@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Union, Any
 import json
 import logging
 
-logger = logging.getLogger(__name__)  # Use the logger set up elsewhere
+logger = logging.getLogger("trading_bot")  # Use the logger set up elsewhere
 
 class ConfigManager:
     """Manages the configuration of the trading bot."""
@@ -32,18 +32,17 @@ class ConfigManager:
             config_path: Path to the configuration file
         """
         self.config_path = config_path
+        self.logger = logging.getLogger("trading_bot")
         self.config = self._load_config()
-        
-        
-    def _load_config(self) -> Dict[str, Any]:
+
+    def _get_default_config(self) -> Dict[str, Any]:
         """
-        Load configuration from file.
-        
+        Get default configuration structure.
+
         Returns:
-            Configuration dictionary
+            Dictionary containing default configuration values
         """
-        # Default configuration
-        default_config = {
+        return {
             "api": {
                 "key": "",
                 "secret": ""
@@ -71,19 +70,32 @@ class ConfigManager:
             }
         }
         
+    def _load_config(self) -> Dict[str, Any]:
+        """
+        Load configuration from file.
+        
+        Returns:
+            Configuration dictionary
+        """
+        # Default configuration
+        default_config = self._get_default_config()
+        
         # Try to load from file
         if os.path.exists(self.config_path):
             try:
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path, 'r', encoding='utf-8') as f:
                     loaded_config = json.load(f)
                 
                 # Merge with default config to ensure all keys exist
                 self._deep_update(default_config, loaded_config)
-                logger.info(f"Configuration loaded from {self.config_path}")
-                
+                self.logger.info(f"Configuration loaded from {self.config_path}")
+
+            except json.JSONDecodeError as e:
+                self.logger.error(f"Invalid JSON in configuration file: {e}")
+                self.logger.warning("Using default configuration")
             except Exception as e:
-                logger.error(f"Error loading configuration: {e}")
-                logger.info("Using default configuration")
+                self.logger.error(f"Error loading configuration: {e}")
+                self.logger.info("Using default configuration")
         else:
             logger.info(f"Configuration file {self.config_path} not found. Using default configuration.")
             # Save default config
@@ -117,12 +129,17 @@ class ConfigManager:
         """
         try:
             config_to_save = config if config is not None else self.config
+            
+            config_dir = os.path.dirname(self.config_path)
+            if config_dir and not os.path.exists(config_dir):
+                os.makedirs(config_dir)
+            
             with open(self.config_path, 'w') as f:
                 json.dump(config_to_save, f, indent=4)
-            logger.info(f"Configuration saved to {self.config_path}")
+            self.logger.info(f"Configuration saved to {self.config_path}")
             return True
         except Exception as e:
-            logger.error(f"Error saving configuration: {e}")
+            self.logger.error(f"Error saving configuration: {e}")
             return False
 
     def get(self, section: str, key: Optional[str] = None, default: Any = None) -> Any:
@@ -138,11 +155,17 @@ class ConfigManager:
             Configuration value
         """
         if section not in self.config:
+            self.logger.debug(f"Section '{section}' not found in config, returning default")
             return default
         
         if key is None:
             return self.config[section]
         
+        value = self.config[section].get(key, default)
+        if value == default and default is not None:
+            self.logger.debug(f"Key '{section}.{key}' not found, using default: {default}")
+        
+
         return self.config[section].get(key, default)
 
     def set(self, section: str, key: str, value: Any) -> None:
@@ -156,8 +179,11 @@ class ConfigManager:
         """
         if section not in self.config:
             self.config[section] = {}
-        
+
+        old_value = self.config[section].get(key)
         self.config[section][key] = value
+        self.logger.debug(f"Config updated: {section}.{key} = {value} (was: {old_value})")
+
 
     def update(self, section: str, values: Dict[str, Any]) -> None:
         """
@@ -171,6 +197,7 @@ class ConfigManager:
             self.config[section] = {}
         
         self.config[section].update(values)
+        self.logger.debug(f"Config section '{section}' updated with {len(values)} values")
 
     def validate(self) -> bool:
         """
@@ -179,6 +206,7 @@ class ConfigManager:
         Returns:
             True if valid, False otherwise
         """
+        validation_errors = []
         try:
             # Check required API keys if not in test mode
             if not self.config.get('trading', {}).get('test_mode', True):
@@ -186,15 +214,71 @@ class ConfigManager:
                 api_secret = self.config.get('api', {}).get('secret')
                 
                 if not api_key or not api_secret:
-                    logger.error("API key and secret are required when not in test mode")
+                    validation_errors.append("API key and secret are required when not in test mode")
                     return False
             
             # Check if there are symbols to trade
             symbols = self.config.get('trading', {}).get('symbols')
-            if not symbols:
-                logger.error("No trading symbols specified")
+            if not symbols or len(symbols) == 0:
+                validation_errors.append("No trading symbols specified")
+
+
+            # Validate intervals
+            interval = self.get('trading', 'interval')
+            if interval and interval <= 0:
+                validation_errors.append(f"interval must be positive (got: {interval})")
+
+            check_interval = self.get('trading', 'check_interval_seconds')
+            if check_interval and check_interval <= 0:
+                validation_errors.append(f"check_interval_seconds must be positive (got: {check_interval})")
+
+
+            stop_loss = self.get('risk_management', 'stop_loss_pct')
+            if stop_loss is not None and (stop_loss <= 0 or stop_loss > 1):
+                validation_errors.append(f"stop_loss_pct must be between 0 and 1 (got: {stop_loss})")
+
+            # Validate strategy parameters
+            strategy_params = self.get('strategy', 'params', {})
+            if 'short_window' in strategy_params and 'long_window' in strategy_params:
+                short_window = strategy_params['short_window']
+                long_window = strategy_params['long_window']
+                
+                if short_window >= long_window:
+                    validation_errors.append(
+                        f"short_window ({short_window}) must be less than long_window ({long_window})"
+                    )
+                
+                if short_window <= 0 or long_window <= 0:
+                    validation_errors.append("Window parameters must be positive")
+
+            # Log all validation errors
+            if validation_errors:
+                for error in validation_errors:
+                    self.logger.error(f"Validation error: {error}")
                 return False
-        except Exception as e:        
-            raise RuntimeError(f"Could not fetch price: {e}")
-        # More validation rules can be added here
-        return True
+            
+            self.logger.info("Configuration validation passed")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Configuration validation exception: {e}")
+            return False
+
+
+    def get_log_level(self) -> int:
+        """
+        Get logging level as integer constant.
+        
+        Returns:
+            Logging level constant (e.g., logging.INFO)
+        """
+        level_str = self.get('logging', 'level', 'INFO').upper()
+        return getattr(logging, level_str, logging.INFO)
+
+    def __repr__(self) -> str:
+        """String representation of ConfigManager."""
+        return f"ConfigManager(config_path='{self.config_path}')"
+
+    def __str__(self) -> str:
+        """Human-readable string representation."""
+        return f"Config loaded from {self.config_path} with {len(self.config)} sections"
