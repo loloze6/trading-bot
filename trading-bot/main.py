@@ -10,7 +10,7 @@ from execution.execution_handler import ExecutionHandler, MockExecutionHandler
 from risk.risk_manager import RiskManager, MockRiskManager
 from execution.portfolio_info import PortfolioInfo, MockPortfolioInfo, PortfolioStateTracker
 from execution.forecast_manager import ForecastManager
-from strategies.simple_strategy import AdvancedStrategy
+from strategies.main_strategy import AdvancedStrategy
 # from strategies.simple_strategy_copy import SimpleMovingAverageStrategy, BuyAndHoldXPeriodsStrategy
 from performance.metrics import EnhancedPerformanceTracker
 from utils.logger import setup_logger
