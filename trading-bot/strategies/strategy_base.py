@@ -56,19 +56,6 @@ class MarketRegime(Enum):
     CHOP = "chop"                           
     UNKNOWN = "unknown"
 
-@dataclass
-class RegimeMetrics:
-    """Market regime metrics calculated from rolling window with
-    trend_strength -> Rolling return over lookback
-    lookback_bars -> Window size used
-    current_price -> For reference
-    """
-    trend_strength: float       # Rolling return over lookback
-    
-    # Meta
-    lookback_bars: int         # Window size used
-    current_price: float       # For reference
-
 # >>>>>>>> Below base strategy from more granular to main strategy <<<<<<<<
 
 class SubStrategyComponent(ABC):
@@ -115,6 +102,10 @@ class SubStrategyComponent(ABC):
         pass
 
     def is_ready_with_standardization(self) -> bool:
+        # Components that don't use standardization (e.g. regime detectors with 0-1 scale)
+        # are ready as soon as the underlying data check passes.
+        if not self.standardized_forecast:
+            return self.is_ready()
         return self.is_ready() and self.standardization_count > self.standardization_ready
         
 
@@ -137,7 +128,8 @@ class SubStrategyComponent(ABC):
                 return ComponentOutput(0.0, 0.0, self.name, self.parameters, self.weight, {'error': 'not_ready'})
         else: 
             forecast = self.basic_forecast
-            logger.info(f"{self.name} // Forecast non-standardized return : {forecast}")
+            #Log only if parameter of logger for trading_refinement is True
+            if logger.strategy_refinement : logger.info(f"{self.name} // Forecast non-standardized return : {forecast}") 
         return ComponentOutput(
             forecast=float(forecast),
             confidence=float(self.confidence),
@@ -262,17 +254,17 @@ class CompositeStrategy(SubStrategyComponent):
         debug_info = {'components': {}}
         
         for component in self.components:
-            ComponentOutput = component.generate_forecast()
+            component_output = component.generate_forecast()
             component_forecasts.append({
-                'name': ComponentOutput.componentName,
-                'forecast': ComponentOutput.forecast,
-                'weight': ComponentOutput.weight,
-                'weighted_contribution': ComponentOutput.forecast * ComponentOutput.weight,
-                'confidence': ComponentOutput.confidence,
-                'parameters': ComponentOutput.parameters,
+                'name': component_output.componentName,
+                'forecast': component_output.forecast,
+                'weight': component_output.weight,
+                'weighted_contribution': component_output.forecast * component_output.weight,
+                'confidence': component_output.confidence,
+                'parameters': component_output.parameters,
             })
 
-            debug_info['components'][component.name] = ComponentOutput.debug_info
+            debug_info['components'][component.name] = component_output.debug_info
         
         # Calculate weighted ensemble
         final_forecast = sum(c['weighted_contribution'] for c in component_forecasts)
@@ -285,10 +277,10 @@ class CompositeStrategy(SubStrategyComponent):
         debug_info['final_forecast'] = final_forecast
         
         # Log ensemble
-        logger.info(f"   🎯 Strategy {self.name} ensemble:")
+        if logger.strategy_refinement: logger.info(f"   🎯 Strategy {self.name} ensemble:")
         for c in component_forecasts:
-            logger.info(f"      {c['name']}: {c['forecast']:+.2f} × {c['weight']:.2f} = {c['weighted_contribution']:+.2f}")
-        logger.info(f"      Final: {final_forecast:+.2f}")
+            if logger.strategy_refinement : logger.info(f"      {c['name']}: {c['forecast']:+.2f} × {c['weight']:.2f} = {c['weighted_contribution']:+.2f}")
+        if logger.strategy_refinement : logger.info(f"      Final: {final_forecast:+.2f}")
         
         return float(final_forecast), 0.0, debug_info
     
@@ -316,7 +308,7 @@ class CompositeStrategyForRegime(CompositeStrategy):
         self.regime_change_count = 0
 
     def track_regime_change(self, forecast_regime: float = 0.0, debug_info: Optional[Dict[str, Any]] = None):
-# Increment bars in regime
+        # Increment bars in regime
         if self.current_regime == self.previous_regime:
             self.bars_in_current_regime += 1
         else:
@@ -414,35 +406,6 @@ class MainStrategy(ABC):
                 debug_info={"error": str(e)}
             )
 
-    def get_readiness_status(self) -> Dict[str, Any]: #Optional for Logging
-        """
-        Get detailed readiness status for debugging.
-        
-        Returns:
-            Dict with readiness info for all components
-        """
-        status = {
-            'buffer_size': self.data_buffer.size,
-            'required_bars': self.required_bars,
-            'buffer_ready': self.data_buffer.size >= self.required_bars,
-            'regime_detector_ready': self.regime_detector.is_ready(),
-            'regime_detector_bars': self.regime_detector.bars_received,
-            'regime_detector_history': len(self.regime_detector.historical_metrics),
-            'current_regime': self.current_regime.value,
-            'strategies': {}
-        } #Note: Not sure if all needed - to simplify ?
-        
-        for regime, strategy in self.strategies.items():
-            if strategy is not None:
-                status['strategies'][regime.value] = {
-                    'name': strategy.name,
-                    'ready': strategy.is_ready(),
-                    'required_periods': strategy.get_required_periods()
-                }
-        
-        status['overall_ready'] = self.is_ready()
-        
-        return status
 
 
 # >>>>> Below tools/technical_indicators. <<<<<<<<<<
