@@ -26,17 +26,17 @@ class RiskManager:
     """
 
     def __init__(self, max_trades_per_hour=10, max_position_size: float = 0.1, stop_loss_pct: float = 0.05):
-        self.max_trades_per_hour = max_trades_per_hour
-        self.trade_timestamps = []
-
         """
         Initialize risk manager.
-        
+
         Args:
-            max_position_size: Maximum position size as fraction of portfolio (0.1 = 10%)
+            max_trades_per_hour: Maximum number of trades allowed per hour
+            max_position_size: Maximum allocation change as fraction of portfolio (e.g. 0.1 = 10%)
             stop_loss_pct: Stop loss percentage (0.05 = 5%)
         """
-        self.max_position_size = max_position_size #10%
+        self.max_trades_per_hour = max_trades_per_hour
+        self.trade_timestamps = []
+        self.max_position_size = max_position_size
         self.stop_loss_pct = stop_loss_pct
         self.max_total_exposure = 1  # 100% max total exposure
 

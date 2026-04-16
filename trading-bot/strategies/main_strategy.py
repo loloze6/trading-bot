@@ -1,19 +1,14 @@
 from strategies.simple_strategy import (
-WeightedComponentRegimeDetector,
-RegimeToStrategyMapping,
-MainStrategy,
-MarketRegime,
-RollingBuffer
+    WeightedComponentRegimeDetector,
+    RegimeToStrategyMapping,
+    MainStrategy,
+    MarketRegime,
+    RollingBuffer,
 )
-
-from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 import pandas as pd
 import logging
 import numpy as np
-from collections import deque
-from dataclasses import dataclass
-from enum import Enum
 
 logger = logging.getLogger("trading_bot")  # Use the logger set up elsewhere
 
@@ -160,7 +155,7 @@ class AdvancedStrategy(MainStrategy):
                 'regime': self.current_regime.value,
                 'reason': 'Strategy_is_None_for_regime',
                 'bars_in_regime': self.regime_detector.bars_in_current_regime,
-                'score_regime': debug_regime.get('forecast_regime', None)
+                'score_regime': debug_regime.get('final_forecast', None)
             }
             
             return (forecast, None, self.current_regime, 0.0, debug_info)
@@ -177,7 +172,7 @@ class AdvancedStrategy(MainStrategy):
             'forecast_delta': forecast_delta,
             'status': 'active_trading',
             'strategy_name': primary_strategy.name,
-            'score_regime': debug_regime.get('forecast_regime', None)
+            'score_regime': debug_regime.get('final_forecast', None)
         }
 
         # Can be included later - Performance-based strategy weighting with get_performance_score

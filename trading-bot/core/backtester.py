@@ -55,8 +55,8 @@ class BacktestEngine:
         self.data_loaded = {}
 
         # Trading data
-        self.open_trades: Dict[str, Trade] = {}
-        self.closed_trades: List[Trade] = []
+        self.open_trades: Dict[str, CompletedTrade] = {}
+        self.closed_trades: List[CompletedTrade] = []
         self.equity_curve: List[Dict[str, Any]] = []
 
         logger.info("Backtest bot initialized")

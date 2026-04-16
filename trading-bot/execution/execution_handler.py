@@ -615,16 +615,13 @@ class MockExecutionHandler:
             logger.error(f"❌ No mock position found for {symbol}")
             return {'status': 'ERROR', 'message': f'No position for {symbol}'}
         try:
-            # Get current position from portfolio
-   
-            positions = self.portfolio_info.get_account_balance()
-            base_asset = symbol.replace('USDT', '')
-
-            position_qty = positions.get(base_asset, {}).get('free', 0) - positions.get(base_asset, {}).get('locked', 0)
+            balances = self.portfolio_info.get_account_balance()
             price = data['close'].iloc[-1] if hasattr(data['close'], 'iloc') else data['close']
             data_time = data['timestamp'].iloc[-1]
 
-            position = positions.get(symbol, None).get('free', None) - positions.get(symbol, None).get('locked', None)
+            # Balance is stored under the full symbol key (e.g. 'BTCUSDT')
+            symbol_balance = balances.get(symbol, {'free': 0.0, 'locked': 0.0})
+            position = symbol_balance.get('free', 0.0) - symbol_balance.get('locked', 0.0)
 
         except Exception as e:
             logger.error(f"❌ Cannot retrieve close data: {e}")

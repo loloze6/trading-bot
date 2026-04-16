@@ -132,33 +132,6 @@ class ForecastManager:
         
         return needs_rebalance, allocation_change
 
-    def calculate_rebalance_needed(self, symbol: str, target_allocation: float) -> Tuple[bool, float]:
-        """
-        Check if rebalancing is needed for a symbol.
-        
-        Args:
-            symbol: Trading symbol
-            target_allocation: Target allocation (-1.0 to 1.0)
-            
-        Returns:
-            Tuple of (needs_rebalance, allocation_change)
-        """
-        current_allocation = self.current_allocations.get(symbol, 0.0)
-        allocation_change = target_allocation - current_allocation
-        
-        needs_rebalance = abs(allocation_change) >= self.rebalance_threshold
-
-        # Log decision with visual indicators
-        if needs_rebalance:
-            change_pct = allocation_change * 100
-            direction = "📈" if allocation_change > 0 else "📉"
-            logger.debug(f"   ✓ Rebalance needed │ {symbol} │ {direction} Δ: {change_pct:+.1f}% │ "
-                        f"Current: {current_allocation:+.1%} → Target: {target_allocation:+.1%}")
-        else:
-            logger.debug(f"   ✗ No rebalance │ {symbol} │ Δ: {allocation_change:+.1%} < {self.rebalance_threshold:.1%} threshold")
-
-        return needs_rebalance, allocation_change
-    
     def update_target_allocation(self, symbol: str, forecast: float):
         """Update target allocation based on new forecast."""
         
