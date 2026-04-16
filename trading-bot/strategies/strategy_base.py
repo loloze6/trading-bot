@@ -73,7 +73,7 @@ class SubStrategyComponent(ABC):
 
 
         #For standardization setup
-        self.rolling_forecast = RollingBuffer(9999999)
+        self.rolling_forecast = RollingBuffer(500)
         self.standardization_ready = 50
         self.standardization_count = 0
 
@@ -411,32 +411,50 @@ class MainStrategy(ABC):
 # >>>>> Below tools/technical_indicators. <<<<<<<<<<
 
 class RollingBuffer:
+    """Fixed-size bar buffer with lazy indicator computation.
+
+    Design:
+      - `bars` deque holds raw bar dicts only (no indicator keys mixed in).
+      - Indicators are recomputed lazily on the first `get_df()` / `__getitem__`
+        call after any `add_data()`, then cached until the next `add_data()`.
+      - `add_data()` is O(1); a full rebuild costs one O(n) DataFrame construction
+        per tick regardless of how many components read from the buffer.
+    """
+
     def __init__(self, max_size: int = 500):
         self.max_size = max_size
-        self.bars = deque(maxlen=max_size)  # O(1) fixed-size FIFO
-        self.indicators = {}  # {'stddev_24': lambda df: df['close'].rolling(24).std()}
+        self.bars: deque = deque(maxlen=max_size)
+        self.indicators: Dict[str, Any] = {}
+        self._cached_df: Optional[pd.DataFrame] = None
+        self._dirty: bool = True
 
     def add_data(self, data_dict: dict):
-        """Add new bar/data row, auto-update indicators."""
+        """Append a new bar dict. O(1) — does NOT rebuild indicators."""
         self.bars.append(data_dict)
-        self._update_indicators()
+        self._dirty = True
 
     def register_indicator(self, name: str, func):
-        """Register indicator func(df) -> pd.Series."""
+        """Register indicator func(df) -> scalar or pd.Series."""
         self.indicators[name] = func
+        self._dirty = True
 
     def _update_indicators(self):
-        """Lazy recompute all indicators on current df."""
+        """Build the full DataFrame with indicator columns. Called lazily."""
         if not self.bars:
+            self._cached_df = pd.DataFrame()
+            self._dirty = False
             return
         df = pd.DataFrame(self.bars)
         for name, func in self.indicators.items():
             df[name] = func(df)
-        # Update bars with computed df (keep latest indicators)
-        self.bars = deque(df.to_dict('records'), maxlen=self.max_size)
+        self._cached_df = df
+        self._dirty = False
 
     def get_df(self) -> pd.DataFrame:
-        return pd.DataFrame(self.bars)
+        """Return the current DataFrame, rebuilding if stale."""
+        if self._dirty or self._cached_df is None:
+            self._update_indicators()
+        return self._cached_df if self._cached_df is not None else pd.DataFrame()
 
     def __getitem__(self, key):
         df = self.get_df()
