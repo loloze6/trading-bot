@@ -1,0 +1,300 @@
+base_hypothesis_id: HYP-002-LIQ-REVERSAL
+
+expanded_variants:
+
+  - variant_id: V1-REGIME-GATED
+    label: conservative_reversal_ranging_only
+    thesis: >
+      Emit the counter-directional forecast only when the regime detector signals
+      RANGING. In TRENDING regime, zero the component output entirely. This is
+      the minimum viable risk-control layer and directly addresses the primary
+      expected failure mode of the base hypothesis.
+    detection_rule: identical to base hypothesis
+    forecast_rule: >
+      If regime == RANGING: emit counter-directional score per base hypothesis
+      (magnitude 0.5, linear decay over 3 bars).
+      If regime == TRENDING: emit 0.0 — defer fully to regime component.
+    integration_change: >
+      Add single regime_mode guard in LiquidationReversalComponent.emit().
+      Regime label already available in existing architecture; no new data needed.
+    code_complexity: minimal
+    conservative: true
+    priority: 1
+
+  - variant_id: V2-REGIME-ADAPTIVE
+    label: dual_mode_reversal_continuation
+    thesis: >
+      Treat the spike signal as regime-conditional: counter-directional in
+      RANGING (exhaustion reversal) but same-directional in TRENDING (breakout
+      continuation). One component handles both market states, avoiding the
+      dead-weight of a fully disabled signal in trending conditions.
+    detection_rule: identical to base hypothesis
+    forecast_rule: >
+      If regime == RANGING: emit -sign(spike_direction) * 0.5, decay over 3 bars.
+      If regime == TRENDING: emit +sign(spike_direction) * 0.30, decay over 2 bars.
+      (Continuation magnitude is smaller; trend signal already dominates.)
+    integration_change: >
+      LiquidationReversalComponent.emit() branches on regime_mode.
+      Regime label is already available as an existing shared signal.
+    code_complexity: low
+    conservative: false
+    priority: 2
+
+  - variant_id: V3-ASYMMETRIC-DIRECTION
+    label: asymmetric_spike_reversal
+    thesis: >
+      Down-spikes (long liquidation cascades) and up-spikes (short squeezes) have
+      structurally different reversal profiles. Long liquidations deplete the ask
+      side quickly; the book refills and price recovers with speed. Short squeezes
+      attract momentum chasers and may partially sustain. Model each direction
+      with separate magnitude and decay parameters.
+    detection_rule: identical to base hypothesis; tag candle with spike_direction
+    forecast_rule: >
+      Down-spike (bearish candle): emit +0.60, decay over 3 bars.
+      Up-spike (bullish candle): emit -0.35, decay over 2 bars.
+    integration_change: >
+      LiquidationReversalComponent stores spike_direction at detection time.
+      Emission function selects magnitude and decay_bars by direction.
+    code_complexity: low
+    conservative: false
+    priority: 3
+
+  - variant_id: V4-OI-CONFIRMED
+    label: open_interest_liquidation_confirmation
+    thesis: >
+      A sharp open interest drop concurrent with a price spike is direct evidence
+      of forced position closure rather than a large informed directional trade.
+      Conditioning the reversal signal on an OI drop removes the core ambiguity
+      of the OHLCV-only proxy and is expected to raise signal precision at the
+      cost of lower frequency.
+    detection_rule: >
+      Base spike conditions AND delta_OI(t) < -1.5 * rolling_std_delta_OI(20).
+      If OI rises during the spike (new directional positions opening), classify
+      as a breakout and suppress the reversal forecast.
+    forecast_rule: identical to base hypothesis when conditions met
+    integration_change: >
+      Fetch open_interest_hist endpoint from Binance Futures API (free, 1h
+      granularity). Add OI_delta column to data pipeline and merge on timestamp.
+    code_complexity: medium
+    conservative: false
+    priority: 4
+
+  - variant_id: V5-WICK-REJECTION
+    label: wick_based_price_rejection
+    thesis: >
+      Replace candle body size with a wick-to-body ratio as the primary detection
+      metric. A candle with a long upper/lower wick and small body signals that
+      price probed a level and was rejected, capturing failed breakouts (incomplete
+      cascades) that revert quickly. This is an independent detection hypothesis
+      that can be tested alongside the body-size variant.
+    detection_rule: >
+      wick_ratio = max(high - close, close - low) / max(abs(close - open), 1e-8).
+      Spike flagged when: wick_ratio > 3.0 AND volume > 2.0 * rolling_mean_volume(20).
+    forecast_rule: >
+      Forecast direction = opposite to wick direction.
+      Upper wick dominant → bearish forecast (-0.40), decay over 2 bars.
+      Lower wick dominant → bullish forecast (+0.40), decay over 2 bars.
+    integration_change: >
+      New detection function within LiquidationReversalComponent.
+      No data pipeline changes; all inputs are standard OHLCV columns.
+    code_complexity: low
+    conservative: false
+    priority: 3
+
+  - variant_id: V6-CASCADE-CONTINUATION
+    label: double_cascade_continuation
+    thesis: >
+      When a second qualifying spike fires within the 3-bar decay window of the
+      first, abandon the reversal and emit a same-direction continuation forecast.
+      A second cascade in rapid succession signals structural one-sided selling
+      (or buying) pressure that cannot be absorbed by the mean-reversion logic.
+      This directly converts the base hypothesis's named failure mode into a
+      tradeable signal.
+    detection_rule: >
+      Track active reversal windows with a bar counter.
+      If a new spike fires within 3 bars of the previous signal, set
+      cascade_mode = True and record spike2_direction.
+    forecast_rule: >
+      In cascade_mode: cancel active reversal forecast. Emit
+      +sign(spike2_direction) * 0.40 continuation forecast, decay over 2 bars.
+      Reset cascade_mode after decay window expires.
+    integration_change: >
+      Add cascade_mode state variable and override logic within
+      LiquidationReversalComponent. No external data required.
+    code_complexity: low
+    conservative: false
+    priority: 2
+
+  - variant_id: V7-CROSS-ASSET-FILTER
+    label: cross_asset_cascade_confirmation
+    thesis: >
+      A simultaneous spike on both BTCUSDT and ETHUSDT on the same 1h bar is more
+      likely a systemic exchange-wide liquidation cascade than an idiosyncratic
+      asset event (e.g., large block trade, flash crash on a single venue).
+      Requiring cross-asset confirmation is expected to sharply reduce false
+      positives at the cost of lower signal frequency.
+    detection_rule: >
+      Require independent spike detection on both BTC and ETH on the same bar.
+      If only one asset spikes, optionally suppress or reduce to 0.20 magnitude
+      (governed by a feature flag).
+    forecast_rule: >
+      Cross-asset confirmed: emit at full base magnitude (0.50) on both assets.
+      Single-asset only: emit 0.20 or suppress, per feature flag.
+    integration_change: >
+      Component requires read access to spike state of both symbols simultaneously.
+      May require a small change to the multi-symbol data dispatch layer.
+    code_complexity: medium
+    conservative: false
+    priority: 3
+
+alternative_data_candidates:
+
+  - source: binance_futures_open_interest_hist
+    endpoint: "GET /futures/data/openInterestHist"
+    availability: free, standard Binance Futures API
+    granularity: 1h
+    use_case: >
+      Confirms that a price spike involved forced position closures (OI drop)
+      rather than a large informed directional trade (OI increase). This is the
+      highest-quality signal upgrade available within the no-paid-data constraint.
+    feasibility: high
+    variant_reference: V4-OI-CONFIRMED
+
+  - source: binance_funding_rate
+    endpoint: "GET /fapi/v1/fundingRate"
+    availability: free
+    granularity: 8h, interpolatable to 1h by forward-fill
+    use_case: >
+      Extreme funding rate in the same direction as the spike indicates heavy
+      leverage concentration. Used as a behavioral gate: extreme positive funding
+      + down-spike elevates reversal confidence. Not a standalone signal.
+    feasibility: high
+    variant_reference: behavioral_features / BF-01
+
+  - source: binance_global_long_short_ratio
+    endpoint: "GET /futures/data/globalLongShortAccountRatio"
+    availability: free
+    granularity: 1h
+    use_case: >
+      Pre-spike sentiment imbalance as an entry condition enhancer. Extreme
+      long ratio before a down-spike increases cascade probability.
+      Requires baseline calibration before use.
+    feasibility: medium
+    variant_reference: future_expansion_only
+
+reverse_hypothesis:
+  hypothesis_id: HYP-002-REV-CONTINUATION
+  label: liquidation_cascade_momentum_continuation
+  thesis: >
+    The spike is not exhaustion but capitulation of the opposing side, clearing
+    the path for directional continuation. In a TRENDING regime, a large-body
+    spike in the trend direction removes remaining resistance (trapped longs/
+    shorts), accelerating the move. Fading such a spike is the primary source
+    of losses for the base hypothesis. A dedicated continuation component with
+    tighter entry timing (next bar open) may capture alpha missed by the slower
+    regime signal.
+  signal_concept: >
+    On a spike bar where spike_direction == trend_direction and regime == TRENDING,
+    emit a same-directional forecast of +0.40, decaying over 2 bars.
+    Opposite-direction spikes in TRENDING are still treated as counter-signals
+    at reduced weight (0.20), as they may represent temporary counter-trend
+    exhaustion.
+  conditions: "regime == TRENDING AND spike_direction == trend_direction"
+  relationship_to_base: >
+    This is the logical inverse of the base reversal thesis. V2-REGIME-ADAPTIVE
+    partially implements both in a single component. The reverse hypothesis
+    stands alone as a pure continuation variant if the reversal leg fails
+    validation.
+  testable: true
+  conservative: false
+
+behavioral_features:
+
+  - feature_id: BF-01
+    name: funding_rate_extremity_gate
+    source: binance_funding_rate (free)
+    description: >
+      Measures how far the current funding rate deviates from its rolling median.
+      Extreme positive funding → market is long-heavy → down-spike is more likely
+      a genuine liquidation cascade with mean-reversion potential. Extreme negative
+      funding → short-heavy → up-spike is more likely a short squeeze with
+      higher reversal probability.
+    operationalization: >
+      funding_z = (funding_rate - rolling_median(funding_rate, 90_periods)) /
+                   rolling_std(funding_rate, 90_periods).
+      Gate: abs(funding_z) > 1.5 AND sign(funding_z) matches spike_direction.
+      Multiply forecast magnitude by 1.20 when gate passes.
+    applicable_variants:
+      - V1-REGIME-GATED
+      - V3-ASYMMETRIC-DIRECTION
+    new_data_required: "binance_funding_rate (free)"
+
+  - feature_id: BF-02
+    name: volume_acceleration
+    source: derived from OHLCV (no new data required)
+    description: >
+      Rate of change of volume over the 3 bars leading into the spike bar.
+      Accelerating volume build-up suggests a cascading chain reaction rather
+      than a single anomalous institutional trade. Reduces false positives from
+      isolated large-block trades.
+    operationalization: >
+      vol_accel = (volume[t] / volume[t-1] > 1.5) AND (volume[t-1] / volume[t-2] > 1.2).
+      Use as an optional AND condition tightening spike detection. Feature flag
+      controls whether this filter is applied.
+    applicable_variants:
+      - V1-REGIME-GATED
+      - V4-OI-CONFIRMED
+    new_data_required: none
+
+  - feature_id: BF-03
+    name: pre_spike_range_compression
+    source: derived from OHLCV (no new data required)
+    description: >
+      A period of ATR contraction in the 6 bars preceding the spike indicates
+      trapped positions building at a price level. When those positions liquidate,
+      the reversal is sharper because they represent pent-up supply/demand.
+      A spike following already volatile conditions is more likely a continuation.
+    operationalization: >
+      atr_ratio = ATR(14)[t-1] / ATR(14)[t-6].
+      If atr_ratio < 0.70 (compression detected), multiply forecast magnitude
+      by 1.25. If atr_ratio > 1.30 (already volatile), multiply by 0.75.
+    applicable_variants:
+      - V1-REGIME-GATED
+      - V3-ASYMMETRIC-DIRECTION
+    new_data_required: none
+
+regime_specific_variants:
+
+  - regime: RANGING
+    recommended_variants:
+      - V1-REGIME-GATED
+      - V3-ASYMMETRIC-DIRECTION
+      - V5-WICK-REJECTION
+    rationale: >
+      In RANGING, there is no dominant directional catalyst. Spikes represent
+      temporary imbalances that the regime equilibrium absorbs. Counter-directional
+      signals have the highest expected value here.
+    forecast_direction: counter-directional
+    suggested_weight_in_blend: 0.30–0.40
+
+  - regime: TRENDING
+    recommended_variants:
+      - V2-REGIME-ADAPTIVE (continuation leg)
+      - V6-CASCADE-CONTINUATION
+    rationale: >
+      In TRENDING, fading momentum is the dominant failure mode. Only
+      continuation-aligned variants should be active. If no continuation
+      variant is deployed, zero the component entirely.
+    forecast_direction: same-directional
+    suggested_weight_in_blend: 0.15–0.25
+
+  - regime: any
+    recommended_variants:
+      - V4-OI-CONFIRMED
+      - V7-CROSS-ASSET-FILTER
+    rationale: >
+      Data quality improvements and cross-asset filters are regime-agnostic.
+      They reduce false positives regardless of regime state and act as
+      modifiers layered on top of directional variants.
+    forecast_direction: follows underlying variant logic
+    suggested_weight_in_blend: modifier only (not additive to blend weight)

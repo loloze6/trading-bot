@@ -309,15 +309,17 @@ class CompletedTrade:
 class EnhancedPerformanceTracker:
     """Enhanced performance tracker supporting iterative long/short positions with LIFO matching."""
     
-    def __init__(self, commission_rate: float = 0.001, log_file: str = 'trades.json', initial_capital: float = 1000.0):
+    def __init__(self, commission_rate: float = 0.001, log_file: str = 'results/trades.json', initial_capital: float = 1000.0):
         self.commission_rate = commission_rate
-        self.log_file = log_file
+        performance_dir = os.path.dirname(os.path.abspath(__file__))
+        project_dir = os.path.dirname(performance_dir)
+        self.log_file = os.path.join(project_dir, log_file)
         self.positions: Dict[str, Position] = {}  # symbol -> Position
         self.completed_trades: List[CompletedTrade] = []
         self.execution_counter = 0
         self.initial_capital = initial_capital  # NEW
         self.forecast_analyzer = ForecastAnalyzer(
-       output_path="forecast_analysis.xlsx"
+       output_path="results/forecast_analysis.xlsx"
        )
         self.trade_regime_agreement = {}
 
@@ -342,10 +344,10 @@ class EnhancedPerformanceTracker:
         if timestamp is None:
             timestamp = datetime.now()
         
-        forecast = signal.get('forecast') if signal else None
-        regime = signal.get('regime') if signal else None
-        confidence = signal.get('confidence') if signal else None
-        debug_info = signal.get('debug_info') if signal else None
+        forecast = signal.forecast if signal else None
+        regime = signal.regime if signal else None
+        confidence = signal.confidence if signal else None
+        debug_info = signal.debug_info if signal else None
 
         # Create execution
         self.execution_counter += 1
@@ -369,29 +371,30 @@ class EnhancedPerformanceTracker:
         is_new_position = symbol not in self.positions
 
         # Log execution header
-        logger.info(f"┌─── EXECUTION #{self.execution_counter} ───") 
-        # logger.info(f"│ {side} {symbol} │ Qty: {abs(quantity):.6f} @ ${price:.2f} │ Forecast: {forecast if forecast else 'N/A'}")
+        logger.debug(f"┌─── EXECUTION #{self.execution_counter} ───") 
+        # logger.debug(f"│ {side} {symbol} │ Qty: {abs(quantity):.6f} @ ${price:.2f} │ Forecast: {forecast if forecast else 'N/A'}")
 
         # Process the execution
         completed_trades = self._process_executed_trades(execution)
         
-        # 1/ Save trades
-        if completed_trades: self.save_trades()
+        # 1/ Save trades (throttled: full rewrite every 100 closes to avoid O(n²) I/O)
+        if completed_trades and len(self.completed_trades) % 100 == 0:
+            self.save_trades()
         
         # 2/ Log results based on what happened
         if is_new_position and symbol in self.positions:
-            logger.info(f"│ ✓ OPENED new {side} position")
+            logger.debug(f"│ ✓ OPENED new {side} position")
 
         elif completed_trades:
             total_pnl = sum(t.net_profit_loss_percent for t in completed_trades)
             wins = sum(1 for t in completed_trades if t.profitable_net)
             losses = len(completed_trades) - wins
-            logger.info(f"│ ✓ CLOSED {len(completed_trades)} trade(s) │ W/L: {wins}/{losses} │ Net P&L: {total_pnl:+.3f}%")
+            logger.debug(f"│ ✓ CLOSED {len(completed_trades)} trade(s) │ W/L: {wins}/{losses} │ Net P&L: {total_pnl:+.3f}%")
                        
             for i, trade in enumerate(completed_trades, 1):
                 pnl_symbol = "📈" if trade.profitable_net else "📉"
                 duration_str = f"{trade.duration_minutes:.0f}m" if trade.duration_minutes < 60 else f"{trade.duration_minutes/60:.1f}h"
-                logger.info(f"│   [{i}] {pnl_symbol} {trade.side.value} │ "
+                logger.debug(f"│   [{i}] {pnl_symbol} {trade.side.value} │ "
                           f"{trade.entry_price:.2f}→{trade.exit_price:.2f} │ "
                           f"P&L: {trade.net_profit_loss_percent:+.3f}% │ "
                           f"Duration: {duration_str}"
@@ -400,7 +403,7 @@ class EnhancedPerformanceTracker:
         elif symbol in self.positions:
             # Added to existing position
             pos = self.positions[symbol]
-            logger.info(f"│ ✓ ADDED to {pos.side.value} position │ "
+            logger.debug(f"│ ✓ ADDED to {pos.side.value} position │ "
                        f"Total Qty: {abs(pos.total_quantity):.6f} │ "
                        f"Avg Entry: ${pos.avg_entry_price:.2f} │ "
                        f"Executions: {len(pos.executions)}")
@@ -408,11 +411,11 @@ class EnhancedPerformanceTracker:
         # Show current position status
         if symbol in self.positions and not self.positions[symbol].is_closed:
             pos = self.positions[symbol]
-            logger.info(f"│ POSITION: {pos.side.value if pos.side else 'CLOSED'} {abs(pos.total_quantity):.6f} @ ${pos.avg_entry_price:.2f}")
+            logger.debug(f"│ POSITION: {pos.side.value if pos.side else 'CLOSED'} {abs(pos.total_quantity):.6f} @ ${pos.avg_entry_price:.2f}")
         else:
-            logger.info(f"│ POSITION: FLAT (no open position)")
+            logger.debug(f"│ POSITION: FLAT (no open position)")
         
-        logger.info(f"└{'─' * 60}")
+        logger.debug(f"└{'─' * 60}")
 
 
         
@@ -440,7 +443,7 @@ class EnhancedPerformanceTracker:
         # Case 2: Opposite direction - need to match against existing executions using LIFO
         remaining_to_close = abs(new_quantity)  # How much we need to close
 
-        logger.info(f"│ → Matching LIFO │ To Close: {remaining_to_close}")
+        logger.debug(f"│ → Matching LIFO │ To Close: {remaining_to_close}")
 
         # Process existing executions in REVERSE chronological order (LIFO - Last In First Out)
         executions_to_remove = []
@@ -465,7 +468,7 @@ class EnhancedPerformanceTracker:
             # Determine how much of this execution can be closed
             quantity_to_close = min(available_quantity, remaining_to_close)
             matched_count += 1
-            logger.info(f"│   Match #{matched_count}: {quantity_to_close:.6f} from {existing_exec.execution_id}")
+            logger.debug(f"│   Match #{matched_count}: {quantity_to_close:.6f} from {existing_exec.execution_id}")
             
             
             # Create a completed trade for this match
@@ -520,7 +523,7 @@ class EnhancedPerformanceTracker:
             # Mark for removal if fully consumed
             if abs(existing_exec.quantity_postComm) < 1e-8:
                 executions_to_remove.append(existing_exec)
-                logger.info(f"│   ✓ Fully closed: {existing_exec.execution_id}")
+                logger.debug(f"│   ✓ Fully closed: {existing_exec.execution_id}")
         
         # Remove fully consumed executions
         for exec_to_remove in executions_to_remove:
@@ -580,12 +583,16 @@ class EnhancedPerformanceTracker:
         except Exception as e:
             logger.error(f"Error saving trades: {e}")
 
-    def export_trades_to_excel(self): #Called end of BT to transform JSON into an excel of all completed trades
+    def export_trades_to_excel(self, filepath: str): #Called end of BT to transform JSON into an excel of all completed trades
+        self.save_trades()  # flush final state before reading — throttle may have skipped last batch
         with open(self.log_file, 'r') as f:
             data = json.load(f)
 
         df = pd.DataFrame(data) 
-        df.to_excel('tradesxl.xlsx', index=False)
+        performance_folder = os.path.dirname(os.path.abspath(__file__))
+        project_folder = os.path.dirname(performance_folder)
+        metric_path = os.path.join(project_folder, filepath)
+        df.to_excel(metric_path, index=False)
     
     def load_trades(self): #Load trades  at init of PerformanceTracker (opt? to keep track of all trades across multiple backtests?)
         """Load trades from JSON file."""
@@ -595,7 +602,7 @@ class EnhancedPerformanceTracker:
             
             # Note: This is a simplified load - in practice you'd want to reconstruct
             # the full CompletedTrade objects and potentially the position state
-            logger.info(f"Loaded {len(trades_data)} trades from {self.log_file}")
+            logger.debug(f"Loaded {len(trades_data)} trades from {self.log_file}")
             
         except Exception as e:
             logger.error(f"Error loading trades: {e}")
@@ -603,7 +610,10 @@ class EnhancedPerformanceTracker:
     def export_metrics_to_excel(self, filepath: str, metrics: Dict[str, Any]) -> None: #Amend the excel with a new Tab with metrics
         """Export metrics to Excel with 'Performance_Metrics' sheet."""
         try:
-            wb = openpyxl.load_workbook(filepath)
+            performance_folder = os.path.dirname(os.path.abspath(__file__))
+            project_folder = os.path.dirname(performance_folder)
+            metric_path = os.path.join(project_folder, filepath)
+            wb = openpyxl.load_workbook(metric_path)
             if 'Performance_Metrics' in wb.sheetnames:
                 wb.remove(wb['Performance_Metrics'])
             ws = wb.create_sheet('Performance_Metrics', 0)
@@ -719,8 +729,8 @@ class EnhancedPerformanceTracker:
             ws.column_dimensions['C'].width = 22
             ws.column_dimensions['D'].width = 22
             
-            wb.save(filepath)
-            logger.info(f"Metrics exported to {filepath} (Performance_Metrics sheet with explanatory comments)")
+            wb.save(metric_path)
+            logger.info(f"Metrics exported to {metric_path} (Performance_Metrics sheet with explanatory comments)")
         
            # Run forecast-centric analysis
             self.forecast_analyzer.analyze(self.completed_trades)
@@ -881,7 +891,7 @@ class EnhancedPerformanceTracker:
         }
 
     def classify_full_history(self, full_price_data: pd.DataFrame) -> Tuple[List[str], pd.Series]:
-        logger.info("Starting Locally Adaptive Heuristic...")
+        logger.debug("Starting Locally Adaptive Heuristic...")
         
         df = full_price_data.copy().reset_index(drop=True)
         df['close'] = pd.to_numeric(df['close'], errors='coerce') 
@@ -972,9 +982,9 @@ class EnhancedPerformanceTracker:
                           num_macro_snapshots: int = 4,    # Number of timeline splits (0 to disable)
                           snap_worst: int = 2,             # Number of worst trades to snapshot (0 to disable)
                           snap_best: int = 2,              # Number of best trades to snapshot (0 to disable)
-                          snap_random: int = 2             # Number of random trades to snapshot (0 to disable)
+                          snap_random: int = 0            # Number of random trades to snapshot (0 to disable)
                           ) -> None:
-        logger.info("Generating optimized Plotly HTML dashboard...")
+        logger.debug("Generating optimized Plotly HTML dashboard...")
         
         df_plot = price_data.copy()
         df_plot['Regime'] = full_regimes
@@ -1099,24 +1109,30 @@ class EnhancedPerformanceTracker:
         fig.update_yaxes(title_text="Capital ($)", row=3, col=1)
 
         chart_config = {'scrollZoom': True, 'displayModeBar': True, 'displaylogo': False, 'modeBarButtonsToRemove': ['lasso2d', 'select2d']}
-        output_file = "strategy_dashboard.html"
-        fig.write_html(output_file, config=chart_config)
-        logger.info(f"Interactive dashboard successfully saved to {output_file}")
+        
+        output_file = "results/strategy_dashboard.html"
+        performance_dir = os.path.dirname(os.path.abspath(__file__))
+        project_dir = os.path.dirname(performance_dir)
+        output_file_path = os.path.join(project_dir, output_file)
+        fig.write_html(output_file_path, config=chart_config)
+        
+        logger.debug(f"Interactive dashboard successfully saved to {output_file}")
 
         # ==========================================
         # 7. AUTOMATED SNAPSHOTS (MACRO & MICRO)
         # ==========================================
         if num_macro_snapshots > 0 or snap_worst > 0 or snap_best > 0 or snap_random > 0:
             try:
-                import os
                 import random
                 import shutil  
 
-                logger.info(f"📸 Generating snapshots ({num_macro_snapshots} macro, {snap_best} best, {snap_worst} worst, {snap_random} random)...")
-                snap_dir = "trade_snapshots"
-                if os.path.exists(snap_dir):
-                    shutil.rmtree(snap_dir, ignore_errors=True)
-                os.makedirs(snap_dir, exist_ok=True)
+                logger.debug(f"📸 Generating snapshots ({num_macro_snapshots} macro, {snap_best} best, {snap_worst} worst, {snap_random} random)...")
+                snap_dir = "results/trade_snapshots"
+                snap_dir_path = os.path.join(project_dir, snap_dir)
+
+                if os.path.exists(snap_dir_path):
+                    shutil.rmtree(snap_dir_path, ignore_errors=True)
+                os.makedirs(snap_dir_path, exist_ok=True)
                 
                 # ------------------------------------------
                 # PART A: MACRO VIEW (Dynamic Time Splits)
@@ -1132,7 +1148,7 @@ class EnhancedPerformanceTracker:
                         x_end = min_time + ((i + 1) * chunk_duration)
                         
                         fig.update_xaxes(range=[x_start, x_end])
-                        filename = f"{snap_dir}/Macro_Part{i+1}_of_{num_macro_snapshots}.png"
+                        filename = f"{snap_dir_path}/Macro_Part{i+1}_of_{num_macro_snapshots}.png"
                         fig.write_image(filename, width=1920, height=1080, scale=1.5)
                     
                 # ------------------------------------------
@@ -1204,7 +1220,7 @@ class EnhancedPerformanceTracker:
 
                         # 3. Save Image
                         safe_date = trade.entry_time.strftime("%Y%m%d_%H%M")
-                        filename = f"{snap_dir}/Micro_{category}_{rank}_{trade.side.value}_{trade.net_profit_loss_percent:+.2f}pct_{safe_date}.png"
+                        filename = f"{snap_dir_path}/Micro_{category}_{rank}_{trade.side.value}_{trade.net_profit_loss_percent:+.2f}pct_{safe_date}.png"
                         fig.write_image(filename, width=1920, height=1080, scale=1.5)
 
                 # ------------------------------------------
@@ -1216,7 +1232,7 @@ class EnhancedPerformanceTracker:
                 fig.update_yaxes(autorange=True, row=2, col=1)
                 fig.update_yaxes(autorange=True, row=3, col=1)
                 
-                logger.info(f"✓ Successfully saved requested snapshots to /{snap_dir}/")
+                logger.debug(f"✓ Successfully saved requested snapshots to /{snap_dir_path}/")
                 
             except Exception as e:
                 logger.warning(f"⚠ Failed to generate image snapshots: {e} (Ensure 'kaleido' is installed via pip)")
@@ -1537,31 +1553,31 @@ class EnhancedPerformanceTracker:
         
 
         # Log to console
-        logger.info("\n" + "="*80)
-        logger.info("TIER 1 PERFORMANCE METRICS")
-        logger.info("="*80)
+        logger.debug("\n" + "="*80)
+        logger.debug("TIER 1 PERFORMANCE METRICS")
+        logger.debug("="*80)
 
         overall = metrics['overall_metrics']
-        logger.info(f"Net Profit Factor: {overall['net_profit_factor']}")
-        # logger.info(f"Expectancy per Trade: ${overall['expectancy_per_trade_usd']}")
-        # # logger.info(f"Commission Efficiency: {overall['commission_efficiency_pct']}%")
-        # logger.info(f"Net Win Rate: {overall['net_win_rate_pct']}%")
-        # logger.info(f"Max Drawdown: ${overall['max_drawdown_usd']} ({overall['max_drawdown_pct']}%)")  # NEW
-        # logger.info(f"Sharpe Ratio: {overall['sharpe_ratio']}")  # NEW
-        # logger.info(f"Calmar Ratio: {overall['calmar_ratio']}")  # NEW
+        logger.debug(f"Net Profit Factor: {overall['net_profit_factor']}")
+        # logger.debug(f"Expectancy per Trade: ${overall['expectancy_per_trade_usd']}")
+        # # logger.debug(f"Commission Efficiency: {overall['commission_efficiency_pct']}%")
+        # logger.debug(f"Net Win Rate: {overall['net_win_rate_pct']}%")
+        # logger.debug(f"Max Drawdown: ${overall['max_drawdown_usd']} ({overall['max_drawdown_pct']}%)")  # NEW
+        # logger.debug(f"Sharpe Ratio: {overall['sharpe_ratio']}")  # NEW
+        # logger.debug(f"Calmar Ratio: {overall['calmar_ratio']}")  # NEW
         
-        # logger.info("\nREGIME VALIDATION:")
+        # logger.debug("\nREGIME VALIDATION:")
         # validation = metrics['regime_validation']
-        # logger.info(f"Classification Accuracy: {validation['accuracy_pct']}%")
-        # logger.info(f"False Positives: {validation['false_positives']}")
+        # logger.debug(f"Classification Accuracy: {validation['accuracy_pct']}%")
+        # logger.debug(f"False Positives: {validation['false_positives']}")
 
         # agreement_metrics = self.trade_regime_agreement
         # if 'total_trades_analyzed' in agreement_metrics and 'error' not in agreement_metrics:
-        #     logger.info(f"Total trades analyzed: {agreement_metrics['total_trades_analyzed']}")
-        #     logger.info(f"Agreement rate: {agreement_metrics['agreement_rate_pct']}%")
-        #     logger.info(f"Agreements: {agreement_metrics['agreements']} trades")
-        #     logger.info(f"Detected regimes: {agreement_metrics.get('detected_regimes', {})}")
-        #     logger.info(f"Ground truth regimes: {agreement_metrics.get('ground_truth_regimes', {})}")
+        #     logger.debug(f"Total trades analyzed: {agreement_metrics['total_trades_analyzed']}")
+        #     logger.debug(f"Agreement rate: {agreement_metrics['agreement_rate_pct']}%")
+        #     logger.debug(f"Agreements: {agreement_metrics['agreements']} trades")
+        #     logger.debug(f"Detected regimes: {agreement_metrics.get('detected_regimes', {})}")
+        #     logger.debug(f"Ground truth regimes: {agreement_metrics.get('ground_truth_regimes', {})}")
         # else:
         #     logger.warning("Agreement metrics calculation returned unexpected format")
         #     logger.warning(f"Content: {agreement_metrics}")
@@ -1714,12 +1730,12 @@ class EnhancedPerformanceTracker:
     
     # def print_detailed_trade_summary(tracker):
     #     """Print detailed summary of all completed trades."""
-    #     logger.info("\n" + "="*80)
-    #     logger.info("DETAILED TRADE SUMMARY")
-    #     logger.info("="*80)
+    #     logger.debug("\n" + "="*80)
+    #     logger.debug("DETAILED TRADE SUMMARY")
+    #     logger.debug("="*80)
         
     #     if not tracker.completed_trades:
-    #         logger.info("No completed trades.")
+    #         logger.debug("No completed trades.")
     #         return
         
     #     total_pnl = 0
@@ -1741,17 +1757,17 @@ class EnhancedPerformanceTracker:
     #         else:
     #             status = "BREAK-EVEN"
             
-    #         logger.info(f"Trade #{i:2d}: {trade.side.value:<5} {trade.matched_quantity:>6.3f} BTC "
+    #         logger.debug(f"Trade #{i:2d}: {trade.side.value:<5} {trade.matched_quantity:>6.3f} BTC "
     #             f"@ {trade.entry_price:>8.0f} -> {trade.exit_price:>8.0f} "
     #             f"| P&L: {pnl:>8.0f} ({pnl_pct:>+6.2f}%) "
     #             f"| Net: {net_pnl:>8.0f} | {status}")
         
-    #     logger.info("-" * 80)
-    #     logger.info(f"SUMMARY: {len(tracker.completed_trades)} trades | "
+    #     logger.debug("-" * 80)
+    #     logger.debug(f"SUMMARY: {len(tracker.completed_trades)} trades | "
     #         f"Wins: {winning_trades} | Losses: {losing_trades} | "
     #         f"Win Rate: {winning_trades/len(tracker.completed_trades)*100:.1f}%")
-    #     logger.info(f"Total P&L: {total_pnl:.0f} | Average P&L: {total_pnl/len(tracker.completed_trades):.0f}")
-    #     logger.info("="*80)
+    #     logger.debug(f"Total P&L: {total_pnl:.0f} | Average P&L: {total_pnl/len(tracker.completed_trades):.0f}")
+    #     logger.debug("="*80)
 
     # def get_equity_curve(self) -> pd.DataFrame:
     #     """
@@ -1877,7 +1893,7 @@ class EnhancedPerformanceTracker:
     #         with open(output_file, 'w') as f:
     #             f.write(html)
             
-    #         logger.info(f"Performance report saved to {output_file}")
+    #         logger.debug(f"Performance report saved to {output_file}")
         
     #     except Exception as e:
     #         logger.error(f"Error generating performance report: {e}")

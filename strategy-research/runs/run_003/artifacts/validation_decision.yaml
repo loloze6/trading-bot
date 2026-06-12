@@ -1,0 +1,59 @@
+hypothesis_id: HYP-run003-001
+run_id: run_003
+refinement_attempt: 1
+primary_variant: VMD-B-zscore
+
+status: approve
+
+rationale: >
+  VMD-B-zscore is falsifiable, regime-routed with documented lag controls, and carries
+  a pre-registered primary variant. Multiple comparison structure is partially defined
+  (BH for secondaries). Six enumerable failure modes are testable via constructed statistics.
+  Hypothesis structure clears gatekeeper criteria. Backtest specification authoring may
+  proceed. Backtest execution is hard-blocked pending BLK-01 and BLK-02 resolution.
+  BLK-03 (parameter pre-registration) must be resolved before IS run begins.
+
+blocking_issues:
+  - id: BLK-01
+    source: BLOCK-01
+    severity: critical
+    description: >
+      shift(1) on rolling zscore series not code-reviewed.
+      VMD-B-zscore and VMD-A carry implementation_allowed: false.
+    resolution: "Code reviewer confirms .shift(1) precedes zscore formula for both series."
+    blocks: backtest_execution
+    clears: backtest_specification_authoring
+
+  - id: BLK-02
+    source: BR-06
+    severity: critical
+    description: >
+      Regime detector (ER/vol) lag relative to signal bar undocumented.
+      Forward-looking smoothing in detector contaminates all routed variants.
+    resolution: "Confirm all regime detector inputs are lagged. Record bar offset in spec."
+    blocks: backtest_execution
+    clears: backtest_specification_authoring
+
+  - id: BLK-03
+    source: BR-02
+    severity: high
+    description: >
+      VMD-B-zscore pre-registered as variant but specific (N, z_thresh, vol_z_thresh,
+      div_z_thresh) tuple not pre-registered. IS run on 72 configs without
+      pre-commitment is post-hoc selection.
+    resolution: >
+      Pre-register single parameter tuple in backtest_specification.yaml before
+      IS backtest is executed. All 72 configs reported; only pre-registered tuple
+      used for primary hypothesis test.
+    blocks: backtest_authorization
+    clears: specification_authoring
+
+  - id: BLK-04
+    source: BLOCK-04
+    severity: medium
+    description: "VMD-CROSS-01 inclusion/exclusion pending classifier API audit."
+    resolution: >
+      Record classifier API audit result in backtest_specification.yaml.
+      Confirm VMD-D as active fallback or reinstate VMD-CROSS-01 as secondary.
+    blocks: variant_finalization
+    clears: primary_backtest

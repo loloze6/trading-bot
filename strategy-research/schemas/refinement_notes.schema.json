@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Refinement Notes",
+  "type": "object",
+  "required": [
+    "hypothesis_id",
+    "stage",
+    "blocker_responses",
+    "decision"
+  ],
+  "properties": {
+    "hypothesis_id": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string"
+    },
+    "blocker_responses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "issue",
+          "action",
+          "status"
+        ],
+        "properties": {
+          "issue": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "pending",
+              "resolved"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": [
+        "next_step",
+        "implementation_allowed"
+      ],
+      "properties": {
+        "next_step": {
+          "type": "string"
+        },
+        "implementation_allowed": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

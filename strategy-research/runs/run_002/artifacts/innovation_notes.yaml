@@ -1,0 +1,137 @@
+run_id: run_002
+stage: innovation_expansion
+base_hypothesis_id: HYP-002-LIQ-REVERSAL
+refinement_attempt: 0
+
+expansion_decisions:
+
+  - decision: regime_gated_variant_as_conservative_anchor
+    reasoning: >
+      The base hypothesis names TRENDING false positives as its primary failure
+      mode. A regime gate resolves this with a single conditional and zero new
+      data. V1-REGIME-GATED is the highest-confidence path to a passing
+      screening backtest and anchors the expansion as required by the mandate.
+
+  - decision: regime_adaptive_dual_mode_variant
+    reasoning: >
+      Disabling the component entirely in TRENDING wastes signal potential.
+      V2-REGIME-ADAPTIVE recycles the same detection logic as a continuation
+      signal in TRENDING, doubling the component's utility for minimal code
+      overhead. It partially encodes the reverse hypothesis and eliminates the
+      need to deploy a separate component.
+
+  - decision: reverse_hypothesis_explicitly_modeled
+    reasoning: >
+      The reverse thesis (cascade = continuation, not reversal) is the exact
+      failure mode of the base hypothesis. Modeling it explicitly now prevents
+      a separate research cycle if the reversal leg fails validation. It also
+      provides a structural explanation for why V2 continuation leg is valid.
+
+  - decision: open_interest_as_top_alternative_data_priority
+    reasoning: >
+      Binance Futures OI history is free, 1h granularity, and measures the
+      quantity of interest directly: OI drop = positions closed = liquidations.
+      It eliminates the fundamental ambiguity of OHLCV as a liquidation proxy.
+      Among all free data sources evaluated, this has the highest expected lift
+      on signal precision. Ranked #1 alternative data candidate.
+
+  - decision: funding_rate_as_behavioral_gate_not_signal
+    reasoning: >
+      Funding rate encodes the structural leverage imbalance that makes cascades
+      likely. Using it as a magnitude multiplier or gate (not a primary detector)
+      avoids overfitting while capturing its predictive value. Its 8h resolution
+      is appropriate for this role.
+
+  - decision: wick_rejection_as_independent_detection_mechanism
+    reasoning: >
+      The base hypothesis uses candle body size. Wick size captures a distinct
+      microstructure phenomenon (price probed and rejected vs. price closed
+      directionally). Including both creates two independent testable detection
+      approaches. If one fails, the other may pass. No new data required.
+
+  - decision: cascade_continuation_converts_failure_mode_to_signal
+    reasoning: >
+      The base hypothesis explicitly names double-cascade as a failure mode and
+      describes it as a loss amplifier. V6 inverts this: if a second spike fires
+      within the decay window, treat it as confirmation of sustained directional
+      pressure and emit continuation. Minimal incremental logic; high relevance
+      to the known risk.
+
+  - decision: asymmetric_direction_parameters
+    reasoning: >
+      Long liquidations (down-spikes) and short squeezes (up-spikes) have
+      asymmetric liquidity dynamics. This is observable in crypto literature
+      and testable with split-sample analysis. Parameterizing by direction adds
+      a modest calibration cost but is fully testable.
+
+  - decision: cross_asset_filter_flagged_medium_complexity
+    reasoning: >
+      Cross-asset confirmation is logically sound (systemic vs. idiosyncratic
+      events) and improves precision, but requires cross-symbol state access
+      that may need a small architecture change. Included as a variant with an
+      explicit medium complexity flag so validation can proceed without it if
+      the dispatch layer requires non-trivial work.
+
+  - decision: long_short_ratio_deferred_to_future_expansion
+    reasoning: >
+      Binance global long/short ratio requires baseline calibration before it can
+      serve as a meaningful gate. Its information content partially overlaps with
+      funding rate (BF-01), which is simpler to operationalize. Deferred.
+
+rejected_ideas:
+
+  - idea: tick_data_trade_tape
+    rejection_reason: requires paid infrastructure; violates no_paid_data constraint
+
+  - idea: exchange_liquidation_feed_bybit_okx
+    rejection_reason: >
+      Third-party exchange liquidation APIs require a separate integration
+      effort and exceed the minimal code change constraint. High-value but
+      explicitly out of scope.
+
+  - idea: l2_order_book_imbalance
+    rejection_reason: >
+      L2 snapshot data is not stored in the existing 1h OHLCV pipeline.
+      Adding it requires significant data infrastructure changes, which
+      violates the prefer_minimal_code_changes constraint.
+
+  - idea: rebuild_or_modify_regime_detector
+    rejection_reason: >
+      Explicitly forbidden by research_brief constraints. Regime detection
+      is treated as a fixed, read-only input by all variants in this expansion.
+
+  - idea: multi_timeframe_confirmation_5m_15m
+    rejection_reason: >
+      The existing backtest framework operates on 1h candles. Adding lower
+      timeframes would require data pipeline and simulation loop changes that
+      exceed minimal scope. Deferred to future cycle if 1h variants show edge.
+
+variant_priority_order:
+  - rank: 1
+    variant_id: V1-REGIME-GATED
+    rationale: conservative, zero new data, directly fixes primary failure mode
+  - rank: 2
+    variant_id: V2-REGIME-ADAPTIVE
+    rationale: efficient dual-mode design, low code complexity, reverse hypothesis encoded
+  - rank: 3
+    variant_id: V6-CASCADE-CONTINUATION
+    rationale: converts named failure mode into signal, minimal state logic
+  - rank: 4
+    variant_id: V3-ASYMMETRIC-DIRECTION
+    rationale: empirically motivated, low code complexity, adds calibration cost
+  - rank: 5
+    variant_id: V5-WICK-REJECTION
+    rationale: independent detection mechanism, no new data, medium precision gain
+  - rank: 6
+    variant_id: V7-CROSS-ASSET-FILTER
+    rationale: high precision, medium architecture complexity
+  - rank: 7
+    variant_id: V4-OI-CONFIRMED
+    rationale: strongest signal quality upgrade, requires data pipeline change
+
+next_stage_recommendation: >
+  Proceed to validation_gate with V1-REGIME-GATED as the primary candidate.
+  If V1 passes screening, introduce V2 or V6 as the next complexity-one
+  additions. V4-OI-CONFIRMED should be evaluated only if V1/V2 show marginal
+  edge that OI confirmation is expected to sharpen — validate the detection
+  concept first, then layer in data quality improvements.

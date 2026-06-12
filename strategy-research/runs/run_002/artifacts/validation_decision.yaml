@@ -1,0 +1,131 @@
+hypothesis_id: HYP-002-LIQ-REVERSAL
+status: refine
+
+rationale: >
+  The core mean-reversion thesis in RANGING regime is directionally plausible
+  and is scoped to a minimum-viable implementation (V1) that requires no new
+  data and minimal code change. The innovation expansion is intellectually
+  coherent and the regime-gating design directly addresses the primary expected
+  failure mode.
+
+  However, the hypothesis cannot be approved for backtest in its current state
+  for three reasons:
+
+  1. Regime label causality is unverified. The entire V1 gate collapses if
+     the Keltner regime signal uses any forward-looking window. This is a
+     binary prerequisite, not a risk to accept.
+
+  2. FM-08 (regime misclassification on spike bars themselves) is a structural
+     incompatibility that has not been analyzed. A spike bar's extreme price
+     move may systematically trigger a TRENDING label at the exact moment
+     the reversal wants to fire in RANGING, making V1's gate self-defeating
+     without a bar-lag fix.
+
+  3. Variant proliferation risk (FM-10, BR-05) is uncontrolled. Seven variants
+     tested without a pre-committed sequence is equivalent to running 7 separate
+     experiments and reporting the best one. The testing sequence must be
+     locked before any IS data is touched.
+
+  The hypothesis is not rejected because: V1 is structurally sound if blocking
+  issues are resolved, the signal space is empirically unexplored in this
+  architecture, and the integration change is genuinely minimal.
+
+blocking_issues:
+
+  - issue_id: BLOCK-01
+    priority: critical
+    description: >
+      Regime label causality must be verified before any backtest runs.
+      Inspect the regime component code and confirm that all inputs at bar t
+      use only data available at bar t close (no centered windows, no
+      forward-filled future rows). If lookahead is found, it must be corrected
+      before the backtest spec is written.
+    required_action: >
+      Code audit of regime detector. Written confirmation that all rolling
+      windows are strictly backward-looking. If the regime label is computed
+      as a multi-bar smoothed signal, verify smoothing is applied only to
+      past bars.
+    blocks_variants:
+      - V1-REGIME-GATED
+      - V2-REGIME-ADAPTIVE
+
+  - issue_id: BLOCK-02
+    priority: critical
+    description: >
+      FM-08 must be quantified before finalizing V1 detection logic.
+      Specifically: what percentage of qualifying spike bars (body > 2σ,
+      volume > 2σ) occurring during structurally RANGING periods are
+      labeled TRENDING by the regime detector at bar t vs. bar t-1?
+      If the spike bar itself triggers a TRENDING label > 30% of the time,
+      V1's emission rule must use regime[t-1] (prior bar) instead of regime[t].
+    required_action: >
+      Run a lightweight pandas analysis (no full backtest) on historical data:
+      for each spike event, log regime[t] and regime[t-1]. Report the
+      misclassification rate. Adjust the V1 detection rule accordingly and
+      document the fix before backtest specification is written.
+    blocks_variants:
+      - V1-REGIME-GATED
+      - V3-ASYMMETRIC-DIRECTION
+      - V5-WICK-REJECTION
+
+  - issue_id: BLOCK-03
+    priority: high
+    description: >
+      Variant testing sequence must be formally committed before any IS
+      data is examined. The sequence defined in validation_protocol.yaml
+      (V1 → V3 → V5 → V4 → V2 → V6/V7) must be treated as a binding
+      protocol. Results from a later-stage variant cannot retroactively
+      justify modifying V1's parameters.
+    required_action: >
+      Explicitly confirm the testing sequence in the backtest specification
+      artifact before execution. Each variant test gate (IS Sharpe, signal
+      count) must be evaluated and documented before the next variant is run.
+    blocks_variants:
+      - all secondary variants (V2 through V7)
+
+  - issue_id: BLOCK-04
+    priority: high
+    description: >
+      OI timestamp semantics must be resolved before V4 is approved for
+      any backtest. Specifically: confirm that Binance OI records carry
+      an end-of-bar timestamp (meaning the value is known at bar close)
+      and that the data pipeline shifts the delta series by +1 bar before
+      merging with price data to reflect true signal availability in live
+      trading.
+    required_action: >
+      Download a sample of Binance OI data and inspect timestamps.
+      Document the bar offset required for live-trading fidelity.
+      Write the merge logic with the confirmed offset before V4 testing.
+    blocks_variants:
+      - V4-OI-CONFIRMED
+
+conditional_approvals:
+  - variant: V1-REGIME-GATED
+    approved_for_screening_backtest: false
+    condition: >
+      Approved upon resolution of BLOCK-01 and BLOCK-02. No IS backtest
+      may run until both are cleared and documented.
+
+  - variant: V4-OI-CONFIRMED
+    approved_for_screening_backtest: false
+    condition: >
+      Approved only after V1 passes screening AND BLOCK-04 is resolved.
+
+  - variants:
+      - V2-REGIME-ADAPTIVE
+      - V3-ASYMMETRIC-DIRECTION
+      - V5-WICK-REJECTION
+      - V6-CASCADE-CONTINUATION
+      - V7-CROSS-ASSET-FILTER
+    approved_for_screening_backtest: false
+    condition: >
+      Approved sequentially per testing sequence only after V1 passes
+      IS screening. No parallel multi-variant testing permitted.
+
+next_action: >
+  Return to implementation with the following checklist:
+  (1) Audit regime detector for causality (BLOCK-01).
+  (2) Run spike-bar regime misclassification analysis (BLOCK-02).
+  (3) Confirm OI timestamp semantics if V4 is in scope (BLOCK-04).
+  (4) Lock testing sequence in backtest spec (BLOCK-03).
+  Only then proceed to backtest_specification stage for V1-REGIME-GATED.

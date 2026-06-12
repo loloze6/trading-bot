@@ -1,0 +1,78 @@
+type: object
+required:
+  - handoff_version
+  - run_id
+  - from_stage
+  - to_stage
+  - objective
+  - primary_input_artifact
+  - required_inputs
+  - deliverables
+  - constraints
+  - stop_conditions
+properties:
+  handoff_version:
+    type: integer
+    enum: [1]
+
+  run_id:
+    type: string
+
+  from_stage:
+    type: string
+
+  to_stage:
+    type: string
+
+  objective:
+    type: string
+
+  context_summary:
+    type: array
+    items:
+      type: string
+
+  primary_input_artifact:
+    type: string
+
+  required_inputs:
+    type: array
+    items:
+      type: object
+      required: [path, reason]
+      properties:
+        path:
+          type: string
+        reason:
+          type: string
+
+  optional_inputs:
+    type: array
+    items:
+      type: object
+      required: [path, reason]
+      properties:
+        path:
+          type: string
+        reason:
+          type: string
+
+  constraints:
+    type: array
+    items:
+      type: string
+
+  deliverables:
+    type: array
+    items:
+      type: string
+
+  stop_conditions:
+    type: array
+    items:
+      type: string
+
+  notes_for_orchestrator:
+    type: array
+    items:
+      type: string

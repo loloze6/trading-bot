@@ -1,0 +1,46 @@
+innovation_notes:
+  - section: Alternative Data Candidates
+    notes: >
+      The proposed alternative data sources (Order Book Depth, Social Media Sentiment,
+      Futures Funding Rates) are plausible for refining the base hypothesis.
+      Order book data can provide real-time micro-structure insights to validate
+      or refute the conviction behind volume spikes. Sentiment analysis can capture
+      behavioral extremes that often precede reversals. Funding rates offer a view
+      into leveraged positions that can exacerbate price moves and increase reversal
+      probability. These are generally accessible via APIs and do not require paid subscriptions,
+      aligning with constraints.
+  - section: Reverse Hypothesis
+    notes: >
+      The reverse hypothesis (HG_BTCUSDT_1h_001_RH) directly addresses the possibility
+      that high volume confirms momentum rather than reversal. This is a critical
+      test of the base hypothesis's core assumption and aligns with the research goal
+      of understanding behavior across regimes. If the reverse hypothesis performs
+      better, it suggests the base hypothesis is fundamentally flawed in its interpretation
+      of volume signals.
+  - section: Behavioral Features
+    notes: >
+      The suggested behavioral features (Volume Spike Magnitude, Price Change Velocity,
+      RSI at Signal) aim to add granularity to the existing signal concept.
+      Volume Spike Magnitude allows for non-linear relationships, recognizing that
+      extreme volume might have different implications. Price Change Velocity provides
+      a more nuanced view of price movement within the lookback period. RSI at Signal
+      introduces a common momentum indicator to corroborate or contradict the price/volume
+      signal, potentially improving robustness and distinguishing between reversal and
+      continuation signals. These features can likely be implemented using standard
+      OHLCV data and existing indicator calculations.
+  - section: Regime-Specific Variants
+    notes: >
+      The regime-specific variants (HG_BTCUSDT_1h_001_TRENDING and HG_BTCUSDT_1h_001_RANGING)
+      are designed to test the hypothesis's performance in distinct market conditions,
+      directly addressing the research goal of cross-regime robustness. The TRENDING
+      variant hypothesizes momentum, while the RANGING variant focuses on mean-reversion.
+      This approach allows for a more targeted evaluation and potential adaptation of
+      parameters or even signal logic based on the detected regime, leveraging the
+      `advanced_strategy_with_regime_detection_exists` context.
+  - section: Conservative Variant
+    notes: >
+      Variant HG_BTCUSDT_1h_001_V1 serves as the conservative option. It simplifies
+      the base hypothesis by using fixed thresholds for volume confirmation and a
+      fixed lookback period for price change. This reduces the complexity and the
+      risk of overfitting to specific parameter values, making it a more robust starting
+      point for validation before exploring more complex variants.

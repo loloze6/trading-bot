@@ -1,0 +1,19 @@
+strategy_domain: crypto_perpetuals
+market_universe:
+  - BTCUSDT
+  - ETHUSDT
+timeframe: 1h
+constraints:
+  - use_existing_backtest_framework
+  - prefer_minimal_code_changes
+  - use_existing_strategy_architecture
+  - no_paid_data
+research_goal: >
+  Explore whether a liquidation-driven reversal or continuation hypothesis
+  can be integrated into the existing forecast -> allocation -> rebalance
+  architecture through a minimal strategy/component change.
+existing_context:
+  - advanced_strategy_with_regime_detection_exists
+  - sub_strategy_components_exist
+  - simulate_command_already_runs
+  - post_backtest_summary_already_exists

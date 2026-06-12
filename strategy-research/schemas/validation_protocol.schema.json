@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Validation Protocol",
+  "type": "object",
+  "required": [
+    "hypothesis_id",
+    "falsifiable_statement",
+    "null_expectation",
+    "required_evidence",
+    "bias_risks",
+    "failure_modes",
+    "sample_split_design",
+    "decision_rules"
+  ],
+  "properties": {
+    "hypothesis_id": { "type": "string" },
+    "falsifiable_statement": { "type": "string" },
+    "null_expectation": { "type": "string" },
+    "required_evidence": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "bias_risks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "failure_modes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 5
+    },
+    "sample_split_design": { "type": "string" },
+    "decision_rules": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

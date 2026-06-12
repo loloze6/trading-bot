@@ -1,0 +1,49 @@
+run_id: run_004
+status: failed
+current_stage: validation
+pending_stage: validation
+completed_stages:
+- hypothesis_generation
+- innovation_expansion
+artifacts: {}
+governance:
+  max_hypothesis_variants_per_cycle: 3
+  max_refinements_after_validation: 2
+  max_reruns_after_analysis: 1
+  max_required_reads_per_stage: 3
+counters:
+  refinements_used: 0
+  reruns_used: 0
+flags:
+  holdout_reserved: false
+  validation_approved: false
+  screening_passed: false
+  walk_forward_passed: false
+last_summary: null
+audit_log:
+  hypothesis_generation_attempt_0:
+    timestamp: '2026-05-15T14:20:56.168341+00:00'
+    engine: gemini-native-api
+    execution_time_seconds: 3.23
+    tokens:
+      input: 743
+      output: 481
+      total: 1224
+  innovation_expansion_attempt_0:
+    timestamp: '2026-05-15T14:25:23.794109+00:00'
+    engine: gemini-native-api
+    execution_time_seconds: 13.69
+    tokens:
+      input: 1305
+      output: 2953
+      total: 4258
+  validation_attempt_0:
+    timestamp: '2026-05-15T14:38:56.057636+00:00'
+    engine: gemini-native-api
+    execution_time_seconds: 8.29
+    tokens:
+      input: 2930
+      output: 1571
+      total: 4501
+updated_at: '2026-05-15T14:38:56.073048+00:00'
+last_error: 'Unknown validation status: Refine'

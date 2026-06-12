@@ -1,0 +1,77 @@
+# validation_protocol.yaml
+hypothesis_id: HG_BTCUSDT_1h_001
+falsifiable_statement: >
+  The mean-reversion strategy (HG_BTCUSDT_1h_001_V1, HG_BTCUSDT_1h_001_RANGING)
+  will not demonstrate statistically significant profitability (Sharpe Ratio > 1.0,
+  p-value < 0.05) when entering short on significant price increases with above-average
+  volume, and entering long on significant price decreases with above-average volume,
+  particularly in ranging markets. The momentum strategy (HG_BTCUSDT_1h_001_V3,
+  HG_BTCUSDT_1h_001_TRENDING) will not demonstrate statistically significant
+  profitability (Sharpe Ratio > 1.0, p-value < 0.05) when entering long on
+  significant price increases with above-average volume, and entering short on
+  significant price decreases with above-average volume, particularly in trending
+  markets.
+null_expectation: >
+  The Sharpe Ratio of the tested variants will be less than or equal to 1.0,
+  or the p-value associated with the profitability test will be greater than
+  or equal to 0.05, indicating no statistically significant edge.
+required_evidence:
+  - Backtest results for HG_BTCUSDT_1h_001_V1, HG_BTCUSDT_1h_001_V2, HG_BTCUSDT_1h_001_V3,
+    HG_BTCUSDT_1h_001_TRENDING, and HG_BTCUSDT_1h_001_RANGING variants.
+  - Statistical significance tests (e.g., t-test for Sharpe Ratio, p-value for
+    profitability).
+  - Analysis of performance across different market regimes (identified by the
+    regime detection mechanism).
+  - Confirmation that data used for validation is unseen during parameter optimization.
+bias_risks:
+  - Lookahead Bias: Ensuring that future information (e.g., future volume, future
+    price changes) is not used in signal generation or decision-making.
+  - Overfitting: Parameters (X, Y, Z in signal concepts) must be optimized on a
+    separate dataset from the one used for final validation. The validation set
+    must be strictly out-of-sample.
+  - Data Leakage: Ensuring that no information from the validation period inadvertently
+    influences the parameter selection or strategy design. This includes ensuring
+    that average volume calculations do not incorporate future data.
+  - Regime Detection Accuracy: The performance of V2, TRENDING, and RANGING variants
+    is contingent on the accuracy of the underlying regime detection. If the regime
+    detector is flawed, these variants may perform poorly due to incorrect regime
+    assignments.
+failure_modes:
+  - Mean Reversion Failure (V1, RANGING): High volume spikes consistently confirm
+    momentum rather than signaling exhaustion, leading to losses when trading against
+    the prevailing trend.
+  - Momentum Failure (V3, TRENDING): High volume spikes are not indicative of sustained
+    momentum, or they precede reversals, leading to losses when trading with the
+    move.
+  - Regime Misclassification: The regime detection mechanism incorrectly identifies
+    market conditions, causing the strategy to apply inappropriate logic (e.g.,
+    mean-reversion in a strong trend).
+  - Insufficient Volume Confirmation: The fixed volume multiplier (e.g., 1.5x) is
+    too low to reliably capture conviction, or too high, filtering out valid signals.
+  - Parameter Sensitivity: The strategy's profitability is highly dependent on the
+    specific values of X, Y, and Z, and these optimal values do not generalize
+    across different time periods or market conditions.
+  - Transaction Costs: Slippage and fees erode the profitability of frequent mean-reversion
+    or momentum trades, especially during high-volatility periods.
+  - Lack of Statistical Significance: The observed profitability is due to random
+    chance rather than a genuine predictive edge.
+sample_split_design:
+  - Training/Optimization Period: 70% of the historical data. This period will be
+    used for parameter tuning (X, Y, Z) and potentially regime model training/validation.
+  - Validation Period: 30% of the historical data, strictly following the training
+    period. This period will be used to evaluate the performance of the chosen
+    parameters and the overall strategy without any further optimization.
+  - Data Splitting Logic: Chronological split. The data will be divided into contiguous
+    blocks based on time.
+decision_rules:
+  - Approve: If at least one variant (V1, V2, V3, TRENDING, RANGING) demonstrates
+    a Sharpe Ratio > 1.0 with a p-value < 0.05 on the validation set, and the
+    rationale for its success is consistent with its thesis.
+  - Refine: If variants show marginal profitability (e.g., Sharpe Ratio between
+    0.5 and 1.0) or statistically significant results but with clear areas for
+    improvement (e.g., high drawdown, poor performance in specific regimes not
+    accounted for by the variant's thesis). This may involve adjusting parameters,
+    revisiting assumptions, or incorporating alternative data.
+  - Reject: If all variants fail to achieve a Sharpe Ratio > 1.0 with a p-value < 0.05
+    on the validation set, or if significant bias risks (lookahead, overfitting)
+    cannot be mitigated.

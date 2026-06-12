@@ -1,0 +1,79 @@
+hypothesis_id: HYP-002-LIQ-REVERSAL
+thesis: >
+  On 1h BTC/ETH perpetual candles, an extreme price spike accompanied by an
+  abnormal volume surge is a reliable proxy for a liquidation cascade event.
+  Following such an event, price exhibits a mean-reversion tendency within the
+  next 1–3 candles, as the forced closure of over-leveraged positions exhausts
+  directional momentum. This reversal signal can be integrated as a sub-strategy
+  forecast component that temporarily overrides or weights down the prevailing
+  directional forecast.
+
+rationale: >
+  Crypto perpetual markets carry structural leverage concentrations. When price
+  moves sharply, stop-loss and liquidation orders cluster above/below recent
+  highs/lows fire in sequence, amplifying the move. Once that pool of forced
+  sellers/buyers is exhausted, no organic directional catalyst remains and price
+  snaps back. This mechanism is well-documented in intraday equity and crypto
+  literature and is testable with OHLCV data alone, requiring no paid feed.
+
+signal_concept:
+  name: liquidation_spike_reversal
+  inputs:
+    - close
+    - high
+    - low
+    - volume
+  detection_rule: >
+    A liquidation spike candle is flagged when:
+    (1) |candle_body| > 2.5 * ATR(14)
+    (2) candle_volume > 2.0 * rolling_mean_volume(20)
+    Both conditions must hold on the same 1h bar.
+  forecast_signal: >
+    On the bar immediately following a flagged spike, emit a short-horizon
+    counter-directional forecast score (e.g., +0.5 for a bearish spike, -0.5
+    for a bullish spike). The signal decays linearly to zero over 3 bars.
+    Outside of a spike window, the component emits a neutral (0) score and
+    defers to the existing regime-based forecast.
+  integration_point: >
+    Add as a new sub-strategy component (e.g., LiquidationReversalComponent)
+    that returns a forecast value blended into the existing weighted forecast
+    aggregation. No changes required to the allocation or rebalance layers.
+
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+
+timeframe: 1h
+
+assumptions:
+  - OHLCV data is a sufficient proxy for liquidation activity in the absence of
+    a dedicated liquidation feed.
+  - A large-body candle with elevated volume on 1h is predominantly driven by
+    forced liquidations rather than informed directional flow.
+  - The reversal window is short (1–3 bars); beyond that, the regime signal
+    dominates.
+  - Slippage and fees are captured by the existing backtest cost model and do
+    not invalidate a signal with a forecast edge > transaction cost.
+  - The existing regime detection (TRENDING / RANGING) does not need to be
+    modified; the spike component acts as an additive override.
+
+expected_failure_modes:
+  - false_positives_in_trending_regimes: >
+      In a strong trend, a large candle may represent genuine breakout momentum
+      rather than a liquidation exhaustion. Fading it in TRENDING regime will
+      produce losses. Mitigation: gate the component or reduce its weight when
+      the regime detector signals TRENDING.
+  - parameter_sensitivity: >
+      ATR multiplier (2.5) and volume multiplier (2.0) are initial values.
+      If the distribution of spike sizes shifts across market cycles, fixed
+      thresholds will under- or over-fire. Mitigation: walk-forward validation
+      with rolling calibration window.
+  - latency_of_reversal: >
+      The reversal may resolve within the same 1h bar rather than the next,
+      meaning entry on bar close captures a degraded edge. Mitigation: measure
+      open-to-close return of the bar following the spike bar as the primary
+      evaluation metric.
+  - double_cascade: >
+      In violent trending moves, a second liquidation wave can follow immediately,
+      turning the reversal trade into a loss-amplifier. Mitigation: cancel the
+      counter-signal if a second spike fires in the 3-bar decay window.

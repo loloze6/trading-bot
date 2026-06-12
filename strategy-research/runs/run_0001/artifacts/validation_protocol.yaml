@@ -1,0 +1,220 @@
+hypothesis_id: H-0001
+
+falsifiable_statement: >
+  On closed 1h bars for BTCUSDT and ETHUSDT, when cumulative liquidation
+  volume exceeds a pre-specified threshold, the direction-adjusted return
+  over the following 1 to 3 bars is statistically significantly positive
+  (for long-liquidation events) or negative (for short-liquidation events),
+  at p < 0.05 after multiple-comparison correction, with a mean risk-adjusted
+  return greater than the unconditional bar return in the same period.
+  If this cannot be demonstrated on in-sample data with a defined threshold
+  fixed before backtest execution, the hypothesis is falsified.
+
+null_expectation: >
+  After a liquidation event, the subsequent 1h bar return is drawn from the
+  same distribution as any random bar return. The modifier has zero expected
+  contribution to the ER forecast. Any apparent edge is attributable to
+  chance, threshold fitting, or look-ahead contamination.
+
+required_evidence:
+  - evidence: positive_direction_adjusted_return
+    description: >
+      Mean return in the 1-3 bars following a qualifying liquidation event
+      must be directionally consistent and statistically distinguishable from
+      zero. Measured separately for long-liquidation and short-liquidation
+      events.
+    threshold: p < 0.05 (Bonferroni-corrected for two markets and two event types)
+
+  - evidence: minimum_event_count
+    description: >
+      At least 100 qualifying events per market per event type in the
+      in-sample period. Fewer than 100 events makes statistical inference
+      unreliable regardless of reported p-value.
+    threshold: n >= 100 per market per direction
+
+  - evidence: sharpe_improvement
+    description: >
+      Backtest Sharpe ratio of the strategy with the modifier active must
+      exceed the Sharpe ratio of the identical strategy without the modifier
+      by at least 0.15 on the in-sample period. Smaller improvements are
+      within noise.
+    threshold: delta_sharpe >= 0.15
+
+  - evidence: out_of_sample_persistence
+    description: >
+      The directional edge (positive mean direction-adjusted return) must
+      persist on the held-out out-of-sample period with the same threshold
+      fixed from in-sample. Degradation of more than 50% of in-sample effect
+      size is a rejection signal.
+    threshold: OOS_effect_size >= 0.5 * IS_effect_size
+
+  - evidence: no_lookahead_confirmation
+    description: >
+      The liquidation volume used for the signal must be from the fully closed
+      prior bar only. Any use of current-bar liquidation data before bar close
+      must be confirmed absent. This is verified by design inspection, not
+      statistical test.
+    threshold: binary pass/fail
+
+bias_risks:
+
+  - risk: threshold_overfitting
+    severity: high
+    description: >
+      The liquidation volume threshold is a free parameter. If selected by
+      scanning many values and picking the best in-sample result, the threshold
+      is overfit and OOS performance will regress to the mean. Mitigation:
+      fix the threshold at a round percentile (e.g., 95th percentile of
+      historical liquidation volume) before running any return analysis.
+
+  - risk: look-ahead_via_intrabar_data
+    severity: critical
+    description: >
+      The Binance liquidation stream is a real-time feed. If historical
+      reconstruction uses intrabar liquidation totals attributed to bar open
+      instead of bar close, the signal will embed future information. Any
+      bar-level liquidation feature must be computed strictly from data
+      available at bar close T, applied to the signal for bar T+1.
+
+  - risk: regime_label_contamination
+    description: >
+      The regime detector (TRENDING/RANGING) uses price data from the same
+      bar. If the regime label at bar T is used alongside the liquidation
+      signal at bar T to forecast bar T+1, the regime signal is not
+      contaminated — but if the regime uses any forward-looking smoothing
+      or lagged recomputation on future bars, it introduces bias.
+    severity: medium
+
+  - risk: survivorship_and_exchange_selection
+    severity: medium
+    description: >
+      Testing only on BTC and ETH selects the two assets that survived and
+      remained liquid. Liquidation dynamics on smaller perpetuals (which
+      were delisted or lost liquidity) are not in the sample. This does not
+      invalidate the hypothesis but limits generalization claims.
+
+  - risk: market_structure_regime_shift
+    severity: medium
+    description: >
+      Binance introduced insurance fund changes and auto-deleveraging rule
+      updates at various points. Liquidation dynamics pre- and post- these
+      rule changes may be structurally different. A single pooled backtest
+      will blend these regimes without distinguishing them.
+
+  - risk: sparse_event_inflation
+    severity: high
+    description: >
+      If qualifying events are rare (n < 50 per market per direction),
+      a few extreme post-event returns can dominate the mean and produce a
+      statistically significant but economically fragile result. All return
+      distributions must be inspected for outlier dominance.
+
+  - risk: correlated_events
+    severity: medium
+    description: >
+      During market-wide stress, BTC and ETH liquidation events occur
+      simultaneously. Treating them as independent doubles the apparent
+      sample size while the events share the same underlying cause.
+      Correlation must be accounted for in any joint significance test.
+
+failure_modes:
+
+  - id: FM-1
+    name: Continuation dominates reversal
+    description: >
+      In the actual data, large liquidation events more often precede
+      continued price movement in the same direction than reversal. The
+      modifier systematically fades the correct trade and adds negative
+      alpha. This is the primary falsification risk.
+
+  - id: FM-2
+    name: Edge is concentrated in 2-3 extreme outlier events
+    description: >
+      The positive mean return following liquidation events is entirely
+      explained by 2-3 extreme post-event bars (e.g., COVID March 2020,
+      FTX collapse). Remove those dates and the effect disappears. The
+      signal has no repeatable edge.
+
+  - id: FM-3
+    name: Threshold is not identifiable without overfitting
+    description: >
+      No stable threshold exists that produces consistent in-sample results
+      across multiple sub-periods. The optimal threshold varies by year,
+      making it impossible to fix a single value for live use without
+      continuously reoptimizing.
+
+  - id: FM-4
+    name: Historical liquidation data is unavailable or unreliable
+    description: >
+      The Binance public liquidation stream is live-only. If the team has
+      not archived raw liquidation tick data, there is no historical dataset
+      to backtest on. Reconstructing it from secondary sources introduces
+      accuracy risk. Without verified historical data, the hypothesis cannot
+      be tested at all.
+
+  - id: FM-5
+    name: Signal collapses in live execution due to bar-close latency
+    description: >
+      Even if the backtest shows edge, in live trading the bar-close
+      liquidation total is only known after bar close. By the time the
+      modifier updates the forecast and the allocation rebalances, 1-5
+      minutes of the next bar have elapsed. The overshoot reversal may
+      fully materialize within minutes of bar close, leaving no edge by
+      the time the order reaches the exchange.
+
+  - id: FM-6
+    name: OI confirmation adds noise rather than signal
+    description: >
+      The OI-liquidation divergence feature (behavioral feature 3) may not
+      be computable reliably within the 1h bar framework due to polling
+      latency and coarse OI snapshots. Including it degrades signal
+      cleanliness without adding predictive value.
+
+  - id: FM-7
+    name: Regime gate removes nearly all qualifying events
+    description: >
+      If the RANGING regime is relatively rare and liquidation cascades
+      predominantly occur during TRENDING periods, H-0001-B's regime gate
+      may filter out 80%+ of events, leaving too few observations to trade
+      or draw conclusions from.
+
+sample_split_design:
+  method: temporal_split
+  in_sample_start: "2020-01-01"
+  in_sample_end: "2022-12-31"
+  out_of_sample_start: "2023-01-01"
+  out_of_sample_end: "2024-06-30"
+  holdout_start: "2024-07-01"
+  holdout_end: present
+  rationale: >
+    In-sample covers two full market cycles (2020 bull, 2021 peak, 2022
+    bear) including major liquidation events. OOS covers the post-FTX
+    structural shift. Holdout is untouched until a final decision is made.
+    All threshold and parameter selection must be done exclusively on
+    in-sample data. OOS is for one evaluation pass only; no re-tuning after
+    seeing OOS results.
+  forbidden: >
+    Do not adjust the liquidation threshold after viewing OOS results.
+    Do not cherry-pick the split dates after seeing which split produces
+    the best-looking result.
+
+decision_rules:
+  approve_if:
+    - in_sample_event_count >= 100 per market per direction
+    - direction_adjusted_mean_return is statistically significant (p < 0.05 corrected)
+    - delta_sharpe >= 0.15 in-sample
+    - OOS effect size >= 50% of in-sample effect size
+    - no look-ahead contamination confirmed by design inspection
+
+  refine_if:
+    - event count is 50-99 (borderline statistical power)
+    - in-sample edge exists but OOS degradation is 50-75% (weak but not absent)
+    - regime-gated variant (H-0001-B) substantially outperforms ungated (H-0001-A),
+      suggesting the base signal needs structural improvement before approval
+
+  reject_if:
+    - historical liquidation data is unavailable or unverifiable
+    - event count < 50 per market per direction
+    - direction-adjusted mean return is not distinguishable from zero at p < 0.05
+    - OOS effect size < 0 (sign reversal)
+    - edge is attributable to 3 or fewer extreme outlier events

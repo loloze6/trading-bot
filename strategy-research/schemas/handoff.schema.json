@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Handoff",
+  "type": "object",
+  "required": [
+    "run_id",
+    "from_stage",
+    "to_stage",
+    "objective",
+    "primary_input_artifact",
+    "required_inputs",
+    "deliverables"
+  ],
+  "properties": {
+    "run_id": { "type": "string" },
+    "from_stage": { "type": "string" },
+    "to_stage": { "type": "string" },
+    "objective": { "type": "string" },
+    "primary_input_artifact": { "type": "string" },
+    "required_inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "reason"],
+        "properties": {
+          "path": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "optional_inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "reason"],
+        "properties": {
+          "path": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "deliverables": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "injected_context": {
+      "type": "object",
+      "description": "Live state variables injected by the orchestrator at runtime.",
+      "additionalProperties": { "type": "string" }
+    },
+    "assigned_engine": {
+      "type": "string",
+      "enum": ["claude", "gemini"]
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Validation Decision",
+  "type": "object",
+  "required": [
+    "hypothesis_id",
+    "status",
+    "rationale",
+    "blocking_issues"
+  ],
+  "properties": {
+    "hypothesis_id": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["approve", "refine", "reject"]
+    },
+    "rationale": { "type": "string" },
+    "blocking_issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

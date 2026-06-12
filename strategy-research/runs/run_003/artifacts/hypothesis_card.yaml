@@ -1,0 +1,73 @@
+hypothesis_id: HYP-run003-001
+thesis: >
+  On BTCUSDT 1h, the agreement or disagreement between price rate-of-change and
+  volume rate-of-change predicts directional continuation in TRENDING regimes and
+  exhaustion reversals in RANGING regimes. A regime-conditional Volume-Momentum
+  Divergence (VMD) signal can deliver OOS Sharpe > 1.2 with controlled drawdown.
+
+rationale: >
+  Volume leads price at inflection points. Co-acceleration (price up, volume up)
+  signals institutional participation and continuation. Divergence (price extends,
+  volume contracts) signals withdrawal and imminent reversal. Conditioning on the
+  existing regime classifier routes each case to its highest-efficacy context,
+  avoiding the signal's known failure mode of fading valid breakouts.
+
+signal_concept:
+  name: Volume-Momentum Divergence (VMD)
+  inputs:
+    - close
+    - volume
+  components:
+    price_roc: "ROC(close, N=12)"
+    volume_roc: "ROC(volume, N=12)"
+    divergence_score: "price_roc * sign(volume_roc)  # negative = diverging"
+  regime_routing:
+    TRENDING:
+      long_condition:  "price_roc > 0 AND volume_roc > vol_thresh"
+      short_condition: "price_roc < 0 AND volume_roc > vol_thresh"
+      rationale: "Volume confirmation required; filters weak breakouts."
+    RANGING:
+      fade_condition:  "divergence_score < -div_thresh"
+      flat_condition:  "abs(divergence_score) < div_thresh"
+      rationale: "Exhaustion fade only; no momentum chasing in ranging market."
+  forecast_output: "Signed float proportional to abs(divergence_score); feeds existing allocation layer unchanged."
+
+target_market: BTCUSDT
+timeframe: 1h
+
+assumptions:
+  - Binance 1h spot volume is directionally informative despite wash-trade noise at the margin.
+  - Existing regime classifier labels TRENDING/RANGING with >60% precision.
+  - N=12 bars (~12 hours) captures a dominant intraday momentum cycle without excess lag.
+  - Continuous BTCUSDT OHLCV history covers sufficient bull and bear regimes for OOS validity.
+
+expected_failure_modes:
+  liquidation_cascades:
+    description: >
+      Forced liquidation events spike volume without directional intent, generating
+      false momentum confirmation signals.
+    mitigation_hint: Cap volume_roc at a percentile ceiling before computing divergence_score.
+
+  regime_transition_lag:
+    description: >
+      Regime flip detected 3–5 bars late routes VMD signal into the wrong context,
+      causing momentum entries during exhaustion and fades during breakouts.
+    mitigation_hint: Add a regime-confirmation buffer before switching routing logic.
+
+  thin_session_noise:
+    description: >
+      Asian-session low volume degrades ROC signal quality; divergence_score becomes
+      unreliable noise.
+    mitigation_hint: Evaluate time-of-day filter or widen signal threshold during low-volume hours.
+
+  parameter_sensitivity:
+    description: >
+      N=12 and divergence thresholds may be cycle-specific; OOS degradation expected
+      if dominant cycle length shifts.
+    mitigation_hint: Walk-forward validation must sweep N in [8, 20]; reject if Sharpe
+      collapses outside N=12 ± 2.
+
+integration_notes:
+  - New sub-strategy component only; no changes to regime detection, allocation, or rebalance layers.
+  - Inputs are standard OHLCV fields; no external data required.
+  - Forecast output is a signed float compatible with existing pipeline interface.

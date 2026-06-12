@@ -1,35 +1,95 @@
+"""
+data_manager.py
+===============
+Unified data manager for live trading and backtesting, with support for
+auxiliary data feeds (funding rates, fear & greed, on-chain metrics, etc.)
+that are automatically merged into the candle DataFrame as extra columns.
+
+Architecture overview
+─────────────────────
+                        ┌─────────────────────────┐
+                        │       DataManager        │
+                        │  mode = 'live'|'backtest'│
+                        └────────────┬────────────┘
+                                     │ owns
+                          ┌──────────▼──────────┐
+                          │    CandleBuilder     │  ← single aggregation engine
+                          │  (price ticks only)  │
+                          └──────────┬──────────┘
+                                     │ on candle close
+                          ┌──────────▼──────────┐
+                          │  _enrich_and_notify  │  ← merges aux feeds + fires callback
+                          └──────────┬──────────┘
+                                     │
+                          ┌──────────▼──────────┐
+                          │   strategy callback   │  ← receives enriched DataFrame
+                          └─────────────────────┘
+
+Auxiliary feeds (registered via register_feed())
+─────────────────────────────────────────────────
+Each feed is a BaseFetcher subclass.  At candle close DataManager looks up
+the latest value from each registered feed for that candle's timestamp and
+appends it as an extra column to the history DataFrame before the strategy
+callback is fired.
+
+In backtest mode the feeds are pre-loaded and pre-merged into the historical
+DataFrame using merge_asof (forward-fill on the feed's timestamps) so that
+the strategy never sees a future value.  In live mode each feed is polled
+on a separate background thread and the latest cached value is used.
+"""
+
 from binance.client import Client
 from config.settings import API_KEY, API_SECRET, USE_TESTNET
 import pandas as pd
 import logging
-from typing import Dict, List, Optional, Union, Tuple, Any, Callable
+from typing import Callable, Dict, List, Optional
 import datetime
 import os
 import numpy as np
-import ccxt
 import time
 
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import threading
 import queue
 
+# Fetchers are imported here so callers only need to import data_manager
+from data.fetchers.ccxt_fetcher import CcxtFetcher as HistoricalDataFetcher
+from data.fetchers.base_fetcher import BaseFetcher
+
+logger = logging.getLogger("trading_bot")
 
 
-logger = logging.getLogger("trading_bot")  # Use the logger set up elsewhere
-
+# ===========================================================================
+# Core data structures  (unchanged)
+# ===========================================================================
 
 @dataclass
 class PriceTick:
-    """Individual price tick."""
+    """
+    A single price observation for one symbol.
+
+    In live mode:     created by DataManager._rest_price_fetcher() from a
+                      Binance ticker response.
+    In backtest mode: created inside CandleBuilder.add_row() from a historical
+                      DataFrame row.
+    Volume is optional because get_symbol_ticker() does not return it.
+    """
     symbol: str
     price: float
     timestamp: datetime.datetime
     volume: Optional[float] = None
 
+
 @dataclass
 class Candle:
-    """Custom candle structure."""
+    """
+    One completed OHLCV bar.
+
+    start_time is always aligned to an interval boundary thanks to
+    CandleBuilder._align().  tick_count records how many raw ticks contributed
+    (useful for diagnosing sparse backtest data).
+    """
     symbol: str
     open: float
     high: float
@@ -40,874 +100,867 @@ class Candle:
     end_time: datetime.datetime
     tick_count: int = 0
 
+
+# ===========================================================================
+# AuxFeedConfig
+#
+# Lightweight descriptor stored by DataManager for each registered auxiliary
+# feed.  It carries:
+#   fetcher    — the BaseFetcher subclass instance that knows how to
+#                retrieve and cache this feed's data
+#   column     — the column name that will appear in the enriched DataFrame
+#                (e.g. 'fear_greed', 'funding_rate')
+#   agg        — how to reduce multiple readings within one candle window:
+#                  'last'  → most recent value (default, good for rates/indices)
+#                  'mean'  → average (good for noisy signals)
+#                  'sum'   → sum (good for counts/volumes)
+#   live_value — the most recently fetched value, updated by the background
+#                poll thread in live mode; used as the enrichment value at
+#                candle close.
+# ===========================================================================
+
+@dataclass
+class AuxFeedConfig:
+    """Descriptor for one registered auxiliary data feed."""
+    fetcher:    BaseFetcher
+    column:     str
+    agg:        str = "last"          # 'last' | 'mean' | 'sum'
+    live_value: Optional[float] = None  # updated in live mode by poll thread
+
+
+# ===========================================================================
+# CandleBuilder  (unchanged from previous version — no awareness of aux feeds)
+# ===========================================================================
+
 class CandleBuilder:
-    """Builds custom candles from real-time price ticks."""
-    
-    def __init__(self, interval_seconds: int, candle_completion_callback: Callable[[str, Candle], None] = None):
-        """
-        Initialize CandleBuilder.
-        
-        Args:
-            interval_seconds: Candle interval in seconds
-            candle_completion_callback: Function to call when a candle is completed
-                                      Should accept (symbol: str, candle: Candle) parameters
-        """
+    """
+    Aggregates price ticks into fixed-interval OHLCV candles.
+
+    This class knows nothing about auxiliary feeds — enrichment happens one
+    level up in DataManager._enrich_and_notify() after a candle closes.
+
+    Flow diagram
+    ────────────
+    Live:
+        REST poll → PriceTick → add_tick() ──┐
+                                              ├─→ _ingest() → Candle (on close)
+    Backtest:                                 │               → callback → enrich
+        DataFrame row → add_row() ───────────┘
+    """
+
+    def __init__(
+        self,
+        interval_seconds: int,
+        candle_completion_callback: Callable[[str, "Candle"], None] = None,
+    ):
         self.interval_seconds = interval_seconds
         self.current_candles: Dict[str, Candle] = {}
         self.completed_candles: Dict[str, List[Candle]] = defaultdict(list)
         self.candle_completion_callback = candle_completion_callback
-        
+
+    # ------------------------------------------------------------------
+    # Public entry points
+    # ------------------------------------------------------------------
+
     def add_tick(self, tick: PriceTick) -> Optional[Candle]:
-        """
-        Add a price tick and return completed candle if interval finished.
-        
-        Returns:
-            Completed candle if interval finished, None otherwise
-        """
-        symbol = tick.symbol
-        
-        # Get or create current candle
-        if symbol not in self.current_candles:
-            self.current_candles[symbol] = self._start_new_candle(tick)
-            return None
-            
-        current = self.current_candles[symbol]
-        
-        # Check if we need to close current candle and start new one
-        if (tick.timestamp - current.start_time).total_seconds() >= self.interval_seconds:
-            # Close current candle
-            completed_candle = current
-            self.completed_candles[symbol].append(completed_candle)
-            
-            # Call completion callback if provided
-            if self.candle_completion_callback:
-                try:
-                    self.candle_completion_callback(symbol, completed_candle)
-                except Exception as e:
-                    logger.error(f"Error in candle completion callback for {symbol}: {e}", exc_info=True)
-            
-            # Start new candle
-            self.current_candles[symbol] = self._start_new_candle(tick)
-            
-            return completed_candle
-        else:
-            # Update current candle
-            self._update_candle(current, tick)
-            return None
-    
-    def _start_new_candle(self, tick: PriceTick) -> Candle:
-        """Start a new candle with the given tick."""
-        # Align to interval boundaries
-        aligned_time = self._align_to_interval(tick.timestamp)
-        
-        return Candle(
+        """Live path: ingest a PriceTick, return completed Candle or None."""
+        return self._ingest(
             symbol=tick.symbol,
-            open=tick.price,
-            high=tick.price,
-            low=tick.price,
-            close=tick.price,
-            volume=tick.volume or 0,
-            start_time=aligned_time,
-            end_time=aligned_time + datetime.timedelta(seconds=self.interval_seconds),
-            tick_count=1
+            price=tick.price,
+            volume=tick.volume or 0.0,
+            timestamp=tick.timestamp,
         )
-    
-    def _update_candle(self, candle: Candle, tick: PriceTick):
-        """Update existing candle with new tick."""
-        candle.high = max(candle.high, tick.price)
-        candle.low = min(candle.low, tick.price)
-        candle.close = tick.price
-        candle.volume += tick.volume or 0
-        candle.tick_count += 1
-    
-    def _align_to_interval(self, timestamp: datetime.datetime) -> datetime.datetime:
-        """Align timestamp to interval boundary."""
-        # Round down to nearest interval
-        total_seconds = int(timestamp.timestamp())
-        aligned_seconds = (total_seconds // self.interval_seconds) * self.interval_seconds
-        return datetime.datetime.fromtimestamp(aligned_seconds)
-    
+
+    def add_row(self, row: pd.Series, symbol: str) -> Optional[Candle]:
+        """
+        Backtest path: ingest one historical DataFrame row.
+
+        Uses 'close' as the price to avoid look-ahead bias on entries decided
+        at bar close.  Converts pd.Timestamp → datetime for timedelta arithmetic.
+        """
+        timestamp = pd.to_datetime(row["timestamp"])
+        if hasattr(timestamp, "to_pydatetime"):
+            timestamp = timestamp.to_pydatetime()
+        return self._ingest(
+            symbol=symbol,
+            price=float(row["close"]),
+            volume=float(row.get("volume", 0.0)),
+            timestamp=timestamp,
+            open=float(row["open"])  if "open"  in row.index else None,
+            high=float(row["high"])  if "high"  in row.index else None,
+            low=float(row["low"])    if "low"   in row.index else None,
+        )
+
     def get_candle_history(self, symbol: str, count: int = 1) -> pd.DataFrame:
-        """Get historical candles as DataFrame."""
+        """
+        Return the last `count` completed candles as a plain (non-indexed)
+        DataFrame.  Extra columns added by DataManager enrichment are NOT
+        present here — use DataManager.get_data_history() for enriched data.
+        """
         candles = self.completed_candles.get(symbol, [])[-count:]
         
         if not candles:
             return pd.DataFrame()
-        
-        data = []
-        for candle in candles:
-            data.append({
-                'timestamp': candle.start_time,
-                'open': candle.open,
-                'high': candle.high,
-                'low': candle.low,
-                'close': candle.close,
-                'volume': candle.volume
-            })
-        
-        df = pd.DataFrame(data)
-        df.set_index('timestamp', inplace=True)
-        return df
+        return pd.DataFrame([
+            {
+                "timestamp": c.start_time,
+                "open":      c.open,
+                "high":      c.high,
+                "low":       c.low,
+                "close":     c.close,
+                "volume":    c.volume,
+            }
+            for c in candles
+        ])
 
-class DataManager:
-    """Manages real-time data fetching and candle building."""
-    
-    def __init__(self, symbols: List[str], price_fetch_interval: int, candle_builder: CandleBuilder):
-        """
-        Initialize DataManager.
-        
-        Args:
-            symbols: List of trading symbols
-            price_fetch_interval: Interval for fetching prices in seconds
-            candle_builder: CandleBuilder instance for processing ticks
-        """
-        self.client = Client(API_KEY, API_SECRET, testnet=USE_TESTNET)
-        self.symbols = symbols
-        self.price_fetch_interval = price_fetch_interval
-        self.candle_builder = candle_builder
-        self.price_queue = queue.Queue()
-        self.running = False
+    def get_current_candle(self, symbol: str) -> Optional[Candle]:
+        """Return the still-open candle for a symbol, or None."""
+        return self.current_candles.get(symbol)
 
-    def initiate_start_thread(self) -> Optional[threading.Thread]:
-        """Start the price fetching thread."""
-        try:
-            price_thread = threading.Thread(target=self._rest_price_fetcher, daemon=True)
-            price_thread.start()
-            return price_thread
-        except Exception as e:
-            logger.error(f"Error initiating thread: {e}")
+    def reset(self, symbol: str = None):
+        """
+        Wipe aggregation state.  Called by DataManager.initialize() before
+        each backtest run so that candle history does not bleed between runs.
+        """
+        if symbol:
+            self.current_candles.pop(symbol, None)
+            self.completed_candles.pop(symbol, None)
+        else:
+            self.current_candles.clear()
+            self.completed_candles.clear()
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _ingest(
+        self,
+        symbol: str,
+        price: float,
+        volume: float,
+        timestamp: datetime.datetime,
+        open: float = None,
+        high: float = None,
+        low: float = None,
+    ) -> Optional[Candle]:
+        """
+        Core aggregation logic shared by live and backtest paths.
+
+        1. First tick for a symbol → open a new candle, return None.
+        2. Elapsed time >= interval → close candle, fire callback, open next.
+        3. Otherwise → update running candle (high/low/close/volume).
+
+        The callback is fired synchronously so the strategy always receives
+        a complete, closed bar.
+        """
+        if symbol not in self.current_candles:
+            self.current_candles[symbol] = self._open_candle(symbol, price, volume, timestamp, open, high, low)
             return None
 
-    def _rest_price_fetcher(self):
-        """Fetch prices using REST API at regular intervals for all symbols and store them in a queue."""
+        current = self.current_candles[symbol]
+
+        if (timestamp - current.start_time).total_seconds() >= self.interval_seconds:
+            # ── Candle close ──────────────────────────────────────────────
+            self.completed_candles[symbol].append(current) #Enrich the local stored candle history with the completed candle before firing the callback, so that the strategy can access it via get_candle_history() in the callback.
+            if self.candle_completion_callback:
+                try:
+                    self.candle_completion_callback(symbol)
+                except Exception as e:
+                    logger.error(f"Candle callback error for {symbol}: {e}", exc_info=True)
+
+            self.current_candles[symbol] = self._open_candle(symbol, price, volume, timestamp, open, high, low)
+            return current
+        else:
+            # ── Candle update ─────────────────────────────────────────────
+            self._update_candle(current, price, volume)
+            return None
+
+    def _open_candle(self, symbol, price, volume, timestamp, open=None, high=None, low=None) -> Candle:
+        """Open a new candle aligned to the interval boundary."""
+        aligned = self._align(timestamp)
+        return Candle(
+            symbol=symbol, 
+            open=open  if open  is not None else price,
+            high=high  if high  is not None else price,
+            low=low    if low   is not None else price,
+            close=price,
+            volume=volume,
+            start_time=aligned,
+            end_time=aligned + datetime.timedelta(seconds=self.interval_seconds),
+            tick_count=1,
+        )
+
+    @staticmethod
+    def _update_candle(candle: Candle, price: float, volume: float, high: float = None, low: float = None):
+        """Merge a tick into an open candle in-place."""
+        candle.high      = max(candle.high, high if high is not None else price)
+        candle.low       = min(candle.low,  low  if low  is not None else price)
+        candle.close     = price
+        candle.volume   += volume
+        candle.tick_count += 1
+
+    def _align(self, timestamp: datetime.datetime) -> datetime.datetime:
+        """
+        Floor timestamp to the nearest interval boundary using Unix epoch
+        integer division.
+
+        Example for interval_seconds=300:  09:03:47 → 09:00:00
+        """
+        ts = int(timestamp.timestamp())
+        return datetime.datetime.fromtimestamp(
+            (ts // self.interval_seconds) * self.interval_seconds
+        )
+
+
+# ===========================================================================
+# DataManager
+#
+# Unified live + backtest data manager with pluggable auxiliary feed support.
+#
+# New in this version
+# ────────────────────
+# register_feed(name, fetcher, agg)
+#     Plug in any BaseFetcher subclass.  The feed's data is automatically:
+#       • fetched and cached (same storage pipeline as price data)
+#       • pre-merged into historical_data before backtest replay starts
+#       • appended as extra columns to every candle history DataFrame
+#         returned to the strategy
+#     Registering feeds is optional — if none are registered the behaviour is
+#     identical to the previous version.
+#
+# get_data_history(symbol, count)
+#     Now returns an enriched DataFrame: OHLCV columns + one column per
+#     registered feed.
+#
+# _enrich_and_notify(symbol, candle)
+#     Called by CandleBuilder's callback.  Builds the enriched history
+#     DataFrame and fires the strategy callback.  This is the only new
+#     code path in the hot loop.
+# ===========================================================================
+
+class DataManager:
+    """
+    Single data manager for live trading and backtesting.
+
+    Auxiliary feed registration example
+    ─────────────────────────────────────
+        from data.fetchers import FearGreedFetcher, FundingRateFetcher
+
+        dm = DataManager(['BTCUSDT'], interval_seconds=300, mode='backtest')
+
+        dm.register_feed(
+            name    = 'fear_greed',
+            fetcher = FearGreedFetcher('2024-01-01', '2024-12-31', localStorage=True),
+            agg     = 'last',
+        )
+        dm.register_feed(
+            name    = 'funding_rate',
+            fetcher = FundingRateFetcher('2024-01-01', '2024-12-31',
+                                         symbols=['BTCUSDT'], localStorage=True),
+            agg     = 'last',
+        )
+
+        # load_data() and initialize() handle pre-merging automatically.
+        # The strategy then receives a DataFrame with columns:
+        #   timestamp, open, high, low, close, volume, fear_greed, funding_rate
+
+    Live mode aux feeds
+    ────────────────────
+    Each registered feed's fetcher.get_data() is called once at startup to
+    pre-load historical values.  A background thread then polls each feed's
+    fetcher at a configurable interval and updates AuxFeedConfig.live_value.
+    At candle close the latest cached value is used for enrichment.
+    """
+
+    def __init__(
+        self,
+        symbols: List[str],
+        interval_seconds: int,
+        mode: str = "live",
+        price_fetch_interval: int = 60,
+        candle_completion_callback: Callable[[str, Candle], None] = None,
+    ):
+        """
+        Args:
+            symbols:                    Trading pairs, e.g. ['BTCUSDT'].
+            interval_seconds:           Candle duration in seconds.
+            mode:                       'live' or 'backtest'.
+            price_fetch_interval:       Seconds between REST price polls (live only).
+            candle_completion_callback: Forwarded to CandleBuilder.  Usually set
+                                        after TradingBot construction via:
+                                        data_manager.candle_builder.candle_completion_callback = ...
+        """
+        if mode not in ("live", "backtest"):
+            raise ValueError(f"mode must be 'live' or 'backtest', got '{mode}'")
+
+        self.symbols              = symbols
+        self.interval_seconds     = interval_seconds
+        self.mode                 = mode
+        self.price_fetch_interval = price_fetch_interval
+
+        # ── Registered auxiliary feeds ─────────────────────────────────────
+        # Populated by register_feed().  Keys are the column names that will
+        # appear in the enriched candle DataFrame (e.g. 'fear_greed').
+        self._aux_feeds: Dict[str, AuxFeedConfig] = {}
+
+        # ── Candle-level enrichment cache ──────────────────────────────────
+        # In backtest mode: pre-merged aux columns keyed by symbol.
+        #   _enrichment_data[symbol] = DataFrame with columns
+        #   [timestamp, col1, col2, …] indexed to the same rows as historical_data.
+        # In live mode: managed per-feed via AuxFeedConfig.live_value.
+        self._enrichment_data: Dict[str, pd.DataFrame] = {}
+
+        # ── Shared aggregation engine ──────────────────────────────────────
+        # CandleBuilder fires _enrich_and_notify() (not the strategy directly).
+        # _enrich_and_notify() then adds aux columns and calls the real callback.
+        self.candle_builder = CandleBuilder(
+            interval_seconds=interval_seconds,
+            candle_completion_callback=self._enrich_and_notify,
+        )
+
+        # ── Strategy-level callback ────────────────────────────────────────
+        # Set externally after TradingBot is constructed.  This is what the
+        # strategy ultimately receives (with an enriched DataFrame available
+        # via get_candle_history()).
+        self._strategy_callback: Optional[Callable[[str, Candle], None]] = (
+            candle_completion_callback
+        )
+
+        # ── Live-only state ────────────────────────────────────────────────
+        if mode == "live":
+            self.client      = Client(API_KEY, API_SECRET, testnet=USE_TESTNET)
+            self.price_queue: queue.Queue = queue.Queue()
+            self.running     = False
+
+        # ── Backtest-only state ────────────────────────────────────────────
+        self.historical_data: Dict[str, pd.DataFrame] = {}   # symbol → DataFrame
+        self._cursor: Dict[str, int] = {}
+
+    # -----------------------------------------------------------------------
+    # Feed registration
+    # -----------------------------------------------------------------------
+
+    def register_feed(
+        self,
+        name: str,
+        fetcher: BaseFetcher,
+        agg: str = "last",
+    ) -> None:
+        """
+        Register an auxiliary data feed.
+
+        Args:
+            name:    Column name that will appear in the enriched DataFrame,
+                     e.g. 'fear_greed', 'funding_rate', 'open_interest'.
+            fetcher: Any BaseFetcher subclass instance.  Must be pre-configured
+                     with the correct date range and symbols.
+            agg:     Aggregation function to apply when multiple readings fall
+                     within one candle window:
+                       'last' — most recent value  (default)
+                       'mean' — average
+                       'sum'  — sum
+
+        Can be called at any time before initialize() (backtest) or
+        initiate_start_thread() (live).
+        """
+        if agg not in ("last", "mean", "sum"):
+            raise ValueError(f"agg must be 'last', 'mean', or 'sum' — got '{agg}'")
+        self._aux_feeds[name] = AuxFeedConfig(fetcher=fetcher, column=name, agg=agg)
+        logger.info(f"DataManager: registered aux feed '{name}' (agg={agg})")
+
+    # -----------------------------------------------------------------------
+    # Enrichment — called at every candle close
+    # -----------------------------------------------------------------------
+
+    def _enrich_and_notify(self, symbol: str, candle: Candle) -> None:
+        """
+        Internal callback wired into CandleBuilder.
+
+        Steps:
+        1. Build the base candle history DataFrame from CandleBuilder.
+        2. If any aux feeds are registered, join their latest values as extra
+           columns (see _attach_aux_columns).
+        3. Fire the real strategy callback (_strategy_callback) with the
+           enriched DataFrame available via get_data_history().
+
+        This is the only code path that changes in the hot loop compared to the
+        previous version.  If no feeds are registered, steps 1→3 degenerate to
+        the same behaviour as before.
+        """
+        if self._strategy_callback:
+            try:
+                self._strategy_callback(symbol, candle)
+            except Exception as e:
+                logger.error(f"Strategy callback error for {symbol}: {e}", exc_info=True)
+
+    def _attach_aux_columns(
+        self, symbol: str, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        Merge registered aux feed values into a candle history DataFrame.
+
+        For each registered feed:
+          Backtest: use _enrichment_data[symbol] which was pre-merged at
+                    initialize() time via merge_asof.  Simply select the rows
+                    that overlap with df's timestamp range.
+          Live:     use AuxFeedConfig.live_value (the most recently polled value)
+                    broadcast as a constant column.
+
+        Returns a new DataFrame with additional columns; the original is not
+        mutated.  If a feed has no data for the requested window, the column is
+        filled with NaN so the strategy can handle missing data gracefully.
+        """
+        
+        if not self._aux_feeds or df.empty:
+            return df
+
+        result = df.copy()
+
+        for name, feed in self._aux_feeds.items():
+            if self.mode == "backtest":
+                # Pre-merged data is keyed by symbol; may not exist for feeds
+                # that are global (e.g. fear_greed uses its own key)
+                key = symbol if symbol in self._enrichment_data else name
+                enriched = self._enrichment_data.get(key, pd.DataFrame())
+
+                if not enriched.empty and name in enriched.columns:
+                    # Forward-fill: each candle gets the latest known value
+                    # at or before its timestamp using merge_asof
+                    merged = pd.merge_asof(
+                        result.sort_values("timestamp"),
+                        enriched[["timestamp", name]].sort_values("timestamp"),
+                        on="timestamp",
+                        direction="backward",   # last known value ≤ candle time
+                    )
+                    result = merged
+                else:
+                    result[name] = np.nan
+
+            else:
+                # Live mode: broadcast the latest polled value
+                result[name] = feed.live_value  # None becomes NaN automatically
+
+        return result
+
+    def get_data_history(self, symbol: str, count: int = 1) -> pd.DataFrame:
+        """
+        Return the last `count` completed candles enriched with aux feed columns.
+
+        This is the method strategies should call — it returns the full enriched
+        DataFrame.  CandleBuilder.get_candle_history() returns OHLCV only and
+        should not be called directly by strategies.
+        """
+        df = self.candle_builder.get_candle_history(symbol, count)
+        
+
+        return self._attach_aux_columns(symbol, df)
+
+    # -----------------------------------------------------------------------
+    # Backtest aux feed pre-merge
+    # -----------------------------------------------------------------------
+
+    def _premerge_aux_feeds(self, symbol: str, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Merge all registered aux feeds into a price DataFrame before replay.
+
+        Called by initialize() for each symbol.  Uses pd.merge_asof with
+        direction='backward' so each price row gets the most recent aux value
+        at or before its timestamp — no look-ahead.
+
+        The merged aux columns are also stored in _enrichment_data[symbol] so
+        that _attach_aux_columns() can look them up at candle-close time during
+        replay.
+
+        Returns the enriched price DataFrame (aux columns added in-place on a
+        copy).
+        """
+        if not self._aux_feeds:
+            return df
+
+        enriched = df.copy().sort_values("timestamp")
+
+        for name, feed in self._aux_feeds.items():
+            # Determine which symbol key to use for this feed.
+            # Global feeds (e.g. fear_greed) store data under their own name;
+            # per-symbol feeds (e.g. funding_rate) store under the trading symbol.
+            feed_data = feed.fetcher.get_data(symbol)
+            logger.debug(f"_premerge: feed='{name}', symbol='{symbol}', feed_data type={type(feed_data)}, empty={feed_data.empty if hasattr(feed_data, 'empty') else 'N/A'}")
+
+            if feed_data.empty:
+                all_data  = feed.fetcher.get_data()
+                feed_data = (
+                    next(iter(all_data.values()), pd.DataFrame())
+                    if isinstance(all_data, dict)
+                    else all_data
+                )
+                # Add these:
+                logger.debug(f"_premerge '{name}': feed_data columns={feed_data.columns.tolist()}")
+                logger.debug(f"_premerge '{name}': feed_data head=\n{feed_data.head(3)}")
+                logger.debug(f"_premerge '{name}': price df timestamp range: {df['timestamp'].min()} → {df['timestamp'].max()}")
+                # After
+                if not feed_data.empty and 'timestamp' in feed_data.columns:
+                    logger.debug(f"_premerge '{name}': feed timestamp range: {feed_data['timestamp'].min()} → {feed_data['timestamp'].max()}")
+                else:
+                    logger.debug(f"_premerge '{name}': feed_data is empty after lookup")
+            if feed_data.empty or name not in feed_data.columns:
+                logger.warning(
+                    f"DataManager: no data for aux feed '{name}' "
+                    f"(symbol={symbol}) — column will be NaN"
+                )
+                enriched[name] = np.nan
+                continue
+
+            # Apply the registered aggregation function to handle cases where
+            # the aux feed has higher resolution than the price data
+            # (e.g. funding rate every 8h, price every 1m)
+            if feed.agg != "last":
+                feed_data = (
+                    feed_data
+                    .set_index("timestamp")
+                    .resample(f"{self.interval_seconds}s")
+                    .agg({name: feed.agg})
+                    .reset_index()
+                )
+
+            enriched = pd.merge_asof(
+                enriched,
+                feed_data[["timestamp", name]].sort_values("timestamp"),
+                on="timestamp",
+                direction="backward",
+            )
+            logger.info(
+                f"DataManager: pre-merged '{name}' into {symbol} "
+                f"({feed_data[name].notna().sum()} non-null values)"
+            )
+
+        # Store for _attach_aux_columns() to use during replay
+        # Keep only timestamp + aux columns (price columns already in historical_data)
+        aux_cols = [name for name in self._aux_feeds]
+        self._enrichment_data[symbol] = enriched[["timestamp"] + aux_cols].copy()
+
+        return enriched
+
+    # -----------------------------------------------------------------------
+    # Shared public interface  (unchanged from previous version)
+    # -----------------------------------------------------------------------
+
+    def get_final_candle(self, symbol: str) -> Optional[Candle]:
+        """Return the still-open candle at end-of-backtest (or current live candle)."""
+        return self.candle_builder.get_current_candle(symbol)
+
+    def process_next_tick(self, symbol: str) -> Optional[Candle]:
+        """
+        Advance by one tick; return a completed Candle if the interval closed.
+
+        Live:     drains pending ticks from the price queue.
+        Backtest: feeds the row at the current cursor into CandleBuilder.
+        """
+        if self.mode == "live":
+            return self._process_live_tick(symbol)
+        else:
+            return self._process_backtest_tick(symbol)
+
+    def has_more_data(self, symbol: str) -> bool:
+        """False when backtest data is exhausted; always True in live mode."""
+        if self.mode == "live":
+            return True
+        if symbol not in self.historical_data:
+            return False
+        return self._cursor.get(symbol, 0) < len(self.historical_data[symbol]) - 1
+
+    def advance(self, symbol: str, steps: int = 1) -> bool:
+        """
+        Move the backtest cursor forward.  No-op in live mode.
+        Returns False when the end of historical data is reached.
+        """
+        if self.mode == "live":
+            return True
+        if symbol not in self.historical_data:
+            logger.warning(f"advance: {symbol} not in historical_data")
+            return False
+        new_idx = self._cursor.get(symbol, 0) + steps
+        if new_idx >= len(self.historical_data[symbol]):
+            logger.warning(f"DataManager: cursor reached end for {symbol}")
+            return False
+        self._cursor[symbol] = new_idx
+        # logger.debug(f"DataManager: {symbol} cursor → {self._cursor[symbol]}")
+        return True
+
+    # -----------------------------------------------------------------------
+    # Backtest-specific setup
+    # -----------------------------------------------------------------------
+
+    def initialize(self):
+        """
+        Prepare for a backtest run.
+
+        1. Resets CandleBuilder state (clears candle history from previous run).
+        2. Resets all cursors to 0.
+        3. Pre-merges any registered aux feeds into each symbol's historical
+           DataFrame so that enrichment during replay is a simple dict lookup.
+
+        Must be called after historical_data has been populated and after all
+        feeds have been registered via register_feed().
+        """
+        self.candle_builder.reset()
+        self._enrichment_data.clear()
+
+        for symbol, df in self.historical_data.items():
+            self._cursor[symbol] = 0
+
+            if self._aux_feeds:
+                # Pre-merge aux data; the enriched DataFrame replaces the raw one
+                # so that _process_backtest_tick feeds pre-enriched rows to CandleBuilder
+                # (price columns are what CandleBuilder uses; aux columns ride along
+                # and are picked up by _attach_aux_columns at get_candle_history time)
+                self._premerge_aux_feeds(symbol, df)
+                logger.info(
+                    f"DataManager: {symbol} initialised with "
+                    f"{len(self._aux_feeds)} aux feed(s) — "
+                    f"{len(df)} rows"
+                )
+            else:
+                logger.info(f"DataManager: {symbol} initialised ({len(df)} rows)")
+
+    def fetch_historical_data(self, symbol: str, start_date, end_date) -> pd.DataFrame:
+        """
+        Fetch raw OHLCV data for one symbol via CcxtFetcher and return it as
+        a flat DataFrame.
+
+        Typical call from BacktestEngine.load_data():
+            self.historical_data[symbol] = self.data_manager.fetch_historical_data(
+                symbol, start_date, end_date
+            )
+        followed by self.data_manager.initialize().
+
+        Returns an empty DataFrame on failure.
+        """
+        logger.debug(f"Fetching OHLCV for {symbol}  {start_date} → {end_date}")
+
+        data_folder = os.path.dirname(os.path.abspath(__file__))
+        project_folder = os.path.dirname(data_folder)
+        data_storage_dir = os.path.join(project_folder, "local_data")
+
+        fetcher = HistoricalDataFetcher(
+            start_date, end_date, [symbol],
+            candle_interval_seconds=self.interval_seconds,
+            exchange="binance",
+            localStorage=True,
+            data_dir = data_storage_dir
+        )
+        try:
+            data = fetcher.get_data()   # {symbol: DataFrame}
+            if symbol in data and not data[symbol].empty:
+                is_continuous, gaps = fetcher.validate_data_continuity(symbol)
+                logger.debug(f"  Records   : {len(data[symbol])}")
+                logger.debug(
+                    f"  Date range: {data[symbol]['timestamp'].min()} "
+                    f"to {data[symbol]['timestamp'].max()}"
+                )
+                logger.debug(f"  Continuous: {is_continuous}")
+                if not is_continuous:
+                    logger.warning(f"  {len(gaps)} gap(s) detected in {symbol} data")
+                return data[symbol]
+            else:
+                logger.warning(f"No OHLCV data available for {symbol}")
+                return pd.DataFrame()
+        except Exception as e:
+            logger.error(f"Error fetching OHLCV for {symbol}: {e}", stack_info=True, exc_info=True)
+            return pd.DataFrame()
+
+    # -----------------------------------------------------------------------
+    # Live-mode threading
+    # -----------------------------------------------------------------------
+
+    def initiate_start_thread(self) -> Optional[threading.Thread]:
+        """
+        Start the background REST price-fetcher thread (live mode only).
+
+        Also starts one background poll thread per registered aux feed so that
+        live_value is kept up to date between candle closes.
+        """
+        if self.mode != "live":
+            logger.warning("initiate_start_thread called in backtest mode — ignored")
+            return None
+        self.running = True
+
+        # Price feed thread
+        price_thread = threading.Thread(target=self._rest_price_fetcher, daemon=True)
+        price_thread.start()
+
+        # One poll thread per aux feed
+        for name, feed in self._aux_feeds.items():
+            t = threading.Thread(
+                target=self._aux_feed_poll_loop,
+                args=(name, feed),
+                daemon=True,
+                name=f"aux_feed_{name}",
+            )
+            t.start()
+            logger.info(f"DataManager: started poll thread for aux feed '{name}'")
+
+        return price_thread
+
+    def _aux_feed_poll_loop(self, name: str, feed: AuxFeedConfig):
+        """
+        Background thread: periodically refresh one aux feed's live_value.
+
+        Polls once per candle interval (no need to poll faster than the candle
+        closes).  On each poll, calls fetcher.get_data() which returns from
+        the local cache if the data is still fresh, or re-fetches if needed.
+        """
         while self.running:
             try:
-                # Fetch prices for all symbols in the list
+                # Refresh feed data (fetcher handles caching internally)
+                now = datetime.datetime.utcnow()
+                data = feed.fetcher.get_data()
+
+                if isinstance(data, dict):
+                    # Global feeds return {key: DataFrame}
+                    df = next(iter(data.values()), pd.DataFrame())
+                else:
+                    df = data
+
+                if not df.empty and feed.column in df.columns:
+                    # Forward-fill to now: take the row with the largest
+                    # timestamp <= current time
+                    df_sorted = df.sort_values("timestamp")
+                    past = df_sorted[df_sorted["timestamp"] <= pd.Timestamp(now)]
+                    if not past.empty:
+                        feed.live_value = float(past[feed.column].iloc[-1])
+                        logger.debug(f"Aux feed '{name}': live_value = {feed.live_value}")
+
+            except Exception as e:
+                logger.error(f"Aux feed poll error for '{name}': {e}", exc_info=True)
+
+            time.sleep(self.interval_seconds)   # poll once per candle interval
+
+    def _rest_price_fetcher(self):
+        """
+        Background thread: poll Binance REST at price_fetch_interval seconds
+        and push PriceTicks onto price_queue.
+        """
+        while self.running:
+            try:
                 for symbol in self.symbols:
-                    if not self.running:  # Check if we should stop
+                    if not self.running:
                         break
-                        
                     price_data = self._get_current_price(symbol)
-                    
                     if price_data:
                         tick = PriceTick(
                             symbol=symbol,
-                            price=price_data['price'],
+                            price=price_data["price"],
                             timestamp=datetime.datetime.now(),
-                            volume=price_data.get('volume', 0)
+                            volume=price_data.get("volume", 0),
                         )
                         self.price_queue.put(tick)
                     else:
                         logger.warning(f"Failed to fetch price for {symbol}")
-                
-                # Log fetching activity for multiple symbols
                 if len(self.symbols) > 1:
                     logger.debug(f"Fetched prices for {len(self.symbols)} symbols")
-                
                 time.sleep(self.price_fetch_interval)
-                
             except Exception as e:
-                logger.error(f"Error fetching prices for symbols {self.symbols}: {e}", exc_info=True)
-                time.sleep(1)  # Brief pause before retrying
+                logger.error(f"REST price fetcher error: {e}", exc_info=True)
+                time.sleep(1)
 
-    def _get_current_price(self, symbol: str) -> Optional[Dict]:
-        """Get current price from exchange."""
+    def _get_current_price(self, symbol: str) -> Optional[dict]:
+        """Fetch the latest ticker price for one symbol via Binance REST."""
         try:
             ticker = self.client.get_symbol_ticker(symbol=symbol)
-            return {
-                'price': float(ticker['price']),
-                'volume': 0  # You'd get this from 24hr ticker if needed
-            }
+            return {"price": float(ticker["price"]), "volume": 0}
         except Exception as e:
             logger.error(f"Error getting price for {symbol}: {e}")
             return None
 
-    def _main_candle_processing_loop(self):
-        """Main loop that retrieve ticks from a queue and ask to process it."""
+    def live_main_candle_processing_loop(self):
+        """
+        Drain price_queue and feed ticks into CandleBuilder (live mode).
+
+        The candle_completion_callback (_enrich_and_notify) handles enrichment
+        and strategy notification when a candle closes.
+        """
         while self.running:
             try:
-                # Process all queued price ticks (handles multiple symbols)
-                processed_ticks = 0
+                processed = 0
                 while not self.price_queue.empty():
                     tick = self.price_queue.get_nowait()
-                    self._process_price_tick(tick)
-                    processed_ticks += 1
-                
-                # Log activity if processing multiple symbols
-                if processed_ticks > 0:
-                    logger.debug(f"Processed {processed_ticks} price ticks")
-                
-                time.sleep(0.1)  # Small sleep to prevent CPU spinning
-                
+                    completed = self.candle_builder.add_tick(tick)
+                    if completed:
+                        logger.info(
+                            f"Candle: {tick.symbol} "
+                            f"O:{completed.open} H:{completed.high} "
+                            f"L:{completed.low} C:{completed.close}"
+                        )
+                    processed += 1
+                if processed > 0:
+                    logger.debug(f"Processed {processed} ticks")
+                time.sleep(0.1)
             except queue.Empty:
                 continue
             except Exception as e:
-                logger.error(f"Error in main processing loop: {e}", exc_info=True)
+                logger.error(f"Candle processing loop error: {e}", exc_info=True)
 
-    def _process_price_tick(self, tick: PriceTick):
-        """Process a single price tick."""
+    # -----------------------------------------------------------------------
+    # Internal helpers
+    # -----------------------------------------------------------------------
+
+    def _process_live_tick(self, symbol: str) -> Optional[Candle]:
+        """Drain all queued ticks and return any completed candle for `symbol`."""
         try:
-            # Add tick to candle builder - this will automatically call the callback
-            # when a candle is completed
-            completed_candle = self.candle_builder.add_tick(tick)
-            
-            # Log candle completion (the actual processing is handled by the callback)
-            if completed_candle:
-                logger.info(f"Candle completed for {tick.symbol}: "
-                           f"O:{completed_candle.open} H:{completed_candle.high} "
-                           f"L:{completed_candle.low} C:{completed_candle.close}")
-                
+            completed = None
+            while not self.price_queue.empty():
+                tick    = self.price_queue.get_nowait()
+                result  = self.candle_builder.add_tick(tick)
+                if result and result.symbol == symbol:
+                    completed = result
+            return completed
+        except queue.Empty:
+            return None
         except Exception as e:
-            logger.error(f"Error processing tick for {tick.symbol}: {e}", exc_info=True)
-
-class MockCandleBuilder:
-    """Mock candle builder for backtesting that provides historical data."""
-    
-    def __init__(self):
-        self.candle_history = {}  # Store completed candles for each symbol
-
-    def add_completed_candle(self, symbol: str, candle: Candle):
-        """Add a completed candle to the history."""
-        if symbol not in self.candle_history:
-            self.candle_history[symbol] = []
-        self.candle_history[symbol].append(candle)
-
-    # def update_current_data(self, symbol: str, candle_data: pd.Series):
-    #     """Update current data for a symbol."""
-    #     self.current_data[symbol] = candle_data
-    
-    def get_candle_history(self, symbol: str, count: int = 1) -> pd.DataFrame:
-        """Get historical candles as DataFrame for strategy analysis."""
-        if symbol not in self.candle_history or not self.candle_history[symbol]:
-            return pd.DataFrame()
-        
-        # Get the last 'count' candles
-        candles = self.candle_history[symbol][-count:]
-        
-        # Convert to DataFrame
-        data = []
-        for candle in candles:
-            data.append({
-                'timestamp': candle.start_time,
-                'open': candle.open,
-                'high': candle.high,
-                'low': candle.low,
-                'close': candle.close,
-                'volume': candle.volume
-            })
-        
-        return pd.DataFrame(data)
-
-class HistoricalDataManager:
-    """Manager of historical data during backtesting."""
-    def __init__(self, historical_data: Dict[str, pd.DataFrame] = None, interval_seconds: int = 240):
-        """
-        Initialize the historical data provider with data library.
-        
-        Args:
-            historical_data: Dictionary mapping symbols to their historical data DataFrames - see structure above
-        """
-        self.historical_data = historical_data
-        self.current_index = {}
-        self.candle_builder = None
-        
-        # For interval aggregation
-        self.current_candles = {}  # Accumulating candle data
-        self.last_candle_start = {}  # Track when current candle started
-        self.interval_seconds = interval_seconds
-        
-        logger.warning(f"DataManager initiated without data")
-
-    def initialize (self):
-        """
-        Initialize the DataManager index with historical data.
-        """
-        for symbol in self.historical_data:
-            self.current_index[symbol] = 0
-            self.current_candles[symbol] = None
-            self.last_candle_start[symbol] = None
-            logger.info(f"DataManager initiated with data on {symbol}")
-
-    def get_historical_klines(self, symbol: str, interval: str, limit: int = 1) -> pd.DataFrame:
-        """
-        Fetch historical kline (candlestick) data at current index (index simulated into HistoricalDataProvider)
-        
-        Args:
-            symbol: Trading pair symbol
-            interval: Kline interval (ignored in backtesting)
-            limit: Number of klines to retrieve
-            
-        Returns:
-            DataFrame with OHLCV data
-        """
-        if symbol not in self.historical_data:
-            logger.warning(f"No historical data available for {symbol}")
-            return pd.DataFrame()
-        
-        # Get data up to the current index
-        current_idx = self.current_index[symbol]
-        if current_idx >= len(self.historical_data[symbol][symbol]):
-            logger.warning(f"DM - Historical data reached end for {symbol}")
-            return pd.DataFrame()  # No more data
-            
-        # Get data slice
-        start_idx = max(0, current_idx - limit + 1)
-        data_slice = self.historical_data[symbol][symbol].iloc[start_idx:current_idx + 1].copy()
-        return data_slice
-
-    def process_next_tick(self, symbol: str) -> Optional[Candle]:
-        """
-        Process the next data point and return completed candle if interval is finished.
-        
-        Args:
-            symbol: Trading pair symbol
-            
-        Returns:
-            Completed candle if interval finished, None otherwise
-        """
-        if symbol not in self.historical_data:
-            return None
-            
-        data = self.historical_data[symbol][symbol]
-        current_idx = self.current_index[symbol]
-        
-        if current_idx >= len(data):
-            return None
-            
-        current_data = data.iloc[current_idx]
-        current_time = pd.to_datetime(current_data['timestamp'])
-        
-        # Align timestamp to interval boundary
-        aligned_time = self._align_to_interval(current_time)
-        
-        # Check if we need to start a new candle
-        if (self.last_candle_start.get(symbol) is None or 
-            aligned_time != self.last_candle_start[symbol]):
-            
-            # Complete previous candle if it exists
-            completed_candle = None
-            if self.current_candles[symbol] is not None:
-                completed_candle = self.current_candles[symbol]
-            
-            # Start new candle
-            self.current_candles[symbol] = Candle(
-                symbol=symbol,
-                open=current_data['close'],
-                high=current_data['close'],
-                low=current_data['close'],
-                close=current_data['close'],
-                volume=current_data['volume'],
-                start_time=aligned_time,
-                end_time=aligned_time + pd.Timedelta(seconds=self.interval_seconds),
-                tick_count=1
-            )
-            self.last_candle_start[symbol] = aligned_time
-            
-            return completed_candle
-        else:
-            # Update existing candle
-            candle = self.current_candles[symbol]
-            candle.high = max(candle.high, current_data['close'])
-            candle.low = min(candle.low, current_data['close'])
-            candle.close = current_data['close']
-            candle.volume += current_data['volume']
-            candle.tick_count += 1
-            
+            logger.error(f"Live tick error for {symbol}: {e}", exc_info=True)
             return None
 
-    def _align_to_interval(self, timestamp: pd.Timestamp) -> pd.Timestamp:
-        """Align timestamp to interval boundary."""
-        # Convert to seconds since epoch, align to interval, convert back
-        epoch_seconds = timestamp.timestamp()
-        aligned_seconds = (epoch_seconds // self.interval_seconds) * self.interval_seconds
-        return pd.Timestamp.fromtimestamp(aligned_seconds)
-
-    def get_final_candle(self, symbol: str) -> Optional[Candle]:
-        """Get the final incomplete candle when backtesting ends."""
-        return self.current_candles.get(symbol)
-
-    def get_current_candle(self, symbol: str) -> Optional[pd.Series]:
-        """Get the current candle for a symbol."""
+    def _process_backtest_tick(self, symbol: str) -> Optional[Candle]:
+        """Feed the row at the current cursor to CandleBuilder."""
         if symbol not in self.historical_data:
             return None
-            
-        data = self.historical_data[symbol][symbol]
-        current_idx = self.current_index[symbol]
-        
-        if current_idx >= len(data):
+        df  = self.historical_data[symbol]
+        idx = self._cursor.get(symbol, 0)
+        if idx >= len(df):
             return None
-            
-        return data.iloc[current_idx]
+        return self.candle_builder.add_row(df.iloc[idx], symbol)
 
-    def advance(self, symbol: str, steps: int = 1) -> bool:
+    # -----------------------------------------------------------------------
+    # Legacy compatibility shim
+    # -----------------------------------------------------------------------
+
+    def get_historical_klines(
+        self, symbol: str, interval: str = None, limit: int = 1
+    ) -> pd.DataFrame:
         """
-        Advance the current index for a symbol.
-        
-        Args:
-            symbol: Trading pair symbol
-            steps: Number of steps to advance
-            
-        Returns:
-            True if successful, False if no more data
+        Backward-compatible shim for strategies that called
+        HistoricalDataManager.get_historical_klines().
+
+        Backtest: returns raw rows up to the current cursor (not enriched).
+        Live:     returns the last `limit` completed enriched candles.
         """
-        if symbol not in self.historical_data:
-            logger.warning(f"{symbol} is not existing - cannot advance index")
-            return False
-
-        logger.debug(f"index {self.current_index[symbol]}")
-        new_index = self.current_index[symbol] + steps
-        if new_index >= len(self.historical_data[symbol][symbol]):
-            logger.warning(f"DM - Index of historical data reached end for {symbol}")
-            return False
-            
-        self.current_index[symbol] = new_index
-        return True
-
-    def has_more_data(self, symbol: str) -> bool:
-        """Check if there's more data available for a symbol."""
-        if symbol not in self.historical_data:
-            return False
-        
-        data = self.historical_data[symbol][symbol]
-        return self.current_index[symbol] < len(data) - 1
-
-class HistoricalDataFetcher:
-    """Provider for historical data during backtesting with intelligent merging."""
-    def __init__(self, start_date, end_date, symbols=["BTCUSDT"], candle_interval_seconds=60, exchange="binance", localStorage= False):
-        """
-        Initialize the data fetcher with date range and symbols.
-        
-        Args:
-            start_date: Start date for data collection (string or datetime)
-            end_date: End date for data collection (string or datetime)
-            symbols: List of trading symbols to fetch
-            candle_interval_seconds: Data interval in seconds 
-            exchange: CCXT-supported exchange name (default: binance)
-            localStorage: Whether to store data locally (default: False)
-        """
-        # Convert dates to datetime if they're strings
-        self.start_date = pd.to_datetime(start_date) if isinstance(start_date, str) else start_date
-        self.end_date = pd.to_datetime(end_date) if isinstance(end_date, str) else end_date
-        self.symbols = symbols
-        self.candle_interval_ccxt = self._seconds_to_ccxt_interval(candle_interval_seconds)
-        self.exchange_id = exchange
-        self.localStorage = localStorage
-
-        self.data_cache = {}
-        self.data_loaded = False
-        
-        # Set up data directory
-        self.data_dir = "data"
-        os.makedirs(self.data_dir, exist_ok=True)
-        
-        # Initialize exchange
-        try:
-            exchange_class = getattr(ccxt, self.exchange_id)
-            self.exchange = exchange_class({
-                'enableRateLimit': True,  # Important to avoid rate limit issues
-                'options': {
-                    'defaultType': 'spot'  # Use spot markets by default
-                }
-            })
-            logger.info(f"Initialized {self.exchange_id} exchange interface")
-        except Exception as e:
-            logger.error(f"Failed to initialize exchange {self.exchange_id}: {e}")
-            self.exchange = None
-    
-    def _seconds_to_ccxt_interval(self, seconds):
-        intervals = {
-            60: '1m',
-            300: '5m',
-            900: '15m',
-            1800: '30m',
-            3600: '1h',
-            14400: '4h',
-            86400: '1d'
-        }
-
-        closest_match = min(intervals.keys(), key=lambda x: abs(x - seconds))
-        return intervals[closest_match]
-
-    def _timeframe_to_milliseconds(self, timeframe):
-        """Convert CCXT timeframe to milliseconds for API requests."""
-        # Parse timeframe value and unit
-        amount = int(''.join(filter(str.isdigit, timeframe)))
-        unit = ''.join(filter(str.isalpha, timeframe))
-        
-        # Calculate milliseconds
-        if unit == 'm':
-            return amount * 60 * 1000
-        elif unit == 'h':
-            return amount * 60 * 60 * 1000
-        elif unit == 'd':
-            return amount * 24 * 60 * 60 * 1000
-        elif unit == 'w':
-            return amount * 7 * 24 * 60 * 60 * 1000
-        else:
-            # Default to 1 hour if unknown
-            return 60 * 60 * 1000
-    
-    def _identify_missing_periods(self, existing_data, start_date, end_date):
-        """
-        Identify date ranges that are missing from the existing data.
-        
-        Args:
-            existing_data: DataFrame with timestamp column
-            start_date, end_date: The overall date range we want to cover
-            
-        Returns:
-            List of (start, end) tuples representing missing periods
-        """
-        if existing_data.empty:
-            logger.debug(f"Existing data empty")
-            # No existing data, need to fetch the entire range
-            return [(start_date, end_date)]
-        
-        # Make sure timestamps are datetime
-        existing_data['timestamp'] = pd.to_datetime(existing_data['timestamp'])
-        
-        # Sort the data
-        existing_data = existing_data.sort_values('timestamp')
-        
-        # Generate list of missing periods
-        missing_periods = []
-        
-        # Check if we need data before the earliest timestamp
-        earliest_timestamp = existing_data['timestamp'].min()
-        if start_date < earliest_timestamp:
-            logger.info(f"Potential need of data before the earliest timestamp stored, from: {start_date} to {earliest_timestamp - datetime.timedelta(milliseconds=1)}")
-            adjusted_missingPeriod_end = min(earliest_timestamp - datetime.timedelta(milliseconds=1), end_date)
-            missing_periods.append((start_date, adjusted_missingPeriod_end))
-            
-       # Check if we need data after the latest timestamp
-        latest_timestamp = existing_data['timestamp'].max()
-        logger.debug(f"latest_timestamp: {latest_timestamp}, end_date: {end_date}")
-
-        if end_date > latest_timestamp:
-            logger.info(f"Potential need of data after the latest timestamp stored, from: {latest_timestamp + datetime.timedelta(milliseconds=1)} to {end_date}")
-            adjusted_missingPeriod_start = max(latest_timestamp + datetime.timedelta(milliseconds=1), start_date)
-            missing_periods.append((adjusted_missingPeriod_start, end_date))
-        
-       # Check for gaps within the data
-        timestamps = existing_data['timestamp'].sort_values().values
-        
-        # Get expected interval
-        interval_map = {
-            '1m': np.timedelta64(1,'m'),
-            '5m': np.timedelta64(5,'m'),
-            '15m': np.timedelta64(15,'m'),
-            '30m': np.timedelta64(30,'m'),
-            '1h': np.timedelta64(1,'h'),
-            '4h': np.timedelta64(4,'h'),
-            '1d': np.timedelta64(1,'D'),
-        }
-        expected_interval = interval_map.get(self.candle_interval_ccxt, datetime.timedelta(hours=1))
-        
-        # Find gaps in existing data
-        for i in range(1, len(timestamps)):
-            gap = timestamps[i] - timestamps[i-1]
-            
-            if gap > expected_interval * 1.5:  # Allow some tolerance
-                gap_start = timestamps[i-1] + expected_interval
-                gap_end = timestamps[i] - np.timedelta64(1, 'ms')
-                # Only include gap if it's within our requested range
-                logger.debug(f"tgap_start: {gap_start} end_date(milliseconds=1) {end_date} type gap_start[i]: {type(gap_start)}  type timedeltat: {type(end_date)}")
-
-                if gap_start <= np.datetime64(end_date) and gap_end >= np.datetime64(start_date):
-                    adjusted_start = max(gap_start, start_date)
-                    adjusted_end = min(gap_end, end_date)
-                    logger.info(f"Missing data inside the file, from: {adjusted_start} to {adjusted_end}")
-                    missing_periods.append((adjusted_start, adjusted_end))
-        
-        # Merge overlapping periods
-        if missing_periods:
-            missing_periods.sort()
-            merged_periods = [missing_periods[0]]
-            
-            for current_start, current_end in missing_periods[1:]:
-                prev_start, prev_end = merged_periods[-1]
-                
-                # If periods overlap or are adjacent, merge them
-                if current_start <= prev_end + datetime.timedelta(milliseconds=1):
-                    merged_periods[-1] = (prev_start, max(prev_end, current_end))
-                else:
-                    merged_periods.append((current_start, current_end))
-            
-            return merged_periods
-        
-        return []
-
-    def _find_existing_data(self, symbol):
-        """Find existing local data"""
-       
-        data_path = os.path.join(self.data_dir, f"{symbol}_{self.candle_interval_ccxt}.csv")
-        existing_data = pd.DataFrame()
-        
-        # Load existing data if available
-        if os.path.exists(data_path):
-            logger.info(f"Found local data file for {symbol}. Checking coverage...")
-            
-            try:
-                existing_data = pd.read_csv(data_path)
-                
-                # Ensure timestamp column is in datetime format
-                if 'timestamp' in existing_data.columns:
-                    existing_data['timestamp'] = pd.to_datetime(existing_data['timestamp'])
-                else:
-                    logger.warning(f"No timestamp column found in {data_path}")
-                    existing_data = pd.DataFrame()  # Reset to empty if invalid format
-            
-            except Exception as e:
-                logger.error(f"Error reading local data for {symbol}: {e}")
-                existing_data = pd.DataFrame()
-        return existing_data
-            
-    def _merge_save_data(self, symbol, new_data_pieces, save=False) -> None:
-        # Combine existing and new data
-        combined_data = pd.concat(new_data_pieces, ignore_index=True)
-        
-        # Remove duplicates based on timestamp
-        combined_data = combined_data.drop_duplicates(subset=['timestamp'])
-        
-        # Sort by timestamp
-        combined_data = combined_data.sort_values('timestamp')
-        
-        # Save the combined data
-        self.data_cache[symbol] = combined_data
-        if save:
-            data_path = os.path.join(self.data_dir, f"{symbol}_{self.candle_interval_ccxt}.csv")
-            combined_data.to_csv(data_path, index=False)
-            logger.info(f"Saved merged data for {symbol} and stored locally ")  
-        else: logger.info(f"Saved merged data for {symbol} but not stored locally ")
-  
-    def _fetch_historical_data(self, symbol, start_date, end_date):
-        """
-        Fetch historical data from cryptocurrency exchange API.
-        
-        Args:
-            symbol: Trading pair to fetch data for (e.g., "BTCUSDT")
-            start_date: Start of period to fetch
-            end_date: End of period to fetch
-            
-        Returns:
-            DataFrame containing historical price data
-        """
-
-        if self.exchange is None:
-            logger.error("Exchange not initialized, cannot fetch data")
-            return pd.DataFrame()
-                
-        try:
-            # Convert dates to timestamps
-            since = int(start_date.timestamp() * 1000)
-            until = int(end_date.timestamp() * 1000)
-            
-            # Convert CCXT timeframe (e.g., '5m', '1h')
-            timeframe = self.candle_interval_ccxt
-            
-            # Prepare lists to store results
-            all_candles = []
-            current_since = since
-            logger.debug(f"since: {since}, until: {until}, since: {since}, ")
-
-            # CCXT has limits on how many candles can be fetched at once
-            # We need to make multiple requests for longer periods
-            while current_since < until:
-                # Some exchanges don't accept 'until' parameter, so we use limit instead
-                try:
-                    # Standardize symbol format (different exchanges have different requirements)
-                    exchange_symbol = symbol
-                    # For some exchanges like Binance, we may need to remove the quote currency
-                    # e.g., convert BTCUSDT to BTC/USDT
-                    if '/' not in symbol and len(symbol) > 3:
-                        for quote in ['USDT', 'USD', 'BUSD', 'USDC', 'ETH', 'BTC']:
-                            if symbol.endswith(quote):
-                                base = symbol[:-len(quote)]
-                                exchange_symbol = f"{base}/{quote}"
-                                break
-                    logger.debug(f"timeframe: {timeframe}, since: {since}, ")
-                    
-                    # Fetch OHLCV data (Open, High, Low, Close, Volume)
-                    candles = self.exchange.fetch_ohlcv(
-                        symbol=exchange_symbol,
-                        timeframe=timeframe,
-                        since=current_since,
-                        limit=1000  # Most exchanges limit to 1000 candles per request
-                    )
-
-                    if not candles:
-                        logger.warning(f"No candles returned for {symbol}")
-                        break
-                    
-                    all_candles.extend(candles)
-                    
-                    # Update the current_since for the next iteration
-                    # Last candle timestamp + one timeframe
-                    last_timestamp = candles[-1][0]
-                    current_since = last_timestamp + self._timeframe_to_milliseconds(timeframe)
-                    
-                    # Add a small pause to respect rate limits
-                    time.sleep(self.exchange.rateLimit / 1000)
-                    
-                    # Stop if we've reached the until time or if returned data is too small
-                    if last_timestamp >= until or len(candles) < 100:
-                        break
-                    
-                except Exception as e:
-                    logger.error(f"Error fetching data for {symbol}: {e}")
-                    break
-            
-            if not all_candles:
-                logger.warning(f"No data retrieved for {symbol}")
-                return pd.DataFrame()
-            
-            # Convert to DataFrame
-            df = pd.DataFrame(all_candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-            
-            # Convert timestamp from milliseconds to datetime
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            
-            # Add additional columns to match the expected format
-            df['close_time'] = df['timestamp'] + pd.Timedelta(milliseconds=self._timeframe_to_milliseconds(timeframe) - 1)
-            df['quote_asset_volume'] = df['volume'] * df['close']  # Estimate
-            df['number_of_trades'] = np.nan  # Not provided by CCXT's fetch_ohlcv
-            df['taker_buy_base_asset_volume'] = np.nan  # Not provided by CCXT's fetch_ohlcv
-            df['taker_buy_quote_asset_volume'] = np.nan  # Not provided by CCXT's fetch_ohlcv
-            df['ignore'] = 0
-            
-            return df
-        
-        except Exception as e:
-            logger.error(f"Error in _fetch_historical_data: {e}")
-            return pd.DataFrame()
-
-    def _fetch_backtest_data(self) -> None:
-        """Load historical data for backtesting, with intelligent merging."""
-        for symbol in self.symbols:
-            
-            # Find existing local data
-            if self.localStorage: 
-                existing_data = self._find_existing_data(symbol)
-            else: 
-                existing_data = pd.DataFrame()
-
-            # Identify missing periods
-            logger.info(f"Identifying missing periods")
-            missing_periods = self._identify_missing_periods(existing_data, self.start_date, self.end_date)
-            
-            # Fetch data online based on missing periods
-            if missing_periods:
-                logger.info(f"Need to fetch {len(missing_periods)} missing period(s) for {symbol} ; details: {missing_periods}")
-                new_data_pieces = []
-                
-                if not existing_data.empty:
-                    new_data_pieces.append(existing_data)
-                # Fetch each missing period              
-                for period_start, period_end in missing_periods:
-                    logger.info(f"Fetching {symbol} data from {period_start} to {period_end}")
-                    period_data = self._fetch_historical_data(symbol, period_start, period_end)
-                    
-                    if not period_data.empty:
-                        new_data_pieces.append(period_data)
-                    else:
-                        logger.warning(f"DM - Failed to fetch data for {symbol} from {period_start} to {period_end}")
-                
-                #Merge & Save data pieces
-                if new_data_pieces:
-                    self._merge_save_data(symbol, new_data_pieces, save=self.localStorage) 
-                else:
-                    logger.warning(f"No valid data available for {symbol}")
-                    self.data_cache[symbol] = pd.DataFrame()
-            
-            else:
-                logger.info(f"Local data for {symbol} is complete for the requested period")
-                self.data_cache[symbol] = existing_data
-            
-            # Filter to requested date range
-            if symbol in self.data_cache and not self.data_cache[symbol].empty:
-                self.data_cache[symbol] = self.data_cache[symbol][
-                    (self.data_cache[symbol]['timestamp'] >= self.start_date) & 
-                    (self.data_cache[symbol]['timestamp'] <= self.end_date)
-                ]
-                
-                # Final check of data
-                if self.data_cache[symbol].empty:
-                    logger.warning(f"No data available for {symbol} in requested date range after filtering")
-                else:
-                    logger.info(f"Final dataset for {symbol}: {len(self.data_cache[symbol])} records")
-        
-        self.data_loaded = True
-        logger.info("Data loading complete")
-        
-        # Log summary of data coverage
-        for symbol in self.symbols:
-            if symbol in self.data_cache and not self.data_cache[symbol].empty:
-                data = self.data_cache[symbol]
-                logger.info(f"{symbol}: {len(data)} records from {data['timestamp'].min()} to {data['timestamp'].max()}")
-            else:
-                logger.warning(f"{symbol}: No data available")
-
-    def get_data(self, symbol=None):
-        """
-        Get the loaded data for a specific symbol or all symbols.
-        
-        Args:
-            symbol: Specific symbol to get data for. If None, returns all data.
-            
-        Returns:
-            Data for the requested symbol(s)
-        """
-        if not self.data_loaded:
-            self._fetch_backtest_data()
-            
-        if symbol:
-            return self.data_cache.get(symbol, pd.DataFrame())
-        return self.data_cache
+        if self.mode == "backtest" and symbol in self.historical_data:
+            idx   = self._cursor.get(symbol, 0)
+            start = max(0, idx - limit + 1)
+            return self.historical_data[symbol].iloc[start : idx + 1].copy()
+        return self.get_data_history(symbol, limit)
 
 
-
-    def validate_data_continuity(self, symbol):
-        """
-        Check if data has any gaps based on the interval.
-        
-        Args:
-            symbol: Trading symbol to check
-            
-        Returns:
-            Tuple of (is_continuous, gaps) where gaps is a list of missing periods
-        """
-        if symbol not in self.data_cache or self.data_cache[symbol].empty:
-            return False, []
-            
-        data = self.data_cache[symbol].copy()
-        
-        # Sort by timestamp to ensure order
-        data = data.sort_values('timestamp')
-        
-        # Convert interval to timedelta
-        interval_map = {
-            '1m': np.timedelta64(1,'m'),
-            '5m': np.timedelta64(5,'m'),
-            '15m': np.timedelta64(15,'m'),
-            '30m': np.timedelta64(30,'m'),
-            '1h': np.timedelta64(1,'h'),
-            '4h': np.timedelta64(4,'h'),
-            '1d': np.timedelta64(1,'D'),
-        }
-        
-        expected_interval = interval_map.get(self.candle_interval_ccxt, datetime.timedelta(hours=1))
-        
-        # Get consecutive timestamps
-        timestamps = data['timestamp'].sort_values().values
-        
-        # Find gaps
-        gaps = []
-        for i in range(1, len(timestamps)):
-            diff = timestamps[i] - timestamps[i-1]
-            if diff > expected_interval * 1.5:  # Allow some tolerance
-                gap_start = timestamps[i-1]
-                gap_end = timestamps[i]
-                gaps.append((gap_start, gap_end))
-        
-        is_continuous = len(gaps) == 0
-        return is_continuous, gaps
+# ===========================================================================
+# Backward-compatibility re-export
+# Code that did:  from data.data_manager import HistoricalDataFetcher
+# continues to work unchanged.
+# ===========================================================================
+__all__ = [
+    "PriceTick",
+    "Candle",
+    "CandleBuilder",
+    "DataManager",
+    "AuxFeedConfig",
+    "HistoricalDataFetcher",   # re-exported from ccxt_fetcher
+]
