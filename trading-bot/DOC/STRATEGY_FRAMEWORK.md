@@ -57,6 +57,7 @@ Forecast → `forecast_to_allocation` (= forecast/10.0) downstream.
 4. **threshold_filter runs before the ensemble ±20 clip** — harmless while min_abs < 20; revisit if min_abs ≥ 20.
 5. **A strategy component spec without `"lookback"` override** gets the engine-default deque; the warmup cap then silently lowers effective warmup to that size. Check the startup log line.
 6. `regimes: {"<name>": null}` = deliberately flat in that regime (forecast 0.0). Not an error.
+7. **`regime_scores`/`regime_margin` in `debug_info` are score-mode-only fields.** Under `threshold_rules` they are structurally `{}` and `None` — correct and expected, not missing data. Only populated when `regime_detector.mode = "score"`.
 
 ## Verified baseline
 Backtest BTCUSDT 1h 2024-04-01→2024-05-30: bit-identical (4-dp) per-bar regimes and forecasts vs legacy `WeightedComponentRegimeDetector`/`CompositeStrategy` implementation (1438 bars, 0 diffs).

@@ -713,7 +713,11 @@ class DataManager:
                 # so that _process_backtest_tick feeds pre-enriched rows to CandleBuilder
                 # (price columns are what CandleBuilder uses; aux columns ride along
                 # and are picked up by _attach_aux_columns at get_candle_history time)
-                self._premerge_aux_feeds(symbol, df)
+                if df.empty or 'timestamp' not in df.columns:
+                    logger.error(f"No valid price data for {symbol} — skipping aux feed merge")
+                    continue  # or return, depending on loop structure
+                
+                self._premerge_aux_feeds(symbol, df) 
                 logger.info(
                     f"DataManager: {symbol} initialised with "
                     f"{len(self._aux_feeds)} aux feed(s) — "

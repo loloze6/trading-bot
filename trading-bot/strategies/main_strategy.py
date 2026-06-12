@@ -1,6 +1,7 @@
 from strategies.regime_engine import ConfigDrivenRegimeEngine
 from strategies.strategy_engine import ConfigDrivenStrategyEngine
 from strategies.strategy_base import MainStrategy, MarketRegime, RollingBuffer
+from tools.validate_config import validate as _validate_config
 from typing import Any, Dict, Optional, Tuple
 import json
 import os
@@ -20,6 +21,12 @@ class AdvancedStrategy(MainStrategy):
 
         with open(config_path) as f:
             config = json.load(f)
+
+        errors = _validate_config(config)
+        if errors:
+            for e in errors:
+                logger.error(e)
+            raise ValueError("invalid strategy_config")
 
         self.regime_engine   = ConfigDrivenRegimeEngine(config["regime_detector"])
         self.strategy_engine = ConfigDrivenStrategyEngine(config["strategies"])
