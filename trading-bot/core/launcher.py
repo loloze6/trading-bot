@@ -460,3 +460,47 @@ class Launcher:
         coin_values = OtherPortfolioOperations().get_portfolio_converted('USDT')
         grand_usdt_total = sum(map(lambda coin_usdt_value: coin_usdt_value[1], coin_values))
         print(f"Total portfolio value: {grand_usdt_total:.2f} USDT")
+
+
+# ---------------------------------------------------------------------------
+# Standalone callable used by run_protocol.py
+# ---------------------------------------------------------------------------
+
+def run_backtest(config_path: str, symbol: str, start: str, end: str, results_root: str):
+    """Wire and run a single-symbol backtest; return the run_dir Path."""
+    from data.feed_registry import FEED_REGISTRY
+
+    launcher = Launcher()
+    interval = parse_interval_seconds(launcher.config.get('trading', 'interval', 3600))
+    params = TradingParams(
+        symbols=[symbol],
+        interval=interval,
+        check_interval=launcher.config.get('trading', 'check_interval_seconds', 3600),
+        test_mode=True,
+        commission_rate=DEFAULT_COMMISSION_RATE,
+    )
+
+    strategy = AdvancedStrategy()
+    stack = launcher._build_mock_stack(params, DEFAULT_INITIAL_BALANCE)
+    stack.portfolio_state_tracker.output_dir = results_root
+
+    engine = BacktestEngine(
+        data_manager=stack.data_manager,
+        strategy=strategy,
+        execution_handler=stack.execution_handler,
+        logger=launcher.logger,
+        portfolio_info=stack.portfolio_info,
+        portfolio_state_tracker=stack.portfolio_state_tracker,
+        forecast_manager=stack.forecast_manager,
+        risk_manager=stack.risk_manager,
+        performance_tracker=stack.performance_tracker,
+        price_fetch_interval=params.check_interval,
+        candle_interval_seconds=params.interval,
+        test_mode=params.test_mode,
+        symbols=params.symbols,
+        initial_capital=DEFAULT_INITIAL_BALANCE,
+    )
+
+    engine.load_data(start_date=start, end_date=end, extra_feeds=FEED_REGISTRY)
+    engine.simulate_on_loaded_data()
+    return engine._last_run_dir
