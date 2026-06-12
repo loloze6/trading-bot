@@ -1,13 +1,22 @@
+import json
+import os
 import time
 from typing import Any, Dict, List, Optional, Union, Tuple
 from datetime import datetime
+
 from performance.metrics import CompletedTrade, EnhancedPerformanceTracker
 import pandas as pd
 from core.trading_bot import TradingBot
 from data.fetchers import CcxtFetcher
 from data.fetchers import FundingRateFetcher, FearGreedFetcher
 from data.data_manager import Candle
-import os
+from execution.portfolio_info import flatten_dict_columns
+from reporting.run_artifact import (
+    new_run_dir, write_manifest, write_bars_csv, write_trades_json,
+    write_metrics_json, write_forecast_distribution,
+    build_core, build_per_regime, build_forecast_bins, build_dynamic,
+    _get_git_sha,
+)
 """
 Backtesting Engine
 =================
@@ -16,22 +25,23 @@ Engine for backtesting trading strategies against historical data.
 
 
 class BacktestEngine:
-    def __init__(self, 
-                 data_manager =None, 
-                 strategy=None, 
-                 execution_handler=None, 
-                 logger=None, 
+    def __init__(self,
+                 data_manager =None,
+                 strategy=None,
+                 execution_handler=None,
+                 logger=None,
                  portfolio_info=None,
                  portfolio_state_tracker=None,
                  forecast_manager=None,
                  risk_manager=None,
                  performance_tracker=None,
-                 price_fetch_interval: int=60, 
-                 candle_interval_seconds: int = 300, 
-                 test_mode: bool = True, 
+                 price_fetch_interval: int=60,
+                 candle_interval_seconds: int = 300,
+                 test_mode: bool = True,
                  symbols: List[str] = None,
                  initial_capital: float = 10000.0,
                  commission_rate: float = 0.001,
+                 human_reports: bool = False,
                  ):
         if symbols is None: symbols = ["BTCUSDT"]
         self.data_manager = data_manager 
@@ -53,6 +63,7 @@ class BacktestEngine:
         # Initialize BT data
         self.initial_capital = initial_capital
         self.commission_rate = commission_rate
+        self.human_reports = human_reports
         self.historical_data = {}
         self.data_loaded = {}
 
@@ -157,13 +168,11 @@ class BacktestEngine:
         self.logger.info("🏁 BACKTEST ENDING - Closing all open positions")
         self.logger.info("="*70)
         bot.stop()
-        
 
-        # === REGIME ANALYZIS ===
+        # === REGIME ANALYSIS ===
         self.logger.debug(f"\n{'='*80}")
         self.logger.debug("TRADE REGIME AGREEMENT ANALYSIS")
         self.logger.debug(f"{'='*80}")
-
 
         # Extract base price data and resample to the candle interval used during backtest
         price_data = self.extract_historical_price_data()
@@ -189,35 +198,35 @@ class BacktestEngine:
 
         # === MERGE TICK-BY-TICK STATE INTO PRICE DATA ===
         tracker = getattr(self, 'portfolio_state_tracker', None)
-        if tracker and tracker.states:  # Check if states list has data
+        flat_state_df = None
+        if tracker and tracker.states:
             state_df = tracker.get_tracker_full_record()
-            tracker.to_csv()  # Export states to CSV for debugging
 
             state_df['timestamp'] = pd.to_datetime(state_df['timestamp'])
             price_data['timestamp'] = pd.to_datetime(price_data['timestamp'])
-            
+
             # Rename total_portfolio_value to portfolio_value so the chart recognizes it
             if 'total_portfolio_value' in state_df.columns:
                 state_df['portfolio_value'] = state_df['total_portfolio_value']
-                
+
             # Select columns to merge
             cols_to_merge = ['timestamp']
-            if 'forecast' in state_df.columns: 
+            if 'forecast' in state_df.columns:
                 cols_to_merge.append('forecast')
-            else: 
+            else:
                 print('forecast not in column')
-            if 'portfolio_value' in state_df.columns: 
+            if 'portfolio_value' in state_df.columns:
                 cols_to_merge.append('portfolio_value')
-            else: 
+            else:
                 print('portfolio_value not in column')
-            if 'regime' in state_df.columns: 
+            if 'regime' in state_df.columns:
                 cols_to_merge.append('regime')
-            else: 
+            else:
                 print('regime not in column')
 
             # Merge into price_data
             price_data = pd.merge(price_data, state_df[cols_to_merge], on='timestamp', how='left')
-            
+
             # Rename and forward-fill so every bar has a calculated regime
             if 'regime' in price_data.columns:
                 price_data.rename(columns={'regime': 'calc_regime'}, inplace=True)
@@ -225,23 +234,86 @@ class BacktestEngine:
 
             # Forward-fill portfolio values and default empty forecasts to 0
             if 'portfolio_value' in price_data.columns:
-                price_data['portfolio_value'] = price_data['portfolio_value'].ffill() 
+                price_data['portfolio_value'] = price_data['portfolio_value'].ffill()
             if 'forecast' in price_data.columns:
                 price_data['forecast'] = price_data['forecast'].fillna(0.0)
-                
+
             self.logger.debug(f"✓ State merged successfully. Columns available: {price_data.columns.tolist()}")
+
+            # Build the flattened state DataFrame for the run artifact
+            flat_state_df = flatten_dict_columns(state_df.copy())
+            flat_state_df = flat_state_df.map(lambda x: x.item() if hasattr(x, 'item') else x)
         else:
             self.logger.warning("⚠ Could not find portfolio states! Make sure tracker.record_state() is running.")
 
-        self.performance_tracker.export_trades_to_excel('results/tradesxl.xlsx')
-        
-        # Calculate metrics and plot the chart (which now contains 'forecast' and 'portfolio_value')
-        metrics = self.performance_tracker.get_performance_metrics(price_data=price_data)
-        self.performance_tracker.export_metrics_to_excel('results/tradesxl.xlsx', metrics)
+        # === BUILD RUN ARTIFACT DIR ===
+        # Re-read strategy config from disk (the strategy loads it at __init__ but does not store it)
+        _strategies_dir = os.path.dirname(os.path.abspath(__file__))
+        _project_dir = os.path.dirname(_strategies_dir)
+        _config_path = os.path.join(_project_dir, 'strategy_config.json')
+        with open(_config_path) as _f:
+            _strategy_config = json.load(_f)
+
+        results_root = (
+            tracker.output_dir if tracker else os.path.join(_project_dir, "results")
+        )
+        run_dir = new_run_dir(results_root, _strategy_config)
+        self.logger.info(f"📁 Run artifact dir: {run_dir}")
+
+        # Write manifest
+        raw_price_df = self.extract_historical_price_data()
+        write_manifest(
+            run_dir=run_dir,
+            config=_strategy_config,
+            data_df=raw_price_df if raw_price_df is not None else pd.DataFrame(
+                columns=["timestamp", "open", "high", "low", "close", "volume"]
+            ),
+            symbols=self.symbols,
+            timeframe=f"{self.data_manager.interval_seconds}s",
+            git_sha=_get_git_sha(),
+            lookback=self.strategy.strategy_engine.lookback,
+            warmup=self.strategy.strategy_engine._warmup,
+        )
+
+        # Write trades JSON
+        write_trades_json(run_dir, self.performance_tracker.completed_trades)
+
+        # === EXCEL (always written, unchanged logic) ===
+        self.performance_tracker.export_trades_to_excel(str(run_dir / "tradesxl.xlsx"))
+
+        # Calculate metrics (pass price_data only when human_reports requested)
+        metrics = self.performance_tracker.get_performance_metrics(
+            price_data=price_data if self.human_reports else None
+        )
+        self.performance_tracker.export_metrics_to_excel(str(run_dir / "tradesxl.xlsx"), metrics)
         self.performance_tracker.log_performance_metrics(metrics)
 
+        # Write metrics JSON
+        completed_trades = self.performance_tracker.completed_trades
+        core_metrics = build_core(metrics, completed_trades)
+        per_regime = build_per_regime(flat_state_df, completed_trades) if flat_state_df is not None else {}
+        forecast_bins = build_forecast_bins(completed_trades)
+        dynamic = build_dynamic(flat_state_df) if flat_state_df is not None else {}
+        write_metrics_json(run_dir, core_metrics, per_regime, forecast_bins, dynamic)
 
-        # Integrity assertion: every record_trade call must correspond to an executed order.
+        # Write bars CSV and forecast distribution
+        if flat_state_df is not None:
+            write_bars_csv(run_dir, flat_state_df)
+            write_forecast_distribution(run_dir, flat_state_df)
+
+        # Write tracker CSV into run dir
+        if tracker and tracker.states:
+            tracker.output_dir = str(run_dir)
+            tracker.to_csv()
+
+        # === HUMAN REPORTS (optional) ===
+        if self.human_reports:
+            from performance.forecast_analyzer import ForecastAnalyzer
+            ForecastAnalyzer(output_path=str(run_dir / "forecast_analysis.xlsx")).analyze(
+                self.performance_tracker.completed_trades
+            )
+
+        # === INTEGRITY CHECK ===
         orders_placed = self.execution_handler.executed_orders_counter
         trades_recorded = self.performance_tracker.execution_counter
         if orders_placed != trades_recorded:

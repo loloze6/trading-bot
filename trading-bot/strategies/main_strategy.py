@@ -2,7 +2,6 @@ from strategies.regime_engine import ConfigDrivenRegimeEngine
 from strategies.strategy_engine import ConfigDrivenStrategyEngine
 from strategies.strategy_base import MainStrategy, MarketRegime, RollingBuffer
 from typing import Any, Dict, Optional, Tuple
-import csv
 import json
 import os
 import pandas as pd
@@ -38,7 +37,6 @@ class AdvancedStrategy(MainStrategy):
         )
 
         self.last_forecast = 0.0
-        self._regime_log_initialized = False
 
         logger.debug(f"✅ AdvancedStrategy initialized (required_bars={self.required_bars})")
 
@@ -68,9 +66,8 @@ class AdvancedStrategy(MainStrategy):
 
     def generate_forecast(self) -> Tuple[float, Any, MarketRegime, float, Dict[str, Any]]:
         regime, debug_regime = self.regime_engine.classify()
-        self._write_regime_log(debug_regime)
 
-        forecast = self.strategy_engine.forecast(regime)
+        forecast, debug_components = self.strategy_engine.forecast(regime)
         forecast_delta = forecast - self.last_forecast
         self.last_forecast = forecast
 
@@ -80,28 +77,8 @@ class AdvancedStrategy(MainStrategy):
             'regime_scores': debug_regime.get('scores', {}),
             'regime_margin': debug_regime.get('margin'),
             'bars_in_regime': self.regime_engine.bars_in_current_regime,
+            'components': debug_components,
         }
 
         return forecast, None, regime, 0.0, debug_info
 
-    def _write_regime_log(self, debug_regime: Dict[str, Any]) -> None:
-        scores = debug_regime.get('scores', {})
-        if not scores:
-            return
-        strategies_dir = os.path.dirname(os.path.abspath(__file__))
-        project_dir    = os.path.dirname(strategies_dir)
-        log_path       = os.path.join(project_dir, 'results', 'regime_debug.csv')
-        if not self._regime_log_initialized:
-            open(log_path, 'w').close()
-            self._regime_log_initialized = True
-        row = {
-            'regime': self.regime_engine.current_regime.value,
-            'margin': round(debug_regime.get('margin', float('nan')), 4),
-            **{f'score_{r}': round(s, 4) for r, s in scores.items()},
-        }
-        write_header = os.path.getsize(log_path) == 0
-        with open(log_path, 'a', newline='') as f:
-            w = csv.DictWriter(f, fieldnames=list(row.keys()))
-            if write_header:
-                w.writeheader()
-            w.writerow(row)

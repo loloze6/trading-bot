@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 import pandas as pd
 import numpy as np
 import logging
@@ -94,22 +94,29 @@ class ConfigDrivenStrategyEngine:
         all_comps = [c for rc in self._components.values() for c in rc.values()]
         return max((c.get_required_periods() for c in all_comps), default=0)
 
-    def forecast(self, regime: MarketRegime) -> float:
+    def forecast(self, regime: MarketRegime) -> Tuple[float, Dict[str, Any]]:
         rkey = regime.value
         cfg  = self._regime_cfgs.get(rkey)
         if cfg is None:
-            return 0.0
+            return 0.0, {}
 
         comp_refs = cfg["components"]
         total_w   = sum(c["weight"] for c in comp_refs)
         ensemble  = 0.0
+        debug: Dict[str, Any] = {}
 
         for c in comp_refs:
             cid = c["id"]
             h   = self._history.get(rkey, {}).get(cid)
             if not h or len(h) < 2:
-                return 0.0
-            value     = apply_transform_pipeline(pd.Series(list(h)), c["transforms"], self._data)
-            ensemble += (c["weight"] / total_w) * value
-
-        return float(np.clip(ensemble, -20.0, 20.0))
+                return 0.0, {"not_ready_component": cid}
+            value  = apply_transform_pipeline(pd.Series(list(h)), c["transforms"], self._data)
+            w_norm = c["weight"] / total_w
+            ensemble += w_norm * value
+            debug[cid] = {
+                "last_history_value":    float(h[-1]),
+                "post_pipeline_value":   float(value),
+                "weight_normalized":     float(w_norm),
+                "weighted_contribution": float(w_norm * value),
+            }
+        return float(np.clip(ensemble, -20.0, 20.0)), debug

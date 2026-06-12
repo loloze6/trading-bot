@@ -732,9 +732,6 @@ class EnhancedPerformanceTracker:
             wb.save(metric_path)
             logger.info(f"Metrics exported to {metric_path} (Performance_Metrics sheet with explanatory comments)")
         
-           # Run forecast-centric analysis
-            self.forecast_analyzer.analyze(self.completed_trades)
-        
         except Exception as e:
             logger.error(f"Error exporting metrics: {e}")
             import traceback
