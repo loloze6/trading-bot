@@ -1,0 +1,36 @@
+{
+    "api": {
+        "key": "",
+        "secret": ""
+    },
+    "trading": {
+        "test_mode": true,
+        "symbols": [
+            "BTCUSDT"
+        ],
+        "interval": 3600,
+        "check_interval_seconds": 3600
+    },
+    "strategy": {
+        "max_abs_range_forecast":20.0,
+        "rebalance_threshold": 0.20,
+        "name": "AdvancedStrategy",
+        "BuyAndHoldXPeriodsStrategy": {
+            "hold_period": 10000
+        },
+        "SimpleMovingAverageStrategy": {
+            "short_window": 20,
+            "long_window": 50
+        }
+    },
+    "risk_management": {
+        "controls": {
+        "max_allocation_change": {"max": 4.0},
+        "min_allocation_change": {"threshold": 0.2}
+        }
+    },
+    "logging": {
+        "level": "DEBUG",
+        "file_path": "results/trading_bot.log"
+    }
+}

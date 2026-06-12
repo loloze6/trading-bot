@@ -14,6 +14,8 @@ def setup_logger(name: str, log_file: str = "logs/bot.log", level: int = logging
     Returns:
         logging.Logger: Configured logger instance.
     """
+    strategy_refinement = False  # ← Custom parameter to control logging behavior in strategies
+
     # Ensure the directory for the log file exists; create if it does not
     log_dir = os.path.dirname(log_file)
     if log_dir and not os.path.exists(log_dir):
@@ -26,8 +28,11 @@ def setup_logger(name: str, log_file: str = "logs/bot.log", level: int = logging
     )
 
     # Create or get logger instance by name
-    logger = logging.getLogger(name)
+    logger = logging.getLogger(name) 
     logger.setLevel(level)
+
+    # Attach your custom parameter directly to the logger object
+    logger.strategy_refinement = strategy_refinement
 
     # Add handlers only if not already configured to avoid duplicate logs
     if not logger.hasHandlers():

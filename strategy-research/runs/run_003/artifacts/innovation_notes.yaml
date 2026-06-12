@@ -1,0 +1,89 @@
+run_id: run_003
+stage: innovation_expansion
+refinement_attempt: 1
+
+refinement_loop_summary:
+  applied_fixes:
+    - block: BLOCK-01
+      action: "Added shift(1) lag directives to VMD-A and VMD-B; implementation_allowed: false pending reviewer."
+    - block: BLOCK-02
+      action: "VMD-B-zscore pre-registered as primary; BH+Bonferroni correction attached to all secondary variants."
+    - block: BLOCK-03
+      action: "VMD-REV-01 excluded from all variant lists; deferred_to: run_004."
+    - block: BLOCK-04
+      action: "VMD-CROSS-01 excluded pending audit; VMD-D retained as designated fallback."
+
+novelty_additions:
+  - type: new_secondary_variant
+    id: VMD-E-session-filter
+    novelty: "UTC-hour gate removes structurally noisy Asian session bars; not present in prior expansion."
+    testability: high
+    code_impact: minimal
+
+  - type: reverse_hypothesis
+    id: VMD-REV-BASE
+    novelty: >
+      Pure inverse routing (not the undefined combined-score VMD-REV-01).
+      Structurally symmetric; tests whether regime-to-signal direction
+      assumption is inverted.
+    testability: high
+    code_impact: minimal
+
+  - type: behavioral_feature
+    name: volume_momentum_persistence
+    novelty: "Consecutive-bar volume count; filters spike vs. sustained flow at signal layer."
+
+  - type: behavioral_feature
+    name: divergence_acceleration
+    novelty: "Second derivative of divergence; adds momentum confirmation independent of level."
+
+  - type: alternative_data
+    name: RVOL
+    novelty: "Self-normalizing relative volume; proposed as lower-sensitivity alternative to VMD-A percentile cap."
+
+testability_matrix:
+  - id: VMD-B-zscore
+    ohlcv_only: true
+    lag_clean: false
+    lag_clean_note: "Pending code reviewer shift(1) confirmation"
+    implementation_allowed: false
+
+  - id: VMD-A-percentile-cap
+    ohlcv_only: true
+    lag_clean: false
+    lag_clean_note: "Pending code reviewer shift(1) confirmation"
+    implementation_allowed: false
+
+  - id: VMD-C-conservative
+    ohlcv_only: true
+    lag_clean: true
+    implementation_allowed: true
+
+  - id: VMD-D-transition-buffer
+    ohlcv_only: true
+    lag_clean: true
+    implementation_allowed: true
+
+  - id: VMD-E-session-filter
+    ohlcv_only: true
+    lag_clean: true
+    implementation_allowed: true
+
+  - id: VMD-REV-BASE
+    ohlcv_only: true
+    lag_clean: true
+    implementation_allowed: true
+
+conservative_variant_present: true
+conservative_variant_id: VMD-C-conservative
+
+outstanding_blockers:
+  - id: BLOCK-01
+    required_action: "Commit shift(1) lag spec to backtest_specification.yaml; obtain code reviewer sign-off."
+  - id: BLOCK-02
+    required_action: "Commit VMD-B-zscore primary designation to backtest_specification.yaml."
+  - id: BLOCK-04
+    required_action: "Complete classifier API audit; record result; select VMD-CROSS-01 or VMD-D."
+
+backtest_authorization: false
+next_stage: backtest_specification

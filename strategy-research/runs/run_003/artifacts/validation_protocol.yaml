@@ -1,0 +1,187 @@
+hypothesis_id: HYP-run003-001
+run_id: run_003
+refinement_attempt: 1
+primary_variant_tested: VMD-B-zscore
+
+falsifiable_statement: >
+  VMD-B-zscore generates OOS annualized Sharpe > 0.5 and positive per-trade expectancy
+  in TRENDING and RANGING regime subsamples after full transaction costs, and statistically
+  outperforms a regime-filtered random-entry null at one-tailed p < 0.05.
+
+null_expectation: >
+  H0: divergence_score = price_z * sign(volume_z) carries zero predictive information.
+  Expected OOS Sharpe ≤ 0.0. Null: regime-filtered random long/short entries with
+  identical sizing and cost structure yields statistically equivalent performance.
+
+required_evidence:
+  primary_metric: annualized_sharpe_oos
+  primary_threshold: "> 0.5"
+  metrics:
+    - metric: annualized_sharpe_net
+      threshold: "> 0.5"
+      scope: walk-forward OOS, TRENDING and RANGING subsets independently
+    - metric: null_benchmark_p_value
+      threshold: "p < 0.05 one-tailed"
+      scope: OOS period only
+    - metric: win_rate_per_trade
+      threshold: "> 0.50, binomial p < 0.05"
+      scope: OOS trades, minimum 200 per regime
+    - metric: profit_factor
+      threshold: "> 1.2 net of costs"
+      scope: OOS
+    - metric: max_drawdown
+      threshold: "< 30%"
+      scope: full OOS window
+  pre_execution_gate:
+    - "BLOCK-01 code-review confirmed before any backtest run"
+    - "Regime detector lag verified as lagged-only before regime-conditional test"
+    - "Single primary parameter set pre-registered before IS run"
+
+bias_risks:
+  - id: BR-01
+    type: look_ahead
+    severity: critical
+    description: >
+      shift(1) on rolling zscore series is spec-only; code reviewer sign-off not completed.
+      Misplacement at signal output rather than rolling-stat computation ingests t+1 data.
+    mitigation: "Mandatory code review; block execution until confirmed."
+
+  - id: BR-02
+    type: multiple_comparison
+    severity: high
+    description: >
+      72 primary configs (4×3×3×2). Pre-registration names VMD-B-zscore but
+      not a specific parameter set. Best IS config selected post-hoc ≡ data dredging.
+    mitigation: >
+      Pre-register (N, z_thresh, vol_z_thresh, div_z_thresh) tuple before IS run.
+      Report full 72-config distribution; flag if best rank implies p_corrected ≥ 0.05.
+
+  - id: BR-03
+    type: regime_subsample_size
+    severity: high
+    description: >
+      200-bar zscore warmup burns leading bars per symbol. Regime-conditional OOS
+      subsamples may fall below 200 trades; significance tests become unreliable.
+    mitigation: "Count OOS trades per regime before reporting. Abort regime test if < 200."
+
+  - id: BR-04
+    type: overfitting
+    severity: high
+    description: >
+      IS parameter selection on Sharpe from 72 configs. Effective DOF < 72
+      if configs are correlated; actual family-wide FDR worse than reported.
+    mitigation: >
+      Compute pairwise signal correlation matrix pre-backtest.
+      If > 50% of pairs r > 0.9, effective configs < 36; tighten α accordingly.
+
+  - id: BR-05
+    type: volume_data_quality
+    severity: medium
+    description: >
+      Crypto exchange volume includes wash trading. zscore normalization
+      may recalibrate to noise rather than institutional flow.
+    mitigation: "Check ACF(volume_z, lag=1). Flag as contaminated if > 0.3."
+
+  - id: BR-06
+    type: regime_label_leakage
+    severity: critical
+    description: >
+      ER/vol regime detector lag relative to signal bar is undocumented.
+      Any forward-looking smoothing in the detector contaminates all routed variants.
+    mitigation: "Confirm detector uses only lagged inputs; record bar offset in spec."
+
+failure_modes:
+  - id: FM-01
+    label: lookahead_shift_misplacement
+    description: "shift(1) at signal output rather than rolling stat → future data in formula."
+    falsification_test: "Permutation on shuffled price series; contaminated signal exceeds true signal → reject."
+    probability: medium
+
+  - id: FM-02
+    label: normalization_signal_collapse
+    description: >
+      Low-vol compression drives rolling zscore variance to zero.
+      Thresholds permanently unmet in RANGING; zero trades generated.
+    falsification_test: "IS trade count in RANGING < 50 → reject VMD-B-zscore for RANGING."
+    probability: medium
+
+  - id: FM-03
+    label: transaction_cost_erasure
+    description: "Gross edge < 1× taker fee round-trip. Positive gross Sharpe, negative net."
+    falsification_test: "Net Sharpe ≤ 0 → reject."
+    probability: high
+
+  - id: FM-04
+    label: regime_transition_overtrade
+    description: "Rapid TRENDING↔RANGING flips generate signal churn at boundary without confirmation."
+    falsification_test: "Flag if regime-transition trades > 15% of total; measure their isolated PnL."
+    probability: medium
+
+  - id: FM-05
+    label: liquidation_spike_false_positives
+    description: >
+      Top-5% volume bars (liquidation cascades) trigger volume_z > vol_z_thresh
+      into adverse momentum continuation.
+    falsification_test: >
+      Tag spike trades. If spike trades > 40% of net PnL or win_rate < 0.35 on spikes → reject.
+    probability: high
+
+  - id: FM-06
+    label: regime_detector_lag_mismatch
+    description: "VMD signal fires on stale regime label; true regime onset K bars earlier."
+    falsification_test: "Mean trade PnL as function of bars-since-regime-change; monotonic decay → reject."
+    probability: medium
+
+  - id: FM-07
+    label: parameter_degeneracy
+    description: >
+      High intra-family signal correlation reduces effective DOF.
+      BH correction underestimates overfitting; best config is noise.
+    falsification_test: "Pairwise correlation matrix. If > 50% pairs r > 0.9 → reduce declared family size."
+    probability: medium
+
+  - id: FM-08
+    label: non_stationarity_volume_distribution
+    description: >
+      Volume distribution shifts across bear/bull cycles faster than 200-bar window recalibrates.
+    falsification_test: "Sub-period Sharpe decomposition; monotonic OOS Sharpe degradation → reject."
+    probability: medium
+
+sample_split_design:
+  in_sample:
+    fraction: 0.60
+    purpose: "Parameter selection and signal calibration only."
+    rule: "Best param set locked before OOS evaluation begins. No re-entry."
+  walk_forward_oos:
+    fraction: 0.25
+    purpose: "Primary hypothesis test."
+    window: "6-month IS / 1-month OOS rolling folds. Param re-selected each IS fold."
+    aggregate_metric: "OOS Sharpe across all folds."
+  holdout:
+    fraction: 0.15
+    purpose: "Final confirmation only."
+    rule: "Touch once. Only after walk-forward passes all decision_rules.approve conditions."
+    violation: "Early access = automatic rejection regardless of result."
+  regime_subsample_gate:
+    minimum_oos_trades_per_regime: 200
+    abort_condition: "< 200 OOS trades in any tested regime → suppress regime-conditional significance."
+
+decision_rules:
+  approve:
+    - "OOS annualized net Sharpe > 0.5 (primary pre-registered config)"
+    - "Null benchmark p < 0.05 one-tailed"
+    - "OOS max drawdown < 30%"
+    - "BLOCK-01 code review confirmed pre-execution"
+    - "Regime detector lag verified as lagged-only"
+    - "FM-05 spike trades < 40% of net PnL"
+  refine:
+    - "0.0 < OOS net Sharpe < 0.5 with isolatable structural cause (FM-02, FM-04, FM-06)"
+    - "Regime subsample < 200 in one regime only; other regime passes"
+    - "Parameter degeneracy (FM-07) identified but correctable by reducing grid"
+  reject:
+    - "OOS net Sharpe ≤ 0 after costs"
+    - "Null benchmark p ≥ 0.05"
+    - "BLOCK-01 or BR-06 lookahead confirmed by permutation test"
+    - "FM-05: spike trades > 40% of net PnL or win_rate < 0.35 on spikes"
+    - "OOS max drawdown > 40%"
+    - "Monotonic sub-period Sharpe degradation confirmed (FM-08)"

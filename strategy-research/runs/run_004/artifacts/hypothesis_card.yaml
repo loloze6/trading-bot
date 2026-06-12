@@ -1,0 +1,42 @@
+hypothesis_id: HG_BTCUSDT_1h_001
+thesis: >
+  A mean-reversion strategy that enters short when BTCUSDT exhibits a significant
+  price increase on high volume, and enters long when BTCUSDT exhibits a significant
+  price decrease on high volume, will be profitable.
+rationale: >
+  Significant price movements on high volume can indicate overextension, leading to
+  a reversion to the mean. This is particularly relevant in crypto markets which can
+  experience rapid, exaggerated moves. The strategy aims to capture these reversals.
+signal_concept: >
+  Enter short when (Price_Change > X% AND Volume_Change > Y%) AND (Current_Volume > Average_Volume * Z).
+  Enter long when (Price_Change < -X% AND Volume_Change < -Y%) AND (Current_Volume > Average_Volume * Z).
+  Where X, Y, and Z are parameters to be optimized. Price_Change and Volume_Change are
+  calculated over a short lookback period (e.g., 1-3 hours).
+target_market: BTCUSDT
+timeframe: 1h
+assumptions:
+  - >
+    The BTCUSDT market exhibits mean-reverting tendencies after significant,
+    volume-driven price excursions.
+  - >
+    The existing backtest framework can accommodate the calculation of price and
+    volume changes over short lookback periods and the application of volume
+    confirmation.
+  - >
+    Standard OHLCV data is sufficient to implement this strategy.
+  - >
+    The strategy can be integrated as a sub-strategy component without requiring
+    significant changes to the existing architecture.
+expected_failure_modes:
+  - >
+    The market exhibits strong trending behavior rather than mean reversion,
+    leading to sustained losses when entering against the trend.
+  - >
+    The chosen parameters (X, Y, Z) are not robust and lead to overfitting or
+    poor signal generation.
+  - >
+    High volume spikes do not consistently precede reversals, but rather confirm
+    momentum.
+  - >
+    The strategy fails to maintain statistical significance across different
+    market regimes (trending vs. ranging).

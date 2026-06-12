@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Human Resolution",
+  "type": "object",
+  "required": [
+    "run_id",
+    "hypothesis_id",
+    "status",
+    "resolution_notes",
+    "injected_context"
+  ],
+  "properties": {
+    "run_id": { "type": "string" },
+    "hypothesis_id": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["resolved_proceed", "unresolvable_reject"]
+    },
+    "resolution_notes": { "type": "string" },
+    "injected_context": {
+      "type": "object",
+      "description": "Any new paths, variables, or context the next agent needs",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

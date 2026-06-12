@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Hypothesis Card",
+  "type": "object",
+  "required": [
+    "hypothesis_id",
+    "thesis",
+    "rationale",
+    "signal_concept",
+    "target_market",
+    "timeframe",
+    "assumptions",
+    "expected_failure_modes"
+  ],
+  "properties": {
+    "hypothesis_id": { "type": "string" },
+    "thesis": { "type": "string" },
+    "rationale": { "type": "string" },
+    "signal_concept": { "type": "string" },
+    "target_market": { "type": "string" },
+    "timeframe": { "type": "string" },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "expected_failure_modes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

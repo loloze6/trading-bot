@@ -1,0 +1,20 @@
+run_id: "template"
+from_stage: "validation"
+to_stage: "refinement_planner"
+objective: "Convert validation blockers into a structured, actionable refinement plan without redesigning the strategy."
+primary_input_artifact: "artifacts/validation_decision.yaml"
+required_inputs:
+  - path: "artifacts/validation_protocol.yaml"
+    reason: "Contains the falsification rules and bias risks."
+  - path: "artifacts/validation_decision.yaml"
+    reason: "Contains the specific blocking issues that need to be resolved."
+  - path: "artifacts/expanded_hypothesis_card.yaml"
+    reason: "Context for how the strategy is currently designed."
+optional_inputs: []
+constraints:
+  - "Do not redesign the strategy yourself; only output the action plan."
+  - "If the blocker requires a physical data audit, set implementation_allowed to false."
+  - "TOKEN LIMIT: Do not write conversational filler. Keep all rationale strictly mathematical and limit text descriptions to under 100 words per section."
+deliverables:
+  - "refinement_notes.yaml"
+assigned_engine: "gemini"

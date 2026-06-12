@@ -31,44 +31,13 @@ class ConfigManager:
         Args:
             config_path: Path to the configuration file
         """
-        self.config_path = config_path
+        config_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(config_dir)
+        self.config_path = os.path.join(base_dir, config_path)
         self.logger = logging.getLogger("trading_bot")
         self.config = self._load_config()
 
-    def _get_default_config(self) -> Dict[str, Any]:
-        """
-        Get default configuration structure.
 
-        Returns:
-            Dictionary containing default configuration values
-        """
-        return {
-            "api": {
-                "key": "",
-                "secret": ""
-            },
-            "trading": {
-                "test_mode": True,
-                "symbols": ["BTCUSDT"],
-                "interval": "15m",
-                "check_interval_seconds": 60
-            },
-            "strategy": {
-                "name": "SimpleMovingAverage",
-                "params": {
-                    "short_window": 50,
-                    "long_window": 200
-                }
-            },
-            "risk_management": {
-                "max_position_size": 0.1,  # 10% of available balance
-                "stop_loss_pct": 0.05      # 5% stop loss
-            },
-            "logging": {
-                "level": "INFO",
-                "file_path": "trading_bot.log"
-            }
-        }
         
     def _load_config(self) -> Dict[str, Any]:
         """
@@ -78,7 +47,6 @@ class ConfigManager:
             Configuration dictionary
         """
         # Default configuration
-        default_config = self._get_default_config()
         
         # Try to load from file
         if os.path.exists(self.config_path):
@@ -87,35 +55,20 @@ class ConfigManager:
                     loaded_config = json.load(f)
                 
                 # Merge with default config to ensure all keys exist
-                self._deep_update(default_config, loaded_config)
-                self.logger.info(f"Configuration loaded from {self.config_path}")
+                self.logger.debug(f"Configuration loaded from {self.config_path}")
 
             except json.JSONDecodeError as e:
                 self.logger.error(f"Invalid JSON in configuration file: {e}")
                 self.logger.warning("Using default configuration")
             except Exception as e:
                 self.logger.error(f"Error loading configuration: {e}")
-                self.logger.info("Using default configuration")
+                self.logger.debug("Using default configuration")
         else:
-            logger.info(f"Configuration file {self.config_path} not found. Using default configuration.")
+            logger.error(f"Configuration file {self.config_path} not found.")
             # Save default config
-            self.save_config(default_config)
+            return {}
             
-        return default_config
-
-    def _deep_update(self, original: Dict, update: Dict) -> None:
-        """
-        Recursively update a nested dictionary.
-        
-        Args:
-            original: Original dictionary to update
-            update: Dictionary with updates
-        """
-        for key, value in update.items():
-            if key in original and isinstance(original[key], dict) and isinstance(value, dict):
-                self._deep_update(original[key], value)
-            else:
-                original[key] = value
+        return loaded_config
 
     def save_config(self, config: Optional[Dict] = None) -> bool:
         """
@@ -136,7 +89,7 @@ class ConfigManager:
             
             with open(self.config_path, 'w') as f:
                 json.dump(config_to_save, f, indent=4)
-            self.logger.info(f"Configuration saved to {self.config_path}")
+            self.logger.debug(f"Configuration saved to {self.config_path}")
             return True
         except Exception as e:
             self.logger.error(f"Error saving configuration: {e}")
@@ -155,49 +108,19 @@ class ConfigManager:
             Configuration value
         """
         if section not in self.config:
-            self.logger.debug(f"Section '{section}' not found in config, returning default")
+            # self.logger.debug (f"Section '{section}' not found in config, returning default")
             return default
         
         if key is None:
             return self.config[section]
         
         value = self.config[section].get(key, default)
-        if value == default and default is not None:
-            self.logger.debug(f"Key '{section}.{key}' not found, using default: {default}")
+        # if value == default and default is not None:
+            # self.logger.debug (f"Key '{section}.{key}' not found, using default: {default}")
         
 
         return self.config[section].get(key, default)
 
-    def set(self, section: str, key: str, value: Any) -> None:
-        """
-        Set a configuration value.
-        
-        Args:
-            section: Configuration section
-            key: Configuration key
-            value: Value to set
-        """
-        if section not in self.config:
-            self.config[section] = {}
-
-        old_value = self.config[section].get(key)
-        self.config[section][key] = value
-        self.logger.debug(f"Config updated: {section}.{key} = {value} (was: {old_value})")
-
-
-    def update(self, section: str, values: Dict[str, Any]) -> None:
-        """
-        Update multiple configuration values in a section.
-        
-        Args:
-            section: Configuration section
-            values: Dictionary of values to update
-        """
-        if section not in self.config:
-            self.config[section] = {}
-        
-        self.config[section].update(values)
-        self.logger.debug(f"Config section '{section}' updated with {len(values)} values")
 
     def validate(self) -> bool:
         """
@@ -207,57 +130,14 @@ class ConfigManager:
             True if valid, False otherwise
         """
         validation_errors = []
-        try:
-            # Check required API keys if not in test mode
-            if not self.config.get('trading', {}).get('test_mode', True):
-                api_key = self.config.get('api', {}).get('key')
-                api_secret = self.config.get('api', {}).get('secret')
-                
-                if not api_key or not api_secret:
-                    validation_errors.append("API key and secret are required when not in test mode")
-                    return False
-            
+        try:           
             # Check if there are symbols to trade
             symbols = self.config.get('trading', {}).get('symbols')
             if not symbols or len(symbols) == 0:
-                validation_errors.append("No trading symbols specified")
-
-
-            # Validate intervals
-            interval = self.get('trading', 'interval')
-            if interval and interval <= 0:
-                validation_errors.append(f"interval must be positive (got: {interval})")
-
-            check_interval = self.get('trading', 'check_interval_seconds')
-            if check_interval and check_interval <= 0:
-                validation_errors.append(f"check_interval_seconds must be positive (got: {check_interval})")
-
-
-            stop_loss = self.get('risk_management', 'stop_loss_pct')
-            if stop_loss is not None and (stop_loss <= 0 or stop_loss > 1):
-                validation_errors.append(f"stop_loss_pct must be between 0 and 1 (got: {stop_loss})")
-
-            # Validate strategy parameters
-            strategy_params = self.get('strategy', 'params', {})
-            if 'short_window' in strategy_params and 'long_window' in strategy_params:
-                short_window = strategy_params['short_window']
-                long_window = strategy_params['long_window']
-                
-                if short_window >= long_window:
-                    validation_errors.append(
-                        f"short_window ({short_window}) must be less than long_window ({long_window})"
-                    )
-                
-                if short_window <= 0 or long_window <= 0:
-                    validation_errors.append("Window parameters must be positive")
-
-            # Log all validation errors
-            if validation_errors:
-                for error in validation_errors:
-                    self.logger.error(f"Validation error: {error}")
+                self.logger.error("No trading symbols specified")
                 return False
             
-            self.logger.info("Configuration validation passed")
+            self.logger.debug("Configuration validation passed")
             return True
             
         except Exception as e:

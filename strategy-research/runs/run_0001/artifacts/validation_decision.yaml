@@ -1,0 +1,62 @@
+hypothesis_id: H-0001
+status: refine
+
+rationale: >
+  The hypothesis is logically coherent and the mechanism is plausible, but
+  it cannot be approved at this stage for three reasons. First, the
+  availability of historical liquidation data is unconfirmed. The Binance
+  liquidation stream is live-only; without verified archived data covering
+  at minimum 2020-2022, the backtest cannot be executed at all. This is a
+  blocking dependency that must be resolved before any implementation work
+  begins. Second, the threshold parameter is a free variable with no
+  principled prior. Testing without a pre-committed threshold is equivalent
+  to fitting a model and calling it a backtest. Third, the event count
+  requirement (>=100 per market per direction) is uncertain given the
+  live-only nature of the data source — the actual qualifying event
+  frequency in the available archive is unknown.
+
+  The hypothesis is not rejected because the mechanism is specific and
+  falsifiable, the integration path into the existing architecture is
+  clear and minimal, and at least two variants (H-0001-A and H-0001-B)
+  are testable without new infrastructure. The reverse hypothesis
+  (H-0001-R) provides a natural complement that avoids discarding the
+  TRENDING-regime signal entirely.
+
+  The refinement required before proceeding is a data audit, not a
+  strategy redesign.
+
+blocking_issues:
+
+  - issue: historical_liquidation_data_availability
+    severity: critical
+    description: >
+      Confirm whether Binance liquidation tick C has been archived locally
+      or is available from a verifiable free source covering 2020-2024.
+      Without this, the backtest cannot run and no further work is justified.
+    resolution_required: >
+      Produce a verified dataset of per-bar (1h) liquidation volume (long
+      and short separately) for BTCUSDT and ETHUSDT from 2020-01-01 onward,
+      with a documented source and any known gaps flagged.
+
+  - issue: threshold_must_be_pre_committed
+    severity: high
+    description: >
+      The liquidation volume threshold for qualifying events must be fixed
+      at a principled value (e.g., 95th percentile of rolling 90-day
+      liquidation volume) before any return analysis is run. Selecting the
+      threshold by scanning results is overfitting by definition.
+    resolution_required: >
+      Document the threshold selection rule in the backtest specification
+      before any simulation is executed. The rule must be computable from
+      data available at bar T without using future data.
+
+  - issue: bar_close_execution_latency
+    severity: medium
+    description: >
+      The signal depends on bar-close liquidation totals. The realistic
+      order entry point is several minutes into the next bar. The backtest
+      specification must model this delay explicitly (e.g., assume entry
+      at open of bar T+2 rather than bar T+1) to avoid inflating results.
+    resolution_required: >
+      Confirm the assumed entry bar in the backtest specification and
+      verify the existing simulate command supports configurable signal lag.

@@ -11,6 +11,7 @@ from typing import List, Dict, Any
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
+import os
 
 logger = logging.getLogger('trading_bot')
 
@@ -23,7 +24,9 @@ class ForecastAnalyzer:
     """
     
     def __init__(self, output_path: str = "forecast_analysis.xlsx"):
-        self.output_path = output_path
+        performance_dir = os.path.dirname(os.path.abspath(__file__))
+        project_dir = os.path.dirname(performance_dir)
+        self.output_path = os.path.join(project_dir, output_path)
         
     def analyze(self, completed_trades: List['CompletedTrade']):
         """
@@ -36,7 +39,7 @@ class ForecastAnalyzer:
             logger.warning("No completed trades to analyze.")
             return
         
-        logger.info(f"Starting forecast-centric analysis on {len(completed_trades)} trades...")
+        logger.debug(f"Starting forecast-centric analysis on {len(completed_trades)} trades...")
         
         # Step 1: Extract forecast records from trades
         forecast_records = self._extract_forecasts(completed_trades)
@@ -46,7 +49,7 @@ class ForecastAnalyzer:
             return
         
         df_forecasts = pd.DataFrame(forecast_records)
-        logger.info(f"✓ Extracted {len(df_forecasts)} forecast decision points")
+        logger.debug(f"✓ Extracted {len(df_forecasts)} forecast decision points")
         
         # Step 2: Calculate metrics
         metrics_tables = self._calculate_metrics(df_forecasts)
@@ -54,7 +57,7 @@ class ForecastAnalyzer:
         # Step 3: Export to Excel
         self._export_excel(df_forecasts, metrics_tables)
         
-        logger.info(f"✓ Forecast analysis exported to {self.output_path}")
+        logger.debug(f"✓ Forecast analysis exported to {self.output_path}")
         
     def _extract_forecasts(self, trades: List['CompletedTrade']) -> List[Dict]:
         """
@@ -309,4 +312,4 @@ class ForecastAnalyzer:
             ws.freeze_panes = 'A2'
         
         wb.save(filepath)
-        logger.info(f"✓ Excel formatting applied")
+        logger.debug(f"✓ Excel formatting applied")

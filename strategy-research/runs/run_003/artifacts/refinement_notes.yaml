@@ -1,0 +1,93 @@
+hypothesis_id: HYP-run003-001
+run_id: run_003
+stage: refinement
+refinement_attempt: 0
+
+blocker_responses:
+
+  - id: BLOCK-01
+    severity: critical
+    issue: "Look-ahead contamination in VMD-A and VMD-B rolling normalization"
+    action: >
+      In backtest_specification.yaml, add explicit lag directives:
+      VMD-A: percentile(volume_roc_raw, 95, window=200) must use .shift(1) on the
+      rolling series before min() application.
+      VMD-B: zscore(ROC, window=200) must use .shift(1) on the rolling window
+      before computing the z-score ratio.
+      Annotate both as: lag_enforced: true, implementation_allowed: false until
+      code reviewer confirms shift(1) is applied at the rolling stat step, not
+      at the signal output step.
+    status: requires_spec_update
+    implementation_allowed: false
+    verification_required: "Code reviewer must confirm .shift(1) precedes signal formula entry for both variants."
+
+  - id: BLOCK-02
+    severity: critical
+    issue: "10 variants tested simultaneously without pre-registration or family-wise error correction"
+    action: >
+      Designate VMD-B (z-score normalized) as the single pre-registered primary variant.
+      Rationale: addresses the most general failure mode (parameter sensitivity to vol
+      regime) with OHLCV-compliant, low-code-impact implementation.
+      All remaining variants are secondary. Apply Benjamini-Hochberg correction to
+      secondary variant p-values. Report corrected p-values alongside raw Sharpe.
+      Primary variant designation must appear in backtest_specification.yaml before
+      any backtest run is authorized. Corrected α per variant = 0.005 (Bonferroni
+      floor) or BH-adjusted q < 0.05.
+    status: requires_spec_update
+    implementation_allowed: false
+    primary_variant_designated: VMD-B-zscore
+    correction_method: "Benjamini-Hochberg for secondary variants; Bonferroni floor α=0.005"
+    verification_required: "Primary designation must be committed to backtest_specification.yaml before run authorization."
+
+  - id: BLOCK-03
+    severity: high
+    issue: "VMD-REV-01 mutual exclusion with base VMD RANGING fade undefined"
+    action: >
+      Exclude VMD-REV-01 from this backtest run entirely. Rationale: defining a
+      combined score or priority rule mid-refinement constitutes hypothesis redesign,
+      which is forbidden at this stage. VMD-REV-01 will be isolated in a dedicated
+      subsequent run (run_004 or later) with explicit mutual exclusion logic
+      pre-specified before any backtest authorization.
+      Mark VMD-REV-01 status as: deferred_to_isolated_run.
+    status: resolved_by_exclusion
+    implementation_allowed: false
+    deferred_artifact: "VMD-REV-01 isolation spec to be written in a separate refinement cycle"
+    verification_required: "Confirm VMD-REV-01 is absent from backtest_specification.yaml variant list."
+
+  - id: BLOCK-04
+    severity: medium
+    issue: "VMD-CROSS-01 requires continuous probability scalar from regime classifier; API unverified"
+    action: >
+      Before including VMD-CROSS-01 in backtest_specification.yaml, perform a
+      targeted data audit: inspect regime classifier output interface and confirm
+      whether it emits a float probability scalar or a hard categorical label.
+      If hard-label only: drop VMD-CROSS-01 from this run; substitute VMD-D
+      (regime confirmation buffer) as documented fallback.
+      If probability scalar confirmed: include VMD-CROSS-01 as secondary variant
+      with BH correction applied.
+      Do not assume interface; do not write VMD-CROSS-01 into spec until audit
+      result is recorded.
+    status: requires_data_audit
+    implementation_allowed: false
+    audit_target: "Regime classifier output API — float probability vs. hard label"
+    fallback_variant: VMD-D-transition-buffer
+    verification_required: "Audit result must be recorded in backtest_specification.yaml before VMD-CROSS-01 inclusion decision."
+
+decision:
+  outcome: proceed_to_backtest_specification
+  conditions_met: false
+  unresolved_blockers:
+    - BLOCK-01  # awaiting spec update with lag directives
+    - BLOCK-02  # awaiting primary variant commitment in spec
+    - BLOCK-04  # awaiting classifier API audit
+  resolved_blockers:
+    - BLOCK-03  # resolved by VMD-REV-01 exclusion
+  proceed_conditions_remaining:
+    - "BLOCK-01: Add shift(1) lag spec to backtest_specification.yaml for VMD-A and VMD-B"
+    - "BLOCK-02: Commit VMD-B-zscore as primary variant in backtest_specification.yaml"
+    - "BLOCK-04: Complete classifier API audit; record result; select VMD-CROSS-01 or VMD-D accordingly"
+  next_stage: backtest_specification
+  note: >
+    No backtest run is authorized until all three remaining proceed conditions are
+    committed to backtest_specification.yaml and verified. Refinement scope is
+    limited to spec updates and the classifier audit. No strategy redesign performed.

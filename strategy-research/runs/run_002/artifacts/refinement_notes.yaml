@@ -1,0 +1,180 @@
+hypothesis_id: HYP-002-LIQ-REVERSAL
+stage: refinement
+refinement_attempt: 0
+primary_variant: V1-REGIME-GATED
+
+blocker_responses:
+
+  - issue_id: BLOCK-01
+    priority: critical
+    issue: >
+      Regime label causality is unverified. The Keltner regime detector may use
+      forward-looking windows (centered MAs, forward-filled smoothed EMAs) that
+      contaminate the regime gate at bar t with future bar data. If confirmed,
+      V1 and V2 are invalid and no backtest may run.
+    action: >
+      Perform a targeted code audit of the Keltner regime detector (locate the
+      component in the trading-bot codebase — expected path: trading-bot/ regime
+      or signal directory). Confirm each of the following:
+        (a) All rolling windows use only data from bar t and earlier (no centered
+            rolling windows, no forward-fill that drags future values to past rows).
+        (b) If a smoothed EMA or MA is applied to the regime label itself, verify
+            the smoothing kernel is strictly one-sided (lookback only).
+        (c) The regime label emitted at bar t is computed exclusively from OHLCV
+            data whose timestamp <= bar t close.
+      Document findings as a short audit note (pass/fail per sub-check) and store
+      result before writing the backtest specification. If lookahead is found,
+      the fix (shift regime series by +1 bar or replace centered window with
+      trailing window) must be applied and re-verified before proceeding.
+    implementation_allowed: false
+    rationale_for_flag: >
+      A code audit of an existing component is required. No backtest code may be
+      written or executed until the audit result is documented. If lookahead is
+      confirmed, a targeted single-line fix (index offset or window direction) is
+      permissible — but only after the audit finding is recorded.
+    status: UNRESOLVED
+    blocks_variants:
+      - V1-REGIME-GATED
+      - V2-REGIME-ADAPTIVE
+    resolution_artifact: audit_regime_causality.yaml
+
+  - issue_id: BLOCK-02
+    priority: critical
+    issue: >
+      FM-08 is unquantified. A spike bar's extreme price action may itself trigger
+      a TRENDING label in the Keltner detector at bar t, making V1's regime gate
+      structurally self-defeating. The misclassification rate on spike bars must
+      be measured before the detection rule is finalized.
+    action: >
+      After BLOCK-01 is resolved (regime code confirmed causal), run a lightweight
+      analysis on historical OHLCV data (IS period: 2020-01-01 to 2023-06-30):
+        Step 1 — Identify spike bars: body_pct > 2σ of rolling 20-bar body
+                 distribution AND volume > 2σ of rolling 20-bar volume distribution.
+        Step 2 — For each spike bar, log:
+                   - regime_label[t]   (label at spike bar)
+                   - regime_label[t-1] (label one bar prior)
+        Step 3 — Compute misclassification rate:
+                   pct of spike bars where regime_label[t] == TRENDING
+                   among bars where regime_label[t-1] == RANGING.
+        Decision rule (pre-committed):
+          If misclassification_rate > 30%:
+            V1 emission rule changes to use regime[t-1] instead of regime[t].
+            Document the change before writing backtest spec.
+          If misclassification_rate <= 30%:
+            V1 retains regime[t] gating. Document result and proceed.
+      Store spike event log and misclassification rate in analysis output artifact.
+    implementation_allowed: true
+    rationale_for_flag: >
+      This is a read-only exploratory analysis on historical data already expected
+      to be in the pipeline. No new data download is required; only existing OHLCV
+      and regime labels are needed. Analysis must complete before backtest spec
+      is written.
+    status: UNRESOLVED
+    prerequisite: BLOCK-01 must be resolved first (regime label must be confirmed causal before misclassification is meaningful)
+    blocks_variants:
+      - V1-REGIME-GATED
+      - V3-ASYMMETRIC-DIRECTION
+      - V5-WICK-REJECTION
+    resolution_artifact: spike_regime_misclassification_analysis.yaml
+
+  - issue_id: BLOCK-03
+    priority: high
+    issue: >
+      Variant testing sequence has not been formally committed. Testing multiple
+      variants without a pre-locked sequence is equivalent to running 7 experiments
+      and reporting the best result (FM-10, BR-05). The sequence must be recorded
+      as a binding protocol before any IS data is examined.
+    action: >
+      Transcribe and lock the following pre-committed testing sequence into the
+      backtest specification artifact before any backtest run is initiated:
+        Step 1: V1-REGIME-GATED
+          Gate: IS Sharpe > 0.5 AND IS signal_count >= 30. Must pass to proceed.
+        Step 2: V3-ASYMMETRIC-DIRECTION (enhancement of V1, not a replacement)
+          Gate: V1 passed IS screening.
+        Step 3: V5-WICK-REJECTION (independent detection; not additive to V1)
+          Gate: V1 passed IS screening.
+        Step 4: V4-OI-CONFIRMED
+          Gate: V1 passed IS screening AND BLOCK-04 resolved.
+        Step 5: V2-REGIME-ADAPTIVE (reverse-hypothesis leg tested independently)
+          Gate: V1 passed IS screening.
+        Step 6: V6-CASCADE-CONTINUATION and V7-CROSS-ASSET-FILTER (only if prior
+          variants show consistent IS/WF results and complexity budget is justified).
+      Explicit constraints:
+        - No parameter changes to V1 are permitted after IS results are observed.
+        - No secondary variant result may retroactively modify V1's threshold.
+        - Each gate evaluation must be documented before the next step begins.
+    implementation_allowed: true
+    rationale_for_flag: >
+      No code or data access required. This is a documentation and process-lock
+      action. It must be completed and referenced in the backtest specification
+      artifact header.
+    status: UNRESOLVED
+    blocks_variants:
+      - V2-REGIME-ADAPTIVE
+      - V3-ASYMMETRIC-DIRECTION
+      - V4-OI-CONFIRMED
+      - V5-WICK-REJECTION
+      - V6-CASCADE-CONTINUATION
+      - V7-CROSS-ASSET-FILTER
+    resolution_artifact: backtest_specification.yaml (sequence section)
+
+  - issue_id: BLOCK-04
+    priority: high
+    issue: >
+      OI timestamp semantics from Binance are unverified. Binance OI records may
+      carry an end-of-bar timestamp, meaning the value is technically known only
+      at bar t+1 open in live trading. Using delta_OI[t] without a +1 bar shift
+      introduces lookahead in V4. This must be resolved before V4 enters any
+      backtest.
+    action: >
+      Download a sample of Binance Futures OI data via the openInterestHist
+      endpoint (free API, 1h granularity). Inspect raw timestamps:
+        (a) Determine whether each OI record timestamp represents bar open or
+            bar close of the associated 1h candle.
+        (b) If timestamp = bar close: the value is available at bar close, but
+            in live trading it arrives only after bar t closes (same as candle
+            close data). Shift delta_OI series by +1 bar before merging with
+            price data to ensure live-trading fidelity.
+        (c) If timestamp = bar open: the value reflects OI at the start of the
+            bar — no shift needed, but delta_OI(t) = OI[t] - OI[t-1] uses OI
+            available at bar t open, which may be reasonable.
+      Document the exact timestamp interpretation and the bar offset decision.
+      Write the merge logic specification (offset value, join key) before any
+      V4 backtest code is drafted.
+    implementation_allowed: false
+    rationale_for_flag: >
+      Requires downloading and physically inspecting a sample of external API
+      data. This is a data audit task. No V4 backtest code may be written until
+      the timestamp interpretation is documented and the merge offset is committed.
+    status: UNRESOLVED
+    blocks_variants:
+      - V4-OI-CONFIRMED
+    resolution_artifact: oi_timestamp_audit.yaml
+
+decision:
+  status: refine
+  implementation_allowed: false
+  rationale: >
+    No backtest may be executed until BLOCK-01 and BLOCK-02 are resolved in
+    sequence. BLOCK-01 (regime causality audit) is a binary prerequisite —
+    its result determines whether BLOCK-02's misclassification analysis is
+    meaningful. BLOCK-03 (sequence lock) must be completed before any IS data
+    is touched. BLOCK-04 (OI timestamp) is V4-scoped and does not block V1
+    screening but must be resolved before V4 is drafted.
+  resolution_order:
+    - BLOCK-01  # audit first; if lookahead found, fix before any analysis
+    - BLOCK-02  # depends on BLOCK-01 result
+    - BLOCK-03  # can proceed in parallel with BLOCK-01/02; locks testing protocol
+    - BLOCK-04  # V4-scoped; unblocks in parallel with V1 screening after BLOCK-01 resolves
+  scope_constraint: >
+    This refinement plan addresses only the four blockers identified in
+    validation_decision.yaml. No strategy redesign, no new variants, and no
+    parameter changes are authorized. The strategy architecture (V1 minimum
+    viable design, regime-gated emission, existing pipeline integration) is
+    unchanged.
+  next_stage: backtest_specification
+  next_stage_condition: >
+    All four blockers resolved and documented. Backtest specification artifact
+    must reference the BLOCK-01 audit result, the BLOCK-02 misclassification
+    finding (and any resulting detection rule adjustment), and the locked variant
+    testing sequence before any IS backtest execution is permitted.

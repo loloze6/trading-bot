@@ -1,0 +1,64 @@
+hypothesis_id: H-0001
+stage: refinement
+
+blocker_responses:
+
+  - issue: historical_liquidation_data_availability
+    action: >
+      Conduct a data audit before any backtest work begins. Check whether
+      the existing data pipeline has archived Binance liquidation tick data
+      locally. If not, query the Binance Futures REST endpoint
+      GET /fapi/v1/allForceOrders with pagination to reconstruct per-bar
+      (1h) cumulative liquidation volume (long and short separately) for
+      BTCUSDT and ETHUSDT from 2020-01-01 onward. Document the earliest
+      available date, any gaps in coverage, and the total qualifying event
+      count per market per direction at the pre-committed threshold.
+      If the endpoint does not provide sufficient history (Binance retains
+      approximately 30 days of force order history via REST), identify a
+      verified third-party archive (e.g., CoinGlass public export or a
+      community dataset with documented provenance) and record the source
+      and its known limitations. If no data covering at minimum 2020-2022
+      can be sourced, escalate to reject: the hypothesis cannot be tested
+      and further work is not justified.
+    status: proposed
+
+  - issue: threshold_must_be_pre_committed
+    action: >
+      Pre-commit the threshold selection rule as follows, before any return
+      analysis is run: the qualifying liquidation event threshold is defined
+      as the 95th percentile of per-bar cumulative liquidation volume
+      (per direction) computed over a rolling 90-bar (90h) lookback window,
+      evaluated at bar close T and applied to signal bar T+1. This rule is
+      computable from data available at bar T with no lookahead. It is fixed
+      for all variants (H-0001-A, H-0001-B, H-0001-C, H-0001-R). The only
+      permitted parameter to vary across variants is whether the modifier is
+      applied unconditionally (H-0001-A), regime-gated (H-0001-B), or
+      z-score scaled (H-0001-C). The threshold percentile itself (95th) is
+      not a tuning parameter and must not be changed after any backtest
+      result is observed.
+    status: proposed
+
+  - issue: bar_close_execution_latency
+    action: >
+      Fix the assumed entry bar as bar T+2 open (i.e., the signal is
+      computed from bar T close liquidation data, the forecast is updated
+      at bar T+1 open, and the order is submitted for execution at bar T+2
+      open). This adds one full bar of conservatism beyond the minimum
+      (T+1) to account for realistic bar-close processing and order routing
+      latency. Verify that the existing simulate command supports a
+      configurable signal_lag parameter or equivalent; if not, document
+      this as a prerequisite for the backtest specification stage. Do not
+      model T+1 entry in the backtest unless confirmed that live execution
+      can reliably achieve it.
+    status: proposed
+
+decision:
+  next_step: >
+    Execute the data audit for historical_liquidation_data_availability.
+    All three blocker responses are proposed actions, not yet executed.
+    Implementation of the strategy modifier is not allowed until the data
+    audit confirms sufficient historical coverage and the event count
+    requirement (>=100 per market per direction) is verified. Once the
+    audit is complete, proceed to the backtest specification stage with the
+    pre-committed threshold and entry-lag assumptions documented here.
+  implementation_allowed: false

@@ -1,0 +1,53 @@
+hypothesis_id: H-0001
+thesis: >
+  When a large liquidation cascade occurs on a crypto perpetual (BTC or ETH),
+  price temporarily overshoots in the direction of the liquidation pressure.
+  The resulting imbalance in order flow creates a short-term mean-reversion
+  opportunity: entering against the liquidation direction within a defined
+  window produces positive expected returns on a 1h timeframe.
+
+rationale: >
+  Liquidation cascades force involuntary market orders that exhaust available
+  liquidity and push price beyond fundamental equilibrium. Once the cascade
+  exhausts itself, the structural imbalance reverses as market makers and
+  discretionary participants absorb the overshoot. This mechanism is
+  observable on 1h candles for large-cap perpetuals (BTC, ETH) where
+  liquidation volume is publicly available via exchange APIs at no cost.
+
+signal_concept: >
+  Use the cumulative liquidation volume (long or short) in the current or
+  prior 1h bar as a proxy for cascade magnitude. Define a threshold above
+  which the bar qualifies as a liquidation event. After a long-liquidation
+  event (forced sellers), bias the forecast positive (reversal). After a
+  short-liquidation event (forced buyers), bias the forecast negative.
+  Implement as a forecast modifier component that adjusts the existing
+  ER-based score before allocation, requiring no change to the rebalance or
+  allocation layer.
+
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+
+timeframe: 1h
+
+assumptions:
+  - Liquidation volume data is available in the existing data pipeline or can
+    be sourced from Binance public endpoints without cost.
+  - Large liquidation events (above the threshold) are rare enough that the
+    signal is non-trivial and not permanently in the market.
+  - The reversal effect is strongest within the same or next 1h bar,
+    justifying a short holding window consistent with the existing framework.
+  - The existing regime detection (TRENDING / RANGING) is not adversely
+    disrupted by layering a liquidation modifier; the modifier is additive
+    to the ER forecast, not a replacement.
+
+expected_failure_modes:
+  - Continuation bias: in strong trending markets, liquidation cascades may
+    be continuation signals rather than reversals, causing the modifier to
+    fight the trend and lose.
+  - Data sparsity: if liquidation events above the threshold are too rare,
+    the modifier has near-zero effect and adds complexity for no gain.
+  - Lookahead leakage: if intrabar liquidation data is used before bar close,
+    results will be inflated in backtest but unreproducible live.
+  - Threshold sensitivity: the signal may only work in a narrow parameter
+    range, indicating overfitting rather than a robust edge.

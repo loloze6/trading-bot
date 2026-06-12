@@ -1,0 +1,129 @@
+base_hypothesis_id: H-0001
+
+expanded_variants:
+
+  - variant_id: H-0001-A
+    name: Conservative Reversal Modifier (Base Variant)
+    description: >
+      Identical to H-0001. Apply a fixed additive boost to the ER forecast
+      when cumulative liquidation volume in the closed 1h bar exceeds a static
+      threshold. Long-liquidation event → positive modifier. Short-liquidation
+      event → negative modifier. No regime gating.
+    novelty: low
+    testability: high
+    integration_effort: minimal
+    conservative: true
+
+  - variant_id: H-0001-B
+    name: Regime-Gated Reversal
+    description: >
+      Apply the liquidation reversal modifier only when the regime detector
+      labels the current bar as RANGING. In TRENDING regimes, suppress or
+      invert the modifier to a continuation signal. Rationale: cascades in
+      trending markets often accelerate rather than reverse.
+    novelty: medium
+    testability: high
+    integration_effort: minimal
+    conservative: false
+
+  - variant_id: H-0001-C
+    name: Cascade Magnitude Scaling
+    description: >
+      Instead of a binary threshold, scale the modifier continuously as a
+      function of liquidation volume z-score over a rolling 30-bar window.
+      Larger cascades produce stronger modifier signals; sub-threshold events
+      produce near-zero adjustment. Prevents cliff-edge sensitivity.
+    novelty: medium
+    testability: high
+    integration_effort: low
+    conservative: false
+
+alternative_data_candidates:
+  - source: Binance liquidation stream
+    endpoint: wss://fstream.binance.com/ws/!forceOrder@arr
+    cost: free
+    availability: live_only
+    historical_availability: archive_required
+    use: liquidation_event_signal
+
+  - source: Binance open interest
+    endpoint: https://fapi.binance.com/fapi/v1/openInterest
+    cost: free
+    availability: live_and_historical
+    historical_availability: public_api
+    use: crowding_confirmation
+
+  - source: Binance funding rate history
+    endpoint: https://fapi.binance.com/fapi/v1/fundingRate
+    cost: free
+    availability: live_and_historical
+    historical_availability: public_api
+    use: positioning_context
+
+reverse_hypothesis:
+  hypothesis_id: H-0001-R
+  thesis: >
+    Liquidation cascades in strongly trending crypto markets are continuation
+    signals, not reversal signals. A large liquidation flush in the direction
+    of trend clears weak hands and accelerates the move. Entering in the
+    direction of the cascade (not against it) in TRENDING regime produces
+    positive expected returns.
+  signal_concept: >
+    Mirror the base signal: in TRENDING regime, apply a positive modifier
+    to the ER forecast when liquidation direction aligns with the detected
+    trend direction. Suppress the modifier or apply zero when in RANGING.
+  testability: high
+  integration_effort: minimal
+  rationale: >
+    This is the natural complement to H-0001-B. If regime-gating shows that
+    the reversal edge is RANGING-only, the TRENDING-continuation variant
+    should be tested as the counterpart to avoid leaving alpha on the table.
+
+behavioral_features:
+
+  - feature: liquidation_volume_ratio
+    description: >
+      Ratio of long-liquidation volume to short-liquidation volume over the
+      prior N bars. Extreme ratios signal one-sided crowding and increase
+      reversal probability.
+    proxy_for: crowd positioning imbalance
+    data_required: per-side cumulative liquidation volume
+
+  - feature: cascade_cluster_flag
+    description: >
+      Binary flag: 1 if two or more consecutive 1h bars each exceed the
+      liquidation threshold. Consecutive cascades often indicate systemic
+      deleveraging rather than a single flush, dampening the reversal edge.
+    proxy_for: deleveraging vs single-event distinction
+    data_required: liquidation volume per bar
+
+  - feature: oi_liquidation_divergence
+    description: >
+      Measure whether open interest drops in proportion to the liquidation
+      volume. Large OI drop + large liquidation = genuine unwinding (reversal
+      likely). Stable OI + large liquidation = possible wash trades or
+      localized event (reversal less reliable).
+    proxy_for: structural vs noise event classification
+    data_required: open interest per bar, liquidation volume per bar
+
+regime_specific_variants:
+
+  - regime: RANGING
+    recommended_variant: H-0001-A or H-0001-C
+    rationale: >
+      Mean reversion is the dominant mechanism in RANGING regime. Liquidation
+      cascade reversal aligns with the existing regime logic and is most
+      likely to reinforce correct ER signals.
+
+  - regime: TRENDING
+    recommended_variant: H-0001-R (reverse hypothesis)
+    rationale: >
+      In TRENDING regime, applying the reversal modifier fights the trend.
+      Switch to the continuation variant or zero out the modifier entirely
+      until regime-gated testing confirms which is better.
+
+  - regime: TRANSITION (unknown/boundary)
+    recommended_variant: suppress modifier
+    rationale: >
+      Regime transitions have high misclassification risk. Applying any
+      liquidation modifier during regime uncertainty adds noise without edge.

@@ -1,0 +1,40 @@
+```yaml
+hypothesis_id: HG-BTCUSDT-1h-001
+thesis: >
+  A mean-reversion strategy that buys dips during periods of high selling volume and
+  sells rips during periods of high buying volume will be profitable on BTCUSDT
+  on a 1-hour timeframe.
+rationale: >
+  High volume spikes can indicate capitulation or exhaustion. Buying after a high
+  selling volume spike (indicating potential capitulation) and selling after a high
+  buying volume spike (indicating potential exhaustion) can capture short-term
+  reversals. This is expected to be robust across regimes as it relies on
+  fundamental market dynamics of supply and demand rather than directional trends.
+signal_concept: >
+  Long Entry: When the current 1-hour candle closes with a significant increase in
+  volume (e.g., > 2 standard deviations above the 20-period moving average of volume)
+  and the price has decreased (close < open).
+  Short Entry: When the current 1-hour candle closes with a significant increase in
+  volume (e.g., > 2 standard deviations above the 20-period moving average of volume)
+  and the price has increased (close > open).
+  Exit: A fixed take-profit of 0.5% and a fixed stop-loss of 1% for both long and
+  short positions.
+target_market: BTCUSDT
+timeframe: 1h
+assumptions:
+  - Volume spikes are indicative of significant market participant activity leading to
+    reversals.
+  - The chosen exit parameters (0.5% TP, 1% SL) are appropriate for capturing mean-reversion
+    opportunities without excessive risk.
+  - Standard OHLCV data is sufficient to identify these volume-confirmed anomalies.
+  - The existing backtest framework can accurately simulate this strategy.
+expected_failure_modes:
+  - The strategy may fail in strongly trending markets where high volume confirms the
+    trend rather than signaling exhaustion.
+  - Transaction costs (fees and slippage) may erode profitability, especially with frequent
+    trades.
+  - The definition of "significant increase in volume" may require further tuning to avoid
+    false signals.
+  - The fixed take-profit and stop-loss levels may not be optimal across different volatility
+    regimes.
+```

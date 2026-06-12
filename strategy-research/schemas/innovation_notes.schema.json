@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Innovation Notes",
+  "type": "object",
+  "required": [
+    "run_id",
+    "stage",
+    "base_hypothesis_id",
+    "summary",
+    "key_insight",
+    "recommended_test_order",
+    "risks_identified",
+    "variants_not_pursued",
+    "integration_notes"
+  ],
+  "properties": {
+    "run_id": { "type": "string" },
+    "stage": { "type": "string" },
+    "base_hypothesis_id": { "type": "string" },
+    "summary": { "type": "string" },
+    "key_insight": { "type": "string" },
+    "recommended_test_order": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "risks_identified": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["risk", "detail"],
+        "properties": {
+          "risk": { "type": "string" },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "variants_not_pursued": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["idea", "reason"],
+        "properties": {
+          "idea": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "integration_notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

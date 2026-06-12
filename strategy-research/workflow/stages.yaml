@@ -1,0 +1,39 @@
+version: 1
+
+stages:
+  research_brief:
+    outputs:
+      - runs/{run_id}/artifacts/research_brief.yaml
+    next:
+      - hypothesis
+
+  hypothesis:
+    skill: skills/hypothesis-generation/SKILL.md
+    required_inputs:
+      - runs/{run_id}/artifacts/research_brief.yaml
+    outputs:
+      - runs/{run_id}/artifacts/hypothesis_card.yaml
+    next:
+      - innovation_expansion
+
+  innovation_expansion:
+    skill: skills/innovation-expansion/SKILL.md
+    required_inputs:
+      - runs/{run_id}/artifacts/research_brief.yaml
+      - runs/{run_id}/artifacts/hypothesis_card.yaml
+    outputs:
+      - runs/{run_id}/artifacts/expanded_hypothesis_card.yaml
+      - runs/{run_id}/artifacts/innovation_notes.yaml
+    next:
+      - validation
+
+  validation:
+    skill: skills/validation/SKILL.md
+    required_inputs:
+      - runs/{run_id}/artifacts/research_brief.yaml
+      - runs/{run_id}/artifacts/expanded_hypothesis_card.yaml
+      - runs/{run_id}/artifacts/innovation_notes.yaml
+    outputs:
+      - runs/{run_id}/artifacts/validation_protocol.yaml
+      - runs/{run_id}/artifacts/validation_decision.yaml
+    next: []

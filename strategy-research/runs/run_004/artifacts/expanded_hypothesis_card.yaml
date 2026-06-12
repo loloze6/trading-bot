@@ -1,0 +1,163 @@
+base_hypothesis_id: HG_BTCUSDT_1h_001
+expanded_variants:
+  - variant_id: HG_BTCUSDT_1h_001_V1
+    thesis: >
+      A mean-reversion strategy that enters short on significant price increases
+      accompanied by above-average volume, and enters long on significant price
+      decreases accompanied by above-average volume, will be profitable. This variant
+      uses a fixed threshold for volume confirmation (e.g., current volume > 1.5 * 20-period
+      average volume) and a fixed lookback for price change (e.g., 3 hours).
+    rationale: >
+      This is a more conservative implementation of the base hypothesis, using fixed,
+      pre-defined thresholds for volume and price change. This reduces the parameter
+      search space and aims for robustness by avoiding overfitting to specific parameter
+      values. It directly addresses the "overfitting to recent price action" constraint.
+    signal_concept: >
+      Enter short when (Price_Change_3h > X%) AND (Current_Volume > Average_Volume_20h * 1.5).
+      Enter long when (Price_Change_3h < -X%) AND (Current_Volume > Average_Volume_20h * 1.5).
+      Where X is a parameter to be optimized.
+    assumptions:
+      - The fixed volume multiplier and lookback period are sufficient to identify
+        meaningful volume confirmation.
+      - The chosen parameter X can be optimized robustly.
+  - variant_id: HG_BTCUSDT_1h_001_V2
+    thesis: >
+      A mean-reversion strategy that enters short on significant price increases
+      on high volume, and enters long on significant price decreases on high volume,
+      will be profitable. This variant incorporates a regime-detection filter,
+      only taking short entries during identified trending regimes and long entries
+      during identified ranging regimes.
+    rationale: >
+      This variant explicitly addresses the research goal of maintaining statistical
+      significance across different market regimes. By tailoring entry conditions
+      to the detected regime, it aims to avoid taking mean-reversion trades against
+      strong trends or taking trend-following trades in choppy markets.
+    signal_concept: >
+      IF regime == TRENDING: Enter short when (Price_Change > X% AND Volume_Change > Y%) AND (Current_Volume > Average_Volume * Z).
+      IF regime == RANGING: Enter long when (Price_Change < -X% AND Volume_Change < -Y%) AND (Current_Volume > Average_Volume * Z).
+      Where X, Y, and Z are parameters to be optimized.
+    assumptions:
+      - The existing regime detection mechanism is accurate and reliable.
+      - The mean-reversion signal is more pronounced or reliable in ranging markets
+        for longs, and trend confirmation is more reliable for shorts in trending markets.
+  - variant_id: HG_BTCUSDT_1h_001_V3
+    thesis: >
+      A momentum strategy that enters long when BTCUSDT exhibits a significant
+      price increase on high volume, and enters short when BTCUSDT exhibits a
+      significant price decrease on high volume, will be profitable. This variant
+      reverses the base hypothesis's mean-reversion assumption.
+    rationale: >
+      This variant directly tests the "high volume spikes do not consistently precede
+      reversals, but rather confirm momentum" expected failure mode. It explores
+      whether the volume confirmation actually signals continuation rather than reversal.
+    signal_concept: >
+      Enter long when (Price_Change > X% AND Volume_Change > Y%) AND (Current_Volume > Average_Volume * Z).
+      Enter short when (Price_Change < -X% AND Volume_Change < -Y%) AND (Current_Volume > Average_Volume * Z).
+      Where X, Y, and Z are parameters to be optimized.
+    assumptions:
+      - High volume accompanying significant price moves indicates strong conviction
+        and continuation of the move.
+      - The market exhibits momentum that can be captured with volume confirmation.
+alternative_data_candidates:
+  - data_source: Order Book Depth / Imbalance
+    description: >
+      Analyze order book depth and imbalance around significant price moves.
+      High volume spikes accompanied by a significant shift in order book
+      imbalance (e.g., increasing sell-side pressure during a price rise)
+      could indicate a stronger reversal signal than volume alone.
+    relevance: >
+      Provides micro-structure information that can refine the interpretation
+      of volume-driven price moves, potentially distinguishing between genuine
+      overextension and strong trend confirmation.
+  - data_source: Social Media Sentiment (e.g., Twitter)
+    description: >
+      Monitor social media sentiment related to BTCUSDT. A significant price
+      move on high volume accompanied by extreme positive sentiment (for a
+      price rise) or extreme negative sentiment (for a price fall) might
+      indicate a climax and potential reversal.
+    relevance: >
+      Captures crowd psychology, which can be a driver of exaggerated moves
+      in crypto. Extreme sentiment often correlates with local tops/bottoms.
+  - data_source: Futures Funding Rates
+    description: >
+      Analyze futures funding rates. High funding rates (positive or negative)
+      can indicate leveraged positions that are more susceptible to liquidation
+      and reversal when price moves against them, especially if accompanied by
+      high spot volume.
+    relevance: >
+      Provides insight into leveraged market positioning, which can amplify
+      price movements and increase the probability of reversals.
+reverse_hypothesis:
+  hypothesis_id: HG_BTCUSDT_1h_001_RH
+  thesis: >
+    A strategy that enters long when BTCUSDT exhibits a significant price decrease
+    on high volume, and enters short when BTCUSDT exhibits a significant price
+    increase on high volume, will be profitable. This is the inverse of the base
+    hypothesis, assuming that high volume moves are actually trend continuations.
+  rationale: >
+    This directly tests the opposite of the base hypothesis. If the market is trending
+    and high volume confirms momentum, then entering against the move (as in the
+    base hypothesis) would lose money, while entering with the move would profit.
+  signal_concept: >
+    Enter long when (Price_Change < -X% AND Volume_Change < -Y%) AND (Current_Volume > Average_Volume * Z).
+    Enter short when (Price_Change > X% AND Volume_Change > Y%) AND (Current_Volume > Average_Volume * Z).
+    Where X, Y, and Z are parameters to be optimized.
+behavioral_features:
+  - feature_name: Volume Spike Magnitude
+    description: >
+      Quantify the magnitude of the volume spike relative to its recent average
+      (e.g., Current_Volume / Average_Volume_20h). Higher magnitudes might indicate
+      stronger conviction or panic.
+    relevance: >
+      Allows for non-linear relationships between volume and price action. Extreme
+      volume spikes might have different predictive power than moderate ones.
+  - feature_name: Price Change Velocity
+    description: >
+      Measure the rate of price change within the lookback period (e.g.,
+      (Price_t - Price_t-1) / Price_t-1 for each hour within the lookback).
+      A rapid, consistent velocity might indicate strong momentum, while a
+      choppy velocity might indicate indecision.
+    relevance: >
+      Distinguishes between a sharp, single-hour move and a sustained move over
+      several hours, providing more nuance to the "significant price increase/decrease."
+  - feature_name: Relative Strength Index (RSI) at Signal
+    description: >
+      Calculate RSI over a short period (e.g., 3-5 hours) at the time of the
+      potential signal. Extreme RSI values (e.g., > 70 or < 30) could confirm
+      overextension for mean-reversion or signal exhaustion for momentum.
+    relevance: >
+      Adds a momentum oscillator to confirm or contradict the price/volume signal,
+      potentially improving signal quality and distinguishing between reversal and
+      continuation.
+regime_specific_variants:
+  - variant_id: HG_BTCUSDT_1h_001_TRENDING
+    thesis: >
+      A momentum strategy that enters long on significant price increases on high
+      volume, and enters short on significant price decreases on high volume, will
+      be profitable specifically during trending market regimes.
+    rationale: >
+      This variant focuses on the expected failure mode of the base hypothesis in
+      trending markets. It hypothesizes that high volume confirms momentum in trends,
+      and thus a trend-following approach would be profitable.
+    signal_concept: >
+      IF regime == TRENDING: Enter long when (Price_Change > X% AND Volume_Change > Y%) AND (Current_Volume > Average_Volume * Z).
+      IF regime == TRENDING: Enter short when (Price_Change < -X% AND Volume_Change < -Y%) AND (Current_Volume > Average_Volume * Z).
+      Where X, Y, and Z are parameters to be optimized.
+    assumptions:
+      - The existing regime detection correctly identifies trending periods.
+      - High volume during trends confirms momentum.
+  - variant_id: HG_BTCUSDT_1h_001_RANGING
+    thesis: >
+      A mean-reversion strategy that enters short on significant price increases
+      on high volume, and enters long on significant price decreases on high volume,
+      will be profitable specifically during ranging market regimes.
+    rationale: >
+      This variant focuses on the core assumption of the base hypothesis, hypothesizing
+      that mean reversion is more pronounced and exploitable during ranging periods.
+    signal_concept: >
+      IF regime == RANGING: Enter short when (Price_Change > X% AND Volume_Change > Y%) AND (Current_Volume > Average_Volume * Z).
+      IF regime == RANGING: Enter long when (Price_Change < -X% AND Volume_Change < -Y%) AND (Current_Volume > Average_Volume * Z).
+      Where X, Y, and Z are parameters to be optimized.
+    assumptions:
+      - The existing regime detection correctly identifies ranging periods.
+      - Mean reversion is more reliable in ranging markets.

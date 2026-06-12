@@ -1,0 +1,291 @@
+base_hypothesis_id: HYP-run003-001
+run_id: run_003
+refinement_attempt: 1
+
+refinement_fixes_applied:
+  BLOCK-01:
+    status: resolved_in_spec
+    resolution: >
+      VMD-A and VMD-B both carry lag_enforced: true. .shift(1) directive
+      applied on the rolling stat computation (percentile/zscore window),
+      not at signal output. implementation_allowed: false until code
+      reviewer confirms placement.
+  BLOCK-02:
+    status: resolved_in_spec
+    resolution: >
+      VMD-B-zscore designated primary pre-registered variant. All secondary
+      variants carry correction_required: true with Benjamini-Hochberg
+      (q < 0.05) or Bonferroni floor α = 0.005.
+  BLOCK-03:
+    status: resolved_by_exclusion
+    resolution: VMD-REV-01 absent from all variant lists. Deferred to run_004.
+  BLOCK-04:
+    status: pending_audit
+    resolution: >
+      VMD-CROSS-01 excluded pending classifier API audit. VMD-D included
+      as designated fallback. Inclusion decision deferred to
+      backtest_specification.yaml audit section.
+
+primary_variant:
+  id: VMD-B-zscore
+  pre_registered: true
+  description: >
+    Z-score normalized VMD. Normalizes price_roc and volume_roc via rolling
+    z-score (window=200, shift(1) on rolling stat) before computing
+    divergence_score. Addresses parameter sensitivity to vol-regime shifts.
+  signal_formula:
+    price_z: "zscore(ROC(close, N), window=200).shift(1)"
+    volume_z: "zscore(ROC(volume, N), window=200).shift(1)"
+    divergence_score: "price_z * sign(volume_z)"
+  lag_enforced: true
+  shift_location: "rolling window stat before formula entry, not at signal output"
+  regime_routing:
+    TRENDING:
+      long: "price_z > z_thresh AND volume_z > vol_z_thresh"
+      short: "price_z < -z_thresh AND volume_z > vol_z_thresh"
+    RANGING:
+      fade: "divergence_score < -div_z_thresh"
+  parameters:
+    N: [8, 12, 16, 20]
+    z_thresh: [0.5, 1.0, 1.5]
+    vol_z_thresh: [0.3, 0.7, 1.0]
+    div_z_thresh: [0.5, 1.0]
+  correction_required: false
+  implementation_allowed: false
+  verification_required: >
+    Code reviewer must confirm .shift(1) precedes signal formula for
+    both rolling zscore series.
+
+expanded_variants:
+
+  - id: VMD-A-percentile-cap
+    role: secondary
+    description: >
+      Caps volume_roc at rolling 95th percentile (window=200, shift(1) on
+      rolling stat) before divergence_score. Targets liquidation-cascade
+      false signals. BLOCK-01 lag fix applied.
+    signal_formula:
+      volume_roc_raw: "ROC(volume, N)"
+      cap: "percentile(volume_roc_raw, 95, window=200).shift(1)"
+      volume_roc_cap: "min(volume_roc_raw, cap)"
+      price_roc: "ROC(close, N)"
+      divergence_score: "price_roc * sign(volume_roc_cap)"
+    lag_enforced: true
+    shift_location: "rolling percentile series before min() application"
+    regime_routing:
+      TRENDING:
+        long: "price_roc > p_thresh AND volume_roc_cap > v_thresh"
+        short: "price_roc < -p_thresh AND volume_roc_cap > v_thresh"
+      RANGING:
+        fade: "divergence_score < -d_thresh"
+    parameters:
+      N: [8, 12, 16, 20]
+      cap_percentile: [90, 95, 99]
+      p_thresh: [0.005, 0.01, 0.02]
+      v_thresh: [0.0, 0.01]
+      d_thresh: [0.01, 0.02]
+    correction_required: true
+    correction_method: "Benjamini-Hochberg q < 0.05; Bonferroni floor α=0.005"
+    implementation_allowed: false
+    verification_required: >
+      Code reviewer must confirm .shift(1) on percentile rolling series
+      precedes min() application.
+
+  - id: VMD-C-conservative
+    role: secondary
+    description: >
+      Raw ROC VMD with fixed thresholds and no rolling normalization.
+      Inherent ROC lag is the only look-ahead surface. Lowest
+      implementation risk; minimal parameter surface.
+    signal_formula:
+      price_roc: "ROC(close, N)"
+      volume_roc: "ROC(volume, N)"
+      divergence_score: "price_roc * sign(volume_roc)"
+    lag_enforced: true
+    shift_location: "inherent N-bar ROC lag only; no rolling stat required"
+    regime_routing:
+      TRENDING:
+        long: "price_roc > p_thresh AND volume_roc > v_thresh"
+        short: "price_roc < -p_thresh AND volume_roc > v_thresh"
+      RANGING:
+        fade: "divergence_score < -d_thresh"
+    parameters:
+      N: [8, 12, 16, 20]
+      p_thresh: [0.005, 0.01, 0.02]
+      v_thresh: [0.0, 0.01, 0.02]
+      d_thresh: [0.01, 0.02]
+    correction_required: true
+    correction_method: "Benjamini-Hochberg q < 0.05; Bonferroni floor α=0.005"
+    implementation_allowed: true
+    notes: "No rolling normalization eliminates BLOCK-01 concern entirely."
+
+  - id: VMD-D-transition-buffer
+    role: secondary
+    description: >
+      K-bar regime confirmation gate. Delays VMD routing switch until regime
+      label is stable for K consecutive bars. Targets regime-transition-lag
+      failure mode. Designated VMD-CROSS-01 fallback (BLOCK-04).
+    signal_formula:
+      regime_confirmed: "current_regime if stable for K consecutive bars else NEUTRAL"
+      divergence_score: "price_roc * sign(volume_roc)"
+      routed_signal: "divergence_score if regime_confirmed != NEUTRAL else 0.0"
+    lag_enforced: true
+    shift_location: "regime_confirmed uses only historical label lookback"
+    parameters:
+      K_bars: [2, 3, 5]
+      N: [8, 12, 16, 20]
+      p_thresh: [0.005, 0.01]
+      v_thresh: [0.0, 0.01]
+    correction_required: true
+    correction_method: "Benjamini-Hochberg q < 0.05; Bonferroni floor α=0.005"
+    implementation_allowed: true
+    vmx_cross01_relationship: >
+      Active as fallback if classifier API audit confirms hard label only.
+      Superseded by VMD-CROSS-01 if float probability confirmed.
+
+  - id: VMD-E-session-filter
+    role: secondary
+    description: >
+      Suppresses VMD signal during Asian low-volume hours (00:00–07:00 UTC).
+      Uses VMD-C base formula; adds hour-of-day gate. Targets thin-session
+      noise failure mode.
+    signal_formula:
+      active_session: "utc_hour NOT IN [0,1,2,3,4,5,6]"
+      signal: "VMD-C divergence_score if active_session else 0.0"
+    lag_enforced: true
+    shift_location: "time filter is contemporaneous; no rolling stat"
+    parameters:
+      session_cutoff_utc: ["07:00", "08:00"]
+      N: [8, 12]
+      p_thresh: [0.005, 0.01]
+      v_thresh: [0.0, 0.01]
+    correction_required: true
+    correction_method: "Benjamini-Hochberg q < 0.05; Bonferroni floor α=0.005"
+    implementation_allowed: true
+    notes: "Built on VMD-C; session gate is the only addition."
+
+excluded_variants:
+  - id: VMD-REV-01
+    reason: "BLOCK-03: mutual exclusion with base RANGING fade undefined; redesign forbidden."
+    deferred_to: run_004
+
+  - id: VMD-CROSS-01
+    reason: "BLOCK-04: classifier float probability API unverified."
+    reinstatement_condition: >
+      Classifier confirmed to emit float probability scalar in
+      backtest_specification.yaml audit section. If confirmed, include
+      as secondary variant with BH correction applied.
+    fallback: VMD-D-transition-buffer
+
+alternative_data_candidates:
+  - name: VWAP deviation
+    source: derived_from_ohlcv
+    formula: "(close - VWAP_N) / VWAP_N"
+    rationale: >
+      Captures intrabar dislocation relative to volume-weighted anchor.
+      OHLCV-derivable; no external feed required. Augments divergence_score
+      as secondary entry filter.
+    feasibility: high
+    integration: optional_filter_on_VMD-C
+
+  - name: Relative Volume (RVOL)
+    source: derived_from_ohlcv
+    formula: "volume / rolling_mean(volume, window=24)"
+    rationale: >
+      Self-normalizing baseline separates structural elevation from event
+      spikes. Alternative to percentile cap in VMD-A; lower parameter
+      sensitivity.
+    feasibility: high
+    integration: replace_percentile_cap_in_VMD-A_as_variant
+
+  - name: Binance funding rate
+    source: binance_public_api
+    rationale: "Leveraged sentiment proxy; correlated with liquidation cascades."
+    feasibility: low
+    excluded_reason: >
+      Requires separate data infrastructure; violates minimal-code-changes
+      and OHLCV-only constraints.
+
+reverse_hypothesis:
+  id: VMD-REV-BASE
+  distinction_from_excluded: >
+    VMD-REV-01 proposed combining reverse and base logic simultaneously
+    (undefined mutual exclusion). VMD-REV-BASE is pure inverse routing
+    only — structurally symmetric and independently testable.
+  thesis: >
+    In TRENDING regimes, price_roc/volume_roc divergence predicts exhaustion
+    reversal. In RANGING regimes, co-acceleration predicts range breakout.
+    Inverts base VMD regime-to-signal mapping.
+  signal_formula:
+    divergence_score: "price_roc * sign(volume_roc)"
+  regime_routing:
+    TRENDING:
+      counter: "divergence_score < -div_thresh  # fade diverging trend"
+    RANGING:
+      breakout: "price_roc > 0 AND volume_roc > vol_thresh  # buy co-accel"
+  status: secondary_candidate
+  correction_required: true
+  correction_method: "Benjamini-Hochberg q < 0.05; Bonferroni floor α=0.005"
+  implementation_allowed: true
+
+behavioral_features:
+  - name: volume_momentum_persistence
+    description: >
+      Consecutive-bar count of volume_roc > 0 within a rolling window.
+      Distinguishes sustained institutional flow from single-bar volume spike.
+    formula: "rolling_sum(volume_roc > 0, window=5)"
+    use_case: "Gate VMD-C entry; require persistence >= 2 before signal fires."
+    lag_enforced: true
+    shift_note: "window is historical-only; no look-ahead"
+
+  - name: divergence_acceleration
+    description: >
+      First difference of divergence_score. Detects whether divergence is
+      widening or compressing; complements level-based signal.
+    formula: "divergence_score.diff(1)"
+    use_case: "Confirm entry only if divergence accelerating in signal direction."
+    lag_enforced: true
+    shift_note: "diff(1) uses prior bar value only"
+
+  - name: hour_of_day
+    description: "UTC hour indicator for session-based filtering (VMD-E)."
+    formula: "timestamp.dt.hour"
+    use_case: "Mask signal in [0,6] UTC low-volume window."
+    lag_enforced: true
+    shift_note: "contemporaneous; no rolling stat"
+
+regime_specific_variants:
+  TRENDING:
+    primary: VMD-B-zscore
+    rationale: >
+      Z-score adapts thresholds to current vol regime; critical when
+      trending BTC exhibits vol clustering that stales raw ROC thresholds.
+    fallback: VMD-C-conservative
+
+  RANGING:
+    primary: VMD-B-zscore
+    rationale: >
+      Self-adapting fade threshold prevents staleness during ranging vol
+      compression. Avoids false fades when compression tightens rapidly.
+    fallback: VMD-D-transition-buffer
+    note: >
+      Ranging regime most vulnerable to regime re-entry errors; buffer
+      suppresses premature fade entries after failed breakouts.
+
+  TRANSITION:
+    active_variant: VMD-D-transition-buffer
+    rationale: >
+      K-bar buffer suppresses routing errors during label flip; neither
+      TRENDING nor RANGING VMD fires until label stabilizes.
+    implementation_allowed: true
+
+pre_registration_commitment:
+  primary_variant: VMD-B-zscore
+  registered_at_stage: innovation_expansion
+  registered_refinement_attempt: 1
+  correction_method_secondary: "Benjamini-Hochberg q < 0.05; Bonferroni floor α=0.005"
+  backtest_authorization: false
+  authorization_conditions:
+    - "BLOCK-01: shift(1) lag spec committed in backtest_specification.yaml for VMD-A and VMD-B; code reviewer sign-off"
+    - "BLOCK-02: VMD-B-zscore primary designation committed in backtest_specification.yaml"
+    - "BLOCK-04: Classifier API audit result recorded; VMD-CROSS-01 or VMD-D selected accordingly"

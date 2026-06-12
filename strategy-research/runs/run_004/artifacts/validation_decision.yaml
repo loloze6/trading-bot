@@ -1,0 +1,21 @@
+# validation_decision.yaml
+hypothesis_id: HG_BTCUSDT_1h_001
+status: Refine
+rationale: >
+  The expanded hypothesis presents multiple variants (V1, V2, V3, TRENDING, RANGING)
+  that require rigorous backtesting against clearly defined falsifiable statements
+  and null expectations. The proposed sample split design (70% train, 30% validate)
+  is appropriate for out-of-sample testing. However, the core assumptions for each
+  variant, particularly regarding regime detection accuracy and the predictive power
+  of volume spikes in different market conditions, need to be empirically validated.
+  Without actual backtest results, it's impossible to definitively approve or reject.
+  The potential for bias risks, especially lookahead and overfitting, necessitates
+  a careful implementation of the validation protocol. The strategy's viability
+  hinges on demonstrating statistically significant profitability (Sharpe Ratio > 1.0,
+  p < 0.05) across at least one variant. Given the lack of empirical data, the
+  initial decision is to 'Refine' by proceeding to the validation testing phase as
+  outlined in the protocol.
+blocking_issues:
+  - Lack of empirical backtest results for any of the expanded variants.
+  - Assumptions regarding regime detection accuracy and the predictive power of
+    volume spikes in different market regimes remain untested.

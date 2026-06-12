@@ -1,0 +1,61 @@
+run_id: run_0001
+stage: innovation_expansion
+base_hypothesis_id: H-0001
+
+summary: >
+  The base liquidation-reversal hypothesis (H-0001) expands naturally into
+  three testable variants and one reverse hypothesis. The key structural
+  insight gained during expansion is that regime context is the primary
+  moderator of whether a cascade is a reversal or a continuation signal.
+  This maps cleanly onto the existing TRENDING/RANGING regime detector,
+  requiring no infrastructure changes.
+
+key_insight: >
+  A liquidation cascade is not inherently bullish or bearish for the reversal
+  thesis — it is regime-conditional. The same cascade that signals reversal
+  in RANGING mode may signal continuation in TRENDING mode. Regime-gating
+  (H-0001-B) should be the first variant tested after the conservative base.
+
+recommended_test_order:
+  1: H-0001-A  # conservative baseline, no regime gating, validates signal exists
+  2: H-0001-B  # regime-gated, tests whether RANGING/TRENDING split improves it
+  3: H-0001-R  # reverse hypothesis, tests continuation logic in TRENDING
+  4: H-0001-C  # magnitude scaling, tests if binary threshold is a limitation
+
+risks_identified:
+  - risk: OI data polling latency
+    detail: >
+      Open interest must be polled via REST; at bar close there may be a
+      brief lag. Ensure OI delta is computed from confirmed closed-bar values
+      to avoid lookahead.
+  - risk: Liquidation volume historical reconstruction
+    detail: >
+      Live Binance liquidation stream does not provide deep history. If
+      historical liquidation data is not already archived, backtest coverage
+      will be limited to the period post-data-collection-start.
+  - risk: Cascade cluster suppression may remove too many events
+    detail: >
+      The cascade_cluster_flag behavioral feature could suppress signal during
+      extended deleveraging periods (e.g., 2022-style bear cascades), which
+      are exactly when the reversal edge may be most valuable. Test both
+      with and without the cluster filter.
+
+variants_not_pursued:
+  - idea: Order book imbalance as cascade precursor
+    reason: >
+      Requires L2 order book data at 1h bar resolution. Binance snapshot
+      history is not freely available at scale; excluded per research_brief
+      no_paid_data constraint.
+  - idea: Cross-asset liquidation correlation (BTC cascade predicting ETH)
+    reason: >
+      Interesting but adds a cross-asset dependency layer that complicates
+      the single-asset forecast modifier integration. Deferred to a future
+      run if the base variant shows promise.
+
+integration_notes: >
+  All viable variants (H-0001-A, B, C, R) can be implemented as a single
+  forecast modifier component inserted before the allocation step. The
+  modifier reads liquidation_volume (and optionally oi_delta) from the bar
+  data, computes a scalar adjustment, and adds it to the existing ER forecast
+  score. No changes to the rebalance, allocation, or regime detection layers
+  are required.

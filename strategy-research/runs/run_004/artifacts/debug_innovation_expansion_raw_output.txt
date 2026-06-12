@@ -1,0 +1,140 @@
+```yaml
+base_hypothesis_id: HG_BTCUSDT_1h_001
+expanded_variants:
+  - variant_id: HG_BTCUSDT_1h_001_V1
+    thesis: >
+      A mean-reversion strategy that enters short on significant price increases
+      accompanied by above-average volume, and enters long on significant price
+      decreases accompanied by above-average volume, will be profitable. This variant
+      uses a fixed threshold for volume confirmation (e.g., Current_Volume > Average_Volume * 2)
+      and optimizes only the price change threshold (X).
+    rationale: >
+      This is a more conservative variant, reducing the number of parameters to optimize
+      by fixing the volume confirmation multiplier. This aims to reduce overfitting
+      and improve robustness by focusing on the core price reversal signal.
+    signal_concept: >
+      Enter short when (Price_Change > X%) AND (Current_Volume > Average_Volume * 2).
+      Enter long when (Price_Change < -X%) AND (Current_Volume > Average_Volume * 2).
+      Where X is a parameter to be optimized. Price_Change is calculated over a 1-hour lookback.
+    constraints:
+      - use_existing_backtest_framework
+      - prefer_minimal_code_changes
+      - use_existing_strategy_architecture
+      - standard_ohlcv_data_only
+  - variant_id: HG_BTCUSDT_1h_001_V2
+    thesis: >
+      A momentum strategy that enters long on significant price increases on high volume,
+      and enters short on significant price decreases on high volume, will be profitable.
+      This variant hypothesizes that high volume spikes confirm and extend existing trends,
+      rather than signaling reversals.
+    rationale: >
+      This variant directly challenges the mean-reversion assumption by proposing a momentum
+      strategy. It leverages the same input signals (price and volume spikes) but interprets
+      them as trend continuation indicators. This addresses the expected failure mode where
+      high volume confirms momentum.
+    signal_concept: >
+      Enter long when (Price_Change > X% AND Volume_Change > Y%) AND (Current_Volume > Average_Volume * Z).
+      Enter short when (Price_Change < -X% AND Volume_Change < -Y%) AND (Current_Volume > Average_Volume * Z).
+      Where X, Y, and Z are parameters to be optimized. Price_Change and Volume_Change are
+      calculated over a 1-hour lookback.
+    constraints:
+      - use_existing_backtest_framework
+      - prefer_minimal_code_changes
+      - use_existing_strategy_architecture
+      - standard_ohlcv_data_only
+  - variant_id: HG_BTCUSDT_1h_001_V3
+    thesis: >
+      A mean-reversion strategy that enters short on significant price increases
+      accompanied by above-average volume, and enters long on significant price
+      decreases accompanied by above-average volume, will be profitable. This variant
+      incorporates a simple regime filter, only trading during identified ranging periods.
+    rationale: >
+      This variant aims to improve robustness by specifically targeting market conditions
+      where mean reversion is more likely to occur. By filtering for ranging markets,
+      it attempts to mitigate the risk of trading against strong trends.
+    signal_concept: >
+      Enter short when (Price_Change > X% AND Current_Volume > Average_Volume * Z) AND (Regime == 'RANGING').
+      Enter long when (Price_Change < -X% AND Current_Volume > Average_Volume * Z) AND (Regime == 'RANGING').
+      Where X and Z are parameters to be optimized. Price_Change is calculated over a 1-hour lookback.
+      Regime detection is based on an existing strategy component.
+    constraints:
+      - use_existing_backtest_framework
+      - prefer_minimal_code_changes
+      - use_existing_strategy_architecture
+      - standard_ohlcv_data_only
+      - use_existing_regime_detection
+alternative_data_candidates:
+  - data_source: Order Book Imbalance
+    description: >
+      Order book imbalance can provide a real-time indicator of buying or selling pressure
+      that might precede or confirm price movements. High volume spikes coupled with
+      significant order book imbalance could strengthen the signal for reversal or continuation.
+    plausibility: Moderate. Requires access to real-time order book data, which might not be standard.
+  - data_source: Social Media Sentiment (e.g., Twitter)
+    description: >
+      Extreme price movements on high volume might be correlated with spikes in social media
+      discussion or sentiment shifts. Analyzing sentiment around these events could help
+      differentiate between genuine overextension (reversal) and hype-driven momentum.
+    plausibility: Moderate. Requires NLP processing and access to social media APIs, potentially outside standard OHLCV.
+reverse_hypothesis:
+  hypothesis_id: HG_BTCUSDT_1h_001_RH1
+  thesis: >
+    A strategy that enters long when BTCUSDT exhibits a significant price increase on high volume,
+    and enters short when BTCUSDT exhibits a significant price decrease on high volume, will be profitable.
+  rationale: >
+    This is the direct inverse of the original thesis. It hypothesizes that significant price
+    movements on high volume indicate the start of a strong trend, and that entering in the
+    direction of the move will capture further momentum. This addresses the possibility that
+    high volume confirms, rather than reverses, price action.
+  signal_concept: >
+    Enter long when (Price_Change > X% AND Volume_Change > Y%) AND (Current_Volume > Average_Volume * Z).
+    Enter short when (Price_Change < -X% AND Volume_Change < -Y%) AND (Current_Volume > Average_Volume * Z).
+    Where X, Y, and Z are parameters to be optimized. Price_Change and Volume_Change are
+    calculated over a 1-hour lookback.
+  constraints:
+    - use_existing_backtest_framework
+    - prefer_minimal_code_changes
+    - use_existing_strategy_architecture
+    - standard_ohlcv_data_only
+behavioral_features:
+  - feature_name: Volume Spike Magnitude
+    description: >
+      Quantify the magnitude of the volume spike relative to its recent average (e.g.,
+      (Current_Volume - Avg_Volume) / StdDev_Volume). Larger spikes might indicate
+      stronger conviction behind the price move.
+    relevance: Can be used to refine the 'high volume' condition, potentially differentiating
+      between moderate volume increases and extreme spikes.
+  - feature_name: Price Change Velocity
+    description: >
+      Measure the speed of the price change over the lookback period (e.g., Price_Change / Lookback_Period).
+      Faster price movements might be more prone to reversal or continuation.
+    relevance: Can help distinguish between gradual moves and sharp, potentially overextended,
+      price actions.
+  - feature_name: Trade Frequency / Order Flow Imbalance (if available)
+    description: >
+      If order flow data is accessible, analyze the imbalance between buy and sell orders
+      during the price move. A strong imbalance could confirm the direction of the move.
+    relevance: Provides a microstructural view of market participants' behavior, potentially
+      offering a more direct signal than aggregated volume.
+regime_specific_variants:
+  - variant_id: HG_BTCUSDT_1h_001_TRENDING
+    thesis: >
+      The mean-reversion strategy is less effective in trending markets. A momentum strategy,
+      entering long on significant price increases with high volume and short on significant
+      price decreases with high volume, will be profitable during trending periods.
+    rationale: >
+      This variant explicitly addresses the expected failure mode of mean reversion in trending
+      markets. It proposes a momentum approach, assuming that high volume confirms and extends
+      existing trends.
+    signal_concept: >
+      Enter long when (Price_Change > X% AND Volume_Change > Y%) AND (Current_Volume > Average_Volume * Z) AND (Regime == 'TRENDING').
+      Enter short when (Price_Change < -X% AND Volume_Change < -Y%) AND (Current_Volume > Average_Volume * Z) AND (Regime == 'TRENDING').
+      Where X, Y, and Z are parameters to be optimized. Price_Change and Volume_Change are
+      calculated over a 1-hour lookback. Regime detection is based on an existing strategy component.
+    constraints:
+      - use_existing_backtest_framework
+      - prefer_minimal_code_changes
+      - use_existing_strategy_architecture
+      - standard_ohlcv_data_only
+      - use_existing_regime_detection
+  - variant

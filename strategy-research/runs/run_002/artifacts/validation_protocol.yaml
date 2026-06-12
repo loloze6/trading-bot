@@ -1,0 +1,364 @@
+hypothesis_id: HYP-002-LIQ-REVERSAL
+variants_in_scope:
+  - V1-REGIME-GATED
+  - V2-REGIME-ADAPTIVE
+  - V3-ASYMMETRIC-DIRECTION
+  - V4-OI-CONFIRMED
+  - V5-WICK-REJECTION
+  - V6-CASCADE-CONTINUATION
+  - V7-CROSS-ASSET-FILTER
+
+falsifiable_statement: >
+  In RANGING regime, 1h candles where body_pct exceeds 2.0 standard deviations
+  of the 20-bar rolling body distribution AND volume exceeds 2.0 standard
+  deviations of the 20-bar rolling volume distribution produce a statistically
+  significant counter-directional return over the subsequent 1–3 bars (measured
+  at bar close), with an isolated-signal Sharpe ratio > 0.5 and a positive
+  incremental information ratio (IR > 0.20) when the component is blended into
+  the existing bot at weight 0.30.
+  The hypothesis is FALSIFIED if: (a) mean post-spike 3-bar return is not
+  significantly counter-directional (p > 0.10 two-tailed t-test), OR (b) the
+  component IR is <= 0 in the in-sample blended backtest, OR (c) walk-forward
+  Sharpe degrades more than 60% relative to in-sample Sharpe.
+
+null_expectation: >
+  Post-spike 1–3 bar forward returns in RANGING regime are drawn from the same
+  unconditional return distribution as non-spike bars (mean ≈ 0, no directional
+  skew). After conditioning on regime state, the spike detection rule adds zero
+  information beyond what the existing Keltner regime component already captures.
+  Formally: E[r_{t+1:t+3} | spike_detected, RANGING] = E[r_{t+1:t+3} | RANGING].
+
+required_evidence:
+  minimum_signal_count:
+    in_sample: 30
+    walk_forward: 15
+    rationale: >
+      Below 30 events, standard error on mean return exceeds the expected
+      signal magnitude (≈0.30%), making statistical inference unreliable.
+      If IS signal count < 30, the test must be declared underpowered and
+      the variant shelved until more data is available — not approved.
+  statistical_tests:
+    - test: two-tailed t-test on mean 3-bar post-spike return vs zero
+      threshold: p < 0.10
+    - test: Sharpe ratio of isolated component signal (component weight = 1.0)
+      threshold: "> 0.50 in-sample"
+    - test: incremental IR vs. baseline bot without component
+      threshold: "> 0.20 in-sample, > 0.0 in walk-forward"
+    - test: win rate on post-spike counter-directional moves
+      threshold: "> 52% (must beat coin flip by meaningful margin)"
+  primary_variant_for_screening: V1-REGIME-GATED
+  rationale: >
+    V1 is minimum viable. It requires no new data and has only one branching
+    condition. All other variants are predicated on V1 producing a positive
+    signal. No multi-variant testing until V1 clears screening.
+
+bias_risks:
+  - risk_id: BR-01
+    category: lookahead_bias
+    description: >
+      Regime label contamination. The existing Keltner regime detector must
+      be confirmed strictly causal. If the regime signal uses any future
+      bar data (e.g., a centered moving average, or a smoothed EMA applied
+      forward-fill to past rows during preprocessing), the regime gate in
+      V1 and V2 inherits implicit lookahead. This is the single highest-risk
+      bias in the architecture.
+    severity: critical
+    verification_required: >
+      Inspect regime component code to confirm all inputs use only
+      data available at bar t close. Flag any rolling windows that
+      include bar t+1 or later.
+
+  - risk_id: BR-02
+    category: lookahead_bias
+    description: >
+      OI delta contamination (V4). The Binance OI endpoint returns 1h
+      granularity. delta_OI(t) = OI[t] - OI[t-1] requires OI at close
+      of bar t, which in live trading is not confirmed until bar t+1 opens.
+      In a backtest using downloaded OI snapshots, this is trivially
+      implementable — but may not reflect true availability at signal
+      emission time.
+    severity: high
+    verification_required: >
+      Document the exact timestamp of each OI record from Binance.
+      Confirm bar_t OI is available BEFORE the bar_t+1 candle opens.
+      If OI timestamp is end-of-bar, shift the delta series by +1 bar
+      before merging. V4 must not be backtested until this is resolved.
+
+  - risk_id: BR-03
+    category: lookahead_bias
+    description: >
+      Funding rate interpolation (BF-01). Forward-filling an 8h funding
+      rate to 1h creates artificial precision. The 8h rate is published
+      at funding settlement timestamps. Between settlements the true rate
+      is unknown. Using the settled value for all 8 subsequent bars is
+      a minor lookahead at bars t+1 through t+7 relative to when that
+      rate was actually known.
+    severity: medium
+    verification_required: >
+      Use only the funding rate that was confirmed at or before bar t
+      open. Do not assume the next settlement value is known early.
+
+  - risk_id: BR-04
+    category: survivorship_and_selection_bias
+    description: >
+      The spike hypothesis was almost certainly inspired by memorable
+      events (FTX collapse Nov 2022, LUNA May 2022, 3AC June 2022).
+      These events are outliers in the training history. If the IS period
+      contains these events, their dominant contribution to spike-event
+      statistics inflates mean reversion estimates. The WF and holdout
+      periods must not contain the same catalysts.
+    severity: high
+    verification_required: >
+      Tag all spike events with date. If >40% of IS spike events
+      cluster within a 30-day window around a known macro event,
+      report this as concentration risk and widen the IS window.
+
+  - risk_id: BR-05
+    category: overfitting_and_parameter_snooping
+    description: >
+      The parameter set (body threshold 2σ, volume threshold 2σ,
+      magnitude 0.50, decay 3 bars, wick_ratio 3.0, cascade window 3 bars)
+      appears to have been set by inspection rather than derived from
+      first principles or a prior empirical study. With 7 variants and
+      3 behavioral features, the effective hypothesis space is large
+      enough that some variants will succeed in-sample by chance.
+    severity: high
+    verification_required: >
+      Freeze all parameters before running the IS backtest. No
+      parameter adjustment is permitted after seeing IS results.
+      Variant selection for WF must be pre-committed on IS results
+      only, with no cherry-picking post-WF.
+
+  - risk_id: BR-06
+    category: signal_redundancy
+    description: >
+      The existing regime component (Keltner) may already partially
+      capture the post-spike mean reversion effect. In RANGING regime,
+      Keltner naturally pushes price toward the band midpoint — the
+      same directional bias as the reversal signal. If the two signals
+      are correlated, the component IR may be overstated in blended
+      backtest due to weight-doubling on the same underlying prediction.
+    severity: medium
+    verification_required: >
+      Compute correlation between LiquidationReversal signal and
+      Keltner signal on spike bars. If correlation > 0.50, the
+      blended IR improvement is likely spurious.
+
+failure_modes:
+  - id: FM-01
+    label: trending_continuation_dominates_reversal
+    description: >
+      The regime gate in V1 correctly suppresses the signal in TRENDING,
+      but regime misclassification (a trending bar that the detector
+      labels RANGING) causes the reversal signal to fire against a
+      directional move with fat-tail returns. Single such events can
+      erase many small wins.
+    likelihood: medium
+    impact: high
+    mitigation: Verify regime detector precision on spike bars specifically.
+
+  - id: FM-02
+    label: cascade_continuation_unrecognized
+    description: >
+      V6 attempts to handle cascades with a 3-bar window, but a true
+      structural cascade (e.g., multi-day deleveraging) generates
+      repeated spikes beyond the 3-bar detection window. The component
+      re-enters reversal mode between cascade legs, accumulating losses
+      on each re-entry.
+    likelihood: medium
+    impact: high
+    mitigation: >
+      Define a hard cooldown: no reversal signal for N bars after
+      any cascade event (N to be set pre-backtest). 3-bar cascade
+      window alone is insufficient for systemic events.
+
+  - id: FM-03
+    label: low_signal_frequency_underpowered_statistics
+    description: >
+      Stacking V4 (OI filter) + V7 (cross-asset) + BF-02 (volume accel)
+      may reduce qualifying events to fewer than 10 per year. With
+      this event count, observed Sharpe is noise-dominated and any
+      positive result is unactionable.
+    likelihood: high (for combined variants)
+    impact: medium
+    mitigation: >
+      Report signal count alongside performance metrics. Auto-reject
+      any variant with < 15 events in IS period as statistically
+      underpowered regardless of observed Sharpe.
+
+  - id: FM-04
+    label: asymmetric_direction_assumption_period_specific
+    description: >
+      V3's claim that down-spikes revert faster than up-spikes rests
+      on an unvalidated structural assumption about order book dynamics.
+      This may have been true in 2022 bear market but reversed in 2024
+      bull market where short squeeze momentum was more persistent.
+    likelihood: medium
+    impact: medium
+    mitigation: >
+      Test V3 direction asymmetry as a sub-hypothesis with a dedicated
+      two-sample test (down-spike mean return vs. up-spike mean return).
+      Do not assume asymmetry; measure it.
+
+  - id: FM-05
+    label: ohlcv_proxy_indistinguishable_from_block_trade
+    description: >
+      The body_pct + volume threshold cannot distinguish a liquidation
+      cascade from a large informed institutional block trade, which
+      does NOT revert. V4 (OI filter) is the correct solution, but
+      until V4 is validated, V1 through V3 and V5 are exposed to this
+      ambiguity on every signal event.
+    likelihood: high
+    impact: medium
+    mitigation: >
+      Accept this ambiguity as a base rate hit to signal precision.
+      Estimate false-positive rate by examining IS spike events
+      where OI rose (continuation expected) vs. OI fell (reversal expected).
+
+  - id: FM-06
+    label: cross_asset_sync_latency_creates_implicit_lookahead
+    description: >
+      V7 requires simultaneous spike detection on BTC and ETH. If
+      the data pipeline fetches BTCUSDT and ETHUSDT candles at
+      slightly different wall-clock times, the later-arriving candle
+      can be matched against an already-confirmed spike on the earlier
+      asset, creating implicit lookahead in live trading (though not
+      in historical backtest where data is fully aligned).
+    likelihood: medium (live trading only)
+    impact: high (strategy live performance vs. backtest gap)
+    mitigation: >
+      In backtest: enforce strict bar-close timestamp alignment.
+      In live: design data dispatch to wait for both candles before
+      emitting any cross-asset signal. Document this constraint explicitly.
+
+  - id: FM-07
+    label: decay_window_sensitivity_to_bar_granularity
+    description: >
+      All variants use 2–3 bar decay windows on 1h candles. The
+      reversal window is therefore 2–3 hours. If the actual post-spike
+      mean reversion completes in 30–45 minutes (sub-bar), the signal
+      is emitted after most of the move has already occurred, capturing
+      noise rather than signal.
+    likelihood: medium
+    impact: medium
+    mitigation: >
+      Check 1h forward return autocorrelation after spikes. If
+      reversal is predominantly intra-bar, the 1h bar structure
+      makes this signal untradeable at this granularity.
+
+  - id: FM-08
+    label: regime_misclassification_rate_on_spike_bars
+    description: >
+      Spike bars by definition exhibit unusual price and volume behavior.
+      The Keltner regime detector may systematically misclassify regime
+      on spike bars themselves (e.g., a large-body bar pushes price
+      outside the Keltner band, triggering a TRENDING label at the
+      exact moment the reversal signal wants to fire in RANGING mode).
+      This is a structural incompatibility between the spike detector
+      and the regime detector.
+    likelihood: high
+    impact: high
+    mitigation: >
+      Measure regime label on spike bars specifically. If >30% of
+      RANGING-expected spike events are labeled TRENDING by the
+      detector, V1's regime gate is self-defeating and the gating
+      logic must look at regime N-1 (prior bar) rather than bar t.
+
+  - id: FM-09
+    label: nonstationarity_across_market_cycles
+    description: >
+      Crypto liquidation cascade dynamics changed materially between
+      2020 (DeFi summer), 2021 (bull), 2022 (bear/deleveraging), 2023
+      (recovery), and 2024–2025 (ETF-driven institutional). A model
+      trained on one cycle may fail entirely on another due to changes
+      in exchange-level liquidation engine behavior, OI composition,
+      and participant leverage levels.
+    likelihood: high
+    impact: high
+    mitigation: >
+      Report performance by calendar year within IS period. Reject
+      if IS results are driven by a single year. Walk-forward must
+      cover at least one full distinct market phase from IS.
+
+  - id: FM-10
+    label: variant_proliferation_implicit_overfitting
+    description: >
+      Seven variants plus three behavioral features plus reverse
+      hypothesis constitute a large joint hypothesis space. Even
+      without explicit optimization, selecting the "best" variant
+      after IS testing is equivalent to multiple comparison bias.
+      The probability that at least one variant shows IS Sharpe > 0.5
+      by chance (with 7 variants) is substantially higher than alpha.
+    likelihood: high (if all variants tested simultaneously)
+    impact: high
+    mitigation: >
+      Pre-commit to a single primary variant (V1) before any IS
+      testing. Only test secondary variants sequentially, with each
+      requiring V1 to pass first. Document variant testing order
+      before running any backtest.
+
+sample_split_design:
+  in_sample:
+    start: "2020-01-01"
+    end: "2023-06-30"
+    rationale: >
+      Covers bull (2020–2021), bear (2022), and early recovery (2023).
+      Contains known liquidation cascade events for minimum signal count.
+      3.5 years provides structural variety without overfitting to a
+      single regime phase.
+  walk_forward:
+    start: "2023-07-01"
+    end: "2024-06-30"
+    rationale: >
+      Post-FTX normalized market. ETF narrative begins. Meaningfully
+      different micro-structure from IS period. Tests regime-gating
+      in a low-volatility trending phase.
+  holdout:
+    start: "2024-07-01"
+    end: "2025-12-31"
+    lock_status: STRICTLY_LOCKED
+    rationale: >
+      Must not be examined until walk-forward results are formally
+      reviewed and a go/no-go decision on holdout testing is issued.
+      Touching this data before WF approval constitutes invalidation.
+  variant_test_sequence:
+    - step: 1
+      variant: V1-REGIME-GATED
+      gate: "Must achieve IS Sharpe > 0.5 and signal_count >= 30 before step 2"
+    - step: 2
+      variant: V3-ASYMMETRIC-DIRECTION
+      gate: "V1 passed; test direction asymmetry as an enhancement only"
+    - step: 3
+      variant: V5-WICK-REJECTION
+      gate: "V1 passed; test as independent alternative detection, not additive"
+    - step: 4
+      variant: V4-OI-CONFIRMED
+      gate: "V1 passed AND OI timestamp semantics resolved per BR-02"
+    - step: 5
+      variant: V2-REGIME-ADAPTIVE
+      gate: "V1 passed; reverse hypothesis leg tested independently"
+    - step: 6
+      variants:
+        - V6-CASCADE-CONTINUATION
+        - V7-CROSS-ASSET-FILTER
+      gate: "Prior variants show consistent positive IS/WF; complexity budget justified"
+
+decision_rules:
+  approve_criteria:
+    - "V1 IS Sharpe > 0.5"
+    - "V1 IS signal_count >= 30"
+    - "V1 IS component IR > 0.20 in blended backtest"
+    - "Regime label confirmed strictly causal (no lookahead)"
+    - "WF Sharpe >= 50% of IS Sharpe (degradation <= 50%)"
+    - "Performance not concentrated in single calendar year"
+  refine_criteria:
+    - "V1 IS Sharpe between 0.2 and 0.5 (weak but non-zero signal)"
+    - "Regime causality unconfirmed but not falsified"
+    - "Signal count >= 20 but < 30 (borderline)"
+    - "Failure modes FM-08 or FM-05 unquantified"
+  reject_criteria:
+    - "V1 IS Sharpe <= 0.0"
+    - "V1 IS signal_count < 20 (underpowered, uninformative)"
+    - "Regime label lookahead confirmed (BR-01 violated)"
+    - "Post-spike return distribution is directionally mixed across years"
+    - "Component IR <= 0 in blended IS backtest"
