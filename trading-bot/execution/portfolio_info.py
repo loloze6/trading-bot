@@ -318,7 +318,22 @@ class MockPortfolioInfo(CommonPortfolioDef):
         logger.debug(f"🧪 Mock Portfolio initialized │ Balance: {self.local_balance} │ Commission: {commission_rate*100:.2f}%")
         super().__init__(commission_rate)
     
-class PortfolioStateTracker: 
+def flatten_dict_columns(df):
+    """Recursively expand dict-valued columns into dot-separated scalar columns."""
+    changed = True
+    while changed:
+        changed = False
+        for col in df.columns:
+            if df[col].apply(lambda x: isinstance(x, dict) and len(x) > 0).any():
+                df = df.drop(columns=[col]).join(
+                    df[col].apply(lambda x: pd.Series(x) if isinstance(x, dict) else pd.Series(dtype=object))
+                        .add_prefix(f"{col}.")
+                )
+                changed = True
+    return df
+
+
+class PortfolioStateTracker:
     """
     Tracks portfolio state over time and exports to CSV.
     Records: Date, Forecast, Total Portfolio Value, USDT owned, BTC borrowed, BTC owned, USDT borrowed
@@ -355,20 +370,6 @@ class PortfolioStateTracker:
             return None
 
         df = self.get_tracker_full_record()
-
-        # Flatten dict columns recursively until no dict columns remain
-        def flatten_dict_columns(df):
-            changed = True
-            while changed:
-                changed = False
-                for col in df.columns:
-                    if df[col].apply(lambda x: isinstance(x, dict) and len(x) > 0).any():
-                        df = df.drop(columns=[col]).join(
-                            df[col].apply(lambda x: pd.Series(x) if isinstance(x, dict) else pd.Series([x], index=[col]))
-                                .add_prefix(f"{col}.")
-                        )
-                        changed = True
-            return df
 
         df = flatten_dict_columns(df)
 

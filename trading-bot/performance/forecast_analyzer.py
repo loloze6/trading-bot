@@ -16,6 +16,41 @@ import os
 logger = logging.getLogger('trading_bot')
 
 
+def calc_range_metrics(df: pd.DataFrame) -> dict:
+    """Calculate metrics for forecasts grouped by range bin."""
+    if len(df) == 0 or 'forecast' not in df.columns:
+        return {}
+
+    bins = [-np.inf, -15, -10, -5, 0, 5, 10, 15, np.inf]
+    labels = [
+        'very_negative_lt_minus_15',
+        'minus_15_to_minus_10',
+        'minus_10_to_minus_5',
+        'minus_5_to_0',
+        '0_to_5',
+        '5_to_10',
+        '10_to_15',
+        '15_to_very_positive',
+    ]
+
+    df = df.copy()
+    df['forecast_bin'] = pd.cut(df['forecast'], bins=bins, labels=labels)
+
+    metrics = {}
+    for bin_label in labels:
+        bin_trades = df[df['forecast_bin'] == bin_label]
+        if len(bin_trades) == 0:
+            continue
+        metrics[bin_label] = {
+            'total_forecasts': len(bin_trades),
+            'profitable_trades': int(bin_trades['profitable_net'].sum()),
+            'success_rate_pct': round(bin_trades['profitable_net'].mean() * 100, 2),
+            'total_net_pnl_usd': round(bin_trades['net_profit_loss_absolute'].sum(), 4),
+            'avg_pnl_per_trade_usd': round(bin_trades['net_profit_loss_absolute'].mean(), 4),
+        }
+    return metrics
+
+
 class ForecastAnalyzer:
     """
     Analyzes trading strategy through forecast lens.
@@ -173,41 +208,7 @@ class ForecastAnalyzer:
             'Avg Forecast (Losers)': round(losers['forecast'].mean(), 4) if len(losers) > 0 else 'N/A',
         }  
     def _calc_range_metrics(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Calculate metrics for ENTRY forecasts by range."""
-        if len(df) == 0 or 'forecast' not in df.columns:
-            return {}
-        
-        bins = [-np.inf, -15, -10, -5, 0, 5, 10, 15, np.inf]
-        labels = [
-            'very_negative_lt_minus_15',
-            'minus_15_to_minus_10',
-            'minus_10_to_minus_5',
-            'minus_5_to_0',
-            '0_to_5',
-            '5_to_10',
-            '10_to_15',
-            '15_to_very_positive',
-
-        ]
-        
-        df['forecast_bin'] = pd.cut(df['forecast'], bins=bins, labels=labels)
-        
-        metrics = {}
-        for bin_label in labels:
-            bin_trades = df[df['forecast_bin'] == bin_label]
-            if len(bin_trades) == 0:
-                continue
-            
-            else:
-                metrics[bin_label] = {
-                'total_forecasts': len(bin_trades),
-                'profitable_trades': int(bin_trades['profitable_net'].sum()),
-                'success_rate_pct': round(bin_trades['profitable_net'].mean() * 100, 2),
-                'total_net_pnl_usd': round(bin_trades['net_profit_loss_absolute'].sum(), 4),
-                'avg_pnl_per_trade_usd': round(bin_trades['net_profit_loss_absolute'].mean(), 4)
-                }
-        
-        return metrics
+        return calc_range_metrics(df)
     
     
     def _export_excel(self, df_forecasts: pd.DataFrame, metrics_dict: Dict[str, Dict]):
