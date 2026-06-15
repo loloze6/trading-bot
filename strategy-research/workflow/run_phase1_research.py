@@ -259,7 +259,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path):
 
 # Initialize the Native Client
 # It automatically picks up the GEMINI_API_KEY environment variable
-client = genai.Client(api_key="***REMOVED-SECRET***")
+client = genai.Client(api_key="xxx")
 
 async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     print(f"\n✨ [GEMINI INVOKED] Waking up Native Gemini API for: {stage_name}")
