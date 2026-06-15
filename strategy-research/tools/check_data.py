@@ -1,14 +1,16 @@
-"""Task 5.1 — data availability check. Run from trading-bot/ directory."""
+"""Task 5.1 — data availability check. Run from repo root or strategy-research/."""
 import sys
 import os
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = os.path.dirname(_HERE)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+_HERE = os.path.dirname(os.path.abspath(__file__))   # strategy-research/tools/
+_SR   = os.path.dirname(_HERE)                        # strategy-research/
+_REPO = os.path.dirname(_SR)                          # repo root
+_TBOT = os.path.join(_REPO, "trading-bot")
+
+if _TBOT not in sys.path:
+    sys.path.insert(0, _TBOT)
 
 import datetime
-import numpy as np
 import pandas as pd
 from data.data_manager import DataManager
 
@@ -34,7 +36,7 @@ for symbol in SYMBOLS:
     df = dm.fetch_historical_data(symbol, START, END)
 
     if df.empty:
-        print(f"{symbol}: NO DATA RETURNED — cannot proceed")
+        print(f"{symbol}: NO DATA RETURNED -- cannot proceed")
         any_large_gap = True
         continue
 
@@ -60,7 +62,7 @@ for symbol in SYMBOLS:
             duration  = gap_end - gap_start
             dur_h     = duration.total_seconds() / 3600
             flag = " *** > 1 DAY ***" if duration.total_seconds() > MAX_GAP_SECONDS else ""
-            print(f"  gap: {gap_start} → {gap_end}  ({dur_h:.1f}h){flag}")
+            print(f"  gap: {gap_start} to {gap_end}  ({dur_h:.1f}h){flag}")
             if duration.total_seconds() > MAX_GAP_SECONDS:
                 any_large_gap = True
     print()
@@ -69,4 +71,4 @@ if any_large_gap:
     print("STOP: gap > 1 day detected. Report above. Do not proceed to 5.2 until user decides.")
     sys.exit(2)
 else:
-    print("OK: no gap > 1 day. Safe to proceed to 5.2.")
+    print("OK: no gap > 1 day. Safe to proceed.")

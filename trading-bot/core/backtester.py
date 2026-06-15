@@ -71,6 +71,7 @@ class BacktestEngine:
         self.open_trades: Dict[str, CompletedTrade] = {}
         self.closed_trades: List[CompletedTrade] = []
         self.equity_curve: List[Dict[str, Any]] = []
+        self._last_run_dir = None
 
         logger.debug("Backtest bot initialized")
 
@@ -258,7 +259,8 @@ class BacktestEngine:
             tracker.output_dir if tracker else os.path.join(_project_dir, "results")
         )
         run_dir = new_run_dir(results_root, _strategy_config)
-        self.logger.info(f"📁 Run artifact dir: {run_dir}")
+        self._last_run_dir = run_dir
+        self.logger.info(f"Run artifact dir: {run_dir}")
 
         # Write manifest
         raw_price_df = self.extract_historical_price_data()
