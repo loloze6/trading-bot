@@ -584,7 +584,6 @@ class DataManager:
             # Global feeds (e.g. fear_greed) store data under their own name;
             # per-symbol feeds (e.g. funding_rate) store under the trading symbol.
             feed_data = feed.fetcher.get_data(symbol)
-            logger.debug(f"_premerge: feed='{name}', symbol='{symbol}', feed_data type={type(feed_data)}, empty={feed_data.empty if hasattr(feed_data, 'empty') else 'N/A'}")
 
             if feed_data.empty:
                 all_data  = feed.fetcher.get_data()

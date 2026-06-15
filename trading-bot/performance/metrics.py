@@ -217,6 +217,9 @@ class CompletedTrade:
     @property
     def net_portfolio_profit_loss_percent(self) -> float:
         """Calculate profit/loss percent on the portfolio considering this trade (with commission)"""
+        if self.initial_portfolio_value is None or self.initial_portfolio_value == 0:
+            logger.warning(f"self.initial_portfolio_value is {self.initial_portfolio_value}")
+            return 0.0
         return self.net_profit_loss_absolute /self.initial_portfolio_value*100
         return self.net_profit_loss_percent * self.matched_quantity * self.entry_price / self.initial_portfolio_value
     @property
@@ -1547,15 +1550,15 @@ class EnhancedPerformanceTracker:
 # Below metric logging
 
     def log_performance_metrics(self, metrics: Dict[str, Any]):
-        
+        pass
 
-        # Log to console
-        logger.debug("\n" + "="*80)
-        logger.debug("TIER 1 PERFORMANCE METRICS")
-        logger.debug("="*80)
+        # # Log to console
+        # logger.debug("\n" + "="*80)
+        # logger.debug("TIER 1 PERFORMANCE METRICS")
+        # logger.debug("="*80)
 
-        overall = metrics['overall_metrics']
-        logger.debug(f"Net Profit Factor: {overall['net_profit_factor']}")
+        # overall = metrics['overall_metrics']
+        # logger.debug(f"Net Profit Factor: {overall['net_profit_factor']}")
         # logger.debug(f"Expectancy per Trade: ${overall['expectancy_per_trade_usd']}")
         # # logger.debug(f"Commission Efficiency: {overall['commission_efficiency_pct']}%")
         # logger.debug(f"Net Win Rate: {overall['net_win_rate_pct']}%")
