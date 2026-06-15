@@ -593,14 +593,14 @@ class DataManager:
                     else all_data
                 )
                 # Add these:
-                logger.debug(f"_premerge '{name}': feed_data columns={feed_data.columns.tolist()}")
-                logger.debug(f"_premerge '{name}': feed_data head=\n{feed_data.head(3)}")
-                logger.debug(f"_premerge '{name}': price df timestamp range: {df['timestamp'].min()} → {df['timestamp'].max()}")
-                # After
-                if not feed_data.empty and 'timestamp' in feed_data.columns:
-                    logger.debug(f"_premerge '{name}': feed timestamp range: {feed_data['timestamp'].min()} → {feed_data['timestamp'].max()}")
-                else:
-                    logger.debug(f"_premerge '{name}': feed_data is empty after lookup")
+                # logger.debug(f"_premerge '{name}': feed_data columns={feed_data.columns.tolist()}")
+                # logger.debug(f"_premerge '{name}': feed_data head=\n{feed_data.head(3)}")
+                # logger.debug(f"_premerge '{name}': price df timestamp range: {df['timestamp'].min()} → {df['timestamp'].max()}")
+                # # After
+                # if not feed_data.empty and 'timestamp' in feed_data.columns:
+                #     logger.debug(f"_premerge '{name}': feed timestamp range: {feed_data['timestamp'].min()} → {feed_data['timestamp'].max()}")
+                # else:
+                #     logger.debug(f"_premerge '{name}': feed_data is empty after lookup")
             if feed_data.empty or name not in feed_data.columns:
                 logger.warning(
                     f"DataManager: no data for aux feed '{name}' "

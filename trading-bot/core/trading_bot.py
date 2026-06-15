@@ -150,17 +150,20 @@ class TradingBot:
             balances = self.portfolio_info.get_account_balance()
             total_portfolio_value = self.portfolio_info._calculate_total_portfolio_value(balances, close)
             self.logger.debug(f"   💼 Portfolio: ${total_portfolio_value:.2f}")
-            previous_allocation = self.portfolio_info._calculate_actual_allocation(close, balances, total_portfolio_value)
+
+            previous_allocation = self.portfolio_info._calculate_actual_allocation(close, balances, total_portfolio_value, symbol)
 
             # Update strategy with data history and generate signals
             self.strategy.update(data)
             signal = self.strategy.generate_signals()
-            self.logger.debug(f"   🧠 Forecast: {signal.forecast:+.4f} │ Confidence: {signal.confidence:+.4f} │ Regime: {signal.regime} (score: {signal.debug_info.get('score_regime', None)})")
 
             # Get target allocation from forecast
-            target_allocation = self.forecast_manager.forecast_to_allocation(signal.forecast)
-            allocation_change = self.forecast_manager.calculate_allocation_change(target_allocation, previous_allocation)
             
+            target_allocation = self.forecast_manager.forecast_to_allocation(signal.forecast)
+
+
+            allocation_change = self.forecast_manager.calculate_allocation_change(target_allocation, previous_allocation)
+
             #Init variables
             approved_rebalance = None
             debug_approve_allocation_change = {}
@@ -199,7 +202,7 @@ class TradingBot:
             postRebalance_balances = self.portfolio_info.get_account_balance() if success_execute_portfolio_rebalance else balances
             postRebalance_total_portfolio_value = self.portfolio_info._calculate_total_portfolio_value(postRebalance_balances, close) if success_execute_portfolio_rebalance else total_portfolio_value
             if success_execute_portfolio_rebalance : self.logger.debug(f"   💼 Portfolio after rebalance: ${postRebalance_total_portfolio_value:.2f}")
-            postRebalance_current_allocation = self.portfolio_info._calculate_actual_allocation(close, postRebalance_balances, postRebalance_total_portfolio_value) if success_execute_portfolio_rebalance else previous_allocation
+            postRebalance_current_allocation = self.portfolio_info._calculate_actual_allocation(close, postRebalance_balances, postRebalance_total_portfolio_value, symbol) if success_execute_portfolio_rebalance else previous_allocation
             
             # === RECORD PORTFOLIO STATE === --> This is to store at a bar level and visualize it in a graph.
             if hasattr(self, 'portfolio_state_tracker'):
@@ -283,7 +286,7 @@ class TradingBot:
 
                 balances = self.portfolio_info.get_account_balance()
                 total_value = self.portfolio_info._calculate_total_portfolio_value(balances, close)
-                actual_allocation = self.portfolio_info._calculate_actual_allocation(close, balances, total_value)
+                actual_allocation = self.portfolio_info._calculate_actual_allocation(close, balances, total_value, symbol)
 
                 target_allocation = 0.0  # Force flat
                 allocation_change = self.forecast_manager.calculate_allocation_change(target_allocation, actual_allocation)
@@ -312,7 +315,7 @@ class TradingBot:
                 postRebalance_balances = self.portfolio_info.get_account_balance() if success_execute_portfolio_rebalance else balances
                 postRebalance_total_portfolio_value = self.portfolio_info._calculate_total_portfolio_value(postRebalance_balances, close) if success_execute_portfolio_rebalance else total_value
                 if success_execute_portfolio_rebalance : self.logger.debug(f"   💼 Portfolio after rebalance: ${postRebalance_total_portfolio_value:.2f}")
-                postRebalance_current_allocation = self.portfolio_info._calculate_actual_allocation(close, postRebalance_balances, postRebalance_total_portfolio_value) if success_execute_portfolio_rebalance else previous_allocation
+                postRebalance_current_allocation = self.portfolio_info._calculate_actual_allocation(close, postRebalance_balances, postRebalance_total_portfolio_value, symbol) if success_execute_portfolio_rebalance else previous_allocation
                 
                 # === RECORD PORTFOLIO STATE === --> This is to store at a bar level and visualize it in a graph.
                 if hasattr(self, 'portfolio_state_tracker'):

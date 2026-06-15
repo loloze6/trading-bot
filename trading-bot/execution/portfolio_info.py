@@ -261,14 +261,22 @@ class CommonPortfolioDef:
         # self.logger.debug (f"║ └─ TOTAL: ${total_value} {quote_currency}")
         return total_value
 
-    def _calculate_actual_allocation(self, close, balances, total_value) -> float:
-            # Calculate actual position value for
-            # For BTCUSDT: (free + locked) * current_price
-            btc_balance = balances.get('BTCUSDT', balances.get('BTC', {}))
-            btc_quantity = btc_balance.get('free', 0.0) - btc_balance.get('locked', 0.0)
-            position_value = btc_quantity * close            
-            actual_allocation = position_value / total_value if total_value > 0 else 0.0
-            return actual_allocation
+    def _calculate_actual_allocation(self, close, balances, total_value, symbol) -> float:
+            # # Calculate actual position value for
+            # # For BTCUSDT: (free + locked) * current_price
+            # btc_balance = balances.get('BTCUSDT', balances.get('BTC', {}))
+            # btc_quantity = btc_balance.get('free', 0.0) - btc_balance.get('locked', 0.0)
+            # position_value = btc_quantity * close
+            # logger.debug(f"btc_balance: {btc_balance} │btc_quantity {btc_quantity}│ position_value: ${position_value:.2f}")       
+            # actual_allocation = position_value / total_value if total_value > 0 else 0.0
+            # return actual_allocation
+        quote_currency = 'USDT'
+        base_asset = symbol.replace(quote_currency, '')  # or use a proper symbol->base-asset mapping if one exists
+        asset_balance = balances.get(symbol, balances.get(base_asset, {}))
+        quantity = asset_balance.get('free', 0.0) - asset_balance.get('locked', 0.0)
+        position_value = quantity * close
+        actual_allocation = position_value / total_value if total_value > 0 else 0.0
+        return actual_allocation
 
     def get_account_balance(self) -> Dict[str, float]:
         return self.local_balance   
