@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -c \"import yaml; d = yaml.safe_load\\(open\\('runs/run_006/artifacts/validation_decision.yaml'\\)\\); print\\('status:', d['status']\\)\")"
+      "Bash(python -c \"import yaml; d = yaml.safe_load\\(open\\('runs/run_006/artifacts/validation_decision.yaml'\\)\\); print\\('status:', d['status']\\)\")",
+      "Bash(python *)",
+      "Bash(PYTHONIOENCODING=utf-8 python workflow/setup_run.py run_010)",
+      "Bash(PYTHONIOENCODING=utf-8 python workflow/run_phase1_research.py run_010)",
+      "Bash(PYTHONIOENCODING=utf-8 python tools/run_protocol.py runs/run_010/artifacts/candidate_strategy_config.json protocols/baseline_v1.json)"
     ]
   }
 }

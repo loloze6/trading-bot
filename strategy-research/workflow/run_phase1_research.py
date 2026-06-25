@@ -644,8 +644,9 @@ def run_loop(run_id: str):
                     with open(candidate_path, "w", encoding="utf-8") as f:
                         json.dump(config_obj, f, indent=2)
                     validator = Path("..") / "trading-bot" / "tools" / "validate_config.py"
+                    TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
                     result = subprocess.run(
-                        ["python", str(validator), str(candidate_path)],
+                        [str(TBOT_PYTHON), str(validator), str(candidate_path)],
                         capture_output=True, text=True
                     )
                     if result.returncode != 0:

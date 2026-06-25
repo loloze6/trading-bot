@@ -42,12 +42,30 @@ The embedded `config` must:
 - Keep the config minimal.
 - If ANY required indicator/transform/regime is absent from the reference, status=component_gap; do not
   fabricate a config around the missing piece.
+- transforms list must not be empty for directional signal components. If no normalization
+  is intended, include {"op": "identity"} explicitly to confirm intent.
+- scaling_factor and transform pipeline interact: if using ratio_to_mean + scale,
+  scaling_factor controls raw signal range before normalization; if transforms is empty,
+  scaling_factor IS the forecast magnitude — ensure it produces values in [-20, +20].
+- default_regime must map to a regime with at least one component with weight > 0. The
+  correct default for a hypothesis with one active regime is to set default_regime to that
+  active regime (e.g. mean_reversion). Inactive regimes should be set to null, not to
+  empty components lists.
+- Include all regime rules from STRATEGY_CONFIG_REFERENCE.md's worked example as the
+  baseline, then modify only what the hypothesis requires. Do not omit regimes not
+  explicitly mentioned in the brief — omitting trending/chop means those bars fall to
+  default_regime behavior.
 
 ## Forbidden
 - Do not invent component classes, transform ops, or regime names absent from STRATEGY_CONFIG_REFERENCE.md.
 - Do not write Python or modify the engine.
 - Do not emit more than one config.
 - Do not loosen any threshold or sample-split decision validation already fixed.
+- Do not emit empty transforms lists unless the component's raw output is already in [-20,+20]
+  and no normalization is needed. Always document why.
+- Do not set default_regime to a regime that maps to null in the strategies block.
+- Do not set any regime to {"components": []} (empty components list).
+  If a regime should produce no trades, set it to null.
 
 ## Context rule
 Read only the two hypothesis artifacts and the config reference. Minimal context.
