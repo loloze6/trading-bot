@@ -47,6 +47,8 @@ import tempfile
 import time
 import subprocess
 import json
+import sys
+import shutil
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBlock
 from google import genai
 from google.genai import types
@@ -85,6 +87,14 @@ STAGE_CONFIGS = {
         "handoff": "validation_to_backtest_specification.yaml",
         "default_next": "dynamic_routing",
     },
+    "protocol_execution": {
+        "handoff": "backtest_spec_to_protocol_execution.yaml",
+        "default_next": "verdict_interpreter",
+    },
+    "verdict_interpreter": {
+        "handoff": "protocol_to_verdict_interpreter.yaml",
+        "default_next": "dynamic_routing",
+    },
 }
 
 def load_yaml(path: Path):
@@ -114,6 +124,13 @@ def ensure_files(paths):
     missing = [str(p) for p in paths if not Path(p).exists()]
     if missing:
         raise FileNotFoundError(f"Missing files: {missing}")
+    for p in paths:
+        p = Path(p)
+        if p.suffix in ('.yaml', '.yml'):
+            try:
+                yaml.safe_load(p.read_text(encoding='utf-8'))
+            except yaml.YAMLError as e:
+                raise ValueError(f"YAML parse error in {p.name}: {e}")
 
 def estimate_tokens(text: str) -> int:
     """Provides a rough token estimation (1 token ≈ 4 chars)."""
@@ -143,12 +160,13 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path):
         "validation": "quant-validation",
         "refinement_planner": "refinement-planner",
         "backtest_specification": "backtest-engineering",
+        "verdict_interpreter": "verdict-interpreter",
     }
 
     skill_file_name = skill_map.get(stage_name)
     if not skill_file_name:
         raise ValueError(f"No SKILL file mapped for stage: {stage_name}")
-        
+
     skill_path = Path(".") / "skills" / skill_file_name / "SKILL.md"
     with open(skill_path, "r", encoding="utf-8") as f:
         system_prompt = f.read()
@@ -283,6 +301,7 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         "validation": "quant-validation",
         "refinement_planner": "refinement-planner",
         "backtest_specification": "backtest-engineering",
+        "verdict_interpreter": "verdict-interpreter",
     }
 
     skill_file_name = skill_map.get(stage_name)
@@ -413,19 +432,59 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         with open(debug_path, "w", encoding="utf-8") as f:
             f.write(agent_output)
 
+async def run_tool_worker(stage_name: str, run_id: str):
+    """Executes a deterministic tool stage. No LLM call. No token cost."""
+    RUN_DIR = ROOT / "runs" / run_id
+    ARTIFACTS = RUN_DIR / "artifacts"
+    TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
+
+    if stage_name == "protocol_execution":
+        config_path     = ARTIFACTS / "candidate_strategy_config.json"
+        protocol_path   = ROOT / "protocols" / "baseline_v1.json"
+        validation_path = ARTIFACTS / "validation_protocol.yaml"
+
+        cmd = [
+            str(TBOT_PYTHON), str(ROOT / "tools" / "run_protocol.py"),
+            str(config_path), str(protocol_path),
+            "--validation-protocol", str(validation_path),
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        print(result.stdout)
+        if result.returncode != 0:
+            raise RuntimeError(f"run_protocol.py failed:\n{result.stderr}")
+
+        summaries = sorted(
+            (ROOT / "results" / "protocols").glob("*/protocol_summary.json"),
+            key=lambda p: p.stat().st_mtime,
+        )
+        if not summaries:
+            raise FileNotFoundError("protocol_summary.json not found after protocol run")
+        latest = summaries[-1]
+
+        with open(latest, encoding="utf-8") as f:
+            summary = json.load(f)
+        save_yaml(ARTIFACTS / "protocol_result.yaml", summary)
+        hv = (summary.get("hypothesis_verdict") or {}).get("verdict", "unknown")
+        print(f"✅ Protocol complete. Hypothesis verdict: {hv}")
+    else:
+        raise ValueError(f"No tool implementation for stage: {stage_name}")
+
+
 async def async_invoke_agent(stage_name: str, run_id: str):
+    tool_stages = {"protocol_execution"}
+    if stage_name in tool_stages:
+        await run_tool_worker(stage_name, run_id)
+        return
 
     RUN_DIR = ROOT / "runs" / run_id
     HANDOFFS = RUN_DIR / "handoffs"
     config = STAGE_CONFIGS[stage_name]
-    handoff_path = HANDOFFS / config["handoff"]    
-    
+    handoff_path = HANDOFFS / config["handoff"]
+
     # 1. Load the live handoff file
-    
     handoff = load_yaml(handoff_path)
 
-    # Select enginefrom handoff file, default to Claude if not specified
-
+    # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")
     
     if engine == "claude":
@@ -487,12 +546,106 @@ def determine_post_validation_route(path: Path):
     else:
         raise ValueError(f"Unknown validation status: {status}")
 
+def _create_remaining_handoffs(run_id: str, run_dir: Path):
+    """Write protocol_execution and verdict_interpreter handoffs for runs missing them."""
+    handoffs = run_dir / "handoffs"
+    pe_path = handoffs / "backtest_spec_to_protocol_execution.yaml"
+    vi_path = handoffs / "protocol_to_verdict_interpreter.yaml"
+
+    if not pe_path.exists():
+        save_yaml(pe_path, {
+            "handoff_version": 1, "run_id": run_id,
+            "from_stage": "backtest_specification", "to_stage": "protocol_execution",
+            "assigned_engine": "tool",
+            "objective": "Run the full walk-forward protocol against the emitted config, "
+                         "evaluated against this hypothesis's specific validation criteria.",
+            "required_inputs": [
+                {"path": "artifacts/candidate_strategy_config.json",
+                 "reason": "the config to backtest"},
+                {"path": "artifacts/validation_protocol.yaml",
+                 "reason": "hypothesis-specific success criteria for verdict evaluation"},
+            ],
+            "deliverables": ["protocol_result.yaml"],
+        })
+
+    if not vi_path.exists():
+        save_yaml(vi_path, {
+            "handoff_version": 1, "run_id": run_id,
+            "from_stage": "protocol_execution", "to_stage": "verdict_interpreter",
+            "assigned_engine": "claude",
+            "objective": "Interpret backtest findings against hypothesis-specific criteria. "
+                         "Produce a refined brief fixing the primary identified failure, "
+                         "or a final kill/promote decision.",
+            "required_inputs": [
+                {"path": "artifacts/protocol_result.yaml",
+                 "reason": "backtest findings and hypothesis-specific verdict criteria results"},
+                {"path": "artifacts/validation_protocol.yaml",
+                 "reason": "original success criteria and failure modes to interpret against"},
+                {"path": "artifacts/backtest_spec.yaml",
+                 "reason": "maps config choices to hypothesis claims for failure attribution"},
+                {"path": "artifacts/research_brief.yaml",
+                 "reason": "original research question and constraints"},
+            ],
+            "deliverables": ["verdict_interpretation.yaml"],
+            "constraints": [
+                "Change at most one hypothesis dimension in proposed_brief.yaml.",
+                "Do not recommend components absent from STRATEGY_CONFIG_REFERENCE.md.",
+                "Accept protocol_result.yaml numbers as truth — do not re-evaluate.",
+            ],
+            "stop_conditions": [
+                "All evaluable approve criteria pass → produce research_decision.yaml with decision promote.",
+                "Two or more reject criteria confirmed → produce research_decision.yaml with decision kill.",
+            ],
+        })
+
+
+def setup_next_run(current_run_path: Path, next_run_id: str):
+    """Scaffold next run and copy proposed_brief as its research_brief."""
+    subprocess.run([sys.executable, str(ROOT / "workflow" / "setup_run.py"), next_run_id])
+    proposed  = current_run_path / "artifacts" / "proposed_brief.yaml"
+    next_brief = ROOT / "runs" / next_run_id / "artifacts" / "research_brief.yaml"
+    shutil.copy(proposed, next_brief)
+    print(f"✅ {next_run_id} scaffolded with proposed brief from {current_run_path.name}")
+
+
+def determine_post_verdict_route(path: Path, run_id: str):
+    interp  = load_yaml(path / "artifacts" / "verdict_interpretation.yaml")
+    verdict = interp.get("protocol_verdict", "").strip().lower()
+
+    if verdict == "promote":
+        update_state(path=path, flags={"walk_forward_passed": True})
+        print("\n🎯 PROMOTE: hypothesis passes all evaluable criteria. Proceed to holdout.")
+        return "completed_promoted"
+
+    if verdict == "kill":
+        print("\n🛑 KILL: hypothesis fails multiple criteria with no recoverable fix.")
+        return "completed_rejected"
+
+    if verdict == "refine":
+        proposed = path / "artifacts" / "proposed_brief.yaml"
+        if not proposed.exists():
+            print("\n⏸️ REFINE verdict but no proposed_brief.yaml found. Human review needed.")
+            return "human_pause"
+        state = load_yaml(path / "pipeline_state.yaml")
+        used  = state.get("counters", {}).get("refinements_used", 0)
+        max_r = state.get("governance", {}).get("max_refinements_after_validation", 2)
+        if used >= max_r:
+            print(f"\n🛑 Refinement budget exhausted ({used}/{max_r}). Killing hypothesis.")
+            return "completed_rejected"
+        next_run_id = f"run_{int(run_id.split('_')[-1]) + 1:03d}"
+        print(f"\n🔄 REFINE: setting up {next_run_id} with proposed brief.")
+        setup_next_run(path, next_run_id)
+        return "completed_refined"
+
+    raise ValueError(f"Unknown verdict: {verdict}")
+
+
 def determine_post_spec_route(path: Path):
     KNOWN_STATUSES = {"spec_ready", "component_gap"}
     decision = load_yaml(path / "artifacts" / "decision.yaml")
     status = decision.get("status", "").strip().lower()
     if status == "spec_ready":
-        return "ready_for_protocol"     # terminal this iteration; protocol run manually
+        return "protocol_execution"
     if status == "component_gap":
         update_state(path=path, status="paused_for_human")
         print("\n⏸️ COMPONENT GAP: hypothesis needs an engine piece that does not exist. "
@@ -553,7 +706,7 @@ def run_loop(run_id: str):
     while True:
         current_stage = state.get("pending_stage")
          
-        TERMINAL_PREFIXES = ("completed", "rejected", "ready_for_protocol", "human_pause", "failed_validation")
+        TERMINAL_PREFIXES = ("completed", "rejected", "human_pause", "failed_validation")
         if not current_stage or current_stage.startswith(TERMINAL_PREFIXES):
             print(f"🏁 Pipeline finished. Final state: {current_stage}")
             break
@@ -637,13 +790,13 @@ def run_loop(run_id: str):
 
             elif current_stage == "backtest_specification":
                 next_stage = determine_post_spec_route(RUN_DIR)
-                if next_stage == "ready_for_protocol":
+                if next_stage == "protocol_execution":
                     spec = load_yaml(ARTIFACTS / "backtest_spec.yaml")
                     config_obj = spec.get("config")
                     candidate_path = ARTIFACTS / "candidate_strategy_config.json"
                     with open(candidate_path, "w", encoding="utf-8") as f:
                         json.dump(config_obj, f, indent=2)
-                    validator = Path("..") / "trading-bot" / "tools" / "validate_config.py"
+                    validator  = Path("..") / "trading-bot" / "tools" / "validate_config.py"
                     TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
                     result = subprocess.run(
                         [str(TBOT_PYTHON), str(validator), str(candidate_path)],
@@ -659,10 +812,14 @@ def run_loop(run_id: str):
                         update_state(path=RUN_DIR, status="failed_validation")
                         next_stage = "failed_validation"
                     else:
-                        print("✅ config schema-valid; run the protocol manually:")
-                        print(f"  python tools/run_protocol.py runs/{run_id}/artifacts/candidate_strategy_config.json protocols/baseline_v1.json")
+                        print("✅ config schema-valid; advancing to protocol_execution")
+                        # Create handoff files for the remaining pipeline stages
+                        _create_remaining_handoffs(run_id, RUN_DIR)
                 elif next_stage == "human_pause":
                     break
+
+            elif current_stage == "verdict_interpreter":
+                next_stage = determine_post_verdict_route(RUN_DIR, run_id)
 
             # 6. Mark completed and stage next phase
             completed = state.get("completed_stages", [])

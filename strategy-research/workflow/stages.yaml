@@ -46,4 +46,26 @@ stages:
     outputs:
       - runs/{run_id}/artifacts/backtest_spec.yaml
       - runs/{run_id}/artifacts/decision.yaml
+    next:
+      - protocol_execution
+
+  protocol_execution:
+    tool: tools/run_protocol.py
+    required_inputs:
+      - runs/{run_id}/artifacts/candidate_strategy_config.json
+      - runs/{run_id}/artifacts/validation_protocol.yaml
+    outputs:
+      - runs/{run_id}/artifacts/protocol_result.yaml
+    next:
+      - verdict_interpreter
+
+  verdict_interpreter:
+    skill: skills/verdict-interpreter/SKILL.md
+    required_inputs:
+      - runs/{run_id}/artifacts/protocol_result.yaml
+      - runs/{run_id}/artifacts/validation_protocol.yaml
+      - runs/{run_id}/artifacts/backtest_spec.yaml
+      - runs/{run_id}/artifacts/research_brief.yaml
+    outputs:
+      - runs/{run_id}/artifacts/verdict_interpretation.yaml
     next: []
