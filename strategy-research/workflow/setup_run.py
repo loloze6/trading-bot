@@ -1,10 +1,11 @@
 import argparse
 import shutil
 import yaml
+import sys
 from pathlib import Path
 
 
-ROOT = Path(".")
+ROOT = Path(__file__).parent.parent
 TEMPLATES_DIR = ROOT / "templates" / "handoffs"
 
 def create_pipeline_state(run_dir: Path, run_id: str):
@@ -34,7 +35,8 @@ def create_pipeline_state(run_dir: Path, run_id: str):
         },
         "last_summary": None
     }
-    
+
+        
     state_path = run_dir / "pipeline_state.yaml"
     with open(state_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(state, f, sort_keys=False)

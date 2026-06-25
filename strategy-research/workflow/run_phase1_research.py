@@ -45,7 +45,9 @@ import re
 import asyncio
 import tempfile
 import time
-from claude_agent_sdk import query, ClaudeAgentOptions
+import subprocess
+import json
+from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBlock
 from google import genai
 from google.genai import types
 
@@ -78,7 +80,11 @@ STAGE_CONFIGS = {
         "handoff": "validation_to_refinement.yaml",
         # "required_outputs": [ARTIFACTS / "refinement_notes.yaml"],
         "default_next": "innovation_expansion", # Route back to innovation after planning
-    }
+    },
+    "backtest_specification": {
+        "handoff": "validation_to_backtest_specification.yaml",
+        "default_next": "dynamic_routing",
+    },
 }
 
 def load_yaml(path: Path):
@@ -135,9 +141,10 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path):
         "hypothesis_generation": "hypothesis-design",
         "innovation_expansion": "innovation-expansion",
         "validation": "quant-validation",
-        "refinement_planner": "refinement-planner"
+        "refinement_planner": "refinement-planner",
+        "backtest_specification": "backtest-engineering",
     }
-    
+
     skill_file_name = skill_map.get(stage_name)
     if not skill_file_name:
         raise ValueError(f"No SKILL file mapped for stage: {stage_name}")
@@ -198,6 +205,11 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path):
         prompt=full_prompt,
         options=ClaudeAgentOptions(model= "claude-haiku-4-5",allowed_tools=[])
     ):
+        # Accumulate text content from assistant messages
+        if isinstance(message, AssistantMessage):
+            for block in message.content:
+                if isinstance(block, TextBlock):
+                    agent_output += block.text
         # --- Optional: NATIVE COST TRACKING ---
         if hasattr(message, "total_cost_usd"):
             exact_usage = getattr(message, "usage", {})
@@ -259,7 +271,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path):
 
 # Initialize the Native Client
 # It automatically picks up the GEMINI_API_KEY environment variable
-client = genai.Client(api_key="xxx")
+client = genai.Client()
 
 async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     print(f"\n✨ [GEMINI INVOKED] Waking up Native Gemini API for: {stage_name}")
@@ -269,9 +281,10 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         "hypothesis_generation": "hypothesis-design",
         "innovation_expansion": "innovation-expansion",
         "validation": "quant-validation",
-        "refinement_planner": "refinement-planner"
+        "refinement_planner": "refinement-planner",
+        "backtest_specification": "backtest-engineering",
     }
-    
+
     skill_file_name = skill_map.get(stage_name)
     if not skill_file_name:
         raise ValueError(f"No SKILL file mapped for Gemini stage: {stage_name}")
@@ -453,9 +466,14 @@ def determine_post_validation_route(path: Path):
     refinements_used = state.get("counters", {}).get("refinements_used", 0)
     max_refinements = state.get("governance", {}).get("max_refinements_after_validation", 2)
 
-    if status == "approve":
+    if status in ("approve", "conditional_approve"):
+        if status == "conditional_approve":
+            conditions = decision.get("conditions", [])
+            print(f"\n⚠️  CONDITIONAL APPROVAL — conditions to respect in backtest config:")
+            for c in conditions:
+                print(f"   - {c}")
         update_state(path=path, flags={"validation_approved": True})
-        return "backtest_specification" # Proceed to Phase 2
+        return "backtest_specification"
     
     elif status == "refine":
         if refinements_used >= max_refinements:
@@ -468,7 +486,25 @@ def determine_post_validation_route(path: Path):
     
     else:
         raise ValueError(f"Unknown validation status: {status}")
-    
+
+def determine_post_spec_route(path: Path):
+    KNOWN_STATUSES = {"spec_ready", "component_gap"}
+    decision = load_yaml(path / "artifacts" / "decision.yaml")
+    status = decision.get("status", "").strip().lower()
+    if status == "spec_ready":
+        return "ready_for_protocol"     # terminal this iteration; protocol run manually
+    if status == "component_gap":
+        update_state(path=path, status="paused_for_human")
+        print("\n⏸️ COMPONENT GAP: hypothesis needs an engine piece that does not exist. "
+              "See artifacts/decision.yaml; extend the engine per STRATEGY_EXTENDING.md, then resume.")
+        return "human_pause"
+    if status not in KNOWN_STATUSES:
+        update_state(path=path, status="paused_for_human")
+        print(f"\n⏸️ UNEXPECTED STATUS '{status}' from backtest_specification — "
+              f"SKILL.md may need a new status case, or this run had bad inputs. "
+              f"Rationale: {decision.get('rationale', '<none>')}")
+        return "human_pause"
+
 def resume_pipeline(run_id: str):
     RUN_DIR = ROOT / "runs" / run_id
     state = load_yaml(RUN_DIR / "pipeline_state.yaml")
@@ -517,12 +553,14 @@ def run_loop(run_id: str):
     while True:
         current_stage = state.get("pending_stage")
          
-        if not current_stage or current_stage.startswith("completed") or current_stage == "backtest_specification":
-            print(f"🏁 Phase 1 pipeline finished. Final state: {current_stage}")
+        TERMINAL_PREFIXES = ("completed", "rejected", "ready_for_protocol", "human_pause", "failed_validation")
+        if not current_stage or current_stage.startswith(TERMINAL_PREFIXES):
+            print(f"🏁 Pipeline finished. Final state: {current_stage}")
             break
 
         # --- Optional: TOKEN CIRCUIT BREAKER ---
-        budget = state.get("governance", {}).get("max_total_tokens_per_run", 80000)
+        budget = 300000
+        # budget = state.get("governance", {}).get("max_total_tokens_per_run", 80000)
         audit = state.get("audit_log", {})
         
         total_tokens_used = 0
@@ -590,12 +628,40 @@ def run_loop(run_id: str):
                 # Increment the refinement counter
                 current_count = state.get("counters", {}).get("refinements_used", 0)
                 update_state(path=RUN_DIR, counters={"refinements_used": current_count + 1})
-                
+
                 # Ask the new function where to go next
                 next_stage = determine_post_refinement_route(RUN_DIR) #Checks if refinement requires a human pause or loops back to innovation.
-                
+
                 if next_stage == "human_pause":
                     break # Break the while loop to stop the script cleanly
+
+            elif current_stage == "backtest_specification":
+                next_stage = determine_post_spec_route(RUN_DIR)
+                if next_stage == "ready_for_protocol":
+                    spec = load_yaml(ARTIFACTS / "backtest_spec.yaml")
+                    config_obj = spec.get("config")
+                    candidate_path = ARTIFACTS / "candidate_strategy_config.json"
+                    with open(candidate_path, "w", encoding="utf-8") as f:
+                        json.dump(config_obj, f, indent=2)
+                    validator = Path("..") / "trading-bot" / "tools" / "validate_config.py"
+                    result = subprocess.run(
+                        ["python", str(validator), str(candidate_path)],
+                        capture_output=True, text=True
+                    )
+                    if result.returncode != 0:
+                        report = result.stdout + result.stderr
+                        report_path = ARTIFACTS / "spec_validation_report.txt"
+                        with open(report_path, "w", encoding="utf-8") as f:
+                            f.write(report)
+                        print("❌ Config schema violations found:")
+                        print(report)
+                        update_state(path=RUN_DIR, status="failed_validation")
+                        next_stage = "failed_validation"
+                    else:
+                        print("✅ config schema-valid; run the protocol manually:")
+                        print(f"  python tools/run_protocol.py runs/{run_id}/artifacts/candidate_strategy_config.json protocols/baseline_v1.json")
+                elif next_stage == "human_pause":
+                    break
 
             # 6. Mark completed and stage next phase
             completed = state.get("completed_stages", [])

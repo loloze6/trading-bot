@@ -36,4 +36,14 @@ stages:
     outputs:
       - runs/{run_id}/artifacts/validation_protocol.yaml
       - runs/{run_id}/artifacts/validation_decision.yaml
+    next: [backtest_specification]
+
+  backtest_specification:
+    skill: skills/backtest-engineering/SKILL.md
+    required_inputs:
+      - runs/{run_id}/artifacts/expanded_hypothesis_card.yaml
+      - runs/{run_id}/artifacts/validation_protocol.yaml
+    outputs:
+      - runs/{run_id}/artifacts/backtest_spec.yaml
+      - runs/{run_id}/artifacts/decision.yaml
     next: []

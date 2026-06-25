@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["hypothesis_id", "status", "config", "config_rationale"],
+  "properties": {
+    "hypothesis_id": {"type": "string"},
+    "status": {"enum": ["spec_ready", "component_gap"]},
+    "config": {
+      "type": "object",
+      "description": "A strategy_config.json candidate, validated separately against trading-bot/strategy_config.schema.json. Null only when status is component_gap.",
+      "nullable": true
+    },
+    "config_rationale": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["hypothesis_claim", "config_choice"],
+        "properties": {
+          "hypothesis_claim": {"type": "string"},
+          "config_choice": {"type": "string"}
+        }
+      }
+    },
+    "component_gap": {
+      "type": ["object", "null"],
+      "properties": {
+        "needed": {"type": "string"},
+        "kind": {"enum": ["component", "transform", "regime"]},
+        "description": {"type": "string"}
+      }
+    }
+  }
+}
