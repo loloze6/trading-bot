@@ -31,6 +31,7 @@ Pressure-test the hypothesis before implementation.
 - status
 - rationale
 - blocking_issues
+- conditions (list of strings, only when status is conditional_approve)
 
 ## Checklist
 - Restate the hypothesis in falsifiable form.
@@ -38,7 +39,7 @@ Pressure-test the hypothesis before implementation.
 - List at least 5 failure modes.
 - Identify leakage, look-ahead, and overfitting risks.
 - Define sample split logic.
-- Return approve, refine, or reject.
+- Return approve, conditional_approve, refine, or reject. Use conditional_approve when the hypothesis is sound but one specific, resolvable condition must be honored in the config — include a conditions list in the output.
 - Check whether the idea can be tested through a minimal change to the existing bot architecture.
 
 ## Forbidden

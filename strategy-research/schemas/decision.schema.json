@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["hypothesis_id", "stage", "status", "rationale"],
+  "properties": {
+    "hypothesis_id": {"type": "string"},
+    "stage": {"type": "string"},
+    "status": {"type": "string", "description": "stage-specific verdict, e.g. spec_ready | component_gap"},
+    "rationale": {"type": "string"},
+    "blocking_issues": {"type": "array", "items": {"type": "string"}}
+  }
+}
