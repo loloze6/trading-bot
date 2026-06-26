@@ -51,7 +51,7 @@ _UNTESTED_KEYWORDS = [
 ]
 
 _KEYWORD_TO_FIELD = [
-    (['mr frequency', 'mr freq', 'regime frequency', 'mr regime'], 'regime_frequency'),
+    (['mr frequency', 'mr freq', 'regime frequency', 'regime_frequency', 'mr regime'], 'regime_frequency'),
     (['win rate', 'win_rate', 'hit rate'],                          'median_win_rate'),
     (['sharpe'],                                                     'median_sharpe'),
     (['drawdown'],                                                   'max_abs_drawdown_pct'),
@@ -140,7 +140,7 @@ def _evaluate_criterion(text: str, extended: dict, is_reject: bool) -> dict:
     overall = ('UNTESTED' if all(r['result'] == 'UNTESTED' for r in per_symbol)
                else 'FAIL'  if any(r['result'] == 'FAIL'    for r in per_symbol)
                else 'PASS')
-    return {'criterion': text, 'required': threshold,
+    return {'criterion': text, 'field': field, 'required': threshold,
             'result': overall, 'per_symbol': per_symbol}
 
 def evaluate_against_decision_rules(
@@ -168,16 +168,32 @@ def evaluate_against_decision_rules(
         return str(item)
     required_evidence = [_normalize_evidence_item(i) for i in required_evidence]
 
+    def _dict_to_criterion_text(d: dict) -> str:
+        """Convert a multi-key criterion dict to a single evaluable string."""
+        metric    = d.get('metric',    d.get('criterion', ''))
+        operator  = d.get('operator',  d.get('op', ''))
+        threshold = d.get('threshold', d.get('value', ''))
+        window    = d.get('window', '')
+        text = f"{metric}: {operator} {threshold}"
+        if window:
+            text += f" ({window})"
+        return text
+
     # Handle three decision_rules formats:
-    #   list of {criterion: threshold} dicts  → new SKILL.md format
+    #   list of dicts  → new SKILL.md format; single-key {k:v} or multi-key {metric:,threshold:,...}
     #   dict with approve_if_all_met/reject_if_any_met lists → future structured format
     #   dict with approve/reject prose strings → run_010 legacy format
     if isinstance(decision_rules, list):
         approve_texts = []
         for item in decision_rules:
             if isinstance(item, dict):
-                for k, v in item.items():
+                if len(item) == 1:
+                    # Single-key {criterion_name: threshold_expr} — already works
+                    k, v = next(iter(item.items()))
                     approve_texts.append(f"{k}: {v}")
+                else:
+                    # Multi-key {metric:, operator:, threshold:, ...} — reconstruct as one string
+                    approve_texts.append(_dict_to_criterion_text(item))
             # skip plain-string summary notes (e.g. "All four criteria must pass...")
         reject_texts = []
     elif 'approve_if_all_met' in decision_rules:
@@ -203,11 +219,13 @@ def evaluate_against_decision_rules(
         criteria_results.append(row); evidence_rows.append(row)
 
     # Fix 1: deduplicate — required_evidence often repeats criteria already in decision_rules.
-    # Key is lowercased criterion text; first occurrence (decision_rules) wins.
+    # Key is resolved metric field (e.g. 'median_sharpe') so that differently-worded
+    # criteria for the same field collapse to one. UNTESTED rows (no field) fall back
+    # to lowercased criterion text. First occurrence (decision_rules order) wins.
     seen = set()
     deduped = []
     for row in criteria_results:
-        key = row['criterion'].lower().strip()
+        key = row.get('field') or row['criterion'].lower().strip()
         if key not in seen:
             seen.add(key)
             deduped.append(row)

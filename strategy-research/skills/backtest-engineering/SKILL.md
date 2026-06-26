@@ -36,6 +36,13 @@ The embedded `config` must:
 - rationale: one line on why
 - blocking_issues: the missing piece(s) if component_gap, else []
 
+YAML formatting rule — applies to ALL string values in both artifacts:
+- Any string value containing a colon (:) MUST use block scalar syntax (| or >) or be
+  quoted with single or double quotes.
+- List items (- items) that contain colons MUST be quoted: `- "key: value"` not `- key: value`
+- This rule applies even inside nested mappings and multi-line values.
+- Violation causes a YAML parse error that halts the pipeline.
+
 ## Checklist
 - In config_rationale, show how the signal concept becomes component + transform pipeline.
 - Pick regime mode the hypothesis needs; default threshold_rules. One active regime is fine for a first test.
