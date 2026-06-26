@@ -30,6 +30,9 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - primary_failure_mode      # the single most likely explanation for failure
 - config_to_failure_map     # which specific config choice contributed to the primary failure
 - untested_criteria         # list of criteria that could not be evaluated
+- proposed_change_dimension # one word identifying what is being changed (e.g. er_threshold,
+                            # smooth_period, signal_component, regime_mode). Used to detect
+                            # consecutive same-dimension changes across runs.
 
 `proposed_brief.yaml` (when refine):
 - must be a valid research_brief.yaml (same schema as input brief)
@@ -44,6 +47,13 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - rationale: which criteria drove the decision
 - findings_archive: key metrics across all windows for the record
 
+YAML formatting rule — applies to ALL string values in all artifacts:
+- Any string value containing a colon (:) MUST use block scalar syntax (| or >) or be
+  quoted with single or double quotes.
+- List items (- items) that contain colons MUST be quoted: `- "key: value"` not `- key: value`
+- This rule applies even inside nested mappings and multi-line values.
+- Violation causes a YAML parse error that halts the pipeline.
+
 ## Checklist
 - Read criteria_results from protocol_result.yaml first. Do not re-derive the verdict.
 - Identify the primary_failure_mode by mapping FAIL criteria to failure_modes in validation_protocol.yaml.
@@ -52,6 +62,11 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - For kill: confirm at least 2 independent FAIL criteria before killing. If only 1 FAILs,
   recommend refine with a targeted fix.
 - UNTESTED criteria are not failures. Do not kill based on untested criteria.
+- Check proposed_brief_history: if the same config dimension (proposed_change_dimension)
+  was changed in the immediately preceding run AND the primary FAIL criterion did not
+  improve, do NOT change the same dimension again. Change a DIFFERENT dimension instead
+  and explain the pivot in change_from_previous. Use research_brief.yaml change_from_previous
+  field to detect what the previous run changed.
 
 ## Forbidden
 - Do not change more than one hypothesis dimension in proposed_brief.yaml.
