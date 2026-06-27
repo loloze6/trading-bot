@@ -194,7 +194,9 @@ def evaluate_against_decision_rules(
                 else:
                     # Multi-key {metric:, operator:, threshold:, ...} — reconstruct as one string
                     approve_texts.append(_dict_to_criterion_text(item))
-            # skip plain-string summary notes (e.g. "All four criteria must pass...")
+            elif isinstance(item, str):
+                # Plain-string criterion — process it (not a "summary note")
+                approve_texts.append(item)
         reject_texts = []
     elif 'approve_if_all_met' in decision_rules:
         approve_texts = list(decision_rules['approve_if_all_met'])
@@ -250,11 +252,44 @@ def evaluate_against_decision_rules(
     untested = [r for r in criteria_results if r['result'] == 'UNTESTED']
     fail_n   = sum(1 for r in tested if r['result'] == 'FAIL')
 
+    # A4: diagnostics block — evidence for altitude decision by verdict_interpreter
+    gross_pnls  = [r["core"].get("gross_pnl")              for r in results if r["core"].get("gross_pnl")              is not None]
+    cost_drags  = [r["core"].get("cost_drag_pct")          for r in results if r["core"].get("cost_drag_pct")          is not None]
+    corrs       = [r["core"].get("forecast_return_corr")   for r in results if r["core"].get("forecast_return_corr")   is not None]
+
+    uninformative: list = []
+    for r in results:
+        for regime, stats in r.get("regime_validity", {}).items():
+            if not stats.get("informative", True) and regime not in uninformative:
+                uninformative.append(regime)
+
+    # Use criteria_results (all evaluated criteria) so classification is robust even when
+    # decision_rules uses string items that might route via evidence_rows instead of approve_rows.
+    wr_rows     = [row for row in criteria_results if row.get("field") == "median_win_rate"]
+    sharpe_rows = [row for row in criteria_results if row.get("field") == "median_sharpe"]
+    wr_pass     = bool(wr_rows)     and all(r["result"] == "PASS" for r in wr_rows)
+    sharpe_fail = bool(sharpe_rows) and any(r["result"] == "FAIL" for r in sharpe_rows)
+    if wr_pass and sharpe_fail:
+        wr_vs_sharpe = "win_rate PASS + sharpe FAIL"
+    elif not wr_pass and sharpe_fail:
+        wr_vs_sharpe = "both FAIL"
+    else:
+        wr_vs_sharpe = "both PASS or N/A"
+
+    diagnostics = {
+        "median_gross_pnl":            round(statistics.median(gross_pnls), 4) if gross_pnls else None,
+        "median_cost_drag_pct":        round(statistics.median(cost_drags), 4) if cost_drags else None,
+        "median_forecast_return_corr": round(statistics.median(corrs),      4) if corrs      else None,
+        "uninformative_regimes":       uninformative,
+        "win_rate_vs_sharpe":          wr_vs_sharpe,
+    }
+
     return {
         'verdict':          verdict,
         'criteria_results': criteria_results,
         'verdict_reason':   f"{fail_n} of {len(tested)} evaluable criteria FAIL; "
                             f"{len(untested)} UNTESTED",
+        'diagnostics':      diagnostics,
     }
 
 
@@ -355,10 +390,12 @@ def main():
                 m = json.load(f)
             core = m["core"]
             results.append({
-                "symbol": symbol,
-                "window": label,
-                "run_id": rd.name,
-                "core":   core,
+                "symbol":          symbol,
+                "window":          label,
+                "run_id":          rd.name,
+                "core":            core,
+                "per_regime":      m.get("per_regime", {}),
+                "regime_validity": m.get("regime_validity", {}),
             })
             print(f"    sharpe={core.get('sharpe', 0):.3f}  trades={core.get('trade_count', 0)}"
                   f"  dd={core.get('max_drawdown_pct', 0):.1f}%")

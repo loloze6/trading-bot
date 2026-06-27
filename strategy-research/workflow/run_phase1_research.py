@@ -54,6 +54,7 @@ from google import genai
 from google.genai import types
 
 ROOT = Path(".")
+CAMPAIGN_STATE_PATH = ROOT / "campaign_state.yaml"
 
 # Dynamic Stage Configurations
 STAGE_CONFIGS = {
@@ -96,6 +97,87 @@ STAGE_CONFIGS = {
         "default_next": "dynamic_routing",
     },
 }
+
+# ---------------------------------------------------------------------------
+# Campaign state (B3) — cross-run memory spanning all runs of one research question
+# ---------------------------------------------------------------------------
+
+def load_campaign_state() -> dict:
+    """Load campaign_state.yaml, creating a blank one if absent."""
+    if not CAMPAIGN_STATE_PATH.exists():
+        return {
+            "campaign_id":               "default",
+            "research_question":         "",
+            "runs":                      [],
+            "altitude_history":          [],
+            "recent_parameter_dimensions": [],
+            "failed_families":           [],
+            "instruments_tried":         [],
+            "components_built":          [],
+            "timeframes_tried":          ["1h"],
+            "diagnostics_log":           [],
+            "status":                    "active",
+        }
+    return load_yaml(CAMPAIGN_STATE_PATH)
+
+def _save_campaign_state(state: dict):
+    state["updated_at"] = datetime.now(timezone.utc).isoformat()
+    save_yaml(CAMPAIGN_STATE_PATH, state)
+
+def update_campaign_state_after_run(run_id: str, altitude: str, dimension: str,
+                                     family: str, outcome: str, diagnostics: dict):
+    """Append one run's outcome to campaign history and update derived fields."""
+    state = load_campaign_state()
+    state.setdefault("runs", [])
+    if run_id not in state["runs"]:
+        state["runs"].append(run_id)
+
+    state.setdefault("altitude_history", [])
+    state["altitude_history"].append({
+        "run": run_id, "altitude": altitude,
+        "dimension": dimension, "family": family, "outcome": outcome,
+    })
+
+    if altitude == "parameter" and dimension:
+        dims = state.setdefault("recent_parameter_dimensions", [])
+        if dimension not in dims:
+            dims.append(dimension)
+
+    state.setdefault("diagnostics_log", [])
+    state["diagnostics_log"].append({"run": run_id, **diagnostics})
+
+    _save_campaign_state(state)
+
+def record_pivot(family: str):
+    """Record a failed hypothesis family and reset parameter-dimension counter."""
+    state = load_campaign_state()
+    state.setdefault("failed_families", [])
+    if family:
+        state["failed_families"].append(family)
+    state["recent_parameter_dimensions"] = []   # reset for new hypothesis
+    _save_campaign_state(state)
+
+def record_escalation(target: str, detail: str):
+    """Record a search-space escalation."""
+    state = load_campaign_state()
+    if target == "instrument":
+        state.setdefault("instruments_tried", [])
+        if detail and detail not in state["instruments_tried"]:
+            state["instruments_tried"].append(detail)
+    elif target == "timeframe":
+        state.setdefault("timeframes_tried", [])
+        if detail and detail not in state["timeframes_tried"]:
+            state["timeframes_tried"].append(detail)
+    elif target == "new_component":
+        state.setdefault("components_built", [])
+        if detail and detail not in state["components_built"]:
+            state["components_built"].append(detail)
+    _save_campaign_state(state)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def load_yaml(path: Path):
     with open(path, "r", encoding="utf-8") as f:
@@ -466,6 +548,21 @@ async def run_tool_worker(stage_name: str, run_id: str):
         save_yaml(ARTIFACTS / "protocol_result.yaml", summary)
         hv = (summary.get("hypothesis_verdict") or {}).get("verdict", "unknown")
         print(f"✅ Protocol complete. Hypothesis verdict: {hv}")
+
+        # Verify Phase A diagnostics are present
+        result_data = load_yaml(ARTIFACTS / "protocol_result.yaml")
+        hv_block = result_data.get("hypothesis_verdict") or {}
+        diagnostics = hv_block.get("diagnostics") or {}
+        missing = [f for f in ["median_gross_pnl", "median_forecast_return_corr",
+                                "median_cost_drag_pct"] if diagnostics.get(f) is None]
+        if missing:
+            print(f"⚠️ WARNING: diagnostics block missing fields: {missing}")
+            print("   Phase A metrics unavailable — verdict_interpreter will have reduced signal.")
+            print("   Check run_artifact.py build_core and ensure trading-bot venv has scipy.")
+        else:
+            print(f"✅ Diagnostics verified: corr={diagnostics['median_forecast_return_corr']:.3f}, "
+                  f"cost_drag={diagnostics['median_cost_drag_pct']:.1f}%, "
+                  f"gross_pnl={diagnostics['median_gross_pnl']:.2f}")
     else:
         raise ValueError(f"No tool implementation for stage: {stage_name}")
 
@@ -574,11 +671,11 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
             "from_stage": "protocol_execution", "to_stage": "verdict_interpreter",
             "assigned_engine": "claude",
             "objective": "Interpret backtest findings against hypothesis-specific criteria. "
-                         "Produce a refined brief fixing the primary identified failure, "
-                         "or a final kill/promote decision.",
+                         "Choose the correct altitude (refine/pivot/escalate/kill/promote) "
+                         "based on diagnostics and campaign history. Produce the matching artifact.",
             "required_inputs": [
                 {"path": "artifacts/protocol_result.yaml",
-                 "reason": "backtest findings and hypothesis-specific verdict criteria results"},
+                 "reason": "backtest findings, hypothesis verdict, and diagnostics block"},
                 {"path": "artifacts/validation_protocol.yaml",
                  "reason": "original success criteria and failure modes to interpret against"},
                 {"path": "artifacts/backtest_spec.yaml",
@@ -586,15 +683,21 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
                 {"path": "artifacts/research_brief.yaml",
                  "reason": "original research question and constraints"},
             ],
+            "optional_inputs": [
+                {"path": "../../campaign_state.yaml",
+                 "reason": "cross-run altitude history; drives circuit-breaker altitude decisions"},
+            ],
             "deliverables": ["verdict_interpretation.yaml"],
             "constraints": [
-                "Change at most one hypothesis dimension in proposed_brief.yaml.",
+                "Change at most one hypothesis dimension in proposed_brief.yaml (refine case).",
                 "Do not recommend components absent from STRATEGY_CONFIG_REFERENCE.md.",
                 "Accept protocol_result.yaml numbers as truth — do not re-evaluate.",
+                "Populate altitude_justification with the specific diagnostic value used.",
+                "Do not emit both proposed_brief.yaml AND escalation_request.yaml.",
             ],
             "stop_conditions": [
-                "All evaluable approve criteria pass → produce research_decision.yaml with decision promote.",
-                "Two or more reject criteria confirmed → produce research_decision.yaml with decision kill.",
+                "All evaluable approve criteria pass → status: promote, emit research_decision.yaml.",
+                "Two or more reject criteria confirmed → status: kill, emit research_decision.yaml.",
             ],
         })
 
@@ -608,36 +711,244 @@ def setup_next_run(current_run_path: Path, next_run_id: str):
     print(f"✅ {next_run_id} scaffolded with proposed brief from {current_run_path.name}")
 
 
-def determine_post_verdict_route(path: Path, run_id: str):
-    interp  = load_yaml(path / "artifacts" / "verdict_interpretation.yaml")
-    verdict = interp.get("protocol_verdict", "").strip().lower()
+def _next_run_id(run_id: str) -> str:
+    """Increment the numeric suffix: run_013 → run_014."""
+    parts = run_id.rsplit("_", 1)
+    return f"{parts[0]}_{int(parts[1]) + 1:03d}" if len(parts) == 2 and parts[1].isdigit() else f"{run_id}_next"
 
-    if verdict == "promote":
+
+def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
+    proposed = path / "artifacts" / "proposed_brief.yaml"
+    if not proposed.exists():
+        print("\n⏸️ REFINE verdict but no proposed_brief.yaml found. Human review needed.")
+        return "human_pause"
+    state = load_yaml(path / "pipeline_state.yaml")
+    used  = state.get("counters", {}).get("refinements_used", 0)
+    max_r = state.get("governance", {}).get("max_refinements_after_validation", 2)
+    if used >= max_r:
+        print(f"\n🛑 Refinement budget exhausted ({used}/{max_r}). Killing hypothesis.")
+        return "completed_rejected"
+    next_id = _next_run_id(run_id)
+    print(f"\n🔄 REFINE (altitude 1): setting up {next_id} with proposed brief.")
+    setup_next_run(path, next_id)
+    # Record in campaign state
+    dim = interp.get("proposed_change_dimension", "")
+    fam = interp.get("hypothesis_family", "")
+    diag = _extract_diagnostics(path)
+    update_campaign_state_after_run(run_id, "parameter", dim, fam, "no_improvement", diag)
+    return "completed_refined"
+
+
+def _route_pivot(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
+    proposed = path / "artifacts" / "proposed_brief.yaml"
+    if not proposed.exists():
+        print("\n⏸️ PIVOT verdict but no proposed_brief.yaml found. Human review needed.")
+        return "human_pause"
+    family = interp.get("hypothesis_family", "")
+    next_id = _next_run_id(run_id)
+    print(f"\n🔀 PIVOT (altitude 2): hypothesis family '{family}' exhausted. "
+          f"Setting up {next_id} with structurally different hypothesis.")
+    setup_next_run(path, next_id)
+    # Copy findings_carryover.yaml if the LLM produced it
+    carryover_src = path / "artifacts" / "findings_carryover.yaml"
+    if carryover_src.exists():
+        carryover_dst = ROOT / "runs" / next_id / "artifacts" / "findings_carryover.yaml"
+        import shutil as _shutil
+        _shutil.copy(carryover_src, carryover_dst)
+        print(f"  findings_carryover.yaml copied to {next_id}")
+    record_pivot(family)
+    diag = _extract_diagnostics(path)
+    update_campaign_state_after_run(run_id, "hypothesis", "", family, "pivot", diag)
+    return "completed_refined"
+
+
+def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
+    esc_path = path / "artifacts" / "escalation_request.yaml"
+    if not esc_path.exists():
+        print("\n⏸️ ESCALATE verdict but no escalation_request.yaml found. Human review needed.")
+        return "human_pause"
+    esc = load_yaml(esc_path)
+    target = esc.get("target", "unknown")
+    detail = esc.get("proposed_capability", "")
+    print(f"\n🚀 ESCALATE (altitude 3): target={target}. {esc.get('reason', '')}")
+    record_escalation(target, detail)
+    diag = _extract_diagnostics(path)
+    update_campaign_state_after_run(run_id, "search_space", target, "", "escalate", diag)
+    if target == "new_component":
+        print("  → Component engineering required (Phase C1). Pausing for human code review.")
+        print(f"  → See {esc_path} for the component specification.")
+        update_state(path=path, status="paused_for_human")
+        return "human_pause"
+    # instrument / timeframe escalation: pause for human to wire the modified protocol
+    print(f"  → {target} escalation requires protocol modification (Phase C2).")
+    print(f"  → See {esc_path}. When ready, create artifacts/human_resolution.yaml and --resume.")
+    update_state(path=path, status="paused_for_human")
+    return "human_pause"
+
+
+def _route_kill(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
+    print("\n🛑 KILL: space exhausted or question answered negatively.")
+    decision = {
+        "campaign_id": campaign.get("campaign_id", "default"),
+        "terminal_run": run_id,
+        "decision": "kill",
+        "rationale": interp.get("primary_failure_mode", "no rationale provided"),
+        "altitude_justification": interp.get("altitude_justification", ""),
+        "runs_attempted": campaign.get("runs", []),
+        "families_tried": campaign.get("failed_families", []),
+        "instruments_tried": campaign.get("instruments_tried", []),
+        "components_built": campaign.get("components_built", []),
+        "utc": datetime.now(timezone.utc).isoformat(),
+    }
+    save_yaml(ROOT / "campaign_decision.yaml", decision)
+    print(f"  → Campaign decision written to campaign_decision.yaml")
+    state = load_campaign_state()
+    state["status"] = "space_empty"
+    _save_campaign_state(state)
+    return "completed_rejected"
+
+
+def _extract_diagnostics(path: Path) -> dict:
+    """Pull diagnostics from protocol_result.yaml for campaign logging."""
+    try:
+        pr = load_yaml(path / "artifacts" / "protocol_result.yaml")
+        diag = (pr.get("hypothesis_verdict") or {}).get("diagnostics", {})
+        return {
+            "forecast_return_corr": diag.get("median_forecast_return_corr"),
+            "cost_drag_pct":        diag.get("median_cost_drag_pct"),
+            "win_rate_vs_sharpe":   diag.get("win_rate_vs_sharpe"),
+        }
+    except Exception:
+        return {}
+
+
+def _verify_verdict_outputs(run_dir: Path, status: str) -> list:
+    """
+    Check that verdict_interpreter produced the right artifacts for its declared status.
+    Returns a list of violation strings. Empty list = all checks pass.
+    """
+    violations = []
+    ARTIFACTS = run_dir / "artifacts"
+    interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")
+
+    # Universal checks (all statuses)
+    if not interp.get("altitude_justification"):
+        violations.append("verdict_interpretation.yaml missing altitude_justification")
+    if not interp.get("status"):
+        violations.append("verdict_interpretation.yaml missing status field")
+
+    if status == "pivot":
+        # proposed_brief must exist and differ structurally from current brief
+        proposed_path = ARTIFACTS / "proposed_brief.yaml"
+        current_path  = ARTIFACTS / "research_brief.yaml"
+        if not proposed_path.exists():
+            violations.append("pivot: proposed_brief.yaml not produced")
+        else:
+            proposed = load_yaml(proposed_path)
+            current  = load_yaml(current_path)
+            # structural difference: signal_concept or regime_filter must differ
+            if (proposed.get("signal_concept", "").strip().lower() ==
+                    current.get("signal_concept", "").strip().lower() and
+                proposed.get("regime_filter", "").strip().lower() ==
+                    current.get("regime_filter", "").strip().lower()):
+                violations.append(
+                    "pivot: proposed_brief.yaml appears identical to current brief "
+                    "(signal_concept and regime_filter unchanged) — not a structural pivot"
+                )
+
+        # findings_carryover must exist and contain diagnostic_rule_applied
+        carryover_path = ARTIFACTS / "findings_carryover.yaml"
+        if not carryover_path.exists():
+            violations.append("pivot: findings_carryover.yaml not produced")
+        else:
+            carryover = load_yaml(carryover_path)
+            if not carryover.get("diagnostic_rule_applied"):
+                violations.append(
+                    "pivot: findings_carryover.yaml missing diagnostic_rule_applied field"
+                )
+            if not carryover.get("what_not_to_try"):
+                violations.append(
+                    "pivot: findings_carryover.yaml missing what_not_to_try field"
+                )
+
+    if status == "refine":
+        proposed_path = ARTIFACTS / "proposed_brief.yaml"
+        if not proposed_path.exists():
+            violations.append("refine: proposed_brief.yaml not produced")
+        else:
+            interp_d  = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")
+            dim = interp_d.get("proposed_change_dimension", "")
+            campaign = load_campaign_state()
+            recent   = campaign.get("recent_parameter_dimensions", [])
+            if dim and dim in recent:
+                violations.append(
+                    f"refine: proposed_change_dimension '{dim}' was already tried "
+                    f"(in recent_parameter_dimensions: {recent}). Should have pivoted."
+                )
+            if not interp_d.get("proposed_change_dimension"):
+                violations.append(
+                    "refine: verdict_interpretation.yaml missing proposed_change_dimension"
+                )
+
+    return violations
+
+
+def determine_post_verdict_route(path: Path, run_id: str):
+    interp = load_yaml(path / "artifacts" / "verdict_interpretation.yaml")
+    # `status` is the new altitude-aware field; fall back to `protocol_verdict` for old runs
+    status = (interp.get("status") or interp.get("protocol_verdict") or "").strip().lower()
+    campaign = load_campaign_state()
+
+    # --- CIRCUIT BREAKER: enforce altitude climbing regardless of LLM choice ---
+    if status == "refine":
+        dim         = interp.get("proposed_change_dimension", "")
+        recent_dims = campaign.get("recent_parameter_dimensions", [])
+        if dim in recent_dims or len(recent_dims) >= 2:
+            reason = (f"tried dimension '{dim}' before" if dim in recent_dims
+                      else f"2 parameter dimensions already tried ({recent_dims})")
+            print(f"⚠️  CIRCUIT BREAKER: parameter altitude exhausted ({reason}). Forcing pivot.")
+            status = "pivot"
+
+    if status == "pivot":
+        family         = interp.get("hypothesis_family", "")
+        failed_families = campaign.get("failed_families", [])
+        if failed_families.count(family) >= 2:
+            print(f"⚠️  CIRCUIT BREAKER: hypothesis family '{family}' exhausted "
+                  f"(appeared {failed_families.count(family)}x in failed_families). Forcing escalate.")
+            status = "escalate"
+    # --- end circuit breaker ---
+
+    if status == "promote":
         update_state(path=path, flags={"walk_forward_passed": True})
         print("\n🎯 PROMOTE: hypothesis passes all evaluable criteria. Proceed to holdout.")
         return "completed_promoted"
 
-    if verdict == "kill":
-        print("\n🛑 KILL: hypothesis fails multiple criteria with no recoverable fix.")
-        return "completed_rejected"
+    if status == "kill":
+        return _route_kill(path, run_id, interp, campaign)
 
-    if verdict == "refine":
-        proposed = path / "artifacts" / "proposed_brief.yaml"
-        if not proposed.exists():
-            print("\n⏸️ REFINE verdict but no proposed_brief.yaml found. Human review needed.")
-            return "human_pause"
-        state = load_yaml(path / "pipeline_state.yaml")
-        used  = state.get("counters", {}).get("refinements_used", 0)
-        max_r = state.get("governance", {}).get("max_refinements_after_validation", 2)
-        if used >= max_r:
-            print(f"\n🛑 Refinement budget exhausted ({used}/{max_r}). Killing hypothesis.")
-            return "completed_rejected"
-        next_run_id = f"run_{int(run_id.split('_')[-1]) + 1:03d}"
-        print(f"\n🔄 REFINE: setting up {next_run_id} with proposed brief.")
-        setup_next_run(path, next_run_id)
-        return "completed_refined"
+    # Verify verdict outputs before scaffolding the next run (not applied to terminal routes)
+    violations = _verify_verdict_outputs(path, status)
+    if violations:
+        print(f"\n⚠️ VERDICT VERIFICATION FAILED ({len(violations)} issue(s)):")
+        for v in violations:
+            print(f"   - {v}")
+        report_path = path / "artifacts" / "verdict_verification_report.txt"
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(violations))
+        update_state(path=path, status="paused_for_human")
+        print("Pipeline paused. Fix the violations above, then resume.")
+        return "human_pause"
 
-    raise ValueError(f"Unknown verdict: {verdict}")
+    if status == "refine":
+        return _route_refine(path, run_id, interp, campaign)
+
+    if status == "pivot":
+        return _route_pivot(path, run_id, interp, campaign)
+
+    if status == "escalate":
+        return _route_escalate(path, run_id, interp, campaign)
+
+    raise ValueError(f"Unknown verdict status: '{status}'")
 
 
 def determine_post_spec_route(path: Path):
@@ -679,7 +990,7 @@ def resume_pipeline(run_id: str):
             pending_stage="backtest_specification", # Move to Phase 2
             injected_human_context=resolution.get("injected_context")
         )
-        run_loop()
+        run_loop(run_id)
     else:
         print("❌ Human marked issue as unresolvable. Ending run.")
         update_state(path=RUN_DIR, status="rejected", pending_stage="completed_rejected")

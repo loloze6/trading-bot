@@ -14,10 +14,13 @@ logger = logging.getLogger("trading_bot")
 class AdvancedStrategy(MainStrategy):
     """Multi-regime adaptive trading strategy driven by strategy_config.json."""
 
-    def __init__(self):
-        strategies_dir = os.path.dirname(os.path.abspath(__file__))
-        project_dir    = os.path.dirname(strategies_dir)
-        config_path    = os.path.join(project_dir, 'strategy_config.json')
+    def __init__(self, config_path: Optional[str] = None):
+        if config_path is None:
+            strategies_dir = os.path.dirname(os.path.abspath(__file__))
+            project_dir    = os.path.dirname(strategies_dir)
+            config_path    = os.path.join(project_dir, 'strategy_config.json')
+
+        self._config_path = config_path
 
         with open(config_path) as f:
             config = json.load(f)
