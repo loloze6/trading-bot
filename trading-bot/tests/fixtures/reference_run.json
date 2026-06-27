@@ -1,0 +1,16 @@
+{
+  "description": "Reference backtest: BTCUSDT 1h 2024-04-01 to 2024-05-30, default strategy_config.json",
+  "symbol": "BTCUSDT",
+  "timeframe": "1h",
+  "start_date": "2024-04-01",
+  "end_date": "2024-05-30",
+  "config": "strategy_config.json",
+  "expected": {
+    "trade_count": 76,
+    "net_pnl": -270.797424,
+    "net_pnl_tolerance": 0.01,
+    "sharpe": -4.364,
+    "sharpe_tolerance": 0.005
+  },
+  "note": "Established after Step 3 parity gate (config-driven engine iso-functional with legacy). Survives: allocation fix, config_path fix. Fails if: PnL computation changes, matching logic changes, engine wiring changes."
+}

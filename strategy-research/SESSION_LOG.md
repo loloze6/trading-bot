@@ -213,3 +213,17 @@ Known open items:
   fix is always: check STRATEGY_CONFIG_REFERENCE.md, find the closest existing component,
   inject clarification via human_resolution.yaml.
 ```
+
+---
+
+## Regression test convention
+Before any change to `trading-bot/` that touches: core/launcher.py, core/backtester.py,
+strategies/main_strategy.py, strategies/strategy_engine.py, strategies/regime_engine.py,
+strategies/registry.py, performance/metrics.py, reporting/run_artifact.py:
+
+Run: `pytest trading-bot/tests/test_regression_backtest.py -v -m slow --timeout=600`
+(pytest.ini has a 30s global timeout; --timeout=600 is required to override it for this slow test)
+
+Expected: 3 passed (or 4 if manifest is present).
+If any test fails: DO NOT PROCEED. The change broke a known-good canonical result.
+Fix the regression before continuing research loop runs.

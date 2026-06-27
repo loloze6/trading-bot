@@ -14,6 +14,9 @@ Translate the approved hypothesis into one valid strategy config (emitted inside
 - `validation_protocol.yaml`
 - `STRATEGY_CONFIG_REFERENCE.md`  (trading-bot config reference: the authoritative list of every available
   component, transform op, regime, and parameter)
+- `WORKFLOW_CAPABILITIES.md` (optional — read before emitting any config to confirm the
+  required signal variant is achievable without new code. If not achievable, emit
+  component_gap immediately rather than inventing a component class name.)
 
 ## Required outputs
 - `backtest_spec.yaml`   (conforms to schemas/backtest_spec.schema.json)
@@ -73,6 +76,9 @@ YAML formatting rule — applies to ALL string values in both artifacts:
 - Do not set default_regime to a regime that maps to null in the strategies block.
 - Do not set any regime to {"components": []} (empty components list).
   If a regime should produce no trades, set it to null.
+- Do not invent component class names. If you are unsure whether a variant is possible,
+  read WORKFLOW_CAPABILITIES.md "Common confusion" section first. The answer is almost
+  always "yes, achievable via a config parameter."
 
 ## Context rule
 Read only the two hypothesis artifacts and the config reference. Minimal context.
