@@ -152,6 +152,32 @@ All expose `raw_value()`; usable in both engines. `params` defaults in parenthes
 | `VolumeExpansionHedgeComponent` | vol_period(24), scaling_factor(20.0) | volume-expansion hedge | vol+1 |
 | `VolatilityFromStdDevComponent` | vol_period(20), scaling_factor(1.0) | returns stdev % | vol_period |
 
+### Component variant patterns
+
+**`KeltnerBreakoutComponent` variants (no new component needed):**
+- Upper-band long breakout (momentum): `scaling_factor: +20.0` (default)
+- Lower-band short/mean-reversion: `scaling_factor: -20.0` — inverts the signal;
+  fires when price breaks BELOW the lower band. Use in trending regime with a negative
+  forecast expectation, or in mean_reversion regime expecting bounce.
+- Wider channels (fewer signals, higher conviction): increase `atr_multiplier` (e.g. 2.0)
+- Tighter channels (more signals, lower conviction): decrease `atr_multiplier` (e.g. 1.0)
+
+**`RSIPullbackComponent` variants (no new component needed):**
+- Long-only mean-reversion: `long_only: true` (clamps forecast ≥ 0; only buys dips)
+- Bidirectional: `long_only: false` (default) — fires on both overbought shorts and oversold longs
+- Signal magnitude: adjust `scaling_factor` (higher = stronger raw signal before normalization)
+
+**`EMASpreadComponent` variants (no new component needed):**
+- Momentum (long when fast > slow): `scaling_factor: +5.0` (default)
+- Inverse momentum (short when fast > slow): `scaling_factor: -5.0` — inverts signal direction
+- Faster/slower crossover: adjust `fast_period` and `slow_period`
+
+**`DonchianBreakoutComponent` variants (no new component needed):**
+- Upper-band breakout (long momentum): `scaling_factor: +20.0` (default)
+- Lower-band breakdown (short): `scaling_factor: -20.0` — inverts the signal
+- Wider channel (fewer, higher-conviction breaks): increase `period` (e.g. 96)
+- Tighter channel (more frequent signals): decrease `period` (e.g. 24)
+
 ## 5. Worked example (current production mean_reversion)
 ```json
 {"id": "rsi", "class": "strategies.strategy_components.RSIPullbackComponent",
