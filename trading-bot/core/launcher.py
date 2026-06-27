@@ -480,7 +480,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         commission_rate=DEFAULT_COMMISSION_RATE,
     )
 
-    strategy = AdvancedStrategy()
+    strategy = AdvancedStrategy(config_path=config_path)
     stack = launcher._build_mock_stack(params, DEFAULT_INITIAL_BALANCE)
     stack.portfolio_state_tracker.output_dir = results_root
 

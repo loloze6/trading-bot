@@ -14,7 +14,7 @@ from execution.portfolio_info import flatten_dict_columns
 from reporting.run_artifact import (
     new_run_dir, write_manifest, write_bars_csv, write_trades_json,
     write_metrics_json, write_forecast_distribution,
-    build_core, build_per_regime, build_forecast_bins, build_dynamic,
+    build_core, build_per_regime, build_forecast_bins, build_dynamic, build_regime_validity,
     _get_git_sha,
 )
 """
@@ -248,10 +248,12 @@ class BacktestEngine:
             self.logger.warning("⚠ Could not find portfolio states! Make sure tracker.record_state() is running.")
 
         # === BUILD RUN ARTIFACT DIR ===
-        # Re-read strategy config from disk (the strategy loads it at __init__ but does not store it)
-        _strategies_dir = os.path.dirname(os.path.abspath(__file__))
-        _project_dir = os.path.dirname(_strategies_dir)
-        _config_path = os.path.join(_project_dir, 'strategy_config.json')
+        # Read config from the path the strategy actually loaded (may be a candidate config).
+        _config_path = getattr(self.strategy, '_config_path', None)
+        if _config_path is None:
+            _strategies_dir = os.path.dirname(os.path.abspath(__file__))
+            _project_dir = os.path.dirname(_strategies_dir)
+            _config_path = os.path.join(_project_dir, 'strategy_config.json')
         with open(_config_path) as _f:
             _strategy_config = json.load(_f)
 
@@ -292,11 +294,12 @@ class BacktestEngine:
 
         # Write metrics JSON
         completed_trades = self.performance_tracker.completed_trades
-        core_metrics = build_core(metrics, completed_trades)
-        per_regime = build_per_regime(flat_state_df, completed_trades) if flat_state_df is not None else {}
-        forecast_bins = build_forecast_bins(completed_trades)
-        dynamic = build_dynamic(flat_state_df) if flat_state_df is not None else {}
-        write_metrics_json(run_dir, core_metrics, per_regime, forecast_bins, dynamic)
+        core_metrics      = build_core(metrics, completed_trades, flat_state_df)
+        per_regime        = build_per_regime(flat_state_df, completed_trades) if flat_state_df is not None else {}
+        forecast_bins     = build_forecast_bins(completed_trades)
+        dynamic           = build_dynamic(flat_state_df) if flat_state_df is not None else {}
+        regime_validity   = build_regime_validity(flat_state_df) if flat_state_df is not None else {}
+        write_metrics_json(run_dir, core_metrics, per_regime, forecast_bins, dynamic, regime_validity)
 
         # Write bars CSV and forecast distribution
         if flat_state_df is not None:

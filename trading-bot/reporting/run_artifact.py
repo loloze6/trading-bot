@@ -11,7 +11,7 @@ import subprocess
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -109,6 +109,7 @@ def write_metrics_json(
     per_regime: dict,
     forecast_bins: dict,
     dynamic: dict,
+    regime_validity: Optional[dict] = None,
 ) -> None:
     payload = {
         "core": {
@@ -119,6 +120,8 @@ def write_metrics_json(
         "forecast_bins": forecast_bins,
         "dynamic": dynamic,
     }
+    if regime_validity is not None:
+        payload["regime_validity"] = regime_validity
     (run_dir / "metrics.json").write_text(json.dumps(payload, indent=2, default=str))
 
 
@@ -155,21 +158,67 @@ def write_forecast_distribution(run_dir: Path, bars_df: pd.DataFrame) -> None:
 # Metrics section builders
 # ---------------------------------------------------------------------------
 
-def build_core(metrics_dict: dict, completed_trades: list) -> dict:
+def build_core(
+    metrics_dict: dict,
+    completed_trades: list,
+    bars_df: Optional[pd.DataFrame] = None,
+) -> dict:
     overall = metrics_dict.get("overall_metrics", {})
     n = len(completed_trades)
     avg_net_pnl = (
         sum(t.net_profit_loss_absolute for t in completed_trades) / n if n > 0 else 0.0
     )
     fees_paid = sum(t.total_commission for t in completed_trades)
+
+    # A1: gross/net PnL + cost drag
+    # gross_pnl: pre-commission PnL; net_pnl: post-commission
+    gross_pnl = sum(t.profit_loss_absolute for t in completed_trades)
+    net_pnl   = sum(t.net_profit_loss_absolute for t in completed_trades)
+    cost_drag_pct = (
+        round((gross_pnl - net_pnl) / abs(gross_pnl) * 100, 4) if gross_pnl != 0 else None
+    )
+
+    # A2: forecast→return correlation
+    # Positive corr + negative Sharpe → signal predicts direction but sizing/costs destroy it.
+    # Near-zero corr → signal has no predictive power.
+    # Negative corr → signal is inverted.
+    forecast_return_corr       = None
+    forecast_return_corr_pvalue = None
+    if bars_df is not None and "forecast" in bars_df.columns and "close" in bars_df.columns:
+        df = bars_df[["forecast", "close"]].copy()
+        df["forward_return"] = df["close"].shift(-1) / df["close"] - 1
+        df = df.dropna()
+        df = df[df["forecast"] != 0]
+        if len(df) >= 5:
+            x = df["forecast"].values.astype(float)
+            y = df["forward_return"].values.astype(float)
+            xm, ym = x - x.mean(), y - y.mean()
+            denom = np.sqrt((xm**2).sum() * (ym**2).sum())
+            corr = float((xm * ym).sum() / denom) if denom > 1e-12 else 0.0
+            corr = max(-1.0, min(1.0, corr))
+            forecast_return_corr = round(corr, 6)
+            n_c = len(x)
+            if n_c > 2 and abs(corr) < 1.0:
+                t_stat = corr * np.sqrt((n_c - 2) / (1.0 - corr**2))
+                try:
+                    from scipy.stats import t as t_dist
+                    forecast_return_corr_pvalue = round(float(2 * t_dist.sf(abs(t_stat), df=n_c - 2)), 6)
+                except ImportError:
+                    pass
+
     return {
-        "net_return_pct":    overall.get("[OVERALL ONLY] total_return_pct", 0.0),
-        "sharpe":            overall.get("sharpe_ratio", 0.0),
-        "max_drawdown_pct":  overall.get("max_drawdown_pct", 0.0),
-        "trade_count":       n,
-        "win_rate":          overall.get("net_win_rate_pct", 0.0),
-        "avg_trade_net_pnl": round(avg_net_pnl, 6),
-        "fees_paid":         round(fees_paid, 6),
+        "net_return_pct":              overall.get("[OVERALL ONLY] total_return_pct", 0.0),
+        "sharpe":                      overall.get("sharpe_ratio", 0.0),
+        "max_drawdown_pct":            overall.get("max_drawdown_pct", 0.0),
+        "trade_count":                 n,
+        "win_rate":                    overall.get("net_win_rate_pct", 0.0),
+        "avg_trade_net_pnl":           round(avg_net_pnl, 6),
+        "fees_paid":                   round(fees_paid, 6),
+        "gross_pnl":                   round(gross_pnl, 6),
+        "net_pnl":                     round(net_pnl, 6),
+        "cost_drag_pct":               cost_drag_pct,
+        "forecast_return_corr":        forecast_return_corr,
+        "forecast_return_corr_pvalue": forecast_return_corr_pvalue,
     }
 
 
@@ -230,4 +279,28 @@ def build_dynamic(bars_df: pd.DataFrame) -> dict:
                 "std":  round(float(series.std()),  6) if len(series) > 1 else None,
             }
         result[col] = col_stats
+    return result
+
+
+def build_regime_validity(bars_df: pd.DataFrame) -> dict:
+    """A3: per-regime forward 1-bar return stats for regime label informativeness.
+
+    A regime whose |forward_return_mean| < 0.0001 is near-random — an UNINFORMATIVE label.
+    A regime with consistent non-zero mean is a REAL market state worth targeting.
+    """
+    if "regime" not in bars_df.columns or "close" not in bars_df.columns:
+        return {}
+    df = bars_df[["regime", "close"]].copy()
+    df["forward_return"] = df["close"].shift(-1) / df["close"] - 1
+    df = df.dropna()
+    result: Dict[str, Any] = {}
+    for regime, grp in df.groupby("regime"):
+        fwd = grp["forward_return"]
+        mean_fwd = round(float(fwd.mean()), 8)
+        result[str(regime)] = {
+            "forward_return_mean": mean_fwd,
+            "forward_return_std":  round(float(fwd.std()), 8) if len(fwd) > 1 else None,
+            "n_bars":              int(len(fwd)),
+            "informative":         abs(mean_fwd) >= 0.0001,
+        }
     return result
