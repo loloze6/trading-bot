@@ -10,6 +10,11 @@ runs:
 - run_014
 - run_015
 - run_016
+- run_017
+- run_018
+- run_019
+- run_020
+- run_021
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -46,17 +51,55 @@ altitude_history:
   dimension: band_width
   family: keltner_mean_reversion
   outcome: no_improvement
-recent_parameter_dimensions:
-- band_width
+- run: run_017
+  altitude: hypothesis
+  dimension: ''
+  family: keltner_mean_reversion
+  outcome: pivot
+- run: run_018
+  altitude: parameter
+  dimension: threshold_filter_min_abs
+  family: rsi_momentum_trending
+  outcome: no_improvement
+- run: run_019
+  altitude: parameter
+  dimension: threshold_min_abs
+  family: rsi_momentum
+  outcome: no_improvement
+- run: run_020
+  altitude: hypothesis
+  dimension: ''
+  family: rsi_momentum_trending
+  outcome: pivot
+- run: run_020
+  altitude: search_space
+  dimension: timeframe
+  family: ''
+  outcome: escalate
+- run: run_021
+  altitude: hypothesis
+  dimension: ''
+  family: keltner_mean_reversion
+  outcome: pivot
+recent_parameter_dimensions: []
 failed_families:
 - rsi_mean_reversion
 - keltner_breakout
+- keltner_mean_reversion
+- rsi_momentum_trending
+- keltner_mean_reversion
 instruments_tried:
 - BTCUSDT
 - ETHUSDT
 components_built: []
 timeframes_tried:
 - 1h
+- 'Backtest RSI momentum, Keltner bands, and other signal components on 4h timeframe
+  for BTCUSDT, ETHUSDT. Expected outcome: regime windows expand 4-5x in bar count
+  per fold; median_trade_count should reach 20+ per window. Cost drag per trade should
+  drop 4-5x due to lower fee impact on larger 4h moves. Same regime detection rules
+  (ER≥0.50, VR≥1.20) and signal families reusable; validate edge only after sample
+  size restored.'
 diagnostics_log:
 - run: run_011
   forecast_return_corr: null
@@ -85,10 +128,34 @@ diagnostics_log:
   forecast_return_corr: 0.0447
   cost_drag_pct: 185.3166
   win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
+- run: run_017
+  forecast_return_corr: 0.2145
+  cost_drag_pct: 27.446
+  win_rate_vs_sharpe: both PASS or N/A
+- run: run_018
+  forecast_return_corr: 0.018
+  cost_drag_pct: 272.865
+  win_rate_vs_sharpe: both PASS or N/A
+- run: run_019
+  forecast_return_corr: 0.0
+  cost_drag_pct: 25.2061
+  win_rate_vs_sharpe: both FAIL
+- run: run_020
+  forecast_return_corr: null
+  cost_drag_pct: null
+  win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
+- run: run_020
+  forecast_return_corr: null
+  cost_drag_pct: null
+  win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
+- run: run_021
+  forecast_return_corr: 0.0136
+  cost_drag_pct: 413.0538
+  win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
   exhaustion → pivot) remain qualitatively valid. run_015 re-run and run_016+ are
   the first genuinely clean executions.'
 status: active
-updated_at: '2026-06-26T13:47:08.243684+00:00'
+updated_at: '2026-06-27T11:53:22.361920+00:00'

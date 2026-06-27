@@ -890,6 +890,20 @@ def _verify_verdict_outputs(run_dir: Path, status: str) -> list:
                     "refine: verdict_interpretation.yaml missing proposed_change_dimension"
                 )
 
+    if status == "escalate":
+        carryover_path = ARTIFACTS / "findings_carryover.yaml"
+        if not carryover_path.exists():
+            violations.append("escalate: findings_carryover.yaml not produced")
+        else:
+            carryover = load_yaml(carryover_path)
+            if not carryover.get("diagnostic_rule_applied"):
+                violations.append("escalate: findings_carryover.yaml missing diagnostic_rule_applied field")
+            if not carryover.get("what_not_to_try"):
+                violations.append("escalate: findings_carryover.yaml missing what_not_to_try field")
+        escalation_path = ARTIFACTS / "escalation_request.yaml"
+        if not escalation_path.exists():
+            violations.append("escalate: escalation_request.yaml not produced")
+
     return violations
 
 

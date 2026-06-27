@@ -154,7 +154,7 @@ All expose `raw_value()`; usable in both engines. `params` defaults in parenthes
 
 ### Component variant patterns
 
-**`KeltnerBreakoutComponent` variants (no new component needed):**
+**`KeltnerBreakoutComponent` — Variants via config (no new component needed):**
 - Upper-band long breakout (momentum): `scaling_factor: +20.0` (default)
 - Lower-band short/mean-reversion: `scaling_factor: -20.0` — inverts the signal;
   fires when price breaks BELOW the lower band. Use in trending regime with a negative
@@ -162,17 +162,17 @@ All expose `raw_value()`; usable in both engines. `params` defaults in parenthes
 - Wider channels (fewer signals, higher conviction): increase `atr_multiplier` (e.g. 2.0)
 - Tighter channels (more signals, lower conviction): decrease `atr_multiplier` (e.g. 1.0)
 
-**`RSIPullbackComponent` variants (no new component needed):**
+**`RSIPullbackComponent` — Variants via config (no new component needed):**
 - Long-only mean-reversion: `long_only: true` (clamps forecast ≥ 0; only buys dips)
 - Bidirectional: `long_only: false` (default) — fires on both overbought shorts and oversold longs
 - Signal magnitude: adjust `scaling_factor` (higher = stronger raw signal before normalization)
 
-**`EMASpreadComponent` variants (no new component needed):**
+**`EMASpreadComponent` — Variants via config (no new component needed):**
 - Momentum (long when fast > slow): `scaling_factor: +5.0` (default)
 - Inverse momentum (short when fast > slow): `scaling_factor: -5.0` — inverts signal direction
 - Faster/slower crossover: adjust `fast_period` and `slow_period`
 
-**`DonchianBreakoutComponent` variants (no new component needed):**
+**`DonchianBreakoutComponent` — Variants via config (no new component needed):**
 - Upper-band breakout (long momentum): `scaling_factor: +20.0` (default)
 - Lower-band breakdown (short): `scaling_factor: -20.0` — inverts the signal
 - Wider channel (fewer, higher-conviction breaks): increase `period` (e.g. 96)
