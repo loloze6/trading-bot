@@ -1100,6 +1100,13 @@ def determine_post_verdict_route(path: Path, run_id: str):
 
     if _should_trigger_campaign_review(load_campaign_state()):
         print(f"\n🔭 CAMPAIGN REVIEW TRIGGERED — stepping back to assess campaign direction.")
+        # Ensure the run-specific handoff file exists (it's only in templates by default)
+        cr_handoff = path / "handoffs" / "campaign_review.yaml"
+        if not cr_handoff.exists():
+            template = ROOT / "templates" / "handoffs" / "campaign_review.yaml"
+            cr_data = load_yaml(template)
+            cr_data["run_id"] = run_id
+            save_yaml(cr_handoff, cr_data)
         return "campaign_review"
 
     if status == "refine":
@@ -1162,6 +1169,9 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         setup_next_run(path, next_run_id)
         nrq = review.get("next_research_question", {})
         if nrq:
+            import yaml as _yaml
+            if isinstance(nrq, str):
+                nrq = _yaml.safe_load(nrq)
             save_yaml(ROOT / "runs" / next_run_id / "artifacts" / "research_brief.yaml", nrq)
         update_campaign_state_after_run(
             run_id=run_id,
