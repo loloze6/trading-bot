@@ -98,6 +98,10 @@ Decide `status` from `diagnostics` (in protocol_result.yaml) + `campaign_state.y
 4. If 2+ hypotheses in the same family have been pivoted through and all fail on the same root cause
    → family is exhausted. Climb to altitude 3: `escalate`.
    Apply Diagnostic interpretation rules (see section below) to choose the escalation target.
+   When recommending escalate with target=instrument: read coin_universe.yaml and propose
+   a specific symbol from the category whose strategy_affinity matches the current
+   hypothesis's signal type. E.g. if the signal is momentum/trending, propose a coin from
+   smart_contract_infra (strategy_affinity: [trending, breakout]) not from memecoin.
 
 5. Only `kill` if: escalate has already tried the reasonable instrument set AND candidate component
    types for this research question, and all failed. Killing is answering the research question

@@ -161,7 +161,7 @@ def record_pivot(family: str):
     state["recent_parameter_dimensions"] = []   # reset for new hypothesis
     _save_campaign_state(state)
 
-def record_escalation(target: str, detail: str):
+def record_escalation(target: str, detail: str, protocol_path: str = None):
     """Record a search-space escalation."""
     state = load_campaign_state()
     if target == "instrument":
@@ -176,6 +176,15 @@ def record_escalation(target: str, detail: str):
         state.setdefault("components_built", [])
         if detail and detail not in state["components_built"]:
             state["components_built"].append(detail)
+    if protocol_path:
+        state["last_escalation"] = {"target": target, "detail": detail, "protocol_path": protocol_path}
+    _save_campaign_state(state)
+
+
+def _mark_campaign_status(status: str):
+    """Set the top-level status field in campaign_state."""
+    state = load_campaign_state()
+    state["status"] = status
     _save_campaign_state(state)
 
 
@@ -528,7 +537,10 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
     if stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
-        protocol_path   = ROOT / "protocols" / "baseline_v1.json"
+        campaign = load_campaign_state()
+        last_escalation = campaign.get("last_escalation", {})
+        protocol_path_str = last_escalation.get("protocol_path")
+        protocol_path = Path(protocol_path_str) if protocol_path_str else ROOT / "protocols" / "baseline_v1.json"
         validation_path = ARTIFACTS / "validation_protocol.yaml"
 
         cmd = [
@@ -723,6 +735,89 @@ def _next_run_id(run_id: str) -> str:
     return f"{parts[0]}_{int(parts[1]) + 1:03d}" if len(parts) == 2 and parts[1].isdigit() else f"{run_id}_next"
 
 
+def _next_instrument_from_universe(campaign: dict) -> dict:
+    """
+    Given current campaign state, return the next instrument to try from coin_universe.yaml.
+    Returns: {symbol, category, timeframe} or None if all tried.
+    """
+    import yaml
+    universe_path = ROOT / "coin_universe.yaml"
+    if not universe_path.exists():
+        return None
+
+    universe = yaml.safe_load(universe_path.read_text(encoding="utf-8"))
+    tried = set(campaign.get("instruments_tried", []))
+    current_tf = campaign.get("timeframes_tried", ["1h"])[-1]
+
+    # Walk escalation_order by priority
+    for step in sorted(universe["escalation_order"]["sequence"],
+                       key=lambda x: x["priority"]):
+        cat_name = step["category"]
+        cat = universe["categories"].get(cat_name, {})
+        for coin in cat.get("coins", []):
+            symbol = coin["symbol"]
+            if symbol not in tried:
+                return {
+                    "symbol": symbol,
+                    "category": cat_name,
+                    "timeframe": current_tf,
+                    "strategy_affinity": cat.get("strategy_affinity", []),
+                    "data_cached": coin.get("data_cached", False),
+                }
+    return None   # all instruments exhausted
+
+
+def _next_timeframe_from_universe(campaign: dict):
+    """Return the next timeframe to try, or None if all tried."""
+    import yaml
+    universe = yaml.safe_load((ROOT / "coin_universe.yaml").read_text(encoding="utf-8"))
+    tried = set(campaign.get("timeframes_tried", ["1h"]))
+    for step in universe["timeframe_escalation"]["sequence"]:
+        if step["timeframe"] not in tried:
+            return step["timeframe"]
+    return None
+
+
+def _create_escalation_protocol(symbol: str, timeframe: str) -> Path:
+    """
+    Create a new protocol file for the escalated instrument.
+    Does NOT modify baseline_v1.json -- creates a new file in protocols/.
+    Returns the path to the new protocol file.
+    """
+    import json
+    baseline_path = ROOT / "protocols" / "baseline_v1.json"
+    baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+    escalation = dict(baseline)
+    escalation["symbols"] = [symbol]
+    escalation["timeframe"] = timeframe
+    escalation["_escalation_note"] = (
+        f"Auto-generated for instrument escalation to {symbol}. "
+        f"Derived from baseline_v1.json. Do not edit manually."
+    )
+    proto_name = f"escalation_{symbol.lower()}_{timeframe}.json"
+    proto_path = ROOT / "protocols" / proto_name
+    proto_path.write_text(json.dumps(escalation, indent=2), encoding="utf-8")
+    print(f"✅ Created escalation protocol: {proto_path.name}")
+    return proto_path
+
+
+def _create_timeframe_protocol(timeframe: str) -> Path:
+    """Create a new protocol file for a timeframe escalation."""
+    import json
+    baseline_path = ROOT / "protocols" / "baseline_v1.json"
+    baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+    escalation = dict(baseline)
+    escalation["timeframe"] = timeframe
+    escalation["_escalation_note"] = (
+        f"Auto-generated for timeframe escalation to {timeframe}. "
+        f"Derived from baseline_v1.json."
+    )
+    proto_name = f"escalation_tf_{timeframe.replace('/', '_')}.json"
+    proto_path = ROOT / "protocols" / proto_name
+    proto_path.write_text(json.dumps(escalation, indent=2), encoding="utf-8")
+    return proto_path
+
+
 def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     proposed = path / "artifacts" / "proposed_brief.yaml"
     if not proposed.exists():
@@ -773,23 +868,52 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
     if not esc_path.exists():
         print("\n⏸️ ESCALATE verdict but no escalation_request.yaml found. Human review needed.")
         return "human_pause"
-    esc = load_yaml(esc_path)
-    target = esc.get("target", "unknown")
-    detail = esc.get("proposed_capability", "")
-    print(f"\n🚀 ESCALATE (altitude 3): target={target}. {esc.get('reason', '')}")
-    record_escalation(target, detail)
-    diag = _extract_diagnostics(path)
-    update_campaign_state_after_run(run_id, "search_space", target, "", "escalate", diag)
-    if target == "new_component":
-        print("  → Component engineering required (Phase C1). Pausing for human code review.")
-        print(f"  → See {esc_path} for the component specification.")
+
+    campaign = load_campaign_state()
+    escalation = load_yaml(path / "artifacts" / "escalation_request.yaml")
+    target = escalation.get("target", "instrument")
+
+    if target == "instrument":
+        next_inst = _next_instrument_from_universe(campaign)
+        if next_inst is None:
+            # All instruments exhausted. Do NOT return "campaign_review" (loop risk if we
+            # arrived here FROM campaign_review). Mark the campaign space_empty and terminate.
+            print("⚠️ All instruments in coin_universe.yaml tried. Marking campaign space_empty.")
+            _mark_campaign_status("space_empty")
+            return "completed_rejected"
+        print(f"\n📊 ESCALATE → {next_inst['symbol']} ({next_inst['category']}, {next_inst['timeframe']})")
+        if not next_inst["data_cached"]:
+            print(f"   ⚠️ Data not cached for {next_inst['symbol']} — will fetch on first run.")
+        proto_path = _create_escalation_protocol(next_inst["symbol"], next_inst["timeframe"])
+        next_run_id = _next_run_id(run_id)
+        setup_next_run(path, next_run_id)
+        record_escalation("instrument", next_inst["symbol"], protocol_path=str(proto_path))
+        diag = _extract_diagnostics(path)
+        update_campaign_state_after_run(run_id, "search_space", "instrument", "", "escalate", diag)
+        return "completed_escalated"
+
+    elif target == "timeframe":
+        next_tf = _next_timeframe_from_universe(campaign)
+        if next_tf is None:
+            print("⚠️ All timeframes tried. Marking campaign space_empty.")
+            _mark_campaign_status("space_empty")
+            return "completed_rejected"
+        print(f"\n⏱ ESCALATE → timeframe {next_tf}")
+        proto_path = _create_timeframe_protocol(next_tf)
+        next_run_id = _next_run_id(run_id)
+        setup_next_run(path, next_run_id)
+        record_escalation("timeframe", next_tf, protocol_path=str(proto_path))
+        diag = _extract_diagnostics(path)
+        update_campaign_state_after_run(run_id, "search_space", "timeframe", "", "escalate", diag)
+        return "completed_escalated"
+
+    elif target == "new_component":
+        print("\n⏸️ ESCALATE → new component required. Pausing for human authoring.")
         update_state(path=path, status="paused_for_human")
         return "human_pause"
-    # instrument / timeframe escalation: pause for human to wire the modified protocol
-    print(f"  → {target} escalation requires protocol modification (Phase C2).")
-    print(f"  → See {esc_path}. When ready, create artifacts/human_resolution.yaml and --resume.")
-    update_state(path=path, status="paused_for_human")
-    return "human_pause"
+
+    else:
+        raise ValueError(f"_route_escalate: unknown escalation target '{target}'")
 
 
 def _route_kill(path: Path, run_id: str, interp: dict, campaign: dict) -> str:

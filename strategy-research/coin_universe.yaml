@@ -1,0 +1,111 @@
+# Coin universe for instrument escalation
+# Ordered within each category by: liquidity (high->low), data_available (confirmed first)
+# Add new coins here; the pipeline reads this file for all instrument pivots.
+
+version: 1
+default_timeframe: 1h
+default_exchange: binance
+
+categories:
+
+  store_of_value:
+    description: "Digital gold / macro assets. Deep liquidity, slow regime transitions,
+      trending signals durable. Mean-reversion works in chop but rarely fires."
+    strategy_affinity: [trending, momentum_continuation]
+    coins:
+      - symbol: BTCUSDT
+        name: Bitcoin
+        data_cached: true
+        min_trade_count_floor: 20   # override default if needed
+        notes: "Primary research asset. Most liquid, tightest spreads."
+      - symbol: ETHUSDT
+        name: Ethereum
+        data_cached: true
+        notes: "Second primary. Slightly more vol than BTC, tracks BTC closely."
+
+  smart_contract_infra:
+    description: "Layer-1/2 platforms. Adoption-driven trends, regime changes tied to
+      ecosystem events. Trending signals with longer lookbacks work well."
+    strategy_affinity: [trending, breakout]
+    coins:
+      - symbol: SOLUSDT
+        name: Solana
+        data_cached: false
+        notes: "High beta to BTC. More dramatic trending regime."
+      - symbol: AVAXUSDT
+        name: Avalanche
+        data_cached: false
+      - symbol: DOTUSDT
+        name: Polkadot
+        data_cached: false
+
+  defi:
+    description: "DeFi protocols. Funding-rate sensitive, mean-reversion in range markets.
+      Higher correlation with ETH than BTC. Regime transitions faster."
+    strategy_affinity: [mean_reversion, funding_rate]
+    coins:
+      - symbol: UNIUSDT
+        name: Uniswap
+        data_cached: false
+      - symbol: AAVEUSDT
+        name: Aave
+        data_cached: false
+      - symbol: LINKUSDT
+        name: Chainlink
+        data_cached: false
+        notes: "Oracle token -- less defi-native, more infra."
+
+  payment:
+    description: "Payment / remittance focused. Utility-capped upside, mean-reversion
+      dominant. Lower vol than smart contract platforms."
+    strategy_affinity: [mean_reversion, range_trading]
+    coins:
+      - symbol: XRPUSDT
+        name: XRP
+        data_cached: false
+      - symbol: XLMUSDT
+        name: Stellar
+        data_cached: false
+
+  memecoin:
+    description: "Sentiment-driven, extremely high vol, regime transitions are fast and
+      unpredictable. Only test here after a strategy shows robustness on store_of_value.
+      Mean-reversion signals may work on shorter timeframes (15m) better than 1h."
+    strategy_affinity: [sentiment, short_timeframe_mean_reversion]
+    risk_note: "HIGH RISK -- test last, never first. Liquidity can vanish."
+    coins:
+      - symbol: DOGEUSDT
+        name: Dogecoin
+        data_cached: false
+      - symbol: SHIBUSDT
+        name: Shiba Inu
+        data_cached: false
+
+escalation_order:
+  description: "When escalating to a new instrument, try in this order.
+    Skip if data_cached: false and data fetch fails."
+  sequence:
+    - category: store_of_value
+      priority: 1
+      rationale: "Most liquid, most data, most comparable to primary research asset"
+    - category: smart_contract_infra
+      priority: 2
+      rationale: "Higher vol, same regime structure as BTC -- good generalization test"
+    - category: defi
+      priority: 3
+      rationale: "Different regime drivers (protocol usage vs macro) -- true diversification test"
+    - category: payment
+      priority: 4
+    - category: memecoin
+      priority: 5
+      rationale: "Last resort -- only if all other categories exhausted"
+
+timeframe_escalation:
+  description: "When escalating timeframe (not instrument), try in this order."
+  sequence:
+    - timeframe: 4h
+      rationale: "4x fewer trades, 4x less cost drag -- often resolves cost_drag > 80% without signal change"
+    - timeframe: 15m
+      rationale: "Higher frequency -- useful for mean-reversion if 1h signals fire too rarely"
+    - timeframe: 1d
+      rationale: "Daily -- only for macro trend signals with very long lookbacks"
