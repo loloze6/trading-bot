@@ -96,6 +96,10 @@ STAGE_CONFIGS = {
         "handoff": "protocol_to_verdict_interpreter.yaml",
         "default_next": "dynamic_routing",
     },
+    "campaign_review": {
+        "handoff": "campaign_review.yaml",
+        "default_next": "dynamic_routing",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -243,6 +247,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path):
         "refinement_planner": "refinement-planner",
         "backtest_specification": "backtest-engineering",
         "verdict_interpreter": "verdict-interpreter",
+        "campaign_review": "campaign-review",
     }
 
     skill_file_name = skill_map.get(stage_name)
@@ -384,6 +389,7 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         "refinement_planner": "refinement-planner",
         "backtest_specification": "backtest-engineering",
         "verdict_interpreter": "verdict-interpreter",
+        "campaign_review": "campaign-review",
     }
 
     skill_file_name = skill_map.get(stage_name)
@@ -907,6 +913,21 @@ def _verify_verdict_outputs(run_dir: Path, status: str) -> list:
     return violations
 
 
+def _should_trigger_campaign_review(campaign: dict) -> bool:
+    """
+    Trigger campaign review when:
+    - 2+ distinct hypothesis families have failed, OR
+    - run count hits a multiple of review_every_n_runs (e.g. every 6 runs)
+    Note: called AFTER the current run is recorded in campaign_state, so counts are current.
+    """
+    failed = campaign.get("failed_families", [])
+    runs   = campaign.get("runs", [])
+    review_n = campaign.get("review_every_n_runs", 6)
+    families_trigger = len(set(failed)) >= 2   # distinct families, not total entries
+    budget_trigger   = len(runs) > 0 and len(runs) % review_n == 0
+    return families_trigger or budget_trigger
+
+
 def determine_post_verdict_route(path: Path, run_id: str):
     interp = load_yaml(path / "artifacts" / "verdict_interpretation.yaml")
     # `status` is the new altitude-aware field; fall back to `protocol_verdict` for old runs
@@ -953,6 +974,10 @@ def determine_post_verdict_route(path: Path, run_id: str):
         print("Pipeline paused. Fix the violations above, then resume.")
         return "human_pause"
 
+    if _should_trigger_campaign_review(load_campaign_state()):
+        print(f"\n🔭 CAMPAIGN REVIEW TRIGGERED — stepping back to assess campaign direction.")
+        return "campaign_review"
+
     if status == "refine":
         return _route_refine(path, run_id, interp, campaign)
 
@@ -963,6 +988,85 @@ def determine_post_verdict_route(path: Path, run_id: str):
         return _route_escalate(path, run_id, interp, campaign)
 
     raise ValueError(f"Unknown verdict status: '{status}'")
+
+
+def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
+    review = load_yaml(path / "artifacts" / "campaign_review.yaml")
+    rec = review.get("recommendation", "").strip().lower()
+
+    if rec == "continue":
+        # Campaign review says: current direction is fine. Proceed with the pending
+        # verdict WITHOUT re-triggering campaign_review (which would infinite-loop).
+        # Read the verdict status and route directly to the matching _route_* helper,
+        # bypassing determine_post_verdict_route's trigger check.
+        print("\n🔭 CAMPAIGN REVIEW: continue current direction.")
+        interp = load_yaml(path / "artifacts" / "verdict_interpretation.yaml")
+        status = interp.get("status", "refine").strip().lower()
+        campaign = load_campaign_state()
+        # Apply circuit-breaker overrides exactly as determine_post_verdict_route would,
+        # then route — but do NOT call _should_trigger_campaign_review again.
+        if status == "refine":
+            dim         = interp.get("proposed_change_dimension", "")
+            recent_dims = campaign.get("recent_parameter_dimensions", [])
+            if dim in recent_dims or len(recent_dims) >= 2:
+                reason = (f"tried dimension '{dim}' before" if dim in recent_dims
+                          else f"2 parameter dimensions already tried ({recent_dims})")
+                print(f"⚠️  CIRCUIT BREAKER: parameter altitude exhausted ({reason}). Forcing pivot.")
+                status = "pivot"
+        if status == "pivot":
+            family          = interp.get("hypothesis_family", "")
+            failed_families = campaign.get("failed_families", [])
+            if failed_families.count(family) >= 2:
+                print(f"⚠️  CIRCUIT BREAKER: hypothesis family '{family}' exhausted "
+                      f"(appeared {failed_families.count(family)}x in failed_families). Forcing escalate.")
+                status = "escalate"
+        if status == "refine":
+            return _route_refine(path, run_id, interp, campaign)
+        if status == "pivot":
+            return _route_pivot(path, run_id, interp, campaign)
+        if status == "escalate":
+            return _route_escalate(path, run_id, interp, campaign)
+        if status == "promote":
+            return "completed_promoted"
+        if status == "kill":
+            return _route_kill(path, run_id, interp, campaign)
+        raise ValueError(f"continue: unknown verdict status {status}")
+
+    if rec == "reframe":
+        # Write the new research question as the next run's brief
+        next_run_id = _next_run_id(run_id)
+        setup_next_run(path, next_run_id)
+        nrq = review.get("next_research_question", {})
+        if nrq:
+            save_yaml(ROOT / "runs" / next_run_id / "artifacts" / "research_brief.yaml", nrq)
+        update_campaign_state_after_run(
+            run_id=run_id,
+            altitude="campaign",
+            dimension="research_question",
+            family="",
+            outcome="reframed",
+            diagnostics=_extract_diagnostics(path),
+        )
+        print(f"\n🔄 REFRAME: new research question for {next_run_id}")
+        return "completed_reframed"
+
+    if rec in ("escalate_instrument", "escalate_component"):
+        # Route through the escalate helper directly (escalate is NOT a stage name).
+        # Build a minimal interp dict carrying the escalation target so _route_escalate
+        # knows whether to escalate instrument or component.
+        interp = load_yaml(path / "artifacts" / "verdict_interpretation.yaml")
+        target = "instrument" if rec == "escalate_instrument" else "new_component"
+        # Ensure escalation_request.yaml exists with the right target for _route_escalate
+        esc_path = path / "artifacts" / "escalation_request.yaml"
+        if not esc_path.exists():
+            save_yaml(esc_path, {"target": target,
+                                 "reason": review.get("recommendation_rationale", "")})
+        return _route_escalate(path, run_id, interp, load_campaign_state())
+
+    if rec == "terminate":
+        return _route_kill(path, run_id, review, load_campaign_state())
+
+    raise ValueError(f"Unknown campaign_review recommendation: {rec}")
 
 
 def determine_post_spec_route(path: Path):
@@ -1145,6 +1249,9 @@ def run_loop(run_id: str):
 
             elif current_stage == "verdict_interpreter":
                 next_stage = determine_post_verdict_route(RUN_DIR, run_id)
+
+            elif current_stage == "campaign_review":
+                next_stage = determine_post_campaign_review_route(RUN_DIR, run_id)
 
             # 6. Mark completed and stage next phase
             completed = state.get("completed_stages", [])
