@@ -69,3 +69,12 @@ stages:
     outputs:
       - runs/{run_id}/artifacts/verdict_interpretation.yaml
     next: []
+
+  campaign_review:
+    skill: skills/campaign-review/SKILL.md
+    required_inputs:
+      - campaign_state.yaml
+      - runs/{run_id}/artifacts/research_brief.yaml
+    outputs:
+      - runs/{run_id}/artifacts/campaign_review.yaml
+    next: []
