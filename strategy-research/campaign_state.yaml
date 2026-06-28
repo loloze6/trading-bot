@@ -15,6 +15,7 @@ runs:
 - run_019
 - run_020
 - run_021
+- run_022
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -81,6 +82,11 @@ altitude_history:
   dimension: ''
   family: keltner_mean_reversion
   outcome: pivot
+- run: run_022
+  altitude: campaign
+  dimension: research_question
+  family: ''
+  outcome: reframed
 recent_parameter_dimensions: []
 failed_families:
 - rsi_mean_reversion
@@ -152,11 +158,15 @@ diagnostics_log:
   forecast_return_corr: 0.0136
   cost_drag_pct: 413.0538
   win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
+- run: run_022
+  forecast_return_corr: 0.042
+  cost_drag_pct: 82.1027
+  win_rate_vs_sharpe: both PASS or N/A
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
   exhaustion → pivot) remain qualitatively valid. run_015 re-run and run_016+ are
   the first genuinely clean executions.'
-review_every_n_runs: 6   # campaign_review fires at run 6, 12, 18, ...
+review_every_n_runs: 6
 status: active
-updated_at: '2026-06-27T11:53:22.361920+00:00'
+updated_at: '2026-06-28T11:32:33.469252+00:00'

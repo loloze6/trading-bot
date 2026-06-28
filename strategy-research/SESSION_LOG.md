@@ -216,6 +216,128 @@ Known open items:
 
 ---
 
+## Session: 2026-06-28 — ENHANCE_03 (campaign coordinator) + ENHANCE_04 (coin universe)
+
+### Hypothesis
+The pipeline could circle at altitude 2 (hypothesis level) the same way it used to circle
+at altitude 1 (parameter level): no mechanism existed to detect when multiple families
+had failed for the same structural root cause, or to redirect the search at campaign scope.
+Additionally, instrument escalation had no structured universe to draw from — it paused
+for human on every instrument/timeframe escalation.
+
+### Result
+Both enhancements fully implemented and verified.
+
+**ENHANCE_03 — Campaign coordinator:**
+- Created `strategy-research/skills/campaign-review/SKILL.md` — new LLM stage that reads
+  campaign_state.yaml + research_brief.yaml and returns one of: continue | reframe |
+  escalate_instrument | escalate_component | terminate.
+- Registered `campaign_review` stage in `stages.yaml`, STAGE_CONFIGS, and both skill_maps
+  (run_claude_worker + run_gemini_worker).
+- Added `_should_trigger_campaign_review(campaign)` — fires when distinct failed_families ≥ 2
+  OR run count hits a multiple of `review_every_n_runs` (default 6).
+- Wired trigger into `determine_post_verdict_route` — fires after circuit breaker, before
+  any _route_* call.
+- Added `determine_post_campaign_review_route` — routes continue (with circuit-breaker
+  re-application, bypassing trigger to avoid infinite loop) | reframe | escalate_* | terminate.
+- Added `elif current_stage == "campaign_review":` branch in `run_loop`.
+- Created `strategy-research/templates/handoffs/campaign_review.yaml`.
+- Added `review_every_n_runs: 6` to `campaign_state.yaml`.
+- NOTE: `_should_trigger_campaign_review` will fire immediately on run_023 because
+  `failed_families` already has 4 distinct families. That is CORRECT — the campaign is
+  already past the threshold and a review is warranted.
+
+**ENHANCE_04 — Coin universe + category-aware escalation:**
+- Created `strategy-research/coin_universe.yaml` — 14 coins across 5 categories
+  (store_of_value, smart_contract_infra, defi, payment, memecoin), escalation priority
+  order, and timeframe escalation sequence.
+- Added `record_escalation` `protocol_path: str = None` kwarg; stores `last_escalation`
+  dict in campaign_state so run_tool_worker can read the per-escalation protocol.
+- Added `_mark_campaign_status(status)` helper.
+- Added `_next_instrument_from_universe`, `_next_timeframe_from_universe`,
+  `_create_escalation_protocol`, `_create_timeframe_protocol` helpers.
+- Replaced `_route_escalate` wholesale: now auto-selects next instrument from universe,
+  creates a per-escalation protocol file (never mutates baseline_v1.json), scaffolds next
+  run, and returns `completed_escalated` instead of pausing for human.
+- Updated `run_tool_worker` to read `last_escalation.protocol_path` from campaign_state
+  instead of always using `baseline_v1.json`.
+- Added `coin_universe.yaml` as optional_input to `protocol_to_verdict_interpreter.yaml`
+  template.
+- Added strategy_affinity-aware escalation guidance to step 4 in
+  `skills/verdict-interpreter/SKILL.md`.
+- `completed_escalated` is caught by TERMINAL_PREFIXES via `startswith("completed")` ✓
+- baseline_v1.json symbols confirmed unchanged: ['BTCUSDT', 'ETHUSDT'] ✓
+
+**Two task-spec bugs silently corrected:**
+- `_next_run_id(path)` → `_next_run_id(run_id)` (function takes str, not Path)
+- `record_escalation(campaign, symbol, "instrument", ...)` → `record_escalation("instrument", symbol, protocol_path=...)` (wrong arg order in spec)
+
+### Files touched
+- `strategy-research/skills/campaign-review/SKILL.md` — created
+- `strategy-research/workflow/stages.yaml` — campaign_review stage added
+- `strategy-research/workflow/run_phase1_research.py` — ENHANCE_03 + ENHANCE_04 wiring
+- `strategy-research/templates/handoffs/campaign_review.yaml` — created
+- `strategy-research/campaign_state.yaml` — review_every_n_runs: 6 added
+- `strategy-research/coin_universe.yaml` — created
+- `strategy-research/templates/handoffs/protocol_to_verdict_interpreter.yaml` — optional_inputs added
+- `strategy-research/skills/verdict-interpreter/SKILL.md` — step 4 escalation guidance added
+
+### Next session prompt (copy-paste)
+```
+Read PROJECT_STATE.md and strategy-research/SESSION_LOG.md first.
+
+ENHANCE_03 (campaign coordinator) and ENHANCE_04 (coin universe) are fully implemented.
+
+State of the campaign:
+- campaign_state.yaml has 4 distinct failed families: rsi_mean_reversion, keltner_breakout,
+  keltner_mean_reversion, rsi_momentum_trending. The pipeline is on run_021 (last entry).
+- The next run to execute is run_023 (check strategy-research/runs/ to confirm the highest
+  existing run number, then increment by 1).
+- `_should_trigger_campaign_review` will fire immediately on the next run that reaches
+  determine_post_verdict_route, because len(set(failed_families)) >= 2 is already true.
+  This is correct and expected behavior.
+
+Before running:
+1. Check the highest existing run directory:
+   ls strategy-research/runs/
+   If run_022 exists and is scaffolded, run it. If not, scaffold it first:
+   cd strategy-research
+   ../venv/Scripts/python.exe workflow/setup_run.py run_022
+   Then copy the most recent proposed_brief.yaml as its research_brief.yaml if needed.
+
+2. Confirm campaign_state.yaml has review_every_n_runs: 6 (added this session).
+
+3. The first run after ENHANCE_03 will hit campaign_review instead of going directly to
+   _route_*. The LLM will read campaign_state.yaml (4 failed families, cost_drag history)
+   and almost certainly output recommendation: reframe. This will scaffold a new run with
+   a fundamentally different research question.
+
+To run:
+  cd strategy-research
+  $env:PYTHONIOENCODING="utf-8"
+  $env:PYTHONPATH="C:\Users\alauz\Documents\Projects\trading-bot\trading-bot"
+  ../venv/Scripts/python.exe workflow/run_phase1_research.py run_022
+
+After the run completes, check:
+1. Did campaign_review.yaml get created in the run's artifacts/?
+2. What was the recommendation? (almost certainly reframe given 4 failed families)
+3. If reframe: was a new research_brief.yaml written to the next run's artifacts/?
+4. Did campaign_state.yaml record the outcome (altitude: campaign, outcome: reframed)?
+5. If escalate_instrument fired instead: did _create_escalation_protocol create a new
+   file in strategy-research/protocols/? Confirm baseline_v1.json was NOT modified.
+
+Known open items:
+- ENHANCE_04 instrument escalation will auto-select SOLUSDT as first non-tried instrument
+  (first in smart_contract_infra after BTCUSDT and ETHUSDT). Data is not cached
+  (data_cached: false) — if escalation fires, the run will print a warning and attempt
+  to fetch on first use.
+- The reframe path in determine_post_campaign_review_route calls _extract_diagnostics(path)
+  which requires a protocol_result.yaml in artifacts/. If campaign_review fires on a run
+  that never reached protocol_execution, this will fail. Unlikely but worth watching.
+```
+
+---
+
 ## Regression test convention
 Before any change to `trading-bot/` that touches: core/launcher.py, core/backtester.py,
 strategies/main_strategy.py, strategies/strategy_engine.py, strategies/regime_engine.py,
