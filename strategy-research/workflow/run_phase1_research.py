@@ -811,7 +811,12 @@ def _next_instrument_from_universe(campaign: dict) -> dict:
 
     universe = yaml.safe_load(universe_path.read_text(encoding="utf-8"))
     tried = set(campaign.get("instruments_tried", []))
-    current_tf = campaign.get("timeframes_tried", ["1h"])[-1]
+    raw_tf = campaign.get("timeframes_tried", ["1h"])[-1]
+    # Guard: timeframes_tried may contain prose strings if a corruption occurred.
+    # Extract the first clean timeframe identifier; default to "1h" if none found.
+    import re as _re
+    _tf_match = _re.search(r'\b(1m|5m|15m|30m|1h|2h|4h|6h|12h|1d|3d|1w)\b', raw_tf)
+    current_tf = _tf_match.group(1) if _tf_match else "1h"
 
     # Walk escalation_order by priority
     for step in sorted(universe["escalation_order"]["sequence"],
@@ -929,13 +934,17 @@ def _route_pivot(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
 
 def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     esc_path = path / "artifacts" / "escalation_request.yaml"
+    # When the circuit breaker forces escalate (overriding an LLM pivot verdict),
+    # no escalation_request.yaml is produced. Default to instrument escalation —
+    # that is the canonical meaning of "hypothesis family exhausted".
     if not esc_path.exists():
-        print("\n⏸️ ESCALATE verdict but no escalation_request.yaml found. Human review needed.")
-        return "human_pause"
+        print("\n📊 ESCALATE (circuit-breaker forced) → defaulting to instrument escalation.")
+        target = "instrument"
+    else:
+        escalation = load_yaml(esc_path)
+        target = escalation.get("target", "instrument")
 
     campaign = load_campaign_state()
-    escalation = load_yaml(path / "artifacts" / "escalation_request.yaml")
-    target = escalation.get("target", "instrument")
 
     if target == "instrument":
         next_inst = _next_instrument_from_universe(campaign)
@@ -951,6 +960,22 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
         proto_path = _create_escalation_protocol(next_inst["symbol"], next_inst["timeframe"])
         next_run_id = _next_run_id(run_id)
         setup_next_run(path, next_run_id)
+        # Write run_context.yaml so hypothesis_generation knows the escalation target.
+        # research_brief.yaml carries the hypothesis methodology; run_context overrides asset.
+        next_run_ctx = ROOT / "runs" / next_run_id / "artifacts" / "run_context.yaml"
+        save_yaml(next_run_ctx, {
+            "escalation_type": "instrument",
+            "target_symbol": next_inst["symbol"],
+            "target_timeframe": next_inst["timeframe"],
+            "escalation_reason": "hypothesis_family_exhausted",
+            "source_run": run_id,
+            "note": (
+                "This run is an instrument escalation. research_brief.yaml carries the "
+                "hypothesis methodology from the previous run. Override the asset target to "
+                f"{next_inst['symbol']} — do NOT use the asset listed in research_brief.yaml. "
+                f"All stages must target {next_inst['symbol']} at {next_inst['timeframe']} timeframe."
+            ),
+        })
         record_escalation("instrument", next_inst["symbol"], protocol_path=str(proto_path))
         diag = _extract_diagnostics(path)
         update_campaign_state_after_run(run_id, "search_space", "instrument", "", "escalate", diag)
@@ -1016,19 +1041,23 @@ def _extract_diagnostics(path: Path) -> dict:
         return {}
 
 
-def _verify_verdict_outputs(run_dir: Path, status: str) -> list:
+def _verify_verdict_outputs(run_dir: Path) -> list:
     """
     Check that verdict_interpreter produced the right artifacts for its declared status.
+    Always reads verdict_interpretation.yaml fresh — never uses caller-modified status.
     Returns a list of violation strings. Empty list = all checks pass.
     """
     violations = []
     ARTIFACTS = run_dir / "artifacts"
     interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")
 
+    # Derive status from the artifact itself, not from any caller-supplied value.
+    status = (interp.get("status") or interp.get("protocol_verdict") or "").strip().lower()
+
     # Universal checks (all statuses)
     if not interp.get("altitude_justification"):
         violations.append("verdict_interpretation.yaml missing altitude_justification")
-    if not interp.get("status"):
+    if not status:
         violations.append("verdict_interpretation.yaml missing status field")
 
     if status == "pivot":
@@ -1070,8 +1099,7 @@ def _verify_verdict_outputs(run_dir: Path, status: str) -> list:
         if not proposed_path.exists():
             violations.append("refine: proposed_brief.yaml not produced")
         else:
-            interp_d  = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")
-            dim = interp_d.get("proposed_change_dimension", "")
+            dim = interp.get("proposed_change_dimension", "")
             campaign = load_campaign_state()
             recent   = campaign.get("recent_parameter_dimensions", [])
             if dim and dim in recent:
@@ -1079,7 +1107,7 @@ def _verify_verdict_outputs(run_dir: Path, status: str) -> list:
                     f"refine: proposed_change_dimension '{dim}' was already tried "
                     f"(in recent_parameter_dimensions: {recent}). Should have pivoted."
                 )
-            if not interp_d.get("proposed_change_dimension"):
+            if not interp.get("proposed_change_dimension"):
                 violations.append(
                     "refine: verdict_interpretation.yaml missing proposed_change_dimension"
                 )
@@ -1150,7 +1178,7 @@ def determine_post_verdict_route(path: Path, run_id: str):
         return _route_kill(path, run_id, interp, campaign)
 
     # Verify verdict outputs before scaffolding the next run (not applied to terminal routes)
-    violations = _verify_verdict_outputs(path, status)
+    violations = _verify_verdict_outputs(path)
     if violations:
         print(f"\n⚠️ VERDICT VERIFICATION FAILED ({len(violations)} issue(s)):")
         for v in violations:
@@ -1193,7 +1221,7 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         # If campaign_review supplied next_research_question, honour it —
         # it overrides the verdict_interpreter's proposed_brief.yaml.
         nrq = review.get("next_research_question")
-        if nrq:
+        if nrq and isinstance(nrq, dict) and len(nrq) > 0:
             import yaml as _yaml_nrq
             if isinstance(nrq, str):
                 nrq = _yaml_nrq.safe_load(nrq)

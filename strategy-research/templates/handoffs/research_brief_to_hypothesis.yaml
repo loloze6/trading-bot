@@ -6,7 +6,9 @@ primary_input_artifact: "artifacts/research_brief.yaml"
 required_inputs:
   - path: "artifacts/research_brief.yaml"
     reason: "Contains the base requirements, market universe, constraints, and research goal."
-optional_inputs: []
+optional_inputs:
+  - path: "artifacts/run_context.yaml"
+    reason: "Present on instrument escalation runs. Overrides the asset field in research_brief.yaml. If present, all hypothesis artifacts must target run_context.target_symbol and run_context.target_timeframe — not the asset listed in research_brief.yaml."
 constraints:
   - "Must not propose ideas that require replacing the whole existing bot architecture."
   - "Do not write code."
