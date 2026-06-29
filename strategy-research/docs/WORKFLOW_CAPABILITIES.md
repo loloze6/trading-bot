@@ -7,7 +7,7 @@ Read this before deciding whether to pause for human review.
 ### Strategy expression
 - Any combination of existing components, transforms, regimes in STRATEGY_CONFIG_REFERENCE.md
 - Variant patterns (sign-flip, scaling, parameter ranges) — see Variants section per component
-- New regime modes (threshold_rules vs score, different thresholds, veto combinations)
+- New regime modes (threshold_rules, score, score_product, different thresholds, veto combinations)
 - Multi-component ensembles (weighted combination of signals in one regime)
 - Any transform pipeline ordering allowed by STRATEGY_CONFIG_REFERENCE.md ordering rules
 
@@ -53,6 +53,7 @@ Read this before deciding whether to pause for human review.
 | LLM invents a component name | Check "Variants via config" in STRATEGY_CONFIG_REFERENCE.md — the variant likely exists |
 | Regime fires too rarely | Relax regime thresholds in config — no new code |
 | Signal direction inverted | Negative scaling_factor or negate transform — no new code |
+| Need multiplicative regime scoring (ER × VR) | Use `mode: "score_product"` with per-component `divisor` keys — no new code |
 | Want bidirectional signal | long_only: false on RSIPullbackComponent — no new code |
 | Want lower-band Keltner | scaling_factor: -20.0 — no new code |
 | Want wider/tighter Keltner | atr_multiplier parameter — no new code |

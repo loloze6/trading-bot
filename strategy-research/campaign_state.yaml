@@ -19,6 +19,7 @@ runs:
 - run_023
 - run_024
 - run_025
+- run_027
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -105,6 +106,11 @@ altitude_history:
   dimension: regime_rule_logic
   family: keltner_threshold_regime
   outcome: no_improvement
+- run: run_027
+  altitude: search_space
+  dimension: instrument
+  family: ''
+  outcome: escalate
 recent_parameter_dimensions:
 - regime_rule_logic
 failed_families:
@@ -117,15 +123,11 @@ failed_families:
 instruments_tried:
 - BTCUSDT
 - ETHUSDT
+- SOLUSDT
 components_built: []
 timeframes_tried:
 - 1h
-- 'Backtest RSI momentum, Keltner bands, and other signal components on 4h timeframe
-  for BTCUSDT, ETHUSDT. Expected outcome: regime windows expand 4-5x in bar count
-  per fold; median_trade_count should reach 20+ per window. Cost drag per trade should
-  drop 4-5x due to lower fee impact on larger 4h moves. Same regime detection rules
-  (ER≥0.50, VR≥1.20) and signal families reusable; validate edge only after sample
-  size restored.'
+- 4h
 diagnostics_log:
 - run: run_011
   forecast_return_corr: null
@@ -194,6 +196,10 @@ diagnostics_log:
   forecast_return_corr: 0.0824
   cost_drag_pct: 39.3628
   win_rate_vs_sharpe: both FAIL
+- run: run_027
+  forecast_return_corr: 0.2145
+  cost_drag_pct: 27.446
+  win_rate_vs_sharpe: both FAIL
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
@@ -201,4 +207,8 @@ notes:
   the first genuinely clean executions.'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-06-28T12:56:50.915915+00:00'
+updated_at: '2026-06-29T09:11:37.194737+00:00'
+last_escalation:
+  target: instrument
+  detail: SOLUSDT
+  protocol_path: protocols\escalation_solusdt_4h.json

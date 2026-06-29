@@ -13,7 +13,7 @@ Schema and behavior owned by `regime_engine.py`, `strategy_engine.py`, `registry
 ## 1. `regime_detector`
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `mode` | `"threshold_rules"` \| `"score"` | `threshold_rules` | Classification algorithm |
+| `mode` | `"threshold_rules"` \| `"score"` \| `"score_product"` | `threshold_rules` | Classification algorithm |
 | `components` | list | required | Indicator components (see §Component spec) shared by rules/vetoes/scores |
 | `vetoes` | list | `[]` | Evaluated FIRST every bar, both modes. First veto whose rules all pass for `consecutive_bars` bars forces its `result` regime |
 | `rules` | list | `[]` | threshold_rules mode only. Priority-ordered; first match wins |
@@ -30,6 +30,8 @@ Regime names (must map to `MarketRegime`): `trending`, `mean_reversion`, `chop`,
 **`threshold_rules`** (default): per bar, take each component's latest RAW value; walk `rules` top-down; first rule whose `any_of` matches wins; no match → `default_regime`. Deterministic if/else — use when regime boundaries are absolute thresholds (current production mode).
 
 **`score`**: per bar, for each entry in `regime_detector.regimes`, compute score = weight-normalized average of TRANSFORMED component values; winner = argmax. Winner must satisfy `score ≥ min_score` AND `(score − runner-up) ≥ min_margin`, else regime = `unknown`. Use when regimes compete on relative evidence rather than hard cutoffs. Readiness is stricter: every component history must be FULL (= lookback), vs ≥ 1 entry for threshold_rules. Config shape:
+
+**`score_product`**: per bar, for each regime compute score = Π (transformed_value / divisor) across components; winner = argmax. Same `min_score` / `min_margin` gating as `score` mode. Use when the hypothesis is a PRODUCT of regime indicators (e.g. ER × VR/2.0 ≥ threshold). Each component in `regimes[r].components` accepts an optional `"divisor"` key (default 1.0) to normalize its scale contribution. **Single-regime pattern:** define only the target regime (e.g. `"trending"`); with one regime, margin = 1.0 always, so only `min_score` governs firing. Outside the threshold, returns `unknown`. Does NOT support inversion (fire when score < threshold) or SMA smoothing of the score — those require engine extension. Config shape:
 ```json
 "regimes": {
   "trending": {"components": [
@@ -42,6 +44,27 @@ Regime names (must map to `MarketRegime`): `trending`, `mean_reversion`, `chop`,
 }
 ```
 Entries reference declared `components` by `id` (same shared histories as rules/vetoes); transform output scales must be comparable across regimes for argmax to be meaningful (percentile-family ops, all 0–1, are the safe choice).
+
+`score_product` mode example (ER × VR/2.0 ≥ 0.4 → trending):
+```json
+"regime_detector": {
+  "mode": "score_product",
+  "min_score": 0.4,
+  "min_margin": 0.0,
+  "components": [
+    {"id": "er", "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent", "params": {"period": 24, "smooth_period": 5}},
+    {"id": "vr", "class": "strategies.strategy_components.VarianceRatioComponent", "params": {"k": 5, "window": 100}}
+  ],
+  "regimes": {
+    "trending": {"components": [
+      {"id": "er", "divisor": 1.0, "transforms": [{"op": "identity"}]},
+      {"id": "vr", "divisor": 2.0, "transforms": [{"op": "identity"}]}
+    ]}
+  },
+  "default_regime": "unknown"
+}
+```
+With ER=0.5, VR=2.0 → product = 0.5 × 1.0 = 0.5 (≥ 0.4: fires). With ER=0.6, VR=0.8 → product = 0.6 × 0.4 = 0.24 (< 0.4: returns unknown).
 
 ### Veto entry
 ```json

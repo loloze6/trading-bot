@@ -118,6 +118,8 @@ class ConfigDrivenRegimeEngine:
 
         if self._mode == "threshold_rules":
             self.current_regime = self._classify_threshold_rules()
+        elif self._mode == "score_product":
+            self.current_regime = self._classify_score_product(debug)
         else:
             self.current_regime = self._classify_score(debug)
 
@@ -168,6 +170,31 @@ class ConfigDrivenRegimeEngine:
                 for c in rcfg["components"]
             )
             scores[rname] = score / total_w if total_w > 0 else 0.0
+
+        winner      = max(scores, key=scores.get)
+        sorted_vals = sorted(scores.values(), reverse=True)
+        margin      = sorted_vals[0] - sorted_vals[1] if len(sorted_vals) > 1 else 1.0
+
+        debug["scores"] = {r: round(s, 4) for r, s in scores.items()}
+        debug["winner"] = winner
+        debug["margin"] = round(margin, 4)
+
+        if scores[winner] >= self.min_score and margin >= self.min_margin:
+            return _REGIME_MAP.get(winner, MarketRegime.UNKNOWN)
+        return MarketRegime.UNKNOWN
+
+    # ------------------------------------------------------------------
+    # score_product mode
+    # ------------------------------------------------------------------
+    def _classify_score_product(self, debug: Dict) -> MarketRegime:
+        scores: Dict[str, float] = {}
+        for rname, rcfg in self._regime_cfgs.items():
+            product = 1.0
+            for c in rcfg["components"]:
+                val     = apply_transform_pipeline(self._series(c["id"]), c["transforms"], self._data)
+                divisor = c.get("divisor", 1.0)
+                product *= (val / divisor) if divisor != 0.0 else val
+            scores[rname] = product
 
         winner      = max(scores, key=scores.get)
         sorted_vals = sorted(scores.values(), reverse=True)

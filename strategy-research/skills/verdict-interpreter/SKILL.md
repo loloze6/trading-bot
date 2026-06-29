@@ -18,12 +18,12 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - `campaign_state.yaml`        (cross-run altitude history; what has been tried and at which altitude)
 
 ## Required outputs
-- `verdict_interpretation.yaml`   (structured findings summary)
-- ONE of:
-  - `proposed_brief.yaml`         (if status = refine or pivot: the next research_brief.yaml)
-  - `findings_carryover.yaml`     (if status = pivot: lessons to seed the new hypothesis)
-  - `escalation_request.yaml`     (if status = escalate: what capability is needed)
-  - `research_decision.yaml`      (if status = kill or promote: final outcome)
+- `verdict_interpretation.yaml`   (structured findings summary — always required)
+- `findings_carryover.yaml`       (required when status = pivot OR escalate)
+- EXACTLY ONE of the following:
+  - `proposed_brief.yaml`         (if status = refine or pivot)
+  - `escalation_request.yaml`     (if status = escalate)
+  - `research_decision.yaml`      (if status = kill or promote)
 
 ## Output requirements
 `verdict_interpretation.yaml` must include:
@@ -195,6 +195,13 @@ with the EXACT diagnostic values that triggered the rule:
   median_forecast_return_corr is significantly negative AND its reverse was already tested and failed).
 - Do not pivot or escalate without citing the specific diagnostic value in altitude_justification.
 - Do not emit both proposed_brief.yaml AND escalation_request.yaml — pick exactly one.
+- Do not invent escalation targets. The ONLY permitted values for escalation_request.yaml
+  target are: "instrument", "timeframe", "new_component". Any other value will crash the
+  pipeline. Regime methodology changes (OR-gate, score-mode, different thresholds, new
+  component type) are hypothesis-level changes — use status=pivot with a proposed_brief.yaml,
+  not status=escalate. Brief constraints in the current run's research_brief.yaml are
+  guidance for THAT run only; they do not prevent a pivot to a new brief that lifts those
+  constraints.
 
 ## Context rule
 Read only the five input artifacts. Minimal context.
