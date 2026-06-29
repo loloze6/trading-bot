@@ -16,6 +16,9 @@ runs:
 - run_020
 - run_021
 - run_022
+- run_023
+- run_024
+- run_025
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -87,13 +90,30 @@ altitude_history:
   dimension: research_question
   family: ''
   outcome: reframed
-recent_parameter_dimensions: []
+- run: run_023
+  altitude: campaign
+  dimension: research_question
+  family: ''
+  outcome: reframed
+- run: run_024
+  altitude: hypothesis
+  dimension: ''
+  family: keltner_trend_mean_reversion
+  outcome: pivot
+- run: run_025
+  altitude: parameter
+  dimension: regime_rule_logic
+  family: keltner_threshold_regime
+  outcome: no_improvement
+recent_parameter_dimensions:
+- regime_rule_logic
 failed_families:
 - rsi_mean_reversion
 - keltner_breakout
 - keltner_mean_reversion
 - rsi_momentum_trending
 - keltner_mean_reversion
+- keltner_trend_mean_reversion
 instruments_tried:
 - BTCUSDT
 - ETHUSDT
@@ -162,6 +182,18 @@ diagnostics_log:
   forecast_return_corr: 0.042
   cost_drag_pct: 82.1027
   win_rate_vs_sharpe: both PASS or N/A
+- run: run_023
+  forecast_return_corr: 0.0097
+  cost_drag_pct: 420.1885
+  win_rate_vs_sharpe: both FAIL
+- run: run_024
+  forecast_return_corr: 0.2145
+  cost_drag_pct: 27.446
+  win_rate_vs_sharpe: both FAIL
+- run: run_025
+  forecast_return_corr: 0.0824
+  cost_drag_pct: 39.3628
+  win_rate_vs_sharpe: both FAIL
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
@@ -169,4 +201,4 @@ notes:
   the first genuinely clean executions.'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-06-28T11:32:33.469252+00:00'
+updated_at: '2026-06-28T12:56:50.915915+00:00'

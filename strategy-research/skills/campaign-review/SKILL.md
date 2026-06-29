@@ -30,9 +30,11 @@ needs refinement.
 - recommendation: one of:
     continue | reframe | escalate_instrument | escalate_component | terminate
 - recommendation_rationale: one paragraph citing specific diagnostic values
-- next_research_question: (if recommendation=reframe) a revised research_brief.yaml
-  content that incorporates what was learned — different from a single-run proposed_brief
-  in that it may change the fundamental question, not just the signal or parameter
+- next_research_question: ONLY populate this field when recommendation=reframe.
+  Leave it ABSENT (do not write the key at all) when recommendation=continue.
+  When present: a revised research_brief.yaml content that incorporates what was
+  learned — different from a single-run proposed_brief in that it may change the
+  fundamental question, not just the signal or parameter.
 - budget_assessment: runs_used / campaign_budget, and whether to prioritize speed or
   thoroughness for remaining runs
 
@@ -79,6 +81,9 @@ no_pattern:
   runs with the same root cause.
 - Do not change the asset class or timeframe without citing a specific diagnostic
   reason (e.g. "all regimes uninformative on 1h → try 4h" not just "try something else").
+- Do NOT populate next_research_question when recommendation=continue. Populating it
+  on a continue output causes the pipeline to treat it as a reframe and overwrite the
+  next run's brief, ignoring the verdict_interpreter's recommendation entirely.
 
 ## Context rule
 Read campaign_state.yaml and research_brief.yaml only. Do not read individual run
