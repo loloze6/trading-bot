@@ -192,9 +192,73 @@ def _mark_campaign_status(status: str):
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _quote_yaml_line(line: str) -> str:
+    """Quote the value portion of a single YAML line that is causing a parse error."""
+    import re
+    stripped = line.lstrip()
+    indent = len(line) - len(stripped)
+    # List item scalar
+    if stripped.startswith("- "):
+        value = stripped[2:]
+        if value and not value[0] in ('"', "'", "|", ">", "{", "["):
+            q = value.replace('"', "'")
+            return " " * indent + '- "' + q + '"'
+    # Mapping value
+    m = re.match(r'^(\s*)([\w _\-./]+):\s+(.+)$', line)
+    if m:
+        pre, key, value = m.groups()
+        if value and not value[0] in ('"', "'", "|", ">", "{", "[", "~"):
+            q = value.replace('"', "'")
+            return pre + key + ': "' + q + '"'
+    return line
+
+
+def _repair_yaml(content: str, source: str = "") -> str:
+    """
+    Iteratively repair LLM-generated YAML by using the parser's own error marks
+    to find the exact failing line, quoting its value, and retrying.
+    Handles both list-item colons and inline string colons.
+    Logs each repair so silent fixes are auditable.
+    """
+    attempt = content
+    for _ in range(30):
+        try:
+            list(yaml.safe_load_all(attempt))
+            return attempt  # parsed successfully
+        except yaml.YAMLError as e:
+            mark = getattr(e, "problem_mark", None) or getattr(e, "context_mark", None)
+            if mark is None:
+                break
+            line_idx = mark.line
+            lines = attempt.split("\n")
+            if line_idx >= len(lines):
+                break
+            original = lines[line_idx]
+            fixed_line = _quote_yaml_line(original)
+            if fixed_line == original:
+                break  # no change possible — give up
+            tag = f" [{source}]" if source else ""
+            print(f"[YAML-REPAIR]{tag} line {line_idx + 1} quoted"
+                  f"\n    was: {original[:120]}"
+                  f"\n    now: {fixed_line[:120]}")
+            lines[line_idx] = fixed_line
+            attempt = "\n".join(lines)
+    return attempt
+
+
 def load_yaml(path: Path):
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        content = f.read()
+    # First pass: standard parse (handles well-formed YAML)
+    try:
+        docs = list(yaml.safe_load_all(content))
+        return docs[0] if docs else None
+    except yaml.YAMLError:
+        pass
+    # Second pass: iterative repair (handles LLM colon/multi-doc errors)
+    repaired = _repair_yaml(content, source=Path(path).name)
+    docs = list(yaml.safe_load_all(repaired))
+    return docs[0] if docs else None
 
 def save_yaml(path: Path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1126,10 +1190,24 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
     rec = review.get("recommendation", "").strip().lower()
 
     if rec == "continue":
-        # Campaign review says: current direction is fine. Proceed with the pending
-        # verdict WITHOUT re-triggering campaign_review (which would infinite-loop).
-        # Read the verdict status and route directly to the matching _route_* helper,
-        # bypassing determine_post_verdict_route's trigger check.
+        # If campaign_review supplied next_research_question, honour it —
+        # it overrides the verdict_interpreter's proposed_brief.yaml.
+        nrq = review.get("next_research_question")
+        if nrq:
+            import yaml as _yaml_nrq
+            if isinstance(nrq, str):
+                nrq = _yaml_nrq.safe_load(nrq)
+            next_run_id = _next_run_id(run_id)
+            setup_next_run(path, next_run_id)
+            save_yaml(ROOT / "runs" / next_run_id / "artifacts" / "research_brief.yaml", nrq)
+            update_campaign_state_after_run(
+                run_id=run_id, altitude="campaign", dimension="research_question",
+                family="", outcome="reframed", diagnostics=_extract_diagnostics(path),
+            )
+            print(f"\n🔄 CAMPAIGN REVIEW (continue+reframe): next_research_question -> {next_run_id}")
+            return "completed_reframed"
+
+        # No next_research_question — true continue, defer to verdict_interpreter.
         print("\n🔭 CAMPAIGN REVIEW: continue current direction.")
         interp = load_yaml(path / "artifacts" / "verdict_interpretation.yaml")
         status = interp.get("status", "refine").strip().lower()
@@ -1323,8 +1401,23 @@ def run_loop(run_id: str):
             # Save it right back over the existing file
             save_yaml(handoff_path, handoff_data)
 
+            # Skip agent invocation if artifact already exists and is valid YAML
+            # (avoids re-running LLM when manually recovering from a parse error)
+            _skip_agent = False
+            if current_stage == "campaign_review":
+                _cr_path = RUN_DIR / "artifacts" / "campaign_review.yaml"
+                if _cr_path.exists():
+                    try:
+                        import yaml as _yaml_check
+                        _yaml_check.safe_load(_cr_path.read_text(encoding="utf-8"))
+                        _skip_agent = True
+                        print(f"⏭️  campaign_review.yaml already valid — skipping LLM re-run.")
+                    except Exception:
+                        pass  # invalid YAML — re-run the agent
+
             # Invoke the Agent
-            asyncio.run(async_invoke_agent(current_stage, run_id))
+            if not _skip_agent:
+                asyncio.run(async_invoke_agent(current_stage, run_id))
 
             
             # # 4. Validate output artifacts were created
@@ -1333,6 +1426,18 @@ def run_loop(run_id: str):
             # 4. Validate output artifacts were created
             expected_outputs = [RUN_DIR / "artifacts" / x for x in handoff_data.get("deliverables", [])]
             ensure_files(expected_outputs)
+
+            # 4b. For campaign_review: validate YAML is parseable (LLM often emits colons in list items)
+            if current_stage == "campaign_review" and not _skip_agent:
+                import yaml as _yaml_val
+                _cr_out = RUN_DIR / "artifacts" / "campaign_review.yaml"
+                try:
+                    _yaml_val.safe_load(_cr_out.read_text(encoding="utf-8"))
+                except Exception as _ye:
+                    raise ValueError(
+                        f"YAML parse error in campaign_review.yaml: {_ye}\n"
+                        f"Fix the file manually and re-run to resume."
+                    )
 
             # 5. Handle Dynamic Routing & Counters
             next_stage = config["default_next"]
