@@ -111,11 +111,27 @@ GATE B — Trade count (executed trades):
   A regime may activate on many bars (high n_bars) while generating few trades, because
   the rebalancing gate requires |allocation_change| >= 0.20 to trigger an execution
   (see "Position rebalancing behavior" above).
-  No operative minimum trade count is defined anywhere in this pipeline.
-  quant-validation/SKILL.md lists `min_trade_count` as an available decision criterion
-  but assigns no specific number. This is an unresolved gap requiring a human decision —
-  do not substitute n_bars=20 or any other number as a proxy. Flag it as an open gap if
-  you encounter a situation where trade count appears too low to trust a point estimate.
+
+  PROVISIONAL MINIMUM — set 2026-06-30, pending more campaign data:
+  15 total trades cumulated across ALL walk-forward windows and symbols in a single run
+  before any Sharpe or corr point estimate is treated as conclusive.
+  Below this threshold a result must be labelled "directional signal only, not validated"
+  — the point estimate may be directionally informative but carries insufficient sample
+  for a promote, kill, or strong pivot decision based on that estimate alone.
+
+  Basis for 15: across 36 runs of this campaign, 2–3 trades/window consistently produced
+  uncomputable or degenerate Sharpe in multiple windows; 10–11 trades/window was the
+  first level at which Sharpe became computable in most windows. 15 cumulative trades
+  is the minimum that makes a computable per-window median plausible across the standard
+  22-window protocol (2 symbols × 11 walk-forward windows). It is NOT a settled
+  statistical law — a rigorous calibration study (power analysis tied to actual return
+  variance in this market) has not been done. Treat 15 as a conservative floor that
+  prevents obvious small-sample promotions, not as a validated threshold.
+
+  UPDATE PROTOCOL: revise this number when: (a) a strategy is promoted and the post-
+  promotion out-of-sample result is available (success or failure informs calibration),
+  or (b) enough campaign runs accumulate at specific trade-count levels to establish
+  an empirical floor with better evidence. Document the revision reason here.
 
 WORKED EXAMPLE (confirmed clean data, Keltner mean-reversion / TRENDING regime / 1h /
 BTCUSDT+ETHUSDT, run_017 and clean replications run_024, run_027, run_033):

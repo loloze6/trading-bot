@@ -130,6 +130,12 @@ Decide `status` from `diagnostics` (in protocol_result.yaml) + `campaign_state.y
    types for this research question, and all failed. Killing is answering the research question
    negatively — valid, but it must come AFTER search-space expansion.
 
+## Required prerequisite reading
+Read skills/quant-fundamentals/SKILL.md before applying any rule below. If a rule's stated
+mechanism conflicts with an identity in quant-fundamentals, quant-fundamentals is
+authoritative — note the conflict in your output rather than silently following the rule
+as originally written.
+
 ## Diagnostic interpretation rules
 Apply these rules IN ORDER to the `diagnostics` block in `protocol_result.yaml`
 before choosing an altitude. Each rule maps a numeric condition to a root cause,
@@ -245,6 +251,23 @@ with the EXACT diagnostic values that triggered the rule:
   altitude_justification: "Rule 1: cost_drag_pct=142.82% > 80%, gross_pnl=+21.94 > 0"
 
 ## Checklist
+- Check TWO independent trade-count gates before treating corr or Sharpe as conclusive.
+  These are separate checks — passing one does not satisfy the other.
+
+  GATE B-CUMULATIVE: sum trade counts across ALL walk-forward windows and symbols
+  (sum protocol_result.yaml results[*].trade_count). If the total is < 15: label the
+  run "directional signal only, not validated" in verdict_interpretation.yaml
+  primary_failure_mode. This catches extreme small-sample runs (e.g. a 3-trade lucky
+  streak on a single window). Threshold is PROVISIONAL (set 2026-06-30) — see
+  quant-fundamentals/SKILL.md Gate B for the basis and update protocol.
+
+  GATE B-PER-WINDOW: note that a run with 11 windows at 2–3 trades each clears the
+  cumulative floor (e.g. 44 total) while every individual window's Sharpe is computed
+  from 2–3 trades — individually unreliable. Per-window thinness is enforced via the
+  min_trade_count criterion in validation_protocol.yaml (a separate existing gate).
+  Do not treat a cumulative pass as a substitute for a per-window pass. If
+  min_trade_count appears in criteria_results as FAIL, honour it as a genuine failure
+  independent of the cumulative total.
 - Read criteria_results from protocol_result.yaml first. Do not re-derive the verdict.
 - Read diagnostics block from protocol_result.yaml. Cite the specific value driving your altitude choice.
 - Read campaign_state.yaml: recent_parameter_dimensions, failed_families, instruments_tried.
@@ -263,6 +286,13 @@ with the EXACT diagnostic values that triggered the rule:
 - Do not recommend new components or transforms not in STRATEGY_CONFIG_REFERENCE.md (refine case).
 - Do not re-run or re-evaluate backtest numbers — accept protocol_result.yaml as truth.
 - Do not promote unless ALL evaluable approve criteria pass.
+- Do not promote if total trade count across all windows is < 15 (provisional floor —
+  see quant-fundamentals/SKILL.md Gate B). A run below this threshold cannot be
+  conclusively validated regardless of corr or Sharpe values.
+- Do not promote if min_trade_count appears in criteria_results with result: FAIL.
+  This is a hard block independent of the cumulative floor above: a run can have 69
+  cumulative trades while still having windows with 0 trades, making per-window Sharpe
+  uncomputable or degenerate in those windows. Both gates must pass independently.
 - Do not refine the same parameter dimension twice consecutively.
 - Do not kill before at least one escalate (instrument or component) has been attempted, UNLESS
   diagnostics prove the research question is definitively answered negatively (e.g.
