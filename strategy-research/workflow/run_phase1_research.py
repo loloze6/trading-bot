@@ -613,15 +613,18 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
     if stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
-        # Replication diagnostic runs always use baseline_v1.json regardless of campaign escalation state.
+        # Protocol selection: replication_diagnostic → baseline_v1.json;
+        # forced_diagnostic → protocol named in run_context.yaml; else → campaign escalation path.
         run_ctx_path = ARTIFACTS / "run_context.yaml"
-        is_replication = (
-            run_ctx_path.exists()
-            and (load_yaml(run_ctx_path) or {}).get("run_type") == "replication_diagnostic"
-        )
-        if is_replication:
+        run_ctx = (load_yaml(run_ctx_path) or {}) if run_ctx_path.exists() else {}
+        run_type = run_ctx.get("run_type", "")
+        if run_type == "replication_diagnostic":
             print("🔁 replication_diagnostic run — ignoring last_escalation, using baseline_v1.json")
             protocol_path = ROOT / "protocols" / "baseline_v1.json"
+        elif run_type == "forced_diagnostic":
+            proto_name = run_ctx.get("protocol", "baseline_v1.json")
+            protocol_path = ROOT / "protocols" / proto_name
+            print(f"🔬 forced_diagnostic run — using protocol: {proto_name}")
         else:
             campaign = load_campaign_state()
             last_escalation = campaign.get("last_escalation") or {}
@@ -1073,9 +1076,10 @@ def _extract_diagnostics(path: Path) -> dict:
         pr = load_yaml(path / "artifacts" / "protocol_result.yaml")
         diag = (pr.get("hypothesis_verdict") or {}).get("diagnostics", {})
         return {
-            "forecast_return_corr": diag.get("median_forecast_return_corr"),
-            "cost_drag_pct":        diag.get("median_cost_drag_pct"),
-            "win_rate_vs_sharpe":   diag.get("win_rate_vs_sharpe"),
+            "forecast_return_corr":      diag.get("median_forecast_return_corr"),
+            "cost_drag_pct":             diag.get("median_cost_drag_pct"),
+            "win_rate_vs_sharpe":        diag.get("win_rate_vs_sharpe"),
+            "avg_trade_duration_bars":   diag.get("median_avg_trade_duration_bars"),
         }
     except Exception:
         return {}

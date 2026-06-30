@@ -61,10 +61,11 @@ YAML formatting rule — applies to ALL string values in both artifacts:
 - scaling_factor and transform pipeline interact: if using ratio_to_mean + scale,
   scaling_factor controls raw signal range before normalization; if transforms is empty,
   scaling_factor IS the forecast magnitude — ensure it produces values in [-20, +20].
-- default_regime must map to a regime with at least one component with weight > 0. The
-  correct default for a hypothesis with one active regime is to set default_regime to that
-  active regime (e.g. mean_reversion). Inactive regimes should be set to null, not to
-  empty components lists.
+- default_regime must ALWAYS be "unknown" in threshold_rules and score_product modes.
+  Setting it to any active trading regime (trending, mean_reversion, chop) causes bars that
+  fail the regime rules to still fire the signal — bypassing the gate entirely. This produces
+  hundreds of spurious trades per window and destroys cost_drag. Always: default_regime: "unknown".
+  Inactive regimes should be set to null, not to empty components lists.
 - Include all regime rules from STRATEGY_CONFIG_REFERENCE.md's worked example as the
   baseline, then modify only what the hypothesis requires. Do not omit regimes not
   explicitly mentioned in the brief — omitting trending/chop means those bars fall to
@@ -86,6 +87,9 @@ If `run_context.yaml` is present and contains `run_type: replication_diagnostic`
 - Do not loosen any threshold or sample-split decision validation already fixed.
 - Do not emit empty transforms lists unless the component's raw output is already in [-20,+20]
   and no normalization is needed. Always document why.
+- NEVER set default_regime to "trending", "mean_reversion", or "chop" in threshold_rules
+  or score_product mode. This is a critical config bug: it disables the regime gate and
+  trades every bar. validate_config.py will reject it as VIOLATION V9. Use "unknown" only.
 - Do not set default_regime to a regime that maps to null in the strategies block.
 - Do not set any regime to {"components": []} (empty components list).
   If a regime should produce no trades, set it to null.

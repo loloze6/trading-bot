@@ -206,6 +206,18 @@ def build_core(
                 except ImportError:
                     pass
 
+    # Avg trade duration in bars (derived from trade timestamps + bar interval)
+    avg_trade_duration_bars = None
+    if n > 0 and bars_df is not None and "timestamp" in bars_df.columns and len(bars_df) >= 2:
+        ts_diffs = pd.Series(bars_df["timestamp"].values).diff().dropna()
+        if len(ts_diffs) > 0:
+            med = ts_diffs.median()
+            bar_minutes = med.total_seconds() / 60 if hasattr(med, "total_seconds") else float(med) / 60
+            if bar_minutes > 0:
+                avg_trade_duration_bars = round(
+                    sum(t.duration_minutes for t in completed_trades) / n / bar_minutes, 2
+                )
+
     return {
         "net_return_pct":              overall.get("[OVERALL ONLY] total_return_pct", 0.0),
         "sharpe":                      overall.get("sharpe_ratio", 0.0),
@@ -219,6 +231,7 @@ def build_core(
         "cost_drag_pct":               cost_drag_pct,
         "forecast_return_corr":        forecast_return_corr,
         "forecast_return_corr_pvalue": forecast_return_corr_pvalue,
+        "avg_trade_duration_bars":     avg_trade_duration_bars,
     }
 
 
