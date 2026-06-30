@@ -60,14 +60,32 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 You MUST produce this file in the **same response** as proposed_brief.yaml or escalation_request.yaml.
 Do not emit proposed_brief.yaml or escalation_request.yaml without also emitting findings_carryover.yaml.
 
+## CRITICAL — do not claim untested variants as explored space
+
+`expanded_hypothesis_card.yaml` (if present) may list multiple variants (V1, V2, V3...).
+Only the variant that actually appears in `protocol_result.yaml` was executed — typically
+V1 only. Before writing any statement in `what_not_to_try` that references a specific
+parameter value, configuration, or variant, verify that value appears in
+`protocol_result.yaml` or `backtest_spec.yaml` (the config that actually ran), NOT just in
+`expanded_hypothesis_card.yaml` (proposals that may never have run).
+
+FORBIDDEN: writing "[parameter] already tried/tested/exhausted" for any value that only
+appears in `expanded_hypothesis_card.yaml`'s untested variants (V2 onward, when only V1
+executed). This is a false claim that permanently and incorrectly forecloses real search
+space for all future runs reading this carryover.
+
+If you want to note that a variant was proposed but not tested, use this framing instead:
+"V2 (ATR=1.8) was proposed by innovation_expansion but not executed — still untested,
+available for future exploration" — this is accurate and distinct from claiming it failed.
+
 `findings_carryover.yaml` must include:
 - hypothesis_id
 - what_failed: list of criteria that FAILed
 - diagnostic_rule_applied: "Rule N: <one-line description of the matched condition>"
 - diagnostic_snapshot: {forecast_return_corr, cost_drag_pct, gross_pnl, uninformative_regimes}
-- what_not_to_try: list of approaches ruled out by the diagnostics (e.g. "do not pivot
-  signal while cost_drag > 80% and gross_pnl > 0 — signal earns gross PnL, cost drag
-  is the problem; do not propose sizing/leverage changes, they cannot affect cost_drag_pct")
+- what_not_to_try: list of approaches ruled out by the diagnostics — ONLY cite parameter
+  values or configs that appear in protocol_result.yaml (actually executed). Do NOT cite
+  expanded_hypothesis_card.yaml variant proposals as tested. See CRITICAL section above.
 - next_altitude: refine | pivot | escalate (the decision taken)
 - parameter_bracket: (optional — populate ONLY when the bracketing condition is met; omit otherwise)
     dimension: <the parameter dimension being tuned, e.g. min_score>
