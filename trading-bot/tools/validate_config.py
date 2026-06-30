@@ -197,6 +197,18 @@ def validate(config: dict) -> List[str]:
                 f"VIOLATION V7 strategies.regimes.{rname}: regime name '{rname}' not in {sorted(_VALID_REGIMES)}"
             )
 
+    # V9: default_regime must not be "trending" in threshold_rules or score_product mode.
+    # Setting default_regime to an active trading regime bypasses the regime gate —
+    # every bar that fails the rules is still classified as that regime and traded.
+    mode = rd.get("mode", "threshold_rules")
+    default_regime_val = rd.get("default_regime")
+    if mode in ("threshold_rules", "score_product") and default_regime_val == "trending":
+        violations.append(
+            f"VIOLATION V9 regime_detector.default_regime: 'trending' is forbidden in mode '{mode}'. "
+            "Bars outside regime rules get classified as trending and traded, bypassing the gate. "
+            "Set default_regime to 'unknown'."
+        )
+
     # V8: every strategy-engine component has numeric weight; per-regime total > 0
     for rname, rcfg in config["strategies"].get("regimes", {}).items():
         if rcfg is None:

@@ -66,7 +66,8 @@ Do not emit proposed_brief.yaml or escalation_request.yaml without also emitting
 - diagnostic_rule_applied: "Rule N: <one-line description of the matched condition>"
 - diagnostic_snapshot: {forecast_return_corr, cost_drag_pct, gross_pnl, uninformative_regimes}
 - what_not_to_try: list of approaches ruled out by the diagnostics (e.g. "do not pivot
-  signal while cost_drag > 80% and gross_pnl > 0 — sizing is the problem, not signal")
+  signal while cost_drag > 80% and gross_pnl > 0 — signal earns gross PnL, cost drag
+  is the problem; do not propose sizing/leverage changes, they cannot affect cost_drag_pct")
 - next_altitude: refine | pivot | escalate (the decision taken)
 - parameter_bracket: (optional — populate ONLY when the bracketing condition is met; omit otherwise)
     dimension: <the parameter dimension being tuned, e.g. min_score>
@@ -134,16 +135,29 @@ Apply these rules IN ORDER to the `diagnostics` block in `protocol_result.yaml`
 before choosing an altitude. Each rule maps a numeric condition to a root cause,
 which then drives the altitude choice.
 
-RULE 1 — Cost drag dominates (sizing problem, NOT signal problem):
+RULE 1 — Cost drag dominates (trade-level dilution or duration problem):
   IF median_cost_drag_pct > 80% AND median_gross_pnl > 0:
-    Root cause: the signal earns gross PnL but fees/sizing destroy it.
+    Root cause: the signal earns gross PnL but per-trade fees consume it.
+    NOTE: cost_drag_pct = total_fees / |gross_pnl|. Fees and gross_pnl scale
+    together under any position-size or leverage change, so cost_drag_pct is
+    mathematically invariant to sizing. "Sizing problem" is not a valid diagnosis
+    here. Do NOT propose leverage reductions, position-size changes, or framing
+    this as a "sizing model" issue — they cannot affect this ratio by construction.
+    Two candidate causes (cannot always be distinguished with current metrics):
+    (a) Low-conviction trade dilution: many trades with small |price_return| drag
+        down the aggregate. forecast magnitude distribution is the diagnostic.
+        Fix: raise threshold_filter min_abs to cut low-conviction entries.
+    (b) Short trade duration: positions close before price moves enough to offset
+        fees. avg_trade_duration_bars would be the diagnostic, but this field does
+        not yet exist in metrics.json (STEP_02 pending). If cause (b) is suspected
+        (e.g. threshold_filter is already ≥ 15.0 and cost_drag persists), note
+        in findings_carryover.yaml that the root cause is provisional — cause (b)
+        cannot be ruled out until avg_trade_duration_bars is available.
     Do NOT pivot to a different signal — the signal works.
-    Correct action at altitude 1: tighten threshold_filter (raise min_abs) to reduce
-    trade frequency. If threshold_filter is already ≥ 15.0 and cost_drag still > 80%,
-    correct action at altitude 2 (pivot): keep the same signal, change the sizing model
-    (e.g. lower scaling_factor, raise threshold_filter further, switch to a less-frequent
-    entry rule). Write this root cause explicitly in findings_carryover.yaml.
-    Do NOT write a pivot brief that changes the signal — that wastes a run.
+    Correct action at altitude 1: raise threshold_filter min_abs.
+    Correct action at altitude 2 (pivot): keep the same signal; switch to a
+    less-frequent entry rule (e.g. wider bands, higher min_score). Do NOT write
+    a pivot brief that changes the signal family — that wastes a run.
 
 RULE 2 — Signal has no directional edge:
   IF abs(median_forecast_return_corr) < 0.03 OR pvalue > 0.10:
@@ -160,12 +174,22 @@ RULE 3 — Signal is inverted:
 
 RULE 4 — Regime is uninformative:
   IF all regimes in uninformative_regimes include the active strategy's regime:
-    Root cause: the regime classifier does not identify a coherent market state.
-    The forward_return_mean in that regime is near zero (< 0.0001) — no signal will
-    work within it because the regime label is not predictive.
-    Correct action: pivot (altitude 2) to a different regime definition
-    (e.g. score mode instead of threshold_rules, or different component thresholds).
-    Document which regime was uninformative and at what threshold in findings_carryover.
+    FIRST check n_bars for the active regime in regime_validity
+    (available in protocol_result.yaml results[*].regime_validity[regime].n_bars).
+    Compute the median n_bars for that regime across all 22 windows.
+    IF median n_bars < 20:
+      The near-zero forward_return_mean is likely noise from an insufficient sample,
+      not evidence that the regime label is unpredictive. Do NOT conclude the regime
+      is uninformative. Route to Rule 5 instead (regime fires too rarely → sample
+      problem → relax thresholds).
+    IF median n_bars >= 20:
+      Root cause: the regime classifier does not identify a coherent market state.
+      The forward_return_mean in that regime is near zero (< 0.0001) with enough
+      bars to be reliable — the regime label itself is not predictive at this timescale.
+      Correct action: pivot (altitude 2) to a different regime definition
+      (e.g. score mode instead of threshold_rules, or different component thresholds).
+      Document which regime was uninformative, its n_bars, and its forward_return_mean
+      in findings_carryover.
 
 RULE 5 — Signal works but regime is too rare (sample problem):
   IF win_rate_vs_sharpe == "win_rate PASS + sharpe FAIL"
@@ -178,11 +202,39 @@ RULE 5 — Signal works but regime is too rare (sample problem):
     altitude 2: switch to a regime that fires more often (e.g. unknown/default, or a
     score-mode regime with a lower min_score).
 
-RULE 6 — No diagnostic signal (all metrics null or UNTESTED):
+RULE 6 — No diagnostic signal (all metrics null):
   IF median_forecast_return_corr is null AND median_gross_pnl is null:
-    Root cause: pre-Phase-A run or metrics computation failed.
-    Correct action: refine with the same brief, do not count this run in the
-    parameter-dimension history. Flag in findings_carryover.
+    FIRST distinguish cause using per_symbol_summary in protocol_result.yaml.
+    Check min_trade_count for every symbol in per_symbol_summary.
+
+    CASE A — Pre-Phase-A / instrumentation failure:
+      IF any symbol has min_trade_count > 0:
+        Root cause: trades occurred but Phase-A instrumentation was absent (old run).
+        Correct action: refine with the same brief. Do NOT count this run in
+        parameter-dimension history or failed_families. Flag in findings_carryover.
+
+    CASE B — Regime starvation (all symbols have min_trade_count = 0):
+      Root cause: regime thresholds are set above the market's actual ER/VR
+      distribution — the regime fired on zero bars across ALL 22 walk-forward
+      windows. The signal never engaged. This IS informative: it tells you the
+      threshold is too tight, not that the signal lacks edge.
+      Count this run in parameter-dimension history (it is a data point).
+      Correct action: INCREMENTAL threshold relaxation only. This is NOT permission
+      to apply Rule 5's full prescription. Cautionary precedent: run_034 relaxed
+      the ER threshold aggressively (0.50 → 0.35), causing corr to collapse from
+      0.2145 → 0.014 and cost_drag to spike to 413%. Over-relaxation is as bad as
+      over-tightening.
+      - If parameter_bracket is present in findings_carryover.yaml for the regime
+        threshold dimension: use the midpoint rule exactly (do not step further in
+        either direction). Compute the midpoint explicitly and state it in
+        proposed_brief.yaml change_from_previous.
+      - If no bracket exists: relax by the minimum plausible step only (e.g. ER
+        threshold: subtract 0.05, NOT 0.15+). Set parameter_bracket with
+        too_tight_value = current threshold; too_loose_value = TBD (to be filled
+        once over-trading is observed). Document the open bracket in
+        findings_carryover.yaml so the next run can close it.
+      Do NOT escalate timeframe or pivot signal — starvation is a threshold
+      calibration problem, not a signal quality or timeframe problem.
 
 PRIORITY: apply rules in order 1→6. The FIRST matching rule determines root cause and
 altitude. Do not apply multiple rules to the same run. If no rule matches, default to

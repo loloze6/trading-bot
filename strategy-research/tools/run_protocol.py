@@ -253,9 +253,10 @@ def evaluate_against_decision_rules(
     fail_n   = sum(1 for r in tested if r['result'] == 'FAIL')
 
     # A4: diagnostics block — evidence for altitude decision by verdict_interpreter
-    gross_pnls  = [r["core"].get("gross_pnl")              for r in results if r["core"].get("gross_pnl")              is not None]
-    cost_drags  = [r["core"].get("cost_drag_pct")          for r in results if r["core"].get("cost_drag_pct")          is not None]
-    corrs       = [r["core"].get("forecast_return_corr")   for r in results if r["core"].get("forecast_return_corr")   is not None]
+    gross_pnls  = [r["core"].get("gross_pnl")                for r in results if r["core"].get("gross_pnl")                is not None]
+    cost_drags  = [r["core"].get("cost_drag_pct")            for r in results if r["core"].get("cost_drag_pct")            is not None]
+    corrs       = [r["core"].get("forecast_return_corr")     for r in results if r["core"].get("forecast_return_corr")     is not None]
+    durations   = [r["core"].get("avg_trade_duration_bars")  for r in results if r["core"].get("avg_trade_duration_bars")  is not None]
 
     uninformative: list = []
     for r in results:
@@ -277,11 +278,12 @@ def evaluate_against_decision_rules(
         wr_vs_sharpe = "both PASS or N/A"
 
     diagnostics = {
-        "median_gross_pnl":            round(statistics.median(gross_pnls), 4) if gross_pnls else None,
-        "median_cost_drag_pct":        round(statistics.median(cost_drags), 4) if cost_drags else None,
-        "median_forecast_return_corr": round(statistics.median(corrs),      4) if corrs      else None,
-        "uninformative_regimes":       uninformative,
-        "win_rate_vs_sharpe":          wr_vs_sharpe,
+        "median_gross_pnl":              round(statistics.median(gross_pnls),  4) if gross_pnls  else None,
+        "median_cost_drag_pct":          round(statistics.median(cost_drags),  4) if cost_drags  else None,
+        "median_forecast_return_corr":   round(statistics.median(corrs),       4) if corrs       else None,
+        "median_avg_trade_duration_bars": round(statistics.median(durations),  2) if durations   else None,
+        "uninformative_regimes":         uninformative,
+        "win_rate_vs_sharpe":            wr_vs_sharpe,
     }
 
     return {
