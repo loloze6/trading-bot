@@ -358,9 +358,15 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path):
     INSTRUCTIONS FOR OUTPUT:
     Fulfill the objective defined in the handoff. You must generate the exact deliverables requested.
     Output ONLY valid YAML blocks for your deliverables. Do not output conversational filler.
-    
+
+    YAML FORMATTING RULES (violations will crash the pipeline):
+    - Any string value containing a colon (:) MUST be wrapped in double quotes.
+    - Example bad:  description: Split into windows (0.0-0.15, 0.15-0.25, 0.25+) to verify costs
+    - Example good: description: "Split into windows (0.0-0.15, 0.15-0.25, 0.25+) to verify costs"
+    - When in doubt, quote the entire value.
+
     You MUST use this exact format for each deliverable so my script can parse it:
-    
+
     ```yaml
     # filename.yaml
     <your yaml content here>
@@ -488,9 +494,15 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     full_prompt = f"""
     YOUR HANDOFF INSTRUCTIONS:
     {yaml.dump(handoff, sort_keys=False)}
-    
+
     YOUR PROVIDED CONTEXT FILES:
     {chr(10).join(context_blocks)}
+
+    YAML FORMATTING RULES (violations will crash the pipeline):
+    - Any string value containing a colon (:) MUST be wrapped in double quotes.
+    - Example bad:  description: Split into windows (0.0-0.15, 0.15-0.25, 0.25+) to verify costs
+    - Example good: description: "Split into windows (0.0-0.15, 0.15-0.25, 0.25+) to verify costs"
+    - When in doubt, quote the entire value.
     """
 
     # --- PRE-FLIGHT SAFETY RADAR ---
@@ -601,10 +613,20 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
     if stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
-        campaign = load_campaign_state()
-        last_escalation = campaign.get("last_escalation", {})
-        protocol_path_str = last_escalation.get("protocol_path")
-        protocol_path = Path(protocol_path_str) if protocol_path_str else ROOT / "protocols" / "baseline_v1.json"
+        # Replication diagnostic runs always use baseline_v1.json regardless of campaign escalation state.
+        run_ctx_path = ARTIFACTS / "run_context.yaml"
+        is_replication = (
+            run_ctx_path.exists()
+            and (load_yaml(run_ctx_path) or {}).get("run_type") == "replication_diagnostic"
+        )
+        if is_replication:
+            print("🔁 replication_diagnostic run — ignoring last_escalation, using baseline_v1.json")
+            protocol_path = ROOT / "protocols" / "baseline_v1.json"
+        else:
+            campaign = load_campaign_state()
+            last_escalation = campaign.get("last_escalation") or {}
+            protocol_path_str = last_escalation.get("protocol_path")
+            protocol_path = Path(protocol_path_str) if protocol_path_str else ROOT / "protocols" / "baseline_v1.json"
         validation_path = ARTIFACTS / "validation_protocol.yaml"
 
         cmd = [
@@ -784,9 +806,14 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
         })
 
 
-def setup_next_run(current_run_path: Path, next_run_id: str):
-    """Scaffold next run and copy proposed_brief as its research_brief."""
+def _scaffold_next_run(next_run_id: str):
+    """Scaffold next run directory only — no brief copy."""
     subprocess.run([sys.executable, str(ROOT / "workflow" / "setup_run.py"), next_run_id])
+
+
+def setup_next_run(current_run_path: Path, next_run_id: str):
+    """Scaffold next run and copy proposed_brief as its research_brief. Refine path only."""
+    _scaffold_next_run(next_run_id)
     proposed  = current_run_path / "artifacts" / "proposed_brief.yaml"
     next_brief = ROOT / "runs" / next_run_id / "artifacts" / "research_brief.yaml"
     shutil.copy(proposed, next_brief)
@@ -901,6 +928,13 @@ def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     next_id = _next_run_id(run_id)
     print(f"\n🔄 REFINE (altitude 1): setting up {next_id} with proposed brief.")
     setup_next_run(path, next_id)
+    # Copy findings_carryover.yaml (enables directional memory / parameter_bracket)
+    carryover_src = path / "artifacts" / "findings_carryover.yaml"
+    if carryover_src.exists():
+        carryover_dst = ROOT / "runs" / next_id / "artifacts" / "findings_carryover.yaml"
+        import shutil as _shutil
+        _shutil.copy(carryover_src, carryover_dst)
+        print(f"  findings_carryover.yaml copied to {next_id}")
     # Record in campaign state
     dim = interp.get("proposed_change_dimension", "")
     fam = interp.get("hypothesis_family", "")
@@ -910,15 +944,13 @@ def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
 
 
 def _route_pivot(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
-    proposed = path / "artifacts" / "proposed_brief.yaml"
-    if not proposed.exists():
-        print("\n⏸️ PIVOT verdict but no proposed_brief.yaml found. Human review needed.")
-        return "human_pause"
     family = interp.get("hypothesis_family", "")
     next_id = _next_run_id(run_id)
     print(f"\n🔀 PIVOT (altitude 2): hypothesis family '{family}' exhausted. "
-          f"Setting up {next_id} with structurally different hypothesis.")
-    setup_next_run(path, next_id)
+          f"Setting up {next_id} for fresh hypothesis generation.")
+    # Scaffold directory only — no proposed_brief to copy. The next run's brief
+    # is produced by hypothesis_generation using findings_carryover.yaml as input.
+    subprocess.run([sys.executable, str(ROOT / "workflow" / "setup_run.py"), next_id])
     # Copy findings_carryover.yaml if the LLM produced it
     carryover_src = path / "artifacts" / "findings_carryover.yaml"
     if carryover_src.exists():
@@ -959,7 +991,11 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
             print(f"   ⚠️ Data not cached for {next_inst['symbol']} — will fetch on first run.")
         proto_path = _create_escalation_protocol(next_inst["symbol"], next_inst["timeframe"])
         next_run_id = _next_run_id(run_id)
-        setup_next_run(path, next_run_id)
+        _scaffold_next_run(next_run_id)
+        # Carry the current methodology brief into the next run (not proposed_brief.yaml).
+        src_brief = path / "artifacts" / "research_brief.yaml"
+        if src_brief.exists():
+            shutil.copy(src_brief, ROOT / "runs" / next_run_id / "artifacts" / "research_brief.yaml")
         # Write run_context.yaml so hypothesis_generation knows the escalation target.
         # research_brief.yaml carries the hypothesis methodology; run_context overrides asset.
         next_run_ctx = ROOT / "runs" / next_run_id / "artifacts" / "run_context.yaml"
@@ -990,7 +1026,11 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
         print(f"\n⏱ ESCALATE → timeframe {next_tf}")
         proto_path = _create_timeframe_protocol(next_tf)
         next_run_id = _next_run_id(run_id)
-        setup_next_run(path, next_run_id)
+        _scaffold_next_run(next_run_id)
+        # Carry the current methodology brief into the next run (not proposed_brief.yaml).
+        src_brief = path / "artifacts" / "research_brief.yaml"
+        if src_brief.exists():
+            shutil.copy(src_brief, ROOT / "runs" / next_run_id / "artifacts" / "research_brief.yaml")
         record_escalation("timeframe", next_tf, protocol_path=str(proto_path))
         diag = _extract_diagnostics(path)
         update_campaign_state_after_run(run_id, "search_space", "timeframe", "", "escalate", diag)
@@ -1041,6 +1081,79 @@ def _extract_diagnostics(path: Path) -> dict:
         return {}
 
 
+def _auto_generate_findings_carryover(path: Path, interp: dict):
+    """
+    Constructs findings_carryover.yaml from verdict_interpretation.yaml when the LLM
+    omitted it. Called after verdict_interpreter completes, before _verify_verdict_outputs.
+    Safe to call unconditionally — skips if the file already exists.
+    """
+    carryover_path = path / "artifacts" / "findings_carryover.yaml"
+    if carryover_path.exists():
+        return
+
+    status = (interp.get("status") or "").strip().lower()
+    if status not in ("refine", "pivot", "escalate"):
+        return
+
+    altitude_just = interp.get("altitude_justification", "")
+
+    # First sentence of altitude_justification → diagnostic_rule_applied
+    first_sentence = altitude_just.split(". ")[0].strip() if altitude_just else "Rule unknown: no altitude_justification provided"
+
+    def _extract_float(pattern: str, text: str):
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            try:
+                return float(m.group(1).lstrip("+"))
+            except ValueError:
+                return None
+        return None
+
+    corr      = _extract_float(r'(?:forecast_return_corr|corr)=([+-]?[\d.]+)', altitude_just)
+    cost_drag = _extract_float(r'cost_drag(?:_pct)?=([+-]?[\d.]+)', altitude_just)
+    gross_pnl = _extract_float(r'gross_pnl=([+-]?[\d.]+)', altitude_just)
+
+    what_failed = [
+        c.get("criterion", str(c))
+        for c in (interp.get("criteria_summary") or [])
+        if str(c.get("result", "")).upper() == "FAIL"
+    ]
+    if not what_failed:
+        what_failed = ["No explicit FAIL criteria found — see altitude_justification"]
+
+    dim    = interp.get("proposed_change_dimension", "")
+    family = interp.get("hypothesis_family", "")
+    if status == "refine":
+        what_not_to_try = [
+            f"Do not change {dim} further without addressing the root cause cited in altitude_justification"
+            if dim else "Do not repeat the same parameter dimension"
+        ]
+    elif status == "pivot":
+        what_not_to_try = [
+            f"Do not retry {family} hypothesis family — parameter space exhausted"
+            if family else "Do not retry this hypothesis family"
+        ]
+    else:  # escalate
+        what_not_to_try = [
+            f"Do not apply {family} signal further on current instrument — regime/signal failure confirmed"
+            if family else "Do not apply this signal on the current instrument"
+        ]
+
+    save_yaml(carryover_path, {
+        "hypothesis_id":           interp.get("hypothesis_id", "unknown"),
+        "what_failed":             what_failed,
+        "diagnostic_rule_applied": first_sentence,
+        "diagnostic_snapshot": {
+            "forecast_return_corr": corr,
+            "cost_drag_pct":        cost_drag,
+            "gross_pnl":            gross_pnl,
+        },
+        "what_not_to_try": what_not_to_try,
+        "next_altitude":   status,
+    })
+    print("⚙️ Auto-generated findings_carryover.yaml from verdict artifacts.")
+
+
 def _verify_verdict_outputs(run_dir: Path) -> list:
     """
     Check that verdict_interpreter produced the right artifacts for its declared status.
@@ -1061,24 +1174,8 @@ def _verify_verdict_outputs(run_dir: Path) -> list:
         violations.append("verdict_interpretation.yaml missing status field")
 
     if status == "pivot":
-        # proposed_brief must exist and differ structurally from current brief
-        proposed_path = ARTIFACTS / "proposed_brief.yaml"
-        current_path  = ARTIFACTS / "research_brief.yaml"
-        if not proposed_path.exists():
-            violations.append("pivot: proposed_brief.yaml not produced")
-        else:
-            proposed = load_yaml(proposed_path)
-            current  = load_yaml(current_path)
-            # structural difference: signal_concept or regime_filter must differ
-            if (proposed.get("signal_concept", "").strip().lower() ==
-                    current.get("signal_concept", "").strip().lower() and
-                proposed.get("regime_filter", "").strip().lower() ==
-                    current.get("regime_filter", "").strip().lower()):
-                violations.append(
-                    "pivot: proposed_brief.yaml appears identical to current brief "
-                    "(signal_concept and regime_filter unchanged) — not a structural pivot"
-                )
-
+        # pivot does NOT produce proposed_brief.yaml — the next run's brief is
+        # generated fresh by hypothesis_generation using findings_carryover as input.
         # findings_carryover must exist and contain diagnostic_rule_applied
         carryover_path = ARTIFACTS / "findings_carryover.yaml"
         if not carryover_path.exists():
@@ -1110,6 +1207,21 @@ def _verify_verdict_outputs(run_dir: Path) -> list:
             if not interp.get("proposed_change_dimension"):
                 violations.append(
                     "refine: verdict_interpretation.yaml missing proposed_change_dimension"
+                )
+
+        # findings_carryover must exist for refine (cross-run directional memory)
+        carryover_path = ARTIFACTS / "findings_carryover.yaml"
+        if not carryover_path.exists():
+            violations.append("refine: findings_carryover.yaml not produced")
+        else:
+            carryover = load_yaml(carryover_path)
+            if not carryover.get("diagnostic_rule_applied"):
+                violations.append(
+                    "refine: findings_carryover.yaml missing diagnostic_rule_applied field"
+                )
+            if not carryover.get("what_not_to_try"):
+                violations.append(
+                    "refine: findings_carryover.yaml missing what_not_to_try field"
                 )
 
     if status == "escalate":
@@ -1177,6 +1289,9 @@ def determine_post_verdict_route(path: Path, run_id: str):
     if status == "kill":
         return _route_kill(path, run_id, interp, campaign)
 
+    # Auto-generate findings_carryover if missing (catches both normal and resume paths)
+    _auto_generate_findings_carryover(path, interp)
+
     # Verify verdict outputs before scaffolding the next run (not applied to terminal routes)
     violations = _verify_verdict_outputs(path)
     if violations:
@@ -1226,7 +1341,7 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
             if isinstance(nrq, str):
                 nrq = _yaml_nrq.safe_load(nrq)
             next_run_id = _next_run_id(run_id)
-            setup_next_run(path, next_run_id)
+            _scaffold_next_run(next_run_id)
             save_yaml(ROOT / "runs" / next_run_id / "artifacts" / "research_brief.yaml", nrq)
             update_campaign_state_after_run(
                 run_id=run_id, altitude="campaign", dimension="research_question",
@@ -1272,7 +1387,7 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
     if rec == "reframe":
         # Write the new research question as the next run's brief
         next_run_id = _next_run_id(run_id)
-        setup_next_run(path, next_run_id)
+        _scaffold_next_run(next_run_id)
         nrq = review.get("next_research_question", {})
         if nrq:
             import yaml as _yaml
@@ -1443,6 +1558,17 @@ def run_loop(run_id: str):
                     except Exception:
                         pass  # invalid YAML — re-run the agent
 
+            if current_stage == "verdict_interpreter":
+                _vi_path = RUN_DIR / "artifacts" / "verdict_interpretation.yaml"
+                if _vi_path.exists():
+                    try:
+                        import yaml as _yaml_check
+                        _yaml_check.safe_load(_vi_path.read_text(encoding="utf-8"))
+                        _skip_agent = True
+                        print(f"⏭️  verdict_interpretation.yaml already valid — skipping LLM re-run.")
+                    except Exception:
+                        pass  # invalid YAML — re-run the agent
+
             # Invoke the Agent
             if not _skip_agent:
                 asyncio.run(async_invoke_agent(current_stage, run_id))
@@ -1515,6 +1641,8 @@ def run_loop(run_id: str):
                     break
 
             elif current_stage == "verdict_interpreter":
+                _interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")
+                _auto_generate_findings_carryover(RUN_DIR, _interp)
                 next_stage = determine_post_verdict_route(RUN_DIR, run_id)
 
             elif current_stage == "campaign_review":

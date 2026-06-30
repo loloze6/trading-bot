@@ -17,6 +17,10 @@ Translate the approved hypothesis into one valid strategy config (emitted inside
 - `WORKFLOW_CAPABILITIES.md` (optional — read before emitting any config to confirm the
   required signal variant is achievable without new code. If not achievable, emit
   component_gap immediately rather than inventing a component class name.)
+- `findings_carryover.yaml` (if present): read `parameter_bracket` field.
+  If present, the config MUST use the midpoint value for the bracketed dimension.
+  Do not use any other value. Print: "BRACKET DETECTED: {dimension} midpoint = {midpoint}"
+- `run_context.yaml` (if present): read `run_type` field. See Replication guard below.
 
 ## Required outputs
 - `backtest_spec.yaml`   (conforms to schemas/backtest_spec.schema.json)
@@ -65,6 +69,15 @@ YAML formatting rule — applies to ALL string values in both artifacts:
   baseline, then modify only what the hypothesis requires. Do not omit regimes not
   explicitly mentioned in the brief — omitting trending/chop means those bars fall to
   default_regime behavior.
+
+## Replication guard
+If `run_context.yaml` is present and contains `run_type: replication_diagnostic`:
+- Output ONE config only. No variants (V2-V5).
+- The config must exactly match `source_run`'s parameters as recorded in
+  campaign_state.yaml or findings_carryover.yaml.
+- Print "REPLICATION MODE: reproducing {source_run} config exactly" at the
+  start of your output.
+- Any deviation from source_run parameters is a critical failure of this stage.
 
 ## Forbidden
 - Do not invent component classes, transform ops, or regime names absent from STRATEGY_CONFIG_REFERENCE.md.
