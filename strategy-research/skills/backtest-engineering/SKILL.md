@@ -50,6 +50,13 @@ YAML formatting rule — applies to ALL string values in both artifacts:
 - This rule applies even inside nested mappings and multi-line values.
 - Violation causes a YAML parse error that halts the pipeline.
 
+## Required prerequisite reading
+Read skills/quant-fundamentals/SKILL.md before proposing any config change justified
+by a metric value (e.g. raising/lowering a threshold because of cost_drag or corr).
+If a stated rationale conflicts with an identity in quant-fundamentals,
+quant-fundamentals is authoritative — note the conflict rather than silently following
+the original rationale.
+
 ## Checklist
 - In config_rationale, show how the signal concept becomes component + transform pipeline.
 - Pick regime mode the hypothesis needs; default threshold_rules. One active regime is fine for a first test.

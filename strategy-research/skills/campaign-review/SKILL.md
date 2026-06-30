@@ -38,6 +38,12 @@ needs refinement.
 - budget_assessment: runs_used / campaign_budget, and whether to prioritize speed or
   thoroughness for remaining runs
 
+## Required prerequisite reading
+Read skills/quant-fundamentals/SKILL.md before assessing diagnostic trends across runs.
+If a pattern's stated mechanism conflicts with an identity in quant-fundamentals,
+quant-fundamentals is authoritative — note the conflict in your output rather than
+silently following the pattern definition as originally written.
+
 ## Pattern definitions
 
 same_root_cause_different_families:

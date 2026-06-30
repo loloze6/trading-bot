@@ -288,6 +288,17 @@ notes:
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
   exhaustion → pivot) remain qualitatively valid. run_015 re-run and run_016+ are
   the first genuinely clean executions.'
+- 'TEMPORAL DISTRIBUTION FINDING (2026-06-30): ER>=0.50 Keltner/TRENDING signal
+  (run_017, run_024, run_027, run_033 — all identical) has 69 cumulative trades
+  across 22 window-symbol slots (11 windows x 2 symbols). Of those 22 slots, 7 fire
+  zero trades: BTC 2024-01, 2024-09, 2024-10 and ETH 2024-01, 2024-03, 2024-07,
+  2024-11. TRENDING regime simply does not occur in those calendar months regardless
+  of gate design — it is a temporal distribution problem, not a sample-size or
+  gate-selectivity problem. Per-slot counts range 1-9 with high variance; median
+  Sharpe stays at 0.000 because zero-trade slots drag the median and non-zero slots
+  have too few trades for stable Sharpe estimates. No further regime-gate tuning on
+  this signal should be attempted. Fixes require either extending walk-forward history
+  beyond 11 months, or a signal with more uniform monthly activation.'
 review_every_n_runs: 6
 status: active
 updated_at: '2026-06-30T08:44:18.579187+00:00'
