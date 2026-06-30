@@ -20,6 +20,13 @@ runs:
 - run_024
 - run_025
 - run_027
+- run_028
+- run_029
+- run_030
+- run_032
+- run_033
+- run_034
+- run_035
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -111,8 +118,43 @@ altitude_history:
   dimension: instrument
   family: ''
   outcome: escalate
+- run: run_028
+  altitude: parameter
+  dimension: regime_threshold
+  family: keltner_scoremode
+  outcome: no_improvement
+- run: run_029
+  altitude: search_space
+  dimension: instrument
+  family: ''
+  outcome: escalate
+- run: run_030
+  altitude: hypothesis
+  dimension: ''
+  family: keltner_scoremode
+  outcome: pivot
+- run: run_032
+  altitude: campaign
+  dimension: research_question
+  family: ''
+  outcome: reframed
+- run: run_033
+  altitude: parameter
+  dimension: regime_filter_er_threshold
+  family: keltner_breakout
+  outcome: no_improvement
+- run: run_034
+  altitude: campaign
+  dimension: research_question
+  family: ''
+  outcome: reframed
+- run: run_035
+  altitude: campaign
+  dimension: research_question
+  family: ''
+  outcome: reframed
 recent_parameter_dimensions:
-- regime_rule_logic
+- regime_filter_er_threshold
 failed_families:
 - rsi_mean_reversion
 - keltner_breakout
@@ -120,10 +162,12 @@ failed_families:
 - rsi_momentum_trending
 - keltner_mean_reversion
 - keltner_trend_mean_reversion
+- keltner_scoremode
 instruments_tried:
 - BTCUSDT
 - ETHUSDT
 - SOLUSDT
+- AVAXUSDT
 components_built: []
 timeframes_tried:
 - 1h
@@ -200,6 +244,34 @@ diagnostics_log:
   forecast_return_corr: 0.2145
   cost_drag_pct: 27.446
   win_rate_vs_sharpe: both FAIL
+- run: run_028
+  forecast_return_corr: 0.2953
+  cost_drag_pct: 84.2881
+  win_rate_vs_sharpe: both FAIL
+- run: run_029
+  forecast_return_corr: 0.0493
+  cost_drag_pct: 52.083
+  win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
+- run: run_030
+  forecast_return_corr: 0.0138
+  cost_drag_pct: 128.4407
+  win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
+- run: run_032
+  forecast_return_corr: 0.215
+  cost_drag_pct: 30.5894
+  win_rate_vs_sharpe: both FAIL
+- run: run_033
+  forecast_return_corr: 0.2145
+  cost_drag_pct: 27.446
+  win_rate_vs_sharpe: both FAIL
+- run: run_034
+  forecast_return_corr: 0.0136
+  cost_drag_pct: 413.0538
+  win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
+- run: run_035
+  forecast_return_corr: 0.0662
+  cost_drag_pct: 49.7383
+  win_rate_vs_sharpe: both PASS or N/A
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
@@ -207,8 +279,5 @@ notes:
   the first genuinely clean executions.'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-06-29T09:11:37.194737+00:00'
-last_escalation:
-  target: instrument
-  detail: SOLUSDT
-  protocol_path: protocols\escalation_solusdt_4h.json
+updated_at: '2026-06-29T23:47:39.843123+00:00'
+last_escalation: null

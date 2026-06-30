@@ -19,7 +19,7 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 
 ## Required outputs
 - `verdict_interpretation.yaml`   (structured findings summary — always required)
-- `findings_carryover.yaml`       (required when status = pivot OR escalate)
+- `findings_carryover.yaml`       (required when status = refine, pivot OR escalate)
 - EXACTLY ONE of the following:
   - `proposed_brief.yaml`         (if status = refine or pivot)
   - `escalation_request.yaml`     (if status = escalate)
@@ -54,6 +54,12 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - must carry forward lessons from the failed hypothesis via `findings_carryover` field
 - must explain in `change_from_previous` WHY the previous family was exhausted
 
+## REQUIRED OUTPUT — findings_carryover.yaml
+
+`findings_carryover.yaml` is MANDATORY whenever status is refine, pivot, or escalate.
+You MUST produce this file in the **same response** as proposed_brief.yaml or escalation_request.yaml.
+Do not emit proposed_brief.yaml or escalation_request.yaml without also emitting findings_carryover.yaml.
+
 `findings_carryover.yaml` must include:
 - hypothesis_id
 - what_failed: list of criteria that FAILed
@@ -62,6 +68,22 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - what_not_to_try: list of approaches ruled out by the diagnostics (e.g. "do not pivot
   signal while cost_drag > 80% and gross_pnl > 0 — sizing is the problem, not signal")
 - next_altitude: refine | pivot | escalate (the decision taken)
+- parameter_bracket: (optional — populate ONLY when the bracketing condition is met; omit otherwise)
+    dimension: <the parameter dimension being tuned, e.g. min_score>
+    too_tight_value: <value that produced too few trades / over-filtered>
+    too_loose_value: <value that produced too many trades / under-filtered>
+    last_tried_value: <the value used in the run that produced THIS carryover>
+    direction_history: [<ordered list of outcomes, e.g. tight, loose>]
+
+Bracket population rule: when status is refine AND the same dimension has been tried in
+BOTH directions across runs (one producing too few trades, one too many), populate
+parameter_bracket with the bracket bounds derived from the two bounding runs.
+
+Bracket consumption rule: when parameter_bracket is present in the INCOMING
+findings_carryover.yaml (from the previous run), the next proposed value for that
+dimension MUST be the midpoint of too_tight_value and too_loose_value. Do not step
+further in either direction. Compute midpoint explicitly and state it in
+proposed_brief.yaml change_from_previous.
 
 `escalation_request.yaml` (when status = escalate):
 - target: "new_component" | "instrument" | "timeframe"
@@ -195,6 +217,8 @@ with the EXACT diagnostic values that triggered the rule:
   median_forecast_return_corr is significantly negative AND its reverse was already tested and failed).
 - Do not pivot or escalate without citing the specific diagnostic value in altitude_justification.
 - Do not emit both proposed_brief.yaml AND escalation_request.yaml — pick exactly one.
+- Do NOT recommend pivot on a parameter dimension if a bracket exists in the incoming
+  findings_carryover.yaml and the midpoint of that bracket has not yet been tested.
 - Do not invent escalation targets. The ONLY permitted values for escalation_request.yaml
   target are: "instrument", "timeframe", "new_component". Any other value will crash the
   pipeline. Regime methodology changes (OR-gate, score-mode, different thresholds, new
@@ -202,6 +226,7 @@ with the EXACT diagnostic values that triggered the rule:
   not status=escalate. Brief constraints in the current run's research_brief.yaml are
   guidance for THAT run only; they do not prevent a pivot to a new brief that lifts those
   constraints.
+- Do not output escalation_request.yaml or proposed_brief.yaml without also outputting findings_carryover.yaml in the same response.
 
 ## Context rule
 Read only the five input artifacts. Minimal context.
