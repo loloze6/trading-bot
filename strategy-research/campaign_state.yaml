@@ -28,6 +28,8 @@ runs:
 - run_034
 - run_035
 - run_037
+- run_038
+- run_039
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -159,16 +161,41 @@ altitude_history:
   dimension: research_question
   family: ''
   outcome: reframed
+- run: run_038
+  altitude: campaign
+  dimension: research_question
+  family: ''
+  outcome: reframed
+- run: run_039
+  altitude: parameter
+  dimension: er_threshold
+  family: rsi_secondary_mean_reversion
+  outcome: no_improvement
 recent_parameter_dimensions:
 - regime_filter_er_threshold
+- er_threshold
 failed_families:
-- rsi_mean_reversion
-- keltner_breakout
-- keltner_mean_reversion
-- rsi_momentum_trending
-- keltner_mean_reversion
-- keltner_trend_mean_reversion
-- keltner_scoremode
+# Tagged 2026-07-02 (Improvement 07): all entries carry evidence_window: 2024_only.
+# root_cause: regime_availability entries may be re-opened ONCE on baseline_v2 per campaign_review.
+# root_cause: signal_quality / signal_inversion / cost_drag entries are NOT re-openable.
+- name: rsi_mean_reversion
+  evidence_window: 2024_only
+  root_cause: signal_quality       # run_014 corr: -0.022 (near-zero, parameter exhausted)
+- name: keltner_breakout
+  evidence_window: 2024_only
+  root_cause: signal_inversion     # run_015 corr: -0.171; run_033 re-test also failed
+- name: keltner_mean_reversion
+  evidence_window: 2024_only
+  root_cause: regime_availability  # run_017 corr: 0.215 but zero-trade slots in 7/22 windows
+- name: rsi_momentum_trending
+  evidence_window: 2024_only
+  root_cause: cost_drag            # run_018 corr: 0.018, cost_drag: 273%
+- name: keltner_trend_mean_reversion
+  evidence_window: 2024_only
+  root_cause: regime_availability  # run_024 corr: 0.215 but regime absent in key months
+- name: keltner_scoremode
+  evidence_window: 2024_only
+  root_cause: signal_quality       # run_030 corr: 0.014 (weak, inconsistent across variants)
 instruments_tried:
 - BTCUSDT
 - ETHUSDT
@@ -283,23 +310,41 @@ diagnostics_log:
   cost_drag_pct: 32.9503
   win_rate_vs_sharpe: both PASS or N/A
   avg_trade_duration_bars: 5.97
+- run: run_038
+- run: run_039
+  forecast_return_corr: -0.0724
+  cost_drag_pct: 28.9885
+  win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
+  avg_trade_duration_bars: 8.0
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
   exhaustion → pivot) remain qualitatively valid. run_015 re-run and run_016+ are
   the first genuinely clean executions.'
-- 'TEMPORAL DISTRIBUTION FINDING (2026-06-30): ER>=0.50 Keltner/TRENDING signal
-  (run_017, run_024, run_027, run_033 — all identical) has 69 cumulative trades
-  across 22 window-symbol slots (11 windows x 2 symbols). Of those 22 slots, 7 fire
-  zero trades: BTC 2024-01, 2024-09, 2024-10 and ETH 2024-01, 2024-03, 2024-07,
-  2024-11. TRENDING regime simply does not occur in those calendar months regardless
-  of gate design — it is a temporal distribution problem, not a sample-size or
-  gate-selectivity problem. Per-slot counts range 1-9 with high variance; median
-  Sharpe stays at 0.000 because zero-trade slots drag the median and non-zero slots
-  have too few trades for stable Sharpe estimates. No further regime-gate tuning on
-  this signal should be attempted. Fixes require either extending walk-forward history
-  beyond 11 months, or a signal with more uniform monthly activation.'
+- 'TEMPORAL DISTRIBUTION FINDING (2026-06-30): ER>=0.50 Keltner/TRENDING signal (run_017,
+  run_024, run_027, run_033 — all identical) has 69 cumulative trades across 22 window-symbol
+  slots (11 windows x 2 symbols). Of those 22 slots, 7 fire zero trades: BTC 2024-01,
+  2024-09, 2024-10 and ETH 2024-01, 2024-03, 2024-07, 2024-11. TRENDING regime simply
+  does not occur in those calendar months regardless of gate design — it is a temporal
+  distribution problem, not a sample-size or gate-selectivity problem. Per-slot counts
+  range 1-9 with high variance; median Sharpe stays at 0.000 because zero-trade slots
+  drag the median and non-zero slots have too few trades for stable Sharpe estimates.
+  No further regime-gate tuning on this signal should be attempted. Fixes require
+  either extending walk-forward history beyond 11 months, or a signal with more uniform
+  monthly activation.'
+- 'BASELINE_V2 KELTNER RE-RUN (2026-07-02, Improvement 07 acceptance criterion):
+  Same config as run_033 (ER>=0.50 Keltner breakout in TRENDING regime) re-run on
+  baseline_v2 (24 windows, 2024-01 to 2025-12). Results: zero-trade slots 14/48 (29%)
+  vs 7/22 (32%) on v1 — structurally unchanged. BTC 9/24 zero-trade (37%), ETH 5/24
+  (21%). Total trades 163 (BTC=71, ETH=92) across 48 slots vs 69 across 22 on v1.
+  Median Sharpe 0.000 for both symbols. Per-window Sharpes highly bimodal: inactive
+  months drag median to zero; active months show large variance (+20 to -8). Verdict:
+  regime-availability problem is CONFIRMED as structural and NOT a 2024-data artifact.
+  keltner_mean_reversion and keltner_trend_mean_reversion remain fully exhausted even
+  on extended data. Their failed_families evidence_window: 2024_only tags remain but
+  root cause is now confirmed — do NOT re-open these families on baseline_v2.
+  Protocol result: strategy-research/results/protocols/20260702T091324Z_18fad381/'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-06-30T08:44:18.579187+00:00'
+updated_at: '2026-06-30T15:13:29.247533+00:00'
 last_escalation: null

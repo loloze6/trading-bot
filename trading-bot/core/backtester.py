@@ -260,7 +260,8 @@ class BacktestEngine:
         results_root = (
             tracker.output_dir if tracker else os.path.join(_project_dir, "results")
         )
-        run_dir = new_run_dir(results_root, _strategy_config)
+        run_dir = new_run_dir(results_root, _strategy_config,
+                              runs_dir=getattr(tracker, "runs_dir", None))
         self._last_run_dir = run_dir
         self.logger.info(f"Run artifact dir: {run_dir}")
 

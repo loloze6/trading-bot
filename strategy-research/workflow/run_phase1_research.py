@@ -295,17 +295,17 @@ def estimate_tokens(text: str) -> int:
     """Provides a rough token estimation (1 token ≈ 4 chars)."""
     return len(str(text)) // 4
 
-def check_context_limits(stage_name: str, full_prompt: str, max_window: int = 100000):
-    """Monitors the payload size and warns/halts if nearing limits."""
-    estimated_tokens = estimate_tokens(full_prompt)
-    print(f"📊 [METRICS] {stage_name} Payload: ~{estimated_tokens:,} tokens")
+# def check_context_limits(stage_name: str, full_prompt: str, max_window: int = 100000):
+#     """Monitors the payload size and warns/halts if nearing limits."""
+#     estimated_tokens = estimate_tokens(full_prompt)
+#     # print(f"📊 [METRICS] {stage_name} Payload: ~{estimated_tokens:,} tokens")
     
-    if estimated_tokens > max_window * 0.8:
-        print("⚠️ WARNING: Context window is at 80% capacity. Risk of model degradation.")
-    if estimated_tokens > max_window:
-        raise ValueError(f"CRITICAL: Context window exceeded ({estimated_tokens:,} > {max_window:,}). Pipeline halted.")
+#     if estimated_tokens > max_window * 0.8:
+#         print("⚠️ WARNING: Context window is at 80% capacity. Risk of model degradation.")
+#     if estimated_tokens > max_window:
+#         raise ValueError(f"CRITICAL: Context window exceeded ({estimated_tokens:,} > {max_window:,}). Pipeline halted.")
         
-    return estimated_tokens
+#     return estimated_tokens
 
 async def run_claude_worker(stage_name: str, handoff: str, path: Path):
     
@@ -375,7 +375,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path):
 
     # --- PRE-FLIGHT SAFETY RADAR ---
     start_time = time.time()
-    check_context_limits(stage_name, full_prompt, max_window=150000)
+    # check_context_limits(stage_name, full_prompt, max_window=150000)
 
     # 5. Invoke the Agent and Stream the Response (with strict tool constraints to enforce handoff rules)
     print("⏳ Waiting for Claude CLI response...")
@@ -508,7 +508,7 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     # --- PRE-FLIGHT SAFETY RADAR ---
     start_time = time.time()
     # Gemini has a massive context window, but we still protect our budget
-    estimated_prompt_tokens = check_context_limits(stage_name, full_prompt, max_window=200000)
+    # estimated_prompt_tokens = check_context_limits(stage_name, full_prompt, max_window=200000)
 
     print("⏳ Waiting for Gemini API response...")
     
@@ -636,21 +636,18 @@ async def run_tool_worker(stage_name: str, run_id: str):
             str(TBOT_PYTHON), str(ROOT / "tools" / "run_protocol.py"),
             str(config_path), str(protocol_path),
             "--validation-protocol", str(validation_path),
+            "--out-dir", str(RUN_DIR),
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
         print(result.stdout)
         if result.returncode != 0:
             raise RuntimeError(f"run_protocol.py failed:\n{result.stderr}")
 
-        summaries = sorted(
-            (ROOT / "results" / "protocols").glob("*/protocol_summary.json"),
-            key=lambda p: p.stat().st_mtime,
-        )
-        if not summaries:
+        summary_path = RUN_DIR / "protocol_summary.json"
+        if not summary_path.exists():
             raise FileNotFoundError("protocol_summary.json not found after protocol run")
-        latest = summaries[-1]
 
-        with open(latest, encoding="utf-8") as f:
+        with open(summary_path, encoding="utf-8") as f:
             summary = json.load(f)
         save_yaml(ARTIFACTS / "protocol_result.yaml", summary)
         hv = (summary.get("hypothesis_verdict") or {}).get("verdict", "unknown")

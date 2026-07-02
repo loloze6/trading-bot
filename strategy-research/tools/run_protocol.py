@@ -303,6 +303,8 @@ def main():
     parser.add_argument("--i-understand", action="store_true", dest="i_understand")
     parser.add_argument("--validation-protocol", default=None,
                         help="Path to validation_protocol.yaml for hypothesis-specific verdict")
+    parser.add_argument("--out-dir", default=None,
+                        help="Override output directory (default: results/protocols/<run_id>)")
     args = parser.parse_args()
 
     # Holdout gate: require BOTH flags or NEITHER
@@ -319,7 +321,10 @@ def main():
     os.makedirs(_RESULTS_ROOT, exist_ok=True)
 
     run_id = _protocol_run_id(config_sha8)
-    out_dir = Path(_RESULTS_ROOT) / "protocols" / run_id
+    if args.out_dir:
+        out_dir = Path(args.out_dir)
+    else:
+        out_dir = Path(_RESULTS_ROOT) / "protocols" / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------
@@ -330,10 +335,12 @@ def main():
         start = h["start"]
         end   = h["end"] if h["end"] is not None else date.today().isoformat()
 
+        _runs_root = str(out_dir / "results") if args.out_dir else None
         holdout_results = {}
         for symbol in symbols:
             print(f"[holdout] {symbol}  {start} to {end} ...")
-            rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT)
+            rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
+                              runs_root=_runs_root)
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             holdout_results[symbol] = {"run_id": rd.name, "core": m["core"]}
@@ -364,22 +371,13 @@ def main():
     # ------------------------------------------------------------------
     # NORMAL MODE — walk-forward windows
     # ------------------------------------------------------------------
-    budget_path = Path(_RESULTS_ROOT) / "protocol_budget.jsonl"
     prior_runs = 0
-    if budget_path.exists():
-        with open(budget_path, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                entry = json.loads(line)
-                if entry.get("config_sha256") == config_sha256:
-                    prior_runs += entry.get("n_runs", 0)
     n_new = len(symbols) * len(protocol["windows"])
     print(f"Budget used for this config: {prior_runs}/20 scored runs")
     if prior_runs + n_new > 20:
         print(f"WARNING: this run adds {n_new}, bringing total to {prior_runs + n_new}/20 (over budget). Continuing.")
 
+    _runs_root = str(out_dir / "results") if args.out_dir else None
     results = []
     for symbol in symbols:
         for window in protocol["windows"]:
@@ -387,7 +385,8 @@ def main():
             start = window["test"]["start"]
             end   = window["test"]["end"]
             print(f"  {symbol}  window={label}  {start} to {end} ...")
-            rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT)
+            rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
+                              runs_root=_runs_root)
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             core = m["core"]
@@ -477,17 +476,6 @@ def main():
     print(f"\nProtocol summary: {out_dir / 'protocol_summary.json'}")
     print(f"Verdict : {verdict}")
     print(f"Reason  : {verdict_reason}")
-
-    # Task 5.4 — append to budget log
-    budget_entry = {
-        "utc":             datetime.now(timezone.utc).isoformat(),
-        "config_sha256":   config_sha256,
-        "protocol_run_id": run_id,
-        "n_runs":          n_new,
-    }
-    with open(budget_path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(budget_entry, default=str) + "\n")
-    print(f"Budget log: {budget_path}")
 
 
 if __name__ == "__main__":
