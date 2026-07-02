@@ -1,44 +1,39 @@
-detector_version: f70b774c
-evaluated_at: '2026-07-02T12:27:56.794056+00:00'
+detector_version: c647ee20
+evaluated_at: '2026-07-02T12:43:17.279934+00:00'
 data_range:
   start: '2024-01-01'
   end: '2025-12-31'
-config_source: runs/run_039/artifacts/candidate_strategy_config.json
+config_source: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\config\regime_retune_winner.json
 per_symbol_per_timeframe:
 - symbol: BTCUSDT
   timeframe: 1h
   metrics:
-    regime_persistence_median_bars: 8.0
-    transition_frequency_per_window: 28.71
-    parameter_sensitivity: 0.1596
-    trending_activation_rate: 0.0255
-    zero_trade_slot_pct: 0.0417
+    regime_persistence_median_bars: 12.0
+    transition_frequency_per_window: 40.38
+    parameter_sensitivity: 0.0551
+    trending_activation_rate: 0.3279
+    zero_trade_slot_pct: 0.0
     agreement_with_reference_labels: null
     class_conditional_sensitivity_per_label:
       unknown:
-        baseline_count: 8771
-        class_conditional_sensitivity: 0.2877
-        worst_case_direction: up
-        relative_population_change: -0.2664
-      trending:
-        baseline_count: 445
-        class_conditional_sensitivity: 0.5865
-        worst_case_direction: up
-        relative_population_change: -0.5865
-      mean_reversion:
-        baseline_count: 8224
-        class_conditional_sensitivity: 0.2977
+        baseline_count: 11775
+        class_conditional_sensitivity: 0.082
         worst_case_direction: down
-        relative_population_change: -0.2977
+        relative_population_change: -0.082
+      trending:
+        baseline_count: 5745
+        class_conditional_sensitivity: 0.1572
+        worst_case_direction: up
+        relative_population_change: -0.1572
     activation_band_check:
-      within_band: false
+      within_band: true
       band_min: 0.1
       band_max: 0.4
       rare_label_threshold: 0.1
-      gate_metric_used: class_conditional
-  confidence: low
-  confidence_rationale: 'persistence=8.0<12; class_cond_sensitivity(TRENDING)=0.587
-    [rare label: activation=2.55%<10%]>0.25'
+      gate_metric_used: all_bars
+  confidence: medium
+  confidence_rationale: 'persistence=12.0>=12, all_bars_sensitivity=0.055<=0.25 but
+    fails high gate: persistence=12.0<24; transitions=40.4>4'
   known_weak_periods:
   - 2024-01
   - 2024-09
@@ -52,37 +47,32 @@ per_symbol_per_timeframe:
 - symbol: ETHUSDT
   timeframe: 1h
   metrics:
-    regime_persistence_median_bars: 7.0
-    transition_frequency_per_window: 31.92
-    parameter_sensitivity: 0.1763
-    trending_activation_rate: 0.039
-    zero_trade_slot_pct: 0.0833
+    regime_persistence_median_bars: 13.0
+    transition_frequency_per_window: 38.96
+    parameter_sensitivity: 0.0522
+    trending_activation_rate: 0.3263
+    zero_trade_slot_pct: 0.0
     agreement_with_reference_labels: null
     class_conditional_sensitivity_per_label:
       unknown:
-        baseline_count: 8748
-        class_conditional_sensitivity: 0.2961
-        worst_case_direction: up
-        relative_population_change: -0.2754
-      trending:
-        baseline_count: 680
-        class_conditional_sensitivity: 0.4882
-        worst_case_direction: up
-        relative_population_change: -0.4882
-      mean_reversion:
-        baseline_count: 8012
-        class_conditional_sensitivity: 0.3396
+        baseline_count: 11803
+        class_conditional_sensitivity: 0.0775
         worst_case_direction: down
-        relative_population_change: -0.3396
+        relative_population_change: -0.0775
+      trending:
+        baseline_count: 5717
+        class_conditional_sensitivity: 0.1419
+        worst_case_direction: up
+        relative_population_change: -0.1419
     activation_band_check:
-      within_band: false
+      within_band: true
       band_min: 0.1
       band_max: 0.4
       rare_label_threshold: 0.1
-      gate_metric_used: class_conditional
-  confidence: low
-  confidence_rationale: 'persistence=7.0<12; class_cond_sensitivity(TRENDING)=0.488
-    [rare label: activation=3.90%<10%]>0.25'
+      gate_metric_used: all_bars
+  confidence: medium
+  confidence_rationale: 'persistence=13.0>=12, all_bars_sensitivity=0.052<=0.25 but
+    fails high gate: persistence=13.0<24; transitions=39.0>4'
   known_weak_periods:
   - 2024-01
   - 2024-03

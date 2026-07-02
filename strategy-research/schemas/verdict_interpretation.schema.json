@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "verdict_interpretation",
+  "description": "Output of the verdict-interpreter skill. Routes the pipeline after a walk-forward backtest.",
+  "type": "object",
+  "required": [
+    "hypothesis_id", "protocol_verdict", "status",
+    "criteria_summary", "primary_failure_mode", "config_to_failure_map",
+    "untested_criteria", "proposed_change_dimension", "hypothesis_family",
+    "altitude_justification"
+  ],
+  "properties": {
+    "hypothesis_id":            { "type": "string" },
+    "protocol_verdict":         { "type": "string", "enum": ["promote", "refine", "kill"] },
+    "status": {
+      "type": "string",
+      "enum": ["promote", "refine", "pivot", "escalate", "kill"],
+      "description": "The interpreter's decision, which may differ from protocol_verdict."
+    },
+    "criteria_summary": {
+      "type": "array",
+      "description": "Each evaluated criterion with PASS/FAIL/UNTESTED and actual value.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "criterion":   { "type": "string" },
+          "result":      { "type": "string", "enum": ["PASS", "FAIL", "UNTESTED"] },
+          "actual_value": {}
+        }
+      }
+    },
+    "primary_failure_mode": {
+      "type": "string",
+      "description": "The single most likely explanation for strategy failure."
+    },
+    "config_to_failure_map": {
+      "type": "array",
+      "description": "Specific config choices linked to the primary failure.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "config_element":  { "type": "string" },
+          "current_value":   {},
+          "failure_linkage": { "type": "string" }
+        }
+      }
+    },
+    "untested_criteria": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "proposed_change_dimension": {
+      "type": "string",
+      "description": "One word identifying the dimension being changed (e.g. er_threshold, smooth_period)."
+    },
+    "hypothesis_family": {
+      "type": "string",
+      "description": "Short label for the signal family (e.g. keltner_breakout, rsi_mean_reversion)."
+    },
+    "altitude_justification": {
+      "type": "string",
+      "description": "One sentence citing the specific diagnostic value(s) that drove the altitude choice."
+    },
+    "diagnostic_rule_applied": {
+      "type": "string",
+      "description": "Which named diagnostic rule triggered the verdict (e.g. 'Rule 1: cost_drag')."
+    },
+    "regime_attribution": {
+      "type": "object",
+      "description": "Mandatory for regime-gated hypotheses (Improvement 02).",
+      "properties": {
+        "detector_confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+        "signal_performs_in_intended_regime": { "type": "boolean" },
+        "signal_performs_in_other_regimes":   { "type": "boolean" },
+        "conclusion": {
+          "type": "string",
+          "enum": [
+            "signal_bad_everywhere",
+            "signal_good_wrong_regime_gate",
+            "signal_good_regime_gate_correct",
+            "inconclusive_low_detector_confidence"
+          ]
+        }
+      }
+    },
+    "trade_attribution": {
+      "type": "object",
+      "description": "Step 03: causal attribution of performance to entry, exit, sizing, or signal. Required when trade_diagnostics.json is available.",
+      "required": ["primary_weakness", "evidence"],
+      "properties": {
+        "primary_weakness": {
+          "type": "string",
+          "enum": ["entry", "exit", "holding_sizing", "signal_direction", "none_healthy"],
+          "description": "The dominant performance problem identified from trade_diagnostics_summary fields."
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Must reference specific trade_diagnostics_summary fields (e.g. exit_efficiency_median=0.12, mae_mfe_ratio_median=3.1)."
+        }
+      }
+    }
+  }
+}

@@ -22,7 +22,13 @@
       "PowerShell(cd C:\\\\Users\\\\alauz\\\\Documents\\\\Projects\\\\trading-bot\\\\strategy-research; $env:PYTHONIOENCODING=\"utf-8\"; python workflow\\\\run_phase1_research.py run_028 2>&1 | Select-Object -First 30)",
       "Bash(\"../venv/Scripts/pytest\" --collect-only)",
       "Bash(..\\\\venv\\\\Scripts\\\\python.exe tools\\\\validate_regime_detector.py --config runs\\\\run_039\\\\artifacts\\\\candidate_strategy_config.json)",
-      "Bash(../venv/Scripts/python.exe tools/validate_regime_detector.py --config runs/run_039/artifacts/candidate_strategy_config.json)"
+      "Bash(../venv/Scripts/python.exe tools/validate_regime_detector.py --config runs/run_039/artifacts/candidate_strategy_config.json)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d[:2] if isinstance\\(d,list\\) else d, indent=2\\)\\)\")",
+      "Bash(xargs -I{} python3 -c \"import json,sys; d=json.load\\(open\\('{}'\\)\\); print\\(len\\(d\\), '{}'\\) if len\\(d\\)>0 else None\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in d.items\\(\\) if k != 'results'}, indent=2\\)\\)\")",
+      "Bash(xargs python3 *)",
+      "Bash(python3 *)",
+      "Bash(../venv/Scripts/python.exe *)"
     ]
   }
 }

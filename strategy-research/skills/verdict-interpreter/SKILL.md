@@ -16,6 +16,7 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - `backtest_spec.yaml`         (config_rationale: what config choices mapped to which claims)
 - `research_brief.yaml`        (original research question and constraints)
 - `campaign_state.yaml`        (cross-run altitude history; what has been tried and at which altitude)
+- `trade_diagnostics.json`     (Step 03 — optional; present when trades occurred. Read summary block.)
 
 ## Required outputs
 - `verdict_interpretation.yaml`   (structured findings summary — always required)
@@ -41,6 +42,8 @@ a refined brief that fixes the identified failure, or a final decision to kill o
                             # keltner_breakout). Used for circuit-breaker family tracking.
 - altitude_justification    # one sentence citing the specific diagnostic value that drove
                             # the altitude choice (required; do not omit).
+- trade_attribution         # Step 03: required when trade_diagnostics.json is available
+                            # (see STEP 03 — Trade Attribution section below).
 
 `proposed_brief.yaml` (when status = refine):
 - must be a valid research_brief.yaml (same schema as input brief)
@@ -328,6 +331,67 @@ with the EXACT diagnostic values that triggered the rule:
   constraints.
 - Do not output escalation_request.yaml or proposed_brief.yaml without also outputting findings_carryover.yaml in the same response.
 
+## STEP 03 — Trade Attribution (required when trade_diagnostics.json is available)
+
+Read `trade_diagnostics.json` summary block. Apply the decision table below to populate
+`trade_attribution` in `verdict_interpretation.yaml`:
+
+```yaml
+trade_attribution:
+  primary_weakness: <entry | exit | holding_sizing | signal_direction | none_healthy>
+  evidence: <must cite specific trade_diagnostics_summary field values>
+```
+
+Decision table (apply first matching pattern):
+
+| Pattern in `trade_diagnostics_summary` | `primary_weakness` |
+|---|---|
+| High `mfe`, low realized return AND `exit_efficiency_median` < 0.30 | `exit` — signal finds good moves, exits give them back |
+| `entry_efficiency_median` < −0.10 | `entry` — entering late/early relative to signal degrades the edge |
+| `pnl_concentration.pct_pnl_from_worst_decile_trades` > 80% (magnitude) AND `exit_reason_breakdown.signal_flip_pct` > 70% | `holding_sizing` — losses driven by uncapped adverse excursions; worst-decile trades dominate total PnL; no stop mechanism. Applies even when `stop_loss_pct = 0` — the absence of stops is the diagnosis. |
+| `stop_loss_recovery_rate` > 0.50 AND `exit_reason_breakdown.stop_loss_pct` > 10% | `holding_sizing` — stops fired but trades would have recovered; stops are too tight |
+| Poor `entry_efficiency_median`, poor `exit_efficiency_median`, AND `forecast_return_corr` < 0 | `signal_direction` — genuine signal problem, not execution |
+| None of the above triggered | `none_healthy` |
+
+Aggregate-median caveat: `exit_efficiency_median` is the median across ALL trades including
+winners, which pulls it positive even when losers have deeply negative exit efficiency (e.g.,
+Keltner 2025: overall median 0.44, loser-cohort median −1.46). The `pnl_concentration` pattern
+catches this by looking at total PnL impact of the worst trades rather than per-trade efficiency.
+Do not conclude `none_healthy` solely because `exit_efficiency_median` appears positive — check
+`pct_pnl_from_worst_decile_trades` first.
+
+Routing rule: when `primary_weakness` is `entry`, `exit`, or `holding_sizing`, the verdict
+**must not** discard the underlying signal. These are execution-level problems (altitude 1
+refine on execution logic), distinct from signal quality problems that warrant pivot.
+
+A3.3 guard on `exit_efficiency`: this metric benchmarks realized returns against the best
+possible exit in the holding window — an unattainable hindsight optimum. It is valid for
+*relative comparison across variants and for trend detection within a family*. Do NOT
+interpret `exit_efficiency_median = 0.35` as "35% of return was left on the table and is
+achievable." Do not prescribe "capture the remaining X%" as a refinement target.
+
+A3.5 regression fixture — `keltner_163`: the 163-trade Keltner ledger at
+strategy-research/results/protocols/20260702T091324Z_18fad381/ has the following
+settled canonical signature (post-reconciliation, 2026-07-02):
+
+  2024 cohort (n=69): win_rate_net=50.7%, per_trade_expectancy_bps.mean=−26.2
+  2025 cohort (n=94): win_rate_net=57.4%, per_trade_expectancy_bps.mean=−58.3
+
+  NOTE: win_rate_net uses `profitable_net` (engine net-of-commission definition).
+  Gross win rate (profit_loss_percent > 0) overstates by ~8–9 pp and is WRONG here.
+  per_trade_expectancy_bps uses `net_portfolio_return_pct * 100` (portfolio-level net).
+  Position-level gross bps understates expectancy magnitude by ~2× and is WRONG here.
+
+  Named channel: `holding_sizing`
+  Evidence string: "pct_pnl_from_worst_decile_trades=123% (2024) / 128% (2025), signal_flip_pct=95%,
+  loser_median_mae grew 1.8%→2.7% (2024→2025); no stop mechanism; worst-decile trades
+  wipe all gains. Winner avg (+62/+68 bps) stable; loser avg worsened −117→−228 bps."
+
+  Any implementation of the trade attribution decision table must route the keltner_163
+  fixture to `primary_weakness = holding_sizing` on the basis of `pct_pnl_from_worst_decile_trades`.
+  If it routes to `none_healthy` or `signal_direction`, the aggregate-median caveat above
+  has been ignored — re-check the decision table.
+
 ## IMPROVEMENT 02 — Regime Attribution Gate (mandatory for regime-gated hypotheses)
 
 When the tested hypothesis is regime-gated (its config has a `regime_detector` block and
@@ -383,6 +447,24 @@ If `below_floor_pct > 0.50` (more than half the windows are sparse):
 - If `per_trade_expectancy_bps` mean ≤ 0 with |t_stat| > 1.5: treat as a kill/pivot signal.
 - If `per_trade_expectancy_bps` is unavailable in the diagnostics block: note the gap
   and fall back to win_rate + cost_drag as the primary evidence.
+
+## A2.3 — IC measurement scope and suspended metrics
+
+### IC scope for ungated escape (A2.1)
+
+`median_forecast_return_corr` in the diagnostics block is IC computed **on gated bars only** — the bars where the strategy actually placed trades, which occur exclusively inside the active regime. For a strategy gated to TRENDING (~1% of bars), IC=0.2145 on those bars does NOT represent all-bars IC.
+
+When the handoff indicates `ungated_escape_eligible` was evaluated:
+- If the IC figure cited in `ungated_escape_rationale` came from a gated protocol run (standard run), do NOT treat it as evidence for or against the escape.
+- A gated-bar IC that is high does not mean the ungated escape is unavailable; it means the IC scope is wrong for that test.
+- A gated-bar IC that is near-zero ALSO does not confirm the escape, for the same reason.
+- Only an IC computed from an **ungated protocol run** (regime filter removed) is admissible for the A2.1 determination.
+
+If the ungated protocol run has not been executed, do not resolve `ungated_escape_eligible` — treat it as indeterminate and note that in `altitude_justification`.
+
+### prescreen_result.ic_by_regime is suspended (A2.3)
+
+Until a trustworthy detector (confidence: high from regime-auditor) is in place, do NOT use or reference `prescreen_result.ic_by_regime` in any verdict decision. Use only ungated IC from the diagnostics block.
 
 ## Context rule
 Read only the five input artifacts plus the handoff `regime_detector_confidence` field.
