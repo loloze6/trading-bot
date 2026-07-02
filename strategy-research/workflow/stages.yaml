@@ -80,3 +80,32 @@ stages:
     outputs:
       - runs/{run_id}/artifacts/campaign_review.yaml
     next: []
+
+  # Improvement 02: regime detector validation (campaign-scoped, not per-run)
+  regime_detector_validation:
+    tool: tools/validate_regime_detector.py
+    description: >
+      Standalone deterministic tool. Runs the regime detector over historical data,
+      computes persistence/sensitivity/activation metrics, writes campaign-root
+      regime_detector_report.yaml. Triggered before verdict_interpreter when report
+      is absent or stale.
+    required_inputs:
+      - runs/{run_id}/artifacts/candidate_strategy_config.json
+      - config/campaign_data_policy.yaml
+    outputs:
+      - regime_detector_report.yaml
+    next:
+      - regime_auditor
+
+  regime_auditor:
+    skill: skills/regime-auditor/SKILL.md
+    description: >
+      LLM skill that reads regime_detector_report.yaml and produces regime_audit_decision.yaml.
+      Decides trustworthy / needs_retune / unusable and checks A2.1 ungated escape.
+    required_inputs:
+      - regime_detector_report.yaml
+      - runs/{run_id}/artifacts/protocol_result.yaml
+    outputs:
+      - runs/{run_id}/artifacts/regime_audit_decision.yaml
+    next:
+      - verdict_interpreter

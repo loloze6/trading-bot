@@ -806,6 +806,100 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
         })
 
 
+def _ensure_regime_detector_report(run_id: str, run_dir: Path) -> dict | None:
+    """
+    Improvement 02: ensure regime_detector_report.yaml exists and is < 30 days old.
+    If stale or absent, runs validate_regime_detector.py deterministically.
+    Returns the loaded report dict, or None if it could not be produced.
+    """
+    import datetime as _dt
+    report_path = ROOT / "regime_detector_report.yaml"
+    stale = True
+    if report_path.exists():
+        try:
+            rpt = load_yaml(report_path)
+            evaluated_at = rpt.get("evaluated_at", "")
+            if evaluated_at:
+                age = datetime.now(timezone.utc) - datetime.fromisoformat(evaluated_at)
+                if age.days < 30:
+                    stale = False
+        except Exception:
+            pass
+
+    if stale:
+        config_path = run_dir / "artifacts" / "candidate_strategy_config.json"
+        if not config_path.exists():
+            print("⚠️  regime_detector_report: candidate_strategy_config.json not found — skipping.")
+            return None
+
+        TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
+        cmd = [
+            str(TBOT_PYTHON),
+            str(ROOT / "tools" / "validate_regime_detector.py"),
+            "--config", str(config_path),
+        ]
+        print("🔍 Running regime detector validation (Improvement 02)...")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        print(result.stdout)
+        if result.returncode != 0:
+            print(f"⚠️  validate_regime_detector.py failed:\n{result.stderr}")
+            return None
+
+    if report_path.exists():
+        return load_yaml(report_path)
+    return None
+
+
+def _inject_regime_context_into_handoff(handoff_path: Path, regime_report: dict,
+                                         regime_audit: dict | None, run_id: str):
+    """
+    Improvement 02: update the verdict_interpreter handoff to include regime detector
+    confidence and the A2.1 ungated-escape flag. Adds optional_inputs and a constraint.
+    """
+    if not handoff_path.exists() or regime_report is None:
+        return
+
+    handoff = load_yaml(handoff_path) or {}
+
+    # Add regime_detector_report as optional input
+    opt = handoff.setdefault("optional_inputs", [])
+    paths_present = {x.get("path") for x in opt}
+    if "../../regime_detector_report.yaml" not in paths_present:
+        opt.append({
+            "path": "../../regime_detector_report.yaml",
+            "reason": "Improvement 02: detector confidence per symbol/timeframe; "
+                      "required before any regime-attribution conclusion",
+        })
+
+    # Summarise confidence per entry for the skill
+    conf_summary = {
+        f'{e["symbol"]}_{e["timeframe"]}': e["confidence"]
+        for e in regime_report.get("per_symbol_per_timeframe", [])
+    }
+    handoff["regime_detector_confidence"] = conf_summary
+
+    # A2.1 ungated escape
+    if regime_audit:
+        handoff["ungated_escape_eligible"] = regime_audit.get("ungated_escape_eligible", False)
+        handoff["ungated_escape_rationale"] = regime_audit.get("ungated_escape_rationale", "")
+
+    # Add the mechanical constraint
+    constraints = handoff.setdefault("constraints", [])
+    detector_block = (
+        "IMPROVEMENT 02 — REGIME ATTRIBUTION GATE: "
+        "Do NOT conclude regime_attribution.conclusion = signal_bad_everywhere "
+        "while detector_confidence != high for the tested symbol/timeframe, "
+        "UNLESS ungated_escape_eligible is true (see handoff field). "
+        "If detector_confidence is low/medium and ungated escape is not available, "
+        "set conclusion = inconclusive_low_detector_confidence and route to regime_auditor."
+    )
+    if detector_block not in constraints:
+        constraints.append(detector_block)
+
+    save_yaml(handoff_path, handoff)
+    print(f"✅ Regime context injected into verdict_interpreter handoff: {conf_summary}")
+
+
 def _scaffold_next_run(next_run_id: str):
     """Scaffold next run directory only — no brief copy."""
     subprocess.run([sys.executable, str(ROOT / "workflow" / "setup_run.py"), next_run_id])
@@ -1569,6 +1663,14 @@ def run_loop(run_id: str):
                         print(f"⏭️  verdict_interpretation.yaml already valid — skipping LLM re-run.")
                     except Exception:
                         pass  # invalid YAML — re-run the agent
+
+                # Improvement 02: ensure regime detector is fresh and inject context
+                if not _skip_agent:
+                    _regime_rpt = _ensure_regime_detector_report(run_id, RUN_DIR)
+                    _regime_aud_path = RUN_DIR / "artifacts" / "regime_audit_decision.yaml"
+                    _regime_aud = load_yaml(_regime_aud_path) if _regime_aud_path.exists() else None
+                    _vi_handoff = RUN_DIR / "handoffs" / "protocol_to_verdict_interpreter.yaml"
+                    _inject_regime_context_into_handoff(_vi_handoff, _regime_rpt, _regime_aud, run_id)
 
             # Invoke the Agent
             if not _skip_agent:
