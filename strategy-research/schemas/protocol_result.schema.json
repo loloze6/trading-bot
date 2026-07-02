@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "protocol_result",
+  "description": "Output of run_protocol.py (protocol_summary.json). Includes walk-forward results, per-symbol summaries, verdict, and trade-level diagnostics from Step 03.",
+  "type": "object",
+  "required": ["protocol_run_id", "config_sha256", "results", "per_symbol_summary", "verdict", "verdict_reason"],
+  "properties": {
+    "protocol_run_id":    { "type": "string" },
+    "config_sha256":      { "type": "string" },
+    "protocol_file":      { "type": "string" },
+    "verdict":            { "type": "string", "enum": ["promote", "refine", "kill"] },
+    "verdict_reason":     { "type": "string" },
+    "results": {
+      "type": "array",
+      "description": "One entry per (symbol, walk-forward window) combination.",
+      "items": {
+        "type": "object",
+        "required": ["symbol", "window", "run_id", "core"],
+        "properties": {
+          "symbol":   { "type": "string" },
+          "window":   { "type": "string" },
+          "run_id":   { "type": "string" },
+          "core": {
+            "type": "object",
+            "description": "Per-window metrics from metrics.json.",
+            "properties": {
+              "sharpe": {
+                "type": ["number", "null"],
+                "description": "A3.4: null (not 0.0) when trade_count < 5. Distinguishes sparse windows from zero-Sharpe losing windows."
+              },
+              "trade_count":              { "type": "integer" },
+              "win_rate":                 { "type": ["number", "null"] },
+              "net_return_pct":           { "type": ["number", "null"] },
+              "max_drawdown_pct":         { "type": ["number", "null"] },
+              "gross_pnl":                { "type": ["number", "null"] },
+              "net_pnl":                  { "type": ["number", "null"] },
+              "fees_paid":                { "type": ["number", "null"] },
+              "cost_drag_pct":            { "type": ["number", "null"] },
+              "forecast_return_corr":     { "type": ["number", "null"] },
+              "forecast_return_corr_pvalue": { "type": ["number", "null"] },
+              "avg_trade_duration_bars":  { "type": ["number", "null"] }
+            }
+          },
+          "per_regime":      { "type": "object" },
+          "regime_validity": { "type": "object" }
+        }
+      }
+    },
+    "per_symbol_summary": {
+      "type": "object",
+      "description": "Aggregated metrics per symbol across all walk-forward windows.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "median_sharpe": {
+            "type": ["number", "null"],
+            "description": "A3.4: null when all windows are sparse (< 5 trades). Use per_trade_expectancy_bps instead."
+          },
+          "max_abs_drawdown_pct": { "type": "number" },
+          "min_trade_count":      { "type": "integer" },
+          "zero_trade_slot_pct":  {
+            "type": "number",
+            "description": "A3.4: % of this symbol's windows with 0 trades. > 30% is a deployment risk."
+          }
+        }
+      }
+    },
+    "hypothesis_verdict": {
+      "type": ["object", "null"],
+      "description": "Present when --validation-protocol is supplied. Contains criteria results and the diagnostics block read by verdict-interpreter.",
+      "properties": {
+        "verdict":          { "type": "string", "enum": ["promote", "refine", "kill"] },
+        "criteria_results": { "type": "array" },
+        "verdict_reason":   { "type": "string" },
+        "diagnostics": {
+          "type": "object",
+          "properties": {
+            "median_gross_pnl":               { "type": ["number", "null"] },
+            "median_cost_drag_pct":           { "type": ["number", "null"] },
+            "median_forecast_return_corr":    { "type": ["number", "null"] },
+            "median_avg_trade_duration_bars": { "type": ["number", "null"] },
+            "uninformative_regimes":          { "type": "array", "items": { "type": "string" } },
+            "win_rate_vs_sharpe":             { "type": "string" },
+            "below_floor_pct": {
+              "type": "number",
+              "description": "A3.4: % of windows with trade_count < 5. When > 50%, median_sharpe rules are suspended."
+            },
+            "per_trade_expectancy_bps": {
+              "type": ["object", "null"],
+              "description": "A3.4: present when trade_diagnostics_summary is available.",
+              "properties": {
+                "mean":   { "type": ["number", "null"] },
+                "se":     { "type": ["number", "null"] },
+                "t_stat": { "type": ["number", "null"] },
+                "n":      { "type": "integer" }
+              }
+            },
+            "zero_trade_slot_pct": {
+              "type": ["number", "null"],
+              "description": "A3.4: global % of all window-symbol slots with 0 trades."
+            }
+          }
+        }
+      }
+    },
+    "trade_diagnostics_summary": {
+      "type": ["object", "null"],
+      "description": "Step 03 summary block. null when no trades occurred in any window. Full per-trade records in trade_diagnostics.json.",
+      "$ref": "trade_diagnostics.schema.json#/properties/summary"
+    }
+  }
+}

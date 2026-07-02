@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "trade_diagnostics",
+  "description": "Per-trade and summary diagnostics produced by run_protocol.py alongside protocol_summary.json. Step 03 artifact.",
+  "type": "object",
+  "required": ["trades", "summary"],
+  "properties": {
+    "trades": {
+      "type": "array",
+      "description": "One record per closed trade across all walk-forward windows.",
+      "items": {
+        "type": "object",
+        "required": [
+          "trade_id", "symbol", "window", "regime_at_entry", "direction",
+          "entry_time", "exit_time", "holding_bars", "realized_return",
+          "mae", "mfe", "exit_reason"
+        ],
+        "properties": {
+          "trade_id":               { "type": "string" },
+          "symbol":                 { "type": "string" },
+          "window":                 { "type": "string", "description": "Walk-forward window label, e.g. '2024-02'" },
+          "regime_at_entry":        { "type": "string" },
+          "direction":              { "type": "string", "enum": ["long", "short"] },
+          "entry_time":             { "type": "string", "format": "date-time" },
+          "exit_time":              { "type": "string", "format": "date-time" },
+          "holding_bars":           { "type": "integer", "minimum": 1 },
+          "realized_return":        { "type": "number", "description": "Gross return as % of position value (denominator: entry_price). Used for MAE/MFE ratio and entry/exit_efficiency comparisons." },
+          "profitable_net":         { "type": "boolean", "description": "True when net-of-commission return > 0. Matches the engine's PerformanceTracker definition. Use this for win classification, not realized_return > 0." },
+          "net_portfolio_return_pct": { "type": "number", "description": "Net return as % of total portfolio value (after commission). Use this for per_trade_expectancy_bps, not position-level gross." },
+          "mae": {
+            "type": "number",
+            "description": "Max adverse excursion as positive % of entry price during holding window"
+          },
+          "mfe": {
+            "type": "number",
+            "description": "Max favorable excursion as positive % of entry price during holding window"
+          },
+          "entry_efficiency": {
+            "type": ["number", "null"],
+            "description": "realized_return minus hypothetical return if entered at next-bar open. Positive = early entry was better."
+          },
+          "exit_efficiency": {
+            "type": ["number", "null"],
+            "description": "Fraction of best possible return captured (hindsight optimum). Valid only for relative comparison — not achievable headroom (A3.3)."
+          },
+          "exit_reason": {
+            "type": "string",
+            "enum": ["signal_flip", "stop_loss", "time_stop", "end_of_window"]
+          },
+          "post_exit_return_5bars": {
+            "type": ["number", "null"],
+            "description": "A3.1: signed return in position direction for 5 bars after exit. Required for stop_loss_recovery_rate."
+          },
+          "post_exit_return_20bars": {
+            "type": ["number", "null"],
+            "description": "A3.1: signed return in position direction for 20 bars after exit."
+          },
+          "cost_paid": {
+            "type": "number",
+            "description": "A3.2: round-trip cost in bps. From config/cost_model.yaml if available; else from actual commission data."
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "Aggregated trade-level statistics across all windows and symbols.",
+      "properties": {
+        "win_rate_net": {
+          "type": ["number", "null"],
+          "description": "Net-of-commission win rate (% of trades with profitable_net = true). Matches engine's own win_rate. Note: gross win rate overstates this by ~8pp at 0.2% commission."
+        },
+        "mae_mfe_ratio_median": {
+          "type": ["number", "null"],
+          "description": "Median of (MAE/MFE) per trade. High ratio + low realized return = exits leaving money on table."
+        },
+        "entry_efficiency_median": {
+          "type": ["number", "null"],
+          "description": "Median entry_efficiency. Near 0 = entry timing adds nothing; negative = late/early entry degrades edge."
+        },
+        "exit_efficiency_median": {
+          "type": ["number", "null"],
+          "description": "Median exit_efficiency. Hindsight benchmark — see A3.3 caveat."
+        },
+        "holding_period_distribution": {
+          "type": "object",
+          "properties": {
+            "p10_bars": { "type": ["integer", "null"] },
+            "p50_bars": { "type": ["integer", "null"] },
+            "p90_bars": { "type": ["integer", "null"] }
+          }
+        },
+        "pnl_concentration": {
+          "type": "object",
+          "properties": {
+            "pct_pnl_from_top_decile_trades": {
+              "type": ["number", "null"],
+              "description": "% of total PnL from the top 10% of trades by return. High value = fragile tail-dependency on winners."
+            },
+            "pct_pnl_from_worst_decile_trades": {
+              "type": ["number", "null"],
+              "description": "% of total PnL from the worst 10% of trades. When this exceeds 100% (in magnitude), the worst few trades wipe out all gains — confirms uncapped loss tail. Key input for holding_sizing diagnosis."
+            }
+          }
+        },
+        "exit_reason_breakdown": {
+          "type": "object",
+          "properties": {
+            "signal_flip_pct":   { "type": "number" },
+            "stop_loss_pct":     { "type": "number" },
+            "time_stop_pct":     { "type": "number" },
+            "end_of_window_pct": { "type": "number" }
+          }
+        },
+        "stop_loss_recovery_rate": {
+          "type": "number",
+          "description": "A3.1: fraction of stop_loss exits where post_exit_return_20bars > 0. Triggers holding_sizing diagnosis when above threshold."
+        },
+        "per_trade_expectancy_bps": {
+          "type": "object",
+          "description": "A3.4: primary performance stat when median_sharpe is invalid (> 50% sparse windows). Computed from net_portfolio_return_pct * 100 (portfolio-level net bps), NOT position-level gross. Matches engine's PerformanceTracker records.",
+          "properties": {
+            "mean":   { "type": ["number", "null"] },
+            "se":     { "type": ["number", "null"] },
+            "t_stat": { "type": ["number", "null"] },
+            "n":      { "type": "integer" }
+          }
+        },
+        "zero_trade_slot_pct": {
+          "type": "number",
+          "description": "A3.4: % of all window-symbol slots with 0 trades. > 30% is a deployment risk independent of expectancy."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "er",
+        "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+        "params": {
+          "period": 24,
+          "smooth_period": 5
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "er",
+              "op": "gte",
+              "value": 0.25
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  }
+}

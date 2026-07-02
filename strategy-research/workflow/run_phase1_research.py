@@ -1694,9 +1694,11 @@ def run_loop(run_id: str):
                     if _regime_aud:
                         _fw_violations = _validate_retune_firewall(_regime_aud)
                         if _fw_violations:
-                            print("⚠️  RETUNE FIREWALL — regime_audit_decision.yaml contains forbidden references:")
-                            for _v in _fw_violations:
-                                print(f"   - {_v}")
+                            raise RuntimeError(
+                                "RETUNE FIREWALL VIOLATION — regime_audit_decision.yaml "
+                                "references forbidden strategy metrics:\n"
+                                + "\n".join(f"  - {v}" for v in _fw_violations)
+                            )
                     _vi_handoff = RUN_DIR / "handoffs" / "protocol_to_verdict_interpreter.yaml"
                     _inject_regime_context_into_handoff(_vi_handoff, _regime_rpt, _regime_aud, run_id)
 

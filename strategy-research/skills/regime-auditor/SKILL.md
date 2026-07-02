@@ -71,6 +71,43 @@ evaluated_at: "<ISO timestamp>"
 
 ---
 
+## A2.3 — Post-unusable policy
+
+Applies whenever `status = unusable_for_this_symbol_timeframe` is issued (including after a completed retune cycle).
+
+### No replacement detector until an ungated edge exists
+
+A replacement detector (ADX, HMM, daily-timeframe overlay, or any other family) is NOT to be built or commissioned until both of the following are true:
+
+1. A confirmed **ungated** edge exists: Improvement 03 trade diagnostics show positive per-trade expectancy without any regime filter.
+2. Those same diagnostics show **regime-dependent** performance: the edge is materially stronger in a particular market state.
+
+Regime gating is an optimization over a working edge. Without a confirmed edge, a new detector adds trial surface with no payoff. When recommending `unusable`, do NOT suggest building a replacement detector as the next action. Instead, record candidate families in `config/detector_wishlist.yaml` — this is a wishlist, not a work queue.
+
+### Preferred first candidate when the trigger fires
+
+When the conditions above are met, the preferred first detector candidate is a **daily-timeframe regime overlay on the 1h strategy**: regime computed from daily bars (daily ER or ADX), then applied as a gate on the 1h strategy. Persistence measured in days clears the intrinsic gates (persistence ≥ 24 daily bars = 24 calendar days, well above the 12-bar minimum). This is a config-level change, not an engine extension.
+
+### Improvement 02 gate is permanent and detector-agnostic
+
+Any future detector, whatever the family, MUST pass `validate_regime_detector.py` (including A2.2 class-conditional sensitivity) and this regime-auditor stage before its labels may condition any metric. The 02 machinery does not need to be rebuilt per detector — it is already detector-agnostic.
+
+### prescreen_result.ic_by_regime is suspended
+
+Until a trustworthy detector (confidence: high, confirmed by regime-auditor) is in place, `prescreen_result.ic_by_regime` MUST NOT be used or cited. Use only ungated IC from the diagnostics block.
+
+### IC measurement scope for A2.1 ungated escape — CRITICAL
+
+The A2.1 ungated-escape criterion requires IC computed over **all bars with no regime partition** — i.e., running (or simulating) the strategy without any regime filter.
+
+`median_forecast_return_corr` from the diagnostics block reflects IC **on gated bars only** (bars where the strategy actually traded, which occur only inside the active regime). For a strategy gated to TRENDING (~1% of bars), IC=0.2145 on those 1% bars does NOT imply all-bars IC is high — in fact, a signal that only fires on 1% of bars necessarily has near-zero all-bars IC by construction.
+
+**Rule**: before deciding `ungated_escape_eligible`, verify the IC's measurement scope:
+- If IC was measured on all bars (ungated protocol run): admissible.
+- If IC was measured on gated bars only (standard gated protocol): NOT admissible for or against the escape. Mark `ungated_escape_eligible: indeterminate` and state in `ungated_escape_rationale` that an ungated protocol run is required to resolve it.
+
+---
+
 ## RETUNE FIREWALL (A2.2 — hard rule)
 
 When `status = needs_retune`, your `recommended_action` MUST be grounded exclusively in detector-intrinsic criteria. The following are the ONLY valid acceptance criteria for a detector retune:

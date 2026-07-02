@@ -1,0 +1,72 @@
+# detector_wishlist.yaml
+# Candidate regime detector families recorded during the A2.3 post-unusable policy.
+# This is a WISHLIST, not a work queue. Nothing here is built until the A2.3 trigger fires:
+#   (1) confirmed ungated edge (positive per-trade expectancy without regime filter), AND
+#   (2) Improvement 03 diagnostics show regime-dependent performance.
+#
+# Format mirrors feed_wishlist (A1.2): each entry records the family, why it was noted,
+# and its expected gate-clearing characteristics. Priority ordering is informational.
+#
+# Updated: 2026-07-02 (post-retune, A2.3 implementation)
+
+trigger_condition:
+  description: >
+    Build the first wishlist entry when: (1) a confirmed ungated edge exists per
+    Improvement 03 diagnostics, AND (2) those diagnostics show regime-dependent
+    performance (edge materially stronger in a particular market state).
+  status: not_triggered
+
+candidates:
+  - priority: 1
+    family: daily_timeframe_er_overlay
+    description: >
+      Daily-bar ER (period=24 daily bars = ~24 calendar days) used as a regime gate
+      on the 1h strategy. Regime label computed once per day from daily OHLCV, then
+      applied to all 1h bars within that day.
+    why_preferred: >
+      Persistence measured in calendar days clears the intrinsic gates by construction
+      (24 daily bars >> 12-bar minimum). This is a config-level change (daily DataManager
+      call + daily ER component), not an engine extension. No new strategy_components
+      class needed.
+    expected_metrics:
+      persistence_bars: ">=24 (measured in daily bars)"
+      activation_estimate: "unknown — depends on ER threshold at daily resolution"
+      engine_extension_required: false
+    gate_2_status: not_evaluated
+
+  - priority: 2
+    family: adx_threshold
+    description: >
+      ADX (Average Directional Index, period=14 daily bars) thresholded at 25.
+      ADX > 25 = trending; ADX <= 25 = ranging/unknown. Well-established persistence
+      characteristics on daily bars.
+    why_noted: >
+      ADX is designed for trend strength measurement and produces inherently smoother
+      transitions than ER (which can flip on individual bars). Requires adding
+      ADXRegimeComponent to strategy_components.py.
+    expected_metrics:
+      persistence_bars: "typically 5-30 daily bars in trending states"
+      activation_estimate: "~20-40% on major crypto (rough estimate)"
+      engine_extension_required: true
+      extension_note: "New ADXRegimeComponent class needed in simple_strategy.py"
+    gate_2_status: not_evaluated
+
+  - priority: 3
+    family: hidden_markov_model
+    description: >
+      2-state HMM fitted on returns + volatility, classifying trending vs mean-reverting.
+      Stateful by construction — no threshold tuning needed for persistence.
+    why_noted: >
+      HMM regime labels are inherently persistent (state transitions have learned
+      probabilities). Class-conditional sensitivity low by construction. However,
+      requires refitting on each walk-forward window to avoid lookahead bias, and
+      adds significant complexity (sklearn HMM or custom implementation).
+    expected_metrics:
+      persistence_bars: "model-dependent; typically 20-100 bars"
+      activation_estimate: "~50% by design (2-state symmetric)"
+      engine_extension_required: true
+      extension_note: "Significant: new HMM fitting + inference pipeline; refits per walk-forward window"
+    gate_2_status: not_evaluated
+
+wishlist_policy_reference: A2.3
+created_at: '2026-07-02'
