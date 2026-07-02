@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Regime Audit Decision",
+  "description": "LLM regime-auditor skill output: trustworthiness verdict for current regime detection.",
+  "type": "object",
+  "required": ["status", "affected_symbols_timeframes", "recommended_action", "evaluated_at"],
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["trustworthy", "needs_retune", "unusable_for_this_symbol_timeframe"],
+      "description": "trustworthy: per_regime_metrics may be used for verdict decisions. needs_retune: pause regime-gated generation until re-validated. unusable: record in KB, switch to ungated-only."
+    },
+    "affected_symbols_timeframes": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Symbol_timeframe pairs affected by this decision, e.g. ['BTCUSDT_1h']."
+    },
+    "recommended_action": {"type": "string"},
+    "ungated_escape_eligible": {
+      "type": "boolean",
+      "description": "Per A2.1: true when pooled IC ~ 0 or ungated backtest supports signal_bad_everywhere independent of regime partition."
+    },
+    "ungated_escape_rationale": {
+      "type": "string",
+      "description": "Evidence used to reach signal_bad_everywhere without trusting the regime partition."
+    },
+    "retune_attempted": {
+      "type": "boolean",
+      "description": "If true and status is still not trustworthy, orchestrator switches to ungated-only instead of pausing."
+    },
+    "evaluated_at": {"type": "string"}
+  }
+}

@@ -344,6 +344,13 @@ notes:
   on extended data. Their failed_families evidence_window: 2024_only tags remain but
   root cause is now confirmed — do NOT re-open these families on baseline_v2.
   Protocol result: strategy-research/results/protocols/20260702T091324Z_18fad381/'
+- 'A6.4 AUDIT (2026-07-02, before Improvement 02 concludes): forecast_return_corr=0.2145
+  across runs 017/024/027/033 is GENUINE deterministic computation, not stale caching.
+  All four runs share identical Keltner params (ema=20, atr=20, mult=2.0, scale=-20)
+  and ER threshold=0.5. Config hashes differ on secondary parameters that do not affect
+  the signal computation. Therefore these four runs constitute ONE trial for deflated-Sharpe
+  deduplication (A6.4 rule: deduplicate by signal-params-hash + protocol-hash, not
+  full config hash). No code bug; no audit action required beyond this note.'
 review_every_n_runs: 6
 status: active
 updated_at: '2026-06-30T15:13:29.247533+00:00'

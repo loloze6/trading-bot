@@ -328,5 +328,62 @@ with the EXACT diagnostic values that triggered the rule:
   constraints.
 - Do not output escalation_request.yaml or proposed_brief.yaml without also outputting findings_carryover.yaml in the same response.
 
+## IMPROVEMENT 02 — Regime Attribution Gate (mandatory for regime-gated hypotheses)
+
+When the tested hypothesis is regime-gated (its config has a `regime_detector` block and
+at least one strategy regime other than `unknown`), you MUST populate a `regime_attribution`
+block in `verdict_interpretation.yaml`:
+
+```yaml
+regime_attribution:
+  detector_confidence: <value from handoff field `regime_detector_confidence`, e.g. medium>
+  signal_performs_in_intended_regime: <bool>   # from per_regime_metrics for the gated regime
+  signal_performs_in_other_regimes: <bool>     # would it work ungated or in another regime?
+  conclusion: <one of the four values below>
+```
+
+Apply this decision tree IN ORDER:
+
+1. If `detector_confidence != high` for the tested symbol/timeframe:
+   - Check the handoff field `ungated_escape_eligible`.
+   - If `ungated_escape_eligible: true` (pooled IC ~ 0, see rationale):
+     → conclusion = `signal_bad_everywhere` (ungated evidence overrides; cite the ungated
+       metric values from `ungated_escape_rationale` in `altitude_justification`).
+   - If `ungated_escape_eligible: false`:
+     → conclusion = `inconclusive_low_detector_confidence`
+     → status MUST be `refine` (route back to regime-auditor, not kill or pivot)
+     → altitude_justification must state: "Regime detector confidence is [level] for
+       [symbol_timeframe]; cannot conclude signal_bad_everywhere without trusted regime
+       partition. Routed to regime re-validation."
+     → **FORBIDDEN: setting conclusion = signal_bad_everywhere while detector_confidence
+       != high and ungated_escape_eligible = false.**
+
+2. If `detector_confidence = high`:
+   - Check per_regime_metrics for the gated regime and for ungated/default:
+   - If signal performs well ONLY in a DIFFERENT regime than gated:
+     → conclusion = `signal_good_wrong_regime_gate`
+     → status = `refine` (altitude 1: change which regime is active, not the signal)
+   - If signal performs poorly in ALL regimes (including ungated):
+     → conclusion = `signal_bad_everywhere`
+     → status = `pivot` or `kill` per normal rules
+   - If signal performs well in the gated regime:
+     → conclusion = `signal_good_regime_gate_correct`
+     → continue to normal promotion path
+
+## A3.4 — Sparse-trader Sharpe gate (mandatory)
+
+Before applying any Sharpe-based diagnostic rule, compute:
+  `below_floor_pct = fraction of windows with trade_count < 5`
+
+If `below_floor_pct > 0.50` (more than half the windows are sparse):
+- Suspend all `median_sharpe`-based rules.
+- Use `per_trade_expectancy_bps` (from `hypothesis_verdict.diagnostics`) as the primary
+  performance statistic.
+- State in `verdict_interpretation.yaml` which statistic was used and why.
+- If `per_trade_expectancy_bps` mean ≤ 0 with |t_stat| > 1.5: treat as a kill/pivot signal.
+- If `per_trade_expectancy_bps` is unavailable in the diagnostics block: note the gap
+  and fall back to win_rate + cost_drag as the primary evidence.
+
 ## Context rule
-Read only the five input artifacts. Minimal context.
+Read only the five input artifacts plus the handoff `regime_detector_confidence` field.
+Minimal context.

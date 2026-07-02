@@ -1,0 +1,46 @@
+detector_version: 1bc9b530
+evaluated_at: '2026-07-02T11:08:30.551214+00:00'
+data_range:
+  start: '2024-01-01'
+  end: '2025-12-31'
+config_source: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_033\artifacts\candidate_strategy_config.json
+per_symbol_per_timeframe:
+- symbol: BTCUSDT
+  timeframe: 1h
+  metrics:
+    regime_persistence_median_bars: 18
+    transition_frequency_per_window: 2.5
+    parameter_sensitivity: 0.0161
+    trending_activation_rate: 0.0107
+    zero_trade_slot_pct: 0.2917
+    agreement_with_reference_labels: null
+  confidence: medium
+  confidence_rationale: 'persistence=18.0>=12, sensitivity=0.016<=0.25 but fails high
+    gate: persistence=18.0<24'
+  known_weak_periods:
+  - 2024-01
+  - 2024-09
+  - 2024-10
+  - 2024-12
+  - 2025-03
+  - 2025-04
+  - 2025-05
+  - 2025-09
+  - 2025-12
+- symbol: ETHUSDT
+  timeframe: 1h
+  metrics:
+    regime_persistence_median_bars: 9
+    transition_frequency_per_window: 3.92
+    parameter_sensitivity: 0.0202
+    trending_activation_rate: 0.0159
+    zero_trade_slot_pct: 0.2083
+    agreement_with_reference_labels: null
+  confidence: low
+  confidence_rationale: persistence=9.0<12
+  known_weak_periods:
+  - 2024-01
+  - 2024-03
+  - 2024-11
+  - 2024-12
+  - 2025-02
