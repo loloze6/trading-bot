@@ -40,7 +40,9 @@
               "transition_frequency_per_window",
               "parameter_sensitivity",
               "trending_activation_rate",
-              "zero_trade_slot_pct"
+              "zero_trade_slot_pct",
+              "class_conditional_sensitivity_per_label",
+              "activation_band_check"
             ],
             "additionalProperties": false,
             "properties": {
@@ -49,7 +51,35 @@
               "parameter_sensitivity":           {"type": "number"},
               "trending_activation_rate":        {"type": "number"},
               "zero_trade_slot_pct":             {"type": "number"},
-              "agreement_with_reference_labels": {"type": ["number", "null"]}
+              "agreement_with_reference_labels": {"type": ["number", "null"]},
+              "class_conditional_sensitivity_per_label": {
+                "type": "object",
+                "description": "Worst-case class-conditional sensitivity per regime label. Fraction of baseline-label bars that lose the label under +-10% threshold perturbation. Keys are label names.",
+                "additionalProperties": {
+                  "type": "object",
+                  "required": ["baseline_count", "class_conditional_sensitivity", "worst_case_direction", "relative_population_change"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "baseline_count":                {"type": "integer"},
+                    "class_conditional_sensitivity": {"type": "number"},
+                    "worst_case_direction":          {"type": "string"},
+                    "relative_population_change":    {"type": "number"}
+                  }
+                }
+              },
+              "activation_band_check": {
+                "type": "object",
+                "description": "Whether trending_activation_rate falls within the plausibility band [band_min, band_max]. Confidence is capped at medium when outside the band.",
+                "required": ["within_band", "band_min", "band_max", "rare_label_threshold", "gate_metric_used"],
+                "additionalProperties": false,
+                "properties": {
+                  "within_band":          {"type": "boolean"},
+                  "band_min":             {"type": "number"},
+                  "band_max":             {"type": "number"},
+                  "rare_label_threshold": {"type": "number"},
+                  "gate_metric_used":     {"type": "string", "enum": ["class_conditional", "all_bars"]}
+                }
+              }
             }
           },
           "confidence": {

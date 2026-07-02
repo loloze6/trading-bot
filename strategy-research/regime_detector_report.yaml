@@ -1,22 +1,44 @@
-detector_version: 1bc9b530
-evaluated_at: '2026-07-02T11:08:30.551214+00:00'
+detector_version: f70b774c
+evaluated_at: '2026-07-02T12:27:56.794056+00:00'
 data_range:
   start: '2024-01-01'
   end: '2025-12-31'
-config_source: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\runs\run_033\artifacts\candidate_strategy_config.json
+config_source: runs/run_039/artifacts/candidate_strategy_config.json
 per_symbol_per_timeframe:
 - symbol: BTCUSDT
   timeframe: 1h
   metrics:
-    regime_persistence_median_bars: 18
-    transition_frequency_per_window: 2.5
-    parameter_sensitivity: 0.0161
-    trending_activation_rate: 0.0107
-    zero_trade_slot_pct: 0.2917
+    regime_persistence_median_bars: 8.0
+    transition_frequency_per_window: 28.71
+    parameter_sensitivity: 0.1596
+    trending_activation_rate: 0.0255
+    zero_trade_slot_pct: 0.0417
     agreement_with_reference_labels: null
-  confidence: medium
-  confidence_rationale: 'persistence=18.0>=12, sensitivity=0.016<=0.25 but fails high
-    gate: persistence=18.0<24'
+    class_conditional_sensitivity_per_label:
+      unknown:
+        baseline_count: 8771
+        class_conditional_sensitivity: 0.2877
+        worst_case_direction: up
+        relative_population_change: -0.2664
+      trending:
+        baseline_count: 445
+        class_conditional_sensitivity: 0.5865
+        worst_case_direction: up
+        relative_population_change: -0.5865
+      mean_reversion:
+        baseline_count: 8224
+        class_conditional_sensitivity: 0.2977
+        worst_case_direction: down
+        relative_population_change: -0.2977
+    activation_band_check:
+      within_band: false
+      band_min: 0.1
+      band_max: 0.4
+      rare_label_threshold: 0.1
+      gate_metric_used: class_conditional
+  confidence: low
+  confidence_rationale: 'persistence=8.0<12; class_cond_sensitivity(TRENDING)=0.587
+    [rare label: activation=2.55%<10%]>0.25'
   known_weak_periods:
   - 2024-01
   - 2024-09
@@ -30,14 +52,37 @@ per_symbol_per_timeframe:
 - symbol: ETHUSDT
   timeframe: 1h
   metrics:
-    regime_persistence_median_bars: 9
-    transition_frequency_per_window: 3.92
-    parameter_sensitivity: 0.0202
-    trending_activation_rate: 0.0159
-    zero_trade_slot_pct: 0.2083
+    regime_persistence_median_bars: 7.0
+    transition_frequency_per_window: 31.92
+    parameter_sensitivity: 0.1763
+    trending_activation_rate: 0.039
+    zero_trade_slot_pct: 0.0833
     agreement_with_reference_labels: null
+    class_conditional_sensitivity_per_label:
+      unknown:
+        baseline_count: 8748
+        class_conditional_sensitivity: 0.2961
+        worst_case_direction: up
+        relative_population_change: -0.2754
+      trending:
+        baseline_count: 680
+        class_conditional_sensitivity: 0.4882
+        worst_case_direction: up
+        relative_population_change: -0.4882
+      mean_reversion:
+        baseline_count: 8012
+        class_conditional_sensitivity: 0.3396
+        worst_case_direction: down
+        relative_population_change: -0.3396
+    activation_band_check:
+      within_band: false
+      band_min: 0.1
+      band_max: 0.4
+      rare_label_threshold: 0.1
+      gate_metric_used: class_conditional
   confidence: low
-  confidence_rationale: persistence=9.0<12
+  confidence_rationale: 'persistence=7.0<12; class_cond_sensitivity(TRENDING)=0.488
+    [rare label: activation=3.90%<10%]>0.25'
   known_weak_periods:
   - 2024-01
   - 2024-03

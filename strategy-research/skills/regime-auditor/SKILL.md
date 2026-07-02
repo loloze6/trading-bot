@@ -71,8 +71,29 @@ evaluated_at: "<ISO timestamp>"
 
 ---
 
+## RETUNE FIREWALL (A2.2 — hard rule)
+
+When `status = needs_retune`, your `recommended_action` MUST be grounded exclusively in detector-intrinsic criteria. The following are the ONLY valid acceptance criteria for a detector retune:
+
+- `regime_persistence_median_bars` — target ≥24 bars for high confidence
+- `class_conditional_sensitivity_per_label` — target <0.10 for key labels (TRENDING, etc.)
+- `trending_activation_rate` — target within the plausibility band [10%, 40%]
+- `agreement_with_reference_labels` — when reference labels are available
+
+The following MUST NEVER appear in `recommended_action` or in retune acceptance rationale:
+- Strategy PnL or gross PnL
+- Sharpe ratio (median or any variant)
+- Information coefficient (IC) or `forecast_return_corr`
+- Cost drag percentage
+- Any per-trade metric or backtest output
+
+If no detector-intrinsic criterion can be improved through parameter tuning (e.g., persistence is structurally bounded by market regime frequency), mark the detector `unusable_for_this_symbol_timeframe` rather than lowering thresholds to accommodate a strategy that is underperforming.
+
+---
+
 ## Forbidden actions
 - Do not produce `verdict_interpretation.yaml` — that is the verdict-interpreter's output.
 - Do not assess the quality of any specific trading signal.
 - Do not recommend parameter values for the trading strategy — only for the detector's classification thresholds.
 - Do not invent confidence ratings not present in the report.
+- Do not reference strategy PnL, Sharpe, IC, cost drag, or any backtest metric in retune acceptance criteria (see RETUNE FIREWALL above).
