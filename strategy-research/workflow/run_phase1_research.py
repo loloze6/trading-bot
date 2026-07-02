@@ -850,6 +850,27 @@ def _ensure_regime_detector_report(run_id: str, run_dir: Path) -> dict | None:
     return None
 
 
+_RETUNE_FORBIDDEN_TERMS = {
+    "pnl", "sharpe", "ic", "backtest", "cost_drag",
+    "forecast_return_corr", "per_trade", "expectancy",
+}
+
+def _validate_retune_firewall(regime_audit: dict) -> list:
+    """
+    A2.2 retune firewall: regime_audit_decision.yaml must not cite strategy metrics
+    in recommended_action. Returns a list of violation strings (empty = clean).
+    """
+    violations = []
+    recommended = (regime_audit.get("recommended_action") or "").lower()
+    for term in _RETUNE_FORBIDDEN_TERMS:
+        if term in recommended:
+            violations.append(
+                f"Retune firewall: '{term}' in recommended_action — "
+                "detector retunes must use detector-intrinsic criteria only."
+            )
+    return violations
+
+
 def _inject_regime_context_into_handoff(handoff_path: Path, regime_report: dict,
                                          regime_audit: dict | None, run_id: str):
     """
@@ -1669,6 +1690,13 @@ def run_loop(run_id: str):
                     _regime_rpt = _ensure_regime_detector_report(run_id, RUN_DIR)
                     _regime_aud_path = RUN_DIR / "artifacts" / "regime_audit_decision.yaml"
                     _regime_aud = load_yaml(_regime_aud_path) if _regime_aud_path.exists() else None
+                    # A2.2 retune firewall: audit output must not cite strategy metrics
+                    if _regime_aud:
+                        _fw_violations = _validate_retune_firewall(_regime_aud)
+                        if _fw_violations:
+                            print("⚠️  RETUNE FIREWALL — regime_audit_decision.yaml contains forbidden references:")
+                            for _v in _fw_violations:
+                                print(f"   - {_v}")
                     _vi_handoff = RUN_DIR / "handoffs" / "protocol_to_verdict_interpreter.yaml"
                     _inject_regime_context_into_handoff(_vi_handoff, _regime_rpt, _regime_aud, run_id)
 
