@@ -466,8 +466,13 @@ class Launcher:
 # Standalone callable used by run_protocol.py
 # ---------------------------------------------------------------------------
 
-def run_backtest(config_path: str, symbol: str, start: str, end: str, results_root: str):
-    """Wire and run a single-symbol backtest; return the run_dir Path."""
+def run_backtest(config_path: str, symbol: str, start: str, end: str, results_root: str,
+                 runs_root: str = None):
+    """Wire and run a single-symbol backtest; return the run_dir Path.
+
+    runs_root: if set, individual run folders are created directly inside this
+               directory (no /runs/ subdirectory), e.g. runs/run_xxx/results/.
+    """
     from data.feed_registry import FEED_REGISTRY
 
     launcher = Launcher()
@@ -483,6 +488,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
     strategy = AdvancedStrategy(config_path=config_path)
     stack = launcher._build_mock_stack(params, DEFAULT_INITIAL_BALANCE)
     stack.portfolio_state_tracker.output_dir = results_root
+    if runs_root is not None:
+        stack.portfolio_state_tracker.runs_dir = runs_root
 
     engine = BacktestEngine(
         data_manager=stack.data_manager,

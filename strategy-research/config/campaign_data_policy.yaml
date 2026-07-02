@@ -1,0 +1,20 @@
+# Campaign data policy — frozen at Improvement 07 (2026-07-02)
+# Governs which date ranges are available for walk-forward search vs. reserved holdout.
+#
+# burned_ranges: date ranges already used in any historical walk-forward window.
+#   Usable for walk-forward SEARCH in baseline_v2 (they already are burnt for unbiased
+#   estimation but not for comparative search).
+# walk_forward_extension: newly available date range for baseline_v2 walk-forward.
+# holdout_range: FROZEN — no stage, tool, prescreen, or diagnostic may read candles
+#   inside this range except the (future) holdout_evaluation stage.
+# holdout_consumed_by: hypothesis_ids that have spent their single holdout evaluation.
+
+burned_ranges:
+  BTCUSDT_1h: ["2024-01-01", "2024-11-30"]
+  ETHUSDT_1h: ["2024-01-01", "2024-11-30"]
+
+walk_forward_extension: ["2024-12-01", "2025-12-31"]
+
+holdout_range: ["2026-01-01", "2026-06-30"]
+
+holdout_consumed_by: []

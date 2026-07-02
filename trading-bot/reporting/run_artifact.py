@@ -21,11 +21,12 @@ import pandas as pd
 # Directory creation
 # ---------------------------------------------------------------------------
 
-def new_run_dir(results_root: str, config: dict) -> Path:
+def new_run_dir(results_root: str, config: dict, *, runs_dir: str = None) -> Path:
     canonical = json.dumps(config, sort_keys=True, separators=(",", ":"))
     config_hash = sha256(canonical.encode()).hexdigest()[:8]
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "_" + config_hash
-    run_dir = Path(results_root) / "runs" / run_id
+    base = Path(runs_dir) if runs_dir else Path(results_root) / "runs"
+    run_dir = base / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     return run_dir
 
