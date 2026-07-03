@@ -1,0 +1,78 @@
+# config/cost_model.yaml
+# Single source of truth for fee/spread/cost assumptions.
+# Consumed by: validation gate (Layer 1), prescreen tool (Layer 2),
+#              backtest engine (_cost_paid_bps in run_protocol.py),
+#              and the cost_drag diagnostic rule in verdict-interpreter.
+#
+# RULE: No fee or spread constant may be hardcoded anywhere else after Improvement 09.
+# Grep audit: search for hardcoded fee constants in tools/ and skills/.
+#
+# Created: 2026-07-02 (Improvement 09)
+
+version: "1.0"
+created_at: "2026-07-02"
+
+# Safety factor: required_gross_edge = safety_factor × round_trip_cost
+# A strategy must earn at least 2× its round-trip cost per trade to pass Layer 2.
+safety_factor: 2.0
+
+# One-way taker fee in bps (basis points, 1 bps = 0.01%)
+# Binance spot, BNB discount applied (0.075% per side)
+# NOTE: used by run_protocol.py _cost_paid_bps() as 'fee_rate_bps[symbol]'
+fee_rate_bps:
+  BTCUSDT: 7.5
+  ETHUSDT: 7.5
+  SOLUSDT: 7.5
+  AVAXUSDT: 7.5
+  BNBUSDT: 6.0    # maker tier discount on BNB
+  default: 7.5
+
+# Typical bid-ask spread estimate in bps (one-way, applied once per round-trip)
+spread_estimate_bps:
+  BTCUSDT: 1.5
+  ETHUSDT: 2.0
+  SOLUSDT: 3.0
+  AVAXUSDT: 4.0
+  BNBUSDT: 2.0
+  default: 3.0
+
+# Market impact / slippage estimate in bps (one-way)
+slippage_estimate_bps:
+  BTCUSDT: 0.5
+  ETHUSDT: 0.5
+  SOLUSDT: 1.0
+  AVAXUSDT: 1.5
+  BNBUSDT: 0.5
+  default: 1.0
+
+# Pre-computed round-trip cost in bps:
+#   round_trip_cost = 2 * taker_fee + spread + slippage
+# BTCUSDT: 2*7.5 + 1.5 + 0.5 = 17.0
+# ETHUSDT: 2*7.5 + 2.0 + 0.5 = 17.5
+# SOLUSDT: 2*7.5 + 3.0 + 1.0 = 19.0
+# AVAXUSDT: 2*7.5 + 4.0 + 1.5 = 20.5
+round_trip_cost_bps:
+  BTCUSDT: 17.0
+  ETHUSDT: 17.5
+  SOLUSDT: 19.0
+  AVAXUSDT: 20.5
+  BNBUSDT: 15.0
+  default: 18.5
+
+# Layer 1 reference (validation_gate, declarative LLM check):
+#   required_gross_edge_bps_per_trade = safety_factor * round_trip_cost_bps[symbol]
+#   e.g. BTCUSDT: 2.0 * 17.0 = 34.0 bps required gross edge per trade
+#
+# Layer 2 formula (prescreen_signal.py, deterministic):
+#   estimated_gross_edge_bps_per_trade = abs(IC) * sigma_bar_bps * sqrt(avg_holding_bars)
+#   where:
+#     IC             = pooled Spearman IC (all-bars ungated, per prescreen windows)
+#     sigma_bar_bps  = std dev of 1-bar close returns in bps
+#     avg_holding_bars = 1 / turnover_rate (trades per bar)
+#   edge_to_cost_ratio = estimated_gross_edge_bps_per_trade / round_trip_cost_bps
+#   pass = (edge_to_cost_ratio >= safety_factor)
+#
+# A9.1 calibration fixture: Keltner strategy with ungated IC ≈ 0 (regime-gated to ~1%
+# of bars, ungated IC approaches 0) must fail cost_check with edge_to_cost_ratio ≈ 0.
+# A gate that passes the Keltner despite its confirmed -26 to -58 bps/trade expectancy
+# is not calibrated.

@@ -11,12 +11,15 @@ Translate structured backtest findings into a concrete next action:
 a refined brief that fixes the identified failure, or a final decision to kill or promote.
 
 ## Required inputs
-- `protocol_result.yaml`       (backtest findings + hypothesis_verdict criteria_results + diagnostics)
+- `protocol_result.yaml`       (backtest findings + hypothesis_verdict criteria_results + diagnostics;
+                                OR a prescreen stub — see PRESCREEN KILL section below)
 - `validation_protocol.yaml`   (original hypothesis success criteria and failure modes)
 - `backtest_spec.yaml`         (config_rationale: what config choices mapped to which claims)
 - `research_brief.yaml`        (original research question and constraints)
 - `campaign_state.yaml`        (cross-run altitude history; what has been tried and at which altitude)
 - `trade_diagnostics.json`     (Step 03 — optional; present when trades occurred. Read summary block.)
+- `prescreen_result.yaml`      (Improvement 08+09 — present when a prescreen gate was applied.
+                                REQUIRED as primary evidence when protocol_result.yaml is a stub.)
 
 ## Required outputs
 - `verdict_interpretation.yaml`   (structured findings summary — always required)
@@ -454,18 +457,108 @@ If `below_floor_pct > 0.50` (more than half the windows are sparse):
 
 `median_forecast_return_corr` in the diagnostics block is IC computed **on gated bars only** — the bars where the strategy actually placed trades, which occur exclusively inside the active regime. For a strategy gated to TRENDING (~1% of bars), IC=0.2145 on those bars does NOT represent all-bars IC.
 
-When the handoff indicates `ungated_escape_eligible` was evaluated:
-- If the IC figure cited in `ungated_escape_rationale` came from a gated protocol run (standard run), do NOT treat it as evidence for or against the escape.
-- A gated-bar IC that is high does not mean the ungated escape is unavailable; it means the IC scope is wrong for that test.
-- A gated-bar IC that is near-zero ALSO does not confirm the escape, for the same reason.
-- Only an IC computed from an **ungated protocol run** (regime filter removed) is admissible for the A2.1 determination.
+**A8.3 — two ICs are now reported by prescreen:**
 
-If the ungated protocol run has not been executed, do not resolve `ungated_escape_eligible` — treat it as indeterminate and note that in `altitude_justification`.
+`prescreen_result.ic_active_bars`: IC computed on bars where |forecast| > threshold (active/gated bars). This is what the **IC gate** evaluates. For a regime-gated config, this equals gated-bar IC. High ic_active_bars means the signal has directional content when it fires.
+
+`prescreen_result.ic_all_bars`: IC computed over ALL bars (forecast=0 on inactive bars). This is the **ungated, all-bars IC** — the only figure admissible for A2.1 ungated-escape assessment per A2.3 rule 5.
+
+When the handoff indicates `ungated_escape_eligible` was resolved by prescreen:
+- The resolution uses `ic_all_bars` (recorded in `prescreen_ic_all_bars` in `regime_audit_decision.yaml`).
+- `ic_active_bars` is explicitly NOT admissible for A2.1: a signal with active-bar IC > 0 still has no evidence of ungated edge; "signal_bad_everywhere" requires the ALL-bars IC to be near zero.
+- If `ungated_escape_eligible` was set to True by the prescreen: `ic_all_bars` was near zero with tight CI — cite it when applying the A2.1 escape.
+- If set to False: `ic_all_bars` was not near zero, OR could not be computed — do not apply the escape.
+
+If the prescreen has not been run and no ungated run exists, treat `ungated_escape_eligible` as indeterminate and note that in `altitude_justification`.
 
 ### prescreen_result.ic_by_regime is suspended (A2.3)
 
-Until a trustworthy detector (confidence: high from regime-auditor) is in place, do NOT use or reference `prescreen_result.ic_by_regime` in any verdict decision. Use only ungated IC from the diagnostics block.
+Until a trustworthy detector (confidence: high from regime-auditor) is in place, do NOT use or reference `prescreen_result.ic_by_regime` in any verdict decision. Use only `ic_all_bars` (ungated) for A2.1 and `ic_active_bars` for the IC gate description.
+
+## IMPROVEMENT 08+09 — Prescreen Kill Verdicts
+
+When the handoff contains `prescreen_route` (set by the orchestrator when signal_prescreen
+killed this run before a full backtest), the protocol_result.yaml is a **prescreen stub**,
+NOT a full backtest result. Act accordingly:
+
+### Detecting a prescreen kill
+
+Check for `protocol_result.yaml.source == "prescreen_stub"` OR the handoff field
+`prescreen_route` being set. If either is true:
+
+1. **Read `prescreen_result.yaml` as the primary evidence source** (not protocol_result.yaml).
+2. The diagnostics in the stub's `hypothesis_verdict.diagnostics` are derived from prescreen
+   metrics (IC and estimated cost_drag). Use them only for context — cite `prescreen_result.yaml`
+   values directly in your verdict.
+3. No trade-level data exists (`trade_diagnostics.json` will be absent or empty).
+4. Gate B-CUMULATIVE and Gate B-PER-WINDOW do NOT apply (no trades ran).
+
+### Mapping prescreen_route to verdict
+
+Apply the FIRST matching rule:
+
+| `prescreen_route` | Diagnostic Rule | `status` | Action |
+|---|---|---|---|
+| `kill_no_ic` | Rule 2 (weak signal) | `pivot` | IC was not significant at all-bars ungated level. Signal has no directional content on this venue/timeframe. Produce `findings_carryover.yaml` + `proposed_brief.yaml` for a structurally different signal. |
+| `refine_inverted_ic` | Rule 3 (signal inversion) | `refine` | Pooled IC was significantly negative. Reverse signal polarity. Produce `proposed_brief.yaml` with polarity flip as the single change. |
+| `refine_cost_hurdle` | Rule 1 (cost drag) | `refine` | IC was positive+significant but gross edge < 2× cost. Fix: raise `threshold_filter` min_abs (fewer, higher-conviction trades → longer avg holding → better edge/cost ratio). |
+| `kill_cost_hurdle` | Rule 1 (cost drag, structural) | `pivot` | IC marginal AND cost fails. No implementation fix expected. Treat as structural barrier — pivot to a different signal class. |
+
+### Output requirements for prescreen kills
+
+`verdict_interpretation.yaml` for a prescreen kill must include:
+- `altitude_justification`: cite `prescreen_result.yaml` values (e.g. `"Rule 2: ic_spearman_pooled=0.0021, p=0.82 > 0.10 — no informational content at all-bars ungated level. Prescreen killed before walk-forward."`)
+- `primary_failure_mode`: one of `"no_informational_content_prescreen"` | `"signal_inversion_prescreen"` | `"cost_drag_prescreen"`
+- `config_to_failure_map`: note which config elements (signal components, threshold_filter) drove the prescreen result
+- `trade_attribution`: omit or set to `null` (no trades)
+- `prescreen_evidence`: include the key prescreen metrics (A8.3 fields):
+  ```yaml
+  prescreen_evidence:
+    ic_active_bars: <from prescreen_result.ic_active_bars — the IC gate value>
+    ic_all_bars: <from prescreen_result.ic_all_bars — admissible for A2.1 ungated escape>
+    forecast_sparsity_pct: <from prescreen_result.forecast_sparsity_pct>
+    active_n_bars: <from prescreen_result.active_n_bars>
+    p_value: <from prescreen_result.ic_significance.p_value>
+    edge_to_cost_ratio: <from prescreen_result.cost_check.edge_to_cost_ratio>
+    route: <prescreen_result.route>
+  ```
+
+A2.3 note: `prescreen_result.ic_by_regime` is suspended — do NOT reference it.
+
+### Forbidden for prescreen kills
+
+- Do NOT claim the signal "works" based on gated IC (e.g. `forecast_return_corr=0.2145` from
+  a regime-gated run is NOT all-bars IC — see A2.3 IC scope rule above).
+- Do NOT apply the A3.4 sparse-trader Sharpe gate (it requires actual trades).
+- Do NOT promote based on prescreen evidence alone — promotion always requires a full backtest.
+
+---
+
+## IMPROVEMENT 09 — Post-backtest cost_drag gap rule
+
+When `cost_drag` (Rule 1) fires AFTER a full backtest — i.e., the prescreen passed but
+the realized cost_drag_pct is high — this means the upstream cost estimate was wrong.
+The `cost_feasibility` block in `validation_protocol.yaml` (Layer 1) or the prescreen
+`cost_check` (Layer 2) underestimated actual costs.
+
+**Required action:** populate `supporting_evidence` in `verdict_interpretation.yaml` with
+the estimate-vs-realized gap:
+
+```yaml
+supporting_evidence:
+  cost_drag_gap:
+    layer1_assumed_round_trip_bps: <from validation_protocol.cost_feasibility.assumed_round_trip_cost_bps>
+    layer2_estimated_gross_edge_bps: <from prescreen_result.cost_check.estimated_gross_edge_bps_per_trade>
+    realized_cost_drag_pct: <from protocol_result.hypothesis_verdict.diagnostics.median_cost_drag_pct>
+    gap_explanation: "<brief note on what drove the divergence: e.g. shorter-than-expected holds, or regime activation rate lower than assumed>"
+```
+
+Repeated large gaps (estimate vs realized) across runs signal that `config/cost_model.yaml`
+needs recalibration. Flag this in `findings_carryover.yaml` if the gap is > 2× the estimate.
+
+---
 
 ## Context rule
 Read only the five input artifacts plus the handoff `regime_detector_confidence` field.
+When `prescreen_result.yaml` is present (prescreen kill), read it as the primary evidence source.
 Minimal context.
