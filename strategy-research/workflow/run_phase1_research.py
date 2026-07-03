@@ -49,6 +49,7 @@ import subprocess
 import json
 import sys
 import shutil
+import statistics
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBlock
 from google import genai
 from google.genai import types
@@ -86,6 +87,11 @@ STAGE_CONFIGS = {
     },
     "backtest_specification": {
         "handoff": "validation_to_backtest_specification.yaml",
+        "default_next": "dynamic_routing",
+    },
+    # Improvement 08+09: prescreen stage (tool, no LLM)
+    "signal_prescreen": {
+        "handoff": "backtest_spec_to_signal_prescreen.yaml",
         "default_next": "dynamic_routing",
     },
     "protocol_execution": {
@@ -611,7 +617,57 @@ async def run_tool_worker(stage_name: str, run_id: str):
     ARTIFACTS = RUN_DIR / "artifacts"
     TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
 
-    if stage_name == "protocol_execution":
+    if stage_name == "signal_prescreen":
+        # Improvement 08+09: signal prescreen — cheap IC + cost gate before full backtest.
+        config_path = ARTIFACTS / "candidate_strategy_config.json"
+
+        # Protocol selection mirrors protocol_execution logic
+        run_ctx_path = ARTIFACTS / "run_context.yaml"
+        run_ctx = (load_yaml(run_ctx_path) or {}) if run_ctx_path.exists() else {}
+        run_type = run_ctx.get("run_type", "")
+        if run_type == "replication_diagnostic":
+            protocol_path = ROOT / "protocols" / "baseline_v1.json"
+        elif run_type == "forced_diagnostic":
+            proto_name = run_ctx.get("protocol", "baseline_v1.json")
+            protocol_path = ROOT / "protocols" / proto_name
+        else:
+            campaign = load_campaign_state()
+            last_escalation = campaign.get("last_escalation") or {}
+            protocol_path_str = last_escalation.get("protocol_path")
+            protocol_path = Path(protocol_path_str) if protocol_path_str else ROOT / "protocols" / "baseline_v1.json"
+
+        out_dir = RUN_DIR / "prescreen"
+        cmd = [
+            str(TBOT_PYTHON), str(ROOT / "tools" / "prescreen_signal.py"),
+            str(config_path), str(protocol_path),
+            "--run-id", run_id,
+            "--out-dir", str(out_dir),
+        ]
+        print("🔬 Running signal prescreen (Improvement 08+09)...")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        print(result.stdout)
+        if result.returncode != 0:
+            raise RuntimeError(f"prescreen_signal.py failed:\n{result.stderr}")
+
+        prescreen_path = out_dir / "prescreen_result.yaml"
+        if not prescreen_path.exists():
+            raise FileNotFoundError("prescreen_result.yaml not found after prescreen run")
+
+        # Copy to artifacts so verdict_interpreter can read it
+        import shutil as _ps_shutil
+        _ps_shutil.copy(prescreen_path, ARTIFACTS / "prescreen_result.yaml")
+
+        ps = load_yaml(ARTIFACTS / "prescreen_result.yaml")
+        route = ps.get("route", "unknown")
+        print(f"✅ Prescreen complete. Route: {route} | "
+              f"IC={ps.get('ic_spearman_pooled')} | "
+              f"cost_pass={ps.get('cost_check', {}).get('pass')}")
+
+        # A6.2: record prescreen as a trial in campaign_state (even kills count as trials)
+        # statistic_valid = "neither" for kills (no backtest Sharpe available)
+        _record_prescreen_trial(run_id, ps)
+
+    elif stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
         # Protocol selection: replication_diagnostic → baseline_v1.json;
         # forced_diagnostic → protocol named in run_context.yaml; else → campaign escalation path.
@@ -653,6 +709,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
         hv = (summary.get("hypothesis_verdict") or {}).get("verdict", "unknown")
         print(f"✅ Protocol complete. Hypothesis verdict: {hv}")
 
+        # A6.2: record full-backtest trial in campaign_state.trial_sharpes
+        _record_backtest_trial(run_id, summary)
+
         # Verify Phase A diagnostics are present
         result_data = load_yaml(ARTIFACTS / "protocol_result.yaml")
         hv_block = result_data.get("hypothesis_verdict") or {}
@@ -672,7 +731,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
 
 async def async_invoke_agent(stage_name: str, run_id: str):
-    tool_stages = {"protocol_execution"}
+    tool_stages = {"protocol_execution", "signal_prescreen"}
     if stage_name in tool_stages:
         await run_tool_worker(stage_name, run_id)
         return
@@ -748,10 +807,40 @@ def determine_post_validation_route(path: Path):
         raise ValueError(f"Unknown validation status: {status}")
 
 def _create_remaining_handoffs(run_id: str, run_dir: Path):
-    """Write protocol_execution and verdict_interpreter handoffs for runs missing them."""
+    """Write signal_prescreen, protocol_execution, and verdict_interpreter handoffs."""
     handoffs = run_dir / "handoffs"
+    sp_path = handoffs / "backtest_spec_to_signal_prescreen.yaml"
     pe_path = handoffs / "backtest_spec_to_protocol_execution.yaml"
     vi_path = handoffs / "protocol_to_verdict_interpreter.yaml"
+
+    # Improvement 08+09: signal_prescreen handoff
+    if not sp_path.exists():
+        save_yaml(sp_path, {
+            "handoff_version": 1, "run_id": run_id,
+            "from_stage": "backtest_specification", "to_stage": "signal_prescreen",
+            "assigned_engine": "tool",
+            "objective": (
+                "Run signal prescreen — cheap IC + cost gate before full walk-forward. "
+                "Compute pooled IC, block-adjusted significance, turnover proxy, and "
+                "cost_check from config/cost_model.yaml. Route: proceed_to_backtest "
+                "(both IC and cost pass) or kill/refine (skip backtest)."
+            ),
+            "required_inputs": [
+                {"path": "artifacts/candidate_strategy_config.json",
+                 "reason": "strategy config to prescreen"},
+                {"path": "../../config/cost_model.yaml",
+                 "reason": "Layer 2 cost hurdle parameters"},
+                {"path": "../../config/campaign_data_policy.yaml",
+                 "reason": "holdout range guard — prescreen must not read holdout data"},
+            ],
+            "deliverables": ["prescreen_result.yaml"],
+            "constraints": [
+                "A8.1: no standalone IC pass — cost_check is always required.",
+                "A2.3: ic_by_regime is suspended; report ungated IC only.",
+                "A6.2: prescreen kills must be recorded as trials in campaign_state.",
+                "Holdout data must not be used in prescreen windows.",
+            ],
+        })
 
     if not pe_path.exists():
         save_yaml(pe_path, {
@@ -1197,6 +1286,207 @@ def _extract_diagnostics(path: Path) -> dict:
         return {}
 
 
+def _record_prescreen_trial(run_id: str, ps: dict):
+    """
+    A6.2: record a prescreen run as a trial in campaign_state.trial_sharpes.
+    Prescreen kills count as trials (statistic_valid='neither', sharpe=null, n_trades=0).
+    Prescreen passes that advance to backtest will have their full Sharpe recorded
+    after protocol_execution completes.
+    """
+    state = load_campaign_state()
+    trials = state.setdefault("trial_sharpes", [])
+    route  = ps.get("route", "unknown")
+    trial_entry = {
+        "trial_id":        run_id,
+        "source":          "prescreen",
+        "route":           route,
+        "sharpe":          None,
+        "expectancy_bps":  None,
+        "n_trades":        0,
+        "statistic_valid": "neither",  # no backtest ran
+        "ic_pooled":       ps.get("ic_spearman_pooled"),
+        "cost_pass":       ps.get("cost_check", {}).get("pass"),
+    }
+    trials.append(trial_entry)
+    _save_campaign_state(state)
+    print(f"⚙️  A6.2: prescreen trial recorded in campaign_state.trial_sharpes "
+          f"(route={route}, statistic_valid=neither)")
+
+
+def _record_backtest_trial(run_id: str, summary: dict):
+    """
+    A6.2: record a completed full-backtest as a trial in campaign_state.trial_sharpes.
+    Appends {trial_id, source, sharpe, expectancy_bps, n_trades, statistic_valid}.
+    Sparse-trading strategies (A3.4): statistic_valid='expectancy' when median Sharpe
+    is null/unreliable; 'sharpe' otherwise.
+    """
+    state  = load_campaign_state()
+    trials = state.setdefault("trial_sharpes", [])
+
+    hv    = summary.get("hypothesis_verdict") or {}
+    diag  = hv.get("diagnostics") or {}
+    pss   = summary.get("per_symbol_summary") or {}
+
+    # Aggregate Sharpe and trade count across symbols
+    sharpes     = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
+    trade_counts = [v.get("trade_count") or 0 for v in pss.values()]
+    n_trades    = sum(trade_counts)
+    median_sharpe = round(statistics.median(sharpes), 4) if sharpes else None
+
+    expectancy   = diag.get("per_trade_expectancy_bps")
+    below_floor  = diag.get("below_floor_pct", 0.0) or 0.0
+
+    # A6.2 extension: sparse-trading strategies use expectancy, not Sharpe
+    if below_floor > 50.0:
+        statistic_valid = "expectancy"
+    elif median_sharpe is not None:
+        statistic_valid = "sharpe"
+    else:
+        statistic_valid = "neither"
+
+    trial_entry = {
+        "trial_id":        run_id,
+        "source":          "backtest",
+        "sharpe":          median_sharpe,
+        "expectancy_bps":  expectancy,
+        "n_trades":        n_trades,
+        "statistic_valid": statistic_valid,
+        "below_floor_pct": below_floor,
+    }
+    trials.append(trial_entry)
+    _save_campaign_state(state)
+    print(f"⚙️  A6.2: backtest trial recorded (sharpe={median_sharpe}, "
+          f"n_trades={n_trades}, statistic_valid={statistic_valid})")
+
+
+def _create_protocol_result_from_prescreen(path: Path, ps: dict):
+    """
+    When a prescreen kills (route=kill_* or refine_*), create a minimal
+    protocol_result.yaml from prescreen evidence so verdict_interpreter
+    can run its standard artifact-based flow.
+
+    The stub carries IC and estimated cost_drag as the primary diagnostics.
+    The verdict_interpreter skill reads prescreen_result.yaml (injected as
+    optional input) for full prescreen context.
+    """
+    pr_path = path / "artifacts" / "protocol_result.yaml"
+    if pr_path.exists():
+        return  # don't overwrite an existing real result
+
+    ic_pooled   = ps.get("ic_spearman_pooled")
+    cost_pass   = ps.get("cost_check", {}).get("pass", False)
+    ratio       = ps.get("cost_check", {}).get("edge_to_cost_ratio")
+    route       = ps.get("route", "unknown")
+
+    # Estimate cost_drag_pct from edge_to_cost_ratio:
+    # if ratio = 0.5, edge covers 50% of cost → cost_drag ≈ 200% (cost > gross edge).
+    # If ratio = 0, edge = 0 → cost_drag is undefined; use sentinel 999%.
+    if ratio is not None and ratio > 0:
+        estimated_cost_drag = round(100.0 / ratio, 1)
+    elif ratio is not None and ratio == 0:
+        estimated_cost_drag = 999.0
+    else:
+        estimated_cost_drag = None
+
+    stub = {
+        "source":           "prescreen_stub",
+        "prescreen_route":  route,
+        "hypothesis_verdict": {
+            "verdict": "kill" if route.startswith("kill_") else "refine",
+            "criteria_results": [],
+            "verdict_reason": f"Prescreen gate: {ps.get('route_rationale', '')}",
+            "diagnostics": {
+                "median_forecast_return_corr":    ic_pooled,
+                "median_cost_drag_pct":           estimated_cost_drag,
+                "median_gross_pnl":               None,
+                "median_avg_trade_duration_bars": None,
+                "uninformative_regimes":          [],
+                "win_rate_vs_sharpe":             "N/A (prescreen kill — no backtest)",
+                "below_floor_pct":                100.0,  # no trades
+                "per_trade_expectancy_bps":       None,
+                "zero_trade_slot_pct":            100.0,
+            },
+        },
+        "per_symbol_summary": {},
+        "results":           [],
+        "prescreen_kill_reason": ps.get("prescreen_kill_reason"),
+    }
+    save_yaml(pr_path, stub)
+    print(f"⚙️  Created protocol_result.yaml stub from prescreen evidence "
+          f"(route={route}, IC={ic_pooled})")
+
+
+def determine_post_prescreen_route(path: Path) -> str:
+    """
+    Route after signal_prescreen based on prescreen_result.yaml.
+
+    A8.1: proceed_to_backtest requires both ic_significance AND cost_check.pass.
+    Kill/refine routes skip the full backtest and go directly to verdict_interpreter
+    (with a stub protocol_result.yaml created from prescreen evidence).
+    """
+    ps_path = path / "artifacts" / "prescreen_result.yaml"
+    if not ps_path.exists():
+        print("⚠️  prescreen_result.yaml missing — skipping prescreen gate, continuing to backtest.")
+        return "protocol_execution"
+
+    ps    = load_yaml(ps_path)
+    route = ps.get("route", "proceed_to_backtest")
+
+    if route == "proceed_to_backtest":
+        print(f"✅ Prescreen PASSED — advancing to protocol_execution.")
+        return "protocol_execution"
+
+    # All other routes (kill_* or refine_*) skip the full backtest
+    print(f"🔬 Prescreen gate triggered: {route}. "
+          f"Creating stub protocol_result and routing to verdict_interpreter.")
+    _create_protocol_result_from_prescreen(path, ps)
+    return "verdict_interpreter"
+
+
+def _inject_prescreen_context_into_verdict_handoff(handoff_path: Path, ps: dict):
+    """
+    When a prescreen kill routes directly to verdict_interpreter (no backtest ran),
+    inject prescreen_result.yaml as a required input and add a constraint note
+    so the skill knows to interpret prescreen evidence instead of backtest evidence.
+    """
+    if not handoff_path.exists():
+        return
+
+    handoff = load_yaml(handoff_path) or {}
+
+    # Add prescreen_result as required input (backtest was skipped)
+    req = handoff.setdefault("required_inputs", [])
+    paths_present = {x.get("path") for x in req}
+    if "artifacts/prescreen_result.yaml" not in paths_present:
+        req.append({
+            "path":   "artifacts/prescreen_result.yaml",
+            "reason": "Prescreen killed this run — protocol_result.yaml is a stub. "
+                      "Use prescreen_result.yaml as the primary evidence source.",
+        })
+
+    # Note for the skill
+    constraints = handoff.setdefault("constraints", [])
+    ps_note = (
+        f"PRESCREEN KILL: This run was terminated by signal_prescreen "
+        f"(route={ps.get('route')}, IC={ps.get('ic_spearman_pooled')}, "
+        f"cost_pass={ps.get('cost_check', {}).get('pass')}). "
+        f"protocol_result.yaml is a prescreen stub, NOT a full backtest result. "
+        f"Base your verdict on prescreen_result.yaml evidence. "
+        f"Apply the appropriate Diagnostic Rule from the prescreen route: "
+        f"kill_no_ic → Rule 2 (weak signal); refine_inverted_ic → Rule 3 (signal inversion); "
+        f"refine_cost_hurdle → Rule 1 (cost drag, raise threshold_filter); "
+        f"kill_cost_hurdle → Rule 1 (cost drag, structural — kill)."
+    )
+    if ps_note not in constraints:
+        constraints.append(ps_note)
+
+    handoff["prescreen_route"] = ps.get("route")
+    handoff["prescreen_ic"]    = ps.get("ic_spearman_pooled")
+    save_yaml(handoff_path, handoff)
+    print(f"✅ Prescreen context injected into verdict_interpreter handoff "
+          f"(route={ps.get('route')})")
+
+
 def _auto_generate_findings_carryover(path: Path, interp: dict):
     """
     Constructs findings_carryover.yaml from verdict_interpretation.yaml when the LLM
@@ -1545,7 +1835,8 @@ def determine_post_spec_route(path: Path):
     decision = load_yaml(path / "artifacts" / "decision.yaml")
     status = decision.get("status", "").strip().lower()
     if status == "spec_ready":
-        return "protocol_execution"
+        # Improvement 08+09: route via signal_prescreen before full backtest
+        return "signal_prescreen"
     if status == "component_gap":
         update_state(path=path, status="paused_for_human")
         print("\n⏸️ COMPONENT GAP: hypothesis needs an engine piece that does not exist. "
@@ -1745,7 +2036,7 @@ def run_loop(run_id: str):
 
             elif current_stage == "backtest_specification":
                 next_stage = determine_post_spec_route(RUN_DIR)
-                if next_stage == "protocol_execution":
+                if next_stage in ("signal_prescreen", "protocol_execution"):
                     spec = load_yaml(ARTIFACTS / "backtest_spec.yaml")
                     config_obj = spec.get("config")
                     candidate_path = ARTIFACTS / "candidate_strategy_config.json"
@@ -1767,11 +2058,34 @@ def run_loop(run_id: str):
                         update_state(path=RUN_DIR, status="failed_validation")
                         next_stage = "failed_validation"
                     else:
-                        print("✅ config schema-valid; advancing to protocol_execution")
-                        # Create handoff files for the remaining pipeline stages
+                        print("✅ config schema-valid; advancing to signal_prescreen")
+                        # Create handoff files for prescreen + remaining pipeline stages
                         _create_remaining_handoffs(run_id, RUN_DIR)
                 elif next_stage == "human_pause":
                     break
+
+            elif current_stage == "signal_prescreen":
+                # Improvement 08+09: route based on prescreen_result.yaml
+                next_stage = determine_post_prescreen_route(RUN_DIR)
+                if next_stage == "verdict_interpreter":
+                    # Prescreen kill — inject prescreen context into verdict handoff
+                    ps = load_yaml(ARTIFACTS / "prescreen_result.yaml") or {}
+                    _vi_handoff = RUN_DIR / "handoffs" / "protocol_to_verdict_interpreter.yaml"
+                    _inject_prescreen_context_into_verdict_handoff(_vi_handoff, ps)
+                    # Also inject regime context if available (Improvement 02)
+                    _regime_rpt = _ensure_regime_detector_report(run_id, RUN_DIR)
+                    _regime_aud_path = RUN_DIR / "artifacts" / "regime_audit_decision.yaml"
+                    _regime_aud = load_yaml(_regime_aud_path) if _regime_aud_path.exists() else None
+                    if _regime_aud:
+                        _fw_violations = _validate_retune_firewall(_regime_aud)
+                        if _fw_violations:
+                            raise RuntimeError(
+                                "RETUNE FIREWALL VIOLATION — regime_audit_decision.yaml "
+                                "references forbidden strategy metrics:\n"
+                                + "\n".join(f"  - {v}" for v in _fw_violations)
+                            )
+                    if _regime_rpt:
+                        _inject_regime_context_into_handoff(_vi_handoff, _regime_rpt, _regime_aud, run_id)
 
             elif current_stage == "verdict_interpreter":
                 _interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")

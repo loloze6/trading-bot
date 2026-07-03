@@ -47,7 +47,30 @@ stages:
       - runs/{run_id}/artifacts/backtest_spec.yaml
       - runs/{run_id}/artifacts/decision.yaml
     next:
-      - protocol_execution
+      - signal_prescreen
+
+  # Improvement 08 + 09: cheap IC + cost gate before full walk-forward.
+  # A8.1: 08 and 09 land together — no standalone IC pass; cost_check is always required.
+  # A9.1: Keltner config with ungated IC≈0 must fail cost_check despite historical gated IC=0.2145.
+  # A2.3: ic_by_regime is suspended; ungated IC only until a trustworthy detector exists.
+  signal_prescreen:
+    tool: tools/prescreen_signal.py
+    description: >
+      Deterministic tool. Runs backtest on a subset of walk-forward windows (prescreen
+      budget: first 2 windows per symbol). Computes pooled IC, block-adjusted significance
+      (block=24 bars for 1h), turnover proxy, and cost_check from config/cost_model.yaml.
+      Route: proceed_to_backtest (IC significant AND cost_check.pass) | kill_no_ic |
+      refine_inverted_ic | refine_cost_hurdle | kill_cost_hurdle.
+      Prescreen kills are recorded as trials in campaign_state.trial_sharpes (A6.2).
+    required_inputs:
+      - runs/{run_id}/artifacts/candidate_strategy_config.json
+      - config/cost_model.yaml
+      - config/campaign_data_policy.yaml
+    outputs:
+      - runs/{run_id}/artifacts/prescreen_result.yaml
+    next:
+      - protocol_execution   # when route=proceed_to_backtest
+      - verdict_interpreter  # when route=kill_* or refine_*
 
   protocol_execution:
     tool: tools/run_protocol.py

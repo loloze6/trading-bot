@@ -10,7 +10,8 @@
     "bias_risks",
     "failure_modes",
     "sample_split_design",
-    "decision_rules"
+    "decision_rules",
+    "cost_feasibility"
   ],
   "properties": {
     "hypothesis_id": { "type": "string" },
@@ -33,6 +34,51 @@
     "decision_rules": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "cost_feasibility": {
+      "type": "object",
+      "description": "Improvement 09 Layer 1: coarse cost-feasibility check at validation time. Hard rule: plausibility=implausible blocks approval.",
+      "required": [
+        "assumed_round_trip_cost_bps",
+        "expected_holding_bars",
+        "expected_trades_per_window",
+        "required_gross_edge_bps_per_trade",
+        "plausibility",
+        "plausibility_rationale"
+      ],
+      "properties": {
+        "assumed_round_trip_cost_bps": {
+          "type": "number",
+          "description": "From config/cost_model.yaml round_trip_cost_bps for the primary symbol. E.g. BTCUSDT=17.0"
+        },
+        "expected_holding_bars": {
+          "type": "object",
+          "description": "Estimated holding period range from hypothesis signal class and timeframe",
+          "required": ["min", "max"],
+          "properties": {
+            "min": { "type": "number" },
+            "max": { "type": "number" }
+          }
+        },
+        "expected_trades_per_window": {
+          "type": "integer",
+          "description": "Implied trade count per monthly window given holding period and any regime gating"
+        },
+        "required_gross_edge_bps_per_trade": {
+          "type": "number",
+          "description": "= 2 × assumed_round_trip_cost_bps (safety factor from cost_model.yaml)"
+        },
+        "plausibility": {
+          "type": "string",
+          "enum": ["plausible", "marginal", "implausible"],
+          "description": "LLM judgment: can this signal class realistically earn required_gross_edge_bps_per_trade at this timeframe?"
+        },
+        "plausibility_rationale": {
+          "type": "string",
+          "description": "Must reference the signal class and timeframe. E.g. '1h mean-reversion with ~6-bar holds must clear ~34 bps/trade gross; typical gross edges for this class are Y-Z bps'"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

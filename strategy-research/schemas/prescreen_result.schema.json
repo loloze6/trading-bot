@@ -1,0 +1,187 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Prescreen Result",
+  "description": "Output of tools/prescreen_signal.py. Contains ic_all_bars, ic_active_bars, significance on active-bar n, turnover proxy, and cost_check. A8.1: no standalone pass state — proceed_to_backtest requires both ic_significance AND cost_check.pass. A8.3: gate evaluates ic_active_bars; ic_all_bars also reported for A2.1 ungated-escape use.",
+  "type": "object",
+  "required": [
+    "run_id",
+    "config_sha8",
+    "computed_at",
+    "protocol_version",
+    "symbols",
+    "prescreen_windows_used",
+    "n_bars_total",
+    "ic_all_bars",
+    "ic_active_bars",
+    "forecast_sparsity_pct",
+    "active_n_bars",
+    "ic_significance",
+    "turnover_proxy",
+    "cost_check",
+    "route",
+    "route_rationale"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Run identifier this prescreen belongs to"
+    },
+    "config_sha8": {
+      "type": "string",
+      "description": "First 8 chars of SHA-256 of the strategy config"
+    },
+    "computed_at": {
+      "type": "string",
+      "description": "ISO 8601 UTC timestamp when this prescreen was computed"
+    },
+    "protocol_version": {
+      "type": "string",
+      "description": "Protocol used (e.g. baseline_v2)"
+    },
+    "symbols": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Symbols evaluated in this prescreen"
+    },
+    "prescreen_windows_used": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Walk-forward window labels actually evaluated (full range = all windows)"
+    },
+    "n_bars_total": {
+      "type": "integer",
+      "description": "Total forecast records (bars where strategy was ready) across all symbols"
+    },
+    "ic_all_bars": {
+      "type": ["number", "null"],
+      "description": "A8.3: Spearman(forecast, next_return) over ALL bars including inactive (forecast=0). Used for A2.1 ungated-escape assessment (not for the IC gate)."
+    },
+    "ic_active_bars": {
+      "type": ["number", "null"],
+      "description": "A8.3: Spearman(forecast, next_return) restricted to bars where |forecast| > threshold. Used for the IC gate and cost_check (ic_used='ic_active_bars')."
+    },
+    "forecast_sparsity_pct": {
+      "type": ["number", "null"],
+      "description": "A8.3: percentage of forecast bars where forecast is inactive (|forecast| <= threshold). High sparsity explains ic_all_bars < ic_active_bars."
+    },
+    "active_n_bars": {
+      "type": "integer",
+      "description": "A8.3: count of bars where |forecast| > threshold. Used as n for block-adjusted significance."
+    },
+    "forecast_hash": {
+      "type": ["string", "null"],
+      "description": "A6.4: SHA-256 prefix of the serialized forecast series over the protocol range. Identical hashes = identical signal = one trial for deflation purposes."
+    },
+    "ic_spearman_pooled": {
+      "type": ["number", "null"],
+      "description": "Legacy field: equals ic_active_bars for backward compatibility with older orchestrator code."
+    },
+    "ic_by_regime": {
+      "type": "object",
+      "description": "SUSPENDED per A2.3: ungated IC only until a trustworthy detector exists.",
+      "properties": {
+        "suspended": { "type": "boolean" },
+        "reason":    { "type": "string" }
+      }
+    },
+    "ic_significance": {
+      "type": "object",
+      "description": "Block-adjusted significance computed on active_n_bars (A8.3). The gate: significant=true AND ic_active_bars > 0 are required for proceed_to_backtest.",
+      "required": ["pooled_ic", "p_value", "n_eff", "block_size", "significant"],
+      "properties": {
+        "pooled_ic":   { "type": ["number", "null"], "description": "= ic_active_bars (the value evaluated for significance)" },
+        "z_stat":      { "type": ["number", "null"] },
+        "p_value":     { "type": ["number", "null"] },
+        "n_eff":       { "type": "integer", "description": "active_n_bars / block_size" },
+        "block_size":  { "type": "integer", "description": "Block size for autocorrelation adjustment (default 24 for 1h)" },
+        "significant": { "type": "boolean", "description": "true if p_value < 0.10" }
+      }
+    },
+    "turnover_proxy": {
+      "type": "object",
+      "required": ["active_bars_total", "implied_trades_estimated", "avg_holding_bars"],
+      "properties": {
+        "active_bars_total": {
+          "type": "integer",
+          "description": "Count of bars where |forecast| > threshold (= active_n_bars)"
+        },
+        "implied_trades_estimated": {
+          "type": ["integer", "null"],
+          "description": "Estimated trade count from forecast sign changes"
+        },
+        "avg_holding_bars": {
+          "type": ["number", "null"],
+          "description": "active_bars_total / implied_trades_estimated. Used in cost_check formula."
+        },
+        "forecast_sparsity_pct": {
+          "type": ["number", "null"],
+          "description": "Duplicate of top-level field for in-object reference convenience"
+        }
+      }
+    },
+    "sigma_bar_bps": {
+      "type": ["number", "null"],
+      "description": "Estimated std dev of 1-bar close returns in bps across all bars"
+    },
+    "cost_check": {
+      "type": "object",
+      "required": ["symbol", "implied_trades_per_window", "estimated_gross_edge_bps_per_trade", "cost_bps_per_trade", "edge_to_cost_ratio", "safety_factor_required", "pass"],
+      "description": "Layer 2 cost hurdle (Improvement 09). A8.1: always present. Formula: abs(ic_active_bars) * sigma_bar_bps * sqrt(avg_holding_bars). Pass = ratio >= safety_factor.",
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "description": "Primary symbol used for cost lookup"
+        },
+        "implied_trades_per_window": {
+          "type": ["number", "null"],
+          "description": "From turnover_proxy.implied_trades_estimated"
+        },
+        "estimated_gross_edge_bps_per_trade": {
+          "type": ["number", "null"],
+          "description": "abs(ic_active_bars) * sigma_bar_bps * sqrt(avg_holding_bars)"
+        },
+        "cost_bps_per_trade": {
+          "type": ["number", "null"],
+          "description": "From config/cost_model.yaml round_trip_cost_bps for the primary symbol"
+        },
+        "edge_to_cost_ratio": {
+          "type": ["number", "null"],
+          "description": "estimated_gross_edge_bps_per_trade / cost_bps_per_trade"
+        },
+        "safety_factor_required": {
+          "type": "number",
+          "description": "From cost_model.yaml safety_factor (default 2.0)"
+        },
+        "pass": {
+          "type": "boolean",
+          "description": "true if edge_to_cost_ratio >= safety_factor_required"
+        },
+        "ic_used": {
+          "type": "string",
+          "enum": ["ic_active_bars"],
+          "description": "Always ic_active_bars (A8.3)"
+        }
+      }
+    },
+    "route": {
+      "type": "string",
+      "enum": [
+        "proceed_to_backtest",
+        "kill_no_ic",
+        "refine_inverted_ic",
+        "refine_cost_hurdle",
+        "kill_cost_hurdle"
+      ],
+      "description": "Routing decision. A8.1: proceed_to_backtest requires BOTH ic_significance.significant AND cost_check.pass."
+    },
+    "route_rationale": {
+      "type": "string",
+      "description": "One-sentence rationale citing the specific metric values that drove the route decision"
+    },
+    "prescreen_kill_reason": {
+      "type": ["string", "null"],
+      "description": "Mechanism failure label for verdict_interpreter when route is kill_*"
+    }
+  },
+  "additionalProperties": true
+}

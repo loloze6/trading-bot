@@ -25,6 +25,7 @@ Pressure-test the hypothesis before implementation.
 - failure_modes
 - sample_split_design
 - decision_rules
+- cost_feasibility   ← **REQUIRED (Improvement 09 Layer 1)**
 
 `validation_decision.yaml` must include:
 - hypothesis_id
@@ -48,6 +49,7 @@ YAML formatting rule — applies to ALL string values in both artifacts:
 - Define sample split logic.
 - Return approve, conditional_approve, refine, or reject. Use conditional_approve when the hypothesis is sound but one specific, resolvable condition must be honored in the config — include a conditions list in the output.
 - Check whether the idea can be tested through a minimal change to the existing bot architecture.
+- **Complete the `cost_feasibility` block** (Improvement 09 Layer 1 — see section below).
 
 ## Permitted decision criteria
 decision_rules in validation_protocol.yaml MUST use only these measurable criteria.
@@ -73,12 +75,51 @@ Forbidden (never emit these — undefined or unmeasurable in current pipeline):
 - Regime detection lag (no ground-truth regime timestamp recorded)
 - Any metric requiring a second backtest run (e.g. V5 reverse control)
 
+## IMPROVEMENT 09 — Layer 1 Cost Feasibility (required in every validation_protocol.yaml)
+
+Populate this block from `config/cost_model.yaml` (round_trip_cost_bps per symbol):
+
+```yaml
+cost_feasibility:
+  assumed_round_trip_cost_bps: <from cost_model.yaml for primary symbol, e.g. 17.0 for BTCUSDT>
+  expected_holding_bars:
+    min: <minimum holding period from signal class and timeframe>
+    max: <maximum holding period from signal class and timeframe>
+  expected_trades_per_window: <implied count given holding period and any regime gating>
+  required_gross_edge_bps_per_trade: <= 2 × assumed_round_trip_cost_bps>
+  plausibility: <plausible | marginal | implausible>
+  plausibility_rationale: "<must cite the signal class and timeframe. Example: '1h mean-reversion with 6–12 bar holds must clear 34 bps/trade gross; established mean-reversion signals on 1h crypto typically achieve 10–30 bps — marginal to implausible'>"
+```
+
+### Hard rule (mirrors "no falsifiable statement → no approval"):
+
+**`plausibility: implausible` → validation status CANNOT be `approve` or `conditional_approve`.**
+
+The blocking issue must be "turnover/cost mismatch". Typical fixes for an implausible verdict:
+- Longer timeframe (reduces round-trip cost per holding period)
+- Tighter regime gating (fewer, higher-conviction trades)
+- Wider holding period assumption (more bars per trade to amortise costs)
+
+If implausible AND no fix is viable within the current architecture: status = `reject`.
+
+### Plausibility rubric:
+
+| Plausibility | Condition |
+|---|---|
+| `plausible` | Established signal class on this timeframe demonstrably earns ≥ 2× round-trip cost (e.g. strong trend-following on 4h+, daily mean-reversion). |
+| `marginal` | Signal class can earn the required edge under favourable conditions but the evidence base is thin or the timeframe is borderline (e.g. moderate-IC mean-reversion on 1h). |
+| `implausible` | Signal class cannot plausibly earn 2× round-trip cost at this timeframe with this holding period (e.g. high-frequency entries on 1h with 2–3 bar holds, or a regime-gated strategy that fires on ~1% of bars requiring ~34 bps/trade to break even at 17 bps round-trip). |
+
+Note: `config/cost_model.yaml` is the single source of truth for cost numbers. Do not hardcode fees.
+
 ## Forbidden
 - Do not write backtest code.
 - Do not approve vague ideas.
 - Do not skip explicit failure modes.
 - Do not rely on narrative confidence.
 - Do not emit decision criteria using metrics outside the Permitted list above.
+- **Do not approve or conditionally approve when `cost_feasibility.plausibility = implausible`.**
+- Do not hardcode fee or spread numbers — always read from `config/cost_model.yaml`.
 
 ## Embedded stance
 Assume the hypothesis is wrong until enough evidence is specified.
