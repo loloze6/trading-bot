@@ -170,9 +170,10 @@
         "kill_no_ic",
         "refine_inverted_ic",
         "refine_cost_hurdle",
-        "kill_cost_hurdle"
+        "kill_cost_hurdle",
+        "no_signal_artifact"
       ],
-      "description": "Routing decision. A8.1: proceed_to_backtest requires BOTH ic_significance.significant AND cost_check.pass."
+      "description": "Routing decision. A8.1: proceed_to_backtest requires BOTH ic_significance.significant AND cost_check.pass. F5c (2026-07-04): no_signal_artifact takes priority over every other route — see component_error_count/active_n_bars. A hypothesis whose component never emitted is UNTESTED, not a kill_no_ic verdict; it must never be scored as one."
     },
     "route_rationale": {
       "type": "string",
@@ -180,7 +181,26 @@
     },
     "prescreen_kill_reason": {
       "type": ["string", "null"],
-      "description": "Mechanism failure label for verdict_interpreter when route is kill_*"
+      "description": "Mechanism failure label for verdict_interpreter when route is kill_*. F5c: 'component_error' or 'zero_activation' when route=no_signal_artifact."
+    },
+    "component_error_count": {
+      "type": "integer",
+      "description": "F5b/F5c: total bars (summed across symbols) where AdvancedStrategy.update() caught and swallowed a component-level exception. A component that errors on every bar produces active_n_bars=0 identically to a signal that genuinely never fires; this field is what distinguishes them. Zero means no swallowed exceptions were observed."
+    },
+    "component_error_sample": {
+      "type": "array",
+      "description": "F5b/F5c: capped sample (see prescreen_signal.py _MAX_ERROR_SAMPLE) of the swallowed exceptions, one entry per occurrence up to the cap.",
+      "items": {
+        "type": "object",
+        "required": ["symbol", "bar_index", "stage", "error_type", "error_message"],
+        "properties": {
+          "symbol":        { "type": "string" },
+          "bar_index":     { "type": "integer", "description": "1-indexed call count into AdvancedStrategy.update() for this symbol" },
+          "stage":         { "type": "string", "enum": ["buffer", "regime_engine", "strategy_engine"] },
+          "error_type":    { "type": "string", "description": "Python exception class name, e.g. ZeroDivisionError" },
+          "error_message": { "type": "string" }
+        }
+      }
     }
   },
   "additionalProperties": true

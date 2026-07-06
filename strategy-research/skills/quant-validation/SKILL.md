@@ -46,10 +46,29 @@ YAML formatting rule — applies to ALL string values in both artifacts:
 - Define null expectation.
 - List at least 5 failure modes.
 - Identify leakage, look-ahead, and overfitting risks.
-- Define sample split logic.
+- Define sample split logic — **including holdout range declaration (A6.1, see below)**.
 - Return approve, conditional_approve, refine, or reject. Use conditional_approve when the hypothesis is sound but one specific, resolvable condition must be honored in the config — include a conditions list in the output.
 - Check whether the idea can be tested through a minimal change to the existing bot architecture.
 - **Complete the `cost_feasibility` block** (Improvement 09 Layer 1 — see section below).
+
+## IMPROVEMENT 06 — Holdout Range Declaration (required in every validation_protocol.yaml)
+
+Before finalizing `validation_protocol.yaml`, read `../../config/campaign_data_policy.yaml`
+and record the campaign holdout range in `sample_split_design`. The holdout is single-use and
+must be declared at validation time — not discovered at promotion.
+
+```yaml
+sample_split_design:
+  walk_forward_range: "<from walk_forward_extension in campaign_data_policy.yaml>"
+  holdout_range: "<from holdout_range in campaign_data_policy.yaml — FROZEN, do not use in any backtest>"
+  holdout_note: "Single-use per A6.1. Evaluated only at holdout_evaluation stage after deflated Sharpe gate passes."
+  windows: <integer — number of walk-forward windows planned>
+  window_size_bars: <integer>
+  step_size_bars: <integer>
+```
+
+**Hard rule:** `validation_protocol.yaml.sample_split_design` must contain `holdout_range`.
+Any protocol that omits this field is missing a required output and will fail the deliverable check.
 
 ## Permitted decision criteria
 decision_rules in validation_protocol.yaml MUST use only these measurable criteria.

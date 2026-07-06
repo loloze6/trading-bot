@@ -759,6 +759,46 @@ Known constraints for next reframe:
   unexecuted and low priority relative to the campaign direction question.
 ```
 
+---
+
+## Session: 2026-07-03 — A8.4 alignment checks + run_041 (H-041-A) prescreen
+
+### Hypothesis
+H-041-A (structural_forced_flow: Binance 8h funding rate mean-reversion) would show
+IC > 0 at settlement boundaries when |funding_rate| > 0.001. This is the end-to-end
+pass-path test for the rebuilt Improvement 01 pipeline.
+
+### Result
+**KILLED: kill_no_ic** — IC=0.014, p=0.97, n_eff=10.
+
+Critical finding: BTC/ETH funding rates in 2024-2025 peaked at ~0.088-0.102%, never
+reaching the 0.10% threshold specified in the hypothesis. The mechanism is sound but
+the regime required for it to activate (extreme funding) did not occur in this period.
+At the recalibrated threshold (0.0002 = top 5%), only 261 active bars in 24 months —
+statistically underpowered (n_eff=10, SE≈0.35, need |IC|>0.58 for significance).
+
+H-041-C (Fear & Greed contrarian) blocked: A8.4 alignment check FAILS — alternative.me
+publishes daily F&G at unknown mid-day UTC time, but code assigns day D value to 00:00
+bar of day D (lookahead up to 24h). Fix: shift F&G timestamps +1 day.
+
+### Files touched
+- `strategy-research/runs/run_041/` (NEW): artifacts/feed_alignment_check.yaml,
+  artifacts/hypothesis_card.yaml, artifacts/candidate_strategy_config.json,
+  artifacts/verdict_interpretation.yaml, pipeline_state.yaml
+- `strategy-research/runs/run_042/` (NEW): artifacts/feed_alignment_check.yaml (FAIL)
+- `trading-bot/strategies/strategy_components.py`: Added FundingRateMeanReversionComponent
+- `trading-bot/strategies/regime_engine.py`: Fixed get_required_periods() empty-components bug
+- `strategy-research/tools/prescreen_signal.py`: Added aux feed loading (_load_funding_rate,
+  _merge_aux_feeds, aux_feeds config key)
+
+### Next session prompt
+"H-041-C is next. (1) Apply the F&G +1 day shift to _merge_aux_feeds() in
+strategy-research/tools/prescreen_signal.py. (2) Add FearGreedContrarianComponent to
+trading-bot/strategies/strategy_components.py — fires daily at 00:00 UTC bar when
+previous day's fear_greed value is extreme (<20 or >80), direction: fear→long,
+greed→short. (3) Scaffold run_042, write hypothesis card and candidate_strategy_config.json.
+(4) Run prescreen on baseline_v2. (5) Verdict judged on per-trade expectancy ± SE (A3.4)."
+
 ## Regression test convention
 Before any change to `trading-bot/` that touches: core/launcher.py, core/backtester.py,
 strategies/main_strategy.py, strategies/strategy_engine.py, strategies/regime_engine.py,
@@ -770,3 +810,132 @@ Run: `pytest trading-bot/tests/test_regression_backtest.py -v -m slow --timeout=
 Expected: 3 passed (or 4 if manifest is present).
 If any test fails: DO NOT PROCEED. The change broke a known-good canonical result.
 Fix the regression before continuing research loop runs.
+
+---
+
+## Session: 2026-07-03 (run_042 + Improvement 05)
+
+### Hypothesis
+H-041-C (Fear & Greed contrarian): F&G extreme readings (<25 or >75) at daily 00:00 UTC
+bar predict contrarian returns over 1-2 days (persistent_behavioral_bias). Prescreen
+expected to confirm or rule out the mechanism on 2024-2025 data.
+
+### Result
+- run_042 prescreen: ic_active_bars=0.1905, p=0.5469, n_eff=13 → kill_no_ic (automated)
+  → verdict: insufficient_sample_inconclusive (human; IC positive direction but n_eff=13
+  needs |IC|>0.46 for significance)
+- Pre-registration checks: (a) shifted IC > unshifted IC (0.190 > 0.140), delta=0.05 << SE=0.28
+  — inconclusive at this sample size; (b) price baseline comparison skipped (prescreen killed);
+  (c) A8.4 re-verification triggered (IC>0.15) and PASSED — no bugs found
+- Reactivation condition: data extension to 2018+ (n_eff≈46); more symbols does NOT fix
+  (F&G is market-wide, correlated returns)
+- Improvement 05 KB: campaign_knowledge_base.yaml created with 9 findings + 2 meta-findings
+  - AC4 (chain-missed conclusion): Keltner root cause is signal_quality (ic_active=-0.032),
+    NOT regime_availability as the carryover chain recorded for 10+ runs
+  - ER-detector unusable finding closes Improvement 02's pending AC4
+  - Vocabulary hard rule (A5.2) applied: no "confirmed edge" language in KB
+
+### Files touched
+- `strategy-research/campaign_knowledge_base.yaml` (NEW) — Improvement 05 KB
+- `strategy-research/runs/run_042/` (updates + new artifacts):
+  - artifacts/unshifted_comparison.yaml (NEW)
+  - artifacts/a8_4_reverification.yaml (NEW)
+  - artifacts/verdict_interpretation.yaml (NEW)
+  - artifacts/h041_family_archive.yaml (NEW, reactivation conditions corrected)
+  - artifacts/improvement_05_acceptance.yaml (NEW)
+  - pipeline_state.yaml (UPDATED → parked_insufficient_sample)
+- `strategy-research/runs/run_041/artifacts/verdict_interpretation.yaml` (UPDATED)
+  — added data-extension note to reactivation_trigger
+- `strategy-research/results/prescreens/run_042/prescreen_result.yaml` (NEW)
+
+### Corrections applied this session
+- A8.6 n_eff floor rule supersedes the general observation; deterministic arithmetic at
+  validation gate (not a new stage); implement when convenient
+- H-041-C reactivation: "2018+ data extension" (not more symbols — F&G is market-wide)
+- H-041-A: funding-percentile trigger kept, data-extension note added
+- rsi_mean_reversion_no_edge evidence_count corrected from 3 to 1 (runs 011-013 had
+  config_path bug; only run_014 is clean; analytic parameter exhaustion justifies exhausted=true)
+
+### Next session prompt
+"Start next session by reading: strategy-research/campaign_knowledge_base.yaml (KB state),
+AMENDMENTS_01-06.md, and strategy-research/workflow/stages.yaml.
+
+Current state as of 2026-07-03:
+- Improvement 05 (KB) ACCEPTED. KB has 9 findings, 2 meta-findings.
+- H-041-A: parked, reactivation via 2018+ data extension OR live funding percentile trigger
+- H-041-C: parked, reactivation via 2018+ data extension only
+- Backward extension pass (all power-parked hypotheses): SCHEDULED, start after build steps
+- A8.6 a-priori power check: SCHEDULED for validation gate implementation (deterministic arithmetic)
+- ER-detector: unusable; wishlist in config/detector_wishlist.yaml; no new detector until ungated edge confirmed
+
+Next step per build order: Improvement 04 (indicator library) or next live-campaign hypothesis
+generation using the completed KB + A1.1-A1.3 taxonomy. Check AMENDMENTS_01-06.md revised
+implementation order (section: Revised implementation order) to confirm."
+
+---
+
+## Session: 2026-07-04 — Improvement 06 (Promotion Rigor)
+
+### Hypothesis
+M3 build plan: add deflated Sharpe promotion gate + holdout evaluation stage to prevent spurious terminal promotions.
+
+### Result
+COMPLETED. All 23 tests pass (7 new + 16 prior regression).
+
+### Files touched
+- strategy-research/tools/deflate_sharpe.py — NEW: Bailey & López de Prado DSR; trial dedup by forecast_hash; sparse-trading expectancy path; CLI
+- strategy-research/schemas/promotion_audit.schema.json — NEW: schema for promotion_audit.yaml
+- strategy-research/schemas/holdout_result.schema.json — NEW: schema for holdout_result.yaml
+- strategy-research/config/campaign_data_policy.yaml — UPDATED: added holdout_failure_is_terminal and enforcement comments
+- strategy-research/templates/handoffs/holdout_evaluation.yaml — NEW: handoff template for holdout stage
+- strategy-research/skills/quant-validation/SKILL.md — UPDATED: added holdout range declaration requirement (A6.1)
+- strategy-research/workflow/run_phase1_research.py — UPDATED: holdout_evaluation in STAGE_CONFIGS; _write_promotion_audit(); _route_holdout_evaluation(); promote→holdout_evaluation routing; single-use enforcement writing back to campaign_data_policy.yaml
+- strategy-research/tests/test_improvement06_acceptance.py — NEW: 7 acceptance tests (AC2 monotonicity, A6.4 dedup quartet, single-use refusal, overlap guard, AC5 Keltner must-fail, synthetic must-pass)
+
+### Key design decisions
+- Promote from verdict_interpreter is now provisional → routes to holdout_evaluation, not completed_promoted
+- Terminal promotion only after: (1) DSR > 0.95 passes, (2) holdout_result.yaml status=pass, (3) hypothesis_id marked in holdout_consumed_by
+- DSR formula: BLP E_max = μ + σ × Z_exp_max(N), Z_exp_max = (1-γ)Φ⁻¹(1-1/N) + γΦ⁻¹(1-1/(eN))
+- Dedup by forecast_hash: runs 017/024/027/033 collapse to 1 trial (identical Keltner forecasts)
+- Sparse-trading (below_floor_pct > 50%): expectancy t-stat path; DSR not used (zero median-Sharpe variance)
+- Monotonicity test uses fixed μ/σ to isolate N effect (sample-σ drift from trial extension masks monotonicity)
+
+### Next session prompt
+"Resume strategy-research campaign. Read: strategy-research/SESSION_LOG.md (last entry), strategy-research/campaign_knowledge_base.yaml, strategy-research/config/campaign_data_policy.yaml. M3 build plan is COMPLETE (Improvements 01–09 all implemented). Next step is the user's decision on: (a) backward-extension pass for power-parked hypotheses (H-041-A, H-041-C), or (b) fresh hypothesis batch using the completed KB + taxonomy."
+
+---
+
+## Session: 2026-07-04 to 2026-07-06 — P1a (pipeline shakedown) + P1b (backward-extension reactivation)
+
+### Hypothesis
+P1a: run a 2-hypothesis mini-batch through the live orchestrator (never hand-executed) to shake out wiring defects post-M3. P1b: backfill 2018/2019→2025 data, implement A8.5.1a (episode-blocked significance — brand new methodology, user-specified), and re-prescreen the two power-parked reactivations (H-041-A funding-extreme, H-041-C F&G-contrarian) on the extended range, launched through the orchestrator per the same standing rule.
+
+### Result
+**P1a: CLOSED** (2026-07-04). 8 wiring defects found+fixed (F1-F8) + 2 soft patches. Two real results: `EMA_SPREAD_TREND_CONTINUATION_V1` (run_043, no_edge_observed, already_priced_in) and `FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED` (run_044, inconclusive, escalated to timeframe). Full defect ledger and results: `00_closing_state.md` §7.
+
+**P1b: CLOSED** (2026-07-06). Data backfill verified (OHLCV→2018-01, funding→each symbol's real perp inception, F&G→2018-02). A8.5.1a implemented + 3 required fixtures + wired into `prescreen_signal.py` as opt-in (default behavior unchanged). 5 more orchestrator defects found+fixed (F4a-F4e) — one (F4d, pre-registration conformance gate) discovered only AFTER `run_047` completed end-to-end on the WRONG data range with the MANDATORY significance method silently dropped; had to invalidate that run's KB entry/trial and redo. Final real results:
+- **H-041-A** (run_050): IC=0.0178, p=0.521, n_episodes=139 (7yr). Not significant — genuine, well-powered null. `kill_no_ic`, family closed.
+- **H-041-C** (run_048): IC=-0.0403, p=0.081 (significant, WRONG sign pooled). **A8.5.1a's per-era breakdown is the real finding**: sign flips cleanly between eras (negative 2018-2023, positive 2024-2025, all 8 era-symbol pairs). `refine_inverted_ic` proposed a flip-polarity run (`run_052`, scaffolded, NOT launched) — a naive flip doesn't fix the era-instability. Full detail: `00_closing_state.md` §8.
+
+Neither hypothesis passed both gates (IC + cost), so no walk-forward was triggered — "STOP before walk-forward" satisfied trivially.
+
+### Files touched
+- `strategy-research/tools/episode_significance.py` — NEW: A8.5.1a implementation
+- `strategy-research/tools/prescreen_signal.py` — UPDATED: opt-in A8.5.1a wiring, era_of/symbol tagging
+- `strategy-research/workflow/run_phase1_research.py` — UPDATED: F4a (`_repair_multiline_list_item`), F4b (`_invoke_agent_with_yaml_retry`, `UnrepairableYAMLError`), F4c (`_weighted_token_units`, `_load_token_budget`), F4d (`_load_machine_constraints`, `_ensure_protocol_from_constraints`, `_check_prescreen_conformance`, `_mark_trial_invalidated`)
+- `strategy-research/config/campaign_config.yaml` — UPDATED: `episode_significance` block, `token_budget_per_run_weighted_units`
+- `strategy-research/config/campaign_data_policy.yaml` — UPDATED: `backward_extension`, `eras`
+- `strategy-research/docs/plan/AMENDMENTS_01-06.md` — UPDATED: "A8.5.1a-spec" section
+- `strategy-research/docs/p1b_fetch_manifest.md`, `docs/p1b_episode_preregistration.yaml` — NEW
+- `strategy-research/campaign_knowledge_base.yaml` — UPDATED: H-041-A/H-041-C closed, run_047 invalidated sibling finding
+- `strategy-research/campaign_state.yaml` — UPDATED: run_047/048/050 trials, run_047 marked invalidated_artifact
+- `runs/run_047/` (invalidated), `runs/run_050/` (H-041-A corrected), `runs/run_048/` (H-041-C), `runs/run_049/`, `runs/run_052/` (both scaffolded, not launched)
+- 10 new test files under `strategy-research/tests/` (A8.5.1a fixtures + integration, YAML repair, retry-with-context, weighted budget, conformance gate) — 176 total passing, 0 failures
+
+### Corrections applied this session
+- `episode_significance.per_era_report()`'s dict keys must be stringified before YAML serialization (tuple keys crash on read-back) — caught live, not by unit tests, because my fixtures used plain-string `era_of` and never exercised the real `(symbol, era_id)` tuple wiring
+- `run_context.yaml` protocol overrides require `run_type: forced_diagnostic` — a pre-existing convention I missed on first implementation, causing a silent fallback to stale campaign-wide `last_escalation` state
+- A conformance check against `significance_methodology` must accept ANY valid A8.5.1a outcome (`episode_block_bootstrap`, `episode_bootstrap_insufficient_n`, `block_24_dense_fallback`), not just literal equality with the mandated family name — caught while writing the test, before shipping, not live
+
+### Next session prompt
+"Resume strategy-research campaign. Read: strategy-research/SESSION_LOG.md (this entry), strategy-research/00_closing_state.md §8 (P1b closure), strategy-research/campaign_knowledge_base.yaml. P1a and P1b are both CLOSED. H-041-A and H-041-C are both closed as of P1b (kill and refine-proposed respectively — see §8 for the era-instability finding on H-041-C, which is the more interesting result). Two scaffolded-but-not-launched runs are pending a decision: run_052 (H-041-C flip-polarity proposal — do NOT launch as-is, the era-instability finding means a naive flip doesn't fix it; needs a decision on era-conditional variants or abandoning the family) and run_049 (H-041-A 15m escalation from the now-invalidated run_047 — likely stale, not reviewed). Next step is the user's decision: (a) review run_052/run_049 and decide how to proceed with the funding/F&G families, or (b) move to Phase P2/P3/P4 per docs/plan (10_profitability_plan.md, not in this repo — cross-sectional/breadth, cost attack, or boring-hypotheses phases)."

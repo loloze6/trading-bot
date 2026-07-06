@@ -1,11 +1,13 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Hypothesis Card",
+  "description": "A single, testable trading strategy hypothesis with an explicit edge-source declaration. Improvement 01 (A1.1-A1.3).",
   "type": "object",
   "required": [
     "hypothesis_id",
     "thesis",
     "rationale",
+    "edge_source",
     "signal_concept",
     "target_market",
     "timeframe",
@@ -14,18 +16,153 @@
   ],
   "properties": {
     "hypothesis_id": { "type": "string" },
-    "thesis": { "type": "string" },
-    "rationale": { "type": "string" },
-    "signal_concept": { "type": "string" },
-    "target_market": { "type": "string" },
+    "thesis": {
+      "type": "string",
+      "description": "One-sentence plain-English claim about why this strategy should work."
+    },
+    "rationale": {
+      "type": "string",
+      "description": "Market microstructure or behavioral reason supporting the thesis."
+    },
+    "edge_source": {
+      "type": "object",
+      "description": "Improvement 01: declares the structural reason this edge should exist. Must be populated BEFORE signal_concept.",
+      "required": [
+        "category",
+        "specific_mechanism",
+        "why_not_arbitraged",
+        "evidence_type",
+        "measurable_proxy"
+      ],
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "information_asymmetry",
+            "structural_forced_flow",
+            "liquidity_provision",
+            "cross_venue_dislocation",
+            "persistent_behavioral_bias"
+          ],
+          "description": "The structural category of the edge."
+        },
+        "specific_mechanism": {
+          "type": "string",
+          "description": "A1.3: 1-2 sentences. Must name at least one measurable proxy in an available feed that looks different if the mechanism is real vs absent."
+        },
+        "why_not_arbitraged": {
+          "type": "string",
+          "description": "Why this edge persists. For persistent_behavioral_bias: must argue why bias survives at this timeframe/venue despite being publicly known."
+        },
+        "evidence_type": {
+          "type": "string",
+          "enum": [
+            "price_volume_only",
+            "funding_open_interest",
+            "fear_and_greed",
+            "order_book",
+            "liquidation_data",
+            "cross_exchange",
+            "on_chain",
+            "options_flow",
+            "other_external"
+          ],
+          "description": "A1.2: must match an available entry in config/available_feeds.yaml, OR requires_new_feed must be set and the hypothesis routes to feed_wishlist.yaml."
+        },
+        "measurable_proxy": {
+          "type": "string",
+          "description": "A1.3: the specific observable from an available feed that would look different if the mechanism is real vs absent. Becomes input to validation_protocol.falsifiable_statement."
+        },
+        "requires_new_feed": {
+          "type": "string",
+          "description": "A1.2: present when evidence_type is NOT in available_feeds.yaml. Names the feed needed. Hypothesis routes to feed_wishlist.yaml and MUST NOT enter the run queue."
+        }
+      },
+      "additionalProperties": false
+    },
+    "signal_concept": {
+      "type": "string",
+      "description": "Pseudo-formula or English description of the signal computation. Must be derivable from edge_source.measurable_proxy."
+    },
+    "target_market": {
+      "type": "string",
+      "description": "Symbol and conditions where the signal applies. Must be ungated (no regime condition) per A2.3."
+    },
     "timeframe": { "type": "string" },
     "assumptions": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": { "type": "string" },
+      "description": "Falsifiable things that must be true for the signal to work."
     },
     "expected_failure_modes": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": { "type": "string" },
+      "minItems": 3,
+      "description": "Pre-enumerated ways this hypothesis could fail. At least 3 required."
+    },
+    "library_lookup": {
+      "type": "object",
+      "description": "Improvement 04: result of indicator library lookup. Required before finalizing signal_concept.",
+      "required": ["indicator_id", "regime_affinity_for_target", "crowding_risk"],
+      "properties": {
+        "indicator_id": { "type": ["string", "null"] },
+        "regime_affinity_for_target": {
+          "type": ["string", "null"],
+          "enum": ["favorable", "unfavorable", "neutral", null]
+        },
+        "affinity_justification": { "type": "string" },
+        "prior_campaign_failures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "run_id": { "type": "string" },
+              "mechanism_tried": { "type": "string" }
+            }
+          }
+        },
+        "crowding_risk": {
+          "type": ["string", "null"],
+          "enum": ["low", "medium", "high", null]
+        },
+        "crowding_deviation_justification": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "power_parameters": {
+      "type": "object",
+      "description": "A8.6: a-priori power parameters for automated power check before prescreen.",
+      "required": ["activation_rate", "plausible_ic_upper"],
+      "properties": {
+        "activation_rate": {
+          "type": ["number", "null"],
+          "description": "Fraction of bars where signal fires (e.g. 0.218 for F&G daily)."
+        },
+        "plausible_ic_upper": {
+          "type": ["number", "null"],
+          "description": "Literature upper bound for IC in this signal class (e.g. 0.15)."
+        },
+        "n_bars": {
+          "type": "integer",
+          "description": "Bars in test window (default: 17520 = 2 years at 1h).",
+          "default": 17520
+        },
+        "n_symbols": {
+          "type": "integer",
+          "description": "Number of symbols tested.",
+          "default": 2
+        },
+        "is_market_wide": {
+          "type": "boolean",
+          "description": "True if signal is a single market-wide index (F&G, VIX). Returns are correlated so n_symbols_effective = sqrt(n_symbols).",
+          "default": false
+        },
+        "data_requirement": {
+          "type": ["string", "null"],
+          "description": "Stated data extension needed if power is insufficient."
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

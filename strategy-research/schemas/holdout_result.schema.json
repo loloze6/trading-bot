@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "holdout_result.schema.json",
+  "title": "HoldoutResult",
+  "description": "Records the result of a single-use holdout evaluation stage (Improvement 06). Consumed once per hypothesis; status=fail is terminal per A6.1.",
+  "type": "object",
+  "required": [
+    "hypothesis_id",
+    "holdout_window",
+    "expected_range",
+    "status",
+    "consumed_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "hypothesis_id": {
+      "type": "string",
+      "description": "Identifier of the hypothesis being evaluated."
+    },
+    "holdout_window": {
+      "type": "object",
+      "description": "The date range used for holdout evaluation.",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "type": "string",
+          "description": "Holdout window start date (YYYY-MM-DD)."
+        },
+        "end": {
+          "type": "string",
+          "description": "Holdout window end date (YYYY-MM-DD)."
+        }
+      }
+    },
+    "expected_range": {
+      "type": "object",
+      "description": "Pre-registered performance expectations, locked in BEFORE evaluation is run.",
+      "required": ["min_sharpe", "max_sharpe", "rationale"],
+      "additionalProperties": false,
+      "properties": {
+        "min_sharpe": {
+          "type": "number",
+          "description": "Lower bound of acceptable Sharpe ratio."
+        },
+        "max_sharpe": {
+          "type": "number",
+          "description": "Upper bound of acceptable Sharpe ratio."
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Justification for the chosen expected range, written before evaluation."
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pass", "fail", "inconclusive"],
+      "description": "Outcome of the holdout evaluation. 'fail' is terminal per A6.1 — no further promotion path exists."
+    },
+    "consumed_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp recording when the holdout was spent. This evaluation cannot be repeated."
+    },
+    "holdout_sharpe": {
+      "type": ["number", "null"],
+      "description": "Sharpe ratio measured over the holdout window. Null when closed trade count < 5 per A3.4 null-floor rule."
+    },
+    "holdout_max_drawdown": {
+      "type": ["number", "null"],
+      "description": "Maximum drawdown measured over the holdout window. Null when trade count is insufficient."
+    },
+    "walk_forward_sharpe_for_comparison": {
+      "type": ["number", "null"],
+      "description": "Walk-forward Sharpe used as a reference baseline for degradation calculation."
+    },
+    "degradation_pct": {
+      "type": ["number", "null"],
+      "description": "Percentage degradation from walk-forward Sharpe to holdout Sharpe. Null when either Sharpe is null."
+    },
+    "per_trade_expectancy": {
+      "type": "object",
+      "description": "Statistical summary of per-trade returns over the holdout window.",
+      "required": ["mean_bps", "se_bps", "t_stat", "n_trades"],
+      "additionalProperties": false,
+      "properties": {
+        "mean_bps": {
+          "type": ["number", "null"],
+          "description": "Mean return per trade in basis points."
+        },
+        "se_bps": {
+          "type": ["number", "null"],
+          "description": "Standard error of mean return in basis points."
+        },
+        "t_stat": {
+          "type": ["number", "null"],
+          "description": "t-statistic for the mean return (mean_bps / se_bps)."
+        },
+        "n_trades": {
+          "type": ["number", "null"],
+          "description": "Number of closed trades in the holdout window."
+        }
+      }
+    },
+    "within_expected_range": {
+      "type": ["boolean", "null"],
+      "description": "True if holdout_sharpe falls within [expected_range.min_sharpe, expected_range.max_sharpe]. Null when holdout_sharpe is null."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-text notes on anomalies, caveats, or follow-up actions."
+    }
+  }
+}

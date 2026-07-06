@@ -1,0 +1,115 @@
+hypothesis_id: "EMA_SPREAD_TREND_CONTINUATION"
+protocol_version: v2
+edge_source_taxonomy_version: "Improvement 01 (A1.1-A1.3)"
+created_at: "2026-07-04"
+
+thesis: >
+  A persistent fast/slow EMA percentage spread on BTC/ETH 1h carries ungated directional
+  information: widening spread in one direction predicts continued drift in that
+  direction over the next few bars, because trend-following order flow (both
+  discretionary and algorithmic) chases already-moving prices.
+
+rationale: >
+  Directional herding is a well-documented behavioral pattern in liquid, retail-heavy
+  crypto markets: once a short-term trend establishes (fast EMA pulling away from slow
+  EMA), momentum traders and trend-following algorithms enter in the same direction,
+  extending the move for a short additional interval before mean-reversion or exhaustion
+  sets in. The EMA spread is a smoothed, low-noise proxy for "is a short-term trend
+  currently established" that ignores single-candle noise.
+
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: >
+    When the fast EMA(9) diverges from the slow EMA(21) in one direction, it reflects
+    a recent run of same-direction candles; trend-following participants (momentum
+    algos, retail chasers) enter in the direction of the established move, mechanically
+    extending it for a short additional window. This is measurable: EMA spread magnitude
+    and sign, computed purely from OHLCV close prices, should show positive Spearman
+    correlation with subsequent 1h returns if the herding mechanism is real; zero or
+    negative correlation if the effect is absent or already arbitraged away.
+  why_not_arbitraged: >
+    EMA crossover is one of the most widely known technical signals (library
+    crowding_risk: high) -- the bar for persistence is correspondingly high. The
+    argument for survival: at the 1h timeframe on BTC/ETH, the effect (if any) is
+    capacity-limited to a short continuation window that is not fully competed away
+    by faster intraday/HFT arbitrage, which operates on sub-minute horizons and does
+    not directly target 1h-bar EMA crossovers. This campaign has never empirically
+    tested this specific indicator (campaign_empirical_results for moving_average_crossover
+    was empty prior to this run) -- the crowding argument is a prior risk factor, not
+    a settled finding, and is treated as such in expected_failure_modes.
+  evidence_type: price_volume_only
+  measurable_proxy: >
+    EMASpreadComponent output: spread_pct = (EMA9 - EMA21) / EMA21 * 100, on every bar.
+    All-bars Spearman IC (forecast vs next-bar return) is the primary test statistic.
+  requires_new_feed: null
+
+signal_concept: >
+  EMASpreadComponent(fast_period=9, slow_period=21, scaling_factor=5.0): forecast =
+  ((EMA9 - EMA21) / EMA21 * 100) * 5.0, computed every bar once warmup (21 bars)
+  completes. Dense signal: active (nonzero) on effectively 100% of ready bars, unlike
+  the sparse funding/F&G signals already tested in this campaign. Ungated -- no regime
+  filter (A2.3 standing policy).
+
+target_market: "BTCUSDT, ETHUSDT, all bars (ungated, no regime condition)"
+timeframe: "1h"
+
+assumptions:
+  - "EMA(9)/EMA(21) spread on 1h BTC/ETH close prices reflects genuine short-term trend
+     information, not pure noise."
+  - "Trend-continuation herding is not yet fully arbitraged away at the 1h bar
+     granularity on these two symbols."
+  - "The signal is dense enough (near-100% activation) that block-adjusted significance
+     (n_eff = active_bars/24) will not itself be a binding constraint -- unlike the two
+     already-parked sparse feed-based hypotheses in this campaign."
+
+expected_failure_modes:
+  - "High crowding risk (library: moving_average_crossover crowding_risk=high) means the
+     signal may show near-zero all-bars IC -- fully arbitraged, consistent with this
+     campaign's prior finding that price-only oscillator/channel signals (RSI, Keltner)
+     showed no edge on this venue/timeframe (KB: rsi_mean_reversion_no_edge,
+     keltner_mean_reversion_no_edge)."
+  - "Signal could be inverted (negative IC): EMA-spread breakouts reverse rather than
+     continue, mirroring the keltner_breakout_inverted finding (also a breakout/momentum
+     mechanism) -- would indicate this venue/timeframe systematically favors reversion
+     over continuation for technical breakout-style signals."
+  - "Even if IC is significant and positive, cost_check may fail: a dense (near-100%
+     active) signal implies frequent re-evaluation/turnover; if realized avg_holding_bars
+     is short, per-trade gross edge may not clear the 17-17.5 bps round-trip cost."
+  - "EMA(9)/EMA(21) parameters are a single point in the crossover parameter space;
+     a null result here does not exhaust the moving_average_crossover mechanism (only
+     this specific parameterization) -- future refine attempts would need materially
+     different lookback periods to be informative, not a re-test of these exact periods."
+
+library_lookup:
+  indicator_id: "moving_average_crossover"
+  regime_affinity_for_target: "neutral"
+  affinity_justification: >
+    This hypothesis is ungated per A2.3 (no regime condition), so the library's
+    per-regime affinity split (trending: favorable, ranging: unfavorable) is not directly
+    applicable to a target_market with no regime gate. Noted as a prior risk factor in
+    expected_failure_modes: since real markets mix trending and ranging periods, the
+    all-bars pooled IC will reflect a blend where the unfavorable (ranging) component
+    could dominate given crypto 1h markets spend more time ranging/choppy than trending.
+  prior_campaign_failures: []
+  crowding_risk: "high"
+  crowding_deviation_justification: >
+    Step 3 of the lookup protocol: is there a compatible indicator with
+    data_requirements != ohlcv_only and matching edge_source_compatibility
+    (persistent_behavioral_bias)? Yes -- fear_greed_index_contrarian (sentiment,
+    fear_and_greed feed) matches persistent_behavioral_bias and has lower crowding_risk
+    (medium). However, that indicator has ALREADY been tested in this campaign (H-041-C,
+     run_042) and is parked_insufficient_sample on the current 2024-2025 window -- it is
+    not an available substitute right now (re-running it would replicate the known
+    daily_signal_power_floor finding, not add information). moving_average_crossover
+    remains the best available genuinely-untested library entry for the
+    persistent_behavioral_bias category on OHLCV data. Proceeding with the high-crowding
+    OHLCV indicator is therefore deliberate: it is the only indicator in this category
+    with an empty prior-evidence slate, not a preference for high crowding.
+
+power_parameters:
+  activation_rate: 1.0
+  plausible_ic_upper: 0.05
+  n_bars: 17520
+  n_symbols: 2
+  is_market_wide: false
+  data_requirement: null

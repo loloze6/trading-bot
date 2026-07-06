@@ -1,0 +1,95 @@
+hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+run_id: run_044
+
+base_hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+
+expanded_variants:
+  - variant_id: V1
+    signal_name: FundingRateMeanReversionComponent
+    component_class: FundingRateMeanReversionComponent
+    parameters:
+      threshold: 0.0
+      scaling_factor: 10.0
+    activation_logic: "Fires at every 8h UTC settlement boundary (UTC hour % 8 == 0) regardless of funding magnitude. forecast = -sign(funding_rate) * scaling_factor at settlement bars; forecast = 0 elsewhere."
+    evidence_type: funding_open_interest
+    library_category: structural_rate
+    data_requirements: funding_open_interest
+    diversity_axis: "Base hypothesis; continuous activation at all funding magnitudes (not just H-041-A extremes with threshold > 0.001). Activation ~12.5% per 8h cycle (3 bars/day)."
+    ungated: true
+    status: ready_for_run
+    notes: "Conservative variant using existing component. Mechanism: every settlement bar forces position rebalancing; cumulative effect across 8h cycle creates predictable mean-reversion impulse."
+
+regime_specific_variants:
+  - variant_id: V2
+    signal_name: "FundingRateMeanReversionComponent_HighVolFilter"
+    component_class: FundingRateMeanReversionComponent
+    parameters:
+      threshold: 0.0
+      scaling_factor: 10.0
+    activation_logic: "Fire funding mean-reversion signal at 8h settlement ONLY when market volatility (ATR-based or regime-labeled) is elevated. Rationale: funding spikes correlate with vol events; gating to high-vol windows may concentrate signal power when forced deleveraging is most intense."
+    evidence_type: funding_open_interest
+    library_category: structural_rate (composite: structural_rate + volatility via filter)
+    data_requirements: funding_open_interest
+    regime_requirement: high_vol (requires detector)
+    diversity_axis: "Regime-conditional variant; narrows activation to high-volatility windows only."
+    ungated: false
+    status: detector_wishlist_pending
+    blocker_reason: "BTC/ETH 1h regime detector currently unusable per A2.3 standing policy."
+    suggested_ungated_reformulation: "FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0) with ATR volatility gate: fire only when ATR(14) > rolling_quantile_75(252 bars). Achieves high-vol concentration without regime detector."
+
+  - variant_id: V3
+    signal_name: "FundingRateMeanReversionComponent_InTrendingRegime"
+    component_class: FundingRateMeanReversionComponent
+    parameters:
+      threshold: 0.0
+      scaling_factor: 10.0
+    activation_logic: "Fire funding mean-reversion signal at settlement ONLY in trending regimes. Rationale: robustness check -- tests whether mean-reversion edge is regime-robust or regime-specific. If signal fails in trending (when price momentum is strongest), mechanism is incomplete."
+    evidence_type: funding_open_interest
+    library_category: structural_rate
+    data_requirements: funding_open_interest
+    regime_requirement: trending
+    diversity_axis: "Robustness variant; tests signal across regime orthogonal to V2."
+    ungated: false
+    status: detector_wishlist_pending
+    blocker_reason: "Requires regime detector (currently unavailable)."
+    suggested_ungated_reformulation: "Fire only when SMA(50) slope > 0 (trending proxy via price slope). Ungated alternative using OHLCV only; no detector required."
+
+alternative_data_candidates:
+  - candidate_id: ALT_1
+    name: "Funding Rate + Open Interest Divergence (Dual Structural Signal)"
+    mechanism_idea: "Combine funding_rate_extreme (current, available) with open_interest_divergence (unavailable). Dual confirmation gate: fire mean-reversion only when BOTH conditions hold: (1) funding sign indicates forced flow direction, AND (2) open interest trajectory diverges from price (OI rising while price falls = liquidation risk building). Dual structural signals compound confirmation."
+    data_sources: ["funding_open_interest", "open_interest_true"]
+    library_categories: ["structural_rate", "structural_rate"]
+    data_requirements_spanned: "funding_open_interest (available) + open_interest_true (unavailable)"
+    diversity_verdict: "Real diversity: spans structural_rate x structural_rate family with dual independent sources -- complex signal, not cosmetic."
+    feasibility: requires_new_feed
+    feed_wishlist_entry: "open_interest_true. Binance provides OI via `GET /fapi/v1/openInterest` but not currently in FEED_REGISTRY or data_manager.py. Unlock: add OI feed to data_manager, compute divergence (dOI/dt vs dPrice/dt)."
+    activation_rate_estimate: "~6-8% (both gates must trigger; conjunction reduces frequency ~2x relative to funding alone)."
+    power_concern: "Lower activation -> lower n_eff. Requires 3-4 year backtest window to achieve n_eff ~ 100. Consider after current 2024-2025 window proves V1."
+
+  - candidate_id: ALT_2
+    name: "Funding Mean-Reversion + Fear & Greed Sentiment Confirmation"
+    mechanism_idea: "Gate funding mean-reversion to sentiment extremes. Fire only when BOTH (1) funding sign is favorable, AND (2) Fear & Greed Index is in extreme zone (< 25 or > 75). Rationale: crowd emotional extremes + mechanical funding forced-flow may align, improving precision."
+    data_sources: ["funding_open_interest", "fear_and_greed"]
+    library_categories: ["structural_rate", "sentiment"]
+    data_requirements_spanned: "funding_open_interest (available) + fear_and_greed (available)"
+    diversity_verdict: "Real diversity: spans 2 library categories (structural_rate + sentiment); dual independent evidence sources."
+    feasibility: requires_new_component
+    blocker: "No existing FundingRateWithSentimentComponent. Would require new composite component code (prohibited in current batch)."
+    component_wishlist_entry: "FundingRateSentimentGatedComponent: gates funding mean-reversion signal to F&G extremes. Implementation: resample daily F&G to 1h (forward-fill), check if value is outside [25, 75] band, AND with funding signal."
+    activation_rate_estimate: "~1-2% (F&G extremes occur ~8-12% of time; conjunction with funding ~12.5% -> ~1.5%). Very low activation."
+    power_concern: "Critical: only ~260-350 active samples over 2-year window (2024-2025). n_eff ~ 11-15, insufficient power per A8.6. Reactivation requires 5+ year window (n_eff ~ 60)."
+    recommendation: "Strong precision possible, but sample size inadequate on current window. Defer to future cycle with extended backtest range."
+
+  - candidate_id: ALT_3
+    name: "Funding Rate + ATR Volatility Filter (Ungated Alternative to V2)"
+    mechanism_idea: "Gate V1 to periods of elevated volatility (ungated, no regime detector needed). Fire funding mean-reversion only when ATR(14) > 75th percentile of rolling 252-bar window. Conceptually similar to V2 (high-vol focus) but achievable today without detector dependency. Rationale: forced deleveraging cascades hit hardest during high-vol spikes; gating improves signal-to-noise."
+    data_sources: ["funding_open_interest", "price_volume_only"]
+    library_categories: ["structural_rate", "volatility"]
+    data_requirements_spanned: "funding_open_interest + ohlcv_only (ATR is pure price/volume)"
+    diversity_verdict: "Real diversity: spans 2 categories via hybrid filter; uses available data only."
+    feasibility: readily_feasible
+    implementation_path: "Wrap FundingRateMeanReversionComponent with ATR > quantile(252) gate. No new component code required; conditional logic on existing signal output."
+    activation_rate_estimate: "~3.5-4.0% (funding ~12.5% x ATR_high ~30-35% ~= 4%). Moderate reduction from V1, avoids V2's severe sample loss."
+    power_note: "n_eff ~ 70-80 on 2024-2025 window. Adequate power (mde ~ 0.11 < plausible 0.15). Candidate for V1.5 variant if V1 shows positive IC."
+    recommendation: "Implement as conditional variant of V1 for next cycle if V1 shows promising but noisy IC. Tests hypothesis that precision improves with vol gating (ungated)."

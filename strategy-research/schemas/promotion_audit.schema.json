@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "promotion_audit",
+  "description": "Output of deflate_sharpe.py. Deflated Sharpe Ratio audit for a candidate hypothesis (Bailey & López de Prado 2014). Written to runs/<run_id>/artifacts/promotion_audit.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "hypothesis_id",
+    "raw_median_sharpe",
+    "total_hypotheses_tested",
+    "trial_sharpe_variance",
+    "deflated_sharpe_ratio",
+    "correction_method",
+    "promotion_threshold_raw",
+    "promotion_threshold_deflated",
+    "passes_deflated_threshold",
+    "excluded_trial_counts",
+    "n_trials_used",
+    "is_sparse_trading"
+  ],
+  "properties": {
+    "hypothesis_id": {
+      "type": "string",
+      "description": "Matches hypothesis_card.yaml hypothesis_id for the run being audited."
+    },
+    "raw_median_sharpe": {
+      "type": ["number", "null"],
+      "description": "Candidate median Sharpe from protocol_result.yaml per_symbol_summary. Null on the sparse-trading path (below_floor_pct > 50%)."
+    },
+    "total_hypotheses_tested": {
+      "type": "integer",
+      "description": "Total deduplicated trial records in campaign_state.trial_sharpes at audit time (N in BLP 2014).",
+      "minimum": 0
+    },
+    "trial_sharpe_variance": {
+      "type": ["number", "null"],
+      "description": "Sample variance of the Sharpe-valid trial values used for DSR denominator estimation. Null when fewer than 2 valid trials exist."
+    },
+    "deflated_sharpe_ratio": {
+      "type": ["number", "null"],
+      "description": "DSR = Φ((candidate_sr - E_max_SR) / sigma_SR). Range [0, 1]. Null when DSR cannot be computed (sparse path, insufficient trials, or zero trial variance).",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "correction_method": {
+      "type": "string",
+      "description": "Citation for the multiple-testing correction applied.",
+      "enum": ["bailey_lopezdeprado_2014"]
+    },
+    "promotion_threshold_raw": {
+      "type": ["number", "null"],
+      "description": "Expected maximum Sharpe (E_max_SR) — the Sharpe threshold in raw Sharpe space that the candidate must exceed to pass DSR > 0.95. Null on the sparse path or when DSR cannot be computed."
+    },
+    "promotion_threshold_deflated": {
+      "type": "number",
+      "description": "DSR threshold for promotion (0.95 for the Sharpe path). Fixed for all runs.",
+      "const": 0.95
+    },
+    "passes_deflated_threshold": {
+      "type": "boolean",
+      "description": "True if DSR > 0.95 (Sharpe path) or t_stat > 2.0 (sparse/expectancy path)."
+    },
+    "excluded_trial_counts": {
+      "type": "object",
+      "description": "Records excluded from Sharpe trial pool, broken down by reason.",
+      "additionalProperties": false,
+      "required": ["no_sharpe_value", "statistic_expectancy", "statistic_neither"],
+      "properties": {
+        "no_sharpe_value": {
+          "type": "integer",
+          "description": "Trials with statistic_valid='sharpe' but sharpe field is null.",
+          "minimum": 0
+        },
+        "statistic_expectancy": {
+          "type": "integer",
+          "description": "Trials with statistic_valid='expectancy' (sparse-trading runs — not included in Sharpe pool).",
+          "minimum": 0
+        },
+        "statistic_neither": {
+          "type": "integer",
+          "description": "Trials with statistic_valid absent or set to an unrecognized value.",
+          "minimum": 0
+        }
+      }
+    },
+    "n_trials_used": {
+      "type": "integer",
+      "description": "Number of deduplicated Sharpe-valid trial values actually used in DSR computation.",
+      "minimum": 0
+    },
+    "is_sparse_trading": {
+      "type": "boolean",
+      "description": "True when below_floor_pct > 50% — median_sharpe is unreliable and promotion decision routes through expectancy_promotion instead."
+    },
+    "expected_max_sharpe": {
+      "type": ["number", "null"],
+      "description": "E_max_SR = mu_SR + sigma_SR * Z_exp_max. The expected maximum Sharpe over N independent trials. Present only on the Sharpe path with sufficient trials."
+    },
+    "expectancy_promotion": {
+      "type": ["object", "null"],
+      "description": "Present when is_sparse_trading=true. Contains t-test result for per-trade expectancy.",
+      "additionalProperties": false,
+      "required": ["t_stat", "passes", "bonferroni_note"],
+      "properties": {
+        "t_stat": {
+          "type": ["number", "null"],
+          "description": "t_stat = expectancy_bps / expectancy_se. Null when expectancy_se is unavailable or zero."
+        },
+        "passes": {
+          "type": "boolean",
+          "description": "True if t_stat > 2.0 (conservative practical threshold)."
+        },
+        "bonferroni_note": {
+          "type": "string",
+          "description": "Informational note on the strict Bonferroni threshold vs the 2.0 threshold used. Recorded for audit trail."
+        }
+      }
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "ISO 8601 UTC timestamp when this audit was computed.",
+      "format": "date-time"
+    }
+  }
+}

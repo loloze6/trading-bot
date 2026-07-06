@@ -48,6 +48,17 @@ class AdvancedStrategy(MainStrategy):
 
         self.last_forecast = 0.0
 
+        # F5b (P1a shakedown, 2026-07-04): update() previously swallowed any component
+        # exception with a bare log line and no other trace. A component-level bug
+        # (e.g. FundingRateMeanReversionComponent's threshold=0 divide-by-zero, F5a)
+        # could therefore silently zero out an entire prescreen window and be
+        # indistinguishable from a genuine "no signal" result (see run_044, 2026-07-04).
+        # These counters make that distinguishable without changing update()'s
+        # fail-open behavior (a bad component still must not crash the whole strategy).
+        self.component_error_count = 0
+        self.component_error_samples = []  # capped list; see _MAX_ERROR_SAMPLES
+        self._update_call_count = 0
+
         logger.debug(f"✅ AdvancedStrategy initialized (required_bars={self.required_bars})")
 
     def is_ready(self) -> bool:
@@ -65,14 +76,29 @@ class AdvancedStrategy(MainStrategy):
             return False
         return True
 
+    _MAX_ERROR_SAMPLES = 5
+
     def update(self, new_bar: pd.DataFrame):
+        self._update_call_count += 1
+        stage = "buffer"
         try:
             self.data_buffer.add_data(new_bar.iloc[-1].to_dict())
             window = self.data_buffer.get_df()
+            stage = "regime_engine"
             self.regime_engine.update(window)
+            stage = "strategy_engine"
             self.strategy_engine.update(window)
         except Exception as e:
-            logger.error(f"Error updating strategy: {e}")
+            # F5b: count and classify instead of a bare log line (see __init__ note).
+            self.component_error_count += 1
+            if len(self.component_error_samples) < self._MAX_ERROR_SAMPLES:
+                self.component_error_samples.append({
+                    "bar_index": self._update_call_count,
+                    "stage": stage,
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                })
+            logger.error(f"Error updating strategy (stage={stage}, bar={self._update_call_count}): {e}")
 
     def generate_forecast(self) -> Tuple[float, Any, MarketRegime, float, Dict[str, Any]]:
         regime, debug_regime = self.regime_engine.classify()

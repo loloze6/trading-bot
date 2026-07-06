@@ -7,10 +7,12 @@ stages:
     next:
       - hypothesis
 
-  hypothesis:
-    skill: skills/hypothesis-generation/SKILL.md
+  hypothesis_generation:
+    skill: skills/hypothesis-design/SKILL.md
     required_inputs:
       - runs/{run_id}/artifacts/research_brief.yaml
+      - config/available_feeds.yaml
+      - config/indicator_library.yaml
     outputs:
       - runs/{run_id}/artifacts/hypothesis_card.yaml
     next:
@@ -27,8 +29,19 @@ stages:
     next:
       - validation
 
+  refinement_planner:
+    skill: skills/refinement-planner/SKILL.md
+    required_inputs:
+      - runs/{run_id}/artifacts/validation_decision.yaml
+      - runs/{run_id}/artifacts/expanded_hypothesis_card.yaml
+    outputs:
+      - runs/{run_id}/artifacts/refinement_notes.yaml
+    next:
+      - innovation_expansion  # when implementation_allowed=true
+      - human_pause           # when implementation_allowed=false
+
   validation:
-    skill: skills/validation/SKILL.md
+    skill: skills/quant-validation/SKILL.md
     required_inputs:
       - runs/{run_id}/artifacts/research_brief.yaml
       - runs/{run_id}/artifacts/expanded_hypothesis_card.yaml
@@ -132,3 +145,26 @@ stages:
       - runs/{run_id}/artifacts/regime_audit_decision.yaml
     next:
       - verdict_interpreter
+
+  # Improvement 06: single-use holdout evaluation gate (tool stage, no LLM)
+  # Routes here after verdict_interpreter emits promote (provisional).
+  # Terminal promotion only after DSR gate + holdout pass.
+  holdout_evaluation:
+    tool: tools/deflate_sharpe.py
+    description: >
+      Tool stage. Checks promotion_audit.yaml passes_deflated_threshold; enforces
+      holdout_consumed_by single-use from config/campaign_data_policy.yaml;
+      evaluates holdout_result.yaml (pass/fail/inconclusive). Failure is terminal.
+      Pre-registration: expected_range in holdout_result.yaml must be written BEFORE
+      running the holdout backtest.
+    required_inputs:
+      - runs/{run_id}/artifacts/promotion_audit.yaml
+      - config/campaign_data_policy.yaml
+    optional_inputs:
+      - runs/{run_id}/artifacts/holdout_result.yaml
+    outputs:
+      - runs/{run_id}/artifacts/holdout_result.yaml
+    next:
+      - completed_promoted   # when holdout_result.status = pass
+      - completed_rejected   # when DSR fails or holdout_result.status = fail
+      - human_pause          # when holdout_result.yaml is absent

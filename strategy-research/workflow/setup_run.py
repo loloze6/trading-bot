@@ -8,8 +8,45 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent
 TEMPLATES_DIR = ROOT / "templates" / "handoffs"
 
+
+def _is_fresh_or_absent(state_path: Path) -> bool:
+    """
+    F8 (2026-07-04): True if no pipeline_state.yaml exists yet, or if it exists but
+    represents an untouched scaffold (no stages completed, still waiting on
+    hypothesis_generation). False means this run has already made real progress —
+    overwriting it would be exactly what a run-ID collision looked like in practice
+    (run_043's reframe computing "run_044" while an unrelated run_044 was already
+    mid-pipeline, and vice versa the next time).
+    """
+    if not state_path.exists():
+        return True
+    try:
+        existing = yaml.safe_load(state_path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError:
+        return False  # unparseable — do not blindly overwrite
+    return (
+        not existing.get("completed_stages")
+        and existing.get("pending_stage", "hypothesis_generation") == "hypothesis_generation"
+    )
+
+
 def create_pipeline_state(run_dir: Path, run_id: str):
-    """Generates a fresh pipeline_state.yaml for the new run. And stores it in the run directory."""
+    """Generates a fresh pipeline_state.yaml for the new run. And stores it in the run directory.
+
+    F8 (2026-07-04): refuses to overwrite a run that already has real progress —
+    see _is_fresh_or_absent(). This is a backstop independent of whether the caller's
+    run-ID allocation is correct; even a correct allocator should never need this path,
+    but a defect there must fail loudly here instead of silently destroying state.
+    """
+    state_path = run_dir / "pipeline_state.yaml"
+    if not _is_fresh_or_absent(state_path):
+        raise RuntimeError(
+            f"REFUSING TO OVERWRITE: {state_path} already exists and represents a run "
+            f"in progress or completed (non-empty completed_stages, or pending_stage != "
+            f"'hypothesis_generation'). This is very likely a run-ID collision (F8) — "
+            f"'{run_id}' was computed as a supposedly-free ID but is already in use. "
+            f"Fix the caller's ID allocation; do not delete this file to work around it."
+        )
     state = {
         "run_id": run_id,
         "status": "active",

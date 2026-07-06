@@ -7,7 +7,7 @@
     "hypothesis_id", "protocol_verdict", "status",
     "criteria_summary", "primary_failure_mode", "config_to_failure_map",
     "untested_criteria", "proposed_change_dimension", "hypothesis_family",
-    "altitude_justification"
+    "altitude_justification", "root_cause"
   ],
   "properties": {
     "hypothesis_id":            { "type": "string" },
@@ -80,6 +80,37 @@
             "signal_good_regime_gate_correct",
             "inconclusive_low_detector_confidence"
           ]
+        }
+      }
+    },
+    "root_cause": {
+      "type": "object",
+      "description": "Improvement 01: structured causal explanation replacing free-text root_cause. Required for all non-promote verdicts.",
+      "required": ["mechanism_failure", "supporting_evidence", "confidence"],
+      "properties": {
+        "mechanism_failure": {
+          "type": "string",
+          "enum": [
+            "already_priced_in",
+            "lag_mismatch_to_regime_persistence",
+            "no_informational_content_this_venue",
+            "signal_real_but_subscale_vs_costs",
+            "indicator_incompatible_with_asset_flow",
+            "entry_exit_execution_gap",
+            "regime_misattribution",
+            "edge_arbitraged_away",
+            "insufficient_sample_inconclusive"
+          ],
+          "description": "The single most likely structural reason the hypothesis failed. Drives orchestrator routing."
+        },
+        "supporting_evidence": {
+          "type": "string",
+          "description": "Must cite specific fields from protocol_result.yaml or trade_diagnostics.json — not a restatement of the verdict. E.g.: 'forecast_return_corr=0.012 (p=0.71), all-bars IC near zero, n=8840 bars'."
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low"],
+          "description": "Confidence in the mechanism_failure assignment given available evidence."
         }
       }
     },

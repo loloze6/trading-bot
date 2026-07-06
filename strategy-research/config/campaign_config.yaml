@@ -1,0 +1,140 @@
+# campaign_config.yaml
+# Campaign-specific constants that encode venue / timeframe / market assumptions.
+# Constants justified as mathematical or statistical conventions stay in code (see comments).
+# Version: 1.1  Created: 2026-07-03 (Portability audit, Improvement 05)
+#              Updated: 2026-07-04 (A8.6 rho formula, Fix 1)
+#
+# NOTE — "config-only new campaign" bar is NOT yet met.
+# The constants listed here are canonical references; the running code still reads
+# its own named module-level constants (e.g. _BLOCK_SIZE_1H = 24 in prescreen_signal.py).
+# A runtime-loading refactor (config read at startup) is deferred. Until that lands,
+# test_campaign_config_sync.py enforces that config values and code constants stay in sync.
+# A divergence is a hard failure in the regression suite.
+
+# ---------------------------------------------------------------------------
+# Prescreen / IC computation (prescreen_signal.py)
+# ---------------------------------------------------------------------------
+
+prescreen:
+  block_size_1h: 24          # bars per autocorrelation episode at 1h (= bars per day)
+                              # Governs N_eff = active_bars / block_size
+  significance_threshold: 0.10  # p-value gate; IC is "significant" only when p < this
+  sigma_bar_bps_degenerate_fallback: 15.0
+    # Degenerate placeholder ONLY: _sigma_from_records() returns this literal value
+    # when len(returns) < 5 (data-starved edge case — statistics.stdev() is not
+    # computed at all below this floor). It is NEVER used when >= 5 return
+    # observations are available, which includes every real run to date (e.g.
+    # run_042: full-sample pooled BTC/ETH sigma_bar_bps = 62.52, measured).
+    # Do NOT read this as a "typical 1h crypto volatility" assumption — it isn't
+    # one, and treating it as such previously produced a 4.17x cost-ratio error
+    # in a viable-space projection (see docs/plan/11_viable_space_map.md Part 1).
+
+  # Constants staying in code (mathematical / statistical — not campaign assumptions):
+  #   dof = n_eff - 3        (Fisher z-transform DOF correction)
+  #   z_95 = 1.96            (95% CI z-multiplier)
+  #   near_zero_multiplier: 2.0  (|IC| < 2*SE ≈ p > 0.05)
+  #   active_threshold: 1e-6 (numerical precision floor for "signal fired")
+  #   min_bars_for_stdev: 5  (need ≥ 5 bars to compute stdev; statistical minimum)
+  #   min_block_size_floor: 6 (degenerate-block floor for non-1h timeframes)
+
+# ---------------------------------------------------------------------------
+# A8.5.1a — episode-blocked significance (episode_significance.py)
+# ---------------------------------------------------------------------------
+# New methodology for sparse signals over multi-era backfilled data (P1b). See
+# docs/plan/AMENDMENTS_01-06.md "A8.5.1a-spec" for the full specification.
+
+episode_significance:
+  gap_bars: 48                    # max inactive bars between active bars within one episode
+                                    # (48 bars @ 1h ~= 2 days). Gaps > this, or an era
+                                    # boundary, close the episode.
+  density_fallback_pct: 50.0       # if activation >= this %, episodes degenerate into the
+                                    # whole series -> use the existing 24-bar block method.
+  min_n_episodes: 8                # below this floor, no significance claim is made
+                                    # (disposition stays insufficient_sample_inconclusive
+                                    # regardless of p-value).
+  n_resamples: 2000                # bootstrap resample count (episodes resampled with
+                                    # replacement, same episode count as observed)
+
+# ---------------------------------------------------------------------------
+# Regime detector validation (validate_regime_detector.py)
+# ---------------------------------------------------------------------------
+
+regime_detector:
+  activation_band_min: 0.10   # lower bound of plausibility band for trending activation rate
+  activation_band_max: 0.40   # upper bound; activation outside [10%, 40%] caps confidence at medium
+                               # Encodes 1h BTC/ETH crypto regime plausibility
+  default_start: "2024-01-01" # campaign walk-forward start date (CLI default)
+  default_end:   "2025-12-31" # campaign walk-forward end date (CLI default)
+
+  # Constants staying in code (detector architecture, not campaign assumptions):
+  #   high_persistence: 24    (min bars per regime episode for high confidence)
+  #   high_transitions: 4     (max transitions per window for high confidence)
+  #   high_sensitivity: 0.15  (max gate sensitivity for high confidence)
+  #   medium_persistence: 12  (min persistence for medium confidence)
+  #   medium_sensitivity: 0.25
+  #   rare_label_threshold: 0.10  (switch to class-conditional sensitivity below this)
+  #   bars_per_window: 720    (~30 days at 1h; detector architecture constant)
+  #   perturbation_down: 0.90 / up: 1.10  (±10% sensitivity analysis; methodology constant)
+
+# ---------------------------------------------------------------------------
+# Orchestrator / pipeline governance (run_phase1_research.py)
+# ---------------------------------------------------------------------------
+
+orchestrator:
+  token_budget_per_run: 300000          # SUPERSEDED by token_budget_per_run_weighted_units below
+                                         # (F4c, 2026-07-05) — kept only as a historical reference of
+                                         # the old raw-token-sum semantics; no longer read by the loop.
+  token_budget_per_run_weighted_units: 1500000
+    # F4c circuit breaker, ACTUALLY read at runtime by _load_token_budget() (unlike every other
+    # constant in this file — see the module docstring's "declared parity only" note; this one is an
+    # explicit exception because it's an operational knob, not an architectural constant).
+    # Units are cost-WEIGHTED tokens (input x1.0, output x5.0, cache_read x0.1, cache_creation x1.25 —
+    # see _weighted_token_units()), not raw token counts. A raw sum treated a heavily-discounted
+    # cache-read token as equally expensive as a fresh output token, so a single validation call with
+    # 836,461 cache_read tokens (session-cumulative per claude_agent_sdk's own accounting across
+    # num_turns internal turns) tripped the old 300k raw-token breaker even though its true dollar
+    # cost was $0.35 (see run_047, 2026-07-05). Empirically, hypothesis_generation +
+    # innovation_expansion + validation together came to ~478,000 weighted units for a real,
+    # legitimately-approved reactivation hypothesis with a multi-turn validation call; 1,500,000
+    # leaves headroom for the remaining LLM stages (backtest_specification, verdict_interpreter)
+    # while still catching genuinely runaway behavior. Revisit if a normal run trips this again —
+    # widen the constant, don't disable the breaker.
+  max_refinements_default: 2            # default fallback when not in pipeline_state.yaml governance block
+  review_every_n_runs_default: 6        # default campaign-review cadence
+  distinct_failed_families_trigger: 2   # campaign review triggered when this many distinct families fail
+  below_floor_pct_threshold: 50.0       # switch to expectancy mode when > this % of windows are sparse
+                                         # (same value as verdict-interpreter; must stay in sync)
+
+# ---------------------------------------------------------------------------
+# Verdict interpreter thresholds (SKILL.md reference)
+# ---------------------------------------------------------------------------
+
+verdict_interpreter:
+  # These are defined in SKILL.md and applied by the LLM agent, not code.
+  # Listed here as the canonical reference for future deterministic migration.
+  trade_floor_per_window: 5      # per-window "sparse" threshold (A3.4 gate)
+  cumulative_trade_floor: 15     # hard cumulative floor below which run is "not validated"
+  edge_arbitraged_threshold: 30  # >= 30 total trades required for edge_arbitraged_away diagnosis
+  cost_drag_pct_threshold: 80    # cost consumes > 80% of gross PnL → cost_drag root cause
+  weak_signal_ic_floor: 0.03     # |IC| < 0.03 → no directional edge (Rule 2)
+  signal_inversion_ic_ceiling: -0.03  # IC < -0.03 AND significant → signal_inversion (Rule 3)
+  min_bars_per_regime: 20        # regime window with < 20 bars treated as noise (Rule 4)
+
+# ---------------------------------------------------------------------------
+# A8.6 — Symbol correlation (used in n_eff_symbols = n / (1 + (n-1)*rho) formula)
+# ---------------------------------------------------------------------------
+
+symbol_correlation:
+  btc_eth_return_correlation_1h: 0.82
+  # Formula: n_eff_symbols = n / (1 + (n-1) * rho)
+  # At rho=0.82, two symbols give n_eff_symbols ≈ 1.10 (not sqrt(2) ≈ 1.41).
+  # This is the A8.6-mandated correction replacing the sqrt(n) heuristic.
+  # A sqrt(n) approximation materially overstates power and is not acceptable (A8.6 amendment).
+  #
+  # To measure: compute Pearson correlation of close-to-close log returns on 1h OHLCV.
+  #   import pandas as pd; from scipy.stats import pearsonr
+  #   btc_ret = pd.read_parquet("btc_1h.parquet")["close"].pct_change().dropna()
+  #   eth_ret = pd.read_parquet("eth_1h.parquet")["close"].pct_change().dropna()
+  #   aligned = pd.concat([btc_ret, eth_ret], axis=1).dropna()
+  #   rho, _ = pearsonr(aligned.iloc[:,0], aligned.iloc[:,1])
+  # Campaign range: 2024-01-01 to 2025-12-31. Update this value when measured.

@@ -10,6 +10,9 @@ Read this before deciding whether to pause for human review.
 - New regime modes (threshold_rules, score, score_product, different thresholds, veto combinations)
 - Multi-component ensembles (weighted combination of signals in one regime)
 - Any transform pipeline ordering allowed by STRATEGY_CONFIG_REFERENCE.md ordering rules
+- Funding-rate or Fear & Greed signals via `aux_feeds` + `FundingRateMeanReversionComponent` /
+  `FearGreedContrarianComponent` (STRATEGY_CONFIG_REFERENCE.md §4/§4a) — these already exist and
+  have working reference configs (run_041, run_042). Do NOT emit component_gap for these.
 
 ### Research loop
 - Generate, validate, and refine hypotheses autonomously (stages 1-4)
@@ -58,3 +61,4 @@ Read this before deciding whether to pause for human review.
 | Want lower-band Keltner | scaling_factor: -20.0 — no new code |
 | Want wider/tighter Keltner | atr_multiplier parameter — no new code |
 | Want slower/faster EMA | fast_period, slow_period parameters — no new code |
+| Hypothesis needs funding rate or Fear & Greed data | `aux_feeds: ["funding_rate"]` or `["fear_greed"]` + the matching existing component — no new code (run_044's original false component_gap on this exact point, 2026-07-04, is the cautionary example) |
