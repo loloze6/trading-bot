@@ -665,3 +665,155 @@ class EMADiff(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.LT_EMA_period
+
+
+# ============================================================================
+# COMPONENT: FUNDING RATE MEAN REVERSION  (H-041-A, Improvement 01)
+# edge_source.category: structural_forced_flow
+# ============================================================================
+
+class FundingRateMeanReversionComponent(SubStrategyComponent):
+    """
+    Fires at 8h Binance funding settlement boundaries (UTC hour 0, 8, 16)
+    when |funding_rate| > threshold.
+
+    Forecast = -sign(funding_rate) * scaling_factor at active bars; 0 elsewhere.
+    Relies on 'funding_rate' column being merged into the bar DataFrame by the
+    prescreen loader or data_manager before update() is called.
+
+    threshold=0.0 is a legitimate, intentional design (continuous mode: fire at every
+    settlement regardless of magnitude, not just extremes) — NOT an error condition.
+    F5a (2026-07-04): this previously raised ZeroDivisionError in the confidence
+    calculation whenever threshold=0.0, silently swallowed by main_strategy.update()'s
+    broad exception handler, which made every continuous-mode config appear to have
+    zero active bars (a bug artifact, not a real "no signal" result — see run_044,
+    the F5 fixture for this exact failure).
+    """
+
+    def __init__(self, name="FundingMR", weight=1.0, parameters=None):
+        params = parameters or {}
+        params.setdefault("standardized_forecast", False)
+        super().__init__(name, weight, params)
+        self.threshold = float(params.get("threshold", 0.001))
+        self.scaling_factor = float(params.get("scaling_factor", 10.0))
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        if "funding_rate" not in data.columns:
+            return
+
+        # Settlement boundary: UTC hour must be divisible by 8
+        try:
+            ts = pd.Timestamp(data["timestamp"].iloc[-1])
+            if ts.hour % 8 != 0:
+                return
+        except Exception:
+            return
+
+        funding_rate = data["funding_rate"].iloc[-1]
+        if funding_rate is None or (hasattr(funding_rate, "__float__") and np.isnan(float(funding_rate))):
+            return
+        funding_rate = float(funding_rate)
+
+        if abs(funding_rate) <= self.threshold:
+            return
+
+        # Mean-reversion: negative forecast when funding is positive (longs pay)
+        signal = -np.sign(funding_rate) * self.scaling_factor
+        self._raw_value = float(np.clip(signal, -20.0, 20.0))
+        if self.threshold > 0:
+            self.confidence = min(abs(funding_rate) / (self.threshold * 3.0), 1.0)
+        else:
+            # Continuous mode: no threshold reference to scale "how extreme" against —
+            # every settlement bar is an equally legitimate signal instance.
+            self.confidence = 1.0
+        self.debug_info = {
+            "funding_rate": funding_rate,
+            "at_settlement": True,
+            "raw_signal": signal,
+        }
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= 2
+
+    def get_required_periods(self) -> int:
+        return 2
+
+
+# ============================================================================
+# COMPONENT: FEAR & GREED CONTRARIAN  (H-041-C, Improvement 01)
+# edge_source.category: persistent_behavioral_bias
+# ============================================================================
+
+class FearGreedContrarianComponent(SubStrategyComponent):
+    """
+    Contrarian sentiment signal firing at daily boundary bars (UTC hour == 0).
+    Uses the previous day's Fear & Greed index value (after +1 day A8.4 shift).
+
+    Fires when fear_greed < fear_threshold (→ long, contrarian against fear) or
+    fear_greed > greed_threshold (→ short, contrarian against greed).
+    Zero on all other bars.
+
+    Requires 'fear_greed' column merged into bar DataFrame by prescreen loader.
+    """
+
+    def __init__(self, name="FGContrarian", weight=1.0, parameters=None):
+        params = parameters or {}
+        params.setdefault("standardized_forecast", False)
+        super().__init__(name, weight, params)
+        self.fear_threshold = float(params.get("fear_threshold", 25.0))
+        self.greed_threshold = float(params.get("greed_threshold", 75.0))
+        self.scaling_factor = float(params.get("scaling_factor", 10.0))
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        if "fear_greed" not in data.columns:
+            return
+
+        # Signal fires only at the daily boundary bar (UTC midnight)
+        try:
+            ts = pd.Timestamp(data["timestamp"].iloc[-1])
+            if ts.hour != 0:
+                return
+        except Exception:
+            return
+
+        fg = data["fear_greed"].iloc[-1]
+        if fg is None or (hasattr(fg, "__float__") and np.isnan(float(fg))):
+            return
+        fg = float(fg)
+
+        if fg < self.fear_threshold:
+            signal = self.scaling_factor          # contrarian: buy into fear
+        elif fg > self.greed_threshold:
+            signal = -self.scaling_factor         # contrarian: sell into greed
+        else:
+            return
+
+        self._raw_value = float(np.clip(signal, -20.0, 20.0))
+        self.confidence = min(abs(fg - 50.0) / 50.0, 1.0)
+        self.debug_info = {
+            "fear_greed": fg,
+            "at_daily_boundary": True,
+            "raw_signal": signal,
+        }
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= 2
+
+    def get_required_periods(self) -> int:
+        return 2

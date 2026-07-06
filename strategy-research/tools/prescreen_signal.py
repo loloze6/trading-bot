@@ -75,12 +75,107 @@ _ACTIVE_THRESHOLD = 1e-6
 # Default sigma_bar estimate in bps for 1h crypto.
 _DEFAULT_SIGMA_BAR_BPS = 15.0
 
+# F5c (2026-07-04): component_error_count as a percentage of n_bars_total above which
+# the run is routed to no_signal_artifact even when active_n_bars > 0 (pervasive but
+# not total failure — still not a trustworthy result). active_n_bars == 0 always
+# triggers no_signal_artifact regardless of this threshold.
+_NO_SIGNAL_ARTIFACT_ERROR_PCT_THRESHOLD = 5.0
+
 _LOCAL_DATA = os.path.join(_TBOT, "local_data")
 
 
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
+
+def _load_funding_rate(symbol: str, start: str, end: str) -> pd.DataFrame:
+    """
+    Load 8h funding rate from local_data/{SYMBOL}_funding_8h.csv for [start, end).
+    Returns DataFrame with columns: timestamp (pd.Timestamp), funding_rate (float).
+    Empty DataFrame if file not found.
+    """
+    fpath = os.path.join(_LOCAL_DATA, f"{symbol}_funding_8h.csv")
+    if not os.path.exists(fpath):
+        print(f"    ⚠ Funding rate file not found: {fpath}")
+        return pd.DataFrame(columns=["timestamp", "funding_rate"])
+    df = pd.read_csv(fpath)
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df = df[(df["timestamp"].dt.strftime("%Y-%m-%d") >= start) &
+            (df["timestamp"].dt.strftime("%Y-%m-%d") < end)]
+    return df[["timestamp", "funding_rate"]].sort_values("timestamp").reset_index(drop=True)
+
+
+def _load_fear_greed(start: str, end: str) -> pd.DataFrame:
+    """
+    Load daily Fear & Greed from local_data/fear_greed_daily.csv for [start, end).
+    A8.4 alignment fix: timestamps are shifted +1 day so that the value published
+    on day D-1 is first visible on day D's 00:00 bar (eliminates same-day lookahead).
+    Returns DataFrame with columns: timestamp (pd.Timestamp), fear_greed (float).
+    """
+    fpath = os.path.join(_LOCAL_DATA, "fear_greed_daily.csv")
+    if not os.path.exists(fpath):
+        print(f"    ⚠ Fear & Greed file not found: {fpath}")
+        return pd.DataFrame(columns=["timestamp", "fear_greed"])
+    df = pd.read_csv(fpath)
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    # A8.4 fix: +1 day shift so day D value is visible only from day D+1 onward
+    df["timestamp"] = df["timestamp"] + pd.Timedelta(days=1)
+    df = df[(df["timestamp"].dt.strftime("%Y-%m-%d") >= start) &
+            (df["timestamp"].dt.strftime("%Y-%m-%d") < end)]
+    return df[["timestamp", "fear_greed"]].sort_values("timestamp").reset_index(drop=True)
+
+
+def _merge_aux_feeds(
+    bars_df: pd.DataFrame,
+    aux_feeds: list,
+    symbol: str,
+    start: str,
+    end: str,
+) -> pd.DataFrame:
+    """
+    Merge auxiliary feed columns into bars_df using merge_asof(direction='backward').
+    Each feed value assigned to the bar whose open timestamp is >= the feed's timestamp —
+    matching the data_manager.py _premerge_aux_feeds() logic exactly.
+
+    Supported aux_feed names: "funding_rate", "fear_greed"
+    """
+    result = bars_df.copy()
+    result["timestamp"] = pd.to_datetime(result["timestamp"])
+
+    if "funding_rate" in aux_feeds:
+        fund_df = _load_funding_rate(symbol, start, end)
+        if not fund_df.empty:
+            result = pd.merge_asof(
+                result.sort_values("timestamp"),
+                fund_df.sort_values("timestamp"),
+                on="timestamp",
+                direction="backward",
+            )
+            n_active = (result["funding_rate"].abs() > 0).sum()
+            print(f"    Merged funding_rate: {len(fund_df)} settlement records, "
+                  f"{n_active} bars with non-zero rate")
+        else:
+            result["funding_rate"] = float("nan")
+            print(f"    ⚠ No funding rate data for {symbol} — funding_rate set to NaN")
+
+    if "fear_greed" in aux_feeds:
+        fng_df = _load_fear_greed(start, end)
+        if not fng_df.empty:
+            result = pd.merge_asof(
+                result.sort_values("timestamp"),
+                fng_df.sort_values("timestamp"),
+                on="timestamp",
+                direction="backward",
+            )
+            n_extreme = ((result["fear_greed"] < 25) | (result["fear_greed"] > 75)).sum()
+            print(f"    Merged fear_greed: {len(fng_df)} daily records (+1d shift applied), "
+                  f"{n_extreme} bars in extreme zone (25/75 thresholds)")
+        else:
+            result["fear_greed"] = float("nan")
+            print(f"    ⚠ No Fear & Greed data — fear_greed set to NaN")
+
+    return result
+
 
 def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.DataFrame:
     """
@@ -166,7 +261,7 @@ def _spearman(x: list, y: list) -> float | None:
 # Forecast extraction (signal layer only, no portfolio simulation)
 # ---------------------------------------------------------------------------
 
-def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> list:
+def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> tuple:
     """
     Instantiate AdvancedStrategy from config_path, feed bars sequentially,
     collect (forecast, next_return_bps) pairs for every bar where is_ready().
@@ -174,7 +269,13 @@ def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> list:
     next_return_bps: close-to-close return of the bar following the forecast bar,
     in basis points. The last bar in the window has no successor and is excluded.
 
-    Returns list of dicts: {forecast, next_return_bps, active}.
+    Returns (records, component_error_count, component_error_samples):
+    - records: list of dicts {forecast, next_return_bps, active}
+    - component_error_count: F5b — bars where AdvancedStrategy.update() swallowed a
+      component exception. A signal that errors on every bar produces active_n=0
+      identically to a signal that genuinely never fires — this count is what lets
+      the caller (run_prescreen) tell the two apart (F5c: no_signal_artifact route).
+    - component_error_samples: capped list of {bar_index, stage, error_type, error_message}
     """
     strategy = AdvancedStrategy(config_path=config_path)
     records = []
@@ -199,9 +300,13 @@ def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> list:
             "forecast":       float(forecast),
             "next_return_bps": float(next_ret_bps),
             "active":          abs(forecast) > _ACTIVE_THRESHOLD,
+            # A8.5.1a: timestamp carried through so episode_significance.py can
+            # map bars to era boundaries. Additive field, does not affect any
+            # existing consumer of this record shape.
+            "timestamp":       bars_df["timestamp"].iloc[i],
         })
 
-    return records
+    return records, strategy.component_error_count, strategy.component_error_samples
 
 
 # ---------------------------------------------------------------------------
@@ -314,6 +419,26 @@ def _load_cost_model() -> dict:
         return yaml.safe_load(f) or {}
 
 
+def _load_campaign_data_policy() -> dict:
+    p = Path(_SR) / "config" / "campaign_data_policy.yaml"
+    if not p.exists():
+        return {}
+    with open(p, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _era_id_for_timestamp(ts, eras: list) -> str:
+    """A8.5.1a: map a bar timestamp to its era_id per campaign_data_policy.yaml's
+    `eras` list. Returns 'era_unmapped' if the timestamp falls outside every
+    declared era (should not happen for in-policy data, but must not crash)."""
+    d = pd.Timestamp(ts).strftime("%Y-%m-%d")
+    for era in eras:
+        lo, hi = era["range"]
+        if lo <= d <= hi:
+            return era["era_id"]
+    return "era_unmapped"
+
+
 def _round_trip_cost(symbol: str, cost_model: dict) -> float:
     rtc = cost_model.get("round_trip_cost_bps", {})
     return float(rtc.get(symbol) or rtc.get("default", 18.5))
@@ -392,19 +517,28 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
     """
     sig       = ic_sig.get("significant", False)
     pooled_ic = ic_sig.get("pooled_ic") or 0.0
-    p_value   = ic_sig.get("p_value", 1.0)
+    p_value   = ic_sig.get("p_value")
+    p_value   = p_value if p_value is not None else 1.0
     ratio     = cost.get("edge_to_cost_ratio")
     cost_pass = cost.get("pass", False)
 
     if not sig:
-        return (
-            "kill_no_ic",
-            (
-                f"Active-bar IC={pooled_ic:.4f}, p={p_value:.4f} >= {_SIG_THRESHOLD}. "
-                f"Signal has no detectable directional content on this venue/timeframe."
-            ),
-            "no_informational_content_this_venue",
+        disposition_note = ic_sig.get("disposition_note")
+        kill_reason = (
+            "insufficient_episodes_a851a" if disposition_note == "insufficient_sample_inconclusive"
+            else "no_informational_content_this_venue"
         )
+        rationale = (
+            f"Active-bar IC={pooled_ic:.4f}, p={p_value:.4f} >= {_SIG_THRESHOLD}. "
+            f"Signal has no detectable directional content on this venue/timeframe."
+        )
+        if disposition_note:
+            rationale = (
+                f"A8.5.1a: n_episodes={ic_sig.get('n_episodes')} below the "
+                f"min_n_episodes floor — descriptive only (pooled_ic={pooled_ic:.4f}), "
+                f"no significance claim made. {disposition_note}."
+            )
+        return ("kill_no_ic", rationale, kill_reason)
 
     if pooled_ic < 0:
         return (
@@ -585,6 +719,7 @@ def run_prescreen(
     with open(protocol_path, encoding="utf-8") as f:
         protocol = json.load(f)
 
+    aux_feeds      = config_raw.get("aux_feeds", [])
     cost_model     = _load_cost_model()
     config_sha256, config_sha8 = _config_sha(config_path)
 
@@ -601,6 +736,9 @@ def run_prescreen(
     all_records_by_symbol: dict = {}
     n_bars_total = 0
     sigma_estimates: list = []
+    total_component_error_count = 0
+    component_error_sample: list = []  # capped across all symbols, see below
+    _MAX_ERROR_SAMPLE = 5
 
     for symbol in symbols:
         # Determine full protocol range: earliest start to latest end across all windows
@@ -622,8 +760,19 @@ def run_prescreen(
             continue
 
         print(f"    Loaded {len(bars_df)} bars — running signal extraction ...")
-        records = _extract_forecasts(config_path, bars_df)
+        if aux_feeds:
+            bars_df = _merge_aux_feeds(bars_df, aux_feeds, symbol, range_start, range_end)
+        records, error_count, error_samples = _extract_forecasts(config_path, bars_df)
+        for r in records:
+            r["symbol"] = symbol  # A8.5.1a: needed to keep episodes symbol-bounded when pooled
         print(f"    {len(records)} forecast records; active={sum(1 for r in records if r['active'])}")
+        if error_count:
+            print(f"    ⚠ {error_count} bar(s) raised a swallowed component exception "
+                  f"during update() — see component_error_count/component_error_sample")
+            total_component_error_count += error_count
+            for s in error_samples:
+                if len(component_error_sample) < _MAX_ERROR_SAMPLE:
+                    component_error_sample.append({"symbol": symbol, **s})
 
         all_records_by_symbol[symbol] = records
         n_bars_total += len(records)
@@ -647,7 +796,43 @@ def run_prescreen(
 
     # Block-adjusted significance on ACTIVE-BAR n (A8.3)
     ic_values_for_sig = [ic_active] if ic_active is not None else []
-    ic_sig = _block_adjusted_significance(ic_values_for_sig, active_n, block_size)
+    ic_sig_block24 = _block_adjusted_significance(ic_values_for_sig, active_n, block_size)
+    ic_sig = ic_sig_block24
+    significance_methodology_used = "block_24_fisher_z"
+    ic_by_era = None
+
+    # A8.5.1a (opt-in): candidate_strategy_config.json may request the episode-
+    # blocked significance method for hypotheses evaluated over multi-era
+    # backward-extension data (see docs/plan/AMENDMENTS_01-06.md "A8.5.1a-spec").
+    # Default behavior (flag absent) is UNCHANGED — every prior run's recorded
+    # result stays reproducible under the original block_24_fisher_z method.
+    if config_raw.get("significance_methodology") == "episode_blocked_a851a":
+        import episode_significance as _es
+        policy = _load_campaign_data_policy()
+        eras = policy.get("eras", [])
+        es_cfg = policy.get("episode_significance", {})
+
+        def _era_of(i, _records=all_records, _eras=eras):
+            return (_records[i]["symbol"], _era_id_for_timestamp(_records[i]["timestamp"], _eras))
+
+        a851a_result = _es.compute_a851a_significance(
+            all_records,
+            era_of=_era_of if eras else None,
+            gap_bars=es_cfg.get("gap_bars", _es._DEFAULT_GAP_BARS),
+            density_fallback_pct=es_cfg.get("density_fallback_pct", _es._DEFAULT_DENSITY_FALLBACK_PCT),
+            min_n_episodes=es_cfg.get("min_n_episodes", _es._MIN_N_EPISODES),
+            block_size=block_size,
+            n_resamples=es_cfg.get("n_resamples", _es._DEFAULT_N_RESAMPLES),
+        )
+        ic_sig = a851a_result
+        significance_methodology_used = a851a_result["method"]
+        if eras:
+            ic_by_era = _es.per_era_report(all_records, _era_of)
+        print(f"    A8.5.1a significance: method={a851a_result['method']} "
+              f"n_episodes={a851a_result.get('n_episodes')} "
+              f"pooled_ic={a851a_result.get('pooled_ic')} "
+              f"p_value={a851a_result.get('p_value')} "
+              f"significant={a851a_result.get('significant')}")
 
     # Turnover proxy: active bars per trade implies holding period
     total_active = sum(1 for r in all_records if r["active"])
@@ -688,6 +873,37 @@ def run_prescreen(
     # Route decision
     route, rationale, kill_reason = _determine_route(ic_sig, cost)
 
+    # F5c (2026-07-04): zero-signal-artifact check takes priority over every other
+    # route. active_n_bars==0 or a pervasive component-error rate means the signal
+    # was never actually evaluated — a bug/config problem, not a scientific "no edge"
+    # result. This MUST NOT be scored as kill_no_ic (that says "tested, found nothing");
+    # the hypothesis here is untested. See run_044 (2026-07-04): FundingRateMeanReversion
+    # Component's threshold=0 divide-by-zero produced active_n_bars=0, which read as a
+    # real kill_no_ic verdict and nearly closed an otherwise-untested hypothesis family.
+    error_pct = (total_component_error_count / n_bars_total * 100.0) if n_bars_total > 0 else 0.0
+    if active_n == 0 or error_pct > _NO_SIGNAL_ARTIFACT_ERROR_PCT_THRESHOLD:
+        route = "no_signal_artifact"
+        if total_component_error_count > 0:
+            kill_reason = "component_error"
+            rationale = (
+                f"F5c: {total_component_error_count} bar(s) ({error_pct:.1f}% of "
+                f"{n_bars_total} processed) raised a swallowed component exception during "
+                f"update() (see component_error_sample). active_n_bars={active_n} cannot be "
+                f"trusted as a genuine result — this is an engineering failure, not evidence "
+                f"about the hypothesis. Fix the component/config, then re-run fresh."
+            )
+        else:
+            kill_reason = "zero_activation"
+            rationale = (
+                f"F5c: active_n_bars=0 with zero swallowed component errors — the signal "
+                f"genuinely never activated on this data (e.g. its firing condition was "
+                f"never satisfied in this window). Still routed as no_signal_artifact, not "
+                f"kill_no_ic: a component that never fires has not been tested for "
+                f"directional content, only for activation. Investigate the activation "
+                f"condition/data before concluding anything about the mechanism."
+            )
+        print(f"  ⚠ [prescreen] no_signal_artifact: {rationale}")
+
     # ic_by_regime: suspended per A2.3
     ic_by_regime = {
         "suspended": True,
@@ -718,12 +934,20 @@ def run_prescreen(
         "ic_spearman_pooled":       ic_active,
         "ic_by_regime":             ic_by_regime,
         "ic_significance":          ic_sig,
+        # A8.5.1a: always compute+report the original block_24 method for
+        # continuity/comparison, and which method actually decided `route` above.
+        "ic_significance_block24":  ic_sig_block24,
+        "significance_methodology_used": significance_methodology_used,
+        "ic_by_era":                ic_by_era,
         "turnover_proxy":           turnover_proxy,
         "sigma_bar_bps":            round(sigma_bar_bps, 4),
         "cost_check":               cost,
         "route":                    route,
         "route_rationale":          rationale,
         "prescreen_kill_reason":    kill_reason,
+        # F5b/F5c
+        "component_error_count":    total_component_error_count,
+        "component_error_sample":   component_error_sample,
     }
 
     # A9.1 side effect: resolve ungated_escape_eligible using ic_all_bars (A2.1 admissible metric)

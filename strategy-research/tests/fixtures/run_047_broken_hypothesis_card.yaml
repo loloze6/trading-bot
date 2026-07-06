@@ -1,0 +1,127 @@
+hypothesis_id: H-041-A
+thesis: >
+  8h perpetual funding rate extremes (|rate| > 0.0002) create mechanical mean-reversion
+  pressure as crowded positions forced to deleverage on settlement. Structural forced
+  flow, not behavioral.
+
+rationale: >
+  Funding settlement at UTC 00:00, 08:00, 16:00 transfers cash from longs to shorts
+  (or vice versa) proportional to rate magnitude. Extreme funding (|0.0002|+) signals
+  crowded, imbalanced positioning; settlement mechanics force deleveraging. Subsequent
+  price reversal reflects trapped positions unwinding. Backfilled data (2019-09-10 BTC,
+  2019-11-27 ETH through 2025-12-31) captures 2020–2022 era when funding extremes were
+  common; n_eff increases from ~10 (2024-2025 only) to ~55–70 (full 7-year window).
+  Pre-registered episode count: 132 funding-extreme episodes (pooled BTC+ETH, gap_blocks≤48).
+
+edge_source:
+  category: structural_forced_flow
+  evidence_type: funding_open_interest
+  specific_mechanism: >
+    At 8h UTC settlement boundaries (hour % 8 == 0), extreme absolute funding rate
+    (|rate| > 0.0002) triggers contrarian forecast: -sign(funding_rate) × scaling_factor.
+    Mechanism: settlement mechanics mandate cash transfer proportional to rate; crowded
+    longs/shorts pay to maintain positions and are incentivized to reduce leverage.
+    Unwinding creates mean-reversion price impulse measurable over 1–2h post-settlement.
+    Proxy observable: signed funding_rate from binance_funding_rate feed at each settlement;
+    mechanism predicts negative correlation between extreme signed rate and next-bar returns.
+  why_not_arbitraged: >
+    Structural forced flow survives arbitrage because: (a) timetable is fixed (UTC
+    times), not opportunity-signal-driven; (b) deleveraging is mechanical need, not
+    informational trade; (c) low adoption — funding-data strategies rare vs. price-only;
+    (d) timeframe mismatch — 8h settlement window compressed into 1h bars introduces lag
+    uncertainty that large capital sidesteps; (e) position-holding cost and slippage on
+    large unwinding exceed edge for many market makers.
+  measurable_proxy: >
+    Absolute and signed funding_rate at 8h settlement times where |rate| > threshold;
+    mechanism predicts next-bar IC > 0 under contrarian (short-duration mean-reversion)
+    forecast direction.
+  requires_new_feed: null
+
+signal_concept: >
+  FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0). Fires ONLY
+  at UTC 8h settlement boundaries (00:00, 08:00, 16:00 UTC; implemented as hour % 8 == 0
+  in 1h bar alignment). When |funding_rate| > 0.0002: forecast = -sign(funding_rate) ×
+  scaling_factor. Else: forecast = 0 (inactive bars contribute zero). Ungated (A2.3);
+  no regime_detector conditioning. Reuses run_041 configuration verbatim per A8.5
+  reactivation constraint (no parameter variants, no retune).
+
+target_market: "BTCUSDT, ETHUSDT"
+
+timeframe: "1h"
+
+assumptions:
+  - Funding rate extremes in 2020–2022 (pre-2024 crypto downturn) represent structural
+    market behavior transferable to 2026 conditions; mechanism is time-stable across
+    2019–2025 window.
+  - 1h bar granularity is sufficient to capture post-settlement mean-reversion impulse
+    (empirical lag: 0–2 bars from prior runs).
+  - Threshold (0.0002) remains economically meaningful; if 2026 funding environment
+    de-risks permanently (extremes vanish), mechanism deactivates.
+  - Episode count (132) and era stratification (per campaign_data_policy.yaml) supports
+    episode-blocked significance test with min_n_episodes=8 baseline.
+  - Holdout range [2026-01-01, 2026-06-30] is untouched by any tuning or IC peeking.
+
+expected_failure_modes:
+  - "Activation collapse: If 2026 market structure stabilizes funding (extremes → 0.00005),
+    signal fires zero times. Mechanism inactive = no edge. Monitoring: daily rolling
+    top-5% funding percentile; if sustained <0.00010 for 30 days, escalate to pause.
+    Cost avoidance: zero activation → zero cost → natural halt."
+  - "Lag mismatch to timeframe: Mean-reversion impulse may peak at 2–6h post-settlement,
+    beyond the immediate 1h bar. If unwinding is slower than mechanism predicts, IC
+    flattens. Prior evidence (run_044 continuous variant, outcome=lag_mismatch_to_regime_persistence)
+    establishes risk. Contingency: if IC>0 but cost_drag>100%, escalate to 4h/daily
+    timeframe (separate run, not in scope)."
+  - "Institutional crowding: If other strategists adopt funding signals, edge compresses
+    through front-running or pre-positioning. Today's low crowding is fragile. Tail-risk
+    monitoring: settlement-bar volume should stay stable YoY; if settlement-bar vol drops
+    >30% (liquidity crisis), or rises >50% (crowding influx), escalate."
+  - "Cost drag barrier: Transaction costs (spread, slippage, fees) may exceed gross edge
+    at 12.5% activation frequency (~132 episodes / 1050 bars/year × 2 symbols × 7 years).
+    Mandatory cost gate per A8.2: if edge_to_cost_ratio < 2.0, route to halt or timeframe
+    escalation."
+
+library_lookup:
+  indicator_id: funding_rate_extreme
+  regime_affinity_for_target: neutral
+  affinity_justification: >
+    Mechanism is structural (forced flow) not regime-dependent. Library affinity: neutral
+    for trending/ranging, favorable for high_vol (extremes cluster in volatile periods,
+    supporting structural narrative). Signal is ungated per A2.3; no regime condition
+    applies. Neutral affinity is correct for ungated structural signals.
+  prior_campaign_failures:
+    - run_id: run_041
+      mechanism_tried: "Identical: threshold=0.0002, scaling_factor=10.0, 8h-settlement-gated"
+      outcome: inconclusive
+      outcome_reason: insufficient_sample (n_eff=10 on 2024-2025 window only)
+      reactivation_basis: "Data extended to 2019-09-10 (BTC) / 2019-11-27 (ETH); pre-registered
+        132 episodes on full range; reactivation_condition satisfied per KB finding_id
+        funding_rate_mean_reversion_inconclusive"
+  crowding_risk: low
+  crowding_deviation_justification: "n/a — low crowding confirmed. Funding-data signals
+    are less arbitraged than price-only technicals; requires non-OHLCV feed access."
+
+power_parameters:
+  activation_rate: null
+  plausible_ic_upper: 0.20
+  n_bars: null
+  n_symbols: 2
+  is_market_wide: false
+  power_note: >
+    Signal class: sparse feed-based, extreme/threshold-gated (A8.6 anchor table row 3,
+    plausible_ic_upper = 0.10–0.20). Pre-registered episode count: 132 funding extremes
+    over 2019-09-10 to 2025-12-31 window (BTC OHLCV ~2466 bars, ETH ~2365 bars). Expected
+    n_eff ≈ (132 episodes / 24-bar block size) ≈ 5.5 base, adjusted upward via era
+    stratification (A8.5.1a: separate IC per era, pooled resampling). Conservative: n_eff
+    ≈ 50–70. At n_eff=55: min_detectable_ic ≈ 0.134 — within plausible 0.20 ceiling.
+    A-priori power: sufficient_power_to_detect. Activation_rate and n_bars computed from
+    actual loaded data per A8.6 protocol; not free-handed.
+
+significance_methodology: >
+  MANDATORY per research_brief: episode-blocked significance test (A8.5.1a) via
+  strategy-research/tools/episode_significance.py, NOT standard 24-bar block_adjusted_significance.
+  Episodes defined: gap_bars=48 (campaign_config.yaml default), continuous funding
+  extreme episodes per pre_registration.yaml enumeration. Min_n_episodes=8 baseline met
+  (132 >> 8). Report structure: per-era IC (2019-2021, 2021-2023, 2023-2025 per
+  campaign_data_policy.yaml eras list), per-era episode counts, pooled bootstrap p_value
+  and confidence interval. Era stratification is reporting layer only; resampling is
+  pooled per A8.5.1a rule 5. Deliverable: per_era_table artifact in run_047 output.

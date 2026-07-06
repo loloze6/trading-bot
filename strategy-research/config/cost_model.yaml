@@ -8,17 +8,62 @@
 # Grep audit: search for hardcoded fee constants in tools/ and skills/.
 #
 # Created: 2026-07-02 (Improvement 09)
+# Updated: 2026-07-04 (Cost-structure revision) — see execution_style block below.
 
-version: "1.0"
+version: "1.1"
 created_at: "2026-07-02"
+updated_at: "2026-07-04"
+
+# ---------------------------------------------------------------------------
+# FEE-TIER VERIFICATION (2026-07-04, cost-structure revision)
+# ---------------------------------------------------------------------------
+# Verified against Binance's published spot fee schedule (binance.com/en/fee/schedule,
+# accessed 2026-07-04). Account has no live API keys configured (trading-bot/config.json
+# api.key/secret empty, test_mode=true) and no trading history, so tier cannot be read
+# back from the account directly — assumed tier is Regular/VIP0, confirmed by user.
+#
+# Regular/VIP0 (< $1,000,000 30-day volume, any BNB balance):
+#   Maker 0.100% / Taker 0.100%  →  with 25% BNB discount: Maker 0.075% / Taker 0.075%
+# IMPORTANT: at VIP0, maker and taker are the SAME rate upstream (both 0.100%), so the
+# BNB-discounted rate is identical for both execution styles: 7.5 bps / 7.5 bps.
+# Maker/taker fee rates only diverge starting VIP1 (>= $1M 30-day volume AND >= 5 BNB
+# held): Maker 0.0675% / Taker 0.075% with BNB discount. This account does not meet
+# VIP1 thresholds, so no fee-rate benefit is currently achievable from maker execution —
+# any maker-execution cost advantage at this tier comes ONLY from avoiding the spread
+# and market-impact/slippage of crossing the book, not from a lower fee. See
+# execution_style block below, which models this correctly (identical fee_bps,
+# spread_cost_bps=0 for maker).
+# Re-verify this section if account volume/BNB balance changes tier.
+
+# ---------------------------------------------------------------------------
+# HARD RULE (2026-07-04, cost-structure revision)
+# ---------------------------------------------------------------------------
+# verdict_execution_style: taker
+# All gates (Layer 1 validation_gate, Layer 2 prescreen cost_check) and all promotion
+# evidence (promotion_audit, holdout_result, verdict_interpretation) MUST use the
+# taker cost path (top-level fee_rate_bps / round_trip_cost_bps, equivalently
+# execution_style.taker) — never execution_style.maker. The maker variant is
+# SENSITIVITY-ONLY: it may be reported alongside a taker-based verdict to show "how
+# much would this change under an unvalidated fill-rate assumption," but it may never
+# be the basis for a pass/fail decision, a plausibility rating, or a promotion. This
+# is because maker's fill-rate haircut is an unvalidated assumption (see
+# execution_style.maker below and docs/plan/10_maker_execution_assessment.md) — no
+# order-book data exists to calibrate it, so it cannot support a gating decision.
+# A verdict, prescreen result, or promotion audit that reports a pass driven by
+# execution_style.maker numbers without an accompanying taker-based pass is invalid.
+verdict_execution_style: taker
 
 # Safety factor: required_gross_edge = safety_factor × round_trip_cost
 # A strategy must earn at least 2× its round-trip cost per trade to pass Layer 2.
 safety_factor: 2.0
 
 # One-way taker fee in bps (basis points, 1 bps = 0.01%)
-# Binance spot, BNB discount applied (0.075% per side)
+# Binance spot, Regular/VIP0 tier, BNB discount applied (0.075% per side)
 # NOTE: used by run_protocol.py _cost_paid_bps() as 'fee_rate_bps[symbol]'
+# NOTE: this top-level block is the TAKER path and is what existing code consumes
+# (prescreen_signal.py._load_cost_model / _round_trip_cost, run_protocol.py._cost_paid_bps
+# both read these keys directly at the root). Do not restructure these keys — see
+# execution_style block below for the additive maker variant.
 fee_rate_bps:
   BTCUSDT: 7.5
   ETHUSDT: 7.5
@@ -58,6 +103,75 @@ round_trip_cost_bps:
   AVAXUSDT: 20.5
   BNBUSDT: 15.0
   default: 18.5
+
+# ---------------------------------------------------------------------------
+# EXECUTION STYLE VARIANTS (2026-07-04, cost-structure revision)
+# ---------------------------------------------------------------------------
+# Additive block — NOT yet read by any code path. The top-level keys above remain
+# the only keys prescreen_signal.py and run_protocol.py consume today (taker path).
+# This block is the documented single source for a future maker-path opt-in; wiring
+# it into the engine/backtest is a backlog item (see docs/plan/10_maker_execution_assessment.md),
+# out of Phase P research scope per the cost-structure revision instructions.
+#
+# P2 universe only (BTCUSDT/ETHUSDT/SOLUSDT/AVAXUSDT) — confirmed by user 2026-07-04.
+#
+# taker: mirrors the top-level keys exactly (kept here for symmetry so future code
+#        can loop execution_style[style][symbol] uniformly instead of special-casing).
+#
+# maker: post-only / LIMIT_MAKER order assumption.
+#   fee_bps            — IDENTICAL to taker at this account's Regular/VIP0 tier (see
+#                         FEE-TIER VERIFICATION above). Maker saves nothing on the fee
+#                         rate itself here; it only avoids spread + most slippage.
+#   spread_cost_bps     — 0. A resting order at/inside the best bid/ask is matched at
+#                         its own quote, not crossing the spread. Conservative: we do
+#                         NOT credit spread capture as a positive edge, only its absence
+#                         as a cost.
+#   adverse_selection_bps — proxy for the real risk of resting orders: being filled
+#                         disproportionately right before the market moves against the
+#                         quote. Modeled as 50% of the taker slippage_estimate_bps per
+#                         symbol. UNVALIDATED ASSUMPTION — no order-book data exists to
+#                         calibrate this (order_book feed is unavailable per
+#                         config/available_feeds.yaml). Backlog: calibrate once/if
+#                         order_book feed is acquired.
+#   round_trip_cost_bps_if_filled = 2*fee_bps + spread_cost_bps(0) + adverse_selection_bps
+#   assumed_fill_rate   — UNVALIDATED ASSUMPTION. Higher for BTC/ETH (deep books, tight
+#                         typical spread → resting orders near touch fill reliably before
+#                         a 1h signal decays), lower for SOL/AVAX (thinner books). No
+#                         historical fill-rate data exists for this account; these are
+#                         placeholder priors pending calibration (see backlog doc).
+#   unfilled_handling   — assumed policy used to compute the blended cost below: an
+#                         unfilled maker order is cancelled and re-submitted as a taker
+#                         market order (chase-fill). This is an ASSUMPTION for cost
+#                         modeling purposes, not an implemented behavior.
+#   round_trip_cost_bps_blended = fill_rate * round_trip_cost_bps_if_filled
+#                                 + (1 - fill_rate) * taker.round_trip_cost_bps[symbol]
+#                         This is the number a backtest should use if it wants to assume
+#                         maker execution — per the cost-structure revision instructions,
+#                         ONLY with this explicit fill-rate haircut, never the unfilled
+#                         (best-case, fill_rate=1.0) number.
+execution_style:
+  taker:
+    fee_bps:            {BTCUSDT: 7.5, ETHUSDT: 7.5, SOLUSDT: 7.5, AVAXUSDT: 7.5, default: 7.5}
+    spread_cost_bps:    {BTCUSDT: 1.5, ETHUSDT: 2.0, SOLUSDT: 3.0, AVAXUSDT: 4.0, default: 3.0}
+    slippage_bps:       {BTCUSDT: 0.5, ETHUSDT: 0.5, SOLUSDT: 1.0, AVAXUSDT: 1.5, default: 1.0}
+    round_trip_cost_bps: {BTCUSDT: 17.0, ETHUSDT: 17.5, SOLUSDT: 19.0, AVAXUSDT: 20.5, default: 18.5}
+
+  maker:
+    fee_bps:                 {BTCUSDT: 7.5, ETHUSDT: 7.5, SOLUSDT: 7.5, AVAXUSDT: 7.5, default: 7.5}
+    spread_cost_bps:         {BTCUSDT: 0.0, ETHUSDT: 0.0, SOLUSDT: 0.0, AVAXUSDT: 0.0, default: 0.0}
+    adverse_selection_bps:   {BTCUSDT: 0.25, ETHUSDT: 0.25, SOLUSDT: 0.5, AVAXUSDT: 0.75, default: 0.5}
+    # round_trip_cost_bps_if_filled = 2*fee + spread_cost(0) + adverse_selection
+    #   BTC: 2*7.5+0+0.25=15.25  ETH: 15.25  SOL: 2*7.5+0+0.5=15.5  AVAX: 2*7.5+0+0.75=15.75  default: 15.5
+    round_trip_cost_bps_if_filled: {BTCUSDT: 15.25, ETHUSDT: 15.25, SOLUSDT: 15.5, AVAXUSDT: 15.75, default: 15.5}
+    assumed_fill_rate:       {BTCUSDT: 0.65, ETHUSDT: 0.65, SOLUSDT: 0.50, AVAXUSDT: 0.45, default: 0.50}
+    unfilled_handling: cancel_and_convert_to_taker  # assumption; not implemented in engine
+    # round_trip_cost_bps_blended = fill_rate*if_filled + (1-fill_rate)*taker.round_trip_cost_bps
+    #   BTC:  0.65*15.25 + 0.35*17.0 = 15.86
+    #   ETH:  0.65*15.25 + 0.35*17.5 = 16.04
+    #   SOL:  0.50*15.5  + 0.50*19.0 = 17.25
+    #   AVAX: 0.45*15.75 + 0.55*20.5 = 18.36
+    #   default: 0.50*15.5 + 0.50*18.5 = 17.0
+    round_trip_cost_bps_blended: {BTCUSDT: 15.86, ETHUSDT: 16.04, SOLUSDT: 17.25, AVAXUSDT: 18.36, default: 17.0}
 
 # Layer 1 reference (validation_gate, declarative LLM check):
 #   required_gross_edge_bps_per_trade = safety_factor * round_trip_cost_bps[symbol]

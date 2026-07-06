@@ -30,6 +30,11 @@ runs:
 - run_037
 - run_038
 - run_039
+- run_044
+- run_043
+- run_047
+- run_050
+- run_048
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -171,31 +176,71 @@ altitude_history:
   dimension: er_threshold
   family: rsi_secondary_mean_reversion
   outcome: no_improvement
-recent_parameter_dimensions:
-- regime_filter_er_threshold
-- er_threshold
+- run: run_044
+  altitude: hypothesis
+  dimension: ''
+  family: funding_rate_mean_reversion
+  outcome: pivot
+  outcome_invalidated: true
+  outcome_invalidation_note: 'F5/F6 (2026-07-04): this pivot was doubly wrong. (1)
+    The underlying prescreen kill_no_ic was itself a bug artifact (see trial_sharpes
+    run_044 invalidation_reason -- FundingRateMeanReversionComponent threshold=0 divide-by-zero,
+    F5a). (2) Even taking the verdict at face value, the circuit breaker forced pivot
+    on this family''s FIRST-EVER refine attempt using stale, unrelated Keltner/RSI-era
+    parameter-dimension history that had leaked in via the pre-F6 global (not per-family)
+    recent_parameter_dimensions list. funding_rate_mean_reversion is not validly exhausted;
+    do not treat this entry as evidence against the family.
+
+    '
+- run: run_043
+  altitude: campaign
+  dimension: research_question
+  family: ''
+  outcome: reframed
+- run: run_044
+  altitude: campaign
+  dimension: research_question
+  family: ''
+  outcome: reframed
+- run: run_047
+  altitude: search_space
+  dimension: timeframe
+  family: ''
+  outcome: escalate
+- run: run_050
+  altitude: hypothesis
+  dimension: ''
+  family: funding_rate_mean_reversion
+  outcome: pivot
+- run: run_048
+  altitude: parameter
+  dimension: signal_polarity
+  family: fear_greed_contrarian
+  outcome: no_improvement
+recent_parameter_dimensions_by_family:
+  funding_rate_mean_reversion: []
+  fear_greed_contrarian:
+  - signal_polarity
 failed_families:
-# Tagged 2026-07-02 (Improvement 07): all entries carry evidence_window: 2024_only.
-# root_cause: regime_availability entries may be re-opened ONCE on baseline_v2 per campaign_review.
-# root_cause: signal_quality / signal_inversion / cost_drag entries are NOT re-openable.
 - name: rsi_mean_reversion
   evidence_window: 2024_only
-  root_cause: signal_quality       # run_014 corr: -0.022 (near-zero, parameter exhausted)
+  root_cause: signal_quality
 - name: keltner_breakout
   evidence_window: 2024_only
-  root_cause: signal_inversion     # run_015 corr: -0.171; run_033 re-test also failed
+  root_cause: signal_inversion
 - name: keltner_mean_reversion
   evidence_window: 2024_only
-  root_cause: regime_availability  # run_017 corr: 0.215 but zero-trade slots in 7/22 windows
+  root_cause: regime_availability
 - name: rsi_momentum_trending
   evidence_window: 2024_only
-  root_cause: cost_drag            # run_018 corr: 0.018, cost_drag: 273%
+  root_cause: cost_drag
 - name: keltner_trend_mean_reversion
   evidence_window: 2024_only
-  root_cause: regime_availability  # run_024 corr: 0.215 but regime absent in key months
+  root_cause: regime_availability
 - name: keltner_scoremode
   evidence_window: 2024_only
-  root_cause: signal_quality       # run_030 corr: 0.014 (weak, inconsistent across variants)
+  root_cause: signal_quality
+- funding_rate_mean_reversion
 instruments_tried:
 - BTCUSDT
 - ETHUSDT
@@ -205,6 +250,7 @@ components_built: []
 timeframes_tried:
 - 1h
 - 4h
+- 15m
 diagnostics_log:
 - run: run_011
   forecast_return_corr: null
@@ -316,6 +362,36 @@ diagnostics_log:
   cost_drag_pct: 28.9885
   win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
   avg_trade_duration_bars: 8.0
+- run: run_044
+  forecast_return_corr: null
+  cost_drag_pct: null
+  win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
+  avg_trade_duration_bars: null
+- run: run_043
+  forecast_return_corr: -0.021091
+  cost_drag_pct: 278.6
+  win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
+  avg_trade_duration_bars: null
+- run: run_044
+  forecast_return_corr: 0.016737
+  cost_drag_pct: 412.4
+  win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
+  avg_trade_duration_bars: null
+- run: run_047
+  forecast_return_corr: null
+  cost_drag_pct: null
+  win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
+  avg_trade_duration_bars: null
+- run: run_050
+  forecast_return_corr: 0.017764
+  cost_drag_pct: 135.7
+  win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
+  avg_trade_duration_bars: null
+- run: run_048
+  forecast_return_corr: -0.040257
+  cost_drag_pct: 67.9
+  win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
+  avg_trade_duration_bars: null
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
@@ -332,24 +408,23 @@ notes:
   No further regime-gate tuning on this signal should be attempted. Fixes require
   either extending walk-forward history beyond 11 months, or a signal with more uniform
   monthly activation.'
-- 'BASELINE_V2 KELTNER RE-RUN (2026-07-02, Improvement 07 acceptance criterion):
-  Same config as run_033 (ER>=0.50 Keltner breakout in TRENDING regime) re-run on
-  baseline_v2 (24 windows, 2024-01 to 2025-12). Results: zero-trade slots 14/48 (29%)
-  vs 7/22 (32%) on v1 — structurally unchanged. BTC 9/24 zero-trade (37%), ETH 5/24
-  (21%). Total trades 163 (BTC=71, ETH=92) across 48 slots vs 69 across 22 on v1.
-  Median Sharpe 0.000 for both symbols. Per-window Sharpes highly bimodal: inactive
-  months drag median to zero; active months show large variance (+20 to -8). Verdict:
-  regime-availability problem is CONFIRMED as structural and NOT a 2024-data artifact.
-  keltner_mean_reversion and keltner_trend_mean_reversion remain fully exhausted even
-  on extended data. Their failed_families evidence_window: 2024_only tags remain but
-  root cause is now confirmed — do NOT re-open these families on baseline_v2.
-  Protocol result: strategy-research/results/protocols/20260702T091324Z_18fad381/'
-- 'IC SCOPE CORRECTION (2026-07-02, A2.3): Earlier determination that ungated_escape was
-  not eligible (citing IC=0.2145 from Keltner runs) was incorrect per A2.3 scope rule.
-  IC=0.2145 from runs 017/024/027/033 was computed on TRENDING-gated bars only (~1% of
-  all bars with VR>=1.2 + ER>=0.5 config) — not on all bars. A2.3 requires all-bars IC
-  (ungated protocol run) for the escape determination. ungated_escape_eligible is now
-  INDETERMINATE for all regime-gated runs until an ungated protocol is executed.
+- 'BASELINE_V2 KELTNER RE-RUN (2026-07-02, Improvement 07 acceptance criterion): Same
+  config as run_033 (ER>=0.50 Keltner breakout in TRENDING regime) re-run on baseline_v2
+  (24 windows, 2024-01 to 2025-12). Results: zero-trade slots 14/48 (29%) vs 7/22
+  (32%) on v1 — structurally unchanged. BTC 9/24 zero-trade (37%), ETH 5/24 (21%).
+  Total trades 163 (BTC=71, ETH=92) across 48 slots vs 69 across 22 on v1. Median
+  Sharpe 0.000 for both symbols. Per-window Sharpes highly bimodal: inactive months
+  drag median to zero; active months show large variance (+20 to -8). Verdict: regime-availability
+  problem is CONFIRMED as structural and NOT a 2024-data artifact. keltner_mean_reversion
+  and keltner_trend_mean_reversion remain fully exhausted even on extended data. Their
+  failed_families evidence_window: 2024_only tags remain but root cause is now confirmed
+  — do NOT re-open these families on baseline_v2. Protocol result: strategy-research/results/protocols/20260702T091324Z_18fad381/'
+- 'IC SCOPE CORRECTION (2026-07-02, A2.3): Earlier determination that ungated_escape
+  was not eligible (citing IC=0.2145 from Keltner runs) was incorrect per A2.3 scope
+  rule. IC=0.2145 from runs 017/024/027/033 was computed on TRENDING-gated bars only
+  (~1% of all bars with VR>=1.2 + ER>=0.5 config) — not on all bars. A2.3 requires
+  all-bars IC (ungated protocol run) for the escape determination. ungated_escape_eligible
+  is now INDETERMINATE for all regime-gated runs until an ungated protocol is executed.
   regime_audit_decision.yaml in run_039 updated to reflect this.'
 - 'A6.4 AUDIT (2026-07-02, before Improvement 02 concludes): forecast_return_corr=0.2145
   across runs 017/024/027/033 is GENUINE deterministic computation, not stale caching.
@@ -362,22 +437,137 @@ notes:
   Config discrepancy confirmed: run_033 used ER>=0.5 AND VR>=1.2 (activation=1.07%,
   persistence=18); run_039 used ER>=0.5 AND VR>=0.9 (activation=2.55%, persistence=8).
   Both are genuine different configs; run_033 is the canonical config used for all
-  historical Keltner verdicts.
-  48-cell grid over (ER_enter x ER_exit_ratio x min_dwell) with VR dropped (VR>=1.2
-  structurally limits activation to ~1%, unreachable from [10%,40%] band).
-  Best achievable score: 5/8 (max possible 8/8). Structural ceiling: transitions/window
-  (~40 on best directly-implementable config) and activation-in-band are Pareto-conflicting
-  on 1h crypto with a stateless single-indicator ER detector. No cell achieved
-  transitions<=4/window simultaneously with activation in [10%,40%].
+  historical Keltner verdicts. 48-cell grid over (ER_enter x ER_exit_ratio x min_dwell)
+  with VR dropped (VR>=1.2 structurally limits activation to ~1%, unreachable from
+  [10%,40%] band). Best achievable score: 5/8 (max possible 8/8). Structural ceiling:
+  transitions/window (~40 on best directly-implementable config) and activation-in-band
+  are Pareto-conflicting on 1h crypto with a stateless single-indicator ER detector.
+  No cell achieved transitions<=4/window simultaneously with activation in [10%,40%].
   Best directly-implementable config: ER>=0.25 (no dwell, no hysteresis) — persistence=12,
   activation=33%, cc_sens=0.157, transitions=40. Regime-auditor verdict: unusable_for_this_symbol_timeframe.
-  Ungated escape NOT eligible: pooled IC=0.2145 on canonical Keltner trials >> 0.03 threshold.
-  Campaign implication: regime-gated hypothesis testing on BTC/ETH 1h via ER detector is
-  not viable. All future verdicts must use ungated analysis or a fundamentally different
-  regime detector (e.g., ADX-based, HMM, or daily timeframe). Retune artifacts:
-  regime_retune_results.yaml, config/regime_retune_winner.json,
-  runs/run_039/artifacts/regime_audit_decision.yaml.'
+  Ungated escape NOT eligible: pooled IC=0.2145 on canonical Keltner trials >> 0.03
+  threshold. Campaign implication: regime-gated hypothesis testing on BTC/ETH 1h via
+  ER detector is not viable. All future verdicts must use ungated analysis or a fundamentally
+  different regime detector (e.g., ADX-based, HMM, or daily timeframe). Retune artifacts:
+  regime_retune_results.yaml, config/regime_retune_winner.json, runs/run_039/artifacts/regime_audit_decision.yaml.'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-06-30T15:13:29.247533+00:00'
-last_escalation: null
+updated_at: '2026-07-06T11:06:16.303924+00:00'
+last_escalation:
+  target: timeframe
+  detail: 15m
+  protocol_path: protocols\escalation_tf_15m.json
+trial_sharpes:
+- trial_id: run_041
+  hypothesis_id: H-041-A
+  source: prescreen_backfill
+  route: kill_no_ic
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: 0.013993
+  cost_pass: false
+  forecast_hash: null
+  note: Backfilled from verdict_interpretation.yaml prescreen_summary (pre-A6.2 run).
+    IC p=0.9705 at n_eff=10.
+- trial_id: run_042
+  hypothesis_id: H-041-C
+  source: prescreen_backfill
+  route: kill_no_ic
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: 0.190476
+  cost_pass: true
+  forecast_hash: null
+  note: Backfilled from verdict_interpretation.yaml prescreen_result_summary (pre-A6.2
+    run). IC p=0.5469 at n_eff=13.
+- trial_id: run_043
+  source: prescreen
+  route: kill_no_ic
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: -0.021091
+  cost_pass: false
+- trial_id: run_044
+  source: prescreen
+  route: kill_no_ic
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: null
+  cost_pass: false
+  invalidated_artifact: true
+  invalidation_reason: 'F5 (2026-07-04): route=kill_no_ic and ic_pooled=null were
+    an artifact of FundingRateMeanReversionComponent''s threshold=0.0 divide-by-zero
+    (F5a), silently swallowed by main_strategy.update()''s broad exception handler
+    (pre-F5b), producing active_n_bars=0 on every bar. The hypothesis was never actually
+    tested -- this is not a real kill_no_ic result and must not be counted as evidence
+    about FUNDING_RATE_CONTINUOUS_MEAN_REVERSION. Superseded by the post-F5 relaunch
+    trial (trial_id run_044_post_f5, below). F5c''s no_signal_artifact route (added
+    after this trial was recorded) would have caught this live and routed to an engineering
+    pause instead of this verdict. - trial_id: run_044_post_f5 hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+    source: prescreen route: kill_no_ic sharpe: null expectancy_bps: null n_trades:
+    0 statistic_valid: neither ic_pooled: 0.016737 cost_pass: false forecast_hash:
+    e3b50e8d434608ed note: > F5 (2026-07-04) relaunch of run_044 post-fix. Real result
+    this time: active_n_bars=2004 (F5a eliminated the divide-by-zero; component_error_count=0),
+    ic_all_bars=-0.008706, ic_active_bars=0.016737, p=0.881 (n_eff=83) -- genuinely
+    tested, no detectable directional content, cost fails too (edge_to_cost_ratio=0.24).
+    A real kill_no_ic verdict, unlike the invalidated run_044 entry above. Recorded
+    under a distinct trial_id (not "run_044") because the live A6.2 idempotency guard
+    (by design) treats a repeated run_id as a duplicate and will not append a second
+    entry for the same run_id -- correct for a true resume, but this was a deliberate
+    fresh re-run of the same run_id after a bug fix, which the guard cannot distinguish
+    from an accidental double-invocation. Recorded manually for this reason.
+
+    '
+- trial_id: run_047
+  source: prescreen
+  route: kill_no_ic
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: null
+  cost_pass: false
+  invalidated_artifact: true
+  invalidation_reason: 'F4d (2026-07-05, P1b): this trial contacted real data but
+    tested the wrong thing -- signal_prescreen silently used protocols/baseline_v1.json
+    (2024-01 to 2024-11) instead of the pre-registered backward-extension range [2019-09-10/2019-11-27,
+    2025-12-31], and significance_methodology_used= block_24_fisher_z (the MANDATORY
+    A8.5.1a episode_blocked methodology never ran). See campaign_knowledge_base.yaml
+    finding funding_rate_mean_reversion_run047_invalidated. Kept (not removed) per
+    F8b convention; excluded from promotion/deflate-sharpe accounting by the existing
+    invalidated_artifact filter. A corrected re-run under a fresh run_id is needed;
+    forecast_hash-based dedup will correctly recognize any genuine overlap with run_041
+    if the corrected re-run''s config is unchanged.
+
+    '
+- trial_id: run_050
+  source: prescreen
+  route: no_signal_artifact
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: null
+  cost_pass: false
+  invalidated_artifact: true
+  invalidation_reason: protocol windows start at 2024-01-01, pre-registered range
+    requires starting by 2019-09-10 (the backward-extension range was not used); protocol
+    windows end at 2024-12-01, pre-registered range requires coverage through 2025-12-31
+    (the backward-extension range was not used)
+- trial_id: run_048
+  source: prescreen
+  route: refine_inverted_ic
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: -0.040257
+  cost_pass: false

@@ -17,4 +17,61 @@ walk_forward_extension: ["2024-12-01", "2025-12-31"]
 
 holdout_range: ["2026-01-01", "2026-06-30"]
 
+# P1b backward-extension pass (2026-07-05). Backfilled and verified (see
+# strategy-research/docs/p1b_fetch_manifest.md for the gap report and event
+# cross-checks). Walk-forward-eligible; holdout_range above is UNCHANGED.
+# Per-feed true availability (fetch verified, not assumed):
+#   BTCUSDT_1h / ETHUSDT_1h OHLCV : 2018-01-01 -> present (spot market)
+#   fear_greed                    : 2018-02-01 -> present (alternative.me history start)
+#   funding_rate BTCUSDT          : 2019-09-10 -> present (Binance perp inception)
+#   funding_rate ETHUSDT          : 2019-11-27 -> present (Binance perp inception)
+backward_extension:
+  BTCUSDT_1h: ["2018-01-01", "2023-12-31"]
+  ETHUSDT_1h: ["2018-01-01", "2023-12-31"]
+  fear_greed: ["2018-02-01", "2023-12-31"]
+  funding_rate:
+    BTCUSDT: ["2019-09-10", "2023-12-31"]
+    ETHUSDT: ["2019-11-27", "2023-12-31"]
+  status: walk_forward_eligible
+  holdout_unchanged: true
+
+# Era boundaries for A8.5.1a (episode-blocked significance) era-stratified reporting.
+# Grounded in real feed-availability discontinuities (funding rate did not exist
+# pre-perpetual-futures) plus the pre-existing burned/walk-forward/holdout policy
+# boundaries above. Every prescreen run against backward_extension data must tag
+# each episode with its era_id and report per-era, not only pooled.
+eras:
+  - era_id: era_2018_pre_funding
+    range: ["2018-01-01", "2019-09-09"]
+    feeds_available: [ohlcv, fear_greed]
+    note: funding_rate does not exist yet (pre-Binance-perpetual-futures); H-041-A
+      cannot be tested in this era, H-041-C can.
+  - era_id: era_2019_2023_full_feed
+    range: ["2019-09-10", "2023-12-31"]
+    feeds_available: [ohlcv, fear_greed, funding_rate]
+    note: ETHUSDT funding specifically starts 2019-11-27 (BTC 2019-09-10); negligible
+      ~2.5 month BTC-only sub-window at the start of this era.
+  - era_id: era_2024_burned
+    range: ["2024-01-01", "2024-11-30"]
+    feeds_available: [ohlcv, fear_greed, funding_rate]
+    note: matches burned_ranges above (already used in prior walk-forward).
+  - era_id: era_2024_2025_walk_forward_extension
+    range: ["2024-12-01", "2025-12-31"]
+    feeds_available: [ohlcv, fear_greed, funding_rate]
+    note: matches walk_forward_extension above.
+  - era_id: era_2026_holdout
+    range: ["2026-01-01", "2026-06-30"]
+    feeds_available: [ohlcv, fear_greed, funding_rate]
+    note: matches holdout_range above. FROZEN — same holdout rules apply.
+
 holdout_consumed_by: []
+
+# Improvement 06: holdout enforcement rules
+# holdout_consumed_by: list of hypothesis_ids that have spent the single holdout evaluation.
+# A hypothesis_id appearing here MUST NOT be evaluated again; second attempt is a hard refusal.
+# The orchestrator checks this list BEFORE running holdout_evaluation for any promoted hypothesis.
+# holdout_failure_is_terminal: if status=fail in holdout_result.yaml, no further promotion path exists.
+holdout_failure_is_terminal: true
+
+# Single-use rule: update `holdout_consumed_by` list when holdout_evaluation completes.
+# The orchestrator writes back the hypothesis_id here.

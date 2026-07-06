@@ -94,7 +94,7 @@ class ConfigDrivenRegimeEngine:
         return all(len(h) >= self.lookback for h in self._history.values())
 
     def get_required_periods(self) -> int:
-        return max(c.get_required_periods() for c in self._components.values())
+        return max((c.get_required_periods() for c in self._components.values()), default=0)
 
     # ------------------------------------------------------------------
     def classify(self) -> Tuple[MarketRegime, Dict[str, Any]]:

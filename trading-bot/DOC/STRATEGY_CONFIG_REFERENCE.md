@@ -6,7 +6,9 @@ Schema and behavior owned by `regime_engine.py`, `strategy_engine.py`, `registry
 ```json
 {
   "regime_detector": { ... },   // → ConfigDrivenRegimeEngine
-  "strategies":      { ... }    // → ConfigDrivenStrategyEngine
+  "strategies":      { ... },   // → ConfigDrivenStrategyEngine
+  "aux_feeds":       [ ... ]    // optional — non-OHLCV columns to merge onto the bar
+                                //   DataFrame before any component sees it. See §4a.
 }
 ```
 
@@ -174,6 +176,32 @@ All expose `raw_value()`; usable in both engines. `params` defaults in parenthes
 | `PriceOverextensionHedgeComponent` | period(21), scaling_factor(2.0) | contrarian z-score vs EMA | period |
 | `VolumeExpansionHedgeComponent` | vol_period(24), scaling_factor(20.0) | volume-expansion hedge | vol+1 |
 | `VolatilityFromStdDevComponent` | vol_period(20), scaling_factor(1.0) | returns stdev % | vol_period |
+
+### Structural / sentiment alpha (non-OHLCV — REQUIRE `aux_feeds`, see §4a)
+| Class | params | Output | Req |
+|---|---|---|---|
+| `FundingRateMeanReversionComponent` | threshold(0.001), scaling_factor(10.0) | −sign(funding_rate)×sf at 8h settlement bars (UTC hour%8==0); 0 elsewhere. `threshold=0.0` fires at EVERY settlement bar regardless of magnitude (continuous variant) instead of only extremes | 2 |
+| `FearGreedContrarianComponent` | fear_threshold(25.0), greed_threshold(75.0), scaling_factor(10.0) | +sf if prior day's F&G < fear_threshold, −sf if > greed_threshold, else 0; fires only at UTC-midnight boundary bars | 2 |
+
+Both force `standardized_forecast: false` internally (constructor default override) —
+do not add a `standardized_forecast: true` param expecting it to take effect.
+
+#### §4a. `aux_feeds` (top-level config key)
+Required whenever a component reads a column that isn't in the raw OHLCV bar DataFrame.
+Recognized values today: `"funding_rate"` (merges a `funding_rate` column, backward
+as-of join — `FundingRateMeanReversionComponent` requires this), `"fear_greed"`
+(merges a `fear_greed` column, **with a +1 day shift already applied** for point-in-time
+correctness per A8.4 — `FearGreedContrarianComponent` requires this). Unrecognized
+names are silently ignored (no error) by both `prescreen_signal.py._merge_aux_feeds()`
+and `data_manager.py`'s live equivalent — double check the spelling.
+```json
+"aux_feeds": ["fear_greed"]
+```
+A hypothesis needing funding rate or Fear & Greed is achievable via config ALONE
+(existing components + `aux_feeds`) — this is NOT a component_gap. See run_041
+(`H-041-A`, `strategy-research/runs/run_041/`) and run_042 (`H-041-C`,
+`strategy-research/runs/run_042/artifacts/candidate_strategy_config.json`) for
+working reference configs.
 
 ### Component variant patterns
 

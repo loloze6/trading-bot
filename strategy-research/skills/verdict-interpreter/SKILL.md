@@ -45,6 +45,8 @@ a refined brief that fixes the identified failure, or a final decision to kill o
                             # keltner_breakout). Used for circuit-breaker family tracking.
 - altitude_justification    # one sentence citing the specific diagnostic value that drove
                             # the altitude choice (required; do not omit).
+- root_cause                # IMPROVEMENT 01: structured causal explanation (see section below).
+                            # Required for all non-promote verdicts.
 - trade_attribution         # Step 03: required when trade_diagnostics.json is available
                             # (see STEP 03 — Trade Attribution section below).
 
@@ -128,6 +130,72 @@ YAML formatting rule — applies to ALL string values in all artifacts:
 - List items (- items) that contain colons MUST be quoted: `- "key: value"` not `- key: value`
 - This rule applies even inside nested mappings and multi-line values.
 - Violation causes a YAML parse error that halts the pipeline.
+
+## IMPROVEMENT 01 — Structured Root Cause (replaces free-text root_cause)
+
+For every verdict that is NOT `promote`, populate a `root_cause` block:
+
+```yaml
+root_cause:
+  mechanism_failure: <enum value — see table below>
+  supporting_evidence: <must cite specific field names from protocol_result.yaml or trade_diagnostics.json>
+  confidence: <high | medium | low>
+```
+
+### mechanism_failure enum — choose the FIRST matching value
+
+| Diagnostic trigger | mechanism_failure to assign | Notes |
+|---|---|---|
+| `weak_signal` rule fires (corr < 0.03) | `already_priced_in`, `no_informational_content_this_venue`, or `edge_arbitraged_away` | Distinguish using `edge_source.category` from hypothesis_card: if category = `persistent_behavioral_bias` on a mature venue, prefer `already_priced_in`; if the signal is asset-specific, `no_informational_content_this_venue`; if a once-structural edge has degraded, `edge_arbitraged_away` |
+| `cost_drag` rule fires (cost_drag > 80%) | `signal_real_but_subscale_vs_costs` | FIRST confirm `forecast_return_corr > 0` — if correlation is also negative, the root cause is `already_priced_in`, not cost drag. Cost drag only applies when the signal direction is correct. |
+| `signal_inversion` rule fires (corr < -0.03) | `entry_exit_execution_gap` or `already_priced_in` | Check trade_diagnostics.json MAE/MFE first. If losers have large favorable post-exit moves (`post_exit_return_20bars > 0`) on a winning entry direction, root cause is `entry_exit_execution_gap`. Otherwise `already_priced_in`. |
+| `regime_uninformative` rule fires | `regime_misattribution` or `lag_mismatch_to_regime_persistence` | MUST consult `regime_detector_report.yaml` (Improvement 02). If detector_confidence is low/medium → `regime_misattribution`. If detector_confidence is high AND regime label is valid but forward_return_mean near zero → `lag_mismatch_to_regime_persistence`. |
+| `parameter_exhausted` (same parameter tried 2×) | `edge_arbitraged_away` or `insufficient_sample_inconclusive` | If total trade count ≥ 30, prefer `edge_arbitraged_away`. If total trade count < 30, prefer `insufficient_sample_inconclusive`. |
+| Trade attribution `primary_weakness = holding_sizing` | `signal_real_but_subscale_vs_costs` OR `entry_exit_execution_gap` | Check: is per_trade_expectancy negative because of outsized losses (→ `entry_exit_execution_gap`) or because gross edge is too small (→ `signal_real_but_subscale_vs_costs`)? |
+| Trade attribution `primary_weakness = entry` or `exit` | `entry_exit_execution_gap` | Execution problem; do not discard signal. |
+| Trade attribution `primary_weakness = signal_direction` | `already_priced_in` | Signal itself is wrong. |
+| Indicator does not suit this asset's flow dynamics | `indicator_incompatible_with_asset_flow` | Applies when an indicator designed for equities (e.g., MACD) shows consistent misalignment with crypto perpetual behavior; note in campaign_knowledge_base. |
+| Diagnostics show `active_n_bars=0` combined with a nonzero `component_error_count`/`component_error_sample` (protocol_result.yaml, if a full backtest ran despite errors), OR any other clear engine/config-level fault (not a signal-quality or sample-size question) | `component_execution_error` | F6 (2026-07-04). This is an engineering failure, not a research finding — do NOT map it to `already_priced_in`, `insufficient_sample_inconclusive`, or any other signal-quality/power category. `status` should still be set descriptively (e.g. `refine`), but see the prescribed action below: the orchestrator's circuit breaker treats this mechanism_failure as an absolute stop regardless of `status` — it will never be silently upgraded into pivot/escalate/kill. NOTE: `no_signal_artifact` at the prescreen stage (F5c) is intercepted by the orchestrator BEFORE verdict_interpreter ever runs — you should not normally need this value for a prescreen kill. It exists for the rarer case where a FULL backtest ran (prescreen passed) but diagnostics still show a component/engine fault. |
+
+### mechanism_failure → prescribed action
+
+| mechanism_failure | Prescribed next action | Notes |
+|---|---|---|
+| `already_priced_in` | pivot to a different `edge_source.category` | Do NOT retry price_volume_only variants within the same category |
+| `lag_mismatch_to_regime_persistence` | refine (altitude 1) — adjust lookback/threshold | Parameter problem, not signal problem |
+| `no_informational_content_this_venue` | **Wishlist note only** — record "this mechanism requires a venue with property X" in findings_carryover.yaml notes. Do NOT generate an executable escalation_request until multi-venue infrastructure exists (A1.4). Route as `pivot` to a different mechanism/asset class, not `escalate`. | Until cross-venue feeds exist, "different venue" is not an executable target |
+| `signal_real_but_subscale_vs_costs` | refine — raise `threshold_filter min_abs` (fewer, higher-conviction trades → longer avg holding → better edge/cost ratio). **Do NOT prescribe "lower-fee venue" as an escalation target** — multi-venue execution does not exist (A1.4). If cost hurdle is structurally unbeatable on current venues, route as `pivot` to a different signal class, not `escalate`. | Do NOT pivot signal; direction is correct. Venue prescription is wishlist-only. |
+| `indicator_incompatible_with_asset_flow` | pivot family entirely; exclude this indicator category for this asset going forward | Feed to campaign_knowledge_base (Improvement 05) |
+| `component_execution_error` | STOP — do not spawn a new run, do not record a trial or KB finding, do not mark the family failed. Human fixes the component/config, then re-runs fresh. | F6: the orchestrator enforces this as an absolute circuit-breaker override — see ORCHESTRATOR NOTE below |
+| `entry_exit_execution_gap` | refine at execution layer only — do NOT discard the signal | Per Improvement 03; altitude 1 only |
+| `regime_misattribution` | STOP — do not spawn new run; route to regime-auditor for investigation | See ORCHESTRATOR NOTE below |
+| `edge_arbitraged_away` | pivot category; record in campaign_knowledge_base as known-competed mechanism | |
+| `insufficient_sample_inconclusive` | do NOT kill; flag for extended protocol or more windows before final verdict | |
+
+### ORCHESTRATOR NOTE — `regime_misattribution` routing
+
+When `root_cause.mechanism_failure = regime_misattribution`:
+- The orchestrator will pause the pipeline and route to regime-auditor before spawning any next run.
+- Your job: set `status = refine` (not kill/pivot) and cite the detector confidence value and the
+  regime label in `altitude_justification`.
+- Do NOT escalate or kill on regime_misattribution — regime attribution is an instrumentation
+  problem, not a hypothesis-level failure. Fix the measurement before re-evaluating the signal.
+- Per A2.3 standing policy: if the regime auditor confirms the detector is unusable, the 
+  orchestrator will switch to ungated-only generation for this symbol/timeframe. Your verdict
+  should recommend ungated reformulation of the hypothesis.
+
+### `supporting_evidence` format rule
+
+Must cite at least one field name from `protocol_result.yaml` or `trade_diagnostics.json`:
+```yaml
+# GOOD
+supporting_evidence: "forecast_return_corr=0.012 (p=0.71); n_trades_total=47; 
+  cost_drag_pct=31% — signal direction roughly right but correlation indistinguishable 
+  from zero across 22 windows."
+
+# BAD — restates verdict without citing a field
+supporting_evidence: "The signal does not predict returns well."
+```
 
 ## Altitude decision logic
 
@@ -480,6 +548,19 @@ Until a trustworthy detector (confidence: high from regime-auditor) is in place,
 When the handoff contains `prescreen_route` (set by the orchestrator when signal_prescreen
 killed this run before a full backtest), the protocol_result.yaml is a **prescreen stub**,
 NOT a full backtest result. Act accordingly:
+
+### F5c — no_signal_artifact never reaches this skill
+
+`prescreen_route: no_signal_artifact` (active_n_bars=0, or a pervasive component-error
+rate — see `component_error_count`/`component_error_sample` in `prescreen_result.yaml`)
+is intercepted by the orchestrator BEFORE this stage (`determine_post_prescreen_route`
+returns `human_pause` directly, no `protocol_result.yaml` stub is created). You should
+never see this route in a normal invocation. If you somehow receive a handoff with
+`prescreen_route: no_signal_artifact` anyway (e.g. a manual/direct invocation bypassing
+the orchestrator), do NOT interpret it as `kill_no_ic` or any other scientific verdict —
+this is an engineering failure (a component never emitted a signal, or errored on every
+bar), not evidence about the hypothesis. Do not write `verdict_interpretation.yaml` at
+all; state plainly that this run requires human engineering triage, not interpretation.
 
 ### Detecting a prescreen kill
 

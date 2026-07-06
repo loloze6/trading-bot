@@ -12,11 +12,26 @@ required_inputs:
     reason: full history of all runs, families tried, diagnostics across all iterations
   - path: artifacts/research_brief.yaml
     reason: the original research question to compare against current search direction
+  - path: ../../campaign_knowledge_base.yaml
+    reason: >
+      A5.1-5.3: durable KB of all tested mechanisms, power-parked hypotheses, and
+      exhausted cells. Must be read before any continue/reframe/terminate decision.
+      Required to answer the three KB questions below.
 deliverables:
   - campaign_review.yaml
 constraints:
   - Do not recommend terminate with fewer than 3 instruments tried AND 1 component built.
   - Cite specific diagnostic values from diagnostics_log, not general impressions.
   - If recommendation is reframe, next_research_question must be a complete research_brief.
+  - >
+    KB GATE — before any recommendation, answer these three questions using
+    campaign_knowledge_base.yaml (answers must appear in campaign_review.yaml):
+    (1) UNTESTED CELLS: Which mechanism × venue × timeframe cells in coverage_matrix
+        have not been tested and are worth trying? List them.
+    (2) EXHAUSTED CELLS FORBIDDEN: Which cells are in exhausted_mechanisms?
+        Must not propose any mechanism in that list.
+    (3) COMBINATION CANDIDATES: Are any power-parked findings (outcome=inconclusive)
+        combinable — e.g., two signals whose joint activation rate meets the power floor?
+        List any credible combinations.
 stop_conditions:
   - All reasonable options exhausted → recommendation: terminate with full evidence.

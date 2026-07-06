@@ -1,0 +1,50 @@
+# Available feeds — auto-derivable from the trading-bot FEED_REGISTRY.
+# This file constrains which evidence_type values are testable TODAY.
+# Anything outside this list requires requires_new_feed tagging and goes
+# to feed_wishlist.yaml rather than the run queue.
+#
+# Maintained by: Improvement 01 / A1.2
+# Update this file when a new feed is wired into the trading-bot engine.
+
+version: "1.0"
+created_at: "2026-07-03"
+
+available:
+  - evidence_type: price_volume_only
+    description: "OHLCV candle data: open, high, low, close, volume — standard Binance 1h candles"
+    feed_name: binance_ohlcv
+    notes: "All components using price/volume ratios, candle body analysis, ATR, RSI, SMA, EMA, Keltner derive from this feed."
+
+  - evidence_type: funding_open_interest
+    description: "Binance perpetual funding rate (8h settlement). Not OI — OI is not wired."
+    feed_name: binance_funding_rate
+    notes: >
+      The funding rate feed exists and is ingested by FundingRateComponent (if present in the bot).
+      Open interest is NOT currently available — tag any OI-dependent hypothesis as requires_new_feed.
+      This evidence_type also satisfies innovation-expansion's 'at least one non-price_volume_only' rule.
+
+  - evidence_type: fear_and_greed
+    description: "Alternative.me Crypto Fear & Greed Index (daily, 0–100)"
+    feed_name: alternative_me_fng
+    notes: >
+      Daily resolution only — mismatched to 1h candles. The skill must flag
+      that a Fear & Greed signal must be aligned to daily bars or forward-filled
+      to 1h with explicit staleness. Suitable for regime-level context, not
+      tick-level entry signals.
+
+unavailable:
+  - evidence_type: order_book
+    description: "Depth-of-market: bid/ask levels, imbalance, spread"
+    route: feed_wishlist
+  - evidence_type: liquidation_data
+    description: "Per-exchange liquidation events, heatmaps"
+    route: feed_wishlist
+  - evidence_type: cross_exchange
+    description: "Cross-venue basis, lead-lag between spot/perp/futures"
+    route: feed_wishlist
+  - evidence_type: on_chain
+    description: "Blockchain flow data: exchange inflows, whale wallets, NVT"
+    route: feed_wishlist
+  - evidence_type: options_flow
+    description: "Options gamma, put/call ratio, IV surface"
+    route: feed_wishlist

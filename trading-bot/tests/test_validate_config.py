@@ -1,0 +1,179 @@
+"""
+F1 (P1a shakedown, 2026-07-04) regression tests for tools/validate_config.py.
+
+Covers:
+- The actual run_043 (attempt 1) failure fixture: an invented regime name ("active")
+  outside the four-value enum, produced by backtest_specification when it tried to
+  build an "always active" config via a dummy always-true rule. VIOLATION V7 already
+  caught this correctly — this is a non-regression check, not a new fix.
+- V9 fix: the previous version only ever forbade default_regime="trending", and did so
+  UNCONDITIONALLY (even with regime_detector.rules=[], where there is no gate to
+  bypass — the rule's own stated rationale). This left mean_reversion/chop unchecked
+  in the genuine bypass case (rules non-empty), and incorrectly rejected the fully-
+  ungated canonical pattern for "trending" specifically. Both gaps are closed by
+  conditioning the check on `rules` being non-empty and covering all three names.
+- V10 (new): a fully-ungated regime_detector (components=[] and rules=[]) must not
+  point default_regime at a null strategies.regimes entry — that combination silently
+  forecasts 0.0 on every bar forever.
+"""
+import json
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).parent.parent
+REPO_ROOT = PROJECT_ROOT.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from tools.validate_config import validate
+
+_RUN_043_ATTEMPT_1_CONFIG = (
+    REPO_ROOT / "strategy-research" / "runs" / "run_043" / "attempt_1_blocked"
+    / "candidate_strategy_config.json"
+)
+
+
+def _minimal_config(regime_detector: dict, regimes: dict) -> dict:
+    return {"regime_detector": regime_detector, "strategies": {"warmup": 25, "regimes": regimes}}
+
+
+EMA = {
+    "id": "ema_spread",
+    "class": "strategies.strategy_components.EMASpreadComponent",
+    "weight": 1.0,
+    "transforms": [{"op": "identity"}],
+    "params": {"fast_period": 9, "slow_period": 21, "scaling_factor": 5.0},
+}
+
+
+# ---------------------------------------------------------------------------
+# Non-regression: the actual run_043 attempt-1 failure fixture
+# ---------------------------------------------------------------------------
+
+def test_run_043_attempt_1_invented_regime_name_is_still_rejected():
+    """Non-regression: V7 must still catch the invented 'active' regime name that
+    caused run_043's first blocker (2026-07-04). This test does not depend on F1's
+    fixes — it documents that the pre-existing V7 check already worked correctly and
+    must keep working after the V9/V10 changes above."""
+    if not _RUN_043_ATTEMPT_1_CONFIG.exists():
+        import pytest
+        pytest.skip("run_043 attempt_1_blocked fixture not present on disk")
+
+    with open(_RUN_043_ATTEMPT_1_CONFIG) as f:
+        config = json.load(f)
+
+    violations = validate(config)
+    assert any("VIOLATION V7" in v and "active" in v for v in violations), (
+        f"Expected VIOLATION V7 citing the invented regime name 'active'; got: {violations}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# V9 fix: gate-bypass check now conditioned on rules being non-empty, and covers
+# mean_reversion/chop as well as trending.
+# ---------------------------------------------------------------------------
+
+def _gated_config(default_regime: str) -> dict:
+    """A REAL gate exists here (rules is non-empty) — aliasing default_regime to one
+    of the gated regime names is a genuine bypass and must be forbidden."""
+    return _minimal_config(
+        regime_detector={
+            "mode": "threshold_rules",
+            "components": [{"id": "er", "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent"}],
+            "rules": [{"regime": "trending", "any_of": [[{"id": "er", "op": "gte", "value": 0.5}]]}],
+            "default_regime": default_regime,
+        },
+        regimes={"trending": {"components": [EMA]}, "mean_reversion": {"components": [EMA]},
+                 "chop": {"components": [EMA]}, "unknown": None},
+    )
+
+
+def test_v9_still_forbids_trending_default_when_gated():
+    violations = validate(_gated_config("trending"))
+    assert any("VIOLATION V9" in v for v in violations)
+
+
+def test_v9_now_forbids_mean_reversion_default_when_gated():
+    """This is the actual gap: the OLD V9 only checked '== \"trending\"' and would have
+    silently let this through despite it being exactly the gate-bypass V9 exists to
+    prevent (bars that fail the 'trending' rule get classified as mean_reversion and
+    traded unconditionally)."""
+    violations = validate(_gated_config("mean_reversion"))
+    assert any("VIOLATION V9" in v for v in violations), (
+        "V9 did not fire for default_regime='mean_reversion' with non-empty rules — "
+        "the gate-bypass gap this fix was meant to close is still open."
+    )
+
+
+def test_v9_now_forbids_chop_default_when_gated():
+    violations = validate(_gated_config("chop"))
+    assert any("VIOLATION V9" in v for v in violations)
+
+
+def test_v9_permits_unknown_default_when_gated():
+    violations = validate(_gated_config("unknown"))
+    assert not any("VIOLATION V9" in v for v in violations)
+
+
+def _ungated_pattern_a_config(default_regime: str) -> dict:
+    regimes = {"trending": None, "mean_reversion": None, "chop": None, "unknown": None}
+    regimes[default_regime] = {"components": [EMA]}
+    return _minimal_config(
+        regime_detector={
+            "mode": "threshold_rules", "components": [], "rules": [],
+            "default_regime": default_regime,
+        },
+        regimes=regimes,
+    )
+
+
+def test_v9_no_longer_blocks_trending_default_when_fully_ungated():
+    """The other half of the gap: the OLD V9 rejected default_regime='trending'
+    UNCONDITIONALLY, even here, where regime_detector.rules=[] means there is no gate
+    to bypass at all (V9's own stated rationale does not apply). This is exactly the
+    canonical fully-ungated pattern from
+    tests/test_ungated_config_pattern.py::test_pattern_a_unknown_is_the_unique_warmup_safe_choice."""
+    violations = validate(_ungated_pattern_a_config("trending"))
+    assert not any("VIOLATION V9" in v for v in violations), (
+        f"V9 incorrectly fired for a fully-ungated config (rules=[]): {violations}"
+    )
+
+
+def test_v9_permits_mean_reversion_and_chop_default_when_fully_ungated():
+    for name in ("mean_reversion", "chop", "unknown"):
+        violations = validate(_ungated_pattern_a_config(name))
+        assert not any("VIOLATION V9" in v for v in violations), f"{name}: {violations}"
+
+
+# ---------------------------------------------------------------------------
+# V10 (new): fully-ungated config must not point default_regime at a null block
+# ---------------------------------------------------------------------------
+
+def test_v10_flags_dead_ungated_config():
+    """components=[] and rules=[] means EVERY bar resolves to default_regime — if that
+    key's strategies.regimes block is null, the config forecasts 0.0 forever with no
+    error anywhere. This is the concrete mistake risk in authoring the canonical
+    pattern (moving default_regime without moving its components block)."""
+    config = _minimal_config(
+        regime_detector={
+            "mode": "threshold_rules", "components": [], "rules": [],
+            "default_regime": "mean_reversion",
+        },
+        regimes={"trending": None, "mean_reversion": None, "chop": None, "unknown": None},
+    )
+    violations = validate(config)
+    assert any("VIOLATION V10" in v for v in violations), (
+        f"Expected VIOLATION V10 for a dead fully-ungated config; got: {violations}"
+    )
+
+
+def test_v10_permits_correctly_populated_fully_ungated_config():
+    for name in ("trending", "mean_reversion", "chop", "unknown"):
+        violations = validate(_ungated_pattern_a_config(name))
+        assert not any("VIOLATION V10" in v for v in violations), f"{name}: {violations}"
+
+
+def test_v10_does_not_fire_for_gated_configs():
+    """V10 only applies to the components=[]/rules=[] signature — a normal gated
+    config with a null default_regime='unknown' block must not be flagged."""
+    violations = validate(_gated_config("unknown"))
+    assert not any("VIOLATION V10" in v for v in violations)

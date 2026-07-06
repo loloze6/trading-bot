@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Indicator Library",
+  "description": "Improvement 04: domain-knowledge library of indicator classes with regime affinity, crowding risk, and edge_source compatibility. campaign_empirical_results populated via KB (Improvement 05).",
+  "type": "object",
+  "required": ["indicators"],
+  "properties": {
+    "indicators": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "category",
+          "known_regime_affinity",
+          "typical_lag_bars",
+          "crowding_risk",
+          "data_requirements",
+          "edge_source_compatibility",
+          "campaign_empirical_results",
+          "notes"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "category": {
+            "type": "string",
+            "enum": [
+              "oscillator",
+              "trend_following",
+              "volatility",
+              "volume_flow",
+              "order_book_imbalance",
+              "sentiment",
+              "structural_rate"
+            ]
+          },
+          "known_regime_affinity": {
+            "type": "object",
+            "required": ["trending", "ranging", "high_vol"],
+            "properties": {
+              "trending": { "type": "string", "enum": ["favorable", "unfavorable", "neutral"] },
+              "ranging":  { "type": "string", "enum": ["favorable", "unfavorable", "neutral"] },
+              "high_vol": { "type": "string", "enum": ["favorable", "unfavorable", "neutral"] }
+            },
+            "additionalProperties": false
+          },
+          "typical_lag_bars": { "type": "string" },
+          "crowding_risk": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
+          "data_requirements": {
+            "type": "string",
+            "enum": [
+              "ohlcv_only",
+              "funding_open_interest",
+              "fear_and_greed",
+              "order_book",
+              "liquidation",
+              "cross_exchange"
+            ]
+          },
+          "edge_source_compatibility": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "information_asymmetry",
+                "structural_forced_flow",
+                "liquidity_provision",
+                "cross_venue_dislocation",
+                "persistent_behavioral_bias"
+              ]
+            },
+            "minItems": 1
+          },
+          "campaign_empirical_results": {
+            "type": "array",
+            "description": "Populated via campaign_knowledge_base.yaml (Improvement 05). Do NOT write directly.",
+            "items": {
+              "type": "object",
+              "required": ["symbol_timeframe", "regime_tested", "outcome", "run_id"],
+              "properties": {
+                "symbol_timeframe": { "type": "string" },
+                "regime_tested": { "type": "string" },
+                "outcome": {
+                  "type": "string",
+                  "enum": ["promising", "failed", "inconclusive", "parked"]
+                },
+                "run_id": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

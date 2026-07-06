@@ -1,0 +1,43 @@
+hypothesis_id: "H-XXX"
+thesis: "<one-sentence claim about why this strategy should have edge>"
+rationale: "<market microstructure or behavioral reason supporting the thesis>"
+
+edge_source:
+  category: "<information_asymmetry | structural_forced_flow | liquidity_provision | cross_venue_dislocation | persistent_behavioral_bias>"
+  specific_mechanism: "<1-2 sentences naming the causal chain AND a measurable proxy in an available feed — see A1.3>"
+  why_not_arbitraged: "<why this edge persists despite being exploitable>"
+  evidence_type: "<price_volume_only | funding_open_interest | fear_and_greed | order_book | liquidation_data | cross_exchange | on_chain | options_flow | other_external>"
+  measurable_proxy: "<the specific observable from an available feed that differs if mechanism is real vs absent>"
+  # requires_new_feed: "<feed_name>"  # uncomment and set if evidence_type is not in available_feeds.yaml
+
+signal_concept: "<pseudo-formula or plain-English description of the signal — must follow from measurable_proxy>"
+target_market: "<symbol; ungated — no regime condition per A2.3>"
+timeframe: "1h"
+assumptions:
+  - "<falsifiable assumption 1>"
+  - "<falsifiable assumption 2>"
+expected_failure_modes:
+  - "<failure mode 1>"
+  - "<failure mode 2>"
+  - "<failure mode 3>"
+
+# Improvement 04: indicator library lookup result — required before finalizing signal_concept
+library_lookup:
+  indicator_id: null              # id from config/indicator_library.yaml
+  regime_affinity_for_target: null  # favorable | unfavorable | neutral
+  affinity_justification: "n/a"  # required if unfavorable
+  prior_campaign_failures: []     # [{run_id, mechanism_tried}] if any
+  crowding_risk: null             # low | medium | high (from library)
+  crowding_deviation_justification: "n/a"  # required if high and no less-crowded alternative used
+
+# A8.6: a-priori power parameters — required for automated power check before prescreen
+power_parameters:
+  activation_rate: null       # fraction of TIMEFRAME BARS where signal fires
+                              # For daily signals on 1h bar data: activation_rate = daily_rate / 24
+                              # e.g. F&G extreme 21.8% of days → 0.218/24 ≈ 0.009 per 1h bar
+  plausible_ic_upper: null    # literature upper bound for IC in this signal class (e.g. 0.15)
+  n_bars: 17520               # bars per symbol in test window (2 years × 8760 = 17520 at 1h)
+  n_symbols: 2                # symbols tested (BTC+ETH default)
+  is_market_wide: false       # true if signal is a single index (e.g. F&G, VIX) — correlated returns
+                              # when true: n_symbols_effective = sqrt(n_symbols), not n_symbols
+  data_requirement: null      # stated data extension needed if power is insufficient

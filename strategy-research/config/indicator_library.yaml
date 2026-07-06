@@ -1,0 +1,320 @@
+# indicator_library.yaml
+# Improvement 04 — Indicator Knowledge Library
+# Domain-knowledge seed. campaign_empirical_results entries are populated via
+# the KB (campaign_knowledge_base.yaml) — this file is an indicator-indexed
+# read-view over that data, not a separately maintained store.
+#
+# Schema: schemas/indicator_library.schema.json
+# Version: 1.0  Created: 2026-07-04
+#
+# Vocab:
+#   category: oscillator | trend_following | volatility | volume_flow |
+#             order_book_imbalance | sentiment | structural_rate
+#   known_regime_affinity: favorable | unfavorable | neutral
+#   crowding_risk: low | medium | high
+#   data_requirements: ohlcv_only | funding_open_interest | fear_and_greed |
+#                      order_book | liquidation | cross_exchange
+#   edge_source_compatibility: information_asymmetry | structural_forced_flow |
+#     liquidity_provision | cross_venue_dislocation | persistent_behavioral_bias
+
+indicators:
+
+  # ---------------------------------------------------------------------------
+  # OSCILLATORS — mean-reversion signals based on overbought/oversold conditions
+  # ---------------------------------------------------------------------------
+
+  - id: rsi_mean_reversion
+    category: oscillator
+    known_regime_affinity:
+      trending: unfavorable   # strong trend overrides mean-reversion; signal fires against momentum
+      ranging: favorable      # price oscillates within bands; oversold/overbought are predictive
+      high_vol: neutral       # extreme readings may deepen before reversing; inconclusive
+    typical_lag_bars: "medium (2–8 bars at 1h)"
+    crowding_risk: high       # RSI extremes are universally watched; arbitrage is fast
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - persistent_behavioral_bias  # overreaction / disposition bias → reversion
+    campaign_empirical_results: []
+    notes: >
+      Textbook mean-reversion indicator. High crowding risk on liquid crypto pairs —
+      RSI extremes are typically resolved quickly by other participants. Most reliable
+      in low-volatility, range-bound regimes. Parameter sweep (periods 7–21) unlikely
+      to uncover edge that pure RSI timing missed.
+
+  - id: rsi_momentum
+    category: oscillator
+    known_regime_affinity:
+      trending: favorable     # RSI staying above 50 (momentum mode) tracks strong trends
+      ranging: unfavorable    # momentum signal whipsaws in sideways markets
+      high_vol: neutral
+    typical_lag_bars: "medium (2–6 bars at 1h)"
+    crowding_risk: high
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - persistent_behavioral_bias  # herding / trend-following behavior
+    campaign_empirical_results: []
+    notes: >
+      RSI used as a momentum filter (RSI > 50 = bullish bias) rather than as an
+      overbought/oversold signal. Reduces whipsaw in trending regimes. Still high
+      crowding — RSI momentum is standard practice for retail algo traders.
+
+  - id: stochastic_oscillator
+    category: oscillator
+    known_regime_affinity:
+      trending: unfavorable
+      ranging: favorable
+      high_vol: unfavorable   # extremes can persist for many bars under volatility spikes
+    typical_lag_bars: "medium (3–10 bars at 1h)"
+    crowding_risk: high
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - persistent_behavioral_bias
+    campaign_empirical_results: []
+    notes: >
+      Similar to RSI in behavior but uses high/low range. Less popular than RSI
+      among algo traders; marginally lower crowding but same structural weaknesses
+      in trending regimes.
+
+  # ---------------------------------------------------------------------------
+  # TREND-FOLLOWING — signals based on price direction / momentum
+  # ---------------------------------------------------------------------------
+
+  - id: moving_average_crossover
+    category: trend_following
+    known_regime_affinity:
+      trending: favorable     # captures sustained price momentum
+      ranging: unfavorable    # generates frequent false signals (whipsaw)
+      high_vol: unfavorable   # crossovers occur faster than they can be acted on
+    typical_lag_bars: "high (5–20+ bars depending on MA periods)"
+    crowding_risk: high       # most widely taught indicator; heavily arbitraged on liquid crypto
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - persistent_behavioral_bias  # herding, trend-following bias
+    campaign_empirical_results: []
+    notes: >
+      EMA/SMA crossover is the most widely known signal class. Extremely high crowding
+      on BTC/ETH 1h — any edge is competed away quickly. Long lag makes it sensitive
+      to regime changes. Prefer only when there is a structural reason for persistence
+      (e.g., forced rebalancing creating self-fulfilling momentum).
+
+  - id: keltner_channel_trend
+    category: trend_following
+    known_regime_affinity:
+      trending: favorable     # breakouts from channel predict continuation in trends
+      ranging: unfavorable    # channel breakouts reverse quickly in sideways markets
+      high_vol: unfavorable   # channel width expands; signal sparsity increases
+    typical_lag_bars: "medium (1–4 bars)"
+    crowding_risk: medium     # less universal than MA but still standard in crypto retail algos
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - persistent_behavioral_bias  # breakout herding / FOMO
+    campaign_empirical_results: []
+    notes: >
+      Keltner channels use ATR-based bands. Trend variant (breakout = continuation) is
+      regime-dependent: empirically in this campaign, ic_active_bars=-0.032 in TRENDING
+      labeled bars — no informational content even where detector says it should work.
+      See KB: keltner_breakout_inverted (signal_inversion) and keltner_mean_reversion_no_edge.
+
+  - id: keltner_channel_mean_reversion
+    category: oscillator
+    known_regime_affinity:
+      trending: unfavorable   # mean-reversion fires against strong trends; losses
+      ranging: favorable      # price returns to channel center reliably in sideways
+      high_vol: neutral
+    typical_lag_bars: "low (0–2 bars)"
+    crowding_risk: medium
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - persistent_behavioral_bias
+    campaign_empirical_results: []
+    notes: >
+      Mean-reversion variant of Keltner: buy at lower band, sell at upper band.
+      Campaign result: no edge observed, root cause is signal_quality not regime_availability.
+      Full-range prescreen (ic_active_bars=-0.032) shows zero informational content on
+      TRENDING-labeled bars. See KB meta-finding keltner_root_cause_reattribution.
+
+  - id: macd
+    category: trend_following
+    known_regime_affinity:
+      trending: favorable     # MACD histogram direction tracks momentum well
+      ranging: unfavorable    # generates oscillating signals with no net direction
+      high_vol: neutral
+    typical_lag_bars: "high (5–15 bars)"
+    crowding_risk: high
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - persistent_behavioral_bias
+    campaign_empirical_results: []
+    notes: >
+      Combines two EMAs plus a signal line. Very high crowding; widely used by
+      retail and algorithmic traders. Strong in persistent trends; severe whipsaw
+      in flat or ranging regimes.
+
+  # ---------------------------------------------------------------------------
+  # VOLATILITY — signals based on price spread / range
+  # ---------------------------------------------------------------------------
+
+  - id: bollinger_bands
+    category: volatility
+    known_regime_affinity:
+      trending: unfavorable   # bands expand during trends; mean-reversion trades fail
+      ranging: favorable      # price reliably touches and reverts from bands
+      high_vol: unfavorable   # bands widen dramatically; signal fires at extremes that deepen
+    typical_lag_bars: "low (1–3 bars)"
+    crowding_risk: high
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - persistent_behavioral_bias
+    campaign_empirical_results: []
+    notes: >
+      Bollinger Bands use a rolling SD for band width. Classic mean-reversion tool.
+      Very high crowding on crypto; pattern is universally known and competed away
+      quickly on liquid pairs. Similar regime-dependency to Keltner mean-reversion.
+
+  - id: atr_volatility_filter
+    category: volatility
+    known_regime_affinity:
+      trending: neutral       # ATR is a filter, not a directional signal
+      ranging: neutral
+      high_vol: neutral
+    typical_lag_bars: "low (1 bar)"
+    crowding_risk: low        # used as a position-sizing input, not a directional signal
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - structural_forced_flow    # ATR-based stops force mechanical exits → forced flow window
+      - persistent_behavioral_bias  # as a filter for behavioral signals
+    campaign_empirical_results: []
+    notes: >
+      ATR is primarily a sizing and stop-placement tool; not a standalone signal.
+      Low crowding risk as a signal because most use it for sizing only.
+      Useful as an execution-layer component (stop = k×ATR) per A8.2 methodology.
+
+  # ---------------------------------------------------------------------------
+  # VOLUME FLOW — signals based on volume and price-volume interaction
+  # ---------------------------------------------------------------------------
+
+  - id: volume_ratio_momentum
+    category: volume_flow
+    known_regime_affinity:
+      trending: favorable     # above-average volume confirms directional moves
+      ranging: neutral        # volume spikes in ranging markets are ambiguous
+      high_vol: unfavorable   # liquidation cascades dominate; mechanism impure
+    typical_lag_bars: "low (0–2 bars)"
+    crowding_risk: medium
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - persistent_behavioral_bias  # herding/FOMO creates high-volume continuation bars
+      - structural_forced_flow      # BUT liquidation-dominated high-volume bars predict reversal
+    campaign_empirical_results: []
+    notes: >
+      MECHANISM PURITY WARNING (A1.3, H-041-B): volume_ratio × body_fraction is
+      mechanism-impure — activates on both organic herding (→ continuation) and
+      liquidation cascades (→ mean-reversion). Requires liquidation feed to separate.
+      Until liquidation_data is available, any directional claim is inadmissible.
+      See feed_wishlist.yaml: liquidation_data. See KB: volume_impulse_continuation_blocked.
+
+  - id: on_balance_volume
+    category: volume_flow
+    known_regime_affinity:
+      trending: favorable     # OBV divergence anticipates trend reversals
+      ranging: neutral
+      high_vol: neutral
+    typical_lag_bars: "medium (3–10 bars)"
+    crowding_risk: medium
+    data_requirements: ohlcv_only
+    edge_source_compatibility:
+      - persistent_behavioral_bias
+      - information_asymmetry   # informed accumulation/distribution detectable in OBV
+    campaign_empirical_results: []
+    notes: >
+      OBV accumulates signed volume. Divergence from price is the classic signal.
+      Requires sustained momentum to work. Less crowded than price-only MA signals
+      but subject to same structural limitations at 1h crypto timeframe.
+
+  # ---------------------------------------------------------------------------
+  # STRUCTURAL RATE — signals from funding/open interest (non-price feeds)
+  # ---------------------------------------------------------------------------
+
+  - id: funding_rate_extreme
+    category: structural_rate
+    known_regime_affinity:
+      trending: neutral       # extremes can occur in any regime; mechanism is structural
+      ranging: neutral
+      high_vol: favorable     # high-vol periods coincide with leverage extremes
+    typical_lag_bars: "low (0–2 bars after settlement)"
+    crowding_risk: low        # requires non-OHLCV feed; less universally arbitraged
+    data_requirements: funding_open_interest
+    edge_source_compatibility:
+      - structural_forced_flow  # extreme funding → mechanical forced deleveraging
+    campaign_empirical_results: []
+    notes: >
+      Extreme funding rates (> |0.0002| on 1h) → longs/shorts forced to pay heavily
+      → deleveraging pressure → mean-reversion. Low crowding because fewer strategies
+      use funding data. Mechanism is structural (settlement mechanics), not behavioral.
+      Campaign result: parked_insufficient_sample (H-041-A, n_eff=10 at 2024-2025 window).
+      Activation requires 2020-2022 style funding extremes; 2024-2025 window was low-funding.
+
+  - id: open_interest_divergence
+    category: structural_rate
+    known_regime_affinity:
+      trending: favorable     # OI build-up in direction of trend signals conviction
+      ranging: neutral
+      high_vol: unfavorable   # rapid OI changes during volatility are hard to interpret
+    typical_lag_bars: "medium (1–4 bars)"
+    crowding_risk: low
+    data_requirements: funding_open_interest
+    edge_source_compatibility:
+      - structural_forced_flow
+      - information_asymmetry   # OI accumulation can signal informed positioning
+    campaign_empirical_results: []
+    notes: >
+      Open interest divergence from price can signal forced positioning or
+      informed accumulation. Low crowding; requires non-standard feed access.
+      Not yet tested in this campaign.
+
+  # ---------------------------------------------------------------------------
+  # SENTIMENT — signals from external behavioral/sentiment indices
+  # ---------------------------------------------------------------------------
+
+  - id: fear_greed_index_contrarian
+    category: sentiment
+    known_regime_affinity:
+      trending: neutral       # extreme fear in a bull trend may be a dip; directionally mixed
+      ranging: favorable      # sentiment extremes reliably mark turning points in sideways markets
+      high_vol: favorable     # extreme readings are common in high-vol; contrarian signal strongest
+    typical_lag_bars: "high (12–48 bars; daily signal, 1h execution)"
+    crowding_risk: medium     # daily publication makes it a shared signal; but sparse activation
+    data_requirements: fear_and_greed
+    edge_source_compatibility:
+      - persistent_behavioral_bias  # crowd fear/greed → overcrowded positioning → mean-reversion
+    campaign_empirical_results: []
+    notes: >
+      Fear & Greed Index: single market-wide daily index. IMPORTANT POWER NOTE (A8.6):
+      F&G is market-wide — BTC/ETH returns are correlated under the same signal.
+      n_eff_symbols = n / (1 + (n-1)*rho) ≈ 1.1 for 2 symbols at rho=0.82.
+      2024-2025 window: n_eff=13, insufficient_power_a_priori (mde=0.31 > plausible 0.15).
+      Reactivation requires 2018+ data (n_eff≈46). Campaign result: parked (H-041-C).
+      Feed timing: signal must fire only at daily 00:00 bar (A8.4 alignment check).
+
+  # ---------------------------------------------------------------------------
+  # ORDER BOOK — requires unavailable feed (reference only)
+  # ---------------------------------------------------------------------------
+
+  - id: order_book_imbalance
+    category: order_book_imbalance
+    known_regime_affinity:
+      trending: favorable     # large bid/ask imbalance predicts short-term direction
+      ranging: favorable      # microstructure edge present in both regimes
+      high_vol: unfavorable   # order book changes too rapidly; signal decays fast
+    typical_lag_bars: "very low (0–1 bars)"
+    crowding_risk: low        # requires L2 data; most retail strategies don't access it
+    data_requirements: order_book
+    edge_source_compatibility:
+      - information_asymmetry   # informed order flow detectable before price moves
+      - liquidity_provision
+    campaign_empirical_results: []
+    notes: >
+      UNAVAILABLE FEED: order_book is NOT in available_feeds.yaml. Any hypothesis
+      using this indicator must set requires_new_feed: order_book and route to
+      feed_wishlist.yaml. Do NOT enter run queue. Included here for completeness
+      and to pre-empt generation of order-book hypotheses.

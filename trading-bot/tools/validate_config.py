@@ -197,17 +197,55 @@ def validate(config: dict) -> List[str]:
                 f"VIOLATION V7 strategies.regimes.{rname}: regime name '{rname}' not in {sorted(_VALID_REGIMES)}"
             )
 
-    # V9: default_regime must not be "trending" in threshold_rules or score_product mode.
-    # Setting default_regime to an active trading regime bypasses the regime gate —
-    # every bar that fails the rules is still classified as that regime and traded.
+    # V9: default_regime must not alias a "real" trading regime (trending, mean_reversion,
+    # chop) WHILE rules is non-empty — that combination bypasses the regime gate: every bar
+    # that fails all the rules still gets classified as that regime and traded, silently
+    # defeating the gate's entire purpose.
+    #
+    # This restriction does NOT apply when rules == [] (and components == []): that is the
+    # canonical fully-ungated pattern (F1, 2026-07-04 — see
+    # tests/test_ungated_config_pattern.py and skills/backtest-engineering/SKILL.md
+    # "Ungated hypotheses" section). With no rules to bypass, default_regime is a pure,
+    # empirically-verified label with no behavioral effect — it may be any of the four
+    # valid names, including trending/mean_reversion/chop. Forbidding it unconditionally
+    # (the previous version of this check) blocked "trending" even in the fully-ungated
+    # case for no behavioral reason, while never actually checking "mean_reversion" or
+    # "chop" for the genuine bypass case this rule exists to prevent — both gaps are
+    # closed by conditioning on `rules`.
     mode = rd.get("mode", "threshold_rules")
     default_regime_val = rd.get("default_regime")
-    if mode in ("threshold_rules", "score_product") and default_regime_val == "trending":
+    rules_nonempty = bool(rd.get("rules"))
+    if (
+        mode in ("threshold_rules", "score_product")
+        and rules_nonempty
+        and default_regime_val in ("trending", "mean_reversion", "chop")
+    ):
         violations.append(
-            f"VIOLATION V9 regime_detector.default_regime: 'trending' is forbidden in mode '{mode}'. "
-            "Bars outside regime rules get classified as trending and traded, bypassing the gate. "
-            "Set default_regime to 'unknown'."
+            f"VIOLATION V9 regime_detector.default_regime: '{default_regime_val}' is forbidden "
+            f"in mode '{mode}' while regime_detector.rules is non-empty. Bars that fail every "
+            "rule still get classified as this regime and traded, bypassing the gate. Set "
+            "default_regime to 'unknown', or — if no rules/gate is intended at all — clear "
+            "regime_detector.rules and regime_detector.components entirely (fully-ungated "
+            "pattern; default_regime may then be any of the four valid names)."
         )
+
+    # V10: a declared fully-ungated regime_detector (components == [] AND rules == []) must
+    # not point default_regime at a null strategies.regimes entry — that combination is a
+    # "dead" config that forecasts 0.0 on every bar forever, with no error anywhere to say
+    # so. This is the concrete mistake the canonical ungated pattern must guard against
+    # (moving default_regime without moving the components block that goes with it).
+    fully_ungated = rd.get("components", []) == [] and rd.get("rules", []) == []
+    if fully_ungated and default_regime_val is not None:
+        strat_regimes = config["strategies"].get("regimes", {})
+        target_block = strat_regimes.get(default_regime_val)
+        if target_block is None:
+            violations.append(
+                f"VIOLATION V10 strategies.regimes.{default_regime_val}: regime_detector is "
+                "fully ungated (components=[] and rules=[]), so EVERY bar resolves to "
+                f"default_regime='{default_regime_val}' — but strategies.regimes.{default_regime_val} "
+                "is null or missing. This config forecasts 0.0 on every bar; move the real "
+                "components block to this key."
+            )
 
     # V8: every strategy-engine component has numeric weight; per-regime total > 0
     for rname, rcfg in config["strategies"].get("regimes", {}).items():

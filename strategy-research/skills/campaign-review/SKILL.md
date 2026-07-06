@@ -71,8 +71,43 @@ no_pattern:
   Recommendation: escalate_instrument or escalate_component to try a genuinely different
   search space.
 
+## Wishlist-gated recommendations (`detector_wishlist.yaml` / `feed_wishlist.yaml`)
+
+Both wishlists exist precisely because their contents are NOT yet actionable — each
+entry there was deliberately deferred behind an explicit trigger condition (e.g.
+`detector_wishlist.yaml`'s `trigger_condition`: build the first candidate only when
+(1) a confirmed ungated edge exists AND (2) Improvement 03 diagnostics show
+regime-dependent performance). Recommending a run that consumes a wishlist candidate
+BEFORE its trigger has fired quietly deletes the gate — it turns a deferred idea back
+into a live run queue item without the condition that justified deferring it ever
+having been satisfied.
+
+**Before citing a `detector_wishlist.yaml` or `feed_wishlist.yaml` entry in
+`recommendation_rationale` or `next_research_question`:**
+1. Read that wishlist file's `trigger_condition` (or per-entry trigger) field directly
+   — do not infer it from memory or from this skill's summary above.
+2. Check whether the trigger has actually fired, citing the specific campaign_state.yaml
+   or campaign_knowledge_base.yaml evidence that would need to exist for it to have
+   fired (e.g. a KB finding with `outcome` other than `no_edge_observed`/`inconclusive`/
+   `invalidated_artifact`, showing genuine ungated edge).
+3. If the trigger has NOT fired: do not set `recommendation: reframe` (or any
+   recommendation) that converts the wishlist entry into a run. Instead, record it as
+   **wishlist support** — a note that this campaign's evidence continues to support
+   deferring to that wishlist entry, without recommending it be run now. `recommendation`
+   in this case should be `continue` (or another value independently justified by the
+   diagnostics), never a reframe whose `next_research_question` targets the untriggered
+   wishlist family.
+4. If the trigger HAS fired: cite the exact evidence (finding id, outcome, KB values)
+   that satisfies it, in `recommendation_rationale`, before recommending the run.
+
+This applies even when the same wishlist family has already been suggested in a prior
+`campaign_review.yaml` — repetition does not substitute for the trigger firing.
+
 ## Checklist
 - Read ALL diagnostics_log entries, not just the latest.
+- If `recommendation_rationale` or `next_research_question` draws on a
+  `detector_wishlist.yaml`/`feed_wishlist.yaml` entry, check and cite its trigger
+  condition per the section above BEFORE recommending it as a run.
 - Compute the trend in forecast_return_corr across runs: improving / stable / worsening.
 - Compute the trend in cost_drag_pct: falling / stable / rising.
 - If same root cause across families: name it explicitly in pattern_evidence.
@@ -90,6 +125,12 @@ no_pattern:
 - Do NOT populate next_research_question when recommendation=continue. Populating it
   on a continue output causes the pipeline to treat it as a reframe and overwrite the
   next run's brief, ignoring the verdict_interpreter's recommendation entirely.
+- Do NOT recommend reframe (or any run) into a `detector_wishlist.yaml` or
+  `feed_wishlist.yaml` family whose trigger_condition has not fired. (2026-07-04:
+  this happened twice in the same campaign — both toward `daily_timeframe_er_overlay`
+  / ADX overlay, per detector_wishlist.yaml `trigger_condition.status: not_triggered`
+  at the time — see campaign_knowledge_base.yaml for the parked record.) Record it as
+  wishlist support instead; see "Wishlist-gated recommendations" above.
 
 ## Context rule
 Read campaign_state.yaml and research_brief.yaml only. Do not read individual run

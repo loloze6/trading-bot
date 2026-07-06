@@ -13,6 +13,7 @@
 4. [Skills](#4-skills)
 5. [Tools & Scripts](#5-tools--scripts)
 6. [Glossary](#6-glossary)
+7. [Acceptance Culture](#7-acceptance-culture)
 
 ---
 
@@ -38,26 +39,37 @@ It is built around three principles:
 [Human]  research_brief
             │
             ▼
-[Claude] hypothesis_generation
+[Claude] hypothesis_generation ◄── (reads indicator_library.yaml, available_feeds.yaml)
             │
             ▼
-[Claude] innovation_expansion
+[Claude] innovation_expansion ◄── (diversity check: ≥2 library categories or data_requirements)
             │
             ▼
-[Claude] validation_gate ──────────────────────────────────┐
-            │ approve                                        │ refine (≤2x)
-            │                         ┌──────────────────────▼──────────┐
-            │                         │     refinement_planner           │
-            │                         │       ↓                          │
-            │                         │   [back to innovation_expansion] │
-            │                         └──────────────────────────────────┘
+[Claude] validation_gate ──── A8.6 power check (deterministic, pre-build)
+            │ approve          │ insufficient_power_a_priori
+            │                  └──► completed_rejected (no component built)
+            │ refine (≤2x)
+            │   ↕
+            │  refinement_planner → innovation_expansion loop
+            │
             ▼
 [Claude] backtest_specification
             │ spec_ready
             ▼
-[Tool]   protocol_execution  (walk-forward backtest)
-            │
-            ▼
+[Tool]   signal_prescreen  ◄── A8.6 pre-flight (blocks if power insufficient)
+            │                   Computes active-bar IC, cost_check (A8.1: both required)
+            │                   Records trial in campaign_state.trial_sharpes (A6.2)
+     ┌──────┴──────────────────────┐
+     │ proceed_to_backtest         │ kill_* / refine_* routes
+     ▼                             ▼
+[Tool]   protocol_execution    [skip to verdict_interpreter]
+     │
+     ▼
+[Tool]   regime_detector_validation  (auto-triggered before verdict if report stale)
+     │
+[Claude] regime_auditor  →  regime_audit_decision.yaml
+     │
+     ▼
 [Claude] verdict_interpreter
             │
      ┌──────┼──────────────────────────────┐
@@ -79,10 +91,16 @@ It is built around three principles:
      │      │                  │
      │  [new run]          [kill]
      │
-     ▼
-[terminal] promote  ──►  research_decision (archive)
-           kill     ──►  research_decision (archive)
+     ▼ promote (provisional)
+[Tool]   holdout_evaluation  ◄── DSR gate + single-use enforcement
+            │                    pre-registered expected_range required
+     ┌──────┴─────────┐
+     │ pass           │ fail (terminal)
+     ▼                ▼
+[terminal] promote  kill
 ```
+
+**Ungated-only standing policy:** ER-based regime detection is unusable on BTC/ETH 1h (A2.3). All hypotheses in the run queue are ungated. A regime gate is only permitted after: (1) a trustworthy detector exists per the A2.2 gate, and (2) an ungated edge already confirmed showing regime-dependent performance.
 
 ---
 
@@ -91,15 +109,18 @@ It is built around three principles:
 | # | Stage | Engine | Objective |
 |---|---|---|---|
 | 1 | **research_brief** | Human | Define the research question, target market, constraints, and existing context. Entry point for every run. |
-| 2 | **hypothesis_generation** | Claude | Translate the brief into a single, concrete, testable hypothesis with an explicit signal formula and assumptions. |
-| 3 | **innovation_expansion** | Claude | Expand the single hypothesis into 3–6 testable variants covering alternative data sources, reversed logic, behavioral angles, and regime-specific versions. |
-| 4 | **validation_gate** | Claude | Stress-test the hypothesis: write falsifiable statements, identify failure modes, specify bias risks, define success/failure decision rules. |
-| 5 | **refinement_planner** | Claude | If validation returns `refine`, convert each blocking issue into a concrete implementation fix and decide whether the hypothesis is ready for another round or needs human review. |
-| 6 | **backtest_specification** | Claude | Translate the validated hypothesis into a `strategy_config` JSON that plugs directly into the trading-bot backtest engine. |
-| 7 | **protocol_execution** | Python tool | Run the strategy config across all walk-forward windows (22 combinations: 11 months × 2 symbols) and produce per-window metrics. |
-| 8 | **verdict_interpreter** | Claude | Read backtest diagnostics, apply 5 named diagnostic rules, and issue an altitude decision: refine / pivot / escalate / promote / kill. |
-| 9 | **campaign_review** | Claude | After 2+ hypothesis families have failed, step back and assess whether to continue the search, reframe the research question, escalate to a new instrument, or terminate the campaign. |
-| 10 | **research_decision** | Claude | Archive the final campaign outcome (promoted strategy config or kill rationale) into a permanent decision artifact. |
+| 2 | **hypothesis_generation** | Claude | Translate the brief into a single, concrete, testable hypothesis. Must: populate `edge_source` BEFORE `signal_concept` (A1.1–A1.3); look up proposed indicator in `indicator_library.yaml` (A1.4/Impr 04); declare `evidence_type` from `available_feeds.yaml` or route to `feed_wishlist.yaml`. |
+| 3 | **innovation_expansion** | Claude | Expand into 3–6 testable variants. Must: pass real-diversity check (≥2 `library_category` OR `data_requirements`; cosmetic = rejected). |
+| 4 | **validation_gate** | Claude | Pressure-test the hypothesis: write falsifiable statements, identify failure modes, run A8.6 a-priori power check deterministically. If `min_detectable_ic > plausible_ic_upper`, routes to `insufficient_power_a_priori` (no component built). Must declare holdout range in `sample_split_design` (A6.1). |
+| 5 | **refinement_planner** | Claude | Convert validation blockers into concrete fixes; decide if implementation is possible in current framework. |
+| 6 | **backtest_specification** | Claude | Translate the validated hypothesis into `strategy_config` JSON for the trading-bot backtest engine. |
+| 7 | **signal_prescreen** | Python tool | A8.6 pre-flight first (blocks if power insufficient). Then: active-bar IC, block-bootstrap significance, cost_check. A8.1: both IC significance AND cost_check.pass required for `proceed_to_backtest`. Records trial in `campaign_state.trial_sharpes` (A6.2). |
+| 8 | **protocol_execution** | Python tool | Walk-forward backtest across all windows; produces per-window metrics including per-trade expectancy (A3.4). |
+| 9 | **regime_detector_validation** | Python tool | Auto-triggered before verdict when `regime_detector_report.yaml` is absent or stale. Computes persistence, class-conditional sensitivity, activation band (A2.2). |
+| 10 | **regime_auditor** | Claude | Reads `regime_detector_report.yaml`; decides trustworthy / needs_retune / unusable. Enforces retune firewall (A2.2): retune acceptance criteria may never include PnL or Sharpe. |
+| 11 | **verdict_interpreter** | Claude | Read backtest diagnostics (or prescreen evidence), apply 5 named diagnostic rules, issue altitude decision: refine / pivot / escalate / promote / kill. Promote is provisional — routes to holdout_evaluation. |
+| 12 | **campaign_review** | Claude | After 2+ hypothesis families have failed (or every 6 runs), assess whether to continue, reframe, escalate to a new instrument, or terminate. |
+| 13 | **holdout_evaluation** | Python tool | DSR gate (Bailey & López de Prado): if `passes_deflated_threshold=False`, terminal reject before holdout runs. Single-use enforcement from `campaign_data_policy.yaml`. Evaluates `holdout_result.yaml` (pre-registered expected_range required). Failure is terminal. |
 
 ---
 
@@ -125,8 +146,19 @@ It is built around three principles:
 
 | Config status | Next stage |
 |---|---|
-| `spec_ready` | → protocol_execution |
+| `spec_ready` | → signal_prescreen |
 | `component_gap` | → human pause (a new bot component must be built) |
+
+#### After signal_prescreen
+
+| Prescreen route | Next stage |
+|---|---|
+| `proceed_to_backtest` | → protocol_execution |
+| `kill_no_ic` | → verdict_interpreter (stub protocol_result) |
+| `refine_inverted_ic` | → verdict_interpreter |
+| `refine_cost_hurdle` | → verdict_interpreter |
+| `kill_cost_hurdle` | → verdict_interpreter |
+| `insufficient_power_a_priori` | → verdict_interpreter (skip; already written at validation gate) |
 
 #### After verdict_interpreter — the Altitude System
 
@@ -137,7 +169,7 @@ The verdict interpreter assigns an **altitude** to each decision. Altitude measu
 | `refine` | 1 | Minor tweak | Same hypothesis family, same signal, adjust a parameter (threshold, lookback window) |
 | `pivot` | 2 | New idea | New hypothesis family, same research question |
 | `escalate` | 3 | New environment | Same methodology, different instrument or timeframe |
-| `promote` | — | Terminal success | Strategy passes all gates; archived and handed to live deployment pipeline |
+| `promote` | — | Provisional success | Strategy passes all backtest gates; routes to holdout_evaluation before terminal promotion |
 | `kill` | — | Terminal failure | Strategy is dead; root cause archived in campaign memory |
 
 #### Circuit Breakers (anti-loop protection)
@@ -160,6 +192,17 @@ The orchestrator detects search-space exhaustion and forces an altitude climb au
 | `escalate_instrument` | Target a new symbol/timeframe; spawn next run |
 | `escalate_component` | Identify missing bot component; human pause |
 | `terminate` | Kill entire campaign; write research_decision |
+
+#### After holdout_evaluation
+
+| Holdout result | Next stage |
+|---|---|
+| DSR < 0.95 | → completed_rejected (terminal, before holdout runs) |
+| Second attempt (already in holdout_consumed_by) | → completed_rejected (mechanically refused) |
+| `holdout_result.yaml` absent | → human_pause (run holdout backtest first) |
+| `status: pass` | → completed_promoted (terminal success) |
+| `status: fail` | → completed_rejected (terminal — no further path) |
+| `status: inconclusive` | → human_pause |
 
 ---
 
@@ -443,6 +486,103 @@ Handoffs are the formal interface contract between stages. Each stage reads its 
 
 ---
 
+### `prescreen_result.yaml`
+**Created by:** signal_prescreen tool (`tools/prescreen_signal.py`)
+**Read by:** verdict_interpreter, orchestrator
+**Schema:** `schemas/prescreen_result.schema.json`
+
+| Field | Definition |
+|---|---|
+| `route` | Routing decision: `proceed_to_backtest`, `kill_no_ic`, `refine_inverted_ic`, `refine_cost_hurdle`, `kill_cost_hurdle`, `insufficient_power_a_priori` |
+| `ic_all_bars` | Spearman IC computed over all bars (tie-dominated for sparse signals) |
+| `ic_active_bars` | Spearman IC conditional on non-zero/changing forecast — the primary IC gate |
+| `forecast_sparsity_pct` | Fraction of bars with zero/unchanging forecast |
+| `cost_check` | `{pass: bool, edge_to_cost_ratio, required_gross_edge_bps}` — Layer 2 gate |
+| `ic_significance` | Whether `ic_active_bars` is statistically significant (block-bootstrap) |
+
+---
+
+### `trade_diagnostics.json`
+**Created by:** protocol_execution tool
+**Read by:** verdict_interpreter
+
+Per-trade records (one row per closed trade) with fields: `entry_bar`, `exit_bar`, `pnl_bps`, `cost_paid_bps`, `exit_reason`, `mae_bps`, `mfe_bps`, `post_exit_return_5bars`, `post_exit_return_20bars`. Summary: `trade_diagnostics_summary` with winner/loser-conditional metrics (A3.6), `stop_loss_recovery_rate`, `pnl_concentration`.
+
+---
+
+### `regime_detector_report.yaml`
+**Created by:** `tools/validate_regime_detector.py`
+**Read by:** regime_auditor skill
+
+| Field | Definition |
+|---|---|
+| `detector_version` | Hash of the detector config (used to tag findings in KB, per A5.3) |
+| `persistence_score` | Fraction of regime transitions that persist ≥ dwell_period |
+| `class_conditional_sensitivity` | Per-label flip rate under ±10% parameter perturbation |
+| `activation_rate` | Fraction of bars per regime label (must be in [10%, 40%] for trend labels) |
+
+---
+
+### `regime_audit_decision.yaml`
+**Created by:** regime-auditor skill
+**Read by:** verdict_interpreter, orchestrator
+
+| Field | Definition |
+|---|---|
+| `status` | `trustworthy`, `needs_retune`, or `unusable` |
+| `retune_firewall_check` | Confirms acceptance criteria contain no PnL/Sharpe references |
+| `ungated_escape_eligible` | `true / false / indeterminate` — A2.1 escape assessment |
+
+---
+
+### `promotion_audit.yaml`
+**Created by:** orchestrator / `tools/deflate_sharpe.py`
+**Read by:** holdout_evaluation tool
+**Schema:** `schemas/promotion_audit.schema.json`
+
+| Field | Definition |
+|---|---|
+| `deflated_sharpe_ratio` | Bailey & López de Prado DSR; `null` for sparse-trading candidates |
+| `trial_sharpe_variance` | Variance of the trial Sharpe distribution used for DSR |
+| `n_trials_used` | Trial count after dedup by `forecast_hash` |
+| `passes_deflated_threshold` | `true` if DSR > 0.95 (Sharpe path) or t_stat > 2.0 (expectancy path) |
+| `excluded_trial_counts` | Breakdown of excluded trials by reason (statistic_expectancy, statistic_neither, no_sharpe_value, dedup_removed) |
+| `expectancy_promotion` | Present on sparse-trading path: `{t_stat, passes, bonferroni_note}` |
+| `is_sparse_trading` | `true` when below_floor_pct > 50% (A3.4) |
+
+---
+
+### `holdout_result.yaml`
+**Created by:** Human (after running holdout backtest) + orchestrator (marks consumed_at)
+**Read by:** holdout_evaluation tool
+**Schema:** `schemas/holdout_result.schema.json`
+
+| Field | Definition |
+|---|---|
+| `expected_range` | Pre-registered `{min_sharpe, max_sharpe, rationale}` written BEFORE running holdout |
+| `holdout_sharpe` | Window-Sharpe on holdout data; `null` when trade count < 5 (A3.4 null-floor) |
+| `per_trade_expectancy` | `{mean_bps, se_bps, t_stat, n_trades}` — primary statistic for sparse strategies |
+| `within_expected_range` | Whether holdout_sharpe fell within the pre-registered range |
+| `status` | `pass`, `fail`, or `inconclusive` |
+| `consumed_at` | ISO timestamp when holdout was spent (single-use enforcement) |
+
+---
+
+### Config files (section 3 addendum)
+
+| File | Purpose |
+|---|---|
+| `config/campaign_data_policy.yaml` | Frozen holdout range (2026-H1), burned ranges, `holdout_consumed_by` list |
+| `config/cost_model.yaml` | Single source of truth for round-trip cost per symbol (bps); read by prescreen and validation |
+| `config/available_feeds.yaml` | Which data feeds are testable today; constrains `evidence_type` in hypothesis_card |
+| `config/campaign_config.yaml` | Named constants for prescreen, orchestrator, power check; drift-guarded by test |
+| `config/indicator_library.yaml` | 15 seeded entries: regime_affinity, crowding_risk, data_requirements per indicator class |
+| `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each |
+| `config/detector_wishlist.yaml` | Detector families to build when an ungated edge exists |
+| `campaign_knowledge_base.yaml` | 9 findings (6 exhausted by analytic basis), 2 meta-findings, derived views |
+
+---
+
 ## 4. Skills
 
 Skills are LLM persona prompts stored in `skills/{name}/SKILL.md`. Each skill defines a role, a checklist, constraints, and forbidden actions for a Claude agent acting as a specialist. The orchestrator loads the relevant skill at each stage and passes it as the system prompt.
@@ -629,3 +769,32 @@ JSON files specifying the exact windows, symbols, timeframes, and thresholds for
 | **Audit Log** | A per-stage record in `pipeline_state.yaml` tracking token usage, cost in USD, attempt number, and timestamp. Used to enforce token budgets and debug expensive runs. |
 | **Campaign Review** | A special stage triggered after 2+ hypothesis families fail. Unlike the per-run verdict_interpreter, it has access to the full campaign history and can issue campaign-level decisions (reframe, terminate) that no single-run stage can make. |
 | **Research Decision** | The terminal artifact of a campaign, written when a strategy is promoted or the campaign is terminated. Captures the final verdict, the lessons learned, and (if promoted) the approved strategy config. |
+| **Burnt data** | Date ranges already used in any walk-forward window. Cannot serve as unbiased holdout. Tracked in `config/campaign_data_policy.yaml.burned_ranges`. |
+| **Trial** | Any comparison of a strategy config against historical data: prescreen kills, walk-forward runs, refinement iterations. All count. Deduplicated by `forecast_hash` (identical forecasts on identical data = one trial regardless of config differences). |
+| **Prescreen** | Cheap IC + cost-hurdle gate run before full walk-forward. A8.1: both `ic_significance` AND `cost_check.pass` required; neither alone is a pass. Records a trial in `campaign_state.trial_sharpes` even when it kills. |
+| **Active-bar IC** | Spearman correlation between forecast and return, restricted to bars where the forecast is non-zero or changing. The gate statistic for sparse/event-driven signals; all-bars IC is misleading for these (dominated by the tie mass at forecast=0). |
+| **Power check** | Deterministic arithmetic (A8.6) run before any component is built: computes `min_detectable_ic` from `activation_rate × n_bars × n_eff_symbols / block_size`. If MDE > `plausible_ic_upper`, the hypothesis is parked with a data requirement. Market-wide signals use `n/(1+(n−1)·ρ̄)` effective symbols (not sqrt(n)). |
+| **Dormant mechanism** | A hypothesis whose activating condition never fired in the test window. Disposition: backward data extension (pre-2024 history where the condition demonstrably occurred) OR parking with a condition-based reactivation trigger. |
+| **Holdout consumption** | The irreversible event where a hypothesis_id enters `campaign_data_policy.holdout_consumed_by`. From this point, no further holdout evaluation is possible for that hypothesis_id. Failure is terminal. |
+| **DSR (Deflated Sharpe Ratio)** | Bailey & López de Prado (2014) correction for selection bias across multiple trials. `E_max = μ_SR + σ_SR × [(1−γ)Φ⁻¹(1−1/N) + γΦ⁻¹(1−1/(eN))]`; DSR = Φ[(candidate_SR − E_max)/σ_SR]. Threshold: 0.95. Falls monotonically as trial count grows for fixed true Sharpe. |
+| **Expectancy path** | Promotion route for sparse-trading strategies (below_floor_pct > 50%). Uses per-trade expectancy t-stat instead of DSR; threshold t > 2.0 (Bonferroni note recorded in promotion_audit). |
+
+---
+
+## 7. Acceptance Culture
+
+The system uses three distinct acceptance protocols depending on what is being accepted:
+
+### Known-answer fixtures (for metrics)
+All quantitative tools are validated against a named fixture whose correct output is known in advance. The standing fixture is **`keltner_163`** — 163 closed trades from the baseline_v2 Keltner re-run. Any tool touching per-trade metrics must reproduce this fixture's known signature: win rate rising 51%→57% from 2024 to 2025 cohorts, per-trade expectancy worsening −26→−58 bps. A tool that cannot reproduce this is not calibrated.
+
+The prescreen tool carries its own must-reject fixture (A9.1): the Keltner config must route to kill despite its historical gated IC of 0.2145 — the all-bars IC (near zero by tie construction) and cost hurdle independently reject it.
+
+### Output audits (for prompts and skills)
+Skill rewrites have no behavior until an LLM executes them. They are accepted by **output audit** (A1.4), never by diff review. For each skill change: (a) run a trial and audit every output card for compliance; (b) look for compliant-looking confabulations (satisfies the letter, violates the spirit). Captured examples go back into the skill. The first audit-passing card serves as the end-to-end pass-path test.
+
+### Pre-registration (for runs)
+Before any holdout backtest runs: write `holdout_result.yaml.expected_range` with the a-priori bounds and rationale. Before any recalibration: document the threshold change as a new trial. This ensures that the result cannot be declared "as expected" retroactively and every data comparison is pre-committed.
+
+### Calibration reporting
+Calibration outputs are always reported as numbers, not pass marks: DSR values, IC values with CIs, t-stats with n, expectancy ± SE. "7 tests pass" is not a calibration report. The calibration numbers for Improvement 06 are on record in `00_closing_state.md`.
