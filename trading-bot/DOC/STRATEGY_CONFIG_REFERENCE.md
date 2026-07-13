@@ -170,6 +170,7 @@ All expose `raw_value()`; usable in both engines. `params` defaults in parenthes
 | `MomentumDivergenceComponent` | short_period(5), long_period(20), scaling_factor(1.5) | short×long trend alignment | long |
 | `MacdHistogramCrossoverComponent` | fast_period(12), slow_period(26), signal_period(9), scaling_factor(10.0) | ±sf event-pulse the bar the MACD histogram (MACD line − signal line) crosses zero (bullish/bearish); 0 all other bars — stateful, not a transform | slow+signal |
 | `SmaTrendLongOnlyComponent` | lookback_L(100), scaling_factor(10.0) | sf if prior bar's close > SMA(lookback_L), else 0 — long-only (never negative), one-bar lag on both close and SMA (see class docstring: engine has no next-open fill, this is the closest approximation) | L+1 |
+| `GatedSmaTrendLongOnlyComponent` | lookback_L(100), scaling_factor(10.0), er_period(20), gate_threshold(0.30) |sf if in position, else 0. SMA(L) long-only trend entry-latched by raw Kaufman ER(er_period) $\ge$ gate_threshold evaluated strictly at transition. One-bar lag on indicators | max(L+1, er_period+2) |
 | `BuyAndHoldStrategy` | — | constant +10 | 0 |
 
 ### Hedges / filters
