@@ -13,7 +13,16 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 ## Required inputs
 - `protocol_result.yaml`       (backtest findings + hypothesis_verdict criteria_results + diagnostics;
                                 OR a prescreen stub — see PRESCREEN KILL section below)
-- `validation_protocol.yaml`   (original hypothesis success criteria and failure modes)
+- `pass_rule_evaluation.yaml`  (K2, 2026-07-13 — REQUIRED. Machine-authored verdict from the
+                                pre-registered, structured pass rule in pre_registration.yaml —
+                                see "MACHINE-AUTHORED VERDICT" section below. When its `result` is
+                                `PASS` or `FAIL`, its `hypothesis_verdict`/`lineage_routing` fields
+                                are COPY-THROUGH, not independently re-decided. When its `result` is
+                                `legacy_not_evaluable` or `SPEC_ERROR` — including every run's
+                                pre_registration.yaml before K2, e.g. run_057's own — this file
+                                carries no binding verdict and you decide exactly as before K2.)
+- `validation_protocol.yaml`   (descriptive context ONLY as of K2 — its own decision_rules/
+                                required_evidence are NOT decision-bearing; see below)
 - `backtest_spec.yaml`         (config_rationale: what config choices mapped to which claims)
 - `research_brief.yaml`        (original research question and constraints)
 - `campaign_state.yaml`        (cross-run altitude history; what has been tried and at which altitude)
@@ -21,20 +30,65 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - `prescreen_result.yaml`      (Improvement 08+09 — present when a prescreen gate was applied.
                                 REQUIRED as primary evidence when protocol_result.yaml is a stub.)
 
+## MACHINE-AUTHORED VERDICT (K2, 2026-07-13)
+
+`pass_rule_evaluation.yaml` (written by `tools/verdict_criteria_evaluator.py` during
+`protocol_execution`, before this stage runs) is the DECISION authority whenever it
+carries one. Your job shifted: explain WHY, cite it, and supply the qualitative fields
+no formula can produce (`root_cause`, `config_to_failure_map`, `trade_attribution`) —
+not re-decide `hypothesis_verdict`/`lineage_routing` independently when it already has.
+
+- `result: PASS` or `FAIL` — copy `hypothesis_verdict` and `lineage_routing` from it
+  VERBATIM into `verdict_interpretation.yaml` (B4 copy-through discipline — do not
+  paraphrase, do not re-derive). If your own diagnostic reading (Rules 1-6 below)
+  disagrees with its verdict, do NOT silently overwrite it either direction — write
+  your disagreement into `altitude_justification` and set a `human_pause` per the
+  standing disagreement rule (see RUNBOOK.md's pause table); a stage output that
+  contradicts `pass_rule_evaluation.yaml` without flagging it is a conformance
+  violation, not a judgment call.
+- `result: legacy_not_evaluable` or `SPEC_ERROR`, or absent `hypothesis_verdict`/
+  `lineage_routing` with `discretion: stage` set — no binding verdict exists for this
+  run (a legacy pre_registration.yaml, or a pre-registered branch that explicitly opted
+  into stage discretion). Decide `hypothesis_verdict`/`lineage_routing` yourself, using
+  Rules 1-6 below, exactly as this skill worked before K2.
+- Check `branches_failed` (not just `statement_branch_matched`) when writing
+  `criteria_summary` — every failing branch is recorded, never hidden, even though only
+  the first (id-order) selects the routing decision.
+
+Rule 6 and the other five diagnostic rules below are UNCHANGED by K2 — they still drive
+`root_cause`/`altitude_justification`'s qualitative content on every run; only the
+PASS/FAIL/routing decision itself moves to the machine when a structured pass rule exists.
+
 ## Required outputs
 - `verdict_interpretation.yaml`   (structured findings summary — always required)
-- `findings_carryover.yaml`       (required when status = refine, pivot OR escalate)
+- `findings_carryover.yaml`       (required when lineage_routing = refine, pivot OR escalate)
 - EXACTLY ONE of the following:
-  - `proposed_brief.yaml`         (if status = refine or pivot)
-  - `escalation_request.yaml`     (if status = escalate)
-  - `research_decision.yaml`      (if status = kill or promote)
+  - `proposed_brief.yaml`         (if lineage_routing = refine or pivot)
+  - `escalation_request.yaml`     (if lineage_routing = escalate)
+  - `research_decision.yaml`      (if lineage_routing = terminate or hypothesis_verdict = promote)
 
 ## Output requirements
 `verdict_interpretation.yaml` must include:
 - hypothesis_id
-- protocol_verdict          # from protocol_result.yaml hypothesis_verdict.verdict
-- status                    # YOUR decision: promote | refine | pivot | escalate | kill
-- criteria_summary          # list: each criterion → PASS/FAIL/UNTESTED + actual value
+- protocol_verdict          # from protocol_result.yaml hypothesis_verdict.verdict (legacy field,
+                            # retained as a mirror — see hypothesis_verdict/lineage_routing below)
+- hypothesis_verdict        # K2/A8: kill | refine | promote — is the MECHANISM dead? Copy-through
+                            # from pass_rule_evaluation.yaml when it has a binding verdict (see
+                            # MACHINE-AUTHORED VERDICT above); otherwise your own diagnostic judgment.
+- lineage_routing           # K2/A8: terminate | refine | pivot | escalate — what does the CAMPAIGN
+                            # do next? A SEPARATE question from hypothesis_verdict (run_057's own
+                            # incident: mechanism dead + pivot routing were forced into one slot).
+                            # Same copy-through/independent-judgment split as hypothesis_verdict.
+- status                    # LEGACY mirror field, derived: status = lineage_routing when it's
+                            # refine/pivot/escalate; status = kill when hypothesis_verdict == kill
+                            # regardless of routing; status = promote when hypothesis_verdict ==
+                            # promote. Kept so older tooling/logs reading a single-word summary
+                            # never breaks — hypothesis_verdict/lineage_routing are authoritative,
+                            # status is derived FROM them, never the reverse.
+- criteria_summary          # list: each criterion → PASS/FAIL/UNTESTED + actual value. When
+                            # pass_rule_evaluation.yaml has a binding verdict, this must be
+                            # consistent with its criteria_results/branches_failed, not a
+                            # separately-invented set.
 - primary_failure_mode      # the single most likely explanation for failure
 - config_to_failure_map     # which specific config choice contributed to the primary failure
 - untested_criteria         # list of criteria that could not be evaluated
@@ -50,17 +104,26 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - trade_attribution         # Step 03: required when trade_diagnostics.json is available
                             # (see STEP 03 — Trade Attribution section below).
 
-`proposed_brief.yaml` (when status = refine):
+`proposed_brief.yaml` (when lineage_routing = refine):
 - must be a valid research_brief.yaml (same schema as input brief)
 - must change EXACTLY ONE aspect of the hypothesis from the previous brief
 - must state explicitly in a `change_from_previous` field what changed and why
 - must NOT change the core research question unless the primary_failure_mode indicates
   the hypothesis itself is wrong (not just the implementation)
+- C9 (K2, 2026-07-13): this content is checked against campaign_knowledge_base.yaml for an
+  exhausted/forbidden family BEFORE the orchestrator scaffolds the next run
+  (`_route_refine`) — do not name a family the KB already marks exhausted with no open
+  reactivation_condition; that pauses the pipeline rather than proceeding.
 
-`proposed_brief.yaml` (when status = pivot):
+`proposed_brief.yaml` (when lineage_routing = pivot):
 - must represent a STRUCTURALLY DIFFERENT hypothesis (different signal family or regime mode)
 - must carry forward lessons from the failed hypothesis via `findings_carryover` field
 - must explain in `change_from_previous` WHY the previous family was exhausted
+- C9 (K2, 2026-07-13): `_route_pivot` itself does not read proposed_brief.yaml (the next
+  run's hypothesis is formalized later, by hypothesis_generation) — but it DOES scan
+  `primary_failure_mode`/`config_to_failure_map`/`root_cause`/`findings_carryover.yaml`'s
+  own prose for a KB-exhausted family before scaffolding. Naming an exhausted family
+  (e.g. a Keltner variant) anywhere in that prose pauses the pipeline the same way.
 
 ## REQUIRED OUTPUT — findings_carryover.yaml
 

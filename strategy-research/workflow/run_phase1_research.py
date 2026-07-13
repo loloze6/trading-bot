@@ -376,9 +376,27 @@ def load_yaml(path: Path):
     return docs[0] if docs else None
 
 def save_yaml(path: Path, data):
+    """
+    R4 (K4 kernel, 2026-07-13): writes via temp-file-then-os.replace in the
+    destination's own directory, not a direct open(path, "w"). os.replace()
+    is atomic on both POSIX and Windows (MoveFileEx w/ MOVEFILE_REPLACE_EXISTING) --
+    a crash mid-write can no longer leave a partially-written/truncated
+    pipeline_state.yaml (or any other file this function writes) in place;
+    readers always see either the old complete content or the new complete
+    content, never a partial one.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+        os.replace(tmp_name, path)
+    except BaseException:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
 
 def update_state(path: Path, **kwargs):
     state = load_yaml(path / "pipeline_state.yaml")
@@ -1012,6 +1030,33 @@ async def run_tool_worker(stage_name: str, run_id: str):
         hv = (summary.get("hypothesis_verdict") or {}).get("verdict", "unknown")
         print(f"✅ Protocol complete. Hypothesis verdict: {hv}")
 
+        # C7 (K2 kernel, 2026-07-13): machine-checkable pass-rule evaluation --
+        # replaces evaluate_against_decision_rules (tools/run_protocol.py's own
+        # prose-criteria parser) as the DECISION authority; that function's
+        # output remains informational only from here on (see design note
+        # section 6). Writes pass_rule_evaluation.yaml, a REQUIRED input for
+        # the verdict_interpreter stage (skills/verdict-interpreter/SKILL.md).
+        # R3 (K2 Phase B operator ruling): evaluate_pass_rule_criteria() never
+        # raises on a legacy (string-shaped or absent) pass_rule -- it returns
+        # 'legacy_not_evaluable', and the LLM stage's own judgment applies
+        # exactly as it did before K2 (every run's pre_registration.yaml
+        # before this kernel, including run_057's own, is this legacy shape).
+        _tools_path = str(Path(__file__).parent.parent / "tools")
+        if _tools_path not in sys.path:
+            sys.path.insert(0, _tools_path)
+        import verdict_criteria_evaluator as _vce
+        _pre_reg_path = ARTIFACTS / "pre_registration.yaml"
+        _pre_reg_for_eval = load_yaml(_pre_reg_path) if _pre_reg_path.exists() else {}
+        _pass_rule_eval = _vce.evaluate_pass_rule_criteria(summary, _pre_reg_for_eval or {})
+        _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
+        _pass_rule_eval["evaluator_version"] = 1
+        save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
+        _pre_reg_result = _pass_rule_eval.get("result")
+        print(f"✅ [C7] pass_rule_evaluation.yaml written: result={_pre_reg_result}"
+              + (f" verdict={_pass_rule_eval.get('hypothesis_verdict')}/"
+                 f"{_pass_rule_eval.get('lineage_routing')}"
+                 if _pre_reg_result in ("PASS", "FAIL") else ""))
+
         # A6.2: record full-backtest trial in campaign_state.trial_sharpes
         _record_backtest_trial(run_id, summary)
 
@@ -1637,6 +1682,129 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
     return violations
 
 
+_VALID_HYPOTHESIS_VERDICTS = ("kill", "refine", "promote")
+_VALID_LINEAGE_ROUTINGS = ("terminate", "refine", "pivot", "escalate")
+_VALID_CRITERION_COMPARATORS = (">=", ">", "<=", "<", "==")
+
+
+def _lint_pass_rule_total_mapping(pre_registration: dict) -> tuple:
+    """
+    B11 (K2 kernel, 2026-07-13): materialization-time lint over
+    pre_registration.yaml's structured pass_rule.outcomes -- every branch
+    must carry an explicit {hypothesis_verdict, lineage_routing} pair, or an
+    explicit 'discretion: stage' opt-in ("routing at stage discretion" as an
+    opt-in phrase, per B11's own fix text -- never the absence of a pair,
+    which is what today's "verdict routing decides kill vs pivot" free-text
+    amounts to, exactly run_057's own incident).
+
+    Returns (violations, warnings) -- a non-empty `violations` list means the
+    brief is REJECTED at materialization (never reaches
+    runs/<id>/artifacts/pre_registration.yaml, mirroring
+    _parse_brief_frontmatter's/_parse_refinement_brief_yaml's own
+    required-field ValueError style, applied here as a caller-facing
+    contract instead of a raised exception so callers can log every
+    violation at once). `warnings` never blocks materialization.
+
+    A legacy (string-shaped, or altogether absent) pass_rule is NOT linted
+    here -- R3's legacy_not_evaluable path (tools/verdict_criteria_evaluator.py)
+    handles it at evaluation time instead; this lint only applies to briefs
+    that opt INTO the structured schema.
+    """
+    violations = []
+    warnings = []
+
+    pass_rule = pre_registration.get("pass_rule")
+    if pass_rule is None or isinstance(pass_rule, str):
+        return violations, warnings  # legacy shape -- nothing to lint
+
+    if not isinstance(pass_rule, dict):
+        violations.append(f"pass_rule is neither a string nor a dict (got {type(pass_rule).__name__})")
+        return violations, warnings
+
+    criteria = pass_rule.get("criteria") or []
+    outcomes = pass_rule.get("outcomes") or []
+
+    if not outcomes:
+        violations.append("pass_rule is dict-shaped but has no outcomes -- a structured "
+                           "pass rule must enumerate every branch's verdict+routing mapping")
+
+    seen_branches = set()
+    for outcome in outcomes:
+        branch = outcome.get("branch")
+        if not branch:
+            violations.append(f"outcomes entry {outcome!r} is missing its 'branch' name")
+            continue
+        seen_branches.add(branch)
+        discretion = outcome.get("discretion")
+        if discretion == "stage":
+            continue  # explicit opt-in -- no pair required
+        if discretion is not None:
+            violations.append(f"branch {branch!r}: discretion={discretion!r} is not a "
+                               f"recognized opt-in value (only 'stage' is)")
+            continue
+        hv = outcome.get("hypothesis_verdict")
+        lr = outcome.get("lineage_routing")
+        if hv not in _VALID_HYPOTHESIS_VERDICTS:
+            violations.append(f"branch {branch!r}: hypothesis_verdict={hv!r} is missing or "
+                               f"not one of {_VALID_HYPOTHESIS_VERDICTS} (no discretion opt-in present)")
+        if hv == "promote":
+            if lr is not None:
+                violations.append(f"branch {branch!r}: hypothesis_verdict=promote must have "
+                                   f"lineage_routing=null (promote never routes); got {lr!r}")
+        else:
+            if lr not in _VALID_LINEAGE_ROUTINGS:
+                violations.append(f"branch {branch!r}: lineage_routing={lr!r} is missing or "
+                                   f"not one of {_VALID_LINEAGE_ROUTINGS} (no discretion opt-in present)")
+
+    # C7/C8: every criterion states its metric, comparator, and metric_basis
+    # (bar_level/episode_level -- never fragment_level, per the standing
+    # metric-basis rule); a per-symbol (sparse-eligible) criterion also needs
+    # a null_handling policy or the only possible runtime outcome is SPEC_ERROR.
+    for criterion in criteria:
+        cid = criterion.get("id", "<unnamed>")
+        if not criterion.get("metric"):
+            violations.append(f"criterion {cid!r}: missing 'metric'")
+        if criterion.get("comparator") not in _VALID_CRITERION_COMPARATORS:
+            violations.append(f"criterion {cid!r}: missing or invalid 'comparator'")
+        if not criterion.get("metric_basis"):
+            violations.append(f"criterion {cid!r}: missing 'metric_basis' (bar_level / "
+                               f"episode_level -- fragment_level is itself inadmissible for "
+                               f"a verdict, per the standing metric-basis rule)")
+        if criterion.get("per_symbol_threshold") and not criterion.get("null_handling"):
+            violations.append(f"criterion {cid!r}: has per_symbol_threshold (a per-symbol, "
+                               f"sparse-eligible statistic) but no null_handling policy -- "
+                               f"A3.4 requires stating what a null aggregate means here")
+
+    # A1 (K2 Phase B operator amendment): WARN (never reject) when multiple
+    # FAIL-<id> branches carry DIFFERING verdict pairs -- id-order resolution
+    # at evaluation time silently picks the first failing criterion's branch
+    # unless the brief's author is told about the ordering now, at registration.
+    fail_branches = [o for o in outcomes if str(o.get("branch", "")).startswith("FAIL-")]
+    if len(fail_branches) > 1:
+        pairs = {(o.get("hypothesis_verdict"), o.get("lineage_routing")) for o in fail_branches}
+        if len(pairs) > 1:
+            warnings.append(
+                f"multiple FAIL branches ({[o.get('branch') for o in fail_branches]}) carry "
+                f"DIFFERING hypothesis_verdict/lineage_routing pairs -- criteria id-order at "
+                f"evaluation time will silently pick the FIRST failing criterion's branch; "
+                f"confirm this ordering is intentional"
+            )
+
+    # Best-effort, never blocks: does pass_rule.statement's own prose mention
+    # every branch label registered in outcomes? (Prose branch-labeling is
+    # inherently fuzzier than the structured outcomes list, hence WARNING only.)
+    statement = str(pass_rule.get("statement") or "")
+    if statement:
+        for branch in seen_branches:
+            label = branch[len("FAIL-"):] if branch.startswith("FAIL-") else branch
+            if branch.lower() not in statement.lower() and label.lower() not in statement.lower():
+                warnings.append(f"branch {branch!r} is registered in outcomes but its label "
+                                 f"was not found in pass_rule.statement's own prose -- "
+                                 f"cross-check the human-readable rule still matches")
+
+    return violations, warnings
+
+
 def _check_kb_reactivation_conformance(next_research_question: dict, kb: dict) -> list:
     """
     A5.4 (2026-07-06, F09/run_053 postmortem): before honoring ANY reframe/reactivation
@@ -1672,8 +1840,20 @@ def _check_kb_reactivation_conformance(next_research_question: dict, kb: dict) -
 
     violations = []
     for f in (kb.get("findings") or []):
-        hyp_id = f.get("hypothesis_id")
-        if not hyp_id or hyp_id.lower() not in text:
+        # R4/C9 (K2 kernel, 2026-07-13) bug fix: this KB's `findings` schema is
+        # NOT uniform -- 9 of 15 findings use a singular `hypothesis_id`, but 5
+        # (including all three Keltner findings, the exact family this ledger
+        # item's own C9 symptom names) use a plural `hypothesis_ids` list
+        # instead, and one has neither. Reading only `f.get("hypothesis_id")`
+        # (as this function did before this fix) silently returns None for
+        # every multi-hypothesis finding, so this gate could NEVER catch a
+        # reactivation/re-proposal of any of them, regardless of text content
+        # -- verified by direct parse of campaign_knowledge_base.yaml, not
+        # assumed (see docs/design/K2_verdict_machinery_design_20260713.md
+        # section 7). Normalize both shapes to a list and match on any member.
+        hyp_ids = f.get("hypothesis_ids") or ([f["hypothesis_id"]] if f.get("hypothesis_id") else [])
+        hyp_id = next((h for h in hyp_ids if h and h.lower() in text), None)
+        if not hyp_id:
             continue
         consumed_by = f.get("reactivation_consumed_by")
         if consumed_by:
@@ -1941,6 +2121,29 @@ def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     if used >= max_r:
         print(f"\n🛑 Refinement budget exhausted ({used}/{max_r}). Killing hypothesis.")
         return "completed_rejected"
+    # C9 rider (K2 kernel, 2026-07-13): KB exhaustion + reactivation-conformance
+    # check BEFORE scaffolding -- proposed_brief.yaml is the LLM-authored
+    # proposal this route is about to install as the child's own
+    # research_brief.yaml; a forbidden/exhausted family here must pause, not
+    # scaffold, exactly the gap this ledger item names (Keltner re-proposal).
+    # Reuses _check_kb_reactivation_conformance directly -- proposed_brief.yaml
+    # is itself a research_brief.yaml-shaped document (same schema as the
+    # input brief, per skills/verdict-interpreter/SKILL.md), so it already
+    # carries the research_goal/existing_context/constraints fields that
+    # function's text-matching expects; no separate wrapper needed.
+    proposed_content = load_yaml(proposed) or {}
+    _kb = load_yaml(_KB_PATH) if _KB_PATH.exists() else {}
+    _kb_violations = _check_kb_reactivation_conformance(proposed_content, _kb or {})
+    if _kb_violations:
+        print("\n🛑 [C9] KB-EXHAUSTION CHECK — refine proposal targets an "
+              "already-closed/exhausted family:")
+        for v in _kb_violations:
+            print(f"   - {v}")
+        update_state(path=path, status="paused_for_human",
+                     flags={"kb_reactivation_violation": True},
+                     kb_reactivation_violations=_kb_violations)
+        return "human_pause"
+
     next_id = _next_run_id(run_id)
     print(f"\n🔄 REFINE (altitude 1): setting up {next_id} with proposed brief.")
     setup_next_run(path, next_id)
@@ -1956,11 +2159,53 @@ def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     fam = interp.get("hypothesis_family", "")
     diag = _extract_diagnostics(path)
     update_campaign_state_after_run(run_id, "parameter", dim, fam, "no_improvement", diag)
+    # A1 (K4 kernel): persist continuation intent on THIS run's own state,
+    # after the child scaffold is known-good (see design note section 5 for
+    # the ordering rationale) -- process_once() reads this back instead of
+    # diffing runs/ across separate process invocations.
+    update_state(path=path, continuation_child=next_id, continuation_created_by="_route_refine")
     return "completed_refined"
 
 
 def _route_pivot(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     family = interp.get("hypothesis_family", "")
+
+    # C9 rider (K2 kernel, 2026-07-13): _route_pivot does NOT read or write
+    # proposed_brief.yaml (verified this phase -- the next run's brief is
+    # produced by a LATER, separate hypothesis_generation stage, using
+    # findings_carryover.yaml as input). The forward-looking content that
+    # could name a forbidden/exhausted family AT PIVOT TIME is
+    # verdict_interpretation.yaml's own prose (primary_failure_mode,
+    # config_to_failure_map, root_cause) and findings_carryover.yaml's
+    # what_not_to_try/notes -- both already written by the time this function
+    # runs. Checking here is strictly earlier/cheaper than waiting for
+    # hypothesis_generation to formalize a forbidden family into a wasted
+    # scaffold (see design note section 7 for why this differs from a
+    # literal "before writing proposed_brief.yaml" reading of the ledger).
+    _pivot_text_parts = [
+        family,
+        str(interp.get("primary_failure_mode") or ""),
+        str(interp.get("config_to_failure_map") or ""),
+        str((interp.get("root_cause") or {}).get("supporting_evidence") or ""),
+    ]
+    _carryover_for_gate = path / "artifacts" / "findings_carryover.yaml"
+    if _carryover_for_gate.exists():
+        _co = load_yaml(_carryover_for_gate) or {}
+        _pivot_text_parts.append(str(_co.get("what_not_to_try") or ""))
+        _pivot_text_parts.append(str(_co.get("notes") or ""))
+    _pivot_text = " ".join(p for p in _pivot_text_parts if p)
+    _kb = load_yaml(_KB_PATH) if _KB_PATH.exists() else {}
+    _kb_violations = _check_kb_reactivation_conformance({"research_goal": _pivot_text}, _kb or {})
+    if _kb_violations:
+        print("\n🛑 [C9] KB-EXHAUSTION CHECK — pivot direction targets an "
+              "already-closed/exhausted family:")
+        for v in _kb_violations:
+            print(f"   - {v}")
+        update_state(path=path, status="paused_for_human",
+                     flags={"kb_reactivation_violation": True},
+                     kb_reactivation_violations=_kb_violations)
+        return "human_pause"
+
     next_id = _next_run_id(run_id)
     print(f"\n🔀 PIVOT (altitude 2): hypothesis family '{family}' exhausted. "
           f"Setting up {next_id} for fresh hypothesis generation.")
@@ -1977,6 +2222,8 @@ def _route_pivot(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     record_pivot(family)
     diag = _extract_diagnostics(path)
     update_campaign_state_after_run(run_id, "hypothesis", "", family, "pivot", diag)
+    # A1 (K4 kernel): see _route_refine's identical comment above.
+    update_state(path=path, continuation_child=next_id, continuation_created_by="_route_pivot")
     return "completed_refined"
 
 
@@ -2031,6 +2278,8 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
         record_escalation("instrument", next_inst["symbol"], protocol_path=str(proto_path))
         diag = _extract_diagnostics(path)
         update_campaign_state_after_run(run_id, "search_space", "instrument", "", "escalate", diag)
+        # A1 (K4 kernel): see _route_refine's identical comment above.
+        update_state(path=path, continuation_child=next_run_id, continuation_created_by="_route_escalate")
         return "completed_escalated"
 
     elif target == "timeframe":
@@ -2050,6 +2299,8 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
         record_escalation("timeframe", next_tf, protocol_path=str(proto_path))
         diag = _extract_diagnostics(path)
         update_campaign_state_after_run(run_id, "search_space", "timeframe", "", "escalate", diag)
+        # A1 (K4 kernel): see _route_refine's identical comment above.
+        update_state(path=path, continuation_child=next_run_id, continuation_created_by="_route_escalate")
         return "completed_escalated"
 
     elif target == "new_component":
@@ -2062,13 +2313,47 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
 
 
 def _route_kill(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
-    print("\n🛑 KILL: space exhausted or question answered negatively.")
+    """
+    A9 (K2 kernel, 2026-07-13): PER-HYPOTHESIS termination only. Prior to
+    this split, this function ALSO wrote a campaign-wide campaign_decision.yaml
+    and set campaign_state.status = "space_empty" unconditionally -- killing
+    ONE gate variant would have declared the whole campaign's search space
+    exhausted (the writeback agent caught this live on run_057's own
+    lineage-close and applied the terminal state by hand, bypassing this
+    router entirely). That campaign-wide write now lives ONLY in
+    _route_campaign_terminate, invoked exclusively from
+    determine_post_campaign_review_route()'s own, already-existing
+    `rec == "terminate"` branch -- an EXPLICIT campaign-review decision, never
+    inferred from a single hypothesis's kill verdict.
+    """
+    print("\n🛑 KILL: hypothesis dead (mechanism falsified / no edge / question answered negatively).")
+    diag = _extract_diagnostics(path)
+    update_campaign_state_after_run(run_id, "hypothesis", "",
+                                     interp.get("hypothesis_family", ""), "kill", diag)
+    # K4 symmetry: record the (null) continuation explicitly, same site A1's
+    # other routing functions use -- this lineage has no child.
+    update_state(path=path, continuation_child=None, continuation_created_by="_route_kill")
+    return "completed_rejected"
+
+
+def _route_campaign_terminate(path: Path, run_id: str, interp_or_review: dict, campaign: dict) -> str:
+    """
+    A9 (K2 kernel): campaign-WIDE termination -- the search space itself is
+    declared exhausted, not just one hypothesis. This is the campaign-decision.yaml
+    + campaign_state.status="space_empty" write _route_kill used to perform
+    unconditionally; it now only runs from determine_post_campaign_review_route()'s
+    `rec == "terminate"` branch, an explicit campaign_review recommendation
+    (campaign-review scope, per A9's own fix text), never from a single
+    hypothesis's own kill verdict.
+    """
+    print("\n🛑 CAMPAIGN TERMINATE: campaign_review recommends the search space is exhausted.")
     decision = {
         "campaign_id": campaign.get("campaign_id", "default"),
         "terminal_run": run_id,
         "decision": "kill",
-        "rationale": interp.get("primary_failure_mode", "no rationale provided"),
-        "altitude_justification": interp.get("altitude_justification", ""),
+        "rationale": interp_or_review.get("primary_failure_mode")
+                     or interp_or_review.get("recommendation_rationale", "no rationale provided"),
+        "altitude_justification": interp_or_review.get("altitude_justification", ""),
         "runs_attempted": campaign.get("runs", []),
         "families_tried": campaign.get("failed_families", []),
         "instruments_tried": campaign.get("instruments_tried", []),
@@ -2765,17 +3050,29 @@ def _inject_prescreen_context_into_verdict_handoff(handoff_path: Path, ps: dict)
           f"(route={ps.get('route')})")
 
 
-def _auto_generate_findings_carryover(path: Path, interp: dict):
+def _auto_generate_findings_carryover(path: Path, interp: dict, lineage_routing: str = None):
     """
     Constructs findings_carryover.yaml from verdict_interpretation.yaml when the LLM
     omitted it. Called after verdict_interpreter completes, before _verify_verdict_outputs.
     Safe to call unconditionally — skips if the file already exists.
+
+    A8 (K2 kernel, 2026-07-13): branches on `lineage_routing` (what the NEXT
+    run should avoid -- a routing question) rather than the legacy `status`
+    enum. Callers that already resolved lineage_routing (e.g.
+    determine_post_verdict_route) should pass it directly; if omitted, falls
+    back to deriving it from the legacy `status` field for a not-yet-migrated
+    call site.
     """
     carryover_path = path / "artifacts" / "findings_carryover.yaml"
     if carryover_path.exists():
         return
 
-    status = (interp.get("status") or "").strip().lower()
+    if lineage_routing is None:
+        legacy_status = (interp.get("status") or "").strip().lower()
+        mapped = _LEGACY_STATUS_TO_VERDICT_ROUTING.get(legacy_status)
+        lineage_routing = mapped[1] if mapped else legacy_status
+
+    status = lineage_routing
     if status not in ("refine", "pivot", "escalate"):
         return
 
@@ -2848,14 +3145,22 @@ def _verify_verdict_outputs(run_dir: Path) -> list:
     ARTIFACTS = run_dir / "artifacts"
     interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")
 
-    # Derive status from the artifact itself, not from any caller-supplied value.
-    status = (interp.get("status") or interp.get("protocol_verdict") or "").strip().lower()
+    # A8 (K2 kernel): derive lineage_routing from the artifact ITSELF, not from
+    # any caller-supplied value (unchanged discipline from the pre-K2 status
+    # field) -- which deliverable is required is a ROUTING question, prefer
+    # the artifact's own lineage_routing field, falling back to the legacy
+    # status field for a not-yet-migrated artifact.
+    legacy_status = (interp.get("status") or interp.get("protocol_verdict") or "").strip().lower()
+    status = interp.get("lineage_routing")
+    if not status:
+        mapped = _LEGACY_STATUS_TO_VERDICT_ROUTING.get(legacy_status)
+        status = mapped[1] if mapped else legacy_status
 
     # Universal checks (all statuses)
     if not interp.get("altitude_justification"):
         violations.append("verdict_interpretation.yaml missing altitude_justification")
     if not status:
-        violations.append("verdict_interpretation.yaml missing status field")
+        violations.append("verdict_interpretation.yaml missing status/lineage_routing field")
 
     if status == "pivot":
         # pivot does NOT produce proposed_brief.yaml — the next run's brief is
@@ -3255,6 +3560,161 @@ def _apply_circuit_breaker(status: str, interp: dict, campaign: dict) -> str:
     return status
 
 
+# A8 (K2 kernel, 2026-07-13): legacy single-enum status -> (hypothesis_verdict,
+# lineage_routing) mapping, used ONLY when an artifact doesn't carry the new
+# A8 fields directly (every pre-K2 run, or a circuit-breaker-forced override --
+# see _resolve_verdict_fields). Preserves IDENTICAL routing to pre-K2 behavior;
+# "pivot"/"escalate" map hypothesis_verdict to "kill" as the closest existing
+# enum value (the legacy vocabulary never distinguished "mechanism dead" from
+# "campaign routes elsewhere" -- this is a backward-compat approximation for
+# OLD artifacts only, never used for a new-schema run).
+_LEGACY_STATUS_TO_VERDICT_ROUTING = {
+    "promote":  ("promote", None),
+    "kill":     ("kill", "terminate"),
+    "refine":   ("refine", "refine"),
+    "pivot":    ("kill", "pivot"),
+    "escalate": ("kill", "escalate"),
+}
+
+
+def _resolve_verdict_fields(interp: dict, original_status: str, breaker_status: str) -> tuple:
+    """
+    A8 (K2 kernel): resolves the (hypothesis_verdict, lineage_routing) pair a
+    caller should route on, for one verdict_interpretation.yaml.
+
+    Prefers the artifact's OWN hypothesis_verdict/lineage_routing fields (the
+    new A8 schema) when present. Falls back to deriving both from the legacy
+    single-enum `status` field for a not-yet-migrated (pre-K2) artifact.
+
+    `original_status` / `breaker_status` are the status string BEFORE and
+    AFTER _apply_circuit_breaker ran (callers already compute both). If the
+    breaker fired (they differ), its forced value overrides `lineage_routing`
+    ONLY -- the breaker's job is "route differently" (e.g. force pivot after
+    repeated same-dimension refines), never "re-decide whether the mechanism
+    itself is dead". An artifact-declared `hypothesis_verdict` survives a
+    breaker override; only `lineage_routing` is replaced.
+    """
+    breaker_fired = breaker_status != original_status
+    hv = interp.get("hypothesis_verdict")
+    lr = interp.get("lineage_routing")
+
+    if breaker_fired:
+        mapped = _LEGACY_STATUS_TO_VERDICT_ROUTING.get(breaker_status)
+        if mapped is None:
+            raise ValueError(f"Unknown circuit-breaker-forced status: '{breaker_status}'")
+        mapped_hv, mapped_lr = mapped
+        return (hv or mapped_hv), mapped_lr
+
+    if hv and (lr or hv == "promote"):
+        return hv, lr
+
+    mapped = _LEGACY_STATUS_TO_VERDICT_ROUTING.get(breaker_status)
+    if mapped is None:
+        raise ValueError(f"Unknown verdict status: '{breaker_status}'")
+    return mapped
+
+
+def _check_pass_rule_evaluation_conformance(path: Path, hypothesis_verdict: str,
+                                             lineage_routing: str) -> list:
+    """
+    C7 (K2 kernel, 2026-07-13): if pass_rule_evaluation.yaml carries a BINDING
+    verdict (result PASS/FAIL, with a concrete hypothesis_verdict/
+    lineage_routing pair -- i.e. NOT legacy_not_evaluable/SPEC_ERROR, and NOT
+    a `discretion: stage` branch), the verdict_interpreter stage's own
+    resolved hypothesis_verdict/lineage_routing MUST match it exactly
+    (copy-through, B4 discipline) -- a stage output that disagrees, either
+    direction, is a conformance violation, never a silent overwrite (mirrors
+    B8's semantic-conformance-gate precedent). Returns a list of violation
+    strings (empty = conforms, or nothing binding to check against).
+    """
+    pre_path = path / "artifacts" / "pass_rule_evaluation.yaml"
+    if not pre_path.exists():
+        return []
+    pre_eval = load_yaml(pre_path) or {}
+    if pre_eval.get("result") not in ("PASS", "FAIL"):
+        return []
+    if pre_eval.get("discretion") == "stage":
+        return []
+    expected_hv = pre_eval.get("hypothesis_verdict")
+    expected_lr = pre_eval.get("lineage_routing")
+    if expected_hv is None and expected_lr is None:
+        return []
+
+    violations = []
+    if expected_hv and hypothesis_verdict != expected_hv:
+        violations.append(
+            f"verdict_interpretation.yaml's hypothesis_verdict={hypothesis_verdict!r} "
+            f"disagrees with pass_rule_evaluation.yaml's binding verdict {expected_hv!r} "
+            f"(branch {pre_eval.get('statement_branch_matched')!r})"
+        )
+    if expected_lr and lineage_routing != expected_lr:
+        violations.append(
+            f"verdict_interpretation.yaml's lineage_routing={lineage_routing!r} disagrees "
+            f"with pass_rule_evaluation.yaml's binding routing {expected_lr!r} "
+            f"(branch {pre_eval.get('statement_branch_matched')!r})"
+        )
+    return violations
+
+
+def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dict,
+                             hypothesis_verdict: str, lineage_routing: str | None) -> str:
+    """
+    A8 (K2 kernel), R1 (operator ruling): the SINGLE verdict->route dispatcher,
+    shared by determine_post_verdict_route and
+    determine_post_campaign_review_route's continue-branch -- previously two
+    independent copies of the same status->route if/elif chain (verified by
+    reading both; see design note section 4 and the K2 Phase B deviations
+    section for the ONE real behavioral divergence found between them,
+    resolved during this consolidation).
+
+    Callers own resolving `hypothesis_verdict`/`lineage_routing` (via
+    _resolve_verdict_fields) and any pre-dispatch concerns (engineering-failure
+    immunity, campaign-review-trigger check, KB-findings write, output
+    verification) that only ONE of the two call sites needs -- this function
+    is purely the verdict-shape -> route mapping, nothing else.
+
+    K2 rider (2026-07-13): validates the resolved pair against the design's
+    own §4 authority table BEFORE dispatching -- closes deviation 3 from the
+    K2 Phase B report ("does not independently validate every pair for
+    semantic coherence"). `_resolve_verdict_fields`'s pure-legacy fallback
+    path (no artifact-declared hypothesis_verdict at all) always lands on
+    one of these five pairs by construction, so a genuinely old-schema
+    artifact is unaffected; only a NEW-schema artifact declaring an
+    incoherent pair itself, or the breaker-fired branch mixing an
+    artifact-declared hypothesis_verdict with a legacy-mapped
+    lineage_routing (e.g. hv="refine" survives while the breaker forces
+    lr="pivot"), can reach an invalid pair -- and must be caught here,
+    never silently dispatched on lineage_routing alone.
+    """
+    valid_pairs = {
+        ("kill", "terminate"), ("kill", "pivot"), ("kill", "escalate"),
+        ("refine", "refine"), ("promote", None),
+    }
+    if (hypothesis_verdict, lineage_routing) not in valid_pairs:
+        raise ValueError(
+            f"Incoherent hypothesis_verdict/lineage_routing pair: "
+            f"hypothesis_verdict={hypothesis_verdict!r}, lineage_routing={lineage_routing!r} "
+            f"-- not one of the design's authority-table combinations "
+            f"(kill+terminate, kill+pivot, kill+escalate, refine+refine, promote+null)."
+        )
+
+    if hypothesis_verdict == "promote":
+        update_state(path=path, flags={"walk_forward_passed": True})
+        print("\n🎯 PROVISIONAL PROMOTE: walk-forward passed. Writing promotion_audit and routing to holdout_evaluation.")
+        _write_promotion_audit(path, run_id)
+        return "holdout_evaluation"
+
+    if lineage_routing == "pivot":
+        return _route_pivot(path, run_id, interp, campaign)
+    if lineage_routing == "escalate":
+        return _route_escalate(path, run_id, interp, campaign)
+    if lineage_routing == "refine":
+        return _route_refine(path, run_id, interp, campaign)
+    # lineage_routing == "terminate" (the only remaining possibility once
+    # the valid_pairs check above has passed).
+    return _route_kill(path, run_id, interp, campaign)
+
+
 def determine_post_verdict_route(path: Path, run_id: str):
     interp = load_yaml(path / "artifacts" / "verdict_interpretation.yaml")
     # `status` is the new altitude-aware field; fall back to `protocol_verdict` for old runs
@@ -3280,6 +3740,7 @@ def determine_post_verdict_route(path: Path, run_id: str):
                      flags={"component_execution_error_flagged": True})
         return "human_pause"
 
+    original_status = status
     status = _apply_circuit_breaker(status, interp, campaign)
 
     # --- IMPROVEMENT 01: mechanism_failure routing (A1.01) ---
@@ -3299,17 +3760,32 @@ def determine_post_verdict_route(path: Path, run_id: str):
         return "human_pause"
     # --- end mechanism_failure routing ---
 
-    if status == "promote":
-        update_state(path=path, flags={"walk_forward_passed": True})
-        print("\n🎯 PROVISIONAL PROMOTE: walk-forward passed. Writing promotion_audit and routing to holdout_evaluation.")
-        _write_promotion_audit(path, run_id)
-        return "holdout_evaluation"
+    # A8 (K2 kernel): resolve the two-field pair (preferring the artifact's own
+    # hypothesis_verdict/lineage_routing; legacy-status fallback + circuit-breaker
+    # interaction documented in _resolve_verdict_fields).
+    hypothesis_verdict, lineage_routing = _resolve_verdict_fields(interp, original_status, status)
 
-    if status == "kill":
-        return _route_kill(path, run_id, interp, campaign)
+    # C7: the stage's own verdict must not silently disagree with a BINDING
+    # machine-authored pass_rule_evaluation.yaml verdict.
+    _prc_violations = _check_pass_rule_evaluation_conformance(path, hypothesis_verdict, lineage_routing)
+    if _prc_violations:
+        print("\n🛑 [C7] STAGE OUTPUT DISAGREES WITH pass_rule_evaluation.yaml:")
+        for v in _prc_violations:
+            print(f"   - {v}")
+        update_state(path=path, status="paused_for_human",
+                     flags={"pass_rule_evaluation_disagreement": True},
+                     pass_rule_evaluation_violations=_prc_violations)
+        return "human_pause"
+
+    # Short-circuit ordering UNCHANGED from pre-K2 behavior: promote and a
+    # terminal kill (lineage_routing == "terminate") bypass carryover
+    # generation / KB write / output verification / campaign-review-trigger,
+    # exactly as the old status=="promote"/"kill" branches did.
+    if hypothesis_verdict == "promote" or lineage_routing == "terminate":
+        return _dispatch_verdict_route(path, run_id, interp, campaign, hypothesis_verdict, lineage_routing)
 
     # Auto-generate findings_carryover if missing (catches both normal and resume paths)
-    _auto_generate_findings_carryover(path, interp)
+    _auto_generate_findings_carryover(path, interp, lineage_routing)
 
     # A5.1-5.3: update campaign KB with this run's verdict
     _write_kb_findings_entry(path, run_id, interp)
@@ -3338,16 +3814,7 @@ def determine_post_verdict_route(path: Path, run_id: str):
             save_yaml(cr_handoff, cr_data)
         return "campaign_review"
 
-    if status == "refine":
-        return _route_refine(path, run_id, interp, campaign)
-
-    if status == "pivot":
-        return _route_pivot(path, run_id, interp, campaign)
-
-    if status == "escalate":
-        return _route_escalate(path, run_id, interp, campaign)
-
-    raise ValueError(f"Unknown verdict status: '{status}'")
+    return _dispatch_verdict_route(path, run_id, interp, campaign, hypothesis_verdict, lineage_routing)
 
 
 def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
@@ -3414,19 +3881,36 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
             return "human_pause"
 
         # Apply circuit-breaker overrides exactly as determine_post_verdict_route would,
-        # then route — but do NOT call _should_trigger_campaign_review again.
+        # then route via the SAME shared dispatcher (R1, K2 kernel) — but do NOT call
+        # _should_trigger_campaign_review again.
+        #
+        # DEVIATION (K2 Phase B, found during implementation): this branch's OLD promote
+        # handling was `return "completed_promoted"` directly — skipping
+        # _write_promotion_audit and the holdout_evaluation gate entirely, unlike
+        # determine_post_verdict_route's own promote handling. Nothing in this codebase
+        # documents that divergence as intentional, and this campaign's own standing
+        # doctrine treats holdout as a mandatory single-use gate every promote must pass
+        # through. R1 rejects "two divergent copies"; consolidating onto the SAME
+        # dispatcher necessarily picks ONE behavior, and the complete one (promotion_audit
+        # + holdout_evaluation) is the only one consistent with that doctrine. Flagged
+        # here and in the appended design-note section, not silently merged.
+        original_status = status
         status = _apply_circuit_breaker(status, interp, campaign)
-        if status == "refine":
-            return _route_refine(path, run_id, interp, campaign)
-        if status == "pivot":
-            return _route_pivot(path, run_id, interp, campaign)
-        if status == "escalate":
-            return _route_escalate(path, run_id, interp, campaign)
-        if status == "promote":
-            return "completed_promoted"
-        if status == "kill":
-            return _route_kill(path, run_id, interp, campaign)
-        raise ValueError(f"continue: unknown verdict status {status}")
+        hypothesis_verdict, lineage_routing = _resolve_verdict_fields(interp, original_status, status)
+
+        # C7: same disagreement check as determine_post_verdict_route (R1 --
+        # one shared conformance rule, not a divergent second copy).
+        _prc_violations = _check_pass_rule_evaluation_conformance(path, hypothesis_verdict, lineage_routing)
+        if _prc_violations:
+            print("\n🛑 [C7] STAGE OUTPUT DISAGREES WITH pass_rule_evaluation.yaml:")
+            for v in _prc_violations:
+                print(f"   - {v}")
+            update_state(path=path, status="paused_for_human",
+                         flags={"pass_rule_evaluation_disagreement": True},
+                         pass_rule_evaluation_violations=_prc_violations)
+            return "human_pause"
+
+        return _dispatch_verdict_route(path, run_id, interp, campaign, hypothesis_verdict, lineage_routing)
 
     if rec == "reframe":
         # Write the new research question as the next run's brief
@@ -3463,7 +3947,18 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         return _route_escalate(path, run_id, interp, load_campaign_state())
 
     if rec == "terminate":
-        return _route_kill(path, run_id, review, load_campaign_state())
+        # A9 (K2 kernel): this is the campaign-review-EXPLICIT termination
+        # decision the design note anticipated needing a new recommendation
+        # value for -- on implementation, `rec == "terminate"` already existed
+        # here (pre-K2) and already called the OLD, unsplit _route_kill (which
+        # wrote campaign_decision.yaml + space_empty unconditionally). No new
+        # recommendation value is needed: this existing "terminate" IS the
+        # campaign-scope decision A9 wants isolated: it now calls
+        # _route_campaign_terminate (the split-out campaign-wide half)
+        # instead of the now-per-hypothesis-only _route_kill. See the
+        # appended design-note section for why this differs from the
+        # Phase A design (which proposed inventing "terminate_campaign").
+        return _route_campaign_terminate(path, run_id, review, load_campaign_state())
 
     raise ValueError(f"Unknown campaign_review recommendation: {rec}")
 
