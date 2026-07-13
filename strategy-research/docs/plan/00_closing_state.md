@@ -1,5 +1,11 @@
 # Strategy-Research Pipeline — Closing State (Plan v2 Complete)
 
+**ARCHIVED SNAPSHOT — superseded by `strategy-research/00_closing_state.md` (the
+top-level file of the same title is the current, canonical version; this copy
+under `docs/plan/` is preserved for historical record only, per that file's
+own "archived under version control in `docs/plan/`" note. Read this only for
+what the plan looked like at this point in time, not as current status.**
+
 **Status: enhancement plan complete (M0–M3), pending final verification of two Improvement 06 acceptance outputs.** This document supersedes `00_overview_v2.md` as the entry point. Future sessions (human or agent) start here, then `AMENDMENTS_01-06.md` (which overrides the original plan docs `01`–`09` wherever they conflict). Do not reconstruct campaign state from run artifacts or memory — this document plus the amendments file plus `campaign_knowledge_base.yaml` are the canonical record.
 
 ## 1. What was built (one line per step, implementation order)

@@ -18,6 +18,11 @@
 prescreen:
   block_size_1h: 24          # bars per autocorrelation episode at 1h (= bars per day)
                               # Governs N_eff = active_bars / block_size
+  block_size_1d: 1           # 2026-07-07: a daily bar IS already one calendar day --
+                              # no intra-day autocorrelation block to divide out.
+                              # Mirrors block_size_1h's own logic (bars-per-day ==
+                              # block_size); see prescreen_signal.py._BLOCK_SIZE_1D
+                              # and run_phase1_research.py._A86_BLOCK_SIZE_BY_TIMEFRAME.
   significance_threshold: 0.10  # p-value gate; IC is "significant" only when p < this
   sigma_bar_bps_degenerate_fallback: 15.0
     # Degenerate placeholder ONLY: _sigma_from_records() returns this literal value

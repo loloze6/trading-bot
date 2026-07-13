@@ -16,6 +16,8 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
+from performance.signal_statistics import pearson_correlation, t_test_pvalue
+
 
 # ---------------------------------------------------------------------------
 # Directory creation
@@ -183,6 +185,14 @@ def build_core(
     # Positive corr + negative Sharpe → signal predicts direction but sizing/costs destroy it.
     # Near-zero corr → signal has no predictive power.
     # Negative corr → signal is inverted.
+    # 2026-07-09: a long-only (or otherwise single-constant-magnitude-when-active)
+    # signal has ZERO VARIANCE among these active-bar forecast values -- the
+    # correlation is mathematically undefined here, not "no correlation." Delegates
+    # to performance.signal_statistics, which returns None (never a fabricated
+    # 0.0) for this case, and never derives a p-value from an undefined
+    # correlation. See that module's docstring for the incident this fixes: the
+    # prior hardcoded corr=0.0 fallback produced a p=1.0 "confirmed no-edge"
+    # result that was actually just an artifact of the signal's shape.
     forecast_return_corr       = None
     forecast_return_corr_pvalue = None
     if bars_df is not None and "forecast" in bars_df.columns and "close" in bars_df.columns:
@@ -193,19 +203,10 @@ def build_core(
         if len(df) >= 5:
             x = df["forecast"].values.astype(float)
             y = df["forward_return"].values.astype(float)
-            xm, ym = x - x.mean(), y - y.mean()
-            denom = np.sqrt((xm**2).sum() * (ym**2).sum())
-            corr = float((xm * ym).sum() / denom) if denom > 1e-12 else 0.0
-            corr = max(-1.0, min(1.0, corr))
-            forecast_return_corr = round(corr, 6)
-            n_c = len(x)
-            if n_c > 2 and abs(corr) < 1.0:
-                t_stat = corr * np.sqrt((n_c - 2) / (1.0 - corr**2))
-                try:
-                    from scipy.stats import t as t_dist
-                    forecast_return_corr_pvalue = round(float(2 * t_dist.sf(abs(t_stat), df=n_c - 2)), 6)
-                except ImportError:
-                    pass
+            corr = pearson_correlation(x, y)
+            forecast_return_corr = round(corr, 6) if corr is not None else None
+            pvalue = t_test_pvalue(corr, len(x))
+            forecast_return_corr_pvalue = round(pvalue, 6) if pvalue is not None else None
 
     # Avg trade duration in bars (derived from trade timestamps + bar interval)
     avg_trade_duration_bars = None

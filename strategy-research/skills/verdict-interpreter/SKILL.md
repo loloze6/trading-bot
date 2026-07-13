@@ -401,6 +401,16 @@ with the EXACT diagnostic values that triggered the rule:
   guidance for THAT run only; they do not prevent a pivot to a new brief that lifts those
   constraints.
 - Do not output escalation_request.yaml or proposed_brief.yaml without also outputting findings_carryover.yaml in the same response.
+- Do NOT read, cite, or otherwise consume `fragment_patterns.yaml` (2026-07-10).
+  It is an ideation-only diagnostic artifact (basis: lifo_fragment,
+  ideation_only) — ANY finding in it, including an apparently damning
+  forecast-bin or duration/regime pattern, must never be used to relitigate,
+  support, or override a verdict here. It is not in this skill's Required
+  inputs for exactly this reason. If it is ever presented alongside the
+  required inputs, ignore it for verdict purposes — it belongs to
+  campaign_review's ideation stage, not here. See
+  docs/TIMEFRAME_CHANGE_PLAYBOOK.md section 7 for the three-role model this
+  enforces and test_fragment_patterns_firewall.py for the mechanical check.
 
 ## STEP 03 — Trade Attribution (required when trade_diagnostics.json is available)
 

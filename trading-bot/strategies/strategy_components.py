@@ -817,3 +817,315 @@ class FearGreedContrarianComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return 2
+
+
+# ============================================================================
+# COMPONENT: MACD HISTOGRAM CROSSOVER  (H-MACD, run_053)
+# edge_source.category: persistent_behavioral_bias
+# ============================================================================
+
+class MacdHistogramCrossoverComponent(SubStrategyComponent):
+    """
+    MACD(12,26,9) histogram zero-crossing detector with directional state.
+
+    histogram = (EMA_fast - EMA_slow) - EMA_signal(EMA_fast - EMA_slow)
+
+    Fires +scaling_factor the bar the histogram crosses from <=0 to >0 (bullish),
+    -scaling_factor the bar it crosses from >=0 to <0 (bearish), 0 on all other
+    bars (event-pulse signal, matching FundingRateMeanReversionComponent /
+    FearGreedContrarianComponent convention — activation_rate is meant to be
+    measured on these active bars only).
+
+    Existing EMADiff computes only the MACD line (ST_EMA - LT_EMA): no signal
+    line, no cross-bar state, no direction. This component adds the signal line
+    and a stateful sign comparison against the previous bar's histogram sign,
+    which a stateless transform op cannot express.
+    """
+
+    def __init__(self, name="MacdHistCrossover", weight=1.0, parameters=None):
+        params = parameters or {}
+        params.setdefault("standardized_forecast", False)
+        super().__init__(name, weight, params)
+        self.fast_period = int(params.get("fast_period", 12))
+        self.slow_period = int(params.get("slow_period", 26))
+        self.signal_period = int(params.get("signal_period", 9))
+        self.scaling_factor = float(params.get("scaling_factor", 10.0))
+        self._raw_value = 0.0
+        self._prev_histogram_sign = None  # None until the first ready bar is observed
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        close = data['close']
+        fast_ema = close.ewm(span=self.fast_period, adjust=False).mean()
+        slow_ema = close.ewm(span=self.slow_period, adjust=False).mean()
+        macd_line = fast_ema - slow_ema
+        signal_line = macd_line.ewm(span=self.signal_period, adjust=False).mean()
+        histogram = macd_line - signal_line
+
+        current_hist = float(histogram.iloc[-1])
+        current_sign = 1 if current_hist > 0 else (-1 if current_hist < 0 else 0)
+
+        crossover_direction = 0
+        # Skip the very first observed bar: with no real previous sign, comparing
+        # against a placeholder would fabricate a spurious crossover at warm-up.
+        if self._prev_histogram_sign is not None:
+            if self._prev_histogram_sign <= 0 and current_sign > 0:
+                crossover_direction = 1
+            elif self._prev_histogram_sign >= 0 and current_sign < 0:
+                crossover_direction = -1
+
+        if crossover_direction != 0:
+            self._raw_value = float(np.clip(crossover_direction * self.scaling_factor, -20.0, 20.0))
+            self.confidence = 1.0
+        else:
+            self.confidence = 0.0
+
+        self.debug_info = {
+            'macd_line': float(macd_line.iloc[-1]),
+            'signal_line': float(signal_line.iloc[-1]),
+            'histogram': current_hist,
+            'crossover_direction': crossover_direction,
+        }
+
+        self._prev_histogram_sign = current_sign
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.slow_period + self.signal_period
+
+
+# ============================================================================
+# COMPONENT: SMA TREND, LONG-ONLY (P4_ts_trend, SMA(100)-daily)
+# edge_source.category: persistent_behavioral_bias
+# ============================================================================
+
+class SmaTrendLongOnlyComponent(SubStrategyComponent):
+    """
+    Canonical time-series momentum: long (full allocation) when close > SMA(L),
+    flat otherwise. Long-only (no shorts) -- this component NEVER outputs a
+    negative raw_value. Designed for daily bars per the registered brief
+    (lookback_L=100 calendar days, not swept; single fixed formulation, not the
+    alternative "trailing L-day return > 0" framing -- that is a separate
+    registered trial per the brief's own hypothesis_space note).
+
+    ENGINE LIMITATION (documented, not silently approximated away): the brief
+    specifies "execution: next-day open after signal change." This engine's
+    ExecutionHandler fills exclusively at the CURRENT bar's close
+    (data['close'].iloc[-1], hardcoded throughout execution/execution_handler.py)
+    -- there is no next-bar-open fill mode anywhere in the engine. The closest
+    faithful approximation without new engine work: this component's raw_value
+    at bar T reflects the long/flat state determined from data THROUGH bar
+    T-1's close (a one-bar lag), so a crossover detected on day T-1's close
+    only takes effect starting day T's processing -- filled at day T's CLOSE,
+    not day T's OPEN. This is NOT identical to next-day-open execution (open
+    vs close differ, sometimes materially, around gaps) -- see
+    pre_registration.yaml's known_engine_caveat for this run.
+
+    standardized_forecast forced False (matching FundingRateMeanReversionComponent
+    / FearGreedContrarianComponent / MacdHistogramCrossoverComponent convention):
+    this is a binary long/flat state, not a magnitude-scaled correlation signal,
+    so generic stddev_24-based normalization does not apply and is skipped
+    entirely -- main_strategy.py's std_dev_period is never consulted for this
+    component's output.
+    """
+
+    def __init__(self, name="SmaTrendLongOnly", weight=1.0, parameters=None):
+        params = parameters or {}
+        params.setdefault("standardized_forecast", False)
+        super().__init__(name, weight, params)
+        self.lookback_L = int(params.get("lookback_L", 100))
+        self.scaling_factor = float(params.get("scaling_factor", 10.0))
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        close = data['close']
+        sma = close.rolling(self.lookback_L).mean()
+
+        # One-bar lag (see class docstring "ENGINE LIMITATION") -- use the
+        # PRIOR bar's fully-formed close/SMA, not the current bar's, so the
+        # signal a bar acts on was already determined before that bar started.
+        prior_close = float(close.iloc[-2])
+        prior_sma   = float(sma.iloc[-2])
+        is_long     = prior_close > prior_sma
+
+        self._raw_value = self.scaling_factor if is_long else 0.0
+        self.confidence = 1.0
+        self.debug_info = {
+            'prior_close': prior_close,
+            'prior_sma': prior_sma,
+            'is_long': is_long,
+        }
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.lookback_L + 1   # +1 for the one-bar lag (bar T-1 must be fully formed)
+
+
+# ============================================================================
+# COMPONENT: GATED SMA TREND, LONG-ONLY (P4_ts_trend_r1_er_gate, entry-latch)
+# edge_source.category: persistent_behavioral_bias
+# ============================================================================
+
+class GatedSmaTrendLongOnlyComponent(SubStrategyComponent):
+    """
+    SMA(100) long-only trend-following, gated by Kaufman Efficiency Ratio
+    ER(er_period) at entry ONLY -- an entry-only LATCH, not a continuous
+    regime gate. Built for the P4_ts_trend_r1_er_gate refinement after
+    backtest_specification's first attempt (wiring the gate through
+    regime_detector/strategies.regimes dispatch) was found to implement a
+    continuous ER trailing stop instead: that wiring re-evaluates whether
+    ANY forecast is produced every bar based on the CURRENT regime, so an
+    ER drop mid-position forced an exit -- a different hypothesis than the
+    one registered. This component keeps the gate check confined to the
+    single bar it belongs on.
+
+    LATCH SEMANTICS:
+    - The gate (ER(er_period) >= gate_threshold) is checked EXACTLY ONCE
+      per episode: on the bar the SMA(lookback_L) signal transitions from
+      off to on (a fresh cross-up). Internal state (`_in_position`,
+      `_prior_signal`) persists across `update()` calls -- the same
+      stateful-component pattern already used by
+      MacdHistogramCrossoverComponent's prior-histogram-sign tracking.
+    - If the gate check on that bar PASSES: the position is latched in
+      (`_in_position = True`) and held at `scaling_factor` for every
+      subsequent bar the SMA signal remains on, REGARDLESS of what ER does
+      afterward. In-position ER changes have no effect -- there is no
+      re-check, no early exit, no re-gating while the episode is open.
+    - If the gate check on that bar FAILS: the entry is skipped ENTIRELY
+      for this episode (output 0). This is NOT a deferred entry -- the
+      component does not re-check the gate on a later bar while the SMA
+      signal stays on; the only way back in is a fresh off-then-on
+      transition (a real cross-down followed by a real cross-up).
+    - Exit is the unchanged parent rule: the bar the SMA signal goes off
+      (cross-down), `_in_position` clears and output returns to 0 --
+      identical to SmaTrendLongOnlyComponent's own exit behavior.
+
+    ER BASIS: Kaufman ER_t(er_period) = abs(close_t - close_{t-n}) /
+    sum(abs(close_i - close_i-1)), computed RAW (no smoothing -- unlike
+    EfficiencyRatioRegimeComponent's EWM-smoothed regime-detector version;
+    the brief's gate_definition specifies the unsmoothed formula), over a
+    window ending at the SAME prior bar (T-1) the SMA comparison uses --
+    identical one-bar lag, no lookahead, no cross-contamination between the
+    two indicators' effective "as-of" bar.
+
+    ENGINE CAVEAT (verbatim from the brief's execution_convention, inherited
+    unchanged from SmaTrendLongOnlyComponent -- the gate does not change
+    this): "Execution: next-day open after signal change. Engine caveat:
+    this backtester fills at bar close, not next-bar open -- see
+    strategies/strategy_components.py::SmaTrendLongOnlyComponent's docstring
+    for the one-bar-lag approximation actually used; not identical to true
+    next-open execution." This component's raw_value at bar T reflects the
+    long/flat/gate state determined from data THROUGH bar T-1's close (the
+    same one-bar lag), so a signal or gate decision made on day T-1's close
+    only takes effect starting day T's processing -- filled at day T's
+    CLOSE, not day T's OPEN.
+
+    Parameterized (lookback_L, scaling_factor, er_period, gate_threshold) so
+    a separate ER(10) run (S1, the brief's secondary robustness check) can
+    reuse this same class with er_period=10 -- a distinct registered trial,
+    not a sweep run through this component.
+    """
+
+    def __init__(self, name="GatedSmaTrendLongOnly", weight=1.0, parameters=None):
+        params = parameters or {}
+        params.setdefault("standardized_forecast", False)
+        super().__init__(name, weight, params)
+        self.lookback_L = int(params.get("lookback_L", 100))
+        self.scaling_factor = float(params.get("scaling_factor", 10.0))
+        self.er_period = int(params.get("er_period", 20))
+        self.gate_threshold = float(params.get("gate_threshold", 0.30))
+        self._raw_value = 0.0
+        self._in_position = False
+        self._prior_signal = False  # False until the first computable bar --
+                                     # matches SmaTrendLongOnlyComponent/
+                                     # MacdHistogramCrossoverComponent's
+                                     # "no fabricated transition at warmup" rule
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        close = data['close']
+        sma = close.rolling(self.lookback_L).mean()
+
+        # One-bar lag (see class docstring "ENGINE CAVEAT") -- identical
+        # convention to SmaTrendLongOnlyComponent: use bar T-1's fully-formed
+        # close/SMA, not bar T's.
+        prior_close = float(close.iloc[-2])
+        prior_sma = float(sma.iloc[-2])
+        is_long_signal = prior_close > prior_sma
+
+        # Kaufman ER(er_period), RAW (unsmoothed), same one-bar lag: window
+        # ends at the same prior bar (T-1) the SMA comparison uses.
+        close_vals = close.values
+        er_window = close_vals[-(self.er_period + 2):-1]  # er_period+1 closes ending at T-1
+        raw_change = abs(float(er_window[-1]) - float(er_window[0]))
+        path_length = float(np.sum(np.abs(np.diff(er_window))))
+        prior_er = raw_change / path_length if path_length != 0 else 0.0
+
+        entered_this_bar = False
+        gate_rejected_this_bar = False
+
+        if is_long_signal and not self._prior_signal:
+            # Transition bar (signal off -> on): the ONLY point the gate is
+            # ever evaluated. No deferred entry, no re-check on later bars.
+            if prior_er >= self.gate_threshold:
+                self._in_position = True
+                entered_this_bar = True
+            else:
+                self._in_position = False
+                gate_rejected_this_bar = True
+        elif not is_long_signal:
+            # Signal-off bar (cross-down, or signal never triggered): flat,
+            # latch cleared -- unchanged parent exit rule.
+            self._in_position = False
+        # else: signal still on, not a transition bar -- _in_position is left
+        # exactly as it was (the latch: hold if in, stay skipped if rejected).
+
+        if self._in_position:
+            self._raw_value = self.scaling_factor
+        else:
+            self._raw_value = 0.0
+        self.confidence = 1.0
+
+        self.debug_info = {
+            'prior_close': prior_close,
+            'prior_sma': prior_sma,
+            'is_long_signal': is_long_signal,
+            'prior_er': prior_er,
+            'gate_threshold': self.gate_threshold,
+            'in_position': self._in_position,
+            'entered_this_bar': entered_this_bar,
+            'gate_rejected_this_bar': gate_rejected_this_bar,
+        }
+
+        self._prior_signal = is_long_signal
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        # SMA needs lookback_L+1 (one-bar lag); ER needs er_period+2 (er_period+1
+        # closes ending at the SAME prior bar, one-bar lag) -- take the binding one.
+        return max(self.lookback_L + 1, self.er_period + 2)

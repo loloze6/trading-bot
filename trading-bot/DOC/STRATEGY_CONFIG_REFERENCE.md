@@ -168,6 +168,8 @@ All expose `raw_value()`; usable in both engines. `params` defaults in parenthes
 | `DonchianBreakoutComponent` | period(48), scaling_factor(20.0) | breakout position | period |
 | `KeltnerBreakoutComponent` | ema_period(20), atr_period(20), atr_multiplier(1.5), scaling_factor(20.0) | channel breakout | max(ema,atr)+1 |
 | `MomentumDivergenceComponent` | short_period(5), long_period(20), scaling_factor(1.5) | short×long trend alignment | long |
+| `MacdHistogramCrossoverComponent` | fast_period(12), slow_period(26), signal_period(9), scaling_factor(10.0) | ±sf event-pulse the bar the MACD histogram (MACD line − signal line) crosses zero (bullish/bearish); 0 all other bars — stateful, not a transform | slow+signal |
+| `SmaTrendLongOnlyComponent` | lookback_L(100), scaling_factor(10.0) | sf if prior bar's close > SMA(lookback_L), else 0 — long-only (never negative), one-bar lag on both close and SMA (see class docstring: engine has no next-open fill, this is the closest approximation) | L+1 |
 | `BuyAndHoldStrategy` | — | constant +10 | 0 |
 
 ### Hedges / filters

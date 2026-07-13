@@ -1140,7 +1140,20 @@ def determine_post_validation_route(path: Path):
     """
     decision_path = path / "artifacts" / "validation_decision.yaml"
     decision = load_yaml(decision_path)
-    status = decision.get("status").strip().lower()
+    # F4f (2026-07-06, run_053): the quant-validation skill's real output for a
+    # multi-variant family validation (5 MACD variants) used `family_status`
+    # instead of the schema-canonical top-level `status` (schemas/validation_decision.
+    # schema.json requires status/rationale/blocking_issues; family_status is not
+    # even a schema-valid key). Fall back rather than crash with an opaque
+    # AttributeError on None — but still fail loudly (not silently proceed) if
+    # neither key is present, since that means the file is genuinely malformed.
+    status = decision.get("status") or decision.get("family_status")
+    if status is None:
+        raise ValueError(
+            f"{decision_path} has neither 'status' nor 'family_status' — cannot "
+            f"determine route. Keys present: {list(decision.keys())}"
+        )
+    status = status.strip().lower()
 
     state = load_yaml(path / "pipeline_state.yaml")
     refinements_used = state.get("counters", {}).get("refinements_used", 0)
@@ -1148,7 +1161,13 @@ def determine_post_validation_route(path: Path):
 
     if status in ("approve", "conditional_approve"):
         if status == "conditional_approve":
-            conditions = decision.get("conditions", [])
+            # Family-schema output has no top-level `conditions` — aggregate
+            # per-variant conditions instead (see the status fallback above).
+            conditions = decision.get("conditions")
+            if conditions is None:
+                conditions = [
+                    c for v in decision.get("variant_decisions", []) for c in v.get("conditions", [])
+                ]
             print(f"\n⚠️  CONDITIONAL APPROVAL — conditions to respect in backtest config:")
             for c in conditions:
                 print(f"   - {c}")
@@ -1618,6 +1637,61 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
     return violations
 
 
+def _check_kb_reactivation_conformance(next_research_question: dict, kb: dict) -> list:
+    """
+    A5.4 (2026-07-06, F09/run_053 postmortem): before honoring ANY reframe/reactivation
+    recommendation from campaign_review, verify it does not target a KB finding whose
+    reactivation_condition has already been consumed (reactivation_consumed_by set) or
+    that is flatly exhausted with no open reactivation_condition. Mirrors
+    _check_prescreen_conformance (F4d) in spirit — a violation here means the campaign
+    is about to spend a real trial re-testing an already-answered question, exactly
+    what happened live: run_053's campaign_review recommended reframing into
+    reactivating both H-041-A and H-041-C, both of which run_050/run_048 (P1b) had
+    already closed — but neither KB entry had been written back with the closing
+    verdict (see _write_kb_findings_entry's F09 hook, which now prevents this from
+    recurring going forward; this gate is the second, independent line of defense that
+    also catches a STALE KB entry a human hasn't gotten around to correcting yet).
+
+    Detection is text-based (hypothesis_id mentioned in the proposed research
+    question's prose) — next_research_question is free-form LLM prose, not a
+    structured pointer to a KB entry, the same class of match already used for
+    wishlist-trigger detection in workflow/run_campaign.py._check_wishlist_trigger.
+    Returns a list of violation strings (empty = conforms).
+    """
+    if not next_research_question:
+        return []
+    text_parts = []
+    for key in ("research_goal", "existing_context", "constraints"):
+        val = next_research_question.get(key)
+        if not val:
+            continue
+        text_parts.append(val if isinstance(val, str) else " ".join(str(v) for v in val))
+    text = " ".join(text_parts).lower()
+    if not text:
+        return []
+
+    violations = []
+    for f in (kb.get("findings") or []):
+        hyp_id = f.get("hypothesis_id")
+        if not hyp_id or hyp_id.lower() not in text:
+            continue
+        consumed_by = f.get("reactivation_consumed_by")
+        if consumed_by:
+            violations.append(
+                f"next_research_question references {hyp_id} (finding {f.get('id')!r}), "
+                f"whose reactivation_condition was already consumed by {consumed_by} "
+                f"(outcome={f.get('outcome')}). A genuinely different formulation is a "
+                f"new hypothesis registration, not a reactivation of this entry."
+            )
+        elif f.get("exhausted") and not f.get("reactivation_condition"):
+            violations.append(
+                f"next_research_question references {hyp_id} (finding {f.get('id')!r}), "
+                f"which is exhausted (outcome={f.get('outcome')}) with no open "
+                f"reactivation_condition."
+            )
+    return violations
+
+
 def _mark_trial_invalidated(run_id: str, reason: str):
     """F8b-pattern: flag a previously-recorded trial as invalidated_artifact — it
     contacted real data but tested the wrong thing (conformance violation), so it
@@ -1696,6 +1770,76 @@ def _next_run_id(run_id: str) -> str:
         candidate = f"{base_candidate}{suffix_n}"
         suffix_n += 1
     return candidate
+
+
+def _handle_hypothesis_generation_multi_card_split(run_id: str, run_dir: Path) -> bool:
+    """
+    Architecture rule (2026-07-06, run_054 postmortem): ONE hypothesis per run.
+    hypothesis_generation's handoff always expects a single hypothesis_card.yaml —
+    ensure_files()'s contract is NOT changed to accept multiple; every downstream
+    stage assumes one card. If the LLM instead writes MULTIPLE
+    hypothesis_card_*.yaml files (because next_research_question's research_goal
+    named more than one mechanism to test — exactly what happened for run_054,
+    reframed from run_053 into testing BOTH H-041-A and H-041-C at once), that is
+    not a failure to raise on: split it. The first card becomes THIS run's
+    hypothesis_card.yaml (so it proceeds completely normally — no change to any
+    downstream stage or to ensure_files); every additional card is handed to a
+    freshly-scaffolded sibling run, already past hypothesis_generation, and the
+    split is recorded in campaign_state.yaml's hypothesis_splits so a multi-run
+    wrapper (workflow/run_campaign.py) can tell a split sibling apart from a
+    reframe/escalate continuation (same brief lineage) and create a SEPARATE queue
+    entry for it instead.
+
+    Called from run_loop only when ensure_files() raised FileNotFoundError for
+    hypothesis_generation's expected hypothesis_card.yaml. Returns True if a split
+    was performed (caller treats the stage as having succeeded); False if this
+    isn't actually a multi-card situation (caller re-raises the original error
+    unchanged — a genuinely missing, non-multi-card deliverable is still a real
+    failure).
+    """
+    artifacts = run_dir / "artifacts"
+    expected = artifacts / "hypothesis_card.yaml"
+    if expected.exists():
+        return False  # not actually missing — some other deliverable was the problem
+
+    cards = sorted(artifacts.glob("hypothesis_card_*.yaml"))
+    if len(cards) < 2:
+        return False  # genuinely missing, not a multi-card split — let the caller raise
+
+    print(f"\n🔀 ARCHITECTURE RULE (one hypothesis per run): hypothesis_generation produced "
+          f"{len(cards)} hypothesis cards instead of one ({[c.name for c in cards]}). "
+          f"Splitting: this run keeps the first card; a sibling run is scaffolded per "
+          f"additional card.")
+
+    first, rest = cards[0], cards[1:]
+    shutil.copy(first, expected)
+    print(f"   {run_id} keeps {first.name} as hypothesis_card.yaml")
+
+    research_brief_src = artifacts / "research_brief.yaml"
+    children = []
+    for card in rest:
+        child_id = _next_run_id(run_id)
+        _scaffold_next_run(child_id)
+        child_dir = ROOT / "runs" / child_id
+        child_artifacts = child_dir / "artifacts"
+        if research_brief_src.exists():
+            shutil.copy(research_brief_src, child_artifacts / "research_brief.yaml")
+        shutil.copy(card, child_artifacts / "hypothesis_card.yaml")
+        # Skip straight to innovation_expansion — this card is already a completed
+        # hypothesis_generation deliverable, not a fresh one to regenerate.
+        update_state(path=child_dir, pending_stage="innovation_expansion",
+                     current_stage="hypothesis_generation",
+                     completed_stages=["hypothesis_generation"], status="active")
+        children.append(child_id)
+        print(f"   {child_id} scaffolded from {card.name}")
+
+    state = load_campaign_state()
+    splits = state.setdefault("hypothesis_splits", [])
+    splits.append({"parent_run": run_id, "children": children,
+                    "reason": "hypothesis_generation produced multiple hypothesis cards"})
+    _save_campaign_state(state)
+
+    return True
 
 
 def _next_instrument_from_universe(campaign: dict) -> dict:
@@ -2121,7 +2265,23 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
         return
 
     run_id_str = str(interp.get("run_id") or run_id)
-    verdict_label = (interp.get("verdict_label") or interp.get("disposition") or "").lower()
+    # F10 (2026-07-06, run_053): verdict_interpreter's REAL output for this run used
+    # neither verdict_label nor disposition — it wrote protocol_verdict: "kill" (generic,
+    # not in _VERDICT_TO_OUTCOME) alongside prescreen_evidence.route: "kill_no_ic" (the
+    # specific code that IS in the map). The old two-key lookup silently fell back to the
+    # "inconclusive" default, writing a genuine no_edge_observed null into the KB as
+    # merely "inconclusive" — the same class of schema drift as the validation stage's
+    # family_status incident (F08). prescreen_evidence.route is checked before
+    # protocol_verdict because it carries the specific outcome code; protocol_verdict is
+    # last-resort (generic "kill"/"promote"/etc. wording that mostly won't match anyway,
+    # but is still better than empty string).
+    verdict_label = (
+        interp.get("verdict_label")
+        or interp.get("disposition")
+        or (interp.get("prescreen_evidence") or {}).get("route")
+        or interp.get("protocol_verdict")
+        or ""
+    ).lower()
     outcome = _VERDICT_TO_OUTCOME.get(verdict_label, "inconclusive")
 
     existing = _find_kb_entry(findings, hyp_id)
@@ -2133,6 +2293,49 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
             existing["evidence_count"] = len(runs)
         print(f"⚙️  A5.1: KB entry for {hyp_id} updated "
               f"(evidence_count={existing['evidence_count']}, run={run_id_str})")
+
+        # F09 (2026-07-06, run_053 postmortem): a run that consumes an OPEN
+        # reactivation_condition must close it here — otherwise the KB entry stays
+        # stale (still describing the pre-reactivation outcome/underpowered state,
+        # with reactivation_condition still inviting another attempt) even after a
+        # corrected, adequately-powered re-run genuinely answers the question. This
+        # exact gap let run_053's campaign_review propose reactivating H-041-A/H-041-C
+        # on 2026-07-06 — run_050/run_048 (P1b) had already closed both, but neither
+        # KB entry was ever written back with the new verdict, so reactivation_condition
+        # was still non-null when campaign_review read it. Fixed here at the write
+        # path (not just by hand-correcting the two stale entries — see
+        # campaign_knowledge_base.yaml git history), so it cannot recur silently for
+        # a future reactivation. Only fires when the new verdict is NOT itself another
+        # inconclusive/underpowered result (re-parking an open condition is fine —
+        # only a genuinely definitive new verdict should close it).
+        if existing.get("reactivation_condition") and not existing.get("reactivation_consumed_by"):
+            is_still_open = outcome == "inconclusive" or "insufficient" in verdict_label
+            if not is_still_open:
+                existing["reactivation_consumed_by"] = run_id_str
+                existing["reactivation_condition"] = None
+                existing["outcome"] = outcome
+                existing["outcome_reason"] = verdict_label
+                ps = interp.get("prescreen_result_summary", {})
+                if ps:
+                    existing["signal_property"] = {
+                        k: ps.get(k) for k in ("ic_active_bars", "p_value", "n_eff", "n_episodes")
+                        if ps.get(k) is not None
+                    }
+                power = interp.get("power_disposition")
+                if power:
+                    existing["power_disposition"] = power
+                existing["exhausted"] = True
+                existing["exhausted_basis"] = (
+                    f"Empirical ({run_id_str}): reactivation_condition consumed with a "
+                    f"definitive verdict ({verdict_label}). Auto-closed by "
+                    f"_write_kb_findings_entry (F09) — REVIEW FOR ACCURACY, especially if "
+                    f"the result is nuanced (e.g. era-conditional instability, a flipped "
+                    f"sign, or anything a plain outcome enum can't capture); a stub close "
+                    f"is a starting point for the human-authored narrative, not a substitute."
+                )
+                print(f"🔒 F09: reactivation_condition for {hyp_id} consumed by {run_id_str} "
+                      f"— KB entry closed (outcome={outcome}). Review exhausted_basis for "
+                      f"accuracy if the result is nuanced.")
     else:
         ps = interp.get("prescreen_result_summary", {})
         power = interp.get("power_disposition")
@@ -2306,6 +2509,12 @@ def _compare_llm_vs_machine_power(run_id: str, hyp_id: str, machine: dict, card:
         _log_power_check_discrepancy(run_id, hyp_id, machine, llm_reported, discrepancies)
 
 
+# 2026-07-07: A8.6 block_size, timeframe-aware (mirrors prescreen_signal.py's
+# _BLOCK_SIZE_1H/_BLOCK_SIZE_1D — both must be updated together, same as the
+# power_check.py/prescreen_signal.py mirroring this docstring already calls out).
+_A86_BLOCK_SIZE_BY_TIMEFRAME = {"1h": 24, "1d": 1}
+
+
 def _run_a86_power_check(artifacts: Path) -> dict:
     """
     A8.6: compute expected statistical power from hypothesis_card.yaml power_parameters.
@@ -2333,7 +2542,15 @@ def _run_a86_power_check(artifacts: Path) -> dict:
     n_bars = params.get("n_bars", 17520)
     n_symbols = params.get("n_symbols", 2)
     is_market_wide = params.get("is_market_wide", False)
-    block_size = 24  # 1h bars per episode
+    # 2026-07-07: block_size must match the run's actual timeframe — this was
+    # hardcoded to 24 (1h bars/day) with no dispatch at all, silently treating
+    # a daily-bar hypothesis's power_parameters.n_bars as if they were hourly
+    # (n_eff off by a full 24x). Read timeframe from research_brief.yaml (the
+    # standard schema field every run already carries); default "1h" preserves
+    # every prior run's exact behavior when the field is absent.
+    brief_path = artifacts / "research_brief.yaml"
+    timeframe = (load_yaml(brief_path) or {}).get("timeframe", "1h") if brief_path.exists() else "1h"
+    block_size = _A86_BLOCK_SIZE_BY_TIMEFRAME.get(timeframe, 24)
 
     if is_market_wide:
         rho = _load_rho_bar()
@@ -3137,6 +3354,31 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
     review = load_yaml(path / "artifacts" / "campaign_review.yaml")
     rec = review.get("recommendation", "").strip().lower()
 
+    # A5.4 (F09): KB-reactivation conformance gate. Any recommendation that carries a
+    # next_research_question ("continue"+reframe or "reframe") is checked BEFORE
+    # scaffolding a new run — a violation must not spend a trial re-testing an
+    # already-answered, already-consumed reactivation. See
+    # _check_kb_reactivation_conformance's docstring for the run_053 incident this
+    # closes. No new run is scaffolded on a violation, same treatment as F4d's
+    # prescreen conformance gate.
+    _nrq_raw = review.get("next_research_question")
+    if _nrq_raw and rec in ("continue", "reframe"):
+        _nrq = _nrq_raw
+        if isinstance(_nrq, str):
+            _nrq = yaml.safe_load(_nrq)
+        if isinstance(_nrq, dict) and _nrq:
+            _kb = load_yaml(_KB_PATH) if _KB_PATH.exists() else {}
+            _kb_violations = _check_kb_reactivation_conformance(_nrq, _kb or {})
+            if _kb_violations:
+                print("\n🛑 [A5.4] KB-REACTIVATION CONFORMANCE VIOLATION — this reframe "
+                      "targets an already-closed KB entry:")
+                for v in _kb_violations:
+                    print(f"   - {v}")
+                update_state(path=path, status="paused_for_human",
+                             flags={"kb_reactivation_violation": True},
+                             kb_reactivation_violations=_kb_violations)
+                return "human_pause"
+
     if rec == "continue":
         # If campaign_review supplied next_research_question, honour it —
         # it overrides the verdict_interpreter's proposed_brief.yaml.
@@ -3427,7 +3669,14 @@ def run_loop(run_id: str):
             # Invoke the Agent (F4b: one bounded YAML-repair retry on failure)
             expected_outputs = [RUN_DIR / "artifacts" / x for x in handoff_data.get("deliverables", [])]
             if not _skip_agent:
-                _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
+                if current_stage == "hypothesis_generation":
+                    try:
+                        _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
+                    except FileNotFoundError:
+                        if not _handle_hypothesis_generation_multi_card_split(run_id, RUN_DIR):
+                            raise
+                else:
+                    _invoke_agent_with_yaml_retry(current_stage, run_id, RUN_DIR, expected_outputs, state)
             else:
                 ensure_files(expected_outputs)
 

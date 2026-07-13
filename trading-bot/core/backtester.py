@@ -42,8 +42,16 @@ class BacktestEngine:
                  initial_capital: float = 10000.0,
                  commission_rate: float = 0.001,
                  human_reports: bool = False,
+                 warmup_cutoff_timestamp=None,
                  ):
         if symbols is None: symbols = ["BTCUSDT"]
+        # 2026-07-07: bars with timestamp < warmup_cutoff_timestamp still update the
+        # strategy (see TradingBot._process_symbol_candle_completion) but never trade
+        # or touch portfolio state -- used to silently warm up indicator history from
+        # data fetched before the real scoring window (see launcher.run_backtest's
+        # warmup_prefetch). Default None preserves exact prior behavior: every bar
+        # trades, as before this parameter existed.
+        self.warmup_cutoff_timestamp = warmup_cutoff_timestamp
         self.data_manager = data_manager 
         self.strategy = strategy 
         self.execution_handler = execution_handler
@@ -130,10 +138,11 @@ class BacktestEngine:
             forecast_manager = self.forecast_manager,
             risk_manager=self.risk_manager,
             performance_tracker= self.performance_tracker,
-            price_fetch_interval= self.price_fetch_interval, 
+            price_fetch_interval= self.price_fetch_interval,
             candle_interval_seconds=self.candle_interval_seconds,
             test_mode=True,
-            symbols=self.symbols
+            symbols=self.symbols,
+            warmup_cutoff_timestamp=self.warmup_cutoff_timestamp,
         )
 
         # Wire the candle callback now that bot exists

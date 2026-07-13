@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+Start with `DOC_INDEX.md` — it maps every doc in this directory by the
+question you're arriving with, not by file location.
+
 ## Project
 Research-only trading strategy factory.
 

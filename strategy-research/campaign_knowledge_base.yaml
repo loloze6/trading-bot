@@ -27,6 +27,34 @@ findings:
     forecast_return_corr: 0.2145
     ic_all_bars: -0.012
     ic_active_bars: -0.032
+    per_trade_expectancy_bps: -108.7421
+    per_trade_expectancy_t_stat: -1.855
+    per_trade_expectancy_n_episodes: 67
+  signal_property_audit_note: '2026-07-10: per_trade_expectancy_bps backfilled (this
+    field predates the A3.4 schema and was previously absent -- the gap that masked
+    daily_timeframe_er_overlay''s predicate evaluation as missing_field instead of
+    a clean false). Computed, not estimated, EPISODE-level (not fragment-level) from
+    the stored keltner_163 baseline_v2 artifacts at strategy-research/results/protocols/20260702T091324Z_18fad381/
+    (protocol_summary.json + per-window bars.csv/trades.json under results/runs/<run_id>/):
+    reconstructed 67 real position episodes from the activity-transition boundaries
+    on each window''s bars.csv forecast column, grouped all 163 trades.json fragments
+    into those 67 episodes by real entry timestamp (0 fragments unassigned), summed
+    each episode''s real net_portfolio_profit_loss_percent into one episode PnL in
+    bps, then took mean/se/t_stat over the 67 episode-level observations (2024 cohort
+    n=28 mean=-64.62bps; 2025 cohort n=39 mean=-140.42bps; pooled n=67 mean=-108.74bps,
+    se=58.62, t=-1.855). This differs materially from the FRAGMENT-level figure already
+    on record elsewhere (skills/verdict-interpreter/SKILL.md''s A3.5 keltner_163 fixture:
+    pooled n=163, mean=-44.6bps, t=-4.637) -- both are negative (this signal has no
+    case for a positive per-trade edge under either basis), but the magnitude and
+    significance differ because 163 fragments collapse into only 67 real episodes
+    here (an average of ~2.4 LIFO fragments per real position episode) -- unlike run_054''s
+    SMA signal, this Keltner mean-reversion signal DOES scale positions and DOES fragment
+    materially. See docs/TIMEFRAME_CHANGE_PLAYBOOK.md section 2(c). Both figures kept
+    on record (fragment-level in SKILL.md, episode-level here) -- this KB entry''s
+    signal_property now carries the episode-level number since that is the basis decision-consumed
+    metrics must use.
+
+    '
   protocol_version: baseline_v2
   detector_version: c647ee20
   detector_note: 'The TRENDING labels at ER>=0.50 activate ~1% of bars (class-conditional
@@ -152,41 +180,37 @@ findings:
   - run_041
   - run_050
   evidence_count: 2
-  outcome: inconclusive
-  outcome_reason: insufficient_sample_inconclusive
+  outcome: no_edge_observed
+  outcome_reason: closed_null_well_powered
   signal_property:
-    ic_active_bars: 0.014
-    p_value: 0.97
-    n_eff: 10
+    ic_active_bars: 0.017764
+    p_value: 0.521
+    n_episodes: 139
     direction: positive
-  protocol_version: baseline_v2
+  protocol_version: backward_extension_2019_2025
   detector_version: not_applicable
   power_disposition:
-    status: underpowered
-    expected_n_eff: 10
+    status: adequately_powered
+    expected_n_eff: 139
     min_detectable_ic_at_target_power: 0.46
     plausible_ic_range:
     - 0.05
     - 0.2
-    verdict: insufficient_power
-  reactivation_condition: 'PRIMARY: Backward data extension to 2018+ (funding extremes
-    documented in 2020-2022; expected_n_eff ≈ 50+ on 7-year window). Scheduled in
-    consolidated backward-extension pass — do not start ad hoc. SECONDARY (live):
-    trailing 30-day funding_rate percentile > top-5% (≈0.0002, rolling past-only per
-    A8.5.2). When active-regime condition is met, re-prescreen on current data is
-    meaningful.
-
-    STILL UNATTEMPTED as of 2026-07-05: run_047 (P1b) attempted this reactivation
-    but was invalidated by the pre-registration conformance gate (F4d) before reaching
-    this entry -- see the sibling finding funding_rate_mean_reversion_run047_invalidated.
-    evidence_runs/evidence_count above were reverted to run_041-only after the verdict_interpreter
-    had incorrectly merged run_047''s invalid result in. A corrected re-run (proper
-    backward-extension protocol + A8.5.1a, enforced by the new conformance gate) is
-    still needed to actually close this reactivation_condition.
+    verdict: well_powered_null
+  reactivation_condition: null
+  reactivation_consumed_by: run_050
+  exhausted: true
+  exhausted_basis: 'Empirical (P1b, run_050, 2026-07-05/06): ic_active_bars=0.017764,
+    p=0.521, n_episodes=139 over the full 2019-09-10 to 2025-12-31 backward-extended
+    window (A8.5.1a episode-blocked significance, floor_pass=true at min_n_episodes_floor=8).
+    ~14x the original episode count (run_041: n_eff=10) and still not significant.
+    This is the reactivation_condition''s own PRIMARY trigger (backward extension)
+    fully executed and closed, not a power-limited parked result — no further reactivation
+    of this same formulation is defensible. A structurally different claim (different
+    evidence_type, timeframe, or venue) would be a new hypothesis registration, not
+    a reactivation of this entry.
 
     '
-  exhausted: false
-  exhausted_basis: null
 - id: funding_rate_mean_reversion_run047_invalidated
   mechanism: Funding rate extreme → contrarian mean-reversion (structural_forced_flow)
   hypothesis_id: H-041-A
@@ -235,37 +259,46 @@ findings:
   - run_042
   - run_048
   evidence_count: 2
-  outcome: inconclusive
-  outcome_reason: insufficient_sample_inconclusive
+  outcome: era_conditional_instability
+  outcome_reason: significant_pooled_ic_with_era_sign_flip
   signal_property:
-    ic_active_bars: 0.19
-    p_value: 0.547
-    n_eff: 13
-    direction: positive
+    ic_active_bars: -0.040257
+    p_value: 0.081
+    n_episodes: 234
+    direction: negative_pooled_sign_flips_by_era
     unshifted_ic: 0.14
-  protocol_version: baseline_v2
+    per_era_note: Sign is negative throughout 2018-2023 (BTC -0.058 to -0.073, ETH
+      -0.071 to -0.135) and positive throughout 2024-2025 (BTC +0.101 to +0.182, ETH
+      +0.094 to +0.163) -- consistent across both symbols and all 8 era-symbol pairs.
+      See docs/00_closing_state.md section 8.
+  protocol_version: backward_extension_2018_2025
   detector_version: not_applicable
   a8_4_alignment: applied_plus1day_shift
   power_disposition:
-    status: underpowered
-    expected_n_eff: 13
+    status: adequately_powered
+    expected_n_eff: 234
     min_detectable_ic_at_target_power: 0.46
     plausible_ic_range:
     - 0.05
     - 0.15
-    verdict: insufficient_power
-  reactivation_condition: 'Data extension to 2018+. F&G available since 2018; 7-year
-    window (2018-2025) gives active_n≈557 per symbol (21.8% × 2555 days), n_eff≈46
-    with 2 symbols. At n_eff=46: min_detectable_ic ≈ 0.15 — within plausible IC range
-    for sentiment signals. NOTE: Additional symbols do NOT materially increase power.
-    F&G is market-wide (single index), so BTC and ETH next-bar returns are correlated
-    under the same signal. History is the binding resource, not symbol count. Extension
-    scheduled in consolidated backward-extension pass. Do NOT retune 25/75 thresholds
-    on new data — requires H-041-C-v2 registration per A8.5.3.
+    verdict: significant_but_era_unstable
+  reactivation_condition: null
+  reactivation_consumed_by: run_048
+  exhausted: true
+  exhausted_basis: 'Empirical (P1b, run_048, 2026-07-05/06): the pooled/naive extreme-F&G
+    contrarian claim on this entry''s exact formulation is closed -- ic_active_bars=-0.040257,
+    p=0.081 (significant, wrong sign vs. this entry''s original positive-direction
+    claim), n_episodes=234 over 2018-02 to 2025-12-31. The per-era breakdown (A8.5.1a)
+    is the real finding: the sign flips cleanly by era (see signal_property.per_era_note),
+    so neither "confirmed edge" nor a simple "kill" applies to the pooled claim as
+    registered. A naive polarity flip (run_052, scaffolded 2026-07-06, NOT launched)
+    would only fix one era at the expense of the other -- it does not resolve the
+    underlying era-instability and must not be proposed as a plain reactivation. Any
+    further pursuit of F&G contrarian behavior requires a NEW hypothesis registration
+    (H-041-C-v2, e.g. an explicitly era-conditional or regime-gated formulation) per
+    A8.5.3 -- not a reactivation of this entry, and not run_052 launched as-is.
 
     '
-  exhausted: false
-  exhausted_basis: null
 - id: volume_impulse_continuation_blocked
   mechanism: High-volume bars with strong body fraction → directional continuation
   hypothesis_id: H-041-B
@@ -429,6 +462,158 @@ findings:
     not a power question, since n_eff=83 here already clears the a-priori power bar.
 
     '
+- id: macd_trend_continuation_extended_2018_2025_auto
+  mechanism: MACD(12,26,9) histogram zero-crossing, BTC/ETH 1h, ungated (persistent_behavioral_bias)
+  hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+  edge_source_category: persistent_behavioral_bias
+  evidence_runs:
+  - run_053
+  evidence_count: 1
+  outcome: no_edge_observed
+  root_cause: no_informational_content_this_venue
+  outcome_reason: 'Full backward-extended range (2018-01-01 to 2025-12-31, 8 years,
+    multiple bull/bear/chop cycles), prescreen kill_no_ic. ic_all_bars=-0.014497 (p=0.2922,
+    not significant); ic_active_bars=-0.050271 on MACD crossover events specifically
+    (negative direction -- signal is directionally wrong or orthogonal, not merely
+    undersampled). forecast_sparsity_pct=92.41 (active_n_bars=10616 of 139.8k). cost_check
+    also fails (edge_to_cost_ratio=0.2452 << 2.0 required; estimated gross edge ~4.2
+    bps/trade vs. 17.0 bps/trade round-trip cost). Consistent with this campaign''s
+    established finding that no price-only technical indicator (RSI, Keltner in any
+    variant, EMA spread, now MACD) shows exploitable directional content on BTC/ETH
+    1h -- see ema_spread_trend_continuation_v1_auto for the same pattern on a different
+    trend-following mechanism.
+
+    '
+  signal_property:
+    ic_all_bars: -0.014497
+    ic_active_bars: -0.050271
+    p_value: 0.2922
+    forecast_sparsity_pct: 92.41
+    active_n_bars: 10616
+    edge_to_cost_ratio: 0.2452
+  protocol_version: backward_extension_2018_2025
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: null
+- id: p4_sma_trend_longonly_daily_auto
+  mechanism: SMA(100) daily trend-following, long-only, ungated (BTC/ETH spot, taker
+    costs)
+  hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+  edge_source_category: persistent_behavioral_bias
+  evidence_runs:
+  - run_054
+  - run_057
+  evidence_count: 2
+  outcome: kill_er_gate_mechanism_falsified
+  outcome_reason: 'run_057 (P4_SMA_TREND_LONGONLY_DAILY_ER20GATE): pre-registered
+    pass_rule (pre_registration.yaml) applied verbatim as the sole verdict authority
+    per operator pre-commitment (prescreen_override_20260711.yaml) -- FAIL on criterion
+    (a): gated bar-level median Sharpe (recomputed per the standing metric-basis rule,
+    not the fragment-level protocol_result.yaml nulls) is 0.0000 for both BTCUSDT
+    and ETHUSDT (n=15 windows each), against required >=0.5791 (BTCUSDT) / >=0.0318
+    (ETHUSDT); 29/30 window-symbols fell below the A3.4 five-trade floor. Criterion
+    (b) (per-episode expectancy > 0) passed on sign (mean +433.7 bps, SE 441.4, n=42)
+    but per the pass_rule ''FAIL on (a) or (b)'' the gate did not rescue the edge.
+    S2 secondary mechanism check (descriptive only, never verdict-bearing) independently
+    falsified the brief''s own rationale: identity-matched partition (42/42 run_057
+    trades matched to run_054 parent records, 100% percent-return agreement, cross-check
+    clean) shows excluded entries (ER<0.30, n=75) mean expectancy +1395.9 bps (SE
+    821.2) EXCEEDS included entries (ER>=0.30, n=42) mean +433.7 bps (SE 441.4) --
+    the gate anti-selects on this record, roughly 3:1 against its own design rationale.
+    Framing: this is strong directional evidence against ER-at-entry gating for this
+    family on this record. One parameterization (ER(20), threshold 0.30) was tested
+    under a pre-registered, frozen specification with no threshold adjustment permitted;
+    this is not proof the entry-gating family in general is exhausted. No regime-attribution
+    claim is made -- ER(20) here was a strategy-internal entry filter, never a validated
+    regime detector (Step-02 gate never run on it); this finding describes gated-variant
+    performance and entry-selection evidence only. Verdict routing was hand-corrected
+    from the verdict_interpreter stage''s initial refine/pivot output (which followed
+    the pass_rule''s own ''kill vs pivot'' delegation and produced a Keltner-family
+    pivot proposal) per the binding operator pre-commitment -- see runs/run_057/artifacts/verdict_interpretation.yaml''s
+    operator_correction_20260711 field for the full instruction-layering account.'
+  outcome_history_superseded:
+  - outcome: kill_ungated_regime_mismatch
+    recorded_at: '2026-07-09'
+    superseded_at: '2026-07-10'
+    superseded_reason: median_sharpe basis correction (LIFO-fragment -> bar-level
+      equity curve) flips protocol_verdict from kill to refine; see outcome_reason
+      above.
+  - outcome: kill_ungated_regime_mismatch
+    recorded_at: 2026-07-10 (incident revert)
+    superseded_at: 2026-07-10 (incident resolution)
+    superseded_reason: A parallel agent with pre-bug-five context reverted this entry
+      a second time, in good faith, believing the refine correction was tampering.
+      Resolved by independent re-recomputation of the bar-level Sharpe figures (arithmetic
+      re-verified, not re-asserted) -- see incident_20260710/INCIDENT.md.
+  - outcome: refine_pending_regime_gating
+    recorded_at: '2026-07-10'
+    superseded_at: '2026-07-11'
+    superseded_reason: 'run_057 (regime-gated ER(20)>=0.30 entry-latch refinement,
+      in-lineage per refine_pending_regime_gating) completed the pre-registered walk-forward
+      and was killed on criterion (a): gated bar-level median Sharpe null-or-zero
+      on both symbols vs required >=0.5791 (BTCUSDT) / >=0.0318 (ETHUSDT), 29/30 window-symbols
+      below the A3.4 five-trade floor. S2 mechanism check (identity-verified, 42/42
+      subset match) falsified the gate''s own rationale: excluded entries (n=75) mean
+      expectancy +1395.9 bps (SE 821.2) exceeds included entries (n=42) mean +433.7
+      bps (SE 441.4) -- the gate anti-selected on this record.'
+  audit_note: 'Decision-layer input audit, two passes, INDEPENDENTLY RE-VERIFIED 2026-07-10
+    after the incident above. PASS 1 (2026-07-09, trade-count only): bar-level activity-transition
+    count on bars.csv vs. trades.json completed-trade count -- closed clean. Both
+    methods agree exactly (117) in every one of the 30 window-symbol results, zero
+    mismatches, confirmed against both the final and the original (pre-build_core-fix)
+    protocol_result.yaml. An earlier "94 trades / 24 windows" figure some quoted was
+    confirmed to be an LLM hallucination in a since-discarded draft verdict_interpretation.yaml,
+    never grounded in the underlying data at any point. PASS 2 (2026-07-10, full metric-basis
+    sweep, re-verified after the incident): every decision-consumed metric checked
+    for basis (bar / episode / fragment). Episode-level win rate (grouping real trades.json
+    fragment PnL by activity-transition episode boundary) reproduces fragment-level
+    win_rate exactly in all 30 results -- this hypothesis never actually fragments
+    a position across multiple trades.json rows, so win_rate was never distorted.
+    median_sharpe WAS distorted -- not by fragmentation, but by the trade-exit-day/per-trade-basis
+    formula in calculate_sharpe_ratio breaking down under sparse trading (1-8 trades/window).
+    Engine note: matching is LIFO, not FIFO (performance/metrics.py, "Enhanced performance
+    tracker supporting iterative long/short positions with LIFO matching") -- this
+    is intentional and correct as an accounting engine; the bug was only ever in the
+    decision layer treating a sparse-trade-derived Sharpe as a reliable aggregate
+    statistic.
+
+    '
+  signal_property:
+    ic_active_bars: null
+    ic_all_bars_prescreen: 0.034803
+    ic_walk_forward_bootstrap_btc: 0.0372
+    ic_walk_forward_bootstrap_eth: 0.0199
+    per_trade_expectancy_bps: 1050.5086
+    per_trade_expectancy_t_stat: 1.9106
+    median_sharpe_btc_basis_lifo_fragment_descriptive_only: -1.78
+    median_sharpe_eth_basis_lifo_fragment_descriptive_only: -1.54
+    median_sharpe_btc_basis_bar_level: 0.5791
+    median_sharpe_eth_basis_bar_level: 0.0318
+    run_057_s2_excluded_mean_bps: 1395.9
+    run_057_s2_excluded_se_bps: 821.17
+    run_057_s2_excluded_n: 75
+    run_057_s2_included_mean_bps: 433.73
+    run_057_s2_included_se_bps: 441.39
+    run_057_s2_included_n: 42
+    run_057_gated_bar_level_median_sharpe_btc: 0.0
+    run_057_gated_bar_level_median_sharpe_eth: 0.0
+  protocol_version: ts_trend_daily_v1
+  detector_version: not_applicable
+  power_disposition:
+    status: adequately_powered
+    expected_n_eff: 117
+    verdict: thin_uneven_edge_regime_gating_untested
+  exhausted: true
+  exhausted_basis: 'Empirical (run_057, 2026-07-11): the regime-gated refinement direction
+    prescribed by the prior refine_pending_regime_gating outcome was tested via an
+    ER(20)>=0.30 entry-latch gate (GatedSmaTrendLongOnlyComponent) and killed on the
+    pre-registered pass rule plus an independent S2 mechanism falsification. This
+    closes the ER-at-entry-gate refinement specifically -- it does not, on its own,
+    mark the broader persistent_behavioral_bias / SMA-trend-family search space exhausted
+    (one parameterization tested, per the outcome_reason framing above).'
+  reactivation_condition: null
 meta_findings:
 - id: daily_regime_overlay_recommended_before_a23_trigger
   title: campaign_review recommended detector_wishlist.yaml work twice without checking
@@ -605,7 +790,7 @@ coverage_matrix:
   structural_forced_flow:
   - hypothesis_id: H-041-A
     finding_id: funding_rate_mean_reversion_inconclusive
-    outcome: inconclusive
+    outcome: no_edge_observed
     evidence_count: 2
   - hypothesis_id: H-041-A
     finding_id: funding_rate_mean_reversion_run047_invalidated
@@ -614,7 +799,15 @@ coverage_matrix:
   persistent_behavioral_bias:
   - hypothesis_id: H-041-C
     finding_id: fear_greed_contrarian_inconclusive
-    outcome: inconclusive
+    outcome: era_conditional_instability
+    evidence_count: 2
+  - hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+    finding_id: macd_trend_continuation_extended_2018_2025_auto
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+    finding_id: p4_sma_trend_longonly_daily_auto
+    outcome: kill_er_gate_mechanism_falsified
     evidence_count: 2
   deferred_mechanism_impure:
   - hypothesis_id: H-041-B
