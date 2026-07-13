@@ -1,0 +1,151 @@
+# Frozen baseline of run directories that predate or fall outside this
+# campaign's normal atomic registration path (pre-K4, or manually resolved).
+# Per design docs/design/K4_routing_registration_design_20260712.md section 6.
+#
+# A human adds an entry here only after manually confirming provenance.
+# reconcile_orphans() (workflow/run_campaign.py) NEVER auto-populates this
+# file -- a newly discovered, unlisted orphan is always reported as
+# unexpected, never silently grandfathered in.
+version: '1.0'
+frozen_at: '2026-07-13'
+description: >
+  Run directories referenced nowhere in campaign_queue.yaml's run_ids,
+  campaign_state.yaml's runs/trial_sharpes/hypothesis_splits, as of the K4
+  kernel's introduction. Each entry's reason was verified read-only against
+  the run's own pipeline_state.yaml/artifacts and, where available, the
+  campaign's own documented closure records (00_closing_state.md,
+  campaign_knowledge_base.yaml) -- never assumed from narrative alone.
+grandfathered_runs:
+  - id: run_0001
+    reason: >
+      Pre-tracking: predates campaign_queue.yaml/campaign_state.yaml's
+      runs/trial_sharpes registration convention entirely (this campaign's
+      earliest run). Not individually spot-checked this session (not one
+      of the four step-1 targets); carried forward from the Phase A design
+      note's baseline draft.
+  - id: run_002
+    reason: Pre-tracking, same basis as run_0001.
+  - id: run_003
+    reason: Pre-tracking, same basis as run_0001.
+  - id: run_004
+    reason: Pre-tracking, same basis as run_0001.
+  - id: run_005
+    reason: Pre-tracking, same basis as run_0001.
+  - id: run_006
+    reason: Pre-tracking, same basis as run_0001.
+  - id: run_007
+    reason: Pre-tracking, same basis as run_0001.
+  - id: run_008
+    reason: Pre-tracking, same basis as run_0001.
+  - id: run_009
+    reason: Pre-tracking, same basis as run_0001.
+  - id: run_010
+    reason: Pre-tracking, same basis as run_0001.
+  - id: run_026
+    reason: >
+      Orphaned mid-reframe. pipeline_state.yaml: status active,
+      pending_stage completed_reframed, completed_stages through
+      verdict_interpreter/campaign_review; last_error records a YAML
+      parse failure ("mapping values are not allowed here...") timestamped
+      2026-06-29T08:00. Reached the reframe-terminal pending_stage but was
+      never picked up by a continuation -- the exact orphan-lineage shape
+      A3 describes (routing set the terminal string, no registration
+      followed). Verified read-only,
+      docs/design/K4_routing_registration_design_20260712.md section 4.
+  - id: run_031
+    reason: >
+      Failed refine route. pipeline_state.yaml: status failed,
+      pending_stage campaign_review, completed_stages through
+      verdict_interpreter; last_error "[Errno 2] No such file or
+      directory: 'runs\run_031\artifacts\proposed_brief.yaml'" timestamped
+      2026-06-29T21:41. Verified read-only, same design-note section 4.
+  - id: run_036
+    reason: >
+      Stalled before verdict_interpreter. pipeline_state.yaml: status
+      active, pending_stage verdict_interpreter, completed_stages through
+      protocol_execution, audit_log empty (consistent with
+      protocol_execution being a tool-only stage, not itself a defect). No
+      further trace of why it stalled. Verified read-only, same
+      design-note section 4.
+  - id: run_040
+    reason: >
+      Fresh scaffold, never started. pipeline_state.yaml: status active,
+      pending_stage hypothesis_generation, completed_stages empty. Same
+      shape as run_051. Verified read-only, same design-note section 4.
+  - id: run_045
+    reason: >
+      Parked pending A2.3 wishlist trigger. pipeline_state.yaml: status
+      active, pending_stage hypothesis_generation, completed_stages empty
+      (never launched, per its own park decision). Its
+      artifacts/research_brief.yaml (brief DAILY_REGIME_OVERLAY_1H_EXECUTION)
+      carries its own content annotation "status: parked_pending_a23_trigger"
+      (line 38) plus a status_note citing detector_wishlist.yaml's
+      trigger_condition.status: not_triggered. Cross-checked against
+      00_closing_state.md section 7 ("Two parked, near-duplicate 'daily
+      regime overlay' briefs (runs/run_045/, runs/run_046/)... Annotated
+      status: parked_pending_a23_trigger") and
+      campaign_knowledge_base.yaml's meta_findings entry
+      daily_regime_overlay_recommended_before_a23_trigger (implication
+      field names runs/run_045 explicitly). Matches documented disposition
+      exactly -- verified 2026-07-13, K4 Phase B step 1.
+  - id: run_046
+    reason: >
+      Parked pending A2.3 wishlist trigger, same event as run_045.
+      pipeline_state.yaml: status active, pending_stage
+      hypothesis_generation, completed_stages empty.
+      artifacts/research_brief.yaml (brief
+      DAILY_REGIME_OVERLAY_SIGNAL_QUALITY) carries the same
+      "status: parked_pending_a23_trigger" annotation (line 41) and
+      status_note. Matches 00_closing_state.md section 7 and
+      campaign_knowledge_base.yaml's
+      daily_regime_overlay_recommended_before_a23_trigger meta-finding
+      (which names runs/run_046 explicitly alongside run_045). Verified
+      2026-07-13, K4 Phase B step 1.
+  - id: run_049
+    reason: >
+      Scaffolded, not launched -- H-041-A's 15m timeframe escalation from
+      run_047. pipeline_state.yaml: status active, pending_stage
+      hypothesis_generation, completed_stages empty.
+      artifacts/research_brief.yaml carries hypothesis_id H-041-A,
+      run_type reactivation, timeframe field literally "1h" (the parent
+      run_047 brief's own field, copied verbatim by
+      _route_escalate's timeframe branch, which does not rewrite the
+      timeframe field -- the actual 15m escalation target is recorded
+      only in campaign_state.yaml's last_escalation
+      {target: timeframe, detail: 15m, protocol_path:
+      protocols/escalation_tf_15m.json}, cross-checked and consistent, not
+      a mismatch). Matches 00_closing_state.md section 8 ("run_049
+      (H-041-A's original 15m timeframe escalation from run_047, now
+      itself downstream of an invalidated run) -- scaffolded, not
+      launched"). Verified 2026-07-13, K4 Phase B step 1.
+  - id: run_051
+    reason: >
+      Fresh scaffold, never started. pipeline_state.yaml: status active,
+      pending_stage hypothesis_generation, completed_stages empty. Same
+      shape as run_040. Verified read-only,
+      docs/design/K4_routing_registration_design_20260712.md section 4.
+  - id: run_052
+    reason: >
+      Scaffolded, not launched -- H-041-C flip-polarity proposal.
+      pipeline_state.yaml: status active, pending_stage
+      hypothesis_generation, completed_stages empty.
+      artifacts/research_brief.yaml carries hypothesis_id H-041-C,
+      research_question describing the run_048 per-era IC sign-flip
+      finding and a reversed-polarity re-test (fear_greed<25 -> SHORT,
+      >75 -> LONG); artifacts/findings_carryover.yaml also present.
+      Matches 00_closing_state.md section 8 ("run_052 (H-041-C
+      flip-polarity proposal) -- scaffolded, not launched; the
+      era-instability finding above means launching it as-is would repeat
+      the same naive-fix mistake"). Verified 2026-07-13, K4 Phase B
+      step 1.
+  - id: run_055
+    reason: >
+      quarantined_orphan (hand-set), pivot scaffold of the overturned
+      run_054 kill verdict, 2026-07-09 -- see runs/run_055/ORPHANED_README.md
+      (present on disk, verified). Never advance, reuse, or copy from it
+      (NEXT_SESSION.md state-delta, "runs/run_055, run_056: quarantined
+      orphans... never advance, reuse, or copy from them").
+  - id: run_056
+    reason: >
+      quarantined_orphan (hand-set), same event as run_055 -- see
+      runs/run_056/ORPHANED_README.md (present on disk, verified).

@@ -65,3 +65,10 @@ C:\Users\alauz\Documents\Projects\trading-bot\trading-bot\core\backtester.py:234
 - 2026-07-10T17:17:57Z [DRY RUN] queue: selected entry 'P4_ts_trend' (status=in_progress, brief=briefs/P4_ts_trend_r1_er_gate.yaml)
 - 2026-07-12T16:15:48Z STAGE  P4_ts_trend / run_057: pending_stage=completed_rejected status=rejected (cost_ratio=1.3626, prescreen_route=kill_no_ic, backtest_verdict=refine, median_sharpe=-0.686, verdict_status=kill)
 - 2026-07-12T16:15:48Z DONE P4_ts_trend (run_057) -> kill_er_gate_mechanism_falsified
+- 2026-07-13T11:25:57Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-13T13:38:16Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-13T13:38:16Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-13T13:38:16Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal
+- 2026-07-13T14:16:33Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-13T14:16:33Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-13T14:16:33Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal

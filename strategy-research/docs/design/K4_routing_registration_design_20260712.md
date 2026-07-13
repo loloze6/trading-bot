@@ -840,3 +840,149 @@ A3 design, §7 B1 design, §8 Fixture plan, §9 Files-to-modify + open
 questions) — 10 sections, matches the step-8 requirement (quotes,
 step-3/4 reports, three designs, fixture plan, files-to-be-modified list,
 open questions all present as one coherent document).
+
+---
+
+## Phase B rulings + deviations (2026-07-13)
+
+Body above is unchanged from Phase A approval. This section records the
+operator's Phase B rulings and every point where implementation deviated
+from the approved design, per the Phase B prompt's step 2 instruction
+("do not silently improve").
+
+### Operator rulings (binding, applied as follows)
+
+- **R1** (open question 1): no stage-skip. `_materialize_refinement_run`
+  does not touch `pending_stage`; a refinement-brief child starts at
+  `setup_run`'s own default (`hypothesis_generation`), identical to a
+  fresh-launch child. Verified by
+  `test_refinement_brief_materializes_checksum_identical_and_pre_registration`.
+- **R2** (open question 2): the
+  `refinement_brief_conflicts_with_existing_continuation` hard-pause is
+  implemented in `process_once()`, checked BEFORE `setup_run`/
+  `_materialize_refinement_run` are ever called — a conflicted entry
+  never scaffolds a second child (confirmed: `runs/run_601` does not
+  exist afterward in the conflict test, only the pre-existing internal
+  child). The halt detail and log line name both `refinement_brief_path`
+  and the existing `continuation_child` run_id verbatim. Verified by
+  `test_refinement_brief_conflict_pauses_with_both_children_intact`.
+  RUNBOOK.md section 3's pause table gained one new row for it.
+- **R3** (open question 3): the four unresolved baseline entries
+  (`run_045`, `run_046`, `run_049`, `run_052`) were spot-checked read-only
+  in step 1 and populated with verified reasons, not
+  `NOT YET SPOT-CHECKED`, in `config/campaign_baseline_runs.yaml`. No
+  mismatch between any directory's contents and its documented
+  disposition was found (see step-1 findings in the final report); the
+  `run_049` timeframe field ("1h" in its own `research_brief.yaml") was
+  investigated rather than assumed a mismatch — explained by
+  `_route_escalate`'s timeframe branch copying the parent brief verbatim
+  and never rewriting the `timeframe` field itself, with the true 15m
+  target recorded only in `campaign_state.last_escalation` (cross-checked
+  and consistent).
+- **R4** (open question 4): registration-before-mkdir and temp-then-rename
+  for run *directories* were NOT adopted, as designed. The amendment
+  (temp-file-then-`os.replace` for shared YAML writes) was applied to the
+  two lowest-level shared-write primitives this kernel's own changes flow
+  through: `run_phase1_research.save_yaml()` (used by `update_state()`,
+  hence by every `pipeline_state.yaml` write including the new
+  `continuation_child` write, and by `_materialize_run`/
+  `_materialize_refinement_run`'s `research_brief.yaml`/
+  `pre_registration.yaml` writes) and `run_campaign._save_queue()`
+  (the sole writer of `campaign_queue.yaml`). Scoping decision, recorded
+  since R4's wording ("every shared YAML write this change touches or
+  introduces") could be read more broadly: `user_brief_verbatim.yaml`
+  (a byte-for-byte copy, not a `yaml.safe_dump` write, and a per-run
+  artifact file, not a concurrently-shared one in RUNBOOK's own sense)
+  was left as a plain write — it is custody-verbatim by construction
+  (raw bytes copied, then checksummed), and a torn write there would be
+  caught immediately by the checksum comparison itself, unlike a torn
+  `pipeline_state.yaml`/`campaign_queue.yaml` write, which a reader could
+  otherwise silently half-trust. `config/campaign_baseline_runs.yaml` has
+  no runtime writer in this design (human-authored, read-only to
+  `reconcile_orphans()`) — nothing to make atomic yet; if a writer is
+  added later it will inherit atomicity for free by going through
+  `save_yaml()`.
+
+### Deviations from the approved design (with reasons)
+
+1. **`before_dirs`/`after_dirs`/`new_runs` removed from `process_once()`
+   entirely, not kept "for split-child detection" as §5 of the design
+   claimed.** On implementation, split-child detection
+   (`new_split_events`/`split_child_ids`) turns out to depend entirely on
+   `before_splits`/`after_splits` (`campaign_state.yaml`'s
+   `hypothesis_splits`), never on the `runs/`-directory diff — the design
+   note's own claim on this point was wrong. Once the lineage-continuation
+   check was switched to read `continuation_child` directly, `new_runs`
+   had no remaining reader anywhere. Removed the now-fully-dead
+   computation rather than leave it as inert cruft; `_snapshot_run_dirs()`
+   itself is kept (now called from `reconcile_orphans()` instead of
+   `process_once()`).
+2. **A minor defensive addition not in the design**: the lineage-
+   continuation check also requires `continuation_child not in
+   split_child_ids` before following it. Belt-and-suspenders against a
+   pathological id collision between a split sibling and a routing
+   continuation (not observed, not expected given `_next_run_id`'s
+   collision-free allocation) — harmless, flagged since it wasn't
+   specified.
+3. **Fixture hermeticity required patching different call sites than the
+   design's fixture plan (§8) stated.** `_route_pivot` scaffolds its child
+   via a direct `subprocess.run([...setup_run.py..., next_id])` call, and
+   `_scaffold_next_run` (used by `_route_refine` via `setup_next_run` and
+   by `_route_escalate`) does the same; both build the spawned script's
+   path from the caller's `ROOT`, but `setup_run.py`'s OWN module-level
+   `ROOT` (`Path(__file__).parent.parent`) is hardcoded independent of any
+   monkeypatching, and `run_campaign.py`'s `setup_run` (imported directly,
+   called in-process for fresh-launch/refinement-brief scaffolding) has
+   the identical problem. Monkeypatching `rpr.ROOT`/`camp.ROOT` alone
+   therefore does NOT sandbox either call site — confirmed by finding this
+   is also why the pre-existing `dry_run_verify()` only achieves its
+   "zero footprint" claim via cleanup-after (`shutil.rmtree` in a
+   `finally` block), not via true isolation. This kernel's own tests
+   (`tests/test_k4_routing_registration.py`) instead monkeypatch the NAMES
+   actually invoked (`rpr.subprocess.run`, `camp.setup_run`) to in-tmp_path
+   fakes replicating the real functions' on-disk output shape, so nothing
+   touches the real repository and no subprocess/LLM is spawned. The
+   design's fixture plan text ("Invoke `orch.run_loop(N)` directly... to
+   drive it through `_route_refine`") was also not followed literally:
+   `_route_refine`/`_route_pivot`/`_route_escalate` are called directly
+   rather than through `run_loop()`, avoiding the need for real handoff
+   files/`STAGE_CONFIGS` wiring — this matches this repo's own established
+   test convention (e.g. `tests/test_resume_idempotency.py` calls
+   `_write_kb_findings_entry`/`_recompute_kb_views` directly, not through
+   `run_loop`), not a new pattern introduced here.
+4. **`_route_escalate`'s instrument branch is covered by its own fixture**,
+   requiring minimal `coin_universe.yaml` and `protocols/baseline_v1.json`
+   fixtures not enumerated in the design's §8 fixture plan (which only
+   named the refine-verdict acceptance criterion explicitly). Added
+   because `_route_escalate` received the same A1 code change as the
+   other two routing functions and an untested behavioral claim on it
+   would leave a real gap.
+5. **B1 fixtures stub `orch.run_loop` to a no-op** for the `process_once()`
+   call immediately following refinement-brief materialization (and its
+   idempotency-guard repeat call). Per R1, the materialized child starts
+   fresh at `hypothesis_generation`; actually executing that stage would
+   need real handoff files and an LLM call, out of scope for what those
+   two fixtures test (materialization correctness and the
+   `refinement_brief_consumed_for` bookkeeping guard, not stage
+   execution). Not a design-plan deviation in substance (§8 never claimed
+   these fixtures would exercise real stage execution) but recorded since
+   it wasn't spelled out either.
+6. **RUNBOOK.md's new pause-table row was inserted as the FIRST row**,
+   ahead of `no_signal_artifact`, since it is the only pause evaluated
+   BEFORE any scaffolding/`run_loop()` call is attempted (every other row
+   is produced by `_hard_pause_reason()` after a real run_loop() call
+   returns) — a placement choice, not specified by the design note.
+7. **The module-docstring correction (§9) landed in `run_campaign.py`**,
+   where the inaccurate claim ("Nothing in workflow/run_phase1_research.py
+   is modified") actually lives, not in `run_phase1_research.py` as the
+   Phase B prompt's authorized-writes list literally grouped it under —
+   both files were separately authorized for this change regardless, so
+   this is a placement clarification, not a scope violation.
+
+### Test results
+
+221 passed (210 pre-existing + 11 new in
+`tests/test_k4_routing_registration.py`), 0 failed, 0 regressions. Full
+verbatim output is in this session's final report to the operator (not
+duplicated here to keep this design note from becoming a second copy of
+the test log).

@@ -10,10 +10,16 @@ reframe/escalation the orchestrator's own routing produces, detect the run
 reaching a terminal state, and either advance to the next queued brief or
 halt the whole campaign on a hard-pause condition.
 
-Nothing in workflow/run_phase1_research.py is modified. This file only reads
-its module-level helpers (load_yaml, save_yaml, update_state,
-load_campaign_state, run_loop, resume_pipeline) and the on-disk artifacts it
-already produces.
+Through the K4 kernel (2026-07-13, see docs/design/K4_routing_registration_
+design_20260712.md), workflow/run_phase1_research.py's routing functions
+(_route_refine/_route_pivot/_route_escalate) now also write two small fields
+(continuation_child, continuation_created_by) onto their OWN run's
+pipeline_state.yaml, read back by process_once() below instead of a
+runs/-directory diff. Before K4, nothing in that file was modified from this
+wrapper's own work; this file still only READS its module-level helpers
+(load_yaml, save_yaml, update_state, load_campaign_state, run_loop,
+resume_pipeline) and the on-disk artifacts it already produces -- the K4
+change lives entirely inside run_phase1_research.py itself, not here.
 
 THE QUEUE (config/campaign_queue.yaml):
 Ordered list of briefs. One entry = one research question. An entry's
@@ -47,9 +53,11 @@ See RUNBOOK.md for the operational playbook (launch / status / resume / stop).
 
 import argparse
 import hashlib
+import os
 import re
 import shutil
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -63,13 +71,20 @@ ROOT = Path(__file__).resolve().parent.parent
 QUEUE_PATH = ROOT / "config" / "campaign_queue.yaml"
 CAMPAIGN_LOG_PATH = ROOT / "campaign_log.md"
 CAMPAIGN_SUMMARY_PATH = ROOT / "campaign_summary.md"
+# A3 (K4 kernel): frozen baseline of run directories that predate or fall
+# outside the normal atomic registration path -- see
+# docs/design/K4_routing_registration_design_20260712.md section 6.
+BASELINE_PATH = ROOT / "config" / "campaign_baseline_runs.yaml"
 
 _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?\n)---\s*\n", re.DOTALL)
 
 # Terminal pending_stage values that mean "this brief's lineage is truly done"
 # (as opposed to completed_reframed/completed_escalated, which spawn a
 # continuation run under the SAME queue entry — see process_once()).
-_LINEAGE_CONTINUATION_STAGES = ("completed_reframed", "completed_escalated")
+# completed_refined added 2026-07-13 (K4/A1) -- both _route_refine and
+# _route_pivot return this same string (A2 is the separate, later ledger item
+# that would give them distinct terminal strings; not done here).
+_LINEAGE_CONTINUATION_STAGES = ("completed_reframed", "completed_escalated", "completed_refined")
 
 
 # ---------------------------------------------------------------------------
@@ -82,8 +97,24 @@ def _load_queue() -> dict:
 
 
 def _save_queue(queue: dict):
-    with open(QUEUE_PATH, "w", encoding="utf-8") as f:
-        yaml.safe_dump(queue, f, sort_keys=False, allow_unicode=True)
+    """R4 (K4 kernel, 2026-07-13): temp-file-then-os.replace in QUEUE_PATH's
+    own directory -- see run_phase1_research.save_yaml's identical rationale.
+    campaign_queue.yaml is the clearest concurrent-writer-risk file in this
+    repo (RUNBOOK.md's single-writer-per-state-store rule names it
+    explicitly), so a crash mid-write can no longer leave a truncated/partial
+    queue file for the next reader."""
+    fd, tmp_name = tempfile.mkstemp(prefix=".campaign_queue.", suffix=".tmp",
+                                     dir=str(QUEUE_PATH.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            yaml.safe_dump(queue, f, sort_keys=False, allow_unicode=True)
+        os.replace(tmp_name, QUEUE_PATH)
+    except BaseException:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
 
 
 def _select_entry(entries: list) -> dict | None:
@@ -99,6 +130,26 @@ def _select_entry(entries: list) -> dict | None:
         return None
     ready.sort(key=lambda e: e.get("priority", 999))
     return ready[0]
+
+
+def _next_action_for_entry(entry: dict) -> str:
+    """B1/B2-non-regression (K4 kernel): the single classifier both
+    process_once() and dry_run_verify() use to decide what happens next for
+    a selected queue entry, so the two never diverge on what "the next
+    action" means (see design note section 7 -- this does not achieve B2's
+    full dry-run-parity fix, which also needs to simulate the plain
+    "continue" branch; it only means B1's own new branch doesn't repeat
+    B2's defect on day one).
+
+    Returns "refinement_brief" (an unconsumed refinement_brief_path is
+    present -- takes precedence over a plain continuation), "fresh_launch"
+    (no run_ids yet), or "continue" (follow the existing lineage)."""
+    if entry.get("refinement_brief_path") and \
+       entry.get("refinement_brief_consumed_for") != entry["refinement_brief_path"]:
+        return "refinement_brief"
+    if not entry.get("run_ids"):
+        return "fresh_launch"
+    return "continue"
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +221,114 @@ def _materialize_run(run_id: str, brief: dict):
             ),
             "machine_constraints": machine_constraints,
         }
+        # B11 (K2 kernel): materialization-time total-mapping lint. A no-op
+        # for this path today (machine_constraints-only briefs don't carry a
+        # pass_rule block yet), but applied unconditionally so any future
+        # fresh-launch brief that DOES add a structured pass_rule is linted
+        # the same way a refinement brief is (_materialize_refinement_run,
+        # below) -- one gate, not two divergent ones.
+        _violations, _warnings = orch._lint_pass_rule_total_mapping(pre_registration)
+        if _violations:
+            raise ValueError(
+                f"{run_id}: pre_registration.yaml pass_rule failed the B11 total-mapping "
+                f"lint -- refusing to materialize:\n" + "\n".join(f"  - {v}" for v in _violations)
+            )
+        for _w in _warnings:
+            print(f"⚠️  [B11 lint] {run_id}: {_w}")
         orch.save_yaml(artifacts / "pre_registration.yaml", pre_registration)
+
+
+# ---------------------------------------------------------------------------
+# B1 (K4 kernel): refinement_brief_path -- first-class refinement-brief
+# ingestion for an ALREADY in_progress queue entry. See design note section 7.
+# ---------------------------------------------------------------------------
+
+_REQUIRED_REFINEMENT_BRIEF_KEYS = ("brief_id", "lineage", "hypothesis", "gate_definition", "evaluation")
+
+
+def _parse_refinement_brief_yaml(brief_path: Path) -> dict:
+    """Unlike _parse_brief_frontmatter (a '---'-delimited block inside an
+    .md file), a refinement brief is a PLAIN YAML document -- confirmed
+    against the real, live file at briefs/P4_ts_trend_r1_er_gate.yaml
+    (design note section 7). Only validates required-top-level-key
+    presence, mirroring _parse_brief_frontmatter's own error style; not
+    full schema validation."""
+    data = yaml.safe_load(brief_path.read_text(encoding="utf-8")) or {}
+    for required in _REQUIRED_REFINEMENT_BRIEF_KEYS:
+        if not data.get(required):
+            raise ValueError(f"{brief_path}: refinement brief missing required field '{required}'.")
+    return data
+
+
+def _existing_continuation_child(run_id: str) -> str | None:
+    """Reads run_id's OWN pipeline_state.yaml for an already-recorded A1
+    continuation_child (i.e. internal LLM routing already fired for this
+    run). Returns None if the run has no state file yet or no continuation
+    recorded."""
+    state_path = ROOT / "runs" / run_id / "pipeline_state.yaml"
+    if not state_path.exists():
+        return None
+    state = orch.load_yaml(state_path) or {}
+    return state.get("continuation_child")
+
+
+def _materialize_refinement_run(child_id: str, brief: dict, brief_path: Path):
+    """Installs a refinement_brief_path brief onto a freshly-scaffolded child
+    run: byte-verbatim user_brief_verbatim.yaml (custody rule -- never
+    reconstructed/paraphrased), its sha256 checksum, and a pre_registration.yaml
+    carrying lineage/gate_definition/pass_rule copied verbatim (B4 copy-through
+    discipline) plus machine_constraints if present. R1 (operator ruling):
+    no stage-skip -- the child starts at setup_run's own default
+    (hypothesis_generation); this function does not touch pending_stage."""
+    run_dir = ROOT / "runs" / child_id
+    artifacts = run_dir / "artifacts"
+    artifacts.mkdir(parents=True, exist_ok=True)
+
+    raw_bytes = brief_path.read_bytes()
+    checksum = hashlib.sha256(raw_bytes).hexdigest()
+
+    lineage = brief.get("lineage") or {}
+    evaluation = brief.get("evaluation") or {}
+    pre_registration = {
+        "run_id": child_id,
+        "hypothesis_id": brief["brief_id"],
+        "registered_at": datetime.now(timezone.utc).date().isoformat(),
+        "lineage": lineage,
+        "gate_definition": brief.get("gate_definition"),
+        "pass_rule": evaluation.get("pass_rule"),
+        "user_brief_checksum": f"sha256:{checksum}",
+        "reactivation_context": (
+            "Installed via refinement_brief_path (B1, K4 kernel) -- an "
+            "operator-authored refinement brief, not the internal LLM "
+            "routing's own proposed_brief.yaml. lineage/gate_definition/"
+            "pass_rule copied verbatim from the source brief; see "
+            "user_brief_verbatim.yaml for the byte-identical original."
+        ),
+    }
+    machine_constraints = brief.get("machine_constraints")
+    if machine_constraints:
+        pre_registration["machine_constraints"] = machine_constraints
+
+    # B11 (K2 kernel, 2026-07-13): materialization-time total-mapping lint,
+    # checked BEFORE any file is written for this child -- a rejected brief
+    # leaves only the bare setup_run() scaffold behind (same, already-tolerated
+    # shape A3's reconciler flags for any other incomplete scaffold), never a
+    # partially-materialized pre_registration.yaml/user_brief_verbatim.yaml
+    # pair. A legacy (string-shaped) pass_rule -- e.g. run_057's own brief --
+    # is not linted at all (see _lint_pass_rule_total_mapping's own docstring).
+    _violations, _warnings = orch._lint_pass_rule_total_mapping(pre_registration)
+    if _violations:
+        raise ValueError(
+            f"{child_id}: refinement brief's pass_rule failed the B11 total-mapping "
+            f"lint -- refusing to materialize:\n" + "\n".join(f"  - {v}" for v in _violations)
+        )
+    for _w in _warnings:
+        print(f"⚠️  [B11 lint] {child_id}: {_w}")
+
+    verbatim_path = artifacts / "user_brief_verbatim.yaml"
+    verbatim_path.write_bytes(raw_bytes)
+    orch.save_yaml(artifacts / "pre_registration.yaml", pre_registration)
+    return checksum
 
 
 # ---------------------------------------------------------------------------
@@ -784,16 +942,123 @@ def _snapshot_run_dirs() -> set:
     return {p.name for p in runs_dir.iterdir() if p.is_dir()}
 
 
+# ---------------------------------------------------------------------------
+# A3 (K4 kernel): scaffold/registration reconciler. See design note section 6.
+# ---------------------------------------------------------------------------
+
+def _referenced_run_ids() -> set:
+    """Every run_id counted as 'registered' by ANY of: campaign_queue.yaml's
+    run_ids, campaign_state.yaml's runs/trial_sharpes/hypothesis_splits, or
+    the frozen baseline file. trial_sharpes and hypothesis_splits are
+    included deliberately -- run_041/run_042 (design note section 4) are
+    referenced ONLY via trial_sharpes, never campaign_state.runs; omitting
+    either surface would make the reconciler false-positive on them."""
+    referenced = set()
+    queue = _load_queue()
+    for e in queue.get("queue", []):
+        referenced.update(e.get("run_ids") or [])
+    campaign = orch.load_campaign_state()
+    referenced.update(campaign.get("runs", []))
+    referenced.update(t["trial_id"] for t in campaign.get("trial_sharpes", [])
+                       if t.get("trial_id"))
+    for ev in campaign.get("hypothesis_splits") or []:
+        if ev.get("parent_run"):
+            referenced.add(ev["parent_run"])
+        referenced.update(ev.get("children") or [])
+    if BASELINE_PATH.exists():
+        baseline = orch.load_yaml(BASELINE_PATH) or {}
+        referenced.update(r["id"] for r in baseline.get("grandfathered_runs", []) if r.get("id"))
+    return referenced
+
+
+def _is_quarantined_orphan(run_id: str) -> bool:
+    """Hand-set convention (run_055/run_056 precedent): an ORPHANED_README.md
+    in the run's own directory. A3 leaves A4's later work (a first-class
+    quarantined_orphan STATUS field recognized by selectors) as a separate,
+    later ledger item -- this is only the detection half."""
+    return (ROOT / "runs" / run_id / "ORPHANED_README.md").exists()
+
+
+def reconcile_orphans() -> list:
+    """Read-only. Returns the full sorted list of runs/ directories
+    referenced by none of campaign_queue.yaml / campaign_state.yaml /
+    the frozen baseline (quarantined and unexpected alike).
+
+    Always emits EXACTLY ONE log line per invocation (K4 rider,
+    2026-07-13): a clean pass (zero unexpected orphans) used to log
+    nothing at all, making it indistinguishable from reconcile_orphans()
+    never having run. Non-clean case logs the UNEXPECTED subset (not
+    already known-quarantined), content unchanged from before this rider,
+    so a real crash-window orphan (A1/A3's crash-window analysis) is never
+    silently missed, while the already-known run_055/run_056-style orphans
+    don't spam that line's content on every invocation -- they still count
+    toward the clean-case line's coverage numbers instead. Never blocks
+    _select_entry()/_next_new_run_id() -- both already scan runs/ on disk
+    directly and independently exclude every occupied number regardless
+    of this function's output."""
+    on_disk = _snapshot_run_dirs()
+    referenced = _referenced_run_ids()
+    orphans = sorted(on_disk - referenced)
+    unexpected = [o for o in orphans if not _is_quarantined_orphan(o)]
+    if unexpected:
+        _log(f"RECONCILE: {len(unexpected)} unreferenced run dir(s) not in "
+             f"campaign_queue.yaml/campaign_state.yaml/{BASELINE_PATH.name}: {unexpected}")
+    else:
+        covered = len(on_disk) - len(orphans)
+        _log(f"RECONCILE: {len(on_disk)} run dir(s) scanned, {covered} "
+             f"referenced/grandfathered, 0 unexpected ({len(orphans)} known-quarantined)")
+    return orphans
+
+
 def process_once() -> bool:
     """Runs exactly one launch/continue/advance step. Returns True if the
     caller should keep looping, False if the campaign is done or halted."""
+    reconcile_orphans()  # A3: read-only, logs only newly-unexpected orphans
+
     queue = _load_queue()
     entry = _select_entry(queue["queue"])
     if entry is None:
         _log("Queue exhausted — no ready or in_progress entries remain.")
         return False
 
-    if not entry.get("run_ids"):
+    action = _next_action_for_entry(entry)
+
+    if action == "refinement_brief":
+        # B1: an operator-authored refinement_brief_path takes precedence
+        # over the internal LLM routing's own proposed_brief.yaml — but
+        # ONLY if internal routing hasn't already fired for this lineage
+        # step. R2: the conflict check runs BEFORE setup_run — a conflicted
+        # entry never scaffolds a second child.
+        parent_run_id = entry["run_ids"][-1]
+        existing_child = _existing_continuation_child(parent_run_id)
+        if existing_child:
+            reason = "refinement_brief_conflicts_with_existing_continuation"
+            detail = (
+                f"refinement_brief_path={entry['refinement_brief_path']!r} conflicts with "
+                f"existing continuation_child={existing_child!r} already recorded on "
+                f"{parent_run_id}'s pipeline_state.yaml (internal routing already fired for "
+                f"this lineage step). Resolve by hand per RUNBOOK.md's custody norm (rename "
+                f"the internally-scaffolded child per convention, or discard the operator "
+                f"override) before resuming."
+            )
+            entry["status"] = f"paused:{reason}"
+            _save_queue(queue)
+            _regenerate_summary(queue)
+            _log(f"HALT — {reason}: {detail}. Campaign stopped on {entry['id']} / {parent_run_id}. "
+                 f"See RUNBOOK.md 'Resume after a pause'.")
+            return False
+
+        brief_path = ROOT / entry["refinement_brief_path"]
+        brief = _parse_refinement_brief_yaml(brief_path)
+        child_id = _next_new_run_id()
+        setup_run(child_id)
+        _materialize_refinement_run(child_id, brief, brief_path)
+        entry["run_ids"].append(child_id)
+        entry["refinement_brief_consumed_for"] = entry["refinement_brief_path"]
+        _save_queue(queue)
+        _log(f"REFINEMENT-BRIEF {entry['id']} -> {child_id} (brief={entry['refinement_brief_path']})")
+        run_id = child_id
+    elif action == "fresh_launch":
         brief_path = ROOT / entry["brief_path"]
         brief = _parse_brief_frontmatter(brief_path)
         run_id = _next_new_run_id()
@@ -807,12 +1072,9 @@ def process_once() -> bool:
         run_id = entry["run_ids"][-1]
 
     run_dir = ROOT / "runs" / run_id
-    before_dirs = _snapshot_run_dirs()
     before_splits = _snapshot_hypothesis_splits()
     orch.run_loop(run_id)
-    after_dirs = _snapshot_run_dirs()
     after_splits = _snapshot_hypothesis_splits()
-    new_runs = sorted(after_dirs - before_dirs)
 
     # Any hypothesis_generation split(s) that happened anywhere during this run_loop
     # call (whether on run_id itself or an internal reframe/escalate continuation
@@ -843,13 +1105,20 @@ def process_once() -> bool:
              f"See RUNBOOK.md 'Resume after a pause'.")
         return False
 
+    # A1 (K4 kernel): read the run's own PERSISTED continuation intent
+    # (continuation_child, written by _route_refine/_route_pivot/
+    # _route_escalate onto their own run's pipeline_state.yaml) instead of
+    # diffing runs/ across this call — a continuation across SEPARATE
+    # process_once() invocations (fresh process, or this same run reaching
+    # its terminal pending_stage in an earlier invocation) now still resolves
+    # correctly, since the intent lives on disk, not in this call's locals.
     pending = state.get("pending_stage") or ""
-    lineage_new_runs = [r for r in new_runs if r not in split_child_ids]
-    if pending in _LINEAGE_CONTINUATION_STAGES and lineage_new_runs:
-        continuation_id = lineage_new_runs[0]
-        entry["run_ids"].append(continuation_id)
+    continuation_child = state.get("continuation_child")
+    if pending in _LINEAGE_CONTINUATION_STAGES and continuation_child and \
+            continuation_child not in split_child_ids:
+        entry["run_ids"].append(continuation_child)
         _save_queue(queue)
-        _log(f"CONTINUE {entry['id']} lineage {run_id} -> {continuation_id} ({pending})")
+        _log(f"CONTINUE {entry['id']} lineage {run_id} -> {continuation_child} ({pending})")
         return True
 
     entry["status"] = "done"
@@ -874,12 +1143,29 @@ def run_forever(once: bool = False):
 def dry_run_verify():
     _log("=== DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===", dry_run=True)
 
+    reconcile_orphans()  # A3: read-only, always logs exactly one line (see its own docstring)
+
     queue = _load_queue()
     entry = _select_entry(queue["queue"])
     if entry is None:
-        raise AssertionError("no ready/in_progress entry found in campaign_queue.yaml")
+        # K4 rider (2026-07-13): parity with process_once()'s own graceful
+        # "Queue exhausted" handling -- an all-terminal queue (every entry
+        # done/blocked_on_*) is a legitimate, informative outcome, not an
+        # assertion failure. Previously raised AssertionError here, which
+        # is indistinguishable from a real wiring defect.
+        _log("DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal",
+             dry_run=True)
+        return
     _log(f"queue: selected entry '{entry['id']}' (status={entry['status']}, "
          f"brief={entry['brief_path']})", dry_run=True)
+
+    # B1/B2-non-regression: classify via the SAME function process_once() uses,
+    # so a broken refinement_brief_path is caught before a real launch. This
+    # does not achieve B2's full dry-run/process_once branch parity (the
+    # plain "continue" branch still isn't simulated at all) -- see design
+    # note section 7.
+    action = _next_action_for_entry(entry)
+    _log(f"classified next action for '{entry['id']}': {action!r}", dry_run=True)
 
     brief_path = ROOT / entry["brief_path"]
     brief = _parse_brief_frontmatter(brief_path)
@@ -901,6 +1187,16 @@ def dry_run_verify():
         _log(f"setup_run + brief materialization OK: {rb_path.relative_to(ROOT)} written"
              f"{', pre_registration.yaml written' if has_pr else ' (brief has no machine_constraints)'}",
              dry_run=True)
+
+        if action == "refinement_brief":
+            rb_source = ROOT / entry["refinement_brief_path"]
+            rb_brief = _parse_refinement_brief_yaml(rb_source)
+            _materialize_refinement_run(dry_run_id, rb_brief, rb_source)
+            verbatim_path = dry_run_dir / "artifacts" / "user_brief_verbatim.yaml"
+            if not verbatim_path.exists():
+                raise AssertionError("user_brief_verbatim.yaml was not written")
+            _log(f"refinement-brief materialization OK: {verbatim_path.relative_to(ROOT)} written "
+                 f"(checksum recorded in pre_registration.yaml)", dry_run=True)
 
         # Simulate a normal terminal outcome (no LLM calls) — prove terminal
         # classification does NOT misfire as a pause.
