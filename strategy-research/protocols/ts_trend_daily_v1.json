@@ -1,0 +1,135 @@
+{
+  "protocol_version": "ts_trend_daily_v1",
+  "pre_registration": {
+    "significance_methodology_for_single_magnitude_signals": "block_bootstrap_all_bars_v1",
+    "_note_significance": "SmaTrendLongOnlyComponent is long-only, single constant magnitude when active -- ic_active_bars is undefined by construction (see prescreen_signal._is_degenerate_active_forecast). Falls back automatically to a circular stationary block bootstrap on the pooled all-bars IC (prescreen_signal._stationary_block_bootstrap_ic_significance). Fixed pre-registration, 2026-07-07 -- see briefs/research_brief_P4_ts_trend.md pre_registration_addendum for full justification and the in-sample IC value observed during shakedown (not used to tune these parameters).",
+    "block_size_bars": 20,
+    "n_resamples": 1000,
+    "seed": 20260707,
+    "significance_threshold": 0.1,
+    "_note_windows": "2026-07-08 revision: original design used monthly (~30-day) windows copied from the 1h baseline_v2.json convention. That is structurally incompatible with this signal: SmaTrendLongOnlyComponent needs 101 days of warmup (engine readiness actually needs ~2x that, ~200 bars, due to the strategy_engine history-deque-fill mechanic -- see trading-bot/core/launcher.py run_backtest docstring), so every monthly window showed zero trades regardless of true signal quality (verified via a zero-trade repro run, 2026-07-07, which leaked no information about the signal itself -- see brief addendum). Redesigned to semi-annual (182-day) non-overlapping windows: the shakedown showed ~6.4 opens/symbol/year, giving ~3.2 expected trades/window -- comfortably clears a quarterly (91-day, ~1.6 expected) floor with real margin while giving 2x the walk-forward sample count of annual windows. First window starts 2018-04-01 (not 2018-01-01): Binance BTCUSDT/ETHUSDT true history starts 2017-08-17 (confirmed via live fetch, backfill extended in local_data/*_1d.csv), and the required_bars-based warmup prefetch (up to 2x required_bars=202 days before window_start) needs window_start >= ~2018-03-07 to stay within available history; 2018-04-01 gives a 25-day safety margin.",
+    "_note_min_trade_count": "2026-07-08 revision: promotion.min_trade_count_gte was 20, copied from the 1h baseline_v2.json convention (calibrated for high-frequency signals). The brief itself pre-registers expected_active_n of only 10-25 TOTAL transitions per symbol over 6 years (power_preregistration) -- no window length, however long, would plausibly reach 20 trades per window for this signal class without collapsing the walk-forward to 1-2 windows total. Revised to 1 (at least one completed round-trip required for a window to count as evaluable), matching the LOWER end of the brief a-priori expectation (10-25 transitions / 15 windows =~ 0.7-1.7/window). This is a pre-registered floor, not tuned to the shakedown observed values."
+  },
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT"
+  ],
+  "timeframe": "1d",
+  "windows": [
+    {
+      "label": "2018-04",
+      "test": {
+        "start": "2018-04-01",
+        "end": "2018-10-01"
+      }
+    },
+    {
+      "label": "2018-10",
+      "test": {
+        "start": "2018-10-01",
+        "end": "2019-04-01"
+      }
+    },
+    {
+      "label": "2019-04",
+      "test": {
+        "start": "2019-04-01",
+        "end": "2019-10-01"
+      }
+    },
+    {
+      "label": "2019-10",
+      "test": {
+        "start": "2019-10-01",
+        "end": "2020-04-01"
+      }
+    },
+    {
+      "label": "2020-04",
+      "test": {
+        "start": "2020-04-01",
+        "end": "2020-10-01"
+      }
+    },
+    {
+      "label": "2020-10",
+      "test": {
+        "start": "2020-10-01",
+        "end": "2021-04-01"
+      }
+    },
+    {
+      "label": "2021-04",
+      "test": {
+        "start": "2021-04-01",
+        "end": "2021-10-01"
+      }
+    },
+    {
+      "label": "2021-10",
+      "test": {
+        "start": "2021-10-01",
+        "end": "2022-04-01"
+      }
+    },
+    {
+      "label": "2022-04",
+      "test": {
+        "start": "2022-04-01",
+        "end": "2022-10-01"
+      }
+    },
+    {
+      "label": "2022-10",
+      "test": {
+        "start": "2022-10-01",
+        "end": "2023-04-01"
+      }
+    },
+    {
+      "label": "2023-04",
+      "test": {
+        "start": "2023-04-01",
+        "end": "2023-10-01"
+      }
+    },
+    {
+      "label": "2023-10",
+      "test": {
+        "start": "2023-10-01",
+        "end": "2024-04-01"
+      }
+    },
+    {
+      "label": "2024-04",
+      "test": {
+        "start": "2024-04-01",
+        "end": "2024-10-01"
+      }
+    },
+    {
+      "label": "2024-10",
+      "test": {
+        "start": "2024-10-01",
+        "end": "2025-04-01"
+      }
+    },
+    {
+      "label": "2025-04",
+      "test": {
+        "start": "2025-04-01",
+        "end": "2025-10-01"
+      }
+    }
+  ],
+  "holdout": {
+    "start": "2026-01-01",
+    "end": "2026-06-30"
+  },
+  "promotion": {
+    "median_sharpe_gt": 0,
+    "max_abs_drawdown_pct_lt": 30,
+    "min_trade_count_gte": 1,
+    "kill_median_sharpe_lt": -1
+  }
+}

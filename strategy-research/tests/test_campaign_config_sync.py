@@ -43,6 +43,27 @@ def test_block_size_1h(campaign_config):
     )
 
 
+def test_block_size_1d(campaign_config):
+    """2026-07-07: daily-bar engine support (P4_ts_trend/SMA(100)-daily)."""
+    import prescreen_signal
+    expected = campaign_config["prescreen"]["block_size_1d"]
+    assert prescreen_signal._BLOCK_SIZE_1D == expected, (
+        f"prescreen_signal._BLOCK_SIZE_1D={prescreen_signal._BLOCK_SIZE_1D} "
+        f"!= config prescreen.block_size_1d={expected}"
+    )
+
+
+def test_a86_block_size_by_timeframe_matches_config(campaign_config):
+    """_run_a86_power_check's timeframe dispatch must match both prescreen_signal.py's
+    own constants AND campaign_config.yaml — three places, one source of truth."""
+    import run_phase1_research as rpr
+    import prescreen_signal
+    assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME["1h"] == prescreen_signal._BLOCK_SIZE_1H
+    assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME["1h"] == campaign_config["prescreen"]["block_size_1h"]
+    assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME["1d"] == prescreen_signal._BLOCK_SIZE_1D
+    assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME["1d"] == campaign_config["prescreen"]["block_size_1d"]
+
+
 def test_significance_threshold(campaign_config):
     import prescreen_signal
     expected = campaign_config["prescreen"]["significance_threshold"]

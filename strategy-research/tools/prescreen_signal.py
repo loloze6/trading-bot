@@ -39,6 +39,7 @@ import os
 import csv
 import json
 import math
+import random
 import argparse
 import statistics
 from datetime import datetime, timezone, date as _date, timedelta
@@ -57,6 +58,7 @@ if _TBOT not in sys.path:
     sys.path.insert(0, _TBOT)
 
 from strategies.main_strategy import AdvancedStrategy
+from performance.signal_statistics import spearman_correlation as _spearman
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -64,9 +66,33 @@ from strategies.main_strategy import AdvancedStrategy
 
 # Block size for autocorrelation-adjusted significance (24 bars for 1h).
 _BLOCK_SIZE_1H = 24
+# 2026-07-07: a daily bar IS already one calendar day -- no intra-day
+# autocorrelation block to divide out (mirrors _BLOCK_SIZE_1H's own logic:
+# bars-per-day == block_size, which is 1 bar-per-day at daily resolution).
+_BLOCK_SIZE_1D = 1
 
 # Significance threshold: p < 0.10 is informative.
 _SIG_THRESHOLD = 0.10
+
+# 2026-07-07 (P4_ts_trend shakedown finding): fallback significance test for signals
+# whose active-bar forecast is a SINGLE constant magnitude (e.g. long-only, never
+# shorts -- SmaTrendLongOnlyComponent). Spearman IC among active bars is
+# mathematically undefined for a constant series (zero variance) regardless of
+# sample size or true signal quality -- see _is_degenerate_active_forecast. This is
+# a DIFFERENT question from _BLOCK_SIZE_1H/_BLOCK_SIZE_1D above (how many raw bars
+# form one independent unit for n_eff): the bootstrap block size below answers "how
+# many CONSECUTIVE bars must be resampled together to preserve serial dependence in
+# daily returns/signal persistence." Set to ~1 trading month (20 bars), matching the
+# "multi-week horizon" serial-correlation mechanism this campaign's brief documents
+# for persistent_behavioral_bias edges -- long enough to preserve dependency
+# structure, short enough to leave many resampling blocks per symbol (~2720/20=136
+# for the full 2018-2025 daily range). This is a PRE-REGISTERED default, fixed
+# before observing any run's actual IC value -- do not tune per-hypothesis.
+_BOOTSTRAP_BLOCK_SIZE_1D = 20
+_BOOTSTRAP_N_RESAMPLES = 1000
+# Fixed seed for reproducibility -- a bootstrap significance test must give the same
+# p-value on every re-run of the same data, not a different one each invocation.
+_BOOTSTRAP_SEED = 20260707
 
 # Forecast is "active" if abs(forecast) > this threshold.
 # Exactly zero is the inactive state for regime-gated strategies.
@@ -219,43 +245,12 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
 
 
 # ---------------------------------------------------------------------------
-# Spearman rank correlation (no scipy dependency)
+# Spearman rank correlation -- see the import above: _spearman is
+# performance.signal_statistics.spearman_correlation (shared, degenerate-safe
+# implementation; deduplicated 2026-07-09 after the same logic was found
+# independently hand-rolled a second time in run_artifact.py::build_core with
+# a bug in its degenerate-case handling).
 # ---------------------------------------------------------------------------
-
-def _spearman(x: list, y: list) -> float | None:
-    """
-    Compute Spearman rank correlation between x and y.
-    Returns None when either series is constant (or fewer than 3 points).
-    """
-    n = len(x)
-    if n < 3 or len(y) != n:
-        return None
-
-    def _rank(vals):
-        sorted_i = sorted(range(n), key=lambda i: vals[i])
-        ranks = [0.0] * n
-        i = 0
-        while i < n:
-            j = i
-            while j < n - 1 and vals[sorted_i[j + 1]] == vals[sorted_i[j]]:
-                j += 1
-            avg_r = (i + j) / 2.0 + 1
-            for k in range(i, j + 1):
-                ranks[sorted_i[k]] = avg_r
-            i = j + 1
-        return ranks
-
-    rx = _rank(x)
-    ry = _rank(y)
-    mean_rx = sum(rx) / n
-    mean_ry = sum(ry) / n
-    cov = sum((rx[i] - mean_rx) * (ry[i] - mean_ry) for i in range(n)) / n
-    std_rx = math.sqrt(sum((r - mean_rx) ** 2 for r in rx) / n)
-    std_ry = math.sqrt((sum((r - mean_ry) ** 2 for r in ry) / n))
-    if std_rx < 1e-10 or std_ry < 1e-10:
-        return None
-    return cov / (std_rx * std_ry)
-
 
 # ---------------------------------------------------------------------------
 # Forecast extraction (signal layer only, no portfolio simulation)
@@ -325,6 +320,7 @@ def _compute_ic_fields(records: list) -> dict:
             "forecast_sparsity_pct": 100.0,
             "active_n_bars":        0,
             "forecast_hash":        None,
+            "active_forecast_distinct_count": 0,
         }
 
     all_f  = [r["forecast"]        for r in records]
@@ -336,6 +332,11 @@ def _compute_ic_fields(records: list) -> dict:
 
     ic_all   = _spearman(all_f, all_r)
     ic_active = _spearman(act_f, act_r) if act_f else None
+    # 2026-07-07: distinct forecast magnitudes among ACTIVE bars only. A long-only
+    # constant-magnitude signal (e.g. always exactly +10.0 when active) has exactly
+    # 1 here -- Spearman IC is undefined by construction (zero variance), not by a
+    # small-sample or no-edge failure. See _is_degenerate_active_forecast.
+    active_distinct_count = len({round(v, 10) for v in act_f})
 
     n_total  = len(records)
     n_active = len(active_records)
@@ -351,6 +352,7 @@ def _compute_ic_fields(records: list) -> dict:
         "forecast_sparsity_pct": round(sparsity, 2),
         "active_n_bars":        n_active,
         "forecast_hash":        f_hash,
+        "active_forecast_distinct_count": active_distinct_count,
     }
 
 
@@ -400,6 +402,146 @@ def _block_adjusted_significance(
         "n_eff":       n_eff,
         "block_size":  block_size,
         "significant": bool(p_value < _SIG_THRESHOLD),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Degenerate active-bar forecast fallback (2026-07-07)
+# ---------------------------------------------------------------------------
+
+def _is_degenerate_active_forecast(ic_active: float | None, active_n: int, active_distinct_count: int) -> bool:
+    """
+    True when ic_active_bars is undefined NOT because of a bug or an underpowered
+    sample, but because the active-bar forecast has fewer than 2 distinct values --
+    Spearman IC has zero variance to correlate against returns by construction.
+    Structural detection (count of distinct values), never a magnitude threshold.
+    """
+    return ic_active is None and active_n > 0 and active_distinct_count < 2
+
+
+def _stationary_block_bootstrap_ic_significance(
+    records_by_symbol: dict,
+    block_size: int = _BOOTSTRAP_BLOCK_SIZE_1D,
+    n_resamples: int = _BOOTSTRAP_N_RESAMPLES,
+    seed: int = _BOOTSTRAP_SEED,
+) -> dict:
+    """
+    Pre-registered fallback significance test for the pooled ALL-BARS rank IC, used
+    only when ic_active_bars is degenerate (_is_degenerate_active_forecast). All-bars
+    IC has real variance to test here because inactive (forecast=0) and active
+    (forecast=constant nonzero) bars are two distinct levels.
+
+    Circular block bootstrap: resamples fixed-length blocks WITH replacement,
+    independently per symbol (never crossing a symbol boundary, preserving each
+    symbol's own time ordering and forecast/return pairing within a block), wrapping
+    circularly at the end of each symbol's series. Pools resampled bars across
+    symbols exactly as the real statistic does, recomputing Spearman IC on each of
+    n_resamples replicates.
+
+    Significance: two-sided bootstrap p-value via the percentile method --
+    p = 2 * min(frac(boot_ic <= 0), frac(boot_ic >= 0)), i.e. how much of the
+    bootstrap distribution's mass sits on the opposite side of zero from the
+    observed IC. Reproducible: fixed seed, not re-randomized per call.
+    """
+    symbol_arrays = {}
+    observed_all_f, observed_all_r = [], []
+    for sym, recs in records_by_symbol.items():
+        f   = [r["forecast"]        for r in recs]
+        ret = [r["next_return_bps"] for r in recs]
+        symbol_arrays[sym] = (f, ret)
+        observed_all_f.extend(f)
+        observed_all_r.extend(ret)
+
+    observed_ic = _spearman(observed_all_f, observed_all_r)
+    result_base = {
+        "method":       "block_bootstrap_all_bars_v1",
+        "block_size":   block_size,
+        "n_resamples":  n_resamples,
+    }
+    if observed_ic is None:
+        return {**result_base, "pooled_ic": None, "p_value": 1.0,
+                "significant": False, "n_bootstrap_valid": 0}
+
+    rng = random.Random(seed)
+    boot_ics = []
+    for _ in range(n_resamples):
+        rf, rr = [], []
+        for f, ret in symbol_arrays.values():
+            n = len(f)
+            if n == 0:
+                continue
+            n_blocks_needed = (n + block_size - 1) // block_size
+            for _b in range(n_blocks_needed):
+                start = rng.randrange(0, n)
+                for k in range(block_size):
+                    idx = (start + k) % n  # circular wrap -- Politis & Romano (1994)
+                    rf.append(f[idx])
+                    rr.append(ret[idx])
+        ic = _spearman(rf, rr)
+        if ic is not None:
+            boot_ics.append(ic)
+
+    if not boot_ics:
+        return {**result_base, "pooled_ic": round(observed_ic, 6), "p_value": 1.0,
+                "significant": False, "n_bootstrap_valid": 0}
+
+    frac_le_0 = sum(1 for v in boot_ics if v <= 0) / len(boot_ics)
+    frac_ge_0 = sum(1 for v in boot_ics if v >= 0) / len(boot_ics)
+    p_value = min(1.0, 2.0 * min(frac_le_0, frac_ge_0))
+
+    return {
+        **result_base,
+        "pooled_ic":         round(observed_ic, 6),
+        "p_value":           round(p_value, 4),
+        "significant":       bool(p_value < _SIG_THRESHOLD),
+        "n_bootstrap_valid":  len(boot_ics),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Turnover proxy (2026-07-07 redefinition -- see run_prescreen's call site)
+# ---------------------------------------------------------------------------
+
+def _compute_turnover_proxy(records_by_symbol: dict) -> dict:
+    """
+    Trade boundary = an ACTIVITY transition, not a sign transition:
+    inactive -> active OPENS a trade; active -> inactive CLOSES it; a direct
+    sign flip (long -> short with no flat bar between) closes the old side and
+    opens the new one in the same bar (counted as one open here, since exactly
+    one new episode begins).
+
+    Superseded the prior sign-flip-only counter (tracked "last NONZERO sign"
+    across flat gaps), which silently merged every long-only or short-only
+    signal's separate episodes into a SINGLE trade whenever the signal never
+    flipped sign -- flat gaps were invisible to it. See the P4_ts_trend
+    SmaTrendLongOnlyComponent shakedown finding: that bug inflated
+    avg_holding_bars from a ~193-bar estimate to 3058 (the entire pooled
+    active-bar count treated as one trade) and the cost ratio to 44.9x.
+
+    Computed per-symbol (never crossing a symbol boundary) then summed:
+    pooling the flat records list across symbols would let one symbol's
+    trailing sign leak into the next symbol's opening bar as a spurious
+    "no transition" read.
+    """
+    total_active = 0
+    total_opens = 0
+    for recs in records_by_symbol.values():
+        prev_sign = 0  # 0 = flat; tracks the actual PRIOR bar's state, flat included
+        for r in recs:
+            curr_sign = 1 if r["forecast"] > _ACTIVE_THRESHOLD else (
+                       -1 if r["forecast"] < -_ACTIVE_THRESHOLD else 0)
+            if curr_sign != 0:
+                total_active += 1
+                if curr_sign != prev_sign:
+                    total_opens += 1
+            prev_sign = curr_sign
+
+    implied_trades = max(total_opens, 1)
+    avg_holding_bars = total_active / implied_trades if implied_trades > 0 else None
+    return {
+        "active_bars_total":        total_active,
+        "implied_trades_estimated": implied_trades,
+        "avg_holding_bars":         avg_holding_bars,
     }
 
 
@@ -505,6 +647,14 @@ def _sigma_from_records(records: list) -> float:
 # Routing logic (A8.1)
 # ---------------------------------------------------------------------------
 
+def _fmt_ic(ic: float | None) -> str:
+    """Render an IC value for a rationale string. None means undefined (e.g. a
+    degenerate constant-magnitude active-bar forecast, see
+    _is_degenerate_active_forecast) -- must never print as "0.0000", which would
+    claim a measured null result where none exists."""
+    return f"{ic:.4f}" if ic is not None else "undefined (degenerate active-bar forecast)"
+
+
 def _determine_route(ic_sig: dict, cost: dict) -> tuple:
     """
     Returns (route, rationale, prescreen_kill_reason).
@@ -515,8 +665,14 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
     3. IC significant, positive, cost fails → refine_cost_hurdle (or kill_cost_hurdle)
     4. Both pass → proceed_to_backtest
     """
-    sig       = ic_sig.get("significant", False)
-    pooled_ic = ic_sig.get("pooled_ic") or 0.0
+    sig          = ic_sig.get("significant", False)
+    pooled_ic_raw = ic_sig.get("pooled_ic")
+    # 2026-07-07: pooled_ic=None means UNDEFINED (e.g. degenerate constant-magnitude
+    # active-bar forecast -- see _is_degenerate_active_forecast), not a measured
+    # zero. Rendering None as "0.0000" claims a result was measured when it wasn't;
+    # _fmt_ic keeps the two cases visually distinct in every rationale string below.
+    pooled_ic = pooled_ic_raw if pooled_ic_raw is not None else 0.0
+    ic_str    = _fmt_ic(pooled_ic_raw)
     p_value   = ic_sig.get("p_value")
     p_value   = p_value if p_value is not None else 1.0
     ratio     = cost.get("edge_to_cost_ratio")
@@ -529,7 +685,7 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
             else "no_informational_content_this_venue"
         )
         rationale = (
-            f"Active-bar IC={pooled_ic:.4f}, p={p_value:.4f} >= {_SIG_THRESHOLD}. "
+            f"Active-bar IC={ic_str}, p={p_value:.4f} >= {_SIG_THRESHOLD}. "
             f"Signal has no detectable directional content on this venue/timeframe."
         )
         if disposition_note:
@@ -544,7 +700,7 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
         return (
             "refine_inverted_ic",
             (
-                f"Active-bar IC={pooled_ic:.4f} (negative, significant at p={p_value:.4f}). "
+                f"Active-bar IC={ic_str} (negative, significant at p={p_value:.4f}). "
                 f"Signal direction is inverted — flip polarity before backtest."
             ),
             None,
@@ -563,7 +719,7 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
             return (
                 "kill_cost_hurdle",
                 (
-                    f"Active-bar IC={pooled_ic:.4f} (p={p_value:.4f}, marginal). "
+                    f"Active-bar IC={ic_str} (p={p_value:.4f}, marginal). "
                     f"Est. gross edge {edge_str} vs cost {cost_str} "
                     f"(ratio={ratio_str} < {safety}). Structural cost barrier."
                 ),
@@ -573,7 +729,7 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
             return (
                 "refine_cost_hurdle",
                 (
-                    f"Active-bar IC={pooled_ic:.4f} (significant, p={p_value:.4f}), but "
+                    f"Active-bar IC={ic_str} (significant, p={p_value:.4f}), but "
                     f"est. gross edge {edge_str} vs cost {cost_str} "
                     f"(ratio={ratio_str} < required {safety}). "
                     f"Fix: wider threshold or longer holding."
@@ -585,7 +741,7 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
     return (
         "proceed_to_backtest",
         (
-            f"Active-bar IC={pooled_ic:.4f} (p={p_value:.4f}, significant). "
+            f"Active-bar IC={ic_str} (p={p_value:.4f}, significant). "
             f"Edge-to-cost ratio={ratio_str} >= {cost.get('safety_factor_required', 2.0)}. "
             f"Signal passes both IC and cost gates."
         ),
@@ -726,7 +882,17 @@ def run_prescreen(
     symbols   = protocol["symbols"]
     windows   = protocol["windows"]
     timeframe = protocol.get("timeframe", "1h")
-    block_size = _BLOCK_SIZE_1H if timeframe in ("1h",) else max(_BLOCK_SIZE_1H // 4, 6)
+    # 2026-07-07: added explicit "1d" case (block_size=1 -- each daily bar IS
+    # already one calendar day, so there is no intra-day autocorrelation block
+    # to divide out, matching how "1h" itself is treated: bars-per-day ==
+    # block_size). The pre-existing generic fallback for every OTHER non-1h
+    # timeframe (4h, 15m, etc.) is untouched.
+    if timeframe == "1h":
+        block_size = _BLOCK_SIZE_1H
+    elif timeframe == "1d":
+        block_size = _BLOCK_SIZE_1D
+    else:
+        block_size = max(_BLOCK_SIZE_1H // 4, 6)
 
     if out_dir is None:
         out_dir = Path(_SR) / "results" / "prescreens"
@@ -793,6 +959,7 @@ def run_prescreen(
     ic_all         = ic_fields["ic_all_bars"]
     active_n       = ic_fields["active_n_bars"]
     sparsity_pct   = ic_fields["forecast_sparsity_pct"]
+    active_distinct = ic_fields["active_forecast_distinct_count"]
 
     # Block-adjusted significance on ACTIVE-BAR n (A8.3)
     ic_values_for_sig = [ic_active] if ic_active is not None else []
@@ -800,6 +967,22 @@ def run_prescreen(
     ic_sig = ic_sig_block24
     significance_methodology_used = "block_24_fisher_z"
     ic_by_era = None
+    # Value used for the cost gate's gross-edge estimate (A8.3/A9.1 default: ic_active).
+    # Overridden below when ic_active is degenerate (see _is_degenerate_active_forecast).
+    ic_for_cost = ic_active
+
+    # 2026-07-07: degenerate active-bar forecast (e.g. a long-only, single-constant-
+    # magnitude signal -- SmaTrendLongOnlyComponent). ic_active_bars is undefined by
+    # construction here (zero variance among active-bar forecasts), NOT a real
+    # no-edge result -- see the P4_ts_trend shakedown finding. Only structural
+    # (component ALWAYS produces one magnitude when active) triggers this, checked
+    # below; a merely-small active-bar sample from a sign-based signal (e.g. few
+    # extreme-funding episodes that happen to share a sign in a narrow window) is a
+    # POWER problem, not a structural one -- that case is already handled by the
+    # a851a opt-in's own insufficient-episode disposition below, which must run
+    # first and is left untouched. This structural fallback only applies to the
+    # DEFAULT (non-a851a) path.
+    degenerate_active_forecast = _is_degenerate_active_forecast(ic_active, active_n, active_distinct)
 
     # A8.5.1a (opt-in): candidate_strategy_config.json may request the episode-
     # blocked significance method for hypotheses evaluated over multi-era
@@ -833,24 +1016,25 @@ def run_prescreen(
               f"pooled_ic={a851a_result.get('pooled_ic')} "
               f"p_value={a851a_result.get('p_value')} "
               f"significant={a851a_result.get('significant')}")
+    elif degenerate_active_forecast:
+        bootstrap_result = _stationary_block_bootstrap_ic_significance(all_records_by_symbol)
+        ic_sig = bootstrap_result
+        significance_methodology_used = bootstrap_result["method"]
+        ic_for_cost = bootstrap_result["pooled_ic"]
+        print(f"    Degenerate active-bar forecast (active_forecast_distinct_count="
+              f"{active_distinct}) -- ic_active_bars is undefined by construction, "
+              f"not a no-edge result. Falling back to {bootstrap_result['method']}: "
+              f"pooled_ic={bootstrap_result['pooled_ic']} p_value={bootstrap_result['p_value']} "
+              f"significant={bootstrap_result['significant']}")
 
-    # Turnover proxy: active bars per trade implies holding period
-    total_active = sum(1 for r in all_records if r["active"])
-    # Estimate trade count from sign changes in forecast (each flip = one round-trip)
-    sign_changes = 0
-    prev_sign = 0
-    for r in all_records:
-        curr_sign = 1 if r["forecast"] > _ACTIVE_THRESHOLD else (
-                   -1 if r["forecast"] < -_ACTIVE_THRESHOLD else 0)
-        if curr_sign != 0 and prev_sign != 0 and curr_sign != prev_sign:
-            sign_changes += 1
-        if curr_sign != 0:
-            prev_sign = curr_sign
-
-    # Implied trades ≈ sign_changes (each direction flip is one close+open).
-    # Fallback: if no sign changes, use a trade every avg_holding_bars.
-    implied_trades = max(sign_changes, 1)
-    avg_holding_bars = total_active / implied_trades if implied_trades > 0 else None
+    # Turnover proxy: active bars per trade implies holding period. See
+    # _compute_turnover_proxy's docstring for the 2026-07-07 activity-transition
+    # redefinition (supersedes the prior sign-flip-only counter, which silently
+    # merged long-only/short-only episodes across flat gaps into one trade).
+    _turnover = _compute_turnover_proxy(all_records_by_symbol)
+    total_active     = _turnover["active_bars_total"]
+    implied_trades   = _turnover["implied_trades_estimated"]
+    avg_holding_bars = _turnover["avg_holding_bars"]
 
     turnover_proxy = {
         "active_bars_total":           total_active,
@@ -859,10 +1043,12 @@ def run_prescreen(
         "forecast_sparsity_pct":       sparsity_pct,
     }
 
-    # Cost check uses ic_active_bars (A8.3 and A9.1)
+    # Cost check uses ic_active_bars (A8.3 and A9.1), or ic_for_cost's block-bootstrap
+    # fallback when ic_active is degenerate (see above) -- otherwise the cost gate
+    # would unconditionally fail (ic=None) regardless of the signal's true cost profile.
     primary_symbol = symbols[0] if symbols else "default"
     cost = _cost_check(
-        ic_active=ic_active,
+        ic_active=ic_for_cost,
         sigma_bar_bps=sigma_bar_bps,
         avg_holding_bars=avg_holding_bars,
         symbol=primary_symbol,
@@ -930,6 +1116,9 @@ def run_prescreen(
         "forecast_sparsity_pct":    sparsity_pct,
         "active_n_bars":            active_n,
         "forecast_hash":            ic_fields["forecast_hash"],
+        # 2026-07-07: structural flag, not a threshold -- see _is_degenerate_active_forecast.
+        "active_forecast_distinct_count": active_distinct,
+        "degenerate_active_forecast":     degenerate_active_forecast,
         # Legacy pooled field (= ic_active_bars for backward compat)
         "ic_spearman_pooled":       ic_active,
         "ic_by_regime":             ic_by_regime,

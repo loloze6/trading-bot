@@ -34,7 +34,8 @@ class TradingBot:
         price_fetch_interval: int = 60,
         candle_interval_seconds: int = 180,
         test_mode: bool = True,
-        symbols: List[str] = None
+        symbols: List[str] = None,
+        warmup_cutoff_timestamp=None,
     ):
         """
         Initialize the trading bot.
@@ -61,6 +62,9 @@ class TradingBot:
         self.portfolio_info = portfolio_info
         self.portfolio_state_tracker = portfolio_state_tracker
         self.forecast_manager = forecast_manager
+        # 2026-07-07: see BacktestEngine.warmup_cutoff_timestamp docstring. Default
+        # None preserves exact prior behavior (every candle always trades).
+        self.warmup_cutoff_timestamp = warmup_cutoff_timestamp
         self.risk_manager = risk_manager
         self.performance_tracker = performance_tracker
         
@@ -144,6 +148,15 @@ class TradingBot:
                 return
             close = data['close'].iloc[-1]
             data_time = data['timestamp'].iloc[-1]
+
+            # 2026-07-07: warmup-only prefetch bars (see BacktestEngine.warmup_cutoff_timestamp)
+            # update the strategy's internal history so indicators are primed by the
+            # real scoring window's start, but must never trade or touch portfolio
+            # state. Default None preserves exact prior behavior: every bar trades.
+            if self.warmup_cutoff_timestamp is not None and data_time < self.warmup_cutoff_timestamp:
+                self.strategy.update(data)
+                return
+
             self.logger.debug(f"🕯 CANDLE │ {symbol} │ {data_time} │ Close: ${close:.2f} ")
 
             # Retrieve portfolio information

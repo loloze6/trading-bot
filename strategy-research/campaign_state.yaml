@@ -35,6 +35,8 @@ runs:
 - run_047
 - run_050
 - run_048
+- run_053
+- run_054
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -217,10 +219,32 @@ altitude_history:
   dimension: signal_polarity
   family: fear_greed_contrarian
   outcome: no_improvement
+- run: run_053
+  altitude: campaign
+  dimension: research_question
+  family: ''
+  outcome: reframed
+- run: run_053
+  altitude: campaign
+  dimension: research_question
+  family: ''
+  outcome: reframed
+- run: run_054
+  altitude: hypothesis
+  dimension: ''
+  family: sma_trend
+  outcome: pivot
+- run: run_054
+  altitude: hypothesis
+  dimension: ''
+  family: sma_trend_following
+  outcome: pivot
 recent_parameter_dimensions_by_family:
   funding_rate_mean_reversion: []
   fear_greed_contrarian:
   - signal_polarity
+  sma_trend: []
+  sma_trend_following: []
 failed_families:
 - name: rsi_mean_reversion
   evidence_window: 2024_only
@@ -241,6 +265,8 @@ failed_families:
   evidence_window: 2024_only
   root_cause: signal_quality
 - funding_rate_mean_reversion
+- sma_trend
+- sma_trend_following
 instruments_tried:
 - BTCUSDT
 - ETHUSDT
@@ -392,6 +418,26 @@ diagnostics_log:
   cost_drag_pct: 67.9
   win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
   avg_trade_duration_bars: null
+- run: run_053
+  forecast_return_corr: -0.050271
+  cost_drag_pct: 407.8
+  win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
+  avg_trade_duration_bars: null
+- run: run_053
+  forecast_return_corr: -0.050271
+  cost_drag_pct: 407.8
+  win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
+  avg_trade_duration_bars: null
+- run: run_054
+  forecast_return_corr: 0.0
+  cost_drag_pct: 3.7069
+  win_rate_vs_sharpe: both PASS or N/A
+  avg_trade_duration_bars: 23.6
+- run: run_054
+  forecast_return_corr: null
+  cost_drag_pct: 3.7069
+  win_rate_vs_sharpe: both PASS or N/A
+  avg_trade_duration_bars: 23.6
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
@@ -452,7 +498,7 @@ notes:
   regime_retune_results.yaml, config/regime_retune_winner.json, runs/run_039/artifacts/regime_audit_decision.yaml.'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-07-06T11:06:16.303924+00:00'
+updated_at: '2026-07-12T16:13:05.628746+00:00'
 last_escalation:
   target: timeframe
   detail: 15m
@@ -571,3 +617,73 @@ trial_sharpes:
   statistic_valid: neither
   ic_pooled: -0.040257
   cost_pass: false
+- trial_id: run_053
+  source: prescreen
+  route: kill_no_ic
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: -0.050271
+  cost_pass: false
+- trial_id: run_054
+  source: prescreen
+  route: no_signal_artifact
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: null
+  cost_pass: false
+- trial_id: run_054
+  source: backtest
+  sharpe: -1.66
+  expectancy_bps:
+    mean: 1050.5086
+    se: 549.8235
+    t_stat: 1.9106
+    n: 117
+  n_trades: 0
+  statistic_valid: expectancy
+  below_floor_pct: 53.33
+- trial_id: run_054
+  source: backtest
+  sharpe: -1.66
+  expectancy_bps:
+    mean: 1050.5086
+    se: 549.8235
+    t_stat: 1.9106
+    n: 117
+  n_trades: 0
+  statistic_valid: expectancy
+  below_floor_pct: 53.33
+- trial_id: run_057
+  source: prescreen
+  route: kill_no_ic
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: null
+  cost_pass: false
+  note: route kill_no_ic set aside per prescreen_override_20260711.yaml; proceeding
+    to pre-registered walk-forward.
+- trial_id: run_057
+  source: backtest
+  sharpe: -0.686
+  expectancy_bps:
+    mean: 433.7313
+    se: 441.388
+    t_stat: 0.9827
+    n: 42
+  n_trades: 42
+  statistic_valid: expectancy
+  below_floor_pct: 96.67
+  n_trades_correction_note: 'Corrected from auto-recorded 0 to the verified true value
+    42 (matches expectancy_bps.n above, and the protocol_result.yaml/trades.json trade
+    count confirmed multiple times this session). Root cause: _record_backtest_trial
+    (run_phase1_research.py) reads per_symbol_summary[symbol][''trade_count''], but
+    that dict only has ''min_trade_count'' -- the lookup silently defaults to 0 for
+    every symbol. Code bug NOT fixed (out of scope this turn); will recur for future
+    sparse-trading runs until fixed at the source.'
+  verdict_final: kill_er_gate_mechanism_falsified

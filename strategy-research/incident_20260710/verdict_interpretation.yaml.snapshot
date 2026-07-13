@@ -1,0 +1,139 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY"
+protocol_verdict: "refine"
+status: "refine"
+
+metric_basis_correction_note: >
+  2026-07-10: this verdict supersedes an earlier one that read protocol_verdict=kill
+  (verdict_reason: "both symbols below kill threshold: BTCUSDT median_sharpe=-1.780<-1,
+  ETHUSDT median_sharpe=-1.540<-1"). That median_sharpe was computed by
+  performance/metrics.py::calculate_sharpe_ratio from LIFO-fragment (trades.json)
+  rows -- it reindexes the daily-return calendar only from first-trade-exit to
+  last-trade-exit (dropping long flat stretches outside that span) and renormalizes
+  each trade's return against ITS OWN entry-time portfolio value rather than a
+  single consistent basis. With 1-8 trades per 181-bar window, this produces a
+  thin, spiky distribution dominated by a handful of trade-exit days -- not a
+  faithful picture of what an investor in this backtest actually experienced.
+  A decision-layer input audit (2026-07-09/10) found no fragmentation problem for
+  this hypothesis specifically (117 completed trades reconcile exactly against a
+  bar-level activity-transition episode count, zero mismatches across all 30
+  window-symbol results -- see updated audit_note in campaign_knowledge_base.yaml).
+  The problem is the Sharpe formula's basis under sparse trading, not trade
+  fragmentation. Recomputing Sharpe from each window's own bars.csv
+  total_portfolio_value (full-window daily mark-to-market equity curve, sqrt(365)
+  annualization, same convention already labeled in protocol_result.yaml's
+  sharpe_annualization field) gives median_sharpe = +0.579 (BTCUSDT, n=15) and
+  +0.032 (ETHUSDT, n=15) -- both positive, neither anywhere near the kill
+  threshold. Recomputed independently outside metrics.py (which stays untouched
+  per scope constraint); see trade-level vs bar-level table below.
+  Fragment-level Sharpe/win_rate remain valid as descriptive statistics
+  (basis: lifo_fragment, descriptive_only) but are no longer decision-consumed
+  for this verdict.
+
+corrected_metrics_table:
+  BTCUSDT:
+    median_sharpe_basis_lifo_fragment_descriptive_only: -1.78
+    median_sharpe_basis_bar_level_decision_input: 0.579
+    win_rate_basis_episode_pct: null   # see per-window table; no aggregate win_rate criterion fired for BTC alone
+  ETHUSDT:
+    median_sharpe_basis_lifo_fragment_descriptive_only: -1.54
+    median_sharpe_basis_bar_level_decision_input: 0.032
+    win_rate_basis_episode_pct: null
+  note: >
+    ETHUSDT's corrected median_sharpe (+0.032) is statistically indistinguishable
+    from zero given n=15 windows of highly variable per-window Sharpe (range
+    roughly -2.2 to +3.8) -- this is a "no clear signal either way" result for ETH,
+    not a second confirmed positive. BTCUSDT's +0.579 is more supportive but still
+    drawn from the same sparse-window population.
+  episode_vs_fragment_count: "117 = 117 in all 30 window-symbol results (BTCUSDT 58, ETHUSDT 59, both methods agree exactly) -- no fragmentation artifact for this hypothesis."
+
+criteria_summary:
+  - "Walk-forward pooled IC ≥ 1.5–2.0%: FAIL (BTCUSDT actual 0.0372, ETHUSDT actual 0.0199; validation_protocol required=1.5 is specification error — Spearman correlation cannot exceed 1.0. Intended threshold likely 0.015–0.020 decimal, which both symbols meet. Accepting criteria_results.result=FAIL as official, unchanged by this correction — this criterion is bar-level and was never in question.)"
+  - "Per-era decomposition (backward extension and walk-forward): UNTESTED"
+  - "Reverse-polarity test (short-only IC ≤ 0): UNTESTED"
+  - "Activation sparsity ≤ 60%: UNTESTED"
+  - "Layer 2 cost check (estimated_gross_edge ≥ 34 bps): UNTESTED"
+  - "Minimum holding period validation: UNTESTED"
+
+primary_failure_mode: >
+  insufficient_sample_at_current_altitude: the signal shows a real, marginally
+  significant positive per-episode edge (per_trade_expectancy_bps mean=1050.5,
+  t_stat=1.91, n=117) and, once measured on a consistent bar-level basis,
+  aggregate risk-adjusted return is NOT confirmed negative (BTCUSDT median_sharpe
+  +0.579, ETHUSDT +0.032 -- ETH indistinguishable from zero). The regime-mismatch/
+  whipsaw story below is a CANDIDATE explanation for why the edge is thin and
+  uneven across windows, not a confirmed mechanism -- the evidence that previously
+  supported it as established fact (the -1.78/-1.54 aggregate Sharpe) no longer
+  holds under the corrected metric. Per-window sample is still too thin (min
+  trade_count per window as low as 1; below_floor_pct=53.33% of windows have <5
+  trades) to promote or to draw a confident directional conclusion either way.
+
+config_to_failure_map:
+  - "regime_detector (empty components and rules): ungated configuration routes all bars to default_regime=unknown. Whether choppy-regime whipsaw is actually suppressing an otherwise-larger trending-regime edge is the open question a regime-gated variant would test -- not yet demonstrated by this run's corrected metrics."
+
+untested_criteria:
+  - "Per-era IC decomposition across backward_extension (2018–2023) and walk_forward (2024–2025) eras"
+  - "Reverse-polarity test (short-only signal IC ≤ 0 or p > 0.10)"
+  - "Activation sparsity (n_active_bars / n_total_bars ≤ 60%)"
+  - "Layer 2 cost check (estimated_gross_edge ≥ 34 bps per formula)"
+  - "Minimum holding period validation (back-computed from trade history)"
+
+proposed_change_dimension: "regime_gating"
+
+hypothesis_family: "sma_trend_following"
+
+altitude_justification: >
+  Corrected per A3.4 sparse-trader gate: below_floor_pct=53.33% > 50% suspends
+  Sharpe-based promote/kill reasoning at the ORIGINAL (fragment-basis) figures
+  too, so the original run's own logic already should not have leaned on
+  median_sharpe=-1.78/-1.54 as conclusive -- this correction reinforces rather
+  than reverses that A3.4 judgment call, it just also fixes the number itself.
+  Primary performance metric remains per_trade_expectancy_bps=1050.5 (t_stat=1.91,
+  marginally significant, positive). Rule 4 (regime_uninformative) check:
+  uninformative_regimes=['unknown'] with median n_bars=180 >= 20 -- forward
+  returns in the single ungated regime are weak but not conclusively zero.
+  Per SKILL.md's mechanism_failure -> action table, lag_mismatch_to_regime_persistence
+  prescribes refine (altitude 1, parameter/config change), which is consistent
+  with treating "add a regime gate to this same hypothesis" as a refinement of
+  P4_SMA_TREND_LONGONLY_DAILY rather than a new hypothesis registration -- this
+  supersedes the prior status=pivot / "new hypothesis registration" framing.
+
+root_cause:
+  mechanism_failure: "lag_mismatch_to_regime_persistence"
+  confidence: "medium"
+  supporting_evidence: >
+    per_trade_expectancy_bps mean=1050.5 (t_stat=1.91, marginally significant at
+    p<0.10, n=117); median_forecast_return_corr=0.0372 (BTCUSDT) and 0.0199
+    (ETHUSDT), both positive, indicating some directional edge exists.
+    CORRECTED (2026-07-10): median_sharpe on a bar-level equity-curve basis is
+    +0.579 (BTCUSDT) and +0.032 (ETHUSDT) -- NOT the -1.78/-1.54 previously
+    reported (that figure was a LIFO-fragment/trade-exit-day statistic with a
+    basis problem under sparse trading, not a bar-level measurement; see
+    metric_basis_correction_note above). Confidence downgraded from high to
+    medium: the era-by-era pattern this run originally cited (profitable in
+    2020-04, 2020-10, 2023-10, 2024-10, 2025-04; losing in 2018-04, 2021-04,
+    2022-04, 2023-04, 2024-04) is still visible in the per-window data and is
+    consistent with a trending-vs-choppy story, but the aggregate-Sharpe evidence
+    that previously made this "confirmed, high confidence" is gone. Treat the
+    whipsaw/regime-mismatch mechanism as the leading HYPOTHESIS for why the edge
+    is uneven, to be tested by a regime-gated refinement -- not as an established
+    finding.
+
+trade_attribution:
+  primary_weakness: "exit"
+  evidence: >
+    exit_efficiency_median=-0.0726 indicates exits realize ~7% less of available
+    post-exit move, suggesting exits occur slightly early as SMA signal flips.
+    Combined with exit_reason_breakdown.signal_flip_pct=99.15% (almost all exits
+    driven by signal reversal rather than protective stops), exits lock in partial
+    gains when trend may persist. pnl_concentration impact is mild (worst_decile
+    trades contribute -15.1% PnL drag) and win_rate_net=46.15% is near-baseline
+    50%. NOTE (2026-07-10): win_rate_net is unaffected by the metric-basis
+    correction -- episode-level win rate (grouping real fragment PnL by
+    activity-transition episode boundary) reproduces the exact same 46.15%/
+    per-window figures in all 30 results, because every episode in this
+    hypothesis maps 1:1 to exactly one trades.json fragment (no scaling, no
+    fragmentation). This trade_attribution block's inputs (entry/exit_efficiency,
+    pnl_concentration, exit_reason_breakdown) remain trade-diagnostics-derived,
+    per-fragment descriptive statistics -- not re-derived on a different basis
+    here, since they were never Sharpe-shaped aggregate statistics and their
+    1:1 fragment/episode correspondence means no basis correction changes them.

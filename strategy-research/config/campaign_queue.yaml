@@ -1,0 +1,186 @@
+version: '1.0'
+created_at: '2026-07-06'
+queue:
+- id: P4_ts_trend
+  brief_path: briefs/P4_ts_trend_r1_er_gate.yaml
+  status: done
+  priority: 1
+  source: user_delivered
+  relation: refine
+  notes: 'STATUS AS OF 2026-07-11 (updated: run_057 -- the regime-gated ER(20)>=0.30
+    entry-latch refinement -- reached a final KILL verdict and this entry closes.
+    Verdict final per the operator pre-commitment in prescreen_override_20260711.yaml:
+    "the verdict is kill; no further arbitration or gate relief will be sought for
+    this lineage." Pre-registered pass_rule (pre_registration.yaml) applied as sole
+    verdict authority -- FAIL on criterion (a): gated bar-level median Sharpe 0.0000
+    for both BTCUSDT and ETHUSDT (recomputed per the standing metric-basis rule,
+    not the fragment-level protocol_result.yaml nulls) vs required >=0.5791 (BTCUSDT)
+    / >=0.0318 (ETHUSDT); 29/30 window-symbols below the A3.4 five-trade floor. S2
+    secondary mechanism check falsified per s2_mechanism_check_20260711.yaml: identity-verified
+    (42/42 run_057 trades matched to run_054 parent records, 100% percent-return
+    agreement) -- excluded entries (ER<0.30, n=75) mean expectancy +1395.9 bps (SE
+    821.2) vs included entries (ER>=0.30, n=42) mean +433.7 bps (SE 441.4); the gate
+    anti-selected on this record, roughly 3:1 against its own design rationale. Verdict
+    routing hand-corrected per runs/run_057/artifacts/verdict_interpretation.yaml''s
+    operator_correction_20260711 field: the verdict_interpreter stage initially routed
+    refine/pivot (protocol_verdict=refine, status=pivot) per the pass_rule''s own
+    "verdict routing decides kill vs pivot" delegation, producing a Keltner-family
+    pivot proposal (KB-exhausted, forbidden re-proposal) -- corrected to protocol_verdict=kill,
+    status=kill per the binding pre-commitment, which had no precedence channel the
+    skill recognized. KB finding p4_sma_trend_longonly_daily_auto updated: outcome
+    kill_er_gate_mechanism_falsified, evidence_count 1->2 (run_057 added), exhausted=true
+    for this refinement direction specifically (not the broader family), coverage_matrix
+    mirror verified matching. This entry closes done/outcome=kill_er_gate_mechanism_falsified;
+    the underlying persistent_behavioral_bias / SMA-trend-family search space is not
+    thereby marked broadly exhausted -- one parameterization (ER(20), threshold 0.30)
+    was tested under a frozen, pre-registered specification.
+
+    STATUS AS OF 2026-07-10 (updated: in-lineage refinement brief installed
+    verbatim at brief_path above -- brief_id P4_ts_trend_r1_er_gate, relation: refine,
+    parent_run: run_054, parent_verdict: refine_pending_regime_gating. This is NOT
+    a new queue registration and NOT a reactivation; it appends to this entry''s
+    own run_ids per the standing lineage convention. Regime-gated SMA(100)-daily
+    ER(20)>=0.30 entry filter (Kaufman Efficiency Ratio), frozen a-priori parameters,
+    pre-registered pass rule against the independently-recomputed run_054 bar-level
+    baselines (BTCUSDT >=0.5791, ETHUSDT >=0.0318 median Sharpe over the same 15-window
+    sets). Operational mode: interactive --once stepping only per RUNBOOK 1c / INCIDENT.md
+    (nohup blocked pending operator harness investigation, NEXT_SESSION.md task 1).
+    Ready for dry-run verification, then --once launch on operator go-ahead. Prior
+    brief_path (briefs/research_brief_P4_ts_trend.md, the original parent brief)
+    is superseded for future reference by this refinement brief but not deleted.
+
+    STATUS AS OF 2026-07-10 (updated: metric-basis audit corrected run_054''s
+    verdict from protocol_verdict=kill/status=pivot to protocol_verdict=refine/status=refine
+    -- median_sharpe was computed from LIFO-fragment trade-exit-day statistics with
+    a basis problem under sparse trading, not from a bar-level equity curve; recomputed
+    correctly it is positive for both symbols (BTCUSDT +0.579, ETHUSDT +0.032), and
+    the corrected kill/promote/refine rule no longer kills. See campaign_knowledge_base.yaml''s
+    p4_sma_trend_longonly_daily_auto entry (outcome: refine_pending_regime_gating,
+    exhausted: false) and runs/run_054/artifacts/verdict_interpretation.yaml. A regime-gated
+    SMA(100)-daily variant is now the prescribed next step WITHIN this hypothesis''s
+    own lineage (refine, altitude 1) -- not a new registration, not a reactivation,
+    so this entry reverts to status: in_progress (lineage not finished, per run_campaign.py::_select_entry''s
+    own semantics: "An entry already in_progress (its lineage isn''t finished) always
+    wins") rather than done. outcome cleared from completed_refined to refine_pending_regime_gating
+    to match the KB entry. detector_wishlist.yaml''s daily_timeframe_er_overlay predicate
+    was re-evaluated against the corrected KB (workflow/run_campaign.py::evaluate_wishlist_predicate)
+    -- result: missing_field (NOT true/triggered -- it no longer fires on this finding,
+    which now fails the outcome=kill_ungated_regime_mismatch condition cleanly; the
+    missing_field result is driven by an unrelated, pre-existing KB record (keltner_mean_reversion_no_edge)
+    that has never populated per_trade_expectancy_bps, not by this correction). No
+    wishlist consumption authorized off the current evaluation. Next actual step:
+    register/build the regime-gated SMA(100)-daily refinement (not yet done) and continue
+    this entry''s lineage via run_campaign.py.
+
+    STATUS AS OF 2026-07-09 (updated: full IC methodology gap closed -- evaluate_against_decision_rules
+    now has the same block-bootstrap fallback for constant-magnitude signals prescreen
+    already had, imported from prescreen_signal.py, not reimplemented. Re-derived
+    hypothesis_verdict from stored run_054 artifacts (no backtest re-run -- scoring
+    was uncontaminated). Cleared the stale no_signal_artifact_flagged flag left over
+    from a prior unrelated pause (the real reason was component_execution_error, correctly
+    diagnosed by verdict_interpreter citing the prescreen_backtest_cross_check). verdict_interpretation.yaml
+    removed from artifacts/ so it regenerates against the corrected protocol_result.yaml;
+    prior versions preserved at runs/run_054/artifacts_SUPERSEDED_forecast_return_corr_bug/.
+    Resuming.
+
+    STATUS AS OF 2026-07-09 (updated: reopened after forecast_return_corr bug found
+    in trading-bot/reporting/run_artifact.py::build_core -- see campaign_knowledge_base.yaml''s
+    p4_sma_trend_longonly_daily_auto entry, outcome: invalidated_artifact. run_054
+    reached completed_refined (2026-07-09T13:02:23Z) on a verdict_interpreter narrative
+    that cited a fabricated forecast_return_corr=0.0/p=1.0 -- directly contradicting
+    the same run''s own prescreen result (pooled_ic=0.0359, p=0.004, significant),
+    which is what exposed the bug. Fixed via a shared, degenerate-safe statistics
+    module (trading-bot/performance/signal_statistics.py). Reset run_054''s pipeline_state.yaml
+    to pending_stage: protocol_execution; verdict_interpretation.yaml/campaign_review.yaml
+    preserved at runs/run_054/artifacts_SUPERSEDED_forecast_return_corr_bug/ and removed
+    from artifacts/ so they regenerate fresh. Re-running under the fixed code.
+
+    STATUS AS OF 2026-07-07 (updated: daily-bar engine support built, shakedown passed,
+    kb_reactivation_violation resolution below prepared for --resume).
+
+    2. RESOLUTION (2026-07-07): daily-bar engine support built (1d cache, protocol
+    timeframe plumbing, SmaTrendLongOnlyComponent, block-bootstrap significance fallback
+    for the long-only degenerate-active-forecast shape, turnover-proxy fix -- see
+    pre_registration_addendum in the brief and the test suite). Shakedown passed:
+    route=proceed_to_backtest, pooled_ic=0.0359, p=0.004, cost ratio=4.45. run_053''s
+    campaign_review.yaml next_research_question has been hand-corrected (RUNBOOK.md
+    kb_reactivation_violation procedure) to register THIS brief''s SMA(100)-daily
+    hypothesis -- a genuinely new registration, not a reactivation of H-041-A/H-041-C
+    (both already closed, consumed by run_050/run_048 respectively). pipeline_state.yaml''s
+    pending_stage corrected from the human_pause sentinel to campaign_review per the
+    same procedure. Ready for --resume.
+
+    STATUS AS OF 2026-07-06 (updated: authoritative brief installed).
+
+    0. PROVENANCE RESOLVED: the user-delivered brief (P4-TS-TREND: Time-Series Trend
+    Following, daily; SMA(100)-daily long-only, next-day-open execution, no sweep,
+    universe-parallel breadth, excess-over-buy-and-hold benchmark) has been installed
+    VERBATIM (byte-identical, diffed against the uploaded original) at brief_path
+    above, superseding the agent-authored draft (preserved at briefs/research_brief_P4_ts_trend_draft_superseded.md).
+    Authorized: build daily-bar engine support (data resampling + cache, protocol-level
+    timeframe plumbing, hardcoded-24-period-constant conversion with regression tests,
+    shakedown run) then launch through run_campaign.py. See campaign_state.yaml /
+    test suite for build progress; this entry stays blocked until the shakedown run
+    passes.
+
+    1. PROVENANCE (historical): the file this entry previously pointed to (agent-authored,
+    three open candidate mechanisms) is REJECTED as a design — one registered hypothesis
+    per brief, not a menu for hypothesis_generation to choose from.
+
+    2. MACD (run_053, no_edge_observed) and Keltner-trend (multiple prior runs) are
+    BOTH terminal families per campaign_knowledge_base.yaml — do not re-propose either
+    as this brief''s hypothesis.
+
+    3. FEASIBILITY CHECK (a) — daily-bar engine support: FAILS today, confirmed by
+    direct code investigation. No cached 1d OHLCV exists for BTC/ETH (only _1h.csv
+    in trading-bot/local_data/). run_protocol.py never reads timeframe from the protocol
+    at all — hardcoded to config.json''s global 3600s interval (trading-bot/core/launcher.py).
+    prescreen_signal.py partially reads protocol.timeframe but would hit FileNotFoundError
+    immediately (no _1d.csv). No 1h->1d resampling utility exists for OHLCV price
+    bars anywhere in the repo (only aux-feed resampling for funding/fear-greed exists).
+    Multiple hardcoded 24-bar/24-period assumptions (prescreen_signal.py''s block_size
+    logic, episode_significance.py''s gap_bars, AND trading-bot/strategies/main_strategy.py''s
+    std_dev_period=24 literal — used live in production forecast normalization) would
+    silently misbehave on daily bars without adjustment. This is new engineering work
+    (data fetch + protocol/launcher plumbing + fixing hardcoded periods), not a pre-registration
+    tweak — not undertaken without explicit authorization, since it touches production
+    strategy code (main_strategy.py), not just research tooling.
+
+    4. FEASIBILITY CHECK (b) — A8.6 power, informational only (moot while (a) fails;
+    computed anyway since cheap and directly checkable against real data): actual
+    computed numbers (BTCUSDT_1h.csv/ETHUSDT_1h.csv resampled to daily closes, SMA(100),
+    long-only, 2018-04-11 to 2025-12-31 post-warmup, 2822 daily bars) — NOT the ~10-25/symbol
+    estimate. Real: 53 long-episodes/ symbol, 106 transitions/symbol, ~55% time long,
+    both symbols nearly identical. Pooled n_eff=106 (no is_market_wide discount —
+    this is a per-symbol signal, not a shared index): mde = 1/sqrt(103) = 0.0985,
+    which clears a plausible_ic_upper of ~0.15-0.20 typical for this signal class
+    (see other findings'' power_disposition blocks for the anchor range). I.e. if
+    the engine could run it, 2 symbols x 8 years would likely NOT be the binding constraint
+    — the real blocker is (3), not symbol breadth. This contradicts the assumption
+    that ~15-symbol breadth (P2) was required for power on this specific hypothesis.
+
+    Custody rule (going forward, all entries): advisor-delivered briefs/specs are
+    installed verbatim with a `source: user_delivered` header; agent- authored briefs
+    are marked `source: agent`. No silent substitution in either direction.
+
+    '
+  run_ids:
+  - run_053
+  - run_054
+  - run_057
+  outcome: kill_er_gate_mechanism_falsified
+- id: XS_momentum
+  brief_path: briefs/research_brief_XS_momentum.md
+  status: blocked_on_P2
+  priority: 2
+  source: agent
+  notes: 'Cross-sectional momentum needs a real cross-section of low-correlation instruments;
+    the campaign currently covers only BTCUSDT/ETHUSDT (rho=0.82, n_eff_symbols≈1.10
+    per config/campaign_config.yaml). P2 = instrument-universe expansion (fetch-verify
+    OHLCV for a broader coin_universe.yaml set, update campaign_data_policy.yaml,
+    re-measure correlations). See the brief''s own "What P2 must deliver" section
+    for the unblock checklist. Do not flip to ready until that checklist is done.
+
+    '
+  run_ids: []
+  outcome: null

@@ -38,8 +38,14 @@ _DEFAULT_POLICY = os.path.join(_SR, "config", "campaign_data_policy.yaml")
 # Default data check range (covers all baseline_v2 walk-forward windows).
 _DEFAULT_START = "2024-01-01"
 _DEFAULT_END   = "2025-12-31"
-INTERVAL_SECONDS = 3600  # 1h
-MAX_GAP_SECONDS  = 86400  # 1 day
+_DEFAULT_TIMEFRAME = "1h"
+
+# Timeframe -> (candle interval seconds, max-allowed-gap seconds before flagging).
+# Max gap is set to ~1.5x the candle interval for daily bars (matching the
+# existing 1h convention's own gap-detection tolerance of 1.5x, applied in
+# check_data_availability below) rather than a fixed 1-day constant that would
+# be meaningless (equal to the candle interval itself) for daily bars.
+_TIMEFRAME_SECONDS = {"1h": 3600, "1d": 86400}
 
 
 # ---------------------------------------------------------------------------
@@ -121,19 +127,30 @@ def check_holdout_overlap(protocol: dict, policy: dict) -> bool:
 # Data availability check
 # ---------------------------------------------------------------------------
 
-def check_data_availability(symbols: list, start: str, end: str) -> bool:
+def check_data_availability(symbols: list, start: str, end: str,
+                             timeframe: str = _DEFAULT_TIMEFRAME) -> bool:
+    interval_seconds = _TIMEFRAME_SECONDS.get(timeframe)
+    if interval_seconds is None:
+        print(f"ERROR: unknown timeframe {timeframe!r} — supported: {sorted(_TIMEFRAME_SECONDS)}")
+        return False
+    # Flag any gap that exceeds ~2 candle-intervals (same 1.5-2x tolerance spirit
+    # as the existing 1h-only check, generalized so a daily-bar cache is checked
+    # against "> ~2 days," not the fixed 1-day constant that would be meaningless
+    # (smaller than one candle) at 1d resolution).
+    max_gap_seconds = interval_seconds * 2
+
     start_dt = datetime.datetime.strptime(start, "%Y-%m-%d")
     end_dt   = datetime.datetime.strptime(end,   "%Y-%m-%d")
-    expected_bars = int((end_dt - start_dt).total_seconds() / INTERVAL_SECONDS)
+    expected_bars = int((end_dt - start_dt).total_seconds() / interval_seconds)
 
-    print(f"\nData availability check: {start} to {end} (1h)")
+    print(f"\nData availability check: {start} to {end} ({timeframe})")
     print(f"Expected bars (per symbol): {expected_bars}")
     print()
 
     any_large_gap = False
 
     for symbol in symbols:
-        dm = DataManager(symbols=[symbol], interval_seconds=INTERVAL_SECONDS, mode="backtest")
+        dm = DataManager(symbols=[symbol], interval_seconds=interval_seconds, mode="backtest")
         df = dm.fetch_historical_data(symbol, start, end)
 
         if df.empty:
@@ -146,7 +163,7 @@ def check_data_availability(symbols: list, start: str, end: str) -> bool:
 
         actual_bars = len(df)
         diff = df["timestamp"].diff().dropna()
-        expected_delta = pd.Timedelta(seconds=INTERVAL_SECONDS)
+        expected_delta = pd.Timedelta(seconds=interval_seconds)
         gaps = diff[diff > expected_delta * 1.5]
 
         print(f"{symbol}:")
@@ -162,9 +179,9 @@ def check_data_availability(symbols: list, start: str, end: str) -> bool:
                 gap_end   = df.loc[idx,     "timestamp"]
                 duration  = gap_end - gap_start
                 dur_h     = duration.total_seconds() / 3600
-                flag = " *** > 1 DAY ***" if duration.total_seconds() > MAX_GAP_SECONDS else ""
+                flag = f" *** > {max_gap_seconds/3600:.0f}H ***" if duration.total_seconds() > max_gap_seconds else ""
                 print(f"  gap: {gap_start} to {gap_end}  ({dur_h:.1f}h){flag}")
-                if duration.total_seconds() > MAX_GAP_SECONDS:
+                if duration.total_seconds() > max_gap_seconds:
                     any_large_gap = True
         print()
 
@@ -189,6 +206,11 @@ def main():
         "--skip-data-check", action="store_true",
         help="Only run holdout overlap check, skip the data availability download."
     )
+    parser.add_argument(
+        "--timeframe", default=None, choices=sorted(_TIMEFRAME_SECONDS),
+        help="Override timeframe for the data check (default: from --protocol's "
+             "'timeframe' field if given, else '1h')."
+    )
     args = parser.parse_args()
 
     # --- Step 1: holdout overlap guard ---
@@ -210,8 +232,9 @@ def main():
         if not overlap_ok:
             sys.exit(1)
 
-        # Derive symbols and date range from protocol windows
-        symbols = protocol.get("symbols", ["BTCUSDT", "ETHUSDT"])
+        # Derive symbols, date range, and timeframe from the protocol
+        symbols   = protocol.get("symbols", ["BTCUSDT", "ETHUSDT"])
+        timeframe = args.timeframe or protocol.get("timeframe", _DEFAULT_TIMEFRAME)
         windows = protocol.get("windows", [])
         if windows:
             starts = [w["test"]["start"] for w in windows]
@@ -223,6 +246,7 @@ def main():
             data_end   = _DEFAULT_END
     else:
         symbols    = ["BTCUSDT", "ETHUSDT"]
+        timeframe  = args.timeframe or _DEFAULT_TIMEFRAME
         data_start = _DEFAULT_START
         data_end   = _DEFAULT_END
 
@@ -231,12 +255,12 @@ def main():
         print("Data availability check skipped (--skip-data-check).")
         sys.exit(0)
 
-    ok = check_data_availability(symbols, data_start, data_end)
+    ok = check_data_availability(symbols, data_start, data_end, timeframe=timeframe)
     if not ok:
-        print("STOP: gap > 1 day detected. Report above. Do not proceed until user decides.")
+        print("STOP: gap detected exceeding tolerance. Report above. Do not proceed until user decides.")
         sys.exit(2)
     else:
-        print("OK: no gap > 1 day. Safe to proceed.")
+        print("OK: no gap exceeding tolerance. Safe to proceed.")
         sys.exit(0)
 
 

@@ -467,16 +467,50 @@ class Launcher:
 # ---------------------------------------------------------------------------
 
 def run_backtest(config_path: str, symbol: str, start: str, end: str, results_root: str,
-                 runs_root: str = None):
+                 runs_root: str = None, interval_seconds: int = None,
+                 warmup_prefetch: bool = False, holdout_start: str = None):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
                directory (no /runs/ subdirectory), e.g. runs/run_xxx/results/.
+    interval_seconds: candle interval override for this backtest only (e.g. 86400
+        for daily bars). Defaults to None, which preserves the exact prior
+        behavior of reading the live bot's global config.json interval — a
+        protocol that doesn't pass this must produce bit-identical results to
+        before this parameter existed. Never mutates config.json itself, so a
+        daily-bar research run can never affect the live trading interval.
+    warmup_prefetch: when True, fetches 2 * strategy.required_bars of EXTRA
+        history before `start` and feeds it through the strategy silently (no
+        trading, see BacktestEngine.warmup_cutoff_timestamp) so indicators are
+        already warmed up by `start` itself, instead of degrading the first
+        ~required_bars of every window. 2x is a proven-sufficient upper bound:
+        strategy_engine.is_ready() needs the per-component history deque to
+        reach length strategy_engine._warmup AFTER the component itself becomes
+        ready at required_bars, and _warmup <= required_bars always (it's
+        min(config_warmup, min_buf) where min_buf <= required_bars) -- so the
+        exact bar of first readiness (required_bars + _warmup - 2) is always
+        < 2*required_bars. This ~2x-required_bars warmup applies to every
+        strategy config, including 1h production ones -- not something specific
+        to daily bars, so this flag is not restricted to any one timeframe.
+        Verified empirically against the P4_ts_trend SmaTrendLongOnlyComponent
+        shakedown (required_bars=101: naive assumption would use 101 bars, but
+        is_ready() actually first returns True at bar 201).
+        Default False preserves the exact prior behavior (fetch exactly
+        [start, end), every bar trades) -- bit-identical, see
+        tests/test_warmup_prefetch_bit_identical.py.
+    holdout_start: when warmup_prefetch is True and this is set (a "YYYY-MM-DD"
+        string), asserts the computed prefetch fetch_start never reaches at or
+        past holdout_start -- the backward-extended warmup buffer must never
+        pull holdout data into a training window. No-op unless both
+        warmup_prefetch=True and holdout_start are set.
     """
     from data.feed_registry import FEED_REGISTRY
 
     launcher = Launcher()
-    interval = parse_interval_seconds(launcher.config.get('trading', 'interval', 3600))
+    if interval_seconds is not None:
+        interval = interval_seconds
+    else:
+        interval = parse_interval_seconds(launcher.config.get('trading', 'interval', 3600))
     params = TradingParams(
         symbols=[symbol],
         interval=interval,
@@ -490,6 +524,25 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
     stack.portfolio_state_tracker.output_dir = results_root
     if runs_root is not None:
         stack.portfolio_state_tracker.runs_dir = runs_root
+
+    warmup_cutoff_timestamp = None
+    fetch_start = start
+    if warmup_prefetch:
+        prefetch_bars = 2 * strategy.required_bars
+        fetch_start_dt = datetime.datetime.strptime(start, "%Y-%m-%d") - datetime.timedelta(
+            seconds=prefetch_bars * interval
+        )
+        fetch_start = fetch_start_dt.strftime("%Y-%m-%d")
+        warmup_cutoff_timestamp = datetime.datetime.strptime(start, "%Y-%m-%d")
+
+        if holdout_start is not None:
+            holdout_start_dt = datetime.datetime.strptime(holdout_start, "%Y-%m-%d")
+            assert fetch_start_dt < holdout_start_dt, (
+                f"warmup_prefetch: computed fetch_start={fetch_start} is at or past "
+                f"holdout_start={holdout_start} -- the backward-extended warmup buffer "
+                f"would pull holdout data into a training window. Investigate before "
+                f"proceeding (likely a window scheduled too close to the holdout boundary)."
+            )
 
     engine = BacktestEngine(
         data_manager=stack.data_manager,
@@ -506,8 +559,26 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         test_mode=params.test_mode,
         symbols=params.symbols,
         initial_capital=DEFAULT_INITIAL_BALANCE,
+        warmup_cutoff_timestamp=warmup_cutoff_timestamp,
     )
 
-    engine.load_data(start_date=start, end_date=end, extra_feeds=FEED_REGISTRY)
+    engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=FEED_REGISTRY)
+
+    if warmup_prefetch:
+        # Verify the prefetch actually suffices -- fail loudly rather than silently
+        # score a not-yet-ready strategy. Uses a throwaway probe instance (NOT the
+        # real `strategy` object, which must stay untouched until the engine's own
+        # bar-by-bar loop feeds it -- double-feeding would corrupt its RollingBuffer).
+        probe = AdvancedStrategy(config_path=config_path)
+        prefetch_df = engine.historical_data[symbol]
+        prefetch_only = prefetch_df[prefetch_df['timestamp'] < warmup_cutoff_timestamp]
+        for i in range(len(prefetch_only)):
+            probe.update(prefetch_only.iloc[i:i + 1])
+        assert probe.is_ready(), (
+            f"warmup_prefetch: strategy not ready after {len(prefetch_only)} prefetch bars "
+            f"({fetch_start} to {start}) -- required_bars={strategy.required_bars}. "
+            f"2x-required_bars was insufficient for this config; investigate before proceeding."
+        )
+
     engine.simulate_on_loaded_data()
     return engine._last_run_dir

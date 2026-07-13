@@ -25,7 +25,7 @@ _TBOT = os.path.join(_REPO, "trading-bot")            # trading-bot/
 if _TBOT not in sys.path:
     sys.path.insert(0, _TBOT)
 
-from core.launcher import run_backtest
+from core.launcher import run_backtest, parse_interval_seconds
 
 _RESULTS_ROOT = os.path.join(_SR, "results")
 
@@ -453,16 +453,53 @@ _KEYWORD_TO_FIELD = [
     (['sharpe'],                                                     'median_sharpe'),
     (['drawdown'],                                                   'max_abs_drawdown_pct'),
     (['trade count', 'trade_count', 'trades'],                      'min_trade_count'),
+    # 2026-07-09: previously unmapped -- "Walk-forward pooled IC >= ..." criteria were
+    # ALWAYS UNTESTED (no matching keyword), regardless of what forecast_return_corr
+    # actually contained. Now resolves to median_forecast_return_corr, which
+    # _build_extended_summary populates with a block-bootstrap fallback for
+    # degenerate (constant-magnitude-when-active) signals -- see that function.
+    # DELIBERATELY NARROW: a broader keyword (e.g. bare " ic ") also matched
+    # "block-bootstrapped pooled_ic is statistically significant (p<0.05)" --
+    # a DIFFERENT criterion about a P-VALUE, not an IC magnitude. That
+    # collision made a real number (0.037) satisfy an unrelated "< 0.05"
+    # threshold by coincidence and flipped the verdict to a false PROMOTE.
+    # Only match the specific "walk-forward pooled ic" phrase this brief's
+    # validation_protocol.yaml actually uses for the MAGNITUDE criterion, and
+    # explicitly exclude anything mentioning significance/p-value wording.
+    (['walk-forward pooled ic', 'walk forward pooled ic'], 'median_forecast_return_corr'),
 ]
+# KNOWN UNIT AMBIGUITY (2026-07-09, deliberately unresolved): this criterion's
+# threshold is worded as a percentage ("IC >= 1.5-2.0%"), but
+# median_forecast_return_corr is a raw correlation coefficient (e.g. 0.037).
+# Compared raw-vs-raw (0.037 >= 1.5) this FAILS; rescaled by x100 (3.72 >= 1.5)
+# it would PASS. _apply_op does no unit conversion -- deliberately left as
+# raw-vs-raw (the conservative reading: never silently inflate toward a PASS)
+# rather than guessing the LLM-authored criterion's intended scale. Does not
+# change the overall verdict either way for run_054 (still 'refine'). If this
+# ever becomes the deciding criterion for a promote/kill call, resolve the
+# ambiguity explicitly before trusting it.
 
 def _is_untested(text: str) -> bool:
     lower = text.lower()
     return any(kw in lower for kw in _UNTESTED_KEYWORDS)
 
+# 2026-07-09: significance/p-value wording that must NEVER resolve to
+# median_forecast_return_corr -- a criterion phrased as "pooled_ic is
+# statistically significant (p<0.05)" is asking about a P-VALUE threshold, not
+# an IC magnitude threshold. Conflating the two let a real IC value (0.037)
+# coincidentally satisfy an unrelated "< 0.05" p-value threshold and flip a
+# verdict to a false PROMOTE -- see _KEYWORD_TO_FIELD's own note.
+_SIGNIFICANCE_WORDING = ['p<', 'p <', 'p-value', 'significant']
+
+
 def _resolve_field(text: str):
     lower = text.lower()
     for keywords, field in _KEYWORD_TO_FIELD:
         if any(kw in lower for kw in keywords):
+            if field == 'median_forecast_return_corr' and any(
+                w in lower for w in _SIGNIFICANCE_WORDING
+            ):
+                continue
             return field
     return None
 
@@ -478,8 +515,72 @@ def _apply_op(op: str, actual: float, threshold: float) -> bool:
     return {'>': actual > threshold, '>=': actual >= threshold,
             '<': actual < threshold, '<=': actual <= threshold}.get(op, False)
 
-def _build_extended_summary(per_symbol_summary: dict, results: list) -> dict:
-    """Augment per_symbol_summary with median_win_rate and regime_frequency."""
+def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
+    """
+    2026-07-09: returns (median_forecast_return_corr, method) for one symbol's
+    rows across all its windows.
+
+    Uses the plain median of each window's forecast_return_corr (from
+    trading-bot/reporting/run_artifact.py::build_core) when at least one window
+    produced a defined value. Falls back to prescreen_signal's own
+    circular-block-bootstrap significance test -- IMPORTED, not reimplemented --
+    only when EVERY window's forecast_return_corr is None: the same degenerate,
+    constant-magnitude-when-active signal shape prescreen_signal.py already
+    detects via _is_degenerate_active_forecast (see that module and
+    trading-bot/performance/signal_statistics.py for why the correlation is
+    undefined there, not zero). Pools this symbol's bars.csv across ALL its
+    windows (chronological order, never crossing into another symbol's data --
+    same pooling discipline prescreen_signal.py uses across symbols).
+
+    This extension was authorized after observing a real negative walk-forward
+    Sharpe on the SMA(100)-daily hypothesis (P4_ts_trend/run_054): it makes a
+    pre-registered criterion (this brief already commits to
+    block_bootstrap_all_bars_v1 for exactly this signal shape) computable via
+    the pre-committed method, rather than leaving it permanently UNTESTED.
+    Expected effect is CONFIRMING the existing negative-Sharpe result, not
+    rescuing the hypothesis -- median_sharpe/min_trade_count (already computed,
+    never contaminated by this bug) remain the primary evidence either way.
+    """
+    corrs = [r['core'].get('forecast_return_corr') for r in rows
+             if r.get('core', {}).get('forecast_return_corr') is not None]
+    if corrs:
+        return round(statistics.median(corrs), 4), 'per_window_median_pearson'
+    if runs_root is None:
+        return None, None
+
+    import pandas as pd
+    sys.path.insert(0, _HERE)
+    import prescreen_signal as _ps
+
+    records = []
+    for r in sorted(rows, key=lambda x: x['window']):
+        bars_path = Path(runs_root) / r['run_id'] / 'bars.csv'
+        if not bars_path.exists():
+            continue
+        bdf = pd.read_csv(bars_path)
+        if 'forecast' not in bdf.columns or 'close' not in bdf.columns:
+            continue
+        closes = bdf['close'].tolist()
+        forecasts = bdf['forecast'].tolist()
+        for i in range(len(bdf) - 1):
+            if closes[i] == 0:
+                continue
+            records.append({
+                'forecast': float(forecasts[i]),
+                'next_return_bps': (closes[i + 1] - closes[i]) / closes[i] * 10000.0,
+            })
+    if not records:
+        return None, None
+
+    symbol = rows[0]['symbol']
+    boot = _ps._stationary_block_bootstrap_ic_significance({symbol: records})
+    return boot.get('pooled_ic'), boot['method']
+
+
+def _build_extended_summary(per_symbol_summary: dict, results: list, runs_root=None) -> dict:
+    """Augment per_symbol_summary with median_win_rate, regime_frequency, and
+    median_forecast_return_corr (with a degenerate-signal bootstrap fallback --
+    see _pooled_ic_with_bootstrap_fallback)."""
     extended = {s: dict(v) for s, v in per_symbol_summary.items()}
     for symbol in extended:
         rows = [r for r in results if r['symbol'] == symbol]
@@ -499,6 +600,9 @@ def _build_extended_summary(per_symbol_summary: dict, results: list) -> dict:
         extended[symbol]['regime_frequency'] = (
             round(statistics.median(freqs), 4) if freqs else None
         )
+        corr, method = _pooled_ic_with_bootstrap_fallback(rows, runs_root)
+        extended[symbol]['median_forecast_return_corr'] = corr
+        extended[symbol]['median_forecast_return_corr_method'] = method
     return extended
 
 def _split_criteria(text: str) -> list:
@@ -518,6 +622,18 @@ def _evaluate_criterion(text: str, extended: dict, is_reject: bool) -> dict:
     if op is None:
         return {'criterion': text, 'result': 'UNTESTED',
                 'reason': 'could not parse numeric threshold'}
+    # 2026-07-09: sanity check for an impossible threshold -- a correlation
+    # coefficient can never exceed 1.0 in absolute value, so a criterion like
+    # "IC >= 1.5%" parsed as a raw threshold of 1.5 (not 0.015) is structurally
+    # unpassable, almost always a percent/decimal unit mismatch in the
+    # LLM-authored validation_protocol.yaml, not a real evidentiary FAIL. See
+    # skills/quant-validation/SKILL.md's changelog for the incident this closes
+    # (P4_ts_trend/run_054's "Walk-forward pooled IC >= 1.5-2.0%").
+    if field == 'median_forecast_return_corr' and abs(threshold) > 1.0:
+        return {'criterion': text, 'field': field, 'result': 'SPEC_ERROR',
+                'reason': (f'threshold={threshold} exceeds 1.0 -- impossible for a '
+                           f'correlation coefficient; likely a percent/decimal unit '
+                           f'mismatch in validation_protocol.yaml, not a real criterion')}
     per_symbol = []
     for symbol, vals in extended.items():
         actual = vals.get(field)
@@ -542,6 +658,7 @@ def evaluate_against_decision_rules(
     results: list,
     validation_protocol: dict,
     trade_diagnostics_summary: dict | None = None,
+    runs_root=None,
 ) -> dict:
     """
     Evaluate per_symbol_summary against criteria from a loaded validation_protocol.yaml dict.
@@ -550,8 +667,11 @@ def evaluate_against_decision_rules(
     Reject criteria FAILing → kill; approve/evidence FAILing → refine only (D3).
     trade_diagnostics_summary: optional; when provided, enriches diagnostics block with
     per_trade_expectancy_bps and zero_trade_slot_pct (A3.4).
+    runs_root: optional; when provided, enables the block-bootstrap IC fallback
+    for degenerate (constant-magnitude-when-active) signals in
+    _build_extended_summary (2026-07-09).
     """
-    extended = _build_extended_summary(per_symbol_summary, results)
+    extended = _build_extended_summary(per_symbol_summary, results, runs_root)
 
     decision_rules    = validation_protocol.get('decision_rules', {})
     required_evidence = validation_protocol.get('required_evidence', []) or []
@@ -621,9 +741,16 @@ def evaluate_against_decision_rules(
     reject_rows   = [r for r in reject_rows   if id(r) in row_ids]
     evidence_rows = [r for r in evidence_rows if id(r) in row_ids]
 
+    # 2026-07-09: SPEC_ERROR (an impossible threshold, e.g. a percent/decimal unit
+    # mismatch -- see _evaluate_criterion) must be treated like UNTESTED here, not
+    # like a real evaluated criterion. Otherwise a criterion that can never
+    # mathematically pass OR fail would still count toward approve_evaluated,
+    # and if it's the only criterion evaluated, approve_fails==0 (SPEC_ERROR != FAIL)
+    # would incorrectly satisfy the promote condition.
+    _NOT_REALLY_EVALUATED = ('UNTESTED', 'SPEC_ERROR')
     reject_triggered  = any(r['result'] == 'FAIL' for r in reject_rows)
     approve_fails     = sum(1 for r in approve_rows + evidence_rows if r['result'] == 'FAIL')
-    approve_evaluated = sum(1 for r in approve_rows + evidence_rows if r['result'] != 'UNTESTED')
+    approve_evaluated = sum(1 for r in approve_rows + evidence_rows if r['result'] not in _NOT_REALLY_EVALUATED)
 
     if reject_triggered:
         verdict = 'kill'
@@ -632,8 +759,8 @@ def evaluate_against_decision_rules(
     else:
         verdict = 'refine'
 
-    tested   = [r for r in criteria_results if r['result'] != 'UNTESTED']
-    untested = [r for r in criteria_results if r['result'] == 'UNTESTED']
+    tested   = [r for r in criteria_results if r['result'] not in _NOT_REALLY_EVALUATED]
+    untested = [r for r in criteria_results if r['result'] in _NOT_REALLY_EVALUATED]
     fail_n   = sum(1 for r in tested if r['result'] == 'FAIL')
 
     # Diagnostics block — evidence for altitude decision by verdict_interpreter
@@ -690,6 +817,103 @@ def evaluate_against_decision_rules(
     }
 
 
+def _cross_check_prescreen_vs_backtest(out_dir: Path, results: list, extended: dict | None = None) -> dict | None:
+    """
+    2026-07-09: institutionalized after the P4_ts_trend incident where prescreen's
+    bootstrap IC (pooled_ic=0.0359, p=0.004, significant) and the full backtest's
+    own forecast_return_corr silently disagreed -- the old (buggy) build_core
+    reported a fabricated corr=0.0/p=1.0 IDENTICALLY across all 24 window-symbol
+    results, and verdict_interpreter cited that as "confirmed no edge, high
+    confidence" without anyone noticing the contradiction with prescreen's own
+    significant result. Two stages computing nominally the same quantity must
+    never coexist silently on a material disagreement.
+
+    extended: optional, the per-symbol dict from _build_extended_summary. When
+    provided, uses its median_forecast_return_corr (which already applies the
+    block-bootstrap fallback for degenerate signals -- see
+    _pooled_ic_with_bootstrap_fallback) instead of the raw per-window
+    forecast_return_corr. Without this, a signal that's ALREADY been resolved
+    via the fallback would still get flagged as "disagreement: undefined",
+    contradicting the resolved value sitting right next to it in the same
+    protocol_result.yaml -- confirmed live: verdict_interpreter got confused by
+    exactly this internal inconsistency on its first re-run.
+
+    Always written to protocol_result.yaml (even when no disagreement is found,
+    so this check is auditable going forward), or returns None if no
+    prescreen_result.yaml exists for this run to compare against.
+    """
+    prescreen_path = out_dir / "artifacts" / "prescreen_result.yaml"
+    if not prescreen_path.exists():
+        return None
+    import yaml
+    with open(prescreen_path, encoding="utf-8") as f:
+        prescreen = yaml.safe_load(f) or {}
+
+    ic_sig = prescreen.get("ic_significance") or {}
+    prescreen_significant = bool(ic_sig.get("significant"))
+    prescreen_pooled_ic = ic_sig.get("pooled_ic")
+
+    if extended:
+        # Resolved values (post block-bootstrap-fallback) -- the honest, final
+        # per-symbol IC this run actually used for its criteria evaluation.
+        resolved_corrs = [vals.get("median_forecast_return_corr") for vals in extended.values()]
+        resolved_methods = {vals.get("median_forecast_return_corr_method") for vals in extended.values()}
+        defined_corrs = [c for c in resolved_corrs if c is not None]
+        n_total = len(resolved_corrs)
+        n_defined = len(defined_corrs)
+        fallback_used = "block_bootstrap_all_bars_v1" in resolved_methods
+    else:
+        corr_values = [r["core"].get("forecast_return_corr") for r in results]
+        defined_corrs = [c for c in corr_values if c is not None]
+        n_total = len(corr_values)
+        n_defined = len(defined_corrs)
+        fallback_used = False
+
+    disagreement = False
+    detail = None
+    if prescreen_significant and prescreen_pooled_ic is not None:
+        if n_defined == 0:
+            disagreement = True
+            detail = (
+                f"prescreen reports significant pooled_ic={prescreen_pooled_ic} "
+                f"(p={ic_sig.get('p_value')}), but forecast_return_corr is undefined "
+                f"(None) in ALL {n_total} window-symbol backtest results, and no "
+                f"block-bootstrap fallback resolved it either -- likely a degenerate "
+                f"active-bar-forecast shape (see "
+                f"trading-bot/performance/signal_statistics.py)."
+            )
+        else:
+            backtest_pooled = sum(defined_corrs) / len(defined_corrs)
+            if (prescreen_pooled_ic > 0) != (backtest_pooled > 0):
+                disagreement = True
+                detail = (
+                    f"prescreen pooled_ic={prescreen_pooled_ic} (significant, "
+                    f"p={ic_sig.get('p_value')}) disagrees in SIGN with the backtest's "
+                    f"own {'bootstrap-resolved' if fallback_used else 'mean'} "
+                    f"forecast_return_corr={backtest_pooled:.4f} across "
+                    f"{n_defined}/{n_total} {'symbols' if extended else 'windows'}."
+                )
+
+    result = {
+        "prescreen_significant":       prescreen_significant,
+        "prescreen_pooled_ic":         prescreen_pooled_ic,
+        "backtest_n_windows_defined":  n_defined,
+        "backtest_n_windows_total":    n_total,
+        "backtest_bootstrap_fallback_used": fallback_used,
+        "disagreement_detected":       disagreement,
+        "detail":                      detail,
+    }
+    if disagreement:
+        print(f"\n⚠️⚠️⚠️ [CROSS-CHECK] prescreen/backtest DISAGREEMENT: {detail}")
+        print("⚠️⚠️⚠️ Treat any verdict_interpreter narrative citing forecast_return_corr "
+              "with suspicion until this is investigated.\n")
+    elif fallback_used:
+        print(f"\n✅ [CROSS-CHECK] prescreen/backtest agree after block-bootstrap fallback "
+              f"(prescreen pooled_ic={prescreen_pooled_ic}, backtest resolved "
+              f"{n_defined}/{n_total} symbols to the same sign).\n")
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description="Walk-forward protocol runner")
     parser.add_argument("config_path",   help="Path to strategy_config.json")
@@ -713,6 +937,11 @@ def main():
 
     config_sha256, config_sha8 = _config_sha(args.config_path)
     symbols = protocol["symbols"]
+    # Protocol-level timeframe (default "1h" preserves exact prior behavior —
+    # run_backtest's own interval_seconds=None default falls back identically
+    # to the pre-existing global-config-derived interval).
+    protocol_timeframe = protocol.get("timeframe", "1h")
+    interval_seconds = parse_interval_seconds(protocol_timeframe) if protocol_timeframe != "1h" else None
     os.makedirs(_RESULTS_ROOT, exist_ok=True)
 
     run_id = _protocol_run_id(config_sha8)
@@ -720,6 +949,17 @@ def main():
         out_dir = Path(args.out_dir)
     else:
         out_dir = Path(_RESULTS_ROOT) / "protocols" / run_id
+    # 2026-07-07: resolve to absolute. run_phase1_research.py's ROOT = Path(".") makes
+    # --out-dir a RELATIVE string (e.g. "runs/run_054"); left relative, it propagates
+    # into run_backtest's runs_root -> new_run_dir's run_dir, which
+    # trading-bot/performance/metrics.py's export_trades_to_excel/export_metrics_to_excel
+    # then re-anchor to trading-bot/'s OWN package directory (os.path.join(project_folder,
+    # filepath) -- a no-op for an absolute path, but silently rewrites a relative one to a
+    # different, non-existent directory than what new_run_dir actually created). This was
+    # dormant because every prior hypothesis in this campaign was killed at prescreen,
+    # before ever reaching protocol_execution with a per-run --out-dir; SMA(100)-daily
+    # (P4_ts_trend/run_054) is the first to clear prescreen and expose it.
+    out_dir = out_dir.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
     cost_model = _load_cost_model()
@@ -736,8 +976,14 @@ def main():
         holdout_results = {}
         for symbol in symbols:
             print(f"[holdout] {symbol}  {start} to {end} ...")
+            # 2026-07-07: warmup_prefetch=True unconditionally -- see
+            # launcher.run_backtest's docstring. No holdout_start guard here: this
+            # loop's OWN start IS the holdout start, so its prefetch legitimately
+            # reaches backward into pre-holdout training data for warmup only
+            # (never scored) -- that's the intended, correct behavior.
             rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
-                              runs_root=_runs_root)
+                              runs_root=_runs_root, interval_seconds=interval_seconds,
+                              warmup_prefetch=True)
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             holdout_results[symbol] = {"run_id": rd.name, "core": m["core"]}
@@ -778,14 +1024,28 @@ def main():
     results = []
     all_trade_records = []  # Step 03: accumulate per-trade diagnostics
 
+    # 2026-07-07: holdout boundary guard for the warmup_prefetch buffer (see
+    # launcher.run_backtest's warmup_prefetch docstring). Read once; every window
+    # is checked against it below, both directly (this loop, general protocol
+    # sanity: no training window may reach into holdout) and inside run_backtest
+    # itself (the prefetch's computed fetch_start must stay before it too).
+    _holdout_start = protocol.get("holdout", {}).get("start")
+
     for symbol in symbols:
         for window in protocol["windows"]:
             label     = window["label"]
             start     = window["test"]["start"]
             end       = window["test"]["end"]
+            if _holdout_start is not None:
+                assert end <= _holdout_start, (
+                    f"Window {label} ({symbol}) ends {end}, at or past holdout_start="
+                    f"{_holdout_start} -- a training window must never reach into the "
+                    f"holdout range. Fix the protocol's windows before proceeding."
+                )
             print(f"  {symbol}  window={label}  {start} to {end} ...")
             rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
-                              runs_root=_runs_root)
+                              runs_root=_runs_root, interval_seconds=interval_seconds,
+                              warmup_prefetch=True, holdout_start=_holdout_start)
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             core = m["core"]
@@ -898,13 +1158,21 @@ def main():
                 parts.append(f"{s}: " + ", ".join(fails))
         verdict_reason = "; ".join(parts) if parts else "mixed — not all pass promote, not all fail at kill"
 
+    # 2026-07-09: compute the extended (bootstrap-fallback-resolved) per-symbol
+    # summary BEFORE the cross-check, so the check reports whether the
+    # fallback already reconciled prescreen/backtest, rather than flagging a
+    # "disagreement" that's actually been resolved elsewhere in this same file.
+    extended_for_cross_check = _build_extended_summary(per_symbol, results, _runs_root)
+    cross_check = _cross_check_prescreen_vs_backtest(out_dir, results, extended_for_cross_check)
+
     hypothesis_verdict = None
     if args.validation_protocol:
         import yaml
         with open(args.validation_protocol, encoding="utf-8") as f:
             vp = yaml.safe_load(f)
         hypothesis_verdict = evaluate_against_decision_rules(
-            per_symbol, results, vp, trade_diagnostics_summary or None
+            per_symbol, results, vp, trade_diagnostics_summary or None,
+            runs_root=_runs_root,
         )
         print(f"Hypothesis verdict : {hypothesis_verdict['verdict']}")
         print(f"Reason             : {hypothesis_verdict['verdict_reason']}")
@@ -919,6 +1187,7 @@ def main():
         "verdict_reason":         verdict_reason,
         "hypothesis_verdict":     hypothesis_verdict,
         "trade_diagnostics_summary": trade_diagnostics_summary if all_trade_records else None,
+        "prescreen_backtest_cross_check": cross_check,
     }
     (out_dir / "protocol_summary.json").write_text(
         json.dumps(summary, indent=2, default=str), encoding="utf-8"

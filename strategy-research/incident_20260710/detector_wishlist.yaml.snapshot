@@ -1,0 +1,183 @@
+file_documentation: >
+  detector_wishlist.yaml -- candidate regime detector families recorded during
+  the A2.3 post-unusable policy. This is a WISHLIST, not a work queue. Nothing
+  here is built until its trigger_condition fires -- MECHANICALLY evaluated,
+  not by human prose review. Format mirrors feed_wishlist (A1.2): each entry
+  records the family, why it was noted, and its expected gate-clearing
+  characteristics. Priority ordering is informational.
+
+  PREDICATE SCHEMA (2026-07-10): trigger_condition.predicate is a structured,
+  machine-checkable expression -- named fields, operators, thresholds/enums,
+  no prose:
+    predicate:
+      source: kb_finding          # which artifact class to search
+      all_of:                     # every condition must hold on the SAME finding
+        - field: <dotted path into a finding, e.g. signal_property.per_trade_expectancy_bps>
+          op: ">" | ">=" | "<" | "<=" | "==" | "!=" | "in"
+          value: <threshold number, string, or list (for "in")>
+
+  Evaluation outcomes (see RUNBOOK.md section 3):
+    true          -> build/consume the wishlist item, continue autonomously
+    false         -> reject; campaign_review must produce a non-wishlist next_research_question
+    missing_field -> pause (data gap: the KB doesn't yet record a field the predicate needs)
+
+  SINGLE-AUTHORITY CONTRACT (2026-07-10, hardened after an incident): status,
+  last_evaluated_at, last_evaluated_against, kb_state_hash, and evaluation_note
+  under each candidate's trigger_condition are written ONLY by
+  workflow/run_campaign.py::evaluate_and_persist_wishlist_predicate() -- never
+  hand-edited. (Incident: a status: triggered value was found hand-authored in
+  this file with no corresponding evaluator run ever having produced it --
+  confirmed by grepping the whole repo for any code path that opens this file
+  for writing outside test fixtures' sandboxes; none existed. All three
+  candidates below carried the same orphaned value. Corrected 2026-07-10 for
+  daily_timeframe_er_overlay via the new persist function; adx_threshold and
+  hidden_markov_model still carry the ORIGINAL, UNVERIFIED hand-authored
+  status as of this note and must not be trusted until re-evaluated the same
+  way.) Before trusting a persisted status, verify kb_state_hash still matches
+  a fresh sha256 of campaign_knowledge_base.yaml's current bytes -- a status
+  whose hash predates the KB's current content is stale and must be
+  re-evaluated, not read as-is. This same note applies to hand-editing ANY
+  YAML file in this repo via a plain yaml.safe_dump round-trip: PyYAML does
+  not preserve '#' comments, so anything written by re-serializing a
+  previously hand-commented file silently deletes those comments -- this is
+  exactly how this file's original header comment block was lost, requiring
+  this restoration as a real YAML field instead of a comment so it survives
+  future automated writes.
+
+  Format note: this documentation lives in a real YAML field (not a '#'
+  comment block) specifically so it survives being re-serialized by any code
+  that loads and re-saves this file with yaml.safe_dump -- a plain '#'
+  comment header does not survive that round-trip.
+trigger_condition_note: 'The original (pre-2026-07-10) trigger_condition was prose:
+  "Build the first wishlist entry when (1) a confirmed ungated edge exists per Improvement
+  03 diagnostics, AND (2) those diagnostics show regime-dependent performance." Each
+  candidate below now carries its OWN machine-checkable predicate encoding this same
+  intent, since "confirmed ungated edge" and "regime-dependent performance" mean different
+  specific fields depending on the candidate family.
+
+  '
+candidates:
+- priority: 1
+  family: daily_timeframe_er_overlay
+  description: 'Daily-bar ER (period=24 daily bars = ~24 calendar days) used as a
+    regime gate on the 1h strategy. Regime label computed once per day from daily
+    OHLCV, then applied to all 1h bars within that day.
+
+    '
+  why_preferred: 'Persistence measured in calendar days clears the intrinsic gates
+    by construction (24 daily bars >> 12-bar minimum). This is a config-level change
+    (daily DataManager call + daily ER component), not an engine extension. No new
+    strategy_components class needed.
+
+    '
+  expected_metrics:
+    persistence_bars: '>=24 (measured in daily bars)'
+    activation_estimate: unknown — depends on ER threshold at daily resolution
+    engine_extension_required: false
+  trigger_condition:
+    predicate:
+      source: kb_finding
+      all_of:
+      - field: signal_property.per_trade_expectancy_bps
+        op: '>'
+        value: 0
+      - field: signal_property.per_trade_expectancy_t_stat
+        op: '>='
+        value: 1.5
+      - field: outcome
+        op: in
+        value:
+        - kill_ungated_regime_mismatch
+    status: triggered
+    last_evaluated_at: '2026-07-10'
+    last_evaluated_against: p4_sma_trend_longonly_daily_auto
+    evaluation_note: all 3 condition(s) hold on record 'p4_sma_trend_longonly_daily_auto'
+      (source=kb_finding, family='daily_timeframe_er_overlay')
+    kb_state_hash: 1d0d978efed49557ba07b1a107d1d9e44c22a70c0efe1a473eac4adb94e1b41f
+  gate_2_status: not_evaluated
+- priority: 2
+  family: adx_threshold
+  description: 'ADX (Average Directional Index, period=14 daily bars) thresholded
+    at 25. ADX > 25 = trending; ADX <= 25 = ranging/unknown. Well-established persistence
+    characteristics on daily bars.
+
+    '
+  why_noted: 'ADX is designed for trend strength measurement and produces inherently
+    smoother transitions than ER (which can flip on individual bars). Requires adding
+    ADXRegimeComponent to strategy_components.py.
+
+    '
+  expected_metrics:
+    persistence_bars: typically 5-30 daily bars in trending states
+    activation_estimate: ~20-40% on major crypto (rough estimate)
+    engine_extension_required: true
+    extension_note: New ADXRegimeComponent class needed in simple_strategy.py
+  trigger_condition:
+    predicate:
+      source: kb_finding
+      all_of:
+      - field: signal_property.per_trade_expectancy_bps
+        op: '>'
+        value: 0
+      - field: signal_property.per_trade_expectancy_t_stat
+        op: '>='
+        value: 1.5
+      - field: outcome
+        op: in
+        value:
+        - kill_ungated_regime_mismatch
+    status: triggered
+    last_evaluated_at: '2026-07-10'
+    last_evaluated_against: p4_sma_trend_longonly_daily_auto
+    evaluation_note: 'Same predicate and same firing finding as daily_timeframe_er_overlay
+      -- the A2.3 trigger is about the EXISTENCE of a confirmed ungated, regime-dependent
+      edge somewhere in the KB, not specific to one detector family. ADX remains priority
+      2 (engine_extension_required=true, more build cost) purely on why_preferred/why_noted
+      grounds, not on trigger status.
+
+      '
+  gate_2_status: not_evaluated
+- priority: 3
+  family: hidden_markov_model
+  description: '2-state HMM fitted on returns + volatility, classifying trending vs
+    mean-reverting. Stateful by construction — no threshold tuning needed for persistence.
+
+    '
+  why_noted: 'HMM regime labels are inherently persistent (state transitions have
+    learned probabilities). Class-conditional sensitivity low by construction. However,
+    requires refitting on each walk-forward window to avoid lookahead bias, and adds
+    significant complexity (sklearn HMM or custom implementation).
+
+    '
+  expected_metrics:
+    persistence_bars: model-dependent; typically 20-100 bars
+    activation_estimate: ~50% by design (2-state symmetric)
+    engine_extension_required: true
+    extension_note: 'Significant: new HMM fitting + inference pipeline; refits per
+      walk-forward window'
+  trigger_condition:
+    predicate:
+      source: kb_finding
+      all_of:
+      - field: signal_property.per_trade_expectancy_bps
+        op: '>'
+        value: 0
+      - field: signal_property.per_trade_expectancy_t_stat
+        op: '>='
+        value: 1.5
+      - field: outcome
+        op: in
+        value:
+        - kill_ungated_regime_mismatch
+    status: triggered
+    last_evaluated_at: '2026-07-10'
+    last_evaluated_against: p4_sma_trend_longonly_daily_auto
+    evaluation_note: 'Same predicate, same firing finding. Priority 3 purely on build
+      cost (engine_extension_required=true, "significant" per extension_note above),
+      not on trigger status.
+
+      '
+  gate_2_status: not_evaluated
+wishlist_policy_reference: A2.3
+created_at: '2026-07-02'
+last_predicate_rewrite: '2026-07-10'

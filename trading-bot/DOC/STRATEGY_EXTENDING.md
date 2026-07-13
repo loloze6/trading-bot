@@ -1,6 +1,12 @@
 # STRATEGY_EXTENDING.md
 Purpose: add a new component, transform op, or regime. Each recipe is self-contained; total code change per recipe is one class or one lambda + registry entries + config.
 
+Moving a hypothesis to a NEW TIMEFRAME (not just a new component)? See
+`docs/TIMEFRAME_CHANGE_PLAYBOOK.md` first — warmup mechanics, the two
+different assumption-sweep categories (bar-count vs. signal-shape), shakedown
+doctrine, and the cross-check pattern that catches a signal-shape bug hiding
+behind a bar-count fix.
+
 ## A. New indicator component
 Where: `strategies/strategy_components.py`. No registration needed — config references the dotted class path.
 

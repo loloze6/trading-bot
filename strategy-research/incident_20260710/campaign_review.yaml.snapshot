@@ -1,0 +1,66 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 33
+review_date: "2026-07-09"
+
+kb_gate_answers:
+  untested_cells:
+    - "Daily-timeframe regime detectors (ADX-based, HMM overlays per detector_wishlist.yaml) — GATED: trigger_condition not yet fired (requires confirmed ungated edge with regime-dependent performance in Improvement 03). Do not recommend until trigger fires."
+    - "Higher timeframes (8h+, weekly) on tested instruments — possible but lower priority than validating recent 1d escalation"
+    - "Combination strategies (SMA trend + structural flow signals) — not yet scoped"
+  exhausted_cells_forbidden:
+    - "keltner_mean_reversion_no_edge"
+    - "keltner_breakout_inverted"
+    - "keltner_scoremode_no_edge"
+    - "rsi_mean_reversion_no_edge"
+    - "rsi_momentum_trending_cost_drag"
+    - "er_detector_unusable_btc_eth_1h"
+    - "H-041-A (funding_rate_mean_reversion_inconclusive — exhausted, reactivation_consumed_by: run_050)"
+    - "H-041-C (fear_greed_contrarian_inconclusive — exhausted, reactivation_consumed_by: run_048)"
+  combination_candidates: "None. FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED is marked inconclusive with reactivation_condition=timeframe escalation (test at 4h/daily), but this is escalation-to-retest, not combination. volume_impulse_continuation_blocked is feed-gated (liquidation data unavailable). No other power-parked findings available for combination."
+
+pattern_detected: same_root_cause_different_families
+
+pattern_evidence:
+  - "rsi_mean_reversion (run_014): corr = -0.0223"
+  - "keltner_breakout (run_015, 033): corr = -0.1705 (signal inversion)"
+  - "keltner_mean_reversion (run_017, 024, 027, 033): corr = 0.2145 on regime-gated bars only (~1%); ic_active_bars = -0.032 (p=0.83, not significant). Per KB reattribution, root cause is signal_quality, not regime_availability."
+  - "rsi_momentum_trending (run_018): corr = 0.018, cost_drag = 272.8%"
+  - "keltner_scoremode (run_028, 030): corr = 0.2953, cost_drag = 84.3%"
+  - "ema_spread_trend_continuation (run_043): ic_all_bars = -0.021, p = 0.588"
+  - "macd_trend_continuation (run_053): ic_active_bars = -0.050271, p = 0.292"
+  - "Common root cause: price-only technical indicators show no directional edge on liquid BTC/ETH 1h. KB finding (ema_spread_trend_continuation_v1_auto) documents pattern: 'EMA crossover is a textbook, universally-taught technical signal on the most liquid crypto pair — consistent with no price-only technical indicator (RSI, Keltner in any variant, now EMA spread) showing exploitable directional content on BTC/ETH 1h.'"
+  - "Structural barrier: ER-detector is Pareto-blocked on 1h BTC/ETH (cannot achieve [10-40% activation] AND [≤4 transitions/window] simultaneously); regime-conditional findings suffer small-sample bias."
+
+recommendation: continue
+
+recommendation_rationale: >
+  CORRECTED 2026-07-09 (the premise below was stale -- see history note at end).
+  The campaign exhausted price-only technical signals (RSI, Keltner variants, EMA,
+  MACD) on BTC/ETH 1h with consistent root cause (signal_quality / already_priced_in).
+  Run_054 escalated to daily-timeframe SMA(100) trend-following -- a genuinely
+  distinct search space from the 1h oscillators/channels already exhausted.
+  Run_054 IS NOW COMPLETE under the fixed code (bar-level/trades-file trade-count
+  audit closed clean, 117 trades, zero mismatches -- see
+  campaign_knowledge_base.yaml's p4_sma_trend_longonly_daily_auto). Result:
+  protocol_verdict=kill, status=pivot -- NOT "no edge". The signal has a real,
+  positive per-trade edge (per_trade_expectancy_bps=1050.5, t=1.91) that is
+  negated by whipsaw losses in choppy regimes under this ungated formulation;
+  root_cause=signal_regime_mismatch_ungated. The explicit, live pivot thread is
+  a regime-gated SMA(100)-daily variant (a NEW hypothesis registration, not a
+  reactivation of the ungated finding). Whether this satisfies
+  config/detector_wishlist.yaml's daily_timeframe_er_overlay A2.3 trigger
+  (confirmed ungated edge + regime-dependent performance -- both arguably present
+  here) is an operator decision per RUNBOOK.md, not resolved by this entry.
+  Recommendation is to continue the campaign pending that operator call, rather
+  than either building the regime-gated variant unilaterally or treating
+  run_054 as fully closed-out with no further thread.
+
+  SUPERSEDED PREMISE (2026-07-09, earlier same day): this rationale previously
+  said "run_054 has not been re-run with fixed code" -- that was true when this
+  review first ran, but the fix was completed and the corrected verdict derived
+  from stored (uncontaminated) artifacts within the same day, without a full
+  backtest re-run. Preserved here for the record, not as current guidance.
+
+budget_assessment: "Runs used: 33 (exact campaign_budget unknown from campaign_state.yaml, but implied high given 8+ reframes and escalations across instruments/timeframes). Usage ratio likely <0.5 of typical campaign budgets. Run_054 (P4_ts_trend, daily SMA trend-following) is now complete: kill/pivot on the ungated formulation, with a specific regime-gating pivot thread identified (see recommendation_rationale and campaign_knowledge_base.yaml). Next highest-information step is the operator's detector_wishlist.yaml trigger determination, not a new backtest."
+
+next_research_question: null

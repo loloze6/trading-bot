@@ -1,0 +1,799 @@
+schema_version: 05.A5
+created_at: '2026-07-03'
+amended_by:
+- A5.1
+- A5.2
+- A5.3
+- A8.5
+- A8.6
+findings:
+- id: keltner_mean_reversion_no_edge
+  mechanism: Keltner mean-reversion in TRENDING regime (ER>=0.50)
+  hypothesis_ids:
+  - keltner_mean_reversion
+  - keltner_trend_mean_reversion
+  evidence_runs:
+  - run_017
+  - run_024
+  - run_027
+  - run_033
+  evidence_count: 1
+  supplementary_evidence:
+  - 'run_039 prescreen (A8.3 full-range): ic_active_bars=-0.032, p=0.83, n_active=1125'
+  - 'Baseline_v2 re-run (2026-07-02): 163 trades, zero-trade slots 14/48, median_sharpe=0.000'
+  outcome: no_edge_observed
+  root_cause: signal_quality
+  signal_property:
+    forecast_return_corr: 0.2145
+    ic_all_bars: -0.012
+    ic_active_bars: -0.032
+    per_trade_expectancy_bps: -108.7421
+    per_trade_expectancy_t_stat: -1.855
+    per_trade_expectancy_n_episodes: 67
+  signal_property_audit_note: >
+    2026-07-10: per_trade_expectancy_bps backfilled (this field predates the
+    A3.4 schema and was previously absent -- the gap that masked
+    daily_timeframe_er_overlay's predicate evaluation as missing_field instead
+    of a clean false). Computed, not estimated, EPISODE-level (not
+    fragment-level) from the stored keltner_163 baseline_v2 artifacts at
+    strategy-research/results/protocols/20260702T091324Z_18fad381/
+    (protocol_summary.json + per-window bars.csv/trades.json under
+    results/runs/<run_id>/): reconstructed 67 real position episodes from the
+    activity-transition boundaries on each window's bars.csv forecast column,
+    grouped all 163 trades.json fragments into those 67 episodes by real entry
+    timestamp (0 fragments unassigned), summed each episode's real
+    net_portfolio_profit_loss_percent into one episode PnL in bps, then took
+    mean/se/t_stat over the 67 episode-level observations (2024 cohort n=28
+    mean=-64.62bps; 2025 cohort n=39 mean=-140.42bps; pooled n=67
+    mean=-108.74bps, se=58.62, t=-1.855). This differs materially from the
+    FRAGMENT-level figure already on record elsewhere
+    (skills/verdict-interpreter/SKILL.md's A3.5 keltner_163 fixture: pooled
+    n=163, mean=-44.6bps, t=-4.637) -- both are negative (this signal has no
+    case for a positive per-trade edge under either basis), but the magnitude
+    and significance differ because 163 fragments collapse into only 67 real
+    episodes here (an average of ~2.4 LIFO fragments per real position
+    episode) -- unlike run_054's SMA signal, this Keltner mean-reversion
+    signal DOES scale positions and DOES fragment materially. See
+    docs/TIMEFRAME_CHANGE_PLAYBOOK.md section 2(c). Both figures kept on
+    record (fragment-level in SKILL.md, episode-level here) -- this KB entry's
+    signal_property now carries the episode-level number since that is the
+    basis decision-consumed metrics must use.
+  protocol_version: baseline_v2
+  detector_version: c647ee20
+  detector_note: 'The TRENDING labels at ER>=0.50 activate ~1% of bars (class-conditional
+    sensitivity ~50-59%). Regime-conditional findings from this detector are findings
+    about its labels, not about market regimes per se. Root cause of zero-trade slots
+    is Pareto-blocked detector (see er_detector_unusable below), not calendar seasonality.
+
+    '
+  exhausted: true
+  exhausted_basis: 'Analytic: prescreen ic_active_bars = -0.032 (p=0.83) establishes
+    no informational content on the TRENDING-labeled bars. Even granting the detector
+    perfect regime identification, the signal produces no directional content. Further
+    tuning of regime parameters cannot recover signal quality.
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
+- id: keltner_breakout_inverted
+  mechanism: Keltner channel breakout (TRENDING regime, ER>=0.50)
+  hypothesis_ids:
+  - keltner_breakout
+  evidence_runs:
+  - run_015
+  - run_033
+  evidence_count: 2
+  outcome: no_edge_observed
+  root_cause: signal_inversion
+  signal_property:
+    forecast_return_corr: -0.171
+  protocol_version: baseline_v2
+  detector_version: c647ee20
+  exhausted: true
+  exhausted_basis: 'Analytic: signal_inversion is direction-fatal. The mechanism claim
+    is "breakout → continuation" (positive IC). Both runs show negative IC in the
+    same direction, confirmed on the same TRENDING-labeled bars where the full-range
+    prescreen also showed ic_active_bars=-0.032. Reversing polarity requires registering
+    the opposite claim as a new hypothesis; the breakout-continuation claim is closed.
+    A5.1 analytic basis: a directional claim producing consistent negative IC across
+    all evidence is falsified by the signal_inversion category itself — not a parameter
+    to tune.
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
+- id: keltner_scoremode_no_edge
+  mechanism: Keltner score-mode (composite multi-threshold, TRENDING)
+  hypothesis_ids:
+  - keltner_scoremode
+  evidence_runs:
+  - run_028
+  - run_030
+  evidence_count: 2
+  outcome: no_edge_observed
+  root_cause: signal_quality
+  signal_property:
+    forecast_return_corr_max: 0.2953
+    forecast_return_corr_v2: 0.014
+  protocol_version: baseline_v1
+  detector_version: pre_a22_detector
+  exhausted: true
+  exhausted_basis: 'Analytic (A5.1): cost_drag=84% on the highest-IC variant (run_028)
+    is a 4× structural cost barrier — arithmetic, not parameter-sensitive. No tuning
+    reduces round-trip cost at this signal frequency. Terminal low-IC variant (run_030
+    corr=0.014) adds empirical confirmation of signal quality failure. The analytic
+    cost failure alone suffices to close this family per A5.1 (math doesn''t need
+    replication).
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
+- id: rsi_mean_reversion_no_edge
+  mechanism: RSI(14) mean-reversion in low-ER regime
+  hypothesis_ids:
+  - rsi_mean_reversion
+  evidence_runs:
+  - run_014
+  evidence_count: 1
+  outcome: no_edge_observed
+  root_cause: signal_quality
+  signal_property:
+    forecast_return_corr: -0.022
+  protocol_version: baseline_v1
+  detector_version: pre_a22_detector
+  exhausted: true
+  exhausted_basis: 'Analytic: parameter space for RSI mean-reversion was exhaustively
+    searched across smooth_period (run_011), er_threshold (run_012), vr_threshold
+    (run_013/014). Terminal result at the parameter frontier: corr=-0.022. A5.1 permits
+    exhausted=true at evidence_count=1 when the failure is analytic (parameter space
+    closed out). Note: runs 011-013 had config_path bug; directional conclusion (RSI
+    parameter exhaustion → pivot) is qualitatively supported but exact numbers from
+    those runs are not cited here.
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
+- id: rsi_momentum_trending_cost_drag
+  mechanism: RSI momentum in TRENDING regime
+  hypothesis_ids:
+  - rsi_momentum_trending
+  evidence_runs:
+  - run_018
+  evidence_count: 1
+  outcome: no_edge_observed
+  root_cause: cost_drag
+  signal_property:
+    forecast_return_corr: 0.018
+    cost_drag_pct: 272.865
+  protocol_version: baseline_v1
+  detector_version: pre_a22_detector
+  exhausted: true
+  exhausted_basis: 'Analytic: cost_drag=273% means gross edge is overwhelmed by transaction
+    costs by 2.7×. corr=0.018 is also near-zero. Structurally cost-unviable at this
+    trade frequency.
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
+- id: funding_rate_mean_reversion_inconclusive
+  mechanism: Funding rate extreme → contrarian mean-reversion (structural_forced_flow)
+  hypothesis_id: H-041-A
+  edge_source_category: structural_forced_flow
+  evidence_runs:
+  - run_041
+  - run_050
+  evidence_count: 2
+  outcome: no_edge_observed
+  outcome_reason: closed_null_well_powered
+  signal_property:
+    ic_active_bars: 0.017764
+    p_value: 0.521
+    n_episodes: 139
+    direction: positive
+  protocol_version: backward_extension_2019_2025
+  detector_version: not_applicable
+  power_disposition:
+    status: adequately_powered
+    expected_n_eff: 139
+    min_detectable_ic_at_target_power: 0.46
+    plausible_ic_range:
+    - 0.05
+    - 0.2
+    verdict: well_powered_null
+  reactivation_condition: null
+  reactivation_consumed_by: run_050
+  exhausted: true
+  exhausted_basis: 'Empirical (P1b, run_050, 2026-07-05/06): ic_active_bars=0.017764,
+    p=0.521, n_episodes=139 over the full 2019-09-10 to 2025-12-31 backward-extended
+    window (A8.5.1a episode-blocked significance, floor_pass=true at min_n_episodes_floor=8).
+    ~14x the original episode count (run_041: n_eff=10) and still not significant.
+    This is the reactivation_condition''s own PRIMARY trigger (backward extension)
+    fully executed and closed, not a power-limited parked result — no further reactivation
+    of this same formulation is defensible. A structurally different claim (different
+    evidence_type, timeframe, or venue) would be a new hypothesis registration, not
+    a reactivation of this entry.
+
+    '
+- id: funding_rate_mean_reversion_run047_invalidated
+  mechanism: Funding rate extreme → contrarian mean-reversion (structural_forced_flow)
+  hypothesis_id: H-041-A
+  edge_source_category: structural_forced_flow
+  evidence_runs:
+  - run_047
+  evidence_count: 1
+  outcome: invalidated_artifact
+  outcome_reason: 'F4d (2026-07-05, P1b): run_047 completed end-to-end (kill_no_ic,
+    active_n_bars=234, ic_all_bars=0.008435) and verdict_interpreter wrote it into
+    the sibling finding funding_rate_mean_reversion_inconclusive (evidence_runs+=run_047,
+    evidence_count 1→2) BEFORE the pre-registration conformance gate existed to catch
+    it. Two real defects, confirmed by direct artifact inspection: (1) signal_prescreen
+    silently used protocols/baseline_v1.json (2024-01 to 2024-11 only) instead of
+    the pre-registered backward-extension range [2019-09-10 BTC / 2019-11-27 ETH,
+    2025-12-31] -- nothing translated the research_brief''s prose date-range mandate
+    into an actual protocol file/override; (2) backtest_specification''s LLM stage
+    silently dropped the MANDATORY significance_methodology=episode_blocked_a851a
+    field despite an explicit skill-file instruction, so prescreen_result.yaml shows
+    significance_methodology_used=block_24_fisher_z, ic_by_era=null -- A8.5.1a never
+    ran. Net effect: run_047 was a near-exact repeat of run_041''s original 2024-only
+    test (active_n=234 here vs 13 there, same underpowered window), NOT a valid test
+    of the backward-extension reactivation. The sibling entry''s evidence_runs/evidence_count
+    were reverted to run_041-only; this entry preserves the historical record of the
+    invalidated attempt. campaign_review.yaml''s "continue current direction" recommendation
+    from this run cycle was made on the basis of this invalid result -- see its own
+    annotation. Remediation: pre_registration.yaml now carries a machine_constraints
+    block; the orchestrator generates the protocol file from it directly and force-injects
+    significance_methodology into candidate_strategy_config.json (not left to LLM
+    memory); a conformance gate before verdict_interpreter would have caught this
+    exact case (regression test: strategy-research/tests/test_prereg_conformance_gate.py).
+    Do not cite this entry as evidence about the mechanism.
+
+    '
+  protocol_version: baseline_v1_WRONG_should_have_been_backward_extension
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: null
+- id: fear_greed_contrarian_inconclusive
+  mechanism: F&G extreme (< 25 / > 75) → contrarian 1-2 day mean-reversion (persistent_behavioral_bias)
+  hypothesis_id: H-041-C
+  edge_source_category: persistent_behavioral_bias
+  evidence_runs:
+  - run_042
+  - run_048
+  evidence_count: 2
+  outcome: era_conditional_instability
+  outcome_reason: significant_pooled_ic_with_era_sign_flip
+  signal_property:
+    ic_active_bars: -0.040257
+    p_value: 0.081
+    n_episodes: 234
+    direction: negative_pooled_sign_flips_by_era
+    unshifted_ic: 0.14
+    per_era_note: Sign is negative throughout 2018-2023 (BTC -0.058 to -0.073, ETH
+      -0.071 to -0.135) and positive throughout 2024-2025 (BTC +0.101 to +0.182, ETH
+      +0.094 to +0.163) -- consistent across both symbols and all 8 era-symbol pairs.
+      See docs/00_closing_state.md section 8.
+  protocol_version: backward_extension_2018_2025
+  detector_version: not_applicable
+  a8_4_alignment: applied_plus1day_shift
+  power_disposition:
+    status: adequately_powered
+    expected_n_eff: 234
+    min_detectable_ic_at_target_power: 0.46
+    plausible_ic_range:
+    - 0.05
+    - 0.15
+    verdict: significant_but_era_unstable
+  reactivation_condition: null
+  reactivation_consumed_by: run_048
+  exhausted: true
+  exhausted_basis: 'Empirical (P1b, run_048, 2026-07-05/06): the pooled/naive extreme-F&G
+    contrarian claim on this entry''s exact formulation is closed -- ic_active_bars=-0.040257,
+    p=0.081 (significant, wrong sign vs. this entry''s original positive-direction
+    claim), n_episodes=234 over 2018-02 to 2025-12-31. The per-era breakdown (A8.5.1a)
+    is the real finding: the sign flips cleanly by era (see signal_property.per_era_note),
+    so neither "confirmed edge" nor a simple "kill" applies to the pooled claim as
+    registered. A naive polarity flip (run_052, scaffolded 2026-07-06, NOT launched)
+    would only fix one era at the expense of the other -- it does not resolve the
+    underlying era-instability and must not be proposed as a plain reactivation. Any
+    further pursuit of F&G contrarian behavior requires a NEW hypothesis registration
+    (H-041-C-v2, e.g. an explicitly era-conditional or regime-gated formulation) per
+    A8.5.3 -- not a reactivation of this entry, and not run_052 launched as-is.
+
+    '
+- id: volume_impulse_continuation_blocked
+  mechanism: High-volume bars with strong body fraction → directional continuation
+  hypothesis_id: H-041-B
+  edge_source_category: deferred_mechanism_impure
+  evidence_runs: []
+  evidence_count: 0
+  outcome: blocked_feed_unavailable
+  outcome_reason: 'Proxy (volume_ratio × body_fraction) is mechanism-impure: activates
+    equally on organic herding (→ continuation) and forced liquidations (→ mean-reversion).
+    Opposite directional implications; no a priori claim is defensible without a liquidation
+    feed to separate the two.
+
+    '
+  blocked_by_feed: liquidation_data
+  reference: strategy-research/feed_wishlist.yaml
+  reactivation_condition: 'Liquidation feed available (e.g., Binance liquidation stream).
+    Split approach: (a) liquidation-dominated high-volume bars → H-041-B-liq (structural_forced_flow,
+    mean-reversion); (b) organic high-volume bars → H-041-B-org (behavioral_herding,
+    continuation). Each is a separate, mechanism-pure hypothesis entry requiring its
+    own registration.
+
+    '
+  power_disposition: null
+  exhausted: false
+- id: er_detector_unusable_btc_eth_1h
+  mechanism: ER-threshold single-indicator stateless regime detector on BTC/ETH 1h
+  detector_family: efficiency_ratio_threshold
+  evidence_runs:
+  - run_039
+  evidence_count: 1
+  outcome: unusable_for_this_symbol_timeframe
+  root_cause: 'Pareto conflict: activation in [10%, 40%] band (intrinsic criterion)
+    and transitions/window ≤ 4 (stability criterion) cannot be simultaneously satisfied
+    on 1h crypto. Best achievable: score 5/8, transitions ≈ 18/window at dwell=24
+    (not directly implementable), or transitions ≈ 40/window at dwell=1. No ER-family
+    configuration overcomes this structural constraint.
+
+    '
+  exhausted_basis: 'Analytic: the Pareto conflict is a structural property of the
+    signal family and timeframe, not a calibration failure. evidence_count=1 is sufficient
+    per A5.1 rule (analytic failure). A full 48-cell grid confirming the ceiling is
+    analytic evidence.
+
+    '
+  protocol_version: baseline_v2
+  detector_version: c647ee20
+  policy_consequence: 'Per A2.3 post-unusable policy: no replacement detector built
+    until an ungated edge exists with regime-dependent performance in Improvement
+    03 diagnostics. Candidate detector families in config/detector_wishlist.yaml.
+    Preferred first candidate: daily-timeframe regime overlay on 1h strategies.
+
+    '
+  closes_ac4: true
+  closes_ac4_note: 'AC4 of Improvement 02 required the post-unusable standing policy
+    to be recorded. This entry, in the permanent KB, serves as the durable record.
+
+    '
+  exhausted: true
+- id: ema_spread_trend_continuation_v1_auto
+  mechanism: EMA(9/21) spread trend continuation, BTC/ETH 1h, ungated (persistent_behavioral_bias)
+  hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
+  evidence_runs:
+  - run_043
+  evidence_count: 1
+  outcome: no_edge_observed
+  root_cause: already_priced_in
+  outcome_reason: 'P1a (2026-07-04) shakedown result, real (post-F1-F4 wiring fixes).
+    Dense, always-on signal (forecast_sparsity_pct=0.0, active_n_bars=15938 of 15938
+    processed bars, n_eff=664 block-adjusted). ic_all_bars=ic_active_bars=-0.021091
+    (p=0.5876, not significant); cost_check also fails (edge_to_cost_ratio=0.3589
+    < 2.0 required). verdict_interpreter root_cause.mechanism_failure=already_priced_in,
+    confidence=high: EMA crossover is a textbook, universally-taught technical signal
+    on the most liquid crypto pair — consistent with this campaign''s established
+    finding that no price-only technical indicator (RSI, Keltner in any variant, now
+    EMA spread) shows exploitable directional content on BTC/ETH 1h.
+
+    '
+  signal_property:
+    ic_all_bars: -0.021091
+    ic_active_bars: -0.021091
+    p_value: 0.5876
+    n_eff: 664
+    forecast_sparsity_pct: 0.0
+    edge_to_cost_ratio: 0.3589
+  protocol_version: baseline_v1.json
+  protocol_version_note: 'Ran against protocols/baseline_v1.json (11 months, 2024-01
+    to 2024-11), not baseline_v2 — the orchestrator''s default protocol-selection
+    fallback (when campaign_state.last_escalation is unset) points at baseline_v1,
+    a separate wiring finding from this same P1a pass, not fixed as part of F1-F8
+    (out of scope).
+
+    '
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: null
+- id: funding_rate_continuous_mean_reversion_auto
+  hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+  evidence_runs:
+  - run_044
+  evidence_count: 1
+  outcome: invalidated_artifact
+  outcome_reason: 'F5 (2026-07-04): the original ''inconclusive'' outcome (from prescreen
+    route=kill_no_ic, active_n_bars=0) was a bug artifact, not a real result -- FundingRateMeanReversionComponent''s
+    threshold=0.0 divide-by-zero (F5a) was silently swallowed by main_strategy.update(),
+    zeroing out every settlement bar. The hypothesis was never actually tested. Superseded
+    by the post-F5 relaunch trial (see evidence_runs / a fresh finding entry once
+    that completes). Do not cite this entry as evidence about the mechanism.
+
+    '
+  protocol_version: baseline_v2
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: null
+- id: funding_rate_continuous_mean_reversion_expanded_auto
+  mechanism: Continuous (threshold=0.0) 8h funding-rate sign mean-reversion, BTC/ETH
+    1h, ungated (structural_forced_flow)
+  hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED
+  evidence_runs:
+  - run_044
+  evidence_count: 1
+  outcome: inconclusive
+  root_cause: lag_mismatch_to_regime_persistence
+  outcome_reason: 'P1a (2026-07-04) shakedown result, real (post-F5a fix — F5a eliminated
+    a divide-by-zero that had produced a bug-artifact active_n_bars=0 on the first
+    attempt; component_error_count=0 here). Fires at every 8h settlement (~12.5% activation,
+    ~8x denser than H-041-A''s extreme-only variant; active_n_bars=2004, n_eff=83).
+    ic_all_bars=-0.008706, ic_active_bars=0.016737 (p=0.881, not significant); cost_check
+    fails (edge_to_cost_ratio=0.2425). verdict_interpreter root_cause.mechanism_failure=lag_mismatch_to_regime_persistence,
+    confidence=high: the forced-settlement mechanism is structurally real, but 1h
+    bars may be too fast for the mean-reversion impulse to materialize/reverse before
+    the position closes. status=escalate (target=timeframe), not kill — this is NOT
+    a terminal result for the mechanism, only for the 1h execution granularity.
+
+    '
+  signal_property:
+    ic_all_bars: -0.008706
+    ic_active_bars: 0.016737
+    p_value: 0.881
+    n_eff: 83
+    forecast_sparsity_pct: 87.5
+    edge_to_cost_ratio: 0.2425
+  protocol_version: baseline_v1.json
+  protocol_version_note: 'Same orchestrator default-protocol-selection finding as
+    ema_spread_trend_continuation_v1_auto — ran against baseline_v1.json, not the
+    canonical baseline_v2.json.
+
+    '
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: 'verdict_interpreter escalated to timeframe (proposed_change_dimension=timeframe):
+    re-test the identical mechanism (FundingRateMeanReversionComponent, threshold=0.0)
+    at 4h or daily bars, where the settlement-driven mean-reversion impulse may have
+    time to materialize before position close. Distinct from H-041-A''s reactivation
+    path (backward data extension to 2018+ for power) — this is a timeframe question,
+    not a power question, since n_eff=83 here already clears the a-priori power bar.
+
+    '
+- id: macd_trend_continuation_extended_2018_2025_auto
+  mechanism: MACD(12,26,9) histogram zero-crossing, BTC/ETH 1h, ungated (persistent_behavioral_bias)
+  hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+  edge_source_category: persistent_behavioral_bias
+  evidence_runs:
+  - run_053
+  evidence_count: 1
+  outcome: no_edge_observed
+  root_cause: no_informational_content_this_venue
+  outcome_reason: 'Full backward-extended range (2018-01-01 to 2025-12-31, 8 years,
+    multiple bull/bear/chop cycles), prescreen kill_no_ic. ic_all_bars=-0.014497 (p=0.2922,
+    not significant); ic_active_bars=-0.050271 on MACD crossover events specifically
+    (negative direction -- signal is directionally wrong or orthogonal, not merely
+    undersampled). forecast_sparsity_pct=92.41 (active_n_bars=10616 of 139.8k). cost_check
+    also fails (edge_to_cost_ratio=0.2452 << 2.0 required; estimated gross edge ~4.2
+    bps/trade vs. 17.0 bps/trade round-trip cost). Consistent with this campaign''s
+    established finding that no price-only technical indicator (RSI, Keltner in any
+    variant, EMA spread, now MACD) shows exploitable directional content on BTC/ETH
+    1h -- see ema_spread_trend_continuation_v1_auto for the same pattern on a different
+    trend-following mechanism.
+
+    '
+  signal_property:
+    ic_all_bars: -0.014497
+    ic_active_bars: -0.050271
+    p_value: 0.2922
+    forecast_sparsity_pct: 92.41
+    active_n_bars: 10616
+    edge_to_cost_ratio: 0.2452
+  protocol_version: backward_extension_2018_2025
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: null
+- id: p4_sma_trend_longonly_daily_auto
+  mechanism: SMA(100) daily trend-following, long-only, ungated (BTC/ETH spot, taker costs)
+  hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+  edge_source_category: persistent_behavioral_bias
+  evidence_runs:
+  - run_054
+  evidence_count: 1
+  outcome: kill_ungated_regime_mismatch
+  outcome_reason: >
+    Ungated SMA(100) daily long-only trend-following shows a real, marginally
+    significant per-trade edge (per_trade_expectancy_bps=1050.5086,
+    t=1.9106, n=117 trades across 30 window-symbol results) but this edge is
+    negated in aggregate by whipsaw losses during non-trending (choppy)
+    regimes, since the ungated formulation stays in the market continuously
+    with no mechanism to sit out low-trend periods. Aggregate risk-adjusted
+    return is strongly negative: median_sharpe -1.78 (BTCUSDT, n=15 windows),
+    -1.54 (ETHUSDT, n=15 windows), both computed via
+    performance/metrics.py::calculate_sharpe_ratio (bit-identical to the
+    engine's existing convention, no basis change). root_cause =
+    signal_regime_mismatch_ungated: the signal itself is real (see
+    per_trade_expectancy and the era-by-era profitable/losing pattern) but is
+    not viable without regime gating. protocol_verdict=kill on the ungated
+    formulation via run_protocol.py's three-way rule (median_sharpe < -1 on
+    both symbols); status=pivot, not "no edge" -- the explicit next thread is
+    a regime-gated SMA(100)-daily variant, registered as a NEW hypothesis
+    (not a reactivation of this entry, per SKILL.md's mechanism_failure
+    table treatment of signal/regime mismatch at this altitude).
+  audit_note: >
+    Decision-layer trade-count audit (2026-07-09): bar-level activity-transition
+    count on bars.csv vs. trades.json completed-trade count -- closed clean.
+    Both methods agree exactly (117) in every one of the 30 window-symbol
+    results, zero mismatches, confirmed against both the final and the original
+    (pre-build_core-fix) protocol_result.yaml. An earlier "94 trades / 24
+    windows" figure some quoted was confirmed to be an LLM hallucination in a
+    since-discarded draft verdict_interpretation.yaml, never grounded in the
+    underlying data at any point. Engine note: matching is LIFO, not FIFO
+    (performance/metrics.py, "Enhanced performance tracker supporting
+    iterative long/short positions with LIFO matching") -- intentional and
+    correct as an accounting engine; this hypothesis never fragments a
+    position across multiple trades.json rows in any of the 30 results, so
+    trade-level and episode-level statistics agree exactly throughout.
+  signal_property:
+    ic_active_bars: null
+    ic_all_bars_prescreen: 0.034803
+    ic_walk_forward_bootstrap_btc: 0.0372
+    ic_walk_forward_bootstrap_eth: 0.0199
+    per_trade_expectancy_bps: 1050.5086
+    per_trade_expectancy_t_stat: 1.9106
+    median_sharpe_btc: -1.78
+    median_sharpe_eth: -1.54
+  protocol_version: ts_trend_daily_v1
+  detector_version: not_applicable
+  power_disposition:
+    status: adequately_powered
+    expected_n_eff: 117
+    verdict: killed_regime_mismatch
+  exhausted: true
+  exhausted_basis: >
+    The ungated formulation is exhausted: it has a real, adequately-powered
+    per-trade edge that is structurally negated by whipsaw losses without
+    regime gating (median_sharpe -1.78/-1.54, both well past the kill
+    threshold). Re-testing this identical ungated formulation would not
+    produce new information. A regime-gated variant is the prescribed next
+    step, but is a distinct hypothesis registration (new edge_source /
+    mechanism claim), not a reactivation of this entry.
+  reactivation_condition: null
+meta_findings:
+- id: daily_regime_overlay_recommended_before_a23_trigger
+  title: campaign_review recommended detector_wishlist.yaml work twice without checking
+    its trigger_condition
+  outcome: recommendation_parked_pending_wishlist_trigger
+  evidence_runs:
+  - run_043
+  - run_044
+  evidence_count: 2
+  chain_narrative: 'Both run_043''s and run_044''s campaign_review (2026-07-04) recommended
+    recommendation: reframe toward a daily-timeframe ADX/HMM regime overlay (detector_wishlist.yaml
+    priority-1/2 candidates: daily_timeframe_er_overlay, adx_threshold) as the next
+    research direction. Neither review checked detector_wishlist.yaml''s own trigger_condition
+    first.
+
+    '
+  what_the_chain_missed: 'detector_wishlist.yaml trigger_condition.status was (and
+    remains, as of this entry) not_triggered: it requires (1) a confirmed ungated
+    edge per Improvement 03 diagnostics AND (2) those diagnostics showing regime-dependent
+    performance. No hypothesis in this campaign has produced a confirmed ungated edge
+    — every KB finding to date is no_edge_observed, inconclusive, or invalidated_artifact.
+    Recommending the wishlist family anyway would have converted a deliberately- deferred
+    idea back into a live run without its deferral condition ever being satisfied.
+
+    '
+  implication: 'The two resulting research briefs (DAILY_REGIME_OVERLAY_1H_EXECUTION,
+    DAILY_REGIME_OVERLAY_SIGNAL_QUALITY — recovered from an unrelated run-ID collision,
+    F8, into runs/run_045 and runs/run_046 respectively) are annotated status: parked_pending_a23_trigger
+    and MUST NOT be launched until detector_wishlist.yaml''s trigger_condition fires.
+    skills/campaign-review/SKILL.md now has a "Wishlist-gated recommendations" section
+    requiring any future recommendation that draws on detector_wishlist.yaml or feed_wishlist.yaml
+    to check and cite the specific entry''s trigger condition before recommending
+    a run; if untriggered, record as wishlist support (continue), not a reframe.
+
+    '
+  applicable_rule: campaign-review SKILL.md 'Wishlist-gated recommendations' (added
+    2026-07-04)
+- id: keltner_root_cause_reattribution
+  title: 'Keltner families: root cause is signal quality, not regime availability'
+  outcome: root_cause_reattribution
+  protocol_version: baseline_v2
+  detector_version: c647ee20
+  ac4_for_improvement_05: true
+  chain_narrative: 'The linear carryover chain (findings_carryover.yaml entries from
+    run_017 onward) recorded the Keltner/TRENDING failure as "regime_availability":
+    TRENDING regime absent in 7/22 (then 14/48) window-symbol slots. The campaign_review
+    (run_039) recommended layering an orthogonal secondary signal to fill the zero-trade
+    months. The chain accumulated 25+ runs before this conclusion was reached.
+
+    '
+  what_the_chain_missed: 'The regime-availability narrative was a misdiagnosis. Run_039''s
+    full-range prescreen (A8.3) computed ic_active_bars = -0.032 (p=0.83, n_active=1125)
+    on the TRENDING-labeled bars — the exact bars where the signal "worked." The Keltner
+    signal produces no directional content even on the bars the detector selects as
+    its operating regime. Zero-trade months were a symptom (TRENDING regime absent
+    → no trades), but the causal chain ran deeper: had TRENDING been active in every
+    month, per-trade expectancy would still have been negative (as confirmed: -26
+    bps on keltner_163).
+
+    '
+  implication: "1. The root cause for keltner_mean_reversion and keltner_trend_mean_reversion\
+    \ is\n   upgraded from regime_availability to signal_quality in this KB (see findings\
+    \ above).\n   Their failed_families entries in campaign_state.yaml carry the old\
+    \ tag but are\n   superseded by this KB entry.\n2. A secondary signal layered\
+    \ on the existing Keltner primary would not have fixed\n   the zero-trade problem\
+    \ at its root — it would have added a new signal on top of\n   a null primary.\
+    \ The campaign burned ~10 runs on this path.\n3. The vocabulary error (A5.2):\
+    \ forecast_return_corr=0.2145 was recorded as\n   \"confirmed stable edge\" in\
+    \ the campaign_review.yaml and propagated through\n   carryover. This correlation\
+    \ was: (a) computed on regime-gated bars (~1% of all\n   bars), (b) never validated\
+    \ per trade (per-trade expectancy was -26 bps), and\n   (c) a small-sample artifact\
+    \ (per-window n_active=5-35, IC SE=0.18-0.58). The\n   KB's A5.2 rule makes this\
+    \ unwritable going forward: signal_property field\n   carries the correlation;\
+    \ outcome field carries no_edge_observed.\n"
+  evidence_runs:
+  - run_017
+  - run_024
+  - run_027
+  - run_033
+  - run_039
+  evidence_count: 2
+  applicable_rule: A8.2 closure; A5.2 vocabulary; A5.3 detector scope
+- id: daily_signal_power_floor
+  title: Daily-frequency signals need 2018+ data on BTC/ETH — 2-year window is systematically
+    underpowered
+  outcome: structural_floor_identified
+  protocol_version: baseline_v2
+  detector_version: not_applicable
+  chain_narrative: 'H-041-A and H-041-C each independently produced insufficient_sample_inconclusive.
+    Each run''s findings_carryover logged the individual power failure but the pattern
+    was not generalized.
+
+    '
+  what_the_chain_missed: 'Any signal with daily-or-lower activation frequency (< ~50
+    active bars/year) on BTC/ETH 1h over a 2-year window will produce n_eff < 15.
+    At n_eff=15, the minimum detectable IC at p < 0.10 is ~0.42 — above the plausible
+    IC range for all known behavioral and structural signal classes (literature: 0.05-0.20).
+    This is a structural feature of the data window, not a signal-specific failure.
+    A8.6 mandates this check at registration (a-priori power), making it deterministic
+    arithmetic before any component is built.
+
+    '
+  implication: 'Any future daily-frequency hypothesis registered against 2024-2025
+    data only should be immediately routed to insufficient_power_a_priori with a "extend
+    to 2018+" note. The consolidated backward-extension pass (A8.6) will re-prescreen
+    all power-parked hypotheses simultaneously rather than per-hypothesis.
+
+    '
+  evidence_runs:
+  - run_041
+  - run_042
+  evidence_count: 2
+operational:
+  a86_power_check_implementation: "A8.6 a-priori power check is deterministic arithmetic\
+    \ to be implemented at the validation gate (hypothesis registration step). Formula:\n\
+    \  expected_active_n = activation_rate × n_bars_in_window × n_symbols_effective\n\
+    \  expected_n_eff = expected_active_n / block_size_24\n  min_detectable_ic = 1\
+    \ / sqrt(max(expected_n_eff - 3, 1))\nFor market-wide signals: n_symbols_effective\
+    \ ≈ 1 (correlated returns; additional symbols add sublinear power — use sqrt(n_symbols)\
+    \ as upper bound). If min_detectable_ic > plausible_ic_upper (literature/prior),\
+    \ route to insufficient_power_a_priori. No component built, no trial spent. Implement\
+    \ when convenient; not a blocking item for current build steps.\n"
+  backward_extension_pass:
+    status: scheduled_post_build_steps
+    scope:
+    - H-041-A
+    - H-041-C
+    data_required: BTC/ETH 1h OHLCV + fear_greed + funding_rate from 2018-01-01
+    trigger: after Improvement 05 and remaining build steps complete
+    do_not_start_now: true
+  detector_wishlist:
+    reference: strategy-research/config/detector_wishlist.yaml
+    first_candidate: daily_timeframe_regime_overlay
+    trigger: confirmed ungated edge with regime-dependent performance in Improvement
+      03
+coverage_matrix:
+  unclassified:
+  - hypothesis_id: keltner_mean_reversion
+    finding_id: keltner_mean_reversion_no_edge
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: keltner_trend_mean_reversion
+    finding_id: keltner_mean_reversion_no_edge
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: keltner_breakout
+    finding_id: keltner_breakout_inverted
+    outcome: no_edge_observed
+    evidence_count: 2
+  - hypothesis_id: keltner_scoremode
+    finding_id: keltner_scoremode_no_edge
+    outcome: no_edge_observed
+    evidence_count: 2
+  - hypothesis_id: rsi_mean_reversion
+    finding_id: rsi_mean_reversion_no_edge
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: rsi_momentum_trending
+    finding_id: rsi_momentum_trending_cost_drag
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
+    finding_id: ema_spread_trend_continuation_v1_auto
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+    finding_id: funding_rate_continuous_mean_reversion_auto
+    outcome: invalidated_artifact
+    evidence_count: 1
+  - hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED
+    finding_id: funding_rate_continuous_mean_reversion_expanded_auto
+    outcome: inconclusive
+    evidence_count: 1
+  structural_forced_flow:
+  - hypothesis_id: H-041-A
+    finding_id: funding_rate_mean_reversion_inconclusive
+    outcome: no_edge_observed
+    evidence_count: 2
+  - hypothesis_id: H-041-A
+    finding_id: funding_rate_mean_reversion_run047_invalidated
+    outcome: invalidated_artifact
+    evidence_count: 1
+  persistent_behavioral_bias:
+  - hypothesis_id: H-041-C
+    finding_id: fear_greed_contrarian_inconclusive
+    outcome: era_conditional_instability
+    evidence_count: 2
+  - hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+    finding_id: macd_trend_continuation_extended_2018_2025_auto
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+    finding_id: p4_sma_trend_longonly_daily_auto
+    outcome: kill_ungated_regime_mismatch
+    evidence_count: 1
+  deferred_mechanism_impure:
+  - hypothesis_id: H-041-B
+    finding_id: volume_impulse_continuation_blocked
+    outcome: blocked_feed_unavailable
+    evidence_count: 0
+exhausted_mechanisms:
+- id: keltner_mean_reversion_no_edge
+  mechanism: Keltner mean-reversion in TRENDING regime (ER>=0.50)
+  outcome: no_edge_observed
+  evidence_count: 1
+  basis: analytic
+- id: keltner_breakout_inverted
+  mechanism: Keltner channel breakout (TRENDING regime, ER>=0.50)
+  outcome: no_edge_observed
+  evidence_count: 2
+  basis: analytic
+- id: keltner_scoremode_no_edge
+  mechanism: Keltner score-mode (composite multi-threshold, TRENDING)
+  outcome: no_edge_observed
+  evidence_count: 2
+  basis: analytic
+- id: rsi_mean_reversion_no_edge
+  mechanism: RSI(14) mean-reversion in low-ER regime
+  outcome: no_edge_observed
+  evidence_count: 1
+  basis: analytic
+- id: rsi_momentum_trending_cost_drag
+  mechanism: RSI momentum in TRENDING regime
+  outcome: no_edge_observed
+  evidence_count: 1
+  basis: analytic
+- id: er_detector_unusable_btc_eth_1h
+  mechanism: ER-threshold single-indicator stateless regime detector on BTC/ETH 1h
+  outcome: unusable_for_this_symbol_timeframe
+  evidence_count: 1
+  basis: analytic

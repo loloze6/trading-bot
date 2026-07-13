@@ -1,0 +1,16 @@
+{
+  "description": "Bit-identical check for the 2026-07-07 warmup_prefetch parameter (BacktestEngine.warmup_cutoff_timestamp, launcher.run_backtest's warmup_prefetch). Captured by running the identical backtest against the pre-change code (git stash of backtester.py/launcher.py/trading_bot.py) and the post-change code with warmup_prefetch omitted (defaults False) -- the two metrics.json outputs matched byte-for-byte as dicts.",
+  "config": "tests/fixtures/warmup_prefetch_check_config.json",
+  "symbol": "BTCUSDT",
+  "timeframe": "1h",
+  "start_date": "2024-01-01",
+  "end_date": "2024-01-11",
+  "expected": {
+    "trade_count": 2,
+    "net_pnl": 1.904077,
+    "net_pnl_tolerance": 0.000001,
+    "sharpe": 15.665,
+    "sharpe_tolerance": 0.001
+  },
+  "note": "warmup_prefetch defaults to False and must never change engine.load_data's fetch range or introduce a warmup_cutoff_timestamp when omitted. Fails if: the default value of warmup_prefetch changes, load_data's default start_date handling changes, or _process_symbol_candle_completion's cutoff check fires when it shouldn't."
+}

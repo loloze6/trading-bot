@@ -80,6 +80,18 @@ Available (directly in metrics.json):
 - max_drawdown_pct: maximum drawdown percentage
 - trade_count: total trades across all windows
 - min_trade_count: minimum trades in any single window
+- forecast_return_corr (field name: median_forecast_return_corr): pooled forecast-vs-forward-return
+  correlation across walk-forward windows. **UNIT CONVENTION — ALWAYS a raw decimal in [-1, 1]
+  (e.g. 0.02), NEVER a percentage.** `run_protocol.py`'s criterion parser does no unit conversion
+  (compares the raw value directly against whatever number you write), so a criterion phrased with
+  a "%" suffix (e.g. "IC >= 1.5-2.0%") is silently comparing 0.02 against the literal number 1.5 —
+  a threshold no correlation coefficient can ever clear, since |corr| <= 1 always. Write thresholds
+  as bare decimals: "forecast_return_corr >= 0.015" not "IC >= 1.5%". (2026-07-09, P4_ts_trend:
+  this exact ambiguity appeared in a validation_protocol.yaml before this rule existed — see this
+  skill's changelog and campaign_knowledge_base.yaml's p4_sma_trend_longonly_daily_auto entry.)
+  For a long-only (or otherwise single-constant-magnitude-when-active) signal, this is computed via
+  a pre-registered block-bootstrap fallback, not a naive per-bar correlation — see
+  `trading-bot/performance/signal_statistics.py` and `run_protocol.py::_pooled_ic_with_bootstrap_fallback`.
 
 Computable (derived from metrics.json per_regime):
 - regime_frequency: mean_reversion bars / total bars (use field: per_regime)
@@ -142,3 +154,15 @@ Note: `config/cost_model.yaml` is the single source of truth for cost numbers. D
 
 ## Embedded stance
 Assume the hypothesis is wrong until enough evidence is specified.
+
+## Changelog
+- 2026-07-09: added `forecast_return_corr` to the Permitted decision criteria list, with an
+  explicit raw-decimal unit convention. Before this, IC/correlation was never in the Permitted
+  list at all, yet a validation_protocol.yaml still emitted a "Walk-forward pooled IC >=
+  1.5-2.0%" criterion in violation of this skill's own "do not invent metrics" rule — with the
+  threshold worded as a percentage against a metric that's always a raw decimal in [-1, 1]. The
+  criterion was structurally impossible to pass (or fail, ambiguously) as a result.
+  verdict_interpreter caught the inconsistency itself on the affected run (P4_ts_trend/run_054)
+  and reasoned through it transparently rather than silently picking a side, but the ambiguity
+  should never have reached that stage. See campaign_knowledge_base.yaml's
+  p4_sma_trend_longonly_daily_auto for the full incident record.
