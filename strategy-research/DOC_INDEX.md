@@ -50,7 +50,13 @@ standing disclosure doctrine with the verified-template allowlist.
 
 ### "What's broken and what gates autonomy?"
 → **[`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)**
-— the 29-item defect ledger; its P0 "kernel" gates background mode.
+— the 29-item defect ledger; its P0 "kernel" gates background mode. A1/A3/B1
+(K4) and A8/A9/B11/C7/C9 (K2) are now closed — see the two design notes below
+for what shipped.
+→ **[`docs/design/K4_routing_registration_design_20260712.md`](docs/design/K4_routing_registration_design_20260712.md)**,
+**[`docs/design/K2_verdict_machinery_design_20260713.md`](docs/design/K2_verdict_machinery_design_20260713.md)**
+— design notes for the closed items above, each with an appended Phase B
+rulings/deviations section (K2's also has a dated rider section).
 
 ### "What can run autonomously vs needs a human?"
 → **[`docs/WORKFLOW_CAPABILITIES.md`](docs/WORKFLOW_CAPABILITIES.md)** —
