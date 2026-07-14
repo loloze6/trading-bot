@@ -1164,3 +1164,223 @@ every write, supervised --once/stage-step mode only until (1) clears,
 holdout untouchable, concealment-shaped tool content — verified harness
 templates get one-line disclosure, anything else is surfaced verbatim
 immediately."
+
+---
+
+## Session: 2026-07-13/14 — K4 (A1+A3+B1) + K2 (A8+A9+B11+C7, C9 rider) implemented
+
+### Hypothesis
+Ledger P0 kernel task (1) is large enough to split into independently
+approvable kernels rather than one monolithic change. K4 (lineage
+routing/registration: A1+A3+B1) and K2 (verdict machinery: A8+A9+B11+C7,
+C9 rider) were each carried through Phase A (design note) → operator
+approval → Phase B (implementation + fixtures) as separate,
+sequentially-dispatched implementation-agent tasks, per the standing
+context-preamble/numbered-steps/END-OF-INSTRUCTIONS operator-prompt
+discipline (F5) and single-writer-per-task authorization scoping.
+
+### Result
+
+**K4 (A1+A3+B1), accepted:** `continuation_child`/`continuation_created_by`
+persisted on each run's own `pipeline_state.yaml` by
+`_route_refine`/`_route_pivot`/`_route_escalate`, replacing the
+runs/-directory-diff lineage-continuation check in `run_campaign.py` that
+could not survive a fresh process invocation. `reconcile_orphans()` added
+(A3), backed by a frozen 21-entry `config/campaign_baseline_runs.yaml`
+(all 21 entries verified read-only, not assumed — 4 were confirmed against
+`00_closing_state.md` §7/§8 during Phase B rather than left
+`NOT YET SPOT-CHECKED`). `refinement_brief_path` (B1) gives a queue entry
+a first-class, byte-verbatim-installed refinement-brief ingestion path,
+with a new `refinement_brief_conflicts_with_existing_continuation` hard
+pause when an operator brief and an internally-fired LLM continuation
+collide. A two-line observability/parity rider followed close behind:
+`reconcile_orphans()` now always emits exactly one log line (clean or
+not — a silent clean pass was previously indistinguishable from the
+function never having run), and `dry_run_verify()` now degrades
+gracefully on an all-terminal queue instead of raising `AssertionError`
+(parity with `process_once()`'s own "Queue exhausted" handling). 224
+tests green at K4 acceptance.
+
+**K2 (A8+A9+B11+C7, C9 rider), accepted:** `verdict_interpretation.yaml`'s
+single `status` enum split into `hypothesis_verdict` (kill/refine/promote
+— is the mechanism dead?) and `lineage_routing` (terminate/refine/pivot/
+escalate — what does the campaign do next?), closing the exact conflation
+that made run_057's "kill the hypothesis, pivot the campaign" read as
+stage defiance. `_route_kill` split into a per-hypothesis-only version and
+a new `_route_campaign_terminate` (campaign-wide `campaign_decision.yaml`
++ `space_empty`, now reachable only from `campaign_review`'s own explicit
+`rec == "terminate"` — an ALREADY-EXISTING recommendation value, reused
+rather than inventing a new `"terminate_campaign"` enum as Phase A's
+design had proposed). `pre_registration.yaml` gained a structured
+`pass_rule` schema (`criteria`/`outcomes`), evaluated by a new module,
+`tools/verdict_criteria_evaluator.py`, whose known-answer fixture re-judges
+run_057's OWN real `protocol_result.yaml` and correctly resolves
+FAIL-(a)/kill with BTCUSDT's median Sharpe present-and-null (not
+UNTESTED) — the literal defect C7 was written to close. A
+materialization-time lint (`_lint_pass_rule_total_mapping`) rejects any
+pass rule with an unmapped FAIL branch.
+
+Two bugs were found by READING the code, not by a failing test, and both
+are flagged in `docs/design/K2_verdict_machinery_design_20260713.md`'s
+appended section as bug fixes to existing, already-shipped code (not new
+K2 behavior): (1) `_check_kb_reactivation_conformance` (the A5.4/F09
+campaign-review KB-exhaustion gate) read only a singular `hypothesis_id`
+field, but 5 of `campaign_knowledge_base.yaml`'s 15 findings — including
+all three Keltner findings this exact C9 symptom names — use a plural
+`hypothesis_ids` list instead; the gate could never have caught a
+re-proposal of any of them, regardless of the "wrong stage" gap C9
+already documented. Fixed to check both field shapes. (2) Consolidating
+the previously-duplicated status→route dispatch logic into one shared
+`_dispatch_verdict_route()` (R1) surfaced that `determine_post_campaign_
+review_route`'s own continue-branch handled a promote verdict as a bare
+`return "completed_promoted"`, skipping `_write_promotion_audit`/the
+`holdout_evaluation` gate entirely — a live holdout-bypass for any
+hypothesis promoted via campaign_review's continue path. Closed by
+unifying both call sites on the complete (holdout-gated) behavior. A
+follow-on rider added `_dispatch_verdict_route`'s own
+`(hypothesis_verdict, lineage_routing)` pair validation (kill+terminate,
+kill+pivot, kill+escalate, refine+refine, promote+null only — anything
+else raises naming both values) plus a regression fixture pinning the
+holdout-path fix. 256 tests green after the pair-validation rider (243 at
+K2 acceptance + 13 rider tests).
+
+**Stray-write incident (found and closed within this session, not
+carried forward as an open item):** during K2-rider test authoring, an
+early draft of a parametrized test case incorrectly listed a VALID
+verdict/routing pair (`kill`+`escalate`) as one that should be rejected;
+since it wasn't actually invalid, execution fell through into the real
+`_route_escalate` without the test's own sandboxing fixture, writing a
+real `protocols/escalation_dotusdt_15m.json` and an empty
+`runs/run_x_next/` scaffold into the actual repository before crashing on
+an unrelated encoding error. Caught via `git status` immediately after the
+run, root-caused to the test bug (fixed the same turn), and both stray
+artifacts removed. An INDEPENDENT read-only audit (dispatched separately)
+subsequently confirmed the incident's blast radius: `campaign_state.yaml`
+untouched (the crash preceded any state write), both stray artifacts
+absent, `protocols/` 11/11 accounted for, working tree clean via commit
+`4ac85c1`. **New standing doctrine adopted as a direct result:
+no-self-remediation.** Starting with the very next task dispatched after
+this incident, an accidental or out-of-scope write is a STOP-and-report
+condition, never an agent-remediated one — the operator decides the fix,
+even when the agent is confident the cleanup is safe and reversible. (This
+particular incident predates the doctrine and was correctly closed under
+the OLDER rule that permitted agent remediation; nothing here is
+retroactively non-compliant, but no future incident gets the same
+latitude.)
+
+**Test-isolation-by-default rider, dispatched in direct response to the
+stray-write incident's structural root cause** (sandboxing was opt-in via
+a `campaign_root` fixture, so any test that forgot to request it ran
+against the real repo): landed and is fully functional —
+`tests/conftest.py`'s autouse `_sandbox_by_default` fixture redirects
+every surveyed module-level path global (`run_campaign.py`'s `ROOT`/
+`QUEUE_PATH`/`CAMPAIGN_LOG_PATH`/`CAMPAIGN_SUMMARY_PATH`/`BASELINE_PATH`;
+`run_phase1_research.py`'s `ROOT`/`CAMPAIGN_STATE_PATH`/`_KB_PATH`/
+`_POWER_DISCREPANCY_LOG_PATH`/`_DATA_POLICY_PATH`; `setup_run.py`'s
+`ROOT`) into a per-test tmp_path sandbox unless a test carries the new
+`@pytest.mark.real_repo_readonly` opt-out, applied to exactly one test
+found by running the full suite (`test_wishlist_predicate.py`'s real-KB
+known-answer test). A negative-proof test
+(`tests/test_sandbox_guard.py` — moved there from an initial draft inside
+`conftest.py` itself after discovering pytest does not collect `test_*`
+functions from `conftest.py` during normal directory collection) confirms
+a real write via `run_campaign._save_queue` lands under tmp_path and
+never touches the real repo. 257 tests green. **As of this entry, this
+work is fully functional but sits UNCOMMITTED** on top of commit
+`4ac85c1` — the next session should commit it (or fold it into whatever
+commit boundary the operator prefers) before treating it as done.
+
+**K3 (B3+B10, protocol pinning): NOT started.** No
+`docs/design/K3_protocol_pinning_design_20260713.md` (or any K3 design
+note) exists anywhere in the repository as of this entry, despite an
+earlier context preamble in this session describing it as "dispatched" —
+that framing did not match the actual repo state when checked directly
+this session, and is not reflected in any commit or working-tree file.
+Treat K3 as entirely unstarted, not merely unapproved.
+
+### Files touched
+- `strategy-research/workflow/run_phase1_research.py` — K4's routing
+  functions + K2's verdict-machinery split (`_dispatch_verdict_route`,
+  `_resolve_verdict_fields`, `_route_campaign_terminate`, the C9 gates in
+  `_route_refine`/`_route_pivot`, `_lint_pass_rule_total_mapping`,
+  `_check_pass_rule_evaluation_conformance`, the pair-validation rider)
+- `strategy-research/workflow/run_campaign.py` — K4's reconciler/
+  refinement-brief-path machinery + the two-line observability rider +
+  K2's materialization-time lint wiring
+- `strategy-research/tools/verdict_criteria_evaluator.py` — NEW (C7
+  evaluator)
+- `strategy-research/config/campaign_baseline_runs.yaml` — NEW (A3, 21
+  entries)
+- `strategy-research/skills/verdict-interpreter/SKILL.md` — `pass_rule_
+  evaluation.yaml` required input, `hypothesis_verdict`/`lineage_routing`
+  output fields (`status` retained as a derived mirror); diagnostic Rules
+  1-6 unchanged
+- `strategy-research/RUNBOOK.md` — 3 new pause-table rows
+  (`refinement_brief_conflicts_with_existing_continuation`,
+  `kb_reactivation_violation`'s row expanded to cover both trigger sites,
+  `pass_rule_evaluation_disagreement`)
+- `strategy-research/docs/design/K4_routing_registration_design_20260712.md`,
+  `strategy-research/docs/design/K2_verdict_machinery_design_20260713.md`
+  — NEW design notes, each with an appended Phase B rulings/deviations
+  section (and, for K2, a further dated rider section)
+- `strategy-research/tests/test_k4_routing_registration.py`,
+  `strategy-research/tests/test_k2_verdict_machinery.py` — NEW, 14 and 32
+  tests respectively
+- `strategy-research/tests/conftest.py`, `strategy-research/tests/
+  test_sandbox_guard.py` — NEW (test-isolation rider; uncommitted, see
+  Result above); `strategy-research/tests/test_wishlist_predicate.py` —
+  one `@pytest.mark.real_repo_readonly` marker added (uncommitted)
+- Commit `4ac85c1` ("K2 implemented") — the message understates scope: it
+  bundles K4 + both K4 riders + K2 + the K2 pair-validation/holdout-guard
+  rider in one commit. The test-isolation conftest rider is NOT in this
+  commit (see above).
+
+### Residual risk: test-isolation coverage gap
+**[Added post-close-out, same session — operator amendment.]** The
+conftest autouse sandbox guard covers direct in-process module calls
+only. It does NOT cover: (i) `setup_run.py`'s subprocess-spawn path — a
+spawned child process does not inherit a parent test's monkeypatched
+globals (this specific gap was already noted, for a different reason, in
+K4's design note deviation 3); or (ii) `_load_token_budget()`, which
+reads `config/campaign_config.yaml` via a path hardcoded relative to its
+own source file, never via `ROOT`, so patching `ROOT` does not reach it
+(newly found this session, via the conftest rider's own survey). Neither
+gap is currently blocking — the stray-write incident that motivated the
+rider used the now-covered path — but any future test exercising either
+path is still unprotected against a real-repo write. This must NOT be
+filed as "solved"; it is an open, known limitation of the guard as
+shipped.
+
+### Process note: out-of-scope-write sequencing
+**[Added post-close-out, same session — operator amendment.]** When the
+conftest-rider agent discovered that pytest does not collect `test_*`
+functions from `conftest.py` (making a verification test written there
+inert), it moved the test to a new file, `tests/test_sandbox_guard.py` —
+a write beyond its literal authorized list — and disclosed this AFTER
+the fact rather than stopping to request authorization first. The
+outcome (the file, the reasoning) was accepted by the operator as
+correct, but the SEQUENCE was wrong under this session's standing rule:
+any write landing outside an authorized list must STOP and report
+BEFORE proceeding, not proceed-then-disclose, even when the reasoning is
+sound. **This is now a reaffirmed standing procedural rule for every
+future prompt in this campaign, not a one-off mistake** — this incident
+is its concrete example. (The incident itself predates this restated
+rule and was closed correctly under the then-current rule permitting
+agent remediation of accidental writes; nothing about it is
+retroactively non-compliant — but no future incident, including
+authorized-list overruns discovered mid-task, gets the same latitude:
+stop and ask, don't act and disclose.)
+
+### Next session prompt
+"Resume strategy-research campaign. Read strategy-research/NEXT_SESSION.md
+first (single entry point). K4 and K2 are implemented and accepted
+(commit 4ac85c1); the test-isolation conftest rider (tests/conftest.py +
+tests/test_sandbox_guard.py + one marker in tests/test_wishlist_predicate.py)
+is functional (257 tests green) but UNCOMMITTED — commit it first, or
+confirm the operator wants it folded differently. K3 (B3+B10, protocol
+pinning) has not been started at all — no design note exists; if it's
+next, dispatch it as its own Phase A (design-note-only) implementation-
+agent task, same pattern as K4/K2. Standing constraints unchanged, plus
+one new one: no-self-remediation — an accidental or out-of-scope write is
+always a STOP-and-report, never an agent-remediated cleanup, regardless of
+how confident the fix is."
