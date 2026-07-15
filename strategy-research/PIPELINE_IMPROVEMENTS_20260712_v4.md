@@ -111,7 +111,7 @@ P1 = will bite the next run that exercises the path; P2 = hygiene/docs.
 - **Acceptance:** fixture pairs (fresh entry / in-progress entry) both pass
   dry run iff the real path would proceed.
 
-### B3. No mechanism to PIN an existing named protocol file (P0)
+### B3. CLOSED — No mechanism to PIN an existing named protocol file (P0)
 - **Symptom:** `machine_constraints.protocol` triggers
   `_ensure_protocol_from_constraints` → `_generate_monthly_windows`, which
   would have silently REPLACED the pre-registered
@@ -124,6 +124,17 @@ P1 = will bite the next run that exercises the path; P2 = hygiene/docs.
   generation path untouched.
 - **Acceptance:** fixture: run with `protocol_ref` executes exactly those
   windows; a mismatched protocol file hard-fails conformance.
+- **Resolution (2026-07-15, K3 kernel):** `_ensure_protocol_ref_pinned` +
+  `_resolve_protocol_path` (consolidated resolver) ship the pin mechanism;
+  `_check_prescreen_conformance` extended (rider) to hard-catch an executed
+  prescreen that ran against a different file than the one pinned, plus an
+  optional content-hash check (§5). Registration-time lint
+  (`_lint_machine_constraints_protocol_selection`) and a runtime
+  mutual-exclusion guard both reject `protocol`+`protocol_ref` set
+  together. Audited clean 2026-07-15 (see two new findings below, B13/B14).
+  Full design: `docs/design/K3_protocol_pinning_design_20260714.md` (§9
+  amendments, Phase B rulings, rider section). Commits: `ef58773`
+  (implementation), `1248a5e` (A5 migration), `6b827eb` (rider).
 
 ### B4. Pre-registered text is paraphrased by LLM stages (P0, systemic)
 - **Symptom:** innovation_expansion emitted two DIFFERENT paraphrases of
@@ -357,7 +368,7 @@ live performance reporting — remain open and are not restated here.
   fixture evidence; generalize the latch pattern doc so future gated
   hypotheses don't regenerate the trailing-stop wiring.
 
-### B10. Silent stale-protocol fallback (F4d) — confirmed live (P0 — pinned for run_057, unfixed in code)
+### B10. CLOSED — Silent stale-protocol fallback (F4d) — confirmed live (P0 — pinned for run_057, fixed in code 2026-07-15)
 - **Symptom:** with no run_context.yaml, protocol resolution falls back to
   campaign_state.last_escalation.protocol_path — which held
   escalation_tf_15m.json, a 15-MINUTE protocol, for this 1d run. Confirmed
@@ -370,6 +381,16 @@ live performance reporting — remain open and are not restated here.
   B3 (first-class protocol_ref in machine_constraints).
 - **Acceptance:** fixture: run with mismatched last_escalation and no pin
   refuses to execute rather than running the wrong timeframe.
+- **Resolution (2026-07-15, K3 kernel):** `last_escalation` gains a
+  `claimed_by_run`/`claimed_at` marker (written by `_route_escalate`'s own
+  `record_escalation` call); the fallback now hard-fails (`RuntimeError`,
+  flag `stale_escalation_unclaimed` set before raising) unless the current
+  run IS that escalation's claimed one-hop consumer. A one-time migration
+  stamped the pre-existing `last_escalation` record (`claimed_by_run:
+  run_049`) so run_049's own still-pending resumption is not broken by its
+  own protective exception. Full design:
+  `docs/design/K3_protocol_pinning_design_20260714.md` (§4, §9 A5). Commits:
+  `ef58773` (implementation), `1248a5e` (A5 migration), `6b827eb` (rider).
 
 ## C. Power & validation machinery (continued)
 
@@ -671,6 +692,71 @@ autonomy gap, quantified.
   refinements inherit it automatically at materialization.
 - **Acceptance:** fixture: a child-variant verdict attaches to the parent
   lineage finding, evidence_count increments, no stub is created.
+
+### B13. The "version identifier" trap: a dead key, a doubly-overloaded field name, and a mislabeled path (P2, found by 2026-07-15 K3 audit)
+- **Symptom:** three distinct, compounding naming defects surfaced while
+  implementing B3/B10's post-hoc conformance check. (1) `tools/
+  prescreen_signal.py` writes `prescreen_result.yaml`'s `protocol_version`
+  field from `protocol.get("_version", protocol_path)` — an underscore-
+  prefixed `_version` key that NO protocol JSON in this repo has ever
+  written; the `.get` call is dead code, always falling through to its
+  default. (2) `protocol_version` is a genuinely overloaded field name with
+  two unrelated meanings on different objects: two pre-existing protocol
+  files (`baseline_v2.json`, `ts_trend_daily_v1.json`, both predating K3)
+  carry it as a hand-set human label with no paired hash, while K3's own §5
+  stamping (`tools/stamp_protocol.py`) writes it as a machine date paired
+  with `protocol_content_hash` — same key name, different authors,
+  different semantics, no schema distinguishing them. (3)
+  `prescreen_result.yaml`'s `protocol_version` field, given (1) is dead,
+  is in practice always a raw filesystem PATH string, not a version
+  identifier at all — a field named "version" holding a path is exactly
+  the kind of naming lie this campaign's own doctrine (F4-family) exists
+  to catch, here caught by the rider's own implementation reading, not a
+  test failure. A rider-authored code comment (workflow/
+  run_phase1_research.py, `_check_prescreen_conformance`) initially
+  mis-attributed (2)'s hand-set labels to K3's own stamping; corrected in
+  this close-out (2026-07-15).
+- **Fix:** not undertaken this session (found during, not before, K3's own
+  work; fixing `prescreen_signal.py`'s dead `_version` lookup or
+  renaming/schema-distinguishing `protocol_version`'s two meanings would be
+  a behavior change to shipped code, out of scope for a conformance-check
+  rider). Filed for a future session: either retire the dead `_version`
+  branch and rename `prescreen_result.yaml`'s field to reflect what it
+  actually holds (a path), or make `tools/prescreen_signal.py` genuinely
+  read the protocol's own `protocol_version` stamp (disambiguating it from
+  a hand-set label via the paired `protocol_content_hash`'s presence).
+- **Acceptance:** not yet defined — this is a filed finding, not a shipped
+  fix.
+
+### B14. Content-hash formula triplicated with no single source of truth (P2, found by 2026-07-15 K3 audit)
+- **Symptom:** the same protocol-content-hash formula (strip
+  `protocol_version`/`protocol_content_hash`, `json.dumps(sort_keys=True)`,
+  sha256) now exists independently in THREE places: `workflow/
+  run_phase1_research.py`'s `_compute_protocol_content_hash` (the runtime
+  guard, §5), `tools/stamp_protocol.py`'s `compute_protocol_content_hash`
+  (deliberately duplicated rather than importing, to avoid a heavy
+  `claude_agent_sdk`/`google.genai` import chain in a standalone CLI tool),
+  and the rider's own inline copy inside `_check_prescreen_conformance`
+  (deliberately duplicated rather than calling `_compute_protocol_content_
+  hash`, which takes a `Path` and re-reads from disk, where the rider
+  already has the parsed dict in hand). Each duplication was individually
+  disclosed and round-trip-tested against the others at the time it was
+  written (`test_stamp_protocol_round_trip_matches_rpr_hash_formula`,
+  `test_check_prescreen_conformance_protocol_ref_content_hash_match`), but
+  there is no SINGLE source of truth — a future edit to one copy (e.g. a
+  canonicalization change) could silently diverge from the other two, and
+  nothing would catch it except the existing round-trip tests continuing
+  to happen to exercise the same inputs.
+- **Fix:** not undertaken this session (each duplication was independently
+  justified against a REAL constraint — import weight, `Path` vs. dict
+  input shape — not an oversight; consolidating would require either
+  accepting the heavy import in `stamp_protocol.py` or a shared
+  lightweight module none of the three currently import from). Filed for
+  a future session: extract the formula into one function in a
+  dependency-light module (no `claude_agent_sdk`/`google.genai` imports)
+  that all three sites import.
+- **Acceptance:** not yet defined — this is a filed finding, not a shipped
+  fix.
 
 ### C10. _record_backtest_trial silently records n_trades: 0 (P1)
 - **Symptom:** the function reads per_symbol_summary["trade_count"], a key

@@ -51,12 +51,16 @@ standing disclosure doctrine with the verified-template allowlist.
 ### "What's broken and what gates autonomy?"
 → **[`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)**
 — the 29-item defect ledger; its P0 "kernel" gates background mode. A1/A3/B1
-(K4) and A8/A9/B11/C7/C9 (K2) are now closed — see the two design notes below
-for what shipped.
+(K4), A8/A9/B11/C7/C9 (K2), and B3/B10 (K3) are now closed — see the design
+notes below for what shipped. Two new items (B13, B14) were filed by K3's
+own close-out audit, found while implementing B3/B10, not yet fixed.
 → **[`docs/design/K4_routing_registration_design_20260712.md`](docs/design/K4_routing_registration_design_20260712.md)**,
-**[`docs/design/K2_verdict_machinery_design_20260713.md`](docs/design/K2_verdict_machinery_design_20260713.md)**
+**[`docs/design/K2_verdict_machinery_design_20260713.md`](docs/design/K2_verdict_machinery_design_20260713.md)**,
+**[`docs/design/K3_protocol_pinning_design_20260714.md`](docs/design/K3_protocol_pinning_design_20260714.md)**
 — design notes for the closed items above, each with an appended Phase B
-rulings/deviations section (K2's also has a dated rider section).
+rulings/deviations section (K2's and K3's also have a dated rider section;
+K3's rider section additionally carries the 2026-07-15 audit-outcome
+paragraph).
 
 ### "What can run autonomously vs needs a human?"
 → **[`docs/WORKFLOW_CAPABILITIES.md`](docs/WORKFLOW_CAPABILITIES.md)** —

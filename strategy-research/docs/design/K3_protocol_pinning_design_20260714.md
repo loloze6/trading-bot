@@ -1169,3 +1169,40 @@ the existing call site already supplied every input needed.
   Phase B + 5 new).
 - Full suite: **296 passed, 0 failed, 3 warnings, 61.89s** (291 + 5 = 296,
   exact accounting, no other test file changed).
+
+### Audit outcome (2026-07-15) and close-out
+
+A read-only audit of this kernel (Phase B + rider) returned clean on all
+compliance items across A1–A5/Q1–Q4 — no code defect, no missing
+fixture, no unverified compliance claim. It surfaced three findings and
+one item requiring re-verification, all resolved or recorded in this
+close-out:
+
+1. **The version-identifier trap**: `tools/prescreen_signal.py`'s dead
+   `_version`-key lookup, `protocol_version` carrying two unrelated
+   meanings across different objects, and a field named "version" that,
+   in every real case, holds a raw filesystem path. Recorded in full as
+   the ledger's new **B13** entry.
+2. **Rider comment provenance error**, a direct consequence of finding 1:
+   the rider's own code comment in `_check_prescreen_conformance` wrongly
+   attributed `baseline_v2.json`/`ts_trend_daily_v1.json`'s pre-existing,
+   hand-set `protocol_version` labels to K3's own §5 stamping. Corrected
+   in this close-out's commit (verified: neither file carries the paired
+   `protocol_content_hash` stamp_protocol.py always writes, and both
+   files' `protocol_version` key predates every K3 commit per `git log`).
+3. **Content-hash formula triplication** across
+   `_compute_protocol_content_hash`, `tools/stamp_protocol.py`, and the
+   rider's own inline copy — each disclosed and round-trip-tested at the
+   time it was written, but with no single source of truth against future
+   divergence. Recorded in full as the ledger's new **B14** entry.
+4. **Unverified check**: the A5 migration's presence on disk (commit
+   `1248a5e` records it, but had not been re-read since). Re-verified by
+   direct read this close-out — `campaign_state.yaml`'s `last_escalation`
+   block confirmed to carry `claimed_by_run: run_049` /
+   `claimed_at: '2026-07-06'` alongside its three pre-existing fields,
+   exactly as §9 A5 specifies.
+
+Ledger: **B3 and B10 marked CLOSED** (`PIPELINE_IMPROVEMENTS_20260712_v4.md`),
+pointing back to this design note's §9/Phase-B/rider sections and commits
+`ef58773`/`1248a5e`/`6b827eb`. This close-out's own commit is recorded in
+SESSION_LOG.md.

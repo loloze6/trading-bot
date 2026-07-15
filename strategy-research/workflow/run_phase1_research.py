@@ -1855,14 +1855,22 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
     # prescreen_signal.py's own prescreen_result.yaml records the executed
     # protocol's identity under the (confusingly named, pre-existing, unrelated
     # to K3) "protocol_version" field -- protocol.get("_version", protocol_path):
-    # no real protocol JSON in this repo carries a literal "_version" key (they
-    # carry K3's OWN "protocol_version" stamp field instead, a different key), so
-    # this field is, in practice, always the raw CLI protocol_path argument (an
-    # absolute or ROOT-relative path string) -- confirmed by reading
-    # tools/prescreen_signal.py and every protocols/*.json file this phase, not
-    # assumed. Compared here by BARE FILENAME (matching A1's own bare-filename
-    # convention for run_context.yaml's "protocol" key), never by full path,
-    # since the two are constructed differently (CLI arg vs. ROOT-relative ref).
+    # no real protocol JSON in this repo carries a literal "_version" key. Two
+    # files (baseline_v2.json, ts_trend_daily_v1.json) DO carry a "protocol_version"
+    # key, but this is a PRE-EXISTING, hand-set label that predates K3 entirely
+    # (git history: commits 410512a/d9fc4e7, both before K3) -- a coincidental
+    # collision with K3's own §5 stamp FIELD NAME, not K3's own data: stamp_protocol.py
+    # always writes protocol_version PAIRED with protocol_content_hash, and neither
+    # of these two files carries that hash (audit finding, 2026-07-15, corrected
+    # from this comment's own earlier, wrong provenance claim). Either way -- hand
+    # label or K3 stamp -- neither is the underscored "_version" key
+    # prescreen_signal.py's own `.get("_version", ...)` looks for, so this field
+    # is, in practice, always the raw CLI protocol_path argument (an absolute or
+    # ROOT-relative path string) -- confirmed by reading tools/prescreen_signal.py
+    # and every protocols/*.json file, not assumed. Compared here by BARE FILENAME
+    # (matching A1's own bare-filename convention for run_context.yaml's "protocol"
+    # key), never by full path, since the two are constructed differently (CLI arg
+    # vs. ROOT-relative ref).
     protocol_ref = constraints.get("protocol_ref")
     if protocol_ref:
         executed_identity = prescreen_result.get("protocol_version")
