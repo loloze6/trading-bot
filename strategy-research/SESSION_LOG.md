@@ -1384,3 +1384,215 @@ agent task, same pattern as K4/K2. Standing constraints unchanged, plus
 one new one: no-self-remediation — an accidental or out-of-scope write is
 always a STOP-and-report, never an agent-remediated cleanup, regardless of
 how confident the fix is."
+
+## Session: 2026-07-15 — K3 (B3+B10, protocol pinning) implemented, rider, audit, close-out
+
+### Hypothesis
+K3 (B3+B10: `machine_constraints.protocol_ref` pinning + the F4d silent
+stale-`last_escalation` fallback hard-fail) was the next unstarted P0
+kernel item, per the 2026-07-14 NEXT_SESSION.md handoff. Carried through
+the same Phase A (design note) → operator approval → Phase B
+(implementation + fixtures) pattern as K4/K2, plus an operator-directed
+rider and a read-only audit, all in one continuous session.
+
+### Result
+
+**K3 Phase A (design note), approved with amendments:** design note
+(`docs/design/K3_protocol_pinning_design_20260714.md`) covered the
+`protocol_ref` schema/resolution, the B10 hard-fail design (with the
+critical finding that `_route_escalate`'s own children never set
+`run_type: forced_diagnostic`, so a naive hard-fail would break the
+currently-pending run_049 timeframe-escalation lineage), and
+version-stamping. The operator required a **§9 amendments section**
+before approval: five binding amendments (A1: fix a real path-doubling
+bug in the original draft — writing the full `protocol_ref` value into
+`run_context.yaml` instead of the bare filename would have produced a
+doubled `protocols/protocols/...` path, a bug the mandatory A2 fixture
+below was specifically required to have caught; A2: mandatory
+end-to-end fixture with `subprocess.run` capture, not just a direct-call
+fixture; A3: pinned runs use a NEW dedicated `run_type` value,
+`protocol_ref_pinned`, never reusing `forced_diagnostic`, plus a
+repo-wide `run_type` consumer survey; A4: a runtime mutual-exclusion
+guard at `run_loop()`'s own top, independent of the materialization
+lint; A5: a one-time migration stamping `campaign_state.last_escalation`
+with `claimed_by_run: run_049`) and four open-question rulings (Q1: hard
+lint reject, not warning, on `protocol_ref`/`window_set_ref` mismatch;
+Q2: flag-based classifier signal, `run_campaign.py` confirmed in scope;
+Q3: `tools/stamp_protocol.py` ships in Phase B; Q4: the
+`_resolve_protocol_path` consolidation is REQUIRED, not optional).
+
+**K3 Phase B, accepted:** one consolidated `_resolve_protocol_path`
+resolver replaced the two previously-duplicated inline protocol-selection
+blocks inside `run_tool_worker`'s `signal_prescreen`/`protocol_execution`
+branches; `_ensure_protocol_ref_pinned` (with all three A1 fixes — bare
+filename written, flat-under-`protocols/` lint, bare-filename
+idempotency comparison); the A4 runtime guard at `run_loop()`'s top; the
+B10 hard-fail with a `stale_escalation_unclaimed` flag set via
+`update_state` before raising, and a matching new branch in
+`run_campaign.py`'s `_hard_pause_reason`; `_compute_protocol_content_hash`
++ `tools/stamp_protocol.py` (§5 version-stamping, NEW file); the
+materialization-time lint (`_lint_machine_constraints_protocol_selection`)
+covering mutual exclusion, flat-path, and the Q1 hard reject. The A3
+`run_type` consumer survey confirmed the new dedicated value required
+zero changes to the pre-existing generation-path write site or its test
+(`tests/test_prereg_conformance_gate.py`, confirmed still green,
+unmodified, 9/9 in isolation). 34 new tests
+(`tests/test_k3_protocol_pinning.py`); suite 257 → 291 green. Two commits:
+`ef58773` (implementation) and `1248a5e` (the A5 migration — 
+`campaign_state.yaml`'s `last_escalation` gained `claimed_by_run:
+run_049`/`claimed_at: '2026-07-06'`, sourced from `00_closing_state.md`
+§8's dating of the P1b closure, not from the file's own stale whole-file
+`updated_at`, with an `E3` sidecar,
+`campaign_state_MIGRATION_NOTICE.md`, following the exact naming/
+placement convention found in run_054's own pre-existing
+`findings_carryover_CORRECTION_NOTICE.md`).
+
+**Operator-overruled deviation → K3 rider, accepted:** Phase B's own
+"deviation 1" (declining to extend `_check_prescreen_conformance` for
+`protocol_ref` defense-in-depth, on the grounds that A4/Q1 already
+closed the registration-time gap) was REJECTED by the operator: A4 and
+Q1 are registration-time checks only and cannot catch an EXECUTED
+prescreen that silently ran against a different file than the one
+pinned; the ledger's own B3 text assigns exactly that role to
+`_check_prescreen_conformance`. The rider extended that function with a
+bare-filename identity check against `prescreen_result.yaml`'s
+(confusingly named) `protocol_version` field, plus an optional
+content-hash check when the brief pinned one — requiring, in the
+process, reading `tools/prescreen_signal.py` closely enough to discover
+that its `protocol.get("_version", protocol_path)` lookup checks for a
+key (`_version`, underscore-prefixed) that no real protocol file has
+ever carried, meaning the field is, in every real case, just the raw
+executed CLI path. 5 new fixtures; suite 291 → 296 green. One commit:
+`6b827eb`.
+
+**Read-only audit (2026-07-15), clean with three findings + one
+unverified check, all resolved this close-out:** (1) the "version-
+identifier trap" — the dead `_version` lookup, `protocol_version`
+carrying two unrelated meanings across different objects (two
+pre-existing hand-labeled protocol files vs. K3's own §5 machine
+stamps), and a field named "version" holding a path — filed as new
+ledger entry **B13**. (2) A provenance error in the rider's own code
+comment, wrongly attributing the two pre-existing files' hand-set
+`protocol_version` labels to K3's own stamping — corrected this
+close-out (verified: neither file carries the paired
+`protocol_content_hash` `stamp_protocol.py` always writes, and both
+files' `protocol_version` key predates every K3 commit per `git log`).
+(3) The content-hash formula triplicated across
+`_compute_protocol_content_hash`, `tools/stamp_protocol.py`, and the
+rider's own inline copy, each independently disclosed and
+round-trip-tested but with no single source of truth against future
+divergence — filed as new ledger entry **B14**. (4) An unverified
+check: the A5 migration's presence on disk had not been re-read since
+commit `1248a5e` — re-verified this close-out by direct read (quoted in
+full below).
+
+**Audit-report anomaly, operator-relayed (this session did not read the
+audit report firsthand — provenance stated per E3):** the audit's own
+step 5 required a fresh, verbatim quote of `campaign_state.yaml`'s
+current `last_escalation` block. Per the operator's relay, the
+auditor's read window (`offset 1, limit 30`) never actually reached
+that block; the three-field quote its report presented as "current...
+verbatim" was carried over from an earlier read and lacked the two A5
+migration fields, which cannot be the current record after commit
+`1248a5e`. The auditor self-flagged this in its own report's
+"Anomalies" section rather than letting the mislabeled quote stand,
+noting it had cross-checked the quote only against the migration
+notice's own claims and the commit's `+2`-line diff, never against a
+fresh direct read. **Resolution: this close-out task's own step-1
+gate**, which re-read the block directly (not relying on any prior
+report) before anything else in this task was permitted to proceed —
+verbatim quote below.
+
+```
+last_escalation:
+  target: timeframe
+  detail: 15m
+  protocol_path: protocols\escalation_tf_15m.json
+  claimed_by_run: run_049
+  claimed_at: '2026-07-06'
+```
+
+**Ledger:** B3 and B10 marked **CLOSED** in
+`PIPELINE_IMPROVEMENTS_20260712_v4.md`, each with a **Resolution**
+bullet pointing to the design note and all four commits. Two new items
+filed: **B13** (version-identifier trap) and **B14** (content-hash
+triplication), both P2, not blocking.
+
+**Two premise-failure stops this session, both correctly resolved by
+stopping rather than guessing:**
+1. **K3 Phase B's own step 1**: the dispatch's stated precondition
+   ("git status must be clean") was violated by the K3 design note
+   itself being untracked — but the design note's own creation was
+   ALSO listed as in-scope for the same commit later in the same
+   prompt. Root cause: an internally inconsistent dispatch (a drafting
+   error, not a real blocker). Stopped and asked rather than guessing
+   which requirement should win; operator amended the precondition to
+   name the design note as the one expected untracked file.
+2. **This close-out's own step 7**: dispatched as if a specific,
+   pre-existing audit report's content ("the step-5 self-flagged gap")
+   were already available to this session, when no such report had
+   ever been shown here. Root cause: a dispatch referencing a document
+   its own recipient does not hold. Stopped via `AskUserQuestion`
+   rather than fabricating plausible-sounding audit findings for a
+   permanent log entry; operator relayed the actual content, with its
+   provenance (operator-relayed, not directly read) recorded above.
+
+**Standing prompt-skeleton lessons, both adopted going forward (see
+NEXT_SESSION.md's Standing Constraints):** dispatch precondition
+manifests must state an explicit expected-tree (not a bare "must be
+clean"), and every terminal marker line must carry its own step count —
+both rules exist specifically because this session's two premise-
+failure stops were caused by dispatch-prompt defects, not agent error.
+
+### Files touched
+- `strategy-research/workflow/run_phase1_research.py` — K3's
+  `_resolve_protocol_path`, `_ensure_protocol_ref_pinned`,
+  `_compute_protocol_content_hash`, `_lint_machine_constraints_protocol_
+  selection`, the A4 `run_loop()` guard, `record_escalation`'s
+  `claimed_by_run`/`claimed_at` extension, the rider's
+  `_check_prescreen_conformance` extension (plus this close-out's
+  comment provenance fix)
+- `strategy-research/workflow/run_campaign.py` — the K3 materialization
+  lint call sites, `_hard_pause_reason`'s `stale_escalation_unclaimed`
+  branch
+- `strategy-research/tools/stamp_protocol.py` — NEW (§5)
+- `strategy-research/tests/test_k3_protocol_pinning.py` — NEW, grew
+  34 → 39 tests across the rider
+- `strategy-research/RUNBOOK.md` — 1 new pause-table row
+  (`stale_escalation_unclaimed`)
+- `strategy-research/docs/design/K3_protocol_pinning_design_20260714.md`
+  — NEW design note: §0–§8 (Phase A), §9 (operator amendments), Phase B
+  rulings/deviations section, dated rider section, 2026-07-15
+  audit-outcome paragraph
+- `strategy-research/campaign_state.yaml` — the A5 migration (2 lines:
+  `claimed_by_run`, `claimed_at`), nothing else touched
+- `strategy-research/campaign_state_MIGRATION_NOTICE.md` — NEW (E3
+  sidecar)
+- `strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md` — B3/B10
+  marked CLOSED with Resolution bullets; B13/B14 added
+- `strategy-research/DOC_INDEX.md` — K3 design note pointer added; ledger
+  pointer line amended
+- `strategy-research/NEXT_SESSION.md` — fully replaced; prior version
+  archived verbatim to
+  `strategy-research/docs/plan/NEXT_SESSION_20260714_superseded.md`
+- Commits: `ef58773` (K3 implementation), `1248a5e` (A5 migration +
+  sidecar), `6b827eb` (rider), plus this close-out's own commit
+
+### Next session prompt
+"Resume strategy-research campaign. Read strategy-research/NEXT_SESSION.md
+first (single entry point). K3 (B3+B10, protocol pinning) is fully
+implemented, ridered, audited, and closed (commits ef58773/1248a5e/
+6b827eb + this close-out commit); ledger items B3/B10 are CLOSED, with
+two new P2 items filed (B13: version-identifier trap; B14: content-hash
+formula triplication), neither blocking. Test suite at 296 green. Task
+queue priority (1): draft the H-041-C-v2 registration brief — NOW
+UNBLOCKED, preserving verbatim the standing registration decisions
+(original polarity, era-conditioning from pre-existing boundaries only,
+every FAIL branch mapped to kill/terminate with no discretion
+delegations, a concrete machine-selectable sparse_inconclusive
+criterion, and treating this as a NEW registration per the KB's
+exhausted:true/reactivation_condition:null state, not a reactivation).
+Standing constraints unchanged, plus two new prompt-skeleton rules:
+dispatch preconditions must state an explicit expected git-tree
+manifest, and every terminal marker line must carry its own step
+count."
