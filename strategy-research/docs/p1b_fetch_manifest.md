@@ -20,7 +20,7 @@ was overwritten. Order: F&G → funding → OHLCV (cheapest first), per instruct
 | Feed | Range | Rows | Requested start | Actual start reason |
 |---|---|---|---|---|
 | fear_greed_daily.csv | 2018-02-01 → 2026-07-05 | 3,073 | 2018-02-01 | alternative.me history start |
-| BTCUSDT_funding_8h.csv | 2019-09-10 08:00 → 2026-07-05 | 7,467 | 2019-09-01 | Binance BTCUSDT perp inception |
+| BTCUSDT_funding_8h.csv | 2019-09-10 08:00 → 2026-07-05 | 7,468 | 2019-09-01 | Binance BTCUSDT perp inception |
 | ETHUSDT_funding_8h.csv | 2019-11-27 08:00 → 2026-07-05 | 7,234 | 2019-09-01 | Binance ETHUSDT perp inception (later than BTC) |
 | BTCUSDT_1h.csv | 2018-01-01 → 2026-07-05 | 74,457 | 2018-01-01 | fully satisfied (spot market) |
 | ETHUSDT_1h.csv | 2018-01-01 → 2026-07-05 | 74,457 | 2018-01-01 | fully satisfied (spot market) |
@@ -35,8 +35,8 @@ Gap threshold = 1.5× expected interval.
   27 gaps > 1.5h, largest 2018-02-08→2018-02-09 (1d10h, early-exchange-era downtime),
   remainder all ≤ 11h. No gap exceeds one calendar day after Feb 2018. Negligible
   relative to 74,457-bar series.
-- **BTCUSDT_funding_8h**: 4 gaps > 12h (largest ~16h = exactly one missed 8h
-  publication), spread across 2021/2022/2023/2026.
+- **BTCUSDT_funding_8h**: 3 gaps > 12h (each exactly 16h = one missed 8h
+  publication), in 2022/2023/2026.
 - **ETHUSDT_funding_8h**: 3 gaps > 12h, same pattern.
 - **fear_greed_daily**: 2 gaps — 2018-04-13→17 (4 days) and 2024-10-25→27 (2 days).
 
