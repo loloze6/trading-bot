@@ -235,6 +235,20 @@ def _materialize_run(run_id: str, brief: dict):
             )
         for _w in _warnings:
             print(f"⚠️  [B11 lint] {run_id}: {_w}")
+
+        # K3 (B3, §9 Q1): protocol_ref selection lint, same materialization
+        # gate as B11's total-mapping lint above -- a rejected brief never
+        # reaches pre_registration.yaml at all.
+        _proto_violations = orch._lint_machine_constraints_protocol_selection(
+            machine_constraints, pre_registration.get("pass_rule")
+        )
+        if _proto_violations:
+            raise ValueError(
+                f"{run_id}: pre_registration.yaml machine_constraints failed the K3 "
+                f"protocol-selection lint -- refusing to materialize:\n"
+                + "\n".join(f"  - {v}" for v in _proto_violations)
+            )
+
         orch.save_yaml(artifacts / "pre_registration.yaml", pre_registration)
 
 
@@ -324,6 +338,18 @@ def _materialize_refinement_run(child_id: str, brief: dict, brief_path: Path):
         )
     for _w in _warnings:
         print(f"⚠️  [B11 lint] {child_id}: {_w}")
+
+    if machine_constraints:
+        # K3 (B3, §9 Q1): same protocol-selection lint as _materialize_run.
+        _proto_violations = orch._lint_machine_constraints_protocol_selection(
+            machine_constraints, pre_registration.get("pass_rule")
+        )
+        if _proto_violations:
+            raise ValueError(
+                f"{child_id}: refinement brief's machine_constraints failed the K3 "
+                f"protocol-selection lint -- refusing to materialize:\n"
+                + "\n".join(f"  - {v}" for v in _proto_violations)
+            )
 
     verbatim_path = artifacts / "user_brief_verbatim.yaml"
     verbatim_path.write_bytes(raw_bytes)
@@ -671,6 +697,14 @@ def _hard_pause_reason(run_dir: Path, state: dict):
     pending = state.get("pending_stage") or ""
 
     if status == "failed":
+        # K3/§9 Q2: check the flag-based signal BEFORE falling back to the generic
+        # reason -- otherwise a RuntimeError raised by _resolve_protocol_path's B10
+        # hard-fail (which sets this flag via update_state before raising) would
+        # always classify as the uninformative "unhandled_exception", indistinguishable
+        # from any other engineering failure in this file.
+        flags = state.get("flags", {}) or {}
+        if flags.get("stale_escalation_unclaimed"):
+            return "stale_escalation_unclaimed", str(state.get("last_error", ""))[:300]
         return "unhandled_exception", str(state.get("last_error", ""))[:300]
 
     if pending == "rejected_budget_exceeded":
