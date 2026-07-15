@@ -1846,6 +1846,58 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
                 f"coverage through {expected_end} (the backward-extension range was not used)"
             )
 
+    # K3 rider (2026-07-15, operator ruling on Phase B deviation 1): protocol_ref
+    # post-hoc conformance -- A4's runtime guard and Q1's materialization lint are
+    # both REGISTRATION-time checks; neither catches an executed prescreen that
+    # silently ran against a DIFFERENT file than the one pinned (e.g. a stale
+    # run_context.yaml override, or a hand-edited pre_registration.yaml that
+    # changed protocol_ref after signal_prescreen already ran once). tools/
+    # prescreen_signal.py's own prescreen_result.yaml records the executed
+    # protocol's identity under the (confusingly named, pre-existing, unrelated
+    # to K3) "protocol_version" field -- protocol.get("_version", protocol_path):
+    # no real protocol JSON in this repo carries a literal "_version" key (they
+    # carry K3's OWN "protocol_version" stamp field instead, a different key), so
+    # this field is, in practice, always the raw CLI protocol_path argument (an
+    # absolute or ROOT-relative path string) -- confirmed by reading
+    # tools/prescreen_signal.py and every protocols/*.json file this phase, not
+    # assumed. Compared here by BARE FILENAME (matching A1's own bare-filename
+    # convention for run_context.yaml's "protocol" key), never by full path,
+    # since the two are constructed differently (CLI arg vs. ROOT-relative ref).
+    protocol_ref = constraints.get("protocol_ref")
+    if protocol_ref:
+        executed_identity = prescreen_result.get("protocol_version")
+        pinned_name = Path(protocol_ref).name
+        if executed_identity:
+            executed_name = Path(executed_identity).name
+            if executed_name != pinned_name:
+                violations.append(
+                    f"prescreen executed protocol {executed_name!r} != pre-registered "
+                    f"machine_constraints.protocol_ref bare filename {pinned_name!r} "
+                    f"(prescreen_result.protocol_version={executed_identity!r})"
+                )
+
+        # Optional, stronger guarantee (§5): if the brief also pinned a content
+        # hash, recompute it over the ACTUAL executed protocol_obj (already
+        # loaded by determine_post_prescreen_route's own call site) and compare.
+        # Duplicates _compute_protocol_content_hash's small formula rather than
+        # calling it directly -- that function takes a Path and re-reads the
+        # file from disk; protocol_obj here is already the parsed executed
+        # content, and this function's authorized write set is
+        # _check_prescreen_conformance only (K3 rider scope).
+        expected_hash = constraints.get("protocol_ref_content_hash")
+        if expected_hash and protocol_obj:
+            _stripped = {k: v for k, v in protocol_obj.items()
+                         if k not in ("protocol_version", "protocol_content_hash")}
+            _canonical = json.dumps(_stripped, sort_keys=True)
+            actual_hash = "sha256:" + hashlib.sha256(_canonical.encode("utf-8")).hexdigest()
+            if actual_hash != expected_hash:
+                violations.append(
+                    f"prescreen executed protocol's content hash {actual_hash!r} != "
+                    f"pre-registered machine_constraints.protocol_ref_content_hash "
+                    f"{expected_hash!r} -- the executed file's CONTENT differs from "
+                    f"what was pre-registered"
+                )
+
     return violations
 
 

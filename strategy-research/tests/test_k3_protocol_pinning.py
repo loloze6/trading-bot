@@ -531,6 +531,59 @@ def test_run_loop_top_hard_fails_on_both_protocol_keys_before_anything_else(monk
 
 
 # ---------------------------------------------------------------------------
+# K3 rider (2026-07-15) -- protocol_ref post-hoc conformance extension of
+# _check_prescreen_conformance (operator ruling overturning Phase B deviation 1:
+# A4/Q1 are registration-time only and never catch an EXECUTED prescreen that
+# silently ran against a different file than the one pinned).
+# ---------------------------------------------------------------------------
+
+def test_check_prescreen_conformance_protocol_ref_mismatch_names_both():
+    prescreen_result = {"protocol_version": str(Path("C:/somewhere/protocols/actually_used.json"))}
+    constraints = {"protocol_ref": "protocols/pinned_expected.json"}
+    violations = rpr._check_prescreen_conformance(prescreen_result, constraints, {})
+    assert violations
+    assert any("actually_used.json" in v and "pinned_expected.json" in v for v in violations)
+
+
+def test_check_prescreen_conformance_protocol_ref_match_no_violation():
+    prescreen_result = {"protocol_version": str(Path("/anywhere/protocols/pinned_expected.json"))}
+    constraints = {"protocol_ref": "protocols/pinned_expected.json"}
+    violations = rpr._check_prescreen_conformance(prescreen_result, constraints, {})
+    assert violations == []
+
+
+def test_check_prescreen_conformance_protocol_ref_content_hash_mismatch():
+    protocol_obj = {"symbols": ["BTCUSDT"], "timeframe": "1d", "windows": []}
+    prescreen_result = {"protocol_version": "/anywhere/protocols/pinned.json"}
+    constraints = {
+        "protocol_ref": "protocols/pinned.json",
+        "protocol_ref_content_hash": "sha256:" + "0" * 64,
+    }
+    violations = rpr._check_prescreen_conformance(prescreen_result, constraints, protocol_obj)
+    assert violations
+    assert any("content hash" in v for v in violations)
+
+
+def test_check_prescreen_conformance_protocol_ref_content_hash_match():
+    protocol_obj = {"symbols": ["BTCUSDT"], "timeframe": "1d", "windows": []}
+    expected_hash = stamp_protocol.compute_protocol_content_hash(protocol_obj)
+    prescreen_result = {"protocol_version": "/anywhere/protocols/pinned.json"}
+    constraints = {
+        "protocol_ref": "protocols/pinned.json",
+        "protocol_ref_content_hash": expected_hash,
+    }
+    violations = rpr._check_prescreen_conformance(prescreen_result, constraints, protocol_obj)
+    assert violations == []
+
+
+def test_check_prescreen_conformance_no_protocol_ref_skips_new_branch():
+    """No protocol_ref on the brief -- the new branch must never fire, existing
+    generation-shape checks unaffected."""
+    violations = rpr._check_prescreen_conformance({"protocol_version": "/x/protocols/whatever.json"}, {}, {})
+    assert violations == []
+
+
+# ---------------------------------------------------------------------------
 # Q3 -- tools/stamp_protocol.py round-trip
 # ---------------------------------------------------------------------------
 

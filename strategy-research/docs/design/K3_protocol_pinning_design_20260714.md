@@ -1053,3 +1053,119 @@ guard — `test_ensure_protocol_ref_pinned_content_hash_mismatch_raises`,
 - `tests/test_prereg_conformance_gate.py` in isolation (the file A3
   required stay green and unmodified): **9 passed**, file byte-identical
   to before this kernel (not edited).
+
+---
+
+## K3 rider (2026-07-15): protocol_ref post-hoc conformance extension
+(operator ruling on Phase B deviation 1)
+
+**Operator ruling, verbatim reasoning:** deviation 1 (declining to extend
+`_check_prescreen_conformance` for `protocol_ref` defense-in-depth) was
+REJECTED. A4 (the runtime mutual-exclusion guard) and Q1 (the
+materialization-time `window_set_ref` lint) are both REGISTRATION-time
+checks — they can only ever catch an incoherent brief BEFORE a run
+starts. Neither catches an EXECUTED prescreen that silently ran against
+a DIFFERENT protocol file than the one pinned (e.g. a stale
+`run_context.yaml` override left over from a prior stage attempt, or a
+hand-edited `pre_registration.yaml` whose `protocol_ref` changed after
+`signal_prescreen` had already run once against the old value). The
+ledger's own B3 text assigns exactly this executed-vs-registered
+conformance role to `_check_prescreen_conformance` (the F4d gate this
+kernel's §2c already read and quoted). The transitive path through Q1's
+lint into the C7 evaluator (`tools/verdict_criteria_evaluator.py`'s own
+`window_set_ref` check) covers only `protocol_execution` (the full
+backtest stage), and only when the brief's `pass_rule.window_set_ref` is
+present — it never runs for `signal_prescreen`, and never fires at all
+for a brief with no structured `pass_rule`. This rider closes that gap.
+
+### What was read before implementing (not assumed)
+
+`_check_prescreen_conformance(prescreen_result, constraints,
+protocol_obj)`'s existing call site (`determine_post_prescreen_route`,
+`workflow/run_phase1_research.py`) already resolves the run's ACTUAL
+executed protocol file and passes its full parsed content in as
+`protocol_obj` — the exact input this rider needed, no call-site change
+required (the authorized write set correctly scoped this to
+`_check_prescreen_conformance` only).
+
+The "executed protocol identity" question required reading, not
+assuming: `tools/prescreen_signal.py` writes `prescreen_result.yaml`'s
+`protocol_version` field as `protocol.get("_version", protocol_path)` —
+i.e. it looks for a literal `_version` key (underscore-prefixed) on the
+protocol JSON, falling back to the raw CLI `protocol_path` argument
+string if absent. Checked every file under `protocols/` this phase: NONE
+carries a literal `_version` key — two (`baseline_v2.json`,
+`ts_trend_daily_v1.json`) carry `protocol_version` instead (a DIFFERENT,
+non-underscored key — this kernel's OWN §5 stamp field), which
+`prescreen_signal.py`'s `.get("_version", ...)` call does not match. So
+in every real case today, `prescreen_result.yaml`'s `protocol_version`
+field is, in practice, always the raw CLI path argument (absolute or
+ROOT-relative, exactly as `run_tool_worker` constructed it) — never a
+semantic version string. This is why the new check compares BARE
+FILENAMES (`Path(...).name`), not full paths or version strings: the
+executed identity's path form (constructed from `ROOT / "protocols" /
+proto_name` inside `run_tool_worker`) and the pinned `protocol_ref`'s
+path form (a ROOT-relative string as written in `pre_registration.yaml`)
+are constructed differently and would never compare equal as full
+strings even when they name the same file — matching A1's own
+bare-filename convention.
+
+### Implementation
+
+`_check_prescreen_conformance` gains one new, independent branch (after
+the existing generation-shape checks, gated on `constraints.get(
+"protocol_ref")`, mutually exclusive with the `protocol` branch by
+construction since A4/Q1 already forbid both being set):
+
+1. **Name-level check (always runs when `protocol_ref` is set):**
+   `Path(prescreen_result.get("protocol_version")).name` compared against
+   `Path(protocol_ref).name`. Mismatch → violation naming both, same
+   string-interpolation style as the existing generation-shape
+   violations above it.
+2. **Content-hash check (only when the brief also pinned
+   `protocol_ref_content_hash`, per §5):** recomputes the hash of the
+   ALREADY-LOADED `protocol_obj` (the executed file's real parsed
+   content, passed in by the existing call site) using the same
+   pop-stamp-fields-then-`json.dumps(sort_keys=True)`-then-sha256 formula
+   as `_compute_protocol_content_hash`/`tools/stamp_protocol.py`.
+   **Deliberately duplicated, not imported**: this function's authorized
+   write set for this rider is `_check_prescreen_conformance` only, and
+   `_compute_protocol_content_hash` takes a `Path` (re-reads from disk)
+   where this call site already has the parsed dict in hand — matching
+   the same "small formula duplicated across 3 sites now
+   (`run_phase1_research.py`'s own content-hash guard,
+   `tools/stamp_protocol.py`, and this check), never diverging" pattern
+   already established and disclosed in Phase B's own rulings section.
+
+### Fixtures (§6 pattern: known-answer both directions, plus the hash path)
+
+- `test_check_prescreen_conformance_protocol_ref_mismatch_names_both` —
+  pinned `protocols/pinned_expected.json`, executed
+  `.../actually_used.json` → exactly one violation naming both bare
+  filenames.
+- `test_check_prescreen_conformance_protocol_ref_match_no_violation` —
+  same bare filename, different full path (proving the BARE-filename
+  comparison, not full-path equality) → zero violations.
+- `test_check_prescreen_conformance_protocol_ref_content_hash_mismatch` —
+  wrong hash → violation naming "content hash".
+- `test_check_prescreen_conformance_protocol_ref_content_hash_match` —
+  hash computed via `tools/stamp_protocol.compute_protocol_content_hash`
+  on the same object → zero violations (proves the two hash formulas —
+  this rider's inline copy and `stamp_protocol.py`'s — agree).
+- `test_check_prescreen_conformance_no_protocol_ref_skips_new_branch` —
+  no `protocol_ref` on the brief → new branch never fires, pre-existing
+  behavior (generation-shape checks only) unaffected.
+
+### Deviations
+
+None. The rider ships exactly the two checks the operator's ruling
+specified (name-level always, hash-level only when pinned), touches only
+`_check_prescreen_conformance`, and required no call-site change because
+the existing call site already supplied every input needed.
+
+### Test counts (verbatim)
+
+- `tests/test_k3_protocol_pinning.py` in isolation: **39 passed** (34 from
+  Phase B + 5 new).
+- Full suite: **296 passed, 0 failed, 3 warnings, 61.89s** (291 + 5 = 296,
+  exact accounting, no other test file changed).
