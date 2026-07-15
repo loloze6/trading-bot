@@ -50,6 +50,7 @@ import json
 import sys
 import shutil
 import statistics
+import hashlib
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBlock
 from google import genai
 from google.genai import types
@@ -178,8 +179,16 @@ def record_pivot(family: str):
     state.setdefault("recent_parameter_dimensions_by_family", {})[family] = []
     _save_campaign_state(state)
 
-def record_escalation(target: str, detail: str, protocol_path: str = None):
-    """Record a search-space escalation."""
+def record_escalation(target: str, detail: str, protocol_path: str = None, claimed_by_run: str = None):
+    """
+    Record a search-space escalation.
+
+    K3 (B10, §4): claimed_by_run/claimed_at mark the ONE run this escalation's
+    last_escalation.protocol_path fallback is legitimate for -- mirroring the KB's
+    own reactivation_consumed_by pattern. Set at the SAME call that sets
+    last_escalation (this function already knows next_run_id at its call sites in
+    _route_escalate), so the claim is never a separate, racy write.
+    """
     state = load_campaign_state()
     if target == "instrument":
         state.setdefault("instruments_tried", [])
@@ -194,7 +203,11 @@ def record_escalation(target: str, detail: str, protocol_path: str = None):
         if detail and detail not in state["components_built"]:
             state["components_built"].append(detail)
     if protocol_path:
-        state["last_escalation"] = {"target": target, "detail": detail, "protocol_path": protocol_path}
+        last_escalation = {"target": target, "detail": detail, "protocol_path": protocol_path}
+        if claimed_by_run:
+            last_escalation["claimed_by_run"] = claimed_by_run
+            last_escalation["claimed_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        state["last_escalation"] = last_escalation
     _save_campaign_state(state)
 
 
@@ -933,20 +946,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # Improvement 08+09: signal prescreen — cheap IC + cost gate before full backtest.
         config_path = ARTIFACTS / "candidate_strategy_config.json"
 
-        # Protocol selection mirrors protocol_execution logic
-        run_ctx_path = ARTIFACTS / "run_context.yaml"
-        run_ctx = (load_yaml(run_ctx_path) or {}) if run_ctx_path.exists() else {}
-        run_type = run_ctx.get("run_type", "")
-        if run_type == "replication_diagnostic":
-            protocol_path = ROOT / "protocols" / "baseline_v1.json"
-        elif run_type == "forced_diagnostic":
-            proto_name = run_ctx.get("protocol", "baseline_v1.json")
-            protocol_path = ROOT / "protocols" / proto_name
-        else:
-            campaign = load_campaign_state()
-            last_escalation = campaign.get("last_escalation") or {}
-            protocol_path_str = last_escalation.get("protocol_path")
-            protocol_path = Path(protocol_path_str) if protocol_path_str else ROOT / "protocols" / "baseline_v1.json"
+        # K3/§9 Q4: consolidated resolver, replaces the previously-duplicated
+        # inline protocol-selection logic (also present in protocol_execution below).
+        protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
 
         out_dir = RUN_DIR / "prescreen"
         cmd = [
@@ -990,23 +992,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
     elif stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
-        # Protocol selection: replication_diagnostic → baseline_v1.json;
-        # forced_diagnostic → protocol named in run_context.yaml; else → campaign escalation path.
-        run_ctx_path = ARTIFACTS / "run_context.yaml"
-        run_ctx = (load_yaml(run_ctx_path) or {}) if run_ctx_path.exists() else {}
-        run_type = run_ctx.get("run_type", "")
-        if run_type == "replication_diagnostic":
-            print("🔁 replication_diagnostic run — ignoring last_escalation, using baseline_v1.json")
-            protocol_path = ROOT / "protocols" / "baseline_v1.json"
-        elif run_type == "forced_diagnostic":
-            proto_name = run_ctx.get("protocol", "baseline_v1.json")
-            protocol_path = ROOT / "protocols" / proto_name
-            print(f"🔬 forced_diagnostic run — using protocol: {proto_name}")
-        else:
-            campaign = load_campaign_state()
-            last_escalation = campaign.get("last_escalation") or {}
-            protocol_path_str = last_escalation.get("protocol_path")
-            protocol_path = Path(protocol_path_str) if protocol_path_str else ROOT / "protocols" / "baseline_v1.json"
+        # K3/§9 Q4: consolidated resolver, replaces the previously-duplicated
+        # inline protocol-selection logic (also present in signal_prescreen above).
+        protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
         validation_path = ARTIFACTS / "validation_protocol.yaml"
 
         cmd = [
@@ -1613,6 +1601,185 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     save_yaml(run_ctx_path, run_ctx)
     print(f"✅ [F4d] Wrote run_context.yaml override: run_type=forced_diagnostic, protocol={out_path.name}")
     return out_path
+
+
+def _compute_protocol_content_hash(path: Path) -> str:
+    """
+    K3/§5: structural hash (tolerant of key reordering from hand edits), computed
+    over the file's own JSON body MINUS its own protocol_version/protocol_content_hash
+    stamp fields (avoids a circular hash-of-a-hash problem).
+    """
+    obj = json.loads(path.read_text(encoding="utf-8"))
+    obj.pop("protocol_version", None)
+    obj.pop("protocol_content_hash", None)
+    canonical = json.dumps(obj, sort_keys=True)
+    return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _lint_machine_constraints_protocol_selection(constraints: dict, pass_rule: dict | None = None) -> list:
+    """
+    K3/§3+§9(Q1): materialization-time lint for machine_constraints.protocol_ref.
+    Returns a list of violation strings (empty = conforms). Called from
+    run_campaign.py's _materialize_run/_materialize_refinement_run, alongside
+    the existing B11 lint call — same site, not a new mechanism.
+    """
+    violations = []
+    proto = constraints.get("protocol")
+    ref = constraints.get("protocol_ref")
+
+    if proto and ref:
+        violations.append(
+            f"machine_constraints carries BOTH protocol={proto!r} (generate) AND "
+            f"protocol_ref={ref!r} (pin) — these are mutually exclusive; a brief "
+            f"must choose exactly one protocol-selection mechanism."
+        )
+        return violations  # incoherent pair — no point checking ref shape further
+
+    if ref is not None:
+        if not isinstance(ref, str) or not ref.strip():
+            violations.append(
+                f"machine_constraints.protocol_ref={ref!r} must be a non-empty string."
+            )
+        else:
+            ref_path = Path(ref)
+            if ref_path.parent != Path("protocols"):
+                violations.append(
+                    f"machine_constraints.protocol_ref={ref!r} must resolve FLAT under "
+                    f"'protocols/' (e.g. 'protocols/name.json') — nested subdirectories "
+                    f"or paths outside protocols/ are rejected (K3/§9 A1.2)."
+                )
+            # Q1: pass_rule.window_set_ref naming a DIFFERENT file is a HARD REJECT,
+            # not the WARNING originally proposed in §3. A legacy (string-shaped)
+            # pass_rule has no window_set_ref to compare -- not linted here, same
+            # scope limitation _lint_pass_rule_total_mapping's own docstring names.
+            window_set_ref = pass_rule.get("window_set_ref") if isinstance(pass_rule, dict) else None
+            if window_set_ref and window_set_ref != ref:
+                violations.append(
+                    f"machine_constraints.protocol_ref={ref!r} and "
+                    f"pass_rule.window_set_ref={window_set_ref!r} name DIFFERENT files "
+                    f"— incoherent pre-registration (K3/§9 Q1 hard reject)."
+                )
+
+    return violations
+
+
+def _ensure_protocol_ref_pinned(run_dir: Path, run_id: str, constraints: dict) -> Path | None:
+    """
+    K3 (B3): pins an EXISTING, named protocol file via machine_constraints.protocol_ref
+    -- never generates/regenerates windows (that remains _ensure_protocol_from_constraints's
+    job, gated on the DIFFERENT `protocol` key). Idempotent across repeated run_loop()
+    entries into the same run.
+
+    A1 fix (K3/§9): writes the BARE FILENAME into run_context.yaml's "protocol" key
+    (not the ROOT-relative protocol_ref value) so the existing
+    `ROOT / "protocols" / proto_name` consumer construction keeps working unmodified
+    -- the original Phase A draft wrote the full ref and doubled the path.
+    A3 fix (K3/§9): uses a NEW, dedicated run_type ("protocol_ref_pinned") rather than
+    reusing "forced_diagnostic", so a pinned run is mechanically distinguishable from a
+    generated one at the run_context.yaml level.
+    """
+    ref = constraints.get("protocol_ref")
+    if not ref:
+        return None
+
+    bare_name = Path(ref).name
+    ref_path = ROOT / "protocols" / bare_name
+    run_ctx_path = run_dir / "artifacts" / "run_context.yaml"
+
+    if run_ctx_path.exists():
+        existing = load_yaml(run_ctx_path) or {}
+        if existing.get("run_type") == "protocol_ref_pinned" and existing.get("protocol") == bare_name:
+            return ref_path  # already pinned this run — idempotent, no re-write
+
+    if not ref_path.exists():
+        raise FileNotFoundError(
+            f"machine_constraints.protocol_ref={ref!r} does not exist at {ref_path} -- "
+            f"a pinned ref must name an EXISTING protocol file (this is the whole point "
+            f"of pinning: never silently generate a substitute)."
+        )
+
+    # §5 version-stamping: optional content-hash guard against in-place edits.
+    expected_hash = constraints.get("protocol_ref_content_hash")
+    if expected_hash:
+        actual_hash = _compute_protocol_content_hash(ref_path)
+        if actual_hash != expected_hash:
+            raise RuntimeError(
+                f"[B3] machine_constraints.protocol_ref={ref!r}'s content hash "
+                f"{actual_hash!r} != pre-registered {expected_hash!r} -- the pinned "
+                f"file's CONTENT changed since this brief was registered (e.g. windows "
+                f"silently redefined in place). Refusing to execute against a file that "
+                f"no longer matches what was pre-registered."
+            )
+
+    run_ctx_path.parent.mkdir(parents=True, exist_ok=True)
+    save_yaml(run_ctx_path, {
+        "run_type": "protocol_ref_pinned",
+        "protocol": bare_name,
+        "protocol_ref_pinned": True,
+    })
+    print(f"📌 [B3] Wrote run_context.yaml pin: run_type=protocol_ref_pinned, protocol={bare_name}")
+    return ref_path
+
+
+def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
+    """
+    K3 (B3+B10, §9 Q4): the ONE shared protocol-selection resolver, replacing the
+    two previously-duplicated copies inside run_tool_worker's signal_prescreen/
+    protocol_execution branches. Four branch classes: replication_diagnostic;
+    protocol-GENERATED forced_diagnostic; protocol_ref-PINNED (its own
+    distinguishable run_type, A3); and the claim-checked last_escalation fallback
+    (B10, §4) -- which now HARD-FAILS instead of silently reusing stale
+    campaign-wide state, unless this run is that escalation's own claimed consumer.
+    """
+    artifacts = run_dir / "artifacts"
+    run_ctx_path = artifacts / "run_context.yaml"
+    run_ctx = (load_yaml(run_ctx_path) or {}) if run_ctx_path.exists() else {}
+    run_type = run_ctx.get("run_type", "")
+
+    if run_type == "replication_diagnostic":
+        print("🔁 replication_diagnostic run — ignoring last_escalation, using baseline_v1.json")
+        return ROOT / "protocols" / "baseline_v1.json"
+
+    if run_type == "forced_diagnostic":
+        proto_name = run_ctx.get("protocol", "baseline_v1.json")
+        print(f"🔬 forced_diagnostic run — using protocol: {proto_name}")
+        return ROOT / "protocols" / proto_name
+
+    if run_type == "protocol_ref_pinned":
+        proto_name = run_ctx.get("protocol")
+        if not proto_name:
+            raise RuntimeError(
+                f"[K3] run_context.yaml declares run_type=protocol_ref_pinned but has no "
+                f"'protocol' key -- malformed pin state for {run_id}."
+            )
+        print(f"📌 [B3] protocol_ref_pinned run — using pinned protocol: {proto_name}")
+        return ROOT / "protocols" / proto_name
+
+    # B10 fallback: campaign-wide last_escalation, claim-checked (§4).
+    campaign = load_campaign_state()
+    last_escalation = campaign.get("last_escalation") or {}
+    claimed_by = last_escalation.get("claimed_by_run")
+    protocol_path_str = last_escalation.get("protocol_path")
+    if protocol_path_str and claimed_by == run_id:
+        # This run IS the escalation's own designated next run -- the fallback is
+        # correct FOR THIS ONE RUN, not stale reuse. Still printed loudly (never
+        # silent) and still exactly one hop -- claimed_by is not transitively
+        # inherited by any further lineage continuation from this run.
+        print(f"⚠️  [B10] Using campaign_state.last_escalation.protocol_path "
+              f"({protocol_path_str}) -- this run ({run_id}) is its claimed "
+              f"consumer. Fragile: prefer machine_constraints.protocol_ref on "
+              f"this run's own pre_registration.yaml instead.")
+        return Path(protocol_path_str)
+
+    update_state(path=run_dir, flags={"stale_escalation_unclaimed": True})
+    raise RuntimeError(
+        f"[B10] No run_context.yaml override and no machine_constraints.protocol_ref "
+        f"for {run_id}, and campaign_state.last_escalation "
+        f"(protocol_path={protocol_path_str!r}) is either empty or claimed by a "
+        f"different run ({claimed_by!r}) -- refusing to silently run against stale, "
+        f"unrelated campaign-wide state. Pin this run's protocol explicitly via "
+        f"machine_constraints.protocol_ref in pre_registration.yaml."
+    )
 
 
 def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, protocol_obj: dict) -> list:
@@ -2275,7 +2442,7 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
                 f"All stages must target {next_inst['symbol']} at {next_inst['timeframe']} timeframe."
             ),
         })
-        record_escalation("instrument", next_inst["symbol"], protocol_path=str(proto_path))
+        record_escalation("instrument", next_inst["symbol"], protocol_path=str(proto_path), claimed_by_run=next_run_id)
         diag = _extract_diagnostics(path)
         update_campaign_state_after_run(run_id, "search_space", "instrument", "", "escalate", diag)
         # A1 (K4 kernel): see _route_refine's identical comment above.
@@ -2296,7 +2463,7 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
         src_brief = path / "artifacts" / "research_brief.yaml"
         if src_brief.exists():
             shutil.copy(src_brief, ROOT / "runs" / next_run_id / "artifacts" / "research_brief.yaml")
-        record_escalation("timeframe", next_tf, protocol_path=str(proto_path))
+        record_escalation("timeframe", next_tf, protocol_path=str(proto_path), claimed_by_run=next_run_id)
         diag = _extract_diagnostics(path)
         update_campaign_state_after_run(run_id, "search_space", "timeframe", "", "escalate", diag)
         # A1 (K4 kernel): see _route_refine's identical comment above.
@@ -4031,7 +4198,22 @@ def run_loop(run_id: str):
     # machine_constraints, if present, BEFORE anything else runs. Idempotent.
     _machine_constraints = _load_machine_constraints(RUN_DIR)
     if _machine_constraints:
+        # A4 (K3/§9): runtime mutual-exclusion guard, independent of the
+        # materialization-time lint -- protects a hand-authored/hand-edited
+        # pre_registration.yaml fed directly to this script (bypassing
+        # run_campaign.py's materialization lint entirely, e.g. under --once/
+        # direct-stage invocation).
+        if _machine_constraints.get("protocol") and _machine_constraints.get("protocol_ref"):
+            raise RuntimeError(
+                f"[K3/A4] pre_registration.yaml's machine_constraints carries BOTH "
+                f"protocol={_machine_constraints.get('protocol')!r} (generate) AND "
+                f"protocol_ref={_machine_constraints.get('protocol_ref')!r} (pin) for "
+                f"{run_id} -- mutually exclusive. This should have been caught by "
+                f"run_campaign.py's materialization-time lint; a direct/hand-edited "
+                f"invocation bypassed it. Refusing to silently pick one."
+            )
         _ensure_protocol_from_constraints(RUN_DIR, run_id, _machine_constraints)
+        _ensure_protocol_ref_pinned(RUN_DIR, run_id, _machine_constraints)
 
     while True:
         current_stage = state.get("pending_stage")
