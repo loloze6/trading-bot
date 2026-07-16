@@ -313,6 +313,23 @@ orch.update_state(
    Before trusting a HALT message's stated reason, cross-check `pipeline_state.yaml`'s
    own `flags` dict directly — the log line can be wrong if an old flag was never cleared.
 
+   **STOP — do not skip straight to section 1b/1c after this step.** The
+   run-level reset above only touches `runs/<run_id>/pipeline_state.yaml`.
+   The QUEUE entry's own `status` field (`config/campaign_queue.yaml`) is a
+   SEPARATE piece of state, still reading `paused:<reason>`, and
+   `_select_entry` (`workflow/run_campaign.py`) never auto-selects it in
+   that state — verified directly in code: *"An entry already `in_progress`
+   (its lineage isn't finished) always wins... `blocked_on_*` / `done` /
+   `paused:*` entries are never auto-selected."* Jumping directly to the
+   plain launch command (section 1b/1c) without running step 3 below first
+   does not error — it silently prints `Queue exhausted — no ready or
+   in_progress entries remain.` and does nothing, because the queue-level
+   gate was never cleared. This exact mistake has cost real session time
+   twice (2026-07-16) before being caught. Step 3's `--resume` is the one
+   command that clears BOTH the run-level and queue-level state in a single,
+   guarded call — run it, not the plain launch command, immediately after
+   the reset above.
+
 3. Run:
 
 ```bash
