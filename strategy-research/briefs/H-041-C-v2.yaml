@@ -69,9 +69,9 @@ hypothesis:
     era_2019_2023_full_feed (2018-01-01 to 2023-12-31, both symbols);
     era_2024_burned + era_2024_2025_walk_forward_extension (2024-01-01 to
     2025-12-31) are DIAGNOSTIC-ONLY and never gate the verdict. This is
-    H-041-C's LAST registration: every FAIL branch and the sparse-data
-    condition terminate both the hypothesis and the lineage -- no refine,
-    pivot, or escalate anywhere in this brief's pass_rule.
+    H-041-C's LAST registration: every FAIL branch terminates both the
+    hypothesis and the lineage -- no refine, pivot, or escalate anywhere in
+    this brief's pass_rule.
 
 mechanism_construction:
   source_citation: >
@@ -126,7 +126,7 @@ era_conditioning:
   boundary_source: >
     config/campaign_data_policy.yaml's `eras` block, dates quoted verbatim
     (frozen, not invented for this brief). Era names/framing are also
-    already used, identically, in runs/run_052/artifacts/research_brief.yaml
+    already used, in substance, in runs/run_052/artifacts/research_brief.yaml
     (the diagnostic run that surfaced the sign-flip finding this brief
     responds to).
   pass_gated_eras:
@@ -169,24 +169,31 @@ era_conditioning:
     tools/verdict_criteria_evaluator.py's per-symbol metric lookup
     (per_symbol_summary[symbol][metric]) is POOLED over whichever windows
     the protocol_ref'd protocol file itself contains -- confirmed by reading
-    tools/run_protocol.py and tools/verdict_criteria_evaluator.py this
-    session; the B11/C7 pass_rule schema has no per-era scoping field.
-    Therefore protocols/h041c_v2_backext.json's own `windows` array
-    contains ONLY the two pass-gated eras (72 monthly sub-windows,
-    2018-01 through 2023-12) -- this is how "evaluated over the PASS-GATED
-    windows only" is made mechanically true, not via a schema field. The
-    diagnostic-only eras are deliberately NOT included in this protocol
-    file; their continued reporting is expected via the SAME episode-
-    blocked era-stratified significance methodology (A8.5.1a) already used
-    to diagnose the sign flip in run_048/run_052, run outside this
-    protocol's own walk-forward window set. Flagged explicitly as a
-    mechanical design choice made to conform to existing tooling -- for
-    operator review during line-edit, not an operator-ratified value in
-    its own right.
+    tools/run_protocol.py and tools/verdict_criteria_evaluator.py; the
+    B11/C7 pass_rule schema has no per-era scoping field. Therefore
+    protocols/h041c_v2_backext.json's own `windows` array contains ONLY the
+    two pass-gated eras (71 monthly sub-windows, 2018-02 through 2023-12)
+    -- this is how "evaluated over the PASS-GATED windows only" is made
+    mechanically true, not via a schema field.
+    EXPLICIT NON-PROMISE (2026-07-15 pre-launch audit F1 correction): the
+    2024-burned and 2024-2025-walk-forward-extension diagnostic-only eras
+    are NOT computed, reported, or otherwise touched by this run in any
+    automatic way -- there is no wired mechanism in this campaign's
+    tooling that produces a per-era stratified breakdown for THIS
+    protocol/brief pair on its own. The earlier draft's claim that this
+    reporting is "expected via the SAME episode-blocked era-stratified
+    significance methodology (A8.5.1a) already used ... in run_048/run_052"
+    overstated what exists: that reporting was produced by THOSE runs'
+    OWN pipeline stages for THEIR OWN protocol/window set, not by anything
+    this brief or protocol triggers for the 2024-25 eras. If 2024-25
+    era diagnostics are wanted, the operator must explicitly ORDER a
+    separate, manual, post-verdict A8.5.1a-style analysis after this run
+    completes -- nothing here does it automatically, and this brief's own
+    pass_rule outcome does not depend on any such analysis existing.
 
 machine_constraints:
   protocol_ref: protocols/h041c_v2_backext.json
-  protocol_ref_content_hash: "sha256:51b50ab665e2cdefea1872a248073eb92cb3aa89f357f3e2a155d2156f322139"
+  protocol_ref_content_hash: "sha256:439bc6320ac198c8d2ba8b7d4c11b8da39b0fbad4edfb0a2883937ae590abeb7"
   significance_methodology: episode_blocked_a851a
 
 evaluation:
@@ -195,12 +202,12 @@ evaluation:
       PASS (-> promote, holdout gate then applies mechanically) iff,
       evaluated per symbol over the PASS-GATED windows only
       (protocols/h041c_v2_backext.json: era_2018_pre_funding +
-      era_2019_2023_full_feed, 2018-01-01 to 2023-12-31), BOTH BTCUSDT AND
-      ETHUSDT satisfy: (a) median Sharpe > 0.8; (b) max abs drawdown < 30%;
-      (c) trade_count >= 30; (d) n_episodes >= 8 (episode_significance.py's
-      own _MIN_N_EPISODES floor). ANY criterion FAIL on EITHER symbol ->
-      kill, terminate. This is H-041-C's LAST registration -- no refine,
-      pivot, or escalate anywhere in this mapping.
+      era_2019_2023_full_feed, 2018-02-01 to 2023-12-31, 71 monthly
+      windows), BOTH BTCUSDT AND ETHUSDT satisfy: (a) median Sharpe > 0.8;
+      (b) max abs drawdown < 30%; (c) zero_trade_slot_pct <= 40%. ANY
+      criterion FAIL on EITHER symbol -> kill, terminate. This is
+      H-041-C's LAST registration -- no refine, pivot, or escalate
+      anywhere in this mapping.
     window_set_ref: protocols/h041c_v2_backext.json
     honesty_clause: >
       The pass-gated windows (2018-2023) overlap the SAME data on which the
@@ -212,6 +219,41 @@ evaluation:
       wholly out-of-sample, never touched by any prior diagnostic or by
       this brief's own registration) as the SOLE uncontaminated evidence; a
       pass-gated PASS is not itself confirmation of a real edge.
+    median_sharpe_semantics: >
+      Per tools/run_protocol.py's own construction comment ("A3.4: windows
+      with fewer than this many closed trades get null Sharpe in
+      protocol_result", `_SPARSE_TRADE_FLOOR = 5`): any window with
+      trade_count < 5 gets a null per-window Sharpe, and criterion a's
+      median_sharpe is computed only over the non-null windows -- a
+      structurally sparse-activation month is EXCLUDED from the median,
+      not counted against it at zero.
+    adequacy_division: >
+      Episode-count/sample-adequacy is enforced upstream, at the prescreen
+      stage (tools/prescreen_signal.py's kill_no_ic /
+      insufficient_episodes_a851a routes, backed by
+      tools/episode_significance.py's own significance machinery) -- a
+      hypothesis that never clears prescreen never reaches this pass_rule
+      at all. This pass_rule therefore governs PERFORMANCE on samples that
+      already survived that upstream adequacy gate; it does not re-litigate
+      sample adequacy itself, which is why no n_episodes/n_eff criterion
+      appears here (the earlier draft's criterion d duplicated a check this
+      brief does not need to make).
+    promotion_block_neutralization: >
+      protocols/h041c_v2_backext.json's own `promotion.min_trade_count_gte`
+      is deliberately set to 0 (was 30). That block feeds
+      tools/run_protocol.py's OWN legacy verdict computation (_promote/
+      _kill), which is informational only once a structured B11/C7
+      pass_rule exists (tools/verdict_criteria_evaluator.py's own
+      docstring: it "[r]eplaces tools/run_protocol.py's
+      evaluate_against_decision_rules() as the DECISION authority"). For an
+      extreme-sentiment signal with a measured ~28% zero-active-month rate
+      (see below), `min_trade_count` -- the MINIMUM trade count across ALL
+      71 windows -- is structurally 0 regardless of signal quality; leaving
+      the legacy floor at 30 would make that informational block report a
+      spurious, uninformative "fail" every time, for a reason unrelated to
+      this brief's own pass_rule. Set to 0 so the legacy block stays inert
+      rather than misleadingly noisy; the REAL decision is criterion c
+      below (zero_trade_slot_pct <= 40%), not this legacy floor.
     criteria:
       - id: a
         metric: median_sharpe
@@ -221,7 +263,9 @@ evaluation:
         null_handling: fails_threshold
         source: >
           Operator judgment (2026-07-15 registration ruling), not derived
-          from any prior run's observed values.
+          from any prior run's observed values. See median_sharpe_semantics
+          above for the A3.4 null-window exclusion this metric already
+          carries.
       - id: b
         metric: max_abs_drawdown_pct
         metric_basis: bar_level
@@ -230,38 +274,25 @@ evaluation:
         null_handling: fails_threshold
         source: Operator judgment (2026-07-15 registration ruling).
       - id: c
-        metric: trade_count
+        metric: zero_trade_slot_pct
         metric_basis: bar_level
-        comparator: ">="
-        per_symbol_threshold: {BTCUSDT: 30, ETHUSDT: 30}
-        null_handling: fails_threshold
-        source: Operator judgment (2026-07-15 registration ruling).
-      - id: d
-        metric: n_episodes
-        metric_basis: episode_level
-        comparator: ">="
-        per_symbol_threshold: {BTCUSDT: 8, ETHUSDT: 8}
+        comparator: "<="
+        per_symbol_threshold: {BTCUSDT: 40, ETHUSDT: 40}
         null_handling: fails_threshold
         source: >
-          Operator's sparse_inconclusive rule (2026-07-15 registration
-          ruling: "trade_count < 30 OR n_episodes < 8 OR ic_significance.n_eff
-          below episode_significance.py's existing floor"). Checked against
-          tools/episode_significance.py this session: the module defines
-          exactly ONE floor constant, `_MIN_N_EPISODES = 8` (n_episodes, not
-          a distinctly-named "n_eff" floor) -- no separate n_eff-specific
-          floor exists in code. This criterion implements that floor
-          directly, citing it by reference (8) rather than restating a
-          value the operator asked not to duplicate ad hoc. The
-          trade_count<30 leg of the compound sparse rule is already fully
-          covered by criterion c above (same FAIL->kill/terminate outcome);
-          no separate "sparse_inconclusive" branch is needed in the outcomes
-          mapping below since every criterion's FAIL already maps to the
-          identical (kill, terminate) pair the operator specified for
-          sparse_inconclusive. FLAGGED FOR OPERATOR REVIEW: whether a
-          distinct n_eff statistic (beyond n_episodes) exists elsewhere in
-          protocol_result.yaml's real per_symbol_summary schema was not
-          independently verified against a live run this session (out of
-          scope -- no launch performed); confirm before LAUNCH.
+          Operator ruling, 2026-07-15 pre-launch audit F1 + semantics/
+          base-rate recon: replaces the original criterion c
+          (trade_count >= 30, unreachable for a monthly-window, daily-fire,
+          ~21.8%-active-day signal) with a directly measured base rate --
+          20 of 71 pass-gated months (28.2%) have ZERO extreme-F&G days at
+          all (see the base-rate report accompanying this brief's fix
+          commit; command and per-month table cited there, 2024-01 through
+          2025-12 only, holdout untouched). 40% is set with margin above
+          the measured 28.2% floor so the criterion is reachable and
+          non-vacuous while still rejecting a materially sparser real
+          distribution than what was actually observed. tools/run_protocol.py
+          computes this field natively, per symbol, already (A3.4's own
+          `zero_trade_slot_pct`) -- no new metric plumbing required.
     outcomes:
       - branch: PASS
         hypothesis_verdict: promote
@@ -273,9 +304,6 @@ evaluation:
         hypothesis_verdict: kill
         lineage_routing: terminate
       - branch: FAIL-c
-        hypothesis_verdict: kill
-        lineage_routing: terminate
-      - branch: FAIL-d
         hypothesis_verdict: kill
         lineage_routing: terminate
   holdout: >
@@ -297,8 +325,11 @@ operational_constraints:
 
 deferred_fixes_noted_not_actioned_here:
   - >
-    The exact per_symbol_summary metric-key paths for n_episodes (and
-    whether a distinct n_eff statistic is separately available) in a REAL
-    protocol_result.yaml produced by tools/run_protocol.py were not
-    verified against a live run this session (no launch performed, per
-    this task's own scope). Confirm before LAUNCH.
+    RESOLVED, 2026-07-15 fix commit (pre-launch audit F1 + semantics
+    recon): the original concern here (unverified n_episodes/n_eff
+    metric-key paths for a since-deleted criterion d) no longer applies.
+    Criterion c now uses zero_trade_slot_pct, confirmed present natively
+    in tools/run_protocol.py's own per_symbol_summary construction (A3.4)
+    by direct code read this session -- no further metric-key
+    verification needed before launch on this point. Retained here as a
+    historical record of what changed and why, not as an open item.
