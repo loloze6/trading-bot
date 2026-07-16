@@ -431,6 +431,75 @@ def test_materialize_run_rejects_incoherent_protocol_selection(campaign_root):
     assert not (runs_dir / "run_900" / "artifacts" / "pre_registration.yaml").exists()
 
 
+# ---------------------------------------------------------------------------
+# B4/B7 rider (2026-07-16): pass_rule copy-through on _materialize_run's
+# fresh_launch path, mirroring _materialize_refinement_run's own extraction
+# (brief["evaluation"]["pass_rule"] -> pre_registration["pass_rule"], same
+# key-path and shape) -- closes the documented gap in _materialize_run's own
+# prior comment ("machine_constraints-only briefs don't carry a pass_rule
+# block yet").
+# ---------------------------------------------------------------------------
+
+def _fresh_launch_brief_with_pass_rule(protocol_ref: str = "protocols/foo.json") -> dict:
+    return {
+        "strategy_domain": "test",
+        "machine_constraints": {"protocol_ref": protocol_ref},
+        "evaluation": {
+            "pass_rule": {
+                "statement": "PASS iff x.",
+                "window_set_ref": protocol_ref,
+                "criteria": [
+                    {"id": "a", "metric": "median_sharpe", "metric_basis": "bar_level",
+                     "comparator": ">=", "per_symbol_threshold": {"BTCUSDT": 0.1},
+                     "null_handling": "fails_threshold"},
+                ],
+                "outcomes": [
+                    {"branch": "PASS", "hypothesis_verdict": "promote", "lineage_routing": None},
+                    {"branch": "FAIL-a", "hypothesis_verdict": "kill", "lineage_routing": "terminate"},
+                ],
+            },
+        },
+    }
+
+
+def test_materialize_run_fresh_launch_pass_rule_copy_through(campaign_root):
+    """A fresh-launch brief's evaluation.pass_rule must reach
+    pre_registration.yaml['pass_rule'] verbatim -- the exact gap this rider
+    closes, proven by round-tripping through the real _materialize_run call,
+    not just asserting the code exists."""
+    runs_dir = campaign_root["runs_dir"]
+    root = campaign_root["root"]
+    _write_fresh_scaffold(runs_dir, "run_901")
+    _write_protocol(root, "foo.json")
+
+    brief = _fresh_launch_brief_with_pass_rule()
+    camp._materialize_run("run_901", brief)
+
+    pre_reg_path = runs_dir / "run_901" / "artifacts" / "pre_registration.yaml"
+    assert pre_reg_path.exists()
+    pre_registration = camp.orch.load_yaml(pre_reg_path)
+    assert pre_registration["pass_rule"] == brief["evaluation"]["pass_rule"]
+
+
+def test_materialize_run_fresh_launch_rejects_non_total_pass_rule_mapping(campaign_root):
+    """A fresh-launch brief with a deliberately non-total outcomes mapping
+    (a FAIL branch missing both hypothesis_verdict and lineage_routing, no
+    discretion opt-in) must be rejected by the SAME B11 lint the refinement
+    path already enforces -- one gate, not two divergent ones."""
+    runs_dir = campaign_root["runs_dir"]
+    root = campaign_root["root"]
+    _write_fresh_scaffold(runs_dir, "run_902")
+    _write_protocol(root, "foo.json")
+
+    brief = _fresh_launch_brief_with_pass_rule()
+    brief["evaluation"]["pass_rule"]["outcomes"][1]["hypothesis_verdict"] = None
+    brief["evaluation"]["pass_rule"]["outcomes"][1]["lineage_routing"] = None
+
+    with pytest.raises(ValueError, match="B11 total-mapping lint"):
+        camp._materialize_run("run_902", brief)
+    assert not (runs_dir / "run_902" / "artifacts" / "pre_registration.yaml").exists()
+
+
 def test_materialize_refinement_run_rejects_nested_protocol_ref(campaign_root):
     runs_dir = campaign_root["runs_dir"]
     root = campaign_root["root"]

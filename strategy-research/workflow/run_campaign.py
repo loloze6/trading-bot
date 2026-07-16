@@ -209,6 +209,16 @@ def _materialize_run(run_id: str, brief: dict):
 
     machine_constraints = brief.get("machine_constraints")
     if machine_constraints:
+        # B4/B7 rider (2026-07-16): pass_rule copy-through on the fresh_launch
+        # path, mirroring _materialize_refinement_run's own extraction exactly
+        # (same brief key-path -- brief["evaluation"]["pass_rule"] -- same
+        # top-level pre_registration["pass_rule"] placement) -- closes the
+        # documented gap this function's own prior comment named ("machine_
+        # constraints-only briefs don't carry a pass_rule block yet"). One
+        # gate, not two divergent ones: a fresh-launch brief that DOES
+        # register a structured pass_rule is now linted and evaluated
+        # identically to a refinement brief's.
+        evaluation = brief.get("evaluation") or {}
         pre_registration = {
             "run_id": run_id,
             "hypothesis_id": f"{run_id}-initial",
@@ -219,14 +229,15 @@ def _materialize_run(run_id: str, brief: dict):
                 "pin the protocol so this run cannot silently fall back to a "
                 "stale campaign_state.last_escalation protocol (F4d)."
             ),
+            "pass_rule": evaluation.get("pass_rule"),
             "machine_constraints": machine_constraints,
         }
-        # B11 (K2 kernel): materialization-time total-mapping lint. A no-op
-        # for this path today (machine_constraints-only briefs don't carry a
-        # pass_rule block yet), but applied unconditionally so any future
-        # fresh-launch brief that DOES add a structured pass_rule is linted
-        # the same way a refinement brief is (_materialize_refinement_run,
-        # below) -- one gate, not two divergent ones.
+        # B11 (K2 kernel): materialization-time total-mapping lint. Previously
+        # a no-op on this path (machine_constraints-only briefs never carried
+        # a pass_rule block); now receives real content whenever the rider
+        # above finds one, linted the same way a refinement brief is
+        # (_materialize_refinement_run, below) -- one gate, not two divergent
+        # ones.
         _violations, _warnings = orch._lint_pass_rule_total_mapping(pre_registration)
         if _violations:
             raise ValueError(
