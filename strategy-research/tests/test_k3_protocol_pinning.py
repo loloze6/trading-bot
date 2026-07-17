@@ -676,3 +676,80 @@ def test_stamp_protocol_hash_stable_across_key_reordering():
     a = {"symbols": ["BTCUSDT"], "timeframe": "1d", "windows": []}
     b = {"timeframe": "1d", "windows": [], "symbols": ["BTCUSDT"]}
     assert stamp_protocol.compute_protocol_content_hash(a) == stamp_protocol.compute_protocol_content_hash(b)
+
+
+# ---------------------------------------------------------------------------
+# SDK result-misclassification retry rider (2026-07-16): claude_agent_sdk
+# 0.2.82's query loop can raise a bare Exception whose message is the exact
+# string "Claude Code returned an error result: success" (an SDK-internal
+# is_error=True/subtype="success" contradiction, verified against the
+# installed package -- see _invoke_agent_with_yaml_retry's own comment).
+# _invoke_agent_with_yaml_retry now retries exactly once on this exact
+# message before re-raising unchanged.
+# ---------------------------------------------------------------------------
+
+def test_invoke_agent_with_yaml_retry_recovers_from_sdk_error_result_success(monkeypatch, capsys):
+    root = rpr.ROOT
+    run_dir = _minimal_run(root, "run_600")
+    expected_output = run_dir / "artifacts" / "deliverable.yaml"
+    expected_output.write_text("key: value\n", encoding="utf-8")
+
+    calls = {"n": 0}
+
+    async def _fake_async_invoke_agent(stage_name, run_id, retry_context=None):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise Exception(rpr._SDK_ERROR_RESULT_SUCCESS_MSG)
+        # second call: succeed -- deliverable is already on disk, nothing to write
+
+    monkeypatch.setattr(rpr, "async_invoke_agent", _fake_async_invoke_agent)
+
+    rpr._invoke_agent_with_yaml_retry("some_stage", "run_600", run_dir, [expected_output], {})
+
+    assert calls["n"] == 2, "must retry exactly once on the exact SDK message"
+    captured = capsys.readouterr()
+    assert captured.out.count("[SDK-RETRY]") == 1, "warning line must be emitted exactly once"
+
+
+def test_invoke_agent_with_yaml_retry_reraises_on_second_sdk_error_result_success(monkeypatch):
+    root = rpr.ROOT
+    run_dir = _minimal_run(root, "run_601")
+    expected_output = run_dir / "artifacts" / "deliverable.yaml"
+    expected_output.write_text("key: value\n", encoding="utf-8")
+
+    calls = {"n": 0}
+
+    async def _always_fails(stage_name, run_id, retry_context=None):
+        calls["n"] += 1
+        raise Exception(rpr._SDK_ERROR_RESULT_SUCCESS_MSG)
+
+    monkeypatch.setattr(rpr, "async_invoke_agent", _always_fails)
+
+    with pytest.raises(Exception) as exc_info:
+        rpr._invoke_agent_with_yaml_retry("some_stage", "run_601", run_dir, [expected_output], {})
+
+    assert str(exc_info.value) == rpr._SDK_ERROR_RESULT_SUCCESS_MSG
+    assert calls["n"] == 2, "must attempt exactly twice before re-raising unchanged"
+
+
+def test_invoke_agent_with_yaml_retry_does_not_catch_other_messages(monkeypatch):
+    """Any OTHER exception message -- including a different 'error result:'
+    text -- must propagate immediately, no retry."""
+    root = rpr.ROOT
+    run_dir = _minimal_run(root, "run_602")
+    expected_output = run_dir / "artifacts" / "deliverable.yaml"
+    expected_output.write_text("key: value\n", encoding="utf-8")
+
+    calls = {"n": 0}
+
+    async def _different_error(stage_name, run_id, retry_context=None):
+        calls["n"] += 1
+        raise Exception("Claude Code returned an error result: error_during_execution")
+
+    monkeypatch.setattr(rpr, "async_invoke_agent", _different_error)
+
+    with pytest.raises(Exception) as exc_info:
+        rpr._invoke_agent_with_yaml_retry("some_stage", "run_602", run_dir, [expected_output], {})
+
+    assert str(exc_info.value) == "Claude Code returned an error result: error_during_execution"
+    assert calls["n"] == 1, "a different message must never be retried"

@@ -493,6 +493,33 @@ def _build_yaml_retry_context(err: "UnrepairableYAMLError") -> str:
     )
 
 
+
+# SDK result-misclassification rider (2026-07-16, run_054+run_058 prior art;
+# claude_agent_sdk==0.2.82 installed in this venv, verified against its own
+# source this session, not assumed): the SDK's query loop
+# (_internal/query.py) can raise a bare Exception whose message is the
+# literal, self-contradictory string below. Root cause, read directly out of
+# the installed package: when the CLI's result message carries
+# `is_error=True` with an EMPTY `errors` list, the SDK falls back to that
+# turn's own `subtype` field as the error text (_internal/query.py, the
+# `if message.get("is_error"): ... self._last_error_result_text = ...`
+# block, ~lines 302-307 in this install); if that `subtype` happens to be
+# the literal string "success" -- an SDK-internal inconsistency
+# (is_error=True paired with subtype="success"), not anything this
+# orchestrator or the agent's own output did wrong -- a later ProcessError's
+# message gets replaced with this exact nonsensical text (same file, the
+# `except Exception as e: ... if isinstance(e, ProcessError) and
+# self._last_error_result_text is not None: error_text = f"Claude Code
+# returned an error result: {self._last_error_result_text}"` block, ~lines
+# 326-342). There is no structured exception type upstream distinguishing
+# this from a real failure -- bare Exception + EXACT string match is
+# deliberate here, not a shortcut: a future reader must NOT broaden this
+# into a general except-Exception catch-all, since that would also swallow
+# real agent/CLI failures that happen to share the generic "Claude Code
+# returned an error result: ..." prefix with a genuine, different subtype.
+_SDK_ERROR_RESULT_SUCCESS_MSG = "Claude Code returned an error result: success"
+
+
 def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path, expected_outputs: list, state: dict):
     """
     F4b (2026-07-05, run_047): invoke the agent for `current_stage`; if its
@@ -505,7 +532,17 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
     """
     retry_ctx = None
     for attempt in range(2):
-        asyncio.run(async_invoke_agent(current_stage, run_id, retry_context=retry_ctx))
+        for sdk_attempt in range(2):
+            try:
+                asyncio.run(async_invoke_agent(current_stage, run_id, retry_context=retry_ctx))
+                break
+            except Exception as sdk_err:
+                if sdk_attempt == 0 and str(sdk_err) == _SDK_ERROR_RESULT_SUCCESS_MSG:
+                    print(f"⚠️ [SDK-RETRY] {current_stage}: claude_agent_sdk 0.2.82 "
+                          f"result-misclassification defect (is_error=True/subtype="
+                          f"'success' contradiction) — re-invoking once, prompt unchanged.")
+                    continue
+                raise  # any other message, or a second occurrence — unchanged
         try:
             ensure_files(expected_outputs)
             return

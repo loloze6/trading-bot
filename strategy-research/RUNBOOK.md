@@ -247,7 +247,7 @@ of these are wishlist-trigger questions, and none are auto-resolved.
 | `provisional_promote_awaiting_holdout` | A hypothesis passed walk-forward (`promote`) and `promotion_audit.yaml` is written — the single-use, irreversible holdout evaluation is next. | Run the holdout backtest on the range in `config/campaign_data_policy.yaml`'s `holdout_range` by hand, write `runs/<run_id>/artifacts/holdout_result.yaml` (`status: pass\|fail`), then resume. |
 | `provisional_promote_holdout_inconclusive` | `holdout_result.yaml` exists but its `status` isn't `pass`/`fail`. | Investigate and correct `holdout_result.yaml`, then resume. |
 | `budget_breaker` | This run's weighted-token spend exceeded `config/campaign_config.yaml`'s `orchestrator.token_budget_per_run_weighted_units`. | Review why (check `runs/<run_id>/pipeline_state.yaml`'s `audit_log` per-stage breakdown printed to console). Widen the budget constant only if the spend was legitimate, or fix a runaway stage. Then resume. |
-| `unhandled_exception` | `run_loop`'s own except-block caught something. Detail is in the log line and `pipeline_state.yaml`'s `last_error`. | Fix the root cause, then resume. |
+| `unhandled_exception` | `run_loop`'s own except-block caught something. Detail is in the log line and `pipeline_state.yaml`'s `last_error`. **Known specific case (2026-07-16):** `last_error` reading exactly `Claude Code returned an error result: success` is a `claude_agent_sdk==0.2.82` result-misclassification defect (`is_error=True` paired with `subtype="success"` — see `_invoke_agent_with_yaml_retry`'s own code comment, `workflow/run_phase1_research.py`), not a real agent/deliverable failure. As of this commit, `_invoke_agent_with_yaml_retry` auto-retries this EXACT message once per stage invocation before it can ever reach a human as a halt. If it still halts with this exact message, the failure repeated twice in the same stage invocation and is a real, non-transient failure — do not assume it will clear on a bare retry. | Fix the root cause, then resume. For the known SDK case above: confirm `runs/<run_id>/pipeline_state.yaml`'s `last_error` is exactly this string and that it recurred (not a first occurrence — those are now auto-handled); if so, treat as a genuine failure and investigate normally, do not just retry blindly a third time. |
 | `stale_escalation_unclaimed` | **(B10, K3 kernel, 2026-07-15)** `_resolve_protocol_path` refused to run this stage: no `run_context.yaml` override (`replication_diagnostic`/`forced_diagnostic`/`protocol_ref_pinned`), no `machine_constraints.protocol_ref` on this run's `pre_registration.yaml`, AND `campaign_state.yaml`'s `last_escalation.claimed_by_run` is either absent or names a DIFFERENT run — the exact silent-stale-fallback bug B10 exists to close (this run would otherwise have picked up an unrelated prior escalation's protocol, the F4d-class failure that hit run_050). Flag `stale_escalation_unclaimed` is set on `pipeline_state.yaml` BEFORE the `RuntimeError` is raised, so this reason is distinguishable from a generic `unhandled_exception` even though `status` is `failed` in both cases. | Pin this run's protocol explicitly: add `machine_constraints.protocol_ref: protocols/<name>.json` (optionally `protocol_ref_content_hash`, see `tools/stamp_protocol.py`) to `pre_registration.yaml`. Only if this run genuinely IS the escalation's own intended next run, alternative fix: set `campaign_state.yaml`'s `last_escalation.claimed_by_run` to this `run_id` by hand (rare — prefer `protocol_ref` pinning). Then resume. |
 | `component_gap` | `backtest_specification` needs an engine piece that doesn't exist yet. | Extend the engine per `STRATEGY_EXTENDING.md`, then resume. |
 | `new_component_escalation` | `campaign_review`/verdict routing decided a brand-new engine component is needed. | Author the component, then resume. |
@@ -350,6 +350,27 @@ the normal loop call `run_loop()` again, which continues from wherever
    (or note that `--resume` itself already falls through into the normal loop after
    a successful check — confirmed live: it resumed `run_053` and kept going all the
    way to a `completed_reframed` → `run_054` continuation in the same invocation).
+
+5. **Known limitation: a crash-resume OVERWRITES the stage's `attempt_N` audit
+   entry, it does not append a new one** (verified 2026-07-16,
+   `workflow/run_phase1_research.py`). The `audit_log` key for a stage's cost/
+   timing record is `f"{stage_name}_attempt_{attempt_num}"`, where
+   `attempt_num` comes from the run's own handoff file's
+   `injected_context.refinement_attempt` — but that field is itself
+   unconditionally regenerated from `state["counters"]["refinements_used"]`
+   every time `run_loop()` re-enters a stage (`handoff_data["injected_context"]
+   = {"refinement_attempt": str(state.get("counters", {}).get(
+   "refinements_used", 0)), ...}`, "Create or overwrite... with the latest
+   dynamic info from the state"). So resuming a crashed stage and re-running it
+   silently replaces the PRIOR attempt's audit_log entry (same key, new
+   timestamp/cost/tokens) rather than adding a new one, unless
+   `refinements_used` has genuinely changed between the two attempts. **Do NOT
+   hand-bump `counters.refinements_used` to work around this and preserve
+   audit history** — that counter is the refinement-BUDGET gate
+   (`governance.max_refinements_after_validation`), not an attempt tally;
+   incrementing it to fix a cosmetic audit-log overwrite would falsely consume
+   real refinement budget. Accept the overwrite as a known, cosmetic
+   limitation of the audit log under a crash-resume.
 
 ---
 
