@@ -753,3 +753,78 @@ def test_invoke_agent_with_yaml_retry_does_not_catch_other_messages(monkeypatch)
 
     assert str(exc_info.value) == "Claude Code returned an error result: error_during_execution"
     assert calls["n"] == 1, "a different message must never be retried"
+
+
+# ---------------------------------------------------------------------------
+# B7: _apply_b7_mandatory_inputs -- deterministic mandatory-inputs union for
+# validation and every downstream LLM stage (PIPELINE_IMPROVEMENTS_20260712_v4.md
+# B7 -- three in-the-wild occurrences of a stage deciding without ever
+# reading pre_registration.yaml, most recently run_058).
+# ---------------------------------------------------------------------------
+
+def test_apply_b7_mandatory_inputs_adds_pre_registration_when_handoff_omits_it():
+    root = rpr.ROOT
+    run_dir = _minimal_run(root, "run_610")
+    (run_dir / "artifacts" / "pre_registration.yaml").write_text("pass_rule: {}\n", encoding="utf-8")
+
+    handoff = {"required_inputs": [{"path": "artifacts/expanded_hypothesis_card.yaml", "reason": "x"}]}
+    rpr._apply_b7_mandatory_inputs("validation", handoff, run_dir)
+
+    paths = {req["path"] for req in handoff["required_inputs"]}
+    assert "artifacts/pre_registration.yaml" in paths, \
+        "validation must see pre_registration.yaml even when the handoff omits it"
+    assert "artifacts/expanded_hypothesis_card.yaml" in paths, "must not drop the original entry"
+
+
+def test_apply_b7_mandatory_inputs_skips_missing_file_without_crashing():
+    root = rpr.ROOT
+    run_dir = _minimal_run(root, "run_611")
+    # deliberately do NOT create pre_registration.yaml or user_brief_verbatim.yaml
+
+    handoff = {"required_inputs": []}
+    rpr._apply_b7_mandatory_inputs("validation", handoff, run_dir)  # must not raise
+
+    paths = {req["path"] for req in handoff["required_inputs"]}
+    assert "artifacts/pre_registration.yaml" not in paths, \
+        "a missing file must degrade gracefully, never be force-required"
+    assert "artifacts/user_brief_verbatim.yaml" not in paths
+
+
+def test_apply_b7_mandatory_inputs_deduplicates_already_listed_path():
+    root = rpr.ROOT
+    run_dir = _minimal_run(root, "run_612")
+    (run_dir / "artifacts" / "pre_registration.yaml").write_text("pass_rule: {}\n", encoding="utf-8")
+
+    handoff = {"required_inputs": [{"path": "artifacts/pre_registration.yaml", "reason": "already listed"}]}
+    rpr._apply_b7_mandatory_inputs("validation", handoff, run_dir)
+
+    matching = [req for req in handoff["required_inputs"] if req["path"] == "artifacts/pre_registration.yaml"]
+    assert len(matching) == 1, "must not duplicate a path the handoff already lists"
+
+
+def test_apply_b7_mandatory_inputs_noop_for_non_mandatory_stage():
+    root = rpr.ROOT
+    run_dir = _minimal_run(root, "run_613")
+    (run_dir / "artifacts" / "pre_registration.yaml").write_text("pass_rule: {}\n", encoding="utf-8")
+
+    handoff = {"required_inputs": []}
+    rpr._apply_b7_mandatory_inputs("innovation_expansion", handoff, run_dir)
+
+    assert handoff["required_inputs"] == [], \
+        "stages upstream of validation must be untouched by the B7 union"
+
+
+def test_apply_b7_mandatory_inputs_covers_every_downstream_llm_stage():
+    root = rpr.ROOT
+    for stage in ("validation", "refinement_planner", "backtest_specification",
+                  "verdict_interpreter", "campaign_review"):
+        run_dir = _minimal_run(root, f"run_614_{stage}")
+        (run_dir / "artifacts" / "pre_registration.yaml").write_text("pass_rule: {}\n", encoding="utf-8")
+        (run_dir / "artifacts" / "user_brief_verbatim.yaml").write_text("strategy_domain: x\n", encoding="utf-8")
+
+        handoff = {"required_inputs": []}
+        rpr._apply_b7_mandatory_inputs(stage, handoff, run_dir)
+
+        paths = {req["path"] for req in handoff["required_inputs"]}
+        assert paths == {"artifacts/pre_registration.yaml", "artifacts/user_brief_verbatim.yaml"}, \
+            f"stage {stage} must receive both mandatory inputs"
