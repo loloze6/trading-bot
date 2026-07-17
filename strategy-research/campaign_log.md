@@ -72,3 +72,32 @@ C:\Users\alauz\Documents\Projects\trading-bot\trading-bot\core\backtester.py:234
 - 2026-07-13T14:16:33Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
 - 2026-07-13T14:16:33Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
 - 2026-07-13T14:16:33Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal
+- 2026-07-16T10:56:50Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-16T10:56:51Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-16T10:56:51Z [DRY RUN] queue: selected entry 'H-041-C-v2' (status=ready, brief=briefs/H-041-C-v2.yaml)
+- 2026-07-16T10:56:51Z [DRY RUN] classified next action for 'H-041-C-v2': 'fresh_launch'
+- 2026-07-16T11:37:17Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-16T11:37:17Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-16T11:37:17Z [DRY RUN] queue: selected entry 'H-041-C-v2' (status=ready, brief=briefs/H-041-C-v2.md)
+- 2026-07-16T11:37:17Z [DRY RUN] classified next action for 'H-041-C-v2': 'fresh_launch'
+- 2026-07-16T11:37:17Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=sentiment_contrarian, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-07-16T11:37:17Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-07-16T11:37:17Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-07-16T11:37:17Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-07-16T11:37:17Z [DRY RUN] wishlist-trigger classification OK: detected family="daily_timeframe_er_overlay: checked 15 record(s); none satisfy all 3 condition(s) (source=kb_finding, family='daily_timeframe_er_overlay')"
+- 2026-07-16T11:37:17Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-07-16T11:37:17Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-07-16T11:37:42Z RECONCILE: 57 run dir(s) scanned, 57 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-16T11:37:43Z LAUNCH H-041-C-v2 -> run_058 (brief=briefs/H-041-C-v2.md)
+- 2026-07-16T11:44:15Z STAGE  H-041-C-v2 / run_058: pending_stage=innovation_expansion status=failed (no scored artifacts yet)
+- 2026-07-16T11:44:16Z HALT — unhandled_exception: Missing files: ['runs\\run_058\\artifacts\\innovation_notes.yaml']. Campaign stopped on H-041-C-v2 / run_058. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-16T12:49:34Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-16T12:49:34Z Queue exhausted — no ready or in_progress entries remain.
+- 2026-07-16T14:07:08Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-16T14:08:45Z STAGE  H-041-C-v2 / run_058: pending_stage=validation status=failed (no scored artifacts yet)
+- 2026-07-16T14:08:46Z HALT — unhandled_exception: Claude Code returned an error result: success. Campaign stopped on H-041-C-v2 / run_058. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-17T10:46:13Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-17T10:47:44Z STAGE  H-041-C-v2 / run_058: pending_stage=completed_rejected status=rejected (no scored artifacts yet)
+- 2026-07-17T10:47:45Z DONE H-041-C-v2 (run_058) -> completed_rejected
+- 2026-07-17T10:47:45Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-17T10:47:45Z Queue exhausted — no ready or in_progress entries remain.
