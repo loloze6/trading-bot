@@ -264,6 +264,60 @@ def _materialize_run(run_id: str, brief: dict):
 
 
 # ---------------------------------------------------------------------------
+# B15: first-class registration -> schedulable queue entry. Retires the
+# per-registration hand-edit to campaign_queue.yaml that H-041-C-v2 required
+# (PIPELINE_IMPROVEMENTS_20260712_v4.md B15) -- a fully-authored brief was
+# previously never schedulable without a manual queue append outside any
+# tool's own write path.
+# ---------------------------------------------------------------------------
+
+def register_hypothesis(brief_path: Path, priority: int, notes: str) -> int:
+    """Parse `brief_path` via the EXISTING _parse_brief_frontmatter (propagates
+    its own ValueError, unmodified, on a malformed brief); derive the queue id
+    from the brief's filename stem; refuse (one log line, nonzero return) if
+    that id already exists in the queue; otherwise append an entry mirroring
+    the H-041-C-v2 entry's own field set (id, brief_path, status: ready,
+    priority, source: operator_ratified, relation: new_registration, notes,
+    run_ids: [], no outcome key) via the EXISTING _load_queue/_save_queue
+    pair. Emits exactly one log line, success or refusal, never zero."""
+    brief_path = Path(brief_path)
+    try:
+        _parse_brief_frontmatter(brief_path)
+    except ValueError as err:
+        _log(f"REGISTER REFUSED: malformed brief {brief_path}: {err}")
+        return 1
+
+    new_id = brief_path.stem
+    queue = _load_queue()
+    existing_ids = {e["id"] for e in queue["queue"]}
+    if new_id in existing_ids:
+        _log(f"REGISTER REFUSED: queue id '{new_id}' already exists (brief={brief_path}).")
+        return 1
+
+    try:
+        brief_rel = brief_path.relative_to(ROOT)
+    except ValueError:
+        brief_rel = brief_path
+    brief_rel_str = str(brief_rel).replace("\\", "/")
+
+    entry = {
+        "id": new_id,
+        "brief_path": brief_rel_str,
+        "status": "ready",
+        "priority": priority,
+        "source": "operator_ratified",
+        "relation": "new_registration",
+        "notes": notes,
+        "run_ids": [],
+    }
+    queue["queue"].append(entry)
+    _save_queue(queue)
+    _log(f"REGISTER: queue entry '{new_id}' appended (brief={brief_rel_str}, "
+         f"priority={priority}, status=ready).")
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # B1 (K4 kernel): refinement_brief_path -- first-class refinement-brief
 # ingestion for an ALREADY in_progress queue entry. See design note section 7.
 # ---------------------------------------------------------------------------
@@ -1301,6 +1355,17 @@ if __name__ == "__main__":
                         help="Process a single queue step (one launch/continue/advance), then exit.")
     parser.add_argument("--resume", action="store_true",
                         help="Resume a campaign halted at a hard pause, after the human has resolved it.")
+    subparsers = parser.add_subparsers(dest="command")
+    register_parser = subparsers.add_parser(
+        "register",
+        help="B15: register a fully-authored brief as a new, schedulable queue entry."
+    )
+    register_parser.add_argument("--brief", required=True, type=Path,
+                                  help="Path to the brief .md (frontmatter-format).")
+    register_parser.add_argument("--priority", required=True, type=int,
+                                  help="Queue priority (lower sorts first, matching _select_entry).")
+    register_parser.add_argument("--notes", required=True,
+                                  help="One-line-or-more notes recorded on the queue entry.")
     args = parser.parse_args()
 
     if Path(".").resolve() != ROOT:
@@ -1308,6 +1373,9 @@ if __name__ == "__main__":
               f"ROOT=Path('.') convention). Current CWD: {Path('.').resolve()}. "
               f"cd into strategy-research/ and retry.")
         sys.exit(1)
+
+    if args.command == "register":
+        sys.exit(register_hypothesis(args.brief, args.priority, args.notes))
 
     if args.dry_run:
         dry_run_verify()
