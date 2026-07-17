@@ -681,17 +681,22 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         elif req in handoff.get("required_inputs", []):
             raise FileNotFoundError(f"Agent strictly requires {filepath}, but it is missing.")
 
+    b7_deference_block = (
+        f"\n    {_B7_DEFERENCE_SENTENCE}\n"
+        if stage_name in _B7_MANDATORY_INPUT_STAGES else ""
+    )
+
     # 4. Construct the strict prompt (Combining Persona + Instructions)
     full_prompt = f"""
     PERSONA AND RULES:
     {system_prompt}
-    
+
     YOUR HANDOFF INSTRUCTIONS:
     {yaml.dump(handoff, sort_keys=False)}
-    
+
     YOUR PROVIDED CONTEXT FILES:
     {chr(10).join(context_blocks)}
-    
+    {b7_deference_block}
     INSTRUCTIONS FOR OUTPUT:
     Fulfill the objective defined in the handoff. You must generate the exact deliverables requested.
     Output ONLY valid YAML blocks for your deliverables. Do not output conversational filler.
@@ -859,13 +864,18 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
                 content = f.read()
             context_blocks.append(f"--- CONTENT OF {req['path']} ---\n{content}\n")
 
+    b7_deference_block = (
+        f"\n    {_B7_DEFERENCE_SENTENCE}\n"
+        if stage_name in _B7_MANDATORY_INPUT_STAGES else ""
+    )
+
     full_prompt = f"""
     YOUR HANDOFF INSTRUCTIONS:
     {yaml.dump(handoff, sort_keys=False)}
 
     YOUR PROVIDED CONTEXT FILES:
     {chr(10).join(context_blocks)}
-
+    {b7_deference_block}
     YAML FORMATTING RULES (violations will crash the pipeline):
     - Any string value containing a colon (:) MUST be wrapped in double quotes.
     - Example bad:  description: Split into windows (0.0-0.15, 0.15-0.25, 0.25+) to verify costs
@@ -1103,6 +1113,54 @@ async def run_tool_worker(stage_name: str, run_id: str):
         raise ValueError(f"No tool implementation for stage: {stage_name}")
 
 
+# B7: stages at/after the validation gate must see the pre-registered
+# pass_rule and original brief regardless of what a given run's handoff
+# happens to list -- PIPELINE_IMPROVEMENTS_20260712_v4.md B7 (three
+# in-the-wild occurrences of a stage deciding without ever reading
+# pre_registration.yaml, most recently run_058's validation_decision.yaml
+# misdescribing the very registration it vetoed). This is a deterministic
+# union, not stage discretion: each path is added to required_inputs only
+# when the file actually exists on disk for the run (missing files are
+# skipped, never force-required), so the union degrades gracefully on
+# older runs that predate pre_registration.yaml/user_brief_verbatim.yaml.
+_B7_MANDATORY_INPUT_PATHS = (
+    "artifacts/pre_registration.yaml",
+    "artifacts/user_brief_verbatim.yaml",
+)
+_B7_MANDATORY_INPUT_STAGES = {
+    "validation",
+    "refinement_planner",
+    "backtest_specification",
+    "verdict_interpreter",
+    "campaign_review",
+}
+_B7_DEFERENCE_SENTENCE = (
+    "B7: pre-registered artifacts (pre_registration.yaml / "
+    "user_brief_verbatim.yaml, if provided above) outrank any "
+    "stage-generated card on any conflict -- defer to them."
+)
+
+
+def _apply_b7_mandatory_inputs(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """Union B7's mandatory pre-registration inputs into handoff['required_inputs']
+    for validation and every downstream LLM stage, deduplicated, skipping any
+    path that does not exist on disk for this run."""
+    if stage_name not in _B7_MANDATORY_INPUT_STAGES:
+        return
+    required = handoff.setdefault("required_inputs", [])
+    existing_paths = {req["path"] for req in required}
+    for mandatory_path in _B7_MANDATORY_INPUT_PATHS:
+        if mandatory_path in existing_paths:
+            continue
+        if not (run_dir / mandatory_path).exists():
+            continue
+        required.append({
+            "path": mandatory_path,
+            "reason": "B7 mandatory input: pre-registered pass_rule/brief outrank stage-generated cards on any conflict.",
+        })
+        existing_paths.add(mandatory_path)
+
+
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
     tool_stages = {"protocol_execution", "signal_prescreen"}
     if stage_name in tool_stages:
@@ -1116,6 +1174,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # 1. Load the live handoff file
     handoff = load_yaml(handoff_path)
+
+    # B7: deterministic mandatory-inputs union (see helper docstring above).
+    _apply_b7_mandatory_inputs(stage_name, handoff, RUN_DIR)
 
     # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")
