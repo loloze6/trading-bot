@@ -342,6 +342,22 @@ live performance reporting — remain open and are not restated here.
   stage handoff instructs deference to them explicitly.
 - **Acceptance:** output audit — validation on a pre-registered run cites
   the pre-registered pass rule, invents no thresholds.
+- **Evidence update (2026-07-17, run_058):** validation's required_inputs
+  (runs/run_058/handoffs/innovation_expansion_to_validation.yaml) again list
+  only expanded_hypothesis_card.yaml — pre_registration.yaml was still not a
+  required or optional input. The stage's own validation_decision.yaml then
+  misdescribed the registration it vetoed, writing: "Walk-forward period
+  (2024-12-01 to 2025-12-31) is explicitly marked 'diagnostic-only, sign
+  flips' in expanded card. Testing a hypothesis with documented negative IC
+  in the test period is testing the null/negative hypothesis." — treating
+  the diagnostic-only 2024-2025 era as the pass-gated test period, when
+  pre_registration.yaml's own pass_rule.window_set_ref
+  (protocols/h041c_v2_backext.json) pins the pass-gated windows to
+  2018-02-01..2023-12-31 only (71 months), a fact the stage never saw
+  because it never read the file. Recorded in campaign_knowledge_base.yaml
+  under fear_greed_contrarian_v2_validation_rejected. Per operator ruling at
+  session close, this is the third in-the-wild demonstration of the exact
+  defect this entry describes; the fix has still not shipped.
 
 ### B8. Spec-stage conformance is schema-only, not semantic (P0)
 - **Symptom:** backtest_specification produced a schema-valid config
@@ -782,3 +798,88 @@ lineage memory, zeroed trade counts) under autonomous operation. Every
 catch was supervised review or an agent stop-condition. The P0 set in the
 v3 sequencing section, plus A9 folded into the A8 change and B12 into the
 KB layer, is the complete known gate to autonomy as of session close.
+
+---
+
+# v5 additions — found 2026-07-16/17 (H-041-C-v2 / run_058 launch-to-close arc)
+
+## A. Orchestrator routing & state machine (continued)
+
+### A10. Missing-deliverable stage failures get zero retries (P1, one occurrence, watch-level)
+- **Symptom:** run_058's first innovation_expansion invocation wrote only 1
+  of 2 required deliverables (expanded_hypothesis_card.yaml only;
+  innovation_notes.yaml missing); `ensure_files` hard-failed the run to
+  `paused:unhandled_exception` on the first miss, with no retry of the same
+  stage invocation before pausing. Operator ruled this a single LLM
+  formatting fault (not systemic) and ordered a resume rather than a code
+  fix.
+- **Fix:** not undertaken this session (one occurrence, operator-classified
+  as non-systemic). If it recurs: `_invoke_agent_with_yaml_retry`'s existing
+  retry-loop pattern (already used for the F4b YAML-repair path and the
+  SDK-misclassification path, A11 below) is the natural home for a bounded
+  missing-deliverable retry, re-invoking the same stage with an explicit
+  "deliverable X was not written" correction before pausing for human
+  review.
+- **Acceptance:** not yet defined — filed at watch-level pending a second
+  occurrence.
+
+### A11. CLOSED — claude_agent_sdk 0.2.82 result-misclassification on error turns (P1, occurred run_054 + run_058)
+- **Symptom:** when a CLI result message carries `is_error=True` with an
+  empty `errors` list, the SDK (`_internal/query.py`) falls back to that
+  turn's own `subtype` field as the error text; if `subtype` is literally
+  "success", a later `ProcessError`'s message is replaced with the literal
+  string "Claude Code returned an error result: success" — a genuine SDK
+  defect, independently verified by reading the installed package source,
+  not a real application-level error.
+- **Resolution (2026-07-16/17, this session):** `_invoke_agent_with_yaml_retry`
+  (workflow/run_phase1_research.py) gained a narrow, exact-string-match
+  retry: on the first occurrence of this exact message, re-invoke the same
+  stage once, prompt unchanged; any other message, or a second occurrence,
+  still raises. Deliberately not broadened into a general except-Exception
+  catch-all (see the code comment at the call site). RUNBOOK's halt-table
+  and §4 both annotate the case. Fixtures (tests/test_k3_protocol_pinning.py):
+  test_invoke_agent_with_yaml_retry_recovers_from_sdk_error_result_success,
+  test_invoke_agent_with_yaml_retry_reraises_on_second_sdk_error_result_success,
+  test_invoke_agent_with_yaml_retry_does_not_catch_other_messages. Commit:
+  `9bf2a4c`.
+- **Acceptance:** met — see fixtures above; full suite green at 301
+  (`python -m pytest -q`, confirmed at session close).
+
+## B. Briefs, pre-registration & conformance (continued)
+
+### B15. No first-class path from a fresh hypothesis registration to a schedulable queue entry (P1)
+- **Symptom:** H-041-C-v2's stamped protocol and brief were fully authored
+  and registered (pre_registration.yaml, briefs/H-041-C-v2.md) with no
+  queue entry ever created for it — RUNBOOK's documented launch procedures
+  all assume an existing queue entry. Creating one required a hand-edit to
+  config/campaign_queue.yaml outside the authorized write set at the time;
+  the operator authorized it explicitly.
+- **Fix:** a registration-to-enqueue tool/command (e.g.
+  `python workflow/run_campaign.py --register <brief>`) that creates the
+  queue entry mechanically from a completed brief + pre_registration pair,
+  so a fully-authored registration is always schedulable without a
+  hand-edit.
+- **Acceptance:** fixture: a brief + pre_registration pair with no prior
+  queue entry, run through the register command, produces a `ready` queue
+  entry that `_select_entry` picks up on the next `--once`/`--resume`
+  invocation.
+
+## F. Multi-agent & security operations (continued)
+
+### F10. No raw LLM transcript preserved when a stage invocation crashes (P1)
+- **Symptom:** across this arc's three pause/resume cycles (innovation_expansion
+  deliverable-completeness failure, the queue-level `paused:*` gate, the SDK
+  misclassification failure), the only forensic record available for each
+  crash was the orchestrator's own log lines and the partial artifacts
+  written before failure — the underlying LLM turn(s) that produced (or
+  failed to produce) the deliverables were never captured to disk.
+  Root-causing each pause relied on artifact archaeology and, for the SDK
+  defect, reading third-party library source, rather than the actual
+  transcript.
+- **Fix:** on any stage invocation that raises (SDK exception, ensure_files
+  failure, YAML-repair exhaustion), write the raw request/response
+  transcript (or at minimum the final turn) to a sidecar under the run's
+  artifacts/ or a dedicated crashes/ directory before re-raising or
+  pausing.
+- **Acceptance:** fixture: a stage invocation forced to raise produces a
+  transcript sidecar file, present and non-empty, alongside the pause.

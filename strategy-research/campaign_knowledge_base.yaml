@@ -299,6 +299,61 @@ findings:
     A8.5.3 -- not a reactivation of this entry, and not run_052 launched as-is.
 
     '
+- id: fear_greed_contrarian_v2_validation_rejected
+  mechanism: F&G extreme (< 25 / > 75) -> contrarian 1-2 day mean-reversion, explicitly
+    era-gated registration per A8.5.3 (pass-gated 2018-02-01 to 2023-12-31; 2024-2025
+    diagnostic-only, never gating)
+  hypothesis_id: H-041-C-v2
+  edge_source_category: persistent_behavioral_bias
+  evidence_runs:
+  - run_058
+  evidence_count: 1
+  outcome: completed_rejected
+  outcome_reason: validation_gate_rejection_pre_pass_rule
+  signal_property: null
+  protocol_version: h041c_v2_backext (protocols/h041c_v2_backext.json, sha256:439bc6320ac198c8d2ba8b7d4c11b8da39b0fbad4edfb0a2883937ae590abeb7,
+    per runs/run_058/artifacts/pre_registration.yaml machine_constraints)
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  reactivation_condition: null
+  reactivation_consumed_by: null
+  exhausted: true
+  exhausted_basis: 'run_058 terminated completed_rejected at the validation_gate stage
+    (runs/run_058/artifacts/validation_decision.yaml: status: reject). The REGISTERED
+    mechanical evaluation -- signal_prescreen -> protocol_execution -> the B11/C7
+    structured pass_rule pinned in runs/run_058/artifacts/pre_registration.yaml (criteria
+    a/b/c over the 71 pass-gated monthly windows, 2018-02-01 to 2023-12-31) -- was
+    NEVER EXECUTED; no prescreen_result.yaml, protocol_result.yaml, pass_rule_evaluation.yaml,
+    or verdict_interpretation.yaml exist for this run. Closure therefore rests on the
+    totality of evidence, not on the registered mechanical gate: (1) the pre_registration.yaml
+    honesty_clause itself, which already conceded the pass-gated 2018-2023 window
+    overlaps the exact data on which the era-sign-flip diagnosis was made, so even
+    a mechanical PASS would not have been confirmation of a real edge; (2) this KB''s
+    prior finding (fear_greed_contrarian_inconclusive, above) of a significant pooled
+    IC with a clean era sign-flip (negative 2018-2023, positive 2024-2025, all 8 era-symbol
+    pairs); and (3) the validation_gate rejection itself, on two independent blocking
+    grounds -- documented era-dependent sign-flip treated as edge inversion rather
+    than era artifact, and cost-feasibility infeasibility (6% activation / 270 trades
+    over 13mo against a 34 bps/trade requirement vs. a 5-20 bps historical sentiment
+    edge).
+
+
+    FACTUAL CORRECTION (recorded for future readers): validation_decision.yaml''s
+    rationale and blocking_issues refer to the "2024-2025 walk-forward period" as
+    "the test period" and treat its documented sign-flip as if it were pass/fail evidence.
+    This is not correct. Per runs/run_058/artifacts/pre_registration.yaml (pass_rule.window_set_ref:
+    protocols/h041c_v2_backext.json) and briefs/H-041-C-v2.md (diagnostic_only_eras_never_gated:
+    era_2024_burned + era_2024_2025_walk_forward_extension, "Reported for continuity/context
+    only -- never gating"), the PINNED PROTOCOL''s pass-gated windows are 2018-02-01
+    through 2023-12-31 (71 monthly windows) ONLY. 2024-2025 was registered as diagnostic-only
+    and explicitly excluded from gating precisely because it is the era whose divergence
+    motivated this registration in the first place. The validation_gate rejection''s
+    reasoning about "the test period" therefore describes a window this brief never
+    proposed to test against. This error does not by itself overturn the rejection
+    (grounds (1)-(3) above stand independently of it) but must be weighed by any future
+    reader citing validation_decision.yaml directly.
+
+    '
 - id: volume_impulse_continuation_blocked
   mechanism: High-volume bars with strong body fraction → directional continuation
   hypothesis_id: H-041-B
@@ -801,6 +856,10 @@ coverage_matrix:
     finding_id: fear_greed_contrarian_inconclusive
     outcome: era_conditional_instability
     evidence_count: 2
+  - hypothesis_id: H-041-C-v2
+    finding_id: fear_greed_contrarian_v2_validation_rejected
+    outcome: completed_rejected
+    evidence_count: 1
   - hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
     finding_id: macd_trend_continuation_extended_2018_2025_auto
     outcome: no_edge_observed

@@ -1596,3 +1596,192 @@ Standing constraints unchanged, plus two new prompt-skeleton rules:
 dispatch preconditions must state an explicit expected git-tree
 manifest, and every terminal marker line must carry its own step
 count."
+
+## Session: 2026-07-16/17 — H-041-C-v2 registration through run_058 close-out (H-041 F&G family CLOSED)
+
+### Hypothesis
+Per the 2026-07-15 NEXT_SESSION.md handoff, task queue item (1) was now
+unblocked: draft and register H-041-C-v2 (the F&G contrarian mechanism's
+LAST registration per A8.5.3, following `fear_greed_contrarian_inconclusive`'s
+`exhausted: true` era-sign-flip finding), launch it through the pipeline,
+and let the pipeline's own verdict — not a pre-decided outcome — determine
+whether the H-041 Fear & Greed contrarian family closes or continues.
+
+### Result
+
+**Registration (K3-era authoring, two premise-failure stops, both
+resolved by verification before writing):**
+1. **Funding-mechanism contradiction stop:** a dispatch draft implied
+   funding participates as a filter in H-041-C-v2's mechanism; direct
+   inspection of every real artifact showed zero funding involvement.
+   Stopped via `AskUserQuestion`; operator confirmed the stop was
+   correct — H-041-C is and always was pure F&G contrarian, funding
+   belongs to H-041-A.
+2. **Manifest row-count contradiction stop:** instructed to change a
+   BTC funding row count 7467→7468 against my own cross-validated
+   arithmetic. Stopped; operator ruled direct file forensics before any
+   write. Forensics (`wc -l` + a distinct-timestamp/gap script against
+   `trading-bot/local_data/BTCUSDT_funding_8h.csv`) showed 7,468 distinct
+   timestamps, 3 gaps (not 4) — confirmed 7468 correct AND the
+   manifest's own gap-count prose was independently wrong; both fixed
+   with a sidecar.
+3. Stamped protocol (`protocols/h041c_v2_backext.json`,
+   `tools/stamp_protocol.py`) + B11 structured pass_rule (criteria
+   a/b/c, total outcome mapping, no discretion delegations) +
+   `pre_registration.yaml` committed (`558c70a`).
+4. Pre-launch audit + semantics recon fix: reachable `zero_trade_slot_pct`
+   criterion (replacing an unreachable `trade_count >= 30` floor, per a
+   directly-measured 28.2% zero-active-month base rate), 71-window
+   protocol restamped, the legacy `run_protocol.py` promotion block
+   neutralized (`min_trade_count_gte: 0`) so it stays inert rather than
+   spuriously noisy, and an honest diagnostic note (`091e033`).
+
+**Launch (five walls, each with a shipped cure):**
+1. **Missing queue entry:** no queue entry existed for this brief lineage
+   and creating one required a hand-edit outside any authorized write
+   set. Stopped and reported; operator authorized the hand-edit. Filed
+   as ledger **B15** this close-out (no first-class registration→enqueue
+   path).
+2. **Brief-format mismatch:** `briefs/H-041-C-v2.yaml` lacked `.md`
+   frontmatter required by `_parse_brief_frontmatter`. Investigating
+   further (rather than just reformatting) surfaced that `_materialize_run`
+   never extracted `pass_rule` at all for fresh launches — reformatting
+   alone would have silently dropped the entire registration's decision
+   logic. Stopped with full code quotes; operator ordered the B4/B7
+   pass_rule copy-through rider FIRST, then the `.md` conversion
+   (`63a6af9`).
+3. **`innovation_expansion` deliverable-completeness failure** (run_058's
+   first launch): only 1 of 2 required deliverables written. Operator
+   ruled this a single LLM formatting fault, not systemic; ordered a
+   resume with a one-variant-only constraint fix (`996f432`). Filed as
+   ledger **A10** this close-out (missing-deliverable failures get zero
+   retries — watch-level, one occurrence).
+4. **Queue-level `paused:*` gate never auto-selected:** after a
+   run-level-only reset, relaunch reported "Queue exhausted" —
+   `_select_entry` never picks `paused:*` queue entries regardless of
+   the run's own `pipeline_state.yaml` status. Stopped, quoted
+   `_select_entry`'s docstring precisely. Operator authorized a direct
+   queue-status hand-edit AND — new standing rule this session,
+   **fix-with-the-workaround** — ordered the RUNBOOK §4 documentation
+   cured in the SAME commit, since this exact gap had already cost the
+   campaign session time twice (`d26a437`).
+5. **SDK result-misclassification failure** (`validation` stage): "Claude
+   Code returned an error result: success". Independently verified (not
+   just trusted) by reading the actual installed `claude_agent_sdk==0.2.82`
+   source (`_internal/query.py`) — confirmed the exact defect (an
+   `is_error=True`/empty-`errors`-list turn falls back to that turn's own
+   `subtype` field as error text; a literal `subtype: "success"` then
+   replaces a later `ProcessError`'s message with that literal string).
+   Implemented a narrow, exact-string-match retry in
+   `_invoke_agent_with_yaml_retry` — one re-invocation on first
+   occurrence only, prompt unchanged, explicitly NOT broadened into a
+   general except-Exception catch-all — plus RUNBOOK halt-table and §4
+   cures, in the same commit (`9bf2a4c`). Filed as ledger **A11 CLOSED**
+   this close-out.
+
+**Resume and terminal outcome:** the final relaunch (RUNBOOK §1b,
+foreground) resumed run_058 directly with no new run scaffolded — the
+SDK retry rider was not even needed this time; `validation` succeeded
+cleanly on the first invocation and the pipeline reached a TERMINAL
+state: `completed_rejected` at the `validation_gate` stage itself.
+`validation_decision.yaml` rejected on two independent blocking grounds:
+(1) the documented 2018-2023-vs-2024-2025 era sign-flip, treated as edge
+inversion rather than era artifact; (2) cost-feasibility infeasibility
+(6% activation / 270 trades over 13 months against a 34 bps/trade
+requirement vs. a 5-20 bps historical sentiment edge). The pipeline
+never reached `backtest_specification`, `signal_prescreen`,
+`protocol_execution`, or `verdict_interpreter` — no
+prescreen_result.yaml / protocol_result.yaml / pass_rule_evaluation.yaml
+/ verdict_interpretation.yaml exist for this run.
+
+**Closure ruling (this close-out, final for the session):** the operator
+accepted run_058's validation-stage rejection as the definitive closure
+of the H-041 F&G family, on the TOTALITY of evidence — the registration's
+own honesty clause (which already conceded the pass-gated 2018-2023
+window overlaps the exact data the era-sign-flip diagnosis was made on),
+the KB's prior per-era IC evidence, and the validation rejection itself
+— explicitly NOT on the registered mechanical pass_rule, which was never
+executed. One factual correction is recorded permanently on the new KB
+finding (`fear_greed_contrarian_v2_validation_rejected`): the rejection
+rationale treated the 2024-2025 walk-forward era as "the test period",
+when the pinned protocol's actual pass-gated windows were 2018-02
+through 2023-12-31 only (71 monthly windows), with 2024-2025 registered
+as diagnostic-only and explicitly excluded from gating. Any future
+reader citing `validation_decision.yaml` directly must weigh it with
+that error known. This is also recorded as ledger **B7**'s third
+in-the-wild demonstration (validation still does not read
+`pre_registration.yaml` as an input, and still misdescribed the exact
+registration it vetoed).
+
+**Ledger updates this close-out:** B7 evidence addendum (third
+occurrence, quoted rationale line); new entries A10 (missing-deliverable
+retries, watch-level), A11 CLOSED (SDK misclassification, commit
+`9bf2a4c`), B15 (no registration→enqueue path), F10 (no raw LLM
+transcript preserved on stage crash).
+
+### Files touched
+- `strategy-research/campaign_knowledge_base.yaml` — new finding
+  `fear_greed_contrarian_v2_validation_rejected` (H-041-C-v2, exhausted:
+  true, reactivation_condition: null, factual correction recorded);
+  `coverage_matrix.persistent_behavioral_bias` gained the matching row
+- `strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md` — B7
+  evidence addendum; new v5 section: A10, A11 (CLOSED), B15, F10
+- `strategy-research/NEXT_SESSION.md` — fully replaced; prior version
+  archived verbatim to
+  `strategy-research/docs/plan/NEXT_SESSION_20260715_superseded.md`
+- `strategy-research/workflow/run_campaign.py` — B4/B7 pass_rule
+  copy-through rider on `_materialize_run`'s fresh_launch path (earlier
+  in this arc, commit `63a6af9`)
+- `strategy-research/workflow/run_phase1_research.py` — SDK
+  result-misclassification retry rider on
+  `_invoke_agent_with_yaml_retry` (commit `9bf2a4c`)
+- `strategy-research/tests/test_k3_protocol_pinning.py` — grew across
+  this arc: 39 → 41 (B4/B7 fixtures) → 44 (SDK-retry fixtures); full
+  suite 301 passed at this close-out
+- `strategy-research/RUNBOOK.md` — halt-table SDK-misclassification
+  annotation; §4 queue-level-gate callout + audit-log-overwrite
+  limitation note
+- `strategy-research/briefs/H-041-C-v2.md` — converted from `.yaml`;
+  gained the one-variant-only `constraints` entry
+- `strategy-research/runs/run_058/` — full run tree (registration
+  through terminal `completed_rejected`); `research_brief.yaml`
+  hand-edited once under explicit operator authorization, with sidecar
+  `research_brief_CORRECTION_NOTICE.md`
+- `strategy-research/config/campaign_queue.yaml` — H-041-C-v2 entry
+  added (hand-edit, authorized), cycled through `ready` →
+  `in_progress` → `paused:unhandled_exception` (×2) → `in_progress`
+  (×2, hand-reset) → terminal
+- `strategy-research/SESSION_LOG.md` — this entry
+- Commits this arc: `6b827eb`, `683a0a2`, `558c70a`, `091e033`,
+  `63a6af9`, `996f432`, `d26a437`, `9bf2a4c`, plus this close-out's own
+  commit
+
+### Next session prompt
+"Resume strategy-research campaign. Read strategy-research/NEXT_SESSION.md
+first (single entry point). The H-041 Fear & Greed contrarian family
+(H-041-A funding / H-041-C / H-041-C-v2) is now CLOSED per
+campaign_knowledge_base.yaml — run_058's validation-stage rejection
+accepted on the totality of evidence, with a factual correction recorded
+on the KB finding (the rejection mischaracterized the 2024-2025
+diagnostic-only era as the pass-gated test period; the real pass-gated
+windows were 2018-02 through 2023-12-31 only). SDK result-misclassification
+retry rider and RUNBOOK §4 cures shipped (commit 9bf2a4c); test suite at
+301 green. Ledger gained B7's third evidence occurrence plus four new
+items (A10, A11-CLOSED, B15, F10). OPERATOR CHARTER now in force,
+verbatim in NEXT_SESSION.md: the prime directive is a PROFITABLE
+STRATEGY, not process — every manual review must retire into a
+mechanical gate, fix-with-the-workaround, no new process work off the
+critical path, and KPI tracking (honest verdicts/week, cost/verdict)
+starts now. Task queue priority (1): a GENERATOR SESSION producing a
+batch of live hypotheses via fragment-pattern and trade-diagnostics
+ideation (regime-aware exit diagnostics, ML-scored indicators, timeframe
+exploration) through the now-cheap registration machinery; (2) the
+first real-world exercise of prescreen→protocol→C7 evaluation on a LIVE
+batch hypothesis (never yet run end-to-end); (3) prune the remaining P0
+(B4-rest+D3, B8, C6) by the intervention-cost test, B7 as lead candidate
+(thrice-evidenced); (4) the autonomy acceptance test once the pruned
+kernel clears. Standing constraints unchanged, plus this session's
+additions: format precedents chosen by consumption path; per-value
+provenance citations in registration dispatches; every numeric
+measurement cites its command; write-capable agents never delegate; any
+.py-touching commit runs the full suite."

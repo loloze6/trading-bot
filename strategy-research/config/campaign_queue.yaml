@@ -13,44 +13,44 @@ queue:
     "the verdict is kill; no further arbitration or gate relief will be sought for
     this lineage." Pre-registered pass_rule (pre_registration.yaml) applied as sole
     verdict authority -- FAIL on criterion (a): gated bar-level median Sharpe 0.0000
-    for both BTCUSDT and ETHUSDT (recomputed per the standing metric-basis rule,
-    not the fragment-level protocol_result.yaml nulls) vs required >=0.5791 (BTCUSDT)
+    for both BTCUSDT and ETHUSDT (recomputed per the standing metric-basis rule, not
+    the fragment-level protocol_result.yaml nulls) vs required >=0.5791 (BTCUSDT)
     / >=0.0318 (ETHUSDT); 29/30 window-symbols below the A3.4 five-trade floor. S2
     secondary mechanism check falsified per s2_mechanism_check_20260711.yaml: identity-verified
-    (42/42 run_057 trades matched to run_054 parent records, 100% percent-return
-    agreement) -- excluded entries (ER<0.30, n=75) mean expectancy +1395.9 bps (SE
-    821.2) vs included entries (ER>=0.30, n=42) mean +433.7 bps (SE 441.4); the gate
-    anti-selected on this record, roughly 3:1 against its own design rationale. Verdict
-    routing hand-corrected per runs/run_057/artifacts/verdict_interpretation.yaml''s
-    operator_correction_20260711 field: the verdict_interpreter stage initially routed
-    refine/pivot (protocol_verdict=refine, status=pivot) per the pass_rule''s own
-    "verdict routing decides kill vs pivot" delegation, producing a Keltner-family
-    pivot proposal (KB-exhausted, forbidden re-proposal) -- corrected to protocol_verdict=kill,
-    status=kill per the binding pre-commitment, which had no precedence channel the
-    skill recognized. KB finding p4_sma_trend_longonly_daily_auto updated: outcome
-    kill_er_gate_mechanism_falsified, evidence_count 1->2 (run_057 added), exhausted=true
-    for this refinement direction specifically (not the broader family), coverage_matrix
-    mirror verified matching. This entry closes done/outcome=kill_er_gate_mechanism_falsified;
-    the underlying persistent_behavioral_bias / SMA-trend-family search space is not
-    thereby marked broadly exhausted -- one parameterization (ER(20), threshold 0.30)
-    was tested under a frozen, pre-registered specification.
+    (42/42 run_057 trades matched to run_054 parent records, 100% percent-return agreement)
+    -- excluded entries (ER<0.30, n=75) mean expectancy +1395.9 bps (SE 821.2) vs
+    included entries (ER>=0.30, n=42) mean +433.7 bps (SE 441.4); the gate anti-selected
+    on this record, roughly 3:1 against its own design rationale. Verdict routing
+    hand-corrected per runs/run_057/artifacts/verdict_interpretation.yaml''s operator_correction_20260711
+    field: the verdict_interpreter stage initially routed refine/pivot (protocol_verdict=refine,
+    status=pivot) per the pass_rule''s own "verdict routing decides kill vs pivot"
+    delegation, producing a Keltner-family pivot proposal (KB-exhausted, forbidden
+    re-proposal) -- corrected to protocol_verdict=kill, status=kill per the binding
+    pre-commitment, which had no precedence channel the skill recognized. KB finding
+    p4_sma_trend_longonly_daily_auto updated: outcome kill_er_gate_mechanism_falsified,
+    evidence_count 1->2 (run_057 added), exhausted=true for this refinement direction
+    specifically (not the broader family), coverage_matrix mirror verified matching.
+    This entry closes done/outcome=kill_er_gate_mechanism_falsified; the underlying
+    persistent_behavioral_bias / SMA-trend-family search space is not thereby marked
+    broadly exhausted -- one parameterization (ER(20), threshold 0.30) was tested
+    under a frozen, pre-registered specification.
 
-    STATUS AS OF 2026-07-10 (updated: in-lineage refinement brief installed
-    verbatim at brief_path above -- brief_id P4_ts_trend_r1_er_gate, relation: refine,
-    parent_run: run_054, parent_verdict: refine_pending_regime_gating. This is NOT
-    a new queue registration and NOT a reactivation; it appends to this entry''s
-    own run_ids per the standing lineage convention. Regime-gated SMA(100)-daily
-    ER(20)>=0.30 entry filter (Kaufman Efficiency Ratio), frozen a-priori parameters,
-    pre-registered pass rule against the independently-recomputed run_054 bar-level
-    baselines (BTCUSDT >=0.5791, ETHUSDT >=0.0318 median Sharpe over the same 15-window
-    sets). Operational mode: interactive --once stepping only per RUNBOOK 1c / INCIDENT.md
-    (nohup blocked pending operator harness investigation, NEXT_SESSION.md task 1).
-    Ready for dry-run verification, then --once launch on operator go-ahead. Prior
-    brief_path (briefs/research_brief_P4_ts_trend.md, the original parent brief)
-    is superseded for future reference by this refinement brief but not deleted.
+    STATUS AS OF 2026-07-10 (updated: in-lineage refinement brief installed verbatim
+    at brief_path above -- brief_id P4_ts_trend_r1_er_gate, relation: refine, parent_run:
+    run_054, parent_verdict: refine_pending_regime_gating. This is NOT a new queue
+    registration and NOT a reactivation; it appends to this entry''s own run_ids per
+    the standing lineage convention. Regime-gated SMA(100)-daily ER(20)>=0.30 entry
+    filter (Kaufman Efficiency Ratio), frozen a-priori parameters, pre-registered
+    pass rule against the independently-recomputed run_054 bar-level baselines (BTCUSDT
+    >=0.5791, ETHUSDT >=0.0318 median Sharpe over the same 15-window sets). Operational
+    mode: interactive --once stepping only per RUNBOOK 1c / INCIDENT.md (nohup blocked
+    pending operator harness investigation, NEXT_SESSION.md task 1). Ready for dry-run
+    verification, then --once launch on operator go-ahead. Prior brief_path (briefs/research_brief_P4_ts_trend.md,
+    the original parent brief) is superseded for future reference by this refinement
+    brief but not deleted.
 
-    STATUS AS OF 2026-07-10 (updated: metric-basis audit corrected run_054''s
-    verdict from protocol_verdict=kill/status=pivot to protocol_verdict=refine/status=refine
+    STATUS AS OF 2026-07-10 (updated: metric-basis audit corrected run_054''s verdict
+    from protocol_verdict=kill/status=pivot to protocol_verdict=refine/status=refine
     -- median_sharpe was computed from LIFO-fragment trade-exit-day statistics with
     a basis problem under sparse trading, not from a bar-level equity curve; recomputed
     correctly it is positive for both symbols (BTCUSDT +0.579, ETHUSDT +0.032), and
@@ -186,29 +186,28 @@ queue:
   outcome: null
 - id: H-041-C-v2
   brief_path: briefs/H-041-C-v2.md
-  status: ready
+  status: done
   priority: 3
   source: operator_ratified
   relation: new_registration
-  notes: 'Operator-ratified 2026-07-15. Fear & Greed contrarian, era-conditional
-    registration -- NOT a reactivation of campaign_knowledge_base.yaml''s
-    fear_greed_contrarian_inconclusive entry (exhausted: true, reactivation_condition:
-    null) and NOT run_052 (scaffolded 2026-07-06, never launched, a naive polarity
-    flip the KB entry itself names as insufficient). Original H-041-C signal
-    construction and polarity, copied verbatim from runs/run_042/artifacts/hypothesis_card.yaml
-    and runs/run_048/artifacts/candidate_strategy_config.json -- no funding-rate
-    involvement of any kind. machine_constraints.protocol_ref pins protocols/h041c_v2_backext.json
-    (71 monthly windows, 2018-02 through 2023-12, pass-gated eras only; 2024-burned
-    and 2024-2025-walk-forward-extension are diagnostic-only, never gated).
-    B11-structured pass_rule: (a) median_sharpe > 0.8, (b) max_abs_drawdown_pct
+  notes: 'Operator-ratified 2026-07-15. Fear & Greed contrarian, era-conditional registration
+    -- NOT a reactivation of campaign_knowledge_base.yaml''s fear_greed_contrarian_inconclusive
+    entry (exhausted: true, reactivation_condition: null) and NOT run_052 (scaffolded
+    2026-07-06, never launched, a naive polarity flip the KB entry itself names as
+    insufficient). Original H-041-C signal construction and polarity, copied verbatim
+    from runs/run_042/artifacts/hypothesis_card.yaml and runs/run_048/artifacts/candidate_strategy_config.json
+    -- no funding-rate involvement of any kind. machine_constraints.protocol_ref pins
+    protocols/h041c_v2_backext.json (71 monthly windows, 2018-02 through 2023-12,
+    pass-gated eras only; 2024-burned and 2024-2025-walk-forward-extension are diagnostic-only,
+    never gated). B11-structured pass_rule: (a) median_sharpe > 0.8, (b) max_abs_drawdown_pct
     < 30, (c) zero_trade_slot_pct <= 40, both symbols; any FAIL -> kill, terminate;
     all-pass -> promote, holdout gate applies. This is H-041-C''s LAST registration
-    -- no refine, pivot, or escalate anywhere in the pass_rule. Fixed 2026-07-15
-    per pre-launch audit F1 + semantics/base-rate recon (criterion c replaced
-    from an unreachable trade_count>=30 to the measured zero_trade_slot_pct base
-    rate; promotion.min_trade_count_gte neutralized to 0; see the brief''s own
-    provenance notes for full citation detail).
+    -- no refine, pivot, or escalate anywhere in the pass_rule. Fixed 2026-07-15 per
+    pre-launch audit F1 + semantics/base-rate recon (criterion c replaced from an
+    unreachable trade_count>=30 to the measured zero_trade_slot_pct base rate; promotion.min_trade_count_gte
+    neutralized to 0; see the brief''s own provenance notes for full citation detail).
 
     '
-  run_ids: []
-  outcome: null
+  run_ids:
+  - run_058
+  outcome: completed_rejected
