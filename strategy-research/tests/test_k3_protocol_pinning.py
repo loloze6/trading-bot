@@ -828,3 +828,95 @@ def test_apply_b7_mandatory_inputs_covers_every_downstream_llm_stage():
         paths = {req["path"] for req in handoff["required_inputs"]}
         assert paths == {"artifacts/pre_registration.yaml", "artifacts/user_brief_verbatim.yaml"}, \
             f"stage {stage} must receive both mandatory inputs"
+
+
+# ---------------------------------------------------------------------------
+# B15: register_hypothesis -- first-class registration -> schedulable queue
+# entry (PIPELINE_IMPROVEMENTS_20260712_v4.md B15 -- retires the
+# per-registration hand-edit H-041-C-v2 required).
+# ---------------------------------------------------------------------------
+
+_VALID_BRIEF_FRONTMATTER = """---
+strategy_domain: structural_forced_flow
+market_universe: [BTCUSDT, ETHUSDT]
+timeframe: 1d
+research_goal: Retest funding continuous mean-reversion on daily bars.
+---
+
+Prose body, never read by the orchestrator.
+"""
+
+
+def test_register_hypothesis_appends_entry_with_expected_field_set(campaign_root):
+    root = campaign_root["root"]
+    briefs_dir = root / "briefs"
+    briefs_dir.mkdir(parents=True, exist_ok=True)
+    brief_path = briefs_dir / "FUNDING_MR_DAILY_RETEST.md"
+    brief_path.write_text(_VALID_BRIEF_FRONTMATTER, encoding="utf-8")
+
+    rc = camp.register_hypothesis(brief_path, priority=1, notes="KB reactivation test note.")
+
+    assert rc == 0
+    queue = camp._load_queue()
+    matches = [e for e in queue["queue"] if e["id"] == "FUNDING_MR_DAILY_RETEST"]
+    assert len(matches) == 1
+    entry = matches[0]
+    assert entry == {
+        "id": "FUNDING_MR_DAILY_RETEST",
+        "brief_path": "briefs/FUNDING_MR_DAILY_RETEST.md",
+        "status": "ready",
+        "priority": 1,
+        "source": "operator_ratified",
+        "relation": "new_registration",
+        "notes": "KB reactivation test note.",
+        "run_ids": [],
+    }, "must mirror the H-041-C-v2 entry's own field set exactly, no outcome key"
+
+
+def test_register_hypothesis_refuses_duplicate_id(campaign_root):
+    root = campaign_root["root"]
+    briefs_dir = root / "briefs"
+    briefs_dir.mkdir(parents=True, exist_ok=True)
+    brief_path = briefs_dir / "FUNDING_MR_DAILY_RETEST.md"
+    brief_path.write_text(_VALID_BRIEF_FRONTMATTER, encoding="utf-8")
+
+    _save_queue_entries(campaign_root["queue_path"], [{
+        "id": "FUNDING_MR_DAILY_RETEST", "brief_path": "briefs/FUNDING_MR_DAILY_RETEST.md",
+        "status": "done", "priority": 1, "source": "x", "relation": "x", "notes": "",
+        "run_ids": ["run_001"],
+    }])
+
+    rc = camp.register_hypothesis(brief_path, priority=1, notes="attempted duplicate")
+
+    assert rc == 1, "a duplicate id must be refused (nonzero return)"
+    queue = camp._load_queue()
+    assert len(queue["queue"]) == 1, "the queue must be unchanged on refusal"
+
+
+def test_register_hypothesis_refuses_malformed_brief(campaign_root):
+    root = campaign_root["root"]
+    briefs_dir = root / "briefs"
+    briefs_dir.mkdir(parents=True, exist_ok=True)
+    brief_path = briefs_dir / "BROKEN_BRIEF.md"
+    brief_path.write_text("no frontmatter block here at all\n", encoding="utf-8")
+
+    rc = camp.register_hypothesis(brief_path, priority=1, notes="should never land")
+
+    assert rc == 1, "a malformed brief must be refused (nonzero return), not raise"
+    queue = camp._load_queue()
+    assert queue["queue"] == [], "the queue must be untouched on refusal"
+
+
+def test_register_hypothesis_emits_exactly_one_log_line(campaign_root):
+    root = campaign_root["root"]
+    briefs_dir = root / "briefs"
+    briefs_dir.mkdir(parents=True, exist_ok=True)
+    brief_path = briefs_dir / "FUNDING_MR_DAILY_RETEST.md"
+    brief_path.write_text(_VALID_BRIEF_FRONTMATTER, encoding="utf-8")
+
+    camp.register_hypothesis(brief_path, priority=1, notes="single log line check")
+
+    log_lines = campaign_root["root"].joinpath("campaign_log.md").read_text(encoding="utf-8").splitlines()
+    assert len(log_lines) == 1, "success must emit exactly one log line, never zero"
+    assert "REGISTER:" in log_lines[0]
+    assert "FUNDING_MR_DAILY_RETEST" in log_lines[0]
