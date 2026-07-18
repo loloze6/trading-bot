@@ -305,11 +305,29 @@ class CandleBuilder:
         integer division.
 
         Example for interval_seconds=300:  09:03:47 → 09:00:00
+
+        All price/candle timestamps in this codebase are naive datetimes
+        that represent UTC instants (never local time). Naive
+        datetime.timestamp()/datetime.fromtimestamp() silently interpret
+        and re-emit through the LOCAL system timezone instead of UTC —
+        a no-op for interval_seconds that are an exact multiple of the
+        local UTC offset (e.g. 3600s: any whole-hour offset cancels
+        through the floor), but WRONG for any interval_seconds that is
+        not (e.g. 86400s/1d on a non-UTC machine), silently shifting
+        every aligned start_time to a fixed non-zero hour every day.
+        Confirmed root cause of run_059's silent all-bars zero forecast
+        at 1d: FundingRateMeanReversionComponent's settlement-boundary
+        check (hour % 8 == 0) never matched because daily candles landed
+        on hour=01 (or 02 under DST), never hour=00. Explicit UTC
+        round-trip below removes the local-timezone dependency entirely;
+        1h (and any interval_seconds that already cancelled) is
+        unaffected -- see tests/test_funding_rate_component.py.
         """
-        ts = int(timestamp.timestamp())
+        ts = int(timestamp.replace(tzinfo=datetime.timezone.utc).timestamp())
+        aligned_ts = (ts // self.interval_seconds) * self.interval_seconds
         return datetime.datetime.fromtimestamp(
-            (ts // self.interval_seconds) * self.interval_seconds
-        )
+            aligned_ts, tz=datetime.timezone.utc
+        ).replace(tzinfo=None)
 
 
 # ===========================================================================
