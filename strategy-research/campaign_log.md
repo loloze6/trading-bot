@@ -101,3 +101,4 @@ C:\Users\alauz\Documents\Projects\trading-bot\trading-bot\core\backtester.py:234
 - 2026-07-17T10:47:45Z DONE H-041-C-v2 (run_058) -> completed_rejected
 - 2026-07-17T10:47:45Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
 - 2026-07-17T10:47:45Z Queue exhausted — no ready or in_progress entries remain.
+- 2026-07-18T04:53:01Z REGISTER: queue entry 'FUNDING_MR_DAILY_RETEST' appended (brief=briefs/FUNDING_MR_DAILY_RETEST.md, priority=1, status=ready).
