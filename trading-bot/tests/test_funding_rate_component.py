@@ -80,3 +80,110 @@ def test_run_044_config_now_produces_real_active_bars():
         )
     finally:
         tmp_path.unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# run_059 (2026-07-18) regression: CandleBuilder._align() used naive
+# datetime.timestamp()/datetime.fromtimestamp(), which silently round-trips
+# through the LOCAL system timezone instead of UTC. This is a no-op for
+# interval_seconds that are an exact multiple of the local UTC offset (e.g.
+# 3600s -- any whole-hour offset cancels through the floor), but shifted
+# every 86400s/1d candle's start_time to a fixed non-zero hour (never 0),
+# which made FundingRateMeanReversionComponent's settlement-boundary check
+# (hour % 8 == 0) fail on every single daily bar -- a silent, total
+# zero-forecast with no exception anywhere. Confirmed via in-process repro
+# driving the real DataManager/CandleBuilder chain before any fix; see the
+# implementation-agent session log for the repro output. Fixed in
+# CandleBuilder._align() (data/data_manager.py) by making the UTC
+# interpretation explicit.
+# ---------------------------------------------------------------------------
+
+_FUNDING_CSV_1D = PROJECT_ROOT / "local_data" / "BTCUSDT_funding_8h.csv"
+_OHLCV_CSV_1D = PROJECT_ROOT / "local_data" / "BTCUSDT_1d.csv"
+
+
+@pytest.mark.skipif(not _FUNDING_CSV_1D.exists() or not _OHLCV_CSV_1D.exists(),
+                     reason="local_data fixtures not present")
+def test_daily_bars_with_merged_funding_produce_nonzero_forecasts():
+    """Component-level: FundingRateMeanReversionComponent on DAILY (86400s-
+    aligned, hour=00:00) bars with real merged funding data over a small
+    2019-12 window must fire (nonzero forecast) on every settlement day --
+    daily bars ARE settlement bars (hour%8==0 whenever hour==0)."""
+    sys.path.insert(0, str(REPO_ROOT / "strategy-research" / "tools"))
+    import prescreen_signal as ps
+
+    bars = ps._load_ohlcv("BTCUSDT", "2019-12-01", "2019-12-06", timeframe="1d")
+    merged = ps._merge_aux_feeds(bars, ["funding_rate"], "BTCUSDT", "2019-12-01", "2019-12-06")
+
+    assert len(merged) >= 3, "fixture window too small to be a meaningful regression test"
+    assert all(pd.Timestamp(t).hour == 0 for t in merged["timestamp"]), \
+        "fixture bars must be at hour=00:00 (the whole point of a DAILY bar)"
+
+    comp = FundingRateMeanReversionComponent(parameters={"threshold": 0.0, "scaling_factor": 10.0})
+    fired_days = 0
+    for i in range(1, len(merged) + 1):
+        window = merged.iloc[:i]
+        comp.update(window)
+        if comp.is_ready() and abs(comp.raw_value()) > 1e-9:
+            fired_days += 1
+
+    assert fired_days > 0, (
+        "no daily bar fired -- the 1d silent-zero-forecast regression (run_059) "
+        "has recurred"
+    )
+    assert fired_days == len(merged) - 1, (
+        f"expected every ready bar to fire (continuous mode, threshold=0, real "
+        f"funding rate never exactly 0.0 in this fixture) -- got {fired_days}/{len(merged) - 1}"
+    )
+
+
+@pytest.mark.skipif(not _FUNDING_CSV_1D.exists() or not _OHLCV_CSV_1D.exists(),
+                     reason="local_data fixtures not present")
+def test_data_manager_merge_attach_chain_yields_funding_column_at_1d():
+    """Chain-level: the REAL DataManager merge/attach path (register_feed ->
+    initialize -> _premerge_aux_feeds -> CandleBuilder.add_row -> _align ->
+    get_data_history -> _attach_aux_columns), driven exactly as protocol
+    execution does, at interval_seconds=86400, must yield completed candles
+    at hour=00:00 with a fully non-null funding_rate column for the same
+    fixture window."""
+    from data.data_manager import DataManager
+    from data.fetchers.funding_rate_fetcher import FundingRateFetcher
+
+    start = pd.Timestamp("2019-12-01").to_pydatetime()
+    end = pd.Timestamp("2019-12-06").to_pydatetime()
+    symbol = "BTCUSDT"
+
+    dm = DataManager([symbol], interval_seconds=86400, mode="backtest")
+    dm.register_feed(
+        name="funding_rate",
+        fetcher=FundingRateFetcher(start, end, symbols=[symbol],
+                                    localStorage=True, data_dir=str(PROJECT_ROOT / "local_data")),
+        agg="last",
+    )
+    dm.historical_data[symbol] = dm.fetch_historical_data(symbol, start, end)
+    dm.initialize()
+    dm.candle_builder.candle_completion_callback = None  # bypass default callback wiring (see repro note)
+
+    n_rows = len(dm.historical_data[symbol])
+    assert n_rows >= 3, "fixture window too small to be a meaningful regression test"
+
+    completed_timestamps = []
+    for idx in range(n_rows):
+        row = dm.historical_data[symbol].iloc[idx]
+        candle = dm.candle_builder.add_row(row, symbol)
+        if candle is not None:
+            completed_timestamps.append(candle.start_time)
+
+    assert completed_timestamps, "no candle completed -- fixture window too small"
+    assert all(t.hour == 0 for t in completed_timestamps), (
+        f"CandleBuilder produced misaligned daily candle(s) (hour != 0): "
+        f"{[t for t in completed_timestamps if t.hour != 0]} -- the run_059 "
+        f"local-timezone alignment bug has recurred"
+    )
+
+    data = dm.get_data_history(symbol, count=n_rows)
+    assert "funding_rate" in data.columns
+    assert data["funding_rate"].notna().all(), (
+        f"expected full non-null funding_rate coverage over this fixture window, "
+        f"got {data['funding_rate'].notna().sum()}/{len(data)}"
+    )
