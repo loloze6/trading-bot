@@ -19,13 +19,14 @@ from data.data_manager import DataManager, HistoricalDataFetcher
 from execution.execution_handler import ExecutionHandler, MockExecutionHandler
 from execution.forecast_manager import ForecastManager
 from execution.portfolio_info import MockPortfolioInfo, PortfolioInfo, PortfolioStateTracker, OtherPortfolioOperations
-from performance.metrics import EnhancedPerformanceTracker
+from performance.metrics import EnhancedPerformanceTracker, DEFAULT_COMMISSION_RATE
 from risk.risk_manager import RiskManager
 from strategies.main_strategy import AdvancedStrategy
 from utils.logger import setup_logger
 
 DEFAULT_INITIAL_BALANCE: int = 1000    # USDT
-DEFAULT_COMMISSION_RATE: float = 0.001  # 0.1 %
+# DEFAULT_COMMISSION_RATE now lives in performance.metrics (single source of truth,
+# see that module for why) and is imported above rather than redefined here.
 
 
 @dataclass
@@ -468,7 +469,8 @@ class Launcher:
 
 def run_backtest(config_path: str, symbol: str, start: str, end: str, results_root: str,
                  runs_root: str = None, interval_seconds: int = None,
-                 warmup_prefetch: bool = False, holdout_start: str = None):
+                 warmup_prefetch: bool = False, holdout_start: str = None,
+                 commission_rate: float = None):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -503,6 +505,12 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         past holdout_start -- the backward-extended warmup buffer must never
         pull holdout data into a training window. No-op unless both
         warmup_prefetch=True and holdout_start are set.
+    commission_rate: per-trade commission rate override (e.g. Kraken's taker rate) for
+        this backtest only. Defaults to None, which resolves to DEFAULT_COMMISSION_RATE
+        exactly as before this parameter existed -- a protocol that doesn't pass this
+        must produce bit-identical results to prior behavior (same pattern as
+        interval_seconds above). Never mutates config.json or the module-level default,
+        so a Kraken-calibrated research run can never affect the live trading rate.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -511,12 +519,15 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         interval = interval_seconds
     else:
         interval = parse_interval_seconds(launcher.config.get('trading', 'interval', 3600))
+    resolved_commission_rate = (
+        commission_rate if commission_rate is not None else DEFAULT_COMMISSION_RATE
+    )
     params = TradingParams(
         symbols=[symbol],
         interval=interval,
         check_interval=launcher.config.get('trading', 'check_interval_seconds', 3600),
         test_mode=True,
-        commission_rate=DEFAULT_COMMISSION_RATE,
+        commission_rate=resolved_commission_rate,
     )
 
     strategy = AdvancedStrategy(config_path=config_path)
