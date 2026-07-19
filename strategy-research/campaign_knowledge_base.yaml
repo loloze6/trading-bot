@@ -517,6 +517,131 @@ findings:
     not a power question, since n_eff=83 here already clears the a-priori power bar.
 
     '
+- id: funding_mr_daily_retest_killed
+  mechanism: Continuous (threshold=0.0) 8h funding-rate sign mean-reversion,
+    BTC/ETH, re-tested on DAILY bars -- the daily branch of
+    funding_rate_continuous_mean_reversion_expanded_auto's own
+    reactivation_condition (above)
+  hypothesis_id: FUNDING_MR_DAILY_RETEST
+  edge_source_category: structural_forced_flow
+  evidence_runs:
+  - run_059
+  evidence_count: 1
+  outcome: completed_rejected
+  outcome_reason: 'Mechanically evaluated (B11/C7 structured pass_rule,
+    runs/run_059/artifacts/pass_rule_evaluation.yaml, evaluated_at
+    2026-07-18T16:01:02Z): FAIL on BOTH gating criteria, either symbol
+    sufficient to kill --
+    (a) median_sharpe > 0.8: BTCUSDT -0.296, ETHUSDT -0.979 (both deeply
+    negative, FAIL); (b) max_abs_drawdown_pct < 30: BTCUSDT 34.922, ETHUSDT
+    49.606 (both exceed, FAIL); (c) zero_trade_slot_pct <= 50: BTCUSDT 0.0,
+    ETHUSDT 0.0 (PASS -- see the criterion (c) conformance reconciliation
+    honesty note below). statement_branch_matched: FAIL-a. Per the
+    pre-registered pass_rule''s total outcome mapping
+    (briefs/FUNDING_MR_DAILY_RETEST.md, evaluation.pass_rule.outcomes):
+    hypothesis_verdict: kill, lineage_routing: terminate.
+    verdict_interpreter''s own protocol_verdict field read "refine" on
+    this run (runs/run_059/artifacts/verdict_interpretation.yaml) -- this
+    was OVERRIDDEN by the registered B11 mapping, per the same file''s own
+    hypothesis_verdict/lineage_routing fields (kill/terminate) and
+    altitude_justification ("Pre-registered pass_rule mandates kill on ANY
+    criterion FAIL on EITHER symbol... Lineage terminates."). The override
+    is the REGISTERED, correct behavior (B11''s whole point: a total,
+    pre-committed mapping that a stage''s own free-text verdict field
+    cannot re-open) -- not a discrepancy to flag, cited here so a future
+    reader does not mistake the interpreter''s stray "refine" label for
+    the actual outcome.
+
+
+    CRITERION (c) CONFORMANCE RECONCILIATION (honesty note, filed
+    2026-07-19): the pre-registered zero-trade-window base rates
+    (briefs/FUNDING_MR_DAILY_RETEST.md criterion c source: BTC 28.6% /
+    ETH 38.8%, derived from daily funding-sign-flip counts) assumed trades
+    occur ONLY at sign flips. The realized zero_trade_slot_pct was 0.0/0.0
+    with min_trade_count=1 on all 49 pass-gated windows because each
+    monthly window RESTARTS FLAT and the always-on (threshold=0.0,
+    continuous-mode) signal opens a position at window start regardless
+    of whether a sign flip occurs inside that window -- the sign-flip-count
+    assumption behind the pre-registered base rate described the SIGNAL''s
+    own activation pattern correctly but did not account for the
+    protocol''s own per-window position-restart semantics
+    (tools/run_protocol.py executes each window as an independent
+    replay). The realized value is CONSISTENT WITH A CORRECTLY FUNCTIONING
+    ENGINE, not an anomaly or a new bug: criterion (c) is an
+    engine-conformance detector (per the brief''s honesty note iv), and
+    its breakage-direction power (~100% detection of an F5a-class zeroing
+    bug, which manifests as zero_trade_slot_pct near 100%, not near 0%)
+    is unaffected by this reconciliation.
+
+
+    ENGINE PROVENANCE (tz-bug arc, mandatory disclosure): run_059''s FIRST
+    launch attempt (2026-07-18, pre-fix) hit a SILENT all-bars zero-forecast
+    failure at the signal_prescreen/protocol_execution stage --
+    FundingRateMeanReversionComponent''s settlement-boundary check
+    (hour % 8 == 0) never matched because CandleBuilder._align()
+    (trading-bot/data/data_manager.py) used a naive local-system-timezone
+    epoch round-trip instead of true UTC, silently shifting every 1d
+    candle''s start_time to a fixed non-zero hour. Root-caused via
+    in-process repro (confirmed: 30/31 bars swallowed by the settlement
+    check, 0 fired), fixed at the confirmed site (commit 2529f5b, two new
+    regression tests), and the run was RESUMED after the fix. The
+    pass_rule_evaluation.yaml/protocol_result.yaml/verdict_interpretation.yaml
+    quoted above are ALL POST-FIX artifacts (protocol_result.yaml/
+    pass_rule_evaluation.yaml timestamped 2026-07-18T16:01Z, several hours
+    after the 2026-07-18T11:54Z fix commit; verdict_interpretation.yaml
+    timestamped 2026-07-19T12:29Z after additional resume cycles -- see
+    PIPELINE_IMPROVEMENTS ledger v6 for the stale-cache-reuse and
+    verdict_interpreter branch-fallthrough issues those extra cycles
+    surfaced). This verdict is NOT contaminated by the pre-fix defect --
+    it is the FIXED engine''s own output.
+
+
+    ROOT CAUSE (verdict_interpretation.yaml, fresh, post-fix):
+    mechanism_failure: already_priced_in, confidence: high.
+    per_trade_expectancy_bps mean -38.47 (t=-1.509, n=699, not
+    significant), median_gross_pnl -41.71, win_rate_net 41.77% --
+    insufficient to overcome assumed round-trip costs (17.0-17.5 bps).
+    median_forecast_return_corr=0.047 is a marginal, economically
+    non-viable signal once costs and drawdown are accounted for.
+    "Funding-rate sign itself lacks stable mean-reversion edge on daily
+    timeframe after costs" (verdict_interpretation.yaml, root_cause.supporting_evidence).'
+  signal_property:
+    median_sharpe_btcusdt: -0.296
+    median_sharpe_ethusdt: -0.979
+    max_abs_drawdown_pct_btcusdt: 34.922
+    max_abs_drawdown_pct_ethusdt: 49.606
+    zero_trade_slot_pct_btcusdt: 0.0
+    zero_trade_slot_pct_ethusdt: 0.0
+    min_trade_count_both_symbols: 1
+    median_forecast_return_corr: 0.047
+    median_gross_pnl: -41.7122
+    per_trade_expectancy_bps_mean: -38.47
+    per_trade_expectancy_bps_t_stat: -1.509
+    per_trade_expectancy_n_trades: 699
+    win_rate_net_pct: 41.77
+  protocol_version: funding_mr_daily_retest_v1 (protocols/funding_mr_daily_retest_v1.json,
+    sha256:6cbda1777ba839d2b1f18b7f23a53c84103eab5df41f16657566f74cc645d43e,
+    49 pass-gated monthly windows, 2019-12-01 to 2023-12-31)
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  reactivation_condition: null
+  reactivation_consumed_by: null
+  exhausted: true
+  exhausted_basis: 'This registration was explicitly the daily branch of
+    funding_rate_continuous_mean_reversion_expanded_auto''s reactivation_condition
+    (above), pre-registered as the mechanism''s LAST escalation for the
+    DAILY timeframe with no refine/pivot/escalate anywhere in its own
+    pass_rule (briefs/FUNDING_MR_DAILY_RETEST.md, hypothesis.primary). The
+    B11 total-mapping FAIL-a branch (kill/terminate) closes this daily
+    branch specifically. NOTE: the 4h branch of the SAME parent
+    reactivation_condition was explicitly DEFERRED, not tested and not
+    ruled out, per operator ruling R3 (this session''s dispatch: "4h
+    deferred"). This entry''s exhausted:true/reactivation_condition:null
+    applies ONLY to the daily branch registered here -- it does not by
+    itself close funding_rate_continuous_mean_reversion_expanded_auto''s
+    parent entry, whose own exhausted/reactivation_condition fields are
+    left unmodified by this close-out and remain the authoritative record
+    for the still-open 4h question.'
 - id: macd_trend_continuation_extended_2018_2025_auto
   mechanism: MACD(12,26,9) histogram zero-crossing, BTC/ETH 1h, ungated (persistent_behavioral_bias)
   hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
@@ -669,6 +794,25 @@ findings:
     mark the broader persistent_behavioral_bias / SMA-trend-family search space exhausted
     (one parameterization tested, per the outcome_reason framing above).'
   reactivation_condition: null
+  engine_provenance_caveat: 'Filed 2026-07-19 (run_059 close-out, tz-bug arc):
+    protocol_version ts_trend_daily_v1 executed on 1d bars BEFORE the 2026-07-18
+    CandleBuilder._align() fix (commit 2529f5b). Pre-fix, every daily candle''s
+    start_time was silently shifted to a fixed non-zero hour (01:00 or 02:00
+    depending on DST) by a naive local-system-timezone epoch round-trip,
+    instead of true UTC midnight -- see PIPELINE_IMPROVEMENTS ledger v6 and
+    trading-bot/data/data_manager.py''s own _align() docstring. This does
+    NOT change bar OHLCV values (only the candle''s timestamp LABEL), so
+    day-ordering, closes, and the SMA(100) computation itself are
+    unaffected; the only plausible effect is a possible off-by-one-bar
+    shift at monthly window boundaries in tools/run_protocol.py''s
+    timestamp-range filtering, and equivalent exposure to DST-transition-week
+    anomalies (the fixed hour differs by 1h across the March/October DST
+    boundary). No re-derivation was performed and none is ordered by this
+    entry -- the run_054/run_057 verdicts above (kill_er_gate_mechanism_falsified)
+    are MAINTAINED, not relitigated; this caveat exists so a future reader
+    auditing window-edge trade counts knows the historical alignment context.
+
+    '
 meta_findings:
 - id: daily_regime_overlay_recommended_before_a23_trigger
   title: campaign_review recommended detector_wishlist.yaml work twice without checking
@@ -850,6 +994,10 @@ coverage_matrix:
   - hypothesis_id: H-041-A
     finding_id: funding_rate_mean_reversion_run047_invalidated
     outcome: invalidated_artifact
+    evidence_count: 1
+  - hypothesis_id: FUNDING_MR_DAILY_RETEST
+    finding_id: funding_mr_daily_retest_killed
+    outcome: completed_rejected
     evidence_count: 1
   persistent_behavioral_bias:
   - hypothesis_id: H-041-C
