@@ -32,6 +32,13 @@ from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger("trading_bot")
 
+# Single source of truth for the default per-trade commission rate. core/launcher.py
+# imports this rather than defining its own literal, so TradeExecution's default,
+# EnhancedPerformanceTracker's default, and every launcher call site resolve to the
+# same value and can never independently drift (2026-07-20, commission-rate
+# parameterization — collapses what were three duplicated 0.001 literals).
+DEFAULT_COMMISSION_RATE: float = 0.001  # 0.1%
+
 
 class PositionSide(Enum):
     LONG = "LONG"
@@ -45,7 +52,7 @@ class TradeExecution:
     quantity: float  # Positive for long, negative for short
     timestamp: datetime
     execution_id: str
-    commission_rate: float = 0.001  # Default commission rate (0.1%)
+    commission_rate: float = DEFAULT_COMMISSION_RATE
     forecast: Optional[float] = None  # Optional forecast value for the execution
     regime: Optional[str] = None  # Regime in place
     confidence: Optional[float] = None  # Confidence of forecast
@@ -312,7 +319,7 @@ class CompletedTrade:
 class EnhancedPerformanceTracker:
     """Enhanced performance tracker supporting iterative long/short positions with LIFO matching."""
     
-    def __init__(self, commission_rate: float = 0.001, log_file: str = 'results/trades.json', initial_capital: float = 1000.0):
+    def __init__(self, commission_rate: float = DEFAULT_COMMISSION_RATE, log_file: str = 'results/trades.json', initial_capital: float = 1000.0):
         self.commission_rate = commission_rate
         performance_dir = os.path.dirname(os.path.abspath(__file__))
         project_dir = os.path.dirname(performance_dir)
