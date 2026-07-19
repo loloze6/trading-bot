@@ -1,128 +1,153 @@
-# NEXT_SESSION.md — updated 2026-07-17, post run_058 close-out (H-041 family closed)
+# NEXT_SESSION.md — updated 2026-07-19, post run_059 close-out (first honest C7 verdict; Phase 1 opened)
 
 Single entry point for the next session. Read in order, then work the queue.
 
 ## Read first, in order
 
-1. [`DOC_INDEX.md`](DOC_INDEX.md) — doc map.
-2. [`campaign_knowledge_base.yaml`](campaign_knowledge_base.yaml) —
-   `fear_greed_contrarian_v2_validation_rejected` (H-041-C-v2, newest
-   finding) and `fear_greed_contrarian_inconclusive` (H-041-C, its parent)
-   — the F&G / H-041 family is now fully closed; read the newer entry's
-   `exhausted_basis` in full, including its FACTUAL CORRECTION paragraph,
-   before citing `runs/run_058/artifacts/validation_decision.yaml`
-   anywhere.
-3. [`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)
-   — the defect ledger. This session's v5 additions: **B7** evidence
-   addendum (third in-the-wild demonstration — validation still does not
-   read pre_registration.yaml, still misdescribes registrations it vetoes);
-   **A10** (missing-deliverable stage failures get zero retries — watch-level,
-   one occurrence); **A11 CLOSED** (SDK 0.2.82 result-misclassification —
-   retry rider shipped, commit `9bf2a4c`); **B15** (no first-class
-   registration→enqueue path — hand-edit was required for H-041-C-v2);
-   **F10** (no raw LLM transcript preserved on stage crash).
-4. [`SESSION_LOG.md`](SESSION_LOG.md)'s most recent entry — full narrative
-   of the H-041-C-v2 registration through run_058's launch-to-close arc:
-   the five walls hit (brief format, pass_rule copy-through, missing
-   deliverable, queue-level resume, SDK misclassification) and each
-   one's shipped cure, ending in the terminal validation rejection and
-   this session's closure ruling.
-5. [`RUNBOOK.md`](RUNBOOK.md) §3 (halt-table, now annotated with the SDK
-   misclassification case) and §4 (resume-after-pause, now carrying the
-   queue-level `paused:*` gate callout and the audit-log-overwrite
-   limitation) before touching any paused run.
+1. [`docs/ROADMAP.md`](docs/ROADMAP.md) — the operator-ratified roadmap
+   (v2, 2026-07-19). This is now the campaign's standing plan — read it in
+   full, not just this file's summary of it. Part 2 (Phase 0-5) is the
+   task queue's own source of truth; Part 3/4 (roles, models,
+   context-economy, KPI, anti-corner rule) are now the authoritative
+   process doctrine, superseding this file's own prior "Operator Charter"
+   section where the two differ (they should not differ in substance —
+   the roadmap is the fuller version).
+2. [`DOC_INDEX.md`](DOC_INDEX.md) — doc map.
+3. [`campaign_knowledge_base.yaml`](campaign_knowledge_base.yaml) —
+   `funding_mr_daily_retest_killed` (newest finding, run_059's fresh C7
+   verdict) and the `engine_provenance_caveat` appended to
+   `p4_sma_trend_longonly_daily_auto` (run_054/057, pre-fix 1d
+   misalignment context — verdicts maintained, not relitigated).
+4. [`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)
+   — the defect ledger. This session's v6 additions: **B7 CLOSED**
+   (commit `0a6311d`), **B15 CLOSED** (commit `ae95906`, plus the run_049
+   orphan-thread second-evidence note); new **A12** (P0 — verdict_interpreter's
+   missing human_pause guard, the most likely cause of any future resume
+   friction; fix this first if background/autonomous mode is revisited),
+   **A13** (stale-cache/freshness gap, unresolved, filed pending future
+   resume-cycle logs), **A14** (candle_completion_callback arity,
+   watch-level, confirmed harmless in current wiring), **C11** (A8.6
+   block_size silently defaults to the 1h value for any unmapped
+   timeframe — MUST be fixed before the deferred 4h funding-retest
+   candidate is ever registered), **F11** (no-transcript-on-derived-error,
+   process gap), **D4** (shared, non-run-scoped trades.json output path —
+   root cause of the standing git-status waiver on that file).
+5. [`SESSION_LOG.md`](SESSION_LOG.md)'s most recent entry — full
+   narrative of the FUNDING_MR_DAILY_RETEST registration through run_059's
+   launch (silent 1d zero-forecast failure), the tz-bug root-cause and
+   fix, the resume friction, and the fresh mechanically-evaluated kill
+   verdict.
+6. [`RUNBOOK.md`](RUNBOOK.md) — `component_execution_error` row (§3) now
+   carries the 4-step fix→snapshot→reset→resume procedure this arc
+   actually used; keep it in mind for any future silent (no-exception)
+   engine defect, not just ones that raise.
 
-## State delta since the 2026-07-15 NEXT_SESSION.md (authoritative amendments)
+## State delta since the 2026-07-17 NEXT_SESSION.md (authoritative amendments)
 
-- **K3 (B3+B10, protocol pinning): CLOSED.** Unchanged from the prior
-  delta — carried forward as fact, not re-litigated this session.
-- **B4: partially shipped.** The pass_rule copy-through rider landed
-  (`_materialize_run`'s fresh_launch path now extracts
-  `evaluation.pass_rule` into `pre_registration["pass_rule"]`, mirroring
-  `_materialize_refinement_run`) — commit `63a6af9`. The rest of B4
-  (mechanical copy-through/conformance-diff gate for ALL pre-registered
-  fields across ALL stages) remains open.
-- **H-041-C-v2 / run_058 arc: ENDED, completed_rejected.** The pipeline
-  reached a terminal state at the `validation_gate` stage itself
-  (`runs/run_058/artifacts/validation_decision.yaml`, status: reject) —
-  it never reached `backtest_specification`, `signal_prescreen`,
-  `protocol_execution`, or `verdict_interpreter`; no
-  prescreen_result.yaml / protocol_result.yaml /
-  pass_rule_evaluation.yaml / verdict_interpretation.yaml exist for this
-  run.
-- **The H-041 Fear & Greed contrarian family is CLOSED per the KB**, on
-  the totality of evidence (the registration's own honesty clause + the
-  KB's prior per-era IC sign-flip evidence + the validation rejection) —
-  NOT on the registered mechanical pass_rule, which was never executed.
-  A factual correction is recorded permanently on the KB finding
-  (`fear_greed_contrarian_v2_validation_rejected`): the rejection
-  rationale treated the 2024-2025 walk-forward era as "the test period";
-  the pinned protocol's actual pass-gated windows were 2018-02 through
-  2023-12-31 only, with 2024-2025 registered as diagnostic-only and
-  explicitly excluded from gating. Any future reader citing
-  validation_decision.yaml directly must weigh it with that error known.
-- **SDK result-misclassification retry rider + RUNBOOK §4 cures:
-  shipped**, commit `9bf2a4c`. Queue-level `paused:*`-gate documentation
-  cure (RUNBOOK §4) also shipped this arc, commit `d26a437`.
-- **Test suite: 301 passed, 0 failed** (`python -m pytest -q`, confirmed
-  at this session's close).
-- **58 runs on disk, all referenced/grandfathered, 0 unexpected orphans**
-  (per the campaign runner's own reconcile check, most recently run
-  2026-07-17).
-- **Confirmed edges: still zero.** Unchanged from every prior delta.
+- **B7: CLOSED.** `_apply_b7_mandatory_inputs` ships (commit `0a6311d`) —
+  validation and every downstream LLM stage now see
+  `pre_registration.yaml`/`user_brief_verbatim.yaml` regardless of what a
+  given run's handoff lists, when the file exists on disk.
+- **B15: CLOSED.** `register` subcommand ships (commit `ae95906`) — a
+  fully-authored brief is enqueued with one command, no hand-edit. First
+  real use: `FUNDING_MR_DAILY_RETEST` (commit `8f683fe`).
+- **run_059 (FUNDING_MR_DAILY_RETEST): CLOSED, kill/terminate.** The
+  campaign's FIRST fully mechanically-evaluated (B11/C7) verdict on a
+  live, non-diagnostic hypothesis, end to end. FAIL on median_sharpe and
+  max_abs_drawdown_pct (both symbols, both criteria); PASS on the
+  engine-conformance criterion. root_cause: `already_priced_in`
+  (confidence high) — marginal correlation (0.047), negative expectancy
+  after costs, insufficient win rate.
+- **Engine fix shipped: `CandleBuilder._align()` UTC bug (commit
+  `2529f5b`).** Was silently zeroing every 1d bar's forecast for any
+  settlement-boundary-style check, on this (non-UTC) machine, since no
+  nonzero local UTC offset is ever a multiple of 86400s. 1h is
+  unaffected (whole-hour offsets ARE multiples of 3600s). Two new
+  regression tests; existing 1h F5a tests untouched and green.
+- **Provenance caveat recorded, not a relitigation:** `p4_sma_trend_longonly_daily_auto`
+  (run_054/057, also 1d) ran BEFORE this fix. OHLCV values are unaffected
+  (only the candle timestamp LABEL shifted); at most a possible
+  off-by-one-bar window-boundary effect. Verdicts (`kill_er_gate_mechanism_falsified`)
+  stand unchanged.
+- **Test suite: 38 passed (trading-bot) / 310 passed (strategy-research)**
+  — both confirmed via `python -m pytest -q`, no code changed by the
+  close-out itself (docs/state only).
+- **`docs/ROADMAP.md` installed** — operator-ratified, verbatim (see Read
+  First item 1).
+- **Confirmed edges: still zero.** Unchanged from every prior delta —
+  H-041 family closed (prior session), FUNDING_MR_DAILY_RETEST now also
+  closed. The roadmap's Phase 1-4 exist precisely because the two-coin,
+  single-book-signal corner is exhausted; the search now needs new data
+  axes and a venue-realistic cost model before the next wave of
+  registrations.
 
-## OPERATOR CHARTER (verbatim, binding)
+## Task queue (priority order — now driven by docs/ROADMAP.md Part 2)
 
-The prime directive is a **PROFITABLE STRATEGY, not process.** The
-operator has flagged over-focus on details and circling as the
-campaign's main risk. Rules in force:
+### (1) Phase 1 — Reality alignment: France, venue, fees
+Per `docs/ROADMAP.md`'s own numbering (read the full text there before
+dispatching — this is a summary, not a substitute):
+- **1.1 Venue survey** — French-retail-legal venues today, spot vs perp
+  availability, fee schedules, API/data quality; a decision or 2-venue
+  shortlist, with sources (not from memory).
+- **1.2 Venue-parameterized cost model + 3 calibration re-runs** — the
+  cost model takes the chosen venue's real fee schedule; re-run the
+  funding retest + 2 archived near-misses under it to measure how many
+  "kills" were fee artifacts.
+- **1.3 Registration rule: venue declared** — every new brief states
+  venue + product; anything not legally tradable for the operator is
+  auto-flagged research-only at registration. Settle explicitly whether
+  the funding family (perp access) is live-tradable at all.
+- **1.4 Fee-reduction autopsy field** — any cost-dominated kill's autopsy
+  must answer "is there a system that reduces these fees?" and register
+  the cheap variant if yes.
+- **Gate:** venue decided in writing; cost model live; 3 calibration runs
+  reported; funding family's live-tradability settled yes/no.
 
-- Every manual review must retire itself into a mechanical gate — a new
-  data type must **NEVER** trigger a full human review again once
-  handled once.
-- **Fix-with-the-workaround** — operational knowledge is documented in
-  the same dispatch that pays for it, not deferred.
-- **No new process work** unless it is on the background-mode critical
-  path or demanded by a concrete intervention.
-- **KPI, tracked from now on:** honest verdicts per week, and cost per
-  verdict.
+### (2) Phase 2 tracks — queued behind Phase 1's gate
+Data moat (breadth download, first cross-sectional run on the
+already-registered XS_momentum idea, whale-footprint dataset, forward
+recorders, news/text scoping memo) — do not start ahead of Phase 1's own
+gate; `docs/ROADMAP.md` Part 2 Phase 2 has the full per-track objectives
+and deliverables.
 
-## Task queue (priority order)
+### (3) Ledger items worth fixing opportunistically (not a phase gate)
+**A12** (P0, verdict_interpreter human_pause fall-through) is the
+highest-value fix if any future run needs a clean resume — cheap,
+well-specified, file:line already cited in the ledger. **C11** (4h
+block_size default) MUST be fixed before the deferred 4h funding-retest
+candidate (R3) is ever registered, or its A8.6 power check will silently
+use the wrong divisor.
 
-### (1) GENERATOR SESSION — batch of live hypotheses
-Fragment-pattern and trade-diagnostics ideation. The operator's stated
-ambitions — regime-aware exit diagnostics → more reactive top-detection
-features, ML-scored indicators, timeframe exploration — flow through the
-existing registration machinery, which is now cheap per hypothesis
-(pre_registration.yaml + brief authoring is a well-worn path after
-H-041-C-v2).
+### (4) Everything past Phase 1's gate (Phase 3+ hypothesis waves, Phase 4 ML, Phase 5 promotion)
+Not yet — gated behind Phase 1 (venue/cost reality) and Phase 2 (new data
+axes). See `docs/ROADMAP.md` Part 2 for the full sequence and gates.
 
-### (2) First real-world exercise of prescreen → protocol → C7 evaluation on a LIVE batch hypothesis
-These paths have still never run end-to-end on a live (non-diagnostic,
-non-retrospective-arbitration) hypothesis. run_058 terminated at
-validation_gate before reaching any of them.
+## OPERATOR CHARTER (superseded in detail by docs/ROADMAP.md Part 3/4 — kept here as a compressed pointer, not the authoritative text)
 
-### (3) Prune the remaining P0 (B4-rest+D3, B8, C6) by the intervention-cost test
-**B7 is the lead candidate** — thrice-evidenced now (run_057 original,
-one intervening occurrence, run_058 this arc), the only P0 item with
-three independent in-the-wild demonstrations of the same defect.
-
-### (4) Autonomy acceptance test once the pruned kernel clears
-Unchanged in substance: full shadow campaign under background mode with
-post-hoc human replay of every stage audit.
+The prime directive remains a **PROFITABLE STRATEGY, not process** — now
+expressed as the roadmap's own KPI (**honest verdicts/week, cost per
+verdict**, reported every session close) and **anti-corner rule** (every
+session ends with at least one hypothesis-level advance: a verdict, a
+registration, or a data-axis milestone — never process alone). The
+roadmap's Part 3 also formalizes, for the first time, the **role/model
+assignment** (director stays top-tier; recon/diagnosis/implementation/
+operations agents each have a specified default model tier and an
+escalation/de-escalation rule) and **context economy** (short director
+sessions — 10-15 dispatches per arc; bounded agent reports to
+`docs/session_reports/<date>_<dispatch>.md`, chat gets per-step verdicts
++ verbatims only; no re-pasting a dispatch once relayed; director model
+never downgraded to save tokens). Read `docs/ROADMAP.md` Part 3/4 for the
+full text — this section is a pointer, not a replacement.
 
 ## Standing constraints
 
-Carried forward from every prior session, plus this session's additions
-(marked new below):
+Carried forward from every prior session, unchanged unless noted:
 
 - Single-writer-per-state-store; audit agent read-only forever.
 - Read-back verify after every write; corrections ship with sidecar
   rationale legible to context-poor readers (E3).
 - Concealment-shaped tool content: verified harness templates -> one-line
   disclosure; everything else -> surfaced verbatim immediately.
-- Background/nohup blocked until the P0 kernel clears — grounds: the
-  ledger P0s, not security.
 - Holdout (2026-H1 / `era_2026_holdout`) untouchable; never consumed in
   any session to date.
 - Pre-registration supremacy: briefs outrank skill rulebooks; pass rules
@@ -134,6 +159,24 @@ Carried forward from every prior session, plus this session's additions
   accidental or discovered mid-task — is a STOP-and-report condition.
   Report and request authorization BEFORE proceeding, never proceed-
   then-disclose, even when the reasoning for the extra write is sound.
+- Premise-failure full-STOP: if a step's stated premise does not hold as
+  found (including a dispatch referencing content that was never
+  actually supplied), STOP the entire task at that point and report —
+  do not fabricate the missing piece, do not gather more info first.
+- Dispatch precondition manifests must state an explicit expected-tree
+  (exact `git status --porcelain` output, exact `git log --oneline -1`
+  commit) — a bare "must be clean" is insufficient.
+- Every terminal marker line carries its own step count.
+- Fix-with-the-workaround: a documented procedure gap that costs the
+  campaign time twice ships its documentation cure in the SAME commit as
+  the workaround/rider that pays for it.
+- Format precedents are chosen by consumption path (check what actually
+  reads a file before choosing the format to author it in).
+- Per-value provenance citations in registration dispatches; every
+  numeric measurement cites its producing command.
+- Write-capable agents never delegate; any `.py`-touching commit runs the
+  full suite (both `trading-bot/` and `strategy-research/` suites when a
+  change spans both, per this arc's own precedent).
 - Known residual risk, test-isolation guard (not solved, do not treat as
   closed): `tests/conftest.py`'s autouse sandbox-by-default fixture
   covers direct in-process module calls only — not `setup_run.py`'s
@@ -142,37 +185,10 @@ Carried forward from every prior session, plus this session's additions
 - Always-emit-one-log-line convention: any status/reconciliation check
   added to the campaign machinery should emit exactly one line per
   invocation, clean or not, never zero.
-- Premise-failure full-STOP: if a step's stated premise does not hold as
-  found, STOP the entire task at that point — including remaining
-  authorized read-only steps — and report. Do not gather more info first,
-  do not run anything else "while I'm here."
-- Dispatch precondition manifests must state an explicit expected-tree:
-  a bare "git status must be clean" is insufficient — every dispatch's
-  precondition should instead name the exact expected
-  `git status --porcelain` output and the exact expected
-  `git log --oneline -1` commit.
-- Every terminal marker line carries its own step count: e.g. "END OF
-  INSTRUCTIONS (9 steps)" — lets the executing agent self-check it
-  received the complete prompt, not a truncated one.
-- **Fix-with-the-workaround (new this session, elevated to charter
-  status):** a documented procedure gap that costs the campaign time
-  twice ships its documentation cure in the SAME commit as the
-  workaround/rider that pays for it — never deferred to a later
-  session.
-- **Format precedents are chosen by consumption path (new this
-  session):** e.g. briefs are authored as `.md` frontmatter, not `.yaml`,
-  because `_parse_brief_frontmatter` is what actually consumes them —
-  check what reads a file before choosing the format to author it in.
-- **Per-value provenance citations in registration dispatches (new this
-  session):** any numeric threshold, row count, or window boundary
-  handed to an implementation agent for a registration must cite the
-  file/command that produced it — the manifest row-count contradiction
-  this arc only resolved cleanly because file forensics were run before
-  the write, not after.
-- **Every numeric measurement cites its command (new this session):**
-  e.g. "301 passed (`python -m pytest -q`)" — not a bare number.
-- **Write-capable agents never delegate (new this session, reaffirmed):**
-  no sub-agent dispatch from within an implementation-agent task.
-- **Any `.py`-touching commit runs the full suite (new this session,
-  reaffirmed):** no partial/targeted test runs substituted for the full
-  suite before a commit that touches orchestrator or workflow code.
+- **Context economy (new this session, now formalized in `docs/ROADMAP.md`
+  Part 3):** short director sessions (10-15 dispatches per arc, hand off
+  via this file); bounded agent reports (full detail to
+  `docs/session_reports/<date>_<dispatch>.md`, chat gets per-step
+  verdicts + only the verbatims needed for recomputation); no re-pasting
+  a dispatch once relayed — reference it by name or save it to a repo
+  file; director model never downgraded to save tokens.

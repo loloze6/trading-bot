@@ -16,6 +16,14 @@ Organized by the question a reader actually arrives with, not by directory.
 next session: read-first list, priority-ordered task queue, standing
 constraints. Start here if you're picking this campaign back up.
 
+### "What's the overall plan / KPI / process?"
+→ **[`docs/ROADMAP.md`](docs/ROADMAP.md)** — operator-ratified roadmap
+(v2, 2026-07-19): Phase 0-5 task sequence with gates, the KPI (honest
+verdicts/week, cost per verdict) and anti-corner rule, the role/model
+assignment for every agent class, and the context-economy rules. The
+standing plan — `NEXT_SESSION.md`'s own task queue is now derived from
+this, not the other way around.
+
 ### "How do I operate the campaign?"
 → **[`RUNBOOK.md`](RUNBOOK.md)** — launch/status/resume/stop commands, the
 hard-pause table (section 3), the block on background/`nohup` mode (grounds: ledger P0 kernel — see
@@ -50,10 +58,13 @@ standing disclosure doctrine with the verified-template allowlist.
 
 ### "What's broken and what gates autonomy?"
 → **[`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)**
-— the 29-item defect ledger; its P0 "kernel" gates background mode. A1/A3/B1
-(K4), A8/A9/B11/C7/C9 (K2), and B3/B10 (K3) are now closed — see the design
-notes below for what shipped. Two new items (B13, B14) were filed by K3's
-own close-out audit, found while implementing B3/B10, not yet fixed.
+— the growing defect ledger (v6 as of 2026-07-19); its P0 "kernel" gates
+background mode. A1/A3/B1 (K4), A8/A9/B11/C7/C9 (K2), B3/B10 (K3), and now
+B7/B15 (v5/v6) are CLOSED — see the design notes below for what shipped.
+Open P0: **A12** (verdict_interpreter's missing human_pause guard — fix
+first if resume reliability matters). Open P1/P2 watch items: B13, B14,
+A13, A14, C11 (4h block_size trap — fix before any 4h registration), F11,
+D4 (shared trades.json path).
 → **[`docs/design/K4_routing_registration_design_20260712.md`](docs/design/K4_routing_registration_design_20260712.md)**,
 **[`docs/design/K2_verdict_machinery_design_20260713.md`](docs/design/K2_verdict_machinery_design_20260713.md)**,
 **[`docs/design/K3_protocol_pinning_design_20260714.md`](docs/design/K3_protocol_pinning_design_20260714.md)**
@@ -85,13 +96,30 @@ Each is an LLM persona in `skills/{name}/SKILL.md`:
 → **`docs/plan/`** — superseded enhancement-plan design docs (`00_overview_v2.md`,
 `01`–`11_*.md`, `AMENDMENTS_01-06.md`), plus the archived `00_closing_state.md`
 namesake above. Read only for historical rationale, never as current guidance.
-→ **[`docs/plan/NEXT_SESSION_20260710_superseded.md`](docs/plan/NEXT_SESSION_20260710_superseded.md)**
-— the pre-run_057 NEXT_SESSION.md, archived when the 2026-07-12 version
-replaced it. Historical only.
+→ Archived `NEXT_SESSION.md` snapshots, each superseded by the next as the
+campaign progressed (historical only, read for the session's own
+framing, never as current guidance):
+[`docs/plan/NEXT_SESSION_20260710_superseded.md`](docs/plan/NEXT_SESSION_20260710_superseded.md)
+(pre-run_057),
+[`docs/plan/NEXT_SESSION_20260712_superseded.md`](docs/plan/NEXT_SESSION_20260712_superseded.md)
+(post-run_057 close),
+[`docs/plan/NEXT_SESSION_20260714_superseded.md`](docs/plan/NEXT_SESSION_20260714_superseded.md)
+(post-K4+K2 implementation),
+[`docs/plan/NEXT_SESSION_20260715_superseded.md`](docs/plan/NEXT_SESSION_20260715_superseded.md)
+(post-K3 implementation/close-out),
+[`docs/plan/NEXT_SESSION_20260717_superseded.md`](docs/plan/NEXT_SESSION_20260717_superseded.md)
+(post-H-041-family close, pre-generator-session).
 → **[`SESSION_LOG.md`](SESSION_LOG.md)** — chronological per-session handoff log
 (hypothesis / result / files touched / next-session prompt). Historical once superseded by a newer entry.
 → **`docs/STEP_05_FINDINGS.md`, `docs/p1b_fetch_manifest.md`** — dated,
 self-contained investigation notes. Historical, not living docs.
+→ **[`docs/plan/NEXT_RUN_CHECKLIST.md`](docs/plan/NEXT_RUN_CHECKLIST.md)**
+— moved here 2026-07-19 (superseded): a pre-K2/K3-era operational
+checklist (2026-07-04) whose `pre_registration.yaml` template (section
+4) predates the real B11/C7 structured `pass_rule` schema now in use —
+following it literally today would produce a non-conformant
+registration. Read only for historical context on the A6.2/KB-recompute
+mechanisms it also describes (those are still substantively accurate).
 
 ---
 
