@@ -56,6 +56,12 @@ KB-revert incident and the system-reminder investigation, RESOLVED
 2026-07-11 as native harness boilerplate (see its Resolution addendum);
 standing disclosure doctrine with the verified-template allowlist.
 
+### "Where may I legally trade, and on what venue?"
+→ **[`docs/venue_survey_20260719.md`](docs/venue_survey_20260719.md)** —
+Phase 1.1 venue survey: MiCA/MiFID II authorization status, spot vs. perp
+retail availability, fees, and API quality for Binance/Kraken/Bybit/OKX/
+Coinbase/Bitget; Kraken decided as primary venue, OKX as shortlist backup.
+
 ### "What's broken and what gates autonomy?"
 → **[`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)**
 — the growing defect ledger (v6 as of 2026-07-19); its P0 "kernel" gates
