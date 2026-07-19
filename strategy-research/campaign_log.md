@@ -102,3 +102,28 @@ C:\Users\alauz\Documents\Projects\trading-bot\trading-bot\core\backtester.py:234
 - 2026-07-17T10:47:45Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
 - 2026-07-17T10:47:45Z Queue exhausted — no ready or in_progress entries remain.
 - 2026-07-18T04:53:01Z REGISTER: queue entry 'FUNDING_MR_DAILY_RETEST' appended (brief=briefs/FUNDING_MR_DAILY_RETEST.md, priority=1, status=ready).
+- 2026-07-18T05:27:47Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-07-18T05:27:47Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-18T05:27:47Z [DRY RUN] queue: selected entry 'FUNDING_MR_DAILY_RETEST' (status=ready, brief=briefs/FUNDING_MR_DAILY_RETEST.md)
+- 2026-07-18T05:27:47Z [DRY RUN] classified next action for 'FUNDING_MR_DAILY_RETEST': 'fresh_launch'
+- 2026-07-18T05:27:47Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=structural_forced_flow, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-07-18T05:27:47Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-07-18T05:27:47Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-07-18T05:27:47Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-07-18T05:27:48Z [DRY RUN] wishlist-trigger classification OK: detected family="daily_timeframe_er_overlay: checked 16 record(s); none satisfy all 3 condition(s) (source=kb_finding, family='daily_timeframe_er_overlay')"
+- 2026-07-18T05:27:48Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-07-18T05:27:48Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-07-18T05:28:04Z RECONCILE: 58 run dir(s) scanned, 58 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-18T05:28:04Z LAUNCH FUNDING_MR_DAILY_RETEST -> run_059 (brief=briefs/FUNDING_MR_DAILY_RETEST.md)
+- 2026-07-18T05:38:24Z STAGE  FUNDING_MR_DAILY_RETEST / run_059: pending_stage=human_pause status=active (ic=0.037802, cost_ratio=2.2927, prescreen_route=proceed_to_backtest, backtest_verdict=refine, verdict_status=kill)
+- 2026-07-18T05:38:24Z HALT — component_execution_error. Campaign stopped on FUNDING_MR_DAILY_RETEST / run_059. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-18T15:54:25Z RESUME FUNDING_MR_DAILY_RETEST / run_059: resolution confirmed for 'component_execution_error', resuming queue processing.
+- 2026-07-18T15:54:25Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-18T16:01:06Z STAGE  FUNDING_MR_DAILY_RETEST / run_059: pending_stage=human_pause status=active (ic=0.037802, cost_ratio=2.2927, prescreen_route=proceed_to_backtest, backtest_verdict=refine, median_sharpe=-0.637, verdict_status=kill)
+- 2026-07-18T16:01:07Z HALT — component_execution_error. Campaign stopped on FUNDING_MR_DAILY_RETEST / run_059. See RUNBOOK.md 'Resume after a pause'.
+- 2026-07-19T12:26:54Z RESUME FUNDING_MR_DAILY_RETEST / run_059: resolution confirmed for 'component_execution_error', resuming queue processing.
+- 2026-07-19T12:26:54Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-19T12:29:10Z STAGE  FUNDING_MR_DAILY_RETEST / run_059: pending_stage=completed_rejected status=rejected (ic=0.037802, cost_ratio=2.2927, prescreen_route=proceed_to_backtest, backtest_verdict=refine, median_sharpe=-0.637, verdict_status=kill)
+- 2026-07-19T12:29:11Z DONE FUNDING_MR_DAILY_RETEST (run_059) -> completed_rejected
+- 2026-07-19T12:29:11Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-07-19T12:29:11Z Queue exhausted — no ready or in_progress entries remain.
