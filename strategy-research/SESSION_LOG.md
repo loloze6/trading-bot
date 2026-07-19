@@ -1785,3 +1785,188 @@ additions: format precedents chosen by consumption path; per-value
 provenance citations in registration dispatches; every numeric
 measurement cites its command; write-capable agents never delegate; any
 .py-touching commit runs the full suite."
+
+## Session: 2026-07-17 to 2026-07-19 — FUNDING_MR_DAILY_RETEST registration through run_059's first honest C7 verdict (tz-bug arc)
+
+### Hypothesis
+Per the 2026-07-17 NEXT_SESSION.md handoff (generator session), task queue
+item (1) directed a batch of live hypotheses through the now-cheap B7/B15
+registration machinery. Candidate #1 (funding-rate continuous mean-reversion,
+daily branch — R2/R3 operator ruling: daily is the batch anchor, 4h
+deferred) was registered, protocol-authored, ratified (Step 6 checkpoint:
+era-gating Variant B, criterion (c) recalibrated to 50%), and launched as
+run_059 — the first real exercise of prescreen -> protocol -> C7 evaluation
+on a live (non-diagnostic) hypothesis since the K2/C7 machinery shipped.
+
+### Result
+
+**Registration (B7/B15 first real use):** `FUNDING_MR_DAILY_RETEST` brief +
+stamped protocol (`protocols/funding_mr_daily_retest_v1.json`, 49 pass-gated
+monthly windows, 2019-12-01 to 2023-12-31) authored, ratified via
+`AskUserQuestion` (era-gating Variant B: truncate to 2023-12-31, matching
+the h041c_v2_backext.json precedent's own diagnostic-only-era mechanism —
+simple omission from the protocol's `windows` array, no schema flag;
+criterion (c) zero_trade_slot_pct <= 50%, provenance-cited to measured
+sign-flip base rates), enqueued via the NEW `register` subcommand (B15's
+first real use, one log line, zero hand-edits) — committed
+`63a6af9`/`996f432`/`d26a437`/`9bf2a4c` (B4/B7/queue-gate/SDK-retry riders,
+prior arc) then `9e2f7dc` (session close) then `0a6311d`/`ae95906`/`b2a4ebf`/`8f683fe`
+(B7 rider, B15 register command, candidate #1 registration, enqueue).
+
+**run_059 launch — SILENT total zero-forecast failure (no exception, no
+retry, `component_execution_error`):** `FundingRateMeanReversionComponent`
+produced `avg_forecast=0.0` on all 1,568 bar-symbol instances at 1d,
+`component_error_count=0`. Root-caused via in-process repro driving the
+REAL `DataManager`/`CandleBuilder` chain (not a reimplementation, per the
+standing NO-SPECULATIVE-FIX rule): `CandleBuilder._align()`
+(`trading-bot/data/data_manager.py`) used naive `datetime.timestamp()`/
+`datetime.fromtimestamp()`, which silently round-trip through the LOCAL
+system timezone (this machine: Europe/Paris) instead of UTC. For
+`interval_seconds=3600` (1h) a whole-hour local offset is an exact
+multiple of the interval and cancels through the floor exactly — 1h is
+byte-identical, unaffected. For `interval_seconds=86400` (1d) no nonzero
+UTC offset is ever a multiple of a full day, so every daily candle's
+`start_time` was shifted to a fixed non-zero hour (01:00 winter / 02:00
+DST), NEVER hour=00 — and
+`FundingRateMeanReversionComponent`'s settlement-boundary check
+(`hour % 8 == 0`) therefore failed on every single 1d bar, unconditionally,
+before `funding_rate` was ever read. Confirmed empirically (30/31 completed
+candles swallowed pre-fix, 0 fired; 30/31 fired post-fix, hour values all
+0) and independently confirmed NOT present in
+`strategy-research/tools/prescreen_signal.py`'s own `_merge_aux_feeds`
+(reads CSV timestamps directly via `pd.to_datetime`, never touches
+`CandleBuilder`/`_align()` at all) — explaining why prescreen and the
+engine disagreed and why the prior operator recon's "settlement gate
+already mechanically EXONERATED" premise was itself wrong (daily bars were
+never actually landing on hour=00:00).
+
+**Fix (commit `2529f5b`):** `_align()` made UTC-explicit
+(`timestamp.replace(tzinfo=utc).timestamp()` /
+`datetime.fromtimestamp(..., tz=utc).replace(tzinfo=None)`), at the
+confirmed site only — no refactor, no unification of the duplicated
+merge implementations (filed as ledger items instead, not fixed here).
+Two new regression tests
+(`test_daily_bars_with_merged_funding_produce_nonzero_forecasts`,
+`test_data_manager_merge_attach_chain_yields_funding_column_at_1d`); the
+existing F5a 1h tests left untouched and still green (the explicit
+"floor" requirement). Both full suites green before commit: 38
+(trading-bot) / 310 (strategy-research).
+
+**Resume, additional friction, and the fresh verdict:** the resume needed
+more than one pass (`pipeline_state.yaml`'s `completed_stages` shows
+`protocol_execution` and `verdict_interpreter` each recurring) — traced
+this close-out to `verdict_interpreter`'s missing `human_pause` guard
+(A12, new ledger P0: unlike the sibling `holdout_evaluation` branch, it
+has no `if next_stage == "human_pause": ...; break`, so a pause falls
+through to the generic completion block and gets mislabeled
+`status: active`) plus an unresolved, only partially re-derivable
+stale-cache/freshness gap (A13, filed pending future logs).
+`signal_prescreen` needed no re-run (independently confirmed correct: it
+was never affected by the tz bug in the first place) — only
+`protocol_execution` genuinely depended on the fixed engine.
+
+**THE VERDICT (post-fix, mechanically evaluated, B11/C7 machinery, the
+session's headline result):** `pass_rule_evaluation.yaml`
+(`evaluated_at: 2026-07-18T16:01:02Z`) — FAIL on (a) median_sharpe (BTC
+-0.296, ETH -0.979, both << 0.8) and (b) max_abs_drawdown_pct (BTC 34.922,
+ETH 49.606, both >> 30); PASS on (c) zero_trade_slot_pct (0.0/0.0 — see
+the KB finding's conformance-reconciliation honesty note: this is the
+CORRECT behavior of a continuous always-on signal restarting flat each
+monthly window, not an anomaly, and does not weaken (c)'s
+breakage-direction detection power). `statement_branch_matched: FAIL-a`
+-> `hypothesis_verdict: kill`, `lineage_routing: terminate`, per the
+pre-registered total mapping — `verdict_interpreter`'s own stray
+`protocol_verdict: refine` field was correctly OVERRIDDEN by this binding
+mapping (the registered, correct behavior, not a discrepancy).
+`verdict_interpretation.yaml`'s fresh root_cause (`already_priced_in`,
+confidence high): median_forecast_return_corr=0.047 (marginal),
+per_trade_expectancy_bps=-38.47 (t=-1.509, n=699, not significant),
+win_rate_net=41.77% — insufficient to clear assumed 17.0-17.5 bps
+round-trip costs. Recorded in campaign_knowledge_base.yaml as
+`funding_mr_daily_retest_killed` (exhausted: true for the DAILY branch
+specifically; the parent `funding_rate_continuous_mean_reversion_expanded_auto`
+entry's own 4h branch remains explicitly open per R3, untouched by this
+close-out). **KPI: the campaign's FIRST honest, fully mechanically-evaluated
+C7 verdict on a live (non-diagnostic) hypothesis, end to end
+(registration -> prescreen -> protocol_execution -> pass_rule_evaluation
+-> verdict_interpreter), with no hand-correction of the machine's own
+verdict.** Cost: run_059's own audit_log sums to $0.5881 across five LLM
+stage invocations (`hypothesis_generation` $0.139, `innovation_expansion`
+$0.098, `validation` $0.073, `backtest_specification` $0.063,
+`verdict_interpreter` $0.214 — `signal_prescreen`/`protocol_execution` are
+tool stages, no LLM cost); this does not include the separate
+implementation-agent effort that root-caused and fixed the tz bug itself,
+which is not tracked in any run's own audit_log.
+
+**Session close-out (this dispatch):** B7 and B15 marked CLOSED in the
+ledger (commits `0a6311d`/`ae95906`) with resolution bullets; run_049's
+own orphan-thread state (active, `hypothesis_generation`, zero queue
+references) filed as B15's second in-the-wild demonstration, left
+untouched per operator ruling R4; six new ledger entries (A12 human_pause
+fall-through, A13 stale-cache/freshness gap, A14 candle_completion_callback
+arity watch-item, C11 A8.6 4h block-size default trap, F11
+no-transcript-on-derived-error, D4 shared non-run-scoped trades.json
+path); RUNBOOK §4's `component_execution_error` row enriched with the
+4-step fix->snapshot->reset->resume procedure this arc actually used;
+KB provenance caveat appended to `p4_sma_trend_longonly_daily_auto`
+(run_054/057, pre-fix 1d bars offset 1-2h from UTC midnight — verdicts
+maintained, NOT relitigated); operator-ratified `docs/ROADMAP.md`
+installed verbatim (diff-confirmed byte-identical against the supplied
+source).
+
+### Files touched
+- `strategy-research/campaign_knowledge_base.yaml` — new finding
+  `funding_mr_daily_retest_killed`; `engine_provenance_caveat` appended to
+  `p4_sma_trend_longonly_daily_auto`; `coverage_matrix.structural_forced_flow`
+  gained the matching row
+- `strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md` — B7/B15
+  marked CLOSED with resolution bullets + run_049 evidence; new v6
+  section: A12, A13, A14, C11, F11, D4
+- `strategy-research/RUNBOOK.md` — `component_execution_error` table row
+  enriched with the 4-step resume procedure
+- `strategy-research/docs/ROADMAP.md` — NEW, operator-ratified roadmap
+  v2, installed verbatim
+- `strategy-research/NEXT_SESSION.md` — rewritten around Phase 1 (this
+  close-out)
+- `strategy-research/DOC_INDEX.md` — updated (this close-out)
+- `.gitignore` — gained `.claude/`; `.claude/settings.local.json`
+  untracked via `git rm --cached` (disclosed per standing
+  harness-bookkeeping doctrine, never itself committed as content)
+- `trading-bot/data/data_manager.py` — `CandleBuilder._align()` UTC fix
+  (commit `2529f5b`)
+- `trading-bot/tests/test_funding_rate_component.py` — two new 1d
+  regression tests (commit `2529f5b`)
+- `trading-bot/results/trades.json` — restored (`git checkout --`),
+  standing waiver, never committed with real content
+- `strategy-research/workflow/run_campaign.py` — `register_hypothesis`
+  (B15, commit `ae95906`)
+- `strategy-research/workflow/run_phase1_research.py` — `_apply_b7_mandatory_inputs`
+  (B7, commit `0a6311d`)
+- `strategy-research/briefs/FUNDING_MR_DAILY_RETEST.md`,
+  `strategy-research/protocols/funding_mr_daily_retest_v1.json` — new
+  registration (commit `b2a4ebf`)
+- `strategy-research/config/campaign_queue.yaml` — `FUNDING_MR_DAILY_RETEST`
+  entry enqueued (commit `8f683fe`) through terminal `done`/`completed_rejected`
+- Commits this arc: `0a6311d`, `ae95906`, `b2a4ebf`, `8f683fe`, `2529f5b`,
+  plus this close-out's own commit(s)
+
+### Next session prompt
+"Resume strategy-research campaign. Read strategy-research/NEXT_SESSION.md
+first (single entry point) and strategy-research/docs/ROADMAP.md in full —
+the roadmap is now the campaign's standing plan. run_059
+(FUNDING_MR_DAILY_RETEST) is CLOSED: the campaign's first honest,
+mechanically-evaluated C7 verdict (kill/terminate, FAIL on median_sharpe
+and max_abs_drawdown_pct on both symbols, PASS on the engine-conformance
+criterion) after root-causing and fixing a silent tz-alignment bug in
+CandleBuilder._align() (commit 2529f5b) that had been zeroing every 1d
+bar's forecast. B7 and B15 are CLOSED in the ledger; six new items filed
+(A12 P0 human_pause fall-through -- fix this first, it is the most likely
+cause of any future resume friction; A13 stale-cache/freshness gap,
+unresolved; A14 watch-item; C11 4h block-size trap -- MUST be fixed
+before any 4h registration per R3; F11; D4). Roadmap Phase 1 (venue
+survey, venue-parameterized costs, venue-declared registration rule) is
+now the task-queue priority -- read docs/ROADMAP.md Part 2 Phase 1
+in full before dispatching. Standing charter and context-economy rules
+(short director sessions, bounded agent reports to
+docs/session_reports/, no re-pasting, director stays top-tier) carry
+forward unchanged, now formalized in the roadmap's own Part 3/4."
