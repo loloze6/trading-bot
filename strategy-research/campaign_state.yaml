@@ -37,6 +37,7 @@ runs:
 - run_048
 - run_053
 - run_054
+- run_059
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -239,6 +240,11 @@ altitude_history:
   dimension: ''
   family: sma_trend_following
   outcome: pivot
+- run: run_059
+  altitude: hypothesis
+  dimension: ''
+  family: funding_rate_mean_reversion
+  outcome: kill
 recent_parameter_dimensions_by_family:
   funding_rate_mean_reversion: []
   fear_greed_contrarian:
@@ -438,6 +444,11 @@ diagnostics_log:
   cost_drag_pct: 3.7069
   win_rate_vs_sharpe: both PASS or N/A
   avg_trade_duration_bars: 23.6
+- run: run_059
+  forecast_return_corr: 0.047
+  cost_drag_pct: 6.5689
+  win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
+  avg_trade_duration_bars: 6.17
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
@@ -498,7 +509,7 @@ notes:
   regime_retune_results.yaml, config/regime_retune_winner.json, runs/run_039/artifacts/regime_audit_decision.yaml.'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-07-12T16:13:05.628746+00:00'
+updated_at: '2026-07-19T12:29:10.316253+00:00'
 last_escalation:
   target: timeframe
   detail: 15m
@@ -689,3 +700,30 @@ trial_sharpes:
     every symbol. Code bug NOT fixed (out of scope this turn); will recur for future
     sparse-trading runs until fixed at the source.'
   verdict_final: kill_er_gate_mechanism_falsified
+- trial_id: run_059
+  source: prescreen
+  route: proceed_to_backtest
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: 0.037802
+  cost_pass: true
+- trial_id: run_059
+  source: backtest
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: expectancy
+  below_floor_pct: 100.0
+- trial_id: run_059
+  source: backtest
+  sharpe: -0.6375
+  expectancy_bps:
+    mean: -38.4665
+    se: 25.4911
+    t_stat: -1.509
+    n: 699
+  n_trades: 0
+  statistic_valid: sharpe
+  below_floor_pct: 30.61
