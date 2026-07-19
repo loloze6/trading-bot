@@ -331,7 +331,7 @@ live performance reporting — remain open and are not restated here.
 
 ## B. Briefs, pre-registration & conformance (continued)
 
-### B7. Validation stage never reads the pre-registration artifacts (P0)
+### B7. CLOSED (2026-07-17, commit 0a6311d) — Validation stage never reads the pre-registration artifacts (P0)
 - **Symptom:** validation's only required input was
   expanded_hypothesis_card.yaml — it never read user_brief_verbatim.yaml or
   pre_registration.yaml, then claimed "threshold 0.30 appears empirically
@@ -357,7 +357,28 @@ live performance reporting — remain open and are not restated here.
   because it never read the file. Recorded in campaign_knowledge_base.yaml
   under fear_greed_contrarian_v2_validation_rejected. Per operator ruling at
   session close, this is the third in-the-wild demonstration of the exact
-  defect this entry describes; the fix has still not shipped.
+  defect this entry describes.
+- **Resolution (2026-07-17, commit 0a6311d):** `_apply_b7_mandatory_inputs`
+  (workflow/run_phase1_research.py) unions `pre_registration.yaml` and
+  `user_brief_verbatim.yaml` (when present on disk) into `required_inputs`
+  for validation and every downstream LLM stage (`refinement_planner`,
+  `backtest_specification`, `verdict_interpreter`, `campaign_review`),
+  applied once at the single `async_invoke_agent` dispatch point (both the
+  Claude and Gemini engine paths read the same mutated handoff dict) — a
+  missing file is skipped, never force-required, so the union degrades
+  gracefully on older runs. A conditional deference sentence
+  (`_B7_DEFERENCE_SENTENCE`) is injected into the assembled stage prompt on
+  the same condition. Fixtures (tests/test_k3_protocol_pinning.py):
+  `test_apply_b7_mandatory_inputs_adds_pre_registration_when_handoff_omits_it`,
+  `test_apply_b7_mandatory_inputs_skips_missing_file_without_crashing`,
+  `test_apply_b7_mandatory_inputs_deduplicates_already_listed_path`,
+  `test_apply_b7_mandatory_inputs_noop_for_non_mandatory_stage`,
+  `test_apply_b7_mandatory_inputs_covers_every_downstream_llm_stage`. Note:
+  the mutation happens on the in-memory handoff dict passed into the
+  prompt-assembly functions, not written back to the on-disk handoff YAML
+  — grepping a run's persisted handoff file for "pre_registration" will
+  NOT show evidence of this fix firing; the fixtures above are the
+  authoritative acceptance evidence, not a live-run artifact.
 
 ### B8. Spec-stage conformance is schema-only, not semantic (P0)
 - **Symptom:** backtest_specification produced a schema-valid config
@@ -847,7 +868,7 @@ KB layer, is the complete known gate to autonomy as of session close.
 
 ## B. Briefs, pre-registration & conformance (continued)
 
-### B15. No first-class path from a fresh hypothesis registration to a schedulable queue entry (P1)
+### B15. CLOSED (2026-07-17, commit ae95906) — No first-class path from a fresh hypothesis registration to a schedulable queue entry (P1)
 - **Symptom:** H-041-C-v2's stamped protocol and brief were fully authored
   and registered (pre_registration.yaml, briefs/H-041-C-v2.md) with no
   queue entry ever created for it — RUNBOOK's documented launch procedures
@@ -863,6 +884,40 @@ KB layer, is the complete known gate to autonomy as of session close.
   queue entry, run through the register command, produces a `ready` queue
   entry that `_select_entry` picks up on the next `--once`/`--resume`
   invocation.
+- **run_049 orphan-thread evidence (found 2026-07-19, predates the fix):**
+  `runs/run_049/pipeline_state.yaml` records `status: active`,
+  `pending_stage: hypothesis_generation`, `completed_stages: []` — a run
+  directory that exists on disk with live pipeline state, yet
+  `config/campaign_queue.yaml` contains ZERO entries referencing `run_049`
+  anywhere (confirmed by direct grep of the queue file). This is a second,
+  independent real-world demonstration of the class B15 addresses: a run
+  thread with no queue-level path back to it, discoverable only by
+  directory archaeology, not by any campaign-runner command. Distinct from
+  H-041-C-v2's occurrence (a REGISTRATION with no enqueue path); this one
+  is a RUN with no registration-or-queue path at all. Per operator ruling
+  (R4, this session's dispatch): "run_049 parked — do not touch it" — left
+  untouched as evidence, not remediated by this close-out. The unrelated
+  `campaign_state.yaml.last_escalation.claimed_by_run: run_049` marker
+  (K3/B10's own migration) references the same run_id for a different
+  reason (stale-escalation claim tracking) and is not part of this
+  finding.
+- **Resolution (2026-07-17, commit ae95906):** `register_hypothesis`
+  (workflow/run_campaign.py) — a `register` argparse subcommand
+  (`--brief PATH --priority N --notes TEXT`) parsing the brief via the
+  existing `_parse_brief_frontmatter`, refusing on a duplicate id or a
+  malformed brief (one log line, nonzero exit), otherwise appending an
+  entry mirroring the H-041-C-v2 entry's own field set via the existing
+  `_load_queue`/`_save_queue` pair. First real use: `FUNDING_MR_DAILY_RETEST`
+  (2026-07-18), enqueued cleanly, one log line, ran to completion
+  (`run_059`, `completed_rejected`) without any hand-edit. Fixtures
+  (tests/test_k3_protocol_pinning.py):
+  `test_register_hypothesis_appends_entry_with_expected_field_set`,
+  `test_register_hypothesis_refuses_duplicate_id`,
+  `test_register_hypothesis_refuses_malformed_brief`,
+  `test_register_hypothesis_emits_exactly_one_log_line`. run_049's own
+  orphan state is NOT retroactively fixed by this command (it would need
+  a manual `register` invocation against a brief that does not exist for
+  it, or a different remediation path) — parked per R4.
 
 ## F. Multi-agent & security operations (continued)
 
@@ -883,3 +938,170 @@ KB layer, is the complete known gate to autonomy as of session close.
   pausing.
 - **Acceptance:** fixture: a stage invocation forced to raise produces a
   transcript sidecar file, present and non-empty, alongside the pause.
+
+---
+
+# v6 additions — found 2026-07-18/19 (run_059 tz-bug arc: launch, engine fix, resumes, verdict)
+
+## A. Orchestrator routing & state machine (continued)
+
+### A12. verdict_interpreter's human_pause routing falls through to the generic completion block, mislabeling status "active" (P0)
+- **Symptom:** `run_loop()`'s `elif current_stage == "verdict_interpreter":`
+  branch (workflow/run_phase1_research.py:4608-4611) sets `next_stage =
+  determine_post_verdict_route(...)` with NO check for
+  `next_stage == "human_pause"` — unlike the sibling
+  `elif current_stage == "holdout_evaluation":` branch three cases below
+  it (workflow/run_phase1_research.py:4616-4621), which explicitly does
+  `if next_stage == "human_pause": update_state(status="paused_for_human");
+  break`. Without that check, a verdict_interpreter human-pause routing
+  falls through to the generic "6. Mark completed and stage next phase"
+  block (workflow/run_phase1_research.py:4623-4632), whose status
+  computation is `status="active" if next_stage != "completed_rejected"
+  else "rejected"` — `next_stage="human_pause"` is neither, so `status`
+  is (wrongly) written `"active"` instead of `"paused_for_human"`, even
+  though `pending_stage` does get correctly set to `"human_pause"`. The
+  loop still terminates on the FOLLOWING iteration (the top-of-loop
+  `TERMINAL_PREFIXES` check catches `pending_stage.startswith("human_pause")`),
+  but for one full iteration the run's own `status` field lies about its
+  state — exactly the two symptoms named for this arc: (1) the
+  human_pause sentinel falls through the dedicated branch unhandled; (2)
+  the pause status gets overwritten to `active`.
+- **Fix:** add the same `if next_stage == "human_pause": update_state(...);
+  break` guard to the `verdict_interpreter` branch that `holdout_evaluation`
+  already has; consider making it a shared helper so a THIRD stage adding
+  a human_pause routing doesn't reintroduce the same gap a third time.
+- **Acceptance:** fixture: a verdict_interpreter stage whose
+  `determine_post_verdict_route` returns `"human_pause"` must leave
+  `pipeline_state.yaml.status == "paused_for_human"` immediately (same
+  iteration), not `"active"` for one extra iteration.
+
+### A13. Stale-cache / resume freshness gap across an engine-code fix (P1)
+- **Symptom (operator-observed, this arc's resume cycles):** run_059's
+  resume-after-engine-fix sequence needed more manual intervention than a
+  clean single resume — `pipeline_state.yaml`'s own `completed_stages`
+  list for this run shows `protocol_execution` and `verdict_interpreter`
+  each appearing multiple times (`[..., protocol_execution,
+  verdict_interpreter, protocol_execution, verdict_interpreter,
+  verdict_interpreter]`), consistent with A12's status-mislabeling bug
+  above requiring extra resume passes, and/or a verdict-validity check
+  somewhere in the resume path not forcing re-evaluation against the
+  now-fixed engine on the first attempt. Independent verification this
+  close-out: `signal_prescreen` appears only ONCE in that same list,
+  which is CORRECT (prescreen_signal.py's `_merge_aux_feeds` never goes
+  through `CandleBuilder._align()` at all — confirmed in the prior
+  session's Step 2 repro — so it was never affected by the tz bug and
+  needed no re-run); `protocol_execution` DID need a genuine re-run
+  because it depends on `CandleBuilder`/`_align()` directly. This session
+  could not fully re-derive, from static repo inspection alone, a single
+  additional code site (beyond A12) that explicitly treats a stale
+  artifact as still-valid without checking upstream freshness — filed at
+  the operator's characterization pending a future session with the
+  actual resume-cycle logs in hand.
+- **Fix (proposed, not designed this session):** any verdict-validity /
+  already-computed check that gates a re-run should key on a content hash
+  of its actual inputs (config, protocol file, and ideally the engine
+  code version/commit) rather than mere file presence or run_id
+  membership — closing the general class this arc's manual resume
+  friction belongs to, whatever the precise site turns out to be.
+- **Acceptance:** not yet defined — filed pending root-cause confirmation
+  in a future session with full resume-cycle logs.
+
+### A14. `candle_completion_callback` arity mismatch (watch, not fixed — confirmed harmless in current wiring)
+- **Symptom:** `CandleBuilder._ingest`'s `self.candle_completion_callback(symbol)`
+  call (trading-bot/data/data_manager.py:267) passes ONE argument, but
+  `DataManager`'s own default callback, `_enrich_and_notify(self, symbol,
+  candle)` (trading-bot/data/data_manager.py:493), requires TWO — a
+  `TypeError` on every real candle close, silently swallowed by
+  `_ingest`'s own try/except. Confirmed via the run_059 tz-bug repro
+  (prior session): reproducible on demand by constructing a bare
+  `DataManager` and driving `add_row` without first overwriting
+  `candle_builder.candle_completion_callback`.
+- **Why not fixed:** confirmed harmless in every real (non-repro) code
+  path — `core/backtester.py:149-150` overwrites
+  `candle_builder.candle_completion_callback` with
+  `bot._process_symbol_candle_completion` immediately after construction,
+  which defaults its own `candle` parameter, so the mismatched default
+  wiring is never actually exercised in a live or backtest run. Left as a
+  watch item: a future caller that constructs `DataManager` without going
+  through `core/backtester.py`'s wiring (e.g. a standalone script or a
+  new orchestration path) would hit this silently, with no exception
+  surfaced anywhere.
+- **Fix (if ever prioritized):** either give `_enrich_and_notify`'s
+  `candle` parameter a default of `None`, or have `_ingest` pass the
+  completed `Candle` object through to the callback (arguably the more
+  correct fix, since the callback's whole point is to be notified of the
+  candle that just closed).
+- **Acceptance:** not yet defined — watch-level, zero real-path impact
+  confirmed.
+
+## C. Power & validation machinery (continued)
+
+### C11. A8.6 block_size defaults silently to the 1h value for any unmapped timeframe, including the deferred 4h candidate (P1)
+- **Symptom:** `_A86_BLOCK_SIZE_BY_TIMEFRAME = {"1h": 24, "1d": 1}`
+  (workflow/run_phase1_research.py:3125) defines exactly two timeframes;
+  `_run_a86_power_check`'s lookup,
+  `block_size = _A86_BLOCK_SIZE_BY_TIMEFRAME.get(timeframe, 24)`
+  (workflow/run_phase1_research.py:3163), silently falls back to 24 (the
+  1h value) for ANY other timeframe — including "4h", the exact candidate
+  R3 (this session's dispatch) explicitly deferred rather than abandoned.
+  `tools/prescreen_signal.py`'s own analogous block-size selection
+  (lines ~885-895) already has a correct, timeframe-aware fallback for
+  non-1h/1d cases (`block_size = max(_BLOCK_SIZE_1H // 4, 6)` — i.e. 6
+  for 4h), confirming the A8.6 power-check function's plain `.get(...,
+  24)` default is a genuine, divergent gap between the two
+  power/significance code paths this repo maintains in parallel (same
+  family of duplication risk as B14).
+- **Fix:** add `"4h": 6` (and any other timeframe this campaign is
+  likely to register) to `_A86_BLOCK_SIZE_BY_TIMEFRAME`, or better,
+  derive block_size arithmetically from timeframe (bars-per-day) the way
+  `prescreen_signal.py` already does, in one shared function both files
+  import.
+- **Acceptance:** fixture: an A8.6 power check on a "4h" hypothesis card
+  must compute `n_eff` using block_size=6, not the 1h default of 24.
+
+## F. Multi-agent & security operations (continued)
+
+### F11. No-transcript-on-derived-error, F10-adjacent (P2, one occurrence)
+- **Symptom:** F10 covers no-transcript-on-SDK-crash; this arc surfaced
+  the same gap for a HUMAN/AGENT-DRIVEN diagnostic derivation instead of
+  an SDK exception. The in-process repro script that root-caused the
+  run_059 tz bug (`repro_run059.py`) was written to this session's
+  scratchpad directory (a per-session temp path outside the repo, cleaned
+  up by the harness), never committed anywhere — its exact output is
+  preserved only in this conversation's own transcript/report text, not
+  as a durable, re-runnable repo artifact. The FIX's own regression tests
+  (tests/test_funding_rate_component.py) are durable evidence for the
+  FIXED behavior, but the ORIGINAL pre-fix diagnostic run (the actual
+  proof of the defect, not just of its resolution) is not reproducible by
+  a future reader without re-deriving it from scratch.
+- **Fix:** a convention (not designed this session): ad hoc root-cause
+  repro scripts written during an implementation-agent task get committed
+  to a `debug/`-style directory (or at minimum their full stdout gets
+  saved as a session-report attachment) rather than living only in an
+  ephemeral scratchpad + chat transcript.
+- **Acceptance:** not yet defined — filed as a process gap, not a code
+  defect.
+
+## D. Skills & prompt text (continued)
+
+### D4. Shared, non-run-scoped trades.json output path (P1)
+- **Symptom:** `EnhancedPerformanceTracker.__init__`
+  (trading-bot/performance/metrics.py:315):
+  `def __init__(self, commission_rate: float = 0.001, log_file: str =
+  'results/trades.json', initial_capital: float = 1000.0):` — every
+  backtest run writes to the SAME shared file
+  (trading-bot/results/trades.json) unless a caller explicitly overrides
+  `log_file`. This is the direct cause of this entire multi-session
+  arc's standing `trades.json` git-status waiver (STATE W): every run's
+  trades overwrite the prior run's, so the file is perpetually "modified"
+  relative to whatever was last committed, and must be restored
+  (`git checkout --`) at every session close rather than ever reflecting
+  one run's own history.
+- **Fix:** default `log_file` to a run-scoped path (e.g.
+  `results/{run_id}/trades.json`, threaded through from whatever
+  constructs the tracker) rather than a fixed shared filename; keep the
+  flat `results/trades.json` path available only for genuinely
+  interactive/manual (non-campaign) use.
+- **Acceptance:** fixture: two backtests run back-to-back must each leave
+  their own trades.json intact and inspectable, neither overwriting the
+  other.
