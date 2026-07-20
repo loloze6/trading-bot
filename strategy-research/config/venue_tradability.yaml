@@ -1,0 +1,41 @@
+# Phase 1.3 (docs/ROADMAP.md): single source of truth for which (venue, product)
+# combinations are legally tradable NOW by this operator (French non-professional
+# retail). Consumed by workflow/run_campaign.py's _materialize_run() to auto-flag
+# research_only on any brief whose declared venue+product is not tradable==true,
+# or whose venue/product is undeclared (safe default).
+#
+# Sources: docs/venue_survey_20260719.md (+ 2026-07-20 supplement);
+# docs/session_reports/20260720_eea_perp_fee_verification.md;
+# campaign_knowledge_base.yaml's venue_live_tradability field on
+# funding_mr_daily_retest_killed.
+
+version: "1.0"
+created_at: "2026-07-21"
+
+venues:
+  kraken:
+    spot:
+      tradable: true
+      basis: >
+        Kraken spot is directly accessible to French retail via the standard
+        Kraken exchange account/API; no additional authorization gate found
+        (docs/venue_survey_20260719.md).
+    perp:
+      tradable: true
+      basis: >
+        Kraken perpetual futures are tradable by a French non-professional
+        retail client via the Kraken Pro / Futures API (entity: Payward Europe
+        Digital Solutions (CY) Limited, CySEC licence 342/17; base-tier taker
+        0.05%), gated by a mandatory MiFID II appropriateness questionnaire
+        (docs/session_reports/20260720_eea_perp_fee_verification.md).
+    margin:
+      tradable: unconfirmed
+      basis: >
+        Kraken spot-margin's own EU/French retail legal status is NOT confirmed
+        either way (docs/venue_survey_20260719.md, 2026-07-20 supplement).
+        Treated as NOT tradable (research_only) until confirmed -- "unconfirmed"
+        is not "yes".
+
+# Any (venue, product) pair not present above, or a brief declaring no
+# venue/product at all, defaults to NOT tradable (research_only). Intentional
+# per ROADMAP Phase 1.3: silence must never resolve to a green light.

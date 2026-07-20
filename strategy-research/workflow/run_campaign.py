@@ -156,6 +156,49 @@ def _next_action_for_entry(entry: dict) -> str:
 # Brief materialization
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Phase 1.3 (docs/ROADMAP.md): venue/product registration-rule mechanism.
+# Single source of truth: config/venue_tradability.yaml. Consumed by
+# _materialize_run() below to auto-flag research_only on any brief whose
+# declared venue+product isn't tradable==true, or whose venue/product is
+# undeclared (safe default -- silence must never resolve to a green light).
+# ---------------------------------------------------------------------------
+
+_venue_tradability_cache: dict = {}
+
+
+def _load_venue_tradability() -> dict:
+    """Read+parse config/venue_tradability.yaml, cached per resolved path
+    (not a single unconditional value) so each test's own sandboxed ROOT
+    (tests/conftest.py's autouse per-test sandbox) gets its own cache entry
+    instead of leaking one test's table into another test run against a
+    different ROOT."""
+    path = ROOT / "config" / "venue_tradability.yaml"
+    cached = _venue_tradability_cache.get(path)
+    if cached is not None:
+        return cached
+    if path.exists():
+        table = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    else:
+        table = {}
+    table.setdefault("venues", {})
+    _venue_tradability_cache[path] = table
+    return table
+
+
+def _venue_product_tradable(venue, product) -> bool:
+    """False if venue/product is undeclared, the (venue, product) pair is
+    absent from the table, or its tradable field isn't literal True --
+    "unconfirmed" and False both resolve to False, only True passes."""
+    if not venue or not product:
+        return False
+    table = _load_venue_tradability()
+    entry = table["venues"].get(venue, {}).get(product)
+    if entry is None:
+        return False
+    return entry.get("tradable") is True
+
+
 def _parse_brief_frontmatter(brief_path: Path) -> dict:
     """Extract the leading '---'-delimited YAML block from a brief .md file.
     That block IS the research_brief.yaml content (plus an optional
@@ -205,6 +248,12 @@ def _materialize_run(run_id: str, brief: dict):
     run_dir = ROOT / "runs" / run_id
     artifacts = run_dir / "artifacts"
     research_brief = {k: v for k, v in brief.items() if k != "machine_constraints"}
+    venue = brief.get("venue")
+    product = brief.get("product")
+    tradable = _venue_product_tradable(venue, product)
+    research_brief["research_only"] = not tradable
+    _log(f"VENUE-CHECK {run_id}: venue={venue!r} product={product!r} tradable={tradable} "
+         f"research_only={not tradable}")
     orch.save_yaml(artifacts / "research_brief.yaml", research_brief)
 
     machine_constraints = brief.get("machine_constraints")
