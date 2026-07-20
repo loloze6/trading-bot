@@ -56,11 +56,24 @@ def _materialize_and_read(run_id: str, brief: dict, runs_dir: Path) -> dict:
 
 
 def test_no_venue_product_declared_defaults_research_only_true(campaign_root):
-    """No venue_tradability.yaml on disk at all (the common case for every
-    OTHER test in this suite that hits _materialize_run) must not raise --
-    it must fall back to the safe default: research_only True."""
+    """No venue/product declared on the brief exercises _venue_product_tradable's
+    falsy-venue/product early return (not the file-absent branch of
+    _load_venue_tradability -- that branch is never reached here since the
+    early return fires first): must fall back to the safe default,
+    research_only True."""
     brief = dict(_MINIMAL_BRIEF)
     research_brief = _materialize_and_read("run_900", brief, campaign_root["runs_dir"])
+    assert research_brief["research_only"] is True
+
+
+def test_missing_venue_tradability_file_defaults_research_only_true(campaign_root):
+    """A truthy venue/product declared, but config/venue_tradability.yaml
+    never written to disk at all -- exercises _load_venue_tradability's own
+    file-absent branch (distinct from the falsy-venue/product early return
+    covered above): must not raise, must fall back to the safe default,
+    research_only True."""
+    brief = dict(_MINIMAL_BRIEF, venue="kraken", product="spot")
+    research_brief = _materialize_and_read("run_906", brief, campaign_root["runs_dir"])
     assert research_brief["research_only"] is True
 
 

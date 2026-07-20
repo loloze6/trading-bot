@@ -1260,3 +1260,32 @@ independent audit, fee-isolation-pairs follow-up)
   pair gets.
 - **Acceptance:** met — see fixtures above; full suite 334 passed (328
   pre-existing + 6 new), zero failures.
+- **Addendum (2026-07-21, same day):** an independent read-only audit of
+  `6791dfe` found two accuracy defects and one operational gap, all fixed
+  same-day. (1) `kraken.perp.basis`'s MiFID II appropriateness-questionnaire
+  claim was miscited to `docs/session_reports/20260720_eea_perp_fee_verification.md`
+  (fee-schedule-only, never mentions appropriateness) — corrected to cite
+  `docs/venue_survey_20260719.md` instead, as its own separate sentence; the
+  CySEC-342/17 / 0.05%-taker citation to the fee-verification report was
+  correct and left unchanged. (2)
+  `test_no_venue_product_declared_defaults_research_only_true`'s docstring
+  claimed it covered `_load_venue_tradability`'s file-absent branch, but
+  `_venue_product_tradable`'s falsy-venue/product early return fires first
+  on that fixture, so the file-absent branch was never actually reached by
+  any of the 6 original tests — a real coverage gap. Docstring corrected to
+  describe the branch it actually exercises; new test
+  `test_missing_venue_tradability_file_defaults_research_only_true` added
+  (truthy venue/product, `config/venue_tradability.yaml` never written)
+  to genuinely cover the file-absent branch. Full suite now 335 passed (334
+  + 1 new), zero failures. (3) Operational gap: no existing brief declared
+  `venue`/`product`, so C14's mechanism was mechanically wired but inert
+  campaign-wide. Per operator ruling (2026-07-21): only
+  `briefs/research_brief_XS_momentum.md` was labeled (`venue: kraken`,
+  `product: perp` — matches `cost_model.yaml`'s existing PERP CALIBRATION
+  precedent for other short-containing strategies; no funding-model blocker
+  applies, this is price-based momentum not funding-carry), since it is the
+  next brief in the queue to materialize once Phase 2 Track A's data
+  blocker clears. All other existing/archived briefs were deliberately left
+  undeclared — most were kills already caveated in the ledger, and the
+  operator ruled against retroactively editing archived brief files. This
+  is a decision, not a gap.
