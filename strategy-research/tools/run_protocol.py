@@ -93,6 +93,45 @@ def _load_cost_model() -> dict | None:
         return None
 
 
+def _commission_rate_for_symbol(symbol: str, cost_model: dict | None, product: str = "spot") -> float | None:
+    """
+    2026-07-20 (Dispatch H): convert cost_model.yaml's fee_rate_bps[symbol] (a
+    ONE-WAY taker fee in bps, per that file's own header) into launcher.run_backtest's
+    commission_rate (a per-side fraction, e.g. 0.0005 for 5bps). Straight bps->fraction
+    conversion (/10000), NOT a round-trip conversion: portfolio_info.py's
+    update_local_balance applies commission_rate exactly twice per round trip for BOTH
+    LONG (once at 'LONG' open, once at 'REDUCE_LONG'/'CLOSE') and SHORT (once at
+    'SHORT' open, once at 'REDUCE_SHORT'/'CLOSE') -- confirmed symmetric by direct code
+    read and cross-checked against real trades.json records (entry_commission +
+    exit_commission = total_commission on both LONG and SHORT trades in run_018). So a
+    single per-event fraction of fee_bps/10000 reproduces a round-trip cost of
+    fee_bps*2, matching cost_model.yaml's own round_trip_cost_bps = 2*taker_fee+...
+    convention -- no *2 or /2 here, that would double- or half-charge.
+
+    product: 'spot' (default, reads the top-level fee_rate_bps -- unchanged existing
+        behavior) or 'perp' (reads the additive cost_model['perp']['fee_rate_bps']
+        block instead). NOT a general default switch: callers must opt into 'perp'
+        explicitly per invocation (see main()'s --cost-product flag) so unrelated
+        spot/default runs are never silently re-costed at perp rates.
+
+    Returns None (defer to the engine's own DEFAULT_COMMISSION_RATE) if no cost model
+    is loaded, the requested product block is absent, or the symbol has neither a
+    specific nor a 'default' fee_rate_bps entry.
+    """
+    if not cost_model:
+        return None
+    if product == "perp":
+        fees = cost_model.get("perp", {}).get("fee_rate_bps", {})
+    else:
+        fees = cost_model.get("fee_rate_bps", {})
+    rate_bps = fees.get(symbol)
+    if rate_bps is None:
+        rate_bps = fees.get("default")
+    if rate_bps is None:
+        return None
+    return float(rate_bps) / 10000.0
+
+
 def _ts_normalize(ts: str) -> str:
     """Normalize ISO 8601 trade timestamp to bars.csv format ('YYYY-MM-DD HH:MM:SS')."""
     return ts.replace("T", " ").split("+")[0].split("Z")[0]
@@ -924,6 +963,15 @@ def main():
                         help="Path to validation_protocol.yaml for hypothesis-specific verdict")
     parser.add_argument("--out-dir", default=None,
                         help="Override output directory (default: results/protocols/<run_id>)")
+    parser.add_argument("--cost-product", default="spot", choices=["spot", "perp"],
+                        dest="cost_product",
+                        help="2026-07-20 (Dispatch H): which cost_model.yaml fee block to "
+                             "cost this re-run at. Default 'spot' preserves exact prior "
+                             "behavior (top-level fee_rate_bps). 'perp' reads the additive "
+                             "cost_model['perp']['fee_rate_bps'] block instead -- valid only "
+                             "for price-based strategies (funding cash flows are not modeled; "
+                             "do not use for funding-carry strategies, see cost_model.yaml's "
+                             "PERP CALIBRATION block).")
     args = parser.parse_args()
 
     # Holdout gate: require BOTH flags or NEITHER
@@ -983,7 +1031,9 @@ def main():
             # (never scored) -- that's the intended, correct behavior.
             rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
                               runs_root=_runs_root, interval_seconds=interval_seconds,
-                              warmup_prefetch=True)
+                              warmup_prefetch=True,
+                              commission_rate=_commission_rate_for_symbol(
+                                  symbol, cost_model, product=args.cost_product))
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             holdout_results[symbol] = {"run_id": rd.name, "core": m["core"]}
@@ -1045,7 +1095,9 @@ def main():
             print(f"  {symbol}  window={label}  {start} to {end} ...")
             rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
                               runs_root=_runs_root, interval_seconds=interval_seconds,
-                              warmup_prefetch=True, holdout_start=_holdout_start)
+                              warmup_prefetch=True, holdout_start=_holdout_start,
+                              commission_rate=_commission_rate_for_symbol(
+                                  symbol, cost_model, product=args.cost_product))
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             core = m["core"]
