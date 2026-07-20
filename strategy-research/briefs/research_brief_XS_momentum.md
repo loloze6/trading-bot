@@ -8,6 +8,12 @@ market_universe: [BTCUSDT, ETHUSDT]   # PLACEHOLDER — a cross-sectional signal
                                        # more than 2, highly-correlated symbols; see
                                        # "What P2 must deliver" below.
 timeframe: "1h"
+venue: kraken
+product: perp   # long/short cross-sectional signal; Kraken margin's own EU/French
+                # retail legality is unconfirmed (docs/venue_survey_20260719.md), so
+                # this brief is costed/classified via Kraken perpetual futures instead
+                # (confirmed tradable), matching cost_model.yaml's existing precedent
+                # for other short-containing strategies. Operator ruling 2026-07-21.
 constraints:
   - "Must not propose ideas that require replacing the whole existing bot architecture."
   - "Do not write code."
