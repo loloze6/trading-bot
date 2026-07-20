@@ -1105,3 +1105,57 @@ KB layer, is the complete known gate to autonomy as of session close.
 - **Acceptance:** fixture: two backtests run back-to-back must each leave
   their own trades.json intact and inspectable, neither overwriting the
   other.
+
+# v7 additions — found 2026-07-20 (Dispatch H/J/K arc: perp cost calibration,
+independent audit, fee-isolation-pairs follow-up)
+
+## C. Power & validation machinery (continued)
+
+### C12. Inert protocol-declared timeframe: archived runs predating interval threading silently ran at 1h (P1)
+- **Symptom:** `tools/run_protocol.py`'s two `run_backtest()` call sites read
+  `protocol.get("timeframe", "1h")` and thread it into `interval_seconds` —
+  but this logic did not always exist. `git show
+  e814b07:strategy-research/tools/run_protocol.py` (the commit that created
+  `protocols/escalation_solusdt_4h.json`/`escalation_avaxusdt_4h.json`,
+  2026-06-29) contains zero occurrences of `timeframe` or `interval_seconds`
+  — at that commit, a protocol's declared `"timeframe": "4h"` was pure
+  inert metadata; `run_backtest()` silently fell through to its own 1h
+  default regardless of what the protocol file said. Two archived runs
+  (`run_028`, `run_030`, evidence for KB finding
+  `keltner_scoremode_no_edge`) were executed under this gap: both protocols
+  declare `"4h"`, both runs' own `manifest.json` records `data.timeframe:
+  "3600s"` (1h). Discovered as a side effect, not by a targeted audit: a
+  2026-07-20 cost-recalibration re-run (Dispatch H) used current code
+  (interval threading now present and correct) against the same protocol
+  files, producing genuinely 4h-resolution bars — the two runs'
+  `manifest.json`s disagree, and at the bar level, SOLUSDT's nominal
+  2024-08-24 12:00 bar shows `close=157.28` in the original (a true 1h
+  slice) vs. `close=159.46` in the 4h-threaded re-run (a 4-hour aggregate)
+  — the discriminator that exposed the gap (Dispatch J's independent audit
+  of commit `d86f0d0`, `docs/session_reports/20260720_perp_calibration_audit.md`).
+  This makes any "old vs new" comparison that pairs an archived pre-threading
+  run against a current-code re-run of the *same nominally-4h protocol*
+  invalid unless both legs are confirmed to share a timeframe via their own
+  manifests — the archived leg is silently 1h, not 4h. A caveat documenting
+  this was appended to `keltner_scoremode_no_edge` in
+  `campaign_knowledge_base.yaml` (`engine_provenance_caveat`,
+  2026-07-20) — the original `no_edge_observed` verdict is MAINTAINED, not
+  relitigated; no re-derivation at 4h was ordered.
+- **Scope note:** this entry documents the CLASS of defect (inert
+  protocol-declared timeframe on any run executed before interval threading
+  landed) and confirms exactly two known instances (run_028, run_030). It
+  does **not** perform a sweep of every other archived run's manifest vs.
+  its protocol's declared timeframe to find further instances — that is
+  explicitly out of scope for this entry/dispatch and is the Fix/Acceptance
+  below.
+- **Fix:** a future one-time sweep: for every archived `runs/<id>/results/*/manifest.json`,
+  compare `data.timeframe` against that run's own protocol file's declared
+  `"timeframe"` field (resolved via `protocol_result.yaml`'s `protocol_file`
+  reference, the same lookup Dispatch H/E already used per-run). Any
+  mismatch gets the same `engine_provenance_caveat` treatment as
+  `keltner_scoremode_no_edge` above — verdicts MAINTAINED by default,
+  re-derivation only if separately ordered per finding.
+- **Acceptance:** a script or one-off audit producing a table of every
+  archived run, its protocol-declared timeframe, and its manifest-recorded
+  timeframe, with mismatches flagged; each flagged finding gets a caveat
+  entry, not a silent edit and not an automatic re-run.

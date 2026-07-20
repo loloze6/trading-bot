@@ -124,6 +124,32 @@ findings:
 
     '
   reactivation_condition: null
+  engine_provenance_caveat: 'Filed 2026-07-20 (Dispatch K, fee-isolation-pairs audit
+    follow-up): protocol_version baseline_v1''s escalation_solusdt_4h.json (run_028)
+    and escalation_avaxusdt_4h.json (run_030) both declared "timeframe": "4h" from
+    the commit that created them (e814b07, 2026-06-29), but tools/run_protocol.py
+    at that commit had NO timeframe-to-interval_seconds threading logic (git show
+    e814b07:strategy-research/tools/run_protocol.py contains zero occurrences of
+    "timeframe" or "interval_seconds") -- the declared "4h" field was inert, and
+    run_backtest() silently fell through to its own 1h default. Confirmed directly
+    from both runs'' own manifest.json (data.timeframe: "3600s", i.e. 1h) and at
+    bar level (SOLUSDT window 2024-08, nominal 12:00 bar: original close=157.28 vs
+    a correctly-4h-threaded re-run''s close=159.46 at the same nominal timestamp --
+    the interval-threading logic now exists in current code and was exercised,
+    unintentionally as a side effect, by an unrelated 2026-07-20 cost-recalibration
+    re-run, which is how this was discovered -- see
+    docs/session_reports/20260720_perp_calibration_audit.md). This does NOT change
+    what actually happened when run_028/run_030 originally executed (1h bars, real
+    trades, real cost_drag/sharpe as recorded) -- it means the ORIGINAL findings''
+    evidentiary basis is 1h data, not the 4h data their own protocol
+    filename/declaration implies. No re-derivation at 4h was performed and none is
+    ordered by this entry -- the no_edge_observed verdict above is MAINTAINED, not
+    relitigated; this caveat exists so a future reader comparing this finding
+    against any 4h-labeled re-run knows the original evidentiary basis was actually
+    1h. See PIPELINE_IMPROVEMENTS_20260712_v4.md''s v6+ entry for the general
+    inert-protocol-timeframe class this belongs to.
+
+    '
   power_disposition: not_applicable
 - id: rsi_mean_reversion_no_edge
   mechanism: RSI(14) mean-reversion in low-ER regime
