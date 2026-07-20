@@ -73,10 +73,23 @@ now.
 
 ## Explicit ambiguities / open items for 1.2–1.3
 
-1. Kraken's base-tier spot maker/taker fee has two conflicting figures across
-   sources (0.40%/0.80% per the official page vs. 0.25%/0.40% per a
-   secondary aggregator) — re-verify against the live account fee page before
-   hardcoding into the cost model.
+1. **RESOLVED (2026-07-20, Dispatch I,
+   `docs/session_reports/20260720_eea_perp_fee_verification.md`).** Kraken's
+   spot base tier genuinely is 0.40%/0.80% maker/taker, per the official
+   multi-schedule fee page — that figure was correct all along. The apparent
+   0.25%/0.40% conflict was never actually a competing SPOT figure: it is
+   "Kraken Perps," a separate, mobile-app-only consumer PERPETUAL product
+   (0.25% applied at both entry and exit, plus 8-hourly funding, no other
+   fees) with no API surface at all — a different product on a different
+   interface, not accessible to an API-driven bot regardless of account
+   eligibility. The two figures were being compared across mismatched
+   products (spot vs. app-only perp), not two sources disagreeing about the
+   same product. Kraken Pro / Futures API (the interface this bot's execution
+   path would actually use for perp) is a third, separate schedule: 0.02%
+   maker / 0.05% taker base tier, confirmed identical on both the EEA-scoped
+   fee page and the generic Kraken Pro futures fee page. No further
+   re-verification needed against the live account fee page for this
+   specific ambiguity.
 2. Kraken's MiFID II leverage caps / product limits for perpetual futures
    were referenced but not enumerated — needed before 1.2 can price realistic
    position sizing.

@@ -151,6 +151,81 @@ findings:
 
     '
   power_disposition: not_applicable
+- id: keltner_scoremode_fee_isolation_no_flip
+  mechanism: Keltner score-mode (composite multi-threshold, TRENDING) -- Phase 1.2
+    controlled fee-isolation robustness check on keltner_scoremode_no_edge (10bps
+    vs 5bps/leg, timeframe/window-set/strategy-config held fixed within each pair)
+  hypothesis_ids:
+  - keltner_scoremode
+  evidence_runs:
+  - run_028
+  - run_030
+  evidence_count: 2
+  outcome: no_edge_observed
+  root_cause: signal_quality
+  signal_property:
+    run_030_avaxusdt_median_sharpe_10bps: -2.735
+    run_030_avaxusdt_median_sharpe_5bps: -1.9
+    run_030_avaxusdt_cost_drag_pct_10bps: 62.6513
+    run_030_avaxusdt_cost_drag_pct_5bps: 30.386
+    run_030_avaxusdt_total_trades_both_legs: 1178
+    run_028_solusdt_total_trades_both_legs: 0
+  protocol_version: escalation_solusdt_4h / escalation_avaxusdt_4h (4h)
+  detector_version: pre_a22_detector
+  exhausted: true
+  exhausted_basis: 'Empirical (Phase 1.2, Dispatch L, 2026-07-20; code committed
+    d86f0d0 (perp cost wiring) and e3bcbb0 (--commission-bps override flag);
+    independently audited twice, both AUDIT PASS -- Dispatch J
+    (docs/session_reports/20260720_perp_calibration_audit.md) and Dispatch M
+    (docs/session_reports/20260720_pairs_audit.md)): at the current 4h engine, a
+    controlled pair holding timeframe (14400s), the 11-window set, and
+    strategy-config hash fixed within each pair, varying ONLY commission_rate
+    (10bps/leg vs 5bps/leg via run_protocol.py''s --commission-bps flag), FLIPS NO
+    VERDICT for either evidence run.
+
+    run_030 (AVAXUSDT): kill at both legs. median_sharpe -2.735 (10bps) ->
+    -1.900 (5bps) -- improves but stays below the kill_median_sharpe_lt=-1
+    threshold; cost_drag_pct roughly halves (62.65%->30.39%, consistent with
+    cost_drag scaling near-linearly with the fee term). Trade count is EXACTLY
+    identical between legs (1178=1178, independently hand-recomputed by
+    Dispatch M) -- with timeframe genuinely controlled, this strategy''s trade
+    path is insensitive to fee level in this range.
+
+    run_028 (SOLUSDT): refine at both legs -- 0 trades in every one of 11
+    windows at BOTH fee levels. Dispatch M''s audit ruled out both an engine
+    defect and a fee effect as the cause: 4h candle construction is verified
+    non-defective (uniform 14400s spacing, zero OHLC violations across 190
+    bars), and the regime detector''s raw score varies continuously bar-to-bar
+    (sampled 0.0113-0.3471, never frozen/NaN) but never once crosses the
+    score_product gate''s min_score=0.4 threshold in any of the 11 windows
+    (closest approach: 2024-05-19 00:00:00, regime_scores.trending=0.3471,
+    still 0.053 short). Mechanism: the detector''s ER/VR components use fixed
+    bar-count parameters (period=24, window=100) evidently tuned against 1h
+    data; at 4h the same bar counts span 4x the calendar time, mechanically
+    over-smoothing the score well below the 1h-calibrated gate (the original
+    1h trades showed regime_scores.trending of 0.42/0.42/0.34/0.39/0.41,
+    hovering at/above the same 0.4 gate). This is real, analytically-explained
+    4h regime-gate sparsity -- a legitimate finding about this specific config
+    at this cadence, not a fee effect and not an engine bug.
+
+    CONCLUSION: the keltner_scoremode_no_edge kills are structural (signal
+    quality / regime-detector bar-count calibration mismatch at 4h), not
+    venue-fee artifacts -- halving the fee in the 5-10bps range does not
+    rescue either evidence run.
+
+    EXPLICIT CAVEAT: these 4h pairs are a clean fee-SENSITIVITY probe at 4h
+    only. They are NOT a re-derivation of the original keltner_scoremode_no_edge
+    verdict, which was reached on 1h data (see this same finding''s
+    engine_provenance_caveat, filed 2026-07-20/Dispatch K: the ORIGINAL
+    run_028/run_030 silently executed at 1h despite their protocols declaring
+    4h, because interval threading did not exist at commit e814b07). The 1h
+    and 4h evidentiary bases are both now on record, separately, and neither
+    overwrites the other -- this entry adds a NEW, independent 4h-native
+    fee-robustness result; it does not relitigate the original 1h verdict.
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
 - id: rsi_mean_reversion_no_edge
   mechanism: RSI(14) mean-reversion in low-ER regime
   hypothesis_ids:
@@ -668,6 +743,41 @@ findings:
     parent entry, whose own exhausted/reactivation_condition fields are
     left unmodified by this close-out and remain the authoritative record
     for the still-open 4h question.'
+  venue_live_tradability: 'Phase 1.3 answer (2026-07-20, settled in writing per
+    docs/ROADMAP.md''s Phase 1.3 gate: "settle explicitly whether the funding
+    family (perp access) is live-tradable at all"). YES, legally tradable: Kraken
+    perpetual futures are tradable by a French non-professional retail client via
+    the Kraken Pro / Futures API (entity: Payward Europe Digital Solutions (CY)
+    Limited, CySEC licence 342/17; base-tier taker 0.05%; gated by a mandatory
+    MiFID II appropriateness questionnaire) -- confirmed
+    docs/session_reports/20260720_eea_perp_fee_verification.md, which also
+    settled a real access trap: Kraken''s OTHER, cheaper-looking "0.25% open/close"
+    schedule is a DIFFERENT product (the mobile-app-only "Kraken Perps" consumer
+    line) with no API surface at all -- not accessible to this bot regardless of
+    account eligibility, so it was never a live candidate. Spot is explicitly OFF
+    the table as this family''s execution product: this bot''s SHORT mechanics are
+    margin-simulated (docs/session_reports/20260720_venue_cost_wiring.md,
+    Dispatch F2), and plain cash spot cannot short at all; margin''s own
+    French/EU retail legal availability was separately researched and left
+    UNCONFIRMED (docs/venue_survey_20260719.md''s 2026-07-20 supplement) --
+    perp is both the only product this family''s signal genuinely fits AND the
+    only one with settled legal access, so it is the campaign''s go-forward
+    product for this family, not spot.
+
+    BUT the funding family''s own verdict is RESEARCH-ONLY until funding cash
+    flow is modeled: this cost_model (and the wider engine) prices perp
+    round-trip cost as taker-fee-only (see cost_model.yaml''s PERP CALIBRATION
+    block, Dispatch H) -- it does not model the periodic funding payments that
+    are this family''s entire economic thesis (a short/long funding-carry
+    strategy earning or paying funding, not just avoiding it as a cost). A
+    fee-only perp re-run of run_059 or any funding-family candidate would omit
+    the funding CREDIT the thesis depends on, which is exactly why Dispatch H''s
+    PERP CALIBRATION block explicitly excludes FUNDING_MR_DAILY_RETEST from
+    being costed with it (see that block''s own comment). No funding-cash-flow
+    re-derivation has been performed; none is ordered by this entry. Until a
+    funding-modeling build exists, this family''s verdicts (including this
+    entry''s own kill/terminate above) stand on their FEE-ONLY evidentiary basis
+    and should not be read as having incorporated a realistic funding P&L.'
 - id: macd_trend_continuation_extended_2018_2025_auto
   mechanism: MACD(12,26,9) histogram zero-crossing, BTC/ETH 1h, ungated (persistent_behavioral_bias)
   hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
