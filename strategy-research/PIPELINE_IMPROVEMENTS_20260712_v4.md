@@ -1215,3 +1215,48 @@ independent audit, fee-isolation-pairs follow-up)
   specifically, a future dispatch that explicitly patches
   `default_regime` and re-runs, citing this ledger entry and disclosing
   the diff between the archived and patched config in its own report.
+
+### C14. CLOSED (2026-07-21) — Venue/product registration-rule mechanism (P1)
+- **Symptom:** nothing in the pipeline mechanically enforced Phase 1.2's
+  venue/product tradability findings (`docs/venue_survey_20260719.md`,
+  `docs/session_reports/20260720_eea_perp_fee_verification.md`) at
+  materialization time — a brief declaring an untradable, unconfirmed, or
+  undeclared venue/product could still be launched with no `research_only`
+  flag distinguishing it from a live-tradable one.
+- **Fix:** `strategy-research/config/venue_tradability.yaml` (new file) —
+  single source of truth mapping `(venue, product)` pairs to
+  `tradable: true|false|unconfirmed`, seeded with Kraken spot (tradable),
+  Kraken perp (tradable), Kraken margin (unconfirmed). Any pair absent from
+  the table, or a brief declaring no venue/product, defaults to NOT
+  tradable — silence never resolves to a green light.
+- **Resolution (2026-07-21):** `workflow/run_campaign.py` —
+  `_load_venue_tradability()` and `_venue_product_tradable(venue, product)`
+  (new module-level helpers, ~line 159, immediately before
+  `_parse_brief_frontmatter`), wired into `_materialize_run()` (~line
+  207-213): `research_brief["research_only"]` is now set to
+  `not _venue_product_tradable(brief.get("venue"), brief.get("product"))`
+  before `research_brief.yaml` is written, with one unconditional
+  `VENUE-CHECK` log line per materialization (mirrors
+  `register_hypothesis`'s plain, no-`dry_run`-kwarg `_log(...)` calling
+  convention). `_load_venue_tradability()` caches per resolved `ROOT`-relative
+  path (not a single unconditional value) so `tests/conftest.py`'s autouse
+  per-test sandbox — which gives every test its own `ROOT` — can't leak one
+  test's table into another. Fixtures
+  (`tests/test_venue_tradability.py`, reusing the `campaign_root` fixture
+  from `test_k4_routing_registration.py` per the same precedent
+  `test_k2_verdict_machinery.py`/`test_k3_protocol_pinning.py` already
+  established): `test_no_venue_product_declared_defaults_research_only_true`,
+  `test_kraken_spot_tradable_research_only_false`,
+  `test_kraken_perp_tradable_research_only_false`,
+  `test_kraken_margin_unconfirmed_research_only_true`,
+  `test_kraken_unlisted_product_research_only_true`,
+  `test_unlisted_venue_research_only_true` — all drive `_materialize_run`
+  end-to-end and assert the written `research_brief.yaml`'s `research_only`
+  key, not just the helper in isolation. Dispatch: "Phase 1.3: venue/product
+  registration-rule mechanism" (2026-07-21). Existing brief `.md`/`.yaml`
+  files and `campaign_queue.yaml` were not touched — `venue`/`product`
+  remain optional, additive fields; a brief that never declares them simply
+  gets `research_only: true` by the same default every other undeclared
+  pair gets.
+- **Acceptance:** met — see fixtures above; full suite 334 passed (328
+  pre-existing + 6 new), zero failures.
