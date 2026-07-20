@@ -1159,3 +1159,59 @@ independent audit, fee-isolation-pairs follow-up)
   archived run, its protocol-declared timeframe, and its manifest-recorded
   timeframe, with mismatches flagged; each flagged finding gets a caveat
   entry, not a silent edit and not an automatic re-run.
+
+### C13. Archived candidate configs can fail current V9 validation, blocking re-execution (P1)
+- **Symptom:** `rsi_momentum_trending_cost_drag`'s evidence run
+  (`run_018`, `runs/run_018/artifacts/candidate_strategy_config.json`) was
+  targeted for a Phase 1.2 Kraken-fee calibration re-run (Dispatch H); the
+  re-run attempt raised `ValueError: invalid strategy_config` from
+  `strategies/main_strategy.py:32` (`AdvancedStrategy.__init__`), which
+  calls `tools/validate_config.py`'s `validate()` before constructing the
+  strategy. Recorded validator error, verbatim:
+  `VIOLATION V9 regime_detector.default_regime: 'trending' is forbidden in
+  mode 'threshold_rules' while regime_detector.rules is non-empty. Bars
+  that fail every rule still get classified as this regime and traded,
+  bypassing the gate. Set default_regime to 'unknown', or -- if no
+  rules/gate is intended at all -- clear regime_detector.rules and
+  regime_detector.components entirely...`. `run_028`/`run_030`'s
+  candidate configs were checked the same way and pass cleanly (0 errors
+  each) — this is specific to `run_018`'s artifact, not universal. A
+  separate detached-worktree re-check at the parent commit
+  (`d86f0d0^`/`102fa8e`) reproduced the identical failure against the
+  same on-disk config (Dispatch J's audit,
+  `docs/session_reports/20260720_perp_calibration_audit.md`, Step 4) —
+  confirming this is genuine pre-existing artifact/validator drift (V9
+  was evidently added or tightened after `run_018` was produced,
+  2026-06-27), not something introduced by any dispatch in this arc.
+- **Effect on this arc:** `rsi_momentum_trending_cost_drag` could not be
+  re-run at the Kraken/perp calibrated cost (Dispatch H, then again
+  implicitly out of scope for the Dispatch K/L fee-isolation pairs, which
+  only targeted `keltner_scoremode_no_edge`/run_028+030). Per the
+  standing "don't fabricate" STOP discipline, the archived config was
+  NOT hand-patched to pass V9 — that would test a materially different
+  strategy than the one that actually produced the original KB finding.
+  **This does NOT invalidate `run_018`'s original verdict** — the
+  original run executed and was evaluated under whatever validator
+  existed at the time; V9 tightening after the fact blocks
+  *re-execution* today, it does not retroactively un-happen the
+  original run. It only means this specific evidence run cannot be
+  cheaply re-calibrated to a new venue's fees without either (a) a
+  config fix (which changes what's being tested) or (b) a
+  point-in-time validator bypass (not attempted, would need explicit
+  authorization given it weakens a safety gate).
+- **Fix:** not a code fix by default — the likely-correct action is a
+  targeted, disclosed edit to `run_018`'s archived
+  `candidate_strategy_config.json` (`default_regime: 'trending'` ->
+  `'unknown'`, per V9's own suggested remediation) IF and when this
+  specific evidence run is re-targeted for recalibration, with the
+  change and its rationale recorded alongside whatever re-run consumes
+  it (never silently). Broader question, not solved here: how many
+  OTHER archived candidate configs across the campaign would also fail
+  current validation if re-executed — no sweep has been performed (see
+  C12's identical scope note for the analogous timeframe-drift class;
+  this may be worth combining into one sweep since both are
+  "archived-artifact vs. current-validator/threading drift" instances).
+- **Acceptance:** not yet defined for the sweep; for `run_018`
+  specifically, a future dispatch that explicitly patches
+  `default_regime` and re-runs, citing this ledger entry and disclosing
+  the diff between the archived and patched config in its own report.

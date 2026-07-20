@@ -1970,3 +1970,175 @@ in full before dispatching. Standing charter and context-economy rules
 (short director sessions, bounded agent reports to
 docs/session_reports/, no re-pasting, director stays top-tier) carry
 forward unchanged, now formalized in the roadmap's own Part 3/4."
+
+## Session: 2026-07-19/20 — Phase 1 reality alignment: venue survey through fee-isolation robustness (venue/cost-model arc)
+
+### Hypothesis
+Per `docs/ROADMAP.md` Part 2's Phase 1 gate (opened at the prior session's
+close): before any further hypothesis registration, settle where this
+operator may legally trade (venue), build a venue-parameterized cost model,
+and use it to test whether any of the campaign's existing "kill" verdicts
+were actually fee artifacts of the wrong (Binance-assumed) cost basis rather
+than genuine no-edge findings. Candidate re-calibration targets: the two
+price-based near-misses (`rsi_momentum_trending_cost_drag`/run_018,
+`keltner_scoremode_no_edge`/run_028+030) and the funding-carry family
+(`FUNDING_MR_DAILY_RETEST`/run_059).
+
+### Result
+
+**1.1 Venue decided:** Kraken selected as primary venue (MiCA CASP live since
+2025-06-25, the only candidate with a dedicated MiFID II license for genuine
+perpetual futures; Binance excluded outright — no MiCA authorization as of
+survey date, legally unusable) — `docs/venue_survey_20260719.md` (commit
+`618d548`).
+
+**`commission_rate` parameterized end to end, audited twice:** `run_backtest()`
+gained an optional `commission_rate` parameter, no-op when omitted (commit
+`93f3d87`, Dispatch C, independently audited PASS by Dispatch D). Threading
+this into the actual re-run path (`run_protocol.py`) required two false starts
+that were caught and reverted before commit, not silently shipped: an initial
+attempt (Dispatch F) to flat-calibrate the whole cost model to Kraken spot
+was aborted mid-flight when a superseding dispatch (F2) found the three
+calibration targets' SHORT trades are margin-simulated, not spot or perp,
+contradicting the simple product binary; Dispatch G then researched Kraken
+margin/perp-funding fees to fill that gap
+(`docs/session_reports/20260720_margin_funding_research.md`). The eventual
+shipped design (`d86f0d0`) adds a product-aware `--cost-product {spot,perp}`
+flag plus an additive `cost_model.yaml['perp']` block (Kraken perp taker
+5bps, funding cash flows explicitly NOT modeled) — independently audited by
+Dispatch J, which found the FIRST re-run's numeric conclusions confounded by
+an undisclosed 1h-vs-4h candle-interval change (archived runs predated
+`run_protocol.py`'s timeframe-threading logic; a KB `engine_provenance_caveat`
+was filed on `keltner_scoremode_no_edge` documenting this, verdicts
+MAINTAINED not relitigated — commit `6cde7ae`). A follow-up `--commission-bps`
+explicit-rate override flag (`e3bcbb0`) then made a genuinely controlled,
+timeframe-fixed 10bps-vs-5bps pair possible; that pair's own numbers were
+independently audited PASS by Dispatch M.
+
+**Fee-isolation result: the kills are structural, not fee artifacts.** With
+timeframe/window-set/config held fixed and only commission varied (10bps vs
+5bps), `run_030` (AVAXUSDT, keltner) stays `kill` at both legs
+(median_sharpe -2.735->-1.900, cost_drag_pct 62.65%->30.39%, trade count
+EXACTLY unchanged 1178=1178); `run_028` (SOLUSDT, keltner) stays `refine` at
+both legs (0 trades at either fee level — Dispatch M confirmed this is real
+4h regime-gate sparsity: the detector's bar-count-calibrated ER/VR
+parameters were evidently tuned against 1h data and mechanically over-smooth
+at 4h, never crossing the 0.4 score gate, not an engine defect). Recorded as
+new KB finding `keltner_scoremode_fee_isolation_no_flip`, explicitly scoped
+as a 4h-native robustness probe, not a re-derivation of the original 1h
+verdict (which stands separately via its own provenance caveat).
+`rsi_momentum_trending_cost_drag`/run_018 could NOT be included in this
+robustness check: its archived candidate config fails current V9
+regime-detector validation (pre-existing artifact/validator drift, confirmed
+via an independent detached-worktree re-check at the parent commit) — not
+hand-patched, filed as ledger `C13` instead; does not invalidate run_018's
+original verdict, only blocks re-execution today.
+
+**Phase 1.3 funding-family live-tradability: settled in writing.** Kraken
+perpetual futures ARE legally tradable by a French non-professional retail
+client via the Kraken Pro/Futures API (Payward Europe Digital Solutions (CY)
+Ltd, CySEC 342/17, 0.05% taker base tier, MiFID II appropriateness test) —
+`docs/session_reports/20260720_eea_perp_fee_verification.md`. This also
+resolved venue-survey open item #1 (the apparent 0.40%/0.80% vs 0.25%/0.40%
+spot-fee conflict): the 0.25% figure was never a competing spot number at
+all — it's "Kraken Perps," a separate mobile-app-only consumer product with
+no API surface, not accessible to this bot regardless of eligibility. Spot
+is off the table for this family (this bot's SHORT mechanics are
+margin-simulated, and margin's own EU/French retail legal availability is
+separately unconfirmed) — perp is the go-forward product. BUT the family's
+own verdict remains research-only: no funding-cash-flow model exists
+anywhere in this cost model or engine, and a fee-only perp re-run would omit
+the funding credit that is the family's entire thesis — recorded as a new
+`venue_live_tradability` field on the `funding_mr_daily_retest_killed`
+finding, not a re-derivation.
+
+**KPI at close:** verdicts this arc — **zero new hypothesis verdicts**
+(kill/promote/refine on a genuinely new registration). What shipped instead:
+one venue decision, one venue-legality determination (Phase 1.3 gate
+closed), one robustness re-confirmation of two already-closed kills (now on
+firmer, fee-isolated footing), and the `commission_rate`/`--cost-product`/
+`--commission-bps` infrastructure now available to any future calibration
+work. **Cost is high for the yield:** roughly a dozen dispatches (survey,
+parameterization, three independent audits, two aborted/superseded attempts
+caught before commit, the fee-isolation pairs themselves, this close-out)
+produced no new edge and confirmed rather than overturned two existing
+kills. This is the anti-corner rule's own honest trade-off surfaced, not
+hidden: Phase 1 was a reality-alignment/infrastructure gate the roadmap
+explicitly required before further hypothesis search, not a search session
+itself — the KPI is reported so the NEXT session's cost-per-verdict framing
+isn't distorted by this arc's necessarily infrastructure-heavy nature.
+
+### Files touched
+- `strategy-research/docs/venue_survey_20260719.md` — Phase 1.1 survey (new
+  file, `618d548`); 2026-07-20 Kraken margin/perp-funding supplement
+  (`102fa8e`); open item #1 marked resolved (this close-out)
+- `trading-bot/core/launcher.py`, `trading-bot/performance/metrics.py`,
+  `trading-bot/tests/test_commission_rate_param.py` — `commission_rate`
+  parameter (`93f3d87`)
+- `strategy-research/tools/run_protocol.py` — `--cost-product` flag +
+  `_commission_rate_for_symbol` (`d86f0d0`); `--commission-bps` flag +
+  `_resolve_commission_rate` (`e3bcbb0`)
+- `strategy-research/config/cost_model.yaml` — `perp` block (`d86f0d0`)
+- `strategy-research/tests/conftest.py`,
+  `strategy-research/tests/test_run_protocol_perp_cost_wiring.py`,
+  `strategy-research/tests/test_run_protocol_commission_bps_flag.py` — new
+  regression coverage (`d86f0d0`, `e3bcbb0`)
+- `strategy-research/campaign_knowledge_base.yaml` — `engine_provenance_caveat`
+  on `keltner_scoremode_no_edge` (`6cde7ae`); this close-out adds new finding
+  `keltner_scoremode_fee_isolation_no_flip` and `venue_live_tradability` on
+  `funding_mr_daily_retest_killed`
+- `strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md` — v7 additions:
+  `C12` inert-protocol-timeframe class (`6cde7ae`); this close-out adds `C13`
+  (V9 validation drift blocking run_018 re-execution)
+- `strategy-research/NEXT_SESSION.md`, `strategy-research/DOC_INDEX.md` —
+  rewritten/updated (this close-out); prior `NEXT_SESSION.md` archived to
+  `docs/plan/NEXT_SESSION_20260719_superseded.md`
+- Run artifacts (`strategy-research/runs/run_028/`, `run_030/`
+  `perp_recalibration_20260720/`, `fee_isolation_pairs_20260720/` and
+  siblings) were NOT committed — `strategy-research/runs/` is gitignored
+  project-wide; their numeric results are recorded in this arc's session
+  reports and the KB finding above instead
+- `trading-bot/results/trades.json` — repeatedly restored (`git checkout --`)
+  across this arc, standing waiver (ledger `D4`), never committed with real
+  content
+- Commits this arc: `618d548`, `93f3d87`, `102fa8e`, `d86f0d0`, `6cde7ae`,
+  `e3bcbb0`, plus this close-out's own commit(s)
+- Session reports (this arc's bounded repo memory, committed by this
+  close-out): `docs/session_reports/20260719_venue_survey.md`,
+  `20260719_cost_model_recon.md`, `20260720_cost_calibration.md`,
+  `20260720_run059_replay_feasibility.md`, `20260720_commission_param.md`,
+  `20260720_commission_audit.md`, `20260720_calibration_recon.md`,
+  `20260720_venue_cost_wiring.md`, `20260720_margin_funding_research.md`,
+  `20260720_perp_calibration.md`, `20260720_perp_calibration_audit.md`,
+  `20260720_eea_perp_fee_verification.md`, `20260720_fee_isolation_pairs.md`,
+  `20260720_fee_isolation_pairs_v2.md`, `20260720_pairs_audit.md`,
+  `20260720_close.md`
+
+### Next session prompt
+"Resume strategy-research campaign. Read strategy-research/NEXT_SESSION.md
+first (single entry point). Phase 1 (venue/cost reality alignment) is now
+CLOSED: Kraken decided as venue (docs/venue_survey_20260719.md); commission_rate
+is parameterized end-to-end (run_backtest's commission_rate param, run_protocol.py's
+--cost-product and --commission-bps flags, all independently audited);
+a controlled 10bps-vs-5bps fee-isolation pair (timeframe/window/config held
+fixed) shows keltner_scoremode_no_edge's two kills are structural, not fee
+artifacts (new KB finding keltner_scoremode_fee_isolation_no_flip); Phase 1.3
+is settled in writing -- Kraken perp is legally tradable by this operator via
+the Pro/Futures API (0.05% taker), spot is off the table for the funding
+family (can't short + costlier), but the family's own verdict stays
+RESEARCH-ONLY until a funding-cash-flow model exists (new
+venue_live_tradability field on funding_mr_daily_retest_killed) -- do not
+fee-swap that family without one. Remaining Phase 1 loose ends, not yet
+closed: 1.4 (fee-reduction autopsy field, not built this arc), run_018
+(rsi_momentum_trending_cost_drag) is blocked on a V9 regime-detector
+validation failure in its archived config (ledger C13) -- fixing and
+re-running it is optional cleanup, not a gate. KPI note: this arc shipped
+zero new hypothesis verdicts (infrastructure + a robustness re-confirmation
+only) -- cost was high for the yield, by design (Phase 1 was a reality-alignment
+gate, not a search session); the NEXT session should return to actual
+hypothesis throughput. Task queue: Phase 2 Track A (breadth download to
+unblock the already-registered XS_momentum cross-sectional idea) is next per
+docs/ROADMAP.md Part 2 -- read it in full before dispatching. Standing
+constraints (single-writer-per-state-store, read-back verify, no-self-remediation,
+premise-failure full-STOP, holdout untouchable, always-emit-one-log-line,
+context economy) carry forward unchanged."

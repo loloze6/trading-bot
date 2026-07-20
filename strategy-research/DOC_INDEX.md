@@ -61,16 +61,22 @@ standing disclosure doctrine with the verified-template allowlist.
 Phase 1.1 venue survey: MiCA/MiFID II authorization status, spot vs. perp
 retail availability, fees, and API quality for Binance/Kraken/Bybit/OKX/
 Coinbase/Bitget; Kraken decided as primary venue, OKX as shortlist backup.
+Includes a 2026-07-20 supplement (spot-margin fees, perp funding mechanics,
+the cost-mapping note) and a resolved open item (the apparent spot-fee
+figure conflict was a mismatched-product comparison, not a real conflict).
 
 ### "What's broken and what gates autonomy?"
 → **[`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)**
-— the growing defect ledger (v6 as of 2026-07-19); its P0 "kernel" gates
-background mode. A1/A3/B1 (K4), A8/A9/B11/C7/C9 (K2), B3/B10 (K3), and now
+— the growing defect ledger (v7 as of 2026-07-20); its P0 "kernel" gates
+background mode. A1/A3/B1 (K4), A8/A9/B11/C7/C9 (K2), B3/B10 (K3), and
 B7/B15 (v5/v6) are CLOSED — see the design notes below for what shipped.
 Open P0: **A12** (verdict_interpreter's missing human_pause guard — fix
 first if resume reliability matters). Open P1/P2 watch items: B13, B14,
 A13, A14, C11 (4h block_size trap — fix before any 4h registration), F11,
-D4 (shared trades.json path).
+D4 (shared trades.json path), **C12** (inert protocol-declared timeframe —
+archived pre-threading runs silently ran at 1h), **C13** (V9
+validation-drift blocking run_018 re-execution, does not invalidate its
+original verdict).
 → **[`docs/design/K4_routing_registration_design_20260712.md`](docs/design/K4_routing_registration_design_20260712.md)**,
 **[`docs/design/K2_verdict_machinery_design_20260713.md`](docs/design/K2_verdict_machinery_design_20260713.md)**,
 **[`docs/design/K3_protocol_pinning_design_20260714.md`](docs/design/K3_protocol_pinning_design_20260714.md)**
@@ -114,7 +120,9 @@ framing, never as current guidance):
 [`docs/plan/NEXT_SESSION_20260715_superseded.md`](docs/plan/NEXT_SESSION_20260715_superseded.md)
 (post-K3 implementation/close-out),
 [`docs/plan/NEXT_SESSION_20260717_superseded.md`](docs/plan/NEXT_SESSION_20260717_superseded.md)
-(post-H-041-family close, pre-generator-session).
+(post-H-041-family close, pre-generator-session),
+[`docs/plan/NEXT_SESSION_20260719_superseded.md`](docs/plan/NEXT_SESSION_20260719_superseded.md)
+(post-run_059 close, pre-Phase-1 venue/cost arc).
 → **[`SESSION_LOG.md`](SESSION_LOG.md)** — chronological per-session handoff log
 (hypothesis / result / files touched / next-session prompt). Historical once superseded by a newer entry.
 → **`docs/STEP_05_FINDINGS.md`, `docs/p1b_fetch_manifest.md`** — dated,
