@@ -132,6 +132,30 @@ def _commission_rate_for_symbol(symbol: str, cost_model: dict | None, product: s
     return float(rate_bps) / 10000.0
 
 
+def _resolve_commission_rate(
+    symbol: str, cost_model: dict | None, commission_bps: float | None, product: str
+) -> float | None:
+    """
+    2026-07-20 (Dispatch L): --commission-bps, when set, takes precedence over
+    --cost-product for every symbol -- an explicit, flat one-way-per-leg rate for
+    controlled fee-isolation experiments, independent of cost_model.yaml (useful
+    when neither the 'spot' nor 'perp' block happens to supply the exact rate an
+    experiment needs, e.g. the historical DEFAULT_COMMISSION_RATE of 10bps, which
+    is neither cost_model.yaml's spot 7.5bps nor its perp 5bps). Same conversion
+    as _commission_rate_for_symbol (fee_bps / 10000, one-way-per-side, no
+    double-charge -- see that function's docstring for the full rationale; the
+    engine applies commission_rate exactly twice per round trip for both LONG and
+    SHORT, so no extra *2/  /2 factor here either).
+
+    commission_bps absent (None): falls through unchanged to
+    _commission_rate_for_symbol(..., product=product) -- byte-identical to
+    pre-existing (pre-Dispatch-L) behavior.
+    """
+    if commission_bps is not None:
+        return float(commission_bps) / 10000.0
+    return _commission_rate_for_symbol(symbol, cost_model, product=product)
+
+
 def _ts_normalize(ts: str) -> str:
     """Normalize ISO 8601 trade timestamp to bars.csv format ('YYYY-MM-DD HH:MM:SS')."""
     return ts.replace("T", " ").split("+")[0].split("Z")[0]
@@ -972,6 +996,15 @@ def main():
                              "for price-based strategies (funding cash flows are not modeled; "
                              "do not use for funding-carry strategies, see cost_model.yaml's "
                              "PERP CALIBRATION block).")
+    parser.add_argument("--commission-bps", type=float, default=None, dest="commission_bps",
+                        help="2026-07-20 (Dispatch L): explicit one-way taker commission in bps "
+                             "per leg (e.g. 10 for the historical 0.001 default, 5 for the perp "
+                             "0.0005 rate), converted the same way as --cost-product (/10000, no "
+                             "double-charge). Takes precedence over --cost-product when both are "
+                             "given. Absent, behavior is byte-identical to today (falls through "
+                             "to --cost-product's existing resolution). Intended for controlled "
+                             "fee-isolation experiments that need an exact rate cost_model.yaml "
+                             "doesn't happen to supply as either 'spot' or 'perp'.")
     args = parser.parse_args()
 
     # Holdout gate: require BOTH flags or NEITHER
@@ -979,6 +1012,11 @@ def main():
         print("ERROR: --holdout requires --i-understand (and vice versa). Pass both or neither.",
               file=sys.stderr)
         sys.exit(1)
+
+    if args.commission_bps is not None:
+        print(f"[cost-override] --commission-bps={args.commission_bps} -> "
+              f"commission_rate={float(args.commission_bps) / 10000.0} "
+              f"(takes precedence over --cost-product={args.cost_product!r} for this entire run)")
 
     with open(args.protocol_path, encoding="utf-8") as f:
         protocol = json.load(f)
@@ -1032,8 +1070,8 @@ def main():
             rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
                               runs_root=_runs_root, interval_seconds=interval_seconds,
                               warmup_prefetch=True,
-                              commission_rate=_commission_rate_for_symbol(
-                                  symbol, cost_model, product=args.cost_product))
+                              commission_rate=_resolve_commission_rate(
+                                  symbol, cost_model, args.commission_bps, args.cost_product))
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             holdout_results[symbol] = {"run_id": rd.name, "core": m["core"]}
@@ -1096,8 +1134,8 @@ def main():
             rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
                               runs_root=_runs_root, interval_seconds=interval_seconds,
                               warmup_prefetch=True, holdout_start=_holdout_start,
-                              commission_rate=_commission_rate_for_symbol(
-                                  symbol, cost_model, product=args.cost_product))
+                              commission_rate=_resolve_commission_rate(
+                                  symbol, cost_model, args.commission_bps, args.cost_product))
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             core = m["core"]
