@@ -88,6 +88,121 @@ now.
    March 2026) — regulatory posture here is actively moving; re-check before
    any live-money decision, not just at research time.
 
+## Supplement (2026-07-20): Kraken spot-margin fees + perpetual-futures funding
+
+Roadmap item 1.2 follow-up (Dispatch G). Motivation: three campaign KB findings
+(`rsi_momentum_trending_cost_drag`/run_018, `keltner_scoremode_no_edge`/run_028+030,
+`FUNDING_MR_DAILY_RETEST`/run_059) were found (2026-07-20 recon, see
+`docs/session_reports/20260720_venue_cost_wiring.md`) to simulate SHORT positions
+via `trading-bot/execution/portfolio_info.py`'s margin borrow/sell/repay mechanics
+— not perpetual futures, and not plain (unshortable) spot. This section researches
+the two products that recon flagged as un-costed: Kraken spot-margin (the product
+those three targets actually simulate) and Kraken perpetual-futures funding (the
+product `FUNDING_MR_DAILY_RETEST`'s *signal* is drawn from, distinct from what it
+simulates trading). All facts below sourced live on **2026-07-20** via
+WebSearch/WebFetch, none from training memory; conflicting or unconfirmed claims
+are flagged inline, not asserted.
+
+### Kraken spot-margin trading
+
+**Availability for French/EU retail — NOT explicitly confirmed either way.**
+Evidence is mixed:
+- *Weak positive signal:* Kraken's margin-eligibility support page states margin
+  trading is "available to most verified clients that reside outside of the
+  United States, United Kingdom, Canada, and Australia"[^29] — France/EU are not
+  named as excluded, but are also not named as included; the page never mentions
+  the EEA, MiCA, or MiFID at all.
+- *Notable gap:* Kraken's own dedicated "Overview of changes for EEA clients"
+  page — the most current, EEA-specific source on what the 2026-07-01 MiCA/MiFID
+  transition changed — describes derivatives/perpetual-futures access in detail
+  (appropriateness questionnaire, TIN requirement, the CySEC-regulated entity)[^30]
+  but says nothing about margin trading at all. Since that page's explicit purpose
+  is to document what's now available to EEA clients and under which license, its
+  silence on margin (while perpetuals get full treatment) is a real, unresolved
+  gap — it is not possible to conclude from this survey whether margin trading is
+  covered under Kraken's current EEA authorization, offered under some other basis,
+  or not actually available to EEA retail post-MiCA.
+- **Verdict: flagged unresolved, not asserted available.** Do not treat spot-margin
+  as confirmed-legal for a French retail trader without a direct, current
+  confirmation (e.g. checking the live account UI/support chat) before any
+  live-money decision.
+
+**Opening fee:** varies by asset — BTC 0.01%–0.02%, other major crypto pairs
+0.02%–0.04%, USD-margin (i.e. borrowing USD to go long) 0.025%–0.05%, per
+Kraken's official fee schedule page (fetched in its French-localized form)[^9].
+This is consistent with, and slightly more granular than, a separate support
+article giving a worked example of 0.025% (USD margin, long) and 0.010% (BTC
+margin, short)[^31].
+
+**Rollover fee:** the SAME rate as the opening fee, charged every **4 hours**
+a position remains open, locked in at the time of order execution (rates
+otherwise fluctuate with market conditions)[^9][^31]. Margin fees stack on top
+of ordinary volume-based spot trading fees at position open/close[^9].
+
+**Leverage cap:** up to 10x mentioned generically for margin trading[^32], but no
+EEA/French-retail-specific cap was found distinct from that generic figure (contrast
+with perpetual futures below, where a 3x–10x EEA retail cap tied to the
+appropriateness test is explicitly documented). Flagged as unconfirmed for margin
+specifically.
+
+**Other:** a 3% liquidation fee applies if a margin position is force-closed[^31].
+
+### Kraken perpetual-futures funding
+
+**Funding interval — conflicting sources, EEA-specific one preferred.** Kraken's
+EEA-specific contract-specification page states funding is exchanged **every 1
+hour** for EEA (and other non-US) clients, with US CFTC-regulated contracts
+settling every 8 hours instead[^33]. A separate, non-region-specific Kraken blog
+primer describes settlement "every four hours"[^34]. Per this survey's own
+precedent for handling source conflicts (the 0.40%/0.80% vs. 0.25%/0.40% spot-fee
+conflict above), the more specific, more current, explicitly-EEA-scoped source
+([^33]) is used for a French retail trader — **1 hour** — but this is flagged as
+unresolved against [^34], not fully reconciled.
+
+**Funding rate bound:** ±0.50% per hour maximum/minimum, per the same EEA contract
+spec page[^33].
+
+**Representative/typical funding rate:** the CF Benchmarks Kraken Bitcoin
+Perpetual Funding Rate Index (KFRI) — a third-party benchmark index, not a single
+illustrative snapshot — showed **1.8738% annualized** for BTC perpetual funding on
+Kraken as of access date[^35]. Converted to the EEA hourly interval for the
+cost-mapping formula below: 1.8738% / (365 × 24) ≈ **0.000214% per hour**
+(≈0.0214 bps/hour). Kraken's own funding-rate primer separately illustrates a
+single point-in-time example (0.0003%/hour, next-estimate −0.0069%/hour, asset
+unspecified)[^34] — cited only to show the rate's realistic order of magnitude and
+sign volatility, not used as the representative figure (a single snapshot is not
+representative of a "typical" rate the way a published index average is). No
+ETH-specific published index was found in this pass; flagged as unsourced for ETH
+specifically — the BTC KFRI figure should not be silently reused for ETH.
+
+### Cost-mapping note (for cost-model design, not solved here)
+
+Round-trip cost formula per product, using this survey's bps figures:
+
+- **Spot:** `round_trip_cost = taker_fee × 2` (entry + exit, no time-dependent term).
+- **Spot-margin:** `round_trip_cost = taker_fee × 2 + rollover_fee × n_rollover_intervals`,
+  where `n_rollover_intervals = ceil(holding_period / 4h)` — e.g. a position held
+  6 hours pays 2 rollover charges (bars 0-4h, 4-8h), not 1.5.
+- **Perpetual futures:** `round_trip_cost = taker_fee × 2 + funding_rate × n_funding_intervals`,
+  where `n_funding_intervals = ceil(holding_period / 1h)` for EEA clients per [^33]
+  above, and `funding_rate` is signed (can reduce OR increase cost depending on
+  position direction vs. funding sign) — unlike margin rollover, which is always a
+  cost regardless of direction.
+
+**Finding for cost-model design (not resolved by this dispatch):** both margin and
+perpetual-futures round-trip cost are **time-dependent** — they scale with how long
+a position is held, not just with trade count. The engine's current
+`commission_rate` (threaded per Dispatch C/93f3d87) is a flat, per-side fraction
+applied once at entry and once at exit, structurally unable to express a
+holding-time-weighted cost. Correctly modeling margin or perp cost would require
+either (a) computing an effective flat `commission_rate` per candidate strategy
+from its OWN observed average holding period (`taker + rollover_or_funding ×
+avg_holding_intervals`, backed out from that strategy's own trade log — a
+per-strategy constant, not a venue constant), or (b) a structural engine change to
+apply a genuinely time-weighted cost per trade. Neither is implemented by this
+research-only doc pass; this is a finding to carry into the next cost-model design
+step, not a code change made here.
+
 [^1]: ESMA, MiCA overview & transitional deadline — https://www.esma.europa.eu/esmas-activities/digital-finance-and-innovation/markets-crypto-assets-regulation-mica (accessed 2026-07-19)
 [^3]: CoinDesk, "Binance tells EU users it will no longer provide services after failing to secure MiCA license" — https://www.coindesk.com/policy/2026/06/26/binance-tells-eu-users-it-will-no-longer-provide-services-after-failing-to-secure-mica-license (accessed 2026-07-19)
 [^4]: AMF white-list page for Binance France SAS (returns HTTP 404) — https://www.amf-france.org/en/warnings/white-lists/daspcasp/binance-france-sas (accessed 2026-07-19)
@@ -115,3 +230,10 @@ now.
 [^26]: Coinbase Help, "Coinbase Advanced fees" — https://help.coinbase.com/en/coinbase/trading-and-funding/advanced-trade/advanced-trade-fees (accessed 2026-07-19)
 [^27]: Coinbase Developer Docs, "Get product candles" — https://docs.cdp.coinbase.com/api-reference/exchange-api/rest-api/products/get-product-candles (accessed 2026-07-19)
 [^28]: Cryptonomist, "Bitget MiCAR Authorization Seeks EU Regulatory Approval" — https://en.cryptonomist.ch/2026/07/02/bitget-micar-authorization-eu/ (accessed 2026-07-19)
+[^29]: Kraken Support, "Client eligibility for margin trading services" — https://support.kraken.com/articles/4402532394260-client-eligibility-for-margin-trading-services- (accessed 2026-07-20)
+[^30]: Kraken Support, "Overview of changes for EEA clients" — https://support.kraken.com/articles/overview-of-changes-for-eea-clients (accessed 2026-07-20)
+[^31]: Kraken Support, "What are the fees (opening and rollover) for trading using margin?" — https://support.kraken.com/articles/206161568-what-are-the-fees-opening-and-rollover-for-trading-using-margin- (accessed 2026-07-20)
+[^32]: Kraken, "Crypto Margin Trading – Up to 10x Leverage" — https://www.kraken.com/features/margin-trading (accessed 2026-07-20)
+[^33]: Kraken Support, "Linear Multi-Collateral Derivatives Contract Specifications for clients in the European Economic Area" — https://support.kraken.com/articles/perpetual-contract-specifications-for-clients-in-the-eea (accessed 2026-07-20)
+[^34]: Kraken Blog, "A Quick Primer on Funding Rates" — https://blog.kraken.com/product/quick-primer-on-funding-rates (accessed 2026-07-20)
+[^35]: CF Benchmarks, "CF Bitcoin Kraken Perpetual Funding Rate Index (KFRI)" — https://www.cfbenchmarks.com/data/indices/KFRI (accessed 2026-07-20)
