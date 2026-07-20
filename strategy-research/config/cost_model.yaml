@@ -1,7 +1,10 @@
 # config/cost_model.yaml
 # Single source of truth for fee/spread/cost assumptions.
 # Consumed by: validation gate (Layer 1), prescreen tool (Layer 2),
-#              backtest engine (_cost_paid_bps in run_protocol.py),
+#              backtest engine (_cost_paid_bps in run_protocol.py, and -- as of
+#              2026-07-20 -- the actual per-trade commission_rate threaded into
+#              run_backtest() via run_protocol.py's --cost-product flag; see
+#              PERP CALIBRATION block below),
 #              and the cost_drag diagnostic rule in verdict-interpreter.
 #
 # RULE: No fee or spread constant may be hardcoded anywhere else after Improvement 09.
@@ -9,10 +12,11 @@
 #
 # Created: 2026-07-02 (Improvement 09)
 # Updated: 2026-07-04 (Cost-structure revision) — see execution_style block below.
+# Updated: 2026-07-20 (Perp calibration) — see PERP CALIBRATION block below.
 
-version: "1.1"
+version: "1.2"
 created_at: "2026-07-02"
-updated_at: "2026-07-04"
+updated_at: "2026-07-20"
 
 # ---------------------------------------------------------------------------
 # FEE-TIER VERIFICATION (2026-07-04, cost-structure revision)
@@ -103,6 +107,59 @@ round_trip_cost_bps:
   AVAXUSDT: 20.5
   BNBUSDT: 15.0
   default: 18.5
+
+# ---------------------------------------------------------------------------
+# PERP CALIBRATION (2026-07-20, Phase 1.2 / Dispatch H)
+# ---------------------------------------------------------------------------
+# Additive block, NOT a replacement for the top-level (spot) fee_rate_bps above and
+# NOT read by default. run_protocol.py only consumes this block when explicitly
+# invoked with --cost-product=perp (see that file's _commission_rate_for_symbol);
+# every other invocation continues to read the top-level fee_rate_bps exactly as
+# before this block existed -- this is deliberate, so unrelated spot runs are never
+# silently re-costed at perp rates.
+#
+# Why this exists: the 2026-07-20 recon (docs/session_reports/20260720_venue_cost_wiring.md,
+# Dispatch F2) found that trading-bot/execution/portfolio_info.py's SHORT trades
+# (present in rsi_momentum_trending_cost_drag/run_018 and
+# keltner_scoremode_no_edge/run_028+030) are simulated via margin borrow/sell/repay
+# mechanics, not literal perpetual futures. Dispatch G's venue research
+# (docs/venue_survey_20260719.md, 2026-07-20 supplement) then found Kraken spot-margin's
+# legal availability for French/EU retail is NOT confirmed either way, while Kraken
+# perpetual futures ARE confirmed available to French/EU retail (CySEC licence 342/17,
+# subject to a MiFID II appropriateness test -- see the original 2026-07-19 survey
+# body). Given that gap, this dispatch costs these two price-based, SHORT-containing
+# targets as if executed via Kraken's perp product (the confirmed-available
+# shortable venue) rather than margin (unconfirmed) -- a deliberate substitution for
+# costing purposes, not a claim that the engine executes real perpetual contracts.
+#
+# fee_rate_bps: Kraken perpetual-futures taker fee, base tier -- 0.05% = 5 bps
+# (docs/venue_survey_20260719.md's original comparison table, "Perp maker/taker
+# (base tier)" row: "Official docs: 0.0200% / 0.0500% at $0+"). Flat across all
+# symbols/default: the source is a single tiered schedule, not per-symbol, so no
+# per-symbol breakdown is fabricated here.
+#
+# round_trip_cost_bps: 2 * 5.0 = 10.0 (same 2-events-per-round-trip convention as
+# the top-level spot block -- confirmed symmetric between LONG and SHORT by direct
+# code read of portfolio_info.py's update_local_balance, see
+# _commission_rate_for_symbol's docstring in run_protocol.py). Funding is NOT
+# included in this figure -- see the funding note immediately below.
+#
+# FUNDING NOT MODELED: this cost figure prices ONLY the taker fee round-trip. Kraken
+# perpetual funding cash flows (docs/venue_survey_20260719.md's 2026-07-20
+# supplement: EEA funding interval 1h, rate bound +/-0.5%/hr, representative BTC
+# rate ~1.8738%/year per the CF Benchmarks KFRI index) are NOT modeled anywhere in
+# this cost_model.yaml or in run_protocol.py's wiring. Consequently this
+# round_trip_cost_bps is valid ONLY for price-based strategies whose edge does not
+# depend on funding-rate carry. Funding-carry strategies (the FUNDING_MR_DAILY_RETEST
+# family) are explicitly EXCLUDED from being costed with this block -- a fee-only
+# perp re-run of them would omit the funding credit that is their entire thesis,
+# understating or mis-signing their true edge. They remain deferred to a dedicated
+# funding-modeling build, not re-run here.
+perp:
+  fee_rate_bps:
+    default: 5.0
+  round_trip_cost_bps:
+    default: 10.0
 
 # ---------------------------------------------------------------------------
 # EXECUTION STYLE VARIANTS (2026-07-04, cost-structure revision)

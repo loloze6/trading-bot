@@ -98,6 +98,14 @@ def pytest_configure(config):
         "beyond the convention itself, so use it only for genuine "
         "real-config reads, never as a way to skip writing a proper fixture.",
     )
+    config.addinivalue_line(
+        "markers",
+        "slow: tests that take more than a few seconds (e.g. runs the real "
+        "backtest engine). Matches trading-bot/pytest.ini's convention; no "
+        "default -m filter is configured here, so these still run by default "
+        "-- the marker exists for selective inclusion/exclusion, not to hide "
+        "them.",
+    )
 
 
 @pytest.fixture(autouse=True)
