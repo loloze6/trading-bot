@@ -260,3 +260,26 @@ Note on naming convention: Kraken's liquid pairs are dominantly **USD**-quoted, 
 [^5]: CryptoDataDownload, Kraken dataset page (currently unavailable) — https://www.cryptodatadownload.com/data/kraken/ (accessed 2026-07-21)
 [^6]: Binance Data Collection (public bulk archive) — https://data.binance.vision/ (accessed 2026-07-21)
 [^7]: CoinGecko public API, Kraken exchange tickers — https://api.coingecko.com/api/v3/exchanges/kraken/tickers (accessed 2026-07-21)
+
+---
+
+## Addendum (2026-07-21, same-day correction to Step 3a's scope)
+
+Step 3a, as originally committed, verified Kraken's **spot** `/public/OHLC` endpoint only (720-candle hard cap, "older data cannot be retrieved, regardless of the value of `since`") and recommended the bulk OHLCVT CSV download as the backfill path on that basis. It did not check whether **Kraken Futures** (the perpetual-futures product itself) has a separate price-candle endpoint with different behavior. It does, and the behavior looks materially different — this addendum records that finding without altering the original step 3 text above.
+
+**Kraken Futures candles endpoint:**
+
+```
+GET https://futures.kraken.com/api/charts/v1/{tick_type}/{symbol}/{resolution}
+```
+
+e.g. `.../trade/PI_XBTUSD/1D`. Parameters: `tick_type` (`mark` / `spot` / `trade`), `symbol` (Futures-format, e.g. `PI_XBTUSD`), `resolution` (`1m, 5m, 15m, 1h, 4h, 12h, 1d, 1w`), and — unlike the spot endpoint — explicit `from`/`to` (epoch seconds). The response includes a `more_candles` boolean.
+
+**Why this looks different from spot, not just a variant of the same cap:** the spot endpoint has only a `since` parameter and documents outright that older data is unreachable through it, full stop — the 720-candle window is a hard wall, which is exactly why step 3a routed to the bulk CSV download. The Futures endpoint additionally exposes a `to` parameter and a `more_candles` flag — the shape of a real pagination mechanism (walk `to` backward, or `from` forward, across multiple calls) rather than a hard wall. If that reading is correct, Kraken Futures price history could be backfilled directly through the REST API, with no bulk-CSV workaround needed at all — a different acquisition path than spot.
+
+**Confidence caveat — explicitly not fully confirmed:** three attempts to fetch the primary documentation pages for this endpoint (`docs.kraken.com/api/docs/futures-api/charts/candles`, `.../charts/charts`, `.../trading/historical-data`) all returned HTTP 404 to a direct (non-JS) fetch — likely a client-rendered docs site that doesn't serve static HTML to a plain fetcher, inconsistent with two *other* Kraken docs pages ([^1], [^3] above) that did resolve. The endpoint shape and parameters above were corroborated instead via a third-party API wrapper's documentation, `python-kraken-sdk`[^8], and cross-referenced against general web search results describing the same shape[^9] — **not** the primary source. Per this report's own citation discipline (flag, don't assert, when a claim can't be directly confirmed): treat "Futures candles are genuinely paginable back through full history" as **plausible, not confirmed**. It needs a direct primary-source check (or a live test call) before being relied on for implementation.
+
+**Practical implication — an open item, not resolved by this recon:** which price series each of the 20 pairs should actually use — Kraken **spot** or Kraken **Futures** (perp) — is not decided here. For any pair sourced from Futures (plausible for the funding-based signals specifically, since a funding strategy arguably wants the perp's own price, not spot), the original step 3's bulk-CSV recommendation does not apply — the acquisition path may be the paginated Futures REST endpoint instead, pending the confirmation above. Whoever writes the implementation dispatch needs to (1) decide spot-vs-Futures price sourcing per pair/signal, and (2) directly confirm the Futures candles pagination behavior (primary docs or a live test call) before committing to either acquisition path for those pairs.
+
+[^8]: python-kraken-sdk documentation, Futures REST — `get_ohlc()` — https://python-kraken-sdk.readthedocs.io/en/v2.0.0/src/futures/rest.html (accessed 2026-07-21)
+[^9]: Web search results describing `futures.kraken.com/api/charts/v1/{tick_type}/{market}/{resolution}`, its `more_candles` field, and resolution set (1m–1w) — search query "Kraken Futures API OHLC candles endpoint historical data docs.kraken.com futures-api charts" (accessed 2026-07-21); primary Kraken docs page it references (`docs.kraken.com/api/docs/futures-api/charts/candles/`) returned 404 on direct fetch, see confidence caveat above
