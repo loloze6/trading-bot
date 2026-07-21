@@ -1289,3 +1289,91 @@ independent audit, fee-isolation-pairs follow-up)
   undeclared — most were kills already caveated in the ledger, and the
   operator ruled against retroactively editing archived brief files. This
   is a decision, not a gap.
+
+### C15. CLOSED (2026-07-21) — Fee-reduction autopsy field (P1)
+- **Symptom:** a cost-dominated kill (`root_cause.mechanism_failure ==
+  'signal_real_but_subscale_vs_costs'`) had no mandatory follow-up question
+  in the autopsy schema — nothing forced the verdict-interpreter to ask "is
+  there a system that reduces these fees?" (maker-only execution, lower-
+  frequency variant, different product, venue tier, batching), so a cheap,
+  viable variant could go unregistered purely because no one asked.
+- **Recon finding (step 3 of this dispatch):** `regime_attribution` — this
+  schema's only OTHER field marked "Mandatory" in its own description
+  (`schemas/verdict_interpretation.schema.json:70`, "Mandatory for
+  regime-gated hypotheses") — has **no code-side enforcement at all**. It is
+  absent from both the schema's top-level `required` array and `root_cause`'s
+  own inner `required` list (no JSON-Schema conditional-required either);
+  `workflow/run_phase1_research.py` never checks for its presence — the only
+  "enforcement" is a prompt-level instruction (the IMPROVEMENT 02 handoff
+  `constraints` text at `run_phase1_research.py:1531-1536`, and
+  `skills/verdict-interpreter/SKILL.md:541-543`'s "you MUST populate"). This
+  contradicted this dispatch's own background hypothesis ("likely code-side")
+  — there is no established code-side pattern to mirror for a field's mere
+  presence. `fee_reduction_assessment` therefore follows the SAME (prompt-
+  level-only) precedent for its schema description, plus a NEW, lighter
+  print-warning at the `mechanism_failure` routing site — mirroring that
+  site's own established warning STYLE (the `⚠️` prefix / labeled-message
+  convention at `component_execution_error`/`regime_misattribution`,
+  `run_phase1_research.py:4057-4061` and `4076-4082`) without adopting their
+  routing behavior (both of those `return "human_pause"`; a missing
+  `fee_reduction_assessment` does not — it's a completeness gap in the
+  autopsy, not evidence the verdict itself is untrustworthy).
+- **Fix:** `schemas/verdict_interpretation.schema.json` — new
+  `root_cause.fee_reduction_assessment` object (sibling to
+  `mechanism_failure`/`supporting_evidence`/`confidence`):
+  `has_fee_reduction_system` (boolean), `candidate_system` (string enum —
+  chosen over free text because the ROADMAP's own Phase 1.4 objective text
+  already enumerates a fixed, closed vocabulary — `maker_only_execution`,
+  `lower_frequency_variant`, `different_product`, `venue_tier`, `batching`
+  — matching this schema's established convention of enums for
+  classification fields that drive downstream logic, e.g.
+  `mechanism_failure`/`confidence`/`regime_attribution.conclusion`, versus
+  free text for narrative fields like `supporting_evidence`), and
+  `registered_as` (string, optional — the new idea's brief filename).
+- **Resolution (2026-07-21):** `workflow/run_phase1_research.py`,
+  `determine_post_verdict_route()`, immediately after the existing
+  `regime_misattribution` branch (~line 4088 in the pre-edit file, inside
+  the `# --- IMPROVEMENT 01: mechanism_failure routing ---` block): when
+  `root_cause.get("mechanism_failure") == "signal_real_but_subscale_vs_costs"`
+  and `root_cause.get("fee_reduction_assessment")` is falsy, prints a
+  two-line `⚠️  Phase 1.4:` warning naming the missing field and restating
+  the mandatory question, then falls through to normal routing (no state
+  change, no route change). Fixtures (`tests/test_fee_reduction_assessment.py`,
+  mirroring `test_circuit_breaker_family_scoping.py`'s
+  `test_component_execution_error_is_immune_to_the_breaker` fixture style —
+  direct `rpr.ROOT`/`rpr.CAMPAIGN_STATE_PATH` monkeypatch, hand-written
+  `verdict_interpretation.yaml`/`pipeline_state.yaml`, calling
+  `determine_post_verdict_route` directly, using `status="kill"` so each
+  test short-circuits into the lightweight terminal `_route_kill` path
+  rather than the much heavier carryover/KB-write fixture the non-terminal
+  branches would need):
+  `test_fee_reduction_assessment_missing_emits_warning`,
+  `test_fee_reduction_assessment_present_suppresses_warning`,
+  `test_other_mechanism_failure_never_triggers_fee_reduction_warning`
+  (confirms the gate is keyed on `mechanism_failure` specifically, not
+  fired for every kill). Suite: 338 passed (335 + 3 new), zero failures.
+- **KB retroactive-applicability check (step 6, no action taken — reported
+  only, per instruction):** `campaign_knowledge_base.yaml` predates
+  Improvement 01's structured `root_cause.mechanism_failure` enum for its
+  own `findings:` list entries (they use an older, looser free-text
+  `root_cause:` vocabulary) — no finding anywhere in the KB carries the
+  literal string `signal_real_but_subscale_vs_costs` (confirmed by direct
+  grep). One finding is neverthless genuinely cost-dominated by the SAME
+  substantive criterion: `rsi_momentum_trending_cost_drag`
+  (`campaign_knowledge_base.yaml:254`, evidence `run_018` — the same
+  `run_018` C13 already flagged for unrelated V9-validator drift),
+  `root_cause: cost_drag`, `cost_drag_pct: 272.865`, `exhausted_basis`:
+  "gross edge is overwhelmed by transaction costs by 2.7×... Structurally
+  cost-unviable at this trade frequency." `keltner_scoremode_no_edge`
+  (`campaign_knowledge_base.yaml:111`, `cost_drag=84%` cited as
+  corroborating evidence) was already confirmed NOT cost-dominated — its
+  root cause is `signal_quality` (structural, not cost), per this arc's own
+  prior finding. Three other findings
+  (`already_priced_in`/`lag_mismatch_to_regime_persistence`/
+  `no_informational_content_this_venue`, lines 523/583/789) cite
+  `edge_to_cost_ratio` as corroborating evidence of a small edge, but their
+  assigned root cause is not primarily cost-dominated. Not retroactively
+  edited per instruction — left for the operator to decide as a separate
+  follow-up.
+- **Acceptance:** met — see fixtures above; schema JSON re-parses cleanly
+  (`json.load` round-trip confirmed).

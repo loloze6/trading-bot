@@ -4083,6 +4083,27 @@ def determine_post_verdict_route(path: Path, run_id: str):
         update_state(path=path, status="paused_for_human",
                      flags={"regime_misattribution_flagged": True})
         return "human_pause"
+
+    # Phase 1.4 (docs/ROADMAP.md): a cost-dominated kill must answer "is there
+    # a system that reduces these fees?" (maker-only execution, lower-frequency
+    # variant, different product, venue tier, batching); if yes, register the
+    # cheap variant as a new idea. Unlike component_execution_error/
+    # regime_misattribution above, this does not pause the pipeline -- it's a
+    # completeness gap in the autopsy, not evidence the verdict itself is
+    # untrustworthy (regime_attribution, this schema's only other "mandatory"
+    # root_cause-adjacent field, has no code-side pause either -- it's enforced
+    # only at the prompt/skill level, with no post-hoc check anywhere in this
+    # file). A print-level nudge, mirroring the warning style (not the routing
+    # behavior) of the component_execution_error/regime_misattribution blocks
+    # above, rather than silently passing.
+    if root_cause.get("mechanism_failure") == "signal_real_but_subscale_vs_costs" \
+            and not root_cause.get("fee_reduction_assessment"):
+        print("\n⚠️  Phase 1.4: root_cause.mechanism_failure = signal_real_but_subscale_vs_costs "
+              "but root_cause.fee_reduction_assessment is missing.")
+        print("   Mandatory: is there a system that reduces these fees (maker-only execution, "
+              "lower-frequency variant, different product, venue tier, batching)? If yes, "
+              "register the cheap variant as a new idea and name it in "
+              "fee_reduction_assessment.registered_as.")
     # --- end mechanism_failure routing ---
 
     # A8 (K2 kernel): resolve the two-field pair (preferring the artifact's own

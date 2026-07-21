@@ -111,6 +111,28 @@
           "type": "string",
           "enum": ["high", "medium", "low"],
           "description": "Confidence in the mechanism_failure assignment given available evidence."
+        },
+        "fee_reduction_assessment": {
+          "type": "object",
+          "description": "Mandatory whenever root_cause.mechanism_failure == 'signal_real_but_subscale_vs_costs'. Answers whether a cheaper execution/venue/frequency variant exists; if yes, the cheap variant must be registered as a new idea and named here.",
+          "properties": {
+            "has_fee_reduction_system": { "type": "boolean" },
+            "candidate_system": {
+              "type": "string",
+              "enum": [
+                "maker_only_execution",
+                "lower_frequency_variant",
+                "different_product",
+                "venue_tier",
+                "batching"
+              ],
+              "description": "Which category of cheaper variant applies, per docs/ROADMAP.md Phase 1.4's own enumerated options (maker-only execution, lower-frequency variant, different product, venue tier, batching)."
+            },
+            "registered_as": {
+              "type": "string",
+              "description": "Optional. The new idea's brief filename, if a cheap variant was registered as a result of this assessment."
+            }
+          }
         }
       }
     },
