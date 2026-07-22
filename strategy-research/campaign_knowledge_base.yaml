@@ -6,6 +6,41 @@ amended_by:
 - A5.3
 - A8.5
 - A8.6
+- C7-EXT-R
+verdict_status_legend:
+  purpose: >
+    Added 2026-07-22 by C7-EXT-R/D-4, after the independent audit
+    (docs/session_reports/20260722_c7ext_audit.md) established that this file
+    could not distinguish a verdict that earned its way here from one somebody
+    typed. Every verdict-bearing `outcome` now carries a `verdict_status`
+    stating which it is, and tools/lint_verdict_provenance.py enforces it with
+    no write involved. A `verdict_status` is about PROVENANCE, never about
+    whether the finding is correct.
+  gated: >
+    The verdict evaluator ran and resolved a binding PASS/FAIL. Requires
+    `pass_rule_evaluation_ref` pointing at a pass_rule_evaluation.yaml that
+    exists, belongs to one of this entry's own runs, and recorded PASS or FAIL.
+    As of the 2026-07-22 sweep, exactly ONE record in this campaign qualifies:
+    funding_mr_daily_retest_killed (run_059).
+  ungated: >
+    No pass_rule_evaluation.yaml exists for this entry's runs. The MEASUREMENTS
+    stand and are not withdrawn; they were simply never adjudicated against a
+    pre-registered rule by the machinery. A measurement is not a verdict.
+  stage_discretion: >
+    An LLM pipeline stage rejected or closed the hypothesis before the
+    registered mechanical gate ever ran. This is a real decision with real
+    reasoning behind it, and it is NOT a gated verdict -- G5's own doctrine is
+    that stage discretion does not know the verdict preconditions exist.
+  sweep_note: >
+    The 2026-07-22 sweep newly marked 11 entries `ungated` (12 carry it in total;
+    XS_momentum was already labelled by C7-EXT). That is not a retroactive
+    judgement on any of them -- most are prescreen no-edge results whose evidence
+    is perfectly sound. It records the accurate fact that the campaign's
+    mechanical verdict gate did not run on them, which until now the file did not
+    say either way. The 5 entries carrying no verdict_status at all are
+    engineering/process states (invalidated_artifact, blocked_feed_unavailable,
+    inconclusive, unusable_for_this_symbol_timeframe): they assert nothing about
+    a hypothesis, so they need no gate.
 findings:
 - id: keltner_mean_reversion_no_edge
   mechanism: Keltner mean-reversion in TRENDING regime (ER>=0.50)
@@ -22,6 +57,7 @@ findings:
   - 'run_039 prescreen (A8.3 full-range): ic_active_bars=-0.032, p=0.83, n_active=1125'
   - 'Baseline_v2 re-run (2026-07-02): 163 trades, zero-trade slots 14/48, median_sharpe=0.000'
   outcome: no_edge_observed
+  verdict_status: ungated
   root_cause: signal_quality
   signal_property:
     forecast_return_corr: 0.2145
@@ -81,6 +117,7 @@ findings:
   - run_033
   evidence_count: 2
   outcome: no_edge_observed
+  verdict_status: ungated
   root_cause: signal_inversion
   signal_property:
     forecast_return_corr: -0.171
@@ -108,6 +145,7 @@ findings:
   - run_030
   evidence_count: 2
   outcome: no_edge_observed
+  verdict_status: ungated
   root_cause: signal_quality
   signal_property:
     forecast_return_corr_max: 0.2953
@@ -162,6 +200,7 @@ findings:
   - run_030
   evidence_count: 2
   outcome: no_edge_observed
+  verdict_status: ungated
   root_cause: signal_quality
   signal_property:
     run_030_avaxusdt_median_sharpe_10bps: -2.735
@@ -234,6 +273,7 @@ findings:
   - run_014
   evidence_count: 1
   outcome: no_edge_observed
+  verdict_status: ungated
   root_cause: signal_quality
   signal_property:
     forecast_return_corr: -0.022
@@ -259,6 +299,7 @@ findings:
   - run_018
   evidence_count: 1
   outcome: no_edge_observed
+  verdict_status: ungated
   root_cause: cost_drag
   signal_property:
     forecast_return_corr: 0.018
@@ -282,6 +323,7 @@ findings:
   - run_050
   evidence_count: 2
   outcome: no_edge_observed
+  verdict_status: ungated
   outcome_reason: closed_null_well_powered
   signal_property:
     ic_active_bars: 0.017764
@@ -361,6 +403,7 @@ findings:
   - run_048
   evidence_count: 2
   outcome: era_conditional_instability
+  verdict_status: ungated
   outcome_reason: significant_pooled_ic_with_era_sign_flip
   signal_property:
     ic_active_bars: -0.040257
@@ -409,8 +452,27 @@ findings:
   evidence_runs:
   - run_058
   evidence_count: 1
-  outcome: completed_rejected
+  outcome: stage_discretion_rejection_no_gated_verdict
+  verdict_status: stage_discretion
   outcome_reason: validation_gate_rejection_pre_pass_rule
+  outcome_history_superseded:
+  - outcome: completed_rejected
+    recorded_at: '2026-07-17'
+    superseded_at: '2026-07-22'
+    superseded_reason: 'C7-EXT-R/D-5. `completed_rejected` was being counted as one
+      of the campaign''s two gated verdicts. It is not one. This entry''s own
+      exhausted_basis already said so in as many words -- "The REGISTERED mechanical
+      evaluation ... was NEVER EXECUTED" -- but the outcome string did not, and a
+      string-matching test (test_campaign_honest_verdict_count) counted it anyway.
+      Confirmed by direct check: runs/run_058/artifacts/ contains no
+      pass_rule_evaluation.yaml, no protocol_result.yaml, no prescreen_result.yaml and
+      no verdict_interpretation.yaml; pipeline_state.yaml stops at current_stage:
+      validation. The B11/C7 structured pass_rule pinned in run_058''s
+      pre_registration.yaml (criteria a/b/c over 71 pass-gated monthly windows) never
+      ran. The rejection itself is NOT withdrawn -- validation_decision.yaml''s
+      reasoning, and grounds (1)-(3) in exhausted_basis below, stand exactly as
+      recorded. What is withdrawn is the claim that a registered gate produced them.
+      Nothing measured is deleted; run_058 measured nothing, which is the point.'
   signal_property: null
   protocol_version: h041c_v2_backext (protocols/h041c_v2_backext.json, sha256:439bc6320ac198c8d2ba8b7d4c11b8da39b0fbad4edfb0a2883937ae590abeb7,
     per runs/run_058/artifacts/pre_registration.yaml machine_constraints)
@@ -520,6 +582,7 @@ findings:
   - run_043
   evidence_count: 1
   outcome: no_edge_observed
+  verdict_status: ungated
   root_cause: already_priced_in
   outcome_reason: 'P1a (2026-07-04) shakedown result, real (post-F1-F4 wiring fixes).
     Dense, always-on signal (forecast_sparsity_pct=0.0, active_n_bars=15938 of 15938
@@ -629,6 +692,8 @@ findings:
   - run_059
   evidence_count: 1
   outcome: completed_rejected
+  verdict_status: gated
+  pass_rule_evaluation_ref: runs/run_059/artifacts/pass_rule_evaluation.yaml
   outcome_reason: 'Mechanically evaluated (B11/C7 structured pass_rule,
     runs/run_059/artifacts/pass_rule_evaluation.yaml, evaluated_at
     2026-07-18T16:01:02Z): FAIL on BOTH gating criteria, either symbol
@@ -786,6 +851,7 @@ findings:
   - run_053
   evidence_count: 1
   outcome: no_edge_observed
+  verdict_status: ungated
   root_cause: no_informational_content_this_venue
   outcome_reason: 'Full backward-extended range (2018-01-01 to 2025-12-31, 8 years,
     multiple bull/bear/chop cycles), prescreen kill_no_ic. ic_all_bars=-0.014497 (p=0.2922,
@@ -822,7 +888,53 @@ findings:
   - run_054
   - run_057
   evidence_count: 2
-  outcome: kill_er_gate_mechanism_falsified
+  outcome: ungated_er_gate_variant_too_sparse_to_evaluate
+  verdict_status: ungated
+  readjudication_20260722: 'C7-EXT-R/D-6. Relabelled from
+    `kill_er_gate_mechanism_falsified`. This is a LABELLING correction computed from
+    the artifacts already on disk -- no backtest was re-run and no number below is
+    changed.
+
+    Two independent grounds.
+
+    (1) NEVER MECHANICALLY GATED. run_057''s pass_rule is pre-registered under
+    `machine_constraints.pass_rule`, not at the top level, so the evaluator''s
+    top-level-only lookup resolved it to None. No pass_rule_evaluation.yaml exists for
+    run_057. C7-EXT-R fixes the lookup (verdict_criteria_evaluator._find_pass_rule),
+    which reveals the rule is additionally a legacy PROSE STRING and so resolves to
+    `legacy_not_evaluable` regardless -- it was never machine-evaluable. Every step of
+    this verdict was human-adjudicated. That may well have been the right call; it was
+    not a gated one, and the record now says which.
+
+    (2) THE SAMPLE CANNOT CARRY A KILL. Recomputed directly from
+    runs/run_057/artifacts/protocol_result.yaml: of 30 window-symbols, 29 fall below
+    the A3.4 five-trade floor, and the ENTIRE run contains exactly ONE non-null
+    per-window Sharpe -- ETHUSDT 2022-10, -0.686, on 5 trades. BTCUSDT has zero
+    evaluable windows across all 15. Per-window trade counts are BTCUSDT
+    [4,1,0,2,2,0,3,0,1,3,2,1,1,0,0] and ETHUSDT [1,1,1,2,2,0,2,2,2,5,1,0,2,0,1].
+    Criterion (a) therefore rests on a median taken over one window on one symbol.
+    Meanwhile criterion (b) -- the only criterion with a real sample, n=42 -- PASSED on
+    sign (+433.7 bps, SE 441.4). "The mechanism is falsified" is a stronger claim than
+    this evidence supports. What was established is that the ER(20)>=0.30 entry gate
+    left too few trades to evaluate the hypothesis at all.
+
+    NOT WITHDRAWN, and still the most useful thing in this entry: the S2 mechanism
+    check below is identity-matched (42/42 trades reconciled to run_054 parents, 100%
+    percent-return agreement) and shows EXCLUDED entries (ER<0.30, n=75, +1395.9 bps,
+    SE 821.2) outperforming INCLUDED ones (n=42, +433.7 bps, SE 441.4) roughly 3:1
+    against the gate''s own design rationale. That is directional evidence against
+    ER-at-entry gating for this family on this record, it does not depend on the
+    sparse Sharpe, and it is unaffected by this relabelling.
+
+    CONSEQUENCE FOR THE QUEUE: P4_ts_trend is neither promoted, refined, nor killed by
+    run_057. It is not reopened by this correction either -- reopening is a separate
+    decision requiring a registration that can actually produce trades.'
+  outcome_history_superseded_20260722:
+  - outcome: kill_er_gate_mechanism_falsified
+    recorded_at: '2026-07-11'
+    superseded_at: '2026-07-22'
+    superseded_reason: See readjudication_20260722 above (C7-EXT-R/D-6). Prior
+      outcome_history_superseded entries for this finding are retained verbatim below.
   outcome_reason: 'run_057 (P4_SMA_TREND_LONGONLY_DAILY_ER20GATE): pre-registered
     pass_rule (pre_registration.yaml) applied verbatim as the sole verdict authority
     per operator pre-commitment (prescreen_override_20260711.yaml) -- FAIL on criterion
@@ -1243,7 +1355,7 @@ coverage_matrix:
     evidence_count: 2
   - hypothesis_id: H-041-C-v2
     finding_id: fear_greed_contrarian_v2_validation_rejected
-    outcome: completed_rejected
+    outcome: stage_discretion_rejection_no_gated_verdict
     evidence_count: 1
   - hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
     finding_id: macd_trend_continuation_extended_2018_2025_auto
@@ -1251,7 +1363,7 @@ coverage_matrix:
     evidence_count: 1
   - hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
     finding_id: p4_sma_trend_longonly_daily_auto
-    outcome: kill_er_gate_mechanism_falsified
+    outcome: ungated_er_gate_variant_too_sparse_to_evaluate
     evidence_count: 2
   deferred_mechanism_impure:
   - hypothesis_id: H-041-B

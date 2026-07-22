@@ -1705,7 +1705,82 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
 
 class UngatedProtocolError(ValueError):
     """G7 (C7-EXT): a protocol was materialized from a brief whose
-    machine_constraints carry no pre-registered `promotion` block."""
+    machine_constraints carry no pre-registered `promotion` block.
+
+    C7-EXT-R (D-3) widens this to protocol SELECTION as well as generation."""
+
+
+# C7-EXT-R / D-3. The exact block G7 abolished, kept in ONE place so "is this
+# the abolished default?" is a single comparison rather than four scattered
+# literals. Any protocol file whose promotion block equals this did not get it
+# from a brief -- it got it from the code default, by copy or by generation.
+_GENERIC_PROMOTION = {
+    "median_sharpe_gt": 0,
+    "max_abs_drawdown_pct_lt": 30,
+    "min_trade_count_gte": 20,
+    "kill_median_sharpe_lt": -1,
+}
+
+
+def promotion_is_generic(promotion) -> bool:
+    """True when a promotion block is byte-equal to the abolished code default."""
+    return isinstance(promotion, dict) and dict(promotion) == _GENERIC_PROMOTION
+
+
+def _assert_promotion_ratified(protocol_path: Path) -> None:
+    """
+    C7-EXT-R / D-3. G7 alone was half a fix, and the audit said so plainly:
+    guarding the GENERATOR while leaving the generated artifacts and the default
+    selection in place changes nothing for a run that simply loads one.
+
+    The abolished block is still committed and live in NINE protocol files
+    (baseline_v1, baseline_v2, the four escalation_*, and the three
+    run_0NN_generated ones materialized before G7 existed). `_resolve_protocol_path`
+    could hand any of them to a run, and the resulting verdict would once again be
+    computed against thresholds no brief ever froze.
+
+    (The audit report said seven. Recounting from the tree gives nine; the
+    discrepancy was a miscount in the report's own file listing, not a change to
+    the tree. test_d3_every_committed_generic_protocol_is_marked_unratified pins
+    the number so it cannot drift again unnoticed.)
+
+    So the check moves to the point of USE. A protocol carrying the generic block
+    is refused unless the file explicitly ratifies it, via:
+
+        "promotion_provenance": {"ratified_by": "<brief or operator ruling>",
+                                 "ratified_at": "<date>"}
+
+    Ratification is cheap and reversible -- it is a claim that a human looked at
+    these four numbers and adopted them for this protocol on purpose. That is the
+    entire difference between a pre-registered threshold and a leftover default,
+    and it is exactly the difference the campaign could not previously express.
+    """
+    try:
+        with open(protocol_path, "r", encoding="utf-8") as fh:
+            protocol_obj = json.load(fh)
+    except (OSError, ValueError):
+        return  # existence/parse failures are other checks' business, not this one
+    if not isinstance(protocol_obj, dict):
+        return
+
+    promotion = protocol_obj.get("promotion")
+    if not promotion_is_generic(promotion):
+        return
+
+    provenance = protocol_obj.get("promotion_provenance") or {}
+    if isinstance(provenance, dict) and provenance.get("ratified_by"):
+        return
+
+    raise UngatedProtocolError(
+        f"[G7/D-3] {protocol_path.name} carries the abolished generic promotion "
+        f"block {_GENERIC_PROMOTION} with no `promotion_provenance.ratified_by`. "
+        f"These four numbers came from a code default, not from any brief -- they "
+        f"are the same unregistered '30% DD bar' the XS_momentum verdict was "
+        f"argued against. Refusing to run a verdict-bearing protocol against them. "
+        f"Either pre-register real thresholds for this hypothesis, or add "
+        f"promotion_provenance: {{ratified_by, ratified_at}} to {protocol_path.name} "
+        f"to state on the record that these values were adopted deliberately."
+    )
 
 
 def _require_pre_registered_promotion(proto_constraint: dict, run_id: str) -> dict:
@@ -1871,20 +1946,41 @@ def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
     distinguishable run_type, A3); and the claim-checked last_escalation fallback
     (B10, §4) -- which now HARD-FAILS instead of silently reusing stale
     campaign-wide state, unless this run is that escalation's own claimed consumer.
+
+    C7-EXT-R (D-3): every exit passes through _assert_promotion_ratified, so an
+    unratified generic promotion block is refused wherever the protocol came
+    from -- generated, pinned, defaulted or inherited. The audit's point was that
+    guarding only the generator left the artifacts and the defaults untouched.
     """
     artifacts = run_dir / "artifacts"
     run_ctx_path = artifacts / "run_context.yaml"
     run_ctx = (load_yaml(run_ctx_path) or {}) if run_ctx_path.exists() else {}
     run_type = run_ctx.get("run_type", "")
 
+    def _selected(path: Path) -> Path:
+        _assert_promotion_ratified(path)
+        return path
+
     if run_type == "replication_diagnostic":
         print("🔁 replication_diagnostic run — ignoring last_escalation, using baseline_v1.json")
-        return ROOT / "protocols" / "baseline_v1.json"
+        return _selected(ROOT / "protocols" / "baseline_v1.json")
 
     if run_type == "forced_diagnostic":
-        proto_name = run_ctx.get("protocol", "baseline_v1.json")
+        # C7-EXT-R/D-3: the implicit "baseline_v1.json" default is gone. A
+        # forced_diagnostic that forgot to name its protocol was silently handed
+        # the generic-threshold baseline -- the same silent-default class of
+        # defect G7 was opened to abolish, one layer further out.
+        proto_name = run_ctx.get("protocol")
+        if not proto_name:
+            raise UngatedProtocolError(
+                f"[G7/D-3] run {run_id}: run_context.yaml declares "
+                f"run_type=forced_diagnostic but names no `protocol`. Refusing to "
+                f"default to baseline_v1.json -- a diagnostic that does not say what "
+                f"it is running against silently inherits generic thresholds. Name "
+                f"the protocol explicitly in run_context.yaml."
+            )
         print(f"🔬 forced_diagnostic run — using protocol: {proto_name}")
-        return ROOT / "protocols" / proto_name
+        return _selected(ROOT / "protocols" / proto_name)
 
     if run_type == "protocol_ref_pinned":
         proto_name = run_ctx.get("protocol")
@@ -1894,7 +1990,7 @@ def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
                 f"'protocol' key -- malformed pin state for {run_id}."
             )
         print(f"📌 [B3] protocol_ref_pinned run — using pinned protocol: {proto_name}")
-        return ROOT / "protocols" / proto_name
+        return _selected(ROOT / "protocols" / proto_name)
 
     # B10 fallback: campaign-wide last_escalation, claim-checked (§4).
     campaign = load_campaign_state()
@@ -1910,7 +2006,7 @@ def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
               f"({protocol_path_str}) -- this run ({run_id}) is its claimed "
               f"consumer. Fragile: prefer machine_constraints.protocol_ref on "
               f"this run's own pre_registration.yaml instead.")
-        return Path(protocol_path_str)
+        return _selected(Path(protocol_path_str))
 
     update_state(path=run_dir, flags={"stale_escalation_unclaimed": True})
     raise RuntimeError(
@@ -2843,6 +2939,40 @@ _VERDICT_TO_OUTCOME = {
 }
 
 
+def _verdict_provenance_stamp(run_id_str: str) -> dict:
+    """
+    G6 / C7-EXT-R (D-4). Returns the provenance fields a KB record must carry,
+    determined by what is ACTUALLY ON DISK for this run -- never asserted.
+
+    Before this, _write_kb_findings_entry wrote a bare `outcome` with no
+    provenance and no verdict_status, and then called the G6 validator on the
+    result. That only passed because the validator did not look at `outcome`.
+    With the validator repaired, the writer has to be able to satisfy it, and the
+    only honest way to do that is to check:
+
+      - runs/<id>/artifacts/pass_rule_evaluation.yaml exists AND resolved a
+        binding PASS/FAIL  ->  verdict_status: gated, plus the citation;
+      - anything else -> verdict_status: ungated. Not a demotion of the finding;
+        a statement that the campaign's mechanical gate did not adjudicate it.
+        Most runs legitimately land here (a prescreen kill never reaches a
+        pass rule at all), and the record simply says so now.
+    """
+    if not run_id_str:
+        return {"verdict_status": "ungated"}
+
+    ref = f"runs/{run_id_str}/artifacts/pass_rule_evaluation.yaml"
+    _tools_path = str(Path(__file__).parent.parent / "tools")
+    if _tools_path not in sys.path:
+        sys.path.insert(0, _tools_path)
+    import verdict_criteria_evaluator as _vce
+
+    ok, _detail = _vce.resolve_evaluation_ref(
+        ref, {"evidence_runs": [run_id_str]}, root=ROOT)
+    if ok:
+        return {"verdict_status": "gated", "pass_rule_evaluation_ref": ref}
+    return {"verdict_status": "ungated"}
+
+
 def _find_kb_entry(findings: list, hyp_id: str) -> dict | None:
     for f in findings:
         if f.get("hypothesis_id") == hyp_id:
@@ -2937,6 +3067,15 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
     ).lower()
     outcome = _VERDICT_TO_OUTCOME.get(verdict_label, "inconclusive")
 
+    # G6 / C7-EXT-R (D-4): stamp this run's OWN provenance onto whatever we write.
+    # The audit's sharpest finding was that this writer emitted a bare `outcome`
+    # with neither a pass_rule_evaluation_ref nor a verdict_status -- so the
+    # orchestrator's own output could not have satisfied the gate it then ran.
+    # Every KB record now states which it is, computed from what is on disk:
+    # cite the evaluator's artifact if the evaluator actually ran, else declare
+    # the record ungated and keep the measurements.
+    _pre_stamp = _verdict_provenance_stamp(run_id_str)
+
     existing = _find_kb_entry(findings, hyp_id)
 
     if existing:
@@ -2967,6 +3106,11 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
                 existing["reactivation_consumed_by"] = run_id_str
                 existing["reactivation_condition"] = None
                 existing["outcome"] = outcome
+                # G6/D-4: provenance travels with the outcome. Drop any stale
+                # citation first -- an entry re-adjudicated by an ungated run
+                # must not keep a previous run's evaluation pointing at it.
+                existing.pop("pass_rule_evaluation_ref", None)
+                existing.update(_pre_stamp)
                 existing["outcome_reason"] = verdict_label
                 ps = interp.get("prescreen_result_summary", {})
                 if ps:
@@ -2998,6 +3142,7 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
             "evidence_runs": [run_id_str] if run_id_str else [],
             "evidence_count": 1 if run_id_str else 0,
             "outcome": outcome,
+            **_pre_stamp,  # G6/D-4: provenance travels with the outcome
             "outcome_reason": verdict_label,
             "protocol_version": interp.get("protocol_version", "baseline_v2"),
             "detector_version": "not_applicable",
@@ -3027,8 +3172,10 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
     import verdict_criteria_evaluator as _vce
     for f_entry in findings:
         if isinstance(f_entry, dict):
+            # C7-EXT-R/D-4: `root` is what lets the evaluator RESOLVE a cited
+            # pass_rule_evaluation_ref rather than accept any truthy string.
             _vce.validate_verdict_provenance(
-                f_entry, entry_ref=f"KB finding {f_entry.get('id')!r}")
+                f_entry, entry_ref=f"KB finding {f_entry.get('id')!r}", root=ROOT)
 
     _recompute_kb_views(kb)
     save_yaml(_KB_PATH, kb)

@@ -1779,3 +1779,123 @@ pre-registered rule, and four independent checks missing at once (P0, CLOSED
   caught by a director reading carefully. That is the failure mode this entry
   exists to remove: an integrity layer that depends on someone noticing is not
   an integrity layer.
+
+---
+
+# v9 additions — found 2026-07-22 (independent audit of C7-EXT; remediation C7-EXT-R)
+
+## H. Verdict integrity (continued)
+
+**C7-EXT-R — the C7-EXT gates were audited independently and did not hold.
+Five findings remediated, two carried forward.** Audit:
+`docs/session_reports/20260722_c7ext_audit.md` (committed before this work
+began, unchanged by it). Verdict of that audit: DO NOT RATIFY, two of three
+STOP conditions fired.
+
+**What the audit found, and what was done about it.**
+
+- **D-4 — G6 was bypassable in the exact shape of the incident it closed.**
+  It gated the field names `verdict_c7` / `hypothesis_verdict` / `verdict`. The
+  campaign records verdicts in **`outcome`**. So `{"outcome":
+  "kill_mechanism_falsified"}` was ACCEPTED — and that is the shape
+  `_write_kb_findings_entry` itself emits, meaning the validator was a
+  structural no-op on every entry the orchestrator wrote. A forged
+  `pass_rule_evaluation_ref` was ACCEPTED because the ref was never resolved.
+  The queue writer was never validated at all: the function had exactly one call
+  site in the repository.
+  Fixed: `outcome` is gated via `outcome_is_verdict_bearing()`;
+  `resolve_evaluation_ref()` requires the artifact to EXIST, to BELONG to one of
+  the entry's own runs, and to have recorded a binding PASS/FAIL;
+  `run_campaign._save_queue` validates every entry before writing; and
+  `tools/lint_verdict_provenance.py` checks both stores standalone, with no write
+  involved, because a hand edit was previously unchecked until some unrelated
+  orchestrator write happened to look.
+  Also fixed, and not in the audit: `_write_kb_findings_entry` could not have
+  satisfied the repaired gate, because it wrote a bare `outcome` with no
+  provenance at all. It now stamps `verdict_status` from what is on disk
+  (`_verdict_provenance_stamp`) — gated with a citation if the evaluator really
+  ran, ungated otherwise.
+
+- **D-5 — the gated-verdict count was 2; it is 1.** H-041-C-v2 was counted
+  despite `runs/run_058/artifacts/` containing no `pass_rule_evaluation.yaml`,
+  no `protocol_result.yaml` and no `prescreen_result.yaml`; the entry's own
+  `exhausted_basis` already said the registered evaluation "was NEVER EXECUTED".
+  It was rejected by an LLM validation stage before its pass_rule ever ran —
+  stage discretion, which G5's own doctrine excludes. Re-recorded as
+  `stage_discretion_rejection_no_gated_verdict` / `verdict_status:
+  stage_discretion`, with the prior label retained in
+  `outcome_history_superseded` and the rejection's own reasoning untouched.
+  `test_campaign_honest_verdict_count` no longer string-matches
+  `completed_rejected`; it asserts gatedness from evaluator-artifact existence
+  via `honest_verdict_count()`. **The one gated verdict in this campaign is
+  FUNDING_MR_DAILY_RETEST (run_059).**
+
+- **D-6 — run_057 was the uncorrected twin of XS_momentum.** Its pass_rule is
+  pre-registered under `machine_constraints.pass_rule`, invisible to the
+  top-level-only lookup; no `pass_rule_evaluation.yaml` was ever written; a
+  `kill` was recorded into both stores anyway. `_find_pass_rule` now checks both
+  locations. **Honest limit, stated because it changes the conclusion:** finding
+  run_057's rule does not make it evaluable — it is a legacy prose string and
+  still resolves to `legacy_not_evaluable`. The verdict was human-adjudicated
+  end to end.
+  Re-adjudicated from the archived artifacts (**no backtest re-run**): of 30
+  window-symbols, **29 fall below the five-trade floor, and the entire run holds
+  exactly ONE non-null per-window Sharpe** — ETHUSDT 2022-10, −0.686, on 5
+  trades; BTCUSDT has zero evaluable windows. Criterion (a) therefore rested on a
+  median over one window on one symbol, while criterion (b) — the only criterion
+  with a real sample, n=42 — passed on sign. Relabelled
+  `kill_er_gate_mechanism_falsified` → `ungated_er_gate_variant_too_sparse_to_evaluate`.
+  The S2 identity-matched anti-selection evidence (excluded entries +1395.9 bps
+  vs included +433.7 bps, 42/42 reconciled) does not depend on the sparse Sharpe
+  and is explicitly retained.
+
+- **D-3 — G7 was cosmetic.** It guarded protocol GENERATION while the abolished
+  block stayed live in committed files and in two silent defaults.
+  `_assert_promotion_ratified` now runs at protocol SELECTION, on every branch
+  of `_resolve_protocol_path`, and the implicit `baseline_v1.json` default for a
+  `forced_diagnostic` with no named protocol is gone.
+  **Correction to the audit:** it said seven committed protocol files carry the
+  generic block. Recounting from the tree gives **nine** — `baseline_v1`,
+  `baseline_v2`, four `escalation_*`, and three `run_0NN_generated`. All nine are
+  now marked `promotion_provenance: {status: generic_unratified, ratified_by:
+  null}`, which makes selecting them fail loudly. They were deliberately NOT
+  ratified: ratification is a claim that a human adopted those four numbers on
+  purpose, and no agent may make it on their behalf.
+
+- **D-1 — the kill-routing path was unpinned.** After C7-EXT's repointing, every
+  public-entry assertion in the suite was `VERDICT_BLOCKED`, `PASS`, or
+  `legacy_not_evaluable`. Mutating `evaluate_pass_rule_criteria` to stop calling
+  the kernel was caught by a single PASS-path test.
+  `test_d1_fail_routes_to_kill_terminate_through_the_public_entry` pins
+  FAIL → kill / terminate end-to-end; re-running that mutation now fails two
+  tests including this one.
+
+**WHAT THESE GATES ARE, AND ARE NOT — read before trusting a MET precondition.**
+G1–G4 are **presence checks, not content checks**. They establish that a
+required figure was reported. They do not establish that it was reported
+carefully, and the audit demonstrated exactly this: `skew: 0, kurtosis: 0,
+var_95: 0` clears G2; `cost_basis: ""` and `net_sharpe: "n/a"` clear G3;
+`mechanism_explanation: "."` clears G4. **They catch omission, not
+carelessness.** Nothing in C7-EXT-R changes that, and no MET precondition should
+be read as a quality warrant.
+
+**OPEN carry-forwards — not fixed, not scheduled, recorded so they are not
+mistaken for closed.**
+
+- **D-2 (open).** G4 detects no anomalies. It requires prose for anomalies the
+  artifact's author volunteers via `anomalous: true`. The XS_momentum lag
+  response — net Sharpe RISING with execution delay, 1.33 → 1.42 → 1.51 — clears
+  G4 untouched if nobody sets the flag, which is precisely the judgement that
+  failed the first time. Needs a mechanical detector (e.g. auto-flag a
+  monotone-improving robustness sweep).
+- **D-7 (open).** G1's product allowlist is exact-match against a free-text
+  brief field: `product: "perpetual swap"` reads as not-a-perp and clears the
+  funding gate. A brief-supplied `funding_interval_hours` is trusted without
+  bound. G2/G3 accept placeholder and wrong-typed values as shown above.
+
+**Method note.** The audit was performed by a model that did not write C7-EXT,
+verified by recomputation rather than by reading the commit message, and its two
+STOP conditions were both real. The C7-EXT commit message asserted the chain was
+closed; it was not. An integrity layer that is checked only by its own author is
+not yet an integrity layer — which is the same lesson C7-EXT itself recorded, one
+level up.
