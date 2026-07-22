@@ -9,7 +9,17 @@ Two groups:
   (b) End-to-end reachability of an ingested Kraken pair through
       DataManager.fetch_historical_data()'s new `exchange` parameter — the
       parameter is only meaningful if a caller can actually walk the public
-      path down to kraken_XBTUSD_1h.csv and get real rows back.
+      path down to kraken_BTCUSD_1h.csv and get real rows back.
+
+Read-only-rule note (ledger G1 pipeline defect): DataManager.fetch_historical_
+data() → get_data() → _load_all() gap-fills, and when the requested window has
+an internal gap it attempts a remote fetch and re-saves the cache even on a
+pure read. Under the settled convention the store symbol BTCUSD normalizes to
+the VALID ccxt symbol BTC/USD, so such a fetch would now hit the live network
+and mutate the archive cache. This test therefore reads a deliberately
+gap-free window (BTC 2022 — audited 0 missing bars), which yields zero missing
+periods, hence zero remote fetch and zero re-save. Full-history reachability
+(96,381 rows) is verified by the ingestion script's own reload round-trip.
 """
 
 import sys
@@ -26,14 +36,16 @@ from data.fetchers.ccxt_fetcher import CcxtFetcher   # noqa: E402
 from data.data_manager import DataManager            # noqa: E402
 
 REAL_LOCAL_DATA = PROJECT_ROOT / "local_data"
-KRAKEN_BTC_CACHE = REAL_LOCAL_DATA / "kraken_XBTUSD_1h.csv"
+KRAKEN_BTC_CACHE = REAL_LOCAL_DATA / "kraken_BTCUSD_1h.csv"
 
-# Ratified audit figures (docs/session_reports/20260721_breadth_download_recon.md
-# and the Kraken 5-pair pilot ingestion) that step 4 of this dispatch must
-# reproduce via the public DataManager path, not just by re-reading the CSV.
-EXPECTED_ROWS = 96381
-EXPECTED_FIRST = pd.Timestamp("2013-10-06 21:00:00")
-EXPECTED_LAST = pd.Timestamp("2025-12-31 23:00:00")
+# Gap-free reachability window (BTC 2022 — audited 0 missing bars). Chosen so
+# the public DataManager path finds NO missing period and performs no remote
+# fetch / cache re-save (see module docstring's read-only-rule note).
+WINDOW_START = "2022-01-01"
+WINDOW_END = "2022-12-31"
+EXPECTED_WINDOW_ROWS = 8760
+WINDOW_FIRST = pd.Timestamp("2022-01-01 00:00:00")
+WINDOW_LAST = pd.Timestamp("2022-12-31 23:00:00")
 
 
 # ---------------------------------------------------------------------------
@@ -101,23 +113,26 @@ def test_load_local_accepts_naive_cache(tmp_path):
 )
 def test_kraken_cache_reachable_via_data_manager_exchange_param():
     """
-    Load kraken_XBTUSD_1h.csv end-to-end through the public
+    Load kraken_BTCUSD_1h.csv end-to-end through the public
     DataManager.fetch_historical_data() path with the new `exchange` kwarg,
     reading the REAL on-disk local_data/ cache (not an isolated tmp_path) so
     this is a genuine reachability proof, not a synthetic round-trip.
+
+    Uses the settled STANDARD-base store symbol BTCUSD (not the old XBTUSD),
+    over a gap-free window so the read triggers no remote fetch / re-save.
     """
-    dm = DataManager(symbols=["XBTUSD"], interval_seconds=3600, mode="backtest")
+    dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
 
     df = dm.fetch_historical_data(
-        "XBTUSD", "2013-01-01", "2025-12-31", exchange="kraken"
+        "BTCUSD", WINDOW_START, WINDOW_END, exchange="kraken"
     )
 
     assert not df.empty
-    assert len(df) == EXPECTED_ROWS, len(df)
+    assert len(df) == EXPECTED_WINDOW_ROWS, len(df)
     assert df["timestamp"].dtype == "datetime64[ns]"
     assert df["timestamp"].dt.tz is None
-    assert df["timestamp"].iloc[0] == EXPECTED_FIRST
-    assert df["timestamp"].iloc[-1] == EXPECTED_LAST
+    assert df["timestamp"].iloc[0] == WINDOW_FIRST
+    assert df["timestamp"].iloc[-1] == WINDOW_LAST
 
 
 BINANCE_BTC_CACHE = REAL_LOCAL_DATA / "BTCUSDT_1h.csv"

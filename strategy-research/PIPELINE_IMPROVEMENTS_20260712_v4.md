@@ -1437,8 +1437,15 @@ independent audit, fee-isolation-pairs follow-up)
      breadth set.
   2. **Coverage stops 2025-12-31** — the archive is a static year-end export;
      the ~7-month gap (2026-01-01 → today) needs a live-fetch top-up per pair.
-     The exchange-qualified slot is designed so that top-up composes cleanly,
-     but the top-up itself is out of scope for this dispatch.
+     ~~The exchange-qualified slot is designed so that top-up composes
+     cleanly~~ — **CORRECTED in G2 (2026-07-22): this claim was FALSE under the
+     pilot's `XBTUSD` keying.** A top-up keyed on `XBTUSD` could never fetch
+     (`XBTUSD` → `_fetch_remote` → `XBT/USD` → ccxt `BadSymbol`), so the only
+     symbol reaching the archive slot was unfetchable. G2 re-keys the archive to
+     the standard-base `BTCUSD`, which both hits the same slot AND normalizes to
+     ccxt's valid `BTC/USD`. **Top-up composability is now real and proved by
+     key derivation (G2 step 7); the top-up fetch itself remains a separate
+     dispatch.**
   3. **CLOSED (this commit).** `trading-bot/data/data_manager.py:768`'s
      hardcoded `exchange="binance"` is now an additive `exchange: str =
      "binance"` parameter on `DataManager.fetch_historical_data()` — the one
@@ -1486,3 +1493,109 @@ independent audit, fee-isolation-pairs follow-up)
     ignores `trading-bot/pytest.ini`'s `testpaths`/`-m "not slow"` scope and
     collects unrelated slow/erroring tests outside it. Pre-existing, unrelated
     to this commit, informational only.
+
+### G2. Kraken symbol convention settled + 20-pair breadth scale-up (P1)
+
+- **Falsified premise (the reason this dispatch existed):** G1's ingestion
+  stored the archive under Kraken's legacy altname base — `XBTUSD` → cache_key
+  `kraken_XBTUSD_1h` — and asserted (script docstring L11-15, G1 carry-forward
+  2) that "a future live top-up lands in the SAME slot… the archive and the
+  live feed compose cleanly." **This was false.** `CcxtFetcher._fetch_remote`
+  normalizes a compact symbol to `BASE/QUOTE` before calling ccxt; `XBTUSD` →
+  `XBT/USD`. A top-up keyed on `XBTUSD` therefore hits the archive slot but
+  **cannot fetch** — `XBT/USD` is not a symbol ccxt's Kraken adapter accepts.
+- **Evidence that falsified it (read-only `load_markets()` against the live
+  adapter, no cache touched):**
+  - `market('BTC/USD')` → resolves, id `XXBTZUSD`. **`BTC/USD` is the unified
+    symbol.**
+  - `market('XBTUSD')` → `BadSymbol` (it is only an *altname*, not a key).
+  - `market('XBT/USD')` → `BadSymbol` (not a key, not even an altname).
+  - Confirms the director's reading exactly: **XBTUSD is unfetchable; BTC/USD
+    is the unified form.** Same pattern for DOGE: unified `DOGE/USD`, altname
+    `XDGUSD`. All other 18 breadth bases: unified `<BASE>/USD`, altname
+    `<BASE>USD` (standard base == altname base), so they were never affected.
+- **Decision (step 3) — store under the STANDARD-base compact symbol
+  `<BASE>USD`** (`BTCUSD`, `DOGEUSD`; not `XBTUSD`/`XDGUSD`), cache_key
+  `kraken_BTCUSD_1h`. Source file still located via Kraken's altname
+  (`XBTUSD_60.csv`) — the script now separates `kraken_source_pair()` (altname,
+  disk) from `cache_symbol()` (standard base, cache key). Satisfies all three
+  constraints **without touching `cache_key()`**:
+  - (a) filesystem-safe — `kraken_BTCUSD_1h.csv` has no `/`; the unified
+    `BTC/USD` cannot be a filename.
+  - (b) top-up resolves to the same slot AND fetches — `BTCUSD` → cache_key
+    `kraken_BTCUSD_1h` (identical slot) and `_fetch_remote` normalizes
+    `BTCUSD` → `BTC/USD` (ccxt's accepted unified symbol). Proved by key
+    derivation, not by a live fetch (step 7): a `CcxtFetcher(exchange="kraken",
+    symbols=["BTCUSD"])` derives `kraken_BTCUSD_1h` == the on-disk archive slot.
+  - (c) `cache_key()` untouched — Binance stays `BTCUSDT` → `BTCUSDT_1h`
+    unprefixed (ratified decision (a)); this is purely the `symbol` string the
+    ingester / a future top-up hands the fetcher.
+- **Migration:** only the two legacy-ticker pairs diverged. BTC re-keyed
+  `kraken_XBTUSD_1h.csv` → `kraken_BTCUSD_1h.csv` (regenerated from source by
+  the ingestion script; stale file removed). ETH/SOL/ADA/LINK were already at
+  the standard base and are byte-unchanged. Verified by reload, not assumption:
+  BTC 96,381 rows, 2013-10-06 21:00 → 2025-12-31 23:00 — exact match to the
+  ratified pilot figures.
+- **20-pair coverage (19 ingested; HYPE absent from the archive — G1 item 1
+  confirmed, `HYPEUSD_60.csv` does not exist).** `full%` = missing/expected
+  over the pair's whole history; `2017+%` = same restricted to 2017-01-01
+  onward (the breadth-viability signal; pilot BTC benchmark = 0.11%):
+
+  | asset | cache_key | rows | first | last | full% | 2017+% |
+  |---|---|---:|---|---|---:|---:|
+  | BTC | kraken_BTCUSD_1h | 96,381 | 2013-10-06 21:00 | 2025-12-31 23:00 | 10.14 | 0.11 |
+  | ETH | kraken_ETHUSD_1h | 87,690 | 2015-08-07 14:00 | 2025-12-31 23:00 | 3.83 | 0.17 |
+  | XRP | kraken_XRPUSD_1h | 75,440 | 2017-05-18 15:00 | 2025-12-31 23:00 | 0.19 | 0.19 |
+  | SOL | kraken_SOLUSD_1h | 39,743 | 2021-06-17 15:00 | 2025-12-31 23:00 | 0.15 | 0.15 |
+  | ADA | kraken_ADAUSD_1h | 63,291 | 2018-09-28 13:00 | 2025-12-31 23:00 | 0.54 | 0.54 |
+  | SUI | kraken_SUIUSD_1h | 22,522 | 2023-05-03 12:00 | 2025-12-31 23:00 | 3.60 | 3.60 |
+  | ZEC | kraken_ZECUSD_1h | 76,449 | 2016-10-29 00:00 | 2025-12-31 23:00 | 4.94 | 4.73 |
+  | DOGE | kraken_DOGEUSD_1h | 50,232 | 2019-12-19 18:00 | 2025-12-31 23:00 | 5.05 | 5.05 |
+  | HYPE | — (absent) | — | — | — | — | — |
+  | XMR | kraken_XMRUSD_1h | 77,317 | 2017-01-02 19:00 | 2025-12-31 23:00 | 1.94 | 1.94 |
+  | LTC | kraken_LTCUSD_1h | 84,563 | 2013-10-24 13:00 | 2025-12-31 23:00 | 20.85 | 1.38 |
+  | ONDO | kraken_ONDOUSD_1h | 15,089 | 2024-04-11 14:00 | 2025-12-31 23:00 | 0.11 | 0.11 |
+  | NEAR | kraken_NEARUSD_1h | 30,775 | 2022-06-16 14:00 | 2025-12-31 23:00 | 0.94 | 0.94 |
+  | LINK | kraken_LINKUSD_1h | 54,430 | 2019-09-25 14:00 | 2025-12-31 23:00 | 0.94 | 0.94 |
+  | TAO | kraken_TAOUSD_1h | 13,159 | 2024-07-01 00:00 | 2025-12-31 23:00 | 0.13 | 0.13 |
+  | AVAX | kraken_AVAXUSD_1h | 35,285 | 2021-12-21 15:00 | 2025-12-31 23:00 | 0.08 | 0.08 |
+  | TRX | kraken_TRXUSD_1h | 50,331 | 2020-03-05 14:00 | 2025-12-31 23:00 | 1.42 | 1.42 |
+  | AAVE | kraken_AAVEUSD_1h | 44,001 | 2020-12-15 14:00 | 2025-12-31 23:00 | 0.49 | 0.49 |
+  | INJ | kraken_INJUSD_1h | 36,298 | 2021-08-10 15:00 | 2025-12-31 23:00 | 5.73 | 5.73 |
+  | UNI | kraken_UNIUSD_1h | 45,507 | 2020-10-15 13:00 | 2025-12-31 23:00 | 0.39 | 0.39 |
+
+  **Breadth-viability flags (2017+ gap rate materially above the 0.11%
+  pilot):** INJ 5.73%, DOGE 5.05%, ZEC 4.73%, SUI 3.60%, XMR 1.94%, TRX 1.42%,
+  LTC 1.38% (LTC's 20.85% full-history figure is the 2013–2015 illiquid era,
+  benign; its 2017+ rate is 1.38%). All are single-digit% and consistent with
+  Kraken's "row only when trades occurred" export semantics (listing-era
+  front-loading), but INJ/DOGE/ZEC at ~5% post-2017 should be sanity-checked
+  before those pairs carry weight in a breadth signal — not a formatting
+  detail.
+
+- **NAMED PIPELINE DEFECT — `_load_all()` write-on-read hazard:**
+  `BaseFetcher._load_all()` (`data/fetchers/base_fetcher.py:183-184`) re-saves
+  the cache whenever `pieces` is non-empty — **including when every remote
+  fetch failed and `pieces` is just `[existing]`.** So `get_data()` /
+  `fetch_historical_data()`, nominally a *read*, mutates the on-disk cache any
+  time the requested window has a gap (a prepend/append/internal-gap missing
+  period). Benign when the re-fetch returns nothing (content-identical
+  rewrite), but under the settled convention `BTCUSD` → `BTC/USD` is a **valid
+  live symbol**, so a read over a gappy window would now hit the network and
+  fold live rows into the archive cache. **Standing read-only rule (effective
+  this dispatch, all future work): when the intent is a read-only check, do not
+  invoke a path that can write.** Concretely: never call `get_data()` /
+  `fetch_historical_data()` over a window with internal gaps as a "read"; read
+  the CSV directly, or scope the window to a gap-free range. The reachability
+  test enforces this by reading the audited-gap-free BTC-2022 window (0 missing
+  → 0 fetch → 0 re-save; verified: BTC cache md5 unchanged across the suite).
+  Fixing `_load_all` to not persist on an all-failed fetch is a separate,
+  desirable change (out of scope here) — logged so it is not rediscovered.
+
+- **Acceptance:** met. `tests/test_kraken_archive_ingest.py` extended to 15
+  tests (store-symbol standard-base vs source-altname split; top-up
+  normalization invariant `BTCUSD`→`BTC/USD` per pair; top-up key == archive
+  slot; gap-stat arithmetic; round-trip integrity now asserts
+  `kraken_BTCUSD_1h`). `tests/test_kraken_cache_reachability.py` migrated to the
+  `BTCUSD` slot over the gap-free window. Full suite: **57 passed / 10
+  deselected** (baseline 48/10, +9 new).
