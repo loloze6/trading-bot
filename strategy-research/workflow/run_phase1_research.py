@@ -1082,9 +1082,14 @@ async def run_tool_worker(stage_name: str, run_id: str):
         import verdict_criteria_evaluator as _vce
         _pre_reg_path = ARTIFACTS / "pre_registration.yaml"
         _pre_reg_for_eval = load_yaml(_pre_reg_path) if _pre_reg_path.exists() else {}
-        _pass_rule_eval = _vce.evaluate_pass_rule_criteria(summary, _pre_reg_for_eval or {})
+        # C7-EXT (2026-07-22): the brief is now an evaluator input -- G1 needs
+        # product/timeframe/rebalance to decide whether funding must be modeled.
+        _brief_path = ARTIFACTS / "research_brief.yaml"
+        _brief_for_eval = (load_yaml(_brief_path) if _brief_path.exists() else {}) or {}
+        _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
+            summary, _pre_reg_for_eval or {}, _brief_for_eval)
         _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
-        _pass_rule_eval["evaluator_version"] = 1
+        _pass_rule_eval["evaluator_version"] = 2  # C7-EXT: G1-G5 preconditions
         save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
         _pre_reg_result = _pass_rule_eval.get("result")
         print(f"✅ [C7] pass_rule_evaluation.yaml written: result={_pre_reg_result}"
@@ -1677,10 +1682,7 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
         "timeframe": timeframe,
         "windows": windows,
         "holdout": proto_constraint.get("holdout", {"start": "2026-01-01", "end": None}),
-        "promotion": proto_constraint.get("promotion", {
-            "median_sharpe_gt": 0, "max_abs_drawdown_pct_lt": 30,
-            "min_trade_count_gte": 20, "kill_median_sharpe_lt": -1,
-        }),
+        "promotion": _require_pre_registered_promotion(proto_constraint, run_id),
     }
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(protocol_obj, f, indent=2)
@@ -1699,6 +1701,47 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     save_yaml(run_ctx_path, run_ctx)
     print(f"✅ [F4d] Wrote run_context.yaml override: run_type=forced_diagnostic, protocol={out_path.name}")
     return out_path
+
+
+class UngatedProtocolError(ValueError):
+    """G7 (C7-EXT): a protocol was materialized from a brief whose
+    machine_constraints carry no pre-registered `promotion` block."""
+
+
+def _require_pre_registered_promotion(proto_constraint: dict, run_id: str) -> dict:
+    """
+    G7 (C7-EXT, 2026-07-22). This function replaces a silent default.
+
+    It used to read:
+
+        "promotion": proto_constraint.get("promotion", {
+            "median_sharpe_gt": 0, "max_abs_drawdown_pct_lt": 30,
+            "min_trade_count_gte": 20, "kill_median_sharpe_lt": -1,
+        }),
+
+    -- i.e. a brief that pre-registered NO thresholds silently acquired four
+    generic ones, and every downstream artifact then read as though the
+    campaign had registered them in advance. That is the exact C7 symptom
+    ("protocol_result.yaml issued verdict: refine from generic code
+    thresholds (min_trades>=20, drawdown caps)"), left live in the tree after
+    C7 was recorded CLOSED. It is also the provenance of the "30% DD bar" that
+    XS_momentum's post-hoc verdict was argued against -- a number no brief
+    ever froze.
+
+    Failing loudly is the point: a missing pass rule is a registration defect
+    to be fixed in the brief, never a gap for code to paper over.
+    """
+    promotion = proto_constraint.get("promotion")
+    if not promotion:
+        raise UngatedProtocolError(
+            f"[G7] run {run_id}: machine_constraints.protocol has no pre-registered "
+            f"`promotion` block. Refusing to substitute generic thresholds -- a "
+            f"protocol materialized from defaults is structurally ungated, and any "
+            f"verdict computed against it would misrepresent invented thresholds as "
+            f"pre-registered ones. Add an explicit `promotion` block (B11 total "
+            f"mapping) to the brief's machine_constraints, then re-run."
+        )
+    return promotion
 
 
 def _compute_protocol_content_hash(path: Path) -> str:
@@ -2971,6 +3014,21 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
             }
         findings.append(stub)
         print(f"⚙️  A5.1: KB stub entry created for {hyp_id} (outcome={outcome}, run={run_id_str})")
+
+    # G6 (C7-EXT): every finding must clear verdict-provenance before the KB is
+    # saved -- not just the one this call touched. The KB is the campaign's
+    # memory; a verdict written into it without evaluator provenance becomes
+    # indistinguishable, later, from one that earned its way there. Validating
+    # the whole list also means a hand-edited entry cannot slip in behind a
+    # legitimate write.
+    _tools_path = str(Path(__file__).parent.parent / "tools")
+    if _tools_path not in sys.path:
+        sys.path.insert(0, _tools_path)
+    import verdict_criteria_evaluator as _vce
+    for f_entry in findings:
+        if isinstance(f_entry, dict):
+            _vce.validate_verdict_provenance(
+                f_entry, entry_ref=f"KB finding {f_entry.get('id')!r}")
 
     _recompute_kb_views(kb)
     save_yaml(_KB_PATH, kb)

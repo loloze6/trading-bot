@@ -192,15 +192,30 @@ queue:
     run_054 slots exactly, pre-registered tolerance) before any XS result was
     trusted. XS primary spec (7d trailing-return rank, daily rebalance, dollar-neutral
     long/short top-bottom third, min n=6, Kraken perp 5bps): net Sharpe 1.325 / gross
-    1.665, NOT cost-dominated, no lookahead, but DECAYING (post-2021 net 0.77; 2025 net
-    0.07). C7-style verdict REFINE (positive lean): promote Sharpe bar cleared, DD bar
-    exceeded (leverage-dependent), well above kill. Fork to vectorized research path
-    VINDICATED. Full record: KB finding xs_momentum_cost_surviving_but_decaying;
-    ledger G3; tool strategy-research/tools/panel_backtester.py.
+    1.665, cost drag ~0.34 Sharpe, same-bar lookahead ruled out, but DECAYING
+    (post-2021 net 0.77; 2025 net 0.07). Fork to vectorized research path VINDICATED
+    as an ENGINEERING result -- the panel backtester reproduces the archived engine
+    exactly. Tool: strategy-research/tools/panel_backtester.py; ledger G3.
+
+    2026-07-22 VERDICT CORRECTION (C7-EXT audit). This entry previously recorded a
+    "C7-style verdict REFINE (positive lean)". WITHDRAWN -- it was never a gated
+    verdict. XS_momentum was pre-registered under NO pass_rule (its brief has no
+    pass_rule and no machine_constraints), has no runs/ directory or
+    pre_registration.yaml, and executed off the orchestrator so the verdict evaluator
+    never ran. The "promote Sharpe bar" and "30% DD bar" it was scored against were
+    the generic code fallback formerly at run_phase1_research.py:1681-1682, not
+    registered criteria -- the exact artifact ledger item C7 exists to abolish.
+    Status is now ungated / verdict void. The MEASUREMENTS stand and are NOT
+    withdrawn; they are simply not a verdict, and XS_momentum is neither promoted,
+    refined, nor killed by them. Re-entry requires a pre-registered pass_rule plus
+    the four C7-EXT preconditions (funding completeness -- a daily-rebalanced perp
+    book spans ~3 funding intervals and funding was never modeled; distribution
+    stats; deployable-today; a written mechanism for the anomalous lag response).
+    See ledger C7-EXT and KB xs_momentum_cost_surviving_but_decaying.
 
     '
   run_ids: [research_path_panel_backtester_20260722]
-  outcome: refine_research_path_edge_real_cost_surviving_but_decaying
+  outcome: ungated_measurement_no_admissible_verdict
 - id: H-041-C-v2
   brief_path: briefs/H-041-C-v2.md
   status: done

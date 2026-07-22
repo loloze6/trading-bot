@@ -1680,3 +1680,102 @@ independent audit, fee-isolation-pairs follow-up)
   table above. Registered: KB finding `xs_momentum_cost_surviving_but_decaying`;
   `campaign_queue.yaml` XS_momentum outcome updated. No production `trading-bot/`
   file touched.
+
+---
+
+# v8 additions — found 2026-07-22 (ungated-verdict audit)
+
+### C7-EXT. The ungated-verdict defect chain — a verdict issued with no
+pre-registered rule, and four independent checks missing at once (P0, CLOSED
+2026-07-22)
+
+- **Symptom.** `campaign_knowledge_base.yaml` recorded `verdict_c7: refine`
+  for XS_momentum, and `campaign_queue.yaml` recorded
+  `outcome: refine_research_path_edge_real_cost_surviving_but_decaying`. Neither
+  was a gated verdict. XS_momentum was pre-registered under **no pass_rule at
+  all**: `briefs/research_brief_XS_momentum.md` has no `pass_rule` and no
+  `machine_constraints` (its only mention of the latter is line 106 — prose
+  telling a future editor to decide them at unblock time), no `runs/` directory
+  or `pre_registration.yaml` exists for it, and it executed on the vectorized
+  research path, so `tools/verdict_criteria_evaluator.py` never ran. The tool,
+  the run, the KB finding and the verdict all landed in a single commit
+  (`6c4df3d`) — nothing was frozen before the result was known.
+
+- **The "30% DD bar" it was adjudicated against was never a frozen rule.** Its
+  sole provenance is the generic fallback dict at
+  `workflow/run_phase1_research.py:1681-1682` (mirrored in
+  `protocols/baseline_v1.json`): `median_sharpe_gt: 0`,
+  `max_abs_drawdown_pct_lt: 30`, `min_trade_count_gte: 20`,
+  `kill_median_sharpe_lt: -1`. **That dict is the C7 symptom, verbatim**
+  ("protocol_result.yaml issued verdict: refine from generic code thresholds
+  (min_trades>=20, drawdown caps)") — and it was still live in the tree while
+  C7 was recorded CLOSED in this ledger's own sequencing section. C7 fixed the
+  evaluation path and left the materialization path untouched. **A ledger item
+  marked closed on a partial fix is worse than one left open**: it stops anyone
+  looking.
+
+- **Ruling on the underlying hypothesis.** Not a kill. Even scored against the
+  generic block, DD fails `< 30` on either leverage convention (−31% unit
+  gross, −62.3% at 200% gross), but that block's kill trigger is a separate
+  explicit criterion — `kill_median_sharpe_lt: -1` — against a measured net
+  Sharpe of 1.325. Failing a promote bar is not a kill. Since nothing was
+  pre-registered, neither branch was ever binding. Status: **ungated / verdict
+  void** — not refine, not kill. The measurements stand (the panel backtester
+  passed a genuinely pre-registered 30-slot reproduction gate against run_054);
+  they are simply not a verdict.
+
+- **The four-link chain, and the gate that closes each.**
+
+  | Link | What was missing | Gate |
+  |---|---|---|
+  | (a) | Kraken **perp**, daily rebalance (~24h) against an 8h funding interval — ~3 funding accruals per holding period, funding never modeled, annotated "valid: price-based signal, not funding carry". Funding is a cost of *holding*, not a signal input. | **G1** cost-model completeness: perp + holding > funding interval ⇒ funding must be modeled or bounded-with-citation, else `VERDICT_BLOCKED` |
+  | (b) | Sharpe 1.325 reported with no skew, no kurtosis, no tail statistic — a second-moment summary standing in for a distribution it cannot describe. **This link remained open through the entire C7 closure.** | **G2** distribution stats mandatory alongside any Sharpe |
+  | (c) | Headline 1.325 dominated by 2017 (+416%) and 2020 (+476%); the most recent full year was net Sharpe 0.07 / −6.3%, present in the record but never surfaced as the deployable figure. Both true; only one deployable, and only the other reached the verdict. | **G3** mandatory `deployable_today` (most recent full year, current costs) |
+  | (d) | Net Sharpe **rising** with execution lag (1.33 → 1.42 → 1.51) recorded as `no_lookahead_confirmed: true`. The narrow inference (no same-bar lookahead) is sound; a signal that improves the later you trade it is still an anomaly, and it was filed as reassurance rather than investigated. | **G4** anomalous robustness result requires a written mechanism before any verdict stands |
+
+- **Three structural gates beyond the four.** The four above are all *inside*
+  the machinery, and none would have caught this run, because this run never
+  entered the machinery:
+  - **G5 — preconditions are pass_rule-independent and dominate.**
+    `legacy_not_evaluable` was the hole: with no pass rule, K2 routed the run
+    to stage discretion, and stage discretion has never heard of G1-G4. The
+    preconditions now evaluate whether or not a pass rule exists and
+    short-circuit to `VERDICT_BLOCKED` in front of every one of the kernel's
+    exits. `VERDICT_BLOCKED` is not PASS, not FAIL, and specifically not
+    `legacy_not_evaluable` — it cannot fall through to anyone's judgment. A
+    blocked verdict is not a failed hypothesis; it is inadmissible evidence.
+  - **G6 — no verdict enters the KB or queue except through the evaluator.**
+    This is the link that let a research-path tool write `verdict_c7` with no
+    pass rule, no evaluator call and no run directory. A verdict field is now
+    admissible only alongside a `pass_rule_evaluation_ref`; an entry without
+    one must record `verdict_status: ungated` and keep its measurements.
+    Enforced over the whole findings list on every KB write, so a hand-edited
+    entry cannot ride in behind a legitimate one.
+  - **G7 — the generic promotion fallback fails loudly.** The dict at
+    :1681-1682 is replaced by `_require_pre_registered_promotion()`, which
+    raises `UngatedProtocolError`. A missing pass rule is a registration defect
+    to fix in the brief, never a gap for code to paper over.
+
+- **Acceptance.** `tests/test_c7ext_verdict_gates.py` — 29 tests, one or more
+  per gate, plus a regression that walks the XS_momentum shape end-to-end and
+  asserts it trips **all four** preconditions and can emit no verdict. Suite
+  338 → 369 passing. Five existing tests were repointed, not weakened:
+  `test_k2_verdict_machinery.py`'s known-answer and R3 fixtures now call
+  `_resolve_pass_rule` (the resolution semantics they exist to pin, unchanged),
+  with `test_c7ext_run_057_is_blocked_at_the_public_entry_point` added so the
+  new gate is pinned rather than hidden by the repointing.
+  `test_prereg_conformance_gate.py`'s fixture keeps run_047's real
+  constraints verbatim as evidence — run_047 was itself materialized from the
+  generic default — and a new test asserts they are now refused.
+
+- **Correction to the campaign's own count.** The audit dispatch expected the
+  honest gated-verdict count to be 1. It is **2**: `H-041-C-v2` and
+  `FUNDING_MR_DAILY_RETEST` both carry real B11 total mappings in their briefs.
+  XS_momentum is the only entry whose verdict was withdrawn. Pinned by
+  `test_campaign_honest_verdict_count`.
+
+- **Method note.** Every one of the four content gaps was visible in the
+  as-written record on 2026-07-22 and none was caught by machinery — they were
+  caught by a director reading carefully. That is the failure mode this entry
+  exists to remove: an integrity layer that depends on someone noticing is not
+  an integrity layer.
