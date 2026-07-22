@@ -224,10 +224,27 @@ class BaseFetcher(ABC):
                 logger.warning(f"No 'timestamp' column in {path} — ignoring cache")
                 return pd.DataFrame()
             df["timestamp"] = pd.to_datetime(df["timestamp"])
-            return df
         except Exception as e:
             logger.error(f"Error reading local data {path}: {e}")
             return pd.DataFrame()
+
+        # Convention guard: the whole codebase (this module's own start/end
+        # filtering above, fear_greed_fetcher.py, data_manager.py,
+        # launcher.py) compares this column against naive datetimes. A
+        # tz-aware dtype here means some writer emitted offset-carrying
+        # timestamp strings (e.g. parsed elsewhere with utc=True) — that
+        # would raise a confusing TypeError deep in an unrelated comparison.
+        # Fail loudly at the read boundary instead. Deliberately NOT caught
+        # by the try/except above: this must propagate, not degrade to an
+        # empty DataFrame like a corrupt/missing file would.
+        if isinstance(df["timestamp"].dtype, pd.DatetimeTZDtype):
+            raise ValueError(
+                f"{path}: 'timestamp' column parsed as tz-aware "
+                f"({df['timestamp'].dtype}). The cache convention is "
+                f"naive-UTC. Fix the writer that produced this file rather "
+                f"than parsing with utc=True here."
+            )
+        return df
 
     def _merge_and_store(self, symbol: str, pieces: list, save: bool = False):
         """

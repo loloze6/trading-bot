@@ -1439,22 +1439,49 @@ independent audit, fee-isolation-pairs follow-up)
      the ~7-month gap (2026-01-01 → today) needs a live-fetch top-up per pair.
      The exchange-qualified slot is designed so that top-up composes cleanly,
      but the top-up itself is out of scope for this dispatch.
-  3. **`trading-bot/data/data_manager.py:768` hardcodes `exchange="binance"`** —
-     no backtest can currently reach any of the 341,535 verified Kraken rows
-     ingested in this pilot; `cache_key()`'s Binance-unprefixed rule means this
-     fetcher can only ever derive `{symbol}_{tf}` keys, never `kraken_*`. This
-     is a reachability gap, not just a completeness gap like items 1-2 above,
-     and it is more consequential since it affects 100% of the ingested data
-     rather than a subset. Parameterizing the exchange here is out of scope
-     for this dispatch (found by independent audit, `20260722_kraken_ingest_audit.md`).
+  3. **CLOSED (this commit).** `trading-bot/data/data_manager.py:768`'s
+     hardcoded `exchange="binance"` is now an additive `exchange: str =
+     "binance"` parameter on `DataManager.fetch_historical_data()` — the one
+     public method external callers already reach directly (backtester.py,
+     tools/{validate,retune}_regime_detector.py, tools/check_data.py,
+     tests/test_funding_rate_component.py all call it un-wrapped; no private
+     boundary sits between it and a caller). Reachability proved empirically,
+     not just by diff: `dm.fetch_historical_data("XBTUSD", "2013-01-01",
+     "2025-12-31", exchange="kraken")` against the real on-disk
+     `kraken_XBTUSD_1h.csv` returns 96,381 rows, `datetime64[ns]`, tz-naive,
+     2013-10-06 21:00:00 → 2025-12-31 23:00:00 — exact match to the ratified
+     ingestion figures. Default unchanged (`exchange="binance"`); every
+     existing Binance OHLCV/funding call site still resolves to its original
+     unqualified filename (verified: no `binance_BTCUSDT_1h.csv` variant
+     created, real `BTCUSDT_1h.csv` load still returns data un-migrated).
+
+- **NEW CARRY-FORWARD (precondition on future work, not a TODO):**
+  4. **`FundingRateFetcher.cache_key()` is unqualified — ratified as-is in
+     `3d43cc1`, not touched by this commit.** It ignores its own
+     `exchange_id` (unlike the `CcxtFetcher` fix in this item), so a
+     Kraken-backed `FundingRateFetcher` fetching a symbol that lexically
+     matches an existing Binance funding cache (e.g. `BTCUSDT` →
+     `BTCUSDT_funding_8h.csv`) will silently collide with/overwrite it —
+     the exact wrong-data-read failure mode item 3 above fixed for OHLCV,
+     reopened for funding. **Firing condition: this must be closed before
+     any dispatch fetches funding-rate data from a second venue** — today
+     it is latent and inert because every current `FundingRateFetcher`
+     instance is Binance-only, but the moment a second-venue funding fetch
+     is dispatched, the collision is live. Do not defer this a second time
+     once that dispatch is on the table.
 
 - **Informational (not carry-forward-blocking):**
-  - `base_fetcher.py:226`'s `_load_local` calls `pd.to_datetime(df["timestamp"])`
-    with no `utc=` guard on the read side. Safe today because no writer emits
-    offset-suffixed timestamp strings (verified on-disk), but latent: a future
-    producer that does would silently localize/shift or return an `object`
-    column, with no downstream guard equivalent to the ingester's
-    `verify_utc_roundtrip`.
+  - `base_fetcher.py:226`'s `_load_local` now asserts the parsed `timestamp`
+    column is tz-naive and raises `ValueError` (not silently caught — the
+    check sits outside the surrounding read try/except so it actually
+    propagates) if a future writer emits offset-carrying timestamp strings.
+    Verified this cannot fire on any currently-cached file: swept every CSV
+    directly under `local_data/` plus the 26GB `Kraken_batch/` archive for
+    offset/`Z`-suffixed timestamps — none found. `utc=True` was deliberately
+    NOT added to the parse call itself (would flip the dtype to tz-aware and
+    break the naive-datetime comparisons at `base_fetcher.py:196-197`,
+    `fear_greed_fetcher.py:141`, `data_manager.py:849`, `launcher.py:585`);
+    the convention is enforced, not changed.
   - The test suite is not invocable from repo root with plain `pytest` — it
     ignores `trading-bot/pytest.ini`'s `testpaths`/`-m "not slow"` scope and
     collects unrelated slow/erroring tests outside it. Pre-existing, unrelated
