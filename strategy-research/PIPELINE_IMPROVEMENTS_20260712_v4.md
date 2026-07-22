@@ -1599,3 +1599,84 @@ independent audit, fee-isolation-pairs follow-up)
   `kraken_BTCUSD_1h`). `tests/test_kraken_cache_reachability.py` migrated to the
   `BTCUSD` slot over the gap-free window. Full suite: **57 passed / 10
   deselected** (baseline 48/10, +9 new).
+
+### G3. Engine panel-support blocker (first-class) + research-path vectorized backtester + XS_momentum run (P1)
+
+- **First-class engine blocker (dispatch step 1, same class as P4_ts_trend's
+  daily-bar gap).** The production `BacktestEngine` CANNOT express a
+  cross-sectional / panel strategy. Three concrete gaps, each a hard stop for a
+  panel book on the production path:
+  - **Single-symbol data load.** `core/backtester.py:92`
+    (`fetch_historical_data(self.symbols[0], ...)`) and `:359`
+    (`extract_historical_price_data` returns `self.symbols[0]` only) load exactly
+    one symbol. The simulate loop iterates `self.symbols` but every downstream
+    artifact path is `symbols[0]`-scoped.
+  - **Unpartitioned RollingBuffer.** `strategies/main_strategy.py:44` — one shared
+    indicator buffer, no per-symbol partition, so a component fed interleaved
+    multi-symbol bars would cross-contaminate history.
+  - **Zero netting hooks.** `execution/` has no cross-asset dollar-neutral /
+    long-short netting; `forecast_manager.forecast_to_allocation` maps a single
+    symbol's forecast to a single allocation.
+  - **Scope ruling (dispatch):** these production files were NOT modified — a
+    panel book is a research-only path until the engine gains partitioned,
+    multi-symbol, netting-capable support. Annotated in the KB finding
+    `xs_momentum_cost_surviving_but_decaying.run_path`.
+
+- **Delivered: `strategy-research/tools/panel_backtester.py`** (research-only; no
+  import of / edit to any production engine path). Ports the engine's OWN metric
+  formulas verbatim (`performance/metrics.py::calculate_sharpe_ratio` /
+  `calculate_max_drawdown` / `_calculate_standard_metrics`;
+  `reporting/run_artifact.py::build_core`) so its accounting is provably
+  engine-equivalent. Two commands: `gate` (validation) and `xs` (the panel run).
+
+- **VALIDATION GATE — PASS (the entire safeguard; dispatch steps 2-3).**
+  Reproduced ALL 30 window-symbol slots of archived run_054 (P4_ts_trend,
+  `SmaTrendLongOnlyComponent` L=100, daily, long-only, Binance daily data, default
+  10 bps, initial 1000). **Pre-registered tolerance, declared before comparison:**
+  trade_count EXACT; sharpe |Δ|<=0.10; net_return_pct |Δ|<=0.5pp-or-2%rel;
+  max_drawdown_pct |Δ|<=0.5pp; fees/gross/net <=2%rel. **Actual: exact to 3dp on
+  net_return_pct / sharpe / max_drawdown_pct / trade_count across all 30 slots**
+  (fees/gross/net within 2%) — far tighter than the bands. Engine accounting
+  reconstructed and verified line-by-line against run_054 trades.json (matched_qty
+  = (V/Pe)(1-r); entry_comm = matched*Pe*(r/(1-r)); final_pv = V(1-r)(Px/Pe)).
+  The one non-trivial alignment: the engine's +2h resample (already on record, KB
+  `er_gate_execution_alignment_caveat`) makes its bar labeled D carry the raw
+  CSV's D+1 close and drops ~2 trailing rows/window; the gate scores raw rows
+  [start+1d, end-2d] to match, and reproduction became exact — an independent
+  cross-check of that documented caveat.
+
+- **XS_momentum run (dispatch steps 5-7), research path, Kraken perp cost
+  (`cost_model.yaml` `perp` block, 5 bps one-way, funding not modeled — valid,
+  price-based signal; reused, not re-derived).** Mechanics all enforced: no
+  forward-fill into ranking (NaN-at-t or NaN-at-t-L excludes the asset);
+  dollar-neutral long-top-third / short-bottom-third; pointwise listing via NaN;
+  rank at t uses data through t, positions effective t+1. 19-pair panel,
+  2017-05-18 → 2025-12-31, 75,520 hourly bars, min n=6 (first reached 2017-05-26),
+  7-day trailing-return momentum, daily rebalance.
+  - **Headline: net Sharpe 1.325 (gross 1.665)**, net return +23,742% (compounding
+    of two explosive years 2017/2020; Sharpe is the trustworthy metric), max DD
+    -62.3% at 200% gross (~-31% at unit gross; Sharpe scale-invariant), annualized
+    turnover 423x.
+  - **NOT cost-dominated** (cost drag ~0.34 Sharpe). **No lookahead** (net Sharpe
+    RISES 1.33→1.42→1.51 as exec lag goes 1→2→4 bars). Positive net Sharpe every
+    year 2017-2024 but **decaying** — post-2021 net 0.77, 2025 net 0.07 (2025
+    cumulative -6.3%).
+  - **C7-style verdict: REFINE (positive lean).** Overall/median net Sharpe > 0
+    clears the promote Sharpe bar; DD > 30% bar (leverage-convention-dependent) =>
+    not a clean promote; well above kill; not cost-dominated. Phase-1.4
+    fee_reduction_assessment autopsy NOT triggered (not a cost-dominated kill).
+  - **The fork to a vectorized research path is VINDICATED:** a real,
+    cost-surviving cross-sectional edge exists across the broadened universe (the
+    question the brief posed), justifying investment in production engine panel
+    support — with the caveat that the forward-looking edge is the decaying recent
+    figure, not the full-sample 1.33.
+  - **Strongest single threat:** cost/venue anachronism × early-era dominance —
+    return is dominated by 2017/2020 (small-n, illiquid, pre-perp era for most
+    alts) costed at a flat modern 5 bps; the era where 5 bps is most credible
+    (recent, liquid) is where the edge is weakest. See KB finding for full text.
+
+- **Acceptance:** `panel_backtester.py gate` prints all 30 slots OK / GATE RESULT:
+  PASS; `panel_backtester.py xs` reproduces the headline metrics and robustness
+  table above. Registered: KB finding `xs_momentum_cost_surviving_but_decaying`;
+  `campaign_queue.yaml` XS_momentum outcome updated. No production `trading-bot/`
+  file touched.

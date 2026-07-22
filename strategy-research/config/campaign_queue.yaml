@@ -171,7 +171,10 @@ queue:
   outcome: kill_er_gate_mechanism_falsified
 - id: XS_momentum
   brief_path: briefs/research_brief_XS_momentum.md
-  status: ready
+  status: done   # executed 2026-07-22 on the RESEARCH PATH (vectorized panel backtester,
+                 # NOT the production engine -- engine lacks panel support, ledger G3
+                 # blocker). Any promotion/ratification must re-validate once the engine
+                 # gains partitioned multi-symbol + netting support.
   priority: 2
   source: agent
   notes: 'P2 CLOSED + RATIFIED 2026-07-22 (flipped blocked_on_P2 -> ready). Instrument
@@ -185,9 +188,19 @@ queue:
     appendix: docs/session_reports/20260722_xs_momentum_universe.md; recompute:
     docs/session_reports/_verify_xs_neff.py.
 
+    2026-07-22 RUN (research path): validation gate PASSED (reproduced all 30
+    run_054 slots exactly, pre-registered tolerance) before any XS result was
+    trusted. XS primary spec (7d trailing-return rank, daily rebalance, dollar-neutral
+    long/short top-bottom third, min n=6, Kraken perp 5bps): net Sharpe 1.325 / gross
+    1.665, NOT cost-dominated, no lookahead, but DECAYING (post-2021 net 0.77; 2025 net
+    0.07). C7-style verdict REFINE (positive lean): promote Sharpe bar cleared, DD bar
+    exceeded (leverage-dependent), well above kill. Fork to vectorized research path
+    VINDICATED. Full record: KB finding xs_momentum_cost_surviving_but_decaying;
+    ledger G3; tool strategy-research/tools/panel_backtester.py.
+
     '
-  run_ids: []
-  outcome: null
+  run_ids: [research_path_panel_backtester_20260722]
+  outcome: refine_research_path_edge_real_cost_surviving_but_decaying
 - id: H-041-C-v2
   brief_path: briefs/H-041-C-v2.md
   status: done

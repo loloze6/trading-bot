@@ -949,6 +949,64 @@ findings:
     auditing window-edge trade counts knows the historical alignment context.
 
     '
+- id: xs_momentum_cost_surviving_but_decaying
+  mechanism: Dollar-neutral cross-sectional momentum, 19-pair Kraken universe (7-day
+    trailing-return rank, long top-third / short bottom-third, daily rebalance)
+  hypothesis_ids:
+  - XS_momentum
+  evidence_runs:
+  - research_path_panel_backtester   # NOT a production-engine run -- see run_path note
+  evidence_count: 1
+  outcome: edge_real_cost_surviving_but_decaying
+  root_cause: signal_real_positive_but_time_decaying
+  verdict_c7: refine   # positive lean: net Sharpe > 0 clears the promote bar, but DD
+                       # at 200% gross exceeds the 30% bar (leverage-convention-dependent);
+                       # well above kill; NOT cost-dominated.
+  run_path: research_path_vectorized_panel   # ran on strategy-research/tools/panel_backtester.py,
+    # NOT the production BacktestEngine. The production engine CANNOT express this
+    # hypothesis (single-symbol load backtester.py:92/:359; unpartitioned RollingBuffer
+    # main_strategy.py:44; zero netting hooks) -- see ledger G3 blocker. Any future
+    # ratification / promotion MUST account for the fact that this evidence was produced
+    # off the production path and re-validated once the engine gains panel support.
+  venue: kraken_perp        # costed via cost_model.yaml perp block (5 bps one-way /
+                            # 10 bps round-trip taker). Funding NOT modeled (valid: this
+                            # is a price-based signal, not funding carry).
+  research_only: true
+  validation_gate: PASS     # the vectorized accounting was validated BEFORE this result
+    # by reproducing all 30 window-symbol slots of the archived run_054
+    # (SmaTrendLongOnlyComponent, daily) EXACTLY to 3dp on net_return_pct / sharpe /
+    # max_drawdown_pct / trade_count (fees/gross/net within 2%). Reproduction harness:
+    # strategy-research/tools/panel_backtester.py gate. Pre-registered tolerance (declared
+    # before comparison): trade_count exact; sharpe |Δ|<=0.10; net_return |Δ|<=0.5pp-or-2%;
+    # dd |Δ|<=0.5pp; fees/gross/net <=2% rel. Actual reproduction was far tighter (exact).
+  signal_property:
+    net_sharpe_full_sample: 1.325      # daily-bucketed, annualized sqrt(365), 1-bar exec delay
+    gross_sharpe_full_sample: 1.665    # cost drag ~0.34 Sharpe (~20% rel) -> NOT cost-dominated
+    net_sharpe_post_2021: 0.77         # n>=12, most-liquid era -- edge weaker but positive
+    net_sharpe_2025: 0.073             # near-zero; 2025 cumulative net -6.3%
+    per_year_net_sharpe: [2.95, 0.85, 1.02, 2.96, 0.77, 1.46, 0.76, 0.96, 0.07]  # 2017..2025
+    max_drawdown_pct_at_200pct_gross: -62.3   # ~-31% at unit gross; Sharpe scale-invariant
+    annualized_turnover_x: 423
+    total_cost_drag_pct_of_equity: 182.4
+    n_eligible_range: [6, 19]          # n>=6 first reached 2017-05-26 (ratified start 2017-05-18)
+    n_bars: 75520
+    no_lookahead_confirmed: true       # net Sharpe RISES with exec lag 1->2->4 (1.33/1.42/1.51),
+                                       # not falls -- rules out same-bar lookahead exploit
+  strongest_threat_to_validity: >
+    Cost/venue anachronism compounded with early-era dominance. The compounded return is
+    driven overwhelmingly by 2017 (+416%) and 2020 (+476%) -- a small-n (n=6-10),
+    illiquid era when Kraken perps for most of these alts did not exist -- yet it is
+    costed at a flat MODERN 5 bps perp taker that materially understates real early-era
+    friction (wider spreads, thin books, the flagged high-gap pairs INJ/DOGE). The period
+    where the 5 bps assumption is most credible (recent, liquid, large-n) is exactly where
+    the edge is weakest (post-2021 net Sharpe 0.77; 2025 net ~0). So the headline 1.33 is
+    inflated by the era whose tradability-at-assumed-cost is least defensible; the honest
+    forward-looking edge is the decaying recent figure, not the full-sample number.
+  autopsy_note: >
+    Phase-1.4 fee_reduction_assessment NOT triggered: that autopsy is mandatory only for
+    a cost-dominated kill (mechanism_failure == signal_real_but_subscale_vs_costs). This
+    is NOT a cost-dominated kill -- net Sharpe is positive full-sample AND post-2021.
+    Gross-vs-net recorded above for completeness.
 meta_findings:
 - id: daily_regime_overlay_recommended_before_a23_trigger
   title: campaign_review recommended detector_wishlist.yaml work twice without checking
