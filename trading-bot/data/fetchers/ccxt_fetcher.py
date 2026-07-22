@@ -100,9 +100,22 @@ class CcxtFetcher(BaseFetcher):
 
     def cache_key(self, symbol: str) -> str:
         """
-        e.g. 'BTCUSDT_5m'  — keeps price CSVs separate from auxiliary feeds.
+        e.g. 'BTCUSDT_5m' (Binance) or 'kraken_XBTUSD_1h' (Kraken).
+
+        The key is exchange-qualified so caches from different venues can never
+        collide in the flat data_dir namespace (e.g. a Kraken instance fetching
+        'BTCUSDT' must not overwrite / silently read Binance's 'BTCUSDT_1h.csv').
+
+        Backward-compatibility (decision (a) of the exchange-qualification
+        dispatch): Binance keeps its historical UN-prefixed key, so every
+        existing on-disk cache file (local_data/BTCUSDT_1h.csv, ...) continues
+        to load byte-identically with no migration. Only non-Binance exchanges
+        receive the '{exchange_id}_' prefix. self.exchange_id is always set by
+        __init__ before any cache_key() call (which only happens later via
+        get_data()/_load_all()).
         """
-        return f"{symbol}_{self.ccxt_timeframe}"
+        prefix = "" if self.exchange_id == "binance" else f"{self.exchange_id}_"
+        return f"{prefix}{symbol}_{self.ccxt_timeframe}"
 
     def _fetch_remote(
         self,

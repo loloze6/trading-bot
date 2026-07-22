@@ -1377,3 +1377,65 @@ independent audit, fee-isolation-pairs follow-up)
   follow-up.
 - **Acceptance:** met — see fixtures above; schema JSON re-parses cleanly
   (`json.load` round-trip confirmed).
+
+# v8 additions — found 2026-07-22 (Phase 2 Track A: Kraken 5-pair pilot ingestion)
+
+## G. Data & cache layer (new category)
+
+### G1. Exchange-qualified cache key + Kraken bulk-archive pilot ingestion (P1)
+- **Symptom (cache-key collision):** `CcxtFetcher.cache_key()` was
+  `f"{symbol}_{self.ccxt_timeframe}"` — exchange-agnostic. A Kraken-backed
+  `CcxtFetcher` fetching a symbol that lexically matches a Binance one
+  (e.g. `BTCUSDT` @ `1h`) resolves to the SAME flat cache file
+  (`local_data/BTCUSDT_1h.csv`) already holding Binance candles. Loading one
+  would silently return the other venue's data — a wrong-data read, not an
+  error. `data/fetchers/base_fetcher.py:211` is the single filename-deriving
+  call site (`_csv_path` → `cache_key`), so the collision surfaces everywhere
+  cache files are read/written.
+- **Fix (decision (a), confirmed correct):** qualify the key with the
+  exchange, but keep **Binance UN-prefixed** so every existing on-disk /
+  git-tracked Binance cache file loads byte-identically with zero migration;
+  only non-Binance venues get the `{exchange_id}_` prefix
+  (`kraken_XBTUSD_1h`). `self.exchange_id` is set in `__init__` (line 85)
+  before any `cache_key()` call, so both paths are always populated. Verified:
+  existing `local_data/BTCUSDT_1h.csv` still loads (74,457 rows, 12-col schema
+  intact) via the fixed path; no currently-passing Binance backtest path is
+  touched beyond the key derivation.
+- **Ingestion (5-pair pilot):** `trading-bot/tools/ingest_kraken_archive.py`
+  converts Kraken bulk-export CSVs (headerless, 7-col `unix_s,o,h,l,c,vol,
+  trade_count`, unix **seconds**) into the exact 12-col Binance cache schema
+  and writes them through the real fetcher plumbing
+  (`_merge_and_store`→`_csv_path`→fixed `cache_key`) into the
+  exchange-qualified slot a future live Kraken top-up would share. BTC→XBT
+  ticker remap hardcoded; DOGE→XDG documented in-code for the full run (not
+  ingested here). 1h resolution, USD-quoted. Result: `kraken_XBTUSD_1h`
+  (96,381 rows, 2013-10-06→2025-12-31), `kraken_ETHUSD_1h` (87,690),
+  `kraken_SOLUSD_1h` (39,743), `kraken_ADAUSD_1h` (63,291),
+  `kraken_LINKUSD_1h` (54,430). Cache files land under gitignored
+  `local_data/` — data not committed, script/tests/fix are.
+- **UTC guard:** the fetch/cache layer does NOT inherit
+  `CandleBuilder._align()`'s UTC check (commit `2529f5b`), so the ingester
+  asserts its own — first AND last raw unix epoch must map to the stdlib UTC
+  wall-clock and survive an ingest→reload round trip unchanged, else
+  `IngestUTCError` halts (no silent shift). Verified concretely, not trusted
+  from the recon's inferred-UTC.
+- **Value-level note (documented divergence, not a bug):** `number_of_trades`
+  is populated with Kraken's REAL per-candle trade count (the bulk archive
+  carries it); a live `ccxt.fetch_ohlcv` Kraken top-up returns only 6 columns
+  and would leave it NaN. Archive rows and future live rows in the same slot
+  will therefore differ in that one column. Also: Binance breadth cache is
+  USDT-quoted, Kraken pilot is USD-quoted — a venue divergence to keep in mind
+  when composing cross-venue breadth.
+- **Acceptance:** met — `tests/test_kraken_archive_ingest.py` (6 tests):
+  cache-key backward-compat + qualification + no-collision, plus a
+  source-vs-ingested round-trip integrity check (row count, first/last UTC
+  timestamps, OHLCV/trade-count/quote-vol/close_time spot-checks) and a guard
+  that the UTC check fires on an injected shift. Full suite: 44 passed.
+- **CARRY-FORWARD (open, NOT resolved here) for the full 20-pair scale-up:**
+  1. **HYPE is entirely missing from the archive** (recon `20260721`) — needs
+     a separate live `ccxt`-against-Kraken fallback before HYPE can join the
+     breadth set.
+  2. **Coverage stops 2025-12-31** — the archive is a static year-end export;
+     the ~7-month gap (2026-01-01 → today) needs a live-fetch top-up per pair.
+     The exchange-qualified slot is designed so that top-up composes cleanly,
+     but the top-up itself is out of scope for this dispatch.
