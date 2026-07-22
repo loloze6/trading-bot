@@ -64,6 +64,112 @@ eras:
     feeds_available: [ohlcv, fear_greed, funding_rate]
     note: matches holdout_range above. FROZEN — same holdout rules apply.
 
+# Phase 2 Track A / XS_momentum P2 unblock (2026-07-22). Verified availability for
+# the 19-pair Kraken breadth set (ledger G1/G2), measured directly from the ingested
+# cache CSVs by pd.read_csv (read-only; no fetcher call, per the standing 446885b
+# write-on-read guard). See docs/session_reports/20260722_xs_momentum_universe.md for
+# the full panel table, correlation methodology, and n_eff_symbols measurement.
+#
+# HOLDOUT TREATMENT -- IMPORTANT, differs from the BTCUSDT/ETHUSDT policy above:
+# every one of the 19 Kraken-ingested pairs terminates at 2025-12-31 23:00 (the bulk
+# archive's export cutoff -- ledger G1 carry-forward 2). The frozen holdout_range
+# above (2026-01-01 -> 2026-06-30) is NOT reachable by any of these 19 pairs at all --
+# this is not a leakage risk to guard against (the data physically does not extend
+# into the holdout window), but it means holdout_evaluation cannot run for any
+# XS_momentum hypothesis on this instrument set until a live-fetch top-up backfills
+# 2026-01-01 -> present per pair (same top-up ledger G2 already designed the
+# exchange-qualified cache slot for). Record this as a hard prerequisite for
+# XS_momentum's eventual holdout_evaluation stage, not merely a data-completeness note.
+# Walk-forward search itself is unaffected: the archive's 2025-12-31 cutoff aligns
+# exactly with the existing walk_forward_extension end date above.
+kraken_breadth_19pair:
+  ingested: "2026-07-22"
+  cache_dir: local_data/  # kraken_<BASE>USD_1h.csv, exchange-qualified cache_key
+  quote: USD  # NB: USD, not USDT -- a documented venue divergence vs the BTCUSDT/
+              # ETHUSDT Binance feeds above, not a bug (ledger G1).
+  reachability_caveat: >
+    data_manager.py:768 hardcodes exchange="binance" -- no backtest can currently
+    read these Kraken cache files without that being parameterized first
+    (docs/session_reports/20260722_kraken_ingest_audit.md Target F). Availability
+    windows below describe what has been verified to exist on disk, not what is
+    currently reachable by a live backtest run.
+  availability:
+    BTC:  ["2013-10-06", "2025-12-31"]
+    ETH:  ["2015-08-07", "2025-12-31"]
+    XRP:  ["2017-05-18", "2025-12-31"]
+    SOL:  ["2021-06-17", "2025-12-31"]
+    ADA:  ["2018-09-28", "2025-12-31"]
+    SUI:  ["2023-05-03", "2025-12-31"]
+    ZEC:  ["2016-10-29", "2025-12-31"]
+    DOGE: ["2019-12-19", "2025-12-31"]
+    XMR:  ["2017-01-02", "2025-12-31"]
+    LTC:  ["2013-10-24", "2025-12-31"]
+    ONDO: ["2024-04-11", "2025-12-31"]
+    NEAR: ["2022-06-16", "2025-12-31"]
+    LINK: ["2019-09-25", "2025-12-31"]
+    TAO:  ["2024-07-01", "2025-12-31"]
+    AVAX: ["2021-12-21", "2025-12-31"]
+    TRX:  ["2020-03-05", "2025-12-31"]
+    AAVE: ["2020-12-15", "2025-12-31"]
+    INJ:  ["2021-08-10", "2025-12-31"]
+    UNI:  ["2020-10-15", "2025-12-31"]
+    HYPE: null  # absent from bulk archive entirely (ledger G1 carry-forward 1)
+  within_life_missing_pct_2017plus:
+    # data-quality input for costing (not a gate) -- see session report step 6 for
+    # why this is NOT converted into a cost_model.yaml bps figure: no order-book or
+    # real spread data exists to calibrate a gap-rate -> spread/slippage conversion
+    # factor without fabricating a constant (cost_model.yaml's own maker block
+    # precedent explicitly declines to do this for adverse_selection_bps). Use
+    # ordinally, as a risk/priority flag, not a formula input.
+    AVAX: 0.08
+    BTC: 0.11
+    ONDO: 0.11
+    TAO: 0.13
+    SOL: 0.15
+    ETH: 0.17
+    XRP: 0.19
+    UNI: 0.39
+    AAVE: 0.49
+    ADA: 0.54
+    NEAR: 0.94
+    LINK: 0.94
+    LTC: 1.38
+    TRX: 1.42
+    XMR: 1.94
+    SUI: 3.60
+    ZEC: 4.73
+    DOGE: 5.05
+    INJ: 5.73
+  flagged_pairs_above_011pct_benchmark: [INJ, DOGE, ZEC, SUI, XMR, TRX, LTC]  # "flagged-7"
+  liquid_pairs_at_or_near_benchmark: [BTC, ETH, XRP, SOL, ADA, ONDO, NEAR, LINK, TAO, AVAX, AAVE, UNI]  # "liquid-12"
+  status: measured_not_walk_forward_eligible  # measured/verified; NOT yet cleared for
+                                               # walk-forward use -- that clearance is
+                                               # the director's ratification of the
+                                               # XS_momentum brief's market_universe,
+                                               # not implied by this measurement entry.
+
+# A8.6 symbol_correlation supersession note (2026-07-22): config/campaign_config.yaml's
+# symbol_correlation block still holds ONLY the BTC/ETH pair (rho=0.82, n_eff~1.10) --
+# insufficient for a 4+ instrument cross-section per the XS_momentum brief's own
+# unblock item 3. A full 19x19 pairwise-Pearson log-return correlation matrix and
+# per-candidate-universe rho_bar/n_eff_symbols were measured 2026-07-22 (method:
+# pairwise-complete on 1h log returns, each pair using the full intersection of its
+# own listing-to-present history -- see session report for the PSD caveat on the
+# full 19-set). Headline numbers (n = instrument count):
+#   liquid-12  (PSD-valid): rho_bar=0.6165  n_eff_symbols=1.542
+#   flagged-7  (PSD-valid): rho_bar=0.4386  n_eff_symbols=1.928
+#   all-19 (NON-PSD full joint matrix -- see report): rho_bar=0.5419  n_eff_symbols=1.767
+#     (reported for completeness only; the all-19 joint correlation structure is not
+#     internally consistent under pairwise-complete estimation -- 1 negative
+#     eigenvalue, confirmed structural via leave-one-out, not a single flaky pair --
+#     so this number should not be treated as summarizing one coherent 19-dimensional
+#     joint distribution. liquid-12 and flagged-7 are each independently PSD.)
+# campaign_config.yaml's symbol_correlation block itself is NOT edited by this entry
+# (out of this measurement task's write scope) -- updating it is a follow-on step for
+# whoever ratifies the XS_momentum brief's market_universe, using whichever candidate
+# universe is selected. Full matrix and methodology:
+# docs/session_reports/20260722_xs_momentum_universe.md.
+
 holdout_consumed_by: []
 
 # Improvement 06: holdout enforcement rules

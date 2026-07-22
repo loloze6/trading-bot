@@ -30,11 +30,22 @@ categories:
     coins:
       - symbol: SOLUSDT
         name: Solana
-        data_cached: false
-        notes: "High beta to BTC. More dramatic trending regime."
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_SOLUSD_1h
+        notes: "High beta to BTC. More dramatic trending regime. Verified via Phase 2
+          Track A Kraken bulk-archive ingestion (2026-07-22), NOT Binance -- this
+          file's default_exchange: binance does not apply to this entry. 39,743 rows,
+          2021-06-17 -> 2025-12-31, within-life missing 0.15%. See
+          docs/session_reports/20260722_xs_momentum_universe.md."
       - symbol: AVAXUSDT
         name: Avalanche
-        data_cached: false
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_AVAXUSD_1h
+        notes: "Verified via Kraken bulk-archive ingestion (2026-07-22). 35,285 rows,
+          2021-12-21 -> 2025-12-31, within-life missing 0.08% -- best data quality of
+          the 19-pair breadth set."
       - symbol: DOTUSDT
         name: Polkadot
         data_cached: false
@@ -46,14 +57,26 @@ categories:
     coins:
       - symbol: UNIUSDT
         name: Uniswap
-        data_cached: false
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_UNIUSD_1h
+        notes: "Verified via Kraken bulk-archive ingestion (2026-07-22). 45,507 rows,
+          2020-10-15 -> 2025-12-31, within-life missing 0.39%."
       - symbol: AAVEUSDT
         name: Aave
-        data_cached: false
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_AAVEUSD_1h
+        notes: "Verified via Kraken bulk-archive ingestion (2026-07-22). 44,001 rows,
+          2020-12-15 -> 2025-12-31, within-life missing 0.49%."
       - symbol: LINKUSDT
         name: Chainlink
-        data_cached: false
-        notes: "Oracle token -- less defi-native, more infra."
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_LINKUSD_1h
+        notes: "Oracle token -- less defi-native, more infra. Verified via Kraken
+          bulk-archive ingestion (2026-07-22). 54,430 rows, 2019-09-25 -> 2025-12-31,
+          within-life missing 0.94%."
 
   payment:
     description: "Payment / remittance focused. Utility-capped upside, mean-reversion
@@ -62,7 +85,11 @@ categories:
     coins:
       - symbol: XRPUSDT
         name: XRP
-        data_cached: false
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_XRPUSD_1h
+        notes: "Verified via Kraken bulk-archive ingestion (2026-07-22). 75,440 rows,
+          2017-05-18 -> 2025-12-31, within-life missing 0.19%."
       - symbol: XLMUSDT
         name: Stellar
         data_cached: false
@@ -76,10 +103,100 @@ categories:
     coins:
       - symbol: DOGEUSDT
         name: Dogecoin
-        data_cached: false
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_DOGEUSD_1h
+        notes: "Verified via Kraken bulk-archive ingestion (2026-07-22). 50,232 rows,
+          2019-12-19 -> 2025-12-31, within-life missing 5.05% (2017+) -- FLAGGED:
+          materially above the 0.11% pilot benchmark. See breadth-viability flags in
+          ledger G2 and docs/session_reports/20260722_xs_momentum_universe.md before
+          weighting this pair in a cross-sectional signal."
       - symbol: SHIBUSDT
         name: Shiba Inu
         data_cached: false
+
+  altcoin_l1_verified_kraken:
+    description: "Additional Layer-1 / infra / privacy / RWA coins verified via the
+      Phase 2 Track A Kraken bulk-archive ingestion (2026-07-22) that had no prior
+      entry in this file. All data_cached: true here means Kraken-sourced (USD-quoted,
+      cache_key kraken_<BASE>USD_1h), NOT Binance -- default_exchange: binance above
+      does not apply to this category. Added for the XS_momentum universe-expansion
+      measurement (research_brief_XS_momentum.md P2 unblock item 1); category grouping
+      here is coarse (not re-derived from each coin's actual sector) since the purpose
+      is cross-sectional breadth, not sector classification."
+    strategy_affinity: [cross_sectional_momentum]
+    coins:
+      - symbol: ADAUSDT
+        name: Cardano
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_ADAUSD_1h
+        notes: "63,291 rows, 2018-09-28 -> 2025-12-31, within-life missing 0.54%."
+      - symbol: SUIUSDT
+        name: Sui
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_SUIUSD_1h
+        notes: "Youngest listing in the 19-pair set. 22,522 rows, 2023-05-03 ->
+          2025-12-31, within-life missing 3.60% -- FLAGGED (materially above 0.11%
+          pilot benchmark)."
+      - symbol: ZECUSDT
+        name: Zcash
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_ZECUSD_1h
+        notes: "76,449 rows, 2016-10-29 -> 2025-12-31, within-life missing 4.73%
+          (2017+) -- FLAGGED (materially above 0.11% pilot benchmark)."
+      - symbol: XMRUSDT
+        name: Monero
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_XMRUSD_1h
+        notes: "77,317 rows, 2017-01-02 -> 2025-12-31, within-life missing 1.94% --
+          FLAGGED (materially above 0.11% pilot benchmark, though moderate)."
+      - symbol: LTCUSDT
+        name: Litecoin
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_LTCUSD_1h
+        notes: "Second-longest history in the set. 84,563 rows, 2013-10-24 ->
+          2025-12-31, within-life missing 20.85% full-history (2013-2015 illiquid-era
+          front-loaded, benign) / 1.38% restricted to 2017+ -- FLAGGED (materially
+          above 0.11% pilot benchmark, though moderate)."
+      - symbol: ONDOUSDT
+        name: Ondo
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_ONDOUSD_1h
+        notes: "15,089 rows, 2024-04-11 -> 2025-12-31, within-life missing 0.11% --
+          matches the pilot benchmark exactly, shortest-life pair with clean data."
+      - symbol: NEARUSDT
+        name: NEAR Protocol
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_NEARUSD_1h
+        notes: "30,775 rows, 2022-06-16 -> 2025-12-31, within-life missing 0.94%."
+      - symbol: TAOUSDT
+        name: Bittensor
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_TAOUSD_1h
+        notes: "30,775 rows, 2024-07-01 -> 2025-12-31, within-life missing 0.13%."
+      - symbol: TRXUSDT
+        name: TRON
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_TRXUSD_1h
+        notes: "50,331 rows, 2020-03-05 -> 2025-12-31, within-life missing 1.42% --
+          FLAGGED (materially above 0.11% pilot benchmark, though moderate)."
+      - symbol: INJUSDT
+        name: Injective
+        data_cached: true
+        exchange: kraken
+        cache_key: kraken_INJUSD_1h
+        notes: "36,298 rows, 2021-08-10 -> 2025-12-31, within-life missing 5.73% --
+          FLAGGED: worst data quality of the 19-pair set. See
+          docs/session_reports/20260722_xs_momentum_universe.md before weighting."
 
 escalation_order:
   description: "When escalating to a new instrument, try in this order.
