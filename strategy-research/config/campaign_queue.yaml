@@ -171,15 +171,19 @@ queue:
   outcome: kill_er_gate_mechanism_falsified
 - id: XS_momentum
   brief_path: briefs/research_brief_XS_momentum.md
-  status: blocked_on_P2
+  status: ready
   priority: 2
   source: agent
-  notes: 'Cross-sectional momentum needs a real cross-section of low-correlation instruments;
-    the campaign currently covers only BTCUSDT/ETHUSDT (rho=0.82, n_eff_symbols≈1.10
-    per config/campaign_config.yaml). P2 = instrument-universe expansion (fetch-verify
-    OHLCV for a broader coin_universe.yaml set, update campaign_data_policy.yaml,
-    re-measure correlations). See the brief''s own "What P2 must deliver" section
-    for the unblock checklist. Do not flip to ready until that checklist is done.
+  notes: 'P2 CLOSED + RATIFIED 2026-07-22 (flipped blocked_on_P2 -> ready). Instrument
+    universe ratified = all 19 ingested Kraken pairs (USD-quoted, kraken_<BASE>USD_1h),
+    NOT liquid-12. Decision statistic corrected from raw n_eff (a directional-concentration
+    test, wrong for a dollar-neutral book) to DEMEANED correlation: liquid-12 demeaned
+    rho_bar -0.0800 (floor -0.0909), flagged-7 -0.1588 (floor -0.1667) -- both at the
+    orthogonality floor => genuine idiosyncratic dispersion to rank on. all-19 is PSD on
+    the listwise common window (minEig +0.1575); the as-produced "non-PSD/structural"
+    verdict was a pairwise-deletion estimator artifact. Full record + director-correction
+    appendix: docs/session_reports/20260722_xs_momentum_universe.md; recompute:
+    docs/session_reports/_verify_xs_neff.py.
 
     '
   run_ids: []

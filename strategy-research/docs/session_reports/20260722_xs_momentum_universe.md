@@ -295,3 +295,96 @@ non-PSD caveat carried forward explicitly into the eventual `symbol_correlation`
 or a targeted per-pair sanity check (§5) on INJ/DOGE specifically to see if their gap
 rate reflects genuine illiquidity risk or is otherwise tolerable, before deciding
 whether to admit the full flagged-7 rather than defaulting them out.
+
+---
+---
+
+# DIRECTOR CORRECTION (ratified 2026-07-22) — layered on top; original text above is preserved verbatim
+
+Everything above §0–§7 is the measurement session's **as-produced** output and is left
+unedited on purpose. This appendix records what the director overturned, why, and on
+what evidence. Where a §-numbered conclusion above conflicts with a finding here, **this
+appendix governs.** All four findings below were established by direct recomputation on
+the same ingested Kraken CSVs (`_verify_xs_neff.py`, this directory; read-only,
+`pd.read_csv` only, no fetcher).
+
+## Recomputation, independently reproduced
+
+| quantity | as-produced (§) | ratified recompute | agree? |
+|---|---|---|---|
+| all-19 pairwise-complete minEig | −0.2230 (§2, "non-PSD, structural") | −0.0545 | non-PSD *under this estimator*, yes |
+| **all-19 LISTWISE common-window minEig** | not computed | **+0.1575 → PSD** | overturns "structural" |
+| liquid-12 raw ρ̄ / flagged-7 raw ρ̄ | +0.6165 / +0.4386 (§3) | +0.6193 / +0.4558 | yes (method-noise) |
+| liquid-12 demeaned ρ̄ (listwise) | not computed | **−0.0800** (floor −0.0909, minEig 0.0000) | new |
+| flagged-7 demeaned ρ̄ (listwise) | not computed | **−0.1588** (floor −0.1667, minEig 0.0000) | new |
+
+## Finding 1 — the non-PSD result is an ESTIMATOR ARTIFACT, not structural. §2 RETRACTED.
+
+§2 concluded the all-19 matrix is non-PSD "structurally" because leave-one-out never
+recovered PSD. That conclusion is retracted. The all-19 correlation matrix computed on a
+**listwise common window** (every bar where all 19 pairs are present, 2024-07-01 →
+2025-12-31, 12,966 rows) has **minEig = +0.1575 — PSD.** Pairwise-deletion on ragged
+windows is a *known* generator of non-PSD matrices: each bilateral correlation is
+estimated over a different, non-nested time slice, so the 171 valid pairwise statistics
+need not compose into one PSD 19×19 object. The leave-one-out test in §2 could not have
+detected this, because **every one of its 19 subsets was still estimated by
+pairwise-deletion** — it varied the asset set but never the estimator, so it could only
+ever find "still non-PSD." The §2 claim "No blend across the liquid-12/flagged-7 boundary
+stays PSD" (and §7's reliance on it) is likewise retracted: it too is an artifact of the
+estimator, not a property of the asset set.
+
+## Finding 2 — raw n_eff is NOT the decision statistic for a dollar-neutral book.
+
+§3 quotes raw `n_eff_symbols` per universe against the brief's ≈1.10 bar. For a
+**dollar-neutral long/short** cross-sectional book this is the wrong statistic. Raw ρ̄ /
+raw n_eff measure **directional (market-factor) concentration** — precisely the component
+a dollar-neutral long-top/short-bottom book does *not* hold, because the common factor
+cancels in the long−short spread. The brief's ≈1.10 blocker was sound **for n=2**, where
+the cross-section is degenerate and there is nothing but the common factor. Carrying that
+same raw-n_eff bar to n=12 or n=19 misapplies it: it measures the exposure the strategy
+is constructed to cancel. This does not retract §3's arithmetic (the raw figures are
+fine); it retracts using them as the go/no-go breadth statistic.
+
+## Finding 3 — demeaned ρ̄ sits at the orthogonality floor: real idiosyncratic dispersion exists.
+
+The decision-relevant statistic is the correlation of **cross-sectionally demeaned**
+returns (each bar's cross-sectional mean subtracted — the neutral book's actual
+exposure). Measured listwise per subset:
+
+```
+liquid-12  demeaned rho_bar = -0.0800   floor -1/(n-1) = -0.0909   minEig = 0.0000
+flagged-7  demeaned rho_bar = -0.1588   floor -1/(n-1) = -0.1667   minEig = 0.0000
+```
+
+Both sit **just above the orthogonality floor** −1/(n−1): once the common factor is
+removed, the residuals are close to mutually orthogonal — i.e. genuine idiosyncratic
+dispersion exists to rank on. This is the affirmative breadth result the brief's power
+check actually needed.
+
+Two guardrails, ratified:
+- **Do NOT quote a demeaned n_eff.** As ρ̄ → −1/(n−1) the denominator `1+(n−1)ρ̄` → 0 and
+  n_eff explodes to meaningless values (100–149). Cross-sectional breadth is properly
+  read as ≈ **n−1 rank bets, conditional on dollar-neutrality**, not as an n_eff figure.
+- **minEig = 0 on the demeaned matrices is EXPECTED, not a defect.** Demeaning puts the
+  ones-vector in the null space by construction; a zero eigenvalue is the signature that
+  the demeaning was done correctly, not a non-PSD failure.
+
+## Finding 4 — ratified universe: ALL 19 ingested Kraken pairs. §7's liquid-12 recommendation OVERTURNED.
+
+§7 recommended liquid-12 and defaulted the flagged-7 out on gap rate. Overturned. The
+ratified `market_universe` is **all 19 ingested Kraken pairs.** §4's own numbers (which
+§7 flagged as its single strongest counterargument) are decisive here and are confirmed
+on recompute: the flagged-7 carry **real decorrelation** — 0.456 internal / 0.519 cross
+to the liquid core, versus 0.619 within the core. Excluding them on gap rate would strip
+out exactly the return dispersion a cross-sectional signal exists to detect; the exclusion
+criterion (data completeness) is not orthogonal to the phenomenon under test (dispersion).
+The gap rate remains a legitimate **ordinal risk flag** (§5's refusal to fabricate a
+gap-rate → bps mapping stands and is *not* overturned) — but an ordinal flag is not
+grounds to drop instruments from the ranked set. INJ/DOGE stay in, flagged.
+
+## Net effect on the brief
+
+`market_universe` = the 19. Raw and demeaned ρ̄ recorded in the brief frontmatter. Queue
+status flipped `blocked_on_P2 → ready`. The run's effective start is determined
+empirically in the follow-on run commit (cross-section-size curve → minimum-viable-n
+threshold), not assumed here.
