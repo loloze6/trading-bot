@@ -90,7 +90,15 @@ def test_c7_run_057_known_answer_fail_a_kill_terminate():
     protocol_result = yaml.safe_load(REAL_RUN_057_PROTOCOL_RESULT.read_text(encoding="utf-8"))
     pre_registration = _run_057_structured_pre_registration()
 
-    result = vce.evaluate_pass_rule_criteria(protocol_result, pre_registration)
+    # C7-EXT (2026-07-22): the PASS-RULE RESOLUTION semantics this known-answer
+    # fixture exists to pin are unchanged, and now live in _resolve_pass_rule.
+    # evaluate_pass_rule_criteria() is the gated public entry -- it runs the
+    # four verdict preconditions in front of this kernel, and run_057's archived
+    # protocol_result.yaml (which predates them) does not satisfy them. That
+    # blocking behaviour is asserted separately in
+    # test_c7ext_run_057_is_blocked_at_the_public_entry_point below, so the new
+    # gate is pinned rather than papered over by this repointing.
+    result = vce._resolve_pass_rule(protocol_result, pre_registration)
 
     assert result["result"] == "FAIL"
     crit_a = next(c for c in result["criteria_results"] if c["id"] == "a")
@@ -117,31 +125,51 @@ def test_c7_window_set_ref_mismatch_refuses_evaluation():
     pre_registration = _run_057_structured_pre_registration()
     pre_registration["pass_rule"]["window_set_ref"] = "protocols/some_other_protocol_v2.json"
 
-    result = vce.evaluate_pass_rule_criteria(protocol_result, pre_registration)
+    result = vce._resolve_pass_rule(protocol_result, pre_registration)  # C7-EXT: see above
     assert result["result"] == "SPEC_ERROR"
     assert "some_other_protocol_v2.json" in result["reason"]
     assert "ts_trend_daily_v1.json" in result["reason"]
 
 
+def test_c7ext_run_057_is_blocked_at_the_public_entry_point():
+    """C7-EXT companion to the known-answer fixture above. run_057's archived
+    artifacts predate the verdict preconditions and do not satisfy them, so the
+    gated public entry point must refuse to issue ANY verdict — including the
+    kill/terminate the kernel itself still resolves. Pinned explicitly so the
+    repointing of the two tests above cannot quietly hide the new gate."""
+    protocol_result = yaml.safe_load(REAL_RUN_057_PROTOCOL_RESULT.read_text(encoding="utf-8"))
+    result = vce.evaluate_pass_rule_criteria(
+        protocol_result, _run_057_structured_pre_registration())
+
+    assert result["result"] == "VERDICT_BLOCKED"
+    assert result.get("hypothesis_verdict") is None
+    assert "deployable_today" in result["blocked_by"]
+
+
 # ---------------------------------------------------------------------------
 # R3 -- legacy_not_evaluable hardening (never raises)
+#
+# C7-EXT: R3's contract is about the RESOLUTION kernel never raising on a
+# legacy-shaped pass_rule, so these exercise _resolve_pass_rule directly. The
+# public entry point's precondition gate sits in front of it and is covered by
+# tests/test_c7ext_verdict_gates.py (G5).
 # ---------------------------------------------------------------------------
 
 def test_r3_string_shaped_pass_rule_never_raises():
     protocol_result = {"per_symbol_summary": {}}
     pre_registration = {"pass_rule": _PASS_RULE_STATEMENT}  # run_057's OWN real shape
-    result = vce.evaluate_pass_rule_criteria(protocol_result, pre_registration)
+    result = vce._resolve_pass_rule(protocol_result, pre_registration)
     assert result["result"] == "legacy_not_evaluable"
     assert "reason" in result
 
 
 def test_r3_absent_pass_rule_never_raises():
-    result = vce.evaluate_pass_rule_criteria({}, {})
+    result = vce._resolve_pass_rule({}, {})
     assert result["result"] == "legacy_not_evaluable"
 
 
 def test_r3_non_string_non_dict_pass_rule_never_raises():
-    result = vce.evaluate_pass_rule_criteria({}, {"pass_rule": 12345})
+    result = vce._resolve_pass_rule({}, {"pass_rule": 12345})
     assert result["result"] == "legacy_not_evaluable"
 
 

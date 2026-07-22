@@ -12,6 +12,7 @@ baseline_v1.json protocol it silently fell back to (frozen — per this project'
 standing rule that regression tests use the actual historical failure as
 fixture). Verifies the conformance gate would have caught this exact case.
 """
+import copy
 import sys
 from pathlib import Path
 
@@ -118,12 +119,37 @@ def test_conformance_gate_flags_the_old_default_path_as_a_real_violation():
     assert any("significance_methodology_used" in v for v in violations)
 
 
+def test_g7_run_047_real_constraints_are_now_refused_as_ungated(tmp_path, monkeypatch):
+    """C7-EXT/G7 (2026-07-22). run_047's REAL machine_constraints carry no
+    `promotion` block — it was materialized against the generic code default
+    (median_sharpe_gt=0 / max_abs_drawdown_pct_lt=30 / min_trade_count_gte=20),
+    which is the C7 symptom left live in the tree after C7 was recorded closed.
+    Kept verbatim above as evidence that the landmine fired on a real run; the
+    materializer must now refuse it rather than silently supply thresholds."""
+    run_dir = tmp_path / "run_test"
+    (run_dir / "artifacts").mkdir(parents=True)
+    monkeypatch.setattr(rpr, "ROOT", tmp_path)
+
+    with pytest.raises(rpr.UngatedProtocolError):
+        rpr._ensure_protocol_from_constraints(run_dir, "run_test", RUN_047_MACHINE_CONSTRAINTS)
+
+
 def test_ensure_protocol_from_constraints_generates_and_is_idempotent(tmp_path, monkeypatch):
     run_dir = tmp_path / "run_test"
     (run_dir / "artifacts").mkdir(parents=True)
     monkeypatch.setattr(rpr, "ROOT", tmp_path)
 
-    path = rpr._ensure_protocol_from_constraints(run_dir, "run_test", RUN_047_MACHINE_CONSTRAINTS)
+    # C7-EXT/G7: a pre-registered `promotion` block is now mandatory. run_047's
+    # own constraints lack one (see the test above); this fixture adds an
+    # explicit block so the test can go on exercising what it is actually
+    # about — window generation, run_context wiring, and idempotency.
+    constraints = copy.deepcopy(RUN_047_MACHINE_CONSTRAINTS)
+    constraints["protocol"]["promotion"] = {
+        "median_sharpe_gt": 0, "max_abs_drawdown_pct_lt": 30,
+        "min_trade_count_gte": 20, "kill_median_sharpe_lt": -1,
+    }
+
+    path = rpr._ensure_protocol_from_constraints(run_dir, "run_test", constraints)
     assert path is not None
     assert path.exists()
     proto = yaml.safe_load(path.read_text(encoding="utf-8")) if path.suffix != ".json" else __import__("json").loads(path.read_text(encoding="utf-8"))
@@ -143,7 +169,7 @@ def test_ensure_protocol_from_constraints_generates_and_is_idempotent(tmp_path, 
 
     # Idempotency: mutate the file, re-call, confirm it is NOT clobbered.
     path.write_text("MUTATED", encoding="utf-8")
-    rpr._ensure_protocol_from_constraints(run_dir, "run_test", RUN_047_MACHINE_CONSTRAINTS)
+    rpr._ensure_protocol_from_constraints(run_dir, "run_test", constraints)
     assert path.read_text(encoding="utf-8") == "MUTATED"
 
 
