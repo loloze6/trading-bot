@@ -64,7 +64,9 @@ from pathlib import Path
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import run_phase1_research as orch  # noqa: E402  (path insert must precede this)
+import verdict_criteria_evaluator as vce  # noqa: E402  (G6, see _save_queue)
 from setup_run import setup_run  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -102,7 +104,22 @@ def _save_queue(queue: dict):
     campaign_queue.yaml is the clearest concurrent-writer-risk file in this
     repo (RUNBOOK.md's single-writer-per-state-store rule names it
     explicitly), so a crash mid-write can no longer leave a truncated/partial
-    queue file for the next reader."""
+    queue file for the next reader.
+
+    G6 / C7-EXT-R (D-4): every entry clears verdict-provenance BEFORE the file is
+    written. The independent audit found this writer bypassed the gate entirely --
+    `validate_verdict_provenance` had exactly one call site in the repository, on
+    the KB side, so the queue's own `outcome` field (which is what
+    `_regenerate_summary` and every human reader actually consult) could record a
+    kill with nothing behind it. Validating the WHOLE list, not just the entry a
+    caller happened to touch, is deliberate: it means a hand edit cannot ride into
+    the file behind an unrelated legitimate write."""
+    for entry in queue.get("queue") or []:
+        if isinstance(entry, dict):
+            vce.validate_verdict_provenance(
+                entry, entry_ref=f"campaign_queue.yaml entry {entry.get('id')!r}",
+                root=ROOT)
+
     fd, tmp_name = tempfile.mkstemp(prefix=".campaign_queue.", suffix=".tmp",
                                      dir=str(QUEUE_PATH.parent))
     try:

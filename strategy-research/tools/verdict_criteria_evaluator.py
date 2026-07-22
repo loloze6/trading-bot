@@ -17,8 +17,26 @@ C7-EXT (2026-07-22, XS_momentum ungated-verdict incident) adds seven gates on
 top of the K2 kernel. See the VERDICT PRECONDITIONS section below and ledger
 entry C7-EXT in PIPELINE_IMPROVEMENTS_20260712_v4.md for the four-link defect
 chain each gate closes.
+
+C7-EXT-R (2026-07-22, remediation of the independent audit in
+docs/session_reports/20260722_c7ext_audit.md) repairs G6, which the audit
+demonstrated was bypassable in the exact shape of the incident it was written
+to close. See the G6 section below.
+
+WHAT THESE GATES ARE, STATED PLAINLY: G1-G4 are PRESENCE checks, not content
+checks. They establish that a required figure was REPORTED; they do not and
+cannot establish that it was reported carefully. The audit demonstrated that
+`skew: 0, kurtosis: 0, var_95: 0`, `cost_basis: ""`, and
+`mechanism_explanation: "."` all clear their respective gates. They catch
+OMISSION, not carelessness. Do not read a MET precondition as a quality
+warrant. Carry-forwards D-2 (G4 detects no anomalies; it only demands prose for
+self-declared ones) and D-7 (G1's product allowlist is exact-match on a
+free-text brief field; G2/G3 accept placeholder and wrong-typed values) are
+OPEN and recorded as such in the ledger.
 """
 from __future__ import annotations
+
+from pathlib import Path
 
 _VALID_COMPARATORS = (">=", ">", "<=", "<", "==")
 
@@ -37,6 +55,93 @@ _DEFAULT_FUNDING_INTERVAL_HOURS = 8.0
 
 # G6: a KB/queue verdict field is admissible ONLY with evaluator provenance.
 _VERDICT_FIELDS = ("verdict_c7", "hypothesis_verdict", "verdict")
+
+# C7-EXT-R / D-4, audit bypass C: a THREE-NAME DENYLIST is trivially side-stepped
+# by inventing a fourth. `{"final_verdict": "refine", "c7_verdict": "refine"}` was
+# accepted purely because nobody had listed those names. Rather than chase names,
+# treat ANY field whose name contains "verdict" as a verdict claim unless it is
+# one of the small set of fields that describe provenance rather than assert a
+# verdict. New name, same gate.
+_VERDICT_NAME_MARKER = "verdict"
+_VERDICT_NAME_EXEMPT = frozenset({
+    "verdict_status",        # the provenance label itself
+    "verdict_status_basis",  # prose explaining that label
+    "verdict_void_reason",   # why a verdict was withdrawn -- the opposite of a claim
+    "power_verdict",         # pre-registration power adequacy, not a hypothesis verdict
+})
+
+# C7-EXT-R / D-4. The audit's decisive finding: the three names above are NOT
+# the field the campaign records verdicts in. Both campaign_knowledge_base.yaml
+# and config/campaign_queue.yaml record them in `outcome`, and
+# _write_kb_findings_entry emits exactly that -- so G6 was a structural no-op on
+# every entry the orchestrator itself writes.
+#
+# `outcome` cannot simply be added to _VERDICT_FIELDS, because not every outcome
+# is a verdict. `invalidated_artifact` and `blocked_feed_unavailable` are
+# ENGINEERING states -- they assert nothing about the hypothesis and require no
+# gate. A verdict is a claim about whether the hypothesis is true, and only
+# those need provenance.
+_VERDICT_BEARING_OUTCOME_PREFIXES = ("kill", "promote", "refine")
+_VERDICT_BEARING_OUTCOMES = frozenset({
+    "no_edge_observed",
+    "era_conditional_instability",
+    "completed_rejected",
+})
+# Process/engineering states, and honest self-declarations of non-verdict. These
+# are admissible with no provenance BECAUSE they claim nothing about the
+# hypothesis. `ungated_*` and `measurement_only_*` are the vocabulary a corrected
+# record uses (XS_momentum's own corrected outcome is one of them).
+_NON_VERDICT_OUTCOME_PREFIXES = ("ungated", "measurement_only", "blocked", "unusable",
+                                 "paused", "in_progress")
+_NON_VERDICT_OUTCOMES = frozenset({
+    "invalidated_artifact",
+    "inconclusive",
+    # config/campaign_queue.yaml reuses `outcome` for WHERE A LINEAGE GOT TO as
+    # well as for what it concluded. A stage name or a lineage-continuation
+    # marker asserts nothing about the hypothesis and needs no gate; only a
+    # terminal scientific claim does. `completed_rejected` is deliberately NOT in
+    # this set -- it is a claim, and it is how the campaign's one genuinely gated
+    # verdict (run_059) is recorded.
+    "hypothesis_generation", "innovation_expansion", "validation",
+    "backtest_specification", "signal_prescreen", "protocol_execution",
+    "verdict_interpreter", "refinement_planner", "holdout_evaluation",
+    "campaign_review",
+    "completed_reframed", "completed_escalated", "completed_refined",
+    "done", "ready", "pending", "superseded", "not_launched",
+})
+
+# An entry may honestly declare that it holds no gated verdict. This is not a
+# loophole -- it is the entire point. The defect was that an ungated verdict was
+# INDISTINGUISHABLE from a gated one; requiring the distinction to be stated is
+# the fix. A reader can now tell them apart, and `honest_verdict_count()` counts
+# only the gated ones.
+_UNGATED_DECLARATIONS = frozenset({"ungated", "stage_discretion", "void"})
+
+# A pass_rule_evaluation.yaml only confers provenance if it actually RESOLVED a
+# verdict. VERDICT_BLOCKED / legacy_not_evaluable / SPEC_ERROR are the evaluator
+# declining to decide; citing one as provenance is citing a non-decision.
+_BINDING_EVALUATION_RESULTS = frozenset({"PASS", "FAIL"})
+
+
+def outcome_is_verdict_bearing(outcome) -> bool:
+    """True when `outcome` asserts something about whether the hypothesis is
+    true, and therefore requires evaluator provenance under G6.
+
+    Unrecognised outcomes are treated as VERDICT-BEARING. That default is
+    deliberate: a new outcome string nobody classified is exactly the shape the
+    XS_momentum incident arrived in, and the safe failure mode is to demand
+    provenance and be told 'this one does not need it' rather than to wave it
+    through silently."""
+    if outcome is None:
+        return False
+    text = str(outcome).strip().lower()
+    if not text:
+        return False
+    if text in _NON_VERDICT_OUTCOMES or text.startswith(_NON_VERDICT_OUTCOME_PREFIXES):
+        return False
+    # Everything else -- the classified verdict outcomes AND anything
+    # unrecognised -- requires provenance. See the default-deny note above.
+    return True
 
 
 def _apply_comparator(op: str, actual: float, threshold: float) -> bool:
@@ -393,42 +498,185 @@ class UngatedVerdictError(ValueError):
     one that earned its way there."""
 
 
-def validate_verdict_provenance(entry: dict, entry_ref: str = "<entry>") -> dict:
+def _default_root() -> Path:
+    """strategy-research/, the root the KB and queue live under."""
+    return Path(__file__).resolve().parent.parent
+
+
+def _entry_run_ids(entry: dict) -> list:
+    ids = []
+    for key in ("evidence_runs", "run_ids"):
+        val = entry.get(key)
+        if isinstance(val, list):
+            ids.extend(str(v) for v in val if v)
+        elif val:
+            ids.append(str(val))
+    if entry.get("run_id"):
+        ids.append(str(entry["run_id"]))
+    return ids
+
+
+def resolve_evaluation_ref(ref, entry: dict, root=None) -> tuple:
+    """C7-EXT-R / D-4. Resolves a `pass_rule_evaluation_ref` to a real artifact.
+
+    The audit showed the previous check accepted ANY truthy string --
+    `"does/not/exist.yaml"` conferred provenance. Provenance that is never
+    resolved is not provenance; it is a spelling.
+
+    Three things must hold, and all three are checkable:
+      1. the path EXISTS on disk;
+      2. it BELONGS to this entry -- it lies under runs/<one of this entry's own
+         run ids>/, so an entry cannot borrow another run's evaluation;
+      3. the evaluation RESOLVED a verdict (result PASS or FAIL). VERDICT_BLOCKED,
+         legacy_not_evaluable and SPEC_ERROR are the evaluator DECLINING to
+         decide -- citing one as provenance cites a non-decision.
+
+    Returns (ok: bool, detail: str)."""
+    if not ref or not isinstance(ref, str):
+        return False, f"pass_rule_evaluation_ref is absent or not a string ({ref!r})"
+
+    base = Path(root) if root is not None else _default_root()
+    candidate = Path(ref)
+    path = candidate if candidate.is_absolute() else base / ref
+    if not path.exists():
+        return False, (f"pass_rule_evaluation_ref={ref!r} does not exist "
+                       f"(resolved to {path}) -- a path that resolves to nothing "
+                       f"is not provenance")
+
+    run_ids = _entry_run_ids(entry)
+    if run_ids:
+        norm = str(path).replace("\\", "/")
+        if not any(f"/runs/{rid}/" in norm or f"/{rid}/" in norm for rid in run_ids):
+            return False, (f"pass_rule_evaluation_ref={ref!r} does not lie under any "
+                           f"of this entry's own runs {run_ids} -- an entry may not "
+                           f"borrow another run's evaluation as its provenance")
+
+    try:
+        import yaml
+        with open(path, "r", encoding="utf-8") as fh:
+            evaluation = yaml.safe_load(fh) or {}
+    except Exception as exc:  # unreadable/unparseable is a failed resolution
+        return False, f"pass_rule_evaluation_ref={ref!r} could not be parsed: {exc}"
+
+    if not isinstance(evaluation, dict):
+        return False, f"pass_rule_evaluation_ref={ref!r} did not parse to a mapping"
+
+    result = str(evaluation.get("result") or "").strip().upper()
+    if result not in _BINDING_EVALUATION_RESULTS:
+        return False, (f"pass_rule_evaluation_ref={ref!r} has result={result!r}, which "
+                       f"is not a resolved verdict (expected one of "
+                       f"{sorted(_BINDING_EVALUATION_RESULTS)}) -- the evaluator "
+                       f"declined to decide, so there is no verdict to cite")
+    return True, f"{ref} (result={result})"
+
+
+def validate_verdict_provenance(entry: dict, entry_ref: str = "<entry>",
+                                root=None) -> dict:
     """G6. Returns the entry unchanged when admissible; raises
     UngatedVerdictError otherwise.
 
-    A verdict field is admissible ONLY when the entry cites a
-    `pass_rule_evaluation_ref` (the pass_rule_evaluation.yaml this evaluator
-    wrote) AND that evaluation resolved to a binding result. An entry with no
-    such provenance must instead record `verdict_status: ungated` and keep its
-    measurements -- measurements are real information; they are simply not a
-    verdict."""
-    present = [f for f in _VERDICT_FIELDS if entry.get(f) is not None]
+    C7-EXT-R / D-4 -- this function was rewritten after the independent audit
+    demonstrated four bypasses, all of which are now closed and each of which
+    is pinned by a test named after it:
+
+      A. `{"outcome": "kill_mechanism_falsified"}` was ACCEPTED, because
+         `outcome` was not in the gated field set -- despite being the field the
+         KB, the queue, and _write_kb_findings_entry itself actually use. Now
+         gated via outcome_is_verdict_bearing().
+      B. `pass_rule_evaluation_ref: "does/not/exist.yaml"` was ACCEPTED, because
+         the ref was never resolved. Now resolved by resolve_evaluation_ref().
+      C. `{"final_verdict": "refine", "c7_verdict": "refine"}` was ACCEPTED,
+         because a three-name denylist is side-stepped by inventing a fourth
+         name. Now matched on name SHAPE (_VERDICT_NAME_MARKER), with a small
+         exemption list for fields that describe provenance rather than assert.
+      D. the queue was never validated at all -- this function had exactly one
+         call site in the repo. run_campaign._save_queue now calls it too, and
+         tools/lint_verdict_provenance.py checks both files with no write
+         involved.
+
+    ADMISSIBLE means one of:
+      - the entry cites a pass_rule_evaluation_ref that RESOLVES (exists,
+        belongs to this entry's run, and recorded a binding PASS/FAIL); or
+      - the entry honestly declares it holds no gated verdict, via
+        `verdict_status: ungated` (or stage_discretion / void).
+
+    The second branch is not a loophole. The defect this closes is that an
+    ungated verdict was INDISTINGUISHABLE from a gated one. Forcing the record
+    to say which it is restores the distinction; honest_verdict_count() then
+    counts only the first kind."""
+    strict_fields = sorted(
+        {f for f in _VERDICT_FIELDS if entry.get(f) is not None}
+        | {k for k, v in entry.items()
+           if v is not None
+           and _VERDICT_NAME_MARKER in str(k).lower()
+           and str(k) not in _VERDICT_NAME_EXEMPT}
+    )
+    outcome = entry.get("outcome")
+    outcome_gated = outcome_is_verdict_bearing(outcome)
     ref = entry.get("pass_rule_evaluation_ref")
     status = str(entry.get("verdict_status") or "").strip().lower()
+    declared_ungated = status in _UNGATED_DECLARATIONS
 
-    if not present:
+    if not strict_fields and not outcome_gated:
         return entry
 
-    # Checked before the provenance test: an entry that declares itself ungated
-    # and then carries a verdict anyway is self-contradictory, and saying so is
-    # more useful than the generic missing-provenance message it would
-    # otherwise fall through to.
-    if status == "ungated":
+    # A strict verdict field alongside a self-declaration of ungated is
+    # contradictory, and saying so is more useful than the generic
+    # missing-provenance message it would otherwise fall through to. Note this
+    # applies to the strict fields ONLY: `outcome` plus `verdict_status: ungated`
+    # is the CORRECT shape for a corrected record, not a contradiction.
+    if strict_fields and declared_ungated:
         raise UngatedVerdictError(
-            f"{entry_ref} declares `verdict_status: ungated` yet also carries "
-            f"verdict field(s) {present} -- contradictory. An ungated run has "
+            f"{entry_ref} declares `verdict_status: {status}` yet also carries "
+            f"verdict field(s) {strict_fields} -- contradictory. An ungated run has "
             f"measurements, not a verdict."
         )
+
+    if declared_ungated:
+        return entry
+
     if not ref:
+        what = (f"verdict field(s) {strict_fields}" if strict_fields
+                else f"verdict-bearing `outcome: {outcome}`")
         raise UngatedVerdictError(
-            f"{entry_ref} carries verdict field(s) {present} but no "
-            f"`pass_rule_evaluation_ref` -- this run did not pass through the "
-            f"verdict evaluator and is structurally ungated. Record "
-            f"`verdict_status: ungated` and keep the measurements; a verdict "
-            f"field is not admissible here."
+            f"{entry_ref} carries {what} but no `pass_rule_evaluation_ref` -- this "
+            f"run did not pass through the verdict evaluator and is structurally "
+            f"ungated. Either cite a real pass_rule_evaluation.yaml, or record "
+            f"`verdict_status: ungated` and keep the measurements; a verdict is "
+            f"not admissible here."
+        )
+
+    ok, detail = resolve_evaluation_ref(ref, entry, root)
+    if not ok:
+        raise UngatedVerdictError(
+            f"{entry_ref} cites a pass_rule_evaluation_ref that does not confer "
+            f"provenance: {detail}."
         )
     return entry
+
+
+def honest_verdict_count(kb: dict, queue: dict, root=None) -> list:
+    """C7-EXT-R / D-5. The gated-verdict roll, computed from EVIDENCE rather
+    than from a string match.
+
+    The superseded test counted queue entries whose `outcome` string equalled
+    "completed_rejected", which tests nothing about gatedness: H-041-C-v2 was
+    rejected by an LLM validation stage before its pass_rule ever ran, and was
+    counted anyway. A verdict is gated iff the evaluator actually ran and
+    resolved it -- which is exactly the artifact resolve_evaluation_ref checks.
+
+    Returns a sorted list of hypothesis_ids holding an admissible gated verdict."""
+    gated = set()
+    for entry in list((kb or {}).get("findings") or []) + list((queue or {}).get("queue") or []):
+        if not isinstance(entry, dict):
+            continue
+        if not (outcome_is_verdict_bearing(entry.get("outcome"))
+                or any(entry.get(f) is not None for f in _VERDICT_FIELDS)):
+            continue
+        ok, _ = resolve_evaluation_ref(entry.get("pass_rule_evaluation_ref"), entry, root)
+        if ok:
+            gated.add(str(entry.get("hypothesis_id") or entry.get("id")))
+    return sorted(gated)
 
 
 def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
@@ -475,14 +723,48 @@ def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
     return result
 
 
+def _find_pass_rule(pre_registration: dict):
+    """C7-EXT-R / D-6. A pre-registered pass_rule may sit at the top level of
+    pre_registration.yaml OR nested under `machine_constraints`.
+
+    This is not a cosmetic tolerance. run_057's pass_rule is nested
+    (runs/run_057/artifacts/pre_registration.yaml: machine_constraints.pass_rule)
+    and the top-level-only lookup therefore resolved it to None. No
+    pass_rule_evaluation.yaml was ever written for run_057, and a `kill` was
+    recorded into both the KB and the queue regardless.
+
+    HONEST LIMIT OF THIS FIX: finding run_057's rule does not make it
+    machine-evaluable. It is a legacy PROSE STRING, so it still resolves to
+    `legacy_not_evaluable` -- correctly. The fix changes the diagnosis from "no
+    rule was registered" to the accurate "a rule was registered, in a shape this
+    kernel cannot evaluate, and the verdict was human-adjudicated throughout".
+    That distinction is the whole point for the archive: run_057 was never
+    mechanically gated, and its record must say so rather than implying a gate
+    ran. Future runs registering a nested STRUCTURED rule are now evaluated
+    rather than silently dropped.
+
+    Top level wins when both exist -- a brief that states the rule in both places
+    is malformed, and preferring the canonical location keeps the resolution
+    deterministic rather than silently favouring the nested copy."""
+    top = pre_registration.get("pass_rule")
+    if top is not None:
+        return top
+    machine_constraints = pre_registration.get("machine_constraints")
+    if isinstance(machine_constraints, dict):
+        return machine_constraints.get("pass_rule")
+    return None
+
+
 def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
     """The unchanged K2 pass-rule resolution. Split out by C7-EXT so that G5's
     precondition gate sits strictly in front of every one of its exits --
     including the `legacy_not_evaluable` ones."""
-    pass_rule = pre_registration.get("pass_rule")
+    pass_rule = _find_pass_rule(pre_registration)
     if pass_rule is None:
         return {"result": "legacy_not_evaluable",
-                "reason": "pre_registration.yaml has no pass_rule field at all"}
+                "reason": ("pre_registration.yaml has no pass_rule field at all -- "
+                           "checked both the top level and machine_constraints "
+                           "(C7-EXT-R/D-6)")}
     if isinstance(pass_rule, str):
         return {"result": "legacy_not_evaluable",
                 "reason": ("pass_rule is a plain string (pre-K2 legacy schema), not the "

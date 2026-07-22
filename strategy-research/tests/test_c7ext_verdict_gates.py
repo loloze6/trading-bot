@@ -20,8 +20,9 @@ from pathlib import Path
 
 import pytest
 
-TOOLS_PATH = Path(__file__).parent.parent / "tools"
-WORKFLOW_PATH = Path(__file__).parent.parent / "workflow"
+_SR_ROOT = Path(__file__).parent.parent
+TOOLS_PATH = _SR_ROOT / "tools"
+WORKFLOW_PATH = _SR_ROOT / "workflow"
 sys.path.insert(0, str(TOOLS_PATH))
 sys.path.insert(0, str(WORKFLOW_PATH))
 
@@ -301,9 +302,17 @@ def test_g6_verdict_without_provenance_is_rejected():
 
 
 def test_g6_verdict_with_provenance_is_admissible():
-    entry = {"id": "some_finding", "verdict_c7": "kill",
-             "pass_rule_evaluation_ref": "runs/run_058/artifacts/pass_rule_evaluation.yaml"}
-    assert vce.validate_verdict_provenance(entry) is entry
+    """C7-EXT-R/D-4: this fixture used to cite
+    runs/run_058/artifacts/pass_rule_evaluation.yaml -- a file that DOES NOT
+    EXIST. It passed anyway, which is precisely the bypass the audit found: the
+    ref was never resolved, so any truthy string conferred provenance. It now
+    cites run_059's real evaluation, the only one in the campaign."""
+    entry = {"id": "funding_mr_daily_retest_killed",
+             "hypothesis_id": "FUNDING_MR_DAILY_RETEST",
+             "evidence_runs": ["run_059"],
+             "outcome": "completed_rejected",
+             "pass_rule_evaluation_ref": "runs/run_059/artifacts/pass_rule_evaluation.yaml"}
+    assert vce.validate_verdict_provenance(entry, root=_SR_ROOT) is entry
 
 
 def test_g6_ungated_entry_may_keep_measurements_but_not_a_verdict():
@@ -428,25 +437,323 @@ def test_xs_momentum_kb_entry_is_labelled_ungated_not_refine():
 
 
 def test_campaign_honest_verdict_count():
-    """After the correction, the hypotheses holding a verdict that passed
-    through a pre-registered pass rule are H-041-C-v2 and FUNDING_MR_DAILY_RETEST
-    — TWO, not one.
+    """C7-EXT-R/D-5. The count is ONE, and it is now asserted from EVIDENCE.
 
-    The audit dispatch expected one. It is two: FUNDING_MR_DAILY_RETEST carries
-    its own B11 total mapping in briefs/FUNDING_MR_DAILY_RETEST.md (every FAIL
-    branch terminating both hypothesis and lineage, protocol pinned via
-    machine_constraints), so it is as genuinely gated as H-041-C-v2. XS_momentum
-    is the only entry whose verdict was withdrawn. If this list moves, something
-    acquired or lost a verdict and it must be explained, not adjusted.
+    The superseded version of this test counted queue entries whose `outcome`
+    string equalled "completed_rejected" and concluded TWO. That tests nothing
+    about gatedness -- it is a string match on a label anyone can type.
+    H-041-C-v2 was counted by it despite having been rejected by an LLM
+    validation stage before its pass_rule ever ran; runs/run_058/artifacts/
+    contains no pass_rule_evaluation.yaml at all, and the KB entry's own
+    exhausted_basis says the registered evaluation "was NEVER EXECUTED".
+
+    A verdict is gated iff the evaluator ran and resolved it. That is an
+    artifact on disk, so that is what this asserts.
     """
     import yaml
-    queue_path = Path(__file__).parent.parent / "config" / "campaign_queue.yaml"
-    queue = yaml.safe_load(queue_path.read_text(encoding="utf-8")) or {}
-    outcomes = {e["id"]: (e.get("outcome") or "") for e in queue.get("queue", [])}
+    kb = yaml.safe_load(
+        (_SR_ROOT / "campaign_knowledge_base.yaml").read_text(encoding="utf-8")) or {}
+    queue = yaml.safe_load(
+        (_SR_ROOT / "config" / "campaign_queue.yaml").read_text(encoding="utf-8")) or {}
 
+    gated = vce.honest_verdict_count(kb, queue, root=_SR_ROOT)
+    assert gated == ["FUNDING_MR_DAILY_RETEST"], \
+        f"gated-verdict set changed: {gated} -- something acquired or lost a " \
+        f"verdict and it must be explained, not adjusted"
+
+    # And the artifact that makes it the one: it exists, and it RESOLVED.
+    evaluation = _SR_ROOT / "runs" / "run_059" / "artifacts" / "pass_rule_evaluation.yaml"
+    assert evaluation.exists()
+    assert (yaml.safe_load(evaluation.read_text(encoding="utf-8")) or {})["result"] == "FAIL"
+
+    # H-041-C-v2 is NOT among them, and the reason is checkable rather than asserted.
+    assert not (_SR_ROOT / "runs" / "run_058" / "artifacts"
+                / "pass_rule_evaluation.yaml").exists()
+
+    outcomes = {e["id"]: (e.get("outcome") or "") for e in queue.get("queue", [])}
     assert outcomes["XS_momentum"] == "ungated_measurement_no_admissible_verdict"
     assert "refine" not in outcomes["XS_momentum"]
 
-    gated = sorted(hid for hid, out in outcomes.items() if out == "completed_rejected")
-    assert gated == ["FUNDING_MR_DAILY_RETEST", "H-041-C-v2"], \
-        f"gated-verdict set changed: {gated}"
+
+# --------------------------------------------------------------------------
+# C7-EXT-R (2026-07-22) — remediation of the independent audit.
+#
+# Each test below is named for the audit finding it closes and re-runs the
+# audit's OWN bypass input. See docs/session_reports/20260722_c7ext_audit.md.
+# --------------------------------------------------------------------------
+
+def test_d4_bypass_a_outcome_field_kill_is_now_refused():
+    """Audit bypass A, verbatim. `outcome` is the field the KB, the queue and
+    _write_kb_findings_entry all actually use; it was not gated, so a
+    hand-written kill with nothing behind it was ACCEPTED."""
+    entry = {"id": "x", "outcome": "kill_mechanism_falsified",
+             "evidence_runs": ["run_999"]}
+    with pytest.raises(vce.UngatedVerdictError) as exc:
+        vce.validate_verdict_provenance(entry, root=_SR_ROOT)
+    assert "verdict-bearing `outcome: kill_mechanism_falsified`" in str(exc.value)
+
+
+def test_d4_bypass_b_forged_ref_is_now_refused():
+    """Audit bypass B, verbatim. The ref was never resolved, so any truthy
+    string was provenance."""
+    entry = {"id": "y", "verdict_c7": "promote",
+             "pass_rule_evaluation_ref": "does/not/exist.yaml"}
+    with pytest.raises(vce.UngatedVerdictError) as exc:
+        vce.validate_verdict_provenance(entry, root=_SR_ROOT)
+    assert "does not exist" in str(exc.value)
+
+
+def test_d4_bypass_c_a_renamed_verdict_field_is_now_refused():
+    """Audit bypass C, verbatim. A three-name denylist is side-stepped by
+    inventing a fourth name, so the gate matches on the NAME SHAPE instead."""
+    entry = {"id": "z", "final_verdict": "refine", "c7_verdict": "refine"}
+    with pytest.raises(vce.UngatedVerdictError) as exc:
+        vce.validate_verdict_provenance(entry, root=_SR_ROOT)
+    assert "c7_verdict" in str(exc.value) and "final_verdict" in str(exc.value)
+
+
+def test_d4_provenance_describing_fields_are_not_themselves_verdicts():
+    """The name-shape rule must not eat the vocabulary the fix introduced:
+    verdict_status and verdict_void_reason DESCRIBE provenance, they do not
+    assert a verdict."""
+    entry = {"id": "w", "verdict_status": "ungated",
+             "verdict_void_reason": "no pass_rule_evaluation.yaml exists"}
+    assert vce.validate_verdict_provenance(entry, root=_SR_ROOT) is entry
+
+
+def test_d4_a_ref_belonging_to_another_run_is_refused():
+    """Beyond the audit: run_058 may not borrow run_059's evaluation. Without
+    this, the D-5 correction could be undone by citing the one real artifact in
+    the campaign from any entry at all."""
+    entry = {"id": "u", "evidence_runs": ["run_058"], "outcome": "completed_rejected",
+             "pass_rule_evaluation_ref": "runs/run_059/artifacts/pass_rule_evaluation.yaml"}
+    with pytest.raises(vce.UngatedVerdictError) as exc:
+        vce.validate_verdict_provenance(entry, root=_SR_ROOT)
+    assert "does not lie under any of this entry's own runs" in str(exc.value)
+
+
+def test_d4_a_non_binding_evaluation_is_not_provenance(tmp_path):
+    """A VERDICT_BLOCKED evaluation is the evaluator declining to decide.
+    Citing it as provenance cites a non-decision."""
+    import yaml
+    run_artifacts = tmp_path / "runs" / "run_777" / "artifacts"
+    run_artifacts.mkdir(parents=True)
+    (run_artifacts / "pass_rule_evaluation.yaml").write_text(
+        yaml.safe_dump({"result": "VERDICT_BLOCKED", "blocked_by": ["deployable_today"]}),
+        encoding="utf-8")
+    entry = {"id": "v", "evidence_runs": ["run_777"], "outcome": "kill_something",
+             "pass_rule_evaluation_ref": "runs/run_777/artifacts/pass_rule_evaluation.yaml"}
+    with pytest.raises(vce.UngatedVerdictError) as exc:
+        vce.validate_verdict_provenance(entry, root=tmp_path)
+    assert "not a resolved verdict" in str(exc.value)
+
+
+def test_d4_honest_ungated_declaration_is_admissible():
+    """The escape hatch is honesty, and it is the point of the whole fix: an
+    entry may keep a verdict-shaped outcome IF it states that nothing gated it."""
+    entry = {"id": "z", "outcome": "kill_mechanism_falsified",
+             "verdict_status": "ungated"}
+    assert vce.validate_verdict_provenance(entry, root=_SR_ROOT) is entry
+
+
+def test_d4_engineering_states_need_no_gate():
+    """`invalidated_artifact` and friends assert nothing about the hypothesis."""
+    for outcome in ("invalidated_artifact", "blocked_feed_unavailable",
+                    "inconclusive", "hypothesis_generation"):
+        assert not vce.outcome_is_verdict_bearing(outcome), outcome
+    for outcome in ("kill_er_gate_mechanism_falsified", "no_edge_observed",
+                    "completed_rejected", "promote_to_holdout", "refine_x"):
+        assert vce.outcome_is_verdict_bearing(outcome), outcome
+
+
+def test_d4_unrecognised_outcome_defaults_to_requiring_provenance():
+    """An outcome nobody classified is exactly the shape the XS_momentum
+    incident arrived in. Default-deny."""
+    assert vce.outcome_is_verdict_bearing("some_brand_new_conclusion_nobody_listed")
+
+
+def test_d4_bypass_c_the_live_record_passes_the_standalone_lint():
+    """Audit bypass C: the KB was validated only as a side effect of an
+    orchestrator write, and the queue not at all. This runs the standalone lint
+    over both live files with no write involved."""
+    import lint_verdict_provenance as lint
+    violations = lint.lint_verdict_provenance(root=_SR_ROOT)
+    assert violations == [], "\n".join(violations)
+
+
+def test_d4_queue_writer_refuses_an_ungated_verdict(tmp_path, monkeypatch):
+    """run_campaign._save_queue bypassed validation entirely. Now it cannot."""
+    import run_campaign
+    queue_dir = tmp_path / "config"
+    queue_dir.mkdir(parents=True)
+    monkeypatch.setattr(run_campaign, "QUEUE_PATH", queue_dir / "campaign_queue.yaml")
+    monkeypatch.setattr(run_campaign, "ROOT", tmp_path)
+
+    run_campaign._save_queue({"queue": [{"id": "OK", "outcome": "done"}]})
+    assert (queue_dir / "campaign_queue.yaml").exists()
+
+    with pytest.raises(vce.UngatedVerdictError):
+        run_campaign._save_queue({"queue": [
+            {"id": "SNEAKY", "outcome": "kill_mechanism_falsified"}]})
+
+
+def test_d6_nested_machine_constraints_pass_rule_is_found():
+    """D-6: run_057's real pre_registration.yaml nests its pass_rule under
+    machine_constraints, where the top-level-only lookup could not see it."""
+    import yaml
+    pre_reg = yaml.safe_load(
+        (_SR_ROOT / "runs" / "run_057" / "artifacts" / "pre_registration.yaml")
+        .read_text(encoding="utf-8")) or {}
+    assert pre_reg.get("pass_rule") is None, "fixture drifted: rule is no longer nested"
+    found = vce._find_pass_rule(pre_reg)
+    assert found is not None
+    assert "median Sharpe" in str(found)
+
+    # Honest limit: finding it does not make it machine-evaluable. run_057's rule
+    # is a legacy PROSE STRING, so it still resolves to legacy_not_evaluable --
+    # which is the accurate diagnosis, and the basis for the relabelling.
+    assert isinstance(found, str)
+    assert vce._resolve_pass_rule({}, pre_reg)["result"] == "legacy_not_evaluable"
+
+
+def test_d6_a_nested_structured_rule_is_actually_evaluated():
+    """The forward-looking half of D-6: a future brief nesting a STRUCTURED rule
+    is now evaluated rather than silently dropped to stage discretion."""
+    pre_reg = {"machine_constraints": _structured_pre_registration()}
+    result = vce._resolve_pass_rule(
+        {"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.9}}}, pre_reg)
+    assert result["result"] != "legacy_not_evaluable"
+
+
+def test_d6_run_057_record_no_longer_claims_a_kill():
+    """The relabelling itself, and the measurements it must not have deleted."""
+    import yaml
+    kb = yaml.safe_load(
+        (_SR_ROOT / "campaign_knowledge_base.yaml").read_text(encoding="utf-8")) or {}
+    entry = next(e for e in kb["findings"]
+                 if e.get("id") == "p4_sma_trend_longonly_daily_auto")
+
+    assert entry["outcome"] == "ungated_er_gate_variant_too_sparse_to_evaluate"
+    assert entry["verdict_status"] == "ungated"
+    assert "readjudication_20260722" in entry
+    # The superseded label is retained, not erased.
+    assert any(h.get("outcome") == "kill_er_gate_mechanism_falsified"
+               for h in entry.get("outcome_history_superseded_20260722", []))
+    # The S2 evidence that survives the relabelling is still recorded verbatim.
+    assert "1395.9" in entry["outcome_reason"]
+
+
+def test_d6_run_057_sparsity_is_what_the_artifacts_say():
+    """The relabelling is a claim about the data; this recomputes it from the
+    archived artifact rather than trusting the prose. 29/30 window-symbols below
+    the five-trade floor, exactly ONE non-null per-window Sharpe in the run."""
+    import yaml
+    protocol_result = yaml.safe_load(
+        (_SR_ROOT / "runs" / "run_057" / "artifacts" / "protocol_result.yaml")
+        .read_text(encoding="utf-8")) or {}
+    rows = protocol_result["results"]
+    assert len(rows) == 30
+    assert sum(1 for r in rows if r["core"]["trade_count"] < 5) == 29
+    non_null = [r for r in rows if r["core"]["sharpe"] is not None]
+    assert len(non_null) == 1
+    assert non_null[0]["symbol"] == "ETHUSDT"
+    assert non_null[0]["core"]["sharpe"] == -0.686
+
+
+def test_d5_h041c_v2_is_recorded_as_stage_discretion_not_a_gated_verdict():
+    import yaml
+    kb = yaml.safe_load(
+        (_SR_ROOT / "campaign_knowledge_base.yaml").read_text(encoding="utf-8")) or {}
+    entry = next(e for e in kb["findings"]
+                 if e.get("id") == "fear_greed_contrarian_v2_validation_rejected")
+    assert entry["verdict_status"] == "stage_discretion"
+    assert entry["outcome"] == "stage_discretion_rejection_no_gated_verdict"
+    assert entry["outcome_reason"] == "validation_gate_rejection_pre_pass_rule"
+    # The rejection's own reasoning is not withdrawn.
+    assert any(h.get("outcome") == "completed_rejected"
+               for h in entry.get("outcome_history_superseded", []))
+
+
+def test_d3_generic_promotion_block_is_refused_at_selection(tmp_path, monkeypatch):
+    """D-3: G7 guarded protocol GENERATION only. A run that simply loads a
+    committed protocol carrying the abolished block was untouched."""
+    import json
+    import run_phase1_research as rpr
+    monkeypatch.setattr(rpr, "ROOT", tmp_path)
+    protocols = tmp_path / "protocols"
+    protocols.mkdir()
+    generic = protocols / "baseline_v1.json"
+    generic.write_text(json.dumps({
+        "symbols": ["BTCUSDT"], "windows": [],
+        "promotion": dict(rpr._GENERIC_PROMOTION)}), encoding="utf-8")
+
+    with pytest.raises(rpr.UngatedProtocolError) as exc:
+        rpr._assert_promotion_ratified(generic)
+    assert "abolished generic promotion block" in str(exc.value)
+
+    # Explicit ratification is the documented way through -- and it is a claim a
+    # human makes on the record, not something the code can supply for itself.
+    ratified = json.loads(generic.read_text(encoding="utf-8"))
+    ratified["promotion_provenance"] = {"ratified_by": "operator ruling 2026-07-22",
+                                        "ratified_at": "2026-07-22"}
+    generic.write_text(json.dumps(ratified), encoding="utf-8")
+    rpr._assert_promotion_ratified(generic)
+
+
+def test_d3_every_committed_generic_protocol_is_marked_unratified():
+    """The nine committed protocol files carrying the abolished block are
+    recorded as unratified, so selecting one fails loudly instead of silently
+    supplying thresholds no brief ever froze.
+
+    (The audit report said seven; recounting from the tree gives nine --
+    baseline_v1/v2, four escalation_*, and three run_0NN_generated.)"""
+    import json
+    import run_phase1_research as rpr
+    generic_files = []
+    for path in sorted((_SR_ROOT / "protocols").glob("*.json")):
+        obj = json.loads(path.read_text(encoding="utf-8"))
+        if rpr.promotion_is_generic(obj.get("promotion")):
+            generic_files.append(path.name)
+            provenance = obj.get("promotion_provenance") or {}
+            assert provenance.get("status") == "generic_unratified", path.name
+            assert provenance.get("ratified_by") is None, \
+                f"{path.name} was ratified without a human saying so"
+    assert len(generic_files) == 9, generic_files
+
+
+def test_d3_forced_diagnostic_without_a_named_protocol_no_longer_defaults(tmp_path, monkeypatch):
+    """The second half of D-3: the implicit baseline_v1.json default is gone."""
+    import run_phase1_research as rpr
+    monkeypatch.setattr(rpr, "ROOT", tmp_path)
+    run_dir = tmp_path / "runs" / "run_900"
+    (run_dir / "artifacts").mkdir(parents=True)
+    rpr.save_yaml(run_dir / "artifacts" / "run_context.yaml",
+                  {"run_type": "forced_diagnostic"})  # no `protocol` key
+
+    with pytest.raises(rpr.UngatedProtocolError) as exc:
+        rpr._resolve_protocol_path(run_dir, "run_900")
+    assert "names no `protocol`" in str(exc.value)
+
+
+def test_d1_fail_routes_to_kill_terminate_through_the_public_entry():
+    """D-1. Before this, every public-entry assertion in the suite was
+    VERDICT_BLOCKED, PASS, or legacy_not_evaluable -- the kill-routing path, the
+    most consequential one the evaluator has, was pinned only through the
+    _resolve_pass_rule kernel. Mutating the public entry to stop calling that
+    kernel was caught by a single PASS-path test.
+
+    This pins FAIL -> hypothesis_verdict: kill / lineage_routing: terminate
+    end-to-end through evaluate_pass_rule_criteria, with the preconditions MET so
+    the kernel is genuinely reached."""
+    protocol_result = _complete_protocol_result()
+    protocol_result["hypothesis_verdict"]["diagnostics"]["median_sharpe"] = 0.1
+
+    result = vce.evaluate_pass_rule_criteria(
+        protocol_result, _structured_pre_registration(), {"product": "spot"})
+
+    assert result["result"] == "FAIL"
+    assert result["hypothesis_verdict"] == "kill"
+    assert result["lineage_routing"] == "terminate"
+    assert result["statement_branch_matched"] == "FAIL-a"
+    # The preconditions were genuinely evaluated, not skipped on the way past.
+    assert all(g["result"] == "MET" for g in result["preconditions"])
