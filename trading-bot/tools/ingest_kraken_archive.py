@@ -1,20 +1,43 @@
 """
-Kraken bulk-archive → local cache ingestion (Phase 2 Track A, 5-pair pilot)
-==========================================================================
+Kraken bulk-archive → local cache ingestion (Phase 2 Track A, 20-pair breadth)
+=============================================================================
 
 Converts Kraken's static bulk-export OHLCV CSVs (headerless, unix-second
 timestamps) into the exact column schema used by the Binance-sourced cache
 files this bot already reads, and writes them into the *exchange-qualified*
-cache slot (`kraken_<TICKER>_<tf>.csv`) produced by the fixed
+cache slot (`kraken_<STORE_SYMBOL>_<tf>.csv`) produced by the fixed
 `CcxtFetcher.cache_key()`.
 
-Why exchange-qualified: a Kraken `CcxtFetcher` fetching e.g. `XBTUSD` at 1h now
-derives cache_key `kraken_XBTUSD_1h`, so a future *live top-up* (Jan 2026 →
-present, the ~7-month archive gap) lands in the SAME slot these ingested rows
-occupy — the archive and the live feed compose cleanly.
+Two distinct symbol spaces, deliberately separated (settled 2026-07-22 on
+ccxt `load_markets()` evidence — see ledger G2):
 
-Pilot scope: BTC, ETH, SOL, ADA, LINK, USD-quoted, 1-hour resolution.
-Reusable for the remaining 15 pairs of the 20-pair breadth set later.
+  • SOURCE symbol — how the *archive file* is named. Kraken's bulk export uses
+    its own legacy altname base: BTC → `XBTUSD_60.csv`, DOGE → `XDGUSD_60.csv`.
+    Used ONLY to locate the CSV on disk (`KRAKEN_SOURCE_BASE`).
+
+  • STORE symbol — the string handed to `CcxtFetcher`, hence the cache_key.
+    This is the **standard-base compact** form `<BASE>USD` (BTC, DOGE — NOT
+    XBT, XDG): e.g. `BTCUSD` → cache_key `kraken_BTCUSD_1h`.
+
+Why the STORE symbol is standard-base, not Kraken's altname (the load-bearing
+correction to the pilot): a live top-up must (i) land in the SAME cache slot
+as these rows and (ii) actually fetch. `_fetch_remote` normalizes a compact
+symbol to `BASE/QUOTE` before calling ccxt. ccxt's Kraken adapter only accepts
+its UNIFIED symbol `BTC/USD` (verified: `market('BTC/USD')` → id `XXBTZUSD`);
+it rejects both `XBTUSD` and `XBT/USD` with `BadSymbol`. So a top-up keyed on
+the old `XBTUSD` could never fetch — `XBTUSD` → `XBT/USD` → BadSymbol. Keyed on
+`BTCUSD`, the same string yields cache_key `kraken_BTCUSD_1h` AND normalizes to
+`BTC/USD`, which ccxt fetches. Pairs whose standard base already equals Kraken's
+altname base (ETH, SOL, ADA, LINK, …) were unaffected and keep their names;
+only the legacy-ticker pairs (BTC=XBT, DOGE=XDG) diverged and are corrected.
+The unified `BTC/USD` itself cannot be the cache key — the `/` is a path
+separator (filesystem constraint). None of this touches `cache_key()`, which
+keeps Binance UN-prefixed (ratified decision (a)); it is purely the choice of
+the `symbol` string this script and any future top-up hand to the fetcher.
+
+Scope: the 20-pair USD-quoted breadth set at 1-hour resolution. HYPE is absent
+from the bulk archive (no `HYPEUSD_60.csv`) and is skipped — it needs a
+separate live-fetch path (ledger G1 carry-forward 1). 19 of 20 ingest here.
 
 Source schema (Kraken bulk, no header, 7 cols):
     unix_seconds, open, high, low, close, volume, trade_count
@@ -42,19 +65,24 @@ if str(PROJECT_ROOT) not in sys.path:
 from data.fetchers.ccxt_fetcher import CcxtFetcher  # noqa: E402
 
 # ---------------------------------------------------------------------------
-# Pilot configuration
+# Breadth configuration
 # ---------------------------------------------------------------------------
 
-# Kraken uses legacy base-currency tickers, not the market-standard ones.
-# BTC is stored under XBT. (For the full 20-pair scale-up, DOGE is under XDG —
-# NOT DOGEUSD; not part of this pilot, documented here so the mapping isn't
-# rediscovered later.) All other pilot assets use their standard base ticker.
-KRAKEN_TICKER_MAP = {
+# SOURCE-file naming only: Kraken's bulk export uses legacy base tickers, not
+# the market-standard ones. BTC's archive file is XBTUSD_60.csv, DOGE's is
+# XDGUSD_60.csv. This map is consulted ONLY to locate the CSV on disk; the
+# STORE symbol (cache key) uses the standard base — see cache_symbol().
+KRAKEN_SOURCE_BASE = {
     "BTC": "XBT",
-    # "DOGE": "XDG",   # full-run only — not ingested in this pilot
+    "DOGE": "XDG",
 }
 
-PILOT_ASSETS = ["BTC", "ETH", "SOL", "ADA", "LINK"]
+# 20-pair USD breadth set (standard base tickers). Order = the recon's volume
+# ranking source list. HYPE has no bulk-archive file and is skipped at runtime.
+BREADTH_ASSETS = [
+    "BTC", "ETH", "XRP", "SOL", "ADA", "SUI", "ZEC", "DOGE", "HYPE", "XMR",
+    "LTC", "ONDO", "NEAR", "LINK", "TAO", "AVAX", "TRX", "AAVE", "INJ", "UNI",
+]
 QUOTE = "USD"                # Kraken's primary USD quote. NB: the Binance breadth
                              # cache is USDT-quoted — a documented venue divergence,
                              # not a bug (see ledger entry).
@@ -79,15 +107,27 @@ class IngestUTCError(RuntimeError):
     """Raised when the UTC round-trip verification fails (data is NOT UTC)."""
 
 
-def kraken_pair(asset: str) -> str:
-    """'BTC' -> 'XBTUSD', 'ETH' -> 'ETHUSD', ..."""
-    base = KRAKEN_TICKER_MAP.get(asset, asset)
+def kraken_source_pair(asset: str) -> str:
+    """SOURCE-file pair (Kraken altname base): 'BTC' -> 'XBTUSD',
+    'DOGE' -> 'XDGUSD', 'ETH' -> 'ETHUSD', ..."""
+    base = KRAKEN_SOURCE_BASE.get(asset, asset)
     return f"{base}{QUOTE}"
+
+
+def cache_symbol(asset: str) -> str:
+    """STORE symbol = cache-key input (standard base, never the Kraken altname):
+    'BTC' -> 'BTCUSD', 'DOGE' -> 'DOGEUSD', 'ETH' -> 'ETHUSD', ...
+
+    Chosen so a future live top-up passing this same string (i) lands in the
+    identical cache slot via cache_key() and (ii) survives _fetch_remote's
+    compact->'BASE/QUOTE' normalization into ccxt's unified symbol 'BASE/USD'
+    (the only form Kraken's ccxt adapter accepts). See module docstring."""
+    return f"{asset}{QUOTE}"
 
 
 def kraken_source_path(asset: str, archive_dir: Path,
                        resolution: int = RESOLUTION_MINUTES) -> Path:
-    return archive_dir / f"{kraken_pair(asset)}_{resolution}.csv"
+    return archive_dir / f"{kraken_source_pair(asset)}_{resolution}.csv"
 
 
 def load_kraken_ohlcv(path: Path) -> pd.DataFrame:
@@ -160,12 +200,42 @@ def verify_utc_roundtrip(raw: pd.DataFrame, converted: pd.DataFrame) -> None:
             )
 
 
+def compute_gap_stats(ts: pd.Series, resolution: int = RESOLUTION_MINUTES,
+                      since_year: int = 2017) -> dict:
+    """
+    Coverage stats over a timestamp column, matching the audit's methodology
+    (expected = span/interval + 1 inclusive; missing = expected - actual).
+
+    Returns full-history and post-`since_year` figures. The post-cutoff figure
+    is the breadth-viability signal — the pilot's 2017+ BTC benchmark is 0.11%.
+    """
+    ts = pd.to_datetime(ts).sort_values().reset_index(drop=True)
+    step_h = resolution / 60.0
+
+    def _rate(series: pd.Series) -> dict:
+        if len(series) < 2:
+            return {"rows": len(series), "expected": len(series),
+                    "missing": 0, "pct": 0.0}
+        span_h = (series.iloc[-1] - series.iloc[0]).total_seconds() / 3600.0
+        expected = int(round(span_h / step_h)) + 1
+        missing = expected - len(series)
+        pct = 100.0 * missing / expected if expected else 0.0
+        return {"rows": len(series), "expected": expected,
+                "missing": missing, "pct": pct}
+
+    full = _rate(ts)
+    post = _rate(ts[ts >= pd.Timestamp(year=since_year, month=1, day=1)]
+                 .reset_index(drop=True))
+    return {"full": full, "post": post, "since_year": since_year}
+
+
 def ingest(asset: str, archive_dir: Path, data_dir: Path,
            resolution: int = RESOLUTION_MINUTES) -> dict:
     """
-    Ingest one pilot asset. Returns a summary dict. The file is written through
-    the real fetcher plumbing (`_merge_and_store` -> `_csv_path` -> the fixed
-    `cache_key`) so it lands in the exact slot a live Kraken fetch would use.
+    Ingest one breadth asset. Returns a summary dict. The file is written
+    through the real fetcher plumbing (`_merge_and_store` -> `_csv_path` -> the
+    fixed `cache_key`) so it lands in the exact slot a live Kraken fetch would
+    use — under the STANDARD-base store symbol (BTCUSD, not XBTUSD).
     """
     src = kraken_source_path(asset, archive_dir, resolution)
     if not src.exists():
@@ -175,7 +245,7 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
     converted = to_binance_schema(raw)
     verify_utc_roundtrip(raw, converted)  # STOP-on-fail
 
-    store_symbol = kraken_pair(asset)  # e.g. XBTUSD -> cache_key kraken_XBTUSD_1h
+    store_symbol = cache_symbol(asset)  # e.g. BTCUSD -> cache_key kraken_BTCUSD_1h
     fetcher = CcxtFetcher(
         start_date=converted["timestamp"].min(),
         end_date=converted["timestamp"].max(),
@@ -193,6 +263,7 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
     reloaded["timestamp"] = pd.to_datetime(reloaded["timestamp"])
     verify_utc_roundtrip(raw, reloaded)
 
+    gaps = compute_gap_stats(reloaded["timestamp"], resolution)
     return {
         "asset": asset,
         "store_symbol": store_symbol,
@@ -202,6 +273,7 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
         "rows": len(reloaded),
         "first": reloaded["timestamp"].iloc[0],
         "last": reloaded["timestamp"].iloc[-1],
+        "gaps": gaps,
     }
 
 
@@ -211,12 +283,32 @@ def main() -> None:
 
     print(f"Kraken archive : {archive_dir}")
     print(f"Cache data_dir : {data_dir}")
-    print(f"Pilot assets   : {PILOT_ASSETS} @ {QUOTE} {RESOLUTION_MINUTES}m\n")
+    print(f"Breadth assets : {len(BREADTH_ASSETS)} @ {QUOTE} {RESOLUTION_MINUTES}m\n")
 
-    for asset in PILOT_ASSETS:
+    done, skipped = [], []
+    for asset in BREADTH_ASSETS:
+        src = kraken_source_path(asset, archive_dir)
+        if not src.exists():
+            skipped.append(asset)
+            print(f"[SKIP] {asset:5s} source absent ({src.name})")
+            continue
         r = ingest(asset, archive_dir, data_dir)
-        print(f"[OK] {asset:5s} {r['cache_key']:22s} rows={r['rows']:>7} "
-              f"{r['first']} -> {r['last']}  ({Path(r['dest']).name})")
+        done.append(r)
+        print(f"[OK] {asset:5s} {r['cache_key']:20s} rows={r['rows']:>7} "
+              f"{r['first']} -> {r['last']}")
+
+    # Coverage table
+    print(f"\n{'asset':6}{'cache_key':22}{'rows':>8}  {'first':16} {'last':16}"
+          f"{'miss':>7}{'full%':>8}{'2017+%':>9}")
+    for r in done:
+        g = r["gaps"]
+        f, p = g["full"], g["post"]
+        print(f"{r['asset']:6}{r['cache_key']:22}{r['rows']:>8}  "
+              f"{str(r['first'])[:16]:16} {str(r['last'])[:16]:16}"
+              f"{f['missing']:>7}{f['pct']:>7.2f}%{p['pct']:>8.2f}%")
+
+    print(f"\nIngested {len(done)}/{len(BREADTH_ASSETS)}; skipped "
+          f"{skipped or 'none'}. Pilot 2017+ BTC benchmark = 0.11%.")
 
 
 if __name__ == "__main__":
