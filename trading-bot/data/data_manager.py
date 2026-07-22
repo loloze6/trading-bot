@@ -743,7 +743,7 @@ class DataManager:
             else:
                 logger.info(f"DataManager: {symbol} initialised ({len(df)} rows)")
 
-    def fetch_historical_data(self, symbol: str, start_date, end_date) -> pd.DataFrame:
+    def fetch_historical_data(self, symbol: str, start_date, end_date, exchange: str = "binance") -> pd.DataFrame:
         """
         Fetch raw OHLCV data for one symbol via CcxtFetcher and return it as
         a flat DataFrame.
@@ -754,9 +754,14 @@ class DataManager:
             )
         followed by self.data_manager.initialize().
 
+        `exchange` selects the CCXT exchange id used for both the remote
+        fetch and the local cache filename (see CcxtFetcher.cache_key());
+        defaults to "binance" so existing call sites are unaffected unless
+        they opt in (e.g. exchange="kraken" to reach kraken_XBTUSD_1h etc.).
+
         Returns an empty DataFrame on failure.
         """
-        logger.debug(f"Fetching OHLCV for {symbol}  {start_date} → {end_date}")
+        logger.debug(f"Fetching OHLCV for {symbol}  {start_date} → {end_date}  (exchange={exchange})")
 
         data_folder = os.path.dirname(os.path.abspath(__file__))
         project_folder = os.path.dirname(data_folder)
@@ -765,7 +770,7 @@ class DataManager:
         fetcher = HistoricalDataFetcher(
             start_date, end_date, [symbol],
             candle_interval_seconds=self.interval_seconds,
-            exchange="binance",
+            exchange=exchange,
             localStorage=True,
             data_dir = data_storage_dir
         )
