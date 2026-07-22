@@ -2142,3 +2142,75 @@ docs/ROADMAP.md Part 2 -- read it in full before dispatching. Standing
 constraints (single-writer-per-state-store, read-back verify, no-self-remediation,
 premise-failure full-STOP, holdout untouchable, always-emit-one-log-line,
 context economy) carry forward unchanged."
+
+---
+
+## 2026-07-22 — XS_momentum on the vectorized research path (validation gate + panel run)
+
+### Hypothesis
+Does a dollar-neutral cross-sectional momentum ranking across the broadened,
+ratified 19-pair Kraken universe produce a real, cost-surviving edge — the
+question the campaign's 2-symbol universe could never test? And: can a
+research-only vectorized panel backtester be trusted to answer it, given the
+production engine cannot express a panel book?
+
+### Result
+- **Validation gate: PASS (the whole safeguard).** `strategy-research/tools/panel_backtester.py`
+  ports the engine's own metric formulas verbatim and reproduced ALL 30
+  window-symbol slots of archived run_054 (SmaTrendLongOnlyComponent, daily)
+  **exactly to 3dp** on net_return_pct/sharpe/max_drawdown_pct/trade_count
+  (fees/gross/net within the pre-registered 2%). Tolerance was declared before
+  comparison; actual match was far tighter. The one alignment subtlety (engine's
+  +2h resample => bar D carries raw D+1 close, drops ~2 trailing rows/window)
+  was reproduced by scoring raw rows [start+1d, end-2d] — an independent
+  cross-check of the on-record er_gate_execution_alignment_caveat.
+- **XS run (research path, Kraken perp 5bps, funding not modeled):** net Sharpe
+  **1.325** / gross 1.665, +23,742% net return (compounding of 2017/2020;
+  Sharpe is the honest metric), max DD -62% at 200% gross (~-31% unit gross),
+  turnover 423x. NOT cost-dominated. No lookahead (Sharpe rises with exec lag).
+  Positive net Sharpe every year 2017-2024 but **decaying** — post-2021 net 0.77,
+  2025 net 0.07 (cumulative -6.3%).
+- **C7-style verdict: REFINE (positive lean).** Promote Sharpe bar cleared; DD
+  bar exceeded (leverage-convention-dependent); well above kill; not
+  cost-dominated. **The fork to the vectorized research path is VINDICATED** — a
+  real cost-surviving cross-sectional edge exists, justifying production-engine
+  panel support, with the caveat that the forward-looking edge is the decaying
+  recent figure, not the full-sample 1.33.
+- **Strongest threat:** cost/venue anachronism × early-era dominance — the return
+  is dominated by 2017/2020 (small-n, illiquid, pre-perp for most alts) costed at
+  a flat modern 5bps; the era where 5bps is most credible (recent, liquid) is
+  where the edge is weakest.
+- **Engine blocker registered as first-class (ledger G3):** single-symbol load
+  (backtester.py:92,:359), unpartitioned RollingBuffer (main_strategy.py:44),
+  zero netting hooks — same class as P4_ts_trend's daily-bar gap. No production
+  file touched.
+
+### Files touched
+- `strategy-research/tools/panel_backtester.py` (NEW — research-only tool: gate + xs)
+- `strategy-research/campaign_knowledge_base.yaml` (NEW finding xs_momentum_cost_surviving_but_decaying)
+- `strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md` (NEW ledger entry G3)
+- `strategy-research/config/campaign_queue.yaml` (XS_momentum status=done, outcome, notes)
+- `strategy-research/SESSION_LOG.md` (this entry)
+- `tasks/todo.md` (plan + pre-registered tolerance)
+
+### Next session prompt
+"Resume strategy-research campaign. XS_momentum has been RUN on the vectorized
+research path (strategy-research/tools/panel_backtester.py) and closed with
+verdict REFINE (positive lean): net Sharpe 1.325 / gross 1.665, cost-surviving,
+no-lookahead, but decaying (post-2021 net 0.77, 2025 net ~0). The validation
+gate PASSED (reproduced all 30 run_054 slots exactly) so the accounting is
+trusted. This ran OFF the production engine, which cannot express a panel book
+(ledger G3 blocker: single-symbol load backtester.py:92/:359, unpartitioned
+RollingBuffer main_strategy.py:44, zero netting hooks). Two forward options,
+pick per ROADMAP: (1) a pre-registered REFINEMENT dispatch to test whether the
+recent-era decay is real signal death or a lookback/holding-period artifact
+(e.g. longer holding, monthly rebalance, skip-most-recent, or restricting to the
+post-2021 liquid large-n panel) — do NOT tune to rescue, pre-register first; or
+(2) scope production-engine panel support (partitioned RollingBuffer +
+multi-symbol load + dollar-neutral netting) so a ratifiable holdout run becomes
+possible — the holdout (2026-01-01+) is still untouched and blocked pending a
+per-pair live top-up (campaign_data_policy.yaml kraken_breadth_19pair). The
+strongest threat on record is cost/venue anachronism × early-era dominance.
+Standing constraints (single-writer-per-state-store, read-back verify,
+no-self-remediation, premise-failure full-STOP, holdout untouchable,
+always-emit-one-log-line, context economy) carry forward unchanged."
