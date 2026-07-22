@@ -1439,3 +1439,23 @@ independent audit, fee-isolation-pairs follow-up)
      the ~7-month gap (2026-01-01 → today) needs a live-fetch top-up per pair.
      The exchange-qualified slot is designed so that top-up composes cleanly,
      but the top-up itself is out of scope for this dispatch.
+  3. **`trading-bot/data/data_manager.py:768` hardcodes `exchange="binance"`** —
+     no backtest can currently reach any of the 341,535 verified Kraken rows
+     ingested in this pilot; `cache_key()`'s Binance-unprefixed rule means this
+     fetcher can only ever derive `{symbol}_{tf}` keys, never `kraken_*`. This
+     is a reachability gap, not just a completeness gap like items 1-2 above,
+     and it is more consequential since it affects 100% of the ingested data
+     rather than a subset. Parameterizing the exchange here is out of scope
+     for this dispatch (found by independent audit, `20260722_kraken_ingest_audit.md`).
+
+- **Informational (not carry-forward-blocking):**
+  - `base_fetcher.py:226`'s `_load_local` calls `pd.to_datetime(df["timestamp"])`
+    with no `utc=` guard on the read side. Safe today because no writer emits
+    offset-suffixed timestamp strings (verified on-disk), but latent: a future
+    producer that does would silently localize/shift or return an `object`
+    column, with no downstream guard equivalent to the ingester's
+    `verify_utc_roundtrip`.
+  - The test suite is not invocable from repo root with plain `pytest` — it
+    ignores `trading-bot/pytest.ini`'s `testpaths`/`-m "not slow"` scope and
+    collects unrelated slow/erroring tests outside it. Pre-existing, unrelated
+    to this commit, informational only.
