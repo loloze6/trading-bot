@@ -3,11 +3,48 @@ created_at: '2026-07-06'
 queue:
 - id: P4_ts_trend
   brief_path: briefs/P4_ts_trend_r1_er_gate.yaml
-  status: done
+  status: blocked_on_P2
   priority: 1
   source: user_delivered
   relation: refine
-  notes: 'STATUS AS OF 2026-07-11 (updated: run_057 -- the regime-gated ER(20)>=0.30
+  notes: 'STATUS AS OF 2026-07-24 (reconciled against KB p4_sma_trend_longonly_daily_auto
+    as it stands after the density-probe basis replacement). This entry previously read
+    status: done, a resolved-closure state inherited from a kill that the KB
+    readjudication of 2026-07-22 retracted. It is now blocked_on_P2, which is where the
+    record actually is: the lineage is neither promoted, refined, nor killed, and it is
+    also not runnable.
+
+    NO VERDICT WAS PRODUCED BY ANY OF THIS. The 2026-07-24 density probe
+    (docs/session_reports/20260724_p4_density_probe_archive.md) was governed by no
+    pre-registered pass_rule, counted entry transitions only, and computed no return,
+    P&L, Sharpe, expectancy, drawdown or cost figure. outcome and verdict_status below
+    are unchanged and the honest gated-verdict count is unmoved.
+
+    WHY blocked_on_P2 SPECIFICALLY: the only live reopening path for this entry is the
+    parent ungated SMA(100)-daily rule (the gated ER-at-entry variant is closed on
+    measured grounds -- 3 of 178 evaluable window-symbol slots clear the A3.4 five-trade
+    floor on the full 19-pair universe, against 1 of 30 on the 2-symbol control, so
+    breadth is not its unblock; see the KB reactivation_condition). That parent path
+    needs daily bars for the breadth universe, and Phase 2 Track A ingested 1h bars
+    only: all 19 kraken_*_1h.csv files are hourly and the only *_1d.csv in the cache are
+    BTCUSDT_1d.csv and ETHUSDT_1d.csv, the two symbols run_057 already ran. P2 is
+    therefore the outstanding prerequisite for this entry, exactly as it was for
+    XS_momentum before Track A closed for the hourly panel. blocked_on_* is inert to
+    run_campaign._select_entry, so this records a disposition without reopening
+    anything.
+
+    Full conditions for reopening either rule: campaign_knowledge_base.yaml
+    p4_sma_trend_longonly_daily_auto, reactivation_condition. Measured basis:
+    exhausted_basis on the same finding. Ledger: PIPELINE_IMPROVEMENTS_20260712_v4.md
+    items P4-D1 (1h-only breadth cache) and P4-D2 (conflicting trade floors).
+
+    SUPERSEDED 2026-07-24 -- everything below this line is retained verbatim as
+    history, not as this entry current disposition. The 2026-07-11 block in particular
+    describes a closure under outcome kill_er_gate_mechanism_falsified, a label the KB
+    retracted on 2026-07-22; read it for the run_057 record it carries, not for its
+    verdict language.
+
+    STATUS AS OF 2026-07-11 (updated: run_057 -- the regime-gated ER(20)>=0.30
     entry-latch refinement -- reached a final KILL verdict and this entry closes.
     Verdict final per the operator pre-commitment in prescreen_override_20260711.yaml:
     "the verdict is kill; no further arbitration or gate relief will be sought for

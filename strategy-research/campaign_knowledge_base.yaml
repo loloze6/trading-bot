@@ -1034,14 +1034,105 @@ findings:
     expected_n_eff: 117
     verdict: thin_uneven_edge_regime_gating_untested
   exhausted: true
-  exhausted_basis: 'Empirical (run_057, 2026-07-11): the regime-gated refinement direction
-    prescribed by the prior refine_pending_regime_gating outcome was tested via an
-    ER(20)>=0.30 entry-latch gate (GatedSmaTrendLongOnlyComponent) and killed on the
-    pre-registered pass rule plus an independent S2 mechanism falsification. This
-    closes the ER-at-entry-gate refinement specifically -- it does not, on its own,
-    mark the broader persistent_behavioral_bias / SMA-trend-family search space exhausted
-    (one parameterization tested, per the outcome_reason framing above).'
-  reactivation_condition: null
+  exhausted_basis: 'Measured, not asserted (density probe against the raw Kraken daily
+    archive, 2026-07-24, read-only, no backtest, nothing ingested):
+    docs/session_reports/20260724_p4_density_probe_archive.md.
+
+    THIS PROBE PRODUCED NO VERDICT. It was governed by no pre-registered pass_rule,
+    counted entry transitions only, and computed no return, P&L, Sharpe, expectancy,
+    drawdown or cost figure of any kind (report:5-7, :478-484). Every figure below is
+    a measurement of how often a rule fires, not evidence of edge in either direction.
+    outcome and verdict_status above are UNCHANGED by this basis replacement, and the
+    honest gated-verdict count is unaffected.
+
+    SCOPE: 19 Kraken USD pairs x 15 semi-annual windows = 285 window-symbol slots, of
+    which 178 are evaluable and 107 are insufficient-history, a category kept distinct
+    from zero-entries and never summed with it (report:186-200). Two symbols reach the
+    archive by Kraken native-ticker alias (BTCUSD -> XBTUSD, DOGEUSD -> XDGUSD),
+    flagged for override at report:121-140.
+
+    FLOOR-CLEARING COUNTS at the A3.4 five-trade-per-window floor, denominator =
+    evaluable slots only (report:392-397): GATED ER-at-entry variant 3 / 178 (1.7%);
+    PARENT ungated rule 80 / 178 (44.9%). CONTROL (BTCUSD, ETHUSD; 30/30 evaluable):
+    gated 1 / 30 (3.3%), parent 13 / 30 (43.3%). At the protocol floor of 1, same
+    lines: gated 120 / 178 and 19 / 30; parent 175 / 178 and 29 / 30.
+
+    THE ENTRY GATE, NOT UNIVERSE WIDTH, IS THE DENSITY CONSTRAINT. Across evaluable
+    slots the gate removes 74% of parent entries, 799 -> 209 (report:203-204). Moving
+    from the 2-symbol control to the 19-symbol universe shifted the parent five-trade
+    rate from 43.3% to 44.9%, a 1.6-point change (report:428-429): breadth added slots,
+    not density. Residual gated sparsity is spread rather than concentrated -- g>=5 is
+    zero for 16 of 19 symbols and zero in 12 of 15 windows, and the largest gated count
+    in any evaluable slot in the whole panel is 6 (report:436-441, :456-461) -- so
+    there is no symbol subset and no era to restrict to. These are entry transitions,
+    not completed round-trips, so every floor-clearing figure above is an UPPER bound
+    (report:487-489). Venue caveat: Kraken spot USD here, Binance USDT for
+    run_054/run_057, so the control correspondence is a reimplementation sanity check
+    and not a replication (report:406-411, :490-491).
+
+    WHAT THIS CLOSES AND WHAT IT DOES NOT: it closes the ER(20) >= 0.30 entry-latch
+    variant on measured grounds -- no universe available here reaches the five-trade
+    floor for it -- and it does NOT mark the parent SMA(100)-daily long-only rule, nor
+    the broader persistent_behavioral_bias / SMA-trend family, exhausted. See
+    reactivation_condition below, which separates the two.'
+  readjudication_20260724: 'DENSITY-PROBE BASIS REPLACEMENT (no relabel, no verdict).
+    outcome and verdict_status are UNCHANGED: the 2026-07-24 probe was governed by no
+    pre-registered pass_rule and therefore produced no verdict, and the honest
+    gated-verdict count is unmoved. What changed in this entry: exhausted_basis was
+    replaced with a measured basis, reactivation_condition was set from null, and one
+    retracted label reference inside engine_provenance_caveat was corrected. No number
+    already in this entry was recomputed, re-derived or rounded.
+
+    The closed record schema (tools/record_schema.py:210-213) admits exactly two dated
+    correction families, readjudication_<date> and outcome_history_superseded_<date>.
+    An outcome_history record would falsely imply the outcome moved, which it did not,
+    so the superseded exhausted_basis is retained here instead.
+
+    SUPERSEDED exhausted_basis -- recorded 2026-07-11, superseded 2026-07-24, retained
+    verbatim and NOT deleted:
+
+    "Empirical (run_057, 2026-07-11): the regime-gated refinement direction prescribed
+    by the prior refine_pending_regime_gating outcome was tested via an ER(20)>=0.30
+    entry-latch gate (GatedSmaTrendLongOnlyComponent) and killed on the pre-registered
+    pass rule plus an independent S2 mechanism falsification. This closes the
+    ER-at-entry-gate refinement specifically -- it does not, on its own, mark the
+    broader persistent_behavioral_bias / SMA-trend-family search space exhausted (one
+    parameterization tested, per the outcome_reason framing above)."
+
+    REASON SUPERSEDED: its load-bearing clause, "killed on the pre-registered pass
+    rule", asserts precisely the kill that readjudication_20260722 above retracted --
+    run_057 was never mechanically gated, its pass_rule sits under machine_constraints
+    and is a legacy prose string that resolves to legacy_not_evaluable, and no
+    pass_rule_evaluation.yaml exists for it. The replacement asserts no verdict and
+    rests on counts.'
+  reactivation_condition: 'Two rules, two dispositions. They are NOT reactivated
+    together.
+
+    (1) GATED ER-at-entry variant (ER(20) >= 0.30 entry latch) -- CLOSED on measured
+    grounds, and breadth is not the unblock. On the widest universe available (19
+    Kraken USD pairs, 178 evaluable window-symbol slots) it clears the A3.4 five-trade
+    floor in 3 slots, against 1 of 30 on the 2-symbol control: adding seventeen symbols
+    did not change the rate (docs/session_reports/20260724_p4_density_probe_archive.md:392-397,
+    :428-429). Reactivation on breadth alone is refused. Reopening requires a
+    materially different entry specification -- NOT a threshold move on ER(20), which
+    is frozen at P4_ts_trend_r1_er_gate.yaml:69 with no retune permitted -- together
+    with a pre-registered, machine-evaluable pass_rule under machine_constraints, which
+    the original variant never had.
+
+    (2) PARENT ungated SMA(100)-daily long-only rule -- NOT closed by anything on this
+    entry. It clears the protocol floor of 1 in 175 of 178 evaluable slots and the
+    five-trade floor in 80 of 178 (44.9%): marginal, not disqualifying (same report,
+    :392-397). Reopening it requires ALL of (a) daily bars for the breadth universe
+    present in the engine cache -- today only BTCUSDT_1d.csv and ETHUSDT_1d.csv exist
+    and all 19 Kraken cache files are 1h (20260723_p4_density_probe.md:307-322; ledger
+    v4 item P4-D1); (b) a ruling on WHICH per-window trade floor governs, since
+    protocols/ts_trend_daily_v1.json:132 says 1 and config/campaign_config.yaml:120
+    says 5 and the two disagree for the same quantity (report:361-386; ledger v4 item
+    P4-D2); (c) a pre-registered machine-evaluable pass_rule; and (d) the
+    correlation-adjusted breadth count the parent brief requires
+    (research_brief_P4_ts_trend.md:41), which this probe explicitly did NOT compute
+    (report:471-474). Until (a)-(d) are met this entry stays as it is: no verdict, no
+    reopening.'
   engine_provenance_caveat: 'Filed 2026-07-19 (run_059 close-out, tz-bug arc):
     protocol_version ts_trend_daily_v1 executed on 1d bars BEFORE the 2026-07-18
     CandleBuilder._align() fix (commit 2529f5b). Pre-fix, every daily candle''s
@@ -1056,9 +1147,15 @@ findings:
     timestamp-range filtering, and equivalent exposure to DST-transition-week
     anomalies (the fixed hour differs by 1h across the March/October DST
     boundary). No re-derivation was performed and none is ordered by this
-    entry -- the run_054/run_057 verdicts above (kill_er_gate_mechanism_falsified)
+    entry -- the run_054/run_057 verdicts above (ungated_er_gate_variant_too_sparse_to_evaluate)
     are MAINTAINED, not relitigated; this caveat exists so a future reader
     auditing window-edge trade counts knows the historical alignment context.
+
+    Label correction 2026-07-24: the standing-status sentence immediately above
+    previously read (kill_er_gate_mechanism_falsified), an outcome retracted by
+    readjudication_20260722, so the caveat was re-asserting a withdrawn verdict every
+    time it was read; only that label reference was substituted for the current
+    outcome, and nothing this caveat says about timezone alignment is changed.
 
     '
 - id: xs_momentum_cost_surviving_but_decaying
