@@ -1069,7 +1069,14 @@ findings:
   evidence_runs:
   - research_path_panel_backtester   # NOT a production-engine run -- see run_path note
   evidence_count: 1
-  outcome: measurement_only_no_admissible_verdict
+  outcome: ungated_decayed_measurement_no_admissible_verdict
+  # RELABELLED 2026-07-23, routed through the G6 closed-schema validator
+  # (tools/record_schema.py, first production write on a genuine relabel).
+  # Prior outcome `measurement_only_no_admissible_verdict` -> the `ungated_`
+  # form so the record's own outcome string carries the two facts that decide
+  # it: the measurement is ungated AND its edge is decaying. Parking removes
+  # the verdict claim, not the evidence; every measurement below is unchanged.
+  # No verdict count effect: this entry was never gated (verdict_status: ungated).
   root_cause: signal_real_positive_but_time_decaying
   # CORRECTED 2026-07-22 (C7-EXT audit). This field previously read
   # `verdict_c7: refine`. There was no C7 verdict to record: XS_momentum was
@@ -1088,12 +1095,19 @@ findings:
   # gate. A measurement is not a verdict.
   verdict_status: ungated
   verdict_void_reason: >
-    No pre-registered pass_rule existed for this hypothesis; the run did not pass
-    through the verdict evaluator; the thresholds it was informally argued against
-    were generic code defaults, not registered criteria. Any future verdict requires
-    a pre-registered pass_rule AND satisfaction of the four C7-EXT preconditions
-    (funding completeness, distribution stats, deployable-today, robustness
-    mechanism) -- of which this run, as produced, meets none.
+    Full-sample net Sharpe 1.325 on a gate-validated backtester (the vectorized
+    panel reproduced all 30 archived run_054 slots exactly under a pre-registered
+    tolerance), decaying to net Sharpe 0.07 in its latest full in-sample year
+    (2025) -- edge decay, explicitly NOT trade sparsity (contrast run_057, the
+    ER-gate variant parked as too sparse to evaluate; this signal trades every
+    day and still fades). No admissible verdict because no pre-registered
+    pass_rule was ever declared for this hypothesis AND no obtainable 2026 holdout
+    can statistically resolve the Sharpe this year: SE >= 1.3 for any T <= 0.56
+    year of data, so a single holdout year cannot separate a real 0.07 edge from
+    zero. Unchanged from the prior void reason: any future verdict still requires
+    a pre-registered pass_rule AND the four C7-EXT preconditions (funding
+    completeness, distribution stats, deployable-today, robustness mechanism),
+    of which this run, as produced, meets none.
   run_path: research_path_vectorized_panel   # ran on strategy-research/tools/panel_backtester.py,
     # NOT the production BacktestEngine. The production engine CANNOT express this
     # hypothesis (single-symbol load backtester.py:92/:359; unpartitioned RollingBuffer
