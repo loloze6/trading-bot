@@ -133,6 +133,9 @@ def test_perp_rate_changes_engine_output(tmp_path):
             end=reference["end_date"],
             results_root=str(results_root),
             commission_rate=commission_rate,
+            # Keep the tracker's interim trades.json inside tmp_path; without this
+            # it falls back to the shared trading-bot/results/trades.json (D4).
+            trades_log_file=str(tmp_path / f"interim_trades_{Path(results_root).name}.json"),
         )
         with open(Path(run_dir) / "metrics.json", encoding="utf-8") as f:
             return json.load(f)["core"]

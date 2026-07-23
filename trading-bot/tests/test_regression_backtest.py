@@ -43,6 +43,10 @@ def backtest_result(reference):
             start=reference["start_date"],
             end=reference["end_date"],
             results_root=tmp,
+            # Keep the tracker's interim trades.json inside the temp dir; without
+            # this it would fall back to the shared trading-bot/results/trades.json
+            # (D4).
+            trades_log_file=str(Path(tmp) / "interim_trades.json"),
         )
         run_dir_path = Path(run_dir)
         metrics_path = run_dir_path / "metrics.json"

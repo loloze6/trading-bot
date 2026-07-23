@@ -137,17 +137,28 @@ class Launcher:
         params: TradingParams,
         initial_balance: int = DEFAULT_INITIAL_BALANCE,
         with_state_tracker: bool = True,
+        trades_log_file: Optional[str] = None,
     ) -> MockStack:
         risk_manager, forecast_manager = self._build_risk_and_forecast_managers()
-        
+
         # Backtest DataManager — no thread, no Binance client
         data_manager = DataManager(
             symbols=params.symbols,
             interval_seconds=params.interval,
             mode="backtest",
         )
+        # trades_log_file defaults to None, which lets EnhancedPerformanceTracker
+        # keep its own default (the flat results/trades.json path) -- bit-identical
+        # to prior behaviour. A caller that opts in (e.g. a backtest that must not
+        # write into the shared results dir) passes an explicit path instead.
+        tracker_log_kwargs = {} if trades_log_file is None else {'log_file': trades_log_file}
+        if trades_log_file is not None:
+            log_dir = os.path.dirname(trades_log_file)
+            if log_dir:
+                os.makedirs(log_dir, exist_ok=True)
         performance_tracker = EnhancedPerformanceTracker(
             params.commission_rate, initial_capital=initial_balance,
+            **tracker_log_kwargs,
         )
         portfolio_info = MockPortfolioInfo(
             initial_balance={'USDT': {'free': initial_balance, 'locked': 0}},
@@ -470,7 +481,7 @@ class Launcher:
 def run_backtest(config_path: str, symbol: str, start: str, end: str, results_root: str,
                  runs_root: str = None, interval_seconds: int = None,
                  warmup_prefetch: bool = False, holdout_start: str = None,
-                 commission_rate: float = None):
+                 commission_rate: float = None, trades_log_file: str = None):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -511,6 +522,13 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         must produce bit-identical results to prior behavior (same pattern as
         interval_seconds above). Never mutates config.json or the module-level default,
         so a Kraken-calibrated research run can never affect the live trading rate.
+    trades_log_file: path for the performance tracker's interim trades.json dump.
+        Defaults to None, which resolves to EnhancedPerformanceTracker's own
+        default (the flat, shared results/trades.json) exactly as before this
+        parameter existed -- bit-identical prior behaviour, same additive/opt-in
+        pattern as commission_rate above. A caller that must not touch the shared
+        results dir (notably the test suite, which passes a tmp_path) opts in with
+        an explicit path; production callers that omit it are unaffected.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -531,7 +549,9 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
     )
 
     strategy = AdvancedStrategy(config_path=config_path)
-    stack = launcher._build_mock_stack(params, DEFAULT_INITIAL_BALANCE)
+    stack = launcher._build_mock_stack(
+        params, DEFAULT_INITIAL_BALANCE, trades_log_file=trades_log_file
+    )
     stack.portfolio_state_tracker.output_dir = results_root
     if runs_root is not None:
         stack.portfolio_state_tracker.runs_dir = runs_root

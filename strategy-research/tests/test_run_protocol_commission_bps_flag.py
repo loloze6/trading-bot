@@ -115,6 +115,9 @@ def test_absent_flag_end_to_end_matches_fixture(tmp_path):
         end=reference["end_date"],
         results_root=str(tmp_path),
         commission_rate=resolved_rate,
+        # Keep the tracker's interim trades.json inside tmp_path; without this it
+        # falls back to the shared trading-bot/results/trades.json (D4).
+        trades_log_file=str(tmp_path / "interim_trades.json"),
     )
     with open(Path(run_dir) / "metrics.json", encoding="utf-8") as f:
         core = json.load(f)["core"]
@@ -162,6 +165,9 @@ def test_commission_bps_flag_recomputes_from_real_trades(tmp_path, bps, expected
         end=reference["end_date"],
         results_root=str(tmp_path / f"bps{bps}"),
         commission_rate=resolved_rate,
+        # Keep the tracker's interim trades.json inside tmp_path; without this it
+        # falls back to the shared trading-bot/results/trades.json (D4).
+        trades_log_file=str(tmp_path / f"interim_trades_bps{bps}.json"),
     )
     with open(Path(run_dir) / "trades.json", encoding="utf-8") as f:
         trades = json.load(f)
