@@ -2214,3 +2214,162 @@ strongest threat on record is cost/venue anachronism × early-era dominance.
 Standing constraints (single-writer-per-state-store, read-back verify,
 no-self-remediation, premise-failure full-STOP, holdout untouchable,
 always-emit-one-log-line, context economy) carry forward unchanged."
+
+---
+
+## 2026-07-23 — Arc close-out: Phase 2 Track A complete; C7-EXT verdict-integrity chain (7 gates, 3 audit rounds); XS_momentum parked
+
+### Hypothesis
+Two threads, closed together because the second was discovered auditing the
+first. (1) Does the 2026-07-22 XS_momentum REFINE verdict (`6c4df3d`) actually
+rest on a gated result, given it ran on a research-only vectorized path the
+production evaluator never touched? (2) Can Phase 2 Track A's Kraken breadth
+ingestion reach the full 20-pair target, and can a 2026 top-up be trusted to
+compose cleanly with the archive it would extend?
+
+### Result
+- **XS_momentum's REFINE was ungated.** No `pass_rule` was pre-registered, no
+  `runs/` directory or `pre_registration.yaml` exists for it, and it ran off
+  `tools/verdict_criteria_evaluator.py` entirely — the "30% DD bar" it was
+  scored against was the generic code fallback (`run_phase1_research.py:1681-1682`),
+  the exact artifact ledger item C7 was opened to abolish. Not a kill (its
+  measured net Sharpe 1.325 is well above the kill trigger); not a refine
+  either — nothing was binding. **C7-EXT (`0a4d606`) closed the chain with 7
+  gates** (G1 cost-model completeness, G2 mandatory distribution stats, G3
+  mandatory deployable-today figure, G4 mandatory mechanism for anomalous
+  robustness, G5 pass_rule-independent preconditions, G6 no verdict without
+  evaluator provenance, G7 generic-fallback now raises loudly).
+- **G6 failed the same way three times before it held.** Independent audit
+  `a83084b` (DO NOT RATIFY): G6 gated field names `verdict_c7`/`hypothesis_verdict`/
+  `verdict`, but the campaign records verdicts in `outcome` — a structural
+  no-op on every entry the orchestrator itself writes. Remediation `2c8b8d1`
+  fixed that instance and replaced the denylist with a substring-of-"verdict"
+  rule ("New name, same gate"). Re-audit `4180799` (DO NOT RATIFY): defeated
+  by `status`/`disposition`/`resolution`/`result`/`decision`/`conclusion`,
+  by non-English names (`urteil`, `veredicto_c7`), and by nesting one level
+  down or inside a list — enumerating forbidden names is a guess over an
+  unbounded set, not a fix. **`f1a3d94` replaced it with a closed,
+  deny-by-default schema** (`tools/record_schema.py`): only enumerated fields
+  are admissible at all, verdict-shaped values are refused everywhere except
+  one designated field, and depth is refused by shape, not by nested-name
+  lists.
+- **The honest denominator, established during this chain and unchanged since:
+  of all 59 archived runs, 58 (98.3%) never passed through the C7 mechanical
+  gate; 22 are named by some terminal-outcome entry, 37 by none.** The
+  campaign's "zero confirmed edges" claim rests on exactly one mechanically
+  gated result. The gated-verdict count itself was miscounted mid-chain (2,
+  `0a4d606`) before being corrected back to 1 (`2c8b8d1`, D-5) — `H-041-C-v2`
+  (run_058) was rejected by stage discretion before its registered pass_rule
+  ever ran, so it does not count as gated. Confirmed independently a third
+  time by `4180799`'s audit and again just now by `lint_verdict_provenance.py`:
+  `gated verdicts: 1 ['FUNDING_MR_DAILY_RETEST']`.
+- **Two lessons this chain ratified.** (1) **Existence ≠ execution** —
+  `run_058` had a registered `pre_registration.yaml`, but its own
+  `exhausted_basis` already said the pass_rule evaluation "was NEVER EXECUTED";
+  a registration existing is not the same as it having run. (2) **Derivation ≠
+  an empirical property of a remote service** — Phase 2 Track A's own G2
+  claimed "top-up composability is now real and proved by key derivation";
+  `G3`/`2ab4c70` corrected this a second time: key derivation proves the
+  top-up reaches the right cache slot with a fetchable symbol, not that the
+  remote endpoint serves the history that slot needs. Only a live probe
+  established that (Kraken's public OHLC endpoint ignores `since` and serves
+  a fixed rolling ~720-candle window).
+- **D4 CLOSED** (`2ac4d00`): the backtest suite no longer writes into the
+  shared production `trading-bot/results/trades.json` — `trades_log_file` is
+  now additive/opt-in through `run_backtest()`, production default unchanged,
+  and a `pytest_sessionfinish` guard now fails any session mutating a tracked
+  file under `trading-bot/results/`.
+- **G1 item 2 stays OPEN, seam measured verbatim** (`2ab4c70`): archive ends
+  2025-12-31 23:00; first live-fetchable bar 2026-06-22 23:00; gap 4,151 bars
+  / ~173 days. A write-boundary guard (`FetchGapError`/`_assert_no_new_gap`)
+  now refuses any fetch that would silently punch this shape of hole into a
+  cached series, differential against pre-existing natural gaps so it does
+  not reject the campaign's own archive.
+- **Phase 2 Track A: COMPLETE.** 19 of 20 targeted Kraken pairs ingested
+  (HYPE absent from the bulk archive, recon-confirmed); exchange-qualified
+  cache key and standard-base symbol convention both settled and tested
+  (`32b1c13`, `446885b`); live-fetch reachability proved end-to-end
+  (`11afb72`, `3d43cc1`).
+- **XS_momentum parked** (`6b27d56`), the first production write to go
+  THROUGH the new closed schema on a genuine relabel: KB `outcome:
+  ungated_decayed_measurement_no_admissible_verdict`, `verdict_status:
+  ungated`. Measurements preserved (net Sharpe 1.325 full-sample, decaying to
+  0.07 in 2025 — edge decay, not sparsity); no admissible verdict because no
+  pre-registered pass_rule exists and no obtainable 2026 holdout can
+  statistically resolve this year's Sharpe (SE ≥ 1.3 for any T ≤ 0.56). Honest
+  gated-verdict count unchanged at 1 by design — parking must not move it.
+- **Binance-future-holdout carry-forward recorded** (`6b27d56`): continuous
+  recent data (BTC/ETH already Binance-cached) as the fallback for future
+  holdouts while Kraken's 2026 export is unpublished and its live endpoint
+  serves only ~30 days — **caveat: any Binance-validated strategy must be
+  re-declared and re-costed per Phase 1.3**, XS's Kraken venue/cost basis
+  does not transfer.
+- **q1_26 tick archive parked pending aggregation** (`6b27d56`): Kraken
+  `Trades` (time-and-sales), not OHLCVT — usable only via a scoped-but-unbuilt
+  aggregation path, left on disk, not ingested; G1 item 2 stays open, seam
+  unchanged. Not a ratified finding, but worth the next session's attention:
+  `trading-bot/data/data_manager.py:637` already contains a `.resample()`
+  call (used today for aux-feed alignment, e.g. funding rate onto price
+  interval) — a plausible seam to extend into a trade→OHLCVT aggregator,
+  not yet evaluated for that purpose.
+- **Test suites, strategy-research, across the C7-EXT chain: 338 → 369
+  (`0a4d606`) → 389 (`2c8b8d1`) → 413 (`f1a3d94`).** trading-bot: 57 → 64 per
+  `2ab4c70`'s own commit message — flagged, not reconciled: that same
+  commit's ledger prose reads "Suite 413 → 420", an apparently mismatched
+  baseline against its own count. Holdout discipline held throughout: no
+  return or performance statistic was computed over any 2026 data at any
+  point in this arc.
+
+### Files touched
+- `strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md` (v8-v11 ledger
+  additions — C7-EXT, C7-EXT-R, C7-EXT-R2, G1 item 2 correction, G3 fetch-gap
+  guard, D4, XS-park + carry-forwards)
+- `strategy-research/campaign_knowledge_base.yaml` (XS_momentum verdict_c7 →
+  verdict_status: ungated → parked; H-041-C-v2 relabel)
+- `strategy-research/config/campaign_queue.yaml` (XS_momentum, H-041-C-v2
+  entries)
+- `strategy-research/tools/verdict_criteria_evaluator.py`,
+  `strategy-research/tools/lint_verdict_provenance.py`,
+  `strategy-research/tools/record_schema.py` (NEW — closed schema),
+  `strategy-research/workflow/run_phase1_research.py`,
+  `strategy-research/workflow/run_campaign.py`
+- `strategy-research/protocols/*.json` (9 files re-marked
+  `promotion_provenance.status: generic_unratified`)
+- `strategy-research/tests/test_c7ext_verdict_gates.py`,
+  `test_c7ext_r2_closed_schema.py`, `test_k2_verdict_machinery.py`,
+  `test_prereg_conformance_gate.py`, `conftest.py`
+- `strategy-research/docs/session_reports/20260722_c7ext_audit.md`,
+  `20260723_c7ext_r_audit.md` (independent audit reports)
+- `trading-bot/data/fetchers/base_fetcher.py` (fetch-gap guard),
+  `trading-bot/tests/test_fetch_gap_guard.py`
+- `trading-bot/core/launcher.py`, `trading-bot/performance/metrics.py`,
+  `trading-bot/tests/conftest.py`, `test_results_dir_isolation.py` (D4)
+- `strategy-research/NEXT_SESSION.md`, `strategy-research/SESSION_LOG.md`
+  (this close-out)
+
+### Next session prompt
+"Resume strategy-research campaign. The C7-EXT verdict-integrity chain is
+closed (7 gates, 3 independent audit rounds, now a closed deny-by-default
+schema in tools/record_schema.py) and XS_momentum is parked as an ungated,
+decaying measurement (net Sharpe 1.325 full-sample, 0.07 in 2025) — not a
+verdict, not a kill. Honest gated-verdict count is 1
+(FUNDING_MR_DAILY_RETEST), confirmed by tools/lint_verdict_provenance.py.
+Phase 2 Track A (breadth data moat) is complete: 19/20 Kraken pairs ingested,
+cache-key and symbol-convention settled. Do a READ-ONLY RECON, no run: does
+the validated vectorized panel backtester
+(strategy-research/tools/panel_backtester.py — the one that gate-validated
+by reproducing all 30 window-symbol slots of archived run_054 exactly) run
+P4_ts_trend (daily-bar time-series trend), whose sole blocker on the
+production engine was the same class of gap XS_momentum's panel run worked
+around (ledger G3: single-symbol load in backtester.py:92/:359, unpartitioned
+RollingBuffer in main_strategy.py:44, zero netting hooks)? P4_ts_trend is a
+single-symbol daily-bar strategy, not a cross-sectional panel, so confirm
+precisely which part of that blocker actually applies to it before assuming
+the XS_momentum fix-shape transfers. Do not run a backtest, do not touch the
+KB or queue — this is scoping only: read the P4_ts_trend brief and its
+current queue/KB status, read panel_backtester.py, and report back whether
+it can express P4_ts_trend's daily-bar single-symbol case today, and if not,
+exactly what is missing. Standing constraints (single-writer-per-state-store,
+read-back verify, no-self-remediation, premise-failure full-STOP, holdout
+untouchable, always-emit-one-log-line, context economy) carry forward
+unchanged."

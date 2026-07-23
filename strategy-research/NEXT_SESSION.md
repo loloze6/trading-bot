@@ -44,46 +44,86 @@ Single entry point for the next session. Read in order, then work the queue.
    three independent audits (all AUDIT PASS on what was eventually
    ratified).
 
-## State delta since the 2026-07-19 NEXT_SESSION.md (authoritative amendments)
+## State delta since the 2026-07-20 NEXT_SESSION.md (authoritative amendments, dated 2026-07-23)
 
-- **Phase 1 gate: CLOSED.** Venue decided (Kraken); cost model is live and
-  venue/product-parameterized (`cost_model.yaml`'s spot + perp blocks,
-  `run_protocol.py`'s `--cost-product`/`--commission-bps`); three
-  calibration-adjacent re-runs reported (`rsi_momentum_trending_cost_drag`
-  blocked on V9 drift — see C13; `keltner_scoremode_no_edge` re-run twice,
-  once confounded by a timeframe defect (caught, caveated, not shipped as
-  a real comparison) and once cleanly via the fee-isolation pair); funding
-  family's live-tradability settled explicitly: **yes, legally** (Kraken
-  perp), but **research-only** pending a funding-cash-flow model.
-- **`commission_rate` is now a first-class, audited parameter** across
-  `run_backtest()` → `run_protocol.py`'s two call sites, with three
-  independent read-only audits (Dispatch D, J, M — all confirmed the shipped
-  code's conversion/no-double-charge correctness) and two aborted attempts
-  (Dispatch F, and the first fee-isolation comparison) that were caught by
-  a subsequent audit and either reverted or superseded rather than shipped
-  with a wrong conclusion — the self-correction, not just the final state,
-  is part of this arc's actual result.
-- **New KB finding: `keltner_scoremode_fee_isolation_no_flip`.** Structural
-  kills, not fee artifacts, for both evidence runs, at 4h, with fee genuinely
-  isolated (timeframe/window/config controlled). Explicitly not a
-  re-derivation of the original 1h verdict.
-- **New KB field: `venue_live_tradability`** on
-  `funding_mr_daily_retest_killed`. Perp is the go-forward product for this
-  family (spot can't short this bot's way; margin's own EU/French legal
-  status is unconfirmed); this family cannot be honestly re-costed until
-  funding cash flow is modeled.
-- **Ledger: `C12`, `C13` added** (v7). Neither has been swept/fixed — both
-  are scoped, filed, and explicitly deferred.
-- **Test suites: 328 passed (strategy-research) / 44 passed + 4
-  pre-existing unrelated errors (trading-bot)** — confirmed via
-  `python -m pytest`, state-only close-out, no code changed by this
-  close-out itself.
-- **Confirmed edges: still zero.** This arc closed a reality-alignment gate
-  and reconfirmed two existing kills on firmer footing; it did not produce
-  any new hypothesis verdict. See SESSION_LOG's KPI note for the honest
-  cost/yield accounting — Phase 1 was infrastructure-heavy by design, not a
-  search session, and the next session should return to actual hypothesis
-  throughput.
+- **Phase 2 Track A: COMPLETE.** Breadth ingestion reaches 19 of the 20
+  targeted Kraken pairs (HYPE absent from the bulk archive, recon-confirmed,
+  not ingested) with the exchange-qualified cache key and the standard-base
+  symbol convention both settled and tested (commits `32b1c13` exchange-qualified
+  cache key + 5-pair pilot; `446885b` symbol convention settled + scale-up;
+  ledger `G1`/`G2` in `PIPELINE_IMPROVEMENTS_20260712_v4.md`). Live-fetch
+  reachability against the archive slot is proved end-to-end (`11afb72`,
+  `3d43cc1`).
+- **XS_momentum run → PARKED, not a verdict.** Full-sample net Sharpe 1.325
+  (gross 1.665), decaying to net Sharpe 0.07 in its latest full in-sample
+  year (2025) — edge decay, not trade sparsity. No admissible verdict:
+  no pre-registered `pass_rule` and no obtainable 2026 holdout can
+  statistically resolve this year's Sharpe (SE ≥ 1.3 for any T ≤ 0.56). KB
+  `outcome: ungated_decayed_measurement_no_admissible_verdict`,
+  `verdict_status: ungated`; measurements preserved. Commit `6b27d56`.
+- **The C7-EXT arc (7 gates, three audit rounds, now a closed deny-by-default
+  schema) and the finding it produced.** XS_momentum's original REFINE
+  verdict (commit `6c4df3d`) was issued off no pre-registered rule; closing
+  that defect chain (`0a4d606` 7 gates; audited `a83084b` DO NOT RATIFY;
+  remediated `2c8b8d1`; re-audited `4180799` DO NOT RATIFY, three name-matching
+  bypasses found in two rounds; replaced with a closed schema `f1a3d94`)
+  produced an archive-wide census: **of all 59 runs, 58 (98.3%) never passed
+  through the C7 mechanical gate; 22 are named by some terminal-outcome
+  entry, 37 by none.** The campaign's "zero confirmed edges" claim rests on
+  exactly one mechanically-gated result (`FUNDING_MR_DAILY_RETEST`) —
+  confirmed unchanged at 1 by the lint (`lint_verdict_provenance.py`:
+  `gated verdicts: 1 ['FUNDING_MR_DAILY_RETEST']`) after XS's parking.
+- **Two lessons ratified this arc, worth carrying into any future gate
+  design:** (1) **existence ≠ execution** — H-041-C-v2/run_058 had a
+  registered `pre_registration.yaml` but its pass_rule evaluation "was NEVER
+  EXECUTED" (its own `exhausted_basis`); it was rejected by stage discretion
+  before the pass_rule ran, so it does not count as gated (D-5, `2c8b8d1`).
+  (2) **derivation ≠ an empirical property of a remote service** —
+  G2's claim that key-derivation "proves" Kraken top-up composability was
+  overstated twice in this arc; derivation proves addressability only, and
+  only a live probe can show the endpoint actually serves the requested
+  history (`PIPELINE_IMPROVEMENTS_20260712_v4.md` G-series, commit `2ab4c70`).
+- **D4 CLOSED.** The backtest test suite no longer writes into the shared
+  production `trading-bot/results/trades.json` path — `trades_log_file` is
+  now an additive, opt-in parameter threaded through `run_backtest()`;
+  production default unchanged; a `pytest_sessionfinish` guard now fails any
+  session that mutates a tracked file under `trading-bot/results/`. Commit
+  `2ac4d00`.
+- **G1 item 2 stays OPEN — the 4,151-bar seam, measured verbatim.** Kraken's
+  bulk archive ends **2025-12-31 23:00**; the live OHLC endpoint's fixed
+  rolling window only reaches back to **2026-06-22 23:00**; gap **4,151 bars
+  / ~173 days**. A write-side guard now refuses any fetch that would silently
+  punch this kind of hole into a cached series (`FetchGapError`,
+  `_assert_no_new_gap`, commit `2ab4c70`). 2026 quarterly-export existence is
+  unconfirmed (sources index only through Q4 2025); not downloaded.
+- **Binance-future-holdout carry-forward recorded, with its own caveat.**
+  Continuous recent data (BTC/ETH already Binance-cached) is the fallback for
+  future holdouts while Kraken's 2026 OHLCVT export is unpublished and the
+  live endpoint only serves ~30 days. Caveat, stated explicitly: **any
+  Binance-validated strategy must be re-declared and re-costed per Phase
+  1.3** — XS_momentum's Kraken venue/cost basis does not transfer to Binance.
+  Commit `6b27d56`.
+- **q1_26 tick archive parked, pending aggregation.** Kraken `Trades`
+  (time-and-sales), not OHLCVT — usable only via a scoped-but-unbuilt
+  aggregation path; left on disk, not ingested. `G1` item 2 stays open, seam
+  unchanged. Commit `6b27d56`. Not yet scoped as ratified fact, but worth the
+  next session noting as a starting point: `trading-bot/data/data_manager.py:637`
+  already contains a `.resample()` call (used today for aux-feed alignment,
+  e.g. funding rate onto price interval) — a plausible existing seam to
+  extend into a trade→OHLCVT aggregator, not yet evaluated for that purpose.
+- **Test suites (strategy-research, across the C7-EXT chain): 338 → 369
+  (`0a4d606`) → 389 (`2c8b8d1`) → 413 (`f1a3d94`).** trading-bot suite:
+  57 → 64 per commit `2ab4c70`'s own message — **note, not reconciled here:**
+  that same commit's ledger prose (`PIPELINE_IMPROVEMENTS_20260712_v4.md`
+  line 2118) reads "Suite 413 → 420", an apparently mismatched baseline
+  against its own 57 → 64 count; flagged, not smoothed over, since this
+  close-out does not touch ratified content. No return or performance
+  statistic was computed over any 2026 data at any point in this arc —
+  holdout discipline held throughout.
+- **Confirmed edges: still zero, unchanged.** This arc's advance was
+  Phase 2 Track A's breadth data-moat completion plus a verdict-integrity
+  hardening pass (C7-EXT through C7-EXT-R2, D4) and one hypothesis honestly
+  reclassified from a false REFINE to parked/ungated — not a new edge.
 
 ## Task queue (priority order — now driven by docs/ROADMAP.md Part 2)
 
