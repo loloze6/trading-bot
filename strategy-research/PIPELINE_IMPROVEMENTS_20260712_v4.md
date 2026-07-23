@@ -2258,3 +2258,136 @@ the seam is unchanged — archive ends 2025-12-31 23:00, first fetchable live ba
 2026-06-22 23:00, **4,151-bar / ~173-day gap**. Having the raw trades on disk is
 not the same as having them addressable as OHLC bars, the same
 availability-vs-addressability distinction G1/G2 twice conflated.
+
+## P4-D. P4_ts_trend density-probe carry-forwards (filed 2026-07-24)
+
+Source: `docs/session_reports/20260724_p4_density_probe_archive.md` (read-only entry-count
+probe against the raw Kraken daily archive) and `docs/session_reports/20260723_p4_panel_recon.md`.
+All four are **FILED, NOT FIXED** — nothing below was remediated in the commit that filed it,
+and no backtest, ingest, or tool change was made. Every count cited is an entry-transition
+count from a probe governed by **no pre-registered pass_rule**; none of it is a verdict.
+
+### P4-D1. Phase 2 Track A's breadth ingestion is 1h-only — no daily-bar hypothesis can consume the 19-pair cache today (P1, FILED)
+
+- **Evidence (cache listing, executed and recorded verbatim):**
+  `docs/session_reports/20260723_p4_density_probe.md:307-327`.
+  - `Get-ChildItem $d -Filter "*_1d.csv"` -> exactly two files, `BTCUSDT_1d.csv` and
+    `ETHUSDT_1d.csv` (`:309-311`, restated `:322-323`) — Binance, USDT-quoted, and
+    **precisely the two symbols run_057 already evaluated**.
+  - `(Get-ChildItem $d -Filter "kraken_*" -File | Measure-Object).Count` -> **19** (`:313-314`).
+  - `Get-ChildItem $d -Filter "kraken_*" -File | Where-Object { $_.Name -notmatch '_1h\.csv$' }`
+    -> **no output** (`:316-318`). Every Kraken cache file is `_1h`; there is not one
+    Kraken daily bar in the cache namespace (`:324-327`).
+- **Consequence:** the breadth P2 delivered is real but hourly. `ts_trend_daily_v1.json:17`
+  declares `"timeframe": "1d"`, so the registered P4 hypothesis cannot read the 19-pair
+  cache at all. The daily bars exist on disk —
+  `trading-bot/local_data/Kraken_batch/master_q4/*_1440.csv`, 7 columns, no header,
+  unix-seconds UTC (`20260724_p4_density_probe_archive.md:96-120`, `:284`) — but they are an
+  *archive*, not a *cache key*, and no loader in the repo reaches them. This is the
+  availability-vs-addressability distinction G1/G2 already tripped over twice.
+- **Why it is filed and not fixed:** ingesting `*_1440.csv` into the cache is a write to
+  `local_data/` plus an ingest-path decision (`20260723_p4_density_probe.md:440-444`); it is
+  queued work, not a mid-lineage patch.
+- **Acceptance when taken up:** a daily-bar hypothesis resolves at least three non-BTC/ETH
+  Kraken symbols through the normal cache path with no per-run special-casing.
+
+### P4-D2. Two different per-window minimum-trade floors, both live, both cited as authority (P1, FILED — NOT RESOLVED)
+
+Recorded because the density probe had to report against **both** and explicitly refused to
+choose (`20260724_p4_density_probe_archive.md:361-386`).
+
+- **Floor A = 1** — `strategy-research/protocols/ts_trend_daily_v1.json:132`:
+  `"min_trade_count_gte": 1`. Its own rationale (`ts_trend_daily_v1.json:11`) calls it a
+  pre-registered floor meaning "at least one completed round-trip required for a window to
+  count as evaluable", matched to the brief's a-priori 10-25 transitions / 15 windows.
+- **Floor B = 5** — `strategy-research/config/campaign_config.yaml:120`:
+  `trade_floor_per_window: 5      # per-window "sparse" threshold (A3.4 gate)`. Floor B is
+  the one actually applied to this hypothesis in the campaign record: both
+  `config/campaign_queue.yaml` and `campaign_knowledge_base.yaml` report the archived P4
+  gated run as "29/30 window-symbols below the A3.4 five-trade floor".
+- **These are different gates, and that is the point.** Floor A sits in the `promotion`
+  block of a protocol JSON and is machine-read. Floor B sits under `verdict_interpreter:`
+  in `campaign_config.yaml`, whose own preceding comment (`campaign_config.yaml:117-118`)
+  says these values are "defined in SKILL.md and applied by the LLM agent, not code". So one
+  is a protocol promotion criterion and the other is an agent-applied sparsity heuristic —
+  they were never authored as the same number, yet they govern the same per-window quantity
+  and disagree by 5x.
+- **Consequence, stated with the counts:** which floor governs changes the answer
+  completely. The gated variant clears Floor A in **120/178** evaluable slots and Floor B in
+  **3/178**; the parent clears Floor A in **175/178** and Floor B in **80/178**
+  (`20260724_p4_density_probe_archive.md:392-397`).
+- **NOT RESOLVED HERE.** Choosing between them is a director's call, and this item exists so
+  the choice is made once, in the open, rather than silently by whichever artifact a reader
+  happens to open first.
+
+### P4-D3. `panel_backtester.py`'s commission constant is correct for its gate and a trap for anything else costed through that path (P1, FILED — trap, not a defect)
+
+- **The constant:** `strategy-research/tools/panel_backtester.py:56` —
+  `DEFAULT_COMMISSION_RATE = 0.001  # engine DEFAULT_COMMISSION_RATE (10 bps one-way)`. It is
+  a hardcoded module constant, **not** read from `cost_model.yaml`
+  (`20260723_p4_panel_recon.md:93`).
+- **It is CORRECT where it is used.** Its only consumer is the gate path `validate_gate()`,
+  whose entire job is to reproduce the archived run_054 slots exactly under a pre-registered
+  tolerance. That archived run was produced by the production engine at the engine's own
+  default rate, so reproducing it requires *this* number. Re-pointing it at the campaign's
+  ratified venue figure would break the reproduction gate — which would be a regression in
+  the gate, not a fix to it.
+- **The trap:** the campaign's ratified cost basis is Kraken perp, **5 bps one-way / 10 bps
+  round-trip** — `strategy-research/config/cost_model.yaml:158-162`
+  (`perp.fee_rate_bps.default: 5.0`, `perp.round_trip_cost_bps.default: 10.0`), sourced per
+  that block's own comment at `cost_model.yaml:135-136` from the Kraken perpetual-futures
+  base-tier taker fee. The engine default mirrored at `panel_backtester.py:56` is instead a
+  **Binance spot** figure (`cost_model.yaml:65`, "Binance spot, Regular/VIP0 tier, BNB
+  discount applied"), i.e. **double** the ratified Kraken one-way rate
+  (`20260723_p4_panel_recon.md:167-169`).
+- **Firing condition:** any *future* run costed through `panel_backtester.py`'s gate
+  machinery, or any copy-paste of that constant into a new path, silently prices at 10 bps
+  one-way Binance spot while the campaign believes it ratified 5 bps Kraken perp. The XS path
+  in the same file already avoids this — it reads `cost_model.yaml`
+  (`panel_backtester.py:329-334`, `:364-365`). Two costing conventions inside one file, only
+  one of them venue-ratified, is what makes this worth filing.
+- **Filed, not fixed. The fix is not to change line 56.**
+
+### P4-D4. OVERTURNED PRIOR CONCLUSION — `data_manager.py` does not hardcode the exchange; a default is not a constraint (P1, FILED)
+
+- **The claim, twice recorded:** `docs/session_reports/20260722_kraken_ingest_audit.md:363-366`
+  — "`data_manager.py:768` hardcodes `exchange="binance"` ... **No backtest can currently
+  reach any of the five ingested Kraken cache files.**" Restated as a present-tense blocker by
+  `docs/session_reports/20260723_p4_density_probe.md:363-366` and again at `:450-451`
+  ("`data_manager.py:768` hardcodes `exchange="binance"` and would need parameterizing before
+  any engine run could read a `kraken_*` cache key").
+- **Overturned by reading the code at HEAD:**
+  - `trading-bot/data/data_manager.py:746` —
+    `def fetch_historical_data(self, symbol: str, start_date, end_date, exchange: str = "binance")`.
+    `"binance"` is a **default argument**, not a hardcode.
+  - `trading-bot/data/data_manager.py:757-760` — the docstring says so in as many words:
+    "`exchange` selects the CCXT exchange id used for both the remote fetch and the local
+    cache filename (see `CcxtFetcher.cache_key()`); defaults to `"binance"` so existing call
+    sites are unaffected unless they opt in (e.g. `exchange="kraken"` to reach
+    `kraken_XBTUSD_1h` etc.)."
+  - `trading-bot/data/data_manager.py:773` — the parameter is **threaded through**:
+    `exchange=exchange`, inside the `HistoricalDataFetcher(...)` construction at lines 770-776.
+  - `trading-bot/data/fetchers/ccxt_fetcher.py:85` sets `self.exchange_id = exchange`, and
+    `ccxt_fetcher.py:120` derives the key as
+    `prefix = "" if self.exchange_id == "binance" else f"{self.exchange_id}_"`. So
+    `exchange="kraken"` produces exactly the `kraken_*` keys the claim called unreachable. A
+    dedicated test already covers it end to end:
+    `trading-bot/tests/test_kraken_cache_reachability.py:107`.
+- **Provenance of the error, stated fairly.** The 2026-07-22 ingest audit was auditing commit
+  `32b1c13`, against which its statement was **true**. The parameter landed later that same day
+  in commit `11afb72` ("Phase 2 Track A: Kraken cache reachability — parametrize exchange,
+  tz-naive guard"; `git blame` of `data_manager.py:773`). The 2026-07-23 recon then repeated the
+  claim in the present tense **by citation, without re-reading the file**, after the fix was
+  already in the tree. It is the restatement that was wrong, not the original audit.
+- **What is still true, and must not be over-corrected:** the engine's own backtest call site,
+  `trading-bot/core/backtester.py:92`, does not pass `exchange`, so a backtest run today takes
+  the default and reads Binance keys. That is a **caller that has not opted in** — one keyword
+  argument away — not a constraint in the data layer. P4-D1 (no Kraken *daily* bars in the
+  cache under any exchange id) is the real blocker and is untouched by this correction.
+- **GENERALIZED LESSON — a default is not a constraint.** A default argument records what
+  happens when nobody chooses; a hardcode records that nobody *may* choose. Reading the first
+  as the second turns a one-keyword opt-in into a phantom engineering blocker, and it
+  propagates: here it survived two reports and was one step from being written into a
+  reactivation condition as a hard prerequisite. Rule: before recording any capability as
+  blocked, **open the file and read the signature at HEAD** — a citation to a prior report is
+  not a re-read, and a report is only ever true against the commit it audited.
