@@ -1899,3 +1899,127 @@ STOP conditions were both real. The C7-EXT commit message asserted the chain was
 closed; it was not. An integrity layer that is checked only by its own author is
 not yet an integrity layer — which is the same lesson C7-EXT itself recorded, one
 level up.
+
+---
+
+# v10 additions — found 2026-07-23 (re-audit of C7-EXT-R; remediation C7-EXT-R2)
+
+## H. Verdict integrity (continued)
+
+**C7-EXT-R2 — G6 failed THREE TIMES by name-enumeration. Replaced with a closed
+schema.** Re-audit: `docs/session_reports/20260723_c7ext_r_audit.md` (committed
+before this work, unchanged by it). Verdict: DO NOT RATIFY, G6 bypassable on
+five independent routes.
+
+**The three failures, by name, because the pattern is the finding.**
+
+1. **C7-EXT (0a4d606)** gated three field names:
+   `_VERDICT_FIELDS = ("verdict_c7", "hypothesis_verdict", "verdict")`.
+   Defeated by `{"outcome": "kill_mechanism_falsified"}` — the field the KB and
+   queue actually use, and the one `_write_kb_findings_entry` itself emits.
+2. **C7-EXT-R (2c8b8d1)** added `outcome`, then replaced the three-name denylist
+   with a substring marker: any key containing the literal ASCII word "verdict".
+   The commit message called this *"New name, same gate"*. Defeated by
+   `status: kill`, `disposition: kill`, `resolution: kill`, `result: kill`,
+   `decision: kill`, `conclusion: kill`, `urteil: kill`, `veredicto_c7: kill`,
+   and by nesting a verdict one level down or inside a list. Only `verdicto` was
+   caught, and only because the English word is a literal prefix of the Spanish
+   one — a gate working by linguistic coincidence.
+3. Both rounds made the **same move**: enumerate what is forbidden. The set of
+   names an author might choose is unbounded, spans languages, and grows with
+   every synonym. A denylist over an infinite set is a guess; broadening the
+   guess is not a different class of fix, which is why round 2 fell as fast as
+   round 1.
+
+**Why the closed schema is a different class.** `tools/record_schema.py` inverts
+the polarity: a KB finding or queue entry may contain **only** the fields the
+schema enumerates, each with a declared value SHAPE, and anything else is
+rejected wherever it appears. `details`, `decisions`, `urteil` are not refused
+because they are recognised as dangerous — they are refused because they are not
+on the short list of permitted fields. Nobody has to anticipate them.
+
+Depth is enforced by **shape, not by nested name lists**: no shape lets an
+arbitrary key hold an arbitrary structure. `signal_property` legitimately holds
+66 distinct measurement keys, so its keys cannot be enumerated — but its shape
+can be (flat scalars only), which is what refuses
+`signal_property: {nested: {verdict: kill}}` without knowing the word "verdict".
+
+Second, name-agnostic rule: a **bare verdict token as a VALUE** is refused
+everywhere except the one designated field. Anchored whole-value, so prose that
+discusses a verdict is untouched while `kill_mechanism_falsified` is not. This
+catches `urteil: kill` and `anything_at_all: kill` identically, because it looks
+at the claim rather than the label.
+
+To smuggle a verdict now requires both a permitted field AND a non-verdict
+value — at which point you have written data, not a verdict.
+
+**Path traversal (blocking, re-opened D-4).** The run-ownership check
+substring-matched the **unresolved** path, so
+`runs/run_999_FAKE/../run_059/artifacts/pass_rule_evaluation.yaml` with
+`evidence_runs: ["run_999_FAKE"]` passed (the literal text does contain
+`/runs/run_999_FAKE/`) while `open()` followed the `..` to run_059's real FAIL.
+A fabricated hypothesis citing a run that never executed borrowed a genuine
+result. Now resolved to an absolute real path FIRST, then containment-checked
+against the resolved directory of a run the entry actually names.
+
+**A sixth bypass, found while implementing and named rather than silently
+fixed.** With no `evidence_runs`/`run_ids`/`run_id`, the ownership check was
+skipped outright (`if run_ids:`), so an entry naming no run at all could cite any
+evaluation in the tree and be accepted. An entry claiming a verdict must now say
+which run earned it.
+
+**One named exemption from the token rule, stated rather than left implicit.**
+`outcome_reason` legitimately holds the orchestrator's prescreen ROUTE NAME
+(`kill_no_ic`, `refine_inverted_ic` — exactly the keys of `_VERDICT_TO_OUTCOME`)
+as well as multi-paragraph prose, so it cannot take the token rule. It is safe
+because it is subordinate by construction: it explains `outcome`, is never read
+as an independent verdict, and rides on an entry whose `outcome` was gated in the
+same pass. Named here because an unexamined exemption is how the previous three
+rounds failed. Three further fields (`validation_gate: PASS`,
+`relation: refine`, `source`) collide with the token rule and were given closed
+vocabularies of their own instead — tighter than free text, not looser.
+
+**THE HONEST DENOMINATOR — record this wherever "zero confirmed edges" is
+asserted.** Full census of all 59 runs (re-audit §3, independently reproduced):
+
+- **1 of 59 (1.7%)** passed through the C7 mechanical gate to a binding result:
+  run_059. That is the campaign's entire gated evidence base.
+- **58 of 59 (98.3%)** never had their fate decided by that gate.
+- Of the 59, **22 runs** are named by at least one terminal-outcome KB/queue
+  entry; **37 are named by none** — intermediate or superseded steps within a
+  lineage, never independently adjudicated at all.
+- Rule shapes: 1 structured and evaluated (run_059), 1 structured but never
+  evaluated (run_058), 1 prose/legacy (run_057), 56 with no rule at all.
+
+Every "no edge" finding in this archive other than run_059's is a human/LLM call,
+a prescreen-threshold kill, or an intermediate step with no independent verdict.
+The campaign's "zero confirmed edges" claim is true, and it rests on **one**
+mechanically-gated result out of 59 runs. Stating the denominator is not a
+caveat; omitting it implies uniform gate coverage that does not exist.
+
+**ACCEPTED RISK — operator proportionality ruling, 2026-07-23.** No
+filesystem-only provenance check can distinguish a genuine evaluator-produced
+`pass_rule_evaluation.yaml` from a hand-authored one dropped into a real run's
+`artifacts/` directory. Closing that requires a cryptographic or append-only-log
+tie between the evaluator and its output. Ruled **out of proportion** to a
+single-operator research campaign and accepted as a **standing limitation**, not
+a closed hole. It is recorded in `record_schema.py`'s own header so the next
+reader meets it before trusting the gate, rather than discovering it in an audit.
+Boundary: the schema governs what a RECORD may say; it does not attest that a
+cited artifact was genuinely produced by the machinery.
+
+**Still OPEN, carried forward unchanged.** D-2 (G4 detects no anomalies; it only
+demands prose for self-declared ones) and D-7 (G1's product allowlist is
+exact-match on a free-text brief field; G2/G3 accept placeholder and wrong-typed
+values). Also carried: `promotion_is_generic` uses exact dict equality, the same
+brittle-match shape as D-7 — not exploited by any of the nine files today.
+
+Tests 389 -> 413. All five re-audit bypasses plus the sixth are regression-tested
+verbatim by name in `tests/test_c7ext_r2_closed_schema.py`, alongside the two
+negative cases that correctly held (a real run-scoped file with no binding
+result; an absolute path outside any run) and the `_save_queue` whole-list
+atomicity the re-audit confirmed empirically.
+
+**Method note.** Three rounds of this defect were closed by the person who wrote
+them and reopened by the next reader within minutes. The thing that finally
+changed was not a better guess about names — it was giving up on guessing.

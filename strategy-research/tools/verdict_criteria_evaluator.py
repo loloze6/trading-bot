@@ -36,7 +36,17 @@ OPEN and recorded as such in the ledger.
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
+
+# tools/ may not be on sys.path when this module is imported by path rather than
+# by name (several callers do exactly that), so make the sibling import robust
+# rather than dependent on the caller having set the path up first.
+_TOOLS_DIR = str(Path(__file__).resolve().parent)
+if _TOOLS_DIR not in sys.path:
+    sys.path.insert(0, _TOOLS_DIR)
+
+import record_schema as _record_schema  # noqa: E402
 
 _VALID_COMPARATORS = (">=", ">", "<=", "<", "==")
 
@@ -56,19 +66,21 @@ _DEFAULT_FUNDING_INTERVAL_HOURS = 8.0
 # G6: a KB/queue verdict field is admissible ONLY with evaluator provenance.
 _VERDICT_FIELDS = ("verdict_c7", "hypothesis_verdict", "verdict")
 
-# C7-EXT-R / D-4, audit bypass C: a THREE-NAME DENYLIST is trivially side-stepped
-# by inventing a fourth. `{"final_verdict": "refine", "c7_verdict": "refine"}` was
-# accepted purely because nobody had listed those names. Rather than chase names,
-# treat ANY field whose name contains "verdict" as a verdict claim unless it is
-# one of the small set of fields that describe provenance rather than assert a
-# verdict. New name, same gate.
-_VERDICT_NAME_MARKER = "verdict"
-_VERDICT_NAME_EXEMPT = frozenset({
-    "verdict_status",        # the provenance label itself
-    "verdict_status_basis",  # prose explaining that label
-    "verdict_void_reason",   # why a verdict was withdrawn -- the opposite of a claim
-    "power_verdict",         # pre-registration power adequacy, not a hypothesis verdict
-})
+# C7-EXT-R2 (2026-07-23): the name-matching approach is GONE, and deliberately so.
+#
+# Round 1 gated three names. Round 2 replaced them with "any key containing the
+# substring 'verdict'" and called it "New name, same gate". The re-audit defeated
+# that in minutes with `status: kill`, `disposition: kill`, `urteil: kill`, and by
+# nesting a verdict one level down or inside a list. Enumerating forbidden names
+# is an unbounded guess, and broadening the guess is the same move, not a
+# different one.
+#
+# What replaces it is a CLOSED SCHEMA (tools/record_schema.py): a record may hold
+# only enumerated fields with declared value shapes, and a bare verdict token is
+# refused as a VALUE anywhere except the one designated field. `_VERDICT_FIELDS`
+# survives only because those three names are real legacy shapes worth naming in
+# an error message -- the schema would reject them as unknown fields regardless,
+# and does so even if this tuple is emptied.
 
 # C7-EXT-R / D-4. The audit's decisive finding: the three names above are NOT
 # the field the campaign records verdicts in. Both campaign_knowledge_base.yaml
@@ -543,13 +555,29 @@ def resolve_evaluation_ref(ref, entry: dict, root=None) -> tuple:
                        f"(resolved to {path}) -- a path that resolves to nothing "
                        f"is not provenance")
 
+    # C7-EXT-R2: containment is checked on the RESOLVED path, and only after it is
+    # resolved. The previous version substring-matched the UNRESOLVED string, so
+    #     runs/run_999_FAKE/../run_059/artifacts/pass_rule_evaluation.yaml
+    # with evidence_runs: ["run_999_FAKE"] passed the ownership test (the literal
+    # text does contain "/runs/run_999_FAKE/") while open() followed the ".." to
+    # run_059's real FAIL. A fabricated hypothesis citing a run that never
+    # executed borrowed a genuine result from an unrelated one.
+    resolved = path.resolve()
     run_ids = _entry_run_ids(entry)
-    if run_ids:
-        norm = str(path).replace("\\", "/")
-        if not any(f"/runs/{rid}/" in norm or f"/{rid}/" in norm for rid in run_ids):
-            return False, (f"pass_rule_evaluation_ref={ref!r} does not lie under any "
-                           f"of this entry's own runs {run_ids} -- an entry may not "
-                           f"borrow another run's evaluation as its provenance")
+    if not run_ids:
+        # C7-EXT-R2, found while implementing (not in the re-audit): with no run
+        # ids the ownership check used to be SKIPPED, so an entry naming no run at
+        # all could cite any evaluation in the tree. An entry that claims a verdict
+        # must say which run earned it.
+        return False, (f"pass_rule_evaluation_ref={ref!r} is cited by an entry that "
+                       f"names no run (evidence_runs/run_ids/run_id all absent) -- "
+                       f"ownership cannot be established, so the citation confers "
+                       f"nothing")
+    owning_dirs = [(base / "runs" / rid).resolve() for rid in run_ids]
+    if not any(resolved == owner or owner in resolved.parents for owner in owning_dirs):
+        return False, (f"pass_rule_evaluation_ref={ref!r} resolves to {resolved}, which "
+                       f"does not lie under any of this entry's own runs {run_ids} -- an "
+                       f"entry may not borrow another run's evaluation as its provenance")
 
     try:
         import yaml
@@ -571,46 +599,46 @@ def resolve_evaluation_ref(ref, entry: dict, root=None) -> tuple:
 
 
 def validate_verdict_provenance(entry: dict, entry_ref: str = "<entry>",
-                                root=None) -> dict:
+                                root=None, schema=None) -> dict:
     """G6. Returns the entry unchanged when admissible; raises
     UngatedVerdictError otherwise.
 
-    C7-EXT-R / D-4 -- this function was rewritten after the independent audit
-    demonstrated four bypasses, all of which are now closed and each of which
-    is pinned by a test named after it:
+    TWO GATES, IN ORDER (C7-EXT-R2, 2026-07-23):
 
-      A. `{"outcome": "kill_mechanism_falsified"}` was ACCEPTED, because
-         `outcome` was not in the gated field set -- despite being the field the
-         KB, the queue, and _write_kb_findings_entry itself actually use. Now
-         gated via outcome_is_verdict_bearing().
-      B. `pass_rule_evaluation_ref: "does/not/exist.yaml"` was ACCEPTED, because
-         the ref was never resolved. Now resolved by resolve_evaluation_ref().
-      C. `{"final_verdict": "refine", "c7_verdict": "refine"}` was ACCEPTED,
-         because a three-name denylist is side-stepped by inventing a fourth
-         name. Now matched on name SHAPE (_VERDICT_NAME_MARKER), with a small
-         exemption list for fields that describe provenance rather than assert.
-      D. the queue was never validated at all -- this function had exactly one
-         call site in the repo. run_campaign._save_queue now calls it too, and
-         tools/lint_verdict_provenance.py checks both files with no write
-         involved.
+      1. CLOSED SCHEMA -- tools/record_schema.py. The record may contain only
+         enumerated fields with declared value shapes, and no string anywhere in
+         it, at any depth, may be a bare verdict token except in the one
+         designated field. This replaces three rounds of failed name-matching;
+         see record_schema.py's header for why enumerating forbidden names could
+         never have worked.
+
+      2. PROVENANCE on that one designated field, `outcome`.
 
     ADMISSIBLE means one of:
-      - the entry cites a pass_rule_evaluation_ref that RESOLVES (exists,
-        belongs to this entry's run, and recorded a binding PASS/FAIL); or
+      - the entry cites a pass_rule_evaluation_ref that RESOLVES -- exists,
+        RESOLVED-path-contained within a run this entry actually names, and
+        recorded a binding PASS/FAIL; or
       - the entry honestly declares it holds no gated verdict, via
         `verdict_status: ungated` (or stage_discretion / void).
 
     The second branch is not a loophole. The defect this closes is that an
     ungated verdict was INDISTINGUISHABLE from a gated one. Forcing the record
     to say which it is restores the distinction; honest_verdict_count() then
-    counts only the first kind."""
-    strict_fields = sorted(
-        {f for f in _VERDICT_FIELDS if entry.get(f) is not None}
-        | {k for k, v in entry.items()
-           if v is not None
-           and _VERDICT_NAME_MARKER in str(k).lower()
-           and str(k) not in _VERDICT_NAME_EXEMPT}
-    )
+    counts only the first kind.
+
+    `schema` selects the record type; it defaults to the KB finding schema
+    because that is the stricter of the two."""
+    try:
+        _record_schema.validate_record_schema(
+            entry, schema if schema is not None else _record_schema.KB_FINDING_SCHEMA,
+            entry_ref)
+    except _record_schema.RecordSchemaError as exc:
+        # Re-raised as UngatedVerdictError so every existing call site -- the KB
+        # writer, the queue writer, the standalone lint -- refuses on a schema
+        # violation without needing to learn a second exception type.
+        raise UngatedVerdictError(str(exc)) from exc
+
+    strict_fields = sorted(f for f in _VERDICT_FIELDS if entry.get(f) is not None)
     outcome = entry.get("outcome")
     outcome_gated = outcome_is_verdict_bearing(outcome)
     ref = entry.get("pass_rule_evaluation_ref")

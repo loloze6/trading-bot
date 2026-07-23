@@ -66,6 +66,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import run_phase1_research as orch  # noqa: E402  (path insert must precede this)
+import record_schema  # noqa: E402  (closed record schema, see _save_queue)
 import verdict_criteria_evaluator as vce  # noqa: E402  (G6, see _save_queue)
 from setup_run import setup_run  # noqa: E402
 
@@ -116,9 +117,11 @@ def _save_queue(queue: dict):
     the file behind an unrelated legitimate write."""
     for entry in queue.get("queue") or []:
         if isinstance(entry, dict):
+            # C7-EXT-R2: the QUEUE schema, not the KB one -- `status`, `priority`
+            # and `relation` are legitimate here and meaningless there.
             vce.validate_verdict_provenance(
                 entry, entry_ref=f"campaign_queue.yaml entry {entry.get('id')!r}",
-                root=ROOT)
+                root=ROOT, schema=record_schema.QUEUE_ENTRY_SCHEMA)
 
     fd, tmp_name = tempfile.mkstemp(prefix=".campaign_queue.", suffix=".tmp",
                                      dir=str(QUEUE_PATH.parent))

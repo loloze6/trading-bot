@@ -40,6 +40,7 @@ if str(_HERE) not in sys.path:
 
 import yaml  # noqa: E402
 
+import record_schema  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
 
 
@@ -59,18 +60,23 @@ def lint_verdict_provenance(root=None) -> list:
     violations = []
 
     sources = (
-        ("campaign_knowledge_base.yaml", "findings", base / "campaign_knowledge_base.yaml"),
-        ("campaign_queue.yaml", "queue", base / "config" / "campaign_queue.yaml"),
+        ("campaign_knowledge_base.yaml", "findings", base / "campaign_knowledge_base.yaml",
+         record_schema.KB_FINDING_SCHEMA),
+        ("campaign_queue.yaml", "queue", base / "config" / "campaign_queue.yaml",
+         record_schema.QUEUE_ENTRY_SCHEMA),
     )
-    for label, key, path in sources:
+    for label, key, path, schema in sources:
         document = _load(path)
         for entry in document.get(key) or []:
             if not isinstance(entry, dict):
                 continue
             name = entry.get("id") or entry.get("hypothesis_id") or "<unnamed>"
             try:
+                # C7-EXT-R2: this now checks the closed record schema as well as
+                # provenance -- an unknown field is a violation in its own right.
                 vce.validate_verdict_provenance(
-                    entry, entry_ref=f"{label} entry {name!r}", root=base)
+                    entry, entry_ref=f"{label} entry {name!r}", root=base,
+                    schema=schema)
             except vce.UngatedVerdictError as exc:
                 violations.append(str(exc))
     return violations

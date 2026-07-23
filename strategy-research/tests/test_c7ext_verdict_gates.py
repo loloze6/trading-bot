@@ -294,10 +294,26 @@ def test_g5_k2_legacy_behaviour_survives_when_preconditions_are_met():
 # --------------------------------------------------------------------------
 
 def test_g6_verdict_without_provenance_is_rejected():
-    """The link that let a research-path tool write `verdict_c7: refine`."""
-    entry = {"id": "xs_momentum_cost_surviving_but_decaying", "verdict_c7": "refine"}
+    """The link that let a research-path tool write `verdict_c7: refine`.
+
+    Two refusals now, for two different reasons, and both matter:
+      - the ORIGINAL XS_momentum shape (`verdict_c7`) is refused by the closed
+        schema as an unknown field -- C7-EXT-R2 removed that legacy name rather
+        than keeping it on a list, and the record type no longer admits it;
+      - the same claim written in the DESIGNATED field is refused for the reason
+        this test was originally about: no provenance.
+    """
+    legacy = {"id": "xs_momentum_cost_surviving_but_decaying", "verdict_c7": "refine"}
     with pytest.raises(vce.UngatedVerdictError) as exc:
-        vce.validate_verdict_provenance(entry, entry_ref="KB finding 'xs'")
+        vce.validate_verdict_provenance(legacy, entry_ref="KB finding 'xs'")
+    assert "unknown field" in str(exc.value)
+
+    designated = {"id": "xs_momentum_cost_surviving_but_decaying",
+                  "outcome": "refine_research_path_edge_real",
+                  "evidence_runs": ["research_path_panel_backtester"]}
+    with pytest.raises(vce.UngatedVerdictError) as exc:
+        vce.validate_verdict_provenance(designated, entry_ref="KB finding 'xs'",
+                                        root=_SR_ROOT)
     assert "structurally ungated" in str(exc.value)
 
 
@@ -324,10 +340,13 @@ def test_g6_ungated_entry_may_keep_measurements_but_not_a_verdict():
     }
     assert vce.validate_verdict_provenance(entry) is entry
 
+    # C7-EXT-R2: the legacy `verdict_c7` route into this entry no longer exists
+    # at all -- the closed schema refuses the field before any contradiction
+    # check is reached. Refused earlier and more absolutely than before.
     entry["verdict_c7"] = "refine"
     with pytest.raises(vce.UngatedVerdictError) as exc:
         vce.validate_verdict_provenance(entry)
-    assert "contradictory" in str(exc.value)
+    assert "unknown field" in str(exc.value)
 
 
 def test_g6_live_kb_has_no_ungated_verdict_fields():
@@ -494,9 +513,15 @@ def test_d4_bypass_a_outcome_field_kill_is_now_refused():
 
 
 def test_d4_bypass_b_forged_ref_is_now_refused():
-    """Audit bypass B, verbatim. The ref was never resolved, so any truthy
-    string was provenance."""
-    entry = {"id": "y", "verdict_c7": "promote",
+    """Audit bypass B. The ref was never resolved, so any truthy string was
+    provenance.
+
+    Written through the DESIGNATED field: the original fixture used
+    `verdict_c7`, which C7-EXT-R2's closed schema now refuses as an unknown
+    field before ref resolution is ever reached -- so that shape would no longer
+    exercise the ref check this test exists to pin."""
+    entry = {"id": "y", "outcome": "promote_to_holdout",
+             "evidence_runs": ["run_059"],
              "pass_rule_evaluation_ref": "does/not/exist.yaml"}
     with pytest.raises(vce.UngatedVerdictError) as exc:
         vce.validate_verdict_provenance(entry, root=_SR_ROOT)
@@ -504,12 +529,13 @@ def test_d4_bypass_b_forged_ref_is_now_refused():
 
 
 def test_d4_bypass_c_a_renamed_verdict_field_is_now_refused():
-    """Audit bypass C, verbatim. A three-name denylist is side-stepped by
-    inventing a fourth name, so the gate matches on the NAME SHAPE instead."""
+    """Audit bypass C, verbatim. Under C7-EXT-R2 these are refused as UNKNOWN
+    FIELDS by the closed schema, not by any judgement about their names."""
     entry = {"id": "z", "final_verdict": "refine", "c7_verdict": "refine"}
     with pytest.raises(vce.UngatedVerdictError) as exc:
         vce.validate_verdict_provenance(entry, root=_SR_ROOT)
     assert "c7_verdict" in str(exc.value) and "final_verdict" in str(exc.value)
+    assert "unknown field" in str(exc.value)
 
 
 def test_d4_provenance_describing_fields_are_not_themselves_verdicts():
