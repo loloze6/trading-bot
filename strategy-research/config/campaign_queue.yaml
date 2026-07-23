@@ -216,7 +216,20 @@ queue:
 
     '
   run_ids: [research_path_panel_backtester_20260722]
-  outcome: ungated_measurement_no_admissible_verdict
+  # RELABELLED 2026-07-23 via the G6 closed-schema validator (record_schema.py):
+  # ungated_measurement_no_admissible_verdict -> ungated_decayed_measurement_no_admissible_verdict.
+  # The outcome string now carries the edge-decay fact; verdict_status added
+  # explicitly. No verdict count effect -- never gated. Measurements stand (KB).
+  outcome: ungated_decayed_measurement_no_admissible_verdict
+  verdict_status: ungated
+  verdict_void_reason: >
+    Full-sample net Sharpe 1.325 on a gate-validated backtester (30-slot run_054
+    reproduction, exact), decaying to net Sharpe 0.07 in its latest full in-sample
+    year (2025) -- edge decay, explicitly NOT trade sparsity (contrast run_057).
+    No admissible verdict because no pre-registered pass_rule was ever declared AND
+    no obtainable 2026 holdout can statistically resolve the Sharpe this year
+    (SE >= 1.3 for any T <= 0.56). Re-entry requires a pre-registered pass_rule plus
+    the four C7-EXT preconditions. Full record: KB xs_momentum_cost_surviving_but_decaying.
 - id: H-041-C-v2
   brief_path: briefs/H-041-C-v2.md
   status: done

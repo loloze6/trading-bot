@@ -2185,3 +2185,76 @@ report success (P0, guard CLOSED 2026-07-23; data gap STILL OPEN)
   **2025-12-31 23:00**, first fetchable bar **2026-06-22 23:00**, gap
   **4,151 bars / ~173 days**. Holdout discipline held throughout: coverage
   metadata only, no return or performance statistic over any 2026 data.
+
+---
+
+# v11 additions — 2026-07-23 (XS_momentum parked through the closed schema; data carry-forwards)
+
+## H. Verdict integrity (continued)
+
+**C7-EXT-R2 — first production write through the G6 closed schema, on a genuine
+relabel.** `XS_momentum` was relabelled in both stores and the write was routed
+THROUGH `tools/record_schema.py` (via `validate_verdict_provenance`), not around
+it — the same path `run_phase1_research._write_kb_findings_entry` and
+`run_campaign._save_queue` take. Both entries passed.
+
+- **KB `xs_momentum_cost_surviving_but_decaying`** and **queue `XS_momentum`**:
+  `outcome` -> `ungated_decayed_measurement_no_admissible_verdict` (KB was
+  `measurement_only_no_admissible_verdict`, queue was
+  `ungated_measurement_no_admissible_verdict`); `verdict_status: ungated`
+  (added explicitly to the queue entry, which previously carried none).
+- **Recorded reason (load-bearing, verbatim in `verdict_void_reason`):**
+  full-sample net Sharpe 1.325 on a gate-validated backtester (the 30-slot
+  run_054 reproduction, exact), decaying to net Sharpe **0.07** in its latest
+  full in-sample year (2025) — **edge decay, explicitly NOT trade sparsity**
+  (contrast run_057, the ER-gate variant parked as too sparse; this signal
+  trades daily and still fades). No admissible verdict because no pre-registered
+  pass_rule was ever declared AND no obtainable 2026 holdout can statistically
+  resolve the Sharpe this year: **SE >= 1.3 for any T <= 0.56** year, so one
+  holdout year cannot separate a real 0.07 edge from zero.
+- **Parking removes the verdict claim, not the evidence.** Every measurement is
+  unchanged and verified present after the edit: `net_sharpe_full_sample: 1.325`,
+  `validation_gate: PASS`, `per_year_net_sharpe:
+  [2.95, 0.85, 1.02, 2.96, 0.77, 1.46, 0.76, 0.96, 0.07]`.
+- **Honest verdict count unchanged at 1** (`FUNDING_MR_DAILY_RETEST`), confirmed
+  by the standalone `tools/lint_verdict_provenance.py`. XS was never gated, so
+  parking it must not move the count — and does not. `outcome` starts with the
+  `ungated` prefix, so `outcome_is_verdict_bearing` returns False and the entry
+  is admissible with no provenance, exactly as a corrected record should be.
+
+## G. Data & cache layer (continued)
+
+**NEW CARRY-FORWARD — Binance as the continuous-recent-data source for future
+holdouts.** Where Kraken's 2026 OHLCVT bulk export is unpublished (G3: retrievable
+sources index only through `Kraken_OHLCVT_Q4_2025.zip`) and its live OHLC endpoint
+serves only a fixed rolling ~30-day / ~720-candle window (G3: the silent-hole
+seam, 4,151-bar gap), **Binance can supply continuous recent candles** for a
+future holdout. `BTC/ETH` are already Binance-cached (`BTCUSDT_1h.csv` /
+`ETHUSDT_1h.csv`, unqualified keys), and G1 item 3 already made `exchange` an
+additive parameter on `DataManager.fetch_historical_data()`, so the fetch path is
+in place.
+
+- **CAVEAT, recorded explicitly (firing condition, not a TODO):** any strategy
+  validated on Binance data **must be re-declared and re-costed for Binance per
+  Phase 1.3**. `XS_momentum`'s Kraken venue registration (`venue: kraken_perp`)
+  and its cost basis (cost_model.yaml perp block, 5 bps one-way) **do not
+  transfer** — different venue, different fee schedule, different funding
+  convention, different tradable universe. A Binance holdout of XS is a NEW
+  registration, not a continuation of the Kraken measurement, and must carry its
+  own pre-registered pass_rule and cost basis before any figure it produces is a
+  verdict. (Compounds with G1 item 4: `FundingRateFetcher.cache_key()` is still
+  unqualified, so a second-venue funding fetch is a live collision risk.)
+
+**PARKED — the q1_26 tick archive is Kraken Trades, not OHLCVT.** On disk at
+`trading-bot/local_data/Kraken_batch/q1_26/` (Q1 2026, timestamps from
+2026-01-01). Verified format: **time-and-sales**, header
+`Price,Volume,Timestamp,Type,Miscellaneous,Trade ID` — NOT the 7-column
+`timestamp,open,high,low,close,volume,trades` OHLCVT schema the audited
+`ingest_kraken_archive.py` path consumes. It is therefore usable **only via the
+scoped-but-unbuilt Trades -> 1h aggregation path** (G3 Option 1, with its three
+mandatory integrity checks: boundary alignment, overlap volume reconciliation,
+cursor completeness). **Left on disk, not ingested.** G1 item 2 stays OPEN and
+the seam is unchanged — archive ends 2025-12-31 23:00, first fetchable live bar
+2026-06-22 23:00, **4,151-bar / ~173-day gap**. Having the raw trades on disk is
+not the same as having them addressable as OHLC bars, the same
+availability-vs-addressability distinction G1/G2 twice conflated.
