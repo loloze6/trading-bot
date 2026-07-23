@@ -1443,9 +1443,21 @@ independent audit, fee-isolation-pairs follow-up)
      (`XBTUSD` → `_fetch_remote` → `XBT/USD` → ccxt `BadSymbol`), so the only
      symbol reaching the archive slot was unfetchable. G2 re-keys the archive to
      the standard-base `BTCUSD`, which both hits the same slot AND normalizes to
-     ccxt's valid `BTC/USD`. **Top-up composability is now real and proved by
+     ccxt's valid `BTC/USD`. ~~**Top-up composability is now real and proved by
      key derivation (G2 step 7); the top-up fetch itself remains a separate
-     dispatch.**
+     dispatch.**~~ — **CORRECTED AGAIN 2026-07-23 (see G3). Overstated, and by
+     the same conflation the sentence above it corrects.** Key derivation proves
+     the top-up REACHES the right slot with a fetchable symbol. It says nothing
+     about whether the endpoint SERVES the history that slot needs — and it does
+     not: Kraken's public OHLC endpoint returns a fixed rolling ~720-candle
+     window and ignores `since` entirely. Measured seam, verbatim:
+
+     > archive ends **2025-12-31 23:00**; first fetchable bar
+     > **2026-06-22 23:00**; gap **4,151 bars / ~173 days**.
+
+     Item 2 therefore **stays OPEN**. Addressability and availability are
+     different properties; proving one has now twice been recorded as proving
+     the other.
   3. **CLOSED (this commit).** `trading-bot/data/data_manager.py:768`'s
      hardcoded `exchange="binance"` is now an additive `exchange: str =
      "binance"` parameter on `DataManager.fetch_historical_data()` — the one
@@ -2023,3 +2035,128 @@ atomicity the re-audit confirmed empirically.
 **Method note.** Three rounds of this defect were closed by the person who wrote
 them and reopened by the next reader within minutes. The thing that finally
 changed was not a better guess about names — it was giving up on guessing.
+
+---
+
+# v9 additions — found 2026-07-23 (silent-hole fetch defect)
+
+### G3. A rolling-window endpoint makes `_fetch_remote` write a holed cache and
+report success (P0, guard CLOSED 2026-07-23; data gap STILL OPEN)
+
+- **Symptom.** Kraken's public OHLC endpoint serves a fixed rolling ~720-candle
+  window and **ignores `since` entirely**. Probed read-only, three `since`
+  values return byte-identical windows:
+
+  ```
+  since=2026-01-01  -> n=721  first=2026-06-22 23:00  last=2026-07-22 23:00
+  since=2025-06-01  -> n=721  first=2026-06-22 23:00  last=2026-07-22 23:00
+  since=none        -> n=721  first=2026-06-22 23:00  last=2026-07-22 23:00
+  ```
+
+  Endpoint-wide, not pair-specific (BTC/ETH/XRP/SOL/ONDO/TAO/INJ all identical).
+
+- **Why it was silent — the actual defect.** `_fetch_remote` pages until the
+  endpoint returns `[]`, then `if not candles: break` exits *cleanly*. The
+  partial result flows into `_merge_and_store`, which wrote it unconditionally
+  and logged `Saved … (N rows)`. A 2026 top-up would therefore have produced a
+  cache spanning 2025-12-31 → 2026-07-22 **with a 4,151-bar hole in the middle**,
+  a success line in the log, and nothing anywhere reporting a problem. This is
+  the worst shape a data defect takes: every downstream consumer inherits it and
+  none can detect it. The endpoint's behaviour is Kraken's to define; treating
+  a short read as a complete one was ours.
+
+- **Fix — a guard at the WRITE boundary, not a fetch-loop rewrite.**
+  `BaseFetcher._merge_and_store` now calls `_assert_no_new_gap` and raises
+  `FetchGapError` **before** touching `data_cache` or disk, so a rejected fetch
+  leaves no trace in memory or on disk. The message names the missing span and
+  its bar count.
+  - **Differential by construction.** Archive-ingested caches carry real natural
+    gaps (INJ ~5.7%, DOGE ~5.1% within-life missing bars, already on record), so
+    an absolute "no internal gaps" rule would reject every cache the campaign
+    depends on. Only a gap covering time that was *not already gapped* fails.
+  - **Containment, not equality**, is the comparison: a fetch that PARTIALLY
+    fills a pre-existing hole leaves a smaller gap nested inside the original.
+    That is an improvement and must not be blocked.
+  - **Unguarded when `existing` is empty**: with no prior data there is no
+    continuity to break, and a late-listed asset legitimately returns data
+    starting partway into the requested window.
+  - Reuses `expected_gap_tolerance` and the same gap criterion
+    `_identify_missing_periods`/`validate_data_continuity` already apply, rather
+    than inventing a second notion of continuity.
+
+- **Acceptance.** `trading-bot/tests/test_fetch_gap_guard.py` (7 tests,
+  fixture-driven, no live calls): the Kraken shape to scale raises and writes
+  nothing; the guard derives 4,151 independently rather than restating a
+  constant; contiguous top-up still writes; pre-existing natural gaps still
+  write; partial gap-fill still writes; first-fetch unguarded; and a real
+  on-disk `kraken_BTCUSD_1h.csv` is byte-compared before/after to prove no
+  archive cache changes. Suite 413 -> 420.
+
+- **2026 bulk-archive recon (web-sourced, retrieved 2026-07-23).** Kraken
+  publishes the OHLCVT bulk export with "incremental updates … provided at the
+  end of each quarter", as `Kraken_OHLCVT_Q<N>_<YEAR>.zip`
+  ([support article](https://support.kraken.com/articles/360047124832-downloadable-historical-ohlcvt-open-high-low-close-volume-trades-data)).
+  Schema **matches the already-ingested export exactly**: headerless, 7 columns
+  `timestamp,open,high,low,close,volume,trades`, **unix seconds**, files named
+  `<PAIR>_<MINUTES>.csv` (e.g. `XBTUSD_60.csv`) — identical to
+  `ingest_kraken_archive.py`'s `KRAKEN_RAW_COLUMNS`, so the audited ingestion
+  path would need no change
+  ([schema reference](https://concretumgroup.com/how-to-get-free-full-crypto-intraday-data-2013-2025-from-kraken/)).
+  **Existence of the 2026 files is UNCONFIRMED**: retrievable sources index only
+  through `Kraken_OHLCVT_Q4_2025.zip`. Under the stated cadence Q1 2026
+  (ended 03-31) and Q2 2026 (ended 06-30) should both exist, but cadence is not
+  evidence and is not recorded here as such. Verifying requires the download
+  page itself, which is not publicly indexed. **Not downloaded** — this recon
+  established existence and shape only.
+  - **If Q1+Q2 2026 exist, the seam closes with overlap to spare**: Q2 runs to
+    2026-06-30, and the live rolling window already reaches back to
+    2026-06-22 — a ~8-day overlap, so archive and live compose with no seam at
+    all. This is by far the cheapest path and should be checked before any
+    aggregation work is commissioned.
+
+- **Option 1 cost estimate (`/0/public/Trades` -> 1h aggregation), scoped NOT
+  implemented.** Request volume estimated from the **2025-H2** archive's own
+  `number_of_trades` column — a pre-holdout proxy, so no 2026 data was touched:
+
+  | | |
+  |---|---:|
+  | Trades, 19 pairs, 2025-H2 | 41,210,802 |
+  | Calls @ 1,000 trades/call (endpoint max) | 41,211 |
+  | Serial @ 1 call/sec | **~11.4 hours** |
+  | Parallel per-pair (limit is per IP *and* per pair) | **~2.2 hours**, bounded by BTC |
+
+  Rate limit: public endpoints tolerate ~1 call/sec, limited by IP and pair
+  ([request limits](https://support.kraken.com/articles/206548367-what-are-the-api-rate-limits-));
+  `count` max 1000, paginated via the `last` cursor
+  ([Trades endpoint](https://docs.kraken.com/api/docs/rest-api/get-recent-trades)).
+  Volumes are a proxy, not a measurement — 2026 could differ materially.
+  **Integrity checks aggregation would require, none of which the OHLC path
+  needs:**
+  1. **Aggregation-boundary alignment** — bars must be left-closed/right-open on
+     exact UTC hour boundaries matching the archive's convention. An off-by-one
+     boundary shifts every bar and would reconcile *approximately* while being
+     systematically wrong.
+  2. **Volume reconciliation against the overlap region** — aggregate a window
+     that the archive ALSO covers (e.g. 2025-12), and require volume and
+     `number_of_trades` to match per bar. This is the only check that validates
+     the aggregator against ground truth rather than against itself, and it must
+     pass before any 2026 output is trusted.
+  3. **Trade-completeness at the cursor** — the `since` cursor paginates by trade
+     ID; a dropped page silently under-counts volume in a bar that still looks
+     well-formed.
+
+- **Ledger correction (item 2, second instance).** G2's "top-up composability is
+  now real and proved by key derivation" is **overstated, by the same conflation
+  G2 itself was correcting one sentence earlier**. Key derivation proves the
+  top-up is ADDRESSABLE (right slot, fetchable symbol); it says nothing about
+  whether the endpoint SERVES that history. G1's original claim conflated
+  slot-design with fetchability; G2's replacement conflated fetchability with
+  availability. Twice in one arc, a narrower proof was recorded as the broader
+  one. The pattern worth naming: **"proved by derivation" is a claim about
+  addressing, and can never establish an empirical property of a remote
+  service.** Only a probe can, which is why the seam was found by probing.
+
+- **Item 2 remains OPEN.** Seam recorded verbatim: archive ends
+  **2025-12-31 23:00**, first fetchable bar **2026-06-22 23:00**, gap
+  **4,151 bars / ~173 days**. Holdout discipline held throughout: coverage
+  metadata only, no return or performance statistic over any 2026 data.
