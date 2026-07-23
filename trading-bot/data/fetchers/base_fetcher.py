@@ -39,6 +39,28 @@ import pandas as pd
 logger = logging.getLogger("trading_bot")
 
 
+class FetchGapError(RuntimeError):
+    """
+    Raised at the WRITE boundary when a fetch would introduce a NEW hole into a
+    series that was previously continuous across that span.
+
+    Motivating defect (2026-07-23): Kraken's public OHLC endpoint serves a fixed
+    rolling ~720-candle window and silently IGNORES `since`. Asking it for
+    2026-01-01 onward returns only the last 30 days. `_fetch_remote`'s
+    `if not candles: break` then exits cleanly, `_merge_and_store` writes the
+    result, and the run logs a successful fetch — leaving a ~173-day hole in the
+    middle of the cache with nothing anywhere reporting a problem. A wrong-data
+    read that announces itself as success is the worst shape a data defect can
+    take: every downstream consumer inherits it and none can detect it.
+
+    The guard is deliberately DIFFERENTIAL. Archive-ingested caches carry real
+    natural gaps (INJ ~5.7%, DOGE ~5.1% within-life missing bars are on record),
+    so an absolute "no internal gaps" rule would reject every cache the campaign
+    already depends on. Only a gap covering time that was NOT already gapped
+    fails the write.
+    """
+
+
 class BaseFetcher(ABC):
     """
     Shared plumbing for all data fetchers.
@@ -181,7 +203,8 @@ class BaseFetcher(ABC):
                     else:
                         logger.warning(f"  No data returned for {symbol} {ps} → {pe}")
                 if pieces:
-                    self._merge_and_store(symbol, pieces, save=self.localStorage)
+                    self._merge_and_store(symbol, pieces, save=self.localStorage,
+                                          existing=existing)
                 else:
                     logger.warning(f"  No valid data assembled for {symbol}")
                     self.data_cache[symbol] = pd.DataFrame()
@@ -246,10 +269,75 @@ class BaseFetcher(ABC):
             )
         return df
 
-    def _merge_and_store(self, symbol: str, pieces: list, save: bool = False):
+    def _gap_intervals(self, timestamps) -> List[Tuple[pd.Timestamp, pd.Timestamp]]:
+        """
+        Missing spans in a timestamp series, as inclusive [first_missing,
+        last_missing] pairs. A "gap" is any step exceeding
+        expected_gap_tolerance x the expected interval — the same criterion
+        _identify_missing_periods and validate_data_continuity already use, so
+        the guard agrees with the rest of the class rather than inventing a
+        second notion of continuity.
+        """
+        ts = pd.to_datetime(pd.Series(timestamps)).sort_values().reset_index(drop=True)
+        if len(ts) < 2:
+            return []
+        expected = pd.Timedelta(seconds=int(self.interval_seconds))
+        threshold = expected * self.expected_gap_tolerance
+        spans = []
+        deltas = ts.diff()
+        for i in range(1, len(ts)):
+            if deltas.iloc[i] > threshold:
+                spans.append((ts.iloc[i - 1] + expected, ts.iloc[i] - expected))
+        return spans
+
+    def _assert_no_new_gap(self, symbol: str, existing: pd.DataFrame,
+                           combined: pd.DataFrame) -> None:
+        """
+        Refuse a write that introduces a hole where the series was previously
+        continuous. See FetchGapError for the defect this exists to catch.
+
+        Containment, not equality, is the test: a pre-existing gap that a fetch
+        PARTIALLY fills produces a smaller gap nested inside the original. That
+        is an improvement and must not be blocked. Only a gap that escapes every
+        pre-existing gap's bounds represents time this fetch actually lost.
+        """
+        if existing is None or existing.empty:
+            # Nothing was continuous before, so nothing can be broken. A first
+            # fetch of a sparse or late-listed asset legitimately starts partway
+            # into the requested window; that is not this guard's business.
+            return
+
+        before = self._gap_intervals(existing["timestamp"])
+        after = self._gap_intervals(combined["timestamp"])
+
+        new_gaps = [
+            (s, e) for (s, e) in after
+            if not any(bs <= s and e <= be for (bs, be) in before)
+        ]
+        if not new_gaps:
+            return
+
+        detail = "; ".join(
+            f"{s} -> {e} ({int((e - s) / pd.Timedelta(seconds=int(self.interval_seconds))) + 1} bars)"
+            for s, e in new_gaps
+        )
+        raise FetchGapError(
+            f"[{self.__class__.__name__}] refusing to write {symbol}: this fetch "
+            f"would introduce {len(new_gaps)} new gap(s) into a previously "
+            f"continuous series — {detail}. The remote returned data that does "
+            f"not connect to what is already cached (a rolling-window endpoint "
+            f"that ignores `since` produces exactly this shape). NOTHING was "
+            f"written; the existing cache is unchanged."
+        )
+
+    def _merge_and_store(self, symbol: str, pieces: list, save: bool = False,
+                         existing: pd.DataFrame = None):
         """
         Concatenate DataFrames, deduplicate on timestamp, sort, cache in memory,
         and optionally write to disk.
+
+        Raises FetchGapError — BEFORE touching memory or disk — if the merge
+        would introduce a new discontinuity relative to `existing`.
         """
         combined = (
             pd.concat(pieces, ignore_index=True)
@@ -257,6 +345,10 @@ class BaseFetcher(ABC):
             .sort_values("timestamp")
             .reset_index(drop=True)
         )
+        # Ordered deliberately ahead of both the in-memory cache assignment and
+        # the disk write: a rejected fetch must leave no trace in either.
+        self._assert_no_new_gap(symbol, existing, combined)
+
         self.data_cache[symbol] = combined
         if save:
             path = self._csv_path(symbol)
