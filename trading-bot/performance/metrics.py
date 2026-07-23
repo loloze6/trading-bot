@@ -323,6 +323,9 @@ class EnhancedPerformanceTracker:
         self.commission_rate = commission_rate
         performance_dir = os.path.dirname(os.path.abspath(__file__))
         project_dir = os.path.dirname(performance_dir)
+        # os.path.join returns `log_file` unchanged when it is already absolute,
+        # so callers may pass either a project-relative path (the default) or an
+        # absolute one (e.g. a test's tmp_path) without any behaviour change here.
         self.log_file = os.path.join(project_dir, log_file)
         self.positions: Dict[str, Position] = {}  # symbol -> Position
         self.completed_trades: List[CompletedTrade] = []

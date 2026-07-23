@@ -44,6 +44,9 @@ def _run(reference, tmp_path, **kwargs):
         start=reference["start_date"],
         end=reference["end_date"],
         results_root=str(tmp_path),
+        # Keep the tracker's interim trades.json inside tmp_path; without this it
+        # would fall back to the shared trading-bot/results/trades.json (D4).
+        trades_log_file=str(tmp_path / "interim_trades.json"),
         **kwargs,
     )
     with open(Path(run_dir) / "metrics.json") as f:

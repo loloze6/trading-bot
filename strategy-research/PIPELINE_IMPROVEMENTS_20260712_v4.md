@@ -1105,6 +1105,31 @@ KB layer, is the complete known gate to autonomy as of session close.
 - **Acceptance:** fixture: two backtests run back-to-back must each leave
   their own trades.json intact and inspectable, neither overwriting the
   other.
+- **CLOSED (D4 dispatch, 2026-07-23):** scope was narrowed to the concrete
+  defect the arc actually kept hitting — the **test suite** writing into the
+  shared, tracked `trading-bot/results/trades.json`. The path was baked into
+  *production* code (`EnhancedPerformanceTracker.__init__`'s default), which the
+  backtest path reached because `launcher._build_mock_stack` constructed the
+  tracker with no `log_file`, so it inherited the shared default and the
+  throttled `save_trades()` dumped into the tracked file mid-run. Fix is
+  additive/opt-in: threaded a `trades_log_file` parameter through
+  `run_backtest` → `_build_mock_stack` → `EnhancedPerformanceTracker(log_file=…)`,
+  **production default byte-identical** (omit it ⇒ flat `results/trades.json`
+  exactly as before — verified by `test_default_still_targets_shared_results_path`
+  and the unchanged golden-fixture regression tests). The five suite call sites
+  now opt into `tmp_path`. Standing guarantee: a `pytest_sessionfinish` guard in
+  **both** test roots' conftests fails the run if any tracked file under
+  `trading-bot/results/` is mutated during a session (order-independent),
+  backed by `trading-bot/tests/test_results_dir_isolation.py` proving the seam.
+  Verified: full suite run twice, `git status --porcelain -- trading-bot/results`
+  empty after each. **This defect fired three times in this arc** (session
+  reports 20260720_fee_isolation_pairs, 20260722_c7ext_audit /
+  20260722_kraken_ingest_audit, 20260723_c7ext_r_audit) — each papered over with
+  a `git checkout --` waiver rather than fixed. A suite that writes into a
+  production artifact path is **unauditable evidence provenance**: any run's
+  `trades.json` could be a test's scratch output rather than that run's real
+  history — the same defect class as C7-EXT (untrusted/ambiguous provenance of
+  a decision-input artifact). The STATE W git-status waiver is retired.
 
 # v7 additions — found 2026-07-20 (Dispatch H/J/K arc: perp cost calibration,
 independent audit, fee-isolation-pairs follow-up)

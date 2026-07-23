@@ -74,10 +74,49 @@ need the marker: it queries a family name guaranteed absent from either a
 real or an empty wishlist file, so `missing_field` is the correct result
 either way -- confirmed by it passing unmarked under this guard.
 """
+import subprocess
 import sys
 from pathlib import Path
 
 import pytest
+
+# --- D4 regression guard --------------------------------------------------
+# The whole point of the D4 fix: no test may write into the shared, tracked
+# trading-bot/results/ directory (its trades.json was silently dirtied by the
+# suite three times across this arc). This session-finish hook is the standing
+# guarantee -- it fails the run if ANY test mutated a tracked file there,
+# regardless of which test did it or in what order they ran. See
+# trading-bot/tests/conftest.py for the twin guard on the other suite.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_RESULTS_REL = "trading-bot/results"
+
+
+def _mutated_tracked_results_files():
+    """Return the list of tracked files under trading-bot/results/ that the
+    working tree has modified/deleted, or None if git can't be consulted."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(_REPO_ROOT), "status", "--porcelain", "--", _RESULTS_REL],
+            capture_output=True, text=True, timeout=30,
+        )
+    except Exception:
+        return None
+    if out.returncode != 0:
+        return None
+    # Skip untracked entries ('??'); we assert only on mutations of TRACKED files.
+    return [ln for ln in out.stdout.splitlines() if ln.strip() and not ln.startswith("??")]
+
+
+def pytest_sessionfinish(session, exitstatus):
+    dirty = _mutated_tracked_results_files()
+    if dirty:
+        session.exitstatus = 1
+        print(
+            f"\nD4 REGRESSION: the test session mutated tracked file(s) under "
+            f"{_RESULTS_REL}. Tests must write to tmp_path, never the shared "
+            f"results dir. Offending entries:\n  " + "\n  ".join(dirty)
+        )
+
 
 _WORKFLOW_PATH = Path(__file__).parent.parent / "workflow"
 if str(_WORKFLOW_PATH) not in sys.path:
