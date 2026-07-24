@@ -2373,3 +2373,42 @@ exactly what is missing. Standing constraints (single-writer-per-state-store,
 read-back verify, no-self-remediation, premise-failure full-STOP, holdout
 untouchable, always-emit-one-log-line, context economy) carry forward
 unchanged."
+
+## Session: 2026-07-24 — P4 density arc close-out (recon + density probe, no verdict)
+
+### Hypothesis
+Can `panel_backtester` express P4's per-symbol SMA-trend signal, and does
+19-pair breadth lift trade density above the A3.4 five-trade floor —
+measured, not assumed?
+
+### Result
+Recon + density probe (basis, no verdict). The ER(20)≥0.30 ENTRY GATE, not
+breadth, is the sparsity mechanism: the gate removes 74% of parent entries
+(799 → 209), and going 2 → 19 symbols moved the parent floor-clear rate only
+43.3% → 44.9% (+1.6pt). The parent SMA-trend rule clears the floor 80/178;
+the gated variant is dead 3/178. E1 (density basis, `0d0f848`) and E2
+(provenance/test/ledger, `91087ed`+`96b3058`) ratified by independent
+read-only recomputation audit (A3): 9/9 density figures re-derived to the
+digit, `outcome`/`verdict_status` provably untouched, suite green at 413.
+Honest gated-verdict count held at 1 (`FUNDING_MR_DAILY_RETEST`). No verdict
+produced. Queue routing corrected: `P4_ts_trend` `blocked_on_P2` →
+`blocked_on_daily_bar_ingest`; `blocked_on_P2` is now fully retired from the
+queue as a status token (grep confirms no entry carries it).
+
+### Files touched
+- `campaign_knowledge_base.yaml` (`0d0f848` — density basis)
+- 3 session reports + `test_c7ext_verdict_gates.py` +
+  `PIPELINE_IMPROVEMENTS_20260712_v4.md` (`91087ed`/`96b3058`)
+- `strategy-research/config/campaign_queue.yaml`,
+  `strategy-research/NEXT_SESSION.md`, `strategy-research/SESSION_LOG.md`
+  (this commit)
+
+### Next session prompt (copy-paste)
+"READ-ONLY recon. The P4 parent SMA-trend rule provably clears the five-trade
+ floor (80/178) and is blocked only on daily-bar ingest (ledger P4-D1). Determine
+ whether trading-bot/local_data/Kraken_batch/master_q4/*_1440.csv (3,042 headerless
+ daily files; schema: unix-seconds,open,high,low,close,volume,trades) can be
+ ingested to the cache format the engine reads (kraken_<BASE>USD_1d style), making
+ the P4 parent rule RUNNABLE for a properly-gated adjudication. Recon only: report
+ the ingest gap, the exact target cache schema/path, and whether panel_backtester
+ or the trading-bot engine is the correct runner — no run, no code, no verdict."
