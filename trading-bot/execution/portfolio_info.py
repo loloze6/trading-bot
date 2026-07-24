@@ -201,9 +201,58 @@ class CommonPortfolioDef:
         if self.local_balance['USDT']['locked'] > 0 or self.local_balance[symbol]['locked'] > 0:
             logger.debug(f"      📊 Open borrows │ USDT: ${self.local_balance['USDT']['locked']:.2f} │ {symbol}: {self.local_balance[symbol]['locked']:.6f}")
 
+    def apply_funding(self, symbol, mark_price, f_bar):
+        """
+        Accrue perpetual-funding cash flow on the currently-held position (design
+        2026-07-24 §5(a)). Sibling to update_local_balance, but off the trade path:
+        funding accrues every bar a position is open, independent of any trade, and
+        never interacts with commission.
+
+            funding_cash_flow = - position_sign * N * f_bar
+                N            = |position_qty| * mark_price
+                position_sign = +1 for a LONG (free asset), -1 for a SHORT (locked asset)
+
+        Positive funding + LONG  → cash_flow < 0 (long pays).
+        Positive funding + SHORT → cash_flow > 0 (short receives).
+        Negative funding flips both. Matches the Binance convention (positive rate ⇒
+        longs pay shorts, funding_rate_fetcher.py:9-10).
+
+        Pure USDT.free balance mutation. Flat position → zero. Returns the applied
+        cash flow (for logging/tests).
+
+        Args:
+            symbol: Trading symbol (e.g., 'BTCUSDT')
+            mark_price: Mark price used for notional (the bar close at the hook site)
+            f_bar: Funding rate accrued over the bar (daily-summed; see
+                   data/feed_registry.py::build_daily_funding_series)
+        """
+        if f_bar is None or symbol not in self.local_balance:
+            return 0.0
+
+        free = self.local_balance[symbol].get('free', 0.0)
+        locked = self.local_balance[symbol].get('locked', 0.0)
+        position_qty = free - locked  # long (free asset) > 0; short (locked asset) < 0
+
+        if position_qty == 0:
+            return 0.0
+
+        position_sign = 1.0 if position_qty > 0 else -1.0
+        notional = abs(position_qty) * mark_price
+        funding_cash_flow = -position_sign * notional * f_bar
+
+        if 'USDT' not in self.local_balance:
+            self.local_balance['USDT'] = {'free': 0.0, 'locked': 0.0}
+        self.local_balance['USDT']['free'] += funding_cash_flow
+
+        logger.debug(
+            f"      💰 Funding │ {symbol} │ f_bar={f_bar:+.6f} │ N=${notional:.2f} │ "
+            f"cash_flow=${funding_cash_flow:+.4f}"
+        )
+        return funding_cash_flow
+
     def _calculate_total_portfolio_value(
-        self, 
-        balances: Dict, 
+        self,
+        balances: Dict,
         current_price: float
     ) -> float:
         """
