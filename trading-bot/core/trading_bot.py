@@ -8,6 +8,7 @@ import time
 import datetime
 import logging
 from typing import Any, Dict, List, Optional, Tuple
+import pandas as pd
 from performance.metrics import EnhancedPerformanceTracker, CompletedTrade
 from data.data_manager import Candle
 
@@ -74,6 +75,17 @@ class TradingBot:
         self.test_mode = test_mode
         self.symbols = symbols or ['BTCUSDT']
         
+        # 2026-07-24: off-by-default perpetual-funding accrual (design 2026-07-24 §5).
+        # When model_funding is False (default) the funding hook in
+        # _process_symbol_candle_completion is never entered, so behavior is
+        # byte-identical to before this mechanism existed. Turning it on additionally
+        # requires funding_daily to be populated (a per-symbol daily funding COST
+        # series, distinct from the forward-filled signal feed; see
+        # data/feed_registry.py::build_daily_funding_series). Neither is wired on by
+        # any production config here — this is mechanism-only.
+        self.model_funding = False
+        self.funding_daily = None
+
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
         self.closed_trades: List[CompletedTrade] = []
@@ -125,8 +137,26 @@ class TradingBot:
         finally:
             self.stop()
 
+    def _funding_rate_for_bar(self, symbol, data_time):
+        """
+        Daily funding rate to accrue for `symbol` on the bar dated `data_time`.
+
+        Looks the bar's calendar day up in self.funding_daily (a per-symbol dict of
+        normalized-day-Timestamp → summed funding rate; see
+        data/feed_registry.py::build_daily_funding_series). Returns None when there is
+        no series for the symbol or no settlement dated to that day — the caller then
+        applies no funding. Only the bar's own day is read, so a settlement dated after
+        this bar can never be charged to it (no look-ahead).
+        """
+        series = self.funding_daily.get(symbol) if self.funding_daily else None
+        if not series:
+            return None
+        day = pd.Timestamp(data_time).normalize()
+        val = series.get(day)
+        return None if val is None else float(val)
+
     def _process_symbol_candle_completion(
-        self, 
+        self,
         symbol: str
     ) -> None:
         """
@@ -161,6 +191,19 @@ class TradingBot:
 
             # Retrieve portfolio information
             balances = self.portfolio_info.get_account_balance()
+
+            # 2026-07-24 (design §5): off-by-default funding accrual. Charge funding on
+            # the position HELD INTO this bar — i.e. on `balances` as they stand BEFORE
+            # this bar's rebalance below — using `close` as the mark and the funding
+            # settled during this bar (settlements dated to this bar's day). Placed here
+            # so the accrual flows into the mark-to-market at the next line and into the
+            # recorded bar-level total_portfolio_value series. Flag off (default) or no
+            # feed → skipped entirely, preserving byte-identical prior behavior.
+            if self.model_funding and self.funding_daily is not None:
+                f_bar = self._funding_rate_for_bar(symbol, data_time)
+                if f_bar is not None:
+                    self.portfolio_info.apply_funding(symbol, close, f_bar)
+
             total_portfolio_value = self.portfolio_info._calculate_total_portfolio_value(balances, close)
             self.logger.debug(f"   💼 Portfolio: ${total_portfolio_value:.2f}")
 

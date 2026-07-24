@@ -160,6 +160,27 @@ perp:
     default: 5.0
   round_trip_cost_bps:
     default: 10.0
+  # FUNDING ACCRUAL (2026-07-24, additive off-by-default mechanism per
+  # docs/session_reports/20260724_funding_cashflow_model_design.md §5).
+  # Declares WHERE the funding series comes from and its sign convention so no
+  # funding constant is hardcoded in code (honoring the top-of-file HARD RULE). The
+  # engine mechanism (trading-bot: CommonPortfolioDef.apply_funding + the flag-gated
+  # hook in TradingBot._process_symbol_candle_completion) is OFF by default and reads
+  # NO constant from here; this block is the documented source id + convention that a
+  # future funding-costed re-run (a re-pinned protocol, not yet authored) resolves the
+  # daily funding series against. No re-cost has been run.
+  funding:
+    modeled: false            # mechanism exists but is off by default; no re-cost run
+    source_id: binance_perp_funding_8h
+    # Per-symbol 8h Binance funding CSVs on disk (trading-bot/local_data/
+    # {symbol}_funding_8h.csv), summed to a daily COST series by
+    # data/feed_registry.py::build_daily_funding_series. This is DISTINCT from the
+    # forward-filled funding_rate SIGNAL feed the strategy component reads.
+    cadence: 8h_settlements_summed_to_daily
+    sign_convention: positive_funding_longs_pay_shorts
+    # Binance-vs-Kraken funding basis is an open calibration question (design §6 Q1);
+    # in-sample re-costing uses the Binance 8h series above as the proxy.
+    venue_note: in_sample_proxy_binance_8h_live_venue_kraken_perp_1h
 
 # ---------------------------------------------------------------------------
 # EXECUTION STYLE VARIANTS (2026-07-04, cost-structure revision)
