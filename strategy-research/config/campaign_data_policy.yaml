@@ -148,6 +148,25 @@ kraken_breadth_19pair:
                                                # XS_momentum brief's market_universe,
                                                # not implied by this measurement entry.
 
+# Q1-2026 Kraken holdout tranche quarantine (2026-07-24). The bulk Q1-2026 archive
+# tranche (formerly Kraken_batch/kraken_ohlcvt_q1_2026, ~10,269 CSVs) was moved out of
+# the in-sample Kraken_batch/ tree into a sealed holdout directory (filesystem-only;
+# gitignored via local_data/, not committed). It falls inside the frozen holdout_range
+# above (2026-01-01 -> 2026-06-30, era_2026_holdout) and MUST NOT be read by any
+# walk-forward search, prescreen, or diagnostic. Reachability re-check (2026-07-24)
+# confirmed NO in-sample loader reaches under local_data/holdout_sealed/**:
+# ingest_kraken_archive archive_dir (Kraken_batch/master_q4), campaign_queue master_q4
+# glob, panel_backtester flat + kraken_1h patterns, and base_fetcher cache path all
+# resolve outside the sealed tree. holdout_range (:18) is UNCHANGED by this entry.
+kraken_q1_2026_holdout:
+  quarantined: "2026-07-24"
+  source_dir: local_data/holdout_sealed/2026_H1/kraken_q1_2026/  # moved out of Kraken_batch/
+  era: era_2026_holdout  # matches the frozen holdout era above
+  span: ["2026-01-01", "2026-03-31"]  # Q1 2026, within holdout_range
+  sealed: true
+  single_use: true
+  status: sealed_holdout_not_reachable  # no in-sample loader reaches holdout_sealed/**
+
 # A8.6 symbol_correlation supersession note (2026-07-22): config/campaign_config.yaml's
 # symbol_correlation block still holds ONLY the BTC/ETH pair (rho=0.82, n_eff~1.10) --
 # insufficient for a 4+ instrument cross-section per the XS_momentum brief's own
