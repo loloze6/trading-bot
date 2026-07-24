@@ -44,7 +44,32 @@ Single entry point for the next session. Read in order, then work the queue.
    three independent audits (all AUDIT PASS on what was eventually
    ratified).
 
-## State delta since the 2026-07-20 NEXT_SESSION.md (authoritative amendments, dated 2026-07-23)
+## State delta — P4 density arc close-out (current, dated 2026-07-24)
+
+- **P4 density arc CLOSED.** E1 (density basis, `0d0f848`) and E2
+  (provenance/test/ledger, `91087ed`+`96b3058`) RATIFIED by independent
+  read-only recomputation audit (A3): 9/9 density figures re-derived to the
+  digit; `outcome`/`verdict_status` provably untouched; suite green at 413;
+  honest gated-verdict count = 1 (unchanged). **No verdict produced.**
+- **Finding: the ER(20)≥0.30 ENTRY GATE, not universe width, is P4's
+  sparsity mechanism.** The gate removes 74% of parent entries (799 → 209).
+  Going 2 → 19 symbols moved the parent floor-clear rate only 43.3% → 44.9%
+  (+1.6pt). The gated variant is terminally dead; the parent rule is alive
+  and floor-clearing, blocked only on daily-bar ingest.
+- **Queue:** `P4_ts_trend` status corrected `blocked_on_P2` →
+  `blocked_on_daily_bar_ingest` (this commit). The real blocker is the
+  Track-A daily-bar ingest (ledger P4-D1), not Phase 2 — P2 closed
+  hourly-only (`kraken_<BASE>USD_1h`) and never carried daily breadth bars.
+- **`blocked_on_P2` is now fully retired from the queue as a status token.**
+  A grep of `campaign_queue.yaml` (2026-07-24) finds NO entry carrying
+  `status: blocked_on_P2`; `P4_ts_trend` was the last one. The three
+  remaining textual matches are all historical prose inside `notes:` blocks
+  (P4's own two, XS's one), not statuses. `XS_momentum` is `done` /
+  parked-ungated as of 2026-07-22 (flipped `blocked_on_P2 → ready` at P2
+  close, then executed), not blocked — the earlier stale label is gone.
+- **Suite green at 413; tree clean at close.**
+
+## State delta since the 2026-07-20 NEXT_SESSION.md (PRIOR ARC, dated 2026-07-23 — retained for still-live non-P4 threads: the G1 4,151-bar seam, the Binance holdout carry-forward, the FUNDING gated:1 anchor, holdout discipline)
 
 - **Phase 2 Track A: COMPLETE.** Breadth ingestion reaches 19 of the 20
   targeted Kraken pairs (HYPE absent from the bulk archive, recon-confirmed,
