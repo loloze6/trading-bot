@@ -490,7 +490,13 @@ def test_campaign_honest_verdict_count():
                 / "pass_rule_evaluation.yaml").exists()
 
     outcomes = {e["id"]: (e.get("outcome") or "") for e in queue.get("queue", [])}
-    assert outcomes["XS_momentum"] == "ungated_measurement_no_admissible_verdict"
+    # Relabelled 2026-07-23 (commit 6b27d56) through the G6 closed-schema
+    # validator: `ungated_measurement_no_admissible_verdict` ->
+    # `ungated_decayed_measurement_no_admissible_verdict`, so the outcome string
+    # itself carries the edge-decay fact. The relabel is a naming change with no
+    # verdict-count effect -- this entry was never gated -- which is why the
+    # assertion below moves and the gated set above does not.
+    assert outcomes["XS_momentum"] == "ungated_decayed_measurement_no_admissible_verdict"
     assert "refine" not in outcomes["XS_momentum"]
 
 
