@@ -2391,3 +2391,99 @@ choose (`20260724_p4_density_probe_archive.md:361-386`).
   reactivation condition as a hard prerequisite. Rule: before recording any capability as
   blocked, **open the file and read the signature at HEAD** — a citation to a prior report is
   not a re-read, and a report is only ever true against the commit it audited.
+
+## H. Verdict integrity (continued)
+
+### H1. The closed record schema admits only two dated-key families, so a basis strengthening that deliberately moves no verdict has no correct slot (P2, FILED — seam, not a defect)
+
+Filed as a **seam alongside the `outcome_reason` exemption**
+(`PIPELINE_IMPROVEMENTS_20260712_v4.md:2008-2017`), on the same principle stated
+there: an unexamined exemption is how the previous rounds failed, so a slot the
+schema does not have is written down rather than left to be rediscovered.
+
+- **The schema lines that enumerate the families:** `tools/record_schema.py:207-213`.
+  The allowlist is exactly two patterns —
+  `^readjudication_\d{8}$` -> `TEXT` (`:211`) and
+  `^outcome_history_superseded_\d{8}$` -> `HISTORY` (`:212`) — resolved by
+  `_shape_for()` at `:224-226`, which returns `None` (-> `RecordSchemaError`) for
+  any dated key outside them. This is deny-by-default and that is correct; the
+  seam is the *shape of the vocabulary*, not the strictness.
+- **Both families presuppose that something moved.** `outcome_history_superseded_<date>`
+  is `HISTORY` — a record of a *prior outcome* now superseded. `readjudication_<date>`
+  names a *re-judgement*. Neither names the third real case: the entry's **evidentiary
+  basis** was replaced with something stronger and the **outcome and `verdict_status`
+  were deliberately left where they were**.
+- **The KB key that had to borrow one:** `campaign_knowledge_base.yaml:1078`,
+  `readjudication_20260724` on `p4_sma_trend_longonly_daily_auto`. The 2026-07-24
+  density probe replaced `exhausted_basis` with a measured basis and set
+  `reactivation_condition` from null. It was governed by **no pre-registered
+  pass_rule** and produced **no verdict**, so nothing was re-judged — the key's own
+  first line says so (`:1078-1081`: "DENSITY-PROBE BASIS REPLACEMENT (no relabel, no
+  verdict). outcome and verdict_status are UNCHANGED"), and it states the constraint
+  that forced the borrow at `:1086-1089`: "The closed record schema
+  (tools/record_schema.py:210-213) admits exactly two dated correction families ...
+  An outcome_history record would falsely imply the outcome moved, which it did not,
+  so the superseded exhausted_basis is retained here instead."
+- **Why this is a seam and not a defect.** No record is wrong, nothing was smuggled,
+  and the write is honest — it disclaims in its first sentence the very thing its key
+  name implies. The cost is that a reader indexing on key names sees a *readjudication*
+  where a basis was strengthened, which **overstates it**: it reads as the campaign
+  having re-decided P4_ts_trend when the campaign explicitly did not. Two entries now
+  sit under the `readjudication_<date>` name meaning two different things
+  (`readjudication_20260722` on the same finding was a genuine relabel; `_20260724`
+  was not), and only the prose distinguishes them.
+- **Candidate resolution when taken up (not done here):** a third allowlisted family,
+  e.g. `^basis_replacement_\d{8}$` -> `TEXT`, admissible **only** on entries whose
+  `outcome` and `verdict_status` are byte-identical before and after the write — the
+  no-verdict-movement precondition enforced by the schema rather than asserted in
+  prose. That is a schema change plus a KB migration of the borrowed key, i.e. queued
+  work, not a mid-arc patch.
+- **Acceptance when taken up:** a write that changes `exhausted_basis` while leaving
+  `outcome`/`verdict_status` untouched lands under a key whose name says exactly that;
+  a write that *does* move `outcome` under the same key is refused by the validator.
+
+## I. Session close-out & suite verification (new category)
+
+### I1. The suite was red for three commits and the arc close-out reported a test COUNT, not a RESULT (P1 — assertion fixed; the close-out procedure is FILED, not fixed)
+
+- **What went red, and when.** `6b27d56` ("Park XS_momentum through the G6 closed
+  schema; record Binance carry-forward") relabelled `outcome` ->
+  `ungated_decayed_measurement_no_admissible_verdict` in **both** stores
+  (`campaign_knowledge_base.yaml:1169`, `config/campaign_queue.yaml:260`), routed
+  through the G6 closed schema and documented at `:1170-1176` — a deliberate write.
+  It did not touch `tests/test_c7ext_verdict_gates.py`, whose
+  `test_campaign_honest_verdict_count` still asserted the pre-relabel string. That
+  assertion was authored at `0a4d606` (2026-07-22, `git blame` of the assert line)
+  and was **correct against that commit**; `6b27d56` is what left it behind. The test
+  file's last touch before the relabel was `f1a3d94`, which precedes `6b27d56`, so
+  nothing re-checked it.
+- **The close-out that did not surface it.** `19fa1b9` ("Arc close-out: refresh
+  NEXT_SESSION.md + SESSION_LOG for C7-EXT/XS-park arc") recorded, in both files,
+  "**Test suites (strategy-research, across the C7-EXT chain): 338 -> 369 (`0a4d606`)
+  -> 389 (`2c8b8d1`) -> 413 (`f1a3d94`)**". Every number there is accurate as a count
+  of tests. The suite at `19fa1b9` was **412 passed, 1 failed**. The count was
+  reported; the result was not. The failure then survived `0d0f848` and was found
+  only when the suite was run for its own sake.
+- **Why the count could not have caught it.** A stale assertion does not remove a test.
+  Collection count is invariant under a red test, so a growth series (`338 -> ... ->
+  413`) is structurally incapable of detecting this class. It measures that tests were
+  *written*, which is not the claim a close-out is making when it cites it.
+- **What the close-out procedure would have to check (the actual ask).** A close-out
+  must record the **exit status and the pass/fail summary line verbatim**, not a
+  count: the literal `N passed` / `N failed, M passed` line and a non-zero-exit STOP.
+  A count is not a result. Two corollaries, both from this incident:
+  (a) any commit that changes a value in `campaign_knowledge_base.yaml` or
+  `config/campaign_queue.yaml` must run the suite **in the same commit**, because the
+  KB and queue are test *fixtures* for the verdict-integrity tests and no code change
+  is involved to trigger suspicion; (b) a close-out that reports a suite figure without
+  having run the suite **at the commit it is closing out** should say so explicitly
+  rather than carrying a figure forward from an earlier commit — `413` was `f1a3d94`'s
+  collected count quoted at `19fa1b9`, which is precisely how a green-looking number
+  outlived a green suite.
+- **Fixed (the assertion only):** `tests/test_c7ext_verdict_gates.py:499` now asserts
+  the post-relabel string, with the relabel's provenance in a comment above it. The KB
+  and queue were **not** touched — analysis established they hold the deliberate value
+  and the test held the stale one. Suite after the fix: `413 passed`.
+- **FILED, not fixed (the procedure):** no close-out template, hook or CI check was
+  added. Acceptance when taken up: a close-out commit cannot be written without a
+  pasted verbatim summary line from a run at that commit, and a red suite blocks it.
