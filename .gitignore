@@ -37,6 +37,30 @@ trading-bot/local_data/*/
 # Exceeds GitHub's 100MB per-file hard limit — would reject the push
 trading-bot/local_data/BTCUSDT_1m.csv
 
+# HOLDOUT-CARRYING CACHE FILES — excluded from publication (2026-07-26).
+# Each file below was measured today to contain rows inside the frozen
+# holdout_range 2026-01-01..2026-06-30 (campaign_data_policy.yaml:18). The
+# subdirectory deny-by-default rule above does not reach them: they are loose
+# files at local_data/ root, in the default un-prefixed Binance cache slot that
+# every CcxtFetcher/FundingRateFetcher consumer reads.
+#
+# This block IS a name enumeration, and that is a known weakness — the same
+# weakness the comment above rejects for subdirectories. It is used here because
+# the property being guarded is a DATE RANGE INSIDE file contents, which
+# .gitignore cannot express at all: no pattern can ask "does this CSV have a row
+# after 2026-01-01". The enumeration is therefore a stopgap over a set measured
+# on 2026-07-26, not a rule that catches the next contaminated file. A new cache
+# file crossing into the holdout range will NOT be caught here, and no range check
+# exists anywhere today that would catch it — that gap is open, not closed
+# (tasks/lessons.md L-2026-07-26-A).
+trading-bot/local_data/BTCUSDT_1h.csv
+trading-bot/local_data/ETHUSDT_1h.csv
+trading-bot/local_data/BTCUSDT_1d.csv
+trading-bot/local_data/ETHUSDT_1d.csv
+trading-bot/local_data/fear_greed_daily.csv
+trading-bot/local_data/BTCUSDT_funding_8h.csv
+trading-bot/local_data/ETHUSDT_funding_8h.csv
+
 # Agent config / transcripts
 .claude/
 strategy-research/.claude/

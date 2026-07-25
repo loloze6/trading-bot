@@ -2616,3 +2616,85 @@ does not build on either figure without re-measuring first.
   or trade-density estimate takes a funding sign-flip count as an input, the
   discrepancy must be resolved by re-measurement **before** that rule is
   registered — not adjudicated from this note, which resolves nothing.
+
+# v13 additions — found 2026-07-26 (2026 coverage scope recon; holdout-cache leak arc)
+
+## G. Data & cache layer (continued)
+
+### G8. `Kraken_batch/q1_26/` is holdout-range data inside the in-sample tree — and it is superseded (NON-BLOCKING, FILED NOT FIXED)
+
+Source: dispatch B1-R, `docs/session_reports/20260726_2026_coverage_scope.md` (read-only;
+no file inside `holdout_range` was opened — every 2026-range fact below comes from
+filenames, sizes, counts, the registry, or a prior written record).
+
+**G8a — location risk.** `trading-bot/local_data/Kraken_batch/q1_26/` holds **5.4 GB across
+1,467 CSVs** of Q1-2026 Kraken *Trades* data — i.e. content inside `holdout_range`
+(`campaign_data_policy.yaml:18`) — stored **inside the in-sample tree**, whose sibling
+`master_q4/` *is* an active ingest source (`ingest_kraken_archive.py:281`). Both figures
+match `local_data/README.md:64` exactly (B1-R step 5).
+
+What actually protects it today is that **nothing has been built that can read it**: it is
+Kraken time-and-sales (`Price,Volume,Timestamp,Type,Miscellaneous,Trade ID`, verbatim at
+`:2250-2251`), not the 7-column OHLCVT the audited ingest path consumes, and the
+Trades→OHLCVT aggregation path is scoped-but-unbuilt (G3 Option 1). That is a **policy
+claim about the current state of the codebase, not a mechanical guarantee** — it holds
+only while no aggregator exists, and it is one merged tool away from being false. The
+2026-07-24 quarantine's reachability re-check (`campaign_data_policy.yaml:156-160`) covers
+`holdout_sealed/**` only; **it asserts nothing about `q1_26/`** (B1-R WHAT REMAINS item 4).
+
+**Durable fix, not actioned:** relocate it under a **range-scoped** quarantine path, as was
+done for the Q1 OHLCVT tranche — i.e. scope the guard by the protected date range rather
+than by which directory the bytes happen to occupy (`tasks/lessons.md` L-2026-07-26-A).
+**Operator's call.** Not urgent while it remains unaggregated and no aggregator exists;
+it becomes urgent the moment either changes.
+
+**G8b — supersession: do NOT commission the aggregation.** The check this ledger itself
+demanded at **`:2136-2140`** — *"This is by far the cheapest path and should be checked
+before any aggregation work is commissioned"* — has now been made, and it comes back
+negative for the aggregation.
+
+- The sealed tranche is **already finished OHLCVT**, not raw trades: 10,269 files at
+  `holdout_sealed/2026_H1/kraken_q1_2026/`, a complete grid of **1,467 pairs × 7
+  resolutions** (`_1 _5 _15 _60 _240 _720 _1440`), in Kraken's documented
+  `{TICKER}_{MINUTES}.csv` bulk convention; the registry names its origin directory
+  `Kraken_batch/kraken_ohlcvt_q1_2026` (`campaign_data_policy.yaml:152`) — OHLCVT, on the
+  record. Established from filenames, sizes and counts only; nothing under
+  `holdout_sealed/` was opened (B1-R step 4).
+- **Pair universes are identical.** Compared by filename only (`comm` over the two sorted
+  name lists): q1_26 = 1,467 pairs, sealed `_1440` set = 1,467 pairs, **only-in-q1_26 = 0,
+  only-in-sealed = 0, in-both = 1,467**. Same quarter, same pairs (B1-R step 5).
+
+**Consequence:** aggregating `q1_26` would regenerate, at high cost and with three
+mandatory integrity checks, data that already exists in final form — and it still could
+not produce **Q2 2026**, which is the actual gap (frozen and empty: no Kraken Q2 data
+exists on disk in any form, and the Q2 bulk export's existence remains unconfirmed per
+`:2130-2135`). The aggregation is **off the critical path**; do not commission it.
+
+**Standing caveat that outranks both parts:** the input is holdout-range data, so none of
+this is schedulable now at any size. B1-R sized the *mechanism*; it did not grant
+permission to run it.
+
+### G9. Seven Binance cache CSVs carried holdout rows into the published tree (CLOSED for publication, OPEN in history)
+
+Filed and actioned in the same commit as this note. Seven loose CSVs at
+`trading-bot/local_data/` root carry 78–4,344 rows each inside `holdout_range`, in the
+default un-prefixed Binance cache slot; **three were tracked and published** from
+`ac27791` (2026-06-12). Now `.gitignore`-excluded and `git rm --cached`-untracked, and
+registered at `campaign_data_policy.yaml` (`binance_cache_holdout_contaminated`) with
+per-file last timestamp and in-range row count. Working copies untouched.
+
+Two things stay open, stated rather than smoothed over. **(1) History is not clean** —
+`git rm --cached` does not touch prior commits, so a full-history clone still yields 2026
+H1 bars; rewrite is the operator's decision, filed alongside the same decision for `.env`
+at `fec0120`. **(2) The exclusion is a name enumeration**, which cannot catch the next
+cache file that crosses into the range, because `.gitignore` cannot express a predicate
+over file CONTENTS. No timestamp-range check exists anywhere in the repo today. That
+residual gap is filed OPEN (`tasks/lessons.md` L-2026-07-26-A), not closed by this commit.
+
+Corrects B1-R on two measured points: the swept set is **seven** files, not five (B1-R
+missed both `*_funding_8h.csv`), and only **three** of the seven were tracked, not five
+(`git ls-files` at `fec0120`).
+
+**No verdict added or altered by any part of v13.** Gated verdict count unchanged at **1**
+(`FUNDING_MR_DAILY_RETEST`, per `tools/lint_verdict_provenance.py`). No KB entry, queue
+entry, brief or protocol was touched.
