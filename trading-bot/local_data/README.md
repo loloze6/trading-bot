@@ -46,6 +46,42 @@ If you believe you have read 2026 H1 data — even accidentally, even briefly �
 immediately**. A disclosed contamination can be reasoned about. An undisclosed one
 silently invalidates everything downstream of it.
 
+### ⚠️ This repository shipped 2026 H1 data while saying not to obtain it
+
+Stated plainly, because the section above was written as if the cache stopped at
+2025-12-31 and it did not. Measured 2026-07-26 (last-timestamp field only, no value
+column read), **seven loose CSVs at this directory's root carry rows inside
+`2026-01-01`..`2026-06-30`**:
+
+| File | Last timestamp | Rows in holdout range | Was committed? |
+|---|---|---:|---|
+| `BTCUSDT_1h.csv` | `2026-07-05 10:00:00` | 4,344 | **yes** |
+| `ETHUSDT_1h.csv` | `2026-07-05 10:00:00` | 4,344 | no |
+| `BTCUSDT_1d.csv` | `2026-03-19` | 78 | no |
+| `ETHUSDT_1d.csv` | `2026-03-19` | 78 | no |
+| `fear_greed_daily.csv` | `2026-07-05` | 181 | **yes** |
+| `BTCUSDT_funding_8h.csv` | `2026-07-05 08:00:00.001` | 542 | **yes** |
+| `ETHUSDT_funding_8h.csv` | `2026-07-05 08:00:00.001` | 542 | no |
+
+**All seven are now excluded from publication** (`.gitignore`, "holdout-carrying cache
+files" block); the three that were tracked were removed from the index with
+`git rm --cached`. Working copies are untouched — this changes what the repo *publishes*,
+not what is on your disk. Registered at
+`strategy-research/config/campaign_data_policy.yaml`
+(`binance_cache_holdout_contaminated`).
+
+**Repository HISTORY still contains them.** The three tracked files were committed from
+`ac27791` (2026-06-12) onward. `git rm --cached` removes a file from the current tree, not
+from prior commits, so **a clone of full history is not holdout-clean** — `git show` on any
+commit in that range still yields 2026 H1 bars. History rewrite is the operator's separate
+decision, filed alongside the same decision for `.env` at `fec0120`. Until then, treat full
+history as contaminated and do not check out or diff these paths at older commits.
+
+Two consequences for the rest of this README, noted here rather than by rewriting it:
+§3's "committed and published" no longer holds for the seven files above, and §3.5's
+funding-carry reproduction now requires re-fetching its two inputs (bounded at
+**2025-12-31**) rather than reading them from a clone.
+
 ---
 
 ## 1. What is NOT in this repo, and why

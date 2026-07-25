@@ -2545,3 +2545,107 @@ funding carry large enough to matter — measured, not assumed.
  (single-writer-per-state-store, read-back verify, no-self-remediation,
  premise-failure full-STOP, holdout untouchable, context economy) carry forward
  unchanged."
+
+---
+
+## Session: 2026-07-26 — holdout leak in the published cache closed; debt flushed (dispatch W2)
+
+### Hypothesis
+Dispatch B1-R (read-only, `docs/session_reports/20260726_2026_coverage_scope.md`) reported
+as a side finding that five committed root CSVs carry rows inside the frozen
+`holdout_range` (2026-01-01..2026-06-30). If true, the campaign's holdout prohibition was
+protocol-only for the most-read cache slot in the repo — and the repository was publishing
+2026 H1 data while `local_data/README.md` instructed collaborators not to obtain it. W2's
+job: verify the finding by direct measurement, close the publication path, register the
+files, and flush the queued lessons/ledger debt. No verdict work.
+
+### Result
+**Finding confirmed, and B1-R undercounted it in both directions.** Sweeping every loose
+`*.csv` at `trading-bot/local_data/` root (last-timestamp field only — `tail -n 1 | cut -d,
+-f1`; no price, volume, funding-rate or index value read at any point) returns **seven**
+contaminated files, not five: B1-R missed `BTCUSDT_funding_8h.csv` and
+`ETHUSDT_funding_8h.csv`. Conversely B1-R called all five "committed"; `git ls-files` at
+`fec0120` shows only **three** of the seven were ever tracked — `BTCUSDT_1h.csv`,
+`BTCUSDT_funding_8h.csv`, `fear_greed_daily.csv`. Both corrections are recorded in the
+registry entry and ledger G9 rather than left to be rediscovered.
+
+Per-file, rows falling inside `holdout_range` (`awk -F, 'NR>1 && $1>="2026-01-01" &&
+$1<"2026-07-01"'`): `BTCUSDT_1h` 4,344 · `ETHUSDT_1h` 4,344 · `BTCUSDT_1d` 78 ·
+`ETHUSDT_1d` 78 · `fear_greed_daily` 181 · `BTCUSDT_funding_8h` 542 ·
+`ETHUSDT_funding_8h` 542. All sit in the default un-prefixed Binance cache slot that every
+`CcxtFetcher`/`FundingRateFetcher` consumer reads — unlike the 19 Kraken pairs, which stop
+at 2025-12-31 and physically cannot leak.
+
+- **Closed for publication.** All seven `.gitignore`d under a commented block; the three
+  tracked ones `git rm --cached`. **Working copies untouched** — this changes what the
+  repo publishes, not what is on disk.
+- **Registered.** New `binance_cache_holdout_contaminated` entry in
+  `config/campaign_data_policy.yaml`, carrying per-file path, last timestamp, in-range row
+  count and tracked-status, each with its measuring command named inline. `holdout_range`,
+  `holdout_consumed_by`, `holdout_failure_is_terminal` and `kraken_q1_2026_holdout`
+  verified unchanged by YAML parse. `tools/record_schema.py` governs
+  `campaign_knowledge_base.yaml` findings and `campaign_queue.yaml` entries only — it does
+  not govern this file, so there was no schema to route through and none was bypassed.
+- **Two things stay OPEN, and are filed as open.** (1) `git rm --cached` does not touch
+  history: the three tracked files were committed from `ac27791` (2026-06-12) onward and a
+  full-history clone is **not** holdout-clean. Rewrite is the operator's decision, filed
+  alongside the same decision for `.env` at `fec0120`. (2) The exclusion is a **name
+  enumeration** and cannot catch the next cache file that crosses the range — `.gitignore`
+  cannot express a predicate over file contents, and no timestamp-range check exists
+  anywhere in the repo. Said plainly at the guard site rather than recorded as coverage.
+- **Debt flushed.** `tasks/lessons.md` **created** (it did not exist; the standing rules
+  call for it, and its absence is disclosed at the top of the file) with L-2026-07-26-A
+  (scope a guard by the policy's own unit — a date range — not by directory name; same
+  class as the G6 name-enumeration failure, reached from the opposite direction) and
+  L-2026-07-26-B (a dispatch drafted before a pending writer commit lands needs an explicit
+  RE-BASELINE marker in its header; recorded once already and repeated, so the remedy now
+  has a carrier in the artifact it governs). Ledger **G8** files `Kraken_batch/q1_26/` —
+  5.4 GB / 1,467 files of holdout-range Trades data sitting in the in-sample tree, whose
+  only protection today is that no aggregator exists to read it, which is a policy claim
+  about the codebase and not a mechanical guarantee; durable fix is relocation under a
+  range-scoped quarantine path, operator's call, non-urgent while unaggregated. G8b closes
+  the check this ledger demanded at `:2136-2140`: the sealed tranche is already finished
+  OHLCVT over an **identical** 1,467-pair universe (compared by filename only), so the
+  aggregation **should not be commissioned** — and could not produce Q2 2026 anyway, which
+  is the real gap. Ledger **G9** files the leak itself.
+- **No verdict added or altered.** No KB entry, queue entry, brief or protocol touched.
+  Gated verdict count **unchanged at 1** (`FUNDING_MR_DAILY_RETEST`), verified by
+  `tools/lint_verdict_provenance.py` before and after.
+
+### Files touched
+- `.gitignore` (holdout-carrying cache block; 7 paths)
+- `trading-bot/local_data/BTCUSDT_1h.csv`, `BTCUSDT_funding_8h.csv`,
+  `fear_greed_daily.csv` — **index only** (`git rm --cached`); working copies unmodified
+- `strategy-research/config/campaign_data_policy.yaml` (new
+  `binance_cache_holdout_contaminated` entry; no existing field altered)
+- `trading-bot/local_data/README.md` (new subsection inside the existing holdout section;
+  rest of file not restructured)
+- `tasks/lessons.md` (**new file**; L-2026-07-26-A, L-2026-07-26-B)
+- `strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md` (v13 block: G8, G9)
+- `strategy-research/docs/session_reports/20260726_2026_coverage_scope.md` (B1-R report,
+  previously untracked, staged in this commit)
+- `strategy-research/SESSION_LOG.md` (this entry)
+
+### Next session prompt (copy-paste)
+"The holdout leak in the published cache is CLOSED for publication and registered (see
+ SESSION_LOG 2026-07-26 and ledger G9): seven root CSVs in the Binance cache slot carried
+ 78-4,344 holdout-range rows each, three of them tracked; all seven are now gitignored and
+ the three untracked from the index, with working copies untouched. Do NOT re-add them and
+ do NOT treat the leak as reopened. Two items it left behind, both filed OPEN and neither
+ fixed. (1) REPOSITORY HISTORY IS STILL CONTAMINATED - the three tracked files live in
+ every commit from ac27791 (2026-06-12), so a full-history clone yields 2026 H1 bars;
+ history rewrite is the operator's decision, filed alongside the same decision for .env at
+ fec0120, and it is NOT yours to take unilaterally. (2) THE EXCLUSION IS A NAME
+ ENUMERATION and cannot catch the next contaminated cache file, because .gitignore cannot
+ test file contents; no timestamp-range check exists anywhere in the repo. If you take
+ anything up, take (2): DESIGN TASK, write-up only, no run and no registration - specify a
+ pre-publication check that reads the last timestamp of every cache CSV and refuses any
+ file with rows inside holdout_range, per tasks/lessons.md L-2026-07-26-A (scope the guard
+ by the policy's own unit). Read L-2026-07-26-A, campaign_data_policy.yaml's
+ binance_cache_holdout_contaminated entry, and ledger G8/G9 first. Ledger G8 separately
+ records that Kraken_batch/q1_26/ (5.4 GB holdout-range Trades data in the in-sample tree)
+ should eventually move under a range-scoped quarantine path - operator's call, non-urgent,
+ do not action it unprompted - and that its Trades->OHLCVT aggregation is SUPERSEDED and
+ must NOT be commissioned. Standing constraints (single-writer-per-state-store, read-back
+ verify, no-self-remediation, premise-failure full-STOP, holdout untouchable, context
+ economy) carry forward unchanged."

@@ -167,6 +167,79 @@ kraken_q1_2026_holdout:
   single_use: true
   status: sealed_holdout_not_reachable  # no in-sample loader reaches holdout_sealed/**
 
+# Holdout-contaminated Binance cache files (registered 2026-07-26). Seven loose
+# CSVs at trading-bot/local_data/ root carry rows INSIDE holdout_range (:18).
+# They sit in the DEFAULT, UN-PREFIXED Binance cache slot -- the slot every
+# CcxtFetcher consumer reads for BTCUSDT/ETHUSDT (ccxt_fetcher.py:101-121, empty
+# prefix for exchange="binance") and every FundingRateFetcher consumer reads for
+# funding (funding_rate_fetcher.py:106-108, key not exchange-qualified). Unlike
+# the 19 Kraken pairs (:73-84), whose data physically stops at 2025-12-31 and so
+# CANNOT leak, these files are physically readable straight through 2026 H1:
+# the :8-9 prohibition is PROTOCOL-ONLY for them, with no mechanical guard.
+#
+# Discovered by dispatch B1-R, docs/session_reports/20260726_2026_coverage_scope.md
+# (finding at that report's "Holdout-range rows present in the in-sample cache
+# root" section and WHAT REMAINS item 5). Previously disclosed only indirectly, as
+# the "Binance-future-holdout carry-forward" at NEXT_SESSION.md:124-131; absent
+# from this file and from local_data/README.md until this entry.
+#
+# CORRECTION to B1-R, measured 2026-07-26 by `git ls-files` at fec0120: B1-R
+# reported FIVE files and called all five "committed". Both counts were wrong.
+# The swept set (every loose *.csv at local_data root, last timestamp field only)
+# is SEVEN -- B1-R missed both funding files -- and only THREE of the seven were
+# ever tracked. tracked_at_fec0120 below records the measured status per file.
+#
+# holdout_range (:18), holdout_consumed_by (:192), holdout_failure_is_terminal
+# (:199) and the kraken_q1_2026_holdout entry above are UNCHANGED by this entry.
+binance_cache_holdout_contaminated:
+  registered: "2026-07-26"
+  cache_dir: local_data/  # loose CSVs at root, un-prefixed Binance cache slot
+  era: era_2026_holdout  # rows fall in the frozen 2026 H1 era above
+  spans_holdout_range: true  # every file below has >=1 row in 2026-01-01..2026-06-30
+  excluded_from_publication: "2026-07-26"  # .gitignore, named block; 3 of 7 git rm --cached
+  # Provenance for EVERY number below, measured 2026-07-26 at commit fec0120:
+  #   last_timestamp      -- `tail -n 1 <file> | cut -d, -f1`   (field 1 only)
+  #   rows_in_holdout     -- `awk -F, 'NR>1 && $1>="2026-01-01" && $1<"2026-07-01"'`
+  #   tracked_at_fec0120  -- `git ls-files trading-bot/local_data/`
+  # No price, volume, funding-rate or index value was read from any file.
+  files:
+    - path: local_data/BTCUSDT_1h.csv
+      last_timestamp: "2026-07-05 10:00:00"
+      rows_in_holdout: 4344
+      tracked_at_fec0120: true
+    - path: local_data/ETHUSDT_1h.csv
+      last_timestamp: "2026-07-05 10:00:00"
+      rows_in_holdout: 4344
+      tracked_at_fec0120: false
+    - path: local_data/BTCUSDT_1d.csv
+      last_timestamp: "2026-03-19"
+      rows_in_holdout: 78
+      tracked_at_fec0120: false
+    - path: local_data/ETHUSDT_1d.csv
+      last_timestamp: "2026-03-19"
+      rows_in_holdout: 78
+      tracked_at_fec0120: false
+    - path: local_data/fear_greed_daily.csv
+      last_timestamp: "2026-07-05"
+      rows_in_holdout: 181
+      tracked_at_fec0120: true
+    - path: local_data/BTCUSDT_funding_8h.csv
+      last_timestamp: "2026-07-05 08:00:00.001"
+      rows_in_holdout: 542
+      tracked_at_fec0120: true
+    - path: local_data/ETHUSDT_funding_8h.csv
+      last_timestamp: "2026-07-05 08:00:00.001"
+      rows_in_holdout: 542
+      tracked_at_fec0120: false
+  history_caveat: >
+    Exclusion is forward-looking only. The three files marked tracked_at_fec0120
+    were committed from ac27791 (2026-06-12) onward and REMAIN in repository
+    history; `git rm --cached` removes them from the published tree, not from
+    prior commits. A clone of full history is therefore NOT holdout-clean.
+    History rewrite is the operator's separate decision, filed alongside the
+    same decision for .env at commit fec0120. Not actioned here.
+  status: excluded_from_publication_protocol_only_in_working_tree
+
 # A8.6 symbol_correlation supersession note (2026-07-22): config/campaign_config.yaml's
 # symbol_correlation block still holds ONLY the BTC/ETH pair (rho=0.82, n_eff~1.10) --
 # insufficient for a 4+ instrument cross-section per the XS_momentum brief's own
