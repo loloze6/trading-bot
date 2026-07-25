@@ -2487,3 +2487,132 @@ schema does not have is written down rather than left to be rediscovered.
 - **FILED, not fixed (the procedure):** no close-out template, hook or CI check was
   added. Acceptance when taken up: a close-out commit cannot be written without a
   pasted verbatim summary line from a run at that commit, and a red suite blocks it.
+
+# v12 additions — found 2026-07-25 (funding re-cost arc: carry measurement and close-out)
+
+## C. Power & validation machinery (continued)
+
+### C16. ERA-CONCENTRATED EDGE IN THE PASS-GATED WINDOW: two independent families (XS_momentum, FUNDING_MR_DAILY_RETEST carry) measure edge concentrated in 2020-2021 and decayed to noise by 2023-2025; a full-window median-Sharpe pass rule therefore selects regime-expired strategies, and the single sealed holdout (`holdout_failure_is_terminal: true`) is the thing that pays for it (P1, FILED — no pass rule redesigned here)
+
+The two families share no mechanism, no data feed, no runner and no author. They
+were measured months apart, for different questions. They agree, and that is the
+reason this is filed as a pass-rule problem rather than as two coincidences.
+
+- **Family 1 — funding carry, measured per calendar year** (annualized carry
+  `A1 = (365/N)·Σ_D sign(f_{D-1})·f_D·100`, from
+  `docs/session_reports/20260725_funding_carry_magnitude.md` §7, script marker
+  `L16`; window bound applied before any statistic):
+
+  | Year | BTCUSDT A1 %/yr | ETHUSDT A1 %/yr | n_days |
+  |---|---|---|---|
+  | 2019 (Dec only) | 4.6894 | 10.2332 | 30 |
+  | 2020 | 19.3438 | 27.1763 | 366 |
+  | 2021 | **31.2850** | **37.5817** | 365 |
+  | 2022 | 4.3878 | 4.6791 | 365 |
+  | 2023 | 7.6029 | 8.2273 | 365 |
+
+  Both symbols peak in 2021 and collapse ~7x / ~8x into 2022, recovering only
+  partially in 2023. The whole-window headline (`A1` = 15.4367 / 19.2366, same
+  report §3, marker `L11`) is **carried by 2020–2021** and is roughly 3x the
+  2022–2023 level — i.e. the headline describes a regime that ended inside the
+  window it is quoted over.
+
+- **Family 2 — XS_momentum, per-year net Sharpe**
+  (`campaign_knowledge_base.yaml`, `xs_momentum_cost_surviving_but_decaying`,
+  `signal_property.per_year_net_sharpe`, 2017..2025):
+  `[2.95, 0.85, 1.02, 2.96, 0.77, 1.46, 0.76, 0.96, 0.07]`, against
+  `net_sharpe_full_sample: 1.325`, `net_sharpe_post_2021: 0.77` and
+  `net_sharpe_2025: 0.073` (2025 cumulative net −6.3%). The same entry's
+  `strongest_threat_to_validity` states the compounding is "driven overwhelmingly
+  by 2017 (+416%) and 2020 (+476%)".
+
+- **Where the two families agree, and where they do not — stated precisely, because
+  the shared claim is the load-bearing one.** They agree on the *shape*: a large
+  early-era level, a collapse, and a most-recent-year figure indistinguishable
+  from noise (carry 2022–2023 at ~1/3 of headline; XS 2025 net Sharpe 0.07). They
+  do **not** agree on the exact peak years — funding carry peaks 2021 (BTC 31.2850
+  / ETH 37.5817) whereas XS_momentum's two dominant years are 2017 (2.95) and 2020
+  (2.96), with 2021 already down to 0.77. The title's "2020-2021" is the union of
+  the two peaks, not a claim that both families peak in both years. What
+  generalizes is decay-by-2023-2025, not a common peak date.
+
+- **Why this is a pass-rule defect and not merely an observation.** run_059's
+  criterion (a) is `median_sharpe > 0.8` taken over all 49 monthly windows of
+  2019-12-01..2023-12-31 (`briefs/FUNDING_MR_DAILY_RETEST.md`;
+  `runs/run_059/artifacts/pass_rule_evaluation.yaml`). A median over a window whose
+  first half is a different regime from its second half is a statistic **about a
+  mixture**, and it is symmetric in the wrong direction: it can pass a strategy on
+  expired-era strength exactly as easily as it can fail a strategy that only works
+  now. FUNDING_MR_DAILY_RETEST happened to fail it, so nothing was mis-promoted
+  here — the defect is latent, and a latent selection defect that has not yet
+  fired is precisely the kind that gets discovered by spending the thing it
+  threatens.
+
+- **What it threatens, concretely.** `config/campaign_data_policy.yaml:192`
+  (`holdout_consumed_by: []`) and `:199` (`holdout_failure_is_terminal: true`):
+  the campaign holds **one** holdout evaluation, it has not been spent, and
+  failing it terminates the lineage. A full-window pass rule that selects on
+  2020–2021 strength routes a regime-expired candidate to the single terminal
+  test. The holdout is the resource that pays the bill for a pass rule that
+  cannot see time.
+
+- **REQUIRED ACTION (stated, not designed here).** Any future pass rule must carry
+  a **per-era or recency-weighted component** — the full-window median alone is
+  insufficient. The specific form (era partition boundaries, weighting scheme,
+  per-era thresholds, and how a per-era criterion composes with B11's total
+  verdict+routing mapping) is **deliberately not designed in this ledger entry**;
+  designing it inside a close-out is how an unvalidated rule acquires the
+  authority of a registered one.
+
+- **Acceptance when taken up:** a brief whose pass rule gates only on a
+  full-window statistic is rejected at materialization, the same way B11 rejects a
+  FAIL branch with no verdict+routing pair.
+
+### C17. KNOWN-MINOR (non-blocking, no action): the FUNDING_MR_DAILY_RETEST brief's funding sign-flip counts do not reproduce — 228/220 stated vs 180/152 measured
+
+Recorded so a future reader does not re-derive the discrepancy from scratch, and
+does not build on either figure without re-measuring first.
+
+- **Stated:** `briefs/FUNDING_MR_DAILY_RETEST.md:236-244`, honesty note (i) —
+  over the pass-gated window 2019-12-01..2023-12-31, "BTCUSDT 228 flips, ETHUSDT
+  220 flips"; over the diagnostic window 2024-01-01..2025-12-31, 76 / 94; full
+  73-month span 304 / 314. Method stated in the same sentence: "pandas
+  daily-resample-**last** + sign-flip count".
+- **Measured:** `docs/session_reports/20260725_funding_carry_magnitude.md` §6
+  (script markers `L13`-`L14`) — **180** (BTCUSDT) and **152** (ETHUSDT) flips over
+  1,491 transitions on the same 1,492 bounded days, i.e. 21% and 31% below the
+  brief. Method: daily **sum** of settlements, replicating
+  `trading-bot/data/feed_registry.py:63-71` `build_daily_funding_series`.
+- **Cause: UNDETERMINED.** No re-measurement was performed under the dispatch that
+  filed this note. Three candidate explanations, with their evidentiary standing
+  recorded honestly rather than ranked by assertion:
+  1. *Unbounded-extent counting* (the hypothesis this note was dispatched to
+     record as leading, carried here as stated): the brief counted over the full
+     CSV extent rather than the bounded window. **Recorded, but weakened by the
+     brief's own arithmetic** — the brief gives a separate full-span total of 304 /
+     314 which decomposes exactly as 228+76 and 220+94, so its 228/220 figure is
+     presented as already window-bounded. This is a caveat on the hypothesis, not
+     a refutation of it: nothing here verifies how any of those four numbers was
+     produced.
+  2. *Aggregation method* (**strongest mechanical candidate, and it is cited from
+     the brief itself, not inferred**): daily-resample-**last** takes only the final
+     settlement of each day, whereas the measurement **sums** all three. The two
+     produce different daily signs whenever a day's settlements disagree, and
+     therefore different flip counts. Consistent with the direction observed
+     (summing damps within-day sign disagreement, yielding *fewer* flips).
+  3. *Different series entirely*: the forward-filled 8h **signal** feed
+     (`FundingRateFetcher` + `merge_asof`) rather than the daily-summed **cost**
+     series — `feed_registry.py:41-46` states these are deliberately distinct.
+     Offered in the measurement report itself as unverified.
+- **Why non-blocking.** Neither figure is load-bearing for anything currently in
+  the record. The carry measurement (C16, and the KB `audit_note` on
+  `funding_mr_daily_retest_killed`) computes `A1` and `R` from the funding series
+  and run_059's own artifacts directly; no flip count enters either. The brief's
+  228/220 previously underwrote only the criterion (c) zero-trade base rate, which
+  was **already reconciled and closed** on independent grounds (per-window
+  position-restart semantics — see the CRITERION (c) CONFORMANCE RECONCILIATION
+  note in that same KB entry).
+- **Flag if it becomes load-bearing.** If any future pass rule, power calculation
+  or trade-density estimate takes a funding sign-flip count as an input, the
+  discrepancy must be resolved by re-measurement **before** that rule is
+  registered — not adjudicated from this note, which resolves nothing.

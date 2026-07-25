@@ -2412,3 +2412,136 @@ queue as a status token (grep confirms no entry carries it).
  the P4 parent rule RUNNABLE for a properly-gated adjudication. Recon only: report
  the ingest gap, the exact target cache schema/path, and whether panel_backtester
  or the trading-bot engine is the correct runner — no run, no code, no verdict."
+
+## Session: 2026-07-24 — Q1-2026 Kraken holdout tranche quarantined and sealed (`c6ed564`)
+
+> **CONTINUITY DEBT, filed retroactively 2026-07-25.** This entry was written from
+> the commit and the files it touched, not at the time of the session. Treat it as
+> a reconstruction of the record, not as a contemporaneous hand-off.
+
+### Hypothesis
+The Q1-2026 Kraken tranche sitting in the working data tree overlaps the frozen
+holdout range. Can it be placed beyond the reach of every in-sample loader and
+registered as a single-use source, without any loader or engine change?
+
+### Result
+Yes. The tranche was quarantined to `local_data/holdout_sealed/2026_H1/kraken_q1_2026/`
+and registered in `config/campaign_data_policy.yaml:151-168` as
+`kraken_q1_2026_holdout`: `era: era_2026_holdout`, `span: ["2026-01-01","2026-03-31"]`,
+`sealed: true`, `single_use: true`, `status: sealed_holdout_not_reachable`. Registry
+only — 19 insertions, one file, no code touched. `holdout_consumed_by: []` (`:192`)
+and `holdout_failure_is_terminal: true` (`:199`) are unchanged: the campaign still
+holds exactly one unspent, terminal holdout evaluation. No verdict, no run.
+
+### Files touched
+- `strategy-research/config/campaign_data_policy.yaml` (`c6ed564`, +19)
+
+### Next session prompt (copy-paste)
+*(Superseded — this arc continued directly into `b542bb2` below.)*
+
+## Session: 2026-07-24 — additive off-by-default funding-accrual mechanism (`b542bb2`)
+
+> **CONTINUITY DEBT, filed retroactively 2026-07-25.** Written from the commit and
+> its diff, not at the time of the session.
+
+### Hypothesis
+The funding family's verdicts stand on a FEE-ONLY basis (KB
+`funding_mr_daily_retest_killed` → `venue_live_tradability`). Can a funding
+cash-flow accrual be built per the 2026-07-24 design spec such that, with the flag
+off, engine behavior is byte-identical to before?
+
+### Result
+Built and shipped additively, **off by default**. Two independent opt-ins are
+required (`model_funding`, `funding_daily`; defaults `False`/`None` at
+`trading-bot/core/trading_bot.py:86-87`), and with the flag off the prior behavior
+is byte-identical. `apply_funding` mutates `USDT.free`
+(`execution/portfolio_info.py:245`), which the mock valuation reads by reference, so
+the accrual reaches portfolio value on the backtest path. **No protocol was
+registered and no re-cost run was performed** — the commit message says so
+explicitly. Known at the time of writing: no launcher can set either opt-in and
+`build_daily_funding_series` has no production call site (recorded the next day as
+gaps G1/G2 in the recon report below).
+
+### Files touched
+- `trading-bot/core/trading_bot.py`, `trading-bot/data/feed_registry.py`,
+  `trading-bot/execution/portfolio_info.py`,
+  `trading-bot/tests/test_funding_accrual.py` (new, 345 lines)
+- `strategy-research/config/cost_model.yaml`,
+  `strategy-research/docs/session_reports/20260724_funding_cashflow_model_design.md`
+  (all `b542bb2`)
+
+### Next session prompt (copy-paste)
+*(Superseded — answered by the 2026-07-25 arc below: the re-cost was recosted on
+paper and closed as a measured negative, so the wiring gaps G1/G2 were never worth
+closing for this family.)*
+
+## Session: 2026-07-25 — funding re-cost arc close-out: measured negative, no verdict moved
+
+### Hypothesis
+Now that an honest funding accrual exists, does modelling it actually rescue
+FUNDING_MR_DAILY_RETEST? Two questions, answered in that order: (R1) what stands
+between the mechanism and a properly-gated re-cost run, and (R2) is the realized
+funding carry large enough to matter — measured, not assumed.
+
+### Result
+**NO. Closed as a measured negative, without running the re-cost at all.**
+
+- Measured annualized carry over the pass-gated window 2019-12-01..2023-12-31
+  (1,492 days, 0 missing): `A1` = **15.4367** %/yr (BTCUSDT) / **19.2366** %/yr
+  (ETHUSDT). Required carry `R` = **27.8178** / **27.3757** %/yr. Coverage 0.555 /
+  0.703 — carry pays for roughly half to two-thirds of the per-trade deficit, and
+  only to *break-even*, whereas criterion (a) demands `median_sharpe > 0.8`.
+- The zero-lag ceiling `A0` = 16.8029 / 20.5507 %/yr is **also** short, so the gap
+  does not close even under perfect foresight. The re-cost run was therefore never
+  worth wiring (R1's blockers G1/G2 are moot for this family).
+- Basis asymmetry stated rather than smoothed: `R` is computed on a **pooled**
+  expectancy (−38.4665 bps) while `A1` is per-symbol. ETHUSDT closes on **both**
+  carry and drawdown (49.606 vs `< 30`); BTCUSDT closes cleanly only on criterion
+  (b) **drawdown** (34.922 vs `< 30`), which is cost-independent — its carry margin
+  is directional, not decisive.
+- The KB entry's open `venue_live_tradability` caveat ("should not be read as
+  having incorporated a realistic funding P&L") is now **CLOSED for the daily
+  branch**. The caveat text is retained verbatim; the measurement it asked for sits
+  beside it in a new `audit_note`.
+- **No verdict added or altered.** `outcome` / `verdict_status` / `exhausted` /
+  `reactivation_condition` verified byte-identical before and after by parsing both
+  revisions. Honest gated-verdict count **unchanged at 1** (`FUNDING_MR_DAILY_RETEST`,
+  per `tools/lint_verdict_provenance.py`). No protocol registered. The 4h branch
+  remains DEFERRED. Suite at this commit: **413 passed** (per ledger I1, a KB-changing
+  commit runs the suite in the same commit).
+- Ledger: **C16** files the cross-family finding that edge is era-concentrated
+  (funding carry peaks 2021 at 31.29/37.58 %/yr and collapses ~7-8x by 2022;
+  XS_momentum per-year net Sharpe decays to 0.07 by 2025) — a full-window
+  median-Sharpe pass rule therefore selects regime-expired strategies and spends
+  the single terminal holdout doing it. Required action stated, **not designed**:
+  future pass rules need a per-era or recency-weighted component. **C17** records
+  the non-blocking flip-count discrepancy (brief 228/220 vs measured 180/152).
+
+### Files touched
+- `strategy-research/campaign_knowledge_base.yaml` (additive evidence on
+  `funding_mr_daily_retest_killed`: `audit_note`, `supplementary_evidence`, 13 new
+  `signal_property` keys — no verdict field touched)
+- `strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md` (v12 block: C16, C17)
+- `strategy-research/docs/session_reports/20260725_funding_recost_feasibility.md` (new)
+- `strategy-research/docs/session_reports/20260725_funding_carry_magnitude.md` (new)
+- `strategy-research/tools/measure_funding_carry.py` (new, read-only measurement)
+- `strategy-research/SESSION_LOG.md` (this entry + two backfilled)
+
+### Next session prompt (copy-paste)
+"The funding re-cost question is CLOSED as a measured negative (see SESSION_LOG
+ 2026-07-25 and ledger C16/C17): measured carry 15.44/19.24 %/yr vs 27.82/27.38
+ %/yr required, short even at the zero-lag ceiling, so FUNDING_MR_DAILY_RETEST
+ stays dead and no re-cost run is owed. Do NOT reopen it. The open item it left
+ behind is ledger C16: a full-window median-Sharpe pass rule selects
+ regime-expired strategies, and the campaign holds exactly one unspent holdout
+ with holdout_failure_is_terminal: true. DESIGN TASK, write-up only, no run and no
+ registration: propose a per-era or recency-weighted component for future pass
+ rules — read ledger C16, brief FUNDING_MR_DAILY_RETEST.md's pass_rule block, and
+ B11 (PIPELINE_IMPROVEMENTS_20260712_v4.md:576-590), then specify how a per-era
+ criterion composes with B11's requirement of a TOTAL verdict+routing mapping
+ (what the era partition is, how many eras a candidate must clear, and what each
+ failure branch routes to). Do not modify any existing brief, protocol, or KB
+ entry; produce a design report only. Standing constraints
+ (single-writer-per-state-store, read-back verify, no-self-remediation,
+ premise-failure full-STOP, holdout untouchable, context economy) carry forward
+ unchanged."

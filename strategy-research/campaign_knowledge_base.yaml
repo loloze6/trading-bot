@@ -785,6 +785,22 @@ findings:
     per_trade_expectancy_bps_t_stat: -1.509
     per_trade_expectancy_n_trades: 699
     win_rate_net_pct: 41.77
+    # FUNDING-CARRY MEASUREMENT added 2026-07-25 (Dispatch W1). Evidence only --
+    # no verdict field is touched by this addition. Per-value provenance and the
+    # basis asymmetry between A1 (per-symbol) and R (pooled) are in audit_note below.
+    funding_carry_measured_annualized_pct_btcusdt: 15.4367
+    funding_carry_measured_annualized_pct_ethusdt: 19.2366
+    funding_carry_zero_lag_upper_bound_pct_btcusdt: 16.8029
+    funding_carry_zero_lag_upper_bound_pct_ethusdt: 20.5507
+    funding_carry_required_annualized_pct_btcusdt: 27.8178
+    funding_carry_required_annualized_pct_ethusdt: 27.3757
+    funding_carry_coverage_ratio_btcusdt: 0.555
+    funding_carry_coverage_ratio_ethusdt: 0.703
+    funding_carry_measurement_window: '2019-12-01..2023-12-31'
+    funding_carry_measurement_n_days: 1492
+    funding_carry_measurement_venue_proxy: binance_perp_8h
+    funding_sign_flip_days_btcusdt: 180
+    funding_sign_flip_days_ethusdt: 152
   protocol_version: funding_mr_daily_retest_v1 (protocols/funding_mr_daily_retest_v1.json,
     sha256:6cbda1777ba839d2b1f18b7f23a53c84103eab5df41f16657566f74cc645d43e,
     49 pass-gated monthly windows, 2019-12-01 to 2023-12-31)
@@ -843,6 +859,94 @@ findings:
     funding-modeling build exists, this family''s verdicts (including this
     entry''s own kill/terminate above) stand on their FEE-ONLY evidentiary basis
     and should not be read as having incorporated a realistic funding P&L.'
+  supplementary_evidence:
+  - docs/session_reports/20260725_funding_carry_magnitude.md
+  - docs/session_reports/20260725_funding_recost_feasibility.md
+  audit_note: 'FUNDING RE-COST QUESTION CLOSED AS A MEASURED NEGATIVE (filed
+    2026-07-25). This note ADDS evidence to an already-closed record. No verdict
+    is added, altered, or reopened: outcome, verdict_status, exhausted and
+    reactivation_condition hold the values they held before this write, and the
+    honest gated-verdict count is unchanged at 1. No protocol was registered and
+    no re-cost backtest was run.
+
+    MEASURED CARRY (A1). Realized annualized funding carry over the pass-gated
+    window 2019-12-01 to 2023-12-31 (1492 calendar days, 0 missing days, 4474
+    8h settlements per symbol): BTCUSDT 15.4367 %/yr, ETHUSDT 19.2366 %/yr.
+    A1 = (365/N) * SUM_D sign(f_{D-1}) * f_D * 100 over N=1491 lagged days,
+    computed from trading-bot/local_data/BTCUSDT_funding_8h.csv and
+    ETHUSDT_funding_8h.csv by tools/measure_funding_carry.py, which applies the
+    window bound before any statistic and replicates the daily aggregation of
+    data/feed_registry.py build_daily_funding_series exactly. Provenance:
+    docs/session_reports/20260725_funding_carry_magnitude.md sections 2-3
+    (script markers L9-L11).
+
+    ZERO-LAG UPPER BOUND (A0). BTCUSDT 16.8029 %/yr, ETHUSDT 20.5507 %/yr.
+    A0 = (365/N) * SUM_D abs(f_D) * 100 -- the unattainable perfect-foresight
+    ceiling in which a funding sign flip never costs anything (same report,
+    section 3, marker L12).
+
+    REQUIRED CARRY (R). R = (abs(net_expectancy_bps) - perp_fee_saving_bps) *
+    trades_per_day * 365 / 100, the pre-registered formula, unaltered. R =
+    27.8178 %/yr (BTCUSDT) and 27.3757 %/yr (ETHUSDT). Inputs, each read from
+    run_059 artifacts: net_expectancy_bps -38.4665
+    (runs/run_059/artifacts/protocol_result.yaml:3042); pooled trade count 699
+    (protocol_result.yaml:3045) over 2886 symbol-days (sum of per-slot bar_count
+    across all 98 window-symbol slots) giving trades_per_day 0.2422037;
+    perp_fee_saving_bps 7.0 / 7.5, being the run_059 assumed round-trip cost
+    17.0 / 17.5 (runs/run_059/artifacts/validation_protocol.yaml:47-49) minus the
+    perp round-trip 10.0 (config/cost_model.yaml:161-162). Same report, section 4.
+
+    THE GAP DOES NOT CLOSE. A1/R = 0.555 (BTCUSDT) and 0.703 (ETHUSDT): measured
+    carry covers roughly half to two-thirds of what the per-trade deficit would
+    require merely to reach break-even. The ceiling A0 also falls short on both
+    symbols (16.8029 vs 27.8178; 20.5507 vs 27.3757), so the shortfall survives
+    the most generous assumption available. Honest funding P&L therefore does NOT
+    close the gap. Note additionally that criterion (a) requires median_sharpe >
+    0.8, not break-even, so R understates the carry that would actually be needed
+    to move criterion (a).
+
+    BASIS ASYMMETRY -- STATED, NOT SMOOTHED. R rests on a POOLED expectancy
+    (-38.4665 bps is the both-symbol mean; per-symbol expectancies do not exist
+    in the artifacts, and runs/run_059/artifacts/research_decision.yaml:21,29
+    label their per-symbol trade counts as estimates obtained by dividing the
+    pooled 699 by 2, so they were not used), while A1 is genuinely per-symbol.
+    The only per-symbol term inside R is perp_fee_saving_bps. The consequence is
+    not symmetric across the two symbols:
+
+    (i) ETHUSDT closes on BOTH axes. Carry: 19.2366 vs required 27.3757, and
+    20.5507 even at the ceiling. Drawdown: max_abs_drawdown_pct 49.606 against
+    the criterion (b) threshold of < 30, which fails independently of any cost
+    or funding assumption.
+
+    (ii) BTCUSDT closes on criterion (b) DRAWDOWN (34.922 vs < 30), not robustly
+    on carry. R_BTCUSDT inherits the pooled deficit, whereas BTCUSDT
+    median_sharpe -0.296 is far closer to zero than ETHUSDT -0.979; a true
+    per-symbol R for BTCUSDT is therefore likely lower than 27.8178 by an
+    unmeasured amount. The BTCUSDT carry margin is recorded as directional
+    evidence, not as a decisive one. What carries BTCUSDT is the drawdown gate,
+    and that gate is cost-independent.
+
+    VENUE PROXY CAVEAT (raised, not closed, by this note). The measured series is
+    Binance perp 8h (trading-bot/data/feed_registry.py:60,
+    trading-bot/data/fetchers/funding_rate_fetcher.py:69), whereas this family
+    declares Kraken perp 1h as its go-forward venue (see venue_live_tradability
+    above). The Kraken funding export archive cannot reach this window in any
+    case: its coverage begins 2022-03-22 against a window starting 2019-12-01
+    (docs/session_reports/20260725_funding_recost_feasibility.md, step 2). The
+    carry magnitude above is thus an in-sample Binance-8h proxy, exactly as
+    config/cost_model.yaml:183 already declares
+    (venue_note: in_sample_proxy_binance_8h_live_venue_kraken_perp_1h).
+
+    WHAT THIS CLOSES. The venue_live_tradability field above states that this
+    family''s verdicts "stand on their FEE-ONLY evidentiary basis and should not
+    be read as having incorporated a realistic funding P&L". That open caveat is
+    now CLOSED for the DAILY branch registered here: the funding P&L has been
+    measured; it is a systematic CREDIT to this family, as the caveat
+    anticipated; and it is short of the required magnitude by roughly a factor
+    of two. The caveat text above is retained verbatim and unmodified -- it was
+    correct when written, and this note is the measurement it asked for, not a
+    correction of it. The 4h branch of the parent reactivation_condition remains
+    DEFERRED and is untouched.'
 - id: macd_trend_continuation_extended_2018_2025_auto
   mechanism: MACD(12,26,9) histogram zero-crossing, BTC/ETH 1h, ungated (persistent_behavioral_bias)
   hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
