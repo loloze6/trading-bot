@@ -88,22 +88,58 @@ funding-carry reproduction now requires re-fetching its two inputs (bounded at
 
 | Path | Size | Why excluded |
 |---|---|---|
-| `Kraken_batch/` | **32 GB**, 25,522 files | Bulk Kraken archive. Far past any practical repo size. |
+| `Kraken_batch/` | **15.3 GB**, 7,582 files (was 32 GB / 25,522 — see §1.1) | Bulk Kraken archive. Far past any practical repo size. |
 | `Kraken_funding_rates/` | **436 MB**, 480 CSVs | Bulk Kraken funding export. Size, plus no provenance record (see §2.2). |
 | `holdout_sealed/` | **1.9 GB** | **SEALED single-use holdout** — see the section above. Excluded twice over: by `trading-bot/local_data/*/` and by a dedicated `**/holdout_sealed/` rule. |
-| `BTCUSDT_1m.csv` | **177,664,416 bytes (≈169 MiB)** | Exceeds **GitHub's 100 MB per-file hard limit**. A push containing it is rejected outright — this is not a soft warning, it blocks the push. |
+| `BTCUSDT_1m.csv` | **177,664,416 bytes (≈169 MiB)** | Exceeds **GitHub's 100 MB per-file hard limit**. A push containing it is rejected outright — this is not a soft warning, it blocks the push. **Present on disk — see §2.3, it is not reconstructible from anything else here.** |
 
-`Kraken_batch/` breaks down as:
+`Kraken_batch/` now contains `master_q4/` only — 15.3 GB, 7,582 files: the static year-end
+OHLCVT bulk export, at resolutions **1, 60, 240, 720 and 1440 minutes**, plus one
+non-conforming `BTCUSD_Daily_OHLC.csv`. This is the directory the ingest tool consumes.
 
-- `master_q4/` — 26 GB, 12,027 files. The static year-end OHLCVT bulk export. This is the
-  one the ingest tool consumes.
-- `q1_26/` — 5.4 GB, 1,467 files. **Kraken *Trades* (time-and-sales), not OHLCVT**, with
-  timestamps from 2026-01-01 — i.e. **inside the frozen holdout range**. Parked, never
-  ingested, no aggregation path built
-  (`strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md:2248-2260`). Do not aggregate
-  or inspect it; see the holdout section above.
-- `__MACOSX/` — 16 MB of `._*` macOS resource-fork junk from unzipping on macOS. Not data;
-  safe to delete.
+### 1.1 Disk prune, 2026-07-26 (dispatch C1)
+
+15.71 GB was deleted from this directory to recover disk space (free space on `C:` was
+down to 0.12 GB). **Nothing deleted was a unique source.** What went, and why:
+
+| Deleted | Size | Why it was safe |
+|---|---|---|
+| `master_q4/*_5.csv`, `*_15.csv`, `*_30.csv` | 10.37 GB, 4,445 files | Pure downsamples of the retained `_1` files, and **unused** — see the verification below. Re-derivable locally, or re-obtainable from Kraken (§2.1). |
+| `Kraken_batch/__MACOSX/` | 2.04 MB, 12,028 files | macOS `._*` resource-fork junk from unzipping on macOS. Not data. (Byte-sum; a `du -sh` reads ~16 MB because 12,028 stubs of ~163 B median each occupy one cluster apiece.) |
+| `Kraken_batch/q1_26/` | 5.34 GB, 1,467 files | Superseded **and** holdout-range — see §1.2. |
+
+**`_1` is retained as the reconstruction base.** Every deleted resolution is a strict
+aggregation of it, so `_5`/`_15`/`_30` can be rebuilt offline by resampling `_1` — no
+download, no network, no holdout exposure. Deletion was scoped to resolutions that were
+**both** reconstructible from a retained finer file **and** unused.
+
+**The "unused" claim was verified against real consumers, not asserted.** There are three
+live references to `master_q4/`, and each reads a *retained* file:
+
+1. `trading-bot/tools/ingest_kraken_archive.py:281` sets the archive dir, and `:130` builds
+   `{pair}_{resolution}.csv` at `RESOLUTION_MINUTES = 60` (`:89`). No caller overrides that
+   default — reads `_60`.
+2. `trading-bot/tests/test_kraken_archive_ingest.py:32` points at the same directory.
+3. `strategy-research/config/campaign_queue.yaml:31` pins `master_q4/*_1440.csv`.
+
+Zero path references to `_5.csv` / `_15.csv` / `_30.csv` exist anywhere in the repo.
+`strategy-research/protocols/escalation_tf_15m.json` was checked specifically as the one
+plausible consumer: it declares `"timeframe": "15m"` but carries no data path and is
+derived from `baseline_v1.json`, so it never sourced `_15.csv`. All three consumer paths
+were re-confirmed to resolve after the prune, and the retained set was verified
+byte-identical before and after (7,581 files / 16,384,726,678 bytes).
+
+### 1.2 `Kraken_batch/q1_26/` — deleted, was holdout-range
+
+5.34 GB across 1,467 CSVs of Q1-2026 Kraken **Trades** (time-and-sales, not OHLCVT), with
+timestamps inside the frozen holdout range, stored in the in-sample tree. Deleted
+2026-07-26, unread. It was removed rather than relocated because it was **superseded for
+every purpose**: the sealed tranche already holds the same 1,467 pairs as finished OHLCVT
+(B1-R: only-in-q1_26 = 0, only-in-sealed = 0, in-both = 1,467), so aggregating it could
+only have regenerated data that already exists in final form. Its removal also closes the
+contamination vector filed as ledger **G8** — holdout-range bytes sitting beside an active
+ingest source — by eliminating the bytes. Re-obtainable from Kraken if ever needed
+(§2.1), but **do not re-download it**: it is inside the frozen holdout range (§0).
 
 ---
 
@@ -137,6 +173,21 @@ frozen holdout range. Do not fill it. See §0.
 Once downloaded, unzip to `trading-bot/local_data/Kraken_batch/master_q4/` — the ingest
 tool hardcodes that path (`trading-bot/tools/ingest_kraken_archive.py:281`).
 
+**What is on disk is a subset.** The upstream ZIPs carry all eight intervals; this cache
+retains **1, 60, 240, 720, 1440** only. The `5`, `15` and `30` minute files were pruned
+(§1.1). Two ways to get them back, cheapest first:
+
+1. **Resample locally from the retained `_1` files** — no download, no network, and no risk
+   of straying past the 2025-12-31 archive cutoff into the frozen holdout. The `_1` files
+   are the reconstruction base and are kept precisely for this.
+2. **Re-download and re-unzip** the same Kraken bulk ZIPs linked above; they are static and
+   still contain every interval. Unzipping on macOS recreates the `__MACOSX/` junk
+   directory — delete it, it is not data.
+
+Both routes are bounded by the archive's own **2025-12-31** cutoff, so neither can
+introduce holdout-range data. The `q1_26` Trades tranche came from the same support
+article's Q1-2026 export; **do not re-obtain it** (§0, §1.2).
+
 ### 2.2 `Kraken_funding_rates/exports/` — 480 × `PF_*USD.csv`
 
 **⚠️ NO PROVENANCE RECORD.** This is filed as **ledger item G7**
@@ -168,6 +219,14 @@ convention, wrong schema, wrong cadence, and its 2022-03-22 start cannot reach t
 Binance `*_funding_8h.csv` files that *are* committed here.
 
 ### 2.3 `BTCUSDT_1m.csv` — regenerate, do not download
+
+**Retained on disk; excluded from the repo only by size.** It was a candidate in the
+2026-07-26 prune (§1.1) and was withdrawn before deletion, for a reason worth stating
+explicitly because §1.1 emphasises `_1` as "the reconstruction base": **that base is
+Kraken, and this file is Binance.** `master_q4/*_1.csv` cannot regenerate it. The two are
+different venues with different prints, and substituting one for the other would
+reintroduce exactly the fee/venue mismatch Phase 1 closed. Deleting this file would
+therefore have cost an API re-fetch, not a local resample — so it stays.
 
 Produced by `CcxtFetcher` against Binance at 60-second resolution. `exchange="binance"`
 takes the **un-prefixed** cache key (`ccxt_fetcher.py:120-121`), so the file lands back at

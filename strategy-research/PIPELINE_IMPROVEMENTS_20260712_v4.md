@@ -2621,7 +2621,24 @@ does not build on either figure without re-measuring first.
 
 ## G. Data & cache layer (continued)
 
-### G8. `Kraken_batch/q1_26/` is holdout-range data inside the in-sample tree — and it is superseded (NON-BLOCKING, FILED NOT FIXED)
+### G8. `Kraken_batch/q1_26/` is holdout-range data inside the in-sample tree — and it is superseded (**CLOSED BY DELETION 2026-07-26**)
+
+> **CLOSED — the contamination vector no longer exists.** Dispatch C1 deleted
+> `trading-bot/local_data/Kraken_batch/q1_26/` on 2026-07-26: 1,467 files, 5,738,407,640
+> bytes, removed unread. G8a's location risk is closed **by elimination of the bytes**, not
+> by relocation — the durable range-scoped quarantine proposed below was not built and is
+> now moot for this tranche (it remains the right pattern for any future one; see
+> `tasks/lessons.md` L-2026-07-26-A). G8b stands unchanged on its merits: the aggregation
+> was already off the critical path, and there is now nothing to aggregate.
+>
+> Deletion was chosen over relocation because G8b had established the tranche was the
+> unique source for **nothing** — the sealed tranche holds the same 1,467 pairs as finished
+> OHLCVT. It remains re-obtainable from Kraken's public export, but **must not be
+> re-obtained**: it is inside `holdout_range`. Documented at `local_data/README.md` §1.2.
+> `holdout_sealed/` was verified untouched by the same dispatch (10,269 files /
+> 1,986,009,900 bytes, unchanged before and after).
+>
+> The original filing is preserved below as the record of why this was a live risk.
 
 Source: dispatch B1-R, `docs/session_reports/20260726_2026_coverage_scope.md` (read-only;
 no file inside `holdout_range` was opened — every 2026-range fact below comes from
