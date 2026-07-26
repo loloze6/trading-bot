@@ -41,9 +41,9 @@ from __future__ import annotations
 import argparse
 import sys
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -58,22 +58,45 @@ else:
 _CLOSING = {"WS_DISCONNECT", "RECORDER_STOP"}
 
 
-def total_bytes(out_dir: Path) -> Tuple[int, int]:
-    """(bytes, file count) across today's and yesterday's shards.
+def shard_sizes(out_dir: Path) -> Dict[Path, int]:
+    """Size of every shard on disk, raw and compacted, keyed by path."""
+    sizes: Dict[Path, int] = {}
+    for pattern in ("*.ndjson", "*.ndjson.zst"):
+        for p in Path(out_dir).rglob(pattern):
+            if p.name == JOURNAL_FILENAME or p.name.startswith("_"):
+                continue
+            try:
+                sizes[p] = p.stat().st_size
+            except OSError:
+                continue  # compaction unlinked it between glob and stat
+    return sizes
 
-    Yesterday is included so a check straddling the UTC rotation boundary does
-    not read as a collapse to zero.
+
+def growth_bytes(before: Dict[Path, int], after: Dict[Path, int]) -> int:
     """
-    now = datetime.now(timezone.utc)
-    days = {now.strftime("%Y-%m-%d"), (now - timedelta(days=1)).strftime("%Y-%m-%d")}
-    total = 0
-    count = 0
-    for p in Path(out_dir).rglob("*.ndjson"):
-        if p.name == JOURNAL_FILENAME or p.stem not in days:
-            continue
-        total += p.stat().st_size
-        count += 1
-    return total, count
+    Bytes written between two readings, immune to rotation and compaction.
+
+    Counted as the sum of per-file INCREASES plus the full size of files that
+    appeared, and never as the difference of two totals. Two events would
+    otherwise make a healthy recorder look dead:
+
+      * the hourly roll starts a new shard while the old one stops growing, and
+      * compaction replaces a ~360 MB raw shard with a ~40 MB archive,
+
+    both of which drive a naive total sharply DOWN once an hour. A shrinking
+    total is expected here; only the absence of new bytes is a failure.
+    """
+    grown = 0
+    for path, size in after.items():
+        prev = before.get(path)
+        grown += size if prev is None else max(0, size - prev)
+    return grown
+
+
+def total_bytes(out_dir: Path) -> Tuple[int, int]:
+    """(bytes, file count) across all shards, raw and compacted."""
+    sizes = shard_sizes(out_dir)
+    return sum(sizes.values()), len(sizes)
 
 
 def newest_recv_ts(out_dir: Path) -> Optional[datetime]:
@@ -119,24 +142,27 @@ def check(
         lines.append("ok    " + msg)
 
     # ---- 1. GROWTH ----
-    b0, n0 = total_bytes(out_dir)
+    s0 = shard_sizes(out_dir)
+    b0, n0 = sum(s0.values()), len(s0)
     t0 = datetime.now(timezone.utc)
     lines.append(f"reading 1 @ {t0.isoformat()}  bytes={b0}  shards={n0}")
     time.sleep(window_s)
-    b1, n1 = total_bytes(out_dir)
+    s1 = shard_sizes(out_dir)
+    b1, n1 = sum(s1.values()), len(s1)
     t1 = datetime.now(timezone.utc)
     lines.append(f"reading 2 @ {t1.isoformat()}  bytes={b1}  shards={n1}")
 
+    written = growth_bytes(s0, s1)
     if n1 == 0:
         fail("no shard files exist at all")
     elif b1 == 0:
         fail("shards exist but total size is 0 bytes — this is DOWN, not a quiet market")
-    elif b1 <= b0:
-        fail(f"shards not growing: {b0} -> {b1} over {window_s:.0f}s "
+    elif written <= 0:
+        fail(f"no bytes written over {window_s:.0f}s "
              "— heartbeat guarantees traffic, so flat means dead")
     else:
-        rate = (b1 - b0) / max(1e-9, (t1 - t0).total_seconds())
-        good(f"growth {b1 - b0} bytes over {(t1 - t0).total_seconds():.1f}s "
+        rate = written / max(1e-9, (t1 - t0).total_seconds())
+        good(f"growth {written} bytes over {(t1 - t0).total_seconds():.1f}s "
              f"({rate / 1024:.1f} KiB/s)")
 
     # ---- 2. FRESH ----
@@ -188,6 +214,13 @@ def check(
             fail(f"newest rollup is {rage:.0f}s old (limit 150s) — rollup task dead")
         elif r.get("heartbeats", 0) == 0 and r.get("frames_total", 0) == 0:
             fail("last rollup saw 0 frames AND 0 heartbeats — socket is dead")
+        elif r.get("book_mode") == "snapshot" and r.get("book_frames_folded", 0) == 0:
+            # In snapshot mode `frames_total` counts books this process EMITTED,
+            # not frames the venue sent, so it keeps ticking over a dead feed.
+            # `book_frames_folded` is the venue-side counter and is the one that
+            # can distinguish the two.
+            fail("snapshot mode: 0 venue book frames folded in the last rollup "
+                 "— the emitter is still writing, but the feed is dead")
         elif r.get("symbols_seen", 0) < expect_symbols:
             fail(f"last rollup saw {r.get('symbols_seen')} symbols, "
                  f"expected {expect_symbols} — a pair has dropped out")

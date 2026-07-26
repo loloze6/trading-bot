@@ -58,9 +58,13 @@ except ImportError:  # pragma: no cover - operator-facing
 
 if __package__ in (None, ""):  # allow `python record_kraken_ws.py`
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from recorder.book_state import BookBook  # type: ignore
+    from recorder.compaction import DEFAULT_LEVEL, sweep  # type: ignore
     from recorder.journal import CoverageJournal  # type: ignore
     from recorder.shard_writer import ShardWriter, disk_symbol  # type: ignore
 else:
+    from .book_state import BookBook
+    from .compaction import DEFAULT_LEVEL, sweep
     from .journal import CoverageJournal
     from .shard_writer import ShardWriter, disk_symbol
 
@@ -97,6 +101,14 @@ STREAM_FOR_CHANNEL = {"book": "book_d10", "trade": "trades"}
 META_STREAM = "meta"
 META_SYMBOL = "_session"
 
+#: Book capture cadence. DELTA is the default and must stay the default: it is
+#: the only lossless option, and SNAPSHOT cannot be converted back into it. See
+#: `book_state.py` for exactly what SNAPSHOT discards.
+MODE_DELTA = "delta"
+MODE_SNAPSHOT = "snapshot"
+BOOK_MODES = (MODE_DELTA, MODE_SNAPSHOT)
+DEFAULT_SNAPSHOT_INTERVAL_S = 5.0
+
 
 class Recorder:
     def __init__(
@@ -104,15 +116,34 @@ class Recorder:
         out_dir: Path = DEFAULT_OUT,
         symbols: Optional[List[str]] = None,
         depth: int = BOOK_DEPTH,
+        book_mode: str = MODE_DELTA,
+        snapshot_interval_s: float = DEFAULT_SNAPSHOT_INTERVAL_S,
+        roll: str = "hour",
+        compress: bool = True,
+        compress_level: int = DEFAULT_LEVEL,
     ):
+        if book_mode not in BOOK_MODES:
+            raise ValueError(f"book_mode must be one of {BOOK_MODES}, got {book_mode!r}")
+        if snapshot_interval_s <= 0:
+            raise ValueError("snapshot_interval_s must be > 0")
         self.out_dir = Path(out_dir)
         self.symbols = list(symbols or SYMBOLS)
         self.depth = depth
+        self.book_mode = book_mode
+        self.snapshot_interval_s = float(snapshot_interval_s)
         self.journal = CoverageJournal(self.out_dir)
-        self.writer = ShardWriter(self.out_dir, run_id=self.journal.run_id)
+        self.writer = ShardWriter(
+            self.out_dir,
+            run_id=self.journal.run_id,
+            roll=roll,
+            compress=compress,
+            compress_level=compress_level,
+        )
+        self._books = BookBook(depth=depth) if book_mode == MODE_SNAPSHOT else None
         self._stop = asyncio.Event()
         self._last_frame_mono = time.monotonic()
         self._heartbeats = 0
+        self._book_frames_folded = 0
         self._connection_id: Optional[Any] = None
 
     # -- frame handling ----------------------------------------------------
@@ -161,6 +192,18 @@ class Recorder:
             self._heartbeats += 1
             return  # ~1/s x hours; counted in the rollup, not written to disk
 
+        if (
+            self._books is not None
+            and isinstance(msg, dict)
+            and msg.get("channel") == "book"
+        ):
+            # SNAPSHOT cadence: the delta is folded into the local book and is
+            # NOT written. The emitter task writes the book instead. Trades and
+            # meta are untouched and stay verbatim in every mode.
+            self._books.apply_frame(msg)
+            self._book_frames_folded += 1
+            return
+
         for stream, sym in self._route(msg):
             self.writer.write_frame(stream, sym, raw)
 
@@ -198,6 +241,51 @@ class Recorder:
 
     # -- tasks -------------------------------------------------------------
 
+    def emit_snapshots(self) -> int:
+        """
+        Write one synthesised full depth-N book per ready symbol. Returns the
+        number written.
+
+        Called on a fixed cadence, including when nothing moved: an interval
+        with `updates_applied: 0` is the snapshot-mode statement of
+        COVERED-AND-QUIET, and dropping it would make "quiet" and "not captured"
+        indistinguishable again — the exact ambiguity `journal.py` exists to
+        remove.
+
+        Symbols with no venue snapshot yet are skipped rather than emitted
+        empty; an empty book is not a fact about the market.
+        """
+        if self._books is None:
+            return 0
+        written = 0
+        for symbol in self.symbols:
+            st = self._books.state(symbol)
+            if not st.ready:
+                continue
+            payload = st.snapshot_payload(symbol)
+            self.writer.write_frame(
+                STREAM_FOR_CHANNEL["book"],
+                disk_symbol(symbol),
+                json.dumps(payload, separators=(",", ":")),
+                extra={"synth": "book_snapshot",
+                       "interval_s": self.snapshot_interval_s},
+            )
+            st.mark_emitted()
+            written += 1
+        return written
+
+    async def _snapshot_loop(self) -> None:
+        """Fixed-cadence book emission; inert in delta mode."""
+        while not self._stop.is_set():
+            try:
+                await asyncio.wait_for(
+                    self._stop.wait(), timeout=self.snapshot_interval_s
+                )
+                return
+            except asyncio.TimeoutError:
+                pass
+            self.emit_snapshots()
+
     async def _rollup_loop(self) -> None:
         """
         One HEARTBEAT_ROLLUP per minute: per-symbol frame counts plus the
@@ -216,6 +304,25 @@ class Recorder:
             hb = self._heartbeats
             self._heartbeats = 0
             self.writer.sync()
+            extra: Dict[str, Any] = {}
+            if self._books is not None:
+                # In snapshot mode `frames_total` counts EMITTED books, not
+                # venue frames, so the venue-side count is reported separately.
+                # Without it a rollup could show healthy frame counts while the
+                # socket had gone silent, since emission continues regardless.
+                extra["book_mode"] = MODE_SNAPSHOT
+                extra["snapshot_interval_s"] = self.snapshot_interval_s
+                extra["book_frames_folded"] = self._book_frames_folded
+                self._book_frames_folded = 0
+            for err in self.writer.compaction_errors():
+                # A failed verification leaves the raw shard intact (see
+                # compaction.py); it is surfaced, never retried silently.
+                self.journal.write(
+                    "RECONNECT_ATTEMPT",
+                    attempt=-2,
+                    backoff_s=0,
+                    note=f"COMPACTION FAILED, raw shard retained: {err!r}",
+                )
             self.journal.write(
                 "HEARTBEAT_ROLLUP",
                 window_s=ROLLUP_INTERVAL_S,
@@ -223,6 +330,7 @@ class Recorder:
                 frames_total=sum(counts.values()),
                 symbols_seen=len([s for s in counts if not s.startswith("_")]),
                 frames_by_symbol=counts,
+                **extra,
             )
 
     async def _session(self) -> None:
@@ -289,10 +397,42 @@ class Recorder:
             depth=self.depth,
             channels=["book", "trade", "instrument"],
             out_dir=str(self.out_dir),
+            book_mode=self.book_mode,
+            snapshot_interval_s=(
+                self.snapshot_interval_s if self.book_mode == MODE_SNAPSHOT else None
+            ),
+            roll=self.writer.roll,
+            compress=self.writer.compress,
         )
+        # Pick up shards orphaned by a predecessor that died mid-hour. Done
+        # before any capture starts so a verification failure aborts the boot
+        # rather than surfacing an hour later.
+        if self.writer.compress:
+            try:
+                made = sweep(self.out_dir, self.writer.open_keys(),
+                             level=self.writer.compress_level,
+                             roll=self.writer.roll)
+                if made:
+                    self.journal.write(
+                        "RESUBSCRIBE",
+                        channels=[],
+                        depth=self.depth,
+                        n_symbols=0,
+                        note=f"startup compaction swept {len(made)} orphaned shard(s)",
+                    )
+            except Exception as exc:  # noqa: BLE001 - surfaced, never swallowed
+                self.journal.write(
+                    "RECONNECT_ATTEMPT", attempt=-2, backoff_s=0,
+                    note=f"STARTUP COMPACTION FAILED, raw retained: {exc!r}",
+                )
+                raise
         attempt = 0
+        tasks: List[asyncio.Task] = []
         try:
             rollup = asyncio.create_task(self._rollup_loop())
+            tasks.append(rollup)
+            if self.book_mode == MODE_SNAPSHOT:
+                tasks.append(asyncio.create_task(self._snapshot_loop()))
             while not self._stop.is_set():
                 try:
                     await self._session()
@@ -317,10 +457,16 @@ class Recorder:
                         await asyncio.wait_for(self._stop.wait(), timeout=backoff)
                     except asyncio.TimeoutError:
                         pass
-            rollup.cancel()
+            for task in tasks:
+                task.cancel()
         finally:
             self.journal.write("RECORDER_STOP", reason="signal_or_eof")
             self.writer.close()
+            for err in self.writer.compaction_errors():
+                self.journal.write(
+                    "RECONNECT_ATTEMPT", attempt=-2, backoff_s=0,
+                    note=f"COMPACTION FAILED, raw shard retained: {err!r}",
+                )
             self.journal.close()
         return 0
 
@@ -393,12 +539,35 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--timeout", type=float, default=30.0, help="selftest timeout (s)")
     ap.add_argument("--duration", type=float, default=0.0,
                     help="run mode: stop after N seconds (0 = forever)")
+    ap.add_argument(
+        "--book-mode", choices=list(BOOK_MODES), default=MODE_DELTA,
+        help="delta (default, lossless: every book frame verbatim) or snapshot "
+             "(lossy: one synthesised full depth book per --snapshot-interval). "
+             "SNAPSHOT DISCARDS INTRA-INTERVAL BOOK HISTORY IRRECOVERABLY.",
+    )
+    ap.add_argument(
+        "--snapshot-interval", type=float, default=DEFAULT_SNAPSHOT_INTERVAL_S,
+        help="seconds between synthesised book snapshots (--book-mode snapshot)",
+    )
+    ap.add_argument("--roll", choices=["hour", "day"], default="hour",
+                    help="shard roll period (default hour)")
+    ap.add_argument("--no-compress", action="store_true",
+                    help="do not zstd-compact closed shards")
+    ap.add_argument("--compress-level", type=int, default=DEFAULT_LEVEL)
     args = ap.parse_args(argv)
 
     if args.mode == "selftest":
         return asyncio.run(selftest(args.timeout))
 
-    rec = Recorder(out_dir=Path(args.out), depth=args.depth)
+    rec = Recorder(
+        out_dir=Path(args.out),
+        depth=args.depth,
+        book_mode=args.book_mode,
+        snapshot_interval_s=args.snapshot_interval,
+        roll=args.roll,
+        compress=not args.no_compress,
+        compress_level=args.compress_level,
+    )
 
     async def _drive() -> int:
         loop = asyncio.get_running_loop()

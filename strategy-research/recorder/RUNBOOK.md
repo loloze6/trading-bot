@@ -30,6 +30,16 @@ Verbatim NDJSON from `wss://ws.kraken.com/v2` for the 19 Kraken breadth pairs
 
 Output is excluded from publication by `.gitignore:34` (`trading-bot/local_data/*/`).
 
+Shards roll **hourly** and closed hours are **zstd-compacted** (§8). Layout:
+
+```
+{out}/{stream}/{SYMBOL}/{YYYY-MM-DDTHH}.ndjson       <- the open hour
+{out}/{stream}/{SYMBOL}/{YYYY-MM-DDTHH}.ndjson.zst   <- every closed hour
+```
+
+`recorder.shard_writer.read_shard` reads both and accepts either spelling, so a
+consumer never has to know whether compaction has caught up.
+
 ---
 
 ## 1. Install
@@ -73,6 +83,104 @@ powershell -ExecutionPolicy Bypass -File recorder\supervise.ps1
 For unattended operation, register `supervise.ps1` in Task Scheduler with
 trigger *At startup* and *Restart if the task fails*.
 
+### Flags
+
+| Flag | Default | Effect |
+|---|---|---|
+| `--book-mode delta\|snapshot` | `delta` | book capture cadence — see §3.2 |
+| `--snapshot-interval N` | `5` | seconds between synthesised books (snapshot mode only) |
+| `--roll hour\|day` | `hour` | shard roll period |
+| `--no-compress` | off | keep closed shards raw (measurement / debugging only) |
+| `--compress-level N` | `10` | zstd level |
+| `--duration N` | `0` | stop after N seconds (0 = forever) |
+
+---
+
+## 3.1 Compaction — what happens to a closed hour
+
+At the hour boundary each `(stream, symbol)` shard is closed and handed to a
+single background thread, which:
+
+1. compresses it to `<hour>.ndjson.zst.part`,
+2. **decompresses that and byte-compares it against the source**,
+3. renames `.part` -> `.zst` only on success, and only then deletes the raw.
+
+If the comparison fails the raw shard is left exactly where it was, the partial
+archive is deleted, and the failure is written to the coverage journal as a
+`RECONNECT_ATTEMPT` record with `attempt: -2` and a `COMPACTION FAILED` note.
+**It is not retried.** A shard that fails verification is evidence of a real
+fault (bad block, truncated write, compressor bug); retrying it in place is how
+that fault turns into data loss. Investigate the shard by hand.
+
+Why hourly rather than the nightly roll-up the build spec deferred: raw capture
+measures ~100.5 kB/s, i.e. ~8.7 GB/day, so a nightly roll leaves up to a full
+day of uncompressed data on disk before it compresses anything. Hourly caps the
+raw working set near ~360 MB.
+
+Three further properties worth knowing:
+
+* **The open hour is never compacted, including on a clean stop.** A recorder
+  restarted inside the same hour appends to the shard it left. Compacting at
+  `close()` would strand that shard behind an archive.
+* **Startup sweeps orphans.** A shard left raw by a `kill -9` in a previous hour
+  is compacted at the next `RECORDER_START`, before capture begins, so a
+  verification failure aborts the boot rather than surfacing an hour later.
+* **Compaction never runs on the receive path.** An hour of DOGE book deltas is
+  ~100 MB; compressing it inline would stall the reader for seconds and trip the
+  10 s heartbeat watchdog (§5).
+* **Only shards matching the current roll scheme are eligible.** The tree still
+  contains daily-named shards (`2026-07-26.ndjson`) from the first deployment.
+  An hourly sweep skips them: they are reserved, already-attested captures, and
+  rewriting them as a side effect of an unrelated startup would be a silent
+  modification of reserved data. Unrecognised shard names are left strictly
+  alone rather than compacted on a guess.
+
+Compression is not free of policy: a `.zst` shard is only as good as its
+verification, which is why the byte-compare is unconditional and streamed rather
+than a size or checksum check.
+
+---
+
+## 3.2 Cadence — `--book-mode`, and why the default is not negotiable
+
+| Mode | What lands on disk | Lossless? |
+|---|---|---|
+| `delta` (**default**) | every venue book frame, verbatim | yes |
+| `snapshot` | one synthesised full depth-10 book per `--snapshot-interval` seconds | **no** |
+
+`snapshot` folds the venue's deltas into a maintained local book and writes only
+the book, on a fixed cadence. Trades and meta are **untouched in both modes** —
+the full public trade feed is always captured verbatim.
+
+**What snapshot mode destroys, permanently:** everything that happened between
+two emissions. Queue position, the ordering of a cancel against a trade,
+sub-second book pressure — none of it is recoverable afterwards, because the
+deltas were never written. There is no reprocessing path back to delta fidelity.
+It buys disk and nothing else.
+
+**What it preserves, deliberately:** the venue's exact decimal strings (never
+routed through `float`), and CRC32 verifiability. An emitted snapshot carries the
+`checksum` and `timestamp` of the last venue frame folded into it, and because
+emission happens between applications rather than during one, that checksum
+covers exactly the book emitted. `kraken_crc.verify_book_frame` therefore
+verifies a synthesised snapshot as readily as a venue one — measured 152/152
+against live frames at build time. Snapshot-mode data is lossy in time, not
+unverified.
+
+Synthesised frames are marked, always: `"synthetic": true` in the payload and
+`"synth": "book_snapshot"` in the envelope. A capture is a claim about what the
+venue sent, and a reconstruction indistinguishable from a verbatim frame would
+corrupt that claim for every future consumer.
+
+A frame is emitted every interval **even when nothing moved**, carrying
+`updates_applied: 0`. That is snapshot mode's COVERED-AND-QUIET (§7); suppressing
+it would make "quiet" and "not captured" indistinguishable again.
+
+Storage cost per mode is measured in
+`strategy-research/docs/session_reports/20260726_recorder_cadence_ladder.md`.
+**Choosing a cadence is an operator decision.** The default is `delta` and no
+code path changes it.
+
 ---
 
 ## 4. Health check — THE command
@@ -86,8 +194,12 @@ python -m recorder.liveness
 **It sleeps ~70 s by design** (it needs two size readings) and exits `0` only
 when all three of these hold:
 
-1. **GROWTH** — total shard bytes strictly increased between the two readings.
-   Zero bytes fails. Flat fails.
+1. **GROWTH** — new bytes were written between the two readings. This is the
+   sum of per-file size *increases* plus the full size of files that appeared,
+   never the difference of two totals: the hourly roll starts a fresh shard
+   while the old one stops growing, and compaction replaces a ~360 MB raw shard
+   with a ~40 MB archive, so the total legitimately falls once an hour. A
+   shrinking total is expected; an absence of new bytes is the failure.
 2. **FRESH** — newest `recv_ts` on disk is < 30 s old, and the newest journal
    record is recent.
 3. **COVERAGE** — the journal shows an open coverage interval right now, the
@@ -174,8 +286,8 @@ Three coverage states, not two:
   against 19/19 live snapshots at build time. **This is the deferral that
   genuinely weakens §7** — until it lands, a book desync shows up as a silent
   data-quality defect rather than a `DEGRADED` interval. First thing to add.
-* **zstd at write** — deferred. Raw d10 + trades is bounded and disk is the
-  only exposure. Add a nightly roll-up of closed shards within the first week.
+* ~~**zstd at write**~~ — **LANDED**, as an hourly (not nightly) verified roll.
+  See §3.1. Measured ratios per mode are in the cadence ladder report.
 * **Trades → OHLCV** — not capture work; do it when a consumer needs it.
 
 ## 9. Not available at this venue

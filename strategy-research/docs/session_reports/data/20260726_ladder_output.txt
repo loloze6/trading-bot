@@ -1,0 +1,37 @@
+free space before ladder: 17.785 GB
+
+=== delta === free=17.785 GB
+  rc=0 wall=250.9s stderr=
+  steady span 208.7s  msgs=67,623  raw=22,544,871  comp=1,971,388  ratio=11.44x
+  raw 108,007 B/s -> 9.332 GB/day | comp 9,444 B/s -> 0.816 GB/day, 297.8 GB/12mo
+
+=== snapshot_1 === free=17.771 GB
+  rc=0 wall=241.0s stderr=
+  steady span 208.7s  msgs=4,142  raw=4,293,353  comp=278,560  ratio=15.41x
+  raw 20,576 B/s -> 1.778 GB/day | comp 1,335 B/s -> 0.115 GB/day, 42.1 GB/12mo
+
+=== snapshot_5 === free=17.782 GB
+  rc=0 wall=240.9s stderr=
+  steady span 206.3s  msgs=941  raw=899,046  comp=98,111  ratio=9.16x
+  raw 4,358 B/s -> 0.376 GB/day | comp 476 B/s -> 0.041 GB/day, 15.0 GB/12mo
+
+=== snapshot_10 === free=17.779 GB
+  rc=0 wall=240.9s stderr=
+  steady span 207.8s  msgs=510  raw=466,655  comp=62,651  ratio=7.45x
+  raw 2,245 B/s -> 0.194 GB/day | comp 301 B/s -> 0.026 GB/day, 9.5 GB/12mo
+
+====================================================================================================
+mode           span_s     raw B/s   comp B/s   ratio    GB/day   GB/12mo  vs delta
+====================================================================================================
+delta           208.7     108,007      9,444  11.44x     0.816     297.8    1.000x
+snapshot_1      208.7      20,576      1,335  15.41x     0.115      42.1    0.141x
+snapshot_5      206.3       4,358        476   9.16x     0.041      15.0    0.050x
+snapshot_10     207.8       2,245        301   7.45x     0.026       9.5    0.032x
+
+per-stream steady-state bytes (raw | compressed):
+  delta        book_d10=22,483,590|1,958,677  trades=59,934|12,233  meta=1,347|478
+  snapshot_1   book_d10=4,196,137|266,542  trades=97,216|12,018
+  snapshot_5   book_d10=838,532|88,183  trades=60,514|9,928
+  snapshot_10  book_d10=409,586|53,464  trades=56,719|8,911  meta=350|276
+
+free space after ladder: 17.782 GB

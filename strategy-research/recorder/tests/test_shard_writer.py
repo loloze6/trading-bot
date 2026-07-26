@@ -30,7 +30,10 @@ RAW_TRADE = (
 
 
 def _today():
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    """Current shard period key. The roll is HOURLY by default (compaction
+    needs closed periods well inside a day); these tests assert the layout the
+    default actually produces."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H")
 
 
 def test_disk_symbol_matches_the_on_disk_breadth_convention():
@@ -39,7 +42,7 @@ def test_disk_symbol_matches_the_on_disk_breadth_convention():
 
 
 def test_round_trip_preserves_the_frame_exactly(tmp_path):
-    w = ShardWriter(tmp_path, run_id="r1")
+    w = ShardWriter(tmp_path, run_id="r1", compress=False)
     w.write_frame("book_d10", "BTCUSD", RAW_BOOK)
     w.close()
 
@@ -60,7 +63,7 @@ def test_trailing_zeros_survive_the_round_trip(tmp_path):
     re-serialising writer would destroy the ability to verify the book later —
     the exact thing the spec's deferral of live verification relies on.
     """
-    w = ShardWriter(tmp_path, run_id="r1")
+    w = ShardWriter(tmp_path, run_id="r1", compress=False)
     w.write_frame("book_d10", "BTCUSD", RAW_BOOK)
     w.close()
     text = (tmp_path / "book_d10" / "BTCUSD" / f"{_today()}.ndjson").read_text("utf-8")
@@ -69,7 +72,7 @@ def test_trailing_zeros_survive_the_round_trip(tmp_path):
 
 
 def test_each_frame_is_exactly_one_line(tmp_path):
-    w = ShardWriter(tmp_path, run_id="r1")
+    w = ShardWriter(tmp_path, run_id="r1", compress=False)
     for _ in range(5):
         w.write_frame("trades", "ETHUSD", RAW_TRADE)
     w.close()
@@ -82,7 +85,7 @@ def test_each_frame_is_exactly_one_line(tmp_path):
 
 
 def test_envelope_carries_recv_ts_seq_and_run_id(tmp_path):
-    w = ShardWriter(tmp_path, run_id="run-xyz")
+    w = ShardWriter(tmp_path, run_id="run-xyz", compress=False)
     w.write_frame("trades", "ETHUSD", RAW_TRADE)
     w.write_frame("trades", "ETHUSD", RAW_TRADE)
     w.close()
@@ -99,7 +102,7 @@ def test_seq_is_global_across_streams_so_receive_order_is_recoverable(tmp_path):
     order. Splitting shards per symbol destroys line-order as a proxy, so the
     order has to live in the envelope.
     """
-    w = ShardWriter(tmp_path, run_id="r1")
+    w = ShardWriter(tmp_path, run_id="r1", compress=False)
     w.write_frame("book_d10", "BTCUSD", RAW_BOOK)
     w.write_frame("trades", "ETHUSD", RAW_TRADE)
     w.write_frame("book_d10", "BTCUSD", RAW_BOOK)
@@ -114,7 +117,7 @@ def test_frame_containing_a_newline_falls_back_to_string_encoding(tmp_path):
     """NDJSON cannot carry an embedded newline; the fallback must stay lossless."""
     nasty = '{"channel":"meta","note":"line1\\nline2"}'
     raw_with_real_newline = '{"channel":"meta",\n"note":"x"}'
-    w = ShardWriter(tmp_path, run_id="r1")
+    w = ShardWriter(tmp_path, run_id="r1", compress=False)
     w.write_frame("meta", "_session", nasty)                 # escaped \n: spliced
     w.write_frame("meta", "_session", raw_with_real_newline)  # real \n: stringified
     w.close()
@@ -127,7 +130,7 @@ def test_frame_containing_a_newline_falls_back_to_string_encoding(tmp_path):
 
 
 def test_counts_are_per_symbol_and_reset_on_drain(tmp_path):
-    w = ShardWriter(tmp_path, run_id="r1")
+    w = ShardWriter(tmp_path, run_id="r1", compress=False)
     w.write_frame("book_d10", "BTCUSD", RAW_BOOK)
     w.write_frame("book_d10", "BTCUSD", RAW_BOOK)
     w.write_frame("trades", "ETHUSD", RAW_TRADE)
@@ -138,10 +141,10 @@ def test_counts_are_per_symbol_and_reset_on_drain(tmp_path):
 
 def test_appending_after_reopen_does_not_truncate(tmp_path):
     """A restart must extend today's shard, never clobber it."""
-    w1 = ShardWriter(tmp_path, run_id="r1")
+    w1 = ShardWriter(tmp_path, run_id="r1", compress=False)
     w1.write_frame("trades", "ETHUSD", RAW_TRADE)
     w1.close()
-    w2 = ShardWriter(tmp_path, run_id="r2")
+    w2 = ShardWriter(tmp_path, run_id="r2", compress=False)
     w2.write_frame("trades", "ETHUSD", RAW_TRADE)
     w2.close()
 
@@ -150,12 +153,12 @@ def test_appending_after_reopen_does_not_truncate(tmp_path):
     assert [e["seq"] for e in envs] == [1, 1]  # seq is per-process; run_id disambiguates
 
 
-def test_shard_layout_is_stream_symbol_day(tmp_path):
-    w = ShardWriter(tmp_path, run_id="r1")
+def test_shard_layout_is_stream_symbol_period(tmp_path):
+    w = ShardWriter(tmp_path, run_id="r1", compress=False)
     w.write_frame("book_d10", "SOLUSD", RAW_BOOK)
     w.close()
     assert (tmp_path / "book_d10" / "SOLUSD" / f"{_today()}.ndjson").exists()
 
 
 def test_read_shard_on_missing_file_yields_nothing(tmp_path):
-    assert list(read_shard(tmp_path / "nope" / "x" / "2026-07-26.ndjson")) == []
+    assert list(read_shard(tmp_path / "nope" / "x" / "2026-07-26T11.ndjson")) == []

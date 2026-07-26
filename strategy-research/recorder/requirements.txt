@@ -1,3 +1,7 @@
-# Kraken forward recorder — the only third-party dependency.
-# Verified working at 15.0.1 against wss://ws.kraken.com/v2 on 2026-07-26.
+# Kraken forward recorder dependencies.
+# websockets verified at 15.0.1 against wss://ws.kraken.com/v2 on 2026-07-26.
 websockets>=15.0,<16
+
+# Hourly shard compaction (compaction.py). Required for `run` unless
+# --no-compress is passed. Verified at 0.25.0 on 2026-07-26.
+zstandard>=0.22,<1

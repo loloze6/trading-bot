@@ -12,4 +12,4 @@ No stage, prescreen or diagnostic may read any recorded window until an
 explicit, separately-committed designation releases it.
 """
 
-__all__ = ["journal", "kraken_crc", "shard_writer"]
+__all__ = ["book_state", "compaction", "journal", "kraken_crc", "shard_writer"]
