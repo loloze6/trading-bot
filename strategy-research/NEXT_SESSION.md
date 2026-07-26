@@ -186,6 +186,64 @@ block_size default) MUST be fixed before the deferred 4h funding-retest
 candidate (R3) is ever registered. **C12/C13** (this arc) are filed, not
 fixed — see item (1) above for scope.
 
+#### Forward-recorder ledger (R1–R3, filed 2026-07-26, dispatch D2)
+
+**R1 — Kraken publishes NO public liquidation feed. Roadmap 2.4's "live
+liquidation events" is INFEASIBLE at this venue, not deferred.** This is a
+capability finding, not a scheduling one, and the distinction matters: a
+deferred item waits for effort, an infeasible one waits for a *different
+venue*. Kraken's only `liquidated` field is on the **private, authenticated
+`executions` channel**, which reports order status for *this account* only —
+own-account, not market-wide. Kraken **Futures** public feeds are trade, book,
+ticker, ticker_lite and heartbeat; no liquidation feed there either. If
+market-wide liquidation data is ever a research requirement it needs a
+different venue (Binance `forceOrder` is the obvious candidate), which is a
+separate decision with its own cost/holdout implications. Do not re-scope this
+onto the Kraken recorder; it cannot be done there at any effort level.
+Recorded in `campaign_data_policy.yaml` as
+`kraken_ws_forward_recorder.liquidations_available: false`.
+
+**R2 — Two venue-limit figures in the build spec are UNVERIFIED and must be
+re-verified before anyone relies on them.** The build spec's §3 quotes "200
+symbols per connection" and "≈150 connect attempts per rolling 10 min per IP
+before a Cloudflare ban". The spec itself flags the provenance problem and it
+is repeated here so it survives: **the Kraken WS FAQ page as actually served
+renders v1 content; both figures came from search/doc indexing, not from the
+served page.** Neither was tested against a live connection. They are not
+binding on the current configuration — 19 symbols × 2 channels is one
+connection with ~90% headroom on any plausible symbol limit — but the
+reconnect-rate figure IS load-bearing for `supervise.ps1`'s restart loop and
+for any future decision to shard across connections. Anyone widening the
+universe, adding connections, or tuning restart backoff must re-verify both
+figures empirically first. Treat the current 5s fixed backoff as calibrated to
+an unverified number.
+
+**R3 — STORAGE CHECKPOINT BREACHED: measured 12-month projection is 360 GB
+compressed vs the spec's 64 GB estimate (5.63×), against a pre-registered
+100 GB budget. Operator decision required; no scope was reduced.** The
+pre-registered rule (>100 GB → STOP and report, scope reduction being the
+operator's call) fired. The recorder was built, verified and run exactly as
+specified, then stopped; **no pair, depth or stream was reduced on the
+builder's initiative.** The miss decomposes cleanly and was measured, not
+guessed: book message rate 15.1 msg/s/pair vs assumption A1's 5.0 (3.02×),
+bytes/frame 351 vs A2's 200 (1.76×), and real zstd-3 compression 8.82× vs A4's
+assumed 10× (1.13×) — compounding to 6.01× against 5.63× observed end to end.
+Caveat stated plainly: the measurement is a single ~10-minute window at
+02:05–02:15 UTC and is **not** a defensible annual figure by itself; a 24h
+sample is needed for that. It is reported anyway because the gap is too wide
+for sampling error to close — the window would have to overstate the annual
+mean by 3.6× for 360 GB to fall under budget.
+
+**R3a — SEPARATE AND MORE URGENT: the machine has 0.18 GB free on C:.** This
+is independent of R3 and was not caused by the recorder (which wrote 59 MB
+total). At the measured 8.71 GB/day the daemon would have exhausted the system
+drive in roughly 30 minutes, so it was stopped after the measurement rather
+than left running. **The recorder cannot be restarted at all — at any scope,
+even one pair — until disk is freed.** Note the campaign's own bulk data is
+the obvious candidate: `Kraken_batch/` is ~32 GB and `holdout_sealed/` ~1.9 GB.
+Freeing space is an operator decision because `holdout_sealed/` is single-use
+sealed data and its deletion is irreversible.
+
 ### (5) Everything past Phase 2 (Phase 3+ hypothesis waves, Phase 4 ML, Phase 5 promotion)
 Not yet — see `docs/ROADMAP.md` Part 2 for the full sequence and gates.
 

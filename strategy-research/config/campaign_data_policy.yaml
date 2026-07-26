@@ -63,6 +63,17 @@ eras:
     range: ["2026-01-01", "2026-06-30"]
     feeds_available: [ohlcv, fear_greed, funding_rate]
     note: matches holdout_range above. FROZEN — same holdout rules apply.
+  - era_id: era_2026_h2_forward_recorded
+    range: ["2026-07-26", null]
+    feeds_available: [l2_book_d10, trades]
+    note: >
+      Open-ended; begins at first live capture (kraken_ws_forward_recorder below).
+      NO PRIOR ERA HAS l2_book OR trades AT ALL — every era above is
+      ohlcv/fear_greed/funding_rate only. Any hypothesis using order-book depth or
+      tick-level trades is therefore inherently UN-BACKTESTABLE before 2026-07-26,
+      and no amount of backfill can change that: this data cannot be downloaded
+      backwards. Note also that this era carries NO ohlcv/funding feeds — it does
+      not supersede or extend any era above, it is a parallel feed axis.
 
 # Phase 2 Track A / XS_momentum P2 unblock (2026-07-22). Verified availability for
 # the 19-pair Kraken breadth set (ledger G1/G2), measured directly from the ingested
@@ -261,6 +272,104 @@ binance_cache_holdout_contaminated:
 # whoever ratifies the XS_momentum brief's market_universe, using whichever candidate
 # universe is selected. Full matrix and methodology:
 # docs/session_reports/20260722_xs_momentum_universe.md.
+
+# Kraken WS v2 forward recorder (registered 2026-07-26, roadmap Phase 2.4 Track C).
+# First-party live websocket capture of L2 book depth-10 + full public trades for the
+# same 19 Kraken breadth pairs as kraken_breadth_19pair above. Build spec:
+# docs/session_reports/20260726_recorder_build_spec.md. Code: strategy-research/recorder/.
+#
+# *** DENY BY DEFAULT — THIS DATA IS RESERVED, NOT SEARCHABLE. ***
+# No stage, tool, prescreen, diagnostic or backtest may read ANY window of this
+# capture until an explicit, separately-committed designation releases a named
+# window. That designation is a dated, ratified decision in its own right; it is
+# NOT implied by this registration entry, and it is NOT implied by the data
+# existing on disk. Deny-by-default is the whole point: this is the only
+# RENEWABLE source of genuinely unseen out-of-sample the campaign will ever have
+# — nobody, including us, has looked at it. Registering it as search-eligible on
+# arrival would spend that property immediately and irreversibly, for exactly the
+# reason holdout_failure_is_terminal (below) exists. The search/reserve split
+# should ideally be decided BEFORE enough accumulates to be tempting.
+#
+# holdout_range, holdout_consumed_by, holdout_failure_is_terminal, kraken_q1_2026_holdout,
+# kraken_breadth_19pair and binance_cache_holdout_contaminated are ALL UNCHANGED by this
+# entry. The only other edit in this commit is the ADDITION of era_2026_h2_forward_recorded
+# to the eras list; no existing era was modified.
+kraken_ws_forward_recorder:
+  registered: "2026-07-26"
+  recording_started: "2026-07-26"
+  span: ["2026-07-26", null]  # open-ended, grows while the daemon runs
+  source_id: [kraken_ws_v2_l2_book_d10, kraken_ws_v2_trades]
+  venue: kraken
+  market: spot
+  quote: USD  # matches kraken_breadth_19pair; NB USD, not USDT
+  bases: [BTC, ETH, XRP, SOL, ADA, SUI, ZEC, DOGE, XMR, LTC,
+          ONDO, NEAR, LINK, TAO, AVAX, TRX, AAVE, INJ, UNI]
+  endpoint: "wss://ws.kraken.com/v2"
+  book_depth: 10  # venue offers 10/25/100/500/1000; CRC32 covers EXACTLY the top 10,
+                  # so at depth 10 the entire captured book is checksum-verifiable
+  provenance: live_websocket_capture  # a THIRD provenance class, distinct from the
+    # bulk_archive of Kraken_batch and the REST CcxtFetcher fetch. The distinction is
+    # operationally load-bearing: unlike both of those, this CANNOT BE RE-DERIVED IF
+    # LOST. Every hour the daemon is down is permanently unrecoverable.
+  cadence: event_driven  # explicitly NOT a fixed interval.
+  cache_dir: local_data/recorded_reserved/kraken_ws_v2/{stream}/{SYMBOL}/{YYYY-MM-DD}.ndjson
+    # Deliberately NOT local_data/ root — that flat namespace is the contaminated
+    # Binance slot (binance_cache_holdout_contaminated above). Path keeps the
+    # kraken_ exchange qualification convention of ccxt_fetcher.py:120-121.
+  excluded_from_publication: true  # .gitignore:34 `trading-bot/local_data/*/`, verified
+                                   # by `git check-ignore -v` at registration time
+  era: era_2026_h2_forward_recorded
+  holdout_overlap: none  # capture starts 2026-07-26, AFTER holdout_range end 2026-06-30
+  holdout_range_unchanged: true
+  gap_semantics:
+    # BaseFetcher's interval_seconds gap arithmetic (base_fetcher.py:272-291) DOES NOT
+    # APPLY here and must never be pointed at this data: it assumes a regular grid, and
+    # an event-driven stream has no expected interval, so every guard there misfires.
+    base_fetcher_gap_arithmetic_applies: false
+    coverage_attested_by: _session.ndjson  # the coverage journal, fsync-per-record
+    reason: >
+      Kraken WS v2 publishes NO sequence numbers on the book channel, so the stream
+      alone cannot distinguish "no activity" from "not captured". Coverage is attested
+      only by the separately-written journal. Consumers MUST call
+      recorder.journal.assert_covered() before treating an absence of frames as an
+      absence of market activity; it RAISES CoverageGapError on unattested time rather
+      than warning or filling. This is FetchGapError's doctrine
+      (base_fetcher.py:42-61) moved to the READ boundary, there being no merge step.
+    states: [COVERED_AND_QUIET, UNCAPTURED, DEGRADED]  # DEGRADED reserved until live
+                                                       # CRC32 verification lands
+  storage_checkpoint:
+    # Pre-registered BEFORE measurement (dispatch D2 step 7). Rule fixed in advance:
+    # <=100 GB/12mo compressed -> continue as configured; >100 GB -> STOP and report,
+    # scope reduction being the operator's call and not the builder's.
+    measured: "2026-07-26"
+    measurement_window_s: 300
+    measurement_caveat: >
+      Single ~10-minute sample at 02:05-02:15 UTC. NOT a defensible annual figure on
+      its own — intraday and weekday seasonality are unmeasured. Reported because the
+      overage is far too large to be explained by sampling: bringing 360 GB under the
+      100 GB budget would require this window to overstate the annual mean by 3.6x.
+    raw_bytes_per_second: 100754
+    raw_gb_per_day: 8.71
+    zstd3_ratio_measured: 8.82  # measured on real captured shards, not assumed
+    projected_12mo_compressed_gb: 360.2
+    spec_estimate_gb: 64  # assumptions A1-A4 of the build spec
+    overage_factor: 5.63
+    decision: STOP_AND_REPORT  # >100 GB. Configuration left EXACTLY as specified;
+                               # no pair, depth or stream was reduced.
+    miss_decomposition:  # why the spec estimate was low, measured not guessed
+      book_msgs_per_s_per_pair: {assumed_A1: 5.0, measured: 15.1, factor: 3.02}
+      bytes_per_frame: {assumed_A2: 200, measured: 351, factor: 1.76}
+      zstd_ratio: {assumed_A4: 10.0, measured: 8.82, factor: 1.13}
+      compounded: 6.01  # vs 5.63 observed end-to-end
+  liquidations_available: false  # see ledger item R1 — INFEASIBLE at this venue, not
+                                 # deferred. Kraken publishes no public liquidation feed
+                                 # on spot or futures; the only `liquidated` field is on
+                                 # the private, authenticated, own-account `executions`
+                                 # channel. Roadmap 2.4's "live liquidation events"
+                                 # requires a different venue entirely.
+  status: reserved_undesignated  # NOT walk-forward eligible. NOT holdout. NOT searchable.
+                                 # Undesignated means no window has been assigned to any
+                                 # purpose yet; assignment requires its own commit.
 
 holdout_consumed_by: []
 
