@@ -68,19 +68,27 @@ Anything less than 19 names the missing pairs — investigate before starting.
 
 ## 3. Start
 
-Foreground (Ctrl-C stops cleanly, writing `RECORDER_STOP`):
+### THE OPERATOR LAUNCH COMMAND
+
+This is the supervised, snapshot-cadence, guard-armed capture registered as
+`kraken_ws_forward_recorder.capture_configuration` in `campaign_data_policy.yaml`.
+Run it from `strategy-research/`:
 
 ```
-python -m recorder.record_kraken_ws run
+powershell -ExecutionPolicy Bypass -File recorder\supervise.ps1 -BookMode snapshot -SnapshotInterval 1.0 -MinFreeGb 5.0
 ```
 
-Supervised (restarts on crash; recommended for always-on):
+The cadence and the floor are passed **explicitly**. The recorder's compiled-in
+default is still `--book-mode delta`, and no code path changes it — the registry
+declares intent, the command line sets it (§3.2).
+
+Foreground, unsupervised (Ctrl-C stops cleanly, writing `RECORDER_STOP`):
 
 ```
-powershell -ExecutionPolicy Bypass -File recorder\supervise.ps1
+python -m recorder.record_kraken_ws run --book-mode snapshot --snapshot-interval 1.0 --min-free-gb 5.0
 ```
 
-For unattended operation, register `supervise.ps1` in Task Scheduler with
+For unattended operation, register the supervised command in Task Scheduler with
 trigger *At startup* and *Restart if the task fails*.
 
 ### Flags
@@ -93,6 +101,81 @@ trigger *At startup* and *Restart if the task fails*.
 | `--no-compress` | off | keep closed shards raw (measurement / debugging only) |
 | `--compress-level N` | `10` | zstd level |
 | `--duration N` | `0` | stop after N seconds (0 = forever) |
+| **`--min-free-gb N`** | `5.0` | **free-space floor, decimal GB — §3.3** |
+| `--disk-check-interval N` | `30` | seconds between free-space checks |
+| `--log-file PATH` | — | append operational logging here as well as stderr |
+
+Supervisor parameters: `-MinFreeGb`, `-BookMode`, `-SnapshotInterval`,
+`-Duration`, `-Out`, `-LogFile`, `-MaxRestarts` (default 20),
+`-RestartWindowMinutes` (60), `-BackoffInitialSeconds` (5),
+`-BackoffMaxSeconds` (300), `-HealthyRunSeconds` (600).
+
+---
+
+## 3.3 The disk guard, and what `DISK_GUARD_ABORT` looks like
+
+The recorder enforces its own free-space floor — **on a timer, for the whole
+run**, not only at startup. A startup-only check answers the wrong question: the
+disk is not full when a twelve-month capture begins, it becomes full some weeks
+in, possibly because of something else entirely on the same volume.
+
+On breach the ordering is fixed: **flush and fsync the open shards, then attest,
+then exit.** Attesting first would have the journal claiming coverage for data
+that is not yet durable.
+
+**Free space that cannot be determined is a breach.** An unmeasurable disk is
+the state in which continuing to write is least defensible, and a guard that
+fails open is not a guard.
+
+The stop lands in the coverage journal as its own record type, so it can never
+be confused with a crash or with an operator's Ctrl-C:
+
+```json
+{"jseq":8412,"run_id":"...","ts":"2026-07-27T04:11:09.882431Z","mono":57312.4,
+ "type":"DISK_GUARD_ABORT","path":"...\\kraken_ws_v2","free_bytes":4711234560,
+ "free_gb":4.711,"min_free_bytes":5000000000,"min_free_gb":5.0,
+ "reason":"free space below configured floor","determinable":true}
+```
+
+An undeterminable-space abort is the same record with `"free_bytes":null`,
+`"determinable":false` and `"reason":"free space could not be determined (deny
+by default)"`.
+
+`DISK_GUARD_ABORT` **closes every open coverage interval** and is the last
+record the process writes — there is deliberately no `RECORDER_STOP` on top of
+it. The process exits **3**, and `supervise.ps1` treats that code as *do not
+relaunch*: restarting into a full disk is a loop that burns the remaining space
+and hides the real fault. Free space on the volume, then start again by hand.
+
+Exit codes: `0` clean stop, `3` guard abort, `4` supervisor hit its restart cap,
+anything else a crash (relaunched).
+
+---
+
+## 3.4 Auto-restart — the most valuable thing in this deploy
+
+> **Book gaps are permanently unrecoverable. Trades gaps are backfillable.**
+>
+> Kraken publishes no historical L2 — there is no endpoint, at any price, that
+> returns the order book as it stood while this process was down. A minute of
+> downtime is a minute of book that does not exist and never will. The public
+> trade history endpoint *can* fill a trades gap, and OHLCV is fetchable, so a
+> restart failure costs the book and only the book. That asymmetry is why the
+> supervisor matters more than the cadence.
+
+`supervise.ps1` relaunches on **any non-zero exit except 3**, with exponential
+backoff (5 s doubling to a 300 s ceiling), and resets the ladder once a process
+has stayed up for 10 minutes. It refuses to relaunch after exit `0` (an operator
+pressed Ctrl-C and meant it) and after exit `3` (§3.3). A rolling cap of 20
+restarts per hour turns a crash-loop into a loud stop rather than 150 connect
+attempts in ten minutes, which is where Cloudflare starts banning the IP.
+
+Every relaunch is logged with its reason **and** writes a `RESTART_BOUNDARY`
+record into the coverage journal carrying the dead process's exit code. That is
+what makes the downtime *attested* rather than inferred: `coverage_report`
+labels the gap `restart` with that exit code instead of `unknown`. The dead
+run's intervals are closed at **its own last record**, never at the boundary
+marker — closing at the marker would claim coverage across the outage.
 
 ---
 
@@ -210,6 +293,42 @@ Last line is `HEALTHY` or `UNHEALTHY`; exit code matches. Useful flags:
 `--window 70` (seconds between readings), `--expect-symbols 19`,
 `--max-staleness 30`, `--out <dir>`.
 
+### 4.1 Coverage gap report — what was MISSED
+
+`liveness` answers "is it running right now". This answers "what did we lose",
+which is the question nobody asks until it is too late to fix:
+
+```
+python -m recorder.coverage_report
+```
+
+It reads the coverage journal and prints every interval that is **not**
+attested, each with start, end, duration and the cause the journal actually
+records — `disk_guard_abort`, `clean_stop`, `ws_disconnect`, `restart` (with
+the dead process's exit code), `crash`, `not_yet_started`, or `unknown` — then
+the total captured vs elapsed as a percentage.
+
+`unknown` is a real answer, not a failure of the report: a gap whose cause the
+journal cannot name is exactly what an operator needs to see.
+
+An instant counts as **captured only when every (symbol, channel) pair is
+attested**. 19 subscribed and 18 delivering is a partial-coverage defect, not a
+rounding error — the same rule as check 3 above. Use `--symbol BTC/USD` /
+`--channel book` for the per-pair view, `--start`/`--end` to bound the window,
+and `--fail-on-gap` to make it exit non-zero for an unattended check.
+
+Without this, downtime stays invisible until somebody reconstructs it from shard
+file sizes — guesswork about the one stream that can never be re-fetched.
+
+### 4.2 The log
+
+`recorder.log` now has content in it. The `run` path logs boot (with the guard
+reading), subscription completion, one heartbeat line per minute carrying frames,
+symbols, bytes written and free space, guard state changes, disconnects,
+reconnect attempts, restarts and the clean stop. Low volume by design.
+
+It is still **not** the health check. Judge by §4, not by the log — see below.
+
 ### Why size alone is not the check
 
 Kraken emits a heartbeat ~1/s whenever no other channel update is flowing. A
@@ -234,9 +353,14 @@ symbols in the journal rather than trusting the byte counter.
 | Venue maintenance | journal `STATUS_CHANGE` with `system=maintenance` | venue-side, not us | wait; reconnect backoff handles it |
 | Repeated reconnects | many `RECONNECT_ATTEMPT` | flapping link | check the network **before** restarting in a loop — Cloudflare bans ~150 connect attempts per rolling 10 min per IP |
 | `torn_tail: true` on `RECORDER_START` | — | predecessor killed mid-write | benign; the torn line is skipped and reported, not silently repaired |
+| Journal ends in `DISK_GUARD_ABORT`, exit 3 | supervisor logged `NOT relaunching` | free-space floor breached, or free space undeterminable | free space on the volume, then start again by hand (§3.3). **The supervisor will not do this for you, on purpose.** |
+| Supervisor exit 4 | `GIVING UP: N restarts in the last M min` | persistent fault, not a flap | investigate before restarting — Cloudflare bans ~150 connect attempts per rolling 10 min per IP |
+| Gaps labelled `unknown` in the coverage report | — | process died with no attestation and no successor marker | check whether the supervisor was actually running; an unsupervised crash cannot be labelled |
 
-**Silence in the log is never evidence of health.** The recorder logs almost
-nothing by design; the journal is the record. Judge by §4, not by the log.
+**Silence in the log is never evidence of health.** The log now carries a
+heartbeat line per minute (§4.2), which makes its *absence* informative — but a
+present, cheerful log still proves nothing about coverage. The journal is the
+record. Judge by §4, not by the log.
 
 ---
 
@@ -244,10 +368,16 @@ nothing by design; the journal is the record. Judge by §4, not by the log.
 
 Ctrl-C in the foreground, or stop the Task Scheduler task. Either way the
 `finally` block writes `RECORDER_STOP`, which closes every open coverage
-interval. A `kill -9` skips it — that is not data loss, but it does mean the
-next `RECORDER_START` records `prev_clean_shutdown: false` and the interval is
-closed at the last record the dead process actually attested, leaving the
-downtime visibly UNCAPTURED. That is the intended behaviour.
+interval, and the process exits `0` — which the supervisor reads as *the
+operator meant this* and does not relaunch. A `kill -9` skips it — that is not
+data loss, but it does mean the next `RECORDER_START` records
+`prev_clean_shutdown: false` and the interval is closed at the last record the
+dead process actually attested, leaving the downtime visibly UNCAPTURED. That is
+the intended behaviour.
+
+A `DISK_GUARD_ABORT` (§3.3) is also an *attested* stop, not a crash: the
+successor records `prev_clean_shutdown: true`, because nothing was lost to a
+crash — the disk ran out and the recorder shut down in order.
 
 ---
 
@@ -266,6 +396,9 @@ assert_covered(journal_path, "BTC/USD", "book", start, end)
 does not fill — this is `FetchGapError`'s doctrine
 (`trading-bot/data/fetchers/base_fetcher.py:42-61`) moved to the read boundary,
 because an event stream has no merge step to guard.
+
+For the operator-facing view of the same journal — every uncaptured interval
+with its attested cause, and the captured/elapsed percentage — see §4.1.
 
 Three coverage states, not two:
 

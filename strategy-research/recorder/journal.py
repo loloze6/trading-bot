@@ -66,6 +66,20 @@ RECORD TYPES
     RECONNECT_ATTEMPT  attempt number + backoff seconds
     RESUBSCRIBE        resubscription issued after a reconnect
     RECORDER_STOP      clean shutdown — CLOSES all open intervals
+    DISK_GUARD_ABORT   free-space floor breached; the recorder flushed, attested
+                       and stopped. CLOSES all open intervals. This is an
+                       ATTESTED stop, not a crash, and it is deliberately a
+                       distinct type rather than a RECORDER_STOP with a reason
+                       field: the supervisor must not relaunch into a full disk,
+                       and a gap report must be able to name the cause without
+                       parsing free text. See `disk_guard.py`.
+    RESTART_BOUNDARY   written by the SUPERVISOR, between two recorder
+                       processes, carrying the dead process's exit code. It
+                       marks the downtime as attested rather than leaving it to
+                       be inferred from the absence of records, and it closes
+                       the dead run's intervals at that run's LAST OWN RECORD
+                       (never at the marker), for the same reason
+                       RECORDER_START does — see `coverage_intervals`.
 """
 
 from __future__ import annotations
@@ -93,13 +107,26 @@ RECORD_TYPES = frozenset(
         "RECONNECT_ATTEMPT",
         "RESUBSCRIBE",
         "RECORDER_STOP",
+        "DISK_GUARD_ABORT",
+        "RESTART_BOUNDARY",
     }
 )
 
 #: Record types that open a coverage interval for (symbol, channel).
 _OPENING = "SUBSCRIBE_ACK"
 #: Record types that close every currently-open coverage interval.
-_CLOSING = frozenset({"WS_DISCONNECT", "RECORDER_STOP"})
+_CLOSING = frozenset({"WS_DISCONNECT", "RECORDER_STOP", "DISK_GUARD_ABORT"})
+
+#: Types written by a DIFFERENT actor than the run whose intervals may still be
+#: open — a successor recorder, or the supervisor. Seeing one means the previous
+#: run is over; its intervals are closed at ITS last record, not at this one.
+_NEW_ACTOR = frozenset({"RECORDER_START", "RESTART_BOUNDARY"})
+
+#: Stop types that were ATTESTED by the stopping process. A journal ending in
+#: one of these did not lose its tail to a crash. DISK_GUARD_ABORT belongs here
+#: even though it is a failure: the failure is the disk, and the recorder's own
+#: shutdown was orderly and recorded.
+_ATTESTED_STOP = frozenset({"RECORDER_STOP", "DISK_GUARD_ABORT"})
 
 
 class CoverageGapError(RuntimeError):
@@ -226,6 +253,7 @@ def read_tail_state(path: Path) -> Dict[str, Any]:
         "last_jseq": 0,
         "last_ts": None,
         "last_run_id": None,
+        "last_type": None,
         "offset": 0,
         "clean_shutdown": None,
         "torn_tail": False,
@@ -250,7 +278,12 @@ def read_tail_state(path: Path) -> Dict[str, Any]:
             state["last_ts"] = rec.get("ts", state["last_ts"])
             state["last_run_id"] = rec.get("run_id", state["last_run_id"])
             last_type = rec.get("type")
-    state["clean_shutdown"] = last_type == "RECORDER_STOP" if last_type else None
+    state["last_type"] = last_type
+    # A guard abort is an attested stop as much as a clean one — the successor
+    # must not report it as `prev_clean_shutdown: false`, which means "we lost
+    # the tail to a crash". `last_type` is carried alongside so a consumer that
+    # needs to tell the two apart still can.
+    state["clean_shutdown"] = last_type in _ATTESTED_STOP if last_type else None
     return state
 
 
@@ -294,13 +327,14 @@ def coverage_intervals(
 
     Interval semantics:
       * opened by SUBSCRIBE_ACK(symbol, channel);
-      * closed by WS_DISCONNECT or RECORDER_STOP;
+      * closed by WS_DISCONNECT, RECORDER_STOP or DISK_GUARD_ABORT;
       * closed by UNCLEAN_SHUTDOWN at the *last record of the dead run* when a
-        new RECORDER_START appears while intervals from an earlier run_id are
-        still open. Closing at the new start would silently claim coverage
-        across the crash window — the exact failure mode this module exists to
-        prevent — so the honest bound is the last thing the dead process
-        actually attested;
+        record from a NEW ACTOR (a successor RECORDER_START, or the
+        supervisor's RESTART_BOUNDARY) appears while intervals from an earlier
+        run_id are still open. Closing at the new record would silently claim
+        coverage across the crash window — the exact failure mode this module
+        exists to prevent — so the honest bound is the last thing the dead
+        process actually attested;
       * closed by OPEN_TAIL at the last record in the journal when the recorder
         is still running. Coverage is attested only up to the newest record,
         never to "now": a process that died 40 minutes ago and a process that
@@ -328,7 +362,7 @@ def coverage_intervals(
         ts = parse_iso(ts_raw)
         run_id = rec.get("run_id", "")
 
-        if rtype == "RECORDER_START" and open_since and run_id != last_run:
+        if rtype in _NEW_ACTOR and open_since and run_id != last_run:
             close_all(last_ts if last_ts else ts, "UNCLEAN_SHUTDOWN")
 
         if rtype == _OPENING:

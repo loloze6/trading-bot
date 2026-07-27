@@ -34,6 +34,13 @@ HOLDOUT
 -------
 Capture begins 2026-07-26, strictly after `holdout_range` end 2026-06-30. No
 overlap, no seal interaction. This daemon reads no historical data of any kind.
+
+DISK FLOOR
+----------
+A free-space floor is enforced by this process, on a timer, for the whole run —
+see `disk_guard.py`. A breach flushes, writes `DISK_GUARD_ABORT` to the
+coverage journal and exits `EXIT_DISK_GUARD_ABORT`, which `supervise.ps1` reads
+as "do not relaunch". Every other non-zero exit is relaunched.
 """
 
 from __future__ import annotations
@@ -41,6 +48,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import logging
 import signal
 import sys
 import time
@@ -60,13 +68,28 @@ if __package__ in (None, ""):  # allow `python record_kraken_ws.py`
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from recorder.book_state import BookBook  # type: ignore
     from recorder.compaction import DEFAULT_LEVEL, sweep  # type: ignore
+    from recorder.disk_guard import (  # type: ignore
+        DEFAULT_CHECK_INTERVAL_S, DEFAULT_MIN_FREE_GB, EXIT_DISK_GUARD_ABORT,
+        DiskGuard, GB,
+    )
     from recorder.journal import CoverageJournal  # type: ignore
     from recorder.shard_writer import ShardWriter, disk_symbol  # type: ignore
 else:
     from .book_state import BookBook
     from .compaction import DEFAULT_LEVEL, sweep
+    from .disk_guard import (
+        DEFAULT_CHECK_INTERVAL_S, DEFAULT_MIN_FREE_GB, EXIT_DISK_GUARD_ABORT,
+        DiskGuard, GB,
+    )
     from .journal import CoverageJournal
     from .shard_writer import ShardWriter, disk_symbol
+
+#: Operational log. Low volume by design: boot, subscription, one heartbeat per
+#: rollup (1/min), guard state changes, disconnects, stop. The JOURNAL remains
+#: the record of coverage — this exists so that `recorder.log` stops being
+#: 0 bytes and an operator can see the process is alive without running a
+#: separate check. Judging health by this log is still wrong; see RUNBOOK §4.
+log = logging.getLogger("recorder")
 
 WS_URL = "wss://ws.kraken.com/v2"
 
@@ -121,11 +144,16 @@ class Recorder:
         roll: str = "hour",
         compress: bool = True,
         compress_level: int = DEFAULT_LEVEL,
+        min_free_gb: float = DEFAULT_MIN_FREE_GB,
+        disk_check_interval_s: float = DEFAULT_CHECK_INTERVAL_S,
+        disk_probe=None,
     ):
         if book_mode not in BOOK_MODES:
             raise ValueError(f"book_mode must be one of {BOOK_MODES}, got {book_mode!r}")
         if snapshot_interval_s <= 0:
             raise ValueError("snapshot_interval_s must be > 0")
+        if disk_check_interval_s <= 0:
+            raise ValueError("disk_check_interval_s must be > 0")
         self.out_dir = Path(out_dir)
         self.symbols = list(symbols or SYMBOLS)
         self.depth = depth
@@ -145,6 +173,19 @@ class Recorder:
         self._heartbeats = 0
         self._book_frames_folded = 0
         self._connection_id: Optional[Any] = None
+        self.disk_check_interval_s = float(disk_check_interval_s)
+        self.guard = DiskGuard(
+            self.out_dir,
+            min_free_gb=min_free_gb,
+            **({"probe": disk_probe} if disk_probe is not None else {}),
+        )
+        #: True once the floor has been breached and attested. It is one-way:
+        #: the guard never re-arms, because "there was room again a minute
+        #: later" is not a reason to resume writing into a volume that already
+        #: crossed the floor once.
+        self._guard_abort = False
+        self._acks = 0
+        self._subscription_logged = False
 
     # -- frame handling ----------------------------------------------------
 
@@ -238,6 +279,60 @@ class Recorder:
             return
         if symbol and channel:
             self.journal.write("SUBSCRIBE_ACK", symbol=symbol, channel=channel)
+            self._acks += 1
+            # book + trade, one ack per (symbol, channel). `instrument` is not
+            # per-symbol and does not count towards this.
+            expected = len(self.symbols) * 2
+            if self._acks >= expected and not self._subscription_logged:
+                self._subscription_logged = True
+                log.info("subscription complete: %d/%d (symbol, channel) acks",
+                         self._acks, expected)
+
+    # -- disk guard --------------------------------------------------------
+
+    def check_disk(self) -> bool:
+        """
+        Evaluate the free-space floor. Returns True to keep running.
+
+        On breach the ordering is fixed and is the whole point of doing this
+        inside the recorder: **flush and fsync open shards first, then attest,
+        then stop**. Attesting before the data is durable would be the journal
+        over-claiming coverage it does not have, which `journal.py` calls a
+        correctness event as opposed to a data-quality one.
+        """
+        if self._guard_abort:
+            return False
+        reading = self.guard.check()
+        if reading.ok:
+            return True
+
+        try:
+            self.writer.sync()
+        except OSError as exc:  # a full disk is exactly where fsync fails
+            log.error("disk guard: flush failed during abort: %r", exc)
+        self.journal.write("DISK_GUARD_ABORT", **reading.as_journal_fields())
+        self._guard_abort = True
+        log.error("DISK GUARD ABORT: %s — flushed, attested, stopping (exit %d)",
+                  reading.summary(), EXIT_DISK_GUARD_ABORT)
+        self._stop.set()
+        return False
+
+    async def _disk_guard_loop(self) -> None:
+        """
+        Re-read free space for the whole life of the process.
+
+        A startup-only check answers the wrong question: the disk is not full
+        when a twelve-month capture begins, it becomes full weeks in.
+        """
+        while not self._stop.is_set():
+            try:
+                await asyncio.wait_for(
+                    self._stop.wait(), timeout=self.disk_check_interval_s
+                )
+                return
+            except asyncio.TimeoutError:
+                pass
+            self.check_disk()
 
     # -- tasks -------------------------------------------------------------
 
@@ -301,6 +396,7 @@ class Recorder:
             except asyncio.TimeoutError:
                 pass
             counts = self.writer.drain_counts()
+            written = self.writer.drain_bytes()
             hb = self._heartbeats
             self._heartbeats = 0
             self.writer.sync()
@@ -330,7 +426,20 @@ class Recorder:
                 frames_total=sum(counts.values()),
                 symbols_seen=len([s for s in counts if not s.startswith("_")]),
                 frames_by_symbol=counts,
+                bytes_written=written,
                 **extra,
+            )
+            free = self.guard.check()
+            log.info(
+                "heartbeat: frames=%d symbols=%d heartbeats=%d bytes=%d (%.1f kB/s) "
+                "free=%s guard=%s",
+                sum(counts.values()),
+                len([s for s in counts if not s.startswith("_")]),
+                hb,
+                written,
+                written / ROLLUP_INTERVAL_S / 1000.0,
+                "unknown" if free.free_gb is None else f"{free.free_gb:.2f}GB",
+                "OK" if free.ok else "BREACH",
             )
 
     async def _session(self) -> None:
@@ -367,6 +476,10 @@ class Recorder:
             )
             for sub in subs:
                 await ws.send(json.dumps(sub))
+            self._acks = 0
+            self._subscription_logged = False
+            log.info("ws connected, subscriptions sent: channels=book,trade,instrument "
+                     "symbols=%d depth=%d", len(self.symbols), self.depth)
 
             while not self._stop.is_set():
                 try:
@@ -379,6 +492,8 @@ class Recorder:
                         silent_s=HEARTBEAT_TIMEOUT_S,
                         connection_id=self._connection_id,
                     )
+                    log.warning("ws silent for %.0fs — heartbeat watchdog fired",
+                                HEARTBEAT_TIMEOUT_S)
                     await ws.close()
                     return
                 if isinstance(raw, bytes):
@@ -403,7 +518,26 @@ class Recorder:
             ),
             roll=self.writer.roll,
             compress=self.writer.compress,
+            min_free_gb=self.guard.min_free_bytes / GB,
         )
+        boot = self.guard.check()
+        log.info(
+            "recorder start: out=%s mode=%s%s symbols=%d depth=%d roll=%s compress=%s "
+            "floor=%.2fGB %s",
+            self.out_dir, self.book_mode,
+            f" interval={self.snapshot_interval_s}s"
+            if self.book_mode == MODE_SNAPSHOT else "",
+            len(self.symbols), self.depth, self.writer.roll, self.writer.compress,
+            self.guard.min_free_bytes / GB, boot.summary(),
+        )
+        # Before the startup sweep, not after: compaction writes a `.part` file
+        # the size of an hour of capture, so a boot that is already under the
+        # floor must not be allowed to spend more space proving it.
+        if not self.check_disk():
+            self.writer.close()
+            self.journal.close()
+            return EXIT_DISK_GUARD_ABORT
+
         # Pick up shards orphaned by a predecessor that died mid-hour. Done
         # before any capture starts so a verification failure aborts the boot
         # rather than surfacing an hour later.
@@ -431,6 +565,7 @@ class Recorder:
         try:
             rollup = asyncio.create_task(self._rollup_loop())
             tasks.append(rollup)
+            tasks.append(asyncio.create_task(self._disk_guard_loop()))
             if self.book_mode == MODE_SNAPSHOT:
                 tasks.append(asyncio.create_task(self._snapshot_loop()))
             while not self._stop.is_set():
@@ -445,6 +580,7 @@ class Recorder:
                         reason=f"{type(exc).__name__}: {exc}",
                         connection_id=self._connection_id,
                     )
+                    log.warning("ws disconnect: %s: %s", type(exc).__name__, exc)
                 if self._stop.is_set():
                     break
                 attempt += 1
@@ -452,6 +588,7 @@ class Recorder:
                 self.journal.write(
                     "RECONNECT_ATTEMPT", attempt=attempt, backoff_s=backoff
                 )
+                log.info("reconnect attempt %d in %.0fs", attempt, backoff)
                 if backoff:
                     try:
                         await asyncio.wait_for(self._stop.wait(), timeout=backoff)
@@ -460,7 +597,13 @@ class Recorder:
             for task in tasks:
                 task.cancel()
         finally:
-            self.journal.write("RECORDER_STOP", reason="signal_or_eof")
+            # A guard abort already wrote its own terminal, interval-closing
+            # record. Adding RECORDER_STOP on top would make the journal end in
+            # a record that reads as a clean operator stop, which is precisely
+            # the distinction the supervisor and the gap report depend on.
+            if not self._guard_abort:
+                self.journal.write("RECORDER_STOP", reason="signal_or_eof")
+                log.info("recorder stop: clean")
             self.writer.close()
             for err in self.writer.compaction_errors():
                 self.journal.write(
@@ -468,7 +611,7 @@ class Recorder:
                     note=f"COMPACTION FAILED, raw shard retained: {err!r}",
                 )
             self.journal.close()
-        return 0
+        return EXIT_DISK_GUARD_ABORT if self._guard_abort else 0
 
     def request_stop(self) -> None:
         self._stop.set()
@@ -531,6 +674,33 @@ async def selftest(timeout_s: float = 30.0, symbols: Optional[List[str]] = None)
 # ---------------------------------------------------------------------------
 
 
+def setup_logging(log_file: Optional[str] = None, level: int = logging.INFO) -> None:
+    """
+    stderr always, plus an optional file. UTC timestamps, because every other
+    time in this system (journal `ts`, shard names, `recv_ts`) is UTC and a log
+    in local time cannot be lined up against any of them.
+
+    Appends a handler set rather than calling basicConfig so that a caller which
+    already configured logging is not silently overridden.
+    """
+    fmt = logging.Formatter(
+        "%(asctime)s.%(msecs)03dZ %(levelname)-7s %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+    fmt.converter = time.gmtime
+    log.setLevel(level)
+    log.handlers.clear()
+    stream = logging.StreamHandler(sys.stderr)
+    stream.setFormatter(fmt)
+    log.addHandler(stream)
+    if log_file:
+        Path(log_file).parent.mkdir(parents=True, exist_ok=True)
+        fh = logging.FileHandler(log_file, encoding="utf-8")
+        fh.setFormatter(fmt)
+        log.addHandler(fh)
+    log.propagate = False
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description="Kraken WS v2 forward recorder")
     ap.add_argument("mode", choices=["run", "selftest"])
@@ -554,7 +724,22 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--no-compress", action="store_true",
                     help="do not zstd-compact closed shards")
     ap.add_argument("--compress-level", type=int, default=DEFAULT_LEVEL)
+    ap.add_argument(
+        "--min-free-gb", type=float, default=DEFAULT_MIN_FREE_GB,
+        help=f"free-space floor in decimal GB (default {DEFAULT_MIN_FREE_GB}). On "
+             f"breach the recorder flushes, writes DISK_GUARD_ABORT to the coverage "
+             f"journal and exits {EXIT_DISK_GUARD_ABORT}. Cannot be disabled.",
+    )
+    ap.add_argument(
+        "--disk-check-interval", type=float, default=DEFAULT_CHECK_INTERVAL_S,
+        help=f"seconds between free-space checks while running "
+             f"(default {DEFAULT_CHECK_INTERVAL_S})",
+    )
+    ap.add_argument("--log-file", default=None,
+                    help="append operational logging here as well as stderr")
     args = ap.parse_args(argv)
+
+    setup_logging(args.log_file)
 
     if args.mode == "selftest":
         return asyncio.run(selftest(args.timeout))
@@ -567,6 +752,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         roll=args.roll,
         compress=not args.no_compress,
         compress_level=args.compress_level,
+        min_free_gb=args.min_free_gb,
+        disk_check_interval_s=args.disk_check_interval,
     )
 
     async def _drive() -> int:

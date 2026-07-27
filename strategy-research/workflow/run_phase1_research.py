@@ -1627,9 +1627,99 @@ def _load_machine_constraints(run_dir: Path) -> dict | None:
     return pr.get("machine_constraints")
 
 
-def _generate_monthly_windows(start: str, end: str) -> list:
+class HoldoutBoundaryBreach(ValueError):
+    """
+    A generated month tile would materialise bars inside the sealed holdout
+    range (campaign_data_policy.yaml:holdout_range).
+
+    Raised, never clamped-and-continued. A silently truncated sweep is a sweep
+    whose reported coverage no longer matches what was pre-registered, and the
+    caller has no way to notice. Fail loudly and let a human decide whether the
+    request or the seal was wrong.
+    """
+
+
+def _load_holdout_range(policy_path=None) -> tuple:
+    """
+    (start, end) of holdout_range, read from campaign_data_policy.yaml.
+
+    Deny by default: a missing, unreadable or malformed policy raises rather
+    than returning "no holdout to worry about". The date is never hardcoded
+    here — the seal has exactly one home, and a second copy in the generator is
+    a second thing to forget to move.
+
+    `_DATA_POLICY_PATH` is the pre-existing module global (defined further
+    down, alongside the holdout_consumed_by writer); tests/conftest.py
+    redirects it into a per-test sandbox, so it is deliberately read at call
+    time rather than captured here.
+    """
+    p = Path(policy_path) if policy_path else _DATA_POLICY_PATH
+    try:
+        policy = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    except OSError as exc:
+        raise HoldoutBoundaryBreach(
+            f"cannot read the campaign data policy at {p}: {exc}. Refusing to "
+            "generate windows without knowing where the holdout starts."
+        ) from exc
+    hr = policy.get("holdout_range")
+    if not isinstance(hr, (list, tuple)) or len(hr) != 2 or not all(hr):
+        raise HoldoutBoundaryBreach(
+            f"{p} has no usable holdout_range (got {hr!r}). Refusing to generate "
+            "windows against an unknown seal."
+        )
+    return str(hr[0]), str(hr[1])
+
+
+def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
+                                     holdout_end: str) -> None:
+    """
+    Refuse any window whose bars would land at or after `holdout_start`.
+
+    THE OFF-BY-ONE THIS EXISTS TO KILL
+    ----------------------------------
+    `test.end` looks exclusive — the generator emits the FIRST OF THE NEXT
+    MONTH and the next window starts on the same date. It is not exclusive at
+    the engine. `run_protocol` hands `end` straight to `launcher.run_backtest`,
+    which passes it to `load_data(end_date=end)`, and that yields every bar of
+    the end DAY, through 23:00. So a tile written as
+    [month M day 1, month M+1 day 1) actually materialises
+    [month M day 1 00:00, month M+1 day 1 23:00] -- for a 1h timeframe, 768
+    bars, 24 of them in the following month.
+
+    That 24-bar overspill sits on every tile of every monthly sweep and is
+    harmless on all but the last one. It stopped being harmless exactly once:
+    the final tile of the 2025 sweep spilled into day 1 of the sealed holdout
+    and spent those bars
+    (campaign_data_policy.yaml:holdout_contaminated_runs). The generator had no
+    clamp, so a sweep extended by one more month would breach again by
+    construction.
+
+    Comparison is on YYYY-MM-DD strings, which is chronological for this format
+    and is the same shape run_protocol's own boundary assert uses.
+    """
+    for w in windows:
+        label = w.get("label", "?")
+        for edge in ("start", "end"):
+            value = str(w["test"][edge])[:10]
+            if value >= holdout_start:
+                raise HoldoutBoundaryBreach(
+                    f"window {label!r} has test.{edge}={value}, at or past "
+                    f"holdout_start={holdout_start} (holdout_range "
+                    f"{holdout_start}..{holdout_end}). `end` is INCLUSIVE-BY-DAY at "
+                    f"the engine, so end={value} materialises that whole day's bars "
+                    f"inside the sealed window. Move the sweep's end date before "
+                    f"{holdout_start}; this generator will not truncate it for you."
+                )
+
+
+def _generate_monthly_windows(start: str, end: str, holdout_range=None) -> list:
     """[start, end) chunked into calendar-month windows, matching baseline_v1.json's
-    schema: [{"label": "YYYY-MM", "test": {"start": ..., "end": ...}}, ...]."""
+    schema: [{"label": "YYYY-MM", "test": {"start": ..., "end": ...}}, ...].
+
+    Raises HoldoutBoundaryBreach if any generated tile would reach the sealed
+    holdout — see `_assert_windows_clear_of_holdout` for why `end` is not the
+    exclusive bound it looks like. `holdout_range` overrides the policy file
+    (tests only)."""
     from datetime import date as _date
     y, m = int(start[:4]), int(start[5:7])
     end_y, end_m = int(end[:4]), int(end[5:7])
@@ -1649,6 +1739,9 @@ def _generate_monthly_windows(start: str, end: str) -> list:
         if window_end >= end:
             break
         y, m = ny, nm
+
+    hs, he = holdout_range if holdout_range else _load_holdout_range()
+    _assert_windows_clear_of_holdout(windows, hs, he)
     return windows
 
 
@@ -1677,11 +1770,17 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     end = proto_constraint["end"]
 
     windows = _generate_monthly_windows(start, end)
+    # The seal has ONE home. Defaulting to a literal here was a second copy of
+    # holdout_range that nothing kept in sync with the policy file, in the very
+    # function whose windows have to be checked against it.
+    policy_start, policy_end = _load_holdout_range()
     protocol_obj = {
         "symbols": symbols,
         "timeframe": timeframe,
         "windows": windows,
-        "holdout": proto_constraint.get("holdout", {"start": "2026-01-01", "end": None}),
+        "holdout": proto_constraint.get(
+            "holdout", {"start": policy_start, "end": policy_end}
+        ),
         "promotion": _require_pre_registered_promotion(proto_constraint, run_id),
     }
     with open(out_path, "w", encoding="utf-8") as f:

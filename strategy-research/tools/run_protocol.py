@@ -1125,10 +1125,20 @@ def main():
             start     = window["test"]["start"]
             end       = window["test"]["end"]
             if _holdout_start is not None:
-                assert end <= _holdout_start, (
+                # STRICTLY less than, not <=. `end` reads as an exclusive bound
+                # (the next window starts on the same date) but it is not one:
+                # run_backtest passes it to load_data(end_date=end), which
+                # yields every bar of the end DAY through 23:00. So end ==
+                # holdout_start materialises 24 holdout bars. The <= form let
+                # exactly that through -- see campaign_data_policy.yaml:
+                # holdout_contaminated_runs, whose declared range ends at
+                # day 1 of the seal, 23:00.
+                assert end < _holdout_start, (
                     f"Window {label} ({symbol}) ends {end}, at or past holdout_start="
                     f"{_holdout_start} -- a training window must never reach into the "
-                    f"holdout range. Fix the protocol's windows before proceeding."
+                    f"holdout range. NB `end` is INCLUSIVE-BY-DAY at the engine, so an "
+                    f"end equal to holdout_start still materialises that whole day's "
+                    f"bars. Fix the protocol's windows before proceeding."
                 )
             print(f"  {symbol}  window={label}  {start} to {end} ...")
             rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
