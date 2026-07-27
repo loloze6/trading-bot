@@ -14,7 +14,7 @@ import os
 
 import pandas as pd
 
-from data.fetchers import FundingRateFetcher, FearGreedFetcher
+from data.fetchers import FundingRateFetcher, FearGreedFetcher, WhaleFootprintFetcher
 
 # feed name → lambda(symbols, start, end) → BaseFetcher instance
 FEED_REGISTRY = {
@@ -24,6 +24,50 @@ FEED_REGISTRY = {
     'fear_greed': lambda symbols, start, end, data_dir: FearGreedFetcher(
         start, end, localStorage=True, data_dir=data_dir
     ),
+}
+
+# ---------------------------------------------------------------------------
+# RESERVED FEEDS — a SECOND registry, deliberately not merged into the first.
+#
+# `FEED_REGISTRY` is not an opt-in menu. `launcher.py:290` and `launcher.py:596`
+# both pass the WHOLE dict as `extra_feeds`, so every name in it is constructed
+# and loaded on every backtest. That makes it precisely the wrong home for a
+# dataset that must not be read by default: adding a deny-by-default feed there
+# would either break every run or, worse, quietly load reserved data into all of
+# them. The split below is what deny-by-default means at the wiring level —
+# membership of FEED_REGISTRY IS the release decision, so a reserved feed must
+# not be a member.
+#
+# A caller opts in BY NAME, and even then the gate decides:
+#
+#     from data.feed_registry import RESERVED_FEED_REGISTRY
+#     bot.load_data(start, end, extra_feeds={
+#         k: RESERVED_FEED_REGISTRY[k] for k in ['whale_cvd_delta']
+#     })
+#
+# ...which raises ReservedDataError unless campaign_data_policy.yaml carries a
+# committed designation covering the window. Being listed here is not a release;
+# it is only the wiring.
+#
+# ONE ENTRY PER COLUMN, all backed by the same fetcher and the same cache_key.
+# DataManager._premerge_aux_feeds attaches only the column whose name equals the
+# registered feed name (data_manager.py:622), so a six-column feed needs six
+# names; sharing the cache_key means the CSV is still computed once.
+# ---------------------------------------------------------------------------
+WHALE_FOOTPRINT_FEEDS = (
+    'whale_lt_imbalance',
+    'whale_lt_count',
+    'whale_cvd_delta',
+    'whale_size_shift',
+    'whale_trade_count',
+    'whale_attested',
+)
+
+RESERVED_FEED_REGISTRY = {
+    name: (lambda symbols, start, end, data_dir: WhaleFootprintFetcher(
+        start, end, symbols=symbols, localStorage=True, data_dir=data_dir
+    ))
+    for name in WHALE_FOOTPRINT_FEEDS
 }
 
 

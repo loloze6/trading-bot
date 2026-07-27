@@ -19,6 +19,10 @@ from data.fetchers.base_fetcher        import BaseFetcher
 from data.fetchers.ccxt_fetcher        import CcxtFetcher, HistoricalDataFetcher
 from data.fetchers.fear_greed_fetcher  import FearGreedFetcher
 from data.fetchers.funding_rate_fetcher import FundingRateFetcher
+from data.fetchers.whale_footprint_fetcher import (
+    ReservedDataError,
+    WhaleFootprintFetcher,
+)
 
 __all__ = [
     "BaseFetcher",
@@ -26,4 +30,6 @@ __all__ = [
     "HistoricalDataFetcher",   # backward-compatibility alias
     "FearGreedFetcher",
     "FundingRateFetcher",
+    "WhaleFootprintFetcher",
+    "ReservedDataError",
 ]
