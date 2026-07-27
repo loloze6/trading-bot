@@ -6,11 +6,20 @@
   "end_date": "2024-05-30",
   "config": "strategy_config.json",
   "expected": {
-    "trade_count": 76,
-    "net_pnl": -270.797424,
+    "trade_count": 24,
+    "net_pnl": -231.758912,
     "net_pnl_tolerance": 0.01,
-    "sharpe": -4.364,
+    "sharpe": -5.646,
     "sharpe_tolerance": 0.005
   },
-  "note": "Established after Step 3 parity gate (config-driven engine iso-functional with legacy). Survives: allocation fix, config_path fix. Fails if: PnL computation changes, matching logic changes, engine wiring changes."
+  "note": "Established after Step 3 parity gate (config-driven engine iso-functional with legacy). Survives: allocation fix, config_path fix. Fails if: PnL computation changes, matching logic changes, engine wiring changes.",
+  "rebaselined": {
+    "date": "2026-07-27",
+    "previous": {"trade_count": 76, "net_pnl": -270.797424, "sharpe": -4.364},
+    "cause": "V9 fix: regime_detector.default_regime 'mean_reversion' -> 'unknown' in strategy_config.json.",
+    "why": "mean_reversion is the only regime carrying components, so routing unmatched bars into it ran the RSI strategy over 794 of 1440 bars instead of 208. The 586 unclassifiable bars now sit flat (per_regime.unknown.avg_forecast == 0.0).",
+    "previous_values_are_unreachable": "Not merely stale. AdvancedStrategy runs the same V9 check at construction (main_strategy.py:31) and raises ValueError('invalid strategy_config'), so the old default_regime cannot produce a run at all — it errors before the first bar. Verified: with 'mean_reversion' restored, `python main.py simulate` exits 1 with FATAL ERROR and test_regression_backtest raises 4 errors rather than 3 assertion failures. No code path can regenerate 76 / -270.797424 / -4.364; they predate the runtime guard.",
+    "engine_unchanged": "No PnL, matching or wiring code was touched. Confirmed by reproduction: the post-fix figures were produced independently on Linux/Python 3.10/pandas 2.x (sandbox) and macOS/Python 3.13/pandas 2.3.3, landing on identical config_sha 5ccbec42 and data_sha 5a75366c. A Mac-local or library-version artifact could not agree across both.",
+    "voids": "Every baseline measured with default_regime 'mean_reversion' on this config, including the previous values above. Do not compare across the boundary."
+  }
 }
