@@ -74,6 +74,7 @@ need the marker: it queries a family name guaranteed absent from either a
 real or an empty wishlist file, so `missing_field` is the correct result
 either way -- confirmed by it passing unmarked under this guard.
 """
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -175,6 +176,17 @@ def _sandbox_by_default(request, tmp_path, monkeypatch):
     # real repo's config/ always does; a fresh sandbox does not unless created
     # here). Found by the negative-proof test itself (test_sandbox_guard.py).
     (sandbox / "config").mkdir(parents=True, exist_ok=True)
+
+    # campaign_data_policy.yaml is SEEDED, not left absent. _generate_monthly_windows
+    # now refuses to emit tiles without knowing where holdout_range starts (deny by
+    # default -- a missing policy is not "no holdout to worry about"), so an empty
+    # sandbox would make every window-generating test fail for a reason unrelated to
+    # what it tests. The seed is a verbatim copy of the real file: the sandbox exists
+    # to stop stray WRITES, and a test reading the true seal is the intent, not a
+    # leak. Anything the code writes back lands in the sandbox copy as before.
+    _real_policy = Path(__file__).parent.parent / "config" / "campaign_data_policy.yaml"
+    if _real_policy.exists():
+        shutil.copyfile(_real_policy, sandbox / "config" / "campaign_data_policy.yaml")
 
     monkeypatch.setattr(_camp, "ROOT", sandbox)
     monkeypatch.setattr(_camp, "QUEUE_PATH", sandbox / "config" / "campaign_queue.yaml")

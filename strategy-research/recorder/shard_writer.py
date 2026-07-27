@@ -113,6 +113,12 @@ class ShardWriter:
         self._last_fsync = time.monotonic()
         #: frames written per disk-symbol since the last :meth:`drain_counts`
         self._counts: Dict[str, int] = {}
+        #: bytes handed to the OS since the last :meth:`drain_bytes`. Counted at
+        #: the writer rather than by stat-ing the tree, so the operational log
+        #: reports write THROUGHPUT and stays correct across the hourly roll and
+        #: compaction, both of which make on-disk totals fall (see
+        #: `liveness.growth_bytes` for the same distinction).
+        self._bytes: int = 0
         #: one worker: compaction is I/O+CPU bound and ordering keeps the disk
         #: working set predictable. Never runs on the receive path.
         self._pool: Optional[ThreadPoolExecutor] = (
@@ -229,6 +235,7 @@ class ShardWriter:
         fh.write(line + "\n")
         fh.flush()
         self._counts[symbol] = self._counts.get(symbol, 0) + 1
+        self._bytes += len(line.encode("utf-8")) + 1
 
         if time.monotonic() - self._last_fsync >= self.fsync_interval_s:
             self.sync()
@@ -239,6 +246,12 @@ class ShardWriter:
         counts = self._counts
         self._counts = {}
         return counts
+
+    def drain_bytes(self) -> int:
+        """Bytes written since the last call; resets the tally."""
+        n = self._bytes
+        self._bytes = 0
+        return n
 
     def current_shards(self) -> Dict[Tuple[str, str], Path]:
         day = self.period_key()

@@ -447,15 +447,85 @@ kraken_ws_forward_recorder:
       bytes_per_frame: {assumed_A2: 200, measured: 351, factor: 1.76}
       zstd_ratio: {assumed_A4: 10.0, measured: 8.82, factor: 1.13}
       compounded: 6.01  # vs 5.63 observed end-to-end
+  # ---------------------------------------------------------------------------
+  # INTENDED CAPTURE CONFIGURATION (registered 2026-07-27, dispatch W6).
+  # This block declares WHAT THE OPERATOR LAUNCHES, not what the code defaults to.
+  # The recorder's compiled-in default is and remains --book-mode delta (the only
+  # lossless cadence; see recorder/record_kraken_ws.py MODE_DELTA and RUNBOOK 3.2).
+  # Dispatch W6 did NOT change that default. The long capture is launched with
+  # EXPLICIT flags and this registry records the intent, so that "what is running"
+  # is a ratified, readable declaration rather than an inference from a command
+  # line somebody typed once.
+  # ---------------------------------------------------------------------------
+  capture_configuration:
+    declared: "2026-07-27"
+    book_mode: snapshot        # LOSSY IN TIME. Everything between two emissions --
+                               # queue position, the ordering of a cancel against a
+                               # trade, sub-second book pressure -- is discarded and
+                               # is NOT recoverable afterwards, because the venue
+                               # deltas are never written. Chosen deliberately: the
+                               # measured delta cadence projects 360.2 GB/12mo
+                               # (storage_checkpoint above, decision STOP_AND_REPORT),
+                               # which this machine does not have. What snapshot mode
+                               # preserves is stated and measured, not assumed: the
+                               # venue's exact decimal strings, and CRC32
+                               # verifiability (152/152 against live frames at build
+                               # time). Lossy in time, not unverified.
+    snapshot_interval_s: 1.0   # N=1 rung of the measured ladder.
+    pairs: 19                  # the kraken_breadth_19pair bases above, quote USD
+    book_depth: 10             # CRC32 covers exactly the top 10
+    trades: full               # UNTOUCHED by book_mode -- the full public trade feed
+                               # is captured verbatim in every cadence.
+    roll: hour                 # hourly shards, zstd-compacted after a verified
+                               # byte-compare (recorder/compaction.py)
+    compression: zstd
+    disk_guard_floor_gb: 5.0   # decimal GB. Enforced BY THE RECORDER, on a timer,
+                               # for the whole run; a breach flushes, writes
+                               # DISK_GUARD_ABORT to the coverage journal and exits 3,
+                               # which supervise.ps1 reads as "do not relaunch".
+                               # Undeterminable free space counts as a breach.
+    supervised: true           # recorder/supervise.ps1: relaunch on crash with
+                               # bounded exponential backoff and a rolling restart
+                               # cap; never relaunch after exit 0 or exit 3. Each
+                               # relaunch writes a RESTART_BOUNDARY journal record so
+                               # the downtime is attested rather than inferred.
+    projected_12mo_compressed_gb: 42.1  # vs 360.2 for delta; measured, not modelled
+    projected_gb_per_day: 0.115
+    measured_zstd_ratio: 15.41
+    ladder_report: docs/session_reports/20260726_recorder_cadence_ladder.md
+      # Measured over a 208.7 s steady span at 20,576 raw B/s -> 1,335 compressed B/s.
+      # SAME CAVEAT AS storage_checkpoint ABOVE: a single short daytime sample, with
+      # intraday and weekday seasonality unmeasured. It is a rung on a comparative
+      # ladder, not a defensible annual figure, and the disk guard exists precisely
+      # because the projection could be wrong in the expensive direction.
+    gap_recoverability:
+      book: unrecoverable   # Kraken publishes NO historical L2, at any price. A
+                            # minute the recorder is down is a minute of book that
+                            # does not exist and never will. This is why the
+                            # supervisor, not the cadence, is the load-bearing part
+                            # of this deploy.
+      trades: backfillable  # the public trade history endpoint can fill a gap
+    downtime_report: python -m recorder.coverage_report   # every uncaptured interval,
+                                                          # with attested cause
   liquidations_available: false  # see ledger item R1 — INFEASIBLE at this venue, not
                                  # deferred. Kraken publishes no public liquidation feed
                                  # on spot or futures; the only `liquidated` field is on
                                  # the private, authenticated, own-account `executions`
                                  # channel. Roadmap 2.4's "live liquidation events"
                                  # requires a different venue entirely.
-  status: reserved_undesignated  # NOT walk-forward eligible. NOT holdout. NOT searchable.
-                                 # Undesignated means no window has been assigned to any
-                                 # purpose yet; assignment requires its own commit.
+  status: configured_reserved_undesignated
+    # WHAT CHANGED (2026-07-27, dispatch W6) AND WHAT DID NOT.
+    # Changed: the capture now has a DECLARED configuration (capture_configuration
+    # above) rather than only a reservation. `configured_` records that the operator
+    # has fixed cadence, interval, guard floor and supervision, and that the intent is
+    # committed rather than living in a shell history.
+    # NOT changed, and not weakened by one word of the above: this data is still
+    # RESERVED and UNDESIGNATED. It is NOT walk-forward eligible, NOT holdout, NOT
+    # searchable. No stage, tool, prescreen, diagnostic or backtest may read ANY window
+    # of it. Undesignated means no window has been assigned to any purpose yet, and
+    # assignment requires its own separate, dated, ratified commit -- it is NOT implied
+    # by this entry, by the data existing on disk, or by the capture being configured.
+    # Deny by default; see the *** banner at the head of this block.
 
 holdout_consumed_by: []
 
