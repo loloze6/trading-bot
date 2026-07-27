@@ -1,0 +1,44 @@
+hypothesis_id: KELTNER_SCORE_MODE_REGIME
+asset: BTCUSDT, ETHUSDT
+timeframe: 1h
+research_question: 'Can threshold_rules regime detection (ER and VR indicators) achieve median walk-forward Sharpe ≥0.30 and trade frequency ≥50/month by switching AND logic to OR logic, increasing regime bar coverage while keeping individual component thresholds reasonable?'
+
+signal_concept: 'Keltner mean-reversion (period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=−20.0). Identical component to run_017 baseline. Do NOT change signal.'
+
+regime_filter: 'PIVOT FROM: threshold_rules with AND gate (ER≥0.3 AND VR≥1.2, sparse: 0 trades in 3/12 windows) TO: threshold_rules with OR gate (ER≥0.5 OR VR≥1.2). Either condition activates trending regime; bars meeting neither assigned to unknown. This increases regime representation from 2–40 bars/window to ~30–70 bars/window, providing statistical power to test whether regime concept is predictive. If uninformativeness persists (Rule 4 repeat), proceed to altitude 2 (score_mode architecture pivot).'
+
+mechanism: 'AND logic required both ER and VR simultaneously; most bars trigger only one, falling into unknown (also uninformative). OR logic allows bars with strong directional moves (high ER) OR trending volatility structure (high VR) separately. Expected outcome: 2–3× trade frequency increase, better Sharpe statistical validity. Keltner signal unchanged (forecast formula identical); only regime modulation changes. If OR logic also fails, root cause is regime indicator selection (not threshold tuning), justifying component or architecture escalation.'
+
+assumptions:
+  - 'ER and VR are individually informative indicators; AND combination was confounding'
+  - 'OR logic reduces false negatives (bars wrongly assigned unknown) without increasing false positives (regime is still gated by ER≥0.5 OR VR≥1.2, not every bar)'
+  - '1h timeframe sufficient for regime stability; no bar-to-bar flipping expected'
+  - 'Keltner signal quality (forecast_return_corr~0.21 in winning windows) holds under increased regime coverage'
+
+expected_failure_modes:
+  - 'OR logic over-captures; trending regime now fires in chop, rendering it uninformative by volume'
+  - 'ER and VR individually weak; only their AND intersection predicts direction (orthogonal signals needed)'
+  - 'Regime indicator selection fundamentally wrong; neither ER nor VR separates predictive market states'
+
+constraints:
+  - 'Timeframe: 1h only'
+  - 'Signal: Keltner mean-reversion (IDENTICAL to run_017 baseline)'
+  - 'Regime: threshold_rules architecture (NOT score_mode yet; reserve for altitude 2 if OR fails)'
+  - 'Single-dimensional config change: regime_detector.rules.any_of logic (AND → OR)'
+
+change_from_previous: |
+  PREVIOUS (run_025):
+  Regime detection: threshold_rules, AND gate (ER≥0.3 AND VR≥1.2).
+  Result: 0 trades in 3/12 windows, median sharpe BTCUSDT=0.0, ETHUSDT=−3.027.
+  Diagnosis: Dual AND gate too restrictive; trending and unknown regimes both uninformative (forward_return_mean≈0).
+  
+  NEW:
+  Regime detection: threshold_rules, OR gate (ER≥0.5 OR VR≥1.2).
+  Expected: trade_count 30–70/window (vs 0–17), regime representation ≥0.15 of bars.
+  Signal: unchanged. Keltner params locked to run_017 (ema=20, atr=20, multiplier=2.0, scale=−20.0).
+  
+  RATIONALE:
+  AND gate confounds diagnostic power; most bars meet only one condition (ER or VR) and fall into uninformative unknown regime.
+  OR gate preserves individual threshold rigor while increasing coverage.
+  This is PARAMETER REFINEMENT (altitude 1), not architecture pivot (altitude 2).
+  If OR also fails Rule 4 (regime uninformative), next step is score_mode architecture pivot (altitude 2) with continuous ER/VR confidence scoring.

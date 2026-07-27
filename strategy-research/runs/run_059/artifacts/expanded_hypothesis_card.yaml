@@ -1,0 +1,65 @@
+base_hypothesis_id: FUNDING_MR_DAILY_RETEST
+
+expanded_variants:
+  - variant_id: "V1"
+    label: "Funding Rate Continuous Mean-Reversion on Daily Bars (Threshold=0.0)"
+    thesis: "The 8h funding rate sign-flip mechanism creates mean-reversion pressure that materializes over ~24 hours. Daily bars provide sufficient holding time for forced liquidation cascades to resolve."
+    signal_concept: "Fires at every daily bar with forecast direction determined by current 8h funding rate sign: positive funding (shorts pay longs) → forecast short bias; negative funding (longs pay shorts) → forecast long bias. Effective forecast changes only when funding sign flips day-to-day."
+    edge_source:
+      category: structural_forced_flow
+      specific_mechanism: "When 8h funding rate sign flips (positive↔negative), longs/shorts face heavy settlement costs to maintain positions; forced deleveraging creates mean-reversion pressure that resolves within the next trading day, measurable as sign-flip events in the 8h funding CSV."
+      why_not_arbitraged: "On 1h bars, settlement impulse must reverse within 1 hour — too fast at retail execution speeds. Daily bars extend the window to ~24 hours, allowing the structural forced-liquidation cascade to work through the order book."
+      measurable_proxy: "Funding rate sign changes from 8h Binance settlement CSV; daily flip count is the direct trigger (baseline: BTCUSDT 228 flips, ETHUSDT 220 flips over 49-month pass-gated window 2019-12-01 to 2023-12-31)."
+    evidence_type: funding_open_interest
+    library_category: structural_rate
+    data_requirements: funding_open_interest
+    diversity_axis: "No expansion per brief constraint 'One variant only'. V1 is the base hypothesis passed through without modification."
+    component: FundingRateMeanReversionComponent
+    params:
+      threshold: 0.0
+    target_symbols:
+      - BTCUSDT
+      - ETHUSDT
+    timeframe: 1d
+    ungated: true
+    status: ready_for_queue
+    rationale_for_single_variant: "Pre-registered closure run per research_brief.yaml. Mechanism, parameters, and protocol are specified; no parameter sweep or variant expansion permitted."
+
+alternative_data_candidates:
+  - candidate_id: "ALT_funding_volatility"
+    label: "Funding Rate Volatility as Entry-Timing Refinement"
+    evidence_type: funding_open_interest
+    concept: "Rate-of-change in funding rate could provide early-warning timing (rapid rate spikes → forced cascade imminent). Same feed as base; would require new component logic."
+    feasibility: available
+    status: "future_enhancement_not_queued"
+    notes: "Not part of pre-registered mechanism; deferred as post-run analysis."
+
+  - candidate_id: "ALT_open_interest_divergence"
+    label: "Open Interest Divergence as Liquidation Confirmation"
+    evidence_type: funding_open_interest
+    concept: "OI build-up opposite to funding sign would confirm forced liquidation is active (e.g., longs being liquidated when shorts are paying heavily)."
+    feasibility: unavailable
+    status: "feed_wishlist_blocked"
+    notes: "Open interest is NOT wired into the bot (available_feeds.yaml). Route: feed_wishlist / open_interest."
+
+reverse_hypothesis:
+  reverse_id: "FUNDING_MR_DAILY_MOMENTUM_REVERSE"
+  label: "Funding Rate Momentum (Trend-Following, Not Mean-Reversion)"
+  thesis: "Opposite polarity: daily funding rate sign changes mark momentum continuation rather than mean-reversion. Positive funding (shorts paying longs) → bullish sentiment signal → buy (momentum). Negative funding (longs paying shorts) → bearish sentiment signal → short (momentum)."
+  signal_concept: "Same signal (daily funding rate sign), inverted forecast direction. Positive funding → long bias; negative funding → short bias."
+  rationale: "Mechanistically equivalent to base variant (same feed, same activation timing). Polarity is a domain question: is funding rate a sign of forced selling (mean-reversion) or market conviction (momentum)?"
+  status: "conceptual_not_queued"
+  notes: "Not queued because brief pre-registers only mean-reversion direction. Could be tested in a separate run if evidence suggests polarity inversion."
+
+behavioral_features:
+  - feature_id: "settlement_timing_microstructure"
+    label: "Intraday Funding Settlement Cascade Timing"
+    description: "Funding rate settlements occur at fixed 8h intervals (UTC 00:00, 08:00, 16:00). Forced liquidations may cluster in 1–2 hours post-settlement, leaving later hours for mean-reversion to complete within the daily bar."
+    measurable_proxy: "Timestamp of funding sign flip relative to daily close; intraday bar-level returns by phase relative to settlement UTC times."
+    data_requirement: "Requires settlement timestamp granularity within daily bars. Current data: daily-close-based funding rate only."
+    status: "detector_wishlist_pending"
+    impact_if_resolved: "If settlement timing is material to mean-reversion completion, explains lag_mismatch_to_regime_persistence in run_044 (1h bars may sample at suboptimal phases relative to settlement cascade)."
+
+regime_specific_variants: []
+
+notes: "Brief constraint 'One variant only' enforced. V1 is the base hypothesis passed through. Pre-registered closure run: mechanism specified, parameters pinned, protocol set (funding_mr_daily_retest_v1.json, 49 pass-gated windows 2019-12 through 2023-12). Alternative formulations deferred to future work or feed_wishlist."

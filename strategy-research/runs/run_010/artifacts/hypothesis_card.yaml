@@ -1,0 +1,36 @@
+hypothesis_id: H-RUN007
+thesis: >
+  RSI(14) pullback below 50 generates positive expected returns in BTCUSDT 1h
+  during mean-reversion regimes (ER ≤ 0.20, VR ≤ 0.90), where oversold
+  conditions precede mean-reverting price action.
+
+rationale: >
+  In low-efficiency, low-volatility regimes, mean reversion dominates.
+  RSI < 50 signals oversold conditions; signal strength proportional to
+  distance from 50 (reversion potential). Regime gating isolates the
+  mechanism: applies only when ER ≤ 0.20 AND VR ≤ 0.90, eliminating
+  trending regimes where RSI is a lagging indicator.
+
+signal_concept: >
+  RSIPullbackComponent: long-only forecast = (50 - RSI) / 50 when RSI < 50,
+  else 0. Standardized and scaled via existing normalization pipeline.
+  Regime filter: multiply by 1.0 if (ER ≤ 0.20 AND VR ≤ 0.90), else 0.
+
+target_market: BTCUSDT
+timeframe: 1h
+
+assumptions:
+  - Mean-reversion regime frequency sufficient for statistical validity (>5% of bars)
+  - RSI distance from 50 correlates with subsequent mean-reversion probability
+  - Regime detection responds within 1–2 bars of regime transition
+  - Commission cost < 2 bps per round-trip trade
+
+expected_failure_modes:
+  - Regime classification lags; signals fire on actual trend reversals
+  - RSI no edge in identified "chop" regime; false positive assumptions
+  - Commission drag + slippage erodes positive expected value to zero
+  - BTCUSDT exhibits structural drift incompatible with mean reversion
+
+pass_condition: >
+  Screening backtest (6 months recent data) must show positive PnL,
+  Sharpe ≥ 0.5, max drawdown ≤ 20%. If any fail, hypothesis rejected.

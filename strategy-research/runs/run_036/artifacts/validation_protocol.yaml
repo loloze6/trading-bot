@@ -1,0 +1,10 @@
+hypothesis_id: DIAG_A_4H_KELTNER_CLEAN
+falsifiable_statement: "Keltner mean-reversion at 4h with correct regime gate (default_regime: unknown) produces measurably different trade_count and cost_drag than at 1h."
+null_expectation: "Same sparsity problem as 1h — 2-3 trades/window, Sharpe undefined."
+required_evidence:
+  - "median trade_count per window"
+  - "median cost_drag_pct"
+  - "median forecast_return_corr"
+decision_rules:
+  - "median_sharpe >= 0.0"
+  - "median_trade_count >= 5"

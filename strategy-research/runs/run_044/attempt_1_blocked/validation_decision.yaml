@@ -1,0 +1,14 @@
+hypothesis_id: "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_V1"
+
+status: "conditional_approve"
+
+rationale: "The funding rate mean-reversion mechanism is structurally sound: funding settlements force mechanical position rebalancing every 8h, and sign predicts direction of next-window mean reversion. This is a documented edge with academic precedent (Enenkel et al., Bender et al. on crowding/forced flows). Cost feasibility is marginal (8h is tight, requires ≥34 bps per trade to survive 17 bps round-trip cost), but not impossible if the effect is strong (IC ≈ 0.02–0.04 is realistic for structural signals). Walk-forward evidence can overcome this skepticism. No blocker prevents testing in existing bot architecture (one-line addition to simple_strategy.py). Approve to walk-forward screening with enforced conditions."
+
+blocking_issues: []
+
+conditions:
+  - "Walk-forward median Sharpe must exceed 1.8 annualized (over 7–9 windows on 2024-12-01 to 2025-12-31) to clear cost hurdle."
+  - "Win rate must exceed 52% (establishing directional significance at p<0.05 under random baseline)."
+  - "Total trade count must exceed 150 across all windows (validates n_eff=183 a priori assumption; rejects sparse-activation failure mode)."
+  - "Max drawdown in any single window must not exceed 15% (confirms ungated signal does not produce tail risk)."
+  - "If any condition fails, hypothesis must retreat to regime gating or longer timeframe (4h) before re-entering queue."

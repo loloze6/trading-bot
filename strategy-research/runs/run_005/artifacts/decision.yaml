@@ -1,0 +1,15 @@
+hypothesis_id: volume_momentum_btcusdt_1h
+stage: backtest_specification
+status: validation_incomplete
+rationale: |
+  Hypothesis cannot be converted to a backtest specification at this time. The validation 
+  stage produced REFINE status with 4 blocking author decisions (direction choice, variant 
+  filtering, hyperparameter justification, regime independence confirmation) that must be 
+  resolved before proceeding. Additionally, the STRATEGY_CONFIG_REFERENCE.md file required 
+  to validate component availability was not accessible.
+blocking_issues:
+  - "Validation blocking issue #1: DIRECTION CONFLICT - Author must pre-commit to confirmation or reversal thesis before backtest"
+  - "Validation blocking issue #2: DATA FEASIBILITY - Author must restrict to variants 001, 004, 005 or source trade data"
+  - "Validation blocking issue #3: HYPERPARAMETER OPACITY - Author must justify or grid-sweep clamp [-20,20] and vol_thresholds"
+  - "Validation blocking issue #4: REGIME INDEPENDENCE - Author must confirm regime detector uses price/volatility only, no volume"
+  - "Missing input: STRATEGY_CONFIG_REFERENCE.md not accessible - cannot verify component/transform/regime availability"

@@ -1,0 +1,99 @@
+hypothesis_id: H-041-C
+hypothesis_name: FearGreedContrarianComponent_V1_Reactivation
+falsifiable_statement: "FearGreedContrarianComponent(fear_threshold=25.0, greed_threshold=75.0, scaling_factor=10.0) produces a Spearman IC ≥ 0.15 across walk-forward windows 2024-12-01 to 2025-12-31 (combined BTCUSDT/ETHUSDT) with p-value < 0.10 and n_eff ≥ 40, demonstrating predictive value beyond run_042's insufficient sample."
+null_expectation: "IC = 0 (fear/greed threshold values are arbitrary; contrarian flip produces no edge; component is pure noise)"
+required_evidence:
+  - "Spearman IC ≥ 0.15 (pooled across walk-forward windows, ungated, all bars)"
+  - "p-value < 0.10 (two-tailed test, α = 0.10)"
+  - "n_eff ≥ 40 (effective sample size across extended data 2018-02-01 to 2025-12-31)"
+  - "Per-era IC breakdown (A8.5.1a): report separately for 2018-pre-funding, 2019-2023-full, 2024-burned, 2024-2025-walk-forward"
+  - "Trade count ≥ 50 per walk-forward window (minimum for IC stability)"
+  - "IC stability metric (max_era_IC / min_era_IC) < 2.0 to rule out era-driven overfitting"
+
+bias_risks:
+  - "Lookahead bias: Fear & Greed Index publication lag (alternative.me feed timing relative to 00:00 UTC bar close). Must verify feed is published before 00:00 UTC next day."
+  - "Crowding risk (medium per expanded card): Fear/Greed contrarian is low-discovery-barrier; widespread adoption could erode edge in forward period."
+  - "Sentiment mean-reversion: If index naturally oscillates (fear→greed→fear), contrarian flips may be mean-reversion noise, not causal signal. No causality test yet."
+  - "Regime dependence: Component is ungated (default_regime=mean_reversion, regime_detector.rules=[]). If true regime is trend-following in 2026, ungated contrarian may degrade sharply."
+  - "Indicator data quality (fear_greed starts 2018-02-01): eras before 2018-02-01 have zero samples; pre-2018 data is unavailable and cannot be backtested."
+
+failure_modes:
+  - "IC < 0.15: Insufficient edge magnitude even with n_eff≈46; original hypothesis rejected."
+  - "p-value ≥ 0.10: Cannot reject null (IC=0) at α=0.10; extended sample does not provide statistical confidence."
+  - "n_eff < 40: Extended data (2018-02-01 to 2025-12-31) does not deliver promised sample inflation; hidden correlations or regime shifts truncate effective bars."
+  - "Era-level IC near zero in any single era: Suggests hypothesis is era-specific and unstable; risk of overfitting to historical regimes."
+  - "IC anti-correlation in recent era (2024-2025): Fear/Greed contrarian flips while markets trend sharply; hypothesis backfires in live regime."
+  - "Fire rate < 1% (fewer than ~25 trades/2500-bar window): Sparse signals combined with 34 bps cost requirement force impossibly high per-trade edge."
+  - "Walk-forward IC variance high (ratio >2.0 across windows): Parameter overfitting to run_042 training window; frozen thresholds do not generalize."
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 17.0
+  primary_symbol: BTCUSDT
+  secondary_symbol: ETHUSDT
+  expected_holding_bars:
+    min: 24
+    max: 240
+    note: "Daily fire (00:00 UTC bar); minimum 1 day (24 bars) hold; typical trades 1–10 days before regime shift."
+  expected_trades_per_window:
+    min: 25
+    max: 75
+    note: "Ungated contrarian fires when fear_greed < 25 or > 75 (~10–15% of calendar days in historical data; ~2–5% of all bars accounting for gaps and regime cycles)."
+  required_gross_edge_bps_per_trade: 34.0
+  gross_edge_formula: "safety_factor × round_trip_cost = 2.0 × 17.0 = 34.0 bps (per cost_model.yaml Layer 1)"
+  estimated_gross_edge_bps_per_trade:
+    estimate: "IC × sigma_daily_bps × sqrt(avg_holding_bars) = 0.15 × 50 × sqrt(24) ≈ 35 bps (ballpark, 1-day typical hold; 50 bps daily vol typical for BTC)"
+    range: "25–50 bps depending on realized volatility and holding distribution"
+  plausibility: marginal
+  plausibility_rationale: "Daily sentiment contrarian on crypto is an established signal class (e.g. gradient-boosted models on fear/greed are known to trade the 1h–4h timeframe). Extended data (2018–2025, n_eff≈46) allows a credible IC ≥ 0.15 estimate. However, daily fire rate (~3–5% of bars) combined with 34 bps cost requirement leaves thin margin: required 0.15 IC must be sustained across all eras and window splits. If any single era shows IC < 0.12 or hold times cluster short (< 6 bars), plausibility drops to implausible. Current assumption (1-day typical hold, 0.15 IC, ~50 trades/window) is plausible but tight; any degradation to 0.12 IC or >2-day hold requirement flips to implausible."
+
+sample_split_design:
+  walk_forward_range: ["2024-12-01", "2025-12-31"]
+  holdout_range: ["2026-01-01", "2026-06-30"]
+  holdout_note: "Single-use per A6.1 (Improvement 06). Evaluated only at holdout_evaluation stage AFTER walk-forward Sharpe gate passes. FROZEN: may not be used in any diagnostic, prescreen, or backtest validation tool until promotion path ends."
+  backward_extension_range: ["2018-02-01", "2023-12-31"]
+  backward_extension_note: "Newly available via P1b backfill; walk-forward-eligible per campaign_data_policy.yaml. Fear_greed feed verified 2018-02-01 onward."
+  total_trainable_range: ["2018-02-01", "2025-12-31"]
+  eras_required_per_a8_5_1a:
+    - "era_2018_pre_funding (2018-02-01 to 2019-09-09): ohlcv + fear_greed only"
+    - "era_2019_2023_full_feed (2019-09-10 to 2023-12-31): all feeds (H-041-C compatible)"
+    - "era_2024_burned (2024-01-01 to 2024-11-30): already used in prior walk-forward, but walk-forward-eligible"
+    - "era_2024_2025_walk_forward_extension (2024-12-01 to 2025-12-31): new walk-forward data"
+  windows: 5
+  window_size_bars: 250
+  step_size_bars: 62
+  rolling_window_note: "5 overlapping 250-bar (≈10-day) windows with 62-bar (2.5-day) step across total_trainable_range. Per-window IC and p-value reported; meta-analysis for stability (max/min ratio < 2.0)."
+
+decision_rules:
+  - metric: sharpe
+    operator: ">="
+    threshold: 0.5
+    window_context: "median across walk-forward windows (2024-12-01 to 2025-12-31)"
+    source: "metrics.json"
+  - metric: win_rate
+    operator: ">="
+    threshold: 0.48
+    window_context: "all trades, pooled across walk-forward windows"
+    source: "metrics.json"
+  - metric: spearman_ic
+    operator: ">="
+    threshold: 0.15
+    window_context: "pooled all-bars ungated across walk-forward windows"
+    source: "metrics.json (computed by backtest engine)"
+  - metric: spearman_ic_pvalue
+    operator: "<"
+    threshold: 0.10
+    window_context: "two-tailed, pooled all-bars ungated"
+    source: "metrics.json"
+  - metric: trade_count
+    operator: ">="
+    threshold: 50
+    window_context: "per window (minimum in any window); pooled ≥200 total"
+    source: "metrics.json"
+  - metric: era_ic_stability
+    operator: "<"
+    threshold: 2.0
+    definition: "max(per_regime.era_ic) / min(per_regime.era_ic) across 4 eras"
+    source: "metrics.json per_regime breakdown"
+    note: "If any era reports IC < 0.10, stability test is failed regardless of ratio."
+
+cost_feasibility: "See cost_feasibility block above. Plausibility = marginal. Must meet required_gross_edge_bps_per_trade ≥ 34.0; estimated edge 25–50 bps. Pass if edge_to_cost_ratio ≥ 2.0."

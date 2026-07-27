@@ -1,0 +1,37 @@
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components: []
+    rules: []
+    default_regime: unknown
+  strategies:
+    warmup: 3
+    regimes:
+      unknown:
+        components:
+          - id: funding_rate_mean_reversion
+            class: strategies.strategy_components.FundingRateMeanReversionComponent
+            params:
+              threshold: 0.0
+              scaling_factor: 10.0
+            weight: 1.0
+            transforms:
+              - op: identity
+      trending: null
+      mean_reversion: null
+      chop: null
+  aux_feeds:
+    - funding_rate
+config_rationale:
+  - claim: "V1 mechanism: −sign(8h_funding_rate) × 10.0 at every UTC settlement bar (hour % 8 == 0), regardless of magnitude"
+    config_choice: "FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0); threshold=0.0 enables continuous firing at all settlement bars; −sign × scaling_factor produces ±10.0 forecast at UTC 0, 8, 16 hour settlement boundaries"
+  - claim: "Ungated activation (no regime condition; active on every bar)"
+    config_choice: "Ungated A2.3 topology: regime_detector.rules=[], components=[]; default_regime='unknown'; signal placed under unknown regime block, avoiding one-bar warmup defect and bypassing regime gatekeeping"
+  - claim: "Data requirement: 8h perpetual funding_rate from Binance settlement cycles"
+    config_choice: "aux_feeds: ['funding_rate']; enables FundingRateMeanReversionComponent to read settlement-timed funding rate sign; backward-as-of merge ensures point-in-time correctness"
+  - claim: "Forecast output in [-20, +20] range; no additional normalization needed"
+    config_choice: "transforms: [{op: identity}]; scaling_factor=10.0 produces ±10.0 forecast; identity confirms raw output is appropriate magnitude without historical normalization"
+  - claim: "Warmup: accumulate history before emitting forecasts; balance early-start (meet 100+ min trades/window) with data quality"
+    config_choice: "warmup=3; component Req=2; enables forecasts by bar 5, leaving ~1,459 bars for signal collection across 183 settlement events; sufficient margin to meet minimum 100 trades/window from 3 activations/day × 61 days"
+component_gap: null

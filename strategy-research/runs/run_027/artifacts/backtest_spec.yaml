@@ -1,0 +1,53 @@
+hypothesis_id: TIMEFRAME_ESCALATION_4H
+run_id: run_027
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: trending
+        any_of:
+          - - id: er
+              op: gte
+              value: 0.5
+            - id: vr
+              op: gte
+              value: 1.2
+    default_regime: unknown
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: keltner
+            class: strategies.strategy_components.KeltnerBreakoutComponent
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 2.0
+              scaling_factor: -20.0
+            weight: 1.0
+            lookback: 500
+            transforms:
+              - op: identity
+      mean_reversion: null
+      chop: null
+      unknown: null
+config_rationale:
+  - "Signal concept (Keltner mean-reversion: ema=20, atr=20, mult=2.0, scale=-20.0, identical to run_017) → KeltnerBreakoutComponent with exact params; scaling_factor=-20.0 inverts to lower-band short (mean-reversion)."
+  - "Regime filter (TRENDING: ER≥0.5 AND VR≥1.2, threshold_rules AND-gate) → EfficiencyRatioRegimeComponent and VarianceRatioComponent combined in threshold rule (both conditions required to match trending regime)."
+  - "default_regime=unknown, unknown: null enforces hypothesis intent: trade ONLY when TRENDING fires; all bars outside TRENDING yield 0.0 forecast (stay flat)."
+  - "mean_reversion, chop, unknown set to null per rule: if a regime should produce no trades, set to null. Non-trending regimes produce zero signal."
+  - "Transforms: identity only. Keltner component raw output scaled directly by scaling_factor=-20.0 produces forecast in [-20, +20] range without additional normalization; no vol_normalize or percentile needed."
+component_gap: null

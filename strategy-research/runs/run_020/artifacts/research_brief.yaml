@@ -1,0 +1,60 @@
+hypothesis_id: "V2-PIVOT-A-THRESHOLD-REFINED"
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+
+research_question: |
+  Do RSI momentum signals generate positive expected returns in BTCUSDT/ETHUSDT 1h
+  when the market is TRENDING (high ER, high VR), with min_abs threshold tuned
+  to balance signal quality and trade frequency?
+
+signal_concept: |
+  Relative Strength Index (RSI 14-period) momentum signal in TRENDING regime.
+  Long signal on RSI > 70 (overbought) or short on RSI < 30 (oversold) in trending markets.
+  REFINEMENT: Reduce min_abs threshold from 20.0 to 17.5 to restore signal generation
+  while maintaining stricter filtering than baseline 15.0. Previous run (min_abs=20.0)
+  collapsed trade count to 0, rendering Sharpe uncomputable. Target: restore median
+  trade count to 15-25/window while maintaining cost_drag_pct < 150%.
+
+regime_filter: |
+  TRENDING regime only: ER ≥ 0.50 AND VR ≥ 1.20 (unchanged).
+  All other regimes produce forecast 0.0.
+
+mechanism: |
+  In TRENDING markets, RSI extremes signal momentum continuation. By filtering to
+  |raw_forecast| ≥ 17.5 (vs 20.0), strategy generates sufficient signal volume to
+  evaluate edge while remaining 17% stricter than baseline 15.0. Mechanism preserves
+  directional signal while reducing threshold-induced signal death.
+
+assumptions:
+  - "Previous run (min_abs=20.0) demonstrated that extreme strictness eliminates signal
+    before edge can be measured. Median_trade_count=0 proves threshold is disconnected
+    from market signal distribution."
+  - "V2-PIVOT-A-CONSERVATIVE (min_abs=15.0, from earlier research) showed median cost_drag=272.8%
+    but positive gross_pnl=21.62, confirming signal has directional edge. The edge was
+    valid; only sizing was excessive."
+  - "min_abs=17.5 is conservative refinement (17% stricter than baseline, not 33%).
+    Sufficient to reduce trade churn while restoring evaluable sample size (target: ≥20 trades/window)."
+  - "TRENDING regime filter is correctly implemented and fires when ER/VR thresholds met.
+    regime informativeness will be re-evaluated once signal generation is restored."
+
+expected_failure_modes:
+  - "min_abs=17.5 may still be too strict if signal distribution has shifted. Monitor
+    per-window trade count; if still <15 in majority of windows, further reduce to 16.0."
+  - "If trade count improves but sharpe remains ≤ 0.05, escalate to regime investigation
+    (TRENDING may be genuinely uninformative, masked by threshold filtering)."
+  - "If cost_drag_pct > 150% after trade count restoration, escalate to sizing/entry
+    optimization (signal works but fees dominate)."
+
+constraints:
+  - "Change ONLY min_abs from 20.0 to 17.5 in threshold_filter transform."
+  - "Keep RSI period=14, regime (TRENDING), scaling_factor=0.4, all other params unchanged."
+  - "Target: median_trade_count ≥ 20/window, median_sharpe > 0.05, median_cost_drag_pct < 180%."
+
+change_from_previous: |
+  V2-PIVOT-A-THRESHOLD (min_abs=20.0) caused median_trade_count to collapse to 0,
+  rendering hypothesis unvalidatable. Per Rule 2 diagnostic (forecast_return_corr=0.0),
+  signal generation was eliminated by oversized threshold. Proposed refinement:
+  reduce min_abs from 20.0 to 17.5 (midpoint between baseline 15.0 and current 20.0).
+  This maintains relative strictness vs baseline while restoring signal evaluability.
+  If trade count reaches ≥20/window with this setting, proceed to validate sharpe and
+  cost_drag metrics. If not, further reduce to 16.0 or escalate to component pivot.

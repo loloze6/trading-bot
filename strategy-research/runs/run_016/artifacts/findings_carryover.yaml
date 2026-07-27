@@ -1,0 +1,37 @@
+what_failed: |
+  Keltner upper-band breakout momentum hypothesis (V1) in TRENDING regime (ER ≥ 0.50, 
+  VR ≥ 1.20) produced inverted signal with forecast_return_corr = -0.1705, 
+  gross_pnl = 0.0, trade_count = 0 across most windows, and win_rate = 0.0. 
+  Unlike V2 which had positive gross_pnl but high costs, V1 has no realized edge — 
+  indicating a structural signal problem, not a sizing problem.
+
+critical_distinction_signal_vs_sizing: |
+  V2 (RSI) had: gross_pnl = +21.94, forecast_return_corr = -0.0223, cost_drag = 142.8%
+  → SIZING PROBLEM (signal had edge, costs killed it).
+
+  V1 (Keltner) has: gross_pnl = 0.0, forecast_return_corr = -0.1705, cost_drag = 25.8%
+  → SIGNAL PROBLEM (no realized PnL, inverted correlation).
+
+  The zero gross_pnl confirms V1 did not earn directional edge on any window. 
+  The negative correlation (-0.1705) further indicates the signal is systematically 
+  inverted. This is NOT a cost or sizing issue; the signal itself is backwards.
+
+diagnostics_snapshot:
+  - "median_forecast_return_corr: -0.1705 (inverted across all windows; < -0.02 reject threshold)"
+  - "median_gross_pnl: 0.0 (no realized PnL; unlike V2 which had +21.94)"
+  - "median_cost_drag_pct: 25.77% (secondary to zero PnL; costs are not the killer)"
+  - "median_trade_count: 0 (many windows generated no trades; regime filter too restrictive OR signal never fires)"
+  - "per_regime analysis: trending bars exist (22–7 across windows), but avg_forecast often negative in trending"
+  - "example BTCUSDT 2024-04: trending_bars=4, avg_forecast=-18.65, trades=2, net_pnl=-19.43 (inverted)"
+  - "all four regimes flagged uninformative by regime_validity, including TRENDING"
+
+what_not_to_try:
+  - "Parameter refinements to V1 (lower ATR multiplier, different EMA period): inversion is structural, not parameter tuning"
+  - "Relaxing TRENDING regime thresholds (ER < 0.50, VR < 1.20): regime definition was not the primary failure"
+  - "Testing Keltner upper-band with different scaling_factor or transforms: signal direction is backwards, not magnitude"
+  - "Further RSI mean_reversion variants: family exhausted via runs_011–014 with 3+ parameter dimensions"
+
+lessons:
+  - "Inverted signal (corr < -0.02) is NOT a sizing problem — it is a directional problem. Do not attempt threshold tuning."
+  - "Inverse hypothesis warrant testing: if upper-band breakouts fail with negative corr, lower-band breakdowns may have the real edge."
+  - "Zero gross_pnl is worse than positive gross_pnl with high costs. Prioritize signal edge (corr > 0.02) over cost optimization."

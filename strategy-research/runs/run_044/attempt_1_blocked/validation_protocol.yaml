@@ -1,0 +1,57 @@
+hypothesis_id: "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_V1"
+
+falsifiable_statement: "The sign of the funding rate at each 8h UTC settlement predicts the direction of mean reversion in the subsequent 8-hour period; positions opposite the funding rate sign realize positive risk-adjusted returns (Sharpe ≥ 1.8 walk-forward median) after accounting for 17 bps round-trip cost."
+
+null_expectation: "Funding rate sign has zero predictive power for next-8h returns. Actual returns are indistinguishable from a random walk; Sharpe ≈ 0 after costs."
+
+required_evidence:
+  - "Walk-forward backtest across 7–9 windows (2024-12-01 to 2025-12-31) showing median Sharpe ≥ 1.8"
+  - "Win rate ≥ 52% across all trades in walk-forward windows"
+  - "Trade count ≥ 150 across all windows (n_eff in practice validates n_eff=183 a priori assumption)"
+  - "No single walk-forward window with < 80 bars of trades (activation rate stability)"
+  - "Max drawdown ≤ 15% in any window"
+
+bias_risks:
+  - "Look-ahead bias: Using funding rate at settlement tick vs. actual observable delay in live execution"
+  - "Funding data staleness: Binance funding rate feeds may lag; settlement time differs by venue"
+  - "Survivorship bias: Only perpetuals with sufficient OI (BTCUSDT); selection of most liquid instrument"
+  - "Overfitting to recent regime: Funding rates have compressed dramatically post-2023; historical optimization may not generalize"
+  - "Forecast scaling mismatch: Constant ±10.0 forecast may not reflect changing volatility regimes"
+
+failure_modes:
+  - "Structural mechanism has degraded: Market participants have learned to arbitrage funding settlements; sign no longer predicts reversal"
+  - "Cost drag exceeds edge: 34 bps gross edge requirement not achieved; actual wins are < 30 bps after slippage"
+  - "Activation rate underperforms: Expected 12.5% but actual bars meeting settlement condition < 10% (sparse signals, high variance per window)"
+  - "Settlement timing mismatch: UTC hour % 8 definition differs from Binance's actual settlement window (30s precision, offset timing)"
+  - "Walk-forward degradation: Early windows show strong Sharpe (overfitting to training window) but later windows degrade to < 1.2"
+  - "Regime-conditional failure: Signal works only in high-volatility windows; fails in range-bound regimes despite ungated design"
+  - "Funding open interest disconnect: OI does not co-move with funding rate sign as presumed; forced-flow magnitude is too small"
+
+sample_split_design:
+  walk_forward_range: "2024-12-01 to 2025-12-31"
+  holdout_range: "2026-01-01 to 2026-06-30"
+  holdout_note: "Single-use per A6.1. Frozen — no intermediate diagnostics or pre-screening against holdout. Evaluation only at holdout_evaluation stage after walk-forward passes Sharpe gate."
+  windows: 8
+  window_size_bars: "1500–1800 bars (approximately 21–25 days on 8h timeframe)"
+  step_size_bars: "10% overlap rolling window (150–180 bars)"
+  rationale: "Walk-forward extension spans 396 calendar days (~9504 bars on 8h). Eight overlapping windows provide sufficient sample size per window (≥ 1500 bars) while covering the full extension range. Holdout (181 days, ~8869 bars) is reserved for final single-use evaluation."
+
+decision_rules:
+  - "Sharpe ≥ 1.8 (walk-forward median, annualized): gate on this metric only"
+  - "Win_rate ≥ 0.52: minimum threshold for directional consistency"
+  - "Trade_count ≥ 150: avoids small-sample bias; activates at ~2 trades per window on average"
+  - "Max_drawdown_pct ≤ 15.0: risk boundary; signals firing 12.5% of time should not produce extreme drawdowns"
+  - "All decision rules must be met; failing any rule blocks promotion to screening backtest"
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 17.0
+  expected_holding_bars:
+    min: 8
+    max: 8
+    note: "Exact holding period: one 8h settlement cycle (from settlement T to T+8h). No variable holding."
+  expected_trades_per_window: "20–25 trades per window (183 n_eff ÷ 8 windows, at 12.5% activation rate on 1500-bar window)"
+  required_gross_edge_bps_per_trade: 34.0
+  plausibility: "marginal"
+  plausibility_rationale: "Funding rate mean reversion is a documented structural phenomenon (forced settlement-driven deleveraging). However, 8h horizon is borderline tight: typical academic and industry work shows strongest effects on 4h or daily bars. At 8h with 12.5% activation, each fired trade must earn ≥34 bps gross to cover 17 bps round-trip cost twice (safety factor 2.0). Funding rates in 2024–2026 are ultra-compressed (typically ±0.03% per 8h), suggesting smaller absolute flows but potentially exploitable after microstructure decay. Market has adapted to funding mechanics but structural force remains. Marginal verdict means: (a) edge is theoretically plausible and (b) walk-forward evidence can overcome skepticism, but (c) failure is statistically likely without exceptional IC or turnover efficiency."
+
+cost_feasibility_hedge: "If walk-forward Sharpe < 1.5 or win_rate < 50%, cost drag is the primary suspect. Retreat to 4h timeframe (halves holding period, increases effective volatility for signal decay, may improve cost per trade) or enable regime gating (tighten activation to high-conviction bars only)."

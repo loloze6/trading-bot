@@ -1,0 +1,58 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+variant_id: V1-Conservative
+status: spec_ready
+
+config:
+  regime_detector:
+    mode: score_product
+    min_score: 0.4
+    min_margin: 0.0
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    regimes:
+      trending:
+        components:
+          - id: er
+            divisor: 1.0
+            transforms:
+              - op: identity
+          - id: vr
+            divisor: 2.0
+            transforms:
+              - op: identity
+    default_regime: unknown
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: keltner_mr
+            class: strategies.strategy_components.KeltnerBreakoutComponent
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 2.0
+              scaling_factor: -20.0
+            weight: 1.0
+            transforms:
+              - op: identity
+      unknown: null
+
+config_rationale:
+  - "Signal: Keltner mean-reversion via KeltnerBreakoutComponent (ema=20, atr=20, mult=2.0, scale=-20.0) produces lower-band short breakout; raw forecast in [-20, +20]"
+  - "Regime detection: score_product mode computes ER×VR/2 with min_score=0.4; fires when trending regime detected (high efficiency and variance ratio)"
+  - "Regime components: EfficiencyRatioRegimeComponent (period=24, smooth=5) and VarianceRatioComponent (k=5, window=100) with identity transforms"
+  - "Transform pipeline: identity transform on Keltner signal; no normalization applied (scaling_factor=-20.0 already produces forecast range)"
+  - "Default fallback: unknown regime (score<0.4) maps to null; produces zero forecast and stay-flat posture"
+  - "Variant strategy: V1-Conservative is the core hypothesis baseline; V2-V5 variants (threshold, weighting, inverse, smoothing) deferred to future refinement runs pending V1 validation gates"
+
+component_gap: null

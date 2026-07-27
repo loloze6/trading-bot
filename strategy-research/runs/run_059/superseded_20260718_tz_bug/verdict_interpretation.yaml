@@ -1,0 +1,23 @@
+hypothesis_id: run_059-funding-mr-daily-retest-v1
+protocol_verdict: refine
+hypothesis_verdict: kill
+lineage_routing: terminate
+status: kill
+criteria_summary:
+  - "criterion_a (median_sharpe > 0.8 for both symbols): UNTESTED — no trades executed across any window; Sharpe not computable"
+  - "criterion_b (max_abs_drawdown_pct < 30% for both symbols): PASS — actual: BTCUSDT=0, ETHUSDT=0"
+  - "criterion_c (zero_trade_slot_pct <= 50% for both symbols): FAIL — actual: BTCUSDT=100.0%, ETHUSDT=100.0%"
+  - "criterion_implicit_edge (forecast_return_corr >= 0.01 ungated): FAIL — actual: BTCUSDT=0.0, ETHUSDT=0.0"
+primary_failure_mode: "component_execution_error: FundingRateMeanReversionComponent emitted zero forecasts (avg_forecast=0.0 on all 1,568 bar-symbol instances across 49 windows) despite deterministic threshold=0.0 configuration. Prescreen reported IC=0.0378 (p=0.0406, significant) but backtest produced zero valid forecast_return_corr values."
+config_to_failure_map: "FundingRateMeanReversionComponent (threshold=0.0, scaling_factor=10.0, ungated) designed to fire deterministically on every settlement bar. Configuration is correct per specification. Actual outcome: zero trades, zero active forecasts on both symbols, all windows. Indicates engine/component initialization fault, not parameter or signal-quality issue."
+untested_criteria:
+  - "criterion_a: Sharpe computation impossible (zero trades on all 49 windows)"
+proposed_change_dimension: null
+hypothesis_family: funding_rate_mean_reversion
+altitude_justification: "Rule 6 (CASE B, component_execution_error / regime starvation): min_trade_count=0 on both symbols across all 49 pass-gated windows; active_n_bars=0; zero_trade_slot_pct=100.0% on BTCUSDT and ETHUSDT both exceed criterion_c threshold of 50%. Pre_registration.yaml hardcodes FAIL-c branch: hypothesis_verdict=kill, lineage_routing=terminate. This hypothesis is the mechanism's LAST escalation per KB reactivation_condition ('no further timeframe exists under it: every FAIL branch terminates both the hypothesis and the lineage -- no refine, pivot, or escalate anywhere in this brief's pass_rule'). Terminal routing applies unconditionally."
+root_cause:
+  mechanism_failure: component_execution_error
+  supporting_evidence: "per_symbol_summary: BTCUSDT min_trade_count=0, zero_trade_slot_pct=100.0%; ETHUSDT min_trade_count=0, zero_trade_slot_pct=100.0%. All 98 result rows (49 windows × 2 symbols) show trade_count=0, forecast_return_corr=null, sharpe=null. prescreen_backtest_cross_check: prescreen_pooled_ic=0.0378 (p=0.0406, statistically significant), but backtest_n_windows_defined=0 across symbol-level summary (no windows produced valid forecast_return_corr); disagreement_detected=true; detail='likely a degenerate active-bar-forecast shape'. Component initialized to fire on every settlement bar (threshold=0.0) produced zero signals, indicating component construction/runtime fault, not hypothesis-level signal insufficiency."
+  confidence: high
+trade_attribution: null
+regime_attribution: null

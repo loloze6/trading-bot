@@ -1,0 +1,70 @@
+hypothesis_id: "run_059-funding-mr-daily-retest-v1"
+protocol_verdict: refine
+hypothesis_verdict: kill
+lineage_routing: terminate
+status: kill
+
+criteria_summary:
+  - criterion: "criterion_a: median_sharpe > 0.8 for BOTH symbols (pass-gated windows)"
+    result: FAIL
+    actual:
+      BTCUSDT: -0.296
+      ETHUSDT: -0.979
+    required: "> 0.8"
+    detail: "Both symbols have median Sharpe significantly below threshold; deeply negative"
+  
+  - criterion: "criterion_b: max_abs_drawdown_pct < 30% for BOTH symbols"
+    result: FAIL
+    actual:
+      BTCUSDT: 34.922
+      ETHUSDT: 49.606
+    required: "< 30.0"
+    detail: "Both symbols exceed drawdown threshold; ETHUSDT approaches 50%"
+  
+  - criterion: "criterion_c: zero_trade_slot_pct <= 50% for BOTH symbols"
+    result: PASS
+    actual:
+      BTCUSDT: 0.0
+      ETHUSDT: 0.0
+    required: "<= 50.0"
+    detail: "Engine conformance check passes; no F5a-class zeroing bug detected"
+  
+  - criterion: "criterion_implicit_edge: forecast_return_corr >= 0.01 (raw decimal) or win_rate >= 52%"
+    result: PASS
+    actual:
+      median_forecast_return_corr: 0.047
+      median_win_rate_pct: 41.77
+    required: "corr >= 0.01 OR winrate >= 52%"
+    detail: "Marginal pass on correlation (0.047 > 0.01) despite negative gross PnL and sub-threshold win_rate"
+
+untested_criteria:
+  - "Holdout evaluation (2026-01-01..2026-06-30): Withheld per pass_rule gate failure; promotion never reached"
+  - "Implementation conformance daily-resample-last verification: Not independently re-checked in verdict stage"
+
+primary_failure_mode: "signal_direction_and_magnitude_failure_on_daily_holding_window"
+
+config_to_failure_map:
+  - "Component: FundingRateMeanReversionComponent (threshold=0.0, scaling_factor=10.0) correctly implemented per backtest_spec.yaml"
+  - "Timeframe mismatch: Daily bar holding (24-hour window) extends beyond mean-reversion impulse resolution window (1–2 hours post-settlement per validation_protocol honesty note ii), allowing drift/reversal to erode edge"
+  - "No regime gating: Ungated operation (all bars active) means position held across trending periods where mean-reversion fails structurally"
+  - "Deterministic trade count floor: Sign-flip mechanism produces only 228/220 trades per symbol over 49-month pass-gated window (~4.7 per month per validation_protocol expected_trades_per_window), creating sparse windows (30.61% below 5-trade floor)"
+
+root_cause:
+  mechanism_failure: "already_priced_in"
+  supporting_evidence: "median_forecast_return_corr=0.047 (marginal signal; pooled across 699 trades); median_gross_pnl=-41.7122 (negative aggregate); per_trade_expectancy_bps.mean=-38.47 with t_stat=-1.509, n=699 (not significant); win_rate_net=41.77% insufficient to overcome assumed_round_trip_cost_bps=[17.0, 17.5] per validation_protocol cost_feasibility. Funding-rate sign itself lacks stable mean-reversion edge on daily timeframe after costs."
+  confidence: high
+
+altitude_justification: "Rule 2 applied: median_forecast_return_corr=0.047 combined with median_gross_pnl=-41.7122 and per_trade_expectancy_bps=-38.47 (t=-1.509, n=699) demonstrates signal has no economically viable directional content on daily bars. Pre-registered pass_rule mandates kill on ANY criterion FAIL on EITHER symbol (FAIL-a: Sharpe, FAIL-b: drawdown both trigger). Research_brief.yaml states: 'This is the mechanism's LAST escalation per the KB's own reactivation_condition (no further timeframe exists under it) -- no refine, pivot, or escalate anywhere in this brief's pass_rule.' Lineage terminates."
+
+proposed_change_dimension: null
+hypothesis_family: "funding_rate_mean_reversion"
+
+trade_attribution:
+  primary_weakness: "holding_sizing"
+  evidence: "pct_pnl_from_worst_decile_trades=313.58% (>80%), signal_flip_pct=100.0% (>70%), stop_loss_recovery_rate=0.0 (no stop mechanism). Worst-decile trades accumulate massive uncapped losses; all exits via signal flip, zero stops. However, underlying root cause is signal failure (win_rate=41.77% cannot overcome costs), not execution gating; positions rationally held via mechanism design but edge is insufficient."
+
+regime_attribution: null
+
+prescreen_evidence: null
+
+human_pause: false

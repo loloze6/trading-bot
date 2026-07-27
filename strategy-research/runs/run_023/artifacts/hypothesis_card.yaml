@@ -1,0 +1,33 @@
+hypothesis_id: REFRAME-COST-REGIME-VALIDATION
+
+thesis: |
+  Keltner mean-reversion at 1h with TRENDING regime (ER≥0.50, VR≥1.20) produced the only repeatable edge (corr=0.2145, cost_drag=27.45%) across all prior runs.
+  Hypothesis: this edge is real, not statistical noise, and replicable under identical backtest conditions.
+
+rationale: |
+  Run_017 is the sole backtest exceeding minimum thresholds (corr > 0.01, cost_drag < 80%).
+  Mechanism: Keltner bands normalize to volatility, reducing whipsaw; 1h candles balance trade frequency against transaction cost; TRENDING regime filters to zones with structural mean-reversion.
+  Cost spike in run_021 (27.45% → 413%) correlates with timeframe escalation (1h → 4h), suggesting timeframe or sizing sensitivity, not edge loss.
+  Test: replicate run_017 exactly; validate forecast_return_corr and cost_drag repeatability.
+
+signal_concept: |
+  Keltner lower-band mean-reversion gated by TRENDING regime.
+  Entry: price touches lower band; forecast = normalized distance to band center.
+  Exit: taker_fee, position limits, portfolio rebalance triggers.
+  Expected mechanism: volatility-normalized bands suppress false signals in mean-reverting zones.
+
+target_market: BTCUSDT, ETHUSDT
+
+timeframe: "1h"
+
+assumptions:
+  - Run_017 edge (corr=0.2145) is statistically real and replicable under identical conditions.
+  - Cost degradation in run_021 is timeframe-dependent (4h vs 1h candle dynamics), not inherent to the signal.
+  - TRENDING regime has positive forward returns at 1h; 4h behavior may differ.
+  - Position sizing is correctly tuned for 1h; scaling to 4h without adjustment over-leverages or over-trades.
+
+expected_failure_modes:
+  - Replication failure: re-running run_017 conditions yields corr ≤ 0.01 or cost_drag > 80% (artifact, not edge).
+  - Regime invalidity: TRENDING regime has zero or negative forward returns at 1h (definition captures noise).
+  - Position sizing misalignment: cost_drag increases non-linearly with frequency (requires component redesign).
+  - Boundary instability: TRENDING regime active > 50% of time (low selectivity; effective signal count insufficient for significance).

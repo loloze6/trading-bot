@@ -1,0 +1,71 @@
+run_id: run_005
+status: failed
+current_stage: backtest_specification
+pending_stage: backtest_specification
+completed_stages:
+- hypothesis_generation
+- innovation_expansion
+- validation
+artifacts: {}
+governance:
+  max_hypothesis_variants_per_cycle: 3
+  max_refinements_after_validation: 2
+  max_reruns_after_analysis: 1
+  max_required_reads_per_stage: 3
+  max_total_tokens_per_run: 300000
+counters:
+  refinements_used: 0
+  reruns_used: 0
+flags:
+  holdout_reserved: false
+  validation_approved: true
+  screening_passed: false
+  walk_forward_passed: false
+last_summary: null
+audit_log:
+  hypothesis_generation_attempt_0:
+    timestamp: '2026-06-15T22:06:00.138120+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 32.0
+    cost_usd: 0.023966249999999995
+    tokens:
+      input: 10
+      output: 2681
+      cache_read: 25185
+      cache_creation: 5299
+      total: 33175
+  innovation_expansion_attempt_0:
+    timestamp: '2026-06-15T22:07:06.112274+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 65.94
+    cost_usd: 0.047734250000000006
+    tokens:
+      input: 10
+      output: 7155
+      cache_read: 25185
+      cache_creation: 5927
+      total: 38277
+  validation_attempt_0:
+    timestamp: '2026-06-15T22:08:29.872884+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 83.71
+    cost_usd: 0.055387
+    tokens:
+      input: 10
+      output: 8084
+      cache_read: 25185
+      cache_creation: 7266
+      total: 40545
+  backtest_specification_attempt_0:
+    timestamp: '2026-06-15T22:12:05.922517+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 116.28
+    cost_usd: 0.13976295
+    tokens:
+      input: 146
+      output: 7801
+      cache_read: 689997
+      cache_creation: 20461
+      total: 718405
+updated_at: '2026-06-15T22:12:05.944871+00:00'
+last_error: 'Unknown decision status: validation_incomplete'

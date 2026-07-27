@@ -1,0 +1,84 @@
+campaign_id: "rsi_mean_reversion_low_er"
+runs_reviewed: 28
+pattern_detected: "same_root_cause_different_families"
+pattern_evidence:
+  - "keltner_mean_reversion (runs 017, 024, 027, 033): forecast_return_corr=0.2145 on TRENDING-gated bars only (~1% of bars); full-range prescreen (run_039) ic_active_bars=-0.032 (p=0.83, n_active=1125). Signal produces zero directional content on the regime it was designed for."
+  - "keltner_breakout (runs 015, 033): forecast_return_corr=-0.171, confirming signal inversion. Same underlying mechanism (Keltner) as mean_reversion family."
+  - "keltner_scoremode (runs 028, 030): forecast_return_corr ranging 0.014–0.2953; cost_drag=84%, a 4× structural cost barrier independent of parameter tuning."
+  - "keltner_trend_mean_reversion (runs 024, 027, 033): reuses identical signal and params as keltner_mean_reversion; shares the same zero-directional-content root cause."
+  - "rsi_mean_reversion (run_014): forecast_return_corr=-0.022 after exhausting parameter space (smooth_period, er_threshold, vr_threshold all varied)."
+  - "rsi_momentum_trending (run_018): forecast_return_corr=0.018, cost_drag=272.8%, structural cost unviability (cost barrier >> 80% threshold)."
+  - "KB meta_finding (A5.1-A5.3): Keltner families were initially recorded as failing due to 'regime_availability' (zero-trade slots in 7/22 then 14/48 window-symbol slots). Post-hoc analysis (run_039 full-range prescreen) revealed true root cause: signal_quality (ic_active_bars=-0.032, p=0.83 on TRENDING-labeled bars). Campaign spent ~10 runs attempting to fix regime availability via secondary-signal layering when the primary signal itself had zero informational content."
+  - "COST STRUCTURE BARRIER: Both rsi_momentum_trending (cost_drag=272.8%) and keltner_scoremode (cost_drag=84%) exceed structural viability thresholds. This is arithmetic, not parameter-tunable: high-frequency rebalancing incurs round-trip costs that overwhelm gross edge on 1h timeframe."
+recommendation: "reframe"
+recommendation_rationale: >
+  The campaign has tested 6 hypothesis families (rsi_mean_reversion, keltner_breakout,
+  keltner_mean_reversion, rsi_momentum_trending, keltner_trend_mean_reversion,
+  keltner_scoremode) without discovering a consistent positive-IC edge. Misdiagnosis
+  of "regime availability" as root cause burned ~10 runs. The true causal structure:
+  classical technical indicators on 1h BTC/ETH lack directional content (signal_quality
+  failure) coupled with cost-structure constraints (transaction costs overwhelm gross
+  edge at rebalance frequency). The ER-threshold detector used for regime gating is
+  itself unusable on BTC/ETH 1h (Pareto-blocked by activation×stability tradeoff;
+  KB finding: er_detector_unusable_btc_eth_1h). Continuing parameter tuning yields
+  diminishing returns. Reframe required: either (a) test daily-timeframe regime overlays
+  (KB preferred first candidate) to determine if finer regime delineation recovers
+  signal quality, OR (b) proceed to power-parked structural/behavioral signals
+  (H-041-A funding_rate, H-041-C fear_greed) with extended historical data (2018+).
+  Current search space has hit structural ceiling.
+
+kb_untested_cells:
+  - "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION (post-F5 bug fix): run_044 was invalidated due to FundingRateMeanReversionComponent threshold=0.0 divide-by-zero causing phantom prescreen kill. Hypothesis deserves clean retry with fixed code."
+  - "Daily-timeframe regime overlay (ADX-based or HMM regime detection): KB's preferred first detector-replacement candidate. Zero prior test on any 1h technical signal. High information value for AC4 decision point (policy: build detector only if ungated daily-regime-conditional edge emerges)."
+
+kb_exhausted_cells:
+  - "keltner_mean_reversion_no_edge: ic_active_bars=-0.032 (p=0.83) on TRENDING-labeled bars. Analytic signal-quality failure independent of regime calibration."
+  - "keltner_breakout_inverted: forecast_return_corr=-0.171. Directional claim falsified; reversal requires new hypothesis registration."
+  - "keltner_scoremode_no_edge: cost_drag=84% (4× structural barrier) + low IC (0.014–0.2953 range). Analytic arithmetic failure; no parameter tuning recovers."
+  - "rsi_mean_reversion_no_edge: Parameter space (smooth_period, er_threshold, vr_threshold) exhausted; terminal corr=-0.022."
+  - "rsi_momentum_trending_cost_drag: cost_drag=272.8%, structural unviability at 1h frequency."
+  - "er_detector_unusable_btc_eth_1h: Pareto-blocked architecture (activation [10-40%] vs. transitions ≤ 4/window cannot both be satisfied). No ER-family configuration overcomes this constraint."
+
+kb_combination_candidates:
+  - "H-041-A (funding_rate extreme, inconclusive) + H-041-C (fear_greed extreme, inconclusive): Both are power-parked and scheduled for consolidated backward-extension pass (2018+ data). No credible combination without data history. F&G is market-wide single index; additional symbols provide sublinear power (n_eff scales as sqrt(n_symbols), not linearly). DATA (historical depth) is the binding resource, not signal diversity."
+
+budget_assessment:
+  runs_used: 28
+  estimated_campaign_budget: "30–36 runs (inferred from review_every_n_runs=6)"
+  budget_utilization_pct: "78–93%"
+  recommendation_on_remaining: "Prioritize ONE high-information remaining test: either (a) daily-regime-overlay (ADX or HMM) on Keltner params (run_017 canonical config) to validate KB preferred detector path, OR (b) post-F5-bugfix FUNDING_RATE_CONTINUOUS_MEAN_REVERSION retry to test structural-forced-flow mechanism on corrected code. Both are feasible in 3–6 remaining runs. Do NOT continue classical indicator parameter tuning within current frame."
+
+next_research_question:
+  hypothesis_id: "DAILY_REGIME_OVERLAY_SIGNAL_QUALITY"
+  asset: "BTCUSDT, ETHUSDT"
+  timeframe: "1h"
+  research_question: >
+    Does a daily-timeframe regime overlay (ADX-based trend/range classification or 
+    daily HMM state) improve signal quality and activation consistency for Keltner 
+    technical indicators on 1h BTC/ETH? Specifically: can a daily regime gate reduce 
+    temporal variance (zero-trade months observed in runs 017/024/027/033 attributed 
+    to regime detector scarcity) and recover positive forecast_return_corr on a signal 
+    family (Keltner TRENDING gate, ER>=0.50) that showed ic_active_bars=-0.032 ungated 
+    but forecast_corr=0.2145 when regime-gated? If daily-regime-conditional IC is 
+    positive (> 0.05, p < 0.10) AND stable across calendar windows, this validates 
+    regime-detection as a mechanism class and justifies building a daily ADX or HMM 
+    detector per KB AC4 post-unusable policy (A2.3). If ungated daily-regime edge 
+    remains <= 0 or cost-drag remains > 80%, escalate to power-parked structural 
+    signals (H-041-A, H-041-C) on extended 2018+ data.
+  signal_concept: >
+    Keltner channel (ema=20, atr=20, mult=2.0, scale=-20) with daily ADX(14) overlay 
+    on trend/range classification. Forecast computed as -sign(keltner_band_breach) 
+    modulated by daily ADX regime: full strength in ADX>=30 (trending regime), reduced 
+    weight (0.5×) in 20<=ADX<30 (intermediate), zeroed in ADX<20 (ranging). Daily ADX 
+    propagated to all 1h bars within each calendar day. Ungated on ER/VR (A2.3 standing 
+    policy). Compute forecast_return_corr and ic_active_bars on all bars (filtering 
+    active_bars where ADX!=NaN); compare both metrics against baseline (pure Keltner 
+    from run_017 canonical). Variant V1 (ADX thresholding per above); V2 (ADX linear 
+    scaling, reserved for diversity audit) not executed in this cycle.
+  constraints:
+    - "One variant only (V1) for immediate run queue; V2 reserved for diversity audit."
+    - "Must not replace existing bot architecture or introduce new regime detector infrastructure (standalone assessment only; detector build decision requires AC4 gate)."
+    - "Ungated by ER/VR regime detectors (post-A2.3 standing policy)."
+    - "Daily ADX computed on daily OHLC; propagated to all 1h bars within each calendar day."
+    - "Compute ic_active_bars separately (gates by ADX != NaN) per A8.3 protocol; report both all-bars and active-bars IC."
+    - "If positive daily-regime-conditional IC emerges (ic_active_bars > 0.05, p < 0.10 on combined symbols), register full ADX daily detector build (separate hypothesis) per KB post-unusable policy (A2.3 consequence field)."

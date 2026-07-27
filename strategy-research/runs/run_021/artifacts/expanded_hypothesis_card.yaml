@@ -1,0 +1,156 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER"
+base_hypothesis_id: "V3-ESCALATE-4H-KELTNER"
+refinement_attempt: 0
+
+expanded_variants:
+
+  - variant_id: "V1-Base-Conservative"
+    label: "4h Keltner Lower-Band Mean-Reversion, TRENDING Gate (Prescribed)"
+    signal_concept: "KeltnerBreakoutComponent: scaling_factor=-20.0, atr_multiplier=2.0, ema_period=20."
+    regime_filter: "TRENDING (ER≥0.50, VR≥1.20, threshold_rules)"
+    target_market: "BTCUSDT, ETHUSDT"
+    timeframe: "4h"
+    rationale: |
+      Primary hypothesis from research brief. Exact replication of run_017 config (1h corr=+0.214)
+      at 4h timeframe. Tests: Does escalation from 1h to 4h fix trade starvation caused by strict
+      TRENDING regime gate? Conservative variant with no parameter deviations.
+    expected_outcome: "Trade count 30-60 per window (vs ~4 at 1h). Cost drag <70%. Positive Sharpe."
+    success_criteria: "Trade count ≥ 25 AND Sharpe > 0.3 AND correlation ≥ 0.15"
+
+  - variant_id: "V2-Reverse-Directional"
+    label: "4h Keltner Upper-Band Momentum (Reverse Signal Direction)"
+    signal_concept: "KeltnerBreakoutComponent: scaling_factor=+20.0, atr_multiplier=2.0, ema_period=20."
+    regime_filter: "TRENDING (ER≥0.50, VR≥1.20, threshold_rules)"
+    target_market: "BTCUSDT, ETHUSDT"
+    timeframe: "4h"
+    rationale: |
+      Tests directional robustness via reverse hypothesis. If 1h edge (corr=+0.214) is real
+      mean-reversion skill, V1 must outperform V2. If V2 ≈ V1, directional betting is regime-driven noise.
+      Confirms whether edge is signal or artifact of fitting.
+    hypothesis_test: "Mean-reversion edge (V1 > V2) vs regime-driven noise (V1 ≈ V2)"
+    expected_outcome: "V1 Sharpe >> V2 Sharpe if mean-reversion skill is genuine"
+    success_criteria: "V1 Sharpe ≥ V2 Sharpe + 0.5 (confirms directional edge integrity)"
+
+  - variant_id: "V3-BTC-Only"
+    label: "4h Keltner Mean-Reversion, BTCUSDT Isolated"
+    signal_concept: "KeltnerBreakoutComponent: scaling_factor=-20.0, atr_multiplier=2.0, ema_period=20."
+    regime_filter: "TRENDING (ER≥0.50, VR≥1.20, threshold_rules)"
+    target_market: "BTCUSDT"
+    timeframe: "4h"
+    rationale: |
+      Tests asset-specific variance. BTC has native market dynamics (liquidation structure,
+      market hours, volatility regime) that may differ from ETHUSDT. V3 isolation reveals whether
+      edge is BTC-driven or universal. Determines if paired trading is optimal or if BTC should
+      trade independently.
+    hypothesis_test: "Asset-universal edge (V3 ≈ V4) vs BTC-specific (V3 > V4 or V3 < V4)"
+    expected_outcome: "Establishes BTC-only Sharpe, trade count, cost_drag baseline"
+    success_criteria: "Trade count ≥ 15 (half of V1 paired expectation); Sharpe > 0.2"
+
+  - variant_id: "V4-ETH-Only"
+    label: "4h Keltner Mean-Reversion, ETHUSDT Isolated"
+    signal_concept: "KeltnerBreakoutComponent: scaling_factor=-20.0, atr_multiplier=2.0, ema_period=20."
+    regime_filter: "TRENDING (ER≥0.50, VR≥1.20, threshold_rules)"
+    target_market: "ETHUSDT"
+    timeframe: "4h"
+    rationale: |
+      Complements V3. ETHUSDT microstructure (different vol distribution, altcoin market hours,
+      different maker/taker dynamics) may respond differently to TRENDING gate. V3+V4 together
+      reveal if 4h Keltner generalizes or if one asset dominates the composite edge.
+    hypothesis_test: "Generalization check (V3 ≈ V4 ≈ V1/2) vs dominance (V3 >> V4 or vice versa)"
+    expected_outcome: "Establishes ETH-only Sharpe, trade count, cost_drag; enables variance decomposition"
+    success_criteria: "Trade count ≥ 15; results inform whether to pair-trade or segregate"
+
+alternative_data_candidates:
+  - name: "Order Flow Imbalance (Buy/Sell Ratio)"
+    mechanism: "Weight Keltner signal by buy/sell volume imbalance; suppress signal in balanced markets"
+    pros: |
+      Filters low-conviction regime entries (noise when imbalance is neutral).
+      Could improve Sharpe by skipping trades in choppy zones.
+    cons: |
+      Requires Binance OFI feed (not in current backtest data pipeline).
+      Adds latency; unfeasible for live without external API.
+    feasibility: "Low (future enhancement if V1 shows adequate trades but Sharpe < 0.3)"
+    priority: "Deferred"
+
+  - name: "Liquidation Cascade Proximity"
+    mechanism: "Modulate position size by aggregate liquidation event density; increase size when cascades likely"
+    pros: "Mean-reversion edges correlate with liquidation clustering; could improve edge capture"
+    cons: |
+      Requires external liquidation feed; not historical-compatible for full-window backtests.
+      Infrastructure overhead for real-time data ingestion.
+    feasibility: "Very Low (external data dependency)"
+    priority: "Deferred"
+
+  - name: "Cross-Timeframe Confirmation (1h + 4h Alignment)"
+    mechanism: "Require 1h Keltner band breach in same direction as 4h; suppress 4h signal if 1h contradicts"
+    pros: "Filters false breakouts; multi-TF confirmation historically improves Sharpe"
+    cons: |
+      Adds backtest infrastructure (parallel TF indicator state management).
+      Trade count reduction; cost_drag trade-off unknown.
+    feasibility: "Medium (doable but deferred to post-V1 screening if Sharpe insufficient)"
+    priority: "Conditional (if V1 Sharpe < 0.4)"
+
+reverse_hypothesis: |
+  **Thesis (Inverted):** Keltner UPPER-BAND MOMENTUM (scaling_factor=+20.0), not lower-band
+  mean-reversion, is the dominant 4h edge in TRENDING regime. Variant V2-Reverse tests this.
+  
+  **Interpretation:** If true, TRENDING regime correlates with price continuation, not reversion.
+  Means the 1h edge (corr=+0.214, mean-reversion) does NOT transfer to 4h. Implies either:
+  (a) Directional bet reverses at longer timeframe (risk-on regime continuation), or
+  (b) Both directions are equally viable (signal is noise, edge is regime factor only).
+  
+  **Validation:** V1 >> V2 Sharpe confirms mean-reversion skill is real. V1 ≈ V2 rejects hypothesis.
+
+behavioral_features:
+  - feature: "TRENDING Regime Persistence"
+    measurement: "Mean consecutive bars in TRENDING state at 4h (vs 1h baseline)"
+    why_relevant: "Longer persistence = more trades per entry, better cost amortization. Tests core 4h escalation assumption."
+    target: "≥2 bars average (vs ~0.5 at 1h)"
+
+  - feature: "Trade Clustering Intensity"
+    measurement: "Distribution of inter-trade bars within TRENDING windows (burst vs sparse)"
+    why_relevant: "Clustered trades suggest regime coherence; sparse suggests false-positive gates. Affects confidence intervals."
+    target: "5-10 trades per TRENDING window minimum for statistical significance"
+
+  - feature: "Correlation Stability Across Timeframe"
+    measurement: "Does 1h Keltner correlation (corr=+0.214) transfer to 4h? (corr_4h vs corr_1h)"
+    why_relevant: "Tests if directional edge is time-invariant or candle-length dependent. Core assumption validation."
+    target: "corr_4h ≥ 0.12 (≥56% of 1h correlation retained)"
+
+  - feature: "Cost Drag Amortization Ratio"
+    measurement: "Average 4h move size / average fee cost; compare to 1h baseline (target: 4x ratio)"
+    why_relevant: "Tests if larger 4h moves proportionally reduce cost_drag as assumed. Direct ROI driver."
+    target: "4h_move / 4h_fee ≥ 4 * (1h_move / 1h_fee)"
+
+regime_specific_variants:
+  - variant_name: "Regime-Entry-Window (Conditional V5)"
+    description: "Trade only within first 2 bars of TRENDING entry; skip trades in sustained TRENDING (after regime-in-place)"
+    rationale: |
+      Mean-reversion edges often strongest in transition phase (regime entry momentum).
+      Later bars may see regime-confirming continuation (works against mean-reversion).
+    hypothesis_test: "Does restricting to regime-entry improve Sharpe despite trade count reduction?"
+    trigger_condition: "Only backtest if V1 has trade_count > 50 AND Sharpe < 0.4"
+    priority: "Contingent"
+
+  - variant_name: "Sustained-TRENDING-Filter (Conditional V6)"
+    description: "Trade only after TRENDING regime has persisted ≥2 bars; suppress first-bar entries"
+    rationale: |
+      Filters false-positive regime detections; waits for regime conviction before trading.
+      May reduce cost_drag by skipping quick regime exits.
+    hypothesis_test: "Does regime-conviction filtering improve Sharpe at cost of trade count?"
+    trigger_condition: "Only backtest if V1 has cost_drag > 70% AND trade_count 20-40"
+    priority: "Contingent"
+
+export_notes: |
+  All variants respect brief constraints: 4h timeframe fixed, TRENDING thresholds (ER≥0.50, VR≥1.20)
+  fixed, KeltnerBreakoutComponent catalog-only, no infrastructure changes required.
+  
+  Variant taxonomy:
+  - V1: Primary hypothesis (prescribed by brief)
+  - V2: Reverse hypothesis robustness test (mandated by innovation mandate)
+  - V3/V4: Asset-generalization tests (expand coverage within constraints)
+  - V5/V6: Conditional regime-filtering variants (only if V1 screening justifies)
+  
+  Next stage: Validation gate → Screening backtest on V1 only. Pass V1 → walk_forward_validation.
+  Fail V1 → apply refinement loop to alternate variants. Pass V1 with {trade_count/Sharpe/cost_drag}
+  thresholds → expand to V2/V3/V4.

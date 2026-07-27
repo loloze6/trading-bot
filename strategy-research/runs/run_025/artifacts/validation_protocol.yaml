@@ -1,0 +1,74 @@
+hypothesis_id: KELTNER_SCORE_MODE_REGIME
+base_hypothesis_id: KELTNER_SCORE_MODE_REGIME
+refinement_attempt: 0
+
+falsifiable_statement: "Score-mode regime detection with confidence-scaled position sizing achieves median walk-forward Sharpe ≥0.30 AND trade frequency ≥50/month in screening, with at least one variant (V1–V6) outperforming run_017 (threshold_rules baseline) by ≥5% on Sharpe while maintaining regime_stability_duration >2 bars on average."
+
+null_expectation:
+  - All variants collapse to Sharpe <0.20 OR trade frequency <40/month in screening window.
+  - Confidence scaling (position_size = forecast × regime_confidence) provides no material edge over fixed position sizing.
+  - Regime score distributions fail to stratify regimes meaningfully (>60% bars concentrated in single regime).
+  - Cost drag from bar-by-bar rebalancing + micro-positions outweighs frequency gains.
+
+required_evidence:
+  - "Screening backtest (2025-06-01 to 2025-12-31): All 6 variants tested in parallel on BTCUSDT + ETHUSDT."
+  - "Walk-forward validation (training 2025-01-01 to 2025-05-31; test 2025-06-01 to 2025-12-31): Monthly rebalance windows; median Sharpe across 6 windows reported per variant."
+  - "Holdout confirmation (2026-01-01 to 2026-06-30): Out-of-sample window; no parameter re-tuning."
+  - "Per-variant regime statistics: regime frequency (MR bars / total bars), regime_stability_duration (avg consecutive bars per regime), confidence_distribution metrics."
+  - "V3 reversal control: If V3_inverse_confidence Sharpe >0.20 AND beats V1 by >5%, regime clarity assumption is falsified."
+
+bias_risks:
+  - "Parameter overfitting: V2 (per-asset thresholds), V4 (geometric parameters), V6 (vol_adjustment_scale) calibrated on 4 failed families (prior campaign). Mitigation: lock V1 baseline thresholds; treat variants as sensitivity analysis; walk-forward validation mandatory."
+  - "Regime definition circularity: Optimal thresholds are variant-dependent (V1=70/40, V2=asset-specific, V4=60/null). Comparison validity requires fixed threshold lock across variants in same test window. Mitigation: V1 thresholds apply to all walk-forward tests; exploration variants tested as perturbations only."
+  - "Confidence leakage: Confidence formula (|regime_score−50|/50) derived from within-window regime score; no explicit forward look, but values may correlate with implicit volatility proxies. Mitigation: holdout window must confirm edge on unseen data."
+  - "Cost model fidelity: Config assumes homogeneous trade costs; Binance maker/taker fees (0.05–0.10% range) may deviate from backtest assumption. Sensitivity test required: run V1 screening at 0.10% cost to stress cost-drag hypothesis."
+
+failure_modes:
+  - "'Regime sparsity collapse: Geometric mean (V4) or high thresholds compress scores toward 0; >65% bars land in chop; trending/MR regimes insufficient for statistical validation (<20 trades per window).'"
+  - "'Threshold arbitrariness persistent: Fixed thresholds (40, 70) remain arbitrary; small shifts (±5) cause 25%+ trade frequency swings; per-asset calibration (V2) adds complexity without predictive gain.'"
+  - "'Confidence scaling ineffective: Position size scaling by regime confidence produces no material edge; cost drag from micro-positions (0–30% confidence) outweighs signal preservation; Sharpe <0.15.'"
+  - "'Inverse confidence paradox (V3) falsifies base assumption: If V3 Sharpe ≥0.20 AND outperforms V1 by >5%, hypothesis inversion succeeds; regime clarity requirement is invalid; fundamental rethinking required.'"
+  - "'Volatility overfitting (V6): Dynamic thresholds introduce curve-fitting risk; vol_adjustment_scale (0.5) and vol_window (20) are arbitrary; rapid regime flipping near vol_pct=50 generates excessive rebalances (cost drag dominates).'"
+  - "'Regime instability escalates cost drag: regime_stability_duration <2 bars on average signals high rebalance frequency; per-bar friction exceeds frequency gains; absolute return underperforms run_017.'"
+  - "'Regime flipping near thresholds: Bars clustered within ±5 points of thresholds (e.g., score ∈[65,75] for trending_threshold=70) trigger unnecessary rebalances without directional conviction.'"
+
+sample_split_design:
+  screening_window:
+    range: "2025-06-01 to 2025-12-31"
+    symbols: ["BTCUSDT", "ETHUSDT"]
+    bars_total: ~4320 (1h candles, 6 months)
+    test_method: "All 6 variants tested in parallel; no parameter tuning."
+    acceptance_threshold: "Any variant with Sharpe ≥0.25 AND trade_count ≥50 advances to walk-forward."
+    
+  walk_forward_validation:
+    structure:
+      - training: "2025-01-01 to 2025-05-31 (5 months)"
+        test: "2025-06-01 to 2025-12-31 (6 months)"
+      - rebalance_windows: "6 monthly windows (1st trading day of each month)"
+    metric: "Median Sharpe across 6 windows; per_regime stats from metrics.json."
+    passing_criteria: "Median Sharpe ≥0.30 across 6 windows; minimum single-window Sharpe ≥0.10 (floor to exclude luck)."
+    variant_lock: "V1 thresholds (trending>70, chop_floor=40) locked for all variants in this stage; exploration variants tested as parameter perturbations."
+    
+  holdout_confirmation:
+    range: "2026-01-01 to 2026-06-30 (6 months, partial as of 2026-06-28)"
+    bars_total: ~4320 (1h candles)
+    treatment: "Out-of-sample; no parameter re-tuning."
+    passing_criteria: "Holdout Sharpe ≥0.25 AND trade_count ≥40 (lower bar due to partial data and confirmation role)."
+
+decision_rules:
+  - rule_1_sharpe_primary: "Median walk-forward Sharpe ≥0.30 across 6 rebalance windows (primary gate). Single-window floor ≥0.10 (hard limit; prevents lucky outliers from skewing median)."
+  - rule_2_trade_count: "Screening: ≥50 trades (statistical power). Walk-forward: ≥40 trades minimum per window (avoid sparse regimes). Holdout: ≥40 trades total (confirmation)."
+  - rule_3_regime_frequency: "Mean-reversion bars / total bars ≥0.15 (minimum MR regime representation; validates regime stratification assumption). If <0.15, regime scoring has failed to separate MR from chop."
+  - rule_4_stability_proxy: "regime_stability_duration (avg consecutive bars per regime) >2 bars on average. If <2, cost drag from excessive rebalancing likely dominates."
+  - rule_5_variant_comparison: "V1 baseline acceptable only if Sharpe exceeds run_017 by ≥3%. Exploration variants (V2–V6) must beat V1 by ≥5% to justify complexity cost."
+  - rule_6_per_asset_premium: "V2 (per-asset calibration) must beat V1 by ≥8% Sharpe to justify added config complexity. Otherwise, consolidated thresholds (V1) preferred."
+  - rule_7_reversal_falsification: "V3 (inverse_confidence) is hypothesis reversal control. If V3 Sharpe ≥0.20 AND outperforms V1 by >5%, conclude regime clarity assumption is invalid; recommend hypothesis refinement or rejection."
+  - rule_8_volatility_overfitting: "V6 (vol-adaptive) must beat V1 by ≥10% Sharpe to justify dynamic threshold risk. Otherwise, static thresholds (V1) preferred for simplicity."
+
+cost_drag_sensitivity:
+  - test_method: "Run V1 screening at 0.10% per-trade cost (stress test vs 0.05% baseline assumption)."
+    falsification_trigger: "If V1 Sharpe drops >20% (e.g., 0.30 → 0.24), cost model sensitivity is high; recommend explicit cost-drag analysis."
+
+alternative_hypotheses_excluded:
+  - "volume_weighting: Deferred (requires volume data integration; adds model complexity). Candidate for V7 if score_mode variants succeed."
+  - "momentum_secondary_indicator: Excluded (violates 'no new component' rule). Candidate for escalation (altitude 3) if all variants fail."

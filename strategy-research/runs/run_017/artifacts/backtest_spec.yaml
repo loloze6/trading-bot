@@ -1,0 +1,55 @@
+hypothesis_id: V1-PIVOT-A
+variant_id: V1
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: trending
+        any_of:
+          - - id: er
+              op: gte
+              value: 0.50
+            - id: vr
+              op: gte
+              value: 1.20
+    default_regime: unknown
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: keltner_lower
+            class: strategies.strategy_components.KeltnerBreakoutComponent
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 2.0
+              scaling_factor: -20.0
+            weight: 1.0
+            lookback: 500
+            history_transforms: []
+            transforms:
+              - op: identity
+      mean_reversion: null
+      chop: null
+      unknown: null
+config_rationale:
+  - "Inverted Keltner lower-band (mean-reversion): KeltnerBreakoutComponent with atr_multiplier=2.0, scaling_factor=-20.0. Fires on lower-band touches (oversold), output in [-20,+20]."
+  - "EMA baseline: ema_period=20 for short-term trend reference; atr_period=20 for volatility bands."
+  - "TRENDING regime detection: ER≥0.50 AND VR≥1.20 rule classifies trending markets. All other ER/VR combinations fall to unknown regime with null strategy."
+  - "Scaling and transforms: KeltnerBreakoutComponent raw output already scaled by -20.0. Identity transform confirms no additional normalization; signal is directional, requires no ratio_to_mean or percentile scaling."
+  - "Inactive regimes (mean_reversion, chop, unknown) set to null to produce zero forecasts (no trades) outside TRENDING market regime."
+component_gap: null
+notes: "V2 (atr_multiplier=1.8) and V3 (atr_multiplier=2.2) variants require separate configs with modified parameter. V4 (2-candle confirmation) requires custom component for multi-bar entry logic. Regime-specific validation tests (VOLATILE, CHOPPY, MOMENTUM) require separate configs with modified detection rules."

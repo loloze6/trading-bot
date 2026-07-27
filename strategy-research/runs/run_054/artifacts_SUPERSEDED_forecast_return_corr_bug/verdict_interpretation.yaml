@@ -1,0 +1,41 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY"
+protocol_verdict: "refine"
+status: "pivot"
+criteria_summary:
+  - "Walk-forward pooled IC ≥ 1.5-2.0%: FAIL (median_forecast_return_corr=0.0, p=1.0)"
+  - "Per-era IC significance (p<0.05): FAIL (all windows show p=1.0, no significance)"
+  - "Reverse-polarity test: UNTESTED (not evaluable; forward signal has zero edge)"
+  - "Activation sparsity ≤60%: UNTESTED (no metric provided)"
+  - "Layer 2 cost check ≥34 bps: UNTESTED (no IC to compute edge)"
+  - "Minimum holding validation: PASS (avg_trade_duration_bars=23.6, adequate for cost amortization)"
+
+primary_failure_mode: "no_informational_content_this_venue"
+config_to_failure_map: "SmaTrendLongOnlyComponent with lookback_L=100, scaling_factor=10.0 outputs 0 or +10.0 based on close > SMA(100). This binary threshold signal produces zero correlation with forward returns on daily BTCUSDT/ETHUSDT, indicating either (a) SMA(100) trend-following edge is arbitraged away on crypto spot, or (b) the signal mechanism does not apply to this venue/timeframe."
+
+hypothesis_family: "sma_trend"
+edge_source_category: "persistent_behavioral_bias"
+untested_criteria:
+  - "Layer 2 activation_sparsity (no metric provided)"
+  - "Layer 2 cost feasibility estimate (prescreen data not available)"
+  - "Reverse-polarity test (prescreen data not available)"
+  - "Era stratification IC decomposition (not computed in walk-forward protocol)"
+
+root_cause:
+  mechanism_failure: "already_priced_in"
+  supporting_evidence: "forecast_return_corr=0.0 (p=1.0) across all 24 windows (n=94 total trades: BTCUSDT=45, ETHUSDT=49). Median sharpe=-1.78 (BTCUSDT) and -1.54 (ETHUSDT). SMA(100) long-only produces zero directional signal on daily timeframe; edge is indistinguishable from random entry."
+  confidence: "high"
+
+trade_attribution:
+  primary_weakness: "signal_direction"
+  evidence: "forecast_return_corr=0.0, p=1.0 across all windows; win_rate_net=46.15% (below 50%, confirming random direction). Entry efficiency neutral (0.0), exit efficiency slightly negative (-0.0726), but primary issue is that the signal itself has no edge. Exits follow signal flips 99.15% of the time; signal reversals are the problem, not exit timing given a good signal."
+
+regime_attribution:
+  detector_confidence: "medium"
+  signal_performs_in_intended_regime: false
+  signal_performs_in_other_regimes: false
+  conclusion: "signal_bad_everywhere"
+  rationale: "Hypothesis is ungated (default_regime=unknown routes all bars). Both BTCUSDT and ETHUSDT show detector_confidence=medium (not high), but ungated signal has zero IC, so even if detector confidence were high, the signal itself has no edge in any regime configuration."
+
+altitude_justification: "Rule 2 fires: median_forecast_return_corr=0.0, p=1.0 across 24 windows (n=94 trades). Signal has zero directional content. SMA(100) trend-following is not profitable on daily BTC/ETH spot due to arbitraged-away or fundamental lack of edge on this timeframe. Pivot to structurally different signal family (e.g., mean-reversion instead of trend-following) to test alternative mechanism."
+
+proposed_change_dimension: "signal_component"

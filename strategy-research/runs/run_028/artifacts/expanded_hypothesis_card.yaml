@@ -1,0 +1,103 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+base_hypothesis_id: KELTNER_SCOREMODE_4H
+target_market: SOLUSDT
+timeframe: 4h
+signal_concept: "Keltner mean-reversion (ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0). Identical to run_027 baseline."
+
+expanded_variants:
+  V1-Conservative:
+    regime_filter: "regime_score = (ER / 1.0) × (VR / 2.0); fire when regime_score ≥ 0.4"
+    expected_trade_count: "10-20 trades/window"
+    rationale: "Exact specification from research_brief. Baseline score-mode validation at SOLUSDT 4h. Core hypothesis test without modification."
+    outcome_if_success: "Sharpe > 0; confirms score-mode regime selectivity and Keltner edge compounding."
+    outcome_if_failure: "Sharpe ≤ 0; score-mode threshold remains misaligned or cost drag > 80%."
+
+  V2-LowerThreshold:
+    regime_filter: "regime_score = (ER / 1.0) × (VR / 2.0); fire when regime_score ≥ 0.3"
+    expected_trade_count: "20-35 trades/window"
+    rationale: "Relaxes threshold to test sensitivity. Addresses failure mode: regime_score ≥0.4 too tight. Quantifies trade-off: sample size expansion vs. signal dilution."
+    outcome_if_success: "Sharpe improves; cost drag < 50%; lower threshold unlocks edge."
+    outcome_if_failure: "Sharpe ≤ V1; indiscriminate firing erodes edge despite volume."
+
+  V3-SymmetricWeighting:
+    regime_filter: "regime_score = (ER / 0.6) × (VR / 0.6); fire when regime_score ≥ 0.4"
+    expected_trade_count: "8-18 trades/window"
+    rationale: "Tests assumption that VR scaling (2.0) vs ER (1.0) is optimal. Equal normalization balances contributions. Falsifies or validates current weight asymmetry."
+    outcome_if_success: "V3 Sharpe > V1; symmetric weighting is superior; current ratio is suboptimal."
+    outcome_if_failure: "V3 Sharpe < V1; validates 1.0:2.0 weighting empirically."
+
+  V4-InverseRegime:
+    regime_filter: "regime_score = (ER / 1.0) × (VR / 2.0); fire when regime_score < 0.4 (reverse)"
+    expected_trade_count: "10-20 trades/window"
+    rationale: "Reverse hypothesis: Keltner edge exists in choppy (low ER, low VR) regimes, not trending. Tests signal directional bias and regime type sensitivity."
+    outcome_if_success: "Sharpe > V1; confirms mean-reversion thrives in anti-trend regimes; requires regime inversion."
+    outcome_if_failure: "Sharpe << V1; Keltner requires high-ER trending regimes; inverse confirms failure mode."
+
+  V5-SmoothedRegime:
+    regime_filter: "regime_score_sma = SMA(regime_score, 20-bar); fire when regime_score_sma ≥ 0.4"
+    expected_trade_count: "6-14 trades/window"
+    rationale: "Tests regime persistence. SMA dampens noise; fires only on sustained regime shifts. Validates whether regime transitions are discrete events or transient spikes."
+    outcome_if_success: "Sharpe > V1 and cost_drag < V1; clustering reduces churn; persistent regimes improve performance."
+    outcome_if_failure: "Sharpe < V1 or Sharpe ≤ 0; lag from smoothing misses reversals."
+
+alternative_data_candidates:
+  - candidate: "Binance spot-margin spread"
+    use_case: "Regime strength proxy; validates score-mode transitions."
+    priority: "defer (Keltner ATR already captures volatility regime; marginal value first pass)"
+  
+  - candidate: "Exchange funding rates or positioning data"
+    use_case: "Confirms regime transitions align with market structure shifts."
+    priority: "defer (useful only if all V1-V5 fail; indicates regime model is fundamentally broken)"
+
+reverse_hypothesis:
+  variant_id: "V4-InverseRegime"
+  thesis: "Keltner mean-reversion outperforms in low-ER, low-VR (choppy, mean-reverting) regimes. High-ER trending regimes are hostile to mean-reversion due to directional momentum."
+  mechanism: "Inverse score filter (fire when regime_score < 0.4) blocks trends and activates on consolidation. Signal may have inherent anti-trend bias."
+  falsification: "If V4 Sharpe << V1, hypothesis rejected; Keltner requires high-ER regimes."
+
+behavioral_features:
+  - feature_name: "regime_dwelltime_bars"
+    definition: "Count consecutive bars where regime_score qualifies (above or below threshold). Measure regime stickiness per symbol."
+    usage: "Diagnose trade clustering; validate regime persistence assumption."
+  
+  - feature_name: "score_volatility_20bar"
+    definition: "Std(regime_score) over 20-bar rolling window. High volatility = regime indecision; low volatility = regime persistence."
+    usage: "Proxy for regime quality; indicates if score-mode fires decisively or noisily."
+  
+  - feature_name: "threshold_distance_distribution"
+    definition: "Distribution of (regime_score - threshold) across all bars. Bars far above/below indicate regime strength; bars near threshold indicate marginal cases."
+    usage: "Identify marginal firing events; separate high-confidence from low-confidence regime signals."
+
+regime_specific_variants:
+  trending_regime_variant:
+    description: "V1-Conservative and V3-SymmetricWeighting target high-ER trending conditions (score ≥ 0.4). Both are trending-regime optimized."
+    expected_behavior: "High-confidence trend identification; Keltner mean-reversion may underperform momentum."
+  
+  choppy_regime_variant:
+    description: "V4-InverseRegime (score < 0.4) targets low-ER choppy conditions. Anti-trend mean-reversion optimized."
+    expected_behavior: "If V4 succeeds, regime type is critical; separate backtest by regime classification required."
+  
+  persistence_regime_variant:
+    description: "V5-SmoothedRegime targets persistent regimes only. Reduces regime-switching churn; tests if regime stickiness matters."
+    expected_behavior: "Longer regime dwelltime; fewer transitions; lower trade frequency; may reduce proportional costs."
+
+constraints_verification:
+  - constraint: "Timeframe: 4h only."
+    status: "✓ honored"
+    details: "All variants locked to 4h."
+  
+  - constraint: "Signal: Keltner mean-reversion (ema=20, atr=20, mult=2.0, scale=-20.0) — IDENTICAL to run_027."
+    status: "✓ honored"
+    details: "All variants preserve signal parameters unchanged."
+  
+  - constraint: "Regime: score-mode (continuous ER and VR aggregation), not threshold_rules."
+    status: "✓ honored"
+    details: "All variants use score-mode formula (ER×VR aggregation). V4 inverts threshold logic only, not regime definition."
+  
+  - constraint: "regime_score threshold: 0.4 (tunable if second refine run needed; target 10-20 trades/window)."
+    status: "✓ honored"
+    details: "V1, V3, V5 use 0.4 (baseline). V2 explores 0.3 as tunable refinement option per constraint."
+  
+  - constraint: "default_regime: unknown (block zero-forecasts outside regime, same as run_027)."
+    status: "✓ honored"
+    details: "All variants inherit same default behavior; no forecast outside regime."

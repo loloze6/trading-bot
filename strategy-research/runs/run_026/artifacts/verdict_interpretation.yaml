@@ -1,0 +1,32 @@
+hypothesis_id: KELTNER_OR_GATE_REGIME
+protocol_verdict: refine
+status: refine
+criteria_summary:
+  - "sharpe (median ≥0.30): FAIL — BTCUSDT -2.383, ETHUSDT -3.266"
+  - "trade_count (≥30 total): FAIL — BTCUSDT 9, ETHUSDT 16"
+  - "win_rate (≥40%): PASS — BTCUSDT 50.0%, ETHUSDT 51.72%"
+  - "max_drawdown_pct (≤50%): PASS — BTCUSDT 15.28%, ETHUSDT 17.42%"
+  - "regime_coverage: UNTESTED"
+  - "parameter_stability: UNTESTED"
+  - "regime_return_significance: UNTESTED"
+  - "backtest_control_replication: UNTESTED"
+  - "regime_assignment_distribution: UNTESTED"
+  - "forward_return_regime_conditioned: UNTESTED"
+  - "threshold_parameter_log: UNTESTED"
+  - "lookback_bias_audit: UNTESTED"
+  - "trade_log_per_regime: UNTESTED"
+primary_failure_mode: "Cost drag (93.99%) destroys profitability despite positive gross PnL (+5.81); OR-gate regime thresholds fire too frequently, triggering excessive trades and accumulated fee erosion."
+config_to_failure_map: "Regime thresholds (ER≥0.5 OR VR≥1.2) permit trending assignment to ~40–80% of bars per window, generating 40–80 trades per window. Each trade incurs cumulative fees (~0.05% per side). Gross forecasts have low correlation to returns (median 0.0576), but sufficient to produce small positive P&L before fees. Fee accumulation (cost_drag ~94%) exceeds gross PnL margin, yielding persistent negative net returns."
+untested_criteria:
+  - "regime_coverage: ≥15% of bars assigned to trending per window (no per-window bar counts logged)"
+  - "parameter_stability: ER/VR thresholds constant across windows (no per-window logged values)"
+  - "regime_return_significance: t-test on forward returns trending vs. unknown (not computed)"
+  - "backtest_control_replication: run_025 AND-gate baseline (not re-run in current protocol)"
+  - "regime_assignment_distribution: % bars per regime per window (not aggregated in output)"
+  - "forward_return_regime_conditioned: mean returns by regime assignment (per-window data present, not summarized)"
+  - "threshold_parameter_log: ER/VR per-window values (not extracted to summary)"
+  - "lookback_bias_audit: Rolling window construction review (not performed)"
+  - "trade_log_per_regime: Trade entry regime and P&L by regime (not grouped in output)"
+proposed_change_dimension: regime_threshold_tightening
+hypothesis_family: keltner_regime_gating
+altitude_justification: "Rule 1: median_cost_drag_pct=93.9887% > 80%, median_gross_pnl=5.8128 > 0; signal generates positive gross edge but fee/frequency destroys net returns. Refine by raising regime thresholds to reduce trade frequency."

@@ -1,0 +1,31 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 31
+
+kb_gate_q1_untested_cells:
+  - "4h timeframe ungated signal (escalation from funding_rate_continuous_mean_reversion_expanded_auto root_cause lag_mismatch_to_regime_persistence; run_047 protocol-invalidated F4d, not a real 4h test)"
+  - "H-041-A (funding_rate_extreme_mean_reversion) on proper backward-extension protocol with A8.5.1a episode-blocked significance [2019-09-10 BTC / 2019-11-27 ETH to 2025-12-31]; run_047 attempt invalidated by protocol conformance (F4d), requires clean re-attempt"
+
+kb_gate_q2_exhausted_mechanisms_forbidden:
+  - keltner_mean_reversion_no_edge
+  - keltner_breakout_inverted
+  - keltner_scoremode_no_edge
+  - rsi_mean_reversion_no_edge
+  - rsi_momentum_trending_cost_drag
+  - er_detector_unusable_btc_eth_1h
+
+kb_gate_q3_combination_candidates:
+  - "H-041-A (funding_rate_extreme) + H-041-C (fear_greed_contrarian) on extended 2018+ data: H-041-C tested run_048 FAILED (ic_pooled=-0.040257, route=refine_inverted_ic — signal does not generalize to pre-2024 eras, regime-specific artifact not persistent behavioral bias). H-041-A still untested on extended data (run_047 invalidated by protocol conformance F4d). Recommendation: execute clean H-041-A re-prescreen on proper protocol before terminating this cell combination."
+
+pattern_detected: same_root_cause_different_families
+
+pattern_evidence:
+  - "Five price-only technical signal families (RSI, Keltner, EMA spread) all exhausted with converging root cause: no directional edge on BTC/ETH 1h. rsi_mean_reversion forecast_return_corr=-0.022 (run_014); keltner_mean_reversion ic_active_bars=-0.032 p=0.83 (run_039 ungated full-range prescreen, n_active=1125); ema_spread ic_all_bars=-0.021091 p=0.588 n_eff=664 (run_043 dense always-on)"
+  - "Cost-drag ceiling blocks even mediocre signals: rsi_momentum_trending cost_drag=272.865%, keltner_scoremode cost_drag=84% on highest-IC run, keltner_trend_mean_reversion median_sharpe=0.000 baseline_v2 rerun (zero-trade slots 14/48 = 29%)"
+  - "Structural regime detector failure: ER-threshold Pareto-blocked on BTC/ETH 1h (run_039 exhaustive 48-cell grid, analytic ceiling). Consequences: all regime-gated technical testing on 1h now closed per er_detector_unusable_btc_eth_1h finding in KB"
+  - "Power-parked behavioral signal failed on reactivation attempt: H-041-C (fear_greed_contrarian) extended to 2018+ data (run_048) produced inverted ic=-0.040257 (route=refine_inverted_ic), disproving persistent_behavioral_bias hypothesis — signal is regime-specific to 2024-2025, not cross-era generalizable"
+
+recommendation: continue
+
+recommendation_rationale: "All price-only technical signal families (5 families: RSI, Keltner mean-reversion, Keltner breakout, Keltner scoremode, EMA spread) exhausted with combined root cause: no directional edge on BTC/ETH 1h (forecast_return_corr ranging -0.022 to 0.041 ungated; most blocked by cost_drag>80%). Structural regime detector (ER-threshold) itself unusable per analytic Pareto conflict (run_039 grid confirms: cannot achieve activation∈[10%,40%] AND transitions≤4/window simultaneously). One registered inconclusive hypothesis tested and FAILED on reactivation: H-041-C (fear_greed_contrarian) extended to 2018+ data (run_048) produced inverted ic=-0.040257, indicating signal is regime-specific artifact, not persistent behavioral bias across market eras. One inconclusive hypothesis remains: H-041-A (funding_rate_extreme_mean_reversion) untested on extended data — run_047 reactivation attempt was invalidated by protocol conformance defect (F4d: wrong baseline used, A8.5.1a significance not applied). Recommend one final clean re-prescreen of H-041-A on proper backward-extension protocol [2019-09-10 BTC / 2019-11-27 ETH to 2025-12-31], MANDATORY A8.5.1a episode-blocked significance, using the exact reactivation_condition from KB funding_rate_mean_reversion_inconclusive entry. This exhausts the registered inconclusive hypothesis space. Terminal gate: if H-041-A also kills (no_ic or cost_drag>80%), campaign terminates — all signal families exhausted, all detectors exhausted, no viable combinations remain, components_built=0 prevents further cycling."
+
+budget_assessment: "Runs used: 31 of estimated 60-run budget (52%). One final H-041-A clean re-prescreen estimated 1 run. If H-041-A kills: campaign terminal (all inconclusive hypotheses now failed/exhausted). If H-041-A prescreen passes (IC>0.15 AND cost<80%): proceed to backtest with mandatory user-level era-transferability review gate (2018-2021 market regime vs 2026 regime conflict needs human judgment before live trading)."

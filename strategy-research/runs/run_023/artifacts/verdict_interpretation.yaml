@@ -1,0 +1,18 @@
+hypothesis_id: REFRAME-COST-REGIME-VALIDATION
+protocol_verdict: refine
+status: refine
+criteria_summary:
+  - "V1: sharpe ≥ 0.5 (median): FAIL — BTCUSDT=-7.315, ETHUSDT=-5.657"
+  - "V1: win_rate ∈ [0.35, 0.65]: UNTESTED — could not parse threshold"
+  - "V1: min_trade_count ≥ 20: PASS — BTCUSDT=364, ETHUSDT=370"
+  - "All variants: max_drawdown_pct < 35%: FAIL — BTCUSDT=41.744, ETHUSDT=36.363"
+primary_failure_mode: "Cost drag (420% median) destroys positive gross signal (+3.56 median). Signal earns returns in principle but excessive rebalancing via tight Keltner bands renders edge uneconomical."
+config_to_failure_map: "KeltnerBreakoutComponent atr_multiplier=1.5 produces bands too tight for 1h timeframe, triggering excessive false breakouts and whipsaws in choppy TRENDING regimes. Cost_drag_pct = median_fees_paid / median_gross_pnl = 420%, indicating 4x over-trading vs gross earnings."
+untested_criteria:
+  - "V1, V2, V3, V4 win_rate per window (parsing failed)"
+  - "V1, V2, V3, V4 trade_count per window (parsing failed)"
+  - "Keltner band touch frequency proxy (no metric generated)"
+  - "Forecast-return correlation validation metric (nominal corr=0.0097 near zero, pvalue>0.77 in all windows)"
+proposed_change_dimension: "atr_multiplier"
+hypothesis_family: "keltner_mean_reversion"
+altitude_justification: "Rule 1: median_cost_drag_pct=420.1885% > 80%, median_gross_pnl=+3.5591 > 0. Signal is viable (positive gross returns) but destroyed by trade frequency. Widening bands via atr_multiplier increase reduces false touches without signal redesign."

@@ -1,0 +1,61 @@
+hypothesis_id: V1-PIVOT-A
+what_failed:
+  - "V1 win_rate >= 0.49 (ETHUSDT: 0.0% win rate)"
+  - "V1 trade_count >= 80 (both assets: min_trade_count=0 in multiple windows)"
+  - "Signal statistical significance (all forecast_return_corr pvalues > 0.10)"
+
+diagnostic_rule_applied: |
+  "Rule 2: Signal has no directional edge. Condition met: pvalue >> 0.10 (median ~0.80 across
+  tested windows). Despite nominal correlation 0.2145, the correlation is not statistically
+  significant—indistinguishable from noise."
+
+diagnostic_snapshot:
+  forecast_return_corr: 0.2145
+  forecast_return_corr_pvalue_median: "~0.80 (very high; non-significant)"
+  cost_drag_pct: 27.446
+  gross_pnl: 0.0
+  uninformative_regimes:
+    - unknown
+    - trending
+  per_asset_performance:
+    BTCUSDT:
+      aggregate_pnl: "-108.20 USD (35 trades, -3.09% per trade)"
+      sharpe_median: 0.0
+    ETHUSDT:
+      aggregate_pnl: "-74.46 USD (34 trades, -2.19% per trade)"
+      sharpe_median: 0.0
+      win_rate: "0.0% (no winning trades across backtest)"
+
+what_not_to_try: |
+  "Do NOT adjust TRENDING regime thresholds (ER/VR) without testing a different signal
+  component first—the regime fires and identifies trending markets, but the Keltner
+  mean-reversion signal within TRENDING has no edge (pvalue >> 0.10 is a signal quality
+  failure, not a threshold calibration problem).
+  [CORRECTION 2026-06-30: The original text stated 'Do NOT refine band width further
+  (ATR 1.8, 2.2): one-dimension parameter search already exhausted.' This was false —
+  propagated verbatim from run_017/findings_carryover.yaml. ATR=1.8 (V2) and ATR=2.2 (V3)
+  were proposed by innovation_expansion in run_017 but never executed — only ATR=2.0 (V1)
+  was backtested. These values are untested and remain available for future exploration
+  if Keltner/TRENDING returns to consideration.]
+  [CORRECTION 2026-06-30: The original text stated 'Do NOT add confirmation filters
+  (multi-bar logic).' Confirmation filters (V4-confirmation) were proposed but never
+  executed. The exclusion rests only on logical inference: pvalue >> 0.10 means the base
+  signal has no directional edge, so a frequency-reducing filter cannot fix a broken
+  signal — that reasoning is independently valid but is not empirical evidence from
+  running V4. V4-confirmation is untested.]"
+
+next_altitude: pivot
+
+carryover_lessons:
+  - "Keltner lower-band mean-reversion does not have a reliable edge in TRENDING regimes on
+    BTCUSDT/ETHUSDT 1h, even after band-width optimization. Edge was not trading-cost-driven
+    (cost_drag 27% is acceptable) but signal-driven (pvalue >> 0.10)."
+  - "ETHUSDT responds worse than BTCUSDT to this signal (0% win rate vs 22%); consider that
+    stablecoin pairs may have different mean-reversion dynamics, or the signal is not
+    transferable across assets."
+  - "Trending regime (ER≥0.50, VR≥1.20) classification is working (regime fires and has
+    reasonable forward returns in some windows), but signal does not profit from those states.
+    Problem is signal-regime mismatch, not regime detection."
+  - "Next hypothesis should test a structurally different signal (e.g., RSI momentum, MACD
+    divergence, volatility mean-reversion) or a different regime mode (e.g., quantile-score
+    regime instead of threshold rules)."

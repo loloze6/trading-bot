@@ -1,0 +1,52 @@
+hypothesis_id: "V2 (H-RUN007 VR-relaxed)"
+asset: BTCUSDT
+timeframe: 1h
+
+research_question: >
+  Does RSI(14) generate positive expected returns in BTCUSDT 1h when the market
+  is in a mean_reversion regime (low ER, relaxed VR)?
+
+signal_concept: >
+  RSIPullbackComponent: long-only signal proportional to distance of RSI below 50.
+  Single component, single regime. (unchanged from V1)
+
+regime_filter: >
+  mean_reversion only: ER ≤ 0.25 AND VR ≤ 1.00. Relaxed VR threshold from 0.90
+  to 1.00 to capture neutral and mean-reverting volatility regimes, excluding only
+  strongly trending scenarios. All other regimes produce forecast 0.0.
+  (MODIFIED: VR threshold increased from 0.90 to 1.00)
+
+mechanism: >
+  RSI below 50 in a low-efficiency, neutral-to-reverting volatility regime indicates
+  short-term oversold conditions. Price expected to revert toward mean.
+
+assumptions:
+  - "mean_reversion regime occurs frequently enough for statistical validity (≥30 trades minimum)"
+  - "RSI distance from 50 correlates with reversion probability"
+  - "Relaxed VR threshold (1.00 vs 0.90) captures sufficient mean_reversion bars without trending contamination"
+
+expected_failure_modes:
+  - "VR ≤ 1.00 now over-captures neutral volatility; regime signal becomes too weak"
+  - "RSI signal lacks fundamental edge even with relaxed regime definition"
+  - "Binance commission drag erodes positive expected value"
+  - "Win_rate degrades below 40% from regime contamination"
+
+constraints:
+  - "one variant only — no divergence, no behavioral features, no cross-timeframe"
+  - "use only RSIPullbackComponent and existing regime components"
+  - "no new code required"
+  - "change ONLY VR threshold; keep ER ≤ 0.25 and all signal transforms unchanged"
+
+change_from_previous: >
+  CONFIGURATION PIVOT: V1 (ER-relaxed) relaxed ER from 0.20→0.25 but trade_count
+  failed to improve (remained 14–21, vs required ≥30). Root cause analysis reveals
+  ER relaxation alone insufficient; VR ≤ 0.90 is the active bottleneck. Win_rate
+  remains healthy (51–60% median), indicating signal has directional bias but sample
+  is starved.
+  
+  REVISED CONFIGURATION: Relax VR threshold from 0.90 to 1.00 in
+  regime_detector.rules[0].any_of. This allows neutral volatility (VR near 1.0)
+  in addition to mean-reverting (VR < 1.0), capturing more regime bars without
+  signal redesign. Expected outcome: trade_count increases toward ≥30, enabling
+  reliable Sharpe estimation. Fallback: if trade_count still fails after VR
+  relaxation, RSI signal mechanism itself lacks edge in BTCUSDT, triggering kill.

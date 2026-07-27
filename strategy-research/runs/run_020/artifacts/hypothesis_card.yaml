@@ -1,0 +1,61 @@
+hypothesis_id: "V2-PIVOT-A-THRESHOLD-REFINED"
+
+thesis: |
+  RSI 14-period momentum signals in TRENDING regime generate positive expected returns
+  when filtered by min_abs ≥ 17.5. This threshold is 17% stricter than baseline (15.0),
+  restoring signal volume (target ≥20 trades/window) while controlling cost_drag < 180%.
+
+rationale: |
+  Previous iteration (min_abs=20.0) produced 0 trades, proving threshold exceeded signal
+  distribution. Baseline min_abs=15.0 confirmed signal edge (gross_pnl=21.62) but suffered
+  cost_drag=272.8%. Parameter min_abs=17.5 balances signal quality (stricter than baseline)
+  with evaluability (trade count sufficient to measure Sharpe). Mechanism: RSI extremes in
+  TRENDING markets signal momentum continuation; filtering by |forecast| ≥ 17.5 preserves
+  directional edge while reducing churn.
+
+signal_concept: |
+  Indicator: RSI(14)
+  Entry: Long on RSI > 70, Short on RSI < 30
+  Filter: |raw_forecast| ≥ 17.5 (threshold magnitude)
+  Scaling: 0.4 (forecast_to_allocation factor)
+  Regime gate: TRENDING only (ER ≥ 0.50 AND VR ≥ 1.20)
+  Out-of-regime: forecast = 0.0
+
+target_market:
+  - "BTCUSDT"
+  - "ETHUSDT"
+
+timeframe: "1h"
+
+assumptions:
+  - "Signal distribution supports ≥20 median trades/window at min_abs=17.5; previous collapse
+    to 0 was threshold misalignment, not regime uninformativeness."
+  - "TRENDING filter (ER/VR thresholds) correctly identifies regimes where RSI momentum is
+    actionable."
+  - "RSI 14-period extremes proxy momentum continuation in high ER/VR markets."
+  - "Trade sizing and fee structure unchanged; improvements are from parameter alignment,
+    not market drift."
+
+expected_failure_modes:
+  - "Failure Mode 1: If median_trade_count < 15/window, signal distribution shifted lower;
+    reduce min_abs to 16.0 and revalidate."
+  - "Failure Mode 2: If trade count ≥ 20 but sharpe ≤ 0.05, TRENDING regime may be
+    uninformative; escalate to regime decomposition and regime_informativeness re-tuning."
+  - "Failure Mode 3: If cost_drag_pct > 150% after trade restoration, signal edge exists
+    but is consumed by fees; escalate to entry optimization or position sizing review."
+
+validation_criteria:
+  - "median_trade_count ≥ 20 per 100-candle window"
+  - "median_sharpe > 0.05"
+  - "median_cost_drag_pct < 180%"
+
+config_change:
+  component: "RSI momentum (threshold_filter transform)"
+  parameter: "min_abs"
+  previous_value: 20.0
+  new_value: 17.5
+  immutable_params:
+    - "rsi_period: 14"
+    - "regime: TRENDING"
+    - "scaling_factor: 0.4"
+    - "regime_thresholds: ER ≥ 0.50, VR ≥ 1.20"

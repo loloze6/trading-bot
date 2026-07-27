@@ -1,0 +1,61 @@
+run_id: run_043
+stage: innovation_expansion
+timestamp_utc: "2026-07-04T00:00:00Z"
+
+diversity_audit:
+  context: "Brief constrains to single variant (V1) for pipeline shakedown. Improvement 04 diversity test is N/A when variant count is constrained to one."
+  categories_spanned: [trend_following]
+  data_requirements_spanned: [ohlcv_only]
+  verdict: "single_variant_constraint_waives_diversity_check"
+  explanation: "Research brief explicitly states 'One variant only for the run queue (V1).' No competing variants exist to span categories or data_requirements. Diversity audit is deferred until brief constraint is lifted in future campaign stages."
+  note: "Alternative candidates (ALT_01, ALT_02) would span different evidence_type values (funding_open_interest, fear_and_greed) but both are parked due to design/power constraints, not in queue."
+
+evidence_type_rule_improvement_01:
+  rule_statement: "At least one variant per family must use non-price_volume_only evidence_type."
+  application_to_run_043: "Brief constrains N=1 variant. Rule is vacuous (single variant cannot satisfy 'at least one of multiple'). Alternative candidates use funding_open_interest and fear_and_greed but are routed to feed_wishlist, not queue. No violation; rule suspension justified by brief structural constraint."
+
+alternative_data_assessment:
+  alt_01_funding_rate_strength:
+    concept: "EMA spread × Binance funding rate sign (structural + behavioral)."
+    design_blocker: "Two-stage filtering (spread > threshold AND |funding| > threshold) introduces regime-like sparse activation, violating A2.3 ungated policy. Requires upstream validation: does unfiltered spread alone carry edge? If yes, gating on funding adds complexity. If no, gating is futile."
+    route: "feed_wishlist.yaml, design_phase. Conditional: first validate V1 (ungated spread) has positive IC."
+    
+  alt_02_fear_greed_confluence:
+    concept: "EMA spread + F&G contrarian extremes."
+    blockers: [
+      "Power-insufficient: F&G is market-wide (ρ_symbols=0.82). 2024-2025 window yields n_eff ≈ 13; target MDE=0.10 requires n_eff ≥ 60.",
+      "Signal alignment: F&G published daily (1 bar/day); misaligned to 1h bars. Requires A8.4 forward-fill logic with explicit staleness tracking.",
+      "Sparse activation: F&G extremes occur ~10% of bars; dense signal advantage (A2.4) is lost."
+    ]
+    route: "feed_wishlist.yaml, power_analysis. Reactivation: extend backtest to 2018+ (bull/bear/recovery cycles) for n_eff ≈ 50–70."
+
+reverse_hypothesis_purpose:
+  concept: "Negate spread sign; test directionality of edge."
+  if_v1_true_positive: "Base IC(positive) ≠ reverse IC(negative/near-zero). Confirms directional edge exists."
+  if_both_near_zero: "Cost_drag dominates mechanism. Closes MA-based ungated family for BTC/ETH 1h timeframe."
+  execution_timing: "Post-V1 results. Run reverse hypothesis on same backtest window and identical scaling to isolate direction vs. cost."
+
+behavioral_insights:
+  consensus_strength_proxy: "Spread magnitude (|spread|) is observable intensity metric. Larger divergence = coherent momentum. No new component required; extractable from EMA_spread_pct in post-backtest analysis (performance_analyzer.py)."
+  persistence_signal: "Sign autocorrelation captures herding stability. Supports thesis: continuous signal (95% bars) is more informative than discrete MA-crossover (1–2 per trend). Supports edge persistence claim in campaign hypothesis."
+  velocity_exhaustion: "Momentum acceleration/deceleration not actionable in current component framework; useful for post-hoc confidence bucketing and regime diagnostics."
+
+campaign_hypothesis_validation_pathway:
+  claim_under_test: "Continuous activation (95% bars) + 1h lag structure permit residual edge post-costs despite high MA crowding."
+  how_v1_tests_claim: "V1 measures gross IC on all bars. If IC (post-cost check) > 0: continuous + lag provides residual edge. If IC < 0 or barely > 0: crowding fully arbitraged mechanism."
+  expected_failure_modes: [
+    "cost_drag: gross IC is small (0.02–0.04, plausible range per crowding) × activation_rate. Cost ≈ 20 bps per rebalance overwhelms edge.",
+    "regime_sensitivity: IC is +0.08 in TRENDING, -0.04 in RANGING (library affinity pattern). Unfiltered IC = weighted average ≈ 0.00. Per A2.3 policy, no regime gating; family fails at aggregated level.",
+    "parameter_brittleness: 9/21 locally optimal. Adjacent (8/20, 10/22, 7/23) may differ radically. True optimum is brittle; edge is overfitted."
+  ]
+  next_steps_if_v1_fails: "Do NOT pursue ALT_01/ALT_02 gating logic (adds complexity to dead signal). Pivot to non-MA family (oscillator or volume_flow) for ungated edge research."
+  next_steps_if_v1_validates: "ALT_02 (multi-scale stacking, component refactor required) becomes priority. ALT_01 (funding confluence) low priority unless funding extremes appear in test window."
+
+output_artifacts:
+  - expanded_hypothesis_card.yaml
+  - innovation_notes.yaml (this file)
+
+notes:
+  token_management: "Rationale is constraint-driven and mathematical. No conversational filler per TOKEN LIMIT."
+  yaml_compliance: "All string values containing colons are quoted. Lists and nested maps follow expanded_hypothesis_card.yaml schema."
+  scope_adherence: "No new infrastructure or component proposals. EMASpreadComponent only per brief. Alternative formulations are documented context, not implemented variants."

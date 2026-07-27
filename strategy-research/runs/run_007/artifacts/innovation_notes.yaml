@@ -1,0 +1,51 @@
+stage: innovation_expansion
+hypothesis_id: H-RUN007
+base_signal: "RSI(14) < 50 in mean-reversion regime"
+
+innovation_rationale: |
+  Base hypothesis assumes: (1) RSI distance from 50 is linearly predictive, 
+  (2) regime binary gate (mean-reversion true/false) is crisp, (3) RSI level 
+  is the signal. Expansion tests: (1) threshold tuning and regime-relative 
+  positioning, (2) soft regime gating and transition triggers, (3) slope 
+  and behavioral alternatives.
+
+variant_design_principles:
+  - "All variants fit SubStrategyComponent interface (fits existing execution)."
+  - "Conservative variants (V1, V2, V8) preserve core hypothesis; low implementation risk."
+  - "Mechanistic variants (V3, V4) test alternative signal foundations (slope vs. level, relative vs. absolute)."
+  - "Behavioral variants (V6, V7) add market structure reasoning (volume, regime shifts)."
+  - "Reverse variant (V5) is falsification control: if profitable, regime filter drives returns, not RSI direction."
+
+testability_assessment:
+  v1_threshold_tuning: "High. RollingBuffer supports ER query; scalar threshold. Est. effort: 10 LOC."
+  v2_persistence_filter: "High. Requires N-bar lookback count. Est. effort: 5 LOC."
+  v3_rsi_slope: "High. Standard momentum calculation. Est. effort: 3 LOC."
+  v4_regime_relative_ma: "Moderate. Session-scoped MA requires regime-aware buffer. Est. effort: 25 LOC."
+  v5_reverse_rsi_high: "High. Identical logic, negated condition. Est. effort: 1 LOC."
+  v6_volume_confirmation: "High. Volume in candle data. Est. effort: 4 LOC."
+  v7_regime_transition: "Moderate. Requires regime[t-1] history. Est. effort: 15 LOC."
+  v8_fractional_intensity: "High. Pure multiplicative scaling. Est. effort: 3 LOC."
+
+data_availability:
+  - "All core variants require only OHLCV and existing regime (ER/VR) signals."
+  - "Alternative data (on-chain flow, funding rates) is optional; variants work without it."
+  - "No new market data infrastructure required."
+
+hypothetical_failure_modes_by_variant:
+  v1: "Oversold threshold too strict in weak regimes → no signal. Solution: test regime_intensity scaling separately (V8)."
+  v2: "Persistence filter too strict → delayed entry. Solution: backtest N parameter (2 vs. 3 vs. 4 bars)."
+  v3: "RSI slope insufficient for reversion → slope alone noisy. Solution: combine with V2 (persistence + slope)."
+  v4: "Session MA estimation lag during first N bars of regime. Solution: warm-up with pre-computed regime history."
+  v5: "If V5 also profitable, regime is the sole driver. Solution: inspect return contribution of regime vs. RSI in analysis."
+  v6: "Volume confirmation removes >50% of signals → overfitting to backtest noise. Solution: walk-forward immediately."
+  v7: "Transition trigger misses established-regime reversion setups. Solution: compare V7 frequency vs. base hypothesis frequency."
+  v8: "Soft gating introduces small signals during weak regimes → whipsaw. Solution: test floor cutoff (e.g., intensity > 0.3)."
+
+next_stage: validation_gate
+next_stage_instructions: |
+  Select 2–3 variants for screening backtest:
+  1. Conservative pick: V1 or V8 (low risk, natural improvement).
+  2. Mechanistic alternative: V3 or V4 (tests theory, moderate risk).
+  3. Falsification: V5 (control test, one LOC).
+  Run backtest on same date range as base hypothesis (H-RUN007 baseline).
+  Rank by Sharpe ratio and trade frequency. Advance top 2 to walk-forward.

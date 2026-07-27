@@ -1,0 +1,49 @@
+result: FAIL
+criteria_results:
+- id: a
+  result: FAIL
+  per_symbol:
+    BTCUSDT:
+      value: null
+      threshold: 0.8
+      result: FAIL
+      reason: 'BTCUSDT median_sharpe is null (A3.4: all windows below the trade floor)
+        -- a null aggregate cannot satisfy > 0.8, resolved as FAIL per the pre-registered
+        null_handling policy'
+    ETHUSDT:
+      value: null
+      threshold: 0.8
+      result: FAIL
+      reason: 'ETHUSDT median_sharpe is null (A3.4: all windows below the trade floor)
+        -- a null aggregate cannot satisfy > 0.8, resolved as FAIL per the pre-registered
+        null_handling policy'
+- id: b
+  result: PASS
+  per_symbol:
+    BTCUSDT:
+      value: 0
+      threshold: 30
+      result: PASS
+    ETHUSDT:
+      value: 0
+      threshold: 30
+      result: PASS
+- id: c
+  result: FAIL
+  per_symbol:
+    BTCUSDT:
+      value: 100.0
+      threshold: 50
+      result: FAIL
+    ETHUSDT:
+      value: 100.0
+      threshold: 50
+      result: FAIL
+branches_failed:
+- FAIL-a
+- FAIL-c
+statement_branch_matched: FAIL-a
+hypothesis_verdict: kill
+lineage_routing: terminate
+evaluated_at: '2026-07-18T05:36:37.631439+00:00'
+evaluator_version: 1

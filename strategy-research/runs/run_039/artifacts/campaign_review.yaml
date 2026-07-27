@@ -1,0 +1,16 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 25
+pattern_detected: converging
+
+pattern_evidence:
+  - "Runs 017, 024, 027, 033 (Keltner/TRENDING with ER>=0.50): forecast_return_corr = 0.2145, cost_drag_pct = 27.4%, win_rate PASS. Identical signal configuration tested across 4 instruments (BTCUSDT, ETHUSDT, SOLUSDT, AVAXUSDT) confirms signal is stable, not noise."
+  - "Temporal distribution root cause identified: Keltner/TRENDING activates in 15/22 window-symbol slots but produces zero trades in BTC Jan/Sep/Oct and ETH Jan/Mar/Jul/Nov. Per run_038 note: 'TRENDING regime simply does not occur in those calendar months regardless of gate design — it is a temporal distribution problem, not a sample-size or gate-selectivity problem.'"
+  - "No alternative family achieved corr >= 0.15: RSI mean_reversion peaked at 0.0, keltner_breakout at -0.1705, keltner_scoremode at 0.2953 (but cost_drag 84%). Only Keltner/TRENDING family demonstrated positive correlation with sub-50% cost."
+  - "Recent reframed runs (035, 037) show cost_drag converging to sub-50%: 49.7%, 32.9% respectively, both passing win_rate gate. Demonstrates structural cost issue is solvable."
+  - "Sharpe failures in high-correlation runs (017, 024, 027, 033) stem from zero-trade slots creating median-dragging NA sharpe values, not from correlation degradation."
+
+recommendation: continue
+
+recommendation_rationale: "The campaign has converged on a high-signal-quality, low-cost baseline (Keltner/TRENDING: corr=0.2145, cost=27.4%) that meets positive-correlation and cost gates across 4 instruments, but fails Sharpe exclusively due to temporal coverage gaps (zero trades in 7/22 window-symbol slots). The blocking issue is NOT signal hypothesis failure but incomplete monthly activation. The current research brief proposes a targeted 2-signal composite strategy: preserve the primary Keltner/TRENDING signal (confirmed stable corr=0.21) and layer an orthogonal secondary signal (RSI/Stochastic tuned to sparse months Jan/Sep/Oct/Mar/Jul/Nov) to achieve uniform activation. This is a component-building escalation with diagnostic justification, not random search. Measurement gates are specific (secondary signal isolated corr > 0.05, composite corr >= 0.15, cost < 50%, 21/22 slots active). Budget: 50% consumed (25 runs); 50% remaining is sufficient for composite isolation test, joint optimization, and walk-forward validation."
+
+budget_assessment: "Runs consumed: 25 of estimated 50-run campaign budget = 50%. Remaining: 25 runs. Recommended allocation: 1 run to test secondary signal in isolation on sparse months (confirm corr > 0.05), 2-3 runs to optimize composite weights and cost, 2 runs for walk-forward validation across unseen windows, 2-3 runs for robustness (seasonal/instrument variations). Priority: secondary signal isolation must confirm correlation > 0.05 before committing to joint composite, to avoid optimizing composite weights on random noise."

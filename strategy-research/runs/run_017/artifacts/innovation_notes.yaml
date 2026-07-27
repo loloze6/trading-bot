@@ -1,0 +1,44 @@
+expansion_summary:
+  total_variants: 4
+  parameter_sweeps: 2 (ATR 1.8, 2.2 around 2.0 base)
+  entry_rule_variants: 1 (confirmation)
+  regime_falsification_tests: 3 (VOLATILE, CHOPPY, MOMENTUM)
+  
+expansion_rationale: |
+  V1-PIVOT-A is highly constrained by brief: only ATR multiplier can vary. Expansion 
+  respects these boundaries while probing the parameter landscape and regime assumptions.
+  
+  V1 (base 2.0) tests the core hypothesis directly. V2 (1.8) and V3 (2.2) bracket 
+  the optimum to diagnose whether frequency reduction is the true limiting factor or 
+  whether the cost_drag failure is structural (applies at all band widths). V4 
+  (confirmation) tests a secondary entry rule to reduce whipsaws without changing 
+  band width, isolating the effect of entry timing from band calibration.
+  
+  Regime-specific variants (VOLATILE, CHOPPY, MOMENTUM) falsify the assumption that 
+  mean-reversion is specific to TRENDING. If lower-band touches work equally well in 
+  non-trending regimes, the regime filter is unnecessary and the signal is general-
+  purpose. If they fail, the regime filter is validated.
+
+critical_assumptions_under_test:
+  assumption_1: "Frequency is the failure mode, not signal weakness"
+    test_vehicle: "V2 vs V3 parameter sweep. If Sharpe improves monotonically with width, frequency is the lever. If Sharpe peaks at V2 (1.8) and degrades at V3 (2.2), optimal width exists and suggests Gaussian-like cost-benefit curve."
+    
+  assumption_2: "Mean-reversion edge concentrates in extreme pullbacks only"
+    test_vehicle: "V3 vs V1 win-rate comparison. If win-rate remains 49-52% at V3 (extreme-only trades), edge is real but rare. If win-rate drops to 45%, edge is average-case noise."
+    
+  assumption_3: "TRENDING regime correctly isolates tradeable conditions"
+    test_vehicle: "Regime-specific variants. If V1-PIVOT-A-VOLATILE or V1-PIVOT-A-CHOPPY produces Sharpe > -1.0, regime filter is insufficiently selective. If Sharpe << -2.0, regime filter is validated."
+    
+  assumption_4: "Entry timing (touch vs confirmation) does not materially affect Sharpe"
+    test_vehicle: "V4 (confirmation) vs V1. If confirmation moves win-rate from 50% to 54% while trade count stays similar, timing filter adds value. If trade count halves and win-rate stays at 50%, confirmation is false selectivity."
+
+integration_with_framework:
+  - "All variants fit within KeltnerBreakoutComponent without refactoring."
+  - "No new regime detectors, scaling factors, or signal components required."
+  - "Regime-specific variants test via existing CompositeStrategy framework (map regime to signal)."
+  - "Alternative data candidates (4h confluence, volume) require only DataManager extension, not execution/portfolio changes."
+
+next_stage_input_requirements:
+  - "expanded_hypothesis_card.yaml (this document)"
+  - "strategy-research/schemas/hypothesis_card.yaml (for validation)"
+  - "Confirmation that all variants fit current strategy codebase before proceeding to backtest_specification"

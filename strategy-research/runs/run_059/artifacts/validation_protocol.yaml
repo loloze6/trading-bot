@@ -1,0 +1,61 @@
+hypothesis_id: "run_059-funding-mr-daily-retest-v1"
+
+falsifiable_statement: "Daily funding-rate sign-flips from Binance 8h settlement CSV encode mean-reversion pressure that produces median Sharpe > 0.8 on daily OHLCV bars over 49 monthly windows (2019-12-01 to 2023-12-31) for both BTCUSDT and ETHUSDT, with max drawdown < 30% and zero_trade_slot_pct <= 50%."
+
+null_expectation: "Funding-rate sign-flips are noise/regime-dependent artifacts with no stable mean-reversion edge. Expected Sharpe ≈ 0 (or negative after costs). Any apparent edge is spurious or costs-related, not structural."
+
+required_evidence:
+  - "Backtest pass_rule outcomes: (a) median_sharpe > 0.8 AND (b) max_abs_drawdown_pct < 30% AND (c) zero_trade_slot_pct <= 50% — ALL criteria PASS for BOTH BTCUSDT and ETHUSDT over pass-gated windows."
+  - "Holdout evaluation must follow mechanically after pass-rule gate; single-use reserve frozen at 2026-01-01 to 2026-06-30."
+  - "Gross edge decomposition: forecast_return_corr >= 0.01 (raw decimal) or demonstrated win_rate >= 52% to justify 34-35 bps/trade round-trip cost."
+  - "Implementation conformance: daily-resample-last verified for funding CSV alignment; no off-by-one in sign-flip detection; trade activation timestamps logged."
+
+bias_risks:
+  - "Selection bias: Historical pass-gated window (2019-12 to 2023-12) spans bull run (2021) and extended bear (2022-2023). Mean-reversion works disproportionately well in choppy/bearish regimes. Forward-period 2024-2025 is prolonged uptrend; edge may degrade. Holdout 2026-01-01..06-30 will reveal out-of-sample regime dependence."
+  - "Overfitting on sparse samples: ~4.7 trades per month (228 over 49 months, ~0.15 per trading day) means per-window trade counts << 30. Sharpe estimated on 2–10 trades/month is highly unstable. Null-window exclusion rule (trades < 5 per window) will eliminate many months, further shrinking the median denominator."
+  - "Lookahead bias (critical): Funding settlements occur at UTC 00:00, 08:00, 16:00. If signal uses funding rate sampled at daily close and forecasts the same daily close, latency between settlement time and OHLCV sampled return creates implicit lookahead. Settlement impulse materializes 0–8 hours before candle close; any portion not yet resolved at close time is forecasting unobserved return."
+  - "Data-quality leakage: Funding CSV has 8h granularity. Daily-resample-last operation must use the correct endpoint (e.g., 00:00 UTC funding for day 1 close, or end-of-day funding for day 1 close?). Misalignment shifts the signal 1–2 bars and falsely inflates edge."
+  - "Spurious correlation: ~62% of days (BTC) and ~60% (ETH) have at least one sign-flip over the pass-gated window. A 50%-ungated binary signal on random data has inherent false-positive rate. Sharpe > 0.8 could reflect regime fit rather than structural mechanism."
+
+failure_modes:
+  - "F1 — Implementation bug (F5a-class): Divide-by-zero or sign-detection logic zeroes settlement bars, creating artificial equity curve (described in honesty note iv). Manifests as zero_trade_slot_pct near 100%, triggering rejection on criterion (c). Pre-screen: verify component outputs a non-zero forecast on every settlement bar."
+  - "F2 — Mean-reversion decay too fast: Settlement impulse resolves within 1–2 hours post-settlement (honesty note ii), but daily bar spans 24 hours. Later hours expose residual position to drift or reversal of the initial mean-reversion. Net edge after holding all 24 hours is near-zero. Manifest as: Sharpe fails criterion (a)."
+  - "F3 — Costs exceed edge: Gross edge per trade estimated at 5–15 bps (funding sign-flip is binary; win-loss asymmetry unknown). Round-trip cost 17–17.5 bps. Even if trade count is high, edge/cost ratio < 1, resulting in negative PnL and negative Sharpe. Manifest as: criterion (a) fails or win_rate < 50%."
+  - "F4 — Regime-dependent signal: Mean-reversion only works in choppy/mean-reverting market regimes. Pass-gated window includes prolonged bear (2022–2023). Forward period 2024–2025 and holdout 2026 are bull/trend regimes. Edge not portable. Manifest as: Sharpe > 0.8 on 2019–2023 but Sharpe < 0.3 on holdout or forward walk_forward_extension window."
+  - "F5 — Activations are deterministic but correlation is spurious: Funding sign-flips are real (228 events). But they may be correlated with market regime, not with actual returns. Once regime is controlled, correlation vanishes. Manifest as: forecast_return_corr < 0.01 or IC of opposing sign."
+
+sample_split_design:
+  walk_forward_range: "2024-12-01 to 2025-12-31"
+  holdout_range: "2026-01-01 to 2026-06-30"
+  holdout_note: "Single-use per A6.1. Frozen. No stage/prescreen/diagnostic may read candles in holdout_range except holdout_evaluation stage (post promotion)."
+  pass_gated_range: "2019-12-01 to 2023-12-31"
+  windows: 49
+  window_structure: "monthly non-overlapping windows aligned to calendar months, spanning pass-gated range"
+  window_size_bars: "21-23 (approximate, month-dependent)"
+  step_size_bars: "one calendar month"
+  null_window_handling: "any window with trade_count < 5 excluded from median_sharpe (per A3.4 null-window rule)"
+  rationale: "Daily funding sign-flips are deterministic per funding CSV. Window granularity is monthly because trade count varies by month (range 0–8 flips observed); weekly or daily windows would produce many zero-trade slots. Monthly aggregation provides stable regime-level signal while honoring the prescreen-stage temporal independence assumption."
+
+decision_rules:
+  - criterion_a: "median_sharpe (across all non-null windows, pass-gated range only): BTCUSDT > 0.8 AND ETHUSDT > 0.8. Null: fails."
+  - criterion_b: "max_abs_drawdown_pct (pass-gated windows): BTCUSDT < 30 AND ETHUSDT < 30. Null: fails."
+  - criterion_c: "zero_trade_slot_pct (bar-level, pass-gated): BTCUSDT <= 50 AND ETHUSDT <= 50. (Conformance detector for F5a-class zeroing bug; not a selection criterion.)"
+  - criterion_implicit_edge: "forecast_return_corr (pooled per-symbol, pass-gated, ungated bars) >= 0.01 (raw decimal, not percentage). If all three pass/fail criteria (a, b, c) pass AND this edge check passes, no cost-block rejection triggered. If all three pass BUT forecast_return_corr < 0.01, promotion_audit must re-inspect cost_feasibility block; a 'marginal' or 'implausible' plausibility verdict may escalate to rejection at promotion stage."
+  - criterion_cost_check_implicit: "Under cost_feasibility below, if plausibility = implausible, status CANNOT be approve/conditional_approve regardless of (a, b, c) outcomes."
+
+cost_feasibility:
+  assumed_round_trip_cost_bps:
+    BTCUSDT: 17.0
+    ETHUSDT: 17.5
+  required_gross_edge_bps_per_trade:
+    BTCUSDT: 34.0
+    ETHUSDT: 35.0
+  expected_holding_bars:
+    min: 1
+    max: 24
+    rationale_and_uncertainty: "Hypothesis claims mean-reversion resolves within 1–2 hours post-settlement (honesty note ii). But daily-bar implementation holds until next day close, effectively 1–24 bars depending on settlement time and when the forced-liquidation cascade completes. Actual holding window is model-dependent and NOT measured in the hypothesis; assumed worst-case (full 24-hour bar) for cost."
+  expected_activation_frequency: "~0.15 trades per trading day (228 flips over 49 months ≈ 4.7 per month) across pass-gated window. Higher in recent years (2024–2025: 76–94 over 24 months ≈ 3–4 per month); lower in earlier years (2019–2021 typically 3–4 per month)."
+  expected_trades_per_window: "~4–5 per monthly window (median). High variance (range 0–8 observed in historical data; see honesty note iv's zero-flip months at 28.6%–41.1% base rate)."
+  gross_edge_per_trade_estimated_bps: "5–15 bps (funding sign-flip is binary outcome; win/loss asymmetry unknown; no backtest results available yet). Lower bound assumes 50% win rate (neutral); upper bound assumes 55% win rate (slight edge). Both are below 34–35 bps required."
+  plausibility: "marginal"
+  plausibility_rationale: "Daily mean-reversion on crypto CAN succeed (e.g., strong oscillations on 4h/daily timeframes yield 30–50+ bps edge under ideal regime gating). Funding-rate-driven forced liquidation is a documented structural flow. However: (1) funding sign-flip is a bare binary signal (no intensity weighting); (2) holding period is full 24h, not the claimed 1–2h mean-reversion window; (3) estimated gross edge (5–15 bps) is below required 34–35 bps by 2–7×; (4) pass-gated window is heavily weighted toward choppy/bear regime (2022–2023), where mean-reversion thrives but forward periods (2024–2025 bull, 2026 unknown) may degrade edge. Backtest must show BOTH (a) Sharpe > 0.8 pass_rule gate AND (b) gross edge >= 2× round-trip cost. Failure of either blocks promotion."

@@ -1,0 +1,14 @@
+run_id: run_033
+stage: innovation_expansion
+decision: NO_EXPANSION
+decision_rationale: "Brief explicitly constrains task to diagnostic replication with zero parameter changes. Variant expansion would contaminate result purity."
+variant_count_final: 1
+variants_passed_through:
+  - variant: V1_EXACT_REPLICATION
+    description: "Exact pass-through of RUN017 hypothesis. No novelty added—purity required for reproducibility diagnostic."
+constraint_honors:
+  - "NO parameter changes: Maintained. ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0 frozen."
+  - "Replication only: Confirmed. Zero alternative data, reverse hypotheses, or behavioral variants introduced."
+  - "Timeframe/assets fixed: 1h, BTCUSDT/ETHUSDT locked."
+next_stage: validation_gate
+next_action: "Backtest specification for V1_EXACT_REPLICATION. If edge fails to reproduce, diagnostics must identify root cause (regime definition drift, data quality, or market structure change)."

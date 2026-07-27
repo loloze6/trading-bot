@@ -1,0 +1,82 @@
+base_hypothesis_id: "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION"
+
+expansion_strategy: "Single-variant run queue per brief constraint; V2/V3 conceptual only due to infrastructure/feed limitations"
+
+expanded_variants:
+  - variant_id: "V1"
+    label: "Continuous Funding Rate Mean Reversion (Conservative Base)"
+    signal_concept: >
+      FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0).
+      Fires at every 8h UTC settlement (hour % 8 == 0) regardless of magnitude.
+      Forecast = -sign(funding_rate) × 10.0; ungated, no regime condition.
+    edge_source:
+      category: "structural_forced_flow"
+      specific_mechanism: >
+        Funding rate settlements force mechanical deleveraging every 8h.
+        Positive rate → longs rebalance; negative → shorts rebalance.
+        Sign predicts next-8h mean-reversion regardless of magnitude.
+    evidence_type: "funding_open_interest"
+    library_category: "structural_rate"
+    data_requirements: "funding_open_interest"
+    diversity_axis: >
+      Conservative base hypothesis; structural_forced_flow mechanism.
+      Primary candidate per brief constraint (one-variant-only).
+    activation_rate: 0.125
+    expected_n_eff: 183
+    power_verdict: "ADEQUATE_POWER_A_PRIORI"
+    run_queue_status: "eligible"
+
+alternative_data_candidates:
+  - candidate_id: "ALT_1_OI_DIVERGENCE"
+    name: "Open Interest Divergence"
+    reasoning: >
+      OI build-up signals conviction in forced positions. Complementary to funding sign.
+      Mechanism: OI delta predicts reversal window width.
+    evidence_type: "funding_open_interest"
+    status: "requires_new_feed"
+    note: >
+      OI is NOT currently available per available_feeds.yaml. Funding rate is available;
+      OI is explicitly marked unavailable. Route to feed_wishlist.yaml.
+
+reverse_hypothesis: null
+reverse_hypothesis_reasoning: >
+  Structural forced-flow mechanism is directional (positive funding → longs deleveraging).
+  Reversing polarity would predict continuation, contradicting the structural claim.
+  Reverse polarity is not valid under this mechanism. Skipped.
+
+behavioral_features: []
+behavioral_features_note: >
+  Base mechanism is structural (forced settlement mechanics), not behavioral.
+  Behavioral variants (e.g., contrarian positioning proxies) would require
+  alternative evidence types (liquidation_data, order_book) currently unavailable.
+
+regime_specific_variants: []
+regime_specific_variants_note: >
+  A2.3 standing policy: no regime gating. Ungated activation at every settlement
+  maintains mechanistic purity. No detector-dependent variants generated.
+
+conceptual_v2_not_queued:
+  variant_id: "V2_CONCEPTUAL"
+  name: "Funding + Volatility Context"
+  rationale: >
+    Compress settlement windows only when volatility is elevated (ATR > median).
+    Hypothesis: forced-flow effects are stronger in high-volatility regimes.
+  blocker: "Requires multi-component synthesis and regime-context wiring. Forbidden by brief."
+  status: "blocked_by_brief"
+
+conceptual_v3_not_queued:
+  variant_id: "V3_CONCEPTUAL"
+  name: "OI Divergence + Funding Rate"
+  rationale: >
+    Combine OI build-up (conviction) with funding sign (direction) for higher IC.
+    Hypothesis: OI divergence refines timing window for forced-flow reversal.
+  blocker: "OI feed is unavailable per available_feeds.yaml. Requires open_interest ingestion."
+  status: "requires_new_feed"
+  route_to: "feed_wishlist.yaml"
+
+innovation_summary: >
+  Brief constraint limits expansion to V1. Infrastructure constraints (no new components,
+  no new feeds, ungated only per A2.3) prevent cosmetic or conceptual variants in
+  this cycle. V2/V3 documented for future roadmap planning. Full-fledged diversity
+  expansion deferred until (1) multiple feeds available (OI), (2) multi-component
+  synthesis permitted, or (3) brief relaxed beyond shakedown batch scope.

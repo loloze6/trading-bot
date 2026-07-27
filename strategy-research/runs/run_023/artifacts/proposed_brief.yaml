@@ -1,0 +1,21 @@
+hypothesis_id: REFRAME-COST-REGIME-VALIDATION
+asset: BTCUSDT, ETHUSDT
+timeframe: 1h
+research_question: "Run_023 replicated run_017 exactly but achieved corr=0.0097 vs corr=0.2145, with cost_drag=420%. Is cost_drag due to over-tight bands (atr_multiplier=1.5) generating false breakouts, or is the signal fundamentally broken? Can widening bands (atr_multiplier 1.5→2.5) reduce cost_drag below 150% while preserving edge?"
+signal_concept: "Keltner lower-band mean-reversion with widened bands. Identical signal family and logic to run_017, adjusted only for band width to reduce false touches."
+regime_filter: "TRENDING regime (ER>=0.50, VR>=1.20, threshold_rules). Identical to run_017 and run_023."
+mechanism: "Run_023 replication failed: corr dropped from 0.2145 to 0.0097, cost_drag reached 420%. Median gross_pnl remained positive (+3.56), indicating signal is not fundamentally broken but is being masked by excessive rebalancing. Root cause: Keltner bands at 1.5x ATR are too tight for 1h bars, triggering whipsaws in choppy TRENDING zones. Solution: widen bands to 2.5x ATR to require larger moves for signal trigger, reducing trade count by ~35% and proportional cost_drag reduction."
+assumptions:
+  - "Positive gross_pnl (+3.56 median) proves signal merit; costs are the problem, not signal weakness."
+  - "Cost_drag_pct ratio of 420% is unsustainable; reducing trade frequency by 35% should cut costs to ~260%, still problematic but directionally correct."
+  - "Widening bands will maintain win_rate above 40% (larger, higher-conviction signals) while eliminating whipsaws."
+expected_failure_modes:
+  - "Widening bands does not reduce cost_drag (trade frequency is not the root cause; signal itself is weak)."
+  - "Trade count drops 50%+ but each trade loses more due to fewer mean-reversions, degrading win_rate below 35%."
+  - "Cost_drag improves but sharpe remains deeply negative due to fundamental regime inefficiency (trending regime forward returns near zero)."
+constraints:
+  - "Timeframe: 1h (unchanged; do not escalate to 4h without cost diagnostics understood at 1h)."
+  - "Regime: TRENDING (ER>=0.50, VR>=1.20, threshold_rules; unchanged)."
+  - "Signal family: Keltner mean-reversion (no new components; band width adjustment only)."
+  - "Do not parameterize beyond atr_multiplier; if cost_drag persists above 150%, pivot to regime definition (Rule 4)."
+change_from_previous: "Increase KeltnerBreakoutComponent atr_multiplier from 1.5 to 2.5. Rationale: run_023 shows cost_drag=420% with positive gross_pnl (+3.56), indicating over-trading via tight bands. Widening bands reduces false breakouts without weakening mean-reversion logic. Altitude 1 refine (parameter adjustment), not escalation. Previous change was timeframe (4h→1h); this change is band_width (1.5x→2.5x ATR), a different dimension."

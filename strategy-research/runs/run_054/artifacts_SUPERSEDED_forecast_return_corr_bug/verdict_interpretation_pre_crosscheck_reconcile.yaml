@@ -1,0 +1,51 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY"
+protocol_verdict: "refine"
+status: "refine"
+criteria_summary:
+  - "Walk-forward pooled IC (Spearman, all bars ungated) ≥ 1.5–2.0%: FAIL per criteria_results (actual 0.0372% BTCUSDT, 0.0199% ETHUSDT), but prescreen reported 0.034803 (3.48%) via block_bootstrap_all_bars_v1; backtest forecast_return_corr=null across all 30 windows"
+  - "Per-era IC decomposition: UNTESTED (no per-era breakdown in output)"
+  - "Reverse-polarity test: UNTESTED"
+  - "Activation sparsity ≤60%: UNTESTED"
+  - "Layer 2 cost check: UNTESTED"
+  - "Minimum holding period validation: UNTESTED"
+  - "All Layer 1 validation criteria: UNTESTED (no matching metric keyword)"
+
+primary_failure_mode: "Instrumentation: Prescreen-backtest IC disagreement. Prescreen reported significant pooled_ic=0.034803 (p=0.006) via block_bootstrap_all_bars_v1 (binary forecast-compatible method). Backtest attempted standard per-bar Pearson/Spearman correlation and returned forecast_return_corr=null across all 30 windows, indicating incompatibility with SmaTrendLongOnlyComponent's binary constant-magnitude {0, +10.0} forecast shape."
+
+config_to_failure_map: "SmaTrendLongOnlyComponent emits binary forecast (0 inactive, +10.0 active). Standard per-bar IC calculators fail on low-variance signals. Backtest did not apply registered block_bootstrap_all_bars_v1 fallback; instead returned null, causing criteria_results to show inconsistent values and prescreen_backtest_cross_check.disagreement_detected=true."
+
+untested_criteria:
+  - "Per-era IC decomposition (eras: 2018_pre_funding, 2019_2023_full_feed, 2024_2025_walk_forward_extension)"
+  - "Reverse-polarity test (short-only signal close < SMA(100) must show IC ≤ 0)"
+  - "Activation sparsity detailed analysis (n_active_bars / n_total_bars ≤ 60% preferred ≤ 50%)"
+  - "Layer 2 cost check (estimated_gross_edge ≥ 34 bps BTCUSDT or 35 bps ETHUSDT)"
+  - "Minimum holding period validation (sufficient to prevent cost collapse)"
+
+proposed_change_dimension: null
+
+hypothesis_family: "time_series_trend_following_sma_daily"
+
+altitude_justification: "Prescreen-backtest IC computation disagreement: prescreen (block_bootstrap_all_bars_v1) reported 0.034803 (p=0.006, statistically significant); backtest (standard correlation) returned null in all 30 windows. Detail: 'likely a degenerate active-bar-forecast shape'. This is an instrumentation fault (backtest IC calculator incompatibility), not a signal-quality failure. No parameter tuning can fix null IC. Prescribed action per mechanism_failure=component_execution_error (F6): STOP, human engineering fix required before re-run."
+
+root_cause:
+  mechanism_failure: "component_execution_error"
+  supporting_evidence: "prescreen_backtest_cross_check.disagreement_detected=true; prescreen_significant=true (pooled_ic=0.034803, p=0.006, block_bootstrap_all_bars_v1); backtest forecast_return_corr=null across all 30 results; detail states 'likely a degenerate active-bar-forecast shape'; brief pre-registers significance_methodology=block_bootstrap_all_bars_v1 as automatic trigger for binary signals; backtest did not apply fallback."
+  confidence: "high"
+
+trade_attribution:
+  primary_weakness: "none_healthy"
+  evidence: "Per-trade expectancy positive (mean=1050.5086 bps, t_stat=1.9106, n=117 trades); win_rate_net=46.15%; entry_efficiency_median=0.0 (neutral); exit_efficiency_median=-0.0726 (slightly negative, not severe); worst_decile concentration=-15.1% (losers do NOT dominate; winners at 120.24% drive PnL); signal_flip_pct=99.15% (consistent with SMA logic); no stops active. Trade execution is healthy; IC measurement is the failure."
+
+regime_attribution: null
+
+sparse_trader_gate_applied: "A3.4 applies: below_floor_pct=53.33% > 0.50. Suspended median_sharpe-based rules. Primary metric: per_trade_expectancy_bps (mean=1050.5086, t_stat=1.9106 > 1.5, positive direction). Positive expectancy does NOT override IC computation failure (instrumentation issue, not signal-quality issue)."
+
+prescreen_evidence:
+  ic_all_bars: 0.034803
+  p_value: 0.006
+  pooled_ic: 0.034803
+  edge_to_cost_ratio: 4.45
+  significance_methodology_applied: "block_bootstrap_all_bars_v1 (pre-registered per brief for binary constant-magnitude forecasts)"
+  prescreen_verdict: "Route=proceed_to_backtest (prescreen cleared; IC significant, edge sufficient)"
+
+backtest_ic_status: "FAILED: forecast_return_corr=null in ALL 30 window-symbol results (contradicts prescreen significance); prescreen_backtest_cross_check.disagreement_detected=true"

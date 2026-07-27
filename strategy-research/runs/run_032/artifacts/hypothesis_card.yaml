@@ -1,0 +1,17 @@
+hypothesis_id: RUN017_REPLICATION_DIAGNOSTIC
+thesis: "KeltnerBreakout signal with TRENDING regime filter reproduces edge on current data windows (BTCUSDT, ETHUSDT, 1h)."
+rationale: "Run_017 established edge via ATR-scaled band breaches (ema=20, atr=20, multiplier=2.0, scaling=-20.0) gated by ER>=0.50 and VR>=1.20. This replication tests whether the signal's predictive mechanism persists without parameter drift. No innovation intended; diagnostic only."
+signal_concept: "KeltnerBreakoutComponent: ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0. TRENDING regime filter: ER>=0.50, VR>=1.20."
+target_market: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+assumptions:
+  - "Regime detection (ER/VR calculation) remains mathematically stable."
+  - "ATR multiplier 2.0 remains appropriate for current volatility regime."
+  - "Keltner bands capture reversion-predictive structure."
+  - "Market microstructure (spreads, fills) has not degraded significantly."
+expected_failure_modes:
+  - "Regime characteristics shifted: ER/VR thresholds no longer identify tradeable windows."
+  - "Volatility regime expansion: ATR 2.0 becomes too wide or too tight for predictive breakouts."
+  - "Signal degradation: Breakouts become noise (fee bleed exceeds edge)."
+  - "Data artifact: Historical window bias or survivorship bias in current sample."
+validation_metric: "Sharpe ratio parity with run_017 baseline; win rate >50% on out-of-sample window."

@@ -1,0 +1,43 @@
+hypothesis_id: "V1"
+protocol_verdict: "refine"
+status: "pivot"
+criteria_summary:
+  - "Screening backtest: forecast_return_corr > 0.02 — UNTESTED (no metric)"
+  - "Walk-forward: median Sharpe ≥ 0.5 — FAIL (actual: 0.0 on both symbols)"
+  - "Walk-forward: cost_drag < 50% — UNTESTED (no metric)"
+  - "Walk-forward: min trade_count ≥ 30 — FAIL (actual: 0 on both symbols)"
+  - "Walk-forward: win_rate ≥ 45% — FAIL (actual: 0.0 on both symbols)"
+
+primary_failure_mode: |
+  Signal inversion across both symbols and timeframes. Forecast-return correlation 
+  = -0.1705 (negative), indicating the Keltner upper-band breakout hypothesis is 
+  backwards. The signal fires with inverted directional bias: in windows where 
+  trending regime fires (e.g., BTCUSDT 2024-04, 2024-06), average forecasts are 
+  negative (-18.65, -9.06), and trades lose money. Gross PnL = 0.0 across the 
+  campaign, indicating no realized edge — unlike V2 which earned +21.94 gross PnL 
+  despite cost drag. This is a structural signal problem, not parameter miscalibration.
+
+config_to_failure_map: |
+  KeltnerBreakoutComponent (ema_period=20, atr_multiplier=2.0, scaling_factor=20.0) 
+  targets long on upper band breakout in TRENDING regime (ER ≥ 0.50, VR ≥ 1.20). 
+  Actual outcome: signal generates negative correlation and zero gross PnL, suggesting 
+  either (a) upper-band breakouts are mean-reversion, not momentum (inversion), or 
+  (b) the TRENDING regime definition is mislabeling mean-reversion bars.
+
+untested_criteria:
+  - "Screening backtest: forecast_return_corr > 0.02 (no keyword in protocol output)"
+  - "Walk-forward: cost_drag < 50% (median cost_drag=25.77% was computed but not matched to criterion field)"
+
+proposed_change_dimension: "signal_direction"
+
+hypothesis_family: "keltner_breakout"
+
+altitude_justification: |
+  median_forecast_return_corr = -0.1705 across 11 windows (well below the threshold 
+  of ≤ -0.02 in reject_criteria) indicates signal inversion. Per guidance, negative 
+  correlation drives pivot to reverse signal or opposite regime. Gross PnL = 0.0 
+  confirms no edge exists in current configuration; issue is structural, not parameter 
+  tuning. Two signal families (RSI mean_reversion from V2, Keltner momentum from V1) 
+  now tested on same instruments/timeframe, both failed on different failure modes 
+  (V2: weak edge + costs; V1: inverted edge). Pivot to inverse hypothesis to test 
+  if the directional assumption was backwards.

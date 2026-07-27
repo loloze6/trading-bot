@@ -1,0 +1,36 @@
+handoff_run_id: run_057
+base_hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY_ER20GATE
+
+expansion_decision: pass_through_no_expansion
+
+pass_through_rationale: >
+  Operator pre-registered brief specifies single-variant constraint ("pass-through per SKILL.md line 138, do not expand"). 
+  Operator ruling 2026-07-10 reiterates: Improvements 01 (evidence-type diversity) and 04 (library-category diversity) 
+  are expansion-quality rules applicable only when expansion occurs; they are moot for pass-through. Output exactly one 
+  variant (V1) unchanged, signal_concept matching hypothesis_card.yaml exactly, gate ER(20)>=0.30 frozen, S1/S2 remain 
+  secondaries (not promoted to variants), evidence_type stays price_volume_only. No funding-rate or alternative-feed variants added.
+
+variant_summary: |
+  V1: SMA(100) daily long-only cross-up gated on ER(20)>=0.30 (frozen a-priori, no data tuning).
+  Parent run_054 ungated: +1050.5 bps per-trade (t=1.91, n=117), uneven Sharpe (0.579 BTC, 0.032 ETH).
+  Whipsaw fragment analysis: net-negative. Hypothesis: ER gate selects trending regimes, improving per-episode 
+  Sharpe while preserving net positive per-trade expectancy. S1 (ER(10) sensitivity), S2 (excluded-entry validation) 
+  embedded as secondaries per hypothesis_card.
+
+diversity_audit:
+  verdict: pass_through_only
+  categories_spanned: ["trend_following"]
+  data_requirements_spanned: ["ohlcv_only"]
+  notes: "No expansion; Improvements 01/04 n/a. V1 single variant per constraint."
+
+alternative_data_exploration: "Deferred (pass-through only). Funding rate variant candidates available if gate hypothesis fails screening."
+
+reverse_hypothesis: "Not formulated (pass-through)."
+
+behavioral_features: "Not added (pass-through). S1/S2 checks embedded in hypothesis_card."
+
+regime_specific_variants: "None. SMA(100) unfavorable in ranging per library; ER(20) gate is entry filter only (not detector). No regime-gated variants."
+
+next_stage: screening_backtest
+
+operator_correction_20260710: "Stage output paraphrased signal_concept in two places, dropping 'no deferred entry', the warmed-up-series/no-lookahead clause, and 'bar-close' precision. Both fields hand-restored to hypothesis_card.yaml's verbatim text by operator instruction. All other stage output accepted as produced."

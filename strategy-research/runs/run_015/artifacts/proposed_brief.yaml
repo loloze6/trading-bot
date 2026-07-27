@@ -1,0 +1,53 @@
+hypothesis_id: "V1-PIVOT"
+asset: "BTCUSDT, ETHUSDT"
+timeframe: 1h
+
+research_question: |
+  Do Keltner channel lower-band breakdowns generate positive expected returns in 
+  BTCUSDT/ETHUSDT 1h when the market is in a TRENDING regime (high ER, high VR), 
+  as a mean-reversion pullback signal that is inverse to the failed momentum hypothesis?
+
+signal_concept: |
+  KeltnerChannelComponent: long signal when price breaks BELOW lower Keltner band 
+  in trending regime. Tests the inversion of V1: instead of momentum continuation 
+  on upper-band breakouts, test mean-reversion bounce on lower-band breakdowns. 
+  The negative forecast_return_corr (-0.1705) in V1 suggests this inverse signal 
+  direction may have the real edge.
+
+regime_filter: |
+  TRENDING regime only: ER ≥ 0.50 AND VR ≥ 1.20 (unchanged from V1).
+  Holds the regime definition constant to isolate the effect of signal reversal.
+  All other regimes produce forecast 0.0.
+
+mechanism: |
+  In strong trending markets (high ER, high VR), Keltner bands widen and price 
+  oscillates within them. When price drops below the lower band during a trend, 
+  it may signal an oversold bounce opportunity (mean-reversion within trend). 
+  This is the inverse of V1's momentum hypothesis and directly addresses the 
+  observed signal inversion (negative correlation in V1).
+
+assumptions:
+  - "V1 inversion (corr = -0.1705) indicates the reverse signal has positive edge"
+  - "Lower-band breakdowns occur frequently enough for ≥30 trades minimum"
+  - "Transaction costs justified by larger average trade magnitude on mean-reversion bounces in trending regimes"
+
+expected_failure_modes:
+  - "Lower-band breakdowns do not predict bounce success; both directions lack edge"
+  - "Trending regime definition still over-captures chop despite inversion"
+  - "Mean-reversion bounces are too small to overcome transaction costs"
+
+constraints:
+  - "one variant only — test only the lower-band breakdowns, do not test both simultaneously"
+  - "use existing KeltnerChannelComponent with inverted signal logic (or new component variant)"
+  - "change ONLY signal direction (upper → lower band); keep regime thresholds (ER ≥ 0.50, VR ≥ 1.20) constant"
+  - "no new regime detector or parameter changes to ER/VR thresholds"
+
+change_from_previous: |
+  SIGNAL INVERSION FIX: V1 tested Keltner upper-band breakouts (momentum hypothesis) 
+  in TRENDING regime, producing forecast_return_corr = -0.1705 (inverted signal), 
+  gross_pnl = 0.0 (no realized edge), and win_rate = 0.0. Per inversion protocol, 
+  reverse the signal direction: test lower-band breakdowns (mean-reversion bounce) 
+  instead of upper-band breakouts (momentum continuation). Keep TRENDING regime 
+  thresholds constant (ER ≥ 0.50, VR ≥ 1.20) to isolate the effect of signal 
+  reversal. Root cause: Keltner upper-band breakouts do not capture momentum in 
+  trending regimes; the inverse signal may capture the real edge.

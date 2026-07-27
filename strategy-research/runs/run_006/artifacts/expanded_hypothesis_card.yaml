@@ -1,0 +1,148 @@
+base_hypothesis_id: H-RUN006
+base_thesis: RSI mean-reversion signal generates positive alpha in low-efficiency (choppy) regimes on BTCUSDT 1h where oscillatory behavior dominates over trend.
+
+expanded_variants:
+  V1_conservative:
+    id: H-RUN006-V1
+    name: RSI Base (No Change)
+    description: Exact configuration from hypothesis_card.yaml. RSI(14) < 50 in mean_reversion regime only. Isolates prior config issues from hypothesis validity.
+    signal_formula: max(0, (50 - RSI14) / 50) when RSI14 < 50 else 0.0
+    regime_filter: ER <= 0.20 AND VR <= 0.90
+    expected_outcome: Baseline for prior config hypothesis.
+    
+  V2_bidirectional_oversold:
+    id: H-RUN006-V2
+    name: RSI Bidirectional (Long/Short Oversold)
+    description: Extend to short side. RSI > 70 generates negative forecast. Mean-reversion applies symmetrically in chop.
+    signal_formula: |
+      if RSI14 < 50: max(0, (50 - RSI14) / 50)
+      elif RSI14 > 70: min(0, (RSI14 - 70) / 30) * -1
+      else: 0.0
+    regime_filter: ER <= 0.20 AND VR <= 0.90
+    long_only: False
+    constraint: Requires config.trading.margin_enabled = True.
+    expected_outcome: Signal frequency doubled; tests regime symmetry.
+    
+  V3_rsi_divergence:
+    id: H-RUN006-V3
+    name: RSI Divergence Filter
+    description: Bearish divergence (price higher low, RSI lower low) + oversold. Higher-conviction than absolute level.
+    signal_formula: |
+      divergence = 1.0 if (price_curr > price_prev AND RSI_curr < RSI_prev) else 0.0
+      forecast = divergence * max(0, (50 - RSI14) / 50) if RSI14 < 50 else 0.0
+    regime_filter: ER <= 0.20 AND VR <= 0.90
+    expected_outcome: Lower frequency, higher probability. Tests signal composition.
+    
+  V4_adaptive_rsi_threshold:
+    id: H-RUN006-V4
+    name: Adaptive RSI Threshold by VR
+    description: Scale RSI threshold based on local VR. Tighter chop (VR < 0.6) requires deeper oversold (RSI < 45).
+    signal_formula: |
+      threshold = 45 if VR <= 0.60 else (48 if VR <= 0.80 else 50)
+      forecast = max(0, (threshold - RSI14) / threshold) if RSI14 < threshold else 0.0
+    regime_filter: ER <= 0.20 AND VR <= 0.90
+    expected_outcome: Better regime-fit; reduces false signals in weak chop.
+    
+  V5_cross_timeframe_confirmation:
+    id: H-RUN006-V5
+    name: Cross-Timeframe Confirmation (1h RSI + 4h Vol Stability)
+    description: 1h RSI signal only when 4h volatility is stable (not spiking). Filters tail events and whipsaw.
+    signal_formula: |
+      vol_4h_stable = (std_close_4h_20 / sma_close_4h_20) < 0.03
+      forecast = max(0, (50 - RSI1h) / 50) if (RSI1h < 50 AND vol_4h_stable) else 0.0
+    regime_filter: ER <= 0.20 AND VR <= 0.90 (1h)
+    data_requirement: 4h candle history in DataManager.
+    expected_outcome: Fewer trades, lower drawdown, more consistent alpha. Trade frequency for stability.
+    
+  V6_reverse_divergence_in_trending:
+    id: H-RUN006-V6
+    name: Reverse Hypothesis - Divergence Works in TRENDING
+    description: RSI divergence predicts reversal in TRENDING regimes (ER > 0.20 OR VR > 0.90), not just mean-reversion. Tests regime criticality.
+    signal_formula: |
+      divergence = 1.0 if (price_curr > price_prev AND RSI_curr < RSI_prev) else 0.0
+      forecast = divergence * max(0, (50 - RSI14) / 50) if RSI14 < 50 else 0.0
+    regime_filter: ER > 0.20 OR VR > 0.90 (INVERTED: TRENDING or CHOP, NOT mean_reversion)
+    expected_outcome: If outperforms base, regime filter is decoy. If underperforms, regime dependence is real.
+    
+  V7_volume_confirmation:
+    id: H-RUN006-V7
+    name: Volume-Confirmed Mean Reversion
+    description: RSI oversold + declining volume (reversal strength). Standard confluence; reduces whipsaw on heavy selloff.
+    signal_formula: |
+      vol_declining = (volume_curr < sma_volume_20)
+      forecast = max(0, (50 - RSI14) / 50) if (RSI14 < 50 AND vol_declining) else 0.0
+    regime_filter: ER <= 0.20 AND VR <= 0.90
+    expected_outcome: Higher-conviction trades; improves Sharpe if volume is informative.
+
+alternative_data_candidates:
+  stochastic_k:
+    component: StochasticComponent (exists in strategy_base.py)
+    vs_rsi: Faster oscillator; captures microstructure better on 1h. Drop-in for RSI14.
+    feasibility: HIGH
+    use_case: Pair with V3_divergence for faster signal response.
+    
+  macd_histogram:
+    component: MACDComponent (exists in strategy_base.py)
+    vs_rsi: Explicit momentum divergence. Histogram sign + magnitude.
+    feasibility: HIGH
+    use_case: Replace RSI logic entirely in V3 for momentum-based divergence detection.
+    
+  bollinger_band_position:
+    component: BollingerComponent (exists in strategy_base.py)
+    vs_rsi: Alternative oversold = (close - lower_band) / (upper - lower) < 0.2.
+    feasibility: HIGH
+    use_case: Substitute for RSI threshold in V4_adaptive.
+    
+  volume_profile_weighting:
+    component: Custom weight in RollingBuffer (medium lift)
+    vs_rsi: Weight RSI by cumulative volume to separate reversal from distribution.
+    feasibility: MEDIUM
+    use_case: Only if V7_volume shows promise; add second-order signal refinement.
+
+reverse_hypothesis:
+  id: H-RUN006-REVERSE
+  thesis: RSI divergence generates reversal signals REGARDLESS of regime. Regime filter is noise; divergence suffices.
+  mechanism: Bearish divergence (higher price low + lower RSI low) indicates exhaustion in any regime (trending, chop, or mean-reversion).
+  operationalized_as: V6_reverse_divergence_in_trending above.
+  decision_gate: If V6 Sharpe > V1 Sharpe in walk-forward, regime filter is overfitting. Discard and use divergence universally.
+
+behavioral_features:
+  duration_in_oversold:
+    description: "Count bars where RSI < 50 continuously. Longer duration = conviction."
+    formula: "forecast *= min(1.0, bars_in_oversold / 10)"
+    rationale: Protracted oversold more likely to revert than brief spike.
+    
+  volume_divergence_strength:
+    description: "Price range relative to ATR vs RSI move magnitude."
+    formula: "divergence_strength = (price_range / ATR20) / (RSI_move / 100); forecast *= min(1.0, divergence_strength / 2)"
+    rationale: Large price move with small RSI move = exhaustion confirmation.
+    
+  momentum_fade:
+    description: "Decay signal if 3-bar ROC still positive. Reversal requires momentum turn."
+    formula: "forecast *= max(0, 1 - ROC3bar / 2)"
+    rationale: Mean-reversion works when momentum exhausted, not mid-acceleration.
+
+regime_specific_variants:
+  tight_chop_vr_0.5_0.7:
+    name: Tight Oscillation Variant
+    vr_range: [0.5, 0.7]
+    er_range: [0.0, 0.20]
+    mechanism: Tight oscillation; RSI extremes sharper and more predictive. Shorter reversion cycle.
+    rsi_threshold: 40 (stricter oversold)
+    expected_outcome: Higher Sharpe, shorter trades. Lower latency captures quick reverts.
+    
+  loose_chop_vr_0.7_0.9:
+    name: Loose Oscillation Variant
+    vr_range: [0.7, 0.9]
+    er_range: [0.0, 0.20]
+    mechanism: Looser oscillation; RSI oversold less definitive. Longer reversion cycle.
+    rsi_threshold: 50 (original, includes borderline oversold)
+    expected_outcome: Lower Sharpe but more frequent signals. Captures slower regime.
+    
+  transition_zone_quasi_trend:
+    name: Regime Boundary (ER 0.20–0.35, VR 0.50–0.70)
+    er_range: [0.20, 0.35]
+    vr_range: [0.50, 0.70]
+    mechanism: Price transitioning from chop to trend; RSI divergence may capture exhaustion before directional move.
+    signal_variant: V6_reverse (divergence in quasi-trend zone).
+    expected_outcome: Tests regime boundary behavior. If strong Sharpe here, divergence signal bleeds into trending.

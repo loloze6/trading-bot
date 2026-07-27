@@ -1,0 +1,53 @@
+hypothesis_id: "V2-PIVOT-A-THRESHOLD"
+status: "conditional_approve"
+decision_stage: "validation_gate"
+
+rationale: |
+  Hypothesis is mechanically sound: threshold increase reduces trade frequency,
+  directly targeting weak signals (10-15 raw_forecast) that hemorrhage fees.
+  Feasibility high: requires only config change (no code refactor). Look-ahead bias
+  risk is manageable via strict data split. However, validity depends critically on
+  maintaining min_trade_count ≥15/window; below this, Sharpe is unreliable and
+  hypothesis cannot be tested. Recommend proceeding to screening_backtest with
+  explicit trade-count floor enforcement and per-window reporting.
+
+blocking_issues: []
+
+conditions:
+  - "Screening backtest MUST enforce min_trade_count ≥ 15/window. Mark variants as FAIL if any window produces <15 trades."
+  - "Enforce strict 60% train / 20% validation / 20% holdout split. No threshold re-tuning during validation window."
+  - "Report per-window sharpe, min_trade_count, cost_drag_pct, max_drawdown_pct separately in output. Reject if median sharpe ≤ 0.05."
+  - "If V2-THRESHOLD-22p5 fails trade-count gate, promote V2-THRESHOLD-20p0 (primary) or V2-THRESHOLD-17p5 (fallback) without re-tuning."
+  - "Asset-specific variant (BTC-ONLY) is exploratory only. Promote to walk-forward only if BTCUSDT sharpe > 0.15 AND min_trade_count ≥ 25/window (higher bar for over-optimization risk)."
+  - "Verify cost_drag_pct metric is computed in backtest pipeline. If unavailable, flag and use trade_count reduction as proxy for fee savings."
+
+next_stage: "screening_backtest"
+
+required_backtest_config:
+  regime_filter: "TRENDING (ER ≥ 0.50 AND VR ≥ 1.20) unchanged across all variants"
+  variants_to_test:
+    - "V2-THRESHOLD-17p5"
+    - "V2-THRESHOLD-20p0"
+    - "V2-THRESHOLD-22p5"
+    - "V2-THRESHOLD-20p0-BTC-ONLY"
+  metrics_to_record:
+    - "sharpe (per-window, report median)"
+    - "min_trade_count (per-window, report minimum)"
+    - "trade_count (total and per-window)"
+    - "cost_drag_pct (per-window, report median)"
+    - "net_pnl (per-window, check sign)"
+    - "max_drawdown_pct"
+  success_criteria: "V2-THRESHOLD-20p0 achieves conditional_approve criteria OR V2-THRESHOLD-17p5 passes all gates (then investigate if 20.0 too aggressive)"
+
+escalation_if_all_variants_fail: |
+  If all four variants fail decision gates, escalate to regime-filter investigation.
+  Hypothesis: TRENDING regime definition (ER/VR thresholds) may be uninformative
+  regardless of RSI threshold. Recommend: (1) ER/VR threshold sensitivity sweep,
+  (2) Cross-asset regime coherence check, (3) Reverse hypothesis (lower threshold
+  in non-TRENDING regimes for mean-reversion capture).
+
+notes: |
+  Reverse hypothesis (lower threshold in RANGE/MEAN-REVERSION regimes) deferred
+  to post-gate; brief explicitly constrains regime to TRENDING-only. Architecture
+  re-use complete: only config change required. Asset-specific variants are
+  parallel exploration, not core path.

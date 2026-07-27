@@ -1,0 +1,40 @@
+hypothesis_id: "RUN017_REPLICATION_DIAGNOSTIC_V1"
+expanded_variant_id: "V1_REPLICATION_EXACT"
+falsifiable_statement: "The exact KeltnerBreakout (ema=20, atr=20, atr_mult=2.0, scale=-20.0) + TRENDING filter (ER>=0.50, VR>=1.20) achieves Sharpe >= 0.6 and win_rate > 50% on post-run_017 OOS window without parameter drift."
+null_expectation: "Sharpe < 0.6 OR win_rate <= 50% on OOS, indicating parameter drift, regime shift, or overfitting in run_017."
+
+required_evidence:
+  - "Walk-forward Sharpe (median across >= 2 windows) on OOS period >= 0.6"
+  - "Win rate on OOS period >= 50%"
+  - "Trade count on OOS >= 20 total (sufficient frequency to rule out luck)"
+  - "Max drawdown on OOS <= 20%"
+  - "ER/VR calculation verified to contain no look-ahead bias (bar-close only, no future data)"
+  - "Sharpe degradation from run_017 baseline documented (aspirational check: <= 20 percentage points)"
+
+bias_risks:
+  - "Look-ahead bias: ER/VR metrics computed with current or future price data instead of lagged."
+  - "Selection bias: Testing only BTCUSDT/ETHUSDT; generalization to other symbols unknown."
+  - "Survivorship bias: run_017 may be statistical outlier from multiple candidate backtests."
+  - "Hindsight bias: Knowing run_017 succeeded creates false confidence in replication working."
+  - "Data quality bias: Gaps, errors, or missing OHLCV data in current window OOS period."
+
+failure_modes:
+  - "Parameter drift: ATR/EMA constants no longer optimal on current market microstructure or volatility regime."
+  - "Regime instability: TRENDING filter (ER>=0.50, VR>=1.20) triggers on < 15% of OOS bars, insufficient signal density."
+  - "Volatility regime change: ATR scaling assumes pre-2025 volatility patterns; 2025-2026 microstructure differs."
+  - "Slippage and cost leakage: run_017 assumed zero fees; live execution incurs 0.05%+ cost per round-trip trade."
+  - "Statistical noise: run_017 Sharpe within luck range (variance indistinguishable from random); replication fails on OOS noise."
+  - "Data leakage in ER/VR: Efficient Ratio or Volatility Ratio computed with synchronous pricing; OOS test invalidated."
+
+sample_split_design:
+  training_window: "run_017 baseline backtest period (confirm exact date range from original run)"
+  oos_window: "Post-run_017 to present (current market data)"
+  walk_forward_splits: "Divide OOS into >= 2 equal-length subperiods; recompute Sharpe, win_rate, trade_count per subperiod for drift detection."
+  holdout_window: "Final 5% of OOS reserved for single-pass evaluation after all decisions finalized."
+  symbols_testing: "Test BTCUSDT and ETHUSDT separately; report metrics per symbol to assess robustness."
+
+decision_rules:
+  - "Sharpe (median across walk-forward windows) >= 0.6 on OOS period"
+  - "Win rate >= 50% on OOS period"
+  - "Trade count >= 20 total across OOS window"
+  - "Max drawdown <= 20% on OOS period"

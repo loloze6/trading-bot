@@ -1,0 +1,4 @@
+hypothesis_id: RUN017_REPLICATION_DIAGNOSTIC_V1
+target: instrument
+reason: "Original hypothesis specifies BTCUSDT and ETHUSDT (validation_protocol.yaml symbols_testing field), but backtest executed on AVAXUSDT. Rule 4 diagnosis: trending regime on AVAXUSDT is uninformative (fires < 1% of bars; forward_return_mean negative when triggered in 2024-06/07/08). No parameter changes permitted by replication brief. Re-test exact config on BTCUSDT (primary research asset from run_017 training, store_of_value category) to verify regime triggers appropriately."
+proposed_capability: "Backtest RUN017_REPLICATION_DIAGNOSTIC_V1 config on BTCUSDT with identical settings (no parameter drift). Validate that ER/VR thresholds fire on > 5% of bars and produce positive forward returns when regime triggers."

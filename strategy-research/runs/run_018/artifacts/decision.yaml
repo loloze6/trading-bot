@@ -1,0 +1,12 @@
+run_id: "run_018"
+stage: "backtest_specification"
+status: "spec_ready"
+variant_selected: "V2-PIVOT-A-CONSERVATIVE"
+rationale: "V2-PIVOT-A-CONSERVATIVE implements the base RSI momentum hypothesis using only available components (EfficiencyRatioRegimeComponent, VarianceRatioComponent, RSIPullbackComponent) and standard transforms. Static thresholds (RSI extremes at 70/30) are interpreted as momentum continuation (via negate transform) rather than mean-reversion pullback. Config is fully compliant with STRATEGY_CONFIG_REFERENCE.md. Other variants (Stochastic, Multi-timeframe, Bollinger Bands, Volume, Divergence) require new component code or architectural changes beyond config scope."
+blocking_issues: []
+config_compliance_notes:
+  - "Transform pipeline: history-based (vol_normalize, ratio_to_mean) precedes scalar (negate, scale, threshold_filter) per STRATEGY_CONFIG_REFERENCE.md ordering rules"
+  - "Lookback=500 explicitly set for ratio_to_mean (requires min 30 bars); engine will use this override instead of default"
+  - "Warmup=51 is legacy-parity value; engine will defer first forecast until at least 51 appends to deque (component-dependent readiness may extend this)"
+  - "Regime detector default_regime=trending routes non-matching bars to trending forecast (practical assumption: TRENDING fires ≥20% per validation, rendering non-TRENDING bar classification secondary)"
+  - "All component class paths validated against strategies/strategy_components.py module structure"

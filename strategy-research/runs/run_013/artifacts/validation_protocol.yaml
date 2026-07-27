@@ -1,0 +1,71 @@
+hypothesis_id: "V1 (H-RUN007 ER-relaxed)"
+base_hypothesis: "RSI Pullback mean-reversion detector"
+falsifiable_statement: "Relaxing ER threshold 0.20→0.25 increases trade_count ≥30 AND sustains Sharpe ≥ -0.5 (median walk-forward) AND win_rate ≥ 40%, without regime frequency <15%."
+null_expectation: "ER 0.25 either remains sample-starved (<30 trades) OR captures trending contamination (Sharpe <-0.5, win_rate <40%). RSI has no edge even with relaxed regime."
+
+required_evidence:
+  - "trade_count ≥ 30 minimum (aggregated across walk-forward)"
+  - "sharpe median across walk-forward windows ≥ -0.5"
+  - "win_rate ≥ 40% (profitable trade fraction)"
+  - "regime_frequency (mean_reversion bars / total) ≥ 0.15 post-relaxation"
+  - "No regime leakage: ER ≤ 0.25 bars consistently pass both ER AND VR ≤ 0.90 filters"
+  - "Commission impact quantified: gross vs net Sharpe both reported"
+
+bias_risks:
+  - label: "Leakage (ER threshold)"
+    description: "ER computed on rolling window. Risk: future volatility informs regime label. Mitigation: ER must use only historical prices up to bar T, no forward-looking data."
+  - label: "Look-ahead (RSI calculation)"
+    description: "RSI(14) requires 14 prior bars. Low risk if close[t-14:t] only. Verify no future prices used."
+  - label: "Overfitting (post-hoc threshold selection)"
+    description: "ER 0.25 chosen because 0.20 failed in H-RUN007 on same asset. Risk: threshold selected after observing first run. Mitigation: apply only to fresh walk-forward windows; first window must validate ≥15% frequency."
+  - label: "Regime frequency optimism"
+    description: "Assumes ER ≤ 0.25 delivers ≥15% bars. If assumption fails, strategy starved again. Must verify in first walk-forward window only; if <15%, halt."
+  - label: "Commission drag"
+    description: "RSI signal weak (distance-based). Even Sharpe ≥ -0.5 may flip negative after 0.1% Binance taker fee. Must report gross vs net separately."
+
+failure_modes:
+  - "RSI signal fundamentally lacks edge; VR ≤ 0.90 insufficient to filter trending noise"
+  - "ER 0.25 over-captures volatility-driven moves misclassified as mean-reversion"
+  - "Trade count remains <30; regime frequency <15% despite relaxation"
+  - "Win rate <40% due to whipsaw in choppy volatility environment"
+  - "Sharpe degrades <-0.5 due to consecutive losses from false reversals"
+  - "Binance commission (0.1% taker) erodes net Sharpe below -0.5 despite gross Sharpe ≥ -0.5"
+  - "Walk-forward Sharpe variance >1.0 indicates regime-dependent overfitting"
+
+sample_split_design:
+  training: "1st walk-forward window: validate ER ≤ 0.25 regime frequency ≥15% and trade_count ≥6. If either fails, abort—no further windows tested."
+  validation: "Windows 2–N (if N ≥ 4): Sharpe, win_rate must not degrade >15% from window 1. Trade_count ≥6 per window minimum."
+  holdout: "Final window (if available): Sharpe ≥ -0.5 required; if Sharpe ≤ -1.0, reject hypothesis entirely."
+  regime_bucketing: "Compute per_regime Sharpe. If in-regime Sharpe <out-of-regime Sharpe, signal has no edge and hypothesis rejected."
+
+decision_rules:
+  - metric: "trade_count"
+    operator: ">="
+    threshold: 30
+    window: "full walk-forward aggregate"
+    action: "if fail, reject immediately"
+  - metric: "sharpe"
+    operator: ">="
+    threshold: -0.5
+    window: "median across walk-forward windows"
+    action: "if fail, reject immediately"
+  - metric: "win_rate"
+    operator: ">="
+    threshold: 0.40
+    window: "full walk-forward"
+    action: "if fail, refine regime further"
+  - metric: "max_drawdown_pct"
+    operator: "<="
+    threshold: 30
+    window: "full walk-forward"
+    action: "if fail, conditional reject (high risk)"
+  - metric: "regime_frequency"
+    operator: ">="
+    threshold: 0.15
+    window: "first walk-forward window only"
+    action: "if fail, halt—no further validation"
+  - metric: "min_trade_count"
+    operator: ">="
+    threshold: 6
+    window: "per walk-forward window"
+    action: "if any window fails, suspect regime instability"

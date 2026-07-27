@@ -1,0 +1,50 @@
+hypothesis_id: H-RUN007
+base_thesis: RSI(14) pullback in mean_reversion regime (ER ≤ 0.20, VR ≤ 0.90) generates positive expected returns on BTCUSDT 1h via config adjustment (smooth_period 5→2 bars).
+
+falsifiable_statement: >
+  Reducing ER smooth_period from 5 to 2 bars increases strategy Sharpe ratio above 0.5
+  in mean_reversion regime bars, compared to H-RUN007-V1 baseline (-5.019 Sharpe).
+  Null hypothesis: config adjustment yields Sharpe ≤ -1.0 (regime lag not root cause).
+
+null_expectation: >
+  Sharpe remains ≤ -1.0 across walk-forward windows, indicating RSI pullback mechanism
+  lacks edge in identified mean-reversion regime or regime thresholds are misspecified.
+
+required_evidence:
+  - Screening backtest: Sharpe ≥ 0.5, win_rate ≥ 0.45, trade_count ≥ 30
+  - Regime frequency: ≥ 15% of bars in target regime (sufficient sample)
+  - Walk-forward stability: Sharpe range across 5+ windows must not exceed ±2.0
+  - Per-regime trade analysis: mean_reversion regime trades must outperform non-regime bars
+
+bias_risks:
+  - Post-hoc optimization: smooth_period tuned after observing -5.019 failure (snooping)
+  - "Regime lag assumption: 2-3 hour window unvalidated; no supporting analysis provided"
+  - Selection bias: only increasing lag responsiveness tested; decreasing as control omitted
+  - Long-only constraint: no rationale provided; inherent directional bias
+
+failure_modes:
+  - Insufficient regime sample: mean_reversion bars <15% of total, high per-window variance
+  - Smooth_period=2 over-sensitivity: ER oscillates rapidly on noise, regime flips exceed reversion window
+  - RSI mechanism invalid: (50-RSI) does not capture mean-reversion; correlation ≤ 0.1 with regime returns
+  - Threshold misspecification: ER≤0.20, VR≤0.90 identify different phenomenon; no correlation with reversion opportunity
+  - Regime detection lag persists: 2-bar smooth still misaligned with actual reversion duration
+  - Survivorship of negative: previous run's -5.019 indicates fundamental signal deficiency, not lag correctable by config
+
+sample_split_design:
+  screening_window: First 40% of backtest period (ensures sufficient mean_reversion bars)
+  walk_forward_windows: 5 non-overlapping windows across remaining 60% (validation)
+  regime_filter: Decision rules apply only to bars where regime_mask=1 (mean_reversion active)
+  holdout: Final 10% unseen during any tuning; Sharpe must remain >0
+
+decision_rules:
+  - rule_1: "Sharpe ≥ 0.5 (minimum positive signal)"
+  - rule_2: "win_rate ≥ 0.45 (>45% profitable trades)"
+  - rule_3: "trade_count ≥ 30 (sufficient volume across screening window)"
+  - rule_4: "regime_frequency ≥ 0.15 (mean_reversion regime present ≥15% of bars)"
+  - rule_5: "min_trade_count ≥ 5 (no single walk-forward window drops below 5 trades)"
+  - rule_6: "max_drawdown_pct ≤ 15% (risk containment)"
+  - abort_condition: "If Sharpe < -1.0 in screening, hypothesis rejected immediately (signal lacks edge)"
+
+confidence_assessment:
+  pre_backtest_confidence: LOW
+  rationale: Root cause diagnosis (regime lag vs signal deficiency) unvalidated. Config adjustment post-hoc optimized. Long-only bias and RSI mechanism unexamined.

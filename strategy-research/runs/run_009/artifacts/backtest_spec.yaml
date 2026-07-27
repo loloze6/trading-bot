@@ -1,0 +1,48 @@
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: mean_reversion
+        any_of:
+          - - id: er
+              op: lte
+              value: 0.20
+            - id: vr
+              op: lte
+              value: 0.90
+    default_regime: unknown
+  strategies:
+    warmup: 51
+    regimes:
+      mean_reversion:
+        components:
+          - id: rsi
+            class: strategies.strategy_components.RSIPullbackComponent
+            params:
+              period: 14
+              scaling_factor: 0.01
+              long_only: true
+            weight: 1.0
+            lookback: 500
+            transforms: []
+      trending: null
+      chop: null
+config_rationale:
+  - "Hypothesis signal max(0, 50-RSI)/100 maps directly to RSIPullbackComponent with scaling_factor=0.01 and long_only=true, preserving exact formula"
+  - "Mean-reversion regime detection: ER ≤ 0.20 AND VR ≤ 0.90 via threshold_rules mode; thresholds locked per validation protocol"
+  - "Single active regime (mean_reversion); trending and chop return null (flat forecast) per one-variant constraint"
+  - "RSI period=14 matching hypothesis specification; lookback=500 provides statistical depth; warmup=51 (legacy parity) ensures full RSI history before forecast emission"
+  - "No history_transforms or output transforms applied; raw forecast scaled to [0, 0.5] range, numerical stability at ensemble level (±20 clip)"
+component_gap: null

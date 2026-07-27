@@ -1,0 +1,60 @@
+hypothesis_id: "H-041-C-v2"
+falsifiable_statement: "Daily Fear & Greed Index readings (< 25 or > 75) generate statistically significant contrarian forecasts for 1h BTC/ETH returns within 24–48 hour windows. Pooled forecast-return correlation (IC) > 0.01 (raw decimal) across walk-forward windows; win_rate >= 52%; Sharpe >= 0.8 after costs in 2024-2025 walk-forward range."
+
+null_expectation: "Extreme F&G readings have no predictive power (IC = 0) or predict continuation (IC < 0). Win_rate = 50% (coin-flip). Sharpe < 0.5 after costs."
+
+required_evidence:
+  - "Pooled Spearman IC across walk-forward windows (2024-12-01 to 2025-12-31) measured per prescreen window. Minimum 200 total trades required for IC stability."
+  - "Win_rate derived from completed_trades entries; minimum 50 trades per window."
+  - "Annualized Sharpe ratio computed on walk-forward equity curve, post-cost, per run_protocol.py."
+  - "Trade hold-period distribution: histogram of days-to-close from entry to exit."
+  - "Per-era performance breakdown (walk-forward era 2024-2025 vs. holdout era 2026-01-06-30) to detect sign-flip continuation or reversal."
+
+bias_risks:
+  - "Look-ahead bias: F&G Index daily publish time must be verified as occurring BEFORE 00:00 UTC. If published post-00:00, the 00:00 signal uses next-day's F&G (lookahead). Timing window: < 1 minute between F&G update and signal fire required for validity."
+  - "In-sample sign-flip: Expanded card states 2024-2025 shows 'sign flips, era-instability artifact.' If IC flips negative in walk-forward era, hypothesis is falsified; cannot reframe as 'diagnostic.'"
+  - "Sparse activation overfitting: At 6% activation (≈540 trades/13-month window), sample size supports limited precision on IC. Confidence interval width may exceed signal strength."
+  - "Regime-dependent edge masked by ungating: Despite ungated design, edge likely concentrated in high-volatility regimes (panic/greed extremes more severe when vol elevated). Ungated aggregation masks regime specificity; true edge may be regime-conditional."
+  - "Sentiment feed data quality: F&G Index is constructed aggregate (Fear Factors + Greed Factors). Extreme readings (< 25 or > 75) are sparse and may cluster in anomaly periods (e.g., March 2020, May 2021, June 2022). Edge may be concentrated in few events, not stable."
+
+failure_modes:
+  - "Walk-forward IC < 0 (sign flip confirmed in current regime): Hypothesis falsified by direct contradiction. This is already documented as present in 2024-2025."
+  - "Walk-forward IC in [0, 0.01]: Null expectation cannot be rejected. Required evidence bar not met."
+  - "Trade count < 50 per window: Insufficient sample size for win_rate or IC confidence. Sparse activation (6%) produces high variance estimates."
+  - "Sharpe < 0.5 after costs: Cost slippage on high-turnover (540 trades/13mo) overcomes any edge. Required gross edge 34 bps/trade (BTCUSDT) × 540 trades ≈ 18.4% cumulative slippage."
+  - "Per-regime breakdown shows edge concentrated in < 10% of bars (regime subsampling within 6% already-sparse activation): True mechanism is regime-specific, not a general sentiment reversal; architecture does not support regime-gating per POST-A2.3 constraint."
+  - "Hold-period distribution: If median < 1 hour, signal is intraday microstructure entry (not 'mean reversion window within 1–2 days'); if > 48 hours, contradicts stated mechanism timeframe."
+
+sample_split_design:
+  walk_forward_range: "[2024-12-01, 2025-12-31]"
+  holdout_range: "[2026-01-01, 2026-06-30]"
+  holdout_note: "Single-use per A6.1. FROZEN. Evaluated only at holdout_evaluation stage after walk-forward Sharpe gate (Sharpe >= 0.8) and IC gate (IC >= 0.01 raw decimal) both pass. No backtest pipeline may read 2026-01-01 to 2026-06-30 candles except holdout_evaluation."
+  windows: 4
+  window_size_bars: "2304 (13 months at 1h, 24*30*13 ≈ 2304; adjusted to trading hours only in engine)"
+  step_size_bars: 576
+  training_freeze: "No retraining on walk-forward or holdout data. Parameters fixed from innovation_expansion stage (fear_threshold: 25.0, greed_threshold: 75.0, scaling_factor: 10.0)."
+
+decision_rules:
+  - "sharpe >= 0.8 across walk-forward windows (annualized, post-cost)"
+  - "forecast_return_corr >= 0.01 (raw decimal in [-1, 1], pooled across walk-forward windows)"
+  - "win_rate >= 0.52 (52%, minimum threshold above coin-flip)"
+  - "trade_count >= 50 per window (enforces statistical confidence on sparse activation)"
+
+cost_feasibility:
+  assumed_round_trip_cost_bps:
+    BTCUSDT: 17.0
+    ETHUSDT: 17.5
+  expected_holding_bars:
+    min: 24
+    max: 48
+    unit: "1h bars (contrarian reversal window: 1–2 days per mechanism statement)"
+  expected_trades_per_window:
+    calculation: "13 months walk-forward (9,000 bars) × 6% activation = 540 trades total across 2 symbols; per-symbol ≈ 270."
+    count: 270
+  required_gross_edge_bps_per_trade: 34.0
+  plausibility: "implausible"
+  plausibility_rationale: "1h contrarian mean-reversion with 6% activation (270 trades/13mo) must earn 34 bps/trade gross on BTCUSDT. Over 24-48h holds, crypto sentiment reversals historically deliver 5–20 bps, falling far short of the 2× cost safety factor (34 bps). Cumulative cost drag across 270 trades = 9,180 bps ≈ 9.2% trading capital slippage. The sparse activation exacerbates cost burden (high per-trade threshold) without reducing turnover (absolute trade count high). Historical sentiment edge on 1h crypto is unreliable post-2023; expanded card documents sign-flip in 2024-2025, indicating edge has inverted or disappeared."
+
+blockers:
+  - "Era sign-flip already present: Expanded card (reverse_hypothesis section) documents IC sign flip from 2018-2023 to 2024-2025. Walk-forward search period (2024-12-01 to 2025-12-31) falls in the 'diagnostic-only' sign-flip era. Testing a hypothesis with a documented sign-flip is equivalent to testing the null or negative of the hypothesis."
+  - "Cost feasibility implausible: Per Improvement 09 Layer 1 rule, plausibility = implausible blocks approval."

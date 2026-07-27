@@ -1,0 +1,41 @@
+run_id: run_043
+hypothesis_id: EMA_SPREAD_TREND_CONTINUATION
+registered_at: "2026-07-04"
+
+# Power check (A8.6 formula, matches _run_a86_power_check in run_phase1_research.py exactly)
+# activation_rate=1.0: EMASpreadComponent is continuous/dense (nonzero on ~100% of ready bars),
+# unlike the sparse daily/8h feed signals already tested (H-041-A, H-041-C).
+# is_market_wide=false: BTC and ETH EMA spreads are distinct per-symbol series (not a single
+# shared index), so no rho-based n_symbols_effective discount applies per the A8.6 code.
+expected_active_n: 35040.0
+n_eff_symbols: 2.0
+expected_n_eff: 1460.0
+min_detectable_ic: 0.0262
+plausible_ic_upper: 0.05
+power_verdict: power_adequate
+
+# Outcome range -- written before any prescreen/backtest result is observed.
+expected_sharpe_range:
+  pessimistic: -0.2
+  base_case: 0.05
+  optimistic: 0.6
+expected_ic_range: [-0.02, 0.03]
+expected_cost_ratio: 0.9
+disconfirming_outcome: >
+  IC_all_bars significantly negative (< -0.03, p < 0.10) would indicate the signal is
+  anti-predictive (breakout/momentum reverses rather than continues on this venue/timeframe),
+  mirroring the keltner_breakout_inverted finding -- a stronger and different result than
+  mere absence of edge. A significantly positive IC (> 0.05) that also clears the cost
+  hurdle would be a genuine surprise given the library's high crowding_risk rating and
+  this campaign's uniform null result on every price-only technical indicator tested so
+  far (RSI, Keltner in both breakout and mean-reversion form).
+
+rationale_for_base_case: >
+  Given library crowding_risk=high for moving_average_crossover, and this campaign's
+  established pattern (KB: rsi_mean_reversion_no_edge, keltner_breakout_inverted,
+  keltner_mean_reversion_no_edge, keltner_scoremode_no_edge -- every price-only technical
+  signal tested to date has shown no exploitable edge on BTC/ETH 1h), the base-case
+  expectation is another null result: IC indistinguishable from zero, likely killed at
+  the prescreen IC gate (kill_no_ic) rather than the cost gate, since a dense signal at
+  near-zero IC will also imply a near-zero estimated_gross_edge_bps_per_trade regardless
+  of turnover assumptions.

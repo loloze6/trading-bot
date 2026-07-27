@@ -1,0 +1,77 @@
+base_hypothesis_id: "REFRAME_REGIME_SELECTIVITY_01"
+expansion_focus: "Novel regime selectivity component (third condition gate)"
+signal_unchanged: "KeltnerBreakout (ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0)"
+baseline_conditions_fixed:
+  - "ER >= 0.35 (trending)"
+  - "VR >= 1.20 (mean-reverting bands)"
+
+expanded_variants:
+  V1:
+    variant_id: "REFRAME_REGIME_SELECTIVITY_01_V1"
+    name: "VR Persistence Gate"
+    selectivity_metric: "VR rolling persistence check"
+    description: "Fire signal only if VR >= 1.20 for last N consecutive bars (N=3 default). Ensures mean-reversion regime is sustained, not transient."
+    implementation: "Check rolling window of VR values; trivial logic."
+    expected_bar_coverage: "8-12%"
+    variant_type: "Conservative"
+
+  V2:
+    variant_id: "REFRAME_REGIME_SELECTIVITY_01_V2"
+    name: "Volatility Clustering Gate"
+    selectivity_metric: "Realized volatility quantile gating"
+    description: "Fire signal only when realized volatility (10-bar rolling std of returns × close) is in middle quantile (30th-70th percentile over 100-bar window). Avoids crisis/euphoria vol clusters."
+    implementation: "Compute rolling realized vol; bin into percentiles; gate on [0.30, 0.70] band."
+    expected_bar_coverage: "10-15%"
+    variant_type: "Novel behavioral"
+
+  V3:
+    variant_id: "REFRAME_REGIME_SELECTIVITY_01_V3"
+    name: "Regime Intensity Score"
+    selectivity_metric: "Multiplicative ER × VR product"
+    description: "Fire signal only if (ER × VR) >= product_threshold (default 0.50). Captures synergy: strong trending AND strong mean-reversion = highest conviction."
+    implementation: "Single multiplication and comparison; no new indicators."
+    expected_bar_coverage: "12-18%"
+    variant_type: "Conservative mathematical"
+
+  V4:
+    variant_id: "REFRAME_REGIME_SELECTIVITY_01_V4"
+    name: "Trade Spacing Gate"
+    selectivity_metric: "Minimum distance to recent order entry"
+    description: "Fire signal only if current close is >2 ATR away from most recent signal execution price. Prevents position clustering; forces selectivity via execution spacing."
+    implementation: "Query recent fill price from ExecutionHandler; measure distance to current price."
+    expected_bar_coverage: "5-10%"
+    variant_type: "Novel execution-aware"
+
+reverse_hypothesis:
+  variant_id: "REFRAME_REGIME_SELECTIVITY_01_REVERSE"
+  name: "Full Coverage Position Scaling"
+  thesis: "Keep 100% bar coverage; scale position size by regime intensity (ER × VR → multiplier in [0.1, 1.0]). Low-conviction regimes get tiny positions; high-conviction fire full size."
+  rationale: "Addresses cost_drag by sizing down in weak regimes (lower slippage/trade) rather than reducing frequency. Retains signal breadth; smoother P&L curve."
+  testability: "High (only requires position_multiplier in execution layer)"
+
+alternative_data_candidates:
+  - metric: "Order flow imbalance (buy/sell wall ratio)"
+    plausibility: "Medium"
+    reason: "Binance API available; but adds latency risk and computational cost"
+  - metric: "On-chain whale activity"
+    plausibility: "Low"
+    reason: "No free API; not aligned with spot margin strategy"
+
+behavioral_features:
+  - feature: "Regime momentum (dER/dt, dVR/dt)"
+    description: "Fire only when both ER and VR are accelerating (not just above threshold). Tightens gate to regime transitions."
+  - feature: "Recent P&L polarity"
+    description: "Only fire signal in regimes matching direction of last 5 trades (avoid signal reversals after drawdown)."
+  - feature: "Candle close proximity"
+    description: "Prefer signals when close aligns with KeltnerBreakout direction (close near high for long, near low for short)."
+
+regime_specific_variants:
+  TRENDING_override:
+    regime: "ER >= 0.35, VR < 1.20"
+    adjustment: "Relax V3 threshold to 0.35 (skip VR gate in strong trends; mean-reversion confirmation unnecessary)."
+  MEAN_REVERTING_override:
+    regime: "ER < 0.35, VR >= 1.20"
+    adjustment: "Tighten V2 to 40th-60th quantile vol (mean-reversion fragile in extremes)."
+  CHOPPY_fallback:
+    regime: "ER < 0.35, VR < 1.20"
+    adjustment: "All variants fire rarely; relax V3 to ER×VR >= 0.25 or disable signal entirely."

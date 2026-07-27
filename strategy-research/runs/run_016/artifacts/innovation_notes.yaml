@@ -1,0 +1,31 @@
+run_id: "run_016"
+from_stage: "hypothesis_generation"
+to_stage: "innovation_expansion"
+
+expansion_decision: |
+  Brief constraint specifies 'one variant only'. No expansion into alternatives, 
+  reverse hypotheses, behavioral features, or regime-specific variants applied. 
+  V1 passed through as single fully-specified testable variant.
+
+variant_generation: "V1 (mean-reversion lower-band breakdowns)"
+
+preserved_from_brief:
+  - Signal direction: lower-band breakdowns (inverted from V1 upper-band)
+  - Regime filter: TRENDING only (ER ≥0.50, VR ≥1.20)
+  - Band parameters: EMA(20) ± ATR(20) × 1.5
+  - Forecast: +10 on trigger, 0 else
+  - Assets: BTCUSDT, ETHUSDT
+  - Timeframe: 1h
+  - Min signals: ≥30
+
+alternative_data_candidates: "Not generated (constraint = single variant)"
+reverse_hypothesis: "Not generated (brief already specifies signal inversion)"
+behavioral_features: "Not generated (constraint = single variant)"
+regime_specific_variants: "Not generated (regime locked by brief)"
+
+rationale: |
+  Brief is explicit and well-constrained: signal inversion is the core hypothesis, 
+  regime is validated, and parameters are locked. Single variant suffices to test 
+  whether the inverted signal (lower-band in trending) captures the real edge.
+
+next_stage_input: "expanded_hypothesis_card.yaml (V1 single variant)"

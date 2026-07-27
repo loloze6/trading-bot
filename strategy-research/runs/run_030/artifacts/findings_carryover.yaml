@@ -1,0 +1,17 @@
+hypothesis_id: "KELTNER_SCOREMODE_4H_AVAX"
+what_failed:
+  - "Sharpe ≥0.30 (actual: -2.61, median across 11 windows)"
+  - "Max drawdown ≤35% (actual: -45.559% in 2024-07)"
+  - "Cost drag ≤80% (actual: 128.44%, indicating sizing problem)"
+diagnostic_rule_applied: "Rule 1: cost_drag_pct=128.44% > 80% AND gross_pnl=+44.86 > 0 → sizing/frequency problem, NOT signal problem. Signal generates positive gross PnL but fees overwhelm due to excessive trade count."
+diagnostic_snapshot:
+  forecast_return_corr: 0.0138
+  cost_drag_pct: 128.4407
+  gross_pnl: 44.8599
+  uninformative_regimes: ["mean_reversion", "trending"]
+what_not_to_try:
+  - "Do not lower min_score further (already at 0.15; run_029→run_030 showed deterioration)"
+  - "Do not change Keltner signal or ER/VR parameters (gross edge confirmed positive)"
+  - "Do not refine min_score in opposite direction (consecutive same-dimension refine forbidden)"
+  - "Do not blame signal component (forecast_corr=0.0138 weak but positive; gross_pnl positive)"
+next_altitude: "pivot"

@@ -1,0 +1,78 @@
+hypothesis_id: "H-041-C"
+protocol_version: v2
+edge_source_taxonomy_version: "Improvement 01 (A1.1-A1.3)"
+created_at: "2026-07-03"
+
+thesis: >
+  When the Alternative.me Fear & Greed index reaches an extreme reading (< 25 = extreme
+  fear, > 75 = extreme greed), crowded one-sided positioning creates a contrarian
+  opportunity over the following 1-2 calendar days as the sentiment mean-reverts.
+
+rationale: >
+  Extreme fear readings reflect a market where panic selling has pushed many participants
+  to capitulate or reduce exposure. This overcrowding on the bearish side creates mean-
+  reversion pressure as survivors re-enter and forced sellers are exhausted. The symmetric
+  argument holds for extreme greed: overleveraged longs and FOMO-driven entry create a
+  fragile long-side structure that is vulnerable to any catalyst. The F&G index, published
+  once daily by alternative.me, aggregates multiple sentiment dimensions (volatility,
+  momentum, social media, surveys, dominance, trends) providing a denser sentiment signal
+  than any single component.
+
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: >
+    Extreme Fear & Greed readings reflect crowded herding that overshoots fair value.
+    At F&G < 25, fear-driven position reduction is self-amplifying (capitulators trigger
+    more capitulators) until the crowding reverses when selling exhaustion is reached.
+    The contrarian return is realized as overcrowded positioning unwinds over the next
+    1-2 days. Measurable proxy: daily F&G < 25 (fear) or > 75 (greed) at the daily
+    update bar predicts the OPPOSITE sign of subsequent 1-2 day returns.
+  why_not_arbitraged: >
+    The crowding that creates the signal is itself the arb barrier: entering long into
+    extreme fear means absorbing forced selling, requiring capital and stomach to mark
+    down positions before they recover. At the 1h timeframe, the mean-reversion is
+    gradual enough (1-2 days) that intra-day arb cannot capture it cheaply. The bias
+    persists because panic and FOMO arise from the same behavioral architecture in each
+    cycle — new market participants repeat the pattern. Institutions with sufficient
+    capital to arb this face reputational risk of buying into falling markets.
+  evidence_type: fear_and_greed
+  measurable_proxy: >
+    fear_greed daily index (previous day's reading, +1 day A8.4 alignment shift applied):
+    fear_greed < 25 at daily boundary bar predicts positive next returns;
+    fear_greed > 75 predicts negative next returns.
+    Active bars: ~159 fear/greed events in 2024-2025 (21.8% of days).
+
+signal_concept: >
+  Signal fires ONLY at the daily boundary bar (UTC hour == 0) when the previous day's
+  F&G value (A8.4 +1 day shift) is extreme:
+    fear_greed < 25 → forecast = +10.0 (contrarian long)
+    fear_greed > 75 → forecast = -10.0 (contrarian short)
+    otherwise       → forecast = 0.0 (inactive)
+  Sparsity: ~78% inactive bars (159 daily active events / 730 total days per symbol).
+  Ungated: no regime filter (A2.3 standing policy).
+
+target_market: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+
+assumptions:
+  - "Previous day's F&G is publicly available by each day's 00:00 UTC bar
+     (A8.4 alignment fix applied: +1 day shift; fix verified in feed_alignment_check.yaml)."
+  - "F&G extremes predict returns at the 1h granularity (1-2 day effect captured as
+     1h-bar next return, active only at the daily boundary bar)."
+  - "The contrarian effect is symmetric: extreme fear and extreme greed both mean-revert."
+  - "F&G adds sentiment information beyond what price already encodes (required check:
+     compare IC against price-momentum-reversal baseline before crediting sentiment signal)."
+  - "The 25/75 thresholds are economically motivated and pre-registered; no parameter
+     search over this dimension is permitted post-hoc."
+
+expected_failure_modes:
+  - "F&G index is partially price-derived (price momentum is one component). The measured
+     IC may replicate a pure price-momentum-reversal signal, not sentiment per se."
+  - "Contrarian edge at 1h next-bar is too granular: the mean-reversion takes 2-5 days,
+     and the 1h next-bar return after the daily signal is noise relative to the effect."
+  - "Cost check fails: the daily signal fires rarely (21.8% of days) and predicted gross
+     edge per active bar is below the round-trip cost of 17 bps."
+  - "F&G extreme readings cluster in specific periods (March 2024 fear, Dec 2024 greed)
+     that may not generalize — sample is effectively one or two episodes."
+  - "The +1 day alignment shift reduces IC substantially vs the unshifted version,
+     suggesting prior apparent IC was feed-timing lookahead artifact."

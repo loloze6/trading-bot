@@ -1,0 +1,331 @@
+hypothesis_id: KELTNER_SCORE_MODE_REGIME
+base_hypothesis_id: KELTNER_SCORE_MODE_REGIME
+refinement_attempt: 0
+thesis: "Score_mode regime detection (ER/VR percentile-based, continuous 0–100 scale)\
+  \ with confidence-scaled \nKeltner signal. Explore variant threshold ranges, confidence\
+  \ scaling formulas, and regime composition \nmethods to maximize trade frequency\
+  \ (target ≥50/month) while preserving signal integrity and controlling \ncost drag.\
+  \ All variants preserve Keltner component; variants differ in regime threshold mapping\
+  \ and \nconfidence scaling logic only.\n"
+preserved_constraints:
+- 'Timeframe: 1h exclusively'
+- 'Signal component: Keltner mean-reversion (period=20, atr_period=20, atr_multiplier=2.0,
+  scaling_factor=−20.0). IDENTICAL to run_017. No modification.'
+- 'Regime architecture: score_mode only (ER/VR percentile-based, no threshold_rules,
+  no new indicators)'
+- 'Active regimes: Trending, Chop, Mean-reversion all trade (no zero-weight fallback)'
+- 'Position sizing: forecast × regime_confidence (no fixed position sizes)'
+- 'Config change scope: single-dimensional (regime_detector.mode + mode_params only)'
+expanded_variants:
+- variant_id: V1_baseline_score_mode
+  class: conservative
+  thesis: 'Percentile-based ER/VR (0–100) mapped to fixed regime thresholds (trending>70,
+    chop 40–70, MR<40).
+
+    Confidence = |regime_score − 50| / 50. Trades all bars with position size proportional
+    to regime clarity.
+
+    '
+  mechanism: '(1) ER percentile, VR percentile computed independently.
+
+    (2) regime_score = (ER_pct + VR_pct) / 2 [arithmetic mean of indicators].
+
+    (3) Threshold mapping: trending (score>70), chop (40–70), mean_reversion (<40).
+
+    (4) confidence = |regime_score − 50| / 50 ∈ [0, 1].
+
+    (5) position_size = forecast × confidence.
+
+    (6) Rebalance every bar.
+
+    '
+  expected_outcome: 'Trade frequency 50–80/month. Sharpe ≥0.3 (higher statistical
+    power than threshold_rules).
+
+    forecast_return_corr~0.20–0.22 (signal preserved). Cost drag manageable via 50%+
+    bar trading at low confidence.
+
+    '
+  failure_modes:
+  - Chop regime dominates; low-confidence positions fire excessively; cost drag exceeds
+    savings from frequency.
+  - Regime score distribution skew (one regime overrepresented); single thresholds
+    misalign with asset-specific distributions.
+  - Regime flipping near thresholds (40, 70) causes unnecessary rebalances without
+    directional conviction.
+  config_params:
+    regime_detector.mode: score_mode
+    regime_detector.mode_params:
+      scoring_method: percentile_arithmetic_mean
+      trending_threshold: 70
+      chop_floor: 40
+      confidence_formula: symmetric_distance
+      confidence_floor: 0.0
+- variant_id: V2_adaptive_thresholds
+  class: exploration
+  thesis: 'Per-asset regime thresholds. BTCUSDT and ETHUSDT have different ER/VR distributions
+    (empirically observed).
+
+    Calibrate thresholds separately (BTCUSDT trending>65; ETHUSDT trending>75) to
+    match asset-specific behavior.
+
+    '
+  mechanism: '(1) Same percentile ER/VR scoring as V1.
+
+    (2) BTCUSDT: trending>65, chop 40–65, MR<40.
+
+    (3) ETHUSDT: trending>75, chop 45–75, MR<45.
+
+    (4) confidence formula identical to V1.
+
+    (5) Rebalance every bar with asset-specific regime classification.
+
+    '
+  expected_outcome: 'Reduced regime noise per asset; tighter regime clustering. Trade
+    frequency balanced (50–70/month).
+
+    Sharpe potentially higher if thresholds reduce spurious regime transitions.
+
+    '
+  failure_modes:
+  - Per-asset calibration increases config complexity without predictive gain.
+  - Thresholds still arbitrary; minor shifts (±5) cause large trade frequency swings.
+  - ETHUSDT threshold (75) may be too high, producing sparse trending regime (same
+    problem as threshold_rules).
+  config_params:
+    regime_detector.mode: score_mode
+    regime_detector.mode_params:
+      scoring_method: percentile_arithmetic_mean
+      asset_overrides:
+        BTCUSDT:
+          trending_threshold: 65
+          chop_floor: 40
+        ETHUSDT:
+          trending_threshold: 75
+          chop_floor: 45
+      confidence_formula: symmetric_distance
+      confidence_floor: 0.0
+- variant_id: V3_inverse_confidence
+  class: exploration
+  thesis: "Reverse hypothesis: low regime confidence signals stronger trades. If Keltner\
+    \ works best when market structure \nis ambiguous (chop, transitioning), upweight\
+    \ low-confidence bars. Position_size = forecast × (1 − confidence).\n"
+  mechanism: '(1) Regime scoring identical to V1.
+
+    (2) confidence = 1 − (|regime_score − 50| / 50). Trending/MR ≈0.0, chop ≈0.5–1.0.
+
+    (3) position_size = forecast × confidence.
+
+    (4) Chop-regime bars now trade larger; trending bars trade smaller.
+
+    '
+  expected_outcome: "If mean_reversion signal is actually contained in chop regimes\
+    \ (cross-regime variability), \nthis trades it with 2–5x higher position size.\
+    \ Sharpe potentially higher if chop-mean-reversion correlation is hidden.\n"
+  failure_modes:
+  - Whipsaw escalates dramatically; chop bars (regime flipping) trade larger → worst
+    case for cost drag.
+  - Keltner signal weak in chop (likely); maximizing chop position size reduces Sharpe
+    to <0.
+  - Inverting confidence is untested; may violate regime validity assumptions.
+  config_params:
+    regime_detector.mode: score_mode
+    regime_detector.mode_params:
+      scoring_method: percentile_arithmetic_mean
+      trending_threshold: 70
+      chop_floor: 40
+      confidence_formula: inverse_distance
+      confidence_floor: 0.0
+- variant_id: V4_geometric_regime_composition
+  class: exploration
+  thesis: "Regime composition via geometric mean (multiplicative) instead of arithmetic\
+    \ (additive). \nTrending = both ER_pct AND VR_pct high; mean_reversion = both\
+    \ low. Tests whether regime clarity \nrequires BOTH indicators elevated (stronger\
+    \ signal).\n"
+  mechanism: '(1) ER_pct, VR_pct computed (0–100).
+
+    (2) trending_score = sqrt(ER_pct × VR_pct).
+
+    (3) mean_reversion_score = sqrt((100 − ER_pct) × (100 − VR_pct)).
+
+    (4) chop_score = 100 − max(trending_score, mean_reversion_score).
+
+    (5) regime_class = argmax(trending, mean_reversion, chop).
+
+    (6) confidence = normalized_score / 100.
+
+    (7) Thresholds for regime switching: trending if trending_score>60; MR if MR_score>60;
+    else chop.
+
+    '
+  expected_outcome: "Multiplicative scoring strengthens regime signal when both indicators\
+    \ align. Trending regime becomes \nrarer but higher conviction; fewer regime flips.\
+    \ Sharpe potentially higher via reduced noise, \ntrade frequency may drop to 30–50/month\
+    \ (trade-off vs V1).\n"
+  failure_modes:
+  - Geometric mean compresses scores toward 0; most bars land in chop regime; regime
+    sparsity re-emerges.
+  - Trending becomes too rare (replicates threshold_rules failure); trading frequency
+    insufficient for statistical validation.
+  - Confidence scaling via normalized_score loses the symmetric distance intuition;
+    scaling becomes opaque.
+  config_params:
+    regime_detector.mode: score_mode
+    regime_detector.mode_params:
+      scoring_method: percentile_geometric_mean
+      trending_threshold: 60
+      chop_floor: null
+      confidence_formula: normalized_score
+      confidence_floor: 0.0
+- variant_id: V5_confidence_floor
+  class: conservative
+  thesis: "Prevent micro-positions by enforcing minimum confidence floor (e.g., 0.3).\
+    \ \nIf regime_confidence < 0.3, trade at 30% size instead of 0–30%. Reduces cost\
+    \ drag from \ntiny orders while preserving bar-level trading.\n"
+  mechanism: '(1) Scoring and confidence identical to V1.
+
+    (2) confidence_effective = max(confidence, confidence_floor = 0.3).
+
+    (3) position_size = forecast × confidence_effective.
+
+    (4) ~95% of bars still trade; low-confidence bars (chop) sized to 30% minimum
+    instead of 0–30%.
+
+    '
+  expected_outcome: "Cost drag improves (fewer nano-positions → lower per-trade friction).\
+    \ Trade frequency identical to V1 (50–80/month), \nbut chop-regime average position\
+    \ size increases from 25% → 30%. Sharpe potentially 5–10% higher if cost savings\
+    \ \noutweigh signal dilution from upweighting low-confidence trades.\n"
+  failure_modes:
+  - Cost-drag savings overstated; chop signals still fire frequently; raising minimum
+    to 30% increases whipsaw exposure.
+  - Sharpe deteriorates if chop-regime signal is genuinely absent.
+  config_params:
+    regime_detector.mode: score_mode
+    regime_detector.mode_params:
+      scoring_method: percentile_arithmetic_mean
+      trending_threshold: 70
+      chop_floor: 40
+      confidence_formula: symmetric_distance
+      confidence_floor: 0.3
+- variant_id: V6_volatility_adaptive_thresholds
+  class: exploration
+  thesis: "Regime thresholds adapt dynamically to recent volatility. During high-volatility\
+    \ regimes, \nlower regime thresholds (more trending bias); during low-volatility,\
+    \ raise thresholds \n(favor chop/mean_reversion). Tests whether regime interpretation\
+    \ should vary with volatility context.\n"
+  mechanism: '(1) Compute 20-bar realized volatility percentile (0–100).
+
+    (2) Base thresholds: trending>70, chop_floor=40 (V1 defaults).
+
+    (3) vol_adjustment = (vol_pct − 50) / 10 ∈ [−5, +5].
+
+    (4) dynamic_trending_threshold = 70 − vol_adjustment [high vol → lower threshold,
+    more trending].
+
+    (5) dynamic_chop_floor = 40 + vol_adjustment / 2.
+
+    (6) Confidence formula identical to V1.
+
+    (7) Rebalance every bar with vol-adjusted thresholds.
+
+    '
+  expected_outcome: "Regime classification adapts to market structure. High-volatility\
+    \ periods tag more bars as trending \n(aligned with realized vol spikes). Low-volatility\
+    \ periods favor chop/MR (range-bound moves). \nSharpe potentially higher if Keltner\
+    \ signal correlation varies with volatility regime.\n"
+  failure_modes:
+  - Volatility adaptation adds complexity without predictive gain (volatility regime
+    already implicit in ER/VR).
+  - Dynamic thresholds cause rapid regime flipping as vol_pct crosses midpoint (50).
+  - Over-parameterization (adjustment scale, vol_window) introduces curve-fitting
+    risk.
+  config_params:
+    regime_detector.mode: score_mode
+    regime_detector.mode_params:
+      scoring_method: percentile_arithmetic_mean
+      base_trending_threshold: 70
+      base_chop_floor: 40
+      volatility_adaptation: true
+      vol_window: 20
+      vol_adjustment_scale: 0.5
+      confidence_formula: symmetric_distance
+      confidence_floor: 0.0
+alternative_data_candidates:
+- candidate_id: volume_weighting
+  description: Weight ER/VR percentiles by volume percentile (favor regimes with high
+    conviction volume). Requires volume data from candles; already available in data
+    pipeline.
+  rationale: Regime scoring is pure price-based (ER/VR). Volume-weighting tests whether
+    regime clarity should exclude low-volume noise.
+  constraint: Additive feature only; must preserve ER/VR baseline scoring for comparison.
+  scope: Out of scope for V1–V6; candidate for V7 if variants need external data.
+- candidate_id: momentum_secondary_indicator
+  description: RSI or rate-of-change as secondary regime indicator. Map 3D space (ER,
+    VR, momentum) to regimes.
+  rationale: Current ER/VR focused on volatility/efficiency. Momentum adds direction.
+    Tests whether directional bias improves regime classification.
+  constraint: Requires new indicator calculation; violates 'no new component' rule.
+  scope: Deferred to escalation (altitude 3) if score_mode variants fail.
+reverse_hypothesis: "V3_inverse_confidence tests the reverse: \"Keltner works best\
+  \ when regime confidence is LOW (chop, ambiguous structure).\"\nEmpirical negation:\
+  \ if V3 sharpe < 0.1, conclude that regime clarity (high confidence) is indeed required\
+  \ \nfor signal integrity, validating base hypothesis assumption.\n"
+behavioral_features:
+- feature_id: regime_transition_intensity
+  description: Bars within 5 points of threshold (e.g., score ∈ [65, 75] for trending_threshold=70).
+    Proxy for regime instability.
+  application: Post-hoc analysis; identify if variant failures correlate with high
+    transition intensity.
+- feature_id: regime_stability_duration
+  description: Consecutive bars in same regime classification. Low stability → rapid
+    threshold crossing → high rebalance frequency.
+  application: Monitor per variant; if duration < 3 bars on average, cost drag likely
+    dominates.
+- feature_id: confidence_distribution_skew
+  description: Histogram of confidence values across bars. Right-skew (many high-confidence)
+    vs left-skew (many low-confidence).
+  application: Distinguish V1 vs V2 vs V3 regime profile; V3 should invert skew vs
+    V1.
+regime_specific_variants:
+- regime: trending
+  variant_adaptations: "V1–V2 (baseline, adaptive): trending trades full confidence\
+    \ (1.0). \nV3 (inverse): trending trades ~0% (inverse formula). Should be minimal\
+    \ check; identify if signal concentrated in chop.\nV4 (geometric): trending_score\
+    \ = sqrt(ER × VR) → high conviction when both indicators exceed 60th percentile.\n\
+    V5 (confidence floor): trending benefit marginal (already >70% confidence, so\
+    \ floor inactive).\nV6 (vol-adaptive): trending threshold lower during high-vol\
+    \ → more bars classified trending in spikes.\n"
+- regime: chop
+  variant_adaptations: 'V1–V2 (baseline, adaptive): chop trades 25–50% confidence
+    (regime 40–70 maps to confidence 0–0.5).
+
+    V3 (inverse): chop trades 50–100% (high position size if chop is actually predictive
+    reversal zone).
+
+    V4 (geometric): chop residual (1 − max(trending, MR)) → likely high proportion,
+    may dominate trading.
+
+    V5 (confidence floor): chop minimum confidence 30%; reduces whipsaw risk from
+    0–30% regime.
+
+    V6 (vol-adaptive): chop floor rises during low-vol, falls during high-vol → shifts
+    regime boundaries.
+
+    '
+- regime: mean_reversion
+  variant_adaptations: 'V1–V2 (baseline, adaptive): MR trades full confidence when
+    score<40.
+
+    V3 (inverse): MR trades ~0% (inverse).
+
+    V4 (geometric): MR_score = sqrt((100−ER) × (100−VR)) → rare unless both indicators
+    simultaneously low.
+
+    V5 (confidence floor): MR high-confidence bars unaffected; low-confidence MR bars
+    upweighted to 30%.
+
+    V6 (vol-adaptive): MR threshold fluctuates with volatility; high-vol → tighter
+    MR classification.
+
+    '

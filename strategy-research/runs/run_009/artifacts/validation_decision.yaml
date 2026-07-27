@@ -1,0 +1,32 @@
+hypothesis_id: H-RUN007-V1-RSI-PULLBACK-MR
+
+status: conditional_approve
+
+rationale: |
+  The hypothesis is well-specified and falsifiable. RSI proximity to 50 in a 
+  rigorously defined mean-reversion regime is a plausible mean-reversion signal. 
+  Acceptance thresholds are modest (Sharpe 0.5) and acceptance criteria list is 
+  tight (4 hard gates). No fundamental logical flaw or data availability blocker 
+  detected. However, three specific conditions must be honored to prevent 
+  look-ahead bias and ensure statistical power. Regime leakage is the primary risk.
+
+blocking_issues:
+  - Regime training must be strictly in-sample during walk-forward windows (not full-sample ER/VR)
+  - Minimum 30 mean-reversion regime candles per walk-forward window or test is invalid
+  - RSI(14) lookback must confirm no circular dependence with regime labeling at candle completion
+
+conditions:
+  - Walk-forward test must recompute regime model (ER, VR thresholds) in-sample only; no regime flags from data beyond walk-forward window date
+  - Backtest harness must enforce minimum 30 mean-reversion regime candles per walk-forward window; exit with error if unmet
+  - RSI(14) computation documented in code; manual audit of bar N confirms only bars 1..N-1 used in forecast, not bar N+k
+
+next_step: |
+  If all 3 conditions are documented and locked in code before backtest, 
+  advance to backtest_specification stage.
+  If any condition cannot be enforced (harness limitation), return to refine stage.
+
+confidence_rationale: |
+  Moderate. Hypothesis avoids cross-timeframe divergence and behavioral proxies 
+  (per constraint). RSI is standard. ER/VR regime is established. However, 
+  1h BTCUSDT is narrow; generalization untested. Regime leakage is plausible 
+  if not carefully guarded. Conditions are resolvable via code audit + harness config.

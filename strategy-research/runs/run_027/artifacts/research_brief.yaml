@@ -1,0 +1,47 @@
+hypothesis_id: TIMEFRAME_ESCALATION_4H
+asset: BTCUSDT, ETHUSDT
+timeframe: 4h
+research_question: 'Does Keltner mean-reversion at 4h timeframe (with correct config:
+  default_regime=unknown) achieve positive Sharpe and adequate trade frequency? Prior
+  4h test (run_021) failed due to default_regime=trending config bug (cost_drag=413%),
+  not signal failure. This is the first valid 4h test.'
+signal_concept: Keltner mean-reversion (ema_period=20, atr_period=20, atr_multiplier=2.0,
+  scaling_factor=-20.0). Identical signal to run_017 baseline. Do NOT change signal.
+regime_filter: TRENDING regime (ER>=0.5 AND VR>=1.2, threshold_rules mode). Same regime
+  definition as run_017. At 4h, each bar spans 4 hours so the same ER/VR thresholds
+  should fire on a comparable fraction of bars by count, but each trade covers more
+  price movement.
+mechanism: 'Run_017 (1h) achieves corr=0.2145 but only 2.5 trades/window — too sparse
+  for reliable Sharpe in monthly windows. At 4h, each TRENDING bar represents 4h of
+  price action. Hypothesis: same regime frequency by bar count translates to longer-held
+  positions, higher gross PnL per trade, and lower proportional cost drag. If cost_drag
+  stays below 80% and corr stays above 0.10, the edge is viable at 4h.'
+assumptions:
+- Keltner signal edge (corr~0.21) transfers to 4h timeframe.
+- TRENDING regime (ER>=0.5, VR>=1.2) fires at similar bar-count frequency at 4h as
+  at 1h.
+- Larger per-trade PnL at 4h offsets higher absolute fees per trade.
+- run_021 failure was entirely due to default_regime=trending config bug, not 4h signal
+  weakness.
+expected_failure_modes:
+- 'Signal does not transfer: corr drops to near-zero at 4h (regime detection works
+  differently at lower resolution).'
+- Cost drag remains high despite longer positions (execution cost model is not timeframe-sensitive).
+- TRENDING regime fires too rarely at 4h (fewer bars per month means fewer qualifying
+  windows).
+- Sharpe is high in individual windows but median is negative due to volatility of
+  small samples.
+constraints:
+- 'Timeframe: 4h only.'
+- 'Signal: Keltner mean-reversion (IDENTICAL params to run_017: ema=20, atr=20, mult=2.0,
+  scale=-20.0).'
+- 'Regime: TRENDING (ER>=0.5 AND VR>=1.2, threshold_rules). Do NOT change thresholds.'
+- 'default_regime: unknown (CRITICAL — do NOT set to trending). This was the bug in
+  run_021.'
+- 'unknown regime: null (no zero-weight components).'
+- No new signal families, no OR-gate logic, no threshold relaxation.
+change_from_previous: 'PREVIOUS (run_026): OR gate (ER>=0.5 OR VR>=1.2) at 1h. Result:
+  40 trades/window, corr=0.058, cost_drag=94%, Sharpe=-3.17. Campaign review: reframe
+  to 4h escalation. THIS RUN: same Keltner signal + AND gate (ER>=0.5 AND VR>=1.2)
+  at 4h. Rationale: 1h threshold space is exhausted (runs 024-026). 4h was never tested
+  correctly.'

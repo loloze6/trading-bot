@@ -1,0 +1,42 @@
+hypothesis_id: H-041-A
+base_hypothesis_id: H-041-A
+refinement_attempt: 2
+
+expanded_variants:
+  - variant_id: V1_holding_window_extended_4h
+    timeframe_original: 1h
+    timeframe_expanded: 4h
+    signal_mechanism: "FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0) — VERBATIM from run_041. Fires at every 32 4h-bars (8 calendar days, funding settlement cycles) when |funding_rate| > 0.0002. Forecast = -sign(funding_rate) × 10.0. Holding window: 32–96 bars (4–24 calendar days)."
+    threshold: 0.0002
+    scaling_factor: 10.0
+    holding_window_bars: [32, 96]
+    holding_window_calendar_days: [4, 24]
+    evidence_type: funding_open_interest
+    
+    blocker_resolutions:
+      BR_02_sparse_activation: "4h timeframe increases episode density 4–5×. Expected activation: ~40–60 episodes/year (vs ~3–4/year on 1h). Expected n_eff≈550 blocks (exceeds reactivation gate n_eff≥50)."
+      BR_03_timeframe_mismatch: "4h holding window (32–96 bars = 4–24 calendar days) aligns with empirical 8–48h funding-cascade unwinding identified in refinement notes. Cost-per-bar: 0.27 bps (feasible at plausible IC≥0.15; was 17 bps on 1h short hold)."
+    
+    mechanism: "Structural forced-flow via 8h funding settlement cycles. Extreme rate triggers mechanical position unwinding. Parameter mismatch in attempt 1 was execution-layer only (1h bars + insufficient hold duration); mechanism remains sound."
+    cost_per_bar_bps: 0.27
+    cost_feasibility: PASS
+    library_category: structural_rate
+    data_requirements: funding_open_interest
+    diversity_axis: "Timeframe shift (1h→4h) resolves cost-per-bar feasibility and activation-density constraints while preserving structural signal mechanism."
+
+alternative_data_candidates: []
+
+reverse_hypothesis: null
+
+behavioral_features: []
+
+regime_specific_variants: []
+
+power_parameters_updated:
+  activation_rate: 0.12
+  plausible_ic_upper: 0.20
+  n_bars: 55000
+  n_symbols: 2
+  is_market_wide: false
+  expected_n_eff: 550
+  power_gate: PASS

@@ -1,0 +1,46 @@
+expansion_stage: innovation_expansion
+run_id: run_020
+
+context_summary: |
+  V2-PIVOT-A-THRESHOLD (min_abs=20.0) collapsed to median_trade_count=0.
+  Prior baseline V2-PIVOT-A-CONSERVATIVE (15.0) showed edge (gross_pnl=+21.62)
+  but cost_drag=272.8% (excessive churn). Proposal (17.5) targets ≥20 trades/window
+  with cost_drag <180%.
+
+variant_selection_rationale: |
+  Signal distribution P(|forecast|) determines trade volume at threshold τ.
+  τ=20.0 truncates below support (0 trades, unvalidatable).
+  τ=15.0 includes tail (27-30 trades, high churn).
+  τ=17.5 targets mid-CDF quantile (~20-25 trades, reduced churn).
+  
+  Variants probe quantile boundaries:
+  V1 (17.5): Anchors proposal; validates trade_count ≥20.
+  V2 (16.5): Tests if +10% permissiveness restores edge magnitude.
+  V3 (18.0): Probes collapse risk; measures cost_drag vs V1 if trade_count ≥15.
+  V4 (16.0): Fallback gradient point if V1 fails trade_count threshold.
+
+constraints_honored: |
+  - Only min_abs varies; RSI period=14, regime=TRENDING, scaling_factor=0.4 fixed.
+  - No infrastructure rebuild (threshold_filter fits existing component framework).
+  - All variants maintain regime gate (ER/VR thresholds) unchanged.
+  - Respects brief's signal_concept (RSI(14) momentum in TRENDING only).
+
+testability_matrix: |
+  Decision logic per variant:
+  
+  IF median_trade_count[V1] ≥ 20 AND median_sharpe[V1] > 0.05:
+    ✓ Proposal passes gate → validation_gate stage.
+  
+  ELIF median_trade_count[V2] ≥ 25 AND median_cost_drag[V2] < 150%:
+    ✓ Accept V2 (less strict) → escalate to V2 hypothesis.
+  
+  ELIF all variants median_trade_count < 15:
+    ✗ Signal distribution below support → regime_informativeness pivot required.
+  
+  ELSE:
+    ✓ Identify threshold boundary; test intermediate values (16.25, 17.0) if needed.
+
+expected_outputs: |
+  Per-variant metrics: median_trade_count, median_sharpe, median_cost_drag_pct,
+  forecast_return_corr (must restore from previous 0.0), gross_pnl.
+  Variant ranking by trade_count and cost_drag enables decision tree above.

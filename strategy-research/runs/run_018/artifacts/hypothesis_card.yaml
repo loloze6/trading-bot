@@ -1,0 +1,55 @@
+hypothesis_id: V2-PIVOT-A
+thesis: |
+  RSI momentum signals (quantile-based extreme levels) generate positive alpha in TRENDING
+  regime because trend-strength classification (ER ≥ 0.50, VR ≥ 1.20) should correlate
+  with momentum continuation, not mean-reversion pullback.
+
+rationale: |
+  V1-PIVOT-A (Keltner mean-reversion, ATR 2.0) failed on signal significance (pvalue 0.80,
+  >> 0.10 threshold). Diagnostic: signal family has no edge in the regime. Hypothesis:
+  TRENDING regime scores high on trend strength, not pullback depth. Therefore momentum
+  (trend-continuation) should outperform mean-reversion on statistical significance.
+  RSI quantile thresholds (rolling 100-bar percentile) adapt to regime dynamics and reduce
+  false signals vs static 70/30 levels.
+
+signal_concept: |
+  RSI 14-period momentum in TRENDING regime only.
+  Entry: Long when RSI > 75th percentile of rolling 100-bar distribution (uptrend context).
+         Short when RSI < 25th percentile (downtrend context).
+  Regime gate: ER ≥ 0.50 AND VR ≥ 1.20 (unchanged).
+  Output: forecast ∈ {-1, 0, +1}. Baseline forecast = 0 outside TRENDING.
+
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+
+timeframe: 1h
+
+assumptions:
+  - TRENDING regime detection (ER/VR thresholds) correctly identifies trend-strength markets.
+  - Momentum signals have higher alpha surface in high-trend-strength environments than
+    mean-reversion (due to trend inertia and feedback).
+  - RSI quantile thresholds reduce false entry signals and improve statistical significance
+    vs static 70/30 overbought/oversold levels.
+  - RSI 14-period lookback uses only lagged close prices; no forward-looking bias.
+  - Signal component (not regime filter or rebalancing logic) is the bottleneck. Regime
+    detection is correct.
+
+expected_failure_modes:
+  - "Consensus momentum: TRENDING regime edge is over-subscribed; trend continuation is consensus-traded, reducing alpha and increasing slippage at entry."
+  - "Regime misclassification: TRENDING regime is high-volatility classifier, not trend-continuation predictor. True edge is volatility mean-reversion, requiring opposite signal family."
+  - "Look-ahead bias: Rolling 100-bar percentile includes current bar, biasing entry signals forward in time."
+  - "Threshold miscalibration: Momentum continuation only occurs at ER >= 0.70 (not 0.50); regime entry criterion is too loose."
+  - "Insufficient lookback: RSI 14-period lag is too short for 1h candles; signal requires longer decay or multi-candle confirmation."
+
+testability: |
+  Walk-forward test on BTCUSDT/ETHUSDT 1h data: compute forecast_return_corr and pvalue
+  on out-of-sample period. Reject if pvalue ≥ 0.10 or median Sharpe < 0.0. Accept if
+  pvalue < 0.05 and median Sharpe ≥ 0.5, indicating statistically significant momentum
+  edge in TRENDING regime.
+
+integration_path: |
+  Implement RSIComponent (SubStrategyComponent subclass) in simple_strategy.py. Gate
+  output via existing TRENDING regime filter. Replace KeltnerBreakoutComponent in
+  CompositeStrategy for TRENDING regime only. No changes to execution, forecast_manager,
+  or rebalance logic required.

@@ -1,0 +1,37 @@
+hypothesis_id: H-041-A
+base_hypothesis_id: H-041-A
+run_context:
+  run_id: run_047
+  run_type: reactivation
+  expansion_applied: false
+  expansion_rationale: "research_brief.constraints specifies 'One variant only (V1 = the exact run_041 config). No innovation_expansion diversity search -- this is a straight reactivation, not a fresh search.' Per persona rule, expansion is not applied when brief constrains variant count to one."
+
+expanded_variants:
+  - variant_id: V1
+    variant_name: "FundingRateMeanReversionComponent (run_041 config, reactivation)"
+    signal_concept: "FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0)"
+    configuration:
+      threshold: 0.0002
+      scaling_factor: 10.0
+    evidence_type: funding_open_interest
+    library_category: structural_rate
+    data_requirements: funding_open_interest
+    diversity_axis: "N/A (single variant, reactivation context)"
+    regime_gates: []
+    regime_gates_note: "Ungated per A2.3. regime_detector.rules=[], default_regime='mean_reversion'. Mechanism is structural (settlement mechanics), not regime-dependent."
+    rationale: "Reactivation of H-041-A from run_041 (outcome: insufficient_sample_inconclusive, n_eff=10). Data extension (2019-09-10/2019-11-27 to 2025-12-31) provides n_eff≈50, pre-registered episodes=132 (pooled BTC+ETH, gap_bars≤48). Mechanism identical to run_041: |funding_rate| > 0.0002 at 8h settlement triggers contrarian mean-reversion."
+    mechanism_preservation: true
+    feed_status: available
+    a12_compliance: true
+    a12_compliance_note: "evidence_type='funding_open_interest' is non-price_volume_only and present in available_feeds.yaml.available. A1.2 satisfied."
+
+alternative_data_candidates: []
+alternative_data_candidates_note: "Single-variant reactivation context per research_brief constraint. No alternative feeds explored."
+
+reverse_hypothesis: null
+
+behavioral_features: []
+
+regime_specific_variants: []
+
+summary: "V1 only (reactivation): FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0), ungated, mechanism-preserving. No expansion per research_brief 'one variant only' constraint. Data extension provides n_eff recovery (10→50). A1.2 satisfied. Ready for validation_gate."

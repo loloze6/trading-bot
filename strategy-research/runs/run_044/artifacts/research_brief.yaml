@@ -1,0 +1,28 @@
+hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+research_question: >
+  Does the SIGN of the 8h Binance perpetual funding rate at every settlement bar
+  (not just extreme readings) carry ungated mean-reversion information on BTC/ETH
+  1h -- i.e. does an always-active (every 8h boundary) contrarian funding-sign signal
+  earn all-bars Spearman IC significantly different from zero, and does the implied
+  gross edge clear the round-trip cost hurdle? This is a materially different claim
+  from H-041-A (parked, extreme-funding-only, threshold=0.001, activation_rate too
+  low for power on 2024-2025 data): here the mechanism claim is that even MILD funding
+  payments create continuous incremental crowd-positioning pressure, not just tail
+  events, so the same directional relationship should hold at every settlement bar,
+  raising activation_rate ~8x and giving adequate a-priori power on the current window.
+signal_concept: >
+  FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0): fires at every
+  8h settlement boundary (UTC hour % 8 == 0) regardless of funding_rate magnitude
+  (threshold=0.0 removes the "extreme" gate used in H-041-A). forecast = -sign(funding_rate)
+  * scaling_factor at every settlement bar; 0 elsewhere. Ungated: no regime filter
+  (A2.3 standing policy).
+constraints:
+  - "One variant only for the run queue (V1). Additional variants (V2/V3) are proposed
+     in expanded_hypothesis_card.yaml for the diversity audit but are NOT executed this
+     cycle -- this is a pipeline shakedown batch, not the main search."
+  - "Must not propose ideas that require replacing the whole existing bot architecture."
+  - "Ungated only (post-A2.3): no regime_detector gating logic."
+  - "Existing components only: FundingRateMeanReversionComponent (trading-bot/strategies/strategy_components.py),
+     used with threshold=0.0. No new component code in this batch."

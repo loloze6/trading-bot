@@ -1,0 +1,182 @@
+{
+  "run_id": "20260626T110143Z_2754e184",
+  "created_utc": "2026-06-26T11:01:43.118140+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "er",
+          "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+          "params": {
+            "period": 24,
+            "smooth_period": 5
+          }
+        },
+        {
+          "id": "vr",
+          "class": "strategies.strategy_components.VarianceRatioComponent",
+          "params": {
+            "k": 5,
+            "window": 100
+          }
+        },
+        {
+          "id": "vol",
+          "class": "strategies.strategy_components.VolatilityPercentileRegimeComponent",
+          "params": {
+            "vol_period": 20,
+            "lookback_period": 100,
+            "smooth_period": 5
+          }
+        }
+      ],
+      "vetoes": [
+        {
+          "id": "vol",
+          "transforms": [
+            {
+              "op": "identity"
+            }
+          ],
+          "rules": [
+            {
+              "op": "gte",
+              "value": 0.9
+            }
+          ],
+          "consecutive_bars": 2,
+          "result": "chop"
+        }
+      ],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "er",
+                "op": "gte",
+                "value": 0.25
+              },
+              {
+                "id": "vr",
+                "op": "gte",
+                "value": 1.1
+              }
+            ],
+            [
+              {
+                "id": "er",
+                "op": "gte",
+                "value": 0.3
+              },
+              {
+                "id": "vr",
+                "op": "between",
+                "low": 0.9,
+                "high": 1.1
+              }
+            ]
+          ]
+        },
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "er",
+                "op": "lte",
+                "value": 0.2
+              },
+              {
+                "id": "vr",
+                "op": "lte",
+                "value": 0.9
+              }
+            ]
+          ]
+        },
+        {
+          "regime": "chop",
+          "any_of": [
+            [
+              {
+                "id": "er",
+                "op": "lte",
+                "value": 0.15
+              },
+              {
+                "id": "vol",
+                "op": "lte",
+                "value": 0.35
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "mean_reversion"
+    },
+    "strategies": {
+      "warmup": 51,
+      "regimes": {
+        "trending": null,
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "rsi",
+              "class": "strategies.strategy_components.RSIPullbackComponent",
+              "params": {
+                "period": 14,
+                "scaling_factor": 0.4,
+                "long_only": true
+              },
+              "weight": 1.0,
+              "lookback": 500,
+              "history_transforms": [
+                {
+                  "op": "vol_normalize"
+                }
+              ],
+              "transforms": [
+                {
+                  "op": "ratio_to_mean"
+                },
+                {
+                  "op": "scale",
+                  "params": {
+                    "factor": 10.0
+                  }
+                },
+                {
+                  "op": "threshold_filter",
+                  "params": {
+                    "min_abs": 15.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "chop": null,
+        "unknown": null
+      }
+    }
+  },
+  "config_sha256": "2754e18483d28276fe98cf2c0f2aa31194a0d2923ccf4626120b386e00219ed4",
+  "data": {
+    "symbols": [
+      "ETHUSDT"
+    ],
+    "timeframe": "3600s",
+    "start": "2024-11-01 00:00:00",
+    "end": "2024-12-01 23:00:00",
+    "bar_count": 744,
+    "data_sha256": "7c034d6465a3a66e38c6e661f364a981d40c57cea6d84b91cbe537e1796a2e71"
+  },
+  "git_sha": "08403100a4f303a72979e3bb1e307c4dfb6731f0",
+  "engine": {
+    "lookback": 30,
+    "warmup": 51
+  }
+}

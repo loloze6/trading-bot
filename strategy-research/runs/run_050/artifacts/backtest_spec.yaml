@@ -1,0 +1,39 @@
+hypothesis_id: "H-041-A"
+refinement_attempt: 2
+variant_id: "V1_holding_window_extended_4h"
+status: "spec_ready"
+config:
+  regime_detector:
+    mode: "threshold_rules"
+    components: []
+    rules: []
+    default_regime: "unknown"
+  strategies:
+    warmup: 3
+    regimes:
+      unknown:
+        components:
+          - id: "funding_mr"
+            class: "strategies.strategy_components.FundingRateMeanReversionComponent"
+            params:
+              threshold: 0.0002
+              scaling_factor: 10.0
+            weight: 1.0
+            transforms:
+              - op: "identity"
+      trending: null
+      mean_reversion: null
+      chop: null
+  aux_feeds:
+    - "funding_rate"
+  significance_methodology: "episode_blocked_a851a"
+config_rationale:
+  - "Hypothesis mechanism: FundingRateMeanReversionComponent (threshold=0.0002, scaling_factor=10.0) fires at 8h UTC funding settlement bars when |funding_rate| exceeds threshold"
+  - "Timeframe shift 1h→4h resolves activation density (40–60 episodes/year vs 3–4/year); cost feasibility improves to 0.27 bps/bar (viable at IC≥0.15)"
+  - "Signal scaling: Raw output ±sign(funding_rate)×10.0 produces [-10,+10] range; identity transform preserves this without additional normalization"
+  - "Ungated configuration: regime_detector.rules=[] and components=[], default_regime='unknown' routes every bar to the signal under 'unknown' regime (canonical post-A2.3 ungated pattern per validated test_ungated_config_pattern.py)"
+  - "Regime null-mapping: trending, mean_reversion, chop set to null (inactive regimes); unknown maps to active component; no dead configs"
+  - "Aux feed requirement: funding_rate column injected pre-analysis via aux_feeds=['funding_rate'] per STRATEGY_CONFIG_REFERENCE.md §4a"
+  - "Warmup: 3 bars (component requires min 2 bars); buffer for history deque initialization before first ready candidate"
+  - "Validation gate: episode-blocked A8.5.1a significance per validation_protocol.yaml sample_split_design; walk-forward 8 windows [2024-12-01, 2025-12-31], holdout [2026-01-01, 2026-06-30]"
+component_gap: null

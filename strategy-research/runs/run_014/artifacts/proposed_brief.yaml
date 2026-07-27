@@ -1,0 +1,59 @@
+hypothesis_id: "V3 (pivot-from-V2-E1)"
+asset: "BTCUSDT, ETHUSDT"
+timeframe: 1h
+
+research_question: |
+  Do Keltner channel breakouts generate positive expected returns in BTC/ETHUSDT 1h
+  when the market is in a TRENDING regime (high ER, high VR), as a structurally
+  different alternative to mean_reversion pullbacks?
+
+signal_concept: |
+  KeltnerChannelComponent: long signal when price breaks above upper Keltner band
+  in trending regime. Tests inverse hypothesis to mean_reversion: momentum
+  continuation (not mean reversion) drives returns in BTC 1h.
+
+regime_filter: |
+  TRENDING regime only: ER ≥ 0.50 AND VR ≥ 1.20 (inverse of mean_reversion gate).
+  Filters for strong trending conditions, excluding choppy/mean-reverting bars.
+  All other regimes produce forecast 0.0.
+
+mechanism: |
+  Keltner channel bands widen and trend in strong trending markets. Price breaks
+  above upper band indicate momentum continuation. Expected to capture directional
+  moves in high-ER, high-VR regimes. Inverse of V2's failed mean_reversion assumption.
+
+assumptions:
+  - "Trending regime occurs frequently enough for ≥30 trades minimum (expected higher ER/VR bar frequency than mean_reversion)"
+  - "Keltner breakouts correlate with short-term momentum continuation (opposite of mean_reversion)"
+  - "Transaction costs justified by larger average trade magnitude in trending regimes"
+
+expected_failure_modes:
+  - "Keltner bands do not predict breakout success; signal lacks edge in trending regime"
+  - "Trending regime definition (ER ≥ 0.50, VR ≥ 1.20) over-captures chop or under-captures true trends"
+  - "Binance commission drag still erodes edge; Keltner may require even stricter threshold"
+  - "Win_rate degrades below 40% in trending conditions"
+
+constraints:
+  - "one variant only — test Keltner channel breakouts against ER/VR trending thresholds"
+  - "use existing KeltnerChannelComponent and regime components"
+  - "no new code required"
+  - "change ONLY signal family and regime mode; keep risk management and rebalance logic unchanged"
+
+change_from_previous: |
+  STRUCTURAL PIVOT: V2 (RSI mean_reversion) tested oversold signals in low-ER/low-VR
+  regimes, expecting mean reversion. Results: median forecast_return_corr = -0.0223
+  (zero predictive power), trade_count = 14-21 (below minimum 30), median Sharpe = 
+  -5.019/-2.604, cost drag = 142.8%. Three parameter dimensions (smooth_period, 
+  er_threshold, vr_threshold) tried with no improvement; run_013→run_014 repeated 
+  same dimension (violating protocol).
+
+  ROOT CAUSE: RSI pullback signal lacks edge in mean_reversion regime. High win_rate
+  (51-60%) is directional noise; costs destroy weak edge. Trade count failure indicates
+  regime underperforms, not parameter misconfiguration.
+
+  REVISED HYPOTHESIS: Test inverse regime and signal family. Keltner channel breakouts
+  in TRENDING regime (ER ≥ 0.50, VR ≥ 1.20) capture momentum continuation instead of
+  mean reversion. Larger moves and lower trade frequency in trending regimes may reduce
+  cost drag (expected < 50% vs current 142.8%). If Keltner also shows forecast_return_corr 
+  < 0.02, escalate to new component or timeframe. If Sharpe > 0.5 but below 0.8, refine 
+  threshold. If Sharpe < -3, kill signal family.

@@ -1,0 +1,12 @@
+hypothesis_id: DIAG_B_ER35_1H_KELTNER_CLEAN
+asset: "BTCUSDT, ETHUSDT"
+timeframe: 1h
+research_question: "Does relaxing ER threshold from 0.35 to 0.30 (all other run_037 params identical) increase trade_count from current sparse level (min=0, 4 zero-trade windows) to 5-10/window, while maintaining forecast correlation > 0.10?"
+signal_concept: "KeltnerBreakout identical to run_037: ema=20, atr=20, atr_mult=2.0, scale=-20.0. TRENDING regime: ER>=0.30 (CHANGED FROM 0.35) AND VR>=1.20. default_regime: unknown."
+constraints:
+  - "Increment ER relaxation per Rule 6 Case B: apply minimum plausible step (-0.05) only."
+  - "Do not change signal family, component selection, or regime scoring methodology."
+  - "Close ER_threshold bracket: too_tight=0.35 (starvation observed), too_loose=TBD (to be determined when over-trading emerges)."
+change_from_previous:
+  what_changed: "er_threshold: 0.35 -> 0.30"
+  why: "Run_037 diagnostic retest confirmed regime starvation with min_trade_count=0 in 4/22 windows. ER threshold 0.35 remains above market's actual ER/VR distribution (particularly in Jan, Sep, Oct when ER < 0.35). Per Rule 6 Case B, relax by incremental step: 0.35 - 0.05 = 0.30. This explores the bracket's upper bound; if over-trading emerges (cost_drag > 80%, trades >> 10/window), the next step will use the bracket midpoint rule."

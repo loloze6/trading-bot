@@ -1,0 +1,6 @@
+stage: backtest_specification
+status: spec_ready
+rationale: "spec_ready as produced wired the ER gate through regime dispatch, implementing a continuous ER trailing stop (a different hypothesis than the brief's entry-only latched gate); component gap: engine has no entry-latch mechanism; operator engaged, building GatedSmaTrendLongOnlyComponent per STRATEGY_EXTENDING.md."
+blocking_issues: []
+
+operator_resolution_20260711: "Component gap resolved: GatedSmaTrendLongOnlyComponent built (trading-bot/strategies/strategy_components.py), implementing entry-only latch semantics per the brief. Acceptance: 30/30 gate-disabled (gate_threshold=-1) bar-for-bar forecast equivalence to run_054's canonical results across all window-symbol combinations of protocols/ts_trend_daily_v1.json (same 117 trades), plus two passing synthetic fixtures (no-deferred-entry and latch, see backtest_spec.yaml's operator_resolution_20260711 for full detail). status corrected component_gap -> spec_ready; the rationale field above is kept unedited as history of the original component_gap finding."

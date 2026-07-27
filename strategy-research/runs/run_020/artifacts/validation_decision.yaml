@@ -1,0 +1,25 @@
+hypothesis_id: V2-PIVOT-A-THRESHOLD-REFINED
+
+status: conditional_approve
+
+rationale: |
+  Hypothesis is falsifiable, regime-constrained, and testable via walk-forward backtest.
+  RSI extremes in TRENDING regime are mechanically plausible as momentum signals. Variant
+  structure (±8–20% around baseline 17.5) is appropriately scoped for sensitivity analysis.
+  However, approval requires three process conditions: (1) min_abs parameter definition
+  confirmed in code; (2) cost model (fees, slippage) validated against Binance live
+  conditions before backtest run; (3) walk-forward split and variant ranking locked
+  a priori in config before first backtest execution. These are resolvable blockers.
+  With conditions met, hypothesis proceeds to screening_backtest stage.
+
+blocking_issues:
+  - "Parameter definition: Confirm min_abs is |scaled_forecast| where scaled_forecast = (RSI - 50) * 0.4."
+  - "Cost model specification: Hardcode or document maker_fee, taker_fee, slippage_pct before backtest; reference Binance rate card or live fill data."
+  - "Walk-forward dates locked: Specify exact fold boundaries (e.g., fold1 train [2024-01-01, 2024-07-01], test [2024-07-01, 2024-08-01]) before backtest execution."
+
+conditions:
+  - "1. min_abs parameter documented: Value interpreted as absolute magnitude of (RSI - 50) * scaling_factor; confirmed in config.json or inline comment."
+  - "2. Cost model hardcoded: maker_fee=0.001, taker_fee=0.001, slippage_pct=0.05 (or document deviation from Binance standard and provide justification)."
+  - "3. Walk-forward split locked in backtest config: Fold boundaries, train/test proportions, and holdout date range finalized before any variant backtest run."
+  - "4. Variant ranking locked: V1 (17.5) designated primary a priori; V2, V3, V4 are secondary probes only, evaluated after V1 result is known. No post-hoc reranking."
+  - "5. Reverse hypothesis acceptance criterion: If all four variants produce Sharpe <-0.10 with consistent loss direction across all walk-forward windows, stop development and reject V2-PIVOT entirely (no further iteration)."

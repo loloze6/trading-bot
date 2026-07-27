@@ -1,0 +1,29 @@
+strategy_domain: "time_series_trend_following"
+market_universe:
+  - "BTCUSDT"
+  - "ETHUSDT"
+timeframe: "1d"
+historical_window: "2018-01-01_to_2025-12-31"
+
+constraints:
+  - "Regime-gated SMA(100) long-only: long iff (close > SMA(100) AND regime == trending), flat otherwise. Regime detector applies threshold-based trending classification (detail in regime_detector_config per regime_detector_report.yaml)."
+  - "Pre-registered SMA period: 100 bars (fixed, no parameter sweep — same pre-registered period as prior ungated run P4_SMA_TREND_LONGONLY_DAILY)."
+  - "Execution: next-bar-close after signal change (same backtest caveat as prior: filled at bar close, ~1-bar lag from ideal next-open)."
+  - "Universe scoring: both BTCUSDT and ETHUSDT with correlation-adjusted breadth (one trial covers both symbols per brief benchmark rule)."
+
+available_data:
+  - "price_volume_only (1d OHLCV, BTC/ETH, 2018-01-01 to 2025-12-31)"
+  - "regime_detector_report.yaml (medium-confidence 1h detector; daily-bar adaptation applied)"
+
+research_goal: "Prior P4_SMA_TREND_LONGONLY_DAILY (ungated) generated positive per-trade edge (1050 bps, t_stat=1.91, IC=0.037–0.020) but suffered negative Sharpe (−1.78 BTC, −1.54 ETH) due to regime exposure mismatch: SMA(100) is highly profitable in trending markets (+20% to +448% in 2020, 2023-10, 2024-10, 2025-04) but whipsaws in choppy markets (−16% to −24% in 2018, 2021-04, 2022-04, 2023-04, 2024-04). Hypothesis: SMA(100) trend-following is structurally viable but requires regime-gating to eliminate choppy-period whipsaw drag and restore positive Sharpe. Target: gate signal to trending regime only, expected to deliver Sharpe > 0.5 on walk-forward window (2024-12-01 to 2025-12-31)."
+
+existing_context:
+  - "use_existing_backtest_framework"
+  - "daily_bar_engine_support_built_2026-07-07"
+  - "use_existing_strategy_architecture (regime_detector and multi-strategy gating already wired)"
+  - "regime_detector_report available (medium confidence at 1h; daily-bar adaptation pending)"
+  - "prefer_minimal_code_changes"
+
+change_from_previous: "P4_SMA_TREND_LONGONLY_DAILY (ungated, all-bars) → P4_SMA_TREND_REGIMEGATED_DAILY (gated to trending regime only). Structural change: hypothesis now includes regime-gating via regime_detector thresholds and routing to trending-specific strategy component. Signal component (SMA(100) long-only) and SMA period (100 bars) remain unchanged and pre-registered (no sweep). Rationale: prior ungated run showed signal achieves +1050 bps per-trade edge in trending environments but suffers −500+ bps losses in choppy environments (2018, 2021-04, 2022-04, 2023-04, 2024-04 window returns all −16% to −24%). Regime-gating eliminates choppy-regime exposure, concentrating exposure on high-signal-quality trending periods. Expected benefit: Sharpe improvement from −1.78 to target > +0.5, driven by lower return variance (fewer chop-driven losses) while maintaining positive trend-capture edge"
+
+optional_focus: []

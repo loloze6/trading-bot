@@ -1,0 +1,32 @@
+campaign_id: "rsi_mean_reversion_low_er"
+runs_reviewed: 22
+pattern_detected: "same_root_cause_different_families"
+pattern_evidence:
+  - "run_014-016 (rsi_mean_reversion): cost_drag 142.8%, 25.8%, 185.3%"
+  - "run_017 (keltner_breakout): cost_drag 27.4%, corr 0.2145 but sharpe FAIL"
+  - "run_018-019 (rsi_momentum variants): cost_drag 272.9%, 25.2%; corr 0.018, 0.0"
+  - "run_021-023 (keltner_mean_reversion variant): cost_drag 413.1%, 82.1%, 420.2%; all sharpe FAIL"
+  - "run_024-027-032-033 (keltner variants): identical corr≈0.215, cost_drag≈27.4%, all sharpe FAIL"
+  - "Structural pattern: ALL signal families (RSI, Keltner, momentum) fail with either cost_drag>100% OR marginal forecast quality (corr<0.25) that does not generate Sharpe>0.5"
+  - "Escalations to SOLUSDT (run_027), AVAXUSDT (run_029) and 4h timeframe (run_020) did not alter the fundamental cost/quality tradeoff"
+
+recommendation: "reframe"
+
+recommendation_rationale: "Across 22 runs spanning 7 hypothesis families (rsi_mean_reversion, keltner_breakout, keltner_mean_reversion, rsi_momentum_trending, keltner_trend_mean_reversion, keltner_scoremode, and regime variants), the campaign exhibits a consistent structural failure: either cost_drag exceeds 100% (indicating excessive rebalancing with weak alpha) or forecast correlation is marginal (0.01–0.22) and does not produce Sharpe>0.5. This is NOT a signal-selection problem (RSI, Keltner, momentum all fail identically) but a regime-filtering and trade-sizing problem. Runs 017, 024, 027, 032, 033 showing identical diagnostics (corr=0.2145, cost_drag=27.4%) indicate the search is looping; escalations to new instruments (SOLUSDT, AVAXUSDT) and timeframes (4h) did not break the loop. The research question must shift from 'which signal works?' to 'how do we find or build regimes with naturally selective, high-conviction trades?'"
+
+next_research_question: |
+  hypothesis_id: "REFRAME_REGIME_SELECTIVITY_01"
+  asset: "BTCUSDT, ETHUSDT"
+  timeframe: "1h"
+  research_question: "Can stricter regime thresholds or a novel regime component identify windows where even marginal forecasts (corr ≥ 0.15) produce >0.5 Sharpe by dramatically reducing rebalance frequency and position count?"
+  signal_concept: "Reuse existing KeltnerBreakout (ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0) as proof-of-concept, but research a novel regime COMPONENT (not just parameter tuning) that combines ER, VR, and volatility regime into a stricter 3-condition gate firing <20% of bars. Goal: achieve >80% cost_drag reduction by cutting rebalances by 60–70%."
+  regime_filter: "TRENDING + novel selectivity component (e.g. VR-based persistence, volatility clustering, or adaptive threshold). Baseline: ER ≥ 0.35, VR ≥ 1.20, plus new selectivity metric (to be defined) that fires only on highest-conviction windows. Target: <15% bar coverage, >50 cumulative trades across walk-forward, cost_drag <30%, Sharpe ≥ 0.5."
+  constraints:
+    - "Do NOT change asset or timeframe; focus on regime selectivity, not diversification."
+    - "KeltnerBreakout component parameters remain exact from RUN017."
+    - "Novel regime component is a NEW hypothesis family and must be coded/tested independently before integration."
+  change_from_previous: "Previous runs exhausted parameter-tuning within existing regime logic (ER/VR thresholds). All signal families (RSI, Keltner, momentum) failed identically with cost_drag or weak correlation. This reframe targets the structural sizing problem: stricter regime gates to enable higher conviction per trade, not signal selection. Shifts from 'find the right signal' (exhausted) to 'find the right timing filter' (unexplored)."
+
+budget_assessment: "22 runs used / estimated 35-run campaign budget = 63% consumed. Recommend prioritizing the most informative remaining test: a single novel regime component integrated with KeltnerBreakout (1–2 runs to validate concept). If successful, walk-forward validate and holdout test (3–4 runs). Reserve final budget (~8 runs) for robustness across assets/timeframes."
+
+status: "active_reframe_pending"

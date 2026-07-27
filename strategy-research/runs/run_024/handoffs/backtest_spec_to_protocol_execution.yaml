@@ -1,0 +1,46 @@
+handoff_version: 1
+run_id: run_024
+from_stage: backtest_specification
+to_stage: protocol_execution
+assigned_engine: tool
+objective: 'Run the full walk-forward protocol against the emitted config, evaluated
+  against this hypothesis''s specific validation criteria.
+
+  '
+primary_input_artifact: runs/{run_id}/artifacts/candidate_strategy_config.json
+required_inputs:
+- path: artifacts/candidate_strategy_config.json
+  reason: the config to backtest
+- path: artifacts/validation_protocol.yaml
+  reason: hypothesis-specific success criteria for verdict evaluation
+deliverables:
+- protocol_result.yaml
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'true'
+  v1_diagnostic_result: 'ROOT CAUSE FOUND: default_regime must be ''unknown'' (not
+    ''trending''). atr_multiplier must be 2.0 (not 1.5). No new components needed.'
+  required_config_constraints: 'Generate ONE config only (V1 exact replication of
+    run_017). Parameters:
+
+    - default_regime: "unknown"   (CRITICAL — do NOT set to "trending")
+
+    - atr_multiplier: 2.0         (CRITICAL — do NOT use 1.5)
+
+    - ema_period: 20
+
+    - atr_period: 20
+
+    - scaling_factor: -20.0
+
+    - regime: trending (ER>=0.5 AND VR>=1.2, threshold_rules)
+
+    - timeframe: 1h
+
+    Do NOT add vetoes, do NOT set default_regime to any active strategy.
+
+    Do NOT generate V2/V3/V4 variants — they are not needed given V1 finding.
+
+    '
+  component_gap_resolution: No component gap. KeltnerBreakoutComponent with default_regime=unknown
+    is sufficient.

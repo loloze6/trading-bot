@@ -1,0 +1,18 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY"
+
+status: "conditional_approve"
+
+rationale: "The hypothesis is falsifiable, mechanically clear, and grounded in established trend-following signal class with documented edge. Cost feasibility is plausible (not marginal or implausible) if activation rate and holding period match pre-registered expectations (~45% sparsity, 10–20 bar average holds). Three explicit conditions must be honored in prescreen execution to ensure edge is real, not an artifact of era-specific regimes, crowding, or parameter overfitting. No blocking issues prevent advancement to screening_backtest stage."
+
+conditions:
+  - "Condition A (Activation Sparsity): Prescreen must report activation_sparsity ≤60% on both BTCUSDT and ETHUSDT. If actual_sparsity > 60%, edge-to-cost ratio collapses and cost_feasibility becomes marginal or implausible → reject at Layer 2 cost_check."
+  - "Condition B (Per-Era IC Decomposition): Block-bootstrapped pooled_ic must remain statistically significant (p < 0.05) on BOTH backward_extension (eras 2018-2023) AND walk_forward_extension (era 2024-2025). If all significant IC is concentrated in single era, edge is regime-conditional, not structural → reject on regime_robustness_check."
+  - "Condition C (Reverse-Polarity Directionality): Short-only signal (close < SMA(100)) must show IC ≤ 0 or p > 0.10 (not statistically significant). If short-only IC is positive and significant, edge is mean-reversion, not directional trend-following; mechanism is invalidated → reject on signal_directionality_check."
+
+blocking_issues: []
+
+notes: "No blocking issues at validation stage. Signal is mechanically implementable in existing bot (close > SMA(100) at daily bar close, rebalance at next bar open). Data is price-only (ohlcv), no look-ahead bias if candle timestamps are correctly aligned to bar closes. Conditional approval is necessary and sufficient to proceed to screening_backtest; conditions must be checked by automated Layer 2 prescreen gate (prescreen_signal.py) before advancing to backtest spec."
+
+approval_path: "Conditional_approve → screening_backtest (Layer 2 prescreen cost_check + per-era IC decomposition + reverse-polarity validation) → walk_forward_validation → deflated_sharpe_gate → holdout_evaluation (single-use, reserved) → holdout_result → final_promotion_audit"
+
+holdout_consumption_warning: "Once this hypothesis is promoted to holdout_evaluation stage, holdout range [2026-01-01, 2026-06-30] is consumed. Per campaign_data_policy.yaml, if holdout_result status = fail, rejection is terminal (holdout_failure_is_terminal=true). The hypothesis cannot be re-evaluated; the holdout range is locked and unavailable for other hypotheses in this campaign."

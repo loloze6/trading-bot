@@ -1,0 +1,53 @@
+hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED
+protocol_verdict: kill
+status: escalate
+criteria_summary:
+  - criterion: "Sharpe >= 0.5"
+    result: UNTESTED
+    reason: "Prescreen killed before walk-forward; no trades executed."
+  - criterion: "Win rate >= 0.52"
+    result: UNTESTED
+    reason: "Prescreen killed before walk-forward."
+  - criterion: "Trade count >= 100/window"
+    result: FAIL
+    reason: "Prescreen estimated 126 implied trades across window (below safety floor of 183 at 3 activations/day)."
+  - criterion: "IC > 0.05"
+    result: FAIL
+    reason: "ic_all_bars=-0.00871, ic_active_bars=0.01674, p=0.881. Signal has zero detectable directional content."
+  - criterion: "Gross edge > 34 bps (cost-adjusted)"
+    result: FAIL
+    reason: "Estimated gross edge 4.12 bps per trade vs 17 bps cost. Edge-to-cost ratio 0.24 vs required 2.0."
+
+primary_failure_mode: "No informational content detected on 1h BTC/ETH; IC near zero with high p-value. Mechanism (8h settlement mean-reversion) unproven at this timeframe."
+
+config_to_failure_map: "FundingRateMeanReversionComponent threshold=0.0 (continuous activation at all 8h settlement bars) yields ic_all_bars=-0.00871 and ic_active_bars=0.01674 (p=0.881), both indistinguishable from zero. Config correctly implements the hypothesis claim (forecast=-sign(funding_rate)×10.0 at every UTC 0/8/16h boundary), but the mechanism produces no predictive power on 1h bars."
+
+untested_criteria:
+  - "Sharpe ratio per window (prescreen gate prevented walk-forward execution)"
+  - "Drawdown (prescreen gate prevented walk-forward execution)"
+  - "Per-regime performance (ungated signal; no regime stratification available)"
+
+proposed_change_dimension: "timeframe"
+
+hypothesis_family: "funding_rate_mean_reversion"
+
+altitude_justification: "Rule 2 (weak signal): ic_all_bars=-0.00871, ic_active_bars=0.01674, p=0.8810 >> 0.10 threshold. Prescreen killed after 16,032 bars (6 months) across 2 symbols with zero significant correlation. Signal has no detectable directional content on 1h BTC/ETH."
+
+root_cause:
+  mechanism_failure: "lag_mismatch_to_regime_persistence"
+  supporting_evidence: "ic_all_bars=-0.008706 (n_eff=83, p=0.881); forecast_sparsity_pct=87.5 (signal fires only at 8h settlement boundaries, 12.5% of bars); active_bars_total=2004 bars accumulating zero correlation. The forced 8h settlement mechanism is structurally sound (forced funding flows are real), but 1h bar frequency may be too fast: mean-reversion impulse from 8h settlement may take 4+ hours to materialize and reverse. At 1h frequency, signal fires at settlements but position likely closes before mean-reversion fully develops."
+  confidence: high
+
+regime_attribution: null
+
+prescreen_evidence:
+  ic_all_bars: -0.008706
+  ic_active_bars: 0.016737
+  p_value: 0.881
+  forecast_sparsity_pct: 87.5
+  active_n_bars: 2004
+  edge_to_cost_ratio: 0.2425
+  route: "kill_no_ic"
+  cost_pass: false
+
+trade_attribution: null

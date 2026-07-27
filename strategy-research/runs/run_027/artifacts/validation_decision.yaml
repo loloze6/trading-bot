@@ -1,0 +1,12 @@
+hypothesis_id: TIMEFRAME_ESCALATION_4H
+status: conditional_approve
+rationale: |
+  Hypothesis is mathematically sound: mean-reversion at longer timeframes reduces cost drag if per-trade PnL scales proportionally. Signal edge (corr~0.21) is documented and locked from run_017; regime thresholds fixed. Approval is conditional on two empirically verifiable properties: (1) regime spacing at 4h must support ≥30 trades per validation window; (2) cost structure must satisfy cost_drag < 80%. Both are measurable in backtest output. Reversal hypothesis specifies explicit falsification: cost insensitivity (mechanism a), regime spacing collapse (b), signal loss (c), or correlation decay (d). Configuration is minimal; no signal search permitted. Architecture integration straightforward: existing ComponentOutput framework supports 4h Keltner without modification.
+
+blocking_issues: []
+
+conditions:
+  - "Trade count ≥ 30 per walk-forward validation window (typically 1-month windows). If any window < 30, regime TRENDING frequency insufficient at 4h; restart with 2–3 month windows or reject on regime spacing failure."
+  - "Cost drag < 80%: Compute as (total absolute transaction costs) / (sum of positive trade PnL). If ≥ 80%, reversal hypothesis (mechanism: cost insensitivity) confirmed; reject."
+  - "Regime TRENDING frequency ≥ 5% of total bars at 4h. If < 5%, regime filter too restrictive; reject due to insufficient sample size."
+  - "V2 asset isolation: If Sharpe diverges significantly between BTCUSDT and ETHUSDT (one positive, one negative), restrict to successful asset and document as asset-specific variant, do not approve as generic."

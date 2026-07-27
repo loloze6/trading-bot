@@ -1,0 +1,48 @@
+run_id: run_041
+hypothesis_id: H-041-A
+hypothesis_family: funding_rate_mean_reversion
+protocol_version: v2
+improvement_01_applied: true
+status: parked_insufficient_sample
+current_stage: verdict
+pending_stage: null
+completed_stages:
+  - feed_alignment_check
+  - hypothesis_design
+  - backtest_specification
+  - prescreen
+artifacts:
+  feed_alignment_check: artifacts/feed_alignment_check.yaml
+  hypothesis_card: artifacts/hypothesis_card.yaml
+  candidate_strategy_config: artifacts/candidate_strategy_config.json
+governance:
+  max_hypothesis_variants_per_cycle: 3
+  max_refinements_after_validation: 2
+  max_reruns_after_analysis: 1
+  max_required_reads_per_stage: 3
+counters:
+  refinements_used: 0
+  reruns_used: 0
+flags:
+  holdout_reserved: false
+  validation_approved: false
+  screening_passed: false
+  walk_forward_passed: false
+  a8_4_alignment_checked: true
+  a8_4_verdict: PASS
+  regime_gated: false
+notes:
+  - "First run using Improvement 01 (edge_source taxonomy A1.1-A1.3)"
+  - "Hypothesis class: structural_forced_flow (Binance 8h funding rate)"
+  - "A8.4 alignment check completed and PASSED before prescreen"
+  - "Signal ungated per A2.3 standing policy"
+  - "Active-bar IC gate applies (A8.3: sparsity ~87%, n_active ~2,190 settlement bars)"
+last_summary: >
+  H-041-A prescreen: kill_no_ic. IC=0.014, p=0.97, n_eff=10. Root cause:
+  insufficient_sample_inconclusive. Original threshold (0.001) never activated
+  in 2024-2025 BTC/ETH (max rate 0.000881). Recalibrated to 0.0002; only 261
+  active bars, statistical power too low to evaluate the mechanism. NOT evidence
+  mechanism is wrong — untestable in this regime.
+artifacts:
+  verdict_interpretation: artifacts/verdict_interpretation.yaml
+  prescreen_result: "strategy-research/results/prescreens/run_041/prescreen_result.yaml"

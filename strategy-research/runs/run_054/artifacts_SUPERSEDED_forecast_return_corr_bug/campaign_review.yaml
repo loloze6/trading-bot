@@ -1,0 +1,50 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 44
+pattern_detected: same_root_cause_different_families
+
+kb_gate_q1_untested_cells:
+- cell: "daily timeframe, SMA trend (time-series momentum), BTC/ETH"
+  status: "in_progress (run_054)"
+  rationale: "Daily timeframe is orthogonal to the failed 1h technical-indicator space; amortizes ~17bps round-trip cost over multi-week holds per P3 viable-space analysis. Registered by user-delivered research_brief P4_SMA_TREND_LONGONLY_DAILY."
+
+kb_gate_q2_exhausted_cells_forbidden:
+- finding_id: keltner_mean_reversion_no_edge
+  outcome: no_edge_observed
+  evidence_count: 1
+  basis: analytic
+- finding_id: keltner_breakout_inverted
+  outcome: no_edge_observed
+  evidence_count: 2
+  basis: analytic
+- finding_id: keltner_scoremode_no_edge
+  outcome: no_edge_observed
+  evidence_count: 2
+  basis: analytic
+- finding_id: rsi_mean_reversion_no_edge
+  outcome: no_edge_observed
+  evidence_count: 1
+  basis: analytic
+- finding_id: rsi_momentum_trending_cost_drag
+  outcome: no_edge_observed
+  evidence_count: 1
+  basis: analytic
+- finding_id: er_detector_unusable_btc_eth_1h
+  outcome: unusable_for_this_symbol_timeframe
+  evidence_count: 1
+  basis: analytic
+
+kb_gate_q3_power_parked_combinations: []
+combination_rationale: "Two power-parked inconclusive findings exist: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED (1h, structural_forced_flow, escalate=timeframe) and P4_SMA_TREND_LONGONLY_DAILY (daily, persistent_behavioral_bias, outcome=inconclusive refine). These operate on different timeframes and signal families; combining them would conflate a timeframe optimization problem with a signal-selection problem. No joint activation rate calculation defensible before each mechanism independently demonstrates positive ic or positive gross_pnl. Cannot combine until both show ungated edge."
+
+pattern_detected_evidence:
+- "Price-only technical indicators across 6+ signal families (RSI mean-reversion, Keltner mean-reversion, Keltner trend-following, Keltner breakout, Keltner scoremode, EMA spread, MACD) all show no_edge_observed on 1h BTC/ETH (documented in exhausted_mechanisms and KB findings)"
+- "Consistent root-cause: signal_quality failure (no informational content on active bars). Keltner TRENDING regime (runs 017/024/027/033): ic_active_bars=-0.032, p=0.83, n_active=1125 (KB keltner_mean_reversion_no_edge). EMA spread (run_043): ic_all_bars=ic_active_bars=-0.021091, p=0.5876. MACD (run_053): ic_active_bars=-0.050271, p=0.2922."
+- "Regime detector structural failure (er_detector_unusable_btc_eth_1h): Pareto conflict between target activation [10%, 40%] and transitions<=4/window cannot be resolved via parameter grid (48 cells evaluated). Best score 5/8; directly implementable ceiling at ~40 transitions/window. Analytic closure per A5.1."
+- "Cost-drag structural barrier: forecast_return_corr=0.2145 (Keltner runs 017/024/027/033) paired with cost_drag_pct=27.446 appears viable in isolation, but regime-gating reduces activation to ~1% (7 zero-trade slots per 22 window-symbol pairs, run_039 note), creating sparse-signal cost penalty. Broader-activation variants (e.g., run_021 cost_drag_pct=413, run_023 cost_drag_pct=420) become cost-unviable; no intermediate parameter set reconciles activation and cost."
+- "Category-level exhaustion across 4 instruments (BTCUSDT, ETHUSDT, SOLUSDT, AVAXUSDT) and 3 timeframes (1h, 4h, 15m) confirms asset-class or timeframe structural mismatch, not parameter-tuning failure. Escalation to daily timeframe (run_054) is appropriate."
+
+recommendation: continue
+
+recommendation_rationale: "The campaign has achieved a clear structural diagnosis: price-only technical indicators on 1h BTC/ETH (6+ signal families, 4 instruments, 3 timeframes) demonstrate no_edge_observed as a category-level finding (not tuning-salvageable). The KB meta-finding and findings chain confirm: RSI, Keltner, EMA, MACD all produced ic_active_bars in range [-0.050, +0.018] with p > 0.1, establishing null directional content. Regime filtering (ER-threshold detector) adds a structural layer: Pareto-blocked per 48-cell grid audit. This frees the campaign to escalate: run_054 (P4_SMA_TREND_LONGONLY_DAILY) represents a genuine escape to daily timeframe + time-series momentum (orthogonal mechanism, user-delivered brief, persistent_behavioral_bias edge_source per canonical momentum literature, cost amortization rationale). Run_054 prescreen route=no_signal_artifact (forecast=0) followed by backtest with sharpe=-1.66, expectancy_mean=1050.5bps, t_stat=1.9106, n_trades=0, below_floor_pct=53.33 indicates configuration concern (zero trades at current thresholds), not mechanism failure. This is refinable. Budget: ~44 runs / ~100-run campaign budget = 44% burn; 56 runs remain. Recommend continuing with daily timeframe diagnosis and threshold optimization before concluding daily is unviable. Escalating again before exhausting run_054's parameter space would be premature."
+
+budget_assessment: "Runs used: 44 of estimated 80–100 run campaign budget (44–55% burn rate). Remaining runway: 36–56 runs. Prioritize diagnostic depth on run_054 (prescreen no_signal_artifact cause, entry/exit threshold sensitivity, SMA period optimization, cost-to-edge ratio). If daily timeframe becomes viable (sharpe > 0.5, cost_pass true, positive expectancy), reserve 3–5 runs for walk-forward validation and final holdout before conclusion. Current burn rate supports proper exploration of daily mechanism without budget risk."

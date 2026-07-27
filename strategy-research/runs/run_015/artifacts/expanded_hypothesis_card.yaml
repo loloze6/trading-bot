@@ -1,0 +1,54 @@
+hypothesis_id: "V3 (pivot-from-V2-E1)"
+base_hypothesis_id: "V3 (pivot-from-V2-E1)"
+
+expansion_status: "constraint-constrained"
+constraint_note: "Research brief specifies 'one variant only'. Base hypothesis passed through as V1. No multi-variant expansion applied."
+
+expanded_variants:
+  - variant_id: "V1"
+    variant_name: "Keltner Channel Breakout (TRENDING Momentum)"
+    signal_mechanism: |
+      KeltnerChannelComponent: long_signal = price > upper_Keltner_band 
+      AND regime == TRENDING (ER ≥ 0.50, VR ≥ 1.20). 
+      Forecast > 0 only on breakout bars in trending regimes; else forecast = 0.
+      Inverse of V2 mean_reversion: tests momentum continuation hypothesis.
+    regime_filter: "TRENDING only: ER ≥ 0.50 AND VR ≥ 1.20"
+    keltner_parameters:
+      ema_period: 20
+      atr_multiplier: 2.0
+    expected_trade_magnitude: "3–5× larger than V2 (reduced frequency, larger moves)"
+    cost_drag_target: "< 50% (vs V2: 142.8%)"
+    sharpe_target: ≥ 0.5
+    trade_count_minimum: 30
+    forecast_return_corr_target: "> 0.02"
+    rationale: |
+      V2 (RSI pullback, mean_reversion regime) achieved +21.94 gross PnL but 
+      cost_drag=142.8% due to trade frequency/magnitude mismatch. Trending regimes 
+      feature larger directional moves; Keltner breakout signals should fire less 
+      frequently but on bigger moves. Test whether regime inversion + signal family 
+      change (momentum vs pullback) resolves sizing problem while preserving edge.
+
+alternative_data_candidates: []
+
+reverse_hypothesis: |
+  CONSIDERED BUT CONSTRAINED OUT: Short signal = price < lower_Keltner_band 
+  in TRENDING regime. Dual-directional variant would improve regime utilization 
+  but violates "one variant only" constraint. Defer to walk-forward or refinement 
+  if V1 shows asymmetric directional behavior.
+
+behavioral_features: []
+
+regime_specific_variants: []
+
+critical_assumptions_from_carryover: |
+  1. Keltner breakouts have genuine directional edge (not zero correlation like raw RSI)
+  2. TRENDING regime filters out chop; survives validity check (|forward_return_mean| > 0.0001)
+  3. Trade frequency reduction (expected 30–50 vs V2: 14–21) yields per-trade magnitude 
+     sufficient to justify 0.1% round-trip commission cost
+  4. Win_rate ≥ 45% indicates signal capture of real directional moves, not noise
+
+exit_criteria:
+  victory: "Sharpe ≥ 0.5 on BTCUSDT and ETHUSDT; cost_drag < 50%; trade_count ≥ 30 both symbols; forecast_return_corr > 0.02"
+  failure_hard: "Sharpe < –3 or cost_drag > 100%: signal family exhausted"
+  failure_soft: "Sharpe ∈ [–3, 0.5) with gross_pnl > 0: defer to threshold tuning phase (minimum forecast filter)"
+  contingency: "If forecast_return_corr < 0.01 and gross_pnl ≤ 0: escalate to new component or timeframe"

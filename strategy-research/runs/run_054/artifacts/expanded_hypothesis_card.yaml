@@ -1,0 +1,82 @@
+base_hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+
+expanded_variants:
+  - variant_id: V1_PRICE_SINGLEHYP
+    label: "Base hypothesis (price-volume only, registered)"
+    signal_concept: "Long when close > SMA(100), flat when close ≤ SMA(100); next-bar-open execution"
+    evidence_type: price_volume_only
+    entry_condition: "close > SMA(100) at daily bar close"
+    exit_condition: "close ≤ SMA(100) at daily bar close"
+    target_markets:
+      - BTCUSDT
+      - ETHUSDT
+    timeframe: 1d
+    library_category: trend_following
+    data_requirements: ohlcv_only
+    diversity_axis: "Base hypothesis as-is; single variant per brief constraint (research_brief.yaml: 'Single registered hypothesis, no parameter sweep')."
+    status: ready_for_run_queue
+    rationale: >
+      Exact base hypothesis: close > SMA(100) trend-following on daily bars.
+      Aligns with registered hypothesis per brief. No expansion into parameter sweep
+      (SMA periods, entry delays) or alternative signal families (RSI, Keltner, MACD).
+      Daily timeframe amortizes ~17 bps round-trip cost over multi-week holds; 
+      persistent trend-following bias is structural and recurs across regimes.
+    inherited_edge_source:
+      category: persistent_behavioral_bias
+      specific_mechanism: "Trend-following persistence: after close > SMA(100), momentum continues; new entrants chase established direction; institutional rebalancing anchors to recent momentum."
+      why_not_arbitraged: "Daily resolution eliminates same-day reversal arbitrage; multi-week holds make high-frequency arbitrage infeasible; trend bias is self-reinforcing."
+    confidence: baseline
+    notes: >
+      Brief constraint: "Single registered hypothesis, no parameter sweep."
+      No variants; V1 is the singular formulation for this trial.
+      Alternative trailing-return formulation is a separate registered trial per brief.
+
+regime_specific_variants: []
+
+alternative_data_candidates:
+  - candidate_id: V2_FUNDING_GATED
+    label: "SMA(100) + funding-rate extreme filter (for future multi-variant trials)"
+    signal_concept: "Long when (close > SMA(100)) AND (funding_rate < absolute_threshold); filters on-extreme leverage buildup."
+    evidence_type: funding_open_interest
+    data_requirements: funding_open_interest
+    rationale: >
+      Same signal family (SMA(100) trend-following) but confirmed by structural indicator
+      (funding rate extremes as deleveraging predictor). Ungated formulation: entry when
+      both SMA and funding conditions hold. Would satisfy Improvement 01 (non-price_volume_only
+      evidence type), but CANNOT be tested under current brief constraint of single hypothesis.
+      Preserved here as candidate for future expansion if brief is amended to allow
+      multi-hypothesis comparison within the same trial.
+    status: "feed_available_but_brief_constrained"
+    activation_logic: "Unconditional (no regime gate); could be ungated if brief permits"
+    mechanism_purity: "High — funding extremes are structural (forced deleveraging), orthogonal to behavioral SMA signal"
+    notes: >
+      Documented per innovation-expansion persona: alternatives not in run queue are preserved
+      in alternative_data_candidates and regime_specific_variants. Brief does not permit this
+      variant in expanded_variants; include in feed_wishlist discussion if multi-variant
+      trials are later authorized.
+
+behavioral_features:
+  - feature_id: reverse_hypothesis
+    description: "Mechanistic symmetry test: short when close < SMA(100)"
+    rationale: "If trend-following edge is truly structural, the inverse should not generate reverse polarity edge (should be near-zero). Testing short-only signal validates that edge is directional, not an artifact of universe bias."
+    signal_inversion: "Entry: close < SMA(100) → short. Exit: close ≥ SMA(100) → cover. Spot market limits this to flat or long-only, so reverse logic is theoretical in backtester; but if spot-only, this tests whether 'flat' vs long-only difference drives all edge."
+    expected_outcome: "If edge exists in long-only form, reverse should show poor/negative performance, confirming signal polarity, not universal mean-reversion."
+    testing_plan: "Optional follow-up: compare pooled_ic(long-only) vs. pooled_ic(short-only) to confirm directionality."
+  
+  - feature_id: activation_sparsity
+    description: "Track fraction of bars in trending (close > SMA) vs. flat/declining (close ≤ SMA) state"
+    rationale: "High activation_rate (>>50%) indicates frequent position changes (whipsaw cost drag); low rate suggests sparse entry but high conviction when firing. Pre-registered power calc uses 0.45 activation_rate; actual sparsity will reveal whether cost model holds."
+    measurement: "n_active_bars / n_total_bars per symbol"
+    interpretation: "If actual_sparsity >> 0.45, cost drag from whipsaw may exceed benefit; if << 0.45, gains per active bar must be large."
+  
+  - feature_id: multi_regime_validation
+    description: "Per-era pooled_ic breakdown (bull/bear/sideways regimes)"
+    rationale: "Edge_source claims mechanism is regime-invariant (trend bias recurs everywhere). Validation: pre-screen analysis (A8.5.1a per brief) decomposes pooled_ic across eras to confirm not era-conditional."
+    measurement: "Block-bootstrap pooled_ic for each regime subset; compare to overall pooled_ic"
+    expected_outcome: "If pooled_ic is driven by one era, mechanism is fragile (regime-conditional). If distributed across eras, mechanism is robust."
+
+  - feature_id: crowding_decay_monitor
+    description: "Track forecast_return_corr (or active-bar IC) over rolling windows to detect edge decay"
+    rationale: "Crowding risk is medium per library (SMA is textbook but daily resolution has weaker arbitrage than 1h). Over time, if adoption rises, IC should decline. Monitor this trajectory as an early warning."
+    measurement: "Rolling 6-month pooled_ic; compare 2024-vs-2025 periods"
+    expected_signal: "Stable or slight decline acceptable; sharp cliff suggests crowding collapse."

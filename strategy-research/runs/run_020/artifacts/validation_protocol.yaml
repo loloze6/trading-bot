@@ -1,0 +1,62 @@
+hypothesis_id: V2-PIVOT-A-THRESHOLD-REFINED
+
+falsifiable_statement: |
+  RSI extremes (>70 for short, <30 for long) scaled by 0.4 with absolute magnitude ≥17.5
+  in TRENDING regime (ER ≥ 0.50, VR ≥ 1.20) generate Sharpe ≥0.15 (median walk-forward)
+  with minimum 15 trades per window on BTCUSDT/ETHUSDT 1h bars.
+
+null_expectation: |
+  Sharpe ≤0.05 across walk-forward median (indistinguishable from buy-hold) OR max_drawdown
+  exceeds 25% OR any single window achieves trade_count <15 OR win_rate <50%.
+
+required_evidence:
+  - "Sharpe (median across ≥3 windows): ≥0.15"
+  - "min_trade_count (lowest window): ≥15"
+  - "win_rate (all trades): ≥50%"
+  - "max_drawdown_pct: ≤25%"
+  - "regime_frequency: ≥10% (sufficient deployment)"
+
+bias_risks:
+  - lookahead: |
+      ER/VR thresholds must be computed on bar t-1 close only; cannot incorporate t-bar
+      open, high, low, or forward-looking statistics.
+  - leakage: |
+      RSI(14) must use bars [0, t-1]; verify forecast generated before t-bar closes;
+      no intra-bar lookahead in CandleBuilder completion callback.
+  - overfitting: |
+      Four threshold variants (16.0, 16.5, 17.5, 18.0) tested on same walk-forward split.
+      V1 (17.5) designated a priori as primary; variants V2-V4 are secondary probes only.
+  - selection_bias: |
+      RSI(14) is industry-standard momentum indicator; no multiple-hypothesis-testing
+      correction applied; treat as confirmatory not novel discovery.
+  - cost_assumption: |
+      Backtest cost model must match live Binance conditions: verify maker_fee, taker_fee,
+      slippage_pct against actual executions or documented assumptions.
+  - regime_survivorship: |
+      If TRENDING filter triggers <5% of bars, signal has minimal deployment window;
+      regime_frequency must be ≥10% to justify development.
+
+failure_modes:
+  - "Sharpe <0.05 (median): Signal is noise despite apparent directional bias."
+  - "Max drawdown >30%: Risk-adjusted return insufficient; violates risk budget."
+  - "Trade count <15 in any fold: Regime filter or signal threshold too restrictive; insufficient signal."
+  - "Win rate <50%: Directional forecast reversed or threshold captures reversals, not momentum."
+  - "Cost drag >50% of gross PnL: Transaction costs erase edge; live trading uneconomical."
+  - "Regime frequency <5%: TRENDING regime rare; signal deployable <5% of time."
+  - "Reverse hypothesis confirmed: All four variants achieve Sharpe <-0.10 with consistent loss direction; falsifies momentum thesis."
+  - "Parameter cliff: Threshold ±0.5 from V1 (i.e., 17.0 or 18.0) inverts Sharpe sign; evidence of overfitting."
+
+sample_split_design: |
+  Walk-forward: 3–5 consecutive folds, 6-month in-sample, 1-month out-of-sample per fold.
+  Anchored to historical data [2024-01-01 to 2025-06-27]. Each fold uses disjoint test set;
+  no data reuse across folds. Holdout: final 3 calendar months (2025-04-01 to 2025-06-27)
+  held out from all variant selection and tuning. Variant evaluation order locked a priori:
+  V1 primary (17.5), V2/V3/V4 secondary probes. No retroactive reranking post-backtest.
+
+decision_rules:
+  - primary: "Sharpe (median walk-forward) ≥0.15 AND min_trade_count ≥15"
+  - secondary: "max_drawdown_pct ≤25% AND win_rate ≥50%"
+  - tertiary: "regime_frequency ≥10%"
+  - rejection: "Any fold with Sharpe <-0.05 OR trade_count <10 triggers investigation; two or more rejecting folds → stop."
+  - reverse_hypothesis: "If all variants achieve Sharpe <-0.10 with consistent loss direction, reject entire V2-PIVOT family."
+  - ranking: "If V1 passes all rules in walk-forward, proceed to holdout. If V1 fails but V2 passes, flag as permissive drift and require larger holdout sample. If V3 or V4 pass first, hypothesis rejected (threshold not near optimum)."

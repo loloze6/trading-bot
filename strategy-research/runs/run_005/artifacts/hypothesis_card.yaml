@@ -1,0 +1,44 @@
+hypothesis_id: volume_momentum_btcusdt_1h
+thesis: >
+  Volume-confirmed price momentum (synchronized directional price change and volume
+  increase) generates a stationary, regime-neutral forecast that isolates institutional
+  conviction without overfitting to price levels.
+
+rationale: |
+  Volume concentration on directional moves signals institutional participation and move
+  durability. Momentum paired with above-average volume removes noise from price-only signals
+  and detects false moves (volume divergence = whipsaw). Mechanically: forecast =
+  sign(Δprice_5bar) × log(1 + volume_current/MA_volume_20), producing interpretable
+  scale-invariant signal across TRENDING (amplifies reversion) and RANGING (flags weak breakouts).
+
+signal_concept:
+  name: Volume-Weighted Momentum
+  formula: |
+    momentum = (close[t] - close[t-5]) / (σ(close, 20) × close[t])
+    vol_ratio = volume[t] / MA(volume, 20)
+    forecast = momentum × log(1 + vol_ratio)
+    final = clamp(forecast, [-20, 20])
+  computation_notes: |
+    5-bar price change (demeaned by stddev). 20-bar volume SMA as baseline.
+    Log volume ratio caps extreme spikes. Final forecast standardized to [-20, 20].
+
+target_market:
+  asset: BTCUSDT
+  venue: spot
+  timeframe: 1h
+  regime_applicability: [TRENDING, RANGING]
+
+timeframe: 1h
+
+assumptions:
+  - Volume data reliable (no wash trading)
+  - Institutional volume clusters persist ≥5 bars
+  - Regime detection stable within 1h window
+  - OHLCV data complete, no gaps
+
+expected_failure_modes:
+  - Volume divergence: momentum + falling volume triggers false reversals
+  - Regime transition: signal breaks during rapid regime flip
+  - Flash crash spikes: extreme volume distorts SMA ratio
+  - Thin liquidity: early market hours (00:00–06:00 UTC) show unreliable volume
+  - Structural breaks: major BTC events (ETF approval, regulatory shock) invalidate model

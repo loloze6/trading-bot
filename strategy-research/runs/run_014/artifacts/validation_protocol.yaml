@@ -1,0 +1,53 @@
+hypothesis_id: "V2-E1"
+
+falsifiable_statement: |
+  RSI(14) oversold signals max(0, (50 - RSI14) / 50) generate Sharpe ≥ 0.8 
+  with win_rate ≥ 48% across walk-forward windows in BTCUSDT 1h when gated 
+  by ER ≤ 0.25 AND VR ≤ 1.00.
+
+null_expectation: |
+  VR ≤ 1.00 threshold includes sufficient trending bars to degrade edge; 
+  RSI oversold produces no statistical edge; regime parameters are curve-fitted.
+
+required_evidence:
+  - "Trade count ≥ 30 across full backtest period"
+  - "Sharpe (median walk-forward) ≥ 0.8"
+  - "Win rate ≥ 48% across all windows"
+  - "No walk-forward window with Sharpe < 0.5 (consistency check)"
+  - "Per-regime breakdown: regime_frequency ≥ 15% to ensure adequate sample"
+
+bias_risks:
+  leakage: |
+    VR ≤ 1.00 threshold may select bars where trend direction has already 
+    reversed (post-hoc regime selection). Mitigate: lock VR threshold before 
+    performance evaluation.
+  look_ahead: |
+    If ER (efficiency ratio) computed from future returns, forbidden. Must be 
+    rolling backward-only. If RSI(14) uses bars indexed t+1 onward, forbidden.
+  overfitting: |
+    Two regime thresholds (ER=0.25, VR=1.00) were tuned on same data as 
+    performance. Grid search must occur on first 30% of training period only.
+  regime_instability: |
+    Sharpe may collapse outside (ER, VR) bounds if thresholds are data-fitted 
+    rather than principled.
+
+failure_modes:
+  - "VR ≤ 1.00 includes sufficient trending bars: win_rate < 48%"
+  - "RSI oversold is non-causal; edge vanishes in walk-forward test"
+  - "Regime frequency too low: trade_count < 30 across full period"
+  - "Parameter sensitivity: Sharpe degrades > 20% when thresholds vary ±0.05"
+  - "ER/VR thresholds are curve-fitted; walk-forward Sharpe < 0.5"
+  - "RSI(14) computation uses future bars (look-ahead bias)"
+
+sample_split_design: |
+  Walk-forward with expanding window. Regime parameters (ER, VR thresholds) 
+  locked via grid search on first 30% of training data. Evaluate Sharpe, 
+  win_rate, trade_count on remaining 70% OOS. Report per-regime breakdown 
+  to detect conditional collapse.
+
+decision_rules:
+  - "sharpe (median walk-forward) ≥ 0.8 → pass"
+  - "win_rate ≥ 48% → pass"
+  - "trade_count ≥ 30 → pass"
+  - "min sharpe across windows ≥ 0.5 → pass (consistency)"
+  - "regime_frequency ≥ 15% → pass (adequate sample)"

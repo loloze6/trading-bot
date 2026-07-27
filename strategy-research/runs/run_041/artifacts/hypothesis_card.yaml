@@ -1,0 +1,82 @@
+hypothesis_id: "H-041-A"
+protocol_version: v2
+edge_source_taxonomy_version: "Improvement 01 (A1.1-A1.3)"
+created_at: "2026-07-03"
+
+thesis: >
+  When Binance 8h funding rate exceeds ±0.10% at settlement, over-leveraged
+  participants face a structural carry cost that incentivizes position reduction
+  at the settlement boundary, generating short-lived mean-reversion pressure
+  over the following 1-4 bars.
+
+rationale: >
+  Extreme funding rates (|rate| > 0.10% per 8h = >0.30%/day) impose a
+  mechanically compelled carry cost. At each 8h settlement, participants on
+  the paying side face realized P&L drag sufficient to motivate position
+  reduction. This creates directional imbalance at the settlement bar that
+  mean-reverts toward fair value before new positioning re-forms. The mechanism
+  is structural (contractual settlement schedule) not behavioral — it does not
+  require sustained attention or reaction lag.
+
+edge_source:
+  category: structural_forced_flow
+  specific_mechanism: >
+    At each 8h funding settlement boundary, participants holding positions on
+    the paying side of extreme funding (|rate| > 0.001) face a carry cost that
+    exceeds typical short-term return expectations at this threshold. Position
+    reduction at the settlement moment generates directional selling (when
+    funding > 0: longs pay, reducing long exposure) or buying (when funding < 0:
+    shorts pay, reducing short exposure) that temporarily moves price away from
+    fair value before reversing. Measurable proxy: sign-directional funding_rate
+    at settlement bars predicts the OPPOSITE sign of subsequent 1-4h returns.
+  why_not_arbitraged: >
+    The arbitrage requires holding a counterparty perpetual position for multiple
+    8h cycles, paying the same funding rate on the arb leg. At |rate| > 0.10%
+    per period, the carry cost on the arb position fully offsets the mean-reversion
+    gain captured in the 1-4 bar window. The trade is capacity-limited at the
+    1h timeframe — institutional desks arb persistent funding gaps (sustained
+    extreme funding over days) but not the transient settlement-boundary impulse.
+  evidence_type: funding_open_interest
+  measurable_proxy: >
+    funding_rate (8h, Binance perpetual): sign(funding_rate) at settlement bars
+    where |funding_rate| > 0.001 (0.10% per 8h). Mechanism predicts negative
+    correlation between extreme positive funding and next 1-4h returns, and
+    positive correlation between extreme negative funding and next 1-4h returns.
+    Proxy is computable from binance_funding_rate feed (verified available).
+
+signal_concept: >
+  Signal fires ONLY at 8h settlement boundary bars (bar open UTC hour ∈ {0, 8, 16})
+  where |funding_rate| > 0.001 (0.10% per 8h). At active bars:
+    forecast = -sign(funding_rate) × 10.0
+  At all other bars: forecast = 0.0 (sparse signal, A8.3 applies).
+  Expected sparsity: ~87% inactive bars (3 settlements/day × 730 days = 2,190
+  total settlement bars per symbol; ~50% expected to exceed the 0.10% threshold
+  → ~1,095 active bars per symbol over the 24-month baseline_v2 range).
+  Ungated: no regime filter applied (A2.3 standing policy).
+
+target_market: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+
+assumptions:
+  - "Binance 8h funding rate is publicly known at the exact settlement timestamp
+     (A8.4 alignment check: PASS — settlement timestamp IS the publication moment)."
+  - "Position-holder response to extreme funding concentrates at the settlement bar
+     and the next 1-4h; not distributed across the full 8h window."
+  - "The mean-reversion effect is directionally symmetric for positive and negative
+     extreme funding (same mechanism, opposite direction)."
+  - "The 0.10% threshold (0.001) isolates events where carry pressure is economically
+     meaningful; sub-threshold events have negligible forced-flow impact."
+  - "Effect persists across 2024-2025 despite growing market sophistication and
+     increasing funding arbitrage activity."
+
+expected_failure_modes:
+  - "Funding extremes coincide with strong trending conditions; momentum buyers
+     absorb the settlement-boundary deleverage and no mean-reversion materializes."
+  - "Mean-reversion horizon is sub-1h: the reversion completes within the settlement
+     bar itself, so the forecast for the NEXT bar captures nothing."
+  - "Cost check fails: the 1-4 bar mean-reversion magnitude is < 2× round-trip cost
+     (~35 bps RTC × 2 safety factor = ~70 bps required gross edge per trade)."
+  - "Sample is dominated by a small number of extreme funding episodes that do not
+     generalize out-of-sample (e.g., BTC March 2024, Dec 2024 spikes)."
+  - "Mechanism is BTCUSDT-specific; ETHUSDT funding extremes do not generate
+     comparable forced flow due to different open interest and hedger composition."

@@ -1,0 +1,55 @@
+hypothesis_id: "H-041-A-V2"
+base_hypothesis_id: "H-041-A"
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "8h"
+run_type: "pivot_timeframe"
+
+research_question: >
+  H-041-A timeframe pivoted from 4h to 8h to test hypothesis that signal-settlement
+  cycle alignment improves IC recovery. Original 4h run (run_050) showed zero IC
+  (ic_all_bars=0.000822, p=0.521, n_episodes=139, spanning 2019–2025 full history).
+  Hypothesis: 4h candles incur alias lag relative to 8h UTC funding settlement boundaries
+  (00:00, 08:00, 16:00 UTC). 8h candles align 1:1 with settlement, eliminating intra-candle
+  lag and expected to recover directional correlation. Target: ic ≥ 0.10 on 8h, with
+  ~40–60 events/year activation rate (same or similar to 4h 1.7% sparsity).
+
+signal_concept: >
+  FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0) unchanged.
+  Fires when |funding_rate| > 0.0002 at 8h UTC settlement boundaries, issuing
+  forecast = -sign(funding_rate) × 10.0. Ungated configuration
+  (regime_detector.rules=[], default_regime="unknown") per post-A2.3 canonical pattern.
+
+significance_methodology: >
+  Episode-blocked significance (A8.5.1a) via strategy-research/tools/episode_significance.py.
+  Walk-forward: 8 non-overlapping 3-month windows, [2024-12-01, 2025-12-31] on 8h OHLCV,
+  ~98–120 bars per window (90 calendar days × 6.67 8h-candles/day). Holdout frozen:
+  [2026-01-01, 2026-06-30].
+
+constraints:
+  - "Signal component unchanged: FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0) — no parameter tuning."
+  - "One variant only (V1 = same component, 8h timeframe)."
+  - "Ungated only (post-A2.3 standing policy): regime_detector.rules=[], default_regime='unknown'."
+  - "Existing component only; no new code."
+  - "Data range: [2019-09-10 (BTC) / 2019-11-27 (ETH), 2025-12-31]."
+  - "Do not touch holdout range [2026-01-01, 2026-06-30]."
+  - "Do not propose new infrastructure changes or bot architecture modifications."
+
+power_parameters:
+  activation_rate: 50
+  plausible_ic_upper: 0.15
+  n_bars: null
+  n_symbols: 2
+  is_market_wide: false
+
+edge_source:
+  category: "structural_forced_flow"
+  evidence_type: "funding_rate"
+  specific_mechanism: >
+    Perpetual futures 8h UTC settlement forces cash transfer between longs/shorts every
+    8 hours. Extreme funding rates (|rate| > 0.0002) signal crowded one-sided positioning;
+    mean-reversion in price post-settlement reflects position unwinding/squeezes. 8h candles
+    open/close at settlement boundaries, capturing price response without intra-candle
+    aggregation lag. Hypothesis: 4h IC=0.0008 was depressed by candle-boundary misalignment;
+    8h resolves this.
+
+change_from_previous: "Timeframe changed from 4h to 8h. Rationale: run_050 (4h) showed zero IC (ic_all_bars=0.0008, p=0.521) across full 7-year window and both symbols. The 4h candle boundaries do not align with 8h UTC funding settlement (00:00, 08:00, 16:00 UTC), creating alias lag: settlement events occur mid-candle, candle aggregation smears intra-settlement price response. 8h candles align 1:1 with settlement windows, hypothesized to unmask the directional edge obscured by 4h alias. This is a single structural change (timeframe only); signal logic, threshold (0.0002), and scaling (10.0) are identical to run_050. If 8h also yields ic < 0.03, the funding-rate mean-reversion mechanism is confirmed absent at this venue; escalation to a different signal family or instrument becomes the next step."

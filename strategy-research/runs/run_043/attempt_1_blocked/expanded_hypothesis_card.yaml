@@ -1,0 +1,83 @@
+hypothesis_id: EMA_SPREAD_TREND_CONTINUATION
+base_hypothesis_id: EMA_SPREAD_TREND_CONTINUATION
+
+expanded_variants:
+  - variant_id: V1_EMA_9_21_SPREAD
+    signal_name: "EMASpreadComponent(fast_period=9, slow_period=21)"
+    signal_concept: "Continuous EMA spread percentage: (fast_ema - slow_ema) / slow_ema × 100"
+    evidence_type: price_volume_only
+    ungated: true
+    rationale: "Base hypothesis: spread quantifies consensus strength. Positive spread predicts 1–4 bar continuation. Continuous activation (95% of bars) vs. discretized MA-crossover reduces regime sensitivity and captures intraday momentum."
+    library_category: trend_following
+    data_requirements: ohlcv_only
+    diversity_axis: "Baseline formulation; serves as regression test and campaign pipeline validator."
+    status: queue_active
+
+alternative_data_candidates:
+  - candidate_id: ALT_01_EMA_SPREAD_PLUS_FUNDING
+    concept: "Dual-mechanism signal: EMA spread direction AND Binance funding rate (8h) sign presence. Fires spread signal only when funding ≠ zero (leverage present)."
+    mechanism: "Positive spread + positive funding = reinforced bullish conviction (herding + leverage buildup). Positive spread + negative funding = conflict signal (herding but forced deleveraging) → near-term reversal risk."
+    evidence_type: funding_open_interest
+    why_candidate: "Orthogonal feed (structural vs. behavioral). Tests if leverage regime compounds or contradicts behavioral signal."
+    activation_logic: "Two-stage filtering (spread > 0 AND funding > threshold). Creates sparse activation; regime-gating risk similar to detector-dependent formulations."
+    available_today: true
+    routed_to: "feed_wishlist (design_phase pending: validate unfiltered spread carries edge before gating on funding)"
+    
+  - candidate_id: ALT_02_FEAR_GREED_SPREAD_CONFLUENCE
+    concept: "EMA spread + Alternative.me Fear & Greed Index contrarian confluence. Signal fires when spread is positive AND F&G at extremes (< 20 or > 80)."
+    mechanism: "Contrarian edge: extreme fear with positive spread = capitulation + momentum setup. Extreme greed with positive spread = momentum exhaustion. Conflicting signals at extremes suggest regime inflection."
+    evidence_type: fear_and_greed
+    why_candidate: "Market-wide behavioral sentiment vs. price-only signal. Tests if collective fear/greed amplifies or dampens EMA spread edge."
+    activation_logic: "Daily signal (F&G published once/day) misaligned to 1h bars. Requires forward-fill or alignment per A8.4. Sparse activation (~10% of bars at extremes)."
+    available_today: true
+    power_concern: "F&G is market-wide (2 symbols correlated ρ=0.82). 2024-2025 window: n_eff ≈ 13, insufficient to detect plausible IC=0.10 (requires n_eff ≥ 60). Reactivation requires 2018+ data."
+    routed_to: "feed_wishlist (power_analysis pending; revisit with longer backtest window)"
+
+alternative_data_notes: "ALT_01 and ALT_02 documented for process completeness. Both parked: ALT_01 requires design validation (does unfiltered spread alone work?), ALT_02 is power-insufficient for current window. V1 remains sole run-queue candidate per brief constraint."
+
+reverse_hypothesis:
+  concept: "Inverse EMA spread: (slow_ema - fast_ema) / slow_ema × 100 — negative spread predicts downside continuation."
+  signal_concept: "(-1) × EMA_spread_pct (negate raw spread before scaling)"
+  rationale: "Directional validation test. If positive spread → positive IC (true edge), then negative spread → negative IC. If both → near-zero IC, cost_drag dominates."
+  edge_source: "persistent_behavioral_bias (direction-reversed)"
+  expected_behavior: "Base IC opposite sign from reverse IC = confirming directional edge. Both IC near-zero = cost dominates, closes MA family."
+  status: "parked_post_v1_analysis (not in run queue; useful for validation phase)"
+
+behavioral_features:
+  - feature_id: BEH_01_CONSENSUS_STRENGTH
+    name: "EMA Spread Magnitude"
+    description: "Absolute value of spread (|fast_ema - slow_ema| / slow_ema × 100) as intensity proxy for consensus strength among trend-followers."
+    mechanism: "Larger |spread| → EMAs more diverged → stronger momentum coherence. Small |spread| → EMAs near crossover → momentum fragility."
+    measurable_proxy: "|EMA_spread_pct|"
+    typical_range: "0–5% on BTC/ETH 1h; > 2% signals strong directional consensus"
+    regime_affinity: "Favorable in trending (spreads widen steadily). Unfavorable in ranging (oscillates ±0.5–1%)."
+    
+  - feature_id: BEH_02_SPREAD_PERSISTENCE
+    name: "Sign Autocorrelation"
+    description: "Run-length of consecutive bars with same spread sign as proxy for herding persistence vs. fragmentation."
+    mechanism: "Multi-bar sign persistence = herding is sustained. Sign flip = herding exhaustion. ACF lag-1 > 0.5 = strong continuation context."
+    measurable_proxy: "sign(EMA_spread_pct) autocorrelation lag-1"
+    typical_range: "ACF ≈ 0.6–0.75 in trending; ACF ≈ 0.1–0.3 in ranging"
+    regime_affinity: "Favorable in trending (persistence). Unfavorable in ranging (frequent reversals)."
+    
+  - feature_id: BEH_03_SPREAD_ACCELERATION
+    name: "Momentum Velocity"
+    description: "First difference of spread over 2–3 bars (Δspread/Δt) as proxy for momentum acceleration or deceleration."
+    mechanism: "Positive Δspread + positive spread = accelerating trend (continuation). Negative Δspread while spread > 0 = momentum fatigue (reversal inflection)."
+    measurable_proxy: "d(EMA_spread_pct)/dt over 2-bar window"
+    typical_range: "Acceleration > 0.1% per bar indicates momentum building; deceleration < -0.05% indicates fatigue"
+    regime_affinity: "Useful in trending (detects exhaustion). Neutral in ranging (oscillations frequent)."
+
+regime_specific_variants:
+  # Empty — brief constrains to ungated variant only. Regime detector (A2.3) unusable for BTC/ETH 1h.
+  # No regime-gated formulations enter run queue.
+
+notes:
+  pipeline_context: "Pipeline shakedown batch. Brief constrains to single variant (V1) for regression testing. Alternative candidates and reverse hypothesis documented for post-V1-decision research continuity."
+  constraints_honored:
+    - "One variant only in run queue per brief"
+    - "No regime-gated variants (detector unavailable)"
+    - "Existing components only (EMASpreadComponent)"
+    - "Ungated signal per A2.3 standing policy"
+  
+  edge_risk_summary: "High crowding risk (MA is most-taught indicator). Library affinity: favorable-trending / unfavorable-ranging. Campaign hypothesis: continuous activation (95% bars) offsets crowding. Failure mode: cost_drag dominates despite positive IC."

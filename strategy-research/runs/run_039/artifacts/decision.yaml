@@ -1,0 +1,11 @@
+stage: backtest_specification
+hypothesis_id: TEMPORAL_COVERAGE_MULTI_REGIME
+variant_selected: V1_RSI_CONSERVATIVE
+status: spec_ready
+rationale: "V1 is the only variant fully implementable with existing components. V2 requires Stochastic (missing), V3 requires ROC (missing), V4 requires seasonal_mult modulation (missing), V5 requires multi-timeframe support (missing)."
+blocking_issues: []
+notes_deferred_variants:
+  - "V2_STOCHASTIC_CROSSOVER: Requires StochasticComponent (Stochastic %K oscillator with configurable smoothing). Not in STRATEGY_CONFIG_REFERENCE.md catalog."
+  - "V3_MOMENTUM_ROC: Requires ROCComponent (Rate-of-Change with ATR normalization). Not in catalog; MomentumDivergenceComponent is insufficient."
+  - "V4_SEASONAL_WEIGHTING_FALLBACK: Requires seasonal_confidence_multiplier transform or temporal gating. Config reference has no seasonal_mult operator or per-month forecast scaling."
+  - "V5_CROSSFRAME_2H_RSI: Requires multi-timeframe component declarations (different bar periods for different signals). Engine does not support timeframe-aware component variants in config."

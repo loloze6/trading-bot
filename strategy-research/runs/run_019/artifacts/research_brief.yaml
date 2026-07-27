@@ -1,0 +1,65 @@
+hypothesis_id: V2-PIVOT-A
+asset: "BTCUSDT, ETHUSDT"
+timeframe: 1h
+
+research_question: |
+  Do RSI momentum signals (extreme overbought/oversold at quantile thresholds) generate positive
+  expected returns in BTCUSDT/ETHUSDT 1h when the market is TRENDING (high ER, high VR),
+  if regime detection remains unchanged but signal component shifts from band-based to
+  momentum-based AND signal strength threshold is increased to reduce fee drag?
+
+signal_concept: |
+  Relative Strength Index (RSI 14-period) momentum signal in TRENDING regime. Long signal on
+  RSI > 70 (overbought, momentum continuation) in uptrending markets OR short signal on RSI < 30
+  (oversold, bounce) in downtrending markets. Use quantile-based thresholds to avoid static levels.
+  REFINEMENT: Increase min_abs threshold from 15.0 to 20.0 to reduce trade frequency and lower
+  cumulative fee burden. Hypothesis: higher threshold preserves signal edge while eliminating
+  weak-signal trades that contribute negative alpha net-of-fees.
+
+regime_filter: |
+  TRENDING regime only: ER ≥ 0.50 AND VR ≥ 1.20 (unchanged from V2-PIVOT-A).
+  All other regimes produce forecast 0.0.
+
+mechanism: |
+  In TRENDING markets, prices continue directional momentum. RSI crossing into extreme territory
+  predicts momentum continuation. By filtering to only signals with |raw_forecast| ≥ 20.0
+  (vs 15.0), strategy trades only high-confidence momentum extremes and avoids the churn
+  that drives 272% cost drag. Gross PnL signal is intact (21.62 median); net PnL improves
+  via lower fee count and higher average trade size per signal.
+
+assumptions:
+  - "V2-PIVOT-A-CONSERVATIVE (min_abs=15.0) demonstrated positive gross_pnl (21.62 median)
+    across walk-forward, confirming signal has directional edge."
+  - "Primary failure is NOT signal quality but trade frequency. Cost drag of 272.8% vs
+    gross_pnl of 21.62 indicates ~13x fee multiplier over profit."
+  - "Increasing min_abs from 15.0 to 20.0 (33% stricter) should reduce trade count by
+    ~40-50%, proportionally reducing fee burden to ~130-180% cost drag."
+  - "TRENDING regime filter (ER/VR) is correctly implemented and fires when market has edge.
+    Regime informativeness issue (Rule 4 diagnosis) is SECONDARY to the sizing/frequency problem
+    (Rule 1). Fixing frequency first will clarify whether regime is truly uninformative or
+    just noisy at high trade count."
+
+expected_failure_modes:
+  - "Min_abs=20.0 may be too strict; trade count drops below significance threshold (< 20/window),
+    invalidating Sharpe calculation. If this occurs, refine to min_abs=17.5 or 18.0 (mid-point)."
+  - "TRENDING regime remains uninformative even with reduced trade count; gross PnL is actually
+    noise, not edge. Forward-return correlation remains near 0.02 (no predictive power)."
+  - "High-threshold filtering selects only the most extreme RSI moves, which occur precisely
+    at regime transitions (mean-reversion inflection). Edge vanishes when filtering to
+    tail-event entries."
+
+constraints:
+  - "Increase ONLY the min_abs parameter of threshold_filter from 15.0 to 20.0."
+  - "Keep RSI period=14, regime (TRENDING), and all other transforms unchanged."
+  - "Target: median_cost_drag_pct < 150%, median_sharpe > 0.10 (relaxed from 0.30 due to
+    trade count reduction; minimum bar is breakeven net-of-fees)."
+
+change_from_previous: |
+  V2-PIVOT-A-CONSERVATIVE (min_abs=15.0) generated median_cost_drag_pct=272.865% despite
+  positive median_gross_pnl=21.62, per Rule 1 diagnostic. Root cause is excessive trade
+  frequency on weak signals. Proposed refinement: increase min_abs threshold from 15.0 to
+  20.0 to reduce false-positive entries and lower cumulative fee burden. This is a
+  THRESHOLD REFINEMENT on the same signal component, not a signal family pivot. Expected
+  outcome: cost_drag_pct < 150%, sharpe improves or trade count reaches significance threshold.
+  If sharpe remains negative, escalate to regime investigation (regime is uninformative per
+  Rule 4 diagnosis; refined trading frequency will clarify this).

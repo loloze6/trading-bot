@@ -1,0 +1,25 @@
+run_id: run_016
+from_stage: innovation_expansion
+to_stage: validation
+objective: Act as a critical gatekeeper to pressure-test the expanded hypothesis for
+  statistical soundness, lookahead bias, and data feasibility.
+primary_input_artifact: artifacts/expanded_hypothesis_card.yaml
+required_inputs:
+- path: artifacts/expanded_hypothesis_card.yaml
+  reason: Contains the expanded variants to be validated.
+optional_inputs:
+- path: artifacts/human_resolution.yaml
+  reason: If returning from a human data audit, verify the human has secured the required
+    data before approving.
+constraints:
+- Assume the hypothesis is wrong until enough evidence is specified.
+- Must define explicit failure modes and sample split design.
+- 'TOKEN LIMIT: Do not write conversational filler. Keep all rationale strictly mathematical
+  and limit text descriptions to under 100 words per section.'
+deliverables:
+- validation_protocol.yaml
+- validation_decision.yaml
+assigned_engine: claude
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'false'

@@ -1,0 +1,21 @@
+what_failed: |
+  RSI(14) pullback signals in mean_reversion regime (ER ≤ 0.25, VR ≤ 1.00) show 
+  zero predictive power (median forecast_return_corr = -0.0223, most p-values > 0.05) 
+  despite 4 refinement attempts across 3 parameter dimensions (smooth_period, 
+  er_threshold, vr_threshold). Median Sharpe = -5.019 (BTC) / -2.604 (ETH) driven by 
+  cost drag = 142.8%, not signal strength. Trade count remains below 30 on both symbols.
+
+diagnostics_snapshot:
+  - "median_forecast_return_corr: -0.0223 (near-zero, most windows p > 0.05 indicating no statistical edge)"
+  - "median_cost_drag_pct: 142.8246 (transaction costs destroy weak edge; 142% drag vs gross profit)"
+  - "median_sharpe BTCUSDT: -5.019"
+  - "median_sharpe ETHUSDT: -2.604"
+  - "median_win_rate BTCUSDT: 51.28% (directional bias exists, but insufficient sample and high costs)"
+  - "min_trade_count BTCUSDT: 14 (required: 30, shortfall indicates regime underperforms or signal has no edge)"
+
+what_not_to_try:
+  - "RSI pullback signals in mean_reversion regime: signal family exhausted via 3+ parameter tunings"
+  - "Further ER threshold relaxation: er_threshold ≤ 0.25 already tested in run_012, no improvement"
+  - "Further VR threshold relaxation: vr_threshold ≤ 1.00 tested twice (run_013/014), no improvement on forecast_return_corr"
+  - "Further smooth_period tuning on ER/VR: run_011 already tested, no improvement"
+  - "Consecutive same-dimension refinement: run_013→run_014 both tested vr_threshold, violates circuit-breaker protocol"

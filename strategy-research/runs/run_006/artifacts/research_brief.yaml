@@ -1,0 +1,38 @@
+hypothesis_id: H-RUN006
+asset: BTCUSDT
+timeframe: 1h
+research_question: >
+  Does RSI mean-reversion signal have positive expected value specifically
+  in low-efficiency (choppy) regimes on BTCUSDT 1h, where no directional
+  trend competes with the reversal?
+signal_concept: >
+  RSIPullbackComponent (period 14, long_only true): generates a positive
+  score when RSI is below 50 (oversold) scaled by distance from 50.
+  Active only in mean_reversion regime (low ER, low VR).
+regime_filter: >
+  mean_reversion regime only, as defined by the existing threshold_rules
+  engine: ER <= 0.20 and VR <= 0.90. CHOP and TRENDING regimes produce
+  forecast 0.0.
+mechanism: >
+  In low-efficiency regimes, price oscillates without directional momentum.
+  RSI extremes in this context reflect short-term overextension likely to
+  revert rather than continue. ER below 0.20 confirms the absence of a
+  trend that would invalidate the mean-reversion premise.
+assumptions:
+  - mean_reversion regime occurs frequently enough for statistical significance
+  - RSI signal strength correlates with reversion magnitude
+  - 1h timeframe captures the relevant oscillation cycle
+expected_failure_modes:
+  - regime mis-classification causes RSI signal to fire in trending markets
+  - RSI divergence does not predict reversion magnitude, only direction
+  - commission drag erodes small expected-value edges at this frequency
+constraints:
+  - use only components already in STRATEGY_CONFIG_REFERENCE.md
+  - no new code or component classes
+  - config must pass validate_config.py before backtest
+baseline_comparison: >
+  Current production config (same RSIPullbackComponent, same regime) showed
+  median sharpe -5.02 across 11 windows. This run tests whether the issue
+  was configuration (threshold_filter at 15.0 filtering too aggressively,
+  vol-normalization behavior) vs the hypothesis itself being invalid.
+  Deliberately keeping config close to production to isolate one variable.

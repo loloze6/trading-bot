@@ -1,0 +1,96 @@
+{
+  "run_id": "20260628T112342Z_828b7587",
+  "created_utc": "2026-06-28T11:23:42.370572+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "er",
+          "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+          "params": {
+            "period": 24,
+            "smooth_period": 5
+          }
+        },
+        {
+          "id": "vr",
+          "class": "strategies.strategy_components.VarianceRatioComponent",
+          "params": {
+            "k": 5,
+            "window": 100
+          }
+        }
+      ],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "er",
+                "op": "gte",
+                "value": 0.5
+              },
+              {
+                "id": "vr",
+                "op": "gte",
+                "value": 1.2
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "trending",
+      "vetoes": []
+    },
+    "strategies": {
+      "warmup": 51,
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "rsi",
+              "class": "strategies.strategy_components.RSIPullbackComponent",
+              "params": {
+                "period": 14,
+                "scaling_factor": 0.4
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "identity"
+                },
+                {
+                  "op": "threshold_filter",
+                  "params": {
+                    "min_abs": 8.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": null,
+        "chop": null,
+        "unknown": null
+      }
+    }
+  },
+  "config_sha256": "828b758741fd602f51bf1449da02421535d8d124d5099e7606c3aa5d49a4f7c3",
+  "data": {
+    "symbols": [
+      "BTCUSDT"
+    ],
+    "timeframe": "3600s",
+    "start": "2024-05-01 00:00:00",
+    "end": "2024-06-01 23:00:00",
+    "bar_count": 768,
+    "data_sha256": "b2a044bcdf81ede47e9fe6e213d97cb2fb4d984fb88411e9a8da8b9600e67d7f"
+  },
+  "git_sha": "1ab915a50ad9705c3dca3fe98b795d89595a710e",
+  "engine": {
+    "lookback": 15,
+    "warmup": 15
+  }
+}

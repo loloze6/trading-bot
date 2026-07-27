@@ -1,0 +1,27 @@
+stage: innovation_expansion
+run_id: run_009
+base_hypothesis_id: H-RUN007
+
+constraint_enforcement: >
+  research_brief.yaml constraint field: "one variant only — no divergence, 
+  no behavioral features, no cross-timeframe". Expansion halted per persona rule: 
+  when brief contains variant count constraint, pass base through as single V1 only.
+
+variants_rejected_by_brief:
+  - RSI divergence (bullish/bearish top/bottom): violates "no divergence"
+  - Volume-weighted RSI or positioning proxy: violates "no behavioral features"
+  - RSI(4h) or RSI(15m) confirmation: violates "no cross-timeframe"
+  - Overbought reversion (RSI > 50): deferred; not part of single-variant scope
+
+rationale_for_one_variant: >
+  Brief constraint is architectural boundary, not editorial. Single variant V1 preserves 
+  base hypothesis fidelity for clean falsification-first validation. Expansion occurs 
+  only in later stage (after acceptance/rejection signal from validation_gate).
+
+implementation_scope: >
+  V1 uses existing RSIPullbackComponent + regime detector. No new code, no infra change. 
+  Data: OHLCV + RSI(14) only.
+
+handoff_to_validation_gate: >
+  V1 ready for screening backtest. If V1 rejects (Sharpe < 0.5, regime too rare, 
+  commission drag), refinement_notes.yaml will guide variant expansion or hypothesis pivot.

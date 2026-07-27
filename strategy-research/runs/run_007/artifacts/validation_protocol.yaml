@@ -1,0 +1,158 @@
+hypothesis_id: H-RUN007
+
+falsifiable_statement: |
+  RSI(14) < 50 in mean-reversion regime (ER ≤ 0.20, VR ≤ 0.90) generates positive 
+  risk-adjusted excess return (Sharpe > 0.5 on holdout BTCUSDT 1h after transaction costs).
+  Null: zero excess return. Alternative: non-zero excess return not explained by 
+  (a) mean-reversion regime alone (V5 control), (b) transaction costs, or (c) overfitting.
+
+null_expectation: |
+  Random entries in mean-reversion regime yield –0.5% per trade after slippage + fees.
+  Mean-reversion regime filter alone (ignoring RSI signal) generates Sharpe ≈ 0.1–0.3.
+  Trend-following in mean-reversion underperforms (Sharpe < 0).
+  V5 (reverse, RSI > 70) should generate Sharpe < 0.2 if RSI direction matters.
+
+required_evidence:
+  - "Base variant Sharpe ≥ 0.5 on holdout BTCUSDT 1h after documented transaction costs."
+  - "V5 (reverse, RSI > 70) Sharpe < 0.2 on holdout (falsifies regime-alone hypothesis)."
+  - "Walk-forward parameter drift < 10% from in-sample tuning; no regime cliff at boundaries."
+  - "Generalization: Sharpe > 0.3 on holdout ETHUSDT 1h (overfitting test)."
+  - "Regime threshold sensitivity documented: ER ∈ [0.15, 0.25], VR ∈ [0.80, 1.0] sweep."
+  - "Transaction cost model explicit: slippage quantile + 0.10% maker/taker fee."
+  - "Hit rate ≥ 55% (beats random entry in mean-reversion regime)."
+
+bias_risks:
+  - name: "Multiple Testing Bias (8 Variants)"
+    description: "8 independent variants tested without Bonferroni correction. False-positive rate inflates to ~34% (α=0.05×8). Risk: best variant is lucky pick, not signal."
+    severity: "Critical"
+    mitigation: "Select 3 variants a priori (V1, V2, V5); treat others as exploratory. Lock variant selection before screening backtest."
+
+  - name: "Regime Threshold Oversensitivity"
+    description: "ER=0.20, VR=0.90 hardcoded without sweep. Small ER/VR drift flips regime classification; parameter not robust."
+    severity: "Critical"
+    mitigation: "Run in-sample sensitivity sweep: ER ∈ [0.15, 0.25], VR ∈ [0.80, 1.0]. Lock thresholds before walk-forward."
+
+  - name: "RSI(14) Parameter Not Justified"
+    description: "RSI period (14) copied from standard without sweep. Optimal period for 1h BTCUSDT may differ; results lack generality."
+    severity: "High"
+    mitigation: "Test RSI(10, 12, 14, 16, 20) in-sample. Lock period before walk-forward."
+
+  - name: "Look-Ahead in ER/VR Regime Detection"
+    description: "ER/VR computed on closed bar; regime classification uses future information. Mitigated only if signal applied strictly at next bar open."
+    severity: "Moderate"
+    mitigation: "Document order of operations: regime assigned at bar[t] close, signal fires at bar[t+1] open for bar[t+1] execution."
+
+  - name: "Walk-Forward Overfitting"
+    description: "Parameters tuned in-sample on BTCUSDT 1h; walk-forward/holdout use same asset. Regime patterns may repeat within asset."
+    severity: "Moderate"
+    mitigation: "Test on ETHUSDT 1h during holdout period (2024-01-01 to 2024-06-30) simultaneously."
+
+  - name: "Behavioral Features Post-Hoc Selection (V6, V7)"
+    description: "V6 (volume confirmation) and V7 (regime transitions) chosen after visual inspection. Data-snooping risk."
+    severity: "Moderate"
+    mitigation: "Exclude V6, V7 from primary decision path. Use as exploratory only if resources permit."
+
+  - name: "Survivorship Bias"
+    description: "BTCUSDT 1h continuous; ignores delisted pairs. Generalization to ETHUSDT partial mitigation only."
+    severity: "Low"
+    mitigation: "Test on ≥2 instruments; report failures transparently."
+
+failure_modes:
+  - id: "FM1"
+    mode: "Transaction Cost Underestimation"
+    description: "Modeled cost 0.10% per trade; actual slippage + fees on 1h BTCUSDT = 0.15–0.25% (bid-ask + taker)."
+    consequence: "Backtest Sharpe 0.5 → 0.0 after realistic costs; positive alpha erased."
+    trigger: "If post-cost Sharpe < 0.3 on holdout, reject."
+
+  - id: "FM2"
+    mode: "Regime Classification Cliff"
+    description: "ER=0.20, VR=0.90 boundaries sharp. RSI signal fires one bar then vanishes as regime flips; false entry rate spikes."
+    consequence: "Win rate collapses in walk-forward (< 45%); regime flipping increases whipsaw."
+    trigger: "Walk-forward Sharpe drops > 20% vs. in-sample OR regime classification instability > 5% of bars."
+
+  - id: "FM3"
+    mode: "RSI Period Mismatch"
+    description: "RSI(14) optimal for daily; 1h has different volatility. Oversold (RSI < 50) triggers on noise; threshold misplaced."
+    consequence: "Hit rate < 50% on holdout; signal indistinguishable from random entry."
+    trigger: "If RSI(10) or RSI(20) outperforms RSI(14) by > 30% in-sample, hypothesis RSI(14) invalid."
+
+  - id: "FM4"
+    mode: "Look-Ahead Bias in Persistence Filter (V2)"
+    description: "Persistence check uses RSI[t:t-2] lookback; if entry executed on bar t, data snooping creates implicit lookahead."
+    consequence: "V2 backtest Sharpe inflated 15–30%; live trading misses signal by 2 bars (delayed entry)."
+    trigger: "If V2 backtest Sharpe > base variant Sharpe by > 20%, flagged as lookahead artifact."
+
+  - id: "FM5"
+    mode: "Overfitting via Expansion (Multiple Testing False Positive)"
+    description: "8 variants + parameter sweeps = 24+ independent tests. Bonferroni α=0.05/24≈0.002. Risk: top variant is lucky."
+    consequence: "Best variant collapses on holdout; Sharpe < 0.2. Alpha was statistical artifact."
+    trigger: "If in-sample variant Sharpe spread > 2.0 but holdout top-variant Sharpe < 0.3, reject."
+
+  - id: "FM6"
+    mode: "Generalization Failure"
+    description: "BTCUSDT 1h has unique microstructure. ETHUSDT 1h has different regime distribution, vol profile, or RSI behavior."
+    consequence: "ETHUSDT holdout Sharpe < 0.2; strategy overfitted to Bitcoin."
+    trigger: "If ETHUSDT holdout Sharpe < 0.3 OR drops > 40% from BTCUSDT holdout, reject."
+
+  - id: "FM7"
+    mode: "Regime Filter Alone Drives Alpha (V5 Indistinguishability)"
+    description: "V5 (RSI > 70 reverse) shows Sharpe ≈ 0.4 on holdout; regime classification is true alpha source, RSI direction spurious."
+    consequence: "RSI signal is noise; long-only in mean-reversion regime sufficient. RSI variants wasteful."
+    trigger: "If V5 holdout Sharpe > 0.35, hypothesis falsified (regime not RSI is driver)."
+
+sample_split_design:
+  in_sample:
+    name: "Hypothesis Tuning & Variant Selection"
+    period: "2020-01-01 to 2023-06-30"
+    instruments: ["BTCUSDT"]
+    purpose: "Sweep regime thresholds (ER, VR), RSI period, variant parameters. Lock 3 variants a priori."
+    candles: "~1278 bars per symbol"
+    protocol: "No peeking at walk-forward or holdout; screening backtest only."
+
+  walk_forward:
+    name: "Parameter Stability Validation"
+    period: "2023-07-01 to 2023-12-31"
+    instruments: ["BTCUSDT"]
+    purpose: "Fix in-sample parameters; confirm no cliff or regime instability."
+    acceptance_criteria: "Performance drift < 10% vs. in-sample; regime classification stable."
+
+  holdout:
+    name: "Final Out-of-Sample Validation (Frozen Parameters)"
+    period: "2024-01-01 to 2024-06-30"
+    instruments: ["BTCUSDT"]
+    purpose: "Final test on truly unseen data; no refitting."
+    acceptance_criteria: "Sharpe > 0.5, hit rate > 55%, max drawdown < 10%, post-cost return positive."
+
+  generalization:
+    name: "Instrument Robustness (Overfitting Test)"
+    period: "2024-01-01 to 2024-06-30"
+    instruments: ["ETHUSDT", "BNBUSDT"]
+    purpose: "Validate parameters generalize beyond Bitcoin."
+    acceptance_criteria: "Sharpe > 0.3 on each instrument (same parameters as BTCUSDT holdout)."
+
+decision_rules:
+  approve_if_all_met:
+    - "Base variant Sharpe ≥ 0.5 on BTCUSDT holdout after transaction costs."
+    - "V5 (reverse) Sharpe < 0.2 on holdout (falsifies regime-alone hypothesis)."
+    - "Walk-forward drift < 10%; no cliff at regime boundaries."
+    - "Hit rate ≥ 55% on holdout (exceeds random entry in mean-reversion)."
+    - "Max drawdown < 10% during holdout period."
+    - "Generalization: Sharpe > 0.3 on ≥1 other instrument (same holdout period)."
+    - "In-sample variant selection rationale documented a priori (before screening backtest)."
+
+  refine_if:
+    - "Base Sharpe 0.3–0.5 in-sample or holdout (marginal edge; optimize parameters or variant mix)."
+    - "V5 Sharpe 0.2–0.35 (regime filter explains partial alpha; isolate RSI contribution via correlation analysis)."
+    - "Walk-forward drift 10–20% (parameter sensitivity detected; extend in-sample, retest walk-forward)."
+    - "Generalization Sharpe 0.15–0.3 (partial overfitting; cross-validate with additional instruments or longer holdout)."
+    - "Hit rate 50–55% (marginal; test RSI period sweep or persistence filter)."
+
+  reject_if_any_met:
+    - "Base Sharpe < 0.3 on holdout or post-cost Sharpe < 0.2."
+    - "V5 Sharpe > 0.4 on holdout (regime filter alone explains alpha; RSI direction spurious)."
+    - "Walk-forward drift > 20% (parameter instability; regime model broken)."
+    - "Hit rate < 50% on holdout (worse than random; signal is noise)."
+    - "Max drawdown > 15% during holdout (unacceptable risk for production)."
+    - "Generalization Sharpe < 0.2 on all instruments (overfitted to BTCUSDT)."
+    - "Transaction cost > 50% of gross return (edge evaporates after execution)."
+    - "8 variants tested without a priori selection (multiple testing bias uncontrolled)."

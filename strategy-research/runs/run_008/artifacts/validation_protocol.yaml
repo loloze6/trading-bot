@@ -1,0 +1,100 @@
+hypothesis_id: H-RUN007
+asset: BTCUSDT
+timeframe: 1h
+regime_target: mean_reversion
+
+falsifiable_statement: >
+  RSI distance from 50 generates positive alpha in mean-reversion regime 
+  (ER ≤ 0.20, VR ≤ 0.90). At least 2 variants achieve Sharpe > 0.8 and 
+  annualized return > 10% in-sample, with Sharpe > 0.6 persistence in 
+  walk-forward hold-out.
+
+null_expectation: >
+  All variants Sharpe ≤ 0.5 (indistinguishable from random noise) or 
+  negative returns. V1 performance ≈ V3 performance (direction irrelevant; 
+  signal driven by regime classification artifact, not oversold mechanics).
+
+required_evidence:
+  in_sample_threshold:
+    - ≥2 variants with Sharpe > 0.8
+    - annualized_return > 10% for advancing variants
+    - Calmar > 1.0 (return/max_drawdown)
+  walk_forward_threshold:
+    - Sharpe > 0.6 (≥0.2 Sharpe drop tolerated; >0.3 triggers rejection)
+    - No regime structural breaks (e.g., mean_reversion disappears)
+  directional_confirmation:
+    - V1 Sharpe - V3 Sharpe > 0.5 (long-biased edge confirmed)
+    - If V1 ≈ V3, thesis rejected (regime classification only)
+
+bias_risks:
+  lookahead_bias:
+    - "RSI(14) must use only completed candles; bar at t uses bars [t-14..t-1]"
+    - "V5 percentile(RSI, 50) requires 50-bar history; forecasting starts at bar 51+"
+    - "All indicators initialized before backtest date; no forward-filled data"
+  regime_selection_bias:
+    - "ER/VR thresholds (0.20/0.90) must be pre-set, NOT optimized on in-sample"
+    - "If computed on full 12-month window, regime labels leak walk-forward information"
+  curve_fitting:
+    - "V2, V4, V5, V6 are parameter/feature variations; 4/6 variants compete for same noise"
+    - "StochRSI(14,3,3), volume_SMA20, percentile(50) are pre-tuned; multi-variant risk"
+  survivorship_bias:
+    - "BTCUSDT backtest only; no cross-symbol validation"
+  in_sample_confirmation_bias:
+    - "6-month in-sample (2023-09-01 to 2024-03-01) is contiguous; no cross-validation folds"
+    - "Walk-forward must be strictly out-of-sample; no overlap with in-sample"
+
+failure_modes:
+  - "V1 Sharpe < 0.5 → mean-reversion thesis is false; RSI oversold has no edge"
+  - "V1 Sharpe ≈ V3 Sharpe (within 0.2) → directional hypothesis invalid; regime classification drives signal, not oversold"
+  - "V2 > V1 in-sample but V2 < V1 in walk-forward by >0.3 Sharpe → StochRSI smoothing is overfitting"
+  - "V4 underperforms V1 (volume dampens real signals) → volume is confounding, not confirmatory; hypothesis rejected"
+  - "V5 requires >50 bars history → buffer initialization must precede bar 51 in live mode; if not, forecastable return is biased"
+  - "Sharpe decays >0.3 from in-sample to walk-forward across all variants → regime structural change in 2024-Q2; out-of-sample performance unreliable"
+  - "V6 HL2 significantly outperforms close input → range-centering leaks regime information (e.g., wide bars in mean-reversion); hypothesis confounded"
+  - "All variants show negative Sharpe in walk-forward → strategy adapts to training set only; fails generalization test"
+
+sample_split_design:
+  in_sample:
+    date_range: "2023-09-01 to 2024-03-01 (6 months)"
+    bars: "~4,320 (1h BTCUSDT)"
+    purpose: "Variant screening and threshold discovery"
+    regime_boundary_rule: "ER/VR thresholds PRE-SET or computed on in-sample only; NOT on future data"
+  walk_forward:
+    date_range: "2024-03-01 to 2024-09-01 (6 months, unseen)"
+    bars: "~4,320 (1h BTCUSDT)"
+    purpose: "Out-of-sample validation; detect overfitting"
+    embargo: "No parameter tuning; use in-sample thresholds only"
+  holdout:
+    date_range: "2024-09-01 onward"
+    purpose: "Final robustness if variants pass walk-forward"
+    condition: "Only if ≥2 variants meet decision_rules"
+
+validation_methods:
+  per_variant_metrics:
+    - "Sharpe ratio (annualized)"
+    - "annualized_return (%)"
+    - "max_drawdown (%)"
+    - "Calmar ratio (return / max_dd)"
+    - "Win rate (%)"
+    - "Avg trade duration (bars)"
+  comparative_tests:
+    - "V1 vs V3 Sharpe delta (directional confirmation)"
+    - "In-sample vs walk-forward Sharpe drop (overfitting detection)"
+    - "V1 vs V2/V4/V5/V6 in walk-forward (variant robustness)"
+  regime_robustness:
+    - "Stratify walk-forward by ER, VR levels; confirm signal holds across sub-regimes"
+    - "Test if Sharpe > 0.8 driven by extreme oversold bars (e.g., RSI < 20) vs broad RSI < 50 region"
+
+decision_rules:
+  approve_condition: >
+    ≥2 variants achieve Sharpe > 0.8 in-sample AND Sharpe > 0.6 in walk-forward 
+    AND V1 Sharpe > V3 Sharpe + 0.5 (directional edge confirmed).
+    Advance to screening_backtest.
+  refine_condition: >
+    Variants show Sharpe 0.5-0.8 in-sample but fail walk-forward (Sharpe drop > 0.3) 
+    OR V1 ≈ V3 but other variants outperform → reparameter, add sub-regime filters, 
+    or add behavioral features before re-screen.
+  reject_condition: >
+    All variants Sharpe < 0.5 in-sample OR V1 ≈ V3 (regime artifact) 
+    OR walk-forward Sharpe < 0.3 (>0.5 drop from in-sample).
+    Hypothesis falsified; discontinue variant pursuit.

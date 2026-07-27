@@ -1,0 +1,58 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY_ER20GATE"
+protocol_verdict: "kill"
+status: "kill"
+
+criteria_summary:
+  - criterion: "median_sharpe_gated_bars (criterion a): (a) gated bar-level median Sharpe >= 0.5791 (BTCUSDT) AND >= 0.0318 (ETHUSDT)"
+    result: FAIL
+    detail: "BTCUSDT: UNTESTED (null; all 11 windows individually below trade-floor minimum, contributing null Sharpe per A3.4 sparse handling). ETHUSDT: actual -0.686, required >= 0.0318. Hard failure on ETHUSDT."
+
+  - criterion: "per_window min_trade_count >= 3"
+    result: FAIL
+    detail: "BTCUSDT min_trade_count=0 (hard gate per checklist); ETHUSDT min_trade_count=0. Multiple windows per symbol generated zero trades, violating minimum sample requirement."
+
+  - criterion: "per_episode_expectancy > 0 bps (criterion b)"
+    result: PASS
+    detail: "Mean 433.73 bps (SE 441.39, t_stat 0.9827, n=42); directionally positive. Passes pre_registration requirement (quoted: no t-stat bar, only sign and expectancy +/- SE required). Not statistically significant but nominally satisfies criterion."
+
+  - criterion: "S2 validation secondary: excluded-entry expectancy check"
+    result: FAIL_MECHANISM_FALSIFIED
+    detail: "S2 predicted excluded entries (ER<0.30) show <= 0 bps per-episode expectancy. Identity-based partition confirmed: excluded subset (n=75) mean=1395.90 bps (SE 821.17) >> included subset (n=42) mean=433.73 bps. Gate removes higher-quality entries, contradicting brief mechanism hypothesis."
+
+primary_failure_mode: "Gate mechanism hypothesis falsified by S2 validation; excluded-entry expectancy (1395.90 bps) significantly exceeds included-entry expectancy (433.73 bps), proving gate selects lower-quality trades contrary to brief rationale"
+
+config_to_failure_map:
+  - "ER(20) threshold configured at 0.30 as entry-selection criterion; S2 identity partition (100% trade match) proves selection is inverted: high-ER entries have lower expectancy than excluded low-ER entries"
+  - "GatedSmaTrendLongOnlyComponent implementation: entry-only latch semantics verified per acceptance tests (30/30 bar-for-bar equivalence to run_054 canonical parent, two passing synthetic fixtures); component executes specification correctly. Issue is mechanism validity, not implementation."
+  - "Pre-registration constraint (quoted: no threshold adjustment permitted within this brief) blocks standard Rule 6 CASE B remedy (incremental relaxation). Threshold tuning is unavailable path."
+
+untested_criteria:
+  - "BTCUSDT median_sharpe_gated_bars: not computable per A3.4 sparse handling. All 11 windows individually below min trade-floor (trade_count < 3), each contributing null Sharpe. Aggregate median undefined."
+  - "Holdout-window performance (2026-01-01 to 2026-06-30): reserved as single-use per A6.1 policy; evaluable only at holdout_evaluation stage after deflated-Sharpe gate passes walk-forward (not this run)"
+
+proposed_change_dimension: "gate_mechanism"
+hypothesis_family: "sma_trend_longonly_with_efficiency_gate"
+
+altitude_justification: "Rule 6 CASE B (regime starvation: min_trade_count=0 in multiple windows; median cost_drag_pct=4.23%, benign). Standard remedy: incremental threshold relaxation. However S2 mechanism check is definitive (identity-based trade partition, 42/42 matched trades, 100% percent-return agreement): excluded entries mean_expectancy_bps=1395.90 >> included mean_expectancy_bps=433.73 — gate removes higher-quality entries, opposite of mechanism prediction. Threshold relaxation cannot fix backward selection logic, and pre-registration forbids adjustment. Lineage terminates per the operator pre-commitment in prescreen_override_20260711.yaml (verdict final on criterion-(a) FAIL; no further arbitration). S2 falsification is recorded as mechanism evidence, not grounds for continuation."
+
+operator_correction_20260711: "Stage routed refine/pivot per its rulebook and the pass rule's own 'verdict routing decides kill vs pivot' delegation; the later pre-commitment narrowing that discretion had no precedence channel the skill recognizes. Enums corrected to kill per the pre-commitment; stage analysis retained verbatim; instruction-layering defect logged in the pipeline ledger (D3/B11/A8)."
+
+root_cause:
+  mechanism_failure: "already_priced_in"
+  supporting_evidence: "S2 validation: identity-based trade partition via timestamp/symbol matching (run_054 parent vs run_057 gated). Match rate 42/42 (100% run_057 trades matched). Percent-return agreement perfect (max_abs_diff=0%). Excluded subset (ER<0.30, unmatched to run_057, n=75): mean_expectancy_bps=1395.90 (SE 821.17). Included subset (ER>=0.30, matched to run_057, n=42): mean_expectancy_bps=433.73 (SE 441.39). Excluded mean >> included mean, contradicting gate hypothesis that ER>=0.30 identifies higher-quality entries. Parent SMA(100) signal is real (run_054 positive aggregate edge), but ER(20)>=0.30 gating inverts quality selection."
+  confidence: "high"
+
+trade_attribution:
+  primary_weakness: "none_healthy"
+  evidence: "Trade mechanics are balanced: entry_efficiency_median=0.0 (neutral), exit_efficiency_median=-0.0416 (near-zero noise), win_rate_net=47.62%, mae_mfe_ratio_median=0.6876 (reasonable). All exits signal-driven (signal_flip_pct=100%). No execution-layer weakness. Root cause is upstream signal-selection logic (gate mechanism), not entry/exit/sizing execution."
+
+regime_attribution: null
+
+prescreen_evidence:
+  prescreen_route_attempted: "kill_no_ic"
+  prescreen_ic_all_bars: 0.008956
+  prescreen_ic_all_bars_pvalue: 0.46
+  prescreen_forecast_sparsity_pct: 74.25
+  override_applied: "yes"
+  override_authority: "prescreen_override_20260711.yaml: A8.3 point 5 conjunction rule violation (single statistic inadmissible for sparse sparse_forecast when forecast_sparsity_pct > 50%)"
+  note: "Walk-forward proceeded despite prescreen kill route. Walk-forward verdict independent of prescreen IC findings."

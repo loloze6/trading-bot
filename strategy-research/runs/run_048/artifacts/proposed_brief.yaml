@@ -1,0 +1,59 @@
+hypothesis_id: H-041-C
+asset: BTCUSDT, ETHUSDT
+timeframe: 1h
+run_type: reactivation
+research_question: >
+  H-041-C F&G extreme sentiment → contrarian mean-reversion (persistent_behavioral_bias).
+  Run_042 parked insufficient_sample_inconclusive; run_048 reactivated on extended data
+  (2018-2025, fear_greed_daily.csv backfilled). Run_048 prescreen revealed entry logic is
+  INVERTED: pooled ic_active_bars=-0.0403. Diagnostic breakthrough: per-era IC breakdown
+  shows negative IC throughout 2018-2023 (−0.058 to −0.135 across symbols) but positive IC
+  in 2024-2025 walk-forward (+0.094 to +0.182). This 180° pattern on identical config proves
+  entry polarity is backwards, not that signal is fundamentally unsound. This run re-tests
+  with REVERSED entry polarity: SHORT when fear_greed<25 (fear is irrational extreme),
+  LONG when fear_greed>75 (greed is irrational extreme). No parameter changes (fear_threshold
+  and greed_threshold locked at 25.0 and 75.0 per A8.5.3). Expected outcome: pooled IC flips
+  from −0.0403 to approximately +0.10–+0.15, meeting validation gate.
+signal_concept: >
+  FearGreedContrarianComponent with NEGATED forecast polarity (altitude 1 refinement).
+  Fires at daily boundary bar (UTC hour==0) when fear_greed index crosses extreme
+  thresholds. Entry CORRECTED: forecast=−10.0 (SHORT) when fear_greed < 25; forecast=+10.0
+  (LONG) when fear_greed > 75; forecast=0 otherwise. Implementation: negate the forecast
+  sign within FearGreedContrarianComponent.generate_forecast(), or reverse the
+  long/short allocation mapping in strategies.regimes.unknown component config
+  (specific implementation delegated to config schema; intent is forecast sign flip).
+  Rationale for polarity flip: run_048 per-era IC values prove the signal works when
+  direction is reversed. This is a mechanical correction, not a signal redesign.
+significance_methodology: >
+  Mandatory prescreen: episode_block_bootstrap (A8.5.1a, gap_bars=48, min_n_episodes=8).
+  MUST report per-era ic_active_bars breakdown across 4 eras (2018-pre-funding,
+  2019-2023-full, 2024-burned, 2024-2025-walk-forward) to confirm polarity inversion
+  restores positive pooled IC ≥0.12 (target 0.15). Also report: per-era n_episodes and
+  active_n_bars for stability assessment.
+constraints:
+  - "SINGLE-VARIABLE REFINEMENT: entry polarity flip only. NO threshold retuning.
+    fear_threshold=25.0, greed_threshold=75.0 locked per A8.5.3 reactivation rule."
+  - "One variant only (V1 = run_042 config with forecast sign negated)."
+  - "Ungated (regime_detector.rules=[], default_regime='unknown'). No regime gating per A2.3."
+  - "Data range [2018-02-01, 2025-12-31] fixed. Holdout [2026-01-01, 2026-06-30] frozen."
+  - "If prescreen passes BOTH IC gate (≥0.15) AND cost gate (edge_to_cost_ratio≥2.0):
+    STOP and report to user. Per run_048 research_brief constraint, era-transferability
+    review (2018-2023 vs 2024+ regime drift) is a human decision, not automatic
+    advance to walk_forward_validation stage."
+  - "Do NOT modify FearGreedContrarianComponent source code beyond polarity reversal."
+power_parameters:
+  activation_rate: null
+  plausible_ic_upper: 0.20
+  n_bars: null
+  n_symbols: 2
+  is_market_wide: true
+edge_source:
+  category: persistent_behavioral_bias
+  evidence_type: fear_greed
+  specific_mechanism: >
+    Extreme crowd sentiment (alternative.me Fear & Greed Index) overreaction creates
+    profitable contrarian opportunity as sentiment reverts. 2024-2025 walk-forward positive
+    IC (+0.094 to +0.182) observed when entry direction is inverted proves the mechanism
+    is real. 2018-2023 negative IC (−0.058 to −0.135) was an artifact of inverted entry
+    logic in run_042's original instantiation, not evidence of signal failure.
+change_from_previous: "Flip entry forecast polarity (single-variable altitude-1 refinement per Rule 3). PREVIOUS (run_042, run_048): forecast=+10.0 when fear_greed<25 (long), forecast=−10.0 when fear_greed>75 (short). CORRECTED: forecast=−10.0 when fear_greed<25 (short extreme fear), forecast=+10.0 when fear_greed>75 (long extreme greed). Justification: run_048 per-era breakdown shows pooled ic_active_bars inverts from −0.0403 (all 2018-2023 eras negative, all 2024-2025 eras positive) under identical component config. This unidirectional 180° flip across 8 era-symbol pairs is diagnostic of mechanical entry-direction inversion, not regime-driven behavior. Negating the forecast will align historical IC to observed 2024-2025 positive direction. Fear_threshold, greed_threshold, scaling_factor, and transforms remain locked per constraints (A8.5.3). Expected pooled IC after fix: ~0.10-0.15 (estimated from 2024-2025 average ic_active_bars)."

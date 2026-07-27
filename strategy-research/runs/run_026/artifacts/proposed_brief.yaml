@@ -1,0 +1,49 @@
+hypothesis_id: KELTNER_OR_GATE_REGIME_REFINED
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+research_question: "Can threshold_rules regime detection (ER and VR indicators) achieve median walk-forward Sharpe ≥0.30 and stabilize trade frequency ≥30/window by tightening OR-gate thresholds (ER≥0.6 OR VR≥1.4) to reduce fee drag below 80%, while preserving signal edge?"
+
+signal_concept: "Keltner mean-reversion (period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=−20.0). Identical component to run_017 baseline. Do NOT change signal."
+
+regime_filter: "REFINE FROM: threshold_rules with OR gate (ER≥0.5 OR VR≥1.2, ~60 trades/window, cost_drag > 90%) TO: threshold_rules with tightened OR gate (ER≥0.6 OR VR≥1.4). Selective threshold increase reduces false positives in trending regime assignment while maintaining individual indicator selectivity. Expected outcome: trade frequency reduced 30–40%, cost_drag reduced to 65–75%, allowing signal edge to offset fees and recover Sharpe."
+
+mechanism: "Run_026 used ER≥0.5 OR VR≥1.2, generating 40–80 trades/window; cost_drag=93.99% consumed all gross PnL (+5.81). By raising thresholds to ER≥0.6 and VR≥1.4, regime assignment becomes more selective; only higher-conviction regime bars trigger. Keltner signal unchanged (forecast formula identical). Expected result: 30–40% trade reduction, cost_drag drop to 70%, sufficient PnL preservation to achieve Sharpe ≥0.30 on high-quality entries."
+
+assumptions:
+  - "ER and VR are individually informative; thresholds (not gate logic itself) were too loose"
+  - "Trade frequency is primary constraint; reducing it preserves highest-quality entries"
+  - "Keltner signal quality (forecast_return_corr≈0.06) is sufficient once cost drag is controlled below 80%"
+  - "1h timeframe sufficient for regime stability at higher threshold levels; no bar-to-bar flipping"
+  - "Signal edge on selected entries exceeds per-trade fee; frequency reduction makes edge profitable"
+
+expected_failure_modes:
+  - "Thresholds too tight; trending regime rarely fires, trade_count collapses toward zero, underdiversification"
+  - "Signal edge insufficient at any fee level; forecast_return_corr too weak to overcome costs (Rule 2)"
+  - "Threshold values non-monotonic; 0.5→0.6 may not scale linearly; regime informativeness drops"
+  - "Efficiency ratio or variance ratio unstable at higher thresholds; values spend more time below threshold, uninformative regimes"
+
+constraints:
+  - "Timeframe: 1h only"
+  - "Signal: Keltner mean-reversion (IDENTICAL to run_017 baseline)"
+  - "Regime: threshold_rules architecture (NOT score_mode yet; reserve for altitude 2 if tightening fails)"
+  - "Single-dimensional config change: regime_detector.rules thresholds only (ER: 0.5→0.6, VR: 1.2→1.4)"
+
+change_from_previous: |
+  PREVIOUS (run_026):
+  Regime detection: threshold_rules, OR gate (ER≥0.5 OR VR≥1.2).
+  Result: median Sharpe BTCUSDT=−2.383, ETHUSDT=−3.266; median trade_count 9–79/window.
+  Primary metric: FAIL on Sharpe and trade_count. Win_rate PASS (50–52%).
+  Diagnosis: Rule 1 — median_cost_drag_pct=93.9887% > 80%, median_gross_pnl=5.8128 > 0.
+  Root cause: Signal generates positive gross P&L, but excessive trade frequency (40–80 trades/window) accumulates fees faster than signal can earn edge.
+  
+  NEW:
+  Regime detection: threshold_rules, OR gate (ER≥0.6 OR VR≥1.4).
+  Expected: trade_count reduction to 30–40/window (30–40% decrease), cost_drag to 65–75%.
+  Signal: unchanged. Keltner params locked to run_017 (ema=20, atr=20, multiplier=2.0, scale=−20.0).
+  
+  RATIONALE:
+  Rule 1 explicitly recommends altitude 1 refine: tighten threshold_filter to reduce trade frequency.
+  OR-gate logic was not the problem; frequency was. Raised thresholds maintain gate selectivity while restricting bar coverage.
+  This is PARAMETER REFINEMENT (altitude 1), changing only numeric threshold values within the same regime architecture.
+  Only dimension changed: threshold values (not gate type, not signal, not architecture).
+  If tightening also fails on cost_drag, escalate to altitude 2 (pivot to score_mode regime with continuous ER/VR confidence scoring).

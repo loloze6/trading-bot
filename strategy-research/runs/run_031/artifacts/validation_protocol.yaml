@@ -1,0 +1,67 @@
+hypothesis_id: "KELTNER_THRESHOLD_4H_AVAX"
+falsifiable_statement: "Applying threshold-based regime gates (V1: ER ≥0.30 AND VR ≥1.5 for trending; VR ≤1.2 for mean_reversion) to Keltner signal generation reduces cost_drag below 80% AND maintains Sharpe ≥0.30 AND achieves min_trade_count ≥5 per walk-forward window, compared to score-mode baseline (run_030: cost_drag=128.44%, trade_count insufficient)."
+
+null_expectation: "Threshold-rules provide no meaningful cost_drag reduction (cost_drag ≥100%) OR trade_count collapses below 4 trades per window OR Sharpe deteriorates below 0.20 OR regime activation remains >25% of candles (defeating frequency control hypothesis)."
+
+required_evidence:
+  - "Walk-forward backtest (≥4 windows, ≥40 bars each) with thresholds calibrated on training-period data only (no look-ahead)."
+  - "Regime activation frequency measurement per window (actual % of candles firing each regime; verify 10–20% target for V1)."
+  - "Trade count per window; flag minimum if min_trade_count <4 in any window."
+  - "Cost_drag breakdown by regime (trending vs mean_reversion) to identify which regime carries cost burden."
+  - "Sharpe ratio and max_drawdown_pct per window; median values across windows."
+  - "Sensitivity analysis: cost_drag vs ER_threshold (0.25–0.35) and vs VR_threshold (1.2–2.0)."
+  - "V2 only: verification that rolling 60th/40th percentile windows use training-period data, not forward data."
+  - "V3 only: confirmation that confidence→position_size scaling is implemented in ExecutionHandler; measure actual position_size reduction (target: 50–70% vs nominal)."
+  - "V4 only: post-backtest regime validity analysis (forward_return_mean and win_rate by regime) to justify asymmetric gates."
+  - "V5 only: regime persistence distribution (mean, median duration in bars); if mean <3 bars, V5 expected to fail."
+  - "V6 & Reverse only: only test if V1 fails due to trade_count; validate that relaxation mechanism achieves cost_drag <80% without returning to score-mode."
+
+bias_risks:
+  - "Parameter overfitting: ER ≥0.30, VR ≥1.5, VR ≤1.2 derived from run_030 diagnostic; may not generalize to different market phases (bull/bear/low-vol). Mitigation: sensitivity analysis + multi-window stability check."
+  - "Look-ahead bias (V2): percentile_window=252 bars; if computed on full dataset before train/test split, incorporates forward data. Mitigation: compute percentiles on training window only."
+  - "Look-ahead bias (V6): regime fire frequency counter may use forward data. Mitigation: frequency computed on training window; adaptive thresholds frozen at test start."
+  - "Sample contamination: same data used to select thresholds and test them (if not walk-forward). Mitigation: explicit train/test split with no threshold tuning on test data."
+  - "Narrative bias: assumption that Keltner edge persists in high-conviction regime subset; not yet verified. Mitigation: measure win_rate and sharpe per regime post-backtest."
+  - "Mechanical bias: forecast standardization (stddev_24 * close scaling) already filters weak signals. Thresholds may be redundant. Mitigation: compare V1 cost_drag to score-mode cost_drag; if no improvement, reject hypothesis."
+  - "Asymmetry assumption (V4): assumes mean_reversion edge > trending edge without evidence; could backfire. Mitigation: post-hoc regime validity analysis required before approving V4."
+  - "Confidence scaling (V3): assumes bot implements position_size scaling via confidence parameter; if not, fallback trades re-admit cost_drag. Mitigation: verify implementation before testing V3."
+
+failure_modes:
+  - "Trade count collapse: thresholds (ER ≥0.30, VR ≥1.5, VR ≤1.2) eliminate too many candles, resulting in min_trade_count <4 in any window. Signal: <2 trades per 40-bar window; variant becomes untradeable."
+  - "Parameter non-generalization: ER/VR thresholds fit run_030 market regime; different distributions (bull, bear, choppy) cause thresholds to over/under-filter. Signal: cost_drag <80% in one window but >100% in another."
+  - "Edge loss after filtering: high-conviction regime subset loses Keltner's win_rate/sharpe; full regime set had edge, but filtered subset does not. Signal: sharpe <0.20 post-threshold."
+  - "Regime persistence too short: actual regime durations average <3 bars; V5 persistence filter (N=3) eliminates all regime fires. Signal: V5 trade_count ≈0."
+  - "Asymmetric gate assumption fails: mean_reversion forward_return_mean ≤ trending forward_return_mean; V4 asymmetry reduces high-edge trades. Signal: V4 sharpe <V1 sharpe."
+  - "Forecast standardization redundancy: stddev_24 scaling already filters weak ER/VR combos; thresholds have no additive effect. Signal: V1 cost_drag ≥100% (no improvement vs run_030)."
+  - "Reverse hypothesis self-contradiction: V6 relaxes gates during low-regime-fire periods, re-admitting marginal trades. Signal: cost_drag reduction <10% vs run_030; defeats hypothesis."
+  - "Confidence mechanism not implemented: V3 assumes confidence→position_size; if bot applies confidence only to forecasts (not sizing), fallback trades execute at nominal size. Signal: V3 cost_drag ≈V1 cost_drag."
+  - "Slippage dominates: cost_drag primarily driven by execution slippage, not regime choice. Thresholds cannot reduce slippage. Signal: cost_drag remains >100% even with V1 thresholds."
+  - "Data contamination in calibration: if percentile windows (V2) or frequency counters (V6) computed on test data before test period begins, introduces forward-looking statistics. Signal: V2/V6 backtest overestimates true out-of-sample performance."
+
+sample_split_design:
+  strategy: "Walk-forward validation with explicit train/test threshold calibration."
+  window_structure: "4 or 5 walk-forward windows (each ≥40 bars ≈10 days at 4h). Total backtest period must span ≥20 weeks to capture multi-regime transitions."
+  threshold_calibration: "Compute ER/VR statistics (mean, stddev, percentiles) on training window only. Thresholds frozen at test window start; no re-optimization during testing."
+  percentile_windows: "For V2 only: rolling 60th/40th percentile windows computed on training data. Test window applies training-period percentiles as fixed thresholds (no adaptive re-calibration)."
+  frequency_adaptation: "For V6 only: regime fire frequency counter (last 20 bars) resets at train/test boundary. Frequency-mode thresholds computed on training regime dynamics; frozen at test start."
+  no_lookahead_rule: "No forward-looking statistics (percentiles, velocity, frequency) computed on test data before test period begins. Regime thresholds applied in causal order: regime fires at t, position at t."
+  hold_out_validation: "Optional: reserve final 4–8 weeks as hold-out set; backtest V1 (control) on hold-out without any re-tuning. Hold-out results must confirm training-period performance."
+
+decision_rules:
+  mandatory_failure_conditions:
+    - "min_trade_count <4 in any window (variant untradeable) → STOP; do not proceed to next variant."
+    - "sharpe <0.15 in median window (edge loss) → STOP."
+    - "regime_frequency >30% (thresholds failed to restrict activations) → STOP; thresholds too permissive."
+  v1_control_approval:
+    - "PASS: cost_drag <80% AND sharpe ≥0.30 AND min_trade_count ≥5 (median across windows)."
+  v2_v5_variant_approval:
+    - "PASS if metric ≥ V1 performance (cost_drag lower or equal, sharpe ≥V1, trade_count ≥V1)."
+    - "CONDITIONAL if metrics within 5% of V1 (acceptable variance; proceed with caution)."
+    - "FAIL if any metric <V1 by >10% or if blocking failure conditions triggered."
+  v6_reverse_hypothesis:
+    - "Test only if V1 fails due to regime_frequency >20% (insufficient trade volume)."
+    - "REJECT if contradicts core hypothesis (cost_drag reduction <10% vs run_030; gates effectively relaxed back to score-mode)."
+  reverse_hypothesis_confidence_scoring:
+    - "Test only if V1 fails AND reason is edge loss (sharpe <0.20), not trade_count."
+    - "Requires prior verification: confidence→position_size scaling implemented in ExecutionHandler (not just forecast scaling)."
+    - "PASS: cost_drag <80%, sharpe ≥0.30, confidence-scaling shows 50–70% position reduction on low-confidence trades."

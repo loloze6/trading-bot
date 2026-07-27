@@ -1,0 +1,28 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 13
+review_date: '2026-06-28'
+pattern_detected: same_root_cause_different_families
+pattern_evidence:
+- run_014 (rsi_mean_reversion) corr=-0.0223, cost_drag=142.82%
+- run_016 (keltner_mean_reversion) corr=0.0447, cost_drag=185.32%
+- run_018 (rsi_momentum_trending) corr=0.018, cost_drag=272.87%
+- run_021 (keltner_mean_reversion) corr=0.0136, cost_drag=413.05%
+- run_023 (keltner_mean_reversion) corr=0.0097, cost_drag=420.19%
+- run_024 (keltner correct config) corr=0.2145, cost_drag=27.4% — confirmed run_017
+  replication, but only 2.5 trades/window
+- 'Root cause identified: default_regime=trending in run_023 bypassed regime gate;
+  fixed in run_024'
+- 'Remaining problem: 2.5 trades/window is too sparse for Sharpe computation; regime
+  thresholds too strict'
+root_cause_hypothesis: 'Config parameter error (default_regime=trending) explained
+  prior cost explosions. Run_024 confirmed. Remaining issue: regime thresholds (ER>=0.5,
+  VR>=1.2) fire too rarely at 1h — need relaxation to generate adequate trade frequency.'
+recommendation: continue
+recommendation_rationale: Run_024 confirmed the correct config replicates run_017
+  edge (corr=0.2145, cost_drag=27.4%). Verdict_interpreter says pivot on regime_definition
+  — relax ER/VR thresholds to get 15-20 trades/window. Campaign should continue with
+  regime threshold refinement before any instrument escalation.
+next_research_question: null
+budget_assessment: runs_used=13, ~52% consumed. Allocate 1-2 runs to regime threshold
+  relaxation.
+status: active

@@ -1,0 +1,56 @@
+hypothesis_id: TEMPORAL_DISTRIBUTION_FINDING_ER50_KELTNER
+what_failed:
+  - "median_sharpe: FAIL across all 4 clean ER>=0.50 replications (run_017, run_024, run_027, run_033)"
+  - "min_trade_count: FAIL — 7 of 22 window-symbol slots fire zero trades"
+  - "walk_forward_stability: FAIL — per-window trade counts range 1-9 with high variance"
+diagnostic_rule_applied: >
+  TEMPORAL DISTRIBUTION (not covered by Rules 1-6): 69 cumulative trades across 22
+  window-symbol slots is above the statistical floor, but the distribution is fatally
+  skewed. 7 slots have zero trades because the TRENDING regime (ER>=0.50, VR>=1.20)
+  does not occur in those calendar months regardless of threshold. This is not Rule 6
+  Case B (starvation from over-tight threshold) — at ER>=0.50 the signal has been
+  confirmed with corr=0.214, and confirmed zero-trade months are Jan, Sep, Oct (BTC)
+  and Jan, Mar, Jul, Nov (ETH). These are months where ER simply does not reach 0.50.
+  Relaxing the threshold (Rule 6 Case B response) has been tried at ER>=0.35 and
+  ER>=0.30 — both collapse corr to 0.041-0.082. There is no ER threshold that
+  simultaneously activates the signal in the dead months AND preserves the corr.
+diagnostic_snapshot:
+  forecast_return_corr: 0.2145
+  cost_drag_pct: 27.446
+  median_gross_pnl: 0.0
+  uninformative_regimes:
+    - unknown
+  total_trades_across_22_slots: 69
+  zero_trade_slots: 7
+  zero_trade_slot_detail:
+    - "BTCUSDT 2024-01: 0 trades"
+    - "BTCUSDT 2024-09: 0 trades"
+    - "BTCUSDT 2024-10: 0 trades"
+    - "ETHUSDT 2024-01: 0 trades"
+    - "ETHUSDT 2024-03: 0 trades"
+    - "ETHUSDT 2024-07: 0 trades"
+    - "ETHUSDT 2024-11: 0 trades"
+  per_slot_range: "1-9 trades in non-zero slots; median per-slot = 2-3"
+what_not_to_try:
+  - "Do NOT attempt further ER/VR threshold tuning on this signal. The tradeoff has
+    been fully explored: ER>=0.50 preserves corr but misses 7 months; ER<=0.35
+    activates more months but collapses corr. No threshold in this range solves both."
+  - "Do NOT attempt regime_confidence_filter or position-sizing adjustments (the
+    COST_DRAG_STRUCTURAL_FIX brief in run_038). The problem is zero-trade months —
+    no filter applied to the existing signal trades will backfill those months."
+  - "Do NOT attempt timeframe escalation (4h, 2h) to address this. The temporal gap
+    is calendar-month-level: months with low ER on 1h also have low ER on 4h. Run_027
+    (4h replication) produced identical corr=0.2145 and identical cost_drag=27.45%,
+    confirming timeframe does not change which months the regime fires."
+  - "Do NOT propose instrument escalation (SOLUSDT, AVAXUSDT, DOTUSDT) on this
+    specific signal family. The issue is signal-regime compatibility, not instrument
+    selection. Run_027 (SOLUSDT) produced the same zero-month pattern."
+next_altitude: campaign_review
+campaign_review_rationale: >
+  The COST_DRAG_STRUCTURAL_FIX research question (run_038 brief) was framed by
+  campaign_review before the temporal distribution finding was computed. That finding
+  invalidates the current brief's premise: it assumes cost_drag comes from too many
+  trades (target is reduce_trade_count), but the confirmed data shows the signal has
+  too FEW trades (69 across 22 slots, 7 with zero), and the binding constraint is
+  temporal coverage, not trade frequency. campaign_review must reframe with this
+  finding as the primary input before run_038 executes any backtest.

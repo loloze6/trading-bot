@@ -1,0 +1,34 @@
+expansion_decision: SINGLE_VARIANT_NO_EXPANSION
+
+constraints_enforced:
+  brief_dimension_constraint: "Single-dimensional config change (AND→OR gate only)"
+  signal_lock: "Keltner params frozen to run_017 baseline"
+  architecture_lock: "threshold_rules only; score_mode reserved for altitude 2 if OR fails"
+  timeframe_lock: "1h only"
+
+variant_rejection_log:
+  alternative_signals: REJECTED (Keltner locked to brief specification)
+  score_mode_architecture: REJECTED (altitude 2 reserved; altitude 1 parameter refinement only)
+  multi_timeframe_exploration: REJECTED (1h locked)
+  alternative_thresholds_with_or: REJECTED (single-dimensional constraint; threshold values fixed)
+
+test_sequence_and_diagnostics:
+  phase_1:
+    action: Execute V1 (OR gate, ER≥0.5 OR VR≥1.2) on BTCUSDT, ETHUSDT
+    windows: 12 walk-forward windows (1h timeframe)
+    target_metric: trade_count, regime_coverage, Sharpe ratio
+  phase_2:
+    action: Evaluate Rule 4 diagnostic (regime informativeness)
+    check_1: "regime_coverage >= 15% of bars"
+    check_2: "forward_return_mean trending regime statistically > 0"
+  phase_3a_success:
+    if_rule4_passed: Parameter refinement (altitude 1) sufficient; move to screening_backtest
+  phase_3b_failure:
+    if_rule4_failed: Regime indicator selection (ER/VR pair) fundamentally wrong; escalate to altitude 2 (score_mode with continuous ER/VR confidence scoring)
+
+design_rationale: >
+  Single-variant isolation ensures regime detection change (AND→OR) separable from signal quality.
+  If OR also fails, root cause definitively identified as regime indicator selection, not parameter tuning.
+  Cleans diagnostic pathway for altitude 2 pivot decision without confounding variables.
+
+token_budget_summary: No conversational filler. All constraints documented. YAML ready for validation_gate stage.

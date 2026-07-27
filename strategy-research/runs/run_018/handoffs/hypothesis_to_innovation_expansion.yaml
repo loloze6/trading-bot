@@ -1,0 +1,27 @@
+run_id: run_018
+from_stage: hypothesis_generation
+to_stage: innovation_expansion
+objective: Expand the base hypothesis into novel, testable variants.
+primary_input_artifact: artifacts/hypothesis_card.yaml
+required_inputs:
+- path: artifacts/research_brief.yaml
+  reason: Ensures variants respect the architectural constraints.
+- path: artifacts/hypothesis_card.yaml
+  reason: The base hypothesis to expand.
+optional_inputs:
+- path: artifacts/refinement_notes.yaml
+  reason: 'CRITICAL: If this exists, you are in a refinement loop. You MUST apply
+    these fixes to the rejected variants.'
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'false'
+constraints:
+- Keep at least one conservative variant.
+- If modifying an existing variant based on refinement notes, state explicitly how
+  the blocker was resolved.
+- 'TOKEN LIMIT: Do not write conversational filler. Keep all rationale strictly mathematical
+  and limit text descriptions to under 100 words per section.'
+deliverables:
+- expanded_hypothesis_card.yaml
+- innovation_notes.yaml
+assigned_engine: claude

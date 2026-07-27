@@ -1,0 +1,38 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY"
+
+what_failed:
+  - "Sharpe-based kill threshold (protocol_result.verdict): median_sharpe=−1.78 (BTCUSDT), −1.54 (ETHUSDT), both < −1.0 hard cutoff"
+  - "Walk-forward pooled IC criterion: reported FAIL with required=1.5 (validation specification error; actual IC values 0.0372 / 0.0199 meet intended 0.015–0.020 threshold but fail against impossible upper bound of 1.5)"
+  - "Regime-adaptive robustness: signal profitability varies dramatically by market regime (trending eras +20% to +448%; choppy eras −16% to −24%), indicating regime dependency unaddressed by ungated configuration"
+
+diagnostic_rule_applied: "Rule 4 (regime_uninformative) + A3.4 sparse-trader gate. (1) Rule 4 fired: uninformative_regimes=['unknown'] with regime_validity showing median n_bars=180 ≥ 20 for active regime, indicating weak forward returns in ungated regime despite n_bars sufficiency. (2) A3.4 suspended Sharpe-based kill (below_floor_pct=53.33% > 50%) and mandated use of per_trade_expectancy_bps=1050.5 (t_stat=1.91, positive and marginally significant), contradicting Sharpe-based kill verdict"
+
+diagnostic_snapshot:
+  forecast_return_corr: "0.0372 (BTCUSDT), 0.0199 (ETHUSDT)"
+  cost_drag_pct: 3.7069
+  gross_pnl: 22.7715
+  uninformative_regimes: "['unknown']"
+  per_trade_expectancy_bps_mean: 1050.5086
+  per_trade_expectancy_bps_t_stat: 1.9106
+  median_sharpe: "-1.78"
+  below_floor_pct: 0.5333
+
+what_not_to_try:
+  - "Ungated SMA(100) without regime filtering: the current ungated configuration IS the failure case; positive per-trade edge is eroded by whipsaw losses during choppy regimes where signal has no alpha"
+  - "SMA periods shorter than 100: no empirical backtest data (pre-registered no-parameter-sweep constraint); regime exposure problem persists at any lookback if ungated"
+  - "Longer-duration holds via threshold adjustment: average holding is already 23.6 bars (~4.7 weeks); further extension would reduce sample size in sparse-window problem (already 53% of windows have <5 trades)"
+  - "Cost reduction via position-sizing: median_cost_drag_pct=3.71% is already low (Rule 1 threshold >80%); not a binding constraint"
+
+next_altitude: "pivot"
+
+parameter_bracket: null
+
+regime_performance_observation:
+  trending_eras_highly_profitable: "2020-04 (+28%), 2020-10 (+448%), 2023-10 (+145%), 2024-10 (+48%), 2025-04 (+19%): SMA(100) captures multi-week uptrend continuation with low cost drag and strong net returns"
+  choppy_eras_unprofitable: "2018-04 (−20%), 2021-04 (−24%), 2022-04 (−16%), 2023-04 (−17%), 2024-04 (−21%): SMA(100) whipsaws as trend reverses and recovers, incurring round-trip transaction costs repeatedly without directional benefit"
+  median_regime_persistence_bars: 12
+
+regime_gate_rationale:
+  detector_availability: "regime_detector_report.yaml provides medium-confidence detector; currently configured for 1h timeframe, requires daily-bar adaptation"
+  regime_definition_from_report: "regime_detector_report shows trending_activation_rate ≈0.33 (33% of bars classified as trending), leaving 67% in unknown/choppy regime; gating to trending only focuses on higher-conviction periods while reducing turnover"
+  confidence_caveat: "Medium detector confidence (persistence=12–13 bars, high-gate persistence=24, transitions=40+/window) means detector is reliable but not highly stable. Recommend validation: test regime-gated hypothesis on both existing medium-confidence detector AND a simplified manual threshold (e.g., ATR > 1.0σ) to confirm robustness before production"

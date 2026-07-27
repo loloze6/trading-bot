@@ -1,0 +1,68 @@
+expansion_stage: innovation_expansion
+run_id: run_019
+refinement_context: "This hypothesis is a threshold refinement loop on V2-PIVOT-A-CONSERVATIVE. No prior rejection loop; initial expansion."
+
+variant_design_rationale:
+  methodology: "Threshold sensitivity sweep around target (min_abs=20.0) to test hypothesis: trading only high-confidence momentum extremes reduces cost drag while preserving edge."
+  
+  variant_selection:
+    - "17.5: Conservative increment (+16% vs baseline 15.0). Tests whether full 20.0 jump is necessary. Lower risk of trade-count invalidation."
+    - "20.0: Target from Rule 1 diagnosis. Expected 33% trade reduction vs baseline; cost_drag → 130-180%; net PnL positive. PRIMARY HYPOTHESIS."
+    - "22.5: Aggressive test. Expected 50% trade reduction. Risk: Sharpe invalid if trade_count < 20/window. High reward if it eliminates tail whipsaw."
+  
+  why_only_threshold_variants: "Brief constraints ('Increase ONLY the min_abs parameter'; 'Keep RSI period, regime, all other transforms unchanged') prohibit alternative signal concepts (e.g., momentum divergence, RSI smoothing). Threshold sweep is the only valid expansion under these constraints."
+
+alternative_data_rejected:
+  - "Bollinger Band width / RSI combo: Requires adding band-based transform; violates 'keep all other transforms unchanged.'"
+  - "Price action confirmation (e.g., close above/below EMA): Introduces secondary indicator; not permitted by brief."
+  - "Volume divergence: Expensive data; not available in current backtest harness. Deferred post-gate if edge survives."
+
+reverse_hypothesis_considered:
+  id: "LOWER_THRESHOLD_IN_MEAN_REVERSION_REGIME"
+  sketch: "What if RSI momentum signals work BETTER in RANGE or MEAN_REVERSION regimes with looser thresholds (min_abs=10.0)? RSI extremes are regime inflection points."
+  testability_status: "Out of scope for current brief (regime locked to TRENDING). Defer to post-gate hypothesis if Rule 4 diagnosis triggers (regime uninformative)."
+  contingency: "If all threshold variants fail sharpe gate, run mini-backtest on RANGE/MEAN-REVERSION regimes with min_abs=10-15 to determine whether regime is the bottleneck."
+
+behavioral_insights:
+  - "RSI > 70, < 30 are **regime transition signals**, not pure continuation. Market inflects at extremes. High thresholds (20.0, 22.5) filter to only the most extreme moves, which may be precisely where reversal probability is highest."
+  - "Cost drag of 272.8% on gross_pnl of 21.62 suggests **weak-signal churn**. Low-confidence trades (raw_forecast 10-15) fire frequently, each incurring 0.1% round-trip fee. Threshold increase targets this tail."
+  - "Quantile-based dynamic thresholds already adapt to volatility. Min_abs=20.0 means 'trade when raw RSI forecast exceeds 20% of recent stddev_24 * close.' At low-volatility bars, this becomes a stricter absolute threshold; at high-volatility bars, slightly looser. Expect better Sharpe at higher thresholds."
+
+test_plan:
+  phase_1_screening:
+    description: "Backtest all four variants (17.5, 18.0, 20.0, 22.5) on same walk-forward window as V2-PIVOT-A-CONSERVATIVE."
+    success_gate: "cost_drag_pct < 150% AND net_pnl > 0 AND sharpe > 0.10 (relaxed minimum bar)."
+    output_metrics: ["trade_count", "cost_drag_pct", "gross_pnl", "net_pnl", "sharpe", "max_dd"]
+    failure_escalation: "If all variants fail sharpe gate: Rule 4 diagnosis → test RANGING/MEAN_REVERSION regimes with lower thresholds (10-15)."
+  
+  phase_2_winner_selection:
+    description: "Rank variants by net_pnl post-fees. Select highest scoring variant for walk-forward validation."
+    ranking_criteria: "net_pnl (primary), sharpe (secondary), max_dd (tertiary)."
+    contingency: "If 20.0 wins sharpe gate but 18.0/17.5 win on net_pnl, report both paths and defer decision to walk-forward."
+
+expected_outcomes_per_variant:
+  V2-THRESHOLD-17p5:
+    trade_count_reduction: "≈20-25% vs V2-CONSERVATIVE (baseline ~100-120 trades/window → 75-95)"
+    cost_drag_pct: "≈200-220% (improvement from 272%, but not enough for breakeven)"
+    sharpe: "Likely negative or marginal (< 0.10)"
+    use_case: "Fallback if 20.0 undershoots on trade count or if 20.0/22.5 both fail sharpe gate."
+
+  V2-THRESHOLD-20p0:
+    trade_count_reduction: "≈40-50% vs V2-CONSERVATIVE (baseline ~100-120 → 50-70 trades/window)"
+    cost_drag_pct: "≈130-180% (reduces fee burden proportionally; preserves gross_pnl of 21.62)"
+    sharpe: "Expected > 0.10 if trade_count ≥ 20/window (achievable at 50-70 trades/window)"
+    net_pnl: "Expected positive; primary hypothesis from Rule 1 diagnosis."
+    use_case: "PRIMARY TARGET. Advances to walk-forward if it clears screening gate."
+
+  V2-THRESHOLD-22p5:
+    trade_count_reduction: "≈50-60% vs V2-CONSERVATIVE (baseline ~100-120 → 40-50 trades/window)"
+    cost_drag_pct: "≈100-130% (lowest fee burden; maximum edge preservation required)"
+    sharpe: "Risk of invalidation if trade_count < 20/window. Contingency: drop to 20.0 or 18.0."
+    net_pnl: "High reward if trade_count ≥ 20; high risk of Sharpe invalidity."
+    use_case: "Aggressive test only if 20.0 strongly passes (sharpe > 0.20, net_pnl > 50 median)."
+
+output_deliverables:
+  - expanded_hypothesis_card.yaml
+  - innovation_notes.yaml (this file)
+
+next_stage: validation_gate

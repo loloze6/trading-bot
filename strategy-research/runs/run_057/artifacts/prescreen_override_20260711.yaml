@@ -1,0 +1,59 @@
+decision: "route kill_no_ic set aside by operator arbitration"
+
+grounds:
+  a_conjunction_rule: >
+    A8.3 point 5 (docs/plan/AMENDMENTS_01-06.md), quoted verbatim: "Conjunction
+    rule for sparse signals: when forecast_sparsity_pct exceeds ~50%,
+    signal_bad_everywhere (and the A2.1 escape) requires both ic_all_bars and
+    ic_active_bars to be statistically indistinguishable from zero. All-bars IC
+    alone is ~= 0 by tie construction for sparse forecasts and is inadmissible
+    as sole evidence; active-bar IC alone measures only the gated subsample."
+    run_057's forecast_sparsity_pct = 74.25%, exceeding the 50% trigger.
+    ic_active_bars is null (structurally undefined -- degenerate constant-
+    magnitude active forecast). The kill rested entirely on the all-bars
+    bootstrap statistic (pooled_ic=0.008956, p=0.46) -- a single statistic,
+    not the required conjunction. Inadmissible as sole evidence per the rule
+    as written.
+  b_attenuation_arithmetic: >
+    Parent run_054 (ungated SmaTrendLongOnlyComponent): ic_all_bars=0.034803
+    at forecast_sparsity_pct=44.82% (active fraction 0.5518). run_057 (ER-gated):
+    active fraction 0.2575 (1 - 0.7425). Under unchanged per-active-bar
+    predictiveness, ic_all_bars scales approximately with active fraction:
+    expected_gated_ic_all_bars = 0.034803 * (0.2575 / 0.5518) ~= 0.034803 *
+    0.4667 ~= 0.01624 (~0.016). Observed run_057 ic_all_bars=0.008956, p=0.46
+    -- wide-CI, underpowered against BOTH the null (0.0) and the naive-scaling
+    expectation (~0.016). The observed p=0.46 does not distinguish these
+    hypotheses; it does not affirmatively demonstrate the signal degraded to
+    zero, only that this particular (attenuated, sparsity-inflated) statistic
+    lacks power to resolve the question either way.
+  c_cost_check_inherits_same_ic: >
+    cost_check.estimated_gross_edge_bps_per_trade=23.1635 and
+    edge_to_cost_ratio=1.3626 (fail) were computed from ic_for_cost=0.008956
+    (the same inadmissible all-bars bootstrap IC, per prescreen_signal.py's
+    ic_for_cost reassignment in the degenerate_active_forecast branch), not
+    from any active-bar-specific statistic. The cost gate's fail inherits
+    the same evidentiary defect as the IC gate's kill -- both trace to the
+    single inadmissible statistic in (a).
+  d_labeling_defects: >
+    Two confirmed formatting/labeling bugs in prescreen_signal.py, both
+    present verbatim in run_054's own PASSING artifact (not specific to
+    run_057, not introduced to manufacture this override): (1)
+    _determine_route's rationale f-string hardcodes the label "Active-bar
+    IC=" regardless of which methodology actually produced the value --
+    in the degenerate-fallback branch this is actually the all-bars
+    bootstrap statistic. (2) _cost_check's return dict hardcodes
+    "ic_used": "ic_active_bars" as a literal string in both its return
+    paths, regardless of what value was actually passed as its ic_active
+    parameter. Neither bug is dispositive on its own; both compound the
+    difficulty of auditing what the gate actually tested.
+
+textual_gap: >
+  A8.3 does not define the governing statistic when ic_active_bars is
+  structurally undefined (zero variance, not merely underpowered) AND
+  forecast_sparsity_pct exceeds the 50% conjunction trigger. The
+  block_bootstrap_all_bars_v1 fallback (2026-07-07) was built for the
+  degenerate-forecast case generally, without cross-referencing or amending
+  the conjunction rule's own trigger condition. Flagged here for a doctrine
+  amendment; not resolved by this override.
+
+pre_commitment: "The pre-registered pass rule in pre_registration.yaml is the sole and final verdict authority for this run. If walk-forward fails it, the verdict is kill; no further arbitration or gate relief will be sought for this lineage."

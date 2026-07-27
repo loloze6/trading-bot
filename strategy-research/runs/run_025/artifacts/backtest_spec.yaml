@@ -1,0 +1,53 @@
+hypothesis_id: KELTNER_SCORE_MODE_REGIME
+refinement_attempt: 0
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: trending
+        any_of:
+          - - id: er
+              op: gte
+              value: 0.30
+            - id: vr
+              op: gte
+              value: 1.20
+    default_regime: unknown
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: keltner
+            class: strategies.strategy_components.KeltnerBreakoutComponent
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 2.0
+              scaling_factor: -20.0
+            weight: 1.0
+            lookback: 500
+            transforms:
+              - op: identity
+      mean_reversion: null
+      chop: null
+      unknown: null
+config_rationale:
+  - "Regime detector: threshold_rules with ER (efficiency ratio) ≥0.30 AND VR (variance ratio) ≥1.20. ER≥0.30 indicates directional price movement; VR≥1.20 indicates trending volatility structure. Thresholds relaxed from run_017 (ER≥0.50) to increase trade frequency while maintaining signal quality via dual-gate."
+  - "Signal component: Keltner mean-reversion (ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0) preserved identically to run_017. Negative scaling inverts signal; fires when price breaks below lower Keltner band, maximizing mean-reversion setup detection."
+  - "Transforms: identity only. Keltner raw output already in [-20, +20] forecast scale; no additional normalization required."
+  - "Non-trending regimes (mean_reversion, chop, unknown): null, emitting 0.0 forecast. Only bars meeting strict trending thresholds produce trades."
+  - "Position sizing: forecast × 1.0 (no confidence scaling). Simplification from original hypothesis; high-conviction regime gate replaces per-bar confidence modulation."
+component_gap: null

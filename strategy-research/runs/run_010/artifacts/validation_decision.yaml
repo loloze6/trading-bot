@@ -1,0 +1,19 @@
+hypothesis_id: "H-RUN007-V1"
+status: "conditional_approve"
+rationale: >
+  Mean-reversion via RSI oversold is mechanically sound; testable with existing
+  infrastructure. Three resolvable risks: regime lag unquantified, commission
+  assumption optimistic (2 bps → 5 bps actual), single-asset overfitting. Approve
+  only if regime detection strictly lagged, walk-forward PE ≥ 1.0, and MR
+  frequency ≥5%. Fail fast on any violation.
+blocking_issues:
+  - "Regime detection lag not quantified; must measure in backtest before final approval."
+  - "Commission assumption 2 bps too optimistic; Binance margin ~5 bps actual cost."
+  - "RSI(14) parameter unjustified (convention only); sensitivity analysis absent."
+  - "Single-asset/timeframe risk: BTCUSDT 1h only; cross-asset generalization untested."
+conditions:
+  - "Regime detection uses strictly lagged ER/VR (bars t-24:t-1 only; no forward window)."
+  - "Commission configured at 5 bps round-trip in backtest config.json."
+  - "Mean-reversion regime frequency ≥5% in screening; halt if < 5%."
+  - "Walk-forward PE ≥ 1.0 required; Sharpe delta ≥ 0.1 in screening also required."
+  - "Regime lag ≤ 2 bars measured and reported; reject if > 2 bars."

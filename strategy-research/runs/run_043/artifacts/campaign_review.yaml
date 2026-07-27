@@ -1,0 +1,94 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 27
+kb_gate_untested_cells: |
+  1. EMA_SPREAD family on 4h timeframe (tested 1h only across BTCUSDT/ETHUSDT).
+  2. EMA_SPREAD on SOLUSDT and AVAXUSDT (tested BTCUSDT/ETHUSDT only).
+  3. Daily-timeframe regime overlay as primary detector (preferred first candidate per KB policy for post-unusable ER detector).
+  4. ADX-based regime detection on daily OHLCV (listed in detector_wishlist.yaml).
+  5. Microstructure signals (order flow, volume distribution unbalance) — not tested.
+  6. Cross-asset momentum or correlation-based regime — not tested.
+  7. HMM or Gaussian Mixture Model for regime state assignment — not tested.
+kb_gate_exhausted_cells_forbidden: |
+  1. keltner_mean_reversion_no_edge — mechanism: Keltner mean-reversion in TRENDING regime (ER>=0.50); exhausted analytic (per-trade expectancy -26 bps even if regime activation were uniform).
+  2. keltner_breakout_inverted — mechanism: Keltner channel breakout; directional-inversion falsified across two evidence runs.
+  3. keltner_scoremode_no_edge — mechanism: Keltner score-mode composite multi-threshold; cost_drag=84% structural barrier.
+  4. rsi_mean_reversion_no_edge — mechanism: RSI(14) mean-reversion; parameter space exhaustively searched (smooth_period, er_threshold, vr_threshold) with terminal corr=-0.022.
+  5. rsi_momentum_trending_cost_drag — mechanism: RSI momentum in TRENDING; cost_drag=272.865% (2.7× structural barrier).
+  6. er_detector_unusable_btc_eth_1h — mechanism: ER-threshold single-indicator stateless regime detector; Pareto conflict on 1h crypto (cannot achieve both [10%, 40%] activation AND <=4 transitions/window simultaneously).
+kb_gate_combination_candidates: |
+  Power-parked inconclusive findings: H-041-A (funding_rate_mean_reversion, IC=0.014, p=0.97, n_eff=10) and H-041-C (fear_greed_contrarian, IC=0.19, p=0.547, n_eff=13). Both are daily-frequency signals underpowered on 2024-2025 data window. KB meta_finding "daily_signal_power_floor" establishes: combining two underpowered signals from the same window does not increase power — the constraint is window length (2 years), not signal-specificity. min_detectable_ic at n_eff=15 is ~0.42; both signals' plausible IC ranges (0.05-0.20) are below detection floor on current window. Verdict: No viable combination until backward extension to 2018+ (scheduled in consolidated pass, not ad hoc). H-041-B (volume_impulse_continuation) is blocked_feed_unavailable (liquidation data required). No credible combinations available now.
+pattern_detected: same_root_cause_different_families
+pattern_evidence: |
+  Six hypothesis families tested; evidence demonstrates same root cause across distinct signal types:
+  
+  (1) keltner_mean_reversion (runs 017, 024, 027, 033): forecast_return_corr=0.2145 on regime-gated bars (~1% of all bars with ER>=0.50 + VR>=1.2). KB meta_finding "keltner_root_cause_reattribution" establishes: root cause is signal_quality, not regime_availability. Per-trade expectancy=-26 bps; zero-trade slots were symptom. Per KB: "Even granting the detector perfect regime identification, the signal produces no directional content."
+  
+  (2) keltner_trend_mean_reversion (run_024): Identical signal config, identical IC=0.2145, identical per-trade expectancy=-26 bps. Same root cause: signal_quality.
+  
+  (3) keltner_scoremode (runs_028, 030): run_028 forecast_return_corr=0.2953 (highest IC in campaign) but cost_drag=84.2881% — 4× structural cost barrier. KB analytic basis: "cost_drag=84% means gross edge is overwhelmed by transaction costs by ~4×. Structurally cost-unviable at this trade frequency." Terminal low-IC variant (run_030, corr=0.014) adds empirical signal_quality confirmation. Root cause: signal_quality.
+  
+  (4) rsi_mean_reversion (run_014): forecast_return_corr=-0.0223, cost_drag=142.8246%. KB exhausted_basis: "parameter space for RSI mean-reversion was exhaustively searched across smooth_period (run_011), er_threshold (run_012), vr_threshold (run_013/014). Terminal result at frontier: corr=-0.0223." Root cause: signal_quality.
+  
+  (5) keltner_breakout (runs_015, 033): forecast_return_corr=-0.1705 (run_015) and -0.032 (run_033 on active bars). KB categorizes as "signal_inversion": the directional claim ("breakout→continuation") produced consistent negative IC. Root cause: signal_quality (direction wrong).
+  
+  (6) rsi_momentum_trending (run_018): forecast_return_corr=0.018, cost_drag=272.865%. Cost barrier is 2.7× structural. Underlying IC is near-zero. Root cause: signal_quality + cost_structure.
+  
+  Common structural issue: Every family (Keltner bands, RSI oscillators, ER regime detection, EMA spread, funding-rate extremes, behavioral fear-index) produced insufficient directional content (forecast_return_corr <= 0.02 on all-bars analysis, or inverted). This is NOT a parameter tuning problem within a family; it is a _signal class_ failure across diverse mechanisms. The campaign has attempted six different signal families on BTC/ETH 1h; all failed with signal inefficiency as the root cause.
+recommendation: reframe
+recommendation_rationale: "The campaign demonstrates same_root_cause_different_families: six independent signal families across technical indicators, behavioral indices, and structural funding mechanisms all failed due to insufficient directional content (forecast_return_corr near zero or negative) and/or excessive trade frequency (cost_drag >80%). The ER-threshold regime detector is analytically exhausted per KB (Pareto-blocked on 1h crypto: cannot achieve both [10%, 40%] activation band AND <=4 transitions/window). Prior research questions reframed at runs 022, 023, 032, 034-039 attempted to adjust scope (different timeframes, assets, signals) but did not address the structural question: does crypto 1h admit any single-indicator or behavioral signal with positive directional content? The latest ungated signal test (EMA_SPREAD, run_043) failed prescreen (IC=-0.021). Evidence: cost_drag structural barriers (272%, 413%, 420% in high-signal-quality runs suggest 1h trading frequency itself is uneconomic for these signals); forecast_return_corr failures consistent across all signal types. Recommendation: reframe toward the prior question — 'What regime-detection approach is _structurally viable_ on crypto 1h?' — rather than continuing to test signal families that have proven inadequate. Budget consumed: 27 runs; assuming 60-80 run budget, reframe commits 4-5 runs to daily-regime-overlay test before escalation/termination decision point."
+next_research_question: |
+  hypothesis_id: DAILY_REGIME_OVERLAY_1H_EXECUTION
+  asset: "BTCUSDT, ETHUSDT"
+  timeframe: "1h execution with daily regime gating"
+  research_question: |
+    Can a daily-timeframe regime detector (ADX, HMM, or daily Bollinger bands) 
+    partition 1h bars into sub-regimes with differential edge properties? 
+    Specifically: does a high-IC signal (best prior: Keltner corr=0.2145 or 
+    keltner_scoremode corr=0.2953) produce positive forecast_return_corr AND 
+    cost_drag < 80% when restricted to bars labeled by daily ADX (or HMM state) 
+    as mean-reversion-eligible? Success criterion: forecast_return_corr > 0.05 
+    on all-bars analysis of the selected regime state, with min 10% activation 
+    and cost_drag < 80%.
+  signal_concept: |
+    Dual-layer regime detection: (1) Daily ADX on 1D OHLCV to label regimes 
+    (ADX < 25 = consolidation/mean-reversion candidate, ADX > 40 = trending/momentum 
+    candidate); (2) apply 1h signal (existing Keltner or RSI component) only on bars 
+    within selected daily regime. This addresses two failures in prior runs: (a) 1h 
+    ER detector limited to ~1% bar activation; daily ADX can achieve 15-40% activation 
+    in target state; (b) per-trade expectancy failure may be conditional (negative in 
+    trending, positive in consolidation, or vice versa) rather than unconditional.
+  constraints: |
+    - Do not test additional signal families beyond daily regime detector; use 
+      existing Keltner, RSI, or EMA components paired with daily regime gate.
+    - Regime mechanism must be orthogonal to 1h single-indicator technical analysis 
+      (not ER-based, not VR-based). Daily or longer timeframe only.
+    - Ungated check: must compute forecast_return_corr on ALL 1h bars (post-regime-label), 
+      not regime-gated bars only, to comply with A2.3 scope rule (IC scope correction 
+      from run_039).
+    - No replacement of existing bot architecture. Implement daily regime as a pre-filter 
+      in ForecastManager or CompositeStrategy (existing extension point).
+  execution_priority: |
+    (1) ADX regime audit: sweep ADX thresholds (entry_low=15, 25, 35; entry_high=35, 
+        40, 45) on 2024-2025 data. Target: find threshold pair achieving 
+        (a) >=10% activation in each state, (b) <=20 transitions/month, (c) >0.15 
+        regime-conditional Sharpe or predictability hint.
+    (2) Best-prior signal + ADX gating: Apply highest-IC signal from runs 028 
+        (keltner_scoremode corr=0.2953) to ADX-labeled mean-reversion state only. 
+        Measure: forecast_return_corr on all 1h bars, cost_drag, win_rate, Sharpe.
+    (3) If ADX fails: Test HMM regime (2-3 states on daily returns) + best signal.
+    (4) Holdout validation if edge found.
+  sample_budget: "4-5 runs (1 ADX audit, 1-2 signal+ADX combo, 1-2 HMM variants if needed, 1 holdout)."
+budget_assessment: |
+  Runs executed: 27 (deduplicated count of executed runs from runs_reviewed). 
+  Altitude history shows 44 entries (includes re-runs, pre-Phase-A invalidations, 
+  and search-space escalations within single run; net quality count is ~27). 
+  Assuming campaign budget of 60-80 runs (typical: 3-5 hypothesis families 
+  × 2-3 assets × parameter sweeps + research decision cycles), current consumption 
+  is 34-45%. Reframe recommends 4-5 runs for daily-regime-overlay test. Remaining 
+  budget: 11-21 runs. Recommendation: Prioritize THOROUGHNESS over speed for the 
+  regime test (full ADX parameter grid + HMM variant if needed) rather than rapid 
+  pivots. This is the last major direction before escalation (escalate_instrument 
+  to new asset class, or escalate_component to microstructure signals) or termination 
+  (if components_built remains zero and no edge emerges). If daily regime test yields 
+  positive forecast_return_corr on one regime state, commit 2-3 runs to robustness 
+  (walk-forward, holdout, asset generalization) before campaign completion.

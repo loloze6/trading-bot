@@ -1,0 +1,51 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 18
+analysis_timestamp: "2026-06-30T00:00:00Z"
+
+pattern_detected: same_root_cause_different_families
+
+pattern_evidence:
+  - "run_017: forecast_return_corr=0.2145 (PASS), cost_drag_pct=27.45%, sharpe FAIL"
+  - "run_024: forecast_return_corr=0.2145 (PASS), cost_drag_pct=27.45%, sharpe FAIL"
+  - "run_027: forecast_return_corr=0.2145 (PASS, escalated to SOLUSDT), cost_drag_pct=27.45%, sharpe FAIL"
+  - "run_028: forecast_return_corr=0.2953 (BEST), cost_drag_pct=84.29%, sharpe FAIL"
+  - "run_021: forecast_return_corr=0.0136, cost_drag_pct=413.05%, sharpe FAIL (keltner_mean_reversion family)"
+  - "run_023: forecast_return_corr=0.0097, cost_drag_pct=420.19%, sharpe FAIL (reframed hypothesis)"
+  - "Root cause: Signal forecasts positive expected returns (corr > 0.20 in best runs), but execution costs exceed edge. Consistent across 7 different hypothesis families (RSI, Keltner breakout, Keltner mean reversion, RSI momentum, Keltner trend mean reversion, Keltner scoremode)."
+
+trend_analysis:
+  forecast_return_corr_trajectory: "Non-monotonic; peaks at run_028 (0.2953) and runs 017/024/027 (0.2145), but intervening runs 018-023 show degradation. Escalations to new instruments do NOT improve correlation; SOLUSDT (run_027) replicates run_017's 0.2145 exactly."
+  cost_drag_pct_trajectory: "Bimodal: runs with cost_drag < 40% cluster around keltner-based hypotheses (017, 024, 027 at ~27.45%), while runs with cost_drag > 100% scatter across multiple families (014, 016, 018, 021, 023, 030). High cost_drag is NOT tied to a single family; it spans RSI, Keltner, and momentum variants."
+  win_rate_vs_sharpe_trend: "Most runs show 'sharpe FAIL' despite 'win_rate PASS' — indicating positive forecast correlation and acceptable trade frequency, but insufficient gross PnL to cover realized costs."
+
+recommendation: reframe
+
+recommendation_rationale: "The campaign has identified positive forecast correlation (0.2145–0.2953) across multiple signal families and instruments, but every high-correlation variant fails due to execution costs overwhelming the edge. Runs 017, 024, and 027 show identical diagnostic signatures (0.2145 corr / 27.45% cost drag) across different families and instruments, indicating the problem is structural, not signal-specific. Continuing to vary signal parameters or try new instruments will not solve cost_drag > 80% as the binding constraint. The research question must shift from 'which signal works?' (answered: Keltner variants in TRENDING regime) to 'how do we monetize this edge by reducing execution friction?'"
+
+next_research_question: |
+  hypothesis_id: COST_REDUCTION_PHASE_1
+  asset: BTCUSDT, ETHUSDT
+  timeframe: 1h
+  research_question: "Can we achieve positive gross PnL on the best-performing signal (run_017 Keltner TRENDING, forecast_return_corr=0.2145) by reducing execution costs through rebalance thresholds and batch sizing?"
+  signal_concept: "Keltner breakout component (run_017 exact config): ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0. FIXED."
+  regime_filter: "TRENDING, ER>=0.50, VR>=1.20. FIXED."
+  cost_reduction_levers: "Test three hypotheses in isolation: (1) raise rebalance_threshold from 5% to 15% target allocation delta; (2) impose minimum_position_value > 0 to avoid micro-trades; (3) enable cross-symbol batch execution to amortize fixed costs."
+  constraints:
+    - "Do NOT change signal or regime logic."
+    - "Timeframe: 1h. Assets: BTCUSDT, ETHUSDT."
+    - "Each lever tested as a single parameter change on run_017's configuration."
+  change_from_previous: "Pivot from signal family search to execution cost optimization. Prerequisite: run_032 must confirm run_017 forecast_return_corr ≥ 0.20 on current data windows."
+
+budget_assessment:
+  runs_used: 18
+  estimated_campaign_budget: 30
+  utilization_ratio: 0.60
+  recommendation: "Prioritize diagnostic confirmation (run_032 replication) and cost-reduction levers over further instrument/family exploration. If cost reduction succeeds, run_017 configuration + optimization can move to walk-forward validation. Budget is sufficient for ~4 more cost-reduction tests + 1 walk-forward before campaign exhaustion."
+
+campaign_health: active
+notes:
+  - "runs_011-013 pre-Phase-A: excluded from correlation analysis due to config_path bug."
+  - "Identical diagnostics across runs 017/024/027 (forecast_return_corr=0.2145, cost_drag=27.45%) suggest either config replication or instrument invariance; does not indicate search space convergence."
+  - "components_built is empty: signal families were tested as single components, not combined. No composite validation performed yet."
+  - "Escalations to timeframe (4h) and new instruments (SOLUSDT, AVAXUSDT) did not yield higher forecast_return_corr; recommend deferring further escalation until cost reduction tested."
+  - "Current research_brief (run_032) is RUN017_REPLICATION_DIAGNOSTIC — appropriate diagnostic checkpoint before pivoting to cost optimization."

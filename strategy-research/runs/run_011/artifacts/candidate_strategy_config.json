@@ -1,0 +1,95 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "default_regime": "unknown",
+    "components": [
+      {
+        "id": "er",
+        "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+        "params": {
+          "period": 24,
+          "smooth_period": 5
+        }
+      },
+      {
+        "id": "vr",
+        "class": "strategies.strategy_components.VarianceRatioComponent",
+        "params": {
+          "k": 5,
+          "window": 100
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "er",
+              "op": "lte",
+              "value": 0.2
+            },
+            {
+              "id": "vr",
+              "op": "lte",
+              "value": 0.9
+            }
+          ]
+        ]
+      },
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "er",
+              "op": "gte",
+              "value": 0.25
+            }
+          ]
+        ]
+      },
+      {
+        "regime": "chop",
+        "any_of": [
+          [
+            {
+              "id": "vr",
+              "op": "gte",
+              "value": 1.1
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  "strategies": {
+    "warmup": 51,
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "rsi",
+            "class": "strategies.strategy_components.RSIPullbackComponent",
+            "params": {
+              "period": 14,
+              "scaling_factor": 0.4,
+              "long_only": true
+            },
+            "weight": 1.0,
+            "lookback": 500,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    }
+  }
+}

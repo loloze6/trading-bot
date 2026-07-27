@@ -1,0 +1,61 @@
+hypothesis_id: H-RUN006
+status: REFINE
+rationale: Hypothesis is **falsifiable and testable** but contains critical ambiguities that must be resolved before approval.
+
+blocking_issues:
+  issue_1_divergence_definition:
+    description: V3/V6 define divergence as "price_curr > price_prev AND RSI_curr < RSI_prev". Window is 2 bars. Not enough. What if price rallies over 10 bars but RSI fails only in last 2? Is that divergence or noise?
+    resolution_required: Pre-specify divergence detection as (a) local high/low over N bars (suggest N=5), or (b) HHV/LLV with explicit threshold. Must be defined before backtest.
+    blocker_severity: CRITICAL
+  
+  issue_2_regime_filter_lookback:
+    description: ER and VR are "rolling" but lookback window is unspecified. 20 bars? 50 bars? Determines how stale regime classification is at signal generation. Stale regime = look-ahead bias.
+    resolution_required: Specify ER_lookback=50 bars (2 hours), VR_lookback=20 bars (1 hour) OR use DataManager's existing regime calculation (check if it exists). Verify regime state is finalized before candle close.
+    blocker_severity: CRITICAL
+  
+  issue_3_v5_4h_data_alignment:
+    description: V5 requires 4h vol_stable check. How are 1h and 4h candles synchronized? If 1h signal fires at hour 2:55, does it reference 4h close from 00:00-04:00? Or wait for next 4h close at 04:00?
+    resolution_required: 'Define execution rule: "1h signal is queued only if a 4h candle closed in prior 4h window AND vol_stable remains True until 1h execution at next open."'
+    blocker_severity: HIGH
+  
+  issue_4_behavioral_feature_parameters:
+    description: Duration (bars_in_oversold / 10), vol divergence (range/ATR / RSI_move / 100 / 2), momentum fade (ROC3bar / 2) are ad-hoc multipliers. No principled justification.
+    resolution_required: Do NOT include behavioral features in primary variants. Test in isolation on V1 only if V1 Sharpe >= 0.80. Require >= 0.15 Sharpe lift to include.
+    blocker_severity: MEDIUM
+  
+  issue_5_margin_trading_costs:
+    description: V2 requires margin. Binance margin interest + slippage + liquidation risk not modeled in backtest. Expected drag is 15-20 bps per trade. Sharpe improvement must exceed this.
+    resolution_required: If testing V2, apply 15 bps cost per entry/exit. Reject V2 if Sharpe < V1 - 0.3 after cost.
+    blocker_severity: MEDIUM
+
+path_forward:
+  immediate_actions:
+    step_1: "Lock divergence definition. Suggest: local minimum over 5-bar lookback for lower RSI + higher price low = valid divergence."
+    step_2: "Lock regime filter lookback: ER_lookback=50 bars, VR_lookback=20 bars. Cross-check with existing DataManager regime calculation."
+    step_3: "If V5 selected, define 4h/1h synchronization rule before backtest."
+    step_4: "Remove behavioral features from primary variants. Evaluate post-hoc if V1 passes."
+    step_5: "Set V2 margin trading cost at 15 bps per round-trip."
+  
+  backtest_execution:
+    run_variants_in_order: "[V1] → [V3, V6 in parallel] → [V2, V4, V5, V7 only if V1 Sharpe >= 0.75]"
+    decision_gate_after_primary: "If V1 Sharpe >= 0.80 AND V6 Sharpe < V1 - 0.2, regime filter is validated. Proceed to exploratory."
+    decision_gate_after_exploratory: "Select best exploratory variant (if any). Combine with V1 for holdout validation."
+    holdout_validation: "Best variant must sustain Sharpe >= 0.70 in 2-week holdout (2026-06-01 to 2026-06-16)."
+  
+  approval_conditions:
+    if_V1_only_passes: "Approve V1 for implementation. Recommend adding divergence filter (V3) if Sharpe > 0.85."
+    if_V1_and_exploratory_pass: "Select single best exploratory variant. Implement V1 + variant combo."
+    if_no_variant_passes: "Reject hypothesis. RSI mean-reversion does not generate alpha in BTCUSDT 1h."
+
+open_questions:
+  - "Does existing DataManager calculate ER/VR? If yes, use that instead of reimplementing."
+  - "Is 4h candle data available in live DataManager, or backtest only?"
+  - "What is realistic slippage model for BTCUSDT 1h? (10 bps? 20 bps?)"
+  - "Are there regime transitions where RSI divergence actually works in TRENDING? (V6 should answer this.)"
+
+final_stance: |
+  Hypothesis passes **feasibility and falsifiability checks** but is not yet **operationalized**. Three critical ambiguities 
+  (divergence definition, regime lookback, behavioral params) must be locked before backtest. Once locked, walk-forward 
+  validation is straightforward and will provide definitive falsification. Recommend approval to move to backtest_specification 
+  stage **contingent on resolving blocking_issues** (issues 1, 2, 3). If user can supply existing regime calculation code 
+  and divergence detection logic from trading-bot/, reduce blockers to 0 and fast-track to backtest.

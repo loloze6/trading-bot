@@ -1,0 +1,130 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 52
+review_phase: campaign_decision_point
+
+kb_gate_answers:
+  untested_cells_within_scope: "Research_brief scope: trend-following mechanisms (moving_average_crossover, Keltner variants, MACD) on BTC/ETH 1h. All three primary mechanisms have been tested. Moving_average: EMA_SPREAD_TREND_CONTINUATION_V1 (run_043, no_edge). Keltner: exhausted across mean-reversion and breakout variants (runs 015/017/024/027/033). MACD: tested (run_053, no_edge at prescreen, ic=-0.050). Extended-data testing (2018-2025 as promised in research_brief goal) was not executed; protocols defaulted to 2-year windows (baseline_v1/baseline_v2). No unmapped trend-following cells remain testable within current scope."
+  exhausted_cells_forbidden:
+    - "keltner_mean_reversion_no_edge (outcome: no_edge_observed, ic_active_bars=-0.032, basis: analytic)"
+    - "keltner_breakout_inverted (outcome: no_edge_observed, signal_inversion, basis: analytic)"
+    - "keltner_scoremode_no_edge (outcome: no_edge_observed, cost_drag=84%, basis: analytic)"
+    - "rsi_mean_reversion_no_edge (outcome: no_edge_observed, forecast_return_corr=-0.022, basis: parameter-exhausted)"
+    - "rsi_momentum_trending_cost_drag (outcome: no_edge_observed, cost_drag=273%, basis: structural)"
+    - "er_detector_unusable_btc_eth_1h (outcome: unusable_for_this_symbol_timeframe, Pareto-blocked, basis: analytic)"
+  combination_candidates: "None viable. Power-parked findings (H-041-A funding_rate and H-041-C fear_greed) activate independently at low frequency (~12.5% and ~21.8% respectively). Combining would reduce activation to ~2-5%, worsening power conflict (currently underpowered at n_eff=10-13 on 2-year window). Both candidates are deferred pending scheduled backward-extension pass (2018-01-01 entry) per KB operational.backward_extension_pass, not eligible for ad-hoc combination within current window."
+
+pattern_detected: "same_root_cause_different_families"
+pattern_evidence:
+  - "Signal_quality failure across mechanistically distinct price-only technical indicators:"
+  - "  - RSI(14): forecast_return_corr=-0.022 (run_014, no directional content)"
+  - "  - Keltner mean-reversion: ic_active_bars=-0.032, p=0.83 on regime-labeled bars (runs 017/024/027/033, KB A8.3 full-range prescreen run_039)"
+  - "  - Keltner breakout: forecast_return_corr=-0.171 (run_015, inverted signal)"
+  - "  - EMA spread: ic_all_bars=-0.021091, p=0.588, n_eff=664 (run_043, dense always-on signal, no edge)"
+  - "  - MACD: ic=-0.050271 (run_053, prescreen kill on extended 2-year data)"
+  - "  - Keltner scoremode: forecast_return_corr=0.2953 (run_028) but cost_drag=84% → structural cost barrier overwhelms signal"
+  - "KB attribution (keltner_root_cause_reattribution): Zero-trade months in regime-gated tests were a symptom of deeper signal failure. Run_039 full-range prescreen confirmed ic_active_bars=-0.032 even on TRENDING-labeled bars the detector selected as its operating regime. Root cause reattributed from regime_availability to signal_quality."
+  - "KB attribution (ema_spread_trend_continuation_v1_auto): 'EMA crossover is a textbook, universally-taught technical signal on the most liquid crypto pair — consistent with this campaign's established finding that no price-only technical indicator (RSI, Keltner in any variant, now EMA spread) shows exploitable directional content on BTC/ETH 1h.'"
+  - "Interpretation: Across 6+ mechanistically distinct families (RSI, Keltner mean-reversion, Keltner breakout, Keltner scoremode, EMA, MACD), all are failing on THE SAME ROOT CAUSE: weak or zero correlation on price-only technical signals at 1h granularity on the most liquid, most efficient crypto pair (BTC/ETH)."
+
+forecast_return_corr_trend: "No monotonic improvement. Keltner variants cluster at 0.2145 (deterministic identical signal, not improving). RSI variants cluster near zero or negative. EMA=-0.021. MACD=-0.050. Terminal runs (run_043, run_048, run_053) show no recovery. Trend: worsening or stable-null."
+
+cost_drag_trend: "Highly variable by family: RSI_momentum_trending 273%, Keltner_scoremode 84%, EMA/Keltner variants 25-50%, Funding/Fear_greed ~70-135%. Trend is not monotonic. Cost barriers are family-specific, not parameters-tunable. No progress toward improving cost_drag across altitude."
+
+recommendation: "reframe"
+
+recommendation_rationale: "The campaign has tested six mechanistically distinct hypotheses (RSI, Keltner mean-reversion, Keltner breakout, Keltner scoremode, EMA, MACD) across 52 trials and runs. All show signal_quality failure: zero/weak/inverted directional correlation on price-only technical indicators at BTC/ETH 1h. This is not a tuning problem (altitude_history shows exhaustive parameter exploration) but a structural property: price-based technicals on the most efficient markets produce no exploitable edge. Simultaneously, the research_brief's stated goal (backward-extended 2018-2025 testing) was not executed; protocols defaulted to 2-year windows due to orchestrator wiring. The budget is approaching limit (~53 runs used of ~50-60 budgeted). The current search direction (mechanistic variation within price-only technicals) has converged to a null result. Two paths forward exist: (1) Fix orchestrator wiring and properly execute extended-data trend testing, OR (2) Pivot to structurally different mechanism classes (funding rate, behavioral sentiment) via the already-scheduled backward-extension pass (KB operational.backward_extension_pass: H-041-A and H-041-C on 2018-2025 data, post-build-steps, status scheduled_post_build_steps). Given infrastructure constraints, path (2) is recommended as next research direction."
+
+# 2026-07-07: CORRECTED per RUNBOOK.md's kb_reactivation_violation resume procedure.
+# The original next_research_question (preserved for the record in
+# next_research_question_SUPERSEDED_kb_reactivation_violation below) proposed
+# reactivating H-041-A (funding_rate_mean_reversion_inconclusive) and H-041-C
+# (fear_greed_contrarian_inconclusive), whose reactivation_conditions were already
+# consumed by run_050 and run_048 respectively (see kb_reactivation_violations in
+# pipeline_state.yaml). Replaced with a genuinely new hypothesis registration: the
+# user-delivered P4_ts_trend brief's SMA(100)-daily hypothesis, unblocked as of
+# 2026-07-07 by the daily-bar engine support build (see
+# briefs/research_brief_P4_ts_trend.md's pre_registration_addendum).
+next_research_question: |
+  strategy_domain: time_series_trend_following
+  market_universe:
+  - BTCUSDT
+  - ETHUSDT
+  timeframe: 1d
+  historical_window: 2018-01-01_to_2025-12-31
+  constraints:
+  - "Single registered hypothesis, no parameter sweep: long iff close > SMA(100), flat otherwise (spot-only, no shorts). Do not silently test the alternative trailing-L-day-return formulation -- that is a separate registered trial per the brief."
+  - "Execution: next-day open after signal change. Engine caveat: this backtester fills at bar close, not next-bar open -- see strategies/strategy_components.py::SmaTrendLongOnlyComponent's docstring for the one-bar-lag approximation actually used; not identical to true next-open execution."
+  - "Universe-parallel breadth: one trial covers both symbols; per-symbol results aggregated with correlation-adjusted breadth, not evaluated as independent single-symbol verdicts."
+  - "Report excess over buy-and-hold per symbol AND over equal-weight universe, plus flat-period fraction and max relative drawdown vs buy-and-hold (per the brief's benchmark rule)."
+  - "significance_methodology for this signal's long-only single-constant-magnitude shape is block_bootstrap_all_bars_v1 (automatic, structural trigger -- see prescreen_signal._is_degenerate_active_forecast); parameters (block_size=20, n_resamples=1000, seed=20260707) are pre-registered in protocols/ts_trend_daily_v1.json and the brief's pre_registration_addendum, fixed before the shakedown's observed ic_all_bars=0.0359 was seen."
+  - "This is a NEW hypothesis registration (canonical time-series momentum, persistent_behavioral_bias edge_source per the brief), NOT a reactivation of any closed KB entry -- distinct from the exhausted price-only-technical-on-1h family (RSI/Keltner/EMA/MACD, all no_edge_observed) and from the closed structural-forced-flow and persistent-sentiment-bias findings this campaign_review previously (incorrectly) proposed reactivating."
+  available_data:
+  - price_volume_only (1d OHLCV, BTC/ETH, 2018-01-01 to 2025-12-31 -- daily-bar engine support built 2026-07-07)
+  research_goal: |
+    Test canonical time-series momentum on daily bars per the user-delivered brief
+    (briefs/research_brief_P4_ts_trend.md, source: user_delivered): hold long when
+    close > SMA(100), flat otherwise. Daily timeframe amortizes the ~17bps
+    round-trip cost over multi-week holds (P3 viable-space rationale). Pre-launch
+    shakedown (2026-07-07, informational only, not the real registration):
+    route=proceed_to_backtest, pooled_ic=0.0359 (block_bootstrap_all_bars_v1),
+    p=0.004, cost edge_to_cost_ratio=4.45.
+  existing_context:
+  - use_existing_backtest_framework
+  - "daily_bar_engine_support_built_2026-07-07 (1d cache, protocol timeframe plumbing, SmaTrendLongOnlyComponent, block-bootstrap significance fallback, turnover-proxy fix -- see the test suite and briefs/research_brief_P4_ts_trend.md's pre_registration_addendum)"
+  - prefer_minimal_code_changes
+  - use_existing_strategy_architecture
+  optional_focus: []
+
+next_research_question_SUPERSEDED_kb_reactivation_violation: |
+  strategy_domain: structural_and_behavioral_signals
+  market_universe:
+  - BTCUSDT
+  - ETHUSDT
+  timeframe: 1h
+  historical_window: 2018-01-01_to_2025-12-31
+  constraints:
+  - "Must not propose ideas that require replacing the whole existing bot architecture."
+  - "Do not write code."
+  - "Keep the mechanism explicit and interpretable."
+  - "Ungated formulations only (per A2.3); no regime-gated hypotheses unless a confirmed detector exists."
+  - "Mechanisms must have plausible IC range 0.05-0.20 (literature prior for structural/behavioral signals)."
+  - "Power floor: minimum n_eff=40 for signal families with activation < 50 bars/year. Current 2-year window (n_eff=10-13) is insufficient for daily-frequency signals; backward extension to 2018-2025 is mandatory."
+  available_data:
+  - price_volume_only
+  - funding_rate_bybit_and_binance
+  - fear_greed_index_daily
+  research_goal: |
+    Evaluate whether structural (forced-flow) and behavioral (persistent sentiment bias) signals produce
+    real, cost-surviving edges on BTC/ETH when evaluated over 7-year historical window (2018-2025) with
+    sufficient sample size (n_eff >= 40) to detect plausible effect sizes. These mechanisms were
+    power-parked in KB findings funding_rate_mean_reversion_inconclusive and fear_greed_contrarian_inconclusive
+    after prescreen (2-year window) showed promising direction (ic=0.014-0.19) but insufficient sample.
+    Extended data window (2018-2025, ~2k daily regimes) provides path to adequate power. Mechanisms are
+    distinct from exhausted price-only technical class (RSI/Keltner/EMA/MACD). Test both mechanisms
+    ungated on extended data. If recovered with positive ic and cost_pass, analyze for regime-dependent
+    performance (per A2.3 post-unusable policy trigger) to inform future detector building.
+  existing_context:
+  - use_existing_backtest_framework
+  - "reuse_scheduled_backward_extension_pass (per KB operational.backward_extension_pass: H-041-A and H-041-C)"
+  - prefer_minimal_code_changes
+  - use_existing_strategy_architecture
+  optional_focus:
+  - regime_performance_analysis_for_detector_building
+
+budget_assessment:
+  runs_used: 53
+  campaign_budget_estimate: 60
+  budget_remaining: 7
+  budget_utilization_pct: 88
+  recommendation: "Budget is nearly exhausted (88% used). Do not pursue speculative new mechanism families. Prioritize execution of backward-extension pass for power-parked findings (highest ROI: existing prescreen evidence suggests potential edge with correct sample size). New mechanism exploration must be deferred or sequestered to a follow-on campaign."
+
+escalation_check:
+  instruments_tried: 4
+  timeframes_tried: 3
+  components_built: 0
+  termination_criteria_met: false
+  termination_rationale: "Termination forbidden per skill rule (instruments >= 3 AND components >= 1 AND all show no positive ic). Current state: instruments=4 (PASS), components=0 (FAIL), positive ic count=0. Condition not met."
+
+status: active
+recommendation_source: pattern_analysis_and_budget_limits
+updated_at: "2026-07-06T16:30:00Z"

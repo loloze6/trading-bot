@@ -1,0 +1,63 @@
+innovation_run: run_008
+hypothesis_id: H-RUN007
+timestamp: "2026-06-25"
+
+expansion_strategy:
+  rationale: "Base hypothesis is pure oversold-detection (RSI < 50 in mean-reversion). Expansion explores: (1) oscillator choice (StochRSI vs RSI), (2) directional assumption validity (reverse short test), (3) behavioral confirmation (volume), (4) dynamic thresholding (percentile vs fixed 50), (5) input selection (HL2 vs close)."
+  variant_count: "6 (1 conservative + 5 novel)"
+  novelty_range: "low (input/parameter tuning) to medium (behavioral filters, adaptive thresholds)"
+
+variant_rationale_summary:
+  V1_Conservative:
+    novelty: "0 (baseline)"
+    purpose: "Control; validates base RSI hypothesis exists."
+    expected_outcome: "RSI < 50 in low-ER/low-VR regime captures oversold reversion with positive Sharpe."
+    
+  V2_StochRSI:
+    novelty: "1 (oscillator substitution)"
+    purpose: "Tests smoothing/normalization vs raw RSI. Reduces whipsaw candidates."
+    expected_outcome: "Similar or better Sharpe than V1 if smoothing eliminates noise; underperformance if lag dominates."
+    risk: "3-period smoothing may lag price reversals by 1-2 bars."
+    
+  V3_ShortOnly:
+    novelty: "2 (directional reverse)"
+    purpose: "Falsification. If both long and short perform equally, mechanism is regime-driven, not directional mean-reversion."
+    expected_outcome: "Underperformance vs V1 if oversold directional edge is real. Parity suggests regime classification drives edge."
+    decision_rule: "If Sharpe(V1) - Sharpe(V3) > 0.5, advance directional thesis. If < 0.3, hypothesis rejected."
+    
+  V4_VolumeConfirmed:
+    novelty: "2 (behavioral confirmation)"
+    purpose: "Filters noise by requiring volume participation decline. Genuine reversals have reduced volume."
+    expected_outcome: "Reduced trade frequency but higher hit-rate. Net: potential Sharpe improvement via fewer false positives."
+    assumption: "Volume SMA20 lag < 1 bar (validated in RollingBuffer)."
+    
+  V5_AdaptiveThreshold:
+    novelty: "2 (dynamic threshold)"
+    purpose: "Tests if relative oversold (vs local median) > absolute (fixed 50). Captures regime sub-state variance."
+    expected_outcome: "Improved signal timing if local median > 50 in uptrends (less signal) and < 50 in downtrends (more signal)."
+    assumption: "Local distribution shift is predictive; rolling percentile lag < 2 bars."
+    
+  V6_HL2Input:
+    novelty: "1 (data input)"
+    purpose: "Control for price input sensitivity. HL2 weights wicks; close weights settlement. Tests which matters for oversold detection."
+    expected_outcome: "Near-neutral performance vs V1. Included as robustness check; no edge expected."
+
+alternative_data_assessment:
+  Rejected_by_default: "ATR scaling (volatility already filtered by VR ≤ 0.90), divergence detection (complexity vs unproven benefit), external indicators (prefer OHLCV only)."
+  Deferred: "Divergence patterns (enhancement candidate if behavioral_features show promise), recent support/resistance (overlaps regime logic)."
+
+reverse_hypothesis_application:
+  test_design: "V3 (short-only) vs V1 (long-only) comparison. Decision rule: Sharpe(V1) - Sharpe(V3) quantifies directional edge strength."
+  interpretation: ">0.5 → directional mean-reversion confirmed. 0.3–0.5 → weak directional effect. <0.3 → signal is regime-driven symmetry."
+  impact: "If V3 ≈ V1, rejects 'oversold causes reversion' mechanism; suggests 'low-efficiency regime causes mean-reversion regardless of RSI direction'."
+
+implementation_requirements:
+  all_variants: "Use CompositeStrategyComponent base (existing). Signal output via ComponentOutput.stddev_24*close (existing). Regime filter ER ≤ 0.20, VR ≤ 0.90 constant."
+  infrastructure_changes: "none (all use OHLCV, no new APIs, no execution/portfolio logic changes)"
+  testing_scope: "Screening backtest only; walk-forward deferred to V_Gate."
+
+next_step:
+  stage: "validation_gate → screening_backtest"
+  input: "expanded_hypothesis_card.yaml (this file)"
+  output: "validation_screening_results.yaml"
+  success_criteria: "≥2 variants Sharpe > 0.8, annualized_return > 10%, in-sample (Sep 2023–Mar 2024). All Sharpe < 0.5 → reject."

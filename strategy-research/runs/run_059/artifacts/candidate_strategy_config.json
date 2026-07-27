@@ -1,0 +1,38 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "funding_rate_mr",
+            "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
+            "params": {
+              "threshold": 0.0,
+              "scaling_factor": 10.0
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  },
+  "aux_feeds": [
+    "funding_rate"
+  ],
+  "significance_methodology": "episode_blocked_a851a"
+}

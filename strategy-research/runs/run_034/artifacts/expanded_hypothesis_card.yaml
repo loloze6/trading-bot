@@ -1,0 +1,90 @@
+hypothesis_id: "RUN017_REPLICATION_REFINE_01"
+base_hypothesis_id: "RUN017_REPLICATION_REFINE_01"
+
+base_thesis: "Relaxing the TRENDING regime threshold from ER=0.50 to ER=0.35 enables the KeltnerBreakout component to generate sufficient trade volume (>100 cumulative trades) while maintaining Sharpe >= 0.5."
+
+expanded_variants:
+  V1-Base:
+    variant_id: "V1-Base"
+    signal_concept: "KeltnerBreakout (ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0) fires on TRENDING: ER >= 0.35 AND VR >= 1.20"
+    rationale: "Direct test of hypothesis. ER=0.35 captures top ~35% efficiency bands (conservative, avoids mean-reversion bleed). Projected regime exposure ~40-45% of bars, targeting >100 cumulative trades across walk-forward windows."
+    assumptions:
+      - "ER=0.35 remains below mean-reversion boundary (~0.40-0.45 efficiency band)."
+      - "ATR-based signal retains predictive value at increased regime frequency."
+      - "Trade count >= 20 per walk-forward window ensures statistical significance."
+    expected_failure_modes:
+      - "ER=0.35 breaches mean-reversion sensitivity threshold; false breakouts and whipsaws increase."
+      - "Breakout alpha decays under higher regime exposure; selection effect reduces edge to <0.5 Sharpe."
+      - "ETHUSDT efficiency metrics prove unstable in holdout window; regime fires <20 trades."
+      - "ATR scaling factor (-20.0) insufficient for ER=0.35 regime; forecast standardization fails."
+
+  V2-Aggressive:
+    variant_id: "V2-Aggressive"
+    signal_concept: "KeltnerBreakout (fixed params) fires on relaxed TRENDING: ER >= 0.30 AND VR >= 1.15"
+    rationale: "Tests lower efficiency threshold (~top 30th percentile). Increases regime exposure further; explores whether lower ER captures more alpha or saturates with false signals. VR floor reduced to 1.15 to capture earlier trend entries."
+    assumptions:
+      - "ER=0.30 maintains structural separation from mean-reversion regime (0.40-0.45 band)."
+      - "Increased trade frequency does not saturate execution capacity or spread costs."
+      - "VR >= 1.15 still identifies genuine trend formation, not market microstructure noise."
+    expected_failure_modes:
+      - "Mean-reversion correlation increases sharply; regime overlap degrades signal isolation."
+      - "Too many false breakouts; win rate falls <45%, Sharpe collapses."
+      - "Binomial distribution of outcomes skews negative; insufficient edge after costs."
+
+  V3-Conservative:
+    variant_id: "V3-Conservative"
+    signal_concept: "KeltnerBreakout fires on tighter TRENDING gate: ER >= 0.40 AND VR >= 1.25"
+    rationale: "Fallback variant if V1 exhibits mean-reversion sensitivity. Higher ER gate ensures only high-efficiency trends qualify. Tighter VR gate filters early/weak trend formations. Regime exposure reduces to ~25-30% of bars, lower trade count but potentially higher Sharpe."
+    assumptions:
+      - "Trade count >= 50 (instead of >100) is sufficient for walk-forward statistical power."
+      - "Tighter gate improves win rate and Sharpe, offsetting lower frequency."
+      - "ER >= 0.40 fires often enough in both BTCUSDT and ETHUSDT to generate >50 trades per window."
+    expected_failure_modes:
+      - "Regime never fires in ETHUSDT holdout; zero or <10 trades, insufficient for Sharpe calculation."
+      - "Reduced frequency makes Sharpe unreliable (n too small for 5-min rebalance cycle)."
+      - "Conservative gate undershoots the true edge; trade count sufficient but Sharpe <0.5."
+
+  V4-Reverse:
+    variant_id: "V4-Reverse"
+    signal_concept: "Mean-reversion hypothesis: signals activated when ER < 0.35 AND VR < 0.90 (inverse TRENDING regime). Use KeltnerBreakout as EXIT/hedge signal (close positions) rather than ENTER signal. Pair with simple mean-reversion entry component (e.g., ATR-band oscillator)."
+    rationale: "Tests structural hypothesis inversion: if ER=0.35 is efficiency boundary, then low-efficiency regime (ER<0.35, VR<0.90) should reward contrarian/fade logic, not trend-following. Orthogonal to V1-V3; decouples trend component from low-efficiency regime entirely."
+    assumptions:
+      - "Positioning/mean-reversion edge exists in low-efficiency regime (opposite of trending edge)."
+      - "KeltnerBreakout used as position-reduction/hedge generates alpha in choppy/range-bound markets."
+      - "Simple mean-reversion entry component (ATR-band cross or RSI) can be integrated without infrastructure changes."
+    expected_failure_modes:
+      - "Mean-reversion component produces higher slippage and trade friction; breakeven edge vanishes."
+      - "Low-efficiency regime fires too infrequently (mirror of V1 problem); insufficient trade count."
+      - "Regime-switching overhead (changing strategy per bar) creates execution risk and correlation drag."
+
+  V5-Behavioral:
+    variant_id: "V5-Behavioral"
+    signal_concept: "KeltnerBreakout signals enhanced by ER-trend: fires on TRENDING (ER >= 0.35, VR >= 1.20) only if efficiency is *rising* over last 3 bars (d(ER)/dt > 0)"
+    rationale: "Adds behavioral filter to detect regime entrance, not mid-regime chop. Rising ER indicates efficiency is improving and momentum is strengthening. Reduces false breakouts triggered at regime boundaries or on mean-reversion tail whips."
+    assumptions:
+      - "ER-trend (rising vs flat) correlates with signal persistence and forward returns."
+      - "3-bar ER slope is stable across assets; no look-ahead bias."
+      - "Efficiency gradient is causal indicator of regime change, not lagging artifact."
+    expected_failure_modes:
+      - "ER-slope introduces lag; misses regime entrance signals by 1-2 bars."
+      - "Filter too stringent; rejects legitimate breakouts occurring at flat efficiency plateaus."
+      - "ER gradient highly noisy in ETHUSDT; filter provides no discrimination power."
+
+alternative_data_candidates:
+  - "ER second derivative (d²ER): detects acceleration vs deceleration of efficiency gains. Requires 5-bar rolling window."
+  - "Volatility regime as secondary filter: combine efficiency (ER) with volatility state (VR) in joint regime grid (e.g., ER x VR quadrants)."
+  - "Volume-weighted ER: weight efficiency by participation volume. Requires volume data integration (available via Binance)."
+  - "Cross-asset ER correlation: if BTCUSDT and ETHUSDT ER are highly correlated, use mean ER across assets for regime detection."
+
+reverse_hypothesis: "Low-efficiency, high-volatility regime (ER < 0.35 AND VR < 0.90) generates alpha via anti-trend/fade logic. Inefficient markets reward contrarian positioning, not trend-following breakouts. KeltnerBreakout signals entry into mean-reversion trades when efficiency is lowest."
+
+behavioral_features:
+  - "ER-trend (slope over 3-5 bars): rising ER indicates regime strengthening and momentum persistence."
+  - "VR-momentum: increasing VR suggests sustained directionality; decreasing VR suggests regime decay."
+  - "ER-VR joint gradient: combined efficiency and trend-ratio acceleration to detect regime phase transitions."
+  - "Efficiency mean-reversion: if ER is far above its 20-bar average, mean-reversion entry is more likely than continuation."
+
+regime_specific_variants:
+  - "BTCUSDT ER threshold: may tolerate ER >= 0.32 (larger liquidity pool, smaller idiosyncratic swings). Test separately if win rate permits."
+  - "ETHUSDT ER threshold: may require ER >= 0.38 (higher idiosyncratic volatility, less efficient). Conservative gate ensures sufficient trade count."
+  - "Cross-asset regime averaging: compute mean ER across both assets, then apply single threshold. Reduces overfitting to asset-specific noise."

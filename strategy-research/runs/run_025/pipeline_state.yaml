@@ -1,0 +1,121 @@
+run_id: run_025
+status: active
+current_stage: campaign_review
+pending_stage: completed_refined
+completed_stages:
+- hypothesis_generation
+- innovation_expansion
+- validation
+- innovation_expansion
+- backtest_specification
+- protocol_execution
+- verdict_interpreter
+- campaign_review
+artifacts: {}
+governance:
+  max_hypothesis_variants_per_cycle: 3
+  max_refinements_after_validation: 2
+  max_reruns_after_analysis: 1
+  max_required_reads_per_stage: 3
+counters:
+  refinements_used: 0
+  reruns_used: 0
+flags:
+  holdout_reserved: false
+  validation_approved: true
+  screening_passed: false
+  walk_forward_passed: false
+last_summary: null
+audit_log:
+  hypothesis_generation_attempt_0:
+    timestamp: '2026-06-28T12:33:36.819398+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 25.47
+    cost_usd: 0.0230625
+    tokens:
+      input: 10
+      output: 1985
+      cache_read: 25185
+      cache_creation: 6444
+      total: 33624
+  innovation_expansion_attempt_0:
+    timestamp: '2026-06-28T12:35:04.065886+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 87.22
+    cost_usd: 0.05487775
+    tokens:
+      input: 10
+      output: 7781
+      cache_read: 25185
+      cache_creation: 7713
+      total: 40689
+  validation_attempt_0:
+    timestamp: '2026-06-28T12:43:26.250098+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 71.74
+    cost_usd: 0.04914874999999999
+    tokens:
+      input: 10
+      output: 5617
+      cache_read: 25185
+      cache_creation: 9969
+      total: 40781
+  backtest_specification_attempt_0:
+    timestamp: '2026-06-28T12:50:37.550903+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 77.9
+    cost_usd: 0.08040350000000002
+    tokens:
+      input: 10
+      output: 8244
+      cache_read: 25185
+      cache_creation: 18020
+      total: 51459
+  verdict_interpreter_attempt_0:
+    timestamp: '2026-06-28T12:54:57.528616+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 68.95
+    cost_usd: 0.0865725
+    tokens:
+      input: 10
+      output: 6344
+      cache_read: 25185
+      cache_creation: 24984
+      total: 56523
+  campaign_review_attempt_0:
+    timestamp: '2026-06-28T12:56:49.823851+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 112.19
+    cost_usd: 0.05854775000000001
+    tokens:
+      input: 10
+      output: 7759
+      cache_read: 25185
+      cache_creation: 9393
+      total: 42347
+updated_at: '2026-06-28T12:56:50.931772+00:00'
+last_error: "YAML parse error in validation_protocol.yaml: mapping values are not\
+  \ allowed here\n  in \"<unicode string>\", line 21, column 168:\n     ... ies (prior\
+  \ campaign). Mitigation: lock V1 baseline thresholds; t ... \n                 \
+  \                        ^"
+injected_human_context:
+  component_gap_resolution: 'No score_mode needed. Use threshold_rules with relaxed
+    thresholds: ER>=0.3, VR>=1.0. Keep default_regime: unknown. Keep Keltner params
+    identical to run_017.'
+  required_config_constraints: 'Generate ONE config only:
+
+    - regime_detector.mode: threshold_rules (NOT score_mode)
+
+    - default_regime: unknown (CRITICAL — do NOT set to trending)
+
+    - TRENDING rule: ER>=0.3 AND VR>=1.2 (relax ER from 0.5 to 0.3, keep VR)
+
+    - OR alternatively: ER>=0.5 OR VR>=1.2 (switch AND to OR for more coverage)
+
+    - Keltner: ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0
+
+    - unknown: null (CRITICAL — do NOT add zero-weight components)
+
+    - No vetoes, no per-asset overrides, no confidence scaling
+
+    '

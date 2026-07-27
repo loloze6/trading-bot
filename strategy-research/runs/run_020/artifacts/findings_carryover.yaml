@@ -1,0 +1,13 @@
+hypothesis_id: V2-PIVOT-A-THRESHOLD-REFINED
+diagnostic_rule_applied: "Rule 5 + structural: regime gate too strict across all signal families tested — TRENDING/mean_reversion on 1h produces too few trades for statistical significance regardless of signal"
+diagnostic_snapshot:
+  forecast_return_corr: null
+  cost_drag_pct: null
+  gross_pnl: null
+  uninformative_regimes: [mean_reversion, trending, chop]
+what_not_to_try:
+  - "any further signal family on 1h BTCUSDT/ETHUSDT — regime gate is the bottleneck, not the signal"
+  - "tighter threshold parameters — they reduce trades further, compounding the sample problem"
+next_altitude: escalate
+escalation_target: timeframe
+escalation_rationale: "4h bars reduce cost drag ~4x per trade and produce longer, more durable regime windows. Same signal families are testable with meaningful sample sizes."

@@ -1,0 +1,56 @@
+handoff_version: 1
+run_id: run_025
+from_stage: validation
+to_stage: backtest_specification
+assigned_engine: claude
+objective: 'Produce one strategy config (inside backtest_spec.yaml) implementing the
+  approved, validated hypothesis, or declare a component_gap if the engine lacks a
+  required piece.
+
+  '
+primary_input_artifact: runs/{run_id}/artifacts/expanded_hypothesis_card.yaml
+required_inputs:
+- path: artifacts/expanded_hypothesis_card.yaml
+  reason: the validated hypothesis and variants to implement
+- path: artifacts/validation_protocol.yaml
+  reason: falsification criteria and sample-split decisions that constrain the config
+optional_inputs:
+- path: ../../../trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md
+  reason: authoritative list of available components, transforms, regimes, parameters
+- path: ../../docs/WORKFLOW_CAPABILITIES.md
+  reason: confirms which signal variants are achievable via config vs require new
+    code
+constraints:
+- Use only components/transforms/regimes in STRATEGY_CONFIG_REFERENCE.md.
+- History-based transform ops precede scalar ops.
+- Do not loosen thresholds or sample-split choices fixed by validation.
+deliverables:
+- backtest_spec.yaml
+- decision.yaml
+stop_conditions:
+- A required component/transform/regime is missing -> decision.status = component_gap.
+notes_for_orchestrator:
+- Routing reads decision.yaml.status (spec_ready | component_gap).
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'true'
+  component_gap_resolution: 'No score_mode needed. Use threshold_rules with relaxed
+    thresholds: ER>=0.3, VR>=1.0. Keep default_regime: unknown. Keep Keltner params
+    identical to run_017.'
+  required_config_constraints: 'Generate ONE config only:
+
+    - regime_detector.mode: threshold_rules (NOT score_mode)
+
+    - default_regime: unknown (CRITICAL — do NOT set to trending)
+
+    - TRENDING rule: ER>=0.3 AND VR>=1.2 (relax ER from 0.5 to 0.3, keep VR)
+
+    - OR alternatively: ER>=0.5 OR VR>=1.2 (switch AND to OR for more coverage)
+
+    - Keltner: ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0
+
+    - unknown: null (CRITICAL — do NOT add zero-weight components)
+
+    - No vetoes, no per-asset overrides, no confidence scaling
+
+    '

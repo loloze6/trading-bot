@@ -1,0 +1,35 @@
+base_hypothesis_id: "V2 (H-RUN007 VR-relaxed)"
+
+expansion_constraint_honored: true
+constraint_source: "research_brief.yaml::constraints[0]='one variant only — no divergence, no behavioral features, no cross-timeframe'"
+
+expanded_variants:
+  - variant_id: "V2-E1"
+    label: "RSI Oversold + Relaxed VR (Baseline, No Expansion)"
+    thesis: >
+      RSI(14) oversold signal generates positive alpha in BTCUSDT 1h during 
+      mean-reversion regimes (ER ≤ 0.25, VR ≤ 1.00), driven by mean-reversion 
+      probability proportional to RSI distance below 50. VR threshold relaxed to 
+      1.00 from 0.90 to increase regime sample size while excluding trending bars.
+    signal_formula: "max(0, (50 - RSI14) / 50) if (ER ≤ 0.25 AND VR ≤ 1.00) else 0"
+    regime_gate: "ER ≤ 0.25 AND VR ≤ 1.00"
+    component: "RSIPullbackComponent"
+    novelty_degree: "none"
+    rationale: >
+      Constraint forbids expansion. Variant passes base hypothesis unchanged, 
+      matching signal_concept and regime_filter exactly. Single configuration 
+      enables focused backtesting of the VR-relaxation pivot without architectural drift.
+    expected_trade_count: "≥30"
+    expected_win_rate: "≥48%"
+    expected_sharpe: "≥0.8"
+    key_assumption: >
+      VR ≤ 1.00 is sufficient to capture mean-reversion bars (VR < 1.0) and neutral 
+      volatility (VR ≈ 1.0) without trend contamination. Relaxation resolves the 
+      trade_count bottleneck that constrained V1.
+
+alternative_data_candidates: null
+reverse_hypothesis: null
+behavioral_features: null
+regime_specific_variants: null
+
+notes: "Expansion stage bypassed per constraint. Single variant represents the configured hypothesis as specified in research_brief and hypothesis_card."

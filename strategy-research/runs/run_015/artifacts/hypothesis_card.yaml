@@ -1,0 +1,56 @@
+hypothesis_id: "V3 (pivot-from-V2-E1)"
+
+thesis: |
+  Keltner channel breakouts capture momentum continuation in TRENDING regimes 
+  (ER ≥ 0.50, VR ≥ 1.20). Larger trade magnitude and lower frequency reduce cost 
+  drag below 50%, delivering positive Sharpe.
+
+rationale: |
+  V2 failed with cost_drag = 142.8% despite gross_pnl = +21.94, indicating correct 
+  signal direction but insufficient trade magnitude. Trending regimes exhibit larger 
+  directional moves; breakout signals should fire less frequently but on larger moves. 
+  Expected outcome: Keltner captures mean(|move|) 3–5× larger than V2, proportionally 
+  reducing fee fraction of gross PnL. Test whether Keltner achieves Sharpe > 0.5 or 
+  identifies same sizing problem with positive gross_pnl but persistent cost_drag > 80%.
+
+signal_concept: |
+  KeltnerChannelComponent: long signal = price > upper Keltner band in TRENDING regime. 
+  Keltner bands (20-period EMA ± 2 × ATR) expand during trending periods. Breakouts 
+  signal momentum continuation, opposite of V2's mean-reversion assumption. Forecast ≥ 0 
+  only when both price > upper_band AND regime = TRENDING, else forecast = 0.
+
+target_market: "BTCUSDT, ETHUSDT"
+
+timeframe: "1h"
+
+assumptions:
+  - "Keltner breakouts correlate with short-term momentum (not mean reversion)"
+  - "TRENDING regime (ER ≥ 0.50, VR ≥ 1.20) filters genuine directional moves with 
+    sufficient magnitude to overcome fees"
+  - "Trade frequency reduction (V2: 14–21 trades → V3 expected: 30–50 trades) yields 
+    mean trade magnitude ≥ 2.5× larger, lowering cost_drag below 80%"
+  - "Keltner parameters (20 EMA, 2 × ATR) appropriate for 1h; no retuning required"
+
+expected_failure_modes:
+  - "Keltner breakouts do not predict continuation; zero edge in TRENDING or all regimes 
+    (forecast_return_corr < 0.01, Sharpe < –3)"
+  - "TRENDING definition (ER ≥ 0.50, VR ≥ 1.20) under-captures true trends or over-captures 
+    chop; trade count remains < 30"
+  - "Keltner shows positive gross_pnl but cost_drag > 80%: same sizing problem as V2 
+    requiring minimum forecast threshold increase, not signal pivot"
+  - "Win_rate collapses below 45% despite regime filter, indicating false breakout signals 
+    in marginal trend conditions"
+
+exit_criteria:
+  victory: "Sharpe ≥ 0.5 on both symbols; cost_drag < 50%; trade_count ≥ 30; 
+    forecast_return_corr > 0.02"
+  failure_hard: "Sharpe < –3 or cost_drag > 100% (signal family exhausted)"
+  failure_soft: "Sharpe ∈ [–3, 0.5) with positive gross_pnl: escalate to minimum 
+    forecast threshold tuning before pivoting signal"
+
+timeline:
+  phase_1: "Screening backtest: run_015 nominal parameters (20 EMA, 2 × ATR, 
+    ER ≥ 0.50, VR ≥ 1.20). Target completion: 1 run, cost_drag diagnostic."
+  decision_point: "If gross_pnl > 0 but cost_drag > 80%, pause and prepare threshold 
+    tuning plan. If Sharpe < –3, retire signal family. If Sharpe ≥ 0.5, advance to 
+    walk-forward."

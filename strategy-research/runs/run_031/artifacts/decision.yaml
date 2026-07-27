@@ -1,0 +1,13 @@
+stage: "backtest_specification"
+status: "spec_ready"
+hypothesis_id: "KELTNER_THRESHOLD_4H_AVAX"
+variant: "V1_Conservative"
+rationale: "All required components (EfficiencyRatioRegimeComponent, VarianceRatioComponent, KeltnerBreakoutComponent), regime mode (threshold_rules), and transforms exist in STRATEGY_CONFIG_REFERENCE.md. Config maps hypothesis thesis directly: ER/VR threshold gates select high-conviction regime subsets; Keltner signal forecasts within activated regimes. Expected to reduce cost_drag <80% via frequency control (10–20% candle activation vs 40–60% baseline)."
+status_details: "Config is valid and schema-compliant. All component classes, transform ops, and regime definitions are available in the config-driven engine without code extension required."
+blocking_issues: []
+next_stage: "screening_backtest"
+notes:
+  - "V1 is the control variant; variants V2–V6 require separate config and run (not emitted at this stage per persona rules: one config per backtest_specification stage)."
+  - "Validation protocol specifies walk-forward with ≥4 windows; ER/VR thresholds (0.30, 1.5, 1.2) are research-calibrated and frozen per validation_protocol.yaml sample_split_design."
+  - "No look-ahead bias: ER and VR components use causal rolling windows; threshold values are applied in real-time bar order."
+  - "Success gate for V1 control approval: cost_drag <80% AND sharpe ≥0.30 AND min_trade_count ≥5 per walk-forward window (median across ≥4 windows)."

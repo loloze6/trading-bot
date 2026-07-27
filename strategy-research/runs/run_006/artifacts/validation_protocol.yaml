@@ -1,0 +1,146 @@
+hypothesis_id: H-RUN006
+hypothesis_name: RSI Mean-Reversion in Choppy Regimes
+falsifiable_statement: RSI(14) mean-reversion signals generate Sharpe >= 0.8 in BTCUSDT 1h when ER <= 0.20 AND VR <= 0.90, with max drawdown <= 20% and >= 30 trades across 6-month walk-forward window.
+
+null_expectation: RSI extremes are random in relation to price reversals. Mean-reversion alpha in chop is indistinguishable from drift + rebalancing. Regime filter (ER, VR) correlates with lower volatility periods but does not enable alpha generation.
+
+required_evidence:
+  - Out-of-sample walk-forward Sharpe > in-sample baseline by >= 0.3
+  - Max drawdown <= 20% across all walk-forward folds
+  - Trade frequency >= 30 total; >= 5 per fold
+  - Win rate >= 45% (tests signal validity beyond drift)
+  - Regime-conditional Sharpe (V1 in chop vs trending) shows 40%+ alpha premium in chop-only subset
+  - V6 reverse (divergence in TRENDING) underperforms V1 by >= 0.2 Sharpe (falsifies "regime filter is noise")
+
+bias_risks:
+  look_ahead_bias:
+    risk: V3/V6 divergence detection requires prior bar comparison (price_curr vs price_prev, RSI_curr vs RSI_prev). Exact lookback window undefined. If divergence detected on close but signal executed at next open, execution lag is hidden.
+    mitigation: Explicitly define divergence lookback (e.g., compare last 2 bars only, or rolling 5-bar local min). Signal must be detectable at bar close, executable at next bar open (realistic slippage).
+  
+  data_leakage:
+    risk: Regime filter (ER, VR) calculated on rolling history. Lookback window determines how "fresh" regime classification is. If lookback is 50+ bars, regime may lag actual market state by 2+ hours.
+    mitigation: Pre-specify ER/VR lookback (e.g., 20 or 50 bars). Cross-check: regime classification must stabilize before candle close and remain unchanged through execution.
+  
+  cross_timeframe_contamination:
+    risk: V5 requires 4h vol stability check aligned with 1h signal. If 4h vol_stable status updates mid-1h candle, execution timing is ambiguous. Risk of detecting "stable vol" that shifts by next open.
+    mitigation: Calculate 4h vol_stable only on closed 4h candles, prior to 1h signal evaluation. Enforce: 4h candle must close before 1h signal enters queue.
+  
+  multiple_comparisons:
+    risk: 7 primary variants + 1 reverse + 3 regime-specific = 11 backtest runs. Without pre-specification and Bonferroni correction, expect 1-2 false positives (Sharpe >= 0.8 by chance) at p=0.05.
+    mitigation: Pre-register V1, V3, V6 as primary tests. V2, V4, V5, V7 are exploratory (threshold Sharpe >= 0.9 required). Regime-specific variants are sub-analyses only if primary test passes.
+  
+  behavioral_feature_overfitting:
+    risk: Duration_in_oversold, volume_divergence_strength, momentum_fade are post-hoc multipliers. Each introduces free parameter (bar count threshold, ATR ratio, ROC threshold). Risk of fitting noise.
+    mitigation: Do NOT apply behavioral features in primary variants (V1-V7). Test as isolated add-on to V1 only if V1 Sharpe >= 0.8. Require feature to improve Sharpe by >= 0.15 to justify inclusion.
+
+failure_modes:
+  failure_1_baseline_replication:
+    description: V1 reproduces prior failed config (from hypothesis_card.yaml). Signal is fundamentally broken, not config issue.
+    indicator: V1 Sharpe < 0.5 in walk-forward. Win rate < 40%.
+    verdict: Reject all variants. Core hypothesis is false.
+  
+  failure_2_margin_trading_slippage:
+    description: V2 (bidirectional) requires margin trading. Binance margin fees + forced liquidations erase alpha. Expected slippage 15-20 bps per trade.
+    indicator: V2 Sharpe < V1 Sharpe - 0.3 after accounting for 10 bps trade cost.
+    verdict: Reject V2. Unilateral long-only strategy may remain viable.
+  
+  failure_3_divergence_lag:
+    description: V3/V6 divergence detection slow. If detected at candle N close, by candle N+1 open, price has already reverted. Entry is at poor fill.
+    indicator: V3 win rate < 40% OR average trade profit < 5 bps. Average trade duration < 1 hour (whipsaw).
+    verdict: Reject V3/V6. Divergence timing is infeasible on 1h.
+  
+  failure_4_regime_calculation_lag:
+    description: ER/VR lookback is too long (50+ bars = 2+ hours). Regime classification lags actual chop state. Signal enters "chop regime" when chop is ending.
+    indicator: Trades clustered at regime transitions (20% of trades in first/last 5 bars of regime window). Sharpe degrades 30%+ when regime backfill removed.
+    verdict: Reject variants. Regime filter is reactive, not predictive.
+  
+  failure_5_vol_stability_filter_too_restrictive:
+    description: V5 (4h vol_stable < 3%) filters out real mean-reversion trades during calm periods that precede vol spikes. False negatives dominate.
+    indicator: V5 trade count < 10 (insufficient sample). Or V5 Sharpe < 0.4 due to missing reversals.
+    verdict: Reject V5. Trade-off favors frequency over consistency.
+  
+  failure_6_reverse_hypothesis_misinterpretation:
+    description: V6 (divergence in TRENDING) underperforms V1, user concludes regime filter is overfitting. Actually divergence signal is just weak.
+    indicator: V6 Sharpe < 0.5 in both TRENDING and CHOP subsamples. No regime-specific edge.
+    verdict: Confirm regime filter is necessary. Do not abandon.
+  
+  failure_7_volume_noise:
+    description: V7 volume condition (vol_declining = volume_curr < SMA20) is too noisy in crypto. Volume surges are unpredictable (Binance wash trades, liquidation cascades).
+    indicator: V7 Sharpe < V1 by > 0.1. OR V7 trades have high variance (drawdown spikes despite Sharpe).
+    verdict: Reject V7. Volume is unreliable signal on 1h.
+  
+  failure_8_behavioral_feature_overfitting:
+    description: Adding 3 behavioral multipliers (duration, vol divergence, momentum fade) without proper validation introduces overfitting risk. Entire edge disappears OOS.
+    indicator: Behavioral-augmented V1 Sharpe drops > 0.2 in walk-forward vs in-sample.
+    verdict: Reject behavioral features. Use base signal only.
+  
+  failure_9_regime_specific_variants_cherry_picking:
+    description: Tight chop (VR 0.5-0.7) shows high Sharpe, loose chop (VR 0.7-0.9) shows low Sharpe. User selects tight-chop variant. OOS, tight-chop frequency drops, variant fails.
+    indicator: One regime-specific variant Sharpe > 1.0, others < 0.5. Optimal regime covers < 40% of training data.
+    verdict: Reject regime-specific variants. Prefer regime-agnostic signal with lower Sharpe.
+
+sample_split_design:
+  data_source: BTCUSDT 1h candles (historical + live DataManager integration).
+  test_period: 2025-01-01 to 2026-06-16 (18 months total).
+  
+  walk_forward:
+    fold_structure: "6-month rolling windows; 1-week rebalance (shift by 5 business days)."
+    fold_1: "In-sample 2025-01-01 to 2025-06-30; OOS 2025-07-01 to 2025-07-31 (1 month)."
+    fold_2: "In-sample 2025-02-01 to 2025-07-31; OOS 2025-08-01 to 2025-08-31."
+    fold_3: "In-sample 2025-03-01 to 2025-08-31; OOS 2025-09-01 to 2025-09-30."
+    fold_4: "In-sample 2025-04-01 to 2025-09-30; OOS 2025-10-01 to 2025-10-31."
+    fold_5: "In-sample 2025-05-01 to 2025-10-31; OOS 2025-11-01 to 2025-11-30."
+    fold_6: "In-sample 2025-06-01 to 2025-11-30; OOS 2025-12-01 to 2025-12-31."
+    fold_7: "In-sample 2025-07-01 to 2025-12-31; OOS 2026-01-01 to 2026-01-31."
+    fold_8: "In-sample 2025-08-01 to 2026-01-31; OOS 2026-02-01 to 2026-02-28."
+    fold_9: "In-sample 2025-09-01 to 2026-02-28; OOS 2026-03-01 to 2026-03-31."
+    fold_10: "In-sample 2025-10-01 to 2026-03-31; OOS 2026-04-01 to 2026-04-30."
+    fold_11: "In-sample 2025-11-01 to 2026-04-30; OOS 2026-05-01 to 2026-05-31."
+    fold_12: "In-sample 2025-12-01 to 2026-05-31; OOS 2026-06-01 to 2026-06-16 (partial)."
+  
+  holdout_period: "2026-06-01 to 2026-06-16 (2 weeks, completely unseen during all folds). Reserve for final validation only."
+  
+  regime_subset_validation:
+    description: "Within each fold, partition trades into CHOP (ER <= 0.20 AND VR <= 0.90) vs TRENDING (ER > 0.20 OR VR > 0.90). Compute fold-specific Sharpe for each regime."
+    minimum_trades_per_subset: "5 trades minimum per regime per fold. If CHOP trades < 5, mark fold as insufficient."
+    
+  parameter_lock:
+    description: "All variant parameters (RSI threshold, VR/ER boundaries, lookback windows) must be fixed BEFORE any backtest run. No tuning on walk-forward OOS data."
+
+decision_rules:
+  approval_threshold:
+    - Sharpe_WF_mean >= 0.80 (walk-forward average across 12 folds)
+    - Sharpe_WF_std <= 0.25 (low fold-to-fold variance)
+    - max_drawdown_WF <= 20%
+    - Trade_count_WF >= 30 total (avg 2.5 per fold)
+    - Win_rate >= 45% (in-sample and OOS aligned)
+    - Sharpe_CHOP_regime > Sharpe_TRENDING_regime by >= 0.3 (regime specificity confirmed)
+    - V6_reverse Sharpe < V1_Sharpe by >= 0.2 (regime filter validated, not overfitting)
+  
+  refinement_threshold:
+    - Sharpe_WF_mean 0.50–0.79 AND max_drawdown_WF <= 25%
+    - Trade_count >= 15
+    - Win_rate >= 40%
+    - Regime specificity present but modest (0.15–0.30 delta)
+    - Verdict: Investigate specific failure modes. Reduce parameter count or extend test period.
+  
+  rejection_threshold:
+    - Sharpe_WF_mean < 0.50 OR max_drawdown_WF > 25%
+    - Trade_count < 10
+    - Win_rate < 40%
+    - V6_reverse Sharpe >= V1_Sharpe (regime filter is decoy)
+    - Any Failure Mode 1-9 confirmed
+  
+  halt_conditions:
+    - If fold-level Sharpe < -0.5, halt backtest (signal is harmful)
+    - If 50%+ of trades result in max_loss > 2% per trade, halt (tail risk uncontrolled)
+    - If regime_classification_lag > 4 hours (detected via trade timing analysis), reject regime filter
+
+variant_priority:
+  primary: [V1_conservative, V3_rsi_divergence, V6_reverse_divergence_in_trending]
+  exploratory: [V2_bidirectional_oversold, V4_adaptive_rsi_threshold, V5_cross_timeframe_confirmation, V7_volume_confirmation]
+  sub_analyses: [regime_specific_variants, behavioral_features]
+  
+  primary_prerequisite: "All three primary variants must complete walk-forward validation. V6 result (compare vs V1) determines regime filter validity."
+  exploratory_gate: "Only if V1 Sharpe >= 0.75. Exploratory variants require Sharpe >= 0.90 to justify inclusion."
+  behavioral_gate: "Only test on V1 if V1 Sharpe >= 0.80 in holdout. Behavioral feature must improve Sharpe by >= 0.15."

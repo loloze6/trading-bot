@@ -1,0 +1,43 @@
+result: FAIL
+criteria_results:
+- id: a
+  result: FAIL
+  per_symbol:
+    BTCUSDT:
+      value: -0.296
+      threshold: 0.8
+      result: FAIL
+    ETHUSDT:
+      value: -0.979
+      threshold: 0.8
+      result: FAIL
+- id: b
+  result: FAIL
+  per_symbol:
+    BTCUSDT:
+      value: 34.922
+      threshold: 30
+      result: FAIL
+    ETHUSDT:
+      value: 49.606
+      threshold: 30
+      result: FAIL
+- id: c
+  result: PASS
+  per_symbol:
+    BTCUSDT:
+      value: 0.0
+      threshold: 50
+      result: PASS
+    ETHUSDT:
+      value: 0.0
+      threshold: 50
+      result: PASS
+branches_failed:
+- FAIL-a
+- FAIL-b
+statement_branch_matched: FAIL-a
+hypothesis_verdict: kill
+lineage_routing: terminate
+evaluated_at: '2026-07-18T16:01:02.101356+00:00'
+evaluator_version: 1

@@ -1,0 +1,92 @@
+hypothesis_id: "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED"
+falsifiable_statement: "The sign of 8h perpetual funding rate, applied as −sign(funding_rate) × 10.0 at every UTC settlement boundary (0, 8, 16h), has positive predictive power for 1h BTC/ETH returns measurable as walk-forward Spearman IC > 0.05 or Sharpe > 0.5 with minimum 100 trades per window during 2024-12-01 to 2025-12-31."
+null_expectation: "Funding rate sign has zero predictive power; IC = 0; Sharpe ≈ 0."
+
+failure_modes:
+  - mode_id: "FM1"
+    name: "Structural mechanism refuted"
+    description: "8h settlement flow fully priced in; no mean-reversion edge despite mechanical forcing."
+  
+  - mode_id: "FM2"
+    name: "Regime-dependent edge"
+    description: "Signal works only in trending markets. Walk-forward reveals per_regime IC concentration, failing minimum threshold."
+  
+  - mode_id: "FM3"
+    name: "Settlement execution slippage"
+    description: "Order slippage during settlement bars consumes 2–5 bps; gross edge below 34 bps threshold."
+  
+  - mode_id: "FM4"
+    name: "Cost overhang from high turnover"
+    description: "3 activations/day × 252 days ≈ 756 trades/year. At 17 bps round-trip, strategy requires 34 bps/trade. Ungated mean-reversion typically delivers 5–20 bps. Insufficient edge."
+  
+  - mode_id: "FM5"
+    name: "Look-ahead bias in timing"
+    description: "Component reads current 8h funding_rate instead of lag(funding_rate, 8h) from prior settlement. Backtest leaks future information."
+  
+  - mode_id: "FM6"
+    name: "Non-stationarity (2026 holdout)"
+    description: "Funding rate regimes shift; edge disappears in holdout period 2026-01-01 to 2026-06-30."
+
+bias_risks:
+  - risk_id: "BR1"
+    name: "Look-ahead bias"
+    mitigation: "Code audit: confirm FundingRateMeanReversionComponent reads lag(funding_rate, 8h) from prior settlement bar, not current."
+  
+  - risk_id: "BR2"
+    name: "Symbol selection bias"
+    mitigation: "Tested only on BTC/ETH. Generalization to SOL/AVAX is untested; do not extrapolate."
+  
+  - risk_id: "BR3"
+    name: "Regime-conditional IC"
+    mitigation: "Ungated signals show higher IC in trending markets. Walk-forward must report per_regime IC stratification (metrics.json per_regime field)."
+  
+  - risk_id: "BR4"
+    name: "Overfitting to 2024–2025 data"
+    mitigation: "Only 12 months walk-forward. Holdout evaluation is mandatory before any live promotion."
+
+sample_split_design:
+  walk_forward_range: ["2024-12-01", "2025-12-31"]
+  walk_forward_source: "From campaign_data_policy.yaml walk_forward_extension."
+  holdout_range: ["2026-01-01", "2026-06-30"]
+  holdout_note: "Single-use per Improvement 06. Frozen at validation time. Reserved exclusively for holdout_evaluation stage."
+  windows: 4
+  window_size_bars: 1464
+  step_size_bars: 1464
+  window_duration_days: 61
+  rationale: "4 non-overlapping 61-day windows (1,464 bars each, 24 bars/day) span 12-month walk-forward. Each window contains ~183 activation events (3/day × 61), meeting minimum 100 trades/window for statistical power."
+
+decision_rules:
+  - metric: "sharpe"
+    operator: ">="
+    threshold: 0.5
+    rationale: "Minimum detectable Sharpe for ungated structural signal after overfitting adjustment. Genuine funding-rate mean-reversion typically delivers 0.3–1.0 Sharpe."
+  
+  - metric: "win_rate"
+    operator: ">="
+    threshold: 0.52
+    rationale: "Minimum positive expectancy (52% wins at ~1:1 payoff ratio); rules out random drift."
+  
+  - metric: "trade_count"
+    operator: ">="
+    threshold: 100
+    rationale: "Minimum trades per window to reject IC=0 with power ≥ 80% (a_priori_n_eff ≈ 100)."
+  
+  - metric: "max_drawdown_pct"
+    operator: "<"
+    threshold: 30
+    rationale: "Drawdown must remain manageable; >30% indicates excess volatility or regime mismatch."
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 17.0
+  assumed_round_trip_cost_source: "cost_model.yaml, execution_style=taker, BTCUSDT primary symbol."
+  expected_holding_bars:
+    min: 1
+    max: 4
+    rationale: "Forced 8h settlement mean-reversion impulse typically decays within 1–4 hours on 1h timeframe."
+  expected_trades_per_window: 183
+  expected_trades_per_window_calc: "3 activations/day × 61 days (1,464 bars ÷ 24 bars/day)."
+  required_gross_edge_bps_per_trade: 34.0
+  required_gross_edge_formula: "safety_factor (2.0) × round_trip_cost_bps (17.0)."
+  estimated_gross_edge_range: "5–20 bps/trade (based on peer ungated funding-rate mean-reversion IC 0.05–0.15 on 1h)."
+  plausibility: "marginal"
+  plausibility_rationale: "Mechanism is structural (forced 8h settlement flow) and should carry mean-reversion signal. However, strategy requires 34 bps/trade; ungated structural mean-reversion on 1h typically earns 5–20 bps. High turnover (3/day, no regime gate) without per-symbol filtering creates cost risk. Edge is not implausible—the mechanism is proven—but walk-forward validation is critical to confirm it survives costs."

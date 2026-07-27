@@ -1,0 +1,74 @@
+run_id: "run_044"
+stage: "innovation_expansion"
+
+expansion_context: >
+  Base hypothesis (H-041-A successor) uses structural forced-flow mechanism.
+  H-041-A failed due to insufficient_sample (n_eff=10, extreme threshold).
+  This variant removes magnitude gate (threshold=0.0), raising n_eff to 183
+  and restoring adequate power. No mechanism change; signal density increase.
+
+brief_constraint_impact: >
+  Research brief explicitly specifies "one variant only for the run queue (V1)...
+  pipeline shakedown batch, not the main search." This limits expansion to
+  conservative base hypothesis only. Reflects intentional pipeline testing scope,
+  not signal weakness.
+
+v1_rationale: >
+  Continuous funding-sign mean-reversion at every 8h settlement. Mechanism:
+  funding rate settlements force mechanical deleveraging regardless of magnitude.
+  Sign alone captures directional pressure (positive/negative). Threshold=0.0
+  removes extreme-filtering gate, raising activation ~8x (n_eff: 10 → 183).
+  Power adequate a priori (min_detectable_ic ≈ 0.074 vs plausible 0.05–0.20).
+  Conservative choice: preserves proven mechanism (H-041-A), repairs power shortage.
+
+alternative_feed_rejection: >
+  ALT_1_OI_Divergence: OI (open interest) is NOT in available_feeds.yaml.available.
+  Funding rate is available; OI is explicitly unavailable. Tagged requires_new_feed
+  and routed to feed_wishlist.yaml. Cannot queue variant dependent on unavailable feed.
+
+reverse_hypothesis_rejection: >
+  Structural mechanism (forced longs deleveraging when rate positive) is
+  directional by nature. Reversing polarity → predicts continuation.
+  Contradicts forced-flow claim. Not a valid variant. Skipped per rules.
+
+behavioral_features_rejection: >
+  Base mechanism is structural (settlement mechanics), not behavioral herding.
+  Behavioral variants would require alternative feeds (liquidation_data, order_book)
+  not available today. Defer to future expansion when feeds available.
+
+regime_gating_rejection: >
+  A2.3 standing policy: no regime gating on primary variants.
+  Ungated activation preserves mechanistic purity. Any regime-conditional
+  formulation routed to detector_wishlist_pending (no detector available for 1h BTC/ETH).
+
+diversity_audit:
+  single_variant_scope: "Brief constraint limits run queue to V1 only; diversity audit checks only apply when V1 has conceptual alternatives (V2+)."
+  v1_library_match:
+    indicator_id: "funding_rate_extreme"
+    category: "structural_rate"
+    data_requirements: "funding_open_interest"
+    edge_source_compatibility: ["structural_forced_flow"]
+  cosmetic_diversity_check: >
+    Not applicable. Only one variant in expanded_variants (V1). Cosmetic diversity
+    check requires ≥2 variants. V2/V3 are blocked by infrastructure constraints,
+    not cosmetic duplication.
+  v2_v3_conceptual_status: >
+    V2 (Funding + Volatility): Requires multi-component synthesis, explicitly
+    forbidden by "existing_components_only" brief constraint.
+    V3 (Funding + OI): Requires open_interest feed, explicitly unavailable.
+    Both documented but NOT queued per brief guidance.
+  verdict: "expansion_scope_constrained_by_brief; no diversity failures; single_variant_queued_as_specified"
+
+anti_confabulation_check: >
+  V1 specific_mechanism: "funding_rate sign at 8h settlement boundary" maps to
+  funding_rate feed in available_feeds.yaml.available (evidence_type: funding_open_interest ✓).
+  Mechanism is measurable and feed-available. Anti-confabulation satisfied (A1.3).
+
+evidence_type_requirement_01_check: >
+  Improvement 01 (A1.2): At least one variant must use evidence_type != price_volume_only.
+  V1 uses evidence_type: funding_open_interest ✓. Requirement satisfied.
+
+queue_placement_summary: >
+  V1 → expanded_variants (run queue eligible).
+  V2 (Funding + Vol) → documented, blocked by brief, not queued.
+  V3 (Funding + OI) → documented, feed_wishlist.yaml candidate, not queued.

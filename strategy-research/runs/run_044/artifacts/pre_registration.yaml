@@ -1,0 +1,44 @@
+run_id: run_044
+hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+registered_at: "2026-07-04"
+
+# Power check (A8.6 formula, matches _run_a86_power_check in run_phase1_research.py exactly)
+# activation_rate=0.125: FundingRateMeanReversionComponent(threshold=0.0) fires at every
+# 8h settlement bar (hour%8==0) regardless of magnitude -- 1/8 of all bars, ~8x denser
+# than H-041-A's extreme-only gate (which produced n_eff=10, the parked underpowered result).
+# is_market_wide=false: funding_rate is published per-symbol (BTC and ETH settle
+# independently), not a single shared index like Fear & Greed, so no rho-based
+# n_symbols_effective discount applies per the A8.6 code (unlike H-041-C's F&G case).
+expected_active_n: 4380.0
+n_eff_symbols: 2.0
+expected_n_eff: 182.5
+min_detectable_ic: 0.0746
+plausible_ic_upper: 0.12
+power_verdict: power_adequate
+
+# Outcome range -- written before any prescreen/backtest result is observed.
+expected_sharpe_range:
+  pessimistic: -0.3
+  base_case: 0.1
+  optimistic: 0.7
+expected_ic_range: [0.0, 0.1]
+expected_cost_ratio: 1.2
+disconfirming_outcome: >
+  IC_active_bars significantly negative (< -0.03, p < 0.10) would indicate the sign of
+  funding rate predicts CONTINUATION rather than reversion even at mild magnitudes --
+  the opposite of the forced-deleveraging mechanism and a different, stronger finding
+  than mere absence of edge. IC not significant at n_eff~182 (much better powered than
+  H-041-A's n_eff=10) would indicate the continuous-magnitude version of the mechanism
+  is genuinely absent, not just underpowered -- a materially informative result distinct
+  from H-041-A's inconclusive disposition.
+
+rationale_for_base_case: >
+  This is a materially different, weaker mechanism claim than H-041-A (extreme funding
+  only): mild, routine funding payments are assumed to create small continuous
+  incremental positioning pressure rather than tail-risk forced deleveraging. Because
+  the effect per event is expected to be weaker than the extreme-only case (KB:
+  funding_rate_mean_reversion_inconclusive cites plausible_ic_range 0.05-0.2 for the
+  EXTREME version), the base case for the continuous version is set toward the lower
+  end (0.0-0.1) -- adequate power to detect it here, but the true effect size at
+  non-extreme magnitudes is genuinely uncertain, unlike the price-only H1 case where a
+  null result is the well-established campaign pattern.

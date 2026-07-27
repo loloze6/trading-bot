@@ -1,0 +1,33 @@
+hypothesis_id: H-RUN006
+thesis: RSI mean-reversion signal generates positive alpha in low-efficiency (choppy) regimes on BTCUSDT 1h where oscillatory behavior dominates over trend.
+rationale: |
+  Low-efficiency regimes (ER ≤ 0.20, VR ≤ 0.90) indicate oscillatory price behavior without directional momentum. RSI < 50 signals oversold conditions; in such regimes, overextension tends to revert rather than persist. ER threshold excludes trending markets where mean-reversion fails.
+signal_concept: |
+  RSIPullbackComponent (period=14, long_only=True).
+  forecast = max(0, (50 - RSI) / 50) when RSI < 50, else 0.
+  Active in mean_reversion regime only; forecast=0 in CHOP or TRENDING.
+target_market: BTCUSDT spot or margin
+timeframe: 1h (dominant oscillation cycle without excessive microstructure noise)
+assumptions:
+  - Mean-reversion regime occurs ≥15% of bars for statistical significance
+  - RSI distance from 50 correlates with reversion magnitude
+  - ER/VR thresholds correctly isolate mean-reversion environments
+  - 1h is the relevant reversion cycle
+  - Transaction costs < expected edge
+expected_failure_modes:
+  - Regime misclassification: ER/VR thresholds fire RSI in disguised trends
+  - RSI divergence: oversold ≠ imminent reversion
+  - Commission drag: 1h edges (~0.3–0.7% per trade) consumed by 2–3 bps costs
+  - Walk-forward degradation: regime distribution differs out-of-sample
+testability: |
+  Isolate RSI signal in mean_reversion regime only. Backtest BTCUSDT 1h across 
+  2 years; measure Sharpe. Compare signal alpha isolated vs. control (random 
+  mean reversion). Stress test on different VR/ER lookback windows.
+baseline_comparison: |
+  Previous run (same component, same regime) yielded Sharpe -5.02 (11-window median). 
+  This isolates config variables (threshold_filter aggressiveness, vol-normalization) 
+  from hypothesis validity. If Sharpe improves, issue was config; if worsens, hypothesis invalid.
+decision_criteria:
+  accept: Sharpe > 0.5 in-sample, > 0.3 walk-forward
+  reject: Sharpe < -0.5 or confidence < 65%
+  iterate: "-0.5 ≤ Sharpe ≤ 0.5, refine thresholds or component parameters"

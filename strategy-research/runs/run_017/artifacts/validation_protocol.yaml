@@ -1,0 +1,58 @@
+hypothesis_id: V1-PIVOT-A
+falsifiable_statement: |
+  Inverted Keltner-band mean-reversion (ATR 2.0 multiplier in TRENDING regime)
+  generates walk-forward Sharpe ≥ 0.0, win_rate ≥ 49%, trade_count ≥ 80 across
+  all windows, and min_trade_count ≥ 4 per window. Edge persists despite 33%
+  band widening reducing signal frequency vs baseline 1.5×.
+
+null_expectation: |
+  Band width (ATR 1.8–2.2) is irrelevant to profitability. Edge is regime-independent.
+  TRENDING filter does the work, not band calibration. Mean-reversion signal does not exist.
+
+required_evidence:
+  - "V1 (ATR 2.0) walk-forward metrics: sharpe, win_rate, trade_count, min_trade_count"
+  - "V2 (ATR 1.8) and V3 (ATR 2.2) complete backtest: establish parameter monotonicity or local optimum"
+  - "V4 (confirmation) vs V1: verify whipsaw reduction improves Sharpe"
+  - "Regime-specificity: V-volatile, V-choppy, V-momentum sharpe << 0.0 (validates TRENDING requirement)"
+  - "Reverse hypothesis: ATR 1.0 backtest sharpe < −1.0 or > +1.0 (rules out moderate edge)"
+  - "Live slippage estimate: per-trade entry/exit cost model applied to each trade; verify assumptions"
+
+bias_risks:
+  - "Look-ahead: Regime classification uses ER/VR at bar-close with current bar included; verify lagging only past bars"
+  - "Leakage: Keltner EMA and ATR computed with current bar; minor look-ahead if bar_close price used in band"
+  - "Multiple comparisons: 4 variants + 3 regime tests + reverse hypothesis on same walk-forward data; α-correction not applied"
+  - "Post-hoc behavioral features: time_in_regime_bars, volatility_shift_direction, relative_position_in_range are data-discovered patterns, not pre-registered; high overfitting risk if added to config after backtest"
+  - "Regime tuning: ER threshold 0.50 and VR threshold 1.20 may be optimized on same data; validate threshold stability across time periods"
+  - "Survivorship and regime boundary bias: ER/VR thresholds define regime entry/exit; boundaries may trap or release trades spuriously"
+
+failure_modes:
+  - "Optimization overfitting: ATR 2.0 optimal on backtest; live parameter drift causes performance collapse"
+  - "Regime filter is proxy: True edge is regime detection (ER/VR), not band touches; band is noise vehicle for regime trade"
+  - "Unmodeled execution: Slippage, bid-ask spread, and commissions on band-touch triggering exceed gross PnL; net Sharpe < -1.0"
+  - "Win-rate noise: 49–52% easily explained by random walk over short window; edge does not exist, just variance"
+  - "Time-varying mean-reversion: Edge exists only 2022–2024 (specific volatility regime); breaks in stress periods or low-volatility years"
+  - "Confirmation filter introduces look-ahead: 'Close back above band' visible only at bar close; live entry signal is earlier and misses the bounce"
+  - "Regime cardinality fragmentation: Volatility sub-filter (ATR-high vs ATR-low) reduces effective trade_count below 20 per window; insufficient statistical power"
+  - "Band width as entry-delay proxy: Wider bands = later entry (after deeper pullback); edge is timing, not band geometry; not transferable to new instruments"
+  - "Behavioral feature overfitting: Relative_position_in_range, candle_severity features cherry-picked post-hoc; fit noise, not signal"
+
+sample_split_design: |
+  Walk-forward validation: V1, V2, V3, V4 backtested across existing walk-forward windows.
+  Variant count pre-specified (4 only); do not add post-hoc. Report median sharpe and win_rate
+  across windows; if window-level variance is high (>50% std), edge is unstable.
+  Regime validation: V-volatile, V-choppy, V-momentum tested on full historical window (not
+  walk-forward split) to isolate regime effect without data leakage. Expect sharpe < 0.0 for
+  off-regime tests; if sharpe > 0.0 in VOLATILE or CHOPPY, regime filter is spurious.
+  Reverse hypothesis: ATR 1.0× tested on same walk-forward windows as V1–V4. Expect
+  sharpe << −1.0 (edge non-existent) or sharpe >> +1.0 (severe under-filtering). Sharpe
+  in (−0.5, +0.5) suggests edge exists but is fragile to band calibration; flag as risk.
+
+decision_rules:
+  - "V1 sharpe (median across walk-forward windows) >= 0.0"
+  - "V1 win_rate >= 0.49"
+  - "V1 trade_count >= 80"
+  - "V1 min_trade_count >= 4"
+  - "V1 max_drawdown_pct <= 40%"
+  - "Regime-specificity: V-volatile, V-choppy, V-momentum each sharpe < 0.0"
+  - "Reverse hypothesis: ATR 1.0 sharpe < −1.0 OR sharpe > +1.0 (not −0.5 to +0.5)"
+  - "Parameter monotonicity: V2 and V3 sharpe values bracket V1; no local minimum at 2.0"

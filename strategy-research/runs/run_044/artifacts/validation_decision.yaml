@@ -1,0 +1,23 @@
+hypothesis_id: "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED"
+status: "conditional_approve"
+rationale: "Hypothesis is falsifiable, mechanism is structural (proven forced flow), and sample split is properly defined. Cost feasibility is marginal, not implausible—the signal is plausible under favorable IC conditions but requires walk-forward validation to confirm. Conditional approval allows hypothesis to enter screening_backtest; promotion to holdout is gated on performance thresholds below."
+
+blocking_issues: []
+
+conditions:
+  - "Walk-forward Sharpe >= 0.5 (median across 4 windows) validates signal survives costs."
+  - "Walk-forward trade_count >= 100 per window meets statistical power minimum."
+  - "Win_rate >= 0.52 (median) rules out random drift."
+  - "Per_regime IC must not collapse (≥ 0.04) in mean-reversion regimes, indicating regime-specific overfitting."
+  - "Code audit: confirm FundingRateMeanReversionComponent reads lag(funding_rate, 8h) from PRIOR settlement bar (no look-ahead)."
+  - "If all conditions pass, hypothesis qualifies for promotion decision. Holdout_evaluation stage will determine final approval before live deployment."
+
+next_stage: "screening_backtest"
+screening_entry_criteria:
+  - "Run backtest on walk-forward range using run_protocol.py with run_id=run_044."
+  - "FundingRateMeanReversionComponent must be in place with threshold=0.0, scaling_factor=10.0."
+  - "Collect walk-forward metrics.json with per_regime stratification."
+  - "If Sharpe < 0.5 OR trade_count < 100 in any window, hypothesis returns to refine stage (recommend regime gate or volatility filter to reduce turnover)."
+  - "If all conditions pass, generate walk_forward_summary.yaml and proceed to walk_forward_validation stage."
+
+approval_note: "Marginal cost plausibility means hypothesis is approved for testing but is not presumed to succeed. The walk-forward validation is the primary falsification gate. A confirmed Sharpe >= 0.5 with IC >= 0.05 post-walk-forward would unlock holdout_evaluation; failure at any gate below Sharpe threshold triggers refine-and-retry or rejection."

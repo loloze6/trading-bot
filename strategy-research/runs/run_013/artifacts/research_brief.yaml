@@ -1,0 +1,50 @@
+hypothesis_id: H-RUN007
+asset: BTCUSDT
+timeframe: 1h
+research_question: >
+  Does RSI(14) generate positive expected returns in BTCUSDT 1h when the market
+  is in a mean_reversion regime (low ER, relaxed VR)?
+
+signal_concept: >
+  RSIPullbackComponent: long-only signal proportional to distance of RSI below 50.
+  Single component, single regime. (unchanged from H-RUN007)
+
+regime_filter: >
+  mean_reversion only: ER ≤ 0.25 AND VR ≤ 0.90. Relaxed ER threshold to capture
+  low-efficiency scenarios beyond extreme chop. All other regimes produce
+  forecast 0.0. (MODIFIED: ER threshold increased from 0.20)
+
+mechanism: >
+  RSI below 50 in a low-efficiency regime indicates short-term oversold
+  conditions without directional trend. Price expected to revert toward mean.
+
+assumptions:
+  - mean_reversion regime occurs frequently enough for statistical validity (≥15% of bars)
+  - RSI distance from 50 correlates with reversion probability
+  - Relaxed ER threshold (0.25 vs 0.20) captures sufficient mean_reversion bars without including trending
+
+expected_failure_modes:
+  - RSI signal still has no edge even with relaxed regime definition
+  - ER 0.25 threshold now captures trending conditions incorrectly; VR ≤ 0.90 insufficient to filter
+  - commission drag erodes positive expected value
+  - win_rate degrades below 45% with larger regime sample
+
+constraints:
+  - one variant only — no divergence, no behavioral features, no cross-timeframe
+  - use only RSIPullbackComponent and existing regime components
+  - no new code required
+  - change ONLY ER threshold; keep VR ≤ 0.90 and all signal transforms unchanged
+
+change_from_previous: >
+  HYPOTHESIS REVISION: Previous run (H-RUN007) failed with trade_count=14–21
+  (below required ≥30). Root cause analysis showed smooth_period reduction
+  (5→2 bars) did not improve Sharpe (-5.019 unchanged), falsifying the lag hypothesis.
+  Instead, regime thresholds (ER ≤ 0.20, VR ≤ 0.90) are too restrictive, starving
+  the strategy of mean_reversion samples.
+  
+  CONFIGURATION CHANGE: Relax ER threshold from 0.20 to 0.25 in
+  regime_detector.rules[0]. This allows low-efficiency (choppy) scenarios up to
+  the trending threshold boundary (ER ≥ 0.25 for trending), capturing more
+  mean_reversion bars without signal mechanism redesign. Expected outcome:
+  trade_count increases toward ≥30, Sharpe improves due to reduced variance
+  from larger sample.

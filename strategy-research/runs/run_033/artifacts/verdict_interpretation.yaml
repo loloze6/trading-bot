@@ -1,0 +1,17 @@
+hypothesis_id: "RUN017_REPLICATION_DIAGNOSTIC"
+protocol_verdict: "refine"
+status: "refine"
+criteria_summary:
+  - "sharpe >= 0.5: FAIL (actual median: 0.0, required: >= 0.5)"
+  - "win_rate >= 0.52: FAIL ETHUSDT (0.0%), PASS BTCUSDT (22.22%)"
+  - "trade_count >= 100: FAIL (min_count: 0 across windows)"
+  - "max_drawdown_pct <= 30: PASS (BTCUSDT: 9.056%, ETHUSDT: 7.573%)"
+primary_failure_mode: "Regime threshold ER>=0.50 AND VR>=1.20 too restrictive; trending regime fires in <30% of windows, yielding median trade_count=0 for ETHUSDT and insufficient binomial power for Sharpe validation. Signal itself shows edge when regime fires (2024-06 BTCUSDT: forecast_corr=0.625, +3.46% net), but scarcity prevents validation."
+config_to_failure_map: "regime_detector.rules[trending]: both conditions (ER>=0.50 AND VR>=1.20) must trigger simultaneously; ER>=0.50 is overly conservative, filtering valid trending markets. Contributes directly to trade_count=0 in 2024-01, 2024-09, 2024-10, and most ETHUSDT windows."
+untested_criteria:
+  - "metrics.json composition (non-numeric threshold)"
+  - "per_regime Sharpe breakdown (non-numeric threshold)"
+  - "per_symbol Sharpe separation (non-numeric threshold)"
+proposed_change_dimension: "regime_filter_er_threshold"
+hypothesis_family: "keltner_breakout"
+altitude_justification: "Rule 4 matched: trending regime listed in uninformative_regimes with mixed forward returns (BTCUSDT 2024-06: -0.00104, 2024-07: -0.00038), firing in only 20-30% of available windows. Regime structure is sound (2024-06 shows +625bps forecast-return correlation), but threshold too tight. Loosen ER 0.50→0.35 to increase regime availability from ~30% to ~45% of windows while preserving signal integrity."

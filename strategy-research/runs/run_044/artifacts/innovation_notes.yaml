@@ -1,0 +1,135 @@
+run_id: run_044
+stage: innovation_expansion
+base_hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+
+expansion_strategy:
+  v1_role: "Run queue baseline. Continuous activation, no filters. Establishes power and effect-size benchmark."
+  v2_v3_role: "Audit-only variants proposed for diversity check per brief shakedown constraint. V2 explores volatility gating; V3 explores sentiment conviction. Both documented in expanded_hypothesis_card.yaml but NOT executed this cycle. Full testing deferred pending V1 results."
+
+candidate_variants_for_future_cycles:
+
+  - variant_id: V2
+    name: FundingRateMeanReversion_KeltnerGate
+    mechanism: "−sign(8h_funding_rate) × scaling_factor, fires only when price within 1σ of Keltner band extremes (upper or lower). Combines structural (settlement) + volatility (band proximity)."
+    edge_source:
+      category: structural_forced_flow + volatility
+      mechanism: "Settlement creates mean-reversion pressure; Keltner extremes mark high-conviction dislocations. Joint: settlement effect maximum at band extremes; minimal mid-range. Filters noise."
+      compatibility:
+        - structural_forced_flow
+        - persistent_behavioral_bias
+    components_required:
+      - "FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0)"
+      - "KeltnerChannelMeanReversionComponent(atr_period=20, atr_dev=1.0) — existing from strategy_components.py"
+    component_composition: "CompositeStrategy: normalized_forecast = w_funding × funding_forecast + w_keltner × keltner_forecast. Keltner outputs zero outside band extremes, effectively gating funding signal."
+    evidence_type: funding_open_interest + ohlcv
+    library_category: structural_rate (primary) + volatility (filter)
+    data_requirements: funding_open_interest + ohlcv_only
+    diversity_axis: "Adds volatility-based high-conviction gating. Changes data_requirements vs V1 (adds ohlcv_only). Introduces cross-category constraint: structural modulated by volatility."
+    parameters:
+      funding_threshold: 0.0
+      funding_scaling_factor: 10.0
+      keltner_atr_period: 20
+      keltner_atr_dev: 1.0
+    estimated_activation_rate: 0.0625
+    activation_rationale: "~6.25%: settlement bars (~12.5%) × fraction with price at Keltner band proximity (~50% estimated). Fewer trades, hypothetically higher quality."
+    regime_affinity_risk: "Keltner unfavorable in trending (library: ic_active_bars=−0.032 in TRENDING labeled bars). V2 inherits this penalty if trending dominates test window. Trade-off: accept regime variance for activation continuity (no regime gating)."
+    testing_priority: "Medium. Test after V1. If V1 high-IC but high false-signal rate, V2 high-value refinement. If V1 zero/negative IC, V2 unlikely to rescue."
+
+  - variant_id: V3
+    name: FundingRateMeanReversion_SentimentAdjust
+    mechanism: "−sign(8h_funding_rate) × scaling_factor × (1 + sentiment_alpha × norm_fng), where norm_fng ∈ [−1, +1]. Sentiment amplifies contrarian signal when crowd is crowded (fear/greed extremes)."
+    edge_source:
+      category: structural_forced_flow + sentiment
+      mechanism: "Settlement creates structural mean-reversion. Sentiment captures crowd positioning: extreme fear = crowd short, high mean-reversion power; extreme greed = crowd long, lower power. Sentiment as conviction multiplier."
+      compatibility:
+        - structural_forced_flow
+        - persistent_behavioral_bias
+    evidence_type: funding_open_interest + fear_and_greed
+    library_category: structural_rate (primary) + sentiment (modifier)
+    data_requirements: funding_open_interest + fear_and_greed
+    diversity_axis: "Adds sentiment conviction multiplier. Changes data_requirements vs V1 (adds fear_and_greed). Blends structural + behavioral edge sources."
+    parameters:
+      funding_threshold: 0.0
+      funding_scaling_factor: 10.0
+      sentiment_alpha: 0.25
+      fng_range: "fear < 25 (norm ≈ −0.5); greed > 75 (norm ≈ +0.5); neutral 25–75 (≈ 0)"
+    activation_rate: 0.125
+    feed_timing_caveat: "Fear & Greed is daily (one value/day, published 00:00 UTC). V3 forward-fills across 24h bars. Staleness trade-off: continuous conviction vs. 24h max signal age. Alternative: fire only at 00:00 (sparse, loses power)."
+    power_caveat: "F&G market-wide (BTC/ETH correlated) → reduced n_eff_symbols. KB (H-041-C): F&G alone insufficient power on 2024-2025. V3 inherits penalty unless structural+behavioral synergy offsets."
+    testing_priority: "Low. Exploratory fusion; power headwinds known. Test only after V1/V2. Useful if V1/V2 succeed and synergy hypothesis drawn."
+
+diversity_audit:
+  categories_spanned:
+    - V1: structural_rate
+    - V2: "structural_rate + volatility"
+    - V3: "structural_rate + sentiment"
+  data_requirements_spanned:
+    - V1: funding_open_interest
+    - V2: "funding_open_interest + ohlcv_only"
+    - V3: "funding_open_interest + fear_and_greed"
+  verdict: real_diversity
+  justification: "V1/V2/V3 span 3 distinct categories and 3 distinct data_requirement sets. V2 vs V1 differ in data_requirements (adds ohlcv_only). V3 vs V1 differ in data_requirements (adds fear_and_greed). V2 vs V3 differ in both. No parameter-sweep cosmetics; each introduces novel data or mechanistic fusion. Real diversity confirmed per Improvement 04."
+  cosmetic_rejects:
+    - "REV1 (polarity flip): Shares structural_rate category + funding_open_interest data_requirements with V1. Rejected per Improvement 04 (same category AND same data_requirements = cosmetic). Documented for completeness; reactivated if V1 IC inverted."
+
+design_decisions:
+
+  - decision: "All variants ungated (no regime detector per A2.3 standing policy)."
+    caveat: "Ungated variants inherit regime risk. V1/V2 mean-reversion may fail in trending (unfavorable regime affinity per library). Trade-off: gain activation continuity; accept regime variability."
+
+  - decision: "V2 (Keltner) uses existing KeltnerChannelMeanReversionComponent. No new code required."
+    caveat: "Keltner unfavorable in trending (KB empirical: ic_active_bars=−0.032 TRENDING). V2 may inherit this penalty if trending regime dominates 2024-2025 test window."
+
+  - decision: "V3 forward-fills daily F&G to 1h resolution for continuous sentiment modulation."
+    caveat: "Staleness: F&G value 24h old by end-of-day. Sentiment conviction decays. Alternative (sparse 00:00 firing) kills power. Forward-fill preserves power; document staleness trade-off in backtest results."
+
+indicator_library_alignment:
+  V1:
+    library_id: funding_rate_extreme
+    category: structural_rate
+    regime_affinity: neutral
+    crowding_risk: low
+    justification: "Non-OHLCV feed; low retail adoption. Funding data is structural, not behavioral."
+
+  V2:
+    library_ids:
+      - funding_rate_extreme (structural_rate)
+      - keltner_channel_mean_reversion (volatility)
+    category_mix: "structural_rate + volatility"
+    regime_affinity: "funding neutral + keltner unfavorable_in_trending"
+    crowding_risk: "low (funding) + medium (keltner)"
+    justification: "Fusion of structural + volatility. Keltner moderately crowded; funding non-crowded. Composite crowding = low-medium."
+
+  V3:
+    library_ids:
+      - funding_rate_extreme (structural_rate)
+      - fear_greed_index_contrarian (sentiment)
+    category_mix: "structural_rate + sentiment"
+    regime_affinity: "funding neutral + fng favorable_in_ranging_and_high_vol"
+    crowding_risk: "low (funding) + medium (fng)"
+    crowding_caveat: "F&G market-wide (shared signal → medium crowding). Structural+sentiment synergy novel; empirical crowding unknown."
+
+feed_wishlist_recommendations:
+  - feed: liquidation_data
+    use_case: "Validate V2 mechanism purity. Volume at settlement may signal organic herding (continuation) vs. cascade (mean-reversion). Decomposition requires liquidation data."
+    priority: medium
+    enables_variants: V2
+
+  - feed: open_interest
+    use_case: "Enable V2b: fire settlement only when OI direction matches settlement pressure. Dual-structural conviction filter."
+    priority: low
+    enables_variants: V2b_future
+
+  - feed: order_book
+    use_case: "Validate behavioral feature BF2 (settlement clustering hypothesis). Order-book depth contraction + spread widening at UTC settlement hours."
+    priority: low
+    enables_features: BF2
+
+session_summary:
+  artifacts_generated:
+    - expanded_hypothesis_card.yaml (V1 for run queue; V2/V3 audit-only with status)
+    - innovation_notes.yaml (expansion rationale, diversity audit, design decisions)
+  diversity_audit_result: "REAL DIVERSITY. V1/V2/V3 span 3 categories and 3 data_requirement sets. All variants ungated per A2.3. No cosmetic parameter sweeps."
+  handoff_to_stage: validation_gate
+  validation_target: V1_only_per_brief_shakedown
+  v2_v3_disposition: "Documented for future cycles; routing depends on V1 backtest results. If V1 high-IC and low false-signal rate, V2 deferred (baseline sufficient). If V1 high-IC + high false-signal, V2 prioritized. If V1 zero/negative IC, V2/V3 not pursued (mechanism unsound)."

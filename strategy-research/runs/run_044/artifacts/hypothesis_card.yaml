@@ -1,0 +1,93 @@
+hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+
+thesis: "The sign of the 8h Binance perpetual funding rate at every settlement boundary carries ungated mean-reversion information on BTC/ETH 1h, raising activation ~8x vs prior extreme-threshold variants and clearing power thresholds on current 2024-2025 data."
+
+rationale: >
+  Funding rate settlement is a mechanical, recurring structural event: every 8 hours,
+  longs or shorts pay funding based on rate sign. This forced adjustment of positions
+  creates predictable mean-reversion pressure. Long-payers reduce exposure (bearish
+  flow); short-payers reduce exposure (bullish flow). The mechanism holds at all
+  funding magnitudes (not just extremes), making the signal continuous rather than
+  rare. H-041-A tested only extreme funding (threshold > 0.001); activation was sparse
+  (n_eff=10, insufficient power). This hypothesis removes the magnitude gate, activating
+  at every settlement bar (threshold=0.0), raising activation_rate ~8x to ~12.5% and
+  n_eff to ~100, enabling adequate a-priori power on 2024-2025 window.
+
+edge_source:
+  category: structural_forced_flow
+  specific_mechanism: "At every 8h funding settlement (UTC hour % 8 == 0), the sign of perpetual funding rate determines which side must reduce positions: positive funding (longs pay) → longs' adjustment costs accumulate → mean-reversion sell impulse; negative funding (shorts pay) → shorts' adjustment → mean-reversion buy impulse. Settlement is mechanical and non-optional; even small rates force cumulative position adjustments, creating recurring mean-reversion opportunity at settlement windows."
+  why_not_arbitraged: "Funding settlement fees (0.03–0.05% per 8h) consume 2–5 bps per settlement. Full arbitrage requires capital deployed per settlement cycle, facing slippage and execution friction. Most participants either pay funding (retail leveraged) or receive it (large providers), not both; true arbitrage capital is constrained. Effect persists due to capital scarcity and asymmetric participation."
+  evidence_type: funding_open_interest
+  measurable_proxy: "8h perpetual funding rate (sign and magnitude, UTC hour % 8 == 0). Mechanism-present: non-zero funding rate forces position rebalancing → mean-reversion. Mechanism-absent: zero funding (rare) → no forced flow. Proxy is directly observable from Binance funding_rate feed."
+  requires_new_feed: null
+
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+
+timeframe: "1h"
+
+assumptions:
+  - "Funding settlement occurs at UTC hours 0, 8, 16 every day with no drift; candle.hour % 8 == 0 reliably identifies settlement bars."
+  - "Mean-reversion half-life from settlement pressure is < 8 bars (< 8h), making next-bar forecast useful."
+  - "Market structure and funding magnitudes during 2024-2025 remain representative of future periods; no structural funding regime shift."
+  - "Execution possible at or near mid-price; slippage and fees ≤ 5 bps per round-trip."
+  - "BTC and ETH funding rates move independently; per-symbol forecast is meaningful."
+
+expected_failure_modes:
+  - "FAILURE 1 — Funding signal too small. Settlement flow (2–5 bps cost) masked by noise. If mean-reversion half-life > 8h or < 1h, signal fires at wrong timing; zero correlation to returns."
+  - "FAILURE 2 — Liquidation cascade dominance in high-vol. Indicator lib notes funding_rate_extreme has favorable affinity in high_vol regimes, but this may reflect liquidation cascade inversion of the modest settlement signal. Ungated (no vol filter) inherits this risk."
+  - "FAILURE 3 — Cost drag at continuous activation. At ~12.5% bar activation (3 trades/day), accumulated slippage (~1 bp) + fees (~1–2 bp) = ~2–3 bps per round-trip. If gross IC < 5 bps per trade, cost drag eliminates edge."
+  - "FAILURE 4 — Historical structural change. Funding rates during 2024-2025 were lower and tighter than 2020-2022. If edge existed in high-funding regimes but decayed by 2024-2025, IC will be near-zero on current window despite mechanism being sound in principle."
+  - "FAILURE 5 — Scale mismatch in forecast. Funding sign is ordinal (−1, 0, +1); forecast is scaled (10.0 × sign). Downstream allocation logic may misalign this scaling, producing correct direction but catastrophic magnitude error → negative Sharpe despite positive correlation."
+
+library_lookup:
+  indicator_id: funding_rate_extreme
+  indicator_category: structural_rate
+  regime_affinity_for_target: neutral
+  affinity_justification: "Ungated (no regime condition per A2.3 standing policy). Underlying indicator has favorable affinity in high_vol, neutral in trending/ranging. Risk noted in expected_failure_modes. Ungated formulation does not commit to regime—all regimes treated equally."
+  prior_campaign_failures:
+    - hypothesis_id: H-041-A
+      run_id: run_041
+      mechanism_tried: "Extreme funding threshold > 0.001; sparse activation ~1.25% (n_eff=10)"
+      outcome: "inconclusive; insufficient_sample_inconclusive"
+      mechanism_difference: "Current uses threshold=0.0 (continuous, all settlement bars, not just extremes); activation ~12.5% (~8x higher); mechanistic claim is incremental crowd-positioning pressure from all funding magnitudes, not only forced deleveraging from extremes. Structurally distinct per A8.5.3."
+  crowding_risk: low
+  crowding_deviation_justification: "Funding feed is non-standard (not OHLCV-only); low adoption among retail algo strategies. Indicator class structural_rate is less arbitraged than oscillators or moving-average signal classes."
+
+power_parameters:
+  activation_rate: 0.125
+  plausible_ic_upper: 0.15
+  n_bars: 17520
+  n_symbols: 2
+  n_symbols_effective: 1.1
+  is_market_wide: false
+  a_priori_calculation: "expected_active_n = 0.125 × 17520 × 1.1 = 2409; expected_n_eff = 2409 / 24 = 100.4; min_detectable_ic = 1 / sqrt(97.4) ≈ 0.10. Min detectable IC (0.10) < plausible_ic_upper (0.15); adequate a-priori power. Calculation per A8.6 formula. 2-year window (2024-2025) = ~17,520 bars; BTC/ETH correlation ≈0.82 → n_eff_symbols ≈ sqrt(2) / (1 + 0.82) ≈ 1.1."
+  verdict: sufficient_power_a_priori
+  power_notes: "Estimated 1-beta ≈ 0.60–0.70 at plausible IC ≈0.12 (midpoint of range). Passes A8.6 a-priori gate; no power-parked routing. Activation every 8h settlement (3 bars/day ≈ 12.5%) enables n_eff~100 vs n_eff~10 in H-041-A's sparse extreme-only variant."
+
+signal_concept: >
+  FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0) fires at
+  every 8h UTC settlement boundary (candle.hour % 8 == 0) regardless of funding
+  magnitude. Forecast = −sign(funding_rate) × scaling_factor at settlement bars;
+  forecast = 0 elsewhere. Ungated: no regime filter (A2.3 standing policy). Signal
+  fires every settlement bar without reduction or gating.
+
+variant_note: "V1 (run queue execution, single variant). Expanded variants V2/V3 proposed in expanded_hypothesis_card.yaml for diversity audit only; NOT executed in current cycle."
+
+metadata:
+  run_id: run_044
+  from_stage: init
+  to_stage: hypothesis_generation
+  created_at: "2026-07-04"
+  kb_exhausted_mechanism_check: "H-041-A (funding_rate_mean_reversion_inconclusive, exhausted=false) exists in KB. Current proposal is structurally distinct mechanism (threshold=0.0 vs 0.001; activation ~8x higher; edge claim is incremental positioning vs forced deleveraging). Not a re-proposal of same mechanism. New variant acceptable per A5.1 and A8.5.3 reactivation allowance."
+  a_constraints_compliance:
+    - "IMPROVEMENT 01: edge_source fully populated before signal_concept. ✓"
+    - "A1.2: evidence_type funding_open_interest confirmed in available_feeds.yaml.available. ✓"
+    - "A1.3 anti-confabulation: specific_mechanism names measurable proxy (8h funding rate sign). ✓"
+    - "A2.3 ungated: no regime filter. ✓"
+    - "IMPROVEMENT 04 library lookup: complete; prior H-041-A contextualized; crowding_risk low; mechanism_purity OK. ✓"
+    - "A8.6 power check: a_priori power adequate (n_eff≈100, min_detectable_ic≈0.10 < plausible 0.15). ✓"
+    - "Existing component only: FundingRateMeanReversionComponent, threshold=0.0, from strategy_components.py. ✓"
+    - "One variant for run queue: V1 only; V2/V3 in expanded card (audit only). ✓"
+    - "Architecture-preserving: integrates into forecast → allocation → rebalance pipeline without replacement. ✓"

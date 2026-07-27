@@ -1,0 +1,86 @@
+expansion_stage: "innovation_expansion"
+run_id: "run_022"
+from_stage: "hypothesis_generation"
+to_stage: "validation_gate"
+refinement_attempt: 0
+
+expansion_rationale: |
+  Brief does not constrain variant count; constraints are architectural (4h timeframe, 
+  TRENDING regime, RSI/catalog components). Expansion explores signal sensitivity (V2), 
+  behavioral gating (V3), hypothesis reversal (V4), and alternative indicators (V5)—
+  all testable in current framework. Variants preserve constraints while isolating 
+  distinct failure modes from 1h campaign (trade starvation, signal weakness, regime mismatch).
+
+variant_design_principles:
+  signal_sensitivity: |
+    V2 tests whether 30/70 thresholds are miscalibrated for 4h bar velocity. At 1h, 
+    RSI frequently crosses boundaries; at 4h, price oscillation within a bar may be lower,
+    requiring looser thresholds. Expected trade count increase (450–550 vs 350–400) isolates
+    threshold effect from regime-gate effect. Mathematical: if V2 Sharpe > V1 at same cost drag,
+    threshold mismatch was the blocker.
+  
+  behavioral_confirmation: |
+    V3 adds AND gate (RSI + price structure). Rationale: low trade count (FM1) may mean
+    RSI signals are rare, not that they lack correlation. SMA(20) confirmation filters noise
+    at cost of frequency (150–250 vs 350–400). Mathematical trade-off: if Sharpe(V3) > Sharpe(V1)
+    despite 50% fewer trades, signal quality improvement outweighs frequency loss.
+  
+  hypothesis_reversal: |
+    V4 is falsification test. TRENDING regime (high ER≥0.50, high VR≥1.20) could indicate
+    trending (momentum) or extreme mean-reversion (wide swings). Inverting signal direction
+    (long on RSI > 70 instead of < 30) tests which interpretation is correct. If V4 outperforms V1,
+    regime captures momentum, not consolidation; hypothesis space reframes without regime escalation.
+  
+  alternative_components: |
+    V5 replaces RSI with Stochastic(14,3,3). Both are non-adaptive momentum indicators;
+    Stochastic is smoother (SMA3 of K-line). If both fail at 4h (corr ≈ 0), edge-loss is
+    indicator-generic, not RSI-specific. Isolates: (a) timeframe-level microstructure fault,
+    (b) regime definition mismatch, (c) instrument suitability (rather than signal tuning).
+
+alternative_data_strategy:
+  OBV_divergence: |
+    RSI < 30 + OBV declining = high-confidence oversold (capitulation).
+    RSI < 30 + OBV flat/rising = low-confidence (distribution masking as accumulation).
+    Cost: low (derived from OHLCV). Integration: post-signal AND gate (similar to V3 SMA logic).
+    Timing: defer to V3+ iterations; do not add to V1–V5 screening.
+  
+  orderbook_data: |
+    Out-of-scope for backtest. Current framework does not support live order book snapshots.
+    Candidate for live trading refinement (real-time margin/spot ratio monitoring).
+
+failure_mode_mapping:
+  FM1_trade_starvation: |
+    Low trade count (< 25 aggregate). V2 and V3 address directly: V2 increases frequency 
+    via looser thresholds, V3 trades frequency for quality. If both fail to hit 25 trades,
+    regime gate (ER≥0.50, VR≥1.20) is too strict; escalate to regime definition.
+  
+  FM2_signal_weakness: |
+    Correlation < 0.03 despite adequate trade count. V1, V4, V5 isolate: V1 establishes 
+    baseline, V4 tests hypothesis direction, V5 tests indicator family. If all three fail,
+    signal weakness is systemic; escalate to regime definition or instrument.
+  
+  FM3_cost_drag: |
+    Cost drag > 80% despite trade volume recovery. V2 and V3 may increase or decrease cost:
+    V2 more frequent = higher slippage cost; V3 higher-confidence = better fill quality.
+    Mathematical: cost_drag = total_slippage / gross_return. If V3 cost < V1 cost, gating 
+    improves execution quality (fewer false signals = better average fills).
+
+validation_gate_inputs:
+  required: |
+    - V1–V5 backtest runs (correlations, Sharpe, cost drag, trade count per variant)
+    - V1 baseline metrics (to compare against V2–V5)
+    - Trade-by-trade correlation per variant (to validate correlation > 0.03 claim)
+  
+  decision_criteria: |
+    1. Does any variant (V1–V5) pass all base_criteria (Sharpe ≥ 0.3, corr > 0.03, trade count ≥ 25, cost < 50%)?
+       - YES → proceed to screening_backtest with winning variant(s).
+       - NO → escalate to regime definition or instrument; do not retry signal variants.
+    2. Which variant class performs best (V2 sensitivity, V3 behavioral, V4 reversal, V5 alternative)?
+       - Indicates which hypothesis dimension is at fault and guides regime escalation.
+
+handoff_readiness: |
+  Expanded card and innovation notes provide five distinct, testable variants. Each variant
+  isolates one hypothesis dimension (sensitivity, behavioral gating, reversal, alternative component).
+  Variants are mathematically scoped (no prose padding, clear decision rules per variant class).
+  All variants fit current framework; no infrastructure, data fetches, or parameter search required.
+  Ready for screening_backtest stage.

@@ -1,0 +1,111 @@
+run_id: "run_021"
+stage: "innovation_expansion"
+base_hypothesis_id: "V3-ESCALATE-4H-KELTNER"
+refinement_attempt: 0
+
+expansion_scope: |
+  Research brief is tightly constrained (4h fixed, signal params locked, TRENDING gate fixed).
+  Expansion applies DIMENSIONALITY TESTING: directional robustness (V2), asset generalization (V3/V4),
+  and conditional regime refinements (V5/V6 if V1 screening warrants).
+  Each variant respects brief's core prescriptions while testing distinct risk/assumption axes.
+
+variant_construction:
+
+  V1:
+    novelty_level: "None (replication)"
+    constraint_compliance: "Exact match to brief specifications"
+    risk_profile: |
+      Inherits all brief assumptions. If 4h doesn't fix trade starvation despite
+      formal escalation decision, entire hypothesis fails. Single point of failure.
+    justification: "Direct response to formal escalation_request.yaml (run_020). Primary hypothesis."
+
+  V2:
+    novelty_level: "Signal inversion (directional reversal)"
+    constraint_compliance: |
+      JUSTIFICATION: Reverse hypothesis is mandated by innovation expansion rules
+      ("Consider the reverse version of the thesis"). V2 is NOT a parameter variant;
+      it's a validity test of the directional edge. Brief prescribes V1; innovation
+      rules mandate testing V1's opposite.
+    risk_profile: |
+      If V2 ≈ V1 performance, rejects directional edge hypothesis and proves both
+      directions are equally valid (implies noise, not skill). Fundamental failure mode.
+    interpretability: "Binary: V1 >> V2 (edge is real) OR V1 ≈ V2 (edge is regime artifact)"
+
+  V3:
+    novelty_level: "Asset isolation (market-structure variant)"
+    constraint_compliance: "Same component, params, regime; only target market subset"
+    risk_profile: |
+      If trade_count(BTC) << V1/2, regime gate too strict for isolated BTC.
+      If Sharpe(BTC) << Sharpe(ETH), ETH dominates composite; suggests separate handling.
+    interpretability: "Deterministic variance decomposition: BTC Sharpe vs ETH Sharpe"
+
+  V4:
+    novelty_level: "Asset isolation (market-structure variant)"
+    constraint_compliance: "Same component, params, regime; only target market subset"
+    risk_profile: |
+      Mirror of V3. If Sharpe(ETH) << Sharpe(BTC), BTC is the real edge; ETH adds noise.
+      Guides portfolio allocation strategy (pair vs segregated trading).
+    interpretability: "Completes asset variance mapping; enables attribution analysis"
+
+  V5_Contingent:
+    novelty_level: "Regime timing filter (behavioral variant)"
+    constraint_compliance: "No new components; gates existing component on regime persistence"
+    trigger: "Only if V1 screening shows trade_count > 50 AND Sharpe < 0.4"
+    rationale: |
+      Hypothesis: Mean-reversion edge is strongest at regime ENTRY (transition momentum),
+      weaker in sustained TRENDING. Restricting to first 2 bars of regime capture peak alpha.
+
+  V6_Contingent:
+    novelty_level: "Regime conviction filter (behavioral variant)"
+    constraint_compliance: "No new components; waits for regime confirmation before trading"
+    trigger: "Only if V1 screening shows cost_drag > 70% AND 20 < trade_count < 40"
+    rationale: |
+      Hypothesis: False-positive regime detections (1-bar TRENDING blips) incur cost_drag.
+      Requiring ≥2 consecutive bars confirms regime, filters noise.
+
+assumptions_tested:
+  - assumption: "1h edge (corr=+0.214) from run_017 is a real skill signal, not fitting artifact"
+    test_variant: "V2 (reverse direction)"
+    acceptance_criterion: "V1 Sharpe ≥ V2 Sharpe + 0.5"
+
+  - assumption: "4h timeframe escalation fixes trade starvation caused by strict TRENDING gate"
+    test_variant: "V1 (primary)"
+    acceptance_criterion: "trade_count ≥ 25 in screening window"
+
+  - assumption: "4h mean-reversion edge is universal across BTCUSDT and ETHUSDT"
+    test_variant: "V3, V4 (asset-specific)"
+    acceptance_criterion: "Sharpe(BTC) and Sharpe(ETH) both > 0.2; ratio in range [0.5, 2.0]"
+
+  - assumption: "Mean 4h price move is ≥4x larger than typical 1h move (cost amortization)"
+    test_variant: "V1 (measurement during backtest)"
+    acceptance_criterion: "cost_drag ≤ 70%; move_4h / move_1h ≥ 3.5"
+
+data_availability_review:
+  - "OHLC data (required): Available in full backtest pipeline"
+  - "ATR indicator (required): Calculated from OHLC; no external dependency"
+  - "ER/VR regime detection (required): Implemented in AdvancedStrategy; available"
+  - "Order flow, liquidations, cross-TF data (optional, for V5/V6+): Not in current pipeline; deferred"
+
+next_stage_handoff: |
+  Deliverable: expanded_hypothesis_card.yaml
+  
+  Validation gate (stage 5) will:
+  1. Accept V1-Base as primary screening target.
+  2. Run full-window screening backtest on V1.
+  3. If V1 passes (trade_count ≥ 25, Sharpe > 0.3): advance to walk_forward_validation with V1.
+  4. If V1 fails: apply refinement loop; consider V2/V3/V4 as alternatives only if V1 is fundamentally broken.
+  5. If V1 passes but Sharpe > 0.8: backtest V2/V3/V4 in parallel for comparative advantage.
+  6. Conditional variants V5/V6: only if V1 post-hoc metrics warrant (trade_count/cost_drag thresholds).
+
+quality_checklist:
+  - All variants use KeltnerBreakoutComponent (catalog-only): ✓
+  - All variants respect 4h timeframe: ✓
+  - All variants respect TRENDING gate (ER≥0.50, VR≥1.20): ✓
+  - No infrastructure changes required: ✓
+  - Each variant tests distinct hypothesis/assumption: ✓
+  - At least one conservative variant (V1): ✓
+  - Reverse hypothesis included (V2): ✓
+  - Alternative data candidates documented (3 entries, 1-2 realistic, rest deferred): ✓
+  - Behavioral features enumerated (4 features, interpretable metrics): ✓
+  - Regime-specific variants documented with triggers: ✓
+  - No generic brainstorming prose; all rationale is mathematical or mechanistic: ✓

@@ -1,0 +1,52 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY_ER20GATE"
+
+thesis: "Gating SMA(100) long-only daily entries on Kaufman Efficiency Ratio ER(20) >= 0.30 removes negative-expectancy whipsaw entries, improving bar-level risk-adjusted returns while preserving positive per-episode expectancy on taken trades."
+
+rationale: "Parent run_054 (ungated SMA(100) daily long-only) achieved +1050.5 bps per-trade expectancy (t=1.91, n=117) but uneven window-level Sharpe (0.579 BTC, 0.032 ETH, medians). Fragment analysis showed long-hold positions won 65.6% vs. short/medium-duration whipsaws net-negative. The gate hypothesis predicts ER(20) >= 0.30 at entry selects trending regimes where SMA crosses carry positive expectancy, filtering choppy-market false signals. This is a lineage refinement (parent verdict: refine_pending_regime_gating), not a new mechanism."
+
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "SMA(100) crossovers occur in both trending and choppy regimes; in choppy regimes (low ER), signals reverse rapidly (whipsaw losses). Kaufman Efficiency Ratio ER_t(n) = abs(close_t - close_{t-n}) / sum(abs(close_i - close_{i-1})) measures directional efficiency: high when price moved trending, low when choppy. Filtering entries to ER(20) >= 0.30 (conventional trending threshold) removes entries in choppy regimes where per-trade expectancy is negative."
+  why_not_arbitraged: "Entry gating requires parameter discipline and dual-path signal maintenance. Most SMA(100) traders apply raw signals without regime filtering. The ER=0.30 threshold is convention-based (Kaufman literature), not data-tuned, making it labor-intensive to discover. Individual traders rarely layer efficiency filters; institutional adoption is partial and heterogeneous."
+  evidence_type: price_volume_only
+  measurable_proxy: "Kaufman Efficiency Ratio ER_t(20) computed from daily closes: ER_t(20) = abs(close_t - close_{t-20}) / sum_{i=t-19..t} abs(close_i - close_{i-1}). Mechanism predicts: (a) entries with ER_t(20) >= 0.30 have per-episode expectancy > 0 (bps); (b) excluded entries (ER < 0.30) have per-episode expectancy <= 0."
+  requires_new_feed: null
+
+signal_concept: "SMA(100) daily cross-up signals are entry-gated: taken iff ER_t(20) >= 0.30 at bar-close t, else skipped (no deferred entry). Exits unchanged (parent rule: cross-down). Both indicators computed on same warmed-up close series (no lookahead). Primary gate: ER(20) >= 0.30, frozen a-priori. Secondary S1: ER(10) >= 0.30 (Kaufman KAMA standard). Secondary S2: mechanism validation (excluded entries have per-episode expectancy <= 0)."
+
+target_market: "BTC/ETH spot (BTCUSDT, ETHUSDT). Long-only, overnight holds allowed."
+
+timeframe: "1d (daily bars)"
+
+assumptions:
+  - "Kaufman ER(20) >= 0.30 is a valid trending-regime proxy at daily bar resolution."
+  - "SMA(100) crosses in choppy regimes (ER < 0.30) have persistent mean-reversion resistance and negative carry."
+  - "Parent per-trade expectancy (+1050.5 bps ungated) is causally driven by regime composition (trending vs. choppy splits), not by per-parameter edge within the trend subset."
+  - "Gate threshold is frozen a-priori per published ER literature; no lookahead or data-snooping bias introduced."
+  - "Episode-level LIFO matching accurately reflects position economics; bar-level Sharpe is a valid risk-adjusted metric for sparse-trade windows."
+
+expected_failure_modes:
+  - "Gate too conservative: ER(20) >= 0.30 filters high-probability entries, reducing trade floor. Sharpe improves on smaller n, but per-episode expectancy falls below 0, failing pass rule (b)."
+  - "Gate too permissive: ER still includes choppy entries, zero selectivity. Sharpe remains below 0.5791 (BTC) or 0.0318 (ETH) baseline, no Sharpe improvement."
+  - "Regime composition was not the constraint: per-trade expectancy on gated subset remains positive, but window-level Sharpe is driven by trade sizing or cost, not regime. Gate mechanically reduces n, amplifying variance."
+  - "Era-conditional instability: gate works in 2018-2024 but fails 2025 (market structure shift, ER informativeness loss on daily timeframe). S1 robustness check (ER(10)) or S2 mechanism check may flag directional disagreement."
+
+library_lookup:
+  indicator_id: "moving_average_crossover + custom_efficiency_filter"
+  indicator_note: "This hypothesis combines the library's moving_average_crossover (SMA(100) daily) with a custom Kaufman ER(20) entry gate not in the library. The filter is strategy-internal, frozen a-priori per user brief."
+  regime_affinity_for_target: "neutral"
+  affinity_justification: "The parent SMA(100) has unfavorable affinity in ranging regimes per library. The ER gate is an ENTRY FILTER, not a regime detector (user brief explicitly: ER(20) is strategy-internal, not a validated detector per Step-02 gate). The gate selects from SMA(100) superset; it does not classify regimes. No regime-affinity assessment applies to the gated variant as a detector — only entry selectivity."
+  prior_campaign_failures: []
+  crowding_risk: medium
+  crowding_deviation_justification: "Parent SMA(100) is high-crowding (textbook indicator). This variant applies custom a-priori efficiency filter, reducing effective entry-population crowding. Not universally arbitraged; ER(20) gate is less common than raw MA."
+
+power_parameters:
+  activation_rate: 0.25
+  activation_rate_note: "Bars-in-position (the quantity _run_a86_power_check and prescreen's active-bar machinery consume — confirmed vs parent run_054 precedent, 0.45 ungated). Prior value 0.04 was mislabeled entries-per-bar. 0.25 is a deliberately punitive floor (~45% of parent in-position bars lost to the gate; whipsaw entries are short-duration so true loss should be smaller). Sensitivity: check passes down to activation_rate ~0.10, so this estimate is not load-bearing."
+  n_bars: 2715
+  n_bars_note: "15 semi-annual windows * ~181 bars/window (per-symbol evaluation). Evaluated separately per symbol."
+  n_symbols: 2
+  is_market_wide: false
+  plausible_ic_upper: 0.06
+  plausible_ic_upper_note: "Parent ceiling retained (high-crowding textbook MA family). The prior 0.08 'custom filter reduces crowding' upgrade was not pre-registered and is struck."
+  power_note: "A8.6 machine formula (run_phase1_research.py _run_a86_power_check), inputs activation_rate 0.25, n_bars 2715, n_symbols 2, block_size 1 for 1d: expected_n_eff = 1357.5; min_detectable_ic = 0.0272 < 0.06 -> power_adequate. Episode significance: pooled n_episodes >= 8 per A8.5.1a-spec rule 3 (campaign_config.yaml episode_significance.min_n_episodes) — pooled, not per-window. Per-window trade floor for Sharpe validity is A3.4 (default 5 trades; below-floor windows report null Sharpe). Corrected 2026-07-10 by operator instruction: prior block mislabeled activation_rate (entries-per-bar vs bars-in-position), cited A3.6 erroneously, and described a calculation the machine gate never runs."

@@ -1,0 +1,30 @@
+run_id: run_027
+stage: innovation_expansion
+
+expansion_approach: |
+  Brief constraints (signal lock, regime thresholds lock, config lock, no OR-gate, no new signal families) 
+  severely limit variant space. This is configuration validation (run_021 bug fix), not signal discovery. 
+  Expansion focuses on: (1) exact specification (V1), (2) asset-level robustness (V2), (3) explicit failure modes.
+
+variant_justification: |
+  V1 (Primary): Exactly per brief specification. Conservative, required.
+  V2 (Asset-Isolation): Tests if signal edge is generic (works on both BTCUSDT, ETHUSDT) or asset-specific. 
+  Does NOT violate brief—uses identical signal/regime/config, differs only in asset scope. 
+  Provides early signal if one asset is fundamentally incompatible.
+
+reverse_hypothesis_metrics: |
+  Primary falsifiers: (1) corr<0.10 → signal does not transfer to 4h. (2) cost_drag≥80% → duration scaling does not work. 
+  (3) trade_count/month<0.3 → TRENDING fires too sparsely; monthly sample insufficient. 
+  (4) sharpe_median<0 → high in-window Sharpe but median negative due to sparse sample variance. 
+  Track all four during validation; each maps to a specific mechanism.
+
+key_validation_gates: |
+  Before screening backtest: (1) Verify config: default_regime=unknown (not trending from run_021). 
+  (2) Data integrity: 4h candles built correctly, regime detection runs without error. 
+  (3) Early stop rule: If V1 shows corr<0.10 or cost_drag>80% in first window, skip full backtest.
+  (4) V2 divergence: If |corr_BTCUSDT - corr_ETHUSDT|>0.10, flag for asset-specific downstream tuning.
+
+next_stage_handoff: |
+  Proceed to validation_gate with V1 as primary, V2 as parallel robustness check. 
+  Gate should confirm config correctness and establish early-stop thresholds. 
+  If gate passes, move to screening_backtest with full date range; track trade frequency to confirm regime spacing assumptions.

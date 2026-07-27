@@ -1,0 +1,42 @@
+run_id: "template"
+from_stage: "hypothesis_generation"
+to_stage: "innovation_expansion"
+objective: "Expand the base hypothesis into novel, testable variants."
+primary_input_artifact: "artifacts/hypothesis_card.yaml"
+required_inputs:
+  - path: "artifacts/research_brief.yaml"
+    reason: "Ensures variants respect the architectural constraints."
+  - path: "artifacts/hypothesis_card.yaml"
+    reason: "The base hypothesis to expand. Inherits edge_source block — all variants must preserve or refine the declared mechanism."
+  - path: "../../config/available_feeds.yaml"
+    reason: "A1.2: at least one variant must use a non-price_volume_only evidence_type from this list. funding_open_interest is available today."
+required_inputs:
+  - path: "artifacts/research_brief.yaml"
+    reason: "Ensures variants respect the architectural constraints."
+  - path: "artifacts/hypothesis_card.yaml"
+    reason: "The base hypothesis to expand. Inherits edge_source block — all variants must preserve or refine the declared mechanism."
+  - path: "../../config/available_feeds.yaml"
+    reason: "A1.2: at least one variant must use a non-price_volume_only evidence_type from this list. funding_open_interest is available today."
+  - path: "../../config/indicator_library.yaml"
+    reason: "Improvement 04: read category and data_requirements for each proposed variant. Diversity test requires variants span ≥2 categories or data_requirements. Cosmetic diversity (same category, same data_requirements, parameter change only) is rejected."
+optional_inputs:
+  - path: "artifacts/refinement_notes.yaml"
+    reason: "CRITICAL: If this exists, you are in a refinement loop. You MUST apply these fixes to the rejected variants."
+injected_context: {}
+constraints:
+  - "Keep at least one conservative variant."
+  - "IMPROVEMENT 01: at least one variant must use evidence_type != price_volume_only (funding_open_interest satisfies this)."
+  - "POST-A2.3: regime_specific_variants go in that field with status: detector_wishlist_pending — NOT in expanded_variants (the run queue)."
+  - "expanded_variants must contain only ungated formulations."
+  - "If modifying an existing variant based on refinement notes, state explicitly how the blocker was resolved."
+  - "TOKEN LIMIT: Do not write conversational filler. Keep all rationale strictly mathematical and limit text descriptions to under 100 words per section."
+  - >
+    IMPROVEMENT 04 DIVERSITY CHECK: Before finalizing expanded_variants, look up each
+    variant's indicator in config/indicator_library.yaml. All variants sharing the same
+    library category AND data_requirements = cosmetic diversity → expansion REJECTED, must redo.
+    Each variant must carry library_category, data_requirements, diversity_axis fields.
+    Write diversity_audit section in innovation_notes.yaml.
+deliverables:
+  - "expanded_hypothesis_card.yaml"
+  - "innovation_notes.yaml"
+assigned_engine: "claude"

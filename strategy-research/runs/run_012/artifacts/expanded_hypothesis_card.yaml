@@ -1,0 +1,46 @@
+hypothesis_id: H-RUN007
+base_hypothesis_id: H-RUN007
+
+base_thesis: >
+  RSI(14) pullback signals in mean_reversion regime (ER ≤ 0.20, VR ≤ 0.90)
+  generate positive expected returns in BTCUSDT 1h.
+
+expansion_scope: |-
+  research_brief.yaml constraint: "one variant only"
+  Decision: No expansion applied. Single variant (V1) passes base hypothesis
+  through with configuration adjustment (smooth_period: 5 → 2 bars).
+  This directly targets the regime detection lag failure mode identified
+  in H-RUN007-V1 without altering signal mechanism or requiring code changes.
+
+expanded_variants:
+  - variant_id: V1
+    label: RSI Pullback Mean-Reversion (Lag-Corrected Config)
+    signal_mechanism: >
+      forecast = (50 - RSI14) × regime_mask, where
+      regime_mask = 1 if (ER ≤ 0.20 AND VR ≤ 0.90) else 0.
+      Long-only, no divergence, no behavioral overlays.
+    configuration_change: >
+      ER smooth_period: 5 → 2 bars. Reduces regime detection lag
+      from 5 hours to 2 hours, aligning with observed 2–3 hour
+      mean-reversion window duration.
+    failure_mode_addressed: >
+      H-RUN007-V1 produced -5.019 Sharpe across 24 walk-forward windows.
+      Root cause: regime lag, not signal edge. Config adjustment isolates
+      and corrects lag while preserving RSI pullback mechanism.
+    constraints_satisfied:
+      one_variant_only: true
+      no_divergence: true
+      no_behavioral_features: true
+      no_cross_timeframe: true
+      existing_components_only: true
+      configuration_change_only: true
+
+alternative_data_candidates: []
+
+reverse_hypothesis: null
+
+behavioral_features: []
+
+regime_specific_variants: []
+
+readiness_for_validation: true

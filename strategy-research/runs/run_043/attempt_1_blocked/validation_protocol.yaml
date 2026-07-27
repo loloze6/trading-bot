@@ -1,0 +1,57 @@
+hypothesis_id: "EMA_SPREAD_TREND_CONTINUATION"
+base_hypothesis_id: "EMA_SPREAD_TREND_CONTINUATION"
+
+falsifiable_statement: "EMA spread (fast=9, slow=21, 1h) positive signal predicts positive 1-4 bar return; median Spearman IC across walk-forward windows > 0. Ungated (95% activation)."
+
+null_expectation: "IC ≤ 0 (spread is noise or negatively correlated due to regime dependence). Zero edge survives transaction cost."
+
+required_evidence:
+  - "Walk-forward IC > 0 across ≥4 disjoint windows (2024-12-01 to 2025-12-31)"
+  - "Win rate ≥ 52% (indicates positive edge before costs)"
+  - "Gross edge ≥ 34 bps/trade (BTCUSDT) or 35 bps/trade (ETHUSDT) to clear 2× round-trip cost"
+  - "Min trade count ≥ 500 per window (ensures statistical significance)"
+
+bias_risks:
+  - "Forward bias (none): spread uses close price, available at bar close only"
+  - "Overfitting risk (high): MA is taught globally; 95% ungated activation amplifies crowding. No regime gating means strategy must perform across ranging and trending periods equally"
+  - "Transaction sequence risk (high): 1-4 bar holds at 1h timeframe incur 2-3 round-trips/day; slippage, fills during volatility spikes compound cost"
+  - "Regime dependence (unchecked): spread widens in trends, tightens in ranges. Signal IC likely negative or near-zero during ranging periods, creating drawdown windows"
+
+failure_modes:
+  - "Cost drag dominates: positive IC but edge < 34 bps/trade; high turnover (5-10 trades/day) makes transaction friction insurmountable"
+  - "IC collapses to zero (or negative) when regime is ranging (~40-50% of time); walk-forward IC is average of trending + ranging periods"
+  - "Mean reversion whipsaws: 1h timeframe with 2-3 bar holds susceptible to market microstructure noise; spread signal is mean-reverting itself (breaks on same bar it fires)"
+  - "Correlation drag: 95% ungated activation means low signal selectivity; many trades enter/exit near indifference points; IC correlation to true 1-bar return is low"
+  - "Parameter drift: EMA 9/21 may be suboptimal across different volatility regimes; walk-forward may show performance decay"
+  - "Cumulative slippage: each round-trip is modeled at 17 bps; actual fills under volatile conditions (when signals fire) may exceed model, eroding edge"
+
+sample_split_design:
+  walk_forward_range: "[2024-12-01, 2025-12-31]"
+  holdout_range: "[2026-01-01, 2026-06-30]"
+  holdout_note: "Single-use per A6.1. Reserved for final holdout_evaluation stage only. No intermediate screening or diagnostic reads permitted."
+  windows: 4
+  window_size_bars: 2160
+  step_size_bars: 2160
+  window_detail: "Non-overlapping walk-forward; each ~90 calendar days. Window 1: 2024-12-01–2025-02-28; Window 2: 2025-03-01–2025-05-29; Window 3: 2025-05-30–2025-08-27; Window 4: 2025-08-28–2025-12-31."
+
+decision_rules:
+  - "Sharpe (walk-forward median): PASS if ≥ 0.5 across all windows (indicates positive mean return relative to vol)"
+  - "Win rate: PASS if ≥ 52% (baseline; requires edge)"
+  - "Trade count (min per window): PASS if ≥ 500 trades per window (n sufficient for IC estimation)"
+  - "Max drawdown pct: PASS if ≤ 20% (risk tolerance; extreme drawdown => regime tail risk)"
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: "17.0 (BTCUSDT primary; ETHUSDT 17.5)"
+  expected_holding_bars:
+    min: 1
+    max: 4
+    mean_assumption: 2.5
+  expected_trades_per_window: "~800–1000 (95% ungated, 2160 bars/window, 2.5 bar mean hold → 864 trades/window nominally)"
+  required_gross_edge_bps_per_trade: "34 (BTCUSDT: 2×17); 35 (ETHUSDT: 2×17.5)"
+  plausibility: "marginal"
+  plausibility_rationale: "EMA-based trend signals are well-established on crypto 1h timeframes and commonly demonstrate 10–30 bps gross edge in favorable regimes. However, 95% ungated activation incurs high transaction friction: 800–1000 trades/window × 2 round-trips/trade × 2–3 bar hold mean each trade must clear 34 bps gross to survive. At 1h scale with 2–3 bar holds, whipsaw risk is elevated. Empirical edge (IC > 0 in walk-forward) is the gate; if IC is positive, cost edge becomes plausible. If IC ≤ 0, strategy fails cost check and is rejected."
+
+notes:
+  - "This is a regression test (pipeline shakedown batch per brief). Variant V1 validates the framework and existing EMASpreadComponent before research on alternatives."
+  - "Alternative candidates (ALT_01, ALT_02) are parked pending V1 outcome; ALT_02 is power-insufficient in current window (n_eff ≈ 13)."
+  - "Reverse hypothesis (negative spread) will be evaluated post-V1 to confirm directional edge and rule out IC near-zero noise hypothesis."

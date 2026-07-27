@@ -1,0 +1,60 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+asset: BTCUSDT, ETHUSDT
+timeframe: 4h
+research_question: |
+  At 4h timeframe, does a continuous score-mode regime filter (ER × VR
+  aggregation) with relaxed threshold outperform the AND-gate binary threshold
+  on the Keltner mean-reversion signal? The AND-gate regime in run_027 is
+  uninformative at 4h (zero trades). Score-mode with min_score=0.4 in run_028
+  generated insufficient trade frequency (0 trades in 10/11 windows). Can
+  lowering the threshold to 0.25 allow the signal edge to emerge through
+  increased sample size?
+signal_concept: |
+  Keltner mean-reversion (ema_period=20, atr_period=20, atr_multiplier=2.0,
+  scaling_factor=-20.0). Identical to run_017 baseline, run_027, and run_028
+  — DO NOT CHANGE.
+regime_filter: |
+  Score-mode regime: regime_score = (ER / 1.0) × (VR / 2.0). Fire when
+  regime_score ≥ 0.25 (lowered from 0.4). This is a continuous blend: high ER
+  and high VR both contribute proportionally. A bar with ER=0.5, VR=2.0 scores
+  0.5 (above 0.25, qualifies). A bar with ER=0.3, VR=0.8 scores 0.12 (below
+  0.25, does not qualify). Lowering threshold from 0.4 to 0.25 increases
+  qualifying bars by 3-5× while maintaining signal focus on moderate-trending
+  conditions.
+mechanism: |
+  The AND-gate (ER≥0.5 AND VR≥1.2) in run_027 and score-mode min_score=0.4
+  in run_028 both created regime thresholds too strict for 4h bar frequency.
+  At 4h (~100-120 bars/month), regime transitions are slow; bars exhibit high
+  ER or high VR independently but rarely both. Even continuous blending at 0.4
+  admits too few bars. Lowering threshold to 0.25 relaxes the constraint:
+  bars with ER=0.3+ or VR=0.8+ (or intermediate combinations) now qualify.
+  This increases sample size for the Keltner signal to show its edge
+  (forecast_return_corr=0.4859 observed in run_028 when regime fired).
+assumptions:
+  - "Keltner signal (forecast_return_corr=0.4859) is robust at 4h timeframe; the score threshold 0.4 was too strict."
+  - "Score-mode regime with min_score=0.25 fires on 3-5× more bars than min_score=0.4 while preserving trend-like character."
+  - "Increased trade frequency (target: 5-10 trades/window) allows signal edge to compound into positive Sharpe and lower proportional cost drag."
+expected_failure_modes:
+  - "Score-mode fires too frequently with min_score=0.25, cost drag returns to > 80% (regime filter too loose). Indicates sizing problem, not signal problem."
+  - "Signal edge only exists in high-ER AND high-VR regimes; score-mode dilutes the edge at lower thresholds."
+  - "regime_score threshold 0.25 is still not optimal; may need further adjustment to 0.15 or adaptive per-window thresholds in a subsequent refine round."
+  - "Score-mode regime forward_return_mean remains near-zero or negative (regime definition is fundamentally broken at 4h). Escalate to different instrument or timeframe."
+constraints:
+  - "Timeframe: 4h only."
+  - "Signal: Keltner mean-reversion (ema=20, atr=20, mult=2.0, scale=-20.0) — IDENTICAL to run_027 and run_028. Do NOT modify signal."
+  - "Regime: score-mode (continuous ER and VR aggregation), not threshold_rules or mode changes."
+  - "regime_score threshold: 0.25 (lowered from 0.4 based on run_028 observation: 0 trades at 0.4 → refine to increase frequency)."
+  - "default_regime: unknown (block zero-forecasts outside regime, same as run_027 and run_028)."
+change_from_previous: |
+  PREVIOUS (run_028): score-mode regime with min_score=0.4. Result:
+  Sharpe=0.0, min_trade_count=0 (only 2 trades across 11 windows), regime
+  barely fires (15 trending bars total). Signal is predictive when it fires
+  (forecast_return_corr=0.4859, win_rate=100%, gross_pnl=+10.73), but
+  threshold prevents execution. THIS REFINE: Lower min_score from 0.4 to 0.25
+  to increase qualifying bars by 3-5× without changing signal or regime mode.
+  Rationale: Primary failure is regime frequency (parameter problem), not
+  signal quality. Per validation_protocol failure mode "Regime score threshold
+  too tight (V1)": Threshold requires refinement. Diagnostic support:
+  min_trade_count=0 (<<3 required), forecast_return_corr=0.4859 (>>0.03
+  signal is valid), cost_drag=37.34% (<<80% not sizing-constrained).
+  Lowering threshold is the targeted fix for this altitude refine.

@@ -1,0 +1,120 @@
+run_id: run_058
+hypothesis_id: run_058-initial
+registered_at: '2026-07-16'
+reactivation_context: First launch of this queue entry's brief lineage (not a reactivation
+  of a prior hypothesis). machine_constraints below pin the protocol so this run cannot
+  silently fall back to a stale campaign_state.last_escalation protocol (F4d).
+pass_rule:
+  statement: 'PASS (-> promote, holdout gate then applies mechanically) iff, evaluated
+    per symbol over the PASS-GATED windows only (protocols/h041c_v2_backext.json:
+    era_2018_pre_funding + era_2019_2023_full_feed, 2018-02-01 to 2023-12-31, 71 monthly
+    windows), BOTH BTCUSDT AND ETHUSDT satisfy: (a) median Sharpe > 0.8; (b) max abs
+    drawdown < 30%; (c) zero_trade_slot_pct <= 40%. ANY criterion FAIL on EITHER symbol
+    -> kill, terminate. This is H-041-C''s LAST registration -- no refine, pivot,
+    or escalate anywhere in this mapping.
+
+    '
+  window_set_ref: protocols/h041c_v2_backext.json
+  honesty_clause: 'The pass-gated windows (2018-2023) overlap the SAME data on which
+    the era-sign-flip diagnosis itself was made (run_048''s per-era IC breakdown,
+    KB-cited above under diagnostic_only_eras_never_gated). FAIL is therefore doubly
+    terminal -- it both kills the hypothesis AND confirms the era-instability finding
+    stands unresolved on its own terms. PASS earns only the holdout evaluation (era_2026_holdout,
+    wholly out-of-sample, never touched by any prior diagnostic or by this brief''s
+    own registration) as the SOLE uncontaminated evidence; a pass-gated PASS is not
+    itself confirmation of a real edge.
+
+    '
+  median_sharpe_semantics: 'Per tools/run_protocol.py''s own construction comment
+    ("A3.4: windows with fewer than this many closed trades get null Sharpe in protocol_result",
+    `_SPARSE_TRADE_FLOOR = 5`): any window with trade_count < 5 gets a null per-window
+    Sharpe, and criterion a''s median_sharpe is computed only over the non-null windows
+    -- a structurally sparse-activation month is EXCLUDED from the median, not counted
+    against it at zero.
+
+    '
+  adequacy_division: 'Episode-count/sample-adequacy is enforced upstream, at the prescreen
+    stage (tools/prescreen_signal.py''s kill_no_ic / insufficient_episodes_a851a routes,
+    backed by tools/episode_significance.py''s own significance machinery) -- a hypothesis
+    that never clears prescreen never reaches this pass_rule at all. This pass_rule
+    therefore governs PERFORMANCE on samples that already survived that upstream adequacy
+    gate; it does not re-litigate sample adequacy itself, which is why no n_episodes/n_eff
+    criterion appears here (the earlier draft''s criterion d duplicated a check this
+    brief does not need to make).
+
+    '
+  promotion_block_neutralization: 'protocols/h041c_v2_backext.json''s own `promotion.min_trade_count_gte`
+    is deliberately set to 0 (was 30). That block feeds tools/run_protocol.py''s OWN
+    legacy verdict computation (_promote/ _kill), which is informational only once
+    a structured B11/C7 pass_rule exists (tools/verdict_criteria_evaluator.py''s own
+    docstring: it "[r]eplaces tools/run_protocol.py''s evaluate_against_decision_rules()
+    as the DECISION authority"). For an extreme-sentiment signal with a measured ~28%
+    zero-active-month rate (see below), `min_trade_count` -- the MINIMUM trade count
+    across ALL 71 windows -- is structurally 0 regardless of signal quality; leaving
+    the legacy floor at 30 would make that informational block report a spurious,
+    uninformative "fail" every time, for a reason unrelated to this brief''s own pass_rule.
+    Set to 0 so the legacy block stays inert rather than misleadingly noisy; the REAL
+    decision is criterion c below (zero_trade_slot_pct <= 40%), not this legacy floor.
+
+    '
+  criteria:
+  - id: a
+    metric: median_sharpe
+    metric_basis: bar_level
+    comparator: '>'
+    per_symbol_threshold:
+      BTCUSDT: 0.8
+      ETHUSDT: 0.8
+    null_handling: fails_threshold
+    source: 'Operator judgment (2026-07-15 registration ruling), not derived from
+      any prior run''s observed values. See median_sharpe_semantics above for the
+      A3.4 null-window exclusion this metric already carries.
+
+      '
+  - id: b
+    metric: max_abs_drawdown_pct
+    metric_basis: bar_level
+    comparator: <
+    per_symbol_threshold:
+      BTCUSDT: 30
+      ETHUSDT: 30
+    null_handling: fails_threshold
+    source: Operator judgment (2026-07-15 registration ruling).
+  - id: c
+    metric: zero_trade_slot_pct
+    metric_basis: bar_level
+    comparator: <=
+    per_symbol_threshold:
+      BTCUSDT: 40
+      ETHUSDT: 40
+    null_handling: fails_threshold
+    source: 'Operator ruling, 2026-07-15 pre-launch audit F1 + semantics/ base-rate
+      recon: replaces the original criterion c (trade_count >= 30, unreachable for
+      a monthly-window, daily-fire, ~21.8%-active-day signal) with a directly measured
+      base rate -- 20 of 71 pass-gated months (28.2%) have ZERO extreme-F&G days at
+      all (see the base-rate report accompanying this brief''s fix commit; command
+      and per-month table cited there, 2024-01 through 2025-12 only, holdout untouched).
+      40% is set with margin above the measured 28.2% floor so the criterion is reachable
+      and non-vacuous while still rejecting a materially sparser real distribution
+      than what was actually observed. tools/run_protocol.py computes this field natively,
+      per symbol, already (A3.4''s own `zero_trade_slot_pct`) -- no new metric plumbing
+      required.
+
+      '
+  outcomes:
+  - branch: PASS
+    hypothesis_verdict: promote
+    lineage_routing: null
+  - branch: FAIL-a
+    hypothesis_verdict: kill
+    lineage_routing: terminate
+  - branch: FAIL-b
+    hypothesis_verdict: kill
+    lineage_routing: terminate
+  - branch: FAIL-c
+    hypothesis_verdict: kill
+    lineage_routing: terminate
+machine_constraints:
+  protocol_ref: protocols/h041c_v2_backext.json
+  protocol_ref_content_hash: sha256:439bc6320ac198c8d2ba8b7d4c11b8da39b0fbad4edfb0a2883937ae590abeb7
+  significance_methodology: episode_blocked_a851a

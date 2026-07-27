@@ -1,0 +1,98 @@
+run_id: run_041
+hypothesis_id: H-041-A
+hypothesis_family: funding_rate_mean_reversion
+protocol_version: v2
+verdict_at: "2026-07-03"
+verdict_label: insufficient_sample_inconclusive
+trial_count: 1
+
+# A8.5.3 — Recalibration note (mandatory when original threshold is replaced)
+threshold_recalibration:
+  original: 0.001
+  original_rationale: "Standard BTC extreme-funding threshold from 2020-2022 cycle"
+  recalibrated_to: 0.0002
+  recalibration_basis: >
+    BTC/ETH funding in 2024-2025 peaked at 0.000881 (BTC) and 0.001017 (ETH).
+    The original 0.001 threshold produced zero active bars — the signal never fired.
+    Threshold recalibrated to 0.0002 (empirical top 5-6% of observed rates in the
+    test window). Note per A8.5.3: the recalibrated run is the ONLY trial counted;
+    the zero-activation run at 0.001 does not constitute a trial.
+  trial_count_ruling: >
+    trial_count = 1 (recalibrated config only). Zero-activation at original threshold
+    is not a trial — there is no forecast series and no IC to record.
+
+prescreen_summary:
+  route: kill_no_ic
+  ic_active_bars: 0.013993
+  ic_all_bars: 0.006604
+  p_value: 0.9705
+  n_eff: 10
+  active_n_bars: 261
+  forecast_sparsity_pct: 99.26
+  cost_check_pass: false
+  edge_to_cost_ratio: 0.8314
+  threshold_used: 0.0002
+
+# A8.5 — Sparse-trial disposition protocol
+# A8.5.1b — Parked with condition-based reactivation (not killed)
+disposition: parked
+disposition_protocol: A8.5.1b
+disposition_rationale: >
+  insufficient_sample_inconclusive differs from kill_no_ic: the IC measurement
+  (0.014, p=0.97) is statistically indistinguishable from any value in [-0.70, +0.73]
+  at n_eff=10. We have not observed a near-zero IC; we have observed an uninformative
+  range. This is an underpowered test, not a falsification.
+
+  The structural mechanism (extreme funding → forced deleverage → mean-reversion)
+  is theoretically sound. The 2024-2025 test period had a moderate-funding regime
+  where the mechanism rarely activated. This does NOT constitute evidence against
+  the mechanism.
+
+  Disposition: PARKED with condition-based reactivation trigger (A8.5.1b).
+  Not added to failed_families. Not retried without trigger condition met.
+
+reactivation_trigger: >
+  PRIMARY: Data extension to 2018+ (pre-2024 history). Funding extremes are well-documented
+  in 2020-2022 (rates routinely above 0.001). A 7-year window increases n_eff from 10 to
+  ~50+, making |IC|=0.014 detectable if real. This extension is scheduled as a consolidated
+  backward-extension pass (after remaining build steps); do not start ad hoc.
+
+  SECONDARY (live monitoring): Reactivate H-041-A when trailing 30-day funding_rate
+  percentile (computed over past-only data, rolling — see A8.5.2) exceeds the top-5%
+  threshold (≈ 0.0002). Concretely: when ≥ 5 settlement events in the prior 30 days
+  have |funding_rate| > 0.0002, the signal is in an active regime and re-prescreen
+  on current data is meaningful.
+
+# A8.5.2 — Future percentile-based threshold constraint
+percentile_threshold_note: >
+  If H-041-A is reactivated with a percentile-based threshold (e.g., "top 5% of
+  rolling 30-day funding rates"), the percentile must be computed over PAST-ONLY data
+  at each signal bar (rolling window, no future lookahead). Expanding-window or
+  full-sample percentiles are forbidden — they constitute a form of feed alignment
+  lookahead analogous to the F&G issue in H-041-C.
+
+root_cause:
+  mechanism_failure: insufficient_sample_inconclusive
+  supporting_evidence: >
+    ic_active_bars=0.014 at p=0.9705 with n_eff=10 (block_size=24, active_n=261).
+    At n_eff=10, the 95% CI on IC spans approximately [-0.70, +0.73] — statistically
+    uninformative. Primary cause: funding extremes rarely occur in 2024-2025 BTC/ETH
+    (top-5% rate = 0.0002, versus original 0.001 threshold that never activated).
+    Secondary: even at recalibrated threshold, gross edge (14.1 bps) < round-trip
+    cost (17.0 bps), edge_to_cost_ratio=0.83 < required 2.0.
+  confidence: low
+
+campaign_trial_record:
+  trial_id: run_041
+  hypothesis_id: H-041-A
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  route: insufficient_sample_inconclusive
+  note: "A8.5.3 recalibration; parked per A8.5.1b"
+
+do_not_add_to_failed_families: true
+do_not_retry_until: >
+  Funding regime reactivation trigger is met (see reactivation_trigger above).
+  No 2021-2023 backward data extension — out of scope for current campaign phase.

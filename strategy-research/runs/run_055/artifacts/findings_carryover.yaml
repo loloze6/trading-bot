@@ -1,0 +1,29 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY"
+what_failed:
+  - "Walk-forward pooled IC ≥ 1.5-2.0%: actual median_forecast_return_corr=0.0 (p=1.0, completely insignificant)"
+  - "Per-era IC decomposition significance: all 24 windows show p=1.0; zero evidence of regime-invariant edge"
+  - "Minimum 15-trade cumulative gate (Gate B): PASS (94 trades), but all correlations zero regardless of sample"
+
+diagnostic_rule_applied: "Rule 2: median_forecast_return_corr=0.0 (p=1.0) — signal has no directional edge. Prescribed action: pivot to structurally different signal."
+
+diagnostic_snapshot:
+  forecast_return_corr: 0.0
+  forecast_return_corr_pvalue: 1.0
+  n_trades_cumulative: 94
+  n_windows_with_trades: 24
+  cost_drag_pct: 3.7069
+  gross_pnl_median: 22.7715
+  sharpe_median_btc: -1.78
+  sharpe_median_eth: -1.54
+  win_rate_net_pct: 46.15
+
+what_not_to_try:
+  - "SMA(100) long-only signal on 1d BTCUSDT/ETHUSDT: tested, zero edge (corr=0.0, p=1.0). Do not retry without structural change to signal mechanism."
+  - "Daily timeframe with only price-volume data on store_of_value category (BTC/ETH): 1d SMA trend exhausted on primary instruments. Next trial must pivot to different mechanism (mean-reversion, momentum, cross-asset) or escalate to new capability (funding-rate, cross-venue)."
+
+next_altitude: "pivot"
+parameter_bracket: null
+
+findings_notes: "Pre-registration brief stated pooled_ic=0.0359 (p=0.004, edge_to_cost_ratio=4.45) from informal prescreen shakedown. Walk-forward backtest on 2018-2025 data shows corr=0.0, p=1.0 across all 24 windows. Hypothesis: prescreen may have been era-specific (overfit to bull markets 2020-2021) or look-ahead-biased. Backtest engine fills at bar close; approximates next-bar-open execution per SmaTrendLongOnlyComponent docstring (not identical, potential source of edge loss). Execution fidelity should be verified before retesting trend signals on daily timeframe."
+
+carry_forward_to_next_run: "SMA(100) trend-following on daily crypto spot has been explicitly tested and falsified (corr=0.0) on both BTCUSDT and ETHUSDT across 2018-2025 walk-forward and backward extension. Do not retest same family on same instruments without structural signal change. Candidate pivots: (1) mean-reversion component (RSI, Keltner) on 1d BTC/ETH, (2) trend-following on different instrument (e.g., SOLUSDT with higher beta and longer trends), (3) escalate to crypto-specific component (funding-rate, open-interest) if price-only family continues to show zero edge."

@@ -1,0 +1,61 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 15
+pattern_detected: same_root_cause_different_families
+pattern_evidence:
+  - "'Cost_drag >200% appears consistently across DIFFERENT families: run_018 (rsi_momentum_trending: 272.87%), run_021 (keltner_mean_reversion: 413.05%), run_023 (reframed campaign: 420.19%). This is NOT signal-specific; it is execution/sizing structural.'"
+  - "Forecast_return_corr near-zero or negative in 12/15 runs (80%) across all signal families (rsi_mean_reversion, keltner_breakout, keltner_mean_reversion variants, rsi_momentum variants). Regime filter is systematically uninformative, not underfitted."
+  - "'Trade frequency bottleneck: AND gate (ER≥0.3 AND VR≥1.2) produced 0 trades in 3/12 windows per run_025 diagnostics. Run_020 already flagged timeframe as root cause; campaign deferred but did not disprove.'"
+  - "Run_017 (corr=0.2145, cost_drag=27.45%) never replicated independently. Run_024 produces IDENTICAL diagnostic values, suggesting config copy, not statistical replication. Signal cannot be trusted until validated at different timeframe."
+
+recommendation: reframe
+
+recommendation_rationale: |
+  The campaign exhibits a structural problem spanning FIVE different signal hypothesis families: cost_drag >80% is ubiquitous (especially >200% in runs 018, 021, 023), and forecast_return_corr is near-zero in 80% of runs. This pattern indicates the problem is NOT signal selection or regime parameter tuning, but execution capacity: 1h timeframe generates insufficient trades to overcome transaction costs. Run_020 explicitly flagged timeframe escalation; the campaign has since tried four more families on 1h with no improvement, confirming that 1h is the constraint. The only positive anchor (run_017, corr=0.2145) has never been independently replicated; run_024's identical values suggest config reuse rather than proof of concept. Reframe from "which signal/regime combination" to "what timeframe restores statistical power?" This shifts from altitude 1 (parameter/hypothesis tuning) to altitude 2 (search space escalation). Do not terminate: only 2 instruments tried, 0 components built. Do not recommend further 1h tuning: run_026's OR logic test is low-risk but will not solve cost_drag on 1h; 4h escalation is the required next test.
+
+next_research_question: |
+  hypothesis_id: TIMEFRAME_ESCALATION_4H
+  asset: BTCUSDT, ETHUSDT
+  timeframe: 4h
+  research_question: Can 4h timeframe restore statistical power by increasing trade frequency 4-5× and reducing cost_drag 4-5× per trade, allowing the Keltner signal (forecast_return_corr~0.21 on 1h run_017) to achieve Sharpe ≥0.30 on 4h with cost_drag <50%?
+  signal_concept: Keltner mean-reversion, identical to run_017 baseline (period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=−20.0). NO CHANGES to signal parameters.
+  regime_filter: Threshold_rules with OR gate (ER≥0.5 OR VR≥1.2), applied to 4h bars. Rationale: 1h AND gate too restrictive (3/12 windows with 0 trades); OR gate expands coverage while individual thresholds remain meaningful. Expected outcome on 4h: 30-70 bars/window per regime, 20+ trades/window, median trade_count ≥50/month aggregate.
+  mechanism: 4h bars incorporate ~4× larger price moves, reducing transaction cost fraction per trade proportionally. ER/VR computed over 4h rolling windows (not 1h snapshots), stabilizing regime assignments and reducing false regime flips. Cost_drag problem on 1h (>200% in runs 018, 021, 023) is due to high trade frequency + small position sizes; 4h naturally reduces trade frequency and increases position sizes, preserving forecast quality while eliminating fee friction.
+  assumptions:
+    - "1h trade frequency >80/month is the primary cost_drag driver; 4h trade frequency will drop to 15-30/month target"
+    - "Run_017's forecast_return_corr=0.2145 is real signal, not overfitted; it will transfer to 4h at similar or improved magnitude"
+    - "ER and VR computed on 4h lookback windows produce stable regime assignments without over-smoothing"
+    - "Keltner mean-reversion captures inter-bar direction on 4h with same lead that worked on 1h"
+  expected_failure_modes:
+    - "4h bars too coarse; Keltner signal loses predictive power (corr drops below 0.10)"
+    - "4h regime OR gate over-captures again; trending regime fires in chop, rendering it uninformative"
+    - "4h sample size still insufficient after cost reduction; sharpe remains <0.20 due to regime purity loss"
+  constraints:
+    - "Backtest 4h timeframe only; do not mix 1h and 4h in same run"
+    - "Keltner signal locked to run_017 parameters; do not tune signal on 4h"
+    - "'Regime detection: OR gate (ER≥0.5 OR VR≥1.2) only; do NOT test AND gate or other architectures yet'"
+    - "Measure trade_count, cost_drag_pct, forecast_return_corr as primary diagnostics; if any fail Rule 4 (cost_drag >100% or corr <0.10), proceed to altitude 2 regime architecture pivot (score_mode continuous ER/VR)"
+  change_from_previous: |
+    PREVIOUS (1h campaign, runs 011-025):
+    Tested five signal families on 1h timeframe under restrictive AND gate (ER≥0.3 AND VR≥1.2).
+    Result: 80% of runs show corr near-zero; cost_drag >200% in runs 018, 021, 023.
+    Root diagnosis: 1h timeframe generates 80-100+ trades/month; transaction cost overwhelms signal.
+    Also: AND gate produces 0-17 trades per window; statistical power insufficient.
+    
+    NEW (4h escalation):
+    Shift to 4h timeframe with OR gate (ER≥0.5 OR VR≥1.2).
+    Expected: 15-30 trades/month (4-5× reduction), cost_drag 10-20% (vs 100-200%), Sharpe >0.20.
+    Signal: unchanged (Keltner run_017 baseline).
+    Regime: upgrade from AND to OR gate, but keep threshold_rules architecture.
+    
+    RATIONALE:
+    1h is a tactical timeframe; cost_drag problem is structural, not parameter-tunable.
+    4h is operational horizon where individual position sizes justify risk budget and fees are amortized over larger moves.
+    If 4h succeeds, 1h OR logic test (run_026) becomes unnecessary; if 4h fails, escalate to regime architecture redesign (score_mode continuous scoring), not further timeframe variation.
+
+budget_assessment: "15/~30 runs (50% budget used). Remaining 15 runs should allocate: 4-5 for 4h validation (signal + regime variations), 4-5 for walk-forward on 4h if promising, 3-5 for robustness/rollover testing. Priority: validate 4h trade_count >15/window and cost_drag <50% within next 2 runs. If both metrics pass, commit remaining budget to 4h refinement and holdout test. If 4h fails both, reserve budget for altitude-2 regime architecture pivot (score_mode ER/VR continuous confidence)."
+
+notes:
+  - "Run_026 (OR logic on 1h) is now OPTIONAL checkpoint, not critical path. Execute only if already committed in workflow; expect marginal improvement (cost_drag 50-100%, corr 0.05-0.15). Do not iterate further on 1h variants."
+  - "Run_017 (corr=0.2145) success is isolated and unvalidated. Do NOT assume it generalizes; treat as upper bound hypothesis to test on 4h before claiming signal quality."
+  - "High cost_drag runs (018, 021, 023) are NOT failures of signal; they are infeasibility proofs of 1h regime combinations. Dismiss as noise on 1h; validate signal on 4h."
+  - "'Constraint enforcement: Do NOT deviate from locked Keltner parameters or mix timeframes. If 4h shows <10 trades/window, reframe to regime architecture (score_mode), not further timeframe escalation.'"

@@ -1,0 +1,44 @@
+run_id: run_012
+hypothesis_id: H-RUN007
+stage: innovation_expansion
+
+constraint_check:
+  constraint_detected: "one variant only"
+  source: research_brief.yaml
+  action: No expansion; single variant V1 matches brief signal_concept exactly
+  binding: true
+
+v1_rationale:
+  mechanism_preserved: true
+  mechanism_details: >
+    RSI pullback (oversold detection) in low-trend regime predicts
+    2–3 hour mean-reversion window. Original mechanism untested due
+    to 5-hour detection lag in H-RUN007-V1.
+  config_delta: smooth_period(ER) = 2 bars (from 5)
+  delta_impact: >
+    Reduces ER rolling window from 5-bar average to 2-bar average.
+    Detects regime state changes faster; lag drops from 5 hours to ~2 hours.
+    Aligns with mean-reversion window observation.
+  testability: >
+    Configuration-only change. No code modifications. Single lever
+    (smooth_period) directly targets known failure mode. Isolation
+    enables causal attribution.
+
+rejected_expansion_candidates:
+  - candidate: RSI divergence (higher lows + price lower highs)
+    reason: Constraint forbids divergence features
+  - candidate: Volume profile / on-balance volume behavior
+    reason: Constraint forbids behavioral indicators
+  - candidate: 4-hour confirmation candle
+    reason: Constraint forbids cross-timeframe
+  - candidate: MACD or ADX alternative regime filters
+    reason: Constraint requires ER/VR components only
+  - candidate: Short bias (RSI > 70 overbought)
+    reason: Brief specifies long-only mechanism
+
+implementation_readiness: true
+readiness_notes: >
+  V1 ready for validation_gate. Configuration adjustment is minimal,
+  isolated, and directly addresses regime detection lag without
+  altering hypothesis core or architecture.
+next_stage: validation_gate

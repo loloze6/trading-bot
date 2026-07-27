@@ -1,0 +1,62 @@
+status: "spec_ready"
+hypothesis_id: "KELTNER_THRESHOLD_4H_AVAX"
+variant_selected: "V1_Conservative"
+
+config:
+  regime_detector:
+    mode: "threshold_rules"
+    components:
+      - id: "er"
+        class: "strategies.strategy_components.EfficiencyRatioRegimeComponent"
+        params: {period: 24, smooth_period: 5}
+      - id: "vr"
+        class: "strategies.strategy_components.VarianceRatioComponent"
+        params: {k: 5, window: 100}
+    rules:
+      - regime: "trending"
+        any_of:
+          - - id: "er"
+              op: "gte"
+              value: 0.30
+            - id: "vr"
+              op: "gte"
+              value: 1.5
+      - regime: "mean_reversion"
+        any_of:
+          - - id: "vr"
+              op: "lte"
+              value: 1.2
+    default_regime: "unknown"
+  
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: "keltner"
+            class: "strategies.strategy_components.KeltnerBreakoutComponent"
+            params: {ema_period: 20, atr_period: 20, atr_multiplier: 1.5, scaling_factor: -20.0}
+            weight: 1.0
+            transforms:
+              - {op: "identity"}
+      mean_reversion:
+        components:
+          - id: "keltner"
+            class: "strategies.strategy_components.KeltnerBreakoutComponent"
+            params: {ema_period: 20, atr_period: 20, atr_multiplier: 1.5, scaling_factor: -20.0}
+            weight: 1.0
+            transforms:
+              - {op: "identity"}
+      unknown: null
+
+config_rationale:
+  - "Regime detection: threshold_rules mode with ER (Efficiency Ratio) and VR (Variance Ratio) components."
+  - "Trending regime fires when ER ≥0.30 AND VR ≥1.5, indicating strong trend with sustained directional move."
+  - "Mean_reversion regime fires when VR ≤1.2, indicating low variance and potential bounce opportunity."
+  - "Signal concept: Keltner breakout with lower-band focus (scaling_factor=-20.0), configured identically in both regimes per hypothesis."
+  - "Keltner component uses ema_period=20, atr_period=20, atr_multiplier=1.5 (narrow channels for high-conviction signals)."
+  - "Signal output range [-20, +20] via scaling_factor; identity transform documents that no additional normalization is applied."
+  - "default_regime=unknown prevents spurious trades outside regime gates; zero forecast when regime conditions are unclear."
+  - "Expected frequency control: 10–20% of candles activate regime (vs run_030 score-mode 40–60%), reducing cost_drag from marginal-regime trades."
+
+component_gap: null

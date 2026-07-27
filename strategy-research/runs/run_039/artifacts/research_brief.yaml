@@ -1,0 +1,32 @@
+hypothesis_id: TEMPORAL_COVERAGE_MULTI_REGIME
+asset: BTCUSDT, ETHUSDT
+timeframe: 1h
+research_question: Can we achieve uniform monthly signal activation (>= 1 trade per
+  window-symbol slot in >= 21 of 22 slots) and forecast_return_corr >= 0.15 by layering
+  the confirmed Keltner/TRENDING signal (corr=0.2145, active in high-ER months) with
+  an orthogonal secondary signal tuned to fire in the zero-trade months identified
+  in the temporal distribution analysis (Jan, Sep, Oct for BTC; Jan, Mar, Jul, Nov
+  for ETH)?
+signal_concept: 'Construct a composite 2-signal strategy: (1) Primary: Keltner/TRENDING
+  with ER>=0.50 filter (confirmed corr=0.21, fires in 15/22 slots), (2) Secondary:
+  A non-regime-based signal (e.g., RSI mean-reversion on 30-min bars, or intraday
+  Stochastic %K crossover) designed to activate specifically in the identified sparse
+  months. Composite forecast = weighted_average(keltner_forecast, secondary_forecast)
+  with weights optimized jointly. The secondary signal should be orthogonal (not ER/VR
+  dependent) to avoid redundant seasonal skew.'
+constraints:
+- 'Measurement: Monthly activation must improve from 15/22 to >= 21/22 window-symbol
+  slots with >= 1 trade per month per slot. Target: zero slots in less than 2 calendar
+  months.'
+- Preserve forecast_return_corr >= 0.15 (primary success gate). Acceptable to degrade
+  from run_017's 0.2145 by combining orthogonal signals if correlation of composites
+  remains >= 0.15.
+- Cost_drag < 50% (secondary gate; degradation from run_017's 27% acceptable due to
+  signal complexity and reduced trade concentration).
+- Secondary signal must have correlation > 0.05 when tested in isolation on the sparse
+  months (Jan/Sep/Oct BTC, Jan/Mar/Jul/Nov ETH) to confirm it carries independent
+  information.
+- 'If 2-signal composite fails to reach 21/22 slots, pivot to seasonal-weighting approach:
+  apply forecast_confidence *= seasonal_strength_factor (derived from historical monthly
+  ER/VR) to the single best signal to naturally de-emphasize sparse months rather
+  than attempting explicit multi-signal combination.'

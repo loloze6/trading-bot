@@ -1,0 +1,49 @@
+hypothesis_id: REFRAME-COST-REGIME-VALIDATION
+falsifiable_statement: |
+  Keltner lower-band touch signals in TRENDING regime (ER≥0.50, VR≥1.20) exhibit 
+  positive predictive power (sharpe≥0.5, win_rate≥0.40 in walk-forward windows 
+  independent of run_017 discovery period). Regime filter is material (V2 underperforms 
+  V1). Mean-reversion mechanism is confirmed (V3 polarity reversal fails). Edge is 
+  TRENDING-specific (V4 RANGING regime shows degraded performance).
+null_expectation: |
+  Forecast returns correlate indistinguishably from noise (sharpe≤0.2 post-cost). 
+  Regime filter adds no predictive value (V2 matches V1). Momentum and mean-reversion 
+  are indistinguishable (V3 succeeds). Edge generalizes to all regimes (V4 matches V1). 
+  Signal fails replication outside discovery period.
+required_evidence:
+  - "V1, V2, V3, V4 walk-forward sharpe ratio (median and per-window)"
+  - "V1, V2, V3, V4 win_rate per window"
+  - "V1, V2, V3, V4 trade_count and min_trade_count per window"
+  - "V1, V2, V3, V4 max_drawdown_pct per window"
+  - "V1, V2, V3, V4 regime_frequency (TRENDING bars / total)"
+  - "Keltner band touch frequency (proxy: count per hour, TRENDING vs non-TRENDING)"
+  - "Forecast-return correlation output (validation metric, not hard gate)"
+  - "Cost drag post-realistic slippage (Binance ~0.05% per side)"
+bias_risks:
+  - "Look-ahead bias: regime ER/VR must be computed using only prior bars; verify data_manager does not use future candles"
+  - "Data snooping: run_017 discovered signal post-hoc on same backtest period; replication must use distinct walk-forward windows"
+  - "Cost drag underestimation: 27.45% appears high; verify includes execution slippage, not just exchange fees"
+  - "Survivorship bias: TRENDING regimes are selectively tested; RANGING and volatile regimes may be underrepresented"
+  - "Regime threshold overfitting: ER≥0.50 and VR≥1.20 thresholds may be tuned to run_017 data; random perturbation testing recommended"
+failure_modes:
+  - "V1 replication fails (sharpe<0.2 in walk-forward): run_017 was statistical fluke or data error; signal is noise"
+  - "V1 succeeds but V2 indistinguishable (V2 sharpe≥0.4): regime filter is spurious; edge exists but is regime-agnostic"
+  - "V3 polarity test outperforms V1 (V3 sharpe>0.3): momentum, not mean-reversion, dominates; hypothesis is inverted"
+  - "V4 RANGING regime outperforms V1 (V4 sharpe>0.5): edge is strongest in RANGING; TRENDING assumption is backward"
+  - "Win rate collapses in forward windows (win_rate<0.30): signal overfit to historical regime structure; breaks on unseen dynamics"
+  - "Trade count below threshold in any window (min_trade_count<20): insufficient inference power; results driven by variance"
+  - "Drawdown exceeds acceptable threshold (max_drawdown_pct>35% in any window): tail risk uncontrolled; economically unviable"
+sample_split_design: |
+  Walk-forward with non-overlapping train/test windows, disjoint from run_017 discovery period. 
+  Minimum 3 windows: 6-month train, 1-month test, rolling forward. Regime ER/VR computed 
+  with 24-hour lookback only (no future candles). Minimum 20 trades per test window required 
+  for statistical power. Test windows must cover distinct market regimes (trending, consolidating).
+decision_rules:
+  - "V1: sharpe ≥ 0.5 (median across walk-forward windows; core viability)"
+  - "V1: win_rate ∈ [0.35, 0.65] per window (probability mass avoids extremes)"
+  - "V1: min_trade_count ≥ 20 per test window (minimum inference power)"
+  - "V2: sharpe < 0.2 (regime filter is material; demonstrates V2 underperformance)"
+  - "V3: sharpe < 0.2 (polarity falsification succeeds; mean-reversion confirmed)"
+  - "V4: sharpe < 0.3 (TRENDING-specificity; V4 underperforms V1 by ≥0.2 Sharpe units)"
+  - "All variants: max_drawdown_pct < 35% in all windows (risk acceptable)"
+  - "No window exhibits sharpe decay >0.3 versus prior window (regime shift detection)"

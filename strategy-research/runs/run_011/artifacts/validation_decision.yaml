@@ -1,0 +1,17 @@
+hypothesis_id: H-RUN007-V1
+status: conditional_approve
+
+rationale: |
+  V1 is falsifiable, testable with no new code, and mechanistically sound (regime-gated
+  mean-reversion is plausible). However, RSI's intrinsic reversion creates tautology risk,
+  and regime detection lag is unquantified. Approval conditional on lookahead verification
+  and regime frequency confirmation before screening execution.
+
+blocking_issues:
+  - "RSI tautology: Mean-reversion regime selection may conflate RSI oscillation property with market alpha; edge may disappear in out-of-sample if driven by RSI structure."
+  - "Regime detection lag: ER/VR classification delay relative to actual price turn unknown; signal may fire after opportunity passes, absorbing commission cost."
+  - "Regime rarity assumption: If actual mean_reversion frequency < 15%, statistical power fails due to insufficient sample, not signal invalidity."
+
+conditions:
+  - "ER/VR computation must use only historical bars [t-window:t]. Verify no lookahead in code before backtest execution."
+  - "Screening backtest must report mean_reversion regime_frequency. If actual < 0.15, hypothesis moves to reject; if ≥ 0.15, proceed to walk-forward validation."

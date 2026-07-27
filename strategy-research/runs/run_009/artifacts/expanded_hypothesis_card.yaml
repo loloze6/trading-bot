@@ -1,0 +1,33 @@
+base_hypothesis_id: H-RUN007
+
+expansion_constraint: "research_brief.yaml specifies 'one variant only'. No divergence, behavioral features, or cross-timeframe variants applied."
+
+expanded_variants:
+  - variant_id: V1-RSI-PULLBACK-MR
+    label: RSI Pullback Mean-Reversion
+    thesis: >
+      RSI(14) distance below 50 generates positive expected returns in BTCUSDT 1h 
+      when mean_reversion regime is active (ER ≤ 0.20, VR ≤ 0.90). 
+      Forecast = max(0, 50 - RSI) / 100. No divergence, no behavioral proxies.
+    mechanism: >
+      Oversold RSI in low-efficiency, low-volatility regime signals temporary 
+      price deviation. Market microstructure mean reversion pulls price toward fair value 
+      within 1–4h window.
+    regime_filter: "mean_reversion only (ER ≤ 0.20, VR ≤ 0.90)"
+    component: RSIPullbackComponent
+    data_required: [OHLCV, RSI(14)]
+    acceptance_criteria:
+      - Sharpe (MR-filtered) ≥ 0.5
+      - Win rate ≥ 52%
+      - Walk-forward Sharpe ≥ 0.4 (decay < 15%)
+      - Max drawdown < 10%
+
+alternative_data_candidates: []
+
+reverse_hypothesis: >
+  RSI > 50 in mean_reversion regime predicts downside (overbought reversion). 
+  Deferred; not part of "one variant only" constraint.
+
+behavioral_features: []
+
+regime_specific_variants: []

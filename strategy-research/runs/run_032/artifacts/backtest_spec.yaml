@@ -1,0 +1,52 @@
+status: "spec_ready"
+config:
+  regime_detector:
+    mode: "threshold_rules"
+    components:
+      - id: "er"
+        class: "strategies.strategy_components.EfficiencyRatioRegimeComponent"
+        params:
+          period: 24
+          smooth_period: 5
+      - id: "vr"
+        class: "strategies.strategy_components.VarianceRatioComponent"
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: "trending"
+        any_of:
+          - - id: "er"
+              op: "gte"
+              value: 0.50
+            - id: "vr"
+              op: "gte"
+              value: 1.20
+    default_regime: "unknown"
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: "keltner"
+            class: "strategies.strategy_components.KeltnerBreakoutComponent"
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 2.0
+              scaling_factor: -20.0
+            weight: 1.0
+            transforms:
+              - op: "identity"
+      mean_reversion: null
+      chop: null
+      unknown: null
+config_rationale:
+  - "REPLICATION MODE: Reproducing RUN017_REPLICATION_DIAGNOSTIC config exactly per expanded_hypothesis_card.yaml"
+  - "Signal concept (KeltnerBreakout): Configured with ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0 for lower-band mean-reversion detection"
+  - "TRENDING regime gate: EfficiencyRatioRegimeComponent (period=24, smooth_period=5) AND VarianceRatioComponent (k=5, window=100) with thresholds ER>=0.50 AND VR>=1.20"
+  - "Transform pipeline: identity (no normalization; scaling_factor=-20.0 already produces forecast in [-20,+20] range)"
+  - "Single active regime (TRENDING): Other regimes (mean_reversion, chop, unknown) set to null, falling to default_regime behavior when rule does not match"
+  - "Warmup: 51 bars (legacy parity value for directional signal)"
+  - "Component dependencies: KeltnerBreakout requires max(ema_period, atr_period) + 1 = 21 bars; regime indicators add their own requirements (ER: period+1=25, VR: window+k=105)"
+component_gap: null

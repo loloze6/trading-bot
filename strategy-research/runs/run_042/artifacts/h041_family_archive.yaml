@@ -1,0 +1,93 @@
+# H-041 Family Archive
+# Three hypotheses generated under Improvement 01 (edge_source taxonomy A1.1-A1.3).
+# Status as of 2026-07-03. Archived after run_042 concludes.
+# Acceptance condition: per Improvement 01 final review.
+
+family: H-041
+campaign_context: "Improvement 01 — edge_source taxonomy, A1.1-A1.3"
+archived_at: "2026-07-03"
+
+hypotheses:
+
+  H-041-A:
+    full_name: "Funding Rate Mean Reversion"
+    run_id: run_041
+    edge_source_category: structural_forced_flow
+    mechanism: >
+      High funding rates → longs pay shorts → overcrowded long positioning → mean-reversion
+      as leveraged longs de-risk or are liquidated. Signal at 8h settlement bars.
+    status: parked_insufficient_sample
+    trial_count: 1
+    prescreen_result:
+      ic_active_bars: 0.014
+      p_value: 0.97
+      active_n: 261
+      n_eff: 10
+    threshold_recalibration:
+      original: 0.001  # zero activations in 2024-2025 data
+      recalibrated: 0.0002  # top 5-6% of observed rates
+    disposition_note: >
+      A8.5.3 recalibration documented. A8.5.1b parked (not added to failed_families).
+      Primary reactivation: data extension to 2018+ (funding extremes well-documented
+      2020-2022). Secondary: trailing 30-day funding percentile > top-5% (≈0.0002).
+    verdict_file: "strategy-research/runs/run_041/artifacts/verdict_interpretation.yaml"
+
+  H-041-B:
+    full_name: "Volume-Impulse Continuation"
+    run_id: null  # never tested
+    edge_source_category: deferred_mechanism_impure
+    mechanism: >
+      High-volume bars with strong body fraction (body/range ratio) predict price
+      continuation in the direction of the candle. Proposed proxy: volume_ratio ×
+      body_fraction as signal input.
+    status: blocked_feed_unavailable
+    trial_count: 0
+    blocking_reason: >
+      volume_ratio × body_fraction is mechanism-impure: activates equally on organic
+      herding (→ continuation) and liquidation cascades (→ mean-reversion). These have
+      opposite strategy implications. Without a liquidation feed to distinguish the two,
+      no honest directional claim can be made. Blocked at hypothesis design stage.
+      Documented in strategy-research/feed_wishlist.yaml under "liquidation_data".
+    reactivation_condition: >
+      Liquidation data feed available (e.g., Binance liquidation stream). Then split
+      high-volume bars into: (a) liquidation-dominated → test mean-reversion (structural_forced_flow);
+      (b) organic momentum → test continuation (behavioral_herding). Each becomes a
+      separate, mechanism-pure hypothesis.
+    verdict_file: null
+
+  H-041-C:
+    full_name: "Fear & Greed Contrarian"
+    run_id: run_042
+    edge_source_category: persistent_behavioral_bias
+    mechanism: >
+      Extreme Fear & Greed readings (<25 or >75) reflect crowded one-sided positioning.
+      Contrarian signal at daily 00:00 UTC bar using previous day's F&G value (A8.4 +1d shift).
+    status: parked_insufficient_sample
+    trial_count: 1
+    prescreen_result:
+      ic_active_bars: 0.190476
+      p_value: 0.5469
+      active_n: 316
+      n_eff: 13
+      cost_gate: "PASS (ratio=3.75)"
+    a8_4_reverification: PASS
+    unshifted_ic: 0.140005  # claim (a) technically not satisfied but delta << SE
+    disposition_note: >
+      IC in correct direction (positive) but insufficient power (need n_eff≥23 for detection).
+      Not added to failed_families. Reactivation condition: data extension to 2018+
+      (n_eff ≈ 46 on 7-year window). More symbols do NOT fix this — F&G is market-wide,
+      returns are correlated; history is the binding resource.
+    verdict_file: "strategy-research/runs/run_042/artifacts/verdict_interpretation.yaml"
+
+family_summary:
+  outcomes: "0 proceed_to_backtest, 2 parked_insufficient_sample, 1 blocked_feed_unavailable"
+  key_finding: >
+    Both testable H-041 hypotheses are parked due to insufficient sample, not falsified.
+    The data window (2024-2025, 2 symbols) is too short for daily-frequency signals with
+    low activation rates. The edge_source taxonomy (A1.1) correctly identified mechanisms
+    (structural_forced_flow, persistent_behavioral_bias), but the 2-year sample cannot
+    power them at p < 0.10 with the given signal sparsity.
+  recommendation_for_improvement_05: >
+    Both H-041-A and H-041-C become strong first entries for the knowledge base (A5.1-3):
+    document the n_eff requirements per activation rate so future hypotheses with <20%
+    activation rates on a 2-year window are pre-screened for power before registration.

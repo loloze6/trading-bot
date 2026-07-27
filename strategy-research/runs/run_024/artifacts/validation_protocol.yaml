@@ -1,0 +1,69 @@
+hypothesis_id: POSITION_SIZING_TIMEFRAME_COUPLING
+
+falsifiable_statement: |
+  The 15x cost efficiency gap between run_017 (1h, Keltner+TRENDING: 27.45%) and run_021
+  (4h, identical signal+regime: 413.05%) is NOT caused by signal degradation but by
+  execution structure: either position_sizing_scale is timeframe-unaware, or rebalance
+  frequency is insufficient at longer bars relative to regime window duration, or both.
+  Keltner+TRENDING regime detection is signal-invariant across timeframes.
+
+null_expectation: |
+  Cost efficiency is independent of timeframe and rebalance frequency. Signal quality
+  (Keltner+TRENDING) is identical at 1h and 4h. If true, cost differential must be
+  <50%. Observed 15x gap implies signal degradation or data quality confound, not
+  execution structure mismatch.
+
+required_evidence:
+  - "V1 diagnostic: Extract from run_017, run_021, run_022 logs: delta in trade_count, avg_position_size_pct, fee_pct_per_trade, rebalance_events_per_regime_window. Identify which metric delta exceeds 30% and correlates with cost gap."
+  - "V2 backtest result: 4h Keltner+TRENDING with position_sizing capped at 1h_equivalent_size_pct. Report sharpe, trade_count, win_rate, max_drawdown_pct."
+  - "V3 backtest result: 4h Keltner+TRENDING with rebalance_frequency_floor enforced. Report sharpe, trade_count, max_drawdown_pct."
+  - "V4 log partitioning: Stratify run_017 by regime phase (0–25%, 25–75%, 75–100%). Report fee_pct_per_trade and trade_count per phase; compute variance."
+  - "Baseline replication: run_022 (1h baseline) sharpe vs run_017 sharpe; delta must be <5% to validate 1h edge stability."
+
+bias_risks:
+  - "Forward bias in V4: Regime phase computed at backtest time may not reflect live signal state at bar. If position sizing gate uses regime_phase derived from future data, this introduces lookahead."
+  - "Overfitting to run_017: Single 1h run on specific date range may have favorable micro-structure. 15x cost gap may not generalize to other date ranges or market regimes."
+  - "Data quality confound: 1h and 4h candles sourced from different APIs or aggregation methods; cost variance is artifact, not mechanism."
+  - "Slippage model mismatch: ExecutionHandler.slippage() not timeframe-invariant. If 4h uses different slippage curve than 1h, cost delta is artificial and does not reflect real execution behavior."
+  - "Regime detection parameter assumption: Hypothesis assumes Keltner band multiplier and regime thresholds are equally optimal at 1h and 4h; unverified and likely false."
+  - "Confounding rebalance frequency with regime quality: 4h may have longer regime windows but not inherently stale positions; cost gap may be driven by signal noise at longer timeframe, not frequency of updates."
+
+failure_modes:
+  - "V1 diagnostic shows neither position_size_pct nor rebalance_events delta accounts for >20% of cost variance; unknown confounding variable drives cost gap (e.g., data quality, regime parameter sensitivity)."
+  - "V2 backtest: 4h cost remains >300% even with 1h position_sizing cap. Position sizing is not the primary driver; rebalance frequency or signal quality is."
+  - "V3 backtest: 4h cost remains >200% even with rebalance_floor enforced. Neither position sizing nor rebalance frequency fully explains gap; hypothesis framing is wrong."
+  - "V4 regime phase analysis: Cost variance across phases <15 pct_points; regime age has negligible impact on execution efficiency."
+  - "run_022 replication fails: 1h baseline sharpe differs >10% from run_017. 1h edge is not stable or repeatable; invalidates all 1h/4h comparisons."
+  - "All variants pass individual tests but holdout sharpe <0.6: Variants overfit to training period and do not generalize. Hypothesis is mechanistically correct but operationally fragile."
+
+sample_split_design:
+  train_validation: |
+    Run_017 (1h, Keltner+TRENDING, original date range): Establish baseline sharpe,
+    trade_count, win_rate, max_drawdown_pct. Run_022 replication on same date range:
+    confirm stability (sharpe within 5%).
+  diagnostic_phase: |
+    V1 log analysis on existing run_017, run_021, run_022 output. Identify which
+    execution metric (trade_count, position_size_pct, rebalance_events, fee_pct_per_trade)
+    dominates cost variance. No new backtest.
+  test_phase: |
+    V2 backtest (4h position_sizing cap): Run on identical date range as run_021.
+    V3 backtest (4h rebalance_floor): Run on identical date range as run_021.
+    V4 backtest (1h phase-gated sizing): Run on run_017 date range.
+    Each variant independently measures sharpe, trade_count, win_rate vs baseline.
+  holdout_phase: |
+    If any variant achieves sharpe >= 0.75 * run_017_sharpe on test data, re-run on
+    disjoint 4-week date range with no overlap to training or test. Holdout period must
+    contain at least one complete market regime cycle (trending + mean-reversion).
+
+decision_rules:
+  - "V1 is mandatory gate: If no single execution metric (trade_count, position_size_pct, rebalance_events) delta exceeds 30% or accounts for >50% of cost variance, halt and request hypothesis refinement. Do not proceed to V2/V3/V4."
+  - "V2 success: 4h backtest achieves sharpe >= (0.8 * run_017_sharpe). Trade_count must be >= (0.7 * run_017_trade_count) to ensure statistical validity (minimum ~30 trades)."
+  - "V3 success: 4h backtest achieves sharpe >= (0.9 * run_017_sharpe)."
+  - "V4 success: 1h phase-gated backtest achieves sharpe >= run_017_sharpe AND win_rate >= 0.45 (cost gains must not sacrifice profitability)."
+  - "Holdout validation (if any variant passes test): Walk-forward sharpe >= (0.8 * variant_test_sharpe). Max_drawdown_pct must not exceed run_017_baseline by >2 pct_points."
+  - "Final approval: At least one variant must satisfy both test and holdout criteria with sharpe >= (0.75 * run_017_sharpe). If no variant passes, reject hypothesis."
+
+alternative_rejection_criteria:
+  - "If run_022 replication shows sharpe drift >10%, reject hypothesis because 1h baseline is unstable."
+  - "If all variants show trade_count < min_trade_count (minimum 20), reject due to statistical insufficiency."
+  - "If any variant holdout sharpe <0.6 * run_017_sharpe, reject due to non-generalization."

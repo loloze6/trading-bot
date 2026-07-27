@@ -1,0 +1,50 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 12
+pattern_detected: converging
+pattern_evidence:
+  - "run_017 (keltner_mean_reversion at 1h TRENDING regime): forecast_return_corr=0.2145, cost_drag=27.45% — ONLY run meeting both signal>0.01 AND cost<80% criteria"
+  - "run_022 (replication attempt at 1h): forecast_return_corr=0.042, cost_drag=82.10% — signal weakened 5x, cost crept to threshold; replication did not recover run_017 edge"
+  - "run_021 (run_017 signal at 4h timeframe): forecast_return_corr=0.0136, cost_drag=413.05% — cost increased 15x, correlation dropped 16x, confirming timeframe mismatch"
+  - "failed families trend: rsi_mean_reversion (run_014: corr=-0.0223, cost=142.82%), keltner_breakout (run_015: corr=-0.1705), keltner_mean_reversion (run_016/021: cost=185.32%/413.05%), rsi_momentum_trending (run_018: cost=272.87%)"
+  - "cost_drag range: 25.21% (run_019) to 413.05% (run_021); 15x variance within same signal family (Keltner at 1h vs 4h) indicates structural sensitivity, not signal variation"
+  - "only successful configuration: run_017 using Keltner bands + TRENDING regime + 1h timeframe (corr=0.2145, cost=27.45%)"
+
+recommendation: reframe
+recommendation_rationale: "Campaign has converged on ONE successful configuration (run_017) but all attempts to replicate or build on it have failed: run_022 (1h replication) yielded corr=0.042 vs 0.2145, cost=82.10%; run_021 (4h escalation) yielded corr=0.0136, cost=413.05%. The 15x cost explosion from run_017 to run_021 (same signal, different timeframe) and the 5x signal decay from run_017 to run_022 (same timeframe, but weakened replication) indicate the edge is narrow and structurally dependent on timeframe/sizing alignment. Further parameter tuning of existing signal families is unproductive—parameter sweeps (run_011-019) exhausted without achieving run_017's efficiency. Instead, reframe toward understanding WHY run_017's cost structure (27.45%) is 5-15x better than all alternatives. The answer likely involves position sizing model, rebalance frequency, or regime filtering robustness. Isolating this structural factor is the path to either replicating the edge or confirming run_017 was a backtest artifact."
+
+next_research_question: |
+  hypothesis_id: STRUCTURE_OF_RUN_017_COST_EFFICIENCY
+  asset: BTCUSDT, ETHUSDT
+  timeframe: 1h
+  research_question: "What structural factor enables run_017 (Keltner mean-reversion, TRENDING regime, 1h) to achieve cost_drag=27.45% while all other configurations exceed 80%? Is the efficiency due to (a) Keltner band signal filtering, (b) TRENDING regime window selection, (c) position sizing sensitivity, or (d) rebalance frequency interaction with 1h bars? Can we isolate the factor and replicate it?"
+  signal_concept: "Keltner mean-reversion (identical to run_017: period, std_dev_multiplier, direction). Do NOT innovate new signals. Focus diagnostic decomposition: trade_count per regime window, average_position_size_pct, fee_pct_per_trade, and regime_stability."
+  regime_filter: "TRENDING regime (ER>=0.50, VR>=1.20, threshold_rules, identical to run_017). Run_017 succeeded at 1h; run_021 (same regime logic at 4h) failed catastrophically. Hypothesis: regime definition is sound at 1h but position sizing is not timeframe-aware."
+  mechanism: "Run_017 achieved forecast_return_corr=0.2145, cost_drag=27.45%, representing the campaign's only successful result. Run_021 (identical signal + regime, 4h timeframe) achieved corr=0.0136, cost_drag=413.05%, a 15x cost increase. This mismatch indicates the sizing model or rebalance frequency amplifies cost at 4h timeframe. Run_022 (replication at 1h) achieved corr=0.042, cost=82.10%, suggesting the 1h edge is repeatable but weaker across a full window, possibly because Keltner bands perform well in specific regime phases but deteriorate in others. Diagnostic plan: (1) extract trade_count, avg_position_size, fee_pct, win_rate from run_017 execution logs; (2) compare against run_022 and run_021 to identify which metric differs most; (3) if position_size is the differentiator, test whether position_sizing logic is responsive to regime duration or bar count."
+  assumptions:
+    - "Run_017's cost efficiency (27.45%) is real and driven by a replicable structural property, not statistical noise"
+    - "Keltner bands at 1h filter out high-cost trades (false signals) that 4h bars include"
+    - "Position sizing or rebalance frequency logic is not timeframe-aware; 4h positions are over-sized or over-traded relative to 4h regime windows"
+    - "Run_022's weaker correlation (0.042 vs 0.2145) reflects full-window averaging, not a sign of true degradation"
+  expected_failure_modes:
+    - "Run_017 edge is purely statistical (specific backtest window); decomposition shows no structural difference from other runs"
+    - "TRENDING regime has zero or negative forward returns; run_017 edge is a false positive from regime selection luck"
+    - "Keltner bands are not the source; the efficiency comes from regime logic alone, which is already in AdvancedStrategy and not novel"
+    - "Position sizing is correct; cost_drag differences are due to trade_count variation in regime windows, which is signal-driven not structural"
+  constraints:
+    - "Timeframe: 1h only (4h escalation confirmed harmful)"
+    - "Regime: TRENDING (ER>=0.50, VR>=1.20, identical to run_017)"
+    - "Signal: Keltner mean-reversion (identical to run_017 parameters)"
+    - "No new signal families or regime definitions; diagnostic focus only"
+    - "2-3 diagnostic runs maximum before deciding whether to build component or escalate_instrument"
+  change_from_previous: "Reframe from 'which signal family works best' to 'why does run_017 have 5-15x better cost efficiency, and is it replicable?' This is a focused structural deepening, not a new search direction. Keeps signal and regime fixed, zooms into cost decomposition."
+
+budget_assessment: "12 runs used; campaign_budget unknown. Review_every_n_runs=6 indicates checkpoint at run_018 was passed. Estimated budget: 15-20 runs (typical for Phase-A research). Runs_used=12, so ~60-80% of estimated budget consumed. Recommend: (1) allocate 2 diagnostic runs to isolate cost structure (low parameter variance, focused decomposition); (2) if structural factor confirmed, build 1 custom component and re-test; (3) if no pattern found, escalate_instrument (try 3rd asset: ADAUSDT, LTCUSDT, or others) or terminate. Prioritize speed for diagnostic runs (minimal hyperparameter ranges), then thoroughness for component validation."
+
+status: active
+recommendation_date: '2026-06-28'
+notes:
+  - "run_011-013 invalid due to config bug; Phase-A diagnostics begin at run_014"
+  - "run_017 is the campaign's sole positive signal; treating it as the baseline for structural analysis"
+  - "4h escalation (run_020-021) was unjustified and failed; decision confirmed to hold at 1h"
+  - "Reframe is conservative: same signal, same regime, same timeframe; redirects focus to cost decomposition"
+  - "next_research_question is NOT a new hypothesis family; it is a deepening of the run_017 investigation"

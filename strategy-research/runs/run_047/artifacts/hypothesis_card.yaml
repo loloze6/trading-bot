@@ -1,0 +1,54 @@
+hypothesis_id: H-041-A
+thesis: "Extreme perpetual funding rates (|rate| > 0.0002) force mechanical deleveraging of crowded positions at 8h settlement boundaries, producing predictable mean-reversion in the settlement bar and following bars."
+rationale: "Perpetual futures funding is a structural, mandatory cash transfer—not opinion-driven. Extreme imbalances force liquidations and position unwinding independent of price sentiment, creating a non-discretionary flow signal with low arbitrage crowding."
+edge_source:
+  category: structural_forced_flow
+  specific_mechanism: "Perpetual futures funding settlement forces a real cash transfer between long and short positions every 8h. An extreme funding rate reflects an extreme, crowded, one-sided positioning imbalance; mean-reversion in price following the settlement reflects that crowded positions unwind or get squeezed. Measurable proxy: signed funding_rate magnitude at each settlement, available in BTCUSDT/ETHUSDT_funding_8h.csv."
+  why_not_arbitraged: "Arbitrage constraints: (1) discrete 8h frequency makes per-event transaction costs material relative to edge; (2) direct replication requires holding perp positions and funding-cost carry, which is capital-inefficient; (3) effect is episodic (extremes rare in stable funding environments), limiting arb capital deployment; (4) forced liquidation flow is capacity-constrained and difficult to execute at scale without moving price."
+  evidence_type: funding_open_interest
+  measurable_proxy: "Signed absolute funding_rate (|rate|) at 8h settlement boundaries (UTC hour % 8 == 0). When |rate| > 0.0002, forecast = -sign(funding_rate) × 10. Prediction: 4–12h post-settlement bars show price reversion opposite the funding direction, consistent with crowded-side deleveraging."
+signal_concept: "FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0) — REUSED VERBATIM from run_041. Fires at 8h settlement boundaries (UTC hour % 8 == 0) when |funding_rate| > 0.0002. forecast = -sign(funding_rate) × scaling_factor at active bars; 0 elsewhere. Ungated (A2.3): regime_detector.rules=[], default_regime='mean_reversion' (per run_041 config, F7 one-bar engine caveat applies identically)."
+target_market: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+assumptions:
+  - "Funding-rate data is accurate and synchronized to 8h UTC settlement boundaries."
+  - "Historical 2019+ data exhibits the same structural forced-flow mechanism as present (no regime-drift in perpetual funding mechanics)."
+  - "Extreme funding episodes (gap_bars ≤ 48) are correctly identified and independent."
+  - "Mean-reversion impulse materializes within 1h–24h post-settlement; position can be closed before next settlement without compounding adverse exposure."
+  - "Cost model (Binance 0.02% maker, 0.04% taker, 8 bps slippage) remains valid."
+expected_failure_modes:
+  - "Era-structure risk: 2020–2022 (high-leverage bull/bear) may drive funding extremes, while 2024–2025 (low-leverage stable) saw rare extremes. If signal is dominated by one era, transfer to present market structure fails. Mitigation: report per-era IC/episode counts (A8.5.1a rule 5) before advancing past prescreen."
+  - "Lag-mismatch: Forced deleveraging may unfold over 4h–24h, but signal re-evaluates at every 1h bar. Per-bar IC is diluted by noise; prior inconclusive run (run_041) showed n_eff=10, insufficient power. This reactivation targets power recovery via data extension, but if mechanism is fundamentally 4h-grained, 1h execution remains suboptimal. Escalation path: timeframe reassessment (cf. FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED finding)."
+  - "Edge-to-cost failure: Prior trial (run_041) had n_eff=10, active_n=13. With 132 pre-registered episodes over 7 years, expected n_eff ≈ 44–50. At n_eff=50 and |IC|=0.10–0.15 (literature mid-range), edge-to-cost ratio may still fail if cost drag > 100%. Result: insufficient gross-edge payoff."
+  - "Funding data integrity: Gaps, stale recordings, or settlement timestamp misalignment reduce signal precision. Outcome: latent measurement error masks true mechanism or fires on stale state."
+library_lookup:
+  indicator_id: funding_rate_extreme
+  regime_affinity_for_target: neutral
+  affinity_justification: "Mechanism is structural (settlement mechanics), not regime-dependent. Library lists 'favorable' only for high_vol; this ungated hypothesis applies universally. Neutral assignment is correct."
+  prior_campaign_inconclusive:
+    - run_id: run_041
+      outcome: insufficient_sample_inconclusive
+      n_eff: 10
+      active_episodes: 13
+      mechanism_identical: true
+  prior_campaign_failures: []
+  crowding_risk: low
+  crowding_deviation_justification: "n/a — funding_open_interest requires institutional-grade data source, not crowd-traded OHLCV. Crowding risk remains low."
+power_parameters:
+  activation_rate: null
+  plausible_ic_upper: 0.20
+  n_bars: null
+  n_symbols: 2
+  is_market_wide: false
+  power_note: "Sparse feed-based, extreme/threshold-gated (A8.6 anchor table row 3). plausible_ic_upper=0.20 per literature (Binance perpetual mechanics). activation_rate and n_bars computed from backfilled range [2019-09-10 BTC / 2019-11-27 ETH through 2025-12-31]. Pre-registered episode count: 132 (pooled BTC+ETH, gap_bars≤48). Significance test: A8.5.1a episode-blocked (not plain 24-bar), min_n_episodes=8, era-stratified reporting required per research_brief significance_methodology."
+run_context:
+  run_id: run_047
+  run_type: reactivation
+  data_range_test: "[2019-09-10 (BTC) / 2019-11-27 (ETH), 2025-12-31]"
+  data_range_holdout: "[2026-01-01, 2026-06-30] — untouched"
+  prior_reactivation_condition: "Backward data extension to 2018+ completed; funding extremes documented in 2020–2022, expected_n_eff≈50+ on 7-year window. Condition satisfied."
+  variants: 1
+  variant_v1_config: "threshold=0.0002, scaling_factor=10.0 (VERBATIM run_041, no tuning)"
+  no_innovation_expansion: true
+  no_regime_gating: true
+  existing_component_only: FundingRateMeanReversionComponent

@@ -1,0 +1,91 @@
+{
+  "run_id": "20260629T215426Z_ef569824",
+  "created_utc": "2026-06-29T21:54:26.259415+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "er",
+          "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+          "params": {
+            "period": 24,
+            "smooth_period": 5
+          }
+        },
+        {
+          "id": "vr",
+          "class": "strategies.strategy_components.VarianceRatioComponent",
+          "params": {
+            "k": 5,
+            "window": 100
+          }
+        }
+      ],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "er",
+                "op": "gte",
+                "value": 0.5
+              },
+              {
+                "id": "vr",
+                "op": "gte",
+                "value": 1.2
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "warmup": 51,
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "keltner",
+              "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+              "params": {
+                "ema_period": 20,
+                "atr_period": 20,
+                "atr_multiplier": 2.0,
+                "scaling_factor": -20.0
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "identity"
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": null,
+        "chop": null,
+        "unknown": null
+      }
+    }
+  },
+  "config_sha256": "ef56982461cdf6350d37db1a68122e234de20c317b2eae54394660ba24f6bb30",
+  "data": {
+    "symbols": [
+      "AVAXUSDT"
+    ],
+    "timeframe": "3600s",
+    "start": "2024-07-01 00:00:00",
+    "end": "2024-08-01 23:00:00",
+    "bar_count": 768,
+    "data_sha256": "181ea08c154897121d84c3dc978100d08178e78afea3cfaa5245f4425bbec45b"
+  },
+  "git_sha": "e814b07cf75d8fb792c4cec5e84d5756070c314c",
+  "engine": {
+    "lookback": 21,
+    "warmup": 21
+  }
+}

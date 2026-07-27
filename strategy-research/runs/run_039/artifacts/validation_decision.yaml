@@ -1,0 +1,29 @@
+hypothesis_id: "TEMPORAL_COVERAGE_MULTI_REGIME"
+status: "conditional_approve"
+rationale: |
+  Hypothesis is testable and falsifiable. Core claim (sparse-month signal scarcity) is plausible.
+  Multi-variant approach (V1-V5) hedges mechanism risk. If any 2 variants achieve sharpe >= 0.40 
+  and win_rate >= 45% on walk-forward validation, hypothesis advances to screening backtest.
+  Strong bias/leakage protections required: seasonal mask isolation, secondary threshold pre-specification,
+  orthogonality validation, and weight stability monitoring are mandatory.
+  If all variants fail or show overfitting (in_sample vs. walk_forward delta >= 0.20), reject.
+
+blocking_issues:
+  - "Seasonal mask protocol ambiguity: Sparse-month classification must be fixed apriori (calendar-based) or computed on training fold only. Current expanded card is silent on method."
+  - "Secondary signal thresholds not pre-specified: RSI 30/70, Stoch 50 midline, ROC 0.5% per bar must be hardcoded in config before training. Optimization after data inspection is forbidden (leakage)."
+  - "Orthogonality assumption untested: No evidence that RSI/Stochastic/ROC forecasts are uncorrelated with ER/VR regime. Requires post-training correlation audit."
+  - "Multi-signal redundancy check missing: V1/V2/V3 all target 30-min oscillators; pairwise Spearman correlation must be computed on training fold to confirm distinctness (threshold: < 0.60)."
+  - "Composite weight stability unmonitored: Weights optimized on training fold may drift on validation. Per-window weight tracking (std_dev < 0.15) must be logged."
+
+conditions:
+  - "1. Sparse-month calendar MUST be fixed apriori (Jan, Mar, Jul, Sep, Oct, Nov for crypto) or computed on training fold only before any data inspection. Document choice in backtest config."
+  - "2. Secondary signal thresholds (RSI: 30/70, Stochastic: 50 midline, ROC: 0.5% per bar) must be pre-specified and hardcoded in config; NO optimization during training."
+  - "3. Only composite weights (Keltner + secondary weighted blend) may be optimized. Log per-window weight values to backtest_results/. Downgrade to REFINE if std_dev > 0.15."
+  - "4. Measure Pearson correlation of secondary forecast with ER/regime_state on training fold. If > 0.40, orthogonality assumption is violated; downgrade variant to REFINE."
+  - "5. Compute pairwise Spearman correlation of V1/V2/V3 secondary forecasts on training fold. If any pair > 0.60, signals are redundant; merge weaker signal or drop."
+  - "6. Walk-forward Sharpe (median across 5 windows) must be >= 0.40. In-sample Sharpe may exceed this; accept walk-forward degradation up to 0.20 delta (e.g., 0.50 in-sample → 0.30 walk-forward = FAIL)."
+  - "7. Win rate on validation fold must be >= 45%. In-sample win_rate is not evidence of signal quality."
+  - "8. Trade count on validation fold must be >= 50 (sufficient data to validate). Min_trade_count >= 1 (no dead symbols)."
+  - "9. At least 2 variants must meet conditions 6-8 to advance to screening backtest. If 0-1 pass, REJECT hypothesis and request refinement."
+  - "10. V4 (seasonal weighting fallback) is triggered only if V1/V2/V3 all fail. V4 success threshold is sharpe >= 0.35 (lower) and win_rate >= 42%, trade_count >= 30."
+  - "11. V5 (cross-timeframe) requires verification that composite forecast does not exceed 8 trades/symbol/day during sparse months. If exceeded, downgrade to REFINE (rebalance cadence conflict)."

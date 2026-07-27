@@ -1,0 +1,72 @@
+run_id: run_054
+stage: innovation_expansion
+hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+timestamp: "2026-07-07"
+
+summary: "Single-variant pass-through. Brief constraint ('Single registered hypothesis, no parameter sweep') forbids expansion into multiple variants. Base hypothesis (close > SMA(100), price_volume_only) is preserved as V1 and routed to run queue. Alternative candidates documented in alternative_data_candidates for future reference if brief is amended."
+
+constraint_analysis:
+  brief_constraint: "Single registered hypothesis, no parameter sweep: long iff close > SMA(100), flat otherwise"
+  constraint_interpretation: "Hypothesis family is fixed (SMA(100) trend-following on daily bars). No alternative signal formulations (trailing-return, regime-gated variants, parameter sweeps) may be tested under this trial. Alternative formulations require separate registered trials per brief."
+  implication_for_expansion: "Expansion rule (persona): 'If brief constrains variant count, honor it before applying expansion logic.' Decision: V1 only (ungated, pass-through base hypothesis)."
+  verdict: "Constraint honored. No multi-variant expansion; no silent testing of alternatives."
+
+diversity_audit:
+  constraint: "Improvement 04: Variants must span ≥2 library categories OR ≥2 data_requirements (cosmetic diversity rejected)."
+  variants_count: 1
+  verdict: "Diversity check not applicable — single variant requires no comparison. If brief is later amended to permit V2_FUNDING or regime-gated variants, diversity check will be re-run at that time."
+  categories_spanned: ["trend_following"]
+  data_requirements_spanned: ["ohlcv_only"]
+
+improvement_01_status:
+  rule: "At least one variant per family must use evidence_type != price_volume_only. funding_open_interest is available today (available_feeds.yaml)."
+  actual_evidence_types: ["price_volume_only"]
+  verdict: "UNSATISFIED — Brief constraint (single price-based hypothesis) prevents generation of alternative-data variants for run queue. Improvement 01 cannot be fulfilled under current brief."
+  workaround_candidate: "V2_FUNDING_GATED documented in alternative_data_candidates; could satisfy Improvement 01 if brief is expanded to allow multi-hypothesis trials or if this hypothesis is reactivated with multi-variant scope in future campaign."
+  feed_wishlist_entry: "Suggest V2_FUNDING_GATED for future expansion: same signal logic, funded with funding-rate confirmation, ungated."
+
+regime_specific_variants_status:
+  note: "Base signal (close > SMA(100)) is unconditional, not regime-gated. No variants routed to detector_wishlist. If future variants are added (e.g., 'long only in TRENDING regime'), they will be re-routed to regime_specific_variants with status: detector_wishlist_pending, noting that regime detector for 1d BTC/ETH is unusable_for_this_symbol_timeframe (A2.3 standing policy)."
+  regime_specific_variants: []
+
+alternative_data_candidates_notes:
+  V2_FUNDING_candidate: >
+    Ungated reformulation of funding-rate filter idea. Same trend-following signal
+    (close > SMA(100)) + structural confirmation (extreme funding rate predicts deleveraging).
+    Evidence_type: funding_open_interest (available in available_feeds.yaml).
+    Would satisfy Improvement 01 if brief permits multi-variant trials.
+    Currently excluded from expanded_variants per brief's "single registered hypothesis" constraint.
+    Mechanism purity: high (funding rate is structural, orthogonal to SMA behavioral signal).
+
+behavioral_features_rationale:
+  reverse_hypothesis: >
+    Mechanistic symmetry test: if edge is structural (trend bias), inverse signal
+    (short when close < SMA) should not generate opposite edge. Validates directionality.
+  activation_sparsity: >
+    Pre-registered power calc assumes 45% activation rate. Actual sparsity may differ,
+    affecting cost model validation. High sparsity improves per-bar signal quality;
+    low sparsity increases cost drag.
+  multi_regime_validation: >
+    Per brief, edge_source claims regime-invariant mechanism. Prescreen (A8.5.1a)
+    will decompose pooled_ic across eras (bull/bear/sideways) to confirm mechanism
+    is not era-conditional. If pooled_ic is driven by single era, mechanism is fragile.
+  crowding_decay_monitor: >
+    SMA(100) is widely known (textbook). Daily execution is less crowded than 1h,
+    but adoption risk exists. Track rolling IC to detect crowding collapse early.
+    Compare 2024-2025 periods; establish baseline for future lookback.
+
+constraints_honored:
+  - Brief "single registered hypothesis" ✓
+  - No parameter sweep ✓
+  - No silent alternative testing ✓
+  - Preserve edge_source mechanism from base hypothesis ✓
+  - Output regime_specific_variants (though empty for this hypothesis) ✓
+  - Token-limit compliance: concise rationale, no filler ✓
+
+next_stage: validation_gate
+next_stage_input: "expanded_hypothesis_card.yaml (V1 single variant to run queue); alternative_data_candidates preserved for future reference if brief scope expands."
+
+notes:
+  - "Improvement 01 conflict is documented but not resolved: brief constraint takes precedence per persona rule."
+  - "If user later authorizes multi-variant trials or parallel comparison of SMA(100) vs. trailing-return vs. funding-filtered versions, return to innovation-expansion with updated brief and re-run diversity check."
+  - "Alternative candidate V2_FUNDING is ungated (no regime dependency) and uses available feed (funding_open_interest), making it ready to move to run queue if brief is amended."

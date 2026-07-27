@@ -1,0 +1,45 @@
+hypothesis_id: KELTNER_SCORE_MODE_REGIME
+asset: BTCUSDT, ETHUSDT
+timeframe: 1h
+research_question: "The threshold_rules TRENDING regime (ER>=0.5, VR>=1.2) fires too rarely (2–23 bars/month) and is non-predictive. Can we achieve comparable Keltner signal quality with higher trade frequency and statistical validity by switching to score_mode regime detection? Hypothesis: use ER and VR scores (0–100 continuous scale) to map every bar to a regime confidence level (trending=high confidence, chop=medium, mean_reversion=low). Apply Keltner to all three regimes with position sizes scaled by regime confidence. This enables trading >95% of bars while keeping low-confidence bars sized small, avoiding whipsaw."
+
+signal_concept: "Keltner mean-reversion (period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=−20.0). Identical component to run_017 baseline. Do NOT change signal. Hypothesis is regime-only."
+
+regime_filter: "PIVOT FROM: threshold_rules mode with binary TRENDING gate (ER>=0.5 AND VR>=1.2, fires 2–23 bars/month, uninformative per diagnostics) TO: score_mode regime detection. Compute ER percentile and VR percentile independently (not AND logic), then combine into regime_score (0–100). Map score ranges: trending (score>70), chop (40–70), mean_reversion (score<40). All three regimes active (no zero-weight fallback). Position_size_scaling = regime_confidence = abs(regime_score − 50) / 50, so trending/mean_reversion fires with confidence=1.0, chop with confidence≤0.5. This scales forecast amplitude by regime clarity instead of eliminating non-trending bars entirely."
+
+mechanism: "Threshold_rules regime produced 0 trades in 5/12 windows due to sparse TRENDING classification. Score_mode ensures every bar has a regime assignment and trading signal proportional to regime quality. Keltner signal remains identical (forecast formula unchanged); only regime modulation changes. Expected outcome: trade frequency ≥50/month (vs 3.6 mean), higher statistical power for sharpe calculation, and comparable forecast_return_corr because signal is unchanged. Cost_drag should improve via higher trade density (more frequent rebalances reduce per-trade cost amortization)."
+
+assumptions:
+  - "Keltner signal quality (forecast_return_corr~0.21) is real and replicable; regime sparsity (threshold_rules binary) was the confound, not signal weakness."
+  - "ER and VR are appropriate regime indicators; only the threshold interpretation was wrong. Continuous scoring corrects the interpretation."
+  - "Confidence scaling prevents whipsaw: low-confidence chop signals sized small will not dominate cost_drag."
+  - "1h bars provide enough regime stability for score_mode (no bar-to-bar regime flipping); ER smooth_period=5 and VR window=100 provide sufficient damping."
+
+expected_failure_modes:
+  - "Score_mode produces regime noise; chop signals fire frequently with low confidence, causing high cost_drag despite scaled sizing."
+  - "Mean_reversion regime is non-predictive (forward_return_mean~0 per regime_validity); scaling it to weight=0.5 still wastes trades."
+  - "Confidence scaling does not prevent deterioration: trade frequency increases to 100+/month with sharpe dropping below 0.5 (whipsaw)."
+  - "Score distributions are asset-dependent: BTCUSDT regimes score differently than ETHUSDT, making single thresholds (70, 40) suboptimal for at least one asset."
+
+constraints:
+  - "Timeframe: 1h only."
+  - "Signal: Keltner mean-reversion (IDENTICAL to run_017 baseline, no new components)."
+  - "Regime: score_mode architecture (NOT threshold_rules, NOT new regime indicator; reinterpret existing ER/VR)."
+  - "Single-dimensional config change: regime_detector.mode (threshold_rules→score_mode), regime_detector.mode_params (add score thresholds and confidence scaling)."
+
+change_from_previous: |
+  PREVIOUS (run_017-derived):
+  Regime detection: threshold_rules, binary TRENDING gate (ER>=0.5 AND VR>=1.2).
+  Result: 0 trades in 5/12 windows, median sharpe=0.0, regime non-predictive (Rule 4 violation).
+  
+  NEW:
+  Regime detection: score_mode, continuous ER/VR scoring (0–100 scale).
+  Three regimes (trending, chop, mean_reversion) all trade Keltner with confidence scaling.
+  Position sizing: forecast_amplitude × regime_confidence, ensuring low-confidence bars downscaled.
+  
+  RATIONALE FOR PIVOT:
+  Diagnostics proved threshold_rules binary gating is uninformative (forward_return_mean non-stationary, bar_count=2–23/window too sparse).
+  V1 parameter refinement (default_regime=unknown, atr_multiplier=2.0) made problem worse by eliminating non-trending bars entirely.
+  Score_mode regime keeps ER/VR signal intact but reinterprets it as continuous confidence instead of binary gate.
+  This is a REGIME ARCHITECTURE pivot (altitude 2), not a signal change or new component (no altitude 3 escalation yet).
+  If score_mode also fails, next step is escalate to a new signal component (e.g., RSI mean-reversion, volatility breakout).

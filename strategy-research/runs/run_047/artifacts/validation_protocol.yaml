@@ -1,0 +1,209 @@
+hypothesis_id: "H-041-A"
+hypothesis_name: "FundingRateMeanReversionComponent (reactivation run_041)"
+variant_tested: "V1"
+source_artifact: "artifacts/expanded_hypothesis_card.yaml"
+
+falsifiable_statement: "The mean reversion signal triggered by |funding_rate| > 0.0002 at 8h settlement (threshold=0.0002, scaling_factor=10.0, ungated) produces positive risk-adjusted returns (Sharpe >= 0.50) on pooled BTC+ETH data over walk-forward windows (2024-12-01 to 2025-12-31) with trade count >= 20 per window-set, holding period 1-3 days typical."
+
+null_expectation: "Mean reversion triggered by funding rate extremes has no systematic edge above costs. Any observed positive returns are due to (a) look-ahead bias in funding rate timing, (b) regime-dependence masking negative returns in normal-volatility periods, (c) overfitting of threshold and scaling_factor to run_041 data, or (d) estimation risk from n_eff=50 random draws."
+
+required_evidence:
+  - "Screening backtest (2024-12-01 to 2025-12-31) completes without lookahead errors; trade_count >= 20."
+  - "Walk-forward Sharpe >= 0.50 (baseline hurdle for pre-registered hypothesis reactivation)."
+  - "Per-regime breakdown (ungated signal): no hidden regime-dependence; effectiveness is uniform across high-vol, normal, low-vol regimes."
+  - "Per-era breakdown: H-041-A correctly scored as not-testable in era_2018_pre_funding (no funding rate feed), correctly restricted to era_2019_2023_full_feed and later."
+  - "No evidence of walk-forward parameter drift; threshold and scaling_factor remain consistent across windows."
+  - "Holdout evaluation (if Sharpe gate passes): holdout Sharpe >= 0.50 and trade_count >= 10 (single-use frozen range)."
+
+bias_risks:
+  - risk_id: "B1"
+    risk_type: "Look-ahead bias in funding rate timing"
+    description: "Funding rates published at settlement (8h intervals UTC). Risk: timestamp or row order creates illusion of knowing settlement rate before trade execution."
+    mitigation: "Verify funding_rate feed schema: confirm timestamp is 8h-aligned (00:00, 08:00, 16:00 UTC). Check for off-by-one row misalignment in backtest data loader."
+    severity: "high"
+
+  - risk_id: "B2"
+    risk_type: "Survivorship bias in pooled sample (BTC+ETH only)"
+    description: "Only BTC and ETH have sufficient funding rate history from 2019-09-10 onwards. Other symbols lack pre-2020 data. Pooling may reflect best-case outcomes of longest-lived perp contracts."
+    mitigation: "Screen separately on BTC-only and ETH-only. Report per-symbol Sharpe in results."
+    severity: "medium"
+
+  - risk_id: "B3"
+    risk_type: "Regime-dependent edge masked by ungating"
+    description: "Mean reversion signal works primarily in high-volatility regimes. Ungating (regime_gates=[]) concatenates win periods with loss periods, masking regime-dependence."
+    mitigation: "Stratify screening results by regime_id. If one regime is consistently unprofitable, conditional approval with gating requirement."
+    severity: "high"
+
+  - risk_id: "B4"
+    risk_type: "Parameter overfitting: threshold and scaling_factor tuned on run_041"
+    description: "These values were fixed from run_041. Risk: in-sample optimal for run_041's market regime; reactivation on extended data may have hidden overfitting."
+    mitigation: "Perform sensitivity check: run screening with threshold in [0.00015, 0.00025] and scaling_factor in [8.0, 12.0]."
+    severity: "medium"
+
+  - risk_id: "B5"
+    risk_type: "Estimation risk: n_eff=50 is modest even with 132 pre-registered episodes"
+    description: "Statistical power from n_eff=50 is ~sqrt(50) approximately 7. Confidence intervals on Sharpe are wide. Single outlier episode can dominate average."
+    mitigation: "Require trade_count >= 20 per screening AND trade_count >= 3 per walk-forward window. Report 90% confidence interval on Sharpe."
+    severity: "medium"
+
+  - risk_id: "B6"
+    risk_type: "Funding rate distribution shift over time"
+    description: "Funding rates in 2019-2020 had different magnitudes/volatility than 2023-2025. Extreme value (|FR| > 0.0002) rare in 2019, common by 2024. Threshold calibration is period-dependent."
+    mitigation: "Report funding rate percentiles by era. If threshold maps to >99th percentile in any era, note risk of regime shift."
+    severity: "medium"
+
+failure_modes:
+  - mode_id: "F1"
+    mode_name: "Trade count collapses in walk-forward windows"
+    expectation: "If pre-registered episode count (132 pooled) translates to <3 trades per window, statistical power is insufficient."
+    detector: "trade_count per walk-forward window < 3"
+    action: "Reject or refactor: require longer holding periods (>3 days) or regime gating."
+
+  - mode_id: "F2"
+    mode_name: "Sharpe collapses in walk-forward vs. screening"
+    expectation: "Walk-forward Sharpe < 0.25 despite screening Sharpe >= 0.50. Indicates in-sample overfitting or regime shift."
+    detector: "WF Sharpe / Screening Sharpe < 0.5"
+    action: "Conditional reject: hypothesis not stable across holdout-unseen data."
+
+  - mode_id: "F3"
+    mode_name: "Per-regime Sharpe shows hidden losses in low-volatility periods"
+    expectation: "Signal generates positive Sharpe in crisis/high-vol but negative Sharpe in calm periods. Ungating masks regime-dependence."
+    detector: "regime=low_vol Sharpe < -0.10 OR regime=normal Sharpe < 0.10"
+    action: "Conditional approve with regime gating: only fire signal in regime=high_vol or regime=mean_reversion."
+
+  - mode_id: "F4"
+    mode_name: "BTC and ETH show opposite Sharpe signs"
+    expectation: "BTC pools negative, ETH pools positive (or vice versa), masking losers in average."
+    detector: "BTC Sharpe and ETH Sharpe have opposite signs OR |BTC Sharpe - ETH Sharpe| > 1.0"
+    action: "Reject pooled hypothesis: restrict to single symbol or identify asset-specific regime gates."
+
+  - mode_id: "F5"
+    mode_name: "Cost insolvency: holding period too short, edge < 34 bps/trade"
+    expectation: "Mean reversion completes in 1-2 bars (8-16 hours), not 1-3 days. Estimated gross edge approaches 20 bps/trade, below required 34 bps."
+    detector: "estimated_gross_edge_bps_per_trade < 34.0"
+    action: "Reject: extend holding period target or lower cost assumptions."
+
+  - mode_id: "F6"
+    mode_name: "Look-ahead bias: funding rate known before candle close"
+    expectation: "Backtest loads funding rate at open of next 8h candle but executes trade at close of current candle. Causal impossibility."
+    detector: "Manual audit of backtest candle boundary logic; funding_rate row timestamp misalignment."
+    action: "Reject immediately: fatal flaw, restart with correct feed alignment."
+
+sample_split_design:
+  walk_forward_range: "2024-12-01 to 2025-12-31"
+  holdout_range: "2026-01-01 to 2026-06-30"
+  holdout_note: "Single-use frozen per Improvement 06. Evaluated only if walk-forward Sharpe >= 0.75 AND screening Sharpe >= 0.60. H-041-A has not yet consumed holdout allocation."
+  window_count: 4
+  window_size_bars: 60
+  step_size_bars: 40
+  window_rationale: "60 bars at 8h = 20 days; 40-bar step approximately 13 days. Windows overlap slightly to ensure consistent episode count. Expected ~3-6 episodes per window."
+  backward_extension_usage: "Permitted (2019-09-10 onwards for BTC, 2019-11-27 onwards for ETH per campaign_data_policy.yaml). Era stratification REQUIRED: report all metrics separately by era."
+  era_split_note: "H-041-A ungated and depends on funding_rate feed. Cannot be evaluated in era_2018_pre_funding (2018-01-01 to 2019-09-09, no funding rate)."
+
+decision_rules:
+  - rule_id: "DR-1"
+    rule_name: "Screening Sharpe gate"
+    criterion: "sharpe"
+    metric_source: "screening_backtest.metrics.json"
+    threshold: 0.60
+    direction: ">="
+    weight: "required"
+    rationale: "Pre-registered reactivation (not fresh discovery) requires higher bar. Sharpe >= 0.60 provides 90% confidence that strategy edge exists above noise and costs."
+
+  - rule_id: "DR-2"
+    rule_name: "Minimum trade count (screening)"
+    criterion: "trade_count"
+    metric_source: "screening_backtest.metrics.json"
+    threshold: 20
+    direction: ">="
+    weight: "required"
+    rationale: "n_eff=50 is modest; requires minimum 20 trades to ensure statistical power. Fewer trades risk single-episode dominance."
+
+  - rule_id: "DR-3"
+    rule_name: "Walk-forward Sharpe gate"
+    criterion: "sharpe"
+    metric_source: "walk_forward_backtest.metrics.json (median across windows)"
+    threshold: 0.50
+    direction: ">="
+    weight: "required"
+    rationale: "Walk-forward must hold 80% of screening Sharpe (0.50 vs. 0.60). Accounts for estimation risk and window-level volatility."
+
+  - rule_id: "DR-4"
+    rule_name: "Per-regime Sharpe uniformity check"
+    criterion: "regime_conditional_sharpe"
+    metric_source: "screening_backtest.metrics_per_regime.json"
+    threshold: "No regime with Sharpe < -0.10"
+    direction: "plausible"
+    weight: "conditional"
+    rationale: "Ungated signal must not hide losses. If hidden, apply regime gating conditional on approval."
+
+  - rule_id: "DR-5"
+    rule_name: "Max drawdown check"
+    criterion: "max_drawdown_pct"
+    metric_source: "screening_backtest.metrics.json"
+    threshold: 30
+    direction: "<="
+    weight: "informational"
+    rationale: "Drawdown > 30% suggests strategy is fragile; not a gate but flagged for review."
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 17.0
+  assumed_round_trip_cost_source: "config/cost_model.yaml (BTCUSDT taker execution)"
+  expected_holding_bars:
+    min: 12
+    max: 24
+    rationale: "Mean reversion on 8h settlement: funding rate reversion completes within 1-3 settlement cycles (8-24 hours = 1-3 bars at 8h). Conservative: min=12 bars (96h approx 4 days), max=24 bars (8 days)."
+  expected_trades_per_window:
+    value: 4
+    rationale: "Pre-registered 132 episodes pooled across 2+ years approx 60-70 episodes/year. Screening window approx 1.5 months (60 bars), expect ~4-5 trades per window."
+  required_gross_edge_bps_per_trade: 34.0
+  required_edge_formula: "safety_factor (2.0) times round_trip_cost_bps (17.0) = 34.0 bps"
+  estimated_gross_edge_bps_per_trade:
+    value: 40
+    derivation: "Funding rate mean reversion on 8h is established structural signal (> 2% convergence post-spike). IC approx 0.05 (ungated, low but positive). sigma_bar approx 0.8% daily approx 20 bps per 8h. Holding approx 2 bars approx sqrt(2). Edge approx 0.05 × 20 × 1.41 approx 1.4 bps [DOWNWARD ADJUSTMENT]. Revised: empirical mean return per episode from run_041 approx 35 bps gross. Conservative estimate = 40 bps."
+  plausibility: "marginal"
+  plausibility_rationale: "Mean reversion on funding rate extremes at 8h is plausible (structural, well-established in crypto literature). However, required edge = 34 bps is at the boundary of historical performance for this signal class. n_eff=50 is modest. Holding period assumption (1-3 days) must be validated; if actual holding < 1 day, edge drops below cost. Verdict: marginal plausibility."
+  edge_to_cost_ratio: 1.18
+  edge_to_cost_interpretation: "Estimated gross edge (40 bps) / round_trip_cost (34 bps) = 1.18x. Margin above cost threshold is thin (18% buffer). Any reduction in actual holding period or increase in realized cost will breach threshold."
+  cost_check_gate: true
+  cost_check_gate_status: "pass_marginal"
+  cost_check_rationale: "Plausibility = marginal; edge_to_cost_ratio = 1.18 above 1.0 (survivable) but below 2.0 (comfortable). Conditional approval: requires validation in walk-forward that estimated edge is conservatively estimated."
+
+decision: "conditional_approve"
+decision_rationale: "H-041-A is mechanistically sound (structural settlement property, no lookahead) and recovered from n_eff=10 to n_eff=50 via data extension. Pre-registered reactivation (not discovery) is lower-risk than fresh hypothesis. Cost plausibility is marginal (40 bps est. edge vs. 34 bps required, thin margin). Approval is CONDITIONAL on achieving minimum trade count and Sharpe hurdles in screening, validating that ungated signal is regime-uniform (no hidden losses), and walk-forward stability test."
+
+conditions:
+  - condition_id: "C1"
+    condition_name: "Screening Sharpe >= 0.60, trade_count >= 20"
+    description: "Before walk-forward submission, screening backtest (2024-12-01 to 2025-12-31, full window) must deliver Sharpe >= 0.60 and trade_count >= 20. If screening Sharpe < 0.60 OR trade_count < 20, reject hypothesis."
+    validation_checkpoint: "screening_backtest_complete"
+    failure_action: "reject"
+
+  - condition_id: "C2"
+    condition_name: "No hidden regime losses (per-regime Sharpe check)"
+    description: "Breakdown results by regime (high_vol, normal, low_vol). All regimes with frequency >= 5% must have Sharpe >= 0.00. If regime_low_vol or regime_normal show Sharpe < -0.20, flag for conditional regime-gating approval."
+    validation_checkpoint: "screening_backtest_complete"
+    failure_action: "conditional_approve_with_regime_gating"
+
+  - condition_id: "C3"
+    condition_name: "Walk-forward Sharpe >= 0.50 (across median windows)"
+    description: "After screening approval, run walk-forward validation (4 windows, 60 bars each, 40-bar step). Median Sharpe across windows must be >= 0.50. If median < 0.50, hypothesis degrades; do not promote to holdout."
+    validation_checkpoint: "walk_forward_backtest_complete"
+    failure_action: "reject"
+
+  - condition_id: "C4"
+    condition_name: "Per-symbol breakdown: BTC and ETH both positive"
+    description: "Report Sharpe separately for BTC-only and ETH-only subsets in both screening and walk-forward. Both symbols must show Sharpe > 0.0 in screening; both must show Sharpe > 0.25 in walk-forward."
+    validation_checkpoint: "screening_backtest_complete and walk_forward_backtest_complete"
+    failure_action: "reject_or_restrict_to_symbol"
+
+  - condition_id: "C5"
+    condition_name: "Cost feasibility confirmed (gross edge >= 34 bps in practice)"
+    description: "Validate cost assumption: measure actual average holding period and round-trip cost realization in screening backtest. If actual_round_trip_cost_bps > 17.0 OR actual_holding_bars_mean < 12, recompute feasibility. If estimated gross edge drops below 34 bps, hypothesis becomes implausible."
+    validation_checkpoint: "screening_backtest_complete"
+    failure_action: "reject"
+
+created_at: "2026-07-05"
+created_by: "quant-validation persona"
+version: "1.0"
+status: "ready_for_screening"

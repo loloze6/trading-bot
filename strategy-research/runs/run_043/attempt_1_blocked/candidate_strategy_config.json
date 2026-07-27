@@ -1,0 +1,52 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "dummy",
+        "class": "strategies.strategy_components.BuyAndHoldStrategy"
+      }
+    ],
+    "rules": [
+      {
+        "regime": "active",
+        "any_of": [
+          [
+            {
+              "id": "dummy",
+              "op": "gte",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 51,
+    "regimes": {
+      "active": {
+        "components": [
+          {
+            "id": "ema_spread",
+            "class": "strategies.strategy_components.EMASpreadComponent",
+            "params": {
+              "fast_period": 9,
+              "slow_period": 21,
+              "scaling_factor": 5.0
+            },
+            "weight": 1.0,
+            "lookback": 500,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "unknown": null
+    }
+  }
+}

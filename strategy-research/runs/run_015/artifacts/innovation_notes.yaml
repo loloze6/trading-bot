@@ -1,0 +1,44 @@
+run_id: "run_015"
+from_stage: "hypothesis_generation"
+to_stage: "innovation_expansion"
+expansion_type: "constraint-driven pass-through"
+
+expansion_decision: |
+  Research brief constrains variant count to "one variant only". No multi-variant 
+  expansion applied. Base hypothesis V3 passed through as canonical V1 variant.
+
+constraint_interpretation: |
+  Brief explicitly states: "one variant only — test Keltner channel breakouts against 
+  ER/VR trending thresholds". Expansion stage honors input constraints; multiple-variant 
+  expansion only appropriate when variant count unconstrained.
+
+novelty_preserved_via: |
+  Hypothesis already embeds structural novelty via regime inversion (TRENDING not 
+  mean_reversion) + signal family change (breakout momentum not pullback RSI). 
+  Novelty sourced from research_brief pivot rationale, not expansion stage.
+
+what_not_to_try_from_carryover: |
+  - RSI pullback signals in any regime variant (V2 family exhausted)
+  - Mean_reversion regime variants (ER ≤ 0.25, VR ≤ 1.00): ruled out by hypothesis pivot
+  - ER/VR threshold relaxation beyond V2 attempts (run_012–014 tested)
+  - Diagnosing near-zero forecast_return_corr as "no edge" without checking gross_pnl
+  - Threshold tuning until V1 screening backtest completes (cost_drag diagnostic required first)
+
+variant_v1_rationale: |
+  Keltner channel breakouts in TRENDING regime represent direct inversion of V2 
+  failure vector. V2 tested oversold pullback signals in low-ER/low-VR conditions 
+  expecting mean reversion; result was +21.94 gross PnL but 142.8% cost drag 
+  (sizing problem, not no edge). V1 tests overbought continuation signals in 
+  high-ER/high-VR conditions, expecting larger per-trade magnitude to reduce 
+  cost friction. Same signal family (Keltner bands available; RSI abandoned) 
+  different regime and directional assumption.
+
+recommended_screening_focus: |
+  1. Verify cost_drag < 80% (if > 100%, retire signal family per exit_criteria)
+  2. Confirm trade_count ≥ 30 both symbols (regime must fire with sufficient frequency)
+  3. Check gross_pnl > 0 (directional edge must exist before cost analysis)
+  4. If Sharpe ∈ [–3, 0.5) AND gross_pnl > 0: pause before next stage; prepare 
+     minimum forecast threshold tuning plan (do NOT pivot signal again)
+
+ready_for_validation_gate: true
+blocking_issues: []

@@ -1,0 +1,41 @@
+hypothesis_id: H-RUN007
+
+thesis: >
+  RSI(14) distance from 50 generates positive alpha in BTCUSDT 1h 
+  under mean reversion regime (ER ≤ 0.20, VR ≤ 0.90). 
+  Long-only positioning on oversold pullbacks.
+
+rationale: >
+  Regime filter (low efficiency, low volatility) removes trending 
+  conditions where oversold is directional continuation, not reversion. 
+  RSI < 50 in mean reversion regime indicates temporary price deviation. 
+  Signal magnitude proportional to deviation distance maximizes edge 
+  capture. Integrates as CompositeStrategyComponent with existing 
+  AdvancedStrategy regime architecture.
+
+signal_concept: >
+  forecast = max(0, (50 - RSI(14)) / 100). Range [0, 0.5]. 
+  Standardized by stddev_24 * close per ComponentOutput protocol.
+
+target_market: BTCUSDT
+
+timeframe: 1h
+
+assumptions:
+  - Mean reversion regime frequency ≥ 15% of bars (sufficient sample).
+  - ER/VR regime classification accuracy ≥ 75% vs. realized reversals.
+  - RSI measurement error < 2% under Binance feed conditions.
+  - Transaction costs ≤ 5-10 bps per trade (preserves edge).
+  - No regime shift in instrument during 2-year test window.
+
+expected_failure_modes:
+  - Regime lag: classification lags actual reversion by 1-3 bars; 
+    captures partial edge only.
+  - Signal noise: RSI distance decays without reversion in > 50% 
+    of triggered signals.
+  - Regime false positive: VR < 1.0 but subtle trend present; 
+    filter allows trending reversals.
+  - Sample insufficiency: ~2,600 regime bars may lack power for 
+    significance at standard thresholds.
+  - Cost consumption: frequent false positives exhaust edge 
+    entirely via round-trip spread.

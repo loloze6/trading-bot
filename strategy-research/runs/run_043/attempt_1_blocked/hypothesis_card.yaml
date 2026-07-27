@@ -1,0 +1,47 @@
+hypothesis_id: EMA_SPREAD_TREND_CONTINUATION
+thesis: "Continuous EMA spread (9/21 periods) carries persistent ungated directional information at 1h on BTC/ETH. The spread % forecast yields positive IC after costs despite high crowding of MA signals, due to continuous activation density and intraday momentum capture that discretized MA-crossover arbs miss."
+rationale: "EMA spread quantifies directional consensus formation. When fast EMA diverges above slow EMA, it reflects distributed agreement among trend-following agents. The signal is continuous (not binary at crossover), which reduces regime-sensitivity and captures intraday momentum reversals before mean-reversion re-enters. At 1h timeframe, the ~6-bar lag creates a small predictable window; overnight gaps introduce daily regime resets that mechanical arbs cannot fully exploit. Campaign hypothesis: continuous density (95% of bars) and lag structure permit residual edge post-costs despite crowding."
+
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "When fast EMA (9-bar) trades above slow EMA (21-bar), the percentage spread (fast - slow) / slow × 100 quantifies consensus strength among trend-following participants. Positive spread triggers momentum-chasing herding; negative spread triggers downside herding. The spread intensity predicts 1–4 bar continuation before mean-reversion dissipates the signal."
+  why_not_arbitraged: "MA-based strategies are heavily crowded and arbitraged on BTC/ETH. However, traditional discretized MA-crossover arbs (buy once at crossover) have structural gaps: (i) embedded ~6-bar lag reduces ex-ante arbitrage window; (ii) overnight gaps and external event risk create daily regime resets that mechanical strategies cannot adapt to in real-time; (iii) continuous spread activation (95% of bars) versus discrete crossover (1–2 per trend) shifts the adversary's cost surface — fewer per-bar optimizations justify very high trade count; (iv) dense signal keeps transaction costs high for would-be arbitrageurs, limiting competition depth. Edge is weak but plausible post-costs."
+  evidence_type: price_volume_only
+  measurable_proxy: "EMA_spread_pct = (EMA9 - EMA21) / EMA21 × 100. Measurable directly from OHLCV (no external feed required). Hypothesis: EMA_spread_pct positively predicts 1h next-bar return; correlation expected 0.05–0.08 (literature range for crowded MA signals on crypto). Proxy distinguishes consensus-driven momentum (positive IC) from regime-flat periods (near-zero IC)."
+
+signal_concept: "EMASpreadComponent(fast_period=9, slow_period=21, scaling_method='quantile_norm') computes forecast = EMA_spread_pct × scaling_factor. Signal is ungated: no regime filter (A2.3 standing policy). Always-on, continuous activation on ~95% of bars after 21-bar warmup. Sparse NaN bars (market gaps) treated as zero forecast. Scaling factor is derived from pre-test empirical quantile matching (target: forecast mean ≈ 0, stddev ≈ 10 per existing strategy convention)."
+
+target_market: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+
+assumptions:
+  - "EMA spread is a stationary proxy for directional consensus during 2024-2025 test window; behavioral herding dynamics do not materially shift."
+  - "EMASpreadComponent exists in trading-bot/strategies/strategy_components.py and requires no architectural changes; scaling instantiation is parameter-free."
+  - "Quantile scaling of spread → forecast is invertible and does not introduce overfitting; all tuning is data-agnostic (quantile targets are fixed, not optimized)."
+  - "Round-trip transaction costs (slippage + Binance taker fee) are ≤20 bps per trade on BTC/ETH perpetuals; cost model is accurate within ±5 bps."
+
+expected_failure_modes:
+  - "High crowding (library: crowding_risk=high on MA signals) may compress gross IC below cost threshold despite statistical significance. Prior RSI/Keltner families failed due to cost_drag overwhelming positive but small IC. EMA spread faces identical structural pressure."
+  - "Regime sensitivity: signal is ungated but library affinity indicates favorable-trending, unfavorable-ranging. Extended ranging periods (20–30 days) will produce zero-trade slots and cost-drag dominated periods. Per-regime breakdown (Improvement 03) will show positive trending IC overwhelmed by negative ranging IC."
+  - "Parameter cliff risk: 9/21 periods are empirically chosen. Adjacent alternatives (8/20, 10/22, 7/23) may produce radically different IC due to lag-sensitivity of MA parameter space. No guarantee optimal parameters were selected."
+  - "Overnight gap and news risk: External black-swan events (rate decisions, exchange hacks, regulatory announcements) create gap opens and regime shifts that invalidate EMA spread signal alignment. Continuous EMA cannot detect real-time structural breaks. Drawdown concentration during event periods may dominate returns."
+  - "Data window bias: 2024-2025 is a crypto bull/recovery period with strong directional bias. Signal may be learning asset-level uptrend rather than the EMA spread mechanism. Holdout test on orthogonal market regime (2018 bear or 2022 bear washout) is critical for validation."
+
+library_lookup:
+  indicator_id: moving_average_crossover
+  regime_affinity_for_target: "neutral (hypothesis is ungated; library affinity is favorable-trending / unfavorable-ranging / unfavorable-high-vol)"
+  affinity_justification: "Per A2.3 standing policy, no regime-gated hypotheses enter the queue. This hypothesis is ungated by design. The indicator's known regime affinity creates an expected failure mode: performance will deteriorate sharply during ranging/high-vol regimes. This is not a surprise or parameter bug; it is inherent to the MA mechanism. Improvement 03 diagnostics will confirm this pattern. The hypothesis stands because unfiltered (gross) IC is hypothesized to be positive across all regimes."
+  prior_campaign_failures: []
+  crowding_risk: high
+  crowding_deviation_justification: "MA crossover is the most-crowded indicator in the library (universally taught, heavily arbitraged). No lower-crowding alternative exists with equivalent edge_source_compatibility (persistent_behavioral_bias). The campaign hypothesis is that continuous spread variant (not binary discretized crossover) and 1h timeframe lag structure provide residual edge to offset crowding. If this hypothesis fails on cost_drag, the root cause will be MA mechanism saturation on crypto 1h, closing the MA-based family for future runs."
+
+power_parameters:
+  activation_rate: 0.95
+  plausible_ic_upper: 0.08
+  n_bars: 17500
+  n_symbols: 2
+  is_market_wide: false
+  expected_active_bars: 33250
+  expected_n_eff: 1385
+  min_detectable_ic_at_target_power: 0.027
+  power_verdict: "sufficient — n_eff=1385 far exceeds minimum required to detect plausible_ic_upper=0.08 with 90%+ power at p<0.05"

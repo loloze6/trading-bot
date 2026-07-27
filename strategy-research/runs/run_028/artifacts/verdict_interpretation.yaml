@@ -1,0 +1,56 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+protocol_verdict: refine
+status: refine
+criteria_summary:
+  - criterion: "sharpe > 0.2"
+    result: FAIL
+    actual: 0.0
+  - criterion: "min_trade_count >= 3"
+    result: FAIL
+    actual: 0
+  - criterion: "win_rate >= 0.4"
+    result: FAIL
+    actual: 0.0
+  - criterion: "max_drawdown_pct < 20"
+    result: PASS
+    actual: 0.0
+  - criterion: "sharpe > V1_sharpe + 0.15"
+    result: UNTESTED
+    reason: "Could not parse numeric threshold"
+  - criterion: "sharpe > V1_sharpe + 0.10"
+    result: UNTESTED
+    reason: "Could not parse numeric threshold"
+  - criterion: "sharpe < V1_sharpe - 0.30"
+    result: UNTESTED
+    reason: "Could not parse numeric threshold"
+  - criterion: "sharpe > V1_sharpe"
+    result: UNTESTED
+    reason: "Could not parse numeric threshold"
+  - criterion: "V1 hold-out Sharpe within 90% of screening Sharpe"
+    result: UNTESTED
+    reason: "Not available in current metrics pipeline"
+primary_failure_mode: |
+  Regime threshold (min_score=0.4) too strict. Threshold admits only ~15 bars
+  as qualifying "trending" across 11 windows. Trade frequency collapsed to
+  0.18 avg trades/window (need >= 3). Signal itself is predictive when regime
+  fires (forecast_return_corr=0.4859); regime filter prevents execution.
+config_to_failure_map: |
+  regime_detector.score_product.min_score=0.4 → ER×VR score must reach 0.4 to
+  qualify bar as "trending". At 4h timeframe, typical ER and VR values do not
+  jointly reach 0.4 frequently. Score < 0.4 defaults to "unknown" regime (zero
+  forecast), suppressing signal fire.
+untested_criteria:
+  - "sharpe > V1_sharpe + 0.15"
+  - "sharpe > V1_sharpe + 0.10"
+  - "sharpe < V1_sharpe - 0.30"
+  - "sharpe > V1_sharpe"
+  - "V1 hold-out Sharpe within 90% of screening Sharpe"
+proposed_change_dimension: regime_threshold
+hypothesis_family: keltner_scoremode
+altitude_justification: |
+  Regime threshold problem: min_trade_count=0 (required >= 3),
+  forecast_return_corr=0.4859 > 0.03 (signal is predictive when regime fires),
+  cost_drag=37.34% < 80% (not sizing-constrained). Per validation_protocol
+  failure mode "Regime score threshold too tight": Threshold requires
+  refinement. Solution: lower min_score from 0.4 to 0.25 to increase regime
+  fire frequency 3-5× without changing signal or regime mode.

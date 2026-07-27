@@ -1,0 +1,27 @@
+handoff_version: 1
+run_id: run_027
+from_stage: verdict_interpreter
+to_stage: campaign_review
+assigned_engine: claude
+objective: 'Step back from per-run decisions and assess the full campaign. Detect
+  patterns across all runs that indicate whether to continue, reframe, escalate, or
+  terminate.
+
+  '
+primary_input_artifact: ../../campaign_state.yaml
+required_inputs:
+- path: ../../campaign_state.yaml
+  reason: full history of all runs, families tried, diagnostics across all iterations
+- path: artifacts/research_brief.yaml
+  reason: the original research question to compare against current search direction
+deliverables:
+- campaign_review.yaml
+constraints:
+- Do not recommend terminate with fewer than 3 instruments tried AND 1 component built.
+- Cite specific diagnostic values from diagnostics_log, not general impressions.
+- If recommendation is reframe, next_research_question must be a complete research_brief.
+stop_conditions:
+- All reasonable options exhausted → recommendation: terminate with full evidence.
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'false'

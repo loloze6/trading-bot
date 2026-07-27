@@ -1,0 +1,71 @@
+hypothesis_id: "H-041-A"
+hypothesis_name: "FundingRateMeanReversionComponent (reactivation run_041)"
+variant_tested: "V1"
+
+status: "conditional_approve"
+
+rationale: |
+  H-041-A is mechanistically sound (structural settlement property, no lookahead bias risk) 
+  and has recovered from n_eff=10 to n_eff=50 via data extension (2019-09-10/2019-11-27 through 
+  2025-12-31). Pre-registered reactivation status (not fresh discovery) reduces risk relative 
+  to novel hypotheses. Cost plausibility is marginal (estimated 40 bps gross edge vs. 34 bps 
+  required, 18% buffer). Approval is conditional on (1) screening Sharpe >= 0.60 AND trade_count >= 20, 
+  (2) per-regime Sharpe uniformity (no hidden losses in normal/low-vol regimes), 
+  (3) walk-forward Sharpe >= 0.50 stability test, (4) per-symbol BTC/ETH both positive, 
+  (5) cost feasibility validation (actual holding and spreads confirm 34+ bps gross edge).
+
+blocking_issues: []
+
+conditions:
+  - condition_id: "C1"
+    condition_name: "Screening gate: Sharpe >= 0.60, trade_count >= 20"
+    description: "Baseline hurdle for reactivation (not discovery). Ensures statistical power (n_eff=50 modest, requires ~20 episodes minimum to rule out noise)."
+
+  - condition_id: "C2"
+    condition_name: "Regime uniformity: no hidden losses in normal/low-vol"
+    description: "Ungating risk: signal may be profitable only in crisis regimes. Screening results must show uniform effectiveness across regimes or trigger conditional regime-gating approval."
+
+  - condition_id: "C3"
+    condition_name: "Walk-forward stability: Sharpe >= 0.50 (median windows)"
+    description: "Out-of-sample hold-back test. Walk-forward Sharpe must be >= 80% of screening (0.50 vs 0.60) to rule out in-sample overfitting."
+
+  - condition_id: "C4"
+    condition_name: "Per-symbol positive returns (BTC and ETH)"
+    description: "Survivorship bias risk: pooling may mask losers. Both symbols must show positive Sharpe in screening and walk-forward to justify pooled hypothesis."
+
+  - condition_id: "C5"
+    condition_name: "Cost feasibility: actual gross edge >= 34 bps"
+    description: "Cost model validation. Measure actual holding period and realized spreads/slippage. If actual cost > 17.0 bps or holding < 12 bars, reject (edge becomes implausible)."
+
+next_stage: "screening_backtest"
+
+screening_configuration:
+  data_range: "2024-12-01 to 2025-12-31"
+  symbols: ["BTCUSDT", "ETHUSDT"]
+  per_symbol_reporting: true
+  per_regime_reporting: true
+  cost_validation_enabled: true
+  confidence_intervals_enabled: true
+  sensitivity_check_enabled: "threshold in [0.00015, 0.00025], scaling_factor in [8.0, 12.0]"
+
+approval_path:
+  if_screening_passes: "→ walk_forward_validation (4 windows, 60 bars, 40-bar step)"
+  if_screening_fails_sharpe: "→ reject (return to innovation_expansion)"
+  if_screening_fails_trade_count: "→ reject (increase regime gating or holding period assumptions)"
+  if_hidden_regime_losses: "→ conditional_approve_with_regime_gating (fire signal in regime=high_vol only)"
+  if_per_symbol_diverges: "→ reject_pooled (restrict to single symbol, new hypothesis_id required)"
+  if_walk_forward_fails: "→ reject (hypothesis not stable across unseen data)"
+  if_holdout_passes: "→ research_decision_report_pass (hypothesis approved for full deployment)"
+
+assessment_summary:
+  hypothesis_soundness: "Sound: structural mechanism (funding rate settlement), no lookahead, pregregation intact, data extension valid."
+  data_quality: "Good: n_eff recovery 10→50, pre-registered episode count 132 pooled (BTC+ETH), era stratification required (no era_2018_pre_funding)."
+  cost_plausibility: "Marginal: 40 bps estimated edge vs 34 bps required; 18% buffer; holding period assumption (1-3 days) critical."
+  regime_dependence_risk: "High: ungated signal may mask high-vol-only profitability. Per-regime screening mandatory."
+  estimation_risk: "Moderate: n_eff=50 modest; requires minimum 20 trades per screening, minimum 3 per walk-forward window."
+  parameter_stability: "Moderate: threshold and scaling_factor fixed from run_041; sensitivity check required."
+  overall_recommendation: "Proceed to screening with all conditions enforced. Cost marginal but defensible. Data extension provides legitimate recovery path. High-risk reactivation but not blocked."
+
+created_at: "2026-07-05"
+created_by: "quant-validation persona"
+version: "1.0"

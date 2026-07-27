@@ -1,0 +1,26 @@
+hypothesis_id: "RUN017_REPLICATION_REFINE_01"
+what_failed:
+  - "Sharpe criterion (aspirational): BTCUSDT median -6.791, ETHUSDT median -5.045 vs target 0.6"
+  - "Sharpe criterion (required): BTCUSDT median -6.791, ETHUSDT median -5.045 vs target >= 0.5"
+diagnostic_rule_applied: "Rule 1: Cost drag dominates (sizing problem, NOT signal problem)"
+diagnostic_snapshot:
+  median_forecast_return_corr: 0.0136
+  median_cost_drag_pct: 413.0538
+  median_gross_pnl: 9.3776
+  median_sharpe: -6.791
+  uninformative_regimes:
+    - "trending"
+what_not_to_try:
+  - "Do NOT pivot signal family while cost_drag > 80% and gross_pnl > 0. The signal has an edge (gross_pnl positive); sizing/frequency is the problem, not signal logic."
+  - "Do NOT increase atr_multiplier to reduce signals; that changes the component and wastes a run on a pivot instead of a frequency refinement."
+  - "Do NOT lower ER further; the problem is over-trading, not under-trading. Moving toward 0.35 or below amplifies the cost_drag."
+next_altitude: "refine"
+parameter_bracket:
+  dimension: "er_threshold"
+  too_tight_value: 0.50
+  too_loose_value: 0.35
+  last_tried_value: 0.35
+  direction_history:
+    - "tight"
+    - "loose"
+  midpoint: 0.425

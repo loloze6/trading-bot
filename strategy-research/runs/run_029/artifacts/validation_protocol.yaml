@@ -1,0 +1,71 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+falsifiable_statement: |
+  Lowering regime score threshold from 0.4 to 0.25 increases trade frequency 3–5×
+  while maintaining Sharpe ≥ 0.3 and win_rate ≥ 0.50 (V1 baseline).
+  Multiplicative regime formula (V1) outperforms additive (V4) and other variants.
+  Reverse hypothesis (unconditional Keltner) has Sharpe < 0.0, confirming regime 
+  necessity rather than cost.
+
+null_expectation: |
+  Under the null, at least one of: (1) V1 Sharpe ≤ baseline (0.4 threshold) Sharpe,
+  (2) V1 trade_count increase < 2× (contradicting claimed 3–5×),
+  (3) V1 win_rate < 0.45, (4) reverse_Sharpe ≥ V1_Sharpe (regime adds cost, not edge),
+  (5) V1_max_drawdown_pct > 35%.
+
+required_evidence:
+  - "V1, V2, V3, V4, V5, and reverse hypothesis backtested across 5+ walk-forward windows with identical market data and date ranges"
+  - "Per-window Sharpe, trade_count, win_rate, max_drawdown_pct for each variant; flagged if trade_count < 5 per window"
+  - "Reverse hypothesis must show negative or significantly lower Sharpe to falsify null"
+  - "Total trade_count across all windows must be ≥50 for each variant; otherwise regime threshold too restrictive"
+  - "Threshold value (0.25) must be declared immutable before W1; derivation method must be specified (optimization, prior, domain expert)"
+
+bias_risks:
+  - "Threshold Overfitting: If 0.25 was chosen post-hoc to maximize Sharpe on same data, re-optimization across variants inflates expected best-variant Sharpe by ~0.15–0.20 under null"
+  - "Regime Score Leakage: ER (Efficiency Ratio) and VR (Volatility Ratio) computed from same OHLCV bar that triggers signal; verify no forward-looking embedded assumptions (e.g., ATR includes intrabar range not known at close)"
+  - "Multiple Comparison Problem: Testing 9 variants (5 primary + reverse + 3 regime-specific) creates expected max-Sharpe ≈0.40 under null at p=0.05 uncorrected; requires Bonferroni or step-down correction"
+  - "Regime Settling Artifact: Bars immediately post-regime-transition may exhibit temporary volatility spikes triggering false mean-reversion signals; must exclude first 5 bars after threshold cross"
+  - "Sample Fragmentation: Per-regime thresholds (trending, volatile, trending+volatile) subdivide windows; any sub-sample with <5 trades is unreliable; do not aggregate"
+  - "Walk-Forward Regime Drift: Market regime composition may shift across windows (e.g., 2024 trending, 2025 choppy); Sharpe medians mask inter-window variance; report per-window separately"
+  - "Reverse Hypothesis Ambiguity: Reverse tests regime necessity but does NOT test alternative regime formulas; even if reverse Sharpe < V1, reverse does not imply V1 is optimal"
+
+failure_modes:
+  - "V1 Sharpe < 0.20: Threshold 0.25 adds filtering cost without preserving edge; hypothesis fails; regime-based approach is not viable at 4h timeframe"
+  - "Reverse Hypothesis Sharpe ≥ V1 Sharpe: Unconditional Keltner outperforms regime-gated variant; regime filter introduces cost, not signal; entire regime thesis falsified"
+  - "Total Trade Count < 30: Threshold 0.25 insufficient to achieve claimed 3–5× increase; sample size remains too small or regime formula too restrictive"
+  - "V1 Win Rate < 0.45: Larger sample includes low-conviction trades; edge degraded; Sharpe > 0.3 driven by lucky outliers, not robust signal"
+  - "V1 Max Drawdown > 35%: Sample increase exposes portfolio to path-dependent drawdowns; Sharpe positive but risk-adjusted returns diminished when portfolio-level volatility considered"
+  - "Per-Window Sharpe Range > 0.40 (e.g., min=0.1, max=0.7): Median sharpe masks instability; regime not consistently predictive across market conditions; overfitted to specific window"
+  - "V2/V3/V4/V5 All Sharpe > V1: V1 baseline is not robust; parameter space under-explored; claim that threshold 0.25 is optimal contradicted by superior variants"
+  - "Min Trade Count per Window < 5: Regime filter fails to trigger in certain market regimes (e.g., highly volatile) leaving strateg inert; limits practical applicability"
+
+sample_split_design: |
+  Walk-forward structure:
+  - Initial window (calibration): 2023 Jan–Dec (regime score distribution only; no trading)
+  - Validation window 1: 2024 Jan–Jun (6 months; ~26 weeks)
+  - Validation window 2: 2024 Jul–Dec (6 months; ~26 weeks)
+  - Holdout window: 2025 Jan–present (reserve for final test if hypothesis passes validation)
+  
+  Per-variant isolation:
+  - Each variant (V1–V5, Reverse, regime-specific) runs independently on full date range
+  - Threshold value locked at start of W1; no re-optimization during walk-forward
+  - Regime state initialized on first 20 bars of each window (do not carry forward from prior window)
+  
+  Transition exclusion:
+  - Identify bars where regime_score crosses threshold (entry/exit)
+  - Exclude 5 bars immediately post-entry (settling window)
+  - Record transition frequency for regime stability analysis
+  
+  Aggregation rules:
+  - Sharpe: median across windows (not mean; reduces outlier impact)
+  - Win rate: overall count (profitable / total trades)
+  - Trade count: sum across windows; report per-window separately
+  - Max drawdown: peak-to-trough across full period
+  - Flag: windows with trade_count < 5 as regime-inapplicable; do not include in Sharpe computation
+
+decision_rules:
+  - "Approval gate: V1_sharpe >= 0.30 AND V1_win_rate >= 0.50 AND V1_trade_count >= 50"
+  - "Falsification gate (required): reverse_sharpe < 0.00; if reverse_sharpe >= V1_sharpe, hypothesis rejected immediately"
+  - "Robustness gate: V1_trade_count must include >=5 trades in at least 4 of 5 walk-forward windows (regime must be consistently applicable)"
+  - "Risk gate: V1_max_drawdown_pct <= 35%; if violated, escalate to risk management review"
+  - "Sample threshold gate: V1_trade_count >= 50 TOTAL confirms 3–5× sample increase relative to 0.4 threshold baseline (backtest baseline on same data to confirm)"
+  - "Stability gate: Report V1_sharpe per window; any window with sharpe < 0.0 must be investigated for regime applicability; if >1 window fails, regime not stable"

@@ -1,0 +1,140 @@
+hypothesis_id: volume_momentum_btcusdt_1h
+
+falsifiable_statement: |
+  Primary thesis (variants 001, 002, 004, 005, 006): 
+  Close[t+1] > Close[t] when momentum[t] > 0 AND vol_ratio[t] > threshold with hit rate ≥55%.
+  
+  Null: Hit rate = 50% (random). Volume and momentum are independent.
+
+null_expectation: |
+  Random guess: 50% directional accuracy. Volume ratio is venue adoption proxy, not signal.
+  Strategy must exceed this by ≥5% to justify operational complexity.
+
+required_evidence:
+  - walk_forward_hit_rate: ≥55% (min 1000 signals)
+  - sharpe_ratio: ≥0.5 (post-fee, 0.075% per side)
+  - regime_split: TRENDING ≥54%, RANGING ≥53% (no >5% degradation)
+  - holdout_performance: ≥55% hit rate, ≥0.3 Sharpe (unseen period)
+  - correlation_stability: vol_momentum correlation loss recovery < 20 bars
+  - cross_pair_validation: ≥54% hit rate on ETHUSDT, BNBUSDT
+
+bias_risks:
+  look_ahead_bias: |
+    Signal uses close[t] volume to forecast close[t+1]. Acceptable if signal 
+    computed post-close. Risk: multi-bar conviction (variant_002) may reference bar[t+1] 
+    during bar[t] decision. Mitigation: Ensure training samples respect bar boundary.
+  
+  selection_bias: |
+    BTCUSDT dominates retail; volume behavior isolated to one pair/venue. 
+    High trading velocity post-2024 inflates vol_ratio distributions. Mitigation: 
+    Require cross-pair validation; reject if pair-specific.
+  
+  regime_detection_bias: |
+    If regime detector uses volume, strategy is endogenous (circular). Forecast 
+    depends on regime; regime depends on volume. Backtest treats as exogenous; 
+    live regime may be unstable. Mitigation: Verify regime uses price/volatility only.
+  
+  variant_selection_bias: |
+    Six variants + three behavioral features + three regime-specific specs = 12+ configurations.
+    Cherry-picking best performer on backtest data (even walk-forward) risks massive overfitting.
+    Mitigation: Pre-commit to ONE variant before testing. No post-hoc selection allowed.
+  
+  hyperparameter_opacity: |
+    Clamp range [-20, 20] and vol_thresholds (1.2–1.5) lack justification. Appear arbitrary, 
+    not derived from risk model or Keltner bandwidth. Mitigation: Require explicit justification 
+    or grid sweep with pre-committed bounds.
+
+failure_modes:
+  - mode: Whipsaw in tight ranges
+    cause: 5-bar momentum reverses within bar; volume spike on reversal direction
+    impact: Hit rate < 50%, Sharpe < -0.5
+    detection: Monitor 50-bar rolling hit rate; alert if <48%
+  
+  - mode: Leverage closeout signals
+    cause: High volume on move direction = institutional exit, not entry confirmation
+    impact: Hit rate 45–48% (distribution, not accumulation)
+    detection: Analyze vol_ratio spike timestamps vs next-bar range; exits underperform continuations
+  
+  - mode: Venue adoption drift
+    cause: BTCUSDT volume growth orthogonal to signal quality; vol_ratio threshold becomes stale
+    impact: vol_ratio > 1.5 becomes baseline; false signals increase
+    detection: Track vol_ratio distribution over rolling 6-month windows; recalibrate if median shifts
+  
+  - mode: Volatility expansion uncouples vol-momentum
+    cause: High-vol periods see vol spikes unrelated to momentum (gamma hedging, volatility expansion)
+    impact: Hit rate degrades during σ > 3%; Sharpe collapses
+    detection: Split backtest by volatility regime (low/med/high); monitor rolling corr(momentum, vol_ratio)
+  
+  - mode: Regime misidentification
+    cause: Regime detector mistakes TRENDING for RANGING; variants_004 apply wrong parameters
+    impact: False signals; divergent performance from assumption
+    detection: Validate regime detector on 20 random dates (manual chart review)
+
+sample_split_design:
+  data_universe: BTCUSDT 1h, 2024-01-01 to 2026-06-16 (30 months)
+  
+  train_validation: 2024-01-01 to 2025-06-30 (18 months)
+    allocation: 70% train, 30% validation (time-split, no shuffle)
+  
+  walk_forward: 2025-07-01 to 2026-02-28 (8 months)
+    blocks: 3 rolling 3-month blocks with 1-month overlap
+    constraint: No backfitting; each block uses only prior data for parameterization
+  
+  holdout: 2026-03-01 to 2026-06-16 (4 months, unseen)
+    freeze_date: 2026-03-01 (backtest cannot touch after this)
+  
+  regime_split: Classify each bar into TRENDING or RANGING using existing regime detector (ER/vol only).
+    test_separately: Hit rate for TRENDING subset, RANGING subset, combined
+    minimum_signals: ≥1000 total, ≥200 per regime
+  
+  transaction_costs: Assume taker fee 0.075% per side (entry + exit = 0.15% per round trip)
+
+decision_rules:
+  rule_01_direction_conflict: |
+    Variants 003 (divergence reversal) and reverse_hypothesis contradict base confirmation thesis.
+    Cannot test both; author must choose ONE (confirmation or reversal) based on economic rationale, 
+    not backtest results. GATE: Pre-commit direction before backtest. Any post-hoc switching = REJECT.
+  
+  rule_02_variant_filtering: |
+    Variants 002 (multi-bar conviction), 003, 006 require buy/sell volume decomposition. OHLCV 
+    insufficient; buy_volume proxy error > 20% on low-vol bars. GATE: Approve only variants 001, 
+    004, 005 unless trade data sourced. Document decision.
+  
+  rule_03_hyperparameter_justification: |
+    Clamp [-20, 20] and vol_thresholds (1.2–1.5) lack derivation. GATE: Either (A) justify 
+    (Keltner? Risk model?) with citation, or (B) treat as hyperparameters and sweep in walk-forward 
+    with pre-committed grid (e.g., vol_threshold ∈ [1.1, 1.2, 1.3, 1.4, 1.5]).
+  
+  rule_04_regime_independence: |
+    If regime detector uses volume, strategy is endogenous. GATE: Verify regime is price/volatility only. 
+    If volume-dependent, either redesign as regime-agnostic OR document coupling as limitation.
+  
+  rule_05_precommitment: |
+    Approval thresholds (≥55% hit rate, ≥0.5 Sharpe, ≥54% TRENDING, ≥53% RANGING) set before backtest runs. 
+    GATE: No post-hoc threshold adjustment. Any moving = REJECT entire hypothesis.
+
+approval_conditions:
+  approve_if_all: |
+    (1) Direction chosen (confirmation or reversal) with economic rationale
+    (2) Variant filtered to data-feasible set (001, 004, 005 or equivalent)
+    (3) Hyperparameters justified or systematically swept
+    (4) Regime independence verified
+    (5) Walk-forward hit rate ≥55% (both regimes)
+    (6) Walk-forward Sharpe ≥0.5
+    (7) Holdout hit rate ≥55% and Sharpe ≥0.3
+    (8) Cross-pair validation ≥54% hit rate (ETHUSDT, BNBUSDT)
+    (9) No regime-specific gap > 5%
+  
+  refine_if: |
+    (A) Any gate (01–04) failed but resolvable, OR
+    (B) Walk-forward 50–55% hit rate (marginal), OR
+    (C) Sharpe 0.3–0.5 (acceptable if hit rate > 55%), OR
+    (D) Regime gap 3–5% (acceptable if Sharpe solid), OR
+    (E) Cross-pair hit rate 51–54% (marginal generalization)
+  
+  reject_if_any: |
+    (A) Author unwilling to precommit direction, OR
+    (B) Walk-forward hit rate < 50%, OR
+    (C) Holdout Sharpe < 0 (value-destroying), OR
+    (D) Regime gap > 5% with no explanation, OR
+    (E) Data unavailable and limitation not accepted

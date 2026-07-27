@@ -1,0 +1,38 @@
+hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+thesis: "MACD histogram crossover signals sustained trend momentum that persists 1–4 bars on average, with cost-surviving edge present when tested over the full 2018–2025 bull/bear/chop cycle rather than the isolated 2024–2025 bull-only window that exhausted EMA(9/21)."
+rationale: "EMA(9/21) spread (moving_average_crossover, run_043) exhausted with ic=-0.021 on 2024–2025 (11 months, high-bull regime). MACD is structurally distinct (EMA 12/26 + signal 9, different lag/smoothing) and has never been tested (campaign_empirical_results: []). Core hypothesis: EMA failure may reflect regime bias (2024–2025 was high-bull, suppressing mean-reversion triggering, inflating false-signal rate). Extended 2018–2025 window includes 2018 winter crash and 2022 bear market; if trend-following edge exists, a full multi-cycle sample should recover it. If edge is genuinely absent (mechanism already-priced-in), extended test will confirm ceiling."
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "MACD histogram crossing above (below) its signal line indicates consensus-momentum shift: traders using MACD enter/extend positions on crossover, creating self-reinforcing directional pressure for 1–4 bars until impulse exhausts or reverse signal fires. Mechanism is herding-driven: MACD is universally taught; crossover events trigger correlated entry/exit clustering."
+  why_not_arbitraged: "MACD is high-crowding (universally arbitraged, same family as exhausted EMA). Edge claim is NOT on MACD signal quality in isolation (mechanism is already-priced-in for isolated windows), but on regime-selection bias: 2024–2025 test was biased high-bull (mean-reversion rare, false signals sparse). Full 2018–2025 window controls for regime bias. If the mechanism is genuinely non-exploitable, this extended test will confirm it. If edge emerges in multi-cycle sample, it indicates regime-dependent performance falsified by narrow window."
+  evidence_type: price_volume_only
+  measurable_proxy: "MACD histogram sign (positive/negative) and crossover state (histogram crossing above/below signal line). Active signal: bar where histogram crosses signal line or changes sign. Proxy is OHLCV-computable; measurable distinction is correlation of histogram direction (or crossover direction) to next-bar return sign — positive correlation (momentum persistence) vs. near-zero or negative (no edge)."
+  requires_new_feed: null
+signal_concept: "On every bar where MACD(12,26,9) histogram crosses above its signal line, enter long with full allocation; on every bar where histogram crosses below, enter short. Hold until next crossover. Ungated (no regime condition per A2.3 policy); signal fires on every occurrence in the 2018–2025 range. Forecast: +1 (long) on bullish crossover, −1 (short) on bearish crossover, 0 (flat) on no-crossover bars."
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+timeframe: 1h
+assumptions:
+  - "MACD crossover momentum persists across bull, bear, and chop regimes when tested on a multi-cycle sample."
+  - "MACD lag structure (EMA 12/26 + signal 9, ~5–15 bar lag at 1h) is fast enough to capture intra-bar momentum before mean-reversion or reversal-signal fires."
+  - "Cost structure (2 bps round-trip, ~8–15 trades/week expected activation) permits signal frequency to survive slippage and fees; cost_drag < 100% of gross edge."
+expected_failure_modes:
+  - "MACD is high-crowding trend-following. Exhausted EMA (ic=-0.021, p=0.59) set an empirical ceiling on this signal family. MACD may be similarly arbitraged; extended window may simply confirm the ceiling rather than recover edge."
+  - "MACD lag at 1h (5–15 bars) may be structurally too slow for trend persistence to materialize before reversal. Mean-reversion forces may overwhelm herding momentum within the lag window, yielding near-zero net IC."
+  - "Regime-bias in 2024–2025 (high-bull) may not fully reverse in 2018–2025 extended window if 2024–2025 dominates the backtest period by weight. True multi-cycle balance requires equal representation of bear years (2018, 2022) and bull years (2020, 2024) — backtest_specification must enforce temporal stratification to isolate regime effect."
+  - "MODEL-BLIND CAVEAT (per brief): linear-IC framing may misrepresent trend-following payoff (convex Sharpe profile). Per-trade expectancy over average holding-period may be the more honest metric than raw IC correlation; backtest_specification should track both."
+library_lookup:
+  indicator_id: macd
+  regime_affinity_for_target: "favorable (trending), unfavorable (ranging)"
+  affinity_justification: "Hypothesis is ungated (no regime condition). MACD has favorable affinity for trending regimes, but affinity does not override empirical results: EMA(9/21), same family (dense OHLCV trend-following), failed at ic=-0.021 on 2024–2025. This hypothesis remains ungated; MACD regime affinity is noted as prior risk in expected_failure_modes."
+  prior_campaign_failures: []
+  crowding_risk: high
+  crowding_deviation_justification: "MACD has identical crowding_risk=high as exhausted EMA(9/21) (both dense OHLCV, universally taught). No lower-crowding alternative in indicator_library with persistent_behavioral_bias edge_source exists. Per research brief, this is an explicit reactivation: 'genuinely untested trend_following family member (macd has campaign_empirical_results: [] ...)'. Crowding risk is accepted; the hypothesis differentiator is (a) indicator change (EMA→MACD) and (b) test window (2024–2025→2018–2025)."
+power_parameters:
+  activation_rate: 0.27
+  plausible_ic_upper: 0.03
+  n_bars: 70152
+  n_symbols: 2
+  is_market_wide: false
+  power_note: "MACD: dense OHLCV, high crowding (A8.6 row 1, plausible_ic_upper=0.03–0.05). Conservative anchor: 0.03, justified by EMA prior empirical result (ic=-0.021, below table range). Activation: MACD crossover/sign-change ≈27% of bars (~continuous signal, not sparse). Expected active_n=0.27×70,152×2≈37,882, n_eff≈1,579 (block-adjusted 24-bar), min_detectable_ic=1/sqrt(1,576)≈0.025. Verdict: sufficient power (min_detectable ≈ plausible_ic_upper boundary; large n supports tight confidence). A priori check: not underpowered."

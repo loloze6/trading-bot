@@ -1,0 +1,111 @@
+base_hypothesis_id: KELTNER_SCOREMODE_4H
+base_thesis: |
+  Score-mode regime (min_score=0.25) enables Keltner mean-reversion at 4h by
+  increasing sample size 3–5× vs. min_score=0.4 while preserving signal validity.
+
+expanded_variants:
+  V1:
+    variant_id: KELTNER_SCOREMODE_4H_V1_BASE
+    description: "Exact brief specification: score-mode = (ER/1.0) × (VR/2.0), threshold 0.25."
+    regime_formula: "score = (ER / 1.0) × (VR / 2.0)"
+    threshold: 0.25
+    rationale: "Conservative baseline. Directly tests hypothesis that min_score=0.25 increases trade frequency without degrading edge."
+    expected_trades_per_window: "5–10"
+    expected_sharpe: ">0.3"
+    preserves_testability: true
+
+  V2:
+    variant_id: KELTNER_SCOREMODE_4H_V2_SCALED_FACTORS
+    description: "Adjust ER and VR scaling factors to alter sensitivity to trend vs. volatility balance."
+    regime_formula: "(ER / 0.8) × (VR / 2.0) clamped at 1.0 before threshold"
+    threshold: 0.25
+    rationale: "ER-dominant regime: Higher ER weight may capture momentum-biased bars where mean-reversion is less effective. Tests if V1 trades include adverse regimes."
+    expected_trades_per_window: "6–12 (higher ER sensitivity)"
+    expected_sharpe: "±0.2 relative to V1"
+    preserves_testability: true
+    alt_regime_formula_b: "(ER / 1.2) × (VR / 1.8)"
+    alt_ratio_b_description: "VR-dominant: prioritizes volatility-based qualification."
+
+  V3:
+    variant_id: KELTNER_SCOREMODE_4H_V3_PERCENTILE_THRESHOLD
+    description: "Replace fixed 0.25 with rolling 25th percentile of regime_score distribution (4-week window)."
+    regime_formula: "score = (ER / 1.0) × (VR / 2.0); threshold = 25th_percentile(score[120 bars])"
+    threshold: "dynamic, ~0.15–0.35 per window"
+    rationale: "Adaptive regime filtering. Account for per-window regime volatility; prevents threshold drift across market regimes."
+    expected_trades_per_window: "5–10 (stabilized)"
+    expected_sharpe: "+0.1 to +0.5 (reduced regime timing risk)"
+    preserves_testability: true
+
+  V4:
+    variant_id: KELTNER_SCOREMODE_4H_V4_ADDITIVE_BLEND
+    description: "Replace multiplicative blend with weighted additive: 0.6 × ER + 0.4 × VR."
+    regime_formula: "score = 0.6 × (ER / 1.0) + 0.4 × (VR / 2.0)"
+    threshold: 0.25
+    rationale: "Additive vs multiplicative changes joint probability to marginal contribution. Tests if regime requires BOTH trends AND volatility (multiplicative logic) or tolerates either (additive logic)."
+    expected_trades_per_window: "8–15 (looser regime)"
+    expected_sharpe: "−0.3 to +0.2 (likely degraded; confirms multiplicative necessity)"
+    preserves_testability: true
+
+  V5:
+    variant_id: KELTNER_SCOREMODE_4H_V5_SMOOTHED_REGIME
+    description: "Apply 2-bar EMA smoothing to regime_score before thresholding to reduce noise-driven entries."
+    regime_formula: "score_ema = EMA(score, 2); fire when score_ema ≥ 0.25"
+    threshold: 0.25
+    rationale: "Smoothing reduces false regime transitions (1-bar spikes). Tests if regime filter is over-sensitive; may improve Sharpe if false entries are costly."
+    expected_trades_per_window: "4–8 (fewer, higher confidence)"
+    expected_sharpe: "+0.2 to +0.6 (if noise was costly)"
+    preserves_testability: true
+
+reverse_hypothesis:
+  variant_id: KELTNER_SCOREMODE_4H_REVERSE_NO_REGIME
+  description: "Disable regime filter entirely; apply Keltner signal unconditionally."
+  regime_formula: "default_regime = 'always'; no gating."
+  threshold: "N/A"
+  rationale: "Tests whether Keltner edge is regime-dependent at 4h. If Sharpe WITHOUT regime > Sharpe WITH regime, regime filter adds cost, not signal."
+  expected_trades_per_window: "20–40 (all bars)"
+  expected_sharpe: "−0.5 to +0.1 (likely negative; cost drag dominates)"
+  diagnostic_value: "Falsifies regime necessity hypothesis."
+
+alternative_data_candidates:
+  - candidate: "ADX (14-bar) as supplementary trend confirmation"
+    why: "Keltner relies on ATR; ADX provides direction-independent trend strength. Use as tiebreaker: fire only if ADX > 25."
+    cost: "Minimal; ADX is standard TA."
+    inclusion_rationale: "Optional secondary gate; does not break component framework."
+  
+  - candidate: "Volume-weighted regime score"
+    why: "Upweight regime_score when bar volume > 20-bar MA(volume). Tests if regime signals are stronger on high-participation bars."
+    cost: "Requires volume feed; Binance provides."
+    inclusion_rationale: "Regime reweighting only; no architectural change."
+
+behavioral_features:
+  - feature: "Regime transition lag detection"
+    description: "Track bars since last regime change. Suppress entries in first 2 bars post-transition (regime settling)."
+    why: "Regime shifts may induce false mean-reversion signals until new regime stabilizes."
+    component_fit: "Gating layer in ForecastManager; no core strategy change."
+
+  - feature: "Forecast-regime alignment score"
+    description: "Require forecast and regime to both be high (confidence > 0.7 AND regime_score > 0.25). Tests co-signal hypothesis."
+    why: "If forecast and regime are independent, joint gate reduces noise. If correlated, gate reduces sample unnecessarily."
+    component_fit: "Portfolio rebalance gating; fits risk_manager approval logic."
+
+regime_specific_variants:
+  - cluster_name: "High-ER, Low-VR (trending, stable)"
+    threshold_override: 0.15
+    rationale: "Trend is clear; relaxed VR gate. Mean-reversion may be weaker in pure trends."
+    variant_id: "KELTNER_SCOREMODE_4H_REGIME_TRENDING"
+  
+  - cluster_name: "Low-ER, High-VR (choppy, volatile)"
+    threshold_override: 0.35
+    rationale: "Volatility without trend is noise. Tighten gate to protect against chop-driven false reversions."
+    variant_id: "KELTNER_SCOREMODE_4H_REGIME_VOLATILE"
+  
+  - cluster_name: "High-ER, High-VR (trending + volatile)"
+    threshold_override: 0.20
+    rationale: "Both signals present; relax slightly. Keltner may be most robust here."
+    variant_id: "KELTNER_SCOREMODE_4H_REGIME_TRENDING_VOLATILE"
+
+summary: |
+  5 primary variants + reverse hypothesis + 3 regime-specific overrides. All preserve
+  signal freeze and score-mode architecture. V1 is direct brief specification. V2–V5
+  test parameter sensitivity and regime logic. Reverse tests regime necessity. Regime
+  clusters enable post-validation per-cluster tuning without cross-contamination.

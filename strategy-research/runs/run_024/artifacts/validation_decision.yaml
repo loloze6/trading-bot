@@ -1,0 +1,38 @@
+hypothesis_id: POSITION_SIZING_TIMEFRAME_COUPLING
+
+status: conditional_approve
+
+rationale: |
+  The hypothesis is mechanistically plausible: 15x cost gap (run_017 27% vs run_021 413%)
+  between signal-identical 1h and 4h tests is unlikely random. Execution structure
+  (position sizing, rebalance frequency) are credible drivers. However, bias risks are
+  material (forward bias in V4 regime phase, overfitting to single run, data quality
+  confounds). V1 diagnostic is mandatory and zero-risk. V2 and V3 are testable via
+  standard backtest. V4 requires careful guard against lookahead. Conditional approval
+  on completing V1 diagnostic first and validating no forward bias in regime_age usage.
+
+blocking_issues:
+  - "Run_022 replication (1h baseline) must show sharpe within 5% of run_017 to validate baseline stability. If sharpe drifts >10%, reject hypothesis."
+  - "V1 diagnostic must complete and isolate trade_count, position_size_pct, or rebalance_events as dominant cost driver (>50% variance). If no single metric emerges, stop before V2/V3/V4."
+  - "ExecutionHandler.slippage() model must be confirmed timeframe-invariant. If 4h uses different slippage curve than 1h, cost gap is artifact, not execution structure effect."
+  - "Keltner band and regime threshold parameters must be documented as IDENTICAL and unmodified between 1h and 4h configs. If parameters differ, hypothesis is not properly controlled."
+  - "For V4 (phase-gating): Regime_age must be computed at candle_completion time using only data available at that moment. No look-ahead into future regime duration or phases."
+
+conditions:
+  - "Execute V1 diagnostic first (log analysis, zero backtest, <2 hours). Report delta in trade_count, avg_position_size_pct, rebalance_events_per_regime_window between run_017 and run_021. If position_size_pct delta >30%, proceed to V2. If rebalance_events delta >40%, proceed to V3. If both <30% and <40%, stop and request hypothesis refinement."
+  - "Before V2: Validate that ForecastManager.position_sizing_scale is independent of timeframe. If scaling logic is timeframe-aware but broken, refactor to be properly aware (not remove awareness). Do not proceed with V2 until root cause of position_sizing difference is documented."
+  - "Before V3: Validate that rebalance_threshold in ForecastManager is computed as a relative change (e.g., |new_alloc - current_alloc| / current_alloc), not absolute (e.g., 0.05 fixed). If threshold is absolute and not scaled to regime window duration, the 4h rebalance_floor should account for regime duration difference."
+  - "For V4 (if regime phase variance >15 pct_points): Ensure regime_age is derived from regime_entry_timestamp (historical only). Do not use regime_exit_time or regime_duration (future knowledge). Validate no forward bias in position_sizing gate."
+  - "All variants: If any achieves sharpe >= 0.75 * run_017_sharpe on test data, mandatory holdout validation on disjoint 4-week period. Holdout must include at least one regime transition (trending to mean-reversion or vice versa)."
+
+next_steps:
+  - "Step 1: Execute V1 diagnostic. Extract trade_count, avg_position_size_pct, fee_pct_per_trade, rebalance_events_per_regime_window from run_017, run_021 logs. Report variance attribution."
+  - "Step 2: Run run_022 (1h replication). Measure sharpe vs run_017; confirm <5% drift. If drift >10%, stop and reject hypothesis."
+  - "Step 3: Based on V1 result, select V2 (position_sizing) or V3 (rebalance_frequency) or both. Implement config changes per strategy-research workflow."
+  - "Step 4: Execute selected variants. Report sharpe, trade_count, win_rate, max_drawdown_pct. If sharpe >= 0.8 * run_017_sharpe, proceed to holdout."
+  - "Step 5: Holdout validation on disjoint date range. If sharpe remains >= 0.75 * run_017_sharpe, approve hypothesis for implementation. Otherwise, refine or reject."
+
+unresolved_questions:
+  - "Is Keltner band regime detection equally valid at 1h and 4h? Hypothesis assumes yes; unverified."
+  - "Does ExecutionHandler.slippage scale linearly with position size and timeframe, or are 4h slips modeled differently than 1h?"
+  - "Is the 15x cost gap real or artifact of backtesting data quality (e.g., 4h candles from different source or aggregation method)?"

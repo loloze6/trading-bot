@@ -1,0 +1,52 @@
+hypothesis_id: TIMEFRAME_ESCALATION_4H
+base_hypothesis_id: TIMEFRAME_ESCALATION_4H
+
+expanded_variants:
+  V1-Primary:
+    thesis: "4h Keltner (ema=20, atr=20, mult=2.0, scale=-20.0), TRENDING filter (ER≥0.5 ∧ VR≥1.2), default_regime=unknown achieves Sharpe > 0."
+    signal_concept: "Keltner mean-reversion: ema=20, atr=20, mult=2.0, scale=-20.0 (identical to run_017)"
+    regime_filter: "TRENDING (ER≥0.5 AND VR≥1.2, threshold_rules, AND-gate)"
+    default_regime: "unknown"
+    timeframe: "4h"
+    assets: "BTCUSDT, ETHUSDT"
+    mechanism: "Cost drag ∝ fees/PnL. 4h holds 4× longer → PnL per trade ↑4× → cost_drag ≈ cost_drag_1h/4. Target: cost_drag<80%, corr>0.10, Sharpe>0."
+    assumptions:
+      - "Signal edge (corr~0.21) transfers to 4h timeframe."
+      - "TRENDING regime bar-count frequency invariant to resolution; same ER/VR thresholds apply."
+      - "Longer hold duration dilutes per-trade cost impact proportionally."
+    conservative: true
+
+  V2-Asset-Isolation:
+    thesis: "Same signal/regime/config, tested per-asset (BTCUSDT or ETHUSDT alone). Identify if edge is asset-generic or asset-specific."
+    signal_concept: "Keltner mean-reversion: ema=20, atr=20, mult=2.0, scale=-20.0 (identical to run_017)"
+    regime_filter: "TRENDING (ER≥0.5 AND VR≥1.2, threshold_rules, AND-gate)"
+    default_regime: "unknown"
+    timeframe: "4h"
+    assets: "BTCUSDT only | ETHUSDT only"
+    mechanism: "If Sharpe diverges significantly between assets, identifies which asset drives the signal. Informs asset-specific allocation strategy."
+    assumptions:
+      - "Signal edge is driven by common market regime, not asset-specific volatility structure."
+    conservative: false
+
+reverse_hypothesis: |
+  Keltner at 4h FAILS. Mechanisms: 
+  (a) Cost insensitivity: absolute per-trade fees remain constant; longer duration does NOT offset fees proportionally (cost_drag ≥80%).
+  (b) Regime spacing: TRENDING bar count at 4h is much lower than 1h; fewer trades/month → insufficient sample for stable Sharpe within monthly windows.
+  (c) Signal loss: ATR/EMA indicator lag relative to regime transitions worsens at 4h resolution; mean-reversion sensitivity degrades.
+  (d) Correlation collapse: corr→0.00 at 4h despite 0.21 at 1h; signal does not transfer across timeframes.
+
+alternative_data_candidates:
+  - name: "Asset-specific volatility scaling"
+    rationale: "ATR smoothing period may be sub-optimal per asset at 4h; per-asset atr_multiplier tuning could improve regime separation."
+    feasibility: "Parameterizable within existing ComponentOutput framework; does not violate brief."
+
+behavioral_features: []
+
+regime_specific_variants: []
+
+expansion_rationale: |
+  Brief constraints are extreme: signal locked (identical to run_017), regime thresholds locked (ER≥0.5 AND VR≥1.2), 
+  config locked (default_regime=unknown), no parameter relaxation allowed. This is configuration validation, not signal search. 
+  V1 is the exact specification. V2 tests asset orthogonality without violating constraints. 
+  Reverse hypothesis documents explicit falsification conditions (cost, regime spacing, signal transfer, correlation). 
+  Minimal variant count by design.

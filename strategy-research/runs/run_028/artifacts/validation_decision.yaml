@@ -1,0 +1,12 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+status: conditional_approve
+rationale: "Hypothesis is mathematically well-specified and testable. All five variants are isolated config-only modifications (threshold, weighting, smoothing) to regime-filtering logic. Bot integration is minimal (simple_strategy.py tweaks only). Approval is conditional on three blockers: (1) ER/VR causal verification (no look-ahead), (2) V1 screening sharpe > 0.2 + min_trade_count ≥ 3 (gates), and (3) V1 generalization to holdout (sharpe ≥ 0.1). Multiple comparisons protection required: V1 reserved for holdout, V2-V5 screened on 80% only. Pass screening with conditions met → walk-forward validation."
+blocking_issues: []
+conditions:
+  - "Code audit of simple_strategy.py: Verify ER and VR are computed from bars [t-19:t] only, no future bars or external data look-ahead."
+  - "V1 screening gates: sharpe > 0.2 (median across walk-forward windows) AND min_trade_count >= 3 per window. If either fails, cost drag hypothesis rejected."
+  - "V1 hold-out test: sharpe >= 0.1 minimum (50% of screening result). Hold-out < 0.1 triggers overfitting rejection; refine threshold or weighting before re-screening."
+  - "Variant ranking report: After screening, document which variant (V1-V5) ranked highest and state why. If best is not V1, flag core assumption invalidation (e.g., V4 > V1 means inverse regime is correct)."
+  - "Multiple comparisons protection: V1 locked for hold-out evaluation only. V2-V5 screened on training/validation data (80%). If V2 out-performs V1 in screening, require separate hold-out validation before live rollout."
+  - "Single-pair limitation: SOLUSDT is first-pass screening only. If V1 passes hold-out, validate on ≥2 additional pairs (ETHUSDT, BTCUSDT) in walk-forward before live deployment decision."
+  - "Behavioral features output: Report regime_dwelltime_bars, score_volatility_20bar, and threshold_distance_distribution post-screening. Flag regime-quality issues (e.g., > 30% bars within ±0.05 of threshold indicates marginal firing)."

@@ -1,0 +1,26 @@
+expansion_status: not_expanded_reactivation_constraint
+variant_count: 1
+constraint_source: research_brief.yaml
+constraint_text: "One variant only (V1 = the exact run_042 config). No innovation_expansion diversity search -- this is a straight reactivation, not a fresh search."
+reasoning: "Per persona forbidden rule: 'If research_brief.yaml contains \"one variant only\", \"single variant\", or \"no variants\" in its constraints field, do NOT expand into multiple variants. Pass the base hypothesis through to a single variant (V1 only).' This brief explicitly mandates one variant only. Innovation expansion does not apply. V1 is the unmodified run_042 configuration applied to extended 2018-2025 historical data; variant diversity exploration is out of scope for a reactivation run."
+
+diversity_audit:
+  categories_spanned: ["sentiment"]
+  data_requirements_spanned: ["fear_and_greed"]
+  verdict: single_variant_reactivation_exemption
+  reason: "Improvement 04 diversity test requires ≥2 variants spanning ≥2 library categories or data_requirements. Only one variant (V1) exists per brief constraint. Diversity validation is not applicable to single-variant reactivation runs."
+  cosmetic_reject_reason: null
+
+alternatives_explored: []
+
+reverse_hypothesis: null
+
+behavioral_indicators_explored: []
+
+library_affinity_note: "fear_greed_index_contrarian (indicator_library.yaml) shows: neutral affinity in TRENDING regime (mean-reversion signal fires against sustained trends; loss exposure), favorable in RANGING and HIGH_VOL. V1 is ungated (A2.3 standing policy, regime_detector.rules=[]) — will activate in all regimes. Known failure mode: TRENDING regime exposure (documented in hypothesis_card.yaml expected_failure_modes). Mitigation: cost check and regime-conditional diagnostics (Improvement 03) recommended if hypothesis passes prescreen."
+
+evidence_type_coverage: "V1 uses fear_and_greed (available_feeds.yaml.available). Improvement 01 (A1.2 rule: at least one variant must use evidence_type != price_volume_only) is satisfied. Single-variant reactivation exempts further evidence_type diversification."
+
+ungated_status: "V1 is ungated per A2.3 standing policy. No regime-gating variants generated. regime_specific_variants list is empty."
+
+next_stage_decision_gate: "If V1 passes screening_backtest with both IC≥0.10 AND p<0.10, STOP before walk_forward_validation per brief instruction: 'STOP before any walk_forward_validation stage if this prescreen passes both the IC-significance gate AND the cost gate -- era-transferability (2018-2021 market structure vs 2026) is a user-level review, not an automatic route. Report per-episode-era numbers and halt at that decision point.' Hypothesis requires explicit user judgment on structural regime transferability before proceeding."

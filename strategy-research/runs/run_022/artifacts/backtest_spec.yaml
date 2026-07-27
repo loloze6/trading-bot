@@ -1,0 +1,64 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER-PIVOT-RSI"
+variant_id: "V1-RSI-14-MR-4H-TRENDING"
+status: "spec_ready"
+config:
+  regime_detector:
+    mode: "threshold_rules"
+    components:
+      - id: "er"
+        class: "strategies.strategy_components.EfficiencyRatioRegimeComponent"
+        params:
+          period: 24
+          smooth_period: 5
+      - id: "vr"
+        class: "strategies.strategy_components.VarianceRatioComponent"
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: "trending"
+        any_of:
+          - - id: "er"
+              op: "gte"
+              value: 0.50
+            - id: "vr"
+              op: "gte"
+              value: 1.20
+    default_regime: "trending"
+    vetoes: []
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: "rsi"
+            class: "strategies.strategy_components.RSIPullbackComponent"
+            params:
+              period: 14
+              scaling_factor: 0.4
+            weight: 1.0
+            transforms:
+              - op: "identity"
+              - op: "threshold_filter"
+                params:
+                  min_abs: 8.0
+      mean_reversion: null
+      chop: null
+      unknown: null
+
+config_rationale:
+  - "RSI(14) mean-reversion signal: RSIPullbackComponent(period=14) directly encodes (50−RSI)×scaling, positive when oversold, negative when overbought."
+  - "Long entry at RSI < 30: (50−30)×0.4 = 8.0; threshold_filter(min_abs=8) activates signal at RSI ≤ 30, producing forecast ≥ +8."
+  - "Short entry at RSI > 70: (50−70)×0.4 = −8.0; threshold_filter(min_abs=8) activates signal at RSI ≥ 70, producing forecast ≤ −8."
+  - "Identity transform pipeline: confirms no statistical normalization (no ratio_to_mean, vol_normalize, or percentile). Scaling_factor=0.4 produces raw ±20 output at RSI extremes, within forecast clip bounds."
+  - "TRENDING regime gate (ER ≥ 0.50 ∧ VR ≥ 1.20): RSI component only emits forecasts during bars matching threshold_rules. Inactive regimes default to default_regime=trending (fallthrough bars receive no special treatment; see notes)."
+  - "Output range: ±20 raw magnitude; weak RSI signals (30 < RSI < 70) zeroed by threshold, producing effective activation only in oversold/overbought zones."
+
+component_gap: null
+
+notes:
+  - "Fallthrough behavior: bars not matching TRENDING rule fall to default_regime=trending and receive RSI forecast. Intended behavior is forecast=0 in non-trending bars; acceptable approximation given config-engine constraints (default_regime must map to non-null regime)."
+  - "V2 (thresholds 35/65): implementable via threshold_filter(min_abs=6.0)—not a gap."
+  - "V3 (RSI + SMA AND-gate confirmation): requires conditional multi-component gating absent from component catalog—triggers component_gap if implemented."
+  - "V4 (trend-following inverse): implementable via scaling_factor=−0.4 or negate transform—not a gap."
+  - "V5 (Stochastic mean-reversion): StochasticComponent not in STRATEGY_CONFIG_REFERENCE catalog—triggers component_gap if implemented."

@@ -1,0 +1,36 @@
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components: []
+    rules: []
+    default_regime: unknown
+  strategies:
+    warmup: 50
+    regimes:
+      unknown:
+        components:
+          - id: sma_trend
+            class: strategies.strategy_components.GatedSmaTrendLongOnlyComponent
+            params:
+              lookback_L: 100
+              scaling_factor: 10.0
+              er_period: 20
+              gate_threshold: 0.3
+            weight: 1.0
+            transforms:
+              - op: identity
+      trending: null
+      mean_reversion: null
+      chop: null
+config_rationale:
+  - "Entry-only LATCH gate (not a regime gate): GatedSmaTrendLongOnlyComponent checks ER(20)>=0.30 EXACTLY ONCE, on the bar the SMA(100) signal transitions off->on (a fresh cross-up). If the gate passes, the position latches in and is held at scaling_factor for every subsequent bar the signal remains on, REGARDLESS of ER -- in-position ER changes have no effect, no re-check, no early exit."
+  - "No deferred entry: if the gate check on the transition bar fails, the entry is skipped ENTIRELY for that episode -- there is no re-check on a later bar while the signal stays on; re-entry requires a fresh off-then-on transition (a real cross-down followed by a real cross-up)."
+  - "Exit is the unchanged parent rule: the bar the SMA(100) signal goes off (cross-down), the latch clears and output returns to 0 -- identical to SmaTrendLongOnlyComponent's own exit behavior."
+  - "Execution convention, verbatim from user_brief_verbatim.yaml's inherited_unchanged_from_parent block: \"Execution: next-day open after signal change. Engine caveat: this backtester fills at bar close, not next-bar open -- see strategies/strategy_components.py::SmaTrendLongOnlyComponent's docstring for the one-bar-lag approximation actually used; not identical to true next-open execution.\" The gate inherits this unchanged: ER_t(20) gates the same signal the engine acts on with its existing one-bar lag. The ONLY delta in this refinement is the entry gate."
+  - "No regime_detector logic is actually exercised: components/rules are empty, default_regime is always 'unknown', and the single component lives directly under strategies.regimes.unknown -- this block exists only to satisfy the schema's required top-level key (validate_config.py V1), not to gate anything. The ER gate lives ENTIRELY inside GatedSmaTrendLongOnlyComponent's own internal latch state, not in regime dispatch -- this is the fix for the original component_gap (a continuous ER trailing stop via regime dispatch, not an entry-only latch)."
+component_gap: null
+
+operator_correction_20260710: "This config is SUPERSEDED -- kept unedited as record only, do not consume for any future run. It wired the ER(20)>=0.30 gate through regime_detector/strategies.regimes dispatch, which re-evaluates the regime (and therefore whether SmaTrendLongOnlyComponent produces any forecast at all) every bar -- an ER trailing stop, not the brief's entry-only latched gate (in-position ER changes must have no effect). Routed to component_gap; GatedSmaTrendLongOnlyComponent is being built per STRATEGY_EXTENDING.md to express true latch semantics. A corrected backtest_spec.yaml will be produced next turn."
+
+operator_resolution_20260711: "Component gap resolved: GatedSmaTrendLongOnlyComponent built (trading-bot/strategies/strategy_components.py), implementing entry-only latch semantics per the brief. Acceptance: 30/30 gate-disabled (gate_threshold=-1) bar-for-bar forecast equivalence to run_054's canonical results across all window-symbol combinations of protocols/ts_trend_daily_v1.json (same 117 trades), plus two passing synthetic fixtures (no-deferred-entry: stays flat through an entire episode after a rejected gate check even as ER later rises; latch: holds through an ER dip mid-position, exits only on the unchanged cross-down rule). This corrected config wires the real gate (gate_threshold=0.30) via the component's own internal state, not via regime dispatch -- component_gap in decision.yaml/backtest_spec.yaml's status field updated to spec_ready accordingly. Deviation from the operator's literal 'no regime_detector section at all' instruction: validate_config.py's schema (V1) requires the regime_detector top-level key to exist -- omitting it entirely fails validation (exit 1). Used the established no-op pattern instead (empty components/rules, default_regime unknown), identical structure to run_054's own precedent -- functionally ungated (no regime-dispatch behavior occurs), schema-valid (exit 0)."

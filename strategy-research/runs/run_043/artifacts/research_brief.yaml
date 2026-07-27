@@ -1,0 +1,23 @@
+hypothesis_id: EMA_SPREAD_TREND_CONTINUATION
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+research_question: >
+  Does the fast/slow EMA percentage spread (a moving-average-crossover proxy) carry
+  ungated directional information on BTC/ETH 1h -- i.e. does it earn all-bars Spearman
+  IC significantly different from zero after the block-adjusted significance test,
+  and does the implied gross edge clear the round-trip cost hurdle?
+signal_concept: >
+  EMASpreadComponent(fast_period=9, slow_period=21): spread_pct = (fast_ema - slow_ema)
+  divided by slow_ema times 100, forecast = spread_pct * scaling_factor. Continuous,
+  always-on signal (dense, not sparse) -- active on effectively every bar once warmup
+  completes. Ungated: no regime filter (A2.3 standing policy). This is the first test
+  in this campaign of the moving_average_crossover library entry (campaign_empirical_results
+  was empty prior to this run).
+constraints:
+  - "One variant only for the run queue (V1). Additional variants (V2/V3) are proposed
+     in expanded_hypothesis_card.yaml for the diversity audit but are NOT executed this
+     cycle -- this is a pipeline shakedown batch, not the main search."
+  - "Must not propose ideas that require replacing the whole existing bot architecture."
+  - "Ungated only (post-A2.3): no regime_detector gating logic."
+  - "Existing components only: EMASpreadComponent (trading-bot/strategies/strategy_components.py).
+     No new component code in this batch."

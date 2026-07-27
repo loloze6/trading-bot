@@ -1,0 +1,130 @@
+{
+  "run_id": "20260720T173316Z_cb671e80",
+  "created_utc": "2026-07-20T17:33:16.398209+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "score",
+      "min_score": 0.15,
+      "min_margin": 0.05,
+      "components": [
+        {
+          "id": "er",
+          "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+          "params": {
+            "period": 24,
+            "smooth_period": 5
+          }
+        },
+        {
+          "id": "vr",
+          "class": "strategies.strategy_components.VarianceRatioComponent",
+          "params": {
+            "k": 5,
+            "window": 100
+          }
+        }
+      ],
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "er",
+              "weight": 0.5,
+              "transforms": [
+                {
+                  "op": "percentile"
+                }
+              ]
+            },
+            {
+              "id": "vr",
+              "weight": 0.5,
+              "transforms": [
+                {
+                  "op": "percentile"
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "vr",
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "negate_percentile"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "warmup": 51,
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "keltner",
+              "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+              "params": {
+                "ema_period": 20,
+                "atr_period": 20,
+                "atr_multiplier": 1.5,
+                "scaling_factor": -20.0
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "identity"
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "keltner",
+              "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+              "params": {
+                "ema_period": 20,
+                "atr_period": 20,
+                "atr_multiplier": 1.5,
+                "scaling_factor": -20.0
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "identity"
+                }
+              ]
+            }
+          ]
+        },
+        "chop": null,
+        "unknown": null
+      }
+    }
+  },
+  "config_sha256": "cb671e807ea15fdee81d46e719599963823a1cde7f827a5ba9caf074acda18db",
+  "data": {
+    "symbols": [
+      "AVAXUSDT"
+    ],
+    "timeframe": "14400s",
+    "start": "2023-12-28 00:00:00",
+    "end": "2024-03-01 20:00:00",
+    "bar_count": 390,
+    "data_sha256": "f99c3fff486aeb83f4e852d77f43b7e33adced129875e8375a68112192db30ef"
+  },
+  "git_sha": "e3bcbb0bb40d3a955fea740abdc1c20b9f46f26a",
+  "engine": {
+    "lookback": 21,
+    "warmup": 21
+  }
+}

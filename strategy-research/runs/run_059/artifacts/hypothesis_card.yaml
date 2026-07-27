@@ -1,0 +1,55 @@
+hypothesis_id: FUNDING_MR_DAILY_RETEST
+
+thesis: "The 8h funding rate sign-flip mechanism (forced settlement creating mean-reversion pressure) requires sufficient holding time to materialize. Daily bars provide this window; 1h bars did not."
+
+rationale: "Run_044 (1h bars) showed inconclusive results with lag_mismatch_to_regime_persistence as root cause — the settlement impulse did not fully reverse before position exit. Daily bars extend the materialization window to ~24 hours, allowing the structural forced-liquidation cascade to work through before position close."
+
+edge_source:
+  category: structural_forced_flow
+  specific_mechanism: "When 8h funding rate sign flips (positive↔negative), longs/shorts face heavy settlement costs to maintain positions; forced deleveraging creates mean-reversion pressure that resolves within the next trading day, measurable as sign-flip events in the 8h funding CSV."
+  why_not_arbitraged: "On 1h bars, the settlement impulse must reverse and close within 1 hour of the 8h settlement — too fast at retail execution speeds. Daily bars extend the window to ~24 hours, allowing the structural forced-liquidation cascade to work through the order book. This is a timing-of-materialization constraint, not a retail-vs-institutional speed arbitrage: the mechanism is real, but 1h resolution outpaces its completion."
+  evidence_type: funding_open_interest
+  measurable_proxy: "Funding rate sign changes from the 8h Binance settlement CSV; daily flip count is the direct trigger (baseline: BTCUSDT 228 flips, ETHUSDT 220 flips over 49-month pass-gated window 2019-12-01 to 2023-12-31)."
+
+signal_concept: "Fires at every daily bar with forecast direction determined by current 8h funding rate sign: positive funding (shorts pay longs) → forecast short bias; negative funding (longs pay shorts) → forecast long bias. Effective forecast changes only when funding sign flips day-to-day."
+
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+
+timeframe: 1d
+
+assumptions:
+  - "Funding rate sign flips are deterministic and directly observable from Binance's 8h settlement CSV."
+  - "The forced settlement mechanism (longs/shorts paying to maintain position) is structural and unavoidable."
+  - "Daily bar resolution provides ~24 hours for mean-reversion pressure to materialize and close."
+  - "Position sizing and execution can be accomplished within daily granularity without slippage dominating the edge."
+  - "The mechanism is ungated (no regime conditioning required, per A2.3 policy)."
+
+expected_failure_modes:
+  - "Failure mode 1: Funding sign-flip frequency declines (base-rate shift) — trade count falls below statistical minimum, sparse-sampling power floor is breached."
+  - "Failure mode 2: Daily timeframe is still too fast for mean-reversion to complete — settlement cascade takes >24 hours to resolve, lag_mismatch persists."
+  - "Failure mode 3: Cost drag dominates (round-trip costs exceed gross expected edge per trade) — negative per-trade expectancy despite mechanism being structural."
+
+library_lookup:
+  indicator_id: funding_rate_extreme
+  regime_affinity_for_target: neutral
+  affinity_justification: "Structural forced-flow mechanism is regime-independent; mean-reversion pressure occurs in any market regime (trending, ranging, high-vol). Neutral affinity per indicator_library.yaml definition for structural_rate category."
+  prior_campaign_failures:
+    - run_id: run_044
+      mechanism_tried: "Continuous (threshold=0.0) 8h funding-rate sign mean-reversion on 1h bars"
+      outcome: inconclusive
+      root_cause: lag_mismatch_to_regime_persistence
+  crowding_risk: low
+  crowding_deviation_justification: "Low crowding is baseline for funding-rate signals (non-OHLCV feed, not universally integrated by retail strategies). No alternative with lower crowding needed."
+
+power_parameters:
+  activation_rate: 0.20
+  activation_rate_note: "Estimated from briefs's honesty note (i): 228 (BTC) + 220 (ETH) = 448 flips over 49 monthly windows, 2 symbols → ~4.6 flips per window-symbol ÷ ~22 trading days/month ≈ 0.21 daily activation rate."
+  plausible_ic_upper: 0.10
+  plausible_ic_upper_basis: "A8.6 anchor table: sparse feed-based, continuous (non-extreme) activation. Funding-rate sign every-occurrence (not extreme-only) → 0.08–0.12 range, selected 0.10."
+  n_bars: 1078
+  n_bars_note: "Pass-gated window: 49 monthly windows (2019-12-01 to 2023-12-31) × ~22 trading days/month = 1078 daily bars total."
+  n_symbols: 2
+  is_market_wide: false
+  power_note: "Pre-registered closure run (operator-ratified 2026-07-18). Protocol pinned: funding_mr_daily_retest_v1.json (49 pass-gated windows only; 2024-2025 diagnostic-only, never gating). No parameter sweep permitted; mechanism tested as specified."

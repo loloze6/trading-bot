@@ -1,0 +1,78 @@
+run_id: run_047
+hypothesis_id: H-041-A
+registered_at: "2026-07-05"
+
+reactivation_context: >
+  Reactivating H-041-A (funding rate extreme -> contrarian mean-reversion,
+  structural_forced_flow) per its recorded reactivation_condition in
+  campaign_knowledge_base.yaml (finding: funding_rate_mean_reversion_inconclusive):
+  "PRIMARY: Backward data extension to 2018+ (funding extremes documented in
+  2020-2022; expected_n_eff ~ 50+ on 7-year window)." Config is REUSED VERBATIM
+  from run_041 (threshold=0.0002, scaling_factor=10.0) -- no retuning, per standing
+  rule (a recalibrated variant is a new trial, A8.5 rule 3).
+
+# --- A8.6 power check (original run_041 framing, carried forward for continuity) ---
+expected_active_n: 1891          # BTC 884 + ETH 1007 active settlements, verified count
+                                   # (real backfilled data, 2019-09-10/2019-11-27 -> 2025-12-31)
+plausible_ic_upper: 0.20          # hypothesis-design SKILL.md A8.6 anchor table:
+                                   # "sparse feed-based, extreme/threshold-gated" row = 0.10-0.20
+
+# --- A8.5.1a episode-blocked significance pre-registration (BINDING, computed BEFORE
+#     any IC/return is touched -- see strategy-research/docs/p1b_episode_preregistration.yaml
+#     for the full per-episode enumeration this was derived from) ---
+episode_preregistration:
+  method: A8.5.1a
+  gap_bars: 48                      # real 1h-bar units (campaign_config.yaml default)
+  min_n_episodes_floor: 8
+  n_episodes_observed: 132           # pooled BTC+ETH, era-and-symbol-bounded episodes
+  floor_pass: true
+  note: >
+    132 episodes clears the n_episodes>=8 floor with substantial margin (16.5x).
+    A significance claim from the episode bootstrap is methodologically licensed
+    for this run -- disposition will NOT be forced to insufficient_sample_inconclusive
+    on power grounds alone, unlike run_041's original n_eff=10 result.
+  era_distribution_expected: >
+    Episodes span era_2019_2023_full_feed (majority), era_2024_burned, and
+    era_2024_2025_walk_forward_extension. era_2018_pre_funding is structurally
+    excluded (funding rate does not exist before BTC/ETH perpetual futures
+    inception). Per-era counts will be reported alongside the pooled bootstrap
+    result (A8.5.1a rule 5: era stratification is reporting, not resampling).
+
+expected_direction:
+  claim: >
+    If the mean-reversion mechanism is real, IC should be positive (funding
+    extreme -> reversal predicts the SIGN of next-bar return opposite the crowded
+    side). IC > 0.
+  magnitude_prior: plausible_ic_upper=0.20 (see above); run_041's original point
+    estimate was IC=0.014 (direction positive, but n_eff=10, far from significant).
+
+expected_sharpe_range:
+  pessimistic: -0.3   # mechanism doesn't hold up out of the original 2024-2025 sample
+  base_case: 0.2       # weak-but-real edge, matching the original direction
+  optimistic: 0.8      # would be surprising given run_041's near-zero point estimate
+
+expected_ic_range: [0.01, 0.20]
+expected_cost_ratio: 2.0   # must clear the standard 2.0 safety factor
+
+disconfirming_outcome: >
+  ic_active_bars <= 0 with the episode-bootstrap p-value < 0.10 (i.e., a
+  significant NEGATIVE or zero pooled IC) would indicate the mechanism is
+  anti-predictive or absent, not merely underpowered -- this is qualitatively
+  different from run_041's original insufficient_sample_inconclusive result and
+  would warrant a kill_no_ic / signal_inversion verdict rather than another
+  power-based park.
+
+parameterization_constraint: >
+  threshold=0.0002, scaling_factor=10.0 are pre-registered (reused verbatim from
+  run_041). No adjustment post-hoc based on this prescreen's outcome. Any
+  recalibration is a new trial (H-041-A-v2) per A8.5 rule 3.
+
+known_engine_caveat: >
+  F7 (filed, not fixed): main_strategy.is_ready() reads regime_engine.current_regime
+  before classify() runs on the very first ready bar, producing one bar's forecast
+  from under-warmed history when default_regime != "unknown". This config (reused
+  from run_041) uses default_regime="mean_reversion", sharing this known one-bar
+  defect (confirmed precedent, see 00_closing_state.md F1/F7 entries and
+  trading-bot/tests/test_ungated_config_pattern.py::test_run_042_precedent_...).
+  Affects exactly one bar out of ~13,000+ hourly bars in this range -- immaterial
+  to episode counts or pooled IC, noted here for completeness, not re-litigated.

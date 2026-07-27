@@ -1,0 +1,27 @@
+hypothesis_id: H-041-A
+stage: refinement_planner
+run_id: run_050
+refinement_attempt: 1
+
+blocker_responses:
+  BR-01_cost_feasibility_implausible:
+    issue: "V1_threshold_relaxed (0.0001, 1–4 bar hold) fails Layer 1 cost gate. Activation increases to 8% but holding window remains short. At IC=0.15 (best plausible), gross_edge≈7 bps vs cost requirement=34 bps. Cost drag=-26 to -30 bps/trade. Plausibility ranking: implausible."
+    action: "REJECT V1_threshold_relaxed in current form. Variant is not viable unless paired with extended holding window (8–24 bars) or timeframe shift (4h) to amortize 17 bps cost. Do not enter backtest queue."
+    status: REJECTED
+
+  BR-02_activation_rate_sparse:
+    issue: "V1_holding_window_extended (0.0002 threshold, 8–24 bar hold) fires 0.06% of bars. Expected episodes: ~0.43/month on 1h, ~10–12 total per full year across 2 symbols. Decision floor=50 episodes/window. Extended holding improves cost-per-bar (1.06→1.1 bps) but does not increase episode count. Statistical power remains insufficient."
+    action: "CONDITIONAL_ACCEPT V1_holding_window_extended. Activate only if sparse-activation blocker is resolved via: (Option A) timeframe shift to 4h (episodes increase 4–5×), (Option B) add vol-gating to concentrate activation density, or (Option C) further extend holding window (24–48 bars) with proof that unwinding persists through full window."
+    status: CONDITIONAL_ACCEPT
+
+  BR-03_timeframe_mismatch:
+    issue: "1h timeframe + sparse threshold gating creates parameter mismatch. Funding cascade unwinds over 8–48 hours (8–48 bars), but 17 bps cost erodes edge at short holds. Extended variant requires IC>0.28 to clear cost bar (above realistic range 0.10–0.20 for threshold signals on 1h). Mechanism is sound; parameters are misaligned."
+    action: "RECOMMEND Option A: shift to 4h timeframe. New variant V1_holding_window_extended_4h uses 32–96 bar holding window (4h→16h timescale). Cost-per-bar drops to 0.27 bps. Expected IC≥0.15 (signal quality typically improves with longer holds). ALT: Option B (vol-gating on 1h, no timeframe change) or Option D (prescreen on 2019–2023 backward-extended data to validate IC≥0.15 at 1h before final commit)."
+    status: RECOMMEND_REFRAME
+
+decision:
+  primary_path: "REFRAME H-041-A. Return to innovation_expansion. Do not proceed with submitted variants. Resubmit with one of: (1) 4h timeframe, V1_holding_window_extended_4h, holding_window_bars=[32–96], (2) 1h+vol-gating, new variant V1_vol_gated (volatility_rolling_percentile gate), (3) 1h+backward-extension prescreen, run on era_2019_2023_full_feed to validate IC≥0.15 before proceeding."
+  mechanism_verdict: "SOUND. Structural forced-flow via funding settlement is established (contractual, not arbitrageable). Parameter mismatch is the issue, not mechanism failure."
+  cost_feasibility_summary: "V1_threshold_relaxed=implausible (reject). V1_holding_window_extended=marginal (conditional accept pending sparse-activation solution). Cost constraints are real; cost_check gates remain in effect post-reframing."
+  promotion_gate_status: NOT_ELIGIBLE
+  reason_not_eligible: "Blocking issues require parameter rework (timeframe shift, vol-gating, or mechanism validation on backward data). These are innovation-stage tasks, not single-config tweaks. Hypothesis must re-enter innovation_expansion, then return to validation after parameter refinement."

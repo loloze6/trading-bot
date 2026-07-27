@@ -1,0 +1,97 @@
+hypothesis_id: H-RUN007
+base_hypothesis_id: H-RUN007
+asset: BTCUSDT
+timeframe: 1h
+regime_target: mean_reversion
+
+thesis_summary: >
+  Base thesis: RSI distance from 50 generates positive alpha in mean-reversion 
+  regime. Expansion tests oscillator choice, directional assumption, volume confirmation, 
+  dynamic thresholding, and price input selection.
+
+expanded_variants:
+  - variant_id: V1-RSI-Base-LongOnly
+    name: "Conservative: RSI(14) Long-Only"
+    signal_concept: forecast = max(0, (50 - RSI(14)) / 100)
+    direction: long-only
+    threshold: 50 (fixed)
+    rationale: "Original hypothesis control. Pure RSI mean-reversion signal in oversold regime."
+    
+  - variant_id: V2-StochRSI-Normalized
+    name: "Alternative Oscillator: StochRSI(14,3,3)"
+    signal_concept: forecast = max(0, (0.5 - StochRSI(14,3,3)) / 1.0)
+    direction: long-only
+    threshold: 0.5 (StochRSI scale)
+    rationale: "StochRSI adds smoothing and normalization. Reduces noise; tests if normalized oscillator captures reversion better than raw RSI."
+    
+  - variant_id: V3-RSI-ShortOnly
+    name: "Reverse: RSI(14) Short-Only"
+    signal_concept: forecast = min(0, (RSI(14) - 50) / 100)
+    direction: short-only
+    threshold: 50 (fixed)
+    rationale: "Falsification test. If mean-reversion thesis is correct, short signals should underperform. If V3 ≈ V1, signal is regime-driven not directional."
+    
+  - variant_id: V4-RSI-VolumeConfirmed
+    name: "Behavioral: RSI + Volume Confirmation"
+    signal_concept: "base = max(0, (50 - RSI(14))/100); vol_factor = min(1.0, volume_current / volume_SMA20); forecast = base * (0.5 + 0.5 * vol_factor)"
+    direction: long-only
+    threshold: 50 + volume decay
+    rationale: "RSI pullback + declining volume confirms genuine reversion vs whipsaw. Volume multiplier [0.5, 1.0] dampens signal in low-volume noise."
+    
+  - variant_id: V5-RSI-AdaptiveThreshold
+    name: "Regime-Adaptive: RSI vs Rolling Percentile"
+    signal_concept: "threshold = percentile(RSI[last_50_bars], 50); forecast = max(0, (threshold - RSI(14)) / 100)"
+    direction: long-only
+    threshold: dynamic percentile(RSI, 50)
+    rationale: "Fixed 50 assumes constant distribution. Adaptive captures relative extremes. Tests if local median better predicts reversion than absolute 50."
+    
+  - variant_id: V6-RSI-HL2Input
+    name: "Alternative Data: RSI(14, HL2) vs Close"
+    signal_concept: "forecast = max(0, (50 - RSI(14, (high+low)/2)) / 100)"
+    direction: long-only
+    threshold: 50 (fixed)
+    rationale: "RSI on midpoint vs close. Tests if range-centered input better identifies oversold in choppy markets. Expected baseline control for input sensitivity."
+
+alternative_data_candidates:
+  - name: "Volume Volatility (Volume SMA20)"
+    description: "Integrated into V4; provides volume confirmation context for filtering noise."
+    feasibility: "high (already computed in RollingBuffer)"
+    
+  - name: "ATR(14) Volatility Scaling"
+    description: "Scale forecast by 1 + ATR/Close. Tests if volatility context within mean_reversion regime improves signal. Deferred; VR ≤ 0.90 already filters vol."
+    feasibility: "high (already computed)"
+    
+  - name: "Price Level Anchoring (Recent High/Low)"
+    description: "Signal strength by distance from 20-bar extremes. Tests if oversold at recent lows yields stronger reversion. Deferred to behavioral_features."
+    feasibility: "high"
+
+reverse_hypothesis:
+  thesis: "If mean-reversion is directional, RSI > 50 should generate NEGATIVE alpha (short signals). If V1 Sharpe >> V3 Sharpe, oversold is directional. If V1 ≈ V3, signal is regime-driven not directional."
+  falsification_test: "V3 underperformance by > 0.5 Sharpe difference confirms directional edge; parity indicates regime classification, not oversold mechanics, drives signal."
+
+behavioral_features:
+  - feature: "Volume Divergence"
+    description: "Declining volume + RSI oversold = genuine reversion vs participated rally. Integrated into V4 multiplier."
+    data_source: "volume_SMA20 (existing)"
+    
+  - feature: "Bar Internals (Open/Close)"
+    description: "Close > open + RSI < 50 strengthens signal (bullish bar contradicts oversold indicator). Enhancement candidate for later variant."
+    data_source: "open, close (existing)"
+    
+  - feature: "RSI Acceleration"
+    description: "RSI declining faster into oversold (t vs t-1) is stronger reversion signal than static position. Enhancement candidate."
+    data_source: "RSI buffer history (existing)"
+
+regime_specific_variants:
+  - variant_id: V5-sub-LowVolatility
+    description: "Apply V1 with full confidence only when ATR < ATR_SMA20. Tests if mean-reversion is stronger in volatility compression sub-regime."
+    rationale: "Mean-reversion edge may concentrate in ultra-low-vol pockets within mean_reversion bounds (ER ≤ 0.20, VR ≤ 0.90)."
+    
+  - variant_id: V5-sub-HighEfficiency
+    description: "Apply V1 with reduced confidence (50%) when ER > 0.15 within mean_reversion band. Tests regime boundary lag effects."
+    rationale: "ER/VR thresholds may be too coarse; sub-partitioning tests if edges exist within existing regime classification."
+
+validation_path:
+  screening_backtest: "All variants V1-V6 on 6-month in-sample, BTCUSDT 1h (2023-09-01 to 2024-03-01)."
+  walk_forward: "Top 2 variants on 6-month hold-out (2024-03-01 to 2024-09-01)."
+  decision_rule: "Advance if ≥2 variants Sharpe > 0.8, annualized_return > 10%. Reject if all Sharpe < 0.5."

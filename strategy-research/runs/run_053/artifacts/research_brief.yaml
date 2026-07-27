@@ -1,0 +1,52 @@
+strategy_domain: trend_following
+market_universe:
+- BTCUSDT
+- ETHUSDT
+timeframe: 1h
+constraints:
+- Must not propose ideas that require replacing the whole existing bot architecture.
+- Do not write code.
+- Keep the mechanism explicit and interpretable.
+- 'POST-A2.3: no regime-gated hypotheses in the run queue. Ungated formulations only.'
+- 'KB EXHAUSTED-CHECK (A5.1): the 2024-2025-only ungated EMA-crossover cell (moving_average_crossover,
+  run_043, EMA_SPREAD_TREND_CONTINUATION_V1) is already exhausted — no_edge_observed,
+  root_cause already_priced_in. The Keltner trend-breakout cell (keltner_channel_trend)
+  is likewise dismantled (signal_inversion / no informational content on TRENDING-labeled
+  bars; see KB keltner_root_cause_reattribution). A valid P4 hypothesis must be a
+  structurally different claim than either exhausted cell — e.g. the same mechanism
+  re-evaluated over the backward-extended 2018-2025 window (a materially larger, multi-cycle
+  sample the original tests did not have), or a genuinely untested trend_following
+  family member (macd has campaign_empirical_results: [] in indicator_library.yaml
+  — never tested). Do not resubmit the identical exhausted formulation.
+
+  '
+- 'MODEL-BLIND CAVEAT (docs/plan/11_viable_space_map.md, rev. 3): moving_average_crossover,
+  keltner_channel_trend, and macd were flagged model_blind in that advisory Layer-1
+  cost-hurdle projection — a linear-IC model cannot price a convex trend-following
+  payoff, so that projection neither passed nor failed them. This is a planning note,
+  not a gate; it does not block registration, A8.6, or prescreen (which uses the actual
+  Layer-2 formula, not the advisory projection). backtest_specification should be
+  aware that a trend-following payoff may be a poor fit for a pure-IC framing and
+  should consider whether the hypothesis''s expectancy claim is better expressed as
+  per-trade expectancy over average holding period than as a raw correlation claim.
+
+  '
+available_data:
+- price_volume_only
+research_goal: 'Test whether a time-series trend-following mechanism (moving-average
+  crossover, Keltner-channel breakout, or MACD) produces a real, cost-surviving edge
+  on BTCUSDT/ETHUSDT 1h once evaluated over the full backward-extended data range
+  (2018-01-01 to 2025-12-31, ~8 years, multiple bull/bear/chop cycles) rather than
+  the single 2024-2025 era the two already-exhausted trend cells were tested on. OHLCV-only
+  mechanism: no funding_rate or fear_greed dependency, so there is no era-availability
+  gap anywhere in the backward-extended range (see config/campaign_data_policy.yaml
+  — BTCUSDT/ETHUSDT 1h OHLCV verified back to 2018-01-01; holdout_range 2026-01-01
+  to 2026-06-30 stays untouched).
+
+  '
+existing_context:
+- use_existing_backtest_framework
+- prefer_minimal_code_changes
+- use_existing_strategy_architecture
+optional_focus:
+- new_sub_strategy_component

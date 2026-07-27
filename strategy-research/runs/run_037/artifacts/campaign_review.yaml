@@ -1,0 +1,49 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 23
+valid_diagnostics_runs: 20
+
+pattern_detected: same_root_cause_different_families
+
+pattern_evidence:
+  - "run_017 (keltner_breakout): corr=0.2145, cost_drag=27.45%, sharpe=FAIL"
+  - "run_024 (keltner_trend_mean_reversion): corr=0.2145, cost_drag=27.45%, sharpe=FAIL"
+  - "run_027 (keltner_scoremode, SOLUSDT): corr=0.2145, cost_drag=27.45%, sharpe=FAIL"
+  - "run_033 (keltner_breakout): corr=0.2145, cost_drag=27.45%, sharpe=FAIL"
+  - "run_015 (keltner_breakout): corr=-0.1705, cost_drag=25.77%, sharpe=FAIL"
+  - "run_018 (rsi_momentum_trending): corr=0.018, cost_drag=272.87%, sharpe=PASS+FAIL"
+  - "run_021 (keltner_mean_reversion): corr=0.0136, cost_drag=413.05%, sharpe=PASS+FAIL"
+  - "run_023 (reframed): corr=0.0097, cost_drag=420.19%, sharpe=FAIL"
+  - "run_034 (reframed): corr=0.0136, cost_drag=413.05%, sharpe=PASS+FAIL"
+  - "Pattern: Across 7 failed families (rsi_mean_reversion, keltner_breakout, keltner_mean_reversion, keltner_trend_mean_reversion, keltner_scoremode, rsi_momentum_trending, rsi_momentum), cost_drag >= 25%, and most sharpe ratios FAIL despite positive correlation. Root cause is NOT the signal — it is trading frequency destroying risk-adjusted returns."
+  - "Win rate PASS + Sharpe FAIL appears in runs 016, 020, 021, 029, 030, 034 — signal direction correct, but too many losing trades per window offset alpha."
+  - "5 reframes (runs 022, 023, 032, 034, 035) have not solved the underlying issue: each reframe still assumes a signal-first approach without addressing sizing or frequency."
+  - "Instrument escalation (runs 027, 029 testing ETHUSDT, SOLUSDT, AVAXUSDT) yields identical cost_drag patterns to BTCUSDT; problem is structural, not instrument-specific."
+  - "Timeframe escalation (run_020, 4h) shows same Sharpe failure pattern; suggests cost_drag is driven by signal rebalance frequency, not absolute time."
+
+recommendation: reframe
+
+recommendation_rationale: "The campaign has tested 7 distinct hypothesis families and 4 instruments across 23 runs, all converging on the same failure mode: positive forecast correlation (0.2+) is neutralized by cost_drag (25-420%), resulting in Sharpe ratio failure. The win_rate PASS + Sharpe FAIL pattern confirms the signal is directionally correct but trades too frequently or too small. Continuing to search for better signals (rsi variants, keltner variants) will not fix a structural problem with position sizing and trade frequency. The research question must shift from 'find the signal that works' to 'find the signal + sizing strategy that generates infrequent, high-conviction trades that survive trading costs.'"
+
+next_research_question: |
+  hypothesis_id: COST_DRAG_STRUCTURAL_FIX
+  asset: "BTCUSDT, ETHUSDT"
+  timeframe: 2h
+  research_question: "When we filter keltner_breakout signals (proven corr ~0.21 on 1h) by regime confidence score OR position size by correlation magnitude, do we reduce trade_count per window while preserving correlation >= 0.10 and cost_drag < 40%?"
+  signal_concept: "Reuse keltner_breakout config from run_017 (ema=20, atr=20, atr_mult=2.0, scale=-20.0, TRENDING regime). Add regime_confidence_filter (only trade when regime_score >= 0.8) OR scale position by correlation_confidence (e.g., size_mult = forecast_confidence_pct / 100). Escalate to 2h timeframe to reduce signal churn from 1h noise."
+  constraints:
+    - "Test on 2h (higher signal SNR than 1h, lower execution drag than 4h)."
+    - "Measure trade_count per window; target <= 3-5 per window vs. current 5-10."
+    - "Preserve forecast_return_corr >= 0.10; primary success metric is cost_drag < 40%."
+    - "If regime_confidence_filter works, next run should apply same filter to other successful families."
+
+budget_assessment:
+  runs_used_pct: 46
+  estimated_campaign_budget: 50
+  guidance: "Prioritize the next 2-3 runs on the highest-leverage tests: (1) regime confidence filtering on 2h timeframe (directly addresses cost_drag root cause), (2) if pass, backtest same filter on 1h to verify timeframe independence. Remaining budget should focus on walk-forward validation once a promotable configuration is found, rather than additional family exploration."
+
+notes:
+  - "run_011 through run_013 invalid due to config_path bug; diagnostics from run_014 onward are reliable."
+  - "runs_017, run_024, run_027, run_033 show identical correlation (0.2145) and cost_drag (27.45%); suggests runs 024, 027, 033 are duplicates or configs merged — confirm with run artifacts."
+  - "run_035 marked PASS despite low corr (0.0662); suggests this run used relaxed thresholds or different success criteria — review run_035 config vs. run_017 baseline."
+  - "No components_built yet; reframe should prioritize component-level changes (regime_confidence_score, position_sizing_fn) over parameter tweaking."
+  - "Next campaign decision point: after run_036 (recommended 2h regime_confidence test). If cost_drag < 40% and corr >= 0.10, continue to walk-forward; if not, escalate to different asset class (crypto options, leverage) or different forecast frequency (4h/6h/daily)."

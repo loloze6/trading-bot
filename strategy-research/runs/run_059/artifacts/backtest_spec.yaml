@@ -1,0 +1,35 @@
+status: "spec_ready"
+config:
+  regime_detector:
+    mode: "threshold_rules"
+    components: []
+    rules: []
+    default_regime: "unknown"
+  strategies:
+    warmup: 2
+    regimes:
+      unknown:
+        components:
+          - id: "funding_rate_mr"
+            class: "strategies.strategy_components.FundingRateMeanReversionComponent"
+            params:
+              threshold: 0.0
+              scaling_factor: 10.0
+            weight: 1.0
+            transforms:
+              - op: "identity"
+      trending: null
+      mean_reversion: null
+      chop: null
+  aux_feeds:
+    - "funding_rate"
+  significance_methodology: "episode_blocked_a851a"
+config_rationale:
+  - "Funding sign-flip mechanism → FundingRateMeanReversionComponent reads 8h Binance settlement CSV, outputs −sign(funding_rate)×scaling_factor at UTC settlement bars (hour%8==0)"
+  - "threshold=0.0 (continuous variant) fires at every settlement bar, encoding daily sign-flip as deterministic forecast trigger"
+  - "scaling_factor=10.0 produces forecast magnitude ±10 (within ±20 clipping range)"
+  - "Daily bars: aux_feeds merges funding_rate column; component fires on settlement bars aligned to daily close window"
+  - "Ungated pattern (A2.3 canonical): no regime detector rules/components; signal active on every bar with a settlement event"
+  - "aux_feeds: [\"funding_rate\"] enables component; no additional code required"
+  - "significance_methodology copied from pre_registration.yaml machine_constraints per A8.5.1a binding"
+component_gap: null

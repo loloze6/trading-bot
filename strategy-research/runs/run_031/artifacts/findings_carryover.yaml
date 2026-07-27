@@ -1,0 +1,28 @@
+hypothesis_id: "KELTNER_THRESHOLD_4H_AVAX"
+
+what_failed:
+  - "Signal directional edge (forecast_return_corr=0.0021, p=0.53, insufficient edge)"
+  - "Cost_drag > 80% target (actual: 106.4%, only 17.5% improvement vs run_030, insufficient)"
+  - "Sharpe < 0.30 target (actual: -5.428, degraded vs run_030: -2.61)"
+  - "Target regime validity (mean_reversion marked uninformative in 3/11 windows; forward_return_mean near 0)"
+
+diagnostic_rule_applied: "Rule 2: abs(forecast_return_corr)=0.0021 < 0.03 AND pvalue=0.530797 > 0.10 (signal has no directional edge). Rule 4: mean_reversion regime (active regime in threshold-rules, firing in mean_reversion per_regime totals) marked informative=false in windows 2024-01, 2024-05, 2024-10 with forward_return_mean near 0 (regime not predictive of price direction)."
+
+diagnostic_snapshot:
+  forecast_return_corr: 0.0021
+  forecast_return_corr_pvalue: 0.530797
+  cost_drag_pct: 106.3993
+  gross_pnl: -112.2051
+  sharpe_median: -5.428
+  uninformative_regimes: ["mean_reversion", "NOT_READY", "unknown"]
+  trade_count_min: 308
+  regime_activation_windows_uninformative: 3
+
+what_not_to_try:
+  - "Do not refine threshold parameters (ER_threshold, VR_threshold, VR_upper) on AVAX without first validating that mean_reversion regime itself carries forward edge on a different instrument. Cost_drag reduction came at the cost of eliminating signal edge entirely (forecast_return_corr: 0.57 → 0.0021). This is not a parameter optimization problem; it is a regime methodology + asset fit problem."
+  - "Do not pivot to a different signal component while keeping AVAX + threshold-rules. The test revealed that AVAX's mean_reversion regime (VR ≤1.2) is uninformative. A different signal will face the same uninformative regime problem. First, validate that the regime definition works on a different asset."
+  - "Do not accept cost_drag reduction of 17% (128→106) as sufficient evidence that threshold-rules work. The reduction came from lower trade frequency, but the signal lost its edge. Gross_pnl flipped from +44.86 (run_030 median) to -112.21 (run_031 median). The strategy stopped working."
+
+next_altitude: "escalate"
+
+parameter_bracket: null

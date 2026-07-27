@@ -1,0 +1,34 @@
+run_id: run_057
+hypothesis_id: run_057-initial
+registered_at: '2026-07-10'
+reactivation_context: First launch of this queue entry's brief lineage (not a reactivation
+  of a prior hypothesis). machine_constraints below pin the protocol so this run cannot
+  silently fall back to a stale campaign_state.last_escalation protocol (F4d).
+machine_constraints:
+  window_set_protocol: protocols/ts_trend_daily_v1.json
+  window_set_note: Pre-registered semi-annual window set per the operator's brief.
+    Deliberately NOT populating machine_constraints.protocol (the _ensure_protocol_from_constraints
+    auto-generation key) -- that path builds NEW monthly windows via _generate_monthly_windows
+    and would silently replace this pre-registered window set. No existing machine_constraints
+    mechanism pins an EXISTING named protocol file without triggering generation;
+    flagged as a known gap, not worked around.
+  gate_definition:
+    indicator: kaufman_efficiency_ratio
+    lookback_n: 20
+    threshold: 0.3
+    frozen: true
+  pass_rule: 'PASS (-> refine/promote routing per verdict-interpreter) iff: (a) gated
+    bar-level median Sharpe >= 0.5791 (BTCUSDT) AND >= 0.0318 (ETHUSDT), computed
+    over the same 15-window sets; and (b) per-episode expectancy of taken entries
+    > 0 (sign plus expectancy +/- SE; no t-stat bar, pre-registered as such because
+    the gated subset has strictly fewer trades); and (c) A3.4 sparse rule: any window
+    whose gated episode count falls below the trade floor contributes null Sharpe,
+    and expectancy +/- SE is primary for the aggregate judgment. FAIL on (a) or (b)
+    -> the gate did not rescue the edge; verdict routing decides kill vs pivot; no
+    threshold adjustment permitted within this brief.'
+  baseline_comparators:
+    ungated_median_sharpe_btc: 0.5791
+    ungated_median_sharpe_eth: 0.0318
+  holdout_prohibition: 2026-01-01 to 2026-06-30 (holdout_range per config/campaign_data_policy.yaml)
+    is untouchable outside a single-use holdout_evaluation stage, per standing rule
+    1 in 00_closing_state.md section 4 and this brief's own pre_registration block.

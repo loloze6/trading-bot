@@ -1,0 +1,39 @@
+handoff_version: 2
+run_id: run_015
+from_stage: protocol_execution
+to_stage: verdict_interpreter
+assigned_engine: claude
+objective: 'Interpret backtest findings against hypothesis-specific criteria. Choose
+  the correct altitude (refine/pivot/escalate/kill/promote) based on diagnostics and
+  campaign history. Produce the matching artifact.
+
+  '
+required_inputs:
+- path: artifacts/protocol_result.yaml
+  reason: backtest findings, hypothesis verdict, and diagnostics block
+- path: artifacts/validation_protocol.yaml
+  reason: original success criteria and failure modes to interpret against
+- path: artifacts/backtest_spec.yaml
+  reason: maps config choices to hypothesis claims for failure attribution
+- path: artifacts/research_brief.yaml
+  reason: original research question and constraints
+optional_inputs:
+- path: ../../campaign_state.yaml
+  reason: cross-run altitude history; drives circuit-breaker altitude decisions
+- path: artifacts/findings_carryover.yaml
+  reason: prior hypothesis family lessons — includes the gross_pnl vs forecast_return_corr
+    distinction
+deliverables:
+- verdict_interpretation.yaml
+constraints:
+- Change at most one hypothesis dimension in proposed_brief.yaml (refine case).
+- Do not recommend components absent from STRATEGY_CONFIG_REFERENCE.md.
+- Accept protocol_result.yaml numbers as truth — do not re-evaluate.
+- Populate altitude_justification with the specific diagnostic value used.
+- Do not emit both proposed_brief.yaml AND escalation_request.yaml.
+stop_conditions:
+- All evaluable approve criteria pass → status: promote, emit research_decision.yaml.
+- Two or more reject criteria confirmed → status: kill, emit research_decision.yaml.
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'false'

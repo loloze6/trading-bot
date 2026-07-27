@@ -1,0 +1,71 @@
+# PRE-REGISTRATION — H-041-C Prescreen
+# Written and committed BEFORE prescreen_signal.py is invoked.
+# Per session instructions (step 6). These predictions are binding:
+# any post-hoc deviation from this framework must be flagged explicitly.
+
+run_id: run_042
+hypothesis_id: H-041-C
+preregistered_at: "2026-07-03"
+prescreen_not_yet_run: true
+
+# Pre-registered expectations and interpretation framework
+
+expected_direction:
+  claim: >
+    If the contrarian mechanism is real, the signal should show positive IC (fear→long
+    predicts positive next-bar returns; greed→short predicts negative next-bar returns).
+    IC > 0.
+  magnitude_prior: >
+    Daily sentiment signals on crypto have IC of 0.05–0.15 on subsequent 1h returns in
+    the literature. IC > 0.15 would be considered strong and triggers A8.4 re-verification
+    before backtest routing (see A8.4 re-verification trigger below).
+
+alignment_shift_effect:
+  claim: >
+    (a) The +1 day A8.4 alignment shift must WEAKEN IC relative to the unshifted version.
+    If IC is stronger post-shift than it would be without the shift, this indicates that
+    the signal does not require alignment correction — which would be a sign of a different
+    mechanism, not the lookahead-corrected version we intended to test.
+    Post-shift IC ≤ unshifted IC is the expected and honest direction.
+  unshifted_reference: >
+    To establish the unshifted baseline: run once without the shift
+    (fear_greed timestamps not shifted) after the main prescreen, record its IC, and
+    compare. The unshifted IC − shifted IC gap estimates the lookahead contamination.
+    This comparison is REQUIRED before crediting any IC to genuine sentiment.
+
+sentiment_vs_price_comparison:
+  claim: >
+    (b) F&G is partially computed from price momentum. Before crediting the IC to
+    sentiment information, the IC must exceed a price-momentum-reversal baseline.
+    Required comparison: run a simple price-reversal signal (e.g., "7-day BTC return
+    < -5% → long; > +5% → short") on the same bars and compute its IC. If F&G IC ≈
+    price-reversal IC, the signal is redundant with price data.
+  timing: >
+    This comparison is required if the prescreen routes to 'proceed_to_backtest'.
+    If prescreen kills, the comparison is optional (informational only).
+  implementation_note: >
+    Write a PriceReversalBaselineComponent and prescreen it on the same windows after
+    H-041-C prescreen completes. Compare active-bar ICs. Document ratio.
+
+a8_4_reverification_trigger:
+  claim: >
+    (c) If prescreen returns active-bar IC > 0.15 or p < 0.05, halt before routing to
+    backtest. Re-verify the F&G alignment: confirm that the +1 day shift is correctly
+    applied in the component's data path, that the RollingBuffer doesn't strip or
+    alter the fear_greed column, and that the signal IS firing only at 00:00 bars
+    (not at non-boundary bars). A strong IC at this sample size and signal sparsity
+    is more likely a bug than genuine edge — verify before celebrating.
+
+statistical_power_note: >
+  With 159 active daily events per symbol × 2 symbols = 318 total active bars,
+  n_eff = 318 / 24 (block_size) ≈ 13. SE ≈ 0.28. To be statistically significant
+  at p < 0.10 (two-tailed), need |IC| > 0.46. This is a high bar for a sentiment
+  signal. A kill result does NOT disprove the mechanism — it may reflect insufficient
+  power (same class of issue as H-041-A). If killed: record as 'insufficient_sample_inconclusive'
+  if IC is in the expected direction (IC > 0) but not significant; 'kill_no_ic' only
+  if IC ≤ 0 or significance is trivially far off.
+
+parameterization_constraint: >
+  Thresholds (fear<25, greed>75) are pre-registered. No adjustment to these parameters
+  post-hoc based on prescreen outcome. If thresholds need recalibration, it is a new
+  trial (H-041-C-v2), documented under A8.5.3.

@@ -1,0 +1,105 @@
+status: unusable_for_this_symbol_timeframe
+affected_symbols_timeframes:
+- BTCUSDT_1h
+- ETHUSDT_1h
+recommended_action: 'The structural blocker is transition_frequency (~40 transitions/window
+  observed on the best directly-implementable config, vs <=4 required for high confidence).
+  This cannot be resolved by ER threshold tuning alone. The only detector-intrinsic
+  path to lower transitions is adding min_dwell >= 24 bars to the engine — the retune
+  grid projects this reduces transitions to ~18/window (er=0.30, dwell=24, exit=0.240;
+  see regime_retune_results.yaml). Even at ~18/window the high gate (<=4) is not met.
+  No ER-based single-indicator configuration on BTC/ETH 1h achieves high confidence
+  simultaneously on all four intrinsic criteria (persistence, activation-in-band,
+  class-conditional sensitivity, transition frequency). Per A2.3 post-unusable policy:
+  record candidate detector families in config/detector_wishlist.yaml; do not build
+  a replacement detector until a confirmed ungated edge exists with regime-dependent
+  performance in Improvement 03 diagnostics.
+
+  '
+ungated_escape_eligible: true
+retune_attempted: true
+retune_summary:
+  grid_cells_evaluated: 48
+  grid_dimensions:
+    er_enter:
+    - 0.2
+    - 0.25
+    - 0.3
+    - 0.35
+    - 0.4
+    - 0.45
+    er_exit_ratios:
+    - 1.0
+    - 0.8
+    min_dwell:
+    - 1
+    - 6
+    - 12
+    - 24
+  vr_component: dropped
+  vr_drop_rationale: 'VR>=1.2 (canonical config) limits activation to ~1%, structurally
+    below the [10%,40%] plausibility band. ER-only rules were tested.
+
+    '
+  best_directly_implementable:
+    er_enter: 0.25
+    er_exit: 0.25
+    min_dwell: 1
+    combined_score: 5.0
+    avg_persistence: 13.0
+    avg_activation: 0.33
+    avg_cc_sens: 0.145
+    avg_transitions_pw: 39.4
+  overall_winner_requires_extension:
+    er_enter: 0.3
+    er_exit: 0.24
+    min_dwell: 24
+    combined_score: 5.0
+    avg_persistence: 27.5
+    avg_activation: 0.359
+    avg_cc_sens: 0.215
+    avg_transitions_pw: 18.3
+  max_score_achieved: 5.0
+  max_possible_score: 8.0
+  structural_ceiling: 'No cell achieved score > 5/8. The transition_frequency criterion
+    (need <=4/window) conflicts structurally with the activation criterion (need 10-40%):
+    lower ER threshold increases activation but amplifies label flipping (transitions);
+    higher ER threshold reduces transitions but pushes activation below 10%. These
+    two objectives are Pareto-conflicting on 1h crypto with a stateless single-indicator
+    detector.
+
+    '
+official_report_after_retune:
+  detector_version: c647ee20
+  evaluated_at: '2026-07-02T12:43:17.279934+00:00'
+  config: ER>=0.25 only (no VR, no dwell)
+  btcusdt_1h:
+    confidence: medium
+    persistence: 12.0
+    transitions_pw: 40.38
+    cc_sens_trending: 0.1572
+    activation: 0.3279
+    in_band: true
+  ethusdt_1h:
+    confidence: medium
+    persistence: 13.0
+    transitions_pw: 38.96
+    cc_sens_trending: 0.1419
+    activation: 0.3263
+    in_band: true
+a23_policy_applied: true
+a23_detector_wishlist: config/detector_wishlist.yaml
+evaluated_at: '2026-07-02T13:00:00.000000+00:00'
+ungated_escape_resolved_by: prescreen_ic_all_bars
+ungated_escape_resolved_at: '2026-07-03T11:45:47.228013+00:00'
+ungated_escape_rationale: 'Resolved using prescreen ic_all_bars (all-bars, ungated
+  — admissible per A2.3 rule 5). ic_all_bars=-0.0122, p=0.6412, 95% CI=[-0.0637, 0.0392],
+  n_eff=1453 (n_total=34878 / block_size=24). IC is within 2 SE of zero — consistent
+  with no edge over all bars. Per A2.1: signal_bad_everywhere may be concluded. ungated_escape_eligible
+  set to true. Separate diagnostic: ic_active_bars=-0.0318 (not admissible for this
+  criterion — equals gated/TRENDING-bar IC for this config).'
+prescreen_ic_all_bars: -0.012237
+prescreen_ic_active_bars: -0.031786
+prescreen_ic_all_bars_ci_95:
+- -0.0637
+- 0.0392

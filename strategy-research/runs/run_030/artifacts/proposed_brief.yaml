@@ -1,0 +1,76 @@
+hypothesis_id: "KELTNER_THRESHOLD_4H_AVAX"
+asset: "AVAXUSDT"
+timeframe: "4h"
+research_question: |
+  At 4h timeframe, does a threshold-rules regime filter (strict component-wise
+  gates replacing score-mode continuous aggregation) reduce trade frequency and
+  cost_drag below 80% while preserving positive forecast edge of Keltner signal
+  and achieving Sharpe ≥0.30 across ≥4 walk-forward windows with ≥5 trades each?
+signal_concept: |
+  Keltner mean-reversion (ema_period=20, atr_period=20, atr_multiplier=1.5,
+  scaling_factor=-20.0), identical to run_030. Signal demonstrates positive
+  gross_pnl=44.86 (median across windows), confirming directional edge exists.
+  Constraint: Keltner signal component is FIXED — do not modify.
+regime_filter: |
+  Threshold-rules mode: Replace score-mode continuous ER×VR aggregation
+  with strict component-wise gates. Fire trending regime only when BOTH
+  ER ≥ 0.30 AND VR ≥ 1.5 simultaneously (high-confidence trending market).
+  Fire mean_reversion regime only when VR ≤ 1.2 (low-variance, mean-reversion
+  environment). This approach filters to regimes with empirically demonstrated
+  forward edge, rather than admitting marginal ER/VR combinations where
+  forward_return_mean ≈ 0 (uninformative).
+mechanism: |
+  Score-mode (min_score=0.15) fires on estimated 40–60% of candles, including
+  weak combinations (e.g., ER=0.3, VR=0.5 scoring 0.15) where regime validity
+  shows forward_return_mean near zero. Per diagnostic Rule 1, cost_drag=128%
+  > 80% despite gross_pnl > 0, indicating frequency (too many marginal trades)
+  rather than signal is the failure mode. Threshold-rules restricts to windows
+  where both ER and VR indicators rank high, reducing qualifying candles to
+  estimated 10–20%. Expected outcome: cost_drag drops below 80% by eliminating
+  trades in uninformative regimes; Sharpe improves by eliminating lossy tail
+  of marginal regime trades.
+assumptions:
+  - "Threshold-rules parameters (ER ≥0.30, VR ≥1.5, VR ≤1.2) derived from
+    component distributions do not introduce forward-looking bias."
+  - "Keltner signal edge preserved in high-conviction regime subset; no signal
+    quality degradation from stricter regime gates."
+  - "Reducing qualifying candles by 50–70% (from 40–60% to 10–20%) lowers
+    cost_drag more than it lowers gross_pnl, yielding net Sharpe improvement."
+  - "Threshold-rules maintains ≥4 walk-forward windows with ≥5 trades despite
+    lower frequency (robustness gate remains achievable)."
+expected_failure_modes:
+  - "Threshold-rules reduces frequency too far; <4 windows achieve ≥5 trades,
+    failing robustness gate. Escalate to shorter timeframe (1h, 15m) or more
+    volatile instrument (higher regime transition frequency)."
+  - "Cost drag improves but Sharpe still <0.25 (signal edge insufficient even
+    in high-conviction regimes). Escalate to different signal component."
+  - "Per-regime analysis reveals threshold windows cluster seasonally (e.g.,
+    Q1/Q3 only) or per-instrument. Suggests regime dynamics are asset-specific
+    or seasonal; escalate to asset-tuned variants or regime methodology."
+constraints:
+  - "Timeframe: 4h only."
+  - "Signal: Keltner mean-reversion (ema=20, atr=20, mult=1.5, scale=-20.0) —
+    IDENTICAL to run_030. Do NOT modify."
+  - "Regime: Threshold-rules mode (new methodology, distinct from score-mode).
+    ER and VR component parameters unchanged (period=24, smooth_period=5 for
+    ER; k=5, window=100 for VR)."
+  - "default_regime: unknown (block zero-forecasts outside regime)."
+change_from_previous: |
+  PREVIOUS (run_030): Score-mode regime with continuous ER×VR aggregation
+  (min_score=0.15). Result: Sharpe=-2.61, cost_drag=128.44%, win_rate=57.1%.
+  Regime validity shows mean_reversion and trending largely uninformative
+  (forward_return_mean ≈ 0 in multiple windows). Diagnostic Rule 1 applied:
+  cost_drag > 80% AND gross_pnl > 0 indicates sizing/frequency problem, NOT
+  signal problem. Prior refinement (lowering min_score from 0.25→0.15) made
+  Sharpe worse (run_029: 0.0 → run_030: -2.61), confirming score-mode
+  approach is parameter-exhausted at this dimension. Consecutive same-dimension
+  refine is forbidden; altitude 2 pivot required.
+  THIS PIVOT: Switch to threshold-rules regime detection mode. Replace continuous
+  ER×VR aggregation with strict component-wise gates (ER ≥0.30 AND VR ≥1.5
+  for trending; VR ≤1.2 for mean_reversion) to fire only on high-conviction
+  regime combinations. Rationale: Rule 1 prescribes reducing trade frequency
+  to lower cost_drag below 80%. Threshold-rules achieves this by filtering
+  marginal ER/VR combinations where regime validity confirms forward_return_mean
+  ≈ 0. Keltner signal shows positive gross edge (gross_pnl=44.86 median); problem
+  is FREQUENCY of application, not signal quality. This pivot maintains signal
+  while restructuring regime filtering to eliminate uninformative regime activations.

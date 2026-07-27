@@ -1,0 +1,35 @@
+base_hypothesis_id: H-041-C
+expansion_status: constraint_prevents_expansion
+expansion_rationale: "research_brief.yaml constraint (line 2 of constraints field): 'One variant only (V1 = the exact run_042 config). No innovation_expansion diversity search -- this is a straight reactivation, not a fresh search.' Per persona rule: expansion logic does not apply when variant count is constrained. V1 is a passthrough of the base hypothesis."
+
+expanded_variants:
+  - id: V1
+    signal_concept: "FearGreedContrarianComponent(fear_threshold=25.0, greed_threshold=75.0, scaling_factor=10.0) — VERBATIM from run_042. Fires at daily UTC 00:00 bar when fear_greed < 25.0 (forecast=+10.0) or fear_greed > 75.0 (forecast=-10.0); else forecast=0. Ungated: regime_detector.rules=[], default_regime='mean_reversion'."
+    evidence_type: fear_and_greed
+    component_name: FearGreedContrarianComponent
+    parameters:
+      fear_threshold: 25.0
+      greed_threshold: 75.0
+      scaling_factor: 10.0
+    rationale: "Reactivation of H-041-C (run_042 parked as insufficient_sample_inconclusive: IC=0.19 in correct direction, n_eff=13, p=0.547 on 2024-2025 window only). Extended data [2018-02-01, 2025-12-31] yields expected n_eff≈46, sufficient to test hypothesis at plausible_ic=0.15, p<0.10. Configuration and thresholds unchanged per A8.5.3 (reactivation does not justify re-tuning)."
+    regime_conditions: []
+    ungated: true
+    library_category: sentiment
+    indicator_id: fear_greed_index_contrarian
+    data_requirements: fear_and_greed
+    diversity_axis: "Base hypothesis passthrough (V1 only per brief constraint; reactivation run, no variant expansion)."
+    expected_ic_lower_bound: 0.15
+    expected_ic_upper_bound: 0.20
+    crowding_risk: medium
+    activation_rate: null
+    n_bars: null
+    n_symbols: 2
+    is_market_wide: true
+
+alternative_data_candidates: []
+
+reverse_hypothesis: null
+
+behavioral_features: []
+
+regime_specific_variants: []

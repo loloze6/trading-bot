@@ -1,0 +1,35 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY_ER20GATE"
+
+status: "conditional_approve"
+
+rationale: |
+  Hypothesis is well-formed, falsifiable, and testable via minimal change to
+  existing bot (add ER(20) gate to SMA(100) entry logic). Mechanism is intuitive
+  (ER gate removes choppy-regime whipsaws) and empirically plausible for daily
+  trend-following. Cost feasibility is marginal but not implausible for established
+  signal class.
+  
+  However, three material risks block immediate approval:
+  (1) Gate threshold 0.30 is not justified a-priori; appears empirically chosen,
+      risking overfitting in screening backtest.
+  (2) Trade sample post-gating may be small (2-5 per 65-day window), introducing
+      high variance and overfitting risk.
+  (3) ER(20) is naturally correlated with market regimes; gate may be regime-selecting
+      rather than mechanism-validating. Secondary S1/S2 checks are required to isolate
+      true signal from noise.
+  
+  Conditions below ensure gating decisions are grounded in walk-forward evidence,
+  not screening-backtest artifacts.
+
+blocking_issues: []
+
+conditions:
+  - "Conditions of approval: execution per pre_registration.yaml (pass_rule, frozen gate, ts_trend_daily_v1 window set) and standing campaign gates. S1/S2 are reported secondaries, never verdict-bearing. No parameter sweep: gate_definition.frozen: true. Prior five LLM-authored conditions struck by operator 2026-07-10 as un-pre-registered (grid sweep on a frozen parameter, invented thresholds, secondaries promoted to verdict-bearing); the stage's risk analysis is retained in validation_protocol.yaml."
+
+next_stage_if_approved: "screening_backtest"
+
+notes: |
+  Approval is contingent on prescreen backtest evidence AND validation of mechanism
+  (S1/S2 secondaries). Gating hypothesis is sound but requires empirical rigor to
+  distinguish signal from regime selection. Do not advance to walk-forward validation
+  unless all four conditions are met.

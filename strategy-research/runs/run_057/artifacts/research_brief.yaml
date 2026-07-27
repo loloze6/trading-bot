@@ -1,0 +1,17 @@
+strategy_domain: time_series_trend_following
+market_universe:
+- BTCUSDT
+- ETHUSDT
+timeframe: 1d
+research_goal: 'In-lineage refinement of P4_SMA_TREND_LONGONLY_DAILY per the operator''s
+  pre-registered brief, copied byte-identical at artifacts/user_brief_verbatim.yaml
+  (source: user_delivered). The hypothesis card MUST conform to that file verbatim
+  -- gate ER(20)>=0.30 entry-only, secondaries S1/S2, pass rule and comparators exactly
+  as written. Do not paraphrase, re-derive, or adjust any parameter. Same instruments,
+  protocol family ts_trend_daily_v1, same cost model.'
+constraints:
+- "single variant -- operator pre-registered brief specifies exactly one primary hypothesis
+  with two pre-declared secondaries (S1/S2, already in hypothesis_card.yaml); pass through
+  per SKILL.md pass-through rule; do not expand. Operator ruling 2026-07-10: pass-through
+  per SKILL.md line 138; Improvements 01/04 are expansion-quality rules, moot for a
+  single-variant pass-through -- do not add variants to satisfy them."

@@ -1,0 +1,59 @@
+hypothesis_id: H-RUN007
+status: REFINE
+severity: HIGH
+
+rationale: >
+  Variants are well-scoped and falsifiable. V3 short-only control is sound. 
+  However, 3 critical data integrity issues block approval: (1) ER/VR regime 
+  boundaries must be pre-set or in-sample-only to prevent leakage into walk-forward; 
+  (2) V5 percentile buffer initialization timing unclear (bar 51 start required); 
+  (3) V4 volume SMA20 currency not confirmed (must lag-safe). Resolve before screening.
+
+blocking_issues:
+  - issue: "Regime boundary leakage (ER ≤ 0.20, VR ≤ 0.90)"
+    description: >
+      If ER/VR thresholds computed on full 2023-09-01 to 2024-09-01 window, 
+      regime labels contaminate walk-forward (2024-03-01+). Thresholds must be 
+      pre-set externally or computed on in-sample only.
+    required_resolution: >
+      Confirm: regime thresholds fixed in code before backtest, OR computed on 
+      2023-09-01 to 2024-03-01 only, NOT on future bars.
+    
+  - issue: "V5 percentile(RSI, 50) buffer initialization"
+    description: >
+      Percentile calculation requires 50 bars of RSI history. If forecasting 
+      starts at bar 1, history is incomplete; if backfilled, lookahead bias 
+      contaminates early bars.
+    required_resolution: >
+      Confirm: V5 forecasting starts at bar 51+ of backtest, warmup period excluded 
+      from performance metrics. OR supply explicit initialization rule.
+    
+  - issue: "V4 volume_SMA20 lag safety"
+    description: >
+      Volume multiplier min(1.0, volume_current / volume_SMA20) requires current-bar 
+      volume. Confirm SMA does not include t+1 volume (forward-looking).
+    required_resolution: >
+      Verify volume_SMA20 computed as SMA of volume[t-19..t], not [t-20..t+1]. 
+      Confirm volume_current is bar-close volume only.
+  
+  - issue: "Multi-variant curve-fitting risk"
+    description: >
+      4/6 variants are parameter/feature mutations (V2 smoothing, V4 volume, V5 
+      threshold, V6 input). Screening backtest will select for best in-sample fit; 
+      walk-forward required to detect overfitting.
+    required_resolution: >
+      Walk-forward (2024-03-01 to 2024-09-01) must be strictly held-out. 
+      No parameter retune on walk-forward. Require Sharpe > 0.6 persistence.
+
+next_steps:
+  - "Confirm ER/VR regime boundaries: pre-set or in-sample-only computation"
+  - "Specify V5 buffer initialization and warmup exclusion logic"
+  - "Verify V4 volume_SMA20 uses only historical volume (no lookahead)"
+  - "Once resolved, proceed to screening_backtest with all 6 variants"
+  - "Require walk-forward validation on 2024-03-01 to 2024-09-01 (strict hold-out)"
+  - "V3 reverse test must run in parallel; if V1 ≈ V3, reject directional hypothesis"
+
+recommendation: >
+  Data integrity issues are resolvable. Hypothesis design is sound and falsifiable. 
+  Resolve blocking issues, then approve for screening. Expected timeline to 
+  screening backtest: <1 day (data audit only).

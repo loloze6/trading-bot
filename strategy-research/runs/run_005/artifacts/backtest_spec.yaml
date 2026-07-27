@@ -1,0 +1,24 @@
+hypothesis_id: volume_momentum_btcusdt_1h
+status: component_gap
+config: null
+config_rationale: []
+component_gap:
+  needed: "Hypothesis approval from validation stage + STRATEGY_CONFIG_REFERENCE documentation"
+  kind: "hypothesis_decision"
+  description: |
+    Hypothesis cannot proceed to backtest specification for two reasons:
+    
+    (1) VALIDATION STATUS: The hypothesis is in REFINE state (not APPROVE) with 4 unresolved 
+    blocking issues from validation stage:
+      - Direction conflict: Author must choose between confirmation vs reversal hypothesis
+      - Data feasibility: Author must select variants 001, 004, 005 (data-feasible only)
+      - Hyperparameter opacity: Author must justify [-20, 20] clamp and vol_thresholds
+      - Regime detection coupling: Author must confirm regime detector is volume-independent
+    
+    Recommendation: Resubmit hypothesis to validation_gate after resolving all 4 issues per 
+    validation_decision.yaml recommended path. Then return to backtest_specification stage.
+    
+    (2) MISSING REFERENCE: Cannot verify config against available engine components without 
+    STRATEGY_CONFIG_REFERENCE.md (authoritative list of SubStrategyComponent types, transform 
+    operators, regime detectors, and valid parameter ranges). This file is required per stage 
+    specification but was not accessible during execution.

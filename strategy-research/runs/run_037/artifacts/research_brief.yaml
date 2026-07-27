@@ -1,0 +1,8 @@
+hypothesis_id: DIAG_B_ER35_1H_KELTNER_CLEAN
+asset: "BTCUSDT, ETHUSDT"
+timeframe: 1h
+research_question: "Does relaxing ER threshold from 0.50 to 0.35 (all other run_017 params identical) increase trade_count from 2.5/window toward 5-10/window while preserving corr > 0.10? Run_034 tested this but had default_regime: trending bug — this is the clean retest."
+signal_concept: "KeltnerBreakout identical to run_017: ema=20, atr=20, atr_mult=2.0, scale=-20.0. TRENDING regime: ER>=0.35 AND VR>=1.20. default_regime: unknown. Only change from run_017: ER threshold 0.50->0.35."
+constraints:
+  - "Config is pre-injected. Do not modify any parameter."
+  - "This is a diagnostic run, not an exploration."

@@ -1,0 +1,69 @@
+expansion_rationale: |
+  Base hypothesis (V1) tests threshold refinement (0.25 → 0.15) from SOLUSDT
+  diagnostic on an alternative asset (AVAXUSDT), validating generalization of
+  the regime methodology. Brief constraints (signal, regime mode, ER/VR params
+  fixed) restrict innovation space to min_score threshold variations only. This
+  constraint is appropriate: brief is refinement-stage hypothesis testing, not
+  open exploration. Expansion strategy respects boundaries: (1) boundary testing
+  (V2-floor, V3-ceiling) (2) asset generalization (V4-ETH) (3) reverse hypothesis
+  (V5-high-regime) to test non-linearity. All variants reuse existing infrastructure
+  (no new data, execution logic, or backtest framework).
+
+innovation_strategy: |
+  Threshold exploration organized in three dimensions:
+  
+  (1) PARAMETER BOUNDARIES: V2 (0.10) and V3 (0.20) stress-test practical
+  limits of regime relaxation. V2 validates floor (cost_drag risk); V3 validates
+  whether 0.15 undershoots or overshoots robustness gate (4 windows ≥5 trades).
+  
+  (2) ASSET GENERALIZATION: V4 tests ETHUSDT (large-cap alt) to validate if
+  ER/VR regime methodology generalizes beyond AVAX mid-cap specifics. Generalization
+  confirms robustness; divergence triggers instrument reassessment.
+  
+  (3) REVERSE HYPOTHESIS: V5 tests opposite assumption (high-regime premium vs
+  frequency-driven edge). If V5 Sharpe >0.40 with few trades, indicates non-linear
+  quality edge; if Sharpe <0, confirms frequency-driven model. Isolates whether
+  edge is linear or regime-dependent.
+
+testability_assessment: |
+  All variants require single backtest run per asset/threshold pair. No sequential
+  dependencies, shared computation (all use run_029 ER/VR indicators), or
+  infrastructure changes. Cost per variant: one backtest simulation. All can
+  run in parallel. Output: Sharpe, trade count, cost_drag, win_rate per window.
+  Direct ablation: V1 vs V2 isolates floor sensitivity; V1 vs V3 isolates
+  ceiling sensitivity; V1 vs V4 isolates asset generalization; V1 vs V5 isolates
+  quality vs quantity tradeoff.
+
+expected_ablation_conclusions: |
+  V1 vs V2: If V2 Sharpe >0.20, lower threshold is stable (no cliff at 0.15);
+  if V2 Sharpe <0, 0.15 is practical floor. Cost_drag rise indicates noise admission.
+  
+  V1 vs V3: If V3 passes 4-window gate, 0.15 overshoots (prefer conservative 0.20);
+  if V3 fails, 0.15 is necessary. Resolves whether brief is correct frequency diagnosis.
+  
+  V1 vs V4: If V4 Sharpe ≥0.25 on ETH, regime generalizes (recommendation: expand
+  to additional assets). If V4 Sharpe <0.10, AVAX-specific dynamics (confine to AVAX).
+  
+  V1 vs V5: If V5 Sharpe >0.35, high-regime premium exists (quality > quantity);
+  design separate high-threshold strategy. If V5 Sharpe <0, frequency model confirmed.
+
+conservative_anchor:
+  hypothesis_version: V1-Conservative
+  role: "Primary hypothesis, validated against research_brief intent: reproduce run_029 methodology (Keltner signal, score-mode regime, ER/VR indicators) on AVAXUSDT with threshold=0.15."
+  signal_preservation: "Keltner component identical (ema=20, atr=20, mult=1.5, scale=-20.0); no signal tuning."
+  regime_preservation: "Score-mode regime (ER/1.0 × VR/2.0); no mode changes or parameter drift."
+  expected_behavior: "Sharpe ≥0.30 (meets gate), ≥4 windows ≥5 trades (meets frequency gate), forecast_corr ≥0.049 (matches SOLUSDT edge)."
+
+variant_ordering_recommendation: |
+  Run order for efficient learning: V1 → V2 → V3 → V4 → V5.
+  Rationale: V1 establishes AVAX baseline; V2/V3 validate threshold bounds;
+  V4 tests generalization (guides instrument scope); V5 tests model assumptions
+  (only after baseline confirmed). This ordering catches parameter issues early,
+  then tests generalization, then validates underlying model.
+
+token_efficiency_note: |
+  All descriptions limited to <100 words per section. Variant rationale restrained
+  to mathematical logic (edge preservation, cost_drag, frequency gates). No
+  generic brainstorming; all proposals are testable and constrained to parameter
+  space. Expected backtest outputs (Sharpe, trade counts, win_rates per window,
+  cost_drag) directly map to variant evaluation criteria.

@@ -1,0 +1,32 @@
+hypothesis_id: "MACD_TREND_CONTINUATION_EXTENDED_2018_2025"
+protocol_verdict: "kill"
+status: "escalate"
+criteria_summary:
+  - "Spearman IC (all-bars, ungated) ≥ 0.01: FAIL (actual: −0.0145, p=0.2922)"
+  - "Spearman IC (active-bars): FAIL (actual: −0.0503, p=0.2922)"
+  - "Cost feasibility layer 2: FAIL (edge_to_cost_ratio=0.245 << 2.0 required)"
+  - "Sharpe ≥ 0.5: UNTESTED (prescreen kill — no backtest)"
+  - "Win rate ≥ 0.45: UNTESTED (prescreen kill — no backtest)"
+  - "Min trade count: UNTESTED (prescreen kill — no backtest)"
+primary_failure_mode: "no_informational_content_prescreen"
+config_to_failure_map: "MacdHistogramCrossoverComponent(fast=12, slow=26, signal=9, scaling=10.0) with default parameters generates no predictive signal on BTCUSDT/ETHUSDT 1h. Negative correlation on active bars (−0.0503) indicates signal direction is orthogonal or inverted relative to price movements."
+untested_criteria: ["Annualized Sharpe ratio ≥ 0.5", "Win rate ≥ 0.45", "Min 50 trades per window", "No parameter drift > 10%"]
+proposed_change_dimension: "timeframe"
+hypothesis_family: "macd_trend_following"
+altitude_justification: "Rule 2 (weak signal): ic_all_bars=−0.0145 (|IC| < 0.03), p=0.2922 >> 0.10, z=−1.053. Three trend-following mechanisms (EMA, Keltner, MACD) tested at 1h with no edge. MACD tested over full backward-extended 2018–2025 range (139.8k bars, 8 years, multiple bull/bear/chop cycles) and still exhibits negative correlation. Family exhausted at 1h; escalating to 4h timeframe to test whether lower turnover (4× fewer trades, 4× lower cost sensitivity) allows trend-following signal to persist."
+root_cause:
+  mechanism_failure: "no_informational_content_this_venue"
+  supporting_evidence: "ic_all_bars=−0.01450 (n_eff=442, p=0.2922); ic_active_bars=−0.05027 (negative direction on MACD crossover events, the bars where signal is most confident); forecast_sparsity=92.41% (only 10,616 active bars out of 139.8k total); cost_check.edge_to_cost_ratio=0.245, requiring gross_edge ≥ 34 bps but MACD delivers ~4 bps gross. Negative correlation rules out simple luck/undersample; signal is directionally wrong or orthogonal to this venue's 1h price dynamics."
+  confidence: "high"
+prescreen_evidence:
+  ic_active_bars: -0.050271
+  ic_all_bars: -0.014497
+  forecast_sparsity_pct: 92.41
+  active_n_bars: 10616
+  p_value: 0.2922
+  edge_to_cost_ratio: 0.2452
+  estimated_gross_edge_bps_per_trade: 4.1677
+  cost_bps_per_trade: 17.0
+  route: "kill_no_ic"
+trade_attribution: null
+regime_attribution: null

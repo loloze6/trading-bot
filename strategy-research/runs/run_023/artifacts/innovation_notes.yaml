@@ -1,0 +1,66 @@
+run_id: run_023
+stage: innovation_expansion
+timestamp: "2026-06-28"
+
+expansion_rationale: |
+  Brief mandates exact replication of run_017 (signal=Keltner, timeframe=1h, regime=TRENDING).
+  Variants do not violate this constraint; instead, each variant tests one critical assumption while keeping other parameters fixed:
+  - V1: baseline (no changes)
+  - V2: tests regime selectivity
+  - V3: tests signal polarity
+  - V4: tests cross-regime generalization
+  All fit existing framework; no infrastructure changes required.
+
+variant_selection_logic: |
+  Brief does not explicitly constrain variant count (no "single variant" phrase).
+  V1 is conservative baseline (persona requirement).
+  V2-V4 are diagnostic controls targeting assumptions in hypothesis_card.yaml.
+
+variant_details:
+
+  V1:
+    name: "Exact Replication"
+    tests: "Assumption 1: Run_017 edge (corr=0.2145) is real and replicable"
+    changes: "None"
+    risk: "Low"
+    cost: "1 backtest"
+
+  V2:
+    name: "Regime Selectivity Test"
+    tests: "Assumption 3: TRENDING regime selectivity is necessary"
+    changes: "Removes regime filter"
+    risk: "Low (backward-compatible)"
+    cost: "1 backtest"
+    decision_rule: "corr(V2)<0.01 → regime essential; corr(V2)≈0.2145 → regime decorative"
+
+  V3:
+    name: "Reverse Polarity (Falsification)"
+    tests: "Assumption 3: TRENDING exhibits mean-reversion, not momentum"
+    changes: "Inverts Keltner entry (upper band breakout)"
+    risk: "Low (logical inversion)"
+    cost: "1 backtest"
+    decision_rule: "corr(V3)<0.01 → mean-reversion confirmed; corr(V3)>0.1 → hypothesis refuted"
+
+  V4:
+    name: "Cross-Regime Validation"
+    tests: "Assumption 3: Edge is TRENDING-specific or universal"
+    changes: "Switches regime to RANGING"
+    risk: "Low (existing regime component)"
+    cost: "1 backtest"
+    decision_rule: "corr(V4)<0.01 → TRENDING-specific; corr(V4)≈0.2145 → universal"
+
+blocked_variants: "None"
+
+testability: |
+  All variants testable within existing backtest framework.
+  No new infrastructure.
+  All produce: forecast_return_corr, cost_drag, win_rate, trade_count.
+  Parallelizable via backtest orchestration.
+
+alternative_data_integration:
+  - order_book_imbalance: "Optional; enhances timing without infrastructure rebuild"
+  - liquidation_density: "Optional; post-run validation only"
+
+aggregation_for_next_stage: |
+  Post-variant summary table: variant_id | corr | cost_drag | win_rate | trade_count
+  Decision: which assumptions hold? Proceed to backtest_specification or escalate research_decision.

@@ -1,0 +1,34 @@
+hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED
+what_failed:
+  - "Directional IC (ic_all_bars=-0.00871, ic_active_bars=0.01674, p=0.881 >> 0.10)"
+  - "Cost feasibility (estimated_gross_edge_bps=4.12 bps vs required=34 bps; edge_to_cost_ratio=0.24 vs required=2.0)"
+
+diagnostic_rule_applied: "Rule 2: ic_active_bars=0.01674, p=0.8810 >= 0.10. Signal has zero detectable directional content on this venue/timeframe. Prescreen killed before walk-forward; zero trade execution expected across windows."
+
+diagnostic_snapshot:
+  ic_all_bars: -0.008706
+  ic_active_bars: 0.016737
+  ic_significance_p_value: 0.881
+  forecast_sparsity_pct: 87.5
+  active_n_bars: 2004
+  estimated_gross_edge_bps_per_trade: 4.1233
+  estimated_cost_bps_per_trade: 17.0
+  edge_to_cost_ratio: 0.2425
+  cost_drag_implied_pct: 412.4
+
+what_not_to_try:
+  - "FundingRateMeanReversionComponent(threshold=0.0) on 1h BTC/ETH ungated: tested in run_044, ic_all_bars=-0.00871 (p=0.881). Signal has no detectable directional content at this venue/timeframe/frequency."
+  - "Increasing activation rate via threshold reduction (threshold=0.0 is already minimum): 3 activations/day × 252 days = 756 trades/year. At 17 bps cost, strategy requires 34 bps/trade edge; ungated funding-rate mean-reversion typically delivers 5–20 bps. Insufficient edge per-trade; cost geometry blocks profitability unless signal IC improves or timeframe extends."
+  - "Attempting refinement on 1h (refining threshold or scaling_factor): signal mechanism is timing-misaligned, not parameterizable. 1h bars are too fast for 8h settlement impulse to develop."
+
+next_altitude: escalate
+
+escalation_specifics:
+  dimension: timeframe
+  from_timeframe: 1h
+  to_timeframe: 4h
+  rationale: "8h settlement cycle suggests mean-reversion impulse decays over 4–16 hours (1–4 bars at 4h resolution). 1h is too granular; signal fires at settlement but position may close before price reverse fully materializes. 4h aligns bar frequency to settlement-cycle persistence. Turnover reduction (3/day → 1.5/day) also cuts cost hurdle from 34 bps to ~17 bps edge requirement, bringing mechanism closer to feasibility."
+  expected_trade_count_4h: 91
+  expected_trade_count_calc: "1.5 activations/day (every 2 settlement windows) × 61 days ≈ 91 trades/window (vs 183 on 1h)"
+
+notes: "Mechanism is sound: 8h perpetual settlement creates forced funding flows and predictable mean-reversion structure. Failure on 1h BTC/ETH is NOT evidence the mechanism is broken — it is evidence of timeframe mismatch. 4h bars give mean-reversion impulse space to develop while remaining high-frequency enough to capture edge. Cost drag (412%) is derived from pre-backtest estimate in validation_protocol (17 bps assumed cost); realized costs may differ — 4h will provide ground truth."

@@ -1,0 +1,56 @@
+strategy_domain: time_series_trend_following
+market_universe:
+- BTCUSDT
+- ETHUSDT
+timeframe: 1d
+historical_window: 2018-01-01_to_2025-12-31
+constraints:
+- 'Single registered hypothesis, no parameter sweep: long iff close > SMA(100), flat
+  otherwise (spot-only, no shorts). Do not silently test the alternative trailing-L-day-return
+  formulation -- that is a separate registered trial per the brief.'
+- 'Execution: next-day open after signal change. Engine caveat: this backtester fills
+  at bar close, not next-bar open -- see strategies/strategy_components.py::SmaTrendLongOnlyComponent''s
+  docstring for the one-bar-lag approximation actually used; not identical to true
+  next-open execution.'
+- 'Universe-parallel breadth: one trial covers both symbols; per-symbol results aggregated
+  with correlation-adjusted breadth, not evaluated as independent single-symbol verdicts.'
+- Report excess over buy-and-hold per symbol AND over equal-weight universe, plus
+  flat-period fraction and max relative drawdown vs buy-and-hold (per the brief's
+  benchmark rule).
+- significance_methodology for this signal's long-only single-constant-magnitude shape
+  is block_bootstrap_all_bars_v1 (automatic, structural trigger -- see prescreen_signal._is_degenerate_active_forecast);
+  parameters (block_size=20, n_resamples=1000, seed=20260707) are pre-registered in
+  protocols/ts_trend_daily_v1.json and the brief's pre_registration_addendum, fixed
+  before the shakedown's observed ic_all_bars=0.0359 was seen.
+- This is a NEW hypothesis registration (canonical time-series momentum, persistent_behavioral_bias
+  edge_source per the brief), NOT a reactivation of any closed KB entry -- distinct
+  from the exhausted price-only-technical-on-1h family (RSI/Keltner/EMA/MACD, all
+  no_edge_observed) and from the closed structural-forced-flow and persistent-sentiment-bias
+  findings this campaign_review previously (incorrectly) proposed reactivating.
+available_data:
+- price_volume_only (1d OHLCV, BTC/ETH, 2018-01-01 to 2025-12-31 -- daily-bar engine
+  support built 2026-07-07)
+research_goal: 'Test canonical time-series momentum on daily bars per the user-delivered
+  brief
+
+  (briefs/research_brief_P4_ts_trend.md, source: user_delivered): hold long when
+
+  close > SMA(100), flat otherwise. Daily timeframe amortizes the ~17bps
+
+  round-trip cost over multi-week holds (P3 viable-space rationale). Pre-launch
+
+  shakedown (2026-07-07, informational only, not the real registration):
+
+  route=proceed_to_backtest, pooled_ic=0.0359 (block_bootstrap_all_bars_v1),
+
+  p=0.004, cost edge_to_cost_ratio=4.45.
+
+  '
+existing_context:
+- use_existing_backtest_framework
+- daily_bar_engine_support_built_2026-07-07 (1d cache, protocol timeframe plumbing,
+  SmaTrendLongOnlyComponent, block-bootstrap significance fallback, turnover-proxy
+  fix -- see the test suite and briefs/research_brief_P4_ts_trend.md's pre_registration_addendum)
+- prefer_minimal_code_changes
+- use_existing_strategy_architecture
+optional_focus: []

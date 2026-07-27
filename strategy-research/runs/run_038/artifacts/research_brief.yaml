@@ -1,0 +1,16 @@
+hypothesis_id: COST_DRAG_STRUCTURAL_FIX
+asset: BTCUSDT, ETHUSDT
+timeframe: 2h
+research_question: When we filter keltner_breakout signals (proven corr ~0.21 on 1h)
+  by regime confidence score OR position size by correlation magnitude, do we reduce
+  trade_count per window while preserving correlation >= 0.10 and cost_drag < 40%?
+signal_concept: Reuse keltner_breakout config from run_017 (ema=20, atr=20, atr_mult=2.0,
+  scale=-20.0, TRENDING regime). Add regime_confidence_filter (only trade when regime_score
+  >= 0.8) OR scale position by correlation_confidence (e.g., size_mult = forecast_confidence_pct
+  / 100). Escalate to 2h timeframe to reduce signal churn from 1h noise.
+constraints:
+- Test on 2h (higher signal SNR than 1h, lower execution drag than 4h).
+- Measure trade_count per window; target <= 3-5 per window vs. current 5-10.
+- Preserve forecast_return_corr >= 0.10; primary success metric is cost_drag < 40%.
+- If regime_confidence_filter works, next run should apply same filter to other successful
+  families.

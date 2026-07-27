@@ -1,0 +1,20 @@
+base_hypothesis_id: RUN017_REPLICATION_DIAGNOSTIC
+variant_count: 1
+expanded_variants:
+  V1_EXACT_REPLICATION:
+    variant_id: V1_EXACT_REPLICATION
+    thesis: "KeltnerBreakout signal filtered to trending regimes reproduces positive edge on current market windows for BTCUSDT and ETHUSDT at 1h timeframe."
+    rationale: "Exact replication per brief constraint (NO parameter changes). Diagnostic purity: signal and regime configuration unchanged from RUN017."
+    signal_concept: "KeltnerBreakoutComponent: ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0"
+    regime_filter: "TRENDING mode: ER >= 0.50 AND VR >= 1.20"
+    target_market: "BTCUSDT, ETHUSDT"
+    timeframe: "1h"
+    parameter_vector: {}
+    test_expected_outcome: "Edge reproduces with Sharpe > 0.5, win_rate > 52%, and stat significance (p < 0.05) on current market windows. Failure indicates market structural change, cost drift, or data misalignment."
+    novelty_level: "replication"
+
+alternative_data_candidates: []
+reverse_hypothesis: null
+behavioral_features: []
+regime_specific_variants: []
+expansion_rationale: "Brief constrains to pure replication with zero parameter changes. Variant expansion violates diagnostic objective."

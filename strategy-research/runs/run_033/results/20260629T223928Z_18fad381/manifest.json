@@ -1,0 +1,91 @@
+{
+  "run_id": "20260629T223928Z_18fad381",
+  "created_utc": "2026-06-29T22:39:28.589359+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "er",
+          "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+          "params": {
+            "period": 24,
+            "smooth_period": 5
+          }
+        },
+        {
+          "id": "vr",
+          "class": "strategies.strategy_components.VarianceRatioComponent",
+          "params": {
+            "k": 5,
+            "window": 100
+          }
+        }
+      ],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "er",
+                "op": "gte",
+                "value": 0.5
+              },
+              {
+                "id": "vr",
+                "op": "gte",
+                "value": 1.2
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "warmup": 51,
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "keltner_breakout",
+              "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+              "params": {
+                "ema_period": 20,
+                "atr_period": 20,
+                "atr_multiplier": 2.0,
+                "scaling_factor": -20.0
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "identity"
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": null,
+        "chop": null,
+        "unknown": null
+      }
+    }
+  },
+  "config_sha256": "18fad381e4995a5b2716428ca838a299eff7809414de07d3dfc56abf1ae88c06",
+  "data": {
+    "symbols": [
+      "ETHUSDT"
+    ],
+    "timeframe": "3600s",
+    "start": "2024-08-01 00:00:00",
+    "end": "2024-09-01 23:00:00",
+    "bar_count": 768,
+    "data_sha256": "1c07afcd5526e2428f915af650673824674e05d6451688bf8fbd53c14fcf5432"
+  },
+  "git_sha": "e814b07cf75d8fb792c4cec5e84d5756070c314c",
+  "engine": {
+    "lookback": 21,
+    "warmup": 21
+  }
+}

@@ -1,0 +1,54 @@
+run_id: run_024
+from_stage: hypothesis_generation
+to_stage: innovation_expansion
+status: "complete"
+
+expansion_strategy: |
+  Base hypothesis is structural diagnostic, not signal-space exploration. Brief explicitly constrains:
+  signal (Keltner mean-reversion, identical to run_017), regime (TRENDING, identical to run_017),
+  timeframe (1h only). Expansion targets execution mechanism: which metric (trade_count, position_size_pct,
+  fee_pct, rebalance_frequency) drives the 15x cost gap between run_017 (27.45%) and run_021 (413.05%)?
+  
+  Four variants are progressive diagnostic tests: V1 identifies metric, V2-V4 test that metric in isolation.
+  Not parallel competing hypotheses; sequential gates.
+
+variant_rationale: |
+  V1: Passive metric extraction (zero backtest cost). If trade_count differs >30%, signal is timeframe-sensitive
+  (escalate signal research). If position_size_pct differs >20%, proceed V2. If rebalance_frequency differs >25%,
+  proceed V3. If cost variance across phases >20 pct_pts, proceed V4.
+  
+  V2: Position sizing control. Run identical signal+regime at 4h but cap position size to 1h-equivalent.
+  Isolates position_sizing_model as independent variable. Success: cost drops to <100%. Failure: cost >250%
+  indicates rebalance_frequency is the control.
+  
+  V3: Rebalance frequency control. Measure rebalance_events per regime_window_duration (metric normalization).
+  Test whether 4h regime windows suffer under-rebalancing. Success: cost improves when rebalance_floor enforced.
+  
+  V4: Regime phase stratification. Cost concentration in regime early-phase indicates Keltner bands degrade
+  as regime matures. Phase-conditional sizing gates position_sizing on regime_age.
+
+decision_gate: |
+  V1 output determines next diagnostic:
+  - If metric_delta(position_size_pct) > 20% → proceed V2 (position_sizing_focus)
+  - If metric_delta(rebalance_frequency) > 25% → proceed V3 (rebalance_frequency_focus)
+  - If metric_delta(regime_phase_cost_variance) > 20 pct_pts → proceed V4 (phase_dependent_sizing)
+  - If no single metric explains >15% of cost delta → escalate to regime stability analysis or signal quality research
+
+preservation: |
+  All variants preserve Keltner mean-reversion (period, std_dev_multiplier, direction), TRENDING regime
+  (ER>=0.50, VR>=1.20), and 1h timeframe. No new signal families or regime definitions. No infrastructure changes.
+  All variants fit within existing ForecastManager, CompositeStrategyForRegime, position_sizing logic.
+
+risk_summary: |
+  V1: Zero risk (log analysis only)
+  V2: Low risk (one backtest, position_size_pct config, reversible)
+  V3: Medium risk (requires rebalance_frequency_floor logic, one backtest)
+  V4: Medium risk (requires regime_age tracking, one backtest)
+  
+  Combined maximum: 3 backtests (V1 then pick one of V2/V3/V4). Brief limits to 2-3 diagnostic runs before
+  escalation decision.
+
+next_action: |
+  Load run_017, run_021, run_022 execution logs. Execute V1 metric comparison immediately.
+  Based on metric_delta, gate next diagnostic backtest. Do not run V2, V3, V4 in parallel.
+  Report V1 results and selected next variant to validation_gate.

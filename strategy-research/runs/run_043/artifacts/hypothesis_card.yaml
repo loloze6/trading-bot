@@ -1,0 +1,51 @@
+hypothesis_id: EMA_SPREAD_TREND_CONTINUATION
+thesis: "Fast/slow EMA spread (9/21 periods) carries ungated directional information on BTC/ETH 1h due to persistent herding-driven trend continuation; achieves block-adjusted Spearman IC > 0 after transaction costs."
+rationale: "Moving-average crossovers exploit trend-following and herding bias documented in behavioral finance. The 9/21 pair is a classic trend-following parametrization. Continuous spread-pct formulation (not binary threshold) may better capture intra-trend momentum dynamics. Ungated test validates whether signal has regime-independent predictive power or is specific to trending periods. High crowding on crypto reduces edge probability, but continuous formulation and 1h execution may uncover residual alpha missed by heavily-arbitraged daily/4h discrete variants."
+
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "When fast EMA (9-period) diverges above slow EMA (21-period), percentage spread increases; traders perceive and follow the established uptrend via herding behavior, sustaining momentum. The spread_pct metric directly measures this momentum divergence; positive correlation with next-bar returns confirms the mechanism."
+  why_not_arbitraged: "EMA crossovers are heavily crowded (universally taught), yet the continuous spread-pct formulation is less standard than binary threshold variants. Execution at 1h on BTC/ETH may differ materially from heavily-arbitraged daily/4h parametrizations. Edge probability is low; empirically to be determined."
+  evidence_type: price_volume_only
+  measurable_proxy: "Spread_pct = (EMA_9 - EMA_21) / EMA_21 × 100. Spearman rank correlation (IC) between spread_pct and next-bar returns quantifies directional information; block-adjusted significance test determines if IC significantly exceeds zero."
+
+signal_concept: "EMASpreadComponent(fast_period=9, slow_period=21): spread_pct = (fast_ema - slow_ema) / slow_ema × 100, forecast = spread_pct × scaling_factor. Continuous, always-on signal (dense, not sparse) — active on every bar post-warmup. Ungated: no regime filter per A2.3 standing policy. First test of moving_average_crossover in this campaign."
+
+target_market: "BTC/ETH 1h"
+timeframe: "1h"
+
+assumptions:
+  - "EMA computation is correct (fast=9-period, slow=21-period, using close prices)."
+  - "Herding behavior persists on BTC/ETH at 1h timeframe (persistent_behavioral_bias mechanism assumption)."
+  - "Continuous spread_pct formulation captures momentum at least as well as binary crossover variants."
+  - "Ungated signal (no regime gating) is appropriate for this hypothesis per A2.3 standing policy."
+  - "Scaling factor is optimized to align forecast magnitude with realized portfolio volatility."
+
+expected_failure_modes:
+  - "High crowding: EMA crossovers are universally known and arbitraged away on liquid crypto pairs. Empirical IC may be near-zero or insignificant despite theoretical persistence_behavioral_bias rationale."
+  - "Whipsaw in ranging regimes: Non-trending periods generate frequent false signals with low predictive power, dragging overall IC negative. Cost-to-benefit ratio may exceed gross edge across full test window."
+  - "Execution lag: Moving-average signals carry 5–20+ bar typical lag (per indicator_library). By the time spread fully forms, price momentum may already be captured by faster participants, reducing captured alpha."
+  - "Parameter suboptimality: The 9/21 pair is a classic choice but may not be optimal for 1h BTC/ETH candles. Alternative period combinations could outperform, suggesting this specific parametrization is not the true edge."
+
+library_lookup:
+  indicator_id: moving_average_crossover
+  regime_affinity_for_target: "mixed_ungated_across_regimes"
+  affinity_justification: "Ungated hypothesis fires across all regimes. Library affinity: trending=favorable, ranging=unfavorable, high_vol=unfavorable. Mixed affinity increases risk of whipsaw in non-trending periods; reflected in expected_failure_modes. Per A2.3, ungated formulation required; regime-gated variant not in run queue."
+  prior_campaign_failures: []
+  crowding_risk: high
+  crowding_deviation_justification: "Moving-average crossovers have universally high crowding (widely taught, heavily arbitraged). Continuous spread-pct formulation is less standard than binary discrete-threshold variants. Proceeding to establish baseline for this specific formulation and execution on 1h BTC/ETH; first test in this campaign."
+
+power_parameters:
+  activation_rate: 1.0
+  plausible_ic_upper: 0.15
+  n_bars: 17520
+  n_symbols: 2
+  is_market_wide: false
+  expected_n_eff: 1460
+  min_detectable_ic_at_target_power: 0.026
+  power_verdict: sufficient
+  power_note: "Dense signal (activation_rate=1.0) over 2-year window (2024-2025, ~17,520 bars) across 2 symbols yields expected n_eff ≈ 1,460 after Newey-West block adjustment (block_size=24). Minimum detectable IC at p < 0.10 is ≈ 0.026, well below plausible range (0.05–0.15) for trend-following signals on crypto. No a-priori power insufficiency."
+
+constraints_acknowledgment: "Per research_brief: one variant (V1) enters run queue this cycle. Variants V2/V3 proposed in separate expanded_hypothesis_card.yaml for diversity audit but NOT executed in this shakedown batch. Existing component only: EMASpreadComponent in trading-bot/strategies/strategy_components.py. No new code."
+
+notes: "Research brief provides detailed signal_concept and rationale for EMA spread as a trend-following proxy. This card synthesizes that content with full edge_source declaration (A1.1–A1.3), indicator library lookup (A4), and power pre-registration (A8.6) per campaign methodology. Hypothesis is ungated (all-bars), avoids regime gating per post-A2.3 standing policy."

@@ -1,0 +1,76 @@
+run_id: run_050
+hypothesis_id: H-041-A
+registered_at: "2026-07-05"
+
+reactivation_context: >
+  Corrected relaunch of run_047 (invalidated by F4d — wrong protocol range +
+  dropped significance_methodology; see campaign_knowledge_base.yaml finding
+  funding_rate_mean_reversion_run047_invalidated). Config reused verbatim from
+  run_041/run_047 (threshold=0.0002, scaling_factor=10.0) — no retuning.
+
+# --- Machine-readable constraints (F4d, 2026-07-05) ---
+# Consumed DIRECTLY by the orchestrator (run_phase1_research.py):
+#   - _ensure_protocol_from_constraints() generates protocols/run_050_generated.json
+#     + runs/run_050/artifacts/run_context.yaml from `protocol` below, BEFORE
+#     hypothesis_generation even starts.
+#   - The backtest_specification config-write step force-injects
+#     `significance_methodology` into candidate_strategy_config.json regardless
+#     of what the LLM stage does.
+#   - determine_post_prescreen_route() runs _check_prescreen_conformance() against
+#     this block before routing to verdict_interpreter; any mismatch halts to
+#     paused_for_human with NO KB write (see test_prereg_conformance_gate.py for
+#     the regression test derived from run_047's real failure).
+machine_constraints:
+  significance_methodology: episode_blocked_a851a
+  protocol:
+    symbols: [BTCUSDT, ETHUSDT]
+    timeframe: "1h"
+    per_symbol_start:
+      BTCUSDT: "2019-09-10"
+      ETHUSDT: "2019-11-27"
+    end: "2025-12-31"
+
+# --- A8.6 power check (continuity with run_041/run_047 framing) ---
+expected_active_n: 1891
+plausible_ic_upper: 0.20
+
+# --- A8.5.1a episode-blocked significance pre-registration (BINDING, computed
+#     BEFORE any IC/return is touched — see
+#     strategy-research/docs/p1b_episode_preregistration.yaml) ---
+episode_preregistration:
+  method: A8.5.1a
+  gap_bars: 48
+  min_n_episodes_floor: 8
+  n_episodes_observed: 132
+  floor_pass: true
+
+expected_direction:
+  claim: >
+    If the mean-reversion mechanism is real, IC should be positive. IC > 0.
+  magnitude_prior: plausible_ic_upper=0.20; run_041's original point estimate was
+    IC=0.014 (direction positive, n_eff=10, not significant).
+
+expected_sharpe_range:
+  pessimistic: -0.3
+  base_case: 0.2
+  optimistic: 0.8
+
+expected_ic_range: [0.01, 0.20]
+expected_cost_ratio: 2.0
+
+disconfirming_outcome: >
+  ic_active_bars <= 0 with the episode-bootstrap p-value < 0.10 would indicate the
+  mechanism is anti-predictive or absent, not merely underpowered — would warrant
+  kill_no_ic / signal_inversion rather than another power-based park.
+
+parameterization_constraint: >
+  threshold=0.0002, scaling_factor=10.0 pre-registered, reused verbatim. No
+  post-hoc adjustment. Recalibration is a new trial (H-041-A-v2) per A8.5 rule 3.
+
+known_engine_caveat: >
+  F7 (filed, not fixed): one-bar under-warmed-forecast defect on the first-ever
+  ready bar. This config uses default_regime="unknown" (the F1-proven
+  label-independent choice), which is the ONE case F1 showed avoids this exact
+  defect at that specific bar — so this caveat does not apply here (unlike
+  run_047/run_041's "mean_reversion" label, which does share it). Noted for
+  completeness, not a concern for this run.

@@ -1,0 +1,32 @@
+hypothesis_id: POSITION_SIZING_TIMEFRAME_COUPLING
+protocol_verdict: refine
+status: pivot
+protocol_reason: "2 of 2 evaluable criteria FAIL (win_rate, sharpe); 9 UNTESTED"
+
+criteria_summary:
+  - "V1 diagnostic (gate): UNTESTED — diagnostic corrections applied (default_regime=unknown, atr_multiplier=2.0) but did not resolve failure"
+  - "V2 success (4h sharpe >= 0.8×baseline): UNTESTED"
+  - "V3 success (4h sharpe >= 0.9×baseline): UNTESTED"
+  - "V4 success (1h win_rate >= 0.45): FAIL — BTCUSDT=22.22% (PASS), ETHUSDT=0.0% (FAIL)"
+  - "Holdout validation (sharpe >= 2.0): FAIL — BTCUSDT=0.0, ETHUSDT=0.0"
+  - "Final approval: UNTESTED"
+
+primary_failure_mode: "Regime classifier uninformative (RULE 4). The threshold_rules regime (ER>=0.5 AND VR>=1.2, threshold_rules mode) identifies as TRENDING in only 2–23 bars per window (too sparse for statistical validity) and does not predict price direction (forward_return_mean across windows: BTC trending=[+0.00221, −0.00068, +0.00207, +0.00059, −0.00104, −0.00038, −0.00130, −0.00418], range −0.00418 to +0.00221, non-stationary). The 'unknown' regime fallback (weight=0.0) generates zero forecast for 88–97% of bars, eliminating trading opportunities entirely. Result: 0 trades in 5/12 windows, insufficient sample sizes for sharpe, mean_forecast_return_corr=0.2145 with high variance (min=−0.046, max=0.709), median_sharpe=0.0."
+
+config_to_failure_map: "regime_detector.mode (threshold_rules), regime_detector.rules.trending.any_of (ER>=0.5 AND VR>=1.2), regimes.unknown.components[0].weight (0.0). Parameter corrections (default_regime=unknown, atr_multiplier=2.0) did not address the root cause; they exacerbated it by eliminating even more non-regime bars."
+
+untested_criteria:
+  - "V1 diagnostic (log-level metric extraction not available in current metrics pipeline)"
+  - "V2 backtest (4h position_sizing cap)"
+  - "V3 backtest (4h rebalance_floor)"
+  - "V4 phase-gated analysis"
+  - "Baseline replication (run_022 vs run_017 delta)"
+  - "Final approval (holdout validation not reached)"
+
+proposed_change_dimension: regime_definition
+
+hypothesis_family: keltner_trend_mean_reversion
+
+altitude_justification: "Rule 4 triggered: uninformative_regimes=[unknown, trending]. BTCUSDT trending regime forward_return_mean=[0.00221, −0.00068, 0.00207, 0.00059, −0.00104, −0.00038, −0.00130, −0.00418], range=0.00486 with non-stationary distribution (windows 1–2 positive, 3 positive, 4 positive, 5–8 negative). Regime bar_count=2–23/window (sample size insufficient). ETHUSDT trending regime similarly non-predictive (forward_return_mean=[−0.00534, null, −0.00108, +0.00164, −0.00086, null, −7.082e-05, +0.00141, +0.00128, +0.00788], bar_count=1–23/window). Both regimes fail informativeness threshold (forward_return_mean ~0 or non-stable). Threshold rule binary gating is the structural problem."
+
+campaign_altitude_context: "refinement_attempt=0. First refinement applied (default_regime=unknown, atr_multiplier=2.0 per V1 diagnostic). Result: worsened outcome (more 0-trade windows, weaker signals). Parameter dimension exhausted for current regime architecture. Regime definition itself (threshold_rules binary) is the blocker, not parameter tuning."

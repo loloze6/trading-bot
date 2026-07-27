@@ -1,0 +1,110 @@
+run_id: run_044
+status: active
+current_stage: campaign_review
+pending_stage: completed_reframed
+completed_stages:
+- hypothesis_generation
+- innovation_expansion
+- validation
+- backtest_specification
+- signal_prescreen
+- verdict_interpreter
+- campaign_review
+artifacts: {}
+governance:
+  max_hypothesis_variants_per_cycle: 3
+  max_refinements_after_validation: 2
+  max_reruns_after_analysis: 1
+  max_required_reads_per_stage: 3
+counters:
+  refinements_used: 0
+  reruns_used: 0
+flags:
+  holdout_reserved: false
+  validation_approved: true
+  screening_passed: false
+  walk_forward_passed: false
+last_summary: null
+audit_log:
+  hypothesis_generation_attempt_0:
+    timestamp: '2026-07-04T15:41:56.047778+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 127.43
+    cost_usd: 0.0936477
+    tokens:
+      input: 10
+      output: 9330
+      cache_read: 13337
+      cache_creation: 22260
+      total: 44937
+  innovation_expansion_attempt_0:
+    timestamp: '2026-07-04T20:17:31.858598+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 233.66
+    cost_usd: 0.1430425
+    tokens:
+      input: 10
+      output: 19063
+      cache_read: 0
+      cache_creation: 29098
+      total: 48171
+  validation_attempt_0:
+    timestamp: '2026-07-04T20:19:10.938984+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 99.01
+    cost_usd: 0.0755542
+    tokens:
+      input: 26
+      output: 9381
+      cache_read: 58482
+      cache_creation: 14744
+      total: 82633
+  backtest_specification_attempt_0:
+    timestamp: '2026-07-04T20:21:42.074448+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 151.04
+    cost_usd: 0.10099944999999999
+    tokens:
+      input: 10
+      output: 12680
+      cache_read: 13337
+      cache_creation: 18083
+      total: 44110
+  verdict_interpreter_attempt_0:
+    timestamp: '2026-07-04T21:26:57.742466+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 112.67
+    cost_usd: 0.10008070000000001
+    tokens:
+      input: 10
+      output: 9866
+      cache_read: 13337
+      cache_creation: 23928
+      total: 47141
+  campaign_review_attempt_0:
+    timestamp: '2026-07-04T21:28:53.218618+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 115.3
+    cost_usd: 0.09548245
+    tokens:
+      input: 10
+      output: 10889
+      cache_read: 13337
+      cache_creation: 19611
+      total: 43847
+note: 'F5 (2026-07-04) relaunch: reset from completed_refined back to signal_prescreen.
+  hypothesis_generation through backtest_specification are unchanged and already validated
+  (F2/F4 confirmed working on this exact config in the prior attempt) -- only signal_prescreen
+  onward is re-run, now that F5a''s divide-by-zero fix means this exact candidate_strategy_config.json
+  (threshold=0.0) will actually produce real forecasts instead of active_n_bars=0.
+  Prior attempt''s post-prescreen artifacts archived to attempt_2_invalidated_by_f5_bug/.
+  RECOVERY NOTE: this file (and research_brief.yaml) were briefly clobbered by an
+  unrelated run-ID collision -- run_043''s campaign_review reframe pivot auto-generated
+  "run_044" as its next run ID (naive numeric increment with no collision check against
+  already-in-use IDs), overwriting this file and research_brief.yaml with an unrelated
+  DAILY_REGIME_OVERLAY_1H_EXECUTION brief. Restored from the pre-collision content
+  immediately after; the reframe''s content was preserved and given its own proper
+  run_045 slot instead. See final report for the full account.
+
+  '
+updated_at: '2026-07-04T21:28:54.079469+00:00'

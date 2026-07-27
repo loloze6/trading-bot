@@ -1,0 +1,17 @@
+status: resolved_proceed
+resolution_note: >
+  KeltnerBreakoutComponent supports lower-band mean-reversion via negative scaling_factor.
+  No new component needed. Use KeltnerBreakoutComponent with scaling_factor: -20.0 (negative).
+  This inverts the oscillator output: price < lower_band → forecast +20 (long, mean-reversion
+  long), price > upper_band → forecast -20 (short, mean-reversion short). The component
+  already computes the oscillator symmetrically for both bands; only the sign of the forecast
+  changes. KeltnerChannelComponent does NOT exist and is NOT needed.
+injected_context:
+  component_clarification: >
+    CRITICAL CLARIFICATION: KeltnerChannelComponent does NOT exist in the engine.
+    KeltnerBreakoutComponent IS the correct component. To implement lower-band mean-reversion
+    (long when price breaks below lower band), set scaling_factor to a NEGATIVE value
+    (e.g. -20.0). The component computes oscillator = (price - EMA) / band_distance, which
+    is negative when price < EMA; multiplying by -20.0 flips it to positive, producing a
+    long forecast on lower-band breaks. Use KeltnerBreakoutComponent with scaling_factor: -20.0.
+    Do NOT declare a component_gap. Emit a complete config using this component.

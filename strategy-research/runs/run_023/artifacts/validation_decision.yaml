@@ -1,0 +1,19 @@
+hypothesis_id: REFRAME-COST-REGIME-VALIDATION
+status: conditional_approve
+rationale: |
+  Hypothesis is well-designed and testable with sound variant structure (V2-V4 isolate 
+  regime, polarity, generalization). However, critical bias risks require remediation: 
+  (1) run_017 discovered signal post-hoc on same period; replication MUST use walk-forward 
+  out-of-sample (data snooping). (2) Regime ER/VR must not use future bars (look-ahead). 
+  (3) Cost drag 27.45% must be validated against realistic slippage (~0.05% per side). 
+  With conditions satisfied, hypothesis merits screening backtest.
+blocking_issues:
+  - "run_017 backtest period cannot be reused for V1 validation; train/test split required"
+  - "Regime classification logic in data_manager must be audited for look-ahead; ER/VR thresholds must use only prior bars"
+  - "Cost drag assumption must be validated against Binance realistic slippage model; verify net sharpe remains >0.3"
+conditions:
+  - "V1 baseline must achieve walk-forward median sharpe ≥ 0.5 across ≥3 non-overlapping test windows (each ≥4 weeks), disjoint from run_017 discovery period"
+  - "Regime classification (ER≥0.50, VR≥1.20) must be computed using only prior 24h of candles; no future price/volume data used"
+  - "Cost drag must include realistic Binance execution slippage (~0.05% per side); if net sharpe falls below 0.3, recalibrate or reject"
+  - "Minimum trade count ≥ 20 per test window; if any window falls below threshold, extend test period or aggregate adjacent windows"
+  - "V3 falsification test (reverse polarity) must execute in parallel with V1; if V3 sharpe > 0.2, mean-reversion hypothesis is immediately rejected"

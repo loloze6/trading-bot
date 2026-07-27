@@ -1,0 +1,26 @@
+hypothesis_id: H-RUN007
+status: conditional_approve
+
+rationale: |
+  Hypothesis is falsifiable and testable within existing infrastructure.
+  Configuration change (smooth_period 5→2) is minimal and reversible.
+  However, prior run's -5.019 Sharpe and unvalidated root-cause diagnosis
+  create high rejection risk. Conditional approval gates on measurable evidence.
+
+blocking_issues:
+  - Post-hoc optimization risk: smooth_period change made after observing failure (snooping detected)
+  - Unvalidated regime assumption: ER≤0.20, VR≤0.90 thresholds lack quantitative justification
+  - Signal mechanism unchallenged: RSI pullback edge in mean-reversion regimes not established theoretically
+  - Long-only constraint: no rationale; introduces structural bias
+
+conditions:
+  - "Backtest must achieve Sharpe ≥ 0.5 AND win_rate ≥ 0.45 across screening window. Reject if Sharpe < -1.0 (indicates signal deficiency, not lag fixable by config)"
+  - "regime_frequency must be ≥ 0.15 (mean-reversion bars ≥15% of total). Reject if <0.10 (insufficient sample)"
+  - "min_trade_count must be ≥ 5 per walk-forward window. Reject if any window <3 trades (high variance, unreliable)"
+  - "Walk-forward Sharpe range must not exceed ±2.0. Reject if range >3.0 (instability indicates overfitting)"
+
+next_action: >
+  Proceed to screening_backtest. If any condition fails, return to refine stage with
+  requirement: (1) ablation test smooth_period in [1,3,5] as control,
+  (2) validate regime thresholds independently,
+  (3) compare RSI mechanism to Keltner/MA reversion alternatives.

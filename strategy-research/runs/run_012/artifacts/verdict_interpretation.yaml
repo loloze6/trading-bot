@@ -1,0 +1,80 @@
+hypothesis_id: H-RUN007
+protocol_verdict: refine
+criteria_summary:
+  - criterion: 'rule_1: Sharpe ≥ 0.5 (minimum positive signal)'
+    result: FAIL
+    actual_values:
+      BTCUSDT: -5.019
+      ETHUSDT: -2.604
+    required: ">= 0.5"
+    gap_magnitude: major
+  - criterion: 'rule_2: win_rate ≥ 0.45 (>45% profitable trades)'
+    result: PASS
+    actual_values:
+      BTCUSDT: 51.28%
+      ETHUSDT: 60.42%
+    required: ">= 0.45"
+  - criterion: 'rule_3: trade_count ≥ 30 (sufficient volume across screening window)'
+    result: FAIL
+    actual_values:
+      BTCUSDT: 14
+      ETHUSDT: 21
+    required: ">= 30"
+    gap_magnitude: major
+  - criterion: 'rule_6: max_drawdown_pct ≤ 15% (risk containment)'
+    result: FAIL
+    actual_values:
+      BTCUSDT: 25.979%
+      ETHUSDT: 33.144%
+    required: "<= 15%"
+    gap_magnitude: major
+  - criterion: 'rule_4: regime_frequency ≥ 0.15'
+    result: UNTESTED
+    reason: regime_frequency not computed in backtest output
+  - criterion: 'abort_condition: If Sharpe < -1.0 in screening'
+    result: UNTESTED
+    reason: criterion definition unparseable
+  - criterion: 'Walk-forward stability: Sharpe range ≤ ±2.0 across windows'
+    result: UNTESTED
+    reason: criterion definition unparseable
+  - criterion: 'Per-regime trade analysis: mean_reversion trades outperform'
+    result: UNTESTED
+    reason: criterion definition unparseable
+
+primary_failure_mode: >
+  Insufficient mean_reversion regime sample. The strategy exhibits high
+  per-trade profitability (win_rate 51–60%), indicating the RSI signal
+  mechanism generates edge when active. However, min trade_count is only
+  14–21 per month (vs required ≥30), implying mean_reversion regime fires
+  <15% of bars. This starves the strategy of sample size, amplifying variance
+  and driving Sharpe deeply negative. Root cause is NOT regime lag (smooth_period
+  was already reduced from 5 to 2 bars in this run with no improvement),
+  but regime THRESHOLDS being too restrictive. Evidence: Sharpe remained
+  -5.019/-2.604 after smooth_period fix, proving lag was not the bottleneck.
+
+config_to_failure_map:
+  rule_1_sharpe_fail:
+    - cause: Low per-regime sample size combined with high variance
+    - config_element: regime_detector.rules[0] thresholds (ER ≤ 0.20, VR ≤ 0.90)
+    - mechanism: 14–21 trades/month is insufficient to establish true edge; variance dominates
+  rule_3_tradecount_fail:
+    - cause: Mean_reversion regime thresholds too restrictive
+    - config_element: regime_detector.rules[0] ER ≤ 0.20, VR ≤ 0.90
+    - mechanism: Real mean_reversion occurs more frequently; thresholds exclude valid opportunities
+  rule_6_drawdown_fail:
+    - cause: High win rate + low sample + outlier losing trades
+    - config_element: regime_detector.rules[0] thresholds (ER ≤ 0.20, VR ≤ 0.90)
+    - mechanism: Few total trades means single large loss dominates portfolio max drawdown
+
+untested_criteria:
+  - rule_4 (regime_frequency): Cannot evaluate; regime activity logs not recorded
+  - abort_condition: Definition parsing error in protocol_result.yaml
+  - walk_forward_stability: Definition parsing error in protocol_result.yaml
+  - per_regime_trade_analysis: Definition parsing error in protocol_result.yaml
+
+note_on_previous_config_change: >
+  Previous run hypothesis identified regime lag (ER smooth_period 5→2) as root
+  cause. This run confirms smooth_period=2 does NOT fix the problem: Sharpe remains
+  -5.019/-2.604, trade counts are still low (14/21). This falsifies the lag hypothesis
+  and points instead to threshold overfitting. The brief should now target thresholds,
+  not lag.

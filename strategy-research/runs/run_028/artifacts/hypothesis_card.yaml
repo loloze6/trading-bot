@@ -1,0 +1,31 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+thesis: Score-mode regime filter (continuous ER×VR aggregation, threshold ≥0.4) on Keltner mean-reversion outperforms AND-gate binary threshold on SOLUSDT 4h by increasing trade frequency, allowing signal edge (corr=0.2145) to compound into positive Sharpe.
+target_market: SOLUSDT
+timeframe: 4h
+signal_concept: Keltner mean-reversion (ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0). Identical to run_027 baseline.
+regime_filter: |-
+  Score-mode continuous aggregation:
+  regime_score = (ER / 1.0) × (VR / 2.0)
+  Fire when regime_score ≥ 0.4
+  High ER or high VR independently contribute proportionally to score.
+  Example: ER=0.5, VR=2.0 → score=0.5 (qualifies); ER=0.6, VR=0.8 → score=0.24 (blocked).
+mechanism: |-
+  run_027 AND-gate (ER≥0.5 AND VR≥1.2) requires both conditions simultaneously.
+  At 4h frequency (~100-120 bars/month), regime transitions are slow; bars rarely exhibit both high ER AND high VR together.
+  Score-mode permits continuous spectrum; bars with high ER alone or high VR alone both qualify if score ≥ 0.4.
+  Relaxed gate fires 2-3× more bars while preserving trending character, increasing sample size from ~3-5 to 10-20 trades/window.
+  Larger sample allows Keltner edge to compound into positive Sharpe with acceptable cost drag (<50%).
+assumptions:
+  - Keltner signal robust at 4h; run_027 AND-gate definition was too restrictive.
+  - Score-mode fires 2-3× more bars than AND-gate while maintaining trend-regime selectivity.
+  - regime_score ≥ 0.4 is calibrated for SOLUSDT 4h; target 10-20 trades/window achievable.
+  - Increased trade frequency allows signal edge to outpace cost drag and generate positive Sharpe.
+expected_failure_modes:
+  - Score-mode fires too frequently; cost drag >80%, Sharpe ≤0 (regime filter too loose for SOLUSDT).
+  - Signal edge exists only in true AND-gate regimes (high ER AND high VR); score-mode dilutes selectivity.
+  - regime_score ≥0.4 still too tight; trade frequency <10 or Sharpe ≤0 (may require refine to 0.3).
+  - forward_return_mean of regime remains near-zero or negative; regime definition fundamentally broken at SOLUSDT 4h.
+escalation_context: |-
+  Instrument escalation from run_027 (BTCUSDT/ETHUSDT).
+  run_027 result: Sharpe=0.0, AND-gate regime uninformative (zero or minimal trades, negative forward returns).
+  Hypothesis family exhausted on original assets. Score-mode methodology tested on new instrument (SOLUSDT) to validate regime approach transferability and identify signal-regime match at 4h.
