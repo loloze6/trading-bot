@@ -485,11 +485,16 @@ class Recorder:
                 try:
                     raw = await asyncio.wait_for(ws.recv(), timeout=HEARTBEAT_TIMEOUT_S)
                 except asyncio.TimeoutError:
+                    # Measured, not the configured constant: if the process itself
+                    # was suspended (system sleep) rather than merely the socket
+                    # going quiet, the real gap since the last frame can be far
+                    # longer than HEARTBEAT_TIMEOUT_S, and the journal must attest
+                    # what actually happened, not the threshold that triggered it.
                     self.journal.write(
                         "WS_DISCONNECT",
                         code=None,
                         reason="heartbeat_timeout",
-                        silent_s=HEARTBEAT_TIMEOUT_S,
+                        silent_s=time.monotonic() - self._last_frame_mono,
                         connection_id=self._connection_id,
                     )
                     log.warning("ws silent for %.0fs — heartbeat watchdog fired",

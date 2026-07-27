@@ -179,6 +179,76 @@ marker — closing at the marker would claim coverage across the outage.
 
 ---
 
+## 3.5 Console survival — running detached from any interactive session
+
+**Finding (2026-07-27 capture-health audit, dispatch W8).** The capture
+deployed 2026-07-27 13:43 UTC was NOT running under `supervise.ps1` at all —
+live process inspection found a bare
+`python -m recorder.record_kraken_ws run --book-mode snapshot
+--snapshot-interval 1.0 --min-free-gb 5.0`, parented directly by a VS Code
+integrated-terminal PowerShell host, itself parented by the VS Code process.
+Closing that terminal, closing the VS Code window, or logging off any of them
+kills the recorder with **no supervisor to relaunch it** — there is no
+`RESTART_BOUNDARY`, no backoff, nothing; the next `RECORDER_START` would show
+`prev_clean_shutdown: false` and the gap would report as `crash` at best,
+`unknown` if the journal write is itself interrupted.
+
+**A separate, larger gap was found in the same audit that this section does
+NOT fix.** Between 2026-07-27T16:42:20Z and 20:48:45Z (~4h06m) the journal
+recorded zero `HEARTBEAT_ROLLUP` records — heartbeats are a local timer task
+independent of the network, so their total absence means the process was not
+scheduled by the OS at all, not merely disconnected — and then the *same*
+process (identical PID and `run_id`, no successor `RECORDER_START`) resumed on
+its own. A kill cannot produce that signature; a system sleep/suspend can.
+`coverage_report` did not surface this at all (see §4.1 caveat below) because
+nothing closed the coverage interval — no `WS_DISCONNECT` fires until the
+process actually resumes and its own recv-timeout notices the connection is
+dead, which is also why the `WS_DISCONNECT` record for this event undersold
+the gap (fixed in the same commit that added this section: `silent_s` is now
+measured from `time.monotonic()`, not the fixed 10 s watchdog threshold).
+
+**Two independent failures, two independent fixes:**
+
+1. *Console/logoff kills the process* → run it as a Windows Scheduled Task
+   instead of an interactive/terminal child process. A task registered with
+   `LogonType S4U` runs in its own session, detached from any interactive
+   logon or console, and an `AtStartup` trigger relaunches it after a reboot
+   with no operator action:
+
+   ```
+   powershell -ExecutionPolicy Bypass -File recorder\register_scheduled_task.ps1 `
+       -BookMode snapshot -SnapshotInterval 1.0 -MinFreeGb 5.0
+   ```
+
+   This registers the task; it does **not** start capturing until the
+   operator stops whatever is currently running and starts the task by hand
+   (`Start-ScheduledTask -TaskName KrakenForwardRecorder`) or reboots. The
+   task launches `supervise.ps1` unchanged, so the existing disk guard,
+   exit-code-3 no-relaunch rule, and `RESTART_BOUNDARY` journal marks all
+   still apply — the task registration only changes *what keeps
+   `supervise.ps1` itself alive*, not anything inside it. See
+   `recorder/register_scheduled_task.ps1` for the full settings (battery
+   behaviour, restart-on-task-failure, no execution time limit) and why each
+   one is set.
+
+2. *System sleep suspends the process regardless of how it was launched* →
+   no Scheduled Task setting keeps a running task's process ticking through
+   S3/modern-standby sleep. Disable sleep on AC power on the capture machine:
+
+   ```
+   powercfg /change standby-timeout-ac 0
+   powercfg /change hibernate-timeout-ac 0
+   ```
+
+   Skipping this step means the Scheduled Task migration alone does not
+   prevent a repeat of the 4-hour gap above — it only prevents the
+   console/logoff failure mode, which is a different mechanism.
+
+Neither command touches a currently running capture; the operator decides
+when to cut over.
+
+---
+
 ## 3.1 Compaction — what happens to a closed hour
 
 At the hour boundary each `(stream, symbol)` shard is closed and handed to a
@@ -316,6 +386,22 @@ attested**. 19 subscribed and 18 delivering is a partial-coverage defect, not a
 rounding error — the same rule as check 3 above. Use `--symbol BTC/USD` /
 `--channel book` for the per-pair view, `--start`/`--end` to bound the window,
 and `--fail-on-gap` to make it exit non-zero for an unattended check.
+
+> **Known blind spot (found 2026-07-27, dispatch W8).** A coverage interval is
+> opened by `SUBSCRIBE_ACK` and closed only by `WS_DISCONNECT`, `RECORDER_STOP`,
+> `DISK_GUARD_ABORT`, or a successor's `RECORDER_START` (`journal.py`
+> `coverage_intervals`) — there is deliberately no requirement that
+> `HEARTBEAT_ROLLUP` records keep landing inside that interval, because a quiet
+> market legitimately produces zero-frame rollups (COVERED-AND-QUIET, §7). That
+> design cannot distinguish "quiet market, process fine" from "process
+> suspended by the OS and not scheduled at all" — both look identical to this
+> report: an open interval with no closing record. A real ~4h06m gap
+> (2026-07-27T16:42:20Z–20:48:45Z, confirmed by zero `HEARTBEAT_ROLLUP` records
+> and zero shard files for three full hours across all 19 symbols) reported as
+> fully CAPTURED here. **Cross-check `coverage_report`'s captured percentage
+> against actual shard presence (§0 layout) when in doubt — do not trust either
+> signal alone.** Not fixed in this pass (`coverage_report`/`journal.py` are
+> shared read-path code — see §3.5 for the fix to the underlying cause).
 
 Without this, downtime stays invisible until somebody reconstructs it from shard
 file sizes — guesswork about the one stream that can never be re-fetched.
