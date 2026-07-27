@@ -2548,6 +2548,181 @@ funding carry large enough to matter — measured, not assumed.
 
 ---
 
+## Session: 2026-07-27 — capture health audit, console survival, causality canary, pre-registration (dispatch W8)
+
+### Hypothesis
+Four independent questions, deliberately answered in an order that never lets
+one bias another: (1) is the forward-recorded capture operationally healthy,
+(2) does the deploy survive a console close or reboot, (3) does the
+whale-footprint aux-feed merge leak future information into a bar (audited
+and empirically canary-tested WITHOUT computing any IC/correlation on real
+whale data), and (4) what sample size would a pre-registered evaluation need,
+derived from in-sample PRICE/RETURN properties only. Fresh context was
+required for (4) specifically — no feature-return relationship on real whale
+data may be seen before deriving a threshold, and this session had none.
+
+### Result
+
+**1. Capture health — worse than the operator's own estimate, in a way the
+tooling did not surface.** `python -m recorder.coverage_report` reported only
+a 7-second `ws_disconnect` blip in the live run (launched 13:43:04 UTC) and
+claimed near-total coverage. Cross-checking against actual shard files found
+a REAL ~4h06m gap the report never named: zero `HEARTBEAT_ROLLUP` journal
+records and zero shard files (any format) for hours T17-T19 across all 19
+pairs/2 channels, plus T20 truncated to ~11 minutes, spanning
+2026-07-27T16:42:20Z to 20:48:45Z. Root cause: `coverage_intervals()`
+(`journal.py`) opens an interval at `SUBSCRIBE_ACK` and closes it only on
+`WS_DISCONNECT`/`RECORDER_STOP`/`DISK_GUARD_ABORT` — a process that stops
+being scheduled by the OS entirely (zero heartbeats, not just zero network
+frames) produces NO closing record, so the interval reads as continuously
+covered. The operator independently confirmed the recorder was launched
+unsupervised (`python -m recorder.record_kraken_ws run ...`, no
+`supervise.ps1`) and that a console did close — but the SAME process (PID
+41440, run_id `6f92b877`, confirmed still live via `Get-CimInstance` in this
+session) never restarted, which a real process kill cannot produce; the
+heartbeat-free signature instead matches a system suspend. Measured
+throughput during connected spans: ~21,032 B/s raw vs. the ladder's 20,576
+B/s for N=1 — on-model. Measured true compression ratio (by decompressing
+all 195 `.zst` shards): 10.44x. Also fixed a related correctness bug:
+`WS_DISCONNECT`'s `silent_s` field was hardcoded to the 10s watchdog
+constant regardless of actual elapsed silence; now measured from
+`time.monotonic()` (`record_kraken_ws.py`).
+
+**2. Console survival — registered, not activated.** Confirmed by direct
+process inspection (not merely by reading `supervise.ps1`) that the live
+capture has no supervisor at all. Built
+`recorder/register_scheduled_task.ps1` (Windows Scheduled Task, `LogonType
+S4U`, `AtStartup` trigger, battery/execution-limit settings tuned so the
+Task Scheduler's own defaults can't reproduce this failure mode) and
+documented the operator cutover command in `RUNBOOK.md` §3.5. Explicitly
+flagged that this does NOT fix system sleep — no Scheduled Task setting keeps
+a process ticking through S3/modern-standby — and prescribed
+`powercfg /change standby-timeout-ac 0` as the separate, required fix for
+the actual root cause found in (1). Also documented the `coverage_report`
+blind spot itself as a known caveat in `RUNBOOK.md` §4.1 (not fixed — shared
+read-path code, out of this dispatch's scope). Nothing running was touched.
+
+**3. Aux-feed causality — no lookahead in the whale feature TODAY, but a
+STOP-level finding about the shared pipeline's defenses.** Static audit (via
+a fresh Explore pass) confirmed: `CandleBuilder` bars cover `[T, T+1)` and
+deliver only once a later tick confirms `T+1`
+(`data/data_manager.py:236-330`); `whale_bar_features` bounds its
+aggregation strictly inside `[bar_start, bar_end)`
+(`recorder/whale_features.py:419-428`); the merge
+(`data_manager.py:547-552`/`642-647`) is `merge_asof(direction='backward')`
+on exact bar timestamps; unattested bars are marked NaN with
+`whale_attested=0`, never forward-filled (`whale_features.py:344-346`, no
+`ffill`/`fillna` anywhere on the whale-feature consumption path). Then BUILT
+AND RAN a canary (`trading-bot/tests/test_aux_feed_causality_canary.py`)
+through the REAL `DataManager` merge and a REAL
+`TradingBot._process_symbol_candle_completion` -> `ForecastManager` ->
+`RiskManager` -> `MockExecutionHandler` -> `MockPortfolioInfo` path (no
+reimplementation). Result, and the reasoning that got there was NOT obvious
+on the first attempt: a feature equal to a bar's OWN already-realized return
+(`own_ret[T] = (close[T]-close[T-1])/close[T-1]`) shows no exploitable edge
+(total_return within a noise band), exactly matching how the real whale
+fetcher is bounded. A feature equal to that bar's literal NEXT return
+(`fwd_ret[T] = (close[T+1]-close[T])/close[T]`, i.e. "a perfect copy of that
+bar's NEXT return" per this dispatch's own instruction) — a value NO
+correctly-bounded fetcher could ever compute at bar T's delivery time —
+produces a ~15x blowup over 119 bars when attached at row T. **This proves
+the shared merge/execution path has NO independent defense against a
+mistimed feed; causality today rests entirely on each fetcher individually
+respecting its own window boundary.** The whale fetcher does (verified
+separately), so there is no live leak, but the finding is filed as
+STOP-level per the dispatch's own criterion and NOT fixed (shared code, per
+"do not restructure the shared merge path — if the leak is in shared code,
+STOP and report").
+
+**4. Power calculation, from in-sample return properties only — the
+headline number is bad news for this hypothesis's near-term viability.**
+Using Kraken hourly OHLCV already on disk (`Kraken_batch/master_q4/*_60.csv`,
+common 19-pair overlap window 2024-07-01..2025-12-31, T=13,175 bars/pair —
+NOT whale data, NOT holdout): mean pairwise Spearman correlation of hourly
+log returns `rho_bar=0.5824` gives `n_eff_symbols = 19/(1+18*0.5824) =
+1.655` (same equicorrelation formula this campaign already used for the
+BTC/ETH XS_momentum check). Lag-1 return autocorrelation is negligible
+(`rho1=-0.0154` mean across pairs), so no material overlapping-window
+penalty applies at a fixed 1-bar horizon. Bonferroni-corrected for 3
+features + 1 pooled test (`alpha_corrected=0.0125`), 80% power: detecting a
+modest IC of 0.03 needs ~7,484 ATTESTED bars/pair (`n_eff~=12,386`, ~311.8
+attested-equivalent days). Translated through the previously-reported 7.8%
+attestation fraction, that is **~3,998 RAW CALENDAR DAYS (~11 years)** of
+continuous capture — reported prominently as a STOP-caliber operational
+finding, not a statistics bug: this pre-registration, as written, is
+unlikely to clear its own minimum-N gate for years unless attestation
+improves (a parameter retune, out of scope here) or the capture runs far
+longer than this campaign has budgeted elsewhere.
+
+**Pre-registration and harness, built unrun.**
+`strategy-research/protocols/prereg_whale_footprint_v1.yaml` carries every
+threshold above with its derivation, the frozen feature parameters
+(`bar_seconds=3600, large_quantile=0.99, baseline_seconds=86400,
+min_baseline_trades=200, min_bar_trades=10`), the Bonferroni family-of-4
+correction, the minimum-N gate, a 5% required-coverage floor (set below the
+measured 7.8% so it catches a regression, not to relitigate today's number),
+single-use consumption via a SIDECAR file (never a mutation of the frozen
+YAML's own thresholds), and a total PASS/UNSTABLE/NULL verdict mapping with
+`sign_consistency` defined numerically (>=80% of per-pair ICs, computed only
+for pairs with >=30 attested bars, sharing the pooled IC's sign). Also
+records the 1h bar-size choice as pre-existing data-dependent provenance (a
+60s trade-density diagnostic, no return information, not re-run here).
+`strategy-research/tools/whale_footprint_evaluation.py` reads every
+threshold from that file (nothing hardcoded), enforces single-use ->
+coverage floor -> minimum-N in that order, and is exercised ONLY by
+`strategy-research/tests/test_whale_footprint_evaluation.py`'s 8 synthetic
+fixtures (PASS, NULL, UNSTABLE via planted per-pair sign disagreement,
+BLOCKED_MIN_N, BLOCKED_COVERAGE_FLOOR, BLOCKED_SINGLE_USE, a blocked-run-
+does-not-consume-the-single-use check, and a schema smoke test against the
+real committed file using a 5-bar panel that must never clear its gate). It
+was never pointed at `recorded_reserved/`.
+
+### Files touched
+- `strategy-research/recorder/record_kraken_ws.py` (silent_s measured, not the
+  hardcoded watchdog constant)
+- `strategy-research/recorder/register_scheduled_task.ps1` (new)
+- `strategy-research/recorder/RUNBOOK.md` (new §3.5 console-survival section;
+  new §4.1 coverage-blind-spot caveat)
+- `strategy-research/protocols/prereg_whale_footprint_v1.yaml` (new)
+- `strategy-research/tools/whale_footprint_evaluation.py` (new)
+- `strategy-research/tests/test_whale_footprint_evaluation.py` (new)
+- `trading-bot/tests/test_aux_feed_causality_canary.py` (new)
+- `strategy-research/SESSION_LOG.md` (this entry)
+- `tasks/lessons.md` (L-2026-07-27-A)
+- Nothing in `trading-bot/local_data/recorded_reserved/` was read; the live
+  capture process was not stopped, restarted, or reconfigured.
+
+### Next session prompt (copy-paste)
+"Dispatch W8 closed (see SESSION_LOG 2026-07-27): capture health, console
+ survival, causality canary, and a pre-registration + unrun harness are all
+ done. THREE STOP-level findings are open and need an operator decision, none
+ fixed in W8 by design:
+ (1) `coverage_report`/`journal.py`'s coverage model cannot detect a gap that
+     never produces a closing record (proven: a real ~4h06m gap read as
+     ~100% covered). Shared read-path code — needs its own dispatch.
+ (2) The aux-feed merge/execution pipeline has no independent defense
+     against a mistimed feed (proven by
+     `trading-bot/tests/test_aux_feed_causality_canary.py`'s next-bar-return
+     control, ~15x blowup). The whale fetcher itself is fine; this is a
+     defense-in-depth gap in `data_manager.py`'s shared merge path.
+ (3) At the current 7.8% whale-feature attestation, the pre-registered
+     evaluation (`protocols/prereg_whale_footprint_v1.yaml`) needs ~11 years
+     of raw calendar capture to detect a modest IC=0.03 — it will not clear
+     its own minimum-N gate on any near-term timeline unless attestation
+     improves or the target detectable IC is relaxed (both are the
+     operator's call, not a silent retune).
+ Also pending, NOT yet done: the operator must actually cut the live capture
+ over to `register_scheduled_task.ps1` (registered but inactive) and run the
+ two `powercfg` commands in `RUNBOOK.md` §3.5 — until then the console-
+ survival and sleep-prevention fixes protect nothing. Do NOT compute any
+ IC/correlation/backtest on real whale data — the pre-registration's gate
+ has not opened. Standing constraints carry forward unchanged: no
+ self-remediation, holdout untouchable, delete nothing, never `git reset
+ --hard`/`checkout -- .`/`clean`, do not stop or reconfigure the running
+ recorder without the operator's explicit go-ahead."
+
+---
+
 ## Session: 2026-07-26 — holdout leak in the published cache closed; debt flushed (dispatch W2)
 
 ### Hypothesis

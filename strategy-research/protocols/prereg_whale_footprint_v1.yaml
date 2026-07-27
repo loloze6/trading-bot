@@ -1,0 +1,290 @@
+# Pre-registration: whale-footprint features vs. forward return, v1
+# Dispatch W8 (2026-07-27). Derived WITHOUT having seen any feature-return
+# relationship on real whale data — no IC, correlation, regression, or backtest
+# was computed against recorded_reserved/ before this file was written. Every
+# threshold below carries its derivation; a threshold without one is not
+# acceptable per the dispatch that created this file.
+#
+# STATUS: registered, unconsumed. See `single_use` below.
+
+# ---------------------------------------------------------------------------
+# (a) Hypothesis — ONE falsifiable claim
+# ---------------------------------------------------------------------------
+hypothesis:
+  statement: >
+    At least one of the three whale-footprint bar features
+    (whale_lt_imbalance, whale_cvd_delta, whale_size_shift), computed on
+    forward-recorded Kraken trade data at 1h bars, has a nonzero Spearman
+    rank correlation with that bar's own forward 1-bar return, of consistent
+    sign across the 19 captured pairs, after Bonferroni correction for
+    testing three features plus one pooled combination.
+  falsifiable_if: >
+    No feature clears the corrected significance threshold, OR a feature
+    clears magnitude but its sign is inconsistent across pairs per the
+    numeric definition in verdict.sign_consistency below.
+
+# ---------------------------------------------------------------------------
+# (b) Data — exact scope
+# ---------------------------------------------------------------------------
+data:
+  source: forward_recorded_capture_only
+  source_id: kraken_ws_forward_recorder  # campaign_data_policy.yaml
+  capture_root: trading-bot/local_data/recorded_reserved/kraken_ws_v2/
+  window:
+    # Named at execution time from the coverage journal, NOT hardcoded here —
+    # the harness (step 6) reads the journal's actual attested span. This
+    # entry documents the RULE, not a frozen date range, because the capture
+    # is open-ended and still running.
+    start: kraken_ws_forward_recorder.span[0]   # "2026-07-27" (13:43 UTC launch)
+    end: as_of_evaluation_run_time
+  pairs: 19  # BTC ETH XRP SOL ADA SUI ZEC DOGE XMR LTC ONDO NEAR LINK TAO AVAX TRX AAVE INJ UNI, all quote USD
+  explicitly_excluded:
+    - trading-bot/local_data/holdout_sealed/2026_H1/kraken_q1_2026/  # era_2026_holdout, sealed, single_use
+    - trading-bot/local_data/recorded_reserved/kraken_ws_v2/**/2026-07-26.ndjson  # pre-launch stub run (10 min, run_id 5988e0cb), out of scope: not part of the 13:43 UTC capture window this hypothesis targets
+  target_variable: bar_forward_return
+  target_definition: >
+    ret[T] = (close[T] - close[T-1]) / close[T-1] using the SAME 1h OHLCV bar
+    grid the whale feature is aligned to (data_manager.py CandleBuilder
+    convention: bar T covers [T, T+1), delivered once T+1 begins). This is
+    each bar's OWN realized return, matching how the feature itself is
+    timestamped (whale_features.py: "timestamp": bar_start) — see
+    causality_provenance below for why this, not a shifted "next-bar" return,
+    is the causally legitimate pairing.
+
+causality_provenance:
+  audit: SESSION_LOG.md 2026-07-27 (dispatch W8 step 3)
+  canary_test: trading-bot/tests/test_aux_feed_causality_canary.py
+  finding: >
+    The real whale fetcher is correctly bounded to each bar's own window
+    (whale_features.py:419-422) and the merge (data_manager.py:547-552,
+    642-647) attaches a bar's own value to that same bar, never a future
+    one — verified both by static inspection and by an empirical canary
+    (test_aux_feed_causality_canary.py::test_own_realized_return_feature_shows_no_exploitable_edge).
+    A SEPARATE finding from the same canary
+    (test_next_bar_return_feature_is_dramatically_profitable_no_pipeline_safeguard)
+    is that the SHARED merge/execution path applies no independent defense
+    against a mistimed feed — flagged STOP-level in SESSION_LOG, not fixed
+    here (shared-code change, out of this dispatch's scope). This
+    pre-registration's target_definition above is deliberately the
+    contemporaneous (not forward-shifted) bar return specifically BECAUSE
+    that is what the audited, correctly-bounded merge actually delivers.
+
+# ---------------------------------------------------------------------------
+# (c) Features — FROZEN parameters (whale_features.py DEFAULT_* constants as
+#     committed at 70dab378; the harness reads these values, it does not
+#     import the library defaults live, so a future change to the library
+#     cannot silently move the goalposts of an already-registered test)
+# ---------------------------------------------------------------------------
+features:
+  frozen: true  # the evaluation may NOT tune these
+  bar_seconds: 3600
+  large_quantile: 0.99
+  baseline_seconds: 86400
+  min_baseline_trades: 200
+  min_bar_trades: 10
+  names:
+    - whale_lt_imbalance
+    - whale_cvd_delta
+    - whale_size_shift
+
+# ---------------------------------------------------------------------------
+# (d) Test statistic and multiple-comparison correction
+# ---------------------------------------------------------------------------
+test_statistic:
+  statistic: spearman_rank_correlation
+  per_pair: true  # computed independently for each of the 19 pairs, then pooled per verdict rules
+  pooling_scheme: >
+    Report each feature's Spearman IC against bar_forward_return per pair,
+    plus ONE pooled statistic per feature (rank-pool across all 19 pairs'
+    attested bars, i.e. treat the panel as one long cross-sectional-pooled
+    sample — matches the cross-sectional effective-N model used in the power
+    calculation below, which already discounts for the pairs' mutual
+    correlation rather than treating them as 19 independent draws).
+  multiple_comparison_correction:
+    method: bonferroni
+    family_size: 4  # 3 features tested individually + 1 pooled combined-feature test
+    alpha_nominal: 0.05
+    alpha_corrected: 0.0125  # 0.05 / 4
+    derivation: >
+      Family size counts every hypothesis this registration can produce a
+      verdict from: whale_lt_imbalance alone, whale_cvd_delta alone,
+      whale_size_shift alone, and the pooled/combined-feature test. Bonferroni
+      chosen over Benjamini-Hochberg because the verdict mapping (g) needs a
+      single fixed per-test threshold usable before any p-values are seen
+      (BH's threshold depends on the observed p-value order, which is not
+      knowable at registration time and would reopen exactly the
+      peek-as-you-go failure mode single-use is meant to close).
+
+# ---------------------------------------------------------------------------
+# (e) MINIMUM-N GATE — derived in SESSION_LOG.md 2026-07-27 (dispatch W8 step 4)
+# ---------------------------------------------------------------------------
+minimum_n_gate:
+  derivation_method: >
+    Effective-N estimated from IN-SAMPLE PRICE/RETURN PROPERTIES ONLY (Kraken
+    hourly OHLCV, Kraken_batch/master_q4/*_60.csv, 2024-07-01..2025-12-31
+    common-overlap window across all 19 pairs — the shortest-history pair,
+    TAO, sets the window start; T=13,175 hourly bars/pair) — NOT whale data,
+    NOT holdout. Two discounts applied to raw bars-x-pairs:
+      1. CROSS-SECTIONAL: mean pairwise Spearman correlation of hourly log
+         returns across the 19 pairs, rho_bar = 0.5824 (median 0.6381, range
+         0.1928-0.7907). n_eff_symbols = N / (1 + (N-1)*rho_bar) = 19 /
+         (1 + 18*0.5824) = 1.655 — the same equicorrelation formula already
+         used in this campaign for the BTC/ETH XS_momentum universe check
+         (n_eff_symbols ~= 1.10 at rho=0.82, docs/session_reports/
+         20260722_xs_momentum_universe.md), applied here to the full 19-pair
+         breadth set.
+      2. TIME-SERIES / OVERLAP: mean lag-1 autocorrelation of hourly log
+         returns across the 19 pairs = -0.0154 (per-pair range -0.080 to
+         +0.045) — negligible at 1h frequency, so no material overlapping-
+         window discount applies PROVIDED the target stays a single
+         non-overlapping 1-bar-ahead return (see data.target_definition
+         above, which fixes the horizon at exactly 1 bar for this reason).
+    n_eff per T bars/pair = T * n_eff_symbols (autocorrelation discount
+    treated as negligible, not banked as a bonus).
+  multiple_comparison_correction: bonferroni family_size=4 (alpha_corrected=0.0125, see (d))
+  power_target: 0.80
+  mde_formula: >
+    Fisher z-transform normal approximation: SE = 1/sqrt(n_eff - 3);
+    z_required = z_(1-alpha_corrected/2) + z_power = 2.4977 + 0.8416 = 3.3393;
+    MDE_spearman_ic = tanh(z_required * SE).
+  detectable_ic_curve_attested_days:
+    # days of ATTESTED bars (i.e. bars where the feature is non-NaN), not raw
+    # calendar days — see attested_to_raw_calendar_conversion below for that step
+    "7":   {n_eff: 278.0,   mde_ic: 0.1987}
+    "14":  {n_eff: 556.1,   mde_ic: 0.1410}
+    "30":  {n_eff: 1191.6,  mde_ic: 0.0966}
+    "60":  {n_eff: 2383.2,  mde_ic: 0.0683}
+    "90":  {n_eff: 3574.8,  mde_ic: 0.0558}
+    "180": {n_eff: 7149.6,  mde_ic: 0.0395}
+    "270": {n_eff: 10724.4, mde_ic: 0.0322}
+    "365": {n_eff: 14497.8, mde_ic: 0.0277}
+    "545": {n_eff: 21647.4, mde_ic: 0.0227}
+    "730": {n_eff: 28995.6, mde_ic: 0.0196}
+  target_detectable_ic: 0.03
+  target_detectable_ic_derivation: >
+    A JUDGMENT CALL, stated as such (not measured): 0.03 is chosen as a
+    modest-but-economically-plausible magnitude for a bar-level microstructure
+    signal (whale trade imbalance/CVD/size-shift), smaller than the
+    ~0.15-0.20 plausible_ic_upper this campaign has used for price-only
+    technicals (docs/session_reports, P4_ts_trend power check) because
+    order-flow features at 1h resolution carry far less information per bar
+    than a multi-day trend signal. If the operator judges 0.03 too strict or
+    too loose, change this value and the gate below recomputes from it — it
+    is not derived from any observed effect.
+  required_attested_bars_per_pair: 7484  # solved from mde_formula for target_detectable_ic=0.03
+  required_n_eff: 12386
+  attested_to_raw_calendar_conversion:
+    attestation_fraction: 0.078  # reported by the operator/prior session for the current capture; NOT recomputed here (recomputing would require reading recorded_reserved/, which is reserved — see data.explicitly_excluded)
+    required_raw_calendar_days: 3998  # 311.8 attested-equivalent days / 0.078
+    required_raw_calendar_years: 10.95
+    finding: >
+      STOP-LEVEL OPERATIONAL FINDING, not a statistics bug: at the current
+      7.8% attestation fraction, detecting even a modest IC of 0.03 requires
+      ~11 years of raw calendar-day capture at this venue/pair set. Relaxing
+      the target to 0.05 (still a small effect) only reduces this to ~1437
+      raw days (~3.9 years) — still impractical on any timeline this
+      campaign has used elsewhere. THIS REGISTRATION, AS WRITTEN, IS UNLIKELY
+      TO CLEAR THE MINIMUM-N GATE FOR YEARS UNLESS ATTESTATION IMPROVES
+      (e.g. lowering min_bar_trades/min_baseline_trades — a parameter
+      retune, which would require re-registering a v2 with new frozen
+      parameters, not silently loosening this one) or capture continues far
+      longer than the ~12 months originally budgeted. Reported prominently
+      per dispatch instruction; no remediation attempted here.
+  gate_rule: >
+    The harness refuses to execute (returns BLOCKED_MIN_N, no verdict
+    computed) unless the pooled attested-bar count across all 19 pairs meets
+    or exceeds required_n_eff equivalent bars, i.e. attested_bars_total *
+    (1/n_eff_symbols discount already folded into required_attested_bars_per_pair
+    above) >= required_attested_bars_per_pair. Concretely: harness computes
+    attested_bars_per_pair_avg from the journal/feature cache and BLOCKS
+    unless attested_bars_per_pair_avg >= required_attested_bars_per_pair.
+
+# ---------------------------------------------------------------------------
+# (f) SINGLE-USE
+# ---------------------------------------------------------------------------
+single_use:
+  fires_exactly_once: true
+  consumption_recorded_on_execution: true
+  consumption_field: consumed_by  # harness stamps {hypothesis_id, run_id, timestamp} here on first execution
+  consumed_by: null  # unconsumed as of registration
+  discipline: >
+    Same discipline as holdout_range (campaign_data_policy.yaml): repeated
+    peeking as attested-bar data accumulates toward the gate is the exact
+    failure mode this exists to prevent. The harness must refuse a second
+    execution against a `consumed_by` that is already populated, regardless
+    of how much more data has since accumulated.
+
+# ---------------------------------------------------------------------------
+# (g) TOTAL verdict mapping — no "routing decides"
+# ---------------------------------------------------------------------------
+verdict:
+  mapping:
+    PASS: >
+      Pooled Spearman IC for at least one of the 3 features clears
+      alpha_corrected=0.0125 (two-sided) AND sign_consistency holds for that
+      feature (see below).
+    UNSTABLE: >
+      Pooled Spearman IC for at least one feature clears alpha_corrected AND
+      sign_consistency FAILS for every feature that cleared magnitude.
+    NULL: >
+      No feature's pooled Spearman IC clears alpha_corrected.
+  sign_consistency:
+    definition: >
+      For a given feature, compute the per-pair Spearman IC across all 19
+      pairs (using only pairs with >= 30 attested bars, below which a
+      per-pair sign is not meaningfully estimable). sign_consistency HOLDS if
+      at least 80% of those per-pair ICs share the same sign as the pooled
+      IC. Below 80%, sign_consistency FAILS. 80% chosen so that at most
+      ~1-in-5 pairs may disagree (allowing ordinary sampling noise on
+      thinly-attested pairs like ONDO/TAO) while still requiring the
+      overwhelming majority to agree before calling a result stable.
+  exhaustiveness: >
+    Every reachable outcome once the minimum-N gate and coverage floor (h)
+    both pass is exactly one of {PASS, UNSTABLE, NULL}. There is no fourth
+    outcome and no discretionary routing step.
+
+# ---------------------------------------------------------------------------
+# (h) REQUIRED-COVERAGE FLOOR
+# ---------------------------------------------------------------------------
+required_coverage_floor:
+  metric: attested_bar_fraction
+  floor: 0.05
+  derivation: >
+    Set BELOW the current measured 0.078 attestation fraction (not above it)
+    so the gate does not immediately and permanently block on today's
+    number — its purpose is to catch a REGRESSION (e.g. a capture outage or
+    a parameter change that drives attestation toward zero), not to
+    relitigate whether 0.078 itself is "enough" (that question is already
+    answered by minimum_n_gate above, which operates on absolute attested-bar
+    COUNT, not fraction). A result resting on attestation below 5% is
+    considered too sparse to interpret regardless of how many raw calendar
+    days have elapsed.
+  gate_rule: >
+    The harness refuses to execute (returns BLOCKED_COVERAGE_FLOOR) if the
+    pooled attested-bar fraction across the 19 pairs is below 0.05 at
+    evaluation time.
+
+# ---------------------------------------------------------------------------
+# Design provenance — data-dependent choices that are NOT this hypothesis test
+# ---------------------------------------------------------------------------
+design_provenance:
+  bar_seconds_choice:
+    value: 3600
+    basis: >
+      A 60s diagnostic measured on REAL capture (trade density only, NO
+      return information computed or examined): at bar_seconds=60, 51% of
+      scored bars (51 of 100, across BTC/ETH/XRP/SOL) contained exactly ONE
+      qualifying (>=tau) trade, collapsing whale_lt_imbalance to a bare sign
+      (whale_features.py module docstring lines ~131-133). 3600s (1h) was
+      chosen to keep enough qualifying trades per bar for the imbalance ratio
+      to carry more information than its own sign. This is a data-dependent
+      design choice about TRADE DENSITY ONLY; it was not re-run for this
+      pre-registration and involved no return data at any point.
+    not_rerun: true
+
+# ---------------------------------------------------------------------------
+metadata:
+  version: 1
+  created: "2026-07-27"
+  created_by_dispatch: W8
+  frozen_at_commit: null  # filled in at the commit that adds this file
