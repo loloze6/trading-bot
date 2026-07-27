@@ -1,0 +1,60 @@
+#!/bin/sh
+# Pre-commit hook — VERSIONED SOURCE OF TRUTH.
+#
+# .git/hooks/ is not tracked by git, so a fresh clone gets NO hooks and would silently
+# lose both checks below. This file is the copy under version control; install it with:
+#
+#     cp strategy-research/tools/hooks/pre-commit .git/hooks/pre-commit
+#     chmod +x .git/hooks/pre-commit
+#
+# Two gates, in increasing order of cost:
+#   1. Holdout date gate — blocks any commit publishing a date inside the sealed
+#      window 2026-01-01..2026-06-30 (campaign_data_policy.yaml:holdout_range).
+#      Added 2026-07-26 by dispatch W5 after two backtest run directories were found
+#      to have crossed the boundary. Fails CLOSED: if it cannot prove a clean scan,
+#      it blocks. Runs first because it is fast and its failure is unconditional.
+#   2. Test suite — the pre-existing check.
+#
+# Emergency bypass for both: git commit --no-verify
+
+ROOT=$(git rev-parse --show-toplevel) || exit 1
+
+# --- 1. Holdout date gate -------------------------------------------------------
+GATE="$ROOT/strategy-research/tools/holdout_date_gate.sh"
+
+# Deny by default: a missing gate is not a passing gate.
+if [ ! -f "$GATE" ]; then
+    echo "COMMIT BLOCKED: $GATE is missing." >&2
+    echo "The holdout gate cannot be skipped by deleting it. Restore it, or use" >&2
+    echo "--no-verify and explain why in the commit message." >&2
+    exit 1
+fi
+
+sh "$GATE" || exit 1
+
+# --- 2. Test suite --------------------------------------------------------------
+echo "Running tests before commit..."
+
+cd "$ROOT/trading-bot" || exit 1
+
+"$ROOT/venv/Scripts/python" -m pytest tests/ -q --tb=short 2>&1
+
+EXIT_CODE=$?
+
+# pytest exit codes:
+#   0 = all tests passed
+#   1 = some tests failed
+#   2 = interrupted
+#   3 = internal error
+#   4 = usage error
+#   5 = no tests collected (OK while test suite is still being built)
+
+if [ $EXIT_CODE -eq 1 ] || [ $EXIT_CODE -eq 2 ] || [ $EXIT_CODE -eq 3 ]; then
+    echo ""
+    echo "COMMIT BLOCKED: tests failed. Fix the tests above before committing."
+    echo "To bypass in an emergency: git commit --no-verify"
+    exit 1
+fi
+
+echo "Tests passed (or none collected yet)."
+exit 0

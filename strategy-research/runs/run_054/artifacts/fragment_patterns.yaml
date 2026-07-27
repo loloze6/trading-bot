@@ -1,0 +1,69 @@
+run_id: run_054
+artifact: fragment_patterns.yaml
+basis: lifo_fragment, ideation_only
+firewall_note: IDEATION-ONLY diagnostic artifact. Never read by evaluate_against_decision_rules,
+  any Gate, or verdict_interpreter's required inputs -- see test_fragment_patterns_firewall.py.
+  May be cited by campaign_review / proposed-brief drafting as a motivating_observation
+  for a NEW candidate hypothesis, which must still earn verdict-grade status through
+  its own pre-registered test. Never cited to relitigate an already-recorded verdict.
+n_fragments_total: 117
+n_episodes_total: 117
+n_fragments_unassigned: 0
+forecast_bin_table:
+  basis: lifo_fragment, ideation_only
+  bin_edges:
+  - -10
+  - -5
+  - 0
+  - 5
+  - 10
+  bins:
+    '[5,10]':
+      fragment_count: 117
+      episode_count: 117
+      aggregate_pnl_net: 12161.899
+      aggregate_cost: 247.4134
+      cost_share_of_total: 1.0
+forecast_composition:
+  basis: lifo_fragment, ideation_only
+  by_bin:
+    '[5,10]':
+      n_fragments: 117
+      entry_component_means:
+        sma_trend: 10.0
+      exit_component_means:
+        sma_trend: 0.0
+increment_anatomy:
+  basis: lifo_fragment, ideation_only
+  inert_no_scaling_observed: true
+  inert_note: This signal never scales a position within an episode -- every episode
+    has exactly one fragment. initial_entry and scale_up summaries below are structurally
+    uninformative (scale_up is empty by construction), not a finding.
+  initial_entry:
+    n: 117
+    aggregate_pnl_net: 12161.899
+    aggregate_cost: 247.4134
+    mean_pnl_net: 103.9479
+  scale_up:
+    n: 0
+    aggregate_pnl_net: 0.0
+    aggregate_cost: 0.0
+    mean_pnl_net: null
+episode_anatomy:
+  basis: lifo_fragment, ideation_only
+  table:
+  - duration_bucket: long (>20 bars)
+    regime: unknown
+    n_episodes: 32
+    win_rate_pct: 65.62
+    aggregate_pnl_net: 14556.7453
+  - duration_bucket: medium (6-20 bars)
+    regime: unknown
+    n_episodes: 30
+    win_rate_pct: 26.67
+    aggregate_pnl_net: -1164.7953
+  - duration_bucket: short (<=5 bars)
+    regime: unknown
+    n_episodes: 55
+    win_rate_pct: 45.45
+    aggregate_pnl_net: -1230.0509

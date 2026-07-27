@@ -1,0 +1,194 @@
+base_hypothesis_id: V2-PIVOT-A
+
+base_thesis: |
+  RSI momentum signals (quantile-based extreme levels) generate positive alpha in TRENDING
+  regime because trend-strength classification (ER ≥ 0.50, VR ≥ 1.20) should correlate
+  with momentum continuation, not mean-reversion pullback.
+
+expanded_variants:
+  V2-PIVOT-A-CONSERVATIVE:
+    name: "RSI Static Overbought/Oversold"
+    signal_concept: |
+      RSI 14-period momentum in TRENDING regime. Long when RSI > 70 (uptrend).
+      Short when RSI < 30 (downtrend). Static thresholds (no quantile adaptation).
+    rationale: |
+      Tests whether quantile-based adaptation is necessary. Isolates the value of rolling
+      percentile thresholds vs standard RSI levels. Establishes baseline for V2-PIVOT-A.
+    testability: "Direct comparison to base V2-PIVOT-A; expected pvalue higher (less selective)."
+
+  V2-PIVOT-A-STOCH:
+    name: "Stochastic Oscillator Momentum"
+    signal_concept: |
+      Stochastic K (14,3) in place of RSI. Long when K > 80 in uptrend.
+      Short when K < 20 in downtrend. Regime gate unchanged (TRENDING only).
+    rationale: |
+      Stochastic incorporates both price level and range dynamics (unlike RSI which uses
+      only magnitude). Tests whether range-normalized momentum outperforms RSI magnitude-based
+      momentum in TRENDING regime. Alternative to RSI in same indicator family.
+    testability: "Same pvalue/Sharpe framework; expected to show different sensitivity to
+      volatility spikes."
+
+  V2-PIVOT-A-MULTI-TIMEFRAME:
+    name: "Multi-Timeframe RSI Confirmation"
+    signal_concept: |
+      Momentum signal requires agreement across timeframes: 1h RSI > 75th percentile
+      AND 4h RSI > 70 (uptrend). Regime gate (TRENDING) applies to 1h only.
+      Short: 1h RSI < 25th percentile AND 4h RSI < 30 (downtrend).
+    rationale: |
+      Tests whether higher-timeframe confirmation filters false 1h momentum signals.
+      Addresses potential over-subscription concern: consensus trades on 1h alone but breaks
+      when higher TF momentum disagrees. Reduces false entry rate without multi-bar lag.
+    testability: "Expected to improve Sharpe and reduce drawdown; pvalue may stay similar
+      (signal selectivity vs magnitude tradeoff)."
+
+  V2-PIVOT-A-REVERSE:
+    name: "Mean-Reversion Momentum Confirmation (Inverse Hypothesis)"
+    signal_concept: |
+      In TRENDING regime, RSI extremes signal pullback/bounce recovery (not continuation).
+      Long when RSI < 30 (oversold recovery in uptrend). Short when RSI > 70 (overbought
+      pullback in downtrend). Inverse of base momentum thesis.
+    rationale: |
+      Tests whether TRENDING regime classification actually predicts volatility mean-reversion
+      (high ER/VR = high reversions) not momentum. If reverse variant outperforms base,
+      regime filter misclassifies trend-strength markets as momentum environments. Falsification
+      of base hypothesis.
+    testability: "Direct comparison to base; if pvalue < 0.05 and Sharpe > 0.5, base
+      hypothesis is rejected. Escalate to regime investigation."
+
+  V2-PIVOT-A-ADAPTIVE-THRESHOLD:
+    name: "Dynamic RSI Thresholds via Bollinger Bands"
+    signal_concept: |
+      Apply Bollinger Bands (20, 2.0) to RSI itself (not price). Entry when RSI crosses
+      BB upper band (momentum overbought/continuation). Exit or reverse on BB lower cross.
+      Quantile calculation replaced with self-normalizing RSI bands. TRENDING regime gate unchanged.
+    rationale: |
+      Tests whether quantile-based adaptation is the optimal normalization. Bollinger Bands
+      on RSI create dynamic thresholds responding to RSI volatility, not just level.
+      May reduce look-ahead bias vs rolling percentile. Explores meta-indicator approach.
+    testability: "Comparable to base on pvalue/Sharpe; expected lower drawdown if RSI
+      volatility predicts regime transitions."
+
+  V2-PIVOT-A-VOLUME-FILTER:
+    name: "RSI Momentum + Volume Confirmation"
+    signal_concept: |
+      RSI signal requires concurrent volume agreement: Long when RSI > 75th percentile
+      AND volume > 75th percentile of 100-bar rolling distribution (uptrend). Short
+      when RSI < 25th percentile AND volume > 75th percentile (panic selling). Asymmetric
+      volume gates per direction.
+    rationale: |
+      Addresses consensus over-subscription: high-volume momentum continuation is less
+      crowded than RSI-alone signals. Filters low-volume noise where momentum fails.
+      Tests behavioral hypothesis: true momentum in TRENDING has volume agreement.
+    testability: "Expected Sharpe improvement with lower drawdown; pvalue may improve if
+      volume filters signal quality."
+
+  V2-PIVOT-A-DIVERGENCE:
+    name: "RSI Divergence Detection (Weakening Momentum)"
+    signal_concept: |
+      Detect weakening momentum via RSI-price divergence: price makes new high in uptrend
+      but RSI < previous RSI high = weakening strength. Generate short signal on divergence
+      detection; long on convergence. TRENDING regime gate unchanged. No multi-bar
+      confirmation; use divergence bar itself as entry.
+    rationale: |
+      Tests structural momentum failure within TRENDING regime. Divergence is early warning
+      that consensus momentum is fading before price reversal. Shifts signal from level
+      (overbought/oversold) to slope (divergence = slope failure). Behavioral interpretation:
+      participants are disengaging.
+    testability: "Different metric than pvalue (divergence detection precision vs return
+      correlation). Expected to identify inflection points before base RSI momentum fails."
+
+alternative_data_candidates:
+  volume_weighted_metrics:
+    description: |
+      VWAP deviation, volume-weighted RSI (weight each bar RSI by volume fraction).
+      More sensitive to institutional participation than unweighted RSI.
+    availability: "Binance spot/futures; 1h candles include volume. Implementable."
+    caveat: "Requires candle-level volume data; adds computational cost. Test only if base
+      RSI volume-filter variant shows promise."
+
+  order_book_imbalance:
+    description: |
+      Real-time order book bid/ask imbalance. Long when buy-side imbalance > 55% AND
+      RSI overbought. Tests whether order book positioning confirms momentum.
+    availability: "Binance REST API (limited depth snapshots) or WebSocket (real-time).
+      Can sample every 5 min or less during backtest window."
+    caveat: "Order book snapshots are point-in-time; historical reconstruction requires
+      replay. Feasible for recent backtests (< 3 months). Not recommended for initial
+      screening."
+
+  funding_rates:
+    description: |
+      Futures funding rate as behavioral inverse-pressure indicator. High positive funding
+      (longs crowded) may predict momentum exhaustion in TRENDING regime. Use as regime
+      gate complement: TRENDING + low funding = safer momentum entry.
+    availability: "Binance Futures funding history via API. Can backtest on perpetuals
+      data (BTCUSDT-USDT equivalent)."
+    caveat: "Spot trading (research brief: BTCUSDT/ETHUSDT spot) does not have funding rates.
+      Limit to perpetuals variants only."
+
+reverse_hypothesis:
+  thesis: |
+    TRENDING regime (ER ≥ 0.50, VR ≥ 1.20) detects high-volatility, mean-reversion-prone
+    markets, NOT trend-continuation markets. RSI extremes should signal pullback/bounce
+    recovery, not momentum continuation.
+  implementation: "V2-PIVOT-A-REVERSE variant above. If reverse outperforms base, regime
+    classification is inverted or incomplete."
+  escalation: |
+    If reverse variant shows pvalue < 0.05 and Sharpe > 0.5: reject momentum hypothesis
+    entirely. Re-investigate ER/VR regime definition. May require ER/VR threshold
+    adjustment or separate classifier (Hurst exponent, autocorrelation) to distinguish
+    trending from mean-reverting high-volatility markets.
+
+behavioral_features:
+  market_participant_positioning:
+    description: |
+      Proxy: long/short ratio from funding rates (perpetuals) or liquidation heat map
+      (where are stops clustered?). Entry when RSI extreme coincides with low positioning
+      (few crowded). Tests consensus over-subscription hypothesis.
+    integration: "Can be added as gate or confidence modifier to RSI signals."
+
+  liquidation_cascades:
+    description: |
+      Binance liquidation events (available via Coinglass API or futures liquidation
+      endpoint). Momentum entry when liquidations are thin (no cascade risk);
+      reverse when liquidations spike. Tests risk-of-feedback hypothesis.
+    integration: "Research only; not available in live backtest harness without external
+      API integration."
+
+  price_acceleration:
+    description: |
+      Second derivative of price (rate of change of momentum). RSI extremes + positive
+      acceleration = stronger signal. Filters fade-outs (RSI extreme with decelerating price).
+    integration: "Directly computable from OHLC; add to RSIComponent as optional
+      confidence boost."
+
+regime_specific_variants:
+  cross_regime_rsi_adaptation:
+    description: |
+      Different RSI parameters per regime: TRENDING uses 14-period (fast, catches inertia);
+      RANGE-BOUND uses 7-period (ultra-fast reversals); HIGH-VOL uses 21-period (smoother,
+      avoids whipsaws). Regime filter gate unchanged; only parameter varies.
+    rationale: |
+      Tests whether RSI effectiveness is regime-dependent. TRENDING momentum uses longer
+      decay; mean-reversion regimes require faster responsiveness. Explores hypothesis that
+      signal-regime interaction (not just regime presence) drives edge.
+    testability: "Requires regime classification on entire historical window; test in
+      screening backtest. Expected to improve pvalue if regime-signal interaction is real."
+
+  trending_sub_regimes:
+    description: |
+      Split TRENDING into high-trend (ER ≥ 0.70) and weak-trend (0.50 ≤ ER < 0.70).
+      RSI momentum only in high-trend (exclude weak-trend as too noisy). Tests threshold
+      calibration hypothesis (assumption: momentum requires ER ≥ 0.70, not 0.50).
+    rationale: |
+      Expected failure mode: V2-PIVOT-A assumes ER ≥ 0.50 is sufficient for momentum.
+      If true edge is ER ≥ 0.70, variant will outperform base significantly.
+    testability: "Compare pvalue/Sharpe of base (ER ≥ 0.50) to sub-regime variant.
+      If sub-regime Sharpe > base by > 0.3, re-calibrate regime thresholds."
+
+integration_constraint: |
+  All variants preserve TRENDING regime gate (ER ≥ 0.50, VR ≥ 1.20).
+  All variants are SubStrategyComponent subclasses in simple_strategy.py.
+  No changes to execution, forecast_manager, or rebalance logic required for any variant.
+  Multi-timeframe variants (e.g., V2-PIVOT-A-MULTI-TIMEFRAME) require external timeframe
+  data source but can use existing data_manager pattern.

@@ -1,0 +1,73 @@
+base_hypothesis_id: TEMPORAL_COVERAGE_MULTI_REGIME
+expanded_variants:
+  - variant_id: V1_RSI_CONSERVATIVE
+    name: "Keltner/TRENDING + RSI Mean-Reversion (Conservative Base)"
+    signal_config:
+      primary: "Keltner/TRENDING, ER>=0.50, confirmed corr=0.21, active 15/22 slots"
+      secondary: "RSI(14) on 30-min bars; oversold <30 or overbought >70 for sparse-month activation"
+      combination: "Composite forecast = weighted_avg(keltner, rsi_normalized); weights jointly optimized"
+    orthogonality_justification: "RSI is pure momentum/price-mean-reversion, independent of ER/VR regime classification."
+    sparse_month_mechanism: "RSI extremes naturally occur when price overshoots in low-activity periods (Jan/Sep/Oct BTC, Jan/Mar/Jul/Nov ETH)."
+    success_criteria: "Activate 21+/22 slots; secondary_corr>0.05 on sparse months; composite_corr>=0.15; cost_drag<50%."
+    risk_profile: "Low; RSI is well-tested oscillator with established mean-reversion properties."
+
+  - variant_id: V2_STOCHASTIC_CROSSOVER
+    name: "Keltner/TRENDING + Stochastic %K Crossover (30-min)"
+    signal_config:
+      primary: "Keltner/TRENDING, ER>=0.50"
+      secondary: "Stochastic %K(14,3,3) on 30-min; signal on %K crossing midline (50)"
+      combination: "Weighted composite; Stochastic tuned for sparse-month detection"
+    orthogonality_justification: "Stochastic smooths momentum independently; orthogonal to volatility-regime dependency."
+    sparse_month_mechanism: "Cyclical momentum rebounds in choppy sparse months; %K crossover captures direction changes missed by RSI extrema."
+    success_criteria: "Same as V1; test whether crossover logic outperforms extrema-based RSI."
+    risk_profile: "Medium; Stochastic smoothing parameters (14,3,3) require walk-forward optimization to avoid overfitting."
+
+  - variant_id: V3_MOMENTUM_ROC
+    name: "Keltner/TRENDING + Momentum ROC (30-min, ATR-normalized)"
+    signal_config:
+      primary: "Keltner/TRENDING, ER>=0.50"
+      secondary: "Rate-of-Change (ROC) momentum normalized by ATR(14); threshold >0.5% per bar for activation"
+      combination: "Weighted composite; ROC tuned for sparse-month directional impulses"
+    orthogonality_justification: "Pure directional acceleration independent of volume/regime classification; captures impulses, not extrema."
+    sparse_month_mechanism: "Sparse months contain intraday impulses missed by Keltner's range/volume focus; ROC detects acceleration."
+    success_criteria: "Same as V1; validate ROC robustness on short (30-min) bars with ATR normalization."
+    risk_profile: "Medium-High; ROC is noise-sensitive on sub-hourly bars; requires robust normalization and walk-forward validation."
+
+  - variant_id: V4_SEASONAL_WEIGHTING_FALLBACK
+    name: "Seasonal Confidence Multiplier (Single-Signal Pivot)"
+    signal_config:
+      primary: "Keltner/TRENDING, ER>=0.50; sole signal"
+      secondary: "None; instead modulate confidence by seasonal_strength_factor"
+      combination: "Keltner forecast unchanged; confidence *= seasonal_mult(month). Dense months: 1.0x-1.3x; sparse months: 0.7x-0.9x"
+    orthogonality_justification: "Not applicable; single-signal approach with temporal modulation."
+    sparse_month_mechanism: "Avoids adding weak secondary signals; de-weights sparse-month noise to reduce trade frequency chop."
+    success_criteria: "Achieve 16-18/22 slots; preserve corr>=0.15; cost_drag<27% (no secondary complexity)."
+    risk_profile: "Low; conservative fallback if 2-signal composite fails. Triggered if secondary_corr<0.05 on sparse months."
+
+  - variant_id: V5_CROSSFRAME_2H_RSI
+    name: "Keltner/TRENDING (1h) + RSI on 2h Bars"
+    signal_config:
+      primary: "Keltner/TRENDING on 1h bars, ER>=0.50"
+      secondary: "RSI(14) on 2h bars; threshold <30 or >70; fills multi-hour consolidation gaps"
+      combination: "Weighted composite; 2h RSI adds longer-cycle mean-reversion signal"
+    orthogonality_justification: "Different timeframe ensures orthogonality; captures multi-hour cycles invisible to 1h Keltner."
+    sparse_month_mechanism: "Sparse months may contain longer consolidation periods (3-6 hours) where 1h Keltner gaps; 2h RSI detects them."
+    success_criteria: "Same as V1; validate trade frequency and portfolio rebalance cadence alignment."
+    risk_profile: "Medium; cross-timeframe interaction may conflict with hourly rebalance cadence; requires simulation."
+
+alternative_data_candidates:
+  - "Order Book Imbalance (OB delta): Bid/ask volume asymmetry may signal sparse-month accumulation not visible in price."
+  - "Realized Volatility (tick-level): Intraday vol distribution signature may differ sparse vs. dense months; alternative ATR normalization."
+  - "On-chain Metrics (BTC only): Active address count, whale movement timing; may predict sparse-month activation windows."
+
+reverse_hypothesis: "Sparse months are not signal deserts but low-SNR periods. Invert hypothesis: reduce forecast confidence in sparse months (0.7x-0.9x) and optimize composite only on dense months. This may improve Sharpe by eliminating low-conviction trades rather than adding signals."
+
+behavioral_features:
+  - "Regime Confidence Collapse: Compute posterior probability of regime classification by month. Low posterior in sparse months suggests regime ambiguity."
+  - "Trade Clustering (consecutive trades within 2-4h): Sparse-month trades may cluster tightly, indicating regime-transition chop vs. sustained directional moves."
+  - "Forecast Disagreement Rate: Measure divergence between Keltner and secondary signal (forecasts pointing opposite directions). High disagreement in sparse months = weak composite."
+
+regime_specific_variants:
+  - "Conditional Secondary by Regime State: Low-ER regime → RSI mean-reversion; High-ER → ROC momentum acceleration. Sparse months may switch regimes; route secondary accordingly."
+  - "Regime-Transition-Only Secondary: Activate secondary signal only during regime_change_magnitude > 0.3. Sparse months often coincide with regime transitions; concentrate secondary on transitions only."
+  - "Confidence-Weighted Secondaries: Blend multiple secondaries (RSI + Stochastic) with weights = regime-posterior. High-confidence regime → single best secondary; low-confidence → balanced blend."

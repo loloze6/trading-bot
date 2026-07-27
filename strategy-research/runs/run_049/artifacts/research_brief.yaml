@@ -1,0 +1,71 @@
+hypothesis_id: H-041-A
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+run_type: "reactivation"
+research_question: >
+  H-041-A (funding rate extreme -> contrarian mean-reversion, structural_forced_flow)
+  was parked insufficient_sample_inconclusive at run_041 (n_eff=10, active_n=13 total,
+  2024-2025 window only -- funding extremes essentially never occurred in that
+  short window). Its recorded reactivation_condition (campaign_knowledge_base.yaml,
+  finding funding_rate_mean_reversion_inconclusive) is: "Backward data extension to
+  2018+ (funding extremes documented in 2020-2022; expected_n_eff ~ 50+ on 7-year
+  window)." That data has now been backfilled and verified (BTCUSDT funding from
+  2019-09-10, ETHUSDT from 2019-11-27, both through present; see
+  strategy-research/docs/p1b_fetch_manifest.md). This run re-prescreens the IDENTICAL
+  mechanism over the extended range [2019-09-10 / 2019-11-27, 2025-12-31] (holdout
+  2026-H1 untouched). Pre-registered episode count from the real backfilled data:
+  132 funding-extreme episodes (pooled BTC+ETH, gap<=48 1h-bars, era-and-symbol-bounded)
+  -- see runs/run_047/artifacts/pre_registration.yaml and
+  strategy-research/docs/p1b_episode_preregistration.yaml for the full enumeration,
+  computed BEFORE any IC was touched.
+signal_concept: >
+  FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0) -- REUSED
+  VERBATIM from run_041's candidate_strategy_config.json. Fires at 8h settlement
+  boundaries (UTC hour % 8 == 0) when |funding_rate| > 0.0002. forecast =
+  -sign(funding_rate) * scaling_factor at active bars; 0 elsewhere. Ungated (A2.3):
+  regime_detector.rules=[], default_regime="mean_reversion" (matches run_041 exactly;
+  known F7 one-bar engine caveat applies identically, see pre_registration.yaml).
+significance_methodology: >
+  MANDATORY: this prescreen must use A8.5.1a (episode-blocked significance,
+  strategy-research/tools/episode_significance.py), NOT the plain 24-bar
+  _block_adjusted_significance path. gap_bars=48 (campaign_config.yaml default),
+  min_n_episodes=8, era boundaries per campaign_data_policy.yaml's `eras` list.
+  Report per-era IC/episode counts alongside the pooled bootstrap result (A8.5.1a
+  rule 5 -- era stratification is reporting, not resampling). This is a hard
+  requirement for this specific run given the multi-era backward-extension data;
+  see docs/plan/AMENDMENTS_01-06.md "A8.5.1a-spec".
+constraints:
+  - "REACTIVATION, not a new hypothesis exploration: reuse the run_041 config
+     VERBATIM (threshold=0.0002, scaling_factor=10.0). Do NOT propose parameter
+     variants, do NOT retune. Any recalibration would be a new trial (H-041-A-v2,
+     A8.5 rule 3) -- out of scope for this run."
+  - "One variant only (V1 = the exact run_041 config). No innovation_expansion
+     diversity search -- this is a straight reactivation, not a fresh search."
+  - "Ungated only (post-A2.3 standing policy): regime_detector.rules=[]."
+  - "Existing component only: FundingRateMeanReversionComponent. No new component
+     code."
+  - "Data range: [2019-09-10 (BTC) / 2019-11-27 (ETH), 2025-12-31]. Do NOT touch
+     holdout_range (2026-01-01 to 2026-06-30) at any stage."
+  - "Must not propose ideas that require replacing the whole existing bot
+     architecture."
+  - "STOP before any walk_forward_validation stage if this prescreen passes both
+     the IC-significance gate AND the cost gate -- era-transferability (2019-2021
+     market structure vs 2026) is a user-level review, not an automatic route.
+     Report per-episode-era numbers and halt at that decision point."
+power_parameters:
+  activation_rate: null   # computed from actual pooled active_n / n_bars_total, not free-handed
+  plausible_ic_upper: 0.20   # hypothesis-design SKILL.md A8.6 anchor table: sparse
+                              # feed-based, extreme/threshold-gated
+  n_bars: null   # computed from actual loaded OHLCV range, not free-handed
+  n_symbols: 2
+  is_market_wide: false   # funding rate is PER-SYMBOL (unlike F&G), no rho discount
+edge_source:
+  category: structural_forced_flow
+  evidence_type: funding_rate
+  specific_mechanism: >
+    Perpetual futures funding settlement forces a real cash transfer between long
+    and short positions every 8h. An extreme funding rate reflects an extreme,
+    crowded, one-sided positioning imbalance; mean-reversion in price following the
+    settlement reflects that crowded positions unwind or get squeezed. Measurable
+    proxy: signed funding_rate magnitude at each settlement, available in
+    BTCUSDT/ETHUSDT_funding_8h.csv.

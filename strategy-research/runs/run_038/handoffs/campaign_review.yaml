@@ -1,0 +1,42 @@
+handoff_version: 1
+run_id: run_038
+from_stage: findings_analysis
+to_stage: campaign_review
+assigned_engine: claude
+objective: 'Step back from per-run decisions and assess the full campaign in light
+  of a new structural finding (temporal distribution of the confirmed edge). The existing
+  run_038 research brief (COST_DRAG_STRUCTURAL_FIX) was written before this finding
+  was computed and must be reconsidered. Determine whether to reframe, escalate, or
+  terminate based on this finding plus the full campaign history.
+
+  '
+primary_input_artifact: ../../campaign_state.yaml
+required_inputs:
+- path: ../../campaign_state.yaml
+  reason: full history of all runs, families tried, diagnostics across all iterations
+- path: artifacts/research_brief.yaml
+  reason: the current proposed brief to evaluate against the temporal distribution
+    finding
+- path: artifacts/findings_carryover.yaml
+  reason: 'CRITICAL — read this first. Contains the temporal distribution finding
+    that invalidates the current brief. Key facts: ER>=0.50 Keltner/TRENDING has 69
+    cumulative trades across 22 window-symbol slots but 7 slots fire zero trades because
+    TRENDING regime does not occur in those calendar months. No threshold tuning resolves
+    this. The COST_DRAG_STRUCTURAL_FIX brief assumes too-many-trades is the problem;
+    the actual finding is too-few-trades concentrated in too-few months.
+
+    '
+deliverables:
+- campaign_review.yaml
+constraints:
+- Do not recommend terminate with fewer than 3 instruments tried AND 1 component built.
+- Cite specific diagnostic values from diagnostics_log, not general impressions.
+- If recommendation is reframe, next_research_question must be a complete research_brief.
+- The reframe must address the temporal distribution finding explicitly — a brief
+  that only changes trade frequency filters or timeframe is not sufficient (both have
+  been ruled out in findings_carryover.yaml).
+stop_conditions:
+- All reasonable options exhausted → recommendation: terminate with full evidence.
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'false'

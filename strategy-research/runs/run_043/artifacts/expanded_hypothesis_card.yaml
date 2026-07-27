@@ -1,0 +1,72 @@
+base_hypothesis_id: EMA_SPREAD_TREND_CONTINUATION
+campaign_id: run_043
+refinement_attempt: 0
+
+expanded_variants:
+  - id: V1
+    label: "EMA 9/21 Spread Trend-Following, Ungated"
+    description: "Fast/slow EMA spread (9/21 periods) as a continuous trend-following signal. Direct carrythrough from base hypothesis; no regime gating per A2.3."
+    signal_concept: "EMASpreadComponent(fast_period=9, slow_period=21): spread_pct = (fast_ema - slow_ema) / slow_ema × 100, forecast = spread_pct × scaling_factor. Continuous, always-on signal (dense, not sparse) — active on effectively every bar post-warmup. Ungated: no regime filter per A2.3 standing policy."
+    edge_source:
+      category: persistent_behavioral_bias
+      specific_mechanism: "When fast EMA (9-period) diverges above slow EMA (21-period), percentage spread increases; traders perceive and follow the established uptrend via herding behavior, sustaining momentum. The spread_pct metric directly measures this momentum divergence; positive correlation with next-bar returns confirms the mechanism."
+    evidence_type: price_volume_only
+    data_requirements: ohlcv_only
+    library_category: trend_following
+    library_regime_affinity: "mixed_ungated_across_regimes (favorable_in_trending, unfavorable_in_ranging_high_vol)"
+    diversity_axis: "Baseline moving-average crossover; foundation for comparison with alternative trend mechanisms (Keltner, funding-rate pairing) in future cycles."
+    component_requirement: EMASpreadComponent
+    component_location: "trading-bot/strategies/strategy_components.py"
+    new_code_required: false
+    execution_status: run_queue
+
+regime_specific_variants: []
+
+alternative_data_candidates:
+  - label: "Funding Rate Extremes (V2 candidate)"
+    evidence_type: funding_open_interest
+    mechanism: "Pair EMA spread positivity with extreme funding rate conditions (> |0.0002|). When spread is positive AND funding is extreme, signal expected mean-reversion on forced deleveraging. Addresses high-crowding risk of EMA by leveraging structural (non-behavioral) edge from funding mechanics. Available today per config/available_feeds.yaml."
+    status: "Proposed for next expansion cycle; satisfies IMPROVEMENT 01 (non-price_volume_only evidence_type)"
+    expected_library_indicator: funding_rate_extreme
+    expected_library_category: structural_rate
+    new_feed_required: false
+    blocking_factor: null
+
+  - label: "Keltner Channel Breakout (V3 candidate)"
+    evidence_type: price_volume_only
+    mechanism: "Replace EMA spread with Keltner channel (ATR-based bands) breakouts. Channel width adapts to volatility; breakout signal may better distinguish real continuation from noise in high-volatility periods. Category: trend_following (like V1), but different library indicator (keltner_channel_trend vs moving_average_crossover) for real diversity per IMPROVEMENT 04."
+    status: "Proposed for next expansion cycle; alternative trend mechanism within ohlcv_only constraint"
+    expected_library_indicator: keltner_channel_trend
+    expected_library_category: trend_following
+    new_feed_required: false
+    blocking_factor: null
+
+  - label: "Signal Inversion Test (V4 candidate)"
+    evidence_type: price_volume_only
+    mechanism: "Negate the EMA spread forecast: negative spread (fast EMA below slow EMA) → sell/short signal. Low-cost experiment to test whether mechanism is symmetric and validate directionality assumption of V1."
+    status: "Viable for next cycle; same evidence_type and component as V1, only polarity change"
+    expected_library_indicator: moving_average_crossover
+    expected_library_category: trend_following
+    new_feed_required: false
+    blocking_factor: null
+
+reverse_hypothesis:
+  label: "EMA Spread Inverted (Short on Negative Spread)"
+  description: "Test opposite polarity: when fast EMA diverges below slow EMA (negative spread), issue sell/short signal. Validates whether herding mechanism is symmetric and whether directional assumption in V1 is correct."
+  mechanism: "If uptrend herding (positive spread → continuation) is driven by persistent behavioral bias, downtrend herding (negative spread → mean-reversion short) should work similarly. Empirical IC on inverted forecast will confirm or refute symmetry."
+
+behavioral_features:
+  - feature: herding_and_trend_following
+    description: "When fast EMA diverges from slow EMA, traders perceive an established trend; herding behavior amplifies momentum."
+    measurable_proxy: "Spread_pct magnitude and sign; higher absolute spread indicates stronger perceived trend direction."
+
+  - feature: momentum_persistence
+    description: "Once EMA spread widens, momentum tends to persist for multiple bars due to FOMO and follow-the-momentum positioning."
+    measurable_proxy: "Continuous spread_pct signal (not binary threshold) better captures intra-trend momentum dynamics than discrete crossover variants."
+
+constraints_honored:
+  brief_constraint_one_variant_only: "Research brief (constraints field) specifies 'One variant only for the run queue (V1)'. Output respects this: V1 (base hypothesis) in expanded_variants; alternative candidates (V2, V3, V4) documented in alternative_data_candidates for future cycles, NOT in run queue."
+  post_a23_no_regime_gating: "No regime-specific variants in expanded_variants. V1 is ungated (all-bars). regime_specific_variants is empty. Future regime-conditional ideas routed to detector_wishlist per post-A2.3 standing policy."
+  existing_components_only: "V1 uses EMASpreadComponent (already in trading-bot/strategies/strategy_components.py). No new component code added this cycle. Alternative candidates note required components but deferred."
+
+notes: "Pipeline shakedown batch: brief constrains expansion to single-variant run queue. V1 is the base hypothesis passed through unchanged. Future expansion (V2/V3) vectors documented in alternative_data_candidates. Diversity audit shows that future integration of V2 (funding_rate_extreme) + V3 (keltner_channel_trend) would satisfy IMPROVEMENT 04 (real diversity across 2+ library categories: structural_rate, trend_following). IMPROVEMENT 01 (non-price_volume_only evidence_type) deferred to next cycle; V2 candidate removes this blocker."

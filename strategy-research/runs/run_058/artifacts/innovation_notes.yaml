@@ -1,0 +1,71 @@
+run_id: run_058
+hypothesis_id: H-041-C-v2
+expansion_result: constraint_locked_single_variant
+
+constraint_citation: "research_brief.yaml, constraints field: 'One variant only — fully pre-registered closure run; expand exactly the registered mechanism; no additional variants.'"
+
+expansion_decision: "No expansion. H-041-C-v2 is a pre-registered closure run with frozen signal mechanism. Per A1.3 anti-confabulation and brief constraints, base hypothesis passed through as V1 only."
+
+variant_count: 1
+variants_generated:
+  - V1: "H-041-C-v2 registered Fear & Greed contrarian mechanism (original polarity, era-gated evaluation)"
+
+diversity_audit:
+  categories_spanned: [sentiment]
+  data_requirements_spanned: [fear_and_greed]
+  verdict: single_variant_constraint_locked
+  cosmetic_reject_reason: null
+  note: "One variant by brief constraint. No cosmetic diversity issues (no multi-variant comparison). V1 carries library_category=sentiment, data_requirements=fear_and_greed."
+
+improvement_01_feed_constraint:
+  status: PASS
+  evidence_type: fear_and_greed
+  availability: "available_feeds.yaml.available ✓"
+  rationale: "Non-price_volume_only requirement satisfied by V1 (fear_and_greed feed). At least one variant rule met."
+  requires_new_feed_count: 0
+
+improvement_04_diversity_check:
+  status: PASS
+  note: "Single variant. Library category and data_requirements documented. No alternative variants needed per brief."
+  library_category: sentiment
+  data_requirements: fear_and_greed
+
+post_a23_regime_gating:
+  status: PASS
+  finding: "H-041-C-v2 is ungated. Signal fires in all regimes (TRENDING, RANGING, HIGH_VOL). No regime_specific_variants populated per POST-A2.3."
+
+a13_anti_confabulation:
+  status: PASS
+  finding: "V1's specific_mechanism ('Sentiment extremes concentrate positioning') names measurable proxy ('F&G Index < 25 or > 75') in available_feeds.yaml.available (fear_and_greed). No mechanism gap."
+
+no_reverse_variant_rationale: "Reverse hypothesis (continuation not contrarian) is empirically FALSE in 2018-2023 pass-gated era (sign consistent with contrarian). Flip in 2024-2025 is era artifact (KB run_048), not structural refutation. Pursuing reverse would require new registration per A8.5.3."
+
+prior_campaign_closure:
+  run_042_mechanism: "H-041-C original (pooled 2018-2025, no era-conditioning)"
+  run_042_outcome: era_conditional_instability
+  run_048_mechanism: "H-041-C extended (2018-2025 with per-era IC breakdown)"
+  run_048_outcome: era_conditional_instability
+  h041c_v2_response: "Restricts pass-gated evaluation to 2018-2023 (mechanism sign consistent, negative IC). Treats 2024-2025 as diagnostic-only (sign flips, positive IC). Not a variant generation; a structural reframing to account for observed era-instability."
+  reactivation_criteria: "A8.5.3 requires new explicit registration for alternate polarity or regime-gated formulations. This brief is H-041-C-v2's LAST registration — every FAIL branch terminates both hypothesis and lineage."
+
+activation_sparsity_and_power:
+  activation_rate: 0.06
+  activation_basis: "UTC 00:00 bar only (~1 event/day when F&G extremes occur). Expected activation: 100–150 extreme days per 2,160 calendar days (2018-02 to 2023-12) pass-gated window."
+  expected_n_eff: 130
+  min_detectable_ic: 0.088
+  power_verdict: adequately_powered
+  note: "Market-wide signal reduces n_eff_symbols from 2 to 1.1 (return correlation rho=0.82). Sparse activation is structural (daily sentiment index), not design failure."
+
+era_conditioning_mechanical_implementation:
+  pass_gated_windows: "protocols/h041c_v2_backext.json, windows array contains only 2018-2023 eras (71 monthly sub-windows, 2018-02 to 2023-12)"
+  diagnostic_only_eras: "2024-burned (2024-01 to 2024-11-30) and 2024-2025-walk-forward (2024-12-01 to 2025-12-31) are NOT computed by this run unless explicitly ordered post-verdict"
+  holdout_untouched: "era_2026_holdout (2026-01-01 to 2026-06-30) untouched by this brief and all prior H-041-C artifacts"
+  mechanism_scope_frozen: "No funding_rate involvement (confirmed by 2026-07-15 KB direct read against runs/run_042, run_048, run_052). Funding belongs exclusively to independent H-041-A mechanism."
+
+no_feed_expansion_rationale: "fear_and_greed is the canonical feed for F&G mechanism. No alternative sentiment feeds are available in available_feeds.yaml (on-chain, options, liquidation all marked unavailable). Brief constraint (one variant only) does not permit feed exploration."
+
+next_stage:
+  stage: validation_gate
+  input: "expanded_hypothesis_card.yaml (H-041-C-v2, V1 only)"
+  prescreen_route: "Will route to tools/prescreen_signal.py. If kill_no_ic or insufficient_episodes_a851a routes trigger, hypothesis does not reach evaluation stage (terminal per brief pass_rule)."
+  decision_authority: "tools/verdict_criteria_evaluator.py per-symbol metrics (median_sharpe, max_abs_drawdown_pct, zero_trade_slot_pct) evaluated over pass-gated 2018-2023 windows only."

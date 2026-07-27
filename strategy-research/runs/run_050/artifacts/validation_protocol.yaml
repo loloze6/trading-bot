@@ -1,0 +1,79 @@
+hypothesis_id: "H-041-A"
+base_hypothesis_id: "H-041-A"
+refinement_attempt: 2
+variant_id: "V1_holding_window_extended_4h"
+
+falsifiable_statement: "On 4h BTCUSDT/ETHUSDT candles (walk-forward 2024-12-01 to 2025-12-31), funding-rate mean reversion (|rate| > 0.0002, forecast −sign(rate) × 10.0, hold 32–96 bars) achieves median Sharpe ≥ 1.0 with trade_count ≥ 100 (min 10/window), win_rate ≥ 45%, max_drawdown ≤ 30%, without lookahead or regime endogeneity."
+
+null_expectation: "Signal exhibits IC ≈ 0, Sharpe < 1.0, insufficient trade count, cost plausibility failure (gross_edge_bps < 2 × round_trip_cost_bps), or sparse activation (< 10 trades per 3-month window). 1h variant's execution-layer failure generalizes to 4h under unvalidated parameters."
+
+required_evidence:
+  - "Walk-forward structure: 8 non-overlapping 3-month windows, 2024-12-01 to 2025-12-31 per A8.5.1a episode-blocked significance. Per-window metrics: Sharpe, trade_count, win_rate, max_drawdown_pct, IC (measured vs forecast), n_eff (episode blocks)."
+  - "Pooled validation: median Sharpe ≥ 1.0 across windows, total trade_count ≥ 100 (minimum 10 per window), win_rate ≥ 45%, max_drawdown_pct ≤ 30%."
+  - "Cost feasibility (Layer 1): estimated_gross_edge_bps_per_trade = IC × sigma_bar_bps × sqrt(avg_holding_bars) ≥ 34 bps (BTCUSDT) or 35 bps (ETHUSDT). Read cost_model.yaml round_trip_cost_bps, apply safety_factor 2.0."
+  - "Funding data integrity: Confirm bar timestamp occurs AFTER funding_rate settlement publication. No look-ahead bias audit."
+  - "Regime independence: Audit AdvancedStrategy.regime_detector input features. Confirm funding_rate is NOT used to compute MarketRegime (else strategy forecast is endogenous)."
+  - "Activation rate validation: Observe 40–60 episodes/year across walk-forward; report episode distribution per window. Flag extreme deviation (< 32 or > 72/year) for parameter drift inspection."
+
+bias_risks:
+  - "Look-ahead bias: Funding settlement occurs post-bar-open; if bar timestamp is bar-open or bar-close before settlement, signal observes future data. Must audit data_manager.py candle-building and funding_rate injection point."
+  - "Regime endogeneity: If regime detector uses funding_rate, then forecast becomes endogenous to regime label. IC and Sharpe inflated by regime-label leakage. Audit AdvancedStrategy and CompositeStrategyForRegime input vectors."
+  - "Parameter overfitting: Threshold (0.0002) and scaling_factor (10.0) transplanted from run_041 (1h, failed). No tuning on 4h. Brittle to market-regime drift; needs validation or walk-forward-tuning."
+  - "Survivorship bias: Only BTCUSDT (since 2019-09-10) and ETHUSDT (since 2019-11-27) have funding data. No dead-symbol adjustment."
+  - "Report bias (n_eff): Blocker resolution claims n_eff ≈ 550 without back-computed evidence. Trust only measured n_eff from backtest."
+
+failure_modes:
+  - "Sparse activation: Total trades < 100 or min trades < 10 in any window. Insufficient sample size for IC significance. Gate: FAIL if trade_count < 100."
+  - "Lookahead undetected: Funding_rate injected at bar-open instead of post-settlement. Backtest Sharpe inflates 20–50%, fails live. Mitigation: mandatory manual audit of candle_builder code."
+  - "Parameter sensitivity: Threshold 0.0002 is non-robust. 10% market drift or funding volatility shift breaks activation. Detection: plot episode timing and threshold-crossings per window; if bimodal distribution (some windows sparse, others dense), flag for threshold re-tuning."
+  - "Cost breakdown: Claimed cost_per_bar 0.27 bps implies avg holding ~60 bars, ~50 trades/year. If actual holding < 30 bars or trade_count < 25, cost_per_trade exceeds required_gross_edge_bps. Gate: prescreen must confirm edge_to_cost_ratio ≥ 2.0."
+  - "Regime-detector leakage: If regime uses lagged funding_rate, IC ungated << IC gated. Ex-post correlation is spurious. Detection: compute IC both ungated and regime-gated; if ratio > 3:1, suspect leakage."
+  - "Parameter drift across windows: Same parameters applied to all 8 windows. If high-vol vs low-vol windows have different optimal thresholds, edge degrades. Detection: report per-window IC distribution; if std_dev > 20% of mean, flag for regime-stratified tuning."
+  - "Out-of-sample cliff: Walk-forward Sharpe ≥ 1.0 but holdout Sharpe << 1.0. Overfitting or structural market change. Holdout is final arbitration; failure is terminal (per campaign_data_policy.yaml holdout_failure_is_terminal: true)."
+
+sample_split_design:
+  walk_forward_range: "[2024-12-01, 2025-12-31]"
+  holdout_range: "[2026-01-01, 2026-06-30]"
+  holdout_note: "Single-use per Improvement 06. FROZEN — no prescreen, diagnostic, or intermediate stage may read candles in this range except holdout_evaluation. Once consumed (PASS or FAIL), H-041-A is ineligible for re-evaluation. See campaign_data_policy.yaml holdout_consumed_by and holdout_failure_is_terminal."
+  windows: 8
+  window_size_bars: 195
+  window_size_calendar_days: 90
+  window_size_rationale: "8 windows over 13 months (390 days) ≈ 48.75 days per window; using standard 3-month (90 day) grid. 90 days × 6 bars/day @ 4h ≈ 195–270 bars depending on market hours; conservatively 195 for analytics."
+  step_size_bars: 195
+  step_size_note: "Non-overlapping windows to prevent in-sample leakage across folds."
+  era_stratification: "All windows fall within era_2024_2025_walk_forward_extension per campaign_data_policy.yaml (funding_rate available for BTCUSDT and ETHUSDT). No sub-era splits required."
+  episode_blocking_rule: "Per A8.5.1a (episode-blocked significance): Each 4h candle completion is an episode (not a trade). Within each window, compute Sharpe/metrics using n_eff = num_episodes / (1 + 2×ACF_lag). Report per-window n_eff; gate passes if min n_eff ≥ 50 per window. Deflated Sharpe = raw_sharpe / sqrt(n_eff / 252 years)."
+
+decision_rules:
+  - "Sharpe (median across 8 windows): ≥ 1.0 → PASS"
+  - "Trade count (pooled): ≥ 100 total, min 10 per window → PASS if satisfied; FAIL if sparse"
+  - "Win rate (pooled): ≥ 45% → PASS"
+  - "Max drawdown (pooled): ≤ 30% → PASS"
+  - "Cost plausibility (Layer 1, Improvement 09): estimated_gross_edge_bps_per_trade ≥ required_gross_edge_bps (2.0 × round_trip_cost_bps). Formula: est_edge = abs(IC) × sigma_bar_bps × sqrt(avg_holding_bars). Computed during prescreen (Layer 2). If Layer 1 plausibility = implausible, REJECT (hard gate per Improvement 09)."
+  - "Look-ahead audit: Manual code review. If funding_rate bar timestamp violates post-settlement rule, REJECT."
+  - "Regime endogeneity audit: Manual code review of AdvancedStrategy and regime_detector. If funding_rate is regime input, REFINE (decouple)."
+  - "Activation count: 40–60 episodes/year ± 20% tolerance. Out-of-range → inspect for parameter drift."
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 17.0
+  assumed_round_trip_cost_bps_note: "BTCUSDT (primary symbol). ETHUSDT 17.5 bps as secondary. Read from config/cost_model.yaml round_trip_cost_bps[BTCUSDT], version 1.1 dated 2026-07-04."
+  assumed_cost_model_verdict_execution_style: "taker (only permitted path for gating per cost_model.yaml L54). Maker variant is sensitivity-only, cannot drive approval/rejection."
+  safety_factor: 2.0
+  required_gross_edge_bps_per_trade: 34.0
+  required_gross_edge_bps_note: "2.0 × 17.0 (safety_factor × round_trip_cost_bps[BTCUSDT])."
+  expected_holding_bars:
+    min: 32
+    max: 96
+    midpoint_estimate: 64
+    calendar_interpretation: "32 bars @ 4h = 128h ≈ 5.3 days; 96 bars = 384h ≈ 16 days; midpoint 64 bars ≈ 10.7 days."
+  expected_trades_per_window: 12
+  expected_trades_per_window_note: "~50 trades/year ÷ 8 windows. Based on claimed 40–60 episodes/year activation."
+  cost_per_bar_claimed_bps: 0.27
+  cost_per_trade_implied_bps: 17.3
+  cost_per_trade_calc: "0.27 bps/bar × 64 bars (midpoint holding) = 17.3 bps/trade. Exact only if actual holding = 64 bars; variance expected."
+  implied_gross_edge_requirement: 16.7
+  implied_gross_edge_note: "Required 34 bps minus cost 17.3 bps = 16.7 bps must come from signal strength (IC). Margin for error is thin; IC must be ≥ 0.15 to achieve estimated_gross_edge 34 bps under typical crypto 4h volatility (sigma_bar 50–100 bps)."
+  plausibility: "marginal"
+  plausibility_rationale: "Funding rate mean-reversion is a known structural signal (8h forced-liquidation cycles). IC 0.15–0.20 is plausible for regime-gated strategies on 4h crypto. However, the parameters (threshold 0.0002, scaling_factor 10.0) are unvalidated on 4h; copied from failed 1h variant. Cost margin is tight: implied_gross_edge 16.7 bps requires IC ≥ 0.15. If actual IC < 0.12 or avg_holding < 40 bars, plausibility drops to implausible. Conditional approval contingent on Layer 2 prescreen confirming edge_to_cost_ratio ≥ 2.0 before backtest runs."
+  plausibility_gate_decision: "MARGINAL allows conditional_approve if conditions are specified and met."
+  improvement_09_layer_1_status: "CONDITIONAL — plausibility marginal, not implausible. Cost check must be re-run in Layer 2 (prescreen) using measured IC, sigma_bar, and avg_holding_bars. Proceed to screening backtest only if edge_to_cost_ratio ≥ 2.0 confirmed."

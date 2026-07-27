@@ -1,0 +1,28 @@
+hypothesis_id: KELTNER_OR_GATE_REGIME
+thesis: OR-gated regime detection (ER≥0.5 OR VR≥1.2) increases predictive bar coverage and trade frequency while maintaining individual threshold rigor.
+
+rationale: |
+  run_025 AND gate (ER≥0.3 AND VR≥1.2) produced 0 trades in 3/12 windows because most bars satisfy 
+  only one condition; both trending and unknown regimes remained uninformative (forward_return_mean≈0). 
+  OR logic increases regime representation from 2–40 to ~30–70 bars/window while preserving selectivity 
+  (ER≥0.5 or VR≥1.2 individually remain demanding). Falsification pathway: if OR fails, architecture 
+  pivot (score_mode) justified; if succeeds, parameter tuning alone resolved the problem.
+
+signal_concept: Keltner mean-reversion (period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=−20.0). IDENTICAL to run_017 baseline; locked to isolate regime effect.
+
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+
+timeframe: 1h
+
+assumptions:
+  - ER and VR individually informative; AND combination created false negatives (bars wrongly classified unknown)
+  - OR logic selective; ER≥0.5 or VR≥1.2 remain individually demanding, do not trivialize assignment
+  - Keltner forecast_return_corr≈0.21 (run_017) persists under expanded regime coverage
+  - 1h timeframe sufficient for regime stability (no bar-to-bar flipping expected)
+
+expected_failure_modes:
+  - OR over-captures; trending regime fires in chop, becomes uninformative by volume
+  - ER and VR individually weak; only AND intersection predicts direction (orthogonal signals needed)
+  - Regime indicator selection fundamentally mismatched to market states (neither ER nor VR separates predictive regimes)

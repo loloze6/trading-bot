@@ -1,0 +1,66 @@
+hypothesis_id: "V1-PIVOT"
+hypothesis_name: "Keltner Lower-Band Mean-Reversion"
+
+falsifiable_statement: |
+  In BTCUSDT/ETHUSDT 1h during TRENDING regimes (ER≥0.50, VR≥1.20),
+  price undershoots of lower Keltner band (EMA20 - ATR20×1.5) exhibit
+  positive mean-reversion edge: forecast_return_correlation > 0.0,
+  walk-forward Sharpe ≥ 0.5, win_rate ≥ 50%, trade_count ≥ 30.
+
+null_expectation: |
+  Lower-band breakdowns are random noise. Forecast_return_correlation = 0.
+  Sharpe ratio < 0.3. Win rate = 50%. Signal inversion from failed V1
+  predecessor yields no improvement.
+
+required_evidence:
+  - "Trade execution frequency ≥30 across entire backtest window for each asset"
+  - "Walk-forward Sharpe median ≥0.5 across 3 windows; min single-window ≥0.3"
+  - "Win rate ≥50% measured post-transaction costs (bid-ask, taker fee)"
+  - "Forecast-to-return correlation > 0 in validation/hold-out, not training"
+  - "TRENDING regime frequency ≥15% of bars to ensure sufficient sample size"
+  - "No look-ahead in ATR or EMA calculation; bands computed at bar close only"
+
+bias_risks:
+  - "Look-ahead: ATR computed on rolling 20-bar window; must confirm no forward-filling"
+  - "Leakage: ER/VR regime computed on rolling basis—verify close timing, no intrabar look-ahead"
+  - "Selection bias: Inverted signal from failed predecessor (V1 corr=-0.1705); correlation sign inversion does not guarantee profit"
+  - "Data snooping: ER≥0.50, VR≥1.20 thresholds derived from prior runs; may overfit"
+  - "Survivor bias: Only test assets with sufficient historical data and high volume"
+  - "Multiple comparisons: Testing lower band only, but upper band (momentum) failed; multiple implicit tests already done"
+
+failure_modes:
+  - "Lower-band breakdowns do not predict bounce; mean-reversion edge absent"
+  - "TRENDING regime definition over-captures choppy/noisy conditions; high false positives"
+  - "Bounce magnitude < transaction costs; Sharpe collapses below 0.3 when costs applied"
+  - "Regime thresholds require retuning on fresh data despite prior V1 validation"
+  - "Implementation bug in inverted signal logic; sign error or threshold comparison reversed"
+  - "Keltner band parameters (20, 20, 1.5×) suboptimal for 1h timeframe; ATR window too short for mean-reversion delay"
+  - "Regime drift: ER/VR threshold stable in backtest but unstable in walk-forward; regimes degrade"
+
+sample_split_design:
+  - "Walk-forward windows: 3 equal, non-overlapping (e.g., 8-week train, 2-week validation per window)"
+  - "Hold-out: final 4 weeks unseen during any optimization, held for final robustness check"
+  - "Regime stratification: report per-regime Sharpe (TRENDING vs other) separately"
+  - "Minimum signal count per window: ≥10 trades (fail if any window < 10)"
+  - "Time alignment: backtest window must include ≥2 complete market cycles (bull + bear) to validate regime stability"
+
+decision_rules:
+  - "approval_gate_1: 'sharpe >= 0.5 (walk-forward median across 3 windows)'"
+  - "approval_gate_2: 'win_rate >= 0.50'"
+  - "approval_gate_3: 'trade_count >= 30 (total across all windows)'"
+  - "approval_gate_4: 'min_trade_count >= 10 (any single window)'"
+  - "approval_gate_5: 'max_drawdown_pct <= 15.0'"
+  - "rejection_gate_1: 'forecast_return_correlation <= 0.0 in hold-out, reject outright'"
+  - "rejection_gate_2: 'trade_count < 20, insufficient signal; reject'"
+
+implementation_feasibility:
+  - "Low code complexity: uses existing KeltnerChannelComponent with inverted boolean flag"
+  - "No new architecture; integrates into existing regime-conditional strategy pipeline"
+  - "Data feasibility: requires 30+ 1h bars per asset; ~6 weeks minimum backtest window"
+
+testing_scope:
+  - "Assets: BTCUSDT, ETHUSDT only (as specified)"
+  - "Timeframe: 1h (fixed, no sweep)"
+  - "Regime: TRENDING only; non-TRENDING bars report Sharpe separately (should be ~0)"
+  - "Band parameters: EMA 20, ATR 20, 1.5× (no tuning; control test only)"
+  - "Position sizing: standard allocation; no per-signal weighting tuning"

@@ -1,0 +1,48 @@
+hypothesis_id: "KELTNER_SCOREMODE_4H_AVAX"
+
+falsifiable_statement: "Lowering regime_score minimum threshold from 0.25 to 0.15 on AVAXUSDT (4h, Keltner signal, score-mode regime) increases trade frequency to 40–60% of candles while maintaining Sharpe ≥0.30, win_rate ≥50%, and forecast correlation ≥0.0493 across ≥4 walk-forward windows with ≥5 trades per window."
+
+null_expectation: "Lowering the threshold admixes marginal regimes where ER/VR distinction is weak; resulting Sharpe <0.20, win_rate <45%, or max_drawdown >40%, indicating noise overwhelms signal edge."
+
+required_evidence:
+  - "V1-Conservative (AVAXUSDT, min_score=0.15): sharpe, win_rate, trade_count per window, max_drawdown, min_trade_count across walk-forward split."
+  - "V2-Floor-Test (AVAXUSDT, min_score=0.10): Sharpe, cost_drag metric; confirm whether 0.15 is practical lower bound."
+  - "V3-Ceiling-Test (AVAXUSDT, min_score=0.20): sharpe, min_trade_count per window; confirm whether 0.15 is necessary for frequency target."
+  - "V4-Asset-Gen-ETH (ETHUSDT, min_score=0.15): sharpe, min_trade_count; validate generalization across market-cap spectrum."
+  - "Reverse-High-Regime (AVAXUSDT, min_score=0.35): sharpe at ultra-strict regime; control test for non-linearity."
+  - "Stratified analysis: compute win_rate and sharpe per regime_score quartile (0.10–0.15, 0.15–0.20, 0.20–0.30, 0.30+); verify edge preservation at margin."
+  - "Trade clustering: plot trade entry points by regime_score; identify whether 0.15 is natural boundary or arbitrary cutoff."
+
+bias_risks:
+  - "Optimization bias: min_score=0.15 may be selected post-hoc to maximize backtest Sharpe on historical data already used in prior tuning."
+  - "Look-ahead bias: ER/VR regime components must be verified for forward-looking data in component computation (verify period and smoothing lags)."
+  - "Multiple comparison bias: 5 variants increase false-discovery risk; apply Bonferroni correction (α_adjusted = 0.05/5 = 0.01) before final approval."
+  - "Generalization risk: threshold tuned on SOLUSDT; AVAXUSDT and ETHUSDT may exhibit regime dynamics uncorrelated to SOL altseason patterns."
+  - "Cost drag underestimation: simulator assumptions on commission and slippage may not reflect live Binance margin execution (fee tiers, rebates, liquidity impact)."
+  - "Regime threshold overfitting: earlier runs may have implicitly optimized ER/VR thresholds; new score thresholds may reflect latent overfitting rather than discovery."
+
+failure_modes:
+  - "V1 Sharpe <0.20 despite lower threshold: edge concentrated in higher-regime windows; threshold lowering admits noise with no frequency benefit."
+  - "Trade clustering within 0.15–0.20 band: suggests arbitrary cutoff, not natural regime phase transition; margin trades unstable and reversible."
+  - "Lowest regime_score quartile (0.10–0.15) win_rate <50%: confirms margin trades are losers; aggressive threshold contradicted by data."
+  - "Max drawdown >40% in any walk-forward window: risk tolerance breached; frequency gain offset by tail risk; variant rejected."
+  - "V4 (ETHUSDT) Sharpe <0.20 or pattern contradicts V1: regime dynamics asset-specific; strategy does not generalize; recommend asset-tuned variants."
+  - "Reverse-High-Regime (V5) Sharpe >0.40 despite trade_count ≤5: signals non-linear edge concentrated in extreme ER/VR regimes; requires separate high-conviction strategy, not lower threshold."
+  - "Fewer than 4 walk-forward windows achieve ≥5 trades: frequency target unmet; cannot claim robustness across market regimes."
+  - "Walk-forward drift: median Sharpe stable, but latest window (most recent data) shows Sharpe <0.10: model regime shift or data-dependent decay invalidates hypothesis."
+
+sample_split_design:
+  - "Use existing walk-forward pipeline: 4 windows, minimum 5 trades per window for a window to count toward robustness gate."
+  - "Per variant: report sharpe (median), win_rate (aggregate), max_drawdown, trade_count, min_trade_count (worst window) for each walk-forward window."
+  - "Stratification: for V1, split all trades into regime_score quartiles; compute sharpe and win_rate per quartile to verify edge preservation at margin (0.10–0.15 band)."
+  - "Reverse control: V5 (min_score=0.35) must run on identical date range and walk-forward split; if V5 median Sharpe >>V1 sharpe, hypothesis assumption inverted."
+  - "Generalization validation: V4 (ETHUSDT) must show median sharpe ≥0.28 and ≥3 windows ≥5 trades; if divergent, flag as asset-specific."
+  - "Sequential decision: V1 must pass all thresholds before V2–V5 results inform go/no-go; if V1 fails, V2–V5 results are diagnostics only, do not approve."
+
+decision_rules:
+  - "V1-Conservative approval criteria: sharpe ≥0.30 (median across walk-forward windows) AND win_rate ≥50% AND ≥4 windows with min_trade_count ≥5 AND max_drawdown ≤35%."
+  - "V2-Floor-Test interpretation: If sharpe ≥0.25 at min_score=0.10, threshold can relax; if sharpe <0.10 or cost_drag >80%, 0.15 is practical floor (confirmed)."
+  - "V3-Ceiling-Test interpretation: If sharpe ≥0.30 at min_score=0.20 AND ≥4 windows ≥5 trades, prefer 0.20 (lower frequency, same Sharpe); reject V1. If V3 fails frequency gate, 0.15 is necessary (V1 confirmed)."
+  - "V4-Asset-Gen interpretation: ETHUSDT median sharpe ≥0.28 AND ≥3 windows ≥5 trades = generalization supported. If divergent (sharpe <0.20 or <3 windows), regime is asset-specific; do not approve multi-asset deployment."
+  - "V5-Reverse control interpretation: If V5 sharpe >0.40 despite trade_count ≤5, signals non-linear edge at high thresholds; create separate high-conviction strategy (do not lower threshold). If V5 sharpe <0.10, lower threshold is correct strategy."
+  - "Final approval: V1 passes all criteria AND (V3 fails frequency gate OR V2 shows marginal degradation) AND V4 generalizes (sharpe ≥0.28) AND V5 reverse does not dominate (sharpe <0.40) → CONDITIONAL_APPROVE with conditions."

@@ -1,0 +1,19 @@
+hypothesis_id: "MACD_TREND_CONTINUATION_EXTENDED_2018_2025"
+what_failed:
+  - "Spearman IC (all-bars, ungated) ≥ 0.01: actual −0.0145, p=0.2922 >> 0.10 (not significant)"
+  - "Active-bar IC: −0.0503 (negative correlation, signal direction inverted or orthogonal)"
+  - "Cost feasibility layer 2: edge_to_cost_ratio=0.245 << 2.0 required"
+diagnostic_rule_applied: "Rule 2: abs(ic_all_bars)=0.0145 < 0.03 AND p=0.2922 >> 0.10 — signal has no detectable directional edge. Negative correlation on active bars (−0.0503) indicates systematic misalignment, not just weak noise."
+diagnostic_snapshot:
+  forecast_return_corr: -0.050271
+  cost_drag_pct: null
+  gross_pnl: null
+  uninformative_regimes: []
+  notes: "No trades executed (prescreen kill). Signal fires on MACD histogram zero-crossings (7.6% of bars). On those bars, forward returns show negative correlation — mechanically wrong signal or regime incompatibility. Backward-extended 2018–2025 range does not solve the problem; MACD consistently fails across 8 years of bull/bear/chop cycles."
+what_not_to_try:
+  - "MACD parameter tuning (fast period 10–14, slow period 24–28, signal period 8–10): mechanism is not predictive at any parameter set at 1h on this venue. Basis: ALL-bars IC negative and insignificant across 139.8k bars — not a noise problem, but systematic lack of edge."
+  - "MACD variants from expanded_hypothesis_card (V2–V6 with volume/funding/RSI/divergence filters): proposed in innovation_expansion but never executed; remain untested and available if 4h escalation fails. Do not claim variants are exhausted — only baseline (V1, ungated) was tested."
+  - "Different EMA periods (run_043 already exhausted on 2024–2025 range: no_edge, root_cause already_priced_in). Keltner (already dismantled on 2024–2025: signal_inversion). These two mechanisms at 1h are closed."
+next_altitude: "escalate"
+parameter_bracket: null
+notes: "Trend-following family exhausted at 1h: three candidate mechanisms tested (EMA, Keltner, MACD) all fail. MACD failure is definitive — tested over 8-year backward-extended range (2018–2025) that was explicitly designed to capture multiple regimes (bull 2021, bear 2022, chop 2023–2024, rebound 2025) in which trend-following should have opportunity. Negative correlation rules out undersample luck. Next test: 4h timeframe (lower turnover, higher bar-level signal-to-noise). If trend-following fails at 4h, family is structurally incompatible with this asset class at 1h/4h and we pivot to mean-reversion or other signal family."

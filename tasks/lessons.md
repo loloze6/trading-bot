@@ -92,3 +92,53 @@ The marker is mandatory and explicit even when the answer is "none", for the sam
 the schema exemption in `record_schema.py:131-148` is named rather than left implicit: an
 unexamined default is how the previous rounds failed. A dispatch whose header lacks the
 marker is malformed, and the reader should say so instead of guessing which case applies.
+
+---
+
+## L-2026-07-26-C — Empty tool output is not evidence until cwd and search scope are stated
+
+**What happened, three times.** W2, then W3, then W4 (this session) each drew a conclusion
+from a search that returned nothing, when the search had not actually run over the
+intended files. W4's instance is the cleanest specimen because the exit code was still on
+screen: a scan of 2,914 untracked CSVs for holdout-range rows was piped through
+`xargs -0 rg -l ...`, and it printed `FILES WITH 2026+ DATED ROWS: 0`. That zero was
+produced by `xargs: rg: No such file or directory` — ripgrep is not on the Git Bash PATH
+in this environment — and the command exited 127. Re-run with `grep -E`, the same scan
+over the same list returned **4 files**, all of them genuine holdout leaks. The "clean"
+result and the "contaminated" result differed only in whether the binary existed.
+
+**Why the reasoning failed.** A search has two independent failure modes that render an
+identical empty result: *the thing is not there*, and *the search never looked*. Only the
+first is evidence. The second is produced by a missing binary (exit 127), a cwd that is
+not the repo root, a glob that matched no files, a path list built against a different
+tree, or a filter applied before the data. Nothing in the output distinguishes them —
+`0 results` renders the same either way — so the reader supplies the interpretation, and
+the convenient interpretation is the one that lets the task proceed. This is the same
+error class as L-2026-07-26-A: a claim about LOCATION or MECHANISM ("I ran a scan") was
+substituted for a claim about CONTENT ("the files are clean"), and the two coincide only
+while the mechanism is actually working.
+
+**Why "be careful" is not sufficient.** All three instances involved an operator already
+trying to be rigorous. The failure is not inattention; it is that an empty result is
+*self-certifying* by default — it arrives looking like an answer, with no field that says
+"and here is the number of files I opened." Any remedy that depends on remembering to feel
+suspicious will fail on the run where the result is what you expected anyway.
+
+**RULE.** A negative search result may not be cited as evidence — in a report, a gate, or
+a decision to proceed — unless the same message states all three:
+
+1. **cwd**, verified in the same command (`pwd` or `git rev-parse --show-toplevel`), not
+   assumed from an earlier call. Bash tool cwd does not persist the way it appears to.
+2. **Scope actually covered** — the file count the search consumed, not the count it was
+   meant to consume. `files scanned: N` where N is measured, e.g. `wc -l` of the input
+   list, plus the tool's exit code. Exit 127/126 or any nonzero from the search leg voids
+   the result outright.
+3. **A positive control** — the pattern demonstrated matching a fixture that must match,
+   run in the same invocation. A pattern that matches nothing anywhere is
+   indistinguishable from a clean tree.
+
+Corollary for gates whose failure is permanent (publication, commit, holdout): the
+positive control is mandatory, not optional. W4's gate found real 2026 bars only because
+the pattern was first proven against a synthetic `2026-01-01` row and a `2025-12-31` row
+that must NOT match. Absent that step, a typo'd regex would have certified the leak clean
+and the commit would have been unrecoverable.

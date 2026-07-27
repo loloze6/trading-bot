@@ -1,0 +1,45 @@
+hypothesis_id: H-RUN007
+
+thesis: |
+  RSI(14) distance from 50 generates positive expected returns in BTCUSDT 1h
+  when market is in mean_reversion regime (ER ≤ 0.20, VR ≤ 0.90).
+
+rationale: |
+  In low-efficiency, low-volatility-ratio regimes, price exhibits mean-reverting
+  behavior. RSI below 50 signals technical oversold without trend confirmation.
+  Forecast strength proportional to |RSI - 50| captures magnitude of reversion
+  opportunity. Signal produces zero forecast outside mean_reversion regime to
+  avoid false signals in trending/choppy environments.
+
+signal_concept: |
+  RSIPullbackComponent: long-only, proportional to RSI distance below 50.
+  Forecast = max(0, (50 - RSI) / 50) * scaling_factor.
+  Zero forecast when RSI ≥ 50. No divergence detection, no behavioral overlays,
+  single component, single regime gate.
+
+target_market: BTCUSDT
+timeframe: 1h
+regime_filter: mean_reversion only (ER ≤ 0.20 AND VR ≤ 0.90)
+
+assumptions:
+  - Mean reversion regime occurs with sufficient frequency for statistical validity
+  - RSI distance from 50 correlates positively with reversion probability
+  - Regime classification (existing ER/VR components) accurately reflects market state within lag tolerance
+  - Commission and slippage cost < expected edge per rebalance
+
+expected_failure_modes:
+  - Regime detector lags actual market transitions; signal catches reversals after cost
+  - RSI has no independent edge even in chop; correlation is spurious
+  - Rebalance frequency erodes positive expected value via commission
+  - Mean reversion regime is rare (< 15% of periods); sample too small for statistical validity
+
+entry_condition: |
+  forecast = 0 if not in mean_reversion regime, else forecast(t) proportional to max(0, 50 - RSI(14, t))
+
+exit_condition: |
+  Rebalance according to ForecastManager.needs_rebalance() and RiskManager approval
+  on candle completion; no time-based exit
+
+test_gate: |
+  Screening backtest 2000 candles: Sharpe ratio > 0.5, max drawdown < 15%,
+  trade count ≥ 10. If pass: walk-forward on holdout unseen data.

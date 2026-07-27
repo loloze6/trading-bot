@@ -1,0 +1,93 @@
+{
+  "run_id": "20260627T114648Z_518efb1d",
+  "created_utc": "2026-06-27T11:46:48.069005+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "er",
+          "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+          "params": {
+            "period": 24,
+            "smooth_period": 5
+          }
+        },
+        {
+          "id": "vr",
+          "class": "strategies.strategy_components.VarianceRatioComponent",
+          "params": {
+            "k": 5,
+            "window": 100
+          }
+        }
+      ],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "er",
+                "op": "gte",
+                "value": 0.5
+              },
+              {
+                "id": "vr",
+                "op": "gte",
+                "value": 1.2
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "trending",
+      "vetoes": []
+    },
+    "strategies": {
+      "warmup": 51,
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "keltner_mr",
+              "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+              "params": {
+                "ema_period": 20,
+                "atr_period": 20,
+                "atr_multiplier": 2.0,
+                "scaling_factor": -20.0
+              },
+              "weight": 1.0,
+              "lookback": 500,
+              "history_transforms": [],
+              "transforms": [
+                {
+                  "op": "identity"
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": null,
+        "chop": null
+      }
+    }
+  },
+  "config_sha256": "518efb1dd7b9c085b99a0d2560e7cfef65fb1be52a3fa5011da445e0ef3849a1",
+  "data": {
+    "symbols": [
+      "BTCUSDT"
+    ],
+    "timeframe": "3600s",
+    "start": "2024-04-01 00:00:00",
+    "end": "2024-05-01 23:00:00",
+    "bar_count": 744,
+    "data_sha256": "b9ee3f5fc1b987f3b6cef1008490e0a2d33bd269099266498e0396d337d11b01"
+  },
+  "git_sha": "0ca4666d62a0f9df3587dd1e893d67eaf3aadde1",
+  "engine": {
+    "lookback": 21,
+    "warmup": 51
+  }
+}

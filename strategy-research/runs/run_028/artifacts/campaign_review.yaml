@@ -1,0 +1,19 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 16
+
+pattern_detected: converging
+
+pattern_evidence:
+  - run_017_keltner_signal_forecast_return_corr: 0.2145
+  - run_024_keltner_rediscovered_forecast_return_corr: 0.2145
+  - run_027_keltner_with_4h_escalation_forecast_return_corr: 0.2145
+  - cost_drag_stable_across_high_correlation_runs: 27.446_pct_consistent
+  - root_cause_identified_by_explicit_diagnostics: run_027_note_states_zero_trades_no_edge_observed
+  - failure_mode_is_regime_filtering_not_signal: corr_stable_but_sharpe_fails_due_insufficient_trades
+  - search_structure_improving: runs_018_to_023_explored_rsi_variants_all_inferior_to_keltner_0p2145
+
+recommendation: continue
+
+recommendation_rationale: "The campaign has identified a robust Keltner mean-reversion signal (forecast_return_corr=0.2145) across runs 017, 024, and 027, with consistent cost_drag at 27.446%. The recurring appearance of this signal strength across three independent research pivots indicates genuine signal stability, not overfitting. The root failure mode has been diagnosed: regime filtering (AND-gate: ER≥0.5 AND VR≥1.2) is too restrictive, producing zero trades at 4h timeframe (run_027 explicitly notes 'zero trades, no edge observed'). The Sharpe ratio failure is not a signal quality problem but a sample-size problem—the edge cannot compound. The proposed pivot to score-mode regime (continuous ER×VR blending with threshold 0.4) is a principled structural fix, not scattered re-exploration. Cost_drag remains within acceptable bounds (27.446%), indicating execution efficiency is sound once trade frequency improves. The search is converging on a solvable problem."
+
+budget_assessment: "16 runs completed. Review criteria (every_n_runs=6) triggered at run_28 decision point. No explicit campaign_budget stated in campaign_state.yaml; typical strategy research campaigns allocate 20–30 runs. Current trajectory suggests 4–6 remaining runs to reach decision threshold. Prioritize run_028 (score-mode regime) as highest-value test: it directly measures whether trade frequency was the bottleneck. Expected outcome: 10–20 trades per window (vs. 0–2 in run_027). Success criteria: forecast_return_corr≥0.15, cost_drag≤40%, Sharpe≥0. If these hold, escalate to walk-forward validation. If Sharpe remains ≤0 despite trade increase, escalate regime component: score-mode may still be too loose or the signal edge may only exist in strict AND-gate regime (implying unfixable trade frequency constraint)."

@@ -1,0 +1,52 @@
+hypothesis_id: H-041-C-v2
+base_hypothesis_id: H-041-C-v2
+expansion_constraint_applied: "One variant only per research_brief.yaml constraints. No expansion performed."
+
+expanded_variants:
+  - variant_id: V1
+    thesis: "Extreme Fear & Greed Index readings (< 25 or > 75) predict contrarian mean-reversion in BTC/ETH 1h candles. Era-gated: pass-gated evaluation 2018-2023 (mechanism sign consistent); 2024-2025 diagnostic-only (sign flips, era-instability artifact)."
+    mechanism: "Sentiment extremes concentrate crowd positioning (panic shorts at fear, overleveraged longs at greed). Mechanical reversal via capital exhaustion and forced liquidation within 1–2 days. Measurable proxy: F&G Index < 25 or > 75 activates contrarian forecast."
+    signal_concept: "Fires at UTC 00:00 when previous day's F&G < 25 → +10.0 (long), or > 75 → -10.0 (short); else 0. Original polarity, ungated."
+    edge_source:
+      category: persistent_behavioral_bias
+      specific_mechanism: "Extreme sentiment readings concentrate crowd positioning. Overcrowded positioning reverses as capital exhaustion and forced liquidation cascade."
+      evidence_type: fear_and_greed
+      measurable_proxy: "Fear & Greed Index daily thresholds; post-extreme 1h returns vs. contrarian forecast (Spearman IC)."
+      why_not_arbitraged: "Sparse activation (~6% of bars), daily granularity prevents intraday microstructure arbitrage. Crowd positioning is structural (spot/futures/margin), not fleeting. Era-dependence (negative IC 2018-2023, positive IC 2024-2025) indicates edge sensitivity to market microstructure, not elimination by competition."
+    target_market:
+      - BTCUSDT
+      - ETHUSDT
+    timeframe: 1h
+    component: FearGreedContrarianComponent
+    params:
+      fear_threshold: 25.0
+      greed_threshold: 75.0
+      scaling_factor: 10.0
+    ungated: true
+    activation_rate: 0.06
+    library_category: sentiment
+    data_requirements: fear_and_greed
+    diversity_axis: "Single variant by brief constraint. V1 is H-041-C-v2 registered mechanism, passed through without variant generation."
+    status: ready_for_queue
+
+alternative_data_candidates: []
+alternative_data_note: "H-041-C-v2 uses fear_and_greed (available_feeds.yaml.available). Alternative sentiment feeds (on-chain, options, liquidation) are unavailable or require new feed registration. Brief constraint (one variant only) does not permit feed exploration."
+
+reverse_hypothesis:
+  statement: "Extreme F&G predicts continuation (same direction, not contrarian)."
+  empirical_status: "Rejected in 2018-2023 (sign matches contrarian hypothesis, IC < 0); supported in 2024-2025 (sign flips, IC > 0). Flip is era artifact per KB run_048, not structural replacement."
+  pursuit_status: "Out of scope. Reverse polarity reactivation requires explicit new registration (A8.5.3). Brief locks to original H-041-C-v2 polarity."
+
+behavioral_features:
+  - name: positioning_concentration
+    description: "Sentiment extremes concentrate positioning (oversold shorts at fear; overleveraged longs at greed)."
+    mechanism_role: "Density creates mechanical reversal pressure via capital exhaustion and forced liquidation."
+  - name: behavioral_overreaction
+    description: "Panic selling and euphoria-driven accumulation overshoot fair value."
+    mechanism_role: "Disposition bias and behavioral cascade produce mean-reversion window."
+  - name: market_wide_synchronization
+    description: "Single daily F&G Index activates identical forecast for BTCUSDT and ETHUSDT."
+    mechanism_role: "Synchronized positioning amplifies forced flow effects across correlated symbols (rho=0.82)."
+
+regime_specific_variants: []
+regime_note: "H-041-C-v2 is ungated. Signal fires identically in all regimes per design. No regime-gated variants per POST-A2.3."

@@ -87,3 +87,11 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Holdout-contaminated backtest runs, quarantined 2026-07-26 (dispatch W5).
+# Two run dirs whose declared range crosses holdout_range's 2026-01-01 start
+# (campaign_data_policy.yaml:holdout_contaminated_runs). Moved here intact, never
+# deleted. Excluded from publication for the same reason holdout_sealed/ is: these
+# outputs already consumed holdout bars, and the pre-commit content gate would
+# reject them anyway. Chronology: the runs PREDATE the seal by ~90 minutes.
+strategy-research/quarantine/holdout_contaminated/

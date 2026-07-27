@@ -1,0 +1,37 @@
+status: "spec_ready"
+config:
+  regime_detector:
+    mode: "threshold_rules"
+    components:
+      - id: "dummy"
+        class: "strategies.strategy_components.BuyAndHoldStrategy"
+    rules:
+      - regime: "active"
+        any_of:
+          - - id: "dummy"
+              op: "gte"
+              value: 0.0
+    default_regime: "unknown"
+  strategies:
+    warmup: 51
+    regimes:
+      active:
+        components:
+          - id: "ema_spread"
+            class: "strategies.strategy_components.EMASpreadComponent"
+            params:
+              fast_period: 9
+              slow_period: 21
+              scaling_factor: 5.0
+            weight: 1.0
+            lookback: 500
+            transforms:
+              - op: "identity"
+      unknown: null
+config_rationale:
+  - "EMA component: EMASpreadComponent(fast_period=9, slow_period=21, scaling_factor=5.0) directly implements hypothesis signal: (fast_ema - slow_ema) / slow_ema × 100 quantifies consensus strength and predicts 1–4 bar continuation"
+  - "Ungated activation: Regime detector routes all bars to 'active' regime via always-true rule (BuyAndHoldStrategy dummy ≥ 0.0), enabling continuous 95% activation per hypothesis; no regime filtering applied"
+  - "Transform pipeline: identity transform preserves raw spread signal (output ≈ ±10, within forecast range [−20, +20]); no normalization or filtering needed for ungated, continuous activation design"
+  - "Regime structure: Single 'active' regime with EMASpreadComponent; default_regime='unknown' ensures signal fires only when 'active' (always, in this config); inert regimes set to null per reference"
+  - "Minimal design: Single-component ensemble validates pipeline and existing EMASpreadComponent without new code; suitable for regression test and framework shakedown per brief"
+component_gap: null

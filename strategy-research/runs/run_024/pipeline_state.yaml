@@ -1,0 +1,127 @@
+run_id: run_024
+status: active
+current_stage: campaign_review
+pending_stage: completed_refined
+completed_stages:
+- hypothesis_generation
+- innovation_expansion
+- validation
+- backtest_specification
+- protocol_execution
+- verdict_interpreter
+- campaign_review
+artifacts: {}
+governance:
+  max_hypothesis_variants_per_cycle: 3
+  max_refinements_after_validation: 2
+  max_reruns_after_analysis: 1
+  max_required_reads_per_stage: 3
+counters:
+  refinements_used: 0
+  reruns_used: 0
+flags:
+  holdout_reserved: false
+  validation_approved: true
+  screening_passed: false
+  walk_forward_passed: false
+last_summary: null
+audit_log:
+  hypothesis_generation_attempt_0:
+    timestamp: '2026-06-28T12:00:49.500739+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 28.96
+    cost_usd: 0.0232855
+    tokens:
+      input: 10
+      output: 2180
+      cache_read: 25185
+      cache_creation: 6112
+      total: 33487
+  innovation_expansion_attempt_0:
+    timestamp: '2026-06-28T12:01:57.115855+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 67.57
+    cost_usd: 0.04583575
+    tokens:
+      input: 10
+      output: 6169
+      cache_read: 25185
+      cache_creation: 7281
+      total: 38645
+  validation_attempt_0:
+    timestamp: '2026-06-28T12:03:31.423500+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 94.25
+    cost_usd: 0.062480499999999994
+    tokens:
+      input: 10
+      output: 9642
+      cache_read: 25185
+      cache_creation: 6952
+      total: 41789
+  backtest_specification_attempt_0:
+    timestamp: '2026-06-28T12:09:27.042909+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 96.52
+    cost_usd: 0.08289225
+    tokens:
+      input: 10
+      output: 10294
+      cache_read: 25185
+      cache_creation: 14575
+      total: 50064
+  verdict_interpreter_attempt_0:
+    timestamp: '2026-06-28T12:21:48.647758+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 139.96
+    cost_usd: 0.11964549999999999
+    tokens:
+      input: 10
+      output: 13323
+      cache_read: 25185
+      cache_creation: 24172
+      total: 62690
+  campaign_review_attempt_0:
+    timestamp: '2026-06-28T12:27:08.221724+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 43.97
+    cost_usd: 0.030395400000000003
+    tokens:
+      input: 10
+      output: 4381
+      cache_read: 34164
+      cache_creation: 0
+      total: 38555
+updated_at: '2026-06-28T12:31:05.255155+00:00'
+injected_human_context:
+  v1_diagnostic_result: 'ROOT CAUSE FOUND: default_regime must be ''unknown'' (not
+    ''trending''). atr_multiplier must be 2.0 (not 1.5). No new components needed.'
+  required_config_constraints: 'Generate ONE config only (V1 exact replication of
+    run_017). Parameters:
+
+    - default_regime: "unknown"   (CRITICAL — do NOT set to "trending")
+
+    - atr_multiplier: 2.0         (CRITICAL — do NOT use 1.5)
+
+    - ema_period: 20
+
+    - atr_period: 20
+
+    - scaling_factor: -20.0
+
+    - regime: trending (ER>=0.5 AND VR>=1.2, threshold_rules)
+
+    - timeframe: 1h
+
+    Do NOT add vetoes, do NOT set default_regime to any active strategy.
+
+    Do NOT generate V2/V3/V4 variants — they are not needed given V1 finding.
+
+    '
+  component_gap_resolution: No component gap. KeltnerBreakoutComponent with default_regime=unknown
+    is sufficient.
+last_error: "YAML parse error in campaign_review.yaml: while parsing a block mapping\n\
+  \  in \"<unicode string>\", line 16, column 5:\n      - forecast_corr_trend_runs_14_to_2\
+  \ ... \n        ^\nexpected <block end>, but found '<scalar>'\n  in \"<unicode string>\"\
+  , line 16, column 110:\n     ... 18, 0.0, 0.0136, 0.042, 0.0097] → no monotonic\
+  \ improvement; run_ ... \n                                         ^"

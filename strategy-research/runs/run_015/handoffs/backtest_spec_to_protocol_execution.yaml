@@ -1,0 +1,20 @@
+handoff_version: 1
+run_id: run_015
+from_stage: backtest_specification
+to_stage: protocol_execution
+assigned_engine: tool
+objective: 'Run the full walk-forward protocol against the emitted config, evaluated
+  against this hypothesis''s specific validation criteria.
+
+  '
+primary_input_artifact: runs/{run_id}/artifacts/candidate_strategy_config.json
+required_inputs:
+- path: artifacts/candidate_strategy_config.json
+  reason: the config to backtest
+- path: artifacts/validation_protocol.yaml
+  reason: hypothesis-specific success criteria for verdict evaluation
+deliverables:
+- protocol_result.yaml
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'false'

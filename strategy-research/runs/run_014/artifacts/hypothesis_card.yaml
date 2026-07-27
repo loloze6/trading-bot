@@ -1,0 +1,42 @@
+hypothesis_id: "V2 (H-RUN007 VR-relaxed)"
+
+thesis: >
+  RSI(14) oversold signal generates positive alpha in BTCUSDT 1h during mean-reversion 
+  regimes (ER ≤ 0.25, VR ≤ 1.00), driven by mean-reversion probability proportional 
+  to RSI distance below 50.
+
+rationale: >
+  V1 (VR ≤ 0.90, ER ≤ 0.25) achieved 51–60% win rate but only 14–21 trades, below 
+  30-trade minimum for Sharpe reliability. Root cause: VR ≤ 0.90 is active bottleneck. 
+  Relax VR to 1.00; admits neutral volatility (VR ≈ 1.0) without trend contamination. 
+  Expected outcome: trade_count → ≥30 while maintaining 51–60% win rate.
+
+signal_concept: >
+  RSIPullbackComponent: forecast = max(0, (50 - RSI14) / 50), long-only. Signal scales 
+  linearly with oversold distance below 50. Regime gate: fire only when ER ≤ 0.25 AND 
+  VR ≤ 1.00; zero forecast otherwise.
+
+target_market: BTCUSDT 1h
+
+timeframe: 1h
+
+assumptions:
+  - Mean-reversion regime occurs ≥30 times per dataset for statistical validity
+  - RSI < 50 correlates with reversion probability; E[return | RSI = x] monotonic in (50 - x)
+  - VR ≤ 1.00 excludes purely trending regimes while capturing neutral volatility
+  - Regime gate adds value; unconditional RSI-only signal underperforms
+  - Commission (0.1% × 2 round-trips ≈ 0.2%) does not erase alpha; breakeven win_rate ≈ 50%
+
+expected_failure_modes:
+  - VR ≤ 1.00 over-captures neutral bars; regime signal weakens; win_rate drops below 50%
+  - RSI signal has no edge in BTCUSDT; regime gate reduces noise but adds no fundamental alpha
+  - Commission + slippage drive effective win_rate below breakeven despite ≥50% nominal rate
+  - trade_count remains < 30 after VR relaxation; regime definition itself is insufficient
+
+success_criteria:
+  - Screening backtest (6-month): trade_count ≥ 30, win_rate ≥ 48%, Sharpe ≥ 0.8
+  - Walk-forward validation (holdout): trade_count ≥ 15, win_rate ≥ 45%
+
+kill_criteria:
+  - Screening: trade_count < 30 or win_rate < 45%; signals mechanism or regime insufficient
+  - Holdout: any criterion unmet; triggers pivot to alternative regime or signal redesign

@@ -1,0 +1,64 @@
+bug_superseded: true
+bug_superseded_note: >
+  F5 (2026-07-04): this verdict's primary_failure_mode diagnosis ("component
+  initialization failure... not signal quality") was directionally correct, but the
+  root cause is now precisely identified: FundingRateMeanReversionComponent's
+  confidence calculation (abs(funding_rate) / (self.threshold * 3.0)) divided by zero
+  whenever threshold=0.0 -- exactly this hypothesis's continuous-mode design -- silently
+  swallowed by main_strategy.update()'s broad exception handler (pre-F5b). Fixed in F5a;
+  F5c now routes this exact condition (active_n_bars=0) to a no_signal_artifact
+  engineering pause instead of a kill_no_ic verdict. This file is preserved for audit
+  trail; do not treat the verdict below as a real research finding. See the post-F5
+  relaunch trial for the actual result.
+hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+protocol_verdict: kill
+status: refine
+primary_failure_mode: "Component initialization failure: FundingRateMeanReversionComponent generated zero active bars across 16,032-bar prescreen window (forecast_sparsity_pct=100%, active_n_bars=0), preventing signal-quality evaluation."
+criteria_summary:
+  - criterion: "walk_forward Spearman IC > 0.05"
+    result: UNTESTED
+    reason: "Prescreen aborted at active_n_bars=0; no bars reached forecast-generation stage"
+  - criterion: "Sharpe > 0.5"
+    result: UNTESTED
+    reason: "Zero bars fired; Sharpe uncomputable"
+  - criterion: "trade_count >= 100 per window"
+    result: FAIL
+    actual_value: 0
+  - criterion: "max_drawdown < 30%"
+    result: UNTESTED
+    reason: "Zero bars fired"
+
+config_to_failure_map: "FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0) is configured to fire at all UTC 8h settlement boundaries (hour % 8 == 0) via aux_feeds: [funding_rate]. However, active_n_bars=0 across 16,032 bars indicates either: (1) aux_feeds funding_rate data not available/null, (2) settlement-bar detection logic failed, or (3) warmup=3 prevents settlement-bar forecast emission. This is an execution-layer problem, not a signal-quality problem."
+
+untested_criteria:
+  - "walk_forward Spearman IC > 0.05"
+  - "Sharpe > 0.5"
+  - "win_rate >= 0.52"
+  - "max_drawdown < 30%"
+
+proposed_change_dimension: "component_initialization_validation"
+hypothesis_family: "funding_rate_mean_reversion"
+
+altitude_justification: "Rule 6 analog (zero active bars, not regime starvation): active_n_bars=0, forecast_sparsity_pct=100.0%, ic_significance.p_value=1.0 (not computed) across 2024-01 to 2024-11 prescreen (16,032 bars). Expected ~1,000 settlement activations (3/day × 330 days); observed 0. This diagnostic points to component-level initialization failure (data unavailable or logic broken), not signal weakness. Refine to validate aux_feeds wiring and settlement-bar detection before rejecting the funding-rate mechanism."
+
+root_cause:
+  mechanism_failure: "insufficient_sample_inconclusive"
+  supporting_evidence: "prescreen_result: active_n_bars=0, forecast_sparsity_pct=100.0, ic_all_bars=null, n_bars_total=16032 across BTCUSDT and ETHUSDT prescreen windows (2024-01 through 2024-11, 1h timeframe). Component should fire ~3 times per 24h at UTC settlement boundaries (0, 8, 16h). Zero active bars across 11 months strongly indicates aux_feeds (funding_rate) data was not successfully merged, or settlement-hour detection logic never executed. This is distinct from 'signal has no correlation' — the signal never engaged."
+  confidence: "high"
+
+regime_attribution:
+  detector_confidence: "medium"
+  signal_performs_in_intended_regime: null
+  signal_performs_in_other_regimes: null
+  conclusion: "inconclusive_low_detector_confidence"
+
+trade_attribution: null
+
+prescreen_evidence:
+  ic_active_bars: null
+  ic_all_bars: null
+  forecast_sparsity_pct: 100.0
+  active_n_bars: 0
+  p_value: 1.0
+  edge_to_cost_ratio: null
+  route: "kill_no_ic"

@@ -1,0 +1,57 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER"
+variant_id: "V1-Base-Conservative"
+status: "spec_ready"
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: "er"
+        class: "strategies.strategy_components.EfficiencyRatioRegimeComponent"
+        params:
+          period: 24
+          smooth_period: 5
+      - id: "vr"
+        class: "strategies.strategy_components.VarianceRatioComponent"
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: "trending"
+        any_of:
+          - - id: "er"
+              op: "gte"
+              value: 0.50
+            - id: "vr"
+              op: "gte"
+              value: 1.20
+    default_regime: "trending"
+    vetoes: []
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: "keltner_mr"
+            class: "strategies.strategy_components.KeltnerBreakoutComponent"
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 2.0
+              scaling_factor: -20.0
+            weight: 1.0
+            lookback: 500
+            history_transforms: []
+            transforms:
+              - op: "identity"
+      mean_reversion: null
+      chop: null
+
+config_rationale:
+  - "Lower-band mean-reversion edge: KeltnerBreakoutComponent with scaling_factor=-20.0 inverts signal to fire on lower-band breaks (mean-reversion vs upper-band momentum)."
+  - "Signal conviction parameters: ema_period=20, atr_multiplier=2.0, scaling_factor=-20.0 match hypothesis prescription; atr_period=20 uses catalog default."
+  - "Regime gate (TRENDING): threshold_rules mode enforces ER≥0.50 AND VR≥1.20 conjunction; both indicators use catalog defaults (EfficiencyRatioRegimeComponent period=24, VarianceRatioComponent window=100)."
+  - "Inactive regimes (mean_reversion, chop): set to null to stay flat outside TRENDING, preserving hypothesis intent to trade only in trend-favorable conditions."
+  - "Signal pipeline: identity transform on KeltnerBreakoutComponent output (already in [-20,+20] via scaling_factor=-20.0); no normalization needed."
+  - "Ensemble weight: single component (weight=1.0); forecast clipped ±20 per engine spec."
+
+component_gap: null

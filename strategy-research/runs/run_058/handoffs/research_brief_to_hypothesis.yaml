@@ -1,0 +1,62 @@
+run_id: run_058
+from_stage: init
+to_stage: hypothesis_generation
+objective: Translate the research brief into a single, testable quantitative trading
+  hypothesis.
+primary_input_artifact: artifacts/research_brief.yaml
+required_inputs:
+- path: artifacts/research_brief.yaml
+  reason: Contains the base requirements, market universe, constraints, and research
+    goal.
+- path: ../../config/available_feeds.yaml
+  reason: 'A1.2: constrains which evidence_type values are testable. Must be read
+    before populating edge_source.evidence_type.'
+- path: ../../config/indicator_library.yaml
+  reason: 'Improvement 04: look up proposed indicator class before finalizing signal_concept.
+    Check regime_affinity, crowding_risk, prior campaign_empirical_results. Populate
+    library_lookup block in hypothesis_card.yaml.'
+optional_inputs:
+- path: artifacts/run_context.yaml
+  reason: Present on instrument escalation runs. Overrides the asset field in research_brief.yaml.
+    If present, all hypothesis artifacts must target run_context.target_symbol and
+    run_context.target_timeframe — not the asset listed in research_brief.yaml.
+- path: ../../feed_wishlist.yaml
+  reason: 'A1.2: append new feed requests here if a hypothesis requires an unavailable
+    feed.'
+- path: ../../campaign_knowledge_base.yaml
+  reason: 'A5.1: read coverage_matrix and exhausted_mechanisms before proposing a
+    hypothesis. Provides context on what has been tested and what mechanisms are closed.
+    If present, load the relevant slice (matching edge_source.category and timeframe).
+
+    '
+constraints:
+- Must not propose ideas that require replacing the whole existing bot architecture.
+- Do not write code.
+- Keep the mechanism explicit and interpretable.
+- 'IMPROVEMENT 01: populate edge_source BEFORE signal_concept. evidence_type must
+  be in available_feeds.yaml.available or requires_new_feed must be set.'
+- 'A1.3 anti-confabulation: specific_mechanism must name a measurable proxy in an
+  available feed.'
+- 'POST-A2.3: no regime-gated hypotheses in the run queue. Ungated formulations only.'
+- 'TOKEN LIMIT: Do not write conversational filler. Keep all rationale strictly mathematical
+  and limit text descriptions to under 100 words per section.'
+- 'KB EXHAUSTED-CHECK (A5.1): if campaign_knowledge_base.yaml is present, check exhausted_mechanisms
+  BEFORE proposing. Must not propose any mechanism whose id appears in that list.
+  If the proposed mechanism overlaps with a KB entry that has outcome=no_edge_observed
+  and exhausted=true, state why the new formulation differs structurally (different
+  evidence_type, timeframe, or venue) — or choose a different mechanism.
+
+  '
+- 'POWER PRE-REGISTRATION (A8.6): populate power_parameters in hypothesis_card.yaml
+  — activation_rate (fraction of bars where signal fires), plausible_ic_upper (literature
+  upper bound for this signal class), n_bars (bars in test window), n_symbols, is_market_wide
+  (true if signal is a single index like F&G). This block is used by the automated
+  power check before the prescreen runs.
+
+  '
+deliverables:
+- hypothesis_card.yaml
+assigned_engine: claude
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'false'

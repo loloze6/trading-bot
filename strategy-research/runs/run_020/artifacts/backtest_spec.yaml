@@ -1,0 +1,55 @@
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: trending
+        any_of:
+          - - id: er
+              op: gte
+              value: 0.50
+            - id: vr
+              op: gte
+              value: 1.20
+    default_regime: unknown
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: rsi
+            class: strategies.strategy_components.RSIPullbackComponent
+            params:
+              period: 14
+              scaling_factor: 0.4
+              long_only: false
+            weight: 1.0
+            lookback: 500
+            transforms:
+              - op: identity
+              - op: threshold_filter
+                params:
+                  min_abs: 17.5
+      mean_reversion: null
+      chop: null
+      unknown: null
+config_rationale:
+  - "RSI extremes (>70 short, <30 long): RSIPullbackComponent computes (50−RSI)×scaling_factor, naturally generating long signals on oversold (<30) and short signals on overbought (>70)"
+  - "Scaling factor 0.4: RSIPullbackComponent param scaling_factor=0.4 produces raw output ≈[−20, +20] when RSI varies 0–100"
+  - "Min absolute magnitude ≥17.5: threshold_filter op with min_abs=17.5 (V1 primary variant per validation_protocol); retains only extreme RSI extremes, filters noise"
+  - "TRENDING regime activation (ER≥0.50, VR≥1.20): threshold_rules condition detects efficient trending market using EfficiencyRatioRegimeComponent and VarianceRatioComponent"
+  - "Out-of-regime forecast=0.0: all non-trending regimes (mean_reversion, chop, unknown) set to null; default_regime=unknown ensures bars failing TRENDING rule yield forecast 0.0"
+  - "No history-based normalization: raw signal post-scaling_factor already in target [-20, +20] range; identity transform confirms explicit intent to avoid ratio_to_mean or percentile normalization"
+  - "Variants V2/V3/V4 (min_abs=16.5/18.0/16.0) are secondary probes per validation_protocol; backtester will sweep all four thresholds on walk-forward folds to measure sensitivity"
+component_gap: null

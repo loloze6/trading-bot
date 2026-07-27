@@ -1,0 +1,17 @@
+hypothesis_id: RUN017_REPLICATION_DIAGNOSTIC_V1
+what_failed:
+  - "Sharpe (median across walk-forward windows) >= 0.6 on OOS period"
+  - "Win rate >= 50% on OOS period"
+  - "Trade count >= 20 total across OOS window"
+diagnostic_rule_applied: "Rule 4 (regime uninformative): trending regime listed in uninformative_regimes;\
+  \ detailed inspection reveals forward_return_mean = -0.0000976 (2024-06), -0.00237\
+  \ (2024-07), -0.00134 (2024-08) despite ER/VR triggers, confirming regime mislabels\
+  \ market state on this instrument"
+diagnostic_snapshot:
+  forecast_return_corr: null
+  cost_drag_pct: null
+  gross_pnl: null
+what_not_to_try:
+  - "Do not apply keltner_threshold_regime signal further on current instrument — regime/signal\
+    \ failure confirmed"
+next_altitude: escalate

@@ -1,0 +1,20 @@
+strategy_domain: crypto_spot
+market_universe:
+  - BTCUSDT
+timeframe: 1h
+constraints:
+  - use_existing_backtest_framework
+  - prefer_minimal_code_changes
+  - use_existing_strategy_architecture
+  - no_paid_data
+  - standard_ohlcv_data_only
+research_goal: >
+  Identify a volume-confirmed momentum or mean-reversion anomaly on BTCUSDT spot
+  that delivers robust, risk-adjusted profitability (e.g., Out-of-Sample Sharpe > 1.2,
+  low max drawdown) and maintains statistical significance across both TRENDING and
+  RANGING market regimes, without overfitting to recent price action.
+existing_context:
+  - advanced_strategy_with_regime_detection_exists
+  - sub_strategy_components_exist
+  - simulate_command_already_runs
+  - post_backtest_summary_already_exists

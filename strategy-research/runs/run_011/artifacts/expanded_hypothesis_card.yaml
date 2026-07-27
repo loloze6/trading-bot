@@ -1,0 +1,54 @@
+base_hypothesis_id: H-RUN007
+expansion_constraint: one_variant_only
+expansion_status: constraint_honored
+
+variants:
+  V1:
+    variant_id: H-RUN007-V1
+    variant_label: Conservative_RSIPullback_MeanReversion
+    
+    thesis: |
+      RSI(14) distance from 50 generates positive expected returns in BTCUSDT 1h
+      when market is in mean_reversion regime (ER ≤ 0.20, VR ≤ 0.90).
+    
+    signal_concept: |
+      RSIPullbackComponent: long-only, proportional to RSI distance below 50.
+      Forecast = max(0, (50 - RSI) / 50) * scaling_factor.
+      Zero forecast when RSI ≥ 50. No divergence detection, no behavioral overlays.
+    
+    regime_filter: |
+      mean_reversion only: ER ≤ 0.20 AND VR ≤ 0.90.
+      Produces zero forecast in all other regimes (trending, high-vol, choppy).
+    
+    mechanism: |
+      Low-efficiency, low-volatility regimes exhibit mean-reverting price behavior.
+      RSI below 50 signals technical oversold condition without trend confirmation.
+      Forecast magnitude proportional to |RSI - 50| captures reversion opportunity size.
+    
+    component_architecture:
+      primary_component: RSIPullbackComponent
+      regime_detectors: ER (efficiency ratio), VR (volatility ratio) — existing
+      new_code_required: false
+      cross_component_fusion: none
+    
+    assumptions:
+      - Mean reversion regime occurs with frequency ≥ 15% of periods
+      - RSI distance from 50 correlates positively with reversion probability
+      - Regime classification lag within acceptable bounds (< 1–2 candles)
+      - Commission cost per rebalance < expected edge
+    
+    expected_failure_modes:
+      - Regime detector lags actual transitions; signal catches reversals after cost
+      - RSI edge is spurious even in mean-reversion regime
+      - Rebalance frequency erodes positive expected value via commission
+      - Mean reversion regime rarity limits statistical power
+    
+    test_gate:
+      screening_backtest_duration: 2000 candles
+      success_criteria:
+        sharpe_ratio: "> 0.5"
+        max_drawdown: "< 15%"
+        min_trade_count: ">= 10"
+
+variant_count: 1
+variants_generated: [V1]

@@ -1,0 +1,61 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 47
+review_timestamp: "2026-07-05T17:52:03.446517+00:00"
+
+postscript_annotation_2026_07_05: >
+  This review's own suspicion was correct and has now been root-caused (F4d):
+  run_047's prescreen silently used protocols/baseline_v1.json (2024-01 to
+  2024-11) instead of the pre-registered backward-extension range, AND the
+  MANDATORY significance_methodology=episode_blocked_a851a was silently dropped
+  by backtest_specification. This was NOT "a data-loading or episode-blocked-
+  significance-calculation issue" in the sense of a transient bug to debug in
+  place -- it was a structural gap (nothing mechanically enforced the
+  pre-registered protocol range or methodology). See
+  campaign_knowledge_base.yaml finding funding_rate_mean_reversion_run047_invalidated
+  and campaign_state.yaml's run_047 trial (invalidated_artifact: true) for the
+  full record. Remediation: pre_registration.yaml now carries a
+  machine_constraints block that the orchestrator consumes directly (protocol
+  generation + significance_methodology injection), gated by a conformance
+  check before verdict_interpreter (test_prereg_conformance_gate.py). This
+  review's "continue" recommendation and untested_cells/combination_candidates
+  lists below are UNCHANGED in their substance (H-041-A's backward-extension
+  reactivation is still genuinely untested, now for a different, understood
+  reason) -- a corrected re-run under a fresh run_id is what "debugging run_047
+  prescreen blocker" (this review's own next-step #1) resolves to.
+
+kb_gate_answers:
+  untested_cells:
+    - "H-041-C (fear_greed_contrarian) on 2018+ backward-extension data range (scheduled, not yet run)"
+    - "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED on 4h timeframe bars (verdict_interpreter escalate verdict, not yet attempted)"
+    - "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED on daily timeframe bars (implied by escalate, lower priority than 4h)"
+    - "H-041-A on 4h timeframe (if extended-data 1h prescreen shows positive IC, test robustness on 4h; currently blocked by run_047 prescreen failure)"
+  exhausted_cells_forbidden:
+    - "keltner_mean_reversion_no_edge (outcome: no_edge_observed, root_cause: signal_quality per KB A5.2 reattribution)"
+    - "keltner_breakout_inverted (outcome: no_edge_observed, signal inversion — IC = -0.171)"
+    - "keltner_scoremode_no_edge (outcome: no_edge_observed, signal_quality)"
+    - "keltner_trend_mean_reversion_no_edge (outcome: no_edge_observed, same root_cause as keltner_mean_reversion)"
+    - "rsi_mean_reversion_no_edge (outcome: no_edge_observed, parameter space exhausted — terminal corr = -0.022)"
+    - "rsi_momentum_trending_cost_drag (outcome: no_edge_observed, cost_drag = 273%)"
+    - "er_detector_unusable_btc_eth_1h (outcome: unusable_for_this_symbol_timeframe, structural Pareto conflict)"
+    - "ema_spread_trend_continuation_v1_auto (outcome: no_edge_observed, already_priced_in, IC = -0.021)"
+  combination_candidates:
+    - "H-041-A (funding_rate extreme, ~1% activation) + H-041-C (fear_greed extreme, ~21% activation): Joint activation rare (~0.2%) but signal might amplify when both fire. Prerequisite: both must prescreen individually on 2018+ data first (H-041-A blocked by run_047 null IC; H-041-C not yet run). Not yet combinable."
+
+pattern_detected: same_root_cause_different_families
+
+pattern_evidence:
+  - "Price-only technical families tested and exhausted: Keltner (mean-reversion, trend_mean_reversion, breakout, scoremode) — 4 distinct hypotheses, all outcome=no_edge_observed"
+  - "RSI variants: rsi_mean_reversion (corr=-0.022, parameter space closed), rsi_momentum_trending (corr=0.018, cost_drag=273%)"
+  - "EMA_spread_trend_continuation: ic_all_bars=-0.021091 (p=0.5876), outcome=already_priced_in"
+  - "Unified root cause across all 7 technical families: signal_quality (no exploitable directional content on BTC/ETH 1h). Per KB finding ema_spread_trend_continuation_v1_auto, confidence=high that price-only technicals are universally-known signals already arb'd away on highly-liquid pairs."
+  - "Keltner ER-threshold regime detector explicitly exhausted: er_detector_unusable_btc_eth_1h, structural Pareto conflict between activation-band [10%-40%] and stability criterion (transitions≤4/window) prevents any configuration from satisfying both. Analytic proof (48-cell grid); evidence_count=1 per A5.1."
+  - "No sustained positive forecast_return_corr across any family. Highest values (0.2145, 0.2953) were regime-gated to <1% of bars with ic_active_bars=-0.032 (p=0.83, KB A5.2 reattribution from 'signal quality' misread as 'regime availability')."
+  - "Inconclusive structural families NOT in same pattern: H-041-A (underpowered n_eff=10, not no_edge), H-041-C (underpowered n_eff=13, not no_edge), FUNDING_RATE_CONTINUOUS (lag_mismatch escalate, not no_edge) — these are distinct findings with reactivation paths that have not been exhausted."
+
+recommendation: continue
+
+recommendation_rationale: "The campaign conclusively exhibits same_root_cause_different_families across price-only technical domain: Keltner, RSI, and EMA variants all fail with signal_quality (no directional content on liquid BTC/ETH 1h), confirming these signals are already priced in. This is structural and does not warrant further technical parameter tuning. However, the campaign's structural/behavioral signal families (H-041-A funding_rate, H-041-C fear_greed, FUNDING_RATE_CONTINUOUS) are NOT exhausted — they are inconclusive due to insufficient_sample on the 2024-2025 window only. The scheduled backward-extension pass (extending to 2018+) addresses this directly with expected n_eff ~50+ (vs current 10-13), putting these hypotheses into detectable-effect range (plausible_ic_range 0.05-0.20, min_detectable_ic at n_eff=50 ≈ 0.14, within range). Run_047's reactivation of H-041-A on extended data failed at prescreen with ic_pooled=null, indicating a data-loading or episode-blocked-significance-calculation issue, not a fundamental edge failure. The pending FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED timeframe escalation (4h bars) is also a distinct, untested cell addressing lag_mismatch feedback from verdict_interpreter. Continuing allows: (1) debugging run_047 prescreen blocker, (2) completing H-041-C reactivation on 2018+ data, (3) testing 4h timeframe for continuous funding signal — three high-information tests not yet explored."
+
+budget_assessment: "Runs used: 47 (including pre-Phase-A, pre-F1-F8 runs, and prescreen kills). No explicit hard campaign budget stated in campaign_state.yaml; review_every_n_runs=6 suggests 8-10 reviews across lifetime. At review 8, runs are allocated efficiently to sweep parameter space, then instrument space, then signal families. Remaining untested cells (H-041-C on 2018+, FUNDING_RATE_CONTINUOUS on 4h) are high-information (distinct mechanisms × timeframe scales). Recommend prioritizing thoroughness over speed: complete the backward-extension + escalation tests before reassessing. If those complete without positive IC, only then escalate to new instruments or declare structural limitations."
+
+next_research_question: null

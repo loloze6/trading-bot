@@ -1,0 +1,35 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 26
+pattern_detected: same_root_cause_different_families
+pattern_evidence:
+  - "Keltner families (mean-reversion, trend, breakout, scoremode) across runs 015-033 all failed; KB reattribution confirms root cause is signal_quality on regime-gated bars, not regime availability."
+  - "All Keltner TRENDING variants (runs 017, 024, 027, 033) produce identical forecast_return_corr=0.2145 but only on <1% of bars; full-range prescreen (run_039) reveals ic_active_bars=-0.032 (p=0.83, n_active=1125) — zero directional content."
+  - "RSI mean-reversion (run_014): corr=-0.0223, parameter space exhausted (smooth_period, er_threshold, vr_threshold terminal)."
+  - "RSI momentum trending (run_018): corr=0.018, cost_drag=272.865% — structural cost unviability regardless of signal quality."
+  - "Unifying root cause: ER-threshold regime detector is Pareto-blocked per run_039 grid search (activation/stability/transition tradeoff unresolvable). Regime-gating as an approach fails across all 6 signal families on BTC/ETH 1h."
+
+recommendation: continue
+recommendation_rationale: "The campaign correctly identified and reframed away from regime-gating (8 reframe pivots in altitude_history). The new ungated direction (runs 035-039, current brief run_044) shows measurable improvement on cost structure (cost_drag falling from 82% to 33%) despite weak IC, suggesting the structural problem (regime detector mismatch) has been addressed but signal-selection remains hard. Run_044 (FUNDING_RATE_CONTINUOUS) is a direct variant of power-parked H-041-A with ~8× higher activation rate on current window, offering adequate a-priori power (vs H-041-A at n_eff=10, run_044 estimated n_eff≈80 from 8-hourly settlement bars). The campaign has not exhausted the new search direction (1 prescreen pending), instruments (4/5), or component-building (0/1). Termination would be premature. Continue with run_044 diagnostics pending; if IC>0.05 p<0.10, proceed to full backtest. If run_044-046 all show IC<0.03, escalate to daily-timeframe regime overlay or alternative mechanism family (structural forced-flow other than funding, behavioral patterns beyond fear/greed)."
+
+budget_assessment: "Runs used: 30 equivalent (26 backtest + 4 prescreen). Estimated budget: 50 runs. Utilization: 60%. Recent shift to prescreen-only mode (041-044) has deferred expensive full backtests; maintain this filter for next 3-4 hypotheses. Recommend prioritizing speed over thoroughness: prescreen aggressively, backtest only IC>0.05. This preserves budget for backward-extension phase (H-041-A/C on 2018+ data) and alternative detector trials."
+
+kb_untested_cells:
+  - "FUNDING_RATE_CONTINUOUS on 4h and daily timeframes (currently 1h with 8h settlement bars only)"
+  - "EMA_SPREAD_TREND_CONTINUATION on 4h and daily (run_043 was 1h prescreen only)"
+  - "Behavioral signals (H-041-A funding extreme, H-041-C fear_greed) on backward-extended 2018+ window (currently underpowered on 2024-2025 only)"
+  - "Alternative regime detectors (ADX-based, HMM, daily-overlay) — ER-threshold exhausted per A2.3 policy; replacements deferred until ungated edge shows regime-conditional performance"
+  - "Cross-asset regimes (SP500, DXY overlay on crypto 1h) — not yet tested"
+
+kb_exhausted_cells:
+  - "Keltner mean-reversion (TRENDING regime, BTC/ETH 1h): ic_active_bars=-0.032 (p=0.83, n=1125 active bars)"
+  - "Keltner trend mean-reversion (TRENDING regime, BTC/ETH 1h): identical detector signal, ic_active_bars=-0.032"
+  - "Keltner breakout (TRENDING regime, BTC/ETH 1h): forecast_return_corr=-0.171, signal inversion (directional claim falsified)"
+  - "Keltner scoremode (TRENDING regime, BTC/ETH 1h): cost_drag=84%+ (analytic structural barrier, corr degrades on variant: 0.2953→0.0138)"
+  - "RSI mean-reversion (low-ER regime, BTC/ETH 1h): parameter space closed (3-dim grid exhausted), terminal corr=-0.0223"
+  - "RSI momentum trending (TRENDING regime, BTC/ETH 1h): cost_drag=273% (4.7× roundtrip cost barrier at signal frequency)"
+  - "ER-threshold single-indicator regime detector (BTC/ETH 1h): Pareto conflict (activation [10%,40%] vs transitions ≤4/window cannot coexist), best score 5/8, no further tuning permits recovery"
+
+kb_combination_candidates:
+  - "FUNDING_RATE_CONTINUOUS (run_044, ~8% activation at 8h boundaries) + EMA_SPREAD_TREND (run_043, activation TBD): Orthogonal mechanisms (structural payment pressure + technical momentum). If both prescreen IC>0.05, test joint activation gate (AND logic); expect reduction in false signals"
+  - "H-041-A (funding extreme) + H-041-C (fear_greed): Both require backward extension to 2018+ for power; correlated triggers (fear→funding flow correlation), not independently combinable. Consolidate in single backward-pass (scheduled post-build)"
+  - "Daily regime (ADX or HMM) + 1h ungated signal (FUNDING_RATE_CONTINUOUS): Meta-experiment after ungated edge confirmed; requires first establishing IC>0.03 on ungated baseline"

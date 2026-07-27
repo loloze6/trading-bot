@@ -251,6 +251,92 @@ binance_cache_holdout_contaminated:
     same decision for .env at commit fec0120. Not actioned here.
   status: excluded_from_publication_protocol_only_in_working_tree
 
+# Holdout-contaminated BACKTEST RUNS (quarantined 2026-07-26, dispatch W5). Two run
+# directories whose declared data range crosses the holdout_range (:18) start boundary.
+# Distinct from binance_cache_holdout_contaminated above: that entry covers INPUT cache
+# files, this one covers RUN OUTPUTS that already consumed holdout bars.
+#
+# CHRONOLOGY VERDICT: RUNS PREDATE SEAL. Measured 2026-07-26, not inferred:
+#   run created_utc (manifest.json)   : 2026-07-02T09:18:06Z and 2026-07-02T09:29:25Z
+#   engine git_sha the runs executed  : 5b39d142, dated 2026-06-30 17:40:45 +0200
+#   holdout_range first declared      : commit 410512a, 2026-07-02 12:52:46 +0200
+#                                       (= 10:52:46 UTC), which is also the commit that
+#                                       CREATED this file (git log --diff-filter=A).
+#                                       Confirmed earliest repo-wide via `git log -S`
+#                                       over --all for both 'holdout_range' and the
+#                                       literal '"2026-01-01", "2026-06-30"'.
+# The runs therefore precede the seal by ~1h34m and ~1h23m, and the code that produced
+# them predates the policy file by two days. This is NOT a violation of a rule in force
+# at the time -- no seal existed to violate. It is pre-seal contamination surfaced after
+# the fact. The bars are spent regardless: single-use is a property of the DATA, not of
+# the operator's intent, so holdout_failure_is_terminal (:199) reasoning still applies
+# to any future use of 2026-01-01 for these two symbol/config pairs.
+#
+# ROOT CAUSE (structural, not a one-off): the sweep that produced these emits monthly
+# tiles of the form [month M 00:00, month M+1 day 1 23:00] -- every tile deliberately
+# overspills 24 bars into the following month. All 24 sibling tiles per symbol share
+# this shape (verified across all 48 manifests carrying config_sha 18fad381). Only the
+# final 2025-12 tile lands that overspill inside holdout_range. The generator has no
+# clamp against the seal boundary; a future sweep extended by one month would breach
+# again by construction. Fixing that generator is NOT actioned here (out of dispatch
+# W5's write scope) -- filed as an open item.
+holdout_contaminated_runs:
+  quarantined: "2026-07-26"
+  quarantine_dir: strategy-research/quarantine/holdout_contaminated/  # gitignored
+  era: era_2026_holdout
+  chronology_verdict: runs_predate_seal
+  produced_utc: "2026-07-02"  # both runs; see per-run created_utc below
+  seal_declared: "2026-07-02T10:52:46Z"  # commit 410512a
+  declared_range: ["2025-12-01 00:00:00", "2026-01-01 23:00:00"]  # identical for both
+  breach_span: ["2026-01-01 00:00:00", "2026-01-01 23:00:00"]  # <=24 1h bars, day 1 of holdout
+  runs:
+    - run_id: 20260702T091806Z_18fad381
+      created_utc: "2026-07-02T09:18:06.908389+00:00"
+      symbol: BTCUSDT
+      timeframe: 3600s
+      declared_bar_count: 768  # whole tile; 744 in-sample (Dec) + <=24 in holdout
+      rows_in_holdout: 22  # as previously recorded in SESSION_LOG.md:2708-2709; NOT
+                           # re-measured here -- re-counting requires reading the
+                           # contaminated rows, which dispatch W5 forbids.
+      files: 7
+      bytes: 274748
+    - run_id: 20260702T092925Z_18fad381
+      created_utc: "2026-07-02T09:29:25.639140+00:00"
+      symbol: ETHUSDT  # NB: SESSION_LOG.md:2708 calls both runs BTCUSDT; the manifest
+                       # says ETHUSDT for this one. Manifest is authoritative.
+      timeframe: 3600s
+      declared_bar_count: 768
+      rows_in_holdout: 23  # same provenance/caveat as above
+      files: 7
+      bytes: 445376
+  config_sha256: 18fad381e4995a5b2716428ca838a299eff7809414de07d3dfc56abf1ae88c06
+  engine_git_sha: 5b39d1420fe8cb46dbb2916be8878eeff657446e
+  strategy_identity: >
+    threshold_rules regime detector (EfficiencyRatioRegimeComponent period=24 smooth=5,
+    VarianceRatioComponent k=5 window=100; trending iff er>=0.5 AND vr>=1.2) mapped to a
+    single KeltnerBreakoutComponent (ema=20, atr=20, mult=2.0, scaling=-20.0) on the
+    trending regime only; all other regimes null. This is the keltner_163 baseline_v2
+    family. Stated purpose: no purpose/description field exists in the manifest schema;
+    the runs are month-tiles of the sweep under protocol 20260702T091324Z_18fad381.
+  dangling_reference:
+    # NOT remediated (dispatch W5: no self-remediation). Recorded so the next operator
+    # inherits it explicitly rather than discovering it as a broken path.
+    parent_protocol: strategy-research/results/protocols/20260702T091324Z_18fad381/protocol_summary.json
+    cites_runs_at_lines: [1224, 2520]
+    consequence: >
+      The parent protocol_summary.json still references both run_ids, and its aggregate
+      necessarily incorporates their <=45 holdout bars. That protocol is load-bearing:
+      campaign_knowledge_base.yaml:73 stores it as the keltner_163 baseline_v2 artifact
+      set, campaign_state.yaml:478 rests a "do NOT re-open these families on baseline_v2"
+      decision on it, incident_20260710/campaign_knowledge_base.yaml.snapshot:39 mirrors
+      it, skills/verdict-interpreter/SKILL.md:518 teaches from it, and
+      tools/run_protocol.py:1173 uses it as a reproduction fixture. Quarantining the two
+      run dirs leaves those five references pointing at a protocol whose final tile is
+      now absent from results/runs/. Deciding whether the family-closing decision
+      survives a 45-bar contamination at the tail of a 768-bar-per-tile sweep is the
+      operator's call, not this dispatch's.
+  status: quarantined
+
 # A8.6 symbol_correlation supersession note (2026-07-22): config/campaign_config.yaml's
 # symbol_correlation block still holds ONLY the BTC/ETH pair (rho=0.82, n_eff~1.10) --
 # insufficient for a 4+ instrument cross-section per the XS_momentum brief's own

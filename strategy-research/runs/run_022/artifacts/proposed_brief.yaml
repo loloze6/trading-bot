@@ -1,0 +1,65 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER-PIVOT-RSI-v2"
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "4h"
+
+research_question: |
+  Do mean-reversion signals generate positive risk-adjusted returns (Sharpe ≥ 0.3) in
+  BTCUSDT/ETHUSDT 4h when market exhibits STRONG TRENDING (ER ≥ 0.60, VR ≥ 1.35)?
+  
+  Previous run revealed RSI mean-reversion failed at 4h with median_sharpe=-2.86 (BTC) and -4.262 (ETH),
+  primarily because regime thresholds (ER≥0.50, VR≥1.20) were too loose, capturing low-confidence trending
+  bars with forward_return_mean ≈ 0. Raise ER/VR thresholds to filter for high-confidence trending only,
+  isolating whether mean-reversion edge exists in genuinely-trending subsets or if timeframe/instrument
+  combination is structurally unsuitable.
+
+signal_concept: |
+  RSI(period=14) mean-reversion component unchanged. Long when RSI < 30, short when RSI > 70.
+  Forecast scaling and threshold_filter(min_abs=8.0) retain previous configuration.
+  Signal component is not the hypothesis variable; regime definition is.
+
+regime_filter: |
+  STRONG TRENDING regime: ER ≥ 0.60 AND VR ≥ 1.35 (raised from ER ≥ 0.50 AND VR ≥ 1.20).
+  Elevated thresholds filter out marginal-trending bars with zero or negative forward_return_mean.
+  Expected impact: ~40-50% reduction in regime-qualifying bars, but remaining bars should
+  exhibit positive forward_return_mean supporting mean-reversion mechanism.
+
+mechanism: |
+  Previous run (V3-ESCALATE-4H-KELTNER-PIVOT-RSI): RSI mean-reversion at 4h with loose regime thresholds produced:
+  - Median Sharpe: -2.86 (BTC), -4.262 (ETH)
+  - Median correlation: 0.042 (statistically insignificant across windows)
+  - Trending regime forward_return_mean: near zero or negative, indicating regime captures non-trending noise
+  
+  Root cause hypothesis: current regime thresholds label consolidation/low-volatility moves as "trending"
+  when market has no directional bias. RSI oversold/overbought signals are noise within regime-misclassified bars.
+  Example: ETHUSDT-2024-05 (corr=-0.1729, cost_drag=33.2%, gross_pnl=-104.8) trades mean-reversion within
+  regime that has negative forward_return, causing systematic losses.
+  
+  Action: Raise ER to ≥0.60 and VR to ≥1.35 to select bars where trend is definitive. Fewer regime-firing bars
+  (~15-20/month instead of 27-39/month), but higher-quality signal from RSI within them.
+
+assumptions:
+  - "RSI mean-reversion mechanism is sound; Keltner→RSI pivot test showed signal, not component, was Keltner-specific issue."
+  - "Regime selectivity is primary tuning lever; threshold tightness controls regime quality."
+  - "Raising ER by 20% (0.50→0.60) and VR by 12.5% (1.20→1.35) maintains regime intent while filtering noise."
+  - "Trade count will decline to ~15-20/month, reducing statistical power slightly but improving signal-to-noise within each trade."
+
+expected_failure_modes:
+  - "Trade count falls below 25 minimum per window, invalidating statistical basis for correlation testing."
+  - "Even with tighter regime, forward_return_mean remains near-zero due to 4h timeframe mismatch; true mean-reversion edge only exists at 1h or 1d resolution."
+  - "Correlation still < 0.03 with new thresholds, indicating mean-reversion (any form) absent at 4h in these symbols, regardless of regime selectivity."
+
+constraints:
+  - "Timeframe: 4h (locked from escalation decision)."
+  - "Signal component: RSI(period=14) with threshold_filter(min_abs=8.0) (unchanged)."
+  - "Regime mode: threshold_rules (unchanged); only threshold parameter values ER and VR modified."
+
+change_from_previous: |
+  Regime thresholds raised from (ER≥0.50, VR≥1.20) to (ER≥0.60, VR≥1.35).
+  
+  Rationale: Previous run's 'trending' regime was uninformative (forward_return_mean≈0 or negative across all 12 windows).
+  Two independent signal families (Keltner, RSI) both failed at 4h within same loose regime, indicating regime definition,
+  not signal family, is the failure point. Raising selectivity filters to high-confidence trending bars only.
+  
+  Expected outcome: If median_sharpe improves to ≥0.3 with new regime, strategy is viable and future work refines
+  thresholds further (altitude 1). If median_sharpe < -1, escalate to regime mode swap (threshold_rules → score_mode)
+  or instrument-level testing (different symbols or new component).

@@ -1,0 +1,10 @@
+hypothesis_id: "RUN017_REPLICATION_REFINE_02"
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+research_question: "Does KeltnerBreakout with bracketed ER threshold (ER >= 0.42) reduce cost_drag below 150% and restore positive Sharpe by cutting trade frequency ~25%?"
+signal_concept: "KeltnerBreakoutComponent: ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0 (unchanged from RUN017_REPLICATION_REFINE_01)."
+regime_filter: "TRENDING, threshold_rules. ER >= 0.42 (bracketed midpoint between too-tight 0.50 and too-loose 0.35), VR >= 1.20 (unchanged). Estimated regime exposure: ~30-35% of bars, reducing cumulative trades to ~250-300 across walk-forward windows (~30% reduction vs prior run)."
+constraints:
+  - "KeltnerBreakout component parameters must remain exact (ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0)."
+  - "Timeframe: 1h. Assets: BTCUSDT, ETHUSDT."
+change_from_previous: "Raised ER threshold from 0.35 to 0.42 (bracketed midpoint: (0.50 + 0.35) / 2 = 0.425, rounded to 0.42). Rationale: Prior run at ER=0.35 over-traded a weak signal (gross_pnl=9.38, cost_drag=413%), producing catastrophic Sharpe (-6.791). The signal itself earns a small positive edge, but excessive trade frequency destroys it via fees. Increasing ER to 0.42 reduces regime firing from ~40-45% to ~30-35% of bars, cutting cumulative trades by ~25-30% while preserving the testing scope (still below baseline 0.50). Expected outcome: cost_drag < 150%, Sharpe >= -1.0, setting up for altitude 2 evaluation if needed."

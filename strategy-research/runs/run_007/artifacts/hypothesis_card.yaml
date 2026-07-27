@@ -1,0 +1,33 @@
+hypothesis_id: H-RUN007
+
+thesis: RSI(14) below 50 generates positive alpha in BTCUSDT 1h when the market exhibits mean-reversion regime characteristics (ER ≤ 0.20, VR ≤ 0.90).
+
+rationale: |
+  Mean-reversion regime (low directional efficiency, contained volatility) isolates periods where RSI oscillations 
+  align with price reversion cycles rather than trending moves. Signal strength proportional to (50 - RSI) assumes 
+  reversion probability increases with oversold depth. Regime filter eliminates false RSI signals during directional trends 
+  where RSI lags. Expected mechanism: in low-efficiency markets, extreme RSI (<50) indicates temporary microstructure imbalance, 
+  not persistent direction.
+
+signal_concept: |
+  RSIPullbackComponent (long-only):
+  - Input: RSI(14) on 1h close, regime classification (ER/VR)
+  - Rule: if regime = mean_reversion: forecast = (50 - RSI) / 50, clipped to [0, 1]
+  - else: forecast = 0.0
+  - Single component, no divergence detection, no behavioral features
+
+target_market: BTCUSDT
+timeframe: 1h
+
+assumptions:
+  - Mean-reversion regime occurs ≥20% of time to achieve statistical significance
+  - RSI distance below 50 positively correlates with price reversion probability in low-ER markets
+  - Regime classification (ER/VR thresholds) reflects market state with ≤1-2 candle lag
+  - Long-only bias does not induce systematic drawdown vs. neutral allocation during trending regimes
+
+expected_failure_modes:
+  - Regime classification lag causes false entry during regime transition (mean-reversion → trending)
+  - RSI cyclicality decouples from price reversion if volatility persists despite low ER
+  - Historical backtest bias: correlation may not persist in walk-forward or live periods
+  - RSI threshold (50) may be misaligned for crypto; requires calibration on validation set
+  - Oversold depth as a probability proxy may be nonlinear; simple linear scaling may underfit

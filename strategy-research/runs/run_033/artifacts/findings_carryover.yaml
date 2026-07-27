@@ -1,0 +1,18 @@
+hypothesis_id: "RUN017_REPLICATION_DIAGNOSTIC"
+what_failed:
+  - "sharpe >= 0.5 (actual: 0.0)"
+  - "trade_count >= 100 (min: 0 in multiple ETHUSDT windows)"
+  - "win_rate >= 0.52 (ETHUSDT: 0.0%, BTCUSDT: 22.22%)"
+diagnostic_rule_applied: "Rule 4: Regime uninformative due to threshold selectivity. Trending regime enters uninformative_regimes list. Trade scarcity prevents statistical validation despite positive signal correlation when regime fires."
+diagnostic_snapshot:
+  median_forecast_return_corr: 0.2145
+  median_cost_drag_pct: 27.446
+  median_gross_pnl: 0.0
+  uninformative_regimes: ["unknown", "trending"]
+  regime_firing_rate_observed: "~25% (trending fires 2-6 months per 12-month window)"
+what_not_to_try:
+  - "Do not pivot signal: KeltnerBreakout demonstrates edge in 2024-06 (corr=0.625, +3.46% net) and 2024-07 (corr=0.709, +0.14% net after high drag). Signal is not the failure."
+  - "Do not abandon regime: Regime structure is valid; definition parameters need adjustment, not replacement."
+  - "Do not focus on cost_drag: 27.4% median is reasonable for crypto. Gross PnL starvation (0.0 median) is sample-size problem, not drag problem."
+next_altitude: "refine"
+parameter_bracket: null

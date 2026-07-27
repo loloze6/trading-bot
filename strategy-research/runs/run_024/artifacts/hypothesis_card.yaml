@@ -1,0 +1,48 @@
+hypothesis_id: POSITION_SIZING_TIMEFRAME_COUPLING
+thesis: Run_017's exceptional cost efficiency (27.45% cost_drag) results from implicit coupling between position sizing and 1h rebalance frequency. Identical signal+regime at 4h (run_021) produces 15x cost increase (413.05%), indicating execution efficiency is timeframe-dependent, not signal-quality-dependent. Position sizing model contains an undiscovered timeframe dependence or rebalance frequency relative to regime window is the critical control variable.
+
+rationale: |
+  Run_017 (1h, Keltner+TRENDING): cost=27.45%, corr=0.2145, baseline
+  Run_021 (4h, Keltner+TRENDING): cost=413.05%, corr=0.0136, 15x cost penalty
+  Run_022 (1h replication): cost=82.10%, corr=0.042, weaker but not catastrophic
+  
+  15x cost increase with identical signal/regime parameters rules out signal deterioration.
+  1h replication weaker (0.042 vs 0.2145) suggests window-averaging or regime-phase dependency,
+  not a signal collapse. The cost structure vs timeframe is the only variable that explains
+  both the 1h edge and the 4h catastrophe.
+
+signal_concept: |
+  Diagnostic decomposition, not signal innovation.
+  Compare run_017 vs run_021 vs run_022 execution logs:
+  - trade_count per regime_window_duration
+  - avg_position_size_pct relative to regime phase
+  - fee_pct per trade (should be identical, but verify)
+  - regime_stability: phase duration, regime_transition_count
+  - rebalance_events per regime_window (critical: check if 4h regime windows contain
+    proportionally fewer or more rebalance triggers than 1h)
+
+target_market: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+regime_filter: "TRENDING (ER>=0.50, VR>=1.20, identical to run_017)"
+
+assumptions:
+  - Cost differences (27.45% vs 413.05%) are structural, not statistical noise (15x spread is far beyond backtest variance)
+  - Keltner signal quality is stable across timeframes (identical parameters)
+  - TRENDING regime detection is sound; failure is in execution, not regime logic
+  - Position sizing model is deterministic; any timeframe effect is implicit in rebalance cadence or position sizing algorithm
+  - Run_022's weaker 1h correlation (0.042 vs 0.2145) reflects full-window averaging over mixed regime phases, not edge degradation
+
+expected_failure_modes:
+  - Run_017's 27.45% edge is backtest-window-specific luck; decomposition shows no structural difference from other runs
+  - TRENDING regime has zero or negative forward returns; all edges are false positives from regime cherry-picking
+  - Cost differences are purely trade_count variation driven by signal signal-quality, not by position sizing or rebalance frequency
+  - Rebalance frequency is constant across timeframes; cost efficiency comes from Keltner signal filtering alone
+  - Position sizing is correct; cost increase at 4h is because Keltner bands deteriorate at longer timeframes (signal quality issue, not structural)
+
+success_criteria:
+  - Identify which metric (trade_count, position_size_pct, fee_pct, or rebalance_frequency) differs most between run_017 and run_021
+  - If position_size_pct is the differentiator, confirm whether sizing model has implicit timeframe dependence in the codebase
+  - If rebalance_frequency is the differentiator, measure rebalance events per regime_window_duration; confirm 4h regime windows have proportionally more or fewer rebalances than 1h windows
+  - Run_022 replication validates whether 1h edge is repeatable (even if weaker); if run_022 cost is <50%, edge is real and diagnostic is justified
+
+next_stage: validation_gate (post-diagnostic backtest execution)

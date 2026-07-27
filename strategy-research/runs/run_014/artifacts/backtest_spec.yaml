@@ -1,0 +1,42 @@
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params: {period: 24, smooth_period: 5}
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params: {k: 5, window: 100}
+    rules:
+      - regime: mean_reversion
+        any_of:
+          - - {id: er, op: lte, value: 0.25}
+            - {id: vr, op: lte, value: 1.00}
+    default_regime: mean_reversion
+  strategies:
+    warmup: 51
+    regimes:
+      mean_reversion:
+        components:
+          - id: rsi
+            class: strategies.strategy_components.RSIPullbackComponent
+            params: {period: 14, scaling_factor: 0.4, long_only: true}
+            weight: 1.0
+            lookback: 500
+            transforms:
+              - {op: ratio_to_mean}
+              - {op: scale, params: {factor: 10.0}}
+      trending: null
+      chop: null
+      unknown: null
+
+config_rationale:
+  - 'ER ≤ 0.25 AND VR ≤ 1.00 regime gate → regime_detector.rules: condition set [ER lte 0.25, VR lte 1.00] routes bars to mean_reversion'
+  - 'RSI(14) oversold signal proportional to (50-RSI) distance → RSIPullbackComponent(period=14, scaling_factor=0.4) computes (50-RSI)×0.4 with output range [0,20]'
+  - 'Signal normalized and scaled into ensemble range [-20,20] → transforms: ratio_to_mean(history) normalizes by RSI signal history, scale(factor=10) standard ensemble magnitude'
+  - 'long_only=true enforces oversold-only (RSI<50) signals → clamped ≥0, producing max(0, (50-RSI)×0.4) matching hypothesis directional constraint'
+  - 'Mean-reversion regime exclusive (trending/chop/unknown null) → hypothesis specifies RSI alpha only in low-ER/low-VR bars; default_regime=mean_reversion is fallback per specification'
+
+component_gap: null

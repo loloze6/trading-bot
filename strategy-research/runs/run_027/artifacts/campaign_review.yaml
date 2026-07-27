@@ -1,0 +1,17 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 15
+pattern_detected: converging
+pattern_evidence:
+  - run_017 shows all passing metrics: forecast_return_corr=0.2145, cost_drag=27.4%, win_rate_vs_sharpe=both PASS or N/A
+  - run_024 replicates run_017 signal (corr=0.2145, cost_drag=27.4%) but with diminished win_rate_vs_sharpe verdict
+  - run_025 attempts further parameter optimization (regime_rule_logic tuning) but regresses (corr=0.0824, cost_drag=39.3%)
+  - all runs with high cost_drag (>100%) show either negative corr or near-zero corr; only low-cost runs (cost_drag<40%) retain signal strength
+  - no improvements found beyond run_017 baseline at 1h timeframe across 8 subsequent 1h runs (017-025)
+recommendation: continue
+recommendation_rationale: "The campaign has converged on a viable edge: Keltner mean-reversion at 1h with TRENDING regime (run_017: corr=0.2145, cost_drag=27.4%, win_rate PASS). The sparsity (2.5 trades/window) is the limiting factor preventing Sharpe reliability in monthly windows. The planned 4h escalation test (research_brief.yaml) is the natural frontier: same signal, larger timeframe to expand trade count without adding signal complexity or relaxing regime filters (both of which explode cost_drag in prior families). The previous 4h attempt (run_021) failed due to default_regime=trending config bug; this is the first clean 4h test. Runs 024-025 show that 1h parameter space has been locally saturated—optimization on 1h alone is now declining. Proceed to 4h escalation (run_027). If 4h replicates run_017's metrics (corr>0.15, cost_drag<80%), the edge is timeframe-stable and tradeable. If 4h fails, escalate_component (different signal family) or escalate_instrument (new pair)."
+budget_assessment: "15 runs used; campaign budget unknown (assume 25-30 min, 50+ max). At ~50-60% utilization. Sufficient margin for 4h test + 1-2 escalation options if needed. Prioritize 4h test (highest information value) before parallel instrument exploration."
+notes:
+  - runs 011-013 contaminated by config_path bug (invalid cross-run comparison; directional conclusions only)
+  - run_021 contaminated by default_regime=trending bug (cost_drag=413% spurious; signal never fairly tested at 4h)
+  - original research_question (RSI in mean_reversion regime) has been effectively falsified; pivot to Keltner in TRENDING regime (not mean_reversion) is the working direction
+  - cost_drag explosion pattern consistent across all families attempting to increase trade frequency (runs 014, 016, 018, 021, 023); suggests execution cost is the bottleneck, not signal discovery

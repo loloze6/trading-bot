@@ -1,0 +1,42 @@
+hypothesis_id: "V1-PIVOT"
+protocol_verdict: "refine"
+status: "refine"
+criteria_summary:
+  - criterion: "approval_gate_1: sharpe >= 0.5"
+    result: "FAIL"
+    actual_btc: -2.944
+    actual_eth: -2.715
+    required: ">= 0.5"
+  - criterion: "approval_gate_2: win_rate >= 0.50"
+    result: "PASS"
+    actual_btc: 49.72
+    actual_eth: 53.61
+    required: ">= 50"
+  - criterion: "approval_gate_3: trade_count >= 30"
+    result: "PASS"
+    actual_btc: 70
+    actual_eth: 96
+    required: ">= 30"
+  - criterion: "approval_gate_5: max_drawdown_pct <= 15.0"
+    result: "FAIL"
+    actual_btc: 31.368
+    actual_eth: 32.102
+    required: "<= 15.0"
+  - criterion: "rejection_gate_1: forecast_return_correlation <= 0.0 in hold-out"
+    result: "UNTESTED"
+    reason: "no hold-out split provided in results"
+  - criterion: "Forecast-to-return correlation > 0 in validation/hold-out, not training"
+    result: "UNTESTED"
+    reason: "no hold-out window reported separately"
+  - criterion: "No look-ahead in ATR or EMA calculation"
+    result: "UNTESTED"
+    reason: "implementation not inspected"
+primary_failure_mode: "Cost drag exceeds 185% of gross PnL; signal produces weak positive gross profit but transaction costs destroy all net returns"
+config_to_failure_map: "Keltner band width (ATR multiplier 1.5) generates excessive breakout triggers; each trade incurs bid-ask spread and taker fee (median 2 taker fees per round-trip) but individual mean-reversion bounces too small to justify frequency"
+untested_criteria:
+  - "rejection_gate_1: hold-out correlation split not computed"
+  - "Forecast-to-return correlation stratified by train vs validation window"
+  - "No look-ahead bias verification in rolling ATR/EMA"
+proposed_change_dimension: "band_width"
+hypothesis_family: "keltner_mean_reversion"
+altitude_justification: "Rule 1: cost_drag_pct=185.32% > 80%, gross_pnl=62.84 > 0 — signal is directionally profitable but fees dominate. Reduce trade frequency by widening Keltner bands (ATR multiplier: 1.5 → 2.0) to target only the strongest pullbacks; this should improve Sharpe without abandoning the working signal direction."

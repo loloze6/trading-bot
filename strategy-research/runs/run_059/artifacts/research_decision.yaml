@@ -1,0 +1,42 @@
+hypothesis_id: "run_059-funding-mr-daily-retest-v1"
+decision: kill
+
+rationale:
+  - "Pre-registered pass_rule criterion (a) FAIL: median_sharpe=-0.296 (BTCUSDT), -0.979 (ETHUSDT) vs threshold > 0.8"
+  - "Pre-registered pass_rule criterion (b) FAIL: max_abs_drawdown_pct=34.922% (BTCUSDT), 49.606% (ETHUSDT) vs threshold < 30%"
+  - "Pass_rule outcome mapping (pre_registration.yaml): 'ANY criterion FAIL on EITHER symbol → kill, terminate'"
+  - "Confirmed by diagnostics: median_gross_pnl=-41.7122 (negative), per_trade_expectancy_bps=-38.47 (t=-1.509, n=699, not significant), forecast_return_corr=0.047 (marginal, insufficient for edge detection after costs)"
+  - "Research hypothesis falsified: Funding-rate sign-flips encode no structural mean-reversion edge on daily OHLCV bars over pass-gated 2019-12..2023-12 evaluation window for either BTCUSDT or ETHUSDT"
+  - "Escalation exhausted: Per research_brief.yaml reactivation_condition and KB entry funding_rate_continuous_mean_reversion_expanded_auto, this daily-bar retest is 'the mechanism's LAST escalation' (no further timeframe exists). Kill terminates lineage; no pivot/escalate available."
+
+findings_archive:
+  evaluation_window: "pass_gated 2019-12-01 to 2023-12-31 (49 monthly windows per protocol)"
+  btcusdt:
+    median_sharpe: -0.296
+    max_abs_drawdown_pct: 34.922
+    median_cost_drag_pct: 6.5689
+    win_rate_net_pct: 41.67
+    min_trade_count: 1
+    zero_trade_slot_pct: 0.0
+    trade_count_cumulative: "~340 (estimated from 699 pooled / 2 symbols)"
+  ethusdt:
+    median_sharpe: -0.979
+    max_abs_drawdown_pct: 49.606
+    median_cost_drag_pct: 6.5689
+    win_rate_net_pct: 35.29
+    min_trade_count: 1
+    zero_trade_slot_pct: 0.0
+    trade_count_cumulative: "~359 (estimated from 699 pooled / 2 symbols)"
+  pooled_metrics:
+    median_forecast_return_corr: 0.047
+    median_gross_pnl: -41.7122
+    per_trade_expectancy_bps:
+      mean: -38.4665
+      se: 25.4911
+      t_stat: -1.509
+      n: 699
+    sparse_windows_below_floor_pct: 30.61
+    holding_period_p50_bars: 48
+    pnl_concentration_worst_decile_pct: 313.58
+  cost_feasibility_assessment: "marginal per validation_protocol: estimated_gross_edge_bps=(5–15) vs required_round_trip_cost_bps=[17.0, 17.5]; realized edge_to_cost_ratio << 1.0, confirmed by negative gross PnL"
+  mechanism_failure_classification: "already_priced_in (funding-rate sign-flip mechanism lacks detectable mean-reversion edge on daily holding window; settlement-driven impulse resolves too quickly relative to 24-hour bar holding window)"

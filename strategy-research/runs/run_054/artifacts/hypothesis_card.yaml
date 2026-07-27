@@ -1,0 +1,92 @@
+hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+thesis: "Time-series momentum on daily bars: close > SMA(100) signals trend persistence."
+rationale: >
+  Daily bars aggregate information over multi-week windows (~5 months for SMA(100)),
+  reducing noise compared to 1h. Round-trip costs (~17 bps) are amortized over
+  multi-week holds, making structural edge defensible. Time-series momentum (trend-following)
+  is a persistent behavioral bias: after trend confirmation (close > SMA), traders and
+  algorithms continue momentum. Shakedown (2024 data) validated pooled_ic=0.0359 (p=0.004),
+  confirming directional content over both symbols.
+
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: >
+    Traders and algorithms exhibit persistent trend-following behavior: after price closes
+    above the 100-day moving average (multi-week trend confirmation), momentum persists as
+    new entrants chase the established direction, creating measurable continuation. The edge
+    is structural (incentive-driven) and recurs across market regimes.
+  why_not_arbitraged: >
+    At daily resolution, execution costs (~17 bps round-trip) consumed by one multi-week hold
+    eliminate same-day reversal arbitrage. The bias persists because: (1) trend-following is
+    self-reinforcing (new highs attract followers, reinforce trend), (2) institutional rebalancing
+    anchors to recent momentum, (3) retail momentum followers are a constant market feature,
+    (4) multi-week holding period makes high-frequency arbitrage infeasible.
+  evidence_type: price_volume_only
+  measurable_proxy: >
+    close > SMA(100) entry signal deterministically activates. Mechanism predicts: when
+    close > SMA (trending regime), returns are positively correlated with the signal; when
+    close < SMA (flat/declining regime), no directional prediction. SMA crossing distinguishes
+    these two states unambiguously.
+
+signal_concept: >
+  Entry: when close of bar N > SMA(100), enter long at next-bar open (bar N+1). Exit: when
+  close of bar M ≤ SMA(100), close position at next-bar open (bar M+1). Position sizing: equal
+  weight across BTCUSDT and ETHUSDT. No shorts; flat when close ≤ SMA(100). Engine caveat: this
+  backtester fills at bar close, not next-bar open—see strategies/strategy_components.py::SmaTrendLongOnlyComponent
+  docstring for the one-bar-lag approximation actually used.
+
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+
+timeframe: 1d
+
+assumptions:
+  - SMA(100) is a valid multi-week trend proxy on daily bars for BTC/ETH (100-day window ≈ 5 months)
+  - Next-day open execution is feasible at retail scale
+  - Trend-following behavior persists across 2018-2025 market regimes (bull, bear, sideways)
+  - Historical data is representative of future behavior
+  - Transaction costs remain ~17 bps round-trip for entry/exit
+
+expected_failure_modes:
+  - "Regime instability: edge may flip polarity in certain eras (similar to H-041-C pattern). Mitigation: A8.5.1a per-era breakdown in prescreen to confirm pooled result is not era-conditional."
+  - "Crowding/arbitrage: adoption by quantitative traders degrades edge over time. Mitigation: track forecast_return_corr trajectory for early decay signal."
+  - "Execution slippage: next-day open at market may experience worse fills in low-liquidity periods. Mitigation: cost_edge_to_cost_ratio must hold post-slippage."
+  - "SMA lag: 100-bar window is backward-looking; entry may be late in fast moves. Signal fires consistently; test reveals whether continuation persists despite lag."
+  - "Whipsaw in sideways markets: close oscillating around SMA(100) triggers frequent entry/exit. Mitigation: signal_sparsity metric reveals % active bars; cost_drag will show structural failure if whipsaw is severe."
+
+library_lookup:
+  indicator_id: moving_average_crossover
+  regime_affinity_for_target: favorable
+  affinity_justification: >
+    SMA trend-following is favorable in trending regimes. At daily resolution, BTC/ETH
+    have persistent trends and fewer regime switches than 1h. Prior 1h price-technicals
+    (run_043 EMA spread, run_053 MACD) showed no edge due to high-frequency arbitrage.
+    Daily timeframe has weaker crowding and longer trend persistence, reducing arbitrage
+    impact. The affinity is favorable despite textbook-status because execution at
+    daily bars is structurally different from 1h arbitrage windows.
+  prior_campaign_failures:
+    - "run_043 (ema_spread_trend_continuation_v1_auto, 1h, ic_all_bars=-0.021, no_edge_observed)"
+    - "run_053 (macd_trend_continuation_extended_2018_2025, 1h, ic_all_bars=-0.015, no_edge_observed)"
+  crowding_risk: medium
+  crowding_deviation_justification: >
+    SMA(100) is widely known, but daily execution is less crowded than 1h. Shakedown
+    pooled_ic=0.0359 (p=0.004) shows measurable directional content despite crowding,
+    validating that daily timeframe offers material edge not present at 1h where the
+    same indicator family failed.
+  mechanism_purity_check: pass
+
+power_parameters:
+  activation_rate: 0.45
+  plausible_ic_upper: 0.06
+  n_bars: 2023
+  n_symbols: 2
+  is_market_wide: false
+  power_note: >
+    A-priori power: expected_n_eff = 0.45 × 2023 × 2 / 24 ≈ 76; min_detectable_ic ≈ 0.115.
+    Shakedown was well-powered (pooled_ic=0.0359, p=0.004, n_active≈2000 bars across both
+    symbols over 11-month 2024 window), so full-range registration trial will be well-powered.
+    Block_bootstrap_all_bars_v1 methodology (pre-registered in protocols/ts_trend_daily_v1.json)
+    has lower MDE than Bonferroni, improving power detection. Plausible_ic_upper=0.06
+    is anchored in upper "Dense OHLCV, high crowding" range (MA crossover is textbook)
+    with downward adjustment for daily resolution weaker crowding vs. 1h.

@@ -1,0 +1,11 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 20
+pattern_detected: search_space_narrowing
+pattern_evidence:
+  - "Four runs (017, 024, 027, 032) achieved cost_drag_pct 27-31% using identical Keltner config; early runs (014-021) ranged 25-420%"
+  - "forecast_return_corr consistency in low-cost cluster: 0.2145 (run_017) → 0.2145 (run_024) → 0.2145 (run_027) → 0.215 (run_032). Reproducible within 0.002 variance."
+  - "Search direction: narrowed from 7 distinct hypothesis families (rsi_mean_reversion, keltner_breakout, keltner_mean_reversion, rsi_momentum_trending, keltner_trend_mean_reversion, keltner_scoremode, etc.) to one reproducible variant (Keltner ema_period=20, atr_period=20, atr_multiplier=2.0 with TRENDING regime filter)"
+  - "Replication diagnostic validates edge: run_032 output (cost=30.59%, corr=0.215) confirms run_017 not an outlier"
+recommendation: continue
+recommendation_rationale: "The campaign shows clear narrowing from broad parameter and family experimentation to a specific, reproducible signal. Early runs (014-021) exhibited scattered diagnostics with cost_drag_pct spanning 25-420% and forecast_return_corr from -0.17 to 0.30. Recent runs (017, 024, 027, 032) cluster at cost 27-31% and corr 0.21-0.22, indicating the search has compressed into a region with consistent, low-friction diagnostics. The replication diagnostic (run_032, first execution of current research_brief) reproduces the exact Keltner config from run_017 and achieves corr=0.215, cost=30.59%—validating reproducibility. Although Sharpe ratio continues to fail, this failure is decoupled from signal quality (positive corr) and cost efficiency (<31%)—suggesting the issue is trade execution timing or volatility regime sensitivity, not the fundamental approach. Continue replication diagnostics to establish confidence in reproducibility across market windows, then investigate Sharpe-corr decoupling (e.g., trade clustering, peak-to-trough timing)."
+budget_assessment: "20 runs completed of estimated 45-50 campaign budget (40%). Recommend continuing with thoroughness priority: execute 2-3 additional replication diagnostics under the run_017 exact config to establish statistical confidence in the low-cost + positive-corr envelope before escalating to component-level innovation."

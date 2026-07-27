@@ -1,0 +1,36 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 50,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "sma_trend",
+            "class": "strategies.strategy_components.GatedSmaTrendLongOnlyComponent",
+            "params": {
+              "lookback_L": 100,
+              "scaling_factor": 10.0,
+              "er_period": 20,
+              "gate_threshold": 0.3
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

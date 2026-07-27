@@ -1,0 +1,67 @@
+hypothesis_id: H-RUN007-V1-RSI-PULLBACK-MR
+
+falsifiable_statement: |
+  In BTCUSDT 1h, mean-reversion regime (ER ≤ 0.20, VR ≤ 0.90), the strategy 
+  forecast = max(0, 50 - RSI(14)) / 100 produces in-sample Sharpe ≥ 0.5, 
+  52% win rate, max DD < 10%, and walk-forward Sharpe ≥ 0.4 with decay < 15%.
+
+null_expectation: |
+  RSI proximity to 50 in any regime carries zero alpha. Strategy achieves 
+  statistical parity with random entry at threshold levels.
+
+required_evidence:
+  - Regime thresholds (ER ≤ 0.20, VR ≤ 0.90) locked before backtest initiation
+  - Regime model trained on walk-forward in-sample window only (no leakage from future ER/VR)
+  - RSI(14) lookback confined to historical bars; no candle-completion circularity
+  - Minimum 30 mean-reversion regime candles per walk-forward window (stat power for 52% win rate)
+  - Slippage and commission assumptions documented and applied uniformly
+  - Backtest date range specified in advance; no post-selection optimization
+  - All 4 acceptance criteria must pass (Sharpe, win rate, DD, decay); no trade-offs
+
+bias_risks:
+  - Selection bias: BTCUSDT and 1h chosen after exploration; cross-asset/timeframe generalization unknown
+  - Look-ahead bias: Regime flags (ER/VR) computed over full sample; walk-forward test must rebuild regime in-sample
+  - Circularity: ER/VR derived from same price data as RSI; regime and signal coupling risk
+  - Threshold arbitrariness: RSI = 50 and Sharpe ≥ 0.5 are convention/results-driven, not derived
+  - Multiple comparisons: 4 acceptance thresholds + 9 failure modes inflate p-hacking surface
+  - Time-of-day effect: 1h candles span all sessions; MR behavior diverges by zone
+  - Regime persistence: MR clusters may produce correlated signals; effective sample size < candle count
+
+failure_modes:
+  - Regime definition is unstable; ER/VR thresholds do not reliably isolate mean-reversion periods across market conditions
+  - RSI(14) computation leaks future data into candle decision; 14-bar lookback conflates N-1 regime label with N data
+  - Mean reversion absent in filtered regime; price deviation is noise, not signal; convergence < 1h window
+  - Forecast scaling arbitrary; max(0, 50 - RSI) / 100 shows no edge vs linear RSI or 30/70 bands
+  - Execution cost (slippage + commission) exceeds thin edge from MR capture in low-volatility regime
+  - Regime clusters; MR regime spans 4+ consecutive hours, producing 16+ overlapping long signals with false diversification
+  - Sample size insufficient; MR regime represents ~10-15% of data, leaving < 50 regime-filtered trades in in-sample window
+  - Overfitting to acceptance thresholds; Sharpe ≥ 0.5 chosen post-hoc from backtest results
+  - Behavioral tail risk: MR breaks during high-vol events; strategy concentrates losses in regime transitions
+
+sample_split_design:
+  training_window:
+    size: 60% of historical data
+    purpose: Regime model training (locked thresholds, no signal optimization)
+    output: ER ≤ 0.20, VR ≤ 0.90 regime flags only
+  walk_forward_window:
+    size: 20% of data
+    windows: Minimum 3 disjoint windows
+    requirement: Each window must contain ≥ 30 mean-reversion regime candles
+    output: Sharpe ≥ 0.4, decay < 15%, in-sample regime model only
+  holdout_window:
+    size: 20% of data
+    requirement: No threshold adjustment post-walk-forward
+    output: Final validation Sharpe ≥ 0.5, 52% win rate
+  date_order: No look-ahead; regime trained before walk-forward evaluation date
+
+decision_rules:
+  - All 4 acceptance criteria must reach thresholds simultaneously (no trade-offs)
+  - Walk-forward Sharpe decay must be provably < 15% (not ≤ 15%)
+  - Regime-filtered sample size triggers hard stop if < 30 candles per window
+  - If decay 15-20%, hypothesis enters "refine" (weaker model generalization)
+  - If any single criterion fails at holdout, decision reverts to reject (no recovery)
+
+testability:
+  integration_effort: Minimal — RSIPullbackComponent slot into existing pipeline; no new regime logic
+  configuration_change: Single YAML entry (regime thresholds, RSI params, allocation rules)
+  blockers: None identified if conditions enforced

@@ -1,0 +1,44 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 14
+pattern_detected: same_root_cause_different_families
+pattern_evidence:
+  - "Runs 014–024 tested 6 distinct signal families across RSI and Keltner variants"
+  - "Run_017 (Keltner mean-reversion + threshold_rules): corr=0.2145, cost_drag=27.45% — ONLY CLEAN PASS in the campaign"
+  - "Run_024 (Keltner trend_mean_reversion, identical signal structure): corr=0.2145 (IDENTICAL), cost_drag=27.45% (IDENTICAL), but sharpe FAILS — suggests variance/sample-size issue, not signal failure"
+  - "Run_021 (same Keltner family as run_017): cost_drag exploded to 413.05% (+1400% delta). Root cause: threshold_rules default_regime=unknown when TRENDING gate fails"
+  - "Run_023 (reframed research, cost_drag=420.19%): catastrophic cost explosion, same root cause as run_021"
+  - "Cost drag bimodality across all runs: 25–28% (runs with selective TRENDING gating) vs 82–420% (runs trading chop/unknown regimes). Volatility in cost suggests regime classification, not signal quality, is the failure point"
+  - "Threshold_rules TRENDING gate (ER≥0.5, VR≥1.2) fires 2–23 bars/month: too sparse for sharpe calculation reliability (run_024 proof: correlation replicates, sharpe fails)"
+  - "Root cause: binary regime gating is too restrictive (sparsity) or too permissive (when default_regime or chop regimes trade, cost_drag explodes). Multi-family pattern confirms structural regime architecture issue, not signal exhaustion"
+
+recommendation: continue
+recommendation_rationale: |
+  The signal itself is validated: Keltner mean-reversion achieves forecast_return_corr=0.2145 consistently
+  (run_017 and run_024, identical correlation despite 7 runs apart). The failure mode is regime architecture.
+  Threshold_rules binary TRENDING gate with ER≥0.5, VR≥1.2 produces 2–23 bars/month—insufficient for
+  sharpe reliability—and non-TRENDING bars (default_regime or chop when miscalculated) drive cost_drag to
+  413–420% when traded. The research_brief proposes score_mode regime detection with continuous ER/VR scoring
+  and position-size scaling by regime confidence. This directly addresses the bimodal cost failure: all bars
+  get a regime assignment and trading signal, but low-confidence bars stay downsized, preventing the
+  all-or-nothing cost explosion. Run_025 with score_mode is the critical next test. Success criteria:
+  forecast_return_corr>0.15, cost_drag<100%, sharpe>0.5 on ≥50 bars/fold. If score_mode cost_drag still
+  explodes (≥200%), fall back to 4h timeframe (run_020 diagnostics already identified this path: regime
+  stability improves 4–5× with longer bars, raising bars-per-fold from 2–23 to 50+).
+
+budget_assessment: |
+  Runs used: 14 / estimated 25-run campaign budget ≈ 56%. Remaining: ~11 runs.
+  Recommendation: Prioritize run_025 (score_mode, addresses identified root cause). If successful,
+  conduct walk-forward validation (2–3 runs). If run_025 cost_drag exceeds 200%, escalate immediately to
+  4h timeframe (run_026). This sequence (score_mode test → 4h if needed) consumes 2–4 runs and is the
+  highest-information-density use of remaining budget. Avoid further 1h refinement after 4h test;
+  if both fail, campaign should terminate (instruments_tried=2, components_built=1, no positive
+  forecast_return_corr in untested space).
+
+search_space_status: |
+  Instruments tried: BTCUSDT, ETHUSDT (2 of 3)
+  Components built: Keltner mean-reversion (1 of 3 typical)
+  Regimes tried: threshold_rules (ER/VR binary, exhausted); score_mode (next); 4h timeframe (fallback)
+  Signal families exhausted at 1h: rsi_mean_reversion, keltner_breakout, rsi_momentum_trending,
+  keltner_trend_mean_reversion. These did not fail due to signal weakness; they failed due to regime
+  gating (sparsity or cost explosion). No escalation to new signal component needed until score_mode
+  + 4h timeframe both fail.

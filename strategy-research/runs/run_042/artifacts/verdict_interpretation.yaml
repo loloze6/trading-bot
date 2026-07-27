@@ -1,0 +1,89 @@
+run_id: run_042
+hypothesis_id: H-041-C
+verdict_label: insufficient_sample_inconclusive
+written_at: "2026-07-03"
+
+prescreen_result_summary:
+  ic_active_bars: 0.190476
+  p_value: 0.5469
+  n_eff: 13
+  active_n: 316
+  route: kill_no_ic  # automated tool output
+  cost_pass: true
+  edge_to_cost_ratio: 3.7545
+
+verdict_rationale: >
+  IC = 0.1905 is in the expected positive direction (fear→long predicts positive returns),
+  consistent with the contrarian mechanism. However, p = 0.547 is far from the significance
+  threshold. Per the pre-registration statistical power note: n_eff = 316/24 ≈ 13, SE ≈ 0.28.
+  To reach p < 0.10, we needed |IC| > 0.46. The observed IC of 0.19 is 0.68 SE from zero —
+  clearly within noise. The cost gate passes (ratio=3.75), but the IC gate fails.
+  Per pre-registration: verdict is 'insufficient_sample_inconclusive' when IC > 0 but
+  not significant due to insufficient power. This is NOT a 'kill_no_ic' (which requires
+  IC ≤ 0 or significance trivially far off). The mechanism is undetermined, not falsified.
+
+pre_registration_check:
+  claim_a_shift_weakens_ic:
+    satisfied: false
+    shifted_ic: 0.190476
+    unshifted_ic: 0.140005
+    delta: 0.050471
+    se: 0.2773
+    delta_in_se_units: 0.18
+    interpretation: >
+      Shifted IC is slightly higher than unshifted IC (delta=0.050, 0.18 SE). This
+      technically violates the claim but is well within sampling noise. No mechanistic
+      interpretation possible at n_eff=13. Claim is inconclusive due to power, not
+      genuinely contradicted. See unshifted_comparison.yaml.
+
+  claim_b_price_baseline_comparison:
+    required: false
+    timing_note: >
+      Per pre-registration: "This comparison is required if the prescreen routes to
+      'proceed_to_backtest'. If prescreen kills, the comparison is optional (informational only)."
+      Prescreen killed — comparison not performed. If hypothesis is reactivated with
+      more data, price-reversal baseline IC must be computed before crediting sentiment.
+
+  claim_c_a8_4_reverification:
+    triggered: true
+    trigger_value: "ic_active_bars=0.190476 > 0.15"
+    result: PASS
+    detail: "See a8_4_reverification.yaml — no bugs found. IC attributable to noise at n_eff=13."
+
+trial_count: 1
+parameterization: "fear_threshold=25, greed_threshold=75 (pre-registered, not adjusted)"
+
+disposition: parked_insufficient_sample
+disposition_rationale: >
+  IC is in the expected direction but sample is too small for the signal frequency
+  (daily signal on 2-year window → n_eff≈13). Condition-based reactivation applies.
+
+reactivation_trigger: >
+  Data extension to 2018+. F&G has existed since 2018; a 7-year window (2018-2025)
+  yields ~2555 daily readings, active_n ≈ 557 (21.8% × 2555), n_eff ≈ 557/24 ≈ 23
+  per symbol. Two symbols: n_eff ≈ 46 → need |IC| > 0.15 for p < 0.10.
+  This is within the plausible IC range for this signal class and the pre-registered
+  mechanism would be properly testable.
+
+  NOTE: Additional symbols do NOT materially increase power for F&G. The index is
+  market-wide (single signal for all crypto), so BTC and ETH next-bar returns are
+  highly correlated under the same F&G reading. Adding symbols increases active_n but
+  not n_eff (effective independent observations). History is the binding resource.
+
+  Data extension is scheduled as a consolidated backward-extension pass (after remaining
+  build steps); do not start ad hoc. Do NOT retune the 25/75 thresholds on new data
+  without registering as H-041-C-v2 per A8.5.3.
+
+do_not_add_to_failed_families: true
+
+campaign_trial_record:
+  trial_id: run_042
+  hypothesis_id: H-041-C
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  note: >
+    Killed at prescreen gate (IC not significant). No backtest run.
+    Cost gate passed (ratio=3.75), so cost structure is viable if IC can be confirmed
+    on a larger sample.

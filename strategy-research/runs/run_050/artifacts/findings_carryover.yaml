@@ -1,0 +1,38 @@
+hypothesis_id: "H-041-A"
+
+what_failed:
+  - "IC significance gate: ic_all_bars=0.000822, p=0.521 >> 0.10 threshold (Rule 2 trigger: weak signal, IC<0.03)"
+  - "Cost feasibility gate (Layer 2): edge_to_cost_ratio=0.7368 << 2.0 required; prescreen cost_check.pass=false"
+
+diagnostic_rule_applied: "Rule 2: abs(forecast_return_corr) < 0.03 AND p_value > 0.10 — signal does not predict price direction (ic_all_bars=0.000822, ic_active_bars=0.017764, p=0.521, n_episodes=139)"
+
+diagnostic_snapshot:
+  forecast_return_corr_all_bars: 0.000822
+  forecast_return_corr_active_bars: 0.017764
+  p_value: 0.521
+  ci_low: -0.032205
+  ci_high: 0.066036
+  cost_drag_pct: 135.7
+  gross_pnl: null
+  edge_to_cost_ratio: 0.7368
+  n_episodes_pooled: 139
+  n_bars_total: 110904
+  forecast_sparsity_pct: 98.3
+  ic_by_era_sample:
+    "BTCUSDT::era_2019_2023_full_feed": 0.025498
+    "ETHUSDT::era_2019_2023_full_feed": 0.007172
+    "BTCUSDT::era_2024_2025_walk_forward_extension": "(null - n_episodes=1, too sparse)"
+    "ETHUSDT::era_2024_2025_walk_forward_extension": 0.123718
+
+what_not_to_try:
+  - "FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0) on 4h BTCUSDT/ETHUSDT: tested across 139 pooled episodes (7-year sample, 2019–2025) with ic_all_bars=0.0008, p=0.521; do not retry this exact venue/timeframe/config combination."
+  - "Parameter refinement (threshold or scaling_factor tuning) on 4h: the zero IC is structural (constant across historical and recent eras, both symbols), not a threshold-calibration problem. Raising/lowering threshold will not recover signal direction."
+  - "Regime-gating on 4h: the ungated IC is already zero; gating to subsets of bars will not create informational content where the ungated signal has none."
+
+next_altitude: "pivot"
+
+parameter_bracket: null
+
+escalation_notes: null
+
+carryover_instruction: "Next pivot should test FundingRateMeanReversionComponent on a different timeframe, NOT parameter variants on 4h. Recommended: 8h timeframe (aligns 1:1 with 8h UTC funding settlement boundaries, eliminating alias lag inherent to 4h candles aligned to 00:00/08:00/16:00 settlement windows). If 8h also shows ic < 0.03, the structural mechanism is ruled out at canonical funding-settlement boundaries, and escalation to a different structural signal family or instrument becomes warranted. Do NOT kill this family prematurely; the mechanism is structural (documented in research), but the 4h venue/timeframe may be structurally misaligned."

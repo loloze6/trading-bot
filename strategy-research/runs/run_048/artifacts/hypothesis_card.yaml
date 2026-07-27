@@ -1,0 +1,52 @@
+hypothesis_id: H-041-C
+thesis: "Extreme crowd sentiment (Fear & Greed Index < 25 or > 75) marks crowded one-directional positioning; prices mean-revert as sentiment normalizes, producing directional edge via contrarian positioning."
+rationale: "Persistent behavioral bias: market participants overreact to extreme fear/greed and build crowded positions that unwind predictably. Prior run (run_042, 2024-2025 window) showed IC=0.19 in the correct direction but insufficient sample (n_eff=13, p=0.547). Data extension to 2018-2025 (F&G available since Feb 2018) yields ~557 active signal days per symbol, expected n_eff≈46 with 2-symbol pool; sufficient to detect plausible_ic=0.15 at p<0.10. Reactivation tests the IDENTICAL mechanism and thresholds on extended historical data — no parameter re-tuning per A8.5.3."
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "Extreme Fear & Greed readings (< 25 or > 75) reflect crowded positioning; as sentiment index mean-reverts toward neutral (50), crowded traders liquidate and prices revert. Measurable proxy: daily F&G value (0–100 scale); mechanism predicts negative correlation between F&G extremeness (|F&G - 50|) and next-day/multi-day returns in opposite direction to sentiment."
+  why_not_arbitraged: "Sparse activation (~200 signal days per year across 2 symbols): arbitrage capacity at daily-signal frequency is limited. F&G publishes once daily at fixed UTC time (00:00); global traders face staggered execution relative to sentiment realization. Market-wide shared signal (low specialization) but liquidity-constrained execution depth per sentiment event limits competition. Cost drag is the binding constraint, not mechanism saturation."
+  evidence_type: fear_and_greed
+  measurable_proxy: "Daily Fear & Greed index published by alternative.me (integer 0–100). Signal activation: day i if F&G[i] < 25.0 or F&G[i] > 75.0. Return measurement window: 12–48 hours post-signal. Directionality: F&G < 25 (extreme fear, long forecast); F&G > 75 (extreme greed, short forecast)."
+  requires_new_feed: null
+
+signal_concept: "FearGreedContrarianComponent(fear_threshold=25.0, greed_threshold=75.0, scaling_factor=10.0) fires at UTC hour==0 boundary bar when daily F&G index < 25.0 (forecast=+10.0) or > 75.0 (forecast=-10.0); all other bars produce forecast=0. Ungated per A2.3: regime_detector.rules=[], default_regime='mean_reversion'. Configuration is REUSED VERBATIM from run_042 — no parameter variants per reactivation constraint."
+
+target_market: "BTC/USDT and ETH/USDT (Binance 1h perpetuals). F&G index is market-wide (single global index); applied identically to both symbols. Returns are ~0.82-correlated under same signal."
+
+timeframe: "1h candles. Daily sentiment signal fires at UTC 00:00 bar; forecast holds across all 24 bars in that calendar day until next signal."
+
+assumptions:
+  - "Fear & Greed index is available daily from 2018-02-01 through 2025-12-31 (7-year history, ~2555 calendar days, ~557 extreme-sentiment days per symbol when tested)."
+  - "F&G < 25 and > 75 thresholds remain psychologically meaningful and stable regime markers across 2018–2025 market structures (no re-calibration of thresholds on new data per A8.5.3)."
+  - "Mean-reversion impulse materializes within 12–48 hours after sentiment extreme (1h to 48h bars); execution slippage at 00:00 UTC entry and multi-hour holding period do not eliminate net edge."
+  - "BTC/ETH 1h liquidity is sufficient to absorb position sizes implied by ~200 signal fires per symbol per year without material market impact."
+  - "Backfilled 2018+ F&G data is accurate and free from look-ahead bias or publication delays."
+
+expected_failure_modes:
+  - "Structural flows dominate in sub-periods: 2018-2020 (high leverage, exchange insolvency risk, thin retail order books) may exhibit liquidation cascades that override sentiment mean-reversion. Signal may invert in early eras where structural forced flows and fear-driven liquidations correlate positively (i.e., F&G extreme predicts further move not reversion). Mitigation: episode-blocked significance (A8.5.1a) reports per-era IC and direction; halt interpretation if >1 era shows opposite sign."
+  - "Market-wide crowding and timing slippage: F&G publication is shared across all traders; front-running at UTC 00:00 bar or slippage vs. sentiment realization may degrade edge. High-leverage traders may pre-position before official publication or react faster. Cost drag may exceed gross edge. Mitigation: edge-to-cost ratio check in backtest; walk-forward tests check if edge persists in fresh data (2026 holdout untouched per research_brief)."
+  - "Regime-affinity risk (ungated execution): indicator library flags fear_greed_index_contrarian as favorable (RANGING, HIGH_VOL) but neutral (TRENDING). Ungated signal may activate during persistent uptrends where extreme fear is a dip, not a reversal point; holding short against a bull trend can produce large drawdowns despite positive mean IC. Mitigation: cost check and regime-conditional diagnostics (Improvement 03) if this passes prescreen."
+  - "Sample correlation artifact: F&G is a single market-wide index shared by BTC and ETH. 180 raw signal episodes across both symbols ≈ 90 unique real-world sentiment extremes observed twice. Effective n_eff reduced by market-wide return correlation (rho≈0.82, n_eff_symbols≈1.1). If correlation structure shifts or one symbol decorrelates, power gain from 2-symbol pool evaporates. Mitigation: monitor per-symbol IC separately; flag if BTC and ETH show divergent signal response in holdout."
+
+library_lookup:
+  indicator_id: fear_greed_index_contrarian
+  regime_affinity_for_target: "neutral (TRENDING regime) / favorable (RANGING, HIGH_VOL)"
+  affinity_justification: "Hypothesis is ungated per post-A2.3 standing policy — no regime conditions in signal_concept. Indicator's library affinity shows mixed results across regimes. Ungated execution may encounter any regime; TRENDING encounters are a prior risk factor. Mitigation: cost check and Improvement 03 regime diagnostics if hypothesis reaches backtest stage."
+  prior_campaign_failures:
+    - run_id: "run_042"
+      mechanism_tried: "fear_greed_contrarian (25/75 thresholds, 2024-2025 window only, n_eff=13)"
+      outcome: insufficient_sample_inconclusive
+      ic_observed: 0.19
+      p_value: 0.547
+      signal_property: "ic_active_bars=0.19, n_eff=13, direction=positive (correct)"
+      note: "This reactivation extends data range to 2018-2025 (n_eff expected ≈46). Mechanism unchanged; outcome dependent entirely on power gain from historical data extension, not mechanism re-evaluation."
+  crowding_risk: medium
+  crowding_deviation_justification: "Fear_greed_index_contrarian has medium crowding (daily publication, sparse ~21.8% activation, market-wide shared signal). No lower-crowding alternative exists for this evidence_type (fear_and_greed) and edge_source (persistent_behavioral_bias) in the library. Sparse activation actually reduces crowding vs. dense OHLCV signals (which have high crowding). Medium risk is appropriate for this class."
+
+power_parameters:
+  activation_rate: null
+  plausible_ic_upper: 0.20
+  n_bars: null
+  n_symbols: 2
+  is_market_wide: true
+  power_note: "Signal class (A8.6): sparse feed-based, extreme/threshold-gated. plausible_ic_upper=0.20 is at the upper bound per A8.6 anchor table (literature: funding_rate_extreme 0.05–0.20, fear_greed_index_contrarian 0.05–0.15); justified by non-OHLCV feed reducing crowding and by the prior run's empirical IC=0.19 as a nearby ceiling. activation_rate and n_bars are computed from actual 2018-02-01 to 2025-12-31 OHLCV range (not pre-registered free-handed). n_eff calculation accounts for market-wide return correlation (rho≈0.82 BTC/ETH); n_symbols_effective ≈ 1.1, scaling expected_n_eff upward from ~46 by factor sqrt(2)×1.1 to account for symbol pairing (see KB finding daily_signal_power_floor)."

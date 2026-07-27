@@ -1,0 +1,21 @@
+run_id: run_010
+stage: innovation_expansion
+hypothesis_id: H-RUN007
+
+constraint_analysis:
+  constraint: "one variant only"
+  source: "research_brief.yaml constraints field"
+  interpretation: "Expansion workflow bypassed per protocol; base hypothesis passed through as V1."
+
+decision:
+  action: "no_expansion"
+  rationale: >
+    Research brief explicitly constrains variant count to one. Per protocol
+    (Forbidden section), expansion is only appropriate when variant count
+    is unconstrained. Single variant V1 generated matching hypothesis_card.yaml
+    signal_concept exactly.
+
+variant_count: 1
+conservative_variant: "V1 (only variant; conservative by design—single component, existing regime)"
+
+next_checkpoint: "validation_gate → screening_backtest"

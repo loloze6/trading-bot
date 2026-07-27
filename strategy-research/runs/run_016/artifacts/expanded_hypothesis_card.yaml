@@ -1,0 +1,53 @@
+base_hypothesis_id: "V1-PIVOT"
+
+variant_count: 1
+constraint_note: "Brief specifies 'one variant only'. No expansion applied. V1 passed through as single tested variant."
+
+variants:
+  V1:
+    name: "Keltner Lower-Band Mean-Reversion"
+    thesis: |
+      Keltner channel lower-band breakdowns generate positive expected returns in 
+      BTCUSDT/ETHUSDT 1h during TRENDING regimes via mean-reversion bounce.
+    
+    signal_definition:
+      component: "KeltnerChannelComponent (inverted logic)"
+      trigger_condition: "price < lower_keltner_band"
+      band_formula: "EMA(close, 20) ± ATR(20) × 1.5"
+      forecast_value: 10
+      forecast_else: 0
+      
+    regime_filter: "TRENDING only"
+    regime_thresholds:
+      ER_min: 0.50
+      VR_min: 1.20
+      other_regimes_forecast: 0.0
+    
+    mechanism: |
+      In high ER (≥0.50) + high VR (≥1.20) regimes, Keltner bands widen. 
+      Price undershoots lower band signals oversold bounce. Inverse of V1 
+      upper-band momentum hypothesis; addresses observed signal inversion 
+      (forecast_return_corr = -0.1705 in predecessor).
+    
+    assumptions:
+      - "Negative correlation in V1 indicates reversed signal has positive edge"
+      - "Lower-band breakdowns occur ≥30 times in backtest window"
+      - "Average winning trade magnitude > transaction costs (≥10 bps)"
+      - "TRENDING regime definition (ER ≥0.50, VR ≥1.20) stable"
+    
+    expected_failure_modes:
+      - "Lower-band breakdowns do not predict bounce; edge absent both directions"
+      - "TRENDING threshold over-captures chop despite regime validation"
+      - "Bounce magnitude insufficient vs. slippage/fees"
+      - "Regime thresholds require retuning despite V1 prior validation"
+    
+    target_assets: ["BTCUSDT", "ETHUSDT"]
+    timeframe: "1h"
+    min_signal_count: 30
+    
+    implementation_constraints:
+      - "Hold ER/VR thresholds constant (no parameter sweep)"
+      - "Test lower-band direction only (no dual-direction test)"
+      - "Use existing KeltnerChannelComponent with inverted signal logic"
+      - "Preserve band parameters: EMA 20, ATR 20, 1.5 multiplier"
+      - "Validate signal distribution ≥30 trades minimum"

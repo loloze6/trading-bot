@@ -1,0 +1,43 @@
+family_hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+
+family_status: approve
+
+family_rationale: |
+  All 5 variants are cost-feasible and mechanically sound. Three variants (V3, V5, V6) have plausible cost structures
+  (longer holds, lower turnover, well-established patterns). Two variants (V1, V4) are marginal but defensible
+  (V1 is pure trend-following baseline; V4 uses structural liquidity provision rationale). No fundamental blockers
+  to proceeding to Layer 2 prescreen. V4 requires conditional verification (see variant_decisions).
+
+family_blocking_issues: []
+
+variant_decisions:
+
+  - variant_id: MACD_HISTOGRAM_CROSSOVER_V1
+    status: approve
+    rationale: "Baseline MACD crossover mechanically sound; high turnover (27% activation, 3.7-bar holds) creates marginal cost structure (need 34 bps gross edge). Trend-following on 1h is documented but margin tight. No blockers; advance with tighter Sharpe gate (≥0.7 vs. standard 0.5) due to turnover risk. If Sharpe ≥ 0.7 passes Layer 2, variant merits Layer 3 holdout evaluation."
+    blocking_issues: []
+    conditions: []
+
+  - variant_id: MACD_CROSSOVER_VOLUME_CONFIRMATION_V3
+    status: approve
+    rationale: "Volume filtering (12% activation, 8.3-bar holds) is well-documented; reduces false entries from liquidation noise. Cost plausible; longer holds aid cost absorption. Volume MA(20) is standard, available in all backtests. No blockers; advance with standard gates (Sharpe ≥0.5, win_rate ≥0.45). If passes Layer 2, eligible for holdout."
+    blocking_issues: []
+    conditions: []
+
+  - variant_id: MACD_CROSSOVER_FUNDING_FILTER_V4
+    status: conditional_approve
+    rationale: "Structural funding-rate gate is economically motivated (extreme positive funding forces short covering); however, asymmetric shorts-only inhibition is novel and untested. Cost marginal (5.6-bar holds on 1h). Advance contingent on: (1) config enforces asymmetry (shorts ≤ +0.0002, longs unrestricted), and (2) Layer 2 output includes per-regime breakdown (long-side Sharpe, short-side Sharpe) to validate long-side edge compensates short-side loss."
+    blocking_issues: ["asymmetric_shorts_gate_untested", "tight_holding_period_5.6_bars_on_1h", "funding_edge_dependent_on_market_structure_persistence"]
+    conditions: ["config_enforces_shorts_inhibition_only_not_both_sides_gate", "layer_2_prescreen_must_report_per_regime_breakdown_long_vs_short_sharpe_separately", "funding_rate_feed_availability_confirmed_in_backtest_execution_per_campaign_data_policy"]
+
+  - variant_id: MACD_CROSSOVER_RSI_CONFIRMATION_V5
+    status: approve
+    rationale: "Dual-indicator consensus (10% activation, 10-bar holds) reduces noise via two-signal confirmation. Cost plausible (10-bar holds support edge over 17.5 bps cost). RSI(14) lag is standard for oscillator confirmation; design is conservative. MACD+RSI dual consensus is well-documented. No blockers; advance with standard gates. If passes Layer 2, eligible for holdout."
+    blocking_issues: []
+    conditions: []
+
+  - variant_id: MACD_DIVERGENCE_V6
+    status: approve
+    rationale: "Divergence pattern (price new extreme, MACD not confirming) is classic momentum-exhaustion signal. Cost plausible (8% activation, 12.5-bar holds support 17.5 bps cost). Longest holds among all variants aid cost absorption. 20-bar lookback for price extremes is standard window. Pattern is well-established in literature. No blockers; advance with standard gates. If passes Layer 2, eligible for holdout."
+    blocking_issues: []
+    conditions: []

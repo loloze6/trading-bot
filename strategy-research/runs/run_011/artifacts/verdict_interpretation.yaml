@@ -1,0 +1,63 @@
+hypothesis_id: H-RUN007-V1
+protocol_verdict: refine
+criteria_summary:
+  - criterion: "Sharpe (bars 501–2000): ≥ 0.5"
+    result: FAIL
+    actual_value_btcusdt: -5.019
+    actual_value_ethusdt: -2.604
+    required: ">= 0.5"
+  - criterion: "Max drawdown: < 15%"
+    result: FAIL
+    actual_value_btcusdt: 25.979
+    actual_value_ethusdt: 33.144
+    required: "< 15.0"
+  - criterion: "Trade count: ≥ 10"
+    result: PASS
+    actual_value_btcusdt: 14
+    actual_value_ethusdt: 21
+    required: ">= 10.0"
+  - criterion: "Regime frequency: ≥ 0.15"
+    result: UNTESTED
+    reason: "regime_frequency metric not computed in backtest output"
+  - criterion: "ER/VR no lookahead"
+    result: UNTESTED
+    reason: "no matching metric keyword; no verification possible from output"
+
+primary_failure_mode: >
+  Regime detection lag. ER component smooth_period=5 (5 bars = 5 hours in 1h
+  timeframe) delays regime identification until AFTER mean-reversion opportunity
+  window closes. Strategy correctly detects mean-reversion conditions and generates
+  trades, but entry/exit occurs with 5-hour lag relative to optimal timing. Edge
+  magnitude reduced below commission drag threshold (~0.1–0.15% per round-trip).
+  Systematic losses across all 24 windows confirm lag prevents any positive net PnL.
+
+config_to_failure_map:
+  - config_element: "regime_detector.components[er].params.smooth_period"
+    current_value: 5
+    failure_linkage: >
+      5-bar exponential smoothing of ER creates 5-hour detection lag in 1h candle
+      timeframe. Mean-reversion window typically 2–3 hours; lag exceeds opportunity
+      duration, causing late entry after mean reversion has already occurred.
+  - config_element: "regime_detector.rules[mean_reversion].any_of[0][0].value (ER threshold)"
+    current_value: 0.20
+    failure_linkage: >
+      Threshold may contribute to low regime frequency if regime occurs < 15% of
+      bars (untested criterion). Low frequency reduces trade volume and prevents
+      statistical validation of RSI mechanism. Secondary contributor to loss.
+
+untested_criteria:
+  - "Mean-reversion regime frequency ≥ 0.15: no regime_frequency metric in output; cannot validate assumption that mean-reversion window occurs ≥15% of the time"
+  - "ER/VR computation lookahead-free: no metric confirms bars [t-window:t] only; cannot rule out future-leakage bias in regime detection"
+
+diagnosis: >
+  The RSI pullback mechanism has not been proven ineffective. Strategy generated
+  14–21 trades per 2000-candle window (exceeding minimum sample size) but lost
+  money on every single window across both symbols and all 12 monthly periods.
+  This consistency points not to no-edge (mechanism failure) but to
+  implementation failure: orders placed too late relative to price movement.
+  Regime detection identifies correct market state but with unacceptable lag.
+  Tightening regime responsiveness (reduce smooth_period from 5 to 2) should
+  lower lag from 5 hours to 2 hours, bringing detection within typical
+  mean-reversion window duration.
+
+recommendation: refine

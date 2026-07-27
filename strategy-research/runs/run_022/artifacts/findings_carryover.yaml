@@ -1,0 +1,38 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER-PIVOT-RSI"
+next_hypothesis_id: "V3-ESCALATE-4H-KELTNER-PIVOT-RSI-v2"
+
+what_failed:
+  - "Regime informativeness: 'trending' regime (ER≥0.50, VR≥1.20) marked uninformative; forward_return_mean near 0 or negative across all 12 windows"
+  - "Sharpe ratio: median -2.86 (BTCUSDT), -4.262 (ETHUSDT); both far below 0.3 threshold"
+  - "Trade count per-window: minimum 22 (BTCUSDT-2024-05), 19 (ETHUSDT-2024-05); below 25 requirement"
+  - "Correlation statistical significance: median 0.042, but pvalue > 0.10 in most windows, indicating no directional edge"
+
+diagnostic_rule_applied: "Rule 4: Regime is uninformative. All bars in uninformative_regimes (trending) have forward_return_mean oscillating near 0 (-0.000225 to +0.000624), violating coherent-market-state assumption. Two structurally different signal families tested at 4h (Keltner: corr=0.0136, RSI: corr=0.042) both fail within same regime thresholds → root cause is regime definition, not signal family."
+
+diagnostic_snapshot:
+  median_forecast_return_corr: 0.042
+  median_cost_drag_pct: 82.1027
+  median_gross_pnl: -10.798
+  uninformative_regimes: ["trending"]
+  forward_return_mean_trending_min: -0.000225
+  forward_return_mean_trending_max: 0.000624
+  forward_return_mean_avg: 0.0001225
+  win_rate_vs_sharpe: "both_fail"
+  aggregate_trade_count:
+    BTCUSDT: 327
+    ETHUSDT: 304
+
+what_not_to_try:
+  - "Do NOT change RSI period or scaling_factor. Keltner and RSI both fail at 4h with same regime. Signal tuning is not the fix."
+  - "Do NOT lower ER/VR thresholds. Regime is already too loose (captures zero forward_return_mean). Loosening further worsens quality."
+  - "Do NOT switch instruments without testing regime adjustment first. Both BTCUSDT and ETHUSDT fail with same regime, suggesting regime-level issue not coin-specific."
+  - "Do NOT revert to 1h timeframe. Keltner at 1h failed on trade starvation (FM1), not regime quality. 4h testing is appropriate for regime informativeness."
+  - "Do NOT adopt multiple parameter changes in refine attempt. If new thresholds fail, escalate to regime mode swap (threshold_rules → score_mode) rather than threshold-tuning loop."
+
+next_altitude: "pivot"
+
+next_action_summary: |
+  Pivot regime thresholds from (ER≥0.50, VR≥1.20) to (ER≥0.60, VR≥1.35) to filter high-confidence trending bars only.
+  Expected trade count reduction to ~15-20/month. If new regime exhibits positive forward_return_mean and median_sharpe ≥ 0.3,
+  strategy is viable and refine threshold values further (altitude 1). If median_sharpe remains below -1, escalate to regime
+  mode change (score_mode regime with momentum/volatility components) or instrument diversity (test other symbols).

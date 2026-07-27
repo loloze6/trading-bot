@@ -1,0 +1,32 @@
+hypothesis_id: "KELTNER_THRESHOLD_4H_AVAX"
+thesis: "Threshold-rules regime filtering (strict ER/VR component gates) reduces cost_drag below 80% by eliminating marginal regime trades while preserving Keltner signal edge in high-conviction regime subset."
+rationale: |
+  run_030 diagnostic: cost_drag=128.44% with positive gross_pnl=44.86 (median).
+  Per Rule 1, this indicates frequency problem, not signal quality. Score-mode
+  fires 40–60% of candles, including weak ER/VR combinations where
+  forward_return_mean ≈ 0 (uninformative per regime validity). Threshold-rules
+  gates trending to ER ≥0.30 AND VR ≥1.5, mean_reversion to VR ≤1.2, restricting
+  to 10–20% of candles. Fewer marginal trades → cost_drag drops below 80%.
+  Signal edge (Keltner) preserved in high-conviction regime subset → Sharpe improves.
+signal_concept: |
+  Keltner mean-reversion (fixed, identical to run_030): ema_period=20,
+  atr_period=20, atr_multiplier=1.5, scaling_factor=-20.0. Forecast range -20 to +20.
+  Signal magnitude increases with ATR-scaled distance to 20-EMA.
+target_market: "AVAXUSDT"
+timeframe: "4h"
+assumptions:
+  - "Threshold parameters (ER ≥0.30, VR ≥1.5, VR ≤1.2) derived from component distributions and regime validity analysis do not introduce forward-looking bias."
+  - "Keltner signal edge (positive gross_pnl, directional consistency) preserved when applied only in high-conviction ER/VR regime subsets."
+  - "Reducing qualifying candles by 50–70% (40–60% to 10–20%) lowers cost_drag more than it lowers gross_pnl, yielding net Sharpe improvement."
+  - "Threshold-rules maintains sufficient trade frequency; ≥4 walk-forward windows with ≥5 trades each achievable despite lower regime activation rate."
+  - "ER and VR component parameters (period=24, smooth_period=5 for ER; k=5, window=100 for VR) remain unchanged; threshold-rules is gating layer only."
+expected_failure_modes:
+  - "Threshold-rules reduces trade frequency too far; <4 walk-forward windows achieve ≥5 trades. Escalation: shorter timeframe (1h, 15m) or higher-volatility instrument."
+  - "Cost drag improves below 80% but Sharpe remains <0.25; signal edge insufficient in high-conviction regimes. Escalation: replace Keltner or add complementary trending component."
+  - "Regime threshold windows cluster seasonally or per-instrument, indicating asset-specific or seasonal regime dynamics. Escalation: asset-tuned thresholds or regime methodology revision."
+  - "Unknown regime persists; Keltner zeros-out too frequently, limiting effective trade count. Escalation: relax default_regime to fallback or add tertiary ER/VR threshold."
+success_criteria:
+  - "cost_drag < 80% (baseline run_030: 128.44%)"
+  - "Sharpe ≥ 0.30 across ≥4 walk-forward windows"
+  - "≥5 trades per window in all ≥4 qualifying windows"
+  - "gross_pnl positive or near-zero median (signal edge preserved)"

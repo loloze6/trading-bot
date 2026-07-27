@@ -1,0 +1,102 @@
+hypothesis_id: KELTNER_SCOREMODE_4H_AVAX
+
+base_thesis: |
+  Lower regime score threshold from 0.25 → 0.15 to increase trade frequency
+  (40-60%) and achieve 4+ windows with ≥5 trades while preserving the positive
+  forecast edge (corr=0.0493) observed at higher threshold.
+
+expanded_variants:
+  - variant_id: V1-Conservative
+    description: "Base hypothesis: min_score=0.15 on AVAXUSDT"
+    parameters:
+      asset: AVAXUSDT
+      timeframe: 4h
+      signal: "Keltner (ema_period=20, atr_period=20, atr_multiplier=1.5, scaling_factor=-20.0)"
+      regime_mode: score-mode
+      min_score: 0.15
+    rationale: "Validates SOLUSDT finding (0.25 → 0.15 refinement) on AVAX; controls for signal and regime mode."
+    expected_outcome: "Sharpe ≥0.30, ≥4 windows with ≥5 trades; replicate run_029 dynamics on alternative asset."
+
+  - variant_id: V2-Floor-Test
+    description: "Stress lower boundary: min_score=0.10 on AVAXUSDT"
+    parameters:
+      asset: AVAXUSDT
+      timeframe: 4h
+      signal: "Keltner (ema_period=20, atr_period=20, atr_multiplier=1.5, scaling_factor=-20.0)"
+      regime_mode: score-mode
+      min_score: 0.10
+    rationale: "Validate practical floor: does score=0.10 admit excessive noise or preserve edge? Quantify cost_drag risk at extreme lower bound."
+    expected_outcome: "If Sharpe ≥0.25: threshold can relax further; If Sharpe <0 with cost_drag >80%; 0.15 is practical floor."
+    risk: "Threshold may admit choppy regimes (ER~0.1, VR~1.0); edge preservation uncertain at margin."
+
+  - variant_id: V3-Ceiling-Test
+    description: "Stress upper boundary: min_score=0.20 on AVAXUSDT"
+    parameters:
+      asset: AVAXUSDT
+      timeframe: 4h
+      signal: "Keltner (ema_period=20, atr_period=20, atr_multiplier=1.5, scaling_factor=-20.0)"
+      regime_mode: score-mode
+      min_score: 0.20
+    rationale: "Validate practical ceiling: does score=0.20 restore robustness gate (≥4 windows ≥5 trades) while preserving edge? Tests if 0.15 undershoots or overshoots."
+    expected_outcome: "If 0.20 passes robustness gate: prefer less aggressive threshold; If 0.20 fails: 0.15 is necessary for trade frequency."
+    risk: "Less aggressive variant; may revert to run_029 sub-threshold windows (2024-05, 2024-07)."
+
+  - variant_id: V4-Asset-Gen-ETH
+    description: "Generalization test: min_score=0.15 on ETHUSDT"
+    parameters:
+      asset: ETHUSDT
+      timeframe: 4h
+      signal: "Keltner (ema_period=20, atr_period=20, atr_multiplier=1.5, scaling_factor=-20.0)"
+      regime_mode: score-mode
+      min_score: 0.15
+    rationale: "Asset generalization chain: SOLUSDT (altseason-corr) → AVAXUSDT (mid-cap alt) → ETHUSDT (large-cap alt). Validate if ER/VR regime dynamics generalize across market cap spectrum."
+    expected_outcome: "Sharpe ≥0.30, ≥4 windows ≥5 trades. Consistent pattern across assets suggests regime is robust; divergence suggests asset-specific tuning required."
+    risk: "ETH lower volatility and more stable regime; ER/VR thresholds may not scale identically to lower-cap alts."
+
+  - variant_id: Reverse-High-Regime
+    description: "Opposite assumption: min_score=0.35 on AVAXUSDT (ultra-strict regime)"
+    parameters:
+      asset: AVAXUSDT
+      timeframe: 4h
+      signal: "Keltner (ema_period=20, atr_period=20, atr_multiplier=1.5, scaling_factor=-20.0)"
+      regime_mode: score-mode
+      min_score: 0.35
+    rationale: "Inverse hypothesis: base assumes quantity (lower threshold) increases robustness. Reverse: does Keltner edge amplify only in VERY high ER/VR (extreme trending regimes)? Tests quality over quantity paradigm."
+    expected_outcome: "Expect fewer trades; if Sharpe ≥0.40 despite low frequency, suggests signal fires only in high-conviction regimes (non-linear edge)."
+    risk: "Likely reproduces run_028 (≤2 trades); defeats frequency problem. Useful only if reveals non-linear edge premium at high thresholds."
+
+alternative_data_candidates:
+  - name: "Volume-weighted ER/VR"
+    description: "Weight regime components by volume profile; enhances regime coherence in thin or imbalanced-volume sessions."
+    plausibility: Medium
+    priority: "Optional post-screening; test V1-V5 baseline first."
+
+  - name: "Multi-asset regime correlation"
+    description: "Confirm AVAX regime score via macro correlation with ETH/BTC; contextual regime veto to prevent false signals."
+    plausibility: Medium
+    priority: "Optional post-screening; only if single-asset performance marginal or divergent from brief intent."
+
+behavioral_features:
+  - feature_name: "Win rate by regime_score bin"
+    description: "Stratify trades by score quartile (0.10-0.15, 0.15-0.20, 0.20-0.30, 0.30+); measure edge preservation as threshold lowers."
+    validation: "Confirms assumption: trade quality stable at margin (0.15-0.25 band) with no degradation below 50% win_rate."
+    
+  - feature_name: "Trade clustering in regime score space"
+    description: "Plot trade entry points by regime_score; identify if concentrated near 0.15 threshold (signal weakness at margin)."
+    validation: "Reveals whether 0.15 threshold is natural boundary or arbitrary cutoff."
+
+  - feature_name: "Sharpe contribution by score bin"
+    description: "Compute Sharpe per quartile; identify which regime band contributes most positive return."
+    validation: "If lowest quartile (0.10-0.15) Sharpe <0, threshold too low; If all positive, aggressive threshold valid."
+
+regime_specific_variants:
+  - "All variants use score-mode regime (no mode change per brief). Variants differ only in min_score parameter."
+  - "Reverse hypothesis (V5) tests non-linearity; if high-regime Sharpe >> low-regime, indicates separate high-conviction strategy warranted."
+  - "No threshold_rules mode, adaptive smoothing, or regime logic changes proposed; brief locks to score-mode and ER/VR parameter immutability."
+
+constraints_honored:
+  - "Timeframe: 4h only across all variants."
+  - "Signal: Keltner (ema_period=20, atr_period=20, atr_multiplier=1.5, scaling_factor=-20.0) unchanged and fixed."
+  - "Regime mode: score-mode (continuous ER×VR blend) preserved; no threshold_rules or mode variants."
+  - "ER/VR parameters: period, smooth_period, k, window unchanged; only min_score threshold varies per variant."
+  - "Infrastructure: No execution, portfolio, or backtest logic changes; parameter-only variants."

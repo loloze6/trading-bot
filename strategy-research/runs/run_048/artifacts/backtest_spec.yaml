@@ -1,0 +1,38 @@
+status: "spec_ready"
+config:
+  regime_detector:
+    mode: "threshold_rules"
+    components: []
+    rules: []
+    default_regime: "unknown"
+  strategies:
+    warmup: 51
+    regimes:
+      unknown:
+        components:
+          - id: "fear_greed_contrarian"
+            class: "strategies.strategy_components.FearGreedContrarianComponent"
+            params:
+              fear_threshold: 25.0
+              greed_threshold: 75.0
+              scaling_factor: 10.0
+            weight: 1.0
+            transforms:
+              - op: "identity"
+      trending: null
+      mean_reversion: null
+      chop: null
+  aux_feeds:
+    - "fear_greed"
+config_rationale:
+  - claim: "FearGreedContrarianComponent(fear_threshold=25.0, greed_threshold=75.0, scaling_factor=10.0) from H-041-C run_042 reactivation"
+    config_choice: "Component id=fear_greed_contrarian in strategies.regimes.unknown.components[0]; parameters unchanged per A8.5.3"
+  - claim: "Daily UTC 00:00 bar firing with ±10.0 forecast magnitude"
+    config_choice: "Firing pattern is built into FearGreedContrarianComponent; scaling_factor=10.0 controls magnitude"
+  - claim: "Ungated (no regime gating rules)"
+    config_choice: "regime_detector has empty rules and components with default_regime='unknown' (canonical A2.3 fully-ungated pattern)"
+  - claim: "No additional signal normalization (raw ±10.0 within [-20,+20] range)"
+    config_choice: "transforms=[{op: identity}] (one-step pipeline confirming no additional transformation)"
+  - claim: "Market-wide on BTCUSDT and ETHUSDT"
+    config_choice: "Symbol selection handled at backtest runtime; config is symbol-neutral"
+component_gap: null

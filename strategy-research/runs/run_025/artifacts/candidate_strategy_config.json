@@ -1,0 +1,72 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "er",
+        "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+        "params": {
+          "period": 24,
+          "smooth_period": 5
+        }
+      },
+      {
+        "id": "vr",
+        "class": "strategies.strategy_components.VarianceRatioComponent",
+        "params": {
+          "k": 5,
+          "window": 100
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "er",
+              "op": "gte",
+              "value": 0.3
+            },
+            {
+              "id": "vr",
+              "op": "gte",
+              "value": 1.2
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 51,
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "keltner",
+            "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+            "params": {
+              "ema_period": 20,
+              "atr_period": 20,
+              "atr_multiplier": 2.0,
+              "scaling_factor": -20.0
+            },
+            "weight": 1.0,
+            "lookback": 500,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    }
+  }
+}

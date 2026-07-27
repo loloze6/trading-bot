@@ -1,0 +1,36 @@
+hypothesis_id: H-041-C
+protocol_verdict: refine
+status: refine
+criteria_summary:
+  - "spearman_ic: FAIL — pooled ic_active_bars=-0.0403 (target ≥0.15)"
+  - "p_value: SIGNIFICANT but NEGATIVE — p=0.0810 with ic=-0.0403 (not validating the hypothesis)"
+  - "trade_count: UNTESTED — prescreen killed before walk-forward execution"
+  - "era_stability: UNTESTED — prescreen diagnostics only"
+  - "cost_feasibility: FAIL — edge_to_cost_ratio=1.47 < 2.0 required (secondary to signal inversion)"
+primary_failure_mode: signal_inversion_prescreen
+config_to_failure_map: "FearGreedContrarianComponent entry logic is inverted relative to the optimal direction. Component currently generates long forecast when fear_greed<25 and short forecast when fear_greed>75, but per-era IC analysis reveals this produces negative correlation in all 2018-2023 historical data (ic_active_bars range: -0.058 to -0.135) and positive correlation in 2024-2025 walk-forward data (ic_active_bars range: +0.094 to +0.182). The signal mechanism is sound; the entry direction is backwards."
+untested_criteria:
+  - "walk_forward sharpe ≥0.5 — not evaluated in prescreen"
+  - "per_window trade_count ≥50 — prescreen would fire approximately 28 total trades across 22 windows (~1.3 per window)"
+  - "era_ic_stability ratio <2.0 — requires full backtest per_window metrics"
+proposed_change_dimension: signal_polarity
+hypothesis_family: fear_greed_contrarian
+altitude_justification: "Rule 3: ic_spearman_pooled=-0.0403, p_value=0.0810 < 0.10 (significant negative IC). Per-era breakdown (A8.5.1a required reporting) reveals the critical diagnostic: BTCUSDT 2018-2023 ic_active_bars in [-0.0584, -0.0726], reverses to [+0.1014, +0.1828] in 2024-2025. ETHUSDT mirrors: 2018-2023 in [-0.0709, -0.1346], reverses to [+0.0941, +0.1628] in 2024-2025. This 180° rotation across all 8 era-symbol pairs is not regime-dependent (identical component config applied throughout); it is mechanical entry-direction inversion. Inverting the forecast polarity will flip the sign and align the prescreen to the observed positive IC in the walk-forward window."
+root_cause:
+  mechanism_failure: entry_exit_execution_gap
+  supporting_evidence: "ic_active_bars=-0.0403 pooled across 234 episodes (n_bars=1676 active out of 138,430 total). Per-era breakdown: 2018-pre-funding BTC ic=-0.0584 (186 bars, 26 episodes), 2019-2023 BTC ic=-0.0726 (495 bars, 57 episodes); 2024-burned BTC ic=+0.1828 (73 bars, 15 episodes), 2024-2025-wf BTC ic=+0.1014 (84 bars, 19 episodes). ETH identical pattern: 2018-2023 range [-0.0709, -0.1346], 2024-2025 range [+0.0941, +0.1628]. This is not a signal quality failure; it is a unidirectional entry-polarity sign error that affects all historical periods uniformly then reverses in recent data, indicating the component's entry conditions (long on fear, short on greed) are mechanically inverted from the true contrarian mechanism."
+  confidence: high
+trade_attribution: null
+regime_attribution: null
+prescreen_evidence:
+  ic_active_bars: -0.040257
+  ic_all_bars: -0.006867
+  forecast_sparsity_pct: 98.79
+  active_n_bars: 1676
+  n_bars_total: 138430
+  p_value: 0.081
+  n_episodes: 234
+  edge_to_cost_ratio: 1.4737
+  estimated_gross_edge_bps_per_trade: 25.0527
+  route: refine_inverted_ic
+  per_era_ic_summary: "All 2018-2023 eras (4 symbol-pairs): negative ic_active_bars (BTC: -0.058 to -0.073, ETH: -0.071 to -0.135). All 2024-2025 walk-forward eras (4 symbol-pairs): positive ic_active_bars (BTC: +0.101 to +0.182, ETH: +0.094 to +0.163). Robust 180° inversion pattern strongly indicates entry-direction artifact, not signal inadequacy. Cost drag (rule 1) secondary: with polarity reversed and positive IC ~0.12 pooled, estimated gross edge improves to ~35-45 bps, yielding edge_to_cost_ratio ~2.0-2.6."

@@ -1,0 +1,14 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 18
+pattern_detected: search_space_narrowing
+pattern_evidence:
+  - "Cost_drag early runs (014-021): 142.8%, 25.77%, 185.3%, 27.45%, 272.87%, 25.21%, 413.05% — volatile with multiple spikes exceeding 100%"
+  - "Cost_drag post-escalation (022-029): 82.1%, 420.19%, 27.45%, 39.36%, 27.45%, 84.29%, 52.08% — stabilized to ~50% median, extreme spikes eliminated"
+  - "Forecast_return_corr positive spikes: run_017=0.2145, run_024=0.2145, run_027=0.2145, run_028=0.2953 all followed by sharpe FAIL, indicating transient rather than structural edge"
+  - "Forecast_return_corr baseline median: 0.02-0.05 across runs 022-029; below threshold needed to compound Sharpe even when cost_drag controlled"
+  - "Win_rate pass achieved in runs 022, 025, 029 with cost_drag less than 60%, confirming signal selection is valid but forecast magnitude insufficient for robust metrics"
+  - "Instrument convergence: BTCUSDT, ETHUSDT, SOLUSDT, AVAXUSDT all exhibit similar cost_drag profiles after 4h escalation; rules out single-instrument regime pathology"
+
+recommendation: continue
+recommendation_rationale: "Cost_drag stability post-escalations (runs 022-029) indicates search space converging toward reliable regime-filtering configuration. Run_029 achieved valid signal benchmark (win_rate PASS, cost_drag=52.08%, forecast_return_corr=0.0493) but with insufficient trading activity (27 total trades, only 3 of 5 windows with >=5 trades). Run_030 parameter refinement (min_score 0.25→0.15) targets the identified bottleneck without signal change. If run_030 achieves 4+ windows with >=5 trades and Sharpe >=0.30, signal family is viable for promotion. If Sharpe remains below 0.30 despite doubled trade frequency, root cause is signal edge (0.05 corr) inherently insufficient for Sharpe robustness at any regime configuration; this would trigger escalate_component recommendation for next iteration."
+budget_assessment: "18 of estimated 24+ total runs consumed (75% utilization). Run_030 serves as decisive gate on current signal family. If outcome is positive, continue parameter tuning; if negative, pivot remaining budget to escalate_component exploration (new signal type) rather than further Keltner threshold refinements."

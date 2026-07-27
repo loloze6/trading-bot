@@ -1,0 +1,70 @@
+hypothesis_id: "V1"
+variant_name: "Keltner Channel Breakout (TRENDING Momentum)"
+validation_stage: "quant_validation"
+
+falsifiable_statement: |
+  Keltner Channel breakouts (price > upper_Keltner_band) in TRENDING regimes 
+  (ER ≥ 0.50, VR ≥ 1.20) have forecast_return_corr > 0.02 and generate 
+  Sharpe ≥ 0.5, cost_drag < 50%, and trade_count ≥ 30 on both BTCUSDT 
+  and ETHUSDT across walk-forward windows.
+
+null_expectation: |
+  No predictive relationship between Keltner breakouts and forward returns 
+  in TRENDING regime: forecast_return_corr ≤ 0.00, Sharpe < 0, cost_drag ≥ 100%.
+
+required_evidence:
+  - "Screening backtest: forecast_return_corr > 0.02 on BTCUSDT AND ETHUSDT (full 2020–2024 data)"
+  - "Walk-forward: median Sharpe ≥ 0.5 across 4 windows (3mo train / 1mo test)"
+  - "Walk-forward: cost_drag < 50% (round-trip cost / avg trade magnitude)"
+  - "Walk-forward: min trade_count ≥ 30 in any single window"
+  - "Walk-forward: win_rate ≥ 45% (supports signal is capturing real moves, not noise)"
+
+bias_risks:
+  - "Regime selection bias: TRENDING chosen post-hoc after observing V2 mean_reversion failure; validate stability across walk-forward via held-constant thresholds (ER ≥ 0.50, VR ≥ 1.20)"
+  - "Magnitude assumption bias: 3–5× larger trades vs V2 is speculative; depends on ATR distribution which may not hold cross-symbol or across market regimes"
+  - "Positive serial correlation risk: Keltner breakouts in extended TRENDING may fire repeatedly on over-extended moves; test win_rate per consecutive-signal clusters"
+  - "Regime persistence overfitting: If TRENDING regime persists across windows, signal may achieve low frequency artificially; validate regime frequency across windows"
+  - "Parameter drift: Keltner EMA and ATR are estimated from training data; ensure parameters (20, 2.0) remain fixed during walk-forward (no re-tuning until holdout phase)"
+
+failure_modes:
+  - "ATR multiplier (2.0) is too wide: signal fires on every tick; trade_count > 100; cost_drag > 100%; Sharpe < 0"
+  - "TRENDING regime detection is too rare: trade_count < 30 across walk-forward windows; no statistical power"
+  - "Breakouts are mean-reversion (false signal): win_rate < 45%; Sharpe < 0; momentum hypothesis is inverted"
+  - "Cost drag dominates magnitude gains: gross_pnl > 0 but net_pnl < 0; cost_drag > 50% despite lower frequency than V2"
+  - "Regime-filter false positive: forecast_return_corr ∈ [−0.01, 0.01]; edge exists only in full dataset, not TRENDING-filtered subset"
+  - "Symbol-specific breakdown: ETHUSDT shows ATR scaling issues (very low volatility or regime-detection misalignment); Sharpe < 0 on one symbol despite other passes"
+
+sample_split_design: |
+  Stage 1 — Screening Backtest (2020–2024): Full historical sample, both symbols. 
+  Compute forecast_return_corr for all TRENDING-regime bars. Gate on 
+  forecast_return_corr > 0.02 for both BTCUSDT and ETHUSDT before proceeding.
+  
+  Stage 2 — Walk-Forward Validation (2024–2025 holdout, 4 windows): 
+  Each window = 3 months training, 1 month test. Hold regime thresholds 
+  and Keltner parameters (ER ≥ 0.50, VR ≥ 1.20, EMA=20, ATR_mult=2.0) constant. 
+  Report per-window: Sharpe, cost_drag, trade_count, win_rate, forecast_return_corr.
+  
+  Stage 3 — Final Holdout Test (2025–2026 unseen, 1 window): 
+  One full month, no re-tuning. Verify walk-forward results transfer.
+
+decision_rules:
+  approve_criteria: |
+    sharpe >= 0.5 (median across walk-forward windows, both symbols) 
+    AND cost_drag < 50% (both symbols) 
+    AND min_trade_count >= 30 (all windows) 
+    AND forecast_return_corr > 0.02 (screening backtest, both symbols)
+  
+  conditional_approve_criteria: |
+    forecast_return_corr > 0.02 in screening backtest AND 
+    sharpe in [0.0, 0.5) in walk-forward → permit tuning phase 
+    (ATR multiplier or EMA period refit on first walk-forward train fold 
+    only, then frozen for remaining windows).
+  
+  refine_criteria: |
+    forecast_return_corr in [0.00, 0.02] → signal lacks sufficient edge; 
+    test reverse signal (short on lower band) or alternative breakout 
+    (Donchian, Bollinger Band squeeze).
+  
+  reject_criteria: |
+    forecast_return_corr <= 0.00 OR sharpe < -3.0 OR cost_drag > 100% 
+    → signal family exhausted; escalate to new component.

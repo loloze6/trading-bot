@@ -1,0 +1,110 @@
+{
+  "regime_detector": {
+    "mode": "score",
+    "min_score": 0.15,
+    "min_margin": 0.05,
+    "components": [
+      {
+        "id": "er",
+        "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+        "params": {
+          "period": 24,
+          "smooth_period": 5
+        }
+      },
+      {
+        "id": "vr",
+        "class": "strategies.strategy_components.VarianceRatioComponent",
+        "params": {
+          "k": 5,
+          "window": 100
+        }
+      }
+    ],
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "er",
+            "weight": 0.5,
+            "transforms": [
+              {
+                "op": "percentile"
+              }
+            ]
+          },
+          {
+            "id": "vr",
+            "weight": 0.5,
+            "transforms": [
+              {
+                "op": "percentile"
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "vr",
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "negate_percentile"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 51,
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "keltner",
+            "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+            "params": {
+              "ema_period": 20,
+              "atr_period": 20,
+              "atr_multiplier": 1.5,
+              "scaling_factor": -20.0
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "keltner",
+            "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+            "params": {
+              "ema_period": 20,
+              "atr_period": 20,
+              "atr_multiplier": 1.5,
+              "scaling_factor": -20.0
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "chop": null,
+      "unknown": null
+    }
+  }
+}

@@ -1,0 +1,84 @@
+campaign_id: run_043
+stage: innovation_expansion
+refinement_attempt: 0
+
+constraints_applied:
+  - "Brief constraint: 'One variant only for run queue (V1)'. Expansion outputs V1 only in expanded_variants; alternative candidates in alternative_data_candidates."
+  - "Post-A2.3: No regime-gated variants. V1 is ungated; regime_specific_variants empty."
+  - "Existing components only: EMASpreadComponent already present. No new code."
+
+improvement_01_status:
+  satisfied_in_run_queue: false
+  reason: "V1 uses price_volume_only evidence_type per base hypothesis. IMPROVEMENT 01 requires at least one variant with evidence_type != price_volume_only."
+  planned_resolution: "V2 candidate (funding_rate_extreme, evidence_type=funding_open_interest) documented in alternative_data_candidates. Integration in next cycle will satisfy IMPROVEMENT 01. Feed is available today (per config/available_feeds.yaml); no new feed required."
+
+improvement_04_diversity_audit:
+  run_queue_variant_count: 1
+  constraint_note: "Brief constrains to one variant in run queue (V1). Diversity audit applied to hypothetical future state when V2/V3 are integrated."
+  
+  v1_library_mapping:
+    indicator_id: moving_average_crossover
+    category: trend_following
+    data_requirements: ohlcv_only
+    known_regime_affinity: "mixed_ungated_across_regimes (favorable_trending, unfavorable_ranging_high_vol)"
+  
+  v2_candidate_library_mapping:
+    indicator_id: funding_rate_extreme
+    category: structural_rate
+    data_requirements: funding_open_interest
+    known_regime_affinity: "neutral (structural forced flow, independent of market regime)"
+    diversity_vs_v1: "Different library category (structural_rate vs trend_following); different evidence source (funding vs price); orthogonal edge mechanism (structural forced flow vs persistent behavioral bias)."
+  
+  v3_candidate_library_mapping:
+    indicator_id: keltner_channel_trend
+    category: trend_following
+    data_requirements: ohlcv_only
+    known_regime_affinity: "mixed (favorable_trending, unfavorable_ranging)"
+    diversity_vs_v1: "Same library category, same data_requirements. BUT different indicator (Keltner breakout vs EMA spread). Alternative volatility-adaptive trend mechanism for IMPROVEMENT 04 real-diversity consideration."
+  
+  diversity_verdict: "Single variant in current run queue (V1). Hypothetical future state with V1 + V2 + V3: categories spanned = [trend_following (V1, V3), structural_rate (V2)] = 2 distinct values ✓; data_requirements spanned = [ohlcv_only (V1, V3), funding_open_interest (V2)] = 2 distinct values ✓. Real diversity threshold (≥2 categories OR ≥2 data_requirements) will be met. Current run defers to single-variant baseline per brief."
+  
+  cosmetic_rejection: null
+
+alternative_data_candidates_summary:
+  - candidate_label: "Funding Rate Extremes (V2)"
+    evidence_type: funding_open_interest
+    impact: "Structural edge orthogonal to EMA herding. Funding extremes → forced deleveraging → mean-reversion. Low crowding (requires non-standard feed access)."
+    feed_available: true
+    
+  - candidate_label: "Keltner Channel Breakout (V3)"
+    evidence_type: price_volume_only
+    impact: "Volatility-adaptive trend signal. ATR-based bands adjust to market conditions; may outperform fixed-period EMA in high-vol regimes."
+    feed_available: true
+    
+  - candidate_label: "Signal Inversion (V4)"
+    evidence_type: price_volume_only
+    impact: "Symmetry test. Validates whether herding mechanism is directional or bidirectional."
+    feed_available: true
+
+regime_affinity_coherence_check:
+  v1_base_indicator: moving_average_crossover
+  library_unfavorable_regimes: "ranging, high_vol"
+  v1_ungated_design: "Activates across all regimes despite unfavorable affinity in ranging/high_vol. Strategy: V1 accepted as baseline; future refinement can add regime-conditional filtering if empirical IC in unfavorable regimes is negative."
+  mitigation_in_candidates: "V2 (funding_rate_extreme) has neutral regime affinity; provides orthogonal edge that activates equally in favorable and unfavorable regimes for V1. V3 (Keltner) also has mixed affinity; no added resilience but alternative mechanism."
+
+next_cycle_recommendations:
+  - title: "Integrate V2 (Funding Rate Extreme) to satisfy IMPROVEMENT 01"
+    priority: high
+    rationale: "Required: at least one variant with evidence_type != price_volume_only. Funding rate feed available today (no new feed required). Provides structural edge orthogonal to herding mechanism."
+    
+  - title: "Empirically validate V4 (signal inversion) against V1 results"
+    priority: medium
+    rationale: "Low-cost experiment. If V1 IC is positive on up-moves, V4 IC should be positive on down-moves (symmetric mechanism). Confirmation supports persistent_behavioral_bias thesis."
+    
+  - title: "Evaluate V3 (Keltner) robustness in high-vol regimes"
+    priority: medium
+    rationale: "V1 (EMA) has unfavorable regime affinity in ranging/high_vol. Keltner's ATR-adaptive bands may mitigate whipsaw. Test if V3 outperforms V1 in unfavorable regimes before full integration."
+
+edge_source_consistency:
+  v1_mechanism: "Herding-driven trend continuation via EMA spread divergence. Category: persistent_behavioral_bias. Measurable proxy: spread_pct Spearman IC with next-bar returns."
+  v2_mechanism: "Structural forced deleveraging triggered by extreme funding rates. Category: structural_forced_flow. Orthogonal to V1 (different edge source, different measurement). Measurable proxy: funding rate level vs next-bar mean-reversion strength."
+  v3_mechanism: "Breakout herding and FOMO via Keltner volatility-adaptive bands. Category: persistent_behavioral_bias (same family as V1). Different signal proxy (ATR-band breakout vs EMA spread). Measurable proxy: band breakout Spearman IC."
+  note: "V1, V2, V3 represent diversification across evidence sources (price-only vs funding vs price) and mechanisms (EMA crossover vs structural rates vs volatility breakout). No conceptual overlap; candidates span edge-source space."
+
+notes: "Shakedown batch with single-variant run queue per brief. V1 passes through base hypothesis unchanged. Alternative expansion directions (funding-rate pairing, Keltner adaptation, signal inversion) documented for next cycle. IMPROVEMENT 01 and diversity-audit real-diversity threshold both deferred to next cycle when V2/V3 are integrated. Current run establishes baseline for EMA 9/21 spread on BTC/ETH 1h to validate power calculations and campaign infrastructure before expanded variant portfolio."

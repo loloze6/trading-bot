@@ -1,0 +1,35 @@
+hypothesis_id: V1-PIVOT-A
+thesis: |
+  Keltner band lower-edge mean-reversion trades capture positive edge in extreme 
+  pullbacks when band width is optimized to filter marginal signals and reduce 
+  transaction cost drag.
+rationale: |
+  V1-PIVOT demonstrated directional edge (gross PnL +62.84, win-rate 49–53%) but 
+  failed on cost-to-frequency ratio (median cost_drag 185%). The failure mechanism 
+  is frequency overwhelm: per-trade profitability exists but is consumed by 
+  transaction costs on low-magnitude signals. Widening bands (ATR 1.5 → 2.0) 
+  reduces signal count ~40–50% while preserving directional edge on remaining 
+  (extreme) pullbacks. If E[profit_per_trade] * (1 − Δ_freq) > E[profit_prev] and 
+  cost_drag falls below 100%, net Sharpe becomes positive.
+signal_concept: |
+  KeltnerBreakoutComponent with inverted signal (long on lower-band touches).
+  Single change: ATR multiplier 1.5 → 2.0.
+  No EMA period, scaling_factor, or regime threshold changes.
+target_market: BTCUSDT, ETHUSDT
+timeframe: 1h
+regime_filter: |
+  TRENDING only: ER ≥ 0.50 AND VR ≥ 1.20.
+  All other regimes produce forecast 0.0.
+assumptions:
+  - Mean-reversion edge exists in extreme pullbacks (smallest 40–50% of signal frequency).
+  - ATR 2.0× multiplier reduces marginal signals without removing true overshoots.
+  - Cost-drag 185% stems from frequency, not signal weakness.
+  - Win-rate ≥ 49% on remaining filtered signals is sufficient when per-trade magnitude improves.
+  - TRENDING regime thresholds correctly isolate tradeable market states.
+  - ATR scaling is stable across BTCUSDT and ETHUSDT.
+expected_failure_modes:
+  - Extreme pullbacks lack mean-reversion edge; win-rate 49–53% is noise, not signal.
+  - TRENDING regime over-captures chop; filtered signals still lack directional edge.
+  - Band width adjustment insufficient; cost_drag remains > 100% after frequency reduction.
+  - Higher selectivity concentrates trades in unfavorable micro-conditions; Sharpe degradation.
+  - Mean-reversion magnitude insufficient to offset remaining transaction costs even in extreme pullbacks.

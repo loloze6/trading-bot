@@ -1,0 +1,74 @@
+hypothesis_id: "TEMPORAL_COVERAGE_MULTI_REGIME"
+falsifiable_statement: |
+  Keltner/TRENDING produces insufficient signal (composite correlation < 0.15) in sparse-activity months.
+  Adding orthogonal secondary signals (RSI, Stochastic, ROC) will improve composite correlation >= 0.15
+  and increase sparse-month slot activation to 21+/22 without introducing overfitting artifacts 
+  that degrade walk-forward Sharpe below 0.40.
+
+null_expectation: |
+  Sparse-month signal scarcity is due to genuine data insufficiency, not missing secondaries.
+  Secondary signals will either: (a) add noise and reduce walk-forward Sharpe < 0.35, 
+  (b) reveal overfitting with in-sample/walk-forward correlation < 0.70, 
+  or (c) produce statistically insignificant Sharpe lift (<5% relative gain over Keltner-only baseline).
+
+required_evidence:
+  - "Walk-forward Sharpe >= 0.40 (median across all walk-forward windows) for each variant."
+  - "Win rate >= 45% on validation fold (not in-sample)."
+  - "Trade count >= 50 across validation fold (sufficient data density to validate signal)."
+  - "Min trade count >= 1 across all symbols (no dead symbols)."
+  - "In-sample Sharpe vs. walk-forward Sharpe correlation >= 0.70 per variant (overfitting gate)."
+  - "Composite weight stability: per-window weight drift std_dev < 0.15 (weight consistency check)."
+  - "Secondary signal forecast correlation with ER/regime_state < 0.40 (orthogonality validation)."
+
+bias_risks:
+  - "Leakage via seasonal_mult: Sparse-month classification must be fixed apriori (calendar-based: Jan, Mar, Jul, Sep, Oct, Nov) or computed on training fold only, never on full dataset before split."
+  - "Secondary signal parameter overfitting: If RSI thresholds (30, 70), Stoch midline (50), or ROC cutoff (0.5%) are optimized on sparse-month returns alone, walk-forward will degrade. Solution: pre-specify thresholds, optimize only composite weights."
+  - "Composite weight instability: Jointly optimized Keltner + secondary weights computed on training fold may diverge sharply on validation fold. Requires per-window weight tracking."
+  - "Orthogonality assumption unvalidated: Claim that RSI/Stochastic/ROC are independent of ER/VR regime must be tested. Measure correlation between secondary signal activation and regime_state; if > 0.40, signals are not independent."
+  - "Multi-signal redundancy (V1/V2/V3): All target 30-min mean-reversion. Pairwise forecast correlation across secondary signals must be measured; if > 0.60, signals are redundant, not orthogonal."
+  - "Sparse-month label instability: Calendar-based sparse definition (fixed months) is immune to regime shift. But if using ex-post activity ranking, masks become invalid if market regimes change."
+  - "Lookahead bias in cost model: Cost drag estimation must use only transaction data available at trade initiation time; no post-hoc adjustment for realized slippage beyond historical assumptions."
+
+failure_modes:
+  - "Walk-forward Sharpe < 0.35: Secondaries add noise despite in-sample improvements; overfitting or regime non-stationarity."
+  - "In-sample Sharpe >> walk-forward Sharpe (delta >= 0.20): Overfitting signature; model learned sparse-month artifacts not generalizable."
+  - "Win rate < 45% on validation: High false-signal rate from secondary triggers; trade quality degrades despite higher frequency."
+  - "Trade count < 50 on validation fold: Sparse-month gaps persist despite secondaries; insufficient signal to validate hypothesis."
+  - "Per-window weight std_dev > 0.15: Composite weights unstable across walk-forward windows; portfolio composition non-stationary, suggests overfitting."
+  - "Secondary signal Spearman correlation with ER/regime_state > 0.40: Orthogonality assumption violated; secondary is not independent of regime classification."
+  - "Pairwise correlation of V1/V2/V3 secondary forecasts > 0.60: Signals are redundant, not orthogonal; merger candidate or accept only best performer."
+  - "Rebalance cadence conflict (V5): Average trades/symbol/day during sparse months > 8; cross-timeframe signal conflicts create execution friction."
+
+sample_split_design:
+  train_val_test_split: "60% train / 20% validation / 20% holdout (calendar-based, not trade-count)."
+  walk_forward_blocks: |
+    Overlapping walk-forward windows: 12-week training, 4-week validation, roll forward by 4 weeks.
+    Each variant trained independently on identical train/val/test splits.
+    Total: 5 windows per asset minimum (100 weeks ~ 2 years data).
+  sparse_month_mask_protocol: |
+    OPTION A (Recommended): Fix sparse-month calendar apriori (Jan, Mar, Jul, Sep, Oct, Nov for crypto).
+    OPTION B (If data-driven): Compute sparse-month mask on training fold only using trade-count quartiles.
+    Never compute mask on full dataset or validation/holdout folds before split.
+  per_variant_isolation: |
+    Each variant (V1-V5) trained independently on identical train/val/test splits.
+    No cross-variant borrowing of optimized parameters.
+    No post-hoc cherry-picking of best variant; all pass/fail thresholds apply uniformly.
+  holdout_protocol: |
+    Final holdout fold (last 20% of calendar, ~1 year if 5 years data): Test winning variant(s) only.
+    Holdout is not used for tuning; confirmation of walk-forward results only.
+
+decision_rules:
+  - "V1_RSI_CONSERVATIVE: PASS if sharpe >= 0.40 AND win_rate >= 45% AND trade_count >= 50."
+  - "V2_STOCHASTIC_CROSSOVER: PASS if sharpe >= 0.40 AND win_rate >= 45% AND trade_count >= 50."
+  - "V3_MOMENTUM_ROC: PASS if sharpe >= 0.40 AND win_rate >= 45% AND trade_count >= 50."
+  - "V4_SEASONAL_WEIGHTING_FALLBACK: CONDITIONAL_PASS only if V1/V2/V3 all fail AND sharpe >= 0.35 AND win_rate >= 42% AND trade_count >= 30."
+  - "V5_CROSSFRAME_2H_RSI: PASS if sharpe >= 0.40 AND win_rate >= 45% AND trade_count >= 50."
+  - "Overfitting gate: Any variant showing in_sample_sharpe - walk_forward_sharpe > 0.20 is downgraded from PASS to REFINE."
+  - "Weight stability gate: Any variant showing per_window_weight_std_dev > 0.15 is downgraded from PASS to REFINE."
+  - "Final ensemble: At least 2 variants must PASS (not REFINE) to approve hypothesis. If 0-1 pass, reject and request hypothesis refinement."
+
+test_data_integrity:
+  - "Confirm no NaN/gaps in 30-min bar data for sparse months; backfill or exclude if needed."
+  - "Verify secondary signal recomputation across train/val boundaries (no lookahead in indicator state)."
+  - "Confirm seasonal_mult modulation does not reference validation/holdout data during training."
+  - "Log all per-symbol trade counts and win rates; verify trade_count >= 50 holds before reporting metrics."

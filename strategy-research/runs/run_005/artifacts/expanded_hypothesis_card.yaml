@@ -1,0 +1,141 @@
+hypothesis_id: volume_momentum_btcusdt_1h
+base_hypothesis_id: volume_momentum_btcusdt_1h_base
+
+expanded_variants:
+  variant_001_conservative:
+    name: Base Volume-Weighted Momentum
+    description: Original formula with log-scaled volume ratio
+    formula: |
+      momentum = (close[t] - close[t-5]) / (σ(close, 20) × close[t])
+      vol_ratio = volume[t] / MA(volume, 20)
+      forecast = momentum × log(1 + vol_ratio)
+      final = clamp(forecast, [-20, 20])
+    rationale: Baseline control. Log scaling prevents extreme vol spikes from dominating signal.
+    regime_applicability: [TRENDING, RANGING]
+    complexity: low
+
+  variant_002_volume_conviction:
+    name: Multi-Bar Volume Conviction
+    description: Trigger only when volume surge persists across 2+ consecutive bars
+    formula: |
+      momentum = (close[t] - close[t-5]) / (σ(close, 20) × close[t])
+      vol_ratio = volume[t] / MA(volume, 20)
+      conviction_score = count(vol_ratio[i] > 1.2 for i in [t-2,t-1,t])
+      forecast = momentum × log(1 + vol_ratio) if conviction_score >= 2 else 0.5 × momentum × log(1 + vol_ratio)
+    rationale: Institutional volume clusters persist; filtering for multi-bar surges reduces whipsaws.
+    regime_applicability: [TRENDING, RANGING]
+    complexity: medium
+
+  variant_003_volume_divergence_reversal:
+    name: Inverse Volume-Momentum (Exhaustion)
+    description: Signal reversal when volume increases against price momentum direction
+    formula: |
+      momentum = (close[t] - close[t-5]) / (σ(close, 20) × close[t])
+      vol_ratio = volume[t] / MA(volume, 20)
+      vol_direction = sign(volume[t] - volume[t-1])
+      forecast = -1 × momentum × log(1 + vol_ratio) if sign(momentum) != vol_direction else momentum × log(1 + vol_ratio)
+      final = clamp(forecast, [-20, 20])
+    rationale: Contradictory thesis. High volume on declining price signals exhaustion. Tests reversal vs confirmation paradigm.
+    regime_applicability: [RANGING]
+    complexity: medium
+
+  variant_004_regime_adaptive_volume_threshold:
+    name: Regime-Adaptive Volume Scaling
+    description: Adjust volume sensitivity and momentum window by regime
+    formula: |
+      IF regime == TRENDING:
+        momentum_lookback = 5, vol_threshold = 1.5
+      ELSE:
+        momentum_lookback = 3, vol_threshold = 1.2
+      
+      momentum = (close[t] - close[t-momentum_lookback]) / (σ(close, 20) × close[t])
+      vol_ratio = volume[t] / MA(volume, 20)
+      forecast = momentum × log(1 + vol_ratio) if vol_ratio > vol_threshold else 0.2 × momentum
+    rationale: TRENDING favors longer accumulation; RANGING detects quicker breakouts. Parametric specialization improves signal quality per regime.
+    regime_applicability: [TRENDING, RANGING]
+    complexity: medium
+
+  variant_005_volume_volatility_zscore:
+    name: Volume Volatility Normalization
+    description: Use volume z-score instead of simple ratio; captures vol expansion state
+    formula: |
+      momentum = (close[t] - close[t-5]) / (σ(close, 20) × close[t])
+      vol_mean = MA(volume, 20)
+      vol_std = StdDev(volume, 20)
+      vol_zscore = (volume[t] - vol_mean) / (vol_std + ε)
+      forecast = momentum × log(1 + vol_zscore)
+      final = clamp(forecast, [-20, 20])
+    rationale: Z-score normalization is robust to absolute volume changes across market phases. Detects true vol expansion independent of venue/adoption effects.
+    regime_applicability: [TRENDING, RANGING]
+    complexity: low
+
+  variant_006_double_standardized:
+    name: Price-Volume Joint Standardization
+    description: Normalize momentum by both price and volume volatility simultaneously
+    formula: |
+      price_momentum_norm = (close[t] - close[t-5]) / (σ(close, 20) × close[t])
+      vol_zscore = (volume[t] - MA(volume, 20)) / (StdDev(volume, 20) + ε)
+      forecast = price_momentum_norm × (1 + 0.5 × vol_zscore)
+      final = clamp(forecast, [-20, 20])
+    rationale: Joint standardization reduces mean-reversion bias on low-vol periods. Both dimensions normalized to volatility regime.
+    regime_applicability: [TRENDING, RANGING]
+    complexity: medium
+
+alternative_data_candidates:
+  - name: Volume-Weighted Average Price (VWAP) Divergence
+    source: OHLCV
+    formula: vwap_divergence = (close - VWAP) / close
+    purpose: Detect when close diverges from institutional VWAP (potential reversal)
+    feasibility: high
+    
+  - name: Directional Volume Proxy
+    source: OHLCV
+    formula: buy_volume ≈ volume × ((close - open) / (high - low + ε))
+    purpose: Attribute volume to buy vs sell side without trade data
+    feasibility: high
+    
+  - name: Volume-Momentum Correlation
+    source: OHLCV
+    formula: corr_20 = correlation(momentum, vol_ratio, 20-bar window)
+    purpose: Detect divergence; correlation drop signals weakening institutional conviction
+    feasibility: high
+
+reverse_hypothesis:
+  name: Volume-Confirmed Mean Reversion
+  description: High volume on directional moves signals exhaustion, not institutional confirmation
+  formula: |
+    momentum = (close[t] - close[t-5]) / (σ(close, 20) × close[t])
+    vol_ratio = volume[t] / MA(volume, 20)
+    forecast = -1 × momentum if vol_ratio > 1.5 else momentum
+  rationale: Retail FOMO amplifies institutional distribution. Tests whether volume + momentum predict reversal instead of continuation.
+  regime_applicability: [RANGING]
+
+behavioral_features:
+  - name: Volume Conviction Streak
+    formula: conviction_streak = count(vol_ratio[i] > 1.2 for last N bars with consistent direction)
+    purpose: Distinguish institutional accumulation from noise spikes. Signal only credible if multi-bar persistence.
+    
+  - name: Momentum-Volume Alignment Penalty
+    formula: alignment_factor = 1.0 if sign(momentum) == sign(vol_ratio - 1) else 0.5
+    purpose: Downweight forecast when momentum and volume signals diverge; core thesis requires both.
+    
+  - name: Close-Bar Volume Concentration
+    formula: close_vol_pct = volume_last_15min / volume_total
+    purpose: High concentration = potential end-of-move; lower confidence when > 60%.
+    
+  - name: Price-Volume Divergence Warning
+    formula: hh_low_vol = (close[t] > MAX(close[t-20:t-1])) AND (vol_ratio[t] < 1.0)
+    purpose: New high on falling volume = weak institutional follow-through. Early reversal warning.
+
+regime_specific_variants:
+  trending_amplified:
+    description: "Longer lookback (7 bars), higher vol threshold (1.4), signal weight 1.2"
+    rationale: Trends exhibit momentum persistence. Require stronger vol confirmation to reduce whipsaws on noise.
+    
+  ranging_breakout_sensitive:
+    description: "Shorter lookback (3 bars), lower vol threshold (1.1), signal weight 1.0"
+    rationale: Breakouts require quick detection. Structurally lower volumes in RANGING justify lower threshold.
+    
+  transition_damped:
+    description: "Reduce forecast weight by 50%, increase vol_threshold to 1.6 during regime transition"
+    rationale: Regime detection confidence is low during transitions. Require extreme conviction before acting.

@@ -1,0 +1,104 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 11
+runs_analyzed:
+  - run_014
+  - run_015
+  - run_016
+  - run_017
+  - run_018
+  - run_019
+  - run_020
+  - run_021
+
+pattern_detected: same_root_cause_different_families
+
+pattern_evidence:
+  - "run_014 (rsi_mean_reversion, 1h): cost_drag_pct=142.82"
+  - "run_016 (keltner_mean_reversion, 1h): cost_drag_pct=185.32"
+  - "run_018 (rsi_momentum_trending, 1h): cost_drag_pct=272.87"
+  - "run_021 (keltner_mean_reversion, 4h): cost_drag_pct=413.05"
+  - "Four structurally different signal families; all exhibit cost_drag > 80%. Secondary pattern: when cost_drag is controlled (<30%, runs 015/017/019), correlation is weak or negative (runs 015/019 fail; run 017 is exception at corr=0.2145)."
+  - "Timeframe escalation hypothesis falsified: run_021 at 4h (corr=0.0136, cost_drag=413%) is inferior to run_017 at 1h (corr=0.2145, cost_drag=27.45%) on same signal family (Keltner)."
+
+recommendation: reframe
+
+recommendation_rationale: |
+  The campaign has tried four distinct signal families (rsi_mean_reversion, keltner_breakout, 
+  keltner_mean_reversion, rsi_momentum_trending) across 11 runs, and all show cost_drag > 80% 
+  except runs 015/017/019, which have <30% drag but weak/negative correlation. This is NOT a 
+  signal-family problem; it is a structural issue in position sizing, rebalancing frequency, or 
+  trade execution. The recent 4h escalation (run_021) made diagnostics worse (corr fell from 
+  0.2145 to 0.0136; cost_drag rose from 27.45% to 413%), falsifying the trade-frequency hypothesis. 
+  Run_017 (Keltner mean-reversion at 1h) remains the sole promotable result (corr=0.2145, 
+  cost_drag=27.45%, win_rate PASS). Continuing to test more signal families or timeframes 
+  without addressing cost structure will exhaust budget on known-failing search paths. The 
+  campaign must pivot from "which signal works?" to "why are costs unsustainable, and can we 
+  replicate run_017's edge?"
+
+next_research_question: |
+  hypothesis_id: "REFRAME-COST-REGIME-VALIDATION"
+  asset: "BTCUSDT, ETHUSDT"
+  timeframe: "1h"
+  
+  research_question: |
+    Why does run_017 (Keltner mean-reversion at 1h, TRENDING regime) achieve corr=0.2145 and 
+    cost_drag=27.45% while all other runs suffer cost_drag > 80%? Is the edge replicable, and 
+    what regime/sizing conditions enable it? Secondary: does TRENDING regime (ER≥0.50, VR≥1.20) 
+    have positive forward returns, or does it select whipsaw zones?
+  
+  signal_concept: |
+    Keltner lower-band mean-reversion (baseline from run_017). No new signal families. 
+    Focus on cost and regime diagnostics, not signal innovation.
+  
+  regime_filter: |
+    TRENDING regime (ER≥0.50, VR≥1.20, threshold_rules). Same as run_017. 
+    Hypothesis: regime definition is sound and run_017 edge is repeatable under identical conditions.
+  
+  mechanism: |
+    Run_017 showed forecast_return_corr=0.2145 with cost_drag=27.45%, the only run meeting 
+    minimum bar (corr > 0.01, cost_drag < 80%). Likely reasons: (1) Keltner bands adapt to 
+    volatility, reducing false signals; (2) 1h bars provide adequate trade frequency without 
+    excessive rebalancing; (3) TRENDING regime correctly identifies high-ER zones. Test whether 
+    run_017 is repeatable or was a statistical artifact. If repeatable, examine position sizing 
+    and trade frequency to understand why cost_drag is sustainable at 27.45% vs 413% in run_021.
+  
+  assumptions:
+    - "Run_017 edge (corr=0.2145) is real, not noise, and replicable under identical conditions."
+    - "Cost drag spike (27.45% → 413%) in run_021 is timeframe-dependent (4h bars) or regime-specific (4h TRENDING is different from 1h)."
+    - "TRENDING regime forward_return is positive in 1h but neutral or negative in 4h (hypothesis to validate)."
+    - "Position sizing logic may be sensitive to timeframe; 1h positions are sized appropriately, 4h positions are over-leveraged or over-traded."
+  
+  expected_failure_modes:
+    - "Run_017 was a statistical fluke; re-running Keltner at 1h yields corr < 0.01, cost_drag > 80%."
+    - "TRENDING regime has zero forward returns even at 1h (regime definition is wrong)."
+    - "Position sizing / rebalance frequency logic is fundamentally misaligned with cost structure (requires component redesign)."
+  
+  constraints:
+    - "Timeframe: 1h (revert from 4h escalation). Do not try 4h until cost diagnostics are understood at 1h."
+    - "Regime: TRENDING (ER≥0.50, VR≥1.20, threshold_rules). Keep identical to run_017."
+    - "Signal: Keltner mean-reversion (identical to run_017). No new signal families."
+    - "Focus: Replicate run_017 exactly, then measure diagnostic repeatability (forecast_return_corr, cost_drag, win_rate, trade_count)."
+  
+  change_from_previous: |
+    Revert from 4h timeframe (run_020/021 escalation) to 1h (run_017 baseline). 
+    Rationale: 4h escalation failed (run_021: corr=0.0136 vs run_017: corr=0.2145). 
+    Before escalating again, validate that 1h edge is repeatable and understand why cost/correlation 
+    degrade at 4h. This is a defensive pivot, not an aggressive search expansion.
+
+budget_assessment: |
+  Runs used: 11 / ~20 campaign_budget (55% consumed).
+  Remaining: ~9 runs.
+  Recommendation: Prioritize run_017 replication (1 run) + regime validation diagnostics (2 runs).
+  If replication succeeds, allocate 3-4 runs to cost/sizing tuning. If replication fails, 
+  allocate remaining budget to escalate_instrument (try 1-2 new symbols with same regime/signal) 
+  before terminating.
+  Speed vs. thoroughness: Prioritize speed on run_017 replication; if edge is confirmed repeatable, 
+  shift to thoroughness on cost analysis (detailed position sizing audit, fee impact breakdown).
+
+escalation_gate: |
+  Do NOT attempt another timeframe escalation until: (1) run_017 is replicated at least once 
+  with corr > 0.10 and cost_drag < 80%, AND (2) a cost diagnostic audit explains why 1h is 
+  sustainable but 4h is not. Escalating to 4h again without these diagnostics will waste budget.
+
+status: active
+updated_at: '2026-06-28'

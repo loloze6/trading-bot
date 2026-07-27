@@ -1,0 +1,40 @@
+expansion_summary: "Expanded TBD selectivity gate into 4 orthogonal variants + 1 reverse. All preserve signal and baseline ER/VR thresholds. Each targets distinct cost_drag vector: temporal (V1), distributional (V2), multiplicative strength (V3), execution spacing (V4)."
+
+variant_rationale:
+  V1: "Simplest. VR already computed; persistence logic is ~1 LOC. Low risk; conservative because regime must hold."
+  V2: "Microstructure insight: extreme vol regimes have different slippage. Interpretable: trade when vol is normal, not crisis/euphoria."
+  V3: "Treats ER and VR as independent confidence; product captures synergy. Conservative because it's a threshold on existing metrics."
+  V4: "Execution-aware gate. Prevents position clustering by enforcing distance. Novel; adds order-tracking complexity but fits component framework."
+
+testability_ranking:
+  V1: "High (rolling check, no bias, ~50-70 trades)"
+  V2: "High (vol from past bars, no bias, ~50-80 trades)"
+  V3: "High (threshold on existing metrics, ~60-90 trades)"
+  V4: "Medium (sparser trades ~30-50; requires order replay verification)"
+
+implementation_effort_ranking: "V3 (trivial) < V1 (trivial) < V2 (moderate) < V4 (moderate-high)"
+
+look_ahead_bias_assessment:
+  V1: "None (backward-looking persistence check)"
+  V2: "None (realized vol from past bars only; quantile computed offline)"
+  V3: "None (threshold on existing ER/VR)"
+  V4: "Low (order history is past data; backtest replay must match live order timestamps)"
+
+expected_sharpe_improvement_order: "V2 > V1 > V3 > V4"
+rationale: "V2 captures distributional quality (vol regime specificity); V1 adds robustness via persistence; V3 is safest but less novel; V4 may over-constrain (very sparse trades = noise)."
+
+failure_mode_by_variant:
+  V1: "VR oscillates around 1.20 → persistence gate becomes random or too tight. Diagnostic: histogram of consecutive bars with VR >= 1.20."
+  V2: "Vol quantiles shift across regimes (TRENDING vs MR have different vol profiles) → gate fires differently per regime, risking look-ahead via regime-dependent quantile backfill. Diagnostic: segment backtest by ER/VR regime; verify bar coverage consistency."
+  V3: "Product threshold 0.50 is arbitrary. Fires >20% bars or <5% bars. Diagnostic: sensitivity sweep on threshold [0.30, 0.40, 0.50, 0.60]; measure bar coverage per threshold."
+  V4: "2 ATR spacing too tight in low-vol or too loose in high-vol. Order tracking adds complexity and replay risk. Diagnostic: verify ExecutionHandler logs match backtest fills; cross-check entry prices."
+
+integration_strategy:
+  location: "CompositeStrategyForRegime or new RegimeComponent subclass"
+  changes_required: "Add selectivity_gate() method; call before forecast return"
+  no_architecture_changes: "All variants fit existing component framework. No changes to ExecutionHandler, PortfolioInfo, or TradingBot._process_symbol_candle_completion()."
+  testing_approach: "Screen each V1-V4 independently for Sharpe > 0.5, cost_drag < 0.30, trades > 50. Walk-forward and holdout test. Rank by Sharpe; select top 2 variants for live trial."
+
+optional_extensions:
+  regime_momentum: "Compute dER/dt and dVR/dt; fire only if both accelerating. ~5 LOC in regime component. Test separately after V1-V4 screening."
+  recent_pnl_polarity: "Track last 5 trade directions; gate signal on matching regime polarity. Medium complexity; defer to post-screening."

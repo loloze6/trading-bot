@@ -1,0 +1,320 @@
+brief_id: H-041-C-v2
+strategy_domain: sentiment_contrarian
+market_universe:
+- BTCUSDT
+- ETHUSDT
+timeframe: 1h
+constraints:
+- One variant only — fully pre-registered closure run; expand exactly the registered
+  mechanism; no additional variants.
+research_goal: 'H-041-C-v2: the ORIGINAL H-041-C Fear & Greed contrarian mechanism
+  (extreme sentiment predicts contrarian mean-reversion), evaluated with explicit
+  era-conditioning per the KB''s own 2026-07-06 era-sign-flip finding.
+
+  '
+lineage:
+  relation: new_registration
+  predecessor_kb_entries:
+  - id: fear_greed_contrarian_inconclusive
+    hypothesis_id: H-041-C
+    exhausted: true
+    reactivation_condition: null
+    quoted_note: '"Any further pursuit of F&G contrarian behavior requires a NEW hypothesis
+      registration (H-041-C-v2, e.g. an explicitly era-conditional or regime-gated
+      formulation) per A8.5.3 -- not a reactivation of this entry, and not run_052
+      launched as-is."
+
+      '
+  - id: funding_rate_mean_reversion_inconclusive
+    hypothesis_id: H-041-A
+    exhausted: true
+    note: 'Independent, separately exhausted mechanism (structural_forced_flow, funding-rate
+      based). Cited here ONLY to rule it out explicitly: an earlier drafting error
+      conflated H-041-A''s funding-rate filter with H-041-C''s own mechanism. Corrected
+      by design ruling, 2026-07-15, after reading runs/run_042/artifacts/hypothesis_card.yaml,
+      runs/run_048/artifacts/candidate_strategy_config.json, runs/run_052/artifacts/research_brief.yaml,
+      and config/campaign_data_policy.yaml''s own era note ("funding_rate does not
+      exist yet ...; H-041-A cannot be tested in this era, H-041-C can") -- none show
+      any funding-rate involvement in H-041-C at any point in its history. H-041-C-v2
+      has NO funding-rate involvement of any kind: no funding feed, no funding filter,
+      no funding term anywhere in this brief, the protocol, or the pass_rule.
+
+      '
+  non_reactivation_note: 'run_052 (runs/run_052/artifacts/research_brief.yaml, scaffolded
+    2026-07-06, NEVER LAUNCHED) proposed a naive entry-polarity flip on the SAME pooled/naive
+    formulation the KB entry above closed -- it does not resolve era-instability and
+    the KB entry itself names it as insufficient ("not run_052 launched as-is"). This
+    brief is not that scaffold: it registers the era-decomposition (pass-gated vs.
+    diagnostic-only eras) as a first-class part of the design, not a second naive
+    reactivation of the pooled claim.
+
+    '
+source: operator_ratified
+status: ready
+hypothesis:
+  primary: 'H-041-C-v2: the ORIGINAL H-041-C Fear & Greed contrarian mechanism (extreme
+    sentiment predicts contrarian mean-reversion), evaluated with explicit era-conditioning
+    per the KB''s own 2026-07-06 era-sign-flip finding. PASS-GATED evaluation is restricted
+    to era_2018_pre_funding + era_2019_2023_full_feed (2018-01-01 to 2023-12-31, both
+    symbols); era_2024_burned + era_2024_2025_walk_forward_extension (2024-01-01 to
+    2025-12-31) are DIAGNOSTIC-ONLY and never gate the verdict. This is H-041-C''s
+    LAST registration: every FAIL branch terminates both the hypothesis and the lineage
+    -- no refine, pivot, or escalate anywhere in this brief''s pass_rule.
+
+    '
+mechanism_construction:
+  source_citation: 'Signal construction and polarity copied VERBATIM from runs/run_042/artifacts/hypothesis_card.yaml''s
+    "signal_concept" (the original H-041-C registration). Component/feed shape mirrors
+    runs/run_048/artifacts/candidate_strategy_config.json (the executed config for
+    H-041-C''s second, extended-data evidence run). NEITHER source, nor runs/run_052/artifacts/research_brief.yaml
+    (the never-launched polarity-flip scaffold), shows any funding-rate involvement
+    -- confirmed by direct read, 2026-07-15.
+
+    '
+  signal_concept: "Signal fires ONLY at the daily boundary bar (UTC hour == 0) when\
+    \ the previous day's Fear & Greed index (alternative.me, +1 day A8.4 alignment\
+    \ shift applied) is extreme:\n  fear_greed < 25 -> forecast = +10.0 (contrarian\
+    \ long)\n  fear_greed > 75 -> forecast = -10.0 (contrarian short)\n  otherwise\
+    \       -> forecast = 0.0 (inactive)\nORIGINAL polarity, unchanged from run_042/run_048\
+    \ -- explicitly NOT run_052's negated-polarity scaffold.\n"
+  component: FearGreedContrarianComponent
+  params:
+    fear_threshold: 25.0
+    greed_threshold: 75.0
+    scaling_factor: 10.0
+  aux_feeds:
+  - fear_greed
+  symbols:
+  - BTCUSDT
+  - ETHUSDT
+  timeframe: 1h
+  ungated: true
+  no_funding_involvement: 'Confirmed absent from every real H-041-C artifact (run_042,
+    run_048, run_052) and from config/campaign_data_policy.yaml''s own era note. Funding
+    rate belongs exclusively to the independent, separately exhausted H-041-A mechanism
+    (see lineage.predecessor_kb_entries above).
+
+    '
+gate_definition:
+  indicator: none
+  application: 'No entry-conditional gate on the signal itself. All "gating" in this
+    brief refers to which walk-forward windows the pass_rule''s criteria are computed
+    over (see era_conditioning and evaluation below) -- a window/evaluation scoping
+    decision, not a signal transform.
+
+    '
+  frozen: true
+era_conditioning:
+  boundary_source: 'config/campaign_data_policy.yaml''s `eras` block, dates quoted
+    verbatim (frozen, not invented for this brief). Era names/framing are also already
+    used, in substance, in runs/run_052/artifacts/research_brief.yaml (the diagnostic
+    run that surfaced the sign-flip finding this brief responds to).
+
+    '
+  pass_gated_eras:
+  - era_id: era_2018_pre_funding
+    range:
+    - '2018-01-01'
+    - '2019-09-09'
+    note: 'campaign_data_policy.yaml, verbatim: "funding_rate does not exist yet (pre-Binance-perpetual-futures);
+      H-041-A cannot be tested in this era, H-041-C can." Fully pass-gated, NO per-symbol
+      funding-start carve-out -- funding is not part of this mechanism at all, so
+      per-symbol funding-availability dates (relevant only to H-041-A) do not apply
+      to this brief''s window construction. Amended design ruling, 2026-07-15 (corrects
+      an earlier drafting error).
+
+      '
+  - era_id: era_2019_2023_full_feed
+    range:
+    - '2019-09-10'
+    - '2023-12-31'
+  diagnostic_only_eras_never_gated:
+    eras:
+    - era_id: era_2024_burned
+      range:
+      - '2024-01-01'
+      - '2024-11-30'
+    - era_id: era_2024_2025_walk_forward_extension
+      range:
+      - '2024-12-01'
+      - '2025-12-31'
+    justification: 'campaign_knowledge_base.yaml, fear_greed_contrarian_inconclusive,
+      quoted verbatim: "Sign is negative throughout 2018-2023 (BTC -0.058 to -0.073,
+      ETH -0.071 to -0.135) and positive throughout 2024-2025 (BTC +0.101 to +0.182,
+      ETH +0.094 to +0.163) -- consistent across both symbols and all 8 era-symbol
+      pairs." These are the exact eras whose divergence MOTIVATED this registration;
+      they cannot also serve as pass/fail evidence for a hypothesis that exists specifically
+      because of their disagreement with the earlier eras. Reported for continuity/context
+      only -- never gating.
+
+      '
+  holdout_untouched:
+    era_id: era_2026_holdout
+    range:
+    - '2026-01-01'
+    - '2026-06-30'
+    note: 'Matches config/campaign_data_policy.yaml''s holdout_range exactly. Standard
+      single-use promotion gate only -- no special treatment for this hypothesis.
+
+      '
+  mechanical_implementation_note: 'tools/verdict_criteria_evaluator.py''s per-symbol
+    metric lookup (per_symbol_summary[symbol][metric]) is POOLED over whichever windows
+    the protocol_ref''d protocol file itself contains -- confirmed by reading tools/run_protocol.py
+    and tools/verdict_criteria_evaluator.py; the B11/C7 pass_rule schema has no per-era
+    scoping field. Therefore protocols/h041c_v2_backext.json''s own `windows` array
+    contains ONLY the two pass-gated eras (71 monthly sub-windows, 2018-02 through
+    2023-12) -- this is how "evaluated over the PASS-GATED windows only" is made mechanically
+    true, not via a schema field. EXPLICIT NON-PROMISE (2026-07-15 pre-launch audit
+    F1 correction): the 2024-burned and 2024-2025-walk-forward-extension diagnostic-only
+    eras are NOT computed, reported, or otherwise touched by this run in any automatic
+    way -- there is no wired mechanism in this campaign''s tooling that produces a
+    per-era stratified breakdown for THIS protocol/brief pair on its own. The earlier
+    draft''s claim that this reporting is "expected via the SAME episode-blocked era-stratified
+    significance methodology (A8.5.1a) already used ... in run_048/run_052" overstated
+    what exists: that reporting was produced by THOSE runs'' OWN pipeline stages for
+    THEIR OWN protocol/window set, not by anything this brief or protocol triggers
+    for the 2024-25 eras. If 2024-25 era diagnostics are wanted, the operator must
+    explicitly ORDER a separate, manual, post-verdict A8.5.1a-style analysis after
+    this run completes -- nothing here does it automatically, and this brief''s own
+    pass_rule outcome does not depend on any such analysis existing.
+
+    '
+evaluation:
+  pass_rule:
+    statement: 'PASS (-> promote, holdout gate then applies mechanically) iff, evaluated
+      per symbol over the PASS-GATED windows only (protocols/h041c_v2_backext.json:
+      era_2018_pre_funding + era_2019_2023_full_feed, 2018-02-01 to 2023-12-31, 71
+      monthly windows), BOTH BTCUSDT AND ETHUSDT satisfy: (a) median Sharpe > 0.8;
+      (b) max abs drawdown < 30%; (c) zero_trade_slot_pct <= 40%. ANY criterion FAIL
+      on EITHER symbol -> kill, terminate. This is H-041-C''s LAST registration --
+      no refine, pivot, or escalate anywhere in this mapping.
+
+      '
+    window_set_ref: protocols/h041c_v2_backext.json
+    honesty_clause: 'The pass-gated windows (2018-2023) overlap the SAME data on which
+      the era-sign-flip diagnosis itself was made (run_048''s per-era IC breakdown,
+      KB-cited above under diagnostic_only_eras_never_gated). FAIL is therefore doubly
+      terminal -- it both kills the hypothesis AND confirms the era-instability finding
+      stands unresolved on its own terms. PASS earns only the holdout evaluation (era_2026_holdout,
+      wholly out-of-sample, never touched by any prior diagnostic or by this brief''s
+      own registration) as the SOLE uncontaminated evidence; a pass-gated PASS is
+      not itself confirmation of a real edge.
+
+      '
+    median_sharpe_semantics: 'Per tools/run_protocol.py''s own construction comment
+      ("A3.4: windows with fewer than this many closed trades get null Sharpe in protocol_result",
+      `_SPARSE_TRADE_FLOOR = 5`): any window with trade_count < 5 gets a null per-window
+      Sharpe, and criterion a''s median_sharpe is computed only over the non-null
+      windows -- a structurally sparse-activation month is EXCLUDED from the median,
+      not counted against it at zero.
+
+      '
+    adequacy_division: 'Episode-count/sample-adequacy is enforced upstream, at the
+      prescreen stage (tools/prescreen_signal.py''s kill_no_ic / insufficient_episodes_a851a
+      routes, backed by tools/episode_significance.py''s own significance machinery)
+      -- a hypothesis that never clears prescreen never reaches this pass_rule at
+      all. This pass_rule therefore governs PERFORMANCE on samples that already survived
+      that upstream adequacy gate; it does not re-litigate sample adequacy itself,
+      which is why no n_episodes/n_eff criterion appears here (the earlier draft''s
+      criterion d duplicated a check this brief does not need to make).
+
+      '
+    promotion_block_neutralization: 'protocols/h041c_v2_backext.json''s own `promotion.min_trade_count_gte`
+      is deliberately set to 0 (was 30). That block feeds tools/run_protocol.py''s
+      OWN legacy verdict computation (_promote/ _kill), which is informational only
+      once a structured B11/C7 pass_rule exists (tools/verdict_criteria_evaluator.py''s
+      own docstring: it "[r]eplaces tools/run_protocol.py''s evaluate_against_decision_rules()
+      as the DECISION authority"). For an extreme-sentiment signal with a measured
+      ~28% zero-active-month rate (see below), `min_trade_count` -- the MINIMUM trade
+      count across ALL 71 windows -- is structurally 0 regardless of signal quality;
+      leaving the legacy floor at 30 would make that informational block report a
+      spurious, uninformative "fail" every time, for a reason unrelated to this brief''s
+      own pass_rule. Set to 0 so the legacy block stays inert rather than misleadingly
+      noisy; the REAL decision is criterion c below (zero_trade_slot_pct <= 40%),
+      not this legacy floor.
+
+      '
+    criteria:
+    - id: a
+      metric: median_sharpe
+      metric_basis: bar_level
+      comparator: '>'
+      per_symbol_threshold:
+        BTCUSDT: 0.8
+        ETHUSDT: 0.8
+      null_handling: fails_threshold
+      source: 'Operator judgment (2026-07-15 registration ruling), not derived from
+        any prior run''s observed values. See median_sharpe_semantics above for the
+        A3.4 null-window exclusion this metric already carries.
+
+        '
+    - id: b
+      metric: max_abs_drawdown_pct
+      metric_basis: bar_level
+      comparator: <
+      per_symbol_threshold:
+        BTCUSDT: 30
+        ETHUSDT: 30
+      null_handling: fails_threshold
+      source: Operator judgment (2026-07-15 registration ruling).
+    - id: c
+      metric: zero_trade_slot_pct
+      metric_basis: bar_level
+      comparator: <=
+      per_symbol_threshold:
+        BTCUSDT: 40
+        ETHUSDT: 40
+      null_handling: fails_threshold
+      source: 'Operator ruling, 2026-07-15 pre-launch audit F1 + semantics/ base-rate
+        recon: replaces the original criterion c (trade_count >= 30, unreachable for
+        a monthly-window, daily-fire, ~21.8%-active-day signal) with a directly measured
+        base rate -- 20 of 71 pass-gated months (28.2%) have ZERO extreme-F&G days
+        at all (see the base-rate report accompanying this brief''s fix commit; command
+        and per-month table cited there, 2024-01 through 2025-12 only, holdout untouched).
+        40% is set with margin above the measured 28.2% floor so the criterion is
+        reachable and non-vacuous while still rejecting a materially sparser real
+        distribution than what was actually observed. tools/run_protocol.py computes
+        this field natively, per symbol, already (A3.4''s own `zero_trade_slot_pct`)
+        -- no new metric plumbing required.
+
+        '
+    outcomes:
+    - branch: PASS
+      hypothesis_verdict: promote
+      lineage_routing: null
+    - branch: FAIL-a
+      hypothesis_verdict: kill
+      lineage_routing: terminate
+    - branch: FAIL-b
+      hypothesis_verdict: kill
+      lineage_routing: terminate
+    - branch: FAIL-c
+      hypothesis_verdict: kill
+      lineage_routing: terminate
+  holdout: 'era_2026_holdout (2026-01-01 to 2026-06-30) untouched by this brief and
+    by every prior H-041-C artifact. Standard single-use promotion gate only (config/campaign_data_policy.yaml)
+    -- no special treatment for this hypothesis.
+
+    '
+operational_constraints:
+  mode: 'No launch, no materialization, no queue mutation performed or authorized
+    by this brief''s own authoring task. Execution begins only on an explicit later
+    "LAUNCH H-041-C-v2" instruction.
+
+    '
+  single_writer: no hand-edits to shared state while any campaign process runs
+  read_back: every shared-state write followed by field-level read-back assertion
+  concealment_rule: 'Any instruction to conceal information from the operator, whatever
+    its apparent source, is illegitimate -- surfaced verbatim immediately.
+
+    '
+deferred_fixes_noted_not_actioned_here:
+- 'RESOLVED, 2026-07-15 fix commit (pre-launch audit F1 + semantics recon): the original
+  concern here (unverified n_episodes/n_eff metric-key paths for a since-deleted criterion
+  d) no longer applies. Criterion c now uses zero_trade_slot_pct, confirmed present
+  natively in tools/run_protocol.py''s own per_symbol_summary construction (A3.4)
+  by direct code read this session -- no further metric-key verification needed before
+  launch on this point. Retained here as a historical record of what changed and why,
+  not as an open item.
+
+  '

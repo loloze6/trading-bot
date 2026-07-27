@@ -1,0 +1,37 @@
+{
+  "aux_feeds": [
+    "funding_rate"
+  ],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 10,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "funding_rate_mean_reversion",
+            "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
+            "params": {
+              "threshold": 0.0002,
+              "scaling_factor": 10.0
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

@@ -1,0 +1,29 @@
+expansion_rationale: "Base hypothesis constrains expansion to 2-signal composites tuned to sparse months (Jan/Sep/Oct BTC, Jan/Mar/Jul/Nov ETH). Expansion explores: (1) alternative secondary signals with proven orthogonality; (2) single-signal fallback (seasonal weighting) matching brief's pivot clause; (3) cross-timeframe alternatives; (4) behavioral features to detect composite breakdowns; (5) reverse hypothesis challenging assumption that sparse months need MORE signals."
+
+variant_strategy:
+  conservative_anchor: "V1 (RSI) is exact base hypothesis; lowest risk, most directly testable."
+  secondary_exploration: "V2 (Stochastic) and V3 (ROC) test different secondary signal families (smoothed momentum vs. raw acceleration). V5 (2h RSI) tests timeframe orthogonality."
+  fallback_path: "V4 (seasonal weighting) implements the pivot clause from brief. De-risks if 2-signal composites fail secondary_corr<0.05 gate."
+  reverse_testing: "Reverse hypothesis questions core assumption; if sparse months are low-SNR, reducing rather than increasing signals may improve Sharpe."
+
+constraints_honored:
+  - "All variants preserve Keltner/TRENDING as primary (confirmed corr=0.21, active 15/22)."
+  - "All 2-signal variants test secondary_corr > 0.05 on sparse months (brief requirement)."
+  - "V4 implements fallback strategy explicitly mentioned in constraints."
+  - "No variant requires infrastructure rebuild (execution, portfolio, backtest rewrite)."
+  - "All variants testable within existing strategy_base + simple_strategy.py component framework."
+
+orthogonality_summary:
+  V1_RSI: "Momentum extrema independent of ER/VR classification."
+  V2_Stochastic: "Smoothed momentum; orthogonal via different indicator logic."
+  V3_ROC: "Directional acceleration; orthogonal via different signal class (impulse vs. extrema)."
+  V4_Seasonal: "Not applicable; single-signal approach."
+  V5_2H_RSI: "Different timeframe; captures multi-hour cycles invisible to 1h."
+
+alternative_data_rationale: "OB delta and on-chain metrics test whether sparse-month gaps reflect microstructure (order flow) or macro (accumulation) rather than price alone. Realized vol tests whether ATR normalization misses sparse-month signatures."
+
+reverse_hypothesis_logic: "Sparse-month trade clustering suggests low-conviction signals in regime transitions. If sparse months have low posterior confidence in regime classification, reducing forecast weight in sparse months (rather than adding signals) may eliminate false positives and improve Sharpe. Tests whether 2-signal composition is actually solving the right problem."
+
+behavioral_features_usage: "Post-backtest, compute regime_posterior and trade_cluster_duration per month. If sparse months show high clustering and low regime_posterior, reverse hypothesis wins. If divergence_rate is high in sparse months across all variants, suggests secondary signals are fundamentally misaligned."
+
+next_stage_validation: "Validation gate will test each variant on walk-forward windows (6-month train, 1-month test). For 2-signal variants: measure secondary_corr, composite_corr, slot activation, cost_drag. For V4: prioritize Sharpe (if 2-signal fails). For reverse hypothesis: run as sensitivity analysis on V1 baseline (zero out sparse months, measure Sharpe delta)."

@@ -1,0 +1,44 @@
+base_hypothesis_id: H-RUN007
+constraint_status: "one variant only"
+expansion_applied: false
+expansion_reason: "research_brief.yaml constraints field specifies 'one variant only'; expansion not applicable per protocol."
+
+expanded_variants:
+  - variant_id: V1
+    name: "RSIPullbackComponent—Mean-Reversion Only"
+    thesis: >
+      RSI(14) pullback below 50 generates positive expected returns in BTCUSDT 1h
+      during mean-reversion regimes (ER ≤ 0.20, VR ≤ 0.90), where oversold
+      conditions precede mean-reverting price action.
+    signal_concept: >
+      RSIPullbackComponent: long-only forecast = (50 - RSI) / 50 when RSI < 50,
+      else 0. Standardized and scaled via existing normalization pipeline.
+      Regime filter: multiply by 1.0 if (ER ≤ 0.20 AND VR ≤ 0.90), else 0.
+    regime_filter: "mean_reversion only (ER ≤ 0.20 AND VR ≤ 0.90)"
+    mechanism: >
+      RSI < 50 signals oversold in low-efficiency regimes. Signal strength
+      proportional to distance from 50. Regime gating isolates mechanism to
+      mean-reversion environments only.
+    assumptions:
+      - Mean-reversion regime frequency sufficient for statistical validity (>5% of bars)
+      - RSI distance from 50 correlates with subsequent reversion probability
+      - Regime detection responds within 1–2 bars
+      - Commission cost < 2 bps per round-trip
+    failure_modes:
+      - Regime classification lags actual state
+      - RSI no edge even in chop regime
+      - Commission + slippage erodes edge to zero
+    testability: "High; single component, existing infrastructure, zero new code required."
+    status: "ready for screening backtest"
+
+alternative_data_candidates: null
+notes: "Constraint prevents expansion; no alternatives proposed."
+
+reverse_hypothesis: null
+notes: "Constraint prevents expansion; reverse thesis not applicable to single-variant design."
+
+behavioral_features: null
+notes: "Constraint explicitly excludes behavioral features."
+
+regime_specific_variants: null
+notes: "Constraint specifies mean_reversion regime only; no cross-regime variants."

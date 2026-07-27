@@ -1,0 +1,77 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY_ER20GATE"
+
+falsifiable_statement: |
+  On the pre-registered ts_trend_daily_v1 windows (15 explicit semi-annual windows
+  per symbol, "2018-04".."2025-04", BTCUSDT+ETHUSDT), gating SMA(100) long-only
+  entries on ER(20) >= 0.30 at bar-close produces:
+  (a) Gated bar-level median Sharpe >= 0.5791 (BTCUSDT) AND >= 0.0318 (ETHUSDT),
+      computed over the same 15-window sets,
+  (b) Per-episode expectancy of taken entries > 0,
+  (c) A3.4 sparse handling: any window whose gated episode count falls below the
+      trade floor contributes null Sharpe, expectancy +/- SE primary for the
+      aggregate judgment.
+
+null_expectation: |
+  Gate provides no statistically significant improvement over ungated SMA(100).
+  Sharpe unchanged or lower; excluded trades show equivalent or superior
+  expectancy (gate is noise or regime correlation artifact).
+
+required_evidence:
+  - "Per-window trade count >= 3 (minimum sample to evaluate)"
+  - "Median per-episode expectancy > 0 bps for taken trades"
+  - "S2 validation: excluded trades show <= 0 bps median per-episode expectancy"
+  - "S1 (ER(10)>=0.30) and S2 (excluded-entry expectancy check) are reported-only secondaries per pre_registration.yaml; never verdict-bearing."
+
+bias_risks:
+  - "Leakage (LOW): ER(20) computed on historical closes; no lookahead if warmed-up correctly."
+  - "Overfitting (MEDIUM): Threshold 0.30 appears empirically chosen. If tuned on walk-forward range, screening backtest will overestimate edge. Mitigation: parameter sweep showing 0.30 stable across windows."
+  - "Selection bias (MEDIUM-HIGH): Gate may be correlating with market-wide trending regimes rather than removing SMA-specific whipsaws. ER(20) high when volatility/trend are high; low when choppy. Edge may be regime capture, not mechanism-driven. Mitigation: S1 secondary (ER(10)) and explicit per-episode breakdown of included vs excluded trades."
+  - "Mechanical confound (LOW-MEDIUM): ER(20) and SMA(100) both elevated in trending regimes. Gate is redundant filter, not independent signal improvement. Mitigated by S1/S2 secondaries and per-trade analysis."
+
+failure_modes:
+  - "Insufficient post-gate sample: Walk-forward windows yield < 3 total trades due to aggressive gating. Sample variance dominates; statistics unreliable."
+  - "Gate threshold is empirically optimized: 0.30 was found via grid search on walk-forward range. Prescreen shows inflated Sharpe; walk-forward degrades out-of-sample."
+  - "Excluded trades show positive expectancy: Mechanism hypothesis falsified. Gate removes high-conviction entries, not whipsaws. Sharpe improves only from reduced trading cost, not strategy improvement."
+  - "Cost deterioration: Average holding period < 5 bars or trade frequency < 2 per window. Required edge 34 bps (BTCUSDT) cannot be met by realistic daily trend-following. Strategy is cost-unviable."
+  - "Regime conditional failure: Gate works in bull/trend regimes, fails in choppy/range. Sharpe is subset-driven; not generalizable. Walk-forward windows show high volatility in Sharpe/edge."
+  - "Correlation artifact: ER(20) is correlated with all upside/volatility. Gate is passive regime filter. S1 (ER(10)) shows same Sharpe, proving gate adds no independent value."
+
+bias_risks_summary: "Overfitting risk (empirically chosen threshold), regime correlation masquerading as mechanism (ER and SMA both elevated in trends), and mechanical confounding (ER and SMA correlated). Requires secondaries (S1, S2) and parameter sweep to isolate true mechanism vs. noise."
+
+sample_split_design:
+  protocol_file: "protocols/ts_trend_daily_v1.json"
+  window_set: "15 explicit semi-annual windows per symbol (\"2018-04\"..\"2025-04\"), ~181-bar eval spans (observed 180-182 rows), 30 window-symbol results total"
+  symbols: ["BTCUSDT", "ETHUSDT"]
+  holdout_range: ["2026-01-01", "2026-06-30"]
+  holdout_note: "Single-use per A6.1. Evaluated only at holdout_evaluation stage after deflated Sharpe gate passes walk-forward screening."
+
+decision_rules:
+  - "PASS (-> refine/promote routing per verdict-interpreter) iff: (a) gated bar-level median Sharpe >= 0.5791 (BTCUSDT) AND >= 0.0318 (ETHUSDT), computed over the same 15-window sets; and (b) per-episode expectancy of taken entries > 0 (sign plus expectancy +/- SE; no t-stat bar, pre-registered as such because the gated subset has strictly fewer trades); and (c) A3.4 sparse rule: any window whose gated episode count falls below the trade floor contributes null Sharpe, and expectancy +/- SE is primary for the aggregate judgment. FAIL on (a) or (b) -> the gate did not rescue the edge; verdict routing decides kill vs pivot; no threshold adjustment permitted within this brief."
+  - "Standing campaign gates (prescreen cost hurdle, IC prescreen, conformance) apply as configured in code/config; no additional LLM-authored thresholds are decision-bearing."
+
+cost_feasibility:
+  assumed_round_trip_cost_bps:
+    BTCUSDT: 17.0
+    ETHUSDT: 17.5
+  expected_holding_bars:
+    min: 3
+    max: 15
+  expected_holding_bars_rationale: "Daily SMA(100) trend-following typically holds 3-15 bars (3-15 days); ER gate will not materially shorten holds."
+  expected_trades_per_window: "2-5 (65-day window, long-only SMA(100) crosses ~5-10 ungated; ER>=0.30 gate filters 40-60%)"
+  required_gross_edge_bps_per_trade: 34.0
+  required_gross_edge_bps_rationale: "2 × 17.0 bps round-trip cost (BTCUSDT, per cost_model.yaml safety_factor=2.0)"
+  plausibility: "marginal"
+  plausibility_rationale: |
+    Long-only daily trend-following on BTCUSDT typically earns 10-30 bps/trade gross
+    (established signal class, moderate alpha). Required edge 34 bps is at or above
+    this range. ER(20) gating may improve selectivity (+5-10 bps realistic upside) but
+    also reduces sample size (risk of overfitting). Holding period 3-15 bars on daily
+    is favorable for cost amortization. Plausibility depends on: (1) demonstrated
+    in-sample edge >= 25 bps (walk-forward screening), (2) trade count >= 3 per window
+    (to avoid vanishing-sample overfitting), (3) threshold 0.30 is not optimized
+    (parameter sweep). If any of these fail, plausibility drops to implausible.
+    Currently marginal: feasible only under optimistic (but realistic for trend-following)
+    assumptions about gross edge and gating selectivity.
+  cost_check_status: "CONDITIONAL: proceed to screening backtest. Prescreen must validate edge >= 20 bps and trades >= 3/window to confirm marginal → plausible. [ADVISORY ONLY, not decision-bearing -- verdict authority is pre_registration.yaml's pass_rule.]"
+
+operator_correction_20260710: "Stage invented decision-bearing content: a flat Sharpe>=0.4 threshold replacing the pre-registered symbol-specific comparators, a grid sweep on the frozen ER(20) gate, an unregistered 6x~65-bar walk-forward window replacing protocols/ts_trend_daily_v1.json's pre-registered 15-window design, and S1/S2 secondaries promoted to verdict-bearing escalation triggers (contradicting pre_registration.yaml's 'S1/S2 reported, never verdict-bearing'). Decision-bearing fields (falsifiable_statement, decision_rules, sample_split_design, required_evidence's struck entries) restored to pre_registration.yaml's pass_rule/gate_definition/window_set by operator instruction. Analysis prose (bias_risks, failure_modes, bias_risks_summary, cost_feasibility) retained as descriptive risk assessment, not decision-bearing."

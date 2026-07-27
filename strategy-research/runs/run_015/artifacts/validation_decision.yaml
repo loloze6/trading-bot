@@ -1,0 +1,25 @@
+hypothesis_id: "V1"
+variant_name: "Keltner Channel Breakout (TRENDING Momentum)"
+
+status: "conditional_approve"
+
+rationale: |
+  Hypothesis is logically coherent: regime inversion (TRENDING vs V2's 
+  mean_reversion) + signal family pivot (momentum vs pullback) directly 
+  addresses V2's cost_drag failure (142.8%). Keltner breakouts are 
+  literature-established and free of lookahead bias. Frequency reduction 
+  (expected 30–50 vs V2's 14–21 trades) is plausible given regime filtering.
+  
+  Magnitude assumption (3–5× larger trades) is speculative; must validate 
+  via walk-forward. Regime selection post-hoc (after observing V2 weakness) 
+  introduces mild selection bias; mitigated by holding thresholds constant 
+  during walk-forward. Can implement via minimal change to simple_strategy.py 
+  (add KeltnerChannelComponent, route to TRENDING only).
+
+blocking_issues: []
+
+conditions:
+  - "Screening backtest (2020–2024) must show forecast_return_corr > 0.02 on both BTCUSDT and ETHUSDT; no walk-forward unless this gate passes."
+  - "Walk-forward must hold regime thresholds (ER ≥ 0.50, VR ≥ 1.20) and Keltner parameters (EMA=20, ATR_mult=2.0) constant across all 4 windows; no re-tuning until post-holdout refinement phase."
+  - "If forecast_return_corr > 0.02 in screening but walk-forward Sharpe ∈ [0.0, 0.5), permit single-pass parameter tuning (ATR_mult or EMA refit on first window train fold only) before re-running full walk-forward."
+  - "Trade count in minimum walk-forward window must reach ≥ 30; if not, escalate to new component or extend test period before acceptance."

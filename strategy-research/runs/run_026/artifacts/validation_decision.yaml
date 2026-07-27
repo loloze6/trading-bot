@@ -1,0 +1,66 @@
+hypothesis_id: KELTNER_OR_GATE_REGIME
+
+status: CONDITIONAL_APPROVE
+
+rationale: >
+  Hypothesis is logically sound: OR gate directly addresses run_025 AND-gate failure mode
+  (false negatives, <8% bar coverage, uninformative regimes). Mechanism is plausible—
+  bars exhibiting high directional energy (ER) or trending volatility (VR) individually
+  should improve signal selectivity vs. requiring both. Requires only configuration change
+  (regime rule update); no architectural refactor. HOWEVER, thresholds (ER=0.5, VR=1.2)
+  are post-hoc cherry-picked fixes with no independent statistical derivation. Approval
+  is contingent on three non-waivable conditions: parameter lock (no re-optimization),
+  control baseline (AND-gate confirmation), and look-ahead bias audit.
+
+blocking_issues:
+  - "Threshold selection bias: ER=0.5 and VR=1.2 selected post-hoc after observing run_025
+    failure. No principled derivation, cross-validation, or sensitivity analysis. Risk of
+    overfitting boundary values to current market regime."
+  - "Missing control baseline: run_025 (AND-gate) must be executed on identical walk-forward
+    windows to isolate OR-gate effect and confirm baseline failure (trade_count <5 or
+    Sharpe <0.20 per window)."
+  - "Look-ahead bias risk: ER and VR rolling window computation must be audited for future-bar
+    references. If rolling lookback window inadvertently includes future bars, backtest is
+    entirely invalid."
+
+conditions:
+  - "Condition 1: Config parameter lock—ER_threshold and VR_threshold must be hardcoded
+    in config.json (not re-optimized per window). Backtest log must confirm threshold values
+    are constant across all 12 walk-forward windows. Any drift or re-fit invalidates hypothesis."
+  - "Condition 2: Control baseline replication—AND-gate backtest (ER≥0.3 AND VR≥1.2) must
+    execute on identical walk-forward split. Document trade_count and Sharpe per window.
+    Results must confirm run_025 baseline (e.g., trade_count <5 or Sharpe <0.20) to validate
+    comparison. If AND-gate replicates run_025 failure, OR-gate improvement is attributable
+    to gate logic, not environment."
+  - "Condition 3: Leakage audit—Code review of ER and VR computation in strategy modules
+    must verify rolling window lookback does not reference future bars. Confirm bar index
+    constraint: lookback_window_end <= current_bar_index (no forward lookahead)."
+
+post_approval_validation:
+  - "Regime coverage validation: Confirm 30–70% of bars assigned to trending regime per
+    window. If <15%, regime indicator remains uninformative despite OR-gate logic."
+  - "Regime-return alignment: Compute mean forward return for trending-assigned bars vs.
+    unknown-assigned bars. Perform t-test (p<0.05, Bonferroni-corrected for 12 windows).
+    If trending return not significantly positive, regime selection failed despite coverage improvement."
+  - "Trade quality per regime: Stratify trade P&L by entry regime (trending vs. unknown).
+    If majority of profitable trades entered in unknown regime, OR-gate selection is selecting
+    noise, not signal."
+  - "Threshold sensitivity: Log ER and VR value distributions across windows. If empirical
+    thresholds (e.g., 50th percentile) differ from locked values (0.5, 1.2), suggests
+    post-hoc overfitting."
+
+failure_escalation:
+  - "If any walk-forward window exhibits trade_count <3 or Sharpe <0.15, classify as
+    conditional rejection."
+  - "If regime_coverage <15% in >2 windows, regime indicator is still uninformative;
+    recommend altitude-2 pivot (alternative indicators: Fisher Transform, ASI, or
+    score_mode per failure_criteria_rule4)."
+  - "If forward-return t-test p≥0.05, regime-return decoupling is confirmed; escalate to
+    regime indicator replacement (not parameter tuning)."
+
+recommendation: >
+  Proceed to screening backtest under locked-parameter design with AND-gate control.
+  Expected outcome if valid: 30–70% regime coverage, ≥30 trades/window, median Sharpe
+  ≥0.30, significant forward-return advantage in trending-assigned bars. If Sharpe
+  <0.30 or coverage <15%, regime detection rule is unsalvageable; escalate to
+  altitude-2 indicator replacement per failure_criteria_rule4.

@@ -1,0 +1,31 @@
+hypothesis_id: "V2-PIVOT-A-THRESHOLD"
+protocol_verdict: "refine"
+status: "refine"
+criteria_summary:
+  - "Median walk-forward sharpe > 0.10 across ≥4 windows: FAIL (actual: 0.0 for BTCUSDT, 0.0 for ETHUSDT)"
+  - "Median cost_drag_pct < 150%: UNTESTED (insufficient trade volume for reliable cost assessment)"
+  - "Median net_pnl > 0: UNTESTED (insufficient trade volume)"
+  - "Trade count consistency: UNTESTED (79% of windows have 0 trades)"
+  - "Trade count ratio(20.0/15.0) ∈ [0.40, 0.60]: UNTESTED (collapsed to near-zero)"
+primary_failure_mode: |
+  threshold_filter.min_abs=20.0 is too strict; filters nearly all RSI signals in TRENDING regime,
+  collapsing median trade count to 0 across 19/24 windows. Sharpe becomes uncomputable
+  (zero trades = undefined/zero volatility). The 33% threshold increase was intended to reduce
+  false positives; instead, it eliminated signal generation entirely.
+config_to_failure_map: |
+  backtest_spec.yaml strategies.trending.transforms[threshold_filter].min_abs: 20.0
+  This parameter is 33% stricter than baseline 15.0, targeting 40-50% trade reduction.
+  Actual result: 95%+ trade reduction (median_trade_count=0).
+untested_criteria:
+  - "Median cost_drag_pct < 150% (only 5/24 windows have trades; insufficient sample)"
+  - "Median net_pnl > 0 (median across all windows is 0.0 due to collapse)"
+  - "Win_rate threshold (per-window sharpe < -0.05 outlier rejection)"
+proposed_change_dimension: "threshold_min_abs"
+hypothesis_family: "rsi_momentum"
+altitude_justification: |
+  Rule 2 applied: median_forecast_return_corr=0.0 < 0.03 indicates signal generated no
+  directional forecast. Root cause: min_abs=20.0 filters all non-zero forecasts before
+  they can be evaluated (avg_forecast=0.0 in 19/24 trending regimes despite regime detection
+  success). Refine altitude (1): reduce min_abs to 17.5 to restore signal generation
+  while maintaining stricter filtering than baseline 15.0. refinement_attempt=0 indicates
+  first parameter refinement is appropriate.

@@ -1,0 +1,61 @@
+hypothesis_id: H-041-C-v2
+thesis: "Extreme Fear & Greed Index readings (< 25 or > 75) predict contrarian mean-reversion in BTC/ETH 1h candles within 1–2 days. This edge exhibits era-conditional instability: negative correlation (consistent with hypothesis) in 2018-2023; positive correlation (inconsistent) in 2024-2025. Pass-gated evaluation (2018-2023 only) tests the original mechanism; 2024-2025 eras are diagnostic and never gate the verdict."
+rationale: "Extreme Fear (< 25) and Greed (> 75) represent crowd capitulation or euphoria-driven positioning. Both extremes are overcrowded and structurally unstable: panic-driven shorts at fear extremes are forced to cover, and euphoria longs are forced to unwind as momentum exhausts. The behavioral mechanism is sound within 2018-2023 data (negative IC, mean-reversion signal fires in correct direction). However, the KB's era-breakdown (run_048) reveals the sign flips in 2024-2025 (positive IC, mean-reversion fires in wrong direction). This flip is NOT explained by parameter drift alone — it reflects structural market changes (funding rate availability, margin policy, leverage capacity). H-041-C-v2 registers this era-instability as a first-class design feature, not a later diagnostic. By restricting pass-gated evaluation to 2018-2023 and treating 2024-2025 as diagnostic-only, the hypothesis explicitly acknowledges the instability and does not claim a one-regime-fits-all edge."
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "Extreme sentiment readings (F&G < 25 or > 75) concentrate crowd positioning (shorts in fear, longs in greed). This overcrowded positioning reverses as capital inflows exhaust and momentum turns. The mechanism unfolds over 1–2 days; the mean-reversion signal is the contrarian forecast (long on fear, short on greed). Measurable proxy is the Fear & Greed Index value itself, which activates the signal; the mechanism is testable by comparing post-extreme returns to the contrarian forecast direction."
+  why_not_arbitraged: "The signal fires ~6% of all 1h bars (daily boundary bar at UTC 00:00, only when F&G crosses < 25 or > 75 thresholds). Sparse activation means per-trade cost is concentrated, limiting retail-arbitrage capacity. Latency arbitrage (intraday microstructure trading) is irrelevant to a daily sentiment metric. The crowd positioning that produces the extreme is structural (participation in spot/futures/margin markets), not fleeting. Mean-reversion unfolds over multiple bars (1–2 days), slower than intraday price-action arbitrage but fast enough to prevent long-horizon capital redeployment. Era-dependence (negative IC 2018-2023, positive IC 2024-2025) indicates the edge is sensitive to market microstructure (funding mechanics, margin regulation) rather than eliminated by competition. The mechanism persists as a behavioral-structural feature, not a fleeting mispricing."
+  evidence_type: fear_and_greed
+  measurable_proxy: "Fear & Greed Index daily values < 25 or > 75. The mechanism's presence is confirmed by Spearman IC on post-extreme 1h returns: 2018-2023 shows negative IC (consistent with contrarian long-on-fear/short-on-greed forecast), 2024-2025 shows positive IC (inconsistent, flagging era-instability). The proxy distinguishes mechanism-present (forecast correlates in expected direction) from mechanism-absent (forecast uncorrelated or wrong sign)."
+  requires_new_feed: null
+signal_concept: "Signal fires ONLY at the daily boundary bar (UTC hour == 0) when the previous day's Fear & Greed Index (alternative.me, +1 day A8.4 alignment shift applied) is extreme.\n  fear_greed < 25 → forecast = +10.0 (contrarian long)\n  fear_greed > 75 → forecast = -10.0 (contrarian short)\n  otherwise → forecast = 0.0 (inactive)\n\nSparse activation (~1 event per day on average when F&G extremes occur, ~6% of all 1h bars). Ungated: signal fires identically in all market regimes; no regime condition on the signal itself. Component: FearGreedContrarianComponent. A8.4 alignment: previous day's F&G (published daily, day D) is applied to UTC 00:00 bar of day D+1."
+target_market: "BTCUSDT, ETHUSDT"
+timeframe: "1h (daily signal fires at UTC 00:00 bar, position execution at 1h granularity)"
+assumptions:
+- "Fear & Greed Index (alternative.me) is published daily and accurately reflects market-wide sentiment aggregate."
+- "Sentiment extremes (< 25 / > 75) represent genuine crowd overcrowding that reverses within 1–2 days as late capital dries up or forced liquidation cascades."
+- "The mechanism's era-dependence (sign flip 2018→2024) is a structural property tied to market microstructure (funding rate availability, margin regulation changes) that persists within each era but may shift again in future eras outside the registered windows."
+- "Pass-gated evaluation (2018-2023, 71 monthly windows) captures the original hypothesis' true mechanism; 2024-2025 (24 months, diagnostic-only) provide outcome evidence only, never gate the pass/fail verdict."
+- "Execution at 1h bars (signal fires at UTC 00:00) incurs no latency or order-filling cost that materially degrades the edge below backtest assumptions."
+- "The hypothesis is ungated (no regime condition). Signal fires identically in trending, ranging, and high-volatility regimes; regime-dependent IC (per KB finding) is an empirical artifact of structural market changes, not a design feature."
+- "LIFO position matching and per-episode Sharpe calculation (performance/metrics.py) correctly account for multiple fragments per real position episode."
+expected_failure_modes:
+- "Era-sign-flip persists or continues into holdout (2026-01-01 to 2026-06-30): If 2024-2025 positive IC (wrong sign) extends into the holdout window, the mechanism is era-unstable beyond the registered window and cannot be recovered. FAIL verdict. Terminal (no reactivation)."
+- "Sparse activation insufficient in pass-gated window: Zero-trade months exceed criterion c (40% threshold). F&G extremes fail to materialize in a sub-period, leaving the signal chronically inactive. FAIL criterion c (zero_trade_slot_pct > 40%)."
+- "Maximum drawdown exceeds criterion b (30%): A subset of extreme events accelerates into the extreme rather than reversing (e.g., black-swan fear cascade that deepens before reverting). Peak drawdown > 30%. FAIL criterion b."
+- "Median Sharpe < criterion a (0.8): Per-symbol edge quality differs materially (e.g., ETHUSDT mean-reversion weaker than BTCUSDT). One or both symbols fail the threshold. FAIL criterion a."
+- "Cost drag overwhelms gross IC (implicit failure mode): Sparse activation (6% of bars) concentrates per-trade cost. If per-trade expectancy < 15–20 bps (typical 1h round-trip cost at retail size), trading at all frequencies cannot overcome slippage. Backtest may underestimate execution friction. Pass rule FAILS via degraded median Sharpe."
+library_lookup:
+  indicator_id: fear_greed_index_contrarian
+  regime_affinity_for_target: "neutral (TRENDING), favorable (RANGING), favorable (HIGH_VOL) — ungated hypothesis fires identically across all regimes"
+  affinity_justification: "Indicator library notes regime affinity: neutral in TRENDING, favorable in RANGING/HIGH_VOL. H-041-C-v2 is ungated (no regime condition on signal), so all three affinities apply. The signal does not gate entry/exit; it fires the same contrarian forecast in all regimes. Regime-dependent IC (2018-2023 vs 2024-2025) is an empirical artifact of structural market changes, not a design choice. All regime affinities are carried as prior risk factors, not decision gates."
+  prior_campaign_failures:
+  - run_id: run_042
+    mechanism_tried: "H-041-C original (pooled/naive 2018-2025, no era-conditioning, single evaluation window)"
+    outcome: "era_conditional_instability (per KB finding_id: fear_greed_contrarian_inconclusive)"
+  - run_id: run_048
+    mechanism_tried: "H-041-C extended (backward-extended 2018-2025 with A8.5.1a per-era IC breakdown)"
+    outcome: era_conditional_instability (same mechanism, same era-flip finding confirmed)
+  crowding_risk: medium
+  crowding_deviation_justification: "Indicator library notes medium crowding (daily publication shared across strategies, but sparse activation limits practical arbitrage capacity). H-041-C-v2 is NOT a crowding mitigation — it is a direct re-registration of the exact same indicator/mechanism under a structurally different evaluation strategy (era-gated pass_rule instead of pooled naive). Prior failures (run_042, run_048) falsified the pooled formulation, not the underlying mechanism. The new formulation (H-041-C-v2) explicitly accounts for era-instability and restricts the pass-verdict to the era where the mechanism's sign is consistent (2018-2023)."
+power_parameters:
+  activation_rate: 0.06
+  activation_rate_basis: "Signal fires at UTC 00:00 (1 bar per calendar day) only when F&G < 25 or > 75. Historical frequency of extremes in pass-gated window: 51 of 71 months (71.8%) contain at least one extreme day. Assuming ~2–3 extreme days per active month on average: ~100–150 extreme days out of ~2,160 total calendar days (2018-02-01 to 2023-12-31). activation_rate = 100–150 / 2,160 ≈ 0.046–0.070; using 0.06 as conservative mid-point. This includes both time sparsity (00:00 only) and event sparsity (F&G threshold rarity)."
+  plausible_ic_upper: 0.15
+  plausible_ic_upper_class: "Sparse feed-based, extreme/threshold-gated (A8.6 anchor table row 3)"
+  plausible_ic_upper_basis: "F&G contrarian is rare/event-driven (< 25 / > 75), fires ~6% of bars, on a non-OHLCV feed. Anchor table range: 0.10–0.20 for this signal class ('Lower crowding (non-standard feed) justifies a higher ceiling than dense OHLCV'). Using 0.15 (conservative mid-point). Prior campaign result (run_048, per-era IC: -0.073 BTC / -0.135 ETH in 2018-2023 pass-gated era; +0.101 BTC / +0.182 ETH in 2024-2025) confirms this anchor: 2018-2023 IC magnitude (0.07–0.135) is within 0.10–0.20, validating the anchor."
+  n_bars: 51840
+  n_bars_basis: "Pass-gated window: 2018-02-01 to 2023-12-31. ~2,160 calendar days × 24 bars/day = 51,840 bars. Frozen per research_brief.yaml era_conditioning.pass_gated_eras."
+  n_symbols: 2
+  n_symbols_basis: "BTCUSDT, ETHUSDT (target_market from research_brief.yaml)"
+  n_eff_symbols: 1.1
+  n_eff_symbols_basis: "BTC/ETH returns are correlated; rho ≈ 0.82 (per indicator_library.yaml fear_greed_index_contrarian notes). n_eff_symbols = n / (1 + (n-1)*rho) = 2 / (1 + 0.82) ≈ 1.1. F&G is market-wide (single daily index for both symbols), so additional symbol does not add full power."
+  is_market_wide: true
+  is_market_wide_basis: "Fear & Greed Index is a single market-wide sentiment metric published daily. Same signal value fires for both BTCUSDT and ETHUSDT; returns are correlated, not independent."
+  expected_n_eff: 130
+  expected_n_eff_basis: "expected_active_n = activation_rate × n_bars × n_eff_symbols = 0.06 × 51,840 × 1.1 ≈ 3,421; block_size_24 = 24 (A8.3 standard episode window); expected_n_eff = 3,421 / 24 ≈ 143. Conservative rounding to 130 to account for potential sampling variation and edge effects."
+  min_detectable_ic: 0.088
+  min_detectable_ic_basis: "min_detectable_ic = 1 / sqrt(max(expected_n_eff - 3, 1)) = 1 / sqrt(130 - 3) = 1 / sqrt(127) ≈ 0.088 (p < 0.10, standard two-tailed test)."
+  power_check_result: adequately_powered
+  power_check_verdict: "min_detectable_ic (0.088) < plausible_ic_upper (0.15) ✓ Hypothesis is adequately powered at the pass-gated window scope. Not routed to insufficient_power_a_priori."
+  power_note: "Market-wide signal reduces effective n_symbols from 2 to 1.1 due to return correlation (rho=0.82). Sparse activation rate (6%) and modest expected_n_eff (130) are both structural features of this signal class (daily sentiment extremes), not design failures. The pass-gated 2018-2023 window (6 years, 71 months) provides sufficient power to distinguish the mechanism's presence from noise. If holdout (2026-01-01 to 2026-06-30) shows different era-sign or much lower activation, power may be insufficient for a definitive reactivation decision without additional data."

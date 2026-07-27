@@ -1,0 +1,29 @@
+hypothesis_id: DIAG_B_ER35_1H_KELTNER_CLEAN
+what_failed:
+  - "median_trade_count >= 5: FAIL (actual min_trade_count=0 across 4 windows)"
+diagnostic_rule_applied: "Rule 6 Case B: Regime starvation — TRENDING regime threshold (ER >= 0.35) is set above the market's actual ER/VR distribution. Regime did not fire in windows 2024-01 (both symbols), 2024-09 (BTC), 2024-10 (BTC). Forward-return averages in these windows suggest ER values fell below 0.35 threshold."
+diagnostic_snapshot:
+  median_forecast_return_corr: 0.041
+  median_cost_drag_pct: 32.9503
+  median_gross_pnl: -1.5886
+  uninformative_regimes:
+    - unknown
+  starvation_windows: 4
+  affected_windows:
+    - BTCUSDT-2024-01
+    - BTCUSDT-2024-09
+    - BTCUSDT-2024-10
+    - ETHUSDT-2024-01
+what_not_to_try:
+  - "Do NOT pivot to a different signal family while regime threshold is set above market distribution — the signal is not yet properly tested under its target market conditions."
+  - "Do NOT propose sizing, leverage, or position-duration changes — these cannot affect regime frequency. Cost_drag=32.95% is not a sizing problem and will not improve by reducing position size."
+  - "Do NOT escalate timeframe or instrument — starvation is a threshold calibration problem specific to the ER/VR distribution, not a signal quality or asset characteristic issue."
+next_altitude: refine
+parameter_bracket:
+  dimension: er_threshold
+  too_tight_value: 0.35
+  too_loose_value: null
+  last_tried_value: 0.35
+  direction_history:
+    - "0.50 (run_017) — tight, insufficient trades"
+    - "0.35 (run_037 diagnostic) — tight, regime starvation in 4 windows"

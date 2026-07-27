@@ -1,0 +1,16 @@
+hypothesis_id: "RUN017_REPLICATION_REFINE_01"
+thesis: "Relaxing the TRENDING regime threshold from ER=0.50 to ER=0.35 enables the KeltnerBreakout component to generate sufficient trade volume (>100 cumulative trades across walk-forward windows) while maintaining Sharpe >= 0.5 by capturing efficiency-driven breakouts in moderately efficient markets."
+rationale: "Previous run (ER=0.50) fired TRENDING regime in only ~25% of bars, producing zero trades in 25% of ETHUSDT windows and insufficient binomial power. ER=0.35 threshold captures top ~35% of efficiency bands (conservative, avoids mean-reversion bleed). Projected regime exposure increases to ~40-45% of bars, increasing trade frequency without altering signal logic."
+signal_concept: "KeltnerBreakout (ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0) generates signals when TRENDING regime fires: ER >= 0.35 AND VR >= 1.20."
+target_market: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+assumptions:
+  - "ER=0.35 threshold remains below mean-reversion regime boundary (~0.40-0.45 efficiency band)."
+  - "ATR-based breakout signals retain predictive value at increased regime frequency."
+  - "Trade count >= 20 per walk-forward window ensures statistical significance."
+  - "Binance 1h candles provide stable efficiency ratio and trend continuation metrics."
+expected_failure_modes:
+  - "ER=0.35 breaches mean-reversion sensitivity threshold; whipsaws and false breakouts increase."
+  - "Breakout signal alpha decays under higher regime exposure; selection effect reduces edge."
+  - "ETHUSDT efficiency metrics prove unstable or regime fires infrequently in holdout window; <20 trades."
+  - "ATR scaling factor (-20.0) insufficient for ER=0.35 regime; forecast standardization fails."

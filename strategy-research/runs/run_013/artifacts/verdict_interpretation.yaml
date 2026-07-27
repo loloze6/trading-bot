@@ -1,0 +1,53 @@
+hypothesis_id: "V1 (H-RUN007 ER-relaxed)"
+protocol_verdict: "refine"
+
+criteria_summary:
+  - criterion: "trade_count ≥ 30 minimum (aggregated across walk-forward)"
+    result: FAIL
+    per_symbol:
+      - symbol: BTCUSDT
+        actual: 14
+        required: ">= 30"
+      - symbol: ETHUSDT
+        actual: 21
+        required: ">= 30"
+
+  - criterion: "win_rate ≥ 40% (profitable trade fraction)"
+    result: PASS
+    per_symbol:
+      - symbol: BTCUSDT
+        actual: 51.28
+        required: ">= 40"
+      - symbol: ETHUSDT
+        actual: 60.42
+        required: ">= 40"
+
+  - criterion: "sharpe median across walk-forward windows ≥ -0.5"
+    result: UNTESTED
+    reason: "criterion malformed in validation_protocol.yaml; observed BTCUSDT -5.019, ETHUSDT -2.604"
+
+  - criterion: "regime_frequency ≥ 0.15"
+    result: UNTESTED
+    reason: "regime_frequency metric not computed in backtest output"
+
+primary_failure_mode: |
+  ER relaxation (0.20→0.25) failed to increase mean_reversion regime frequency.
+  Trade count remains critically low (BTC min: 14, ETH min: 21, vs required ≥30)
+  despite ER threshold loosening. Root cause: both ER and VR must satisfy AND logic;
+  VR ≤ 0.90 filter is now the active bottleneck preventing sufficient regime triggers.
+
+config_to_failure_map: |
+  trade_count ≥ 30 (FAIL) ← regime_detector.rules[0].any_of (ER ≤ 0.25 AND VR ≤ 0.90)
+  Suspect element: VR ≤ 0.90 threshold. Evidence: H-RUN007 relaxed ER without improving
+  trade_count (remained 14–21). VR is now identified as primary bottleneck.
+
+proposed_change_dimension: "vr_threshold"
+
+untested_criteria:
+  - "sharpe median ≥ -0.5 (malformed in validation_protocol)"
+  - "regime_frequency ≥ 0.15 (not computed)"
+
+decision_note: |
+  Only 1 of 2 evaluable criteria FAILs (trade_count). Per protocol rule: single FAIL
+  criterion warrants refine with targeted fix, not kill. Win_rate PASS signals
+  strategy has directional bias; sample size constraint is the limiting factor.

@@ -1,0 +1,47 @@
+hypothesis_id: "H-041-A"
+run_id: "run_047"
+protocol_verdict: "kill"
+source: "prescreen_stub"
+prescreen_route: "kill_no_ic"
+
+status: "escalate"
+
+criteria_summary:
+  - criterion: "ic_gate (ic_all_bars >= 0.03, significant p < 0.10)"
+    result: "FAIL"
+    actual_value: "ic_all_bars = 0.008435, p = 1.0"
+
+primary_failure_mode: "Sparsity-induced insufficient sample: 8h settlement events on 1h timeframe produce 98.54% sparsity (n_eff=9), making IC measurement unreliable."
+
+config_to_failure_map: "Timeframe=1h mismatches settlement cycle=8h. FundingRateMeanReversionComponent fires only at UTC 8h boundaries (hour%8==0), creating 1 active bar per ~8 bars. On 16,032 total bars, only 234 are active (1.46%), producing n_eff=9."
+
+untested_criteria:
+  - "Screening Sharpe gate (walk-forward Sharpe >= 0.50) — prescreen terminated before backtest"
+  - "Min trade count (trade_count >= 20 per window) — prescreen shows implied_trades_per_window = 1"
+  - "Per-regime Sharpe uniformity — prescreen terminated before regime analysis"
+  - "Cost feasibility — prescreen cost_check.pass = false, but cost_drag_pct is null (no realized trades)"
+
+root_cause:
+  mechanism_failure: "no_informational_content_this_venue"
+  supporting_evidence: "ic_all_bars=0.008435, p_value=1.0, forecast_sparsity_pct=98.54%, active_n_bars=234 out of 16032 total, n_eff=9. Root cause is not signal weakness but timeframe mismatch: funding rate settlement is 8-hour atomic event; on 1h candles this creates extreme sparsity. At only ~1 active bar per 8 bars, effective sample size (n_eff=9) is far below the minimum needed to measure IC reliably (threshold ~20-30)."
+  confidence: "high"
+
+altitude_justification: "Prescreen shows ic_all_bars ≈ 0.008435 (p=1.0), matching Rule 2 (weak signal). However, diagnostics reveal underlying cause: forecast_sparsity_pct=98.54%, n_eff=9, implied_trades_per_window=1. This is insufficient sample (Rule 6 boundary) caused by timeframe mismatch, not signal-quality weakness. Funding rate settlement fires every 8h (3 times per 24h); on 1h timeframe this becomes 1 event per ~8 bars. Escalate to 8h timeframe to align candle cycle with settlement frequency, eliminate sparsity (target forecast_sparsity_pct~1-5%), and measure IC on dense, atomic event-based sample."
+
+hypothesis_family: "funding_rate_mean_reversion"
+proposed_change_dimension: "timeframe"
+
+trade_attribution: null
+
+prescreen_evidence:
+  ic_all_bars: 0.008435
+  ic_active_bars: null
+  forecast_sparsity_pct: 98.54
+  active_n_bars: 234
+  n_bars_total: 16032
+  n_eff: 9
+  p_value: 1.0
+  implied_trades_per_window: 1
+  edge_to_cost_ratio: null
+  route: "kill_no_ic"
+  kill_reason: "no_informational_content_this_venue"

@@ -1,0 +1,32 @@
+{
+  "_comment": "H-041-A: funding rate mean-reversion (structural_forced_flow). Improvement 01.",
+  "aux_feeds": ["funding_rate"],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "mean_reversion"
+  },
+  "strategies": {
+    "warmup": 3,
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "funding_mr",
+            "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
+            "weight": 1.0,
+            "transforms": [],
+            "params": {
+              "threshold": 0.0002,
+              "scaling_factor": 10.0,
+              "standardized_forecast": false
+            }
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null
+    }
+  }
+}

@@ -1,0 +1,44 @@
+hypothesis_id: V2-PIVOT-A-THRESHOLD
+thesis: |
+  RSI momentum signals in TRENDING regime generate positive net returns when filtered 
+  to high-confidence extremes (min_abs ≥ 20.0), reducing cost drag from 272.8% to <150%.
+
+rationale: |
+  V2-PIVOT-A-CONSERVATIVE established signal edge (gross_pnl median = 21.62).
+  Cost drag of 272.8% vs profit = 13x fee multiplier. Root cause: excessive trade frequency.
+  Increasing min_abs threshold 15.0→20.0 (33% stricter) reduces trade count ~40-50%,
+  proportionally reducing fee burden to 130-180% cost_drag while preserving signal edge.
+
+signal_concept: |
+  RSI(14) momentum in TRENDING regime. Long: RSI > 70 (overbought continuation).
+  Short: RSI < 30 (oversold bounce). Quantile-based dynamic thresholds.
+  Filter: |raw_forecast| ≥ 20.0. Only high-confidence momentum extremes trade.
+
+target_market:
+  assets: ["BTCUSDT", "ETHUSDT"]
+  regime: TRENDING (ER ≥ 0.50 AND VR ≥ 1.20)
+  regime_default: forecast = 0.0 outside TRENDING
+
+timeframe: 1h
+
+assumptions:
+  - "V2-PIVOT-A-CONSERVATIVE positive gross_pnl (21.62 median) confirms RSI momentum edge in TRENDING."
+  - "Primary failure is trade frequency not signal quality. Cost drag (272.8%) vs profit (21.62) = 13x fee multiplier."
+  - "Min_abs 15.0→20.0 (33% stricter) reduces trade count ~40-50%, proportionally reducing cost_drag to 130-180%."
+  - "TRENDING regime filter correctly implemented. Frequency refinement clarifies regime quality."
+
+expected_failure_modes:
+  - "Min_abs=20.0 too strict: trade count < 20/window invalidates Sharpe. Mitigation: refine to 17.5 or 18.0."
+  - "TRENDING regime uninformative despite lower frequency. Gross PnL is noise. Forward-return correlation ≈ 0.02 (no predictive power)."
+  - "High threshold selects only extreme RSI moves at regime transitions (mean-reversion inflection). Edge vanishes at tail entries."
+
+constraints:
+  - "Modify ONLY min_abs parameter from 15.0 to 20.0 in threshold_filter."
+  - "Keep RSI period=14, TRENDING regime, all other transforms unchanged."
+  - "Success criteria: cost_drag_pct < 150%, sharpe > 0.10, net_pnl > 0."
+
+testability: |
+  Backtest on same walk-forward window as V2-PIVOT-A-CONSERVATIVE.
+  Compare: trade_count (expect ↓40-50%), cost_drag_pct (expect <150%),
+  gross_pnl (expect ≈21.62), net_pnl (expect improved). Pass if
+  cost_drag <150% AND net_pnl >0.

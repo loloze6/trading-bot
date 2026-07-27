@@ -1,0 +1,49 @@
+# A8.4 Re-verification — triggered by ic_active_bars > 0.15
+# Per pre-registration claim (c): halt and verify before routing to backtest.
+# IC > 0.15 triggered; route was kill_no_ic (backtest routing not applicable),
+# but re-verification is still documented per the pre-registration commitment.
+
+run_id: run_042
+hypothesis_id: H-041-C
+trigger: "ic_active_bars=0.190476 > 0.15 threshold in pre-registration"
+reverification_at: "2026-07-03"
+
+checks:
+  shift_applied_correctly:
+    result: PASS
+    evidence: >
+      In prescreen_signal.py _load_fear_greed():
+        df["timestamp"] = df["timestamp"] + pd.Timedelta(days=1)
+      This moves day D's F&G value to day D+1's 00:00 timestamp, ensuring only
+      the PREVIOUS day's reading is available at each daily boundary bar.
+      Confirmed: unshifted active_n=318 vs shifted active_n=316 — 2 fewer active bars
+      after shift (edge bars lost at dataset boundary), not an unexpected divergence.
+
+  signal_fires_only_at_00_00:
+    result: PASS
+    evidence: >
+      Smoke test verified: FearGreedContrarianComponent checks ts.hour != 0 and returns
+      without setting _raw_value. Test 3 confirmed: fear=20 at 01:00 → silent.
+      Signal exclusively fires at hour==0 bars, as required.
+
+  active_bar_count_matches_expectation:
+    result: PASS
+    evidence: >
+      Pre-registered estimate: ~159 fear/greed events per symbol (21.8% of 730 days).
+      Actual: 158 active bars per symbol (316 pooled) in the shifted prescreen.
+      This is within 1 of the pre-registered estimate. No anomalous over-activation.
+
+  rolling_buffer_fear_greed_preservation:
+    result: PASS_BY_DESIGN
+    evidence: >
+      The prescreen does NOT use RollingBuffer — it passes bars directly to
+      AdvancedStrategy.update(), which feeds them into the component's update() method.
+      The fear_greed column is present in the DataFrame from merge_asof and is read
+      directly by FearGreedContrarianComponent. No buffer stripping can occur.
+
+verdict: >
+  No bugs detected. The IC=0.190 is attributable to sampling noise at n_eff≈13 (SE≈0.28).
+  A value of 0.190 is 0.68 SE from zero — well within the range of random variation.
+  Pre-registration language: "A strong IC at this sample size and signal sparsity is more
+  likely a bug than genuine edge." IC=0.190 with n_eff=13 is not a "strong IC" in any
+  statistical sense. No celebration warranted; no bug detected either.

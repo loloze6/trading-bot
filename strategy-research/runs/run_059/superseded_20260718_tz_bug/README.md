@@ -1,0 +1,1 @@
+Broken-arc artifacts of run_059's first execution (2026-07-18), superseded after the CandleBuilder._align() local-timezone fix (commit 2529f5b). protocol_execution and all downstream artifacts here were produced on 1d bars misaligned to local-time hour 1; preserved for audit because runs/ is gitignored and re-execution overwrites in place. See SESSION_LOG 2026-07-18 entry.

@@ -1,0 +1,67 @@
+hypothesis_id: H-041-A
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+run_type: reactivation
+target_market: "BTCUSDT, ETHUSDT"
+
+thesis: "Extreme funding rates (|rate| > 0.0002) trigger mechanical forced liquidations and position unwinding within the 8h settlement cycle, creating mean-reversion pressure on prices detectable over the next 1–4 bars."
+
+rationale: "The mechanism is structural (contractual funding settlement), not behavioral. The measurable proxy (signed funding_rate magnitude) is available in the funding_rate feed. Prior test (run_041) returned inconclusive due to insufficient sample (n_eff=10 on 2024-2025, a low-funding period). Backward extension to 2018+ includes 2020-2022 (documented funding-extreme era), expected to increase n_eff to 50+ and permit a statistically powered test. Reactivation condition now mechanically enforced via pre_registration.yaml machine_constraints block."
+
+edge_source:
+  category: structural_forced_flow
+  specific_mechanism: "Perpetual futures funding settlement (every 8h UTC) forces a real cash transfer between long and short positions. An extreme funding rate (|rate| > 0.0002) indicates an extreme, crowded, one-sided positioning imbalance that is mechanically forced to unwind or squeeze at settlement, creating mean-reversion pressure on price. Measurable proxy: signed funding_rate magnitude at each settlement boundary, available in BTCUSDT/ETHUSDT_funding_8h.csv."
+  why_not_arbitraged: "The forced-settlement mechanism itself is contractual and mechanical (not arbitrageable). Funding data is not universally integrated into algorithmic strategies—most retail and institutional traders focus on price technicals. Crowding risk is low. Information asymmetry does not apply (no speed/access advantage needed); the edge arises from structural flow that executes regardless of whether traders monitor funding extremes."
+  evidence_type: funding_open_interest
+  measurable_proxy: "Signed funding_rate magnitude and sign at 8h settlement bars (UTC hour % 8 == 0). Mechanism predicts: bars immediately after settlements with |rate| > 0.0002 show negative correlation between forecast sign and subsequent 1–4 bar returns (mean-reversion). Proxy is directly computable from available funding_rate feed."
+
+signal_concept: "FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0) — VERBATIM from run_041's candidate_strategy_config.json. Fires at 8h settlement boundaries (UTC hour % 8 == 0) when |funding_rate| > 0.0002. forecast = -sign(funding_rate) * scaling_factor at active bars; 0 elsewhere. Ungated (A2.3 standing policy): regime_detector.rules=[], default_regime='unknown'."
+
+assumptions:
+  - "Funding rate feed is accurate, timely, and reflects actual settlement amounts."
+  - "Extreme funding rates (|rate| > 0.0002) reliably trigger forced deleveraging or squeezed positions."
+  - "Mean-reversion materializes within 1–4 bars after settlement, not days later."
+  - "Historical funding data (2018–2025) is representative of future dynamics; no structural breaks in settlement mechanics."
+  - "Episode definition (gap ≤ 48 1h-bars, era-and-symbol-bounded) correctly isolates independent funding-extreme events for episode-blocked significance testing."
+
+expected_failure_modes:
+  - "Secular low-funding environment: 2024–2025 window showed sparse funding extremes. Even with backward extension, if 2026 markets remain structurally calm (lower leverage, tighter circuit breakers), activation may remain sparse and statistical power may fall below reactivation target."
+  - "Lag mismatch to execution granularity: Forced deleveraging may take days or weeks to fully materialize. Prior KB finding (FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED, run_044) shows lag_mismatch_to_regime_persistence at 1h bars. Extreme-only variant may face the same lag, failing to capture mean-reversion within position hold window."
+  - "Signaling without flow: High funding rates signal crowded positioning but may not trigger immediate deleveraging if positions are renewed through settlement at high cost. Causal chain breaks if crowded traders accept the settlement cost rather than unwind."
+  - "Cost drag at sparse activation: ~3% activation frequency (~2,000–3,000 active bars per symbol over 7 years) means high cost per trade. Even at plausible IC=0.10–0.20, edge-to-cost ratio may fail if transaction costs exceed 10 bps per round-trip."
+  - "Era-transferability risk: 2020–2022 funding extremes occurred in higher-leverage, retail-driven market regime. Structural changes in 2024–2026 (institutional market-making, improved circuit breakers, regulatory constraints on leverage) may reduce forced-liquidation frequency or magnitude despite larger sample size."
+
+library_lookup:
+  indicator_id: funding_rate_extreme
+  regime_affinity_for_target: neutral
+  affinity_justification: "Ungated hypothesis (post-A2.3 standing policy). Mechanism is structural (forced settlement mechanics), not regime-dependent. Indicator affinity is neutral across trending/ranging/high_vol regimes. No regime condition stated or implied."
+  prior_campaign_failures:
+    - run_id: run_041
+      mechanism_tried: "FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0)"
+      outcome: "inconclusive, insufficient_sample (n_eff=10, 2024-2025 only)"
+    - run_id: run_047
+      mechanism_tried: "Identical config; run invalidated (F4d)"
+      outcome: "invalidated_artifact — silently used wrong protocol (2024-only baseline_v1.json instead of backward-extension range) and silently dropped A8.5.1a significance_methodology. Not a mechanism failure."
+  crowding_risk: low
+  crowding_deviation_justification: "n/a (crowding_risk=low; no high-crowding alternative needed)"
+
+power_parameters:
+  activation_rate: 0.03
+  plausible_ic_upper: 0.20
+  n_bars: 55000
+  n_symbols: 2
+  is_market_wide: false
+  power_note: "Sparse feed-based, extreme-gated activation. A8.6 anchor table row 'Sparse feed-based, extreme/threshold-gated' suggests plausible_ic_upper=0.10–0.20; research brief pre-registers 0.20 (per indicator_library.yaml literature range 0.05–0.2), overriding anchor with explicit justification: structural_forced_flow (settlement mechanics) has lower crowding than OHLCV-only signals, supporting upper half of range. activation_rate=0.03 estimated from pre-registered 132 episodes over 7-year window. n_bars=55000 estimated from data range [2019-09-10 (BTC)/2019-11-27 (ETH) to 2025-12-31] ≈ 6.3 years × 8,766 1h-bars/year per symbol. Expected n_eff = (0.03 × 55000 × 2) / 24 ≈ 138 blocks, exceeds reactivation condition target of n_eff≈50+. Power gate: PASS."
+
+reactivation_metadata:
+  prior_run: run_041
+  prior_outcome: "inconclusive (insufficient_sample_inconclusive)"
+  prior_n_eff: 10
+  prior_active_n: 13
+  prior_window: "2024-01-01 to 2024-11-30 (2-year, low-funding era)"
+  reactivation_condition_met: true
+  reactivation_trigger: "Backward data extension to 2018+ (expected_n_eff ≈ 50+). Pre-registered episode count: 132 funding-extreme episodes (pooled BTC+ETH, gap≤48 1h-bars, era-and-symbol-bounded)."
+  this_run_conformance: "run_050_generated.json (protocol file generated from machine_constraints block in pre_registration.yaml, enforced by orchestrator). Significance methodology: episode_blocked (A8.5.1a, MANDATORY, force-injected into candidate_strategy_config.json by orchestrator). Conformance gate before verdict_interpreter prevents silent drift (F4d regression)."
+  reactivation_variant: "V1 only (exact run_041 config, no tuning). No innovation_expansion diversity search—this is a straight reactivation."
+
+notes: "H-041-A is a formal reactivation following run_047's invalidation (F4d, 2026-07-05). run_047 silently reverted to 2024-only baseline_v1.json (not the machine-enforced backward-extension protocol) and silently dropped the MANDATORY A8.5.1a episode-blocked significance_methodology, making it a near-duplicate of run_041, not a valid test of the backward-extension reactivation. This run (run_050) has pre_registration.yaml machine_constraints block read directly by the orchestrator (not LLM-memorized), which generates the protocol file and force-injects significance_methodology into candidate_strategy_config.json. A conformance gate before verdict_interpreter halts (paused_for_human) if protocol or methodology deviate, preventing silent drift. Config is VERBATIM from run_041 (threshold=0.0002, scaling_factor=10.0); no recalibration. If prescreen passes both IC-significance gate AND cost gate, STOP before walk_forward_validation and report per-era numbers (2019-2021, 2021-2023, 2023-2026) for user-level review of era-transferability before proceeding. Era-transferability is a user decision, not automatic routing."

@@ -1,0 +1,72 @@
+hypothesis_id: KELTNER_OR_GATE_REGIME
+
+falsifiable_statement: >
+  OR-gated regime rule (ER≥0.5 OR VR≥1.2) assigned to 1h Keltner signal on BTCUSDT/ETHUSDT
+  will classify ≥15% of bars into trending regime (vs. AND-gate baseline 2–8%), execute ≥30
+  trades per walk-forward window, achieve median Sharpe ≥0.30 across windows, maintain
+  ER/VR thresholds constant (no re-optimization), and exhibit statistically significant
+  positive forward returns in trending-assigned bars vs. unknown regime (t-test p<0.05).
+
+null_expectation: >
+  OR gate coverage increase does not improve signal quality. Regime assignments remain
+  uninformative despite higher bar count. Forward returns in trending-assigned bars are
+  statistically indistinguishable from unknown regime (p≥0.05). Sharpe and trade_count
+  remain ≤ AND-gate baseline (run_025). Thresholds require per-window re-optimization,
+  violating fixed-parameter design.
+
+required_evidence:
+  - "backtest_control_replication: run_025 AND-gate (ER≥0.3 AND VR≥1.2) identical walk-forward windows"
+  - "regime_assignment_distribution: % bars assigned to trending per window (expect 30–70%)"
+  - "forward_return_regime_conditioned: mean and t-statistic of returns in trending vs. unknown assigned bars"
+  - "threshold_parameter_log: ER/VR values per window; must be constant (no drift)"
+  - "lookback_bias_audit: Code review of ER/VR rolling window; confirm no future-bar references"
+  - "trade_log_per_regime: Entry regime and P&L grouped by trending vs. unknown assignment"
+
+bias_risks:
+  - "Post-hoc threshold selection: ER=0.5 and VR=1.2 chosen after observing run_025 AND-gate failure; no independent derivation or cross-validation set."
+  - "Data mining bias: OR-gate variant tested only to address known failure; selection bias toward variants that increase coverage."
+  - "Threshold overfitting: No sensitivity analysis on ER and VR boundaries; (0.5, 1.2) may be optimal for current asset pair and regime distribution only."
+  - "Asset correlation assumption: BTCUSDT and ETHUSDT highly correlated; regime rule may overfit to Bitcoin behavior and fail on Ethereum."
+  - "Forward-looking leakage: Rolling window ER/VR computation must not include future bars; subtle lookahead bias common in rolling-window indicators."
+
+failure_modes:
+  - "False positive proliferation: OR gate lowers selectivity; bars with only ER≥0.5 or only VR≥1.2 misclassified as trending; noise trading increases, Sharpe <0.30."
+  - "Threshold instability across regimes: ER and VR exhibit high variance in bull vs. bear regimes; fixed thresholds become uninformative in one regime, causing trade_count <10 in some windows."
+  - "Regime-return decoupling: Despite higher coverage, bars assigned to trending regime exhibit mean forward return ≈0; regime indicator fundamentally misaligned with market microstructure."
+  - "Asset-specific overfitting: Thresholds implicit to BTCUSDT volatility regime; ETHUSDT windows show Sharpe <0.15 and trade_count <5."
+  - "Insufficient walk-forward validation: If sample size too small or regime heterogeneity high, variance in metrics masks poor true signal quality."
+  - "Control baseline mismatch: AND-gate backtest does not replicate run_025; confounds experiment due to data version or configuration drift."
+
+sample_split_design:
+  walk_forward_structure:
+    num_windows: "12"
+    in_sample_bars_per_window: "~240 (10 trading days × 24h candles at 1h)"
+    out_of_sample_bars_per_window: "~48 (2 days, pure forward test)"
+    roll_forward: "2-day increments; minimal overlap"
+  control_arm:
+    baseline_config: "AND gate: ER≥0.3 AND VR≥1.2 (run_025 replication)"
+    execution: "Backtest on identical walk-forward split; document trade_count and Sharpe per window"
+  parameter_lock:
+    ER_threshold: "0.5 (hardcoded; no re-fit)"
+    VR_threshold: "1.2 (hardcoded; no re-fit)"
+    Keltner_signal_params: "period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0 (run_017 locked)"
+  per_asset_evaluation:
+    BTCUSDT: "Separate Sharpe ≥0.30; trade_count ≥30"
+    ETHUSDT: "Separate Sharpe ≥0.30; trade_count ≥30"
+
+decision_rules:
+  - "sharpe: median across 12 windows ≥0.30 (computed per asset separately)"
+  - "trade_count: ≥30 total trades across window; minimum 2–3 trades per window"
+  - "regime_coverage: ≥15% of bars assigned to trending per window (validate expected 30–70%)"
+  - "win_rate: ≥40% of trades profitable"
+  - "max_drawdown_pct: ≤50%"
+  - "parameter_stability: ER/VR thresholds logged constant across all 12 windows (zero drift)"
+  - "control_baseline_validation: AND-gate Sharpe ≤0.20 and trade_count ≤5 per window (confirms run_025 failure baseline)"
+  - "regime_return_significance: forward return in trending-assigned bars statistically significant vs. unknown (t-test p<0.05 after Bonferroni correction)"
+
+backtest_configuration:
+  assets: [BTCUSDT, ETHUSDT]
+  timeframe: 1h
+  regime_rule_syntax: "any_of=[{ER: {'>=': 0.5}}, {VR: {'>=': 1.2}}]"
+  signal_component: "Keltner mean-reversion (run_017 locked)"
+  architecture_change: "Minimal (regime rule only; no altitude-2 pivot)"

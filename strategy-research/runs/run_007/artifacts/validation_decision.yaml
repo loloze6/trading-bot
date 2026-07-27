@@ -1,0 +1,115 @@
+hypothesis_id: H-RUN007
+
+status: "REFINE"
+
+rationale: |
+  Hypothesis is theoretically sound (regime-gated RSI mean-reversion with falsification control) 
+  and variants well-designed. However, critical gaps prevent approval:
+  
+  (1) MULTIPLE TESTING BIAS: 8 variants without Bonferroni correction inflates false-positive 
+  rate to ~34%. Variants must be selected a priori; recommend conservative subset (V1, V2, V5).
+  
+  (2) REGIME THRESHOLD UNJUSTIFIED: ER=0.20, VR=0.90 hardcoded without sensitivity sweep. 
+  Regime model validity unproven; must complete ER ∈ [0.15, 0.25], VR ∈ [0.80, 1.0] sweep 
+  in-sample before walk-forward.
+  
+  (3) RSI(14) PARAMETER UNJUSTIFIED: No sweep across RSI period; 14 is standard practice, 
+  not optimized. Must test RSI(10, 12, 14, 16, 20) in-sample to isolate parameter drift.
+  
+  (4) TRANSACTION COST UNDERSPECIFIED: No bid-ask/slippage model or Binance fee tier 
+  documented. Edge may evaporate; currently unvalidated post-costs.
+  
+  TRACTABILITY: Fits existing bot architecture minimally (RSI utility + 3 SubStrategyComponent 
+  subclasses, ~400 lines). No changes to execution, rebalance, or portfolio tracking logic.
+  
+  RECOMMENDATION: Refine via (1) select 3 variants a priori (V1, V2, V5), (2) complete regime 
+  sensitivity sweep, (3) specify transaction costs explicitly, (4) run screening backtest 
+  in-sample only (freeze before walk-forward), (5) if screening passes, advance to walk-forward 
+  per decision_rules.
+
+blocking_issues:
+  - id: "B1"
+    issue: "Multiple Testing Bias (8 Variants)"
+    severity: "CRITICAL"
+    resolution: "Select 3 variants a priori before screening backtest. Document selection rationale in advance. Lock choices in variant_selection_log.yaml. Other variants exploratory only, not decision factors."
+    unblocks: "Approval path if all 3 meet decision_rules thresholds."
+
+  - id: "B2"
+    issue: "Regime Threshold Sensitivity Unproven"
+    severity: "CRITICAL"
+    resolution: "Run in-sample sensitivity sweep: ER ∈ [0.15, 0.25] (Δ 0.025), VR ∈ [0.80, 1.00] (Δ 0.05). Visualize Sharpe surface. Lock thresholds where robustness is highest. Document optimal point and surrounding plateau. If optimization lands exactly at ER=0.20, VR=0.90, thresholds justified; otherwise refine."
+    unblocks: "Walk-forward validation after regime thresholds frozen."
+
+  - id: "B3"
+    issue: "RSI Period Parameter Not Swept"
+    severity: "HIGH"
+    resolution: "Test RSI(10), RSI(12), RSI(14), RSI(16), RSI(20) within in-sample across all 3 selected variants. Document Sharpe and hit rate per period. Choose period with highest in-sample Sharpe. Freeze period before walk-forward. If RSI(14) not optimal, document rationale for any deviation."
+    unblocks: "Holdout validation after RSI period fixed."
+
+  - id: "B4"
+    issue: "Transaction Cost Model Undefined"
+    severity: "HIGH"
+    resolution: "Specify: (a) BTCUSDT 1h bid-ask spread quantile (50th/95th percentile at typical entry hours), (b) Binance taker fee (document account tier; standard 0.10%), (c) slippage model (fixed % vs. size-dependent). Calculate post-cost return: if (gross_return × (1 - 2×cost_pct) < 0.02 per trade, reject. Otherwise, backtest with modeled costs included."
+    unblocks: "Base variant validation once execution costs quantified."
+
+  - id: "B5"
+    issue: "V5 Falsification Control Baseline Unknown"
+    severity: "MODERATE"
+    resolution: "Run V5 (RSI > 70 in mean-reversion) on in-sample. Document Sharpe and hit rate. If V5 Sharpe > 0.3 in-sample, regime filter alone drives alpha (hypothesis falsified). If V5 Sharpe < 0.1, proceed with base variant confident RSI direction matters. Report V5 result transparently in validation summary."
+    unblocks: "Signal direction validation; informs interpretation of base results."
+
+architectural_fit: |
+  Hypothesis fits existing bot infrastructure minimally and reversibly:
+  
+  - RSI(14) Indicator: Add utility function to RollingBuffer or indicator module 
+    (if not already present); ~30 lines.
+  - Regime Gating: Use existing ER/VR detector in strategy_base.py; no new logic.
+  - Variants V1, V2, V5: Implement as SubStrategyComponent subclasses in simple_strategy.py:
+    * v1_adaptive_threshold.py
+    * v2_persistence_filter.py
+    * v5_reverse_rsi.py
+    Total: ~120 lines per component.
+  - Execution, Rebalance, Portfolio Tracking: Zero changes; inherits existing ExecutionHandler, 
+    ForecastManager, PortfolioStateTracker.
+  - Backtest Loop: No changes; components integrate via strategy.generate_forecast().
+  
+  Estimated total delta: ~400 lines. Zero infrastructure risk; fully rollback-able.
+  
+  INTEGRATION CHECKLIST:
+  - [ ] RSI indicator utility added to RollingBuffer
+  - [ ] V1, V2, V5 components stubbed in simple_strategy.py (pass-through forecast=0 initially)
+  - [ ] Variants wired to AdvancedStrategy.generate_forecast() with regime gating
+  - [ ] Backtest harness updated to log component forecasts individually
+  - [ ] Screening backtest runs in-sample only; walk-forward disabled until B1–B5 resolved
+
+next_steps: |
+  IMMEDIATE (Blocking Gates):
+  1. Resolve B1: Select 3 variants a priori (recommend V1, V2, V5). Document rationale.
+  2. Resolve B2: Complete regime sensitivity sweep (ER, VR) in-sample. Lock thresholds.
+  3. Resolve B3: Test RSI periods (10–20) in-sample. Lock chosen period.
+  4. Resolve B4: Specify transaction cost model (bid-ask, slippage, fee). Model post-costs.
+  5. Resolve B5: Run V5 in-sample; document Sharpe. If V5 > 0.3, hypothesis at risk.
+  
+  SCREENING PHASE (After Blocking Gates):
+  1. Implement 3 selected variants as SubStrategyComponent subclasses.
+  2. Run screening backtest on in-sample period (2020-01-01 to 2023-06-30) only.
+  3. Calculate per-variant: Sharpe, hit rate, max drawdown, trades logged to trades.json.
+  4. Document results in artifacts/screening_results.yaml (variant, Sharpe, Δ from cost model).
+  5. If screening base variant Sharpe > 0.4 in-sample AND V5 < 0.2, advance to walk-forward.
+  6. If screening fails, reject hypothesis (alpha insufficient or regime model broken).
+  
+  WALK-FORWARD (If Screening Passes):
+  1. Freeze all parameters from in-sample; disable any further tuning.
+  2. Run walk-forward backtest (2023-07-01 to 2023-12-31).
+  3. Verify parameter drift < 10%; document any regime instability > 5% of bars.
+  4. If walk-forward passes, advance to holdout.
+  
+  HOLDOUT (If Walk-Forward Passes):
+  1. Run final holdout backtest (2024-01-01 to 2024-06-30) on BTCUSDT 1h.
+  2. Simultaneously run same parameters on ETHUSDT 1h (instrument robustness test).
+  3. Compare: BTCUSDT Sharpe vs. ETHUSDT Sharpe. If ETHUSDT < 0.3, overfitting detected.
+  4. If both meet decision_rules thresholds, hypothesis APPROVED for implementation.
+  5. If holdout fails, reject hypothesis; archive results in artifacts/validation_failure.yaml.
+
+status_enum: "REFINE"
+confidence_level: "Medium"

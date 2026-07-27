@@ -1,0 +1,331 @@
+run_id: run_018
+stage: validation_gate
+base_hypothesis_id: V2-PIVOT-A
+
+base_falsifiable_statement: |
+  RSI momentum signals (overbought/oversold extremes) in TRENDING regime (ER ≥ 0.50,
+  VR ≥ 1.20) generate positive alpha (Sharpe > 0.3) via trend-strength correlation
+  because high ER/VR markets exhibit momentum continuation, not mean-reversion.
+
+base_null_expectation: |
+  TRENDING regime does not predict momentum (Sharpe ≤ 0.2, win_rate ≤ 0.50).
+  TRENDING may actually flag mean-reversion or noise; momentum continuation hypothesis
+  is inverted or regime gate is ineffective.
+
+variants:
+  V2-PIVOT-A-CONSERVATIVE:
+    falsifiable_statement: |
+      "Static RSI thresholds (70 overbought, 30 oversold) in TRENDING regime
+      produce Sharpe > 0.30 and win_rate > 0.45 across walk-forward windows."
+    null_expectation: |
+      "Sharpe ≤ 0.20 or win_rate ≤ 0.50; static thresholds indistinguishable
+      from random signals in TRENDING markets."
+    required_evidence:
+      - median_sharpe_across_windows: "> 0.30"
+      - min_trade_count_any_window: ">= 30"
+      - win_rate_overall: "> 0.45"
+    bias_risks:
+      - "RSI calculation is lag-free; no explicit look-ahead on RSI itself."
+      - "Threshold selection bias: if 70/30 are optimized on training window,
+        walk-forward will degrade. Mitigate by using standard literature thresholds."
+      - "Regime gate filters may create selection bias (only trades in TRENDING).
+        Verify TRENDING frequency is > 20% of bars to avoid survival bias."
+      - "Test corpus: BTCUSDT 1h candles. If cryptocurrency regime changes,
+        generalization fails."
+    failure_modes:
+      - "RSI 70/30 are regime-insensitive; produce equal false signal rates
+        in range-bound (high noise) and trending (high signal) markets."
+      - "14-period lookback is too short on 1h candle; noise dominates signal
+        in sub-hourly volatility clusters."
+      - "Static levels ignore volatility scaling; wide-range candles require
+        higher thresholds, tight ranges require lower. 70/30 is one-size-fits-all."
+      - "Signal quality degrades in transition bars (candle closing near threshold);
+        execution precision determines edge. Backtest ignores slippage."
+      - "TRENDING regime itself may be spurious; if ER/VR thresholds are
+        set too low, TRENDING captures range-bound markets with high noise."
+    sample_split_design: |
+      Train window: first 40% of backtest period. Walk-forward: split remaining
+      60% into 3 non-overlapping windows of 20% each. No parameter refit between
+      windows (static 70/30). Measure Sharpe, win_rate, max_drawdown per window.
+      Gate approval on median Sharpe > 0.30 and min_trade_count >= 30 in any window.
+    decision_rules:
+      - "Sharpe (median across walk-forward): must be > 0.30"
+      - "Win rate (overall): must be > 0.45"
+      - "Trade count (minimum in any window): must be >= 30"
+      - "Max drawdown: must be < 40% (soft constraint; document if exceeded)"
+
+  V2-PIVOT-A-STOCH:
+    falsifiable_statement: |
+      "Stochastic K (14,3) in TRENDING regime outperforms base RSI variant
+      by Sharpe margin > 0.20 and achieves win_rate > 0.48."
+    null_expectation: |
+      "Stochastic Sharpe is within 0.10 of RSI (no meaningful improvement)
+      or win_rate <= 0.48; range-normalization benefit is offset by lag."
+    required_evidence:
+      - sharpe_delta_vs_conservative: "> 0.20"
+      - stoch_sharpe: "> 0.40"
+      - win_rate: "> 0.48"
+    bias_risks:
+      - "Stochastic K uses min/max over 14-period window. Must verify min/max
+        are computed on closed bars only, not forming bar. No look-ahead if
+        window boundary is fixed before signal generation."
+      - "Smoothing parameter (3) introduces lag. Lag must be quantified
+        (entry bar offset) and documented."
+      - "Parameter selection: (14,3) are standard; no optimization on training data."
+    failure_modes:
+      - "14-period lookback creates excessive oscillation in choppy markets;
+        Stochastic spends >80% of time near thresholds. Entry churn increases
+        without edge improvement."
+      - "Smoothing (3-period MA on K) delays entry signal; momentum move peaks
+        before K crosses threshold. Backtest assumes instant entry; real execution
+        misses 1-2 bars."
+      - "Range normalization (min/max) resets in extreme moves; K line compresses
+        into [0,100] regardless of move magnitude. High-volatility moves produce
+        identical signals as low-volatility moves."
+      - "Stochastic is less smooth than RSI; drawdown may increase despite
+        higher Sharpe. Verify max_drawdown does not degrade > 10% vs base."
+      - "Stochastic parameters (14,3) are empirically chosen for equity markets;
+        may not generalize to crypto volatility regimes."
+    sample_split_design: |
+      Train window: first 40%. Walk-forward: 3 non-overlapping 20% windows.
+      Compare Stochastic vs RSI Conservative on identical sample splits.
+      Measure Sharpe delta, win_rate, max_drawdown per window pair.
+    decision_rules:
+      - "Stochastic Sharpe vs RSI Conservative: delta must be > 0.20"
+      - "Stochastic win_rate: must be > 0.48"
+      - "Max drawdown (Stochastic): must not exceed Conservative by > 10%"
+
+  V2-PIVOT-A-MULTI-TIMEFRAME:
+    falsifiable_statement: |
+      "1h RSI > 75th percentile AND 4h RSI > 70 confirmation in TRENDING
+      reduces max_drawdown_pct by > 30% vs 1h alone, achieving Sharpe > 0.35."
+    null_expectation: |
+      "Max drawdown reduction <= 15% or Sharpe < 0.30; multi-timeframe
+      confirmation is redundant or trade count falls below significance."
+    required_evidence:
+      - sharpe_multi_vs_conservative: "> 0.35"
+      - max_drawdown_reduction_pct: "> 30%"
+      - min_trade_count: ">= 20"
+    bias_risks:
+      - "CRITICAL: 4h percentile calculation must use only closed 4h bars.
+        If percentile is computed on forming 4h bar, look-ahead bias.
+        Mitigate: lock 4h percentile at 4h candle close, before 1h signal."
+      - "1h and 4h regime gates may diverge (1h in TRENDING, 4h in RANGE).
+        Document interaction; verify protocol handles regime mismatch."
+      - "Multi-timeframe correlation is spurious; 4h agreement reflects same
+        underlying price move, not independent confirmation."
+    failure_modes:
+      - "4h signal is stale. 1h candle completes at T=1h; corresponding 4h
+        candle closes at T=4h. Entry signal at T=1h uses 4h data from T=-3h (3 bars old)."
+      - "Confirmation requirement cuts trade count by ~60%; remaining trades
+        may be statistically non-significant (< 20 per walk-forward window)."
+      - "1h > 75th percentile is already selective (only top 25% of 1h RSI states).
+        4h > 70 gate is redundant filter; marginal benefit is filtering noise,
+        not capturing signal structure."
+      - "Regime shift on 1h but not 4h creates false rejections. Example: 1h
+        enters TRENDING, 4h remains in RANGE. 4h gate blocks entry despite 1h
+        regime prediction being correct."
+      - "Parameter coupling: does base (ER ≥ 0.50) regime gate already filter
+        most noise such that 4h confirmation adds zero value?"
+    sample_split_design: |
+      Train window: first 40%. Walk-forward: 3 non-overlapping 20% windows.
+      On each 1h candle close: (a) check 1h RSI > 75th pct AND (b) check most-recent
+      closed 4h candle has RSI > 70. Entry only if both true AND TRENDING gate passed.
+      Measure Sharpe, max_drawdown, trade_count per window vs 1h-only baseline.
+    decision_rules:
+      - "Sharpe (multi-timeframe): must be > 0.35"
+      - "Max drawdown reduction vs 1h-only: must be > 30%"
+      - "Min trade count (any window): must be >= 20"
+      - "REQUIREMENT: Document 4h percentile computation and closure timing
+        to prevent look-ahead."
+
+  V2-PIVOT-A-REVERSE:
+    falsifiable_statement: |
+      "Mean-reversion hypothesis: RSI < 30 in uptrends (long on recovery)
+      and RSI > 70 in downtrends (short on pullback) in TRENDING regime
+      produce Sharpe <= 0.15. Rejection of base momentum hypothesis."
+    null_expectation: |
+      "Reverse variant outperforms base (Sharpe > 0.40, win_rate > 0.50).
+      TRENDING regime actually detects mean-reversion, not momentum.
+      Base hypothesis is inverted."
+    required_evidence:
+      - reverse_sharpe: "<= 0.15"
+      - base_momentum_sharpe: "> 0.30"
+      - sharpe_delta_base_minus_reverse: "> 0.20"
+    bias_risks:
+      - "This is an intentional falsification test. No new bias introduced;
+        both base and reverse use same regime gate and clean RSI calculation."
+      - "However, if both base AND reverse show Sharpe > 0.35, regime gate
+        itself is strong; signal direction may be secondary to regime filtering."
+    failure_modes:
+      - "Reverse is actually correct. TRENDING regime (high ER, high VR)
+        predicts mean-reversion, not momentum. Base hypothesis fails."
+      - "Both base and reverse show similar Sharpe (0.25-0.35). Signal direction
+        is neutral; regime gate is the edge, not momentum vs mean-reversion."
+      - "Reverse trade count is too high (opposite trades on every extreme);
+        whipsaw cost (slippage, fees) erodes any edge."
+      - "Base and reverse show equal Sharpe but opposite win_rates. Example:
+        base has 60% win_rate, 0.3 Sharpe; reverse has 40% win_rate, 0.3 Sharpe.
+        Both capture volatility, not directional skill."
+      - "Mean-reversion fade occurs 2+ bars after RSI extreme. Entry on divergence
+        (bar after extreme) misses reversion window; entry timing kills reverse signal."
+    sample_split_design: |
+      Identical to base (V2-PIVOT-A-CONSERVATIVE). Run both momentum and
+      mean-reversion variants on same train/walk-forward split. Compare Sharpe,
+      win_rate per window.
+    decision_rules:
+      - "Reverse Sharpe: must be <= 0.15 to validate base momentum hypothesis"
+      - "Base Sharpe: must be > 0.30 to confirm momentum dominates mean-reversion"
+      - "If reverse Sharpe >= 0.40, reject base hypothesis and escalate to
+        regime re-investigation (may need Hurst exponent or autocorrelation)"
+
+  V2-PIVOT-A-ADAPTIVE-THRESHOLD:
+    falsifiable_statement: |
+      "Bollinger Bands (20, 2.0) applied to RSI itself in TRENDING regime
+      produce Sharpe > 0.35 and reduce max_drawdown_pct by > 15% vs static thresholds."
+    null_expectation: |
+      "Sharpe <= 0.25 or max_drawdown increases. Dynamic thresholds add
+      meta-indicator noise without improving signal-to-noise ratio."
+    required_evidence:
+      - sharpe_adaptive: "> 0.35"
+      - max_drawdown_reduction_vs_static: "> 15%"
+      - win_rate: "> 0.45"
+    bias_risks:
+      - "BB calculation on RSI uses rolling 20-period window. Must verify window
+        is closed before signal generation; no look-ahead on forming RSI bar."
+      - "Parameters (20, 2.0) are arbitrary. If selected on training data,
+        walk-forward performance will degrade. Mitigate: use standard literature
+        defaults or justify via theory."
+      - "Self-referential indicator: Bollinger Bands on RSI (normalized [0,100])
+        create spurious smoothing. Verify edge is not artifact of double-normalization."
+    failure_modes:
+      - "Bollinger Band bands on RSI introduce lag. Band break occurs 1-2 bars
+        after RSI extreme; entry misses initial move."
+      - "RSI already normalizes [0,100]. Applying BB (mean ± 2σ) to bounded
+        variable is mathematically unsound; bands may exceed [0,100] or compress
+        near boundaries."
+      - "Parameters (20, 2.0) are equity-market defaults. Crypto RSI volatility
+        differs; optimal parameters may be (14, 1.5) or (28, 2.5). Sensitivity
+        to parameter choice indicates overfitting."
+      - "Trade count may increase (band touches are more frequent than static
+        thresholds) without quality improvement. Test win_rate; if unchanged
+        from static despite higher trade count, signal degradation."
+      - "Adaptive thresholds diverge from regime gate (ER/VR dynamic). If RSI BB
+        adapts to RSI volatility but TRENDING adapts to price volatility, signals
+        may decouple."
+    sample_split_design: |
+      Train window: first 40%. Walk-forward: 3 non-overlapping 20% windows.
+      Compute Bollinger Bands (20, 2.0) on RSI within each window (no parameter
+      refit). Entry on upper band cross. Measure Sharpe, max_drawdown, trade_count.
+    decision_rules:
+      - "Sharpe (adaptive): must be > 0.35"
+      - "Max drawdown vs static: must be <= 85% of static drawdown (15%+ reduction)"
+      - "Trade count: must be > 30 total across walk-forward"
+      - "CONDITION: Prove (20, 2.0) parameters are not optimized on training data"
+
+  V2-PIVOT-A-VOLUME-FILTER:
+    falsifiable_statement: |
+      "RSI momentum entry requires concurrent volume > 75th percentile
+      (long: RSI > 75th pct AND volume high; short: RSI < 25th pct AND volume high).
+      Produces Sharpe > 0.40 and win_rate > 0.50 in TRENDING regime."
+    null_expectation: |
+      "Sharpe <= 0.30 or win_rate <= 0.48. Volume filtering removes signal
+      quality without independent information content."
+    required_evidence:
+      - sharpe_volume_filtered: "> 0.40"
+      - win_rate: "> 0.50"
+      - trade_count_min: ">= 25"
+    bias_risks:
+      - "No look-ahead if volume percentile is computed on closed bars only."
+      - "Correlation bias: volume is computed per-bar. Testing 'volume > 75th
+        percentile on the bar where RSI is at extreme' is not independent.
+        Must compute volume percentile separately (on non-RSI bars) and gate
+        RSI signals with cached volume state."
+      - "Volume data is Binance spot volume; may not reflect true institutional
+        order flow. Generalization risk: different exchange or product."
+    failure_modes:
+      - "Volume thresholds (75th percentile) are too strict; removes 75% of
+        potential entries. Remaining trade count may be < 20/window (non-significant)."
+      - "High-volume bars occur on reversals, not continuations. Filtering for
+        high volume may paradoxically select mean-reversion moments, not momentum."
+      - "Volume and RSI are independent; no causal relationship. Filtering on
+        both may reduce noise but also removes real signals randomly."
+      - "Asymmetric volume gates are contradictory. Spec says 'long when volume > 75th
+        AND short when volume > 75th'. High volume cannot signal both directions;
+        one direction will have no entries."
+      - "Volume percentile is noisy in low-volume periods (nights, weekends).
+        BTCUSDT 1h volume varies 5x between peak and trough. Percentile threshold
+        is unstable."
+    sample_split_design: |
+      Train window: first 40%. Walk-forward: 3 non-overlapping 20% windows.
+      On each 1h candle close: (a) compute rolling 100-bar volume distribution,
+      (b) check RSI > 75th pct (or < 25th) AND current volume > 75th percentile.
+      Entry only if both true AND TRENDING gate passed. Measure Sharpe, win_rate,
+      trade_count per window.
+    decision_rules:
+      - "Sharpe (volume-filtered): must be > 0.40"
+      - "Win rate: must be > 0.50"
+      - "Min trade count (any window): must be >= 25"
+      - "CONDITION: Prove volume and RSI are independent (no spurious correlation)"
+
+  V2-PIVOT-A-DIVERGENCE:
+    falsifiable_statement: |
+      "RSI-price divergence detection (price new high but RSI < previous high)
+      in TRENDING regime signals momentum exhaustion. Entry on divergence detection
+      produces Sharpe > 0.35 and catches inflection > 2 bars before static RSI."
+    null_expectation: |
+      "Sharpe <= 0.20 or divergence signals arrive 0-1 bars after inflection.
+      Divergence is too late to be actionable; not forward-predictive."
+    required_evidence:
+      - sharpe_divergence: "> 0.35"
+      - inflection_lead_bars: "> 2"
+      - trade_count_min: ">= 15"
+    bias_risks:
+      - "CRITICAL LOOK-AHEAD: Divergence detection requires identifying the
+        'previous RSI high' and current RSI high. This requires comparing RSI
+        across history (swing high detection), which is retroactive."
+      - "No known forward-only algorithm for divergence detection without
+        backtracking. Any swing identification uses future bars."
+      - "Pattern definition is ambiguous: previous N bars? Previous trend swing?
+        Subjective anchor makes implementation brittle and parameter-dependent."
+    failure_modes:
+      - "Divergence pattern is visual/subjective. Two analysts may disagree on
+        whether divergence occurred. Implementation adds tunable parameters
+        (lookback window, swing confirmation) that overfit easily."
+      - "Divergence is rare event (< 10% of trend moves); trade count is too low
+        for statistical significance (likely < 15/window)."
+      - "Divergence occurs AFTER momentum fades; entry is 1-2 bars into reversal,
+        not at inflection. Backtest assumes instant entry; real execution loses edge."
+      - "Divergence detection requires multi-bar lookback (comparing swing highs).
+        Identifying swing requires seeing N bars ahead; this is inherent look-ahead bias."
+      - "RSI divergence detection is widely published (retail-friendly strategy);
+        unlikely to generate edge in competitive market. Consensus on divergence
+        signals => signal crowding => alpha decay."
+    sample_split_design: |
+      Cannot safely define. Divergence detection requires a rigorous closed-loop
+      algorithm that (1) identifies swing highs without backtracking, (2) confirms
+      divergence on the bar of detection (not retroactively), and (3) is robust
+      to parameter choices. Current spec is narrative and non-operational.
+    decision_rules:
+      - "REJECT: Divergence detection cannot be implemented without look-ahead bias.
+        Pattern definition is ambiguous and requires explicit algorithm specification
+        to proceed."
+
+common_constraints:
+  - "All variants preserve TRENDING regime gate (ER >= 0.50, VR >= 1.20) unless
+    explicitly overridden."
+  - "Forecast standardization (raw forecast / (stddev_24 * close)) applies to all
+    variants. No changes to allocation or rebalance logic."
+  - "Backtest window: minimum 12 weeks to capture >= 3 walk-forward windows.
+    Test on BTCUSDT 1h candles (spot)."
+  - "No external data sources (order book, funding rates, liquidations) in screening
+    backtest. Stick to OHLCV only."
+  - "Multi-timeframe variants require candle data for both 1h and 4h. Data must be
+    from same source (Binance spot) to avoid temporal misalignment."
+
+sample_split_methodology: |
+  Training: first 40% of backtest period. Walk-forward: split remaining 60%
+  into 3 non-overlapping 20% windows. No parameter refit between windows.
+  Report Sharpe, win_rate, max_drawdown_pct, trade_count per window.
+  Gate approval on median Sharpe and minimum trade count; allow max_drawdown
+  to exceed target by 10% if Sharpe and win_rate pass (draw-down is secondary).

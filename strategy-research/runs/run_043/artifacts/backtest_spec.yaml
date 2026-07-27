@@ -1,0 +1,46 @@
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+    rules:
+      - regime: unknown
+        any_of:
+          - - id: er
+              op: gte
+              value: 0.0
+    default_regime: unknown
+  strategies:
+    warmup: 51
+    regimes:
+      unknown:
+        components:
+          - id: ema_spread
+            class: strategies.strategy_components.EMASpreadComponent
+            params:
+              fast_period: 9
+              slow_period: 21
+              scaling_factor: 5.0
+            weight: 1.0
+            lookback: 500
+            transforms:
+              - op: ratio_to_mean
+              - op: clip
+                params:
+                  min: -20.0
+                  max: 20.0
+      trending: null
+      mean_reversion: null
+      chop: null
+config_rationale:
+  - "V1 hypothesis specifies EMASpreadComponent(fast_period=9, slow_period=21, scaling_factor=5.0) for trend-following via fast/slow EMA divergence"
+  - "Transform pipeline: ratio_to_mean adapts signal magnitude to historical baseline (lookback=500); clip constrains forecast to [-20, +20]"
+  - "Ungated implementation: threshold_rules mode with always-true condition (ER >= 0.0) routes all bars to regime=unknown"
+  - "Strategy engine maps EMA spread component to regime=unknown (active on all bars post-warmup); other regimes set to null"
+  - "Warmup=51 ensures sufficient history; no sparse filtering applied (hypothesis requires dense signal with ~150–200 trades/window)"
+component_gap: null

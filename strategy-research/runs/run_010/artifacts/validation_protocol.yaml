@@ -1,0 +1,38 @@
+hypothesis_id: "H-RUN007-V1"
+falsifiable_statement: "RSI(14) < 50 in BTCUSDT 1h, mean-reversion regime (ER ≤ 0.20, VR ≤ 0.90), generates Sharpe ≥ 0.5 net of 5 bps commission."
+
+null_expectation: "Signal Sharpe ≤ buy-hold; commission and regime lag dominate; net edge ≤ 0."
+
+required_evidence:
+  - "MR regime ≥5% of bars in screening period; reject immediately if < 5%."
+  - "Sharpe(signal | MR regime) > Sharpe(buy-hold) by ≥0.3 in screening."
+  - "Walk-forward PE ≥ 1.0 over unseen data."
+  - "Regime detection lag ≤ 2 bars (measured vs. true regime state)."
+  - "Win rate ≥ 52% after slippage (0.2 bps) + commission (5 bps)."
+
+bias_risks:
+  - "Look-ahead: ER/VR window must be t-24:t-1 only; forward-looking breaks signal validity."
+  - "Selection: BTCUSDT 1h only; no multi-asset or cross-timeframe robustness testing."
+  - "Regime circularity: ER/VR used to both define and label regime; inflates edge without real signal."
+  - "Parameter overfit: RSI(14) is arbitrary convention; no sensitivity or justification."
+
+failure_modes:
+  - "Regime lag > 2 bars: signals fire at wrong time, miss reversal window."
+  - "RSI has no edge in MR regimes: noise dominates signal; Sharpe delta < 0.1."
+  - "Commission/slippage (5 bps actual vs. 2 bps assumed) erodes PE below 1.0."
+  - "MR regime rare: frequency < 5% yields insufficient samples; high measurement noise."
+  - "Parameter instability: RSI(14) overfitted to backtest period; breaks in live."
+  - "Regime transition risk: signal valid at entry, fails at regime exit."
+
+sample_split_design:
+  screening: "2023-01-01 to 2024-06-30 (18 months)"
+  walk_forward: "2024-07-01 to 2025-06-30 (12 months, unseen)"
+  holdout: "2025-07-01 to 2026-06-25 (zero re-fit)"
+  early_rejection_rule: "If MR regime frequency < 5% in screening, halt; do not proceed to walk-forward."
+  regime_lag_measurement: "Measure signal delay vs. true regime state; report in results."
+
+decision_rules:
+  approve: "Sharpe delta > 0.3 in screening AND walk-forward PE > 1.0 AND lag ≤ 2 bars."
+  conditional_approve: "Sharpe delta 0.1–0.3 in screening AND walk-forward PE ≥ 1.0 AND holdout PE > 1.0. REQUIRES: (1) lag ≤ 2 bars confirmed, (2) commission at 5 bps, (3) MR frequency ≥5%, (4) no forward-looking regime window."
+  refine: "Sharpe delta < 0.1 in screening OR lag > 2 bars OR MR frequency < 5%."
+  reject: "Walk-forward PE < 1.0 OR lag > 3 bars OR MR frequency < 3%."

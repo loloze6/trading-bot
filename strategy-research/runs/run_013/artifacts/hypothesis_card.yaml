@@ -1,0 +1,34 @@
+hypothesis_id: H-RUN007
+thesis: >
+  RSI below 50 in mean-reversion regimes predicts near-term price reversion,
+  generating positive expected returns from oversold reversions in low-trending
+  conditions.
+
+rationale: >
+  RSI extremes <50 indicate oversold conditions. Previous run (H-RUN007) failed
+  due to regime starvation (ER ≤ 0.20 captured only 14–21 bars, below ≥30
+  minimum). Root cause: threshold too restrictive, not signal mechanism.
+  Solution: Relax ER to 0.25 (still below trending threshold 0.25+) while
+  keeping VR ≤ 0.90. Expected outcome: sample size increases, Sharpe improves
+  from larger statistical basis.
+
+signal_concept: >
+  RSIPullbackComponent: long-only forecast proportional to (50 - RSI(14)) / 100
+  when in regime, else 0. Single component, no interactions.
+
+target_market: BTCUSDT
+timeframe: 1h
+
+assumptions:
+  - Mean-reversion regime occurs ≥15% of bars for statistical validity
+  - RSI distance below 50 correlates with reversion probability
+  - ER threshold 0.25 captures mean-reversion without trending contamination
+  - VR ≤ 0.90 provides sufficient volatility filtering
+  - Prior failure was regime starvation, not signal concept weakness
+
+expected_failure_modes:
+  - RSI signal fundamentally has no edge even with relaxed regime
+  - ER 0.25 threshold still too permissive; captures trending despite VR filter
+  - Commission drag erodes generated alpha
+  - Trade count remains <30; insufficient statistical power
+  - Win rate <45%, indicating negative expectancy despite regime relaxation

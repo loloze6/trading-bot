@@ -1,0 +1,39 @@
+expansion_context:
+  brief_source: "RUN017_REPLICATION_REFINE_01 hypothesis generation"
+  refinement_attempt: 0
+  parameter_constraints: "KeltnerBreakout signature locked: ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0"
+  infrastructure_constraints: "No changes to execution, portfolio, or backtest architecture permitted"
+
+expansion_rationale: "The hypothesis is parameter-narrow (single-axis: ER threshold from 0.50 to 0.35) but regime-structure-flexible. Expansion explores: (1) alternative ER/VR thresholds within existing regime framework, (2) reverse thesis on efficiency regime meaning, (3) behavioral detection (ER-trend) to improve regime entrance timing, (4) asset-specific tuning without replicating infrastructure. All variants fit existing CompositeStrategy + component framework."
+
+variant_coverage:
+  V1-Base: "Direct test of research question: does ER=0.35 threshold work? Baseline for all comparisons."
+  V2-Aggressive: "Boundary exploration: what if ER can go lower? Tests ER=0.30 to identify sensitivity cliff and mean-reversion overlap point."
+  V3-Conservative: "Fallback gate: if V1 fails due to mean-reversion bleed, tighter V3 (ER=0.40) offers alternative with reduced regime exposure but likely higher Sharpe."
+  V4-Reverse: "Hypothesis inversion: low-efficiency regime rewards contrarian logic. Orthogonal to V1-V3; rejects trend-following entirely in choppy markets."
+  V5-Behavioral: "Signal enhancement: filters false breakouts by requiring ER to be rising. Keeps V1 regime thresholds but adds timing precision."
+
+expansion_decisions:
+  - "Did NOT create variants below ER=0.30: mean-reversion overlap risk (0.40-0.45 band) makes lower thresholds structurally unsound."
+  - "Did NOT create per-asset threshold variants in expanded card: defer to walk-forward analysis; hypothesis space already sufficient."
+  - "DID add behavioral variant (V5-ER-trend): regime-entrance timing is known weak point in static-threshold filtering; ER-trend is available via RollingBuffer."
+  - "DID add reverse hypothesis (V4): efficiency regime inversion is structurally testable and orthogonal; adds robustness check."
+  - "Kept V3-Conservative as fallback: single-step gate-tightening (ER 0.35 → 0.40) is low-risk reversion if V1 fails."
+
+alternative_data_assessment:
+  ER_second_derivative: "Plausible but increases lag (5-bar window). Prioritize only if ER-trend (V5) fails due to noise."
+  VR_momentum: "Already captured via VR threshold. Joint ER-VR filtering explored in regime_specific_variants."
+  volume_weighted_ER: "Requires Binance volume integration. Defer unless efficiency ratio proves highly unstable."
+  cross_asset_ER: "Test in walk-forward phase if asset-specific outcomes diverge significantly (Sharpe spread >0.3)."
+
+statistical_power_notes:
+  - "V1 targets >100 cumulative trades across windows (estimated 20-30 per window × 4-5 windows). Sufficient for Sharpe significance (Coin-flip test at α=0.05 requires n≈20 for 55% win rate)."
+  - "V3 targets >50 trades (fallback); still viable if win rate > 52%."
+  - "V4 (reverse) likely produces <30 trades if efficiency regime is rare. May fail screening backtest."
+  - "V5 (behavioral) likely produces 60-80% of V1 trade count (filter reduces entries). Evaluate win rate vs frequency trade-off."
+
+next_stage_readiness:
+  - "All variants are falsifiable via walk-forward backtest (Sharpe, trade count, max DD, Calmar ratio)."
+  - "V1, V2, V3, V5 use only KeltnerBreakout component (no new infrastructure)."
+  - "V4 requires simple mean-reversion entry component; defer if unavailable (flag in screening backtest)."
+  - "Ready for validation_gate → screening_backtest stage."

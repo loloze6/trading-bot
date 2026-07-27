@@ -1,0 +1,26 @@
+status: resolved_proceed
+resolution_type: redirect_to_existing_capability
+
+finding: |
+  score_mode with confidence scaling does not exist in the engine. However, the goal
+  (more trades/window while keeping Keltner signal quality) is achievable without new
+  components by relaxing the threshold_rules ER/VR thresholds.
+
+  Current thresholds (run_017/024): ER>=0.5 AND VR>=1.2
+  → TRENDING fires 0-3% of bars (0-22 bars/window) → 0-9 trades/window
+
+  Relaxed thresholds: ER>=0.3 AND VR>=1.0
+  → Expected TRENDING rate: ~10-15% of bars → ~20-40 trades/window
+  → Keeps the same Keltner mean-reversion signal and default_regime: unknown
+
+injected_context:
+  component_gap_resolution: "No score_mode needed. Use threshold_rules with relaxed thresholds: ER>=0.3, VR>=1.0. Keep default_regime: unknown. Keep Keltner params identical to run_017."
+  required_config_constraints: |
+    Generate ONE config only:
+    - regime_detector.mode: threshold_rules (NOT score_mode)
+    - default_regime: unknown (CRITICAL — do NOT set to trending)
+    - TRENDING rule: ER>=0.3 AND VR>=1.2 (relax ER from 0.5 to 0.3, keep VR)
+    - OR alternatively: ER>=0.5 OR VR>=1.2 (switch AND to OR for more coverage)
+    - Keltner: ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0
+    - unknown: null (CRITICAL — do NOT add zero-weight components)
+    - No vetoes, no per-asset overrides, no confidence scaling

@@ -1,0 +1,58 @@
+{
+  "run_id": "20260718T053619Z_d8cd6563",
+  "created_utc": "2026-07-18T05:36:19.655919+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "warmup": 2,
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "funding_rate_mr",
+              "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
+              "params": {
+                "threshold": 0.0,
+                "scaling_factor": 10.0
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "identity"
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      }
+    },
+    "aux_feeds": [
+      "funding_rate"
+    ],
+    "significance_methodology": "episode_blocked_a851a"
+  },
+  "config_sha256": "d8cd65638f0fe3698d0bb7a7ec55a43118d312b03e67c651611b2a2999f57a7a",
+  "data": {
+    "symbols": [
+      "ETHUSDT"
+    ],
+    "timeframe": "86400s",
+    "start": "2022-05-14 00:00:00",
+    "end": "2022-08-01 00:00:00",
+    "bar_count": 80,
+    "data_sha256": "5261a338b5697dd813291b912ce0467faa86689a97c8be409c622fd68e6f255a"
+  },
+  "git_sha": "8f683fe9aa1fe5ddd5cdca48834d520c84a3b8d1",
+  "engine": {
+    "lookback": 2,
+    "warmup": 2
+  }
+}

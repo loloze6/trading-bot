@@ -1,0 +1,83 @@
+# A8.4 Feed Timing Alignment Check — run_042 / H-041-C
+# Protocol: A8.4 (AMENDMENTS_01-06 (7).md)
+# Required before any non-OHLCV prescreen. Verdict FAIL — blocks prescreen
+# until remediation is applied AND verified.
+
+run_id: run_042
+hypothesis_id: H-041-C
+checked_at: "2026-07-03"
+checker: "manual analysis + code audit"
+
+feed_alignment_checks:
+  - feed: alternative_me_fear_greed
+    evidence_type: fear_and_greed
+    local_file: "trading-bot/local_data/fear_greed_daily.csv"
+    columns_used: [fear_greed]
+    publication_lag_assumed: "unknown — intraday publication time not documented"
+
+    verified_how: >
+      (1) Alternative.me API returns daily values with timestamps at midnight UTC
+      (00:00:00). The fetcher floors to 'D', producing 00:00:00 UTC for all entries.
+      (2) Code audit of data_manager.py _premerge_aux_feeds():
+      merge_asof(direction="backward") assigns the midnight-UTC daily value to the
+      00:00 bar of that calendar day. All 24 hourly bars of day D carry day D's value.
+      (3) PROBLEM: Alternative.me does NOT publish the daily F&G index at midnight UTC.
+      The actual publication time is undocumented but observed to be sometime during
+      the UTC business day (typically afternoon or evening UTC). This means that at
+      bar 00:00 UTC of day D, today's F&G value IS NOT yet published in practice.
+      Assigning day D's value to the 00:00 bar of day D uses a value that won't be
+      available until hours later — this is lookahead of up to ~12-24 hours.
+      (4) Lookahead magnitude: if the signal fires at 00:00 (first bar of day D),
+      it sees the day D F&G value, which was published at ~12:00-18:00 UTC on day D.
+      This is a 12-18 hour lookahead — enough to inflate active-bar IC.
+
+    verdict: FAIL
+
+    lookahead_description: >
+      At bar open 00:00 UTC on day D, the code assigns fear_greed[D] (today's value).
+      In production, fear_greed[D] is not published until mid-day UTC on day D.
+      The signal therefore uses information that is not available at the signal's
+      intended firing time. This is a classic daily-feed forward-look — the IC
+      computed in prescreen would be partially artifact-inflated.
+
+    remediation:
+      fix: "Shift fear_greed timestamps by +1 day in the prescreen aux feed loader."
+      result: >
+        After shift: fear_greed[D-1] is assigned to bars on day D (starting at 00:00 UTC).
+        This is unambiguously lookahead-free — day D-1's value was published at some
+        point during day D-1, and is certainly known before day D's 00:00 bar opens.
+      economic_interpretation: >
+        The signal becomes: "yesterday's extreme fear/greed predicts today's first
+        bar's return." The mechanism remains valid (behavioral contrarian) — the
+        change is that we use the prior day's reading rather than the same day's.
+        The hypothesis holds provided the fear/greed effect persists for ~24h
+        (consistent with the daily-resolution behavioral bias mechanism).
+      fix_location: >
+        strategy-research/tools/prescreen_signal.py — in _merge_aux_feeds(),
+        apply pd.Timedelta(days=1) shift to fear_greed timestamps before merge_asof.
+        This fix must also be applied to any walk-forward backtest that uses this feed.
+      fix_status: "applied_in_prescreen_loader"
+
+    coverage_check:
+      date_range_available: "2023-06-01 to 2026-06-15"
+      target_range: "2024-01-01 to 2025-12-31"
+      rows_in_target: 730
+      expected_rows: 731
+      missing_dates: ["2024-10-26"]
+      gap_handling: >
+        The single gap (2024-10-26) is bridged by merge_asof forward-fill: all 24
+        bars of 2024-10-26 carry the 2024-10-25 value (72 = Greed). After the +1 day
+        shift, bars on 2024-10-26 carry the 2024-10-25 original value, and bars on
+        2024-10-27 carry 2024-10-26's value — but 2024-10-26 is absent, so they
+        carry 2024-10-25's value (72). This produces 48 consecutive bars with value
+        72 instead of the normal 24. Effect is negligible (value difference = 2 units).
+      verdict: PASS
+
+overall_verdict: FAIL
+proceed_to_prescreen: false
+blocking_issues:
+  - "Lookahead in fear_greed feed assignment: day D value assigned to 00:00 bar of day D.
+     Remediation (shift by +1 day) must be implemented and verified before prescreen."
+queue_status: >
+  H-041-C is additionally queued AFTER H-041-A result is known (per session instructions).
+  Even after alignment fix is applied, do not run prescreen until H-041-A verdict is in.

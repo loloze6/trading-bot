@@ -1,0 +1,8 @@
+hypothesis_id: DIAG_A_4H_KELTNER_CLEAN
+asset: "BTCUSDT, ETHUSDT"
+timeframe: 4h
+research_question: "Does Keltner mean-reversion (run_017 exact params) produce a different cost_drag/trade_count profile at 4h vs 1h, with default_regime: unknown (regime gate enforced)? Run_021 tested this but had default_regime: trending bug — this is the clean retest."
+signal_concept: "KeltnerBreakout identical to run_017: ema=20, atr=20, atr_mult=2.0, scale=-20.0. TRENDING regime: ER>=0.50 AND VR>=1.20. default_regime: unknown. No changes from run_017 except timeframe."
+constraints:
+  - "Config is pre-injected. Do not modify any parameter."
+  - "This is a diagnostic run, not an exploration."

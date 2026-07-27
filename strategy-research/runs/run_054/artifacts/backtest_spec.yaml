@@ -1,0 +1,34 @@
+status: "spec_ready"
+config:
+  regime_detector:
+    mode: "threshold_rules"
+    components: []
+    rules: []
+    default_regime: "unknown"
+  strategies:
+    warmup: 50
+    regimes:
+      unknown:
+        components:
+          - id: "sma_trend"
+            class: "strategies.strategy_components.SmaTrendLongOnlyComponent"
+            params:
+              lookback_L: 100
+              scaling_factor: 10.0
+            weight: 1.0
+            transforms:
+              - op: "identity"
+      trending: null
+      mean_reversion: null
+      chop: null
+config_rationale:
+  - "Entry condition (close > SMA(100)) implemented by SmaTrendLongOnlyComponent with lookback_L=100, which outputs scaling_factor when condition holds, 0 otherwise"
+  - "Exit condition (close ≤ SMA(100)) naturally handled: component emits 0 forecast when condition fails, collapsing position to flat"
+  - "Long-only constraint satisfied by SmaTrendLongOnlyComponent design: never emits negative forecast values"
+  - "Ungated signal: empty regime_detector.rules and components routes all bars to default_regime=unknown, enabling full-time (every bar) trade activation per hypothesis"
+  - "Scaling factor 10.0 provides raw signal magnitude of {0, +10.0} in required [-20, +20] range, no per-bar volatility normalization needed for this binary trend signal"
+  - "Identity transform explicitly confirms no additional normalization pipeline: raw output already valid for ensemble (confirms intent per STRATEGY_CONFIG_REFERENCE.md)"
+  - "Daily timeframe: component operates on daily OHLCV bars; SMA(100) on daily resolves to ~100 trading days (~5 months) trend window"
+  - "Target symbols BTCUSDT and ETHUSDT: single config applies to both symbols per hypothesis; no symbol-specific variants"
+  - "Pre-registered SMA(100) parameter per research brief constraint (no parameter sweep); hypothesis is non-overfitted formulation"
+component_gap: null

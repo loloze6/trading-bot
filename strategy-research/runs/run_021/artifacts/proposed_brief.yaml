@@ -1,0 +1,60 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER-PIVOT-RSI"
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "4h"
+
+research_question: |
+  Do mean-reversion signals generate positive risk-adjusted returns (Sharpe ≥ 0.3) in
+  BTCUSDT/ETHUSDT 4h when market is TRENDING (ER ≥ 0.50, VR ≥ 1.20)?
+  Keltner lower-band mean-reversion lost edge at 4h (corr=0.0136 vs 1h baseline corr=+0.214).
+  Test RSI-based mean-reversion as structurally different signal family within same timeframe
+  and regime to isolate whether edge-loss is timeframe-generic or Keltner-specific.
+
+signal_concept: |
+  RSI(period=14) mean-reversion: long when RSI < 30 (oversold), short when RSI > 70 (overbought),
+  forecast magnitude scaled per engine defaults. RSI is a catalog-standard component (prior runs
+  011–015 at 1h failed on trade starvation FM1, not signal weakness). At 4h, same regime window
+  produces 4x more bars per TRENDING segment, expected to yield 350+ trades. RSI's non-adaptive
+  nature (fixed period, no volatility bands) may be more robust to timeframe changes than
+  Keltner's ATR-scaled bands.
+
+regime_filter: |
+  TRENDING regime only: ER ≥ 0.50 AND VR ≥ 1.20 (unchanged). Threshold_rules mode.
+  All other regimes produce forecast 0.0. Do not modify regime thresholds in this run.
+
+mechanism: |
+  At 1h, RSI mean-reversion fires when RSI crosses 30/70 thresholds. Frequency constraint:
+  TRENDING regime (ER≥0.50, VR≥1.20) gated ~4% of 1h bars, producing zero trades in many windows.
+  At 4h, each bar spans 4 hours of price action. TRENDING regime fires at similar frequency by
+  bar count, but absolute time span is 4x longer, increasing signal fire events. Expected:
+  ~350–400 trades (vs ~0–5 at 1h), and cost drag ~100–150% (vs uncomputable at 1h).
+  If RSI correlation at 4h is positive (> 0.03), edge is preserved. If corr < 0.03, mean-reversion
+  does not exist at 4h resolution across these symbols.
+
+assumptions:
+  - "RSI period=14 is catalog-standard and does not require tuning for escalation."
+  - "1h RSI failure was FM1 (trade starvation due to regime gate), not FM2 (signal weakness)."
+  - "4h timeframe produces adequate trade frequency to test correlation and Sharpe robustly."
+  - "Regime quality (forward_return_mean ≈ 0 in trending) may be caused by TRENDING threshold selection,
+    not the timeframe. Keeping regime unchanged ensures isolation of signal change only."
+
+expected_failure_modes:
+  - "RSI also yields corr ≈ 0 at 4h, indicating mean-reversion (any form) absent at 4h resolution
+    in current symbols (likely market microstructure or regime definition fault, not signal family)."
+  - "Cost drag again > 80% despite trade volume recovery (signal is unreliable; probability of
+    entry is high, win rate low)."
+  - "Trade count remains < 25 aggregate (regime gate still too strict, despite longer bars)."
+
+constraints:
+  - "Timeframe: 4h (locked from escalation decision). Do not revert to 1h."
+  - "Regime: TRENDING (ER≥0.50, VR≥1.20, threshold_rules mode). Do not modify thresholds or switch regime mode."
+  - "Signal component: RSIComponent (or equivalent catalog mean-reversion component). No new or experimental components."
+  - "Signal pipeline: identity transform. No quantile or volatility scaling."
+
+change_from_previous: |
+  Pivot from KeltnerBreakoutComponent (4h, scaling_factor=-20.0) to RSIComponent (4h, period=14).
+  Same timeframe and regime, structurally different signal family. Rationale: Keltner at 4h
+  produced zero directional edge (corr=0.0136), breaking the 1h baseline assumption (corr=+0.214).
+  RSI is simpler (non-adaptive bands), catalog-standard, and was tried at 1h (runs 011–015)
+  only under FM1 trade-starvation constraint. At 4h, trade frequency should be adequate for
+  correlation testing. If RSI also fails at 4h, the problem is timeframe-level or regime-based,
+  not signal-family-specific, triggering escalation to regime definition or instrument.

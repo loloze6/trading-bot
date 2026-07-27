@@ -1,0 +1,44 @@
+bug_superseded: true
+bug_superseded_note: >
+  F5 (2026-07-04): this proposed re-test (identical config + external validation of
+  aux_feeds wiring and settlement-bar logic) correctly anticipated the right next step.
+  The actual bug was found and fixed directly instead (F5a: FundingRateMeanReversion
+  Component's threshold=0.0 divide-by-zero in its confidence calc, silently swallowed
+  by main_strategy.update()). No separate H-044-validated run is needed -- the original
+  FUNDING_RATE_CONTINUOUS_MEAN_REVERSION config is relaunched fresh post-F5 instead.
+hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_VALIDATED
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+research_question: >
+  Re-test the core hypothesis from H-044 (SIGN of 8h Binance perpetual funding rate 
+  at every settlement bar carries mean-reversion signal) with added validation that 
+  the FundingRateMeanReversionComponent is correctly accessing aux_feeds (funding_rate) 
+  and generating forecasts at the expected settlement frequency (~3/day × ~61 days/window 
+  ≈ ~183/window). H-044 produced active_n_bars=0, preventing signal-quality evaluation. 
+  This run isolates whether the failure is data-feed availability or component logic, 
+  then re-evaluates signal edge once component execution is confirmed.
+
+signal_concept: >
+  IDENTICAL to H-044: FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0). 
+  Forecast = −sign(funding_rate) × 10.0 at every UTC 8h settlement bar (hour % 8 == 0); 
+  0 elsewhere. Ungated. Same mechanism, same parameters. The signal hypothesis itself is 
+  NOT changed; the focus is on verifying component initialization and data-feed wiring 
+  before interpreting signal quality.
+
+change_from_previous: >
+  H-044 resulted in active_n_bars=0, which blocked signal evaluation. This run 
+  (H-044-validated) re-uses the identical component configuration but adds external 
+  validation to confirm that: (A) funding_rate aux_feed data is present and non-null 
+  in the prescreen window, (B) settlement-bar identification logic (hour % 8 == 0) 
+  correctly flags settlement boundaries, (C) FundingRateMeanReversionComponent 
+  receives and processes the funding_rate values. Expected outcome: if validation 
+  confirms aux_feed and logic are intact, active_n_bars should exceed 100, and 
+  signal quality (IC, Sharpe) can be evaluated in a follow-up run. If validation 
+  shows data or logic failure, escalate to component/infrastructure team before 
+  continuing hypothesis evaluation.
+
+constraints:
+  - "Zero parameter changes: H-044-validated uses identical FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0) and aux_feeds: [funding_rate]."
+  - "Validation is external (test harness logging), not algorithmic; does not alter component logic."
+  - "If active_n_bars > 100 in this run, the hypothesis is 'ready for signal-quality evaluation' and proceeds to normal backtest in next run."
+  - "If active_n_bars remains 0 AFTER validation confirms aux_feed data is present, escalate to developer review of component process() implementation."

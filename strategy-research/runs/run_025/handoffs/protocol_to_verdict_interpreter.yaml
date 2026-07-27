@@ -1,0 +1,56 @@
+handoff_version: 1
+run_id: run_025
+from_stage: protocol_execution
+to_stage: verdict_interpreter
+assigned_engine: claude
+objective: 'Interpret backtest findings against hypothesis-specific criteria. Produce
+  a refined brief fixing the primary identified failure, or a final kill/promote decision.
+
+  '
+primary_input_artifact: runs/{run_id}/artifacts/protocol_result.yaml
+required_inputs:
+- path: artifacts/protocol_result.yaml
+  reason: backtest findings and hypothesis-specific verdict criteria results
+- path: artifacts/validation_protocol.yaml
+  reason: original success criteria and failure modes to interpret against
+- path: artifacts/backtest_spec.yaml
+  reason: maps config choices to hypothesis claims for failure attribution
+- path: artifacts/research_brief.yaml
+  reason: original research question and constraints
+optional_inputs:
+- path: ../../coin_universe.yaml
+  reason: coin categories and strategy affinity — informs escalation target selection
+constraints:
+- Change at most one hypothesis dimension in proposed_brief.yaml.
+- Do not recommend components absent from STRATEGY_CONFIG_REFERENCE.md.
+- Accept protocol_result.yaml numbers as truth — do not re-evaluate.
+deliverables:
+- verdict_interpretation.yaml
+stop_conditions:
+- All evaluable approve criteria pass → produce research_decision.yaml with decision
+  promote.
+- Two or more reject criteria confirmed → produce research_decision.yaml with decision
+  kill.
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'true'
+  component_gap_resolution: 'No score_mode needed. Use threshold_rules with relaxed
+    thresholds: ER>=0.3, VR>=1.0. Keep default_regime: unknown. Keep Keltner params
+    identical to run_017.'
+  required_config_constraints: 'Generate ONE config only:
+
+    - regime_detector.mode: threshold_rules (NOT score_mode)
+
+    - default_regime: unknown (CRITICAL — do NOT set to trending)
+
+    - TRENDING rule: ER>=0.3 AND VR>=1.2 (relax ER from 0.5 to 0.3, keep VR)
+
+    - OR alternatively: ER>=0.5 OR VR>=1.2 (switch AND to OR for more coverage)
+
+    - Keltner: ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0
+
+    - unknown: null (CRITICAL — do NOT add zero-weight components)
+
+    - No vetoes, no per-asset overrides, no confidence scaling
+
+    '

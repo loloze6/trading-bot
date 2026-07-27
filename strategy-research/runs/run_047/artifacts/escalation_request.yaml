@@ -1,0 +1,5 @@
+hypothesis_id: "H-041-A"
+target: "timeframe"
+reason: "Funding rate settlement is an 8-hour atomic event. On 1h timeframe, FundingRateMeanReversionComponent fires only at UTC 8h boundaries (hour%8==0), producing forecast_sparsity_pct=98.54% (1 active bar per ~8 bars). Effective sample size (n_eff=9, implied_trades_per_window=1) is far too small for IC measurement. Escalate to 8h timeframe to eliminate sparsity, align candle cycle with settlement frequency, and measure IC on dense atomic events."
+proposed_capability: "FundingRateMeanReversionComponent on 8h timeframe (BTCUSDT_8h and ETHUSDT_8h) using identical component parameters (threshold=0.0002, scaling_factor=10.0, ungated). On 8h candles, each settlement event is a full bar; sparsity drops to ~0.5-1% (properly dense), n_eff scales to ~200+, enabling reliable IC measurement."
+next_run_suggestion: "run_048: run_047 config with timeframe changed from 1h to 8h only. All other parameters (component, threshold, scaling_factor, regime_detector, assets, data range) remain identical. Prescreen + walk-forward on 8h data. If ic_all_bars >= 0.03 on 8h, advance to walk-forward validation."

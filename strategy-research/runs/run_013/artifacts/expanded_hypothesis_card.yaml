@@ -1,0 +1,45 @@
+hypothesis_id: H-RUN007
+base_hypothesis_id: H-RUN007
+expansion_rationale: >
+  Research brief constraint specifies "one variant only". Expansion forbidden.
+  V1 passes base hypothesis through with configuration delta applied.
+
+expanded_variants:
+  - variant_id: V1
+    label: "RSI Pullback (Relaxed ER 0.25)"
+    thesis: >
+      RSI below 50 in mean-reversion regimes predicts near-term price reversion,
+      generating positive expected returns from oversold reversions. Regime
+      relaxation (ER ≤ 0.25 vs ≤ 0.20) addresses prior sample starvation.
+    
+    signal_concept: >
+      RSIPullbackComponent: long-only forecast = (50 - RSI(14)) / 100 when in
+      regime, else 0. Unchanged from H-RUN007.
+    
+    regime_filter: >
+      mean_reversion only: ER ≤ 0.25 AND VR ≤ 0.90.
+      All other regimes produce forecast 0.0.
+    
+    configuration_delta: >
+      ER threshold increased from 0.20 to 0.25 in
+      regime_detector.rules[0]. Rationale: prior run (H-RUN007) trade_count
+      14–21 (below ≥30 minimum). Root cause: regime thresholds too restrictive.
+      VR ≤ 0.90 retained; signal transforms unchanged. No code required.
+    
+    assumptions:
+      - Mean-reversion regime occurs ≥15% of bars post-relaxation
+      - RSI distance from 50 correlates with reversion probability
+      - ER 0.25 captures mean-reversion without trending contamination
+      - VR ≤ 0.90 sufficient volatility filtering
+    
+    failure_modes:
+      - RSI signal fundamentally has no edge even with relaxed regime
+      - ER 0.25 still captures trending conditions despite VR filter
+      - Commission erodes generated alpha
+      - Trade count remains <30
+      - Win rate <45% despite relaxation
+
+alternative_data_candidates: []
+reverse_hypothesis: null
+behavioral_features: []
+regime_specific_variants: []

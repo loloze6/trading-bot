@@ -1,0 +1,57 @@
+hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
+protocol_verdict: kill
+status: pivot
+criteria_summary:
+  - "Walk-forward Spearman IC >= 0.2: FAILED at prescreen (ic_all_bars = -0.021091, p = 0.5876 >> 0.10, not significant)"
+  - "Walk-forward Sharpe ratio >= 0.5: UNTESTED (prescreen killed before walk-forward backtest)"
+  - "Win rate >= 0.48: UNTESTED"
+  - "Trade count >= 100 per window: UNTESTED"
+  - "Max drawdown <= 15%: UNTESTED"
+
+primary_failure_mode: "no_informational_content_this_venue"
+config_to_failure_map: >
+  "EMASpreadComponent(fast_period=9, slow_period=21, scaling_factor=5.0) configured
+  with ungated threshold_rules (always-true regime=unknown). The signal mechanism itself
+  (moving-average-crossover, continuous magnitude on every bar) produces negative pooled IC
+  = -0.021091 across BTC/ETH 1h, indicating the signal has no positive directional content
+  on these venues and may even have slight adversarial (mean-reversion) bias."
+
+untested_criteria:
+  - "Walk-forward Spearman IC >= 0.2 (prescreen terminated before walk-forward backtest)"
+  - "Walk-forward Sharpe ratio >= 0.5"
+  - "Win rate >= 0.48"
+  - "Trade count >= 100 per window"
+  - "Max drawdown <= 15%"
+
+proposed_change_dimension: signal_family
+hypothesis_family: moving_average_crossover
+altitude_justification: >
+  "Rule 2 (prescreen kill: kill_no_ic): abs(ic_all_bars) = 0.021091 < 0.03 AND
+  p_value = 0.5876 > 0.10. Signal has no detectable directional content on BTC/ETH 1h
+  ungated. Per diagnostic rule: prescribed action is pivot (altitude 2) to a structurally
+  different signal mechanism, not parameter tuning on the same family."
+
+root_cause:
+  mechanism_failure: already_priced_in
+  supporting_evidence: >
+    "prescreen_result.ic_all_bars = -0.021091 (ungated, all-bars IC, n_eff=664,
+    block-adjusted), p_value = 0.5876 (not significant). EMA spread is a commodity,
+    widely-known moving-average-crossover signal explicitly described in validation_protocol
+    as 'commodity signals. Competitive decay possible if adoption increases.' Negative IC
+    suggests slight mean-reversion bias when ungated (consistent with validation_protocol
+    bias_risk: 'Ungated signal includes bars where EMA spread is adversarial'). On
+    highly-liquid BTC/ETH 1h, this well-known signal is likely already arbitraged away."
+  confidence: high
+
+prescreen_evidence:
+  ic_active_bars: -0.021091
+  ic_all_bars: -0.021091
+  forecast_sparsity_pct: 0.0
+  active_n_bars: 15938
+  p_value: 0.5876
+  edge_to_cost_ratio: 0.3589
+  route: kill_no_ic
+
+trade_attribution: null
+
+regime_attribution: null

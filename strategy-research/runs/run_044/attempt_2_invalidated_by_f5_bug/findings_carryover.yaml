@@ -1,0 +1,36 @@
+bug_superseded: true
+bug_superseded_note: >
+  F5 (2026-07-04): this diagnosis was remarkably close to the actual root cause
+  (correctly identified "component initialization failure," correctly ruled out
+  signal-quality/venue/timeframe explanations, correctly proposed re-validating
+  aux_feeds wiring). The actual bug: FundingRateMeanReversionComponent's confidence
+  calc divides by zero when threshold=0.0 (this hypothesis's own continuous-mode
+  design), silently swallowed by main_strategy.update(). Fixed in F5a. The
+  next_altitude=refine recommendation below was correct in spirit but was overridden
+  by a separate bug (F6: stale cross-family circuit-breaker state forced pivot instead
+  -- see campaign_state.yaml altitude_history run_044 outcome_invalidation_note).
+hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+what_failed:
+  - "Component execution: zero active bars generated across 16,032-bar prescreen window (forecast_sparsity_pct=100%)"
+  - "Aux-feeds integration: funding_rate data was either missing, null-valued, or not merged into component input stream"
+  - "Settlement-bar detection: logic for UTC hour % 8 == 0 either not executing or not correctly identifying settlement bars"
+
+diagnostic_rule_applied: "Rule 6, Case B analog: active_n_bars=0, forecast_sparsity_pct=100%, ic_significance.p_value=1.0 (not computed) indicates component initialization failure, not signal weakness. Distinct from signal-quality failure (weak IC on active bars)."
+
+diagnostic_snapshot:
+  forecast_return_corr: null
+  cost_drag_pct: null
+  gross_pnl: null
+  active_n_bars: 0
+  forecast_sparsity_pct: 100.0
+  implied_trades_estimated: 1
+  ic_significance_p_value: 1.0
+
+what_not_to_try:
+  - "Pivoting away from funding-rate mechanism prematurely: this run did not measure signal quality (active_n_bars=0, no IC measured). The mechanism itself (8h forced settlement flows as mean-reversion driver) is theoretically sound; this is execution failure, not signal failure."
+  - "Escalating to a different instrument: the failure is component-level (initialization), not venue-level. All venues would show active_n_bars=0 if aux_feeds or settlement logic is broken."
+  - "Escalating to a different timeframe: settlement cycles are 8h absolute time, independent of chart timeframe. Timeframe change will not address settlement-bar detection failure."
+
+next_altitude: "refine"
+
+notes: "H-044 configured FundingRateMeanReversionComponent(threshold=0.0) to fire at all settlement bars with aux_feeds: [funding_rate]. Expected ~3 activations/day × 330 prescreen days ≈ 1,000 active bars minimum. Prescreen consumed BTCUSDT, ETHUSDT, 2024-01 through 2024-11 (16,032 bars) and produced active_n_bars=0. This points to: (a) Funding-rate time series is missing or null during prescreen window, (b) FundingRateMeanReversionComponent.process() has a logic bug preventing settlement-bar identification, (c) Warmup=3 or regime initialization silences settlement bars. Recommended refine: run H-045 with identical config but add external validation (logging at component input/output and settlement-bar identification points) to confirm funding_rate values are present and settlement hour logic is executing. If H-045 still shows active_n_bars=0 WITH validation confirming funding_rate data exists, escalate to developer review of component implementation."

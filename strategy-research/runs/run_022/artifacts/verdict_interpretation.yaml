@@ -1,0 +1,35 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER-PIVOT-RSI"
+protocol_verdict: "kill"
+hypothesis_verdict: "refine"
+status: "pivot"
+criteria_summary:
+  - criterion: "Sharpe ≥ 0.3"
+    result: "FAIL"
+    actual_btc: -2.86
+    actual_eth: -4.262
+  - criterion: "Trade count ≥ 25 (per-window minimum)"
+    result: "FAIL"
+    actual_btc_min: 22
+    actual_eth_min: 19
+    note: "Aggregate trade count across 12-month period: BTCUSDT=327, ETHUSDT=304 (both ≥25). Per-window variance is high but total volume exceeds threshold."
+  - criterion: "Max drawdown ≤ 40%"
+    result: "PASS"
+    actual_btc: 14.198
+    actual_eth: 13.089
+  - criterion: "Correlation > 0.03"
+    result: "MARGINAL"
+    actual_median: 0.042
+    note: "Above threshold but statistically insignificant. Most individual windows have pvalue > 0.10 (range: 0.088 to 0.959)."
+  - criterion: "Regime informativeness (forward_return_mean > 0.0001)"
+    result: "FAIL"
+    actual_mean_range: "-0.000225 to 0.000624"
+    note: "trending regime forward_return_mean oscillates near zero, sometimes negative. Regime fails to identify coherent market state predictive of returns."
+untested_criteria:
+  - "V1 baseline passes all criteria before advancing to V2–V5"
+  - "Mean correlation per-regime > 0.03 from metrics.json per_regime field"
+  - "V5 (Stochastic) correlation > 0.03 while V1 < 0.03"
+primary_failure_mode: "Regime classification is uninformative. The 'trending' regime defined by ER≥0.50 and VR≥1.20 captures bars with near-zero or negative forward_return_mean, failing to identify market states with directional bias. Two structurally different signal families (Keltner mean-reversion and RSI mean-reversion) both produce weak correlation (0.0136 and 0.042 respectively) at 4h within this regime. Root cause: regime thresholds too loose, capturing noise labeled as trend."
+config_to_failure_map: "Regime thresholds ER≥0.50, VR≥1.20 capture marginal-trending conditions. Evidence: forward_return_mean in trending regime is {2024-03: +8.6e-05, 2024-04: -2.1e-04, 2024-05: +1.0e-04, 2024-06: -1.8e-04, 2024-11: +5.6e-04}. Bars labeled trending have no reliable directional bias, rendering RSI mean-reversion signal (which depends on regime to activate) ineffective. Same regime tested with both Keltner and RSI, both failed, indicating regime-level problem not signal-specific."
+proposed_change_dimension: "regime_threshold"
+hypothesis_family: "mean_reversion"
+altitude_justification: "Rule 4: uninformative_regimes list includes 'trending' (active regime); forward_return_mean near 0 or negative across majority of windows, violating coherent-market-state requirement; two different signal families tested at same 4h timeframe with same regime thresholds both fail (Keltner corr=0.0136, RSI corr=0.042), ruling out signal-family-level fix. Correct action per persona Rule 4: pivot to different regime definition (raise ER/VR thresholds to select only high-confidence trending bars)."

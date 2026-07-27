@@ -1,0 +1,27 @@
+hypothesis_id: REFRAME_REGIME_SELECTIVITY_01
+asset: BTCUSDT, ETHUSDT
+timeframe: 1h
+research_question: Can stricter regime thresholds or a novel regime component identify
+  windows where even marginal forecasts (corr ≥ 0.15) produce >0.5 Sharpe by dramatically
+  reducing rebalance frequency and position count?
+signal_concept: 'Reuse existing KeltnerBreakout (ema_period=20, atr_period=20, atr_multiplier=2.0,
+  scaling_factor=-20.0) as proof-of-concept, but research a novel regime COMPONENT
+  (not just parameter tuning) that combines ER, VR, and volatility regime into a stricter
+  3-condition gate firing <20% of bars. Goal: achieve >80% cost_drag reduction by
+  cutting rebalances by 60–70%.'
+regime_filter: 'TRENDING + novel selectivity component (e.g. VR-based persistence,
+  volatility clustering, or adaptive threshold). Baseline: ER ≥ 0.35, VR ≥ 1.20, plus
+  new selectivity metric (to be defined) that fires only on highest-conviction windows.
+  Target: <15% bar coverage, >50 cumulative trades across walk-forward, cost_drag
+  <30%, Sharpe ≥ 0.5.'
+constraints:
+- Do NOT change asset or timeframe; focus on regime selectivity, not diversification.
+- KeltnerBreakout component parameters remain exact from RUN017.
+- Novel regime component is a NEW hypothesis family and must be coded/tested independently
+  before integration.
+change_from_previous: 'Previous runs exhausted parameter-tuning within existing regime
+  logic (ER/VR thresholds). All signal families (RSI, Keltner, momentum) failed identically
+  with cost_drag or weak correlation. This reframe targets the structural sizing problem:
+  stricter regime gates to enable higher conviction per trade, not signal selection.
+  Shifts from ''find the right signal'' (exhausted) to ''find the right timing filter''
+  (unexplored).'

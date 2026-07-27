@@ -1,0 +1,46 @@
+hypothesis_id: REFRAME-COST-REGIME-VALIDATION
+asset: BTCUSDT, ETHUSDT
+timeframe: 1h
+research_question: "Why does run_017 (Keltner mean-reversion at 1h, TRENDING regime)\
+  \ achieve corr=0.2145 and \ncost_drag=27.45% while all other runs suffer cost_drag\
+  \ > 80%? Is the edge replicable, and \nwhat regime/sizing conditions enable it?\
+  \ Secondary: does TRENDING regime (ER>=0.50, VR>=1.20) \nhave positive forward returns,\
+  \ or does it select whipsaw zones?\n"
+signal_concept: "Keltner lower-band mean-reversion (baseline from run_017). No new\
+  \ signal families. \nFocus on cost and regime diagnostics, not signal innovation.\n"
+regime_filter: "TRENDING regime (ER>=0.50, VR>=1.20, threshold_rules). Same as run_017.\
+  \ \nHypothesis: regime definition is sound and run_017 edge is repeatable under\
+  \ identical conditions.\n"
+mechanism: "Run_017 showed forecast_return_corr=0.2145 with cost_drag=27.45%, the\
+  \ only run meeting \nminimum bar (corr > 0.01, cost_drag < 80%). Likely reasons:\
+  \ (1) Keltner bands adapt to \nvolatility, reducing false signals; (2) 1h bars provide\
+  \ adequate trade frequency without \nexcessive rebalancing; (3) TRENDING regime\
+  \ correctly identifies high-ER zones. Test whether \nrun_017 is repeatable or was\
+  \ a statistical artifact. If repeatable, examine position sizing \nand trade frequency\
+  \ to understand why cost_drag is sustainable at 27.45% vs 413% in run_021.\n"
+assumptions:
+- Run_017 edge (corr=0.2145) is real, not noise, and replicable under identical conditions.
+- Cost drag spike (27.45% -> 413%) in run_021 is timeframe-dependent (4h bars) or
+  regime-specific (4h TRENDING is different from 1h).
+- TRENDING regime forward_return is positive in 1h but neutral or negative in 4h (hypothesis
+  to validate).
+- Position sizing logic may be sensitive to timeframe; 1h positions are sized appropriately,
+  4h positions are over-leveraged or over-traded.
+expected_failure_modes:
+- Run_017 was a statistical fluke; re-running Keltner at 1h yields corr < 0.01, cost_drag
+  > 80%.
+- TRENDING regime has zero forward returns even at 1h (regime definition is wrong).
+- Position sizing / rebalance frequency logic is fundamentally misaligned with cost
+  structure (requires component redesign).
+constraints:
+- 'Timeframe: 1h (revert from 4h escalation). Do not try 4h until cost diagnostics
+  are understood at 1h.'
+- 'Regime: TRENDING (ER>=0.50, VR>=1.20, threshold_rules). Keep identical to run_017.'
+- 'Signal: Keltner mean-reversion (identical to run_017). No new signal families.'
+- 'Focus: Replicate run_017 exactly, then measure diagnostic repeatability (forecast_return_corr,
+  cost_drag, win_rate, trade_count).'
+change_from_previous: "Revert from 4h timeframe (run_020/021 escalation) to 1h (run_017\
+  \ baseline). \nRationale: 4h escalation failed (run_021: corr=0.0136 vs run_017:\
+  \ corr=0.2145). \nBefore escalating again, validate that 1h edge is repeatable and\
+  \ understand why cost/correlation \ndegrade at 4h. This is a defensive pivot, not\
+  \ an aggressive search expansion.\n"

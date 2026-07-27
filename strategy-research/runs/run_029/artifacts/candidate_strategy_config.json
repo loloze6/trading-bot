@@ -1,0 +1,91 @@
+{
+  "regime_detector": {
+    "mode": "score_product",
+    "min_score": 0.25,
+    "min_margin": 0.0,
+    "components": [
+      {
+        "id": "er",
+        "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+        "params": {
+          "period": 24,
+          "smooth_period": 5
+        }
+      },
+      {
+        "id": "vr",
+        "class": "strategies.strategy_components.VarianceRatioComponent",
+        "params": {
+          "k": 5,
+          "window": 100
+        }
+      }
+    ],
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "er",
+            "divisor": 1.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          },
+          {
+            "id": "vr",
+            "divisor": 2.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 51,
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "keltner_mr",
+            "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+            "params": {
+              "ema_period": 20,
+              "atr_period": 20,
+              "atr_multiplier": 1.5,
+              "scaling_factor": -20.0
+            },
+            "weight": 1.0,
+            "lookback": 500,
+            "transforms": [
+              {
+                "op": "ratio_to_mean"
+              },
+              {
+                "op": "scale",
+                "params": {
+                  "factor": 10.0
+                }
+              },
+              {
+                "op": "threshold_filter",
+                "params": {
+                  "min_abs": 15.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    }
+  }
+}

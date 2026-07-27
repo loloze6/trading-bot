@@ -1,0 +1,25 @@
+hypothesis_id: "H-041-A"
+what_failed:
+  - "ic_gate: ic_all_bars = 0.008435 < 0.03 threshold, p = 1.0 >> 0.10 significance gate"
+  - "min_trade_count: implied_trades_per_window = 1 << 4 expected (prescreen disabled full backtest)"
+
+diagnostic_rule_applied: "Rule 2 + Rule 6 boundary: 'Signal appears to have no directional content' — but underlying cause is insufficient sample (n_eff=9, sparsity=98.54%), not signal weakness. IC measurement is unreliable at this sparsity level."
+
+diagnostic_snapshot:
+  forecast_return_corr: 0.008435
+  cost_drag_pct: null
+  gross_pnl: null
+  uninformative_regimes: []
+  forecast_sparsity_pct: 98.54
+  active_n_bars: 234
+  n_bars_total: 16032
+  n_eff: 9
+  implied_trades_per_window: 1
+
+what_not_to_try:
+  - "FundingRateMeanReversionComponent on 1h timeframe: confirmed sparsity-induced insufficient sample (1.46% of bars active). Do not retry parameters or gate changes on 1h — the timeframe itself is the blocker."
+  - "Parameter variants (threshold, scaling_factor) on 1h: insufficient sample problem is structural (settlement cycle), not parameter-tunable."
+
+next_altitude: "escalate"
+
+notes: "This reactivation (run_047 re-testing H-041-A with backward data extension 2019-09-10+) confirms the original insufficient_sample issue from run_041 persists even with n_bars=16,032 extended range. But the problem is not global scarcity of funding extremes (pre_registration.yaml shows 132 episodes pooled). The problem is 1h timeframe: each episode (8h settlement event) becomes only 1 bar + sparse gaps. On 8h timeframe, each episode is a full candle; this restores proper sample density. Recommend escalate to 8h before concluding edge_arbitraged_away."

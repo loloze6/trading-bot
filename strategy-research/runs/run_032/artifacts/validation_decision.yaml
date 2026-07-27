@@ -1,0 +1,10 @@
+hypothesis_id: "RUN017_REPLICATION_DIAGNOSTIC_V1"
+status: "conditional_approve"
+rationale: "Replication diagnostic is a valid falsification test. Statistical design is sound: walk-forward splits detect parameter drift; threshold decisions are measurable. However, three specific conditions must be honored in config to prevent look-ahead bias, ensure sample adequacy, and establish valid baseline comparison."
+
+blocking_issues: []
+
+conditions:
+  - "Verify ER/VR calculation: confirm Efficient Ratio and Volatility Ratio use only bar-close price data through current bar (no future data). Document code path and confirm in backtest logs before proceeding."
+  - "Configure >= 2 walk-forward subperiods on OOS window. Backtest output must report Sharpe, win_rate, trade_count per subperiod separately; failure to stratify OOS data disqualifies results."
+  - "Specify run_017 baseline Sharpe as input parameter to backtest config (e.g., baseline_sharpe: 1.2). If OOS Sharpe < (baseline - 0.2), classify as failed replication and halt further iterations; do not tune parameters."

@@ -1,0 +1,71 @@
+run_id: run_047
+hypothesis_id: H-041-A
+expansion_stage_outcome: no_expansion_applied
+expansion_constraint_source: "research_brief.constraints: 'One variant only (V1 = the exact run_041 config). No innovation_expansion diversity search -- this is a straight reactivation, not a fresh search.'"
+
+reasoning_for_no_expansion: |
+  research_brief.yaml constrains variant count to one. Per persona rule (forbidden
+  section): if brief contains "one variant only", pass base hypothesis to V1 only.
+  Expansion is appropriate only when brief does not constrain count. Reactivation context:
+  H-041-A parked at run_041 (insufficient_sample_inconclusive, n_eff=10). Reactivation
+  condition (backward data extension to 2019+) now satisfied. Mechanism unchanged.
+
+mechanism_preservation: |
+  V1 = run_041 config, VERBATIM:
+  - Component: FundingRateMeanReversionComponent (existing, no code changes)
+  - Params: threshold=0.0002, scaling_factor=10.0 (no tuning per constraints)
+  - Signal: fires at 8h UTC settlement (hour % 8 == 0) when |funding_rate| > threshold
+  - Forecast: -sign(funding_rate) × scaling_factor at active bars; 0 elsewhere
+  - Ungated: regime_detector.rules=[], default_regime='mean_reversion'
+
+data_context: |
+  Run_041: 2024-2025 only (n_eff=10, active_n=13, funding extremes rare)
+  Run_047: 2019-09-10/2019-11-27 through 2025-12-31 (n_eff≈50, pre-reg=132 episodes)
+  Reactivation condition satisfied per campaign_knowledge_base.yaml.
+
+alternative_data_candidates_not_explored: |
+  Hypothetical additions (for design reference; out of scope):
+  - open_interest_divergence: OI build-up confirmation (would require open_interest feed, currently unavailable separately from funding_open_interest)
+  - liquidation_event_correlation: cascade timing (unavailable; route to feed_wishlist)
+  Deferred to dedicated campaign if data warrants; reactivation does not expand.
+
+reverse_hypothesis: null
+reverse_hypothesis_note: "Not explored. Standard reverse (extreme funding predicts continuation, not reversion) would be new hypothesis (H-041-A-rev), outside reactivation scope."
+
+behavioral_features_not_added: |
+  Single-variant constraint forbids behavioral layer expansion. Hypothetical additions
+  (for design reference; out of scope):
+  - (leverage + volume spike → cascade strength): new component code required
+  - (leverage + vol regime shift → unwind acceleration): behavioral proxy needed
+  Out of scope for reactivation.
+
+regime_specific_variants_not_queued: |
+  Per A2.3 post-research policy: regime-gated variants do NOT enter run queue.
+  Example (detector_wishlist_pending, not run queue):
+  - variant: "mean-reversion active only in RANGING regime"
+    reason: "BTC/ETH 1h regime detector is unusable_for_this_symbol_timeframe.
+    Route to detector_wishlist; retry when detector is wired."
+  V1 is already ungated; no regime-gating logic applied.
+
+diversity_audit: |
+  outcome: single_variant_reactivation
+  v1_library_category: structural_rate
+  v1_data_requirements: funding_open_interest
+  diversity_check: N/A (single variant, no expansion applied)
+  cosmetic_diversity_rejection: not applicable
+  verdict: reactivation context prevents expansion; diversity check is vacuous.
+  
+  A1.2 compliance: V1 uses evidence_type='funding_open_interest' (non-price_volume_only,
+  available in available_feeds.yaml). A1.2 satisfied by single variant.
+
+next_stage_readiness: |
+  expanded_hypothesis_card.yaml contains V1 only (ungated, mechanism-preserving).
+  All constraints satisfied. Ready for validation_gate.
+  Note: prescreen must use A8.5.1a episode-blocked significance (not plain 24-bar)
+  with era stratification per research_brief.significance_methodology.
+
+summary: |
+  No expansion applied (research_brief: "one variant only").
+  V1: FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0), ungated.
+  Mechanism preserved from run_041. Data extension (2019+ vs 2024-25) recovers n_eff (10→50).
+  A1.2 satisfied (funding_open_interest available). Reactivation ready for validation_gate.

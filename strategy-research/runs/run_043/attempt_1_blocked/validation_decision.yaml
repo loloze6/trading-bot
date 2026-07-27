@@ -1,0 +1,11 @@
+hypothesis_id: "EMA_SPREAD_TREND_CONTINUATION"
+status: "conditional_approve"
+rationale: "Hypothesis is well-specified, falsifiable, and mechanistically sound: EMA spread quantifies consensus, and ungated activation avoids regime-gating bias. Cost feasibility is marginal (95% activation incurs high transaction friction), but empirical validation (walk-forward IC > 0) can overcome prior skepticism. Regression test is valuable for framework validation. Conditional approval depends on walk-forward IC > 0; if IC ≤ 0 or edge < 34 bps/trade, hypothesis is rejected at cost gate."
+
+blocking_issues: []
+
+conditions:
+  - "Walk-forward median IC MUST be > 0 across all 4 windows; any single window with IC ≤ 0 triggers re-evaluation"
+  - "Gross edge (estimated from IC and volatility) MUST be ≥ 34 bps per trade (BTCUSDT) or 35 bps (ETHUSDT); otherwise hypothesis is falsified by cost"
+  - "Trade count must remain ≥ 500 per window; if activation drops below 80% due to data quality or implementation, revalidate"
+  - "No interim lookback diagnostics on holdout range [2026-01-01, 2026-06-30] until holdout_evaluation stage"

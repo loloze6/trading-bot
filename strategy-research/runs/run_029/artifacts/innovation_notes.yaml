@@ -1,0 +1,57 @@
+expansion_strategy: |
+  Base hypothesis (V1) is well-specified parameter refinement (min_score 0.4 → 0.25).
+  Expansion explores: (1) regime parameterization sensitivity (V2), (2) adaptive vs
+  fixed thresholds (V3), (3) additive vs multiplicative blending (V4), (4) signal
+  noise filtering (V5), (5) regime necessity (reverse). All variants fit existing
+  component architecture (ForecastManager regime gating). No infrastructure change.
+
+variant_novelty_justification:
+  V2_scaled_factors: |
+    Maintains multiplicative logic; tests ER vs VR weighting balance. Answers whether
+    regime definition is trend-dominant or volatility-dominant.
+  
+  V3_percentile: |
+    Adaptive threshold preserves regime spirit but removes cross-window bias. Tests if
+    fixed 0.25 is universal or window-dependent.
+  
+  V4_additive: |
+    Fundamentally different regime logic. Separates joint probability (multiplicative)
+    from marginal contribution (additive). High diagnostic value; likely fails, but
+    clarifies why multiplicative works.
+  
+  V5_smoothing: |
+    Noise filtering without parameter drift. Tests regime transition sensitivity; fits
+    standard signal processing pattern.
+  
+  reverse_no_regime: |
+    Falsification variant. If baseline Keltner (no regime) outperforms gated Keltner,
+    regime filter is cost center, not edge enhancer. Forces decision: refine regime or
+    abandon it.
+
+testability_checklist: |
+  ✓ All variants use existing regime_score computation (ER, VR).
+  ✓ V1–V5 vary only threshold logic or pre-processing; fit ForecastManager.needs_rebalance().
+  ✓ Reverse hypothesis disables regime gate; falls back to default_regime='always'.
+  ✓ Alternative data (ADX, volume) are optional secondary gates; non-breaking.
+  ✓ Behavioral features (transition lag, alignment score) fit risk gating; no core refactor.
+  ✓ Regime-specific clusters tune post-validation; separate test runs per cluster.
+
+prioritization_guidance: |
+  Test order: V1 (base) → reverse (necessity check) → V3 (adaptive, high upside) →
+  V2 (sensitivity) → V5 (smoothing). V4 (additive) is falsification; run only if V1
+  underperforms and multiplicative logic questioned. Regime clusters are post-validation
+  refinement (cycle 2), not cycle 1.
+
+constraints_honored: |
+  ✓ Signal parameters frozen (Keltner ema=20, atr=20, mult=2.0, scale=−20.0).
+  ✓ Regime remains score-mode (not threshold_rules or mode switch).
+  ✓ Timeframe locked to 4h.
+  ✓ Assets: BTCUSDT, ETHUSDT.
+  ✓ No infrastructure rebuild; all variants fit ForecastManager regime logic.
+  ✓ At least one conservative variant (V1, exact brief).
+
+risk_assessment: |
+  V2–V4 may regress Sharpe if V1 is already optimal. Mitigation: V1 is baseline control.
+  Reverse hypothesis designed to fail (proves necessity, not viability). V3 introduces
+  per-window computation cost; negligible (<1ms per bar). Adaptive threshold may
+  interact unpredictably with walk-forward validation; note as sensitivity.

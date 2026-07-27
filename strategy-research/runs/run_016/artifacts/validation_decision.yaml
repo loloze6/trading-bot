@@ -1,0 +1,24 @@
+hypothesis_id: "V1-PIVOT"
+hypothesis_name: "Keltner Lower-Band Mean-Reversion"
+
+status: "conditional_approve"
+
+rationale: |
+  Hypothesis is falsifiable, mechanically clear, and testable within existing
+  architecture. Keltner component exists; regime filter is defined. Risk: inverted
+  logic from failed predecessor requires implementation verification. Three resolvable
+  conditions must be met: (1) confirm no look-ahead in band calculation,
+  (2) verify ≥30 signals feasible in backtest window, (3) ensure regime thresholds
+  are stable across walk-forward. If conditions pass, proceed to screening backtest.
+
+blocking_issues:
+  - "Implementation: Must verify KeltnerChannelComponent inverted flag does not introduce sign errors or threshold comparison bugs."
+  - "Data: Confirm ≥30 lower-band touches exist in target backtest window for both BTCUSDT and ETHUSDT."
+  - "Regime stability: Validate ER≥0.50, VR≥1.20 thresholds do not degrade across 3 walk-forward windows."
+
+conditions:
+  - "Ensure ATR and EMA are computed at bar close; no forward-fill or intrabar look-ahead in lower-band calculation."
+  - "Verify ≥30 total signal triggers (price < lower band) across entire backtest window across both assets; fail if < 20 signals."
+  - "Confirm TRENDING regime appears ≥10% of bars during backtest period; if <5%, regime is too rare to test reliably."
+  - "Validate inverted signal implementation in KeltnerChannelComponent: code audit for sign correctness (e.g., forecast +10 on break, not -10)."
+  - "Baseline check: compare V1-PIVOT performance to random forecasts (no-skill floor); reject if Sharpe < 0.25 on first screening pass."

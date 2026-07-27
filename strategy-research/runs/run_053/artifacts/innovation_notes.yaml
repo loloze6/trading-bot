@@ -1,0 +1,54 @@
+diversity_audit:
+  categories_spanned: [trend_following, volume_flow, structural_rate, oscillator]
+  data_requirements_spanned: [ohlcv_only, funding_open_interest]
+  verdict: "real_diversity"
+  rationale: "Four distinct library categories; two distinct data_requirements. V1 and V6 share category and data_requirements but employ structurally different mechanisms (histogram crossover vs. price/MACD divergence), not parameter tweaks. Expansion exceeds both diversity thresholds (≥2 categories, ≥2 data_requirements)."
+
+improvement_01_compliance:
+  rule: "At least one variant must use evidence_type != price_volume_only"
+  satisfied_by: V4 (funding_open_interest)
+  status: satisfied
+
+improvement_04_compliance:
+  rule: "Variants must span ≥2 categories OR ≥2 data_requirements OR materially different edge_source_compatibility"
+  span_count_categories: 4
+  span_count_data_requirements: 2
+  status: satisfied
+
+post_a23_compliance:
+  rule: "No regime-gated variants in expanded_variants (run queue)"
+  all_variants_ungated: true
+  regime_detector_required: false
+  rationale: "V1–V6 fire on structural/behavioral conditions (crossover, volume, funding extreme, RSI threshold, divergence), not regime label. No regime detector dependency."
+
+a13_mechanism_validity:
+  rule: "Every variant's specific_mechanism must name a measurable proxy in available feeds"
+  all_variants_pass: true
+  status: satisfied
+
+variant_generation_decisions:
+  rejected_ideas:
+    - concept: "MACD(5,13,5) faster parameters"
+      reason: "Cosmetic diversity. Same trend_following category, same ohlcv_only data_requirements, same histogram-crossover mechanism. Parameter sweep only. Rejected per Improvement 04."
+  
+  accepted_rationale:
+    - "V1 Conservative baseline per hypothesis_card signal_concept."
+    - "V3 Volume filter addresses false-signal risk in low-volume candles; adds volume_flow category."
+    - "V4 Structural filter addresses regime-performance risk (exhausted EMA may reflect 2024-2025 bull-era bias); uses non-price feed per Improvement 01."
+    - "V5 RSI dual-confirmation filters contrarian entries; adds oscillator category."
+    - "V6 Divergence mechanism (distinct from crossover) captures momentum exhaustion anticipation; different activation logic from V1."
+
+ungated_formulation_check:
+  v1: "Fires every bar with crossover; no regime gate."
+  v3: "Fires every bar with crossover + volume; no regime gate."
+  v4: "Fires every bar with crossover; inhibition is structural (funding extreme), not regime-conditional."
+  v5: "Fires every bar with crossover + RSI threshold; no regime gate."
+  v6: "Fires every bar with divergence; no regime gate."
+  verdict: "All 5 variants ungated. Ready for run queue."
+
+alternative_formulations_considered:
+  funding_symmetric: "Could inhibit longs during extreme negative funding (shorts pay heavily). Chose asymmetric (shorts-only inhibition) because forced liquidations are directionally biased (longs forced first, creating reentry). Symmetric version deferred."
+  divergence_lookback: "Used N=20 bars for new-extreme detection. Could vary (N=10 faster, N=40 slower). Left tunable per backtest_specification."
+  rsi_threshold: "Used RSI > 50 (textbook momentum). Could test RSI > 60 (stronger) or RSI > 40 (weaker). Left tunable."
+
+notes: "No regime-specific variants generated; base hypothesis and research goal are unconditional trend-following over multi-cycle window. Regime-gated variants (e.g., 'MACD only in TRENDING') would require trusted TRENDING detector (unavailable for 1h BTC/ETH per A2.3 policy) and would route to detector_wishlist, not run queue. Ungated reformulations preferred per POST-A2.3 guidance."

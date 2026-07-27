@@ -1,0 +1,84 @@
+base_hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+hypothesis_id_expanded: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED
+
+thesis: >
+  The sign of 8h perpetual funding rate carries ungated mean-reversion information
+  at every settlement boundary on BTC/ETH 1h. V1 activates continuously (threshold=0.0).
+  V2/V3 explore orthogonal complementary filters (volatility, sentiment) without regime
+  gating, documented for diversity audit only — V1 executes this cycle per shakedown brief.
+
+expanded_variants:
+  - variant_id: V1
+    name: FundingRateMeanReversionComponent_Continuous
+    mechanism: "−sign(8h_funding_rate) × 10.0 at every UTC settlement bar (hour % 8 == 0), regardless of magnitude (threshold=0.0)."
+    component: "FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0) from strategy_components.py"
+    edge_source:
+      category: structural_forced_flow
+      specific_mechanism: "Mechanical 8h settlement forces position rebalancing: positive funding → longs reduce (bearish flow); negative → shorts reduce (bullish flow). Non-optional, recurring, all magnitudes → continuous mean-reversion pressure."
+      measurable_proxy: "Binance 8h perpetual funding_rate sign; settlement occurs at UTC 0, 8, 16 hours daily."
+      evidence_type: funding_open_interest
+    parameters:
+      threshold: 0.0
+      scaling_factor: 10.0
+      activation_bars_per_day: 3
+    activation_rate: 0.125
+    library_category: structural_rate
+    data_requirements: funding_open_interest
+    diversity_axis: "Base hypothesis; continuous activation; no filters or modifiers."
+    known_regime_affinity: neutral
+    power_estimate:
+      a_priori_n_eff: 100.4
+      min_detectable_ic: 0.10
+      verdict: sufficient_power_a_priori
+
+alternative_data_candidates:
+  - candidate_id: ALT1
+    name: Liquidation_Data_Mechanism_Purity
+    description: "Would decompose volume confirmation signals at settlements into organic herding vs. cascade-driven reversals. Enables confident V2 (Keltner gate) validation."
+    feed_status: unavailable
+    routing: feed_wishlist
+    unlock_impact: "Improves V2 mechanism specificity; prevents false-positive volume confirmation during liquidation cascades."
+
+  - candidate_id: ALT2
+    name: Open_Interest_Divergence_Conviction_Filter
+    description: "Would enable dual-structural filter: fire settlement only when OI direction aligns with funding directional pressure, confirming positioning conviction."
+    feed_status: unavailable
+    routing: feed_wishlist
+    unlock_impact: "Unlocks V2b (funding_sign × oi_direction) with higher specificity than V1 alone."
+
+reverse_hypothesis:
+  - reverse_id: REV1
+    mechanism: "+sign(8h_funding_rate) × 10.0 — same direction as funding payment (alignment, not reversal)."
+    rationale: "Margin calls from longs paying → forced selling cascade → price falls further (continuation, not stabilization)."
+    diversity_check:
+      library_category: structural_rate
+      data_requirements: funding_open_interest
+      verdict: cosmetic_rejected
+      reason: "Shares V1 category AND data_requirements. Polarity flip is parameter change only. Per Improvement 04, rejected. Re-activate if V1 shows positive IC (opposite expected direction)."
+
+behavioral_features:
+  - feature_id: BF1
+    name: Settlement_Lag_Inertia
+    description: "Retail traders lag mechanical settlement adjustments by 1–4 bars. Initial rebalancing at t0; secondary participant reaction extends mean-reversion impulse."
+    proxy: "Bars t1–t4 post-settlement IC sustained or rising vs. t0 (settlement bar). Indicates inertia-driven reversion persistence."
+    variant_relevance: "V1/V2/V3 all benefit. V2 (Keltner) may amplify by capturing inertia-driven extremes."
+
+  - feature_id: BF2
+    name: Leverage_Reset_Clustering
+    description: "Settlement boundaries coincide with margin reset cycles; stop-order and liquidation clustering occurs near settlement times, exacerbating flow."
+    proxy: "Volume clustering, spread widening at UTC settlement hours. Requires order_book data to validate."
+    variant_relevance: "V1 inherits passively. V2 (Keltner) captures clustering via band extremes. V3 (sentiment) orthogonal."
+
+regime_specific_variants: []
+
+metadata:
+  run_id: run_044
+  stage: innovation_expansion
+  created_at: "2026-07-04"
+  compliance_checklist:
+    - "Brief: one variant for run queue (V1 only). ✓"
+    - "Improvement 01: V1 uses non-price_volume_only evidence_type (funding_open_interest). ✓"
+    - "A1.3 anti-confabulation: all variants name measurable proxies. ✓"
+    - "A2.3 ungated: no regime conditions on any variant. ✓"
+    - "Existing components only: V1 from strategy_components.py; V2/V3 use existing component composites. ✓"
+    - "Improvement 04 diversity (documented in innovation_notes.yaml): V1 vs V2 span data_requirements; V1 vs V3 span data_requirements; V2 vs V3 span both. Real diversity confirmed. ✓"

@@ -1,0 +1,13 @@
+hypothesis_id: V2-PIVOT-A
+protocol_verdict: refine
+status: refine
+criteria_summary:
+  - "median_sharpe_across_windows (> 0.30): FAIL — actual -4.081 (BTCUSDT), -1.236 (ETHUSDT)"
+  - "min_trade_count_any_window (>= 30): FAIL — actual 24 (BTCUSDT), 16 (ETHUSDT)"
+  - "win_rate_overall (> 0.45): FAIL — actual ~25.65% (BTCUSDT), ~31.24% (ETHUSDT)"
+primary_failure_mode: "Cost drag dominates (272.865%): signal earns positive gross PnL (21.62 median) but fees and excessive trade frequency consume all alpha and more. Sizing problem, not signal problem."
+config_to_failure_map: "threshold_filter min_abs=15.0 is too permissive; trades on weak signal strength, accumulating fees faster than signal profit."
+untested_criteria: []
+proposed_change_dimension: "threshold_filter_min_abs"
+hypothesis_family: "rsi_momentum_trending"
+altitude_justification: "Rule 1: median_cost_drag_pct=272.865% > 80%, median_gross_pnl=21.62 > 0 → Root cause is sizing/frequency, not signal. Signal has positive edge (gross PnL) but fee drag destroys it."

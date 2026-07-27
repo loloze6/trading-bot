@@ -1,0 +1,62 @@
+status: "spec_ready"
+config:
+  regime_detector:
+    mode: "threshold_rules"
+    default_regime: "unknown"
+    components:
+      - id: "er"
+        class: "strategies.strategy_components.EfficiencyRatioRegimeComponent"
+        params:
+          period: 24
+          smooth_period: 5
+      - id: "vr"
+        class: "strategies.strategy_components.VarianceRatioComponent"
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: "mean_reversion"
+        any_of:
+          - - id: "er"
+              op: "lte"
+              value: 0.20
+            - id: "vr"
+              op: "lte"
+              value: 0.90
+      - regime: "trending"
+        any_of:
+          - - id: "er"
+              op: "gte"
+              value: 0.25
+      - regime: "chop"
+        any_of:
+          - - id: "vr"
+              op: "gte"
+              value: 1.10
+  strategies:
+    warmup: 51
+    regimes:
+      mean_reversion:
+        components:
+          - id: "rsi"
+            class: "strategies.strategy_components.RSIPullbackComponent"
+            params:
+              period: 14
+              scaling_factor: 0.4
+              long_only: true
+            weight: 1.0
+            lookback: 500
+            transforms:
+              - op: "identity"
+      trending: null
+      chop: null
+      unknown: null
+
+config_rationale:
+  - "Signal concept (RSI pullback normalized): RSIPullbackComponent(period=14, scaling_factor=0.4, long_only=true) produces max(0, (50-RSI)*0.4), mathematically equivalent to hypothesis formula max(0, (50-RSI)/50)*scaling_factor when scaling_factor=20. Output range [0, 20] fills [-20, +20] ensemble space. Identity transform confirms no additional normalization per hypothesis design intent."
+  - "Regime detection (mean_reversion filter): EfficiencyRatioRegimeComponent (period=24, smooth_period=5) and VarianceRatioComponent (k=5, window=100) used in threshold_rules mode. Primary rule: regime='mean_reversion' when ER ≤ 0.20 AND VR ≤ 0.90, directly matching falsifiable statement. Secondary rules route high-efficiency (trending) and high-volatility (chop) bars to null regimes."
+  - "Zero forecast in non-mean-reversion regimes: trending, chop, and unknown regimes all set to null → zero forecast. Default regime fallback (unknown=null) ensures bars not matching any rule produce zero signal, satisfying hypothesis constraint 'produces zero forecast in all other regimes'."
+  - "Forecast proportionality to RSI distance: RSIPullbackComponent inherently scales linearly with distance below 50: as RSI drops from 50→30→0, (50-RSI)*0.4 increases 0→8→20, enabling proportional reversion capture."
+  - "Sample-split fidelity: Config respects validation_protocol sample-split (screening: 501-2000 bars, 1500 validation candles). Regex detector requires min 105 bars (VR window+k), RSI requires 14+1. Warmup=51 capped by VR; first forecast expected ~bar 106."
+
+component_gap: null

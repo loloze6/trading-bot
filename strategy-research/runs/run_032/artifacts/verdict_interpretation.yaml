@@ -1,0 +1,24 @@
+hypothesis_id: RUN017_REPLICATION_DIAGNOSTIC_V1
+protocol_verdict: refine
+status: escalate
+criteria_summary:
+  - criterion: "Sharpe (median across walk-forward windows) >= 0.6 on OOS period"
+    result: FAIL
+    actual_value: 0.0
+  - criterion: "Win rate >= 50% on OOS period"
+    result: FAIL
+    actual_value: 0.0
+  - criterion: "Trade count >= 20 total across OOS window"
+    result: FAIL
+    actual_value: 0
+  - criterion: "Max drawdown <= 20% on OOS period"
+    result: PASS
+    actual_value: 4.943
+primary_failure_mode: "Regime classifier (ER/VR thresholds) produces uninformative signals on test instrument: trending regime fires on < 1% of bars and predicts negative forward returns in 2024-06/07/08."
+config_to_failure_map: "regime_detector.rules.trending: ER>=0.50 AND VR>=1.20 thresholds calibrated for different market microstructure; on AVAXUSDT these conditions trigger during price movements with negative or near-zero forward returns."
+untested_criteria:
+  - "ER/VR calculation verified to contain no look-ahead bias (bar-close only, no future data)"
+  - "Replication performance on original hypothesis assets (BTCUSDT, ETHUSDT per validation_protocol.yaml)"
+proposed_change_dimension: instrument
+hypothesis_family: keltner_threshold_regime
+altitude_justification: "Rule 4 (regime uninformative): trending regime listed in uninformative_regimes; detailed inspection reveals forward_return_mean = -0.0000976 (2024-06), -0.00237 (2024-07), -0.00134 (2024-08) despite ER/VR triggers, confirming regime mislabels market state on this instrument."

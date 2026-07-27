@@ -1,0 +1,64 @@
+hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
+campaign_id: run_043
+refinement_attempt: 0
+
+falsifiable_statement: "When fast EMA (9-period) diverges above slow EMA (21-period, spread_pct > 0), subsequent 1-bar returns exhibit positive Spearman IC (IC > 0) on ungated bars across walk-forward windows."
+
+null_expectation:
+  - "IC = 0 (no correlation between spread magnitude and next-bar return)"
+  - "Sharpe ratio <= 0 (no risk-adjusted return after costs)"
+  - "Strategy cannot earn 2× round-trip cost (34 bps/trade required for BTCUSDT @ 17 bps round-trip)"
+
+required_evidence:
+  - "Walk-forward Spearman IC >= 0.2 across 6 rolling windows"
+  - "Walk-forward Sharpe ratio >= 0.5 (median, ungated)"
+  - "Win rate >= 0.48 (required to offset 34 bps round-trip cost with 1-bar holds)"
+  - "Trade count >= 100 per window (stat power for IC estimation)"
+  - "Max drawdown <= 15% (acceptable vol for ungated signal)"
+
+bias_risks:
+  - "Lookahead bias: Verify signal computed at bar close, not open-next-bar. No intra-bar peeking. Standard practice: close-to-close return, no forward fill."
+  - "Overfitting risk (high): 9/21 periods + scaling_factor tuned on burned data (2024-01-01 to 2024-11-30). Walk-forward IC may collapse if parameters are local optima. Alternative periods (7/14, 10/20, 12/26) should be tested if IC < 0.15."
+  - "Regime composition shift: Holdout data (2026-01-01–06-30) may have different trending/ranging prevalence than walk-forward (2024-12-01–2025-12-31). IC and Sharpe may deflate on holdout due to regime drift."
+  - "Ungated mean-reversion bias: Ungated signal includes bars where EMA spread is adversarial (short-term mean-reversion regimes where negative spread correlates with positive returns). Pooled IC severely diluted when ungated."
+  - "Parameter decay: EMA-spread strategies are commodity signals. Competitive decay possible if adoption increases. No hedge-fund competition baseline available."
+
+failure_modes:
+  - "IC collapses to <= 0 on walk-forward due to overfitting of 9/21 periods on burned ranges. Alternative periods tested and failed to restore IC, indicating parameters are non-robust."
+  - "Walk-forward Sharpe falls below 0.5 despite positive IC, driven by regime-gated mean-reversion periods where signal lags sharp reversals. Ungated approach loses 50–80% of Sharpe vs regime-gated variant."
+  - "Win rate falls below 0.48 (insufficient for cost recovery). Cumulative loss on trades near spread zero-crossing (close calls) exceeds gains on high-conviction trades, cost-adjusted."
+  - "High-frequency whipsaws: Fast EMA (9-period) oscillates on noisy 1h bars (typical BTC 1h vol ≈ 50–100 bps). Spread reversals trigger rapid entries/exits with 2–3 bar holds, each incurring ~17 bps cost. Gross edge per trade insufficient (< 10 bps)."
+  - "Look-ahead in feature engineering: If scaling_factor was fitted on forward-looking returns or if EMA computation includes next-bar data, backtest overstates IC and Sharpe by 10–40%."
+  - "Survivorship / data quality: Missing or corrupted OHLCV bars in 2024-12-01 to 2025-12-31 range (e.g. Binance API outage) not detected, causing IC estimation to omit affected windows and bias result upward."
+
+sample_split_design:
+  walk_forward_range: "[2024-12-01, 2025-12-31]"
+  holdout_range: "[2026-01-01, 2026-06-30]"
+  holdout_note: "Single-use per A6.1. Frozen — do not read during walk-forward search or feature tuning. Evaluated only at holdout_evaluation stage after deflated Sharpe gate passes."
+  windows: 6
+  window_size_bars: 1040
+  step_size_bars: 260
+  bars_per_walk_forward_window: "~1,040 bars per 2-month rolling window (20 trading days × 52 bars/day, 1h timeframe)"
+  burn_period_bars: 50
+  rationale: "6 rolling 2-month windows with 1-month stride. Sufficient depth for IC/Sharpe robustness. Holdout reserved as single-use validation after walk-forward pass."
+
+decision_rules:
+  - "Gate 1 (Sharpe): sharpe >= 0.5 median across 6 walk-forward windows. Rationale: Ungated trend-following on 1h crypto rarely exceeds Sharpe 1.0; 0.5 filters noise while remaining realistic."
+  - "Gate 2 (Win rate): win_rate >= 0.48. Rationale: With 34 bps round-trip cost and 1–6 bar holds, win_rate near 50% required to offset cost drag. Indicates IC ≈ 0.2–0.3 (marginal but sufficient for edge)."
+  - "Gate 3 (Drawdown): max_drawdown_pct <= 15%. Rationale: Acceptable vol for ungated signal; crypto is inherently volatile."
+  - "Gate 4 (Trade count): min_trade_count >= 100 per window. Rationale: Dense signal active ~90% of bars; <100 trades/window suggests retroactive gating or signal failure."
+  - "Fallback (Robustness): If any single walk-forward window has Sharpe < 0 OR win_rate < 0.45, do not reject; escalate to REFINE (suggests overfitting or regime drift; test alternative periods or regime-gated variant)."
+
+cost_feasibility:
+  assumed_round_trip_cost_bps: 17.0
+  cost_rationale: "From cost_model.yaml: BTCUSDT taker round-trip = 2*7.5 (fee) + 1.5 (spread) + 0.5 (slippage) = 17.0 bps. Primary symbol for EMA ungated trend."
+  expected_holding_bars:
+    min: 1
+    max: 12
+    mean: "3–5 bars (ungated; exits when spread reverses or after short holding period typical for momentum fade on 1h)"
+  expected_trades_per_window: "~150–200 trades/window (1,040 bars/window × 0.90 dense-signal coverage / 3–5 bars per holding period). High turnover."
+  required_gross_edge_bps_per_trade: 34.0
+  edge_computation: "safety_factor=2.0 × round_trip_cost=17.0 → 34 bps required to achieve positive risk-adjusted return."
+  plausibility: marginal
+  plausibility_rationale: "Ungated EMA spread is a proven trend-following mechanism. Established momentum strategies on 1h BTC earn 5–20 bps gross/trade when regime-gated; ungated IC typically 0.1–0.4 (vs 0.3–0.8 regime-gated). For 1-bar holds with high turnover, ungated IC ≈ 0.2 yields ~6–10 bps edge — marginal vs 34 bps required. Strategy is plausible if ungated IC ≥ 0.3 and holding period >= 4 bars; risk is high because ungated approach likely suppresses IC below 0.2, rendering cost unrecoverable. Conditional approval required; walk-forward must demonstrate Sharpe >= 0.5 and win_rate >= 0.48 to proceed to holdout."
+  blocking_factor: null

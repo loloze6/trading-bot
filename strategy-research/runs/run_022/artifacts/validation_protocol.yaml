@@ -1,0 +1,40 @@
+hypothesis_id: V3-ESCALATE-4H-KELTNER-PIVOT-RSI
+falsifiable_statement: "RSI(14) crosses below 30 (long) or above 70 (short) in 4h TRENDING regime bars will generate aggregate Sharpe ≥ 0.3 and positive correlation > 0.03 across walk-forward test windows"
+null_expectation: "Sharpe < 0.3 OR correlation ≤ 0.03, indicating edge erosion or regime mismatch"
+required_evidence:
+  - "Median Sharpe across walk-forward windows ≥ 0.3"
+  - "Mean correlation per-regime > 0.03 from metrics.json per_regime field"
+  - "Trade count ≥ 25 aggregate (minimum baseline)"
+  - "Max drawdown ≤ 40% (portfolio risk tolerance)"
+  - "V1 baseline passes all criteria before advancing to V2–V5"
+
+bias_risks:
+  - "Look-ahead bias in MA confirmation: SMA(20) must use only contemporaneous/past price data; verify no future bars enter signal computation"
+  - "Regime leakage: ER/VR computed per walk-forward window; ensure rolling window setup has no forward-bias"
+  - "Multiple-comparison bias: 5 variants on same asset/timeframe increase false-positive rate; apply Bonferroni correction (α_effective = 0.04)"
+  - "Sample selection bias: BTCUSDT only; results may not generalize to lower-liquidity pairs"
+  - "Regime truncation: Walk-forward splits must not bisect TRENDING regimes; verify regime continuity at window boundaries"
+
+failure_modes:
+  - "Edge-loss at 4h: Momentum mean-reversion loses efficacy at lower bar frequency due to volatility expansion and signal decay"
+  - "Regime classification false positive: TRENDING gates (ER≥0.50, VR≥1.20) may capture consolidation, not true trending"
+  - "RSI period mismatch: RSI(14) calibrated for daily; at 4h resolution, signal may lag or overshoot mean-reversion points"
+  - "Cost drag absorption: Aggregate trading cost at 4h frequency exceeds edge value; net Sharpe collapses below threshold"
+  - "Look-ahead in behavioral confirmation: V3 SMA(20) inadvertently uses future price data if rolling window extends forward"
+  - "Sample-split misalignment: Walk-forward boundaries not aligned to regime transitions; trains on mixed regimes"
+  - "Overfitting to backtest regime distribution: Historical TRENDING frequency may exceed live frequency; variants overfit to training regime density"
+
+sample_split_design:
+  train_test_windows: "6-month rolling training window → 1-month test window; minimum 2-week overlap to preserve regime state transitions"
+  regime_alignment_check: "Before each split, verify TRENDING regime is not bifurcated by boundary; if truncated, shift boundary ±1 week"
+  holdout_reserve: "Final 3 calendar months of backtest data reserved exclusively for final_holdout_test; not used in screening_backtest or walk_forward_validation"
+  regime_independence: "Compute ER/VR indicators independently per walk-forward window; verify no train/test regime state leakage"
+  variant_selection_correction: "If multiple variants pass screening, apply Bonferroni: effective threshold Sharpe ≥ 0.36 for 5 variants"
+
+decision_rules:
+  - "V1 baseline must pass all base_criteria (Sharpe ≥ 0.3, correlation > 0.03, trade count ≥ 25) to advance to V2–V5"
+  - "If V1 Sharpe < 0.3 but trade_count ≥ 350: examine V2 (sensitive thresholds) to isolate signal-quality issue from threshold mismatch"
+  - "If V2 or V3 Sharpe ≥ 0.3 while V1 < 0.3: use variant for backtest_specification; do not escalate to regime modification"
+  - "If all V1–V5 correlation < 0.03: escalate to regime_definition audit (raise ER/VR thresholds or test alternative instruments)"
+  - "If V4 (reverse hypothesis) Sharpe > 0.3 AND V1 < 0.3: TRENDING regime is trend-following; reframe hypothesis without regime escalation"
+  - "If V5 (Stochastic) correlation > 0.03 while V1 < 0.03: RSI-specific issue (e.g., period=14 too long at 4h); retain RSI for production"

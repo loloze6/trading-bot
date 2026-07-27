@@ -1,0 +1,20 @@
+hypothesis_id: TEMPORAL_COVERAGE_MULTI_REGIME
+what_failed:
+  - "Trade count >= 50 across validation fold (actual: 1 BTCUSDT, 0 ETHUSDT)"
+  - "Overfitting gate median_sharpe > 0.2 (actual: 0.0 BTCUSDT, -4.088 ETHUSDT)"
+  - "Regime activation frequency: only 4–7 of 11 windows per symbol, producing 4–18 trades per symbol vs 50 required"
+diagnostic_rule_applied: "Rule 6: Regime starvation with adequate sample (CASE B). Trending regime fires too rarely (n_bars < 30 cumulative). ER >= 0.50 threshold is the bottleneck, not signal family or secondary design."
+diagnostic_snapshot:
+  forecast_return_corr: -0.0724
+  cost_drag_pct: 28.9885
+  gross_pnl: -3.8668
+  uninformative_regimes:
+    - mean_reversion
+    - unknown
+  regime_activation_summary: "BTCUSDT: 4 windows with >= 1 trending trade. ETHUSDT: 10 windows with trending regime but 1 window with 0 bars. Cumulative: 22 trades across 22 window-symbol slots, 56% below validation floor of 50."
+what_not_to_try:
+  - "Do NOT pivot to Stochastic or ROC secondary signal without first relaxing ER threshold; any secondary will starve under ER >= 0.50 regime gate."
+  - "Do NOT interpret median_forecast_return_corr = -0.0724 as evidence that RSI secondary is harmful; only 22 total trades (n < 30) makes corr unreliable. Provisional diagnosis only."
+  - "Do NOT increase RSI weight (currently 0.40) or adjust RSI period (currently 14) without first increasing regime frequency; RSI is correctly tuned but never gets to activate."
+  - "Do NOT apply aggressive ER relaxation (e.g., 0.50 → 0.30 or beyond). Precedent run_034 relaxed 0.50 → 0.35 and collapsed corr from 0.2145 → 0.014 with cost_drag spike to 413%. Maximum safe step is +0.05 per refine iteration."
+next_altitude: refine

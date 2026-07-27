@@ -19,9 +19,13 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _RESULTS_REL = "trading-bot/results"
 
 
-def _mutated_tracked_results_files():
-    """Return the list of tracked files under trading-bot/results/ that the
-    working tree has modified/deleted, or None if git can't be consulted."""
+def _tracked_results_status():
+    """Return porcelain status lines for tracked files under trading-bot/results/,
+    or None if git can't be consulted.
+
+    Untracked ('??') entries are skipped: an untracked file is by definition not a
+    mutation of a tracked one.
+    """
     try:
         out = subprocess.run(
             ["git", "-C", str(_REPO_ROOT), "status", "--porcelain", "--", _RESULTS_REL],
@@ -31,12 +35,39 @@ def _mutated_tracked_results_files():
         return None
     if out.returncode != 0:
         return None
-    # Skip untracked entries ('??'); we assert only on mutations of TRACKED files.
-    return [ln for ln in out.stdout.splitlines() if ln.strip() and not ln.startswith("??")]
+    return {ln for ln in out.stdout.splitlines() if ln.strip() and not ln.startswith("??")}
+
+
+# Status snapshot taken before any test runs. `None` means git could not be consulted
+# at session start, in which case the finish check has no baseline and stands down
+# rather than guessing.
+_BASELINE = None
+
+
+def pytest_sessionstart(session):
+    """Snapshot the pre-existing status so the finish check measures CHANGE.
+
+    Why a baseline is required (2026-07-26): the original check asked "is any tracked
+    file under results/ non-clean?" and treated a yes as proof the session dirtied it.
+    That inference only holds while results/ is committed and clean before the run. It
+    breaks the moment previously-untracked result files are STAGED for a bulk commit:
+    staged additions report as 'A ', which is neither '??' nor caused by any test, so
+    the guard failed a run in which all 77 tests passed and nothing was written. The
+    defect this guard exists to catch is a WRITE PERFORMED BY THE SESSION, so compare
+    against the state at session start rather than against an assumed-clean tree.
+    """
+    global _BASELINE
+    _BASELINE = _tracked_results_status()
 
 
 def pytest_sessionfinish(session, exitstatus):
-    dirty = _mutated_tracked_results_files()
+    if _BASELINE is None:
+        return
+    after = _tracked_results_status()
+    if after is None:
+        return
+    # Only entries that APPEARED or CHANGED during the session are attributable to it.
+    dirty = sorted(after - _BASELINE)
     if dirty:
         session.exitstatus = 1
         print(

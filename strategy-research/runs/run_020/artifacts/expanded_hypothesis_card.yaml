@@ -1,0 +1,53 @@
+hypothesis_id: V2-PIVOT-A-THRESHOLD-REFINED
+base_hypothesis_id: V2-PIVOT-A-THRESHOLD-REFINED
+
+expanded_variants:
+  - variant_id: V2-PIVOT-A-THRESHOLD-REFINED-V1
+    min_abs: 17.5
+    classification: proposal_baseline
+    rationale: |
+      Brief's proposed value. 17% stricter than V2-PIVOT-A-CONSERVATIVE (15.0).
+      Target: median_trade_count ≥20/window. Probe mid-point of signal distribution.
+
+  - variant_id: V2-PIVOT-A-THRESHOLD-REFINED-V2
+    min_abs: 16.5
+    classification: aggressive
+    rationale: |
+      10% permissive vs V1. Tests if baseline's edge (gross_pnl=+21.62) persists
+      with reduced threshold. Expected trade_count ≈25-35/window.
+
+  - variant_id: V2-PIVOT-A-THRESHOLD-REFINED-V3
+    min_abs: 18.0
+    classification: conservative
+    rationale: |
+      20% stricter vs V1. Probes collapse risk toward V2-PIVOT-A-THRESHOLD (20.0).
+      Measures cost_drag improvement if trade_count remains ≥15/window.
+
+  - variant_id: V2-PIVOT-A-THRESHOLD-REFINED-V4
+    min_abs: 16.0
+    classification: gradient_checkpoint
+    rationale: |
+      8.3% permissive vs V1. Tests cost_drag delta between 15.0 and 17.5.
+      Fallback if V1 trade_count < 15/window.
+
+alternative_data_candidates: []
+
+reverse_hypothesis: |
+  RSI extremes in TRENDING regime do NOT signal momentum. Falsification:
+  All variants achieve sharpe < -0.10 (consistent loss direction).
+
+behavioral_features: []
+
+regime_specific_variants:
+  - variant_id: TRENDING_ONLY
+    regime_filter: "ER ≥ 0.50 AND VR ≥ 1.20"
+    out_of_regime_forecast: 0.0
+    note: "Unchanged across all variants per brief constraint."
+
+immutable_params:
+  rsi_period: 14
+  scaling_factor: 0.4
+  regime_thresholds: "ER ≥ 0.50, VR ≥ 1.20"
+  signal_direction: "Long on RSI > 70, Short on RSI < 30"
+  assets: ["BTCUSDT", "ETHUSDT"]
+  timeframe: "1h"

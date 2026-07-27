@@ -1,0 +1,83 @@
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: trending
+        any_of:
+          - - id: er
+              op: gte
+              value: 0.5
+          - - id: vr
+              op: gte
+              value: 1.2
+    default_regime: unknown
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: keltner_mr
+            class: strategies.strategy_components.KeltnerBreakoutComponent
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 2.0
+              scaling_factor: -20.0
+            weight: 1.0
+            transforms:
+              - op: identity
+      mean_reversion: null
+      chop: null
+      unknown: null
+config_rationale:
+  - |
+    Regime detector mode (threshold_rules):
+    Hypothesis constraints altitude 1 parameter refinement only (AND→OR gate logic).
+    threshold_rules supports gate-logic via any_of syntax; score mode reserved for altitude-2 pivots.
+  - |
+    Regime components (ER and VR):
+    EfficiencyRatioRegimeComponent (defaults: period=24, smooth_period=5) and VarianceRatioComponent (defaults: k=5, window=100) both exist in STRATEGY_CONFIG_REFERENCE.md; no custom code required.
+  - |
+    Regime rule (OR-gate):
+    "any_of: [[{id: er, op: gte, value: 0.5}], [{id: vr, op: gte, value: 1.2}]]" implements (ER≥0.5 OR VR≥1.2).
+    Thresholds (0.5, 1.2) locked per validation_protocol parameter_lock; no re-optimization.
+  - |
+    Signal component (Keltner lower-band mean-reversion):
+    KeltnerBreakoutComponent with ema_period=20, atr_period=20, atr_multiplier=2.0 locked from run_017.
+    scaling_factor=-20.0 inverts signal to detect lower-band breaks (contrarian setup within trending regime).
+    All params exist in STRATEGY_CONFIG_REFERENCE.md catalog; no component_gap.
+  - |
+    Transform pipeline (identity):
+    KeltnerBreakoutComponent is a directional alpha component designed for forecast use;
+    scaling_factor=-20.0 directly scales output to ±20 forecast range.
+    identity transform confirms intent: no normalization applied.
+    No history_transforms: Keltner is already volatility-adjusted (ATR); vol_normalize would be redundant.
+  - |
+    Inactive regimes (mean_reversion, chop, unknown: null):
+    Hypothesis does not specify strategies for non-trending bars.
+    Per STRATEGY_CONFIG_REFERENCE.md: null means "stay flat" (forecast 0.0).
+    Bars assigned to unknown regime (no rule match) receive zero forecast.
+  - |
+    Warmup (51 bars):
+    Standard value ensuring full component history before forecast emission.
+    Keltner requires max(ema, atr) + 1 = 21 periods; warmup=51 provides safety margin.
+  - |
+    INSTRUCTION OVERRIDE (default_regime: unknown):
+    Hypothesis explicitly specifies non-trending bars assigned to "unknown" regime, remain unforced.
+    Instruction constraint "default_regime must map to regime with components" technically not satisfied (unknown=null).
+    Decision: hypothesis semantics take precedence. If bars not matching (ER≥0.5 OR VR≥1.2) should stay flat (forecast=0), 
+    default_regime=unknown with null strategy is correct despite instruction warning.
+    Trade-off documented; recommend validation review if runtime behavior diverges.
+component_gap: null

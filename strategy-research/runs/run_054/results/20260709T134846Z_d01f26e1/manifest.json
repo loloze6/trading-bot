@@ -1,0 +1,54 @@
+{
+  "run_id": "20260709T134846Z_d01f26e1",
+  "created_utc": "2026-07-09T13:48:46.385642+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "warmup": 50,
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "sma_trend",
+              "class": "strategies.strategy_components.SmaTrendLongOnlyComponent",
+              "params": {
+                "lookback_L": 100,
+                "scaling_factor": 10.0
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "identity"
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      }
+    }
+  },
+  "config_sha256": "d01f26e10fa789b703616c4b3d733175891949eacfeed133c7b287010728101e",
+  "data": {
+    "symbols": [
+      "ETHUSDT"
+    ],
+    "timeframe": "86400s",
+    "start": "2021-03-13 00:00:00",
+    "end": "2022-04-01 00:00:00",
+    "bar_count": 385,
+    "data_sha256": "db56757c5225e86e83f8ad3e4e25edd06a78cacd4493fd4c9c7131b3bea01868"
+  },
+  "git_sha": "2e244ebde77e912de75a4a3ea5da76cfc18a3c0d",
+  "engine": {
+    "lookback": 101,
+    "warmup": 50
+  }
+}

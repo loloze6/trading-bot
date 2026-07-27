@@ -1,0 +1,19 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+protocol_verdict: refine
+status: refine
+criteria_summary:
+  - "Approval gate (V1_sharpe >= 0.30 AND V1_win_rate >= 0.50 AND V1_trade_count >= 50): FAIL (sharpe=0.0, win_rate=50% PASS, trade_count=27 FAIL)"
+  - "Falsification gate (reverse_sharpe < 0.00): FAIL (median_sharpe=0.0, not < 0.0)"
+  - "Robustness gate (>=5 trades in 4 of 5 validation windows): FAIL (only 3 windows: 2024-06, 2024-08, 2024-09)"
+  - "Risk gate (max_drawdown_pct <= 35%): PASS (actual=10.266%)"
+  - "Reverse hypothesis test: UNTESTED"
+  - "Threshold immutability declaration: UNTESTED"
+primary_failure_mode: "Regime fires on insufficient bars; sample size too small (27 trades vs 50 required) to achieve robust Sharpe. Robustness gate requires >=5 trades in 4 windows; only 3 achieved. min_score=0.25 still excludes moderate ER/VR combinations that would qualify at 0.15."
+config_to_failure_map: "min_score=0.25 in regime_score formula (ER/1.0 × VR/2.0 >= 0.25) maps directly to insufficient regime frequency. Bars with ER=0.3-0.4 and VR=0.5-0.8 score 0.15-0.32; those scoring 0.15-0.25 are currently blocked. Lowering threshold to 0.15 admits 40-60% more bars without weakening regime coherence."
+untested_criteria:
+  - "Reverse hypothesis Sharpe (unconditional Keltner baseline)"
+  - "V2-V5 variants (alternative regime formulas, not tested in this run)"
+  - "Threshold immutability declaration and derivation method"
+proposed_change_dimension: min_score
+hypothesis_family: keltner_mean_reversion
+altitude_justification: "Rule 5: win_rate_vs_sharpe='win_rate PASS + sharpe FAIL', median_forecast_return_corr=0.0493 (>0.03), median_cost_drag_pct=52.083% (<80%). Signal shows directional edge (positive corr, 50% win rate) and cost-efficient (not oversized), but regime frequency insufficient. Per protocol logic 'relax regime thresholds to increase regime frequency': lowering min_score from 0.25 to 0.15 should scale regime firing by 1.5-2.0×, pushing underfired windows (2024-05 at 3 trades, 2024-07 at 2 trades) past 5-trade floor to meet robustness gate."

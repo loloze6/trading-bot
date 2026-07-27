@@ -1,0 +1,23 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+asset: BTCUSDT, ETHUSDT
+timeframe: 4h
+research_question: "At 4h timeframe, does a continuous score-mode regime filter (ER × VR aggregation) outperform the AND-gate binary threshold on the Keltner mean-reversion signal? The AND-gate regime in run_027 is uninformative at 4h (zero trades, no edge observed). A score-mode filter may be more responsive to 4h regime transitions and allow the signal edge to emerge through increased trade frequency."
+signal_concept: "Keltner mean-reversion (ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0). Identical to run_017 baseline and run_027 — DO NOT CHANGE."
+regime_filter: "Score-mode regime: regime_score = (ER / 1.0) × (VR / 2.0). Fire when regime_score ≥ 0.4. This is a continuous blend: high ER and high VR both contribute proportionally, rather than requiring both conditions simultaneously. A bar with ER=0.5, VR=2.0 scores 0.5 (above 0.4, qualifies). A bar with ER=0.6, VR=0.8 scores 0.24 (below 0.4, does not qualify). This relaxation should increase trade frequency to 10-20 trades per window while maintaining signal focus on trending-like conditions."
+mechanism: "The AND-gate (ER≥0.5 AND VR≥1.2) in run_027 requires both conditions met simultaneously. At 4h bar frequency (~100-120 bars/month), market regime transitions are slower, so bars may exhibit high ER or high VR independently but rarely both. Score-mode allows a continuous spectrum: high ER with moderate VR (or vice versa) both contribute to regime_score, increasing the number of qualifying bars. This increases sample size for the Keltner signal to show its edge (corr=0.2145)."
+assumptions:
+  - "Keltner signal (corr=0.2145) is robust at 4h timeframe; the AND-gate regime definition was too strict."
+  - "Score-mode regime fires on 2-3× more bars than AND-gate while preserving trend-like character."
+  - "Increased trade frequency (target: 10-20 trades/window) allows signal edge to compound into positive Sharpe and lower proportional cost drag."
+expected_failure_modes:
+  - "Score-mode fires too frequently, cost drag returns to > 80% (regime filter too loose)."
+  - "Signal edge only exists in true high-ER AND high-VR regimes; score-mode dilutes the edge."
+  - "regime_score threshold 0.4 is still too tight; Sharpe remains ≤ 0 (may need further relaxation to 0.3 or lower in a refine round)."
+  - "Score-mode regime forward_return_mean remains near-zero or negative (regime definition is fundamentally broken at 4h)."
+constraints:
+  - "Timeframe: 4h only."
+  - "Signal: Keltner mean-reversion (ema=20, atr=20, mult=2.0, scale=-20.0) — IDENTICAL to run_027. Do NOT modify signal."
+  - "Regime: score-mode (continuous ER and VR aggregation), not threshold_rules."
+  - "regime_score threshold: 0.4 (tunable if a second refine run is needed; target is 10-20 trades/window)."
+  - "default_regime: unknown (block zero-forecasts outside regime, same as run_027)."
+change_from_previous: "PREVIOUS (run_027): threshold_rules AND-gate (ER≥0.5 AND VR≥1.2) at 4h. Result: Sharpe=0.0, min_trade_count=0, regime uninformative (trending regime forward_return_mean negative across windows). THIS PIVOT: score-mode regime (ER×VR continuous blend, threshold ≥0.4) to relax the AND-gate constraint and increase trade frequency. Rationale: Per Rule 4 (regime is uninformative), pivot to a structurally different regime definition. Score-mode is a principled middle ground between AND-gate (too restrictive) and OR-gate (tested at 1h in run_026 with corr=0.058)."

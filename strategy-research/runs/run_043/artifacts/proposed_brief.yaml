@@ -1,0 +1,36 @@
+hypothesis_id: KELTNER_BREAKOUT_TREND_V1
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+
+research_question: >
+  Does a Keltner channel volatility breakout signal carry ungated directional information
+  on BTC/ETH 1h -- i.e. does it earn all-bars Spearman IC significantly different from zero
+  after block-adjusted significance testing, and does the implied gross edge clear the
+  round-trip cost hurdle (2× safety factor)?
+
+signal_concept: >
+  KeltnerComponent(atr_period=20, atr_offset_pct=1.0): Keltner channels are
+  volatility-adjusted bands (ATR-based envelope) centered on a moving average. Signal
+  generates discrete breakout events: +1 when price close crosses above upper band
+  (bullish volatility breakout), -1 when below lower band (bearish breakout), 0 otherwise.
+  Unlike EMA spread (continuous magnitude on every bar), Keltner is sparse (trades on
+  breakout events). This tests whether volatility-normalized trend initiation has ungated
+  predictive power on 1h crypto, where volatility expansion often precedes sustained price
+  moves. Ungated: no regime filter. Expected trade frequency: 80–150 trades/window
+  depending on realized volatility regime.
+
+constraints:
+  - "Must not propose ideas that require replacing the whole existing bot architecture."
+  - "Ungated only (post-A2.3 standing policy): no regime_detector gating logic."
+  - "Existing components only: KeltnerComponent must be available in trading-bot/strategies/strategy_components.py.
+     If unavailable, escalate to new_component."
+
+change_from_previous: >
+  EMA_SPREAD_TREND_CONTINUATION_V1 (run_043) failed prescreen with ic_all_bars =
+  -0.021091 (p = 0.5876, not significant). Root cause: moving-average-crossover is a
+  commodity signal, already arbitraged away on highly-liquid BTC/ETH 1h venues.
+  Negative IC indicates slight mean-reversion bias when ungated. Pivot to structurally
+  different signal family: Keltner channel breakout. This is volatility-aware (ATR-adjusted),
+  distinct from moving-average-based mechanisms, and targets volatility regime shifts as
+  trend initiators -- a fundamentally different signal category. Same asset and timeframe,
+  still ungated for first validation.

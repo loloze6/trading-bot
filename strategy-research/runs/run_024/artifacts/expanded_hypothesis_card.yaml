@@ -1,0 +1,51 @@
+base_hypothesis_id: POSITION_SIZING_TIMEFRAME_COUPLING
+
+thesis: "Run_017's 27.45% cost efficiency (1h, Keltner+TRENDING) is structural and driven by position sizing or rebalance frequency coupling to timeframe. Run_021 (4h, identical signal+regime) produces 413.05% cost (15x penalty), proving cost scaling is execution-structure-dependent, not signal-quality-dependent."
+
+expanded_variants:
+  V1_execution_decomposition:
+    name: "Trade, Position, Fee Metric Comparison"
+    mechanism: "Extract from run_017, run_021, run_022 logs: trade_count, avg_position_size_pct, fee_pct_per_trade, rebalance_events_per_regime_window. Identify which metric differs most. Run_017 vs run_021 15x cost gap must map to one of these four. Diagnostic only (no backtest)."
+    novel_element: "Structured metric isolation; prioritizes rebalance_frequency over signal quality as the control variable."
+    testability: "Log analysis, zero risk"
+    
+  V2_position_sizing_linearity:
+    name: "Position Size Control at 4h"
+    mechanism: "Run 4h Keltner+TRENDING with position_sizing capped at 1h_equivalent_size_pct. If cost improves to <100%, position_sizing_model is timeframe-unaware. If cost stays >300%, rebalance_frequency is the control."
+    novel_element: "Isolates position sizing as independent variable; tests whether sizing algorithm scales poorly at longer bars."
+    testability: "One backtest (4h, config-modified), low risk"
+    
+  V3_rebalance_frequency_gating:
+    name: "Rebalance Density Normalization at 4h"
+    mechanism: "Measure rebalance_events per regime_window_duration for run_017 (1h) vs run_021 (4h). If 4h regime windows contain proportionally fewer rebalances, positions become stale and accumulate slippage. Test by enforcing 4h rebalance_frequency_floor = 1h_equivalent."
+    novel_element: "Rebalance frequency as explicit control variable; tests whether 4h regime windows suffer from under-rebalancing relative to regime duration."
+    testability: "Log analysis + one backtest (4h, rebalance_floor config), medium risk"
+    
+  V4_regime_phase_dependent_sizing:
+    name: "Signal Efficiency Stratified by Regime Maturity"
+    mechanism: "Partition run_017 by regime phase (young=0-25%, middle=25-75%, late=75-100% of regime window). If cost efficiency concentrates in early phase, Keltner bands degrade as regime evolves. Test phase-conditional position sizing: high_size in early phase, scaled_down in late phase."
+    novel_element: "Regime age as execution control variable; captures non-stationarity within regime window."
+    testability: "Log partitioning + one backtest (1h, phase_gated position_sizing config), medium risk"
+
+conservative_variant: "V1 only (passive diagnostic). No new backtest required. If V1 identifies position_size_pct or rebalance_frequency as differentiator, then select V2 or V3. If regime_phase shows variance >20 pct_pts in cost, select V4. Replication (run_022) validates 1h edge repeatability as baseline."
+
+alternative_data_candidates:
+  - "Trade timing distribution (entry/exit times relative to regime window start): Reveals whether 4h positions persist in stale windows"
+  - "Fee percentile distribution per regime phase: Identifies whether early-phase trades have lower slippage than late-phase"
+  - "Regime transition density: Counts per-window regime flips; 4h windows may span multiple regime boundaries missed in analysis"
+
+reverse_hypothesis: "Cost efficiency is NOT caused by timeframe-aware position sizing or rebalance frequency coupling. Instead, TRENDING regime definition itself is negatively skewed at 4h: mean-reversion thesis fails at longer horizons. All 4h positions are inherently costlier because regime assumption degrades. Cost increase is signal-quality degradation masked by identical regime detection logic at both timeframes."
+
+behavioral_features:
+  - "Regime phase age (time since regime_entry_time): Captures regime staleness and potential signal decay"
+  - "Rebalance trigger density normalized by regime_window_duration: Events per bar vs events per regime duration"
+  - "Position hold duration distribution: Average and percentile hold times relative to regime window"
+
+regime_specific_variants:
+  - variant_name: "TRENDING early-phase optimization"
+    logic: "Allocate 100% position_size in regime phase 0-25%, scale to 50% in phase 25-75%, scale to 25% in phase 75-100%"
+    fit_to_framework: "CompositeStrategyForRegime can track regime_age. Position sizing gate in ForecastManager can condition on regime phase."
+    
+  - variant_name: "TRENDING rebalance floor"
+    logic: "At 4h timeframe, enforce minimum rebalance frequency = 1 rebalance per N bars (where N = 1h_bars_per_regime_window / 4)"
+    fit_to_framework: "ForecastManager.needs_rebalance() can accept timeframe-aware threshold"

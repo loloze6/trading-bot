@@ -1,0 +1,11 @@
+hypothesis_id: "RUN017_REPLICATION_REFINE_01"
+status: "conditional_approve"
+rationale: "Hypothesis is structurally sound (ER threshold relaxation is reasonable mechanism for increasing trade volume) and testable within existing bot framework. However, 5 variants plus pre-specific ATR parameters create high overfitting risk. Walk-forward protocol plus holdout test mitigates, but requires explicit safeguards: look-ahead audit, threshold selection justification, and multiple-comparison control. No architectural changes needed."
+blocking_issues: "None critical. ER/VR computation requires lookahead audit to confirm no forward-looking data; resolvable before backtest execution."
+conditions:
+  - "V1 must be primary hypothesis; V2-V5 analysis only permitted if V1 passes walk-forward test (Sharpe >= 0.5, trades >= 100)."
+  - "ER=0.35 threshold must have explicit prior justification (domain knowledge or pre-research); document rationale in backtest config. No post-hoc data-mining."
+  - "Walk-forward windows must be non-overlapping: 60-day train, 15-day test, zero parameter tuning on test windows."
+  - "Holdout test on completely out-of-sample final 30 days; if holdout_sharpe < 0.4, strategy flagged as overfit and requires hyperparameter review."
+  - "ER and VR formulas audited to confirm no forward-looking data; rolling windows include only historical bars up to current bar (no future data)."
+  - "All Sharpe calculations annualized; minimum 20 trades per window required for statistical reliability; Sharpe < 0.3 confidence interval too wide."

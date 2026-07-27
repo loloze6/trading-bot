@@ -1,0 +1,35 @@
+hypothesis_id: "RUN017_REPLICATION_REFINE_01"
+protocol_verdict: "kill"
+status: "refine"
+criteria_summary:
+  - criterion: "Sharpe >= 0.5 (required for approval)"
+    result: "FAIL"
+    actual_btc: -6.791
+    actual_eth: -5.045
+  - criterion: "Trade count >= 100 (cumulative)"
+    result: "PASS"
+    actual_btc: 358
+    actual_eth: 377
+  - criterion: "Win rate >= 45%"
+    result: "PASS"
+    actual_btc: 46.33
+    actual_eth: 49.75
+  - criterion: "Minimum 20 trades per window"
+    result: "UNTESTED"
+    reason: "Could not parse numeric threshold from protocol output"
+  - criterion: "Holdout Sharpe >= 0.4"
+    result: "UNTESTED"
+    reason: "No holdout window provided in test matrix"
+  - criterion: "ER boundaries separated from mean-reversion band (0.40-0.45)"
+    result: "UNTESTED"
+    reason: "No regime boundary analysis in metrics"
+primary_failure_mode: "Over-trading destroys weak signal edge via fees. Lowering ER from 0.50 to 0.35 increased regime firing from ~25% to ~40-45%, tripling trade frequency. The KeltnerBreakout signal earns barely positive gross_pnl (median 9.38) which is completely erased by fees (cost_drag 413%), leaving median Sharpe of -6.791. This is the sizing problem: signal works, but too many trades amplify costs."
+config_to_failure_map: "Regime threshold ER >= 0.35 in backtest_spec.yaml (relaxed from baseline 0.50) directly caused regime firing to increase threefold. This multiplied cumulative trades from ~120 to ~375, proportionally amplifying total fees. The unchanged KeltnerBreakout component produces a low-edge signal whose profitability is completely destroyed when over-traded."
+untested_criteria:
+  - "Minimum 20 trades per walk-forward window"
+  - "Holdout period Sharpe >= 0.4"
+  - "ER regime boundaries clearly separated from mean-reversion band (0.40-0.45)"
+  - "Parameter drift < 10% across windows"
+proposed_change_dimension: "er_threshold"
+hypothesis_family: "keltner_breakout"
+altitude_justification: "Rule 1 (cost_drag dominates): median_cost_drag_pct=413.0538% >> 80% threshold AND median_gross_pnl=9.3776 > 0. Signal earns positive edge but excessive trading destroys it via fees. Correct action per Rule 1: reduce trade frequency by tightening regime threshold, not by pivoting to a different signal."

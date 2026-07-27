@@ -1,0 +1,62 @@
+hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+
+falsifiable_statement: "MACD-based signals (baseline crossover and variants with volume, funding, RSI, divergence filters) generate statistically significant positive excess returns (Sharpe ≥ 0.5) across 1h BTCUSDT/ETHUSDT when tested via walk-forward validation on 2024-12-01 to 2025-12-31."
+
+null_expectation: "MACD signals exhibit zero correlation with forward returns; observed Sharpe ratios are consistent with random walk hypothesis (Sharpe < 0.3, win_rate = 0.50)."
+
+required_evidence:
+  - "Annualized Sharpe ratio ≥ 0.5 (pooled across walk-forward windows) per variant."
+  - "Win rate (profitable trades / total trades) ≥ 0.45 per variant."
+  - "Minimum 50 completed trades per single walk-forward window per variant."
+  - "Spearman IC (1-bar forward close return, ungated, all bars) ≥ 0.01 per variant."
+  - "No parameter drift > 10% mean value across walk-forward windows (MACD periods fixed a priori)."
+  - "Edge-to-cost ratio (estimated_gross_edge_bps / round_trip_cost_bps) ≥ 2.0 per variant (Layer 2 prescreen)."
+
+bias_risks:
+  - "Lookahead: MACD requires past 26 bars; confirmed no forward data fed into computation."
+  - "Overfitting: MACD periods (12,26,9), RSI(14), volume MA(20), and funding threshold (+0.0002/8h) fixed a priori; risk remains that hypothesis generation itself implicitly selected parameters that fit 2018-2025 data."
+  - "Regime selectivity: Ungated baseline (V1) tests across all regimes (trend, mean-reversion, low-vol); variant-specific gates (V3 volume, V4 funding, V5 RSI) may introduce regime bias that does not persist walk-forward."
+  - "Microstructure: Backtest uses Binance spot OHLCV; live conditions vary (intrabar slippage, order book depth, execution priority) not modeled in backtest."
+  - "Funding-rate regime persistence (V4): Threshold (+0.0002 per 8h) may not generalize if crypto market structure or exchange mechanics evolve."
+  - "Survivorship: BTCUSDT/ETHUSDT only; untested on smaller-cap assets (SOLUSDT, AVAXUSDT) with higher noise and costs."
+  - "Train-test contamination risk: Backward_extension data (2018-2023) was used in hypothesis refinement; walk_forward_extension (2024-12-01 to 2025-12-31) is held for screening but user involvement in prior hypothesis iteration creates mild selection bias."
+
+failure_modes:
+  - "MACD crossovers fire at reversal points after momentum exhaustion; whipsaw losses before signal reverts exceed edge gain."
+  - "Volume filtering (V3) activates only during trending phases when volume is elevated; filters out low-conviction moves but also eliminates high-conviction entries during choppy consolidation."
+  - "Funding-rate threshold (V4) inhibits shorts during forced-liquidation cascades, but cascade duration (2–6 hours) may exceed typical 1–2 bar holds; shorts executed within cascade face sequential liquidation pressure."
+  - "RSI confirmation (V5) lags MACD crossover by 1–2 bars; dual-signal consensus trades early entries, reducing frequency below break-even threshold."
+  - "Divergence (V6) rolling-window lookback (20 bars) delays confirmation; by the time divergence is detected, reversal is 50% complete, insufficient margin to cover 17 bps cost."
+  - "Parameter drift: MACD(12,26,9) optimal for 2018-2025; may be suboptimal in future regimes with different volatility/autocorrelation structure."
+  - "High-turnover cost drag (V1, V4): Activation rates (27%, 18%) with 3.7–5.6 bar holds require gross edges ≥ 34 bps; 1h MACD literature reports 5–25 bps typical, leaving narrow margin."
+
+sample_split_design:
+  walk_forward_range: "[2024-12-01, 2025-12-31]"
+  holdout_range: "[2026-01-01, 2026-06-30]"
+  holdout_note: "Single-use per Improvement 06. Evaluation deferred to holdout_evaluation stage only if deflated Sharpe gate passes Layer 2 prescreen."
+  windows: 4
+  window_size_bars: 2160
+  step_size_bars: 540
+  note: "4 overlapping windows (2160 1h bars ≈ 1 calendar month; step = 540 bars ≈ 1 week, 25% overlap). All walk-forward windows use 2024-12-01 to 2025-12-31; no out-of-sample data consumed at Layer 1."
+
+decision_rules:
+  - "Per-variant Sharpe (annualized, median across walk-forward windows) ≥ 0.5; baseline bar for advancement to Layer 2."
+  - "High-turnover gate (V1, V4: activation > 15%): Sharpe ≥ 0.7 required (tighter due to cost-drag risk from frequent trading)."
+  - "Win rate ≥ 0.45 per variant."
+  - "Trade count ≥ 50 per single walk-forward window (no window undersized)."
+  - "Deflated Sharpe (Improvement 04, multiple-testing correction): Sharpe × sqrt(5) [five variants] ≥ 0.3 per variant after deflation."
+  - "Blocking rule: plausibility = implausible → variant rejected (cannot proceed to Layer 2)."
+
+cost_feasibility:
+  assumed_round_trip_cost_bps_btcusdt: 17.0
+  assumed_round_trip_cost_bps_ethusdt: 17.5
+  safety_factor: 2.0
+  required_gross_edge_bps_per_trade_btcusdt: 34.0
+  required_gross_edge_bps_per_trade_ethusdt: 35.0
+  
+  variants_summary: |
+    V1 (MACD baseline): Activation 27%, avg hold 3.7 bars, 585 expected trades/window → marginal plausibility.
+    V3 (Volume filter): Activation 12%, avg hold 8.3 bars, 260 trades/window → plausible.
+    V4 (Funding gate): Activation 18%, avg hold 5.6 bars, 388 trades/window, asymmetric shorts-only → marginal plausibility (structural edge real but untested asymmetry).
+    V5 (RSI confirm): Activation 10%, avg hold 10.0 bars, 216 trades/window → plausible.
+    V6 (Divergence): Activation 8%, avg hold 12.5 bars, 172 trades/window → plausible.

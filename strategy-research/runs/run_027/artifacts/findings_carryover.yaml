@@ -1,0 +1,19 @@
+hypothesis_id: TIMEFRAME_ESCALATION_4H
+what_failed:
+  - "V1 primary backtest: Sharpe ≤ 0.0 on both BTCUSDT and ETHUSDT"
+  - "Minimum trade count ≤ 30 per window (actual: 0 in most windows)"
+  - "Win rate FAIL (indicator: win_rate_vs_sharpe=both FAIL)"
+diagnostic_rule_applied: "Rule 4: Regime is uninformative. The TRENDING regime (ER≥0.5 AND VR≥1.2, threshold_rules AND-gate) at 4h timeframe does not identify a coherent market state. Forward returns in trending regime are near-zero or negative across multiple windows, indicating the regime label is not predictive at 4h bar frequency."
+diagnostic_snapshot:
+  forecast_return_corr: 0.2145
+  cost_drag_pct: 27.446
+  gross_pnl: 0.0
+  uninformative_regimes:
+    - unknown
+    - trending
+what_not_to_try:
+  - "Do not tweak ER or VR threshold values (ER≥0.5, VR≥1.2) — these are correct per run_017 baseline. The problem is the AND-gate binary logic, not the threshold magnitudes."
+  - "Do not change the Keltner signal (ema=20, atr=20, mult=2.0, scale=-20.0) — correlation=0.2145 is viable and identical to run_017. Signal is not the failure mode."
+  - "Do not escalate timeframe further to 1d — the issue is regime definition at 4h, not the timeframe level per se."
+  - "Do not abandon 4h timeframe — signal transfer is good (corr=0.21). 4h was only tested once, with AND-gate. Score-mode may succeed at 4h."
+next_altitude: pivot

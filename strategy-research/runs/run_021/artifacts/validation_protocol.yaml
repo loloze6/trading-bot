@@ -1,0 +1,231 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER"
+
+falsifiable_statement: |
+  4h Keltner lower-band mean-reversion signal (scaling_factor=-20.0, atr_multiplier=2.0,
+  ema_period=20) in TRENDING regime generates annualized Sharpe ≥ 0.3 with ≥ 25 trades
+  per walk-forward window. V1 (lower-band, scaling=-20) Sharpe ≥ V2 (upper-band,
+  scaling=+20) Sharpe + 0.5, confirming directional edge integrity.
+
+null_expectation: |
+  V1 Sharpe ≤ 0.3 OR trade_count < 25 (1h edge does not transfer to 4h).
+  Alternative null: V1 Sharpe ≈ V2 Sharpe ± 0.3 (direction is regime-driven noise,
+  not mean-reversion skill).
+
+required_evidence:
+  - "V1 walk-forward Sharpe (median) > 0.3"
+  - "V1 trade_count (aggregate) ≥ 25; min_trade_count per window ≥ 10"
+  - "V1 Sharpe > V2 Sharpe + 0.5"
+  - "V3 trade_count ≥ 15; V4 trade_count ≥ 15"
+  - "max_drawdown_pct ≤ 50%; cost_drag < 70%"
+
+bias_risks:
+  - risk_id: "Look-Ahead Bias"
+    description: |
+      TRENDING regime computed from rolling ER/VR using close prices. If regime
+      detection uses future prices, trades precede actual regime entry.
+    severity: "High"
+    mitigation: |
+      Verify regime state transitions lag by ≥ 1 bar in regime_state_log.json.
+      Backtest engine must recompute regime at bar N using only data through N-1.
+
+  - risk_id: "Parameter Overfitting (1h to 4h Transfer)"
+    description: |
+      EMA(20), ATR(2.0), scaling(-20.0) implicit to 1h domain. 4h parameters
+      may diverge without explicit search. Untested transfer assumption.
+    severity: "Medium"
+    mitigation: |
+      V1 is prescriptive (no tuning). If V1 fails Sharpe but passes trade_count,
+      defer parameter search to post-validation refinement phase.
+
+  - risk_id: "Regime-Driven vs. Directional Skill"
+    description: |
+      Edge may correlate with TRENDING regime itself, not lower-band mean-reversion.
+      If V1 ≈ V2, hypothesis is false (FM3).
+    severity: "High"
+    mitigation: |
+      Must observe V1 Sharpe > V2 Sharpe + 0.5. V2 reverse test is mandatory
+      variant in parallel run.
+
+  - risk_id: "Survivorship Bias"
+    description: |
+      BTC and ETHUSDT selected post-hoc; both survived 2024. Untested on
+      delisted or underperforming pairs.
+    severity: "Low"
+    mitigation: |
+      V3 (BTC-only) and V4 (ETH-only) isolation tests for divergence.
+      If one dominates, edge may not generalize.
+
+  - risk_id: "Cost Drag Underestimation"
+    description: |
+      4h moves expected 4× larger than 1h; cost scales non-linearly.
+      May be 35–45% instead of <70% target.
+    severity: "Medium"
+    mitigation: |
+      Inspect metrics.json cost_drag field post-backtest. If ≥ 70%, revisit
+      position sizing or entry thresholds.
+
+  - risk_id: "Regime Persistence Assumption"
+    description: |
+      Assumes TRENDING bars cluster (target ≥ 2 bars mean). If persistence < 1.5,
+      regime exits quickly; mean-reversion edge may activate post-regime.
+    severity: "Medium"
+    mitigation: |
+      Compute regime_frequency from per_regime metrics. If < 20%, regime gate
+      insufficient; triggers conditional refinement.
+
+failure_modes:
+  - mode_id: "FM1-Trade-Starvation"
+    trigger: "trade_count < 10 in any walk-forward window"
+    cause: |
+      TRENDING regime gate filters >95% of bars. ER≥0.50, VR≥1.20 thresholds
+      too strict for 4h resolution. Insufficient trades for inference.
+    impact: "Hypothesis untestable; cannot distinguish edge from noise."
+    contingency: |
+      If triggered: Loosen thresholds to ER≥0.40, VR≥1.10 (V5 conditional)
+      before rerunning. Otherwise: Reject hypothesis.
+
+  - mode_id: "FM2-Sharpe-Collapse"
+    trigger: "sharpe < 0.2 in walk-forward validation"
+    cause: |
+      Cost drag > 50% or signal has no edge at 4h (correlation < 0.05).
+      1h edge is timeframe-specific artifact.
+    impact: "No risk-adjusted alpha. Hypothesis rejected."
+    contingency: "Hard stop."
+
+  - mode_id: "FM3-Directional-Noise"
+    trigger: "V1 Sharpe - V2 Sharpe < 0.3 (target ≥ 0.5)"
+    cause: |
+      Reverse direction (upper-band momentum) performs nearly as well.
+      Direction itself, not skill, drives returns.
+    impact: "Edge is unreliable regime bet, not portable signal."
+    contingency: "Hard stop unless V1 > 0.4 absolute Sharpe."
+
+  - mode_id: "FM4-Walk-Forward-Collapse"
+    trigger: "Sharpe(window_N) - median_Sharpe > 0.3 in any window"
+    cause: |
+      Parameters optimized on 1h implicitly. 4h window-specific variance kills
+      generalization across time.
+    impact: "Signal unusable in live trading. Fails stability test."
+    contingency: |
+      Inspect per-window metrics in walk_forward_results.json.
+      If max deviation > 0.4, hypothesis fails.
+
+  - mode_id: "FM5-Asset-Divergence"
+    trigger: "V3 Sharpe > 0.3 AND V4 Sharpe < 0.1 (or vice versa)"
+    cause: |
+      Edge specific to BTC microstructure (liquidation cascades, market hours).
+      Does not transfer to ETHUSDT.
+    impact: "Composite V1 result misleading. Edge not generalizable."
+    contingency: |
+      If V3 >> V4: Trade BTC and ETH separately (not paired).
+      If V3 << V4: Restrict signal to ETH.
+
+  - mode_id: "FM6-Low-Win-Rate"
+    trigger: "win_rate < 0.35"
+    cause: |
+      Reversals are momentum reversals (V2 behavior), not mean-reversion.
+      Signal catches tails, not regime shifts.
+    impact: "Core directional hypothesis rejected."
+    contingency: "Hard stop."
+
+  - mode_id: "FM7-High-Drawdown"
+    trigger: "max_drawdown_pct > 50%"
+    cause: |
+      TRENDING regime reversals are sharp. Leveraged or concentrated positions
+      amplify losses during regime exit.
+    impact: "Unacceptable risk. Violates risk tolerance."
+    contingency: |
+      If triggered with Sharpe > 0.4: Reduce position size, rerun.
+      Else: Reject hypothesis.
+
+  - mode_id: "FM8-Regime-Detection-Lag"
+    trigger: "Regime entry detected > 2 bars after price inflection"
+    cause: |
+      Regime indicators (ER/VR) lag price. Mean-reversion edge occurs at
+      inflection, not regime confirmation.
+    impact: "Trades enter late; miss best reversal zone."
+    contingency: |
+      Inspect regime_state_log for entry delays. If avg lag > 2 bars: Accept
+      quality loss or refactor regime entry logic (V5/V6 conditional).
+
+sample_split_design:
+  train_period: "Implicit in backtest config (e.g., 2024-01-01 to 2024-06-30)"
+  walk_forward_windows: |
+    Backtester defines window size and step. Ensure ≥ 4 non-overlapping or
+    20%-overlapping windows for Sharpe stability. Median Sharpe across windows
+    is primary metric.
+  holdout_period: |
+    Reserve final 8–12 weeks (2024-09-01 to 2024-12-31) for final_holdout_test
+    stage. Do not use for validation gate decision.
+  sample_structure: |
+    Each window must generate ≥ 10 trades for significance. Discard windows
+    with < 10 trades from Sharpe median or flag for refinement.
+  implementation_check: |
+    Ensure no forward-looking indicators in regime computation.
+    Verify regime state transitions occur exactly at bar N using data ≤ N.
+
+decision_rules:
+  - rule_id: "R1-Sharpe-Threshold"
+    metric: "sharpe"
+    operator: ">="
+    threshold: 0.3
+    scope: "median across walk-forward windows"
+    rationale: "Per brief success_criteria. Baseline for positive risk-adjusted return."
+
+  - rule_id: "R2-Trade-Volume"
+    metric: "trade_count"
+    operator: ">="
+    threshold: 25
+    scope: "aggregate across walk-forward windows"
+    rationale: |
+      Per brief. Sufficient for cost amortization and statistical power.
+      Confirms 4h escalation increases frequency vs ~4 trades at 1h.
+
+  - rule_id: "R3-Trade-Minimum-Per-Window"
+    metric: "min_trade_count"
+    operator: ">="
+    threshold: 10
+    scope: "single-window floor"
+    rationale: |
+      Each window must generate ≥ 10 trades for Sharpe CI validity.
+      Windows < 10 excluded from median or trigger refinement.
+
+  - rule_id: "R4-Directional-Edge-Test"
+    metric: "sharpe(V1) - sharpe(V2)"
+    operator: ">="
+    threshold: 0.5
+    scope: "variant comparison (mandatory parallel run)"
+    rationale: |
+      V1 (lower-band) must exceed V2 (upper-band) by ≥ 0.5 Sharpe.
+      Confirms directional mean-reversion skill, not regime noise.
+
+  - rule_id: "R5-Win-Rate"
+    metric: "win_rate"
+    operator: ">="
+    threshold: 0.35
+    scope: "aggregate"
+    rationale: |
+      Mean-reversion requires > 50% win rate as gold standard.
+      Floor at 35% (0.7:1 win:loss ratio) for viability.
+
+  - rule_id: "R6-Drawdown-Cap"
+    metric: "max_drawdown_pct"
+    operator: "<="
+    threshold: 50
+    scope: "aggregate"
+    rationale: "Risk tolerance cap. Avoid > 50% peak-to-trough drawdown."
+
+  - rule_id: "R7-Regime-Frequency-Gate"
+    metric: "regime_frequency"
+    operator: ">="
+    threshold: 0.20
+    scope: "derived from per_regime metrics"
+    rationale: |
+      TRENDING regime must occur ≥ 20% of time for statistical power.
+      Computed as TRENDING bars / total bars. If < 15%, gate insufficient.
+
+decision_summary: |
+  Approve V1 screening backtest only if all decision rules (R1–R7) pass.
+  Mandatory variant V2 (reverse direction) backtested in parallel for directional
+  edge validation (R4). If any rule fails, apply contingency or defer to
+  refinement stage. If R4 fails: hard stop, reject hypothesis.

@@ -1,0 +1,32 @@
+hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
+what_failed:
+  - "Walk-forward Spearman IC >= 0.2: Failed at prescreen (ic_all_bars = -0.021091, p = 0.5876, not significant; required IC >= 0.2)"
+  - "Cost feasibility: Failed (estimated_gross_edge_bps_per_trade = 6.1005 vs required 34; edge_to_cost_ratio = 0.3589 << 2.0 safety factor)"
+
+diagnostic_rule_applied: "Rule 2 (prescreen): abs(forecast_return_corr) = 0.021091 < 0.03 AND p_value = 0.5876 > 0.10 — signal has no detectable directional content on this venue/timeframe at all-bars ungated level."
+
+diagnostic_snapshot:
+  ic_all_bars: -0.021091
+  ic_active_bars: -0.021091
+  p_value: 0.5876
+  z_stat: -0.5422
+  forecast_sparsity_pct: 0.0
+  active_n_bars: 15938
+  estimated_gross_edge_bps_per_trade: 6.1005
+  cost_drag_implied_pct: 278.6
+  edge_to_cost_ratio: 0.3589
+  symbols_tested:
+    - BTCUSDT
+    - ETHUSDT
+
+what_not_to_try:
+  - "EMA spread (fast_period=9, slow_period=21, scaling_factor=5.0) on BTC/ETH 1h ungated — prescreen killed with ic_all_bars = -0.021091 (not significant). Further parameter tuning (period adjustment, scaling_factor increments) on this moving-average-crossover family unlikely to recover positive directional edge given commodity-signal status and negative IC indicating mean-reversion bias."
+  - "Moving-average-crossover indicators on highly-liquid, well-traded venues (BTC, ETH) — among the most widely-known trend signals; negative IC in prescreen consistent with already-arbitraged-away edge. Parametric refinement on the same mechanism is unlikely to be effective."
+
+next_altitude: pivot
+parameter_bracket: null
+
+notes:
+  - "Run 043 is the first execution of EMA_SPREAD_TREND_CONTINUATION_V1 (refinement_attempt = 0). Prescreen killed before walk-forward backtest. No prior parameter brackets to inherit."
+  - "Negative IC (-0.021091) is consistent with validation_protocol bias_risk annotation: 'Ungated mean-reversion bias: Ungated signal includes bars where EMA spread is adversarial (short-term mean-reversion regimes where negative spread correlates with positive returns). Pooled IC severely diluted when ungated.' This suggests ungating itself was a design mistake, but the underlying signal family (moving-average-crossover) is also too commodity-like to recover edge on this venue."
+  - "Cost check failure (edge_to_cost_ratio = 0.3589) is secondary to IC failure. With zero directional content, cost hurdle becomes irrelevant; the signal has no edge to protect."

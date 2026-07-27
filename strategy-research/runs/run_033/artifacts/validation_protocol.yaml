@@ -1,0 +1,27 @@
+hypothesis_id: "RUN017_V1_EXACT_REPLICATION"
+falsifiable_statement: "KeltnerBreakout (EMA20/ATR20/2.0x) filtered to TRENDING (ER≥0.50,VR≥1.20) reproduces Sharpe≥0.5 and win_rate≥52% on BTCUSDT/ETHUSDT 1h walk-forward backtest"
+null_expectation: "Sharpe<0.4 or win_rate<50% indicates market structural change, cost drift, or signal decay since RUN017"
+required_evidence:
+  - "metrics.json containing: sharpe (median across WF windows), win_rate, trade_count, max_drawdown_pct"
+  - "per_regime breakdown: TRENDING bar frequency, per-regime Sharpe to detect regime overfitting"
+  - "per_symbol Sharpe: separate scores for BTCUSDT and ETHUSDT to detect asset-specific overfitting"
+bias_risks:
+  - "Regime lookahead: ER/VR rolling windows must exclude future bars; overlap with test window is fatal"
+  - "Selection bias: only 2 symbols tested; BTC/ETH correlation creates false edge confidence"
+  - "Overfitting to 1h: edge generality to other timeframes untested"
+  - "Harness parity: current backtest engine may differ from RUN017 implementation"
+failure_modes:
+  - "ER/VR calculation overlaps test period, leaking regime labels forward"
+  - "Market transitioned from trending to mean-reversion; TRENDING filter eliminates >75% of signal"
+  - "Execution costs (fees, slippage) increased since RUN017; net P&L negative"
+  - "Win_rate>52% but max_drawdown>35%; risk-adjusted return is negative Sharpe"
+  - "Trade_count<50 per WF window; binomial test lacks statistical power"
+  - "Edge confined to BTC or ETH only; correlated-asset overfitting"
+  - "Sharpe cliff in final WF window; signal decayed in recent market"
+  - "Scaling factor (-20.0) is undisclosed sensitivity; scaling drift invalidates edge"
+sample_split_design: "Expanding walk-forward: train on first 60%, validate on next 20%, holdout final 20%. Regime labels computed from training window only; no re-optimization on test data."
+decision_rules:
+  - "sharpe >= 0.5 (median across walk-forward windows)"
+  - "win_rate >= 0.52 (minimum achievable threshold for edge)"
+  - "trade_count >= 100 (cumulative; ensures binomial power)"
+  - "max_drawdown_pct <= 30 (gating risk-adjusted return quality)"

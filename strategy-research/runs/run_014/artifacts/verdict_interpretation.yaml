@@ -1,0 +1,48 @@
+hypothesis_id: V2-E1
+protocol_verdict: kill
+status: pivot
+criteria_summary:
+  - criterion: "Trade count ≥ 30 across full backtest period"
+    result: FAIL
+    actual: "BTCUSDT 14, ETHUSDT 21"
+  - criterion: "Sharpe (median walk-forward) ≥ 0.8"
+    result: FAIL
+    actual: "BTCUSDT -5.019, ETHUSDT -2.604"
+  - criterion: "Win rate ≥ 48% across all windows"
+    result: PASS
+    actual: "BTCUSDT 51.28%, ETHUSDT 60.42%"
+  - criterion: "Per-regime breakdown: regime_frequency ≥ 15%"
+    result: PASS
+    actual: "BTCUSDT 55.01%, ETHUSDT 59.53%"
+
+primary_failure_mode: |
+  RSI pullback signal generates zero predictive power (median forecast_return_corr 
+  = -0.0223, most p-values > 0.05), masked by directional win_rate (51-60%) that 
+  collapses under transaction cost drag (142.8% median). Trade count fails 
+  (14-21 vs 30 required) as regime frequency remains insufficient even after VR 
+  threshold relaxation from 0.90 → 1.00, indicating signal itself lacks edge 
+  rather than regime gate being too tight.
+
+config_to_failure_map: |
+  VR ≤ 1.00 threshold relaxation (run_013/run_014, config_rationale: 
+  'regime_detector.rules[0].any_of condition set [ER lte 0.25, VR lte 1.00]') 
+  intended to increase mean_reversion regime bars. However, forecast_return_corr 
+  remained near-zero across both symbols, proving signal family (RSI pullback in 
+  low-ER/low-VR regime) has no edge. High cost_drag_pct (142.8%) and win_rate 
+  paradox (good directional bias, negative Sharpe) confirm costs eroding 
+  fundamentally weak signal, not a sizing/threshold problem.
+
+untested_criteria: []
+
+proposed_change_dimension: signal_family
+
+hypothesis_family: rsi_mean_reversion
+
+altitude_justification: |
+  3 parameter dimensions exhausted (smooth_period run_011, er_threshold run_012, 
+  vr_threshold run_013/014) across 4 refinement attempts with no improvement on 
+  primary failure (trade_count, sharpe). Diagnostic median_forecast_return_corr 
+  = -0.0223 (near-zero, p > 0.05 on most windows) proves RSI pullback signal 
+  lacks predictive power. Cost drag = 142.8% and win_rate = 51-60% indicate weak 
+  edge masked by transaction costs. Escalate to altitude 2 (pivot) and test 
+  structurally different signal family (Keltner trend-following vs RSI mean-reversion).

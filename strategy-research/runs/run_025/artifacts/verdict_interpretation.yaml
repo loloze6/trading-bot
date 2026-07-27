@@ -1,0 +1,40 @@
+hypothesis_id: KELTNER_SCORE_MODE_REGIME
+protocol_verdict: refine
+status: refine
+criteria_summary:
+  - criterion: rule_1_sharpe_primary
+    result: FAIL
+    actual_btc: 0.0
+    actual_eth: -3.027
+    required: '>= 0.30'
+  - criterion: rule_2_trade_count
+    result: FAIL
+    actual_btc: 0
+    actual_eth: 2
+    required: '>= 50.0'
+  - criterion: rule_3_regime_frequency
+    result: FAIL
+    actual_btc: 0.0
+    actual_eth: 0.0
+    required: '>= 0.15'
+  - criterion: rule_4_stability_proxy
+    result: UNTESTED
+    reason: no matching metric keyword
+  - criterion: 'Screening backtest (2025-06-01 to 2025-12-31)'
+    result: UNTESTED
+    reason: date range mismatch
+  - criterion: rule_7_reversal_falsification
+    result: UNTESTED
+    reason: V3 inverse_confidence variant not implemented
+
+primary_failure_mode: 'Regime definition uninformative: both trending and unknown regimes have forward_return_mean ≈ 0 across 7+ windows, failing to separate predictive market states. AND logic (ER≥0.3 AND VR≥1.2) too restrictive despite relaxation; 3 windows with 0 trades.'
+config_to_failure_map: 'regime_detector.rules.any_of logic AND-ed two thresholds; bars meeting only one condition assigned to unknown (also uninformative). Dual gate compounds sparsity problem, preventing sufficient regime representation for statistical testing.'
+untested_criteria:
+  - rule_4_stability_proxy
+  - Screening protocol window definition
+  - rule_7_reversal_falsification (V3 variant)
+  - Per-variant regime statistics (V1–V6 not generated)
+
+proposed_change_dimension: regime_rule_logic
+hypothesis_family: keltner_threshold_regime
+altitude_justification: 'Rule 4: trending regime forward_return_mean≈0 in 7/12 windows (uninformative); unknown regime also uninformative in 7/12 windows. AND logic (ER≥0.3 AND VR≥1.2) keeps trade_count=0 in 3 windows despite threshold relaxation. OR logic will increase regime bar coverage from ~2–40 bars/window to ~20–60 bars/window, enabling meaningful regime predictiveness test before architectural pivot.'

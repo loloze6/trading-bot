@@ -1,0 +1,52 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY_ER20GATE"
+
+what_failed:
+  - "median_sharpe_gated_bars (criterion a): ETHUSDT actual -0.686 << required 0.0318; BTCUSDT untested (sparsity dominates: 96.67% of 30 window-symbol slots below trade floor)"
+  - "min_trade_count >= 3: BTCUSDT min=0, ETHUSDT min=0; multiple windows per symbol generated zero trades (regime starvation)"
+  - "S2 mechanism validation: excluded entries (ER<0.30, n=75) mean_expectancy_bps=1395.90 >> included entries (ER>=0.30, n=42) mean_expectancy_bps=433.73; gate removes HIGHER-quality trades, falsifying mechanism hypothesis"
+
+diagnostic_rule_applied: "Rule 6 CASE B fires (regime starvation: min_trade_count=0), but S2 identity-partition validation confirms gate mechanism is inverted, not just under-parameterized"
+
+diagnostic_snapshot:
+  median_forecast_return_corr: null
+  median_forecast_return_corr_reason: "Sparsity prevents IC computation (96.67% below-floor, aggregate undefined)"
+  median_cost_drag_pct: 4.2304
+  median_gross_pnl: 0.0
+  uninformative_regimes: ["unknown"]
+  per_trade_expectancy_bps:
+    mean: 433.73
+    se: 441.39
+    t_stat: 0.9827
+    n: 42
+  below_floor_pct: 96.67
+  win_rate_vs_sharpe: "both_FAIL"
+  s2_validation:
+    included_subset_n: 42
+    included_subset_mean_bps: 433.73
+    included_subset_se: 441.39
+    excluded_subset_n: 75
+    excluded_subset_mean_bps: 1395.90
+    excluded_subset_se: 821.17
+    trade_match_rate: "42/42 (100%)"
+    percent_return_agreement: "max_abs_diff=0.0"
+    mechanism_hypothesis_verdict: "FALSIFIED"
+
+what_not_to_try:
+  - "Incrementally relaxing ER threshold (0.30 → 0.25, 0.20, etc.) per standard Rule 6 CASE B remedy: S2 proves gate mechanism is backward (inverted selection logic), not just under-parameterized. Relaxing threshold will increase trade count but preserve inverted quality filtering. Pre_registration also forbids threshold adjustment (quoted: no threshold adjustment permitted within this brief)."
+  - "Parameter sweep on ER lookback period (20 → 10, 14, 28, etc.) without changing gate direction: S2 shows ER(20)>=0.30 selects lower-quality entries; varying lookback maintains backward mechanism unless gate direction is reversed (requires separate pivot)."
+  - "Mechanical tuning of SMA(100) component (SMA(90), SMA(110), etc.): parent run_054 (ungated SMA(100)) demonstrated positive aggregate edge; SMA component itself is sound. Failure is in gate mechanism, not moving average parameter."
+  - "Cost-side adjustments (leverage, position_scale, rebalance_threshold, etc.): median cost_drag_pct=4.23% is benign, not a bottleneck. Sparsity (regime starvation) and mechanism inversion are binding constraints."
+
+next_altitude: "kill"
+
+notes: |
+  S2 validation is identity-based (trade-identity matching via symbol/window/entry_time/exit_time,
+  not ER reconstruction). Result is deterministic: excluded entries (filtered by gate) have
+  1395.90 bps vs included 433.73 bps. Gate hypothesis predicted excluded entries would have
+  <= 0 bps (low quality). Observed: excluded entries have 3.2x higher expectancy. This is
+  definitive falsification of the mechanism, not an ambiguous or underpowered finding. Lineage
+  terminates here per the operator pre-commitment (prescreen_override_20260711.yaml): verdict
+  is final on criterion-(a) FAIL, no further arbitration. No successor run consumes this
+  carryover.
+
+operator_correction_20260711: "Stage routed refine/pivot per its rulebook and the pass rule's own 'verdict routing decides kill vs pivot' delegation; the later pre-commitment narrowing that discretion had no precedence channel the skill recognizes. Enums corrected to kill per the pre-commitment; stage analysis retained verbatim; instruction-layering defect logged in the pipeline ledger (D3/B11/A8)."

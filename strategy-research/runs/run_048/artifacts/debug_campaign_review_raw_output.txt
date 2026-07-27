@@ -1,0 +1,80 @@
+Looking at this campaign holistically, I need to analyze 30 runs across technical indicators, regime detectors, and behavioral mechanisms, then check the KB gate requirements before formulating a recommendation.
+
+## KB Gate Analysis
+
+**Question 1: Untested cells worth trying?**
+- H-041-C (fear_greed) on 2018+ data: reactivation_condition met per KB (run_048 in flight)
+- H-041-A (funding_rate extreme) on 2018+ data: reactivation_condition met, scheduled in backward-extension pass
+- FUNDING_RATE_CONTINUOUS at 4h/daily bars: escalation path per run_044 verdict
+
+**Question 2: Exhausted cells forbidden?**
+Listed in campaign_knowledge_base.yaml exhausted_mechanisms:
+- keltner_mean_reversion, keltner_breakout, keltner_scoremode, rsi_mean_reversion, rsi_momentum_trending, er_detector_unusable_btc_eth_1h
+
+**Question 3: Combination candidates?**
+- H-041-A + H-041-C: Joint activation would be very sparse (sparse × sparse); underpowered even on extended data; no prior justification for co-activation. Defer until each shows individual power.
+- FUNDING_RATE_CONTINUOUS + H-041-A: Eligible conditional—test both independently per escalation/reactivation plans, revisit only if both show >0.05 IC.
+
+## Pattern Detection
+
+**Pattern detected: `same_root_cause_different_families`**
+
+Technical indicator families (rsi_mean_reversion, keltner variants, ema_spread) all fail identically on BTC/ETH 1h:
+- Negative or near-zero directional content (rsi: corr=-0.022; keltner/TRENDING: ic_active_bars=-0.032 per A8.3; ema: ic=-0.021)
+- Signal inversion (keltner_breakout: corr=-0.171)
+- Cost barriers > 80% (keltner_scoremode: 84%; rsi_momentum: 273%)
+
+This is a root cause of **market efficiency at 1h granularity**, not parameter exhaustion.
+
+## Recommendation
+
+Legitimate paths forward exist beyond technical indicators: 2018+ data unlocks power for daily-activated behavioral/structural mechanisms.
+
+```yaml
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 30
+pattern_detected: same_root_cause_different_families
+pattern_evidence:
+  - "Six technical indicator families exhausted with consistent failure modes on BTC/ETH 1h: rsi_mean_reversion (forecast_return_corr=-0.022, signal_quality), keltner_breakout (corr=-0.171, signal_inversion), keltner_mean_reversion (ic_active_bars=-0.032 per run_039 A8.3 full-range prescreen, signal_quality per KB reattribution), keltner_scoremode (cost_drag_pct=84%, signal_quality), rsi_momentum_trending (cost_drag_pct=273%), ema_spread_trend_continuation (ic_all_bars=-0.021091, p=0.588)."
+  - "All failures on same asset class × timeframe. Root cause is market efficiency, not specific indicator parameter space. The er_detector_unusable_btc_eth_1h finding (Pareto conflict: activation in [10-40%] band incompatible with stability constraint on 1h) prevents regime-gating workarounds."
+  - "Five families meet exhaustion criteria per A5.1 (analytic failure + evidence). Forecast_return_corr mode across technical indicators: zero or negative; spurious peaks (0.2145 on TRENDING ~1% of bars) contradicted by ic_active_bars=-0.032, confirming no true directional content."
+
+recommendation: continue
+recommendation_rationale: "Technical indicator class is exhausted on BTC/ETH 1h — this is a structural efficiency finding, not a research planning failure. However, two pre-registered reactivation paths remain open with unmet conditions now satisfied: (1) H-041-C (fear_greed contrarian, persistent_behavioral_bias) reactivation on [2018-02-01, 2025-12-31] per campaign_knowledge_base.yaml fear_greed_contrarian_inconclusive reactivation_condition—extended data improves n_eff from 13 to ~46, placing min_detectable_ic ≈0.15 within plausible IC range (0.05-0.20); run_048 in flight. (2) H-041-A (funding_rate mean-reversion extreme, structural_forced_flow) with identical power justification, scheduled in consolidated backward-extension pass. (3) FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED escalation from 1h to 4h/daily bars per run_044 post-F5 verdict_interpreter recommendation (lag_mismatch_to_regime_persistence root cause targets timeframe, not signal family). All three paths have explicit pre-registered trigger conditions or escalation rationales. Continue prioritizing these high-signal-density runs over parameter tuning."
+
+budget_assessment: "Runs used: 30 of estimated 60-100 (30-50% utilization based on review_every_n_runs=6 checkpoint cadence). Recommendation: maintain current pace. The two 2018+-extended reactivations are pre-registered and have measurably higher information density than additional technical indicator variants. If either reactivation remains inconclusive after extended-data test, escalation decision (detector wishlist, instrument expansion, or campaign termination) will be determinate."
+
+kb_answers:
+  untested_cells:
+    - id: "H-041-C on extended data [2018-02-01, 2025-12-31]"
+      status: in_flight
+      run_id: run_048
+      trigger_met: true
+      trigger_evidence: "fear_greed_daily.csv backfilled from 2018-02-01; pre-registered reactivation_condition in campaign_knowledge_base.yaml fear_greed_contrarian_inconclusive entry explicitly met."
+    - id: "H-041-A on extended data [2018-01-01+]"
+      status: scheduled
+      trigger_met: true
+      trigger_evidence: "reactivation_condition in campaign_knowledge_base.yaml funding_rate_mean_reversion_inconclusive: 'Backward data extension to 2018+' now available; scheduled in consolidated backward-extension pass."
+    - id: "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED at 4h/daily bars"
+      status: escalation_path_open
+      trigger_met: true
+      trigger_evidence: "run_044 (post-F5) verdict_interpreter routed to escalate_timeframe with root_cause=lag_mismatch_to_regime_persistence; no trigger required, recommendation was explicit."
+  
+  exhausted_cells_forbidden:
+    - keltner_mean_reversion_no_edge
+    - keltner_breakout_inverted
+    - keltner_scoremode_no_edge
+    - rsi_mean_reversion_no_edge
+    - rsi_momentum_trending_cost_drag
+    - er_detector_unusable_btc_eth_1h
+  
+  exhausted_basis: "All six are listed in campaign_knowledge_base.yaml exhausted_mechanisms and marked exhausted: true. Five have evidence_count ≥1 with analytic root causes (cost barriers, signal inversion, detector Pareto conflict). Do not propose variants, re-tunings, or secondary-signal layers on exhausted families; they address symptoms, not root causes."
+  
+  combination_candidates:
+    - candidate: "H-041-A (funding_rate extreme) + H-041-C (fear_greed extreme) as multi-factor mean-reversion"
+      eligible: false
+      rationale: "Joint activation = sparse × sparse << 5%; n_eff collapses below power floor even on 2018+ data. No a priori directional justification for co-activation (mean-revert to what?). Status: test independently per reactivation schedule; revisit only if each shows n_eff>30 AND individual IC>0.08, then re-register as H-041-AC."
+    - candidate: "FUNDING_RATE_CONTINUOUS (threshold=0.0, 8h settlement, ~12.5% activation) + H-041-A (extremes, ~1% activation) as two-tier funding-rate signal"
+      eligible: conditional
+      rationale: "Current: FUNDING_RATE_CONTINUOUS ic_active_bars=0.016737 (p=0.881, n_eff=83) at 1h; H-041-A n_eff=10 at 2024-only. FUNDING_RATE_CONTINUOUS escalation to 4h per verdict_interpreter may show IC>0.05. H-041-A reactivation on 2018+ may reach n_eff>40. If both conditions met: register H-041-A-tier2 (continuous overlay on extreme activation). Current status: test independently; combination not ready."
+```

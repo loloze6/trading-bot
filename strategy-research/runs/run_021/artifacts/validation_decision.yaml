@@ -1,0 +1,73 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER"
+
+status: "conditional_approve"
+
+rationale: |
+  Hypothesis is falsifiable and well-structured. Variants (V1 base, V2 reverse,
+  V3/V4 asset isolation) address core risks and enable directional validation.
+  Core assumption (1h mean-reversion transfers to 4h TRENDING regime) is sound
+  but untested. Decision: Proceed to screening_backtest on V1 only, with
+  mandatory V2 parallel run for directional edge test (R4). Conditional approval
+  contingent on three resolvable conditions below.
+
+blocking_issues: []
+
+conditions:
+  - |
+    CONDITION 1: Confirm regime_frequency (TRENDING bars / total bars) ≥ 0.20 in
+    backtest data. If < 0.15 in any walk-forward window, regime gate is
+    insufficient (FM1 trade starvation). Stop V1 screening; apply V5/V6
+    conditional refinement (loosen ER/VR thresholds or add regime-entry filter)
+    before rerunning.
+
+  - |
+    CONDITION 2: V2 (reverse direction, upper-band momentum) MUST be backtested
+    in parallel to V1. Decision rule R4 requires V1 Sharpe - V2 Sharpe ≥ 0.5.
+    If this test fails (V1 ≈ V2 Sharpe), reject hypothesis as regime-driven
+    noise (FM3). Directional edge integrity is non-negotiable.
+
+  - |
+    CONDITION 3: Inspect metrics.json for cost_drag post-backtest. If cost_drag
+    ≥ 70%, halt walk-forward validation. Assess whether 4h move sizes sufficiently
+    amortize trading costs. If move_size / fee_cost ratio < 3, hypothesis fails
+    cost efficiency (FM2). Apply conditional refinement (position sizing) or
+    reject.
+
+next_stage_dependencies:
+  - artifact: "screening_backtest_results.json"
+    prerequisite_for: "walk_forward_validation"
+    reason: |
+      V1 must pass all decision rules (R1–R7) in screening window before
+      expanding to walk-forward. Screening acts as gate.
+
+  - artifact: "per_regime_metrics.json"
+    prerequisite_for: "validation_gate_decision"
+    reason: |
+      regime_frequency and per_regime Sharpe enable R7 evaluation and
+      regime-specific failure mode diagnosis.
+
+recommended_backtest_config:
+  primary_run: "V1-Base-Conservative (screening window only)"
+  mandatory_parallel: "V2-Reverse-Directional (directional edge test; R4 validation)"
+  secondary_conditional: |
+    V3-BTC-Only, V4-ETH-Only (run only if V1 passes all rules; tests asset
+    generalization and divergence).
+  refinement_contingent: |
+    V5-Regime-Entry-Window (trigger if V1 trade_count > 50 AND Sharpe < 0.4).
+    V6-Sustained-TRENDING-Filter (trigger if V1 cost_drag > 70% AND 20 ≤ trade_count ≤ 40).
+
+success_gate: |
+  V1 pass (all rules R1–R7) → walk_forward_validation.
+  V1 fail with V2 >> V1 → refine to V2-base hypothesis.
+  V1 ≈ V2 Sharpe → reject hypothesis (FM3).
+  V1 pass with regime_frequency < 0.15 → conditional refinement (V5/V6), rerun V1.
+
+infrastructure_changes_required: "None. All variants use existing KeltnerBreakoutComponent."
+
+risk_assessment: |
+  Moderate risk. Core transfer assumption (1h → 4h) is untested and critical.
+  Mitigated by falsifiable reverse test (V2), regime frequency gate (R7), and
+  cost drag cap (R6). Asset isolation (V3/V4) controls survivorship bias. Approval
+  assumes backtest engine correctly timestamps regime state (no look-ahead).
+  Recommend regime_state_log inspection pre-validation to confirm no causality
+  violation.

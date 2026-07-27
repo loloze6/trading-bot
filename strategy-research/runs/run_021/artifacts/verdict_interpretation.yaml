@@ -1,0 +1,42 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER"
+protocol_verdict: "refine"
+status: "pivot"
+criteria_summary:
+  - criterion: "sharpe >= 0.3"
+    result: "FAIL"
+    actual: "-6.791 (BTCUSDT), -5.045 (ETHUSDT)"
+  - criterion: "trade_count >= 25"
+    result: "PASS"
+    actual: "358 (BTCUSDT), 377 (ETHUSDT)"
+  - criterion: "win_rate >= 0.35"
+    result: "PASS"
+    actual: "46.33% (BTCUSDT), 49.75% (ETHUSDT)"
+  - criterion: "max_drawdown_pct <= 50"
+    result: "PASS"
+    actual: "38.524% (BTCUSDT), 32.525% (ETHUSDT)"
+  - criterion: "regime_frequency >= 0.2"
+    result: "FAIL"
+    actual: "0.0 (both symbols)"
+  - criterion: "V1 Sharpe > V2 Sharpe + 0.5"
+    result: "UNTESTED"
+    reason: "reverse variant (V2) not backtested in parallel"
+
+primary_failure_mode: "Signal has no directional edge at 4h timeframe; edge that existed at 1h (corr=+0.214, run_017) collapsed to 0.0136 at 4h."
+config_to_failure_map: |
+  KeltnerBreakoutComponent with scaling_factor=-20.0, atr_multiplier=2.0, ema_period=20
+  was validated at 1h (run_017: forecast_return_corr=+0.214). Configuration ported unchanged
+  to 4h per escalation hypothesis. At 4h, the same configuration yields median_forecast_return_corr=0.0136,
+  indicating the edge is timeframe-specific and does not transfer to longer bars.
+  The escalation assumption (signal independence from timeframe) is violated.
+
+untested_criteria:
+  - "V1 Sharpe > V2 Sharpe + 0.5: V2 (upper-band, scaling_factor=+20) reverse test not executed"
+
+proposed_change_dimension: "signal_component"
+hypothesis_family: "keltner_mean_reversion"
+altitude_justification: |
+  Rule 2: abs(median_forecast_return_corr=0.0136) < 0.03 threshold. Signal produces no
+  directional edge at 4h despite ample trade volume (358+ trades). The 1h baseline of
+  corr=+0.214 was NOT preserved, ruling out Keltner as viable at this timeframe. Pivot
+  required to test alternative signal structure while maintaining 4h timeframe and
+  TRENDING regime to isolate whether any mean-reversion signal can capture 4h alpha.

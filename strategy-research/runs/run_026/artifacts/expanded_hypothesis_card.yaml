@@ -1,0 +1,54 @@
+base_hypothesis_id: KELTNER_OR_GATE_REGIME
+
+expansion_decision: SINGLE_VARIANT_ONLY
+expansion_rationale: >
+  Research brief constrains to single-dimensional parameter change (AND→OR gate).
+  Signal (Keltner, run_017 locked), architecture (threshold_rules, altitude 1 only),
+  and timeframe (1h) all fixed. No multi-variant expansion warranted.
+  Base hypothesis passed through as V1 to isolate regime detection effect.
+
+expanded_variants:
+  V1_OR_GATE:
+    hypothesis_id: KELTNER_OR_GATE_REGIME
+    label: OR-gated regime detection (ER≥0.5 OR VR≥1.2)
+    signal_component: Keltner mean-reversion (period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0)
+    regime_rule: "any_of=[{ER: {'>=': 0.5}}, {VR: {'>=': 1.2}}]"
+    mechanism: >
+      Bars meeting ER≥0.5 OR VR≥1.2 assigned to trending regime; others to unknown.
+      Expected bar coverage 30–70/window vs. 2–40/window under AND gate (run_025).
+      OR logic captures bars with high directional energy (ER) separately from trending volatility structure (VR),
+      reducing false negatives that plagued AND gate logic.
+    improvement_vs_run025: >
+      run_025 AND gate (ER≥0.3 AND VR≥1.2) failed: 0 trades in 3/12 windows, both trending and unknown regimes uninformative.
+      Root cause: most bars satisfy only one condition; fall into uninformative unknown regime.
+      OR gate addresses false negatives while preserving individual threshold selectivity (ER≥0.5 and VR≥1.2 individually demanding).
+    assets: [BTCUSDT, ETHUSDT]
+    timeframe: 1h
+    locked_constraints:
+      - Keltner params unchanged from run_017
+      - threshold_rules architecture (altitude 1 parameter refinement only; altitude 2 reserved)
+      - 1h timeframe only
+
+alternative_data_candidates: null
+
+reverse_hypothesis:
+  hypothesis_id: KELTNER_AND_GATE_CONTROL
+  label: AND-gated regime detection (ER≥0.3 AND VR≥1.2)
+  mechanism: Dual-gate logic; both ER and VR required for trending regime assignment.
+  rationale: >
+    Negative control from run_025. Documents baseline failure mode (false negatives, uninformative regimes)
+    and justifies why OR gate variant expected to perform differently.
+  expected_outcome: Replicates run_025 failure (0 trades, uninformative regimes).
+
+behavioral_features: null
+
+regime_specific_variants: null
+
+success_criteria:
+  - trade_count: ">= 30/window"
+  - median_sharpe: ">= 0.30 (both BTCUSDT and ETHUSDT)"
+  - regime_coverage: ">= 15% of bars assigned to trending"
+
+failure_criteria_rule4:
+  trigger: "forward_return_mean≈0 in trending regime bars across windows"
+  implication: "Regime indicator selection (ER/VR) fundamentally mismatched; justifies altitude 2 pivot (score_mode)"

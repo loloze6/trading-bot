@@ -1,0 +1,58 @@
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    default_regime: unknown
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: trending
+        any_of:
+          - - id: er
+              op: gte
+              value: 0.5
+            - id: vr
+              op: gte
+              value: 1.2
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: keltner
+            class: strategies.strategy_components.KeltnerBreakoutComponent
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 2.0
+              scaling_factor: -20.0
+            weight: 1.0
+            lookback: 500
+            transforms:
+              - op: identity
+      mean_reversion: null
+      chop: null
+      unknown:
+        components:
+          - id: neutral
+            class: strategies.strategy_components.BuyAndHoldStrategy
+            params: {}
+            weight: 0.0
+            transforms:
+              - op: identity
+config_rationale:
+  - "Regime detection (threshold_rules mode): EfficiencyRatio(24,5) and VarianceRatio(5,100) form shared regime classifier. Rule triggers TRENDING when ER>=0.5 AND VR>=1.2, capturing sustained directional momentum. default_regime=unknown ensures bars outside rule scope fall to neutral fallback (required for structural stability between 1h and 4h)."
+  - "Alpha signal in TRENDING regime: KeltnerBreakoutComponent with ema_period=20, atr_period=20 (1h bar frequency baseline), atr_multiplier=2.0 (CRITICAL correction from run_017's 1.5), and scaling_factor=-20.0. The multiplier value is the timeframe-aware execution parameter that compensates for 1h bar size; this isolation enables V2 hypothesis testing (apply same config to 4h bars and measure if position_sizing or rebalance_frequency explains cost gap)."
+  - "Transform pipeline: identity only. The scaling_factor=-20.0 output produces lower-band Keltner breakout signals in ±20 range (mean-reversion mode within trending regime). Signal is ready for rebalance gating; no further normalization needed."
+  - "Unknown regime fallback: BuyAndHoldStrategy with weight=0.0 satisfies requirement that default_regime=unknown must map to defined (non-null) regime while contributing zero forecast. Ambiguous bars receive zero position directive."
+  - "Hypothesis test design: This config exactly replicates run_017 intent (Keltner+TRENDING) with diagnostic corrections (default_regime=unknown, atr_multiplier=2.0). When applied to identical date range as run_021 (4h bars), it isolates whether execution structure differences or signal degradation across timeframes drives the observed 15x cost efficiency penalty."
+component_gap: null

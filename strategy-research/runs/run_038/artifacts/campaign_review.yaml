@@ -1,0 +1,30 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 27
+pattern_detected: no_pattern
+pattern_evidence:
+  - "Multiple hypothesis families failed with inconsistent root causes: RSI exhaustion (corr collapsed to negative), Keltner variants (cost_drag ranges 27–420%, corr 0–0.21), momentum families (corr near zero, varying cost_drag). No single structural failure across all families."
+  - "Forecast_return_corr trend shows oscillation with no monotonic improvement: -0.17 → -0.022 → +0.214 → +0.018 → 0.0 → +0.013 → +0.042 → +0.010 → +0.214 → +0.082 → +0.214 → +0.295 → +0.214 → +0.214 → +0.013 → +0.066 → +0.041. Peaks at 0.2145 (runs 017, 024, 027, 033) with no improvement beyond."
+  - "Cost_drag trend exhibits high volatility: 142% → 25% → 185% → 27% → 272% → 25% → 413% → 82% → 420% → 27% → 84% → 52% → 128% → 30% → 27% → 413% → 49% → 32%. No consistent downward or upward direction."
+  - "Campaign executed 5 research question reframes (run_022, 023, 032, 034, 035, 037) and 2 instrument/timeframe escalations (run_020 4h, run_027 SOL, run_029 AVAX) without convergence beyond corr=0.21."
+  - "CRITICAL STRUCTURAL FINDING (from findings_carryover.yaml): The confirmed high-corr signal (Keltner/TRENDING, ER>=0.50, corr=0.2145) exhibits inherent temporal distribution failure. Of 69 cumulative trades across 22 window-symbol slots, 7 slots produce zero trades in specific months: BTCUSDT 2024-01, 2024-09, 2024-10; ETHUSDT 2024-01, 2024-03, 2024-07, 2024-11. This is NOT a sample-size or threshold-tuning problem: the TRENDING regime (ER>=0.50, VR>=1.20) simply does not occur in those calendar months. Testing ER>=0.35 and ER>=0.30 thresholds collapses corr to 0.041–0.082, confirming no threshold bridges the gap."
+
+recommendation: reframe
+
+recommendation_rationale: "The research campaign has hit a structural constraint that parameter tuning, threshold optimization, and instrument escalation cannot overcome. The confirmed signal (Keltner/TRENDING, corr=0.2145 across 4 identical runs) is temporally sparse by design — the market regime it targets exists in only 15 of 22 window-symbol slots, and those absences are calendar-seasonal, not sporadic. The current research brief (COST_DRAG_STRUCTURAL_FIX, run_038) assumes the problem is too many trades per window and proposes filtering/sizing solutions; this contradicts the findings, which state the problem is too few months with active regimes. No filter applied to existing trades will backfill zero-trade months. The campaign has consumed 27 runs (67% of a typical 40-run budget) and achieved its best result (corr=0.2145) after 6 runs; subsequent 21 runs have failed to improve beyond this. A reframe is required to either: (1) combine the confirmed signal with an orthogonal secondary signal that activates in the sparse months, (2) redesign for seasonal-weighted forecasting, or (3) escalate to non-regime-based signal families with different seasonal profiles. The temporal distribution finding is specific and actionable, making a hypothesis-driven reframe more efficient than further family pivots."
+
+next_research_question: |
+  hypothesis_id: TEMPORAL_COVERAGE_MULTI_REGIME
+  asset: "BTCUSDT, ETHUSDT"
+  timeframe: 1h
+  research_question: "Can we achieve uniform monthly signal activation (>= 1 trade per window-symbol slot in >= 21 of 22 slots) and forecast_return_corr >= 0.15 by layering the confirmed Keltner/TRENDING signal (corr=0.2145, active in high-ER months) with an orthogonal secondary signal tuned to fire in the zero-trade months identified in the temporal distribution analysis (Jan, Sep, Oct for BTC; Jan, Mar, Jul, Nov for ETH)?"
+  signal_concept: "Construct a composite 2-signal strategy: (1) Primary: Keltner/TRENDING with ER>=0.50 filter (confirmed corr=0.21, fires in 15/22 slots), (2) Secondary: A non-regime-based signal (e.g., RSI mean-reversion on 30-min bars, or intraday Stochastic %K crossover) designed to activate specifically in the identified sparse months. Composite forecast = weighted_average(keltner_forecast, secondary_forecast) with weights optimized jointly. The secondary signal should be orthogonal (not ER/VR dependent) to avoid redundant seasonal skew."
+  constraints:
+    - "Measurement: Monthly activation must improve from 15/22 to >= 21/22 window-symbol slots with >= 1 trade per month per slot. Target: zero slots in less than 2 calendar months."
+    - "Preserve forecast_return_corr >= 0.15 (primary success gate). Acceptable to degrade from run_017's 0.2145 by combining orthogonal signals if correlation of composites remains >= 0.15."
+    - "Cost_drag < 50% (secondary gate; degradation from run_017's 27% acceptable due to signal complexity and reduced trade concentration)."
+    - "Secondary signal must have correlation > 0.05 when tested in isolation on the sparse months (Jan/Sep/Oct BTC, Jan/Mar/Jul/Nov ETH) to confirm it carries independent information."
+    - "If 2-signal composite fails to reach 21/22 slots, pivot to seasonal-weighting approach: apply forecast_confidence *= seasonal_strength_factor (derived from historical monthly ER/VR) to the single best signal to naturally de-emphasize sparse months rather than attempting explicit multi-signal combination."
+
+budget_assessment: "27 runs consumed of typical 40-run budget (67%). Remaining 13 runs should prioritize: (1) run the proposed 2-signal test (1 run); (2) if successful (corr>=0.15, >= 21/22 slots), run 2–3 parameter refinement iterations; (3) if 2-signal composite fails, test seasonal-weighting variant (1 run); (4) if both fail, escalate_component to trend-following or momentum families (non-regime-dependent) on 4h or 2h to test whether asset class or regime dependency is the fundamental limiting factor. Speed prioritized over thoroughness given budget depletion."
+
+status: "active — recommend reframing run_038 from COST_DRAG_STRUCTURAL_FIX (which is invalidated by findings) to TEMPORAL_COVERAGE_MULTI_REGIME before execution. This reframe directly addresses the temporal distribution finding. If multi-regime approach fails, escalate to non-regime-based component families."

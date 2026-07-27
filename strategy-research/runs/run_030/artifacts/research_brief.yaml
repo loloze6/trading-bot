@@ -1,0 +1,64 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+asset: SOLUSDT
+timeframe: 4h
+research_question: |
+  At 4h timeframe, does a continuous score-mode regime filter (ER × VR
+  aggregation) with relaxed threshold=0.15 (lowered from 0.25) generate
+  sufficient trade frequency to achieve robust Sharpe ≥ 0.30 while preserving
+  the positive forecast edge observed at threshold=0.25? Can lowering threshold
+  an additional 40% (0.25 → 0.15) cross robustness gate (4 of 5 windows with
+  >=5 trades each)?
+signal_concept: |
+  Keltner mean-reversion (ema_period=20, atr_period=20, atr_multiplier=1.5,
+  scaling_factor=-20.0). Identical to run_029 — DO NOT CHANGE. Signal shows
+  positive forecast_return_corr=0.0493 (median across windows) and win_rate=50%,
+  confirming directional edge. Constraint: signal component is fixed per
+  validation protocol.
+regime_filter: |
+  Score-mode regime: regime_score = (ER / 1.0) × (VR / 2.0). Fire when
+  regime_score ≥ 0.15 (lowered from 0.25). This continuous blend admits bars
+  with lower ER or VR individually: ER=0.3, VR=0.5 scores 0.15 (now qualifies,
+  previously blocked). A bar with ER=0.4, VR=0.4 scores 0.16 (now qualifies).
+  Lowering threshold from 0.25 to 0.15 increases qualifying bars by 40-60%
+  while preserving trend-like market regime focus (excludes choppy periods with
+  very low ER and VR).
+mechanism: |
+  Run_029 at min_score=0.25 generated 27 trades across 10 windows (13.5× more
+  than run_028 at 0.4, which had 2 trades). However, regime fired >=5 trades
+  in only 3 windows (2024-06, 2024-08, 2024-09), falling 1 window short of the
+  robustness gate requirement (4 of 5 windows). Per window-level analysis,
+  2024-05 (3 trades), 2024-07 (2 trades), and 2024-04 (1 trade) are sub-threshold
+  due to borderline ER/VR combinations. Lowering threshold to 0.15 is expected
+  to push 2024-05 from 3 → 5-6 trades and/or 2024-07 from 2 → 4-5 trades,
+  achieving 4+ windows with >=5 trades.
+assumptions:
+  - "Keltner signal remains valid at lower regime frequency (no additional noise/overfitting from relaxed threshold)."
+  - "ER and VR components scale reliably down to score=0.15; no regime coherence loss."
+  - "Lowering min_score by 40% (0.25 → 0.15) increases qualifying bars by 40-60% (linear/sublinear scaling holds)."
+  - "Trade quality does not degrade significantly in regime sub-windows currently scored 0.15-0.25 (edge preserved at margin)."
+expected_failure_modes:
+  - "Threshold 0.15 fires too frequently, cost_drag spikes above 80% (sizing problem). Indicates threshold requires further tightening or suggests sizing model needs adjustment, not signal change."
+  - "Sharpe remains near-zero even with increased trades; indicates signal edge is too weak (forecast_corr barely >0.03) to compound at any sample size. Escalate to stronger signal component."
+  - "Per-window Sharpe highly variable (e.g., 2024-06 sharpe=4.76 but 2024-08 sharpe=-0.70); regime not stable across market conditions. Escalate to regime methodology change or different instrument."
+  - "Still do not achieve 4 windows with >=5 trades at 0.15 threshold. If robustness gate still fails, escalate to instrument or timeframe."
+constraints:
+  - "Timeframe: 4h only."
+  - "Signal: Keltner mean-reversion (ema=20, atr=20, mult=1.5, scale=-20.0) — IDENTICAL to run_029. Do NOT modify signal."
+  - "Regime: score-mode (continuous ER and VR aggregation), not threshold_rules or mode changes."
+  - "Regime threshold: 0.15 (lowered from 0.25 based on robustness gate failure: only 3/4 windows with >=5 trades)."
+  - "default_regime: unknown (block zero-forecasts outside regime, same as run_029)."
+  - "ER and VR component parameters unchanged (period, smooth_period, k, window): only min_score changes."
+change_from_previous: |
+  PREVIOUS (run_029): score-mode regime with min_score=0.25. Result:
+  Sharpe=0.0, 27 total trades, only 3 windows with >=5 trades (need 4 to pass
+  robustness gate). Windows 2024-05 (3 trades) and 2024-07 (2 trades) are
+  sub-threshold due to borderline regime scores. THIS REFINE: Lower min_score
+  from 0.25 to 0.15 to increase regime firing by 40-60% without changing signal
+  or regime mode. Rationale: Per RULE 5 (diagnostic: win_rate PASS + sharpe
+  FAIL + corr > 0.03 + cost_drag < 80%), signal has edge but regime fires too
+  rarely. Primary failure is regime frequency (parameter problem), not signal
+  quality. Lowering threshold is the targeted fix for this altitude 1 refine.
+  Diagnostic support: forecast_return_corr=0.0493 >> 0.03 (signal valid),
+  cost_drag=52.08% << 80% (not sizing-constrained), only 3/4 windows with >=5
+  trades (threshold too high). Lowering threshold is the next logical
+  refinement.

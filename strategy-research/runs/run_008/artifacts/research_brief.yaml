@@ -1,0 +1,23 @@
+hypothesis_id: H-RUN007
+asset: BTCUSDT
+timeframe: 1h
+research_question: >
+  Does RSI(14) generate positive expected returns in BTCUSDT 1h
+  when the market is in a mean_reversion regime (low ER, low VR)?
+signal_concept: >
+  RSIPullbackComponent: long-only signal proportional to distance of
+  RSI below 50. No divergence detection. No behavioral features.
+  Single component, single regime.
+regime_filter: >
+  mean_reversion only: ER <= 0.20 AND VR <= 0.90 (existing thresholds,
+  existing components). All other regimes produce forecast 0.0.
+mechanism: >
+  RSI below 50 in a low-efficiency regime indicates short-term
+  oversold conditions without directional trend. Price expected
+  to revert toward mean.
+assumptions:
+  - mean_reversion regime occurs frequently enough for statistical validity
+  - RSI distance from 50 correlates with reversion probability
+expected_failure_modes:
+  - regime classification lags actual market state
+  - RSI signal

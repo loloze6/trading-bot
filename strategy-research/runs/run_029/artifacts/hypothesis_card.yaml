@@ -1,0 +1,26 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+thesis: |
+  At 4h timeframe, score-mode regime filtering with relaxed threshold (min_score=0.25)
+  enables profitable mean-reversion signaling by increasing qualifying sample size while
+  preserving signal validity.
+rationale: |
+  Run_028 demonstrated signal edge (forecast_return_corr=0.4859) but generated only
+  2 trades across 11 windows due to strict 0.4 threshold. At 4h (~100–120 bars/month),
+  AND-gate and score-mode at 0.4 admit too few bars. Score-mode ≥0.25 relaxes
+  constraint: bars with ER≥0.3 or VR≥0.8 qualify, increasing sample by 3–5×.
+  Expected outcome: 5–10 trades/window allows edge to compound into positive Sharpe.
+signal_concept: |
+  Keltner mean-reversion. Parameters: ema_period=20, atr_period=20, atr_multiplier=2.0,
+  scaling_factor=−20.0. Identical to runs 017, 027, 028. Forecast signal is frozen;
+  only regime threshold adjusts.
+target_market: BTCUSDT, ETHUSDT
+timeframe: 4h
+assumptions:
+  - "Keltner signal edge is robust; min_score=0.4 was parameter constraint, not edge failure."
+  - "Score-mode at 0.25 fires 3–5× more bars while maintaining focus on trend-like regimes."
+  - "Sample size increase (target: 5–10 trades/window) allows edge to compound into measurable Sharpe."
+expected_failure_modes:
+  - "Threshold too loose: cost drag climbs >80%. Indicates sizing issue; regime filter is sound but fires on noise."
+  - "Signal edge only valid at high ER AND high VR; score-mode dilution fails. Indicates signal requires strict regime."
+  - "Score 0.25 still suboptimal; edge requires 0.15 or adaptive per-window thresholds. Points to next refine iteration."
+  - "regime_score forward_return_mean negative. Regime definition fundamentally broken at 4h. Escalate to different instrument/timeframe."

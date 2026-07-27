@@ -1,0 +1,175 @@
+run_id: run_018
+stage: validation_gate
+base_hypothesis_id: V2-PIVOT-A
+decision_timestamp: "2026-06-27"
+status: conditional_approve
+conditions:
+  - "Implement RSI static thresholds (70/30) for Conservative variant; no quantile look-ahead."
+  - "TRENDING regime must fire on >= 20% of backtest bars; if < 15%, flag sample sparsity."
+  - "V2-PIVOT-A-MULTI-TIMEFRAME is blocked (look-ahead risk); do not include in backtest config."
+  - "V2-PIVOT-A-DIVERGENCE is rejected; do not implement."
+
+variant_decisions:
+  V2-PIVOT-A-CONSERVATIVE:
+    status: conditional_approve
+    rationale: |
+      Static RSI thresholds (70/30) are testable, lag-free, and establish a
+      minimal baseline. Regime gate (ER >= 0.50, VR >= 1.20) must be validated
+      to confirm TRENDING actually filters noise. If Conservative passes (Sharpe > 0.30),
+      proceed to test adaptive variants.
+    blocking_issues: []
+    conditions:
+      - "Prove regime gate filters range-bound false signals: measure win_rate
+        in TRENDING-only bars vs RANGE-only bars. If difference <= 5%, regime
+        gate is ineffective."
+      - "Document expected trade frequency: TRENDING should occupy >= 20% of
+        backtest bars. If < 15%, sample may be too sparse."
+
+  V2-PIVOT-A-STOCH:
+    status: conditional_approve
+    rationale: |
+      Stochastic range-normalization is plausible but introduces smoothing lag.
+      Testable against RSI Conservative on identical sample splits. Expected
+      Sharpe delta > 0.20 to justify additional complexity. Use Stochastic as
+      sensitivity test to confirm RSI magnitude (not range-normalization) is core signal.
+    blocking_issues: []
+    conditions:
+      - "Quantify Stochastic K lag vs RSI entry: measure average bar offset
+        between RSI threshold cross and K threshold cross. If lag > 1.5 bars, reject."
+      - "Prove Stochastic improvement is not from reduced noise but from actual
+        signal enhancement: compare win_rate (not just Sharpe) improvement. If
+        win_rate stays flat while Sharpe improves only via lower volatility,
+        signal is weakening."
+
+  V2-PIVOT-A-MULTI-TIMEFRAME:
+    status: refine
+    rationale: |
+      Multi-timeframe confirmation is theoretically sound but introduces
+      look-ahead risk on 4h percentile calculation and data staleness (1h signal
+      uses 4h bar from 3 bars prior). Requires explicit operational protocol
+      specifying 4h percentile closure timing before 1h signal generation.
+      Cannot approve until protocol is written.
+    blocking_issues:
+      - "CRITICAL: 4h percentile computation timing must be explicitly specified.
+        Current spec is ambiguous. Require: 'On 1h candle T, use 4h percentile
+        computed from 4h candles T-3h through T (i.e., most recent closed 4h bar).'
+        Verify backtest implementation locks 4h data before 1h signal."
+    conditions:
+      - "Provide pseudo-code or backtest implementation showing 4h percentile
+        is fetched at 4h candle close time, stored, and used on subsequent 1h
+        bars (not fetched on forming 1h bar)."
+      - "Document regime mismatch handling: specify behavior if 1h is TRENDING
+        but 4h is RANGE. Example: 'Allow 1h entry if 1h TRENDING regardless of
+        4h regime' vs 'Block entry if 4h disagrees.' Choose one."
+
+  V2-PIVOT-A-REVERSE:
+    status: conditional_approve
+    rationale: |
+      This is an intentional falsification test. Hypothesis is sound only if
+      momentum (base) outperforms mean-reversion (reverse) on identical sample splits.
+      Proceed only as secondary test AFTER base Conservative passes Sharpe > 0.30.
+      If reverse outperforms (Sharpe > 0.40), regime classification is inverted;
+      escalate to Hurst exponent or autocorrelation analysis.
+    blocking_issues: []
+    conditions:
+      - "Gate this variant: only run reverse backtest if Conservative achieves
+        Sharpe > 0.30 in screening. Do not test reverse in isolation."
+      - "If reverse Sharpe >= 0.40, do not approve any momentum variant. Instead,
+        escalate to regime re-investigation. Document finding in lessons.md."
+
+  V2-PIVOT-A-ADAPTIVE-THRESHOLD:
+    status: conditional_approve
+    rationale: |
+      Bollinger Bands on RSI is mathematically questionable (normalizing a
+      normalized indicator) but testable. Expected to show marginal improvement
+      over static thresholds if RSI volatility is predictive of momentum regime shifts.
+      Gate approval on proving parameters (20, 2.0) are not optimized on training data.
+    blocking_issues: []
+    conditions:
+      - "Prove BB parameters (20, 2.0) are robust: run walk-forward without
+        parameter refit. If walk-forward Sharpe drops > 0.15 vs training, parameters
+        are overfit. Reject."
+      - "Justify parameter selection: cite literature or economic reasoning for
+        (20, 2.0) choice. Do not allow tuning on backtest results."
+
+  V2-PIVOT-A-VOLUME-FILTER:
+    status: conditional_approve
+    rationale: |
+      Volume-RSI coupling is plausible (high volume may signal conviction) but
+      requires proving independence. Correlation bias is high: testing volume
+      on the same bar as RSI extreme inflates perceived edge. Gate approval on
+      proving volume adds independent signal, not just filtering noise.
+    blocking_issues: []
+    conditions:
+      - "Clarify asymmetric volume gates: current spec says 'long when volume > 75th
+        AND short when volume > 75th'. Correct to: 'Long entry: RSI > 75th pct AND
+        volume > 75th pct. Short entry: RSI < 25th pct AND volume > 75th pct.'
+        Confirm both entries are logically sound."
+      - "Prove volume percentile is independent of RSI: show that volume distribution
+        in high-RSI bars is statistically indistinguishable from volume distribution
+        in low-RSI bars (via KS test or similar). If dependent, gate adds nothing."
+      - "Test robustness to volume threshold: run sensitivity analysis (70th, 75th,
+        80th percentile). If edge is threshold-sensitive (Sharpe swings > 0.2),
+        signal is brittle and likely overfit."
+
+  V2-PIVOT-A-DIVERGENCE:
+    status: reject
+    rationale: |
+      Divergence detection is operationally unsound. Pattern definition requires
+      identifying swing highs retroactively (comparing current RSI to 'previous high'
+      requires scanning history), which is inherent look-ahead bias. No known closed-loop
+      forward-only algorithm exists. Pattern is narrative and non-operational; multiple
+      implementations with different parameter choices will produce conflicting results.
+      Signal is also widely published (retail-friendly); unlikely to generate edge.
+    blocking_issues:
+      - "LOOK-AHEAD BIAS: Divergence pattern detection requires multi-bar history
+        comparison; identifying 'previous RSI high' cannot be done on bar N without
+        reference to bars 1..N-1 (forward lookback is not possible without future data)."
+      - "PATTERN AMBIGUITY: Define 'previous RSI high' rigorously. Last N bars? Last
+        swing high (where swing = local max)? If swing is local max, must see N bars
+        ahead to confirm. This is inherent look-ahead."
+      - "PARAMETER BRITTLENESS: Divergence detection requires tuning (lookback window,
+        confirmation bars, swing definition). Sensitivity to parameters indicates
+        overfitting risk."
+    conditions: []
+
+alternative_data_sources:
+  volume_weighted_metrics:
+    status: defer
+    rationale: "Volume-weighted RSI is plausible enhancement (captures institutional
+      participation) but requires successful baseline first. Defer to post-screening
+      if base variants show promise."
+
+  order_book_imbalance:
+    status: defer
+    rationale: "Order book data requires tick-level reconstruction (not in candle
+      backtest harness). Defer to live trading phase only."
+
+  funding_rates:
+    status: defer
+    rationale: "Funding rates are perpetuals-only; research brief specifies spot
+      trading (BTCUSDT/ETHUSDT). Defer or separate perpetuals study."
+
+escalation_rules:
+  if_reverse_outperforms: |
+    "If V2-PIVOT-A-REVERSE (mean-reversion) Sharpe >= 0.40 and base (momentum)
+    Sharpe <= 0.35, regime classification hypothesis is inverted. Escalate:
+    (1) Reject all momentum variants; (2) Launch new study on Hurst exponent
+    or autocorrelation to distinguish trending-momentum from trending-mean-reversion;
+    (3) Document in lessons.md."
+
+  if_all_variants_fail: |
+    "If all variants (Conservative, Stoch, Adaptive, Volume, Reverse) show
+    Sharpe <= 0.20, regime-based RSI momentum is not viable. Escalate:
+    (1) Question whether TRENDING regime gate itself is signal source (test regime gate
+    vs no gate on random signal); (2) Investigate whether RSI as individual signal
+    is sufficient (may need composite multivariate signal); (3) Document failure
+    in lessons.md."
+
+next_stage: screening_backtest
+next_stage_trigger: |
+  Proceed to screening_backtest when validation_decision.yaml is approved and
+  V2-PIVOT-A-CONSERVATIVE, V2-PIVOT-A-STOCH, V2-PIVOT-A-ADAPTIVE-THRESHOLD, and
+  V2-PIVOT-A-VOLUME-FILTER all have status conditional_approve or approve.
+  V2-PIVOT-A-REVERSE is conditional on Conservative passing. Run Conservative
+  first; escalate Reverse if Conservative Sharpe > 0.30.

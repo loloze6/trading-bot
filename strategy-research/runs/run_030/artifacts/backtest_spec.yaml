@@ -1,0 +1,78 @@
+hypothesis_id: KELTNER_SCOREMODE_4H_AVAX
+variant_id: V1-Conservative
+status: spec_ready
+
+config:
+  regime_detector:
+    mode: score
+    min_score: 0.15
+    min_margin: 0.05
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    regimes:
+      trending:
+        components:
+          - id: er
+            weight: 0.5
+            transforms:
+              - op: percentile
+          - id: vr
+            weight: 0.5
+            transforms:
+              - op: percentile
+      mean_reversion:
+        components:
+          - id: vr
+            weight: 1.0
+            transforms:
+              - op: negate_percentile
+    default_regime: unknown
+
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: keltner
+            class: strategies.strategy_components.KeltnerBreakoutComponent
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 1.5
+              scaling_factor: -20.0
+            weight: 1.0
+            transforms:
+              - op: identity
+      mean_reversion:
+        components:
+          - id: keltner
+            class: strategies.strategy_components.KeltnerBreakoutComponent
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 1.5
+              scaling_factor: -20.0
+            weight: 1.0
+            transforms:
+              - op: identity
+      chop: null
+      unknown: null
+
+config_rationale:
+  - "Min_score threshold lowered from baseline 0.25 → 0.15 (min_score parameter in regime_detector) to increase trade frequency; regimes now activate on weaker ER/VR confluence, increasing 40–60% trade density."
+  - "KeltnerBreakoutComponent with params (ema_period: 20, atr_period: 20, atr_multiplier: 1.5, scaling_factor: -20.0) implements mean-reversion lower-band breakout signal; negative scaling_factor inverts the channel detection to fire on oversold (band undercut)."
+  - "score-mode regime detection distributes ER/VR components across trending and mean_reversion: trending scores equal-weighted ER_percentile + VR_percentile (fire when both trend indicators rank high); mean_reversion scores inverted VR_percentile (fire when VR is low, indicating mean-reversion regime)."
+  - "ER/VR parameters (period: 24, smooth_period: 5 for ER; k: 5, window: 100 for VR) maintained per hypothesis constraint ('ER/VR parameters unchanged')."
+  - "Keltner signal active in both trending and mean_reversion regimes; chop and unknown regimes set to null (no trading) to avoid false signals during ambiguous market structure."
+  - "Identity transform preserves raw Keltner output (already scaled to ±20 by scaling_factor parameter); no adaptive normalization applied to retain signal magnitude consistency across bars and avoid suppressing stable high-conviction signals."
+
+component_gap: null

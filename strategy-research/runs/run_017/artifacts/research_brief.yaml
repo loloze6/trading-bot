@@ -1,0 +1,54 @@
+hypothesis_id: "V1-PIVOT-A"
+asset: "BTCUSDT, ETHUSDT"
+timeframe: 1h
+
+research_question: |
+  Do Keltner channel lower-band breakdowns generate positive expected returns in 
+  BTCUSDT/ETHUSDT 1h when the market is in a TRENDING regime (high ER, high VR), 
+  if band width is optimized to reduce excessive false signals and transaction cost drag?
+
+signal_concept: |
+  KeltnerBreakoutComponent with inverted signal (long on lower-band touches) in 
+  TRENDING regime. Widen the Keltner bands by increasing ATR multiplier from 1.5 
+  to 2.0 to reduce the frequency of breakout triggers. Hypothesis: tighter bands 
+  at 1.5× generate marginal signals that incur full transaction costs but capture 
+  only weak pullback magnitude; wider bands at 2.0× filter to only the strongest 
+  overshoots with better risk-reward and lower cost-to-opportunity ratio.
+
+regime_filter: |
+  TRENDING regime only: ER ≥ 0.50 AND VR ≥ 1.20 (unchanged from V1-PIVOT).
+  All other regimes produce forecast 0.0.
+
+mechanism: |
+  In strong trending markets (high ER, high VR), lower Keltner band breakdowns 
+  signal oversold conditions. Widened bands (ATR × 2.0 vs 1.5) reduce the trigger 
+  frequency and allow the signal to target only the most extreme pullbacks, which 
+  carry higher bounce probability and magnitude sufficient to justify transaction 
+  costs. Trade frequency decreases but per-trade expected value improves.
+
+assumptions:
+  - "V1-PIVOT produced positive gross PnL (62.84) but median cost_drag = 185%, indicating the failure is trade frequency and sizing, not signal direction"
+  - "Increasing band width (ATR 1.5 → 2.0) reduces trade count by ~40-50% while preserving directional edge"
+  - "Mean-reversion edge exists in strongest pullbacks even if marginal overshoots lack edge"
+  - "Win-rate PASS (49-53%) despite cost_drag FAIL suggests trades are at roughly chance level; edge exists but is overwhelmed by frequency"
+
+expected_failure_modes:
+  - "Wider bands reduce trade frequency but remaining signals still lack directional edge; Sharpe remains negative"
+  - "Mean-reversion bounces on lower-band touches are not a reliable feature during TRENDING regime; edge is non-existent across all pullback sizes"
+  - "TRENDING regime over-captures chop and uninformative market states; signal works rarely enough that band width adjustment cannot recover Sharpe to ≥ 0.5"
+
+constraints:
+  - "change ONLY ATR multiplier (1.5 → 2.0) in KeltnerBreakoutComponent; do not adjust ER/VR regime thresholds"
+  - "keep lower-band signal direction (mean-reversion, inverse of V1 upper-band momentum)"
+  - "keep regime thresholds (ER ≥ 0.50, VR ≥ 1.20) unchanged"
+  - "no new regime detector or signal component; no changes to EMA period or scaling_factor"
+
+change_from_previous: |
+  V1-PIVOT tested lower-band mean-reversion with ATR multiplier 1.5, resulting in 
+  median sharpe = -2.8 and median cost_drag = 185% despite positive gross PnL. 
+  Diagnostic Rule 1 applies: cost_drag dominates, not signal weakness. Proposed 
+  altitude 1 fix: increase ATR multiplier from 1.5 to 2.0. This widens bands 
+  geometrically, reducing the number of breakout signals by filtering out marginal 
+  touches. Expected outcome: fewer trades, lower transaction cost burden per-trade, 
+  improved net Sharpe (target ≥ 0.0) while preserving the inverted signal direction 
+  that showed weak but positive gross edge in V1-PIVOT.

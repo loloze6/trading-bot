@@ -1,0 +1,53 @@
+stage: innovation_expansion
+run_id: run_006
+base_hypothesis_id: H-RUN006
+expanded_variant_count: 7
+timestamp: 2026-06-16
+
+expansion_strategy:
+  - Conservative baseline (V1) isolates prior config hypothesis from signal validity.
+  - Signal composition (V2, V3, V7) test long/short symmetry, divergence weighting, and confirmation filters.
+  - Regime adaptation (V4) tests local threshold responsiveness without changing regime definitions.
+  - Cross-timeframe (V5) adds vol stability filter; trades frequency for drawdown reduction.
+  - Reverse hypothesis (V6) falsifies regime criticality; contingency plan if regime filter overfit.
+  - Behavioral features (3 optional) explore positioning and momentum exhaustion signals.
+
+alternative_data_fit:
+  - Stochastic: HIGH fit. Existing component; swap into V3 divergence for faster response.
+  - MACD histogram: HIGH fit. Existing component; replace RSI logic in divergence variants.
+  - Bollinger position: HIGH fit. Existing component; plug into V4 adaptive threshold.
+  - Volume weighting: MEDIUM fit. Requires RollingBuffer custom aggregation. Hold until V7 validates volume signal.
+
+reverse_hypothesis_insurance:
+  - Divergence works in TRENDING regardless of regime (V6).
+  - If true, regime filter is noise and should be discarded entirely.
+  - Decision: Accept base hypothesis only if V1 and V4 outperform V6 in walk-forward.
+
+variant_backtest_sequencing:
+  Phase_1_core: V1, V2, V4 (test signal symmetry + regime interaction). 3 runs.
+  Phase_2_composition: V3, V7 (test signal quality + confirmation). 2 runs. Decision gate: >= 1 positive Sharpe advances.
+  Phase_3_stress: V5, V6 (cross-timeframe stability + reverse hypothesis). 2 runs. Only if Phase 2 positive.
+  Phase_4_refinement: Regime-specific variants (tight/loose/boundary). If Phase 3 shows mixed results.
+
+acceptance_criteria_per_variant:
+  V1_conservative: "Must match or exceed prior baseline. If Sharpe < -4.0, original config hypothesis confirmed bad."
+  V2_bidirectional: "Sharpe > V1 + 0.5 (bidirectional should add edge if thesis is right)."
+  V3_divergence: "Sharpe > 0.2 in-sample, >= 0.0 walk-forward (higher conviction = fewer trades = cleaner signal)."
+  V4_adaptive: "Sharpe > V1 + 0.3 (local threshold fit should reduce noise)."
+  V5_cross_timeframe: "Drawdown < V1 - 5% even if Sharpe < 0 (vol filter primary value is stability)."
+  V6_reverse: "If Sharpe > V1 in walk-forward, regime filter is decoy; investigate divergence universally."
+  V7_volume: "Sharpe > 0.1 in-sample, >= -0.2 walk-forward (volume confirmation should tighten signal)."
+
+implementation_notes:
+  - All variants fit existing SubStrategyComponent pattern in strategies/simple_strategy.py.
+  - V2 only: requires config.trading.margin_enabled = True. Check before backtest.
+  - V3, V5, V7 require RollingBuffer backward lookups (price_prev, RSI_prev). Verify candle_builder retains 20+ bars.
+  - V6 inverts regime filter logic (ER > 0.20 instead of <=). Risk of logic error; validate config validation.py.
+  - No new indicators or execution changes required. All variants remain backtestable in existing engine.
+
+risk_mitigation:
+  - V2 margin dependency: config validation must fail fast if margin not enabled.
+  - V3, V5 multi-bar lookups: RollingBuffer size must be >= max(20, lookback_window). Add assertion.
+  - V6 inverted logic: unit test regime filter flip before backtest; manual sanity check on first run.
+  - V7 volume distortion: skip zero-volume bars or use max(1, volume) to avoid division by zero.
+  - All: if any variant diverges from framework pattern, revert and flag for architecture review.

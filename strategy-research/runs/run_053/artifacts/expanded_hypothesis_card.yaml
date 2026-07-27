@@ -1,0 +1,111 @@
+base_hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+
+expanded_variants:
+
+  - variant_id: MACD_HISTOGRAM_CROSSOVER_V1
+    hypothesis_title: "MACD(12,26,9) histogram crossover — baseline extended window"
+    thesis: "MACD histogram crossing signal line indicates trader consensus-momentum shift, creating 1–4 bar continuation. Ungated formulation fires on every occurrence across all regimes in 2018–2025."
+    signal_concept: "+1 on bullish crossover, −1 on bearish crossover, 0 on no-crossover bars. Hold until next crossover."
+    evidence_type: price_volume_only
+    edge_source:
+      category: persistent_behavioral_bias
+      specific_mechanism: "MACD crossover triggers correlated entry/exit clustering among retail/algo traders; herding-driven momentum persistence before exhaustion."
+    measurable_proxy: "MACD(12,26,9) histogram crossing signal line; OHLCV-computable activation."
+    library_category: trend_following
+    data_requirements: ohlcv_only
+    diversity_axis: "Baseline formulation per hypothesis_card signal_concept; conservative variant."
+    activation_rate: 0.27
+    target_markets: [BTCUSDT, ETHUSDT]
+    timeframe: 1h
+    test_window: "2018-01-01 to 2025-12-31"
+    requires_new_feed: null
+
+  - variant_id: MACD_CROSSOVER_VOLUME_CONFIRMATION_V3
+    hypothesis_title: "MACD histogram crossover with volume surge confirmation"
+    thesis: "Volume surge at MACD crossover confirms herding intent and separates organic trend entries from liquidation noise in low-volume candles."
+    signal_concept: "+1 on bullish crossover AND volume > MA(volume,20); −1 on bearish crossover AND volume > MA(volume,20); else 0."
+    evidence_type: price_volume_only
+    edge_source:
+      category: persistent_behavioral_bias
+      specific_mechanism: "High-volume crossover indicates coordinated herding (multiple algo systems triggering). Low-volume crossover may reverse on liquidation unwind; filtering reduces false entries."
+    measurable_proxy: "MACD histogram crossover AND volume > rolling_average_volume(20); both OHLCV-computable."
+    library_category: volume_flow
+    data_requirements: ohlcv_only
+    diversity_axis: "Adds volume_flow category. Mechanically distinct: adds volume-regime filtering layer to base MACD mechanism."
+    activation_rate: 0.12
+    target_markets: [BTCUSDT, ETHUSDT]
+    timeframe: 1h
+    test_window: "2018-01-01 to 2025-12-31"
+    requires_new_feed: null
+
+  - variant_id: MACD_CROSSOVER_FUNDING_FILTER_V4
+    hypothesis_title: "MACD crossover with structural funding-rate deleveraging filter"
+    thesis: "Extreme positive funding forces short covering, negating MACD trend signal for shorts. Asymmetric gate: retain long entries (unrestricted), inhibit shorts when funding > +0.0002/8h."
+    signal_concept: "+1 on bullish crossover (unrestricted). −1 on bearish crossover only if funding_rate ≤ +0.0002; else 0. Hold until next signal."
+    evidence_type: funding_open_interest
+    edge_source:
+      category: structural_forced_flow
+      specific_mechanism: "Extreme positive funding (> +0.0002 per 8h settlement) forces shorts to pay heavily, triggering mechanical liquidation cascade. MACD short entries during forced-cover periods have zero edge; longs unaffected."
+    measurable_proxy: "Funding_rate at bar close > +0.0002 (binary inhibition gate); bar-level activation check."
+    library_category: structural_rate
+    data_requirements: funding_open_interest
+    diversity_axis: "Uses non-price feed (funding_open_interest). Structural edge source, not behavioral. Decouples from pure-price testing."
+    activation_rate: 0.18
+    target_markets: [BTCUSDT, ETHUSDT]
+    timeframe: 1h
+    test_window: "2018-01-01 to 2025-12-31"
+    requires_new_feed: null
+    funding_threshold: "+0.0002 per 8h settlement"
+
+  - variant_id: MACD_CROSSOVER_RSI_CONFIRMATION_V5
+    hypothesis_title: "MACD histogram crossover with RSI momentum confirmation"
+    thesis: "Dual-indicator confirmation (MACD + RSI momentum) suppresses contrarian entries that fire against the larger-sample momentum trend."
+    signal_concept: "+1 on bullish crossover AND RSI(14) > 50; −1 on bearish crossover AND RSI(14) < 50; else 0."
+    evidence_type: price_volume_only
+    edge_source:
+      category: persistent_behavioral_bias
+      specific_mechanism: "MACD + RSI dual consensus signals coordinated herding from multiple indicator systems. Single-indicator crossover may be contrarian in mean-reversion regimes; dual confirmation filters these out."
+    measurable_proxy: "MACD(12,26,9) histogram crossover AND RSI(14) directional threshold; both OHLCV-computable."
+    library_category: oscillator
+    data_requirements: ohlcv_only
+    diversity_axis: "Adds oscillator category as secondary confirmation layer. Dual-consensus mechanism vs. single-indicator signal in V1."
+    activation_rate: 0.10
+    target_markets: [BTCUSDT, ETHUSDT]
+    timeframe: 1h
+    test_window: "2018-01-01 to 2025-12-31"
+    requires_new_feed: null
+
+  - variant_id: MACD_DIVERGENCE_V6
+    hypothesis_title: "MACD divergence from price (momentum exhaustion)"
+    thesis: "Price makes new extreme but MACD does not (divergence) anticipates reversal 1–3 bars before MACD histogram crossover fires. Captures exhaustion earlier."
+    signal_concept: "+1 on bullish divergence (price new 20-bar low, MACD higher than 20-bar minimum). −1 on bearish divergence (price new 20-bar high, MACD lower than 20-bar maximum). Else 0."
+    evidence_type: price_volume_only
+    edge_source:
+      category: persistent_behavioral_bias
+      specific_mechanism: "Divergence signals momentum exhaustion: retail price-following continues (inertia) while smart-money MACD-tracked momentum weakens (informed liquidation). Retail overconfidence meets informed exit pressure."
+    measurable_proxy: "Price new high/low (N=20 bars) AND MACD new high/low opposite direction (N=20 bars); both OHLCV-computable."
+    library_category: trend_following
+    data_requirements: ohlcv_only
+    diversity_axis: "Structurally distinct mechanism: divergence (lagging confirmation failure) vs. crossover (zero-crossing). Different activation timing from V1."
+    activation_rate: 0.08
+    target_markets: [BTCUSDT, ETHUSDT]
+    timeframe: 1h
+    test_window: "2018-01-01 to 2025-12-31"
+    requires_new_feed: null
+
+regime_specific_variants: []
+
+alternative_data_candidates:
+  - feed_name: funding_open_interest
+    rationale: "V4 uses this feed for structural deleveraging filter. Decouples MACD performance from pure-price testing."
+    status: active
+    routed_to: V4 (expanded_variants)
+
+  - feed_name: fear_and_greed
+    rationale: "Daily resolution; misaligned to 1h candles. Would require forward-fill with staleness penalty. Candidate for regime-context research only."
+    status: parked
+    routed_to: research_backlog
+
+reverse_hypothesis: null
+
+behavioral_features: null

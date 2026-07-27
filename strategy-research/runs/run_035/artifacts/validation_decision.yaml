@@ -1,0 +1,15 @@
+hypothesis_id: "REFRAME_REGIME_SELECTIVITY_01"
+status: "conditional_approve"
+rationale: "Core hypothesis is sound: third-condition selectivity gates are testable and falsifiable. Variants V1 (VR Persistence) and V3 (Regime Intensity Score) are lower-risk with minimal leakage exposure and trivial implementation. V2 introduces forward-looking bias that is remediable but requires explicit training-only percentile computation. V4 conflates signal filtering with execution state and risks circular data dependencies. Reverse hypothesis (position scaling) is structurally valid but orthogonal; must test separately to avoid confounding frequency selectivity with sizing strategy. Proceeding requires addressing specific implementation guardrails and pre-freezing hyperparameters before backtest to block post-hoc tuning."
+blocking_issues:
+  - "V2 (Vol Clustering): Rolling percentile window in backtest loop is forward-looking. Fix required: compute 0.30-0.70 band on training data only; apply fixed thresholds to validation and test without recalculation."
+  - "V4 (Trade Spacing): ExecutionHandler fill price queries risk leaking data across walk-forward windows. Fix required: guard queries to within-window training fills only; audit backtest logs for compliance."
+  - "Reverse hypothesis: Position scaling and frequency selectivity cannot be evaluated simultaneously without confounding. Requires isolated backtest run with position_multiplier in execution layer."
+  - "Hyperparameter tuning risk: N, product_threshold, vol quantiles, and ATR distance must be frozen a priori; zero optimization on test data."
+conditions:
+  - "V2 implementation: percentile bands must be computed on training window only; export fixed thresholds for validation/test application. Audit backtest logs to confirm training-only computation."
+  - "Hyperparameter freeze: lock N=3 (V1), vol quantiles 0.30-0.70 (V2), product_threshold=0.50 (V3), ATR_distance=2 (V4) before any backtest run; document origin (domain logic, not data-fitted)."
+  - "Separate reverse hypothesis: run position scaling strategy in isolated backtest to measure sizing effect independently from frequency selectivity."
+  - "Minimum trade count threshold: reject any variant with min_trade_count < 50 in any walk-forward window; prioritize V1 and V3 first (lower implementation risk)."
+  - "Regime consistency check: test variants on both trending-dominant and mean-reverting-dominant market regimes; flag regime-specific collapse for conditional approval decision."
+  - "Walk-forward Sharpe gate: approve variant only if median Sharpe improvement >= +0.15 vs ungated baseline across all windows."

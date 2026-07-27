@@ -1,0 +1,70 @@
+hypothesis_id: "V2-PIVOT-A-THRESHOLD"
+research_stage: "validation_gate"
+variant_scope:
+  - "V2-THRESHOLD-17p5"
+  - "V2-THRESHOLD-20p0"
+  - "V2-THRESHOLD-22p5"
+  - "V2-THRESHOLD-20p0-BTC-ONLY"
+
+falsifiable_statement: |
+  Increasing RSI min_abs threshold from 15.0 to 20.0 (TRENDING regime only)
+  reduces trade count 40-50% relative to V2-CONSERVATIVE baseline while maintaining:
+  (a) sharpe ≥ 0.10 (walk-forward median), (b) net_pnl > 0, (c) cost_drag_pct < 150%.
+  Sharper threshold (22.5) trades lower trade volume for higher signal quality;
+  conservative threshold (17.5) validates necessity of 20.0.
+
+null_expectation: |
+  Threshold increase provides no statistical improvement over baseline.
+  Sharpe remains ≤ 0.05, cost_drag_pct exceeds 150%, or trade_count drops
+  below statistical significance (<15/window).
+
+required_evidence:
+  - "Median walk-forward sharpe > 0.10 across ≥4 windows"
+  - "Per-window min_trade_count ≥ 15 (preferably ≥20 for Sharpe reliability)"
+  - "Median cost_drag_pct < 150% across validation windows"
+  - "Median net_pnl > 0 in walk-forward test"
+  - "Consistency: no window with sharpe < -0.05 (outlier rejection)"
+  - "Trade count reduction: ratio(20.0 / 15.0) ∈ [0.40, 0.60]"
+
+bias_risks:
+  - "Overfitting: min_abs tuned on same window used for validation. Mitigation: strict 60/20/20 train/val/holdout split."
+  - "Look-ahead bias: ER/VR regime computed from full candle; live signals must use forward-only window."
+  - "Survivorship bias: only BTCUSDT/ETHUSDT tested (highest liquidity); generalization to mid-tier pairs unknown."
+  - "Selection bias: TRENDING thresholds (ER≥0.50, VR≥1.20) defined post-hoc; verify ER/VR selection not circular."
+  - "Fee model drift: backtest simulated fees differ from live Binance margin lending + liquidation costs."
+
+failure_modes:
+  - "Trade count collapses (<15/window): Sharpe becomes unreliable; hypothesis unvalidatable."
+  - "Threshold filters high-conviction trades: RSI extremes (70/30) signal regime pivots; strict filter removes profit zones."
+  - "TRENDING regime redundancy: regime filter already removes weak signals; higher threshold adds no marginal value."
+  - "Regime look-ahead: ER/VR computed on full bar; live bot operates on historical-only window, causing detection lag."
+  - "Backtest/live fee gap: simulated slippage underestimates live fills; fee savings evaporate in production."
+  - "Regime inflection masking: high threshold suppresses trades exactly where RSI extremes signal regime shift."
+  - "Asset-specific over-optimization (BTC-only variant): historical BTC/ETH correlation unstable; separate thresholds may not generalize live."
+
+sample_split_design:
+  train_period: "First 60% of historical data. Threshold tuning completed in innovation_expansion (no re-optimization during validation)."
+  validation_period: "Next 20% of data. Walk-forward windows defined here; no overlap with train or holdout."
+  holdout_period: "Final 20% of data. Sealed until final_holdout_test stage."
+  walk_forward_structure: "Minimum 4 non-overlapping windows in validation_period, each ≥10 trading days."
+  per_window_tracking: "Record trade_count, sharpe, cost_drag_pct, max_drawdown_pct per window independently."
+  cross_asset_analysis: "Apply same split to BTCUSDT and ETHUSDT. Compare trade_count and sharpe distributions to detect asset-specific effects."
+  significance_floor: "Minimum 15 trades per window required for Sharpe validity."
+
+decision_rules:
+  pass_criteria: |
+    ALL must hold:
+    - sharpe (median across validation windows) > 0.10
+    - min_trade_count (worst single window) ≥ 15
+    - cost_drag_pct (median) < 150%
+    - net_pnl (median) > 0
+    - max_drawdown_pct < 50% (reasonable portfolio risk floor)
+  conditional_criteria: |
+    If sharpe ≥ 0.05 AND min_trade_count ≥ 15 AND cost_drag_pct ≤ 180%:
+    conditional_approve with explicit conditions (see validation_decision.yaml).
+  fail_criteria: |
+    ANY violation triggers rejection:
+    - sharpe (median) ≤ 0.05
+    - min_trade_count < 15
+    - cost_drag_pct > 180%
+    - Any single window sharpe < -0.05 (outlier rejection)

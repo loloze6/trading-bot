@@ -1,0 +1,65 @@
+hypothesis_id: "V2-PIVOT-A-THRESHOLD-REFINED-V4"
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+
+research_question: |
+  Do RSI momentum signals generate positive expected returns in BTCUSDT/ETHUSDT 1h
+  when the market is TRENDING (high ER, high VR), with min_abs threshold tuned
+  to balance signal quality and trade frequency?
+
+signal_concept: |
+  Relative Strength Index (RSI 14-period) momentum signal in TRENDING regime.
+  Long signal on RSI < 30 (oversold) or short on RSI > 70 (overbought) in trending markets.
+  REFINEMENT V4: Reduce min_abs threshold from 17.5 to 16.0 to restore signal generation.
+  Prior attempt (min_abs=17.5) produced zero trades, failing Phase-A evaluability test.
+  Baseline (min_abs=15.0) generated trades with edge (gross_pnl=+21.62) but excessive cost_drag=272.8%.
+  Target with V4 (min_abs=16.0): restore ≥15 trades/window for Phase-A evaluation while
+  maintaining stricter filtering than baseline to control cost_drag < 180%.
+
+regime_filter: |
+  TRENDING regime only: ER ≥ 0.50 AND VR ≥ 1.20 (unchanged).
+  All other regimes produce forecast 0.0.
+
+mechanism: |
+  In TRENDING markets, RSI extremes signal momentum continuation. min_abs=16.0 filters
+  to |raw_forecast| ≥ 16.0 (vs 17.5), restoring signal volume toward baseline (15.0)
+  while maintaining 6.7% stricter filtering. Signal distribution empirically concentrated
+  in [15.0, 17.0] range; V4 captures intermediate filtering point between proven baseline
+  and failed refinement.
+
+assumptions:
+  - "Baseline (min_abs=15.0) proved directional edge exists: gross_pnl=+21.62 despite
+    cost_drag=272.8%. Edge is valid; only trade frequency and sizing are excessive."
+  - "Threshold range [15.0, 20.0] maps empirically to trade_count: 15.0→high churn,
+    17.5→zero, 20.0→zero. Signal magnitude histogram is left-skewed; majority of RSI
+    extremes fall in [14.5, 16.5] range."
+  - "min_abs=16.0 is validated variant per backtest_spec.yaml (V4 of 4-variant sweep).
+    Interpolates between proven edge (15.0) and failed refinement (17.5) via step 0.5."
+  - "TRENDING regime filter is correctly implemented; NOT_READY regime in early bars is
+    acceptable initialization period, does not bias results once regime activates after warmup."
+
+expected_failure_modes:
+  - "If trade_count still <15 at min_abs=16.0 after Phase-A, signal distribution is even
+    narrower than predicted; revert to min_abs=15.0 baseline or escalate to component pivot
+    (RSI period, scaling_factor tuning, or regime definition review)."
+  - "If trade_count ≥15 but median_sharpe ≤0.05, signal is noise or unidirectional despite
+    baseline edge; escalate to regime investigation (TRENDING may capture non-predictive market states)."
+  - "If cost_drag_pct > 180% with ≥15 trades/window, signal has edge but sizing is excessive;
+    escalate to execution model refinement (reduce position sizing, raise entry threshold, or increase rebalance interval)."
+
+constraints:
+  - "Change ONLY min_abs from 17.5 to 16.0 in threshold_filter transform."
+  - "Keep RSI period=14, regime (TRENDING), scaling_factor=0.4, all other components and params unchanged."
+  - "Target Phase-A criteria: median_trade_count ≥15/window, median_sharpe ≥0.05, median_cost_drag_pct < 180%."
+
+change_from_previous: |
+  "V2-PIVOT-A-THRESHOLD-REFINED (min_abs=17.5) produced zero trades across all 22 windows,
+  a pre-Phase-A failure under Rule 6 (metrics computation failed; median_forecast_return_corr
+  null AND median_gross_pnl null). Prior run (min_abs=20.0) also failed signal generation.
+  Root cause: threshold overconstrained relative to underlying RSI signal magnitude distribution.
+  However, baseline variant (min_abs=15.0) proved signal has directional edge (gross_pnl=+21.62),
+  ruling out hypothesis invalidity—implementation strictness is the problem. Per backtest_spec
+  variant plan and research_brief's predicted refinement path, escalate to variant V4
+  (min_abs=16.0) to interpolate toward baseline while maintaining stricter filtering.
+  If V4 again fails to restore signal (trade_count<15), confirm signal distribution has
+  shifted and escalate from parameter refinement to component or regime investigation."

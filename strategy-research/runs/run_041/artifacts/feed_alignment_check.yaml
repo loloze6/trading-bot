@@ -1,0 +1,54 @@
+# A8.4 Feed Timing Alignment Check — run_041 / H-041-A
+# Protocol: A8.4 (AMENDMENTS_01-06 (7).md)
+# Required before any non-OHLCV prescreen. Must be completed and verdict=PASS
+# before prescreen_signal.py is invoked.
+
+run_id: run_041
+hypothesis_id: H-041-A
+checked_at: "2026-07-03"
+checker: "manual analysis + code audit"
+
+feed_alignment_checks:
+  - feed: binance_funding_rate
+    evidence_type: funding_open_interest
+    local_file: "trading-bot/local_data/{SYMBOL}_funding_8h.csv"
+    columns_used: [funding_rate]
+    publication_lag_assumed: "zero — settlement timestamp IS the publication moment"
+
+    verified_how: >
+      (1) Binance Perpetual Futures documentation: funding is settled at exactly
+      the 8h boundary (00:00, 08:00, 16:00 UTC). The settled rate is finalized
+      and publicly observable at those exact timestamps, not after.
+      (2) Local CSV timestamps confirm start-of-window alignment:
+      2024-01-01 00:00:00.000, 2024-01-01 08:00:00.000, etc. — each timestamp
+      represents the settlement moment, not the end of the window.
+      (3) Code audit of data_manager.py _premerge_aux_feeds():
+      merge_asof(direction="backward") assigns each 1h bar the most recent
+      settlement rate whose timestamp ≤ bar_open_timestamp. A bar opening at
+      00:00 receives the 00:00 settlement rate (exact match). A bar opening at
+      01:00 receives the same 00:00 rate (forward-filled). This is the correct
+      assignment: the rate settled at 00:00 is known to all participants at
+      00:00 and remains valid until the next settlement at 08:00.
+      (4) No timestamp shift in prescreen_signal.py _merge_aux_feeds() is
+      required because the raw CSV timestamps already represent publication time.
+
+    verdict: PASS
+
+    caveats:
+      - "No code-level guard against end-of-window timestamps. The clean
+         alignment relies on Binance's documented start-of-window convention.
+         If Binance ever shifts to end-of-window timestamps, merge_asof
+         would silently introduce 8h lookahead."
+      - "mark_price column in CSV is always empty; not used by this signal."
+      - "NaN values possible at the very start of the dataset before first
+         settlement record; prescreen handles this via pd.isna() guard in
+         the component."
+
+    re_verification_trigger: >
+      If prescreen active-bar IC > 0.15 or p < 0.05, re-verify alignment
+      before routing to backtest (A8.4 standing rule: strong IC triggers
+      re-check, not celebration).
+
+overall_verdict: PASS
+proceed_to_prescreen: true
+blocking_issues: []

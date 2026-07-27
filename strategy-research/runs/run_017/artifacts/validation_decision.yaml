@@ -1,0 +1,22 @@
+hypothesis_id: V1-PIVOT-A
+status: conditional_approve
+rationale: |
+  Hypothesis structure is sound: clear falsifiable statement, explicit parameter
+  sweep, regime-specificity validation (TRENDING vs VOLATILE/CHOPPY/MOMENTUM),
+  and clever reverse hypothesis (ATR 1.0). However, three resolvable blockers
+  prevent direct approval. (1) Expected outcomes use cost_drag, undefined in
+  permitted metrics; must reframe as sharpe and win_rate. (2) Behavioral features
+  (time_in_regime_bars, volatility_shift_direction) are discovered patterns, not
+  pre-registered; must pre-specify before backtesting to avoid overfitting.
+  (3) V4 confirmation entry timing is ambiguous; must clarify to rule out look-ahead.
+
+blocking_issues:
+  - "cost_drag metric not in permitted decision list; cannot evaluate 'cost_drag < 100%' targets"
+  - "Behavioral features listed as exploratory; risk of post-hoc overfitting if added to config after backtest"
+  - "V4 entry rule states 'close back above lower band' without specifying entry bar (N or N+1 after touch); look-ahead risk"
+
+conditions:
+  - "Rewrite all variant expected_outcome sections using only permitted metrics (sharpe, win_rate, trade_count, min_trade_count, max_drawdown_pct). Replace 'cost_drag < 100%' with 'sharpe >= 0.0 AND win_rate >= 49%'."
+  - "Pre-register behavioral features OR remove from validation scope. If behavioral features will be tested, pre-specify feature definitions and decision thresholds before running any backtest."
+  - "Clarify V4 entry rule with explicit bar timing: 'On bar N, detect lower-band touch. Enter on bar N+1 if close > lower band' (or specify N if same-bar entry intended). Confirm this rule produces no look-ahead bias."
+  - "Verify regime classification (ER/VR calculation) uses only data from bars < current bar; confirm no future-bar data leaks into regime label at backtesting."

@@ -1,0 +1,102 @@
+run_id: run_048
+hypothesis_id: H-041-C
+registered_at: "2026-07-05"
+
+reactivation_context: >
+  Reactivating H-041-C (F&G extreme -> contrarian mean-reversion,
+  persistent_behavioral_bias) per its recorded reactivation_condition in
+  campaign_knowledge_base.yaml (finding: fear_greed_contrarian_inconclusive):
+  "Data extension to 2018+. F&G available since 2018; 7-year window (2018-2025)
+  gives active_n~557 per symbol... Do NOT retune 25/75 thresholds on new data --
+  requires H-041-C-v2 registration per A8.5.3." Config is REUSED VERBATIM from
+  run_042 (fear_threshold=25.0, greed_threshold=75.0, scaling_factor=10.0).
+
+# --- Machine-readable constraints (F4d, 2026-07-05 — added retroactively after
+# run_047's identical reactivation was discovered to have silently used the
+# wrong protocol range and dropped its MANDATORY significance_methodology; see
+# campaign_knowledge_base.yaml finding funding_rate_mean_reversion_run047_invalidated).
+# Consumed DIRECTLY by the orchestrator — see run_050/artifacts/pre_registration.yaml's
+# comment block for the full mechanism description (protocol generation,
+# significance_methodology force-injection, pre-verdict_interpreter conformance gate).
+machine_constraints:
+  significance_methodology: episode_blocked_a851a
+  protocol:
+    symbols: [BTCUSDT, ETHUSDT]
+    timeframe: "1h"
+    start: "2018-02-01"
+    end: "2025-12-31"
+
+# --- A8.6 power check (original run_042 framing, carried forward for continuity) ---
+expected_active_n: 1674           # 837 active daily events x 2 symbol copies (BTC+ETH
+                                    # each carry the identical global F&G series), verified
+                                    # count over 2018-02-01 -> 2025-12-31
+plausible_ic_upper: 0.20           # hypothesis-design SKILL.md A8.6 anchor table:
+                                    # "sparse feed-based, extreme/threshold-gated" row = 0.10-0.20
+
+# --- A8.5.1a episode-blocked significance pre-registration (BINDING, computed BEFORE
+#     any IC/return is touched -- see strategy-research/docs/p1b_episode_preregistration.yaml
+#     for the full per-episode enumeration this was derived from) ---
+episode_preregistration:
+  method: A8.5.1a
+  gap_bars_equivalent_days: 2        # F&G is daily-cadence; 48 1h-bars ~= 2 days per spec
+  min_n_episodes_floor: 8
+  n_episodes_observed: 180            # RAW pooled count (BTC-copy + ETH-copy)
+  n_episodes_unique_estimate: ~90      # F&G is a SINGLE global index (market-wide, A8.6
+                                         # rho-correlation caveat applies identically here):
+                                         # BTC-copy and ETH-copy of the same calendar event
+                                         # produce IDENTICAL episode boundaries -- the raw
+                                         # count of 180 double-counts ~90 real, unique
+                                         # sentiment episodes. Both the raw (180) and unique
+                                         # (~90) counts clear the floor by a wide margin, but
+                                         # the bootstrap's 180 "episodes" are NOT 180
+                                         # independent draws of the sentiment mechanism -- they
+                                         # are ~90 independent draws observed twice. This is
+                                         # noted for correct interpretation of the resulting
+                                         # p-value/CI, not a blocker (the same caveat A8.6
+                                         # already applies to F&G's n_eff_symbols formula).
+  floor_pass: true
+  era_distribution_expected: >
+    Episodes span all 5 eras including era_2018_pre_funding (F&G predates funding
+    rate entirely) through era_2024_2025_walk_forward_extension. This is the
+    widest era coverage of any hypothesis in the campaign to date.
+
+expected_direction:
+  claim: >
+    Contrarian mechanism: fear -> long, greed -> short should predict positive
+    next-bar returns in the historical direction. IC > 0.
+  magnitude_prior: plausible_ic_upper=0.20 (see above); run_042's original point
+    estimate was IC=0.190 (correct direction, but n_eff=13, p=0.547 -- not
+    significant under the old per-bar-block method).
+
+expected_sharpe_range:
+  pessimistic: -0.2
+  base_case: 0.3        # run_042's original IC=0.19 was directionally promising
+  optimistic: 0.9
+
+expected_ic_range: [0.05, 0.20]
+expected_cost_ratio: 2.0
+
+disconfirming_outcome: >
+  ic_active_bars <= 0 with the episode-bootstrap p-value < 0.10 would indicate the
+  contrarian mechanism is anti-predictive or absent on the extended sample --
+  qualitatively different from run_042's original insufficient_sample_inconclusive
+  and would warrant kill_no_ic / signal_inversion rather than another power-based
+  park.
+
+parameterization_constraint: >
+  fear_threshold=25.0, greed_threshold=75.0, scaling_factor=10.0 are pre-registered
+  (reused verbatim from run_042). No adjustment post-hoc. Recalibration is a new
+  trial (H-041-C-v2) per A8.5.3 / A8.5 rule 3.
+
+carried_forward_pre_042_checks: >
+  run_042's original pre_registration.yaml (runs/run_042/artifacts/prescreen_preregistration.yaml)
+  also bound this hypothesis to: (a) alignment-shift effect check (post-shift IC
+  must be <= unshifted IC), (b) sentiment-vs-price-momentum baseline comparison
+  (required IF this prescreen routes to proceed_to_backtest), (c) A8.4
+  re-verification trigger if active-bar IC > 0.15 or p < 0.05. All three remain
+  binding for this reactivation and are not superseded by the A8.5.1a addition.
+
+known_engine_caveat: >
+  F7 (filed, not fixed): same one-bar under-warmed-forecast defect noted in
+  run_047/pre_registration.yaml applies identically here (config reuses
+  default_regime="mean_reversion"). Immaterial at this scale, not re-litigated.

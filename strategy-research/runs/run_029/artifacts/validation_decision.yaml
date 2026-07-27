@@ -1,0 +1,29 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+status: conditional_approve
+rationale: |
+  The hypothesis is mathematically sound and testable within existing bot
+  architecture. Claim that 0.25 threshold increases sample 3–5× while preserving
+  Sharpe > 0.3 is falsifiable and avoids undefined metrics. However, seven
+  specific conditions must be honored before execution to mitigate threshold
+  overfitting, regime score leakage, multiple comparison inflation, and regime
+  settling artifacts. Reverse hypothesis is non-negotiable falsification gate.
+
+blocking_issues: []
+
+conditions:
+  - "Threshold lock: Declare 0.25 immutable before W1. If threshold was derived post-hoc from prior optimization, threshold must be re-locked to prevent forward-looking bias."
+  - "Reverse hypothesis mandatory: No-regime variant (constant regime_score=1.0) MUST run on identical data. If reverse_sharpe >= V1_sharpe, hypothesis rejected on-the-spot; no further analysis."
+  - "Per-window reporting: Backtest must output Sharpe, trade_count, win_rate per window separately (not just median/total). Any window with trade_count < 5 flagged and excluded from Sharpe aggregation."
+  - "Regime settling exclusion: Bars 0–4 (inclusive) after regime_score crosses threshold must be excluded from signal firing to eliminate settling artifacts; implement as gating in ForecastManager."
+  - "Multiple comparison correction: Bonferroni-correct across 9 variants (V1–V5 + reverse + 3 regime-specific). Threshold for significance: p_adjusted = 0.05/9 ≈ 0.0056. Report both uncorrected and corrected Sharpe."
+  - "Baseline comparison: Run V=0.4 (existing baseline) on identical data and windows to confirm that V1 trade_count is 2–5× higher and Sharpe is non-degraded."
+  - "Drawdown ceiling: If V1_sharpe > 0.3 but max_drawdown_pct > 35%, conditional approval: hypothesis sound but portfolio-level constraints (notional sizing, volatility targeting) required before live deployment."
+
+notes: |
+  Architectural feasibility: Regime formulas V1–V5 map to strategy component regime_score
+  calculations; can be parameterized in config.json without code refactoring. Per-regime
+  thresholds (trending/volatile/trending+volatile clusters) require conditional gating in
+  ForecastManager.needs_rebalance() or RiskManager.approve_allocation_change(); minimal
+  change. Reverse hypothesis (no regime) is config toggle. No core pipeline refactoring needed.
+  Regime-specific overrides introduce sub-sample fragmentation; enforce trade_count >= 5 per
+  regime per window before reporting Sharpe.

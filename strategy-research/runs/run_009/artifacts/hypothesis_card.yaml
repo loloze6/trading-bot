@@ -1,0 +1,40 @@
+hypothesis_id: H-RUN007
+thesis: >
+  RSI(14) distance below 50 generates positive expected returns in BTCUSDT 1h candles
+  when the market operates in mean_reversion regime (ER ≤ 0.20, VR ≤ 0.90).
+  Signal magnitude proportional to (50 - RSI). No divergence, no cross-timeframe logic.
+
+rationale: >
+  Low efficiency and low volatility ratio indicate choppy, range-bound price action
+  without sustained directional trend. Under these conditions, RSI oversold readings
+  (RSI < 50) signal temporary mean deviation. Expected mechanism: market-microstructure
+  mean reversion pulls price back toward fair value within 1–4h windows.
+
+signal_concept: >
+  RSIPullbackComponent generates forecast = max(0, 50 - RSI) / 100 when regime is
+  mean_reversion. Forecast = 0 in all other regimes. No behavioral features,
+  no divergence detection. Single component, single regime.
+
+target_market: BTCUSDT
+
+timeframe: 1h
+
+assumptions:
+  - Mean-reversion regime detection (ER, VR thresholds) reflects true market state
+  - RSI distance from 50 correlates with reversion probability (monotonic)
+  - Reversion window ≤ 4h; signal decays beyond that horizon
+  - Commission and slippage < 0.05% per round-trip
+  - Backtest sample size ≥ 500 regime-filtered candles for statistical power
+
+expected_failure_modes:
+  - regime_classification_lag: ER/VR thresholds lag actual regime transition by 1–2 candles
+  - no_signal_edge: RSI distance has no predictive value even in chop; Sharpe ratio ≤ 0.3
+  - commission_drag: trading costs exceed positive PnL; net return < 0
+  - regime_frequency_too_low: mean_reversion regime occurs < 5% of time; insufficient data
+  - regime_overfitting: thresholds are specific to training window; fail on walk-forward data
+
+acceptance_criteria:
+  - In-sample Sharpe ratio ≥ 0.5 (mean_reversion regime only)
+  - Win rate ≥ 52% (mean_reversion filtered trades)
+  - Walk-forward Sharpe ≥ 0.4 (no decay > 15% from in-sample)
+  - Max drawdown < 10% of initial balance

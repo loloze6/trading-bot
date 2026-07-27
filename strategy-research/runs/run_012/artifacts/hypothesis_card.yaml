@@ -1,0 +1,43 @@
+hypothesis_id: H-RUN007
+thesis: >
+  RSI(14) pullback signals generate positive expected returns in BTCUSDT 1h
+  when the market exhibits mean-reversion regime characteristics (ER ≤ 0.20,
+  VR ≤ 0.90).
+
+rationale: >
+  Low ER/VR regime indicates weak directional structure; price oscillations
+  reflect temporary imbalances rather than trend conviction. RSI < 50 signals
+  oversold state; mechanism predicts reversion toward neutral within 2–3 hours.
+  H-RUN007-V1 returned -5.019 Sharpe due to 5-hour regime detection lag, not
+  edge failure. Reducing smooth_period 5→2 bars targets detection timing
+  directly while preserving signal mechanism.
+
+signal_concept: >
+  RSIPullbackComponent: forecast = (50 - RSI14) × regime_mask, where
+  regime_mask = 1 if (ER ≤ 0.20 AND VR ≤ 0.90) else 0. Long-only,
+  no divergence or behavioral features. Standardized via existing
+  ComponentOutput mechanism.
+
+target_market: BTCUSDT
+
+timeframe: 1h
+
+assumptions:
+  - mean_reversion regime occurs ≥15% of bars (sufficient sample size)
+  - RSI distance from 50 correlates with reversion probability
+  - regime detection lag < 2 hours captures 2–3 hour mean-reversion window [NEW]
+  - ER/VR thresholds reliably distinguish reversion from trending
+  - commission drag does not eliminate positive expected value
+
+expected_failure_modes:
+  - regime detection lag persists > 2 hours (smooth_period=2 insufficient)
+  - RSI signal carries zero or negative edge even when regime-filtered
+  - backtest liquidity/data assumptions do not reflect live execution
+  - mean-reversion window duration varies; 2-hour lag is average-case
+  - ER/VR thresholds are dataset-dependent; poor generalization across assets
+
+constraints:
+  - one variant only; no divergence, behavioral features, or cross-timeframe
+  - use only RSIPullbackComponent and existing ER/VR regime components
+  - configuration change only (smooth_period: 5 → 2); no new code
+  - regime thresholds fixed (ER ≤ 0.20, VR ≤ 0.90)

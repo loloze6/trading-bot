@@ -1,0 +1,28 @@
+hypothesis_id: TIMEFRAME_ESCALATION_4H
+protocol_verdict: refine
+status: pivot
+criteria_summary:
+  - criterion: "V1 primary backtest: Sharpe > 0 on both assets across hold-out windows"
+    result: FAIL
+    actual: "BTCUSDT median_sharpe=0.0, ETHUSDT median_sharpe=0.0"
+  - criterion: "Minimum trade count: ≥30 trades per walk-forward validation window"
+    result: FAIL
+    actual: "min_trade_count=0 (multiple windows with zero trades)"
+  - criterion: "Cost drag quantification: < 80%"
+    result: PASS
+    actual: "median_cost_drag_pct=27.446%"
+  - criterion: "Regime frequency: TRENDING bars / total bars > 5%"
+    result: UNTESTED
+    reason: "metric could not be parsed from per-regime bar counts"
+  - criterion: "Comparison baseline: regime frequency at 1h from run_017"
+    result: UNTESTED
+    reason: "baseline data not available in this run"
+primary_failure_mode: "Regime is uninformative at 4h timeframe. The TRENDING regime (ER≥0.5 AND VR≥1.2) at 4h does not identify a coherent market state; forward_return_mean in trending regime is near-zero or negative across multiple windows (e.g., 2024-04: +0.002071, 2024-07: -0.000387, 2024-08: -0.001306). Zero trades executed in most windows despite signal correlation=0.2145 being identical to run_017 1h baseline. Regime threshold definition (AND-gate) too restrictive at 4h bar frequency."
+config_to_failure_map: "regime_detector.rules[0] with threshold_rules AND-gate (ER≥0.5 AND VR≥1.2) combined with 4h candle timeframe produces a regime label that is uninformative at the bar timescale. The threshold values ER≥0.5 and VR≥1.2 are correct per run_017 baseline, but the binary AND-logic does not transfer to 4h regime detection. The default_regime=unknown constraint correctly blocks non-trending trades, so zero forecasts outside trending regime. But trending regime itself is not profitable at 4h."
+untested_criteria:
+  - "Regime frequency threshold (5%)"
+  - "Comparison baseline (regime frequency and correlation at 1h from run_017)"
+  - "Per-asset isolation (V2) — both assets failed simultaneously, no asymmetry"
+proposed_change_dimension: regime_definition
+hypothesis_family: keltner_mean_reversion
+altitude_justification: "Rule 4: trending regime in uninformative_regimes list at 4h; median_forecast_return_corr=0.2145 (signal has directional edge identical to run_017), yet median_gross_pnl=0.0 (no trades executed). Uninformative regime definition is the bottleneck, not signal quality or cost structure. Regime forward_return_mean in trending: 2024-04=+0.002071 (near zero), 2024-07=-0.000387 (negative), 2024-08=-0.001306 (negative), 2024-11=-0.00418001 (negative). Cost drag median=27.4% (low, not the limiting factor). Correct action: pivot to different regime definition (score-mode instead of AND-gate threshold_rules)."

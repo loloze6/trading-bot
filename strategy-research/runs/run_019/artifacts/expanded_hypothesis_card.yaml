@@ -1,0 +1,69 @@
+base_hypothesis_id: V2-PIVOT-A-THRESHOLD
+
+expanded_variants:
+  - variant_id: V2-THRESHOLD-17p5
+    label: Conservative threshold
+    description: min_abs=17.5 (16% stricter than baseline 15.0; tests necessity of full 20.0 jump)
+    parameters:
+      rsi_period: 14
+      min_abs_threshold: 17.5
+      regime_filter: TRENDING (ER ≥ 0.50 AND VR ≥ 1.20)
+      overbought_level: 70
+      oversold_level: 30
+    rationale: "Incremental threshold increase; expect 20-25% trade reduction vs baseline, cost_drag ~200-210%."
+    expected_outcome: "Trade count ≈ 60-70% of V2-CONSERVATIVE; sharpe negative or marginal; cost_drag > 150%. If positive, indicates 20.0 is too aggressive."
+
+  - variant_id: V2-THRESHOLD-20p0
+    label: Target threshold (as specified in brief)
+    description: min_abs=20.0 (33% stricter than baseline 15.0; primary hypothesis from refinement diagnosis)
+    parameters:
+      rsi_period: 14
+      min_abs_threshold: 20.0
+      regime_filter: TRENDING (ER ≥ 0.50 AND VR ≥ 1.20)
+      overbought_level: 70
+      oversold_level: 30
+    rationale: "Targets 40-50% trade reduction; cost_drag <150% while preserving gross_pnl signal (21.62 median). Net PnL becomes positive post-fees."
+    expected_outcome: "Trade count ~40-50% of V2-CONSERVATIVE; cost_drag 130-180%; sharpe ≥ 0.10 if trade count ≥ 20/window."
+
+  - variant_id: V2-THRESHOLD-22p5
+    label: Aggressive threshold
+    description: min_abs=22.5 (50% stricter than baseline 15.0; tests if even stricter improves net PnL)
+    parameters:
+      rsi_period: 14
+      min_abs_threshold: 22.5
+      regime_filter: TRENDING (ER ≥ 0.50 AND VR ≥ 1.20)
+      overbought_level: 70
+      oversold_level: 30
+    rationale: "Maximum threshold to test hypothesis that fewer, higher-conviction trades improve net PnL further. Risk: trade count drops below significance (< 20/window)."
+    expected_outcome: "Trade count ~30-35% of V2-CONSERVATIVE; lowest fee drag but potential for Sharpe invalidity. Contingency: fallback to 18.0 or 20.0 if insignificant."
+
+alternative_data_candidates: []
+note_alternative_data: "Brief constraints require RSI-only signal. Alternative data (e.g., price action, volume) cannot be introduced without violating 'keep all other transforms unchanged' constraint."
+
+reverse_hypothesis:
+  id: V2-REVERSE-LOWER-THRESHOLD
+  description: "Lower threshold (min_abs=12.0) in non-TRENDING regimes to catch mean-reversion bounces when momentum signals are weak."
+  rationale: "RSI extremes often occur at regime inflection points; high-threshold filtering may miss profitable mean-reversion trades. Reverse hypothesis: looser filter in RANGE or MEAN-REVERSION regimes."
+  testability: "Out of scope for current brief (regime filter must remain TRENDING-only). Defer to post-screening gate if V2-THRESHOLD-20p0 fails."
+
+behavioral_features:
+  - feature: "RSI at extreme (>70, <30) often signals regime pivot point, not continuation. High thresholds may filter out the exact trades where momentum reverses."
+  - feature: "Quantile-based dynamic thresholds inherently adapt to volatility. At min_abs=20.0, signal triggers only when raw_forecast is >20% of recent volatility band."
+  - feature: "Cost drag diagnosis: high trade frequency (> 100/window) on weak signals (10-20 raw_forecast) is fee hemorrhage. Threshold increase targets this tail directly."
+
+regime_specific_variants:
+  - variant_id: V2-THRESHOLD-20p0-BTC-ONLY
+    description: "Test if BTCUSDT and ETHUSDT have different RSI momentum sensitivities. Apply min_abs=20.0 to BTCUSDT only in initial screening."
+    rationale: "BTC and ETH differ in liquidity, correlation, and volatility regimes. Separate thresholds per asset could improve signal-to-noise ratio."
+    testability: "Parallel backtest BTCUSDT with 20.0, compare net_pnl and trade_count to ETH. If BTC significantly outperforms, recommend asset-specific thresholds in walk-forward."
+
+constraints_applied:
+  - "Only min_abs parameter varies across variants. RSI period, regime definition, overbought/oversold levels, and quantile-based threshold logic remain fixed."
+  - "All variants inherit TRENDING regime filter (ER ≥ 0.50 AND VR ≥ 1.20) unchanged."
+  - "Conservative variant (V2-THRESHOLD-17p5) provided as fallback if primary target (20.0) undershoots on trade count significance."
+
+testing_sequence:
+  - "Backtest all four threshold variants (17.5, 18.0, 20.0, 22.5) in parallel on same walk-forward window as V2-PIVOT-A-CONSERVATIVE."
+  - "Primary gate: cost_drag_pct < 150% AND sharpe > 0.10 AND net_pnl > 0."
+  - "If V2-THRESHOLD-22p5 fails on trade_count < 20, promote V2-THRESHOLD-20p0 or V2-THRESHOLD-18p0 to validation gate."
+  - "If all threshold variants fail: escalate to regime-filter investigation (Rule 4 diagnosis: TRENDING regime may be uninformative regardless of frequency)."

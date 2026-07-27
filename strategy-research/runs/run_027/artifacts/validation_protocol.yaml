@@ -1,0 +1,53 @@
+hypothesis_id: TIMEFRAME_ESCALATION_4H
+falsifiable_statement: "Keltner mean-reversion (ema=20, atr=20, mult=2.0, scale=-20.0) restricted to TRENDING regimes (ER≥0.5, VR≥1.2) on 4h candles produces annualized Sharpe ratio > 0 across walk-forward windows on BTCUSDT and ETHUSDT."
+null_expectation: "Sharpe ≤ 0 (cost drag dominates; no excess return)"
+required_evidence:
+  - "V1 primary backtest: Sharpe > 0 on both assets across hold-out windows (2024-07-01 to 2025-12-31)"
+  - "V2 per-asset isolation: Sharpe > 0 for at least one asset (BTCUSDT or ETHUSDT)"
+  - "Minimum trade count: ≥30 trades per walk-forward validation window (regime spacing verification)"
+  - "Cost drag quantification: absolute fee cost as % of per-trade PnL; must be < 80%"
+  - "Regime frequency: TRENDING bars / total bars at 4h timeframe; must exceed 5%"
+  - "Comparison baseline: regime frequency and signal correlation at 1h (from run_017) for transfer validation"
+
+bias_risks:
+  - "Look-ahead bias: Ensure ER/VR computed from rolling historical buffers only; no future bars in regime detection"
+  - "Data leakage: 4h candles must be correctly constructed from tick data without forward-filled prices or fills"
+  - "Overfitting: Walk-forward windows must be non-overlapping or appropriately spaced; no parameter tuning between windows"
+  - "Survivorship bias: BTCUSDT/ETHUSDT selected as test assets; no selective inclusion of additional assets post-hoc"
+  - "Cost model mismatch: Backtest must reflect actual Binance margin fees (currently config.json fees); if real fees differ, validation fails"
+
+failure_modes:
+  - "Sharpe ≤ 0 on hold-out data: Primary hypothesis falsified; strategy produces no excess return"
+  - "Trade count < 30 per validation window: Regime spacing collapses at 4h; sample too small for stable Sharpe"
+  - "Win rate < 50%: Positive Sharpe (if any) driven by single outsized trade; edge not statistically robust"
+  - "Max drawdown > 30%: Risk-adjusted return insufficient; uncompensated tail risk"
+  - "Cost drag ≥ 80%: Transaction costs absorb all edge; timeframe escalation fails to reduce fee impact"
+  - "Per-asset Sharpe divergence (V2): BTCUSDT positive, ETHUSDT negative (or vice versa) indicates asset-specific, not generic edge"
+  - "Regime frequency < 5%: TRENDING bars insufficient at 4h; regime filter too restrictive or regime detection breaks"
+
+sample_split_design:
+  training_window: "2022-01-01 to 2023-06-30 (18 months; walk-forward rolling training)"
+  validation_window: "2023-07-01 to 2024-06-30 (12 months; walk-forward rolling validation, e.g., 1-month validation on 2-month training, rolling monthly)"
+  holdout_window: "2024-07-01 to 2025-12-31 (18 months; final validation on completely unseen data; no tuning allowed)"
+  regime_normalization: "ER and VR thresholds (ER≥0.5, VR≥1.2) locked at run_017 values; no re-calibration across train/val/holdout splits"
+
+decision_rules:
+  approve_if:
+    - "V1 median Sharpe across walk-forward windows > 0.0"
+    - "AND V1 minimum trade count per window ≥ 30"
+    - "AND V1 win_rate ≥ 50%"
+    - "AND V1 max_drawdown_pct ≤ 30%"
+    - "AND V2 at least one asset with Sharpe > 0.0"
+    - "AND regime_frequency (TRENDING bars / total) > 5%"
+    - "AND cost_drag_pct < 80%"
+  conditional_approve_if:
+    - "V1 Sharpe > 0.0 and trade_count ≥ 30, but regime_frequency < 5%: approve with condition to increase window size"
+    - "V1 Sharpe > 0.0 and win_rate ≥ 50%, but one asset (V2) has Sharpe < 0.0: conditional_approve with condition to restrict to successful asset"
+    - "V1 Sharpe > 0.0 but cost_drag ≥ 70% and < 80%: conditional_approve with condition to monitor real-world fee impact"
+  refine_if:
+    - "V1 Sharpe ≤ 0.0 but win_rate > 55%: refine signal or regime thresholds within brief constraints"
+  reject_if:
+    - "V1 Sharpe ≤ 0.0 and win_rate ≤ 50%: reversal hypothesis (cost insensitivity) confirmed"
+    - "OR cost_drag_pct ≥ 80%: timeframe escalation fails; cost impact undiminished"
+    - "OR regime_frequency < 5%: regime filter too restrictive; insufficient sample for statistical validation"
+    - "OR max_drawdown_pct > 30%: tail risk uncompensated"

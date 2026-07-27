@@ -1,0 +1,33 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER"
+
+thesis: |
+  Keltner lower-band mean-reversion signals scaled by -20.0 with ATR 2.0 in TRENDING regime
+  (ER ≥ 0.50, VR ≥ 1.20) generate positive expected returns on BTCUSDT/ETHUSDT 4h via reduced
+  cost drag and increased trade frequency relative to 1h baseline.
+
+rationale: |
+  1h campaign (runs 011-020) exhausted 4 signal families; all hit trade starvation despite
+  KeltnerBreakoutComponent achieving corr=+0.214 (run_017). Mechanism: strict TRENDING gate
+  (ER≥0.50) fires rarely at 1h. 4h bars increase TRENDING window duration per candle, raising
+  steady-state trade count. Fee cost (fixed per trade) amortizes across ~4x larger price moves
+  at 4h, reducing cost_drag by ~4x. Escalation decision formally recorded (run_020).
+
+signal_concept: |
+  KeltnerBreakoutComponent: scaling_factor=-20.0, atr_multiplier=2.0, ema_period=20.
+  Inverted signal (negative scaling) targets lower-band mean-reversion. TRENDING regime gate:
+  ER≥0.50 AND VR≥1.20, threshold_rules mode. Forecast=0.0 outside TRENDING.
+
+target_market: "BTCUSDT, ETHUSDT"
+
+timeframe: "4h"
+
+assumptions:
+  - "run_017 (1h, ATR 2.0, scaling -20.0) corr=+0.214: signal has directional edge; failure was trade starvation, not quality."
+  - "4h candles produce ~4x lower cost_drag per trade: same fee applies to ~4x larger moves."
+  - "TRENDING regime (ER≥0.50, VR≥1.20) fires more durably on 4h bars due to longer candle span."
+  - "Escalation (1h→4h) formally recorded in run_020/artifacts/escalation_request.yaml."
+
+expected_failure_modes:
+  - "TRENDING regime still too rare at 4h—ER≥0.50 remains strict threshold even on longer bars."
+  - "Signal loses edge at 4h despite 1h corr=+0.214—cross-timeframe correlation does not transfer."
+  - "Trade count adequate but cost_drag>100%—4h moves insufficient to amortize fee impact."

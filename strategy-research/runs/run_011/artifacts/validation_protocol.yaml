@@ -1,0 +1,56 @@
+hypothesis_id: H-RUN007-V1
+variant_label: Conservative_RSIPullback_MeanReversion
+
+falsifiable_statement: |
+  In BTCUSDT 1h, long-only forecast = max(0, (50 - RSI(14)) / 50) constrained
+  to mean_reversion regime (ER ≤ 0.20, VR ≤ 0.90) generates Sharpe ≥ 0.5,
+  max_drawdown < 15%, and trade_count ≥ 10 in screening backtest.
+
+null_expectation: |
+  RSI distance from 50 has no predictive power in mean-reversion regimes.
+  Returns from signal ≤ buy-and-hold returns in same regime periods.
+
+required_evidence:
+  - Screening backtest (2000 candles): Sharpe ≥ 0.5
+  - Max drawdown < 15%
+  - Trade count ≥ 10 (minimum statistical sample)
+  - Mean-reversion regime frequency ≥ 0.15 (validates frequency assumption)
+  - ER/VR computation verified to use only historical bars (no lookahead)
+
+bias_risks:
+  - Look-ahead: ER/VR must use bars [t-window:t] only; verify historical-only computation in code.
+  - Overfitting: Regime thresholds (ER ≤ 0.20, VR ≤ 0.90) may be data-snooped; walk-forward validation mandatory.
+  - Tautology: RSI is intrinsically mean-reverting; signal may reflect RSI oscillation properties rather than market alpha.
+  - Regime lag: ER/VR classification lags price transitions; signal fires after reversion opportunity closes.
+  - Survivorship: BTCUSDT continuously traded; minimal risk here.
+
+failure_modes:
+  - Regime detector lag erodes edge below commission cost (~0.1% per round-trip).
+  - RSI < 50 spuriously predicts returns (edge is artifact of RSI mean-reversion property).
+  - Mean-reversion regime occurs <15% of time; insufficient sample for statistical power.
+  - Rebalance frequency (per candle) exceeds edge magnitude; net loss after costs.
+  - Walk-forward Sharpe degrades >30% vs. screening due to parameter drift.
+  - RSI(14) period suboptimal in out-of-sample window; fixed length reduces generalizability.
+
+sample_split_design:
+  screening:
+    duration: 2000 candles total
+    initialization: Bars 1–500 (compute ER/VR baseline only, no signal generation)
+    validation: Bars 501–2000 (generate forecasts, measure metrics)
+  
+  walk_forward:
+    window_size: 500 bars
+    retraining: Regime params updated every 500-bar cycle
+    validation: Next 500 bars (disjoint, no overlap)
+    if_screening_passes: Apply only if screening Sharpe ≥ 0.5 and regime_frequency ≥ 0.15
+  
+  out_of_sample:
+    reserved_data: 1000 candles beyond screening window
+    constraint: No retraining; freeze regime parameters from walk-forward
+
+decision_rules:
+  - sharpe (bars 501–2000): ≥ 0.5
+  - max_drawdown_pct: < 15%
+  - trade_count: ≥ 10
+  - regime_frequency (mean_reversion_bars / total_bars in screening): ≥ 0.15
+  - All four criteria must pass to advance to walk-forward validation.

@@ -1,0 +1,10 @@
+hypothesis_id: "RUN017_REPLICATION_REFINE_01"
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+research_question: "Does KeltnerBreakout edge reproduce with relaxed regime threshold (ER >= 0.35) to achieve >100 cumulative trades and Sharpe >= 0.5?"
+signal_concept: "KeltnerBreakoutComponent: ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0 (unchanged from RUN017)."
+regime_filter: "TRENDING, threshold_rules. ER >= 0.35 (lowered from 0.50), VR >= 1.20 (unchanged). Increases regime exposure from ~25% to ~40-45% of bars, targeting >100 cumulative trades across walk-forward windows."
+constraints:
+  - "KeltnerBreakout component parameters must remain exact (ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0)."
+  - "Timeframe: 1h. Assets: BTCUSDT, ETHUSDT."
+change_from_previous: "Lowered Efficiency Ratio threshold from 0.50 to 0.35; VR threshold unchanged at 1.20. Rationale: Diagnostic run fired trending regime in only 25% of windows, producing zero trades in 25% of ETHUSDT windows and insufficient binomial power (min_trade_count < 20). Proposed change increases regime availability to ~40% without altering signal logic. ER=0.35 is still conservative (top 35% of efficiency bands) and avoids mean-reversion regime bleed."

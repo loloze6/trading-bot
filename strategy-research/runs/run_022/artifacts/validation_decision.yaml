@@ -1,0 +1,14 @@
+hypothesis_id: V3-ESCALATE-4H-KELTNER-PIVOT-RSI
+status: conditional_approve
+rationale: |
+  Hypothesis is falsifiable, variants partition hypothesis space cleanly, and all constraints
+  are preserved within existing infrastructure. Five variants span signal sensitivity (V2),
+  behavioral gating (V3), direction reversal (V4), and component substitution (V5). Success
+  criteria are measurable (Sharpe, correlation, trade count, drawdown). No fatal flaws
+  identified. Three specific conditions must be honored during backtest_specification and
+  screening_backtest execution to eliminate look-ahead bias and regime leakage.
+blocking_issues: []
+conditions:
+  - "Walk-forward window boundaries must not truncate TRENDING regime periods; verify regime continuity at each split before execution"
+  - "MA confirmation in V3 must be strictly contemporaneous: SMA(20) computed using only bars ≤ current bar index (no forward price data)"
+  - "Multiple-comparison correction required: if >1 variant passes screening (Sharpe ≥ 0.3), apply Bonferroni adjustment with effective threshold Sharpe ≥ 0.36"

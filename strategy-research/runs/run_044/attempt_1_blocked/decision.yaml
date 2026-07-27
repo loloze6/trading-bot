@@ -1,0 +1,10 @@
+stage: "backtest_specification"
+status: "component_gap"
+hypothesis_id: "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION"
+variant_id: "V1"
+run_id: "run_044"
+rationale: "Hypothesis requires FundingRateMeanReversionComponent to read funding rate data and detect 8-hour UTC settlement boundaries, which is not present in STRATEGY_CONFIG_REFERENCE.md."
+blocking_issues:
+  - kind: "signal_component"
+    name: "FundingRateMeanReversionComponent"
+    description: "Reads funding rate data, detects 8h UTC settlement boundaries (hour % 8 == 0), emits forecast = -sign(funding_rate) × scaling_factor."

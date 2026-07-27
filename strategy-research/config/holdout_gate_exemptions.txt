@@ -1,0 +1,189 @@
+# holdout_gate_exemptions.txt - audited exemptions for holdout_date_gate.sh
+#
+# FORMAT:  <repo-relative-path><TAB><max allowed holdout-date lines>
+#          '#' comments and blank lines ignored.
+#
+# WHAT AN ENTRY MEANS
+#   "This file contains N lines carrying a date inside the sealed window
+#   2026-01-01..2026-06-30, a human has looked at them, and they are PROSE, PLANS,
+#   CONFIG or CODE -- not market data." The count is part of the exemption: a listed
+#   file that gains an N+1'th holdout-date line is BLOCKED again, so the exemption is
+#   pinned to audited content rather than to a filename. Unlisted file => blocked.
+#
+# WHY THESE EXIST (audited 2026-07-26, dispatch W5)
+#   Every entry below was verified to be one of:
+#     a) Pre-seal research plans under strategy-research/runs/** that NAME the window
+#        they intend to reserve ("holdout: 2026-03-01 to 2026-06-16", walk-forward fold
+#        boundaries, freeze dates). These predate or accompany the seal itself; naming a
+#        window is the opposite of reading it.
+#     b) Policy, docs, briefs, KB and session reports that cite the boundary in order to
+#        enforce or explain it -- including campaign_data_policy.yaml, which necessarily
+#        contains the literal holdout_range it defines.
+#     c) Code and tests whose fixtures/constants reference the boundary, including
+#        holdout_date_gate.sh and its own test, which cannot do their job without
+#        containing the dates they detect.
+#   NOT ONE is a data file: the audit confirmed 0 .csv/.ndjson/.tsv/.parquet files in
+#   the residual, across 7,770 text files examined. The two run directories that DID
+#   carry holdout bars were quarantined instead of exempted
+#   (campaign_data_policy.yaml:holdout_contaminated_runs).
+#
+# HOW TO ADD AN ENTRY -- do not do this reflexively
+#   Regenerate candidates with:
+#     sh strategy-research/tools/holdout_date_gate.sh --report-residual
+#   then, for each new path, READ the matching lines and confirm they are not market
+#   data before pasting the path/count. If a file turns out to carry holdout bars, the
+#   answer is to quarantine or exclude it, never to register it here.
+
+.gitignore	3
+strategy-research/NEXT_SESSION.md	1
+strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md	13
+strategy-research/RUNBOOK.md	1
+strategy-research/SESSION_LOG.md	22
+strategy-research/briefs/FUNDING_MR_DAILY_RETEST.md	2
+strategy-research/briefs/H-041-C-v2.md	2
+strategy-research/briefs/research_brief_P4_ts_trend.md	1
+strategy-research/briefs/research_brief_P4_ts_trend_draft_superseded.md	3
+strategy-research/campaign_knowledge_base.yaml	1
+strategy-research/campaign_state.yaml	1
+strategy-research/config/campaign_baseline_runs.yaml	2
+strategy-research/config/campaign_data_policy.yaml	17
+strategy-research/config/holdout_gate_exemptions.txt	2
+strategy-research/docs/STEP_05_FINDINGS.md	1
+strategy-research/docs/design/K4_routing_registration_design_20260712.md	4
+strategy-research/docs/p1b_fetch_manifest.md	6
+strategy-research/docs/p1b_fetch_manifest_CORRECTION_NOTICE.md	2
+strategy-research/docs/plan/07_data_extension_holdout_retrofit.md	1
+strategy-research/docs/plan/NEXT_RUN_CHECKLIST.md	1
+strategy-research/docs/session_reports/20260719_close.md	1
+strategy-research/docs/session_reports/20260720_perp_calibration.md	1
+strategy-research/docs/session_reports/20260720_perp_calibration_audit.md	1
+strategy-research/docs/session_reports/20260721_breadth_download_recon.md	2
+strategy-research/docs/session_reports/20260722_kraken_ingest_audit.md	1
+strategy-research/docs/session_reports/20260722_xs_momentum_universe.md	2
+strategy-research/docs/session_reports/20260723_p4_density_probe.md	1
+strategy-research/docs/session_reports/20260724_funding_cashflow_model_design.md	1
+strategy-research/docs/session_reports/20260724_p4_density_probe_archive.md	6
+strategy-research/docs/session_reports/20260725_funding_carry_magnitude.md	2
+strategy-research/docs/session_reports/20260725_funding_recost_feasibility.md	8
+strategy-research/docs/session_reports/20260726_2026_coverage_scope.md	17
+strategy-research/docs/session_reports/20260726_recorder_build_spec.md	3
+strategy-research/protocols/baseline_v2.json	2
+strategy-research/protocols/funding_mr_daily_retest_v1.json	2
+strategy-research/protocols/h041c_v2_backext.json	2
+strategy-research/protocols/run_048_generated.json	1
+strategy-research/protocols/run_050_generated.json	1
+strategy-research/protocols/run_053_generated.json	2
+strategy-research/protocols/ts_trend_daily_v1.json	2
+strategy-research/recorder/record_kraken_ws.py	1
+strategy-research/runs/run_002/pipeline_state.yaml	1
+strategy-research/runs/run_003/pipeline_state.yaml	8
+strategy-research/runs/run_004/pipeline_state.yaml	4
+strategy-research/runs/run_005/artifacts/validation_protocol.yaml	4
+strategy-research/runs/run_005/pipeline_state.yaml	5
+strategy-research/runs/run_006/artifacts/innovation_notes.yaml	1
+strategy-research/runs/run_006/artifacts/validation_decision.yaml	1
+strategy-research/runs/run_006/artifacts/validation_protocol.yaml	8
+strategy-research/runs/run_006/pipeline_state.yaml	4
+strategy-research/runs/run_007/pipeline_state.yaml	4
+strategy-research/runs/run_008/artifacts/innovation_notes.yaml	1
+strategy-research/runs/run_008/pipeline_state.yaml	4
+strategy-research/runs/run_009/pipeline_state.yaml	5
+strategy-research/runs/run_010/artifacts/validation_protocol.yaml	1
+strategy-research/runs/run_010/pipeline_state.yaml	5
+strategy-research/runs/run_011/pipeline_state.yaml	6
+strategy-research/runs/run_012/pipeline_state.yaml	6
+strategy-research/runs/run_013/pipeline_state.yaml	6
+strategy-research/runs/run_014/pipeline_state.yaml	6
+strategy-research/runs/run_015/pipeline_state.yaml	6
+strategy-research/runs/run_016/pipeline_state.yaml	6
+strategy-research/runs/run_017/artifacts/findings_carryover.yaml	2
+strategy-research/runs/run_017/pipeline_state.yaml	6
+strategy-research/runs/run_018/artifacts/findings_carryover.yaml	2
+strategy-research/runs/run_018/artifacts/validation_decision.yaml	1
+strategy-research/runs/run_018/pipeline_state.yaml	6
+strategy-research/runs/run_019/pipeline_state.yaml	6
+strategy-research/runs/run_020/pipeline_state.yaml	6
+strategy-research/runs/run_021/pipeline_state.yaml	6
+strategy-research/runs/run_022/artifacts/campaign_review.yaml	1
+strategy-research/runs/run_022/pipeline_state.yaml	7
+strategy-research/runs/run_023/artifacts/campaign_review.yaml	1
+strategy-research/runs/run_023/artifacts/innovation_notes.yaml	1
+strategy-research/runs/run_023/pipeline_state.yaml	7
+strategy-research/runs/run_024/artifacts/campaign_review.yaml	1
+strategy-research/runs/run_024/pipeline_state.yaml	7
+strategy-research/runs/run_025/artifacts/protocol_result.yaml	1
+strategy-research/runs/run_025/artifacts/validation_decision.yaml	1
+strategy-research/runs/run_025/artifacts/validation_protocol.yaml	2
+strategy-research/runs/run_025/pipeline_state.yaml	7
+strategy-research/runs/run_025/protocol_summary.json	1
+strategy-research/runs/run_026/pipeline_state.yaml	7
+strategy-research/runs/run_027/pipeline_state.yaml	7
+strategy-research/runs/run_028/pipeline_state.yaml	7
+strategy-research/runs/run_029/pipeline_state.yaml	7
+strategy-research/runs/run_030/pipeline_state.yaml	7
+strategy-research/runs/run_031/pipeline_state.yaml	7
+strategy-research/runs/run_032/artifacts/campaign_review.yaml	1
+strategy-research/runs/run_032/pipeline_state.yaml	7
+strategy-research/runs/run_033/pipeline_state.yaml	7
+strategy-research/runs/run_034/pipeline_state.yaml	7
+strategy-research/runs/run_035/pipeline_state.yaml	7
+strategy-research/runs/run_036/pipeline_state.yaml	1
+strategy-research/runs/run_037/pipeline_state.yaml	3
+strategy-research/runs/run_038/pipeline_state.yaml	2
+strategy-research/runs/run_039/pipeline_state.yaml	7
+strategy-research/runs/run_042/artifacts/feed_alignment_check.yaml	1
+strategy-research/runs/run_043/artifacts/validation_decision.yaml	1
+strategy-research/runs/run_043/artifacts/validation_protocol.yaml	2
+strategy-research/runs/run_043/attempt_1_blocked/validation_decision.yaml	1
+strategy-research/runs/run_043/attempt_1_blocked/validation_protocol.yaml	1
+strategy-research/runs/run_044/artifacts/validation_protocol.yaml	2
+strategy-research/runs/run_044/attempt_1_blocked/validation_protocol.yaml	1
+strategy-research/runs/run_047/artifacts/hypothesis_card.yaml	1
+strategy-research/runs/run_047/artifacts/research_brief.yaml	1
+strategy-research/runs/run_047/artifacts/validation_protocol.yaml	1
+strategy-research/runs/run_048/artifacts/proposed_brief.yaml	1
+strategy-research/runs/run_048/artifacts/research_brief.yaml	2
+strategy-research/runs/run_048/artifacts/validation_protocol.yaml	1
+strategy-research/runs/run_049/artifacts/research_brief.yaml	1
+strategy-research/runs/run_050/artifacts/backtest_spec.yaml	1
+strategy-research/runs/run_050/artifacts/proposed_brief.yaml	2
+strategy-research/runs/run_050/artifacts/research_brief.yaml	1
+strategy-research/runs/run_050/artifacts/validation_decision.yaml	1
+strategy-research/runs/run_050/artifacts/validation_protocol.yaml	1
+strategy-research/runs/run_052/artifacts/research_brief.yaml	1
+strategy-research/runs/run_053/artifacts/pre_registration.yaml	2
+strategy-research/runs/run_053/artifacts/research_brief.yaml	2
+strategy-research/runs/run_053/artifacts/validation_protocol.yaml	1
+strategy-research/runs/run_054/artifacts/validation_decision.yaml	1
+strategy-research/runs/run_054/artifacts/validation_protocol.yaml	4
+strategy-research/runs/run_057/artifacts/pre_registration.yaml	1
+strategy-research/runs/run_057/artifacts/validation_protocol.yaml	1
+strategy-research/runs/run_057/artifacts/verdict_interpretation.yaml	1
+strategy-research/runs/run_058/artifacts/hypothesis_card.yaml	2
+strategy-research/runs/run_058/artifacts/innovation_notes.yaml	1
+strategy-research/runs/run_058/artifacts/research_brief.yaml	3
+strategy-research/runs/run_058/artifacts/validation_protocol.yaml	3
+strategy-research/runs/run_059/artifacts/protocol_result.yaml	1
+strategy-research/runs/run_059/artifacts/research_brief.yaml	3
+strategy-research/runs/run_059/artifacts/validation_decision.yaml	1
+strategy-research/runs/run_059/artifacts/validation_protocol.yaml	3
+strategy-research/runs/run_059/artifacts/verdict_interpretation.yaml	1
+strategy-research/runs/run_059/protocol_summary.json	1
+strategy-research/runs/run_059/superseded_20260718_tz_bug/protocol_result.yaml	1
+strategy-research/runs/run_059/superseded_20260718_tz_bug/protocol_summary.json	1
+strategy-research/skills/quant-fundamentals/SKILL.md	1
+strategy-research/skills/verdict-interpreter/SKILL.md	1
+strategy-research/tests/fixtures/run_047_broken_hypothesis_card.yaml	1
+strategy-research/tests/test_holdout_date_gate.py	9
+strategy-research/tests/test_improvement06_acceptance.py	6
+strategy-research/tools/holdout_date_gate.sh	10
+strategy-research/tools/hooks/pre-commit	1
+strategy-research/tools/measure_funding_carry.py	1
+strategy-research/tools/panel_backtester.py	1
+strategy-research/workflow/run_phase1_research.py	1
+tasks/lessons.md	4
+trading-bot/core/launcher.py	1
+trading-bot/data/fetchers/base_fetcher.py	1
+trading-bot/local_data/README.md	5
+trading-bot/tests/test_fetch_gap_guard.py	18
+trading-bot/tests/test_kraken_archive_ingest.py	1

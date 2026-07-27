@@ -1,0 +1,41 @@
+expansion_stage: innovation_expansion
+run_id: run_013
+hypothesis_id: H-RUN007
+
+expansion_decision: NO_EXPANSION
+
+rationale: >
+  Research brief constraint field specifies "one variant only — no divergence,
+  no behavioral features, no cross-timeframe". Per persona rules, expansion is
+  forbidden when brief constrains variant count. V1 is the base hypothesis with
+  configuration delta (ER 0.20 → 0.25) applied.
+
+what_v1_represents: >
+  Regime threshold relaxation. Prior run (H-RUN007) failed at trade_count
+  14–21 due to ER ≤ 0.20 being too restrictive. V1 tests whether relaxing
+  to ER ≤ 0.25 (still below trending threshold) increases sample size and
+  Sharpe ratio. Signal mechanism unchanged. No code changes required.
+
+configuration_summary:
+  component: RSIPullbackComponent
+  regime_filter:
+    old: ER ≤ 0.20 AND VR ≤ 0.90
+    new: ER ≤ 0.25 AND VR ≤ 0.90
+  change_rationale: >
+    Hypothesis revision: root cause of prior failure was sample starvation
+    (regime too restrictive), not signal mechanism. Relaxing ER to 0.25
+    expands mean_reversion regime without contaminating with trending
+    conditions (trending starts at ER ≥ 0.25).
+
+testability:
+  variant_count: 1
+  constraint_enforcement: hard
+  rationale: >
+    Single variant allows focused validation of the regime-threshold
+    hypothesis. If trade_count increases toward ≥30 and Sharpe improves,
+    relaxation was correct. If metrics degrade, signal fundamentally lacks
+    edge or ER boundary misclassifies regimes.
+
+no_alternatives_because: >
+  Brief explicitly forbids divergence, behavioral features, cross-timeframe,
+  and multiple variants. Expansion would violate constraints.

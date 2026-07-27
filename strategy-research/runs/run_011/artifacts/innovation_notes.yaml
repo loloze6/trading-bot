@@ -1,0 +1,36 @@
+run_id: run_011
+base_hypothesis_id: H-RUN007
+expansion_applied: false
+
+constraint_source: research_brief.yaml constraints field
+constraint_text: "one variant only — no divergence, no behavioral features, no cross-timeframe"
+
+constraint_compliance_matrix:
+  one_variant_only: ✓ honored
+  no_divergence: ✓ honored (V1 uses RSI distance only)
+  no_behavioral_features: ✓ honored (no order flow, positioning overlays)
+  no_cross_timeframe: ✓ honored (1h timeframe only)
+  use_only_rsi_pullback_component: ✓ honored
+  existing_regime_components_only: ✓ honored (ER, VR existing)
+  no_new_code_required: ✓ honored
+
+decision_rationale: |
+  Protocol directive: when research_brief.yaml specifies "one variant only",
+  do NOT generate multiple variants. Pass base hypothesis through as single
+  conservative variant (V1) matching signal_concept exactly. Expansion phase
+  is bypassed; constraint takes precedence over novelty generation.
+
+alternative_approaches_not_explored_due_to_brief_constraint:
+  - RSI divergence (bearish/bullish): explicitly forbidden in brief
+  - Behavioral positioning proxy: explicitly forbidden (no behavioral features)
+  - Cross-timeframe confirmation (4h RSI): explicitly forbidden (no cross-timeframe)
+  - Reverse hypothesis (overbought reversion): not applicable; brief specifies pullback only
+  - Multi-indicator fusion: explicitly forbidden (single component mandate)
+  
+ready_for_next_stage: true
+next_stage: validation_gate
+validation_path: screening_backtest (2000 candles; Sharpe > 0.5, max_dd < 15%, trades ≥ 10)
+
+implementation_notes: |
+  V1 reuses RSIPullbackComponent and existing ER/VR regime detectors.
+  No infrastructure changes. Directly implementable in current strategy framework.

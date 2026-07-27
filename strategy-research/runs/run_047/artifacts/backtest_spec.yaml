@@ -1,0 +1,36 @@
+hypothesis_id: "H-041-A"
+run_id: "run_047"
+status: "spec_ready"
+config:
+  aux_feeds:
+    - "funding_rate"
+  regime_detector:
+    mode: "threshold_rules"
+    components: []
+    rules: []
+    default_regime: "unknown"
+  strategies:
+    warmup: 10
+    regimes:
+      unknown:
+        components:
+          - id: "funding_rate_mean_reversion"
+            class: "strategies.strategy_components.FundingRateMeanReversionComponent"
+            params:
+              threshold: 0.0002
+              scaling_factor: 10.0
+            weight: 1.0
+            transforms:
+              - op: "identity"
+      trending: null
+      mean_reversion: null
+      chop: null
+config_rationale:
+  - "Hypothesis signal 'FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0)' maps directly to component id='funding_rate_mean_reversion' with identical parameter values."
+  - "Ungating per A2.3: regime_detector={rules: [], components: []}, implementing the canonical empty-rules pattern verified empirically in test_ungated_config_pattern.py. Signal placed under 'unknown' regime; all other regimes set to null. This pattern avoids the one-bar warmup-bypass defect that affected run_043 and run_042's earlier designs."
+  - "Critical correction: hypothesis card stated default_regime='mean_reversion', but backtest_specification applies A2.3 canonical pattern with default_regime='unknown' — this is the ONLY choice that respects configured warmup on all bars including the first ready bar, per empirically-verified post-A2.3 fix."
+  - "Mechanism 'structural (settlement mechanics, regime-independent)' implemented as fully-ungated: FundingRateMeanReversionComponent fires at every UTC 8h settlement bar (hour%8==0) regardless of market regime, outputting −sign(funding_rate)×scaling_factor = ±10.0 at settlement, 0 elsewhere."
+  - "Evidence type 'funding_open_interest' provided via aux_feeds: ['funding_rate'], which merges historical funding rate column into OHLCV DataFrame before component execution per STRATEGY_CONFIG_REFERENCE.md §4a."
+  - "Raw component output ±10.0 is already within forecast range [-20, +20]; transforms=[{op: identity}] explicitly preserves raw output without additional normalization, confirming intent per checklist guidance."
+  - "warmup=10 ensures minimum history accumulation (component Req=2 bars minimum, first forecast ~bar 12) to detect early episodes; consistent with validation protocol expectation of 3-6 episodes per 60-bar walk-forward window."
+component_gap: null

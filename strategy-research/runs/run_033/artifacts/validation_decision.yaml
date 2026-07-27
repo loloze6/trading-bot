@@ -1,0 +1,10 @@
+hypothesis_id: "RUN017_V1_EXACT_REPLICATION"
+status: "conditional_approve"
+rationale: "Replication hypothesis is falsifiable and architecturally sound. However, claim is that edge reproduces on *current* market (not just historical fidelity). Regime detection must be audited for lookahead before execution. Symbol selection (2 only) requires justification to rule out survivor/correlation bias."
+blocking_issues: []
+conditions:
+  - "Code audit: ER/VR regime calculation must be confirmed lookahead-free (no future bars in rolling window)"
+  - "Define 'current market windows' explicitly as [start_date, end_date]; confirm data includes post-RUN017 period"
+  - "Enforce expanding walk-forward with no per-window regime re-optimization or label leakage"
+  - "Compute per-symbol Sharpe (BTCUSDT vs ETHUSDT) separately; reject if >0.3 delta (overfitting signal)"
+  - "If trade_count<50 in any WF window, report as aspirational (insufficient power); do not gate approval"

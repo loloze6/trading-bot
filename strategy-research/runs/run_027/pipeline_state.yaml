@@ -1,0 +1,101 @@
+run_id: run_027
+status: active
+current_stage: campaign_review
+pending_stage: completed_escalated
+completed_stages:
+- hypothesis_generation
+- innovation_expansion
+- validation
+- backtest_specification
+- protocol_execution
+- verdict_interpreter
+- campaign_review
+artifacts: {}
+governance:
+  max_hypothesis_variants_per_cycle: 3
+  max_refinements_after_validation: 2
+  max_reruns_after_analysis: 1
+  max_required_reads_per_stage: 3
+counters:
+  refinements_used: 0
+  reruns_used: 0
+flags:
+  holdout_reserved: false
+  validation_approved: true
+  screening_passed: false
+  walk_forward_passed: false
+last_summary: null
+audit_log:
+  hypothesis_generation_attempt_0:
+    timestamp: '2026-06-29T08:26:21.873056+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 42.16
+    cost_usd: 0.03499725
+    tokens:
+      input: 10
+      output: 4564
+      cache_read: 25185
+      cache_creation: 6015
+      total: 35774
+  innovation_expansion_attempt_0:
+    timestamp: '2026-06-29T08:27:57.364113+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 95.45
+    cost_usd: 0.058406999999999994
+    tokens:
+      input: 10
+      output: 8863
+      cache_read: 25185
+      cache_creation: 6866
+      total: 40924
+  validation_attempt_0:
+    timestamp: '2026-06-29T08:29:03.041071+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 65.64
+    cost_usd: 0.04259775
+    tokens:
+      input: 10
+      output: 5797
+      cache_read: 25185
+      cache_creation: 6653
+      total: 37645
+  backtest_specification_attempt_0:
+    timestamp: '2026-06-29T08:31:42.545029+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 159.44
+    cost_usd: 0.100098
+    tokens:
+      input: 10
+      output: 14196
+      cache_read: 25185
+      cache_creation: 13542
+      total: 52933
+  verdict_interpreter_attempt_0:
+    timestamp: '2026-06-29T09:05:18.468191+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 99.61
+    cost_usd: 0.0735652
+    tokens:
+      input: 10
+      output: 9988
+      cache_read: 47882
+      cache_creation: 0
+      total: 57880
+  campaign_review_attempt_0:
+    timestamp: '2026-06-29T09:06:35.776048+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 77.21
+    cost_usd: 0.05231075
+    tokens:
+      input: 10
+      output: 6749
+      cache_read: 25185
+      cache_creation: 8861
+      total: 40805
+updated_at: '2026-06-29T09:11:37.269281+00:00'
+last_error: '[Errno 22] Invalid argument: ''protocols\\escalation_solusdt_Backtest
+  RSI momentum, Keltner bands, and other signal components on 4h timeframe for BTCUSDT,
+  ETHUSDT. Expected outcome: regime windows expand 4-5x in bar count per fold; median_trade_count
+  should reach 20+ per window. Cost drag per trade should drop 4-5x due to lower fee
+  impact on larger 4h moves. Same regime detection rules (ER≥0.50, VR≥1.20) and signal
+  families reusable; validate edge only after sample size restored..json'''

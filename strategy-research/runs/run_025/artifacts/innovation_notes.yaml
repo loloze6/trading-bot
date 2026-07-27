@@ -1,0 +1,94 @@
+expansion_id: run_025_expansion
+base_hypothesis_id: KELTNER_SCORE_MODE_REGIME
+expansion_stage: innovation_expansion
+refinement_attempt: 0
+
+expansion_rationale: |
+  Brief constraints permit variant expansion (no "single variant only" restriction).
+  Base hypothesis focuses on regime architecture pivot (score_mode) and confidence scaling.
+  Six variants explore three independent dimensions:
+  (1) Threshold parameterization (V1 fixed, V2 adaptive, V6 volatility-linked)
+  (2) Confidence scaling formula (V1/V2/V4/V5/V6 symmetric distance, V3 inverse)
+  (3) Regime composition method (V1/V2/V3/V5 arithmetic, V4 geometric, V6 vol-adaptive)
+  
+  Variants preserve signal integrity (Keltner unchanged) and regime architecture (score_mode, ER/VR only).
+  
+  Variant density (6 total, 5 explorations) balances hypothesis search space against backtest runtime.
+
+variant_mapping: |
+  V1_baseline_score_mode (conservative)
+    Null variant matching brief specification exactly. Threshold (70, 40), 
+    symmetric distance confidence, arithmetic mean ER/VR.
+  
+  V2_adaptive_thresholds (exploration)
+    Addresses: "Score distributions are asset-dependent; single thresholds suboptimal."
+    Per-asset threshold calibration. Hypothesis: BTCUSDT and ETHUSDT regime boundaries differ.
+  
+  V3_inverse_confidence (exploration)
+    Addresses: "Mean_reversion regime non-predictive; chop dominates."
+    Tests reverse: upweight low-confidence bars. Hypothesis: Keltner fires better in ambiguity.
+  
+  V4_geometric_regime_composition (exploration)
+    Addresses: "Score_mode produces regime noise; threshold crossing causes flipping."
+    Multiplicative indicator composition requires BOTH elevated for conviction. 
+    Hypothesis: Regime clarity = AND logic (both ER and VR aligned), not additive.
+  
+  V5_confidence_floor (conservative)
+    Addresses: "Cost_drag escalates faster than sizing can mitigate."
+    Implements practical minimum position size (30%) to avoid nano-orders. 
+    Hypothesis: Marginal cost reduction from eliminating sub-30% positions outweighs signal dilution.
+  
+  V6_volatility_adaptive_thresholds (exploration)
+    Addresses: "Thresholds still arbitrary; regime interpretation context-dependent."
+    Dynamic threshold adjustment via volatility percentile. 
+    Hypothesis: Regime boundaries should vary with market structure volatility.
+
+preserved_constraints:
+  timeframe: "1h exclusively"
+  signal_component: "Keltner (period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=−20.0)"
+  regime_architecture: "score_mode (ER/VR percentile-based, 0–100 scale)"
+  active_regimes: "All three (trending, chop, mean_reversion); no zero-weight fallback"
+  position_sizing: "forecast × regime_confidence; no fixed allocations"
+  config_scope: "Single-dimensional (regime_detector.mode + mode_params only)"
+
+validation_gate_inputs: |
+  Expanded variants require validation_gate to:
+  (1) Check variant count (6) against backtest resource constraints.
+  (2) Define pass/fail criteria per variant (Sharpe>0.2? Trade frequency 30–100/month? forecast_return_corr>0.15?).
+  (3) Assign screening_backtest window per variant (2–3 week holdout per asset).
+  (4) Confirm all variants fit within single config change (regime_detector.mode + params only; 
+      no new components, no signal modification).
+
+next_stage_handoff_data:
+  - artifact: expanded_hypothesis_card.yaml
+    purpose: "Variant specifications for screening_backtest stage."
+    consumed_by: validation_gate, screening_backtest
+  
+  - artifact: innovation_notes.yaml
+    purpose: "Expansion rationale, preserved constraints, validation criteria."
+    consumed_by: validation_gate
+  
+  - implied_config_template: |
+      regime_detector:
+        mode: score_mode
+        smooth_period: 5  [ER smoothing]
+        vr_window: 100    [VR lookback]
+        mode_params:
+          scoring_method: [percentile_arithmetic_mean | percentile_geometric_mean]
+          trending_threshold: [70 | 65 (BTCUSDT) | 75 (ETHUSDT) | dynamic]
+          chop_floor: [40 | 40 (BTCUSDT) | 45 (ETHUSDT) | dynamic]
+          confidence_formula: [symmetric_distance | inverse_distance | normalized_score]
+          confidence_floor: [0.0 | 0.3]
+          volatility_adaptation: [false | true]
+
+quality_checklist:
+  - variant_testability: "✓ All 6 variants remain within score_mode regime architecture; no escalation to altitude 3 (new component)."
+  - preserved_signal: "✓ Keltner component untouched across all variants; forecast formula identical."
+  - interpretability: "✓ Each variant has clear mechanical rationale (threshold variation, confidence inversion, composition method, floor, vol-adaptation)."
+  - failure_mode_coverage: "✓ V2 addresses asset-dependency; V3 tests reverse; V4 addresses regime noise; V5 addresses cost drag; V6 addresses threshold arbitrariness."
+  - conservative_variant: "✓ V1 (baseline) and V5 (confidence floor) are conservative; 4 explorations push assumptions."
+  - variant_count: "✓ 6 variants fit within single backtest campaign (typical 10–15 variants per run; this is lean)."
+  - config_scope: "✓ All variants single-dimensional (regime_detector.mode_params only; no infrastructure change)."
+
+---
+token_compliance: "Rationale per variant <100 words. No conversational filler. Mathematical descriptions only."

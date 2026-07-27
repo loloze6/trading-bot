@@ -1,0 +1,36 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER"
+what_failed:
+  - "sharpe >= 0.3: median_sharpe=-6.791 (BTCUSDT), -5.045 (ETHUSDT)"
+  - "regime_frequency >= 0.2: actual=0.0 (both symbols)"
+
+diagnostic_rule_applied: |
+  Rule 2: Signal has no directional edge. Condition: abs(median_forecast_return_corr=0.0136) < 0.03 AND pvalue > 0.10. Signal produces near-zero correlation with forward returns; edge that existed at 1h baseline did not transfer to 4h.
+
+diagnostic_snapshot:
+  forecast_return_corr: 0.0136
+  forecast_return_corr_pvalue: 0.76697
+  cost_drag_pct: 413.0538
+  gross_pnl: 9.3776
+  median_net_pnl_window: "-185 to -298"
+  uninformative_regimes:
+    - "trending"
+  win_rate_vs_sharpe: "win_rate PASS + sharpe FAIL"
+
+what_not_to_try:
+  - |
+    "Do not refine Keltner component parameters (ema_period, atr_multiplier, scaling_factor)
+    within 4h. The 1h correlation of +0.214 was achieved with these exact parameters.
+    At 4h, correlation dropped to +0.0136 despite trade volume recovery (358+ vs starvation).
+    The failure is timeframe-level (1h microstructure vs 4h structure), not parameter-tunable."
+  - |
+    "Do not blame cost drag (413%) as the primary failure mode. While cost_drag is elevated,
+    the root cause is zero predictive signal (corr≈0), not position sizing. Reducing position
+    size will lower cost drag percentage but will not recover alpha that is absent. The signal
+    must be replaced, not resized."
+  - |
+    "Do not add new regime thresholds or score-mode regimes without testing simpler alternatives
+    first. TRENDING regime (ER≥0.50, VR≥1.20) fired 86% of bars in most windows; regime frequency
+    is adequate for sample size. If regime_frequency metric reports 0.0, assume protocol computation
+    error and proceed with signal change at current regime."
+
+next_altitude: "pivot"

@@ -1,0 +1,121 @@
+run_id: run_053
+status: active
+current_stage: campaign_review
+pending_stage: completed_reframed
+completed_stages:
+- hypothesis_generation
+- innovation_expansion
+- validation
+- backtest_specification
+- signal_prescreen
+- verdict_interpreter
+- campaign_review
+- campaign_review
+- campaign_review
+- campaign_review
+artifacts: {}
+governance:
+  max_hypothesis_variants_per_cycle: 3
+  max_refinements_after_validation: 2
+  max_reruns_after_analysis: 1
+  max_required_reads_per_stage: 3
+counters:
+  refinements_used: 0
+  reruns_used: 0
+flags:
+  holdout_reserved: false
+  validation_approved: true
+  screening_passed: false
+  walk_forward_passed: false
+  kb_reactivation_violation: true
+last_summary: null
+audit_log:
+  hypothesis_generation_attempt_0:
+    timestamp: '2026-07-06T14:00:49.884099+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 96.09
+    cost_usd: 0.10544875000000001
+    num_turns: 1
+    tokens:
+      input: 10
+      output: 6546
+      cache_read: 0
+      cache_creation: 40203
+      total: 46759
+      weighted: 82993.8
+  innovation_expansion_attempt_0:
+    timestamp: '2026-07-06T14:03:40.218133+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 170.1
+    cost_usd: 0.11835845
+    num_turns: 1
+    tokens:
+      input: 10
+      output: 17318
+      cache_read: 13337
+      cache_creation: 15487
+      total: 46152
+      weighted: 107292.4
+  validation_attempt_0:
+    timestamp: '2026-07-06T14:06:14.490266+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 154.07
+    cost_usd: 0.10240479999999999
+    num_turns: 5
+    tokens:
+      input: 26
+      output: 14144
+      cache_read: 59943
+      cache_creation: 16490
+      total: 90603
+      weighted: 97352.8
+  backtest_specification_attempt_0:
+    timestamp: '2026-07-06T16:09:32.917371+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 155.72
+    cost_usd: 0.10075025
+    num_turns: 1
+    tokens:
+      input: 10
+      output: 9068
+      cache_read: 0
+      cache_creation: 32517
+      total: 41595
+      weighted: 85996.2
+  verdict_interpreter_attempt_0:
+    timestamp: '2026-07-06T16:17:46.678410+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 141.22
+    cost_usd: 0.11983819999999999
+    num_turns: 1
+    tokens:
+      input: 10
+      output: 13341
+      cache_read: 13337
+      cache_creation: 24978
+      total: 51666
+      weighted: 99271.2
+  campaign_review_attempt_0:
+    timestamp: '2026-07-06T16:20:27.142650+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 159.48
+    cost_usd: 0.11664370000000002
+    num_turns: 1
+    tokens:
+      input: 10
+      output: 12635
+      cache_read: 13337
+      cache_creation: 25136
+      total: 51118
+      weighted: 95938.7
+updated_at: '2026-07-07T13:27:31.204352+00:00'
+last_error: null
+kb_reactivation_violations:
+- next_research_question references H-041-A (finding 'funding_rate_mean_reversion_inconclusive'),
+  whose reactivation_condition was already consumed by run_050 (outcome=no_edge_observed).
+  A genuinely different formulation is a new hypothesis registration, not a reactivation
+  of this entry.
+- next_research_question references H-041-C (finding 'fear_greed_contrarian_inconclusive'),
+  whose reactivation_condition was already consumed by run_048 (outcome=era_conditional_instability).
+  A genuinely different formulation is a new hypothesis registration, not a reactivation
+  of this entry.

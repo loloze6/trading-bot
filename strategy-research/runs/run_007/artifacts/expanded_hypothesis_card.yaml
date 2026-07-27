@@ -1,0 +1,205 @@
+hypothesis_id: H-RUN007
+base_thesis: |
+  RSI(14) below 50 generates positive alpha in BTCUSDT 1h when the market exhibits 
+  mean-reversion regime characteristics (ER ≤ 0.20, VR ≤ 0.90).
+
+expansion_summary: |
+  8 novel variants derived from base by: (1) tuning thresholds, (2) testing slope vs. level, 
+  (3) using regime-relative positioning, (4) reversing signal direction, (5) adding behavioral 
+  confirmation, (6) testing regime transitions, (7) fractional regime intensity, and (8) falsification control.
+
+expanded_variants:
+  
+  v1_conservative_threshold_tuning:
+    name: "RSI Adaptive Threshold by Regime Intensity"
+    description: |
+      Replace fixed threshold (RSI < 50) with regime-intensity-scaled thresholds.
+      Hypothesis: oversold threshold should tighten (decrease) as regime deepens.
+    mechanism: |
+      ER_intensity = max(0, 0.20 - ER) / 0.20  [0=trending, 1=deep mean-reversion]
+      RSI_threshold = 50 - (10 * ER_intensity)  [ranges 40–50 with regime]
+      if regime = mean_reversion AND RSI < RSI_threshold:
+        forecast = (RSI_threshold - RSI) / RSI_threshold
+      else:
+        forecast = 0.0
+    rationale: |
+      Tests if stricter oversold criteria in deep mean-reversion improves precision; 
+      relaxes during weak regimes to avoid false triggers during transitions.
+    testability: "High. Single parameter (slope 10). Fits SubStrategyComponent."
+    data_required: "None (uses existing ER/VR)."
+    
+  v2_conservative_rsi_noise_filter:
+    name: "RSI + Persistence Filter"
+    description: |
+      Long only if RSI oversold depth persists across consecutive bars.
+      Hypothesis: filtered RSI signals avoid whipsaw from single-bar RSI spikes.
+    mechanism: |
+      persistence_count = count(RSI[t:t-n] < 50)  [e.g., n=3]
+      if regime = mean_reversion AND persistence_count >= 2:
+        forecast = (50 - RSI) / 50
+      else:
+        forecast = 0.0
+    rationale: |
+      RSI can spike below 50 intraday without reversion follow-through. 
+      Multi-bar persistence indicates structural oversold, not microstructure noise.
+    testability: "High. RollingBuffer supports lookback queries."
+    data_required: "None."
+    
+  v3_rsi_slope_acceleration:
+    name: "RSI Momentum (Slope) as Primary Signal"
+    description: |
+      Signal based on rate of RSI change, not absolute level.
+      Hypothesis: RSI *entering* oversold (negative slope in mean-reversion) 
+      predicts reversion better than *being* oversold.
+    mechanism: |
+      rsi_slope = RSI[t] - RSI[t-1]
+      if regime = mean_reversion AND RSI[t] < 50 AND rsi_slope < -2:
+        forecast = min(1.0, abs(rsi_slope) / 10)  [steeper slope → stronger signal]
+      else:
+        forecast = 0.0
+    rationale: |
+      Momentum-based entry avoids stale oversold signals. Captures inflection point 
+      where reversion is most likely. Inverse of trend-following logic.
+    testability: "High. Requires RSI[t-1] in buffer; standard technique."
+    data_required: "None."
+    
+  v4_rsi_regime_relative:
+    name: "RSI Position Relative to Regime Session MA"
+    description: |
+      Signal proportional to distance of RSI below its regime-session moving average, not 50.
+      Hypothesis: reversion occurs toward *regime-specific* mean RSI, not fixed 50.
+    mechanism: |
+      rsi_session_ma = mean(RSI[bars where regime=mean_reversion, last 20 bars])
+      if regime = mean_reversion:
+        forecast = max(0, (rsi_session_ma - RSI) / rsi_session_ma)
+      else:
+        forecast = 0.0
+    rationale: |
+      Mean-reversion equilibrium RSI varies with asset and regime depth. 
+      Regime-relative positioning captures local mean, not global 50 threshold.
+      Adaptive without explicit tuning.
+    testability: "Moderate. Requires regime-conditional session buffer. Doable in SubStrategyComponent."
+    data_required: "None; uses existing data."
+    
+  v5_reverse_hypothesis_rsi_high:
+    name: "RSI Overbought in Mean-Reversion (Falsification Test)"
+    description: |
+      Long when RSI > 70 in mean-reversion regime.
+      Hypothesis: opposite direction tests if regime filter alone drives returns, 
+      or if RSI signal direction matters.
+    mechanism: |
+      if regime = mean_reversion AND RSI > 70:
+        forecast = (RSI - 50) / 50
+      else:
+        forecast = 0.0
+    rationale: |
+      Control test. If base hypothesis + reverse variant both generate positive returns, 
+      regime filter (not RSI direction) drives alpha. If only base is profitable, 
+      RSI signal is legitimate.
+    testability: "High. Identical logic, reversed condition."
+    data_required: "None."
+    
+  v6_behavioral_volume_confirmation:
+    name: "RSI + Volume Profile (Behavioral Confirmation)"
+    description: |
+      Long only if RSI oversold coincides with below-average volume 
+      (indicates weak selling, not conviction).
+      Hypothesis: reversion is stronger after weak-volume oversold, 
+      suggesting liquidity-driven spike, not structural selling.
+    mechanism: |
+      vol_ma_20 = mean(volume, last 20 bars)
+      if regime = mean_reversion AND RSI < 50 AND volume < 0.8 * vol_ma_20:
+        forecast = (50 - RSI) / 50
+      else:
+        forecast = 0.0
+    rationale: |
+      Distinguishes panic selling (high volume oversold → stronger reversion) 
+      from lazy selling (low volume → whipsaw risk). Tests volume as behavioral proxy.
+    testability: "High. Volume already tracked in candle data."
+    data_required: "None; uses candle volume."
+    
+  v7_regime_transition_trigger:
+    name: "RSI Signal on Regime Boundary Crossing"
+    description: |
+      Activate RSI signal only during regime transitions (trending→mean-reversion).
+      Hypothesis: regime shift + oversold RSI = strongest reversion catalyst.
+    mechanism: |
+      regime_changed = (regime[t] != regime[t-1]) AND regime[t] = mean_reversion
+      if regime_changed AND RSI < 50:
+        forecast = (50 - RSI) / 50
+      else:
+        forecast = 0.0  [no signal in established regime]
+    rationale: |
+      Market structure breaks during regime transitions, amplifying reversion odds. 
+      Avoids stale signals in prolonged regimes. Tests if *shift* is the edge, not regime alone.
+    testability: "Moderate. Requires regime history tracking in SubStrategyComponent."
+    data_required: "None."
+    
+  v8_fractional_regime_intensity:
+    name: "Continuous Regime Intensity Weighting"
+    description: |
+      Soft regime gate: weight RSI signal by "how deep" into mean-reversion, 
+      not binary regime membership.
+      Hypothesis: signal should scale with regime strength, not switch on/off at threshold.
+    mechanism: |
+      regime_intensity = (0.20 - ER) / 0.20  [clipped to [0,1]]
+      regime_intensity *= (0.90 - VR) / 0.90
+      if RSI < 50:
+        forecast = ((50 - RSI) / 50) * regime_intensity
+      else:
+        forecast = 0.0
+    rationale: |
+      Avoids cliff-effect at ER=0.20 or VR=0.90 boundaries. Smoothly fades signal 
+      as market transitions to trending. Reduces regime lag artifacts.
+    testability: "High. Pure multiplicative scaling."
+    data_required: "None."
+
+alternative_data_candidates:
+  - name: "On-Chain Flow (Aggregate Purchases vs. Sales by Whale Wallets)"
+    reason: "Tests if oversold RSI + weak on-chain demand = reversions. Requires API (low cost); optional."
+    risk: "Low: can be bolted on as optional confirmation, doesn't break base logic."
+  - name: "Funding Rates (Perpetual Futures Leverage Sentiment)"
+    reason: "High funding = leveraged longs prevalent; tests if RSI works differently under different sentiment regimes."
+    risk: "Low: additive filter, available from Binance Futures."
+  - name: "Order Book Imbalance (Bid-Ask Depth Ratio at Recent Lows)"
+    reason: "Distinguishes structural oversold (imbalanced book) from liquidity-driven spike."
+    risk: "Moderate: requires depth data snapshot; may introduce latency."
+
+reverse_hypothesis: |
+  REVERSE (V5): Long on RSI > 70 in mean-reversion regime.
+  If V5 generates positive alpha comparable to base, the regime filter (not RSI direction) 
+  is the source. If V5 is unprofitable, the RSI signal direction is legitimate.
+
+behavioral_features:
+  - "Volume confirmation (V6): weak-volume oversold as behavioral indicator of reversion probability."
+  - "Regime transitions (V7): market structure breaks during regime crossovers; RSI spike + transition = highest risk of false move."
+  - "RSI slope (V3): momentum-based entry captures inflection (entering oversold) vs. stale levels."
+  - "Regime-relative MA (V4): adapts to regime-specific equilibrium without explicit tuning."
+
+regime_specific_variants:
+  - name: "V1 (Adaptive Threshold)"
+    regime_mechanism: "Tightens oversold threshold as ER_intensity increases (deepens into mean-reversion)."
+    application: "Reduces false triggers during weak regime periods."
+  - name: "V8 (Fractional Intensity)"
+    regime_mechanism: "Continuous scaling by (ER_deficit × VR_deficit); no cliff at boundary."
+    application: "Smoother signal fade during regime transitions; avoids lag artifacts."
+  - name: "V7 (Transition Trigger)"
+    regime_mechanism: "Signal fires only when regime[t] != regime[t-1], regime[t] = mean_reversion."
+    application: "Isolates highest-confidence reversion setup (structural shift + oversold)."
+
+variant_selection_guide: |
+  CONSERVATIVE (low risk, high testability):
+    - V1 (Adaptive Threshold): Single tunable parameter; improves on fixed 50 baseline.
+    - V2 (Persistence Filter): Noise reduction; proven whipsaw reduction technique.
+    - V8 (Fractional Intensity): Smooth boundary transition; minimal logic change.
+  
+  MECHANISTIC (alternative signal):
+    - V3 (RSI Slope): Tests momentum vs. level; different theoretical foundation.
+    - V4 (Regime-Relative MA): Adaptive equilibrium; removes 50 assumption.
+  
+  BEHAVIORAL (testing regime dynamics):
+    - V6 (Volume Confirmation): Adds interpretability; tests behavioral proxy.
+    - V7 (Transition Trigger): Isolates regime-shift edge; falsifies "regime alone" hypothesis.
+  
+  FALSIFICATION:
+    - V5 (RSI High): Control test; reverses signal direction to isolate regime contribution.

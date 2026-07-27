@@ -1,0 +1,36 @@
+hypothesis_id: TIMEFRAME_ESCALATION_4H
+
+thesis: |
+  Keltner mean-reversion (run_017 params unchanged) achieves Sharpe > 0 at 4h 
+  with default_regime=unknown and TRENDING filter (ER≥0.5 ∧ VR≥1.2).
+
+rationale: |
+  run_017 (1h): corr=0.2145. run_021 (4h): cost_drag=413% (config bug: default_regime=trending). 
+  Hypothesis: 4h trades hold 4× longer, increasing gross PnL/trade by ~4×. 
+  Longer duration dilutes absolute fee impact: cost_drag ∝ fees/PnL decreases ~4×. 
+  Correct config eliminates run_021 bloat. Target: corr > 0.10, cost_drag < 80%, Sharpe > 0.
+
+signal_concept: |
+  Keltner mean-reversion: ema=20, atr=20, mult=2.0, scale=-20.0. Identical to run_017.
+
+target_market: BTCUSDT, ETHUSDT
+
+timeframe: 4h
+
+mechanism: |
+  1h baseline: ~240 bars/month, 2.5 TRENDING signals/month, 16h avg hold.
+  4h escalation: ~60 bars/month, 0.6 TRENDING signals/month (same ER/VR frequency), 64h avg hold.
+  Gross PnL/trade: 4× higher at 4h (4× price movement per bar). 
+  Cost drag: fees constant per trade; PnL ∝ 4×. Therefore cost_drag_4h ≈ cost_drag_1h / 4.
+
+assumptions:
+  - Signal edge (corr~0.21) transfers to 4h.
+  - TRENDING regime fires at same bar-count frequency (ER/VR thresholds invariant to resolution).
+  - Longer holds dilute cost impact: cost_drag ∝ fees / gross_PnL.
+  - run_021 failure was config bug (default_regime=trending), not signal weakness.
+
+expected_failure_modes:
+  - "Regime spacing: TRENDING fires too rarely at 4h. Insufficient sample for stable Sharpe."
+  - "Signal loss: corr → 0 at 4h (Keltner indicator sensitive to timeframe resolution)."
+  - "Cost insensitivity: cost_drag remains ≥80% (fees do not scale with duration)."
+  - "Sample variance: positive in-window Sharpe but negative median due to sparse trade count."

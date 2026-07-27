@@ -1,0 +1,76 @@
+{
+  "regime_detector": {
+    "mode": "score_product",
+    "min_score": 0.4,
+    "min_margin": 0.0,
+    "components": [
+      {
+        "id": "er",
+        "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+        "params": {
+          "period": 24,
+          "smooth_period": 5
+        }
+      },
+      {
+        "id": "vr",
+        "class": "strategies.strategy_components.VarianceRatioComponent",
+        "params": {
+          "k": 5,
+          "window": 100
+        }
+      }
+    ],
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "er",
+            "divisor": 1.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          },
+          {
+            "id": "vr",
+            "divisor": 2.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 51,
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "keltner_mr",
+            "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+            "params": {
+              "ema_period": 20,
+              "atr_period": 20,
+              "atr_multiplier": 2.0,
+              "scaling_factor": -20.0
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "unknown": null
+    }
+  }
+}

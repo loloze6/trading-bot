@@ -1,0 +1,22 @@
+hypothesis_id: "REFRAME_REGIME_SELECTIVITY_01"
+what_failed:
+  - "Sharpe criterion: median_sharpe=-5.323 (BTC), -3.362 (ETH); target was >= 0.5"
+  - "Signal directional edge: median_forecast_return_corr=0.0662, no predictive power; 10 of 11 BTC windows show pvalue > 0.10"
+  - "Gross PnL quality: median_gross_pnl=-8.886 (signal loses money before fees); indicates fundamental signal-regime failure, not cost structure"
+  - "Regime informativeness: mean_reversion regime marked uninformative; forward_return_mean < 0.001 in majority of windows, forward_return_std similar to non-filtered bars"
+diagnostic_rule_applied: "Rule 2: Signal has no directional edge (forecast_return_corr=0.0662 << 0.03 threshold, pvalue > 0.10 in aggregate)"
+diagnostic_snapshot:
+  median_forecast_return_corr: 0.0662
+  median_cost_drag_pct: 49.7383
+  median_gross_pnl: -8.886
+  uninformative_regimes:
+    - "unknown"
+    - "mean_reversion"
+    - "NOT_READY"
+what_not_to_try:
+  - "Do not refine min_score further; values actually executed: 0.40 (run_028), 0.25 (run_029), 0.15 (run_030) — parameter variation across this range does not improve correlation. [Note: 0.30 (proposed in run_028 expansion, not executed), 0.35 and 0.50 (never tested) remain unexplored, but the score_mode architecture itself failed — signal corr collapses regardless of min_score threshold, so refining this dimension is unlikely to recover edge.]"
+  - "Do not pivot to yet another signal while at 1h timeframe (RSI, momentum, Keltner all tested, all show weak correlation at 1h); signal family exhausted"
+  - "Do not assume cost_drag is root cause (median 49.74%, not >80%); gross_pnl is negative, signal fails at base level"
+  - "Do not add more regime components to ER×VR product (attempted multiple ER/VR threshold combinations in prior runs); regime definition itself breaks down at 1h"
+next_altitude: "escalate"
+parameter_bracket: null

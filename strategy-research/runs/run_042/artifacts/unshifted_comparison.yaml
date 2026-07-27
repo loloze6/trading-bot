@@ -1,0 +1,38 @@
+# Unshifted comparison — required by pre-registration (claim a)
+# Run AFTER main prescreen to check whether the A8.4 alignment shift
+# weakened IC as expected under the contrarian mechanism.
+
+run_id: run_042
+hypothesis_id: H-041-C
+computed_at: "2026-07-03"
+
+shifted_prescreen:
+  ic_active_bars: 0.190476
+  p_value: 0.5469
+  active_n: 316
+  n_eff: 13
+  description: "+1 day A8.4 shift applied — day D-1 F&G visible at day D 00:00 bar"
+
+unshifted_prescreen:
+  ic_active_bars: 0.140005
+  p_value: 0.6580
+  active_n: 318
+  n_eff: 13
+  description: "No shift — day D F&G merged to day D 00:00 bar (same-day, potential lookahead)"
+
+comparison:
+  ic_delta: 0.050471  # shifted - unshifted; positive = shifted is stronger
+  se_estimate: 0.2773  # 1/sqrt(n_eff-3) = 1/sqrt(10) ≈ 0.316; delta << SE
+  pre_registration_claim_a: >
+    "Post-shift IC ≤ unshifted IC is the expected and honest direction."
+  claim_satisfied: false
+  interpretation: >
+    Shifted IC (0.190) exceeds unshifted IC (0.140), technically violating claim (a).
+    However, the delta (0.050) is far below the SE (≈0.28 at n_eff=13). Both ICs are
+    statistically indistinguishable from each other and from zero. The "violation" is
+    sampling noise at this effective sample size, not evidence of a different mechanism.
+    No mechanistic interpretation can be drawn from a 0.05 delta when SE=0.28.
+  conclusion: >
+    Claim (a) cannot be confirmed OR refuted at this sample size. Both shifted and
+    unshifted ICs are consistent with zero under the null. The comparison is inconclusive
+    due to insufficient power, not genuine contradiction of the alignment hypothesis.

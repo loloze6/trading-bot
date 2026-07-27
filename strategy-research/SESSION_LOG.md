@@ -2649,3 +2649,81 @@ at 2025-12-31 and physically cannot leak.
  must NOT be commissioned. Standing constraints (single-writer-per-state-store, read-back
  verify, no-self-remediation, premise-failure full-STOP, holdout untouchable, context
  economy) carry forward unchanged."
+
+---
+
+## Session: 2026-07-26 — campaign-artifact commit STOPPED by the holdout gate (dispatch W4, no commit)
+
+### Hypothesis
+The 7,969 untracked campaign artifacts left by runs 003-0xx are safe to preserve in a
+single commit on top of W3 (`bf50358`), with the only necessary exclusions being files at
+or above GitHub's 100 MB hard cap; the pre-commit holdout gate would be a formality.
+
+### Result — PREMISE FAILED. Nothing staged, nothing committed, nothing deleted.
+The gate was not a formality. It found **genuine 2026 holdout-range market data** in the
+set that was about to be made permanent, and the dispatch's `Failure -> STOP` fired.
+
+- **Size premise was also wrong, harmlessly.** The dispatch expected ~4.8 GiB of loose
+  objects and warned about disk. Measured total is **493.21 MiB across 7,969 files**:
+  `strategy-research/runs/` 7,539 files / 352.55 MiB · `strategy-research/results/` 343 /
+  15.73 MiB · `trading-bot/local_data/` 25 / 110.26 MiB · `trading-bot/results/` 62 /
+  14.67 MiB. No `other` group. Largest single file 10.47 MiB
+  (`local_data/kraken_BTCUSD_1h.csv`). **Zero files at or above 100 MB**, so step 2's
+  exclusion list is empty and no `.gitignore` change was warranted.
+- **The leak.** Two run directories under `strategy-research/results/runs/`, both config
+  `18fad381`, carry BTCUSDT 1h bars past the holdout boundary:
+  `20260702T091806Z_18fad381` (22 rows) and `20260702T092925Z_18fad381` (23 rows), in
+  `bars.csv` and `portfolio_states.csv` each — 4 CSVs. First `2026-01-01 00:00:00`, last
+  `2026-01-01 21:00:00`.
+- **It is a config-level breach, not a stray artifact.** Both `manifest.json` files
+  declare `"end": "2026-01-01 23:00:00"` against `holdout_range` starting `2026-01-01`.
+  The backtest was *configured* to run 24 bars into the sealed window. `metrics.json`
+  (sharpe 7.021, `regime_validity` forward returns) is computed over a window that
+  includes those bars. No other untracked manifest anywhere declares a 2026+ data range —
+  scan of all 5,055 non-CSV untracked files returned exactly these two.
+- **Blast radius is bounded and fully enumerated:** 2 directories, 14 files. The 6 recorded
+  trades all close in December 2025, so no trade fired inside the holdout; the
+  contamination is in the bars, the declared range, and the boundary-touching metrics.
+- **This is precisely the failure the previous session filed as OPEN item (2)** — "the
+  exclusion is a name enumeration and cannot catch the next contaminated file; no
+  timestamp-range check exists anywhere in the repo." No `.gitignore` rule covers these
+  paths, because they are not cache files and carry no matching name. The manual
+  content-scan caught what the name-based guards structurally cannot.
+
+Steps 1 and 3 of the dispatch completed; steps 2, 4 and 5 are blocked by the STOP and were
+not attempted. Step 6 (this entry + `tasks/lessons.md` L-2026-07-26-C) is independent of
+the gate and was completed, but is **uncommitted** — the dispatch bound it to a commit that
+must not happen yet. HEAD remains `bf50358`; `git diff --cached` is empty; untracked count
+unchanged at 7,969 apart from these two housekeeping edits.
+
+### Files touched
+- `tasks/lessons.md` (L-2026-07-26-C — empty tool output is not evidence until cwd, scanned
+  file count, exit code and a positive control are stated; third occurrence of the pattern)
+- `strategy-research/SESSION_LOG.md` (this entry)
+- No other file created, modified, staged, or deleted.
+
+### Next session prompt (copy-paste)
+"Dispatch W4 STOPPED on its holdout gate before staging; HEAD is still bf50358 and nothing
+ was committed, staged, or deleted. Do NOT re-run W4 as written. The blocker: two run
+ directories under strategy-research/results/runs/ — 20260702T091806Z_18fad381 and
+ 20260702T092925Z_18fad381 — contain BTCUSDT bars from 2026-01-01 00:00 to 21:00 (22 and 23
+ rows) in bars.csv and portfolio_states.csv, and BOTH manifest.json files declare
+ \"end\": \"2026-01-01 23:00:00\", i.e. the backtest was configured 24 bars into the sealed
+ holdout. metrics.json for both is computed over that window. The other 7,955 untracked
+ files are clean: 493 MiB total, no file at or above 100 MB, and a scan of all 5,055
+ non-CSV untracked files found no other manifest declaring a 2026+ data range. The
+ operator's decision is required and is NOT yours to take: (a) exclude both directories via
+ .gitignore and commit the remaining 7,955 files, (b) quarantine both directories under a
+ range-scoped holdout path first, then commit, or (c) something else — note that excluding
+ only the 4 CSVs is WRONG, since manifest.json and metrics.json in those dirs are equally
+ contaminated. Whichever is chosen, re-run the gate on the STAGED set before committing,
+ with a positive control on the date pattern (see tasks/lessons.md L-2026-07-26-C — a
+ negative search result is not evidence without cwd, measured file count, exit code, and a
+ fixture that must match; W4's first scan reported 0 hits only because ripgrep is not on
+ the Git Bash PATH and xargs exited 127). Separately still OPEN and unchanged: repository
+ history remains holdout-contaminated from ac27791 and .env from fec0120 — rewrite is the
+ operator's call; and the design task for a content-based pre-publication timestamp check
+ (lessons L-2026-07-26-A) is still unbuilt, and this session is direct evidence it is
+ needed. Standing constraints carry forward unchanged: no self-remediation, premise-failure
+ full-STOP, holdout untouchable, delete nothing, never git reset --hard / checkout -- . /
+ clean, do not touch the recorder default mode."

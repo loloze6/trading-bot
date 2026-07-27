@@ -1,0 +1,23 @@
+run_id: run_021
+from_stage: init
+to_stage: hypothesis_generation
+objective: Translate the research brief into a single, testable quantitative trading
+  hypothesis.
+primary_input_artifact: artifacts/research_brief.yaml
+required_inputs:
+- path: artifacts/research_brief.yaml
+  reason: Contains the base requirements, market universe, constraints, and research
+    goal.
+optional_inputs: []
+constraints:
+- Must not propose ideas that require replacing the whole existing bot architecture.
+- Do not write code.
+- Keep the mechanism explicit and interpretable.
+- 'TOKEN LIMIT: Do not write conversational filler. Keep all rationale strictly mathematical
+  and limit text descriptions to under 100 words per section.'
+deliverables:
+- hypothesis_card.yaml
+assigned_engine: claude
+injected_context:
+  refinement_attempt: '0'
+  human_data_paths_injected: 'false'

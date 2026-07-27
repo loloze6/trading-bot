@@ -1,0 +1,117 @@
+hypothesis_id: V1-PIVOT-A
+base_hypothesis_id: V1-PIVOT
+base_mechanism: Lower-band mean-reversion with cost-drag dominating failure
+expansion_principle: "ATR multiplier is the single tunable lever. Expand around 2.0 with parameter sweeps, entry confirmation, and regime falsification."
+
+expanded_variants:
+  V1:
+    variant_id: V1-PIVOT-A
+    signal_concept: KeltnerBreakoutComponent inverted (long on lower-band touches)
+    parameters:
+      atr_multiplier: 2.0
+      regime_filter: "TRENDING (ER ≥ 0.50, VR ≥ 1.20)"
+      ema_period: 20
+      scaling_factor: unchanged
+      entry_rule: Band touch (single candle)
+    rationale: "Base variant. 33% band widening (ATR 1.5→2.0) reduces signal frequency ~40-50% while preserving directional edge on extreme pullbacks. Hypothesis: per-trade profitability improves sufficiently to overcome remaining transaction costs."
+    expected_outcome: "Median Sharpe ≥ 0.0; cost_drag < 100%; win-rate ≥ 49%"
+    falsification_criteria: "Sharpe ≤ -1.0 OR cost_drag ≥ 100% OR win-rate < 45%"
+    
+  V2:
+    variant_id: V1-PIVOT-A-sweep-1.8
+    signal_concept: KeltnerBreakoutComponent inverted (long on lower-band touches)
+    parameters:
+      atr_multiplier: 1.8
+      regime_filter: "TRENDING (ER ≥ 0.50, VR ≥ 1.20)"
+      ema_period: 20
+      scaling_factor: unchanged
+      entry_rule: Band touch (single candle)
+    rationale: "Conservative parameter sweep. 20% widening (ATR 1.5→1.8) vs 33% for V1. Tests whether 2.0 is locally optimal or if slight reduction preserves edge while maintaining selectivity. Diagnostic: if V2 >> V1 in Sharpe, suggests 2.0 is over-wide."
+    expected_outcome: "Sharpe between V1-PIVOT (1.5) and V1 (2.0); cost_drag 120-160%"
+    falsification_criteria: "Sharpe improvement >30% relative to V1 (over-widening thesis), OR degradation matches V1 (frequency not limiting factor)"
+    
+  V3:
+    variant_id: V1-PIVOT-A-sweep-2.2
+    signal_concept: KeltnerBreakoutComponent inverted (long on lower-band touches)
+    parameters:
+      atr_multiplier: 2.2
+      regime_filter: "TRENDING (ER ≥ 0.50, VR ≥ 1.20)"
+      ema_period: 20
+      scaling_factor: unchanged
+      entry_rule: Band touch (single candle)
+    rationale: "Aggressive parameter sweep. 47% widening (ATR 1.5→2.2). Tests extreme selectivity hypothesis: only the most violent pullbacks carry mean-reversion edge. If true, Sharpe improves further despite lower trade count. If false, Sharpe collapses."
+    expected_outcome: "Lowest trade count (~30-40% of V1-PIVOT); if edge concentrates at extremes, Sharpe > V1"
+    falsification_criteria: "Trade count < 20 per 1000h (insufficient signal generation) OR win-rate < 48% (edge absent at extremes)"
+    
+  V4:
+    variant_id: V1-PIVOT-A-confirmation
+    signal_concept: KeltnerBreakoutComponent inverted with 2-candle confirmation
+    parameters:
+      atr_multiplier: 2.0
+      regime_filter: "TRENDING (ER ≥ 0.50, VR ≥ 1.20)"
+      ema_period: 20
+      scaling_factor: unchanged
+      entry_rule: "Band touch + candle close back above lower band (enter on bounce confirmation, not touch)"
+    rationale: "Reduces whipsaw entries on false band touches. Requires the pullback to reverse before entry. Trades on the bounce signal, not the oversold signal. Hypothesis: confirmation filter improves win-rate and per-trade magnitude more than reduced frequency costs Sharpe."
+    expected_outcome: "Trade count 20-30% below V1; win-rate 52-56%; Sharpe potentially > V1 if per-trade PnL compensates"
+    falsification_criteria: "Win-rate remains 45-50% despite confirmation (bounce is random) OR trade count drops >50% (confirmation too restrictive)"
+
+alternative_data_candidates:
+  - label: "4h band confluence"
+    description: "Add 4h Keltner bands alongside 1h. Enter only when 1h touches 1h lower band AND 1h close is within 4h band range. Reduces false breakouts via higher-TF alignment."
+    availability: "Feasible within current DataManager"
+    risk: "May add regime-like filtering; requires parameter tuning (4h ATR multiplier)"
+    
+  - label: "ATR smoothing method"
+    description: "Test RMA smoothing vs current SMA for ATR. RMA emphasizes recent volatility; SMA is stable. May alter band width behavior without changing multiplier."
+    availability: "Trivial; RMA is standard TA library"
+    risk: "Low; pure data choice"
+    
+  - label: "Volume confirmation"
+    description: "Require volume spike on band-touch candle (e.g., vol > 1.2× 24h MA). Filters out low-liquidity false breakouts."
+    availability: "Feasible; requires volume data (available from Binance)"
+    risk: "Adds filtering logic; must validate volume data quality"
+    
+  - label: "Volatility regime sub-filter"
+    description: "Within TRENDING regime, split by ATR regime (ATR > median vs ATR ≤ median). Test if mean-reversion works only in high-volatility TRENDING or all TRENDING."
+    availability: "Feasible within existing regime system"
+    risk: "Increases regime cardinality; may reduce trade count too far"
+
+reverse_hypothesis:
+  thesis: "Lower-band touches do NOT generate reliable mean-reversion edge regardless of band width. The positive gross PnL in V1-PIVOT is noise, not signal."
+  test_method: "Narrow bands to ATR 1.0× (half of V1-PIVOT 1.5) and test in same TRENDING regime. If Sharpe is highly negative, suggests edge does not exist at any band width. If Sharpe improves, suggests under-filtering was the failure mode, not over-filtering."
+  expected_outcome: "Sharpe << -2.0 (edge non-existent), OR Sharpe >> V1-PIVOT (under-filtering thesis true, not over-filtering)"
+  falsification_criteria: "Moderate Sharpe (-0.5 to 0.5), indicating edge exists but is sensitive to band calibration across the range"
+
+behavioral_features:
+  - name: "time_in_regime_bars"
+    description: "Candles elapsed since last regime transition to TRENDING. Hypothesis: early TRENDING entries (high bounce probability) vs late entries (chop beginning)."
+    signal_proxy: "Reset counter on regime entry; use candle count as contextual feature."
+    
+  - name: "volatility_shift_direction"
+    description: "Is ATR (or VR component) rising or falling within TRENDING? Expanding volatility regime may trap trades; contracting may release them."
+    signal_proxy: "Compare ATR[current] vs ATR[1h_ago]. If expanding, down-weight signal; if contracting, up-weight."
+    
+  - name: "relative_position_in_range"
+    description: "Position of band touch relative to 24-bar high/low. Touch near 24h low = extreme oversold; near recent high = chop. Extremeness may correlate with bounce magnitude."
+    signal_proxy: "Normalize (close - 24h_low) / (24h_high - 24h_low). If touch ≤ 0.25, label 'extreme'; if 0.25-0.50, label 'mild'; > 0.50, filter."
+    
+  - name: "candle_severity"
+    description: "Wick-to-body ratio on band-touch candle. Long lower wick + small body suggests capitulation; small wick + large body suggests exhaustion without panic."
+    signal_proxy: "lower_wick / close. If > 0.05, label 'panic'; if < 0.02, label 'fading'."
+
+regime_specific_variants:
+  - variant_id: "V1-PIVOT-A-volatile"
+    regime_filter: "VOLATILE (ER ≥ 0.50, VR < 1.20)"
+    rationale: "High earnings revision, low volatility ratio (calm trending). Mean-reversion should NOT work here if edge is specific to TRENDING (high revisions + high volatility = trending momentum). If it works equally well, regime filter is wrong."
+    expected_outcome: "Sharpe much worse than V1; validates TRENDING specificity"
+    
+  - variant_id: "V1-PIVOT-A-choppy"
+    regime_filter: "CHOPPY (ER < 0.50, VR < 1.20)"
+    rationale: "Low ER, low VR (weak trend, low volatility). Mean-reversion should fail here; if it succeeds, suggests signal is universal and regime filter is unnecessary."
+    expected_outcome: "Sharpe negative; validates regime filter necessity"
+    
+  - variant_id: "V1-PIVOT-A-momentum"
+    regime_filter: "MOMENTUM (ER < 0.50, VR ≥ 1.20)"
+    rationale: "Low ER, high VR (momentum risk, high volatility). Mean-reversion should lose to momentum dynamics here. Falsifies mean-reversion hypothesis if it still wins."
+    expected_outcome: "Sharpe negative (momentum dominates); validates regime filter"

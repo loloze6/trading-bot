@@ -1,0 +1,33 @@
+{
+  "_comment": "H-041-C: Fear & Greed contrarian (persistent_behavioral_bias). Improvement 01.",
+  "aux_feeds": ["fear_greed"],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "mean_reversion"
+  },
+  "strategies": {
+    "warmup": 3,
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "fg_contrarian",
+            "class": "strategies.strategy_components.FearGreedContrarianComponent",
+            "weight": 1.0,
+            "transforms": [],
+            "params": {
+              "fear_threshold": 25.0,
+              "greed_threshold": 75.0,
+              "scaling_factor": 10.0,
+              "standardized_forecast": false
+            }
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null
+    }
+  }
+}

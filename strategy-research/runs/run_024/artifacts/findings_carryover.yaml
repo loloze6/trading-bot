@@ -1,0 +1,29 @@
+hypothesis_id: POSITION_SIZING_TIMEFRAME_COUPLING
+
+what_failed:
+  - "V4 criterion: win_rate FAIL on ETHUSDT (actual=0.0% vs required>=45%)"
+  - "Holdout criterion: sharpe FAIL on both symbols (actual=0.0 vs required>2.0)"
+  - "Statistical validity: 0 trades in 5/12 windows (Jan, Sep, Oct, Nov BTCUSDT; Jan, Mar, Oct, Nov ETHUSDT); median trade_count=0, cannot compute Sharpe"
+
+diagnostic_rule_applied: "Rule 4 — Regime uninformative. Diagnostics identify uninformative_regimes=[unknown, trending]. Trending regime fires 2–23 bars/month (sample too small); forward_return_mean non-stationary and near zero across windows (BTCUSDT: μ=−0.00068 to +0.00221, σ=0.00486; ETHUSDT: μ=−0.00534 to +0.00788, σ=0.00661). Unknown regime assigned weight=0.0, producing zero forecast and zero trades for 88–97% of bars. Combined effect: regime classifier does not identify coherent market state with predictive power."
+
+diagnostic_snapshot:
+  median_forecast_return_corr: 0.2145
+  median_cost_drag_pct: 27.446
+  median_gross_pnl: 0.0
+  median_net_return: -0.57
+  median_sharpe: 0.0
+  uninformative_regimes: "[unknown, trending]"
+  trending_bar_count_per_window: "min=2, max=23"
+  zero_trade_windows: "5/12"
+  trade_frequency: "0–9 trades/month (mean=3.6)"
+
+what_not_to_try:
+  - "Do NOT refine position_sizing or rebalance_frequency with threshold_rules regime. Position sizing can only optimize within a coherent regime; a non-predictive regime cannot be fixed by execution tuning."
+  - "Do NOT apply current threshold_rules config to 4h bars (4h regime transitions even sparser, forward_return_mean unstable)."
+  - "Do NOT add a new signal component while regime remains uninformative. Keltner signal is working (within-regime correlation=0.2145); the problem is regime definition, not signal."
+  - "Do NOT set default_regime to any active strategy regime. The previous attempt (default_regime=unknown with weight=0.0) was correct architecture but the wrong regime mapping."
+
+next_altitude: pivot
+
+pivot_rationale: "Hypothesis framing assumed TRENDING regime (ER/VR thresholds from run_017) was sound, and the problem was execution (position sizing, rebalance frequency). Diagnostics reveal the regime definition itself is uninformative (forward_return_mean stationary near zero, sample sizes too small). Run_017 baseline (cost_drag=27.45%, corr=0.2145) achieved metrics within the threshold_rules regime but was never validated as predictive. V1 parameter refinement (atr_multiplier=2.0) did not improve regime quality — it was a parameter, not the core blocker. The regime architecture (binary threshold rules) is the problem. Solution: pivot to a different regime detection method (score_mode: continuous regime scoring instead of binary classification) that trades Keltner across all regime phases with confidence scaling. This keeps the signal fixed (Keltner) and changes only the regime architecture (altitude 2)."

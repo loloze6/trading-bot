@@ -1,0 +1,20 @@
+hypothesis_id: "V2-E1"
+
+status: "conditional_approve"
+
+rationale: |
+  Hypothesis is testable and logically sound. VR relaxation (1.00 vs 0.90) 
+  is well-motivated to increase trade sample. Single-variant constraint 
+  prevents architectural drift. Risk profile is manageable if conditions 
+  are honored: parameters must be locked before performance eval, ER 
+  computation must be forward-rolling, and RSI(14) must use only 
+  historical bars.
+
+blocking_issues: []
+
+conditions:
+  - "ER ≤ 0.25 and VR ≤ 1.00 thresholds must be locked via grid search on first 30% of training data only; no post-hoc tuning"
+  - "Verify ER (efficiency ratio) is computed rolling backward (no future returns); supply computation snippet"
+  - "Verify RSI(14) uses only bars t-14 to t (no look-ahead); confirm in backtest config"
+  - "Report per-regime Sharpe (mean_reversion vs non-reversion) to detect conditional collapse"
+  - "Minimum acceptable Sharpe in any single walk-forward window: 0.5 (consistency gate)"

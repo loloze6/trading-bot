@@ -1,0 +1,17 @@
+hypothesis_id: RUN017_REPLICATION_DIAGNOSTIC
+thesis: "KeltnerBreakout signal filtered to trending regimes reproduces positive edge on current market windows for BTCUSDT and ETHUSDT at 1h timeframe."
+rationale: "Run_017 demonstrated measurable edge under baseline_v1 protocol. This hypothesis tests reproducibility by re-running the exact signal and regime configuration on current market data. If edge fails to reproduce, it indicates either (1) market regime change, (2) data quality issue, or (3) parameter sensitivity requiring diagnostic investigation."
+signal_concept: "KeltnerBreakoutComponent generates forecast by detecting candle closes outside Keltner bands (band_width = ATR * 2.0, centered on EMA_20). Forecast scaled to -20 for standardization. Only active when regime_filter condition met."
+regime_filter: "TRENDING mode: ER >= 0.50 AND VR >= 1.20. Regime evaluated per symbol per candle using recent rolling window."
+target_market: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+assumptions:
+  - "Market regime definitions (ER, VR thresholds) remain stable."
+  - "Historical data feeds are clean and consistent with run_017 data source."
+  - "No structural breaks in price behavior between run_017 execution and current backtest window."
+  - "Candle completion logic matches run_017 implementation exactly."
+expected_failure_modes:
+  - "Regime thresholds no longer separate trending from choppy markets (market structural change)."
+  - "Edge erodes if transaction costs exceed forecast alpha (cost environment drift)."
+  - "Parameter sensitivity: small EMA/ATR window shifts degrade performance (indicates fragile edge)."
+  - "Data misalignment or timestamp drift between backtest windows causes false reproduction failure."

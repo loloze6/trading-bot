@@ -1,0 +1,66 @@
+improvement: "05 — Campaign Knowledge Base"
+accepted_at: "2026-07-03"
+acceptance_method: "A1.4 output audit (populate → audit; no diff review)"
+
+deliverable: "strategy-research/campaign_knowledge_base.yaml"
+schema_version: "05.A5"
+amendments_applied: [A5.1, A5.2, A5.3, A8.5, A8.6]
+
+# ---------------------------------------------------------------------------
+# Acceptance criteria checklist
+# ---------------------------------------------------------------------------
+
+ac1_populated_from_campaign_record:
+  status: PASS
+  evidence: >
+    All 9 findings cite real run IDs and values cross-checked against
+    campaign_state.yaml diagnostics_log, regime_audit_decision.yaml,
+    and run_041/run_042 prescreen artifacts. No invented numbers.
+
+ac2_vocabulary_rule_applied:
+  status: PASS
+  evidence: >
+    All outcome fields use enums (no_edge_observed, inconclusive,
+    blocked_feed_unavailable, unusable_for_this_symbol_timeframe).
+    No "confirmed edge" language. forecast_return_corr=0.2145 carried
+    as signal_property, not edge outcome — vocabulary error from prior
+    carryover chain is corrected.
+
+ac3_required_fields_present:
+  status: PASS
+  fields_verified: [evidence_count, outcome, reactivation_condition, power_disposition, protocol_version, detector_version]
+  notes:
+    - "detector_version=not_applicable for ungated signals (H-041-A, H-041-C) — correct per A5.3"
+    - "detector_version=pre_a22_detector for baseline_v1 entries — labels are pre-retune; findings are priors, not hard constraints per A5.3"
+    - "volume_impulse_continuation_blocked: no detector_version (not a signal — correct)"
+
+ac4_chain_missed_conclusion:
+  status: PASS
+  finding_id: keltner_root_cause_reattribution
+  summary: >
+    The KB surfaces that keltner_mean_reversion and keltner_trend_mean_reversion
+    had their root cause misdiagnosed as regime_availability throughout the campaign.
+    Full-range prescreen (A8.3) showed ic_active_bars=-0.032 on TRENDING-labeled bars
+    — the signal has no informational content even where the detector said it should work.
+    The carryover chain spent ~10 runs layering a secondary signal on a null primary.
+    This cross-run synthesis was not captured by any individual run's carryover entry.
+
+ac4_02_er_detector_unusable:
+  status: PASS
+  finding_id: er_detector_unusable_btc_eth_1h
+  closes: "Improvement 02 pending AC4 — post-unusable policy recorded in durable KB artifact"
+
+# ---------------------------------------------------------------------------
+# Known limitations (not blocking acceptance)
+# ---------------------------------------------------------------------------
+
+limitations:
+  - "5 of 9 findings have evidence_count < 3; per A5.1 they are priors/hints for
+     hypothesis generation, not hard constraints. This is appropriate — the campaign
+     is early-stage with 42 runs."
+  - "Keltner entries carry detector_version=pre_a22_detector (labels have ~50-59%
+     class-conditional flip rate per A2.2 report). Their regime-conditional findings
+     are findings about those labels only. Post-retune knowledge base entries will need
+     a new finding per a trustworthy detector if one is ever built."
+  - "A8.6 a-priori power check is noted in operational section but not yet implemented
+     in the validation gate tools. Scheduled as a separate deterministic addition."

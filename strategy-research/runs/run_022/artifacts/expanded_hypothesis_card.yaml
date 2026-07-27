@@ -1,0 +1,169 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER-PIVOT-RSI"
+base_hypothesis_id: "V3-ESCALATE-4H-KELTNER-PIVOT-RSI"
+
+thesis_summary: |
+  RSI mean-reversion at 4h in TRENDING regime generates positive risk-adjusted returns
+  by increasing trade frequency while preserving correlation structure. Variants test
+  signal sensitivity, behavioral gating, hypothesis reversal, and alternative components.
+
+expanded_variants:
+  V1_base:
+    id: "V1-RSI-14-MR-4H-TRENDING"
+    name: "RSI(14) Mean-Reversion, Standard Thresholds"
+    signal_concept: |
+      RSI(14) mean-reversion. Long when RSI < 30 (oversold). Short when RSI > 70 (overbought).
+      Identity transform. No scaling.
+    regime_filter: "TRENDING only (ER≥0.50, VR≥1.20)"
+    timeframe: "4h"
+    classification: "conservative_base"
+    distinction: "Catalog-standard RSI(14) with fixed 30/70 thresholds. Direct test of stated hypothesis."
+    expected_trade_count: "350–400 aggregate"
+    test_objective: "Establish baseline correlation structure and cost drag at 4h resolution."
+
+  V2_sensitive_thresholds:
+    id: "V2-RSI-14-MR-35-65-4H-TRENDING"
+    name: "RSI(14) Mean-Reversion, Sensitive Thresholds"
+    signal_concept: |
+      RSI(14) mean-reversion. Long when RSI < 35. Short when RSI > 65.
+      Identity transform. No scaling.
+    regime_filter: "TRENDING only (ER≥0.50, VR≥1.20)"
+    timeframe: "4h"
+    classification: "sensitivity_variant"
+    distinction: |
+      Relaxed thresholds (±5 from standard) to capture earlier mean-reversion.
+      Tests whether 30/70 filters out valid signals due to 4h bar velocity reduction.
+    expected_trade_count: "450–550 aggregate"
+    test_objective: "Isolate if threshold mismatch to timeframe masks correlation at standard levels."
+
+  V3_behavioral_confirmation:
+    id: "V3-RSI-14-MR-MA-CONFIRM-4H-TRENDING"
+    name: "RSI(14) Mean-Reversion, MA-Confirmed Entries"
+    signal_concept: |
+      RSI(14) mean-reversion with structural confirmation. Long: RSI < 30 AND price below 
+      SMA(20). Short: RSI > 70 AND price above SMA(20). Identity transform on RSI; 
+      apply confirmation as AND gate.
+    regime_filter: "TRENDING only (ER≥0.50, VR≥1.20)"
+    timeframe: "4h"
+    classification: "behavioral_variant"
+    distinction: |
+      Adds price structure confirmation to reduce false signals. Tests whether FM1 
+      (trade starvation) is regime-gate vs signal-quality issue. SMA(20) spans ~80h 
+      (3.3 days), catalog-standard for 4h analysis.
+    expected_trade_count: "150–250 aggregate (filtered subset)"
+    test_objective: "Determine if behavioral gating resolves low-trade-count failure mode."
+
+  V4_reverse_hypothesis:
+    id: "V4-RSI-14-TREND-4H-TRENDING"
+    name: "RSI(14) Trend-Following, TRENDING Regime"
+    signal_concept: |
+      RSI(14) trend-following (inverted mean-reversion). Long when RSI > 70 (strong momentum).
+      Short when RSI < 30 (weak momentum). Identity transform.
+    regime_filter: "TRENDING only (ER≥0.50, VR≥1.20)"
+    timeframe: "4h"
+    classification: "reverse_hypothesis"
+    distinction: |
+      Inverts thesis. Tests whether TRENDING regime (high ER, high VR) actually rewards 
+      trend-following, not mean-reversion. Falsification test of core hypothesis direction.
+    expected_trade_count: "350–400 aggregate"
+    test_objective: |
+      Determine if TRENDING regime captures momentum or consolidation. If V4 Sharpe > 0.3 
+      and V1 < 0.3, reframe hypothesis space without escalating regime definition.
+
+  V5_alternative_component:
+    id: "V5-STOCH-14-MR-4H-TRENDING"
+    name: "Stochastic(14,3,3) Mean-Reversion, Catalog Alternative"
+    signal_concept: |
+      Stochastic(14,3,3) mean-reversion. Long when %K%D < 20 (oversold).
+      Short when %K%D > 80 (overbought). Identity transform.
+    regime_filter: "TRENDING only (ER≥0.50, VR≥1.20)"
+    timeframe: "4h"
+    classification: "alternative_catalog_component"
+    distinction: |
+      Stochastic replaces RSI as alternative momentum-based mean-reversion signal.
+      Smoother than RSI (SMA3 of K-line). Tests if 4h edge-loss is RSI-specific or 
+      applies to all non-adaptive momentum indicators at this timeframe.
+    expected_trade_count: "320–380 aggregate"
+    test_objective: "Isolate whether edge-loss is momentum-indicator-generic or RSI-specific."
+
+alternative_data_candidates:
+  - name: "On-Balance Volume (OBV)"
+    plausibility: "moderate"
+    rationale: |
+      Confirms RSI divergence. Price new low + OBV declining = higher-confidence capitulation.
+      Price new low + OBV flat/rising = weak mean-reversion (accumulation). Low cost 
+      (OHLCV input). Integrates as post-signal behavioral filter (similar to V3).
+    integration_note: "Defer to V3+ iterations if behavioral gating fails V1–V2."
+
+  - name: "Order Book Imbalance Ratio"
+    plausibility: "low"
+    rationale: |
+      Spot long vs margin short ratio from Binance. High ratio suggests retail mean-reversion 
+      crowding, increasing false-signal probability. Requires live API access and lookback 
+      unsupported in current backtest framework.
+    integration_note: "Out-of-scope for backtest; candidate for live trading refinement."
+
+behavioral_features:
+  - feature: "SMA structural confirmation (V3)"
+    mechanism: "AND gate: RSI < 30 must confirm with price below MA(20). Reduces noise."
+    trade_off: "Lower frequency (150–250 trades) vs higher confidence per entry."
+
+  - feature: "Threshold sensitivity (V2)"
+    mechanism: "Shift RSI boundaries ±5 from standard. Captures earlier mean-reversion signals."
+    trade_off: "Higher frequency (450–550 trades) vs potential noise increase."
+
+  - feature: "Momentum divergence (future enhancement)"
+    mechanism: "Detect RSI divergence: price new low but RSI > prior bar RSI."
+    trade_off: "Requires intra-bar tracking; defer to live refinement."
+
+regime_specific_variants:
+  current_constraint: |
+    Brief locks regime to TRENDING (ER≥0.50, VR≥1.20, threshold_rules mode). 
+    All V1–V5 operate only in TRENDING regime; forecast = 0.0 otherwise.
+  
+  escalation_trigger: |
+    If all V1–V5 show correlation < 0.03 at 4h: regime definition itself may be at fault.
+    Candidates: (a) raise thresholds to ER≥0.60, VR≥1.50 (stricter trending confirmation),
+    (b) switch to normalized bins (decoupled volatility regime + trend regime),
+    (c) test alternative assets (XRPUSDT, LTCUSDT—higher-fee assets may favor mean-reversion).
+    Do NOT modify regime in this run; isolate signal first.
+
+success_criteria_per_variant:
+  base_criteria:
+    - "Sharpe ratio ≥ 0.3"
+    - "Positive correlation > 0.03"
+    - "Trade count ≥ 25 aggregate"
+    - "Cost drag < 50%"
+  
+  v1_interpretation: |
+    V1 is baseline. If V1 passes base_criteria, mean-reversion at 4h exists; 
+    other variants provide robustness/optimization. If V1 fails (Sharpe < 0.3, corr < 0.03), 
+    proceed to V2–V5 to isolate failure mode.
+  
+  v2_decision_rule: |
+    If V2 trade_count >> V1 but Sharpe < 0.3, signal quality is weak at 4h; escalate to regime.
+    If V2 Sharpe ≥ 0.3, threshold mismatch was the blocker; use V2 for production.
+  
+  v3_decision_rule: |
+    If V3 Sharpe > V1 Sharpe despite lower trade count, behavioral gating recovers correlation;
+    indicates signal is valid but noisy. If V3 Sharpe ≈ V1 Sharpe, signal is weak; escalate.
+  
+  v4_decision_rule: |
+    If V4 Sharpe > 0.3 and V1 Sharpe < 0.3, TRENDING regime is trend-following, not mean-reversion.
+    Reframe hypothesis; do not escalate regime definition.
+  
+  v5_decision_rule: |
+    If V5 correlation > 0.03 and V1 < 0.03, RSI-specific issue (e.g., period=14 too long at 4h).
+    If both V1 and V5 fail, momentum-generic edge loss; escalate to regime or instrument.
+
+constraints_preserved:
+  - "Timeframe: 4h (locked from escalation decision)."
+  - "Regime: TRENDING (ER≥0.50, VR≥1.20, threshold_rules mode). No threshold modification."
+  - "Signal component: RSI, Stochastic (catalog mean-reversion only). No experimental components."
+  - "Pipeline: identity or behavioral transforms only. No quantile/volatility scaling."
+  - "Infrastructure: all variants fit current strategy/regime/component framework."
+
+notes: |
+  Expansion adds five variants spanning signal sensitivity (V2), behavioral gating (V3),
+  hypothesis reversal (V4), and alternative components (V5). V1 remains conservative base.
+  All variants respect architectural constraints and require no infrastructure changes.
+  Variants are ordered by hypothesis risk: V1 < V2 < V3 < V4 < V5 (conceptual distance from brief).

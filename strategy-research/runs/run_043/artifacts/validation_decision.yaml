@@ -1,0 +1,18 @@
+hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
+campaign_id: run_043
+refinement_attempt: 0
+
+status: conditional_approve
+
+rationale: "EMA spread trend-following is a proven behavioral mechanism (herding on established trends). V1 uses existing EMASpreadComponent (no new code), respects architecture, and provides dense signal (~90% bar coverage) for robust IC estimation. Cost feasibility is marginal but plausible: ungated IC ≈ 0.2–0.3 on crypto 1h yields 6–15 bps edge, falling short of 34 bps required. However, if actual walk-forward Sharpe >= 0.5 and win_rate >= 0.48, the strategy may overcome this bound through longer holds or regime-specific alpha not visible in pooled metrics. Conditional approval gates on reproducible walk-forward evidence; holdout is reserved (frozen) for post-promotion validation per A6.1."
+
+conditions:
+  - "Walk-forward Sharpe >= 0.5 (median across 6 rolling windows, ungated)"
+  - "Win rate >= 0.48 (required to amortize 34 bps round-trip cost)"
+  - "Holdout range [2026-01-01, 2026-06-30] MUST NOT be read during walk-forward search, parameter tuning, or feature engineering. Single-use, frozen."
+  - "Verify EMA signal is computed at bar-completion close only; no intra-bar look-ahead, no forward-fill, standard close-to-close returns."
+  - "If any walk-forward window exhibits Sharpe < 0, escalate to REFINE. Do not reject; investigate regime-specific overfitting or alternative period robustness."
+
+blocking_issues: []
+
+notes: "Cost plausibility is marginal due to high required edge (34 bps) relative to typical ungated trend-following alpha on 1h crypto. Strategy passes conceptual rigor (falsifiable, architecture-compatible, sufficient trade count) but must prove reproducible walk-forward Sharpe to justify promotion to holdout. Monitor for regime drift (holdout range may have different trending prevalence) and parameter overfitting (9/21 periods are fixed; alternative periods not tested in this cycle)."

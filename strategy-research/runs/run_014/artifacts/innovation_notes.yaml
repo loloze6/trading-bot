@@ -1,0 +1,38 @@
+expansion_attempt: "run_014"
+stage: "innovation_expansion"
+
+constraint_analysis:
+  constraint_detected: "one variant only — no divergence, no behavioral features, no cross-timeframe"
+  constraint_source: "research_brief.yaml::constraints[0]"
+  decision: "Expansion logic NOT applied"
+  rationale: >
+    Brief explicitly forbids variant divergence and behavioral features. 
+    No legitimate expansion path exists within constraints. Pass-through to 
+    single variant is correct action.
+
+variant_count_decision:
+  requested: "1"
+  provided: "1"
+  conformance: "100%"
+
+variant_v2_e1_characterization:
+  label: "RSI Oversold + Relaxed VR (Baseline)"
+  is_conservative: true
+  is_novel: false
+  signal_origin: "hypothesis_card.yaml::signal_concept"
+  regime_origin: "hypothesis_card.yaml::regime_filter"
+  pivot_from_v1: >
+    V1 (VR ≤ 0.90) produced 51–60% win_rate but only 14–21 trades (below ≥30 minimum). 
+    V2 relaxes VR threshold to 1.00, capturing neutral volatility (VR ≈ 1.0) 
+    in addition to mean-reverting (VR < 1.0). This configuration change is embedded 
+    in the variant without signal redesign or new components.
+  implementation_scope: "configuration only; no code changes required"
+
+forward_gate:
+  next_stage: "validation_gate"
+  artifact_dependency: "expanded_hypothesis_card.yaml (single variant V2-E1 only)"
+  validation_focus: >
+    Screening backtest must confirm that VR relaxation from 0.90 to 1.00 
+    increases trade_count from 14–21 to ≥30 while maintaining win_rate ≥ 48%. 
+    If trade_count still fails, root cause is the RSI signal mechanism itself, 
+    triggering kill decision. If trade_count succeeds, proceed to walk-forward.

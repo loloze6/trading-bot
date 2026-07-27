@@ -1,0 +1,68 @@
+hypothesis_id: V2-PIVOT-A
+asset: "BTCUSDT, ETHUSDT"
+timeframe: 1h
+
+research_question: |
+  Do RSI momentum signal (extreme overbought/oversold at quantile thresholds) generate positive
+  expected returns in BTCUSDT/ETHUSDT 1h when the market is TRENDING (high ER, high VR),
+  if regime detection remains unchanged but signal component shifts from band-based to
+  momentum-based?
+
+signal_concept: |
+  Relative Strength Index (RSI 14-period) momentum signal in TRENDING regime. Long signal on
+  RSI > 70 (overbought, momentum continuation) in uptrending markets OR short signal on RSI < 30
+  (oversold, bounce) in downtrending markets. Use quantile-based thresholds (e.g., RSI > 75th
+  percentile of rolling 100-bar distribution) to avoid static overbought/oversold levels that
+  may not adapt to market regime. Hypothesis: momentum signals (trend-continuation) in TRENDING
+  markets have higher statistical significance and lower pvalue than mean-reversion, because
+  TRENDING regime identifies trend strength, not pullback depth.
+
+regime_filter: |
+  TRENDING regime only: ER ≥ 0.50 AND VR ≥ 1.20 (unchanged from V1).
+  All other regimes produce forecast 0.0.
+
+mechanism: |
+  In TRENDING markets, prices continue their directional momentum via inertia and feedback.
+  RSI crossing into overbought/oversold territory (especially quantile-extreme, not static)
+  predicts momentum continuation rather than mean-reversion bounce. This shifts the signal
+  family from mean-reversion (broken in V1-PIVOT-A) to momentum, which is theoretically more
+  aligned with the TRENDING regime classification.
+
+assumptions:
+  - "V1-PIVOT-A (Keltner mean-reversion ATR 2.0) failed on signal edge (pvalue > 0.10), not
+    parameter choice (cost_drag acceptable at 27%). Signal family is exhausted for this regime."
+  - "TRENDING regime filter (ER/VR) is correctly implemented and fires when market has edge.
+    Problem is not regime detection but signal component."
+  - "Momentum signals (trend-continuation) should have higher statistical significance in
+    TRENDING regime than mean-reversion (pullback) signals, because TRENDING regime scores
+    high on trend strength, not volatility or mean-reversion probability."
+  - "RSI quantile thresholds will reduce false signals and improve pvalue significance vs
+    static 70/30 levels."
+
+expected_failure_modes:
+  - "Momentum in TRENDING regime is over-subscribed; consensus on trend continuation reduces
+    alpha and increases slippage on entry."
+  - "TRENDING regime is not a trend-continuation regime but a high-volatility regime; true
+    edge is volatility-based mean-reversion, not momentum."
+  - "RSI quantile adaptation creates look-ahead bias; rolling 100-bar percentile includes
+    current bar, biasing entry signals forward."
+
+constraints:
+  - "Change ONLY signal component (from KeltnerBreakoutComponent to RSIComponent or custom
+    RSI quantile component); do NOT change regime thresholds or detection mode."
+  - "Keep TRENDING regime unchanged (ER ≥ 0.50, VR ≥ 1.20)."
+  - "No multi-bar confirmation filters; test base signal first."
+  - "Verify RSI lookback (14) does not introduce forward-looking bias; use lagged close prices
+    only."
+
+change_from_previous: |
+  V1-PIVOT-A tested inverted Keltner lower-band mean-reversion (ATR 2.0) in TRENDING regime,
+  improving Sharpe from -2.8 (V1-PIVOT, ATR 1.5) to 0.0, but failed on signal statistical
+  significance (median_forecast_return_corr_pvalue ~0.80, >> 0.10 threshold). Diagnostic Rule 2
+  applied: signal has no directional edge. Parameter refinement (band width) did not address
+  root cause. Proposed altitude 2 pivot: replace mean-reversion signal family with momentum-based
+  signal (RSI quantile threshold) to test whether TRENDING regime edge is momentum-driven
+  (not band-pullback-driven). This is a structural signal change, not a parameter tweak.
+  Expected outcome: higher forecast_return_corr statistical significance (lower pvalues) and
+  positive median Sharpe ≥ 0.5, or clear rejection that TRENDING regime is incompatible with
+  both signal families (escalate to regime investigation).

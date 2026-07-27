@@ -1,0 +1,10 @@
+hypothesis_id: DIAG_B_ER35_1H_KELTNER_CLEAN
+falsifiable_statement: "Relaxing ER threshold to 0.35 (from run_017's 0.50) increases trade_count without destroying signal correlation."
+null_expectation: "Same sparsity as run_017 (2.5 trades/window) OR signal dilution like run_025 (corr drops to 0.08)."
+required_evidence:
+  - "median trade_count per window"
+  - "median cost_drag_pct"
+  - "median forecast_return_corr"
+decision_rules:
+  - "median_sharpe >= 0.0"
+  - "median_trade_count >= 5"

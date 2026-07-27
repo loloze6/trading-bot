@@ -1,0 +1,76 @@
+expansion_summary:
+  hypothesis_id: KELTNER_SCOREMODE_4H
+  refinement_attempt: 0
+  variant_count: 5
+  expansion_scope: "Threshold tuning (V1, V2), weighting validation (V3), regime direction reversal (V4), persistence stress-test (V5)."
+
+variant_mapping_to_failure_modes:
+  V1_Conservative:
+    addresses_failure_mode: "Baseline; validates whether score-mode ≥0.4 is calibrated for SOLUSDT 4h."
+    dependency: "Primary gate. If Sharpe ≤ 0, escalate to V2 or V4."
+  
+  V2_LowerThreshold:
+    addresses_failure_mode: "regime_score threshold 0.4 is still too tight; Sharpe ≤ 0, insufficient trades."
+    escalation_path: "If V1 fails due to low trade count, V2 expands sample to 20-35 trades."
+  
+  V3_SymmetricWeighting:
+    addresses_failure_mode: "VR weighting (2.0) may over-dominate; regime sensitivity to weighting unknown."
+    escalation_path: "Secondary stress-test; run only if V1 succeeds but weight contribution unclear."
+  
+  V4_InverseRegime:
+    addresses_failure_mode: "Signal edge exists only in true AND-gate regimes (high ER AND high VR); score-mode dilutes selectivity."
+    escalation_path: "If V1 Sharpe ≤ 0, test inverse to determine regime type directional bias."
+  
+  V5_SmoothedRegime:
+    addresses_failure_mode: "Score-mode fires too noisily; regime transitions are noisy spikes, not sustained shifts."
+    escalation_path: "If trade clustering is excessive (high churn), test SMA smoothing for regime persistence."
+
+novelty_and_testability:
+  V1_Conservative:
+    novelty: "baseline"
+    testability: "high (deterministic formula; no hyperparameter tuning)"
+    interpretability: "direct; score-mode specification is explicit"
+  
+  V2_LowerThreshold:
+    novelty: "incremental"
+    testability: "high (controlled threshold ablation)"
+    interpretability: "direct; threshold is scalar hyperparameter"
+  
+  V3_SymmetricWeighting:
+    novelty: "structural"
+    testability: "high (weight ablation; isolates ER vs VR contribution)"
+    interpretability: "direct; weights are transparent scalars"
+  
+  V4_InverseRegime:
+    novelty: "hypothesis reversal"
+    testability: "high (boolean regime inversion; deterministic)"
+    interpretability: "high; reverse thesis clearly stated"
+  
+  V5_SmoothedRegime:
+    novelty: "moderate (regime persistence constraint)"
+    testability: "high (SMA is deterministic)"
+    interpretability: "direct; smoothing period is transparent"
+
+decision_tree_for_validation_gate:
+  stage: "validation_gate"
+  primary_candidate: "V1-Conservative (exact specification; conservative per persona checklist)"
+  
+  if_V1_Sharpe_positive:
+    decision: "Pass to backtest_specification; V1 is primary candidate."
+    secondary: "Run V3 and V5 as robustness stress-tests in parallel."
+  
+  if_V1_Sharpe_zero_or_negative:
+    step_1: "Run V2 (lower threshold); determine if trade frequency is limiting factor."
+    step_2a_if_V2_positive: "Threshold ≥0.3 is optimal; refine to V2 or intermediate (0.35)."
+    step_2b_if_V2_negative: "Trade frequency is not limiting; edge is regime-type dependent. Test V4."
+    step_3_if_V4_positive: "Keltner thrives in anti-trend (choppy) regimes; invert V1 to V4."
+    step_3b_if_V4_negative: "Score-mode regime definition is fundamentally broken at SOLUSDT 4h; escalate to alternative data."
+
+alternative_data_justification:
+  defer_reason: "Keltner ATR already encodes volatility regime. Spread/funding rates marginal first pass."
+  trigger_for_escalation: "If V1, V2, V3, V4, V5 all fail (Sharpe ≤ 0 for all), then regime model is insufficient. Escalate to microstructure or positioning proxies."
+
+output_readiness:
+  backtest_specification_ready: "✓ yes (all variants fit existing CompositeStrategy and score-mode regime class; no infrastructure required)"
+  screening_backtest_ready: "✓ yes (5 variants, deterministic, reproducible)"
+  priority_backtest_order: "[V1, V2, V4, V3, V5] — test threshold first, then regime direction, then weighting and persistence."

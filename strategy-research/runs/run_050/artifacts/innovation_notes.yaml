@@ -1,0 +1,35 @@
+hypothesis_id: H-041-A
+refinement_attempt: 2
+stage: innovation_expansion
+
+refinement_context: "Attempt 1 submitted variants that failed cost feasibility gate on BR-02 (sparse activation) and BR-03 (timeframe parameter mismatch). Refinement recommends three reframing paths; this expansion applies Option A per gate recommendation."
+
+variant_selection:
+  chosen: V1_holding_window_extended_4h
+  recommendation_source: refinement_notes BR-03 primary_path Option A
+  reasoning: "Timeframe shift (1h→4h) directly resolves both blockers: (1) episode density increases 4–5×, lifting sparse-activation constraint; (2) 4h hold window aligns with empirical unwinding duration, reducing cost-per-bar from 17 to 0.27 bps. Mechanism unchanged."
+
+  not_chosen_alternatives:
+    option_b_1h_vol_gating: "1h + volatility rolling-percentile gate. Adds logic layer; introduces quasi-regime condition (high-vol vs baseline), partially undoing ungated property. Viable but slower convergence."
+    option_c_1h_prescreen: "1h + backward-extension validation on 2019-2023 window. Valid path; requires separate prevalidation cycle before main run."
+
+mechanism_audit:
+  verdict: SOUND
+  rationale: "Structural forced-flow (8h funding settlement, contractual unwinding) is the edge source. No behavioral assumption change. BR-03 identified parameter misalignment only, not mechanism failure. Timeframe shift is operational (execution-layer only)."
+
+cost_feasibility_resolution:
+  br_01_threshold_relaxed: "V1_threshold_relaxed (threshold=0.0001, 1–4 bar hold) REJECTED in attempt 1. Not reactivated. Cost drag=-26 to -30 bps/trade; implausible at plausible IC."
+  br_02_sparse_activation: "RESOLVED. 4h timeframe increases episodes 4–5×. Expected n_eff≈550 blocks (vs 138 on 1h). Exceeds reactivation decision floor n_eff≥50."
+  br_03_timeframe_mismatch: "RESOLVED. 4h hold window (32–96 bars = 4–24 calendar days) matches empirical 8–48h unwinding lag per funding-cascade research. Cost-per-bar feasible at 0.27 bps (IC≥0.15 required; plausible range 0.10–0.20 for structural threshold signals)."
+
+alternative_paths_documented:
+  reverse_hypothesis: "Near-zero funding (|rate| < 0.0001) may indicate stable positioning, supporting directional continuation. Requires regime confirmation (trending regime filter) or behavioral pairing signal (e.g., volume surge). Ungated reformulation not evident. Shelved pending detector improvement or additional component availability."
+  behavioral_enrichment: "Liquidation volume, concurrent leverage ratio, whale positioning. Unavailable in current feed registry (liquidation_data not wired). Documented in feed_wishlist for future research window."
+
+diversity_audit:
+  categories_spanned: ["structural_rate"]
+  data_requirements_spanned: ["funding_open_interest"]
+  verdict: single_variant_confirmed
+  reason: "Research brief constrains to one variant only (reactivation, not expansion search). Diversity test not applicable. No cosmetic parameter-sweep risk."
+
+execution_notes: "Config (threshold=0.0002, scaling_factor=10.0) VERBATIM from run_041 per research_brief constraint. Timeframe shift is execution detail only; no recalibration. Run should proceed to backtest screening if cost-feasibility gate confirms 0.27 bps/bar assumption."

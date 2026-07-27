@@ -1,0 +1,38 @@
+hypothesis_id: "V1-PIVOT"
+
+thesis: |
+  Keltner channel lower-band breakdowns generate positive expected returns in 
+  BTCUSDT/ETHUSDT 1h during TRENDING regimes via mean-reversion bounce, 
+  inverting the failed upper-band momentum hypothesis.
+
+rationale: |
+  V1 upper-band breakout produced forecast_return_corr = -0.1705 and gross_pnl = 0.0, 
+  indicating inverted edge. Signal reversal to lower-band breakdowns directly addresses 
+  this inversion. In high ER (≥0.50) + high VR (≥1.20) regimes, price overshoots 
+  below lower band and recovers, generating mean-reversion pullback recovery.
+
+signal_concept: |
+  Binary long signal when price < lower_keltner_band during TRENDING regime.
+  Band = EMA(close, 20) ± ATR(20) × 1.5. Forecast = +10 when triggered, else 0.
+  Expected ≥30 signals over backtest window. Inverse of V1's momentum direction.
+
+target_market: "BTCUSDT, ETHUSDT"
+
+timeframe: "1h"
+
+assumptions:
+  - Negative correlation in V1 indicates inverted signal has real edge
+  - Lower-band breakdowns occur ≥30 times in backtest window
+  - Average winning trade > transaction costs (≥10 bps round-trip)
+  - TRENDING definition (ER ≥0.50, VR ≥1.20) captures regime state accurately
+
+expected_failure_modes:
+  - Lower-band breakdowns do not predict bounce; edge absent in both directions
+  - TRENDING threshold still captures chop despite regime validation
+  - Bounce magnitude insufficient vs. slippage/fees
+  - Regime thresholds require retuning despite V1 prior validation
+
+implementation_notes: |
+  Integrate as new KeltnerChannelComponent variant or modify existing. 
+  Hold ER/VR thresholds constant (no parameter sweep). Test only lower-band 
+  direction (no dual-direction test). Validate signal distribution ≥30 trades minimum.

@@ -1,0 +1,114 @@
+hypothesis_id: "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION"
+thesis: >
+  The SIGN of Binance 8h perpetual funding rate at every settlement bar (ungated, 
+  all magnitudes) carries mean-reversion information on 1h BTC/ETH returns. Continuous 
+  funding-sign contrarian pressure at every settlement (~125 bps activation) provides 
+  n_eff≈183 on 2-year window, adequate to detect plausible IC in [0.05, 0.20] range.
+
+rationale: >
+  Funding rate settlements force mechanical flow: positive rate → longs pay, need 
+  deleveraging; negative rate → shorts pay, need deleveraging. Prior extreme-threshold 
+  variant (H-041-A) parked for insufficient sample (n_eff=10). This variant removes 
+  magnitude gate (threshold=0.0), fires at every settlement, raising activation_rate 
+  ~8x to 125 bps. Expected n_eff≈183 provides power to falsify signal.
+
+edge_source:
+  category: "structural_forced_flow"
+  specific_mechanism: >
+    Funding rate settlements occur at 8h intervals (UTC hour % 8 == 0). Positive 
+    rate forces longs to rebalance; negative rate forces shorts. Mechanical deleveraging 
+    pressure follows every settlement regardless of magnitude, measurable in 8h-lagged 
+    mean-reversion.
+  why_not_arbitraged: >
+    Arbitrage requires holding synthetic hedges across venues for full 8h periods 
+    (capital-intensive, slow). The 8h lag prevents algorithmic quoting from capturing 
+    full reversion. Retail/mid-size positioning capacity is finite and cannot fully 
+    eliminate crowd-positioning effect at every bar.
+  evidence_type: "funding_open_interest"
+  measurable_proxy: >
+    8h funding_rate sign (positive/negative) predicts negative Spearman IC with next 
+    8h log-returns. Signal fires at every UTC settlement (hour % 8 == 0) regardless 
+    of magnitude (~1/8 activation, ungated).
+  requires_new_feed: null
+
+signal_concept: >
+  FundingRateMeanReversionComponent(threshold=0.0, scaling_factor=10.0) firing at 
+  every 8h settlement boundary (UTC hour % 8 == 0). Forecast = -sign(funding_rate) 
+  × 10.0; fires only at settlement bars, 0 elsewhere. Ungated. Reuses existing 
+  strategy_components.py; no new code.
+
+target_market: "BTCUSDT, ETHUSDT"
+
+timeframe: "1h"
+
+assumptions:
+  - "Binance 8h settlement timing is UTC hour % 8 == 0; no irregularities"
+  - "Funding sign is the directional predictor; magnitude is noise (threshold=0.0 valid)"
+  - "Mean-reversion window is 8h; correlation measurable across this horizon"
+  - "No structural breaks in funding regime between 2024-2025 test and live trading"
+
+expected_failure_modes:
+  - "Funding sign is purely random; IC≈0, p > 0.10"
+  - "Arbitrage capacity has scaled up post-2024; IC decays on live despite backtest"
+  - "Settlement bar identification is misaligned (irregular venue timing)"
+  - "Mean-reversion window is materially different (4h or 12h, not 8h); IC unstable across sub-windows"
+
+library_lookup:
+  indicator_id: "funding_rate_extreme"
+  regime_affinity_for_target: "neutral"
+  affinity_justification: >
+    Structural forced-flow is regime-agnostic; deleveraging occurs in trending, 
+    ranging, or volatile regimes. No regime condition per A2.3 standing policy.
+  prior_campaign_failures:
+    - run_id: "run_041"
+      mechanism_tried: "H-041-A: extreme threshold (threshold=0.001), n_eff=10"
+      reason_for_different_proposal: >
+        H-041-A failure was insufficient_sample (n_eff=10, p=0.97), not signal_quality. 
+        New run removes magnitude gate (threshold=0.0) to raise activation_rate 8x. 
+        Expected n_eff≈183 addresses power shortage. Mechanism (forced deleveraging) 
+        unchanged; signal density materially higher.
+  crowding_risk: "low"
+  crowding_deviation_justification: >
+    Funding rate signals require non-OHLCV data. Few retail traders access funding 
+    feeds; crowding is in price/volume signals. Campaign_knowledge_base: H-041-A 
+    showed inconclusive (insufficient_sample), not no_edge_observed, validating 
+    low crowding risk.
+
+power_parameters:
+  activation_rate: 0.125
+  activation_rate_rationale: "3 bars per 24h (UTC 00:00, 08:00, 16:00); 3/24 = 0.125"
+  plausible_ic_upper: 0.20
+  plausible_ic_upper_rationale: >
+    Structural_forced_flow literature: IC [0.05, 0.20]. H-041-A same mechanism 
+    showed IC=0.014 (underpowered); prior rebalancing/liquidation structural signals: 
+    IC 0.08-0.18.
+  n_bars: 17520
+  n_bars_rationale: "2 years × 365 × 24"
+  n_symbols: 2
+  n_symbols_rationale: "BTC, ETH"
+  is_market_wide: false
+  is_market_wide_rationale: "Per-symbol funding rates; not single market-wide index"
+  expected_active_n: 4380
+  expected_active_n_formula: "0.125 × 17520 × 2"
+  expected_n_eff: 183
+  expected_n_eff_formula: "4380 / 24 (block_size=24)"
+  min_detectable_ic_at_target_power: 0.074
+  min_detectable_ic_formula: "1 / sqrt(183 - 3)"
+  power_verdict: "ADEQUATE_POWER_A_PRIORI"
+  power_verdict_rationale: >
+    n_eff=183 >> viable minimum (~15). Min detectable IC ≈ 0.074 is well within 
+    [0.05, 0.20]. Sufficient to detect or falsify hypothesis on 2-year window. 
+    Contrast: H-041-A n_eff=10, min_detectable_ic≈0.42, insufficient. The threshold 
+    change is the material difference enabling this registration.
+
+run_queue_eligibility:
+  eligible: true
+  reasons:
+    - "KB check (A5.1): H-041-A not in exhausted_mechanisms (outcome=inconclusive, not no_edge_observed)"
+    - "Mechanism is materially different: threshold=0.0 (all) vs 0.001 (extremes), activation_rate 8x higher, power adequate"
+    - "Evidence type in available_feeds.yaml.available: funding_open_interest ✓"
+    - "Ungated (no regime conditions) per A2.3 standing policy ✓"
+    - "Reuses existing component; no new bot architecture changes ✓"
+    - "A1.3 anti-confabulation: specific_mechanism names measurable proxy (funding_rate sign) from available feed ✓"
+    - "Improvement 04 library_lookup complete; indicator is funding_rate_extreme, crowding_risk=low ✓"
+    - "A8.6 power pre-registration complete; power verdict=ADEQUATE_POWER_A_PRIORI ✓"

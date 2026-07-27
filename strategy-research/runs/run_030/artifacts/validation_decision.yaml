@@ -1,0 +1,17 @@
+hypothesis_id: "KELTNER_SCOREMODE_4H_AVAX"
+
+status: "conditional_approve"
+
+rationale: |
+  Hypothesis is sound: parameter-only variant (min_score 0.25 → 0.15) on existing score-mode regime; no execution, portfolio, or backtest logic changes required.
+  Variants are well-designed: V1–V3 test threshold sensitivity, V4 tests generalization, V5 (Reverse) provides control. Falsifiable criteria (Sharpe ≥0.30, ≥4 windows ≥5 trades, win_rate ≥50%) are measurable. Sample split (walk-forward stratification, regime_score quartiles) is sound.
+  Bias risks identified and mitigable: optimization bias controlled via reverse test; look-ahead bias manageable via ER/VR verification; multiple-comparison bias acknowledged.
+  Three conditions must be honored before implementation: (1) V1 must pass all decision_rules; (2) cost_drag model validated against live Binance fees; (3) V4 generalization (ETH Sharpe ≥0.28) confirmed.
+  If all conditions met, hypothesis graduates to backtest_specification.
+
+blocking_issues: []
+
+conditions:
+  - "V1-Conservative (AVAXUSDT, min_score=0.15) must pass all decision_rules: sharpe ≥0.30, win_rate ≥50%, ≥4 windows with ≥5 trades, max_drawdown ≤35%. If any gate fails, reject hypothesis and return to innovation_expansion for threshold re-tuning."
+  - "Cost drag model must be validated: confirm simulator commission/slippage assumptions match live Binance margin fees (maker/taker spreads, margin interest, liquidation risk). If live costs >20% of simulated, backtest overstates edge; require recalibration."
+  - "V4-Asset-Gen (ETHUSDT, min_score=0.15) must show median sharpe ≥0.28 and ≥3 windows with ≥5 trades. If ETHUSDT diverges (sharpe <0.20), confirm strategy is asset-specific and tune per-asset variants; do not deploy multi-asset without explicit per-asset approval."

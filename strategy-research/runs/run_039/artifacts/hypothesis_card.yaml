@@ -1,0 +1,18 @@
+hypothesis_id: TEMPORAL_COVERAGE_MULTI_REGIME
+thesis: "A 2-signal composite combining proven Keltner/TRENDING signal with an orthogonal secondary signal can achieve uniform monthly activation (21+/22 slots with >=1 trade per month per symbol) while maintaining forecast_return_corr >= 0.15."
+rationale: "Run_017 achieved 0.2145 forecast correlation with Keltner/TRENDING but activated only 15/22 monthly slots. Temporal distribution analysis identified zero-trade months (Jan/Sep/Oct for BTC; Jan/Mar/Jul/Nov for ETH). Layering an orthogonal secondary signal tuned to sparse months provides independent information to improve coverage without degrading composite correlation below the 0.15 success gate."
+signal_concept: "Primary (Keltner/TRENDING): ER>=0.50 filter; confirmed 0.21 correlation, active 15/22 slots. Secondary (non-regime): RSI mean-reversion or Stochastic %K on 30-min bars, tuned to sparse months only. Composite forecast = weighted_average(keltner_forecast, secondary_forecast). Weights optimized jointly. Secondary signal must not depend on ER/VR regime to remain orthogonal."
+target_market: "BTCUSDT, ETHUSDT"
+timeframe: "1h (30-min bars for secondary signal)"
+assumptions:
+  - "Secondary signal maintains orthogonality to ER/VR regime dependency."
+  - "Zero-trade month patterns (Jan/Sep/Oct BTC, Jan/Mar/Jul/Nov ETH) are stable across walk-forward windows."
+  - "Secondary signal shows correlation > 0.05 when tested in isolation on sparse months."
+  - "Joint optimization of composite weights does not introduce calendar overfitting."
+  - "Cost degradation acceptable to 50% threshold due to signal complexity and reduced trade concentration."
+expected_failure_modes:
+  - "Calendar patterns break during regime shifts; sparse months fill randomly in new periods."
+  - "Secondary signal correlation falls below 0.05 in walk-forward test, triggering pivot to seasonal-weighting approach."
+  - "Composite forecast_return_corr drops below 0.15 threshold despite improved activation coverage."
+  - "Cost drag exceeds 50% due to secondary signal trade clustering in sparse months."
+  - "Tight optimization on seasonal structure prevents generalization to out-of-sample periods."

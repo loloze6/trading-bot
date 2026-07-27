@@ -1,0 +1,40 @@
+hypothesis_id: "KELTNER_THRESHOLD_4H_AVAX"
+protocol_verdict: refine
+status: escalate
+criteria_summary:
+  - criterion: "Trade count per window (min ≥4 in any window)"
+    result: UNTESTED
+    reason: "Metric parsing error in hypothesis_verdict; actual trade counts per window are 300–438, well above ≥5 threshold. Criterion satisfied but marked UNTESTED due to formula mismatch."
+  - criterion: "Cost_drag < 80%"
+    result: FAIL
+    actual: 106.3993
+    required: "< 80"
+  - criterion: "Sharpe ≥ 0.30"
+    result: FAIL
+    actual: -5.428
+    required: "≥ 0.30"
+  - criterion: "Forecast directional edge (abs(forecast_return_corr) ≥ 0.03)"
+    result: FAIL
+    actual: 0.0021
+    required: "≥ 0.03"
+  - criterion: "Regime validity (target regimes must be informative)"
+    result: FAIL
+    reason: "mean_reversion regime (primary regime in run_031) marked uninformative in windows 2024-01, 2024-05, 2024-10 (forward_return_mean near 0)"
+
+primary_failure_mode: "Signal has no directional edge when restricted to threshold-gated regimes; target regime (mean_reversion) is uninformative on AVAX."
+
+config_to_failure_map: "Threshold-rules parameters (ER ≥0.30, VR ≥1.5, VR ≤1.2) successfully restrict regime activations (cost_drag reduced from 128% to 106% vs run_030 score-mode), BUT filtering destroys signal edge: forecast_return_corr collapsed from score-mode baseline to 0.0021. The high-conviction regime subset (where thresholds gate) lacks the forward return signal present in full dataset or score-mode aggregation."
+
+untested_criteria:
+  - "Regime activation frequency measurement per window"
+  - "Cost_drag breakdown by regime"
+  - "Sensitivity analysis: cost_drag vs ER_threshold and VR_threshold"
+  - "Confidence scaling implementation (V3)"
+  - "Regime persistence distribution (V5)"
+  - "Walk-forward thresholds calibration (V2)"
+
+proposed_change_dimension: "instrument"
+
+hypothesis_family: "keltner_breakout"
+
+altitude_justification: "Rule 2: forecast_return_corr=0.0021 (abs value) < 0.03 threshold, pvalue=0.530797 > 0.10 (no statistical significance). Rule 4: mean_reversion regime (firing ~80% of bars in mean_reversion regime) marked informative: false in windows 2024-01 (forward_return_mean=-0.00033244, n=104), 2024-05 (forward_return_mean=-8.02e-06, n=662), 2024-10 (forward_return_mean=-7.058e-05, n=644) — regime validity confirms near-zero forward edge in filtered regime. Signal exists in score-mode (run_030 gross_pnl=44.86 median) but is destroyed by thresholds; asset-specific regime dynamics likely cause thresholds to over-filter on AVAX. Escalate to test regime methodology on different instrument before abandoning signal family."

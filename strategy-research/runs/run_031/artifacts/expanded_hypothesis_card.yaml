@@ -1,0 +1,183 @@
+hypothesis_id: "KELTNER_THRESHOLD_4H_AVAX"
+base_hypothesis_id: "KELTNER_THRESHOLD_4H_AVAX"
+thesis: "Threshold-rules regime filtering (strict ER/VR component gates) reduces cost_drag below 80% by eliminating marginal regime trades while preserving Keltner signal edge in high-conviction regime subset."
+rationale: "run_030 diagnostic shows cost_drag=128.44% with positive gross_pnl=44.86 (median). Score-mode fires 40–60% of candles including weak ER/VR combinations where forward_return_mean ≈0 (uninformative). Threshold-rules gates restrict to 10–20% of candles. Expansion explores parametric sensitivity, hybrid fallback modes, persistence filtering, and asymmetric regime logic to robustify frequency control and Sharpe improvement."
+
+signal_concept: "Keltner mean-reversion (FIXED, identical to run_030): ema_period=20, atr_period=20, atr_multiplier=1.5, scaling_factor=-20.0. Forecast range -20 to +20. Signal magnitude scales with ATR-distance to 20-EMA."
+
+target_market: "AVAXUSDT"
+timeframe: "4h"
+
+expanded_variants:
+  V1_Conservative:
+    name: "Threshold-rules baseline (proposed)"
+    description: "Exact thresholds as hypothesis: trending fires when ER ≥0.30 AND VR ≥1.5; mean_reversion fires when VR ≤1.2. default_regime=unknown (blocks zero-forecasts outside regime). Expected regime activation: 10–20% of candles."
+    regime_thresholds:
+      trending:
+        - "ER ≥ 0.30"
+        - "VR ≥ 1.5"
+      mean_reversion:
+        - "VR ≤ 1.2"
+      default_regime: "unknown"
+    rationale: "Conservative baseline. Exact implementation of research_brief. Serves as control for variant comparisons."
+    expected_behavior: "cost_drag < 80%, Sharpe ≥0.30, ≥5 trades per ≥4 windows if regime activation ≥10%."
+
+  V2_Adaptive_Percentile:
+    name: "Percentile-based adaptive thresholds"
+    description: "Derive ER and VR thresholds from rolling window percentiles (60th, 40th) instead of fixed values. Trending: ER ≥ 60th_pct AND VR ≥ 60th_pct. Mean_reversion: VR ≤ 40th_pct. Adapts to local market regime distribution shifts."
+    regime_thresholds:
+      trending:
+        - "ER ≥ rolling_60th_percentile(ER_24)"
+        - "VR ≥ rolling_60th_percentile(VR_k5_w100)"
+      mean_reversion:
+        - "VR ≤ rolling_40th_percentile(VR_k5_w100)"
+      percentile_window: "252 bars (4h ≈ 6 days, approximately weekly recalibration)"
+      default_regime: "unknown"
+    rationale: "Fixed thresholds may be brittle across market regimes (bull/bear/choppy). Percentile-based adapts to local volatility and trend-intensity distributions. Expected activation: 20–30% of candles (higher than V1 due to percentile definition)."
+    expected_behavior: "Broader regime fires than V1. Sharpe improvement smaller but more robust across market phases. Activation frequency balances frequency control (< score-mode 40–60%) with trade count sufficiency."
+
+  V3_Hybrid_Fallback:
+    name: "Threshold-rules with unknown-regime fallback"
+    description: "Same thresholds as V1 (ER ≥0.30 AND VR ≥1.5, VR ≤1.2). When default_regime=unknown, instead of zeroing, apply Keltner at reduced confidence (e.g., confidence=0.3 vs nominal 0.7). Keltner positions execute but at lower sizing or lower priority. Mitigates trade count collapse if regime gates too restrictive."
+    regime_thresholds:
+      trending:
+        - "ER ≥ 0.30"
+        - "VR ≥ 1.5"
+      mean_reversion:
+        - "VR ≤ 1.2"
+      default_regime: "fallback_low_confidence (confidence scaling: 0.3)"
+    rationale: "V1 risks <5 trades/window if thresholds eliminate too many candles. Fallback allows Keltner signal to execute in marginal regime combos but at lower confidence, reducing position size and thus cost_drag impact. Preserves edge without frequency collapse."
+    expected_behavior: "Higher trade count than V1 (additional fallback trades). Cost_drag reduction smaller than V1 (fallback trades carry marginal-regime lossy tail). Robustness: higher likelihood of ≥5 trades/window across all windows."
+
+  V4_Asymmetric_Regime_Gates:
+    name: "Asymmetric thresholds (trending stricter, mean_reversion permissive)"
+    description: "Trending regime applies strict dual gates (ER ≥0.35, VR ≥2.0, higher than V1). Mean_reversion applies only VR ≤1.5 (relaxed vs V1 VR ≤1.2). Rationale: Trending is noisier; mean_reversion is more reliable. Asymmetry tailors gate strictness to regime signal quality."
+    regime_thresholds:
+      trending:
+        - "ER ≥ 0.35"
+        - "VR ≥ 2.0"
+      mean_reversion:
+        - "VR ≤ 1.5"
+      default_regime: "unknown"
+    rationale: "Regime validity analysis may show mean_reversion has higher forward_return_mean than trending in marginal ER/VR zones. Asymmetry exploits this: tighten trending gates (reduce spurious trending trades) while relaxing mean_reversion gates (admit more high-quality mean_reversion trades). Expected net: higher net trade quality, lower cost_drag via regime selectivity."
+    expected_behavior: "Fewer trending trades, more mean_reversion trades. If mean_reversion edge dominates, Sharpe improves faster than V1. Opposite if trending dominates; requires regime validity post-analysis."
+
+  V5_Persistence_Filter:
+    name: "Regime persistence voting (N-bar confirmation)"
+    description: "Threshold-rules thresholds identical to V1 (ER ≥0.30, VR ≥1.5, VR ≤1.2). Additionally require regime consistency: regime must hold for N consecutive bars before firing (e.g., N=3). Filters regime flip-flops; reduces noise from transient ER/VR spikes."
+    regime_thresholds:
+      trending:
+        - "ER ≥ 0.30"
+        - "VR ≥ 1.5"
+      mean_reversion:
+        - "VR ≤ 1.2"
+      persistence_bars: 3
+      default_regime: "unknown"
+    rationale: "ER and VR computed from rolling windows can spike transiently. Persistence voting (N-bar majority) smooths regime changes, reducing whipsaw trades that exit/re-enter same regime within a few bars. Expected: cost_drag reduction from fewer short-cycle trades; trade count may decline slightly if regimes are brief."
+    expected_behavior: "Lower trade count than V1 (persistence filter eliminates some regime transitions). Cost_drag reduction via whipsaw elimination. Sharpe sensitive to regime persistence distribution (if regimes are naturally brief, filter may be detrimental)."
+
+  V6_Reverse_Hypothesis:
+    name: "Relaxed regime gates during low-frequency periods (inverse frequency control)"
+    description: "During periods when threshold-rules detect <1 regime-fire per N bars (e.g., <1 fire per 5 bars), relax thresholds (trending: ER ≥0.25, VR ≥1.2; mean_reversion: VR ≤1.5) to maintain baseline trade frequency. When regime fires frequently (>2 per 5 bars), revert to strict thresholds (V1). Adaptive to market phase."
+    regime_thresholds:
+      high_frequency_mode:
+        trending:
+          - "ER ≥ 0.30"
+          - "VR ≥ 1.5"
+        mean_reversion:
+          - "VR ≤ 1.2"
+      low_frequency_mode:
+        trending:
+          - "ER ≥ 0.25"
+          - "VR ≥ 1.2"
+        mean_reversion:
+          - "VR ≤ 1.5"
+      frequency_trigger: "moving average of regime fires (last 20 bars). Threshold: 2 fires per 5 bars."
+      default_regime: "unknown"
+    rationale: "Reverse of V1 intent: instead of pure frequency reduction, dynamically relax gates when threshold-rules creates data famine (insufficient trades). Avoids catastrophic trade count collapse while maintaining cost_drag discipline in normal market phases. Hedge against V1 failure mode (frequency too low)."
+    expected_behavior: "Trade frequency more stable across market phases. Cost_drag improvement smaller than V1 (relaxed gates in low-frequency phases re-admit marginal-regime trades). Robustness: higher likelihood of consistent ≥5 trades/window even in low-regime-fire environments."
+
+alternative_data_candidates:
+  volume_profile_regime:
+    description: "VWAP deviation or volume-weighted skew as regime confirmation. If price trades above VWAP with high volume → trending confirmed. Reduces false regime signals from price alone."
+    availability: "Binance historical klines include volume; VWAP computable."
+    testability: "Implementable as supplementary gate; does not modify Keltner signal."
+
+  cross_timeframe_confirmation:
+    description: "Confirm 4h regime using 1h or daily regime detection. Fire 4h threshold-rules only if parent timeframe also signals same regime. Reduces noise from short-term regime micro-reversals."
+    availability: "Requires multi-timeframe candle fetching (already supported in DataManager)."
+    testability: "Additive; orthogonal to Keltner signal."
+
+  regime_transition_velocity:
+    description: "Rate of change of ER or VR (d_ER/dt, d_VR/dt). High velocity may indicate regime instability; gate trades based on regime smoothness. Filters trades at regime boundaries."
+    availability: "Computable from ER_24 and VR rolling buffers."
+    testability: "Supplementary filter; no signal modification."
+
+reverse_hypothesis:
+  thesis: "Increasing regime activation frequency (inverse of threshold-rules) via continuous score-mode aggregation with optimized min_score improves Sharpe by capturing marginal ER/VR regime combinations that benefit from position sizing modulation (confidence-based scaling) rather than gating."
+  mechanism: "Instead of blocking marginal regimes, apply lower confidence scores (0.1–0.3) to marginal ER/VR combinations and higher confidence (0.7+) to high-conviction combinations. Use confidence to scale position size, not to gate trades. Keltner positions execute at all ER/VR combinations but with variable sizing."
+  rationale: "V1 assumes binary regime (fire/no-fire). Reverse assumes continuous regime validity (score gradation). If Keltner's edge is weak in marginal regimes but not zero, small-sizing at low confidence may maintain positive edge while reducing cost_drag via lower notional risk per marginal-regime trade."
+  expected_behavior: "Higher trade frequency than V1 (all regimes fire). Cost_drag reduction via sizing modulation (smaller marginal-regime trades). Success criterion: cost_drag < 80% and Sharpe ≥0.30 without gates, using only confidence scaling."
+
+behavioral_features:
+  regime_clustering:
+    description: "Post-backtest analysis: cluster regime activations by time-of-day, day-of-week, or by calendar phase (month, quarter). If regimes cluster seasonally or by hour, suggests regime dynamics are asset-specific or time-dependent. Triggers asset-tuned or time-tuned variant consideration."
+
+  position_entry_clustering:
+    description: "Analyze whether Keltner positions cluster during specific market conditions (e.g., overnight gaps, high-vol hours, news windows). High clustering may indicate regime gates are correlated with execution quality; low clustering suggests regime gates are orthogonal to execution risk."
+
+  regime_persistence_distribution:
+    description: "Measure duration of regime activations (how many consecutive bars in trending/mean_reversion). If persistence is high (mean >10 bars), persistence filter (V5) likely beneficial. If persistence is low (mean <3 bars), V5 may be detrimental."
+
+  cost_drag_regime_breakdown:
+    description: "Break down cost_drag by regime (trending vs mean_reversion vs unknown). Identify which regime carries highest cost_drag per trade. Informs targeted threshold tightening (e.g., if trending has high cost_drag, tighten V4 asymmetric trending gates further)."
+
+regime_specific_variants:
+  bullish_market_tuning:
+    description: "If regime validity shows trending ER/VR thresholds perform differently in strong uptrends (slope_ma > +10%), use tuned thresholds (e.g., VR ≥1.3 vs 1.5) during uptrend phases. Adapts gates to bull-specific regime dynamics."
+    implementation_note: "Requires slope detection (linear regression or ma delta); orthogonal to Keltner."
+
+  high_volatility_regime:
+    description: "If ATR (or VR) exceeds 2.0 (high volatility), loosen VR thresholds (trending: VR ≥1.3; mean_reversion: VR ≤1.8) to maintain consistent regime activation. High-vol markets emit stronger ER/VR swings; fixed thresholds may over-filter."
+    implementation_note: "Uses VR rolling percentile or ATR level as regime phase indicator."
+
+  low_volume_regimes:
+    description: "If Binance volume drops below 20th percentile of session-typical volume, increase threshold strictness (trending: ER ≥0.35; VR ≥2.0). Low-volume regimes are noisier; stricter gates filter spurious regime signals."
+    implementation_note: "Volume readily available in klines."
+
+success_criteria_per_variant:
+  V1_Conservative:
+    cost_drag: "< 80%"
+    sharpe: "≥ 0.30"
+    trade_count: "≥ 5 per ≥4 windows"
+    gross_pnl: "positive or near-zero"
+
+  V2_Adaptive_Percentile:
+    cost_drag: "≤ 90% (smaller reduction than V1 acceptable if more robust)"
+    sharpe: "≥ 0.25 (lower threshold due to broader regime fires)"
+    trade_count: "≥ 6 per ≥4 windows (expected higher from percentile definition)"
+    gross_pnl: "positive or near-zero"
+
+  V3_Hybrid_Fallback:
+    cost_drag: "< 85% (fallback trades may increase vs V1)"
+    sharpe: "≥ 0.20 (fallback trades may dilute signal)"
+    trade_count: "≥ 8 per ≥4 windows (fallback provides insurance)"
+    gross_pnl: "positive or near-zero"
+
+  V4_Asymmetric_Regime_Gates:
+    cost_drag: "< 75% (asymmetry may achieve better selectivity than V1)"
+    sharpe: "≥ 0.35 (asymmetry exploits regime-specific edge)"
+    trade_count: "≥ 5 per ≥4 windows"
+    gross_pnl: "positive or near-zero"
+
+  V5_Persistence_Filter:
+    cost_drag: "< 80% (persistence may improve selectivity)"
+    sharpe: "≥ 0.30 (whipsaw reduction may boost Sharpe)"
+    trade_count: "≥ 4 per ≥4 windows (persistence may reduce slightly)"
+    gross_pnl: "positive or near-zero"
+
+  V6_Reverse_Hypothesis:
+    cost_drag: "< 80%"
+    sharpe: "≥ 0.25 (confidence scaling may dilute compared to pure thresholds)"
+    trade_count: "≥ 6 per ≥4 windows (relaxed gates ensure baseline frequency)"
+    gross_pnl: "positive or near-zero"

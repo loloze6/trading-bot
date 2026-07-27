@@ -1,0 +1,81 @@
+hypothesis_id: H-041-C
+asset: "BTCUSDT, ETHUSDT"
+timeframe: "1h"
+run_type: "reactivation"
+research_question: >
+  H-041-C (F&G extreme -> contrarian mean-reversion, persistent_behavioral_bias)
+  was parked insufficient_sample_inconclusive at run_042 (n_eff=13, active_n=316,
+  IC=0.190 in the expected direction but p=0.547, 2024-2025 window only). Its
+  recorded reactivation_condition (campaign_knowledge_base.yaml, finding
+  fear_greed_contrarian_inconclusive) is: "Data extension to 2018+. F&G available
+  since 2018; 7-year window (2018-2025) gives active_n~557 per symbol, n_eff~46
+  with 2 symbols... Do NOT retune 25/75 thresholds on new data -- requires
+  H-041-C-v2 registration per A8.5.3." That data has now been backfilled and
+  verified (fear_greed_daily.csv from 2018-02-01 through present; see
+  strategy-research/docs/p1b_fetch_manifest.md). This run re-prescreens the
+  IDENTICAL mechanism over the extended range [2018-02-01, 2025-12-31] (holdout
+  2026-H1 untouched). Pre-registered episode count from the real backfilled data:
+  180 raw pooled episodes (BTC-copy + ETH-copy of the single global F&G series;
+  ~90 unique real-world sentiment episodes -- see the market-wide double-counting
+  caveat in runs/run_048/artifacts/pre_registration.yaml and
+  strategy-research/docs/p1b_episode_preregistration.yaml), computed BEFORE any IC
+  was touched.
+signal_concept: >
+  FearGreedContrarianComponent(fear_threshold=25.0, greed_threshold=75.0,
+  scaling_factor=10.0) -- REUSED VERBATIM from run_042's
+  candidate_strategy_config.json. Fires at the daily boundary bar (UTC hour==0)
+  when fear_greed<25 (long) or fear_greed>75 (short); 0 otherwise. Ungated (A2.3):
+  regime_detector.rules=[], default_regime="mean_reversion" (matches run_042
+  exactly; known F7 one-bar engine caveat applies identically, see
+  pre_registration.yaml).
+significance_methodology: >
+  MANDATORY: this prescreen must use A8.5.1a (episode-blocked significance,
+  strategy-research/tools/episode_significance.py), NOT the plain 24-bar
+  _block_adjusted_significance path. gap_bars=48 1h-bars (~2 days;
+  campaign_config.yaml default), min_n_episodes=8, era boundaries per
+  campaign_data_policy.yaml's `eras` list. Report per-era IC/episode counts
+  alongside the pooled bootstrap result (A8.5.1a rule 5 -- era stratification is
+  reporting, not resampling), AND separately flag the market-wide double-counting
+  caveat (F&G's 180 raw episodes ~= 90 unique events observed twice per symbol
+  copy) when interpreting the resulting p-value/CI. See
+  docs/plan/AMENDMENTS_01-06.md "A8.5.1a-spec".
+constraints:
+  - "REACTIVATION, not a new hypothesis exploration: reuse the run_042 config
+     VERBATIM (fear_threshold=25.0, greed_threshold=75.0, scaling_factor=10.0). Do
+     NOT propose parameter variants, do NOT retune the 25/75 thresholds. Any
+     recalibration would be a new trial (H-041-C-v2, A8.5.3) -- out of scope for
+     this run."
+  - "One variant only (V1 = the exact run_042 config). No innovation_expansion
+     diversity search -- this is a straight reactivation, not a fresh search."
+  - "Ungated only (post-A2.3 standing policy): regime_detector.rules=[]."
+  - "Existing component only: FearGreedContrarianComponent. No new component code."
+  - "Data range: [2018-02-01, 2025-12-31]. Do NOT touch holdout_range (2026-01-01
+     to 2026-06-30) at any stage."
+  - "Must not propose ideas that require replacing the whole existing bot
+     architecture."
+  - "Carry forward run_042's original binding checks (see
+     runs/run_048/artifacts/pre_registration.yaml carried_forward_pre_042_checks):
+     alignment-shift-effect direction check, sentiment-vs-price-momentum baseline
+     comparison if this proceeds to backtest, A8.4 re-verification trigger if
+     active-bar IC>0.15 or p<0.05."
+  - "STOP before any walk_forward_validation stage if this prescreen passes both
+     the IC-significance gate AND the cost gate -- era-transferability (2018-2021
+     market structure vs 2026) is a user-level review, not an automatic route.
+     Report per-episode-era numbers and halt at that decision point."
+power_parameters:
+  activation_rate: null   # computed from actual pooled active_n / n_bars_total, not free-handed
+  plausible_ic_upper: 0.20   # hypothesis-design SKILL.md A8.6 anchor table: sparse
+                              # feed-based, extreme/threshold-gated
+  n_bars: null   # computed from actual loaded OHLCV range, not free-handed
+  n_symbols: 2
+  is_market_wide: true   # F&G is a SINGLE global index shared by both symbols --
+                          # A8.6 rho-correlation discount applies (n_eff_symbols
+                          # formula), same caveat as the episode double-counting note above
+edge_source:
+  category: persistent_behavioral_bias
+  evidence_type: fear_greed
+  specific_mechanism: >
+    Extreme crowd sentiment (measured by the alternative.me Fear & Greed index)
+    reflects a persistent overreaction bias; contrarian positioning against
+    extreme readings profits as sentiment mean-reverts. Measurable proxy: daily
+    fear_greed index value, available in fear_greed_daily.csv.

@@ -1,0 +1,67 @@
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: trending
+        any_of:
+          - - id: er
+              op: gte
+              value: 0.50
+            - id: vr
+              op: gte
+              value: 1.20
+      - regime: mean_reversion
+        any_of:
+          - - id: vr
+              op: lt
+              value: 0.90
+      - regime: chop
+        any_of:
+          - - id: vr
+              op: between
+              low: 0.90
+              high: 1.20
+            - id: er
+              op: gte
+              value: 0.50
+    default_regime: trending
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: keltner_lower_band_mr
+            class: strategies.strategy_components.KeltnerBreakoutComponent
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 1.5
+              scaling_factor: -20.0
+            weight: 1.0
+            lookback: 500
+            transforms:
+              - op: identity
+      mean_reversion: null
+      chop: null
+config_rationale:
+  - "Hypothesis signal (lower-band mean-reversion in TRENDING) maps to KeltnerBreakoutComponent with scaling_factor: -20.0"
+  - "KeltnerBreakoutComponent oscillator = (price - EMA) / band_distance; negative when price < lower band; scaling_factor -20.0 flips sign to positive, producing long forecast on lower-band breaks"
+  - "Band parameters: EMA period 20, ATR period 20, ATR multiplier 1.5 (per hypothesis constraints)"
+  - "Regime detection: TRENDING = ER ≥0.50 AND VR ≥1.20 (threshold_rules mode)"
+  - "ER component (EfficiencyRatioRegimeComponent): measures trend strength (0–1 smoothed)"
+  - "VR component (VarianceRatioComponent): measures variance expansion (~0.5–1.5, >1.1 trend signal)"
+  - "Non-TRENDING regimes (mean_reversion, chop) set to null: produce 0 forecast per validation protocol"
+  - "Transform pipeline: identity (no additional normalization; raw KeltnerBreakoutComponent output is directional forecast); ensemble clips final to ±20"
+component_gap: null

@@ -1,0 +1,51 @@
+stage: innovation_expansion
+run_id: run_005
+research_brief_checksum: volume_momentum_btcusdt_1h
+base_hypothesis_checksum: volume_momentum_btcusdt_1h_base
+
+expansion_axes:
+  primary: "Volume confirmation persistence and regime-specific sensitivity"
+  secondary:
+    - "Momentum lookback window (3–7 bars vs fixed 5)"
+    - "Volume threshold (1.1–1.5 vs fixed MA ratio)"
+    - "Standardization method (log vs z-score vs joint)"
+    - "Thesis direction (continuation vs reversal)"
+
+variant_rationale:
+  variant_001: "Control. Preserve original formula exactly for baseline comparison."
+  variant_002: "Tests persistence hypothesis: institutional conviction requires multi-bar durability."
+  variant_003: "Falsification test. Reverses thesis to exhaustion paradigm; checks if volume + momentum signals reversal instead."
+  variant_004: "Parametric specialization. TRENDING and RANGING regimes have different momentum persistence and absolute volumes."
+  variant_005: "Robustness to structural changes. Z-score normalization survives BTC adoption, venue consolidation, and leverage cycles."
+  variant_006: "Statistically principled. Joint standardization reduces systematic bias on low-vol vs high-vol market phases."
+
+testability_score:
+  all_variants: "High (9/10). Fit existing SubStrategyComponent interface; only formula/threshold changes."
+  backtest_framework_impact: "Minimal. No execution, portfolio, or rebalance logic changes required."
+  implementation_effort_per_variant: "1–2 hours in simple_strategy.py only."
+
+failure_mode_coverage_matrix:
+  volume_divergence_whipsaw: "variant_002 (multi-bar conviction), variant_005 (z-score dampens outliers)"
+  regime_transition_fragility: "variant_004 (regime-adaptive thresholds), transition_damped behavior"
+  flash_crash_spikes: "variant_005 (z-score), behavioral_feature (alignment penalty)"
+  thin_liquidity_bias: "variant_005 (vol z-score), regime_specific dampening for low-vol regimes"
+  structural_breaks: "Walk-forward validation required; variants adapt but cannot prevent breaks"
+
+novel_elements:
+  - "Conviction streak: Tests if institutional volume requires consecutive-bar persistence, not just single spikes."
+  - "Inverse volume-momentum (variant_003): Directly contradicts base thesis; exhaustion detection."
+  - "Regime-adaptive windows: Decouples momentum lookback from asset/regime."
+  - "Volume z-score (variant_005): Resilient to absolute volume changes across market adoption phases."
+  - "Joint standardization (variant_006): Addresses systematic low-vol regime bias in base formula."
+
+architecture_compliance:
+  ohlcv_only: "✓ All variants derive from OHLCV; no paid data or external APIs."
+  component_framework: "✓ Each variant fits SubStrategyComponent output signature."
+  code_locality: "✓ Changes isolated to simple_strategy.py formula methods."
+  existing_rebalance_logic: "✓ No changes to ForecastManager, ExecutionHandler, or PortfolioInfo required."
+  regime_detection: "✓ All variants compatible with existing MarketRegime classification."
+
+next_stage_inputs:
+  - "All 6 variants ready for validation_gate screening."
+  - "Reverse hypothesis (exhaustion) and regime-adaptive specs require explicit test cases."
+  - "Behavioral features (conviction_streak, alignment_penalty) should be tested as optional modifiers first."

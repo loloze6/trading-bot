@@ -1,0 +1,169 @@
+run_id: run_018
+stage: innovation_expansion
+base_hypothesis_id: V2-PIVOT-A
+
+expansion_strategy: |
+  Expanded base RSI momentum hypothesis across 7 signal variants (1 conservative, 3 structural
+  alternatives, 2 filters/gates, 1 reverse), 3 alternative data sources, and 2 regime-specific
+  adaptations. All variants respect regime constraint (TRENDING only) and signal-component-only
+  modification rule (no execution/rebalance changes). Expansion prioritizes testability within
+  existing strategy framework.
+
+variant_selection_rationale:
+
+  V2-PIVOT-A-CONSERVATIVE:
+    purpose: "Establish baseline; quantify value of quantile adaptation vs static thresholds."
+    novelty_level: "Low (removes adaptation, keeps signal family)."
+    risk: "Expected to show higher pvalue (less selective); if Sharpe drops significantly,
+      quantile adaptation is critical. If Sharpe neutral, standard RSI may be sufficient."
+    blocker_address: "None (no prior rejection)."
+
+  V2-PIVOT-A-STOCH:
+    purpose: "Alternative momentum family; tests range-normalization vs magnitude-based."
+    novelty_level: "Medium (different indicator, same family)."
+    risk: "Stochastic may be over-sensitive to range compression in low-volatility TRENDING
+      periods. Expected to show higher drawdown in choppy markets."
+    blocker_address: "None (exploratory variant)."
+
+  V2-PIVOT-A-MULTI-TIMEFRAME:
+    purpose: "Filter consensus over-subscription; test whether 1h signals are confirmed
+      higher-TF structure."
+    novelty_level: "Medium (multi-scale structure, same signal logic)."
+    risk: "May reduce sample size (fewer entries); expected Sharpe improvement but lower
+      trade frequency. If trade frequency drops > 60%, variant becomes impractical."
+    blocker_address: "Addresses failure mode: 'Consensus momentum reduces alpha'."
+
+  V2-PIVOT-A-REVERSE:
+    purpose: "Falsification test; if reverse outperforms base, regime classification
+      hypothesis is inverted."
+    novelty_level: "High (inverse signal thesis)."
+    risk: "If reverse shows pvalue < 0.05 and Sharpe > 0.5, escalate to regime
+      investigation. High-risk experimental variant."
+    blocker_address: "Diagnostic: determine whether TRENDING regime predicts momentum
+      or mean-reversion."
+
+  V2-PIVOT-A-ADAPTIVE-THRESHOLD:
+    purpose: "Explore meta-indicator normalization; compare Bollinger Bands on RSI vs
+      rolling quantiles."
+    novelty_level: "Medium (alternative normalization, same base signal)."
+    risk: "Bollinger Bands may introduce additional lag or look-ahead bias. Requires
+      forward-test confirmation on RSI variance stability."
+    blocker_address: "Addresses concern: 'Look-ahead bias in rolling percentile'."
+
+  V2-PIVOT-A-VOLUME-FILTER:
+    purpose: "Gate signal with volume agreement; reduce false entries from low-volume
+      pseudo-momentum."
+    novelty_level: "Low-Medium (volume gate, not new signal family)."
+    risk: "Low risk; additive filtering. Worst case: reduces trade frequency without
+      improving Sharpe. Best case: filters noise."
+    blocker_address: "Addresses failure mode: 'Consensus momentum over-subscribed'."
+
+  V2-PIVOT-A-DIVERGENCE:
+    purpose: "Shift from level (overbought/oversold) to slope (divergence = momentum
+      failure). Early warning signal."
+    novelty_level: "High (structural signal change within momentum family)."
+    risk: "Divergence detection requires price-RSI multi-bar comparison. False divergences
+      common in choppy ranges. Expected high false-positive rate; testable via pvalue."
+    blocker_address: "None (exploratory). Tests whether momentum slope-failure is detectable
+      in TRENDING regime."
+
+alternative_data_evaluation:
+
+  volume_weighted_metrics:
+    feasibility: "High (candle volume available in data_manager)."
+    expected_impact: "Volume-weighted RSI may filter low-conviction momentum, improving
+      pvalue by 0.05-0.10 if underlying true signal exists."
+    priority: "Use as enhancement to base V2-PIVOT-A variant ONLY if base passes (pvalue
+      < 0.05, Sharpe > 0.5). Not tested in screening backtest."
+
+  order_book_imbalance:
+    feasibility: "Medium (requires API snapshot collection during backtest window)."
+    expected_impact: |
+      Order book positioning can confirm entry conviction. May improve win rate
+      (fewer false entries) by filtering low-imbalance entries. Historical reconstruction
+      feasible for recent data (< 3 months).
+    priority: "Deferred to walk-forward validation if base variant shows promise.
+      Avoid for screening (adds infrastructure cost)."
+
+  funding_rates:
+    feasibility: "Medium (Binance Futures API; not available for spot)."
+    expected_impact: |
+      Funding rate as inverse-pressure gauge. Entry when rate is near-zero or negative
+      (longs exhausted) may improve Sharpe by 0.3-0.5 by avoiding crowded entries.
+    priority: |
+      Deferred: applies to perpetuals (BTCUSDT-PERP), not spot (BTCUSDT).
+      Recommend post-screening perpetuals variant if base spot tests show edge.
+
+reverse_hypothesis_interpretation:
+
+  condition: "If V2-PIVOT-A-REVERSE (mean-reversion in TRENDING) outperforms base
+    (momentum in TRENDING) with pvalue < 0.05 and Sharpe > 0.5:"
+
+  implication: |
+    Base hypothesis is falsified. TRENDING regime (ER ≥ 0.50, VR ≥ 1.20) detects
+    high-volatility mean-reversion environments, NOT trend-continuation environments.
+    Regime definition is inverted or incomplete.
+
+  escalation_steps: |
+    1. Run V2-PIVOT-A-REVERSE baseline walk-forward test.
+    2. If reverse wins: re-examine ER/VR regime definition. Compute Hurst exponent
+       on TRENDING windows to check mean-reversion/persistence.
+    3. Propose regime re-calibration: separate "true trending" (ER ≥ 0.70, VR ≥ 1.5)
+       from "high-vol mean-reversion" (ER ≥ 0.50, VR ≥ 1.20, low Hurst).
+    4. Recommend: restart hypothesis_generation stage with corrected regime model.
+
+behavioral_features_implementation_priority:
+
+  price_acceleration:
+    priority: "Immediate (computable from OHLC without external data)."
+    role: "Confidence modifier to RSI signals, not standalone gate."
+
+  market_positioning:
+    priority: "Walk-forward phase (funding rates via API, limited to perpetuals)."
+
+  liquidation_cascades:
+    priority: "Research only (requires Coinglass external API, not in harness)."
+
+constraint_verification:
+
+  regime_gate:
+    status: "✓ All variants preserve TRENDING (ER ≥ 0.50, VR ≥ 1.20)."
+    note: "Sub-regime variants (e.g., ER ≥ 0.70) proposed but kept as separate gate
+      within same component, not regime change."
+
+  signal_component_only:
+    status: "✓ No execution, portfolio, or rebalance logic modified."
+    note: "Multi-timeframe variants require external TF data but use same component
+      interface."
+
+  no_multi_bar_confirmation:
+    status: "✓ Base and static variants require no multi-bar lag."
+    note: "V2-PIVOT-A-DIVERGENCE requires 2-bar comparison (previous bar RSI/price vs
+      current). Acceptable as local divergence detection, not confirmation filter."
+
+  forward_bias_check:
+    status: "✓ All variants use lagged RSI (14-bar lookback < current bar position)."
+    note: "Quantile thresholds use rolling 100-bar window ending at current bar.
+      Potential look-ahead bias in current-bar inclusion; validate with shifted window
+      (use bar[i-100:i]) in implementation."
+
+next_stage_handoff:
+
+  recommendation: |
+    Proceed to validation_gate (screening backtest). Recommend testing in order:
+    1. V2-PIVOT-A (base) — establish if momentum edge exists at all.
+    2. V2-PIVOT-A-CONSERVATIVE — quantify quantile value.
+    3. V2-PIVOT-A-REVERSE — falsify base hypothesis early.
+    4. V2-PIVOT-A-MULTI-TIMEFRAME — filter over-subscription (if base passes).
+
+  holdback_for_later:
+    - V2-PIVOT-A-STOCH (alternative family, test only if RSI exhausted).
+    - V2-PIVOT-A-ADAPTIVE-THRESHOLD (meta-indicator, test only if quantile suspected
+      of bias).
+    - V2-PIVOT-A-DIVERGENCE (divergence detection, experimental; test in walk-forward
+      if base Sharpe > 0.7).
+    - Behavioral features and alternative data (post-screening only).
+
+  blocker_dependencies: |
+    None. All variants are testable independently. Base variant (V2-PIVOT-A) is prerequisite
+    for interpreting conservative and reverse variants (comparative context).

@@ -1,0 +1,31 @@
+hypothesis_id: KELTNER_SCOREMODE_4H_AVAX
+thesis: |
+  Lower regime score threshold from 0.25 → 0.15 to increase trade frequency
+  (40-60%) and achieve 4+ windows with ≥5 trades while preserving the positive
+  forecast edge (corr=0.0493) observed at higher threshold.
+rationale: |
+  At 0.25, run_029 generated only 3 windows with ≥5 trades (need 4 to pass
+  robustness gate). Per-window analysis shows 2024-05 (3 trades) and 2024-07
+  (2 trades) fall just below threshold due to borderline ER/VR combinations
+  (e.g., ER=0.3, VR=0.5 scores 0.15, previously blocked). Lowering threshold
+  by 40% admits these margin bars without changing signal logic. Diagnostic
+  support: forecast_return_corr=0.0493 >> 0.03, cost_drag=52.08% << 80%,
+  win_rate=50%. Signal edge is valid; failure is regime firing frequency, not
+  signal quality.
+signal_concept: |
+  Keltner mean-reversion: ema_period=20, atr_period=20, atr_multiplier=1.5,
+  scaling_factor=-20.0. Unchanged from run_029. Forecast standardized by
+  stddev_24 × close, scaled to ±10. Win rate 50%, forecast_return_corr=0.0493.
+target_market: AVAXUSDT
+timeframe: 4h
+assumptions:
+  - Keltner signal remains valid at lower regime frequency (no overfitting from threshold relaxation)
+  - ER and VR components scale reliably at score=0.15; no coherence loss
+  - 40% threshold reduction increases qualifying bars by 40-60% (linear/sublinear scaling)
+  - Trade quality stable in regime sub-windows currently scored 0.15-0.25 (edge preserved at margin)
+  - AVAXUSDT exhibits similar ER/VR dynamics to SOLUSDT at 4h
+expected_failure_modes:
+  - Cost drag spikes >80% at 0.15: threshold admits too many choppy bars, sizing needs adjustment
+  - Sharpe near-zero despite increased trades: signal edge too weak (corr ~0.03), escalate to stronger component
+  - Per-window Sharpe highly variable: regime unstable across market conditions, escalate to regime methodology or instrument
+  - Still <4 windows with ≥5 trades at 0.15: robustness gate fails, escalate to higher timeframe or different instrument

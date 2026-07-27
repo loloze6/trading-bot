@@ -1,0 +1,56 @@
+{
+  "run_id": "20260711T140944Z_3233a792",
+  "created_utc": "2026-07-11T14:09:44.550164+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "warmup": 50,
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "sma_trend",
+              "class": "strategies.strategy_components.GatedSmaTrendLongOnlyComponent",
+              "params": {
+                "lookback_L": 100,
+                "scaling_factor": 10.0,
+                "er_period": 20,
+                "gate_threshold": 0.3
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "identity"
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      }
+    }
+  },
+  "config_sha256": "3233a792047c0f4fb9f804ed9c8adfb4ce362f1ac111f296c2e4766de2fb77e4",
+  "data": {
+    "symbols": [
+      "BTCUSDT"
+    ],
+    "timeframe": "86400s",
+    "start": "2021-03-13 00:00:00",
+    "end": "2022-04-01 00:00:00",
+    "bar_count": 385,
+    "data_sha256": "2af9ee9093b8ecb0a766d5031f4ad5229a58c129c4a95e53c0b1a384610484fe"
+  },
+  "git_sha": "2e244ebde77e912de75a4a3ea5da76cfc18a3c0d",
+  "engine": {
+    "lookback": 101,
+    "warmup": 50
+  }
+}

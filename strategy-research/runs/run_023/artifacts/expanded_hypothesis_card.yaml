@@ -1,0 +1,95 @@
+hypothesis_id: REFRAME-COST-REGIME-VALIDATION
+base_hypothesis_id: REFRAME-COST-REGIME-VALIDATION
+
+thesis: |
+  Keltner mean-reversion at 1h with TRENDING regime produced the only repeatable edge (corr=0.2145, cost_drag=27.45%).
+  Hypothesis: this edge is real, not noise, and replicable under identical conditions.
+  Expansion: test regime selectivity, signal polarity, and cross-regime generalization through diagnostic variants.
+
+expanded_variants:
+  - variant_id: V1-EXACT-REPLICATION
+    name: "Keltner Mean-Reversion @ 1h, TRENDING Regime (Baseline)"
+    signal: Keltner lower-band mean-reversion
+    timeframe: "1h"
+    regime_filter: "TRENDING (ER>=0.50, VR>=1.20)"
+    mechanism: "Volatility-normalized bands suppress false signals in mean-reverting zones. Identical to run_017."
+    testability: "Replicates run_017 exactly. Validates forecast_return_corr, cost_drag, win_rate, trade_count."
+    expected_outcome: "corr=0.2145±0.01, cost_drag≤50%, win_rate>40%"
+    novelty_level: "Conservative (control)"
+
+  - variant_id: V2-REGIME-GATE-TEST
+    name: "Keltner Mean-Reversion @ 1h, No Regime Filter (Regime Assumption Test)"
+    signal: Keltner lower-band mean-reversion
+    timeframe: "1h"
+    regime_filter: "None (apply to all candles)"
+    mechanism: "Tests whether TRENDING regime selectivity is essential or decorative. If performance matches V1, regime gate is neutral; if degraded, regime is filtering noise effectively."
+    testability: "Direct comparison with V1. If corr(V2) < 0.01, regime is essential. If corr(V2) ≈ corr(V1), regime is spurious."
+    expected_outcome: "corr<0.01 (regime essential) OR corr≈0.2145 (regime decorative)"
+    novelty_level: "Diagnostic"
+
+  - variant_id: V3-REVERSE-POLARITY
+    name: "Keltner Anti-Mean-Reversion @ 1h, TRENDING Regime (Polarity Falsification)"
+    signal: Keltner upper-band breakout (momentum, not mean-reversion)
+    timeframe: "1h"
+    regime_filter: "TRENDING (ER>=0.50, VR>=1.20)"
+    mechanism: "Tests reverse hypothesis: does TRENDING support momentum instead of mean-reversion? Falsification: if V3 fails (corr<0.01), mean-reversion is confirmed. If V3 succeeds, regime is ambiguous."
+    testability: "Direct falsification. V3 corr >> V1 refutes mean-reversion. V3 corr << V1 confirms mean-reversion."
+    expected_outcome: "corr<0.01 (confirms mean-reversion) OR corr>0.1 (refutes hypothesis)"
+    novelty_level: "Behavioral"
+
+  - variant_id: V4-CROSS-REGIME-TEST
+    name: "Keltner Mean-Reversion @ 1h, RANGING Regime (Cross-Regime Validation)"
+    signal: Keltner lower-band mean-reversion
+    timeframe: "1h"
+    regime_filter: "RANGING (ER<0.50 OR VR<1.20)"
+    mechanism: "Tests whether mean-reversion edge is TRENDING-specific or generalizes to other regimes. RANGING regimes typically support mean-reversion; if V4 matches V1, edge is regime-agnostic."
+    testability: "Compare V4 to V1. If corr(V4) ≈ corr(V1), edge generalizes. If corr(V4) > corr(V1), mean-reversion stronger in RANGING."
+    expected_outcome: "corr<0.01 (TRENDING-specific) OR corr>0.15 (generalizes)"
+    novelty_level: "Diagnostic"
+
+alternative_data_candidates:
+  - data_type: "Order book imbalance"
+    rationale: "Keltner uses price/vol only. Bid-ask depth ratio could improve signal timing at mean-reversion band touches."
+    availability: "Binance WebSocket depth snapshot; integrable via existing data_manager"
+    cost: "Low"
+
+  - data_type: "Liquidation cluster density"
+    rationale: "Validates mean-reversion probability at band touch via third-party liquidation data."
+    availability: "Public liquidation feeds (Coinglass API)"
+    cost: "Low"
+
+reverse_hypothesis: |
+  Inverse: TRENDING regimes exhibit momentum, not mean-reversion. Keltner bands signal volatility expansion, not reversion.
+  Mechanism: Price touches lower band due to momentum acceleration, not oversell. Upper band breakout predicts continued upside.
+  Test: V3 (anti-mean-reversion on TRENDING) outperforms V1 if true.
+
+behavioral_features:
+  - feature: "Band touch frequency within TRENDING"
+    proxy: "Count candles touching Keltner bands per hour; compare TRENDING vs non-TRENDING"
+    rationale: "Tests whether TRENDING regimes exhibit mean-reversion volatility or high-frequency noise."
+
+  - feature: "Mean reversion depth (price penetration)"
+    proxy: "Measure % distance from band center at touch; quantify mean-reversion probability"
+    rationale: "Validates whether Keltner bands correctly identify mean-reversion zones."
+
+  - feature: "Position sizing elasticity"
+    proxy: "Measure relationship between trade frequency and cost_drag across V1-V4"
+    rationale: "Tests whether cost_drag is driven by sizing or frequency."
+
+regime_specific_variants:
+  - regime: "TRENDING (ER>=0.50, VR>=1.20)"
+    variants: ["V1", "V3"]
+    rationale: "Primary regime. V1 baseline; V3 tests polarity."
+
+  - regime: "RANGING (ER<0.50 OR VR<1.20)"
+    variants: ["V4"]
+    rationale: "Cross-regime control."
+
+  - regime: "All (no filter)"
+    variants: ["V2"]
+    rationale: "Regime selectivity diagnostic."
+
+timeline: |
+  1. Run V1. Expected: corr≈0.2145, cost_drag≈27.45%. If achieved, proceed to V2-V4 parallel.
+  2. If V1 fails (corr<0.01): run_017 was fluke. Escalate to research_decision.
+  3. Run V2-V4 in parallel. Aggregate results for validation_gate.

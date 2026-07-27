@@ -1,0 +1,25 @@
+hypothesis_id: "P4_SMA_TREND_LONGONLY_DAILY"
+protocol_verdict: "refine"
+status: "refine"
+criteria_summary:
+  - "Walk-forward pooled IC >= 1.5–2.0%: UNTESTED (forecast_return_corr=null)"
+  - "Per-era IC decomposition: UNTESTED (forecast_return_corr=null)"
+  - "Reverse-polarity test: UNTESTED (IC computation failed)"
+  - "Activation sparsity <= 60%: UNTESTED (not in backtest output)"
+  - "Layer 2 cost check >= 34–35 bps: UNTESTED (backtest IC null, prescreen passed)"
+  - "Minimum holding period validation: UNTESTED (not computed)"
+primary_failure_mode: "component_forecast_incompatible_with_backtest_ic_methodology"
+config_to_failure_map: "SmaTrendLongOnlyComponent emits constant-magnitude forecasts (0 or 10.0); research_brief pre-registers block_bootstrap_all_bars_v1. Backtest applies standard Spearman IC (incompatible with binary forecasts), producing null values."
+untested_criteria:
+  - "All 14 Layer 1 and Layer 2 criteria: UNTESTED due to IC computation failure, not signal-quality failure"
+proposed_change_dimension: "component_execution_methodology"
+hypothesis_family: "sma_trend_following"
+altitude_justification: "Rule F6 (component_execution_error): prescreen pooled_ic=0.034803 (p=0.006, block_bootstrap_all_bars_v1) vs. backtest forecast_return_corr=null (all 30 windows). prescreen_backtest_cross_check.disagreement_detected=true; detail='likely degenerate active-bar-forecast shape'. Trades occurred (n_cumulative=117), ruling out no-signal-artifact. Root cause is IC methodology mismatch: constant-magnitude forecasts require block_bootstrap, not Spearman."
+root_cause:
+  mechanism_failure: "component_execution_error"
+  supporting_evidence: "prescreen_pooled_ic=0.034803 (p=0.006, block_bootstrap_all_bars_v1); backtest forecast_return_corr=null in all 30 window-symbol results; prescreen_backtest_cross_check reports disagreement with detail 'likely degenerate active-bar-forecast shape (see trading-bot/performance/signal_statistics.py)'. Cumulative trade count=117 > 0 (active_n_bars > 0). SmaTrendLongOnlyComponent outputs binary forecasts (0 or 10.0) per pre-registered design. Backtest IC methodology (Spearman correlation) is inapplicable to constant-magnitude signal."
+  confidence: "high"
+trade_attribution:
+  primary_weakness: "exit"
+  evidence: "exit_efficiency_median=-0.0726 (slight exit suboptimality); entry_efficiency_median=0.0 (perfect entry timing); exit_reason_breakdown.signal_flip_pct=99.15% (signal-based exits). pnl_concentration: top_decile=120.24%, worst_decile=-15.1% (concentrated PnL). Entries well-timed, exits leave minimal amount on table. Minor execution-level issue, subordinate to component instrumentation root cause."
+regime_attribution: null

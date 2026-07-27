@@ -1,0 +1,75 @@
+stage: innovation_expansion
+run_id: run_059
+hypothesis_id: FUNDING_MR_DAILY_RETEST
+
+expansion_constraint:
+  brief_constraint_text: "One variant only — fully pre-registered closure run; expand exactly the registered mechanism (FundingRateMeanReversionComponent, threshold=0.0, daily bars); no additional variants."
+  rule_applied: "innovation-expansion persona forbidden section: 'If research_brief.yaml contains \"one variant only\", \"single variant\", or \"no variants\", do NOT expand into multiple variants. Pass the base hypothesis through to a single variant (V1 only).'"
+  action_taken: "No expansion performed. Base hypothesis passed through as V1."
+
+variants_generated: 1
+
+diversity_audit:
+  applicable: false
+  reason: "Single-variant closure run. Diversity test (Improvement 04, which requires 2+ variants to detect cosmetic similarity) is not applicable."
+  base_variant_v1_library_profile:
+    indicator_id: funding_rate_extreme
+    category: structural_rate
+    data_requirements: funding_open_interest
+    known_regime_affinity: neutral
+    crowding_risk: low
+    edge_source_compatibility: [structural_forced_flow]
+
+improvement_01_check:
+  rule: "At least one variant must use evidence_type != price_volume_only (A1.2)."
+  base_evidence_type: funding_open_interest
+  status: satisfied
+  notes: "Base uses funding_open_interest, available in available_feeds.yaml. Constraint satisfied."
+
+anti_confabulation_check:
+  rule: "All variants must have measurable proxies in available feeds (A1.3)."
+  base_mechanism: "Funding rate sign flips (positive↔negative) from 8h Binance settlement CSV."
+  measurable_proxy_available: true
+  status: satisfied
+
+post_a23_ungated_check:
+  base_ungated: true
+  regime_gates_present: false
+  regime_specific_variants_count: 0
+  status: compliant
+  notes: "Base hypothesis has no regime conditioning. POST-A2.3 policy: ungated reformulation always satisfied trivially."
+
+alternative_formulations_analysis:
+  - id: funding_volatility
+    label: "Rate-of-change in funding rate"
+    ungated: true
+    rationale: "Acceleration of funding rate change could trigger mean-reversion entry sooner than sign flip alone. Same data feed; new component logic required."
+    blockage_reason: "Not pre-registered. Deferred as parameter refinement post-run."
+    route: "future_enhancement"
+
+  - id: momentum_reverse
+    label: "Funding rate as momentum signal (polarity inverted)"
+    ungated: true
+    rationale: "Alternative interpretation of funding rate information. Mechanically identical; only forecast direction differs."
+    blockage_reason: "Pre-registration specifies mean-reversion direction only. Polarity is a domain question, not a variant expansion question."
+    route: "separate_registration_if_evidence_justifies"
+
+feed_wishlist_candidates:
+  - id: open_interest_divergence
+    feed_type: funding_open_interest
+    reason: "OI data not wired (available_feeds.yaml). Complementary signal to confirm forced liquidation cascade."
+    route: "feed_wishlist.yaml / open_interest"
+
+  - id: settlement_phase_alignment
+    feed_type: "settlement timestamp granularity"
+    reason: "Funding settlements at fixed UTC times; cascade timing within daily bar may explain 1h bar lag_mismatch in run_044. Requires timestamp-aware candle building."
+    route: "feed_wishlist.yaml / settlement_microstructure"
+
+key_findings:
+  - "No expansion triggered: brief is pre-registered closure run. Single-variant pass-through honors mechanism specification exactly."
+  - "Evidence type diversity (A1.2): funding_open_interest available. Constraint satisfied on V1 alone."
+  - "Ungated compliance (POST-A2.3): base mechanism has no regime gates. No regime-conditional reformulations needed."
+  - "Alternative formulations exist but are deferred: funding_volatility (parameter tuning post-run), momentum reverse (separate registration), OI divergence (feed unavailable), settlement timing (new data capability)."
+  - "Reverse hypothesis documented for completeness: mechanically identical signal, inverted polarity. Not queued per pre-registration."
+
+token_summary: "One-variant pass-through. Base hypothesis preserved as V1. Improvement 01 satisfied (funding_open_interest used). POST-A2.3 satisfied (ungated). Improvement 04 N/A (single variant). All alternatives routed to future work or feed_wishlist."

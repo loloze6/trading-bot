@@ -1,0 +1,21 @@
+hypothesis_id: "V1 (H-RUN007 ER-relaxed)"
+status: "conditional_approve"
+
+rationale: |
+  RSI pullback + ER relaxation addresses root cause (sample starvation) 
+  from H-RUN007. Config-only change; no code risk. Leakage/look-ahead 
+  risks are manageable (ER/RSI history-only). However, approval is 
+  contingent on trade_count ≥30, Sharpe ≥ -0.5, win_rate ≥40%, and 
+  regime_frequency ≥15% holding in first walk-forward window. Failure 
+  of any gate triggers immediate rejection.
+
+blocking_issues: []
+
+conditions:
+  - "ER 0.25 applied consistently in regime_detector.rules[0]; no mixed thresholds"
+  - "Walk-forward must use ≥4 windows (or expanding window if <4 bars available)"
+  - "Binance 0.1% taker commission included; gross vs net Sharpe both reported"
+  - "First walk-forward window: if trade_count <30 OR regime_frequency <15%, abort—do not proceed to window 2"
+  - "First walk-forward window: if Sharpe <-0.5, abort—do not proceed to window 2"
+  - "Walk-forward Sharpe variance across windows must be <1.0; if >1.0, reject for overfitting"
+  - "Per-regime Sharpe computed: if in-regime Sharpe ≤ out-of-regime Sharpe, signal has no edge and hypothesis rejected"

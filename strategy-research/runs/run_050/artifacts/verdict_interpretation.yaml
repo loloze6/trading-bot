@@ -1,0 +1,46 @@
+hypothesis_id: "H-041-A"
+protocol_verdict: "kill"
+status: "pivot"
+criteria_summary:
+  - "Sharpe ≥ 1.0: UNTESTED (prescreen killed before backtest)"
+  - "Trade count ≥ 100: UNTESTED"
+  - "Win rate ≥ 45%: UNTESTED"
+  - "Max drawdown ≤ 30%: UNTESTED"
+  - "Cost feasibility (Layer 2 prescreen): FAIL (edge_to_cost_ratio=0.7368 << 2.0 required)"
+  - "IC significance (primary prescreen gate): FAIL (ic_all_bars=0.000822, ic_active_bars=0.017764, p=0.521 >> 0.1 threshold)"
+
+primary_failure_mode: "no_informational_content_prescreen"
+config_to_failure_map: "FundingRateMeanReversionComponent(threshold=0.0002, scaling_factor=10.0) on 4h timeframe shows zero directional IC across 139 pooled episodes spanning 7 years (2019–2025). The configuration correctly implements the contracted signal logic, but the 4h candle granularity does not capture pricing responses to funding-settlement cycles."
+
+untested_criteria:
+  - "Sharpe ≥ 1.0 (prescreen killed before walk-forward)"
+  - "Trade count ≥ 100 total (no full backtest ran)"
+  - "Win rate ≥ 45% (no full backtest)"
+  - "Max drawdown ≤ 30% (no full backtest)"
+
+proposed_change_dimension: "timeframe"
+hypothesis_family: "funding_rate_mean_reversion"
+
+altitude_justification: "Rule 2 (weak signal): ic_all_bars=0.000822, ic_active_bars=0.017764, p_value=0.521 >> 0.10 threshold — signal exhibits no detectable directional edge across 139 pooled episodes (7-year sample, high confidence). All eras (2019–2023 and 2024–2025) show near-zero IC: BTCUSDT historical IC=0.025, ETHUSDT historical IC=0.007. Secondary gate: cost_drag_pct=135.7%, edge_to_cost_ratio=0.7368 << 2.0 required. Prescreen killed. Altitude 2 (pivot) recommended: signal may be timeframe-misaligned; 8h candles align 1:1 with 8h UTC funding settlement, whereas 4h candles create alias lag."
+
+root_cause:
+  mechanism_failure: "already_priced_in"
+  supporting_evidence: "ic_all_bars=0.000822 (ungated, pooled across 110,904 bars, 139 episodes, p=0.521). ic_active_bars=0.017764 (gated to 1,887 active bars, 1.7% sparsity). Era stratification shows IC remains near-zero even in historical full-data periods (2019–2023): BTCUSDT=0.025, ETHUSDT=0.007. The structural funding-rate mean-reversion mechanism, if profitable at scale on this venue and timeframe, shows no empirical correlation with forward returns in a 7-year backtest window."
+  confidence: "high"
+
+regime_attribution: null
+
+trade_attribution: null
+
+prescreen_evidence:
+  ic_active_bars: 0.017764
+  ic_all_bars: 0.000822
+  forecast_sparsity_pct: 98.3
+  active_n_bars: 1887
+  n_bars_total: 110904
+  p_value: 0.521
+  edge_to_cost_ratio: 0.7368
+  cost_check_pass: false
+  route: "kill_no_ic"
+  n_episodes_pooled: 139
+  n_resamples: 2000

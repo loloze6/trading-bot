@@ -1,0 +1,34 @@
+status: resolved_proceed
+resolution_type: v1_diagnostic_complete_no_new_components_needed
+
+v1_finding: |
+  V1 log analysis complete. Root cause of the 15x cost gap between run_017 (cost_drag=27.45%,
+  2.5 trades/window) and run_023 (cost_drag=420%, 399 trades/window) is a single config field:
+
+  run_017: default_regime = "unknown"   → trades ONLY when ER>=0.5 AND VR>=1.2 (true TRENDING)
+  run_023: default_regime = "trending"  → trades ALL bars (TRENDING is the fallback for every bar)
+
+  This is not a position sizing problem, rebalance frequency problem, or regime age problem.
+  It is a config specification error: setting default_regime to "trending" disables the regime
+  gate entirely, firing Keltner signals on every bar regardless of ER/VR values.
+
+  Secondary difference: atr_multiplier 2.0 (run_017) vs 1.5 (run_023). Narrower bands =
+  more touches = more signals within genuine TRENDING windows too.
+
+  No new components (V2/V3/V4) are needed. The existing KeltnerBreakoutComponent with
+  correct params is sufficient.
+
+injected_context:
+  v1_diagnostic_result: "ROOT CAUSE FOUND: default_regime must be 'unknown' (not 'trending'). atr_multiplier must be 2.0 (not 1.5). No new components needed."
+  required_config_constraints: |
+    Generate ONE config only (V1 exact replication of run_017). Parameters:
+    - default_regime: "unknown"   (CRITICAL — do NOT set to "trending")
+    - atr_multiplier: 2.0         (CRITICAL — do NOT use 1.5)
+    - ema_period: 20
+    - atr_period: 20
+    - scaling_factor: -20.0
+    - regime: trending (ER>=0.5 AND VR>=1.2, threshold_rules)
+    - timeframe: 1h
+    Do NOT add vetoes, do NOT set default_regime to any active strategy.
+    Do NOT generate V2/V3/V4 variants — they are not needed given V1 finding.
+  component_gap_resolution: "No component gap. KeltnerBreakoutComponent with default_regime=unknown is sufficient."

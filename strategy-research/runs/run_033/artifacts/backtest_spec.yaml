@@ -1,0 +1,52 @@
+# REPLICATION MODE: reproducing RUN017 config exactly
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components:
+      - id: er
+        class: strategies.strategy_components.EfficiencyRatioRegimeComponent
+        params:
+          period: 24
+          smooth_period: 5
+      - id: vr
+        class: strategies.strategy_components.VarianceRatioComponent
+        params:
+          k: 5
+          window: 100
+    rules:
+      - regime: trending
+        any_of:
+          - - id: er
+              op: gte
+              value: 0.50
+            - id: vr
+              op: gte
+              value: 1.20
+    default_regime: unknown
+  strategies:
+    warmup: 51
+    regimes:
+      trending:
+        components:
+          - id: keltner_breakout
+            class: strategies.strategy_components.KeltnerBreakoutComponent
+            params:
+              ema_period: 20
+              atr_period: 20
+              atr_multiplier: 2.0
+              scaling_factor: -20.0
+            weight: 1.0
+            transforms:
+              - op: identity
+      mean_reversion: null
+      chop: null
+      unknown: null
+config_rationale:
+  - "Signal: KeltnerBreakout (EMA20/ATR20/2.0x, scaling_factor=-20.0) → KeltnerBreakoutComponent with ema_period=20, atr_period=20, atr_multiplier=2.0, scaling_factor=-20.0; negative scaling_factor inverts signal for lower-band short breakout."
+  - "Regime filter: TRENDING (ER≥0.50, VR≥1.20) → threshold_rules mode with EfficiencyRatioRegimeComponent (period=24, smooth_period=5) and VarianceRatioComponent (k=5, window=100); rule fires when both ER≥0.50 AND VR≥1.20."
+  - "Activation: signal active only in trending regime → strategies.regimes.trending contains KeltnerBreakoutComponent with weight=1.0; other regimes (mean_reversion, chop, unknown) set to null for flat (zero) forecast."
+  - "Normalization: none (exact replication constraint) → transforms=[identity] explicitly confirms no normalization applied; scaling_factor=-20.0 already produces output in ±20 range."
+  - "Fallback behavior: no trading when trending rule doesn't match → default_regime=unknown maps to null in strategies (flat forecast, no position changes)."
+  - "Warmup: KeltnerBreakoutComponent requires max(ema_period, atr_period)+1 = 21 bars minimum; set warmup=51 for legacy parity and diagnostic stability."
+component_gap: null

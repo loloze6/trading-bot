@@ -1,0 +1,105 @@
+campaign_id: rsi_mean_reversion_low_er
+runs_reviewed: 33
+review_date: "2026-07-10"
+
+kb_gate_answers:
+  untested_cells:
+    - "Daily-timeframe regime detectors (ADX-based, HMM overlays per detector_wishlist.yaml) — GATED: trigger_condition not yet fired (requires confirmed ungated edge with regime-dependent performance in Improvement 03). Do not recommend until trigger fires."
+    - "Higher timeframes (8h+, weekly) on tested instruments — possible but lower priority than validating recent 1d escalation"
+    - "Combination strategies (SMA trend + structural flow signals) — not yet scoped"
+  exhausted_cells_forbidden:
+    - "keltner_mean_reversion_no_edge"
+    - "keltner_breakout_inverted"
+    - "keltner_scoremode_no_edge"
+    - "rsi_mean_reversion_no_edge"
+    - "rsi_momentum_trending_cost_drag"
+    - "er_detector_unusable_btc_eth_1h"
+    - "H-041-A (funding_rate_mean_reversion_inconclusive — exhausted, reactivation_consumed_by: run_050)"
+    - "H-041-C (fear_greed_contrarian_inconclusive — exhausted, reactivation_consumed_by: run_048)"
+  combination_candidates: "None. FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED is marked inconclusive with reactivation_condition=timeframe escalation (test at 4h/daily), but this is escalation-to-retest, not combination. volume_impulse_continuation_blocked is feed-gated (liquidation data unavailable). No other power-parked findings available for combination."
+
+pattern_detected: same_root_cause_different_families
+
+pattern_evidence:
+  - "rsi_mean_reversion (run_014): corr = -0.0223"
+  - "keltner_breakout (run_015, 033): corr = -0.1705 (signal inversion)"
+  - "keltner_mean_reversion (run_017, 024, 027, 033): corr = 0.2145 on regime-gated bars only (~1%); ic_active_bars = -0.032 (p=0.83, not significant). Per KB reattribution, root cause is signal_quality, not regime_availability."
+  - "rsi_momentum_trending (run_018): corr = 0.018, cost_drag = 272.8%"
+  - "keltner_scoremode (run_028, 030): corr = 0.2953, cost_drag = 84.3%"
+  - "ema_spread_trend_continuation (run_043): ic_all_bars = -0.021, p = 0.588"
+  - "macd_trend_continuation (run_053): ic_active_bars = -0.050271, p = 0.292"
+  - "Common root cause: price-only technical indicators show no directional edge on liquid BTC/ETH 1h. KB finding (ema_spread_trend_continuation_v1_auto) documents pattern: 'EMA crossover is a textbook, universally-taught technical signal on the most liquid crypto pair — consistent with no price-only technical indicator (RSI, Keltner in any variant, now EMA spread) showing exploitable directional content on BTC/ETH 1h.'"
+  - "Structural barrier: ER-detector is Pareto-blocked on 1h BTC/ETH (cannot achieve [10-40% activation] AND [≤4 transitions/window] simultaneously); regime-conditional findings suffer small-sample bias."
+
+recommendation: continue
+
+recommendation_rationale: >
+  RE-CORRECTED 2026-07-10 after an incident (see
+  strategy-research/incident_20260710/INCIDENT.md): this file, along with
+  campaign_knowledge_base.yaml's p4_sma_trend_longonly_daily_auto entry, was
+  reverted to a kill/pivot narrative by a parallel agent working from
+  pre-metric-basis-audit context, in good faith, believing the correction
+  below was tampering. The correction has been independently re-verified by
+  fresh recomputation of the bar-level Sharpe figures directly from
+  run_054's stored bars.csv equity curves (not by re-asserting the prior
+  narrative) -- see INCIDENT.md for the arithmetic.
+
+  The campaign exhausted price-only technical signals (RSI, Keltner variants,
+  EMA, MACD) on BTC/ETH 1h with consistent root cause (signal_quality /
+  already_priced_in). Run_054 escalated to daily-timeframe SMA(100)
+  trend-following -- a genuinely distinct search space from the 1h
+  oscillators/channels already exhausted.
+
+  A metric-basis audit of run_054's decision-layer inputs found median_sharpe
+  (the figure that drove the original protocol_verdict=kill) was computed
+  from LIFO-fragment trade-exit-day statistics with a basis problem under
+  sparse trading (1-8 trades/window) -- not a fragmentation bug (the 117-trade
+  count reconciles exactly against a bar-level episode count either way).
+  Recomputed on a bar-level equity-curve basis, median_sharpe is +0.579
+  (BTCUSDT) and +0.032 (ETHUSDT) -- both positive. Run through the same
+  kill/promote/refine rule, the corrected protocol_verdict is REFINE, not
+  kill. status is correspondingly refine, not pivot: per SKILL.md's
+  mechanism_failure table, the cited root cause
+  (lag_mismatch_to_regime_persistence) prescribes refine (altitude 1), so a
+  regime-gated SMA(100)-daily variant is now treated as a REFINEMENT WITHIN
+  P4_SMA_TREND_LONGONLY_DAILY'S OWN LINEAGE -- not a new hypothesis
+  registration, and not a reactivation. See
+  campaign_knowledge_base.yaml's p4_sma_trend_longonly_daily_auto entry
+  (outcome: refine_pending_regime_gating, exhausted: false) and
+  runs/run_054/artifacts/verdict_interpretation.yaml for the full corrected
+  evidence. The whipsaw/regime-mismatch mechanism is now a hypothesis to test
+  via the regime-gated refinement, not a confirmed finding.
+
+  WISHLIST PREDICATE FLAG: config/detector_wishlist.yaml's
+  daily_timeframe_er_overlay candidate's trigger_condition.status is now
+  managed exclusively by
+  workflow/run_campaign.py::evaluate_and_persist_wishlist_predicate() (see
+  its kb_state_hash field for freshness verification) -- do not read status
+  as authoritative without confirming kb_state_hash matches a fresh sha256 of
+  campaign_knowledge_base.yaml's current bytes. As of this corrected KB
+  state, re-evaluate before consuming.
+
+  SUPERSEDED PREMISE (2026-07-09, earlier same day, preserved for the
+  record): this rationale previously said "run_054 has not been re-run with
+  fixed code" -- that was true when this review first ran, but the
+  IC-methodology fix was completed and a verdict derived from stored
+  (uncontaminated) artifacts within the same day, without a full backtest
+  re-run. That derived verdict (kill/pivot) was itself superseded by the
+  metric-basis correction above, which was itself reverted and then restored
+  per the incident noted at the top of this field.
+
+budget_assessment: "Runs used: 33 (exact campaign_budget unknown from campaign_state.yaml, but implied high given 8+ reframes and escalations across instruments/timeframes). Usage ratio likely <0.5 of typical campaign budgets. Run_054 (P4_ts_trend, daily SMA trend-following) is now refine, not kill/pivot: a regime-gated variant is the prescribed next step within the SAME hypothesis lineage (see recommendation_rationale and campaign_knowledge_base.yaml). The detector_wishlist.yaml daily_timeframe_er_overlay trigger must be re-evaluated against the restored KB (evaluate_and_persist_wishlist_predicate) before being consumed -- see WISHLIST PREDICATE FLAG above. This is the next highest-information step, not a new backtest."
+
+next_research_question: >
+  Refine P4_SMA_TREND_LONGONLY_DAILY (not a new registration) with a
+  regime-gated variant of SMA(100)-daily long-only: gate trading to a confirmed
+  trending regime (candidate detector per config/detector_wishlist.yaml's
+  daily_timeframe_er_overlay, PENDING fresh re-evaluation of that entry's
+  predicate against the restored KB outcome via
+  evaluate_and_persist_wishlist_predicate -- do not build off any status value
+  whose kb_state_hash does not match the current KB). Same instruments
+  (BTCUSDT, ETHUSDT), same protocol family (ts_trend_daily_v1), same cost
+  model. Test whether suppressing choppy-regime exposure improves the
+  already-positive-but-thin bar-level Sharpe (BTCUSDT +0.579, ETHUSDT +0.032)
+  without materially shrinking the per_trade_expectancy_bps edge (mean=1050.5,
+  t=1.91) via over-filtering.

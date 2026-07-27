@@ -1,0 +1,53 @@
+expansion_context:
+  run_id: "run_031"
+  prior_run: "run_030"
+  failure_mode_triggered: "Diagnostic Rule 1 (cost_drag=128.44% > 80% AND gross_pnl=44.86 > 0) → frequency problem, not signal quality."
+  pivot_altitude: "2 (consecutive same-dimension refinement forbidden; score-mode exhausted at min_score tuning. Switched regime detection methodology.)"
+
+expansion_rationale: |
+  Base hypothesis proposes exact threshold-rules gates (ER ≥0.30 AND VR ≥1.5, VR ≤1.2).
+  Expansion explores: (1) parametric robustness (percentile-based adaptation, asymmetric gates),
+  (2) frequency control fallbacks (V3, V6), (3) noise filtering (V5 persistence), (4) reverse logic
+  (V6 dynamic relaxation, V_reverse confidence scaling). All expand the threshold-rules concept
+  without modifying the fixed Keltner signal. Six variants cover parametric sensitivity, fallback
+  strategies, and risk hedges for expected failure modes (frequency collapse, insufficient Sharpe).
+
+variant_selection_logic:
+  V1_baseline: "Exact hypothesis as proposed. Control variant for all comparisons."
+  V2_adaptation: "Addresses brittleness risk: if fixed thresholds fail in specific market phases (bull/bear), percentile-based thresholds auto-adjust. Moderate parametric complexity; testable within existing regime architecture."
+  V3_fallback: "Hedges frequency collapse failure mode. If V1 activates <5 trades/window, fallback ensures minimum execution. Confidence-based sizing is already supported by strategy framework (confidence field in ComponentOutput)."
+  V4_asymmetry: "Data-driven optimization: if regime validity post-analysis shows mean_reversion and trending have different edge quality in marginal zones, asymmetric gates exploit this. Requires regime validity audit but is implementable."
+  V5_persistence: "Addresses regime flip-flop noise (transient ER/VR spikes creating spurious regime changes). N-bar voting is low-cost; orthogonal to signal."
+  V6_reverse: "Inverse of V1 intent; dynamic frequency control avoids catastrophic trade count collapse. Tests whether adaptive gating outperforms static thresholds. Distinct hypothesis within threshold-rules family."
+
+data_availability_assessment:
+  keltner_signal: "Already computed in run_030. No new data required."
+  er_indicator: "ER_24 (Kaufman efficiency ratio, period=24, smooth=5) already in rolling buffer. No new data."
+  vr_indicator: "VR_k5_w100 (Vertical Ratio, k=5, window=100) already in rolling buffer. No new data."
+  volume_profile: "VWAP and volume in Binance klines; additive, optional."
+  cross_timeframe: "DataManager already fetches multi-timeframe data for backtester; optional."
+  velocity_indicators: "Computed from ER/VR deltas (no new data source)."
+  regime_validity_audit: "Requires post-run analysis of forward_return_mean per regime combo; no new live data, only backtest-computed metrics."
+
+testability_notes:
+  framework_fit: "All six variants fit existing strategy/regime architecture. Keltner signal is unchanged (V1–V6 modify only regime gating logic, not signal computation). No execution, portfolio, or backtest infrastructure changes required."
+  keltner_immutability: "Hypothesis constraint: Keltner signal (ema=20, atr=20, mult=1.5, scale=-20.0) is FIXED across all variants. This constraint is honored in all V1–V6 and in reverse hypothesis."
+  confidence_scaling: "V3 and V6 use confidence field from ComponentOutput to modulate position sizing. Already supported; requires no new framework features."
+  regime_parameters: "V1–V5 modify ER/VR thresholds or add persistence voting. All remain gating layers; ER/VR component parameters (period=24, smooth=5 for ER; k=5, window=100 for VR) unchanged per research_brief constraints."
+  walk_forward_validation: "All variants will be backtested using same walk-forward protocol as run_030 (≥4 windows, ≥5 trades/window). Success criteria are standard (Sharpe, cost_drag, trade count)."
+
+open_questions:
+  regime_validity_urgency: "Q: Do regime validity metrics (forward_return_mean per ER/VR combo) already exist from run_030 diagnostics, or must they be re-computed? If re-computed, timing impact for V4 variant selection."
+  persistence_optimal_N: "Q: Is N=3 bars optimal for V5 persistence voting, or should N be data-driven (optimal persistence from regime duration distribution)? Trade-off: fixed N is simpler; optimized N may be more robust."
+  fallback_confidence_magnitude: "Q: For V3 fallback, is confidence=0.3 appropriate, or should it be 0.5 or 0.1? Sensitivity requires prior tuning or grid search."
+  asymmetric_parameter_derivation: "Q: For V4, should asymmetric thresholds (ER ≥0.35 trending, VR ≥2.0 trending, VR ≤1.5 mean_reversion) be pre-set or derived from regime validity analysis? Pre-set assumes trending is noisier; derived is more data-driven but adds latency."
+  multivariate_interaction: "Q: Do variants interact in compound ways (e.g., V3 fallback + V5 persistence)? Should only single-variant runs be tested first, or should interaction runs be planned?"
+
+next_stage_handoff:
+  artifact_path: "artifacts/expanded_hypothesis_card.yaml"
+  pipeline_stage: "validation_gate"
+  validation_inputs_required:
+    - "regime_validity_audit (post-run_030 analysis of forward_return_mean per ER/VR combo)"
+    - "regime_persistence_distribution (duration of regime activations in run_030)"
+    - "cost_drag_regime_breakdown (cost_drag by trending vs mean_reversion in run_030)"
+  validation_decision_gate: "Select ≤3 variants for screening backtest based on: (1) failure mode mitigation priority, (2) data availability, (3) parameter certainty. Recommend: V1 (baseline), V3 (frequency insurance), V4 (asymmetric if regime validity supports it)."

@@ -1,0 +1,105 @@
+hypothesis_id: KELTNER_SCOREMODE_4H
+falsifiable_statement: "Keltner mean-reversion (ema=20, atr=20, mult=2.0, scale=-20.0) combined with continuous regime filtering (score-mode: ER×VR aggregation) generates annualized Sharpe > 0.2 with regime selectivity reducing transaction cost drag below 50% of signal edge."
+null_expectation: "Without regime filtering or with random threshold, cost drag from 4h rebalancing exceeds signal edge; Sharpe ≤ 0. Trade frequency is insufficient (min_trade_count < 3 per walk-forward window)."
+required_evidence:
+  - "V1 screening Sharpe > 0.2 across walk-forward windows (median)."
+  - "V1 min_trade_count ≥ 3 per window (signal firing consistently, not sparse)."
+  - "V1 win_rate ≥ 40% (majority of fires profitable before cost drag)."
+  - "V1 max_drawdown_pct < 20% (regime filter prevents extended loss sequences)."
+  - "V1 hold-out Sharpe within 90% of screening Sharpe (generalization preserved, no overfitting)."
+bias_risks:
+  - risk: "Look-ahead bias in ER/VR computation"
+    mechanism: "If ER (Efficiency Ratio) or VR (Volatility Ratio) use future bars, regime score is causal-infected. Current architecture uses 20-bar rolling windows; verify no look-ahead in ATR or directional movement calculations."
+    mitigation: "Code audit of ER/VR implementation in simple_strategy.py. Confirm both computed from bars [t-19:t] at signal time t, no future references."
+  - risk: "Multiple comparisons (5 variants × 1 pair)"
+    mechanism: "Testing V1-V5 on SOLUSDT 4h inflates Type I error. One variant will outperform by chance."
+    mitigation: "Reserve V1 for holdout; screen V2-V5 on 80% of data only. Report best V2-V5 performer, validate separately in holdout."
+  - risk: "Pair selection bias (SOLUSDT retroactive choice)"
+    mechanism: "If SOLUSDT chosen because regime filtering 'looks good' on its chart, result is circular."
+    mitigation: "Accept as first-pass screening. Require cross-pair validation (≥2 additional pairs) if V1 passes holdout."
+  - risk: "Overfitting via threshold tuning (0.4 → 0.3 in V2)"
+    mechanism: "Relaxed threshold may fit noise in historical regime transitions without predictive power."
+    mitigation: "If V2 outperforms V1 in screening, segregate V2 evaluation to holdout before live rollout."
+  - risk: "Regime score high variance near threshold (marginal firing cases)"
+    mechanism: "Bars within ±0.05 of regime_score = 0.4 may fire indecisively. Concentration near threshold inflates false signals."
+    mitigation: "Monitor threshold_distance_distribution post-screening. Flag windows where > 30% of bars are within ±0.05 of threshold."
+failure_modes:
+  - failure: "Cost drag dominates edge; all variants Sharpe ≤ 0"
+    mechanism: "4h rebalancing ~150 trades/year; 0.1% per-trade cost = 15bps annual drag. If signal gross Sharpe is 0.3, cost wipes it."
+    detection: "V1 Sharpe ≤ 0 across all screening windows."
+    verdict: "Reject hypothesis. Keltner edge too small for 4h frequency. Consider daily+ timeframes."
+  - failure: "Regime score threshold too tight (V1) or too loose (V2)"
+    mechanism: "V1 fires < 3 times per window (sparse, noisy) OR > 40 times per window (indiscriminate, dilutes signal)."
+    detection: "min_trade_count < 3 (tight) or trade_count > 40 (loose)."
+    verdict: "Threshold requires refinement. Conditional approval deferred pending re-tuning study."
+  - failure: "Inverse regime (V4) dramatically outperforms baseline"
+    mechanism: "Keltner mean-reversion thrives in choppy (ER < 0.5) regimes, not trending. Score-based regime direction is inverted."
+    detection: "V4 Sharpe > V1 Sharpe + 0.2; win_rate(V4) > V1."
+    verdict: "Core assumption invalidated. Reject V1; hypothesis requires inversion. Flag for human review."
+  - failure: "Smoothing (V5) introduces lag that erases reversals"
+    mechanism: "20-bar SMA of regime score lags true transitions by ~10 bars. Fires late, misses reversals."
+    detection: "V5 Sharpe < V1 and win_rate(V5) < 35%."
+    verdict: "Smoothing is counterproductive. Reject V5; maintain V1 discrete firing."
+  - failure: "Symmetric weighting (V3) is indifferent or worse than asymmetric"
+    mechanism: "Empirically, VR (2.0) weighted more than ER (1.0) outperforms. V3 symmetric (0.6, 0.6) dilutes VR's predictive power."
+    detection: "V3 Sharpe < V1 or V3 Sharpe ≈ V1 ± 0.05."
+    verdict: "Current 1:2 weighting is optimal. Reject V3; asymmetry is validated."
+sample_split_design:
+  screening_period: "Full available history (≥2 years or 500+ bars per window). Walk-forward: 60-bar train / 20-bar test, rolling 3-window minimum."
+  holdout_period: "Reserve final 20% of data for V1 only. Screen V2-V5 on 80% (training + validation). Lock holdout until V1 selected."
+  cross_validation: "Minimum 3 walk-forward windows. Compute median Sharpe and per-window trade_count stability."
+  decision_gate: "V1 median Sharpe > 0.2 AND min_trade_count ≥ 3 across all screening windows before holdout."
+  holdout_bar: "V1 holdout Sharpe ≥ 0.1. If < 0.1, overfitting confirmed; reject and refine."
+decision_rules:
+  - rule: "V1 baseline Sharpe gate"
+    metric: sharpe
+    operator: ">"
+    threshold: 0.2
+    rationale: "Minimum to justify edge over cost drag."
+    gate: true
+  - rule: "V1 minimum trade count per window"
+    metric: min_trade_count
+    operator: ">="
+    threshold: 3
+    rationale: "Sufficient signal frequency; prevents noise domination."
+    gate: true
+  - rule: "V1 win rate"
+    metric: win_rate
+    operator: ">="
+    threshold: 0.40
+    rationale: "Majority of trades profitable pre-cost."
+    gate: false
+  - rule: "V1 max drawdown"
+    metric: max_drawdown_pct
+    operator: "<"
+    threshold: 20
+    rationale: "Regime filter prevents extended loss sequences."
+    gate: false
+  - rule: "V2 vs V1 threshold relaxation"
+    metric: sharpe
+    operator: ">"
+    threshold: "V1_sharpe + 0.15"
+    comparison: "V2 vs V1"
+    rationale: "Lower threshold (0.3 vs 0.4) only justified if Sharpe improves ≥15%."
+    gate: false
+  - rule: "V3 vs V1 symmetric weighting"
+    metric: sharpe
+    operator: ">"
+    threshold: "V1_sharpe + 0.10"
+    comparison: "V3 vs V1"
+    rationale: "Symmetric weighting only superior if Sharpe improves ≥10%."
+    gate: false
+  - rule: "V4 inverse regime test (directional bias validation)"
+    metric: sharpe
+    operator: "<"
+    threshold: "V1_sharpe - 0.30"
+    comparison: "V4 vs V1"
+    rationale: "If V4 Sharpe << V1, inverse rejected; Keltner requires trending, not choppy."
+    gate: false
+  - rule: "V5 smoothing test"
+    metric: sharpe
+    operator: ">"
+    threshold: "V1_sharpe"
+    comparison: "V5 vs V1"
+    rationale: "Smoothing approved only if Sharpe ≥ V1 AND max_drawdown improves."
+    gate: false

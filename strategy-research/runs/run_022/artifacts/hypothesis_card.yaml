@@ -1,0 +1,49 @@
+hypothesis_id: "V3-ESCALATE-4H-KELTNER-PIVOT-RSI"
+
+thesis: |
+  RSI mean-reversion at 4h timeframe within TRENDING regime (ER≥0.50, VR≥1.20) 
+  generates positive risk-adjusted returns (Sharpe ≥ 0.3) by increasing trade 
+  frequency while preserving correlation structure, isolating whether edge-loss 
+  is timeframe-generic or Keltner-specific.
+
+rationale: |
+  Keltner at 4h lost correlation (0.0136 vs 1h baseline 0.214), attributed to 
+  adaptive ATR scaling sensitivity to timeframe. RSI uses fixed period (14) 
+  without volatility bands, hypothesized more robust to timeframe changes. 
+  At 1h, RSI failed via FM1 (trade starvation from regime gate), not signal 
+  weakness. At 4h, same regime fires 4x longer time windows, increasing absolute 
+  signal events despite similar bar frequency. Expected: 350+ trades (vs 0–5 at 1h).
+
+signal_concept: |
+  RSI(period=14) mean-reversion. Long trigger: RSI < 30 (oversold). 
+  Short trigger: RSI > 70 (overbought). Forecast magnitude per engine defaults. 
+  Identity transform—no quantile or volatility scaling.
+
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+
+timeframe: "4h"
+
+assumptions:
+  - "RSI period=14 is catalog-standard, does not require tuning for escalation."
+  - "1h RSI failure was FM1 (trade starvation), not FM2 (signal weakness)."
+  - "4h produces adequate trade frequency (350+ expected) to test correlation robustly."
+  - "Regime quality issue (forward_return_mean ≈ 0) caused by TRENDING threshold choice, not timeframe."
+
+expected_failure_modes:
+  - "RSI yields corr ≈ 0 at 4h, indicating mean-reversion absent at 4h resolution (microstructure or regime definition fault)."
+  - "Cost drag remains > 80% despite trade volume recovery (signal unreliable; low win rate)."
+  - "Trade count < 25 aggregate (regime gate still too strict despite longer bars)."
+
+constraints:
+  - "Timeframe locked at 4h. Do not revert to 1h."
+  - "Regime locked at TRENDING (ER≥0.50, VR≥1.20, threshold_rules mode). Do not modify."
+  - "Signal component: RSIComponent. No experimental components."
+  - "Signal pipeline: identity transform. No scaling."
+
+success_criteria:
+  - "Sharpe ratio ≥ 0.3"
+  - "Positive correlation (RSI return vs forecast) > 0.03"
+  - "Trade count ≥ 25 aggregate across train period"
+  - "Cost drag < 50%"

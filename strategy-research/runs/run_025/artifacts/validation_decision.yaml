@@ -1,0 +1,24 @@
+hypothesis_id: KELTNER_SCORE_MODE_REGIME
+status: conditional_approve
+refinement_attempt: 0
+
+rationale: |
+  Score-mode regime detection with confidence scaling is theoretically sound (continuous percentile-based scoring vs discrete thresholds; confidence as signal strength proxy) and testable within existing architecture without new indicators or infrastructure. Six variants span reasonable design space (thresholds, composition methods, confidence formulas). Walk-forward validation + holdout confirmation mandate protect against overfitting on 4 failed families.
+  
+  However, variant proliferation (V1–V6) introduces multiple comparison risk. Recommend staged screening: accept only V1 baseline + top 2 exploration variants based on failure-mode severity. V3 reversal control is a strength (falsification lever). Cost-drag hypothesis requires explicit sensitivity test at 0.10% per-trade.
+  
+  Core assumption (regime clarity correlates with Keltner signal strength) is testable and falsifiable. Approval conditional on meeting Sharpe gates and regime stratification minimum.
+
+blocking_issues: []
+
+conditions:
+  - "Screening backtest (2025-06-01 to 2025-12-31) mandatory. V1 baseline only advances if Sharpe >0.25; exploration variants (V2–V6) must beat V1 by ≥5% to qualify for walk-forward. Reject any variant with Sharpe <0.20 or trade_count <50."
+  - "Walk-forward validation (monthly rebalance windows, training/test split as defined) mandatory. Median Sharpe gate ≥0.30 across 6 windows; single-window floor ≥0.10. Lock V1 thresholds (trending>70, chop_floor=40) for all variants; exploration variants tested as perturbations only."
+  - "Holdout confirmation (2026-01-01 to 2026-06-30, out-of-sample, no re-tuning) mandatory for any passing variant. Holdout Sharpe ≥0.25 AND trade_count ≥40."
+  - "V2 per-asset calibration (BTCUSDT trending>65, ETHUSDT trending>75) approved only if it beats V1 by ≥8% Sharpe on walk-forward median. Otherwise, reject as complexity cost outweighs benefit."
+  - "V6 volatility adaptation (vol_adjustment_scale=0.5, vol_window=20) must be hardcoded in config; no parameter re-tuning allowed during walk-forward (prevents secondary curve-fitting). Must beat V1 by ≥10% Sharpe to justify dynamic threshold risk."
+  - "V3 inverse-confidence reversal control: If V3 Sharpe ≥0.20 AND outperforms V1 by >5% on walk-forward, regime clarity assumption is falsified. Recommend hypothesis refinement: explore low-confidence dominance as primary signal OR reject score-mode regime framework entirely."
+  - "Cost-drag stress test: Run V1 screening at 0.10% per-trade cost (vs 0.05% baseline). If Sharpe drops >20%, cost-drag analysis required; may invalidate high-frequency variants."
+  - "Regime statistics (regime_frequency, regime_stability_duration, confidence_distribution) must be recorded per variant in screening and walk-forward. If regime_frequency[MR] <0.15, regime stratification has failed; reject variant."
+  - "No variant may advance beyond screening if regime_stability_duration <1.5 bars on average (indicates rebalance churn; cost drag risk)."
+  - "If all variants fail screening (Sharpe <0.25), request escalation review. Do not proceed to walk-forward until at least V1 baseline passes Sharpe ≥0.25."

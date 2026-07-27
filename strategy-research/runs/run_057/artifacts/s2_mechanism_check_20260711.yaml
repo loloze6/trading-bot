@@ -1,0 +1,113 @@
+status: CONFIRMED
+
+method: >
+  Corrected design (2026-07-11, second pass): partition run_054's 117
+  parent trades by TRADE IDENTITY (symbol, window, entry_time, exit_time),
+  matched against run_057's actual 42 gate-enforced trades -- not by
+  offline ER reconstruction. ER classification is retained only as a
+  diagnostic cross-check of the join, never as the partition itself.
+
+granularity_finding: >
+  One trades.json row = one LIFO-matched execution pair
+  (EnhancedPerformanceTracker._process_executed_trades,
+  trading-bot/performance/metrics.py:427-517), not necessarily one logical
+  episode -- a single close can unwind multiple prior opens, or vice
+  versa. An identical forecast series does NOT guarantee identical row
+  boundaries across two runs, because fragment boundaries depend on the
+  full execution sequence, which includes portfolio-rebalance-triggered
+  executions (ForecastManager.needs_rebalance/rebalance_threshold) that
+  are invisible to a pure signal-layer comparison. This is why absolute
+  PnL can legitimately differ between run_054 and run_057 on a matched
+  trade even though the percent return is identical: skipped entries
+  change the compounding path (and therefore notional position size) for
+  everything downstream in the same window.
+
+subset_test:
+  matched_count: 42
+  run_057_total: 42
+  match_rate: "42/42 (100%)"
+  unmatched_run_057_trades_with_no_parent: 0
+  dst_tolerance_used_hours: 1
+  actual_max_timestamp_shift_needed: 0
+  note: "Every match was exact (0h shift) -- no DST tolerance was actually needed."
+  percent_return_agreement:
+    max_abs_diff_net_pct: 0.0
+    max_abs_diff_net_portfolio_pct: 0.0
+    note: "Perfect agreement on percent/bps returns for all 42 matched pairs, as expected for an entry-only gate that changes nothing about exit/sizing mechanics once a trade is taken."
+  absolute_pnl_agreement:
+    note: >
+      Differs on several matched pairs (e.g. BTCUSDT 2021-04-01/2021-07-30/
+      2021-08-04; ETHUSDT several 2021-2024 trades) -- expected and NOT
+      counted as a mismatch, per the corrected design: skipped entries
+      change compounding/notional for subsequent trades in the same
+      window, so absolute-currency comparison across a gated vs ungated
+      run is not meaningful. Percent return is the correct comparable
+      unit, and it agrees exactly.
+
+identity_derived_partition:
+  included:
+    n: 42
+    mean_expectancy_bps: 433.73
+    se_bps: 441.39
+    source: "run_054's own matched trade records (net_portfolio_profit_loss_percent x 100)"
+    cross_check_vs_run_057_own_records:
+      run_057_n: 42
+      run_057_mean_bps: 433.73
+      run_057_se_bps: 441.39
+      agreement: "EXACT (these are literally the same 42 trades, confirmed via the subset test above)"
+  excluded:
+    n: 75
+    mean_expectancy_bps: 1395.90
+    se_bps: 821.17
+    source: "run_054's complement (117 - 42 = 75 trades not matched to any run_057 trade)"
+
+s2_verdict: >
+  CONFIRMED. S2 predicted excluded entries (ER<0.30) would show
+  per-episode expectancy <= 0 bps -- mechanism validation. Observed:
+  excluded-subset mean expectancy = +1395.90 bps (n=75, SE=821.17), which
+  is POSITIVE, not <=0. S2's own prediction is therefore FALSIFIED by this
+  corrected, cross-check-clean computation: the excluded entries are not
+  merely non-negative, they carry a LARGER mean expectancy than the
+  included (gated) subset (1395.90 bps vs 433.73 bps) -- the gate is
+  filtering out entries that would, on this parent record, have performed
+  BETTER on average than the ones it lets through. This directly
+  contradicts the brief's edge_source rationale (the gate was designed to
+  remove negative-expectancy whipsaw entries) and is independent evidence
+  against the ER-entry-gate mechanism, on top of the pre-registered
+  walk-forward kill on criterion (a).
+
+history_prior_failed_attempts:
+  attempt_1_window_scoped_bars_csv:
+    method: "ER(20) from each window's own scored-range bars.csv."
+    result: "n_classified=94/117 (23 missing-bar skips), included_n=32, excluded_mean_bps=64.69"
+    cross_check: "FAILED -- 10/42 run_057 trades unmatched"
+    status: SUPERSEDED_UNRELIABLE
+  attempt_2_full_continuous_daily_cache:
+    method: "ER(20) from the full local_data/{SYMBOL}_1d.csv cache, holdout-guarded."
+    result: "n_classified=117/117, included_n=36, excluded_mean_bps=1422.21"
+    cross_check: "FAILED -- 28/42 run_057 trades unmatched (worse than attempt 1 despite fixing the identified data gap)"
+    status: SUPERSEDED_UNRELIABLE
+    diagnostic_reconciliation_against_identity_partition: >
+      28 disagreements vs the identity-derived truth. 6/28 explained: entry_time
+      exactly on a window's own start date, meaning the real gate-check bar
+      predates the window (during silent warmup_prefetch) and is invisible to
+      window-scoped or entry-time-anchored ER reconstruction. Remaining 22/28:
+      a +/-1-day anchor shift does NOT systematically resolve them (some flip
+      with -1d, some with +1d, some neither) -- indicates day-to-day ER
+      volatility near the 0.30 boundary plus an unidentified discrepancy
+      between offline ER reconstruction and the live component's actual
+      internal computation. Root cause not fully identified; not investigated
+      further since the identity-based partition (trade-identity matching,
+      not ER reconstruction) is definitive and does not depend on resolving
+      this.
+  operator_acknowledged_errors: >
+    Two errors in the original design were acknowledged and corrected before
+    this second pass: (1) "per-trade PnL must match" was wrong in currency
+    terms -- only timestamps and percent/bps returns are comparable, not
+    absolute PnL, because skipped entries change compounding for subsequent
+    trades. (2) The "~1396 bps" figure stated as an expectation before this
+    computation was withdrawn as anchoring. It is notable, and disclosed
+    honestly rather than omitted, that the corrected computation's actual
+    result (1395.90 bps) lands almost exactly on the withdrawn figure -- this
+    is treated as a coincidence of a now-verified-correct computation, not as
+    validation of the original (admittedly unfounded) anchor.

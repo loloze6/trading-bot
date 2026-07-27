@@ -1,0 +1,40 @@
+base_hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY_ER20GATE
+hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY_ER20GATE
+
+thesis: "Gating SMA(100) long-only daily entries on Kaufman Efficiency Ratio ER(20) >= 0.30 removes negative-expectancy whipsaw entries, improving bar-level risk-adjusted returns while preserving positive per-episode expectancy on taken trades."
+
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: "SMA(100) crossovers in choppy regimes (ER < 0.30) reverse rapidly (whipsaws, negative per-trade expectancy). ER_t(20) = abs(close_t - close_{t-20}) / sum_{i=t-19..t} abs(close_i - close_{i-1}) measures directional efficiency. Filter to ER >= 0.30 removes choppy-regime entries."
+  evidence_type: price_volume_only
+  measurable_proxy: "ER_t(20) from daily closes. Mechanism predicts: (a) ER >= 0.30 entries have per-episode expectancy > 0 bps; (b) excluded ER < 0.30 entries have per-episode expectancy <= 0 bps."
+  requires_new_feed: null
+
+signal_concept: "SMA(100) daily cross-up signals are entry-gated: taken iff ER_t(20) >= 0.30 at bar-close t, else skipped (no deferred entry). Exits unchanged (parent rule: cross-down). Both indicators computed on same warmed-up close series (no lookahead). Primary gate: ER(20) >= 0.30, frozen a-priori. Secondary S1: ER(10) >= 0.30 (Kaufman KAMA standard). Secondary S2: mechanism validation (excluded entries have per-episode expectancy <= 0)."
+
+target_market: "BTC/ETH 1d spot (BTCUSDT, ETHUSDT), long-only"
+timeframe: "1d"
+
+expanded_variants:
+  - variant_id: V1_ER20_SMA100_PASS_THROUGH
+    signal_concept: "SMA(100) daily cross-up signals are entry-gated: taken iff ER_t(20) >= 0.30 at bar-close t, else skipped (no deferred entry). Exits unchanged (parent rule: cross-down). Both indicators computed on same warmed-up close series (no lookahead). Primary gate: ER(20) >= 0.30, frozen a-priori. Secondary S1: ER(10) >= 0.30 (Kaufman KAMA standard). Secondary S2: mechanism validation (excluded entries have per-episode expectancy <= 0)."
+    gate: "ER(20) >= 0.30 (frozen a-priori)"
+    evidence_type: price_volume_only
+    status: ready_for_screening_backtest
+    rationale: "Pass-through per operator pre-registered brief (single-variant constraint). Operator ruling 2026-07-10: Improvements 01/04 moot for pass-through. No expansion applied."
+    library_category: trend_following
+    data_requirements: ohlcv_only
+    diversity_axis: "Base hypothesis; no variant diversity (pass-through)"
+
+secondaries:
+  S1:
+    description: "ER(10) >= 0.30 (Kaufman KAMA standard). Sensitivity check for gate threshold."
+  S2:
+    description: "Excluded entries (ER < 0.30) must have per-episode expectancy <= 0 bps. Mechanism validation."
+
+alternative_data_candidates: []
+reverse_hypothesis: null
+behavioral_features: []
+regime_specific_variants: []
+
+notes: "Single-variant pass-through per operator pre-registered brief. S1/S2 embedded as secondaries, not promoted to variants."
