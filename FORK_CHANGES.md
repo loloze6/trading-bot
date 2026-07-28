@@ -76,6 +76,18 @@ The runtime generators are no longer an unaudited caveat. `strategy-research/wor
 
 `strategy-research/workflow/` cannot be *executed* here — it imports `claude_agent_sdk` and hardcodes Windows paths (`venv/Scripts/python.exe`). That is an executability limit, not a reason to leave it unread.
 
+### `mac/setup` — housekeeping, 2026-07-28
+
+| # | File | Change | Upstream-worthy? |
+|---|---|---|---|
+| 9 | `.gitignore` | ignore `.omc/` | **No — fork-only.** Jeremy's tree has no `.omc/`; the directory only exists because this lab runs oh-my-claudecode. Offering it upstream would ask him to carry a rule for tooling he does not use. |
+
+`.omc/` is machine-local runtime state — session files, HUD caches, subagent tracking, mission/PRD scratch — regenerated on demand and never source. Three exist (repo root, `trading-bot/`, `strategy-research/`) and the single pattern covers all three; verified with `git check-ignore` on each.
+
+Nothing under `.omc/` was ever tracked (`git ls-files | grep .omc/` → 0), so a plain ignore is sufficient — no `git rm --cached` needed. Before this, a `git add -A` would have committed OMC operational state into the fork.
+
+**Cheapest-control note:** `.git/info/exclude` would have achieved the same with *zero* divergence from Jeremy. `.gitignore` was chosen anyway because it survives a fresh clone and is discoverable by the next session, and because a `.gitignore` line is about the least merge-conflict-prone divergence available. If minimising divergence ever matters more, this is a safe one to drop.
+
 ## Known-broken upstream, deliberately NOT fixed here
 
 - **`tests/test_regression_backtest.py:39` — `test_config_actually_loaded` has never executed.** The `backtest_result` fixture returns from inside `with tempfile.TemporaryDirectory() as tmp:`, so the run dir is deleted the moment the fixture returns. The three sibling tests survive because `metrics` is already in memory; this one reads `manifest.json` from disk afterwards, finds nothing, and hits `pytest.skip` at line 114 — unconditionally, on every platform. The config-identity check that would catch "the backtest ran a different config than specified" is therefore dead code. Pre-existing upstream defect, unrelated to milestone 1, left for its own branch. Do not read `1 skipped` as benign.
