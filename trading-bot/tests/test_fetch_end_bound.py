@@ -162,6 +162,10 @@ def test_a_computed_period_end_on_midnight_is_not_widened_by_a_day(tmp_path):
     f.get_data()
 
     written = set(_written(tmp_path)["timestamp"])
+    # Exactly the prepend gap — the sub-interval remainder after the last
+    # cached bar (16:00:00.001 -> 23:59:59.999, no whole 8h bar fits) must not
+    # be scheduled as a second, phantom period.
+    assert len(f.requested_periods) == 1
     _, pe = f.requested_periods[0]
     assert pd.Timestamp(pe) == pd.Timestamp("2025-03-05 00:00:00")
 
@@ -182,6 +186,30 @@ def test_date_only_end_stays_inclusive_of_that_whole_day(tmp_path):
 
     assert got["timestamp"].max() == pd.Timestamp("2025-12-31 23:00")
     assert len(got) == 31 * 24
+
+
+def test_a_cache_covering_the_window_is_left_alone(tmp_path):
+    """
+    Review finding, 2026-07-28: passing the inclusive `window_end` into
+    `_identify_missing_periods` made the type-2 completeness check see the
+    sub-bar remainder after the last bar of every complete cache — a phantom
+    trailing period, a network call, and a cache-file rewrite on every run,
+    with the top-up's first page opening past the requested end (measured
+    reaching the sealed span before the trim discarded it). A cache whose
+    last bar is the final bar of the window must produce zero fetches and a
+    byte-untouched file.
+    """
+    seed = _bars("2025-12-01", 31 * 24)                    # -> 2025-12-31 23:00
+    seed.to_csv(tmp_path / "BTCUSDT_1h.csv", index=False)
+    before = (tmp_path / "BTCUSDT_1h.csv").read_bytes()
+
+    f = _OvershootingFetcher(tmp_path, "2025-12-01", "2025-12-31")
+    got = f.get_data("BTCUSDT")
+
+    assert f.requested_periods == [], "complete cache scheduled a phantom top-up fetch"
+    assert (tmp_path / "BTCUSDT_1h.csv").read_bytes() == before, \
+        "cache rewritten with no new data"
+    assert got["timestamp"].max() == pd.Timestamp("2025-12-31 23:00")
 
 
 # ---------------------------------------------------------------------------
