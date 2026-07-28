@@ -118,6 +118,26 @@ candle close. No other files need changing beyond `FEED_WINDOW_SECONDS`
 
 ---
 
+## Step 5 — If the feed must also work through `prescreen_signal.py` (REQUIRED for that path)
+
+Everything above wires the feed into the live/backtest `DataManager` path.
+The cheap-IC prescreen tool (`strategy-research/tools/prescreen_signal.py`)
+does **not** go through `DataManager.register_feed()` — it has its own,
+separate, simplified loader, `_merge_aux_feeds()`, driven by a config's
+top-level `"aux_feeds": [...]` list rather than by `FEED_REGISTRY`. A feed
+registered per Steps 1–4 is invisible to that loader until you add matching
+support to `_merge_aux_feeds()` yourself.
+
+Do not skip this if the feed will be exercised via prescreen: as of dispatch
+W14, `_merge_aux_feeds()` is deny-by-default — any name in a config's
+`aux_feeds` list that it cannot deliver raises `UnrecognizedAuxFeedError`
+naming the feed, rather than silently proceeding without the column (the
+prior behavior). This guarantee is general and applies to every feed name,
+not a whale-specific carve-out: a registered feed is either delivered or the
+loader raises, never silently dropped.
+
+---
+
 ## Naming convention
 
 `FeedNameFetcher` class → `'feed_name'` column in the DataFrame.

@@ -173,6 +173,30 @@ def _load_fear_greed(start: str, end: str) -> pd.DataFrame:
     return df[["timestamp", "fear_greed"]].sort_values("timestamp").reset_index(drop=True)
 
 
+_KNOWN_AUX_FEEDS = ("funding_rate", "fear_greed")
+
+
+class UnrecognizedAuxFeedError(ValueError):
+    """
+    Raised by `_merge_aux_feeds` when `aux_feeds` names a feed this loader
+    cannot deliver.
+
+    DENY BY DEFAULT (dispatch W14 step 2). Prior behaviour silently ignored
+    any name outside `_KNOWN_AUX_FEEDS`: no column was added, no warning
+    printed, nothing raised — a config listing e.g. a whale-footprint feed
+    (which `DataManager.register_feed()` CAN merge, but this loader has no
+    equivalent path for) would proceed as though the strategy received that
+    column, when it silently never would. Every component that reads an aux
+    column already has to check for its own absence (e.g.
+    `FundingRateMeanReversionComponent`, `WhaleLargeTradeImbalanceComponent`)
+    — that check exists for the case where the FEED genuinely has no data for
+    the window, not for the case where the LOADER never knew the feed's name.
+    Collapsing those two into the same silent-NaN outcome hid the second one.
+    This is a general guarantee of the loader, not a whale-specific carve-out:
+    it fires for ANY unsupported name.
+    """
+
+
 def _merge_aux_feeds(
     bars_df: pd.DataFrame,
     aux_feeds: list,
@@ -185,8 +209,22 @@ def _merge_aux_feeds(
     Each feed value assigned to the bar whose open timestamp is >= the feed's timestamp —
     matching the data_manager.py _premerge_aux_feeds() logic exactly.
 
-    Supported aux_feed names: "funding_rate", "fear_greed"
+    Supported aux_feed names: "funding_rate", "fear_greed" (`_KNOWN_AUX_FEEDS`).
+    Any other name in `aux_feeds` raises `UnrecognizedAuxFeedError` — see its
+    docstring — rather than silently proceeding without the column.
     """
+    unknown = [f for f in aux_feeds if f not in _KNOWN_AUX_FEEDS]
+    if unknown:
+        raise UnrecognizedAuxFeedError(
+            f"_merge_aux_feeds cannot deliver aux_feed(s) {unknown!r} for "
+            f"{symbol} — only {list(_KNOWN_AUX_FEEDS)} are supported by this "
+            f"loader. Previously this proceeded silently with the column "
+            f"never merged; refusing instead of pretending to deliver it. "
+            f"Add support for the feed in this function (or route the "
+            f"strategy through DataManager.register_feed() instead) before "
+            f"referencing it in a config's aux_feeds list."
+        )
+
     result = bars_df.copy()
     result["timestamp"] = pd.to_datetime(result["timestamp"])
 

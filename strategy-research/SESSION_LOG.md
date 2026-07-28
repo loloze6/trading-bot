@@ -3475,3 +3475,182 @@ gates (holdout date gate + suite) ran on the commit.
  computation on whale features, holdout untouchable, delete nothing, never git reset
  --hard / checkout -- . / clean, do not stop or reconfigure the running recorder without
  explicit go-ahead."
+
+
+---
+
+## 2026-07-28 — Dispatch W14: R2/R3 wired in, prescreen loader deny-by-default, blockers recorded
+
+Follows f6961fbd (W13, same agent — continued rather than restarted). One commit. **No
+evaluation run.** No IC, correlation, forward return or P&L involving a whale feature was
+computed. `prereg_whale_footprint_v2.yaml`'s gate values, thresholds and required-IC
+derivation are unchanged — only an informational addendum was added. R4 (routing the
+pre-registration through the W13 component's forecast path) remains REJECTED and was not
+implemented.
+
+### Director rulings acted on
+R2 APPROVED (swap `scipy.stats.spearmanr` for `signal_statistics.spearman_correlation`),
+R3 APPROVED (swap the raw p-value for `prescreen_signal._block_adjusted_significance`,
+compared against the prereg's own `alpha_corrected` — treated as a defect fix, not a
+style change), R5 APPROVED (leave `required_attested_bars_per_pair` frozen — untouched).
+R4 REJECTED and not implemented.
+
+### 1. R2/R3 implemented in `tools/whale_footprint_evaluation.py`
+
+`_sign_consistency` (`:119-135`) and `_feature_verdict` (`:138-...`) now import
+`performance.signal_statistics.spearman_correlation` (same sys.path pattern
+`prescreen_signal.py` itself uses to reach `trading-bot/performance/`) in place of direct
+`scipy.stats.spearmanr` calls, and the hand-rolled `nunique()<2`/`np.isnan(ic)` degenerate
+guards are removed — the shared function already returns `None` (never a fabricated
+0.0/NaN) on zero variance. `_feature_verdict`'s significance test now calls
+`prescreen_signal._block_adjusted_significance([ic], n_attested, block_size=_BLOCK_SIZE_1H)`
+and compares its `p_value` against the prereg's OWN `alpha_corrected` — not
+`prescreen_signal._SIG_THRESHOLD`, which is that module's unrelated internal routing
+constant. `block_size=24` matches the frozen `features.bar_seconds: 3600` (1h), the same
+convention every 1h prescreen decision in this campaign is already gated on. The per-feature
+result dict gained a `significance` key carrying the full block-adjusted detail
+(`pooled_ic`, `z_stat`, `p_value`, `n_eff`, `block_size`); `ic`/`p_value`/`verdict` keys are
+unchanged in shape, so no downstream consumer needed updating.
+
+**Demonstrated, not asserted** — a new test,
+`test_r3_block_adjusted_significance_disagrees_with_raw_scipy_pvalue`
+(`tests/test_whale_footprint_evaluation.py`), builds one pooled panel (20 pairs x 1400 bars,
+weak `signal_strength=0.02`) and computes BOTH statistics from the SAME data:
+
+    n_pooled = 28,000
+    raw scipy p-value      ≈ 3.0e-21   (WOULD have cleared alpha_corrected=0.0125)
+    block-adjusted p-value ≈ 0.054     (does NOT clear alpha_corrected)
+    n_eff = 28,000 // 24 = 1,166
+
+The raw p-value calls this "significant" from bar count alone; the block-adjusted
+estimator correctly does not, and the harness's verdict for this feature is `NULL` where
+the pre-fix code path would have called it `PASS`/`UNSTABLE`. All 15
+`test_whale_footprint_evaluation.py` tests pass (14 pre-existing + this one; none of the
+14 needed a value change — the fixtures' effect sizes were already large enough to survive
+the block-24 discount).
+
+### 2. `_merge_aux_feeds` silent-ignore fixed — general guarantee, not whale-specific
+
+`prescreen_signal.py:_merge_aux_feeds` (formerly `:176-225`) previously recognized only
+`"funding_rate"`/`"fear_greed"` and dropped any other name with no column, no warning,
+nothing raised. Now deny-by-default: a new `_KNOWN_AUX_FEEDS = ("funding_rate",
+"fear_greed")` tuple and `UnrecognizedAuxFeedError` are checked BEFORE any merge is
+attempted — any unsupported name in `aux_feeds` raises, naming every offending feed in one
+error, even when mixed with a known name (the check runs first, so nothing partially
+merges before the raise). No whale-specific branch was added — `whale_lt_imbalance` is
+just another name the loader cannot deliver and is rejected the same as any invented name.
+
+Six new tests in `tests/test_merge_aux_feeds_deny_by_default.py`: unknown feed raises and
+names itself; unknown mixed with known still raises (no partial merge); multiple unknowns
+are all named in one error; a whale-footprint column name gets no special treatment and
+still raises (explicit non-goal check); an empty `aux_feeds` list still passes through
+unchanged; a known feed (`funding_rate`, no local data for the fixture symbol) still
+merges without raising, landing a NaN column exactly as before this change. The existing
+`funding_rate`-only usages across `test_a851a_prescreen_integration.py`,
+`test_prescreen_no_signal_artifact.py`, and `trading-bot/tests/test_funding_rate_component.py`
+were audited (grep across both test trees and every archived `runs/*/artifacts/
+candidate_strategy_config.json`) — every real usage in the repo only ever names
+`funding_rate` or `fear_greed`, so nothing else needed updating.
+
+### 3. Blockers recorded, no gate value changed
+
+Added `w14_status_addendum` to `prereg_whale_footprint_v2.yaml` (after
+`required_coverage_floor`, before `design_provenance` — no existing key or value touched;
+re-parsed and diffed to confirm `required_ic_at_registered_frequency=0.1445`,
+`required_coverage_floor.floor=0.80`, `minimum_n_gate.required_attested_bars_per_pair=321`
+all identical to before). States two blockers side by side: (a) this file's own
+`required_coverage_floor` still blocks the univariate test directly (restated from
+`w11_status`, unchanged); (b) `WhaleLargeTradeImbalanceComponent` (W13) — a SEPARATE,
+sustained-subset hypothesis the director explicitly declined to route this file's
+evaluation through (R4) — also cannot fire on the current capture, because
+`persistence_bars=3` needs three consecutive attested bars and W11 already measured
+attested runs topping out at 2. Both trace to the same reconnect-churn root cause. **THE
+REGISTERED FIX FOR BOTH IS HOST MIGRATION — moving the recorder off its current
+host/network — NOT threshold relaxation**, per director ruling; explicitly not acceptable:
+lowering the coverage floor, lowering the minimum-N target, or lowering
+`persistence_bars` below 3. The identical two-blocker/host-migration note was added to
+`WhaleLargeTradeImbalanceComponent`'s docstring in `strategies/strategy_components.py`
+(replacing W13's shorter, blocker-(a)-only note), so the same statement is visible from
+both the pre-registration and the code that would otherwise be tempted to route around it.
+
+### 3b. Feed contract docs reconciled — no contradiction found, both updated
+
+Read `trading-bot/data/ADDING_A_FEED.md` (real filename confirmed; the dispatch's
+`architecture.md` is `trading-bot/data/ARCHITECTURE.md`, capitalized).
+
+**What they say.** `ADDING_A_FEED.md` fully documents the `DataManager.register_feed()`
+path (Steps 1-4) including W9's `window_seconds` causality requirement (Step 2, lines
+44-88) and names the canary regression test explicitly ("Run that canary's two fixtures
+whenever you add a feed", lines 58-60) — **fully reflected**. `ARCHITECTURE.md` documents
+only the two-path design (price vs. aux feeds) at a higher level and does not mention
+`window_seconds`, the causality guard, or the canary at all — **silent, not contradictory**
+(it predates/sits above that level of detail; not a documented claim the guard doesn't
+exist). Neither file mentions `prescreen_signal.py`, `_merge_aux_feeds`, or any tolerance
+for unrecognized feed names — grepped both files for "prescreen", "aux_feeds", "silently
+ignor(ed)", "unrecognized/unrecognised": zero matches in either. The stale claim
+documenting the OLD silent-drop behavior lived in a THIRD file outside this dispatch's
+named pair, `trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md` §4a (added by dispatch W13
+itself, describing the pre-fix behavior accurately as of when it was written) — corrected
+in the same commit rather than left contradicting step 2's fix.
+
+**Does step 2 contradict anything documented?** No. Neither `ADDING_A_FEED.md` nor
+`ARCHITECTURE.md` makes any claim about `prescreen_signal.py`'s tolerance for unrecognized
+feeds — there is nothing to contradict. Proceeded without stopping.
+
+**Docs updated, minimum addition only.** `ADDING_A_FEED.md` gained a new "Step 5" stating
+that a feed wired per Steps 1-4 is invisible to `prescreen_signal.py`'s separate
+`_merge_aux_feeds()` loader until matching support is added there too, and that as of W14
+that loader is deny-by-default. `ARCHITECTURE.md` gained one paragraph in "Two distinct
+data paths" naming this third, separate consumer and its shared deny-by-default guarantee.
+`STRATEGY_CONFIG_REFERENCE.md` §4a's stale "silently ignored" sentence was corrected to
+state the loader now raises, and clarified that the `"aux_feeds"` config key is
+prescreen-specific (the live `DataManager` path doesn't read it at all — driven by
+`register_feed()`/`FEED_REGISTRY` instead, a distinction the prior text blurred). No doc
+was restructured; each edit is additive.
+
+### Suites
+trading-bot **117 passed** (unchanged from W13's 117), 10 deselected — strategy-research +
+recorder **700 passed** (693 baseline + 1 new in `test_whale_footprint_evaluation.py` + 6
+new in `test_merge_aux_feeds_deny_by_default.py`). The 4 errors in slow
+`tests/test_regression_backtest.py` ("invalid strategy_config") are **PRE-EXISTING and
+UNCHANGED** — measured at clean f6961fbd before the change and again after, byte-identical
+error messages. Pre-commit gates ran on the commit (holdout date gate + full suite).
+
+### Files touched
+- `strategy-research/tools/whale_footprint_evaluation.py` — R2/R3
+- `strategy-research/tools/prescreen_signal.py` — `_KNOWN_AUX_FEEDS`,
+  `UnrecognizedAuxFeedError`, deny-by-default check in `_merge_aux_feeds`
+- `strategy-research/tests/test_whale_footprint_evaluation.py` — 1 new test (R2/R3
+  disagreement demonstration)
+- `strategy-research/tests/test_merge_aux_feeds_deny_by_default.py` (new) — 6 tests
+- `strategy-research/protocols/prereg_whale_footprint_v2.yaml` — `w14_status_addendum`
+  only; every existing key/value unchanged (re-parsed and diffed to confirm)
+- `trading-bot/strategies/strategy_components.py` —
+  `WhaleLargeTradeImbalanceComponent` docstring blocker section expanded; no code/logic
+  changed, `persistence_bars`/`min_abs_imbalance` defaults untouched
+- `trading-bot/data/ADDING_A_FEED.md`, `trading-bot/data/ARCHITECTURE.md`,
+  `trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md` — reconciliation per step 3b
+- Recorder, supervisor, backfill and coverage tooling: **not touched**.
+
+### Next session prompt (copy-paste)
+"Dispatch W14 closed (see SESSION_LOG 2026-07-28). R2/R3 are wired into
+ whale_footprint_evaluation.py (block-24 Fisher-z significance replaces the raw scipy
+ p-value, compared against the prereg's own alpha_corrected) and demonstrated on a fixture
+ where the two methods disagree (raw p~3e-21 would have passed, block-adjusted p~0.054
+ correctly does not). prescreen_signal.py's _merge_aux_feeds is now deny-by-default: any
+ aux_feeds name it can't deliver raises UnrecognizedAuxFeedError, general guarantee, no
+ whale special-casing. Both blockers on the whale-footprint family are now recorded in
+ TWO places (prereg_whale_footprint_v2.yaml's w14_status_addendum and
+ WhaleLargeTradeImbalanceComponent's docstring): (a) required_coverage_floor still blocks
+ the univariate pre-registration directly, (b) the W13 component can't fire either
+ (persistence_bars=3 vs attested runs capped at 2) -- same root cause, reconnect churn.
+ THE REGISTERED FIX IS HOST MIGRATION, NOT THRESHOLD RELAXATION -- do not lower the
+ coverage floor, the minimum-N target, or persistence_bars to route around either blocker.
+ R4 (routing the pre-registration's IC computation through prescreen's forecast-extraction
+ path, i.e. through the W13 component) remains REJECTED; the two hypotheses -- univariate
+ on the raw column vs. sustained-subset -- stay separately gated and will run sequentially,
+ univariate first, whenever the coverage floor is actually cleared.
+ Standing constraints carry forward unchanged: no self-remediation, no return-involving
+ computation on whale features, holdout untouchable, delete nothing, never git reset
+ --hard / checkout -- . / clean, do not stop or reconfigure the running recorder without
+ explicit go-ahead."

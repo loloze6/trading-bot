@@ -203,9 +203,18 @@ Required whenever a component reads a column that isn't in the raw OHLCV bar Dat
 Recognized values today: `"funding_rate"` (merges a `funding_rate` column, backward
 as-of join — `FundingRateMeanReversionComponent` requires this), `"fear_greed"`
 (merges a `fear_greed` column, **with a +1 day shift already applied** for point-in-time
-correctness per A8.4 — `FearGreedContrarianComponent` requires this). Unrecognized
-names are silently ignored (no error) by both `prescreen_signal.py._merge_aux_feeds()`
-and `data_manager.py`'s live equivalent — double check the spelling.
+correctness per A8.4 — `FearGreedContrarianComponent` requires this).
+
+**This `"aux_feeds"` config key is consumed by `prescreen_signal.py::_merge_aux_feeds()`
+only** (the prescreen/signal-extraction path). It is DENY BY DEFAULT (dispatch W14 step
+2): any name outside `{"funding_rate", "fear_greed"}` raises `UnrecognizedAuxFeedError`
+naming the feed, rather than silently proceeding without the column — the prior
+silent-drop behavior documented here before W14 was a real bug, not a documented
+tolerance. The live/backtest `DataManager` path does not read this config key at all —
+it is driven by explicit `register_feed()` calls (or, for a full backtest, by
+`FEED_REGISTRY` membership passed as `extra_feeds` in `core/launcher.py`), and is
+separately deny-by-default via the `window_seconds` causality declaration
+(`data/ADDING_A_FEED.md` step 2).
 ```json
 "aux_feeds": ["fear_greed"]
 ```
@@ -215,9 +224,9 @@ opts in by name and `campaign_data_policy.yaml` still has to carry a committed
 designation or construction raises `ReservedDataError`. `WhaleLargeTradeImbalanceComponent`
 needs two of them — `"whale_lt_imbalance"` and `"whale_attested"` — and abstains (NaN)
 rather than firing if either column is missing. Note also that
-`prescreen_signal.py::_merge_aux_feeds()` currently knows only `funding_rate` and
-`fear_greed`, so the prescreen loader cannot deliver whale columns today; the
-`DataManager.register_feed()` path can.
+`prescreen_signal.py::_merge_aux_feeds()` still knows only `funding_rate` and
+`fear_greed` — it now REFUSES a whale feed name rather than silently dropping it, but it
+still cannot DELIVER one; the `DataManager.register_feed()` path can.
 A hypothesis needing funding rate or Fear & Greed is achievable via config ALONE
 (existing components + `aux_feeds`) — this is NOT a component_gap. See run_041
 (`H-041-A`, `strategy-research/runs/run_041/`) and run_042 (`H-041-C`,
