@@ -262,7 +262,8 @@ class BaseFetcher(ABC):
             return ts + pd.Timedelta(days=1) - pd.Timedelta(milliseconds=1)
         return ts
 
-    def _trim_to_period(self, chunk: pd.DataFrame, bound) -> pd.DataFrame:
+    @staticmethod
+    def _trim_to_period(chunk: pd.DataFrame, bound) -> pd.DataFrame:
         """
         Drop rows a fetch returned beyond `bound`, the last timestamp the period
         it was asked for admits. `bound` is already literal -- _load_all expands
@@ -284,7 +285,7 @@ class BaseFetcher(ABC):
         anyone fetched a narrower window than the cache holds -- turning a leak
         into data loss. Only freshly fetched rows are this method's business.
         """
-        if chunk is None or chunk.empty or "timestamp" not in chunk.columns:
+        if chunk.empty or "timestamp" not in chunk.columns:
             return chunk
         ts = pd.to_datetime(chunk["timestamp"])
         return chunk[ts <= pd.Timestamp(bound)].copy()
@@ -456,8 +457,15 @@ class BaseFetcher(ABC):
             ))
 
         # ── Gap type 2: after latest stored row ────────────────────────────
+        # A bar can only exist on the interval grid, so data is missing after
+        # `latest` only if at least one whole interval fits before `end_date`.
+        # A sub-interval remainder (e.g. the 59m59.999s between a cache's last
+        # hourly bar and an inclusive end-of-day bound) is not a gap: treating
+        # it as one schedules a phantom top-up fetch on every complete cache —
+        # a network call and a file rewrite per run, and the top-up's first
+        # page opens past the requested end.
         latest = data["timestamp"].max()
-        if end_date > latest:
+        if end_date >= pd.Timestamp(latest) + expected:
             missing.append((
                 max(pd.Timestamp(latest).to_pydatetime() + datetime.timedelta(milliseconds=1), start_date),
                 end_date
