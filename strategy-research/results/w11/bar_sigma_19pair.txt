@@ -1,0 +1,40 @@
+==============================================================================
+PER-BAR RETURN VOLATILITY  sigma_bar_bps  (prices only — no whale data)
+==============================================================================
+source     local_data/kraken_<BASE>USD_1h.csv
+window     2024-12-01 .. 2025-12-31  (campaign_data_policy walk_forward_extension)
+definition stdev of (close[i+1]-close[i])/close[i]*1e4, == prescreen_signal._sigma_from_records
+
+pair         bars   sigma_bps
+-----------------------------
+BTC          9494     48.6209
+ETH          9494     77.5925
+XRP          9494     98.3332
+SOL          9494     93.1388
+ADA          9494    112.5879
+SUI          9494    116.7556
+ZEC          9467    159.1888
+DOGE         9494    102.7443
+XMR          9493     97.1451
+LTC          9493     96.7361
+ONDO         9494    120.1332
+NEAR         9494    112.2018
+LINK         9492    107.4817
+TAO          9494    125.0586
+AVAX         9493    101.8526
+TRX          9493     62.3124
+AAVE         9492    112.2357
+INJ          9494    121.2430
+UNI          9493    116.4344
+-----------------------------
+
+POOLED CANDIDATES
+  pooled (all returns concatenated)   106.8726   n=180,350
+  mean of per-pair sigmas             104.3051
+  median of per-pair sigmas           107.4817
+  min  (conservative: highest req IC) 48.6209
+  max                                 159.1888
+  stdev across pairs                  23.9693
+
+SENSITIVITY — full available history per pair (unequal spans; see docstring)
+  pooled 173.3149   mean 148.9935   median 125.2337   min 89.1155   max 285.7404

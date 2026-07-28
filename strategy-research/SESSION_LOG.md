@@ -3112,3 +3112,149 @@ scheduling the process at all, not merely that the socket was dead.
  closed anyway), holdout untouchable, delete nothing, never git reset --hard / checkout
  -- . / clean, do not stop or reconfigure the running recorder without the operator's
  explicit go-ahead."
+
+---
+
+## 2026-07-28 — Dispatch W11: measure the borrowed inputs, tighten NULL, then hold
+
+Follows 1839ae0b (W10). One commit. Evaluation NOT run — v2 remains unconsumed.
+
+### Hypothesis
+That the two scalars driving `prereg_whale_footprint_v2.yaml`'s required-IC gate —
+`sigma_bar_bps` and `avg_holding_bars` — are not properties of the whale-footprint
+feature family at all. W10 corrected both to better NUMBERS; W11 asks whether either
+is a measurement OF THIS FAMILY, and measures both from the pair set and the capture
+the registration actually names.
+
+### Result
+**Confirmed for both, in different ways.**
+
+**sigma was the right quantity measured on the wrong instrument set.** W10's 61.6052
+is the minimum 1h sigma across archived prescreens, and those cover BTC and AVAX only
+— two of nineteen pairs, neither chosen for being representative. Measured across all
+19 recorded pairs over `walk_forward_extension` (2024-12-01..2025-12-31, n=180,350 bar
+returns): per-pair 48.6209 (BTC) to 159.1888 (ZEC), **pooled 106.8726**, mean 104.3051,
+median 107.4817. The pooled figure is registered; the three defensible conventions agree
+within 3%, so the choice does not carry the result. Recorded explicitly that min-of-19
+(48.6209) is BELOW W10's figure and would have TIGHTENED the threshold — this was not a
+case of picking whichever number helped.
+
+**H could not be measured at all, and that is the finding.** Applying the campaign's own
+`_compute_turnover_proxy` definition to each feature's own sign series gives pooled
+H = 1.0423 / 1.1364 / 1.1062. Those numbers are **censored lower bounds, not estimates**:
+attested bars arrive in runs of mean 1.316 and **maximum 2 bars**, so 80.3-90.3% of
+episodes were still active when their run ran out, and no measured H could have exceeded
+2 whatever the features did. Precision was never the problem — 71-132 pooled episodes,
+relative SE 0.087-0.119, the precision test PASSES. This is the failure mode that looks
+like a good measurement. 5.74 was therefore RETAINED and reclassified
+`provenance_status: BORROWED_UNMEASURED`, with re-measurement a registered obligation:
+substituting a known lower bound would overstate required IC, which is the exact
+direction of the error W10 withdrew.
+
+**Re-derivation** (same formula, same safety_factor 2.0, same round_trip_cost_bps 18.5):
+
+    W9  (void)        37.0 / ( 15.0000 * sqrt(1.00)) = 2.4667  -> N unsolvable
+    W10 (superseded)  37.0 / ( 61.6052 * sqrt(5.74)) = 0.2507  -> 105 bars/pair
+    W11 (REGISTERED)  37.0 / (106.8726 * sqrt(5.74)) = 0.1445  -> 321 bars/pair
+
+Required attested bars **105 -> 321 (3.06x harder)**. Registered 321 not 320: 320 clears
+the target by 4.9e-06, a margin four orders of magnitude inside the precision the target
+itself is registered at.
+
+**A second unit error, of the same class W10 fixed.** days-to-fire used attestation
+0.99939 — the journal's TIME-coverage fraction. The formula needs BAR attestation, which
+is all-or-nothing (`whale_features` unattests a bar if ANY gap touches it, so a 6-second
+reconnect costs a whole 1h bar). Measured: **0.4178** overall, **0.5455** post-hole steady
+state. days-to-fire 13.38 (as instructed, at 0.99939) vs **24.52 (honest)**.
+
+**THE BINDING CONSTRAINT IS NEITHER OF THOSE.** `attested_bar_fraction` is 0.4178 against
+a registered coverage floor of 0.80 — the harness returns BLOCKED_COVERAGE_FLOOR today
+and will keep doing so at any sample size, because the shortfall is a RATE not a backlog:
+six ws_disconnects (code 1006, 2-6s each) in the 10.2h since the process-freeze hole
+closed, ~0.59/hour, giving an expected attested fraction of e^-0.59 ~ 0.55. **The floor was
+left at 0.80.** The same interruption rate is what makes H unmeasurable, so lowering it
+would buy an evaluation still gated by a borrowed constant. Fix is reconnect handling in
+`record_kraken_ws.py`; target <=0.0345 interruptions/bar (one per ~29h) to also clear
+censoring, <=~0.22/bar for the floor alone.
+
+**Recorder status at hand-off:** running, PID 41440, run_id 6f92b877, 17.7h elapsed since
+2026-07-27T13:43:04Z, 19/19 symbols on every heartbeat, 1212 journal records. 390 `.zst`
+shards, 54.39 MB compressed from 622.73 MB raw = **11.45x** (8.73% of original). 8 gaps:
+the one diagnosed 4h06m33s process-freeze plus 6 short ws_disconnects plus a 1s startup
+artifact. Attested bars per pair: 8 of 19 (whole window), 6 of 11 (post-hole). Not
+stopped, not reconfigured, not touched.
+
+**NULL tightened, no threshold moved.** Registered `verdict.null_scope` with four parts:
+what NULL means (no effect at or above the registered magnitude, at the registered bar
+frequency, under the registered aggregation), what it is not a statement about (other
+frequencies, horizons, aggregations, or use as a composite input), what it routes to
+(PARK the univariate 1h formulation, RETAIN the instrument, requeue for a NEW
+registration), and what it does not authorize (re-running under this registration,
+closing the family, or being cited without its qualifiers). Also found and fixed: bare
+`NULL:` is the YAML 1.1 null literal, so the branch parsed under key `None` and
+`mapping["NULL"]` raised KeyError in v1 and v2 alike — latent only because the harness
+derives the trichotomy in code. Quoted in v2; v1 left byte-for-byte untouched per its own
+retention discipline.
+
+**Both landmines closed.** (a) `_DEFAULT_SIGMA_BAR_BPS`'s comment now states it is the
+<5-record fallback and must never be cited as a volatility; both fallback paths log when
+they fire and the artifact carries `sigma_is_placeholder`. (b) `rebalance_threshold` is
+dead — only reference commented out at `launcher.py:110`, so the engine rebalances to
+target every bar. **Engine behaviour unchanged**; docs corrected and the divergence
+recorded in `docs/known_divergences.md`.
+
+**No-peek guarantee is structural, not asserted.** The two measured inputs come from two
+programs that share no data and neither of which can compute an IC:
+`whale_persistence.py` reads the `trades` stream and imports no price loader;
+`measure_bar_sigma.py` reads `kraken_<BASE>USD_1h.csv` and imports nothing from
+`recorder`. Both constraints are enforced by AST import-guard tests. No IC, correlation,
+regression or forward return involving a whale feature was computed.
+
+### Files touched
+- `strategy-research/recorder/whale_persistence.py` (new) — H measurement; censoring
+  detection (`MAX_CENSORED_FRACTION`) as a first-class verdict alongside precision
+- `strategy-research/recorder/tests/test_whale_persistence.py` (new) — 21 tests
+- `strategy-research/tools/measure_bar_sigma.py` (new) — sigma measurement, holdout
+  assertion (`HoldoutViolation`)
+- `strategy-research/tests/test_measure_bar_sigma.py` (new) — 19 tests
+- `strategy-research/protocols/prereg_whale_footprint_v2.yaml` — `w11_correction`,
+  measured sigma, H reclassification, re-derivation, `null_scope`, coverage-floor status
+- `strategy-research/tests/test_whale_footprint_evaluation.py` — W11 invariant tests
+  (every unchanged gate parameter asserted) + null_scope test
+- `strategy-research/tools/prescreen_signal.py` — landmine (a)
+- `strategy-research/docs/known_divergences.md` (new) — landmine (b)
+- `strategy-research/docs/plan/10_maker_execution_assessment.md` — correction note
+- `trading-bot/execution/forecast_manager.py` — docstring only, no behaviour change
+- `strategy-research/config/holdout_gate_exemptions.txt` — 2 audited category-(c) entries
+- `strategy-research/results/w11/*.txt` — measurement artifacts
+- `Projects/.claude/CLAUDE.md` — pipeline diagram + rebalance description corrected.
+  **NB outside the git repo, so not in the commit diff.**
+- Recorder not stopped/reconfigured; no gate relaxed; nothing deleted.
+
+### Suites
+recorder 227 passed - strategy-research 466 passed - trading-bot 101 passed (+6 slow).
+4 errors in `trading-bot` slow `test_regression_backtest.py` ("invalid strategy_config")
+are **PRE-EXISTING** — verified identical at clean 1839ae0b before claiming so.
+
+### Next session prompt (copy-paste)
+"Dispatch W11 closed (see SESSION_LOG 2026-07-28). sigma is now measured for the real
+ 19-pair set (106.8726, was 61.6052 from BTC/AVAX only) and required IC fell 0.2507 ->
+ 0.1445, which TRIPLED the sample requirement to 321 attested bars per pair.
+ avg_holding_bars 5.74 is retained but now explicitly labelled BORROWED_UNMEASURED: the
+ direct measurement failed because attested bars arrive in runs of at most 2 bars, so
+ 80-90% of episodes are censored and the observed H of ~1.05-1.14 is a lower bound that
+ says nothing about the true value. THE DECISION IS OPERATIONAL, NOT STATISTICAL. The
+ evaluation is blocked by the coverage floor (attested_bar_fraction 0.4178 vs floor 0.80)
+ and will stay blocked at any sample size, because ~6 ws_disconnects per 10 hours each
+ destroy a whole 1h bar. The same rate is what censors H. So the question is whether to
+ (a) fix reconnect handling in recorder/record_kraken_ws.py to get to <=0.0345
+ interruptions/bar (one per ~29h), which clears the floor AND makes H measurable AND lets
+ days-to-fire (24.5 days at the measured attestation) actually start counting, (b) accept
+ a permanently borrowed H and argue the 0.14-0.35 required-IC band is decision-useful as
+ it stands, or (c) something else. Do not lower the coverage floor to route around this —
+ W11 declined to and said why in the file. Also open and NOT done: the W8 Scheduled Task
+ console-survival cutover (PID 41440 is still an unsupervised console child, 17.7h in).
+ Standing constraints carry forward unchanged: no self-remediation, no return-involving
+ computation on whale features, holdout untouchable, delete nothing, never git reset
+ --hard / checkout -- . / clean, do not stop or reconfigure the running recorder without
+ explicit go-ahead."

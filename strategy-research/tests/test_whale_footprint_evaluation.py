@@ -5,6 +5,7 @@ Every case here is a SYNTHETIC, planted-answer fixture. Nothing in this file
 reads trading-bot/local_data/recorded_reserved/ — the harness is built and
 tested here but deliberately never run against the real capture.
 """
+import math
 import sys
 from pathlib import Path
 
@@ -275,5 +276,84 @@ def test_the_real_v2_pre_registration_loads_and_refuses_below_the_gate():
     result = evaluate(prereg, _tiny_whale_panels())
     assert result.status == "BLOCKED_MIN_N", (
         "sanity check: with the economic gate withdrawn, a 5-bar synthetic "
-        "panel must still never clear v2's minimum-N gate (105 bars/pair)"
+        "panel must still never clear v2's minimum-N gate (321 bars/pair)"
     )
+
+
+def test_w11_amendment_invariants():
+    """
+    Dispatch W11 measured sigma for the real 19-pair set and reclassified the
+    borrowed H. It was permitted to change ONLY the derived figures; every gate
+    parameter had to survive untouched. These assertions are that constraint
+    written down, so a later amendment cannot quietly loosen one of them while
+    editing the derivation around it.
+    """
+    real_path = (Path(__file__).parent.parent / "protocols" /
+                 "prereg_whale_footprint_v2.yaml")
+    prereg = load_prereg(real_path)
+    econ = prereg["economic_ic_threshold"]
+    assumptions = econ["assumptions_stated"]
+
+    # --- unchanged by W11, by instruction ---------------------------------
+    assert assumptions["safety_factor"]["value"] == 2.0
+    assert assumptions["round_trip_cost_bps"]["value"] == 18.5
+    assert prereg["required_coverage_floor"]["floor"] == 0.80
+    assert prereg["minimum_n_gate"]["power_target"] == 0.80
+    mcc = prereg["test_statistic"]["multiple_comparison_correction"]
+    assert mcc["method"] == "bonferroni"
+    assert mcc["family_size"] == 4 and mcc["alpha_corrected"] == 0.0125
+    assert prereg["single_use"]["fires_exactly_once"] is True
+    assert prereg["single_use"]["consumed_by"] is None, (
+        "v2 must still be unconsumed -- W11 did not run the evaluation"
+    )
+    assert set(prereg["verdict"]["mapping"]) == {"PASS", "UNSTABLE", "NULL"}
+    assert prereg["features"]["bar_seconds"] == 3600
+    assert prereg["features"]["frozen"] is True
+
+    # --- measured by W11 ---------------------------------------------------
+    sigma = assumptions["sigma_bar_bps"]["value"]
+    h = assumptions["avg_holding_bars_primary"]["value"]
+    assert sigma == 106.8726
+    assert len(assumptions["sigma_bar_bps"]["w11_measurement"]["per_pair_bps"]) == 19
+    assert assumptions["avg_holding_bars_primary"]["provenance_status"] == (
+        "BORROWED_UNMEASURED"
+    ), "H is not a measurement of this feature family and must stay labelled as such"
+
+    # --- the derivation is internally consistent ---------------------------
+    expected_ic = round(2.0 * 18.5 / (sigma * math.sqrt(h)), 4)
+    assert econ["required_ic_at_registered_frequency"] == expected_ic
+    assert prereg["minimum_n_gate"]["target_detectable_ic"] == expected_ic, (
+        "v2 couples the minimum-N target to the economic required IC; if they "
+        "diverge, one of the two was edited without the other"
+    )
+
+    # --- and the registered N actually solves it ---------------------------
+    n = prereg["minimum_n_gate"]["required_attested_bars_per_pair"]
+    n_eff = n * 1.655
+    mde = math.tanh((2.4977 + 0.8416) / math.sqrt(n_eff - 3.0))
+    assert mde <= expected_ic, (
+        f"{n} bars/pair yields MDE {mde:.6f}, which does not reach the "
+        f"registered target {expected_ic}"
+    )
+    assert n > 105, "W11's sample requirement must not be below W10's"
+
+
+def test_null_scope_is_registered_and_bounded():
+    """
+    W11 step 5 restated NULL without moving its threshold. Both halves are
+    asserted: the scope section exists, and the condition is still the plain
+    alpha_corrected test.
+    """
+    real_path = (Path(__file__).parent.parent / "protocols" /
+                 "prereg_whale_footprint_v2.yaml")
+    prereg = load_prereg(real_path)
+    verdict = prereg["verdict"]
+    assert "null_scope" in verdict, "NULL's scope must be registered, not implied"
+    scope = verdict["null_scope"]
+    for key in ("what_null_means", "it_is_not_a_statement_that",
+                "what_null_routes_to", "what_null_does_not_authorize"):
+        assert key in scope and scope[key].strip(), f"null_scope.{key} is missing"
+    # the threshold itself is untouched
+    assert "alpha_corrected" in verdict["mapping"]["NULL"]
+    assert prereg["test_statistic"]["multiple_comparison_correction"][
+        "alpha_corrected"] == 0.0125

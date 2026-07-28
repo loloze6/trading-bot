@@ -187,3 +187,13 @@ trading-bot/data/fetchers/base_fetcher.py	1
 trading-bot/local_data/README.md	5
 trading-bot/tests/test_fetch_gap_guard.py	18
 trading-bot/tests/test_kraken_archive_ingest.py	1
+
+# ADDED 2026-07-28, dispatch W11 -- category (c), audited by reading every line.
+# tools/measure_bar_sigma.py measures per-bar sigma from the walk-forward price
+# caches and ASSERTS its window never overlaps the seal (raises HoldoutViolation).
+# The constant it compares against is the holdout_range itself, and the three test
+# lines are the negative cases proving the refusal fires -- a guard that cannot
+# name the window it guards cannot guard it. Neither file reads or contains market
+# data: the tests build synthetic closes in memory and write them to tmp_path.
+strategy-research/tools/measure_bar_sigma.py	1
+strategy-research/tests/test_measure_bar_sigma.py	3
