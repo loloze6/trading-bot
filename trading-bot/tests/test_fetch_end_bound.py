@@ -190,7 +190,7 @@ def test_date_only_end_stays_inclusive_of_that_whole_day(tmp_path):
 
 def test_a_cache_covering_the_window_is_left_alone(tmp_path):
     """
-    Review finding, 2026-07-28: passing the inclusive `window_end` into
+    Review finding: passing the inclusive `window_end` into
     `_identify_missing_periods` made the type-2 completeness check see the
     sub-bar remainder after the last bar of every complete cache — a phantom
     trailing period, a network call, and a cache-file rewrite on every run,
