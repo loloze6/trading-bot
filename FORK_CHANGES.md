@@ -64,7 +64,17 @@ Two distinct holes closed:
 
 Verified: 3 V7 tests and 1 V10 test **watched failing** before their respective fixes; mutating either line back fails tests the other does not cover. Fast suite 108 → **116 passed**; slow 9 passed / 1 skipped / 0 errors; validator exit 0; `simulate` byte-identical to the committed reference artifact.
 
-**Reachability, stated precisely:** all **1,011** `regime_detector` dicts in committed JSON carry a valid `default_regime` (`'unknown'` ×748, `'trending'` ×138, `'mean_reversion'` ×125) — zero nulls, zero omissions, so no committed config changes verdict. **Runtime config generators under `strategy-research/workflow/` are off-limits and unaudited**, so "zero in committed JSON" is the honest claim, not "unreachable."
+**Reachability — audited, and it strengthens the case rather than qualifying it.** All **1,011** `regime_detector` dicts in committed JSON carry a valid `default_regime` (`'unknown'` ×748, `'trending'` ×138, `'mean_reversion'` ×125) — zero nulls, zero omissions, so no committed config changes verdict.
+
+The runtime generators are no longer an unaudited caveat. `strategy-research/workflow/` was read in full (7 files):
+
+- **Strategy configs are LLM-authored.** Stage `backtest_specification` (`workflow/stages.yaml:54`) has a `skill:` and no `tool:` — it is a model stage. `run_phase1_research.py:4885` writes its `backtest_spec.yaml → config` block **verbatim** to `candidate_strategy_config.json`.
+- **`tools/validate_config.py` is the gate**, invoked immediately after at `:4888`; a non-zero exit routes the run to `failed_validation`. The validator hardened here is the only thing between an LLM-authored config and a backtest.
+- **The model has demonstrably emitted an invalid regime name**: `runs/run_043/attempt_1_blocked/` invented `"active"`. V7 caught it then and still does (exit 1) — that fixture is already the non-regression test at the top of `tests/test_validate_config.py`.
+- **The model has demonstrably dropped a mandatory field silently**: `run_phase1_research.py:4876-4883` force-injects `significance_methodology` because run_047's spec stage omitted it despite an explicit skill instruction. **A silently-omitted field is exactly the mechanism that produces an absent `default_regime`** — i.e. the V10 hole closed above is reachable by a documented failure mode of this pipeline, not a hypothetical one.
+- The only other generator, `tools/retune_regime_detector.py:351`, hardcodes `"default_regime": "unknown"` and is safe.
+
+`strategy-research/workflow/` cannot be *executed* here — it imports `claude_agent_sdk` and hardcodes Windows paths (`venv/Scripts/python.exe`). That is an executability limit, not a reason to leave it unread.
 
 ## Known-broken upstream, deliberately NOT fixed here
 
