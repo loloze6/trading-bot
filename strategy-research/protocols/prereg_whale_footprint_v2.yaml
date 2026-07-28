@@ -52,6 +52,9 @@ amendment:
       target_at_corrected_attestation below) — included for comparison even
       though it is not what gates v2 (see next point).
     - >
+      [WITHDRAWN BY W10 — see w10_correction below. The gate is retained but
+      its condition is now false; the untradeability conclusion in this
+      bullet is void.]
       NEW: `economic_ic_threshold` is added as a distinct, EARLIER gate than
       minimum_n_gate. It found the family economically untradeable at its
       registered bar frequency — a required IC that exceeds the mathematical
@@ -61,6 +64,47 @@ amendment:
       different questions, but the economic gate is what actually governs
       v2's verdict today.
   verdict_mapping_and_single_use_discipline: unchanged from v1 (see (f), (g) below).
+
+# ---------------------------------------------------------------------------
+# W10 CORRECTION (2026-07-28) — in-place amendment to v2, NOT a v3.
+# ---------------------------------------------------------------------------
+w10_correction:
+  made_before_any_evaluation: true
+  single_use_status_at_correction: >
+    UNCONSUMED. v2 has never been executed against real or synthetic data —
+    no consumed sidecar exists, and the harness had been returning
+    BLOCKED_ECONOMIC_INFEASIBILITY before reading any panel. No whale IC,
+    correlation, or forward return was computed by W10 either; this
+    correction was derived entirely from cost_model.yaml, prescreen_signal.py,
+    and archived non-whale run artifacts. It is therefore not a post-hoc
+    relaxation of an observed result.
+  what_changed: >
+    economic_ic_threshold.required_ic_at_registered_frequency: 2.4667 ->
+    0.2507, via two corrected inputs — sigma_bar_bps 15.0 -> 61.6052 and
+    avg_holding_bars_primary 1 -> 5.74. Consequently
+    economically_untradeable_at_registered_frequency: true -> false,
+    minimum_n_gate.target_detectable_ic 2.4667 -> 0.2507, and
+    required_attested_bars_per_pair null -> 105 (n_eff 173.78, ~4.38 days).
+  what_did_NOT_change: >
+    The Layer-2 formula, the safety_factor (2.0), round_trip_cost_bps (18.5,
+    the conservative Kraken proxy), the verdict mapping (f)/(g), the
+    single-use discipline, required_coverage_floor (0.80), the MDE method,
+    the power target (0.80), the Bonferroni correction (family_size 4,
+    alpha_corrected 0.0125), n_eff_symbols (1.655), and the hypothesis. No
+    gate was relaxed. Two gates that had been rendered unreachable by the
+    withdrawn finding — the coverage floor and minimum-N — are live again at
+    their registered strengths.
+  scope_warning: >
+    The withdrawn derivation cited no whale data. Any other artifact that
+    reused its 2.4667 figure, or reused _DEFAULT_SIGMA_BAR_BPS=15.0 as if it
+    were a measured 1h volatility, inherits the same error and should be
+    re-checked. Within this repo the only such consumer found was this file.
+    tools/prescreen_signal.py itself is NOT affected: it measures sigma from
+    records and only falls back to 15.0 below 5 records, and it measures
+    avg_holding_bars via _compute_turnover_proxy. The stale constant and its
+    misleading "Default sigma_bar estimate in bps for 1h crypto" comment
+    (prescreen_signal.py:101-102) are left untouched here — out of W10's
+    scope — but are flagged for a follow-up dispatch.
 
 # ---------------------------------------------------------------------------
 # (a) Hypothesis — ONE falsifiable claim (unchanged from v1)
@@ -204,99 +248,170 @@ economic_ic_threshold:
         only strengthen this finding's direction (lower cost -> lower
         required IC), so this is the conservative-against-the-finding choice.
     sigma_bar_bps:
-      value: 15.0
-      source: >
-        strategy-research/tools/prescreen_signal.py::_DEFAULT_SIGMA_BAR_BPS
-        — this campaign's own standing default for 1h-crypto bar volatility,
-        used as the Layer-2 cost-check fallback whenever a run has too few
-        records to estimate sigma directly. Reused here (not re-derived from
-        price data) to stay inside the dispatch's constraint against
-        computing new statistics for this derivation and to keep the
-        threshold traceable to a single, already-reviewed campaign constant
-        rather than a fresh number nobody has checked.
+      value: 61.6052   # CORRECTED by dispatch W10 (2026-07-28); was 15.0
+      superseded_value: 15.0
+      correction_rationale: >
+        W10 ERROR 1 OF 2. The original 15.0 was
+        strategy-research/tools/prescreen_signal.py:102
+        ::_DEFAULT_SIGMA_BAR_BPS. That constant is NOT a campaign measurement
+        of 1h-crypto bar volatility despite its comment saying so: it is the
+        <5-record FALLBACK in _sigma_from_records (prescreen_signal.py:639-643),
+        reached only when a run has too little data to estimate sigma at all.
+        Every real Layer-2 gating decision this campaign has made measured
+        sigma directly instead. Across all 15 archived prescreen artifacts,
+        the measured 1h sigma_bar_bps is 61.6052-82.9013 — never 15.0. The
+        constant is ~4.1x too low (15 bps/1h annualizes to ~14% vol; 62 bps
+        annualizes to ~58%, the realistic crypto figure). Corrected to
+        61.6052, the MINIMUM measured 1h value in the archive
+        (results/../runs/run_043/prescreen/prescreen_result.yaml:56), because
+        the lowest sigma yields the HIGHEST required IC and is therefore the
+        conservative-against-this-correction choice.
     avg_holding_bars_primary:
-      value: 1
-      source: >
-        "the registered bar frequency" per the dispatch's own step-4
-        instruction: these features are recomputed fresh every 1h bar with
-        no persistence mechanism designed into their construction
-        (whale_lt_imbalance / whale_cvd_delta / whale_size_shift are each
-        single-bar aggregates — see features.bar_seconds above), so a
-        strategy trading them AT that frequency re-signals every bar
-        (avg_holding_bars = 1 bar = 1/turnover_rate with turnover_rate=1).
-        This is the PRIMARY, registered assumption. A sensitivity table
-        across less-aggressive turnover assumptions is given below because
-        the dispatch requires showing whether ANY plausible turnover changes
-        the conclusion — it does not, until turnover falls into a range
-        economically incoherent for a microstructure order-flow signal (see
-        finding below).
+      value: 5.74   # CORRECTED by dispatch W10 (2026-07-28); was 1
+      superseded_value: 1
+      correction_rationale: >
+        W10 ERROR 2 OF 2. The original value rested on the inference
+        "recomputed fresh every 1h bar with no persistence mechanism =>
+        avg_holding_bars = 1". That conflates the RECOMPUTATION frequency of
+        a feature with the TURNOVER of a position, which are not the same
+        quantity. This campaign defines avg_holding_bars operationally, in
+        tools/prescreen_signal.py:505-545 (_compute_turnover_proxy), as
+        active_bars_total / activity_transitions — a measure of how long the
+        SIGN of the signal persists, not of how often the feature is
+        recalculated. A feature recomputed every bar whose sign persists for
+        20 bars has avg_holding_bars = 20, not 1. Nothing about hourly
+        recomputation implies a full round-trip every hour.
+        Corrected to 5.74 = the mean realized holding period measured from
+        archived trade logs (W10 step 2): the three highest-trade-count runs
+        in the archive (run_031 438 trades, run_034 430, run_021 430; all 1h,
+        ~27.5d windows) show mean realized holding of 5.74 / 6.11 / 6.11 bars
+        and median 3.0 bars, from each trade's recorded duration_minutes.
+        5.74 is the lowest of the three means, i.e. the highest-turnover
+        measurement available, and is therefore the conservative choice.
+        Measured notional turnover corroborates: 0.35-0.45x portfolio value
+        per symbol-bar across both legs, i.e. ~0.18-0.22 round-trips per bar,
+        not the 1.0 round-trip per bar the original value assumed.
+        NOTE the original value is not merely conservative but out of the
+        measured range entirely: only one archived prescreen (run_053) ever
+        recorded avg_holding_bars = 1.0; the other fourteen recorded
+        6.38-261.0. The measured 1h prescreen median is ~28.7.
+        NOTE ALSO that the live pipeline applies no turnover damping that
+        would push holding UP toward this figure artificially: config.json:16
+        sets rebalance_threshold 0.20, but its only code reference
+        (trading-bot/core/launcher.py:110) is commented out, so the engine
+        currently rebalances to target every bar. The measured 5.74-bar
+        holding is therefore signal persistence, not a threshold artifact.
   ic_to_expected_return_mapping: >
     expected_gross_edge_bps_per_trade(IC, H) = abs(IC) * sigma_bar_bps *
     sqrt(H), H = avg_holding_bars. A strategy clears Layer 2's cost gate
     when expected_gross_edge_bps_per_trade >= safety_factor *
     round_trip_cost_bps = 37.0 bps. Solving for IC at a given H:
-    IC_required(H) = 37.0 / (15.0 * sqrt(H)).
-  required_ic_at_registered_frequency: 2.4667  # IC_required(H=1) = 37.0 / 15.0
+    IC_required(H) = 37.0 / (61.6052 * sqrt(H)).
+    [W10: sigma corrected from 15.0 to 61.6052; the FORMULA itself is
+    unchanged and was never in question — see units_check below.]
+  required_ic_at_registered_frequency: 0.2507  # = 37.0 / (61.6052 * sqrt(5.74))
+  superseded_required_ic_at_registered_frequency: 2.4667  # was 37.0 / (15.0 * sqrt(1))
   max_possible_spearman_ic: 1.0
-  economically_untradeable_at_registered_frequency: true
+  economically_untradeable_at_registered_frequency: false  # CORRECTED by W10; was true
   finding: >
-    STOP-LEVEL FINDING, not a statistics bug, per the dispatch's own
-    criterion ("If the required IC exceeds what the cost model can support
-    at any plausible turnover, SAY SO — that is a legitimate and decisive
-    finding, and it would mean the family is untradeable before any data is
-    collected"). At the registered 1h bar frequency (avg_holding_bars=1),
+    CORRECTED BY DISPATCH W10 (2026-07-28). The prior STOP-LEVEL FINDING
+    below is WITHDRAWN: it was an arithmetic consequence of two wrong inputs,
+    not a property of the cost model.
+    Re-derived with corrected inputs, IC_required = 37.0 / (61.6052 *
+    sqrt(5.74)) = 0.2507. This is below 1.0, so the "exceeds the mathematical
+    bound of a Spearman correlation" argument does not hold, and the family
+    is NOT untradeable before data collection. 0.2507 remains a demanding
+    target — modestly above this campaign's own observed ceiling for its
+    strongest signals (~0.15-0.20) — but it is achievable in principle and
+    must be settled by measurement, not by arithmetic.
+    Note that correcting sigma ALONE is sufficient to withdraw the finding:
+    even retaining the original avg_holding_bars=1, IC_required = 37.0/61.6052
+    = 0.6006 < 1.0. The infeasibility claim never survived either correction
+    independently.
+  withdrawn_finding_retained_for_audit: >
+    ORIGINAL TEXT, SUPERSEDED — DO NOT ACT ON: "STOP-LEVEL FINDING, not a
+    statistics bug... At the registered 1h bar frequency (avg_holding_bars=1),
     IC_required = 2.4667 — this EXCEEDS 1.0, the mathematical maximum a
     Spearman correlation coefficient can ever take. No finite sample size,
     no amount of additional capture time, and no achievable measured IC can
     ever satisfy this: the family is untradeable at its registered frequency
-    BEFORE any data is collected, exactly as the dispatch anticipated as a
-    possible outcome.
+    BEFORE any data is collected."
+  w10_falsification_evidence: >
+    The withdrawn derivation referenced no whale data, so it applied to EVERY
+    1h strategy in this campaign — and the campaign's own archive contradicts
+    it directly. Four archived runs PASSED the Layer-2 cost gate
+    (edge_to_cost_ratio >= safety_factor 2.0) at measured ICs of 0.0348 to
+    0.1905: run_042 (IC 0.1905, H 28.73, sigma 62.52, ratio 3.7545, 1h),
+    run_054 (IC 0.0348, ratio 4.3151), run_059 (IC 0.0378, ratio 2.2927), and
+    the ts_trend daily shakedown (IC 0.0359, ratio 4.4504). Under the
+    withdrawn required-IC of 2.4667 none of these could ever have passed. The
+    inconsistency resolves against the derivation and in favour of the runs:
+    the runs used MEASURED sigma and MEASURED avg_holding_bars through
+    _cost_check, while the derivation substituted a fallback constant and an
+    asserted turnover for those same two inputs.
   sensitivity_table_avg_holding_bars_to_required_ic:
-    # IC_required(H) = 37.0 / (15.0 * sqrt(H)); holding_days = H / 24
-    "1":    {holding_days: 0.04,   ic_required: 2.4667}
-    "2":    {holding_days: 0.08,   ic_required: 1.7442}
-    "4":    {holding_days: 0.17,   ic_required: 1.2333}
-    "9":    {holding_days: 0.38,   ic_required: 0.8222}
-    "16":   {holding_days: 0.67,   ic_required: 0.6167}
-    "25":   {holding_days: 1.04,   ic_required: 0.4933}
-    "50":   {holding_days: 2.08,   ic_required: 0.3488}
-    "100":  {holding_days: 4.17,   ic_required: 0.2467}
-    "152":  {holding_days: 6.33,   ic_required: 0.2001}   # ~= campaign's plausible_ic_upper (0.20)
-    "300":  {holding_days: 12.50,  ic_required: 0.1424}
-    "400":  {holding_days: 16.67,  ic_required: 0.1233}
-    "6760": {holding_days: 281.67, ic_required: 0.0300}   # ~= v1's original judgment-call target
+    # W10-CORRECTED. IC_required(H) = 37.0 / (61.6052 * sqrt(H)); holding_days = H/24
+    "1":     {holding_days: 0.04, ic_required: 0.6006}   # W9's asserted H (superseded)
+    "2":     {holding_days: 0.08, ic_required: 0.4247}
+    "4":     {holding_days: 0.17, ic_required: 0.3003}
+    "5.74":  {holding_days: 0.24, ic_required: 0.2507}   # PRIMARY — measured realized
+    "9":     {holding_days: 0.38, ic_required: 0.2002}   # ~= campaign's plausible_ic_upper (0.20)
+    "16":    {holding_days: 0.67, ic_required: 0.1501}
+    "28.73": {holding_days: 1.20, ic_required: 0.1121}   # median measured 1h prescreen H
+    "50":    {holding_days: 2.08, ic_required: 0.0849}
+    "100":   {holding_days: 4.17, ic_required: 0.0601}
+  superseded_sensitivity_table_note: >
+    The v2-as-written table (H=1 -> 2.4667 through H=6760 -> 0.0300) was
+    computed with sigma=15.0 and is void; every entry was ~4.1x too high.
   sensitivity_finding: >
-    IC_required only falls to this campaign's own historical ceiling for its
-    STRONGEST signals (~0.15-0.20, multi-day price trend, per
-    docs/session_reports P4_ts_trend power check) at avg_holding_bars≈150-270
-    (6.3-11.3 days), and only reaches v1's original 0.03 judgment-call target
-    at avg_holding_bars≈6760 (281.7 days, ~9.3 months). Holding a bar-level
-    order-flow imbalance/CVD/size-shift signal for 6+ days, let alone 9+
-    months, contradicts the economic premise of the feature itself (these
-    are fast microstructure signals by construction, not multi-day trend
-    signals) — treating either crossover as "plausible" would be choosing a
-    turnover assumption to fit a conclusion, not deriving one. The primary,
-    registered assumption (avg_holding_bars=1) is the economically coherent
-    one for this feature family, and it is definitively infeasible.
+    W10-CORRECTED. At the measured realized turnover (H=5.74) IC_required is
+    0.2507, and it falls to this campaign's own historical ceiling for its
+    STRONGEST signals (~0.15-0.20) at H≈9-16 (0.4-0.7 days) — a holding
+    period entirely compatible with a fast microstructure order-flow signal,
+    and well inside the 6.38-261.0 range of avg_holding_bars this campaign
+    has actually measured. The economic premise of the feature family and the
+    turnover required for economic viability are therefore NOT in conflict,
+    which is the opposite of what the superseded table implied. The required
+    IC is demanding but not out of reach, and no plausible turnover makes the
+    family untradeable a priori.
   gate_rule: >
-    The harness (whale_footprint_evaluation.py) refuses to execute
+    The harness (whale_footprint_evaluation.py:171-178) refuses to execute
     (returns BLOCKED_ECONOMIC_INFEASIBILITY, no verdict computed, no data
     read) whenever economically_untradeable_at_registered_frequency is
     true — checked immediately after single-use and before the coverage
     floor or minimum-N gate, since it needs no panel data to decide.
+    W10 STATUS: the mechanism is UNCHANGED and still armed; its condition is
+    now false, so it no longer fires. The coverage floor (0.80) and the
+    minimum-N gate downstream of it are consequently LIVE again — neither was
+    weakened by this correction; they were previously unreachable and are now
+    reachable at their registered strengths.
+  units_check: >
+    W10 step 4. sigma_bar_bps is PER-BAR — the standard deviation of 1-bar
+    close-to-close returns expressed in bps (cost_model.yaml:261,
+    prescreen_signal.py:639-643 computes stdev over records'
+    next_return_bps). It is neither annualized nor per-day. It is divided
+    against safety_factor * round_trip_cost_bps, also in bps, per round trip.
+    bps/bps cancels and IC_required is correctly dimensionless. The sqrt(H)
+    factor scales a per-bar volatility to an H-bar holding period, matching
+    a cost figure charged once per round trip. CONCLUSION: the units are
+    consistent and the formula is sound. The 9.8x error was NOT a units
+    mismatch — it was two wrong scalar inputs (a fallback constant used as if
+    it were a measurement, and an asserted turnover contradicted by every
+    measurement in the archive).
 
 # ---------------------------------------------------------------------------
-# (e) MINIMUM-N GATE — recomputed from step 4 (dispatch W9 step 5). NOTE:
-# this gate is currently MOOT — economic_ic_threshold above blocks execution
-# first, unconditionally, whenever economically_untradeable_at_registered_
-# frequency is true. required_attested_bars_per_pair is deliberately left
-# null: no finite N solves the mde_formula below for
-# target_detectable_ic=2.4667 (tanh is bounded in (-1,1); MDE_spearman_ic
-# can never reach 2.4667 regardless of n_eff). This is intentional, not an
-# oversight — do NOT backfill a fake number here. A future amendment that
-# revisits avg_holding_bars_primary with a written economic justification
-# would need to set both target_detectable_ic AND
-# required_attested_bars_per_pair together.
+# (e) MINIMUM-N GATE — recomputed from step 4 (dispatch W9 step 5).
+# W10 (2026-07-28): this gate is NO LONGER MOOT. economic_ic_threshold above
+# no longer blocks (its condition is now false), so this gate is live and
+# must carry a real number. Per v2's own instruction ("A future amendment
+# that revisits avg_holding_bars_primary with a written economic
+# justification would need to set both target_detectable_ic AND
+# required_attested_bars_per_pair together"), W10 sets BOTH together below.
+# The previous nulls were correct for target_detectable_ic=2.4667 (tanh is
+# bounded in (-1,1), so no finite N solved the mde_formula); at the corrected
+# target 0.2507 a finite N exists and is registered. Leaving the nulls in
+# place would ALSO have crashed the harness, which compares
+# `avg_attested < required_n` at whale_footprint_evaluation.py:192-194.
 # ---------------------------------------------------------------------------
 minimum_n_gate:
   derivation_method: >
@@ -312,8 +427,9 @@ minimum_n_gate:
     Fisher z-transform normal approximation: SE = 1/sqrt(n_eff - 3);
     z_required = z_(1-alpha_corrected/2) + z_power = 2.4977 + 0.8416 = 3.3393;
     MDE_spearman_ic = tanh(z_required * SE). Bounded in (-1, 1) by
-    construction — this is WHY economic_ic_threshold's 2.4667 cannot be
-    solved for a finite N.
+    construction — this is why the SUPERSEDED target of 2.4667 could not be
+    solved for a finite N. The W10-corrected target 0.2507 is inside the
+    bound and solves at n_eff = 173.0 (see required_n_eff below).
   detectable_ic_curve_attested_days:
     # unchanged from v1 -- pure statistics, does not depend on the economic
     # finding or the attestation-fraction correction.
@@ -327,21 +443,46 @@ minimum_n_gate:
     "365": {n_eff: 14497.8, mde_ic: 0.0277}
     "545": {n_eff: 21647.4, mde_ic: 0.0227}
     "730": {n_eff: 28995.6, mde_ic: 0.0196}
-  target_detectable_ic: 2.4667  # == economic_ic_threshold.required_ic_at_registered_frequency
+  target_detectable_ic: 0.2507  # == economic_ic_threshold.required_ic_at_registered_frequency
+  superseded_target_detectable_ic: 2.4667  # W9 value, void — see economic_ic_threshold
   target_detectable_ic_derivation: >
     v1 used a JUDGMENT CALL (0.03, "not derived from any observed effect").
     v2 uses the economic_ic_threshold derivation above instead — the IC a
     strategy trading these features AT their registered bar frequency would
     actually need to clear costs, not a statistically-modest-sounding
-    magnitude chosen by convention.
-  required_attested_bars_per_pair: null  # UNDEFINED — see note above the (e) header
-  required_n_eff: null
+    magnitude chosen by convention. W10 keeps that PRINCIPLE unchanged and
+    corrects only the two inputs the derivation was fed (sigma_bar_bps and
+    avg_holding_bars); 2.4667 -> 0.2507.
+  required_attested_bars_per_pair: 105   # W10; was null (unsolvable at the void target)
+  required_n_eff: 173.78
+  required_n_derivation: >
+    Inverting the mde_formula above at target_detectable_ic = 0.2507:
+    artanh(0.2507) = 0.25603; n_eff - 3 = (3.3393 / 0.25603)^2 = 169.96;
+    n_eff = 172.96. Converting to attested bars per pair via
+    n_eff = bars_per_pair * n_eff_symbols(1.655): 172.96 / 1.655 = 104.51,
+    rounded UP to 105 (never down — rounding down would register a gate the
+    target does not actually satisfy). Verification at the registered
+    integer: 105 * 1.655 = 173.78 n_eff, MDE = tanh(3.3393/sqrt(170.78))
+    = 0.2501 <= 0.2507. PASSES.
+  days_to_fire_at_corrected_attestation: 4.38
+  days_to_fire_derivation: >
+    W10 step 5(b). required_attested_bars_per_pair (105) / (24 bars/day *
+    0.99939 attestation) = 4.378 raw calendar days per pair. At the corrected
+    steady-state attestation of 99.939% the attested and calendar figures are
+    within 0.006 days of each other; the attestation fraction is no longer
+    the binding constraint on the timeline that it was under v1's 7.8%
+    figure. SUPERSEDED COMPARISON: under the void 2.4667 target this was
+    infinite (no finite N existed), which is what made the family look
+    permanently blocked. It is ~4.4 days.
+    CAVEAT, stated because it changes how this number should be read: 4.38
+    days is when the panel becomes large enough to DETECT an IC of 0.2507 at
+    80% power — not a prediction that the features will show one. The gate
+    fires on sample size; the verdict still depends on the measurement.
   gate_status: >
-    MOOT. Not reachable while economic_ic_threshold.
-    economically_untradeable_at_registered_frequency is true (the harness
-    blocks earlier). Retained in the file, rather than removed, so the
-    statistical MDE machinery stays available unchanged for any future
-    amendment.
+    LIVE (W10). Previously MOOT while economic_ic_threshold blocked earlier;
+    that block is withdrawn, so this gate now governs. Unchanged in method,
+    power target, alpha correction, and n_eff_symbols — only the target IC it
+    is solved at was corrected.
   context_only_v1_target_at_corrected_attestation:
     # FOR COMPARISON ONLY -- does NOT gate v2 (economic_ic_threshold does).
     # Answers "how much did the coverage-report fix alone (dispatch W9 step
