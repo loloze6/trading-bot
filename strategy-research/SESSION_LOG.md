@@ -3654,3 +3654,156 @@ error messages. Pre-commit gates ran on the commit (holdout date gate + full sui
  computation on whale features, holdout untouchable, delete nothing, never git reset
  --hard / checkout -- . / clean, do not stop or reconfigure the running recorder without
  explicit go-ahead."
+
+## 2026-07-28 -- Dispatch W15: recorder made deployable on a Linux server
+
+NEW AGENT (deployment/recorder-internals region, distinct from W13/W14's feeds and
+statistics work). Follows 09eac1bb. One commit. **No IC, correlation, forward return, or
+P&L on whale features.** The running Windows capture (PID 41440/46780, unchanged
+CreationDate 2026-07-27T15:43:03) was not stopped or reconfigured at any point --
+confirmed running, same PIDs, immediately before this commit.
+
+### Precondition / current state at hand-off
+`git log --oneline -1` was 09eac1bb, clean tree. `recorder.liveness`: HEALTHY. Current
+`attested_bar_fraction` (att/bars, `recorder.whale_report`, full journal window
+2026-07-26T02:05Z .. 2026-07-28T20:29Z) is **0.1976** (248/1255 bars) -- WORSE than W11's
+0.4178, because more wall-clock time has passed under the same reconnect-churn rate
+without the fix landing. This is a fresh measurement, not a restatement of W11's; nothing
+about the coverage-floor blocker itself changed and no threshold was touched.
+
+### 1. Portability audit -- recorder core was already Linux-portable
+Grepped every `.py` under `recorder/` for OS-specific APIs (`os.name`, `sys.platform`,
+`win32`, backslash literals, `msvcrt`, scheduled-task/registry calls): the ONLY Windows
+dependency was `record_kraken_ws.py:773-779`'s `SIGBREAK` handling, which already
+degrades correctly on Linux via `getattr(signal, signame, None)` (Linux's asyncio
+`add_signal_handler` is in fact more capable than Windows' ProactorEventLoop here -- this
+fallback exists BECAUSE of that Windows limitation). `disk_guard.py` is a bare
+`shutil.disk_usage` call, `shard_writer.py`/`compaction.py`/`journal.py` use only
+`pathlib`/`open`/`os.fsync`/`os.replace`. The entire Windows-specific surface was two
+files: `supervise.ps1` and `register_scheduled_task.ps1`, plus the `powercfg` sleep
+mitigation in RUNBOOK Sec 3.5. Full table in RUNBOOK.md Sec 10.1.
+
+### 2. Linux supervision: `supervise.sh` + `install_systemd_unit.sh`
+`recorder/supervise.sh` ports `supervise.ps1`'s POLICY line-for-line (relaunch on any
+non-zero exit except 3, bounded exponential backoff via `awk` float helpers since bash
+arithmetic is integer-only, rolling-window restart-rate cap, `RESTART_BOUNDARY` journal
+marks via the same `journal_mark` CLI, backoff-ladder reset after a healthy run) rather
+than reaching for systemd's native `RestartSteps=`/`RestartMaxDelaySec=`, which only exist
+from systemd 254 onward and would make the policy's behavior depend on the target
+distro's systemd version (missing on Ubuntu 22.04's systemd 249) -- the opposite of "same
+policy, different host." `recorder/install_systemd_unit.sh` (root, one-time) is the Linux
+counterpart of `register_scheduled_task.ps1`: resolves paths at install time, writes
+`/etc/systemd/system/kraken-forward-recorder.service` with `Restart=on-failure` +
+`SuccessExitStatus=3 4` (both DISK_GUARD_ABORT and supervise.sh's own restart-cap
+give-up are terminal by policy, matching exit 0) as a second, much coarser layer that only
+catches `supervise.sh` itself dying (OOM, bash fault) -- never a policy decision the
+internal loop already made. A systemd system service is never tied to a login session in
+the first place, so there is no S4U-equivalent special case needed for logout survival.
+
+### 3. What was tested vs. reasoned (no Linux host available in this environment)
+TESTED FOR REAL: `tests/test_supervisor_sh.py` (7/7 passing) executes `supervise.sh`'s
+full loop under Git Bash against the same stub-recorder contract as
+`test_supervisor.py` -- genuine execution of the script's logic (arg parsing, exit-code
+branching, backoff arithmetic, restart cap, journal_mark invocation), not a simulation.
+`install_systemd_unit.sh`'s unit-generation and systemd-quoting (`sdquote`) were
+smoke-tested against a stubbed `systemctl` and a path containing a space; the emitted
+`ExecStart=` line was inspected and follows `systemd.service(5)`'s quoting rules
+correctly -- NOT verified against a real `systemd-analyze verify` or `systemctl start`,
+since no systemd binary exists on this Windows dev machine. REASONED, NOT EXECUTED:
+`disk_guard.probe_free_bytes` on real Linux (trusted as CPython stdlib `statvfs(2)`
+behavior, not re-tested); `compaction.py`'s `os.replace()` atomicity (POSIX-atomic by
+construction) and a flagged-but-unimplemented open question -- whether the PARENT
+DIRECTORY also needs an explicit `fsync(dirfd)` after a compacted shard's rename for the
+new directory entry to survive a crash at the wrong instant, a real ext4/XFS subtlety
+with no NTFS equivalent; `journal.py`'s per-record fsync durability under the actual
+target VPS's storage (not measurable without that host); the real `ssh`/`rsync`
+subprocess calls in `SshRsyncTransport` (logic fully tested via `LocalDirTransport`
+instead -- see below). All stated explicitly in RUNBOOK.md Sec 10.4 rather than claimed as
+verified.
+
+### 4. Data retrieval: `retrieval_manifest.py` + `retrieve_shards.py`
+`retrieval_manifest.py` runs ON the capture host (over SSH) and emits a JSON manifest of
+every compacted `*.ndjson.zst` (full-file sha256 -- safe, since compaction.py never
+produces one until the period is closed and already byte-verified) plus the coverage
+journal (a PREFIX sha256 of its first N bytes, since it never stops growing -- receiving
+at least N bytes intact is the property that matters, and `journal.load_records` already
+tolerates a torn final line). `retrieve_shards.py pull` fetches the manifest, pulls
+anything not already confirmed at that hash in a local `_retrieval_ledger.json`, verifies
+every pull independently against the manifest (never the transfer protocol's own say-so),
+and NEVER deletes anything on either side. `retrieve_shards.py prune` is a separate,
+explicitly-flagged (`--yes-delete-confirmed-only`) command that re-fetches a FRESH remote
+manifest and re-hashes the local file before deleting anything -- three independent checks
+right before each delete, not a one-time ledger lookup -- and never touches the coverage
+journal at all. Transport is injectable (`Protocol`): `SshRsyncTransport` is the real
+path; `LocalDirTransport` (another local dir standing in for "remote") makes the full
+diff/pull/verify/ledger/prune logic testable without a network -- 14 new tests
+(`test_retrieval_manifest.py`, `test_retrieve_shards.py`), all genuinely executed and
+passing, including the journal's incremental-growth case and prune's
+changed-since-confirmation / local-tampering guards. CLI smoke-tested end-to-end via
+`--local-source` (bypasses SSH for local/mounted-drive use): pull, re-pull (no-op),
+prune-without-flag (refused), prune-with-flag (deletes exactly the confirmed file).
+
+### 5. Sizing and cost -- measured inputs, one correction to the ladder's own figure
+Used the cadence ladder's measured `snapshot@1s` raw rate (20,576 B/s steady-state, the
+currently-deployed mode) together with the REAL 18-hour production compaction ratio
+**11.45x** (622.73 MB raw -> 54.39 MB compressed, this same SESSION_LOG's 2026-07-28
+hand-off note) in preference to the cadence ladder's own synthetic 15.41x (measured on a
+208.7s sample). Refined 12-month projection: 20,576 B/s x 86,400 x 365 / 11.45 = **56.7
+GB/12mo compressed** -- ~35% higher than the ladder's own 42.1 GB/12mo figure, because that
+number leaned on the short synthetic ratio rather than real multi-hour production data.
+Recommended disk: ~70 GB minimum (56.7 GB data + 5 GB disk-guard floor, unchanged + ~8 GB
+OS/venv), 80-100 GB for margin. Weekly retrieval bandwidth: ~1.1 GB/week compressed,
+trivial against any VPS's transfer allowance. Monthly cost is explicitly labeled an
+ASSUMPTION (not a measurement): a web search of third-party pricing aggregators (not
+providers' own pricing pages) put an ~80GB/1-2vCPU tier around USD 6-10/month in 2026;
+flagged as unverified against a primary source and to be confirmed before purchasing.
+
+### 6. Cutover runbook (RUNBOOK.md Sec 10.7)
+Install/selftest -> `install_systemd_unit.sh` + `systemctl enable --now` -> verify
+`liveness` HEALTHY and `coverage_report --fail-on-gap` clean SINCE THIS HOST's
+`RECORDER_START` before trusting it -> only then stop the Windows recorder with a clean
+signal (never `kill -9`/`Stop-Process -Force`, which forfeits the clean-shutdown
+attestation) -> retrieve once promptly to establish the first ledger baseline. Rollback:
+stop the new host cleanly, restart the Windows recorder, retrieve whatever the server
+captured (no special-casing -- the ledger/manifest design handles a short-lived capture
+like any other), prune never required.
+
+### Suites
+trading-bot: **117 passed, 10 deselected** (unchanged from W14). strategy-research +
+recorder: **721 passed** (700 W14 baseline + 21 new: 7 in `test_supervisor_sh.py`, 5 in
+`test_retrieval_manifest.py`, 9 in `test_retrieve_shards.py`). The 4 errors in
+`trading-bot/tests/test_regression_backtest.py` (marked `slow`, run explicitly with
+`-m slow`) are **PRE-EXISTING AND UNCHANGED** -- same `ValueError: invalid strategy_config`
+at the same call site (`core/launcher.py:551` -> `strategies/main_strategy.py:32`) as
+W14's baseline. Pre-commit gates (holdout date gate + full suite) ran on the commit.
+
+### Files touched
+- `strategy-research/recorder/supervise.sh` (new) -- Bash port of `supervise.ps1`'s policy
+- `strategy-research/recorder/install_systemd_unit.sh` (new) -- Linux counterpart of
+  `register_scheduled_task.ps1`
+- `strategy-research/recorder/retrieval_manifest.py` (new) -- capture-host-side manifest
+- `strategy-research/recorder/retrieve_shards.py` (new) -- pull/verify/ledger/prune
+- `strategy-research/recorder/tests/test_supervisor_sh.py`,
+  `test_retrieval_manifest.py`, `test_retrieve_shards.py` (new) -- 21 tests, all executed
+- `strategy-research/recorder/RUNBOOK.md` -- new Sec 10 (Linux deployment): portability
+  status, supervision design rationale, tested-vs-reasoned inventory, retrieval operator
+  flow, sizing/cost with provenance, cutover + rollback
+- Recorder core (`record_kraken_ws.py`, `journal.py`, `shard_writer.py`, `compaction.py`,
+  `disk_guard.py`, `whale_*.py`), all preregs, and the running capture: **not touched**.
+
+### Next session prompt (copy-paste)
+"Dispatch W15 closed (see SESSION_LOG 2026-07-28). The recorder is now deployable on
+ Linux: recorder/supervise.sh (tested, 7/7 passing under Git Bash) ports
+ supervise.ps1's exact policy, recorder/install_systemd_unit.sh is the systemd
+ counterpart of register_scheduled_task.ps1, and recorder/retrieve_shards.py plus
+ retrieval_manifest.py handle incremental/resumable/integrity-verified pull-back with a
+ ledger (14/14 tests passing) -- full design and a step-by-step cutover/rollback runbook in
+ RUNBOOK.md Sec 10. NOT yet done: no Linux host has actually run any of this (Sec 10.4 lists
+ exactly what was executed vs. reasoned only -- the open item most worth closing first is
+ the parent-directory fsync question for compaction's atomic rename on ext4/XFS). The
+ Windows capture is still the only running capture; attested_bar_fraction is now 0.1976
+ (worse than W11's 0.4178, same reconnect-churn root cause, no threshold moved) and the
+ coverage-floor blocker on the whale-footprint prereg is unchanged. Standing constraints
+ carry forward unchanged: no self-remediation, no return-involving computation on whale
+ features, holdout untouchable, delete nothing, never git reset --hard / checkout -- . /
+ clean, do not stop or reconfigure the running recorder without explicit go-ahead."

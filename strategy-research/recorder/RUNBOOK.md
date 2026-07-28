@@ -516,3 +516,301 @@ Three coverage states, not two:
 is own-account only. Roadmap 2.4's "live liquidation events" is **INFEASIBLE
 here, not deferred**; it requires a different venue (e.g. Binance `forceOrder`)
 and that is a separate decision.
+
+---
+
+## 10. Linux deployment (dispatch W15)
+
+### 10.1 Portability status
+
+The recorder's Python is already Linux-portable: every path uses `pathlib`,
+`disk_guard.probe_free_bytes` is `shutil.disk_usage` (works identically on
+both OSes), `shard_writer`/`journal`/`compaction` use only `open`/`os.fsync`/
+`os.replace`, and `record_kraken_ws.py`'s signal handling
+(`getattr(signal, "SIGBREAK", None)`) already degrades gracefully where a
+signal doesn't exist — `add_signal_handler` for SIGINT/SIGTERM is in fact
+*more* reliable on Linux's default asyncio event loop than on Windows'
+ProactorEventLoop, which is why that fallback path exists at all. Nothing in
+`whale_features.py`, `whale_persistence.py`, `shard_reader.py`,
+`kraken_crc.py`, or `book_state.py` references an OS-specific API.
+
+**What was actually Windows-specific**, entirely confined to two files and
+one operational habit:
+
+| Item | File:line | Status |
+|---|---|---|
+| Restart-supervisor script | `recorder/supervise.ps1` (whole file) | Ported: `recorder/supervise.sh` |
+| Detached/reboot-surviving launch | `recorder/register_scheduled_task.ps1` (whole file) | Ported: `recorder/install_systemd_unit.sh` |
+| Sleep/suspend mitigation | `RUNBOOK.md` §3.5 `powercfg` commands | Not needed the same way — see 10.2 |
+| PowerShell locale-dependent float formatting | `supervise.ps1:90-95` (`Fmt`, invariant-culture) | N/A on Linux — `supervise.sh` never round-trips numbers through a culture-aware formatter |
+| ASCII-only requirement (PS5.1 BOM-less `.ps1` read as ANSI) | `tests/test_supervisor.py:132-144` | N/A to bash — no equivalent test needed for `supervise.sh` |
+
+Also confirmed clean: `requirements.txt` (`websockets`, `zstandard`) both ship
+`manylinux` wheels — no compilation needed on a standard x86_64 Linux host.
+
+### 10.2 The sleep-suspend root cause doesn't repeat the same way on a server
+
+The 2026-07-26/27 ~35h27m and ~4h06m gaps (SESSION_LOG, `coverage_report`)
+were OS-level suspend, not process kills — a laptop-specific failure mode
+(`powercfg` exists to fight it). A VPS does not sleep on lid-close or
+idle-timeout the way a workstation does; there is no equivalent problem to
+mitigate by default. `install_systemd_unit.sh`'s header still tells the
+operator to check
+`systemctl list-units --type=target --all | grep -E 'sleep|suspend'` and mask
+those targets if the chosen image ships any idle-suspend behavior, so this is
+verified rather than assumed on cutover.
+
+### 10.3 Supervision — `supervise.sh` + `install_systemd_unit.sh`
+
+Same policy as `supervise.ps1`, ported to Bash and re-verified against the
+**same stub-recorder contract** in `tests/test_supervisor_sh.py` (relaunch on
+crash + attest the gap; never relaunch on exit 0 or exit 3; restart-rate cap;
+backoff-ladder reset after a healthy run) — genuinely executed under Git Bash
+during this dispatch, not merely reasoned about; see the W15 session report
+for what that does and doesn't prove.
+
+Install (as root, on the capture host):
+
+```
+sudo bash recorder/install_systemd_unit.sh \
+    --user kraken --python-exe /path/to/venv/bin/python3 \
+    --book-mode snapshot --snapshot-interval 1.0 --min-free-gb 5.0
+sudo systemctl enable --now kraken-forward-recorder
+systemctl status kraken-forward-recorder
+python3 -m recorder.liveness
+```
+
+Design note: **a systemd `Restart=` ladder was deliberately NOT used to
+reimplement the backoff/cap policy.** Native exponential backoff
+(`RestartSteps=`/`RestartMaxDelaySec=`) only exists from systemd 254 onward
+(missing on, e.g., Ubuntu 22.04's systemd 249) and would make the policy's
+behavior depend on the target distro's systemd version — the opposite of the
+"same policy, different host" goal. Instead `supervise.sh` owns the *entire*
+recorder-restart policy itself, exactly as `supervise.ps1` does, and the
+generated unit only adds a second, independent, much coarser layer
+(`Restart=on-failure`, `RestartSec=10`, `StartLimitBurst=5`/`10min`) that
+catches `supervise.sh` itself dying unexpectedly (OOM kill, bash fault) — a
+different and much rarer failure than anything the internal loop handles.
+`SuccessExitStatus=3 4` tells systemd that a `DISK_GUARD_ABORT` (3) or a
+restart-cap give-up (4) are *both* terminal by policy, same as a clean exit
+0 — so nothing above `supervise.sh` retries a stop that was reached on
+purpose. Killing the whole cgroup (`KillMode=control-group`, systemd's
+default) delivers `systemctl stop`'s SIGTERM to the recorder subprocess too,
+which already has a portable SIGTERM handler that journals `RECORDER_STOP`
+and exits 0 — so a stop is clean end to end without either script needing to
+know about the other.
+
+There is no S4U-style login-session special case to reach for on Linux — a
+systemd **system** service (as opposed to a `--user` unit tied to a login
+session) is never inside anyone's session in the first place, so "survives
+logout" is true by construction rather than something to configure.
+
+### 10.4 What was verified on real Linux semantics vs. reasoned only
+
+No Linux host was available in this environment (Windows dev machine; tests
+ran under Git Bash/MSYS). Being explicit about the difference:
+
+**Executed for real (genuine verification, not simulation):**
+- `supervise.sh`'s full restart/backoff/cap/attestation loop —
+  `tests/test_supervisor_sh.py`, 7/7 passing, same stub-recorder contract as
+  the PowerShell version.
+- `install_systemd_unit.sh`'s unit-file generation and its systemd-quoting
+  (`sdquote`) — smoke-tested against a stubbed `systemctl` and a path
+  containing a space; the emitted `ExecStart=` line was inspected and is
+  correctly double-quoted per `systemd.service(5)`'s command-line quoting
+  rules. **Not** verified: that a real `systemd-analyze verify` or a real
+  `systemctl start` accepts the unit — no systemd binary exists in this
+  environment.
+- `retrieve_shards.py` / `retrieval_manifest.py` — full pull/verify/ledger/
+  prune logic against `LocalDirTransport`, 14/14 tests passing, including the
+  journal's growing-prefix case and prune's re-verification-before-delete
+  guard.
+
+**Reasoned, not executed here (state this plainly rather than claim
+verification that didn't happen):**
+- `disk_guard.probe_free_bytes` on a real Linux filesystem — it is a bare
+  `shutil.disk_usage()` call, which is implemented for POSIX via `statvfs(2)`
+  in CPython's own stdlib; this is standard-library behavior, not
+  recorder-specific code, so it is trusted on the strength of that rather
+  than independently re-tested here.
+- `compaction.py`'s `os.replace()` atomicity and the fsync-then-rename
+  ordering, under an actual crash, on a real Linux filesystem (ext4/XFS).
+  `os.replace` is atomic on POSIX by construction (`rename(2)`), matching
+  what the module already relies on. The one **genuine open question** a
+  real Linux host would need to answer that Windows/NTFS does not raise the
+  same way: whether the **parent directory** also needs an explicit
+  `fsync(dirfd)` after the compacted shard's rename, for the new directory
+  entry itself to survive a power-loss-at-the-wrong-instant (a known
+  POSIX/ext4/XFS subtlety with no NTFS equivalent). The existing per-file
+  `fsync` before `os.replace` (`compaction.py:178`) already protects the
+  *content*; a directory-entry fsync would harden the *rename becoming
+  visible* against the same class of crash. Not implemented in this
+  dispatch — flagged here as a real, host-specific hardening item for
+  whoever operates this on bare-metal-adjacent Linux storage, not a defect
+  in the current code.
+- `journal.py`'s per-record `fsync` durability guarantee under Linux's actual
+  write-back semantics — the call (`os.fsync(fh.fileno())`) is standard and
+  correct; its real-crash behavior on the target VPS's specific storage
+  (network-attached block storage vs. local NVMe) was not measured because no
+  such host exists yet to measure it against.
+- SSH/rsync transport (`SshRsyncTransport` in `retrieve_shards.py`) — the
+  logic around it is fully tested via `LocalDirTransport`, but no real SSH
+  host was available to exercise the actual subprocess calls to `ssh`/
+  `rsync`. Verify with a real host before the first production retrieval;
+  `rsync` availability on the analysis machine (Windows) needs Git-for-
+  Windows, Cygwin, or WSL — not assumed present.
+
+### 10.5 Data retrieval — `retrieve_shards.py`
+
+Analysis runs locally; capture runs on the server. `recorder/retrieve_shards.py`
+pulls compacted shards (`*.ndjson.zst`) and the coverage journal back,
+incrementally and resumably, verified against a hash **computed on the
+capture host** (`recorder/retrieval_manifest.py`, run over SSH) rather than
+trusting the transfer protocol alone.
+
+```
+# regular pull (run this on a schedule, e.g. weekly cron)
+python -m recorder.retrieve_shards pull \
+    --host kraken-vps --remote-out /data/kraken_ws_v2 \
+    --local-out trading-bot/local_data/recorded_reserved/kraken_ws_v2 \
+    --identity ~/.ssh/kraken_vps
+
+# only once retrieval has been trusted for a while, and only explicitly:
+python -m recorder.retrieve_shards prune --yes-delete-confirmed-only \
+    --host kraken-vps --remote-out /data/kraken_ws_v2 \
+    --local-out trading-bot/local_data/recorded_reserved/kraken_ws_v2
+```
+
+Properties (see `retrieve_shards.py`'s module docstring for the full
+reasoning):
+
+- **Incremental** — `_retrieval_ledger.json` in the local output root records
+  every already-verified path's hash; `pull` only fetches what's new,
+  changed, or previously failed. The coverage journal is the one file that
+  legitimately keeps growing: it gets a **prefix hash** (first N bytes) in
+  the manifest rather than a whole-file hash, so each pull only needs to
+  transfer and verify the delta past the last confirmed byte, and a pull
+  that lands mid-write of the newest record is safe (a torn final line is
+  exactly what `journal.load_records` already tolerates).
+- **Resumable** — an interrupted `pull` leaves the ledger showing precisely
+  what was and wasn't confirmed; rerunning it picks up cleanly, no manual
+  bookkeeping.
+- **Integrity-verified** — every pulled file's local hash is checked against
+  the manifest's hash before it is added to the ledger; a mismatch is
+  reported as failed and retried on the next run, never silently accepted.
+- **Never deletes anything not confirmed received** — `pull` never deletes
+  anything, on either side, under any circumstance. `prune` is a *separate*,
+  explicitly-flagged command that only deletes a remote file if (a) the
+  ledger has it confirmed, (b) a **freshly re-fetched** remote manifest still
+  shows the same hash (catches the file changing after confirmation, which
+  should never happen for an already-compacted shard but is checked rather
+  than assumed), and (c) the local copy's hash, re-checked at prune time,
+  still matches too. The coverage journal is never eligible for deletion by
+  `prune` at all — it is small and there is no storage pressure it relieves.
+
+### 10.6 Sizing and cost
+
+**Measured inputs used below** (no estimates in this paragraph):
+cadence-ladder `snapshot@1s` raw rate **20,576 B/s** steady-state (measured,
+`docs/session_reports/20260726_recorder_cadence_ladder.md` — this is the
+currently-deployed mode); real 18-hour production compaction
+**11.45x** (622.73 MB raw → 54.39 MB compressed, SESSION_LOG 2026-07-28
+hand-off note) — used here in preference to the cadence ladder's own
+synthetic 15.41x, which was measured on a 208.7 s sample rather than
+real multi-hour production data.
+
+**Refined 12-month compressed projection** (measured raw rate ÷ measured
+real-world ratio, continuous capture assumed — the whole point of this
+migration):
+
+```
+20,576 B/s x 86,400 s/day x 365 days = 648.9 GB/12mo RAW
+648.9 GB / 11.45  =  56.7 GB/12mo COMPRESSED
+```
+
+This is **~35% higher** than the cadence ladder's own `snapshot@1s`
+projection of 42.1 GB/12mo, because that number used the short synthetic
+sample's 15.41x ratio rather than the ratio actually observed in production.
+**Use 56.7 GB/12mo, not 42.1 GB/12mo, for disk provisioning** — it is the
+more conservative figure and it is measured, not the synthetic one.
+
+**Disk**: 56.7 GB data + 5 GB disk-guard floor (unchanged — this dispatch did
+not touch it) + ~8 GB OS/venv/logs headroom ≈ **70 GB minimum**; provision
+80-100 GB for margin against a more volatile year (the ladder's own §3 notes
+book-byte share is dominated by a few tick-dense low-priced pairs — a
+volatile DOGEUSD, for example, would push totals up, not down).
+
+**Bandwidth (retrieval)**: 56.7 GB/12mo ÷ 52 ≈ **~1.1 GB/week** compressed
+data pulled from server to analysis machine (the ladder's own number gives
+~0.8 GB/week — either way, trivial). This is the server's *outbound*
+transfer, the side VPS providers meter; inbound (SSH commands, manifest
+JSON) is negligible.
+
+**Rough monthly cost — ASSUMPTION, not measured, verify before purchasing.**
+A single-vCPU tier with ~80 GB SSD and generous outbound transfer is roughly
+**USD 6-10/month** at current (2026) market rates from budget providers
+(e.g., Hetzner's `CX32`-class tier: 80 GB SSD, ~20 TB/month outbound,
+reported around $8/month post their 2026 price adjustment). This figure came
+from a web search of third-party pricing aggregators, not the providers' own
+pricing pages, and is explicitly a rough planning number — confirm current
+pricing directly with whichever provider is chosen before purchasing. At
+that tier, ~1.1 GB/week of retrieval traffic is a rounding error against a
+multi-TB/month allowance — no bandwidth overage risk under any provider
+considered.
+
+### 10.7 Cutover runbook
+
+**Precondition**: do not stop or reconfigure the Windows capture until the
+new host has been verified healthy per below. The Windows recorder keeps
+running throughout steps 1-4.
+
+1. **Provision and install** on the new host: clone/rsync this repo,
+   `pip install -r recorder/requirements.txt`, confirm `python3 -m
+   recorder.record_kraken_ws selftest` passes (RUNBOOK §2).
+2. **Install and start supervision**:
+   ```
+   sudo bash recorder/install_systemd_unit.sh --user kraken \
+       --python-exe /path/to/venv/bin/python3 \
+       --book-mode snapshot --snapshot-interval 1.0 --min-free-gb 5.0
+   sudo systemctl enable --now kraken-forward-recorder
+   ```
+3. **Verify the new host is healthy before trusting it for anything**:
+   ```
+   python3 -m recorder.liveness            # must print HEALTHY
+   python3 -m recorder.coverage_report --fail-on-gap   # since RECORDER_START on this host
+   ```
+   Do not proceed past this step on a liveness failure or an unattested gap
+   since this host's `RECORDER_START` — that is exactly the class of silent
+   failure §3.5/§4 exist to catch, now on a second host.
+4. **Confirm attestation, not just "it's running"**: the new host's own
+   coverage journal must show `RECORDER_START` → ongoing `HEARTBEAT_ROLLUP`s
+   with 19/19 symbols, the same three checks `liveness.py` already runs.
+   Only once this has held for a period the operator is comfortable with
+   (hours, not minutes — a fresh process can look healthy for a few minutes
+   before a config mistake surfaces) should the Windows recorder be stopped.
+5. **Stop the Windows recorder without losing the in-flight hour**: send it a
+   clean stop signal (Ctrl-C on the console it runs under, or
+   `Stop-ScheduledTask -TaskName KrakenForwardRecorder` if it was migrated to
+   the scheduled task first) and confirm exit 0 / `RECORDER_STOP` in its
+   journal — never `kill -9`/`Stop-Process -Force`, which forfeits the clean-
+   shutdown attestation the whole design exists to provide. The **current**
+   (not-yet-hour-closed) shard is left exactly where it is; it is not raw
+   data at risk, just not yet compacted — `compaction.sweep()`'s startup pass
+   picks up anything orphaned by a stop if the process is ever relaunched on
+   that machine again, and in any case the shard itself is complete and
+   unaffected by which process wrote it.
+6. **Retrieve once, promptly, after cutover**: run `retrieve_shards.py pull`
+   against the new host to establish the first ledger baseline before
+   relying on a weekly cadence.
+
+**Rollback, if the server proves worse** (degraded uptime, host-specific
+network issues, anything the whole point of migrating was meant to avoid):
+stop the new host's service (`sudo systemctl stop
+kraken-forward-recorder`), confirm its journal shows a clean `RECORDER_STOP`,
+restart the Windows recorder (§3, `supervise.ps1` or the scheduled task), and
+retrieve whatever the server captured before rollback via
+`retrieve_shards.py pull` — the ledger and manifest design means a partial or
+short-lived server capture is retrieved exactly like any other, with no
+special-casing needed. Nothing about rollback requires deleting anything on
+either host; `retrieve_shards.py prune` is never required and should not be
+run until well after the decision to stay on the new host is final.
