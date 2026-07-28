@@ -1,4 +1,4 @@
-# Handoff → next Claude Code session (written 2026-07-28, after the reset)
+# Handoff → next Claude Code session (written 2026-07-28, after milestone 1)
 
 Paste §1 into a fresh session. Everything below it is the context that prompt refers to.
 
@@ -8,96 +8,89 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 
 > Read these three files in full before doing anything, in this order: `CLAUDE.fork.md`, `research/LEDGER.md`, `research/NEXT_SESSION.md`. **`CLAUDE.fork.md` is NOT auto-loaded** — Jeremy's `CLAUDE.md` has no include for it, so you must read it explicitly. Then run `git status && git log --oneline -5`.
 >
-> **Context:** this fork was reset to Jeremy's `70dab378` on 2026-07-28 and restarted from scratch. The tree is byte-identical to upstream. All prior work is preserved in three `archive/2026-07-28/*` tags — nothing was deleted, and nothing from them is to be restored without my say-so. `research/LEDGER.md` carries the knowledge that was expensive to get; read it properly, it will save you days and it is where the traps live.
+> **Where we are:** milestone 1 is done. Jeremy's bot runs on my Mac and the reference backtest reproduces the baseline exactly — `config_sha256 5ccbec42` / `data_sha256 5a75366c` / net −23.021% / sharpe −5.646 / 24 trades / fees 68.897289 — byte-identically across two independent venvs. Branch `mac/setup` is at `afa2573d`. Fast suite 116 passed, slow 9 passed / 1 skipped / 0 errors. That number is a **reproducibility anchor, never a result**: the committed strategy is from a killed family and loses ~23%.
 >
-> The reason for the reset is in the ledger and I want you to take it seriously: the previous agent proposed heavy runtime guards where a static check would have done, batched large changes into sessions I'd scoped small, and needed three adversarial review rounds to stabilise its own work. I lost trust in the process, not the code. **The working agreement in the ledger is the remedy. Follow it.**
+> **What I actually care about now, and it reorders the backlog:** the LLM research workflow is the product. I want a **self-improving loop** — the pipeline proposes strategies, we backtest them, the results feed back and improve the next proposal. Getting `strategy-research/workflow/` running on macOS is the priority, **ahead of** `fix/metrics-bar-equity`.
 >
-> **Goal for this session: milestone 1 — make Jeremy's bot run on my Mac and prove the base is sound.**
+> That work is already scoped. It was audited on 2026-07-28 and the surface is small: **four hardcoded Windows interpreter paths** (`workflow/run_phase1_research.py:990,1462,4889` and `tools/retune_regime_detector.py:486`, all the same `Path("..")/"venv"/"Scripts"/"python.exe"` line) plus **one undeclared dependency** (`claude_agent_sdk`, imported at `:54`, in no requirements file, not installed here). No other OS hazards exist — zero `shell=True`, zero `os.name`/`platform` branches, zero backslash path literals. The file already uses the correct portable idiom (`sys.executable`) at `:1587` and `:2777`.
 >
-> Right now `../.venv/bin/python main.py simulate` exits `FATAL ERROR: invalid strategy_config`. Three known first-run blockers are described in the ledger. The definition of success is not "it runs" — it is:
->
-> ```
-> config_sha256 5ccbec42…   data_sha256 5a75366c…
-> net −23.021%   sharpe −5.646   maxDD −24.592%   24 trades   fees 68.897289
-> ```
->
-> If a clean Jeremy base plus those three fixes reproduces that exactly, we know the foundation is sound by measurement rather than assertion. That is the whole point of the milestone.
+> **Read anything you need.** Nothing in this repo is off-limits to read — that includes `strategy-research/workflow/`, which is only *unexecutable* here, not secret. Never tell me something is "unaudited" when you could have audited it. Changing things is what needs proof. The one exception is the sealed holdout **data** at `local_data/holdout_sealed/2026_H1/`: don't open it, because reading it spends it. Its policy files are normal reading.
 >
 > **How I want you to work:**
 > - Propose a plan in 3–6 bullets and get my nod **before writing any code**.
 > - One change per branch. Reviewed and green before you start the next.
 > - Prefer the cheapest control that works. Do not add guards to guards.
-> - Verify by execution, never by reading. `main.py simulate` prints **nothing** — read the newest dir under `results/runs/`.
-> - Never push to Jeremy. `origin` only.
-> - No `Co-Authored-By` trailers.
+> - Verify by execution, never by reading. `main.py simulate` prints **nothing** — read the newest dir under `results/runs/` via `stat -f '%m %N' results/runs/* | sort -rn | head -1`.
+> - Mutation-test new tests: break the thing they guard, at the *public* entry point, and confirm they fail.
+> - Never push to Jeremy. `origin` only. No `Co-Authored-By` trailers.
 > - Update `research/LEDGER.md` before the session ends.
 >
 > Start by confirming the environment and telling me what you find.
 
 ---
 
-## 2. What happened (2026-07-28)
+## 2. State as of 2026-07-28
 
-The fork was reset at Dorian's request. He could no longer trust the basis after a session in which the agent injected nine defects that three adversarial review rounds had to catch.
-
-**Measured before the reset, so it is not re-litigated:** the old tree was objectively intact — engine files 0 changed, committed market data 0 bytes changed, holdout seal intact, baseline byte-identical, git history unbroken. The repository was fine. The *process* was not.
-
-What was done:
-
-1. Three `archive/2026-07-28/*` tags created and pushed, each with a message explaining what is inside and what is worth cherry-picking.
-2. `origin/master` fast-forwarded to `upstream/master` = `70dab378`. It was 1 commit behind and 0 ahead, so this was a plain fast-forward — **no force-push, nothing orphaned**.
-3. New branch `mac/setup` cut from `upstream/master`.
-4. Knowledge carried forward (`CLAUDE.fork.md`, `research/LEDGER.md`, `research/TRIALS.csv`, `FORK_CHANGES.md`, `.claude/commands/`). **Code was not.**
-
-**Jeremy has not moved** since `70dab378` — verified, 0 commits ahead. There was no newer upstream code to pull.
-
----
-
-## 3. Expected state — verify, don't assume
-
-| Check | Expected |
+| | |
 |---|---|
-| branch | `mac/setup`, cut from `70dab378` |
-| `git diff upstream/master..HEAD -- trading-bot/` | **empty** (tree is Jeremy's) |
-| `main.py simulate` | `FATAL ERROR: invalid strategy_config`, no run produced |
-| `.venv/bin/python --version` | Python 3.13.12 |
-| installed deps | pandas 2.3.3, ccxt 4.5.68, matplotlib 3.11.1, requests 2.34.2, PyYAML 6.0.3, pytest 9.1.1, numpy 2.5.1 |
-| `trading-bot/local_data` | 28 GB present |
-| `git remote -v` | `upstream` push URL = `DISABLED_use_a_PR_instead` |
+| Branch | `mac/setup` @ `afa2573d`, pushed to `origin` |
+| Upstream | Jeremy still at `70dab378`, 0 commits ahead |
+| Fast suite | 116 passed |
+| Slow suite | 9 passed, 1 skipped, 0 errors *(the skip is a known dead test — see below)* |
+| Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades — byte-identical across two venvs |
 
-**The venv already exists and already has ccxt.** It survived the reset because it is gitignored. So "make it run on the Mac" is *not* an environment problem — the environment works. It is a config problem (blocker #1) plus a `requirements.txt` that does not yet describe what is actually installed (blocker #3).
+**Merged this session** (each on its own branch, reviewed, merged `--no-ff`):
 
-That distinction matters for milestone 1: fixing `requirements.txt` is about making a *fresh clone on another machine* work. Consider proving it with a throwaway venv rather than assuming.
-
----
-
-## 4. Milestone 1 — the plan to propose
-
-Not prescriptive; the next agent should think and propose. But the shape is known:
-
-1. **Blocker #1** — `strategy_config.json`: `default_regime` `"mean_reversion"` → `"unknown"`. Declare the behaviour change loudly: 76 trades → 24, and `tests/fixtures/reference_run.json` must be rebaselined because the old values are **unreachable**, not stale.
-2. **Blocker #2** — `config.json`: `trading.symbols` `ETHUSDT` → `BTCUSDT`.
-3. **Blocker #3** — `requirements.txt`: pin versions, add `ccxt`, `matplotlib`, `requests`, `PyYAML`, and **cap `pandas<3`**. The cap is not cosmetic — read the ledger entry on it.
-4. **Prove it:** fast suite, `pytest -m slow`, `tools/validate_config.py`, then `main.py simulate` reproducing `5ccbec42` / `5a75366c` / −5.646 / 24 trades.
-5. **Record it:** `research/LEDGER.md`, `FORK_CHANGES.md` (these are the first real divergences), a `TRIALS.csv` row for the baseline reproduction.
-
-Do these as **one branch, one review** — they are a single logical unit ("make it run"), not four separate concerns.
-
----
-
-## 5. Deliberately NOT restored — decide before reusing
-
-All in `archive/2026-07-28/fix-fetch-end-bound`. Read the tag message first.
-
-| Item | Assessment |
+| Commit | What |
 |---|---|
-| **`BaseFetcher` end-bound fix** | **Worth cherry-picking.** CcxtFetcher wrote 259 sealed bars past an explicit `end_date` — measured. ~30 lines, upstream-worthy, no dependency on `strategy-research/`. |
-| **`visualize_data` fix** | **Worth cherry-picking.** `end_date='2026-04-23'` is inside the seal with `localStorage=True` (~500k sealed 1m bars per run), and it calls a method that exists on no fetcher. |
-| **Holdout write tripwire** | **Reconsider.** +148 lines inside Jeremy's `base_fetcher.py` with a hard dependency on `strategy-research/config/`. Measured to guard the *write* path only — it handed 1,440 sealed rows to a caller on the *read* path without firing. A static check that no date literal in the repo falls inside `holdout_range` would catch more, for ~15 lines and zero divergence. |
-| **`tools/fetch_data.py`** | Fork-only new file, cannot conflict. Provisions the gitignored caches without crossing the seal. Useful if a fresh clone ever needs provisioning. |
-| **Kraken ingest merge fix** | Real bug (overwrites instead of merging, 500 rows → 10) but only matters if you re-run the ingest. Not urgent. |
+| `443a1b57` | Three first-run blockers: `default_regime`→`unknown`, `symbols`→`BTCUSDT`, `requirements.txt` pinned + 4 missing packages |
+| `c37dd38e` / `c1257be4` | `regime_engine.py:137` fall-through `MEAN_REVERSION`→`UNKNOWN`; public-path tests |
+| `4fc45f68` | `validate_config.py` judges the *effective* `default_regime` at V7 and V9/V10 |
+| `afa2573d` | Audit of `strategy-research/workflow/`; read-policy corrected in `CLAUDE.fork.md` |
 
-**PR #1 to Jeremy is still open and still correct.** Do not close it.
+---
+
+## 3. The priority: port `strategy-research/workflow/` to macOS
+
+**Why it matters more than the old "off-limits" label implied.** The audit found strategy configs there are **LLM-authored**:
+
+- `workflow/stages.yaml:54` — stage `backtest_specification` has a `skill:` and **no** `tool:`. It is a model stage.
+- `workflow/run_phase1_research.py:4885` writes its `backtest_spec.yaml → config` block **verbatim** to `candidate_strategy_config.json`.
+- `trading-bot/tools/validate_config.py` is the gate at `:4888`; non-zero exit → `failed_validation`.
+
+The model has failed in both relevant ways, on record: it invented the regime name `"active"` (`runs/run_043/attempt_1_blocked/`, caught by V7, still exits 1), and it **silently dropped a mandatory field** (`run_phase1_research.py:4876-4883` force-injects `significance_methodology` after run_047 omitted it). That second one is exactly how an absent `default_regime` would arise — which is why the V7/V10 hardening shipped this session is load-bearing, not theoretical.
+
+**Blocker 1 — four Windows interpreter paths.** All the same line:
+```python
+TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
+```
+at `workflow/run_phase1_research.py:990`, `:1462`, `:4889` and `tools/retune_regime_detector.py:486`; plus `tools/hooks/pre-commit:40` (a git hook, not pipeline code). Mac equivalent from `strategy-research/` is `../.venv/bin/python`. Keep Jeremy's tree working — prefer a resolver (Windows path if present, else `.venv/bin/python`, else `sys.executable`) over a hard swap, since the fork must stay mergeable.
+
+**Blocker 2 — `claude_agent_sdk` is undeclared.** Imported at `:54`, pinned to `0.2.82` in comments (`:498`, `:541`), **not installed and in no requirements file**. PyPI name `claude-agent-sdk`. Pin it in a requirements file so a fresh clone reproduces — same discipline as milestone 1's `trading-bot/requirements.txt`.
+
+**Pipeline model:** `claude-haiku-4-5` (`:748`).
+
+### The honesty problem the loop creates — raise this before it runs
+
+A self-improving loop that proposes and tests strategies is mechanically a **selection-bias machine**. Every proposal backtested is a trial, and deflated Sharpe is only as honest as the trial count behind it. The machinery exists — `campaign_state.trial_sharpes` (`run_campaign.py:1053`), `tools/deflate_sharpe.py` — and `run_campaign.py:1119-1122` warns that trials are counted **only** via `trial_sharpes`, never `campaign_state.runs`, so a missed append silently understates N. **Verify that accounting works on Mac before trusting anything the loop produces, including the runs it kills.** A loop that logs only its winners produces beautiful, meaningless Sharpes.
+
+---
+
+## 4. Known-broken, deliberately not fixed
+
+- **`test_config_actually_loaded` has never executed.** `tests/test_regression_backtest.py:39` — the `backtest_result` fixture returns from inside a `with tempfile.TemporaryDirectory()`, so the run dir is deleted before the test reads `manifest.json`; it hits `pytest.skip` at `:114` unconditionally, on every platform, since the file's first commit. **The `1 skipped` in the slow suite is this. Do not read it as green** — the check that would catch "the backtest ran a different config than specified" is dead code. Notion issue open, own branch.
+- `main.py simulate` rewrites the **tracked** `results/trades.json` every run — restore with `git checkout --` after any reproducibility check.
+- Backlog after the port: `fix/metrics-bar-equity` (bar-level equity → true maxDD/Sharpe; unblocks trusting every number), then `fix/risk-layer`, then `feat/slippage-model`.
+
+---
+
+## 5. Lessons this session paid for — do not re-learn them
+
+1. **Verify inherited claims by execution.** The ledger, Notion and the handoff all stated the old fixture values were "unreachable, not stale." One `git log` refuted it — V9 arrived three days *after* the values were recorded. Carried-forward knowledge is the least-tested artifact in the repo.
+2. **Never rebaseline without a control run.** Replay the *old* config and show it still produces the *old* numbers, or a rebaseline is indistinguishable from one hiding a regression.
+3. **Mutation-test new tests.** A 7-test file here caught **0 of 7** mutations because every test drove a private helper instead of the public entry point. Watching a test fail proves only that it reaches the path you wrote it against.
+4. **Reject the strongest form of an option, not the easiest.** I declined to harden V10 by refuting a version of the idea nobody should have chosen, and shipped half a fix my own `FORK_CHANGES.md` had pre-registered as two parts.
+5. **Never hedge with "unaudited" when auditing is available.** Said three times; the audit took fifteen minutes and turned the caveat into the strongest evidence for the change.
 
 ---
 
@@ -105,19 +98,11 @@ All in `archive/2026-07-28/fix-fetch-end-bound`. Read the tag message first.
 
 | File | Why |
 |---|---|
-| `CLAUDE.fork.md` | mission, hard rules, research protocol, backlog. **Not auto-loaded — read it.** |
-| `research/LEDGER.md` | every trap, finding, and the working agreement. **The important one.** |
-| `../TRADING_BOT_REVIEW.md` | full July 2026 code review, all `file:line` refs |
-| `research/TRIALS.csv` | every experiment; T001 is the pre-reset baseline reproduction |
+| `CLAUDE.fork.md` | mission, hard rules, read policy, backlog. **Not auto-loaded — read it.** |
+| `research/LEDGER.md` | every trap, finding, correction, and the working agreement. **The important one.** |
+| `FORK_CHANGES.md` | the 8 deliberate divergences from Jeremy, with the evidence behind each |
+| `strategy-research/workflow/stages.yaml` | the pipeline's stage graph — start here for the port |
 | `strategy-research/config/campaign_data_policy.yaml` | `holdout_range` — source of truth for the seal |
-| `DOC/STRATEGY_FRAMEWORK.md` | read before touching strategies |
+| `research/TRIALS.csv` | every experiment; T001/T002 are baseline reproductions, not results |
 
-Notion — "Trading Bot HQ": the **🐛 Bugs & Tasks** DB, where `Status` = Jeremy's master and **"Dorian's fork"** = this fork.
-
----
-
-## 7. Open decisions for Dorian
-
-- **`.claude/commands/`** (4 fork slash commands) are on disk but untracked — Jeremy's `.gitignore` excludes `.claude/`. Tracking them needs a `.gitignore` divergence.
-- **`CLAUDE.md`** no longer includes `@CLAUDE.fork.md`, so fork guardrails do not auto-load. Two lines would fix it; that is divergence #1 and his call.
-- **`venv/`** — upstream tracks 449 files of a Windows venv. Untracking is PR-worthy, separate.
+Notion — "Trading Bot HQ": the **🐛 Bugs & Tasks** DB. `Status` = Jeremy's master, **"Dorian's fork"** = this fork. The hub's top banner is current as of 2026-07-28.
