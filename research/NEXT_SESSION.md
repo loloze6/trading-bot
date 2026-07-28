@@ -1,4 +1,4 @@
-# Handoff → next Claude Code session (written 2026-07-28, after milestone 1)
+# Handoff → next Claude Code session (written 2026-07-28, after queue #1 merged)
 
 Paste §1 into a fresh session. Everything below it is the context that prompt refers to.
 
@@ -10,113 +10,72 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 
 > Read these three files in full before doing anything, in this order: `CLAUDE.fork.md`, `research/LEDGER.md`, `research/NEXT_SESSION.md`. **`CLAUDE.fork.md` is NOT auto-loaded** — Jeremy's `CLAUDE.md` has no include for it, so you must read it explicitly. Then run `git status && git log --oneline -5`.
 >
-> **Where we are:** milestone 1 is done. Jeremy's bot runs on my Mac and the reference backtest reproduces the baseline exactly — `config_sha256 5ccbec42` / `data_sha256 5a75366c` / net −23.021% / sharpe −5.646 / 24 trades / fees 68.897289 — byte-identically across two independent venvs. Branch `mac/setup`. The last **code** change is the merge `3225a281`; everything after it is documentation, so check `git log` for the actual HEAD rather than trusting a hash written here. Fast suite 116 passed, slow 9 passed / 1 skipped / 0 errors. That number is a **reproducibility anchor, never a result**: the committed strategy is from a killed family and loses ~23%.
+> **Where we are:** milestone 1 AND fork queue #1 are done. The bot runs on the Mac and reproduces the baseline byte-identically — `config_sha256 5ccbec42` / `data_sha256 5a75366c` / net −23.021% / sharpe −5.646 / 24 trades — and the **holdout data path is guarded**: fetches can no longer write past a requested end, `visualize_data` no longer names a sealed date, and `tests/test_no_sealed_date_literals.py` fails the suite on any executable production date at or beyond the seal's start. Branch `mac/setup`; check `git log` for the actual HEAD rather than trusting a hash written here. Fast suite **130 passed**, slow **9 passed / 1 skipped / 0 errors**. The baseline is a **reproducibility anchor, never a result** — the committed strategy is from a killed family, loses ~23%, and its Sharpe still comes off the trade-exit equity curve (that's queue #3).
 >
-> **Where this is going:** the LLM research workflow is the product — a **self-improving loop** that proposes strategies, backtests them, and feeds results back into the next proposal. That is the goal, but it is **not** the next task, and the reason matters.
+> **Two PRs are open on Jeremy's repo — check both at session start** (`gh pr view 1 --repo loloze6/trading-bot` and `gh pr view 2 --repo loloze6/trading-bot`): PR #1 (first-run blockers) and PR #2 (fetch end-bound). If Jeremy commented, that may preempt the session plan — tell me before proceeding. Never push to his repo; PRs only.
 >
-> **The backlog is sequenced by irreversibility, not by cost** (my call, 2026-07-28, after Claude argued it and I agreed). A loop running at throughput against a broken evaluator spends two things we cannot get back: the **holdout** (single-use, terminal) and **trials** (deflated Sharpe must count N whether or not a trial was meaningful). Metrics bugs are fixable; a spent seal is not. So:
+> **The finish line ("good enough to start generating") is four things:** costs modelled, drawdown honest, **holdout guarded ✅**, trials counted. Three remain. Hold me to that line — "fix everything first" never ends.
 >
-> 1. **`fix/data-holdout-safety`** — the only *terminal* risk, and small. `ccxt_fetcher.py:149` overshoots its own `end_date` (measured: a fetch bounded at 2025-12-31 wrote through 2026-03-19), `base_fetcher.py:220` widens every end by a day, `launcher.py:357` hardcodes a sealed date. Fixes exist in `archive/2026-07-28/fix-fetch-end-bound` — cherry-pick deliberately, reviewed, not bulk-restored. **An autonomous loop that fetches data can spend the holdout without anyone noticing.**
-> 2. **`feat/slippage-model`** — flat-bps slippage + lot-size/min-notional rounding. Ahead of bar-equity **deliberately**: bar-level Sharpe fixes how you *score* risk, slippage fixes how you *rank* return, and cost error changes which strategies survive selection. A generator optimising against zero-slippage fills proposes high-turnover mirages.
-> 3. **`fix/metrics-bar-equity`** — bar-level equity from `portfolio_states.csv`, so drawdown stops being understated.
-> 4. **`fix/workflow-macos-port`** — cheap, reversible, **inert until a campaign runs**, so pull it forward whenever convenient; only *running* is gated on 1–3.
-> 5. **Verify trial accounting, then the first campaign.**
+> **Next task — `feat/slippage-model` (queue #2 of 5; board Fork order #4):** flat-bps slippage plus lot-size/min-notional rounding in `MockExecutionHandler` (`execution/execution_handler.py`). Today the backtest fills at the exact close with zero slippage, so every result is optimistic — and a generator optimising against zero-slippage fills systematically proposes high-turnover mirages. Cost error changes **which strategies survive selection**, not just their score, which is why this sits ahead of bar-equity. Requirements: **off-by-default with a bit-identity test** proving default output byte-unchanged (template: `tests/test_warmup_prefetch_bit_identical.py`; hard rule 4); slippage is a separate modelled cost, not folded into the 10 bps fee; then rerun the baseline at 0/5/10 bps — the 0 bps run must stay byte-identical, and the 5/10 bps deltas go in the ledger as the first measure of how much edge is a cost mirage. Propose the design in 3–6 bullets and get my nod before code.
 >
-> **"Good enough to start generating" is four things, not 27 tickets:** costs modelled, drawdown honest, holdout guarded, trials counted. Hold me to that finish line — "fix everything first" is a list that never ends.
+> **After that:** 3 `fix/metrics-bar-equity` (drawdown honest), 4 `fix/workflow-macos-port` (cheap, reversible, inert until a campaign runs — pull forward whenever convenient), 5 verify trial accounting (`run_campaign.py:1119-1122` — a **killed** run must still land a row in `campaign_state.trial_sharpes`), then the first campaign. The ticket-level queue is Notion → 🐛 Bugs & Tasks → **🍎 Fork queue (in order)**; `CLAUDE.fork.md` is canonical if they disagree.
 >
-> **The queue is on the board.** Notion → 🐛 Bugs & Tasks → the **🍎 Fork queue (in order)** view, sorted by the `Fork order` column, is the ticket-level breakdown of the five steps above (10 items). `CLAUDE.fork.md` remains canonical if they ever disagree. Note `Priority` and `Fork order` deliberately disagree — `Priority` is severity on Jeremy's master, `Fork order` is our execution sequence, which is why slippage sits at #4 despite being `Medium`. A blank `Fork order` means not queued.
->
-> **The port, when you get to it, is two ports.** (a) `strategy-research/workflow/` — audited, small: four hardcoded Windows interpreter paths (`run_phase1_research.py:990,1462,4889`, `tools/retune_regime_detector.py:486`, all the same `Path("..")/"venv"/"Scripts"/"python.exe"` line) plus one undeclared dependency (`claude_agent_sdk`, imported `:54`, pinned `0.2.82` in comments, in no requirements file). Zero other OS hazards; `sys.executable` is already used correctly at `:1587`/`:2777`. **Resolver, not a hard swap** — Jeremy's tree must keep working. (b) The **Recorder** — unscoped: `strategy-research/recorder/` is 26 portable Python modules around one `supervise.ps1`, and its RUNBOOK argues the supervisor is the valuable part because book gaps are permanently unrecoverable. Decide explicitly whether the loop needs live capture; it may not be on the critical path for backtest-only research.
->
-> **Read anything you need.** Nothing in this repo is off-limits to read — that includes `strategy-research/workflow/`, which is only *unexecutable* here, not secret. Never tell me something is "unaudited" when you could have audited it. Changing things is what needs proof. The one exception is the sealed holdout **data** at `local_data/holdout_sealed/2026_H1/`: don't open it, because reading it spends it. Its policy files are normal reading.
+> **Lessons that must shape this session** (paid for on queue #1 — details in the ledger):
+> 1. **A byte-identical baseline proves only the paths the baseline walks.** Queue #1's first cut had a real regression the baseline was blind to. Your bit-identity proof must cover the actual default path, and the reviews must probe the paths `simulate` does *not* walk.
+> 2. **"The fix is correct" and "the fix is guarded" are separate claims.** Mutate your own new code (disable the flag, weaken a threshold, invert a condition) at the public entry point and watch a test fail — three such mutations survived the whole suite until a verifier lane caught them.
+> 3. **Commit before mutation rounds** — `git checkout --` restores to HEAD and once ate uncommitted work mid-session.
+> 4. **The OMC lane pattern worked; reuse it:** executor implements from a surgical spec → code-reviewer + red-team in parallel on the diff → separate verifier on the fixes — every stage independent of the author.
 >
 > **How I want you to work:**
 > - Propose a plan in 3–6 bullets and get my nod **before writing any code**.
 > - One change per branch. Reviewed and green before you start the next.
 > - Prefer the cheapest control that works. Do not add guards to guards.
 > - Verify by execution, never by reading. `main.py simulate` prints **nothing** — read the newest dir under `results/runs/` via `stat -f '%m %N' results/runs/* | sort -rn | head -1`.
-> - Mutation-test new tests: break the thing they guard, at the *public* entry point, and confirm they fail.
+> - Mutation-test new tests at the *public* entry point — and mutation-test the fix itself, not just the defect.
 > - Never push to Jeremy. `origin` only. No `Co-Authored-By` trailers.
-> - Update `research/LEDGER.md` before the session ends.
+> - Keep Notion updated as findings land; update `research/LEDGER.md` before the session ends.
 >
-> Start by confirming the environment and telling me what you find.
+> Start by confirming the environment (git state, fast+slow suites) and telling me what you find.
 
 ---
 
-## 2. State as of 2026-07-28
+## 2. State as of 2026-07-28 (evening)
 
 | | |
 |---|---|
-| Branch | `mac/setup` @ `afa2573d`, pushed to `origin` |
-| Upstream | Jeremy still at `70dab378`, 0 commits ahead |
-| Fast suite | 116 passed |
-| Slow suite | 9 passed, 1 skipped, 0 errors *(the skip is a known dead test — see below)* |
-| Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades — byte-identical across two venvs |
+| Branch | `mac/setup` @ `c2228092`, pushed to `origin` |
+| Upstream | Jeremy still at `70dab378`; **PR #1 and PR #2 open** on `loloze6/trading-bot` |
+| Fast suite | 130 passed (116 + 14 from queue #1) |
+| Slow suite | 9 passed, 1 skipped *(the skip is the known dead `test_config_actually_loaded`)* |
+| Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades — byte-identical at `mac/setup` tip |
+| Queue #1 | Merged `c641db9a`; PR branch `fix/data-holdout-safety-upstream` = the 7 code commits cherry-picked onto `upstream/master` |
 
-**Merged this session** (each on its own branch, reviewed, merged `--no-ff`):
+## 3. The task: `feat/slippage-model` — design notes
 
-| Commit | What |
-|---|---|
-| `443a1b57` | Three first-run blockers: `default_regime`→`unknown`, `symbols`→`BTCUSDT`, `requirements.txt` pinned + 4 missing packages |
-| `c37dd38e` / `c1257be4` | `regime_engine.py:137` fall-through `MEAN_REVERSION`→`UNKNOWN`; public-path tests |
-| `4fc45f68` | `validate_config.py` judges the *effective* `default_regime` at V7 and V9/V10 |
-| `afa2573d` | Audit of `strategy-research/workflow/`; read-policy corrected in `CLAUDE.fork.md` |
+- **Where fills happen:** `MockExecutionHandler` in `execution/execution_handler.py` fills at the exact bar close, zero slippage. All current results are optimistic by construction.
+- **Shape:** flat-bps slippage applied against the trade direction, plus lot-size/min-notional rounding (Binance BTCUSDT filters; hardcode sensible constants — no network in backtests). Off by default; a config knob turns it on.
+- **Bit-identity:** with the feature off, `simulate` must be byte-identical to the committed reference (`results/runs/20260728T132811Z_5ccbec42` — `cmp` all five files). With it on at 0 bps, decide and *pre-register* whether rounding alone may change output (it will, if lot-size rounding applies at 0 bps — separate the two knobs if so).
+- **Why it ranks above bar-equity:** slippage fixes how you *rank* return; bar-level Sharpe fixes how you *score* risk. The Edge Playbook: halving costs doubles the viable strategy space — the generator's selection is only honest if costs are.
+- **Interacts with the cost-stress bar:** strategies must survive 1.5×/2× modeled costs on validation. This model is what makes that bar meaningful.
 
----
+## 4. Known-broken, deliberately not fixed (tracked in Notion)
 
-## 3. The priority: port `strategy-research/workflow/` to macOS
+- **Seven Binance caches carry sealed rows** — queue #1 blocks *new* leaks; it did not decontaminate. Never run a window past 2025-12-31.
+- `test_config_actually_loaded` has never executed (dead fixture; the slow suite's `1 skipped`). Own branch, board order #8.
+- `tools/ingest_kraken_archive.py` overwrites instead of merging AND calls `_merge_and_store` directly with a data-derived bound (no end-bound at all) — board order #9.
+- `holdout_date_gate.sh` exists but is not wired into the installed pre-commit (unqueued ticket).
+- `visualize_data` writes its 1m cache into tracked `trading-bot/data/` (wrong dir; gitignore guards the wrong path). Hygiene, deferred.
+- `main.py simulate` rewrites tracked `results/trades.json` every run — restore with `git checkout --` after reproducibility checks.
+- Whale's `_end_of_day_if_midnight` duplicates the midnight rule at microsecond precision (base uses millisecond) — correct output, wasted shard reads. Cosmetic.
 
-**Why it matters more than the old "off-limits" label implied.** The audit found strategy configs there are **LLM-authored**:
-
-- `workflow/stages.yaml:54` — stage `backtest_specification` has a `skill:` and **no** `tool:`. It is a model stage.
-- `workflow/run_phase1_research.py:4885` writes its `backtest_spec.yaml → config` block **verbatim** to `candidate_strategy_config.json`.
-- `trading-bot/tools/validate_config.py` is the gate at `:4888`; non-zero exit → `failed_validation`.
-
-The model has failed in both relevant ways, on record: it invented the regime name `"active"` (`runs/run_043/attempt_1_blocked/`, caught by V7, still exits 1), and it **silently dropped a mandatory field** (`run_phase1_research.py:4876-4883` force-injects `significance_methodology` after run_047 omitted it). That second one is exactly how an absent `default_regime` would arise — which is why the V7/V10 hardening shipped this session is load-bearing, not theoretical.
-
-**Blocker 1 — four Windows interpreter paths.** All the same line:
-```python
-TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
-```
-at `workflow/run_phase1_research.py:990`, `:1462`, `:4889` and `tools/retune_regime_detector.py:486`; plus `tools/hooks/pre-commit:40` (a git hook, not pipeline code). Mac equivalent from `strategy-research/` is `../.venv/bin/python`. Keep Jeremy's tree working — prefer a resolver (Windows path if present, else `.venv/bin/python`, else `sys.executable`) over a hard swap, since the fork must stay mergeable.
-
-**Blocker 2 — `claude_agent_sdk` is undeclared.** Imported at `:54`, pinned to `0.2.82` in comments (`:498`, `:541`), **not installed and in no requirements file**. PyPI name `claude-agent-sdk`. Pin it in a requirements file so a fresh clone reproduces — same discipline as milestone 1's `trading-bot/requirements.txt`.
-
-**Pipeline model:** `claude-haiku-4-5` (`:748`).
-
-### The honesty problem the loop creates — raise this before it runs
-
-A self-improving loop that proposes and tests strategies is mechanically a **selection-bias machine**. Every proposal backtested is a trial, and deflated Sharpe is only as honest as the trial count behind it. The machinery exists — `campaign_state.trial_sharpes` (`run_campaign.py:1053`), `tools/deflate_sharpe.py` — and `run_campaign.py:1119-1122` warns that trials are counted **only** via `trial_sharpes`, never `campaign_state.runs`, so a missed append silently understates N. **Verify that accounting works on Mac before trusting anything the loop produces, including the runs it kills.** A loop that logs only its winners produces beautiful, meaningless Sharpes.
-
----
-
-## 4. Known-broken, deliberately not fixed
-
-- **`test_config_actually_loaded` has never executed.** `tests/test_regression_backtest.py:39` — the `backtest_result` fixture returns from inside a `with tempfile.TemporaryDirectory()`, so the run dir is deleted before the test reads `manifest.json`; it hits `pytest.skip` at `:114` unconditionally, on every platform, since the file's first commit. **The `1 skipped` in the slow suite is this. Do not read it as green** — the check that would catch "the backtest ran a different config than specified" is dead code. Notion issue open, own branch.
-- `main.py simulate` rewrites the **tracked** `results/trades.json` every run — restore with `git checkout --` after any reproducibility check.
-- Backlog after the port: `fix/metrics-bar-equity` (bar-level equity → true maxDD/Sharpe; unblocks trusting every number), then `fix/risk-layer`, then `feat/slippage-model`.
-
----
-
-## 5. Lessons this session paid for — do not re-learn them
-
-1. **Verify inherited claims by execution.** The ledger, Notion and the handoff all stated the old fixture values were "unreachable, not stale." One `git log` refuted it — V9 arrived three days *after* the values were recorded. Carried-forward knowledge is the least-tested artifact in the repo.
-2. **Never rebaseline without a control run.** Replay the *old* config and show it still produces the *old* numbers, or a rebaseline is indistinguishable from one hiding a regression.
-3. **Mutation-test new tests.** A 7-test file here caught **0 of 7** mutations because every test drove a private helper instead of the public entry point. Watching a test fail proves only that it reaches the path you wrote it against.
-4. **Reject the strongest form of an option, not the easiest.** I declined to harden V10 by refuting a version of the idea nobody should have chosen, and shipped half a fix my own `FORK_CHANGES.md` had pre-registered as two parts.
-5. **Never hedge with "unaudited" when auditing is available.** Said three times; the audit took fifteen minutes and turned the caveat into the strongest evidence for the change.
-
----
-
-## 6. Files to read
+## 5. Files to read
 
 | File | Why |
 |---|---|
-| `CLAUDE.fork.md` | mission, hard rules, read policy, backlog. **Not auto-loaded — read it.** |
-| `research/LEDGER.md` | every trap, finding, correction, and the working agreement. **The important one.** |
-| `FORK_CHANGES.md` | the 8 deliberate divergences from Jeremy, with the evidence behind each |
-| `strategy-research/workflow/stages.yaml` | the pipeline's stage graph — start here for the port |
-| `strategy-research/config/campaign_data_policy.yaml` | `holdout_range` — source of truth for the seal |
-| `research/TRIALS.csv` | every experiment; T001/T002 are baseline reproductions, not results |
+| `CLAUDE.fork.md` | mission, hard rules, backlog with queue #1 marked done. **Not auto-loaded.** |
+| `research/LEDGER.md` | every trap and lesson; the 2026-07-28 queue #1 entry is the important one |
+| `FORK_CHANGES.md` | rows 10–16: exactly what queue #1 changed and why |
+| `execution/execution_handler.py` | the task's home — read `MockExecutionHandler` end to end first |
+| `tests/test_warmup_prefetch_bit_identical.py` | the off-by-default bit-identity test template |
 
-Notion — "Trading Bot HQ": the **🐛 Bugs & Tasks** DB. `Status` = Jeremy's master, **"Dorian's fork"** = this fork. The hub's top banner is current as of 2026-07-28.
+Notion — "Trading Bot HQ": 🐛 Bugs & Tasks → **🍎 Fork queue (in order)**. Tickets 1–3 read `Done + PR open`; Mac Fork — Home's top note is current as of this handoff.

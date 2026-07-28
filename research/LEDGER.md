@@ -89,20 +89,20 @@ Reproduced on Linux+py3.10+pandas2 **and** macOS+py3.13+pandas2 — both hashes,
 
 `holdout_range` = **2026-01-01 → 2026-06-30**, from `strategy-research/config/campaign_data_policy.yaml`. Sealed, single-use, `holdout_failure_is_terminal: true`. **Looking is spending it** — a chart, a `head`, a notebook all count.
 
-Known, measured holdout hazards **still present on this clean tree**:
+Known, measured holdout hazards — **fetch-path ones FIXED 2026-07-28** (`fix/data-holdout-safety`, merged `c641db9a`, upstream PR #2):
 
-- **`CcxtFetcher` overshoots its own `end_date`.** `ccxt_fetcher.py:149-174` loops `while current_since < until`, so the bound governs where a page *starts*, never where data *ends*; the frame is never trimmed. A fetch bounded at 2025-12-31 wrote daily bars through **2026-03-19**. Measured, not theoretical.
-- **`launcher.py:357` (`visualize_data`) hardcodes `end_date='2026-04-23'`** — inside the seal — with `localStorage=True` and a 60s interval: **~500k sealed 1m bars per run**. It then dies on `validate_quality_data_continuity`, a method that exists on no fetcher, so the damage lands *before* it reports failure. No `BTCUSDT_1m.csv` exists here, so it has never actually been run.
-- **Seven Binance caches already contain sealed rows** (4,344 in `BTCUSDT_1h.csv`). They are gitignored, but they are readable, and a backtest window reaching into 2026 will happily read them — measured: **1,440 sealed rows handed to a caller** with nothing complaining.
-- **A cheap control that would catch most of this:** a static test asserting no date literal anywhere in the repo falls inside `holdout_range`. ~15 lines, zero divergence from Jeremy. This was *not* what the old branch built, and should have been.
+- ~~**`CcxtFetcher` overshoots its own `end_date`.**~~ **FIXED** — `_load_all` clamps every fetched chunk (`_trim_to_period`); the measured 2025-12-31→2026-03-19 overshoot can no longer reach disk or memory. Also fixed: the `+1 day` end-widening (`base_fetcher.py:220`) and the −1ms midnight period-end re-widening.
+- ~~**`launcher.py:357` hardcodes a sealed date**~~ **FIXED** — bound is `'2025-12-31'` (guarded by the static seal test) and the phantom `validate_quality_data_continuity` call is gone.
+- **Seven Binance caches already contain sealed rows** (4,344 in `BTCUSDT_1h.csv`) — **STILL TRUE.** The fix blocks *new* leaks; it does not decontaminate. They are gitignored but readable, and a backtest window reaching into 2026 will still read them. Never run a window past 2025-12-31.
+- **The cheap static control now EXISTS** — `tests/test_no_sealed_date_literals.py`: any executable production string date at or beyond the seal's start fails the suite. It is prose-aware by necessity (~100 lines, not the imagined ~15): a raw text scan fires on upstream's own `FetchGapError` docstring. The whole-index `holdout_date_gate.sh` exists in `strategy-research/tools/` but is **not wired** into the installed pre-commit (Notion ticket, unqueued).
 
 ### Rescued from the archived Notion bootstrap report, 2026-07-28 — re-verified on this tree
 
 The Notion bootstrap report was archived on this date. Three of its findings were **not** recorded anywhere else. Each was re-measured here before being carried over, rather than copied on trust:
 
 1. **A second Windows dependency for the porting effort: the Recorder.** `strategy-research/recorder/` is **26 Python modules and one `supervise.ps1`** — the library is portable, but the *supervised launch path* is PowerShell. Its own `RUNBOOK.md` argues the supervisor is the valuable part, because book gaps are permanently unrecoverable. So "run the research stack on macOS" is really **two** ports: `workflow/` (scoped, small) and the Recorder supervisor (unscoped). Do not discover this halfway through backlog #1.
-2. **`base_fetcher.py:220` widens every requested end by a day** — `df["timestamp"] < self.end_date + datetime.timedelta(days=1)`. An `end_date` of `2025-12-31 23:00` admits bars through `2026-01-01 22:00`, i.e. **past an explicitly stated bound and into the seal**. Still present, verified by reading the line on this tree.
-3. **`base_fetcher.py:391` derives period ends as `ts − 1ms`**, so a cached row at exactly `00:00:00.001` yields a period end of exactly midnight, which day-expansion then widens by 24h. **`BTCUSDT_funding_8h.csv` carries exactly 244 such rows** — the archived figure re-measured and confirmed to the row. Latent today; arms on any adjacent gap. (Note 3,229 of its 7,468 rows carry *some* sub-second component — a broader and different measurement, not the hazard.)
+2. ~~**`base_fetcher.py:220` widens every requested end by a day**~~ — **FIXED 2026-07-28** (`c641db9a`): the filter is `<= _inclusive_end(end_date)`; a time-carrying end is literal.
+3. ~~**`base_fetcher.py:391` derives period ends as `ts − 1ms`** widened by day-expansion~~ — **FIXED 2026-07-28**: `_load_all` expands the day exactly once, so computed period ends are literal; the 244 `00:00:00.001` funding rows can no longer arm it.
 
 Fixes for 2 and 3 exist in `archive/2026-07-28/fix-fetch-end-bound`. Cherry-pick deliberately, one at a time, reviewed — do not bulk-restore.
 
