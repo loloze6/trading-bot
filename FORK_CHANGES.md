@@ -42,9 +42,29 @@ Verified: the 2 regression tests were **watched failing** before the fix (`MEAN_
 
 *Caveat that no scan here can close:* `strategy-research/workflow/` is off-limits and unread, so if it **generates** configs at runtime rather than shipping committed JSON, its output is outside this count. Likewise Jeremy's own tree and unpushed branches. A `default_regime: null` config anywhere in those would change behaviour silently on merge — see the fail-silent note below.
 
-**End-to-end coverage, added after adversarial review.** The first version of the test file drove only the private `_classify_threshold_rules()`; a review proved that hollow by reintroducing the defect one level up inside `classify()`, where **0 of 7 tests failed**. `test_null_default_regime_is_flat_end_to_end` now drives the real `AdvancedStrategy` path and catches that mutation (31 of 31 bars trading), with a paired control test so an all-zero result cannot be confused with a broken fixture.
+**Public-path coverage, added after adversarial review.** The first version of the test file drove only the private `_classify_threshold_rules()`; a review proved that hollow by reintroducing the defect one level up inside `classify()`, where **0 of 7 tests failed**. Coverage now runs through `classify()` itself, with a control proving the fixture is not vacuously `UNKNOWN` (`classify()` short-circuits to `UNKNOWN` when not ready, so the control is load-bearing).
 
-**Known limitation — this trades fail-into-trading for fail-silently-flat.** A `default_regime: null` config is now harmless but still **invisible**: in the fully-ungated pattern it produces 0.0 on every bar with nothing reporting why (measured: 31 non-zero forecasts before, 0 after). Validator rule V10 exists verbatim to catch "forecasts 0.0 on every bar with no error anywhere," but its guard is `if fully_ungated and default_regime_val is not None` (`validate_config.py:238`), so `None` walks straight past it — as it does past V7 (`:183`, same `is not None` shape). Silent-flat is the correct direction to fail in a money system, which is why this is not a blocker, but the diagnostic gap is real: **the complete fix is engine + validator, not engine instead of validator.** Two `is not None` guards become membership tests. Tracked as a follow-up and deliberately not bundled here to keep this branch single-purpose.
+**This layer alone was not sufficient** — it traded fail-into-trading for fail-*silently*-flat. Completed in the validator by row 7 below.
+
+### `fix/validator-rejects-null-default-regime` — 2026-07-28
+
+| # | File | Change | Upstream-worthy? |
+|---|---|---|---|
+| 7 | `trading-bot/tools/validate_config.py` | V7 and V9/V10 now read `rd.get("default_regime", "unknown")` instead of the raw value; V7's `is not None` skip becomes a plain membership test | **Yes — platform-independent, two lines.** |
+| 8 | `trading-bot/tests/test_validate_config.py` | +8 tests | Yes, ships with #7. |
+
+The root fault was **one mistake expressed in two dialects**: `validate_config.py` used `is not None` as a *skip*, where the engine used `.get(key, "unknown")` as a *substitute*. So `None` meant "don't check" to the validator and "unknown" to the engine. Both sites now use substitute-semantics, matching `regime_engine.py:70`.
+
+Two distinct holes closed:
+
+1. **Explicit `null` validated clean.** V7 skipped it (`is not None`), V9 tests a three-string tuple it isn't in, V10 skipped it too. Three rules blind to one value. Now V7 rejects it, so no such config can construct an `AdvancedStrategy` at all.
+2. **An *omitted* key made V10 blind to a dead config.** A fully-ungated config with no `default_regime` resolves every bar to `unknown`; if `strategies.regimes.unknown` is null it forecasts 0.0 forever — verbatim what V10's own message describes — and V10 skipped it because it judged the raw value rather than the effective one. Pre-existing, unrelated to the null case, found by review.
+
+**The absent-key case stays legal** — that is what makes this a fix rather than a tightening. `.get()` substitutes only for a *missing* key, so an explicit null still yields `None` and still trips V10's `is not None` guard at `:243`. That guard is kept deliberately: removing it (as an earlier draft of this file pre-registered) would emit a correct V7 *plus* a garbled `strategies.regimes.None` V10 for a single fault, since `validate()` collects violations without short-circuiting. Verified both ways.
+
+Verified: 3 V7 tests and 1 V10 test **watched failing** before their respective fixes; mutating either line back fails tests the other does not cover. Fast suite 108 → **116 passed**; slow 9 passed / 1 skipped / 0 errors; validator exit 0; `simulate` byte-identical to the committed reference artifact.
+
+**Reachability, stated precisely:** all **1,011** `regime_detector` dicts in committed JSON carry a valid `default_regime` (`'unknown'` ×748, `'trending'` ×138, `'mean_reversion'` ×125) — zero nulls, zero omissions, so no committed config changes verdict. **Runtime config generators under `strategy-research/workflow/` are off-limits and unaudited**, so "zero in committed JSON" is the honest claim, not "unreachable."
 
 ## Known-broken upstream, deliberately NOT fixed here
 
