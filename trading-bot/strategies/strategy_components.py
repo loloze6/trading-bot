@@ -1253,15 +1253,39 @@ class WhaleLargeTradeImbalanceComponent(SubStrategyComponent):
     multi-component ensemble makes its abstentions silence the other
     components too; do that only deliberately.
 
-    ON THE CURRENT CAPTURE THIS COMPONENT CANNOT FIRE. Dispatch W11 measured
-    attested bars arriving in runs of at most 2 consecutive bars
-    (`prereg_whale_footprint_v2.yaml`:
-    `avg_holding_bars_primary.w11_measurement_attempt`), against a registered
-    `persistence_bars` of 3 -- so state 3 applies to every bar and the output is
-    NaN throughout. That is a property of the recorder's reconnect churn, the
-    same root cause as the blocking coverage floor, and it is NOT a reason to
-    lower `persistence_bars` to 2: choosing the parameter to fit the capture's
-    gap structure would be tuning against the data's defects.
+    TWO BLOCKERS ON THE CURRENT CAPTURE, RECORDED HERE SO NEITHER IS MISREAD AS
+    AN INVITATION TO LOWER A THRESHOLD (dispatch W14 step 3; W13 first noted
+    (a) alone, W14 adds (b) and the registered resolution for both).
+
+    (a) THIS COMPONENT CANNOT FIRE. Dispatch W11 measured attested bars
+    arriving in runs of at most 2 consecutive bars (`prereg_whale_footprint_v2
+    .yaml`: `avg_holding_bars_primary.w11_measurement_attempt`), against a
+    registered `persistence_bars` of 3 -- so state 3 (any unattested bar in
+    the window) applies to every bar and the output is NaN throughout.
+
+    (b) THE UNIVARIATE PRE-REGISTRATION ITSELF IS ALSO BLOCKED, by a separate
+    gate on the raw feature column: `prereg_whale_footprint_v2.yaml`'s
+    `required_coverage_floor` (0.80) is not currently met (measured
+    `attested_bar_fraction` 0.4178 whole-capture / 0.5455 post-hole steady
+    state -- see that file's `required_coverage_floor.w11_status`). This is
+    the OTHER hypothesis test (univariate, on the raw column -- see this
+    file's own hypothesis statement above), which the pre-registration gates
+    independently of this component; the director explicitly REJECTED routing
+    that test through this component's sustained-subset forecast (dispatch
+    W14, R4) because they are different hypotheses.
+
+    BOTH SHARE ONE ROOT CAUSE: reconnect churn in the recorder (~6
+    ws_disconnects/10h, each destroying a whole 1h bar's attestation --
+    `prereg_whale_footprint_v2.yaml`: `required_coverage_floor.w11_status`).
+    THE REGISTERED FIX FOR BOTH IS HOST MIGRATION -- moving the recorder off
+    its current host/network -- NOT threshold relaxation. Concretely: NOT
+    lowering `persistence_bars` below 3 (that would fit this component's
+    parameter to the capture's gap structure rather than to the hypothesis),
+    and NOT lowering `required_coverage_floor` in the pre-registration (that
+    file's own `w11_status` already explains why: the floor's job is to catch
+    this exact regression, and lowering it to wherever the metric currently
+    sits turns a tripped alarm into a new normal). No threshold anywhere was
+    changed by this note.
 
     DATA PATH: the normal aux-feed path and no other. Both columns arrive on the
     bar DataFrame via `DataManager.register_feed()` ->

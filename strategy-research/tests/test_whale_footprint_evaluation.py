@@ -338,6 +338,70 @@ def test_w11_amendment_invariants():
     assert n > 105, "W11's sample requirement must not be below W10's"
 
 
+def test_r3_block_adjusted_significance_disagrees_with_raw_scipy_pvalue():
+    """
+    W14 R2/R3 demonstration, not just assertion. Before this dispatch,
+    `_feature_verdict` compared scipy's raw (unadjusted) Spearman p-value
+    against `alpha_corrected` -- treating every pooled bar as an independent
+    draw. On a WEAK, LARGE-N signal that is anti-conservative: the raw
+    p-value clears significance from bar count alone, while the block-24
+    Fisher-z estimator (`prescreen_signal._block_adjusted_significance`,
+    the same one every 1h prescreen decision in this campaign is gated on)
+    correctly does not. Both p-values are computed here from the SAME pooled
+    data, so the disagreement is demonstrated rather than asserted from a
+    hardcoded number.
+    """
+    from scipy import stats as _scipy_stats
+
+    alpha_corrected = 0.0125
+    # signal_strength=0.02 against noise scale 0.4 (see _panel) gives a real
+    # but weak pooled IC; n_pairs x n_bars is large enough that raw-p treats
+    # it as overwhelming evidence purely from bar count.
+    panels = _panel(n_pairs=20, n_bars=1400, attested_fraction=1.0,
+                     signal_strength=0.02, seed=1)
+    pooled = pd.concat(
+        [df.loc[df["attested"].astype(bool), ["f_signal", "target"]] for df in panels.values()],
+        ignore_index=True,
+    )
+    n_pooled = len(pooled)
+    _raw_ic, raw_p = _scipy_stats.spearmanr(pooled["f_signal"], pooled["target"])
+
+    # "BEFORE" behaviour, reconstructed inline (the removed code path's own
+    # comparison): the raw p-value clears alpha_corrected on this fixture.
+    assert raw_p < alpha_corrected, (
+        "fixture must plant a signal the RAW p-value calls significant -- "
+        "widen n_bars/n_pairs or the signal strength if this no longer holds"
+    )
+
+    prereg = _prereg(required_n=10, coverage_floor=0.0, alpha_corrected=alpha_corrected)
+    result = evaluate(prereg, panels)
+    assert result.status == "VERDICT"
+    f_signal = next(f for f in result.detail["per_feature"] if f["feature"] == "f_signal")
+
+    # "AFTER" behaviour: the harness's own block-adjusted p-value, on the
+    # EXACT SAME pooled data, is orders of magnitude larger and does NOT
+    # clear alpha_corrected -- flipping the verdict to NULL.
+    assert f_signal["p_value"] > raw_p * 1000, (
+        f"block-adjusted p ({f_signal['p_value']}) should be orders of "
+        f"magnitude larger than the raw scipy p ({raw_p}) on this pooled n "
+        f"({n_pooled}) -- the fix may not be wired in"
+    )
+    assert f_signal["p_value"] >= alpha_corrected, (
+        f"expected the block-adjusted estimator to NOT clear alpha_corrected "
+        f"on this weak, large-N signal; got p={f_signal['p_value']}"
+    )
+    assert f_signal["verdict"] == "NULL", (
+        "the raw-p-value code path would have called this PASS/UNSTABLE "
+        "(spuriously, from bar count alone); the block-adjusted fix must "
+        "route it to NULL instead"
+    )
+    assert f_signal["significance"]["block_size"] == 24
+    assert f_signal["significance"]["n_eff"] == n_pooled // 24, (
+        "n_eff must derive from the SAME pooled attested count the verdict "
+        "itself computed, not a value recomputed independently by the test"
+    )
+
+
 def test_null_scope_is_registered_and_bounded():
     """
     W11 step 5 restated NULL without moving its threshold. Both halves are

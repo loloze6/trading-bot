@@ -1074,6 +1074,60 @@ required_coverage_floor:
     hand-off in SESSION_LOG.md. NO GATE WAS RELAXED TO ROUTE AROUND IT.
 
 # ---------------------------------------------------------------------------
+# W14 STATUS ADDENDUM (2026-07-28) — informational only. NO VALUE IN THIS FILE
+# CHANGED. Records a second, downstream blocker discovered outside this file
+# and states the registered resolution for both, so neither reads as an
+# invitation to relax a gate.
+# ---------------------------------------------------------------------------
+w14_status_addendum:
+  made_before_any_evaluation: true
+  no_value_in_this_file_changed: true
+  two_blockers:
+    a_this_files_own_test_is_blocked: >
+      required_coverage_floor.w11_status (above) already documents this in
+      full; restated here only so it sits next to (b). Measured
+      attested_bar_fraction is 0.4178 (whole capture) / 0.5455 (post-hole
+      steady state) against the registered floor of 0.80 — the harness
+      returns BLOCKED_COVERAGE_FLOOR today and will keep doing so at any
+      sample size, because the shortfall is a RATE (reconnect churn), not a
+      backlog.
+    b_a_downstream_component_is_also_blocked_by_the_same_cause: >
+      Dispatch W13 built WhaleLargeTradeImbalanceComponent
+      (trading-bot/strategies/strategy_components.py) as a SEPARATE,
+      sustained-subset hypothesis test — NOT a re-routing of THIS
+      pre-registration's univariate test. Dispatch W14 (director ruling, R4)
+      explicitly REJECTED routing this file's evaluation through that
+      component's forecast: the pre-registration's hypothesis is univariate
+      on the raw feature column, the component's forecast is conditioned on a
+      3-bar sustained subset of it, and those are different hypotheses. This
+      file's gates, thresholds, and required-IC derivation are UNCHANGED and
+      UNAFFECTED by the component's existence. It is recorded here only
+      because that component requires persistence_bars=3 consecutive
+      fully-attested bars to ever produce a non-NaN forecast, and W11's own
+      measurement (avg_holding_bars_primary.w11_measurement_attempt, above)
+      already shows attested bars arriving in runs of AT MOST 2 — so it
+      cannot fire on the current capture either, for the identical reason (a)
+      is blocked.
+  shared_root_cause: >
+    Both blockers trace to the same measured fact: ~6 ws_disconnects per 10
+    hours since the diagnosed process-freeze hole closed, each destroying a
+    whole 1h bar's attestation regardless of the disconnect's own duration (a
+    bar is unattested if ANY gap touches it — see
+    minimum_n_gate.days_to_fire_derivation and
+    required_coverage_floor.w11_status above).
+  registered_fix: >
+    HOST MIGRATION — moving the recorder off its current host/network — NOT
+    threshold relaxation. Explicitly NOT an acceptable response to either
+    blocker: lowering required_coverage_floor below 0.80, lowering
+    minimum_n_gate.required_attested_bars_per_pair below its W11-derived
+    value, or lowering WhaleLargeTradeImbalanceComponent's persistence_bars
+    below 3. Any of those would fit a gate to the capture's defects instead of
+    fixing the defect — the exact failure mode required_coverage_floor.
+    w11_status already declined for blocker (a) alone; this addendum extends
+    the same refusal to blocker (b). NO LATER SESSION SHOULD READ EITHER
+    BLOCKED GATE AS AN INVITATION TO LOWER IT.
+
+# ---------------------------------------------------------------------------
 # Design provenance — data-dependent choices that are NOT this hypothesis test
 # (unchanged from v1)
 # ---------------------------------------------------------------------------
