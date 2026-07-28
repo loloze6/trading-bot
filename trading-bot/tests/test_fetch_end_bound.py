@@ -212,6 +212,64 @@ def test_a_cache_covering_the_window_is_left_alone(tmp_path):
     assert got["timestamp"].max() == pd.Timestamp("2025-12-31 23:00")
 
 
+def test_a_genuinely_missing_final_bar_is_still_fetched(tmp_path):
+    """
+    Companion bound to the complete-cache test: the whole-interval condition
+    must not under-fetch. Verifier finding — disabling type-2 detection
+    outright survived every other test in the suite, and that regression is
+    silent: the fetcher logs "complete" and hands stale data to every
+    consumer. A cache one bar short must schedule exactly one trailing period
+    and land the missing bar on disk.
+    """
+    seed = _bars("2025-12-01", 31 * 24 - 1)                # -> 2025-12-31 22:00
+    seed.to_csv(tmp_path / "BTCUSDT_1h.csv", index=False)
+
+    f = _OvershootingFetcher(tmp_path, "2025-12-01", "2025-12-31")
+    # Snap to the venue grid, as real endpoints do (openTime >= since); the
+    # default stub echoes the off-grid `latest + 1ms` period start.
+    f._fetch_remote = lambda symbol, start, end: (
+        f.requested_periods.append((start, end))
+        or _bars(pd.Timestamp(start).ceil("h"), f.page))
+    got = f.get_data("BTCUSDT")
+
+    assert len(f.requested_periods) == 1, "missing final bar was not scheduled"
+    assert got["timestamp"].max() == pd.Timestamp("2025-12-31 23:00")
+    assert _written(tmp_path)["timestamp"].max() == pd.Timestamp("2025-12-31 23:00")
+
+
+def test_fear_greed_fetch_respects_a_literal_end(monkeypatch):
+    """
+    FearGreedFetcher._fetch_remote filtered `< end + 1 day` — the same
+    widening removed from _load_all — and it now receives already-literal
+    period ends, so it must filter `<= end`. The stub payload spans the seal
+    to prove rows past the bound never leave the subclass.
+    """
+    from data.fetchers import fear_greed_fetcher as fg_mod
+
+    payload = {"data": [
+        {"timestamp": str(int(pd.Timestamp(d).timestamp())),
+         "value": "50", "value_classification": "Neutral"}
+        for d in pd.date_range("2025-12-28", "2026-01-03")
+    ]}
+
+    class _Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return payload
+
+    monkeypatch.setattr(fg_mod.requests, "get", lambda *a, **k: _Resp())
+
+    f = fg_mod.FearGreedFetcher("2025-12-28", "2025-12-31")
+    got = f._fetch_remote("fear_greed", pd.Timestamp("2025-12-28"),
+                          pd.Timestamp("2025-12-31 23:59:59.999"))
+
+    assert got["timestamp"].max() == pd.Timestamp("2025-12-31")
+    assert not (got["timestamp"] >= pd.Timestamp("2026-01-01")).any(), \
+        "rows past the literal period end left _fetch_remote"
+
+
 # ---------------------------------------------------------------------------
 # The case the fix must NOT break
 # ---------------------------------------------------------------------------
