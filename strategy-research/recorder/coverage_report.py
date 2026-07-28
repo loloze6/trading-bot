@@ -41,6 +41,15 @@ Each gap is labelled with what the journal actually says, in this order:
   crash             no closing record at all, and the next RECORDER_START
                     reports `prev_clean_shutdown: false` — the process died
                     without attesting anything
+  no_attestation    the gap starts exactly at the journal's last
+                    SUBSCRIBE_ACK/HEARTBEAT_ROLLUP before a silence exceeding
+                    `journal.ATTESTATION_TOLERANCE_S`, with no explicit close,
+                    no supervisor restart and no successor crash marker — the
+                    SAME run_id simply stopped being scheduled by the OS
+                    (suspend/freeze) and later resumed. This is what a real
+                    ~4h06m capture hole looked like before this cause existed
+                    (SESSION_LOG.md 2026-07-27): zero closing record, so the
+                    old model read it as continuously covered.
   not_yet_started   before the first SUBSCRIBE_ACK in the window
   unknown           none of the above. Reported as unknown; never guessed at,
                     and never quietly folded into one of the others.
@@ -71,6 +80,11 @@ else:
     from .record_kraken_ws import DEFAULT_OUT
 
 Span = Tuple[datetime, datetime]
+
+#: Positive-evidence record types — mirrors journal._ATTESTING. Kept as its
+#: own copy (not imported) because that name is module-private to journal.py;
+#: test_coverage_report.py checks the two stay in lockstep.
+_ATTESTING = frozenset({"SUBSCRIBE_ACK", "HEARTBEAT_ROLLUP"})
 
 CAUSE_BY_CLOSING_TYPE = {
     "DISK_GUARD_ABORT": "disk_guard_abort",
@@ -169,6 +183,21 @@ def _closing_before(
     return best
 
 
+def _attestation_before(
+    records: Sequence[Dict[str, Any]], at: datetime
+) -> Optional[Dict[str, Any]]:
+    """The newest SUBSCRIBE_ACK/HEARTBEAT_ROLLUP record at or before `at`."""
+    best = None
+    for rec in records:
+        ts_raw = rec.get("ts")
+        if not ts_raw or rec.get("type") not in _ATTESTING:
+            continue
+        ts = parse_iso(ts_raw)
+        if ts <= at and (best is None or ts >= parse_iso(best["ts"])):
+            best = rec
+    return best
+
+
 def _attribute(
     records: Sequence[Dict[str, Any]],
     gap: Span,
@@ -219,6 +248,31 @@ def _attribute(
             "successor RECORDER_START reports prev_clean_shutdown=false "
             f"(prev_run_id={later_starts[0].get('prev_run_id')})"
         )
+
+    # A gap bounded by ANY run transition (a RECORDER_START at or after `end`,
+    # regardless of what prev_clean_shutdown says) is restart/crash territory,
+    # already checked above and not resolved — it must fall through to
+    # `unknown` rather than being reattributed below. Without this gate, a
+    # gap that happens to start exactly on the dead run's last
+    # SUBSCRIBE_ACK/HEARTBEAT_ROLLUP (common — those are the most frequent
+    # record types) would be misread as a same-run cadence violation when it
+    # is really an unattributable predecessor/successor boundary.
+    if not later_starts:
+        # By construction of journal.coverage_intervals, a gap that is NOT
+        # bounded by a run transition and does not match an explicit closing
+        # record opens at exactly one place: a NO_ATTESTATION split, i.e. the
+        # journal's last SUBSCRIBE_ACK/HEARTBEAT_ROLLUP before a silence. This
+        # is what a real ~4h06m capture hole looked like before this cause
+        # existed: no closing record, so it read as continuously covered.
+        last_attestation = _attestation_before(records, start)
+        if last_attestation is not None and parse_iso(last_attestation["ts"]) == start:
+            return "no_attestation", (
+                f"last positive attestation ({last_attestation['type']}) at "
+                f"{start.isoformat()}; no SUBSCRIBE_ACK/HEARTBEAT_ROLLUP until "
+                f"{end.isoformat()} ({(end - start).total_seconds():.0f}s of dead "
+                "air — an OS-level process freeze/suspend signature, not a "
+                "network disconnect the process could attest to"
+            )
 
     return "unknown", "no closing record and no successor attestation"
 

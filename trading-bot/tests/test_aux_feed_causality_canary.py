@@ -1,5 +1,5 @@
 """
-Aux-feed causality canary (dispatch W8 step 3).
+Aux-feed causality canary (dispatch W8 step 3; guard added dispatch W9 step 3).
 
 WHY A CANARY INSTEAD OF JUST THE STATIC AUDIT
 ----------------------------------------------
@@ -18,37 +18,41 @@ code and the REAL strategy/execution/portfolio path
 (TradingBot._process_symbol_candle_completion -> ForecastManager ->
 RiskManager -> MockExecutionHandler -> MockPortfolioInfo).
 
-THE TWO FIXTURES, AND A FINDING THAT UPGRADES THE AUDIT'S CONCLUSION
----------------------------------------------------------------------
+WHAT W8 FOUND, AND WHAT W9 FIXED
+----------------------------------
 `own_ret[T] = (close[T] - close[T-1]) / close[T-1]` is bar T's OWN
 already-realized return — exactly analogous to what a correctly-bounded
 fetcher computes from window T's own data, timestamped T. A maximally
 aggressive strategy trading on its sign shows ~zero edge below, because in an
 i.i.d. synthetic price path bar T's own past return has no bearing on bar
-(T+1)'s independent draw. This is the HONEST case and it passes.
+(T+1)'s independent draw. This is the HONEST case; it passes, declaring its
+true window (`window_seconds=interval_seconds` — the value is only final once
+bar T's own close is known, i.e. at bar T's own end).
 
 `fwd_ret[T] = (close[T+1] - close[T]) / close[T]` — literally "a perfect copy
 of that bar's NEXT return" per the W8 dispatch's instruction — is NOT
 computable by any fetcher bounded to window T's own data (it needs
-close[T+1], which does not exist until bar T+1 itself completes). Attaching
-it at row T and running it through the real pipeline is dramatically,
-unmistakably profitable (~15x over 119 bars in the fixture below, vs. a noise
-band under 2x for the honest case) — proving the merge/execution path applies
-NO independent safeguard against a mistimed feed. Causality currently rests
-ENTIRELY on each fetcher individually respecting its own window boundary
-(true today for the whale fetcher, verified separately by inspection and by
-`tests/test_whale_footprint_fetcher.py`); nothing in `data_manager.py`'s
-shared merge path or in `TradingBot._process_symbol_candle_completion` would
-catch a future fetcher that got this wrong.
+close[T+1], which does not exist until bar T+1 itself completes: its TRUE
+declared window is `2 * interval_seconds`, ending at bar T+1's own close).
+W8 found that attaching it at row T through the real pipeline was
+dramatically, unmistakably profitable (~15x over 119 bars), proving the
+merge/execution path applied NO independent safeguard against a mistimed
+feed — filed as a STOP-level finding, not fixed at the time (shared-code
+change, out of that dispatch's scope).
 
-**This is a STOP-level finding by the dispatch's own criterion ("If it can
-[profit], there is lookahead — report it as a STOP-level finding"), but the
-leak location is NOT the whale fetcher (independently audited as correctly
-bounded) — it is the absence of any defense-in-depth in the SHARED merge
-path.** Per the same dispatch's constraint ("Do NOT restructure the shared
-merge path in this commit; if the leak is in shared code, STOP and report"),
-no fix is attempted here. See SESSION_LOG.md 2026-07-27 and the W8 final
-report.
+W9 added exactly that defense: `DataManager.register_feed()` now REQUIRES a
+`window_seconds` declaration, and `_merge_asof_with_causality_guard`
+(data_manager.py) refuses — raises `AuxFeedCausalityError` — to attach any
+value whose declared window ends after the bar it would be merged onto. The
+guard TRUSTS the declaration; it does not re-derive it from how the value was
+actually computed. So the honest fwd_ret feed (correctly declaring
+`window_seconds=2*interval_seconds`) is now REJECTED at merge time, below —
+this is the defense-in-depth W8 found missing. What the guard still cannot
+catch — a feed that lies about its own window (declares 0 while internally
+depending on future data) — is exactly the residual trust boundary documented
+in `AuxFeedCausalityError`'s docstring and `data/ADDING_A_FEED.md`; causality
+for THAT case still rests on the fetcher's own correctness (true today for
+the whale fetcher, verified separately by `tests/test_whale_footprint_fetcher.py`).
 
 Keep this test whenever a new feed is added to FEED_REGISTRY /
 RESERVED_FEED_REGISTRY: swap in that feed's real fetcher output shape and
@@ -66,7 +70,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data.data_manager import DataManager  # noqa: E402
+from data.data_manager import AuxFeedCausalityError, DataManager  # noqa: E402
 from strategies.strategy_base import MainStrategy, StrategyOutput  # noqa: E402
 from execution.execution_handler import MockExecutionHandler  # noqa: E402
 from execution.portfolio_info import MockPortfolioInfo  # noqa: E402
@@ -160,19 +164,24 @@ def _next_returns(price_df: pd.DataFrame) -> pd.Series:
     return (close.shift(-1) - close) / close
 
 
-def _run_canary(price_df: pd.DataFrame, canary_values: pd.Series) -> float:
+def _run_canary(
+    price_df: pd.DataFrame, canary_values: pd.Series, window_seconds: float
+) -> float:
     """Registers `canary_values` (indexed like price_df, aligned to
-    price_df['timestamp']) as an aux feed through the REAL DataManager merge,
-    drives TradingBot._process_symbol_candle_completion bar-by-bar through the
-    REAL forecast/risk/execution/portfolio path, and returns the total return
-    (final / initial - 1) over the run."""
+    price_df['timestamp']) as an aux feed declaring `window_seconds`, through
+    the REAL DataManager merge (raises AuxFeedCausalityError there if the
+    declared window violates causality — the caller decides whether that's
+    expected), drives TradingBot._process_symbol_candle_completion bar-by-bar
+    through the REAL forecast/risk/execution/portfolio path, and returns the
+    total return (final / initial - 1) over the run."""
     feed_df = pd.DataFrame({
         "timestamp": price_df["timestamp"], "canary": canary_values.values,
     }).dropna(subset=["canary"])
 
     dm = DataManager(symbols=[SYMBOL], interval_seconds=3600, mode="backtest")
-    dm.register_feed("canary", _CanaryFetcher(feed_df), agg="last")
-    # REAL merge_asof code path (data_manager.py:642-647), not a stand-in.
+    dm.register_feed("canary", _CanaryFetcher(feed_df), window_seconds=window_seconds, agg="last")
+    # REAL merge_asof + causality-guard code path (data_manager.py's
+    # _premerge_aux_feeds / _merge_asof_with_causality_guard), not a stand-in.
     dm._premerge_aux_feeds(SYMBOL, price_df[["timestamp", "close"]].copy())
 
     # Only the candle-DELIVERY mechanism is stubbed (CandleBuilder's own
@@ -224,14 +233,20 @@ def _run_canary(price_df: pd.DataFrame, canary_values: pd.Series) -> float:
 # ---------------------------------------------------------------------------
 
 
+INTERVAL_SECONDS = 3600  # matches _run_canary's DataManager(interval_seconds=3600)
+
+
 def test_own_realized_return_feature_shows_no_exploitable_edge():
     """HONEST case: canary[T] = bar T's OWN already-realized return -- exactly
     analogous to a correctly-bounded fetcher (like the real whale fetcher).
-    Total return must stay in a noise band, nowhere near the dramatic blowup
-    of the next-bar-return fixture below."""
+    Declares its true window (ends at bar T's own close, i.e.
+    window_seconds=interval_seconds — the same convention whale features use
+    on their own grid), so the guard passes it through. Total return must
+    stay in a noise band, nowhere near the dramatic blowup the dishonestly-
+    timed fixture below would produce if the guard let it through."""
     price_df = _price_series()
     own = _own_returns(price_df)
-    total_return = _run_canary(price_df, own)
+    total_return = _run_canary(price_df, own, window_seconds=INTERVAL_SECONDS)
     assert abs(total_return) < 2.0, (
         f"own-realized-return canary produced total_return={total_return!r}, "
         "outside random-walk noise for a correctly-bounded feature — "
@@ -239,28 +254,22 @@ def test_own_realized_return_feature_shows_no_exploitable_edge():
     )
 
 
-def test_next_bar_return_feature_is_dramatically_profitable_no_pipeline_safeguard():
-    """STOP-LEVEL FINDING (see module docstring): canary[T] = bar T's NEXT
+def test_next_bar_return_feature_is_rejected_by_causality_guard():
+    """THE GUARD CATCHES THE LEAKING CANARY (dispatch W9 step 3; see module
+    docstring for the W8 finding this fixes). canary[T] = bar T's NEXT
     return, literally "a perfect copy of that bar's NEXT return" per the W8
-    dispatch instruction. No correctly-bounded fetcher can compute this at
-    bar T's delivery time. This test PASSING (i.e. dramatic profit) is not a
-    bug in this test — it demonstrates that the shared merge/execution path
-    provides no independent defense against a mistimed feed; causality
-    depends entirely on each fetcher's own window discipline. Today's real
-    whale fetcher IS correctly bounded (separately audited and unit-tested),
-    so this is a defense-in-depth gap in shared code, not a live leak — per
-    dispatch instructions, not fixed here (shared-code fix requires its own
-    dispatch)."""
+    dispatch instruction — not computable by any fetcher bounded to window
+    T's own data; its TRUE window ends at bar T+1's own close, i.e.
+    window_seconds=2*interval_seconds. Declaring that honestly must now make
+    `_premerge_aux_feeds` REFUSE to attach it, before the simulation loop
+    (and any profit) ever runs — this is the defense-in-depth W8 found
+    missing. Today's real whale fetcher never needs to declare a window this
+    large (separately audited and unit-tested), so this is exercising the
+    guard's rejection path, not a live feed."""
     price_df = _price_series()
     nxt = _next_returns(price_df)
-    total_return = _run_canary(price_df, nxt)
-    assert total_return > 5.0, (
-        f"next-bar-return canary only produced total_return={total_return!r}; "
-        "expected dramatic profit confirming the pipeline has no independent "
-        "timing safeguard — if this now fails, re-examine whether something "
-        "changed in the merge/execution path (which would be good news, but "
-        "unexpected) before assuming the canary itself regressed."
-    )
+    with pytest.raises(AuxFeedCausalityError, match="ends after bar"):
+        _run_canary(price_df, nxt, window_seconds=2 * INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":

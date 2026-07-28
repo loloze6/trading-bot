@@ -2902,3 +2902,213 @@ unchanged at 7,969 apart from these two housekeeping edits.
  needed. Standing constraints carry forward unchanged: no self-remediation, premise-failure
  full-STOP, holdout untouchable, delete nothing, never git reset --hard / checkout -- . /
  clean, do not touch the recorder default mode."
+
+---
+
+## Session: 2026-07-28 — gap detection, causality guard, economic threshold (dispatch W9)
+
+### Hypothesis
+Three of W8's four STOP-level findings had a named fix or measurement to attempt, one
+deliberately did not: (1) `coverage_intervals()` cannot detect a gap with no closing
+record — fix it, then re-measure the live capture with the fixed tool; (2) the shared
+aux-feed merge path has no independent defense against a mistimed feed — add one,
+authorized explicitly by the director for this dispatch; (3) the whale-footprint
+pre-registration's 0.03 IC target was a judgment call, not derived — replace it with a
+cost-model derivation and let the chips fall, INCLUDING a finding that the family is
+untradeable, without computing any IC/correlation on real whale data at any point.
+
+### Result
+
+**1. `coverage_intervals()` fixed — positive-evidence, deny-by-default.**
+`journal.py` no longer treats "opened by SUBSCRIBE_ACK, never explicitly closed" as
+covered. Every open (symbol, channel) pair now requires renewal by a SUBSCRIBE_ACK or
+HEARTBEAT_ROLLUP within `ATTESTATION_TOLERANCE_S` (150s = 2.5x the 60s rollup cadence,
+matching `liveness.py`'s own precedent) of the last one; a longer silence closes the
+covered span at the last real attestation with a new `NO_ATTESTATION` closing reason,
+distinct from `ws_disconnect`/`crash`, and reopens only when a fresh attestation arrives.
+`coverage_report.py`'s `_attribute()` gained a matching `no_attestation` cause, gated so it
+never claims a gap that is actually bounded by a run transition (a real bug caught by the
+existing `test_an_unattributable_gap_says_unknown_rather_than_guessing` fixture, which
+would otherwise have been mislabeled — fixed by requiring no later `RECORDER_START` before
+attributing `no_attestation`). Every existing recorder test that encoded the old "long
+silent span with no records = fine" assumption was updated with realistic ~60s-cadence
+heartbeats (not weakened — made physically honest); two new headline regression tests
+(`test_frozen_process_produces_a_no_attestation_gap` in `test_journal.py`,
+`test_a_frozen_process_gap_is_labelled_no_attestation_not_invisible` in
+`test_coverage_report.py`) plant exactly the W8 bug shape (same run_id, zero records for
+hours, then resumes) and assert it now reports. Two more new tests assert a real ~60s-
+cadence 2-hour healthy run reports zero false gaps. Full recorder suite: 206 passed.
+
+**2. Re-measured the live capture with the fixed tool.** The journal covers two runs: a
+~10-minute stub (`run_id 5988e0cb`, 2026-07-26 02:05-02:15, explicitly out of scope per
+the pre-registration) and the real capture (`run_id 6f92b877`, launched
+2026-07-27T13:43:04.595471Z — confirmed by reading the RECORDER_START record directly, not
+assumed). Scoped to the real launch (`--start 2026-07-27T13:43:04.595471Z`), against
+803 journal records spanning 2026-07-27T13:43:04Z .. 2026-07-28T02:03:15Z (12h20m11s
+elapsed): **6 gaps**, dominated by one `no_attestation` gap from 2026-07-27T16:42:20.055Z
+to 20:48:53.121Z (4h06m33s) — this IS the ~4h06m 16:42-20:48Z hole the dispatch asked to
+confirm is surfaced; it is, now correctly named instead of invisible. The other 5 gaps are
+a 1.48s startup handshake (`unknown`, before the first SUBSCRIBE_ACK's process-level
+peers) and four sub-10-second `ws_disconnect` blips (`ConnectionClosedError`, code 1006).
+Raw captured-vs-elapsed: 8h13m20s / 12h20m11s = **66.695%**. Steady-state attestation
+EXCLUDING the diagnosed hole (the number the power calculation needs): captured_s /
+(elapsed_s - hole_s) = 29660.20 / 29678.38 = **99.939%** — this is the corrected
+replacement for the "7.8%" figure the dispatch flagged as wrong; that figure was never a
+connectivity measurement error in an old buggy tool's favor, it was simply never
+recomputed against the fixed reconstruction. Since `whale_features.py`'s own
+`whale_attested` column is DIRECTLY `journal.coverage_intervals`-derived ("attested = not
+any(g.start < bar_end and g.end > bar_start for g in gaps)"), the step-1 fix also silently
+corrects the real feature cache's own attestation column, not just the report.
+
+**3. Shared-pipeline causality guard — built, authorized explicitly by this dispatch.**
+`DataManager.register_feed()` now REQUIRES a `window_seconds` declaration (no default —
+`TypeError` at registration, not a merge that trusts an undeclared window) recorded on
+`AuxFeedConfig`. A new `_merge_asof_with_causality_guard` (`data_manager.py`) replaces the
+raw `merge_asof` calls in both `_premerge_aux_feeds` (the backtest pre-merge W8's canary
+exercised) and `_attach_aux_columns`'s backtest branch (defense-in-depth at the second,
+independent merge site); it raises `AuxFeedCausalityError` when a feed's declared source
+window `[timestamp, timestamp + window_seconds)` would end after the bar it is about to be
+attached to. Declared windows: `funding_rate` / `fear_greed` = 0 (instantaneous
+observations); whale-footprint features = their own `bar_seconds` (3600, forward-window
+aggregation matching `whale_features.py`'s own convention) — wired via a new
+`FEED_WINDOW_SECONDS` dict in `feed_registry.py` that `backtester.py`'s generic
+registration loop now looks up by name (`KeyError` if a feed is missing an entry — deny by
+default at the wiring layer too). `tests/test_aux_feed_causality_canary.py` (W8's canary)
+promoted to a permanent regression test with BOTH directions re-verified against the guard:
+the honest own-realized-return feature (declaring `window_seconds=interval_seconds`) still
+merges and shows no exploitable edge; the dishonestly-timed next-bar-return feature, now
+declaring its TRUE window (`2*interval_seconds` — it needs bar T+1's own close), is
+REJECTED by `_premerge_aux_feeds` with `AuxFeedCausalityError` before the simulation loop
+ever runs, closing the STOP-level gap W8 found (~15x blowup, no pipeline safeguard). The
+guard's trust boundary is documented explicitly (`AuxFeedCausalityError`'s docstring,
+`data/ADDING_A_FEED.md`'s new Step 2): it trusts the declaration, not the computation — a
+feed that lies about its own window is not caught. `data/ADDING_A_FEED.md` now makes
+`window_seconds` a required step and points at the canary as the standing regression test
+for any new feed. Full trading-bot suite: 101 passed (10 pre-existing deselections,
+unrelated).
+
+**4. Economic IC threshold derived from `cost_model.yaml` — decisive negative finding, no
+whale data touched.** Inverted Layer 2's own cost-check formula
+(`prescreen_signal.py::_cost_check`, unchanged formula and unchanged 2x `safety_factor`
+every other strategy in this campaign is gated on): `IC_required(H) = (safety_factor *
+round_trip_cost_bps) / (sigma_bar_bps * sqrt(H))`, H = avg_holding_bars. Assumptions, all
+stated and sourced: `safety_factor=2.0` and `round_trip_cost_bps=18.5`
+(cost_model.yaml `default`, taker path per its own HARD RULE; the 19 Kraken pairs aren't
+individually listed, so `default` is used as the proxy — the same convention
+cost_model.yaml's own PERP CALIBRATION block already uses for Kraken); `sigma_bar_bps=15.0`
+(`prescreen_signal.py::_DEFAULT_SIGMA_BAR_BPS`, this campaign's own standing 1h-crypto
+default, reused rather than freshly computed to stay inside the "no new statistics" spirit
+of the no-real-data constraint); `avg_holding_bars=1` as the PRIMARY assumption — "the
+registered bar frequency" per the dispatch's own phrasing, since these three features are
+single-bar aggregates with no persistence mechanism designed in. Result:
+**IC_required(H=1) = 37.0 / 15.0 = 2.4667 — exceeds 1.0, the mathematical maximum a
+Spearman correlation can ever take.** No finite sample size fixes this. A sensitivity
+table across H=1..6760 bars is registered too: IC_required only reaches this campaign's own
+historical ceiling (~0.20, its strongest multi-day trend signals) at H≈152 bars (6.3 days)
+and v1's original 0.03 judgment-call target only at H≈6760 bars (281.7 days, ~9.3 months)
+— holding a bar-level order-flow imbalance/CVD/size-shift signal for 6+ days, let alone 9+
+months, contradicts the feature family's own economic premise. **The family is untradeable
+at its registered frequency before any data is collected** — exactly the outcome the
+dispatch named as a legitimate, decisive possibility. No IC, correlation, or forward return
+was computed on real whale data at any point in this derivation.
+
+**5. `prereg_whale_footprint_v2.yaml` written, superseding v1.** v1 retained byte-for-byte
+untouched (confirmed no `.consumed.json` sidecar exists anywhere — v1's single-use was
+never consumed); v2 declares the supersession itself (`amendment` block: what changed and
+why, that the amendment predates any evaluation, that v1's single-use was unconsumed at
+amendment time). v2 carries: the step-4 economic derivation as a NEW, EARLIER gate
+(`economic_ic_threshold`, checked before minimum-N because it needs no data to decide);
+`minimum_n_gate` recomputed with `target_detectable_ic` set to the economic threshold
+(2.4667) — `required_attested_bars_per_pair` deliberately registered `null` since no finite
+N solves the bounded MDE formula for a target above 1.0, with a `context_only` sub-block
+showing what v1's ORIGINAL 0.03 target would need under the CORRECTED 99.939% attestation
+(**~312 raw days / 0.85 years, a ~12.8x improvement over v1's ~3998-day / ~11-year figure**
+— reported for comparison even though it does not govern v2's verdict); `required_coverage_
+floor.floor` recomputed to 0.80 (up from v1's 0.05, which was set below a since-corrected
+wrong number) — high enough to catch a real regression, unlike a floor so low it could
+never trip short of near-total data loss. `whale_footprint_evaluation.py` (the harness)
+pointed at v2: new `BLOCKED_ECONOMIC_INFEASIBILITY` status, checked after single-use and
+before the coverage floor, reads only `prereg['economic_ic_threshold']` (data-independent,
+backward compatible with v1-shaped fixtures lacking the key). Confirmed refusing: a new
+`test_the_real_v2_pre_registration_loads_and_refuses_below_the_gate` loads the real
+committed v2 file and asserts `BLOCKED_ECONOMIC_INFEASIBILITY` against a panel that would
+otherwise clear every other gate; v1's original schema smoke test kept, retargeted at v1's
+still-loadable file. 4 new synthetic-fixture tests cover the gate's mechanics (blocks
+regardless of panel data, does not consume single-use when blocked, backward compatible
+when absent/false). `strategy-research` suite: 651 passed.
+
+**6. Console-survival and sleep fixes — one applied, one not; the ~4h loss signature is
+sleep, not console death.** Checked directly, read-only, nothing stopped or reconfigured:
+`powercfg /query SCHEME_CURRENT SUB_SLEEP {STANDBYIDLE,HIBERNATEIDLE}` shows the AC index
+for BOTH at `0x00000000` (disabled) — **the `powercfg /change standby-timeout-ac 0` /
+`hibernate-timeout-ac 0` fix from W8's RUNBOOK §3.5 IS applied**, consistent with no
+further `no_attestation` gaps appearing anywhere after the diagnosed hole (only brief
+`ws_disconnect` blips since). `Get-ScheduledTask -TaskName KrakenForwardRecorder` returns
+nothing — **the Scheduled Task from `register_scheduled_task.ps1` is NOT registered.**
+Directly confirmed via `Get-CimInstance Win32_Process` that the SAME unsupervised
+console-child process from W8's audit is still running (PID 41440, `python -m
+recorder.record_kraken_ws run --book-mode snapshot ...`) — the console-survival fix
+remains un-cut-over; the recorder is still vulnerable to a console-close/logoff kill.
+**The ~4h06m loss signature is a system-sleep signature, not a console-death signature**,
+stated plainly per the dispatch's request: a process kill cannot preserve the same PID and
+run_id across a multi-hour gap with the SAME process resuming afterward and no successor
+`RECORDER_START` — only suspend/resume does that, and heartbeats are a local timer
+independent of the network, so their total absence for 4+ hours means the OS was not
+scheduling the process at all, not merely that the socket was dead.
+
+### Files touched
+- `strategy-research/recorder/journal.py` — `coverage_intervals()` positive-evidence rewrite,
+  `NO_ATTESTATION` closing reason, `ATTESTATION_TOLERANCE_S`/`ROLLUP_INTERVAL_S` constants
+- `strategy-research/recorder/coverage_report.py` — `no_attestation` cause attribution
+  (gated on absence of a later run transition), docstring cause list updated
+- `strategy-research/recorder/tests/test_journal.py`,
+  `strategy-research/recorder/tests/test_coverage_report.py` — realistic-cadence fixture
+  updates + new frozen-process / clean-long-run regression tests
+- `strategy-research/tools/whale_footprint_evaluation.py` — `BLOCKED_ECONOMIC_INFEASIBILITY`
+  gate, pointed at v2 in its own docstring/defaults
+- `strategy-research/tests/test_whale_footprint_evaluation.py` — new gate tests, v1+v2
+  schema smoke tests
+- `strategy-research/protocols/prereg_whale_footprint_v2.yaml` (new) — supersedes v1 (v1
+  untouched)
+- `trading-bot/data/data_manager.py` — `AuxFeedCausalityError`,
+  `_merge_asof_with_causality_guard`, `register_feed(window_seconds=...)` required,
+  `AuxFeedConfig.window_seconds`
+- `trading-bot/data/feed_registry.py` — `FEED_WINDOW_SECONDS`
+- `trading-bot/core/backtester.py` — generic feed-registration loop reads
+  `FEED_WINDOW_SECONDS` by name
+- `trading-bot/data/ADDING_A_FEED.md` — new required Step 2 (window_seconds)
+- `trading-bot/data/fetchers/{funding_rate,fear_greed}_fetcher.py` — docstring examples updated
+- `trading-bot/tests/test_aux_feed_causality_canary.py` — promoted to permanent regression
+  test, both fixtures re-verified against the new guard
+- `trading-bot/tests/test_funding_rate_component.py` — `register_feed` call updated
+- `strategy-research/SESSION_LOG.md` (this entry)
+- Nothing in `trading-bot/local_data/recorded_reserved/` was read for any IC/correlation
+  purpose; the live capture process was not stopped, restarted, or reconfigured; no
+  Scheduled Task or powercfg change was made (read-only check only, per constraint).
+
+### Next session prompt (copy-paste)
+"Dispatch W9 closed (see SESSION_LOG 2026-07-28): coverage gap detection fixed and
+ re-measured (steady-state attestation 99.939%, not the old wrong 7.8%), a shared-pipeline
+ causality guard built and verified both directions, an economic IC threshold derived from
+ cost_model.yaml, and prereg_whale_footprint_v2.yaml written and wired into the harness.
+ THE HEADLINE FINDING: at its registered 1h bar frequency, the whale-footprint feature
+ family requires IC=2.4667 to clear costs — impossible for a Spearman correlation (max
+ 1.0). The family is untradeable before any data is collected, per v2's economic_ic_
+ threshold gate, which now blocks the harness unconditionally (BLOCKED_ECONOMIC_
+ INFEASIBILITY) ahead of the coverage floor and minimum-N gate. This is very likely the
+ terminal verdict for whale-footprint order-flow features at 1h resolution on this venue —
+ the operator's call is whether to (a) accept this as closed/no_edge_observed without ever
+ reading recorded_reserved/ for this family, (b) commission a written economic
+ justification for a longer holding period before revisiting avg_holding_bars_primary in a
+ v3 amendment (the file itself flags treating the crossover points as 'plausible' as
+ choosing a turnover to fit a conclusion, not deriving one), or (c) something else — this
+ is a judgment call, not yours to make silently. Separately, OPERATIONALLY: powercfg sleep
+ prevention is confirmed applied (AC standby/hibernate timeout both 0) but the Scheduled
+ Task console-survival cutover from W8 is NOT done — PID 41440 is still an unsupervised
+ console-child process today. That cutover is the operator's action
+ (`register_scheduled_task.ps1`, then stop the console process and start the task), not
+ something this session should do unprompted. Standing constraints carry forward unchanged:
+ no self-remediation, no predictive statistics on real whale data ever (the gate is now
+ closed anyway), holdout untouchable, delete nothing, never git reset --hard / checkout
+ -- . / clean, do not stop or reconfigure the running recorder without the operator's
+ explicit go-ahead."

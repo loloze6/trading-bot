@@ -1,19 +1,33 @@
 """
-Evaluation harness for prereg_whale_footprint_v1.yaml (dispatch W8 step 6).
+Evaluation harness for prereg_whale_footprint_v2.yaml (dispatch W8 step 6;
+pointed at v2 and given a new economic-feasibility gate by dispatch W9 step 5).
 
 Reads every threshold from the pre-registration file — none are hardcoded
-here — enforces the minimum-N gate, the coverage floor, and single-use
-consumption, and emits a verdict by MECHANICAL application of the
-pre-registration's verdict mapping. This module is UNRUN against the real
+here — enforces economic feasibility, the minimum-N gate, the coverage floor,
+and single-use consumption, and emits a verdict by MECHANICAL application of
+the pre-registration's verdict mapping. This module is UNRUN against the real
 capture: every test in
 `strategy-research/tests/test_whale_footprint_evaluation.py` exercises it on
 synthetic, planted-answer fixtures only.
 
 CALL ORDER OF GATES (fixed, matches the pre-registration's stated intent that
 "the harness refuses to execute" ahead of computing anything): single-use ->
-coverage floor -> minimum-N. The first gate that blocks stops evaluation; no
-verdict is computed for a blocked run, and a blocked run does NOT consume the
-single-use mark (only a run that reaches an actual verdict does).
+economic feasibility -> coverage floor -> minimum-N. The first gate that
+blocks stops evaluation; no verdict is computed for a blocked run, and a
+blocked run does NOT consume the single-use mark (only a run that reaches an
+actual verdict does).
+
+ECONOMIC FEASIBILITY (new in v2, dispatch W9 step 4)
+-----------------------------------------------------
+Data-independent: it reads only `prereg['economic_ic_threshold']`, never the
+panels. A pre-registration whose own cost-model derivation shows the required
+IC at its registered bar frequency exceeds what a Spearman correlation can
+even express (bounded in [-1, 1]) is untradeable BEFORE any data is
+collected — no sample size fixes an economically-impossible threshold, so
+this gate is checked ahead of (and independent of) the minimum-N sample-size
+question. A pre-registration file with no `economic_ic_threshold` key (e.g.
+v1) or with `economically_untradeable_at_registered_frequency` false/absent
+is unaffected — this gate is backward compatible.
 
 INPUT CONTRACT
 --------------
@@ -43,7 +57,8 @@ MIN_BARS_FOR_PER_PAIR_SIGN = 30  # prereg verdict.sign_consistency: pairs below 
 
 @dataclass
 class EvaluationResult:
-    status: str  # "BLOCKED_SINGLE_USE" | "BLOCKED_COVERAGE_FLOOR" | "BLOCKED_MIN_N" | "VERDICT"
+    status: str  # "BLOCKED_SINGLE_USE" | "BLOCKED_ECONOMIC_INFEASIBILITY" |
+                 # "BLOCKED_COVERAGE_FLOOR" | "BLOCKED_MIN_N" | "VERDICT"
     verdict: Optional[str] = None  # "PASS" | "UNSTABLE" | "NULL", only when status == "VERDICT"
     detail: Dict[str, Any] = field(default_factory=dict)
 
@@ -142,7 +157,7 @@ def evaluate(
     *,
     prereg_path: Optional[Path] = None,
     run_id: str = "unspecified_run",
-    hypothesis_id: str = "whale_footprint_v1",
+    hypothesis_id: str = "whale_footprint_v2",
     force_ignore_consumption: bool = False,
 ) -> EvaluationResult:
     # 1. single-use
@@ -151,7 +166,20 @@ def evaluate(
         if prereg.get("single_use", {}).get("fires_exactly_once") and consumed is not None:
             return EvaluationResult(status="BLOCKED_SINGLE_USE", detail={"consumed_by": consumed})
 
-    # 2. coverage floor
+    # 2. economic feasibility -- data-independent, checked before any panel
+    # is touched. See module docstring.
+    econ = prereg.get("economic_ic_threshold") or {}
+    if econ.get("economically_untradeable_at_registered_frequency"):
+        return EvaluationResult(
+            status="BLOCKED_ECONOMIC_INFEASIBILITY",
+            detail={
+                "required_ic_at_registered_frequency": econ.get("required_ic_at_registered_frequency"),
+                "max_possible_ic": 1.0,
+                "finding": econ.get("finding"),
+            },
+        )
+
+    # 3. coverage floor
     floor = prereg["required_coverage_floor"]["floor"]
     attested_fraction = _attestation_fraction(panels)
     if attested_fraction < floor:
@@ -160,7 +188,7 @@ def evaluate(
             detail={"attested_fraction": attested_fraction, "floor": floor},
         )
 
-    # 3. minimum-N gate
+    # 4. minimum-N gate
     required_n = prereg["minimum_n_gate"]["required_attested_bars_per_pair"]
     avg_attested = _attested_bars_per_pair_avg(panels)
     if avg_attested < required_n:
@@ -169,7 +197,7 @@ def evaluate(
             detail={"attested_bars_per_pair_avg": avg_attested, "required": required_n},
         )
 
-    # 4. mechanical verdict per feature, then the (g) TOTAL mapping
+    # 5. mechanical verdict per feature, then the (g) TOTAL mapping
     alpha_corrected = prereg["test_statistic"]["multiple_comparison_correction"]["alpha_corrected"]
     sign_floor = 0.80  # frozen in prereg verdict.sign_consistency; not a tunable input
     feature_names: List[str] = prereg["features"]["names"]

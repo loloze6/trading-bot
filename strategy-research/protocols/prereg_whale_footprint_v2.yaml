@@ -1,0 +1,474 @@
+# Pre-registration: whale-footprint features vs. forward return, v2
+# Dispatch W9 (2026-07-28). SUPERSEDES prereg_whale_footprint_v1.yaml.
+# v1 is RETAINED in the repo, byte-for-byte untouched, marked superseded only
+# here (not by editing v1 itself) -- see `amendment` below.
+#
+# Derived WITHOUT having seen any feature-return relationship on real whale
+# data — no IC, correlation, regression, or backtest was computed against
+# recorded_reserved/ before this file was written. Every threshold below
+# carries its derivation; a threshold without one is not acceptable per the
+# dispatch that created this file.
+#
+# STATUS: registered, unconsumed. See `single_use` below.
+
+# ---------------------------------------------------------------------------
+# Amendment rationale (required by dispatch W9 step 5 — stated in the file
+# itself, not just in SESSION_LOG.md)
+# ---------------------------------------------------------------------------
+amendment:
+  supersedes: prereg_whale_footprint_v1.yaml
+  made_before_any_evaluation: true
+  v1_single_use_status_at_amendment: >
+    UNCONSUMED. No `prereg_whale_footprint_v1.yaml.consumed.json` sidecar
+    exists anywhere in the repo (checked directly, dispatch W9 step 5) — v1
+    was never executed against real or synthetic-smoke data through
+    `evaluate(..., prereg_path=...)`. Amending an unconsumed, unevaluated
+    pre-registration is the case single-use discipline is designed to permit
+    freely; this is not a post-hoc relaxation of an observed result.
+  what_changed_and_why:
+    - >
+      (e) minimum_n_gate.target_detectable_ic moved from a STATISTICAL
+      CONVENTION (v1: 0.03, explicitly labeled "A JUDGMENT CALL... not
+      derived from any observed effect") to a COST-MODEL DERIVATION (v2: see
+      `economic_ic_threshold` below, derived from
+      `strategy-research/config/cost_model.yaml` — what IC a strategy
+      trading these features at their OWN registered 1h bar frequency would
+      need to clear round-trip costs by this campaign's standard 2x safety
+      margin). This is strictly more decisive than a judgment call: it is
+      the IC magnitude required for ECONOMIC viability, independent of
+      whether that magnitude is statistically achievable at all.
+    - >
+      (h) required_coverage_floor.floor recomputed from the CORRECTED
+      steady-state attestation measurement (dispatch W9 step 2, using the
+      coverage-gap-detection fix from step 1) — v1's floor rested on an
+      attestation_fraction (0.078) that "was never it" (dispatch W9's own
+      framing): the tool used to measure it could not detect a gap with no
+      closing record, and a real ~4h06m capture hole read as ~100% covered.
+      The true, corrected steady-state attestation (excluding that hole,
+      which the coverage-report fix now surfaces) is ~99.94%, not 7.8%.
+    - >
+      minimum_n_gate's raw-calendar-day conversion recomputed with the
+      corrected attestation for CONTEXT (see minimum_n_gate.context_only_v1_
+      target_at_corrected_attestation below) — included for comparison even
+      though it is not what gates v2 (see next point).
+    - >
+      NEW: `economic_ic_threshold` is added as a distinct, EARLIER gate than
+      minimum_n_gate. It found the family economically untradeable at its
+      registered bar frequency — a required IC that exceeds the mathematical
+      bound of a Spearman correlation (1.0) — which makes the sample-size
+      question moot regardless of how the coverage fix improved the
+      attestation timeline. Both fixes are reported because they answer
+      different questions, but the economic gate is what actually governs
+      v2's verdict today.
+  verdict_mapping_and_single_use_discipline: unchanged from v1 (see (f), (g) below).
+
+# ---------------------------------------------------------------------------
+# (a) Hypothesis — ONE falsifiable claim (unchanged from v1)
+# ---------------------------------------------------------------------------
+hypothesis:
+  statement: >
+    At least one of the three whale-footprint bar features
+    (whale_lt_imbalance, whale_cvd_delta, whale_size_shift), computed on
+    forward-recorded Kraken trade data at 1h bars, has a nonzero Spearman
+    rank correlation with that bar's own forward 1-bar return, of consistent
+    sign across the 19 captured pairs, after Bonferroni correction for
+    testing three features plus one pooled combination.
+  falsifiable_if: >
+    No feature clears the corrected significance threshold, OR a feature
+    clears magnitude but its sign is inconsistent across pairs per the
+    numeric definition in verdict.sign_consistency below. AS OF v2: even a
+    feature that clears BOTH is not economically actionable at the
+    registered bar frequency — see economic_ic_threshold below. The
+    statistical hypothesis above is unchanged; what changed is the standard
+    v2 requires before that statistical result is call it decisive at Layer
+    2's cost gate.
+
+# ---------------------------------------------------------------------------
+# (b) Data — exact scope (unchanged from v1)
+# ---------------------------------------------------------------------------
+data:
+  source: forward_recorded_capture_only
+  source_id: kraken_ws_forward_recorder  # campaign_data_policy.yaml
+  capture_root: trading-bot/local_data/recorded_reserved/kraken_ws_v2/
+  window:
+    start: kraken_ws_forward_recorder.span[0]   # "2026-07-27" (13:43 UTC launch)
+    end: as_of_evaluation_run_time
+  pairs: 19  # BTC ETH XRP SOL ADA SUI ZEC DOGE XMR LTC ONDO NEAR LINK TAO AVAX TRX AAVE INJ UNI, all quote USD
+  explicitly_excluded:
+    - trading-bot/local_data/holdout_sealed/2026_H1/kraken_q1_2026/  # era_2026_holdout, sealed, single_use
+    - trading-bot/local_data/recorded_reserved/kraken_ws_v2/**/2026-07-26.ndjson  # pre-launch stub run (10 min, run_id 5988e0cb), out of scope
+  target_variable: bar_forward_return
+  target_definition: >
+    ret[T] = (close[T] - close[T-1]) / close[T-1] using the SAME 1h OHLCV bar
+    grid the whale feature is aligned to (data_manager.py CandleBuilder
+    convention: bar T covers [T, T+1), delivered once T+1 begins). This is
+    each bar's OWN realized return, matching how the feature itself is
+    timestamped (whale_features.py: "timestamp": bar_start) — see
+    causality_provenance below.
+
+causality_provenance:
+  audit: SESSION_LOG.md 2026-07-27 (dispatch W8 step 3)
+  canary_test: trading-bot/tests/test_aux_feed_causality_canary.py
+  finding: >
+    Unchanged from v1: the real whale fetcher is correctly bounded to each
+    bar's own window and the merge attaches a bar's own value to that same
+    bar, never a future one.
+  update_w9: >
+    Dispatch W9 step 3 added a SHARED-CODE defense-in-depth guard at the
+    merge boundary (data_manager.py's AuxFeedCausalityError /
+    _merge_asof_with_causality_guard) — every aux feed now declares the
+    window it aggregates (window_seconds), and the merge REFUSES to attach a
+    value whose declared window ends after the bar it would be merged onto.
+    This closes the STOP-level gap the W8 canary found (no independent
+    pipeline defense against a mistimed feed); the whale fetcher was already
+    correctly bounded and needed no behavior change, only its
+    RESERVED_FEED_REGISTRY entries gained a window_seconds declaration
+    (data/feed_registry.py FEED_WINDOW_SECONDS, == whale_features.py's own
+    bar_seconds — the features aggregate the forward window
+    [timestamp, timestamp + bar_seconds)).
+
+# ---------------------------------------------------------------------------
+# (c) Features — FROZEN parameters (unchanged from v1)
+# ---------------------------------------------------------------------------
+features:
+  frozen: true  # the evaluation may NOT tune these
+  bar_seconds: 3600
+  large_quantile: 0.99
+  baseline_seconds: 86400
+  min_baseline_trades: 200
+  min_bar_trades: 10
+  names:
+    - whale_lt_imbalance
+    - whale_cvd_delta
+    - whale_size_shift
+
+# ---------------------------------------------------------------------------
+# (d) Test statistic and multiple-comparison correction (unchanged from v1)
+# ---------------------------------------------------------------------------
+test_statistic:
+  statistic: spearman_rank_correlation
+  per_pair: true
+  pooling_scheme: >
+    Report each feature's Spearman IC against bar_forward_return per pair,
+    plus ONE pooled statistic per feature (rank-pool across all 19 pairs'
+    attested bars).
+  multiple_comparison_correction:
+    method: bonferroni
+    family_size: 4  # 3 features tested individually + 1 pooled combined-feature test
+    alpha_nominal: 0.05
+    alpha_corrected: 0.0125  # 0.05 / 4
+    derivation: >
+      Unchanged from v1. Family size counts every hypothesis this
+      registration can produce a verdict from: whale_lt_imbalance alone,
+      whale_cvd_delta alone, whale_size_shift alone, and the
+      pooled/combined-feature test.
+
+# ---------------------------------------------------------------------------
+# (NEW in v2) ECONOMIC IC THRESHOLD — derived from
+# strategy-research/config/cost_model.yaml (dispatch W9 step 4). Checked by
+# the harness BEFORE minimum_n_gate (whale_footprint_evaluation.py) because
+# it is data-independent: if the derivation below shows the required IC
+# exceeds what a Spearman correlation can express, no amount of additional
+# capture time or sample size changes that.
+# ---------------------------------------------------------------------------
+economic_ic_threshold:
+  derivation_method: >
+    Layer 2's own cost-check formula (strategy-research/tools/
+    prescreen_signal.py::_cost_check, documented in cost_model.yaml's
+    "Layer 2 formula" block), inverted to solve for the IC a strategy would
+    need instead of the IC a strategy has:
+      required_gross_edge_bps_per_trade = safety_factor * round_trip_cost_bps
+      estimated_gross_edge_bps_per_trade = abs(IC) * sigma_bar_bps * sqrt(avg_holding_bars)
+      => IC_required = (safety_factor * round_trip_cost_bps)
+                        / (sigma_bar_bps * sqrt(avg_holding_bars))
+    This is the SAME formula and the SAME safety margin (2x round-trip cost)
+    every other strategy in this campaign is gated on at Layer 2 — no new
+    convention was invented for this feature family.
+  assumptions_stated:
+    safety_factor:
+      value: 2.0
+      source: "strategy-research/config/cost_model.yaml:62 (safety_factor) — campaign-wide, not feature-specific"
+    round_trip_cost_bps:
+      value: 18.5
+      source: >
+        cost_model.yaml round_trip_cost_bps.default (taker execution style,
+        the HARD-RULE-mandated path for any gating decision — maker is
+        sensitivity-only per cost_model.yaml's own top-of-file rule). The
+        19 Kraken pairs this capture covers are not individually listed in
+        cost_model.yaml's per-symbol tables (those are Binance USDT pairs);
+        `default` is used as the Kraken proxy, the same convention
+        cost_model.yaml's own PERP CALIBRATION block already uses elsewhere
+        ("Binance-vs-Kraken funding basis is an open calibration question...
+        in-sample re-costing uses the Binance 8h series above as the
+        proxy"). Using Kraken's OWN (generally lower) fee schedule would
+        only strengthen this finding's direction (lower cost -> lower
+        required IC), so this is the conservative-against-the-finding choice.
+    sigma_bar_bps:
+      value: 15.0
+      source: >
+        strategy-research/tools/prescreen_signal.py::_DEFAULT_SIGMA_BAR_BPS
+        — this campaign's own standing default for 1h-crypto bar volatility,
+        used as the Layer-2 cost-check fallback whenever a run has too few
+        records to estimate sigma directly. Reused here (not re-derived from
+        price data) to stay inside the dispatch's constraint against
+        computing new statistics for this derivation and to keep the
+        threshold traceable to a single, already-reviewed campaign constant
+        rather than a fresh number nobody has checked.
+    avg_holding_bars_primary:
+      value: 1
+      source: >
+        "the registered bar frequency" per the dispatch's own step-4
+        instruction: these features are recomputed fresh every 1h bar with
+        no persistence mechanism designed into their construction
+        (whale_lt_imbalance / whale_cvd_delta / whale_size_shift are each
+        single-bar aggregates — see features.bar_seconds above), so a
+        strategy trading them AT that frequency re-signals every bar
+        (avg_holding_bars = 1 bar = 1/turnover_rate with turnover_rate=1).
+        This is the PRIMARY, registered assumption. A sensitivity table
+        across less-aggressive turnover assumptions is given below because
+        the dispatch requires showing whether ANY plausible turnover changes
+        the conclusion — it does not, until turnover falls into a range
+        economically incoherent for a microstructure order-flow signal (see
+        finding below).
+  ic_to_expected_return_mapping: >
+    expected_gross_edge_bps_per_trade(IC, H) = abs(IC) * sigma_bar_bps *
+    sqrt(H), H = avg_holding_bars. A strategy clears Layer 2's cost gate
+    when expected_gross_edge_bps_per_trade >= safety_factor *
+    round_trip_cost_bps = 37.0 bps. Solving for IC at a given H:
+    IC_required(H) = 37.0 / (15.0 * sqrt(H)).
+  required_ic_at_registered_frequency: 2.4667  # IC_required(H=1) = 37.0 / 15.0
+  max_possible_spearman_ic: 1.0
+  economically_untradeable_at_registered_frequency: true
+  finding: >
+    STOP-LEVEL FINDING, not a statistics bug, per the dispatch's own
+    criterion ("If the required IC exceeds what the cost model can support
+    at any plausible turnover, SAY SO — that is a legitimate and decisive
+    finding, and it would mean the family is untradeable before any data is
+    collected"). At the registered 1h bar frequency (avg_holding_bars=1),
+    IC_required = 2.4667 — this EXCEEDS 1.0, the mathematical maximum a
+    Spearman correlation coefficient can ever take. No finite sample size,
+    no amount of additional capture time, and no achievable measured IC can
+    ever satisfy this: the family is untradeable at its registered frequency
+    BEFORE any data is collected, exactly as the dispatch anticipated as a
+    possible outcome.
+  sensitivity_table_avg_holding_bars_to_required_ic:
+    # IC_required(H) = 37.0 / (15.0 * sqrt(H)); holding_days = H / 24
+    "1":    {holding_days: 0.04,   ic_required: 2.4667}
+    "2":    {holding_days: 0.08,   ic_required: 1.7442}
+    "4":    {holding_days: 0.17,   ic_required: 1.2333}
+    "9":    {holding_days: 0.38,   ic_required: 0.8222}
+    "16":   {holding_days: 0.67,   ic_required: 0.6167}
+    "25":   {holding_days: 1.04,   ic_required: 0.4933}
+    "50":   {holding_days: 2.08,   ic_required: 0.3488}
+    "100":  {holding_days: 4.17,   ic_required: 0.2467}
+    "152":  {holding_days: 6.33,   ic_required: 0.2001}   # ~= campaign's plausible_ic_upper (0.20)
+    "300":  {holding_days: 12.50,  ic_required: 0.1424}
+    "400":  {holding_days: 16.67,  ic_required: 0.1233}
+    "6760": {holding_days: 281.67, ic_required: 0.0300}   # ~= v1's original judgment-call target
+  sensitivity_finding: >
+    IC_required only falls to this campaign's own historical ceiling for its
+    STRONGEST signals (~0.15-0.20, multi-day price trend, per
+    docs/session_reports P4_ts_trend power check) at avg_holding_bars≈150-270
+    (6.3-11.3 days), and only reaches v1's original 0.03 judgment-call target
+    at avg_holding_bars≈6760 (281.7 days, ~9.3 months). Holding a bar-level
+    order-flow imbalance/CVD/size-shift signal for 6+ days, let alone 9+
+    months, contradicts the economic premise of the feature itself (these
+    are fast microstructure signals by construction, not multi-day trend
+    signals) — treating either crossover as "plausible" would be choosing a
+    turnover assumption to fit a conclusion, not deriving one. The primary,
+    registered assumption (avg_holding_bars=1) is the economically coherent
+    one for this feature family, and it is definitively infeasible.
+  gate_rule: >
+    The harness (whale_footprint_evaluation.py) refuses to execute
+    (returns BLOCKED_ECONOMIC_INFEASIBILITY, no verdict computed, no data
+    read) whenever economically_untradeable_at_registered_frequency is
+    true — checked immediately after single-use and before the coverage
+    floor or minimum-N gate, since it needs no panel data to decide.
+
+# ---------------------------------------------------------------------------
+# (e) MINIMUM-N GATE — recomputed from step 4 (dispatch W9 step 5). NOTE:
+# this gate is currently MOOT — economic_ic_threshold above blocks execution
+# first, unconditionally, whenever economically_untradeable_at_registered_
+# frequency is true. required_attested_bars_per_pair is deliberately left
+# null: no finite N solves the mde_formula below for
+# target_detectable_ic=2.4667 (tanh is bounded in (-1,1); MDE_spearman_ic
+# can never reach 2.4667 regardless of n_eff). This is intentional, not an
+# oversight — do NOT backfill a fake number here. A future amendment that
+# revisits avg_holding_bars_primary with a written economic justification
+# would need to set both target_detectable_ic AND
+# required_attested_bars_per_pair together.
+# ---------------------------------------------------------------------------
+minimum_n_gate:
+  derivation_method: >
+    Unchanged pure-statistics method from v1 (effective-N from in-sample
+    PRICE/RETURN properties only — NOT whale data, NOT holdout; see v1 for
+    the full rho_bar/autocorrelation derivation, reproduced unchanged below
+    since it does not depend on the economic question).
+    n_eff_symbols = 19 / (1 + 18*0.5824) = 1.655.
+    n_eff per T bars/pair = T * n_eff_symbols.
+  multiple_comparison_correction: bonferroni family_size=4 (alpha_corrected=0.0125, see (d))
+  power_target: 0.80
+  mde_formula: >
+    Fisher z-transform normal approximation: SE = 1/sqrt(n_eff - 3);
+    z_required = z_(1-alpha_corrected/2) + z_power = 2.4977 + 0.8416 = 3.3393;
+    MDE_spearman_ic = tanh(z_required * SE). Bounded in (-1, 1) by
+    construction — this is WHY economic_ic_threshold's 2.4667 cannot be
+    solved for a finite N.
+  detectable_ic_curve_attested_days:
+    # unchanged from v1 -- pure statistics, does not depend on the economic
+    # finding or the attestation-fraction correction.
+    "7":   {n_eff: 278.0,   mde_ic: 0.1987}
+    "14":  {n_eff: 556.1,   mde_ic: 0.1410}
+    "30":  {n_eff: 1191.6,  mde_ic: 0.0966}
+    "60":  {n_eff: 2383.2,  mde_ic: 0.0683}
+    "90":  {n_eff: 3574.8,  mde_ic: 0.0558}
+    "180": {n_eff: 7149.6,  mde_ic: 0.0395}
+    "270": {n_eff: 10724.4, mde_ic: 0.0322}
+    "365": {n_eff: 14497.8, mde_ic: 0.0277}
+    "545": {n_eff: 21647.4, mde_ic: 0.0227}
+    "730": {n_eff: 28995.6, mde_ic: 0.0196}
+  target_detectable_ic: 2.4667  # == economic_ic_threshold.required_ic_at_registered_frequency
+  target_detectable_ic_derivation: >
+    v1 used a JUDGMENT CALL (0.03, "not derived from any observed effect").
+    v2 uses the economic_ic_threshold derivation above instead — the IC a
+    strategy trading these features AT their registered bar frequency would
+    actually need to clear costs, not a statistically-modest-sounding
+    magnitude chosen by convention.
+  required_attested_bars_per_pair: null  # UNDEFINED — see note above the (e) header
+  required_n_eff: null
+  gate_status: >
+    MOOT. Not reachable while economic_ic_threshold.
+    economically_untradeable_at_registered_frequency is true (the harness
+    blocks earlier). Retained in the file, rather than removed, so the
+    statistical MDE machinery stays available unchanged for any future
+    amendment.
+  context_only_v1_target_at_corrected_attestation:
+    # FOR COMPARISON ONLY -- does NOT gate v2 (economic_ic_threshold does).
+    # Answers "how much did the coverage-report fix alone (dispatch W9 step
+    # 1-2) change the timeline, holding v1's original 0.03 target fixed?"
+    target_detectable_ic: 0.03
+    required_attested_bars_per_pair: 7484  # unchanged from v1 -- pure statistics
+    attested_equivalent_days: 311.83  # 7484 / 24
+    attestation_fraction_used: 0.99939  # dispatch W9 step 2, steady-state EXCLUDING the diagnosed 4h06m no_attestation hole
+    attestation_fraction_source: >
+      python -m recorder.coverage_report --start 2026-07-27T13:43:04.595471Z
+      against the live journal, dispatch W9 step 2: elapsed 44471.45s,
+      captured 29660.20s (66.695% raw, includes the hole), one
+      no_attestation gap of 14793.07s (2026-07-27T16:42:20.055Z ..
+      20:48:53.121Z, matching the ~4h06m 16:42-20:48Z hole this dispatch was
+      asked to confirm is now surfaced — it is). Steady-state excluding that
+      gap: 29660.20 / (44471.45 - 14793.07) = 99.939%.
+    required_raw_calendar_days: 312.02  # 311.83 / 0.99939
+    required_raw_calendar_years: 0.854
+    comparison_to_v1: >
+      v1 (uncorrected 7.8% attestation): ~3998 raw days (~10.95 years).
+      v2 context figure (corrected 99.939% steady-state): ~312 raw days
+      (~0.85 years). The coverage-report fix alone is a ~12.8x improvement
+      in this number — but it does not change economic_ic_threshold's
+      verdict, which is what actually governs v2.
+
+# ---------------------------------------------------------------------------
+# (f) SINGLE-USE (unchanged discipline from v1; this is a NEW, separate
+# single-use instance for v2 — v1's own single-use is untouched and remains
+# separately unconsumed)
+# ---------------------------------------------------------------------------
+single_use:
+  fires_exactly_once: true
+  consumption_recorded_on_execution: true
+  consumption_field: consumed_by  # harness stamps {hypothesis_id, run_id, timestamp} here on first execution
+  consumed_by: null  # unconsumed as of registration
+  discipline: >
+    Same discipline as v1 and as holdout_range (campaign_data_policy.yaml):
+    repeated peeking as attested-bar data accumulates toward the gate is the
+    exact failure mode this exists to prevent. The harness must refuse a
+    second execution against a `consumed_by` that is already populated.
+    NOTE: with economic_ic_threshold blocking first, this single-use mark
+    will not be consumed by any execution while that gate remains true — a
+    BLOCKED_ECONOMIC_INFEASIBILITY result does not stamp consumption, same
+    as every other blocked-gate status.
+
+# ---------------------------------------------------------------------------
+# (g) TOTAL verdict mapping — no "routing decides" (unchanged from v1)
+# ---------------------------------------------------------------------------
+verdict:
+  mapping:
+    PASS: >
+      Pooled Spearman IC for at least one of the 3 features clears
+      alpha_corrected=0.0125 (two-sided) AND sign_consistency holds for that
+      feature (see below). NOTE: per economic_ic_threshold above, a PASS
+      under this statistical mapping alone would still not be economically
+      actionable at the registered bar frequency unless a future amendment
+      changes that finding — this mapping is unchanged from v1 because it
+      answers the STATISTICAL hypothesis (a), not the economic question,
+      which is now a separate, earlier gate.
+    UNSTABLE: >
+      Pooled Spearman IC for at least one feature clears alpha_corrected AND
+      sign_consistency FAILS for every feature that cleared magnitude.
+    NULL: >
+      No feature's pooled Spearman IC clears alpha_corrected.
+  sign_consistency:
+    definition: >
+      Unchanged from v1. For a given feature, compute the per-pair Spearman
+      IC across all 19 pairs (using only pairs with >= 30 attested bars).
+      sign_consistency HOLDS if at least 80% of those per-pair ICs share the
+      same sign as the pooled IC.
+  exhaustiveness: >
+    Every reachable outcome once single-use, economic feasibility, the
+    minimum-N gate and the coverage floor all pass is exactly one of {PASS,
+    UNSTABLE, NULL}. There is no fourth outcome and no discretionary routing
+    step. (economic_ic_threshold currently makes this branch unreachable —
+    see gate_rule above.)
+
+# ---------------------------------------------------------------------------
+# (h) REQUIRED-COVERAGE FLOOR — recomputed from step 2's measured
+# steady-state attestation (dispatch W9 step 5)
+# ---------------------------------------------------------------------------
+required_coverage_floor:
+  metric: attested_bar_fraction
+  floor: 0.80
+  derivation: >
+    v1's floor (0.05) was set below a WRONG measurement (0.078, from a tool
+    that could not detect a gap with no closing record). The corrected
+    steady-state attestation (dispatch W9 step 2, coverage-report fix
+    applied) is ~99.939% excluding the one diagnosed ~4h06m hole. Setting
+    the floor at 0.80 keeps the same PURPOSE v1 stated (catch a REGRESSION,
+    not relitigate whether the current level is "enough" — that is what
+    economic_ic_threshold and minimum_n_gate do) while now being wide enough
+    to trip on a real operational failure (e.g. the sleep-related hole
+    recurring, or a comparable new one) well before it silently erodes weeks
+    of capture, rather than sitting so low (0.05) it could never catch
+    anything short of near-total data loss. `whale_attested` is itself
+    directly derived from journal.coverage_intervals (whale_features.py:
+    "attested = not any(g.start < bar_end and g.end > bar_start for g in
+    gaps)"), so this floor inherits the dispatch W9 step-1 fix automatically
+    — a future no_attestation-caused hole is now visible to this metric,
+    where before the coverage bug would have hidden it here too.
+  gate_rule: >
+    Unchanged mechanism from v1: the harness refuses to execute (returns
+    BLOCKED_COVERAGE_FLOOR) if the pooled attested-bar fraction across the
+    19 pairs is below 0.80 at evaluation time. Checked after single-use and
+    economic feasibility, before minimum-N (see whale_footprint_evaluation.py
+    module docstring).
+
+# ---------------------------------------------------------------------------
+# Design provenance — data-dependent choices that are NOT this hypothesis test
+# (unchanged from v1)
+# ---------------------------------------------------------------------------
+design_provenance:
+  bar_seconds_choice:
+    value: 3600
+    basis: >
+      Unchanged from v1: a 60s diagnostic measured on REAL capture (trade
+      density only, NO return information) found bar_seconds=60 collapsed
+      whale_lt_imbalance to a bare sign for 51% of scored bars; 3600s (1h)
+      was chosen to keep enough qualifying trades per bar. Not re-run for
+      v2 either.
+    not_rerun: true
+
+# ---------------------------------------------------------------------------
+metadata:
+  version: 2
+  created: "2026-07-28"
+  created_by_dispatch: W9
+  supersedes: prereg_whale_footprint_v1.yaml
+  frozen_at_commit: null  # filled in at the commit that adds this file

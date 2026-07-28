@@ -25,7 +25,8 @@ Usage:
     data_manager.register_feed(
         name='funding_rate',
         fetcher=FundingRateFetcher(...),
-        agg='last', 
+        window_seconds=0,  # published instantaneously — no forward window
+        agg='last',
     )
 """
 

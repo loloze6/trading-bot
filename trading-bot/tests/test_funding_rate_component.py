@@ -158,6 +158,7 @@ def test_data_manager_merge_attach_chain_yields_funding_column_at_1d():
         name="funding_rate",
         fetcher=FundingRateFetcher(start, end, symbols=[symbol],
                                     localStorage=True, data_dir=str(PROJECT_ROOT / "local_data")),
+        window_seconds=0,  # published instantaneously — no forward window
         agg="last",
     )
     dm.historical_data[symbol] = dm.fetch_historical_data(symbol, start, end)

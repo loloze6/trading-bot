@@ -27,6 +27,7 @@ Usage:
     data_manager.register_feed(
         name='fear_greed',
         fetcher=FearGreedFetcher(...),
+        window_seconds=0,     # published instantaneously — no forward window
         agg='last',           # take the last reading within each candle window
     )
 """

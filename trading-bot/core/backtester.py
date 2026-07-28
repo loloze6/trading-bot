@@ -9,6 +9,7 @@ import pandas as pd
 from core.trading_bot import TradingBot
 from data.fetchers import CcxtFetcher
 from data.fetchers import FundingRateFetcher, FearGreedFetcher
+from data.feed_registry import FEED_WINDOW_SECONDS
 from data.data_manager import Candle
 from execution.portfolio_info import flatten_dict_columns
 from reporting.run_artifact import (
@@ -95,12 +96,16 @@ class BacktestEngine:
             project_folder = os.path.dirname(data_folder)
             data_storage_dir = os.path.join(project_folder, "local_data")
 
-            # Register before initialize() so the pre-merge picks it up
+            # Register before initialize() so the pre-merge picks it up.
+            # window_seconds is looked up by name, not defaulted — a feed
+            # missing from FEED_WINDOW_SECONDS is a KeyError here, not a
+            # merge that silently trusts an undeclared window.
             for feed_name, factory in (extra_feeds or {}).items():
                 self.data_manager.register_feed(
-                    name    = feed_name,
-                    fetcher = factory(self.symbols, start_date, end_date, data_dir = data_storage_dir),
-                    agg     = 'last',
+                    name           = feed_name,
+                    fetcher        = factory(self.symbols, start_date, end_date, data_dir = data_storage_dir),
+                    window_seconds = FEED_WINDOW_SECONDS[feed_name],
+                    agg            = 'last',
                 )
             self.logger.debug(f"Registered feeds before initialize: {list(self.data_manager._aux_feeds.keys())}")
 
