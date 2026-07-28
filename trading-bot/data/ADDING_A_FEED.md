@@ -41,7 +41,55 @@ Optional overrides (only if needed):
 
 ---
 
-## Step 2 — Add import to `fetchers/__init__.py`
+## Step 2 — Declare the feed's causality window (REQUIRED)
+
+**Every feed must declare `window_seconds`: how far past its own `timestamp`
+row its value aggregates.** This is not optional and has no default —
+`DataManager.register_feed()` raises if it is omitted. It is enforced at the
+merge boundary (`_merge_asof_with_causality_guard`, `data_manager.py`), which
+REFUSES (`AuxFeedCausalityError`) to attach any value whose declared window
+would end after the bar it is about to be merged onto.
+
+Why this exists: `tests/test_aux_feed_causality_canary.py` (dispatch W8)
+empirically proved the merge/execution path applied NO independent defense
+against a mistimed feed — a feature equal to a bar's literal NEXT return
+produced a ~15x return with nothing anywhere raising. Causality rested
+entirely on each fetcher individually respecting its own window; this guard
+(dispatch W9) is the shared-code defense that was missing. **Run that
+canary's two fixtures whenever you add a feed** (swap in your fetcher's real
+output shape) — it is the permanent regression test for this requirement.
+
+Two values cover almost every feed:
+
+| `window_seconds` | When | Examples |
+|---|---|---|
+| `0` | Instantaneous observation — the value is fully known AT `timestamp`, using no data after it | Funding rate, Fear & Greed |
+| your bar width | The value aggregates a FORWARD window `[timestamp, timestamp + window_seconds)` | Whale-footprint features (`window_seconds == bar_seconds`) |
+
+```python
+data_manager.register_feed(
+    name           = 'your_feed',
+    fetcher        = YourFeedFetcher(...),
+    window_seconds = 0,        # or your feed's true aggregation width
+    agg            = 'last',
+)
+```
+
+The guard TRUSTS this declaration — it does not re-derive it from how the
+value was actually computed. Declare the TRUE window (when is this value
+actually finalized, relative to its own `timestamp`?), not the smallest one
+that happens to pass. Understating it defeats the guard; overstating it just
+means your feed gets rejected on bar grids too fine for it.
+
+If you add the feed to `feed_registry.py`'s `FEED_REGISTRY` /
+`RESERVED_FEED_REGISTRY`, add the matching entry to `FEED_WINDOW_SECONDS` in
+the same file — `backtester.py`'s generic registration loop looks it up by
+name and raises `KeyError` if it is missing (deny by default, same as the
+guard itself).
+
+---
+
+## Step 3 — Add import to `fetchers/__init__.py`
 
 ```python
 from data.fetchers.your_feed_fetcher import YourFeedFetcher
@@ -49,7 +97,7 @@ from data.fetchers.your_feed_fetcher import YourFeedFetcher
 
 ---
 
-## Step 3 — Done
+## Step 4 — Done
 
 `feed_registry.py` auto-discovers the new class by naming convention:
 `YourFeedFetcher` → feed name `'your_feed'`.
@@ -65,7 +113,8 @@ bot.load_data(
 ```
 
 The strategy then receives a DataFrame with a `your_feed` column at every
-candle close. No other files need changing.
+candle close. No other files need changing beyond `FEED_WINDOW_SECONDS`
+(Step 2).
 
 ---
 

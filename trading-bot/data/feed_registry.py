@@ -15,6 +15,7 @@ import os
 import pandas as pd
 
 from data.fetchers import FundingRateFetcher, FearGreedFetcher, WhaleFootprintFetcher
+from data.fetchers.whale_footprint_fetcher import DEFAULT_BAR_SECONDS as _WHALE_BAR_SECONDS
 
 # feed name → lambda(symbols, start, end) → BaseFetcher instance
 FEED_REGISTRY = {
@@ -24,6 +25,27 @@ FEED_REGISTRY = {
     'fear_greed': lambda symbols, start, end, data_dir: FearGreedFetcher(
         start, end, localStorage=True, data_dir=data_dir
     ),
+}
+
+# ---------------------------------------------------------------------------
+# FEED_WINDOW_SECONDS — the causality declaration DataManager.register_feed()
+# requires for every feed (data/ADDING_A_FEED.md, AuxFeedCausalityError in
+# data_manager.py). ONE ENTRY PER FEED NAME, in BOTH registries below — a
+# feed missing here is a KeyError at registration time (deny by default: a
+# feed that does not declare its window is rejected, not merged trusting a
+# silent default).
+#   0                  — instantaneous observation, published AT `timestamp`,
+#                        using no data after it (funding rate, fear & greed).
+#   _WHALE_BAR_SECONDS — whale features aggregate the FORWARD window
+#                        [timestamp, timestamp + bar_seconds) — see
+#                        whale_features.py's "timestamp": bar_start
+#                        convention. Matches WhaleFootprintFetcher's own
+#                        default bar_seconds; the RESERVED_FEED_REGISTRY
+#                        factory below never overrides it.
+# ---------------------------------------------------------------------------
+FEED_WINDOW_SECONDS = {
+    'funding_rate': 0,
+    'fear_greed': 0,
 }
 
 # ---------------------------------------------------------------------------
@@ -69,6 +91,8 @@ RESERVED_FEED_REGISTRY = {
     ))
     for name in WHALE_FOOTPRINT_FEEDS
 }
+
+FEED_WINDOW_SECONDS.update({name: _WHALE_BAR_SECONDS for name in WHALE_FOOTPRINT_FEEDS})
 
 
 def build_daily_funding_series(symbols, data_dir):
