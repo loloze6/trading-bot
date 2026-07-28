@@ -108,7 +108,8 @@ Mac/Windows results should be bit-identical — divergence = real bug, file it.
 
 ## Backlog (in order)
 
-1. **`mac/setup`** — venv, the 3 first-run blockers, pinned requirements, fast+slow green, reference `simulate` reproducing `5ccbec42` / `5a75366c` / −5.646. *This proves the base.*
+0. ✅ **`mac/setup` — DONE 2026-07-28** (`afa2573d`). The 3 first-run blockers, pinned requirements, fast+slow green, reference `simulate` reproducing `5ccbec42` / `5a75366c` / −5.646 byte-identically across two venvs. Plus the `default_regime` fail-safe (engine + validator). *The base is proven.*
+1. **`fix/workflow-macos-port`** — **current priority, moved ahead of metrics on Dorian's call 2026-07-28.** The LLM research workflow is the product: a self-improving loop that proposes strategies, backtests them, and feeds results back into the next proposal. Audited — the surface is 4 hardcoded Windows interpreter paths (`workflow/run_phase1_research.py:990,1462,4889`, `tools/retune_regime_detector.py:486`) plus one undeclared dependency (`claude_agent_sdk`, imported `:54`, in no requirements file). Keep Jeremy's tree working: resolver, not a hard swap. **Before trusting any loop output, verify trial accounting** — `campaign_state.trial_sharpes` is the only thing counting N for deflated Sharpe, and a loop that logs only its winners produces beautiful, meaningless numbers.
 2. **`fix/metrics-bar-equity`** — bar-level equity from `portfolio_states.csv` → true maxDD/Sharpe + Sortino, exposure %, turnover, fee share. Off-by-default, known-answer tests. **This unblocks trusting everything else.**
 3. **`fix/risk-layer`** — absolute allocation cap, max-drawdown kill switch, daily loss limit. Off-by-default, bit-identity proven.
 4. **`feat/slippage-model`** — flat-bps slippage + lot-size/min-notional rounding; rerun baseline at 0/5/10 bps to see which strategies were cost mirages.
