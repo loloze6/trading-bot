@@ -12,7 +12,11 @@ The rule is "at or beyond the seal's START", not "inside the seal": a window
 bound past the seal's end still fetches straight through the seal on its way
 there. That straddle shape is the one that actually contaminated seven Binance
 caches (last rows 2026-07-05 — both window literals outside the seal, the span
-crossing it).
+crossing it). The rule is deliberately BROADER than that rationale: a literal
+wholly after the seal (a post-2026-H1 analysis window whose start is also past
+the seal) fires too, though such a window need not cross anything. Fail-closed
+is the point — when a legitimately post-seal window is eventually hardcoded,
+the exemption is a human edit here, not a cleverer scanner.
 
 Only STRING literals are scanned (plus the two committed config JSONs): a
 hardcoded window is a string, while comments and docstrings are prose and
