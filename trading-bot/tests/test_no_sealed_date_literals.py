@@ -1,5 +1,5 @@
 """
-No executable production date may fall inside the sealed holdout — FORK-ONLY.
+No executable production date may sit at or beyond the sealed holdout — FORK-ONLY.
 
 Threat model, measured not theoretical: a hardcoded window in production code
 that reaches into holdout_range. `launcher.py`'s `visualize_data` ended
@@ -8,23 +8,32 @@ sealed 1m bars fetched and written to disk per run, and the mode reported only
 "Data visualization failed" afterwards. Nothing in the runtime could have caught
 it, because the fetch was exactly what the code asked for.
 
-Only STRING literals are scanned (plus the two committed config JSONs): a date
-can reach a fetcher only through a string, never through bare code — while
-comments and docstrings are prose, and legitimately name sealed dates when
-documenting incidents (upstream's FetchGapError docstring does exactly that,
-which is how the first draft of this test — a raw text scan — was found firing
-on the clean tree it exists to protect). Docstrings are excluded by AST
-position, not by guesswork.
+The rule is "at or beyond the seal's START", not "inside the seal": a window
+bound past the seal's end still fetches straight through the seal on its way
+there. That straddle shape is the one that actually contaminated seven Binance
+caches (last rows 2026-07-05 — both window literals outside the seal, the span
+crossing it).
 
-Scope is deliberately narrow. Test files are excluded: fixtures legitimately
-simulate sealed-era timestamps to prove the guards fire. Markdown and prose are
-excluded: the seal cannot be documented without naming it. Configs generated at
-runtime by an LLM cannot be scanned statically at all — that is the campaign
-gate's job, not this file's.
+Only STRING literals are scanned (plus the two committed config JSONs): a
+hardcoded window is a string, while comments and docstrings are prose and
+legitimately name sealed dates when documenting incidents (upstream's
+FetchGapError docstring does exactly that, which is how the first draft of this
+test — a raw text scan — was found firing on the clean tree it exists to
+protect). Docstrings are excluded by AST position, not by guesswork.
+
+This is a filter for that incident shape, not a proof: a date built by code —
+`datetime.date(2026, 4, 23)`, string concatenation, timestamp arithmetic,
+`datetime.now()` drift — passes it, as does anything generated at runtime.
+Those are the runtime/campaign gate's job (`strategy-research/tools/
+holdout_date_gate.sh` is the deny-by-default whole-index scanner; wiring it
+into the installed pre-commit hook is tracked separately). Test files are
+excluded because fixtures legitimately simulate sealed-era timestamps to prove
+the guards fire; markdown and prose are excluded because the seal cannot be
+documented without naming it.
 
 The seal moves with the policy: `holdout_range` is read, never assumed, so a
-literal that becomes sealed by a policy change fails on the same commit that
-changes it.
+literal that becomes unsafe under a policy change fails on the same commit
+that changes it.
 """
 import ast
 import datetime
@@ -39,6 +48,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _POLICY = PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
 
 EXCLUDED_PARTS = ("tests", "venv", ".venv", "__pycache__", "results", "local_data")
+# Positive control: the scan must at least reach the file where the incident
+# lived. Guards against the exclusion filter (or a surprising checkout layout)
+# silently emptying the scan — a seal check that examines nothing reports green.
+SENTINEL = Path("core") / "launcher.py"
 ISO_DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 _STRING_TOKENS = {tokenize.STRING, getattr(tokenize, "FSTRING_MIDDLE", tokenize.STRING)}
 
@@ -70,33 +83,43 @@ def _code_string_dates(path: Path):
             yield line, literal
 
 
-def test_no_executable_production_date_falls_inside_the_seal():
+def test_no_executable_production_date_reaches_the_seal():
     with open(_POLICY) as fh:
         lo, hi = [datetime.date.fromisoformat(d)
                   for d in yaml.safe_load(fh)["holdout_range"]]   # hi is INCLUSIVE
 
     violations = []
 
-    def record(path, lineno, literal):
+    def record(rel, lineno, literal):
         try:
             found = datetime.date.fromisoformat(literal)
         except ValueError:
             return
-        if lo <= found <= hi:
-            violations.append(f"{path.relative_to(PROJECT_ROOT)}:{lineno}: {literal}")
+        if found >= lo:
+            violations.append(f"{rel}:{lineno}: {literal}")
 
+    scanned = set()
     for path in sorted(PROJECT_ROOT.rglob("*.py")):
-        if any(part in EXCLUDED_PARTS for part in path.parts):
+        rel = path.relative_to(PROJECT_ROOT)
+        if any(part in EXCLUDED_PARTS for part in rel.parts):
             continue
+        scanned.add(rel)
         for lineno, literal in _code_string_dates(path):
-            record(path, lineno, literal)
+            record(rel, lineno, literal)
+
+    assert SENTINEL in scanned, (
+        f"seal scan never reached {SENTINEL} — the exclusion filter or checkout "
+        f"layout emptied the scan, so a green result would be vacuous "
+        f"({len(scanned)} files scanned)")
 
     for path in (PROJECT_ROOT / "config.json", PROJECT_ROOT / "strategy_config.json"):
         for lineno, line in enumerate(path.read_text().splitlines(), 1):
             for literal in ISO_DATE.findall(line):
-                record(path, lineno, literal)
+                record(path.relative_to(PROJECT_ROOT), lineno, literal)
 
     assert not violations, (
-        f"executable date literal(s) inside the sealed holdout {lo}..{hi} "
-        f"(strategy-research/config/campaign_data_policy.yaml). Reading sealed "
-        f"data spends it permanently:\n  " + "\n  ".join(violations))
+        f"executable date literal(s) at or beyond the sealed holdout's start "
+        f"{lo} (seal {lo}..{hi}, strategy-research/config/"
+        f"campaign_data_policy.yaml). A window bound at or past the seal pulls "
+        f"sealed rows on the way there; reading sealed data spends it "
+        f"permanently:\n  " + "\n  ".join(violations))
