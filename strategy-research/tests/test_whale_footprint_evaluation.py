@@ -239,12 +239,23 @@ def test_the_real_v1_pre_registration_loads_and_wires_into_the_harness():
 
 
 def test_the_real_v2_pre_registration_loads_and_refuses_below_the_gate():
-    """Schema smoke test against v2, the file the harness is now pointed at
-    (dispatch W9 step 5). v2's own cost-model derivation registers the
-    family as economically untradeable at its registered bar frequency, so
-    the harness must refuse via the NEW gate -- before minimum-N even
-    applies -- regardless of panel size. Not a real evaluation; nothing here
-    reads recorded_reserved/."""
+    """Schema smoke test against v2, the file the harness is now pointed at.
+
+    UPDATED BY DISPATCH W10 (2026-07-28). This test previously asserted
+    BLOCKED_ECONOMIC_INFEASIBILITY, encoding W9's finding that the family was
+    untradeable at its registered bar frequency (required IC 2.4667 > 1.0).
+    W10 arbitrated that derivation and found it WRONG on two inputs: it used
+    prescreen_signal.py's <5-record fallback constant (15.0) as if it were a
+    measured 1h sigma when every archived prescreen measures 61.6-82.9, and
+    it asserted avg_holding_bars=1 from the features' recompute frequency
+    when the campaign defines that quantity as measured signal persistence
+    (realized: 5.74 bars). Corrected required IC is 0.2507, well inside the
+    correlation bound, so the economic gate no longer fires and execution
+    correctly falls through to the (now live) minimum-N gate.
+
+    The economic gate MECHANISM is unchanged and still covered -- see the two
+    tests above that drive it with a synthetic prereg whose flag is true.
+    Not a real evaluation; nothing here reads recorded_reserved/."""
     real_path = (Path(__file__).parent.parent / "protocols" /
                  "prereg_whale_footprint_v2.yaml")
     prereg = load_prereg(real_path)
@@ -252,8 +263,17 @@ def test_the_real_v2_pre_registration_loads_and_refuses_below_the_gate():
         "whale_lt_imbalance", "whale_cvd_delta", "whale_size_shift",
     ]
     assert prereg["metadata"]["supersedes"] == "prereg_whale_footprint_v1.yaml"
+    econ = prereg["economic_ic_threshold"]
+    assert econ["economically_untradeable_at_registered_frequency"] is False, (
+        "W10: the infeasibility finding is withdrawn; the flag must be false"
+    )
+    assert econ["required_ic_at_registered_frequency"] < 1.0, (
+        "a required IC at or above 1.0 is unreachable by a Spearman "
+        "correlation -- if this trips again, re-audit the derivation's inputs "
+        "before registering the conclusion"
+    )
     result = evaluate(prereg, _tiny_whale_panels())
-    assert result.status == "BLOCKED_ECONOMIC_INFEASIBILITY", (
-        "sanity check: v2's registered economic threshold must refuse to run "
-        "regardless of panel data, ahead of the minimum-N gate"
+    assert result.status == "BLOCKED_MIN_N", (
+        "sanity check: with the economic gate withdrawn, a 5-bar synthetic "
+        "panel must still never clear v2's minimum-N gate (105 bars/pair)"
     )
