@@ -11,26 +11,30 @@ reject. It was `MarketRegime.MEAN_REVERSION`, which is the single worst choice
 available: mean_reversion is the only regime carrying components in the shipped
 config, so it is the only regime that produces a non-zero forecast and trades.
 
-The result was a silent bypass of exactly what validator rule V9 exists to
-prevent. V9 forbids `default_regime` aliasing a real trading regime while
-`rules` is non-empty, but it only tests the three literal names
-("trending" / "mean_reversion" / "chop"). An explicit `null` passes the
-validator with zero errors and then lands on MEAN_REVERSION anyway — so every
-bar that matches no rule gets traded, while every check reports green.
+That was a silent bypass of exactly what validator rule V9 exists to prevent. V9
+forbids `default_regime` aliasing a real trading regime while `rules` is
+non-empty, but it tests only the three literal names — so an explicit `null`
+validated with zero errors and then landed on MEAN_REVERSION anyway: every bar
+that matched no rule was traded, while every check reported green.
 
-Note the asymmetry this closes: a MISSING `default_regime` key was always safe,
-because regime_engine.py reads it as `config.get("default_regime", "unknown")`
-and the *string* "unknown" maps correctly. Only an EXPLICIT null was unsafe.
+Note the asymmetry: a MISSING key was always safe, because regime_engine.py:70
+reads it as `config.get("default_regime", "unknown")` and the *string* maps
+correctly. Only an EXPLICIT null was unsafe.
 
-Fixing the fallback rather than extending V9 is deliberate: it closes the whole
-class (any unmapped value, including a typo'd name that reaches the engine
-without validation) instead of the one known instance, and it makes the two
-sibling fallbacks in the same file consistent — the veto path and the
-rule-match path already fall back to MarketRegime.UNKNOWN.
+The fix is now two layers, and each is tested where it lives:
 
-Whether V9 should ALSO reject null is tracked separately as an optional
-follow-up; with the engine failing safe it is a second control on an already
-neutralised fault.
+  * ENGINE (this file) — the fall-through returns UNKNOWN, matching the veto and
+    rule-match paths that already did. This closes the whole class, including a
+    typo'd name, and it is the ONLY protection for callers that construct
+    ConfigDrivenRegimeEngine directly without validating — which
+    strategy-research/tools/validate_regime_detector.py:116 does.
+  * VALIDATOR (tests/test_validate_config.py) — V7 rejects an explicit null
+    outright, so no such config can construct an AdvancedStrategy at all.
+
+Engine alone was not enough: it made a null config harmless but invisible, still
+forecasting 0.0 on every bar with nothing reporting why. Validator alone was not
+enough either, because of the unvalidated construction path above. Reverting
+either layer breaks tests the other does not cover.
 """
 import sys
 from pathlib import Path
@@ -103,9 +107,10 @@ def test_unmapped_default_regime_does_not_resolve_to_a_trading_regime():
 @pytest.mark.parametrize("name", _VALID_REGIMES)
 def test_valid_default_regime_names_are_unaffected(name):
     """A mapped name must still resolve to itself, so this change cannot alter any
-    existing config. Note this pins the private helper only — the end-to-end
-    coverage for the ungated pattern lives in test_ungated_config_pattern.py and in
-    test_null_default_regime_is_flat_end_to_end below."""
+    existing config. Pins the private helper only — public-path coverage is
+    test_null_default_regime_resolves_to_unknown_through_classify below, and
+    forecast-level coverage of the ungated pattern is in
+    test_ungated_config_pattern.py."""
     expected = {
         "trending": MarketRegime.TRENDING,
         "mean_reversion": MarketRegime.MEAN_REVERSION,
@@ -126,104 +131,76 @@ def test_missing_default_regime_key_remains_safe():
 
 
 # ----------------------------------------------------------------------------
-# End-to-end coverage.
+# Public-path coverage.
 #
-# Every test above calls _classify_threshold_rules() directly and hand-stuffs
-# _history, which bypasses update() / is_ready() / classify() — the only path
-# main_strategy.py actually uses. An adversarial review proved that gap real by
-# reintroducing this exact defect one level up, inside classify(), where NONE of
-# the tests above failed. The test below closes it by driving the public path.
+# Every test above calls the private _classify_threshold_rules() with hand-stuffed
+# _history, bypassing update() / is_ready() / classify(). An adversarial review
+# proved that gap real by reintroducing this defect one level up inside classify(),
+# where NONE of those tests failed. The tests below close it by driving classify()
+# — the actual public entry point, and the method that was sabotaged.
 #
-# It uses the fully-ungated pattern (rules=[] and components=[]), where the
-# default fall-through fires on every single bar rather than only on unmatched
-# ones — see test_ungated_config_pattern.py. The signal is parked in
-# mean_reversion, so a regression that routes the default there produces real
-# forecasts, while the fixed behaviour routes to the null `unknown` entry and
-# stays flat.
+# The fully-ungated pattern (rules=[] and components=[]) is used deliberately: it
+# makes the fall-through fire on the first bar with no warmup, and it is the shape
+# where a bad default is most damaging because EVERY bar resolves through it.
 # ----------------------------------------------------------------------------
 
-_EMA_COMPONENT = {
-    "id": "ema_spread",
-    "class": "strategies.strategy_components.EMASpreadComponent",
-    "weight": 1.0,
-    "transforms": [{"op": "identity"}],
-    "params": {"fast_period": 9, "slow_period": 21, "scaling_factor": 5.0},
-}
+def _ungated_engine(default_regime) -> ConfigDrivenRegimeEngine:
+    return ConfigDrivenRegimeEngine({
+        "mode": "threshold_rules",
+        "components": [],
+        "rules": [],
+        "default_regime": default_regime,
+    })
 
 
-def _ungated_config_with_signal_in_mean_reversion(default_regime) -> dict:
-    regimes = {name: None for name in _VALID_REGIMES}
-    regimes["mean_reversion"] = {"components": [_EMA_COMPONENT]}
-    return {
-        "regime_detector": {
-            "mode": "threshold_rules",
-            "components": [],
-            "rules": [],
-            "default_regime": default_regime,
-        },
-        "strategies": {"warmup": 25, "regimes": regimes},
-    }
+def test_null_default_regime_resolves_to_unknown_through_classify():
+    """THE public-path regression, driven through classify() rather than the private
+    helper. Catches a defect reintroduced anywhere in the classification path, which
+    the private-helper tests above provably do not."""
+    regime, _ = _ungated_engine(None).classify()
+    assert regime is MarketRegime.UNKNOWN
 
 
-def _forecasts(config: dict) -> list:
-    """Feed deterministic synthetic bars one at a time through the real public
-    path and collect every forecast produced once ready."""
+def test_the_classify_fixture_is_not_vacuously_unknown():
+    """Control for the test above, and it is load-bearing.
+
+    classify() short-circuits to UNKNOWN when not ready, so an UNKNOWN result could
+    mean 'correctly defaulted' or 'never ran'. Pointing the default at a real regime
+    must yield THAT regime — which is only possible if the engine was ready and the
+    fall-through actually executed.
+    """
+    regime, _ = _ungated_engine("mean_reversion").classify()
+    assert regime is MarketRegime.MEAN_REVERSION, (
+        "the ungated engine did not reach its default fall-through — the null test "
+        "above proves nothing"
+    )
+
+
+def test_advanced_strategy_rejects_a_null_default_regime():
+    """The validator layer: since the V7 hardening, a null default_regime cannot get
+    as far as the engine through the normal path — AdvancedStrategy refuses to build.
+
+    This is what turns the engine's silent-but-safe behaviour into a loud error for
+    every caller that validates. Before both fixes this config constructed happily
+    and traded every bar.
+    """
     import json
     import os
     import tempfile
 
-    import numpy as np
-    import pandas as pd
-
     from strategies.main_strategy import AdvancedStrategy
 
-    rng = np.random.default_rng(42)
-    close = 100.0 + rng.normal(loc=0.05, scale=1.0, size=70).cumsum()
-    bars = pd.DataFrame({
-        "timestamp": pd.date_range("2024-01-01", periods=70, freq="h", tz="UTC"),
-        "open": close, "high": close + 0.5, "low": close - 0.5,
-        "close": close, "volume": 1.0,
-    })
-
+    config = {
+        "regime_detector": {
+            "mode": "threshold_rules", "components": [], "rules": [], "default_regime": None,
+        },
+        "strategies": {"warmup": 25, "regimes": {name: None for name in _VALID_REGIMES}},
+    }
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(config, f)
         tmp_path = f.name
     try:
-        strat = AdvancedStrategy(config_path=tmp_path)
-        out = []
-        for i in range(1, len(bars) + 1):
-            strat.update(bars.iloc[:i])
-            if strat.is_ready():
-                forecast, *_ = strat.generate_forecast()
-                out.append(forecast)
-        return out
+        with pytest.raises(ValueError, match="invalid strategy_config"):
+            AdvancedStrategy(config_path=tmp_path)
     finally:
         os.unlink(tmp_path)
-
-
-def test_null_default_regime_is_flat_end_to_end():
-    """THE end-to-end regression, driven through AdvancedStrategy rather than the
-    private helper.
-
-    Pre-fix this produced real non-zero forecasts off an unclassified default —
-    trading every bar while validate_config reported zero violations. Post-fix
-    every bar must be flat.
-    """
-    forecasts = _forecasts(_ungated_config_with_signal_in_mean_reversion(None))
-    assert forecasts, "strategy never became ready — fixture is vacuous, not passing"
-    nonzero = [f for f in forecasts if f != 0.0]
-    assert not nonzero, (
-        f"{len(nonzero)} of {len(forecasts)} bars traded off a null default_regime; "
-        "an unclassified default must never reach a regime that carries components."
-    )
-
-
-def test_the_end_to_end_fixture_is_not_vacuously_flat():
-    """Control for the test above: the same config with the default pointed AT the
-    signal must produce real forecasts. Without this, an all-zero result could mean
-    'correctly flat' or 'fixture is broken' — and they must not be confusable."""
-    forecasts = _forecasts(_ungated_config_with_signal_in_mean_reversion("mean_reversion"))
-    assert any(f != 0.0 for f in forecasts), (
-        "the signal produced no forecast even when the default pointed straight at "
-        "it — the fixture proves nothing about the null case"
-    )
