@@ -56,6 +56,15 @@ plus:
   means actual allocation lags target for an unknown number of candles — the gating
   logic would re-signal against a stale allocation unless it's made pending-order-aware.
 
+  > **Correction (2026-07-28, dispatch W11).** `ForecastManager.needs_rebalance()`
+  > does not exist and never did; there is no drift-threshold gate anywhere in the
+  > loop. The engine rebalances toward target on every bar whenever the delta is
+  > nonzero (`trading_bot.py:229`), and `config.json`'s `rebalance_threshold` is dead
+  > (only reference commented out at `launcher.py:110`). See
+  > `docs/known_divergences.md` §1. The concern above is **worse** than stated, not
+  > better: with no drift band at all, a stale actual-allocation reading is re-signalled
+  > against on the very next bar rather than being absorbed by a threshold.
+
 ### 2. Backtest-side simulation
 This is the harder problem, and it is currently **infeasible without a new feed**:
 

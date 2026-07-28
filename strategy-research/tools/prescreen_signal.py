@@ -98,7 +98,29 @@ _BOOTSTRAP_SEED = 20260707
 # Exactly zero is the inactive state for regime-gated strategies.
 _ACTIVE_THRESHOLD = 1e-6
 
-# Default sigma_bar estimate in bps for 1h crypto.
+# LAST-RESORT PLACEHOLDER. NOT A VOLATILITY ESTIMATE. DO NOT CITE THIS NUMBER.
+#
+# This is the value _sigma_from_records returns when a run has FEWER THAN FIVE
+# records -- i.e. when there is not enough data to compute a standard deviation
+# at all. It exists so that _cost_check has a finite number to divide by instead
+# of crashing on a degenerate run. It was never measured from anything.
+#
+# Its previous comment read "Default sigma_bar estimate in bps for 1h crypto",
+# which is how it came to be read as a campaign measurement of hourly crypto
+# volatility and copied into a pre-registration as one. That produced dispatch
+# W9's terminal "the whale-footprint family is economically untradeable"
+# verdict, which stood until W10 traced it back here and withdrew it. See
+# strategy-research/protocols/prereg_whale_footprint_v2.yaml:w10_correction.
+#
+# For scale: every real 1h measurement this campaign has taken is 48-160 bps
+# (15 archived prescreen artifacts: 61.6-82.9; the 19 Kraken breadth pairs over
+# 2024-12..2025-12: 48.6-159.2, pooled 106.9 -- tools/measure_bar_sigma.py).
+# 15 bps/1h annualizes to ~14% vol, which is not a crypto number. This constant
+# is roughly 4-7x too low as a volatility and using it as one BIASES REQUIRED-IC
+# DERIVATIONS UPWARD BY THE SAME FACTOR.
+#
+# If you need a 1h sigma, measure it (tools/measure_bar_sigma.py) or take it
+# from the run's own `sigma_bar_bps` output field. Never from here.
 _DEFAULT_SIGMA_BAR_BPS = 15.0
 
 # F5c (2026-07-04): component_error_count as a percentage of n_bars_total above which
@@ -637,8 +659,24 @@ def _cost_check(
 # ---------------------------------------------------------------------------
 
 def _sigma_from_records(records: list) -> float:
+    """
+    Per-bar return volatility in bps, or the placeholder when it cannot be
+    computed.
+
+    The fallback branch is LOUD BY DESIGN. Its silence is what let
+    _DEFAULT_SIGMA_BAR_BPS travel out of this function and into a
+    pre-registration as though it were a measurement (see the constant's own
+    comment). A cost check running on a placeholder sigma is not a cost check,
+    and the run artifact should not be the first place anyone finds out.
+    """
     returns = [r["next_return_bps"] for r in records]
     if len(returns) < 5:
+        print(
+            f"    ⚠ SIGMA FALLBACK FIRED: only {len(returns)} record(s) (<5), cannot "
+            f"compute stdev. Substituting _DEFAULT_SIGMA_BAR_BPS={_DEFAULT_SIGMA_BAR_BPS} "
+            f"— a PLACEHOLDER, not a measurement. Any cost check or required-IC "
+            f"derivation resting on this value is invalid; do not cite it."
+        )
         return _DEFAULT_SIGMA_BAR_BPS
     return statistics.stdev(returns)
 
@@ -953,6 +991,17 @@ def run_prescreen(
         all_records.extend(recs)
 
     ic_fields = _compute_ic_fields(all_records)
+    # Second, independent path to the placeholder: every symbol failed to produce
+    # an estimate. Flagged the same way and for the same reason as the branch in
+    # _sigma_from_records -- `sigma_is_placeholder` is carried into the artifact
+    # below so a downstream reader sees it without having to have watched stdout.
+    sigma_is_placeholder = not sigma_estimates
+    if sigma_is_placeholder:
+        print(
+            f"    ⚠ SIGMA FALLBACK FIRED: no symbol yielded a sigma estimate. "
+            f"Substituting _DEFAULT_SIGMA_BAR_BPS={_DEFAULT_SIGMA_BAR_BPS} — a "
+            f"PLACEHOLDER, not a measurement. The cost check below is not valid."
+        )
     sigma_bar_bps = statistics.mean(sigma_estimates) if sigma_estimates else _DEFAULT_SIGMA_BAR_BPS
 
     ic_active      = ic_fields["ic_active_bars"]
@@ -1130,6 +1179,10 @@ def run_prescreen(
         "ic_by_era":                ic_by_era,
         "turnover_proxy":           turnover_proxy,
         "sigma_bar_bps":            round(sigma_bar_bps, 4),
+        # True when sigma_bar_bps above is _DEFAULT_SIGMA_BAR_BPS rather than a
+        # measurement. Any cost_check or required-IC figure in this artifact is
+        # invalid when this is true -- see the constant's comment.
+        "sigma_is_placeholder":     sigma_is_placeholder,
         "cost_check":               cost,
         "route":                    route,
         "route_rationale":          rationale,

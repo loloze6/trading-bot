@@ -25,11 +25,20 @@ class ForecastManager:
     Workflow:
         1. Strategy generates forecast (e.g., +15 = bullish)
         2. Convert to allocation (e.g., +75% long)
-        3. Compare with current allocation
-        4. Trigger rebalance if change > threshold
+        3. Compute the delta against current allocation
+
+    NO DRIFT THRESHOLD LIVES HERE, and none lives anywhere else either. This
+    class is stateless and holds no threshold. The caller
+    (`trading_bot.py:229`) proceeds on `abs(allocation_change) != 0.0`, so the
+    engine rebalances toward target on EVERY bar. `config.json`'s
+    `risk_management.rebalance_threshold` (0.20) is dead -- its only reference,
+    `core/launcher.py:110`, is commented out. Documented in
+    `strategy-research/docs/known_divergences.md` (1); do not re-add a threshold
+    here without reading it, since archived backtest turnover and cost figures
+    all assume the current every-bar behaviour.
     """
-    
-    def __init__(self):  # 5% threshold
+
+    def __init__(self):
         pass
 
     def forecast_to_allocation(self, forecast: float) -> float:
