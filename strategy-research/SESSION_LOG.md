@@ -3258,3 +3258,220 @@ are **PRE-EXISTING** — verified identical at clean 1839ae0b before claiming so
  computation on whale features, holdout untouchable, delete nothing, never git reset
  --hard / checkout -- . / clean, do not stop or reconfigure the running recorder without
  explicit go-ahead."
+
+---
+
+## 2026-07-28 — Dispatch W13: reconcile the evaluation path, build one component
+
+Follows 7e9e691e (W11). One commit. **No evaluation run.** No IC, correlation, forward
+return or P&L involving a whale feature was computed. `prereg_whale_footprint_v2.yaml`
+remains unconsumed and was not edited.
+
+### Hypothesis
+Two, one per half of the dispatch.
+(1) That `tools/whale_footprint_evaluation.py` (W8) duplicates machinery the campaign
+already has in `tools/prescreen_signal.py`, and that the duplicated parts are load-bearing.
+(2) That the whale-footprint family's first hypothesis — sustained large-trade order-flow
+imbalance predicts short-horizon continuation — can be encoded as an ordinary
+`SubStrategyComponent` in the existing engine, with no new data path, and with abstention
+distinguishable from a zero forecast.
+
+### Result 1 — the bespoke harness partially duplicates prescreen, and the overlap is exactly where two findings have already been withdrawn
+
+**IT DOES DUPLICATE, in three places.**
+
+- **Spearman.** prescreen imports the campaign's shared, degenerate-safe implementation
+  (`prescreen_signal.py:61` -> `performance/signal_statistics.py::spearman_correlation`)
+  and applies it in `_compute_ic_fields` (`prescreen_signal.py:333-378`). The harness
+  calls `scipy.stats.spearmanr` directly at `whale_footprint_evaluation.py:128` and
+  `:144`, with hand-rolled zero-variance guards (`nunique() < 2`) at `:126` and `:141`.
+  `signal_statistics.py`'s own module docstring states the HARD RULE this breaks: "Every
+  consumer of a forecast-vs-return correlation MUST use these functions ... instead of
+  hand-rolling the same logic a third time." The harness is that third hand-roll.
+- **The cost gate.** `_cost_check` (`prescreen_signal.py:611-654`) reads
+  `config/cost_model.yaml` and computes the gate from inputs it MEASURES from the run:
+  sigma via `_sigma_from_records` (`:661-681`), holding period via
+  `_compute_turnover_proxy` (`:527-567`). The harness has no cost computation at all —
+  `evaluate()` gates on a pre-computed scalar,
+  `prereg['economic_ic_threshold']['required_ic_at_registered_frequency']`
+  (`whale_footprint_evaluation.py:169-180`), which W9/W10/W11 derived BY HAND by
+  inverting `_cost_check`'s formula in prose. That is the same formula, evaluated
+  off-line, three times: 2.4667 -> 0.2507 -> 0.1445. Two of those three were wrong, and
+  both errors were in the two inputs `_cost_check` measures for itself.
+- **The inputs to that gate.** `recorder/whale_persistence.py` (W11) re-transcribes
+  `_compute_turnover_proxy`'s definition — the prereg says so in as many words
+  ("transcribed from tools/prescreen_signal.py:505-545") — and
+  `tools/measure_bar_sigma.py` (W11) re-implements `_sigma_from_records`' definition
+  (prereg: "the SAME definition prescreen_signal._sigma_from_records estimates"). Three
+  copies of two definitions.
+
+**IT ALSO DOES NOT DUPLICATE, and the non-duplicated part is the reason to keep it.**
+Single-use consumption via a sidecar (`:71-92`, `:164-167`), the coverage floor
+(`:182-189`), the minimum-N gate (`:191-198`), per-pair sign consistency across 19 pairs
+(`:119-135`), Bonferroni `alpha_corrected`, and the PASS/UNSTABLE/NULL mapping (`:200-211`)
+exist nowhere else. prescreen's own routing (`_determine_route`, `:696-787`) answers a
+different question in a different vocabulary — "should this go to full backtest" —
+not "is the registered hypothesis confirmed".
+
+**One substantive divergence that is not duplication but is a regression.** The harness
+compares scipy's raw two-sided p against `alpha_corrected` (`:146`) with NO
+autocorrelation adjustment. The campaign's whole convention (`_BLOCK_SIZE_1H = 24`,
+`_block_adjusted_significance`, `prescreen_signal.py:385-427`) exists because 1h bars are
+not i.i.d. The harness's p-value is therefore anti-conservative against the null.
+
+**Proposed minimal reconciliation — NOT implemented, for director approval.**
+
+- **R1.** Keep `whale_footprint_evaluation.py` as the GATE layer. Every prereg threshold,
+  gate and verdict rule (minimum-N, coverage floor, single-use, sign consistency, verdict
+  mapping) is preserved exactly as registered. Nothing about the pre-registration changes.
+- **R2.** Replace `stats.spearmanr` at `:128` and `:144` with
+  `performance.signal_statistics.spearman_correlation`, the same import prescreen uses.
+  No behaviour change on non-degenerate input; removes the duplicate zero-variance guards.
+  ~10 lines.
+- **R3.** Replace the raw p-value at `:146` with
+  `prescreen_signal._block_adjusted_significance([ic], n_attested, _BLOCK_SIZE_1H)`,
+  compared against the prereg's own `alpha_corrected` (NOT prescreen's `_SIG_THRESHOLD`).
+  The registered alpha stays authoritative; only the estimator changes, in the
+  conservative direction. ~5 lines.
+- **R4 (the substantive one).** Stop letting the hand-derived
+  `required_ic_at_registered_frequency` be the GATE. Call `_cost_check` at evaluation time
+  with sigma and holding period measured from the run, and keep the YAML figure as the
+  REGISTERED EXPECTATION the measured result is checked against — which is what a
+  pre-registration is for. This is precisely what would have prevented W9's terminal
+  verdict: the number was arithmetic when the machinery to measure it already existed.
+- **R5.** Leave `minimum_n_gate.required_attested_bars_per_pair` derived from the
+  REGISTERED target IC. That one must stay frozen ahead of the data and prescreen has no
+  equivalent.
+
+**Two blockers on R4 the director must rule on, not the implementer.**
+(a) prescreen correlates a STRATEGY FORECAST with a forward return
+(`_extract_forecasts`, `:281-326`); the prereg's hypothesis is univariate on the RAW
+feature column. Routing through a config carrying the component built below would measure
+the IC of the SUSTAINED SUBSET, not of the column — a different hypothesis from the
+registered one. It is only equivalent if the config's component is an identity
+pass-through of the column.
+(b) `prescreen_signal.py::_merge_aux_feeds` (`:176-225`) knows only `funding_rate` and
+`fear_greed` and silently ignores every other name. The prescreen loader **cannot deliver
+whale columns today**; `DataManager.register_feed` can. Any routing decision has to say
+which merge path is authoritative.
+
+### Result 2 — `WhaleLargeTradeImbalanceComponent` built, wiring proved on fixtures
+
+Template matched: `FundingRateMeanReversionComponent`
+(`strategies/strategy_components.py:675-747`) — the campaign's existing aux-feed-consuming
+component. Same shape: `standardized_forecast: false` forced in `__init__`, column read
+off the merged bar DataFrame in `update()`, `_raw_value` set in forecast units,
+`is_ready()` as a bar-count check, `get_required_periods()` returning the window.
+
+**Hypothesis as written in the docstring, one falsifiable claim:** when
+`whale_lt_imbalance` holds ONE sign with magnitude >= `min_abs_imbalance` on each of
+`persistence_bars` consecutive fully-attested bars, the next bar's return carries that
+same sign more often than the opposite one. **Falsified if** the rank correlation between
+the component's forecast and the next bar's return is <= 0 over the bars where it is
+active. One-sided on purpose: a negative correlation would falsify continuation and
+support exhaustion, which is a different hypothesis needing its own registration — not
+this one with `scaling_factor` negated.
+
+**Registered defaults, chosen from the hypothesis wording and the feature's algebra
+before any evaluation, not tuned:** `persistence_bars=3` (N=1 makes "sustained" vacuous;
+N=2 cannot distinguish sustained flow from one large order worked across a bar boundary;
+N=3 is the smallest window surviving two independent bar boundaries) and
+`min_abs_imbalance=0.5` (LTI = (B-S)/(B+S), so |LTI| >= 0.5 is exactly 3:1
+one-directional).
+
+**NaN behaviour — five exhaustive states, abstention never collapsed into zero:**
+
+1. fewer than `persistence_bars` bars buffered -> not ready, engine appends nothing;
+2. an aux column absent -> **NaN** (a wiring failure must not read as balanced flow);
+3. any bar in the window unattested -> **NaN**;
+4. any bar attested but with NaN imbalance (no trade reached the pair's own tau) -> **NaN**;
+5. whole window measured -> a real result: scaled mean if sustained, **exactly 0.0** if
+   not. That is the only place zero appears, and it is a measurement — the same kind
+   `FundingRateMeanReversionComponent` emits below its threshold.
+
+`is_ready()` deliberately does NOT consult attestation. The engine appends only when
+ready (`strategy_engine.py:77-82`) and `apply_transform_pipeline` seeds from
+`history.iloc[-1]` (`registry.py:105`), so a component that went not-ready on an
+unattested bar would append nothing and the next forecast would be seeded from the last
+ATTESTED value — a silent stale carry. Readiness is a bar-count question; attestation is
+a value question and is answered in the value. NaN-in-history is the framework's own
+documented mechanism (`DOC/STRATEGY_FRAMEWORK.md` invariant 1).
+
+**Consequence stated, not hidden:** NaN propagates to the whole per-regime ensemble sum
+(`strategy_engine.py:97-122`), so an abstained bar yields a NaN forecast for the regime
+rather than a partial one from other components. That is the honest reading and it is why
+the component belongs alone in its regime for a univariate test. Documented in
+`STRATEGY_CONFIG_REFERENCE.md` section 4.
+
+**FINDING — the component cannot fire on the current capture, and this is not a reason to
+retune it.** W11 measured attested bars arriving in runs of **at most 2 consecutive bars**
+against a registered `persistence_bars` of 3, so state 3 applies to every bar and the
+output is NaN throughout. Same root cause as the blocking coverage floor: reconnect churn
+in `record_kraken_ws.py`. Lowering `persistence_bars` to 2 would be tuning the hypothesis
+to fit the capture's defects; it was not done.
+
+### Fixture results (16 tests, synthetic planted values only)
+Through the REAL strategy path (`AdvancedStrategy` + config-driven engine, the same loop
+`prescreen_signal.py:302-324` drives), Pattern-A ungated config, `default_regime="unknown"`:
+
+- sustained +0.9 over 3 attested bars -> forecast **+9.0** (= mean x sf, sign NOT inverted),
+  inside -20..+20;
+- sustained -0.9 -> forecast **-9.0**;
+- 4th bar unattested after a firing run -> forecast **NaN**: not 0.0, and not the +9.0
+  carried from the prior bar (the stale-carry case asserted explicitly);
+- unattested bar EARLIER in the window, current bar attested -> NaN;
+- attested-but-unmeasured (NaN LTI) -> NaN; aux columns absent -> NaN;
+- sign flip inside a fully measured window -> **exactly 0.0**; all-below-threshold -> 0.0;
+- abstention and measured-zero asserted mutually distinguishable.
+
+Plus the real aux-feed path: `register_feed` -> `_premerge_aux_feeds` ->
+`_merge_asof_with_causality_guard` with `window_seconds == interval_seconds` attaches each
+bar's OWN value, a 2x-wider declaration raises `AuxFeedCausalityError`, every whale feed's
+`FEED_WINDOW_SECONDS` entry equals `DEFAULT_BAR_SECONDS`, and the component consumes the
+merged frame end-to-end. **No reserved data was read** — a stub fetcher matching the
+`get_data(symbol)` contract is used, exactly as `test_aux_feed_causality_canary.py` does,
+so the designation gate is never approached.
+
+### Files touched
+- `trading-bot/strategies/strategy_components.py` — `WhaleLargeTradeImbalanceComponent`
+  appended; nothing existing modified
+- `trading-bot/tests/test_whale_lt_imbalance_component.py` (new) — 16 fixture tests
+- `trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md` — catalog row, the NaN-propagation
+  warning, and section 4a's reserved-feed / prescreen-loader-gap note
+- Recorder, supervisor, backfill and coverage tooling: **not touched**.
+  `prereg_whale_footprint_v2.yaml`: **not touched**. No reconciliation implemented.
+
+### Suites
+trading-bot **117 passed** (101 baseline + 16 new), 10 deselected — strategy-research +
+recorder **693 passed**, unchanged. The 4 errors in slow
+`tests/test_regression_backtest.py` ("invalid strategy_config") are **PRE-EXISTING and
+UNCHANGED** — measured at clean 7e9e691e before the change and again after. Pre-commit
+gates (holdout date gate + suite) ran on the commit.
+
+### Next session prompt (copy-paste)
+"Dispatch W13 closed (see SESSION_LOG 2026-07-28). Two things are on your desk.
+ FIRST, A DECISION: W13 found that tools/whale_footprint_evaluation.py duplicates
+ prescreen_signal.py in three places — the Spearman computation (breaking
+ signal_statistics.py's stated HARD RULE against a third hand-roll), the cost gate (the
+ harness gates on a hand-derived scalar that prescreen's _cost_check computes from
+ MEASURED inputs; that hand-derivation has been wrong twice), and the two inputs to it
+ (whale_persistence.py and measure_bar_sigma.py each re-transcribe a prescreen
+ definition). It also found the harness's p-value has no block adjustment at all, which is
+ anti-conservative. A five-part minimal reconciliation (R1-R5) is written up in the log;
+ R2/R3 are ~15 lines, R4 is the substantive one. R4 has two blockers only you can rule on:
+ (a) prescreen correlates a strategy FORECAST with a return while the prereg's hypothesis
+ is univariate on the RAW column, so routing through the new component would test the
+ sustained subset rather than the column, and (b) prescreen's own _merge_aux_feeds knows
+ only funding_rate and fear_greed and cannot deliver whale columns at all today. Decide
+ whether to reconcile, and if so which merge path is authoritative.
+ SECOND: WhaleLargeTradeImbalanceComponent now exists and its wiring is proved on
+ fixtures. It CANNOT FIRE on the current capture — persistence_bars=3 against attested
+ runs of at most 2 bars — and that was left alone deliberately rather than retuned to 2.
+ It is the same reconnect-churn root cause as the still-blocking coverage floor
+ (attested_bar_fraction 0.4178 vs 0.80), which is still the binding constraint on the
+ whole registration and is still an operator decision that has not been made. The other
+ two components (CVD, size-shift) are NOT built — W13 was scoped to one.
+ Standing constraints carry forward unchanged: no self-remediation, no return-involving
+ computation on whale features, holdout untouchable, delete nothing, never git reset
+ --hard / checkout -- . / clean, do not stop or reconfigure the running recorder without
+ explicit go-ahead."
