@@ -188,16 +188,23 @@ class BaseFetcher(ABC):
         For each symbol: load existing local data, detect missing periods,
         fetch them, merge, trim to the requested window, and cache.
         """
+        window_end = self._inclusive_end(self.end_date)
+
         for symbol in self.symbols:
             existing = self._load_local(symbol) if self.localStorage else pd.DataFrame()
-            missing  = self._identify_missing_periods(existing, self.start_date, self.end_date)
+            # window_end, not end_date: expanding "through that whole day" ONCE,
+            # here, means every period end below is already literal. Deriving it
+            # per-period instead is not possible -- a type-1 end computed as
+            # `earliest - 1ms` can equal end_date by coincidence, and then no
+            # value comparison can tell a derived bound from the caller's.
+            missing  = self._identify_missing_periods(existing, self.start_date, window_end)
 
             if missing:
                 logger.info(f"[{self.__class__.__name__}] {len(missing)} missing period(s) for {symbol}")
                 pieces = [] if existing.empty else [existing]
                 for ps, pe in missing:
                     logger.info(f"  Fetching {symbol}  {ps} → {pe}")
-                    chunk = self._fetch_remote(symbol, ps, pe)
+                    chunk = self._trim_to_period(self._fetch_remote(symbol, ps, pe), pe)
                     if not chunk.empty:
                         pieces.append(chunk)
                     else:
@@ -217,13 +224,71 @@ class BaseFetcher(ABC):
                 df = self.data_cache[symbol]
                 self.data_cache[symbol] = df[
                     (df["timestamp"] >= self.start_date) &
-                    (df["timestamp"] < self.end_date + datetime.timedelta(days=1))
+                    (df["timestamp"] <= window_end)
                 ].copy()
                 n = len(self.data_cache[symbol])
                 logger.info(f"  {symbol}: {n} records after date filter") if n > 0 \
                     else logger.warning(f"  {symbol}: no records after date filter")
 
         self.data_loaded = True
+
+    # -----------------------------------------------------------------------
+    # Window bounds (shared by all subclasses)
+    # -----------------------------------------------------------------------
+
+    @staticmethod
+    def _inclusive_end(ts) -> pd.Timestamp:
+        """
+        The last timestamp a window/period end admits.
+
+        A DATE-ONLY end means "through that whole day": end_date='2025-12-31'
+        must keep the 23:00 bar. Every caller in this repo passes date-only
+        strings (launcher's simulate/analyse/optimise windows, fetch_data.py's
+        str(end.date())), and the archive caches all terminate at 23:00, so
+        tightening this to midnight would silently drop 23 bars from every
+        window in the codebase.
+
+        An end carrying a TIME OF DAY is taken literally. The previous rule --
+        `timestamp < end_date + 1 day` -- widened every end by a day, so an end
+        of 2025-12-31 23:00 admitted bars through 2026-01-01 22:00: 23 sealed
+        holdout bars, past a bound the caller had stated explicitly.
+
+        For date-only ends the two rules select identically (no bar falls in the
+        last millisecond of a day), which is why the reference baseline is
+        unaffected by this change.
+        """
+        ts = pd.Timestamp(ts)
+        if ts == ts.normalize():
+            return ts + pd.Timedelta(days=1) - pd.Timedelta(milliseconds=1)
+        return ts
+
+    @staticmethod
+    def _trim_to_period(chunk: pd.DataFrame, bound) -> pd.DataFrame:
+        """
+        Drop rows a fetch returned beyond `bound`, the last timestamp the period
+        it was asked for admits. `bound` is already literal -- _load_all expands
+        the caller's "through that whole day" once, before periods are computed,
+        so nothing here may re-expand it.
+
+        The contract this establishes: a subclass's _fetch_remote MAY return
+        more than requested, and the orchestrator is responsible for the bound.
+        That is the only workable contract, because paginated endpoints cannot
+        honour an arbitrary end -- CcxtFetcher's loop (ccxt_fetcher.py:149-174)
+        bounds where a page STARTS, never where the data ENDS, and each page
+        carries up to 1000 candles. A fetch of BTCUSDT_1d bounded at 2025-12-31
+        wrote daily bars through 2026-03-19, straight across the sealed holdout.
+        Bounding a request is not a bound on the response.
+
+        Enforced HERE and not in _merge_and_store deliberately: that method
+        concatenates `existing` with the new chunks, so a clamp there would
+        delete already-cached rows beyond the current request's end whenever
+        anyone fetched a narrower window than the cache holds -- turning a leak
+        into data loss. Only freshly fetched rows are this method's business.
+        """
+        if chunk.empty or "timestamp" not in chunk.columns:
+            return chunk
+        ts = pd.to_datetime(chunk["timestamp"])
+        return chunk[ts <= pd.Timestamp(bound)].copy()
 
     # -----------------------------------------------------------------------
     # Local storage helpers (shared by all subclasses)
@@ -392,8 +457,15 @@ class BaseFetcher(ABC):
             ))
 
         # ── Gap type 2: after latest stored row ────────────────────────────
+        # A bar can only exist on the interval grid, so data is missing after
+        # `latest` only if at least one whole interval fits before `end_date`.
+        # A sub-interval remainder (e.g. the 59m59.999s between a cache's last
+        # hourly bar and an inclusive end-of-day bound) is not a gap: treating
+        # it as one schedules a phantom top-up fetch on every complete cache —
+        # a network call and a file rewrite per run, and the top-up's first
+        # page opens past the requested end.
         latest = data["timestamp"].max()
-        if end_date > latest:
+        if end_date >= pd.Timestamp(latest) + expected:
             missing.append((
                 max(pd.Timestamp(latest).to_pydatetime() + datetime.timedelta(milliseconds=1), start_date),
                 end_date

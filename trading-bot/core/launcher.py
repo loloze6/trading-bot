@@ -354,7 +354,10 @@ class Launcher:
         self.logger.debug("-" * 80)
 
         start_date = '2025-04-01'
-        end_date = '2026-04-23'
+        # Last day before the sealed holdout (strategy-research/config/
+        # campaign_data_policy.yaml). tests/test_no_sealed_date_literals.py
+        # fails if this ever falls inside the seal.
+        end_date = '2025-12-31'
         symbols = ['BTCUSDT']
 
         self.logger.debug(f"Fetching data for: {', '.join(symbols)}")
@@ -371,7 +374,7 @@ class Launcher:
 
             for symbol in symbols:
                 if symbol in data and not data[symbol].empty:
-                    is_continuous, gaps = fetcher.validate_quality_data_continuity(symbol)
+                    is_continuous, gaps = fetcher.validate_data_continuity(symbol)
                     self.logger.debug(f"\n{symbol} DATA SUMMARY")
                     self.logger.debug("-" * 40)
                     self.logger.debug(f"  Records: {len(data[symbol]):,}")
