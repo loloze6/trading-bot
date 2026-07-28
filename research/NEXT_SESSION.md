@@ -2,6 +2,8 @@
 
 Paste §1 into a fresh session. Everything below it is the context that prompt refers to.
 
+**Mirrored in Notion** at *Trading Bot HQ → 🍎 Mac Fork — Home*, where §1 sits in a plain-text code block for clean copy-paste. If you change §1 here, change it there — that page is the one Dorian actually copies from.
+
 ---
 
 ## 1. The prompt — paste this
