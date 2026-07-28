@@ -80,7 +80,14 @@ Per 1h candle (`core/trading_bot.py:158`, identical live/backtest): data+aux fee
 | Config validator V1-V10 | `tools/validate_config.py` — config MUST pass before any run |
 | Reusable stats | `strategy-research/tools/` |
 
-`strategy-research/workflow/` is **off-limits** (needs Agent SDK + Windows paths). The `strategy-research/tools/` analyzers are reusable libraries — prefer reusing them over reimplementing.
+**Nothing in this repo is off-limits to READ.** Dorian's standing instruction, 2026-07-28: *"nothing is off limits if it makes sense and you should know everything. Changing it is something else — make sure you have proof for everything you do, and do not ignore files or folders because of some off limitation."* Reading is how you get the proof. Never answer "unaudited" when auditing was available.
+
+Two things are constrained, and neither is secrecy:
+
+- `strategy-research/workflow/` **cannot be executed here** (imports `claude_agent_sdk`, hardcodes Windows `venv/Scripts/python.exe`). Read it freely — it is where strategy configs are LLM-authored and then gated by `trading-bot/tools/validate_config.py`. Modifying it needs the same proof as anything else.
+- `local_data/holdout_sealed/2026_H1/` **must not be opened at all** — not because it is forbidden knowledge but because *reading it is spending it*. It is a one-shot final exam; a chart, a `head`, a notebook all consume it. Its policy and metadata files (`config/campaign_data_policy.yaml`) are normal reading.
+
+The `strategy-research/tools/` analyzers are reusable libraries — prefer reusing them over reimplementing.
 
 ## Known bugs, traps, and the environment
 
