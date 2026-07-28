@@ -134,7 +134,7 @@ class ConfigDrivenRegimeEngine:
         for rule in self._rules:
             if self._matches_rule(rule, raw):
                 return _REGIME_MAP.get(rule["regime"], MarketRegime.UNKNOWN)
-        return _REGIME_MAP.get(self._default_regime, MarketRegime.MEAN_REVERSION)
+        return _REGIME_MAP.get(self._default_regime, MarketRegime.UNKNOWN)
 
     def _matches_rule(self, rule: Dict, raw: Dict) -> bool:
         for condition_set in rule["any_of"]:
