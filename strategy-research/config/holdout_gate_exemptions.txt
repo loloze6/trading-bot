@@ -38,7 +38,7 @@
 strategy-research/NEXT_SESSION.md	1
 strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md	13
 strategy-research/RUNBOOK.md	1
-strategy-research/SESSION_LOG.md	25
+strategy-research/SESSION_LOG.md	23
 strategy-research/briefs/FUNDING_MR_DAILY_RETEST.md	2
 strategy-research/briefs/H-041-C-v2.md	2
 strategy-research/briefs/research_brief_P4_ts_trend.md	1
@@ -197,3 +197,17 @@ trading-bot/tests/test_kraken_archive_ingest.py	1
 # data: the tests build synthetic closes in memory and write them to tmp_path.
 strategy-research/tools/measure_bar_sigma.py	1
 strategy-research/tests/test_measure_bar_sigma.py	3
+
+# CORRECTED 2026-07-29, dispatch W17 -- SESSION_LOG.md: 25 -> 23.
+# W16 registered 25 without measuring; the file has carried 23 residual lines.
+# An over-registered count is not a blocking failure, it is a SILENT one: it
+# grants headroom for two future unaudited holdout-date lines to land in
+# SESSION_LOG.md without the gate ever firing. Pinning the count to the
+# measured value is the whole point of counting. Measured with the gate's own
+# machinery against the same index this commit publishes:
+#   sh strategy-research/tools/holdout_date_gate.sh --report-residual \
+#       | grep -P '^strategy-research/SESSION_LOG\.md\t'
+#   -> strategy-research/SESSION_LOG.md<TAB>23
+# Corroborated independently by reproducing PATTERN + AUTHORSHIP_KEYS directly
+# over `git grep --cached`: 23 raw hits, 23 after the provenance filter (no
+# line in this file is an authorship stamp, so the filter is a no-op here).

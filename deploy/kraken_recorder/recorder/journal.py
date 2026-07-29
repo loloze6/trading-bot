@@ -11,11 +11,10 @@ Therefore *the market-data stream alone cannot distinguish "no activity" from
 "not captured"*. A half-open TCP socket looks exactly like a quiet market: the
 process stays alive, the log stays quiet, the shard simply stops growing.
 
-That is the same defect shape as the motivating bug behind
-`trading-bot/data/fetchers/base_fetcher.py:42-61` (`FetchGapError`): Kraken's
-REST OHLC endpoint silently ignored `since`, `_fetch_remote` exited cleanly,
-the write succeeded and the run logged success over a ~173-day hole. Its
-docstring's rule is inherited verbatim here:
+That is the same defect shape as a real historical-fetch bug this project hit
+earlier: Kraken's REST OHLC endpoint silently ignored the `since` parameter,
+the fetch exited cleanly, the write succeeded, and the run logged success over
+a ~173-day hole. The rule that came out of it is inherited verbatim here:
 
     "A wrong-data read that announces itself as success is the worst shape a
      data defect can take."
@@ -24,9 +23,9 @@ So coverage is not inferred from the data. It is **attested** by this journal,
 written separately, `fsync`-ed per record, *before* the corresponding stream
 action wherever the ordering is observable.
 
-The second property of `_assert_no_new_gap` (`base_fetcher.py:293-330`) is also
-inherited: the guard is **differential**. Only time that is *unattested* is a
-defect. Attested-but-quiet is fine.
+A second property of that same guard is also inherited: it is
+**differential**. Only time that is *unattested* is a defect.
+Attested-but-quiet is fine.
 
 THE GUARD SITS AT THE READ BOUNDARY
 -----------------------------------

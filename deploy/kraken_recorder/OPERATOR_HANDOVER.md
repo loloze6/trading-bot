@@ -2,6 +2,11 @@
 
 Install, run, and maintain the recorder on a Linux VPS.
 
+**Which machine am I on?** Every command in this document runs 🖥️ **on the
+capture VPS** unless it is explicitly labelled 💻 **ON THE ANALYSIS HOST**.
+Only the "Handing data back to analysis" section mixes the two, and every
+code block there is labelled.
+
 ## Installing on a Linux server
 
 **Prerequisites:**
@@ -77,14 +82,112 @@ python3 -m recorder.liveness
 
 ## Handing data back to analysis
 
-**Extract compressed shards (automated, on your analysis machine):**
+> **Read the machine labels on every code block in this section.**
+> Two different machines are involved and the commands are not
+> interchangeable:
+>
+> | Label | Machine | Who runs it |
+> |---|---|---|
+> | 🖥️ **ON THE CAPTURE VPS** | the server you installed the recorder on | you, the operator |
+> | 💻 **ON THE ANALYSIS HOST** | the machine that analyses the data (may be macOS, Linux, or Windows+WSL) | whoever receives the data |
+>
+> Everything in the rest of this document that is not labelled runs
+> 🖥️ **ON THE CAPTURE VPS**. The retrieval tooling
+> (`recorder.retrieve_shards`) is an SSH *client*: it is only ever run
+> 💻 **ON THE ANALYSIS HOST**, never on the VPS. It ships in this bundle
+> only so both ends are known to be the same version.
 
-Once the recorder has been running for a while and you want to analyze the data:
+### Step 1 — create the retrieval user
+
+🖥️ **ON THE CAPTURE VPS**
+
+Retrieval gets its own unprivileged account. It is not `root`, and it is not
+the account you log in with.
 
 ```bash
-# On the analysis machine (macOS, Linux, Windows with WSL):
+# Reuse the same unprivileged user the service already runs as
+# (`--user kraken` from the install step). If it does not exist yet:
+sudo useradd -r -m -d /home/kraken -s /bin/bash kraken
+
+# It needs to read what the recorder wrote, and nothing else:
+sudo chown -R kraken:kraken /opt/kraken_recorder/data
+
+sudo -u kraken mkdir -p /home/kraken/.ssh
+sudo -u kraken chmod 700 /home/kraken/.ssh
+```
+
+### Step 2 — generate the retrieval key
+
+💻 **ON THE ANALYSIS HOST**
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/kraken_vps -C "kraken-retrieval"
+cat ~/.ssh/kraken_vps.pub
+```
+
+Send the **public** half (`kraken_vps.pub`) to the operator. The private half
+never leaves the analysis host.
+
+### Step 3 — install the key, restricted to retrieval only
+
+🖥️ **ON THE CAPTURE VPS**
+
+The key is pinned to `retrieval_command.sh`, the forced command shipped in
+this bundle. `command=` means sshd runs *that* no matter what the client
+asks for, so this key cannot open a shell, forward a port, or touch anything
+outside the capture directory — even if the private key is stolen.
+
+```bash
+sudo chmod +x /opt/kraken_recorder/retrieval_command.sh
+
+# Paste the analysis host's PUBLIC key at the end of this single line.
+# Note: it is ONE line. The restrictions apply only if they are on the same
+# line as the key.
+sudo -u kraken tee -a /home/kraken/.ssh/authorized_keys >/dev/null <<'EOF'
+command="/opt/kraken_recorder/retrieval_command.sh",no-pty,no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-user-rc ssh-ed25519 AAAA... kraken-retrieval
+EOF
+
+sudo -u kraken chmod 600 /home/kraken/.ssh/authorized_keys
+```
+
+If the capture directory is not the bundle default
+(`/opt/kraken_recorder/data/kraken_ws_v2`), tell the wrapper where it is by
+exporting `KRAKEN_RECORDER_OUT` in `/home/kraken/.ssh/environment` (and
+setting `PermitUserEnvironment yes` in `sshd_config`), or by editing
+`OUT_DIR` at the top of `retrieval_command.sh`.
+
+**What the key is allowed to do — the entire list:**
+1. `recorder.retrieval_manifest` against the capture directory
+2. `rsync --server --sender` (send only — it cannot write to the VPS)
+3. `rm -f` of a **single** `.ndjson.zst` shard inside the capture directory
+
+Anything else — a shell, a different directory, `rm -rf`, deleting the
+coverage journal, path traversal — is refused with a logged reason.
+
+### Step 4 — verify access
+
+💻 **ON THE ANALYSIS HOST**
+
+```bash
+ssh -i ~/.ssh/kraken_vps kraken@<VPS_IP_OR_DNS> \
+    "python3 -m recorder.retrieval_manifest --out /opt/kraken_recorder/data/kraken_ws_v2" | head -c 100
+# Expect: the first ~100 characters of a JSON manifest.
+
+# And confirm the restriction actually bites — this MUST fail:
+ssh -i ~/.ssh/kraken_vps kraken@<VPS_IP_OR_DNS> "id"
+# Expect: "retrieval key: REFUSED (command not on the retrieval whitelist)"
+```
+
+If `id` succeeds, the `command=` restriction is not in effect — recheck that
+the whole `command="...",no-pty,... ssh-ed25519 AAAA...` entry is on one line.
+
+### Step 5 — pull the data
+
+💻 **ON THE ANALYSIS HOST**
+
+```bash
 python3 -m recorder.retrieve_shards pull \
-    --host <VPS_IP_OR_DNS> \
+    --host kraken@<VPS_IP_OR_DNS> \
     --remote-out /opt/kraken_recorder/data/kraken_ws_v2 \
     --local-out /path/to/analysis/kraken_ws_v2 \
     --identity ~/.ssh/kraken_vps
@@ -93,19 +196,25 @@ python3 -m recorder.retrieve_shards pull \
 # pulled 123, verified 123, failed 0, already-confirmed 456
 ```
 
+Do **not** pass `--remote-module-root` with a restricted key: it makes the
+client send `cd ... && ...`, which the forced command refuses. The wrapper
+already changes to the bundle root itself.
+
 **What it does:**
 - Fetches a manifest of all compacted shards from the server
 - Downloads any shards not already confirmed received
 - Verifies each shard's SHA256 against the remote manifest
-- Records confirmed shards in a local ledger (in `/path/to/analysis/.../\_retrieval_ledger.json`)
+- Records confirmed shards in a local ledger (in `/path/to/analysis/.../_retrieval_ledger.json`)
 - Never deletes anything on the server side
 
-**Cleanup (after verified OK):**
+### Step 6 — cleanup, only after the pull verified
+
+💻 **ON THE ANALYSIS HOST**
 
 ```bash
 # Only after data has been safely analyzed and stored elsewhere:
 python3 -m recorder.retrieve_shards prune --yes-delete-confirmed-only \
-    --host <VPS_IP_OR_DNS> \
+    --host kraken@<VPS_IP_OR_DNS> \
     --remote-out /opt/kraken_recorder/data/kraken_ws_v2 \
     --local-out /path/to/analysis/kraken_ws_v2
 
@@ -113,18 +222,9 @@ python3 -m recorder.retrieve_shards prune --yes-delete-confirmed-only \
 # deleted 123, skipped (not confirmed) 0, skipped (changed) 0, skipped (local mismatch) 0
 ```
 
-**Setup SSH key for automation:**
-```bash
-# On the VPS, as root:
-mkdir -p /root/.ssh
-cat >> /root/.ssh/authorized_keys <<EOF
-ssh-rsa AAAA... analysis_host_public_key
-EOF
-chmod 600 /root/.ssh/authorized_keys
-
-# On the analysis machine, verify access:
-ssh -i ~/.ssh/kraken_vps root@<VPS_IP> "python3 -m recorder.retrieval_manifest --out /opt/kraken_recorder/data/kraken_ws_v2" | head -c 100
-```
+This deletes shards **on the VPS**, but only ones it re-verifies as already
+received intact. The forced command enforces the same boundary independently
+on the server side.
 
 ## Troubleshooting
 
