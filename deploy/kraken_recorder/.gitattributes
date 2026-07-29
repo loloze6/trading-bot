@@ -1,0 +1,8 @@
+# Shell scripts must keep LF line endings regardless of the checking-out
+# machine's git config. A Windows checkout with core.autocrlf=true would
+# otherwise rewrite these to CRLF, and a CRLF shebang line
+# (`#!/usr/bin/env bash\r`) fails on Linux with "bad interpreter: ... no such
+# file or directory". This bundle is meant to be extracted or cloned onto a
+# Linux host, quite possibly by way of a Windows machine, so the line ending
+# has to be pinned here rather than left to the operator's git config.
+*.sh text eol=lf

@@ -31,8 +31,8 @@ DENY BY DEFAULT
 If free space cannot be determined — the path is gone, the volume is
 unreachable, `disk_usage` raises anything at all — that is a BREACH, not a
 pass. An unmeasurable disk is exactly the state in which continuing to write is
-least defensible, and a guard that fails open is not a guard. This mirrors
-`holdout_date_gate.sh`'s rule that silence is never treated as success.
+least defensible, and a guard that fails open is not a guard. The rule
+throughout this bundle is that silence is never treated as success.
 
 UNITS
 -----

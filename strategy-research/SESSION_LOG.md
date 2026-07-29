@@ -3941,3 +3941,85 @@ Known open items:
 - Zstandard library: vendoring optional. Bundle assumes pip install from PyPI. If offline deployment required, can pre-vendor wheels.
 
 No code changes required for the bundle itself — it's ready to hand off."
+
+---
+
+## Session: 2026-07-29 — W17 (Bundle repair for third-party handover)
+
+### Hypothesis
+W16's central safety conclusion (the bundle carries no secrets and no holdout
+data) is correct and is NOT revisited here. But W16 self-verified its own
+packaging, and four of its completeness claims were false in the same
+direction. The bundle is therefore not yet handover-ready: a third-party
+operator following it would hit a missing module, a root-SSH instruction, and
+commands that do not say which machine they run on.
+
+### Result
+COMPLETED — 7 of 7 dispatch steps. All five preconditions verified before any
+write (HEAD 1c831584, clean tree, 28 bundle files, retrieve_shards.py present
+in strategy-research/, .gitattributes absent from the bundle).
+
+**Defects fixed:**
+1. `retrieve_shards.py` + its 9-test suite were missing from the bundle
+   entirely — the documented retrieval flow could not run. Ported, docstrings
+   adapted; executable code byte-identical to `strategy-research/`'s copy.
+2. Audience boundary in OPERATOR_HANDOVER.md: retrieval commands were
+   interleaved with no marking of which machine runs them. Split into six
+   labelled steps (capture VPS vs analysis host) plus a document-level default.
+3. `.gitattributes` — claimed by 82b78c5f's commit message, never actually
+   committed. Created; both shell scripts verified CR-free in worktree and blob.
+4. Four repo-path references corrected (journal.py, disk_guard.py,
+   conftest.py comment only, install_systemd_unit.sh usage block).
+5. Root-SSH instruction replaced with an unprivileged `kraken` user and a
+   forced-command key. New `retrieval_command.sh` whitelists exactly the three
+   operations retrieval needs; new 13-test suite proves the refusals.
+6. `holdout_gate_exemptions.txt` SESSION_LOG.md count corrected 25 -> measured
+   value (W16 registered 2 more lines than the file actually had, which is an
+   over-permissive exemption, not a blocking one).
+7. Bundle suite re-run from a temp directory OUTSIDE the repository — the only
+   run that can distinguish a self-contained bundle from one silently
+   resolving repo paths. 166 passed, 1 skipped, exit 0.
+
+**Defects found but NOT fixed** (out of the dispatch's enumerated scope,
+reported rather than silently widened): 10 remaining leakage-scan hits, all
+dangling references to files absent from the bundle — `supervise.ps1` x3,
+`RUNBOOK.md` x3, `register_scheduled_task.ps1`, `test_supervisor.py`, and
+`SESSION_LOG.md`/dispatch-W9 citations in two test docstrings. None leak data
+or secrets; all would confuse an operator. Worth a follow-up dispatch.
+
+### Files touched
+- `deploy/kraken_recorder/recorder/retrieve_shards.py` — NEW (ported)
+- `deploy/kraken_recorder/recorder/tests/test_retrieve_shards.py` — NEW (ported)
+- `deploy/kraken_recorder/retrieval_command.sh` — NEW (forced command)
+- `deploy/kraken_recorder/recorder/tests/test_retrieval_command_sh.py` — NEW
+- `deploy/kraken_recorder/.gitattributes` — NEW
+- `deploy/kraken_recorder/OPERATOR_HANDOVER.md` — audience labels, SSH rewrite
+- `deploy/kraken_recorder/install_systemd_unit.sh` — usage block
+- `deploy/kraken_recorder/recorder/journal.py`, `recorder/disk_guard.py`,
+  `recorder/tests/conftest.py` — comment/docstring path references
+- `strategy-research/config/holdout_gate_exemptions.txt` — SESSION_LOG count
+- `strategy-research/SESSION_LOG.md` — this entry
+
+### Status
+Phase 2.3 remains BUILT-BUT-UNEVALUATED, PARKED PENDING DATA. Nothing in this
+session touched protocols, prereg thresholds, or any recorded capture data.
+
+### Next session prompt
+"W17 is complete. The Kraken recorder bundle at deploy/kraken_recorder/ is
+repaired for third-party handover: retrieval module present, audience-labelled
+handover doc, unprivileged forced-command SSH key, LF pinned, bundle suite
+green from outside the repository.
+
+Open item deliberately left for you: 10 dangling references in the bundle to
+files that are not in it (supervise.ps1, RUNBOOK.md, register_scheduled_task.ps1,
+test_supervisor.py, and two dispatch-W9 test docstrings). They leak no data,
+but an operator reading supervise.sh's header is told to go read a file they
+do not have. Decide whether to rewrite those headers standalone or ship a
+short PROVENANCE.md, then do it.
+
+Not yet done: the bundle has never been executed on an actual Linux host.
+Everything is proven under Git-bash on Windows plus reasoning about Linux
+semantics. A real VPS smoke test (systemd install, liveness, one retrieval
+round-trip over a restricted key) is the remaining unknown.
+
+Phase 2.3 stays PARKED PENDING DATA. Do not mark it closed."

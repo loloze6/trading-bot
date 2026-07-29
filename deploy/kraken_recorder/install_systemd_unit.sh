@@ -27,8 +27,8 @@
 # recorder/RUNBOOK.md "Linux deploy / cutover".
 #
 # Usage (run as a user with sudo; the unit itself runs as --user below):
-#   sudo bash recorder/install_systemd_unit.sh \
-#       --user kraken --python-exe /opt/trading-bot/venv/bin/python3 \
+#   sudo bash install_systemd_unit.sh \
+#       --user kraken --python-exe /usr/bin/python3 \
 #       --book-mode snapshot --snapshot-interval 1.0 --min-free-gb 5.0
 #
 # Then:
