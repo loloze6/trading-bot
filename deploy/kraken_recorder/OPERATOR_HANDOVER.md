@@ -60,6 +60,47 @@ python3 -m recorder.liveness
 - `--book-mode snapshot` — the cadence mode (snapshot = 1 per hour; see README for alternatives)
 - `--min-free-gb 5.0` — minimum free space before stopping (protect the OS)
 
+## Cutover — bringing this host into service
+
+If this recorder is replacing one already running somewhere else, the old one
+keeps running through steps 1–4. Do not stop it early: an overlap costs
+nothing but duplicate shards, and a gap cannot be backfilled — this is a
+forward recording with no upstream to re-fetch from.
+
+1. **Install and selftest.** `python3 -m pip install -r requirements.txt`,
+   then `python3 -m recorder.record_kraken_ws selftest` must pass.
+2. **Install and start supervision** (see "Installing on a Linux server"
+   above): `install_systemd_unit.sh`, then
+   `sudo systemctl enable --now kraken-forward-recorder`.
+3. **Verify healthy before trusting it for anything:**
+   ```bash
+   python3 -m recorder.liveness                       # must print HEALTHY
+   python3 -m recorder.coverage_report --fail-on-gap  # since this host's RECORDER_START
+   ```
+   Do not proceed on a liveness failure or on an unattested gap. That is
+   precisely the silent-failure class this design exists to catch.
+4. **Confirm attestation, not just "it's running".** This host's own coverage
+   journal must show `RECORDER_START` followed by ongoing `HEARTBEAT_ROLLUP`s
+   covering all expected symbols. Let that hold for **hours, not minutes** — a
+   fresh process can look healthy for a few minutes before a config mistake
+   surfaces. Only then stop the old recorder.
+5. **Stop the old recorder cleanly.** Send it a clean stop (`systemctl stop`,
+   or Ctrl-C on its console) and confirm exit 0 and a `RECORDER_STOP` record
+   in its journal. Never `kill -9` — that forfeits the clean-shutdown
+   attestation the whole design exists to produce. The current, not-yet-closed
+   hour is not at risk; it is simply not yet compacted, and a later run's
+   startup compaction sweep picks up anything orphaned.
+6. **Retrieve once, promptly**, to establish the first ledger baseline before
+   settling into a routine cadence. See "Handing data back to analysis".
+
+**Rollback**, if this host proves worse: `sudo systemctl stop
+kraken-forward-recorder`, confirm a clean `RECORDER_STOP` in the journal,
+restart the previous recorder, and retrieve whatever this host captured. A
+short-lived capture is retrieved exactly like any other — the manifest and
+ledger need no special-casing. Rollback never requires deleting anything on
+either host, and `retrieve_shards prune` should not be run until the decision
+to stay on this host is final.
+
 ## What to monitor
 
 **Health check every 30 minutes:**
@@ -68,11 +109,51 @@ python3 -m recorder.liveness
 # Exit 0 = HEALTHY, exit 1 = problem
 ```
 
+**It sleeps ~70 s by design** — it needs two size readings to tell growth from
+stillness. It exits 0 only when all three of these hold:
+
+1. **GROWTH** — new bytes were written between the two readings. This is the
+   sum of per-file size *increases* plus the full size of files that appeared,
+   never the difference of two totals. The hourly roll starts a fresh shard
+   while the old one stops growing, and compaction replaces a large raw shard
+   with a much smaller archive, so the total legitimately *falls* once an
+   hour. A shrinking total is expected; an absence of new bytes is the
+   failure.
+2. **FRESH** — the newest record on disk is under 30 s old, and the newest
+   journal record is recent.
+3. **COVERAGE** — the journal shows an open coverage interval right now, and
+   the newest `HEARTBEAT_ROLLUP` is under 150 s old, carries a non-zero
+   heartbeat count, and saw every expected symbol.
+
+The last line is `HEALTHY` or `UNHEALTHY` and the exit code matches. Useful
+flags: `--window 70` (seconds between readings), `--expect-symbols N`,
+`--max-staleness 30`, `--out <dir>`.
+
+**Why file size alone is not the check:** a half-open socket leaves the
+process alive, the log quiet, and the shard simply not growing. Size looks
+plausible; nothing announces the failure. That is why liveness checks
+attestation in the journal, not just bytes on disk.
+
+**What was actually missed, once:** a ~4 h capture hole where the process was
+never killed — the OS stopped scheduling it (suspend/freeze) and later resumed
+it. There was no crash, no restart, and no closing record, so an
+attestation-free model read the whole hole as "continuously covered". A VPS is
+far less prone to this than a laptop, but it is the reason
+`install_systemd_unit.sh` tells you to check for idle-suspend targets.
+
 **If unhealthy:**
-1. Check supervisor log: `tail -50 data/kraken_ws_v2/../../../recorder.log`
+1. Check supervisor log: `tail -50 recorder.log` in the bundle root
 2. Check service status: `systemctl status kraken-forward-recorder`
 3. Restart if transient: `systemctl restart kraken-forward-recorder`
 4. If it persists: see Troubleshooting below
+
+**What was MISSED, as opposed to what is running now:**
+```bash
+python3 -m recorder.coverage_report --out data/kraken_ws_v2
+python3 -m recorder.coverage_report --out data/kraken_ws_v2 --fail-on-gap  # exit 1 on any gap
+```
+`liveness` answers "is it capturing right now". This answers "what did we
+lose", which is the question nobody asks until it is too late to fix.
 
 **Expected behavior:**
 - Process is always running (unless you stopped it)

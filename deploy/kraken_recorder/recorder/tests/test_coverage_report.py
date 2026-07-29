@@ -196,7 +196,7 @@ def test_an_unattributable_gap_says_unknown_rather_than_guessing():
 
 def test_a_frozen_process_gap_is_labelled_no_attestation_not_invisible():
     """
-    THE HEADLINE CASE (SESSION_LOG.md 2026-07-27, dispatch W9): a real ~4h06m
+    THE HEADLINE CASE: a real ~4h06m
     hole under one continuous run_id, no closing record anywhere, used to
     report ~100% captured. It must now be a reported gap with its own cause,
     distinct from ws_disconnect/crash/unknown.

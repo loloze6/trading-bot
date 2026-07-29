@@ -47,9 +47,9 @@ Each gap is labelled with what the journal actually says, in this order:
                     no supervisor restart and no successor crash marker — the
                     SAME run_id simply stopped being scheduled by the OS
                     (suspend/freeze) and later resumed. This is what a real
-                    ~4h06m capture hole looked like before this cause existed
-                    (SESSION_LOG.md 2026-07-27): zero closing record, so the
-                    old model read it as continuously covered.
+                    ~4h06m capture hole looked like before this cause
+                    existed: zero closing record, so the old model read it as
+                    continuously covered.
   not_yet_started   before the first SUBSCRIBE_ACK in the window
   unknown           none of the above. Reported as unknown; never guessed at,
                     and never quietly folded into one of the others.

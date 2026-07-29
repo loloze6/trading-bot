@@ -157,7 +157,7 @@ def test_quiet_minute_inside_an_interval_is_still_covered():
 
 
 # ---------------------------------------------------------------------------
-# positive-evidence attestation (dispatch W9 step 1)
+# positive-evidence attestation
 # ---------------------------------------------------------------------------
 
 
@@ -173,7 +173,7 @@ def test_attestation_tolerance_matches_the_rollup_cadence():
 
 def test_frozen_process_produces_a_no_attestation_gap():
     """
-    THE HEADLINE REGRESSION CASE (SESSION_LOG.md 2026-07-27, dispatch W9).
+    THE HEADLINE REGRESSION CASE.
 
     A real ~4h06m capture hole was missed by the original model: the SAME
     process (same run_id) simply stopped being scheduled by the OS (system

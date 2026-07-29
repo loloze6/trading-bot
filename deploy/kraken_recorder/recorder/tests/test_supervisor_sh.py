@@ -34,7 +34,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def _stub(tmp_path: Path, codes) -> Path:
-    """Same fake recorder as test_supervisor.py's, invoked via `python <script>`."""
+    """A fake recorder driven by a scripted sequence of exit codes."""
     counter = tmp_path / "invocations.txt"
     script = tmp_path / "stub_recorder.py"
     script.write_text(textwrap.dedent(f"""

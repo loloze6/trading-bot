@@ -157,8 +157,9 @@ class CoverageGapError(RuntimeError):
     Raised at the READ boundary when a consumer requests a window that the
     coverage journal does not fully attest.
 
-    This is the recorder's `FetchGapError` (`base_fetcher.py:42-61`), moved to
-    the read side because an event stream has no merge step to guard. The
+    This is the read-side counterpart of the historical-fetch gap error
+    described at the top of this module, moved to the read boundary because an
+    event stream has no merge step to guard. The
     contract is deliberately harsh: unattested time is never silently treated
     as "the market was quiet", never warned about, and never filled. A consumer
     that wants partial data must ask for a narrower window explicitly.
@@ -358,7 +359,7 @@ def coverage_intervals(
     HEARTBEAT_ROLLUPs, not just zero network frames) produced no closing
     record and read as continuously covered for as long as the SAME run_id
     eventually resumed and kept writing. A real ~4h06m capture hole was missed
-    this way (SESSION_LOG.md 2026-07-27) because the successor records, once
+    this way, because the successor records, once
     the process unfroze, belonged to the same run_id and so never tripped
     UNCLEAN_SHUTDOWN. Absence of attestation is now a gap regardless of cause,
     with its own `NO_ATTESTATION` reason distinct from an explicit close.
