@@ -1,68 +1,99 @@
 #!/bin/bash
 # build_inventory.sh — Idempotent inventory of strategy-research/ tracked files.
+# Optimized: single ls-tree call for all bytes, directory-level git log for aggregates.
+set -e
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
 out="strategy-research/docs/INVENTORY.tsv"
-tmp=$(mktemp)
-trap "rm -f '$tmp'" EXIT
+tmp_lstree=$(mktemp)
+tmp_perfile=$(mktemp)
+tmp_agg=$(mktemp)
+trap "rm -f '$tmp_lstree' '$tmp_perfile' '$tmp_agg'" EXIT
 
-echo "path	bytes	ext	top_dir	first_commit	last_commit	commit_count	file_count" > "$out"
+# STEP 1: Get all file sizes in one git ls-tree call
+echo "Collecting file sizes..." >&2
+git ls-tree -r -l HEAD strategy-research | awk '{
+    # Format: <mode> blob <object> <size> <path>
+    path=$NF
+    for (i=5; i<NF; i++) path = path " " $(i)  # Handle spaces in paths
+    size=$(NF-2)
+    print path "\t" size
+}' > "$tmp_lstree"
 
-# Process each file sequentially
-git ls-files strategy-research/ | sort | while read -r path; do
-    if [[ -z "$path" ]]; then continue; fi
+# STEP 2: Separate files into two sets
+echo "Separating aggregated and per-file rows..." >&2
 
-    bytes=$(git cat-file -s HEAD:"$path")
-    last=$(git log -1 --format=%cs -- "$path" | cut -d- -f1-2)
-    first=$(git log --format=%cs -- "$path" | tail -1 | cut -d- -f1-2)
-    count=$(git log --oneline -- "$path" | wc -l)
+# Per-file rows: everything NOT in runs/ or results/
+awk '!/^strategy-research\/(runs|results)\// {print}' "$tmp_lstree" > "$tmp_perfile"
 
-    # Check if aggregated directory
-    if [[ "$path" == strategy-research/runs/* ]]; then
-        dir=$(echo "$path" | sed 's|^strategy-research/runs/\([^/]*\)/.*|\1|')
-        echo "runs/$dir/" "$bytes" "$count" "$first" "$last"
-    elif [[ "$path" == strategy-research/results/* ]]; then
-        dir=$(echo "$path" | sed 's|^strategy-research/results/\([^/]*\)/.*|\1|')
-        echo "results/$dir/" "$bytes" "$count" "$first" "$last"
-    elif [[ "$path" == strategy-research/quarantine/* ]]; then
-        dir=$(echo "$path" | sed 's|^strategy-research/quarantine/\([^/]*\)/.*|\1|')
-        echo "quarantine/$dir/" "$bytes" "$count" "$first" "$last"
-    else
-        # Per-file row
-        ext=""
-        [[ "$path" == *.* ]] && ext=".${path##*.}"
-        rest="${path#strategy-research/}"
-        top_dir="_root"
-        [[ "$rest" == */* ]] && top_dir="${rest%%/*}"
-        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$path" "$bytes" "$ext" "$top_dir" "$first" "$last" "$count" "1" >> "$out"
-    fi
-done | sort -u | awk '
+# STEP 3: Process per-file rows (293 files total)
+echo "Processing per-file rows..." >&2
 {
-    path=$1; bytes=$2; count=$3; first=$4; last=$5
-    if (path in dirs) {
-        dirs[path] = dirs[path] "\t" bytes "\t" count "\t" first "\t" last
-        bytes_sum[path] += bytes
-        count_sum[path] += count
-        file_count[path]++
-        if (first < first_date[path]) first_date[path] = first
-        if (last > last_date[path]) last_date[path] = last
-    } else {
-        dirs[path] = bytes "\t" count "\t" first "\t" last
-        bytes_sum[path] = bytes
-        count_sum[path] = count
-        file_count[path] = 1
-        first_date[path] = first
-        last_date[path] = last
-    }
-}
-END {
-    for (path in dirs) {
-        dir_type = match(path, /^([a-z]+)\//, m) ? m[1] : ""
-        if (dir_type) {
-            printf "%s\t%s\t(dir)\t%s\t%s\t%s\t%s\t%s\n",
-                path, bytes_sum[path], dir_type, first_date[path], last_date[path], count_sum[path], file_count[path]
-        }
-    }
-}' >> "$out"
+    echo -e "path\tbytes\text\ttop_dir\tfirst_commit\tlast_commit\tcommit_count\tfile_count"
 
-echo "Generated $out"
+    while read -r path size; do
+        if [[ -z "$path" ]]; then continue; fi
+
+        # Get commit info for this file
+        last=$(git log -1 --format=%cs -- "$path" 2>/dev/null | cut -d- -f1-2)
+        first=$(git log --format=%cs -- "$path" 2>/dev/null | tail -1 | cut -d- -f1-2)
+        count=$(git log --oneline -- "$path" 2>/dev/null | wc -l)
+
+        # Extract extension
+        if [[ "$path" == *.* ]]; then
+            ext=".${path##*.}"
+        else
+            ext=""
+        fi
+
+        # Extract top_dir
+        rest="${path#strategy-research/}"
+        if [[ "$rest" == */* ]]; then
+            top_dir="${rest%%/*}"
+        else
+            top_dir="_root"
+        fi
+
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$path" "$size" "$ext" "$top_dir" "$first" "$last" "$count" "1"
+    done < "$tmp_perfile"
+} > "$out"
+
+# STEP 4: Process aggregated directories (runs/ and results/)
+echo "Processing aggregated directories..." >&2
+
+for dir_type in runs results; do
+    base_dir="strategy-research/$dir_type"
+
+    # Get unique immediate subdirectories
+    git ls-files "$base_dir/" 2>/dev/null | cut -d/ -f3 | sort -u | grep -v '^$' | while read -r subdir; do
+        if [[ -z "$subdir" ]]; then
+            continue
+        fi
+
+        dir_path="$base_dir/$subdir"
+
+        # Count files in this subdirectory
+        file_count=$(git ls-files "$dir_path/" 2>/dev/null | wc -l)
+
+        if [[ $file_count -eq 0 ]]; then
+            continue
+        fi
+
+        # Sum bytes from ls-tree output
+        total_bytes=$(grep "^$dir_path/" "$tmp_lstree" | awk '{s+=$NF} END {print s}')
+
+        # Get commit dates at directory level
+        last=$(git log -1 --format=%cs -- "$dir_path/" 2>/dev/null | cut -d- -f1-2)
+        first=$(git log --format=%cs -- "$dir_path/" 2>/dev/null | tail -1 | cut -d- -f1-2)
+        count=$(git log --oneline -- "$dir_path/" 2>/dev/null | wc -l)
+
+        # Output aggregated row
+        rel_path="$dir_type/$subdir/"
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$rel_path" "$total_bytes" "(dir)" "$dir_type" "$first" "$last" "$count" "$file_count" >> "$out"
+    done
+done
+
+# Report stats
+row_count=$(($(wc -l < "$out") - 1))
+echo "Generated $out ($row_count rows)"
+exit 0
