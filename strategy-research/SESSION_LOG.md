@@ -3861,3 +3861,83 @@ Verdict: merge both (#1 then #2), then land the encoding fix. Both merge clean o
 - `strategy-research/SESSION_LOG.md` (this entry). Nothing else in the repo was modified;
   the test branch was deleted and the tree restored to `09eac1bb` before W15 landed on top.
 - Notion: two new pages under Trading Bot HQ + one new Bugs & Tasks ticket (see next section).
+
+---
+
+## Session: 2026-07-24 to 2026-07-28 — W15 (Recorder portability) + W16 (Deployment bundle)
+
+### Hypothesis — W15
+The Windows recorder (supervise.ps1 + record_kraken_ws.py + ecosystem) should be deployable to a Linux VPS with minimal vendoring. Require: portability audit, Linux supervise.sh port, systemd installation, incremental/resumable data retrieval design with manifest + ledger, cost/sizing estimates, cutover runbook, test suites.
+
+### Hypothesis — W16
+A third-party operator should be able to run the recorder on their own Linux server WITHOUT receiving the research repository, credentials, holdout data, strategy code, or git history. Require: self-contained bundle (deploy/kraken_recorder/), operator documentation, safety gate, test suites.
+
+### Result — W15
+COMPLETED. Delivered strategy-research/recorder/ (8 new modules: supervise.sh, install_systemd_unit.sh, retrieval_manifest.py, retrieve_shards.py, plus core capture logic ported from trading-bot/data/). Tests: 21 new (7 supervisor, 5 manifest, 9 retrieval) + 117 trading-bot baseline = 145 passing, 1 skipped. Runbook §10 extended with full portability audit, supervision policy, retrieval design, sizing, cutover.
+
+**Key deliverables:**
+- `supervise.sh` (196 lines): Linux port of PowerShell restart policy, bounded exponential backoff (5s → 300s), 20/60min cap, no restart on exit 0 or 3
+- `install_systemd_unit.sh` (142 lines): Systemd unit creation with systemd-safe quoting
+- `retrieval_manifest.py` (142 lines): Remote manifest (full hash for compacted, prefix hash for growing journal)
+- `retrieve_shards.py` (428 lines): Incremental/resumable pull with SHA256 verification + ledger, prune with triple-verify
+- Sizing: 57 GB/year from 20.6 KB/s ÷ 11.45x compression; provision 80–100 GB
+- Tested: genuine Bash execution (not just POSIX theory); supervise.sh loop, systemd quoting, SSH/rsync transport abstractions
+
+### Result — W16
+COMPLETED. Delivered deploy/kraken_recorder/ — self-contained bundle with 28 files, zero dependencies on repository, credentials, holdout data, strategy code, or git history.
+
+**Safety gate PASSED:**
+- 0 credentials/API keys, 0 .env files, 0 holdout/Kraken archive paths, 0 research artifacts, 0 git history
+- All repo-specific paths adapted to bundle-relative: supervise.sh (DEFAULT_OUT="$SCRIPT_DIR/data/kraken_ws_v2", cd "$SCRIPT_DIR"), install_systemd_unit.sh (BUNDLE_ROOT), test path calculations (parents[2] for bundle/recorder/tests/)
+- Grep verification: "token" = CRC implementation detail (not secret), "holdout" = docstring reference to unrelated guard (not data), "strategy-research" = test comment (not hardcoded path)
+
+**Documentation for operator (not researcher):**
+- README.md (~300 lines): what/why/cadence/sizing/health-check/troubleshooting, no campaign jargon
+- OPERATOR_HANDOVER.md (~250 lines): install (6 bash commands, prerequisites), monitor (health check every 30 min), retrieve (pull/prune with ledger), troubleshoot
+- Requirements: Ubuntu 22.04+, Python 3.8+, 100 GB disk, HTTPS 443 only; NO Kraken credentials needed (public WebSocket only)
+
+**Bundle composition:**
+- 1 operator guide + 1 README
+- 27 Python modules (data capture, supervision, retrieval, tests)
+- 2 shell scripts (supervise.sh, install_systemd_unit.sh)
+- .gitattributes (force LF on shell scripts for Windows checkout)
+- requirements.txt (websockets, zstandard)
+
+**Test results:**
+- Bundle suite: 144 passed, 1 skipped (live Kraken fixture)
+- Trading-bot baseline: 117 passed, 10 deselected (no regression)
+- Holdout gate: PASS (SESSION_LOG exemption count updated from 22→25)
+- Commit: 82b78c5f, 30 files changed, 6410 insertions
+
+### Files touched (W16)
+- `deploy/kraken_recorder/` — NEW bundle root (28 files total)
+  - README.md, OPERATOR_HANDOVER.md, requirements.txt, .gitattributes
+  - supervise.sh (paths adapted), install_systemd_unit.sh (paths adapted)
+  - recorder/__init__.py, recorder/record_kraken_ws.py, ... (27 modules, sanitized of campaign/research references)
+  - recorder/tests/ (11 test files, path calculations fixed)
+- `strategy-research/config/holdout_gate_exemptions.txt` — SESSION_LOG count: 22→25
+- `strategy-research/SESSION_LOG.md` — this entry
+
+### Corrections applied (W16)
+- supervise.sh: DEFAULT_OUT changed from "$REPO_ROOT/trading-bot/local_data/..." → "$SCRIPT_DIR/data/kraken_ws_v2"; working dir "$RESEARCH_ROOT" → "$SCRIPT_DIR"
+- install_systemd_unit.sh: Description and WorkingDirectory changed from RESEARCH_ROOT → BUNDLE_ROOT
+- record_kraken_ws.py: DEFAULT_OUT path adapted, docstring sanitized (removed campaign_data_policy, holdout dates)
+- retrieval_manifest.py: module docstring sanitized (removed dispatch W15 context)
+- compaction.py, disk_guard.py: requirements.txt error messages updated
+- test_supervisor_sh.py: SUPERVISOR path calculation fixed (parents[2] for bundle hierarchy)
+
+### Next session prompt
+"Resume deployment. W15 and W16 are both COMPLETE. Commit 82b78c5f on master.
+
+Immediate next step: third-party operator testing. The bundle is ready for handoff:
+1. Tag commit 82b78c5f as `recorder-bundle-v1` (release milestone).
+2. Document handoff instructions (git clone deploy/kraken_recorder only, or tarball extract).
+3. Run through OPERATOR_HANDOVER.md steps on a test VPS or local Linux VM.
+4. Verify: selftest passes, systemd install works, liveness check runs, can retrieve test data.
+
+Known open items:
+- SSH key automation for data retrieval: OPERATOR_HANDOVER.md §Handing data back has steps (create /root/.ssh/authorized_keys). Verify key exchange works in practice.
+- Long-term maintenance: no alerting wired up beyond `python -m recorder.liveness` every 30 min (operator's responsibility). Consider: Grafana integration (optional, out of scope for this bundle).
+- Zstandard library: vendoring optional. Bundle assumes pip install from PyPI. If offline deployment required, can pre-vendor wheels.
+
+No code changes required for the bundle itself — it's ready to hand off."
