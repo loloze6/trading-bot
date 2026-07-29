@@ -2,29 +2,35 @@
 #
 # Register the Kraken forward recorder's supervisor as a systemd system
 # service, so continuous capture survives console close, SSH logout, and
-# reboot. Linux equivalent of register_scheduled_task.ps1 -- read that
-# script's header for the full "why a registered service, not a bare
-# process" reasoning; it applies here too, with one simplification: a
-# systemd system service (as opposed to a --user service) is NEVER tied to
-# any login session in the first place, so there is no S4U-style special
-# case to reach for. Logging off does not touch it because it was never
-# inside your session to begin with.
+# reboot.
+#
+# WHY A REGISTERED SERVICE AND NOT A BARE PROCESS
+#   A process started from a terminal is owned by that terminal's session.
+#   Close the console, log out, or drop the SSH connection and the session
+#   goes away, taking the capture with it -- silently, because nothing about
+#   a vanished process announces itself in the data. A systemd SYSTEM service
+#   (as opposed to a --user service) is never tied to a login session in the
+#   first place, so logging off cannot touch it: it was never inside your
+#   session to begin with. It also comes back after reboot, which a bare
+#   process does not.
 #
 # WHAT THIS DOES NOT FIX
-#   Same caveat as the Windows RUNBOOK section: this only fixes the
-#   console/logoff/reboot failure mode. A VPS is not expected to suspend the
-#   way a laptop does, but verify: `systemctl list-units --type=target
-#   --all | grep -E 'sleep|suspend'` and, if this distro's image ships any
-#   idle-suspend behaviour, mask it:
+#   This only fixes the console/logoff/reboot failure mode -- it does NOT fix
+#   an OS that stops scheduling the process altogether. A server is not
+#   expected to suspend the way a laptop does, but verify:
+#     systemctl list-units --type=target --all | grep -E 'sleep|suspend'
+#   and, if this distro's image ships any idle-suspend behaviour, mask it:
 #     sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
-#   The 2026-07-27 ~4h06m gap on the Windows capture was an OS-level
-#   suspend, not a process kill -- the same class of fault is worth ruling
-#   out here even though it is rare on server images.
+#   This is worth ruling out rather than assuming: a real ~4h06m capture hole
+#   was once caused by exactly this -- an OS-level suspend, not a process
+#   kill, so nothing crashed and nothing restarted. It is rare on server
+#   images, and it is silent when it happens.
 #
-# THIS SCRIPT DOES NOT TOUCH ANY CURRENTLY RUNNING CAPTURE (Windows or
-# otherwise). It only writes and enables a unit; the operator decides when
-# to stop whatever is currently capturing and cut over. See
-# recorder/RUNBOOK.md "Linux deploy / cutover".
+# THIS SCRIPT DOES NOT TOUCH ANY CURRENTLY RUNNING CAPTURE, here or on any
+# other host. It only writes and enables a unit; the operator decides when to
+# stop whatever is currently capturing and cut over. See OPERATOR_HANDOVER.md
+# "Cutover -- bringing this host into service" for the ordering that avoids
+# an unbackfillable gap.
 #
 # Usage (run as a user with sudo; the unit itself runs as --user below):
 #   sudo bash install_systemd_unit.sh \
@@ -34,7 +40,7 @@
 # Then:
 #   sudo systemctl enable --now kraken-forward-recorder
 #   systemctl status kraken-forward-recorder
-#   python3 -m recorder.liveness   # per RUNBOOK.md
+#   python3 -m recorder.liveness   # see OPERATOR_HANDOVER.md "What to monitor"
 
 set -euo pipefail
 
@@ -137,7 +143,7 @@ systemctl daemon-reload
 
 echo "Wrote $UNIT_PATH"
 echo "Registered but NOT started. It will not capture until:"
-echo "  - the current recorder run elsewhere (Windows or foreground) is stopped, and"
+echo "  - any recorder currently capturing (here or on another host) is stopped, and"
 echo "  - you run: sudo systemctl enable --now $SERVICE_NAME"
 echo "Verify with: systemctl status $SERVICE_NAME"
 echo "         and: $PYTHON_EXE -m recorder.liveness --out $OUT_DIR"

@@ -25,10 +25,9 @@ LAYOUT
     {out_dir}/{stream}/{SYMBOL}/{YYYY-MM-DDTHH}.ndjson       (roll="hour")
     {out_dir}/{stream}/{SYMBOL}/{YYYY-MM-DD}.ndjson          (roll="day")
 
-`SYMBOL` is the venue's `BTC/USD` mapped to `BTCUSD`, matching the on-disk
-convention of the 19 breadth pairs (`kraken_<BASE>USD_1h.csv`). Path components
-keep the `kraken_` exchange qualification of `ccxt_fetcher.py:120-121` at the
-root of `out_dir`, so no future venue can collide into this namespace.
+`SYMBOL` is the venue's `BTC/USD` mapped to `BTCUSD`. Path components keep an
+explicit `kraken_` exchange qualification at the root of `out_dir`, so no
+future venue can collide into this namespace.
 
 ROLL PERIOD AND COMPACTION
     The roll is HOURLY by default. That is a change from the original daily

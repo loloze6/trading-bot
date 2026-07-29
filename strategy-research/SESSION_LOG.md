@@ -4023,3 +4023,124 @@ semantics. A real VPS smoke test (systemd install, liveness, one retrieval
 round-trip over a restricted key) is the remaining unknown.
 
 Phase 2.3 stays PARKED PENDING DATA. Do not mark it closed."
+
+---
+
+## Session: 2026-07-29 — W18 (Close the handover gap; first Linux execution)
+
+### Hypothesis
+The bundle had never been executed on Linux. Everything through W17 was proven
+under Git-bash on Windows plus reasoning about Linux semantics, which cannot
+distinguish "correct on Linux" from "happens not to break on Windows". Two
+concrete defects were suspected to be hiding behind that: the rsync branch of
+the forced command validated only `--server --sender` and the path, passing
+every other option through untouched; and `under_out_dir` normalised only the
+target, not `OUT_DIR`.
+
+### Result
+COMPLETED — 6 of 6 dispatch steps, including the Linux execution.
+
+**Fixed:**
+1. rsync ALLOWED-OPTION whitelist, following rrsync's model but implemented in
+   `retrieval_command.sh` rather than by vendoring rrsync (rrsync cannot
+   dispatch the manifest and prune commands, is GPL-3, and would add a Perl
+   runtime). The option set was OBSERVED, not guessed: rsync 3.2.7 driven by
+   the exact command `retrieve_shards.py` builds, with `-e` pointed at a stub
+   that recorded its argv. Baseline is
+   `rsync --server --sender -logDtprcze.iLsfxCIvu . <path>`.
+   The load-bearing subtlety: the cluster splits at the protocol `e` marker.
+   The capital L in the `e.iLsfxCIvu` blob is a compat bit, NOT `--copy-links`;
+   a real `-L` lands BEFORE the `e` (`-lLogDtprcze...`), as do `-k` and `-s`.
+   `--copy-unsafe-links` and `--remove-source-files` arrive as separate tokens.
+   Rejecting on "L anywhere" would have broken every legitimate transfer.
+2. `under_out_dir` now normalises BOTH sides through `readlink -m`. The bug it
+   replaces denied every legitimate retrieval whenever the data directory sat
+   on a symlink — the normal shape once the capture volume is its own disk.
+3. RUNBOOK gap closed: cutover ordering and the full liveness semantics ported
+   into OPERATOR_HANDOVER.md, and the references repointed there.
+4. ALL dangling references eliminated. Measured 15 across 14 sites, not the
+   dispatch's 11 — see the discrepancy note below. Final targeted scan: 0 hits
+   across 32 files.
+
+**Linux execution (the step never previously done):**
+- Ubuntu 22.04.5 LTS in Docker, kernel 5.15.167.4-microsoft-standard-WSL2,
+  bash 5.1.16, rsync 3.2.7, Python 3.10.12, from a clean `git archive` export.
+- `pip install -r requirements.txt` → websockets 15.0.1, zstandard 0.25.0,
+  exactly the pinned versions. Exit 0.
+- `bash -n` on all three .sh: OK.
+- Full suite: **178 passed, 1 skipped, exit 0.** The 3 symlink tests that skip
+  on Windows (unprivileged symlink creation) RUN and PASS on Linux — which is
+  the whole reason this step mattered.
+- All 18 forced-command deny paths executed for real: every one exited 1 with
+  a logged refusal. Both allow paths worked. Side-effect check confirmed the
+  out-of-tree secret and the coverage journal both survived.
+
+**Corrections to my own prior work:**
+- The Python patch script used this session wrote CRLF into `supervise.sh` and
+  `install_systemd_unit.sh`. Caught by `tr -cd '\r' | wc -c` (205 and 149
+  bytes) and fixed before commit. `.gitattributes` had already normalised the
+  index, so the committed artifact was never affected — but the worktree was.
+- `grep -c $'\r'`, the check quoted in the W17 report, is not reliable in this
+  shell: it reported 0 CR-lines for a file with 205 CR bytes and 250 CR-lines
+  for a file with none. W17's conclusion (committed blobs are LF) still holds,
+  since it was independently confirmed against `git show` and a HEAD export.
+  The measurement METHOD was weak and is replaced by `tr -cd '\r' | wc -c`.
+
+### Discrepancy: dangling-reference count
+Dispatch said 11; I measured 15 across 14 sites. The four the dispatch's list
+omits: `journal.py:160` (a second `base_fetcher.py` citation W17 missed because
+its scan required the `trading-bot/` prefix), `shard_writer.py:30`
+(`ccxt_fetcher.py:120-121`), `install_systemd_unit.sh:14` ("the Windows RUNBOOK
+section" — prose, no file extension, so extension-based scans miss it), and a
+second reference on `supervise.sh:16` (`tests/test_supervisor.py`, on the same
+line as `supervise.ps1`, which the dispatch counts once). All 15 are fixed.
+
+### Not done / limits
+- `record_kraken_ws selftest` could NOT be validated: this network runs a
+  TLS-intercepting proxy and the selftest's connection to `wss://ws.kraken.com`
+  fails with `CERTIFICATE_VERIFY_FAILED`. That is the network, not the bundle,
+  but it means the live-socket path remains unexercised on Linux. PyPI needed
+  `--trusted-host` for the same reason.
+- `readlink -m` is GNU coreutils. On BusyBox userspace (Alpine) it does not
+  exist and the wrapper denies rather than misbehaving — fail-closed, but it
+  means the bundle needs a glibc/coreutils distro, consistent with the stated
+  Ubuntu 22.04+ prerequisite.
+- systemd itself was not exercised: containers have no PID 1 systemd, so
+  `install_systemd_unit.sh` was syntax-checked but not run to completion.
+
+### Files touched
+- `deploy/kraken_recorder/retrieval_command.sh` — option whitelist, symlink fix
+- `deploy/kraken_recorder/recorder/tests/test_retrieval_command_sh.py` — +12 tests
+- `deploy/kraken_recorder/OPERATOR_HANDOVER.md` — cutover + liveness sections
+- `deploy/kraken_recorder/install_systemd_unit.sh`, `supervise.sh` — references
+- `deploy/kraken_recorder/recorder/{coverage_report,journal,shard_writer}.py`
+- `deploy/kraken_recorder/recorder/tests/{test_coverage_report,test_journal,test_supervisor_sh}.py`
+- `strategy-research/SESSION_LOG.md` — this entry
+
+### Status
+Phase 2.3 remains BUILT-BUT-UNEVALUATED, PARKED PENDING DATA. No protocol,
+prereg threshold, or recorded capture data was touched. I did not modify any
+of the 10 operator-authored paths awaiting the CLEAN-0 dispatch.
+
+### Next session prompt
+"W18 is complete. The Kraken recorder bundle has now been executed on real
+Linux (Ubuntu 22.04, Docker): 178 passed / 1 skipped, all 18 forced-command
+deny paths refused for real, rsync option whitelist derived from observed
+behaviour rather than guessed.
+
+Two things remain unexercised and both need a network without a
+TLS-intercepting proxy:
+1. `python3 -m recorder.record_kraken_ws selftest` — the live socket to
+   wss://ws.kraken.com. Never yet run to success anywhere in CI-like
+   conditions.
+2. A real systemd install. Containers have no systemd PID 1, so
+   install_systemd_unit.sh has only ever been syntax-checked. Needs a VM.
+
+Also still open: an end-to-end retrieval round trip (analysis host -> capture
+host) over an actual restricted SSH key. The wrapper's whitelist is proven
+against synthesised command strings; sshd has never actually invoked it.
+
+There are 10 operator-authored cleanup paths in `git status` awaiting the
+CLEAN-0 dispatch — do not commit them as part of anything else.
+
+Phase 2.3 stays PARKED PENDING DATA. Do not mark it closed."

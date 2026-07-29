@@ -1,21 +1,31 @@
 #!/usr/bin/env bash
 #
-# Restart supervisor for the Kraken forward recorder -- Linux port of
-# supervise.ps1. SAME POLICY, different host. Read supervise.ps1's header
-# first; the reasoning there (why this is the highest-value piece of the
-# deploy, what it does NOT do, why a crash is safe to relaunch and a
-# DISK_GUARD_ABORT is not) is not repeated here and still applies verbatim.
+# Restart supervisor for the Kraken forward recorder.
+#
+# WHY THIS IS THE HIGHEST-VALUE PIECE OF THE DEPLOY
+#   The recorder is a forward capture: time it misses is gone, with no
+#   upstream to re-fetch it from. Most of what takes a long-running socket
+#   client down is transient -- a dropped connection, a venue restart, a
+#   memory or DNS blip -- and is fully recovered by starting again. So the
+#   default answer to an unexpected exit is: relaunch, with backoff, and
+#   attest the boundary in the coverage journal so the gap is RECORDED rather
+#   than inferred later from a hole in the data.
+#
+# WHAT IT DOES NOT DO
+#   It does not relaunch into a condition a relaunch cannot fix. A disk-guard
+#   abort (exit 3) means there is no room to write; restarting into a full
+#   disk is a loop, not a recovery. A clean stop (exit 0) means a human asked
+#   it to stop and meant it. Neither is retried.
 #
 # Usage (from anywhere; the script anchors itself via its own path):
-#   bash recorder/supervise.sh --book-mode snapshot --snapshot-interval 1.0 \
+#   bash supervise.sh --book-mode snapshot --snapshot-interval 1.0 \
 #       --min-free-gb 5.0
 #
 # For an unattended deploy, run this under the systemd unit in this same
 # directory (kraken-forward-recorder.service) rather than a bare shell.
 #
-# CONTRACT WITH supervise.ps1 (see tests/test_supervisor.py /
-# tests/test_supervisor_sh.py -- both scripts are exercised against the same
-# stub-recorder behaviour):
+# THE SUPERVISION CONTRACT (exercised for real by
+# recorder/tests/test_supervisor_sh.py against a stub recorder):
 #   - exit 0 (clean stop)         -> do not relaunch
 #   - exit 3 (DISK_GUARD_ABORT)   -> do not relaunch
 #   - any other exit              -> relaunch, bounded exponential backoff
@@ -31,7 +41,7 @@ set -u
 # asserts the two stay equal.
 EXIT_DISK_GUARD_ABORT=3
 # This script's own "I gave up" code, distinct from anything the recorder
-# emits. Matches supervise.ps1's EXIT_RESTART_CAP.
+# emits, so a give-up is never confused with a recorder fault.
 EXIT_RESTART_CAP=4
 
 OUT=""

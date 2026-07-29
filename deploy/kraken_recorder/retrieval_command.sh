@@ -25,6 +25,25 @@
 #   receiving form of rsync --server would let the client WRITE here, which
 #   would turn a retrieval key into a remote-file-write primitive.
 #
+# WHY NOT VENDOR rrsync
+#   rrsync solves the adjacent problem -- general-purpose restricted rsync
+#   over an arbitrary subtree, both directions -- and this needs one
+#   direction, one directory, one file pattern. Three concrete reasons to
+#   extend this script instead of pinning the key to rrsync:
+#     a) The key cannot be pinned to rrsync anyway. rrsync handles only
+#        rsync; the manifest and prune commands still need a dispatcher, so
+#        rrsync would be an extra dependency UNDER this script, not instead
+#        of it.
+#     b) rrsync ships with rsync under GPL-3. Vendoring it into a bundle
+#        handed to a third-party operator drags a licence obligation onto
+#        the whole handover for a component we would be using at ~5% of its
+#        surface.
+#     c) It would add a Perl (or, on newer rsync, a second Python) runtime
+#        to a bundle whose stated prerequisites are Python 3.8+ and bash.
+#   What is borrowed is rrsync's *model*: enumerate allowed options, split
+#   the short-option cluster at the protocol `e` marker, deny by default.
+#   See the rsync branch below for the observed evidence behind the list.
+#
 # THE DELETE IS THE DANGEROUS ONE, SO IT IS THE NARROWEST
 #   Only a single literal path, only under $OUT_DIR, only ending
 #   `.ndjson.zst`, never the coverage journal, never a glob, never -r. This
@@ -67,16 +86,29 @@ strip_quotes() {
     printf '%s' "$s"
 }
 
-# True if $1 resolves to a path at or below $OUT_DIR. readlink -m normalises
-# without requiring existence, so a delete of an already-gone shard is still
-# checked rather than erroring past the check.
+# BOTH SIDES OF THE COMPARISON GET NORMALISED, OR THE COMPARISON IS A LIE.
+# `readlink -m` resolves symlinks and `..` without requiring the path to
+# exist (so deleting an already-gone shard is still checked rather than
+# erroring past the check). Normalising only the target and comparing it
+# against a raw $OUT_DIR is the bug this replaces: with the data directory
+# on a symlink -- /opt/kraken_recorder/data -> /mnt/big/kraken, which is the
+# normal shape once the capture volume is a separate disk -- the target
+# resolves to /mnt/big/... while OUT_DIR stayed /opt/..., so every
+# legitimate retrieval was denied.
+#
+# Resolving the target also means a symlink planted INSIDE the capture
+# directory that points outside it is denied, because it resolves outside.
+# That is deliberate and is the reason -L/--copy-links must stay refused:
+# together they keep "under OUT_DIR" true after resolution, not just before.
+OUT_DIR_REAL="$(readlink -m -- "$OUT_DIR" 2>/dev/null)" || OUT_DIR_REAL=""
+[ -n "$OUT_DIR_REAL" ] || deny "cannot normalise OUT_DIR ($OUT_DIR) -- needs GNU coreutils' readlink -m"
+
 under_out_dir() {
-    local p real
-    p="$1"
-    case "$p" in *..*) return 1 ;; esac
-    real="$(readlink -m -- "$p" 2>/dev/null)" || return 1
-    [ "$real" = "$OUT_DIR" ] && return 0
-    [ "${real#"$OUT_DIR"/}" != "$real" ]
+    local real
+    real="$(readlink -m -- "$1" 2>/dev/null)" || return 1
+    [ -n "$real" ] || return 1
+    [ "$real" = "$OUT_DIR_REAL" ] && return 0
+    [ "${real#"$OUT_DIR_REAL"/}" != "$real" ]
 }
 
 # NOTE ON --remote-module-root: setting it makes `retrieve_shards.py` send
@@ -105,11 +137,95 @@ case "${ARGV[0]}" in
         ;;
 
     rsync)
-        # Expected: rsync --server --sender <flags...> . <path>
+        # ------------------------------------------------------------------
+        # ALLOWED-OPTION WHITELIST (rrsync's model, narrowed to one job)
+        # ------------------------------------------------------------------
+        # Checking only `--server --sender` and the path is not enough: rsync
+        # passes the client's options through, and several of them change what
+        # the server will hand over. Every option is therefore checked against
+        # a list, and anything unlisted is denied.
+        #
+        # What rsync actually sends was OBSERVED, not guessed -- rsync 3.2.7
+        # on Ubuntu 22.04, driven by the exact `rsync -az --checksum` that
+        # retrieve_shards.py:153 builds, with -e pointed at a stub that
+        # recorded its argv:
+        #
+        #   rsync --server --sender -logDtprcze.iLsfxCIvu . <path>
+        #
+        # THE `e` SPLIT IS THE WHOLE TRICK. The cluster is two different
+        # things joined together: real options up to the `e`, then an opaque
+        # protocol/compat blob from `e` onward. In the baseline above, the
+        # blob is `e.iLsfxCIvu` -- note the capital L sitting in it. That L is
+        # a compat bit, NOT --copy-links. A naive scan for "L anywhere" would
+        # reject every legitimate transfer; a naive "allow every letter" would
+        # wave a real -L through. Observed placement of the dangerous ones:
+        #
+        #   -L (--copy-links)      -> -lLogDtprcze...   L BEFORE the e
+        #   -k (--copy-dirlinks)   -> -lkogDtprcze...   k BEFORE the e
+        #   -s (--protect-args)    -> -slogDtprcze...   s BEFORE the e
+        #   --copy-unsafe-links    -> a separate token after the cluster
+        #   --remove-source-files  -> a separate token after the cluster
+        #
+        # So: validate letters before the `e`, treat the blob as opaque but
+        # charset-constrained, and allow NO long options at all (the baseline
+        # sends none). -L and -k would let the client read through a symlink
+        # out of the capture directory; --remove-source-files would let a
+        # *pull* delete on this host. None are on the list, so all are denied.
         [ "${ARGV[1]:-}" = "--server" ]  || deny "only rsync --server --sender is allowed"
         [ "${ARGV[2]:-}" = "--sender" ]  || deny "only the SENDING form of rsync --server is allowed"
-        target="$(strip_quotes "${ARGV[$((${#ARGV[@]} - 1))]}")"
-        under_out_dir "$target"          || deny "rsync path is outside $OUT_DIR"
+
+        # -logDtprcz, exactly the letters the observed baseline sends.
+        RSYNC_ALLOWED_SHORT="logDtprcz"
+
+        n="${#ARGV[@]}"
+        # Minimum shape: rsync --server --sender . <path>
+        [ "$n" -ge 5 ] || deny "rsync command too short to be a pull"
+
+        # Tail must be `. <path>` -- exactly one source, never a list.
+        [ "${ARGV[$((n - 2))]}" = "." ] || deny "expected '. <path>' at the end of the rsync command"
+        target="$(strip_quotes "${ARGV[$((n - 1))]}")"
+
+        # Everything between --sender and the trailing `. <path>`.
+        i=3
+        while [ "$i" -lt "$((n - 2))" ]; do
+            tok="${ARGV[$i]}"
+            case "$tok" in
+                --*)
+                    deny "rsync long option '$tok' is not on the retrieval whitelist" ;;
+                -*)
+                    # Split the cluster at the first `e`.
+                    opts="${tok#-}"
+                    blob=""
+                    case "$opts" in
+                        *e*) blob="e${opts#*e}"; opts="${opts%%e*}" ;;
+                    esac
+                    # The compat blob must look like a compat blob and nothing
+                    # else: a dot then plain alphanumerics.
+                    if [ -n "$blob" ]; then
+                        case "$blob" in
+                            e.*[!A-Za-z0-9]*) deny "malformed rsync protocol blob '$blob'" ;;
+                            e.*)  ;;
+                            e)    ;;
+                            *)    deny "malformed rsync protocol blob '$blob'" ;;
+                        esac
+                    fi
+                    # Every real option letter must be on the list.
+                    while [ -n "$opts" ]; do
+                        c="${opts%"${opts#?}"}"
+                        opts="${opts#?}"
+                        case "$RSYNC_ALLOWED_SHORT" in
+                            *"$c"*) ;;
+                            *) deny "rsync option -$c is not on the retrieval whitelist" ;;
+                        esac
+                    done
+                    ;;
+                *)
+                    deny "unexpected rsync argument '$tok'" ;;
+            esac
+            i=$((i + 1))
+        done
+
+        under_out_dir "$target" || deny "rsync path is outside $OUT_DIR"
         exec "${ARGV[@]}"
         ;;
 
