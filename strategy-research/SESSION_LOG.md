@@ -3807,3 +3807,57 @@ W14's baseline. Pre-commit gates (holdout date gate + full suite) ran on the com
  carry forward unchanged: no self-remediation, no return-involving computation on whale
  features, holdout untouchable, delete nothing, never git reset --hard / checkout -- . /
  clean, do not stop or reconfigure the running recorder without explicit go-ahead."
+
+---
+
+## 2026-07-28 -- Notion review + upstream PR verification (no dispatch, no research)
+
+Not a W-dispatch. Read-only review of the shared Notion workspace, plus execution-verified
+adjudication of the two PRs open on `loloze6/trading-bot` from Dorian's Mac fork. No
+research artifact, prereg, gate or KB entry was touched; no IC/return computed.
+
+### 1. Notion audit
+Read all of Trading Bot HQ (technical review, Start Here, Working Agreement, Edge Playbook,
+Mac Fork Home, System Diagrams) and all three databases. Verified its claims against this
+tree rather than accepting them. Findings:
+- The Full Technical Review is **accurate**: `default_regime`, `symbols`, `base_fetcher:220`,
+  `launcher.py:356-357`/`:374`, `regime_engine.py:137`, tracked `venv/` all confirmed present.
+- **Notion is 7 commits stale** -- it records upstream at `70dab378`. W8-W15 (whale component,
+  aux-feed causality guard, cost-derived IC threshold, sigma 61.6->106.9, recorder Linux port)
+  appear **nowhere** in the workspace. Search returned zero hits.
+- 🏃 Backtest Run Log database is **empty** (0 rows) despite HQ naming it the record of every run.
+- 🧪 Strategy Research Log is a hand-transcribed 2026-07-24 snapshot of the KB -- a second,
+  unenforced source of truth for what is killed.
+- Resolved an open ticket in our favour: `local_data/BTCUSDT_1m.csv` spans
+  2022-03-31 -> **2025-04-01 04:59**, nine months clear of the seal. Not contaminated.
+- Gap raised, not fixed: two forks share one single-use holdout and one deflated-Sharpe N,
+  with no defined way to merge trial ledgers. Protocol drafted to Notion (see below).
+
+### 2. PR verification -- measured on this machine, not read
+Control run first, then each PR merged onto a throwaway branch off `09eac1bb`:
+
+| tree | validator | fast | slow |
+|---|---|---|---|
+| master (control) | FAIL V9 | 117 passed | 6 passed, **4 errors** |
+| + PR #1 | pass | 117 passed | 9 passed, 1 skipped, 0 errors |
+| + PR #2 | pass | 130 passed, **1 failed** | 9 passed, 1 skipped |
+| + encoding fix | pass | **131 passed** | 9 passed, 1 skipped |
+
+- **PR #1** (`706ac543`) is config-only and clears the 4 pre-existing slow-suite errors. Its
+  rebaseline (24 trades / -231.758912 / -5.646) **reproduced here on pandas 2.2.3** against
+  Dorian's 2.3.3 -- independent across two pandas versions and two OSes, so not a Mac artifact.
+  Defect to report: the fixture's committed prose claims the old values "were never valid".
+  Refuted by `git log` -- fixture set `0ca4666d` 2026-06-27, V9 landed `d570ffcd` 2026-06-30.
+- **PR #2** (7 commits) fixes three real holdout-reachability defects. Its own seal test
+  **fails on Windows**: `path.read_text()` with no encoding decodes as cp1252 and dies on
+  `core/backtester.py` byte 7661. Seven production files here are undecodable under cp1252;
+  the guard crashes on the first and **never scans a single date**. Green on macOS, dead here.
+  Fixed with 3x `encoding="utf-8"`; test then passes, confirming **no real seal violation**.
+  A fourth latent instance survives at `test_visualize_data_window.py:41`.
+
+Verdict: merge both (#1 then #2), then land the encoding fix. Both merge clean onto HEAD.
+
+### Files touched
+- `strategy-research/SESSION_LOG.md` (this entry). Nothing else in the repo was modified;
+  the test branch was deleted and the tree restored to `09eac1bb` before W15 landed on top.
+- Notion: two new pages under Trading Bot HQ + one new Bugs & Tasks ticket (see next section).
