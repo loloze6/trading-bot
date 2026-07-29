@@ -1,6 +1,13 @@
 #!/bin/bash
 # build_inventory.sh — Idempotent inventory of strategy-research/ tracked files.
 # Optimized: single ls-tree call for all bytes, directory-level git log for aggregates.
+#
+# EXCLUDED PATHS (infrastructure, not subjects):
+#   - strategy-research/docs/INVENTORY.tsv (this generator's output)
+#   - strategy-research/docs/REFERENCE_MAP.tsv (future index; exclude prospectively)
+#   - strategy-research/tools/build_inventory.sh (this script itself)
+# These are excluded because their byte counts carry no information for deciding
+# what to archive, and self-description makes the generator non-idempotent.
 set -e
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
@@ -25,8 +32,8 @@ git ls-tree -r -l HEAD strategy-research | awk '{
 # STEP 2: Separate files into two sets
 echo "Separating aggregated and per-file rows..." >&2
 
-# Per-file rows: everything NOT in runs/ or results/
-awk '!/^strategy-research\/(runs|results)\// {print}' "$tmp_lstree" > "$tmp_perfile"
+# Per-file rows: everything NOT in runs/, results/, and excluding generator artifacts
+awk -F'\t' '$1 !~ /^strategy-research\/(runs|results)\// && $1 !~ /^strategy-research\/docs\/(INVENTORY\.tsv|REFERENCE_MAP\.tsv)$/ && $1 !~ /^strategy-research\/tools\/build_inventory\.sh$/ {print}' "$tmp_lstree" > "$tmp_perfile"
 
 # STEP 3: Process per-file rows (293 files total)
 echo "Processing per-file rows..." >&2
