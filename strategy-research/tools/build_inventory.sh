@@ -13,10 +13,12 @@ trap "rm -f '$tmp_lstree' '$tmp_perfile' '$tmp_agg'" EXIT
 # STEP 1: Get all file sizes in one git ls-tree call
 echo "Collecting file sizes..." >&2
 git ls-tree -r -l HEAD strategy-research | awk '{
-    # Format: <mode> blob <object> <size> <path>
-    path=$NF
-    for (i=5; i<NF; i++) path = path " " $(i)  # Handle spaces in paths
-    size=$(NF-2)
+    # Format: <mode> <type> <object> <size> TAB <path>
+    # Fields 1-4 separated by whitespace: mode type object size
+    size = $4
+    # Path is everything after the TAB
+    match($0, /\t(.*)$/, arr)
+    path = arr[1]
     print path "\t" size
 }' > "$tmp_lstree"
 
@@ -79,8 +81,8 @@ for dir_type in runs results; do
             continue
         fi
 
-        # Sum bytes from ls-tree output
-        total_bytes=$(grep "^$dir_path/" "$tmp_lstree" | awk '{s+=$NF} END {print s}')
+        # Sum bytes from ls-tree output (field $2 is size, after TAB)
+        total_bytes=$(grep "^$dir_path/" "$tmp_lstree" | awk -F'\t' '{s+=$2} END {print s}')
 
         # Get commit dates at directory level
         last=$(git log -1 --format=%cs -- "$dir_path/" 2>/dev/null | cut -d- -f1-2)
