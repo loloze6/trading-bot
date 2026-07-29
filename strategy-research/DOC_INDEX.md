@@ -34,7 +34,7 @@ PIPELINE_IMPROVEMENTS_20260712_v4.md).
 field-by-field schema, skill goals, tools overview, glossary.
 
 ### "How do I change things safely?"
-→ **[`docs/TIMEFRAME_CHANGE_PLAYBOOK.md`](../docs/TIMEFRAME_CHANGE_PLAYBOOK.md)**
+→ **[`docs/TIMEFRAME_CHANGE_PLAYBOOK.md`](docs/TIMEFRAME_CHANGE_PLAYBOOK.md)**
 — the two assumption-sweep categories, metric-basis rules (bar/episode/fragment),
 the three-role model for fragment data, the concealment-instruction doctrine,
 read-back verification doctrine.
