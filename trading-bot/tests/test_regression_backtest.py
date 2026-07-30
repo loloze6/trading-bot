@@ -1,8 +1,9 @@
 """
 Regression test: verifies the reference backtest produces known-good results.
 
-IMPORTANT: this is a SLOW INTEGRATION TEST (runs a full 2-month backtest, ~3-5 min).
-Do NOT run on every commit. Run explicitly before any change to the backtest path:
+IMPORTANT: this is a SLOW INTEGRATION TEST (runs a full 2-month backtest). Measured on
+this machine: ~7s for this file, ~17s for the whole `-m slow` suite -- cheap enough to
+run before any change to the backtest path, though runtime will vary by machine:
   pytest tests/test_regression_backtest.py -v
 
 Catches: engine wiring regressions, PnL computation changes, config loading bugs.
@@ -59,7 +60,7 @@ def backtest_result(reference):
             metrics = json.load(f)
         # Inject run_dir so individual tests can find manifest.json
         metrics["_run_dir"] = str(run_dir_path)
-        return metrics
+        yield metrics
 
 
 def test_trade_count(backtest_result, reference):
@@ -96,29 +97,49 @@ def test_sharpe(backtest_result, reference):
 
 def test_config_actually_loaded(backtest_result, reference):
     """
-    Catches the config_path bug: verifies the backtest ran the specified config,
-    not a hardcoded default. Reads manifest.json (separate from metrics.json)
-    and checks its config_sha256 matches the sha256 of the specified config file.
+    Manifest integrity check: the config_sha256 recorded in manifest.json must equal
+    the canonical hash of the config file at the path this fixture launched with.
+    Catches canonicalization drift or in-memory mutation of the config dict between
+    load and write_manifest() (reporting/run_artifact.py:58-73) — i.e. the manifest
+    lying about what config produced this run.
+
+    Does NOT catch config_path wiring falling back to the hardcoded default
+    (core/backtester.py:261-265): this fixture always launches with the DEFAULT
+    strategy_config.json, which IS that fallback's file, so a broken config_path
+    that silently falls back reads as a pass here. Needs a run against a non-default
+    candidate config, tracked separately, to catch that class of bug.
     """
     import hashlib
     config_path = PROJECT_ROOT / reference["config"]
     with open(config_path) as f:
         import json as _json
         config_content = _json.dumps(_json.load(f), sort_keys=True, separators=(",", ":"))
+    # sort_keys/separators here must stay in lockstep with write_manifest's own
+    # canonicalization (reporting/run_artifact.py:68) — they agree by construction
+    # today; nothing enforces the coupling if either changes independently.
     expected_sha = hashlib.sha256(config_content.encode()).hexdigest()
 
     # manifest.json is a SEPARATE file from metrics.json — load it independently
     manifest_path = Path(backtest_result.get("_run_dir", "")) / "manifest.json"
     if not manifest_path.exists():
-        # Try finding manifest.json alongside the metrics.json that was loaded
-        pytest.skip("manifest.json not found alongside metrics.json — skipping config identity check")
+        pytest.fail(
+            f"manifest.json missing at {manifest_path}. write_manifest() is called "
+            "unconditionally by BacktestEngine._end_of_backtest (core/backtester.py:279), "
+            "so an absent manifest is an artifact-writer regression, not a skippable "
+            "condition — this exact skip is what hid this test as dead code from "
+            "0ca4666d until the fixture-lifetime fix."
+        )
 
     with open(manifest_path) as f:
         manifest = _json.load(f)
 
     actual_sha = manifest.get("config_sha256", "")
     assert actual_sha == expected_sha, (
-        f"Config identity regression: the backtest ran a different config than specified. "
+        f"Manifest config identity mismatch: manifest.json's config_sha256 does not "
+        f"match the config file at the recorded path. "
         f"Expected sha={expected_sha[:8]}..., got sha={actual_sha[:8]}... "
-        f"Check config_path wiring in core/launcher.py run_backtest()."
+        f"Causes: canonicalization drift vs write_manifest (reporting/run_artifact.py:68), "
+        f"the config dict mutated between load and write_manifest, or the config file "
+        f"changed on disk after the run. NOTE this cannot be a config_path fallback — "
+        f"that reads as a pass here (see docstring)."
     )
