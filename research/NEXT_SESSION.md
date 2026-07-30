@@ -10,7 +10,7 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 
 > Read these three files in full before doing anything, in this order: `CLAUDE.fork.md`, `research/LEDGER.md`, `research/NEXT_SESSION.md`. **`CLAUDE.fork.md` is NOT auto-loaded** — Jeremy's `CLAUDE.md` has no include for it, so you must read it explicitly. Then run `git status && git log --oneline -5`.
 >
-> **Where we are:** milestone 1 AND fork queue #1 are done. The bot runs on the Mac and reproduces the baseline byte-identically — `config_sha256 5ccbec42` / `data_sha256 5a75366c` / net −23.021% / sharpe −5.646 / 24 trades — and the **holdout data path is guarded**: fetches can no longer write past a requested end, `visualize_data` no longer names a sealed date, and `tests/test_no_sealed_date_literals.py` fails the suite on any executable production date at or beyond the seal's start. Branch `mac/setup`; check `git log` for the actual HEAD rather than trusting a hash written here. Fast suite **130 passed**, slow **9 passed / 1 skipped / 0 errors**. The baseline is a **reproducibility anchor, never a result** — the committed strategy is from a killed family, loses ~23%, and its Sharpe still comes off the trade-exit equity curve (that's queue #3).
+> **Where we are:** milestone 1 AND fork queue #1 are done. The bot runs on the Mac and reproduces the baseline byte-identically — `config_sha256 5ccbec42` / `data_sha256 5a75366c` / net −23.021% / sharpe −5.646 / 24 trades — and the **holdout data path is guarded**: fetches can no longer write past a requested end, `visualize_data` no longer names a sealed date, and `tests/test_no_sealed_date_literals.py` fails the suite on any executable production date at or beyond the seal's start. Branch `mac/setup`; check `git log` for the actual HEAD rather than trusting a hash written here. Fast suite **138 passed**, slow **10 passed / 0 skipped / 0 errors** — fully green since 2026-07-31. The baseline is a **reproducibility anchor, never a result** — the committed strategy is from a killed family, loses ~23%, and its Sharpe still comes off the trade-exit equity curve (that's queue #3).
 >
 > **Three PRs are open on Jeremy's repo — check all three at session start** (`gh pr view 1 --repo loloze6/trading-bot`, same for 2 and 3): PR #1 (first-run blockers + provenance-note fix `3e00f895`), PR #2 (fetch end-bound + UTF-8 seal-guard fix `7f0ad3a5`), PR #3 (regime fall-through, opened 2026-07-30 at Jeremy's request). Jeremy verified #1 and #2 on Windows 2026-07-28 and said **merge both**; his findings were fixed on the branches 2026-07-30. If he commented again, that may preempt the session plan — tell me before proceeding. Never push to his repo; PRs only. **His W8→W15 (7 commits, incl. a breaking `register_feed(window_seconds=...)` change) are still unpushed on his side — sync via `git fetch upstream && git merge upstream/master` once he pushes.**
 >
@@ -20,9 +20,9 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 >
 > **Slippage is HANDED TO JEREMY (2026-07-31, Dorian's call)** — execution-core changes belong on his side under single-writer; the decision-ready spec is the Notion page "🎯 Slippage model — decision-ready spec". The fork stays out of `MockExecutionHandler`; "costs modelled" on the finish line becomes Jeremy's item.
 >
-> **Next task — warm-up `fix/regression-test-fixture` (board 4.5, moved from #8):** `tests/test_regression_backtest.py:39` — the `backtest_result` fixture returns from inside `with tempfile.TemporaryDirectory()`, deleting the run dir before `test_config_actually_loaded` reads `manifest.json`, so the config-identity check has **never executed on any platform** (the slow suite's `1 skipped`). Fix the fixture lifetime, watch the dead test run for the first time, mutation-test at the public entry point (a mismatched config MUST fail it), keep the three sibling tests' behavior identical. Upstream-worthy — pre-existing upstream defect.
+> **The board-4.5 warm-up is DONE (2026-07-31, merged `f3d85745`):** `test_config_actually_loaded` executed for the first time since it was written; the slow suite is fully green (10 passed / 0 skipped) and a missing manifest is now a hard FAIL. Scope corrected by mutation proof: the revived check guards **manifest integrity**, not config_path wiring (the reference config IS the hardcoded fallback's file) — the wiring gap is a new Medium board ticket. Upstream offer after PR #1 merges.
 >
-> **Then the main task — `fix/metrics-bar-equity` (queue #3; board #5):** bar-level equity from `portfolio_states.csv` → true maxDD/Sharpe + Sortino, exposure %, turnover, fee share; off-by-default, known-answer tests, default output byte-unchanged. Propose the design in 3–6 bullets and get my nod before code.
+> **Next task — `fix/metrics-bar-equity` (queue #3; board #5):** bar-level equity from `portfolio_states.csv` → true maxDD/Sharpe + Sortino, exposure %, turnover, fee share; off-by-default, known-answer tests, default output byte-unchanged. Propose the design in 3–6 bullets and get my nod before code.
 >
 > **After that:** 3 `fix/metrics-bar-equity` (drawdown honest), 4 `fix/workflow-macos-port` (cheap, reversible, inert until a campaign runs — pull forward whenever convenient), 5 verify trial accounting (`run_campaign.py:1119-1122` — a **killed** run must still land a row in `campaign_state.trial_sharpes`), then the first campaign. The ticket-level queue is Notion → 🐛 Bugs & Tasks → **🍎 Fork queue (in order)**; `CLAUDE.fork.md` is canonical if they disagree.
 >
@@ -49,10 +49,10 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 
 | | |
 |---|---|
-| Branch | `mac/setup` @ `35b48736` (encoding-fix parity), pushed to `origin` |
+| Branch | `mac/setup` @ `f3d85745`, pushed to `origin` |
 | Upstream | Jeremy's GitHub still `70dab378` (local +7, W8→W15, unpushed); **PR #1, #2, #3 open** on `loloze6/trading-bot` |
-| Fast suite | 130 passed (116 + 14 from queue #1) |
-| Slow suite | 9 passed, 1 skipped *(the skip is the known dead `test_config_actually_loaded`)* |
+| Fast suite | 138 passed |
+| Slow suite | 10 passed, 0 skipped — fully green for the first time (dead test revived 2026-07-31) |
 | Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades — byte-identical at `mac/setup` tip |
 | Queue #1 | Merged `c641db9a`; PR branch `fix/data-holdout-safety-upstream` = the 7 code commits cherry-picked onto `upstream/master` |
 
@@ -69,7 +69,7 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 - **Seven Binance caches carry sealed rows** — queue #1 blocks *new* leaks; it did not decontaminate. Never run a window past 2025-12-31.
 - ~~**Seal-test date regex misses T-form timestamps**~~ **FIXED 2026-07-30** (`8acd08e6`, board 3.5) — regex now `(?<!\d)\d{4}-\d{2}-\d{2}`, both flanks closed. Successor tickets: compact/slash/dotted/non-padded forms slip BOTH guard layers (Medium — compact-T is the run-dir naming style); `holdout_date_gate.sh` PATTERN hardcoded, not policy-derived (Low).
 - **Seal scan aborts on the first undecodable file** (loud, fail-closed — but the sentinel never fires). Hardening ticket, unqueued.
-- `test_config_actually_loaded` has never executed (dead fixture; the slow suite's `1 skipped`). Own branch, board order #8.
+- ~~`test_config_actually_loaded` has never executed~~ **FIXED 2026-07-31** (`f3d85745`, board 4.5) — executes, skip is now a hard fail, slow suite 10/0. Successor ticket (Medium): the revived check cannot catch config_path wiring — needs a non-default-config run.
 - `tools/ingest_kraken_archive.py` overwrites instead of merging AND calls `_merge_and_store` directly with a data-derived bound (no end-bound at all) — board order #9.
 - `holdout_date_gate.sh` exists but is not wired into the installed pre-commit (unqueued ticket).
 - `visualize_data` writes its 1m cache into tracked `trading-bot/data/` (wrong dir; gitignore guards the wrong path). Hygiene, deferred.
