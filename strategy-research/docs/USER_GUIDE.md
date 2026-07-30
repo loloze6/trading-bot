@@ -822,7 +822,7 @@ Skill rewrites have no behavior until an LLM executes them. They are accepted by
 Before any holdout backtest runs: write `holdout_result.yaml.expected_range` with the a-priori bounds and rationale. Before any recalibration: document the threshold change as a new trial. This ensures that the result cannot be declared "as expected" retroactively and every data comparison is pre-committed.
 
 ### Calibration reporting
-Calibration outputs are always reported as numbers, not pass marks: DSR values, IC values with CIs, t-stats with n, expectancy ± SE. "7 tests pass" is not a calibration report. The calibration numbers for Improvement 06 are on record in `00_closing_state.md`.
+Calibration outputs are always reported as numbers, not pass marks: DSR values, IC values with CIs, t-stats with n, expectancy ± SE. "7 tests pass" is not a calibration report. The calibration numbers for Improvement 06 are on record in `improvements/IMPROVEMENTS_DONE_20260706.md`.
 
 ### Conflicting agent state (2026-07-10)
 When two sessions (or a session and a background campaign process) disagree

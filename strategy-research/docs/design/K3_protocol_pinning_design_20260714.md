@@ -876,7 +876,7 @@ many unrelated writes since the escalation was actually recorded, and
 `campaign_log.md` has no entry for run_049/the escalation event at all
 (grepped this phase — none found; the log's own curated format post-dates
 this event). The migration's `claimed_at` should instead be sourced from
-`00_closing_state.md` §8's own dating of the P1b closure
+`improvements/IMPROVEMENTS_DONE_20260706.md` §8's own dating of the P1b closure
 (2026-07-06, the session in which run_047→run_049's timeframe escalation
 was recorded) — Phase B's sidecar rationale should cite this explicitly
 rather than inventing a date or misreading the file-level `updated_at`
@@ -965,7 +965,7 @@ found by grep, not assumed:
   the literal value `"replication_diagnostic"` for an unrelated
   "Replication guard" rule. A different value; safely ignores the new one.
 - All other grep hits (`SESSION_LOG.md`, `config/campaign_baseline_runs.yaml`,
-  `improvements/IMPROVEMENTS_DONE_20260712.md`, briefs, `00_closing_state.md`,
+  `improvements/IMPROVEMENTS_DONE_20260712.md`, briefs, `improvements/IMPROVEMENTS_DONE_20260706.md`,
   this design note itself) are prose/doc mentions only, not code consumers.
 
 **Conclusion, confirming A3's own text:** using a NEW, dedicated
