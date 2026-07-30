@@ -208,7 +208,7 @@ stays where it is.
 |---|---|---|
 | `USER_GUIDE.md` | `docs/USER_GUIDE.md` | 0 |
 | `DOC_INDEX.md` | stays at root | 0 — but it is the entry point; moving it defeats its purpose |
-| `workflow/stages.yaml` | `docs/workflow_stages.yaml` | **0** — no code reads it. It is documentation of the stage graph, not a control file. v1 wrongly called this a live control file. |
+| ~~`workflow/stages.yaml`~~ | **REVISED: STAYS in `workflow/`** | PROD=0 confirms no code reads it — it documents the stage graph rather than driving it. But moving it means updating 9 prose references for zero mechanical gain, which violates Rule 1 (conservative on moves, aggressive on documentation). The finding is recorded in `workflow/`'s documentation instead. Renaming it would also break every prose reference that says "stages.yaml". |
 | `incident_20260710/INCIDENT.md` | `docs/incidents/INCIDENT_20260710.md` | 17 refs but all prose — highest-risk move in the plan; own commit |
 | `workflow/handoff.schema.yaml` | `schemas/handoff.schema.yaml` | 0 — joins its 20 siblings; nothing loads it today |
 | `workflow/LATER.md` | `improvements/BACKLOG_DEFERRED.md` | 0 — deferred-scope record, belongs to the improvements family |
