@@ -50,8 +50,7 @@ assertion before launching the real campaign — do not skip this step.
 PYTHONUTF8=1 ../venv/Scripts/python.exe workflow/run_campaign.py
 ```
 
-This blocks in the foreground and keeps going: launches the next `ready` brief
-(currently `P4_ts_trend`), follows its lineage through any reframe/escalation,
+This blocks in the foreground and keeps going: launches the next `ready` brief, follows its lineage through any reframe/escalation,
 and either advances to the next ready brief or halts on a hard pause (section 3).
 `XS_momentum` stays `blocked_on_P2` and is never picked up automatically.
 
@@ -70,7 +69,7 @@ one-line-per-transition version meant for a human to actually read.
 **Blocked — grounds re-based 2026-07-12 (was the security investigation;
 that incident closed benign, see `incident_20260710/INCIDENT.md` Resolution
 addendum). nohup/background mode is now blocked on
-[`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)'s
+[`IMPROVEMENTS_DONE_20260712.md`](improvements/IMPROVEMENTS_DONE_20260712.md)'s
 P0 defect kernel** (A1+A3+B1 routing/registration, A8+A9+B11+C7
 verdict/routing machinery, B3+B10 protocol pinning, B4+B7+D3 conformance,
 B8 spec semantics, C6 prescreen statistic — see that file's sequencing

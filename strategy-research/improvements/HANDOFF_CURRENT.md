@@ -1,4 +1,4 @@
-# NEXT_SESSION.md — updated 2026-07-20, post Phase 1 (venue/cost reality alignment) close-out
+# HANDOFF_CURRENT.md — updated 2026-07-20, post Phase 1 (venue/cost reality alignment) close-out
 
 Single entry point for the next session. Read in order, then work the queue.
 
@@ -31,7 +31,7 @@ Single entry point for the next session. Read in order, then work the queue.
    test), but that family's verdict stays RESEARCH-ONLY until a
    funding-cash-flow model exists — **do not fee-swap or re-run that
    family without one.**
-5. [`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)
+5. [`IMPROVEMENTS_DONE_20260712.md`](IMPROVEMENTS_DONE_20260712.md)
    — v7 additions this arc: **C12** (inert protocol-declared timeframe —
    archived runs predating interval threading silently ran at 1h; two
    confirmed instances, a future sweep for more is scoped but not
@@ -76,7 +76,7 @@ Single entry point for the next session. Read in order, then work the queue.
   not ingested) with the exchange-qualified cache key and the standard-base
   symbol convention both settled and tested (commits `32b1c13` exchange-qualified
   cache key + 5-pair pilot; `446885b` symbol convention settled + scale-up;
-  ledger `G1`/`G2` in `PIPELINE_IMPROVEMENTS_20260712_v4.md`). Live-fetch
+  ledger `G1`/`G2` in `IMPROVEMENTS_DONE_20260712.md`). Live-fetch
   reachability against the archive slot is proved end-to-end (`11afb72`,
   `3d43cc1`).
 - **XS_momentum run → PARKED, not a verdict.** Full-sample net Sharpe 1.325
@@ -107,7 +107,7 @@ Single entry point for the next session. Read in order, then work the queue.
   G2's claim that key-derivation "proves" Kraken top-up composability was
   overstated twice in this arc; derivation proves addressability only, and
   only a live probe can show the endpoint actually serves the requested
-  history (`PIPELINE_IMPROVEMENTS_20260712_v4.md` G-series, commit `2ab4c70`).
+  history (`IMPROVEMENTS_DONE_20260712.md` G-series, commit `2ab4c70`).
 - **D4 CLOSED.** The backtest test suite no longer writes into the shared
   production `trading-bot/results/trades.json` path — `trades_log_file` is
   now an additive, opt-in parameter threaded through `run_backtest()`;
@@ -139,7 +139,7 @@ Single entry point for the next session. Read in order, then work the queue.
 - **Test suites (strategy-research, across the C7-EXT chain): 338 → 369
   (`0a4d606`) → 389 (`2c8b8d1`) → 413 (`f1a3d94`).** trading-bot suite:
   57 → 64 per commit `2ab4c70`'s own message — **note, not reconciled here:**
-  that same commit's ledger prose (`PIPELINE_IMPROVEMENTS_20260712_v4.md`
+  that same commit's ledger prose (`IMPROVEMENTS_DONE_20260712.md`
   line 2118) reads "Suite 413 → 420", an apparently mismatched baseline
   against its own 57 → 64 count; flagged, not smoothed over, since this
   close-out does not touch ratified content. No return or performance

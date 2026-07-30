@@ -12,7 +12,7 @@ Organized by the question a reader actually arrives with, not by directory.
 ---
 
 ### "What do I do this session?"
-→ **[`NEXT_SESSION.md`](NEXT_SESSION.md)** — the single entry point for the
+→ **[`HANDOFF_CURRENT.md`](improvements/HANDOFF_CURRENT.md)** — the single entry point for the
 next session: read-first list, priority-ordered task queue, standing
 constraints. Start here if you're picking this campaign back up.
 
@@ -21,16 +21,16 @@ constraints. Start here if you're picking this campaign back up.
 (v2, 2026-07-19): Phase 0-5 task sequence with gates, the KPI (honest
 verdicts/week, cost per verdict) and anti-corner rule, the role/model
 assignment for every agent class, and the context-economy rules. The
-standing plan — `NEXT_SESSION.md`'s own task queue is now derived from
+standing plan — `improvements/HANDOFF_CURRENT.md`'s own task queue is now derived from
 this, not the other way around.
 
 ### "How do I operate the campaign?"
 → **[`RUNBOOK.md`](RUNBOOK.md)** — launch/status/resume/stop commands, the
 hard-pause table (section 3), the block on background/`nohup` mode (grounds: ledger P0 kernel — see
-PIPELINE_IMPROVEMENTS_20260712_v4.md).
+improvements/IMPROVEMENTS_DONE_20260712.md).
 
 ### "What is this system / what does artifact X mean?"
-→ **[`USER_GUIDE.md`](USER_GUIDE.md)** — pipeline stage map, every artifact's
+→ **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — pipeline stage map, every artifact's
 field-by-field schema, skill goals, tools overview, glossary.
 
 ### "How do I change things safely?"
@@ -66,7 +66,7 @@ the cost-mapping note) and a resolved open item (the apparent spot-fee
 figure conflict was a mismatched-product comparison, not a real conflict).
 
 ### "What's broken and what gates autonomy?"
-→ **[`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)**
+→ **[`IMPROVEMENTS_DONE_20260712.md`](improvements/IMPROVEMENTS_DONE_20260712.md)**
 — the growing defect ledger (v7 as of 2026-07-20); its P0 "kernel" gates
 background mode. A1/A3/B1 (K4), A8/A9/B11/C7/C9 (K2), B3/B10 (K3), and
 B7/B15 (v5/v6) are CLOSED — see the design notes below for what shipped.
@@ -137,4 +137,4 @@ mechanisms it also describes (those are still substantively accurate).
 
 ---
 
-Cross-linked from the top of `RUNBOOK.md`, `USER_GUIDE.md`, and `CLAUDE.md`.
+Cross-linked from the top of `RUNBOOK.md`, `docs/USER_GUIDE.md`, and `CLAUDE.md`.
