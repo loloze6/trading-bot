@@ -80,7 +80,6 @@ the operator, and both flags were correct):
   → MOVE to `schemas/handoff.schema.yaml`, see §D.
 | `incident_20260710/instance_F_payload.txt` | 0 | 0 | 0 | 166 bytes, superseded by `INCIDENT.md` |
 | `protocols/escalation_dotusdt_4h.json` | 0 | 0 | 0 | unexecuted spec; SOL/AVAX/15m siblings are referenced |
-| `protocols/diagnostic_btceth_4h.json` | 0 | 0 | 1 | last touched 2026-06 |
 
 Add `campaign.pid` to `.gitignore`.
 
@@ -135,6 +134,7 @@ is not evidence that the emitting code produces it.
 | `briefs/research_brief_P4_ts_trend_draft_superseded.md` | `archive/briefs/` |
 | `NEXT_SESSION_20260712.md` | `archive/improvements/HANDOFF_20260712.md` — PROD=0, DOC=1 |
 | `campaign_state_MIGRATION_NOTICE.md` | `archive/reports/` — PROD=0, TEST=0, DOC=1 |
+| `protocols/diagnostic_btceth_4h.json` | `archive/protocols/` — PROD=0, DOC=1 but carries 4 referrers: `USER_GUIDE.md:752` (prose), `run_036/artifacts/protocol_result.yaml:3`, `run_036/artifacts/run_context.yaml:2`, `run_036/protocol_summary.json:4`. Last three are run_036 provenance records (blob `8de569f1`); archiving preserves reproducibility. **CORRECTED from DELETE (CLEAN-3a dispatch error).** |
 
 `incident_20260710/INCIDENT.md` is **NOT** archived: 17 path references. It moves
 to `docs/incidents/INCIDENT_20260710.md` (§D) and the folder is retired.
@@ -368,6 +368,7 @@ paths; not findings.
     file is `skills/quant-validation/SKILL.md`.
 11. `run_017/findings_carryover.yaml`, `run_018/...` — `docs/STEP_05_FINDINGS.md:61,68`
     drop the `runs/.../artifacts/` path segment.
+12. `protocols/diagnostic_btceth_4h.json` — `USER_GUIDE.md:752` (transient, CLEAN-3a dispatch error). **RESOLVED**: file restored and reclassified as ARCHIVE, not DELETE.
 
 **STALE — historical record naming something since removed; no fix needed:**
 `protocols/escalation_dotusdt_15m.json` (`SESSION_LOG.md:1253`),
