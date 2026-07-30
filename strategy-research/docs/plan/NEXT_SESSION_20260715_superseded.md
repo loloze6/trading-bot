@@ -36,7 +36,7 @@ Single entry point for the next session. Read in order, then work the queue.
    prescreen_override_20260711.yaml for the lineage's ending (unchanged
    across sessions; still the K2 C7 evaluator's known-answer fixture
    source).
-7. [`incident_20260710/INCIDENT.md`](incident_20260710/INCIDENT.md) —
+7. [`docs/incidents/INCIDENT_20260710.md`](../incidents/INCIDENT_20260710.md) —
    resolution addendum only, unchanged: the "forged system-reminder"
    incident is CLOSED as native harness boilerplate; no hostile actor.
 

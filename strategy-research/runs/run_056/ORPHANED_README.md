@@ -2,7 +2,7 @@
 
 Scaffolded 2026-07-09 by `_route_pivot` under `run_054`'s **original kill verdict**,
 which was overturned by the metric-basis correction (see
-`strategy-research/incident_20260710/INCIDENT.md`).
+`strategy-research/docs/incidents/INCIDENT_20260710.md`).
 
 `findings_carryover.yaml` in this directory cites the refuted figures from that
 kill verdict.
