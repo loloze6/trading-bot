@@ -13,7 +13,7 @@ Single entry point for the next session. Read in order, then work the queue.
 4. [`runs/run_057/artifacts/`](runs/run_057/artifacts/) — skim
    verdict_interpretation.yaml, s2_mechanism_check_20260711.yaml,
    prescreen_override_20260711.yaml for the lineage's ending.
-5. [`incident_20260710/INCIDENT.md`](incident_20260710/INCIDENT.md) —
+5. [`docs/incidents/INCIDENT_20260710.md`](../incidents/INCIDENT_20260710.md) —
    resolution addendum only: the "forged system-reminder" incident is
    CLOSED as native harness boilerplate (grep evidence in the shipped
    binary); no hostile actor. The old task-1 harness investigation is

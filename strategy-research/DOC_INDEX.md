@@ -51,7 +51,7 @@ it against `campaign_queue.yaml`).
 one-line-per-transition log (written by `workflow/run_campaign.py`).
 
 ### "What happened in the security incident?"
-→ **[`incident_20260710/INCIDENT.md`](incident_20260710/INCIDENT.md)** — the
+→ **[`docs/incidents/INCIDENT_20260710.md`](docs/incidents/INCIDENT_20260710.md)** — the
 KB-revert incident and the system-reminder investigation, RESOLVED
 2026-07-11 as native harness boilerplate (see its Resolution addendum);
 standing disclosure doctrine with the verified-template allowlist.

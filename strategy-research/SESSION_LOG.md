@@ -979,7 +979,7 @@ arithmetic, not re-asserting prior prose): BTCUSDT median = 0.5791, ETHUSDT =
 on every write; one real bug caught in the process (`coverage_matrix`'s
 separate mirror of the p4 finding's outcome, missed by the first restoration).
 Full timeline, root cause, and the standing single-writer/concealment-instruction
-rules this produced: `incident_20260710/INCIDENT.md`.
+rules this produced: `docs/incidents/INCIDENT_20260710.md`.
 
 **Also surfaced and fixed:** an unrelated KB record
 (`keltner_mean_reversion_no_edge`) missing a newer schema field
@@ -1031,7 +1031,7 @@ same-title collision with the current `00_closing_state.md`), `campaign_summary.
 - `strategy-research/skills/verdict-interpreter/SKILL.md`, `skills/campaign-review/SKILL.md` — UPDATED: fragment_patterns firewall notes, ideation hook
 - `strategy-research/templates/research_brief.yaml` — UPDATED: documented `status`/`motivating_observation` optional fields
 - `docs/TIMEFRAME_CHANGE_PLAYBOOK.md` — UPDATED: sections 2(c) metric-basis, 5 read-back verification, 6 concealment-instruction doctrine, 7 three-role fragment model, DOC_INDEX checklist item
-- `strategy-research/incident_20260710/INCIDENT.md` — NEW: full incident record + disclosure
+- `strategy-research/docs/incidents/INCIDENT_20260710.md` — NEW: full incident record + disclosure
 - `strategy-research/incident_20260710/*.snapshot` — NEW: pre-restoration snapshots
 - `strategy-research/RUNBOOK.md`, `strategy-research/USER_GUIDE.md`, `strategy-research/docs/plan/00_closing_state.md`, `strategy-research/docs/WORKFLOW_CAPABILITIES.md`, `strategy-research/DOC_INDEX.md`, `strategy-research/CLAUDE.md` — UPDATED/NEW: documentation sync (see Result above)
 - `strategy-research/campaign_summary.md` — regenerated (not hand-edited) via `run_campaign.py::_regenerate_summary`
@@ -1065,7 +1065,7 @@ same-title collision with the current `00_closing_state.md`), `campaign_summary.
 
 ### Next session prompt
 "Resume strategy-research campaign. Read: strategy-research/SESSION_LOG.md (this
-entry), strategy-research/DOC_INDEX.md (map), strategy-research/incident_20260710/INCIDENT.md,
+entry), strategy-research/DOC_INDEX.md (map), strategy-research/docs/incidents/INCIDENT_20260710.md,
 strategy-research/campaign_knowledge_base.yaml's p4_sma_trend_longonly_daily_auto
 entry. Status: P4_ts_trend is `in_progress` / `refine_pending_regime_gating` — a
 regime-gated SMA(100)-daily variant is the prescribed next step WITHIN this
@@ -1136,7 +1136,7 @@ investigation.
   (`n_trades` 0→42, root-cause noted, code itself unfixed)
 - `trading-bot/strategies/strategy_components.py` — `GatedSmaTrendLongOnlyComponent`
   added
-- `strategy-research/incident_20260710/INCIDENT.md` — Resolution addendum
+- `strategy-research/docs/incidents/INCIDENT_20260710.md` — Resolution addendum
   (benign, harness boilerplate, disclosure-doctrine allowlist adopted)
 - `strategy-research/PIPELINE_IMPROVEMENTS_20260712_v4.md` — NEW, 29-item
   defect ledger

@@ -9,7 +9,7 @@ doing anything else, then work the task queue in priority order.
 2. [`00_closing_state.md`](00_closing_state.md) — current canonical status.
 3. [`RUNBOOK.md`](RUNBOOK.md) §1c security block — why background/`nohup` mode
    is currently blocked (see task queue item 1).
-4. [`incident_20260710/INCIDENT.md`](incident_20260710/INCIDENT.md) — skim.
+4. [`docs/incidents/INCIDENT_20260710.md`](../incidents/INCIDENT_20260710.md) — skim.
    Full disclosure of the concealment-instruction incident and the open
    investigation into its origin.
 5. This file's task queue, below.

@@ -67,7 +67,7 @@ echo $! > campaign.pid
 one-line-per-transition version meant for a human to actually read.
 
 **Blocked — grounds re-based 2026-07-12 (was the security investigation;
-that incident closed benign, see `incident_20260710/INCIDENT.md` Resolution
+that incident closed benign, see `docs/incidents/INCIDENT_20260710.md` Resolution
 addendum). nohup/background mode is now blocked on
 [`IMPROVEMENTS_DONE_20260712.md`](improvements/IMPROVEMENTS_DONE_20260712.md)'s
 P0 defect kernel** (A1+A3+B1 routing/registration, A8+A9+B11+C7
@@ -218,7 +218,7 @@ persisted `status` whose `kb_state_hash` doesn't match a fresh
 `sha256(campaign_knowledge_base.yaml)` — a mismatch means the KB changed since
 that status was written and it must be re-evaluated, not read as current (this
 is exactly how an orphaned, hand-authored `status: triggered` from before this
-change sat unverified — see `incident_20260710/INCIDENT.md`).
+change sat unverified — see `docs/incidents/INCIDENT_20260710.md`).
 `missing_field` also no longer fires just because SOME KB finding lacks the
 predicate's field — a record that already fails on another, resolvable
 condition (e.g. wrong `outcome`) is a clean non-match regardless of what an
@@ -406,7 +406,7 @@ it. Cost model is taker-only (`config/cost_model.yaml`
 `verdict_execution_style: taker`) for every gate and every promotion decision. This
 wrapper adds queue orchestration on top of these; it does not relax any of them.
 
-**Single-writer-per-state-store (2026-07-10, `incident_20260710/INCIDENT.md`):**
+**Single-writer-per-state-store (2026-07-10, `docs/incidents/INCIDENT_20260710.md`):**
 `campaign_queue.yaml`, `campaign_knowledge_base.yaml`, and
 `config/detector_wishlist.yaml`/`feed_wishlist.yaml` are each shared state a
 running campaign process and any interactive session can both touch. Prefer a
