@@ -12,7 +12,7 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 >
 > **Where we are:** milestone 1 AND fork queue #1 are done. The bot runs on the Mac and reproduces the baseline byte-identically — `config_sha256 5ccbec42` / `data_sha256 5a75366c` / net −23.021% / sharpe −5.646 / 24 trades — and the **holdout data path is guarded**: fetches can no longer write past a requested end, `visualize_data` no longer names a sealed date, and `tests/test_no_sealed_date_literals.py` fails the suite on any executable production date at or beyond the seal's start. Branch `mac/setup`; check `git log` for the actual HEAD rather than trusting a hash written here. Fast suite **130 passed**, slow **9 passed / 1 skipped / 0 errors**. The baseline is a **reproducibility anchor, never a result** — the committed strategy is from a killed family, loses ~23%, and its Sharpe still comes off the trade-exit equity curve (that's queue #3).
 >
-> **Two PRs are open on Jeremy's repo — check both at session start** (`gh pr view 1 --repo loloze6/trading-bot` and `gh pr view 2 --repo loloze6/trading-bot`): PR #1 (first-run blockers) and PR #2 (fetch end-bound). If Jeremy commented, that may preempt the session plan — tell me before proceeding. Never push to his repo; PRs only.
+> **Three PRs are open on Jeremy's repo — check all three at session start** (`gh pr view 1 --repo loloze6/trading-bot`, same for 2 and 3): PR #1 (first-run blockers + provenance-note fix `3e00f895`), PR #2 (fetch end-bound + UTF-8 seal-guard fix `7f0ad3a5`), PR #3 (regime fall-through, opened 2026-07-30 at Jeremy's request). Jeremy verified #1 and #2 on Windows 2026-07-28 and said **merge both**; his findings were fixed on the branches 2026-07-30. If he commented again, that may preempt the session plan — tell me before proceeding. Never push to his repo; PRs only. **His W8→W15 (7 commits, incl. a breaking `register_feed(window_seconds=...)` change) are still unpushed on his side — sync via `git fetch upstream && git merge upstream/master` once he pushes.**
 >
 > **The finish line ("good enough to start generating") is four things:** costs modelled, drawdown honest, **holdout guarded ✅**, trials counted. Three remain. Hold me to that line — "fix everything first" never ends.
 >
@@ -43,8 +43,8 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 
 | | |
 |---|---|
-| Branch | `mac/setup` @ `c2228092`, pushed to `origin` |
-| Upstream | Jeremy still at `70dab378`; **PR #1 and PR #2 open** on `loloze6/trading-bot` |
+| Branch | `mac/setup` @ `35b48736` (encoding-fix parity), pushed to `origin` |
+| Upstream | Jeremy's GitHub still `70dab378` (local +7, W8→W15, unpushed); **PR #1, #2, #3 open** on `loloze6/trading-bot` |
 | Fast suite | 130 passed (116 + 14 from queue #1) |
 | Slow suite | 9 passed, 1 skipped *(the skip is the known dead `test_config_actually_loaded`)* |
 | Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades — byte-identical at `mac/setup` tip |
@@ -61,6 +61,8 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 ## 4. Known-broken, deliberately not fixed (tracked in Notion)
 
 - **Seven Binance caches carry sealed rows** — queue #1 blocks *new* leaks; it did not decontaminate. Never run a window past 2025-12-31.
+- **Seal-test date regex misses T-form timestamps** (`'2026-…T00:00:00'` passes silently — `\b` can't match digit→`T`). Found by red-team 2026-07-30; fix validated (drop the trailing `\b`, zero new violations on the clean tree). Own small branch, Notion ticket — a good warm-up before or after slippage.
+- **Seal scan aborts on the first undecodable file** (loud, fail-closed — but the sentinel never fires). Hardening ticket, unqueued.
 - `test_config_actually_loaded` has never executed (dead fixture; the slow suite's `1 skipped`). Own branch, board order #8.
 - `tools/ingest_kraken_archive.py` overwrites instead of merging AND calls `_merge_and_store` directly with a data-derived bound (no end-bound at all) — board order #9.
 - `holdout_date_gate.sh` exists but is not wired into the installed pre-commit (unqueued ticket).
