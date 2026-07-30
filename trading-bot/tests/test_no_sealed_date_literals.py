@@ -75,7 +75,7 @@ def _docstring_spans(source: str) -> list:
 
 def _code_string_dates(path: Path):
     """Yield (lineno, literal) for ISO dates inside non-docstring string tokens."""
-    source = path.read_text()
+    source = path.read_text(encoding="utf-8")
     docstrings = _docstring_spans(source)
     for tok in tokenize.generate_tokens(io.StringIO(source).readline):
         if tok.type not in _STRING_TOKENS:
@@ -88,7 +88,7 @@ def _code_string_dates(path: Path):
 
 
 def test_no_executable_production_date_reaches_the_seal():
-    with open(_POLICY) as fh:
+    with open(_POLICY, encoding="utf-8") as fh:
         lo, hi = [datetime.date.fromisoformat(d)
                   for d in yaml.safe_load(fh)["holdout_range"]]   # hi is INCLUSIVE
 
@@ -117,7 +117,7 @@ def test_no_executable_production_date_reaches_the_seal():
         f"({len(scanned)} files scanned)")
 
     for path in (PROJECT_ROOT / "config.json", PROJECT_ROOT / "strategy_config.json"):
-        for lineno, line in enumerate(path.read_text().splitlines(), 1):
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             for literal in ISO_DATE.findall(line):
                 record(path.relative_to(PROJECT_ROOT), lineno, literal)
 

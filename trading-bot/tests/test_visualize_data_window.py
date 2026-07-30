@@ -38,7 +38,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from core import launcher as launcher_mod  # noqa: E402
 
 _POLICY = PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
-with open(_POLICY) as fh:
+with open(_POLICY, encoding="utf-8") as fh:
     HOLDOUT_START = pd.Timestamp(yaml.safe_load(fh)["holdout_range"][0])
 
 
