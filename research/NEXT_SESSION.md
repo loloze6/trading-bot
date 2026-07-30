@@ -18,7 +18,11 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 >
 > **The board-3.5 warm-up is DONE (2026-07-30, merged `8acd08e6`):** the seal regex is now `(?<!\d)\d{4}-\d{2}-\d{2}` — both flanks closed (T-form trailing AND word-char prefix/join leading, the second found in review and bundled with Dorian's approval), 8 new tests, corpus output identical on the clean tree, three mutants killed. Upstream offer waits for PR #2's merge — the seal test does not exist on Jeremy's master.
 >
-> **Next task — `feat/slippage-model` (queue #2 of 5; board Fork order #4):** flat-bps slippage plus lot-size/min-notional rounding in `MockExecutionHandler` (`execution/execution_handler.py`). Today the backtest fills at the exact close with zero slippage, so every result is optimistic — and a generator optimising against zero-slippage fills systematically proposes high-turnover mirages. Cost error changes **which strategies survive selection**, not just their score, which is why this sits ahead of bar-equity. Requirements: **off-by-default with a bit-identity test** proving default output byte-unchanged (template: `tests/test_warmup_prefetch_bit_identical.py`; hard rule 4); slippage is a separate modelled cost, not folded into the 10 bps fee; then rerun the baseline at 0/5/10 bps — the 0 bps run must stay byte-identical, and the 5/10 bps deltas go in the ledger as the first measure of how much edge is a cost mirage. Propose the design in 3–6 bullets and get my nod before code.
+> **Slippage is HANDED TO JEREMY (2026-07-31, Dorian's call)** — execution-core changes belong on his side under single-writer; the decision-ready spec is the Notion page "🎯 Slippage model — decision-ready spec". The fork stays out of `MockExecutionHandler`; "costs modelled" on the finish line becomes Jeremy's item.
+>
+> **Next task — warm-up `fix/regression-test-fixture` (board 4.5, moved from #8):** `tests/test_regression_backtest.py:39` — the `backtest_result` fixture returns from inside `with tempfile.TemporaryDirectory()`, deleting the run dir before `test_config_actually_loaded` reads `manifest.json`, so the config-identity check has **never executed on any platform** (the slow suite's `1 skipped`). Fix the fixture lifetime, watch the dead test run for the first time, mutation-test at the public entry point (a mismatched config MUST fail it), keep the three sibling tests' behavior identical. Upstream-worthy — pre-existing upstream defect.
+>
+> **Then the main task — `fix/metrics-bar-equity` (queue #3; board #5):** bar-level equity from `portfolio_states.csv` → true maxDD/Sharpe + Sortino, exposure %, turnover, fee share; off-by-default, known-answer tests, default output byte-unchanged. Propose the design in 3–6 bullets and get my nod before code.
 >
 > **After that:** 3 `fix/metrics-bar-equity` (drawdown honest), 4 `fix/workflow-macos-port` (cheap, reversible, inert until a campaign runs — pull forward whenever convenient), 5 verify trial accounting (`run_campaign.py:1119-1122` — a **killed** run must still land a row in `campaign_state.trial_sharpes`), then the first campaign. The ticket-level queue is Notion → 🐛 Bugs & Tasks → **🍎 Fork queue (in order)**; `CLAUDE.fork.md` is canonical if they disagree.
 >
@@ -52,7 +56,7 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 | Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades — byte-identical at `mac/setup` tip |
 | Queue #1 | Merged `c641db9a`; PR branch `fix/data-holdout-safety-upstream` = the 7 code commits cherry-picked onto `upstream/master` |
 
-## 3. The task: `feat/slippage-model` — design notes
+## 3. `feat/slippage-model` — design notes (HANDED TO JEREMY 2026-07-31; mirrored to the Notion spec page)
 
 - **Where fills happen:** `MockExecutionHandler` in `execution/execution_handler.py` fills at the exact bar close, zero slippage. All current results are optimistic by construction.
 - **Shape:** flat-bps slippage applied against the trade direction, plus lot-size/min-notional rounding (Binance BTCUSDT filters; hardcode sensible constants — no network in backtests). Off by default; a config knob turns it on.
