@@ -55,33 +55,59 @@ documentation, not relocation.
 
 ## A. DELETE — no mechanism, no audit value
 
-| path | PROD | TEST | DOC | reason |
-|---|---|---|---|---|
-| `campaign.pid` | 0 | 0 | 2 | 4-byte runtime PID file, committed by accident |
-| `workflow/stage_runner.md` | 0 | 0 | 0 | orphaned prompt spec; **there is no `stage_runner.py`** — nothing executes it. Answers the operator's question about whether every stage agent should read CLAUDE.md: moot, this file is dead |
-| `tools/retune_regime_detector.py` | 0 | 0 | 0 | orphaned in all three corpora |
-| `NEXT_SESSION_20260712.md` | 0 | 0 | 1 | **byte-identical duplicate** of `docs/plan/NEXT_SESSION_20260712_superseded.md` (blob `332368e2`, 5771 B both). Delete, do not archive — the archived copy already exists. |
+### EXECUTED at commit `71573062` — 5 files deleted, done, do not re-litigate
 
-**Withdrawn from the v2 delete list after re-measurement** (both were flagged by
-the operator, and both flags were correct):
+| path | PROD/TEST/DOC | reason |
+|---|---|---|
+| `campaign.pid` | 0/0/2 | 4-byte runtime PID file, committed by accident. Now in `.gitignore`. `RUNBOOK.md`'s five hits are shell examples (`echo $! > campaign.pid`) that CREATE it at runtime — not references to a tracked file. |
+| `workflow/stage_runner.md` | 0/0/0 | orphaned prompt spec; **there is no `stage_runner.py`** — nothing executes it. Settles the operator's question about whether every stage agent should read CLAUDE.md: moot, the file was dead. |
+| `NEXT_SESSION_20260712.md` | 0/0/1 | byte-identical duplicate of `docs/plan/NEXT_SESSION_20260712_superseded.md` (blob `332368e2`, 5771 B both). The archived copy already existed. |
+| `incident_20260710/instance_F_payload.txt` | 0/0/0 | 166 bytes, superseded by `INCIDENT.md` |
+| `protocols/escalation_dotusdt_4h.json` | 0/0/0 | unexecuted spec; the SOL/AVAX/15m siblings are referenced, this one never was |
 
-- `workflow/LATER.md` — my probe searched `LATER.md` with the extension. It is a
+### OVER-DELETED and RESTORED at `595b5096`
+
+`protocols/diagnostic_btceth_4h.json` was deleted at `71573062` and should not
+have been. Restored byte-identical (blob `8de569f1`) and reclassified to §B
+ARCHIVE. Cause, recorded so it does not recur: the director downgraded it to
+ARCHIVE in conversation and never edited this file, so the plan and the dispatch
+disagreed and the executing agent followed the plan — correctly, per the
+"file wins" rule. **A verdict that lives only in chat is not a verdict.**
+
+Its three run_036 provenance records (`protocol_result.yaml:3`,
+`run_context.yaml:2`, `protocol_summary.json:4`) are what make run_036
+reproducible — the same argument that archives `regime_retune_results.yaml`
+rather than deleting it.
+
+### HELD — awaiting an explicit operator decision
+
+`tools/retune_regime_detector.py` (0/0/0) is a genuine orphan and CLEAN-3a-pre
+confirmed deleting it orphans no reader. But it is the **sole producer** of
+`config/regime_retune_winner.json`, which `regime_detector_report.yaml:6` names
+as its `config_source`. Delete it and that config becomes unreproducible: the
+next report regeneration falls back to `validate_regime_detector.py:61`'s
+run_033 default and silently describes a **different detector**, while
+`AMENDMENTS_01-06.md:120` makes `detector_version` load-bearing for every
+regime-conditional KB finding. Director recommendation: **keep** — 21 KB buys
+the reproduction path for a config the live report depends on.
+
+### WITHDRAWN from the delete list after re-measurement
+
+Both were flagged by the operator, and both flags were correct:
+
+- `workflow/LATER.md` — the probe searched `LATER.md` with the extension. It is a
   deferred-scope record from STEP6_ITER1_v2 listing five still-open items,
   including "collapsing STAGE_CONFIGS into stages.yaml" and "stages 6-10
   skeletons exist but empty" — the latter corroborated by CLEAN-0 deleting an
-  empty `skills/research-decision/SKILL.md`. This is backlog, not litter.
+  empty `skills/research-decision/SKILL.md`. Backlog, not litter.
   → MOVE to `improvements/`, see §D.
 - `workflow/handoff.schema.yaml` — the string `handoff.schema` appears in **zero**
   files, so nothing loads it, but it is a real 11-field schema
   (`handoff_version`, `run_id`, `from_stage`, `to_stage`, ...) describing the
   contract that `templates/handoffs/*.yaml` implement and
-  `run_phase1_research.py:64-103` consumes by filename. It is a schema with no
+  `run_phase1_research.py:64-103` consumes by filename. A schema with no
   validator — the mirror image of the missing-schema finding in §E.
   → MOVE to `schemas/handoff.schema.yaml`, see §D.
-| `incident_20260710/instance_F_payload.txt` | 0 | 0 | 0 | 166 bytes, superseded by `INCIDENT.md` |
-| `protocols/escalation_dotusdt_4h.json` | 0 | 0 | 0 | unexecuted spec; SOL/AVAX/15m siblings are referenced |
-
-Add `campaign.pid` to `.gitignore`.
 
 ### RESOLVED — CLEAN-3a-pre, 2026-07-30. Two KEEP, one ARCHIVE, none deleted.
 
