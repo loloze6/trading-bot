@@ -40,9 +40,13 @@ the three-role model for fragment data, the concealment-instruction doctrine,
 read-back verification doctrine.
 
 ### "Where do things stand right now?"
-→ **[`00_closing_state.md`](00_closing_state.md)** — canonical current status
-of the enhancement-plan build (M0–M3, P1a/P1b). Note: `docs/plan/00_closing_state.md`
+→ **[`improvements/IMPROVEMENTS_DONE_20260706.md`](improvements/IMPROVEMENTS_DONE_20260706.md)**
+(formerly `00_closing_state.md`) — canonical current status of the
+enhancement-plan build (M0–M3, P1a/P1b). Note: `docs/plan/00_closing_state.md`
 is an ARCHIVED snapshot with the same title — not the current version.
+→ **[`improvements/IMPROVEMENTS_REGISTER.md`](improvements/IMPROVEMENTS_REGISTER.md)**
+— per-improvement status index (01–11): specified vs. implemented vs. accepted,
+built from PROD-corpus references and acceptance artifacts.
 → **[`campaign_summary.md`](campaign_summary.md)** — machine-generated
 scoreboard (written by `workflow/run_campaign.py`, regenerated on `done`/halt
 transitions only — check its own staleness banner if present before trusting
@@ -108,20 +112,20 @@ Each is an LLM persona in `skills/{name}/SKILL.md`:
 → **`docs/plan/`** — superseded enhancement-plan design docs (`00_overview_v2.md`,
 `01`–`11_*.md`, `AMENDMENTS_01-06.md`), plus the archived `00_closing_state.md`
 namesake above. Read only for historical rationale, never as current guidance.
-→ Archived `NEXT_SESSION.md` snapshots, each superseded by the next as the
-campaign progressed (historical only, read for the session's own
-framing, never as current guidance):
-[`docs/plan/NEXT_SESSION_20260710_superseded.md`](docs/plan/NEXT_SESSION_20260710_superseded.md)
+→ Archived `NEXT_SESSION.md` snapshots (moved to `archive/improvements/`), each
+superseded by the next as the campaign progressed (historical only, read for
+the session's own framing, never as current guidance):
+[`archive/improvements/NEXT_SESSION_20260710_superseded.md`](archive/improvements/NEXT_SESSION_20260710_superseded.md)
 (pre-run_057),
-[`docs/plan/NEXT_SESSION_20260712_superseded.md`](docs/plan/NEXT_SESSION_20260712_superseded.md)
+[`archive/improvements/NEXT_SESSION_20260712_superseded.md`](archive/improvements/NEXT_SESSION_20260712_superseded.md)
 (post-run_057 close),
-[`docs/plan/NEXT_SESSION_20260714_superseded.md`](docs/plan/NEXT_SESSION_20260714_superseded.md)
+[`archive/improvements/NEXT_SESSION_20260714_superseded.md`](archive/improvements/NEXT_SESSION_20260714_superseded.md)
 (post-K4+K2 implementation),
-[`docs/plan/NEXT_SESSION_20260715_superseded.md`](docs/plan/NEXT_SESSION_20260715_superseded.md)
+[`archive/improvements/NEXT_SESSION_20260715_superseded.md`](archive/improvements/NEXT_SESSION_20260715_superseded.md)
 (post-K3 implementation/close-out),
-[`docs/plan/NEXT_SESSION_20260717_superseded.md`](docs/plan/NEXT_SESSION_20260717_superseded.md)
+[`archive/improvements/NEXT_SESSION_20260717_superseded.md`](archive/improvements/NEXT_SESSION_20260717_superseded.md)
 (post-H-041-family close, pre-generator-session),
-[`docs/plan/NEXT_SESSION_20260719_superseded.md`](docs/plan/NEXT_SESSION_20260719_superseded.md)
+[`archive/improvements/NEXT_SESSION_20260719_superseded.md`](archive/improvements/NEXT_SESSION_20260719_superseded.md)
 (post-run_059 close, pre-Phase-1 venue/cost arc).
 → **[`SESSION_LOG.md`](SESSION_LOG.md)** — chronological per-session handoff log
 (hypothesis / result / files touched / next-session prompt). Historical once superseded by a newer entry.
