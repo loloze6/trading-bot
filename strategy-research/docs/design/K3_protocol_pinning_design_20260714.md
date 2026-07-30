@@ -22,7 +22,7 @@ Not in scope, context only: B4+B7+D3 (copy-through, pre-registration as
 required input, operator_directives.yaml), B8 (semantic spec conformance),
 C6 (prescreen statistic for latched sparse signals) — none of these
 interact with protocol SELECTION, only with what happens after a protocol
-is already chosen and executed. K1/K6/A6/C3 (per NEXT_SESSION.md's own
+is already chosen and executed. K1/K6/A6/C3 (per improvements/HANDOFF_CURRENT.md's own
 framing) are unrelated re-scoping decisions, untouched here.
 
 No campaign process is running (operator-stated). No code, test, or
@@ -33,7 +33,7 @@ config file is touched this phase — every quote below is read-only.
 ## 1. Ledger items read (verbatim, re-confirmed this phase against the
 current file, not assumed from memory)
 
-**B3** (`PIPELINE_IMPROVEMENTS_20260712_v4.md` lines 114-127):
+**B3** (`improvements/IMPROVEMENTS_DONE_20260712.md` lines 114-127):
 > Symptom: `machine_constraints.protocol` triggers
 > `_ensure_protocol_from_constraints` → `_generate_monthly_windows`, which
 > would have silently REPLACED the pre-registered
@@ -965,7 +965,7 @@ found by grep, not assumed:
   the literal value `"replication_diagnostic"` for an unrelated
   "Replication guard" rule. A different value; safely ignores the new one.
 - All other grep hits (`SESSION_LOG.md`, `config/campaign_baseline_runs.yaml`,
-  `PIPELINE_IMPROVEMENTS_20260712_v4.md`, briefs, `00_closing_state.md`,
+  `improvements/IMPROVEMENTS_DONE_20260712.md`, briefs, `00_closing_state.md`,
   this design note itself) are prose/doc mentions only, not code consumers.
 
 **Conclusion, confirming A3's own text:** using a NEW, dedicated
@@ -1202,7 +1202,7 @@ close-out:
    `claimed_at: '2026-07-06'` alongside its three pre-existing fields,
    exactly as §9 A5 specifies.
 
-Ledger: **B3 and B10 marked CLOSED** (`PIPELINE_IMPROVEMENTS_20260712_v4.md`),
+Ledger: **B3 and B10 marked CLOSED** (`improvements/IMPROVEMENTS_DONE_20260712.md`),
 pointing back to this design note's §9/Phase-B/rider sections and commits
 `ef58773`/`1248a5e`/`6b827eb`. This close-out's own commit is recorded in
 SESSION_LOG.md.

@@ -335,7 +335,7 @@ def _materialize_run(run_id: str, brief: dict):
 # ---------------------------------------------------------------------------
 # B15: first-class registration -> schedulable queue entry. Retires the
 # per-registration hand-edit to campaign_queue.yaml that H-041-C-v2 required
-# (PIPELINE_IMPROVEMENTS_20260712_v4.md B15) -- a fully-authored brief was
+# (improvements/IMPROVEMENTS_DONE_20260712.md B15) -- a fully-authored brief was
 # previously never schedulable without a manual queue append outside any
 # tool's own write path.
 # ---------------------------------------------------------------------------

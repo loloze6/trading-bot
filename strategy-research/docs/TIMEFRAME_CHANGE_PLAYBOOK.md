@@ -427,7 +427,7 @@ the answer means what it appears to mean.
 
 ## Checklist addition — documentation inventory (2026-07-10)
 
-Whenever a doc under `strategy-research/` (or this playbook, or `USER_GUIDE.md`)
+Whenever a doc under `strategy-research/` (or this playbook, or `docs/USER_GUIDE.md`)
 is added or retired, update `strategy-research/DOC_INDEX.md`'s one-line entry
 in the same change — it is the map every fresh session is expected to read
 first, and a stale map is worse than no map. Do not duplicate the doc's own
@@ -436,5 +436,5 @@ content into the index; one line, pointer only.
 ---
 
 Cross-linked from `trading-bot/DOC/STRATEGY_EXTENDING.md`,
-`strategy-research/RUNBOOK.md`, `strategy-research/USER_GUIDE.md`, and
+`strategy-research/RUNBOOK.md`, `strategy-research/docs/USER_GUIDE.md`, and
 `strategy-research/DOC_INDEX.md`.
