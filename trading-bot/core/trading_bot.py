@@ -366,12 +366,16 @@ class TradingBot:
                         self.logger.error(f"   ✗ {symbol} close failed: {debug_execute_portfolio_rebalance}")
                 else:
                     self.logger.warning(f"   {symbol} foreact was already at 0, but position opened")
+                    # None is what the per-bar path records when no rebalance was attempted
+                    # (initialised :226, forced at :275 whenever approved_rebalance is falsy).
+                    # No call is made here either, so match that convention.
+                    success_execute_portfolio_rebalance, debug_execute_portfolio_rebalance = None, {}
 
                 # Retrieve portfolio information after rebalance 
                 postRebalance_balances = self.portfolio_info.get_account_balance() if success_execute_portfolio_rebalance else balances
                 postRebalance_total_portfolio_value = self.portfolio_info._calculate_total_portfolio_value(postRebalance_balances, close) if success_execute_portfolio_rebalance else total_value
                 if success_execute_portfolio_rebalance : self.logger.debug(f"   💼 Portfolio after rebalance: ${postRebalance_total_portfolio_value:.2f}")
-                postRebalance_current_allocation = self.portfolio_info._calculate_actual_allocation(close, postRebalance_balances, postRebalance_total_portfolio_value, symbol) if success_execute_portfolio_rebalance else previous_allocation
+                postRebalance_current_allocation = self.portfolio_info._calculate_actual_allocation(close, postRebalance_balances, postRebalance_total_portfolio_value, symbol) if success_execute_portfolio_rebalance else actual_allocation
                 
                 # === RECORD PORTFOLIO STATE === --> This is to store at a bar level and visualize it in a graph.
                 if hasattr(self, 'portfolio_state_tracker'):
