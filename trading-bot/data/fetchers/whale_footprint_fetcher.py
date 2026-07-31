@@ -131,8 +131,13 @@ def _end_of_day_if_midnight(when: datetime.datetime) -> datetime.datetime:
     instant.
 
     This is `BaseFetcher`'s own convention, not a local invention: `_load_all`
-    trims with ``df["timestamp"] < self.end_date + timedelta(days=1)``
-    (base_fetcher.py:220), i.e. `end_date` is an inclusive DAY. Callers pass
+    trims with ``df["timestamp"] <= self._inclusive_end(self.end_date)``, and
+    `BaseFetcher._inclusive_end` applies this same midnight rule, i.e. `end_date`
+    is an inclusive DAY. (Until 2026-07-28 that trim read
+    ``< self.end_date + timedelta(days=1)``, which widened EVERY end by a day
+    rather than only midnight ones — an end of 23:00 admitted the next day's
+    bars. `_inclusive_end` differs by a millisecond where this differs by a
+    microsecond; both are far below any bar resolution in use.) Callers pass
     dates — ``'2026-07-26'`` parses to midnight — so reading the bound literally
     would return an empty final day while reporting success, which is the
     `FetchGapError` failure shape. Intra-day bounds (which
