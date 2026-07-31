@@ -15,6 +15,7 @@ from reporting.run_artifact import (
     new_run_dir, write_manifest, write_bars_csv, write_trades_json,
     write_metrics_json, write_forecast_distribution,
     build_core, build_per_regime, build_forecast_bins, build_dynamic, build_regime_validity,
+    build_bar_equity,
     _get_git_sha,
 )
 """
@@ -43,6 +44,7 @@ class BacktestEngine:
                  commission_rate: float = 0.001,
                  human_reports: bool = False,
                  warmup_cutoff_timestamp=None,
+                 bar_equity: bool = False,
                  ):
         if symbols is None: symbols = ["BTCUSDT"]
         # 2026-07-07: bars with timestamp < warmup_cutoff_timestamp still update the
@@ -52,7 +54,15 @@ class BacktestEngine:
         # warmup_prefetch). Default None preserves exact prior behavior: every bar
         # trades, as before this parameter existed.
         self.warmup_cutoff_timestamp = warmup_cutoff_timestamp
-        self.data_manager = data_manager 
+        # 2026-07-31: off-by-default bar-level equity metrics (fix/metrics-bar-equity).
+        # When True, _end_of_backtest adds a "bar_equity" block to metrics.json computed
+        # from the full per-bar portfolio_states series instead of core's trade-exit
+        # curve -- see performance/bar_equity.py and reporting/run_artifact.py::
+        # build_bar_equity. Default False: build_bar_equity is never called, so
+        # write_metrics_json never receives the key and metrics.json is byte-identical
+        # to before this parameter existed (see tests/test_bar_equity_bit_identical.py).
+        self.bar_equity = bar_equity
+        self.data_manager = data_manager
         self.strategy = strategy 
         self.execution_handler = execution_handler
         self.logger = logger
@@ -309,7 +319,14 @@ class BacktestEngine:
         forecast_bins     = build_forecast_bins(completed_trades)
         dynamic           = build_dynamic(flat_state_df) if flat_state_df is not None else {}
         regime_validity   = build_regime_validity(flat_state_df) if flat_state_df is not None else {}
-        write_metrics_json(run_dir, core_metrics, per_regime, forecast_bins, dynamic, regime_validity)
+        bar_equity_metrics = (
+            build_bar_equity(flat_state_df)
+            if self.bar_equity and flat_state_df is not None else None
+        )
+        write_metrics_json(
+            run_dir, core_metrics, per_regime, forecast_bins, dynamic, regime_validity,
+            bar_equity=bar_equity_metrics,
+        )
 
         # Write bars CSV and forecast distribution
         if flat_state_df is not None:
