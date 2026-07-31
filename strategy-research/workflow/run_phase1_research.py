@@ -58,6 +58,29 @@ from google.genai import types
 ROOT = Path(".")
 CAMPAIGN_STATE_PATH = ROOT / "campaign_state.yaml"
 
+
+def _resolve_tbot_python() -> Path:
+    """Path to the trading-bot venv interpreter, relative to the CWD the script runs from.
+
+    Windows layout is tried first so an upstream checkout resolves to exactly the
+    interpreter it always has. A candidate must also be executable: this repo has
+    upstream's Windows venv committed, so venv/Scripts/python.exe exists on macOS
+    too but cannot run there. No usable candidate raises rather than falling back
+    to sys.executable — a silently wrong interpreter is the worst outcome here.
+    """
+    candidates = (
+        Path("..") / "venv" / "Scripts" / "python.exe",
+        Path("..") / ".venv" / "bin" / "python",
+    )
+    for candidate in candidates:
+        if candidate.exists() and os.access(candidate, os.X_OK):
+            return candidate
+    raise RuntimeError(
+        "No runnable trading-bot interpreter. Tried, relative to the current "
+        f"directory {Path.cwd()}: " + ", ".join(str(c) for c in candidates)
+    )
+
+
 # Dynamic Stage Configurations
 STAGE_CONFIGS = {
     "hypothesis_generation": {
@@ -987,7 +1010,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
     """Executes a deterministic tool stage. No LLM call. No token cost."""
     RUN_DIR = ROOT / "runs" / run_id
     ARTIFACTS = RUN_DIR / "artifacts"
-    TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
+    TBOT_PYTHON = _resolve_tbot_python()
 
     if stage_name == "signal_prescreen":
         # Improvement 08+09: signal prescreen — cheap IC + cost gate before full backtest.
@@ -1459,7 +1482,7 @@ def _ensure_regime_detector_report(run_id: str, run_dir: Path) -> dict | None:
             print("⚠️  regime_detector_report: candidate_strategy_config.json not found — skipping.")
             return None
 
-        TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
+        TBOT_PYTHON = _resolve_tbot_python()
         cmd = [
             str(TBOT_PYTHON),
             str(ROOT / "tools" / "validate_regime_detector.py"),
@@ -4886,7 +4909,7 @@ def run_loop(run_id: str):
                     with open(candidate_path, "w", encoding="utf-8") as f:
                         json.dump(config_obj, f, indent=2)
                     validator  = Path("..") / "trading-bot" / "tools" / "validate_config.py"
-                    TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
+                    TBOT_PYTHON = _resolve_tbot_python()
                     result = subprocess.run(
                         [str(TBOT_PYTHON), str(validator), str(candidate_path)],
                         capture_output=True, text=True
