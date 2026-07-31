@@ -1,11 +1,28 @@
-python-binance
-python-dotenv
-numpy
-pandas
-plotly
-openpyxl
-hmmlearn
-scikit-learn
-scipy
-pytest
-pytest-timeout
+# Pinned 2026-07-27 (mac-bootstrap). This version set reproduces the reference
+# backtest artifact config_sha 5ccbec42 / data_sha 5a75366c.
+#
+# pandas is capped below 3.0 deliberately. pandas 3.x parses the OHLCV caches to
+# datetime64[us] rather than datetime64[ns]; run_artifact.data_sha256 hashes the
+# timestamp column via hash_pandas_object, so that resolution change alters the
+# data hash and silently breaks comparability with every prior run artifact.
+python-binance==1.0.37
+python-dotenv==1.2.2
+numpy==2.5.1
+pandas==2.3.3
+plotly==6.9.0
+openpyxl==3.1.5
+hmmlearn==0.3.3
+scikit-learn==1.9.0
+scipy==1.18.0
+pytest==9.1.1
+pytest-timeout==2.4.0
+
+# Imported by shipped code but previously absent from this file:
+#   ccxt        data/fetchers/ccxt_fetcher.py
+#   matplotlib  visualization paths
+#   requests    data/fetchers/fear_greed_fetcher.py
+#   PyYAML      strategy-research/tools/, imported by trading-bot tests
+ccxt==4.5.68
+matplotlib==3.11.1
+requests==2.34.2
+PyYAML==6.0.3
