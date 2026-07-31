@@ -160,3 +160,10 @@ Status changes to the rows above:
 | # | File | Change | Upstream-worthy? |
 |---|---|---|---|
 | 21 | `CLAUDE.md` | added a fork-only section with `@CLAUDE.fork.md` so the fork's guardrails auto-load into every agent session | **No — fork-only by definition.** Jeremy has no `CLAUDE.fork.md`. Previously listed under "Decisions deferred"; decided 2026-07-31. On merge/PR days, keep this section out of anything offered upstream. |
+
+### `fix/workflow-macos-port` + `fix/close-positions-nameerror` — merged 2026-07-31 (`33c6fbe9`, `1c84ba0e`)
+
+| # | File | Change | Upstream-worthy? |
+|---|---|---|---|
+| 22 | `strategy-research/workflow/run_phase1_research.py`, `strategy-research/tools/retune_regime_detector.py`, `trading-bot/tests/test_tbot_python_resolver.py` (new), `strategy-research/requirements-mac.txt` (new) | per-file `_resolve_tbot_python()` replaces 4 hardcoded Windows interpreter paths; predicate = executable regular file (the committed Windows venv exists on every checkout and must be skipped); retune's copy repo-anchored; fail-loud, no fallback; static AST call-site guards; fork-only dependency declaration (claude-agent-sdk==0.2.82, google-genai==2.16.0) | Resolver half: **yes, candidate offer after PRs #4–#7** (groundwork for the agreed Linux deploy; PR text must carry the latent wrong-CWD limitation and the POSIX scoping of the subprocess mechanism). requirements-mac.txt: **fork-only** — versions need a discussion with Jeremy first. |
+| 23 | `trading-bot/core/trading_bot.py` (3 lines), `trading-bot/tests/test_close_positions_at_end.py` (new) | two dormant unbound-name defects in `_close_all_positions_at_end` fixed; the forced-close bar now reaches `portfolio_states.csv` on failed and exact-zero closes, recorded with the engine's own per-bar `(None, {})` skipped-call convention | **Yes — PR #8 candidate.** Dorian decides timing. |
