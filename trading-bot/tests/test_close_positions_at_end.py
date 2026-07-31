@@ -47,6 +47,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+_NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
+pytestmark = pytest.mark.skipif(
+    not all((PROJECT_ROOT / "local_data" / f).exists() for f in _NEEDED_CACHES),
+    reason="local_data fixtures not present",
+)
+
 # Measured window: the last bar the engine processes for this window is 2024-10-05 21:00,
 # at which the default strategy_config.json holds a LONG BTCUSDT position -- so
 # _close_all_positions_at_end runs for real. Found by probing bar-by-bar open-position
