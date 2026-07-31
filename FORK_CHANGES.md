@@ -123,7 +123,7 @@ Verified at the branch tip: fast **130 passed** (116 + 14 new); slow **9 passed 
 ## Decisions deferred to the first sessions
 
 - **`.claude/commands/`** — the fork's 4 slash commands (`/red-team`, `/new-hypothesis`, `/run-baseline`, `/sync-upstream`) are restored on disk but Jeremy's `.gitignore` excludes `.claude/`, so they are currently untracked and would be lost on a clone. Tracking them requires a `.gitignore` divergence. Dorian's call.
-- **`CLAUDE.md`** — Jeremy's version has no `@CLAUDE.fork.md` include, so the fork's guardrails do not auto-load into an agent session. Two lines would fix it, and it is arguably the highest-value divergence available. Dorian's call.
+- **`CLAUDE.md`** — ~~Jeremy's version has no `@CLAUDE.fork.md` include, so the fork's guardrails do not auto-load into an agent session. Two lines would fix it, and it is arguably the highest-value divergence available. Dorian's call.~~ **DONE 2026-07-31, Dorian approved — see row 21.**
 - **`venv/`** — upstream tracks 449 files of a Windows venv. The Mac venv lives at `.venv/`. Untracking upstream's is a separate, PR-worthy change; not done.
 
 ## Upstream merged PRs #1-#3 — sync merge, 2026-07-31 (`290ed4fb`)
@@ -154,3 +154,9 @@ Status changes to the rows above:
   artifact `results/runs/20260728T132811Z_5ccbec42/`, `.gitignore` (.omc), and
   `requirements.txt` comment wording (fork's EXACT-pin note is newer than the
   PR #1 text upstream took; pins identical).
+
+### `CLAUDE.md` include — 2026-07-31, Dorian approved
+
+| # | File | Change | Upstream-worthy? |
+|---|---|---|---|
+| 21 | `CLAUDE.md` | added a fork-only section with `@CLAUDE.fork.md` so the fork's guardrails auto-load into every agent session | **No — fork-only by definition.** Jeremy has no `CLAUDE.fork.md`. Previously listed under "Decisions deferred"; decided 2026-07-31. On merge/PR days, keep this section out of anything offered upstream. |
