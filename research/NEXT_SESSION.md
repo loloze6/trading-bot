@@ -1,4 +1,4 @@
-# Handoff → next Claude Code session (written 2026-07-28, after queue #1 merged)
+# Handoff → next Claude Code session (written 2026-07-31, end of the finish-line session)
 
 Paste §1 into a fresh session. Everything below it is the context that prompt refers to.
 
@@ -8,84 +8,73 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 
 ## 1. The prompt — paste this
 
-> Read these three files in full before doing anything, in this order: `CLAUDE.fork.md`, `research/LEDGER.md`, `research/NEXT_SESSION.md`. **`CLAUDE.fork.md` is NOT auto-loaded** — Jeremy's `CLAUDE.md` has no include for it, so you must read it explicitly. Then run `git status && git log --oneline -5`.
+> Read these three files in full before doing anything, in this order: CLAUDE.fork.md, research/LEDGER.md, research/NEXT_SESSION.md. CLAUDE.fork.md is NOT auto-loaded — Jeremy's CLAUDE.md has no include for it, so you must read it explicitly. Then run: git status && git log --oneline -5
 >
-> **Where we are:** milestone 1 AND fork queue #1 are done. The bot runs on the Mac and reproduces the baseline byte-identically — `config_sha256 5ccbec42` / `data_sha256 5a75366c` / net −23.021% / sharpe −5.646 / 24 trades — and the **holdout data path is guarded**: fetches can no longer write past a requested end, `visualize_data` no longer names a sealed date, and `tests/test_no_sealed_date_literals.py` fails the suite on any executable production date at or beyond the seal's start. Branch `mac/setup`; check `git log` for the actual HEAD rather than trusting a hash written here. Fast suite **165 passed**, slow **14 passed / 0 skipped / 0 errors**. The baseline is a **reproducibility anchor, never a result** — the committed strategy is from a killed family and loses ~23%; its default-reported Sharpe still comes off the trade-exit curve, but the honest bar-level block now exists behind the off-by-default `bar_equity` flag (board #5, 2026-07-31): maxDD −24.77 / sharpe −5.12 / sortino −5.05.
+> WHERE WE ARE (end of 2026-07-31): the fork's half of the finish line is COMPLETE — holdout guarded (queue #1), drawdown honest (board #5: off-by-default bar_equity block, merged eaa4b41c), the seal regex closes both flanks (board 3.5, 8acd08e6), and the never-executed manifest-integrity test lives (board 4.5, f3d85745 — slow suite fully green for the first time). Slippage is HANDED TO JEREMY with a decision-ready spec on Notion (execution-core is his under single-writer). Suites: fast 165 passed, slow 14 passed / 0 skipped / 0 errors. Branch mac/setup — run git log for the actual HEAD. Baseline anchor: config_sha 5ccbec42 / data_sha 5a75366c / net -23.021% / sharpe -5.646 / 24 trades — a REPRODUCIBILITY ANCHOR, NEVER A RESULT; honest bar-level numbers exist behind run_backtest(bar_equity=True): maxDD -24.77 / sharpe -5.12 / sortino -5.05.
 >
-> **Three PRs are open on Jeremy's repo — check all three at session start** (`gh pr view 1 --repo loloze6/trading-bot`, same for 2 and 3): PR #1 (first-run blockers + provenance-note fix `3e00f895`), PR #2 (fetch end-bound + UTF-8 seal-guard fix `7f0ad3a5`), PR #3 (regime fall-through, opened 2026-07-30 at Jeremy's request). Jeremy verified #1 and #2 on Windows 2026-07-28 and said **merge both**; his findings were fixed on the branches 2026-07-30. If he commented again, that may preempt the session plan — tell me before proceeding. Never push to his repo; PRs only. **His W8→W15 (7 commits, incl. a breaking `register_feed(window_seconds=...)` change) are still unpushed on his side — sync via `git fetch upstream && git merge upstream/master` once he pushes.**
+> SESSION-START CHECKS (any may preempt the plan — tell me before proceeding):
+> 1. gh pr view 1 --repo loloze6/trading-bot (same for 2 and 3). Jeremy verified #1/#2 on Windows and said MERGE BOTH. If any merged, the stacked follow-up offers unblock: seal-regex fix (after #2), fixture-revival (after #1), bar-equity + the validator PR #4 candidate (after all three). Never push to his repo; PRs only.
+> 2. git fetch upstream && git log --oneline mac/setup..upstream/master. Jeremy's W8→W15 (7 commits, incl. a BREAKING register_feed(window_seconds=...) change and a Linux recorder port) were UNPUSHED as of 07-31. If he has pushed, a sync merge (git merge upstream/master — merge, never rebase) comes BEFORE the port task, and the port-surface line numbers below must be RE-VERIFIED after the merge.
+> 3. Check Notion for new Jeremy notes (his last pass rewrote a session plan): Trading Bot HQ banner, Mac Fork — Home, and the Trial-Ledger page. If he confirmed Option A (single-writer), write the one-sentence rule into the Working Agreement page AND CLAUDE.fork.md — a queued action from our ✉️ response note.
 >
-> **The finish line ("good enough to start generating") is four things:** costs modelled, drawdown honest, **holdout guarded ✅**, trials counted. Three remain. Hold me to that line — "fix everything first" never ends.
+> THE TASK — fix/workflow-macos-port (queue #4; board #6): make strategy-research/workflow/ RUNNABLE on this Mac. Port surface, audited 2026-07-28 (re-verify line numbers if upstream moved): 4 hardcoded Windows interpreter paths — strategy-research/workflow/run_phase1_research.py:990, :1462, :4889 and strategy-research/tools/retune_regime_detector.py:486 (all point at venv/Scripts/python.exe) — plus ONE undeclared dependency: claude_agent_sdk, imported at run_phase1_research.py:54, pinned 0.2.82 in comments, in no requirements file. The fix is a RESOLVER, not a hard swap: sys.executable is already used correctly at :1587/:2777, so apply the file's own idiom; Jeremy's Windows tree must keep working unchanged. The 2026-07-28 audit found zero other OS hazards (no shell=True, no os.name branches, no backslash literals). Pipeline model: claude-haiku-4-5.
 >
-> **The board-3.5 warm-up is DONE (2026-07-30, merged `8acd08e6`):** the seal regex is now `(?<!\d)\d{4}-\d{2}-\d{2}` — both flanks closed (T-form trailing AND word-char prefix/join leading, the second found in review and bundled with Dorian's approval), 8 new tests, corpus output identical on the clean tree, three mutants killed. Upstream offer waits for PR #2's merge — the seal test does not exist on Jeremy's master.
+> SCOPE BOUNDARIES: (1) runnable ≠ run — do NOT execute campaigns. Under trial-ledger Option A campaigns run on Jeremy's machine, and the trial-accounting gate (run_campaign.py:1119-1122 — a KILLED run must still land a row in campaign_state.trial_sharpes) is unverified. (2) The Recorder's PowerShell supervisor (strategy-research/recorder/supervise.ps1) is a SECOND, UNSCOPED port — explicitly out of scope. (3) Adding the claude_agent_sdk dependency needs my explicit approval first (no new deps without approval) and lives in a fork-only requirements file or documented install step — NOT in upstream's requirements.txt without discussion. ACCEPTANCE: a dry smoke check proving the resolver finds the right interpreter on BOTH path styles (mock the Windows case), imports resolve on the Mac, and NOTHING fetches or runs against market data — no window past 2025-12-31, ever. Propose the design in 3-6 bullets and get my nod BEFORE code.
 >
-> **Slippage is HANDED TO JEREMY (2026-07-31, Dorian's call)** — execution-core changes belong on his side under single-writer; the decision-ready spec is the Notion page "🎯 Slippage model — decision-ready spec". The fork stays out of `MockExecutionHandler`; "costs modelled" on the finish line becomes Jeremy's item.
+> HARD RULES (unchanged): never run live; the holdout is sealed (local_data/holdout_sealed/2026_H1/ — reading it spends it; seven pre-contaminated Binance caches remain readable, so never run a window past 2025-12-31); every experiment touching market data gets a research/TRIALS.csv row; no secrets; origin only; no Co-Authored-By trailers.
 >
-> **The board-4.5 warm-up is DONE (2026-07-31, merged `f3d85745`):** `test_config_actually_loaded` executed for the first time since it was written; the slow suite is fully green (10 passed / 0 skipped) and a missing manifest is now a hard FAIL. Scope corrected by mutation proof: the revived check guards **manifest integrity**, not config_path wiring (the reference config IS the hardcoded fallback's file) — the wiring gap is a new Medium board ticket. Upstream offer after PR #1 merges.
+> LESSONS THAT MUST SHAPE THIS SESSION (paid for 07-30/31 — details in the ledger):
+> 1. COMMIT MESSAGES ARE REVIEWED LIKE CODE: six branches in a row carried refutable specifics (dates, counts, byte offsets, history claims) caught only by the verifier lane. Never write a number or claim you didn't just measure.
+> 2. TWO-PHASE FOR ANYTHING NON-TRIVIAL: phase A characterize-and-STOP (schemas/derivations/insertion points with file:line evidence, conventions pre-registered), get the go, then phase B implement. Phase A caught the warmup-boundary trap before it shipped.
+> 3. EARLIER NUMBERS ARE PREDICTIONS: divergence is a bug to explain, never a number to prefer. That is how a 72%-flattering Sortino died in review instead of in production.
+> 4. FAIL LOUD, NOT FLATTERING: anything feeding decisions raises on degenerate inputs (an all-NaN allocation column used to read as 100% exposed, silently).
+> 5. LANE PATTERN + MODEL PINNING (Dorian's cost policy): executor lanes spawn with model=opus; code-reviewer + red-team + verifier stay on the session model; purely mechanical lanes may use sonnet/haiku. Executor implements from a surgical spec → code-reviewer + red-team in parallel on the diff → separate verifier → team-lead merges. Commit BEFORE mutation rounds. Worktrees live in the scratchpad with the gitignored local_data CSVs COPIED in (never symlinked — a stray fetcher write must not poison the real cache).
 >
-> **Board #5 is DONE (2026-07-31, merged `eaa4b41c`) — drawdown honest ✅:** the off-by-default `bar_equity` block computes bar-level risk from `portfolio_states.csv`. Reference window: maxDD −24.7684 vs trade-exit −24.592, sharpe −5.1217 vs −5.646, **sortino −5.0479 (textbook convention — review caught a 72%-flattering variant before any number shipped)**, exposure 3.79%, turnover 84.67, + observation counts. Fail-loud on degenerate inputs; flag-off byte-identical (independently reproduced). Scope notes: fee share dropped (duplicate of `core.cost_drag_pct`); the flag is programmatic-only (`run_backtest(bar_equity=True)`), not reachable from `main.py simulate`. Upstream offer after PRs #1–#3 merge.
+> HOW I WANT YOU TO WORK: plan in 3-6 bullets and get my nod BEFORE code; one change per branch, reviewed and green before the next; cheapest control that works; verify by execution — main.py simulate prints NOTHING, read the newest results/runs/ dir via: stat -f '%m %N' results/runs/* | sort -rn | head -1; mutation-test new tests at the PUBLIC entry point and mutation-test the fix itself; keep Notion updated as findings land (board tickets: "Dorian's fork" column + the Detail lead-note convention); update research/LEDGER.md before session end; post the wrap to Slack (tradingbot channel, C0BLW7V6BC6).
 >
-> **Next task — `fix/workflow-macos-port` (queue #4; board #6):** the last pulled-forward fork item — 4 hardcoded Windows interpreter paths (`run_phase1_research.py:990,1462,4889`, `tools/retune_regime_detector.py:486`) plus the undeclared `claude_agent_sdk` dependency; resolver, not a hard swap (Jeremy's tree must keep working). Inert until a campaign runs — under trial-ledger Option A it is portability insurance. Propose the design in 3–6 bullets and get my nod before code.
->
-> **After that:** verify trial accounting (`run_campaign.py:1119-1122` — a **killed** run must still land a row in `campaign_state.trial_sharpes`; runs on Jeremy's machine under trial-ledger Option A), then the first campaign (Jeremy's side under Option A). Also pending on Jeremy: PR merges #1→#2→#3, then the fork's follow-up offers (seal-regex after #2, fixture-revival after #1, bar-equity after all three). The ticket-level queue is Notion → 🐛 Bugs & Tasks → **🍎 Fork queue (in order)**; `CLAUDE.fork.md` is canonical if they disagree.
->
-> **Lessons that must shape this session** (paid for on queue #1 — details in the ledger):
-> 1. **A byte-identical baseline proves only the paths the baseline walks.** Queue #1's first cut had a real regression the baseline was blind to. Your bit-identity proof must cover the actual default path, and the reviews must probe the paths `simulate` does *not* walk.
-> 2. **"The fix is correct" and "the fix is guarded" are separate claims.** Mutate your own new code (disable the flag, weaken a threshold, invert a condition) at the public entry point and watch a test fail — three such mutations survived the whole suite until a verifier lane caught them.
-> 3. **Commit before mutation rounds** — `git checkout --` restores to HEAD and once ate uncommitted work mid-session.
-> 4. **The OMC lane pattern worked; reuse it:** executor implements from a surgical spec → code-reviewer + red-team in parallel on the diff → separate verifier on the fixes — every stage independent of the author. **Model pinning (Dorian's cost policy, 2026-07-31):** pin executor lanes to `opus` when spawning; keep code-reviewer/red-team/verifier on the session model — the adversarial layers are where the highest-value catches came from; purely mechanical lanes may use `sonnet`/`haiku`.
->
-> **How I want you to work:**
-> - Propose a plan in 3–6 bullets and get my nod **before writing any code**.
-> - One change per branch. Reviewed and green before you start the next.
-> - Prefer the cheapest control that works. Do not add guards to guards.
-> - Verify by execution, never by reading. `main.py simulate` prints **nothing** — read the newest dir under `results/runs/` via `stat -f '%m %N' results/runs/* | sort -rn | head -1`.
-> - Mutation-test new tests at the *public* entry point — and mutation-test the fix itself, not just the defect.
-> - Never push to Jeremy. `origin` only. No `Co-Authored-By` trailers.
-> - Keep Notion updated as findings land; update `research/LEDGER.md` before the session ends.
->
-> Start by confirming the environment (git state, fast+slow suites) and telling me what you find.
+> Start by confirming the environment (git state; fast+slow suites — expect 165 / 14-0-0) and the three session-start checks, and tell me what you find.
 
 ---
 
-## 2. State as of 2026-07-28 (evening)
+## 2. State as of 2026-07-31 (end of day)
 
 | | |
 |---|---|
-| Branch | `mac/setup` @ `eaa4b41c`, pushed to `origin` |
-| Upstream | Jeremy's GitHub still `70dab378` (local +7, W8→W15, unpushed); **PR #1, #2, #3 open** on `loloze6/trading-bot` |
+| Branch | `mac/setup` @ `e0848424`, pushed to `origin` — run `git log` for the actual HEAD |
+| Upstream | Jeremy's GitHub still `70dab378` (his local +7, W8→W15, unpushed); **PRs #1, #2, #3 open**, his findings fixed on all branches |
 | Fast suite | 165 passed |
 | Slow suite | 14 passed, 0 skipped |
-| Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades — byte-identical at `mac/setup` tip |
-| Queue #1 | Merged `c641db9a`; PR branch `fix/data-holdout-safety-upstream` = the 7 code commits cherry-picked onto `upstream/master` |
+| Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades, byte-identical at tip (re-certified during board #5) |
+| bar_equity (flag-on) | maxDD −24.7684 / sharpe −5.1217 / sortino −5.0479 / exposure 3.79% / turnover 84.67 |
+| Finish line | costs modelled → Jeremy (spec ready) · **drawdown honest ✅** · **holdout guarded ✅** · trials counted → Jeremy's machine (Option A, pending his confirmation) |
+| Venv | `trading-bot-dorian/.venv` → run as `../.venv/bin/python` from `trading-bot/` |
 
-## 3. `feat/slippage-model` — design notes (HANDED TO JEREMY 2026-07-31; mirrored to the Notion spec page)
+## 3. The task: `fix/workflow-macos-port` — notes
 
-- **Where fills happen:** `MockExecutionHandler` in `execution/execution_handler.py` fills at the exact bar close, zero slippage. All current results are optimistic by construction.
-- **Shape:** flat-bps slippage applied against the trade direction, plus lot-size/min-notional rounding (Binance BTCUSDT filters; hardcode sensible constants — no network in backtests). Off by default; a config knob turns it on.
-- **Bit-identity:** with the feature off, `simulate` must be byte-identical to the committed reference (`results/runs/20260728T132811Z_5ccbec42` — `cmp` all five files). With it on at 0 bps, decide and *pre-register* whether rounding alone may change output (it will, if lot-size rounding applies at 0 bps — separate the two knobs if so).
-- **Why it ranks above bar-equity:** slippage fixes how you *rank* return; bar-level Sharpe fixes how you *score* risk. The Edge Playbook: halving costs doubles the viable strategy space — the generator's selection is only honest if costs are.
-- **Interacts with the cost-stress bar:** strategies must survive 1.5×/2× modeled costs on validation. This model is what makes that bar meaningful.
+- **Port surface** (4 lines + 1 dep) audited 2026-07-28; the ledger's "PRIORITY CHANGE + workflow audit" entry has the full detail. Re-verify line numbers if upstream moved.
+- **Resolver design intent:** find the venv interpreter relative to the repo (Mac `.venv/bin/python`, Windows `venv/Scripts/python.exe`), falling back sensibly — Jeremy's tree must work unchanged; prefer the file's own `sys.executable` idiom where the subprocess should reuse the running interpreter.
+- **Why now:** inert until a campaign runs; under Option A it is portability insurance and the groundwork for the agreed Linux deploy target.
+- **Out of scope:** the Recorder supervisor port (`supervise.ps1`), executing any campaign, verifying trial accounting (Jeremy's machine).
 
-## 4. Known-broken, deliberately not fixed (tracked in Notion)
+## 4. Known-broken / deferred (tracked on the board)
 
-- **Seven Binance caches carry sealed rows** — queue #1 blocks *new* leaks; it did not decontaminate. Never run a window past 2025-12-31.
-- ~~**Seal-test date regex misses T-form timestamps**~~ **FIXED 2026-07-30** (`8acd08e6`, board 3.5) — regex now `(?<!\d)\d{4}-\d{2}-\d{2}`, both flanks closed. Successor tickets: compact/slash/dotted/non-padded forms slip BOTH guard layers (Medium — compact-T is the run-dir naming style); `holdout_date_gate.sh` PATTERN hardcoded, not policy-derived (Low).
-- **Seal scan aborts on the first undecodable file** (loud, fail-closed — but the sentinel never fires). Hardening ticket, unqueued.
-- ~~`test_config_actually_loaded` has never executed~~ **FIXED 2026-07-31** (`f3d85745`, board 4.5) — executes, skip is now a hard fail, slow suite 10/0. Successor ticket (Medium): the revived check cannot catch config_path wiring — needs a non-default-config run.
-- `tools/ingest_kraken_archive.py` overwrites instead of merging AND calls `_merge_and_store` directly with a data-derived bound (no end-bound at all) — board order #9.
-- `holdout_date_gate.sh` exists but is not wired into the installed pre-commit (unqueued ticket).
-- `visualize_data` writes its 1m cache into tracked `trading-bot/data/` (wrong dir; gitignore guards the wrong path). Hygiene, deferred.
-- `main.py simulate` rewrites tracked `results/trades.json` every run — restore with `git checkout --` after reproducibility checks.
-- Whale's `_end_of_day_if_midnight` duplicates the midnight rule at microsecond precision (base uses millisecond) — correct output, wasted shard reads. Cosmetic.
+- **Seven Binance caches carry sealed rows** — new leaks blocked (queue #1); never run a window past 2025-12-31.
+- Config-identity check cannot catch config_path wiring (Medium) — needs a non-default-config run; TOCTOU defense-in-depth noted.
+- Compact/slash/non-padded date forms slip BOTH seal-guard layers (Medium — compact-T is the run-dir naming style).
+- `holdout_date_gate.sh` PATTERN hardcoded, not policy-derived (Low); pre-commit wiring still unwired (unqueued).
+- Seal scan aborts wholesale on the first undecodable file (Low, fail-closed).
+- `main.py simulate` rewrites tracked `results/trades.json` — restore with `git checkout --` after reproducibility checks.
+- `visualize_data` cache dir in tracked `trading-bot/data/`; whale's duplicate midnight rule — cosmetic, deferred.
+- Latent NameError `trading_bot.py:374` (`previous_allocation` out of scope in `_close_all_positions_at_end`) — confirmed real 2026-07-31, dormant on windows ending flat.
 
 ## 5. Files to read
 
 | File | Why |
 |---|---|
-| `CLAUDE.fork.md` | mission, hard rules, backlog with queue #1 marked done. **Not auto-loaded.** |
-| `research/LEDGER.md` | every trap and lesson; the 2026-07-28 queue #1 entry is the important one |
-| `FORK_CHANGES.md` | rows 10–16: exactly what queue #1 changed and why |
-| `execution/execution_handler.py` | the task's home — read `MockExecutionHandler` end to end first |
-| `tests/test_warmup_prefetch_bit_identical.py` | the off-by-default bit-identity test template |
+| `CLAUDE.fork.md` | mission, hard rules, backlog with #5 done and the finish line updated. **Not auto-loaded.** |
+| `research/LEDGER.md` | every trap and lesson; the 2026-07-30/31 entries are the important ones |
+| `FORK_CHANGES.md` | rows 17–20: exactly what this session changed and why |
+| `strategy-research/workflow/run_phase1_research.py` | the task's home — read the interpreter-path sites and the `sys.executable` idiom first |
+| `strategy-research/tools/retune_regime_detector.py` | the fourth path site |
 
-Notion — "Trading Bot HQ": 🐛 Bugs & Tasks → **🍎 Fork queue (in order)**. Tickets 1–3 read `Done + PR open`; Mac Fork — Home's top note is current as of this handoff.
+Notion — "Trading Bot HQ": 🐛 Bugs & Tasks → **🍎 Fork queue (in order)**. Rows 1–5 (incl. 3.5/4.5) read done; row 6 is ⬅️ next. The ✉️ response note and the 🎯 slippage spec are under Trading Bot HQ.

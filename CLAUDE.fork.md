@@ -27,6 +27,9 @@ You work WITH Dorian — capable, learning quant trading. Explain reasoning, tea
 - **Prefer the cheapest control that works.** Static check > runtime guard > convention. Do not add guards to guards.
 - **End:** update `research/LEDGER.md` (2–5 lines: what changed, verdicts, next step) and commit it. Never end a work session without it.
 - Spawn a **red-team subagent** (`/red-team`) on: any profitable-looking backtest, any change to metrics/engine/data. Its brief: hunt lookahead, leakage, survivorship, silent behaviour change, overfit.
+- **Lane model pinning (Dorian, 2026-07-31):** executor lanes spawn with `model=opus`; code-reviewer/red-team/verifier stay on the session model (the adversarial layers are where the catches happen); purely mechanical lanes may use sonnet/haiku.
+- **Commit messages are reviewed like code.** Six consecutive branches (2026-07-30/31) carried refutable specifics — dates, counts, byte offsets, history claims — caught only by the verifier lane auditing against git history and execution. Quote only what you just measured.
+- **Two-phase for non-trivial features:** phase A characterize-and-STOP (file:line evidence, pre-registered conventions), get the nod, then implement. Earlier numbers are *predictions* — divergence is a bug to explain, never a number to prefer (this killed a 72%-flattering Sortino in review). **Fail loud, not flattering:** anything feeding decisions raises on degenerate inputs.
 - When results and enthusiasm collide, side with the result. **Never soften a kill.**
 
 ## Hard rules (non-negotiable)
