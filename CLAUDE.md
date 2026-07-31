@@ -22,3 +22,6 @@ From repository root:
 ## Project guidance
 - Use `strategy-research/CLAUDE.md` for the research workflow and artifact-based process.
 - Use local folder context before inventing new abstractions.
+
+## Fork guardrails (Dorian's Mac lab — fork-only section)
+@CLAUDE.fork.md
