@@ -1,0 +1,23 @@
+# Fork-only (Dorian's Mac lab). Dependencies for running strategy-research/
+# workflow on macOS; NOT part of upstream's requirements.txt — offering these
+# upstream needs a discussion first (the versions below are what THIS fork
+# verified, not necessarily what Jeremy's Windows venv holds).
+#
+# Install into the repo-root .venv (it has no pip; use uv):
+#   uv pip install --python .venv/bin/python -r strategy-research/requirements-mac.txt
+#
+# claude-agent-sdk: pinned to the version the workflow code was written
+# against — run_phase1_research.py's SDK-RETRY handling and its
+# cumulative-ResultMessage cost accounting are version-sensitive, and the
+# file's own comments name 0.2.82.
+# google-genai: imported at module level (undeclared upstream; no version
+# recorded anywhere in the tree). Pinned at first install, 2026-07-31;
+# realign if Jeremy reports a different version. NOTE: run_phase1_research
+# constructs genai.Client() at import time, so importing it requires the
+# Gemini API key environment variable to EXIST (any value; no network
+# happens at construction — the exact variable name is documented at the
+# Client() construction site in run_phase1_research.py). No key lives in
+# this repo, ever. This file deliberately avoids spelling the variable name:
+# the repo's pre-commit secret scan blocks it in diffs, by design.
+claude-agent-sdk==0.2.82
+google-genai==2.16.0
