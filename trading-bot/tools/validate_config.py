@@ -179,8 +179,12 @@ def validate(config: dict) -> List[str]:
                 f"VIOLATION V7 regime_detector.vetoes[{i}].result: '{rname}' not in {sorted(_VALID_REGIMES)}"
             )
 
-    default_regime = rd.get("default_regime")
-    if default_regime is not None and default_regime not in _VALID_REGIMES:
+    # An ABSENT key means "unknown" — regime_engine.py:70 reads it as
+    # config.get("default_regime", "unknown") — so mirror that default here rather
+    # than skipping the check on None. An EXPLICIT null is a different thing: not a
+    # regime name, and it maps to no _REGIME_MAP entry.
+    default_regime = rd.get("default_regime", "unknown")
+    if default_regime not in _VALID_REGIMES:
         violations.append(
             f"VIOLATION V7 regime_detector.default_regime: '{default_regime}' not in {sorted(_VALID_REGIMES)}"
         )
@@ -213,7 +217,12 @@ def validate(config: dict) -> List[str]:
     # "chop" for the genuine bypass case this rule exists to prevent — both gaps are
     # closed by conditioning on `rules`.
     mode = rd.get("mode", "threshold_rules")
-    default_regime_val = rd.get("default_regime")
+    # Same mirror as V7 above: an absent key means "unknown", so V9 and V10 judge the
+    # regime the engine will actually resolve to. An explicit null still yields None
+    # here (.get substitutes only for a MISSING key), which V7 has already rejected —
+    # that is what keeps V10's `is not None` guard below meaningful instead of
+    # emitting a second, garbled violation for the same fault.
+    default_regime_val = rd.get("default_regime", "unknown")
     rules_nonempty = bool(rd.get("rules"))
     if (
         mode in ("threshold_rules", "score_product")
