@@ -113,6 +113,7 @@ def write_metrics_json(
     forecast_bins: dict,
     dynamic: dict,
     regime_validity: Optional[dict] = None,
+    bar_equity: Optional[dict] = None,
 ) -> None:
     payload = {
         "core": {
@@ -125,6 +126,8 @@ def write_metrics_json(
     }
     if regime_validity is not None:
         payload["regime_validity"] = regime_validity
+    if bar_equity is not None:
+        payload["bar_equity"] = bar_equity
     (run_dir / "metrics.json").write_text(json.dumps(payload, indent=2, default=str))
 
 
@@ -319,3 +322,84 @@ def build_regime_validity(bars_df: pd.DataFrame) -> dict:
             "informative":         abs(mean_fwd) >= 0.0001,
         }
     return result
+
+
+def build_bar_equity(bars_df: pd.DataFrame) -> dict:
+    """Off-by-default bar-level equity metrics -- an honest alternative to
+    core's trade-exit maxDD/Sharpe (see performance/bar_equity.py's module
+    docstring for why the trade-exit basis understates risk).
+
+    Excludes bars where regime == 'NOT_READY' (case/whitespace-normalized;
+    the engine's own not-ready marker, ~120 bars for the reference window)
+    from every statistic below: the strategy could not have acted during
+    warmup, and including it dilutes volatility with flat bars that were
+    never a real trading decision. RESIDUAL LIMITATION: if the engine's
+    not-ready marker were ever renamed to something other than "NOT_READY"
+    (any casing or surrounding whitespace), this function has no independent
+    is_ready signal to fall back on and would silently include those bars.
+
+    The flag is an explicit opt-in, so degenerate input is an error here,
+    never silently swallowed into an empty block: missing required columns,
+    zero bars surviving the warmup exclusion, NaN in a required column among
+    the surviving bars, or a non-finite computed max_drawdown_pct all raise
+    ValueError. n_bars_warmup_excluded == 0 is NOT one of those cases -- a
+    warmup_prefetch run can be ready from bar 0, and that's reported through
+    the field itself, not treated as degenerate.
+    """
+    from performance.bar_equity import (
+        daily_returns, exposure_pct, max_drawdown_pct, sharpe_ratio_daily,
+        sortino_ratio_daily, turnover,
+    )
+
+    required = {
+        "regime", "timestamp", "postRebalance_total_value",
+        "postRebalance_current_allocation", "previous_allocation",
+    }
+    missing = required - set(bars_df.columns)
+    if missing:
+        raise ValueError(f"build_bar_equity: missing required columns: {sorted(missing)}")
+
+    n_total = len(bars_df)
+    normalized_regime = bars_df["regime"].astype(str).str.strip().str.upper()
+    ready = bars_df[normalized_regime != "NOT_READY"].sort_values("timestamp")
+    if ready.empty:
+        raise ValueError(
+            "build_bar_equity: zero bars remain after excluding NOT_READY rows -- "
+            "cannot compute bar-level metrics"
+        )
+
+    non_regime_required = list(required - {"regime"})
+    if ready[non_regime_required].isna().any().any():
+        raise ValueError(
+            f"build_bar_equity: NaN found in a required column among the "
+            f"{len(ready)} post-warmup bars -- refusing to compute silently wrong statistics"
+        )
+
+    equity = ready["postRebalance_total_value"]
+    timestamps = ready["timestamp"]
+
+    maxdd = max_drawdown_pct(equity)
+    if not np.isfinite(maxdd):
+        raise ValueError(f"build_bar_equity: computed max_drawdown_pct is non-finite ({maxdd})")
+
+    dr = daily_returns(equity, timestamps)
+
+    return {
+        "max_drawdown_pct": round(maxdd, 4),
+        "sharpe":           round(sharpe_ratio_daily(equity, timestamps), 4),
+        "sortino":          round(sortino_ratio_daily(equity, timestamps), 4),
+        "exposure_pct":     round(exposure_pct(ready["postRebalance_current_allocation"]), 4),
+        "turnover":         round(
+            turnover(ready["postRebalance_current_allocation"], ready["previous_allocation"]), 6
+        ),
+        "n_bars_total":           n_total,
+        "n_bars_warmup_excluded": n_total - len(ready),
+        "n_daily_returns":        len(dr),
+        "n_downside_days":        int((dr < 0).sum()),
+        "basis": (
+            "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); "
+            "sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); "
+            "sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL "
+            "daily returns (target 0), not the sample std of negative days alone"
+        ),
+    }
