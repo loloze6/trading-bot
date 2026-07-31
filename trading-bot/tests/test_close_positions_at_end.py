@@ -1,26 +1,35 @@
 """
-Regression guard for TradingBot._close_all_positions_at_end (core/trading_bot.py:324).
+Regression guard for TradingBot._close_all_positions_at_end (core/trading_bot.py).
 
 Two NameErrors lived in that method, both dormant because the method only runs when a
 backtest ends holding an OPEN position -- the reference window (2024-04-01 -> 2024-05-30)
 ends flat, so every baseline in this fork was measured without executing the body.
+(Anchors below are names rather than line numbers, which rot on the first edit.)
 
-  1. `postRebalance_current_allocation = ... if success else previous_allocation` (:374).
-     `previous_allocation` is defined nowhere in the method; the in-scope name holding the
-     pre-rebalance allocation is `actual_allocation`. Python evaluates only the taken
-     branch of a ternary, so the undefined name is invisible until the close rebalance
-     FAILS -- exactly the path that matters, since it is the one that has to record what
-     the portfolio still holds.
+  1. The `postRebalance_current_allocation` ternary read `previous_allocation`, a name
+     bound nowhere in the method; the in-scope name holding the pre-rebalance allocation
+     is `actual_allocation`. Python evaluates only the taken branch of a ternary, so the
+     undefined name stayed invisible until the close rebalance FAILS -- exactly the path
+     that matters, since it is the one that has to record what the portfolio still holds.
 
-  2. The `else:` of `if abs(allocation_change) != 0.0:` (:367, position open but the
-     computed change is zero) never binds `success_execute_portfolio_rebalance` or
-     `debug_execute_portfolio_rebalance`, yet :371-374 and the record_state call below
-     read both unconditionally.
+  2. The `else:` of `if abs(allocation_change) != 0.0:` (position open but the computed
+     change is zero) never bound `success_execute_portfolio_rebalance` or
+     `debug_execute_portfolio_rebalance`, which the post-rebalance block and the
+     record_state call below it read unconditionally.
 
-Neither NameError propagates: the per-symbol body is wrapped in `except Exception` (:399),
-which logs and moves on. So the observable damage is silent -- the close bar is simply
-never recorded into portfolio_states.csv -- and the assertions below check exactly that
-pair of consequences (nothing logged from the exception handler; the close bar recorded).
+Neither NameError propagates: the per-symbol body is wrapped in a blanket
+`except Exception`, which logs and moves on. So on those two paths the damage is silent --
+the close bar is simply never recorded into portfolio_states.csv.
+
+Every other close was already correct before the fix: a SUCCEEDING forced close takes the
+ternary's other arm, so the undefined name is never evaluated. Measured on this window,
+pre-fix vs post-fix runs are byte-identical across all five artifacts and the pre-fix run
+records the close row correctly (503 rows, allocation +2.002210281267678 -> 0.0). That is
+why the faults below are injected: without one, this window proves nothing.
+
+The assertions check both that the close bar is recorded AND what it contains. Existence
+alone is too weak -- it passes for a value that is defined but wrong, which is the class
+the original defect belonged to.
 
 Both tests drive the real engine through run_backtest. Faults are injected at public
 collaborator methods (MockExecutionHandler._execute_portfolio_rebalance,
@@ -67,7 +76,7 @@ class _CloseResult:
     def __init__(self):
         self.records = []
         self.open_symbols_at_close = []
-        self.states_recorded_during_close = 0
+        self.close_rows = []
 
 
 def _run_backtest_with_close_fault(monkeypatch, results_dir, install_fault):
@@ -91,7 +100,9 @@ def _run_backtest_with_close_fault(monkeypatch, results_dir, install_fault):
         finally:
             closing["active"] = False
             self.logger.removeHandler(handler)
-            result.states_recorded_during_close = len(tracker.states) - states_before
+            # The raw appended dicts, not a count: the rows' CONTENT is what
+            # distinguishes the fix from a defined-but-wrong value.
+            result.close_rows = tracker.states[states_before:]
 
     monkeypatch.setattr(TradingBot, "stop", stop)
     install_fault(monkeypatch, closing)
@@ -102,7 +113,9 @@ def _run_backtest_with_close_fault(monkeypatch, results_dir, install_fault):
         start=START_DATE,
         end=END_DATE,
         results_root=str(results_dir),
-        # Keep the tracker's interim trades.json out of the shared results dir (D4).
+        # Keep the tracker's interim trades.json out of the shared results dir; the
+        # session-wide guard in conftest.py fails the run if a test dirties a tracked
+        # file under trading-bot/results/.
         trades_log_file=str(Path(results_dir) / "interim_trades.json"),
     )
     return result
@@ -148,8 +161,12 @@ def _zero_the_close_allocation_change(monkeypatch, closing):
 
 
 def _close_path_errors(records):
-    """Records the `except Exception` handler at core/trading_bot.py:399 emitted."""
+    """Records emitted by the method's own `except Exception` handler."""
     return [r for r in records if "Error closing" in r.getMessage()]
+
+
+def _matching(records, fragment):
+    return [r for r in records if fragment in r.getMessage()]
 
 
 def _describe(records):
@@ -186,6 +203,20 @@ def test_window_still_ends_with_an_open_position(rejected_close):
     )
 
 
+def test_rejected_close_fixture_reaches_the_failed_close_branch(rejected_close):
+    """Guard: proves the injected failure lands on the close, not somewhere harmless.
+
+    Without this, a refactor that de-targets the injection (renaming the handler method,
+    moving the call, changing when `closing` is active) leaves every other test in this
+    fixture passing against a SUCCEEDING close -- the happy path, tested twice, proving
+    nothing about the branch these tests exist for.
+    """
+    assert _matching(rejected_close.records, "close failed"), (
+        "the close rebalance never reported failure, so the failed-close branch was "
+        "never taken; the fault injection no longer reaches the close"
+    )
+
+
 def test_close_survives_a_rejected_close_order(rejected_close):
     errors = _close_path_errors(rejected_close.records)
     assert not errors, (
@@ -195,9 +226,56 @@ def test_close_survives_a_rejected_close_order(rejected_close):
 
 
 def test_rejected_close_order_still_records_the_close_bar(rejected_close):
-    assert rejected_close.states_recorded_during_close == 1, (
+    assert len(rejected_close.close_rows) == 1, (
         "the close bar must reach the portfolio state tracker even when the close "
-        f"rebalance fails; recorded {rejected_close.states_recorded_during_close} rows"
+        f"rebalance fails; recorded {len(rejected_close.close_rows)} rows"
+    )
+
+
+def test_rejected_close_pre_close_allocation_is_non_zero(rejected_close):
+    """Guard: a zero pre-close allocation makes the sign check below trivially true."""
+    assert rejected_close.close_rows[0]["previous_allocation"] != 0.0, (
+        "the recorded pre-close allocation is 0.0, so "
+        "test_rejected_close_records_the_allocation_unchanged_including_sign would hold "
+        "for every value the ternary could produce, sign errors included. Re-probe the "
+        "window for one that ends holding a non-zero allocation."
+    )
+
+
+def test_rejected_close_records_the_allocation_unchanged_including_sign(rejected_close):
+    """A close that failed moved nothing, so the post-close allocation IS the pre-close one.
+
+    Pins the sign, not just the magnitude. The close computes
+    `allocation_change = 0.0 - actual_allocation`, so a ternary arm reading the change
+    instead of the allocation records that same number negated (measured: -2.0022 where
+    +2.0022 is correct) -- defined, plausible and wrong, the class the original defect
+    belonged to. Equality is exact because the fixed arm records the very object passed
+    to record_state as previous_allocation; no arithmetic runs in between.
+    """
+    row = rejected_close.close_rows[0]
+    assert row["postRebalance_current_allocation"] == row["previous_allocation"], (
+        "a failed close leaves the position untouched, so the recorded post-close "
+        "allocation must equal the pre-close one exactly, sign included; got "
+        f"{row['postRebalance_current_allocation']!r} against "
+        f"{row['previous_allocation']!r}"
+    )
+
+
+def test_rejected_close_records_the_handler_failure_flag(rejected_close):
+    # Three c's: record_state's keyword is misspelled in core/trading_bot.py, so the
+    # recorded column carries the typo. Not a typo here.
+    assert rejected_close.close_rows[0]["succcess_execute_portfolio_rebalance"] is False, (
+        "a close whose rebalance reported failure must record that failure, so a later "
+        "reader of portfolio_states.csv can tell the position was NOT flattened"
+    )
+
+
+def test_zero_change_fixture_reaches_the_zero_change_branch(zero_change_close):
+    """Guard: proves the forced zero actually selects the else branch. See the
+    rejected-close twin above for why an untargeted injection is worth failing on."""
+    assert _matching(zero_change_close.records, "was already at 0"), (
+        "the zero-allocation-change branch was never taken, so these tests ran against "
+        "an ordinary close; the fault injection no longer reaches the close"
     )
 
 
@@ -210,7 +288,32 @@ def test_close_survives_a_zero_allocation_change(zero_change_close):
 
 
 def test_zero_allocation_change_still_records_the_close_bar(zero_change_close):
-    assert zero_change_close.states_recorded_during_close == 1, (
+    assert len(zero_change_close.close_rows) == 1, (
         "the close bar must reach the portfolio state tracker on the zero-change branch; "
-        f"recorded {zero_change_close.states_recorded_during_close} rows"
+        f"recorded {len(zero_change_close.close_rows)} rows"
+    )
+
+
+def test_zero_allocation_change_records_the_skipped_call_as_none(zero_change_close):
+    """Pins the None convention so it cannot drift silently.
+
+    None is what the per-bar path records for a bar whose rebalance was never attempted:
+    it initialises the flag to None and forces None again at record_state time whenever
+    approved_rebalance is falsy. Measured on this window's artifact, 471 of 503 rows carry
+    None and 32 carry True, so None is the engine's established word for "not attempted".
+    The no-op close makes no call either.
+
+    Both True and False would be defined, plausible, and produce identical numbers -- every
+    other recorded value is unchanged whichever is used, because MockPortfolioInfo's
+    get_account_balance is pure, so the post-rebalance recompute equals the pre-values.
+    They would also pass every other test here, while making the close row the only skipped
+    row in the file claiming a rebalance was attempted.
+
+    Asserted against the tracker's in-memory row, which holds the raw object. The CSV
+    serialises it as an empty field, which pandas reads back as NaN.
+    """
+    assert zero_change_close.close_rows[0]["succcess_execute_portfolio_rebalance"] is None, (
+        "a skipped no-op close must record None, the per-bar path's convention for a "
+        "rebalance that was never attempted -- not a success or a failure that never "
+        "happened"
     )
