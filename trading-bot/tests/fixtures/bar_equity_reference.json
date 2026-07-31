@@ -1,0 +1,21 @@
+{
+  "description": "Reference backtest: BTCUSDT 1h 2024-04-01 to 2024-05-30, default strategy_config.json -- same scenario as reference_run.json, with an added bar_equity expectation block for fix/metrics-bar-equity. Kept as its own fixture (not merged into reference_run.json) so this feature's regression test doesn't couple to core's fixture lifecycle, matching warmup_prefetch_reference.json's precedent.",
+  "symbol": "BTCUSDT",
+  "timeframe": "1h",
+  "start_date": "2024-04-01",
+  "end_date": "2024-05-30",
+  "config": "strategy_config.json",
+  "expected_bar_equity": {
+    "max_drawdown_pct": -24.7684,
+    "sharpe": -5.1217,
+    "sortino": -5.0479,
+    "exposure_pct": 3.7908,
+    "turnover": 84.67312,
+    "n_bars_total": 1438,
+    "n_bars_warmup_excluded": 119,
+    "n_daily_returns": 55,
+    "n_downside_days": 10,
+    "tolerance": 0.001
+  },
+  "note": "Measured 2026-07-31 on run 20260731T000021Z_5ccbec42 (config_sha256 5ccbec42, data_sha256 5a75366c) and cross-checked by an independent from-scratch pandas computation over portfolio_states.csv outside performance/bar_equity.py, at the regime != 'NOT_READY' boundary (119 rows). n_bars_total is portfolio_states.csv's row count for this window; n_bars_warmup_excluded is the count of leading NOT_READY rows. Sortino re-measured 2026-07-31 (fix round) under the textbook target-0 downside-deviation convention (sqrt(mean(min(r,0)^2)) over ALL daily returns) -- was -2.9385 under the earlier sample-std-of-negative-days convention; max_drawdown_pct, sharpe, exposure_pct, turnover, n_bars_total, and n_bars_warmup_excluded are unchanged by that switch, confirmed by rerun."
+}
