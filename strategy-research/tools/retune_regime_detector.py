@@ -51,24 +51,27 @@ from validate_regime_detector import (
 
 
 def _resolve_tbot_python() -> Path:
-    """Path to the trading-bot venv interpreter, relative to the CWD the script runs from.
+    """Absolute path to the trading-bot venv interpreter, anchored at the repo root.
 
     Windows layout is tried first so an upstream checkout resolves to exactly the
     interpreter it always has. A candidate must also be executable: this repo has
     upstream's Windows venv committed, so venv/Scripts/python.exe exists on macOS
-    too but cannot run there. No usable candidate raises rather than falling back
-    to sys.executable — a silently wrong interpreter is the worst outcome here.
+    too but cannot run there. Anchored at _REPO rather than CWD-relative because
+    this script is documented as run from the repo root yet passes cwd=_SR to the
+    subprocess, so only the child ever resolved the old relative path correctly.
+    No usable candidate raises rather than falling back to sys.executable — a
+    silently wrong interpreter is the worst outcome here.
     """
     candidates = (
-        Path("..") / "venv" / "Scripts" / "python.exe",
-        Path("..") / ".venv" / "bin" / "python",
+        Path(_REPO) / "venv" / "Scripts" / "python.exe",
+        Path(_REPO) / ".venv" / "bin" / "python",
     )
     for candidate in candidates:
         if candidate.exists() and os.access(candidate, os.X_OK):
             return candidate
     raise RuntimeError(
-        "No runnable trading-bot interpreter. Tried, relative to the current "
-        f"directory {Path.cwd()}: " + ", ".join(str(c) for c in candidates)
+        "No runnable trading-bot interpreter. Tried: "
+        + ", ".join(str(c) for c in candidates)
     )
 
 
