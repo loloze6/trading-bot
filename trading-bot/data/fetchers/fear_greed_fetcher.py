@@ -138,7 +138,7 @@ class FearGreedFetcher(BaseFetcher):
 
             # Filter to the requested window — the API always returns the most recent
             # N days from today regardless of start/end, so we trim here.
-            df = df[(df["timestamp"] >= start) & (df["timestamp"] < end + datetime.timedelta(days=1))]
+            df = df[(df["timestamp"] >= start) & (df["timestamp"] <= end)]
 
             logger.info(f"FearGreedFetcher: fetched {len(df)} daily readings in window")
             return df.reset_index(drop=True)
