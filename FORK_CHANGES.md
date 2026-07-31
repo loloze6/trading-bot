@@ -125,3 +125,32 @@ Verified at the branch tip: fast **130 passed** (116 + 14 new); slow **9 passed 
 - **`.claude/commands/`** — the fork's 4 slash commands (`/red-team`, `/new-hypothesis`, `/run-baseline`, `/sync-upstream`) are restored on disk but Jeremy's `.gitignore` excludes `.claude/`, so they are currently untracked and would be lost on a clone. Tracking them requires a `.gitignore` divergence. Dorian's call.
 - **`CLAUDE.md`** — Jeremy's version has no `@CLAUDE.fork.md` include, so the fork's guardrails do not auto-load into an agent session. Two lines would fix it, and it is arguably the highest-value divergence available. Dorian's call.
 - **`venv/`** — upstream tracks 449 files of a Windows venv. The Mac venv lives at `.venv/`. Untracking upstream's is a separate, PR-worthy change; not done.
+
+## Upstream merged PRs #1-#3 — sync merge, 2026-07-31 (`290ed4fb`)
+
+Jeremy merged PRs #1, #2, #3 into `loloze6/trading-bot` master (`63237b88`, true
+merges — our commit SHAs are upstream history; W8-W15 still unpushed, so his
+local master is now diverged from his own GitHub). Synced back with
+`git merge upstream/master`; four conflicts resolved by pre-registered map
+(3x fork's version kept; `reference_run.json` took UPSTREAM's — the corrected
+`3e00f895` provenance was never cherry-picked back to `mac/setup`, so the fork's
+copy still carried the refuted "three days" claim). Post-merge verified: fast
+165, slow 14-0-0, validator 0, `simulate` byte-identical to the committed
+reference on all five files.
+
+Status changes to the rows above:
+
+- **Rows 1-6, 10-17: no longer divergences.** Upstream now carries the same
+  content (rows 1-4 via PR #1, 5-6 via PR #3, 10-17 via PR #2).
+- **Rows 7-8 (validator half), 18 (seal regex), 19 (regression fixture),
+  20 (bar_equity): offered upstream 2026-07-31** as PRs #6, #4, #5, #7
+  respectively — branches `0e51bdb7`, `8ab938b1`, `6941b0aa`, `11bcac06`, each
+  cut from `63237b88`, suites verified on that base (control fast 120 passed /
+  2 skipped, slow 9 passed / 1 skipped; the 2 fast skips are the Kraken-archive
+  tests, archive absent in the verification worktrees).
+- **Row 9 (`.omc/` ignore): unchanged, fork-only.**
+- Residual `mac/setup` vs `upstream/master` delta beyond the four open PRs:
+  fork docs (`CLAUDE.fork.md`, `research/`, this file), the committed reference
+  artifact `results/runs/20260728T132811Z_5ccbec42/`, `.gitignore` (.omc), and
+  `requirements.txt` comment wording (fork's EXACT-pin note is newer than the
+  PR #1 text upstream took; pins identical).
