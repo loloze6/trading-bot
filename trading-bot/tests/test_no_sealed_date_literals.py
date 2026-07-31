@@ -28,9 +28,12 @@ protect). Docstrings are excluded by AST position, not by guesswork.
 This is a filter for that incident shape, not a proof: a date built by code —
 `datetime.date(2026, 4, 23)`, string concatenation, timestamp arithmetic,
 `datetime.now()` drift — passes it, as does anything generated at runtime.
-Those are the runtime/campaign gate's job (`strategy-research/tools/
-holdout_date_gate.sh` is the deny-by-default whole-index scanner; wiring it
-into the installed pre-commit hook is tracked separately). Test files are
+The notation matched is narrow too: only zero-padded, dash-separated
+YYYY-MM-DD. Compact (`20260315`), slash-separated, dotted, and non-padded
+forms are not caught (ticketed separately). Those are the runtime/campaign
+gate's job (`strategy-research/tools/holdout_date_gate.sh` is the
+deny-by-default whole-index scanner; wiring it into the installed pre-commit
+hook is tracked separately). Test files are
 excluded because fixtures legitimately simulate sealed-era timestamps to prove
 the guards fire; markdown and prose are excluded because the seal cannot be
 documented without naming it.
@@ -46,6 +49,7 @@ import re
 import tokenize
 from pathlib import Path
 
+import pytest
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -56,7 +60,7 @@ EXCLUDED_PARTS = ("tests", "venv", ".venv", "__pycache__", "results", "local_dat
 # lived. Guards against the exclusion filter (or a surprising checkout layout)
 # silently emptying the scan — a seal check that examines nothing reports green.
 SENTINEL = Path("core") / "launcher.py"
-ISO_DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
+ISO_DATE = re.compile(r"(?<!\d)\d{4}-\d{2}-\d{2}")
 _STRING_TOKENS = {tokenize.STRING, getattr(tokenize, "FSTRING_MIDDLE", tokenize.STRING)}
 
 
@@ -127,3 +131,44 @@ def test_no_executable_production_date_reaches_the_seal():
         f"campaign_data_policy.yaml). A window bound at or past the seal pulls "
         f"sealed rows on the way there; reading sealed data spends it "
         f"permanently:\n  " + "\n  ".join(violations))
+
+
+@pytest.mark.parametrize(
+    ("literal", "expected"),
+    [
+        ("2026-03-15", ["2026-03-15"]),
+        ("2026-03-15T00:00:00", ["2026-03-15"]),
+        ("2026-03-15T00:00:00Z", ["2026-03-15"]),
+        ("run_2026-03-15T00:00:00", ["2026-03-15"]),
+        ("BTCUSDT_2026-03-15_1h.csv", ["2026-03-15"]),
+        ("12026-03-15", []),
+    ],
+)
+def test_a_date_is_extracted_despite_adjacent_word_characters(tmp_path, literal, expected):
+    """A word character (digit, letter, underscore) flanking the date on either
+    side must not hide it — timestamps put 'T' after it, filename/run-id joins
+    put '_' before and after it. A 5-digit year must still be refused."""
+    fixture = tmp_path / "sample.py"
+    fixture.write_text(f'end_date = "{literal}"\n', encoding="utf-8")
+    extracted = [found for _, found in _code_string_dates(fixture)]
+    assert extracted == expected, f"{literal!r} extracted {extracted}, expected {expected}"
+
+
+def test_a_preseal_date_is_extracted_because_extraction_is_seal_blind(tmp_path):
+    """Extraction doesn't know about the seal — record() does the lo comparison
+    — so a plain pre-seal date must come out of extraction just like a sealed
+    one; this isolates that property from any adjacent-word-character shape."""
+    fixture = tmp_path / "sample.py"
+    fixture.write_text('start_date = "2024-01-01"\n', encoding="utf-8")
+    extracted = [found for _, found in _code_string_dates(fixture)]
+    assert extracted == ["2024-01-01"]
+
+
+def test_a_date_inside_an_fstring_literal_part_is_extracted(tmp_path):
+    """FSTRING_MIDDLE (Python 3.12+ tokenizer) sits in _STRING_TOKENS alongside
+    STRING — an f-string's literal text must be scanned too, not just plain
+    string literals."""
+    fixture = tmp_path / "sample.py"
+    fixture.write_text('n = 1\nwindow_start = f"batch{n}: 2026-03-15"\n', encoding="utf-8")
+    extracted = [found for _, found in _code_string_dates(fixture)]
+    assert extracted == ["2026-03-15"]
