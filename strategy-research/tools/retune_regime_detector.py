@@ -49,6 +49,34 @@ from validate_regime_detector import (
     ACTIVATION_BAND_MIN, ACTIVATION_BAND_MAX,
 )
 
+
+def _resolve_tbot_python() -> Path:
+    """Absolute path to the trading-bot venv interpreter, anchored at the repo root.
+
+    Windows layout is tried first so an upstream checkout resolves to exactly the
+    interpreter it always has. A candidate must be a regular file AND executable:
+    this repo has upstream's Windows venv committed, so venv/Scripts/python.exe
+    exists on macOS too but cannot run there, and a bare directory would pass the
+    executable check on its own because directories are searchable. Anchored at
+    _REPO rather than CWD-relative because this script is documented as run from
+    the repo root yet passes cwd=_SR to the subprocess, so only the child ever
+    resolved the old relative path correctly. No usable candidate raises rather
+    than falling back to sys.executable — a silently wrong interpreter is the
+    worst outcome here.
+    """
+    candidates = (
+        Path(_REPO) / "venv" / "Scripts" / "python.exe",
+        Path(_REPO) / ".venv" / "bin" / "python",
+    )
+    for candidate in candidates:
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return candidate
+    raise RuntimeError(
+        "No runnable trading-bot interpreter. Tried: "
+        + ", ".join(str(c) for c in candidates)
+    )
+
+
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
@@ -483,7 +511,7 @@ def main():
         print(f"\nWrote: {_WINNER_CONFIG_PATH}")
 
         print(f"\nRunning validate_regime_detector.py with winner config ...")
-        TBOT_PYTHON = Path("..") / "venv" / "Scripts" / "python.exe"
+        TBOT_PYTHON = _resolve_tbot_python()
         cmd = [
             str(TBOT_PYTHON),
             str(Path(_HERE) / "validate_regime_detector.py"),
