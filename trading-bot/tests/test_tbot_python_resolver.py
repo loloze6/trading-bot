@@ -67,6 +67,10 @@ LAYOUTS = (
     (REPO_ROOT / "strategy-research" / "workflow" / "run_phase1_research.py", CWD_RELATIVE),
     (REPO_ROOT / "strategy-research" / "tools" / "retune_regime_detector.py", REPO_ANCHORED),
 )
+ANCHORED_LAYOUTS = tuple(layout for layout in LAYOUTS if layout[1] == REPO_ANCHORED)
+# An empty parametrize list collects zero cases and reports green, so the filter
+# has to prove it selected something.
+assert ANCHORED_LAYOUTS, "no REPO_ANCHORED layout — the anchored test would vanish"
 
 
 def _resolver_source(path: Path) -> str:
@@ -183,16 +187,16 @@ def test_no_candidate_raises_naming_both_tried_paths(source, mode, tmp_path, mon
             f"from: {message}")
 
 
-@pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
+@pytest.mark.parametrize(("source", "mode"), ANCHORED_LAYOUTS, ids=_ids)
 def test_the_repo_anchored_copy_ignores_the_cwd(source, mode, tmp_path, monkeypatch):
     """`retune`'s resolver must not change answer with the invocation directory.
 
     Its two documented CWDs — repo root and `strategy-research/` — are the whole
     reason it is anchored, so the same interpreter must come back from anywhere.
+    Parametrized over the anchored files only: generating a CWD-relative case just
+    to skip it would leave a permanent skip in every run, and a skip that can never
+    turn into a pass is indistinguishable from a test that has quietly died.
     """
-    if mode != REPO_ANCHORED:
-        pytest.skip("run_phase1_research.py is CWD-relative by design")
-
     cwd = _make_tree(tmp_path, windows=False, mac=True)
     resolver = _load_resolver(source, tmp_path)
     expected = (tmp_path / ".venv" / "bin" / "python").resolve()
