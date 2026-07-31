@@ -10,7 +10,7 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 
 > Read these three files in full before doing anything, in this order: `CLAUDE.fork.md`, `research/LEDGER.md`, `research/NEXT_SESSION.md`. **`CLAUDE.fork.md` is NOT auto-loaded** — Jeremy's `CLAUDE.md` has no include for it, so you must read it explicitly. Then run `git status && git log --oneline -5`.
 >
-> **Where we are:** milestone 1 AND fork queue #1 are done. The bot runs on the Mac and reproduces the baseline byte-identically — `config_sha256 5ccbec42` / `data_sha256 5a75366c` / net −23.021% / sharpe −5.646 / 24 trades — and the **holdout data path is guarded**: fetches can no longer write past a requested end, `visualize_data` no longer names a sealed date, and `tests/test_no_sealed_date_literals.py` fails the suite on any executable production date at or beyond the seal's start. Branch `mac/setup`; check `git log` for the actual HEAD rather than trusting a hash written here. Fast suite **138 passed**, slow **10 passed / 0 skipped / 0 errors** — fully green since 2026-07-31. The baseline is a **reproducibility anchor, never a result** — the committed strategy is from a killed family, loses ~23%, and its Sharpe still comes off the trade-exit equity curve (that's queue #3).
+> **Where we are:** milestone 1 AND fork queue #1 are done. The bot runs on the Mac and reproduces the baseline byte-identically — `config_sha256 5ccbec42` / `data_sha256 5a75366c` / net −23.021% / sharpe −5.646 / 24 trades — and the **holdout data path is guarded**: fetches can no longer write past a requested end, `visualize_data` no longer names a sealed date, and `tests/test_no_sealed_date_literals.py` fails the suite on any executable production date at or beyond the seal's start. Branch `mac/setup`; check `git log` for the actual HEAD rather than trusting a hash written here. Fast suite **165 passed**, slow **14 passed / 0 skipped / 0 errors**. The baseline is a **reproducibility anchor, never a result** — the committed strategy is from a killed family and loses ~23%; its default-reported Sharpe still comes off the trade-exit curve, but the honest bar-level block now exists behind the off-by-default `bar_equity` flag (board #5, 2026-07-31): maxDD −24.77 / sharpe −5.12 / sortino −5.05.
 >
 > **Three PRs are open on Jeremy's repo — check all three at session start** (`gh pr view 1 --repo loloze6/trading-bot`, same for 2 and 3): PR #1 (first-run blockers + provenance-note fix `3e00f895`), PR #2 (fetch end-bound + UTF-8 seal-guard fix `7f0ad3a5`), PR #3 (regime fall-through, opened 2026-07-30 at Jeremy's request). Jeremy verified #1 and #2 on Windows 2026-07-28 and said **merge both**; his findings were fixed on the branches 2026-07-30. If he commented again, that may preempt the session plan — tell me before proceeding. Never push to his repo; PRs only. **His W8→W15 (7 commits, incl. a breaking `register_feed(window_seconds=...)` change) are still unpushed on his side — sync via `git fetch upstream && git merge upstream/master` once he pushes.**
 >
@@ -22,15 +22,17 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 >
 > **The board-4.5 warm-up is DONE (2026-07-31, merged `f3d85745`):** `test_config_actually_loaded` executed for the first time since it was written; the slow suite is fully green (10 passed / 0 skipped) and a missing manifest is now a hard FAIL. Scope corrected by mutation proof: the revived check guards **manifest integrity**, not config_path wiring (the reference config IS the hardcoded fallback's file) — the wiring gap is a new Medium board ticket. Upstream offer after PR #1 merges.
 >
-> **Next task — `fix/metrics-bar-equity` (queue #3; board #5):** bar-level equity from `portfolio_states.csv` → true maxDD/Sharpe + Sortino, exposure %, turnover, fee share; off-by-default, known-answer tests, default output byte-unchanged. Propose the design in 3–6 bullets and get my nod before code.
+> **Board #5 is DONE (2026-07-31, merged `eaa4b41c`) — drawdown honest ✅:** the off-by-default `bar_equity` block computes bar-level risk from `portfolio_states.csv`. Reference window: maxDD −24.7684 vs trade-exit −24.592, sharpe −5.1217 vs −5.646, **sortino −5.0479 (textbook convention — review caught a 72%-flattering variant before any number shipped)**, exposure 3.79%, turnover 84.67, + observation counts. Fail-loud on degenerate inputs; flag-off byte-identical (independently reproduced). Scope notes: fee share dropped (duplicate of `core.cost_drag_pct`); the flag is programmatic-only (`run_backtest(bar_equity=True)`), not reachable from `main.py simulate`. Upstream offer after PRs #1–#3 merge.
 >
-> **After that:** 3 `fix/metrics-bar-equity` (drawdown honest), 4 `fix/workflow-macos-port` (cheap, reversible, inert until a campaign runs — pull forward whenever convenient), 5 verify trial accounting (`run_campaign.py:1119-1122` — a **killed** run must still land a row in `campaign_state.trial_sharpes`), then the first campaign. The ticket-level queue is Notion → 🐛 Bugs & Tasks → **🍎 Fork queue (in order)**; `CLAUDE.fork.md` is canonical if they disagree.
+> **Next task — `fix/workflow-macos-port` (queue #4; board #6):** the last pulled-forward fork item — 4 hardcoded Windows interpreter paths (`run_phase1_research.py:990,1462,4889`, `tools/retune_regime_detector.py:486`) plus the undeclared `claude_agent_sdk` dependency; resolver, not a hard swap (Jeremy's tree must keep working). Inert until a campaign runs — under trial-ledger Option A it is portability insurance. Propose the design in 3–6 bullets and get my nod before code.
+>
+> **After that:** verify trial accounting (`run_campaign.py:1119-1122` — a **killed** run must still land a row in `campaign_state.trial_sharpes`; runs on Jeremy's machine under trial-ledger Option A), then the first campaign (Jeremy's side under Option A). Also pending on Jeremy: PR merges #1→#2→#3, then the fork's follow-up offers (seal-regex after #2, fixture-revival after #1, bar-equity after all three). The ticket-level queue is Notion → 🐛 Bugs & Tasks → **🍎 Fork queue (in order)**; `CLAUDE.fork.md` is canonical if they disagree.
 >
 > **Lessons that must shape this session** (paid for on queue #1 — details in the ledger):
 > 1. **A byte-identical baseline proves only the paths the baseline walks.** Queue #1's first cut had a real regression the baseline was blind to. Your bit-identity proof must cover the actual default path, and the reviews must probe the paths `simulate` does *not* walk.
 > 2. **"The fix is correct" and "the fix is guarded" are separate claims.** Mutate your own new code (disable the flag, weaken a threshold, invert a condition) at the public entry point and watch a test fail — three such mutations survived the whole suite until a verifier lane caught them.
 > 3. **Commit before mutation rounds** — `git checkout --` restores to HEAD and once ate uncommitted work mid-session.
-> 4. **The OMC lane pattern worked; reuse it:** executor implements from a surgical spec → code-reviewer + red-team in parallel on the diff → separate verifier on the fixes — every stage independent of the author.
+> 4. **The OMC lane pattern worked; reuse it:** executor implements from a surgical spec → code-reviewer + red-team in parallel on the diff → separate verifier on the fixes — every stage independent of the author. **Model pinning (Dorian's cost policy, 2026-07-31):** pin executor lanes to `opus` when spawning; keep code-reviewer/red-team/verifier on the session model — the adversarial layers are where the highest-value catches came from; purely mechanical lanes may use `sonnet`/`haiku`.
 >
 > **How I want you to work:**
 > - Propose a plan in 3–6 bullets and get my nod **before writing any code**.
@@ -49,10 +51,10 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 
 | | |
 |---|---|
-| Branch | `mac/setup` @ `f3d85745`, pushed to `origin` |
+| Branch | `mac/setup` @ `eaa4b41c`, pushed to `origin` |
 | Upstream | Jeremy's GitHub still `70dab378` (local +7, W8→W15, unpushed); **PR #1, #2, #3 open** on `loloze6/trading-bot` |
-| Fast suite | 138 passed |
-| Slow suite | 10 passed, 0 skipped — fully green for the first time (dead test revived 2026-07-31) |
+| Fast suite | 165 passed |
+| Slow suite | 14 passed, 0 skipped |
 | Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades — byte-identical at `mac/setup` tip |
 | Queue #1 | Merged `c641db9a`; PR branch `fix/data-holdout-safety-upstream` = the 7 code commits cherry-picked onto `upstream/master` |
 
