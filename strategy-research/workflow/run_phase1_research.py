@@ -63,17 +63,19 @@ def _resolve_tbot_python() -> Path:
     """Path to the trading-bot venv interpreter, relative to the CWD the script runs from.
 
     Windows layout is tried first so an upstream checkout resolves to exactly the
-    interpreter it always has. A candidate must also be executable: this repo has
-    upstream's Windows venv committed, so venv/Scripts/python.exe exists on macOS
-    too but cannot run there. No usable candidate raises rather than falling back
-    to sys.executable — a silently wrong interpreter is the worst outcome here.
+    interpreter it always has. A candidate must be a regular file AND executable:
+    this repo has upstream's Windows venv committed, so venv/Scripts/python.exe
+    exists on macOS too but cannot run there, and a bare directory would pass the
+    executable check on its own because directories are searchable. No usable
+    candidate raises rather than falling back to sys.executable — a silently wrong
+    interpreter is the worst outcome here.
     """
     candidates = (
         Path("..") / "venv" / "Scripts" / "python.exe",
         Path("..") / ".venv" / "bin" / "python",
     )
     for candidate in candidates:
-        if candidate.exists() and os.access(candidate, os.X_OK):
+        if candidate.is_file() and os.access(candidate, os.X_OK):
             return candidate
     raise RuntimeError(
         "No runnable trading-bot interpreter. Tried, relative to the current "
