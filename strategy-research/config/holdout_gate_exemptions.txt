@@ -183,10 +183,14 @@ strategy-research/tools/panel_backtester.py	1
 strategy-research/workflow/run_phase1_research.py	1
 tasks/lessons.md	4
 trading-bot/core/launcher.py	1
-trading-bot/data/fetchers/base_fetcher.py	1
+trading-bot/data/fetchers/base_fetcher.py	3
 trading-bot/local_data/README.md	5
+trading-bot/tests/fixtures/reference_run.json	1
+trading-bot/tests/test_fetch_end_bound.py	7
 trading-bot/tests/test_fetch_gap_guard.py	18
 trading-bot/tests/test_kraken_archive_ingest.py	1
+trading-bot/tests/test_no_sealed_date_literals.py	9
+trading-bot/tests/test_visualize_data_window.py	2
 
 # ADDED 2026-07-28, dispatch W11 -- category (c), audited by reading every line.
 # tools/measure_bar_sigma.py measures per-bar sigma from the walk-forward price
@@ -211,3 +215,36 @@ strategy-research/tests/test_measure_bar_sigma.py	3
 # Corroborated independently by reproducing PATTERN + AUTHORSHIP_KEYS directly
 # over `git grep --cached`: 23 raw hits, 23 after the provenance filter (no
 # line in this file is an authorship stamp, so the filter is a no-op here).
+
+# W20 audit (2026-08-01) -- five files admitted by the 8-PR fork merge. The
+# merge fired pre-merge-commit (absent from .git/hooks), not pre-commit, so the
+# gate never ran on them. Every flagged line was read in full context.
+#   base_fetcher.py                 (b) docstring prose. Count 1 -> 3; two lines
+#                                   arrived with the merge.
+#   test_fetch_end_bound.py         (b)+(c) docstrings plus assertion constants.
+#                                   FIXTURES VERIFIED SYNTHETIC: the sole factory
+#                                   generates timestamps arithmetically and sets
+#                                   every OHLCV field to the constant 1.0; no
+#                                   cache read, no network (requests.get is
+#                                   monkeypatched). The in-window timestamps
+#                                   exist to be REJECTED by the file's own
+#                                   assertions.
+#   test_no_sealed_date_literals.py (c) the seal scanner's own test -- cannot
+#                                   function without containing the strings it
+#                                   detects. Same basis as holdout_date_gate.sh.
+#   test_visualize_data_window.py   (b) docstring prose; its fixture serves a
+#                                   single pre-seal bar and reads the boundary
+#                                   from policy rather than hardcoding it.
+#   reference_run.json              (d) NEW CATEGORY -- wall-clock provenance.
+#                                   The two dates are git commit dates recording
+#                                   when work happened, inside the window by
+#                                   calendar coincidence. The fixture's own
+#                                   backtest window is 2024-04-01..2024-05-30,
+#                                   entirely pre-seal, and its expected block
+#                                   holds run metrics only. This is the
+#                                   false-positive class AUTHORSHIP_KEYS exists
+#                                   for; that filter cannot reach it because the
+#                                   dates sit in a JSON string value, not on a
+#                                   key: line. Extending the filter is logged as
+#                                   follow-up, not done here.
+# NO FILE IN THIS AUDIT CONTAINS MARKET DATA FROM THE SEALED WINDOW.
