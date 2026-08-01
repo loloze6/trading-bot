@@ -354,7 +354,10 @@ class Launcher:
         self.logger.debug("-" * 80)
 
         start_date = '2025-04-01'
-        end_date = '2026-04-23'
+        # Last day before the sealed holdout (strategy-research/config/
+        # campaign_data_policy.yaml). tests/test_no_sealed_date_literals.py
+        # fails if this ever falls inside the seal.
+        end_date = '2025-12-31'
         symbols = ['BTCUSDT']
 
         self.logger.debug(f"Fetching data for: {', '.join(symbols)}")
@@ -371,7 +374,7 @@ class Launcher:
 
             for symbol in symbols:
                 if symbol in data and not data[symbol].empty:
-                    is_continuous, gaps = fetcher.validate_quality_data_continuity(symbol)
+                    is_continuous, gaps = fetcher.validate_data_continuity(symbol)
                     self.logger.debug(f"\n{symbol} DATA SUMMARY")
                     self.logger.debug("-" * 40)
                     self.logger.debug(f"  Records: {len(data[symbol]):,}")
@@ -481,7 +484,8 @@ class Launcher:
 def run_backtest(config_path: str, symbol: str, start: str, end: str, results_root: str,
                  runs_root: str = None, interval_seconds: int = None,
                  warmup_prefetch: bool = False, holdout_start: str = None,
-                 commission_rate: float = None, trades_log_file: str = None):
+                 commission_rate: float = None, trades_log_file: str = None,
+                 bar_equity: bool = False):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -529,6 +533,24 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         pattern as commission_rate above. A caller that must not touch the shared
         results dir (notably the test suite, which passes a tmp_path) opts in with
         an explicit path; production callers that omit it are unaffected.
+    bar_equity: when True, adds an off-by-default "bar_equity" block to metrics.json
+        computed from the full per-bar portfolio_states series (postRebalance_total_value,
+        the value AFTER each bar's rebalance -- what actually carries into the next bar)
+        instead of core's trade-exit equity curve. core.sharpe/max_drawdown_pct sample
+        only 24 points (one per completed trade, reference window) and fill every
+        non-trading calendar day with a synthetic 0.0 return; this instead resamples the
+        real bar series to daily closes and excludes the ~120 NOT_READY warmup bars, which
+        otherwise dilute volatility with flat bars the strategy never acted on. See
+        performance/bar_equity.py and reporting/run_artifact.py::build_bar_equity for the
+        full convention (turnover from executed allocation deltas, not the raw
+        allocation_change field, which also counts rejected rebalance attempts; Sharpe/
+        Sortino annualized sqrt(365), matching core's own convention in form only -- the
+        two are not expected to numerically agree, they measure different things).
+        Default False preserves the exact prior behavior: build_bar_equity is never
+        called, so write_metrics_json never receives a bar_equity argument and the key is
+        never inserted into the payload dict -- metrics.json is byte-identical to before
+        this parameter existed, by construction, not merely by matching values. See
+        tests/test_bar_equity_bit_identical.py.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -591,6 +613,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         symbols=params.symbols,
         initial_capital=DEFAULT_INITIAL_BALANCE,
         warmup_cutoff_timestamp=warmup_cutoff_timestamp,
+        bar_equity=bar_equity,
     )
 
     engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=FEED_REGISTRY)
