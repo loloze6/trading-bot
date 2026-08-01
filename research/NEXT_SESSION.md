@@ -37,6 +37,29 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 
 ---
 
+## 1b. Separate add-on prompt — Python LSP setup + usage (paste on its own, any session)
+
+> LSP SETUP + USAGE (one-off, ~30-45 min; independent of the main task — it changes HOW we work, not WHAT we build). If the fork guardrails didn't auto-load, read CLAUDE.fork.md first.
+>
+> GOAL: give this Mac a Python language server that OMC's LSP bridge (lsp_servers, lsp_diagnostics, lsp_hover, lsp_goto_definition, lsp_find_references, lsp_rename) can talk to, wire it to the REAL venv so imports resolve, and make LSP usage part of the standing development pattern for the main session AND every OMC lane — an installed-and-forgotten tool is a failure here. Installing basedpyright is pre-approved by this prompt; anything else still needs my explicit yes.
+>
+> STEPS:
+> 1. Install: `uv tool install basedpyright` (uv is the house tool; `.venv` has no pip; basedpyright is self-contained — no npm needed). Verify it is on PATH.
+> 2. Config at repo root, `pyrightconfig.json`: `{"venvPath": ".", "venv": ".venv", "pythonVersion": "3.13", "typeCheckingMode": "basic"}`. The venv wiring is the step that actually matters — without it every import of pandas/ccxt/claude_agent_sdk/google.genai reads as unresolved and diagnostics are noise. Basic mode is deliberate: upstream code is not typed to strict standards, and strict would invite exactly the drive-by "fixes" the mergeable-fork rule forbids. DECISION FOR ME BEFORE ACTING: leave the file untracked, or gitignore it with a FORK_CHANGES row (the `.omc/` row-9 precedent). Recommend gitignore + row, so a stray `git add -A` can never ride it toward Jeremy.
+> 3. Tell me to restart Claude Code (the plugin re-detects servers at session start). After restart, verify BY EXECUTION: `lsp_servers` lists the server; `lsp_diagnostics` on `trading-bot/performance/bar_equity.py` returns with venv imports RESOLVING (if pandas shows unresolved, the venv wiring failed — fix before claiming anything); hover/goto_definition on a known symbol works.
+> 4. ACCEPTANCE IS USAGE, NOT INSTALLATION — codify in CLAUDE.fork.md's operating protocol (3-4 lines, no more): (a) before any commit, `lsp_diagnostics` on the changed .py files alongside ruff — a NEW diagnostic inside changed lines is a finding, pre-existing upstream noise is not; (b) any rename or signature change runs `lsp_find_references` FIRST and the reference list goes into the plan; (c) Phase A characterization uses goto_definition/hover/references as the primary navigation, grep as the fallback; (d) executor-lane worktree provisioning COPIES `pyrightconfig.json` in alongside the data CSVs (untracked files don't follow worktrees), and lane briefs name the LSP tools so executors actually reach for them.
+> 5. Sanity probe both directions, in the SCRATCHPAD never the tree: a scratch file importing a nonexistent name from `core.trading_bot` must produce a diagnostic; a clean file must not. Same discipline as every guard we ship — prove it fires AND prove it stays quiet.
+> 6. Wrap: 2-3 line ledger entry; FORK_CHANGES row if the gitignore divergence was chosen; one line on Mac Fork — Home. No Slack needed for tooling.
+>
+> WORTH PROPOSING WHILE AT IT (propose, don't do — each needs my explicit yes; all three are the same spirit: cheap guards that make claims reproducible):
+> (a) Pin dev tools — the venv has no ruff, so yesterday's verifier could not reproduce a ruff finding count because tool versions float; a pinned dev-tools section (ruff==X, basedpyright==Y) in `strategy-research/requirements-mac.txt` makes lint claims reproducible.
+> (b) The unqueued CI ticket — a GitHub Actions fast-suite run on the FORK would have caught the seal guard being dead on Windows (cp1252) months earlier; fork-only workflow file, divergence row, Jeremy invited to adopt.
+> (c) Wire `holdout_date_gate.sh` into pre-commit (existing unqueued ticket).
+>
+> HARD RULES apply unchanged: never run live; holdout sealed, no window past 2025-12-31; no secrets (the pre-commit scanner blocks even env-var NAMES in diffs — reword prose, never bypass); origin only; no Co-Authored-By.
+
+---
+
 ## 2. State as of 2026-07-31 (end of day)
 
 | | |
