@@ -84,7 +84,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 # tree, and two definitions drift — which is the failure the reader's
 # deny-by-default record handling exists to prevent. Precedent for the
 # cross-tree path insert: trading-bot/tests/test_funding_rate_component.py:27.
-_RESEARCH_ROOT = str(_REPO_ROOT / "strategy-research")
+_RESEARCH_ROOT = str(_REPO_ROOT / "strategy-research" / "tools")
 if _RESEARCH_ROOT not in sys.path:
     sys.path.insert(0, _RESEARCH_ROOT)
 

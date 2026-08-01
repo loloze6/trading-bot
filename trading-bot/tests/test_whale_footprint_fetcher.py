@@ -30,8 +30,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 REPO_ROOT = PROJECT_ROOT.parent
-if str(REPO_ROOT / "strategy-research") not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT / "strategy-research"))
+if str(REPO_ROOT / "strategy-research" / "tools") not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT / "strategy-research" / "tools"))
 
 from data.feed_registry import (  # noqa: E402
     FEED_REGISTRY,
