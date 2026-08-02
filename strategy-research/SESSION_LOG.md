@@ -4144,3 +4144,155 @@ There are 10 operator-authored cleanup paths in `git status` awaiting the
 CLEAN-0 dispatch — do not commit them as part of anything else.
 
 Phase 2.3 stays PARKED PENDING DATA. Do not mark it closed."
+
+---
+
+## Session: 2026-07-30 to 2026-08-02 — W18-W21 (Park the restructure, unify with the fork, publish)
+
+### Hypothesis
+The strategy-research restructure (~190 file moves toward a cleaner layout)
+was left mid-flight with the tree KNOWINGLY BROKEN (workflow/ and tools/ path
+constants unrepointed) while 8 independent bugfix PRs from the 7hr1LL fork
+were still unmerged on origin/master. Finishing the restructure first would
+mean redoing the repoint work on top of whatever the fork PRs changed
+underneath it. The restructure can instead be PARKED on its own branch with a
+replay mapping, the fork PRs unified into master first, and a further
+fork commit (macOS portability) folded in afterward — without relaxing the
+holdout seal or losing the ability to replay the restructure later.
+
+### Result
+COMPLETED. master is at `c4feaf56`, pushed.
+
+**W19 — restructure parked, not merged:**
+- `4adb7403` (branch `restructure/parked-20260731` only, NOT on master): the
+  190-file move. Commit message states it explicitly — "KNOWINGLY INCOMPLETE
+  ... strategy-research's own pipeline is BROKEN on this branch ... DO NOT
+  MERGE THIS BRANCH."
+- `1f7525f8` (same branch): adds `docs/RESTRUCTURE_MAPPING.tsv` (200 lines,
+  old_path/new_path/status/PENDING_CORRECTION) and
+  `docs/RESTRUCTURE_REPOINT_SITES.tsv` — the replay mapping needed to redo the
+  move later without re-deriving it.
+- `3cfa7b24` on master: same message as `1f7525f8`, records the parking
+  decision and mapping-file existence on the mainline without carrying the
+  190-file move itself.
+- **Park commit shape (`4adb7403`, measured via `git show --name-status
+  -M100`):** 190 R100, 3 D (`power_check_discrepancy_log.yaml`,
+  `regime_detector_report.yaml`, `regime_retune_results.yaml`), 1 A
+  (`tools/recorder/tests/fixtures/live_book_snapshot.json`), 3 M
+  (`holdout_gate_exemptions.txt`, `whale_footprint_fetcher.py`,
+  `test_whale_footprint_fetcher.py`).
+
+**W20 — fork unification + seal reconciliation:**
+- `172cc55c`: merged `origin/master`, which itself carried 8 fork PRs
+  (`#1`-`#8` from `7hr1LL/trading-bot-dorian`, confirmed via `git log
+  3cfa7b24..4d947106 --grep="Merge pull request"` → exactly 8 hits): first-run
+  blockers, data/holdout safety, regime-default fallback, seal-regex flanks,
+  regression-test fixture, validator effective-default regime, metrics
+  bar-equity, close-positions NameError. 25 files changed, +2140/-44.
+- `de6ab0b0` ("W20"): the 8-PR merge fired the `pre-merge-commit` hook, not
+  `pre-commit` — and `pre-merge-commit` is absent from `.git/hooks` — so the
+  holdout date gate never ran on the merge. Registered 5 previously-unscanned
+  files (`base_fetcher.py`, `test_fetch_end_bound.py`,
+  `test_no_sealed_date_literals.py`, `test_visualize_data_window.py`,
+  `reference_run.json`) after reading every flagged line in full context and
+  classifying each as prose/docstring, an assertion constant a guard test
+  cannot avoid naming, or (for `reference_run.json`) a wall-clock provenance
+  timestamp sitting in a JSON string value rather than an
+  AUTHORSHIP_KEYS-matchable key line. Also corrected the `base_fetcher.py`
+  exemption count.
+
+**W21 — macOS port folded in:**
+- `c4feaf56`: cherry-picked/squashed from `7hr1LL/trading-bot-dorian`'s
+  `mac/setup` branch (5 upstream commits: interpreter resolution instead of
+  hardcoded Windows path, repo-root-anchored retune interpreter resolution,
+  removal of an inapplicable resolver case, declared Mac dependencies,
+  regular-file guard on the call sites). 4 files, +395/-4. Deliberately
+  excluded `research/**`, `FORK_CHANGES.md`, `CLAUDE.fork.md`, `CLAUDE.md`,
+  `.gitignore`, `trading-bot/requirements.txt`, `results/runs/**`. Two local
+  changes on top of Dorian's, not from the fork: `requirements-mac.txt`
+  relocated to `strategy-research/config/`, and a `skipif` guard added to a
+  Windows-unconstructible test (chmod 0o644 yields mode 0o100777 on Windows
+  and `os.access(X_OK)` is unconditionally True there, so the guard the test
+  exercises is macOS-only).
+
+**Defects found, all pre-existing (reported, not fixed under this dispatch's
+scope):**
+- `pre-merge-commit` hook absent from `.git/hooks` → merges bypass the
+  holdout seal gate entirely (root cause behind the W20 registration gap).
+- `.git/hooks` is not version-controlled, so no other clone of this repo has
+  the gate at all, merge or otherwise.
+- `holdout_date_gate.sh:164` — `cut -d: -f1 < "$RESIDUAL" | sort | uniq -c |
+  awk '{print $2"\t"$1}'` splits on whitespace; a path containing a space
+  would be silently truncated to its first token.
+- `AUTHORSHIP_KEYS` matches metadata by key line and is blind to a date
+  sitting inside a JSON string value (e.g. `reference_run.json`'s commit-date
+  provenance) — it happened to classify correctly here only because a human
+  read the content, not because the gate would have caught a mismatch.
+- `google-genai` is used (`genai.Client()` at import time in
+  `workflow/run_phase1_research.py`) but not declared as a dependency in any
+  requirements file.
+- `test_c7ext_verdict_gates.py`'s `test_d3` expects 9 protocols; the tree
+  currently has 8.
+
+### Explicitly unchanged
+No IC/correlation/return/P&L measurement exists for any whale-footprint
+feature. `prereg_whale_footprint_v2.yaml` remains unconsumed by any protocol
+run. No holdout gate was relaxed, widened, or bypassed — the two gate-related
+commits (`de6ab0b0`) only registered pre-existing, already-committed dates
+after full-content review; nothing new was exempted. The sealed holdout
+window (see `campaign_data_policy.yaml:holdout_range`) was not touched, read,
+or backtested against. Phase 2.3 (Kraken recorder) is still
+BUILT-BUT-UNEVALUATED, PARKED PENDING DATA — not closed by this session.
+
+### Files touched
+- `strategy-research/docs/RESTRUCTURE_MAPPING.tsv`,
+  `docs/RESTRUCTURE_REPOINT_SITES.tsv` — NEW, on master via `3cfa7b24` (full
+  190-file move itself lives only on `restructure/parked-20260731`)
+- `strategy-research/config/holdout_gate_exemptions.txt` — 5 files
+  registered, `base_fetcher.py` count corrected (`de6ab0b0`)
+- `trading-bot/config.json`, `core/backtester.py`, `core/launcher.py`,
+  `core/trading_bot.py`, `data/fetchers/base_fetcher.py`,
+  `data/fetchers/fear_greed_fetcher.py`,
+  `data/fetchers/whale_footprint_fetcher.py`, `performance/bar_equity.py`
+  (NEW), `reporting/run_artifact.py` (NEW), `requirements.txt`,
+  `strategies/regime_engine.py`, `strategy_config.json`,
+  `tools/validate_config.py`, plus 10 new/updated test files under
+  `tests/` — all from the 8-PR fork merge (`172cc55c`)
+- `strategy-research/config/requirements-mac.txt` (NEW),
+  `tools/retune_regime_detector.py`, `workflow/run_phase1_research.py`,
+  `trading-bot/tests/test_tbot_python_resolver.py` (NEW) — macOS port
+  (`c4feaf56`)
+- `strategy-research/SESSION_LOG.md` — this entry
+
+### Status
+Restructure PARKED on `restructure/parked-20260731`, replay mapping recorded,
+not merged. Phase 2.3 remains BUILT-BUT-UNEVALUATED, PARKED PENDING DATA.
+Nothing in W18-W21 touched a protocol, a prereg threshold, or recorded
+capture data.
+
+### Next session prompt
+"W18-W21 are complete. master is at c4feaf56, pushed: the 8 fork PRs are
+merged (172cc55c), the holdout-gate seal registry is reconciled for the merge
+gap (de6ab0b0), and the macOS port is folded in (c4feaf56). The
+strategy-research restructure is PARKED (not merged) on
+restructure/parked-20260731 (4adb7403 the move, 1f7525f8 the replay mapping),
+with docs/RESTRUCTURE_MAPPING.tsv as the resume point.
+
+Open defects, all pre-existing and none touched by this session:
+1. `.git/hooks/pre-merge-commit` does not exist, so any future merge bypasses
+   the holdout date gate the same way the 8-PR merge did. `.git/hooks` is not
+   version-controlled at all, so this is also missing on every other clone.
+2. `holdout_date_gate.sh:164`'s awk truncates on the first whitespace token —
+   a path containing a space would silently under-count.
+3. AUTHORSHIP_KEYS cannot see a date embedded in a JSON string value; the
+   reference_run.json case was only caught by manual review.
+4. google-genai is imported (genai.Client() at module scope in
+   run_phase1_research.py) but not declared in any requirements file.
+5. test_d3 in test_c7ext_verdict_gates.py expects 9 protocols; there are 8.
+
+Decide whether to resume the restructure (replay via
+RESTRUCTURE_MAPPING.tsv against the now-merged fork tree) or fix the gate
+defects above first — the restructure branch is still explicitly marked DO
+NOT MERGE until its own path constants are repointed.
+
+Phase 2.3 stays PARKED PENDING DATA. Do not mark it closed."
