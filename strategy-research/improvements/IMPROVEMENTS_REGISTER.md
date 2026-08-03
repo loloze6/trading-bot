@@ -91,7 +91,7 @@ Where the two diverge the row says so explicitly.
 - `improvements/IMPROVEMENTS_DONE_20260706.md` — canonical closing state for the
   01–09 plan build (P1a closed 2026-07-04, P1b closed 2026-07-06)
 - `improvements/IMPROVEMENTS_DONE_20260712.md` — later run_057 pipeline ledger
-- `improvements/HANDOFF_CURRENT.md` — current session handoff
-- `improvements/BACKLOG_DEFERRED.md` — deferred scope
+- `engineering/sessions_archive/HANDOFF_20260724.md` — archived session handoff, superseded by `engineering/roadmap/ROADMAP.md`
+- `engineering/roadmap/E-009/EPIC.md` — carries the 5 items formerly in `BACKLOG_DEFERRED.md` (deleted)
 - `docs/plan/AMENDMENTS_01-06.md` — amendments that override plans 01–09 on conflict
 - `archive/improvements/` — six superseded `NEXT_SESSION_*` handoffs

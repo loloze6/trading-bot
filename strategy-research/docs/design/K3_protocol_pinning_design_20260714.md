@@ -22,7 +22,7 @@ Not in scope, context only: B4+B7+D3 (copy-through, pre-registration as
 required input, operator_directives.yaml), B8 (semantic spec conformance),
 C6 (prescreen statistic for latched sparse signals) — none of these
 interact with protocol SELECTION, only with what happens after a protocol
-is already chosen and executed. K1/K6/A6/C3 (per improvements/HANDOFF_CURRENT.md's own
+is already chosen and executed. K1/K6/A6/C3 (per engineering/sessions_archive/HANDOFF_20260724.md's own
 framing) are unrelated re-scoping decisions, untouched here.
 
 No campaign process is running (operator-stated). No code, test, or

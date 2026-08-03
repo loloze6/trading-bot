@@ -14,7 +14,7 @@ In scope: ledger items **A8** (verdict/routing vocabulary split), **A9**
 **C7** (machine-checkable pass-rule evaluator replacing the prose-criteria
 parser), and **C9 as a rider** (KB-exhaustion gate on the verdict stage's own
 proposal-generating paths). Designed as one coherent change to the
-verdict/routing layer, per improvements/HANDOFF_CURRENT.md's task-1 sequencing (this is the
+verdict/routing layer, per engineering/sessions_archive/HANDOFF_20260724.md's task-1 sequencing (this is the
 "verdict/routing vocabulary split, total pass-rule mapping, machine-evaluated
 criteria" cluster).
 

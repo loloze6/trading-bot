@@ -12,17 +12,22 @@ Organized by the question a reader actually arrives with, not by directory.
 ---
 
 ### "What do I do this session?"
-→ **[`HANDOFF_CURRENT.md`](improvements/HANDOFF_CURRENT.md)** — the single entry point for the
-next session: read-first list, priority-ordered task queue, standing
-constraints. Start here if you're picking this campaign back up.
+→ For **engineering work**: **[`engineering/roadmap/ROADMAP.md`](engineering/roadmap/ROADMAP.md)** —
+one line per epic, the only mandatory read for engineering.
+→ For **campaign/research work**: **[`docs/ROADMAP.md`](docs/ROADMAP.md)** (phase
+plan) and `config/campaign_queue.yaml` (current queue state).
+→ **[`HANDOFF_CURRENT.md`](engineering/sessions_archive/HANDOFF_20260724.md)** —
+archived, superseded by the two roadmaps above. Retained for its 20 DONE rows'
+verified commit SHAs.
 
 ### "What's the overall plan / KPI / process?"
 → **[`docs/ROADMAP.md`](docs/ROADMAP.md)** — operator-ratified roadmap
 (v2, 2026-07-19): Phase 0-5 task sequence with gates, the KPI (honest
 verdicts/week, cost per verdict) and anti-corner rule, the role/model
 assignment for every agent class, and the context-economy rules. The
-standing plan — `improvements/HANDOFF_CURRENT.md`'s own task queue is now derived from
-this, not the other way around.
+standing plan — `engineering/sessions_archive/HANDOFF_20260724.md` (archived) once
+derived its own task queue from this; engineering work now tracks separately in
+`engineering/roadmap/ROADMAP.md`.
 
 ### "How do I operate the campaign?"
 → **[`RUNBOOK.md`](RUNBOOK.md)** — launch/status/resume/stop commands, the
