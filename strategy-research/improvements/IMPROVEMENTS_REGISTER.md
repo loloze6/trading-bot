@@ -1,5 +1,7 @@
 # Improvements Register
 
+> Historical audit of completed plans, not a live tracker.
+
 Index of the numbered improvement plans under `docs/plan/`. One row per numbered
 slot. This is an **index, not a narrative** — it answers "was this built, and how
 do we know?", nothing more. Built 2026-07-30 (dispatch CLEAN-4c).

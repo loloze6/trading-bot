@@ -1,6 +1,11 @@
 # From Here to "Profitable Strategy Found" — Roadmap v2 (granular)
 **Date: 2026-07-19 · For: Loloze (operator) · v2 changes: four concepts explained (campaign, validation, prescreen, cost-per-idea); near-miss scoreboard added; your concern-3/4/5 additions dispatched into numbered steps; every step now carries an objective and a deliverable.**
 
+> This is the program roadmap: strategy, engineering and process
+> together. Engineering steps in it (1.2, 1.3, 1.4, 3.1, 3.2, 3.4, 4.1)
+> are implemented as epics — see engineering/roadmap/ROADMAP.md.
+> Part 3 below is superseded by engineering/roadmap/PROCESS.md.
+
 ---
 
 ## Part 1 — What we built, in plain words (now including your four questions)
@@ -39,7 +44,9 @@ Phases gated by conditions. "Session" = one working session with agent dispatche
 - **2.1 — Breadth download (Track A).** Objective: escape the two-coin corner. Deliverable: price + funding history for the top ~20 liquid pairs, integrity-checked (gaps, timestamps — with the timezone lesson institutionalized as checks), documented provenance. Free and retroactive.
 - **2.2 — First cross-sectional run.** Objective: the already-registered, never-run XS_momentum idea gets its verdict (its data blocker dies with 2.1; a 4-coin pilot on data already on disk can run even earlier). Deliverable: first breadth verdict in the KB.
 - **2.3 — Whale-footprint dataset (Track B).** Objective: your "big players" thesis becomes measurable. Deliverable: from historical public *trade-by-trade* records (retro-downloadable; access to be verified given the France block — data download ≠ trading service), build per-coin series of: large-trade imbalance, cumulative volume delta, trade-size distribution shifts; define the first 2 registrable whale-flow indicators. Optional extension if archives allow: exchange in/outflow proxies.
+  **Status (W24 correction): BUILT and UNEVALUATED, not "queued behind Track A."** `recorder/whale_features.py`, `whale_persistence.py`, `whale_report.py`, `protocols/prereg_whale_footprint_v1.yaml`/`v2.yaml`, and `tools/whale_footprint_evaluation.py` all exist. No KB verdict exists for this family. This is PARKED PENDING DATA/evaluation, not queued, and must not be recorded as closed.
 - **2.4 — Forward recorders (Track C).** Objective: start the clock on data that cannot be downloaded backwards (order-book depth; live liquidation events if wanted later). Deliverable: a small always-on recorder daemon + storage plan. Cheap now, priceless in 6 months.
+  **Status (W24 correction): BUILT and RUN, not "queued."** The recorder was built and executed; it was stopped on a storage-budget gate, not left unstarted. See ledger item R3 / `engineering/roadmap/E-007/EPIC.md`.
 - **2.5 — News/text scoping (Track D — your addition, adopted as exploratory).** Objective: decide honestly whether news ingestion is worth building. Deliverable: a scoping memo — which historical news/text sources exist with *point-in-time timestamps* (the hard requirement: we must only use what was knowable at that moment, else the backtest lies), free vs paid, and one candidate indicator design (event/sentiment shock vs subsequent drift). Build only if the memo clears the bar; note our one crude sentiment test so far (Fear&Greed index) is the weak cousin of this axis.
 - **Gate:** ≥2 new data axes on disk with provenance + a first registrable indicator each; recorders running.
 
