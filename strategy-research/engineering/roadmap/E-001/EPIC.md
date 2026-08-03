@@ -38,15 +38,15 @@ E-001 has failed regardless of what else it delivers.
 
 ## Done when
 
-1. `engineering/roadmap/ROADMAP.md` exists on `master` and is the only file
+1. `engineering/roadmap/EPICS.md` exists on `master` and is the only file
    needed to know what is in flight.
 2. All four superseded trackers are either deleted or reduced to a single
    pointer line at their old path. Verified by:
-   `grep -rLl "roadmap/ROADMAP.md" strategy-research/improvements/ strategy-research/docs/ROADMAP.md`
+   `grep -rLl "roadmap/EPICS.md" strategy-research/improvements/ strategy-research/docs/ROADMAP.md`
    returning nothing that still carries independent status.
 3. A Notion **Epics** database exists, one page per epic, each linking to its
    `EPIC.md`.
-4. The next agent session can answer "what should I work on" from `ROADMAP.md`
+4. The next agent session can answer "what should I work on" from `EPICS.md`
    alone, without reading `SESSION_LOG.md`.
 
 ## Stories

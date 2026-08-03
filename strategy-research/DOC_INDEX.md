@@ -12,7 +12,7 @@ Organized by the question a reader actually arrives with, not by directory.
 ---
 
 ### "What do I do this session?"
-→ For **engineering work**: **[`engineering/roadmap/ROADMAP.md`](engineering/roadmap/ROADMAP.md)** —
+→ For **engineering work**: **[`engineering/roadmap/EPICS.md`](engineering/roadmap/EPICS.md)** —
 one line per epic, the only mandatory read for engineering.
 → For **campaign/research work**: **[`docs/ROADMAP.md`](docs/ROADMAP.md)** (phase
 plan) and `config/campaign_queue.yaml` (current queue state).
@@ -27,7 +27,7 @@ verdicts/week, cost per verdict) and anti-corner rule, the role/model
 assignment for every agent class, and the context-economy rules. The
 standing plan — `engineering/sessions_archive/HANDOFF_20260724.md` (archived) once
 derived its own task queue from this; engineering work now tracks separately in
-`engineering/roadmap/ROADMAP.md`.
+`engineering/roadmap/EPICS.md`.
 
 ### "How do I operate the campaign?"
 → **[`RUNBOOK.md`](RUNBOOK.md)** — launch/status/resume/stop commands, the
