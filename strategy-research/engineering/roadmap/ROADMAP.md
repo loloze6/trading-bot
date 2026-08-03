@@ -9,12 +9,15 @@ epic".
 
 | Ref | Title | State | Next step |
 |---|---|---|---|
-| [E-001](E-001/EPIC.md) | Establish the engineering operational process | in-progress | S2 — audit the five overlapping trackers (664 lines) |
-| [E-002](E-002/EPIC.md) | Land the parked `strategy-research/` restructure | planned | S1 — replay the mapping onto master |
+| [E-001](E-001/EPIC.md) | Establish the engineering operational process | in-progress | S3 — Notion Epics database, then S5 close-out |
+| [E-002](E-002/EPIC.md) | Land the parked `strategy-research/` restructure | planned | S1 — re-verify the replay mapping against current master, then replay |
 | [E-003](E-003/EPIC.md) | Make the holdout seal gate enforceable in every clone | new | Investigate `tools/hooks/` and `core.hooksPath` |
 | [E-004](E-004/EPIC.md) | Settle the shared record taxonomy with the fork | new | Needs a joint decision, not a dispatch |
 | [E-005](E-005/EPIC.md) | Verify master on macOS and Linux | new | Dorian to run both suites on `c4feaf56` |
 | [E-006](E-006/EPIC.md) | Stop shipping a committed Windows venv | new | Agree with Dorian before `git rm -r --cached venv/` |
+| [E-007](E-007/EPIC.md) | Recorder storage and host migration | parked | Operator decision on the R3 storage budget |
+| [E-008](E-008/EPIC.md) | q1_26 tick archive aggregation | new | Evaluate extending `data_manager.py:637`'s `.resample()` seam |
+| [E-009](E-009/EPIC.md) | Pipeline harmonization (STAGE_CONFIGS/skill_map, sample_split, protocol auto-run, auto-repair) | new | S1 — merge STAGE_CONFIGS/skill_map |
 
 ## State legend
 
