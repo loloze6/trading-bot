@@ -1,93 +1,89 @@
-# Handoff → next Claude Code session (written 2026-08-03, end of the LSP + type-sweep day)
+# Handoff → next Claude Code session (written 2026-08-03 late, end of the unification + double-characterization day)
 
 Paste §1 into a fresh session. Everything below it is the context that prompt refers to.
 
-**Mirrored in Notion** at *Trading Bot HQ → 🍎 Mac Fork — Home*, where §1 sits in a plain-text code block for clean copy-paste. If you change §1 here, change it there — that page is the one Dorian actually copies from.
+**Mirrored in Notion** at *Trading Bot HQ → 🍎 Mac Fork — Home*, where §1 sits in a code block for clean copy-paste. If you change §1 here, change it there.
 
 ---
 
 ## 1. The prompt — paste this
 
-> Read these three files in full before doing anything, in this order: CLAUDE.fork.md, research/LEDGER.md, research/NEXT_SESSION.md. NOTE: CLAUDE.md @-includes CLAUDE.fork.md — if the fork guardrails already appear in your context, that is the include working and you should say so; if not, the include failed: read the file explicitly and report it. Then run: git status && git log --oneline -5
+> Read these three files in full before doing anything, in this order: CLAUDE.fork.md, research/LEDGER.md, research/NEXT_SESSION.md. NOTE: CLAUDE.md @-includes CLAUDE.fork.md — if the fork guardrails already appear in your context, that is the include working and you should say so; if not, read the file explicitly and report it. Then run: git status && git log --oneline -5
 >
-> WHERE WE ARE (end of 2026-08-03): mac/setup @ 069d0331 or later — run git log for the actual HEAD. Fork queue #1-#6 DONE; five PRs (#4-#8) open on Jeremy's repo, all against 63237b88. Suites: fast 195 passed / 0 skipped, slow 14 passed / 0 skipped / 0 errors. Baseline anchor unchanged: config_sha 5ccbec42 / data_sha 5a75366c / net -23.021% / sharpe -5.646 / 24 trades — a REPRODUCIBILITY ANCHOR, NEVER A RESULT.
+> WHERE WE ARE (end of 2026-08-03, the unification + double-characterization day): mac/setup @ dab115ca or later — run git log for the actual HEAD. THE FORKS ARE UNIFIED: Jeremy merged all 8 fork PRs and cherry-picked the macOS port; we sync-merged his 33ac7ec4 back (8b9a5f72 + 3f6d8bf1; 3 conflicts, all pre-registered; byte-identity proven twice independently; four-lane pattern, zero refuted claims). Suites at tip: fast 213 passed / 0 skipped, slow 14 / 0 / 0. Baseline anchor unchanged: config 5ccbec42 / data 5a75366c / net −23.021% / sharpe −5.646 / 24 trades — a REPRODUCIBILITY ANCHOR, NEVER A RESULT. Know one new thing about it: EVERY artifact (this one included) carries the uniform last-two-bars truncation — bars.csv 1438 rows vs manifest 1440; internally comparable, individually overstated (finding 2 below).
 >
-> NEW SINCE 07-31 (the 2026-08-03 LSP + type-sweep day; full numbers in the ledger's three 08-03 entries):
-> 1. LSP IS STANDING EQUIPMENT AND MUST BE USED, hybrid decided by measurement. NAVIGATION = ty 0.0.65 (pinned via uv) on OMC's native lsp_* bridge — lsp_goto_definition / lsp_hover / lsp_find_references are the PRIMARY navigation in any Phase A; grep is the fallback. COMMIT GATE ARBITER = basedpyright 1.39.5 CLI, reading the untracked pyrightconfig.json (venv .venv, basic mode, extraPaths [strategy-research, strategy-research/tools]) — run it with ruff on the changed .py files before EVERY commit; a NEW diagnostic inside changed lines is a finding, pre-existing noise is not; bridge diagnostics are advisory. Any rename or signature change runs lsp_find_references FIRST and the list goes into the plan — RE-RUN UNTIL THE COUNT IS STABLE (a cold index under-reports silently; measured 3-of-13). Known floors, always quoted with tool+version: basedpyright — bar_equity.py 1, trading_bot.py 33, repo-wide 408; ty — 0, 32, 289.
-> 2. OMC IS STOCK — the temporary registry patch is REVERTED (verified byte-identical to stock). The basedpyright PR to OMC was closed by its owner (ty-only is intentional; their issue 3624 stays open as a design question); 7hr1LL/oh-my-claudecode is archive-only. If lsp_* ever reports no Python server, ty fell off PATH — reinstall ty; do NOT patch OMC.
-> 3. ORCHESTRATION PER THE STANDING AGREEMENT — non-trivial work runs through OMC lanes, not inline: executor lanes spawn with model=opus; code-reviewer / red-team / verifier stay on the session model (the adversarial layers are where the catches happen); a separate verifier passes before any merge; worktrees live in the scratchpad with gitignored caches AND pyrightconfig.json COPIED in (untracked files don't follow worktrees); lane briefs name the LSP tools and the gate command so executors actually use them.
-> 4. THE TYPE SWEEP IS TRIAGED — do not re-derive it: the one real defect found is queue 8.5 (task A below). Benign verdicts are recorded on the parked cleanup ticket (quoted CompletedTrade annotations — runtime-safe BECAUSE quoted; metrics comma-chain extends — execute fine; main_strategy.py:81 override smell; NaT floor/ceil stub noise). The ~370 possibly-None findings (backtester 62, portfolio_info 55, trading_bot 33) are fix/live-wiring triage material, later.
+> TWO CHARACTERIZATIONS COMPLETED 08-03 EVENING, BOTH VERDICTS DELIVERED, NEITHER FIXED (deliberate — fixes rebaseline everything and remedy ownership is Jeremy's; tickets assigned to Jeremy+Dorian for decision):
+> 1. CANDLE-CALLBACK (queue 8.5, Phase A, ralplan consensus + 4 blinded lanes, ledger 08-03 night entry): the enrichment layer is INERT SINCE BIRTH (_strategy_callback never settable, _enrich_and_notify's body does no enrichment, 14,509-close census with 0 default fires) and the arity trap is a REGRESSION — at ac277917^ the builder called callback(symbol, completed_candle), 2-arg WORKING code; the restructure commit narrowed it to (symbol). Jeremy's own A14 triage has a false justification but true conclusion. Board ticket "A14 revisited" carries evidence, his 3 verification commands, and the recommendation (R4 as RESTORATION of his own pre-restructure design). DECISIONS PENDING: Jeremy's remedy choice, Dorian's stance.
+> 2. LAST-TWO-BARS (task B, ledger 08-03 late entry): REAL, UNDOCUMENTED DEFECT — two additive off-by-ones: has_more_data's `- 1` (data_manager.py:816) never feeds the final loaded row; completion-requires-a-later-row (:355/:364) orphans the last fed candle (get_final_candle, built for exactly that leftover, has zero callers). AND the manifest over-reports BY CONSTRUCTION (run_artifact reads the LOADED frame — bar_count/data.end describe loaded rows, never replayed bars). 41/46 of Jeremy's archived runs show delta exactly 2; 46/46 end at 21:00. DECISION PENDING: joint fix conversation. NO fix branch until Dorian + Jeremy agree — any fix invalidates every baseline on both sides.
+>
+> STANDING EQUIPMENT (LSP hybrid unchanged + three updates):
+> - LSP hybrid: ty 0.0.65 on OMC's lsp_* bridge for navigation; basedpyright 1.39.5 CLI is the commit-gate arbiter (untracked pyrightconfig.json; from worktrees run `basedpyright --venvpath <main repo>` or symlink .venv, else phantom missing-imports). PROTOCOL UPGRADE, measured 3×: a STABLE lsp_find_references count is NECESSARY, NOT SUFFICIENT — grep cross-check before acting on any reference list; for ENUMERATION tasks grep is PRIMARY and LSP the cross-check (architect-adjudicated inversion, navigation ≠ enumeration — not protocol drift).
+> - ast_grep MCP tool: FIXED ON DISK — @ast-grep/napi installed at ~/.claude/node_modules (the bridge resolves createRequire-anchored from its own path; `npm install -g` does NOT work despite the tool's own error message). The previous session's server had the failure cached — VERIFY THE TOOL WORKS early this session and note the result.
+> - ruff==0.15.10 now IN .venv (queue 8.6 done); uv pins basedpyright 1.39.5 / ty 0.0.65; deliberate-upgrade rule stands.
+> - Worktree provisioning (corrected): copyable caches are BTCUSDT_{1h,1d,funding_8h}.csv + fear_greed_daily.csv ONLY (no ETHUSDT caches exist; the rest is tracked and follows); symlink the main .venv at the worktree root (3 strategy-research tests resolve interpreters through it); never `git add` there.
 >
 > SESSION-START CHECKS (any may preempt the plan — tell me before proceeding):
-> 1. gh pr view N --repo loloze6/trading-bot for N=4,5,6,7,8. If any merged: after #4 the compact/slash date-forms ticket unblocks; after all five, the workflow-resolver offer (FORK_CHANGES row 22 — its PR text must carry the wrong-CWD limitation and the POSIX scoping). Never push to his repo; PRs only.
-> 2. git fetch upstream && git log --oneline mac/setup..upstream/master. W8-W15 were still unpushed at 08-03 and Jeremy's local master is DIVERGED from his own GitHub. If he pushed, a sync merge comes FIRST (merge, never rebase) with a pre-registered per-file conflict map like 290ed4fb's.
-> 3. Notion: HQ banner, Mac Fork — Home, and the Trial-Ledger page. If Jeremy confirmed Option A, write the single-writer sentence into the Working Agreement page AND CLAUDE.fork.md — still queued. Check his claude-agent-sdk / google-genai versions (ours 0.2.82 / 2.16.0) and any slippage-spec reaction.
+> 1. git fetch upstream && git log --oneline mac/setup..upstream/master. Jeremy is ACTIVE. Expected pushes: his `git rm -r --cached venv/` (Dorian said yes on the HQ banner — after it lands, our resolver-test docstring premise needs a wording touch), possibly the parked ~190-file strategy-research restructure (he will send NOTICE first — if it landed, PULL BEFORE ANY AGENT WORK, every path breaks otherwise). If he pushed anything: sync merge FIRST (merge, never rebase) and pre-register BOTH the conflict set AND the auto-merge set of fork-footprint files (the 08-03 process lesson — silent loss lives in auto-merges).
+> 2. Notion 🐛 board: did Jeremy answer the two DECISION tickets (A14-revisited; last-two-bars — both assigned to him + Dorian), or measure_bar_sigma / r2-test-vector / numpy-deprecation / the two hazard tickets (all assigned to him)? And the two old asks: Option A confirmation (still unconfirmed — single-writer sentence stays queued), slippage-spec reaction. Any answer re-sequences the session.
+> 3. HQ banner + Mac Fork — Home for anything Jeremy posted.
 >
-> THE TASK — in order, one branch each; plan in 3-6 bullets and get my nod BEFORE code:
-> A (queue 8.5, opener): CHARACTERIZE THE CANDLE-CALLBACK CHAIN — the board ticket carries fully validated evidence (2026-08-03): CandleBuilder calls callback(symbol) — ONE arg — at data_manager.py:267, but the default wiring installs the TWO-arg _enrich_and_notify (:436/:493), so the default chain TypeErrors on every candle close, swallowed by the blanket except; _strategy_callback is NEVER set (neither launcher ctor passes the kwarg — verified :145-149 and :204-209); shipped paths work only because launcher.py:230 / backtester.py:159 clobber the builder callback with the 1-arg bot method; aux enrichment actually happens at READ time (get_data_history → _attach_aux_columns; backtest premerge at initialize) so the :21/:432/:497 docs describe a design the code doesn't implement; test_funding_rate_component.py:165 already bypasses the broken default. Phase A: characterize, choose between deleting the dead layer (cheapest control) vs implementing the documented design, then STOP for my nod. Bit-identity mandatory either way — this is per-bar hot-path code. ISSUE-FIRST with Jeremy before any upstream offer: his unpushed W8-W15 touched register_feed and may rework this area.
-> B: TRACE THE LAST-TWO-BARS TICKET — last processed bar is <end> 21:00, systematic across all probed windows; fetch path exonerated; cause untraced in the candle-completion loop; may be intentional. Outcome: "intentional, documented where" (close with the citation) or a real off-by-one/two — the finding comes to me BEFORE any fix, because a fix invalidates every baseline.
-> C (main, queue #9): KRAKEN DAILY INGEST — GATE FIRST: tools/ingest_kraken_archive.py OVERWRITES the cache instead of merging (measured 2026-07-28: 500 rows → 10; passes no existing=, so _assert_no_new_gap is dead there) — fix on its own branch first (candidates in archive/2026-07-28/fix-fetch-end-bound; cherry-pick one at a time, reviewed). Absorb data_manager.py:768's hardcoded binance cache dir into this work (it makes Kraken caches unreachable). Then ingest majors' 1d bars from the 26 GB archive with per-file provenance checks (the 07-28 BTC reproduction pattern). Never commit new CSVs; every run touching market data gets a research/TRIALS.csv row.
-> Opportunistic riders, already approved via the board: 8.6 dev-tool pins (ruff==0.15.10 into .venv — .venv has NO ruff today, homebrew's copy was the 07-31 verifier's non-repro cause; record the uv pins basedpyright 1.39.5 / ty 0.0.65 and the deliberate-upgrade rule). 8.7 fork CI — FIRST verify the fast suite is green on a cache-less fresh clone (currently UNVERIFIED), then the ubuntu+windows fast-suite workflow (fork-only file + FORK_CHANGES row; ubuntu continuously proves the agreed Linux deploy target).
+> THE TASK (default if nothing preempts) — task C, queue #9: KRAKEN DAILY INGEST. GATE FIRST: tools/ingest_kraken_archive.py OVERWRITES the cache instead of merging (measured 2026-07-28: 500 rows → 10; passes no existing=, so _assert_no_new_gap is dead there) — fix on its own branch first (candidates in archive/2026-07-28/fix-fetch-end-bound; cherry-pick one at a time, reviewed). Absorb data_manager.py:768's hardcoded binance cache dir into this work (it makes Kraken caches unreachable — re-verify the line number on the merged tree before quoting it). Then ingest majors' 1d bars from the 26 GB archive with per-file provenance checks (the 07-28 BTC reproduction pattern: re-ingest, compare to committed, explain every delta). Never commit new CSVs; every run touching market data gets a research/TRIALS.csv row. RIDER 8.7 (approved): FIRST verify the fast suite is green on a cache-less fresh clone (Jeremy's 0fd9a3e4 made the close-regression tests SKIP without caches, so the unverified surface shrank but is still unverified), then the ubuntu+windows fast-suite workflow (fork-only file + FORK_CHANGES row).
 >
-> HARD RULES (unchanged): never run live; the holdout is sealed (reading it spends it; seven pre-contaminated Binance caches remain readable — never run a window past 2025-12-31; and remember the engine's own truncation: last processed bar is <end> 21:00); every experiment touching market data gets a research/TRIALS.csv row; no secrets (the pre-commit scanner blocks even env-var NAMES in diffs — reword prose, never bypass the hook); origin only, never push to Jeremy; no Co-Authored-By trailers.
-> RUNNABLE does NOT mean RUN: campaigns execute ONLY on Jeremy's machine under trial-ledger Option A, and the queue #7 killed-run accounting gate is UNVERIFIED. Never execute campaigns without Dorian's explicit direction.
+> HARD RULES (unchanged): never run live; the holdout is sealed (reading it spends it; seven pre-contaminated Binance caches remain readable — never run a window past 2025-12-31; the engine's own truncation is now EXPLAINED, not mysterious: last processed bar = <end> 21:00, two off-by-ones, ticket has the mechanism); every experiment touching market data gets a research/TRIALS.csv row; no secrets (the pre-commit scanner blocks even env-var NAMES in diffs — reword prose, never bypass); origin only, never push to Jeremy; no Co-Authored-By trailers.
+> RUNNABLE does NOT mean RUN: campaigns execute ONLY on Jeremy's machine under trial-ledger Option A (STILL unconfirmed by him), and the queue #7 killed-run accounting gate is UNVERIFIED.
 >
-> LESSONS THAT MUST SHAPE THIS SESSION (08-03 additions on top of the 07-31 standing set — details in the ledger):
-> 1. RESULTS BEFORE DECISIONS: when work produces results Dorian asked to see, present them and END THE TURN — the decision prompt comes in a LATER turn, never in the same message (his explicit instruction, 2026-08-03).
-> 2. ISSUE-FIRST + RED-TEAM ANYTHING EXTERNAL: adversarially pre-review every external-facing PR before opening it, and ask one question first when the change might touch an intentional design decision — the OMC PR died on a deliberate design choice one issue-question would have surfaced, and both bot review findings were foreseeable by our own standing lessons.
-> 3. MEASURE BEFORE ARGUING: two of three stated concerns against ty died on contact with measurement; when a comparison is cheap, run it instead of defending the recommendation.
-> 4. Standing (07-31): connect known facts to new designs; one consolidated review round-trip; content-blind tests are decoration; zero skips is the healthy state; commit messages reviewed like code; two-phase characterize-and-STOP; earlier numbers are predictions; fail loud, not flattering; provision caches into ANY environment that runs the engine.
+> LESSONS THAT MUST SHAPE THIS SESSION (08-03-evening additions on top of the standing set — details in the ledger's three 08-03 evening/night/late entries):
+> 1. For any sync merge, pre-register the AUTO-MERGE set (fork-footprint files upstream also touched), not just the conflict set.
+> 2. VERBATIM MEANS VERBATIM: a condensed "verbatim" evidence file broke audit traceability twice in one session — hand verifier lanes the actual text, never a summary labeled verbatim.
+> 3. A known-answer anchor must itself be verified before seeding it (round-2's anchor was measured EMPTY and would have failed a correct lane); and a lane reporting "the anchor's premise is false" is CORRECT, not failing.
+> 4. Blind the enumeration lanes; give the pre-recon only to the verifier as reconciliation material — a wrong count anchors an honest lane into confirming it (measured: "five sites" would have capped a ten-site enumeration).
+> 5. Verifier lanes can overclaim too (T3 framed a regression as breaking live mode; the shipped live path is clobber-protected) — the lead audits the auditor against the record before anything reaches a document.
+> 6. Standing (07-31/08-03): results before decisions (present, END TURN, decide later); issue-first + red-team anything external; measure before arguing; one consolidated review round-trip; content-blind tests are decoration; zero skips is the healthy state; commit messages reviewed like code; two-phase characterize-and-STOP; earlier numbers are predictions; fail loud, not flattering; provision caches into ANY environment that runs the engine.
 >
-> HOW I WANT YOU TO WORK: visual todo list first; plan → my nod → execute; one change per branch, reviewed and green before the next; OMC lanes per NEW-SINCE item 3 for anything non-trivial; cheapest control that works; verify by execution — main.py simulate prints NOTHING, read the newest results/runs/ dir via stat -f '%m %N' results/runs/* | sort -rn | head -1; gate every commit with the basedpyright CLI + ruff on the changed files; lsp_find_references before any rename, re-run until stable; mutation-test new tests at the PUBLIC entry point and mutation-test the fix itself; keep Notion current as findings land (board Detail lead-note convention); update research/LEDGER.md before session end; post the wrap to Slack (tradingbot channel, C0BLW7V6BC6) in plain human language first, numbers second.
+> HOW I WANT YOU TO WORK: visual todo list first; plan → my nod → execute; one change per branch, reviewed and green before the next; OMC lanes for anything non-trivial (executor lanes model=opus; code-reviewer/red-team/verifier on the session model; separate verifier before any merge; lane briefs name the LSP tools and the gate command); cheapest control that works; verify by execution — main.py simulate prints NOTHING, read the newest results/runs/ dir via stat -f '%m %N' results/runs/* | sort -rn | head -1; gate every commit with the basedpyright CLI + .venv/bin/ruff on the changed .py files; lsp_find_references before any rename, re-run until stable THEN grep cross-check; mutation-test new tests at the PUBLIC entry point and mutation-test the fix itself; keep Notion current as findings land (board Detail lead-note convention); update research/LEDGER.md before session end; post the wrap to Slack (tradingbot channel, C0BLW7V6BC6) in plain human language first, numbers second.
 >
-> Start by confirming the environment (git state; fast+slow suites — expect 195 / 14-0-0; lsp_servers lists ty for .py; basedpyright floors bar_equity 1 / trading_bot 33) and the three session-start checks, and tell me what you find.
+> Start by confirming the environment (git state; fast+slow suites — expect 213 / 14-0-0; lsp_servers lists ty for .py; basedpyright floors bar_equity 1 / trading_bot 33 — the repo-wide floor changed with the merge, re-measure before quoting it; ast_grep MCP tool now resolves) and the three session-start checks, and tell me what you find.
 
 ---
 
-## 1b. LSP add-on prompt — COMPLETED 2026-08-03, superseded
-
-The former §1b (basedpyright setup) ran on 2026-08-03 and evolved past its own plan: OMC's bridge turned out to hardcode ty, a head-to-head measurement (ledger, 08-03 entries) decided a HYBRID — ty 0.0.65 on the bridge for navigation, basedpyright 1.39.5 CLI as the commit-gate arbiter via pyrightconfig.json. The usage protocol lives in CLAUDE.fork.md's operating protocol; the upstream basedpyright offer was closed by the OMC owner (archive: 7hr1LL/oh-my-claudecode). Nothing left to run from here.
-
----
-
-## 2. State as of 2026-08-03 (end of day)
+## 2. State as of 2026-08-03 (late)
 
 | | |
 |---|---|
-| Branch | `mac/setup` @ `069d0331`, pushed — run `git log` for the actual HEAD |
-| Upstream | `63237b88`; his local W8-W15 still unpushed, his local master DIVERGED from his GitHub |
-| Open PRs | **#4 #5 #6 #7 #8**, all ours, all against `63237b88` — status unchecked since 07-31 |
-| Fast suite | 195 passed / 0 skipped |
-| Slow suite | 14 passed / 0 skipped |
-| Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades |
-| LSP | HYBRID: ty 0.0.65 (uv) on OMC's stock lsp_* bridge; basedpyright 1.39.5 (uv) = commit-gate arbiter via untracked `pyrightconfig.json` (extraPaths added 08-03). Floors: bp 1/33/408, ty 0/32/289 |
-| OMC | STOCK, zero divergence; `7hr1LL/oh-my-claudecode` archive-only |
-| Workflow | RUNNABLE on this Mac; campaigns Jeremy-side only (Option A, confirmation pending) |
-| Venv | `trading-bot-dorian/.venv` → `../.venv/bin/python` from `trading-bot/`; no pip — use uv; **no ruff in .venv** (ticket 8.6) |
+| Branch | `mac/setup` @ `dab115ca`, pushed — run `git log` for the actual HEAD |
+| Upstream | UNIFIED at `33ac7ec4` + our sync merge; his local venv-untrack + parked restructure may land next |
+| PRs | ALL 8 merged; port cherry-picked (`c4feaf56`); no open PRs either direction |
+| Fast suite | 213 passed / 0 skipped (main repo; 211/2 in archive-less worktrees) |
+| Slow suite | 14 / 0 / 0 |
+| Baseline | `5ccbec42` / `5a75366c` / −5.646 / 24 trades (carries the uniform 2-bar truncation: bars.csv 1438 vs manifest 1440) |
+| LSP | HYBRID unchanged: ty 0.0.65 bridge / bp 1.39.5 gate; floors bar_equity 1, trading_bot 33 (repo-wide: re-measure, changed with merge) |
+| Tools | ruff 0.15.10 in .venv; ast_grep napi fixed at ~/.claude/node_modules (verify live this session) |
+| Workflow | runnable on Mac AND merged upstream; campaigns Jeremy-side only (Option A unconfirmed) |
+| Venv | `../.venv/bin/python` from trading-bot/; no pip — use uv |
 
 ## 3. The queue
 
-- ✅ #1-#6 done. **8.5** candle-callback characterization (task A) → **8.6** dev-tool pins → **8.7** fork CI leg → last-two-bars trace (task B) → **#9** Kraken daily ingest (task C).
-- **#7 verify trial accounting** — Jeremy's machine under Option A; blocked on him.
-- **#10 risk layer** — before real money, not before research.
-- Parked by design (blank Fork order): cleanup umbrella ticket (type-hygiene batch with recorded verdicts), compact/slash date forms (after PR #4), config-identity wiring gap, pre-commit holdout-gate wiring.
+- ✅ #1–#6, 8.5 (characterized), 8.6 done. **Next: task C (#9 Kraken ingest, gate-first) + rider 8.7 (CI leg, fresh-clone verification first).**
+- **Blocked on Jeremy+Dorian decisions:** A14 remedy (R1–R4; R4 = restoration, recommended), last-two-bars fix (joint, rebaselines everything), Option A confirmation, venv untrack execution, restructure landing.
+- **#7 trial accounting** — Jeremy's machine under Option A. **#10 risk layer** — before real money, not before research.
+- Parked by design: cleanup umbrella (type-hygiene, verdicts recorded), compact/slash date forms (unblocked, unqueued), config-identity wiring gap, pre-commit holdout-gate wiring, record-taxonomy question (own session), ty upstream issue for the find_references instance-attribute blind spot (optional).
 
-## 4. Known-broken / deferred (tracked on the board)
+## 4. Known-broken / deferred (tracked on the board, all with lead notes)
 
+- Last-two-bars: MECHANISM KNOWN (two off-by-ones + manifest over-report), fix pending joint decision.
+- Candle-callback: INERT layer + arity REGRESSION, remedy pending Jeremy (A14-revisited ticket).
 - Seven Binance caches carry sealed rows — never run a window past 2025-12-31.
-- Backtests never trade the last two fetched bars (task B; cause untraced).
-- Candle-callback default chain arity-broken/dead (task A; shipped paths unaffected — verified).
-- `main.py simulate` rewrites tracked `results/trades.json` — restore with `git checkout --` after reproducibility checks.
-- Close-fix report-only flags (07-31 evening ledger entry); Recorder PowerShell supervisor port unscoped; `holdout_date_gate.sh` PATTERN hardcoded + pre-commit unwired.
+- measure_bar_sigma latent seal overshoot (Medium/Security, Jeremy); seal-scan scope shrinkage; r2 test vector (POSIX); numpy Timedelta deprecation on the default path; live-warmup ordering hazard; optimize_strategy stale-callback hazard.
+- `main.py simulate` rewrites tracked results/trades.json — restore after reproducibility checks.
+- DST delta-3 hypothesis on 4 archived March runs — unverified, in the task-B record.
 
 ## 5. Files to read
 
 | File | Why |
 |---|---|
-| `CLAUDE.fork.md` | mission, hard rules, LSP+lane protocol (updated 08-03); auto-included from CLAUDE.md — verify it loaded |
-| `research/LEDGER.md` | the three 08-03 entries (LSP setup, hybrid decision, type sweep) + the 07-31 entries |
-| `FORK_CHANGES.md` | rows 22-24: current divergences incl. the pyrightconfig gitignore |
-| `pyrightconfig.json` (untracked) | the gate's config — copy into any worktree that runs the gate |
-| 🐛 board tickets 8.5 / 8.6 / 8.7 | full validated evidence + scopes for the next tasks |
+| `CLAUDE.fork.md` | mission, hard rules, LSP+lane protocol (updated 08-03 evening: grep cross-check, worktree provisioning) |
+| `research/LEDGER.md` | the three 08-03 evening/night/late entries (sync merge; Phase A; task B) — the day's full record |
+| `FORK_CHANGES.md` | sync-merge section: which rows closed as merged upstream; residual divergence list |
+| 🐛 board | two DECISION tickets (Jeremy+Dorian) + five Jeremy-assigned finding tickets, all with evidence lead-notes |
 
-Notion — "Trading Bot HQ": 🐛 Bugs & Tasks → **🍎 Fork queue (in order)**. The ✉️ response note, 🎯 slippage spec and 🔢 Trial-Ledger page are under Trading Bot HQ.
+Notion — "Trading Bot HQ": the 🍎 evening banner answers Jeremy's four asks; 🐛 Bugs & Tasks → 🍎 Fork queue view; Trial-Ledger page still awaiting his Option A confirmation.
