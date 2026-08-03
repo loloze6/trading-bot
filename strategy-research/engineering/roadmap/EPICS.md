@@ -33,6 +33,8 @@ not archived elsewhere.
 
 `new` → identified · `planned` → stories written · `in-progress` → dispatched ·
 `parked` → blocked, unblock condition recorded · `done` → SHA + verification ·
-`killed` → abandoned with evidence
+`killed` → abandoned with evidence · `withdrawn` → not an epic after all,
+continues as a card reference
 
-`parked` is never a synonym for `done`. See `PROCESS.md`.
+`parked` is never a synonym for `done`. `withdrawn` is never a synonym for
+`killed` — the work continues, just not here. See `PROCESS.md`.
