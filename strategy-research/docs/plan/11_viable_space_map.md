@@ -78,7 +78,7 @@ awareness, not touched).
 from rev-1 — not from a scaling artifact this time, but from a wrong constant. Rev-3
 below uses the real measured `sigma_bar_bps = 62.52` (source: `run_042`) uniformly,
 and F&G reverts to matching the real, already-on-record result: cost-plausible,
-power-insufficient. This was already documented in `00_closing_state.md`'s epistemic
+power-insufficient. This was already documented in `improvements/IMPROVEMENTS_DONE_20260706.md`'s epistemic
 state section ("H-041-C ... cost ratio 3.75 ...") before this map existed — the map
 was, briefly, out of sync with the campaign's own existing record. It is not new news.
 
@@ -204,7 +204,7 @@ caveat as before.
 **IMPORTANT — what "plausible, cost-only" means for `fear_greed_index_contrarian`:**
 this is not a new finding. It restates `run_042`'s actual, already-on-record result
 (cost check passes at ratio 3.75) and the campaign's own existing characterization of
-H-041-C as "parked (inconclusive, powered-out)" in `00_closing_state.md` — cost was
+H-041-C as "parked (inconclusive, powered-out)" in `improvements/IMPROVEMENTS_DONE_20260706.md` — cost was
 never the reason it's parked; insufficient statistical power was (`n_eff=13` vs. 35
 needed, addressed by the existing backward-extension backlog item). This map cell
 changes nothing about H-041-C's status; it just stops disagreeing with the number that

@@ -15,7 +15,7 @@ See docs/design/K2_verdict_machinery_design_20260713.md sections 6 and 8.
 
 C7-EXT (2026-07-22, XS_momentum ungated-verdict incident) adds seven gates on
 top of the K2 kernel. See the VERDICT PRECONDITIONS section below and ledger
-entry C7-EXT in PIPELINE_IMPROVEMENTS_20260712_v4.md for the four-link defect
+entry C7-EXT in improvements/IMPROVEMENTS_DONE_20260712.md for the four-link defect
 chain each gate closes.
 
 C7-EXT-R (2026-07-22, remediation of the independent audit in

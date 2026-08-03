@@ -185,21 +185,48 @@ All expose `raw_value()`; usable in both engines. `params` defaults in parenthes
 |---|---|---|---|
 | `FundingRateMeanReversionComponent` | threshold(0.001), scaling_factor(10.0) | −sign(funding_rate)×sf at 8h settlement bars (UTC hour%8==0); 0 elsewhere. `threshold=0.0` fires at EVERY settlement bar regardless of magnitude (continuous variant) instead of only extremes | 2 |
 | `FearGreedContrarianComponent` | fear_threshold(25.0), greed_threshold(75.0), scaling_factor(10.0) | +sf if prior day's F&G < fear_threshold, −sf if > greed_threshold, else 0; fires only at UTC-midnight boundary bars | 2 |
+| `WhaleLargeTradeImbalanceComponent` | persistence_bars(3), min_abs_imbalance(0.5), scaling_factor(10.0) | mean(`whale_lt_imbalance`)×sf when the imbalance holds ONE sign with \|LTI\| ≥ min_abs_imbalance across `persistence_bars` consecutive fully-attested bars (continuation — sign NOT inverted); **NaN (abstain)** if any bar in that window is unattested, unmeasured, or the aux columns are absent; 0.0 only when the whole window was measured and was not sustainedly imbalanced | persistence_bars |
 
-Both force `standardized_forecast: false` internally (constructor default override) —
+All three force `standardized_forecast: false` internally (constructor default override) —
 do not add a `standardized_forecast: true` param expecting it to take effect.
+
+**`WhaleLargeTradeImbalanceComponent` emits NaN, and that is deliberate** — read its
+docstring before configuring it. NaN is ABSTENTION ("this bar measured nothing"), which
+the framework supports (`STRATEGY_FRAMEWORK.md` invariant 1: NaN appends are legal;
+never inject 0.0 placeholders). NaN propagates through `apply_transform_pipeline` to the
+whole per-regime ensemble sum, so an abstained bar yields a NaN forecast for the regime,
+not a partial one from the remaining components. Configure it **alone in its regime**
+unless you intend that. Requires BOTH `whale_lt_imbalance` and `whale_attested` (see §4a).
 
 #### §4a. `aux_feeds` (top-level config key)
 Required whenever a component reads a column that isn't in the raw OHLCV bar DataFrame.
 Recognized values today: `"funding_rate"` (merges a `funding_rate` column, backward
 as-of join — `FundingRateMeanReversionComponent` requires this), `"fear_greed"`
 (merges a `fear_greed` column, **with a +1 day shift already applied** for point-in-time
-correctness per A8.4 — `FearGreedContrarianComponent` requires this). Unrecognized
-names are silently ignored (no error) by both `prescreen_signal.py._merge_aux_feeds()`
-and `data_manager.py`'s live equivalent — double check the spelling.
+correctness per A8.4 — `FearGreedContrarianComponent` requires this).
+
+**This `"aux_feeds"` config key is consumed by `prescreen_signal.py::_merge_aux_feeds()`
+only** (the prescreen/signal-extraction path). It is DENY BY DEFAULT (dispatch W14 step
+2): any name outside `{"funding_rate", "fear_greed"}` raises `UnrecognizedAuxFeedError`
+naming the feed, rather than silently proceeding without the column — the prior
+silent-drop behavior documented here before W14 was a real bug, not a documented
+tolerance. The live/backtest `DataManager` path does not read this config key at all —
+it is driven by explicit `register_feed()` calls (or, for a full backtest, by
+`FEED_REGISTRY` membership passed as `extra_feeds` in `core/launcher.py`), and is
+separately deny-by-default via the `window_seconds` causality declaration
+(`data/ADDING_A_FEED.md` step 2).
 ```json
 "aux_feeds": ["fear_greed"]
 ```
+**Whale-footprint feeds are RESERVED and are not in `FEED_REGISTRY`.** The six names in
+`data/feed_registry.py::WHALE_FOOTPRINT_FEEDS` live in `RESERVED_FEED_REGISTRY`; a caller
+opts in by name and `campaign_data_policy.yaml` still has to carry a committed
+designation or construction raises `ReservedDataError`. `WhaleLargeTradeImbalanceComponent`
+needs two of them — `"whale_lt_imbalance"` and `"whale_attested"` — and abstains (NaN)
+rather than firing if either column is missing. Note also that
+`prescreen_signal.py::_merge_aux_feeds()` still knows only `funding_rate` and
+`fear_greed` — it now REFUSES a whale feed name rather than silently dropping it, but it
+still cannot DELIVER one; the `DataManager.register_feed()` path can.
 A hypothesis needing funding rate or Fear & Greed is achievable via config ALONE
 (existing components + `aux_feeds`) — this is NOT a component_gap. See run_041
 (`H-041-A`, `strategy-research/runs/run_041/`) and run_042 (`H-041-C`,

@@ -11,7 +11,7 @@
 In scope: ledger items **A1** (lineage-continuation persistence), **A3**
 (atomic-enough scaffold registration + reconciler), **B1** (first-class
 refinement-brief ingestion path), designed as one coherent change to the
-routing/registration layer per NEXT_SESSION.md task (1) sequencing.
+routing/registration layer per engineering/sessions_archive/HANDOFF_20260724.md task (1) sequencing.
 
 Explicitly NOT designed here (context only, read for non-foreclosure):
 A2 (distinct terminal strings for refine vs. pivot), A4 (`quarantined_orphan`
@@ -33,7 +33,7 @@ touches it. Flagging per instructions: not consumed, not triggered.
 ## 1. Ledger items read (context, not fixed here)
 
 A1, A2, A3, A4, A6, A7, B1, B2 — full text already on file in
-`PIPELINE_IMPROVEMENTS_20260712_v4.md`; not re-quoted here to keep this
+`improvements/IMPROVEMENTS_DONE_20260712.md`; not re-quoted here to keep this
 note's own size down. RUNBOOK.md sections 1/3/4 and the end-of-file custody
 rule also read (see prior orientation turn this session). The one
 addition from this reread worth recording: RUNBOOK's custody rule already
@@ -107,7 +107,7 @@ call are therefore identical (the child dir already existed before this
 call started) — `new_runs` is empty regardless of whether the tuple is
 fixed. This is the crash-window/cross-invocation half of A1 the ledger
 describes, and it reproduces even with `completed_refined` added to the
-tuple, exactly as NEXT_SESSION.md states.
+tuple, exactly as engineering/sessions_archive/HANDOFF_20260724.md states.
 
 ### (b) Scaffold creation and registration are separate operations
 
@@ -466,7 +466,7 @@ grandfathered_runs:
     reason: >
       quarantined_orphan, pivot scaffold of the overturned run_054 kill,
       2026-07-09 (see runs/run_055/ORPHANED_README.md). Never advance,
-      reuse, or copy from it (NEXT_SESSION.md state-delta).
+      reuse, or copy from it (engineering/sessions_archive/HANDOFF_20260724.md state-delta).
   - id: run_056
     reason: same event as run_055.
 ```
@@ -708,7 +708,7 @@ still in_progress, child appended to run_ids"):
    the queue entry's `run_ids = [N]` and N's `pipeline_state.yaml` as
    just written. Assert: `run_ids` becomes `[N, N+1]`, entry status
    stays `in_progress`, no `DONE` line logged. This is the specific case
-   NEXT_SESSION.md's A1 symptom describes and the current dir-diff logic
+   engineering/sessions_archive/HANDOFF_20260724.md's A1 symptom describes and the current dir-diff logic
    fails at zero-warning.
 
 **A3 fixture** (acceptance: "process killed between scaffold and

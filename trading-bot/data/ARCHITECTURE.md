@@ -41,6 +41,16 @@ information but do not drive the simulation.
 
 Both paths share `BaseFetcher` for storage, gap detection, and caching.
 
+**A third, separate consumer exists outside this directory.**
+`strategy-research/tools/prescreen_signal.py::_merge_aux_feeds()` is a
+simplified, standalone aux-feed loader for the cheap-IC prescreen tool — it
+does not go through `DataManager.register_feed()` and is driven by a config's
+`"aux_feeds": [...]` list instead of `FEED_REGISTRY`. It shares this
+directory's deny-by-default philosophy (see `ADDING_A_FEED.md` Step 5, added
+dispatch W14): an unrecognized feed name raises rather than being silently
+dropped. It is a separate implementation, not a thin wrapper over this one —
+adding a feed here does not make it available there.
+
 ---
 
 ## File-by-file summary

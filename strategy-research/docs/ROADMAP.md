@@ -1,6 +1,11 @@
 # From Here to "Profitable Strategy Found" — Roadmap v2 (granular)
 **Date: 2026-07-19 · For: Loloze (operator) · v2 changes: four concepts explained (campaign, validation, prescreen, cost-per-idea); near-miss scoreboard added; your concern-3/4/5 additions dispatched into numbered steps; every step now carries an objective and a deliverable.**
 
+> This is the program roadmap: strategy, engineering and process
+> together. Engineering steps in it (1.2, 1.3, 1.4, 3.1, 3.2, 3.4, 4.1)
+> are implemented as epics — see engineering/roadmap/EPICS.md.
+> Part 3 below is superseded by engineering/DISPATCH_MODEL.md.
+
 ---
 
 ## Part 1 — What we built, in plain words (now including your four questions)
@@ -39,7 +44,9 @@ Phases gated by conditions. "Session" = one working session with agent dispatche
 - **2.1 — Breadth download (Track A).** Objective: escape the two-coin corner. Deliverable: price + funding history for the top ~20 liquid pairs, integrity-checked (gaps, timestamps — with the timezone lesson institutionalized as checks), documented provenance. Free and retroactive.
 - **2.2 — First cross-sectional run.** Objective: the already-registered, never-run XS_momentum idea gets its verdict (its data blocker dies with 2.1; a 4-coin pilot on data already on disk can run even earlier). Deliverable: first breadth verdict in the KB.
 - **2.3 — Whale-footprint dataset (Track B).** Objective: your "big players" thesis becomes measurable. Deliverable: from historical public *trade-by-trade* records (retro-downloadable; access to be verified given the France block — data download ≠ trading service), build per-coin series of: large-trade imbalance, cumulative volume delta, trade-size distribution shifts; define the first 2 registrable whale-flow indicators. Optional extension if archives allow: exchange in/outflow proxies.
+  **Status (W24 correction): BUILT and UNEVALUATED, not "queued behind Track A."** `recorder/whale_features.py`, `whale_persistence.py`, `whale_report.py`, `protocols/prereg_whale_footprint_v1.yaml`/`v2.yaml`, and `tools/whale_footprint_evaluation.py` all exist. No KB verdict exists for this family. This is PARKED PENDING DATA/evaluation, not queued, and must not be recorded as closed.
 - **2.4 — Forward recorders (Track C).** Objective: start the clock on data that cannot be downloaded backwards (order-book depth; live liquidation events if wanted later). Deliverable: a small always-on recorder daemon + storage plan. Cheap now, priceless in 6 months.
+  **Status (W24 correction): BUILT and RUN, not "queued."** The recorder was built and executed; it was stopped on a storage-budget gate, not left unstarted. See ledger item R3 / `engineering/roadmap/E-007/EPIC.md`.
 - **2.5 — News/text scoping (Track D — your addition, adopted as exploratory).** Objective: decide honestly whether news ingestion is worth building. Deliverable: a scoping memo — which historical news/text sources exist with *point-in-time timestamps* (the hard requirement: we must only use what was knowable at that moment, else the backtest lies), free vs paid, and one candidate indicator design (event/sentiment shock vs subsequent drift). Build only if the memo clears the bar; note our one crude sentiment test so far (Fear&Greed index) is the weak cousin of this axis.
 - **Gate:** ≥2 new data axes on disk with provenance + a first registrable indicator each; recorders running.
 
@@ -65,22 +72,10 @@ Phases gated by conditions. "Session" = one working session with agent dispatche
 
 ## Part 3 — How we work: roles, process, and which model for which job
 
-The loop that produced this week's results — and caught five defects before they could lie to us — is kept as the standing process. One unit of work always looks like: **director drafts a dispatch → operator relays it → one agent executes under stop-rules → report → director cross-checks the report against the raw artifacts (recomputing, never trusting narrative) → ruling → next dispatch.** Disagreements between any two parties are settled only by recomputation from files and git — never by whoever sounds more confident.
-
-**The roles and their models** (current Anthropic lineup; model named in every dispatch header, counted into cost-per-verdict):
-
-- **Operator (you).** Final authority: ratifies rulings, relays dispatches, gives LAUNCH, decides venue and money. Deliberately minimal time cost.
-- **Research director (the chat session) — Claude Fable 5.** Plans, writes every dispatch (fixed skeleton: precondition manifest, numbered steps, explicit STOPs), reviews every report against the artifacts, arbitrates by recomputation, maintains roadmap/ledger/KPI. This is the one seat where judgment errors are most expensive — this week it had to overturn its own recon's wrong "exoneration" and catch an impossible-by-construction pass criterion — so it stays on the top-tier model.
-- **Execution agents — one per dispatch, four classes with locked write rights:**
-  - *Recon/audit (read-only)* — verify, quote, measure. Default **Claude Sonnet 4.6**; drop to **Claude Haiku 4.5** for purely mechanical checks (precondition manifests, freshness audits, file inventories).
-  - *Diagnosis (read-only, in-process reproduction)* — **Claude Opus 4.8**. Root-cause confirmation is real investigation (the timezone bug was found by driving the actual engine code in-process); too cheap here buys wrong exonerations.
-  - *Implementation (sole writer: code + tests + commits)* — **Claude Opus 4.8** for engine/orchestrator internals; **Claude Sonnet 4.6** when the dispatch already names the exact site and mandates the tests (minimal, well-specified changes).
-  - *Operations (writes only through orchestrator commands: launch/resume/monitor)* — **Claude Sonnet 4.6 minimum.** This week's stale-cache echo was caught by operations-level judgment; a cheaper model here risks false resumes on untrustworthy halt messages.
-- **Independent auditor (third party, read-only) — Claude Sonnet 4.6.** Mandatory for any commit touching the orchestrator, the engine, or shared state: re-derives every claim from git and artifacts. So: **three-party process** (director + implementor + auditor) for code and state; **two-party** (director + agent) suffices for recon and routine operations.
-
-**Cost discipline:** start at each class's default tier; escalate one tier only after a stop caused by agent *capability* (not by a wrong premise in the dispatch); try one tier cheaper after three consecutive clean dispatches of the same type. Separately, the factory's *internal* stage calls (validation, verdict interpretation, review) are their own cost lever — judgment stages on Sonnet-class, mechanical stages on Haiku 4.5 — tuned only when the cost-per-verdict KPI says so, never speculatively.
-
-**Context economy (added 2026-07-19 — controlling token burn):** four rules. (1) **Short director sessions**: the director closes and hands off after each arc (roughly 10–15 dispatches); the repo's documents — roadmap, session log, next-session file, knowledge base — are the memory, never the chat scroll. Every close-out produces the next director's opening prompt. (2) **Bounded agent reports**: agents write their full detail to a file in the repo (`docs/session_reports/<date>_<dispatch>.md`) and reply in chat with a bounded summary — per-step verdicts plus only the verbatim quotes the director must recompute from. (3) **No re-pasting**: a dispatch is relayed once; if deferred, it is referenced by name, and any dispatch expected to wait is saved to a repo file instead of repeated in chat. (4) **Director model stays Claude Fable 5** — the burn problem is session *length*, not the director's tier; downgrading the arbitration seat to save tokens is how wrong exonerations get accepted. Agent tiers and the escalation ladder above already handle the rest of the cost curve, all counted into cost-per-verdict.
+**Extracted to `engineering/DISPATCH_MODEL.md`** (dispatch W25): the dispatch
+loop, the roles and their models, cost discipline, context economy, and the
+standard verification command. Read it there — it is a living document, kept
+current independent of this roadmap's own revision cadence.
 
 ## Part 4 — Standing guarantees (unchanged, plus one)
 

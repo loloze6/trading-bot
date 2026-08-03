@@ -142,3 +142,42 @@ positive control is mandatory, not optional. W4's gate found real 2026 bars only
 the pattern was first proven against a synthetic `2026-01-01` row and a `2025-12-31` row
 that must NOT match. Absent that step, a typo'd regex would have certified the leak clean
 and the commit would have been unrecoverable.
+
+---
+
+## L-2026-07-27-A — A canary's "own return" vs "next return" framing must be checked against the harness's OWN trade timing, not just the audit's timing
+
+**What happened.** Building the aux-feed causality canary for dispatch W8, the first
+version defined the HONEST fixture as `canary[T] = (close[T+1]-close[T])/close[T]`
+(labelled "bar T's own forward return, already realized by delivery time") and the
+CONTROL fixture as that value shifted one bar further out. Run through the real
+merge/strategy/execution path, the "honest" fixture produced a 14.76x blowup and the
+"control" produced a flat ~6.6% — exactly backwards from what the test was designed to
+show. The error: `close[T+1]` requires bar `T+1`'s own close, which does not exist until
+bar `T+1` itself completes — so the "honest" fixture was already the leak, not the safe
+case. The actual honest quantity is `own_ret[T] = (close[T]-close[T-1])/close[T-1]`
+(bar T's OWN return, using only information available by the time bar T is delivered);
+`(close[T+1]-close[T])/close[T]` is genuinely "that bar's NEXT return" and is exactly the
+thing a canary is supposed to prove the pipeline cannot profit from.
+
+**Why the reasoning failed.** The audit correctly established WHEN a bar is delivered
+(after its own window closes). It is easy to then reason only about delivery time and
+forget that the TEST HARNESS itself has its own trade-timing model: in this codebase, a
+strategy's decision made in response to bar T's data is filled at `close[T]` and marked
+to market at `close[T+1]` on the next call — meaning the harness inherently pays out
+`(close[T+1]-close[T])/close[T]` for whatever position is opened at bar T, regardless of
+which synthetic feature is under test. A feature is only "honest" if it is uncorrelated
+with THAT specific quantity by construction; checking the audit's delivery-time argument
+alone is necessary but not sufficient; it is also not sufficient to just plant "a
+plausible-sounding future value" and trust the label without deriving, index by index,
+which close prices it requires and when those become known.
+
+**RULE.** When building a canary/positive-control pair for a look-ahead test: (1) name
+the exact real-world quantity in closed form (e.g. `(close[T+1]-close[T])/close[T]`), (2)
+state explicitly which raw inputs it requires and the earliest index at which each of
+those inputs is known, (3) separately trace what the TEST HARNESS's own execution timing
+actually pays out for a decision at row T (not just what the production system would),
+and (4) only then assign "honest" vs "leaky" labels. Run both fixtures before trusting
+either assertion — a canary that has never been observed to fail on its own control is not
+yet known to be sensitive, and one whose "honest" case fails on the first run is telling
+you the labels are wrong, not that the pipeline is broken.

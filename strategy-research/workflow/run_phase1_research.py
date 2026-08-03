@@ -1145,7 +1145,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
 # B7: stages at/after the validation gate must see the pre-registered
 # pass_rule and original brief regardless of what a given run's handoff
-# happens to list -- PIPELINE_IMPROVEMENTS_20260712_v4.md B7 (three
+# happens to list -- improvements/IMPROVEMENTS_DONE_20260712.md B7 (three
 # in-the-wild occurrences of a stage deciding without ever reading
 # pre_registration.yaml, most recently run_058's validation_decision.yaml
 # misdescribing the very registration it vetoed). This is a deterministic

@@ -15,9 +15,11 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from recorder.journal import (
+    ATTESTATION_TOLERANCE_S,
     CoverageGapError,
     CoverageJournal,
     Interval,
+    ROLLUP_INTERVAL_S,
     assert_covered,
     coverage_intervals,
     load_records,
@@ -49,7 +51,10 @@ def test_ack_then_stop_yields_one_closed_interval():
     recs = [
         _rec(1, _mins(0), "RECORDER_START"),
         _rec(2, _mins(1), "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
-        _rec(3, _mins(9), "RECORDER_STOP"),
+        _rec(3, _mins(3), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(4, _mins(5), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(5, _mins(7), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(6, _mins(9), "RECORDER_STOP"),
     ]
     ivs = coverage_intervals(recs)[("BTC/USD", "book")]
     assert len(ivs) == 1
@@ -62,10 +67,14 @@ def test_disconnect_reconnect_leaves_a_hole_between_intervals():
     recs = [
         _rec(1, _mins(0), "RECORDER_START"),
         _rec(2, _mins(1), "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
-        _rec(3, _mins(4), "WS_DISCONNECT", reason="heartbeat_timeout"),
-        _rec(4, _mins(6), "RECONNECT_ATTEMPT", attempt=1),
-        _rec(5, _mins(7), "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
-        _rec(6, _mins(10), "RECORDER_STOP"),
+        _rec(3, _mins(2), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(4, _mins(3), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(5, _mins(4), "WS_DISCONNECT", reason="heartbeat_timeout"),
+        _rec(6, _mins(6), "RECONNECT_ATTEMPT", attempt=1),
+        _rec(7, _mins(7), "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
+        _rec(8, _mins(8), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(9, _mins(9), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(10, _mins(10), "RECORDER_STOP"),
     ]
     ivs = coverage_intervals(recs)[("BTC/USD", "book")]
     assert [(i.start, i.end) for i in ivs] == [
@@ -88,11 +97,18 @@ def test_unclean_restart_closes_at_last_dead_record_not_at_new_start():
     recs = [
         _rec(1, _mins(0), "RECORDER_START", run_id="run-a"),
         _rec(2, _mins(1), "SUBSCRIBE_ACK", run_id="run-a", symbol="BTC/USD", channel="book"),
-        _rec(3, _mins(5), "HEARTBEAT_ROLLUP", run_id="run-a", frames_total=99),
+        _rec(3, _mins(2), "HEARTBEAT_ROLLUP", run_id="run-a", frames_total=99),
+        _rec(4, _mins(3), "HEARTBEAT_ROLLUP", run_id="run-a", frames_total=99),
+        _rec(5, _mins(4), "HEARTBEAT_ROLLUP", run_id="run-a", frames_total=99),
+        _rec(6, _mins(5), "HEARTBEAT_ROLLUP", run_id="run-a", frames_total=99),
         # <-- process killed here; no WS_DISCONNECT, no RECORDER_STOP
-        _rec(4, _mins(30), "RECORDER_START", run_id="run-b", prev_clean_shutdown=False),
-        _rec(5, _mins(31), "SUBSCRIBE_ACK", run_id="run-b", symbol="BTC/USD", channel="book"),
-        _rec(6, _mins(40), "RECORDER_STOP", run_id="run-b"),
+        _rec(7, _mins(30), "RECORDER_START", run_id="run-b", prev_clean_shutdown=False),
+        _rec(8, _mins(31), "SUBSCRIBE_ACK", run_id="run-b", symbol="BTC/USD", channel="book"),
+        _rec(9, _mins(33), "HEARTBEAT_ROLLUP", run_id="run-b", frames_total=99),
+        _rec(10, _mins(35), "HEARTBEAT_ROLLUP", run_id="run-b", frames_total=99),
+        _rec(11, _mins(37), "HEARTBEAT_ROLLUP", run_id="run-b", frames_total=99),
+        _rec(12, _mins(39), "HEARTBEAT_ROLLUP", run_id="run-b", frames_total=99),
+        _rec(13, _mins(40), "RECORDER_STOP", run_id="run-b"),
     ]
     ivs = coverage_intervals(recs)[("BTC/USD", "book")]
     assert [(i.start, i.end) for i in ivs] == [
@@ -141,6 +157,81 @@ def test_quiet_minute_inside_an_interval_is_still_covered():
 
 
 # ---------------------------------------------------------------------------
+# positive-evidence attestation (dispatch W9 step 1)
+# ---------------------------------------------------------------------------
+
+
+def test_attestation_tolerance_matches_the_rollup_cadence():
+    """journal.py hardcodes ROLLUP_INTERVAL_S (to avoid importing
+    record_kraken_ws, which imports CoverageJournal from this module — a
+    cycle). This is the tripwire that catches the two drifting apart."""
+    from recorder.record_kraken_ws import ROLLUP_INTERVAL_S as PRODUCTION_ROLLUP_INTERVAL_S
+
+    assert ROLLUP_INTERVAL_S == PRODUCTION_ROLLUP_INTERVAL_S
+    assert ATTESTATION_TOLERANCE_S == ROLLUP_INTERVAL_S * 2.5
+
+
+def test_frozen_process_produces_a_no_attestation_gap():
+    """
+    THE HEADLINE REGRESSION CASE (SESSION_LOG.md 2026-07-27, dispatch W9).
+
+    A real ~4h06m capture hole was missed by the original model: the SAME
+    process (same run_id) simply stopped being scheduled by the OS (system
+    suspend, not a network disconnect) for hours, wrote nothing at all —
+    zero HEARTBEAT_ROLLUP, zero anything — and then resumed writing under
+    the identical run_id once the machine woke. No WS_DISCONNECT, no
+    RECORDER_STOP, no RESTART_BOUNDARY, no new RECORDER_START: every
+    condition the original model required to close an interval was absent,
+    so it read as continuously covered. This must now report a gap.
+    """
+    frozen_for = ATTESTATION_TOLERANCE_S * 3  # comfortably past the tolerance
+    recs = [
+        _rec(1, _mins(0), "RECORDER_START"),
+        _rec(2, _mins(0), "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
+        _rec(3, T0 + timedelta(seconds=60), "HEARTBEAT_ROLLUP", frames_total=5),
+        # <-- process frozen here (system suspend): nothing scheduled, nothing
+        # written, for far longer than any normal rollup gap.
+        _rec(4, T0 + timedelta(seconds=60 + frozen_for), "HEARTBEAT_ROLLUP",
+             frames_total=5),
+        _rec(5, T0 + timedelta(seconds=120 + frozen_for), "RECORDER_STOP"),
+    ]
+    ivs = coverage_intervals(recs)[("BTC/USD", "book")]
+    last_attested = T0 + timedelta(seconds=60)
+    resumed = T0 + timedelta(seconds=60 + frozen_for)
+    assert [(i.start, i.end, i.closed_by) for i in ivs] == [
+        (_mins(0), last_attested, "NO_ATTESTATION"),
+        (resumed, T0 + timedelta(seconds=120 + frozen_for), "RECORDER_STOP"),
+    ]
+    gap = uncovered(ivs, _mins(0), T0 + timedelta(seconds=120 + frozen_for))
+    assert gap == [(last_attested, resumed)]
+    assert (resumed - last_attested).total_seconds() == frozen_for
+
+
+def test_a_long_healthy_run_with_realistic_cadence_reports_no_gap():
+    """Clean run must not report false gaps: two hours of real ~60s-cadence
+    heartbeats (the actual production interval), never exceeding tolerance,
+    must read as fully covered end to end."""
+    recs = [
+        _rec(1, T0, "RECORDER_START"),
+        _rec(2, T0, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
+    ]
+    jseq = 3
+    n_rollups = int(2 * 3600 // ROLLUP_INTERVAL_S)
+    for i in range(1, n_rollups + 1):
+        recs.append(_rec(jseq, T0 + timedelta(seconds=i * ROLLUP_INTERVAL_S),
+                          "HEARTBEAT_ROLLUP", frames_total=5))
+        jseq += 1
+    end = T0 + timedelta(seconds=n_rollups * ROLLUP_INTERVAL_S)
+    recs.append(_rec(jseq, end, "RECORDER_STOP"))
+
+    ivs = coverage_intervals(recs)[("BTC/USD", "book")]
+    assert len(ivs) == 1
+    assert ivs[0].start == T0
+    assert ivs[0].end == end
+    assert uncovered(ivs, T0, end) == []
+
+
+# ---------------------------------------------------------------------------
 # uncovered() edge cases
 # ---------------------------------------------------------------------------
 
@@ -172,9 +263,15 @@ def test_assert_covered_raises_on_a_gap_and_passes_inside_coverage(tmp_path):
     recs = [
         _rec(1, _mins(0), "RECORDER_START"),
         _rec(2, _mins(1), "SUBSCRIBE_ACK", symbol="SOL/USD", channel="book"),
-        _rec(3, _mins(4), "WS_DISCONNECT", reason="heartbeat_timeout"),
-        _rec(4, _mins(7), "SUBSCRIBE_ACK", symbol="SOL/USD", channel="book"),
-        _rec(5, _mins(12), "RECORDER_STOP"),
+        _rec(3, _mins(2), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(4, _mins(3), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(5, _mins(4), "WS_DISCONNECT", reason="heartbeat_timeout"),
+        _rec(6, _mins(7), "SUBSCRIBE_ACK", symbol="SOL/USD", channel="book"),
+        _rec(7, _mins(8), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(8, _mins(9), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(9, _mins(10), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(10, _mins(11), "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(11, _mins(12), "RECORDER_STOP"),
     ]
     path.write_text("".join(json.dumps(r) + "\n" for r in recs), encoding="utf-8")
 
