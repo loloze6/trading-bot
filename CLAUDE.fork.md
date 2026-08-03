@@ -110,6 +110,8 @@ Mac/Windows results should be bit-identical — divergence = real bug, file it.
 
 `origin` = fork (push), `upstream` = Jeremy (**never push**). Branches: `mac/<topic>` for setup, `fix/<topic>` for upstream-worthy work (keep clean for PRs), `lab/<experiment>` for playground. Sync: `git fetch upstream && git merge upstream/master` (merge, don't rebase shared history).
 
+**Collaboration model (Dorian, 2026-08-04): fork + PRs for now — the model above is unchanged. The END STATE is one shared repo, no forks; that migration is a later, joint decision with Jeremy.** The path there: fix → run clean on this Mac → clean up → harden → deploy to the Ubuntu server treated as the shared production environment for test/run. "Production" there means the always-on research home — **live trading stays behind the risk layer and its own explicit joint decision; never-live stands.**
+
 ## Backlog (in order)
 
 0. ✅ **`mac/setup` — DONE 2026-07-28** (`afa2573d`). The 3 first-run blockers, pinned requirements, fast+slow green, reference `simulate` reproducing `5ccbec42` / `5a75366c` / −5.646 byte-identically across two venvs. Plus the `default_regime` fail-safe (engine + validator). *The base is proven.*
