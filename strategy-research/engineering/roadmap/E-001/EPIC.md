@@ -55,14 +55,21 @@ E-001 has failed regardless of what else it delivers.
       from known outstanding work. *(Written directly by the director rather than
       dispatched: the content was already designed, and dispatching designed
       content means writing it twice.)*
-- [ ] **S2** — Audit the four superseded trackers. For every item in each,
+- [x] **S2** — Audit the four superseded trackers. For every item in each,
       classify as **live** (becomes or joins an epic), **done** (archive), or
       **dead** (delete). Reduce each file to a pointer. This is the story that
       makes E-001 worth doing — read-heavy, judgment-heavy, one dispatch.
+      *(Audited in dispatch W23; applied in W24: `HANDOFF_CURRENT.md` archived
+      to `engineering/sessions_archive/HANDOFF_20260724.md`,
+      `BACKLOG_DEFERRED.md` deleted with its 4 live items carried into E-009,
+      `DOC_INDEX.md`/`docs/ROADMAP.md`/`IMPROVEMENTS_REGISTER.md` corrected
+      and reduced to their distinct, non-overlapping roles.)*
 - [ ] **S3** — Create the Notion Epics database mirroring 🐛 Bugs & Tasks'
       property shape; seed one page per epic with a link back to `EPIC.md`.
-- [ ] **S4** — Create `E-002`…`E-006` epic files from the seeds in `ROADMAP.md`,
-      each with a testable *Done when*. One dispatch, mechanical.
+- [x] **S4** — Create `E-002`…`E-009` epic files from the seeds in `ROADMAP.md`
+      plus the items S2's audit surfaced (E-007, E-008, E-009), each with a
+      testable *Done when* except E-004, which needs a joint decision first
+      (recorded as such, not invented).
 - [ ] **S5** — Close: verify the four *Done when* criteria, record SHA and
       output, post the `done` callout to Trading Bot HQ.
 
@@ -90,3 +97,8 @@ Recorded so they are not relitigated:
   `E-001/EPIC.md` written on `master`. Created on `master` rather than on the
   parked restructure branch because `engineering/` is a new path there and will
   not collide with the replay mapping (E-002).
+- 2026-08-03 — S2 audited (W23) and applied (W24, commits `895a3def`,
+  `371e3eb3`): four trackers retired or corrected. S4 complete (W24): `E-002`
+  through `E-009` written, expanded past the original E-002…E-006 seed with
+  E-007/E-008/E-009 surfaced by the S2 audit. Next: S3 (Notion Epics
+  database), then S5 (close-out).
