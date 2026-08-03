@@ -111,7 +111,6 @@ Each is an LLM persona in `skills/{name}/SKILL.md`:
 - **`verdict-interpreter`** — reads backtest diagnostics, issues refine/pivot/escalate/promote/kill.
 - **`campaign-review`** — steps back after 2+ failed families to continue/reframe/escalate/terminate; also the fragment-pattern-motivated ideation hook.
 - **`quant-fundamentals`** — verified math identities/code behaviors other skills must defer to before applying diagnostic rules.
-- **`research-decision`** — currently an empty file (0 lines); no persona defined yet.
 
 ### "What's historical/archived?"
 → **`docs/plan/`** — superseded enhancement-plan design docs (`00_overview_v2.md`,
