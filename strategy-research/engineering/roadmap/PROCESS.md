@@ -47,6 +47,18 @@ The story list is the dispatch queue. Do not invent a separate unit of work — 
 numbered dispatch is the thing that actually happens, and anything else drifts
 from it.
 
+## Relationship to the dispatch model
+
+`PROCESS.md` (this file) governs how work is **organised**: epics, stories,
+states, evidence. `../DISPATCH_MODEL.md` governs how a unit of work is
+**executed**: who dispatches, who audits, which model tier, cost discipline,
+context economy. They meet at exactly one point: **a story is a dispatch**
+(see "Stories are dispatches" above) — the story list this file's epics
+produce is the same queue `DISPATCH_MODEL.md`'s loop consumes one at a time.
+Neither file duplicates the other's content; a question about *what* to work
+on or *how epics are structured* belongs here, a question about *who runs it
+and on what tier* belongs there.
+
 ## Layout
 
 ```
@@ -120,3 +132,29 @@ Testable. A command someone can run, or an observable state. Not "improved".
 ## Log
 - YYYY-MM-DD — `new` → `planned`. <what changed, SHA if any>
 ```
+
+## Amendments
+
+Rules added from testing this process, each with the one-line cause that
+produced it:
+
+1. **No two files may share a bare filename if they serve different
+   purposes.** *Cause: two `ROADMAP.md` files (`docs/ROADMAP.md`,
+   `engineering/roadmap/ROADMAP.md`) existed at once; renamed the latter to
+   `EPICS.md` (dispatch W25).*
+2. **Done epics never move; `EPICS.md` carries Active and Done tables.**
+   *Cause: renames cost a full session of pain, and a space in a directory
+   name has blocked commits three times — moving a closed epic is a rename
+   with no offsetting benefit.*
+3. **An epic's Why must be VERIFIED, not asserted.** *Cause: E-001 claimed
+   "six overlapping places" / "four superseded trackers" when the S2 audit
+   found only two were actually redundant; `docs/ROADMAP.md` was
+   characterised (as a "campaign plan") without being read first.*
+4. **Any dispatch that MOVES a file must check
+   `config/holdout_gate_exemptions.txt` for that path and authorize the
+   re-key in the same dispatch.** *Cause: the pinned-count holdout gate has
+   blocked four commits over path renames it didn't know about in advance.*
+5. **An epic's `artifacts/` holds the evidence that justified it, not only
+   its outputs.** The measurements, command output, and reads that
+   established the epic's Why belong there alongside whatever the epic
+   produces — not just the deliverable.
