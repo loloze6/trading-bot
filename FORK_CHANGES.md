@@ -167,3 +167,11 @@ Status changes to the rows above:
 |---|---|---|---|
 | 22 | `strategy-research/workflow/run_phase1_research.py`, `strategy-research/tools/retune_regime_detector.py`, `trading-bot/tests/test_tbot_python_resolver.py` (new), `strategy-research/requirements-mac.txt` (new) | per-file `_resolve_tbot_python()` replaces 4 hardcoded Windows interpreter paths; predicate = executable regular file (the committed Windows venv exists on every checkout and must be skipped); retune's copy repo-anchored; fail-loud, no fallback; static AST call-site guards; fork-only dependency declaration (claude-agent-sdk==0.2.82, google-genai==2.16.0) | Resolver half: **yes, candidate offer after PRs #4–#7** (groundwork for the agreed Linux deploy; PR text must carry the latent wrong-CWD limitation and the POSIX scoping of the subprocess mechanism). requirements-mac.txt: **fork-only** — versions need a discussion with Jeremy first. |
 | 23 | `trading-bot/core/trading_bot.py` (3 lines), `trading-bot/tests/test_close_positions_at_end.py` (new) | two dormant unbound-name defects in `_close_all_positions_at_end` fixed; the forced-close bar now reaches `portfolio_states.csv` on failed and exact-zero closes, recorded with the engine's own per-bar `(None, {})` skipped-call convention | **Yes — PR #8 candidate.** Dorian decides timing. |
+
+### LSP setup — 2026-08-03
+
+| # | File | Change | Upstream-worthy? |
+|---|---|---|---|
+| 24 | `.gitignore` | ignore `/pyrightconfig.json` (repo-root basedpyright config: `venvPath "."` / `venv ".venv"` / py 3.13 / basic mode) | **No — fork-only.** Machine-local tool wiring, same class as row 9's `.omc/`: the file names the Mac-only `.venv` layout and Jeremy runs no basedpyright. Gitignored rather than left loose so a stray `git add -A` can never carry it upstream. |
+
+The config itself stays untracked (`git check-ignore` verified). Verified by execution 2026-08-03: venv imports resolve (`performance/bar_equity.py` — pandas clean, 1 pre-existing type finding; `core/trading_bot.py` — 0 unresolved imports, 33 pre-existing type findings = the basic-mode noise floor on untyped upstream code); scratchpad probe fires exactly one error on a nonexistent import symbol and stays silent on a clean file. Basic mode is deliberate — strict would invite the drive-by "fixes" the mergeable-fork rule forbids.
