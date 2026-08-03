@@ -175,3 +175,53 @@ Status changes to the rows above:
 | 24 | `.gitignore` | ignore `/pyrightconfig.json` (repo-root basedpyright config: `venvPath "."` / `venv ".venv"` / py 3.13 / basic mode) | **No — fork-only.** Machine-local tool wiring, same class as row 9's `.omc/`: the file names the Mac-only `.venv` layout and Jeremy runs no basedpyright. Gitignored rather than left loose so a stray `git add -A` can never carry it upstream. |
 
 The config itself stays untracked (`git check-ignore` verified). Verified by execution 2026-08-03: venv imports resolve (`performance/bar_equity.py` — pandas clean, 1 pre-existing type finding; `core/trading_bot.py` — 0 unresolved imports, 33 pre-existing type findings = the basic-mode noise floor on untyped upstream code); scratchpad probe fires exactly one error on a nonexistent import symbol and stays silent on a clean file. Basic mode is deliberate — strict would invite the drive-by "fixes" the mergeable-fork rule forbids.
+
+**Worktree caveat (measured 2026-08-03):** `venvPath "."` is config-relative, so in a git worktree without its own `.venv` the CLI reports phantom `reportMissingImports`. Run it as `basedpyright --venvpath /Users/lala/Lab/trading/dorian-fork/trading-bot-dorian <files>` from worktrees, or symlink the main `.venv` in.
+
+## Upstream merged PRs #4–#8 + the port — sync merge, 2026-08-03 (`8b9a5f72`, follow-up `3f6d8bf1`)
+
+Jeremy merged all five remaining PRs (#4–#8) into `loloze6/trading-bot` master on
+2026-07-31 (server-side, our commit SHAs intact), cherry-picked the macOS port
+himself (`c4feaf56`, squashed from the fork's five commits), deleted `main`, and
+pushed — his master moved `63237b88` → `33ac7ec4` (~50 commits: W16–W22, the
+CLEAN-* docs triage, the E-001 epic process, `deploy/kraken_recorder/`, and the
+fork-PR merges). Synced back with `git merge upstream/master`; **3 conflicts,
+all pre-registered** in the dry-run map before merging (`.gitignore` = union of
+disjoint tail blocks; both test files = take upstream, verified strictly
+additive over ours — upstream's versions are the fork's files plus his
+cache-presence skip and his Windows `skipif`, so his "mirror the skipif" ask is
+satisfied by construction). Follow-up commit removes the fork's
+`strategy-research/requirements-mac.txt` after Jeremy relocated it to
+`strategy-research/config/` (one-line header diff, verified).
+
+Verified at the landed tip (`3f6d8bf1`, four lanes: opus executor →
+code-reviewer + red-team → independent verifier, zero refuted claims): fast
+**213 passed / 0 skipped** on the main repo (211/2 in the archive-less
+worktree), slow **14 / 0 / 0**, validator exit 0, `simulate` **byte-identical**
+to the committed reference on all five files (`5ccbec42` / `5a75366c`,
+sharpe −5.646, 24 trades) — measured independently by executor AND verifier, so
+upstream's new aux-feed causality layer is proven inert on the default path.
+First-ever Mac run of the strategy-research suite: **708 passed / 2 failed /
+11 skipped**; both failures attributed by control-run on the pre-merge tree
+(`test_d3` census 8-vs-9 = upstream's own known failure, caused by his
+`71573062` deletion; `test_r2_bypass_1_path_traversal` = pre-existing
+macOS/Windows `path.exists()` semantics divergence, no security impact — the
+ownership guard works on both platforms, the test's vector short-circuits on
+POSIX).
+
+Status changes to the rows above:
+
+- **Rows 7–8, 18, 19, 20, 23: no longer divergences** — merged upstream via
+  PRs #6, #4, #5, #7, #8 respectively.
+- **Row 22: no longer a divergence** — resolver half cherry-picked by Jeremy
+  as `c4feaf56` (the planned upstream offer is moot); `requirements-mac.txt`
+  now lives upstream at `strategy-research/config/`, fork's old-path copy
+  removed in `3f6d8bf1`.
+- **Rows 9 (`.omc/`), 21 (`CLAUDE.md` include), 24 (`pyrightconfig` ignore):
+  unchanged, fork-only** — Jeremy's cherry-pick deliberately excluded the
+  fork-doc surface (his stated taxonomy question).
+- Residual `mac/setup` vs `upstream/master` delta: fork docs (`CLAUDE.md`
+  include, `CLAUDE.fork.md`, `research/**`, this file), the committed reference
+  artifact `results/runs/20260728T132811Z_5ccbec42/`, the two fork-only
+  `.gitignore` blocks, and `requirements.txt` comment wording (fork's EXACT-pin
+  note; pins identical).
