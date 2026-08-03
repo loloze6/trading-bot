@@ -18,6 +18,18 @@ across five files plus Notion:
 | `improvements/BACKLOG_DEFERRED.md` | 7 |
 | Notion 🐛 Bugs & Tasks | — |
 
+**Correction (S2 audit, dispatch W23/W24 — kept below the original claim, not
+in place of it): "six overlapping places" was wrong.** Only **two** of the
+five files were genuinely redundant trackers competing for the same job —
+`improvements/HANDOFF_CURRENT.md` and `improvements/BACKLOG_DEFERRED.md`.
+The other three keep distinct, non-overlapping roles and were corrected, not
+retired: `DOC_INDEX.md` is a documentation index (not a work tracker),
+`docs/ROADMAP.md` is the program roadmap (strategy + engineering + process),
+and `improvements/IMPROVEMENTS_REGISTER.md` is a historical audit of
+completed plans. `docs/ROADMAP.md` in particular was characterised in this
+epic's original drafting without being read first — see Amendment 3 in
+`PROCESS.md`.
+
 None is authoritative, several are stale, and the stated problem that started
 this work was *"I do not understand anymore what is used for what."*
 
@@ -40,10 +52,18 @@ E-001 has failed regardless of what else it delivers.
 
 1. `engineering/roadmap/EPICS.md` exists on `master` and is the only file
    needed to know what is in flight.
-2. All four superseded trackers are either deleted or reduced to a single
-   pointer line at their old path. Verified by:
-   `grep -rLl "roadmap/EPICS.md" strategy-research/improvements/ strategy-research/docs/ROADMAP.md`
-   returning nothing that still carries independent status.
+2. **Corrected against the S2 audit (was: "all four superseded trackers"
+   deleted/reduced to a pointer — wrong; only two were superseded):** the two
+   genuinely redundant trackers, `improvements/HANDOFF_CURRENT.md` and
+   `improvements/BACKLOG_DEFERRED.md`, are retired (archived or deleted, not
+   left as independent trackers); the three that keep distinct roles
+   (`DOC_INDEX.md`, `docs/ROADMAP.md`, `improvements/IMPROVEMENTS_REGISTER.md`)
+   are corrected against the audit's findings, not retired. Verified by:
+   `grep -rl "improvements/HANDOFF_CURRENT.md\|improvements/BACKLOG_DEFERRED.md" strategy-research/`
+   returning only the known frozen historical records (`engineering/roadmap/E-001/EPIC.md`'s
+   own Why table above, `docs/CLEANUP_PLAN.md`'s move-mapping table,
+   `docs/RESTRUCTURE_MAPPING.tsv`'s parked-restructure replay mapping) — no
+   live pointer to either retired filename remains anywhere else.
 3. A Notion **Epics** database exists, one page per epic, each linking to its
    `EPIC.md`.
 4. The next agent session can answer "what should I work on" from `EPICS.md`
@@ -98,7 +118,16 @@ Recorded so they are not relitigated:
   parked restructure branch because `engineering/` is a new path there and will
   not collide with the replay mapping (E-002).
 - 2026-08-03 — S2 audited (W23) and applied (W24, commits `895a3def`,
-  `371e3eb3`): four trackers retired or corrected. S4 complete (W24): `E-002`
+  `371e3eb3`): of the five tracked files, two retired (`HANDOFF_CURRENT.md`
+  archived, `BACKLOG_DEFERRED.md` deleted) and three corrected in place
+  (`DOC_INDEX.md`, `docs/ROADMAP.md`, `IMPROVEMENTS_REGISTER.md` — not
+  overlapping trackers, per the S2 audit). S4 complete (W24): `E-002`
   through `E-009` written, expanded past the original E-002…E-006 seed with
   E-007/E-008/E-009 surfaced by the S2 audit. Next: S3 (Notion Epics
   database), then S5 (close-out).
+- 2026-08-03 — S6 (dispatch W25): killed the `ROADMAP.md` name collision
+  (renamed to `EPICS.md`, commit `c7039809`); extracted the dispatch model to
+  `engineering/DISPATCH_MODEL.md` (commit `b7cdd50c`); named the seam between
+  it and `PROCESS.md`, added five amendment rules from testing (commit
+  `955d543e`); corrected this epic's own Why table and Done-when #2 against
+  the S2 audit's actual finding (two redundant, not four/six) — this commit.
