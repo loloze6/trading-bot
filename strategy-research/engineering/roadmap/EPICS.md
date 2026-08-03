@@ -7,9 +7,10 @@ Research hypotheses do not appear here — they go through the campaign's
 preregistration and verdict machinery. See `PROCESS.md` § "What is and is not an
 epic".
 
+## Active
+
 | Ref | Title | State | Next step |
 |---|---|---|---|
-| [E-001](E-001/EPIC.md) | Establish the engineering operational process | in-progress | S3 — Notion Epics database, then S5 close-out |
 | [E-002](E-002/EPIC.md) | Land the parked `strategy-research/` restructure | planned | S1 — re-verify the replay mapping against current master, then replay |
 | [E-003](E-003/EPIC.md) | Make the holdout seal gate enforceable in every clone | new | Investigate `tools/hooks/` and `core.hooksPath` |
 | [E-004](E-004/EPIC.md) | Settle the shared record taxonomy with the fork | new | Needs a joint decision, not a dispatch |
@@ -18,6 +19,15 @@ epic".
 | [E-007](E-007/EPIC.md) | Recorder storage and host migration | parked | Operator decision on the R3 storage budget |
 | [E-008](E-008/EPIC.md) | q1_26 tick archive aggregation | new | Evaluate extending `data_manager.py:637`'s `.resample()` seam |
 | [E-009](E-009/EPIC.md) | Pipeline harmonization (STAGE_CONFIGS/skill_map, sample_split, protocol auto-run, auto-repair) | new | S1 — merge STAGE_CONFIGS/skill_map |
+
+## Done
+
+Per amendment 2 (`PROCESS.md`): done epics never move; they stay listed here,
+not archived elsewhere.
+
+| Ref | Title | State | Closing SHA |
+|---|---|---|---|
+| [E-001](E-001/EPIC.md) | Establish the engineering operational process | done | `25960cac` corrected the Done-when; this file's own dispatch (W26) closes it — see `E-001/EPIC.md` Log for the verification output |
 
 ## State legend
 
