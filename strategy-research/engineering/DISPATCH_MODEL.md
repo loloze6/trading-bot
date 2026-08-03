@@ -1,8 +1,16 @@
 # Dispatch model — roles, process, and which model for which job
 
 Extracted from `docs/ROADMAP.md` Part 3 (dispatch W25), which now points here.
-See `engineering/roadmap/PROCESS.md` § "Relationship to the dispatch model"
-for how this file and `PROCESS.md` fit together.
+
+## Relationship to `engineering/roadmap/PROCESS.md`
+
+This file governs how a unit of work is **executed**: who dispatches, who
+audits, which model tier, cost discipline, context economy.
+`engineering/roadmap/PROCESS.md` governs how work is **organised**: epics,
+stories, states, evidence. They meet at exactly one point: **a story is a
+dispatch** — `PROCESS.md`'s epics produce the story queue that this file's
+loop consumes one at a time. See `PROCESS.md` § "Relationship to the dispatch
+model" for the reciprocal statement.
 
 ## The dispatch loop
 
