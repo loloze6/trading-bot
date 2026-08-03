@@ -1129,3 +1129,282 @@ class GatedSmaTrendLongOnlyComponent(SubStrategyComponent):
         # SMA needs lookback_L+1 (one-bar lag); ER needs er_period+2 (er_period+1
         # closes ending at the SAME prior bar, one-bar lag) -- take the binding one.
         return max(self.lookback_L + 1, self.er_period + 2)
+
+
+# ============================================================================
+# COMPONENT: WHALE LARGE-TRADE IMBALANCE  (roadmap Phase 2.3, dispatch W13)
+# edge_source.category: structural_forced_flow
+# ============================================================================
+
+#: Bar-DataFrame columns this component reads. Both are registered aux-feed
+#: names in `data/feed_registry.py::WHALE_FOOTPRINT_FEEDS`, and both live in
+#: `RESERVED_FEED_REGISTRY` rather than `FEED_REGISTRY` -- a caller must opt in
+#: BY NAME and the campaign_data_policy designation gate still decides
+#: (feed_registry.py:51-93). Naming them here creates no read path of its own.
+WHALE_LT_IMBALANCE_COLUMN = "whale_lt_imbalance"
+WHALE_ATTESTED_COLUMN = "whale_attested"
+
+
+class WhaleLargeTradeImbalanceComponent(SubStrategyComponent):
+    """
+    HYPOTHESIS -- ONE FALSIFIABLE CLAIM
+    -----------------------------------
+    SUSTAINED LARGE-TRADE ORDER-FLOW IMBALANCE PREDICTS SHORT-HORIZON
+    CONTINUATION. Precisely: when `whale_lt_imbalance` (the signed share of a
+    bar's large-trade notional, in [-1, +1] -- see
+    `strategy-research/recorder/whale_features.py` definition (a)) holds ONE
+    sign with magnitude >= `min_abs_imbalance` on each of `persistence_bars`
+    consecutive FULLY-ATTESTED bars, the next bar's return carries that same
+    sign more often than the opposite one.
+
+    FALSIFIED IF the rank correlation between this component's forecast and the
+    next bar's return is <= 0 over the bars where it is active. The claim is
+    directional and one-sided on purpose: a negative correlation would falsify
+    CONTINUATION and support the opposite mechanism (large prints marking
+    exhaustion), which is a different hypothesis and would need its own
+    registration -- it is not this one "with the sign flipped".
+
+    NOTHING IN THIS CLASS EVALUATES THAT CLAIM. It builds the instrument that
+    lets a separately-gated evaluation put the question, exactly as
+    `whale_features.py` does one level down. There is no return, no
+    correlation and no P&L anywhere in this file.
+
+    SIGN CONVENTION: `whale_lt_imbalance` > 0 means large-trade notional was
+    net TAKER-BUY (whale_features.py "SIGN IS THE TAKER'S SIDE"). Continuation
+    therefore maps a positive imbalance to a POSITIVE (long) forecast -- the
+    forecast is NOT negated. A mean-reversion reading of the same feature is a
+    different component, not a `scaling_factor: -10.0` variant of this one:
+    inverting the sign inverts the hypothesis, and the docstring above would
+    then be a lie about what the config is testing.
+
+    WHAT "SUSTAINED" MEANS, AND WHY N=3
+    ------------------------------------
+    `persistence_bars` (default 3) is the number of consecutive attested bars
+    the imbalance must hold. It is a REGISTERED DEFAULT, chosen from the
+    hypothesis wording before any evaluation, NOT tuned against data -- no IC,
+    correlation or return was computed at any point in choosing it. The
+    reasoning: at N=1 "sustained" is vacuous (one bar is a single reading). At
+    N=2 the claim rests on one repetition, which cannot be told apart from a
+    single large order worked across a bar boundary -- the exact artifact the
+    hypothesis has to exclude to be about sustained FLOW rather than one
+    print. N=3 is the smallest window that requires the imbalance to survive
+    two independent bar boundaries.
+
+    `min_abs_imbalance` (default 0.5) is likewise derived from the feature's
+    own algebra, not from data. LTI = (B - S) / (B + S) over large-trade
+    notional, so |LTI| >= 0.5 is exactly "at least 3:1 one-directional", the
+    natural reading of "imbalanced". Any pre-registration consuming this
+    component must FREEZE both values in its own (c) frozen-parameters block.
+
+    NaN HANDLING -- EXPLICIT, AND THE POINT OF THE COMPONENT
+    --------------------------------------------------------
+    `_raw_value` is NaN whenever the component ABSTAINS, and NaN is appended to
+    the engine's history deque as an abstention. This is the framework's
+    documented mechanism, not an invention: `DOC/STRATEGY_FRAMEWORK.md`
+    invariant 1 -- "NaN appends are legal and intentional ... never inject 0.0
+    placeholders into history deques".
+
+    Zero is NOT abstention here. `whale_lt_imbalance` = 0 asserts that whale
+    flow was measured and was BALANCED, which is a claim; `whale_features.py`
+    already refuses to emit 0.0 for an unmeasured bar for exactly this reason
+    (its definition (a): "Not 0.0: zero asserts that whale flow was balanced,
+    which is a measurement, and there was none to measure"). This component
+    keeps that distinction rather than collapsing it one layer up. The five
+    states, exhaustively:
+
+      1. Fewer than `persistence_bars` bars buffered -> `is_ready()` is False
+         and the engine appends nothing (normal warmup).
+      2. A required column is absent from the bar DataFrame -> ABSTAIN (NaN).
+         The feed was not wired; the component has measured nothing. A 0.0 here
+         would make a missing aux feed indistinguishable from measured-balanced
+         flow, which is how a wiring bug becomes a scientific result.
+      3. Any bar in the persistence window is UNATTESTED (`whale_attested` != 1)
+         -> ABSTAIN (NaN). Includes the current bar. An unattested bar's feature
+         columns are already NaN upstream (whale_features.py NaN-s
+         `_VALUE_COLUMNS` when a coverage gap intersects the bar).
+      4. Any bar in the window has a NaN imbalance while attested (no trade
+         reached the pair's own large-trade threshold tau) -> ABSTAIN (NaN).
+         Whale flow existed to be measured only if a whale traded.
+      5. All `persistence_bars` bars measured -> a real result: the mean
+         imbalance scaled to forecast units if the sustained condition holds,
+         and EXACTLY 0.0 if it does not. 0.0 is correct here and is the only
+         place it is: the flow WAS measured on every bar of the window and was
+         not sustainedly one-directional. That is an inactive measurement, the
+         same kind `FundingRateMeanReversionComponent` emits below its
+         threshold -- not an abstention.
+
+    State 3 is why `is_ready()` deliberately does NOT consult attestation. The
+    engine appends to the history deque only when `is_ready()` is True
+    (strategy_engine.py:77-82), and `apply_transform_pipeline` seeds from
+    `history.iloc[-1]` (registry.py:105). A component that went not-ready on an
+    unattested bar would append nothing, and the next forecast would be
+    computed from the last ATTESTED bar's value -- a silent stale carry, which
+    is the other failure the dispatch that built this forbids. Readiness is a
+    bar-count question; attestation is a value question, and it is answered in
+    the value.
+
+    CONSEQUENCE, STATED RATHER THAN HIDDEN: NaN propagates. A NaN raw value
+    makes this component's post-pipeline value NaN and hence the whole
+    per-regime ensemble sum NaN (strategy_engine.py:97-122), so a bar this
+    component abstains on produces a NaN forecast for the regime, not a partial
+    forecast from the other components. That is the honest reading -- the bar's
+    forecast is undefined, not zero -- and it is why this component belongs in
+    a single-component config for its own univariate test. Mixing it into a
+    multi-component ensemble makes its abstentions silence the other
+    components too; do that only deliberately.
+
+    TWO BLOCKERS ON THE CURRENT CAPTURE, RECORDED HERE SO NEITHER IS MISREAD AS
+    AN INVITATION TO LOWER A THRESHOLD (dispatch W14 step 3; W13 first noted
+    (a) alone, W14 adds (b) and the registered resolution for both).
+
+    (a) THIS COMPONENT CANNOT FIRE. Dispatch W11 measured attested bars
+    arriving in runs of at most 2 consecutive bars (`prereg_whale_footprint_v2
+    .yaml`: `avg_holding_bars_primary.w11_measurement_attempt`), against a
+    registered `persistence_bars` of 3 -- so state 3 (any unattested bar in
+    the window) applies to every bar and the output is NaN throughout.
+
+    (b) THE UNIVARIATE PRE-REGISTRATION ITSELF IS ALSO BLOCKED, by a separate
+    gate on the raw feature column: `prereg_whale_footprint_v2.yaml`'s
+    `required_coverage_floor` (0.80) is not currently met (measured
+    `attested_bar_fraction` 0.4178 whole-capture / 0.5455 post-hole steady
+    state -- see that file's `required_coverage_floor.w11_status`). This is
+    the OTHER hypothesis test (univariate, on the raw column -- see this
+    file's own hypothesis statement above), which the pre-registration gates
+    independently of this component; the director explicitly REJECTED routing
+    that test through this component's sustained-subset forecast (dispatch
+    W14, R4) because they are different hypotheses.
+
+    BOTH SHARE ONE ROOT CAUSE: reconnect churn in the recorder (~6
+    ws_disconnects/10h, each destroying a whole 1h bar's attestation --
+    `prereg_whale_footprint_v2.yaml`: `required_coverage_floor.w11_status`).
+    THE REGISTERED FIX FOR BOTH IS HOST MIGRATION -- moving the recorder off
+    its current host/network -- NOT threshold relaxation. Concretely: NOT
+    lowering `persistence_bars` below 3 (that would fit this component's
+    parameter to the capture's gap structure rather than to the hypothesis),
+    and NOT lowering `required_coverage_floor` in the pre-registration (that
+    file's own `w11_status` already explains why: the floor's job is to catch
+    this exact regression, and lowering it to wherever the metric currently
+    sits turns a tripped alarm into a new normal). No threshold anywhere was
+    changed by this note.
+
+    DATA PATH: the normal aux-feed path and no other. Both columns arrive on the
+    bar DataFrame via `DataManager.register_feed()` ->
+    `_premerge_aux_feeds()` -> `_merge_asof_with_causality_guard()`
+    (data_manager.py:704-786), which enforces the W9 `window_seconds`
+    declaration -- `FEED_WINDOW_SECONDS[<whale feed>] == bar_seconds`
+    (feed_registry.py:46-95), the forward window
+    `[timestamp, timestamp + bar_seconds)` the features actually aggregate. The
+    guard refuses to attach a value whose declared window ends after the bar it
+    targets. This component reads the merged column and adds no loader of its
+    own, exactly as `FundingRateMeanReversionComponent` reads `funding_rate`.
+    """
+
+    def __init__(self, name="WhaleLTImbalance", weight=1.0, parameters=None):
+        params = parameters or {}
+        params.setdefault("standardized_forecast", False)
+        super().__init__(name, weight, params)
+        self.persistence_bars = int(params.get("persistence_bars", 3))
+        self.min_abs_imbalance = float(params.get("min_abs_imbalance", 0.5))
+        self.scaling_factor = float(params.get("scaling_factor", 10.0))
+        if self.persistence_bars < 1:
+            raise ValueError(
+                f"persistence_bars must be >= 1, got {self.persistence_bars} -- "
+                "a sustained-imbalance component with a non-positive window has "
+                "no hypothesis to encode."
+            )
+        # Abstention is the SAFE START. Before the first update() the component
+        # has measured nothing, and 0.0 would be a claim about that nothing.
+        self._raw_value = float("nan")
+
+    def _abstain(self, reason: str, **detail):
+        self._raw_value = float("nan")
+        self.confidence = 0.0
+        self.debug_info = {"abstained": True, "abstain_reason": reason, **detail}
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        # Reset to ABSTAIN, not to 0.0 -- every early return below is a
+        # "measured nothing" case, and the default must say so.
+        self._raw_value = float("nan")
+        self.debug_info = {}
+
+        if not self.is_ready():
+            return
+
+        missing = [
+            c for c in (WHALE_LT_IMBALANCE_COLUMN, WHALE_ATTESTED_COLUMN)
+            if c not in data.columns
+        ]
+        if missing:
+            self._abstain("aux_feed_columns_absent", missing_columns=missing)
+            return
+
+        n = self.persistence_bars
+        window_imbalance = data[WHALE_LT_IMBALANCE_COLUMN].iloc[-n:].astype(float).values
+        window_attested = data[WHALE_ATTESTED_COLUMN].iloc[-n:].astype(float).values
+
+        # Attestation is all-or-nothing per bar and the window is a conjunction:
+        # a single unattested bar means the persistence claim is unverifiable,
+        # not false. Episodes are never joined across an unattested gap -- same
+        # rule recorder/whale_persistence.py applies to the same feature.
+        n_unattested = int(np.sum(~(window_attested == 1.0)))
+        if n_unattested:
+            self._abstain(
+                "window_not_fully_attested",
+                persistence_bars=n,
+                unattested_bars_in_window=n_unattested,
+            )
+            return
+
+        n_unmeasured = int(np.sum(np.isnan(window_imbalance)))
+        if n_unmeasured:
+            # Attested but NaN: no trade in that bar reached the pair's own
+            # trailing large-trade threshold. Nothing to measure, so nothing is
+            # asserted (whale_features.py definition (a)).
+            self._abstain(
+                "no_large_trade_in_window",
+                persistence_bars=n,
+                unmeasured_bars_in_window=n_unmeasured,
+            )
+            return
+
+        # From here the whole window is MEASURED: any output is a real result,
+        # 0.0 included.
+        signs = np.sign(window_imbalance)
+        same_sign = bool(np.all(signs == signs[0])) and signs[0] != 0.0
+        all_above_threshold = bool(np.all(np.abs(window_imbalance) >= self.min_abs_imbalance))
+        sustained = same_sign and all_above_threshold
+
+        mean_imbalance = float(np.mean(window_imbalance))
+        if sustained:
+            # Continuation: forecast carries the imbalance's own sign. |mean| is
+            # in [min_abs_imbalance, 1] here, so the emitted forecast spans
+            # [+-min_abs_imbalance*sf, +-sf] and the clip is a guard, not the
+            # normal path -- the -20..+20 pipeline convention is respected by
+            # construction at the default sf=10.0.
+            self._raw_value = float(np.clip(mean_imbalance * self.scaling_factor, -20.0, 20.0))
+            self.confidence = float(min(abs(mean_imbalance), 1.0))
+        else:
+            self._raw_value = 0.0
+            self.confidence = 0.0
+
+        self.debug_info = {
+            "abstained": False,
+            "persistence_bars": n,
+            "window_imbalance": [float(v) for v in window_imbalance],
+            "mean_imbalance": mean_imbalance,
+            "same_sign": same_sign,
+            "all_above_threshold": all_above_threshold,
+            "sustained": sustained,
+            "min_abs_imbalance": self.min_abs_imbalance,
+        }
+
+    def is_ready(self) -> bool:
+        # Bar-count ONLY -- attestation must NOT be consulted here. See the
+        # class docstring, "State 3 is why is_ready() deliberately does not
+        # consult attestation": a not-ready bar appends nothing, and the next
+        # forecast would then be seeded from the last attested bar's value.
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.persistence_bars

@@ -14,7 +14,7 @@ In scope: ledger items **A8** (verdict/routing vocabulary split), **A9**
 **C7** (machine-checkable pass-rule evaluator replacing the prose-criteria
 parser), and **C9 as a rider** (KB-exhaustion gate on the verdict stage's own
 proposal-generating paths). Designed as one coherent change to the
-verdict/routing layer, per NEXT_SESSION.md's task-1 sequencing (this is the
+verdict/routing layer, per engineering/sessions_archive/HANDOFF_20260724.md's task-1 sequencing (this is the
 "verdict/routing vocabulary split, total pass-rule mapping, machine-evaluated
 criteria" cluster).
 
@@ -54,7 +54,7 @@ exercised.
 ## 1. Ledger items read (context, current text confirmed unchanged)
 
 A8, A9, B11, C7, C9, C8 (doctrine), A2, D3 — re-read fresh this phase
-against `PIPELINE_IMPROVEMENTS_20260712_v4.md` (not solely relied on from
+against `improvements/IMPROVEMENTS_DONE_20260712.md` (not solely relied on from
 the earlier orientation read) to guard against drift; content confirmed
 byte-identical to what was summarized in this session's first turn. Not
 re-quoted in full here (already on file in that document); load-bearing

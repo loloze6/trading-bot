@@ -62,6 +62,7 @@ code that ships; nothing here is a re-implementation.
 """
 import ast
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -186,6 +187,14 @@ def test_windows_wins_when_both_layouts_are_present(source, mode, tmp_path, monk
     assert resolved == (tmp_path / "venv" / "Scripts" / "python.exe").resolve()
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Fixture premise unconstructible on Windows: chmod(0o644) "
+           "yields mode 0o100777 and os.access(X_OK) is unconditionally "
+           "True for any existing file, so a present-but-unrunnable "
+           "candidate cannot be built. The guard this exercises is "
+           "macOS-specific (upstream's committed Windows venv).",
+)
 @pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
 def test_unrunnable_windows_candidate_does_not_shadow_the_mac_one(
         source, mode, tmp_path, monkeypatch):

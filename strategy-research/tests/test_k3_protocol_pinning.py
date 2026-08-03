@@ -757,7 +757,7 @@ def test_invoke_agent_with_yaml_retry_does_not_catch_other_messages(monkeypatch)
 
 # ---------------------------------------------------------------------------
 # B7: _apply_b7_mandatory_inputs -- deterministic mandatory-inputs union for
-# validation and every downstream LLM stage (PIPELINE_IMPROVEMENTS_20260712_v4.md
+# validation and every downstream LLM stage (improvements/IMPROVEMENTS_DONE_20260712.md
 # B7 -- three in-the-wild occurrences of a stage deciding without ever
 # reading pre_registration.yaml, most recently run_058).
 # ---------------------------------------------------------------------------
@@ -832,7 +832,7 @@ def test_apply_b7_mandatory_inputs_covers_every_downstream_llm_stage():
 
 # ---------------------------------------------------------------------------
 # B15: register_hypothesis -- first-class registration -> schedulable queue
-# entry (PIPELINE_IMPROVEMENTS_20260712_v4.md B15 -- retires the
+# entry (improvements/IMPROVEMENTS_DONE_20260712.md B15 -- retires the
 # per-registration hand-edit H-041-C-v2 required).
 # ---------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 # Strategy-Research Pipeline — Enhancement Plan v2 (Overview)
 
-> **SUPERSEDED** — This document has been replaced by `00_closing_state.md` as the canonical entry point. All improvements (01–09) are complete. Read `00_closing_state.md` first; treat this file as historical reference only. Where this document conflicts with `AMENDMENTS_01-06.md`, the amendments win.
+> **SUPERSEDED** — This document has been replaced by `improvements/IMPROVEMENTS_DONE_20260706.md` as the canonical entry point. All improvements (01–09) are complete. Read `improvements/IMPROVEMENTS_DONE_20260706.md` first; treat this file as historical reference only. Where this document conflicts with `AMENDMENTS_01-06.md`, the amendments win.
 
 ## Purpose of this plan
 

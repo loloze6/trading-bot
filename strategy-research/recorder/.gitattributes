@@ -1,0 +1,8 @@
+# Shell scripts must keep LF line endings regardless of the checking-out
+# machine's git config. This repo's core.autocrlf=true would otherwise
+# rewrite these to CRLF on a Windows checkout, and a CRLF shebang line
+# (`#!/usr/bin/env bash\r`) fails on Linux with "bad interpreter: ... no such
+# file or directory" -- exactly the kind of Windows/Linux portability bug
+# W15 exists to close. This matters in particular because these scripts are
+# meant to be deployed by cloning this repo directly onto a Linux host.
+*.sh text eol=lf

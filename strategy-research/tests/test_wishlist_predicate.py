@@ -21,7 +21,7 @@ import run_campaign as rc
 
 @pytest.mark.real_repo_readonly
 def test_er_overlay_predicate_does_not_fire_against_real_kb():
-    """2026-07-10, post-incident (see strategy-research/incident_20260710/INCIDENT.md):
+    """2026-07-10, post-incident (see strategy-research/docs/incidents/INCIDENT_20260710.md):
     this test previously asserted 'true' because p4_sma_trend_longonly_daily_auto's
     outcome was kill_ungated_regime_mismatch. A metric-basis audit found the
     median_sharpe behind that kill verdict was a LIFO-fragment trade-exit-day

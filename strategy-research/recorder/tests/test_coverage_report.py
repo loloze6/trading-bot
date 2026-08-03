@@ -93,7 +93,9 @@ def test_a_fully_covered_journal_reports_no_gaps():
     records = [
         _rec(1, 0, "RECORDER_START"),
         _rec(2, 0, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
-        _rec(3, 300, "RECORDER_STOP"),
+        _rec(3, 100, "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(4, 200, "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(5, 300, "RECORDER_STOP"),
     ]
     found, _window, _covered = gaps(records)
     assert found == []
@@ -192,6 +194,48 @@ def test_an_unattributable_gap_says_unknown_rather_than_guessing():
     assert [g.cause for g in found] == ["unknown"]
 
 
+def test_a_frozen_process_gap_is_labelled_no_attestation_not_invisible():
+    """
+    THE HEADLINE CASE (SESSION_LOG.md 2026-07-27, dispatch W9): a real ~4h06m
+    hole under one continuous run_id, no closing record anywhere, used to
+    report ~100% captured. It must now be a reported gap with its own cause,
+    distinct from ws_disconnect/crash/unknown.
+    """
+    frozen_for = 600.0  # comfortably past ATTESTATION_TOLERANCE_S (150s)
+    records = [
+        _rec(1, 0, "RECORDER_START"),
+        _rec(2, 0, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
+        _rec(3, 60, "HEARTBEAT_ROLLUP", frames_total=5),
+        # <-- system suspend here; the process writes nothing at all
+        _rec(4, 60 + frozen_for, "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(5, 120 + frozen_for, "RECORDER_STOP"),
+    ]
+    found, _w, _c = gaps(records)
+    assert len(found) == 1
+    g = found[0]
+    assert (g.start, g.end) == (_at(60), _at(60 + frozen_for))
+    assert g.duration_s == frozen_for
+    assert g.cause == "no_attestation"
+    assert "dead air" in g.detail
+
+
+def test_a_long_healthy_run_with_realistic_cadence_reports_no_false_gap():
+    """Clean run must not report false gaps: two hours of real ~60s-cadence
+    heartbeats must read as fully covered end to end."""
+    records = [_rec(1, 0, "RECORDER_START"), _rec(2, 0, "SUBSCRIBE_ACK",
+               symbol="BTC/USD", channel="book")]
+    jseq = 3
+    n_rollups = int(2 * 3600 // 60)
+    for i in range(1, n_rollups + 1):
+        records.append(_rec(jseq, i * 60, "HEARTBEAT_ROLLUP", frames_total=5))
+        jseq += 1
+    end_s = n_rollups * 60
+    records.append(_rec(jseq, end_s, "RECORDER_STOP"))
+
+    found, _w, _c = gaps(records)
+    assert found == []
+
+
 # ---------------------------------------------------------------------------
 # strict (intersection) coverage
 # ---------------------------------------------------------------------------
@@ -209,7 +253,8 @@ def test_one_pair_dropping_out_makes_the_window_uncaptured():
         _rec(4, 100, "WS_DISCONNECT", reason="drop"),
         # only BTC comes back
         _rec(5, 120, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
-        _rec(6, 300, "RECORDER_STOP"),
+        _rec(6, 220, "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(7, 300, "RECORDER_STOP"),
     ]
     found, _w, _c = gaps(records)
     assert [(g.start, g.end) for g in found] == [(_at(100), _at(300))]
@@ -252,7 +297,9 @@ def test_cli_on_a_clean_journal_says_none_and_exits_zero(tmp_path, capsys):
     _write(tmp_path, [
         _rec(1, 0, "RECORDER_START"),
         _rec(2, 0, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
-        _rec(3, 300, "RECORDER_STOP"),
+        _rec(3, 100, "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(4, 200, "HEARTBEAT_ROLLUP", frames_total=5),
+        _rec(5, 300, "RECORDER_STOP"),
     ])
     assert main(["--out", str(tmp_path), "--fail-on-gap"]) == 0
     assert "GAPS: none" in capsys.readouterr().out

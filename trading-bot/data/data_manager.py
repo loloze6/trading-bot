@@ -106,26 +106,119 @@ class Candle:
 #
 # Lightweight descriptor stored by DataManager for each registered auxiliary
 # feed.  It carries:
-#   fetcher    — the BaseFetcher subclass instance that knows how to
-#                retrieve and cache this feed's data
-#   column     — the column name that will appear in the enriched DataFrame
-#                (e.g. 'fear_greed', 'funding_rate')
-#   agg        — how to reduce multiple readings within one candle window:
-#                  'last'  → most recent value (default, good for rates/indices)
-#                  'mean'  → average (good for noisy signals)
-#                  'sum'   → sum (good for counts/volumes)
-#   live_value — the most recently fetched value, updated by the background
-#                poll thread in live mode; used as the enrichment value at
-#                candle close.
+#   fetcher         — the BaseFetcher subclass instance that knows how to
+#                     retrieve and cache this feed's data
+#   column          — the column name that will appear in the enriched
+#                     DataFrame (e.g. 'fear_greed', 'funding_rate')
+#   window_seconds  — the causality declaration (see AuxFeedCausalityError
+#                     below): how far past its own `timestamp` row this feed's
+#                     value aggregates. 0 for an instantaneous observation
+#                     (funding rate, fear & greed — published AT `timestamp`,
+#                     using no data after it); the bar width for a feed that
+#                     aggregates a forward window ending at `timestamp +
+#                     window_seconds` (e.g. the whale-footprint features,
+#                     window_seconds == their own bar_seconds). REQUIRED, no
+#                     default — deny by default: a feed that does not declare
+#                     its window is a TypeError at registration, not a merge
+#                     that trusts it implicitly.
+#   agg             — how to reduce multiple readings within one candle window:
+#                       'last'  → most recent value (default, good for rates/indices)
+#                       'mean'  → average (good for noisy signals)
+#                       'sum'   → sum (good for counts/volumes)
+#   live_value      — the most recently fetched value, updated by the
+#                     background poll thread in live mode; used as the
+#                     enrichment value at candle close.
 # ===========================================================================
 
 @dataclass
 class AuxFeedConfig:
     """Descriptor for one registered auxiliary data feed."""
-    fetcher:    BaseFetcher
-    column:     str
-    agg:        str = "last"          # 'last' | 'mean' | 'sum'
-    live_value: Optional[float] = None  # updated in live mode by poll thread
+    fetcher:        BaseFetcher
+    column:         str
+    window_seconds: float
+    agg:            str = "last"          # 'last' | 'mean' | 'sum'
+    live_value:     Optional[float] = None  # updated in live mode by poll thread
+
+
+class AuxFeedCausalityError(RuntimeError):
+    """
+    Raised at the aux-feed merge boundary when a feed's own declared
+    aggregation window would extend past the bar it is about to be attached
+    to — i.e. the value would encode information the strategy could not yet
+    have at that bar's delivery time.
+
+    WHY THIS EXISTS
+    ----------------
+    `test_aux_feed_causality_canary.py` (dispatch W8) proved empirically that
+    the merge/execution path applies NO independent defense against a
+    mistimed feed: a feature equal to a bar's literal NEXT return, attached at
+    that bar via the same `merge_asof(direction='backward')` every real feed
+    uses, produced a ~15x return with nothing anywhere raising. Causality
+    rested entirely on each fetcher individually respecting its own window
+    boundary — true today for the whale fetcher, but nothing in shared code
+    would have caught a future fetcher that got this wrong.
+
+    This is that defense, added at the one shared choke point every feed
+    passes through (`DataManager._premerge_aux_feeds`). It is deny-by-default
+    (`AuxFeedConfig.window_seconds` has no default — see above) and it TRUSTS
+    the declared window rather than inspecting how the value was actually
+    computed: it catches a feed that is honest about needing future data
+    relative to the bar it is being merged onto (an off-by-one in window
+    arithmetic, or a feed built for a coarser bar grid than the one it is
+    attached to), not a feed that lies about its own window. See
+    `data/ADDING_A_FEED.md` for the declaration this exception enforces.
+    """
+
+
+def _merge_asof_with_causality_guard(
+    bars: pd.DataFrame,
+    feed_data: pd.DataFrame,
+    name: str,
+    window_seconds: float,
+    interval_seconds: int,
+    feed_label: str,
+) -> "pd.DataFrame":
+    """
+    `merge_asof(direction='backward')` the feed's `name` column onto `bars`
+    (which must carry a `timestamp` column of bar START times), then refuse
+    (raise `AuxFeedCausalityError`) if any matched row's declared source
+    window — `[feed_ts, feed_ts + window_seconds)` — ends strictly after the
+    bar's own end (`bar_ts + interval_seconds`). Equality is allowed: a feed
+    whose window ends exactly when the bar closes is exactly what a
+    correctly-bounded same-grid feed (e.g. whale features) looks like.
+
+    `bars` is returned unmodified plus the new column; row order/index is not
+    guaranteed to match the input (matches the pre-existing merge_asof calls
+    this replaces).
+    """
+    src = (
+        feed_data[["timestamp", name]]
+        .sort_values("timestamp")
+        .rename(columns={"timestamp": "__src_ts"})
+    )
+    merged = pd.merge_asof(
+        bars.sort_values("timestamp"),
+        src,
+        left_on="timestamp",
+        right_on="__src_ts",
+        direction="backward",
+    )
+    matched = merged["__src_ts"].notna()
+    if matched.any():
+        window_end = merged.loc[matched, "__src_ts"] + pd.Timedelta(seconds=window_seconds)
+        bar_end = merged.loc[matched, "timestamp"] + pd.Timedelta(seconds=interval_seconds)
+        violations = window_end > bar_end
+        if violations.any():
+            bad = merged.loc[matched].loc[violations].iloc[0]
+            raise AuxFeedCausalityError(
+                f"aux feed '{feed_label}' column '{name}': declared source window "
+                f"[{bad['__src_ts']} .. +{window_seconds}s] ends after bar "
+                f"{bad['timestamp']} closes (bar_end="
+                f"{bad['timestamp'] + pd.Timedelta(seconds=interval_seconds)}) — "
+                f"refusing to attach a value the strategy could not yet have. "
+                f"{int(violations.sum())} bar(s) affected."
+            )
+    return merged.drop(columns="__src_ts")
 
 
 # ===========================================================================
@@ -337,10 +430,13 @@ class CandleBuilder:
 #
 # New in this version
 # ────────────────────
-# register_feed(name, fetcher, agg)
+# register_feed(name, fetcher, window_seconds, agg)
 #     Plug in any BaseFetcher subclass.  The feed's data is automatically:
 #       • fetched and cached (same storage pipeline as price data)
-#       • pre-merged into historical_data before backtest replay starts
+#       • pre-merged into historical_data before backtest replay starts,
+#         through a causality guard that REFUSES (AuxFeedCausalityError) to
+#         attach a value whose declared `window_seconds` would end after the
+#         bar it is being merged onto — see data/ADDING_A_FEED.md
 #       • appended as extra columns to every candle history DataFrame
 #         returned to the strategy
 #     Registering feeds is optional — if none are registered the behaviour is
@@ -367,15 +463,17 @@ class DataManager:
         dm = DataManager(['BTCUSDT'], interval_seconds=300, mode='backtest')
 
         dm.register_feed(
-            name    = 'fear_greed',
-            fetcher = FearGreedFetcher('2024-01-01', '2024-12-31', localStorage=True),
-            agg     = 'last',
+            name           = 'fear_greed',
+            fetcher        = FearGreedFetcher('2024-01-01', '2024-12-31', localStorage=True),
+            window_seconds = 0,  # published instantaneously — no forward window
+            agg            = 'last',
         )
         dm.register_feed(
-            name    = 'funding_rate',
-            fetcher = FundingRateFetcher('2024-01-01', '2024-12-31',
+            name           = 'funding_rate',
+            fetcher        = FundingRateFetcher('2024-01-01', '2024-12-31',
                                          symbols=['BTCUSDT'], localStorage=True),
-            agg     = 'last',
+            window_seconds = 0,  # published instantaneously — no forward window
+            agg            = 'last',
         )
 
         # load_data() and initialize() handle pre-merging automatically.
@@ -462,29 +560,54 @@ class DataManager:
         self,
         name: str,
         fetcher: BaseFetcher,
+        window_seconds: float,
         agg: str = "last",
     ) -> None:
         """
         Register an auxiliary data feed.
 
         Args:
-            name:    Column name that will appear in the enriched DataFrame,
-                     e.g. 'fear_greed', 'funding_rate', 'open_interest'.
-            fetcher: Any BaseFetcher subclass instance.  Must be pre-configured
-                     with the correct date range and symbols.
-            agg:     Aggregation function to apply when multiple readings fall
-                     within one candle window:
-                       'last' — most recent value  (default)
-                       'mean' — average
-                       'sum'  — sum
+            name:           Column name that will appear in the enriched
+                            DataFrame, e.g. 'fear_greed', 'funding_rate',
+                            'open_interest'.
+            fetcher:        Any BaseFetcher subclass instance.  Must be
+                            pre-configured with the correct date range and
+                            symbols.
+            window_seconds: REQUIRED — the causality declaration consumed by
+                            the merge guard (see AuxFeedCausalityError).
+                            How far past its own `timestamp` row this feed's
+                            value aggregates: 0 for an instantaneous
+                            observation (funding rate, fear & greed), or the
+                            width of a forward window for a feed that
+                            aggregates one (e.g. whale-footprint features,
+                            window_seconds == their own bar_seconds). No
+                            default — deny by default, per
+                            data/ADDING_A_FEED.md.
+            agg:            Aggregation function to apply when multiple
+                            readings fall within one candle window:
+                              'last' — most recent value  (default)
+                              'mean' — average
+                              'sum'  — sum
 
         Can be called at any time before initialize() (backtest) or
         initiate_start_thread() (live).
         """
         if agg not in ("last", "mean", "sum"):
             raise ValueError(f"agg must be 'last', 'mean', or 'sum' — got '{agg}'")
-        self._aux_feeds[name] = AuxFeedConfig(fetcher=fetcher, column=name, agg=agg)
-        logger.info(f"DataManager: registered aux feed '{name}' (agg={agg})")
+        if not isinstance(window_seconds, (int, float)) or isinstance(window_seconds, bool) \
+                or window_seconds < 0:
+            raise ValueError(
+                f"window_seconds must be a non-negative number — got {window_seconds!r}. "
+                "This is a required causality declaration, not an optional tuning knob: "
+                "see AuxFeedCausalityError / data/ADDING_A_FEED.md."
+            )
+        self._aux_feeds[name] = AuxFeedConfig(
+            fetcher=fetcher, column=name, window_seconds=float(window_seconds), agg=agg
+        )
+        logger.info(
+            f"DataManager: registered aux feed '{name}' "
+            f"(agg={agg}, window_seconds={window_seconds})"
+        )
 
     # -----------------------------------------------------------------------
     # Enrichment — called at every candle close
@@ -543,14 +666,15 @@ class DataManager:
 
                 if not enriched.empty and name in enriched.columns:
                     # Forward-fill: each candle gets the latest known value
-                    # at or before its timestamp using merge_asof
-                    merged = pd.merge_asof(
-                        result.sort_values("timestamp"),
-                        enriched[["timestamp", name]].sort_values("timestamp"),
-                        on="timestamp",
-                        direction="backward",   # last known value ≤ candle time
+                    # at or before its timestamp using merge_asof. `enriched`
+                    # here is _enrichment_data, already causality-checked once
+                    # by _premerge_aux_feeds; re-checked with the same
+                    # declared window for defense-in-depth at this second,
+                    # independent merge_asof call site.
+                    result = _merge_asof_with_causality_guard(
+                        result, enriched, name, feed.window_seconds,
+                        self.interval_seconds, feed_label=name,
                     )
-                    result = merged
                 else:
                     result[name] = np.nan
 
@@ -630,6 +754,7 @@ class DataManager:
             # Apply the registered aggregation function to handle cases where
             # the aux feed has higher resolution than the price data
             # (e.g. funding rate every 8h, price every 1m)
+            effective_window_seconds = feed.window_seconds
             if feed.agg != "last":
                 feed_data = (
                     feed_data
@@ -638,12 +763,17 @@ class DataManager:
                     .agg({name: feed.agg})
                     .reset_index()
                 )
+                # Resampling buckets raw readings into one row per bar-width
+                # bucket, so the resampled row's own window is at least the
+                # bucket width regardless of what each raw reading declared —
+                # a 'sum'/'mean' over [T, T+interval_seconds) is exactly the
+                # forward window whale features already declare on their own
+                # grid, so this only ever widens (never narrows) the check.
+                effective_window_seconds = max(feed.window_seconds, self.interval_seconds)
 
-            enriched = pd.merge_asof(
-                enriched,
-                feed_data[["timestamp", name]].sort_values("timestamp"),
-                on="timestamp",
-                direction="backward",
+            enriched = _merge_asof_with_causality_guard(
+                enriched, feed_data, name, effective_window_seconds,
+                self.interval_seconds, feed_label=name,
             )
             logger.info(
                 f"DataManager: pre-merged '{name}' into {symbol} "

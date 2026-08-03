@@ -89,7 +89,7 @@ import os
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -127,6 +127,30 @@ _NEW_ACTOR = frozenset({"RECORDER_START", "RESTART_BOUNDARY"})
 #: even though it is a failure: the failure is the disk, and the recorder's own
 #: shutdown was orderly and recorded.
 _ATTESTED_STOP = frozenset({"RECORDER_STOP", "DISK_GUARD_ABORT"})
+
+#: Record types that are POSITIVE EVIDENCE the process was alive and
+#: scheduled at that instant, for every (symbol, channel) pair currently open.
+#: SUBSCRIBE_ACK attests its own pair; HEARTBEAT_ROLLUP is process-wide (one
+#: per ROLLUP_INTERVAL_S, regardless of which pairs it reports on -- see
+#: record_kraken_ws.py's `_rollup_loop`) and so renews every pair already open.
+#: Nothing else counts: a WS_CONNECT, STATUS_CHANGE or RECONNECT_ATTEMPT proves
+#: a socket event happened, not that the minute-cadence rollup loop is still
+#: being scheduled by the OS -- and an unscheduled process is exactly the
+#: failure mode (a suspended/frozen process, not merely a dead socket) that
+#: coverage_intervals must not silently read as covered.
+_ATTESTING = frozenset({"SUBSCRIBE_ACK", "HEARTBEAT_ROLLUP"})
+
+#: Kept as a literal (not imported from record_kraken_ws) to avoid a circular
+#: import -- record_kraken_ws imports CoverageJournal from this module.
+#: test_journal.py::test_attestation_tolerance_matches_the_rollup_cadence
+#: asserts this stays in lockstep with record_kraken_ws.ROLLUP_INTERVAL_S.
+ROLLUP_INTERVAL_S = 60.0
+
+#: 2.5x the rollup cadence -- the same real-world slack liveness.py already
+#: uses ("newest rollup is Xs old (limit 150s)") for the live health check,
+#: applied here to historical reconstruction so the two never disagree about
+#: how much silence is normal jitter versus a real gap.
+ATTESTATION_TOLERANCE_S = ROLLUP_INTERVAL_S * 2.5
 
 
 class CoverageGapError(RuntimeError):
@@ -325,8 +349,34 @@ def coverage_intervals(
     Reconstruct, per (symbol, channel), the wall-clock spans the journal
     attests were captured.
 
+    POSITIVE-EVIDENCE, DENY BY DEFAULT
+    -----------------------------------
+    A span counts as covered only where it is actively attested at the
+    expected cadence (`_ATTESTING` / `ATTESTATION_TOLERANCE_S`), not merely
+    "opened and never explicitly closed". The original design closed an
+    interval only on an explicit CLOSING record, which meant a process that
+    stopped being scheduled by the OS entirely (a suspend/freeze -- zero
+    HEARTBEAT_ROLLUPs, not just zero network frames) produced no closing
+    record and read as continuously covered for as long as the SAME run_id
+    eventually resumed and kept writing. A real ~4h06m capture hole was missed
+    this way (SESSION_LOG.md 2026-07-27) because the successor records, once
+    the process unfroze, belonged to the same run_id and so never tripped
+    UNCLEAN_SHUTDOWN. Absence of attestation is now a gap regardless of cause,
+    with its own `NO_ATTESTATION` reason distinct from an explicit close.
+
     Interval semantics:
-      * opened by SUBSCRIBE_ACK(symbol, channel);
+      * opened by SUBSCRIBE_ACK(symbol, channel); attestation (`covered_since`)
+        starts at that same instant;
+      * renewed by every subsequent SUBSCRIBE_ACK or HEARTBEAT_ROLLUP while the
+        pair stays open -- HEARTBEAT_ROLLUP renews EVERY currently-open pair,
+        since one is written per ROLLUP_INTERVAL_S regardless of which pairs
+        it reports on;
+      * closed by `NO_ATTESTATION` the instant more than ATTESTATION_TOLERANCE_S
+        elapses since the last renewal with no new one -- checked against
+        every record's timestamp, not just attesting ones, so a stray
+        non-attesting record arriving after a long silence is what surfaces
+        the gap. The pair stays open (still nominally subscribed) but
+        unattested until the next SUBSCRIBE_ACK/HEARTBEAT_ROLLUP reopens it;
       * closed by WS_DISCONNECT, RECORDER_STOP or DISK_GUARD_ABORT;
       * closed by UNCLEAN_SHUTDOWN at the *last record of the dead run* when a
         record from a NEW ACTOR (a successor RECORDER_START, or the
@@ -340,19 +390,35 @@ def coverage_intervals(
         never to "now": a process that died 40 minutes ago and a process that
         is healthy right now have identical journal tails until the next
         rollup lands.
+
+    A pair that is open but currently in a NO_ATTESTATION gap when the journal
+    ends emits no OPEN_TAIL interval (there is nothing attested left to flush)
+    — the caller sees exactly the last attested instant, same as any other gap.
     """
     open_since: Dict[Tuple[str, str], Tuple[datetime, str]] = {}
+    #: Start of the currently-attested run for a key, or None while that key
+    #: is open but sitting in an unattested (NO_ATTESTATION) gap.
+    covered_since: Dict[Tuple[str, str], Optional[datetime]] = {}
+    last_attested: Dict[Tuple[str, str], datetime] = {}
     result: Dict[Tuple[str, str], List[Interval]] = {}
     last_ts: Optional[datetime] = None
     last_run: Optional[str] = None
+    tolerance = timedelta(seconds=ATTESTATION_TOLERANCE_S)
+
+    def flush(key: Tuple[str, str], end: datetime, reason: str) -> None:
+        start = covered_since.get(key)
+        if start is not None and end >= start:
+            result.setdefault(key, []).append(
+                Interval(start=start, end=end, closed_by=reason, run_id=open_since[key][1])
+            )
+        covered_since[key] = None
 
     def close_all(at: datetime, reason: str) -> None:
-        for key, (start, run_id) in list(open_since.items()):
-            if at >= start:
-                result.setdefault(key, []).append(
-                    Interval(start=start, end=at, closed_by=reason, run_id=run_id)
-                )
+        for key in list(open_since.keys()):
+            flush(key, at, reason)
         open_since.clear()
+        covered_since.clear()
+        last_attested.clear()
 
     for rec in records:
         rtype = rec.get("type")
@@ -365,11 +431,29 @@ def coverage_intervals(
         if rtype in _NEW_ACTOR and open_since and run_id != last_run:
             close_all(last_ts if last_ts else ts, "UNCLEAN_SHUTDOWN")
 
+        # Cadence check FIRST, using this record's own timestamp, regardless
+        # of its type: any record proves the journal has reached `ts` without
+        # an intervening attestation, for every key still open.
+        for key in list(open_since.keys()):
+            if covered_since.get(key) is not None and ts - last_attested[key] > tolerance:
+                flush(key, last_attested[key], "NO_ATTESTATION")
+
         if rtype == _OPENING:
             sym = rec.get("symbol")
             chan = rec.get("channel")
             if sym and chan:
-                open_since.setdefault((sym, chan), (ts, run_id))
+                key = (sym, chan)
+                if key not in open_since:
+                    open_since[key] = (ts, run_id)
+                    covered_since[key] = ts
+                last_attested[key] = ts
+                if covered_since.get(key) is None:
+                    covered_since[key] = ts
+        elif rtype == "HEARTBEAT_ROLLUP":
+            for key in list(open_since.keys()):
+                if covered_since.get(key) is None:
+                    covered_since[key] = ts
+                last_attested[key] = ts
         elif rtype in _CLOSING:
             close_all(ts, rtype)
 

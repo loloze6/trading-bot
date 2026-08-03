@@ -12,37 +12,46 @@ Organized by the question a reader actually arrives with, not by directory.
 ---
 
 ### "What do I do this session?"
-→ **[`NEXT_SESSION.md`](NEXT_SESSION.md)** — the single entry point for the
-next session: read-first list, priority-ordered task queue, standing
-constraints. Start here if you're picking this campaign back up.
+→ For **engineering work**: **[`engineering/roadmap/EPICS.md`](engineering/roadmap/EPICS.md)** —
+one line per epic, the only mandatory read for engineering.
+→ For **campaign/research work**: **[`docs/ROADMAP.md`](docs/ROADMAP.md)** (phase
+plan) and `config/campaign_queue.yaml` (current queue state).
+→ **[`HANDOFF_CURRENT.md`](engineering/sessions_archive/HANDOFF_20260724.md)** —
+archived, superseded by the two roadmaps above. Retained for its 20 DONE rows'
+verified commit SHAs.
 
 ### "What's the overall plan / KPI / process?"
 → **[`docs/ROADMAP.md`](docs/ROADMAP.md)** — operator-ratified roadmap
 (v2, 2026-07-19): Phase 0-5 task sequence with gates, the KPI (honest
 verdicts/week, cost per verdict) and anti-corner rule, the role/model
 assignment for every agent class, and the context-economy rules. The
-standing plan — `NEXT_SESSION.md`'s own task queue is now derived from
-this, not the other way around.
+standing plan — `engineering/sessions_archive/HANDOFF_20260724.md` (archived) once
+derived its own task queue from this; engineering work now tracks separately in
+`engineering/roadmap/EPICS.md`.
 
 ### "How do I operate the campaign?"
 → **[`RUNBOOK.md`](RUNBOOK.md)** — launch/status/resume/stop commands, the
 hard-pause table (section 3), the block on background/`nohup` mode (grounds: ledger P0 kernel — see
-PIPELINE_IMPROVEMENTS_20260712_v4.md).
+improvements/IMPROVEMENTS_DONE_20260712.md).
 
 ### "What is this system / what does artifact X mean?"
-→ **[`USER_GUIDE.md`](USER_GUIDE.md)** — pipeline stage map, every artifact's
+→ **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — pipeline stage map, every artifact's
 field-by-field schema, skill goals, tools overview, glossary.
 
 ### "How do I change things safely?"
-→ **[`docs/TIMEFRAME_CHANGE_PLAYBOOK.md`](../docs/TIMEFRAME_CHANGE_PLAYBOOK.md)**
+→ **[`docs/TIMEFRAME_CHANGE_PLAYBOOK.md`](docs/TIMEFRAME_CHANGE_PLAYBOOK.md)**
 — the two assumption-sweep categories, metric-basis rules (bar/episode/fragment),
 the three-role model for fragment data, the concealment-instruction doctrine,
 read-back verification doctrine.
 
 ### "Where do things stand right now?"
-→ **[`00_closing_state.md`](00_closing_state.md)** — canonical current status
-of the enhancement-plan build (M0–M3, P1a/P1b). Note: `docs/plan/00_closing_state.md`
+→ **[`improvements/IMPROVEMENTS_DONE_20260706.md`](improvements/IMPROVEMENTS_DONE_20260706.md)**
+(formerly `00_closing_state.md`) — canonical current status of the
+enhancement-plan build (M0–M3, P1a/P1b). Note: `docs/plan/00_closing_state.md`
 is an ARCHIVED snapshot with the same title — not the current version.
+→ **[`improvements/IMPROVEMENTS_REGISTER.md`](improvements/IMPROVEMENTS_REGISTER.md)**
+— per-improvement status index (01–11): specified vs. implemented vs. accepted,
+built from PROD-corpus references and acceptance artifacts.
 → **[`campaign_summary.md`](campaign_summary.md)** — machine-generated
 scoreboard (written by `workflow/run_campaign.py`, regenerated on `done`/halt
 transitions only — check its own staleness banner if present before trusting
@@ -51,7 +60,7 @@ it against `campaign_queue.yaml`).
 one-line-per-transition log (written by `workflow/run_campaign.py`).
 
 ### "What happened in the security incident?"
-→ **[`incident_20260710/INCIDENT.md`](incident_20260710/INCIDENT.md)** — the
+→ **[`docs/incidents/INCIDENT_20260710.md`](docs/incidents/INCIDENT_20260710.md)** — the
 KB-revert incident and the system-reminder investigation, RESOLVED
 2026-07-11 as native harness boilerplate (see its Resolution addendum);
 standing disclosure doctrine with the verified-template allowlist.
@@ -66,7 +75,7 @@ the cost-mapping note) and a resolved open item (the apparent spot-fee
 figure conflict was a mismatched-product comparison, not a real conflict).
 
 ### "What's broken and what gates autonomy?"
-→ **[`PIPELINE_IMPROVEMENTS_20260712_v4.md`](PIPELINE_IMPROVEMENTS_20260712_v4.md)**
+→ **[`IMPROVEMENTS_DONE_20260712.md`](improvements/IMPROVEMENTS_DONE_20260712.md)**
 — the growing defect ledger (v7 as of 2026-07-20); its P0 "kernel" gates
 background mode. A1/A3/B1 (K4), A8/A9/B11/C7/C9 (K2), B3/B10 (K3), and
 B7/B15 (v5/v6) are CLOSED — see the design notes below for what shipped.
@@ -102,26 +111,25 @@ Each is an LLM persona in `skills/{name}/SKILL.md`:
 - **`verdict-interpreter`** — reads backtest diagnostics, issues refine/pivot/escalate/promote/kill.
 - **`campaign-review`** — steps back after 2+ failed families to continue/reframe/escalate/terminate; also the fragment-pattern-motivated ideation hook.
 - **`quant-fundamentals`** — verified math identities/code behaviors other skills must defer to before applying diagnostic rules.
-- **`research-decision`** — currently an empty file (0 lines); no persona defined yet.
 
 ### "What's historical/archived?"
 → **`docs/plan/`** — superseded enhancement-plan design docs (`00_overview_v2.md`,
 `01`–`11_*.md`, `AMENDMENTS_01-06.md`), plus the archived `00_closing_state.md`
 namesake above. Read only for historical rationale, never as current guidance.
-→ Archived `NEXT_SESSION.md` snapshots, each superseded by the next as the
-campaign progressed (historical only, read for the session's own
-framing, never as current guidance):
-[`docs/plan/NEXT_SESSION_20260710_superseded.md`](docs/plan/NEXT_SESSION_20260710_superseded.md)
+→ Archived `NEXT_SESSION.md` snapshots (moved to `archive/improvements/`), each
+superseded by the next as the campaign progressed (historical only, read for
+the session's own framing, never as current guidance):
+[`archive/improvements/NEXT_SESSION_20260710_superseded.md`](archive/improvements/NEXT_SESSION_20260710_superseded.md)
 (pre-run_057),
-[`docs/plan/NEXT_SESSION_20260712_superseded.md`](docs/plan/NEXT_SESSION_20260712_superseded.md)
+[`archive/improvements/NEXT_SESSION_20260712_superseded.md`](archive/improvements/NEXT_SESSION_20260712_superseded.md)
 (post-run_057 close),
-[`docs/plan/NEXT_SESSION_20260714_superseded.md`](docs/plan/NEXT_SESSION_20260714_superseded.md)
+[`archive/improvements/NEXT_SESSION_20260714_superseded.md`](archive/improvements/NEXT_SESSION_20260714_superseded.md)
 (post-K4+K2 implementation),
-[`docs/plan/NEXT_SESSION_20260715_superseded.md`](docs/plan/NEXT_SESSION_20260715_superseded.md)
+[`archive/improvements/NEXT_SESSION_20260715_superseded.md`](archive/improvements/NEXT_SESSION_20260715_superseded.md)
 (post-K3 implementation/close-out),
-[`docs/plan/NEXT_SESSION_20260717_superseded.md`](docs/plan/NEXT_SESSION_20260717_superseded.md)
+[`archive/improvements/NEXT_SESSION_20260717_superseded.md`](archive/improvements/NEXT_SESSION_20260717_superseded.md)
 (post-H-041-family close, pre-generator-session),
-[`docs/plan/NEXT_SESSION_20260719_superseded.md`](docs/plan/NEXT_SESSION_20260719_superseded.md)
+[`archive/improvements/NEXT_SESSION_20260719_superseded.md`](archive/improvements/NEXT_SESSION_20260719_superseded.md)
 (post-run_059 close, pre-Phase-1 venue/cost arc).
 → **[`SESSION_LOG.md`](SESSION_LOG.md)** — chronological per-session handoff log
 (hypothesis / result / files touched / next-session prompt). Historical once superseded by a newer entry.
@@ -137,4 +145,4 @@ mechanisms it also describes (those are still substantively accurate).
 
 ---
 
-Cross-linked from the top of `RUNBOOK.md`, `USER_GUIDE.md`, and `CLAUDE.md`.
+Cross-linked from the top of `RUNBOOK.md`, `docs/USER_GUIDE.md`, and `CLAUDE.md`.

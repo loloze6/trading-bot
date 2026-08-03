@@ -3,7 +3,7 @@
 This carryover file was generated under `run_054`'s **original kill verdict**
 (`median_sharpe -1.78 (BTCUSDT) / -1.54 (ETHUSDT)`, a LIFO-fragment-basis bug),
 which was overturned by the metric-basis correction — see
-`strategy-research/incident_20260710/INCIDENT.md`. Corrected bar-level medians:
+`strategy-research/docs/incidents/INCIDENT_20260710.md`. Corrected bar-level medians:
 **+0.5791 (BTCUSDT) / +0.0318 (ETHUSDT)**; corrected verdict: **refine**.
 
 The following fields in `findings_carryover.yaml` are superseded and must not
