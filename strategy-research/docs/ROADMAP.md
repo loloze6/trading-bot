@@ -3,7 +3,7 @@
 
 > This is the program roadmap: strategy, engineering and process
 > together. Engineering steps in it (1.2, 1.3, 1.4, 3.1, 3.2, 3.4, 4.1)
-> are implemented as epics — see engineering/roadmap/ROADMAP.md.
+> are implemented as epics — see engineering/roadmap/EPICS.md.
 > Part 3 below is superseded by engineering/roadmap/PROCESS.md.
 
 ---

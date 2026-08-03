@@ -33,5 +33,5 @@ for `strategy-research/`).
 ## Log
 
 - 2026-08-03 — `new`. Written up in E-001 S4 (dispatch W24); seeded directly
-  from `engineering/roadmap/ROADMAP.md`'s existing "Next step" note. Not
+  from `engineering/roadmap/EPICS.md`'s existing "Next step" note. Not
   started.

@@ -35,5 +35,5 @@ venv from that file and running both suites against it.
 
 - 2026-08-03 — `new`. Tracked-file count and gitignore status verified
   directly during E-001 S4 (dispatch W24). Not started; explicitly gated on
-  agreement with Dorian first, per `engineering/roadmap/ROADMAP.md`'s
+  agreement with Dorian first, per `engineering/roadmap/EPICS.md`'s
   existing next-step note.

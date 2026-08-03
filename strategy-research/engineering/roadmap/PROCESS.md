@@ -1,7 +1,7 @@
 # Engineering process — epics, stories, evidence
 
 The unit of engineering work is an **epic**. This file is the whole spec. If you
-are an agent starting cold, read `ROADMAP.md` first — it is one line per epic and
+are an agent starting cold, read `EPICS.md` first — it is one line per epic and
 tells you what is in flight. Come here only when you need the rules.
 
 ## What is and is not an epic
@@ -52,7 +52,7 @@ from it.
 ```
 engineering/roadmap/
   PROCESS.md        this file
-  ROADMAP.md        the index — one line per epic, the only mandatory read
+  EPICS.md          the index — one line per epic, the only mandatory read
   E-001/
     EPIC.md         one page. If it needs more, it is two epics or it needs a design.
     design/         optional, by exception
