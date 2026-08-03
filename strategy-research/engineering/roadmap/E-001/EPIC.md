@@ -1,8 +1,8 @@
 # E-001 — Establish the engineering operational process
 
-**State:** in-progress
+**State:** done
 **Owner:** Jeremy
-**Updated:** 2026-08-02
+**Updated:** 2026-08-03
 
 ## Why
 
@@ -84,14 +84,21 @@ E-001 has failed regardless of what else it delivers.
       `BACKLOG_DEFERRED.md` deleted with its 4 live items carried into E-009,
       `DOC_INDEX.md`/`docs/ROADMAP.md`/`IMPROVEMENTS_REGISTER.md` corrected
       and reduced to their distinct, non-overlapping roles.)*
-- [ ] **S3** — Create the Notion Epics database mirroring 🐛 Bugs & Tasks'
+- [x] **S3** — Create the Notion Epics database mirroring 🐛 Bugs & Tasks'
       property shape; seed one page per epic with a link back to `EPIC.md`.
+      *(Verified done in dispatch W26: `🧱 Engineering Epics` database exists
+      under Trading Bot HQ, schema `Ref`/`Epic`/`State`/`Next step`/`EPIC.md`/
+      `Blocked on`/`Owner`, 9 rows — one per E-001…E-009, each `EPIC.md`
+      property pointing at the correct repo path.)*
 - [x] **S4** — Create `E-002`…`E-009` epic files from the seeds in `ROADMAP.md`
       plus the items S2's audit surfaced (E-007, E-008, E-009), each with a
       testable *Done when* except E-004, which needs a joint decision first
       (recorded as such, not invented).
-- [ ] **S5** — Close: verify the four *Done when* criteria, record SHA and
-      output, post the `done` callout to Trading Bot HQ.
+- [x] **S5** — Close: verify the four *Done when* criteria, record SHA and
+      output, post the `done` callout to Trading Bot HQ. *(Dispatch W26 — see
+      Log entry below for verification output; Notion page updated to `done`
+      in the same dispatch in lieu of a separate callout post, per that
+      dispatch's own step 4.)*
 
 ## Decisions taken, with reasoning
 
@@ -130,4 +137,18 @@ Recorded so they are not relitigated:
   `engineering/DISPATCH_MODEL.md` (commit `b7cdd50c`); named the seam between
   it and `PROCESS.md`, added five amendment rules from testing (commit
   `955d543e`); corrected this epic's own Why table and Done-when #2 against
-  the S2 audit's actual finding (two redundant, not four/six) — this commit.
+  the S2 audit's actual finding (two redundant, not four/six) — `25960cac`.
+- 2026-08-03 — S5 (dispatch W26): `in-progress` → `done`. All four Done-when
+  criteria verified against the file as it now stands, not from memory:
+  **#1** `engineering/roadmap/EPICS.md` exists — confirmed by direct read,
+  lists all 9 epics one line each. **#2** `grep -rl "improvements/HANDOFF_CURRENT.md\|improvements/BACKLOG_DEFERRED.md" strategy-research/`
+  → exactly the three known frozen historical records
+  (`E-001/EPIC.md`, `docs/CLEANUP_PLAN.md`, `docs/RESTRUCTURE_MAPPING.tsv`),
+  no live pointer. **#3** queried the live `🧱 Engineering Epics` Notion
+  database directly: 9 rows, one per E-001…E-009, each `EPIC.md` property
+  populated with the correct repo path. **#4** (not mechanically testable, as
+  instructed): `EPICS.md` does answer it — state and a concrete next step are
+  visible for every epic without opening `SESSION_LOG.md`; the one thing a
+  cold reader still lacks is cross-epic prioritization (which of several
+  `new` epics to pick first), which `EPICS.md` does not encode and this
+  dispatch did not ask it to. This commit closes the epic.
