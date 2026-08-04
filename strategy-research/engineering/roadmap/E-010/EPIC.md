@@ -2,7 +2,7 @@
 
 **State:** new
 **Owner:** Jeremy
-**Updated:** 2026-08-03
+**Updated:** 2026-08-04
 
 ## Why
 
@@ -19,9 +19,13 @@ rather than by severity.
 
 ## Done when
 
-PROVISIONAL: Dorian's spec is explicitly decision-ready — implement as-is,
-modify, or reject. This Done-when assumes 'as-is' and is not ratified. The
-operator's accept/modify/reject decision is a precondition to S1.
+RATIFIED 2026-08-04: the operator ratified Dorian's spec as-is, with one
+amendment (criterion 4 below) and two recorded limits (see "Known limits").
+S0 is ticked.
+
+NOTE for the record: ratifying accepts the spec's premise that execution-core
+changes stay on Jeremy's side under single-writer. That is a
+division-of-labour commitment for all of E-010, not just this spec.
 
 Derived from the spec's own acceptance criteria (spec was reachable and read
 this dispatch — not left blank per the E-004 precedent):
@@ -42,15 +46,51 @@ default. Verify:
 3. A mutation test confirms: with the flag off, breaking the slippage code
    path is provably invisible (output unchanged); with the flag on,
    disabling it fails a test.
+4. A run whose symbol is not BTCUSDT RAISES rather than falling through to
+   BTCUSDT's lot-size/min-notional filters. Rationale: `config.json` has
+   `symbols: ["BTCUSDT"]` so the hardcoded filters are correct today, but the
+   campaign runs multi-symbol (P4_ts_trend uses BTCUSDT and ETHUSDT;
+   `local_data/` holds 19 pairs). A silent fall-through would apply BTC's
+   filters to ETH and produce quietly wrong numbers. Loud failure over silent
+   wrongness.
+
+**Baseline dependency:** E-012 (two-bars manifest/loop defect) will break the
+`config_sha 5ccbec42` / `data_sha 5a75366c` pins in criterion 1 above — both
+E-012's manifest fix and its loop fix do. Either E-010 lands while that
+baseline is still stable, or its hashes are re-pinned after E-012 resolves.
+Not resolved here; recorded as a dependency.
+
+## Known limits
+
+Accepted, not defects — recorded so nobody later cites the output beyond what
+it supports:
+
+- Flat-bps slippage is size-independent and will UNDERSTATE cost on the
+  largest rebalances. Accepted for v1; the spec defers a depth-dependent
+  model. Mitigating context: the engine has no drift gating and rebalances on
+  every nonzero delta (`trading_bot.py:229`), so turnover is high and
+  dominated by many trades rather than a few large ones — flat bps captures
+  most of the effect for THIS engine.
+- 5 and 10 bps are SENSITIVITY PROBES, not calibrated costs. No one has
+  measured real BTCUSDT slippage. The deltas show how much apparent edge is
+  cost-sensitive; they do NOT state what costs are. This wording must survive
+  into the run artifact.
 
 ## Stories
 
-- [ ] S0 — Operator ratifies the spec: as-is, modified, or rejected.
+- [x] S0 — Operator ratifies the spec: as-is, modified, or rejected.
+      RATIFIED as-is, with the non-BTCUSDT hard-fail amendment and the two
+      recorded limits above (2026-08-04).
 - [ ] S1 — Implement flat-bps slippage + lot-size/min-notional rounding in
       `execution/execution_handler.py`'s `MockExecutionHandler`, both knobs
       off by default.
 - [ ] S2 — Bit-identity test (default path) + mutation test (flag on/off) +
       the 0/5/10 bps comparison run, deltas recorded in the run artifact.
+- [ ] S3 — Decide whether the default flips. Off-by-default is correct for
+      landing safely, but a knob that is off by default does not fix "every
+      result is optimistic by construction". After the 0/5/10 bps deltas are
+      measured, decide whether slippage becomes on-by-default and at what
+      bps. The spec is silent on this.
 
 ## Log
 
@@ -58,3 +98,9 @@ default. Verify:
   Notion "🎯 Slippage model — decision-ready spec" (handed to Jeremy
   2026-07-31). Spec was read this dispatch — reachable, so a testable Done
   when was derived from it rather than left unwritten.
+- 2026-08-04 — Operator ratified the spec as-is, with the non-BTCUSDT
+  hard-fail amendment (Done-when criterion 4) and two recorded limits
+  (flat-bps size-independence; 0/5/10 bps as sensitivity probes, not
+  calibrated costs). S0 ticked; S3 added. Baseline dependency on E-012
+  (two-bars manifest/loop defect) recorded against the config_sha/data_sha
+  pins in criterion 1. Next step: S1 (dispatch W31).

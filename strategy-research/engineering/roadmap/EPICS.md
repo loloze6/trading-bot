@@ -19,7 +19,7 @@ epic".
 | [E-007](E-007/EPIC.md) | Recorder storage and host migration | parked | Operator decision on the R3 storage budget |
 | [E-008](E-008/EPIC.md) | q1_26 tick archive aggregation | new | Evaluate extending `data_manager.py:637`'s `.resample()` seam |
 | [E-009](E-009/EPIC.md) | Pipeline harmonization (STAGE_CONFIGS/skill_map, sample_split, protocol auto-run, auto-repair) | new | S1 — merge STAGE_CONFIGS/skill_map |
-| [E-010](E-010/EPIC.md) | Slippage and lot-size/min-notional model | new | S1 — implement flat-bps slippage + rounding in `MockExecutionHandler` |
+| [E-010](E-010/EPIC.md) | Slippage and lot-size/min-notional model | new | S1 — implement, with the non-BTCUSDT hard-fail |
 | [E-011](E-011/EPIC.md) | Shared campaign execution location | new | blocked behind E-003 — do not start before it |
 | [E-012](E-012/EPIC.md) | Two-bars manifest/loop defect | new | S1 — measure the delta before designing any fix |
 
