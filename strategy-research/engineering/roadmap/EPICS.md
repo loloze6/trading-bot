@@ -11,7 +11,7 @@ epic".
 
 | Ref | Title | State | Next step |
 |---|---|---|---|
-| [E-002](E-002/EPIC.md) | Land the parked `strategy-research/` restructure | planned | S1 — re-verify the replay mapping against current master, then replay |
+| [E-002](E-002/EPIC.md) | Land the parked `strategy-research/` restructure | planned | S2a — coordination gate with Dorian (in-flight Mac-fork test fixes) before S3's replay |
 | [E-003](E-003/EPIC.md) | Make the holdout seal gate enforceable in every clone | new | Investigate `tools/hooks/` and `core.hooksPath` |
 | [E-004](E-004/EPIC.md) | Settle the shared record taxonomy with the fork | new | Needs a joint decision, not a dispatch |
 | [E-005](E-005/EPIC.md) | Verify master on macOS and Linux | new | Dorian to run both suites on `c4feaf56` |
