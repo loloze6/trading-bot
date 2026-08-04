@@ -19,6 +19,10 @@ rather than by severity.
 
 ## Done when
 
+PROVISIONAL: Dorian's spec is explicitly decision-ready — implement as-is,
+modify, or reject. This Done-when assumes 'as-is' and is not ratified. The
+operator's accept/modify/reject decision is a precondition to S1.
+
 Derived from the spec's own acceptance criteria (spec was reachable and read
 this dispatch — not left blank per the E-004 precedent):
 
@@ -41,6 +45,7 @@ default. Verify:
 
 ## Stories
 
+- [ ] S0 — Operator ratifies the spec: as-is, modified, or rejected.
 - [ ] S1 — Implement flat-bps slippage + lot-size/min-notional rounding in
       `execution/execution_handler.py`'s `MockExecutionHandler`, both knobs
       off by default.
