@@ -178,3 +178,37 @@ produced it:
    *Cause: E-003's true size is unknown until its investigation story runs.
    Overloading `killed` to mean "wasn't an epic" repeats the parked-vs-done
    confusion in a different key.*
+8. **CROSS-FORK COORDINATION.** Four rules governing work that crosses the
+   fork boundary — this file, until now, assumed one side.
+
+   (a) **Two axes, not one.** `State` answers "is the work done" (new /
+       planned / in-progress / done / parked / killed / withdrawn).
+       `Location` answers "where does the code live" (master / fork / in
+       transit, i.e. PR open). They are independent — an item can be
+       `in-progress` on master and `done` in the fork with neither being
+       wrong. The fork's existing six-value field collapses both into one;
+       this rule decomposes it without loss.
+
+   (b) **Three roles, not one owner.** Designer (specified it), implementer
+       (wrote it), verifier (proved it). Across a fork these are routinely
+       three different parties. Worked example: E-010 (slippage model) —
+       Dorian designed it, this side implements it, and no verifier is
+       assigned. A two-field scheme cannot express that gap. This also
+       makes visible on the board what `DISPATCH_MODEL.md` already requires
+       in review: three parties for orchestrator/engine/shared-state
+       commits.
+
+   (c) **One item, one home — across both repos.** Every item is owned by
+       exactly one system: epics in git on master, bugs in Notion,
+       fork-only work in the fork's ledger. Cross-references are pointers,
+       never copies. Amendment 6 extended from one repo to two.
+
+   (d) **A decision that binds both sides is written to the shared surface
+       — dated and attributed, at the moment it is taken.** Chat is not a
+       record. Git-on-one-side is not a shared record.
+       *Cause: trial-ledger Option A was decided in conversation on
+       2026-08-03 and recorded only in `E-011/EPIC.md`. The fork's
+       "Trial-ledger DUAL-WRITER merge protocol" page subsequently stated
+       it "was never confirmed by Jeremy, so nothing needs unwinding" — and
+       a protocol was designed on that premise. Neither side misread
+       anything; the decision was simply unreadable from one of them.*
