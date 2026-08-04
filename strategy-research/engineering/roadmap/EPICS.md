@@ -21,6 +21,7 @@ epic".
 | [E-009](E-009/EPIC.md) | Pipeline harmonization (STAGE_CONFIGS/skill_map, sample_split, protocol auto-run, auto-repair) | new | S1 — merge STAGE_CONFIGS/skill_map |
 | [E-010](E-010/EPIC.md) | Slippage and lot-size/min-notional model | new | S1 — implement flat-bps slippage + rounding in `MockExecutionHandler` |
 | [E-011](E-011/EPIC.md) | Shared campaign execution location | new | blocked behind E-003 — do not start before it |
+| [E-012](E-012/EPIC.md) | Two-bars manifest/loop defect | new | S1 — measure the delta before designing any fix |
 
 ## Done
 
