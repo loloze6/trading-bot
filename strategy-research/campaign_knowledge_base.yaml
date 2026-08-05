@@ -222,6 +222,24 @@ findings:
     (10bps/leg vs 5bps/leg via run_protocol.py''s --commission-bps flag), FLIPS NO
     VERDICT for either evidence run.
 
+    Correction (dispatch W39, 2026-08-05 -- kept below the original claim, not
+    in place of it): "independently audited twice, both AUDIT PASS" is false.
+    Dispatch J (docs/session_reports/20260720_perp_calibration_audit.md) does
+    NOT audit this fee-isolation experiment at all -- it audits the earlier
+    commit d86f0d0 and the ORIGINAL run_028/run_030 perp-recalibration numbers
+    (the 1h-vs-4h candle-interval confound), and its own verdict is **AUDIT
+    FAIL**. Dispatch M (docs/session_reports/20260720_pairs_audit.md) is the
+    one audit that actually covers e3bcbb0 and this fee-isolation pair design
+    (legA_10bps/legB_5bps), and it returned AUDIT PASS. So the empirical
+    finding below rests on a single independent audit (Dispatch M), not two.
+    Per PROCESS.md/DISPATCH_MODEL.md and every other exhausted_basis entry in
+    this file, one independently-audited empirical basis suffices to close a
+    family -- no entry requires two audits of the same finding. Dispatch M''s
+    audit re-derived every number in this entry directly from git/artifacts
+    (candle uniformity, regime-score continuity, commission recomputation,
+    trade-count identity, kill-threshold logic), so this finding and the
+    exhausted status below are UNCHANGED and stand on Dispatch M alone.
+
     run_030 (AVAXUSDT): kill at both legs. median_sharpe -2.735 (10bps) ->
     -1.900 (5bps) -- improves but stays below the kill_median_sharpe_lt=-1
     threshold; cost_drag_pct roughly halves (62.65%->30.39%, consistent with

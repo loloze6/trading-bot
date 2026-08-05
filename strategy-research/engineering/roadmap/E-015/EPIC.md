@@ -94,3 +94,17 @@ it exposes.
   hard-fail requirement is kept (the soft default cannot substitute for it
   while nothing reads the flag); split into S1b (hard-fail on missing fields)
   and new S3 (downstream enforcement), added as Done-when #4.
+- 2026-08-05 (dispatch W39) — Stating plainly what W38's finding above means:
+  the flag is written once (`run_campaign.py:274`) and read nowhere, so the
+  auto-flag currently provides **no protection at all**. Nothing stops a
+  `research_only` brief from reaching the sealed, single-use holdout
+  undetected. This is a **safety gap, not a completeness gap** — S3 is not a
+  nice-to-have follow-on, it is the only thing standing between a
+  non-tradable/unconfirmed-venue brief and a live-money decision made on
+  research-only evidence. Notion 🐛 Bugs & Tasks card filed
+  (https://app.notion.com/p/3b31d1fb05a281ce802bdf7d947224d9), tagged to this
+  epic per amendment 6 (Area: Research pipeline, Priority: High) — the card is
+  a pointer only, this EPIC.md stays authoritative. No enforcement
+  implemented in this dispatch; scoping where the check belongs (promotion,
+  walk-forward, holdout entry, or all three) is S3's design work, not a
+  bookkeeping fix.
