@@ -212,3 +212,15 @@ produced it:
        it "was never confirmed by Jeremy, so nothing needs unwinding" — and
        a protocol was designed on that premise. Neither side misread
        anything; the decision was simply unreadable from one of them.*
+
+9. **BEFORE AN EPIC IS CREATED, GREP THE TREE FOR ITS SUBJECT.** Amendment 3
+   requires an epic's Why to be verified; it does not say against what.
+   Checking the record layer (existing epics, Notion tickets) is not enough
+   — it finds duplicate RECORDS, not existing CODE.
+   *Cause: dispatch W34 audited seven roadmap items for overlap against
+   E-002..E-012 and Notion, found none, and six epics were created as
+   unstarted work. A tree audit (W37) then found four of the six already
+   implemented and tested. Root cause: `docs/ROADMAP.md` was written
+   2026-07-19/20 and partly executed 2026-07-20 without being updated, so it
+   described as future what had already shipped. Unrecorded does not mean
+   undone.*
