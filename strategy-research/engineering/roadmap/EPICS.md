@@ -22,12 +22,11 @@ epic".
 | [E-010](E-010/EPIC.md) | Slippage and lot-size/min-notional model | new | S1 — implement, with the non-BTCUSDT hard-fail |
 | [E-011](E-011/EPIC.md) | Shared campaign execution location | new | blocked behind E-003 — do not start before it |
 | [E-012](E-012/EPIC.md) | Two-bars manifest/loop defect | new | S1 — measure the delta before designing any fix |
-| [E-013](E-013/EPIC.md) | Split docs/ROADMAP.md — retire the name, graduate the engineering items | planned | S3 — rewrite and rename the file; repoint `DOC_INDEX.md`; verify no content lost |
 | [E-014](E-014/EPIC.md) | Venue-parameterized cost model + calibration re-runs | new | Blocked behind E-010 — parameterize the cost model by venue fee schedule, then run the 3 calibration re-runs |
 | [E-015](E-015/EPIC.md) | Venue/product declared at brief registration | new | S1 — add venue + product as required fields to brief registration; auto-flag non-tradable products research-only |
 | [E-016](E-016/EPIC.md) | Fee-reduction autopsy field | parked | Blocked on E-010 (fee/slippage attribution) and E-017 (autopsy standard/cost decomposition) |
-| [E-017](E-017/EPIC.md) | Autopsy standard v1 | parked | Blocked on Phase 2's gate (`docs/ROADMAP.md` §Phase 2) |
-| [E-018](E-018/EPIC.md) | Near-miss scoreboard | parked | Blocked on Phase 2's gate (`docs/ROADMAP.md` §Phase 2) |
+| [E-017](E-017/EPIC.md) | Autopsy standard v1 | parked | Blocked on Phase 2's gate (`docs/CAMPAIGN_PROGRAM.md` §Phase 2) |
+| [E-018](E-018/EPIC.md) | Near-miss scoreboard | parked | Blocked on Phase 2's gate (`docs/CAMPAIGN_PROGRAM.md` §Phase 2) |
 | [E-019](E-019/EPIC.md) | Feature matrix + leakage checks | parked | Blocked on Phase 3 complete |
 
 ## Done
@@ -38,6 +37,7 @@ not archived elsewhere.
 | Ref | Title | State | Closing SHA |
 |---|---|---|---|
 | [E-001](E-001/EPIC.md) | Establish the engineering operational process | done | `25960cac` corrected the Done-when; this file's own dispatch (W26) closes it — see `E-001/EPIC.md` Log for the verification output |
+| [E-013](E-013/EPIC.md) | Split docs/ROADMAP.md — retire the name, graduate the engineering items | done | `cd20e6ec` created the six epics (S2); this commit (S3, dispatch W36) closes it — see `E-013/EPIC.md` Log for the content-accounting and repoint verification |
 
 ## State legend
 
