@@ -225,3 +225,20 @@ Status changes to the rows above:
   artifact `results/runs/20260728T132811Z_5ccbec42/`, the two fork-only
   `.gitignore` blocks, and `requirements.txt` comment wording (fork's EXACT-pin
   note; pins identical).
+
+## 2026-08-05 — Row 25: Kraken ingest merge fix (leg 2) — divergence until upstream PR #9 merges
+
+`trading-bot/tools/ingest_kraken_archive.py` + `trading-bot/tests/test_kraken_archive_ingest.py`
+diverge from `upstream/master` by one commit (`a9f56317`, merged to `mac/setup`
+as `4c82a826`): re-ingest UNIONS with the existing cache (archive wins duplicate
+timestamps), the gap guard is live on the ingest path (`existing=` now passed),
+re-ingest is byte-idempotent (`close_time` normalized before the merge), an
+existing-but-unreadable cache is refused rather than treated as a fresh slot,
+`verify_boundary_values` closes the top-up blind spot of the timestamp-only
+post-write check, and the source guard rejects duplicate/out-of-order
+timestamps by name. Offered upstream as **loloze6/trading-bot#9** (branch
+`fix/kraken-ingest-merge-upstream`, blob-identical files, fast suite
+221 passed / 2 skipped on Jeremy's base). Row closes when the PR merges.
+Acceptance at the fork's merged tip: fast **223 / 0 skipped** (the two
+archive-gated tests ran for real), slow **14-0-0**, validator 0, `simulate`
+byte-identical on all five files (`5ccbec42` / `5a75366c`).
