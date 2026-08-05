@@ -46,6 +46,7 @@ class BacktestEngine:
                  human_reports: bool = False,
                  warmup_cutoff_timestamp=None,
                  bar_equity: bool = False,
+                 exchange: str = "binance",
                  ):
         if symbols is None: symbols = ["BTCUSDT"]
         # 2026-07-07: bars with timestamp < warmup_cutoff_timestamp still update the
@@ -63,6 +64,13 @@ class BacktestEngine:
         # write_metrics_json never receives the key and metrics.json is byte-identical
         # to before this parameter existed (see tests/test_bar_equity_bit_identical.py).
         self.bar_equity = bar_equity
+        # 2026-08-06: CCXT exchange id this backtest's price cache comes from
+        # (fix/kraken-cache-engine-reachability). "binance" is the value
+        # fetch_historical_data already applied when no exchange was passed, so
+        # an engine built without it reads the same unqualified BTCUSDT_1h.csv
+        # as before; "kraken" reaches the exchange-qualified kraken_*_1h.csv
+        # caches (see CcxtFetcher.cache_key).
+        self.exchange = exchange
         self.data_manager = data_manager
         self.strategy = strategy 
         self.execution_handler = execution_handler
@@ -100,7 +108,7 @@ class BacktestEngine:
 
         if not self.historical_data:
             self.logger.debug("BT - Fetch historical data...")
-            self.historical_data[self.symbols[0]] = self.data_manager.fetch_historical_data(self.symbols[0], start_date, end_date)
+            self.historical_data[self.symbols[0]] = self.data_manager.fetch_historical_data(self.symbols[0], start_date, end_date, exchange=self.exchange)
 
             data_folder = os.path.dirname(os.path.abspath(__file__))
             project_folder = os.path.dirname(data_folder)
