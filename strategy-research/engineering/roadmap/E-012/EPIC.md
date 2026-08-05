@@ -33,7 +33,7 @@ neither person owns unilaterally.
 
 ## Stories
 
-- [ ] S1 — **MEASURE FIRST, before any fix is designed.** Run the reference
+- [x] S1 — **MEASURE FIRST, before any fix is designed.** Run the reference
       backtest with and without the loop fix; compare all five artifact files;
       record the P&L delta. Rationale: fix-forward invalidates cross-line
       comparisons, and every pre-registered pass rule is pinned to pre-fix
@@ -42,14 +42,59 @@ neither person owns unilaterally.
       thresholds survive; if not, they must be re-derived. The director's
       expectation that 2/1440 bars is negligible is an ESTIMATE and must not
       be recorded as a finding.
+
+      **DONE, by the fork.** FALSIFIED: measured on the position-ending
+      window (below), not negligible. The "2 bars in 1440 is noise" estimate
+      does not hold whenever the window ends holding a position.
 - [ ] S2 — Fix the manifest to report bars replayed rather than rows loaded.
       Changes no trade, return, or Sharpe — metadata only.
 - [ ] S3 — Fix the loop's two off-by-one errors. Operator ruling: fix forward,
       do NOT re-run history. Record a dated line in the sand — results before
       it used the truncated behaviour and stay comparable among themselves.
+
+      **Ruling unchanged, now rests on measurement rather than instinct** (S1
+      delta below), not on the original fix-forward instinct alone.
 - [ ] S4 — Sequence against E-010 (slippage model), whose Done-when pins
       `config_sha 5ccbec42` / `data_sha 5a75366c`. Either fix here breaks
       those pins.
+
+## S1 measurement (2026-08-05, fork)
+
+Source: fork probe branch `lab/e012-s1-probe` (probe commit `23aa31e6`, parent
+`a233030c`, never merged), TRIALS `T003`/`T004`, fork `research/LEDGER.md`
+2026-08-05 (afternoon) entry, recorded to git at commit `5724a3f9`, mirrored
+to the E-012 Notion ticket. Triple-verified: executor, independent verifier
+regeneration, red-team re-run; no lookahead (funding-boundary discriminating
+test passed).
+
+**The delta is CONDITIONAL on how the window ends — it is not one number.**
+
+- **Flat-ending reference window (T003):** bookkeeping only. `trades.json`
+  byte-identical; `config_sha`/`data_sha` both unchanged; manifest `bar_count`
+  finally reconciles with `bars.csv` at 1440 (was 1438). Only the
+  off-by-default `bar_equity` block moves: `exposure_pct` 3.7908 → 3.785.
+- **Position-ending window, 2024-09-15 → 10-05 (T004):** the two dropped bars
+  carried a genuine exit signal. Unpatched force-closes at a STALE 21:00
+  price (61857.64) with 22:00/23:00 sitting unread; patched self-exits on a
+  real signal at 22:00 (62039.52). Net −8.446 → −7.907, Sharpe −7.585 →
+  −7.018, win rate 41.18 → 47.06 — same 17 trades, same maxDD both legs.
+
+**The fix is THREE edits, not two.** The previously characterized pair
+(relax `has_more_data`; flush the end-of-replay candle through
+`close_final_candle`/`_complete_candle`) does not terminate on its own:
+`advance()` parks the cursor ON the last row, so relaxing `has_more_data`
+alone re-feeds that final row indefinitely and corrupts the final candle's
+volume/tick count (proven by bounded simulation). The third edit parks the
+cursor past the end.
+
+**Rebaseline scope is 10 tests, not 9:** the 9 fast tests in
+`test_close_positions_at_end` plus the slow `bar_equity` reference test.
+**Trap recorded:** post-fix, that file's fixture window no longer ends
+holding a position — its premise dissolves, so its two nominal
+"survive" tests would pass VACUOUSLY, silently dropping the only coverage
+for the two `_close_all_positions_at_end` NameErrors. A new
+position-ending fixture window is required before the fix lands, not
+after.
 
 ## Log
 
@@ -57,3 +102,6 @@ neither person owns unilaterally.
   structure (manifest semantics in `run_artifact.py`, the replay loop) and
   needs more than one dispatch. Done-when left unwritten pending the joint
   decision noted above.
+- 2026-08-05 — S1 measurement recorded (dispatch W40) from the fork's
+  triple-verified delta. See "S1 measurement" above. S3's fix-forward ruling
+  stands, now evidenced rather than assumed.
