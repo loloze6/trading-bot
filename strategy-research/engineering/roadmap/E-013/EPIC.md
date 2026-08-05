@@ -1,6 +1,6 @@
 # E-013 — Split docs/ROADMAP.md — retire the name, graduate the engineering items
 
-**State:** done
+**State:** done (reopened and re-closed 2026-08-05, dispatch W37 — see Log)
 **Owner:** Jeremy
 **Updated:** 2026-08-05
 
@@ -86,6 +86,11 @@ b) `engineering/DISPATCH_MODEL.md`'s anti-corner section states it is
       guarantee, not an epic or card.)
 - [x] S3 — Rewrite and rename the file; repoint `DOC_INDEX.md`; verify no
       content lost. (dispatch W36)
+- [x] S4 — Repoint the six live code/schema "Source: Phase X.Y (`docs/ROADMAP.md`)"
+      citations that S3's own Log deferred as "that epic's own implementation
+      work, not S3's." Done-when #3 says "nothing points at the old one," with
+      no carve-out for epic-owned citations — S3's close did not hold.
+      (dispatch W37)
 
 ## Log
 
@@ -172,3 +177,38 @@ b) `engineering/DISPATCH_MODEL.md`'s anti-corner section states it is
   untouched. `RESTRUCTURE_MAPPING.tsv` L48 dropped, row total 196 → 195
   (see `E-002/EPIC.md` Log); `RESTRUCTURE_REPOINT_SITES.tsv` checked, no
   matching reference existed.
+- 2026-08-05 — REOPENED (dispatch W37). `done` → `in-progress`. S3's own Log
+  (above) named six live citations — `config/venue_tradability.yaml:1`,
+  `tests/test_venue_tradability.py:2`, `tests/test_fee_reduction_assessment.py:2`,
+  `workflow/run_campaign.py:180`, `workflow/run_phase1_research.py:4416`,
+  `schemas/verdict_interpretation.schema.json:129` — and explicitly left them
+  pointing at `docs/ROADMAP.md`, deferring the repoint to "that epic's own
+  implementation work, not S3's." Done-when #3 reads "`DOC_INDEX.md` points at
+  the new name and nothing points at the old one" — no carve-out for
+  epic-owned citations. The close did not hold; reopening rather than treating
+  W36's `done` as final. Adding S4 to close the gap.
+- 2026-08-05 — S4 done (dispatch W37). `in-progress` → `done`. Repointed all
+  six citations named above to `docs/CAMPAIGN_PROGRAM.md`, filename only, each
+  "Phase X.Y" reference left intact since those sections exist unchanged under
+  the same numbers in the renamed file. Also removed the now-stale
+  `config/holdout_gate_exemptions.txt` entry that had registered this file's
+  S3 Log paragraph (1 line, category (b)) — that Log text no longer contains a
+  sealed-window date literal after this reword, verified:
+  `grep -E "2026-0[1-6]-[0-9]{2}" engineering/roadmap/E-013/EPIC.md` returns
+  nothing. **Verification (Done-when #3, re-run):**
+  `grep -rn "docs/ROADMAP\.md" strategy-research/` returns only the
+  historical/provenance set — dated session logs and archived handoffs
+  (`SESSION_LOG.md`, `docs/session_reports/*`,
+  `archive/improvements/NEXT_SESSION_20260719_superseded.md`,
+  `engineering/sessions_archive/HANDOFF_20260724.md`), `PROCESS.md`'s
+  past-tense lesson, `docs/CAMPAIGN_PROGRAM.md`'s own carried-verbatim 0.2
+  line, `E-001/EPIC.md`'s Why table, `E-002/EPIC.md`'s pre-existing Log text,
+  `E-013/EPIC.md`'s (this file's) own narrative and dated Log entries,
+  `E-014`..`E-019/EPIC.md`'s "Source: ... verbatim" provenance citations,
+  `campaign_knowledge_base.yaml`'s dated KB entry, `docs/INVENTORY.tsv` and
+  `docs/REFERENCE_MAP.tsv`'s dated audit snapshots, and `EPICS.md`'s own
+  historical description of what this epic did — no live pointer remains.
+  Re-closed on this evidence, this commit's SHA (dispatch W37, "E-013 S4: ..."
+  commit on `master`). Moved back into `EPICS.md`'s Done table (it never left
+  — the reopen/re-close both land in this single commit) with an updated
+  closing-SHA note naming S4.
