@@ -26,6 +26,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent      # trading-bot/
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from data.fetchers.base_fetcher import FetchGapError  # noqa: E402
 from data.fetchers.ccxt_fetcher import CcxtFetcher  # noqa: E402
 from tools import ingest_kraken_archive as ing       # noqa: E402
 
@@ -209,6 +210,276 @@ def test_topup_key_matches_archive_slot(tmp_path):
         exchange="kraken", localStorage=True, data_dir=str(tmp_path),
     ).cache_key("BTCUSD")
     assert archive == topup == "kraken_BTCUSD_1h"
+
+
+# ---------------------------------------------------------------------------
+# (e) Merge semantics against an EXISTING cache
+#
+# `ingest` must hand `_merge_and_store` BOTH frames and pass `existing=`.
+# Passing `[converted]` alone with no `existing=` has two consequences, both
+# reproduced below:
+#   1. the on-disk cache is OVERWRITTEN, not merged, so re-ingesting a narrow
+#      tranche over a wide cache destroys rows silently;
+#   2. `_assert_no_new_gap` short-circuits when `existing` is None, so the
+#      continuity guard is dead at this call site.
+# ---------------------------------------------------------------------------
+
+H = 3600
+T0 = 1577836800          # 2020-01-01 00:00:00 UTC
+
+
+def _write_source(archive_dir: Path, asset: str, start_unix: int, periods: int,
+                  close: float = 100.0, resolution: int = 60) -> Path:
+    """Headerless Kraken bulk CSV: unix_s,open,high,low,close,volume,count."""
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    path = ing.kraken_source_path(asset, archive_dir, resolution)
+    step = resolution * 60
+    rows = [f"{start_unix + i * step},{close},{close},{close},{close},1.0,1"
+            for i in range(periods)]
+    path.write_text("\n".join(rows) + "\n")
+    return path
+
+
+def _seed_cache(data_dir: Path, asset: str, start_unix: int, periods: int,
+                close: float = 999.0) -> Path:
+    """
+    Pre-existing cache in the exact slot `ingest` writes to, built through the
+    real schema converter so the columns match byte-for-byte.
+    """
+    staging = data_dir / "_staging"
+    src = _write_source(staging, asset, start_unix, periods, close=close)
+    frame = ing.to_binance_schema(ing.load_kraken_ohlcv(src))
+    dest = data_dir / f"kraken_{ing.cache_symbol(asset)}_1h.csv"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(dest, index=False)
+    return dest
+
+
+def test_ingest_does_not_truncate_a_wider_existing_cache(tmp_path):
+    """
+    THE DATA-LOSS BUG. A cache holding 500 hourly bars, re-ingested from a
+    10-bar tranche, ended up with 10 rows. The 26 GB master_q4 archive and the
+    3-month quarterly bundles occupy the same cache slot, so this is reachable
+    by ingesting the wrong bundle once.
+    """
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _seed_cache(data_dir, "TEST", T0, 500)
+    _write_source(archive, "TEST", T0, 10)          # narrow, overlapping tranche
+
+    ing.ingest("TEST", archive, data_dir)
+
+    written = pd.read_csv(data_dir / "kraken_TESTUSD_1h.csv")
+    assert len(written) == 500, "pre-existing rows were destroyed by the ingest"
+
+
+def test_archive_values_win_over_stale_cached_values(tmp_path):
+    """
+    Ordering pin AND merge-precedence proof. The archive frame goes ahead of
+    `existing` in `pieces` (drop_duplicates keeps the first occurrence), so a
+    re-ingest can CORRECT a bad cached row; the reverse ordering makes it a
+    no-op for every timestamp already cached, which is worse than the overwrite
+    it replaces.
+
+    The cache is deliberately WIDER than the archive. Seeding both with the same
+    20 timestamps would make the assertion hold identically under plain
+    overwrite — it could not tell merge from replace.
+    """
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _seed_cache(data_dir, "TEST", T0, 100, close=999.0)              # stale, wide
+    _write_source(archive, "TEST", T0 + 50 * H, 20, close=111.0)     # authoritative, inside
+
+    ing.ingest("TEST", archive, data_dir)
+
+    written = pd.read_csv(data_dir / "kraken_TESTUSD_1h.csv")
+    assert len(written) == 100, "merge lost rows"
+
+    overlap = written.iloc[50:70]["close"]
+    rest = pd.concat([written.iloc[:50]["close"], written.iloc[70:]["close"]])
+    assert set(overlap) == {111.0}, "archive did not win on the overlapping span"
+    assert set(rest) == {999.0}, "non-overlapping cached rows were altered"
+
+
+def test_ingest_refuses_to_open_a_new_hole_in_a_continuous_cache(tmp_path):
+    """
+    The continuity guard is DEAD unless `existing=` is passed:
+    `_assert_no_new_gap` returns immediately when `existing` is None. Ingesting
+    a disjoint tranche over a continuous cache must raise and write nothing.
+    """
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    dest = _seed_cache(data_dir, "TEST", T0, 100)        # continuous
+    before = dest.read_bytes()
+    _write_source(archive, "TEST", T0 + 500 * H, 50)     # far-later, disjoint
+
+    with pytest.raises(FetchGapError):
+        ing.ingest("TEST", archive, data_dir)
+
+    assert dest.read_bytes() == before, "cache was modified despite the gap guard"
+
+
+def test_an_out_of_order_source_is_rejected_by_name(tmp_path):
+    """
+    An interior row out of order clears the first-vs-last span check and is
+    invisible to the span-scoped UTC round-trip, so without an explicit
+    monotonicity assertion a malformed export ingests silently.
+    """
+    archive = tmp_path / "archive"
+    src = _write_source(archive, "TEST", T0, 10)
+    rows = src.read_text().strip().split("\n")
+    rows[3], rows[7] = rows[7], rows[3]                  # interior swap
+    src.write_text("\n".join(rows) + "\n")
+
+    with pytest.raises(ValueError, match="Out-of-order"):
+        ing.load_kraken_ohlcv(src)
+
+    # And through the public entry: the guard is WIRED into ingest(), not
+    # merely reachable in the helper.
+    with pytest.raises(ValueError, match="Out-of-order"):
+        ing.ingest("TEST", archive, tmp_path / "cache")
+
+
+def test_a_duplicate_timestamp_is_rejected(tmp_path):
+    """
+    `is_monotonic_increasing` is NON-strict, so a repeated timestamp cleared the
+    guard and `drop_duplicates` then kept whichever copy happened to sort first,
+    discarding a conflicting value with nothing reported. Two rows claiming the
+    same hour with different prices is a malformed export, not a merge decision.
+    """
+    archive = tmp_path / "archive"
+    src = _write_source(archive, "TEST", T0, 4)
+    rows = src.read_text().strip().split("\n")
+    rows[2] = rows[1].replace("100.0", "555.0")          # same timestamp, other prices
+    src.write_text("\n".join(rows) + "\n")
+
+    with pytest.raises(ValueError, match="strictly chronological"):
+        ing.load_kraken_ohlcv(src)
+
+
+def test_reingesting_the_same_archive_is_byte_identical(tmp_path):
+    """
+    Public-entry idempotency. `_load_local` re-parses only `timestamp`, so
+    `close_time` comes back as strings; concatenating that with `converted`'s
+    datetime64 column degrades the merged column to object and `to_csv` then
+    writes `…:59.999000` where the first write produced `…:59.999`. Re-running
+    the ingest would rewrite every archive row of every tracked cache for a
+    formatting difference alone.
+    """
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _write_source(archive, "TEST", T0, 48)
+    dest = data_dir / "kraken_TESTUSD_1h.csv"
+
+    ing.ingest("TEST", archive, data_dir)
+    first = dest.read_bytes()
+    ing.ingest("TEST", archive, data_dir)
+
+    assert dest.read_bytes() == first, "re-ingesting an unchanged archive rewrote the file"
+
+
+def test_a_cache_that_exists_but_parses_empty_is_refused(tmp_path):
+    """
+    `_load_local` swallows every read error and returns an empty frame, so an
+    unreadable cache is indistinguishable from a fresh slot at this call site —
+    and an empty `existing` switches BOTH protections off at once: the union
+    degenerates to the archive alone and `_assert_no_new_gap` short-circuits.
+    That is precisely the state where a cache most needs them.
+    """
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    dest = _seed_cache(data_dir, "TEST", T0, 500)
+    dest.write_text(dest.read_text() + ",".join(str(i) for i in range(26)) + "\n")
+    before = dest.read_bytes()
+    _write_source(archive, "TEST", T0, 10)
+
+    with pytest.raises(ValueError, match="parsed to zero rows"):
+        ing.ingest("TEST", archive, data_dir)
+
+    assert dest.read_bytes() == before, "the unreadable cache was modified"
+
+
+def test_first_ingest_with_no_existing_cache_is_unchanged(tmp_path):
+    """
+    STOP condition: the overwhelmingly common path — a fresh slot — must behave
+    exactly as before, including the returned summary.
+    """
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _write_source(archive, "TEST", T0, 48)
+
+    summary = ing.ingest("TEST", archive, data_dir)
+
+    assert summary["rows"] == 48
+    assert summary["first"] == pd.Timestamp("2020-01-01 00:00:00")
+    assert summary["last"] == pd.Timestamp("2020-01-02 23:00:00")
+
+
+def test_utc_roundtrip_survives_a_union_with_a_wider_cache(tmp_path):
+    """
+    Second-order hazard of the fix: the post-write check re-verifies the ARCHIVE
+    against what landed on disk. Once the merge is a real union, the file's
+    first/last rows are the CACHE's, not the archive's, so comparing them
+    wholesale raises a spurious IngestUTCError. The check must be scoped to the
+    archive's own span.
+    """
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _seed_cache(data_dir, "TEST", T0, 300)
+    _write_source(archive, "TEST", T0 + 50 * H, 20)     # strictly inside the cache
+
+    summary = ing.ingest("TEST", archive, data_dir)     # must not raise
+
+    assert summary["rows"] == 300
+    # gaps describe the WHOLE merged cache, not the ingested tranche.
+    assert summary["gaps"]["full"]["rows"] == 300
+
+
+def _shift_the_write(monkeypatch, hours: int = 1) -> None:
+    """
+    Corrupt what actually lands on disk: every frame written through
+    `DataFrame.to_csv` gets its timestamps shifted. This models "UTC did not
+    survive the write" — the precise defect verify_utc_roundtrip's docstring
+    names as its STOP condition — without touching the code under test.
+    """
+    original = pd.DataFrame.to_csv
+
+    def patched(self, *args, **kwargs):
+        if "timestamp" in getattr(self, "columns", []):
+            shifted = self.copy()
+            shifted["timestamp"] = (pd.to_datetime(shifted["timestamp"])
+                                    + pd.Timedelta(hours=hours))
+            return original(shifted, *args, **kwargs)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(pd.DataFrame, "to_csv", patched)
+
+
+def test_a_shifted_write_is_caught_at_the_archive_boundary(tmp_path, monkeypatch):
+    """
+    The timestamp round-trip alone is geometrically INERT in this geometry. The
+    span mask is built from `converted`'s own bounds, so archive_span's boundary
+    rows carry those two timestamps by construction whenever the cache already
+    covers them — a neighbouring CACHE row satisfies the comparison no matter
+    what the write did, and a whole-cache shift lands silently.
+
+    Comparing the boundary rows' VALUES is what makes the check live: the
+    archive wins duplicate timestamps, so on a healthy write the row sitting at
+    each boundary is the archive's own. Per-row-distinct closes so a shift by
+    one bar cannot coincidentally match.
+    """
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _seed_cache(data_dir, "TEST", T0, 300, close=999.0)      # brackets the archive
+    archive.mkdir(parents=True, exist_ok=True)
+    ing.kraken_source_path("TEST", archive, 60).write_text("\n".join(
+        f"{T0 + (50 + i) * H},{111.0 + i},{111.0 + i},{111.0 + i},{111.0 + i},1.0,1"
+        for i in range(20)) + "\n")
+
+    _shift_the_write(monkeypatch, hours=1)
+
+    with pytest.raises(ing.IngestUTCError, match="boundary"):
+        ing.ingest("TEST", archive, data_dir)
 
 
 # ---------------------------------------------------------------------------
