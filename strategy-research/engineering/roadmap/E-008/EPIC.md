@@ -6,6 +6,14 @@
 
 ## Why
 
+⛔ **SEAL WARNING:** Kraken's `q1_26` tick archive falls inside the frozen
+`holdout_range` (`config/campaign_data_policy.yaml:holdout_range`). Any bars
+this aggregator produces from it are sealed-holdout OUTPUT by construction —
+same status as the input ticks — and MUST NOT be evaluated, scored, or fed to
+a strategy or any stage, tool, prescreen, or diagnostic until the holdout is
+deliberately spent. Flagged by Dorian's mirroring pass (2026-08-05); not
+present in the epic as originally filed.
+
 Kraken's `q1_26` tick archive (`Trades` — time-and-sales, not OHLCVT) is on
 disk but not ingested: there is no aggregation path from trade-level ticks to
 the OHLCVT bars the rest of the pipeline consumes. It sits alongside the G1
@@ -17,6 +25,14 @@ used today for aux-feed alignment (e.g. funding rate onto price interval) —
 a plausible existing seam to extend, not yet evaluated for this purpose.
 
 ## Done when
+
+⛔ **Sealed-window constraint applies to Done-when itself:** building and unit
+-testing the aggregator (S1/S2 below) does not require reading inside
+`holdout_range`. Verifying it end-to-end against `q1_26` (S3) produces sealed
+OUTPUT — that output may be produced and stored, but must not be evaluated,
+scored, compared to a strategy, or otherwise spent, until a deliberate,
+separately-ratified decision releases it, per the same deny-by-default
+doctrine `campaign_data_policy.yaml` applies to other reserved sources.
 
 A tick→OHLCVT aggregator exists, runs against the `q1_26` archive, and
 produces bars whose values are verified against an independent reference
@@ -39,3 +55,6 @@ the aggregation matches within a stated tolerance.
 
 - 2026-08-03 — `new`. Written up in E-001 S4 (dispatch W24) from the HANDOFF
   ledger's q1_26/G1 notes. Not started.
+- 2026-08-05 — Seal warning added (dispatch W40), flagged by Dorian's
+  mirroring pass: `q1_26` falls inside `campaign_data_policy.yaml:holdout_range`,
+  so aggregator OUTPUT is sealed data, not merely sealed input.
