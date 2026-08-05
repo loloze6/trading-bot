@@ -140,6 +140,21 @@ def load_kraken_ohlcv(path: Path) -> pd.DataFrame:
     span = raw["unix_s"].iloc[-1] - raw["unix_s"].iloc[0]
     if span <= 0:
         raise ValueError(f"Non-increasing timestamps in {path}")
+    # STRICTLY increasing — not just first-vs-last, and not merely
+    # non-decreasing. An interior row out of order clears the span check above
+    # and is invisible to the span-scoped verification in ingest() (which
+    # compares only the two boundary rows). A REPEATED timestamp is just as
+    # malformed and less visible still: drop_duplicates downstream keeps
+    # whichever copy sorts first and discards the conflicting value with
+    # nothing reported. Sorting or de-duplicating here would paper either one
+    # over — name it and stop instead.
+    if not (raw["unix_s"].diff().iloc[1:] > 0).all():
+        raise ValueError(
+            f"Out-of-order timestamps in {path}: the bulk export is assumed "
+            f"strictly chronological, and a duplicate or out-of-order row means "
+            f"a malformed archive. Sorting or de-duplicating it here would "
+            f"silently paper that over — inspect the source instead."
+        )
     return raw
 
 
@@ -200,6 +215,42 @@ def verify_utc_roundtrip(raw: pd.DataFrame, converted: pd.DataFrame) -> None:
             )
 
 
+def verify_boundary_values(converted: pd.DataFrame, archive_span: pd.DataFrame,
+                           dest: Path) -> None:
+    """
+    Value-level companion to verify_utc_roundtrip's timestamp comparison, and
+    the half that stays live on a top-up.
+
+    The timestamp check alone is geometrically inert once a cache exists: the
+    span mask is built from `converted`'s OWN bounds, so archive_span's first
+    and last rows carry exactly those timestamps by construction whenever the
+    cache already covers them. A neighbouring CACHE row then satisfies the
+    comparison no matter what the write did, and a whole-file shift lands
+    silently.
+
+    Values close that. The archive wins duplicate timestamps, so on a healthy
+    write the row sitting at each boundary is the archive's own; a shifted or
+    reordered write puts a different row there. Tolerance rather than equality
+    because the CSV float round-trip is not bit-exact.
+    """
+    for pos in (0, -1):
+        for col in ("open", "high", "low", "close", "volume"):
+            expected = converted[col].iloc[pos]
+            got = archive_span[col].iloc[pos]
+            # NaN on both sides is left alone: this check exists to catch a
+            # displaced write, not to become a NaN rejector by side effect.
+            if pd.isna(expected) and pd.isna(got):
+                continue
+            if not abs(got - expected) <= max(abs(expected) * 1e-9, 1e-12):
+                raise IngestUTCError(
+                    f"Post-write boundary-row mismatch in {dest}: at archive "
+                    f"row {pos}, column '{col}' is {got} on disk but the "
+                    f"archive says {expected}. The row occupying the archive's "
+                    f"own boundary timestamp is not the archive's row — the "
+                    f"write displaced or reordered it. Halting."
+                )
+
+
 def compute_gap_stats(ts: pd.Series, resolution: int = RESOLUTION_MINUTES,
                       since_year: int = 2017) -> dict:
     """
@@ -255,14 +306,70 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
         localStorage=True,
         data_dir=str(data_dir),
     )
-    fetcher._merge_and_store(store_symbol, [converted], save=True)
+    existing = fetcher._load_local(store_symbol)
     dest = Path(fetcher._csv_path(store_symbol))
+
+    # A cache file that EXISTS but parses to nothing is not a fresh slot.
+    # `_load_local` swallows every read error and returns an empty frame, and an
+    # empty `existing` switches off BOTH protections below at once: the union
+    # degenerates to the archive alone and `_assert_no_new_gap` short-circuits.
+    # That is exactly the state where a cache most needs them, so refuse rather
+    # than replace. A cache truncated MID-FILE still parses non-empty and is
+    # indistinguishable from truth here — this catches unreadable, not partial.
+    if existing.empty and dest.exists():
+        raise ValueError(
+            f"Existing cache {dest} is present but parsed to zero rows — it is "
+            f"either unreadable (ragged, truncated, or renamed columns) or "
+            f"contentless. Refusing to treat it as a fresh slot, which would "
+            f"replace it with this archive alone. NOTHING was written; inspect "
+            f"or quarantine the file."
+        )
+
+    # `_load_local` re-parses only `timestamp`, so `close_time` comes back as
+    # strings. Concatenating that with `converted`'s datetime64 column degrades
+    # the merged column to object, and `to_csv` then writes str(Timestamp) —
+    # `…:59.999000` where a fresh write produces `…:59.999`. Without this the
+    # ingest is not idempotent: re-running it rewrites every archive row of
+    # every cache for a formatting difference alone.
+    if not existing.empty:
+        existing["close_time"] = pd.to_datetime(existing["close_time"])
+
+    # MERGE, don't overwrite. Passing `[converted]` alone with no `existing=`
+    # has two consequences:
+    #   1. the on-disk cache is REPLACED — re-ingesting a 3-month quarterly
+    #      bundle over the 2013-2025 master_q4 cache destroys twelve years of
+    #      rows, and both occupy this same slot;
+    #   2. `_assert_no_new_gap` short-circuits when `existing` is None, so the
+    #      continuity guard is dead at this call site.
+    # `converted` is placed FIRST so the archive wins on duplicate timestamps
+    # (drop_duplicates keeps the first occurrence): a re-ingest must be able to
+    # correct a bad cached row, not be a no-op for every timestamp it already
+    # has. `existing` is an empty frame on a fresh slot; pd.concat handles it.
+    fetcher._merge_and_store(store_symbol, [converted, existing],
+                             save=True, existing=existing)
 
     # Reload-from-disk round trip, then re-assert UTC survived the write.
     reloaded = pd.read_csv(dest)
     reloaded["timestamp"] = pd.to_datetime(reloaded["timestamp"])
-    verify_utc_roundtrip(raw, reloaded)
 
+    # Scoped to the ARCHIVE's own span, not the whole file. verify_utc_roundtrip
+    # compares `raw`'s FIRST and LAST rows against its second argument's, and the
+    # merge above is a real union, so the file's bounds are the CACHE's whenever
+    # the cache is wider — comparing wholesale raises a spurious IngestUTCError
+    # on every top-up of an existing slot.
+    # .min()/.max() so the mask and the fetcher's own window (built above from
+    # the same two values) are derived identically.
+    archive_span = reloaded.loc[
+        (reloaded["timestamp"] >= converted["timestamp"].min()) &
+        (reloaded["timestamp"] <= converted["timestamp"].max())
+    ]
+    verify_utc_roundtrip(raw, archive_span)
+    # Timestamps alone go blind once a cache brackets the archive's span.
+    verify_boundary_values(converted, archive_span, dest)
+
+    # rows/first/last/gaps describe the WHOLE merged cache on disk, not the
+    # tranche this call ingested. That is what the coverage table and the
+    # "2017+ benchmark" comparison in main() want.
     gaps = compute_gap_stats(reloaded["timestamp"], resolution)
     return {
         "asset": asset,
