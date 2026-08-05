@@ -224,3 +224,14 @@ produced it:
    2026-07-19/20 and partly executed 2026-07-20 without being updated, so it
    described as future what had already shipped. Unrecorded does not mean
    undone.*
+10. **A MECHANISM DEMONSTRATED ON ONE INSTANCE DOES NOT ESTABLISH ITS
+    MAGNITUDE ACROSS THE POPULATION.** Amendment 3 requires a Why to be
+    verified; this covers the other half — a verified mechanism still needs
+    its EFFECT SIZE measured before it drives a decision.
+    *Cause: the fork proved the two-bars mechanism on one window
+    (Sharpe −7.585 → −7.018) and the director ruled that a set of
+    pre-registered thresholds "do not survive", on a median across fifteen
+    windows nobody had computed — and on a window whose absolute values sat
+    nowhere near the positive threshold in question. The mechanism was
+    real; the conclusion did not follow (E-012, dispatch W41, corrected
+    W42).*
