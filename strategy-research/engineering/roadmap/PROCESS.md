@@ -23,8 +23,8 @@ strategy*, it is campaign work. If it changes *how we work*, it is an epic.
 
 ```
 new  →  planned  →  in-progress  →  done
-                  ↘             ↗
-                     parked        killed
+  ↘               ↘             ↗
+   withdrawn         parked        killed
 ```
 
 | State | Means | Requires |
@@ -35,6 +35,7 @@ new  →  planned  →  in-progress  →  done
 | `parked` | Work exists but cannot proceed | **A written unblock condition.** "Resumes when X" |
 | `done` | Complete and verified | **Commit SHA + a verification command and its output** |
 | `killed` | Deliberately abandoned | Evidence for why. A killed epic is not `done` |
+| `withdrawn` | Was not an epic after all; work continues as a card | The card reference |
 
 `parked` is not a soft `done`. Recording parked work as closed asserts a verdict
 we do not have — this has caused real damage before. If it is blocked, say so and
@@ -158,3 +159,22 @@ produced it:
    its outputs.** The measurements, command output, and reads that
    established the epic's Why belong there alongside whatever the epic
    produces — not just the deliverable.
+6. **Incidental findings go to Notion immediately, tagged with the epic ref
+   that found them.** Anything discovered during an epic that is not that
+   epic's Why is filed on 🐛 Bugs & Tasks the moment it is found. It is never
+   fixed inline (scope creep) and never carried only in conversation. If it
+   later proves to need more than one dispatch or to change shared structure,
+   it graduates to an epic and its card is reduced to a POINTER — never
+   maintained as a parallel record.
+   *Cause: E-001 surfaced six defects while doing something else; they survived
+   only because they were kept in a chat list, which is not a durable store.
+   And E-003 was filed as both a Bugs & Tasks card and an epic — two state
+   stores for one item, which this file already forbids.*
+7. **An epic that turns out to be below the threshold is `withdrawn`, not
+   `killed`.** New terminal state. `killed` means the work was abandoned;
+   `withdrawn` means the work is still happening, just as a card, because it
+   needed only one dispatch after all. Requires: the card reference it
+   continues as.
+   *Cause: E-003's true size is unknown until its investigation story runs.
+   Overloading `killed` to mean "wasn't an epic" repeats the parked-vs-done
+   confusion in a different key.*
