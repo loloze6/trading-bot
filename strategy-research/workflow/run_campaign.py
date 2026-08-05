@@ -177,7 +177,7 @@ def _next_action_for_entry(entry: dict) -> str:
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# Phase 1.3 (docs/ROADMAP.md): venue/product registration-rule mechanism.
+# Phase 1.3 (docs/CAMPAIGN_PROGRAM.md): venue/product registration-rule mechanism.
 # Single source of truth: config/venue_tradability.yaml. Consumed by
 # _materialize_run() below to auto-flag research_only on any brief whose
 # declared venue+product isn't tradable==true, or whose venue/product is

@@ -1,5 +1,5 @@
 """
-Phase 1.4 (docs/ROADMAP.md) fee-reduction autopsy field regression tests,
+Phase 1.4 (docs/CAMPAIGN_PROGRAM.md) fee-reduction autopsy field regression tests,
 2026-07-21.
 
 Mirrors test_circuit_breaker_family_scoping.py's

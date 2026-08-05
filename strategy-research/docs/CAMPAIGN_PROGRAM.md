@@ -1,9 +1,14 @@
-# From Here to "Profitable Strategy Found" — Roadmap v2 (granular)
+# The Campaign Program — From Here to "Profitable Strategy Found" (v2, granular)
 **Date: 2026-07-19 · For: Loloze (operator) · v2 changes: four concepts explained (campaign, validation, prescreen, cost-per-idea); near-miss scoreboard added; your concern-3/4/5 additions dispatched into numbered steps; every step now carries an objective and a deliverable.**
 
-> This is the program roadmap: strategy, engineering and process
-> together. Engineering steps in it (1.2, 1.3, 1.4, 3.1, 3.2, 3.4, 4.1)
-> are implemented as epics — see engineering/roadmap/EPICS.md.
+> This file describes the campaign: its concepts (Part 1), its phase plan
+> (Part 2), and its standing guarantees (Part 4). It is not a roadmap —
+> engineering work has its own home in `engineering/roadmap/EPICS.md`. The
+> seven engineering items originally embedded in Part 2 (1.2, 1.3, 1.4, 3.1,
+> 3.2, 3.4, 4.1) are implemented as epics: 1.2 → E-014, 1.3 → E-015,
+> 1.4 → E-016, 3.1 → E-017, 3.2 → E-018, 4.1 → E-019; 3.4 is not an epic —
+> it is a standing guarantee, carried in Part 4. Part 2 below carries only a
+> one-line pointer to each.
 > Part 3 below is superseded by engineering/DISPATCH_MODEL.md.
 
 ---
@@ -24,7 +29,7 @@ Two machines. The **lab bench** (`trading-bot/`) replays history: give it a stra
 
 ---
 
-## Part 2 — The roadmap, granular
+## Part 2 — The phase plan, granular
 
 Phases gated by conditions. "Session" = one working session with agent dispatches. Your five concerns are dispatched into the steps where they live: C1→1 & Part 1; C2→the KPI + anti-corner rule; C3→3.1/3.4; C4→2.2–2.5 & 3.3; C5→1.1–1.4.
 
@@ -35,9 +40,9 @@ Phases gated by conditions. "Session" = one working session with agent dispatche
 
 ### Phase 1 — Reality alignment: France, venue, fees *(1–2 sessions — your concern 5)*
 - **1.1 — Venue survey.** Objective: know where you may legally trade as a French non-professional *today*, with sources. Deliverable: a one-page comparison (authorization status under current French/EU rules; spot vs perpetuals availability for retail; maker/taker fee schedules and tiers; API and historical-data quality) and a target venue decision (or shortlist of 2). Done fresh with citations — not from anyone's memory.
-- **1.2 — Venue-parameterized cost model + calibration re-runs.** Objective: backtests price the venue we'd actually use. Deliverable: the cost model takes the venue's real fee schedule (incl. maker-order assumptions where realistic); then **3 automated calibration re-runs** of already-tested ideas (the funding retest + 2 archived near-misses) under the new fee model — objective of these runs: measure how much verdicts move on fees alone, i.e. how many "kills" were venue artifacts.
-- **1.3 — Registration rule: venue declared.** Objective: no more testing on an unauthorized system's assumptions. Deliverable: every new brief states venue + product; anything using a product not legally tradable for you is auto-flagged **research-only** at registration. Immediate consequence to settle: whether the funding family is live-tradable at all (perp access), or research-only.
-- **1.4 — Fee-reduction autopsy field (your addition, adopted).** Objective: cost-kills must generate ideas, not just tombstones. Deliverable: whenever a kill's root cause is cost-dominated, the autopsy must answer one mandatory question — *"is there a system that reduces these fees?"* (maker-only execution, lower-frequency variant of the same signal, different product, venue tier, batching) — and, if yes, register the cheap variant as a new idea.
+- **1.2 — Venue-parameterized cost model + calibration re-runs.** Graduated to `engineering/roadmap/E-014/EPIC.md`.
+- **1.3 — Registration rule: venue declared.** Graduated to `engineering/roadmap/E-015/EPIC.md`.
+- **1.4 — Fee-reduction autopsy field.** Graduated to `engineering/roadmap/E-016/EPIC.md`.
 - **Gate:** venue decided in writing; cost model live; the three calibration runs reported; funding family's live status settled yes/no.
 
 ### Phase 2 — Data moat: the raw material for non-book ideas *(2–4 sessions, parallel tracks — your concern 4)*
@@ -51,14 +56,14 @@ Phases gated by conditions. "Session" = one working session with agent dispatche
 - **Gate:** ≥2 new data axes on disk with provenance + a first registrable indicator each; recorders running.
 
 ### Phase 3 — Hypothesis wave 2, with real autopsies *(ongoing once Phase 2 delivers — your concerns 3+4; this is where verdicts/week becomes the number that matters)*
-- **3.1 — Autopsy standard v1, with the right metrics (your addition, adopted).** Objective: every kill explains itself precisely enough to make a prediction. Deliverable: a defined **autopsy metric palette** the verdict stage must draw from: *profit per forecast bin at entry* (does a stronger signal actually earn more? — the table already exists in our diagnostics), *regime-identification correctness* (when we labeled "trending", was it, measured after the fact — and PnL conditional on the label being right vs wrong), *forecast calibration* (realized return vs predicted magnitude), *entry/exit efficiency, MAE/MFE, post-exit returns* (already built), and *cost decomposition* (how much of the loss is fees vs signal). Rule: no sibling of a killed family is registered until the parent's autopsy is on file with at least one micro-test of its claimed cause.
-- **3.2 — Near-miss scoreboard (your ranking idea, adopted for ideation only).** Objective: failed-but-instructive ideas feed the generator. Deliverable: a ranked, auto-updated table over all tested ideas (evidence quality, failed-criterion margins, root causes), readable by the idea-generation stage, firewalled from promotion decisions.
+- **3.1 — Autopsy standard v1, with the right metrics.** Graduated to `engineering/roadmap/E-017/EPIC.md`.
+- **3.2 — Near-miss scoreboard.** Graduated to `engineering/roadmap/E-018/EPIC.md`.
 - **3.3 — Registration waves.** Objective: throughput. Deliverable: batches of 3–5 registered ideas per wave from the new axes — cross-sectional momentum & carry across ~20 coins, the 2 whale-flow indicators, fee-reduced variants from 1.4, anything the scoreboard/autopsies motivate. Target once the machinery holds: ≥2 honest verdicts per week at declining cost per verdict. Old-corner single-asset TA stays parked unless an autopsy specifically licenses a variant.
-- **3.4 — Diagnostics extensions on demand.** Objective: the autopsy palette never blocks on a missing metric. Deliverable: small, ledgered additions to the diagnostics layer exactly when an autopsy needs a metric that doesn't exist yet (e.g. the regime-correctness measure) — never speculatively.
+- **3.4 — Diagnostics extensions on demand.** Not an epic — a standing guarantee, see Part 4.
 - **Gate:** a pre-registered candidate passes its full frozen in-sample gates. (If an entire wave dies with clean autopsies: that is the loop *working* — the autopsies + scoreboard write the next wave.)
 
 ### Phase 4 — Combination and ML *(starts when Phases 2–3 give a handful of individually-informative features — your concern 4, "technological fit")*
-- **4.1 — Feature matrix.** Objective: one aligned table per date × coin of every surviving feature (momentum ranks, carry, whale flows, regime state, costs). Deliverable: the matrix + leakage checks.
+- **4.1 — Feature matrix.** Graduated to `engineering/roadmap/E-019/EPIC.md`.
 - **4.2 — ML ranker, registered like everything else.** Objective: extract what combination adds. Deliverable: a walk-forward-trained model that ranks/sizes coins, with its pass rule frozen *before* training ever touches the evaluation windows — same contract discipline as any idea. Outcome either way is recorded: "combination adds X" or "combination adds nothing here" (also a real answer).
 - **Gate:** a combined candidate passes in-sample gates where singles didn't — or the recorded negative.
 
@@ -75,10 +80,10 @@ Phases gated by conditions. "Session" = one working session with agent dispatche
 **Extracted to `engineering/DISPATCH_MODEL.md`** (dispatch W25): the dispatch
 loop, the roles and their models, cost discipline, context economy, and the
 standard verification command. Read it there — it is a living document, kept
-current independent of this roadmap's own revision cadence.
+current independent of this document's own revision cadence.
 
 ## Part 4 — Standing guarantees (unchanged, plus one)
 
 The KPI (honest verdicts/week, cost per verdict) is reported every session close. The **anti-corner rule**: every session ends with at least one hypothesis-level advance — a verdict, a registration, or a data-axis milestone — never process alone. Pipeline/autonomy work happens only where it raises verdicts-per-week. What the roadmap guarantees: searching where edges plausibly still live (big-player behavior, breadth, costs, combination), every failure leaving a tested reason, machinery that cannot lie, and live assumptions matching a venue you may legally use. What nobody can guarantee: that an edge exists. What I can promise: if one is findable with our data and our size, this process finds it — and if not, the knowledge base will show *why*, precisely enough that time and money stop going to ghosts.
 
-*Next update: at session close, with run_059's verdict recorded and Phase 1 opened.*
+**3.4 — Diagnostics extensions on demand.** The autopsy palette never blocks on a missing metric: small, ledgered additions to the diagnostics layer are added exactly when an autopsy needs a metric that doesn't exist yet (e.g. the regime-correctness measure) — never speculatively.
