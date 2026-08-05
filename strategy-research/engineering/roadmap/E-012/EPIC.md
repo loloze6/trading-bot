@@ -57,6 +57,43 @@ neither person owns unilaterally.
 - [ ] S4 — Sequence against E-010 (slippage model), whose Done-when pins
       `config_sha 5ccbec42` / `data_sha 5a75366c`. Either fix here breaks
       those pins.
+- [ ] S5 — Re-derive the run_054 baselines under the fixed loop, BEFORE any
+      P4 evaluation. See "P4 threshold invalidation" and "Anti-fitting
+      guardrail" below.
+
+## P4 threshold invalidation (2026-08-05)
+
+**Measured:** 15 of 30 run_054 windows end holding a position (BTCUSDT 8
+flat / 7 holding, ETHUSDT 7 flat / 8 holding). Method: a genuine
+`_close_all_positions_at_end` leaves `exit_forecast:null` on the trade plus a
+duplicate-timestamp `bars.csv` row with a blank forecast and
+`trade_type CLOSE`; a signal exit landing on the final bar writes a single
+row with a populated forecast. Worked example: window
+`20260709T134348Z_d01f26e1`.
+
+**Consequence:** the pre-registered pass rule pinned to run_054
+(BTCUSDT >= 0.5791, ETHUSDT >= 0.0318 median Sharpe) was computed with half
+its windows containing an artificial force-close. Those thresholds do NOT
+survive the loop fix and must be re-derived.
+
+**Direction unknown per window.** The director's hypothesis: a strategy's
+own signal exit should on average beat an arbitrary forced one, so
+re-derived thresholds may rise. This is a HYPOTHESIS, not measured.
+
+## Anti-fitting guardrail (S5)
+
+Re-deriving a threshold that a strategy will then be tested against is
+structurally identical to fitting unless the ORDER is enforced. Therefore:
+
+- The re-derivation is mechanical: rerun run_054 under the fixed loop,
+  recompute the same medians over the same 15-window sets, change nothing
+  else.
+- The new thresholds are FROZEN and recorded BEFORE P4 is run.
+- No P4 result may be compared against a threshold derived after seeing it.
+
+This is NOT a relaxation: the coverage floor, min-N, and `persistence_bars`
+are untouched and remain non-negotiable. Any session that proposes loosening
+them is refused.
 
 ## S1 measurement (2026-08-05, fork)
 
@@ -105,3 +142,7 @@ after.
 - 2026-08-05 — S1 measurement recorded (dispatch W40) from the fork's
   triple-verified delta. See "S1 measurement" above. S3's fix-forward ruling
   stands, now evidenced rather than assumed.
+- 2026-08-05 — P4 threshold invalidation and S5 anti-fitting guardrail
+  recorded (dispatch W41). run_054's pass-rule thresholds are invalid
+  post-loop-fix and must be re-derived under the frozen-before-P4 order
+  above; not yet done.
