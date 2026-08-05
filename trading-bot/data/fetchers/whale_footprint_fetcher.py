@@ -24,7 +24,7 @@ plus named float columns, and register the name in `feed_registry`
 candles. This class is that, and nothing else — no parallel data path.
 
 The registration goes in `RESERVED_FEED_REGISTRY`, NOT `FEED_REGISTRY`, because
-`launcher.py:290` and `launcher.py:596` pass the whole of the latter as
+`launcher.py:311` and `launcher.py:596` pass the whole of the latter as
 `extra_feeds`: membership there means "loaded by every backtest", which is the
 one thing reserved data must not be. See the comment in `feed_registry.py`.
 

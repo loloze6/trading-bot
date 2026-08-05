@@ -51,7 +51,7 @@ FEED_WINDOW_SECONDS = {
 # ---------------------------------------------------------------------------
 # RESERVED FEEDS — a SECOND registry, deliberately not merged into the first.
 #
-# `FEED_REGISTRY` is not an opt-in menu. `launcher.py:290` and `launcher.py:596`
+# `FEED_REGISTRY` is not an opt-in menu. `launcher.py:311` and `launcher.py:596`
 # both pass the WHOLE dict as `extra_feeds`, so every name in it is constructed
 # and loaded on every backtest. That makes it precisely the wrong home for a
 # dataset that must not be read by default: adding a deny-by-default feed there
