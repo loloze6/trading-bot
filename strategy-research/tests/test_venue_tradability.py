@@ -1,5 +1,5 @@
 """
-Phase 1.3 (docs/ROADMAP.md) venue/product registration-rule mechanism
+Phase 1.3 (docs/CAMPAIGN_PROGRAM.md) venue/product registration-rule mechanism
 regression tests, 2026-07-21.
 
 Reuses K4's campaign_root sandboxing fixture directly (same precedent

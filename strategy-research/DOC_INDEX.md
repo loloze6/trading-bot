@@ -14,14 +14,14 @@ Organized by the question a reader actually arrives with, not by directory.
 ### "What do I do this session?"
 → For **engineering work**: **[`engineering/roadmap/EPICS.md`](engineering/roadmap/EPICS.md)** —
 one line per epic, the only mandatory read for engineering.
-→ For **campaign/research work**: **[`docs/ROADMAP.md`](docs/ROADMAP.md)** (phase
+→ For **campaign/research work**: **[`docs/CAMPAIGN_PROGRAM.md`](docs/CAMPAIGN_PROGRAM.md)** (phase
 plan) and `config/campaign_queue.yaml` (current queue state).
 → **[`HANDOFF_CURRENT.md`](engineering/sessions_archive/HANDOFF_20260724.md)** —
-archived, superseded by the two roadmaps above. Retained for its 20 DONE rows'
+archived, superseded by EPICS.md and docs/CAMPAIGN_PROGRAM.md above. Retained for its 20 DONE rows'
 verified commit SHAs.
 
 ### "What's the overall plan / KPI / process?"
-→ **[`docs/ROADMAP.md`](docs/ROADMAP.md)** — operator-ratified roadmap
+→ **[`docs/CAMPAIGN_PROGRAM.md`](docs/CAMPAIGN_PROGRAM.md)** — operator-ratified campaign program
 (v2, 2026-07-19): Phase 0-5 task sequence with gates, the KPI (honest
 verdicts/week, cost per verdict) and anti-corner rule, the role/model
 assignment for every agent class, and the context-economy rules. The

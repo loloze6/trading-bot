@@ -4413,7 +4413,7 @@ def determine_post_verdict_route(path: Path, run_id: str):
                      flags={"regime_misattribution_flagged": True})
         return "human_pause"
 
-    # Phase 1.4 (docs/ROADMAP.md): a cost-dominated kill must answer "is there
+    # Phase 1.4 (docs/CAMPAIGN_PROGRAM.md): a cost-dominated kill must answer "is there
     # a system that reduces these fees?" (maker-only execution, lower-frequency
     # variant, different product, venue tier, batching); if yes, register the
     # cheap variant as a new idea. Unlike component_execution_error/
