@@ -105,3 +105,12 @@ yet satisfied.
   distinct SHAs (`4adb7403` park commit, `1f7525f8` branch tip,
   `3cfa7b24` master's copy of the mapping), previously conflated under one
   hash. Files moved: none — mapping only.
+- 2026-08-05 — L48 (`docs/ROADMAP.md`, `UNRESOLVED-PENDING-DIRECTOR`) dropped
+  from `RESTRUCTURE_MAPPING.tsv`, per E-013's ruling (dispatch W36): the
+  file's disposition is owned by E-013, which splits and renames it — not
+  "master keeps the file" (that reasoning was already withdrawn above), but
+  that this replay must not relocate a file separate work is restructuring.
+  Row total: 196 → 195 (188 `RENAMED`, 3 `DELETED`, 1 `MODIFIED`, 1
+  `DERIVED`, 1 `MANUAL`, 1 `ADDED`, 0 `UNRESOLVED-PENDING-DIRECTOR`).
+  `RESTRUCTURE_REPOINT_SITES.tsv` checked for the same reference — none
+  found, no change needed there. Files moved: none — mapping only.

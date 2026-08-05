@@ -1,6 +1,6 @@
 # E-013 — Split docs/ROADMAP.md — retire the name, graduate the engineering items
 
-**State:** planned
+**State:** done
 **Owner:** Jeremy
 **Updated:** 2026-08-05
 
@@ -84,8 +84,8 @@ b) `engineering/DISPATCH_MODEL.md`'s anti-corner section states it is
 - [x] S2 — Create the work items the audit calls for. (dispatch W35: six
       epics — E-014..E-019 — created; 3.4 recorded above as a standing
       guarantee, not an epic or card.)
-- [ ] S3 — Rewrite and rename the file; repoint `DOC_INDEX.md`; verify no
-      content lost.
+- [x] S3 — Rewrite and rename the file; repoint `DOC_INDEX.md`; verify no
+      content lost. (dispatch W36)
 
 ## Log
 
@@ -100,3 +100,75 @@ b) `engineering/DISPATCH_MODEL.md`'s anti-corner section states it is
   (above) and the two S3 obligations found by the S1 audit (above). Next
   step: S3 — rewrite/rename `docs/ROADMAP.md`, repoint `DOC_INDEX.md`, verify
   no content lost. S3 is explicitly out of scope for this dispatch.
+- 2026-08-05 — S3 done (dispatch W36). `planned` → `done`.
+  **Rename:** `git mv docs/ROADMAP.md docs/CAMPAIGN_PROGRAM.md`, both paths
+  staged, old path verified gone (`test ! -e` passed).
+  **Content accounting (Done-when #4):** front matter (9 lines) rewritten to
+  describe what the file is, naming E-014 through E-019 in place of the old
+  false-when-written epics claim (now true). Part 1 (14 lines) carried
+  verbatim. Part 2 (43 lines): Phase 0-5 structure and every non-graduating
+  item (0.1, 0.2, Gates ×5, 1.1, 2.1-2.5, 3.3, 4.2, 5.1-5.3, Definition of
+  done) carried verbatim, including 0.2's own historical mention of
+  `docs/ROADMAP.md` (a past session-close deliverable — left unrepointed, per
+  Step 1's historical-record rule, not falsified). The six engineering items
+  (1.2, 1.3, 1.4, 3.1, 3.2, 4.1) each replaced by a one-line pointer to their
+  epic (E-014..E-016, E-017, E-018, E-019); 3.4 replaced by a pointer to
+  Part 4, where its standing-guarantee text (Done-when #1's obligation) was
+  added verbatim from this file's own §"3.4's disposition" record. Part 3
+  (6 lines) carried, with its one self-reference to "this roadmap's ...
+  cadence" corrected to "this document's" since the file is no longer called
+  a roadmap. Part 4 (5 lines) carried verbatim, plus 3.4 appended. The
+  trailing "*Next update: at session close...*" line was DELIBERATELY
+  DROPPED — stale, already superseded (Phase 1 has long since progressed to
+  spinning off E-014/E-015/E-016). No line unaccounted for.
+  **S3 obligation (a):** front matter's epics claim verified against the six
+  epics this dispatch's S2 (`cd20e6ec`) created — restated as true, naming
+  them individually rather than pointing generically at `EPICS.md`.
+  **S3 obligation (b):** `engineering/DISPATCH_MODEL.md` repointed at both
+  its `docs/ROADMAP.md` references (lines 3 and 107); declared
+  `docs/CAMPAIGN_PROGRAM.md` Part 4 the authoritative copy of the
+  anti-corner text, `DISPATCH_MODEL.md`'s own copy a mirror — the two texts
+  were already identical per the S1 audit, so this was a pointer fix.
+  **Repoints (Done-when #3):** `DOC_INDEX.md` (3 entries) and
+  `DISPATCH_MODEL.md` (2 entries) repointed to the new name. Also repointed,
+  found in scope during Step 1's full-repo enumeration and not previously
+  named by this epic: `EPICS.md`'s E-017/E-018 "Blocked on Phase 2's gate"
+  cells (live blocking-condition pointers, not historical) and `EPICS.md`'s
+  own E-013 row (moved Active → Done, this entry).
+  **Left unrepointed, classified historical/provenance, not live pointers:**
+  `SESSION_LOG.md`, `docs/session_reports/*`,
+  `archive/improvements/NEXT_SESSION_20260719_superseded.md`,
+  `engineering/sessions_archive/HANDOFF_20260724.md` (all dated,
+  point-in-time records); `PROCESS.md` Amendment 3 (describes a past
+  mischaracterisation); `E-001/EPIC.md`'s Why table; `E-002/EPIC.md`'s
+  pre-existing W33 Story/Log text (a new dated Log entry was added instead
+  — see `E-002/EPIC.md`, L48 drop); `E-014`..`E-019/EPIC.md`'s own
+  "Source: `docs/ROADMAP.md` §X.Y, verbatim: ..." provenance citations;
+  `campaign_knowledge_base.yaml`'s dated KB entry (quotes the Phase 1.3 gate
+  as it read on 2026-07-20); `docs/INVENTORY.tsv` and `docs/REFERENCE_MAP.tsv`
+  (dated audit-inventory snapshots, structurally the same category as
+  `RESTRUCTURE_MAPPING.tsv` but not named by Step 5 — left untouched as
+  out of scope for this dispatch); and five code/schema provenance
+  citations that name "Phase X.Y (`docs/ROADMAP.md`)" as a spec origin —
+  `config/venue_tradability.yaml:1`, `tests/test_venue_tradability.py:2`,
+  `tests/test_fee_reduction_assessment.py:2`, `workflow/run_campaign.py:180`,
+  `workflow/run_phase1_research.py:4416`, and
+  `schemas/verdict_interpretation.schema.json:129` — same citation pattern
+  as the epic Source: lines above; repointing them to the correct epic
+  (E-014/E-015/E-016 depending on the cited phase) is that epic's own
+  implementation work, not S3's.
+  **Verification:** `grep -rn "docs/ROADMAP.md" strategy-research/` returns
+  only the historical/provenance set enumerated above (plus this dispatch's
+  own new historical citations in `DISPATCH_MODEL.md`, `E-002/EPIC.md`, and
+  `CAMPAIGN_PROGRAM.md`'s own carried-verbatim 0.2 line) — no live pointer
+  remains. Sealed-window check: `CAMPAIGN_PROGRAM.md`'s own dates (2026-07-19,
+  2026-07-20) fall outside the sealed window and needed no exemption entry
+  (Amendment 4). The holdout gate did fire once, self-referentially: this
+  Log paragraph's own prose citing the window's boundary literals tripped
+  it (category (b) — explaining the boundary, not market data); registered
+  `strategy-research/engineering/roadmap/E-013/EPIC.md` (1 line) in
+  `config/holdout_gate_exemptions.txt`'s dated-comment section per that
+  file's own audit-and-register procedure — `holdout_date_gate.sh` itself
+  untouched. `RESTRUCTURE_MAPPING.tsv` L48 dropped, row total 196 → 195
+  (see `E-002/EPIC.md` Log); `RESTRUCTURE_REPOINT_SITES.tsv` checked, no
+  matching reference existed.

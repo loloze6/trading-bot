@@ -1,6 +1,8 @@
 # Dispatch model — roles, process, and which model for which job
 
-Extracted from `docs/ROADMAP.md` Part 3 (dispatch W25), which now points here.
+Extracted from `docs/CAMPAIGN_PROGRAM.md` Part 3 (dispatch W25; the source
+file was named `docs/ROADMAP.md` at the time and was renamed by E-013),
+which now points here.
 
 ## Relationship to `engineering/roadmap/PROCESS.md`
 
@@ -104,7 +106,8 @@ Four rules, added to control token burn:
 
 ## Anti-corner rule
 
-Carried across from `docs/ROADMAP.md` Part 4, which otherwise stays intact:
+Carried across from `docs/CAMPAIGN_PROGRAM.md` Part 4 (authoritative copy;
+this section is a mirror), which otherwise stays intact:
 every session ends with at least one hypothesis-level advance — a verdict, a
 registration, or a data-axis milestone — never process alone.
 Pipeline/autonomy work happens only where it raises verdicts-per-week.
