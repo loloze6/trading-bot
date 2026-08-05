@@ -196,7 +196,7 @@ def test_every_feature_column_has_its_own_registry_entry():
 
 def test_reserved_feeds_are_not_in_the_default_registry():
     """
-    THE LOAD-BEARING ONE. launcher.py:290 and launcher.py:596 pass the whole of
+    THE LOAD-BEARING ONE. launcher.py:311 and launcher.py:596 pass the whole of
     FEED_REGISTRY as extra_feeds, so membership of that dict means "loaded by
     every backtest". A reserved feed appearing there would either break every
     run or quietly load reserved out-of-sample into all of them; membership IS
