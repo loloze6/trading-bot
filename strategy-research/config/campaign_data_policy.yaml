@@ -18,7 +18,7 @@ walk_forward_extension: ["2024-12-01", "2025-12-31"]
 holdout_range: ["2026-01-01", "2026-06-30"]
 
 # P1b backward-extension pass (2026-07-05). Backfilled and verified (see
-# strategy-research/docs/p1b_fetch_manifest.md for the gap report and event
+# strategy-research/engineering/improvements/done/design_and_docs/p1b_fetch_manifest.md for the gap report and event
 # cross-checks). Walk-forward-eligible; holdout_range above is UNCHANGED.
 # Per-feed true availability (fetch verified, not assumed):
 #   BTCUSDT_1h / ETHUSDT_1h OHLCV : 2018-01-01 -> present (spot market)
@@ -78,7 +78,7 @@ eras:
 # Phase 2 Track A / XS_momentum P2 unblock (2026-07-22). Verified availability for
 # the 19-pair Kraken breadth set (ledger G1/G2), measured directly from the ingested
 # cache CSVs by pd.read_csv (read-only; no fetcher call, per the standing 446885b
-# write-on-read guard). See docs/session_reports/20260722_xs_momentum_universe.md for
+# write-on-read guard). See engineering/sessions/session_reports/20260722_xs_momentum_universe.md for
 # the full panel table, correlation methodology, and n_eff_symbols measurement.
 #
 # HOLDOUT TREATMENT -- IMPORTANT, differs from the BTCUSDT/ETHUSDT policy above:
@@ -101,7 +101,7 @@ kraken_breadth_19pair:
   reachability_caveat: >
     data_manager.py:768 hardcodes exchange="binance" -- no backtest can currently
     read these Kraken cache files without that being parameterized first
-    (docs/session_reports/20260722_kraken_ingest_audit.md Target F). Availability
+    (engineering/sessions/session_reports/20260722_kraken_ingest_audit.md Target F). Availability
     windows below describe what has been verified to exist on disk, not what is
     currently reachable by a live backtest run.
   availability:
@@ -188,10 +188,10 @@ kraken_q1_2026_holdout:
 # CANNOT leak, these files are physically readable straight through 2026 H1:
 # the :8-9 prohibition is PROTOCOL-ONLY for them, with no mechanical guard.
 #
-# Discovered by dispatch B1-R, docs/session_reports/20260726_2026_coverage_scope.md
+# Discovered by dispatch B1-R, engineering/sessions/session_reports/20260726_2026_coverage_scope.md
 # (finding at that report's "Holdout-range rows present in the in-sample cache
 # root" section and WHAT REMAINS item 5). Previously disclosed only indirectly, as
-# the "Binance-future-holdout carry-forward" at engineering/sessions_archive/HANDOFF_20260724.md:127-134; absent
+# the "Binance-future-holdout carry-forward" at engineering/sessions/HANDOFF_20260724.md:127-134; absent
 # from this file and from local_data/README.md until this entry.
 #
 # CORRECTION to B1-R, measured 2026-07-26 by `git ls-files` at fec0120: B1-R
@@ -321,7 +321,7 @@ holdout_contaminated_runs:
   dangling_reference:
     # NOT remediated (dispatch W5: no self-remediation). Recorded so the next operator
     # inherits it explicitly rather than discovering it as a broken path.
-    parent_protocol: strategy-research/results/protocols/20260702T091324Z_18fad381/protocol_summary.json
+    parent_protocol: strategy-research/archive/protocols/20260702T091324Z_18fad381/protocol_summary.json
     cites_runs_at_lines: [1224, 2520]
     consequence: >
       The parent protocol_summary.json still references both run_ids, and its aggregate
@@ -329,7 +329,7 @@ holdout_contaminated_runs:
       campaign_knowledge_base.yaml:73 stores it as the keltner_163 baseline_v2 artifact
       set, campaign_state.yaml:478 rests a "do NOT re-open these families on baseline_v2"
       decision on it, incident_20260710/campaign_knowledge_base.yaml.snapshot:39 mirrors
-      it, skills/verdict-interpreter/SKILL.md:518 teaches from it, and
+      it, workflow_artifacts/skills/verdict-interpreter/SKILL.md:518 teaches from it, and
       tools/run_protocol.py:1173 uses it as a reproduction fixture. Quarantining the two
       run dirs leaves those five references pointing at a protocol whose final tile is
       now absent from results/runs/. Deciding whether the family-closing decision
@@ -357,12 +357,12 @@ holdout_contaminated_runs:
 # (out of this measurement task's write scope) -- updating it is a follow-on step for
 # whoever ratifies the XS_momentum brief's market_universe, using whichever candidate
 # universe is selected. Full matrix and methodology:
-# docs/session_reports/20260722_xs_momentum_universe.md.
+# engineering/sessions/session_reports/20260722_xs_momentum_universe.md.
 
 # Kraken WS v2 forward recorder (registered 2026-07-26, roadmap Phase 2.4 Track C).
 # First-party live websocket capture of L2 book depth-10 + full public trades for the
 # same 19 Kraken breadth pairs as kraken_breadth_19pair above. Build spec:
-# docs/session_reports/20260726_recorder_build_spec.md. Code: strategy-research/recorder/.
+# engineering/sessions/session_reports/20260726_recorder_build_spec.md. Code: strategy-research/recorder/.
 #
 # *** DENY BY DEFAULT — THIS DATA IS RESERVED, NOT SEARCHABLE. ***
 # No stage, tool, prescreen, diagnostic or backtest may read ANY window of this
@@ -451,7 +451,7 @@ kraken_ws_forward_recorder:
   # INTENDED CAPTURE CONFIGURATION (registered 2026-07-27, dispatch W6).
   # This block declares WHAT THE OPERATOR LAUNCHES, not what the code defaults to.
   # The recorder's compiled-in default is and remains --book-mode delta (the only
-  # lossless cadence; see recorder/record_kraken_ws.py MODE_DELTA and RUNBOOK 3.2).
+  # lossless cadence; see tools/recorder/record_kraken_ws.py MODE_DELTA and RUNBOOK 3.2).
   # Dispatch W6 did NOT change that default. The long capture is launched with
   # EXPLICIT flags and this registry records the intent, so that "what is running"
   # is a ratified, readable declaration rather than an inference from a command
@@ -477,14 +477,14 @@ kraken_ws_forward_recorder:
     trades: full               # UNTOUCHED by book_mode -- the full public trade feed
                                # is captured verbatim in every cadence.
     roll: hour                 # hourly shards, zstd-compacted after a verified
-                               # byte-compare (recorder/compaction.py)
+                               # byte-compare (tools/recorder/compaction.py)
     compression: zstd
     disk_guard_floor_gb: 5.0   # decimal GB. Enforced BY THE RECORDER, on a timer,
                                # for the whole run; a breach flushes, writes
                                # DISK_GUARD_ABORT to the coverage journal and exits 3,
                                # which supervise.ps1 reads as "do not relaunch".
                                # Undeterminable free space counts as a breach.
-    supervised: true           # recorder/supervise.ps1: relaunch on crash with
+    supervised: true           # tools/recorder/supervise.ps1: relaunch on crash with
                                # bounded exponential backoff and a rolling restart
                                # cap; never relaunch after exit 0 or exit 3. Each
                                # relaunch writes a RESTART_BOUNDARY journal record so
@@ -492,7 +492,7 @@ kraken_ws_forward_recorder:
     projected_12mo_compressed_gb: 42.1  # vs 360.2 for delta; measured, not modelled
     projected_gb_per_day: 0.115
     measured_zstd_ratio: 15.41
-    ladder_report: docs/session_reports/20260726_recorder_cadence_ladder.md
+    ladder_report: engineering/sessions/session_reports/20260726_recorder_cadence_ladder.md
       # Measured over a 208.7 s steady span at 20,576 raw B/s -> 1,335 compressed B/s.
       # SAME CAVEAT AS storage_checkpoint ABOVE: a single short daytime sample, with
       # intraday and weekday seasonality unmeasured. It is a rung on a comparative

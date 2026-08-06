@@ -359,7 +359,7 @@ def main() -> None:
     parser.add_argument(
         "--campaign-state",
         default=None,
-        help="Path to campaign_state.yaml. Defaults to strategy-research/campaign_state.yaml.",
+        help="Path to campaign_state.yaml. Defaults to strategy-research/campaign_record/campaign_state.yaml.",
     )
     args = parser.parse_args()
 
@@ -370,7 +370,7 @@ def main() -> None:
     if args.campaign_state:
         campaign_state_path = Path(args.campaign_state)
     else:
-        campaign_state_path = Path(_SR) / "campaign_state.yaml"
+        campaign_state_path = Path(_SR) / "campaign_record" / "campaign_state.yaml"
 
     if not campaign_state_path.exists():
         print(f"ERROR: campaign_state.yaml not found at {campaign_state_path}", file=sys.stderr)

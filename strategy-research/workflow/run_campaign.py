@@ -72,11 +72,11 @@ from setup_run import setup_run  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 QUEUE_PATH = ROOT / "config" / "campaign_queue.yaml"
-CAMPAIGN_LOG_PATH = ROOT / "campaign_log.md"
-CAMPAIGN_SUMMARY_PATH = ROOT / "campaign_summary.md"
+CAMPAIGN_LOG_PATH = ROOT / "campaign_record" / "campaign_log.md"
+CAMPAIGN_SUMMARY_PATH = ROOT / "campaign_record" / "campaign_summary.md"
 # A3 (K4 kernel): frozen baseline of run directories that predate or fall
 # outside the normal atomic registration path -- see
-# docs/design/K4_routing_registration_design_20260712.md section 6.
+# engineering/improvements/done/design_and_docs/K4_routing_registration_design_20260712.md section 6.
 BASELINE_PATH = ROOT / "config" / "campaign_baseline_runs.yaml"
 
 _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?\n)---\s*\n", re.DOTALL)
@@ -335,7 +335,7 @@ def _materialize_run(run_id: str, brief: dict):
 # ---------------------------------------------------------------------------
 # B15: first-class registration -> schedulable queue entry. Retires the
 # per-registration hand-edit to campaign_queue.yaml that H-041-C-v2 required
-# (improvements/IMPROVEMENTS_DONE_20260712.md B15) -- a fully-authored brief was
+# (engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md B15) -- a fully-authored brief was
 # previously never schedulable without a manual queue append outside any
 # tool's own write path.
 # ---------------------------------------------------------------------------
@@ -503,7 +503,7 @@ def _wishlist_family_names() -> list:
         for c in dw.get("candidates", []):
             if c.get("family"):
                 names.append(c["family"])
-    fw_path = ROOT / "feed_wishlist.yaml"
+    fw_path = ROOT / "campaign_record" / "feed_wishlist.yaml"
     if fw_path.exists():
         fw = orch.load_yaml(fw_path) or {}
         for entry in fw.get("wishlist", []):
@@ -552,7 +552,7 @@ def _find_wishlist_entry(family_name: str) -> dict | None:
         for c in dw.get("candidates", []):
             if c.get("family") == family_name:
                 return c
-    fw_path = ROOT / "feed_wishlist.yaml"
+    fw_path = ROOT / "campaign_record" / "feed_wishlist.yaml"
     if fw_path.exists():
         fw = orch.load_yaml(fw_path) or {}
         for entry in fw.get("wishlist", []):
@@ -650,7 +650,7 @@ def evaluate_wishlist_predicate(family_name: str) -> dict:
     conditions = predicate.get("all_of", [])
 
     if source == "kb_finding":
-        kb_path = ROOT / "campaign_knowledge_base.yaml"
+        kb_path = ROOT / "campaign_record" / "campaign_knowledge_base.yaml"
         kb = (orch.load_yaml(kb_path) or {}) if kb_path.exists() else {}
         records = kb.get("findings", [])
     elif source == "campaign_queue":
@@ -679,7 +679,7 @@ def evaluate_and_persist_wishlist_predicate(family_name: str) -> dict:
     with no corresponding evaluator run (confirmed: grep across the repo for
     any writer of config/detector_wishlist.yaml finds none outside test
     fixtures' tmp_path sandboxes -- it was hand-authored, violating the file's
-    own contract). skills/campaign-review/SKILL.md's wishlist-gate section
+    own contract). workflow_artifacts/skills/campaign-review/SKILL.md's wishlist-gate section
     instructs the LLM-authored campaign_review stage to read this status
     field directly as textual ground truth (it cites a literal historical
     `trigger_condition.status: not_triggered` value) -- that consumer reads
@@ -705,7 +705,7 @@ def evaluate_and_persist_wishlist_predicate(family_name: str) -> dict:
     result = evaluate_wishlist_predicate(family_name)
 
     dw_path = ROOT / "config" / "detector_wishlist.yaml"
-    fw_path = ROOT / "feed_wishlist.yaml"
+    fw_path = ROOT / "campaign_record" / "feed_wishlist.yaml"
     target_path = None
     container_key = None
     if dw_path.exists():
@@ -726,7 +726,7 @@ def evaluate_and_persist_wishlist_predicate(family_name: str) -> dict:
     predicate = (entry.get("trigger_condition") or {}).get("predicate") or {}
     source = predicate.get("source")
     if source == "kb_finding":
-        source_path = ROOT / "campaign_knowledge_base.yaml"
+        source_path = ROOT / "campaign_record" / "campaign_knowledge_base.yaml"
     elif source == "campaign_queue":
         source_path = QUEUE_PATH
     else:
@@ -748,7 +748,7 @@ def evaluate_and_persist_wishlist_predicate(family_name: str) -> dict:
 
 def _check_wishlist_trigger(review: dict) -> str | None:
     """
-    skills/campaign-review/SKILL.md instructs campaign_review to cite (not
+    workflow_artifacts/skills/campaign-review/SKILL.md instructs campaign_review to cite (not
     necessarily consume) detector_wishlist.yaml/feed_wishlist.yaml entries as
     routine KB-question context — that happens on most reviews and is not a
     trigger. What we must catch is campaign_review actually RECOMMENDING a run
@@ -1058,7 +1058,7 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
     failed_families = campaign.get("failed_families", [])
     n_failed_families = len({(f.get("name") if isinstance(f, dict) else f) for f in failed_families})
 
-    kb_path = ROOT / "campaign_knowledge_base.yaml"
+    kb_path = ROOT / "campaign_record" / "campaign_knowledge_base.yaml"
     kb_findings = 0
     if kb_path.exists():
         kb = orch.load_yaml(kb_path) or {}

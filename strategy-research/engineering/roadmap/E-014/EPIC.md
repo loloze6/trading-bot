@@ -33,7 +33,7 @@ before this epic existed:**
   assumption half of Done-when #1 is unwired.
 - `run_028`/`run_030`'s perp-cost recalibrations (also under `d86f0d0`) DID
   execute, but were independently AUDIT FAILED
-  (`docs/session_reports/20260720_perp_calibration_audit.md`, Dispatch J):
+  (`engineering/sessions/session_reports/20260720_perp_calibration_audit.md`, Dispatch J):
   the candle interval silently moved 1h→4h between the original runs and the
   perp re-run (a pre-existing `run_protocol.py` timeframe-threading gap,
   unrelated to the fee change), so neither re-run isolates the fee effect —
@@ -45,7 +45,7 @@ before this epic existed:**
   — which holds timeframe/window/config fixed and varies only the commission
   rate via `run_protocol.py`'s `--commission-bps` override (commit
   `e3bcbb0`), independently audited PASS
-  (`docs/session_reports/20260720_pairs_audit.md`, Dispatch M). This is a
+  (`engineering/sessions/session_reports/20260720_pairs_audit.md`, Dispatch M). This is a
   real, ratifiable result, but it is a bps-sensitivity probe on `run_028`/
   `run_030` only — it is not "the funding retest + 2 archived near-misses"
   the source text describes (no funding-costed re-run exists; perp funding

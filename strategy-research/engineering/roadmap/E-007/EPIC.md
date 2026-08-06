@@ -7,7 +7,7 @@
 ## Why
 
 The forward recorder (`recorder/`) was built and run, then stopped on two
-findings from ledger items R3/R3a (`engineering/sessions_archive/HANDOFF_20260724.md`):
+findings from ledger items R3/R3a (`engineering/sessions/HANDOFF_20260724.md`):
 **R3** — measured 12-month storage projection is 360GB compressed vs. a 64GB
 spec estimate (5.63×) against a pre-registered 100GB budget; the miss is
 decomposed and measured (book message rate, bytes/frame, compression ratio),
@@ -29,8 +29,8 @@ An operator decision on the R3 storage budget is recorded in writing (reduce
 scope / raise the 100GB budget / migrate to a host with more capacity), **and**
 the recorder's current running state (running, deliberately stopped, or
 restarted) is confirmed and matches that decision. Verify: `recorder/`'s own
-liveness/coverage tooling (`recorder/coverage_report.py`,
-`recorder/liveness.py`) reports a state consistent with the recorded decision.
+liveness/coverage tooling (`tools/recorder/coverage_report.py`,
+`tools/recorder/liveness.py`) reports a state consistent with the recorded decision.
 
 ## Stories
 

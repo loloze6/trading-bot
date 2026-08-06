@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).parent.parent
-TEMPLATES_DIR = ROOT / "templates" / "handoffs"
+TEMPLATES_DIR = ROOT / "workflow_artifacts" / "templates" / "handoffs"
 
 
 def _is_fresh_or_absent(state_path: Path) -> bool:

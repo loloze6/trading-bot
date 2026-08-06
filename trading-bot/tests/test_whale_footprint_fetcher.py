@@ -30,8 +30,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 REPO_ROOT = PROJECT_ROOT.parent
-if str(REPO_ROOT / "strategy-research") not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT / "strategy-research"))
+if str(REPO_ROOT / "strategy-research" / "tools") not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT / "strategy-research" / "tools"))
 
 from data.feed_registry import (  # noqa: E402
     FEED_REGISTRY,
@@ -292,7 +292,7 @@ def test_counts_survive_marking_but_values_do_not(tmp_path):
     served for a bar the journal cannot vouch for.
 
     The value arithmetic itself is pinned against hand-computed numbers in
-    strategy-research/recorder/tests/test_whale_features.py; this test is about
+    strategy-research/tools/recorder/tests/test_whale_features.py; this test is about
     what survives the fetcher's marking.
     """
     _capture(tmp_path / "capture", n=300, qty=1.0, whale_qty=5000.0)
