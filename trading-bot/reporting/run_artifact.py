@@ -46,7 +46,15 @@ def data_sha256(df: pd.DataFrame) -> str:
 
 def _get_git_sha() -> str:
     try:
-        return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+        sha = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+        # --untracked-files=no is deliberate: this repo permanently carries untracked
+        # results/runs/ evidence dirs, so an untracked-inclusive check would stamp every
+        # run dirty and the marker would stop discriminating. A modified TRACKED file is
+        # the signal that the tree differs from the commit this manifest names.
+        dirty = subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=no"]
+        ).decode().strip()
+        return f"{sha}-dirty" if dirty else sha
     except Exception:
         return "unknown"
 
