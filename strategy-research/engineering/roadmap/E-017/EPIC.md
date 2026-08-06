@@ -84,6 +84,17 @@ State stays `parked`: none of the above changes the Phase 2 gate dependency.
 - [ ] S2 — Implement the sibling-registration gate against parent-autopsy
       presence + micro-test (zero existing code to build on — new work).
 
+## Pointer
+
+This epic's palette sits on a substrate with an open correctness defect:
+`tools/run_protocol.py`'s exit-reason classifier (`_infer_exit_reason`,
+`_bar_idx_at`) has a measured contradiction (0.85% `end_of_window_pct` vs 15
+of 30 run_054 windows measured ending held) and an unconfirmed hypothesis
+that forced closes are silently relabelled `signal_flip`. Notion ticket
+`3b31d1fb05a281b1b0dacd644023ebae`. Not diagnosed here, not fixed here — if
+confirmed, it affects any exit-reason attribution this epic's autopsy stage
+would draw from.
+
 ## Log
 
 - 2026-08-05 — `new` → `parked`. Created from E-013 S1's audit of
