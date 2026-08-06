@@ -57,6 +57,81 @@ neither person owns unilaterally.
 - [ ] S4 — Sequence against E-010 (slippage model), whose Done-when pins
       `config_sha 5ccbec42` / `data_sha 5a75366c`. Either fix here breaks
       those pins.
+- [ ] S5 — Re-derive the run_054 baselines under the fixed loop, BEFORE any
+      P4 evaluation. See "P4 threshold invalidation" and "Anti-fitting
+      guardrail" below.
+
+      **Revised (2026-08-06, dispatch W42):** from "re-derive before any P4
+      evaluation" to "ensure baseline and candidate share a convention;
+      re-derivation is hygiene, sequenced with the loop fix, not a gate."
+      See the "Correction" under "P4 threshold invalidation" above.
+
+## P4 threshold invalidation (2026-08-05)
+
+**Measured:** 15 of 30 run_054 windows end holding a position (BTCUSDT 8
+flat / 7 holding, ETHUSDT 7 flat / 8 holding). Method: a genuine
+`_close_all_positions_at_end` leaves `exit_forecast:null` on the trade plus a
+duplicate-timestamp `bars.csv` row with a blank forecast and
+`trade_type CLOSE`; a signal exit landing on the final bar writes a single
+row with a populated forecast. Worked example: window
+`20260709T134348Z_d01f26e1`.
+
+**Consequence:** the pre-registered pass rule pinned to run_054
+(BTCUSDT >= 0.5791, ETHUSDT >= 0.0318 median Sharpe) was computed with half
+its windows containing an artificial force-close. Those thresholds do NOT
+survive the loop fix and must be re-derived.
+
+**Direction unknown per window.** The director's hypothesis: a strategy's
+own signal exit should on average beat an arbitrary forced one, so
+re-derived thresholds may rise. This is a HYPOTHESIS, not measured.
+
+**Correction (2026-08-06, dispatch W42 — operator ruling).** The ruling
+above, "those thresholds do NOT survive the loop fix and must be
+re-derived," is TOO STRONG. Corrected in place, original left visible above:
+
+a) The end-of-backtest forced close is a HARNESS CONVENTION, not a strategy
+   decision. Any window ending while holding must do something with the
+   open position — force-close, mark-to-market, discard — and all three are
+   conventions. Moving the boundary two bars substitutes one arbitrary
+   artifact for another; it does not make the strategy better or worse.
+b) The fork's own measurement proves the effect is purely a boundary one:
+   flat-ending windows are byte-identical, both hashes unchanged (T003,
+   "S1 measurement" below). The fix touches nothing except the window edge.
+c) THEREFORE the requirement is not re-derivation. It is that BASELINE AND
+   CANDIDATE ARE MEASURED UNDER THE SAME CONVENTION. Re-deriving the
+   baseline post-fix is one route; running the candidate under the old
+   convention is another. Consistency binds; correctness of the convention
+   does not. The W41 ruling collapsed two separable things into one.
+d) The director OVER-READ the single T004 example. Sharpe −7.585 → −7.018
+   was quoted as a 7.5% move in the pass-rule metric, but both values say
+   catastrophic and the thresholds are POSITIVE (BTCUSDT >=0.5791, ETHUSDT
+   >=0.0318). That window was never near the decision boundary and could
+   not have flipped a verdict on either side of the fix.
+e) Re-derivation is now HYGIENE, not a correctness blocker: everything from
+   here runs on the fixed engine and a permanent pre-fix/post-fix seam
+   through the baselines is worth avoiding. It does NOT gate P4, which is
+   blocked on daily-bar ingest regardless.
+f) UNCHANGED and still binding: the anti-fitting order below. Whenever a
+   threshold is recomputed it is frozen and recorded BEFORE the candidate
+   runs against it. Coverage floor, min-N, and persistence_bars remain
+   untouched and non-negotiable.
+
+The 15-of-30 measurement itself is unaffected by this correction and stands.
+
+## Anti-fitting guardrail (S5)
+
+Re-deriving a threshold that a strategy will then be tested against is
+structurally identical to fitting unless the ORDER is enforced. Therefore:
+
+- The re-derivation is mechanical: rerun run_054 under the fixed loop,
+  recompute the same medians over the same 15-window sets, change nothing
+  else.
+- The new thresholds are FROZEN and recorded BEFORE P4 is run.
+- No P4 result may be compared against a threshold derived after seeing it.
+
+This is NOT a relaxation: the coverage floor, min-N, and `persistence_bars`
+are untouched and remain non-negotiable. Any session that proposes loosening
+them is refused.
 
 ## S1 measurement (2026-08-05, fork)
 
@@ -105,3 +180,14 @@ after.
 - 2026-08-05 — S1 measurement recorded (dispatch W40) from the fork's
   triple-verified delta. See "S1 measurement" above. S3's fix-forward ruling
   stands, now evidenced rather than assumed.
+- 2026-08-05 — P4 threshold invalidation and S5 anti-fitting guardrail
+  recorded (dispatch W41). run_054's pass-rule thresholds are invalid
+  post-loop-fix and must be re-derived under the frozen-before-P4 order
+  above; not yet done.
+- 2026-08-06 — W41's ruling corrected (dispatch W42, operator): the
+  thresholds are not invalid, they are pinned to a convention (the pre-fix
+  end-of-backtest forced close), and the requirement is that baseline and
+  candidate share that convention — re-derivation is one way to satisfy it,
+  not the only one, and is hygiene rather than a gate. S5 reworded
+  accordingly. See "Correction (2026-08-06)" above and PROCESS.md
+  amendment 10.

@@ -7,7 +7,30 @@ queue:
   priority: 1
   source: user_delivered
   relation: refine
-  notes: 'STATUS AS OF 2026-07-24 (routing corrected; supersedes the earlier same-day
+  notes: 'STATUS AS OF 2026-08-05 -- SECOND BLOCKER ADDED (status field unchanged,
+    daily-bar-ingest blocker below unchanged): this brief''s pre-registered pass rule
+    is pinned to run_054 baselines (BTCUSDT >=0.5791, ETHUSDT >=0.0318 median Sharpe)
+    now known INVALID post-loop-fix -- 15 of 30 run_054 windows measured ending while
+    holding a position, each an artificial force-close under the pre-fix two-bars
+    loop defect. See E-012/EPIC.md "P4 threshold invalidation" and its S5. E-012 S5
+    (mechanical re-derivation of these baselines under the fixed loop, frozen BEFORE
+    any P4 evaluation) must complete before this entry can be evaluated, independent
+    of and in addition to the daily-bar-ingest blocker below. Do not evaluate P4
+    against the current run_054 thresholds.
+
+    STATUS AS OF 2026-08-06 (correction to the entry directly above; status field
+    unchanged, daily-bar-ingest blocker below unchanged): the "now known INVALID"
+    characterization above overstated E-012''s finding -- see E-012/EPIC.md''s
+    2026-08-06 correction and PROCESS.md amendment 10. The pass rule is NOT invalid;
+    it is pinned to a convention (the pre-fix end-of-backtest forced-close
+    behaviour), and this entry must be evaluated under the SAME convention its
+    run_054 baseline used -- whether that means re-deriving the baseline under the
+    fixed loop or evaluating under the pre-fix convention. E-012 S5''s re-derivation
+    is HYGIENE, sequenced with the loop fix, not a gate on this entry by itself. Do
+    not evaluate P4 against the current run_054 thresholds until baseline and
+    candidate share a convention.
+
+    STATUS AS OF 2026-07-24 (routing corrected; supersedes the earlier same-day
     blocked_on_P2 disposition, which misnamed the blocker). The real blocker is the
     Track-A daily-bar ingest (ledger item P4-D1), NOT Phase 2. Status is now
     blocked_on_daily_bar_ingest.
