@@ -242,3 +242,47 @@ timestamps by name. Offered upstream as **loloze6/trading-bot#9** (branch
 Acceptance at the fork's merged tip: fast **223 / 0 skipped** (the two
 archive-gated tests ran for real), slow **14-0-0**, validator 0, `simulate`
 byte-identical on all five files (`5ccbec42` / `5a75366c`).
+
+## 2026-08-06 — Row 26: trading.exchange engine plumbing (leg 3) — divergence until offered/merged upstream
+
+`fix/kraken-cache-engine-reachability`, merged `d2759f80` (single commit
+`205c4e1d` on base `29374252`). Optional `trading.exchange` key in
+`config.json` flows `TradingParams` → `Launcher` → `BacktestEngine` →
+`DataManager.fetch_historical_data(..., exchange=...)`, making the 19
+`kraken_*_1h.csv` caches reachable from a plain backtest config. Absent key
+resolves to `"binance"` — byte-identical default proven; no tracked config
+declares the key, so no config hash moves. Bogus values fail loud at launch
+(`ccxt.exchanges` membership, `logger.error` + `sys.exit(1)`). All three
+`Launcher`-class engine sites forward it; module-level `run_backtest()` is
+deliberately unchanged (campaign-path ticket, High, filed). 9 new tests
+(8 watched failing first; the 9th — an AST forwarding invariant — verified
+failing on the pre-fix tree post-hoc), 8 mutations killed across executor +
+review lanes (one survivor was the then-dead dataclass default, folded into
+the campaign ticket), sha256-unchanged assertion guards the reachability
+test's no-rewrite premise. Full lane pattern: opus executor, code-review
+(FIX ROUND NEEDED → 5 doc-level items delivered), red-team (NO BLOCKER;
+gap-exposure measurements moved to the G1 ticket), independent verifier
+(MERGE-READY, message audited claim-by-claim). Acceptance at the merged tip:
+fast **232 / 0 skipped**, slow **14-0-0**, validator 0, `simulate`
+byte-identical on all five files (`5ccbec42` / `5a75366c`), manifest
+`git_sha d2759f80` from a clean tree. Upstream offer: Dorian's call.
+
+## 2026-08-06 — Row 27: manifest git_sha dirty detection — divergence until upstream PR #10 merges
+
+`fix/manifest-gitsha-dirty`, merged `87f2b762` (single commit `63fbcf85` on
+`d2759f80`). `_get_git_sha()` appends `-dirty` when
+`git status --porcelain --untracked-files=no` is non-empty; either git call
+failing degrades to `"unknown"` as before. Tracked-only is a design decision
+(untracked `results/runs/` dirs would make the marker permanent) pinned by a
+dedicated test. 5 probes (1 watched-failing, 4 pins incl. the production
+subdirectory-cwd geometry), 5 mutations killed with sha256-proven restores,
+dirty-shape matrix verified by the adversarial lane (staged/deleted/renamed/
+mode-change/detached-HEAD/zero-commit/stale-lock), E2E both directions.
+Known boundaries, disclosed in the PR: `assume-unchanged`/`skip-worktree`
+false-clean (shared with `git diff HEAD`); a clean tree with a failing
+`git status` now reports `"unknown"` (safe direction). Acceptance at the
+merged tip: fast **237/0**, slow **14-0-0**, validator 0, simulate
+byte-identical ×5 — that run's manifest stamped `87f2b762-dirty`, correctly:
+this row's own uncommitted edit was the dirt (first live catch). Offered
+upstream as **loloze6/trading-bot#10** (blob-identical, fast 216/2 on
+Jeremy's base). Row closes when the PR merges.
