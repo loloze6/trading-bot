@@ -19,7 +19,7 @@ are excluded — a tool referenced only from those is still CLI-only, not dead.
 
 ## build_inventory.sh
 
-**PURPOSE** — Regenerates `docs/INVENTORY.tsv`: every tracked file under
+**PURPOSE** — Regenerates `engineering/improvements/ongoing-improvement-design/INVENTORY.tsv`: every tracked file under
 `strategy-research/` with its byte count and git-history aggregates.
 *In plain terms: takes stock of the repo so you can decide what to archive.*
 
@@ -80,7 +80,7 @@ python strategy-research/tools/deflate_sharpe.py <run_id> [--campaign-state PATH
 
 **KEY PARAMETERS**
 - `run_id` — which run to deflate; artifacts read from `runs/<run_id>/artifacts/`.
-- `--campaign-state` — where the trial history comes from (defaults to `strategy-research/campaign_state.yaml`). This file supplies the trial count that drives the whole correction.
+- `--campaign-state` — where the trial history comes from (defaults to `strategy-research/campaign_record/campaign_state.yaml`). This file supplies the trial count that drives the whole correction.
 
 **STATUS** — live.
 

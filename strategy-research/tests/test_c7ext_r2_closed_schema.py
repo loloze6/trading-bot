@@ -4,7 +4,7 @@ C7-EXT-R2 (2026-07-23) — closed schema, deny by default.
 G6 has failed three times, each time by enumerating the names of FORBIDDEN
 fields, and each time the next reader defeated it with a name nobody had thought
 of. Every test below re-runs a bypass from
-docs/session_reports/20260723_c7ext_r_audit.md VERBATIM, plus the two negative
+engineering/sessions/session_reports/20260723_c7ext_r_audit.md VERBATIM, plus the two negative
 cases that correctly held and must not regress, plus the one D-4 claim that
 audit confirmed empirically.
 
@@ -224,7 +224,7 @@ def test_r2_live_records_conform_to_the_closed_schema():
     """The corrected archive itself must satisfy the schema it is now governed by."""
     import yaml
     kb = yaml.safe_load(
-        (_SR_ROOT / "campaign_knowledge_base.yaml").read_text(encoding="utf-8"))
+        (_SR_ROOT / "campaign_record" / "campaign_knowledge_base.yaml").read_text(encoding="utf-8"))
     for entry in kb["findings"]:
         rs.validate_kb_finding(entry, "KB " + repr(entry.get("id")))
     queue = yaml.safe_load(

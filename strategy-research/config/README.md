@@ -296,7 +296,7 @@ so hypothesis generation starts from something better than a guess.*
 
 **KEY PARAMETERS**
 - Per indicator: `category`, `known_regime_affinity` (favorable / unfavorable / neutral per regime), `typical_lag_bars`, `crowding_risk`, `data_requirements`, `edge_source_compatibility`.
-- Schema: `schemas/indicator_library.schema.json` (`:7`).
+- Schema: `workflow_artifacts/schemas/indicator_library.schema.json` (`:7`).
 - `:3-5`: `campaign_empirical_results` entries are a **read-view over the knowledge
   base**, not a separately maintained store. Don't hand-write empirical results here.
 

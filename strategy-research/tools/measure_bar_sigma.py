@@ -36,7 +36,7 @@ data exists is only legitimate if the amendment cannot have been informed by the
 relationship under test, and the cheapest way to make that checkable is for the
 two amended inputs to be measured by two programs that share no data:
 `sigma_bar_bps` here from prices only, and ``H`` in
-`recorder/whale_persistence.py` from feature signs only. Neither program can
+`tools/recorder/whale_persistence.py` from feature signs only. Neither program can
 compute an IC; together they cannot either.
 
 WINDOW, AND WHY IT IS NOT THE CAPTURE'S OWN

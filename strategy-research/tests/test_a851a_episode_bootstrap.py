@@ -1,5 +1,5 @@
 """
-A8.5.1a fixtures (per pre-registration spec, strategy-research/docs/plan/AMENDMENTS_01-06.md):
+A8.5.1a fixtures (per pre-registration spec, strategy-research/engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md):
   (a) synthetic clustered signal with known IC -> recovered CI covers the true IC.
   (b) same data evaluated with the naive 24-bar block must show a NARROWER
       (overconfident) CI than the episode method — that gap is the point of the rule.

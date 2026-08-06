@@ -3,7 +3,7 @@ lint_verdict_provenance.py -- standalone G6 checker (C7-EXT-R / D-4).
 
 WHY THIS EXISTS, AND WHY IT IS SEPARATE FROM ANY WRITE PATH.
 
-The independent audit (docs/session_reports/20260722_c7ext_audit.md) found that
+The independent audit (engineering/sessions/session_reports/20260722_c7ext_audit.md) found that
 `validate_verdict_provenance` had exactly ONE call site in the whole repository:
 inside run_phase1_research._write_kb_findings_entry. Two consequences followed,
 and this tool closes the second:
@@ -60,7 +60,7 @@ def lint_verdict_provenance(root=None) -> list:
     violations = []
 
     sources = (
-        ("campaign_knowledge_base.yaml", "findings", base / "campaign_knowledge_base.yaml",
+        ("campaign_knowledge_base.yaml", "findings", base / "campaign_record" / "campaign_knowledge_base.yaml",
          record_schema.KB_FINDING_SCHEMA),
         ("campaign_queue.yaml", "queue", base / "config" / "campaign_queue.yaml",
          record_schema.QUEUE_ENTRY_SCHEMA),
@@ -100,7 +100,7 @@ def main(argv=None) -> int:
         return 1
 
     gated = vce.honest_verdict_count(
-        _load(base / "campaign_knowledge_base.yaml"),
+        _load(base / "campaign_record" / "campaign_knowledge_base.yaml"),
         _load(base / "config" / "campaign_queue.yaml"),
         root=base)
     print("OK  every verdict-bearing record is either gated or declared ungated.")

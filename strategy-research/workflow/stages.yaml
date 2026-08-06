@@ -8,7 +8,7 @@ stages:
       - hypothesis
 
   hypothesis_generation:
-    skill: skills/hypothesis-design/SKILL.md
+    skill: workflow_artifacts/skills/hypothesis-design/SKILL.md
     required_inputs:
       - runs/{run_id}/artifacts/research_brief.yaml
       - config/available_feeds.yaml
@@ -19,7 +19,7 @@ stages:
       - innovation_expansion
 
   innovation_expansion:
-    skill: skills/innovation-expansion/SKILL.md
+    skill: workflow_artifacts/skills/innovation-expansion/SKILL.md
     required_inputs:
       - runs/{run_id}/artifacts/research_brief.yaml
       - runs/{run_id}/artifacts/hypothesis_card.yaml
@@ -30,7 +30,7 @@ stages:
       - validation
 
   refinement_planner:
-    skill: skills/refinement-planner/SKILL.md
+    skill: workflow_artifacts/skills/refinement-planner/SKILL.md
     required_inputs:
       - runs/{run_id}/artifacts/validation_decision.yaml
       - runs/{run_id}/artifacts/expanded_hypothesis_card.yaml
@@ -41,7 +41,7 @@ stages:
       - human_pause           # when implementation_allowed=false
 
   validation:
-    skill: skills/quant-validation/SKILL.md
+    skill: workflow_artifacts/skills/quant-validation/SKILL.md
     required_inputs:
       - runs/{run_id}/artifacts/research_brief.yaml
       - runs/{run_id}/artifacts/expanded_hypothesis_card.yaml
@@ -52,7 +52,7 @@ stages:
     next: [backtest_specification]
 
   backtest_specification:
-    skill: skills/backtest-engineering/SKILL.md
+    skill: workflow_artifacts/skills/backtest-engineering/SKILL.md
     required_inputs:
       - runs/{run_id}/artifacts/expanded_hypothesis_card.yaml
       - runs/{run_id}/artifacts/validation_protocol.yaml
@@ -96,23 +96,23 @@ stages:
       - verdict_interpreter
 
   verdict_interpreter:
-    skill: skills/verdict-interpreter/SKILL.md
+    skill: workflow_artifacts/skills/verdict-interpreter/SKILL.md
     required_inputs:
       - runs/{run_id}/artifacts/protocol_result.yaml
       - runs/{run_id}/artifacts/validation_protocol.yaml
       - runs/{run_id}/artifacts/backtest_spec.yaml
       - runs/{run_id}/artifacts/research_brief.yaml
-      - skills/quant-fundamentals/SKILL.md
+      - workflow_artifacts/skills/quant-fundamentals/SKILL.md
     outputs:
       - runs/{run_id}/artifacts/verdict_interpretation.yaml
     next: []
 
   campaign_review:
-    skill: skills/campaign-review/SKILL.md
+    skill: workflow_artifacts/skills/campaign-review/SKILL.md
     required_inputs:
       - campaign_state.yaml
       - runs/{run_id}/artifacts/research_brief.yaml
-      - skills/quant-fundamentals/SKILL.md
+      - workflow_artifacts/skills/quant-fundamentals/SKILL.md
     outputs:
       - runs/{run_id}/artifacts/campaign_review.yaml
     next: []
@@ -134,7 +134,7 @@ stages:
       - regime_auditor
 
   regime_auditor:
-    skill: skills/regime-auditor/SKILL.md
+    skill: workflow_artifacts/skills/regime-auditor/SKILL.md
     description: >
       LLM skill that reads regime_detector_report.yaml and produces regime_audit_decision.yaml.
       Decides trustworthy / needs_retune / unusable and checks A2.1 ungated escape.

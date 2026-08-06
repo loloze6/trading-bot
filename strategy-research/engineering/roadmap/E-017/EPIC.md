@@ -37,7 +37,7 @@ the hard gate does not exist anywhere.**
 
 Existing substrate (3 of 5 palette metrics already on disk, pre-dating this
 epic):
-- `schemas/trade_diagnostics.schema.json` — `entry_efficiency`,
+- `workflow_artifacts/schemas/trade_diagnostics.schema.json` — `entry_efficiency`,
   `exit_efficiency`, MAE/MFE ratio, `post_exit_return_5bars`/`_20bars`.
 - `tools/run_protocol.py:194-244` — `_compute_entry_efficiency()`,
   `_compute_exit_efficiency()`, `_compute_post_exit_returns()`, wired into the

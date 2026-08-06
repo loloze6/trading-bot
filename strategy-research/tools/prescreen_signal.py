@@ -1073,7 +1073,7 @@ def run_prescreen(
 
     # A8.5.1a (opt-in): candidate_strategy_config.json may request the episode-
     # blocked significance method for hypotheses evaluated over multi-era
-    # backward-extension data (see docs/plan/AMENDMENTS_01-06.md "A8.5.1a-spec").
+    # backward-extension data (see engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md "A8.5.1a-spec").
     # Default behavior (flag absent) is UNCHANGED — every prior run's recorded
     # result stays reproducible under the original block_24_fisher_z method.
     if config_raw.get("significance_methodology") == "episode_blocked_a851a":

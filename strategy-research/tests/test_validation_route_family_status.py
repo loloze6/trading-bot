@@ -4,7 +4,7 @@ F4f (2026-07-06, run_053): determine_post_validation_route() crashed with
 validation. The quant-validation skill's real output for a 5-variant MACD
 family used `family_status`/`family_rationale`/`family_blocking_issues` plus a
 `variant_decisions` list, instead of the schema-canonical top-level `status`
-(schemas/validation_decision.schema.json requires status/rationale/
+(workflow_artifacts/schemas/validation_decision.schema.json requires status/rationale/
 blocking_issues; `family_status` isn't even a schema-valid key). This halted
 the whole campaign_queue run (run_campaign.py) with an unhandled_exception
 hard-pause. Fixture: run_053's real validation_decision.yaml content, frozen.

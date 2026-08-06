@@ -208,7 +208,7 @@ def validate(config: dict) -> List[str]:
     #
     # This restriction does NOT apply when rules == [] (and components == []): that is the
     # canonical fully-ungated pattern (F1, 2026-07-04 — see
-    # tests/test_ungated_config_pattern.py and skills/backtest-engineering/SKILL.md
+    # tests/test_ungated_config_pattern.py and workflow_artifacts/skills/backtest-engineering/SKILL.md
     # "Ungated hypotheses" section). With no rules to bypass, default_regime is a pure,
     # empirically-verified label with no behavioral effect — it may be any of the four
     # valid names, including trending/mean_reversion/chop. Forbidding it unconditionally

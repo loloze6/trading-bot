@@ -143,14 +143,14 @@ b) `engineering/DISPATCH_MODEL.md`'s anti-corner section states it is
   **Left unrepointed, classified historical/provenance, not live pointers:**
   `SESSION_LOG.md`, `docs/session_reports/*`,
   `archive/improvements/NEXT_SESSION_20260719_superseded.md`,
-  `engineering/sessions_archive/HANDOFF_20260724.md` (all dated,
+  `engineering/sessions/HANDOFF_20260724.md` (all dated,
   point-in-time records); `PROCESS.md` Amendment 3 (describes a past
   mischaracterisation); `E-001/EPIC.md`'s Why table; `E-002/EPIC.md`'s
   pre-existing W33 Story/Log text (a new dated Log entry was added instead
   — see `E-002/EPIC.md`, L48 drop); `E-014`..`E-019/EPIC.md`'s own
   "Source: `docs/ROADMAP.md` §X.Y, verbatim: ..." provenance citations;
   `campaign_knowledge_base.yaml`'s dated KB entry (quotes the Phase 1.3 gate
-  as it read on 2026-07-20); `docs/INVENTORY.tsv` and `docs/REFERENCE_MAP.tsv`
+  as it read on 2026-07-20); `engineering/improvements/ongoing-improvement-design/INVENTORY.tsv` and `engineering/improvements/ongoing-improvement-design/REFERENCE_MAP.tsv`
   (dated audit-inventory snapshots, structurally the same category as
   `RESTRUCTURE_MAPPING.tsv` but not named by Step 5 — left untouched as
   out of scope for this dispatch); and five code/schema provenance
@@ -158,7 +158,7 @@ b) `engineering/DISPATCH_MODEL.md`'s anti-corner section states it is
   `config/venue_tradability.yaml:1`, `tests/test_venue_tradability.py:2`,
   `tests/test_fee_reduction_assessment.py:2`, `workflow/run_campaign.py:180`,
   `workflow/run_phase1_research.py:4416`, and
-  `schemas/verdict_interpretation.schema.json:129` — same citation pattern
+  `workflow_artifacts/schemas/verdict_interpretation.schema.json:129` — same citation pattern
   as the epic Source: lines above; repointing them to the correct epic
   (E-014/E-015/E-016 depending on the cited phase) is that epic's own
   implementation work, not S3's.
@@ -181,7 +181,7 @@ b) `engineering/DISPATCH_MODEL.md`'s anti-corner section states it is
   (above) named six live citations — `config/venue_tradability.yaml:1`,
   `tests/test_venue_tradability.py:2`, `tests/test_fee_reduction_assessment.py:2`,
   `workflow/run_campaign.py:180`, `workflow/run_phase1_research.py:4416`,
-  `schemas/verdict_interpretation.schema.json:129` — and explicitly left them
+  `workflow_artifacts/schemas/verdict_interpretation.schema.json:129` — and explicitly left them
   pointing at `docs/ROADMAP.md`, deferring the repoint to "that epic's own
   implementation work, not S3's." Done-when #3 reads "`DOC_INDEX.md` points at
   the new name and nothing points at the old one" — no carve-out for
@@ -200,13 +200,13 @@ b) `engineering/DISPATCH_MODEL.md`'s anti-corner section states it is
   historical/provenance set — dated session logs and archived handoffs
   (`SESSION_LOG.md`, `docs/session_reports/*`,
   `archive/improvements/NEXT_SESSION_20260719_superseded.md`,
-  `engineering/sessions_archive/HANDOFF_20260724.md`), `PROCESS.md`'s
+  `engineering/sessions/HANDOFF_20260724.md`), `PROCESS.md`'s
   past-tense lesson, `docs/CAMPAIGN_PROGRAM.md`'s own carried-verbatim 0.2
   line, `E-001/EPIC.md`'s Why table, `E-002/EPIC.md`'s pre-existing Log text,
   `E-013/EPIC.md`'s (this file's) own narrative and dated Log entries,
   `E-014`..`E-019/EPIC.md`'s "Source: ... verbatim" provenance citations,
-  `campaign_knowledge_base.yaml`'s dated KB entry, `docs/INVENTORY.tsv` and
-  `docs/REFERENCE_MAP.tsv`'s dated audit snapshots, and `EPICS.md`'s own
+  `campaign_knowledge_base.yaml`'s dated KB entry, `engineering/improvements/ongoing-improvement-design/INVENTORY.tsv` and
+  `engineering/improvements/ongoing-improvement-design/REFERENCE_MAP.tsv`'s dated audit snapshots, and `EPICS.md`'s own
   historical description of what this epic did — no live pointer remains.
   Re-closed on this evidence, this commit's SHA (dispatch W37, "E-013 S4: ..."
   commit on `master`). Moved back into `EPICS.md`'s Done table (it never left

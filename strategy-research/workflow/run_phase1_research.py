@@ -56,7 +56,7 @@ from google import genai
 from google.genai import types
 
 ROOT = Path(".")
-CAMPAIGN_STATE_PATH = ROOT / "campaign_state.yaml"
+CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
 
 
 def _resolve_tbot_python() -> Path:
@@ -689,7 +689,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     if not skill_file_name:
         raise ValueError(f"No SKILL file mapped for stage: {stage_name}")
 
-    skill_path = Path(".") / "skills" / skill_file_name / "SKILL.md"
+    skill_path = Path(".") / "workflow_artifacts" / "skills" / skill_file_name / "SKILL.md"
     with open(skill_path, "r", encoding="utf-8") as f:
         system_prompt = f.read()
 
@@ -874,7 +874,7 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         raise ValueError(f"No SKILL file mapped for Gemini stage: {stage_name}")
         
     # --- FIX 3: Point to the 'skills' directory ---
-    skill_path = Path(".") / "skills" / skill_file_name / "SKILL.md"
+    skill_path = Path(".") / "workflow_artifacts" / "skills" / skill_file_name / "SKILL.md"
     with open(skill_path, "r", encoding="utf-8") as f:
         system_prompt = f.read()
 
@@ -1095,7 +1095,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # prose-criteria parser) as the DECISION authority; that function's
         # output remains informational only from here on (see design note
         # section 6). Writes pass_rule_evaluation.yaml, a REQUIRED input for
-        # the verdict_interpreter stage (skills/verdict-interpreter/SKILL.md).
+        # the verdict_interpreter stage (workflow_artifacts/skills/verdict-interpreter/SKILL.md).
         # R3 (K2 Phase B operator ruling): evaluate_pass_rule_criteria() never
         # raises on a legacy (string-shaped or absent) pass_rule -- it returns
         # 'legacy_not_evaluable', and the LLM stage's own judgment applies
@@ -1145,7 +1145,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
 # B7: stages at/after the validation gate must see the pre-registered
 # pass_rule and original brief regardless of what a given run's handoff
-# happens to list -- improvements/IMPROVEMENTS_DONE_20260712.md B7 (three
+# happens to list -- engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md B7 (three
 # in-the-wild occurrences of a stage deciding without ever reading
 # pre_registration.yaml, most recently run_058's validation_decision.yaml
 # misdescribing the very registration it vetoed). This is a deterministic
@@ -2437,7 +2437,7 @@ def _check_kb_reactivation_conformance(next_research_question: dict, kb: dict) -
         # every multi-hypothesis finding, so this gate could NEVER catch a
         # reactivation/re-proposal of any of them, regardless of text content
         # -- verified by direct parse of campaign_knowledge_base.yaml, not
-        # assumed (see docs/design/K2_verdict_machinery_design_20260713.md
+        # assumed (see engineering/improvements/done/design_and_docs/K2_verdict_machinery_design_20260713.md
         # section 7). Normalize both shapes to a list and match on any member.
         hyp_ids = f.get("hypothesis_ids") or ([f["hypothesis_id"]] if f.get("hypothesis_id") else [])
         hyp_id = next((h for h in hyp_ids if h and h.lower() in text), None)
@@ -2616,7 +2616,7 @@ def _next_instrument_from_universe(campaign: dict) -> dict:
     Returns: {symbol, category, timeframe} or None if all tried.
     """
     import yaml
-    universe_path = ROOT / "coin_universe.yaml"
+    universe_path = ROOT / "config" / "coin_universe.yaml"
     if not universe_path.exists():
         return None
 
@@ -2650,7 +2650,7 @@ def _next_instrument_from_universe(campaign: dict) -> dict:
 def _next_timeframe_from_universe(campaign: dict):
     """Return the next timeframe to try, or None if all tried."""
     import yaml
-    universe = yaml.safe_load((ROOT / "coin_universe.yaml").read_text(encoding="utf-8"))
+    universe = yaml.safe_load((ROOT / "config" / "coin_universe.yaml").read_text(encoding="utf-8"))
     tried = set(campaign.get("timeframes_tried", ["1h"]))
     for step in universe["timeframe_escalation"]["sequence"]:
         if step["timeframe"] not in tried:
@@ -2716,7 +2716,7 @@ def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     # scaffold, exactly the gap this ledger item names (Keltner re-proposal).
     # Reuses _check_kb_reactivation_conformance directly -- proposed_brief.yaml
     # is itself a research_brief.yaml-shaped document (same schema as the
-    # input brief, per skills/verdict-interpreter/SKILL.md), so it already
+    # input brief, per workflow_artifacts/skills/verdict-interpreter/SKILL.md), so it already
     # carries the research_goal/existing_context/constraints fields that
     # function's text-matching expects; no separate wrapper needed.
     proposed_content = load_yaml(proposed) or {}
@@ -3048,7 +3048,7 @@ def _record_backtest_trial(run_id: str, summary: dict):
 # Improvement 05 — AC1/AC2: KB auto-write and derived views
 # ---------------------------------------------------------------------------
 
-_KB_PATH = ROOT / "campaign_knowledge_base.yaml"
+_KB_PATH = ROOT / "campaign_record" / "campaign_knowledge_base.yaml"
 
 _VERDICT_TO_OUTCOME = {
     "insufficient_sample_inconclusive": "inconclusive",
@@ -4483,7 +4483,7 @@ def determine_post_verdict_route(path: Path, run_id: str):
         # Ensure the run-specific handoff file exists (it's only in templates by default)
         cr_handoff = path / "handoffs" / "campaign_review.yaml"
         if not cr_handoff.exists():
-            template = ROOT / "templates" / "handoffs" / "campaign_review.yaml"
+            template = ROOT / "workflow_artifacts" / "templates" / "handoffs" / "campaign_review.yaml"
             cr_data = load_yaml(template)
             cr_data["run_id"] = run_id
             save_yaml(cr_handoff, cr_data)
