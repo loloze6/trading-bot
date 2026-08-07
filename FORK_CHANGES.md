@@ -286,3 +286,9 @@ byte-identical ×5 — that run's manifest stamped `87f2b762-dirty`, correctly:
 this row's own uncommitted edit was the dirt (first live catch). Offered
 upstream as **loloze6/trading-bot#10** (blob-identical, fast 216/2 on
 Jeremy's base). Row closes when the PR merges.
+
+**CLOSED 2026-08-07.** Jeremy merged PR #10 on 2026-08-06 22:09Z (his merge
+commit `63bad12c` = master tip, verified via the GitHub API; his suite
+226/0/2). Pulled back in sync merge `c3c370ee`: `run_artifact.py` and
+`test_gitsha_dirty.py` blob-identical both sides, diff pre-verified empty.
+The dirty-marker is now shared history on both machines.
