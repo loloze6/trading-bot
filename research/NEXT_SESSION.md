@@ -17,7 +17,7 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 > FIRST ACTIONS, IN ORDER:
 > 1. Slack (tradingbot, C0BLW7V6BC6): Jeremy's reactions to the three 08-07 messages (restructure verification ~17:03, PR #11 ~18:21, PR #12 ~20:00, four-rules ~18:40). Check BOTH PRs: `gh pr view 11 --repo loloze6/trading-bot --json state,comments,reviews` and the same for 12 — the empty-output trap is real, use --json. Check the 🐛 board for his edits.
 > 2. git fetch upstream. If Jeremy merged PR #11 and/or #12: sync merge per the standard protocol (merge never rebase; merge-tree dry run FIRST; pre-registered expectation: all PR commits return blob-identical, zero conflicts — our copies and his should be byte-equal like PRs #9/#10; any textual conflict = STOP and characterize). FORK_CHANGES rows 28 (PR #11) and 29 (PR #12) close on those merges. NOTE: pushes to mac/setup now trigger the fork CI — expect the fast-tests run to go green on both legs after any sync merge; a red leg is signal, read it.
-> 3. NO PRE-APPROVED TASK — bring Dorian the queue and get his pick + nod (characterize → plan 3-6 bullets → nod BEFORE code): (a) 9.5 dual-writer trial-ledger mechanics — STILL awaiting Jeremy, gates ALL campaigns; (b) rule-1 two-axis board-field migration — ours, one-time mechanical, quiet moment, ping Jeremy when columns change; (c) NEW Medium degenerate-cache predicate upgrade (content-aware guard helper: non-empty + parses + covers-window — closes the hole convention-wide, natural follow-on while PR #12 is fresh); (d) E-012 fix-forward (Jeremy-side S5 still pending); (e) Ubuntu-server readiness (Low, unqueued). Campaigns stay gated on 9.5 + queue-#7 verification on both machines.
+> 3. NO PRE-APPROVED TASK — bring Dorian the queue and get his pick + nod (characterize → plan 3-6 bullets → nod BEFORE code): (a) 9.5 dual-writer trial-ledger mechanics — STILL awaiting Jeremy, gates ALL campaigns; (b) ~~rule-1 board migration~~ **DONE 2026-08-08** (Fork state + Fork location live, 53 rows cross-tab-verified, old column renamed-retired as rollback — hard-delete it after Jeremy acks; he was pinged); (c) NEW Medium degenerate-cache predicate upgrade (content-aware guard helper: non-empty + parses + covers-window — closes the hole convention-wide, natural follow-on while PR #12 is fresh); (d) E-012 fix-forward (Jeremy-side S5 still pending); (e) Ubuntu-server readiness (Low, unqueued). Campaigns stay gated on 9.5 + queue-#7 verification on both machines.
 >
 > WORKTREE PROVISIONING (UPDATED 2026-08-07): copy **five** files into <wt>/trading-bot/local_data/: `BTCUSDT_{1h,1d,funding_8h}.csv` + `fear_greed_daily.csv` + `Kraken_batch/master_q4/XBTUSD_60.csv` (5.6 MB pilot fixture — its absence was why every prior worktree lane silently ran 247/2 instead of 249/0; recipe amended in CLAUDE.fork.md). Symlink the main `.venv` at the worktree ROOT (never git add); copy `pyrightconfig.json`; gate = `basedpyright --venvpath <main-repo-path>` (CLI lives at `~/.local/bin/basedpyright`, a uv tool — NOT in .venv/bin) + `.venv/bin/ruff`. NO stale worktrees registered — all pruned 08-07 evening (`git worktree list` to confirm).
 >
@@ -42,7 +42,7 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 | Suites | fast 249/0, slow 14-0-0, validator 0 at `fe9d7061`; cache-less socket-blocked: fast 232/17/0, slow 14 skipped/exit 0 |
 | Today's commits (evening) | `fe9d7061` (merge branch 1) → `be290275` (bookkeeping row 29) → `a95d1369`+`6cdb7961` (CI) → `1d612a5c` (row 30) |
 | Blocked on Jeremy | PR #11 + PR #12 review/merge; 9.5 dual-writer mechanics; E-012 S5; A14 remedy |
-| Blocked on Dorian | next task pick (queue in §1 action 3); rule-1 board migration timing |
+| Blocked on Dorian | next task pick (queue in §1 action 3) — rule-1 migration done 2026-08-08 |
 | LSP / tools | hybrid unchanged (ty 0.0.65 bridge nav / basedpyright 1.39.5 CLI gate at `~/.local/bin/` / grep primary); ruff 0.15.10; models per the note above §1 |
 | Venv | `../.venv/bin/python` from trading-bot/; no pip — use uv |
 
@@ -51,7 +51,7 @@ Paste §1 into a fresh session. Everything below it is the context that prompt r
 - ✅ **Leg 5 complete** (both branches, rows 29+30, PR #12, CI live). **Next: Dorian's pick from §1 action 3 — no pre-approval.**
 - **9.5 dual-writer mechanics** — awaiting Jeremy; gates ALL campaigns with queue #7 (both machines) + the campaign-path exchange ticket (High).
 - Open tickets: campaign path can't select/validate exchange (High); aux feeds venue-blind (present-but-empty, sharpened 08-07); G1 gapped-window live-fetch+rewrite; **NEW: degenerate-cache guard predicate (Medium, whole-convention)**; ingest-tool residues (Low); seal-guard tests/-exclusion note; 8.7 remainder (venv untrack — Jeremy-side proposal, README).
-- Parked by design: cleanup umbrella, compact/slash date forms, config-identity wiring, pre-commit holdout-gate wiring, record taxonomy (E-004, joint), manifest venue field, rule-1 board migration (quiet moment).
+- Parked by design: cleanup umbrella, compact/slash date forms, config-identity wiring, pre-commit holdout-gate wiring, record taxonomy (E-004, joint), manifest venue field. (Rule-1 board migration: DONE 2026-08-08.)
 
 ## 4. Files to read
 
