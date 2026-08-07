@@ -690,7 +690,7 @@ def _evaluate_criterion(text: str, extended: dict, is_reject: bool) -> dict:
     # "IC >= 1.5%" parsed as a raw threshold of 1.5 (not 0.015) is structurally
     # unpassable, almost always a percent/decimal unit mismatch in the
     # LLM-authored validation_protocol.yaml, not a real evidentiary FAIL. See
-    # skills/quant-validation/SKILL.md's changelog for the incident this closes
+    # workflow_artifacts/skills/quant-validation/SKILL.md's changelog for the incident this closes
     # (P4_ts_trend/run_054's "Walk-forward pooled IC >= 1.5-2.0%").
     if field == 'median_forecast_return_corr' and abs(threshold) > 1.0:
         return {'criterion': text, 'field': field, 'result': 'SPEC_ERROR',

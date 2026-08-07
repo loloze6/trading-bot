@@ -79,7 +79,7 @@ def test_sigma_bar_bps_degenerate_fallback(campaign_config):
     observations are available in _sigma_from_records() — never a volatility
     estimate). Renamed from sigma_bar_bps_default to make that non-obvious
     behavior explicit; see campaign_config.yaml's comment and
-    docs/plan/11_viable_space_map.md Part 1 for the misreading this caused.
+    engineering/improvements/done/design_and_docs/11_viable_space_map.md Part 1 for the misreading this caused.
     """
     import prescreen_signal
     expected = campaign_config["prescreen"]["sigma_bar_bps_degenerate_fallback"]

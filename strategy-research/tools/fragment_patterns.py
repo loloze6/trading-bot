@@ -7,7 +7,7 @@ this implements): this module is never imported by any decision-path code
 (strategy-research/tools/run_protocol.py's evaluate_against_decision_rules,
 _aggregate_trade_diagnostics, Gate B, A3.4, or any other verdict-affecting
 function), and its output artifact (fragment_patterns.yaml) is never a
-required or permitted input to skills/verdict-interpreter/SKILL.md. Every
+required or permitted input to workflow_artifacts/skills/verdict-interpreter/SKILL.md. Every
 table this module produces carries `basis: lifo_fragment, ideation_only` --
 these are per-fragment/per-episode diagnostics for IDEATION (motivating a
 candidate hypothesis that must still earn verdict-grade status through its

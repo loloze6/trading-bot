@@ -21,7 +21,7 @@ import run_campaign as rc
 
 @pytest.mark.real_repo_readonly
 def test_er_overlay_predicate_does_not_fire_against_real_kb():
-    """2026-07-10, post-incident (see strategy-research/docs/incidents/INCIDENT_20260710.md):
+    """2026-07-10, post-incident (see strategy-research/docs/analysis-reports/INCIDENT_20260710.md):
     this test previously asserted 'true' because p4_sma_trend_longonly_daily_auto's
     outcome was kill_ungated_regime_mismatch. A metric-basis audit found the
     median_sharpe behind that kill verdict was a LIFO-fragment trade-exit-day
@@ -89,7 +89,8 @@ def test_predicate_false_when_no_finding_satisfies_all_conditions(tmp_path, monk
             }}},
         ]
     }
-    kb_path = tmp_path / "campaign_knowledge_base.yaml"
+    (tmp_path / "campaign_record").mkdir(exist_ok=True)
+    kb_path = tmp_path / "campaign_record" / "campaign_knowledge_base.yaml"
     dw_dir = tmp_path / "config"
     dw_dir.mkdir(parents=True, exist_ok=True)
     dw_path = dw_dir / "detector_wishlist.yaml"
@@ -129,7 +130,8 @@ def test_sentinel_absence_on_dead_record_does_not_mask_clean_false(tmp_path, mon
             }}},
         ]
     }
-    kb_path = tmp_path / "campaign_knowledge_base.yaml"
+    (tmp_path / "campaign_record").mkdir(exist_ok=True)
+    kb_path = tmp_path / "campaign_record" / "campaign_knowledge_base.yaml"
     dw_dir = tmp_path / "config"
     dw_dir.mkdir(parents=True, exist_ok=True)
     dw_path = dw_dir / "detector_wishlist.yaml"
@@ -162,7 +164,8 @@ def test_sentinel_absence_on_record_that_could_otherwise_match_is_missing_field(
             }}},
         ]
     }
-    kb_path = tmp_path / "campaign_knowledge_base.yaml"
+    (tmp_path / "campaign_record").mkdir(exist_ok=True)
+    kb_path = tmp_path / "campaign_record" / "campaign_knowledge_base.yaml"
     dw_dir = tmp_path / "config"
     dw_dir.mkdir(parents=True, exist_ok=True)
     dw_path = dw_dir / "detector_wishlist.yaml"
@@ -192,7 +195,8 @@ def test_predicate_missing_field_when_finding_lacks_required_field(tmp_path, mon
             }}},
         ]
     }
-    kb_path = tmp_path / "campaign_knowledge_base.yaml"
+    (tmp_path / "campaign_record").mkdir(exist_ok=True)
+    kb_path = tmp_path / "campaign_record" / "campaign_knowledge_base.yaml"
     dw_dir = tmp_path / "config"
     dw_dir.mkdir(parents=True, exist_ok=True)
     dw_path = dw_dir / "detector_wishlist.yaml"

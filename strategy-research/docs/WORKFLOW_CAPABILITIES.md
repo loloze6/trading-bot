@@ -29,7 +29,7 @@ Read this before deciding whether to pause for human review.
 ## What ALWAYS requires human action
 
 ### Concurrent writers (2026-07-10)
-- A background campaign process (`RUNBOOK.md` §1c) and an interactive session touching the same state files (`campaign_queue.yaml`, `campaign_knowledge_base.yaml`, `config/detector_wishlist.yaml`) is a real conflict, not a hypothetical one — see `docs/incidents/INCIDENT_20260710.md`; treat any disagreement as requiring recomputation from source artifacts, never a guess.
+- A background campaign process (`RUNBOOK.md` §1c) and an interactive session touching the same state files (`campaign_queue.yaml`, `campaign_knowledge_base.yaml`, `config/detector_wishlist.yaml`) is a real conflict, not a hypothetical one — see `docs/analysis-reports/INCIDENT_20260710.md`; treat any disagreement as requiring recomputation from source artifacts, never a guess.
 
 ### New component code
 - If a hypothesis requires an indicator not in STRATEGY_CONFIG_REFERENCE.md's catalog,

@@ -1,6 +1,6 @@
 """
 K4 kernel (A1 + A3 + B1) regression tests, 2026-07-13.
-See docs/design/K4_routing_registration_design_20260712.md sections 5-8.
+See engineering/improvements/done/design_and_docs/K4_routing_registration_design_20260712.md sections 5-8.
 
 Hermeticity note: workflow/setup_run.py's own module-level ROOT is
 hardcoded (Path(__file__).parent.parent), independent of any caller's
@@ -174,7 +174,8 @@ def test_route_escalate_instrument_persists_continuation_child(campaign_root):
     (root / "protocols" / "baseline_v1.json").write_text(
         '{"symbols": ["BTCUSDT"], "timeframe": "1h", "windows": []}', encoding="utf-8"
     )
-    (root / "coin_universe.yaml").write_text(yaml.safe_dump({
+    (root / "config").mkdir(exist_ok=True)
+    (root / "config" / "coin_universe.yaml").write_text(yaml.safe_dump({
         "escalation_order": {"sequence": [{"category": "majors", "priority": 1}]},
         "categories": {"majors": {"coins": [{"symbol": "ETHUSDT", "data_cached": True}],
                                    "strategy_affinity": []}},

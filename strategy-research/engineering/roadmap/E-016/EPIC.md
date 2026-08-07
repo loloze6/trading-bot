@@ -20,14 +20,14 @@ prior text blocked this on E-010 (fee/slippage attribution) and E-017
 kill "cannot be identified" before either exists. That's wrong: cost-dominance
 is already identified today via the pre-existing
 `root_cause.mechanism_failure == "signal_real_but_subscale_vs_costs"` enum
-value (`schemas/verdict_interpretation.schema.json`, Improvement 01) — no
+value (`workflow_artifacts/schemas/verdict_interpretation.schema.json`, Improvement 01) — no
 fee/slippage split from E-010 and no cost-decomposition metric from E-017 is
 needed to reach that classification; it's an LLM verdict-stage judgment call,
 already in the schema, already usable as a trigger. The mechanism works
 today.
 
 **VERIFIED shipped implementation:**
-- `schemas/verdict_interpretation.schema.json:115-136` —
+- `workflow_artifacts/schemas/verdict_interpretation.schema.json:115-136` —
   `root_cause.fee_reduction_assessment`, mandatory whenever
   `mechanism_failure == "signal_real_but_subscale_vs_costs"`, with
   `has_fee_reduction_system` (bool), `candidate_system` (enum: the five named

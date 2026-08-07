@@ -3,15 +3,15 @@
 # Optimized: single ls-tree call for all bytes, directory-level git log for aggregates.
 #
 # EXCLUDED PATHS (infrastructure, not subjects):
-#   - strategy-research/docs/INVENTORY.tsv (this generator's output)
-#   - strategy-research/docs/REFERENCE_MAP.tsv (future index; exclude prospectively)
+#   - strategy-research/engineering/improvements/ongoing-improvement-design/INVENTORY.tsv (this generator's output)
+#   - strategy-research/engineering/improvements/ongoing-improvement-design/REFERENCE_MAP.tsv (future index; exclude prospectively)
 #   - strategy-research/tools/build_inventory.sh (this script itself)
 # These are excluded because their byte counts carry no information for deciding
 # what to archive, and self-description makes the generator non-idempotent.
 set -e
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
-out="strategy-research/docs/INVENTORY.tsv"
+out="strategy-research/engineering/improvements/ongoing-improvement-design/INVENTORY.tsv"
 tmp_lstree=$(mktemp)
 tmp_perfile=$(mktemp)
 tmp_agg=$(mktemp)
@@ -160,7 +160,7 @@ echo "Generated $out ($row_count rows)"
 #   minus the three infrastructure paths excluded above. Binary files are
 #   skipped by grep -I.
 
-ref_out="strategy-research/docs/REFERENCE_MAP.tsv"
+ref_out="strategy-research/engineering/improvements/ongoing-improvement-design/REFERENCE_MAP.tsv"
 tmp_probes=$(mktemp)
 tmp_puniq=$(mktemp)
 tmp_cands=$(mktemp)

@@ -51,7 +51,7 @@ updated_at: "2026-07-20"
 # much would this change under an unvalidated fill-rate assumption," but it may never
 # be the basis for a pass/fail decision, a plausibility rating, or a promotion. This
 # is because maker's fill-rate haircut is an unvalidated assumption (see
-# execution_style.maker below and docs/plan/10_maker_execution_assessment.md) — no
+# execution_style.maker below and engineering/improvements/done/design_and_docs/10_maker_execution_assessment.md) — no
 # order-book data exists to calibrate it, so it cannot support a gating decision.
 # A verdict, prescreen result, or promotion audit that reports a pass driven by
 # execution_style.maker numbers without an accompanying taker-based pass is invalid.
@@ -118,12 +118,12 @@ round_trip_cost_bps:
 # before this block existed -- this is deliberate, so unrelated spot runs are never
 # silently re-costed at perp rates.
 #
-# Why this exists: the 2026-07-20 recon (docs/session_reports/20260720_venue_cost_wiring.md,
+# Why this exists: the 2026-07-20 recon (engineering/sessions/session_reports/20260720_venue_cost_wiring.md,
 # Dispatch F2) found that trading-bot/execution/portfolio_info.py's SHORT trades
 # (present in rsi_momentum_trending_cost_drag/run_018 and
 # keltner_scoremode_no_edge/run_028+030) are simulated via margin borrow/sell/repay
 # mechanics, not literal perpetual futures. Dispatch G's venue research
-# (docs/venue_survey_20260719.md, 2026-07-20 supplement) then found Kraken spot-margin's
+# (docs/analysis-reports/venue_survey_20260719.md, 2026-07-20 supplement) then found Kraken spot-margin's
 # legal availability for French/EU retail is NOT confirmed either way, while Kraken
 # perpetual futures ARE confirmed available to French/EU retail (CySEC licence 342/17,
 # subject to a MiFID II appropriateness test -- see the original 2026-07-19 survey
@@ -133,7 +133,7 @@ round_trip_cost_bps:
 # costing purposes, not a claim that the engine executes real perpetual contracts.
 #
 # fee_rate_bps: Kraken perpetual-futures taker fee, base tier -- 0.05% = 5 bps
-# (docs/venue_survey_20260719.md's original comparison table, "Perp maker/taker
+# (docs/analysis-reports/venue_survey_20260719.md's original comparison table, "Perp maker/taker
 # (base tier)" row: "Official docs: 0.0200% / 0.0500% at $0+"). Flat across all
 # symbols/default: the source is a single tiered schedule, not per-symbol, so no
 # per-symbol breakdown is fabricated here.
@@ -145,7 +145,7 @@ round_trip_cost_bps:
 # included in this figure -- see the funding note immediately below.
 #
 # FUNDING NOT MODELED: this cost figure prices ONLY the taker fee round-trip. Kraken
-# perpetual funding cash flows (docs/venue_survey_20260719.md's 2026-07-20
+# perpetual funding cash flows (docs/analysis-reports/venue_survey_20260719.md's 2026-07-20
 # supplement: EEA funding interval 1h, rate bound +/-0.5%/hr, representative BTC
 # rate ~1.8738%/year per the CF Benchmarks KFRI index) are NOT modeled anywhere in
 # this cost_model.yaml or in run_protocol.py's wiring. Consequently this
@@ -161,7 +161,7 @@ perp:
   round_trip_cost_bps:
     default: 10.0
   # FUNDING ACCRUAL (2026-07-24, additive off-by-default mechanism per
-  # docs/session_reports/20260724_funding_cashflow_model_design.md §5).
+  # engineering/sessions/session_reports/20260724_funding_cashflow_model_design.md §5).
   # Declares WHERE the funding series comes from and its sign convention so no
   # funding constant is hardcoded in code (honoring the top-of-file HARD RULE). The
   # engine mechanism (trading-bot: CommonPortfolioDef.apply_funding + the flag-gated
@@ -188,7 +188,7 @@ perp:
 # Additive block — NOT yet read by any code path. The top-level keys above remain
 # the only keys prescreen_signal.py and run_protocol.py consume today (taker path).
 # This block is the documented single source for a future maker-path opt-in; wiring
-# it into the engine/backtest is a backlog item (see docs/plan/10_maker_execution_assessment.md),
+# it into the engine/backtest is a backlog item (see engineering/improvements/done/design_and_docs/10_maker_execution_assessment.md),
 # out of Phase P research scope per the cost-structure revision instructions.
 #
 # P2 universe only (BTCUSDT/ETHUSDT/SOLUSDT/AVAXUSDT) — confirmed by user 2026-07-04.

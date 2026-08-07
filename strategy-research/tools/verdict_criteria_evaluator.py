@@ -11,15 +11,15 @@ evaluate_against_decision_rules() as the DECISION authority; that function's
 prose-criteria output (validation_protocol.yaml-derived) remains
 informational only from here on (see design note section 6).
 
-See docs/design/K2_verdict_machinery_design_20260713.md sections 6 and 8.
+See engineering/improvements/done/design_and_docs/K2_verdict_machinery_design_20260713.md sections 6 and 8.
 
 C7-EXT (2026-07-22, XS_momentum ungated-verdict incident) adds seven gates on
 top of the K2 kernel. See the VERDICT PRECONDITIONS section below and ledger
-entry C7-EXT in improvements/IMPROVEMENTS_DONE_20260712.md for the four-link defect
+entry C7-EXT in engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md for the four-link defect
 chain each gate closes.
 
 C7-EXT-R (2026-07-22, remediation of the independent audit in
-docs/session_reports/20260722_c7ext_audit.md) repairs G6, which the audit
+engineering/sessions/session_reports/20260722_c7ext_audit.md) repairs G6, which the audit
 demonstrated was bypassable in the exact shape of the incident it was written
 to close. See the G6 section below.
 
@@ -60,7 +60,7 @@ VERDICT_PRECONDITION_IDS = (
 
 # Default perp funding interval, in hours. Overridable per-brief via
 # research_brief["funding_interval_hours"]. 8h is the convention on every venue
-# in docs/venue_survey_20260719.md (Binance / Kraken / Bybit perps).
+# in docs/analysis-reports/venue_survey_20260719.md (Binance / Kraken / Bybit perps).
 _DEFAULT_FUNDING_INTERVAL_HOURS = 8.0
 
 # G6: a KB/queue verdict field is admissible ONLY with evaluator provenance.

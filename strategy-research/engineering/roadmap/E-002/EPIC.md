@@ -1,8 +1,8 @@
 # E-002 — Land the parked `strategy-research/` restructure
 
-**State:** planned
+**State:** done
 **Owner:** Jeremy
-**Updated:** 2026-08-04
+**Updated:** 2026-08-06
 
 ## Why
 
@@ -59,7 +59,9 @@ yet satisfied.
       196 (was 199) — 188 `RENAMED` (the true move count), 3 `DELETED`,
       1 `MODIFIED`, 1 `DERIVED`, 1 `MANUAL`, 1 `ADDED`, 1
       `UNRESOLVED-PENDING-DIRECTOR`.
-- [ ] **S2a — COORDINATION GATE, blocks S3.** Dorian pulled master into the
+- [x] **S2a — COORDINATION GATE, blocks S3.** **Satisfied (2026-08-06):**
+      Dorian gave the window and confirmed nothing open in `strategy-research/`
+      on his side. Dorian pulled master into the
       Mac fork on 2026-08-03 and has in-flight `strategy-research` test fixes
       open there (the POSIX path-traversal one-liner). A ~191-file rename
       lands on whatever he has open. No files move until a window is agreed
@@ -69,7 +71,7 @@ yet satisfied.
       `trading-bot/tools/ingest_kraken_archive.py` is outside
       `strategy-research/`, which is all E-002 touches. The gate stands on
       the in-flight test fixes, not on the Kraken work.
-- [ ] S3 — Execute the replay (188 `RENAMED` moves; the 8 non-move rows —
+- [x] S3 — Execute the replay (188 `RENAMED` moves; the 8 non-move rows —
       3 `DELETED`, 1 `MODIFIED`, 1 `DERIVED`, 1 `MANUAL`, 1 `ADDED`, 1 left
       `UNRESOLVED-PENDING-DIRECTOR` — are handled per their row's own
       annotation, not as plain moves). S3 MEASURES the full research suite's
@@ -81,9 +83,14 @@ yet satisfied.
       banner figure of 472/1 is stale — it predates the CLEAN-series test
       additions. The test is before == after, never equality with a
       constant.
-- [ ] S4 — Repoint every referrer in `RESTRUCTURE_REPOINT_SITES.tsv`.
-- [ ] S5 — Run both suites; fix the "knowingly incomplete" pipeline breakage
-      the park commit disclosed.
+- [x] S4 — Repoint every referrer. **Done in `8f162fa6`.** The artifact was
+      a starting hint only (26 rows, 24 self-labelled UNVERIFIED) and was
+      re-derived: 94 files repointed. Two of its rows were stale
+      (`setup_run.py` exists at `workflow/setup_run.py`; the
+      `deploy/kraken_recorder/` hits are a separate deployment mirror that
+      references its own copy and must not be repointed).
+- [x] S5 — Both suites run; the park commit's disclosed pipeline breakage is
+      fixed. See the Log entry below for before/after counts.
 - [ ] S6 — Independent audit (read-only) before merge/close, per this
       campaign's standing independent-audit-before-ratify rule.
 
@@ -114,3 +121,80 @@ yet satisfied.
   `DERIVED`, 1 `MANUAL`, 1 `ADDED`, 0 `UNRESOLVED-PENDING-DIRECTOR`).
   `RESTRUCTURE_REPOINT_SITES.tsv` checked for the same reference — none
   found, no change needed there. Files moved: none — mapping only.
+
+- 2026-08-06 — **S3/S4/S5 done; epic closed.** Two commits, dispatch W44.
+
+  `1787258b` amended the mapping BEFORE the replay, dropping two directory
+  renames the director ruled are contract migrations rather than moves:
+
+    * `protocols/` -> `protocols_record/` (14 rows). `protocols/` is a
+      VALIDATED PREFIX, not just a directory: `workflow/run_phase1_research.py:1985`
+      rejects any `protocol_ref` whose parent is not `Path("protocols")`,
+      citing contract K3/S9 A1.2 in its own error text. 27 recorded
+      `protocol_ref`/`window_set_ref` values carry the prefix and ~20
+      assertions in the K3/K2 tests pin it literally, so renaming the
+      directory invalidates every recorded reference.
+    * `briefs/` -> `briefs_record/` (5 rows). Same shape, smaller radius:
+      `config/campaign_queue.yaml` holds 4 live `brief_path: briefs/...`
+      entries resolved relative to ROOT.
+
+  Both need their own dispatch with a migration decision behind them.
+  Row total 195 -> 176 (169 `RENAMED`). The remaining ten directory moves
+  were audited for the same shape before proceeding and are all SAFE:
+  `recorder/`, `skills/`, `templates/`, `schemas/`, `docs/plan/`,
+  `docs/design/`, `docs/incidents/`, `docs/session_reports/`,
+  `improvements/`, `engineering/sessions_archive/`.
+
+  `8f162fa6` is the replay: 230 files changed, 131 exact (R100) renames,
+  169 moves in total, 3 deletions, 1 restored fixture, 94 files repointed.
+
+  Suites, before -> after:
+
+    trading-bot        237 collected, 221 passed, 0 failed, 2 skipped (unchanged)
+    strategy-research  721 collected, 719 -> 720 passed, 1 failed, 1 -> 0 skipped
+
+  The strategy-research delta is the `ADDED` row, not a regression:
+  `recorder/tests/fixtures/live_book_snapshot.json` was UNTRACKED at HEAD, so
+  `test_kraken_crc`'s live-fixture test skipped; restoring blob `189930b5`
+  makes it run and pass. The one failure,
+  `test_d3_every_committed_generic_protocol_is_marked_unratified`, fails
+  identically at `f459d3c3` (asserts 9 generic protocols, finds 8) and is
+  pre-existing.
+
+  **Two reference classes are not path strings and no grep will find them.**
+  Both were caught only by running the suites, and both are worth knowing
+  before any future move:
+
+    1. **Depth constants.** `Path(__file__).resolve().parents[N]` reaching the
+       repo root is off by one for every file that moved a level deeper
+       (`recorder/` -> `tools/recorder/`, `docs/session_reports/` ->
+       `engineering/sessions/session_reports/`). 5 sites bumped. The
+       package-relative `parents[1]`/`parents[2]` sys.path inserts are
+       deliberately NOT bumped -- they mean "the directory holding the
+       recorder package" and follow the move on their own. Same split in
+       shell: `supervise.sh`'s `REPO_ROOT` gains a level; its `RESEARCH_ROOT`
+       does not, because it feeds `python -m recorder.record_kraken_ws`.
+    2. **Sandbox layout.** Tests that monkeypatch `ROOT` to `tmp_path` build a
+       fake root that must MIRROR the real one, so `campaign_record/` and
+       `config/` are now created there. Tests that monkeypatch the path
+       CONSTANT instead are layout-independent and were left alone. Two of
+       the four wishlist tests were passing VACUOUSLY on an empty KB before
+       this was fixed.
+
+  A third class was missed in the first enumeration and is recorded so it is
+  not missed again: **bare basenames inside real-root path constructions**
+  (`ROOT / "campaign_knowledge_base.yaml"`). These were excluded as prose
+  noise because the same basenames appear in hundreds of run artifacts; that
+  exclusion was too broad. 21 sites, caught by the c7ext KB gates.
+
+  **Suite invocation, recorded because it cost a false baseline:**
+  `strategy-research`'s suite must be invoked FROM `strategy-research/`. Run
+  from the repo root, three K3 tests fail on a cwd-relative interpreter
+  lookup (`../venv/Scripts/python.exe`) that has nothing to do with any
+  change under test.
+
+  **S6 (independent audit) is NOT done.** This epic is closed per the
+  dispatch's instruction, ahead of the standing
+  independent-audit-before-ratify rule. Reopen if that audit is still wanted.
+  `restructure/parked-20260731` is left in place -- deleting it is a separate
+  decision and was explicitly out of scope.
