@@ -32,7 +32,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 FIXTURE_PATH = PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_reference.json"
 
-pytestmark = pytest.mark.slow
+_NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
+pytestmark = [
+    pytest.mark.slow,
+    pytest.mark.skipif(
+        not all((PROJECT_ROOT / "local_data" / f).exists() for f in _NEEDED_CACHES),
+        reason="local_data fixtures not present",
+    ),
+]
 
 
 @pytest.fixture(scope="module")
