@@ -35,8 +35,9 @@ separator (filesystem constraint). None of this touches `cache_key()`, which
 keeps Binance UN-prefixed (ratified decision (a)); it is purely the choice of
 the `symbol` string this script and any future top-up hand to the fetcher.
 
-Scope: the 20-pair USD-quoted breadth set at 1-hour resolution. HYPE is absent
-from the bulk archive (no `HYPEUSD_60.csv`) and is skipped — it needs a
+Scope: the 20-pair USD-quoted breadth set — 1-hour by default, or any exactly
+mapped ccxt resolution via `--resolution` (60 = 1h, 1440 = 1d). HYPE is absent
+from the bulk archive (no `HYPEUSD_<res>.csv`) and is skipped — it needs a
 separate live-fetch path (ledger G1 carry-forward 1). 19 of 20 ingest here.
 
 Source schema (Kraken bulk, no header, 7 cols):
@@ -48,9 +49,11 @@ Target schema (Binance cache, WITH header, 12 cols, this exact order):
     taker_buy_base_asset_volume, taker_buy_quote_asset_volume, ignore
 
 Run:
-    python trading-bot/tools/ingest_kraken_archive.py
+    python trading-bot/tools/ingest_kraken_archive.py                    # 1h
+    python trading-bot/tools/ingest_kraken_archive.py --resolution 1440  # 1d
 """
 
+import argparse
 import datetime
 import sys
 from pathlib import Path
@@ -158,12 +161,16 @@ def load_kraken_ohlcv(path: Path) -> pd.DataFrame:
     return raw
 
 
-def to_binance_schema(raw: pd.DataFrame) -> pd.DataFrame:
+def to_binance_schema(raw: pd.DataFrame,
+                      resolution_minutes: int = RESOLUTION_MINUTES) -> pd.DataFrame:
     """
     Map Kraken raw OHLCV to the exact Binance cache column schema/order.
 
     Value-level notes:
-      • close_time / quote_asset_volume are derived identically to
+      • close_time spans one candle less a millisecond, derived from the
+        REQUESTED resolution (default RESOLUTION_MINUTES = 1h). A daily
+        (1440-minute) tranche must not inherit a 1h close_time.
+      • quote_asset_volume is derived identically to
         CcxtFetcher._fetch_remote (est. quote vol = volume * close).
       • number_of_trades is populated with Kraken's REAL per-candle trade count
         (the bulk archive carries it; live ccxt fetch_ohlcv does not, so
@@ -173,6 +180,7 @@ def to_binance_schema(raw: pd.DataFrame) -> pd.DataFrame:
         CcxtFetcher writes for a live Kraken fetch.
     """
     ts = pd.to_datetime(raw["unix_s"], unit="s")  # tz-naive, epoch == UTC
+    close_time_ms = resolution_minutes * 60 * 1000
     out = pd.DataFrame({
         "timestamp": ts,
         "open": raw["open"].astype(float),
@@ -180,7 +188,7 @@ def to_binance_schema(raw: pd.DataFrame) -> pd.DataFrame:
         "low": raw["low"].astype(float),
         "close": raw["close"].astype(float),
         "volume": raw["volume"].astype(float),
-        "close_time": ts + pd.Timedelta(milliseconds=TIMEFRAME_MS - 1),
+        "close_time": ts + pd.Timedelta(milliseconds=close_time_ms - 1),
         "quote_asset_volume": raw["volume"].astype(float) * raw["close"].astype(float),
         "number_of_trades": raw["trade_count"].astype("int64"),
         "taker_buy_base_asset_volume": np.nan,
@@ -288,12 +296,30 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
     fixed `cache_key`) so it lands in the exact slot a live Kraken fetch would
     use — under the STANDARD-base store symbol (BTCUSD, not XBTUSD).
     """
+    # STOP on a resolution that has no EXACT ccxt timeframe. CcxtFetcher snaps
+    # candle_interval to the NEAREST timeframe, so 720m (12h) would land in the
+    # 4h slot and MERGE 12h bars into a legitimate 4h cache; 0 and negatives
+    # produce degenerate close_time spans. The store slot (cache_key) is derived
+    # from the SAME snap, so a mismatch here IS a mis-file. Refuse before any
+    # read or write — this covers programmatic callers, not only the CLI.
+    interval_s = resolution * 60
+    snapped = CcxtFetcher._seconds_to_ccxt_timeframe(interval_s)
+    if CcxtFetcher._timeframe_to_ms(snapped) != interval_s * 1000:
+        raise ValueError(
+            f"Resolution {resolution}m ({interval_s}s) has no exact ccxt "
+            f"timeframe: it snaps to '{snapped}' "
+            f"({CcxtFetcher._timeframe_to_ms(snapped) // 1000}s) and would be "
+            f"written into the '{snapped}' cache slot, silently mixing a "
+            f"different bar size into it. Refusing; NOTHING was written. Use an "
+            f"exactly-mapped resolution (1, 5, 15, 30, 60, 240, or 1440 minutes)."
+        )
+
     src = kraken_source_path(asset, archive_dir, resolution)
     if not src.exists():
         raise FileNotFoundError(f"Kraken source missing for {asset}: {src}")
 
     raw = load_kraken_ohlcv(src)
-    converted = to_binance_schema(raw)
+    converted = to_binance_schema(raw, resolution)
     verify_utc_roundtrip(raw, converted)  # STOP-on-fail
 
     store_symbol = cache_symbol(asset)  # e.g. BTCUSD -> cache_key kraken_BTCUSD_1h
@@ -384,25 +410,60 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
     }
 
 
+def run_all(assets: list, archive_dir: Path, data_dir: Path,
+            resolution: int = RESOLUTION_MINUTES) -> tuple:
+    """
+    Ingest every asset, isolating failures. Returns (done, skipped, failures).
+
+    One asset raising must NOT abort the rest — a single malformed archive or a
+    continuity-guard trip would otherwise silently drop every asset after it.
+    Each ingest is caught, recorded as (asset, exception), and reported loudly
+    at failure time; the run continues. The [SKIP]-on-absent-source path is a
+    deliberate no-op, kept separate from failures — absence is expected (HYPE),
+    a raise is not.
+    """
+    done, skipped, failures = [], [], []
+    for asset in assets:
+        src = kraken_source_path(asset, archive_dir, resolution)
+        if not src.exists():
+            skipped.append(asset)
+            print(f"[SKIP] {asset:5s} source absent ({src.name})")
+            continue
+        try:
+            r = ingest(asset, archive_dir, data_dir, resolution)
+        except Exception as exc:
+            failures.append((asset, exc))
+            print(f"[FAIL] {asset:5s} {type(exc).__name__}: {exc}",
+                  file=sys.stderr)
+            continue
+        done.append(r)
+        print(f"[OK] {asset:5s} {r['cache_key']:20s} rows={r['rows']:>7} "
+              f"{r['first']} -> {r['last']}")
+    return done, skipped, failures
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Ingest Kraken bulk-archive OHLCV CSVs into local cache slots."
+    )
+    parser.add_argument(
+        "--resolution", type=int, default=RESOLUTION_MINUTES,
+        help="Candle resolution in MINUTES (60 = 1h, 1440 = 1d). "
+             "Selects the source-file suffix (_60 / _1440) and the cache "
+             f"timeframe. Default {RESOLUTION_MINUTES}.",
+    )
+    args = parser.parse_args()
+    resolution = args.resolution
+
     archive_dir = PROJECT_ROOT / "local_data" / "Kraken_batch" / "master_q4"
     data_dir = PROJECT_ROOT / "local_data"
 
     print(f"Kraken archive : {archive_dir}")
     print(f"Cache data_dir : {data_dir}")
-    print(f"Breadth assets : {len(BREADTH_ASSETS)} @ {QUOTE} {RESOLUTION_MINUTES}m\n")
+    print(f"Breadth assets : {len(BREADTH_ASSETS)} @ {QUOTE} {resolution}m\n")
 
-    done, skipped = [], []
-    for asset in BREADTH_ASSETS:
-        src = kraken_source_path(asset, archive_dir)
-        if not src.exists():
-            skipped.append(asset)
-            print(f"[SKIP] {asset:5s} source absent ({src.name})")
-            continue
-        r = ingest(asset, archive_dir, data_dir)
-        done.append(r)
-        print(f"[OK] {asset:5s} {r['cache_key']:20s} rows={r['rows']:>7} "
-              f"{r['first']} -> {r['last']}")
+    done, skipped, failures = run_all(BREADTH_ASSETS, archive_dir, data_dir,
+                                      resolution)
 
     # Coverage table
     print(f"\n{'asset':6}{'cache_key':22}{'rows':>8}  {'first':16} {'last':16}"
@@ -414,8 +475,18 @@ def main() -> None:
               f"{str(r['first'])[:16]:16} {str(r['last'])[:16]:16}"
               f"{f['missing']:>7}{f['pct']:>7.2f}%{p['pct']:>8.2f}%")
 
+    # Failures table — loud, on stderr (stdout stays the [OK]/coverage channel).
+    if failures:
+        print(f"\n{'asset':6}error", file=sys.stderr)
+        for asset, exc in failures:
+            print(f"{asset:6}{type(exc).__name__}: {exc}", file=sys.stderr)
+
     print(f"\nIngested {len(done)}/{len(BREADTH_ASSETS)}; skipped "
-          f"{skipped or 'none'}. Pilot 2017+ BTC benchmark = 0.11%.")
+          f"{skipped or 'none'}; failed {[a for a, _ in failures] or 'none'}. "
+          f"Pilot 2017+ BTC benchmark = 0.11%.")
+
+    if failures:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
