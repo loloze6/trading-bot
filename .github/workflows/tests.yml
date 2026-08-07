@@ -1,0 +1,39 @@
+name: fast-tests
+on: [push, pull_request]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      # Pinned, not inherited: strategy-research/tools/recorder/.gitattributes documents
+      # this repo's Windows expectation as core.autocrlf=true. longpaths is cheap
+      # insurance (longest tracked path measured 130 chars on 2026-08-07).
+      - name: Pin git text/path behavior (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.autocrlf true
+          git config --global core.longpaths true
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: trading-bot/requirements.txt
+      - name: Install pinned requirements
+        run: pip install -r requirements.txt
+        working-directory: trading-bot
+      - name: Validate strategy config
+        run: python tools/validate_config.py strategy_config.json
+        working-directory: trading-bot
+      - name: Fast suite
+        run: python -m pytest -q -rs
+        working-directory: trading-bot
