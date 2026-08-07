@@ -1,6 +1,6 @@
 ---
 # research_brief.yaml fields. P2 (instrument-universe expansion) CLOSED and RATIFIED
-# 2026-07-22 — see docs/session_reports/20260722_xs_momentum_universe.md (measurement +
+# 2026-07-22 — see engineering/sessions/session_reports/20260722_xs_momentum_universe.md (measurement +
 # DIRECTOR CORRECTION appendix). Queue entry flipped blocked_on_P2 -> ready.
 strategy_domain: cross_sectional_momentum
 # RATIFIED market_universe = all 19 ingested Kraken pairs (USD-quoted perp product;
@@ -35,7 +35,7 @@ breadth_reasoning:
 timeframe: "1h"
 venue: kraken
 product: perp   # long/short cross-sectional signal; Kraken margin's own EU/French
-                # retail legality is unconfirmed (docs/venue_survey_20260719.md), so
+                # retail legality is unconfirmed (docs/analysis-reports/venue_survey_20260719.md), so
                 # this brief is costed/classified via Kraken perpetual futures instead
                 # (confirmed tradable), matching cost_model.yaml's existing precedent
                 # for other short-containing strategies. Operator ruling 2026-07-21.
@@ -88,7 +88,7 @@ BTC/ETH back to 2018-01-01 by real fetcher calls before it was used as evidence.
 ## What P2 must deliver before this brief can run
 
 1. Fetch and verify (real fetcher calls, gap-checked — same standard as
-   `docs/p1b_fetch_manifest.md`) OHLCV for a candidate cross-sectional set from
+   `engineering/improvements/done/design_and_docs/p1b_fetch_manifest.md`) OHLCV for a candidate cross-sectional set from
    `coin_universe.yaml` (at minimum enough instruments, at low-enough pairwise
    correlation, to give `n_eff_symbols` materially above the current ≈1.10 — this is
    a measurement to make when P2 runs, not an assumption to pre-register here).

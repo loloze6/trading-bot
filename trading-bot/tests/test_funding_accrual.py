@@ -1,6 +1,6 @@
 """
 Tests for the off-by-default funding-accrual mechanism (design 2026-07-24 §5,
-strategy-research/docs/session_reports/20260724_funding_cashflow_model_design.md).
+strategy-research/engineering/sessions/session_reports/20260724_funding_cashflow_model_design.md).
 
 Covers:
   * The 8 worked numeric examples in design §5(d) — CommonPortfolioDef.apply_funding

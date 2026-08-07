@@ -1,7 +1,7 @@
 """
 K3 kernel (B3 + B10, protocol pinning + stale-escalation hard-fail) regression
 tests, 2026-07-15.
-See docs/design/K3_protocol_pinning_design_20260714.md sections 3-6 and 9
+See engineering/improvements/done/design_and_docs/K3_protocol_pinning_design_20260714.md sections 3-6 and 9
 (operator rulings A1-A5, Q1-Q4).
 
 Sandboxing: relies on tests/conftest.py's autouse _sandbox_by_default fixture
@@ -535,7 +535,8 @@ def test_route_escalate_instrument_writes_claimed_by_run(campaign_root):
     (root / "protocols" / "baseline_v1.json").write_text(
         '{"symbols": ["BTCUSDT"], "timeframe": "1h", "windows": []}', encoding="utf-8"
     )
-    (root / "coin_universe.yaml").write_text(yaml.safe_dump({
+    (root / "config").mkdir(exist_ok=True)
+    (root / "config" / "coin_universe.yaml").write_text(yaml.safe_dump({
         "escalation_order": {"sequence": [{"category": "majors", "priority": 1}]},
         "categories": {"majors": {"coins": [{"symbol": "ETHUSDT", "data_cached": True}],
                                    "strategy_affinity": []}},
@@ -757,7 +758,7 @@ def test_invoke_agent_with_yaml_retry_does_not_catch_other_messages(monkeypatch)
 
 # ---------------------------------------------------------------------------
 # B7: _apply_b7_mandatory_inputs -- deterministic mandatory-inputs union for
-# validation and every downstream LLM stage (improvements/IMPROVEMENTS_DONE_20260712.md
+# validation and every downstream LLM stage (engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md
 # B7 -- three in-the-wild occurrences of a stage deciding without ever
 # reading pre_registration.yaml, most recently run_058).
 # ---------------------------------------------------------------------------
@@ -832,7 +833,7 @@ def test_apply_b7_mandatory_inputs_covers_every_downstream_llm_stage():
 
 # ---------------------------------------------------------------------------
 # B15: register_hypothesis -- first-class registration -> schedulable queue
-# entry (improvements/IMPROVEMENTS_DONE_20260712.md B15 -- retires the
+# entry (engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md B15 -- retires the
 # per-registration hand-edit H-041-C-v2 required).
 # ---------------------------------------------------------------------------
 

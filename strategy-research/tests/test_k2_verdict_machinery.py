@@ -1,6 +1,6 @@
 """
 K2 kernel (A8 + A9 + B11 + C7, C9 rider) regression tests, 2026-07-13.
-See docs/design/K2_verdict_machinery_design_20260713.md sections 4-8.
+See engineering/improvements/done/design_and_docs/K2_verdict_machinery_design_20260713.md sections 4-8.
 
 Reuses K4's sandboxing fixtures/helpers directly (campaign_root,
 _write_fresh_scaffold, _save_queue_entries, _write_campaign_state) rather
@@ -495,7 +495,8 @@ def test_pair_validation_accepts_kill_escalate(campaign_root):
     (root / "protocols" / "baseline_v1.json").write_text(
         '{"symbols": ["BTCUSDT"], "timeframe": "1h", "windows": []}', encoding="utf-8"
     )
-    (root / "coin_universe.yaml").write_text(yaml.safe_dump({
+    (root / "config").mkdir(exist_ok=True)
+    (root / "config" / "coin_universe.yaml").write_text(yaml.safe_dump({
         "escalation_order": {"sequence": [{"category": "majors", "priority": 1}]},
         "categories": {"majors": {"coins": [{"symbol": "ETHUSDT", "data_cached": True}],
                                    "strategy_affinity": []}},

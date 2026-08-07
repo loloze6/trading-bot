@@ -1,10 +1,30 @@
+# RESTRUCTURE_MAPPING.tsv
+#
+# AMENDED 2026-08-06 (E-002 S3, dispatch W44). Two directory renames were
+# DROPPED from this mapping before the replay. They are contract migrations,
+# not moves, and are out of scope for a repointing commit:
+#
+#   strategy-research/protocols/ -> protocols_record/   (14 rows removed)
+#     'protocols/' is a VALIDATED PREFIX, not merely a directory.
+#     workflow/run_phase1_research.py:1985 rejects any protocol_ref whose
+#     parent is not Path("protocols"), citing contract K3/S9 A1.2 in its own
+#     error text. 27 recorded protocol_ref / window_set_ref values across live
+#     config and historical run artifacts carry the prefix, and ~20 assertions
+#     in tests/test_k3_protocol_pinning.py and tests/test_k2_verdict_machinery.py
+#     pin it literally. Renaming the directory requires changing the accepted
+#     prefix, which invalidates every recorded protocol_ref.
+#
+#   strategy-research/briefs/ -> briefs_record/          (5 rows removed)
+#     config/campaign_queue.yaml carries 4 live 'brief_path: briefs/...'
+#     entries resolved relative to ROOT. Same shape, smaller blast radius.
+#
+# Both need their own dispatch with a migration decision behind them.
+# NOTE: strategy-research/results/protocols/... is a DIFFERENT directory (a run
+# result artifact) and its row is retained.
+#
+# Rows: 176 (169 RENAMED, 3 DELETED, 1 MODIFIED, 1 MANUAL, 1 DERIVED, 1 ADDED).
 old_path	new_path	status	PENDING_CORRECTION
 strategy-research/results/protocols/20260702T091324Z_18fad381/protocol_summary.json	strategy-research/archive/protocols/20260702T091324Z_18fad381/protocol_summary.json	RENAMED	
-strategy-research/briefs/FUNDING_MR_DAILY_RETEST.md	strategy-research/briefs_record/FUNDING_MR_DAILY_RETEST.md	RENAMED	
-strategy-research/briefs/H-041-C-v2.md	strategy-research/briefs_record/H-041-C-v2.md	RENAMED	
-strategy-research/briefs/P4_ts_trend_r1_er_gate.yaml	strategy-research/briefs_record/P4_ts_trend_r1_er_gate.yaml	RENAMED	
-strategy-research/briefs/research_brief_P4_ts_trend.md	strategy-research/briefs_record/research_brief_P4_ts_trend.md	RENAMED	
-strategy-research/briefs/research_brief_XS_momentum.md	strategy-research/briefs_record/research_brief_XS_momentum.md	RENAMED	
 strategy-research/campaign_knowledge_base.yaml	strategy-research/campaign_record/campaign_knowledge_base.yaml	RENAMED	
 strategy-research/campaign_log.md	strategy-research/campaign_record/campaign_log.md	RENAMED	
 strategy-research/campaign_state.yaml	strategy-research/campaign_record/campaign_state.yaml	RENAMED	
@@ -86,20 +106,6 @@ strategy-research/docs/session_reports/20260726_recorder_build_spec.md	strategy-
 strategy-research/docs/session_reports/20260726_recorder_cadence_ladder.md	strategy-research/engineering/sessions/session_reports/20260726_recorder_cadence_ladder.md	RENAMED	
 strategy-research/docs/session_reports/_verify_xs_neff.py	strategy-research/engineering/sessions/session_reports/_verify_xs_neff.py	RENAMED	
 strategy-research/power_check_discrepancy_log.yaml	DELETED	DELETED	
-strategy-research/protocols/baseline_v1.json	strategy-research/protocols_record/baseline_v1.json	RENAMED	
-strategy-research/protocols/baseline_v2.json	strategy-research/protocols_record/baseline_v2.json	RENAMED	
-strategy-research/protocols/diagnostic_btceth_4h.json	strategy-research/protocols_record/diagnostic_btceth_4h.json	RENAMED	
-strategy-research/protocols/escalation_avaxusdt_4h.json	strategy-research/protocols_record/escalation_avaxusdt_4h.json	RENAMED	
-strategy-research/protocols/escalation_solusdt_4h.json	strategy-research/protocols_record/escalation_solusdt_4h.json	RENAMED	
-strategy-research/protocols/escalation_tf_15m.json	strategy-research/protocols_record/escalation_tf_15m.json	RENAMED	
-strategy-research/protocols/funding_mr_daily_retest_v1.json	strategy-research/protocols_record/funding_mr_daily_retest_v1.json	RENAMED	
-strategy-research/protocols/h041c_v2_backext.json	strategy-research/protocols_record/h041c_v2_backext.json	RENAMED	
-strategy-research/protocols/prereg_whale_footprint_v1.yaml	strategy-research/protocols_record/prereg_whale_footprint_v1.yaml	RENAMED	
-strategy-research/protocols/prereg_whale_footprint_v2.yaml	strategy-research/protocols_record/prereg_whale_footprint_v2.yaml	RENAMED	
-strategy-research/protocols/run_048_generated.json	strategy-research/protocols_record/run_048_generated.json	RENAMED	
-strategy-research/protocols/run_050_generated.json	strategy-research/protocols_record/run_050_generated.json	RENAMED	
-strategy-research/protocols/run_053_generated.json	strategy-research/protocols_record/run_053_generated.json	RENAMED	
-strategy-research/protocols/ts_trend_daily_v1.json	strategy-research/protocols_record/ts_trend_daily_v1.json	RENAMED	
 strategy-research/regime_detector_report.yaml	DELETED	DELETED	
 strategy-research/regime_retune_results.yaml	DELETED	DELETED	
 strategy-research/recorder/.gitattributes	strategy-research/tools/recorder/.gitattributes	RENAMED	

@@ -1152,7 +1152,7 @@ class WhaleLargeTradeImbalanceComponent(SubStrategyComponent):
     SUSTAINED LARGE-TRADE ORDER-FLOW IMBALANCE PREDICTS SHORT-HORIZON
     CONTINUATION. Precisely: when `whale_lt_imbalance` (the signed share of a
     bar's large-trade notional, in [-1, +1] -- see
-    `strategy-research/recorder/whale_features.py` definition (a)) holds ONE
+    `strategy-research/tools/recorder/whale_features.py` definition (a)) holds ONE
     sign with magnitude >= `min_abs_imbalance` on each of `persistence_bars`
     consecutive FULLY-ATTESTED bars, the next bar's return carries that same
     sign more often than the opposite one.
@@ -1346,7 +1346,7 @@ class WhaleLargeTradeImbalanceComponent(SubStrategyComponent):
         # Attestation is all-or-nothing per bar and the window is a conjunction:
         # a single unattested bar means the persistence claim is unverifiable,
         # not false. Episodes are never joined across an unattested gap -- same
-        # rule recorder/whale_persistence.py applies to the same feature.
+        # rule tools/recorder/whale_persistence.py applies to the same feature.
         n_unattested = int(np.sum(~(window_attested == 1.0)))
         if n_unattested:
             self._abstain(

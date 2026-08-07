@@ -154,7 +154,7 @@ ingest source — by eliminating the bytes. Re-obtainable from Kraken if ever ne
 ZIP bundles via Google Drive links published in that support article, covering every pair
 from the beginning of each market, at intervals 1/5/15/30/60/240/720/1440 minutes, with
 quarterly incremental updates. Provenance recorded in
-`strategy-research/docs/session_reports/20260721_breadth_download_recon.md:151` and
+`strategy-research/engineering/sessions/session_reports/20260721_breadth_download_recon.md:151` and
 schema-confirmed in `20260722_kraken_ingest_audit.md:28-53`.
 
 **Format:** headerless, 7 columns —
@@ -191,7 +191,7 @@ article's Q1-2026 export; **do not re-obtain it** (§0, §1.2).
 ### 2.2 `Kraken_funding_rates/exports/` — 480 × `PF_*USD.csv`
 
 **⚠️ NO PROVENANCE RECORD.** This is filed as **ledger item G7**
-(`strategy-research/docs/session_reports/20260725_funding_recost_feasibility.md:503-509`).
+(`strategy-research/engineering/sessions/session_reports/20260725_funding_recost_feasibility.md:503-509`).
 Stated honestly: there is **no README, no manifest, and no emitting fetcher** anywhere in
 `trading-bot/data/fetchers/` that produces these files. `ls -a` on the directory yields
 only `__MACOSX` and `exports`. Nobody recorded where or when they came from, so the
@@ -309,7 +309,7 @@ daily, history starts 2018-02-01 (`campaign_data_policy.yaml:25`).
 
 ### 3.5 Reproducing the funding-carry analysis
 
-`strategy-research/docs/session_reports/20260725_funding_carry_magnitude.md` is fully
+`strategy-research/engineering/sessions/session_reports/20260725_funding_carry_magnitude.md` is fully
 reproducible from what is committed here — it needs **no excluded data**. It consumes
 exactly two files, both present:
 

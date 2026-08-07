@@ -33,7 +33,7 @@ class ForecastManager:
     engine rebalances toward target on EVERY bar. `config.json`'s
     `risk_management.rebalance_threshold` (0.20) is dead -- its only reference,
     `core/launcher.py:113`, is commented out. Documented in
-    `strategy-research/docs/known_divergences.md` (1); do not re-add a threshold
+    `strategy-research/engineering/improvements/known_divergences.md` (1); do not re-add a threshold
     here without reading it, since archived backtest turnover and cost figures
     all assume the current every-bar behaviour.
     """

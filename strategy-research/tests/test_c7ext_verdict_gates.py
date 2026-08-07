@@ -112,7 +112,7 @@ def test_g1_met_when_funding_bounded_with_citation():
     pre_reg["cost_model_completeness"] = {"funding": {
         "treatment": "bounded",
         "bound_bps_per_interval": 1.0,
-        "citation": "docs/venue_survey_20260719.md 2026-07-20 supplement",
+        "citation": "docs/analysis-reports/venue_survey_20260719.md 2026-07-20 supplement",
     }}
     result = vce.evaluate_pass_rule_criteria(
         _perp_held_past_funding(), pre_reg, _xs_momentum_brief())
@@ -353,7 +353,7 @@ def test_g6_live_kb_has_no_ungated_verdict_fields():
     """Guards the corrected record itself: every finding in the real KB must
     be admissible under G6."""
     import yaml
-    kb_path = Path(__file__).parent.parent / "campaign_knowledge_base.yaml"
+    kb_path = Path(__file__).parent.parent / "campaign_record" / "campaign_knowledge_base.yaml"
     kb = yaml.safe_load(kb_path.read_text(encoding="utf-8")) or {}
     for entry in kb.get("findings", []):
         if isinstance(entry, dict):
@@ -443,7 +443,7 @@ def test_xs_momentum_path_can_no_longer_produce_a_verdict():
 def test_xs_momentum_kb_entry_is_labelled_ungated_not_refine():
     """The corrected record: measurements retained, verdict withdrawn."""
     import yaml
-    kb_path = Path(__file__).parent.parent / "campaign_knowledge_base.yaml"
+    kb_path = Path(__file__).parent.parent / "campaign_record" / "campaign_knowledge_base.yaml"
     kb = yaml.safe_load(kb_path.read_text(encoding="utf-8")) or {}
     entry = next(e for e in kb["findings"]
                  if e.get("id") == "xs_momentum_cost_surviving_but_decaying")
@@ -471,7 +471,7 @@ def test_campaign_honest_verdict_count():
     """
     import yaml
     kb = yaml.safe_load(
-        (_SR_ROOT / "campaign_knowledge_base.yaml").read_text(encoding="utf-8")) or {}
+        (_SR_ROOT / "campaign_record" / "campaign_knowledge_base.yaml").read_text(encoding="utf-8")) or {}
     queue = yaml.safe_load(
         (_SR_ROOT / "config" / "campaign_queue.yaml").read_text(encoding="utf-8")) or {}
 
@@ -504,7 +504,7 @@ def test_campaign_honest_verdict_count():
 # C7-EXT-R (2026-07-22) — remediation of the independent audit.
 #
 # Each test below is named for the audit finding it closes and re-runs the
-# audit's OWN bypass input. See docs/session_reports/20260722_c7ext_audit.md.
+# audit's OWN bypass input. See engineering/sessions/session_reports/20260722_c7ext_audit.md.
 # --------------------------------------------------------------------------
 
 def test_d4_bypass_a_outcome_field_kill_is_now_refused():
@@ -661,7 +661,7 @@ def test_d6_run_057_record_no_longer_claims_a_kill():
     """The relabelling itself, and the measurements it must not have deleted."""
     import yaml
     kb = yaml.safe_load(
-        (_SR_ROOT / "campaign_knowledge_base.yaml").read_text(encoding="utf-8")) or {}
+        (_SR_ROOT / "campaign_record" / "campaign_knowledge_base.yaml").read_text(encoding="utf-8")) or {}
     entry = next(e for e in kb["findings"]
                  if e.get("id") == "p4_sma_trend_longonly_daily_auto")
 
@@ -695,7 +695,7 @@ def test_d6_run_057_sparsity_is_what_the_artifacts_say():
 def test_d5_h041c_v2_is_recorded_as_stage_discretion_not_a_gated_verdict():
     import yaml
     kb = yaml.safe_load(
-        (_SR_ROOT / "campaign_knowledge_base.yaml").read_text(encoding="utf-8")) or {}
+        (_SR_ROOT / "campaign_record" / "campaign_knowledge_base.yaml").read_text(encoding="utf-8")) or {}
     entry = next(e for e in kb["findings"]
                  if e.get("id") == "fear_greed_contrarian_v2_validation_rejected")
     assert entry["verdict_status"] == "stage_discretion"

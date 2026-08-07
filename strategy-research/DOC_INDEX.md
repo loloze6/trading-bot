@@ -16,7 +16,7 @@ Organized by the question a reader actually arrives with, not by directory.
 one line per epic, the only mandatory read for engineering.
 → For **campaign/research work**: **[`docs/CAMPAIGN_PROGRAM.md`](docs/CAMPAIGN_PROGRAM.md)** (phase
 plan) and `config/campaign_queue.yaml` (current queue state).
-→ **[`HANDOFF_CURRENT.md`](engineering/sessions_archive/HANDOFF_20260724.md)** —
+→ **[`HANDOFF_CURRENT.md`](engineering/sessions/HANDOFF_20260724.md)** —
 archived, superseded by EPICS.md and docs/CAMPAIGN_PROGRAM.md above. Retained for its 20 DONE rows'
 verified commit SHAs.
 
@@ -25,14 +25,14 @@ verified commit SHAs.
 (v2, 2026-07-19): Phase 0-5 task sequence with gates, the KPI (honest
 verdicts/week, cost per verdict) and anti-corner rule, the role/model
 assignment for every agent class, and the context-economy rules. The
-standing plan — `engineering/sessions_archive/HANDOFF_20260724.md` (archived) once
+standing plan — `engineering/sessions/HANDOFF_20260724.md` (archived) once
 derived its own task queue from this; engineering work now tracks separately in
 `engineering/roadmap/EPICS.md`.
 
 ### "How do I operate the campaign?"
 → **[`RUNBOOK.md`](RUNBOOK.md)** — launch/status/resume/stop commands, the
 hard-pause table (section 3), the block on background/`nohup` mode (grounds: ledger P0 kernel — see
-improvements/IMPROVEMENTS_DONE_20260712.md).
+engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md).
 
 ### "What is this system / what does artifact X mean?"
 → **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — pipeline stage map, every artifact's
@@ -45,11 +45,11 @@ the three-role model for fragment data, the concealment-instruction doctrine,
 read-back verification doctrine.
 
 ### "Where do things stand right now?"
-→ **[`improvements/IMPROVEMENTS_DONE_20260706.md`](improvements/IMPROVEMENTS_DONE_20260706.md)**
+→ **[`engineering/improvements/done/IMPROVEMENTS_DONE_20260706.md`](engineering/improvements/done/IMPROVEMENTS_DONE_20260706.md)**
 (formerly `00_closing_state.md`) — canonical current status of the
-enhancement-plan build (M0–M3, P1a/P1b). Note: `docs/plan/00_closing_state.md`
+enhancement-plan build (M0–M3, P1a/P1b). Note: `engineering/improvements/done/design_and_docs/00_closing_state.md`
 is an ARCHIVED snapshot with the same title — not the current version.
-→ **[`improvements/IMPROVEMENTS_REGISTER.md`](improvements/IMPROVEMENTS_REGISTER.md)**
+→ **[`engineering/improvements/done/IMPROVEMENTS_REGISTER.md`](engineering/improvements/done/IMPROVEMENTS_REGISTER.md)**
 — per-improvement status index (01–11): specified vs. implemented vs. accepted,
 built from PROD-corpus references and acceptance artifacts.
 → **[`campaign_summary.md`](campaign_summary.md)** — machine-generated
@@ -60,13 +60,13 @@ it against `campaign_queue.yaml`).
 one-line-per-transition log (written by `workflow/run_campaign.py`).
 
 ### "What happened in the security incident?"
-→ **[`docs/incidents/INCIDENT_20260710.md`](docs/incidents/INCIDENT_20260710.md)** — the
+→ **[`docs/analysis-reports/INCIDENT_20260710.md`](docs/analysis-reports/INCIDENT_20260710.md)** — the
 KB-revert incident and the system-reminder investigation, RESOLVED
 2026-07-11 as native harness boilerplate (see its Resolution addendum);
 standing disclosure doctrine with the verified-template allowlist.
 
 ### "Where may I legally trade, and on what venue?"
-→ **[`docs/venue_survey_20260719.md`](docs/venue_survey_20260719.md)** —
+→ **[`docs/analysis-reports/venue_survey_20260719.md`](docs/analysis-reports/venue_survey_20260719.md)** —
 Phase 1.1 venue survey: MiCA/MiFID II authorization status, spot vs. perp
 retail availability, fees, and API quality for Binance/Kraken/Bybit/OKX/
 Coinbase/Bitget; Kraken decided as primary venue, OKX as shortlist backup.
@@ -75,7 +75,7 @@ the cost-mapping note) and a resolved open item (the apparent spot-fee
 figure conflict was a mismatched-product comparison, not a real conflict).
 
 ### "What's broken and what gates autonomy?"
-→ **[`IMPROVEMENTS_DONE_20260712.md`](improvements/IMPROVEMENTS_DONE_20260712.md)**
+→ **[`IMPROVEMENTS_DONE_20260712.md`](engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md)**
 — the growing defect ledger (v7 as of 2026-07-20); its P0 "kernel" gates
 background mode. A1/A3/B1 (K4), A8/A9/B11/C7/C9 (K2), B3/B10 (K3), and
 B7/B15 (v5/v6) are CLOSED — see the design notes below for what shipped.
@@ -86,9 +86,9 @@ D4 (shared trades.json path), **C12** (inert protocol-declared timeframe —
 archived pre-threading runs silently ran at 1h), **C13** (V9
 validation-drift blocking run_018 re-execution, does not invalidate its
 original verdict).
-→ **[`docs/design/K4_routing_registration_design_20260712.md`](docs/design/K4_routing_registration_design_20260712.md)**,
-**[`docs/design/K2_verdict_machinery_design_20260713.md`](docs/design/K2_verdict_machinery_design_20260713.md)**,
-**[`docs/design/K3_protocol_pinning_design_20260714.md`](docs/design/K3_protocol_pinning_design_20260714.md)**
+→ **[`engineering/improvements/done/design_and_docs/K4_routing_registration_design_20260712.md`](engineering/improvements/done/design_and_docs/K4_routing_registration_design_20260712.md)**,
+**[`engineering/improvements/done/design_and_docs/K2_verdict_machinery_design_20260713.md`](engineering/improvements/done/design_and_docs/K2_verdict_machinery_design_20260713.md)**,
+**[`engineering/improvements/done/design_and_docs/K3_protocol_pinning_design_20260714.md`](engineering/improvements/done/design_and_docs/K3_protocol_pinning_design_20260714.md)**
 — design notes for the closed items above, each with an appended Phase B
 rulings/deviations section (K2's and K3's also have a dated rider section;
 K3's rider section additionally carries the 2026-07-15 audit-outcome
@@ -133,9 +133,9 @@ the session's own framing, never as current guidance):
 (post-run_059 close, pre-Phase-1 venue/cost arc).
 → **[`SESSION_LOG.md`](SESSION_LOG.md)** — chronological per-session handoff log
 (hypothesis / result / files touched / next-session prompt). Historical once superseded by a newer entry.
-→ **`docs/STEP_05_FINDINGS.md`, `docs/p1b_fetch_manifest.md`** — dated,
+→ **`engineering/improvements/done/design_and_docs/STEP_05_FINDINGS.md`, `engineering/improvements/done/design_and_docs/p1b_fetch_manifest.md`** — dated,
 self-contained investigation notes. Historical, not living docs.
-→ **[`docs/plan/NEXT_RUN_CHECKLIST.md`](docs/plan/NEXT_RUN_CHECKLIST.md)**
+→ **[`engineering/improvements/done/design_and_docs/NEXT_RUN_CHECKLIST.md`](engineering/improvements/done/design_and_docs/NEXT_RUN_CHECKLIST.md)**
 — moved here 2026-07-19 (superseded): a pre-K2/K3-era operational
 checklist (2026-07-04) whose `pre_registration.yaml` template (section
 4) predates the real B11/C7 structured `pass_rule` schema now in use —

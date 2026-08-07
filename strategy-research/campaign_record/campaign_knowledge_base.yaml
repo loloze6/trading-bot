@@ -1,0 +1,1636 @@
+schema_version: 05.A5
+created_at: '2026-07-03'
+amended_by:
+- A5.1
+- A5.2
+- A5.3
+- A8.5
+- A8.6
+- C7-EXT-R
+verdict_status_legend:
+  purpose: >
+    Added 2026-07-22 by C7-EXT-R/D-4, after the independent audit
+    (engineering/sessions/session_reports/20260722_c7ext_audit.md) established that this file
+    could not distinguish a verdict that earned its way here from one somebody
+    typed. Every verdict-bearing `outcome` now carries a `verdict_status`
+    stating which it is, and tools/lint_verdict_provenance.py enforces it with
+    no write involved. A `verdict_status` is about PROVENANCE, never about
+    whether the finding is correct.
+  gated: >
+    The verdict evaluator ran and resolved a binding PASS/FAIL. Requires
+    `pass_rule_evaluation_ref` pointing at a pass_rule_evaluation.yaml that
+    exists, belongs to one of this entry's own runs, and recorded PASS or FAIL.
+    As of the 2026-07-22 sweep, exactly ONE record in this campaign qualifies:
+    funding_mr_daily_retest_killed (run_059).
+  ungated: >
+    No pass_rule_evaluation.yaml exists for this entry's runs. The MEASUREMENTS
+    stand and are not withdrawn; they were simply never adjudicated against a
+    pre-registered rule by the machinery. A measurement is not a verdict.
+  stage_discretion: >
+    An LLM pipeline stage rejected or closed the hypothesis before the
+    registered mechanical gate ever ran. This is a real decision with real
+    reasoning behind it, and it is NOT a gated verdict -- G5's own doctrine is
+    that stage discretion does not know the verdict preconditions exist.
+  sweep_note: >
+    The 2026-07-22 sweep newly marked 11 entries `ungated` (12 carry it in total;
+    XS_momentum was already labelled by C7-EXT). That is not a retroactive
+    judgement on any of them -- most are prescreen no-edge results whose evidence
+    is perfectly sound. It records the accurate fact that the campaign's
+    mechanical verdict gate did not run on them, which until now the file did not
+    say either way. The 5 entries carrying no verdict_status at all are
+    engineering/process states (invalidated_artifact, blocked_feed_unavailable,
+    inconclusive, unusable_for_this_symbol_timeframe): they assert nothing about
+    a hypothesis, so they need no gate.
+findings:
+- id: keltner_mean_reversion_no_edge
+  mechanism: Keltner mean-reversion in TRENDING regime (ER>=0.50)
+  hypothesis_ids:
+  - keltner_mean_reversion
+  - keltner_trend_mean_reversion
+  evidence_runs:
+  - run_017
+  - run_024
+  - run_027
+  - run_033
+  evidence_count: 1
+  supplementary_evidence:
+  - 'run_039 prescreen (A8.3 full-range): ic_active_bars=-0.032, p=0.83, n_active=1125'
+  - 'Baseline_v2 re-run (2026-07-02): 163 trades, zero-trade slots 14/48, median_sharpe=0.000'
+  outcome: no_edge_observed
+  verdict_status: ungated
+  root_cause: signal_quality
+  signal_property:
+    forecast_return_corr: 0.2145
+    ic_all_bars: -0.012
+    ic_active_bars: -0.032
+    per_trade_expectancy_bps: -108.7421
+    per_trade_expectancy_t_stat: -1.855
+    per_trade_expectancy_n_episodes: 67
+  signal_property_audit_note: '2026-07-10: per_trade_expectancy_bps backfilled (this
+    field predates the A3.4 schema and was previously absent -- the gap that masked
+    daily_timeframe_er_overlay''s predicate evaluation as missing_field instead of
+    a clean false). Computed, not estimated, EPISODE-level (not fragment-level) from
+    the stored keltner_163 baseline_v2 artifacts at strategy-research/results/protocols/20260702T091324Z_18fad381/
+    (protocol_summary.json + per-window bars.csv/trades.json under results/runs/<run_id>/):
+    reconstructed 67 real position episodes from the activity-transition boundaries
+    on each window''s bars.csv forecast column, grouped all 163 trades.json fragments
+    into those 67 episodes by real entry timestamp (0 fragments unassigned), summed
+    each episode''s real net_portfolio_profit_loss_percent into one episode PnL in
+    bps, then took mean/se/t_stat over the 67 episode-level observations (2024 cohort
+    n=28 mean=-64.62bps; 2025 cohort n=39 mean=-140.42bps; pooled n=67 mean=-108.74bps,
+    se=58.62, t=-1.855). This differs materially from the FRAGMENT-level figure already
+    on record elsewhere (workflow_artifacts/skills/verdict-interpreter/SKILL.md''s A3.5 keltner_163 fixture:
+    pooled n=163, mean=-44.6bps, t=-4.637) -- both are negative (this signal has no
+    case for a positive per-trade edge under either basis), but the magnitude and
+    significance differ because 163 fragments collapse into only 67 real episodes
+    here (an average of ~2.4 LIFO fragments per real position episode) -- unlike run_054''s
+    SMA signal, this Keltner mean-reversion signal DOES scale positions and DOES fragment
+    materially. See docs/TIMEFRAME_CHANGE_PLAYBOOK.md section 2(c). Both figures kept
+    on record (fragment-level in SKILL.md, episode-level here) -- this KB entry''s
+    signal_property now carries the episode-level number since that is the basis decision-consumed
+    metrics must use.
+
+    '
+  protocol_version: baseline_v2
+  detector_version: c647ee20
+  detector_note: 'The TRENDING labels at ER>=0.50 activate ~1% of bars (class-conditional
+    sensitivity ~50-59%). Regime-conditional findings from this detector are findings
+    about its labels, not about market regimes per se. Root cause of zero-trade slots
+    is Pareto-blocked detector (see er_detector_unusable below), not calendar seasonality.
+
+    '
+  exhausted: true
+  exhausted_basis: 'Analytic: prescreen ic_active_bars = -0.032 (p=0.83) establishes
+    no informational content on the TRENDING-labeled bars. Even granting the detector
+    perfect regime identification, the signal produces no directional content. Further
+    tuning of regime parameters cannot recover signal quality.
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
+- id: keltner_breakout_inverted
+  mechanism: Keltner channel breakout (TRENDING regime, ER>=0.50)
+  hypothesis_ids:
+  - keltner_breakout
+  evidence_runs:
+  - run_015
+  - run_033
+  evidence_count: 2
+  outcome: no_edge_observed
+  verdict_status: ungated
+  root_cause: signal_inversion
+  signal_property:
+    forecast_return_corr: -0.171
+  protocol_version: baseline_v2
+  detector_version: c647ee20
+  exhausted: true
+  exhausted_basis: 'Analytic: signal_inversion is direction-fatal. The mechanism claim
+    is "breakout → continuation" (positive IC). Both runs show negative IC in the
+    same direction, confirmed on the same TRENDING-labeled bars where the full-range
+    prescreen also showed ic_active_bars=-0.032. Reversing polarity requires registering
+    the opposite claim as a new hypothesis; the breakout-continuation claim is closed.
+    A5.1 analytic basis: a directional claim producing consistent negative IC across
+    all evidence is falsified by the signal_inversion category itself — not a parameter
+    to tune.
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
+- id: keltner_scoremode_no_edge
+  mechanism: Keltner score-mode (composite multi-threshold, TRENDING)
+  hypothesis_ids:
+  - keltner_scoremode
+  evidence_runs:
+  - run_028
+  - run_030
+  evidence_count: 2
+  outcome: no_edge_observed
+  verdict_status: ungated
+  root_cause: signal_quality
+  signal_property:
+    forecast_return_corr_max: 0.2953
+    forecast_return_corr_v2: 0.014
+  protocol_version: baseline_v1
+  detector_version: pre_a22_detector
+  exhausted: true
+  exhausted_basis: 'Analytic (A5.1): cost_drag=84% on the highest-IC variant (run_028)
+    is a 4× structural cost barrier — arithmetic, not parameter-sensitive. No tuning
+    reduces round-trip cost at this signal frequency. Terminal low-IC variant (run_030
+    corr=0.014) adds empirical confirmation of signal quality failure. The analytic
+    cost failure alone suffices to close this family per A5.1 (math doesn''t need
+    replication).
+
+    '
+  reactivation_condition: null
+  engine_provenance_caveat: 'Filed 2026-07-20 (Dispatch K, fee-isolation-pairs audit
+    follow-up): protocol_version baseline_v1''s escalation_solusdt_4h.json (run_028)
+    and escalation_avaxusdt_4h.json (run_030) both declared "timeframe": "4h" from
+    the commit that created them (e814b07, 2026-06-29), but tools/run_protocol.py
+    at that commit had NO timeframe-to-interval_seconds threading logic (git show
+    e814b07:strategy-research/tools/run_protocol.py contains zero occurrences of
+    "timeframe" or "interval_seconds") -- the declared "4h" field was inert, and
+    run_backtest() silently fell through to its own 1h default. Confirmed directly
+    from both runs'' own manifest.json (data.timeframe: "3600s", i.e. 1h) and at
+    bar level (SOLUSDT window 2024-08, nominal 12:00 bar: original close=157.28 vs
+    a correctly-4h-threaded re-run''s close=159.46 at the same nominal timestamp --
+    the interval-threading logic now exists in current code and was exercised,
+    unintentionally as a side effect, by an unrelated 2026-07-20 cost-recalibration
+    re-run, which is how this was discovered -- see
+    engineering/sessions/session_reports/20260720_perp_calibration_audit.md). This does NOT change
+    what actually happened when run_028/run_030 originally executed (1h bars, real
+    trades, real cost_drag/sharpe as recorded) -- it means the ORIGINAL findings''
+    evidentiary basis is 1h data, not the 4h data their own protocol
+    filename/declaration implies. No re-derivation at 4h was performed and none is
+    ordered by this entry -- the no_edge_observed verdict above is MAINTAINED, not
+    relitigated; this caveat exists so a future reader comparing this finding
+    against any 4h-labeled re-run knows the original evidentiary basis was actually
+    1h. See engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md''s v6+ entry for the general
+    inert-protocol-timeframe class this belongs to.
+
+    '
+  power_disposition: not_applicable
+- id: keltner_scoremode_fee_isolation_no_flip
+  mechanism: Keltner score-mode (composite multi-threshold, TRENDING) -- Phase 1.2
+    controlled fee-isolation robustness check on keltner_scoremode_no_edge (10bps
+    vs 5bps/leg, timeframe/window-set/strategy-config held fixed within each pair)
+  hypothesis_ids:
+  - keltner_scoremode
+  evidence_runs:
+  - run_028
+  - run_030
+  evidence_count: 2
+  outcome: no_edge_observed
+  verdict_status: ungated
+  root_cause: signal_quality
+  signal_property:
+    run_030_avaxusdt_median_sharpe_10bps: -2.735
+    run_030_avaxusdt_median_sharpe_5bps: -1.9
+    run_030_avaxusdt_cost_drag_pct_10bps: 62.6513
+    run_030_avaxusdt_cost_drag_pct_5bps: 30.386
+    run_030_avaxusdt_total_trades_both_legs: 1178
+    run_028_solusdt_total_trades_both_legs: 0
+  protocol_version: escalation_solusdt_4h / escalation_avaxusdt_4h (4h)
+  detector_version: pre_a22_detector
+  exhausted: true
+  exhausted_basis: 'Empirical (Phase 1.2, Dispatch L, 2026-07-20; code committed
+    d86f0d0 (perp cost wiring) and e3bcbb0 (--commission-bps override flag);
+    independently audited twice, both AUDIT PASS -- Dispatch J
+    (engineering/sessions/session_reports/20260720_perp_calibration_audit.md) and Dispatch M
+    (engineering/sessions/session_reports/20260720_pairs_audit.md)): at the current 4h engine, a
+    controlled pair holding timeframe (14400s), the 11-window set, and
+    strategy-config hash fixed within each pair, varying ONLY commission_rate
+    (10bps/leg vs 5bps/leg via run_protocol.py''s --commission-bps flag), FLIPS NO
+    VERDICT for either evidence run.
+
+    Correction (dispatch W39, 2026-08-05 -- kept below the original claim, not
+    in place of it): "independently audited twice, both AUDIT PASS" is false.
+    Dispatch J (engineering/sessions/session_reports/20260720_perp_calibration_audit.md) does
+    NOT audit this fee-isolation experiment at all -- it audits the earlier
+    commit d86f0d0 and the ORIGINAL run_028/run_030 perp-recalibration numbers
+    (the 1h-vs-4h candle-interval confound), and its own verdict is **AUDIT
+    FAIL**. Dispatch M (engineering/sessions/session_reports/20260720_pairs_audit.md) is the
+    one audit that actually covers e3bcbb0 and this fee-isolation pair design
+    (legA_10bps/legB_5bps), and it returned AUDIT PASS. So the empirical
+    finding below rests on a single independent audit (Dispatch M), not two.
+    Per PROCESS.md/DISPATCH_MODEL.md and every other exhausted_basis entry in
+    this file, one independently-audited empirical basis suffices to close a
+    family -- no entry requires two audits of the same finding. Dispatch M''s
+    audit re-derived every number in this entry directly from git/artifacts
+    (candle uniformity, regime-score continuity, commission recomputation,
+    trade-count identity, kill-threshold logic), so this finding and the
+    exhausted status below are UNCHANGED and stand on Dispatch M alone.
+
+    run_030 (AVAXUSDT): kill at both legs. median_sharpe -2.735 (10bps) ->
+    -1.900 (5bps) -- improves but stays below the kill_median_sharpe_lt=-1
+    threshold; cost_drag_pct roughly halves (62.65%->30.39%, consistent with
+    cost_drag scaling near-linearly with the fee term). Trade count is EXACTLY
+    identical between legs (1178=1178, independently hand-recomputed by
+    Dispatch M) -- with timeframe genuinely controlled, this strategy''s trade
+    path is insensitive to fee level in this range.
+
+    run_028 (SOLUSDT): refine at both legs -- 0 trades in every one of 11
+    windows at BOTH fee levels. Dispatch M''s audit ruled out both an engine
+    defect and a fee effect as the cause: 4h candle construction is verified
+    non-defective (uniform 14400s spacing, zero OHLC violations across 190
+    bars), and the regime detector''s raw score varies continuously bar-to-bar
+    (sampled 0.0113-0.3471, never frozen/NaN) but never once crosses the
+    score_product gate''s min_score=0.4 threshold in any of the 11 windows
+    (closest approach: 2024-05-19 00:00:00, regime_scores.trending=0.3471,
+    still 0.053 short). Mechanism: the detector''s ER/VR components use fixed
+    bar-count parameters (period=24, window=100) evidently tuned against 1h
+    data; at 4h the same bar counts span 4x the calendar time, mechanically
+    over-smoothing the score well below the 1h-calibrated gate (the original
+    1h trades showed regime_scores.trending of 0.42/0.42/0.34/0.39/0.41,
+    hovering at/above the same 0.4 gate). This is real, analytically-explained
+    4h regime-gate sparsity -- a legitimate finding about this specific config
+    at this cadence, not a fee effect and not an engine bug.
+
+    CONCLUSION: the keltner_scoremode_no_edge kills are structural (signal
+    quality / regime-detector bar-count calibration mismatch at 4h), not
+    venue-fee artifacts -- halving the fee in the 5-10bps range does not
+    rescue either evidence run.
+
+    EXPLICIT CAVEAT: these 4h pairs are a clean fee-SENSITIVITY probe at 4h
+    only. They are NOT a re-derivation of the original keltner_scoremode_no_edge
+    verdict, which was reached on 1h data (see this same finding''s
+    engine_provenance_caveat, filed 2026-07-20/Dispatch K: the ORIGINAL
+    run_028/run_030 silently executed at 1h despite their protocols declaring
+    4h, because interval threading did not exist at commit e814b07). The 1h
+    and 4h evidentiary bases are both now on record, separately, and neither
+    overwrites the other -- this entry adds a NEW, independent 4h-native
+    fee-robustness result; it does not relitigate the original 1h verdict.
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
+- id: rsi_mean_reversion_no_edge
+  mechanism: RSI(14) mean-reversion in low-ER regime
+  hypothesis_ids:
+  - rsi_mean_reversion
+  evidence_runs:
+  - run_014
+  evidence_count: 1
+  outcome: no_edge_observed
+  verdict_status: ungated
+  root_cause: signal_quality
+  signal_property:
+    forecast_return_corr: -0.022
+  protocol_version: baseline_v1
+  detector_version: pre_a22_detector
+  exhausted: true
+  exhausted_basis: 'Analytic: parameter space for RSI mean-reversion was exhaustively
+    searched across smooth_period (run_011), er_threshold (run_012), vr_threshold
+    (run_013/014). Terminal result at the parameter frontier: corr=-0.022. A5.1 permits
+    exhausted=true at evidence_count=1 when the failure is analytic (parameter space
+    closed out). Note: runs 011-013 had config_path bug; directional conclusion (RSI
+    parameter exhaustion → pivot) is qualitatively supported but exact numbers from
+    those runs are not cited here.
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
+- id: rsi_momentum_trending_cost_drag
+  mechanism: RSI momentum in TRENDING regime
+  hypothesis_ids:
+  - rsi_momentum_trending
+  evidence_runs:
+  - run_018
+  evidence_count: 1
+  outcome: no_edge_observed
+  verdict_status: ungated
+  root_cause: cost_drag
+  signal_property:
+    forecast_return_corr: 0.018
+    cost_drag_pct: 272.865
+  protocol_version: baseline_v1
+  detector_version: pre_a22_detector
+  exhausted: true
+  exhausted_basis: 'Analytic: cost_drag=273% means gross edge is overwhelmed by transaction
+    costs by 2.7×. corr=0.018 is also near-zero. Structurally cost-unviable at this
+    trade frequency.
+
+    '
+  reactivation_condition: null
+  power_disposition: not_applicable
+- id: funding_rate_mean_reversion_inconclusive
+  mechanism: Funding rate extreme → contrarian mean-reversion (structural_forced_flow)
+  hypothesis_id: H-041-A
+  edge_source_category: structural_forced_flow
+  evidence_runs:
+  - run_041
+  - run_050
+  evidence_count: 2
+  outcome: no_edge_observed
+  verdict_status: ungated
+  outcome_reason: closed_null_well_powered
+  signal_property:
+    ic_active_bars: 0.017764
+    p_value: 0.521
+    n_episodes: 139
+    direction: positive
+  protocol_version: backward_extension_2019_2025
+  detector_version: not_applicable
+  power_disposition:
+    status: adequately_powered
+    expected_n_eff: 139
+    min_detectable_ic_at_target_power: 0.46
+    plausible_ic_range:
+    - 0.05
+    - 0.2
+    verdict: well_powered_null
+  reactivation_condition: null
+  reactivation_consumed_by: run_050
+  exhausted: true
+  exhausted_basis: 'Empirical (P1b, run_050, 2026-07-05/06): ic_active_bars=0.017764,
+    p=0.521, n_episodes=139 over the full 2019-09-10 to 2025-12-31 backward-extended
+    window (A8.5.1a episode-blocked significance, floor_pass=true at min_n_episodes_floor=8).
+    ~14x the original episode count (run_041: n_eff=10) and still not significant.
+    This is the reactivation_condition''s own PRIMARY trigger (backward extension)
+    fully executed and closed, not a power-limited parked result — no further reactivation
+    of this same formulation is defensible. A structurally different claim (different
+    evidence_type, timeframe, or venue) would be a new hypothesis registration, not
+    a reactivation of this entry.
+
+    '
+- id: funding_rate_mean_reversion_run047_invalidated
+  mechanism: Funding rate extreme → contrarian mean-reversion (structural_forced_flow)
+  hypothesis_id: H-041-A
+  edge_source_category: structural_forced_flow
+  evidence_runs:
+  - run_047
+  evidence_count: 1
+  outcome: invalidated_artifact
+  outcome_reason: 'F4d (2026-07-05, P1b): run_047 completed end-to-end (kill_no_ic,
+    active_n_bars=234, ic_all_bars=0.008435) and verdict_interpreter wrote it into
+    the sibling finding funding_rate_mean_reversion_inconclusive (evidence_runs+=run_047,
+    evidence_count 1→2) BEFORE the pre-registration conformance gate existed to catch
+    it. Two real defects, confirmed by direct artifact inspection: (1) signal_prescreen
+    silently used protocols/baseline_v1.json (2024-01 to 2024-11 only) instead of
+    the pre-registered backward-extension range [2019-09-10 BTC / 2019-11-27 ETH,
+    2025-12-31] -- nothing translated the research_brief''s prose date-range mandate
+    into an actual protocol file/override; (2) backtest_specification''s LLM stage
+    silently dropped the MANDATORY significance_methodology=episode_blocked_a851a
+    field despite an explicit skill-file instruction, so prescreen_result.yaml shows
+    significance_methodology_used=block_24_fisher_z, ic_by_era=null -- A8.5.1a never
+    ran. Net effect: run_047 was a near-exact repeat of run_041''s original 2024-only
+    test (active_n=234 here vs 13 there, same underpowered window), NOT a valid test
+    of the backward-extension reactivation. The sibling entry''s evidence_runs/evidence_count
+    were reverted to run_041-only; this entry preserves the historical record of the
+    invalidated attempt. campaign_review.yaml''s "continue current direction" recommendation
+    from this run cycle was made on the basis of this invalid result -- see its own
+    annotation. Remediation: pre_registration.yaml now carries a machine_constraints
+    block; the orchestrator generates the protocol file from it directly and force-injects
+    significance_methodology into candidate_strategy_config.json (not left to LLM
+    memory); a conformance gate before verdict_interpreter would have caught this
+    exact case (regression test: strategy-research/tests/test_prereg_conformance_gate.py).
+    Do not cite this entry as evidence about the mechanism.
+
+    '
+  protocol_version: baseline_v1_WRONG_should_have_been_backward_extension
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: null
+- id: fear_greed_contrarian_inconclusive
+  mechanism: F&G extreme (< 25 / > 75) → contrarian 1-2 day mean-reversion (persistent_behavioral_bias)
+  hypothesis_id: H-041-C
+  edge_source_category: persistent_behavioral_bias
+  evidence_runs:
+  - run_042
+  - run_048
+  evidence_count: 2
+  outcome: era_conditional_instability
+  verdict_status: ungated
+  outcome_reason: significant_pooled_ic_with_era_sign_flip
+  signal_property:
+    ic_active_bars: -0.040257
+    p_value: 0.081
+    n_episodes: 234
+    direction: negative_pooled_sign_flips_by_era
+    unshifted_ic: 0.14
+    per_era_note: Sign is negative throughout 2018-2023 (BTC -0.058 to -0.073, ETH
+      -0.071 to -0.135) and positive throughout 2024-2025 (BTC +0.101 to +0.182, ETH
+      +0.094 to +0.163) -- consistent across both symbols and all 8 era-symbol pairs.
+      See docs/00_closing_state.md section 8.
+  protocol_version: backward_extension_2018_2025
+  detector_version: not_applicable
+  a8_4_alignment: applied_plus1day_shift
+  power_disposition:
+    status: adequately_powered
+    expected_n_eff: 234
+    min_detectable_ic_at_target_power: 0.46
+    plausible_ic_range:
+    - 0.05
+    - 0.15
+    verdict: significant_but_era_unstable
+  reactivation_condition: null
+  reactivation_consumed_by: run_048
+  exhausted: true
+  exhausted_basis: 'Empirical (P1b, run_048, 2026-07-05/06): the pooled/naive extreme-F&G
+    contrarian claim on this entry''s exact formulation is closed -- ic_active_bars=-0.040257,
+    p=0.081 (significant, wrong sign vs. this entry''s original positive-direction
+    claim), n_episodes=234 over 2018-02 to 2025-12-31. The per-era breakdown (A8.5.1a)
+    is the real finding: the sign flips cleanly by era (see signal_property.per_era_note),
+    so neither "confirmed edge" nor a simple "kill" applies to the pooled claim as
+    registered. A naive polarity flip (run_052, scaffolded 2026-07-06, NOT launched)
+    would only fix one era at the expense of the other -- it does not resolve the
+    underlying era-instability and must not be proposed as a plain reactivation. Any
+    further pursuit of F&G contrarian behavior requires a NEW hypothesis registration
+    (H-041-C-v2, e.g. an explicitly era-conditional or regime-gated formulation) per
+    A8.5.3 -- not a reactivation of this entry, and not run_052 launched as-is.
+
+    '
+- id: fear_greed_contrarian_v2_validation_rejected
+  mechanism: F&G extreme (< 25 / > 75) -> contrarian 1-2 day mean-reversion, explicitly
+    era-gated registration per A8.5.3 (pass-gated 2018-02-01 to 2023-12-31; 2024-2025
+    diagnostic-only, never gating)
+  hypothesis_id: H-041-C-v2
+  edge_source_category: persistent_behavioral_bias
+  evidence_runs:
+  - run_058
+  evidence_count: 1
+  outcome: stage_discretion_rejection_no_gated_verdict
+  verdict_status: stage_discretion
+  outcome_reason: validation_gate_rejection_pre_pass_rule
+  outcome_history_superseded:
+  - outcome: completed_rejected
+    recorded_at: '2026-07-17'
+    superseded_at: '2026-07-22'
+    superseded_reason: 'C7-EXT-R/D-5. `completed_rejected` was being counted as one
+      of the campaign''s two gated verdicts. It is not one. This entry''s own
+      exhausted_basis already said so in as many words -- "The REGISTERED mechanical
+      evaluation ... was NEVER EXECUTED" -- but the outcome string did not, and a
+      string-matching test (test_campaign_honest_verdict_count) counted it anyway.
+      Confirmed by direct check: runs/run_058/artifacts/ contains no
+      pass_rule_evaluation.yaml, no protocol_result.yaml, no prescreen_result.yaml and
+      no verdict_interpretation.yaml; pipeline_state.yaml stops at current_stage:
+      validation. The B11/C7 structured pass_rule pinned in run_058''s
+      pre_registration.yaml (criteria a/b/c over 71 pass-gated monthly windows) never
+      ran. The rejection itself is NOT withdrawn -- validation_decision.yaml''s
+      reasoning, and grounds (1)-(3) in exhausted_basis below, stand exactly as
+      recorded. What is withdrawn is the claim that a registered gate produced them.
+      Nothing measured is deleted; run_058 measured nothing, which is the point.'
+  signal_property: null
+  protocol_version: h041c_v2_backext (protocols/h041c_v2_backext.json, sha256:439bc6320ac198c8d2ba8b7d4c11b8da39b0fbad4edfb0a2883937ae590abeb7,
+    per runs/run_058/artifacts/pre_registration.yaml machine_constraints)
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  reactivation_condition: null
+  reactivation_consumed_by: null
+  exhausted: true
+  exhausted_basis: 'run_058 terminated completed_rejected at the validation_gate stage
+    (runs/run_058/artifacts/validation_decision.yaml: status: reject). The REGISTERED
+    mechanical evaluation -- signal_prescreen -> protocol_execution -> the B11/C7
+    structured pass_rule pinned in runs/run_058/artifacts/pre_registration.yaml (criteria
+    a/b/c over the 71 pass-gated monthly windows, 2018-02-01 to 2023-12-31) -- was
+    NEVER EXECUTED; no prescreen_result.yaml, protocol_result.yaml, pass_rule_evaluation.yaml,
+    or verdict_interpretation.yaml exist for this run. Closure therefore rests on the
+    totality of evidence, not on the registered mechanical gate: (1) the pre_registration.yaml
+    honesty_clause itself, which already conceded the pass-gated 2018-2023 window
+    overlaps the exact data on which the era-sign-flip diagnosis was made, so even
+    a mechanical PASS would not have been confirmation of a real edge; (2) this KB''s
+    prior finding (fear_greed_contrarian_inconclusive, above) of a significant pooled
+    IC with a clean era sign-flip (negative 2018-2023, positive 2024-2025, all 8 era-symbol
+    pairs); and (3) the validation_gate rejection itself, on two independent blocking
+    grounds -- documented era-dependent sign-flip treated as edge inversion rather
+    than era artifact, and cost-feasibility infeasibility (6% activation / 270 trades
+    over 13mo against a 34 bps/trade requirement vs. a 5-20 bps historical sentiment
+    edge).
+
+
+    FACTUAL CORRECTION (recorded for future readers): validation_decision.yaml''s
+    rationale and blocking_issues refer to the "2024-2025 walk-forward period" as
+    "the test period" and treat its documented sign-flip as if it were pass/fail evidence.
+    This is not correct. Per runs/run_058/artifacts/pre_registration.yaml (pass_rule.window_set_ref:
+    protocols/h041c_v2_backext.json) and briefs/H-041-C-v2.md (diagnostic_only_eras_never_gated:
+    era_2024_burned + era_2024_2025_walk_forward_extension, "Reported for continuity/context
+    only -- never gating"), the PINNED PROTOCOL''s pass-gated windows are 2018-02-01
+    through 2023-12-31 (71 monthly windows) ONLY. 2024-2025 was registered as diagnostic-only
+    and explicitly excluded from gating precisely because it is the era whose divergence
+    motivated this registration in the first place. The validation_gate rejection''s
+    reasoning about "the test period" therefore describes a window this brief never
+    proposed to test against. This error does not by itself overturn the rejection
+    (grounds (1)-(3) above stand independently of it) but must be weighed by any future
+    reader citing validation_decision.yaml directly.
+
+    '
+- id: volume_impulse_continuation_blocked
+  mechanism: High-volume bars with strong body fraction → directional continuation
+  hypothesis_id: H-041-B
+  edge_source_category: deferred_mechanism_impure
+  evidence_runs: []
+  evidence_count: 0
+  outcome: blocked_feed_unavailable
+  outcome_reason: 'Proxy (volume_ratio × body_fraction) is mechanism-impure: activates
+    equally on organic herding (→ continuation) and forced liquidations (→ mean-reversion).
+    Opposite directional implications; no a priori claim is defensible without a liquidation
+    feed to separate the two.
+
+    '
+  blocked_by_feed: liquidation_data
+  reference: strategy-research/campaign_record/feed_wishlist.yaml
+  reactivation_condition: 'Liquidation feed available (e.g., Binance liquidation stream).
+    Split approach: (a) liquidation-dominated high-volume bars → H-041-B-liq (structural_forced_flow,
+    mean-reversion); (b) organic high-volume bars → H-041-B-org (behavioral_herding,
+    continuation). Each is a separate, mechanism-pure hypothesis entry requiring its
+    own registration.
+
+    '
+  power_disposition: null
+  exhausted: false
+- id: er_detector_unusable_btc_eth_1h
+  mechanism: ER-threshold single-indicator stateless regime detector on BTC/ETH 1h
+  detector_family: efficiency_ratio_threshold
+  evidence_runs:
+  - run_039
+  evidence_count: 1
+  outcome: unusable_for_this_symbol_timeframe
+  root_cause: 'Pareto conflict: activation in [10%, 40%] band (intrinsic criterion)
+    and transitions/window ≤ 4 (stability criterion) cannot be simultaneously satisfied
+    on 1h crypto. Best achievable: score 5/8, transitions ≈ 18/window at dwell=24
+    (not directly implementable), or transitions ≈ 40/window at dwell=1. No ER-family
+    configuration overcomes this structural constraint.
+
+    '
+  exhausted_basis: 'Analytic: the Pareto conflict is a structural property of the
+    signal family and timeframe, not a calibration failure. evidence_count=1 is sufficient
+    per A5.1 rule (analytic failure). A full 48-cell grid confirming the ceiling is
+    analytic evidence.
+
+    '
+  protocol_version: baseline_v2
+  detector_version: c647ee20
+  policy_consequence: 'Per A2.3 post-unusable policy: no replacement detector built
+    until an ungated edge exists with regime-dependent performance in Improvement
+    03 diagnostics. Candidate detector families in config/detector_wishlist.yaml.
+    Preferred first candidate: daily-timeframe regime overlay on 1h strategies.
+
+    '
+  closes_ac4: true
+  closes_ac4_note: 'AC4 of Improvement 02 required the post-unusable standing policy
+    to be recorded. This entry, in the permanent KB, serves as the durable record.
+
+    '
+  exhausted: true
+- id: ema_spread_trend_continuation_v1_auto
+  mechanism: EMA(9/21) spread trend continuation, BTC/ETH 1h, ungated (persistent_behavioral_bias)
+  hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
+  evidence_runs:
+  - run_043
+  evidence_count: 1
+  outcome: no_edge_observed
+  verdict_status: ungated
+  root_cause: already_priced_in
+  outcome_reason: 'P1a (2026-07-04) shakedown result, real (post-F1-F4 wiring fixes).
+    Dense, always-on signal (forecast_sparsity_pct=0.0, active_n_bars=15938 of 15938
+    processed bars, n_eff=664 block-adjusted). ic_all_bars=ic_active_bars=-0.021091
+    (p=0.5876, not significant); cost_check also fails (edge_to_cost_ratio=0.3589
+    < 2.0 required). verdict_interpreter root_cause.mechanism_failure=already_priced_in,
+    confidence=high: EMA crossover is a textbook, universally-taught technical signal
+    on the most liquid crypto pair — consistent with this campaign''s established
+    finding that no price-only technical indicator (RSI, Keltner in any variant, now
+    EMA spread) shows exploitable directional content on BTC/ETH 1h.
+
+    '
+  signal_property:
+    ic_all_bars: -0.021091
+    ic_active_bars: -0.021091
+    p_value: 0.5876
+    n_eff: 664
+    forecast_sparsity_pct: 0.0
+    edge_to_cost_ratio: 0.3589
+  protocol_version: baseline_v1.json
+  protocol_version_note: 'Ran against protocols/baseline_v1.json (11 months, 2024-01
+    to 2024-11), not baseline_v2 — the orchestrator''s default protocol-selection
+    fallback (when campaign_state.last_escalation is unset) points at baseline_v1,
+    a separate wiring finding from this same P1a pass, not fixed as part of F1-F8
+    (out of scope).
+
+    '
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: null
+- id: funding_rate_continuous_mean_reversion_auto
+  hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+  evidence_runs:
+  - run_044
+  evidence_count: 1
+  outcome: invalidated_artifact
+  outcome_reason: 'F5 (2026-07-04): the original ''inconclusive'' outcome (from prescreen
+    route=kill_no_ic, active_n_bars=0) was a bug artifact, not a real result -- FundingRateMeanReversionComponent''s
+    threshold=0.0 divide-by-zero (F5a) was silently swallowed by main_strategy.update(),
+    zeroing out every settlement bar. The hypothesis was never actually tested. Superseded
+    by the post-F5 relaunch trial (see evidence_runs / a fresh finding entry once
+    that completes). Do not cite this entry as evidence about the mechanism.
+
+    '
+  protocol_version: baseline_v2
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: null
+- id: funding_rate_continuous_mean_reversion_expanded_auto
+  mechanism: Continuous (threshold=0.0) 8h funding-rate sign mean-reversion, BTC/ETH
+    1h, ungated (structural_forced_flow)
+  hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED
+  evidence_runs:
+  - run_044
+  evidence_count: 1
+  outcome: inconclusive
+  root_cause: lag_mismatch_to_regime_persistence
+  outcome_reason: 'P1a (2026-07-04) shakedown result, real (post-F5a fix — F5a eliminated
+    a divide-by-zero that had produced a bug-artifact active_n_bars=0 on the first
+    attempt; component_error_count=0 here). Fires at every 8h settlement (~12.5% activation,
+    ~8x denser than H-041-A''s extreme-only variant; active_n_bars=2004, n_eff=83).
+    ic_all_bars=-0.008706, ic_active_bars=0.016737 (p=0.881, not significant); cost_check
+    fails (edge_to_cost_ratio=0.2425). verdict_interpreter root_cause.mechanism_failure=lag_mismatch_to_regime_persistence,
+    confidence=high: the forced-settlement mechanism is structurally real, but 1h
+    bars may be too fast for the mean-reversion impulse to materialize/reverse before
+    the position closes. status=escalate (target=timeframe), not kill — this is NOT
+    a terminal result for the mechanism, only for the 1h execution granularity.
+
+    '
+  signal_property:
+    ic_all_bars: -0.008706
+    ic_active_bars: 0.016737
+    p_value: 0.881
+    n_eff: 83
+    forecast_sparsity_pct: 87.5
+    edge_to_cost_ratio: 0.2425
+  protocol_version: baseline_v1.json
+  protocol_version_note: 'Same orchestrator default-protocol-selection finding as
+    ema_spread_trend_continuation_v1_auto — ran against baseline_v1.json, not the
+    canonical baseline_v2.json.
+
+    '
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: 'verdict_interpreter escalated to timeframe (proposed_change_dimension=timeframe):
+    re-test the identical mechanism (FundingRateMeanReversionComponent, threshold=0.0)
+    at 4h or daily bars, where the settlement-driven mean-reversion impulse may have
+    time to materialize before position close. Distinct from H-041-A''s reactivation
+    path (backward data extension to 2018+ for power) — this is a timeframe question,
+    not a power question, since n_eff=83 here already clears the a-priori power bar.
+
+    '
+- id: funding_mr_daily_retest_killed
+  mechanism: Continuous (threshold=0.0) 8h funding-rate sign mean-reversion,
+    BTC/ETH, re-tested on DAILY bars -- the daily branch of
+    funding_rate_continuous_mean_reversion_expanded_auto's own
+    reactivation_condition (above)
+  hypothesis_id: FUNDING_MR_DAILY_RETEST
+  edge_source_category: structural_forced_flow
+  evidence_runs:
+  - run_059
+  evidence_count: 1
+  outcome: completed_rejected
+  verdict_status: gated
+  pass_rule_evaluation_ref: runs/run_059/artifacts/pass_rule_evaluation.yaml
+  outcome_reason: 'Mechanically evaluated (B11/C7 structured pass_rule,
+    runs/run_059/artifacts/pass_rule_evaluation.yaml, evaluated_at
+    2026-07-18T16:01:02Z): FAIL on BOTH gating criteria, either symbol
+    sufficient to kill --
+    (a) median_sharpe > 0.8: BTCUSDT -0.296, ETHUSDT -0.979 (both deeply
+    negative, FAIL); (b) max_abs_drawdown_pct < 30: BTCUSDT 34.922, ETHUSDT
+    49.606 (both exceed, FAIL); (c) zero_trade_slot_pct <= 50: BTCUSDT 0.0,
+    ETHUSDT 0.0 (PASS -- see the criterion (c) conformance reconciliation
+    honesty note below). statement_branch_matched: FAIL-a. Per the
+    pre-registered pass_rule''s total outcome mapping
+    (briefs/FUNDING_MR_DAILY_RETEST.md, evaluation.pass_rule.outcomes):
+    hypothesis_verdict: kill, lineage_routing: terminate.
+    verdict_interpreter''s own protocol_verdict field read "refine" on
+    this run (runs/run_059/artifacts/verdict_interpretation.yaml) -- this
+    was OVERRIDDEN by the registered B11 mapping, per the same file''s own
+    hypothesis_verdict/lineage_routing fields (kill/terminate) and
+    altitude_justification ("Pre-registered pass_rule mandates kill on ANY
+    criterion FAIL on EITHER symbol... Lineage terminates."). The override
+    is the REGISTERED, correct behavior (B11''s whole point: a total,
+    pre-committed mapping that a stage''s own free-text verdict field
+    cannot re-open) -- not a discrepancy to flag, cited here so a future
+    reader does not mistake the interpreter''s stray "refine" label for
+    the actual outcome.
+
+
+    CRITERION (c) CONFORMANCE RECONCILIATION (honesty note, filed
+    2026-07-19): the pre-registered zero-trade-window base rates
+    (briefs/FUNDING_MR_DAILY_RETEST.md criterion c source: BTC 28.6% /
+    ETH 38.8%, derived from daily funding-sign-flip counts) assumed trades
+    occur ONLY at sign flips. The realized zero_trade_slot_pct was 0.0/0.0
+    with min_trade_count=1 on all 49 pass-gated windows because each
+    monthly window RESTARTS FLAT and the always-on (threshold=0.0,
+    continuous-mode) signal opens a position at window start regardless
+    of whether a sign flip occurs inside that window -- the sign-flip-count
+    assumption behind the pre-registered base rate described the SIGNAL''s
+    own activation pattern correctly but did not account for the
+    protocol''s own per-window position-restart semantics
+    (tools/run_protocol.py executes each window as an independent
+    replay). The realized value is CONSISTENT WITH A CORRECTLY FUNCTIONING
+    ENGINE, not an anomaly or a new bug: criterion (c) is an
+    engine-conformance detector (per the brief''s honesty note iv), and
+    its breakage-direction power (~100% detection of an F5a-class zeroing
+    bug, which manifests as zero_trade_slot_pct near 100%, not near 0%)
+    is unaffected by this reconciliation.
+
+
+    ENGINE PROVENANCE (tz-bug arc, mandatory disclosure): run_059''s FIRST
+    launch attempt (2026-07-18, pre-fix) hit a SILENT all-bars zero-forecast
+    failure at the signal_prescreen/protocol_execution stage --
+    FundingRateMeanReversionComponent''s settlement-boundary check
+    (hour % 8 == 0) never matched because CandleBuilder._align()
+    (trading-bot/data/data_manager.py) used a naive local-system-timezone
+    epoch round-trip instead of true UTC, silently shifting every 1d
+    candle''s start_time to a fixed non-zero hour. Root-caused via
+    in-process repro (confirmed: 30/31 bars swallowed by the settlement
+    check, 0 fired), fixed at the confirmed site (commit 2529f5b, two new
+    regression tests), and the run was RESUMED after the fix. The
+    pass_rule_evaluation.yaml/protocol_result.yaml/verdict_interpretation.yaml
+    quoted above are ALL POST-FIX artifacts (protocol_result.yaml/
+    pass_rule_evaluation.yaml timestamped 2026-07-18T16:01Z, several hours
+    after the 2026-07-18T11:54Z fix commit; verdict_interpretation.yaml
+    timestamped 2026-07-19T12:29Z after additional resume cycles -- see
+    PIPELINE_IMPROVEMENTS ledger v6 for the stale-cache-reuse and
+    verdict_interpreter branch-fallthrough issues those extra cycles
+    surfaced). This verdict is NOT contaminated by the pre-fix defect --
+    it is the FIXED engine''s own output.
+
+
+    ROOT CAUSE (verdict_interpretation.yaml, fresh, post-fix):
+    mechanism_failure: already_priced_in, confidence: high.
+    per_trade_expectancy_bps mean -38.47 (t=-1.509, n=699, not
+    significant), median_gross_pnl -41.71, win_rate_net 41.77% --
+    insufficient to overcome assumed round-trip costs (17.0-17.5 bps).
+    median_forecast_return_corr=0.047 is a marginal, economically
+    non-viable signal once costs and drawdown are accounted for.
+    "Funding-rate sign itself lacks stable mean-reversion edge on daily
+    timeframe after costs" (verdict_interpretation.yaml, root_cause.supporting_evidence).'
+  signal_property:
+    median_sharpe_btcusdt: -0.296
+    median_sharpe_ethusdt: -0.979
+    max_abs_drawdown_pct_btcusdt: 34.922
+    max_abs_drawdown_pct_ethusdt: 49.606
+    zero_trade_slot_pct_btcusdt: 0.0
+    zero_trade_slot_pct_ethusdt: 0.0
+    min_trade_count_both_symbols: 1
+    median_forecast_return_corr: 0.047
+    median_gross_pnl: -41.7122
+    per_trade_expectancy_bps_mean: -38.47
+    per_trade_expectancy_bps_t_stat: -1.509
+    per_trade_expectancy_n_trades: 699
+    win_rate_net_pct: 41.77
+    # FUNDING-CARRY MEASUREMENT added 2026-07-25 (Dispatch W1). Evidence only --
+    # no verdict field is touched by this addition. Per-value provenance and the
+    # basis asymmetry between A1 (per-symbol) and R (pooled) are in audit_note below.
+    funding_carry_measured_annualized_pct_btcusdt: 15.4367
+    funding_carry_measured_annualized_pct_ethusdt: 19.2366
+    funding_carry_zero_lag_upper_bound_pct_btcusdt: 16.8029
+    funding_carry_zero_lag_upper_bound_pct_ethusdt: 20.5507
+    funding_carry_required_annualized_pct_btcusdt: 27.8178
+    funding_carry_required_annualized_pct_ethusdt: 27.3757
+    funding_carry_coverage_ratio_btcusdt: 0.555
+    funding_carry_coverage_ratio_ethusdt: 0.703
+    funding_carry_measurement_window: '2019-12-01..2023-12-31'
+    funding_carry_measurement_n_days: 1492
+    funding_carry_measurement_venue_proxy: binance_perp_8h
+    funding_sign_flip_days_btcusdt: 180
+    funding_sign_flip_days_ethusdt: 152
+  protocol_version: funding_mr_daily_retest_v1 (protocols/funding_mr_daily_retest_v1.json,
+    sha256:6cbda1777ba839d2b1f18b7f23a53c84103eab5df41f16657566f74cc645d43e,
+    49 pass-gated monthly windows, 2019-12-01 to 2023-12-31)
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  reactivation_condition: null
+  reactivation_consumed_by: null
+  exhausted: true
+  exhausted_basis: 'This registration was explicitly the daily branch of
+    funding_rate_continuous_mean_reversion_expanded_auto''s reactivation_condition
+    (above), pre-registered as the mechanism''s LAST escalation for the
+    DAILY timeframe with no refine/pivot/escalate anywhere in its own
+    pass_rule (briefs/FUNDING_MR_DAILY_RETEST.md, hypothesis.primary). The
+    B11 total-mapping FAIL-a branch (kill/terminate) closes this daily
+    branch specifically. NOTE: the 4h branch of the SAME parent
+    reactivation_condition was explicitly DEFERRED, not tested and not
+    ruled out, per operator ruling R3 (this session''s dispatch: "4h
+    deferred"). This entry''s exhausted:true/reactivation_condition:null
+    applies ONLY to the daily branch registered here -- it does not by
+    itself close funding_rate_continuous_mean_reversion_expanded_auto''s
+    parent entry, whose own exhausted/reactivation_condition fields are
+    left unmodified by this close-out and remain the authoritative record
+    for the still-open 4h question.'
+  venue_live_tradability: 'Phase 1.3 answer (2026-07-20, settled in writing per
+    docs/ROADMAP.md''s Phase 1.3 gate: "settle explicitly whether the funding
+    family (perp access) is live-tradable at all"). YES, legally tradable: Kraken
+    perpetual futures are tradable by a French non-professional retail client via
+    the Kraken Pro / Futures API (entity: Payward Europe Digital Solutions (CY)
+    Limited, CySEC licence 342/17; base-tier taker 0.05%; gated by a mandatory
+    MiFID II appropriateness questionnaire) -- confirmed
+    engineering/sessions/session_reports/20260720_eea_perp_fee_verification.md, which also
+    settled a real access trap: Kraken''s OTHER, cheaper-looking "0.25% open/close"
+    schedule is a DIFFERENT product (the mobile-app-only "Kraken Perps" consumer
+    line) with no API surface at all -- not accessible to this bot regardless of
+    account eligibility, so it was never a live candidate. Spot is explicitly OFF
+    the table as this family''s execution product: this bot''s SHORT mechanics are
+    margin-simulated (engineering/sessions/session_reports/20260720_venue_cost_wiring.md,
+    Dispatch F2), and plain cash spot cannot short at all; margin''s own
+    French/EU retail legal availability was separately researched and left
+    UNCONFIRMED (docs/analysis-reports/venue_survey_20260719.md''s 2026-07-20 supplement) --
+    perp is both the only product this family''s signal genuinely fits AND the
+    only one with settled legal access, so it is the campaign''s go-forward
+    product for this family, not spot.
+
+    BUT the funding family''s own verdict is RESEARCH-ONLY until funding cash
+    flow is modeled: this cost_model (and the wider engine) prices perp
+    round-trip cost as taker-fee-only (see cost_model.yaml''s PERP CALIBRATION
+    block, Dispatch H) -- it does not model the periodic funding payments that
+    are this family''s entire economic thesis (a short/long funding-carry
+    strategy earning or paying funding, not just avoiding it as a cost). A
+    fee-only perp re-run of run_059 or any funding-family candidate would omit
+    the funding CREDIT the thesis depends on, which is exactly why Dispatch H''s
+    PERP CALIBRATION block explicitly excludes FUNDING_MR_DAILY_RETEST from
+    being costed with it (see that block''s own comment). No funding-cash-flow
+    re-derivation has been performed; none is ordered by this entry. Until a
+    funding-modeling build exists, this family''s verdicts (including this
+    entry''s own kill/terminate above) stand on their FEE-ONLY evidentiary basis
+    and should not be read as having incorporated a realistic funding P&L.'
+  supplementary_evidence:
+  - engineering/sessions/session_reports/20260725_funding_carry_magnitude.md
+  - engineering/sessions/session_reports/20260725_funding_recost_feasibility.md
+  audit_note: 'FUNDING RE-COST QUESTION CLOSED AS A MEASURED NEGATIVE (filed
+    2026-07-25). This note ADDS evidence to an already-closed record. No verdict
+    is added, altered, or reopened: outcome, verdict_status, exhausted and
+    reactivation_condition hold the values they held before this write, and the
+    honest gated-verdict count is unchanged at 1. No protocol was registered and
+    no re-cost backtest was run.
+
+    MEASURED CARRY (A1). Realized annualized funding carry over the pass-gated
+    window 2019-12-01 to 2023-12-31 (1492 calendar days, 0 missing days, 4474
+    8h settlements per symbol): BTCUSDT 15.4367 %/yr, ETHUSDT 19.2366 %/yr.
+    A1 = (365/N) * SUM_D sign(f_{D-1}) * f_D * 100 over N=1491 lagged days,
+    computed from trading-bot/local_data/BTCUSDT_funding_8h.csv and
+    ETHUSDT_funding_8h.csv by tools/measure_funding_carry.py, which applies the
+    window bound before any statistic and replicates the daily aggregation of
+    data/feed_registry.py build_daily_funding_series exactly. Provenance:
+    engineering/sessions/session_reports/20260725_funding_carry_magnitude.md sections 2-3
+    (script markers L9-L11).
+
+    ZERO-LAG UPPER BOUND (A0). BTCUSDT 16.8029 %/yr, ETHUSDT 20.5507 %/yr.
+    A0 = (365/N) * SUM_D abs(f_D) * 100 -- the unattainable perfect-foresight
+    ceiling in which a funding sign flip never costs anything (same report,
+    section 3, marker L12).
+
+    REQUIRED CARRY (R). R = (abs(net_expectancy_bps) - perp_fee_saving_bps) *
+    trades_per_day * 365 / 100, the pre-registered formula, unaltered. R =
+    27.8178 %/yr (BTCUSDT) and 27.3757 %/yr (ETHUSDT). Inputs, each read from
+    run_059 artifacts: net_expectancy_bps -38.4665
+    (runs/run_059/artifacts/protocol_result.yaml:3042); pooled trade count 699
+    (protocol_result.yaml:3045) over 2886 symbol-days (sum of per-slot bar_count
+    across all 98 window-symbol slots) giving trades_per_day 0.2422037;
+    perp_fee_saving_bps 7.0 / 7.5, being the run_059 assumed round-trip cost
+    17.0 / 17.5 (runs/run_059/artifacts/validation_protocol.yaml:47-49) minus the
+    perp round-trip 10.0 (config/cost_model.yaml:161-162). Same report, section 4.
+
+    THE GAP DOES NOT CLOSE. A1/R = 0.555 (BTCUSDT) and 0.703 (ETHUSDT): measured
+    carry covers roughly half to two-thirds of what the per-trade deficit would
+    require merely to reach break-even. The ceiling A0 also falls short on both
+    symbols (16.8029 vs 27.8178; 20.5507 vs 27.3757), so the shortfall survives
+    the most generous assumption available. Honest funding P&L therefore does NOT
+    close the gap. Note additionally that criterion (a) requires median_sharpe >
+    0.8, not break-even, so R understates the carry that would actually be needed
+    to move criterion (a).
+
+    BASIS ASYMMETRY -- STATED, NOT SMOOTHED. R rests on a POOLED expectancy
+    (-38.4665 bps is the both-symbol mean; per-symbol expectancies do not exist
+    in the artifacts, and runs/run_059/artifacts/research_decision.yaml:21,29
+    label their per-symbol trade counts as estimates obtained by dividing the
+    pooled 699 by 2, so they were not used), while A1 is genuinely per-symbol.
+    The only per-symbol term inside R is perp_fee_saving_bps. The consequence is
+    not symmetric across the two symbols:
+
+    (i) ETHUSDT closes on BOTH axes. Carry: 19.2366 vs required 27.3757, and
+    20.5507 even at the ceiling. Drawdown: max_abs_drawdown_pct 49.606 against
+    the criterion (b) threshold of < 30, which fails independently of any cost
+    or funding assumption.
+
+    (ii) BTCUSDT closes on criterion (b) DRAWDOWN (34.922 vs < 30), not robustly
+    on carry. R_BTCUSDT inherits the pooled deficit, whereas BTCUSDT
+    median_sharpe -0.296 is far closer to zero than ETHUSDT -0.979; a true
+    per-symbol R for BTCUSDT is therefore likely lower than 27.8178 by an
+    unmeasured amount. The BTCUSDT carry margin is recorded as directional
+    evidence, not as a decisive one. What carries BTCUSDT is the drawdown gate,
+    and that gate is cost-independent.
+
+    VENUE PROXY CAVEAT (raised, not closed, by this note). The measured series is
+    Binance perp 8h (trading-bot/data/feed_registry.py:60,
+    trading-bot/data/fetchers/funding_rate_fetcher.py:69), whereas this family
+    declares Kraken perp 1h as its go-forward venue (see venue_live_tradability
+    above). The Kraken funding export archive cannot reach this window in any
+    case: its coverage begins 2022-03-22 against a window starting 2019-12-01
+    (engineering/sessions/session_reports/20260725_funding_recost_feasibility.md, step 2). The
+    carry magnitude above is thus an in-sample Binance-8h proxy, exactly as
+    config/cost_model.yaml:183 already declares
+    (venue_note: in_sample_proxy_binance_8h_live_venue_kraken_perp_1h).
+
+    WHAT THIS CLOSES. The venue_live_tradability field above states that this
+    family''s verdicts "stand on their FEE-ONLY evidentiary basis and should not
+    be read as having incorporated a realistic funding P&L". That open caveat is
+    now CLOSED for the DAILY branch registered here: the funding P&L has been
+    measured; it is a systematic CREDIT to this family, as the caveat
+    anticipated; and it is short of the required magnitude by roughly a factor
+    of two. The caveat text above is retained verbatim and unmodified -- it was
+    correct when written, and this note is the measurement it asked for, not a
+    correction of it. The 4h branch of the parent reactivation_condition remains
+    DEFERRED and is untouched.'
+- id: macd_trend_continuation_extended_2018_2025_auto
+  mechanism: MACD(12,26,9) histogram zero-crossing, BTC/ETH 1h, ungated (persistent_behavioral_bias)
+  hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+  edge_source_category: persistent_behavioral_bias
+  evidence_runs:
+  - run_053
+  evidence_count: 1
+  outcome: no_edge_observed
+  verdict_status: ungated
+  root_cause: no_informational_content_this_venue
+  outcome_reason: 'Full backward-extended range (2018-01-01 to 2025-12-31, 8 years,
+    multiple bull/bear/chop cycles), prescreen kill_no_ic. ic_all_bars=-0.014497 (p=0.2922,
+    not significant); ic_active_bars=-0.050271 on MACD crossover events specifically
+    (negative direction -- signal is directionally wrong or orthogonal, not merely
+    undersampled). forecast_sparsity_pct=92.41 (active_n_bars=10616 of 139.8k). cost_check
+    also fails (edge_to_cost_ratio=0.2452 << 2.0 required; estimated gross edge ~4.2
+    bps/trade vs. 17.0 bps/trade round-trip cost). Consistent with this campaign''s
+    established finding that no price-only technical indicator (RSI, Keltner in any
+    variant, EMA spread, now MACD) shows exploitable directional content on BTC/ETH
+    1h -- see ema_spread_trend_continuation_v1_auto for the same pattern on a different
+    trend-following mechanism.
+
+    '
+  signal_property:
+    ic_all_bars: -0.014497
+    ic_active_bars: -0.050271
+    p_value: 0.2922
+    forecast_sparsity_pct: 92.41
+    active_n_bars: 10616
+    edge_to_cost_ratio: 0.2452
+  protocol_version: backward_extension_2018_2025
+  detector_version: not_applicable
+  power_disposition: not_applicable
+  exhausted: false
+  exhausted_basis: null
+  reactivation_condition: null
+- id: p4_sma_trend_longonly_daily_auto
+  mechanism: SMA(100) daily trend-following, long-only, ungated (BTC/ETH spot, taker
+    costs)
+  hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+  edge_source_category: persistent_behavioral_bias
+  evidence_runs:
+  - run_054
+  - run_057
+  evidence_count: 2
+  outcome: ungated_er_gate_variant_too_sparse_to_evaluate
+  verdict_status: ungated
+  readjudication_20260722: 'C7-EXT-R/D-6. Relabelled from
+    `kill_er_gate_mechanism_falsified`. This is a LABELLING correction computed from
+    the artifacts already on disk -- no backtest was re-run and no number below is
+    changed.
+
+    Two independent grounds.
+
+    (1) NEVER MECHANICALLY GATED. run_057''s pass_rule is pre-registered under
+    `machine_constraints.pass_rule`, not at the top level, so the evaluator''s
+    top-level-only lookup resolved it to None. No pass_rule_evaluation.yaml exists for
+    run_057. C7-EXT-R fixes the lookup (verdict_criteria_evaluator._find_pass_rule),
+    which reveals the rule is additionally a legacy PROSE STRING and so resolves to
+    `legacy_not_evaluable` regardless -- it was never machine-evaluable. Every step of
+    this verdict was human-adjudicated. That may well have been the right call; it was
+    not a gated one, and the record now says which.
+
+    (2) THE SAMPLE CANNOT CARRY A KILL. Recomputed directly from
+    runs/run_057/artifacts/protocol_result.yaml: of 30 window-symbols, 29 fall below
+    the A3.4 five-trade floor, and the ENTIRE run contains exactly ONE non-null
+    per-window Sharpe -- ETHUSDT 2022-10, -0.686, on 5 trades. BTCUSDT has zero
+    evaluable windows across all 15. Per-window trade counts are BTCUSDT
+    [4,1,0,2,2,0,3,0,1,3,2,1,1,0,0] and ETHUSDT [1,1,1,2,2,0,2,2,2,5,1,0,2,0,1].
+    Criterion (a) therefore rests on a median taken over one window on one symbol.
+    Meanwhile criterion (b) -- the only criterion with a real sample, n=42 -- PASSED on
+    sign (+433.7 bps, SE 441.4). "The mechanism is falsified" is a stronger claim than
+    this evidence supports. What was established is that the ER(20)>=0.30 entry gate
+    left too few trades to evaluate the hypothesis at all.
+
+    NOT WITHDRAWN, and still the most useful thing in this entry: the S2 mechanism
+    check below is identity-matched (42/42 trades reconciled to run_054 parents, 100%
+    percent-return agreement) and shows EXCLUDED entries (ER<0.30, n=75, +1395.9 bps,
+    SE 821.2) outperforming INCLUDED ones (n=42, +433.7 bps, SE 441.4) roughly 3:1
+    against the gate''s own design rationale. That is directional evidence against
+    ER-at-entry gating for this family on this record, it does not depend on the
+    sparse Sharpe, and it is unaffected by this relabelling.
+
+    CONSEQUENCE FOR THE QUEUE: P4_ts_trend is neither promoted, refined, nor killed by
+    run_057. It is not reopened by this correction either -- reopening is a separate
+    decision requiring a registration that can actually produce trades.'
+  outcome_history_superseded_20260722:
+  - outcome: kill_er_gate_mechanism_falsified
+    recorded_at: '2026-07-11'
+    superseded_at: '2026-07-22'
+    superseded_reason: See readjudication_20260722 above (C7-EXT-R/D-6). Prior
+      outcome_history_superseded entries for this finding are retained verbatim below.
+  outcome_reason: 'run_057 (P4_SMA_TREND_LONGONLY_DAILY_ER20GATE): pre-registered
+    pass_rule (pre_registration.yaml) applied verbatim as the sole verdict authority
+    per operator pre-commitment (prescreen_override_20260711.yaml) -- FAIL on criterion
+    (a): gated bar-level median Sharpe (recomputed per the standing metric-basis rule,
+    not the fragment-level protocol_result.yaml nulls) is 0.0000 for both BTCUSDT
+    and ETHUSDT (n=15 windows each), against required >=0.5791 (BTCUSDT) / >=0.0318
+    (ETHUSDT); 29/30 window-symbols fell below the A3.4 five-trade floor. Criterion
+    (b) (per-episode expectancy > 0) passed on sign (mean +433.7 bps, SE 441.4, n=42)
+    but per the pass_rule ''FAIL on (a) or (b)'' the gate did not rescue the edge.
+    S2 secondary mechanism check (descriptive only, never verdict-bearing) independently
+    falsified the brief''s own rationale: identity-matched partition (42/42 run_057
+    trades matched to run_054 parent records, 100% percent-return agreement, cross-check
+    clean) shows excluded entries (ER<0.30, n=75) mean expectancy +1395.9 bps (SE
+    821.2) EXCEEDS included entries (ER>=0.30, n=42) mean +433.7 bps (SE 441.4) --
+    the gate anti-selects on this record, roughly 3:1 against its own design rationale.
+    Framing: this is strong directional evidence against ER-at-entry gating for this
+    family on this record. One parameterization (ER(20), threshold 0.30) was tested
+    under a pre-registered, frozen specification with no threshold adjustment permitted;
+    this is not proof the entry-gating family in general is exhausted. No regime-attribution
+    claim is made -- ER(20) here was a strategy-internal entry filter, never a validated
+    regime detector (Step-02 gate never run on it); this finding describes gated-variant
+    performance and entry-selection evidence only. Verdict routing was hand-corrected
+    from the verdict_interpreter stage''s initial refine/pivot output (which followed
+    the pass_rule''s own ''kill vs pivot'' delegation and produced a Keltner-family
+    pivot proposal) per the binding operator pre-commitment -- see runs/run_057/artifacts/verdict_interpretation.yaml''s
+    operator_correction_20260711 field for the full instruction-layering account.'
+  outcome_history_superseded:
+  - outcome: kill_ungated_regime_mismatch
+    recorded_at: '2026-07-09'
+    superseded_at: '2026-07-10'
+    superseded_reason: median_sharpe basis correction (LIFO-fragment -> bar-level
+      equity curve) flips protocol_verdict from kill to refine; see outcome_reason
+      above.
+  - outcome: kill_ungated_regime_mismatch
+    recorded_at: 2026-07-10 (incident revert)
+    superseded_at: 2026-07-10 (incident resolution)
+    superseded_reason: A parallel agent with pre-bug-five context reverted this entry
+      a second time, in good faith, believing the refine correction was tampering.
+      Resolved by independent re-recomputation of the bar-level Sharpe figures (arithmetic
+      re-verified, not re-asserted) -- see docs/analysis-reports/INCIDENT_20260710.md.
+  - outcome: refine_pending_regime_gating
+    recorded_at: '2026-07-10'
+    superseded_at: '2026-07-11'
+    superseded_reason: 'run_057 (regime-gated ER(20)>=0.30 entry-latch refinement,
+      in-lineage per refine_pending_regime_gating) completed the pre-registered walk-forward
+      and was killed on criterion (a): gated bar-level median Sharpe null-or-zero
+      on both symbols vs required >=0.5791 (BTCUSDT) / >=0.0318 (ETHUSDT), 29/30 window-symbols
+      below the A3.4 five-trade floor. S2 mechanism check (identity-verified, 42/42
+      subset match) falsified the gate''s own rationale: excluded entries (n=75) mean
+      expectancy +1395.9 bps (SE 821.2) exceeds included entries (n=42) mean +433.7
+      bps (SE 441.4) -- the gate anti-selected on this record.'
+  audit_note: 'Decision-layer input audit, two passes, INDEPENDENTLY RE-VERIFIED 2026-07-10
+    after the incident above. PASS 1 (2026-07-09, trade-count only): bar-level activity-transition
+    count on bars.csv vs. trades.json completed-trade count -- closed clean. Both
+    methods agree exactly (117) in every one of the 30 window-symbol results, zero
+    mismatches, confirmed against both the final and the original (pre-build_core-fix)
+    protocol_result.yaml. An earlier "94 trades / 24 windows" figure some quoted was
+    confirmed to be an LLM hallucination in a since-discarded draft verdict_interpretation.yaml,
+    never grounded in the underlying data at any point. PASS 2 (2026-07-10, full metric-basis
+    sweep, re-verified after the incident): every decision-consumed metric checked
+    for basis (bar / episode / fragment). Episode-level win rate (grouping real trades.json
+    fragment PnL by activity-transition episode boundary) reproduces fragment-level
+    win_rate exactly in all 30 results -- this hypothesis never actually fragments
+    a position across multiple trades.json rows, so win_rate was never distorted.
+    median_sharpe WAS distorted -- not by fragmentation, but by the trade-exit-day/per-trade-basis
+    formula in calculate_sharpe_ratio breaking down under sparse trading (1-8 trades/window).
+    Engine note: matching is LIFO, not FIFO (performance/metrics.py, "Enhanced performance
+    tracker supporting iterative long/short positions with LIFO matching") -- this
+    is intentional and correct as an accounting engine; the bug was only ever in the
+    decision layer treating a sparse-trade-derived Sharpe as a reliable aggregate
+    statistic.
+
+    '
+  signal_property:
+    ic_active_bars: null
+    ic_all_bars_prescreen: 0.034803
+    ic_walk_forward_bootstrap_btc: 0.0372
+    ic_walk_forward_bootstrap_eth: 0.0199
+    per_trade_expectancy_bps: 1050.5086
+    per_trade_expectancy_t_stat: 1.9106
+    median_sharpe_btc_basis_lifo_fragment_descriptive_only: -1.78
+    median_sharpe_eth_basis_lifo_fragment_descriptive_only: -1.54
+    median_sharpe_btc_basis_bar_level: 0.5791
+    median_sharpe_eth_basis_bar_level: 0.0318
+    run_057_s2_excluded_mean_bps: 1395.9
+    run_057_s2_excluded_se_bps: 821.17
+    run_057_s2_excluded_n: 75
+    run_057_s2_included_mean_bps: 433.73
+    run_057_s2_included_se_bps: 441.39
+    run_057_s2_included_n: 42
+    run_057_gated_bar_level_median_sharpe_btc: 0.0
+    run_057_gated_bar_level_median_sharpe_eth: 0.0
+  protocol_version: ts_trend_daily_v1
+  detector_version: not_applicable
+  power_disposition:
+    status: adequately_powered
+    expected_n_eff: 117
+    verdict: thin_uneven_edge_regime_gating_untested
+  exhausted: true
+  exhausted_basis: 'Measured, not asserted (density probe against the raw Kraken daily
+    archive, 2026-07-24, read-only, no backtest, nothing ingested):
+    engineering/sessions/session_reports/20260724_p4_density_probe_archive.md.
+
+    THIS PROBE PRODUCED NO VERDICT. It was governed by no pre-registered pass_rule,
+    counted entry transitions only, and computed no return, P&L, Sharpe, expectancy,
+    drawdown or cost figure of any kind (report:5-7, :478-484). Every figure below is
+    a measurement of how often a rule fires, not evidence of edge in either direction.
+    outcome and verdict_status above are UNCHANGED by this basis replacement, and the
+    honest gated-verdict count is unaffected.
+
+    SCOPE: 19 Kraken USD pairs x 15 semi-annual windows = 285 window-symbol slots, of
+    which 178 are evaluable and 107 are insufficient-history, a category kept distinct
+    from zero-entries and never summed with it (report:186-200). Two symbols reach the
+    archive by Kraken native-ticker alias (BTCUSD -> XBTUSD, DOGEUSD -> XDGUSD),
+    flagged for override at report:121-140.
+
+    FLOOR-CLEARING COUNTS at the A3.4 five-trade-per-window floor, denominator =
+    evaluable slots only (report:392-397): GATED ER-at-entry variant 3 / 178 (1.7%);
+    PARENT ungated rule 80 / 178 (44.9%). CONTROL (BTCUSD, ETHUSD; 30/30 evaluable):
+    gated 1 / 30 (3.3%), parent 13 / 30 (43.3%). At the protocol floor of 1, same
+    lines: gated 120 / 178 and 19 / 30; parent 175 / 178 and 29 / 30.
+
+    THE ENTRY GATE, NOT UNIVERSE WIDTH, IS THE DENSITY CONSTRAINT. Across evaluable
+    slots the gate removes 74% of parent entries, 799 -> 209 (report:203-204). Moving
+    from the 2-symbol control to the 19-symbol universe shifted the parent five-trade
+    rate from 43.3% to 44.9%, a 1.6-point change (report:428-429): breadth added slots,
+    not density. Residual gated sparsity is spread rather than concentrated -- g>=5 is
+    zero for 16 of 19 symbols and zero in 12 of 15 windows, and the largest gated count
+    in any evaluable slot in the whole panel is 6 (report:436-441, :456-461) -- so
+    there is no symbol subset and no era to restrict to. These are entry transitions,
+    not completed round-trips, so every floor-clearing figure above is an UPPER bound
+    (report:487-489). Venue caveat: Kraken spot USD here, Binance USDT for
+    run_054/run_057, so the control correspondence is a reimplementation sanity check
+    and not a replication (report:406-411, :490-491).
+
+    WHAT THIS CLOSES AND WHAT IT DOES NOT: it closes the ER(20) >= 0.30 entry-latch
+    variant on measured grounds -- no universe available here reaches the five-trade
+    floor for it -- and it does NOT mark the parent SMA(100)-daily long-only rule, nor
+    the broader persistent_behavioral_bias / SMA-trend family, exhausted. See
+    reactivation_condition below, which separates the two.'
+  readjudication_20260724: 'DENSITY-PROBE BASIS REPLACEMENT (no relabel, no verdict).
+    outcome and verdict_status are UNCHANGED: the 2026-07-24 probe was governed by no
+    pre-registered pass_rule and therefore produced no verdict, and the honest
+    gated-verdict count is unmoved. What changed in this entry: exhausted_basis was
+    replaced with a measured basis, reactivation_condition was set from null, and one
+    retracted label reference inside engine_provenance_caveat was corrected. No number
+    already in this entry was recomputed, re-derived or rounded.
+
+    The closed record schema (tools/record_schema.py:210-213) admits exactly two dated
+    correction families, readjudication_<date> and outcome_history_superseded_<date>.
+    An outcome_history record would falsely imply the outcome moved, which it did not,
+    so the superseded exhausted_basis is retained here instead.
+
+    SUPERSEDED exhausted_basis -- recorded 2026-07-11, superseded 2026-07-24, retained
+    verbatim and NOT deleted:
+
+    "Empirical (run_057, 2026-07-11): the regime-gated refinement direction prescribed
+    by the prior refine_pending_regime_gating outcome was tested via an ER(20)>=0.30
+    entry-latch gate (GatedSmaTrendLongOnlyComponent) and killed on the pre-registered
+    pass rule plus an independent S2 mechanism falsification. This closes the
+    ER-at-entry-gate refinement specifically -- it does not, on its own, mark the
+    broader persistent_behavioral_bias / SMA-trend-family search space exhausted (one
+    parameterization tested, per the outcome_reason framing above)."
+
+    REASON SUPERSEDED: its load-bearing clause, "killed on the pre-registered pass
+    rule", asserts precisely the kill that readjudication_20260722 above retracted --
+    run_057 was never mechanically gated, its pass_rule sits under machine_constraints
+    and is a legacy prose string that resolves to legacy_not_evaluable, and no
+    pass_rule_evaluation.yaml exists for it. The replacement asserts no verdict and
+    rests on counts.'
+  reactivation_condition: 'Two rules, two dispositions. They are NOT reactivated
+    together.
+
+    (1) GATED ER-at-entry variant (ER(20) >= 0.30 entry latch) -- CLOSED on measured
+    grounds, and breadth is not the unblock. On the widest universe available (19
+    Kraken USD pairs, 178 evaluable window-symbol slots) it clears the A3.4 five-trade
+    floor in 3 slots, against 1 of 30 on the 2-symbol control: adding seventeen symbols
+    did not change the rate (engineering/sessions/session_reports/20260724_p4_density_probe_archive.md:392-397,
+    :428-429). Reactivation on breadth alone is refused. Reopening requires a
+    materially different entry specification -- NOT a threshold move on ER(20), which
+    is frozen at P4_ts_trend_r1_er_gate.yaml:69 with no retune permitted -- together
+    with a pre-registered, machine-evaluable pass_rule under machine_constraints, which
+    the original variant never had.
+
+    (2) PARENT ungated SMA(100)-daily long-only rule -- NOT closed by anything on this
+    entry. It clears the protocol floor of 1 in 175 of 178 evaluable slots and the
+    five-trade floor in 80 of 178 (44.9%): marginal, not disqualifying (same report,
+    :392-397). Reopening it requires ALL of (a) daily bars for the breadth universe
+    present in the engine cache -- today only BTCUSDT_1d.csv and ETHUSDT_1d.csv exist
+    and all 19 Kraken cache files are 1h (20260723_p4_density_probe.md:307-322; ledger
+    v4 item P4-D1); (b) a ruling on WHICH per-window trade floor governs, since
+    protocols/ts_trend_daily_v1.json:132 says 1 and config/campaign_config.yaml:120
+    says 5 and the two disagree for the same quantity (report:361-386; ledger v4 item
+    P4-D2); (c) a pre-registered machine-evaluable pass_rule; and (d) the
+    correlation-adjusted breadth count the parent brief requires
+    (research_brief_P4_ts_trend.md:41), which this probe explicitly did NOT compute
+    (report:471-474). Until (a)-(d) are met this entry stays as it is: no verdict, no
+    reopening.'
+  engine_provenance_caveat: 'Filed 2026-07-19 (run_059 close-out, tz-bug arc):
+    protocol_version ts_trend_daily_v1 executed on 1d bars BEFORE the 2026-07-18
+    CandleBuilder._align() fix (commit 2529f5b). Pre-fix, every daily candle''s
+    start_time was silently shifted to a fixed non-zero hour (01:00 or 02:00
+    depending on DST) by a naive local-system-timezone epoch round-trip,
+    instead of true UTC midnight -- see PIPELINE_IMPROVEMENTS ledger v6 and
+    trading-bot/data/data_manager.py''s own _align() docstring. This does
+    NOT change bar OHLCV values (only the candle''s timestamp LABEL), so
+    day-ordering, closes, and the SMA(100) computation itself are
+    unaffected; the only plausible effect is a possible off-by-one-bar
+    shift at monthly window boundaries in tools/run_protocol.py''s
+    timestamp-range filtering, and equivalent exposure to DST-transition-week
+    anomalies (the fixed hour differs by 1h across the March/October DST
+    boundary). No re-derivation was performed and none is ordered by this
+    entry -- the run_054/run_057 verdicts above (ungated_er_gate_variant_too_sparse_to_evaluate)
+    are MAINTAINED, not relitigated; this caveat exists so a future reader
+    auditing window-edge trade counts knows the historical alignment context.
+
+    Label correction 2026-07-24: the standing-status sentence immediately above
+    previously read (kill_er_gate_mechanism_falsified), an outcome retracted by
+    readjudication_20260722, so the caveat was re-asserting a withdrawn verdict every
+    time it was read; only that label reference was substituted for the current
+    outcome, and nothing this caveat says about timezone alignment is changed.
+
+    '
+- id: xs_momentum_cost_surviving_but_decaying
+  mechanism: Dollar-neutral cross-sectional momentum, 19-pair Kraken universe (7-day
+    trailing-return rank, long top-third / short bottom-third, daily rebalance)
+  hypothesis_ids:
+  - XS_momentum
+  evidence_runs:
+  - research_path_panel_backtester   # NOT a production-engine run -- see run_path note
+  evidence_count: 1
+  outcome: ungated_decayed_measurement_no_admissible_verdict
+  # RELABELLED 2026-07-23, routed through the G6 closed-schema validator
+  # (tools/record_schema.py, first production write on a genuine relabel).
+  # Prior outcome `measurement_only_no_admissible_verdict` -> the `ungated_`
+  # form so the record's own outcome string carries the two facts that decide
+  # it: the measurement is ungated AND its edge is decaying. Parking removes
+  # the verdict claim, not the evidence; every measurement below is unchanged.
+  # No verdict count effect: this entry was never gated (verdict_status: ungated).
+  root_cause: signal_real_positive_but_time_decaying
+  # CORRECTED 2026-07-22 (C7-EXT audit). This field previously read
+  # `verdict_c7: refine`. There was no C7 verdict to record: XS_momentum was
+  # never pre-registered under ANY pass_rule (briefs/research_brief_XS_momentum.md
+  # has no pass_rule and no machine_constraints -- its only mention of
+  # machine_constraints is line 106, prose instructing a future editor to decide
+  # them at unblock time), no runs/ directory or pre_registration.yaml exists for
+  # it, and it executed on the research path so tools/verdict_criteria_evaluator.py
+  # never ran. The "30% DD bar" it was adjudicated against was not a frozen rule
+  # either: its sole provenance is the generic fallback dict formerly at
+  # workflow/run_phase1_research.py:1681-1682 (mirrored in protocols/baseline_v1.json),
+  # which is the precise artifact ledger item C7 was opened to abolish. Removed
+  # under G6 -- a verdict field without evaluator provenance is inadmissible.
+  # The MEASUREMENTS below are untouched and remain real information: they were
+  # produced on a backtester that passed a pre-registered 30-slot reproduction
+  # gate. A measurement is not a verdict.
+  verdict_status: ungated
+  verdict_void_reason: >
+    Full-sample net Sharpe 1.325 on a gate-validated backtester (the vectorized
+    panel reproduced all 30 archived run_054 slots exactly under a pre-registered
+    tolerance), decaying to net Sharpe 0.07 in its latest full in-sample year
+    (2025) -- edge decay, explicitly NOT trade sparsity (contrast run_057, the
+    ER-gate variant parked as too sparse to evaluate; this signal trades every
+    day and still fades). No admissible verdict because no pre-registered
+    pass_rule was ever declared for this hypothesis AND no obtainable 2026 holdout
+    can statistically resolve the Sharpe this year: SE >= 1.3 for any T <= 0.56
+    year of data, so a single holdout year cannot separate a real 0.07 edge from
+    zero. Unchanged from the prior void reason: any future verdict still requires
+    a pre-registered pass_rule AND the four C7-EXT preconditions (funding
+    completeness, distribution stats, deployable-today, robustness mechanism),
+    of which this run, as produced, meets none.
+  run_path: research_path_vectorized_panel   # ran on strategy-research/tools/panel_backtester.py,
+    # NOT the production BacktestEngine. The production engine CANNOT express this
+    # hypothesis (single-symbol load backtester.py:92/:359; unpartitioned RollingBuffer
+    # main_strategy.py:44; zero netting hooks) -- see ledger G3 blocker. Any future
+    # ratification / promotion MUST account for the fact that this evidence was produced
+    # off the production path and re-validated once the engine gains panel support.
+  venue: kraken_perp        # costed via cost_model.yaml perp block (5 bps one-way /
+                            # 10 bps round-trip taker). Funding NOT modeled -- previously
+                            # annotated "(valid: this is a price-based signal, not funding
+                            # carry)". That reasoning is wrong and is now blocked by G1:
+                            # funding is a cost the position PAYS for being held, not a
+                            # signal input. A daily-rebalanced perp book spans ~3 funding
+                            # intervals (24h vs 8h), so the reported net figures omit a
+                            # real, recurring, unbounded cost. Magnitude is unmeasured --
+                            # a separate dispatch.
+  research_only: true
+  validation_gate: PASS     # the vectorized accounting was validated BEFORE this result
+    # by reproducing all 30 window-symbol slots of the archived run_054
+    # (SmaTrendLongOnlyComponent, daily) EXACTLY to 3dp on net_return_pct / sharpe /
+    # max_drawdown_pct / trade_count (fees/gross/net within 2%). Reproduction harness:
+    # strategy-research/tools/panel_backtester.py gate. Pre-registered tolerance (declared
+    # before comparison): trade_count exact; sharpe |Δ|<=0.10; net_return |Δ|<=0.5pp-or-2%;
+    # dd |Δ|<=0.5pp; fees/gross/net <=2% rel. Actual reproduction was far tighter (exact).
+  signal_property:
+    net_sharpe_full_sample: 1.325      # daily-bucketed, annualized sqrt(365), 1-bar exec delay
+    gross_sharpe_full_sample: 1.665    # cost drag ~0.34 Sharpe (~20% rel) -> NOT cost-dominated
+    net_sharpe_post_2021: 0.77         # n>=12, most-liquid era -- edge weaker but positive
+    net_sharpe_2025: 0.073             # near-zero; 2025 cumulative net -6.3%
+    per_year_net_sharpe: [2.95, 0.85, 1.02, 2.96, 0.77, 1.46, 0.76, 0.96, 0.07]  # 2017..2025
+    max_drawdown_pct_at_200pct_gross: -62.3   # ~-31% at unit gross; Sharpe scale-invariant
+    annualized_turnover_x: 423
+    total_cost_drag_pct_of_equity: 182.4
+    n_eligible_range: [6, 19]          # n>=6 first reached 2017-05-26 (ratified start 2017-05-18)
+    n_bars: 75520
+    # DOWNGRADED 2026-07-22 under G4. Previously `no_lookahead_confirmed: true`,
+    # reasoned as: net Sharpe RISES with exec lag 1->2->4 (1.33/1.42/1.51), not
+    # falls, therefore no same-bar lookahead. The inference is sound as far as it
+    # goes, but a signal that gets BETTER the later you trade it is itself an
+    # anomaly, and it was recorded as reassurance rather than investigated. G4
+    # now requires a written mechanism before any verdict stands on it.
+    lag_response_anomalous: true
+    lag_response_mechanism_explanation: null   # UNWRITTEN -- blocks any verdict
+    same_bar_lookahead_ruled_out: true         # the narrow claim the lag test does support
+    # Distribution statistics (skew / kurtosis / tail) were never computed for
+    # this run -- G2 now blocks a Sharpe reported without them.
+    distribution_stats: not_computed
+  strongest_threat_to_validity: >
+    Cost/venue anachronism compounded with early-era dominance. The compounded return is
+    driven overwhelmingly by 2017 (+416%) and 2020 (+476%) -- a small-n (n=6-10),
+    illiquid era when Kraken perps for most of these alts did not exist -- yet it is
+    costed at a flat MODERN 5 bps perp taker that materially understates real early-era
+    friction (wider spreads, thin books, the flagged high-gap pairs INJ/DOGE). The period
+    where the 5 bps assumption is most credible (recent, liquid, large-n) is exactly where
+    the edge is weakest (post-2021 net Sharpe 0.77; 2025 net ~0). So the headline 1.33 is
+    inflated by the era whose tradability-at-assumed-cost is least defensible; the honest
+    forward-looking edge is the decaying recent figure, not the full-sample number.
+  autopsy_note: >
+    Phase-1.4 fee_reduction_assessment NOT triggered: that autopsy is mandatory only for
+    a cost-dominated kill (mechanism_failure == signal_real_but_subscale_vs_costs). This
+    run produced no admissible verdict at all, so no kill-conditional autopsy is owed.
+    Gross-vs-net recorded above for completeness. Note the trigger check itself was
+    sound; what was wrong was the sentence it sat next to, which asserted a verdict
+    ("NOT a cost-dominated kill") the run was never gated to issue.
+  deployable_today: not_reported   # G3: the most recent FULL year (2025) at current
+    # costs is net Sharpe 0.073 / cumulative -6.3%, present in signal_property but never
+    # surfaced as the deployable figure. The headline that carried the verdict was the
+    # full-sample 1.325, dominated by 2017/2020. Both numbers are true; only one is
+    # deployable, and only the other one reached the verdict.
+meta_findings:
+- id: daily_regime_overlay_recommended_before_a23_trigger
+  title: campaign_review recommended detector_wishlist.yaml work twice without checking
+    its trigger_condition
+  outcome: recommendation_parked_pending_wishlist_trigger
+  evidence_runs:
+  - run_043
+  - run_044
+  evidence_count: 2
+  chain_narrative: 'Both run_043''s and run_044''s campaign_review (2026-07-04) recommended
+    recommendation: reframe toward a daily-timeframe ADX/HMM regime overlay (detector_wishlist.yaml
+    priority-1/2 candidates: daily_timeframe_er_overlay, adx_threshold) as the next
+    research direction. Neither review checked detector_wishlist.yaml''s own trigger_condition
+    first.
+
+    '
+  what_the_chain_missed: 'detector_wishlist.yaml trigger_condition.status was (and
+    remains, as of this entry) not_triggered: it requires (1) a confirmed ungated
+    edge per Improvement 03 diagnostics AND (2) those diagnostics showing regime-dependent
+    performance. No hypothesis in this campaign has produced a confirmed ungated edge
+    — every KB finding to date is no_edge_observed, inconclusive, or invalidated_artifact.
+    Recommending the wishlist family anyway would have converted a deliberately- deferred
+    idea back into a live run without its deferral condition ever being satisfied.
+
+    '
+  implication: 'The two resulting research briefs (DAILY_REGIME_OVERLAY_1H_EXECUTION,
+    DAILY_REGIME_OVERLAY_SIGNAL_QUALITY — recovered from an unrelated run-ID collision,
+    F8, into runs/run_045 and runs/run_046 respectively) are annotated status: parked_pending_a23_trigger
+    and MUST NOT be launched until detector_wishlist.yaml''s trigger_condition fires.
+    workflow_artifacts/skills/campaign-review/SKILL.md now has a "Wishlist-gated recommendations" section
+    requiring any future recommendation that draws on detector_wishlist.yaml or feed_wishlist.yaml
+    to check and cite the specific entry''s trigger condition before recommending
+    a run; if untriggered, record as wishlist support (continue), not a reframe.
+
+    '
+  applicable_rule: campaign-review SKILL.md 'Wishlist-gated recommendations' (added
+    2026-07-04)
+- id: keltner_root_cause_reattribution
+  title: 'Keltner families: root cause is signal quality, not regime availability'
+  outcome: root_cause_reattribution
+  protocol_version: baseline_v2
+  detector_version: c647ee20
+  ac4_for_improvement_05: true
+  chain_narrative: 'The linear carryover chain (findings_carryover.yaml entries from
+    run_017 onward) recorded the Keltner/TRENDING failure as "regime_availability":
+    TRENDING regime absent in 7/22 (then 14/48) window-symbol slots. The campaign_review
+    (run_039) recommended layering an orthogonal secondary signal to fill the zero-trade
+    months. The chain accumulated 25+ runs before this conclusion was reached.
+
+    '
+  what_the_chain_missed: 'The regime-availability narrative was a misdiagnosis. Run_039''s
+    full-range prescreen (A8.3) computed ic_active_bars = -0.032 (p=0.83, n_active=1125)
+    on the TRENDING-labeled bars — the exact bars where the signal "worked." The Keltner
+    signal produces no directional content even on the bars the detector selects as
+    its operating regime. Zero-trade months were a symptom (TRENDING regime absent
+    → no trades), but the causal chain ran deeper: had TRENDING been active in every
+    month, per-trade expectancy would still have been negative (as confirmed: -26
+    bps on keltner_163).
+
+    '
+  implication: "1. The root cause for keltner_mean_reversion and keltner_trend_mean_reversion\
+    \ is\n   upgraded from regime_availability to signal_quality in this KB (see findings\
+    \ above).\n   Their failed_families entries in campaign_state.yaml carry the old\
+    \ tag but are\n   superseded by this KB entry.\n2. A secondary signal layered\
+    \ on the existing Keltner primary would not have fixed\n   the zero-trade problem\
+    \ at its root — it would have added a new signal on top of\n   a null primary.\
+    \ The campaign burned ~10 runs on this path.\n3. The vocabulary error (A5.2):\
+    \ forecast_return_corr=0.2145 was recorded as\n   \"confirmed stable edge\" in\
+    \ the campaign_review.yaml and propagated through\n   carryover. This correlation\
+    \ was: (a) computed on regime-gated bars (~1% of all\n   bars), (b) never validated\
+    \ per trade (per-trade expectancy was -26 bps), and\n   (c) a small-sample artifact\
+    \ (per-window n_active=5-35, IC SE=0.18-0.58). The\n   KB's A5.2 rule makes this\
+    \ unwritable going forward: signal_property field\n   carries the correlation;\
+    \ outcome field carries no_edge_observed.\n"
+  evidence_runs:
+  - run_017
+  - run_024
+  - run_027
+  - run_033
+  - run_039
+  evidence_count: 2
+  applicable_rule: A8.2 closure; A5.2 vocabulary; A5.3 detector scope
+- id: daily_signal_power_floor
+  title: Daily-frequency signals need 2018+ data on BTC/ETH — 2-year window is systematically
+    underpowered
+  outcome: structural_floor_identified
+  protocol_version: baseline_v2
+  detector_version: not_applicable
+  chain_narrative: 'H-041-A and H-041-C each independently produced insufficient_sample_inconclusive.
+    Each run''s findings_carryover logged the individual power failure but the pattern
+    was not generalized.
+
+    '
+  what_the_chain_missed: 'Any signal with daily-or-lower activation frequency (< ~50
+    active bars/year) on BTC/ETH 1h over a 2-year window will produce n_eff < 15.
+    At n_eff=15, the minimum detectable IC at p < 0.10 is ~0.42 — above the plausible
+    IC range for all known behavioral and structural signal classes (literature: 0.05-0.20).
+    This is a structural feature of the data window, not a signal-specific failure.
+    A8.6 mandates this check at registration (a-priori power), making it deterministic
+    arithmetic before any component is built.
+
+    '
+  implication: 'Any future daily-frequency hypothesis registered against 2024-2025
+    data only should be immediately routed to insufficient_power_a_priori with a "extend
+    to 2018+" note. The consolidated backward-extension pass (A8.6) will re-prescreen
+    all power-parked hypotheses simultaneously rather than per-hypothesis.
+
+    '
+  evidence_runs:
+  - run_041
+  - run_042
+  evidence_count: 2
+operational:
+  a86_power_check_implementation: "A8.6 a-priori power check is deterministic arithmetic\
+    \ to be implemented at the validation gate (hypothesis registration step). Formula:\n\
+    \  expected_active_n = activation_rate × n_bars_in_window × n_symbols_effective\n\
+    \  expected_n_eff = expected_active_n / block_size_24\n  min_detectable_ic = 1\
+    \ / sqrt(max(expected_n_eff - 3, 1))\nFor market-wide signals: n_symbols_effective\
+    \ ≈ 1 (correlated returns; additional symbols add sublinear power — use sqrt(n_symbols)\
+    \ as upper bound). If min_detectable_ic > plausible_ic_upper (literature/prior),\
+    \ route to insufficient_power_a_priori. No component built, no trial spent. Implement\
+    \ when convenient; not a blocking item for current build steps.\n"
+  backward_extension_pass:
+    status: scheduled_post_build_steps
+    scope:
+    - H-041-A
+    - H-041-C
+    data_required: BTC/ETH 1h OHLCV + fear_greed + funding_rate from 2018-01-01
+    trigger: after Improvement 05 and remaining build steps complete
+    do_not_start_now: true
+  detector_wishlist:
+    reference: strategy-research/config/detector_wishlist.yaml
+    first_candidate: daily_timeframe_regime_overlay
+    trigger: confirmed ungated edge with regime-dependent performance in Improvement
+      03
+coverage_matrix:
+  unclassified:
+  - hypothesis_id: keltner_mean_reversion
+    finding_id: keltner_mean_reversion_no_edge
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: keltner_trend_mean_reversion
+    finding_id: keltner_mean_reversion_no_edge
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: keltner_breakout
+    finding_id: keltner_breakout_inverted
+    outcome: no_edge_observed
+    evidence_count: 2
+  - hypothesis_id: keltner_scoremode
+    finding_id: keltner_scoremode_no_edge
+    outcome: no_edge_observed
+    evidence_count: 2
+  - hypothesis_id: rsi_mean_reversion
+    finding_id: rsi_mean_reversion_no_edge
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: rsi_momentum_trending
+    finding_id: rsi_momentum_trending_cost_drag
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
+    finding_id: ema_spread_trend_continuation_v1_auto
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION
+    finding_id: funding_rate_continuous_mean_reversion_auto
+    outcome: invalidated_artifact
+    evidence_count: 1
+  - hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED
+    finding_id: funding_rate_continuous_mean_reversion_expanded_auto
+    outcome: inconclusive
+    evidence_count: 1
+  structural_forced_flow:
+  - hypothesis_id: H-041-A
+    finding_id: funding_rate_mean_reversion_inconclusive
+    outcome: no_edge_observed
+    evidence_count: 2
+  - hypothesis_id: H-041-A
+    finding_id: funding_rate_mean_reversion_run047_invalidated
+    outcome: invalidated_artifact
+    evidence_count: 1
+  - hypothesis_id: FUNDING_MR_DAILY_RETEST
+    finding_id: funding_mr_daily_retest_killed
+    outcome: completed_rejected
+    evidence_count: 1
+  persistent_behavioral_bias:
+  - hypothesis_id: H-041-C
+    finding_id: fear_greed_contrarian_inconclusive
+    outcome: era_conditional_instability
+    evidence_count: 2
+  - hypothesis_id: H-041-C-v2
+    finding_id: fear_greed_contrarian_v2_validation_rejected
+    outcome: stage_discretion_rejection_no_gated_verdict
+    evidence_count: 1
+  - hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+    finding_id: macd_trend_continuation_extended_2018_2025_auto
+    outcome: no_edge_observed
+    evidence_count: 1
+  - hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+    finding_id: p4_sma_trend_longonly_daily_auto
+    outcome: ungated_er_gate_variant_too_sparse_to_evaluate
+    evidence_count: 2
+  deferred_mechanism_impure:
+  - hypothesis_id: H-041-B
+    finding_id: volume_impulse_continuation_blocked
+    outcome: blocked_feed_unavailable
+    evidence_count: 0
+exhausted_mechanisms:
+- id: keltner_mean_reversion_no_edge
+  mechanism: Keltner mean-reversion in TRENDING regime (ER>=0.50)
+  outcome: no_edge_observed
+  evidence_count: 1
+  basis: analytic
+- id: keltner_breakout_inverted
+  mechanism: Keltner channel breakout (TRENDING regime, ER>=0.50)
+  outcome: no_edge_observed
+  evidence_count: 2
+  basis: analytic
+- id: keltner_scoremode_no_edge
+  mechanism: Keltner score-mode (composite multi-threshold, TRENDING)
+  outcome: no_edge_observed
+  evidence_count: 2
+  basis: analytic
+- id: rsi_mean_reversion_no_edge
+  mechanism: RSI(14) mean-reversion in low-ER regime
+  outcome: no_edge_observed
+  evidence_count: 1
+  basis: analytic
+- id: rsi_momentum_trending_cost_drag
+  mechanism: RSI momentum in TRENDING regime
+  outcome: no_edge_observed
+  evidence_count: 1
+  basis: analytic
+- id: er_detector_unusable_btc_eth_1h
+  mechanism: ER-threshold single-indicator stateless regime detector on BTC/ETH 1h
+  outcome: unusable_for_this_symbol_timeframe
+  evidence_count: 1
+  basis: analytic

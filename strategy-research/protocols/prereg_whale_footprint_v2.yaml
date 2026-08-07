@@ -126,7 +126,7 @@ w11_correction:
     THE CENTRAL CLAIM OF THIS AMENDMENT, stated so it can be checked rather
     than trusted. Both amended inputs were measured by programs that are
     STRUCTURALLY incapable of computing the quantity under test.
-      - H (feature sign persistence) from recorder/whale_persistence.py, which
+      - H (feature sign persistence) from tools/recorder/whale_persistence.py, which
         imports no price loader, opens no OHLCV cache, and reads only the
         `trades` stream. It has no access to a return.
       - sigma_bar_bps from tools/measure_bar_sigma.py, which opens exactly one
@@ -212,7 +212,7 @@ w11_correction:
         rebalances to target every bar and the documented "5% drift gating" has
         not been in force. ENGINE BEHAVIOUR IS UNCHANGED by W11; only the
         documentation is corrected, and the dead setting is recorded as a known
-        divergence in docs/known_divergences.md. This matters to THIS file
+        divergence in engineering/improvements/known_divergences.md. This matters to THIS file
         because economic_ic_threshold's turnover reasoning cites that very fact
         (see avg_holding_bars_primary.correction_rationale's closing NOTE): the
         measured holding period is signal persistence, not a threshold artifact,
@@ -468,7 +468,7 @@ economic_ic_threshold:
         relabelled, and re-measurement is a registered obligation
         (see w11_measurement_attempt.reregistration_obligation).
       w11_measurement_attempt:
-        tool: recorder/whale_persistence.py
+        tool: tools/recorder/whale_persistence.py
         method: >
           The campaign's own operational definition, transcribed from
           tools/prescreen_signal.py:505-545 (_compute_turnover_proxy):
@@ -833,7 +833,7 @@ minimum_n_gate:
     6-second reconnect destroys a full 1h bar. A capture can therefore be
     99.939% attested BY TIME and 54.55% attested BY BAR at the same instant, and
     it currently is. Measured directly over the 19 pairs
-    (recorder/whale_persistence.py, artifact
+    (tools/recorder/whale_persistence.py, artifact
     results/w11/whale_persistence_20260728T070340Z.txt): 150/359 = 0.4178
     overall, 114/209 = 0.5455 restricted to post-hole steady state.
     The registered 13.38 is retained above because the dispatch specified
@@ -1044,7 +1044,7 @@ required_coverage_floor:
     THIS GATE IS CURRENTLY BLOCKING, AND IT IS THE BINDING CONSTRAINT ON THE
     WHOLE REGISTRATION. Measured attested_bar_fraction is 0.4178 over the
     capture so far and 0.5455 restricted to post-hole steady state, against a
-    floor of 0.80 (recorder/whale_persistence.py, artifact
+    floor of 0.80 (tools/recorder/whale_persistence.py, artifact
     results/w11/whale_persistence_20260728T070340Z.txt). The harness would
     return BLOCKED_COVERAGE_FLOOR today and would keep doing so however many
     bars accumulate, because the shortfall is a RATE, not a backlog.
@@ -1066,7 +1066,7 @@ required_coverage_floor:
     avg_holding_bars_primary.w11_measurement_attempt), so accepting the low
     coverage would not buy a clean evaluation — it would buy an evaluation whose
     economic threshold is still set by a borrowed constant.
-    WHAT WOULD FIX IT. Reconnect handling in recorder/record_kraken_ws.py, not
+    WHAT WOULD FIX IT. Reconnect handling in tools/recorder/record_kraken_ws.py, not
     more capture time and not a threshold change. The target is <= 0.0345
     interruptions per bar (one per ~29 hours) to also clear the censoring
     problem; anything at or below ~0.22/bar clears this floor alone. This is an
@@ -1154,5 +1154,5 @@ metadata:
     - strategy-research/results/w11/whale_persistence_20260728T070340Z.txt
     - strategy-research/results/w11/bar_sigma_19pair.txt
   measurement_tools:
-    - recorder/whale_persistence.py     # H; reads trades only, cannot see a return
+    - tools/recorder/whale_persistence.py     # H; reads trades only, cannot see a return
     - tools/measure_bar_sigma.py        # sigma; reads prices only, cannot see a feature

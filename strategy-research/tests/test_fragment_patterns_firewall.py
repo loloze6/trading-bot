@@ -11,7 +11,7 @@ from pathlib import Path
 
 STRATEGY_RESEARCH = Path(__file__).parent.parent
 TOOLS = STRATEGY_RESEARCH / "tools"
-SKILLS = STRATEGY_RESEARCH / "skills"
+SKILLS = STRATEGY_RESEARCH / "workflow_artifacts" / "skills"
 
 
 def _imported_module_names(py_path: Path) -> set:
@@ -60,7 +60,7 @@ def test_no_decision_path_module_imports_fragment_patterns():
 
 
 def test_verdict_interpreter_skill_does_not_require_fragment_patterns():
-    """skills/verdict-interpreter/SKILL.md's 'Required inputs' section must
+    """workflow_artifacts/skills/verdict-interpreter/SKILL.md's 'Required inputs' section must
     never list fragment_patterns.yaml -- verdict_interpreter reads
     protocol_result.yaml / validation_protocol.yaml / backtest_spec.yaml /
     research_brief.yaml / campaign_state.yaml / trade_diagnostics.json /

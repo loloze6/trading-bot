@@ -176,7 +176,7 @@ def test_pattern_a_unknown_is_the_unique_warmup_safe_choice():
         "isn't vacuously bypassed by main_strategy.is_ready()'s stale pre-classify regime "
         "check) — but it matched. Either the engine's readiness check changed, or this "
         "fixture no longer exercises the one-bar warmup gap. Re-verify before trusting "
-        "the 'use unknown' recommendation in skills/backtest-engineering/SKILL.md."
+        "the 'use unknown' recommendation in workflow_artifacts/skills/backtest-engineering/SKILL.md."
     )
 
     first_divergence = next(i for i, (a, b) in enumerate(zip(unknown, mr)) if a != b)

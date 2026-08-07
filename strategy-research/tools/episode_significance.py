@@ -5,7 +5,7 @@ New methodology (not an extension of an existing rule) for computing IC signific
 on sparse signals over data spanning multiple disjoint eras (e.g. the P1b backward
 extension: 2018-01 pre-funding era, 2019-09-2023 funding-available era, 2024-2025
 existing baseline_v2 window). Full spec recorded in
-docs/plan/AMENDMENTS_01-06.md under "A8.5.1a-spec".
+engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md under "A8.5.1a-spec".
 
 Motivation: the existing _block_adjusted_significance() in prescreen_signal.py treats
 active-bar n_eff as n_active_bars / block_size (24 bars, fixed), which assumes bars

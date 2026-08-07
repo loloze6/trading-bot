@@ -5,7 +5,7 @@ Bar-level whale-footprint features (roadmap Phase 2.3) from the Kraken WS v2
 forward capture.
 
 Output columns added to the candle DataFrame — see
-`strategy-research/recorder/whale_features.py` for the exact definition of each:
+`strategy-research/tools/recorder/whale_features.py` for the exact definition of each:
 
     whale_lt_imbalance   [-1,+1]  signed share of the bar's LARGE-trade notional
     whale_lt_count       count    trades at or above the pair's own size threshold
@@ -84,7 +84,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 # tree, and two definitions drift — which is the failure the reader's
 # deny-by-default record handling exists to prevent. Precedent for the
 # cross-tree path insert: trading-bot/tests/test_funding_rate_component.py:27.
-_RESEARCH_ROOT = str(_REPO_ROOT / "strategy-research")
+_RESEARCH_ROOT = str(_REPO_ROOT / "strategy-research" / "tools")
 if _RESEARCH_ROOT not in sys.path:
     sys.path.insert(0, _RESEARCH_ROOT)
 
