@@ -338,3 +338,20 @@ socket-blocked slow 14 skipped exit 0, fast 232/17/0 unchanged. Upstream
 offer: YES (Dorian 2026-08-07), PR after this merge. Ticketed, not fixed:
 `exists()` satisfied by a degenerate cache — measured EQUAL to the sibling
 convention's own property, Medium, applies to the whole convention.
+
+## 2026-08-07 — Row 30: fast-suite CI (ubuntu + windows) — fork-only, never offered upstream
+
+`mac/ci-fast-suite`, merged after first-push green on both matrix legs
+(run 31206452055 @ `a95d1369`). One file: `.github/workflows/tests.yml` —
+Jeremy has no Actions on upstream, so this is permanent fork tooling, same
+class as row 24's pyrightconfig. Matrix ubuntu-latest + windows-latest,
+py3.13 (minor-matches Jeremy's committed venv 3.13.3 and the Mac's 3.13.12),
+pinned-requirements install, validator step, `pytest -q -rs`, autocrlf
+pinned true on windows (in-tree recorder .gitattributes documents that
+expectation), 20-min job timeout (the only effective hang bound on windows —
+pytest-timeout's signal method is POSIX-only), concurrency group,
+contents:read. Measured first-run counts: ubuntu 232/17/0, windows 230/19 —
+both matching the pre-registered predictions exactly; the skips are the
+designed cache guards (gitignored caches never reach a runner; CI certifies
+the cache-independent surface only, 232/230 of 249). The slow suite is NOT
+in CI (post-row-29 it would be 14 skips on a runner — zero information).
