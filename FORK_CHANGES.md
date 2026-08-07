@@ -292,3 +292,28 @@ commit `63bad12c` = master tip, verified via the GitHub API; his suite
 226/0/2). Pulled back in sync merge `c3c370ee`: `run_artifact.py` and
 `test_gitsha_dirty.py` blob-identical both sides, diff pre-verified empty.
 The dirty-marker is now shared history on both machines.
+
+## 2026-08-07 — Row 28: daily (1440m) ingest + 19 kraken 1d caches — divergence until offered/merged upstream
+
+`fix/kraken-ingest-1d`, merged `5af84961` (single amended commit `6b14522f` on
+`f2fd2203`). Re-diverges the PR-#9 file pair: `tools/ingest_kraken_archive.py`
+gains a `resolution_minutes` parameter on `to_binance_schema` (close_time was
+hardcoded to the 1h `TIMEFRAME_MS` — a daily ingest silently wrote 1-hour
+close_times), a `--resolution` CLI (default 60), an ingest()-level exact-ccxt-
+timeframe guard (CcxtFetcher snaps to the NEAREST timeframe, so 720m would
+land in and MERGE INTO a legitimate 4h cache — refused before any read or
+write, all seven exactly-mapped resolutions measured passing), and per-asset
+isolation in `run_all()` (one raising asset no longer aborts the rest; [FAIL]
+and the failures table on stderr; non-zero exit if any failed).
+`tests/test_kraken_archive_ingest.py` +12 tests. Full lane pattern
+(opus-4.8 executor / opus-5 review + red-team / fable verifier, all
+transcript-verified); 11 mutations killed incl. 4 that survived round 1's
+whole suite. Worktree 247/2; main repo fast 249/0, slow 14-0-0, validator 0,
+reference simulate byte-identical with bare-sha manifest `5af84961`.
+Plus commit `45035402`: the 19 `kraken_<BASE>USD_1d.csv` caches (43,504 rows,
+5.0 MB, tips 2025-12-31 00:00 = last pre-seal daily bar), per-source-file
+sha256 provenance in the commit message, ingest run twice byte-identical.
+Unblocks Jeremy's P4 (blocked_on_daily_bar_ingest). Upstream offer: Dorian's
+call. Residues ticketed, not fixed: typo'd-and-absent resolution exits 0
+(guard closes the dangerous present-sources case); post-write verify ordering
+(pre-existing, leg-2 design); `verify_utc_roundtrip` failures name no dest.
