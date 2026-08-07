@@ -317,3 +317,24 @@ Unblocks Jeremy's P4 (blocked_on_daily_bar_ingest). Upstream offer: Dorian's
 call. Residues ticketed, not fixed: typo'd-and-absent resolution exits 0
 (guard closes the dangerous present-sources case); post-write verify ordering
 (pre-existing, leg-2 design); `verify_utc_roundtrip` failures name no dest.
+
+## 2026-08-07 — Row 29: slow-suite offline-safety guards — divergence until upstream PR merges
+
+`fix/slow-suite-offline-safety`, merged `fe9d7061` (single message-amended
+commit `e481bccf` on `2de1302d`). Diverges 4 upstream-shared test files
+(test_warmup_prefetch_bit_identical, test_regression_backtest,
+test_bar_equity_bit_identical, test_commission_rate_param): each module's
+`pytestmark = pytest.mark.slow` becomes `[slow, skipif]` on the
+BTCUSDT_1h / BTCUSDT_funding_8h / fear_greed_daily triple, reason
+"local_data fixtures not present" — the 0fd9a3e4 sibling convention
+(predicate, `_NEEDED_CACHES` line and reason text character-identical).
+Why: all 14 slow tests route through run_backtest over gitignored caches;
+on a cache-less clone that path live-fetches Binance (networked) or
+silently backtests empty data (measured offline: 9 fail — 7 AssertionError
++ 2 KeyError — and 4 of the 5 passes carry no signal; only
+test_config_actually_loaded passes legitimately). Byte-inert with caches
+present: merged-tip fast 249/0, slow 14-0-0, validator 0; cache-less
+socket-blocked slow 14 skipped exit 0, fast 232/17/0 unchanged. Upstream
+offer: YES (Dorian 2026-08-07), PR after this merge. Ticketed, not fixed:
+`exists()` satisfied by a degenerate cache — measured EQUAL to the sibling
+convention's own property, Medium, applies to the whole convention.
