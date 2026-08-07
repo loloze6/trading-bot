@@ -503,3 +503,232 @@ def test_compute_gap_stats_perfect_series_zero_missing():
     stats = ing.compute_gap_stats(ts, resolution=60)
     assert stats["full"]["missing"] == 0
     assert stats["full"]["pct"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# (f) Daily (1440-minute) resolution
+#
+# to_binance_schema derived close_time from the module-level 1h TIMEFRAME_MS
+# regardless of the requested resolution, so a daily tranche was written with
+# 1-HOUR close_times, silently. close_time now follows the passed resolution.
+# ---------------------------------------------------------------------------
+
+def test_to_binance_schema_daily_close_time_geometry(tmp_path):
+    """A daily (1440-minute) tranche carries a full-day close_time:
+    timestamp + 86,399,999 ms (= 1440*60*1000 - 1), not the 1h default."""
+    src = _write_source(tmp_path, "TEST", T0, 5, resolution=1440)
+    raw = ing.load_kraken_ohlcv(src)
+    got = ing.to_binance_schema(raw, 1440)
+    delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
+    assert (delta == pd.Timedelta(milliseconds=86_399_999)).all()
+
+
+def test_to_binance_schema_default_resolution_stays_hourly(tmp_path):
+    """Byte-identity pin: a no-arg call keeps the 1h close_time geometry —
+    timestamp + 3,599,999 ms. Guards the default against a silent flip."""
+    src = _write_source(tmp_path, "TEST", T0, 5, resolution=60)
+    raw = ing.load_kraken_ohlcv(src)
+    got = ing.to_binance_schema(raw)
+    delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
+    assert (delta == pd.Timedelta(milliseconds=3_599_999)).all()
+
+
+def test_ingest_at_daily_resolution_writes_1d_cache_and_is_idempotent(tmp_path):
+    """End-to-end daily ingest through the real cache_key: the file lands in the
+    1d slot, carries full-day close_times on disk, and re-running is a
+    byte-identical no-op (the same idempotency the 1h path guarantees)."""
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _write_source(archive, "TEST", T0, 30, resolution=1440)
+
+    summary = ing.ingest("TEST", archive, data_dir, 1440)
+
+    assert summary["cache_key"] == "kraken_TESTUSD_1d"
+    dest = Path(summary["dest"])
+    assert dest.name == "kraken_TESTUSD_1d.csv"
+
+    got = pd.read_csv(dest)
+    got["timestamp"] = pd.to_datetime(got["timestamp"])
+    delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
+    assert (delta == pd.Timedelta(milliseconds=86_399_999)).all()
+
+    first = dest.read_bytes()
+    ing.ingest("TEST", archive, data_dir, 1440)
+    assert dest.read_bytes() == first, "re-ingesting an unchanged daily archive rewrote the file"
+
+
+# ---------------------------------------------------------------------------
+# (g) Per-asset isolation
+#
+# One raising asset used to abort every asset after it. run_all now catches per
+# asset, records (asset, error), continues, and reports a non-empty failures
+# list that main() turns into a non-zero exit.
+# ---------------------------------------------------------------------------
+
+def test_run_all_isolates_a_failing_asset_and_continues(tmp_path, capsys):
+    """A raising asset does not abort the rest, AND the failure is attributed to
+    the failing asset — not to assets[0]. BAD sits BETWEEN two healthy assets so
+    both invariants are load-bearing: 'continued past the failure' (GOOD2 after
+    BAD) and 'recorded the failing asset, not the first' (assets[0] is GOOD1).
+    The [SKIP]-on-absent path is separate and covered by its own test."""
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+
+    _write_source(archive, "GOOD1", T0, 48)
+
+    # BAD: interior out-of-order row -> load_kraken_ohlcv raises inside ingest.
+    bad = _write_source(archive, "BAD", T0, 10)
+    rows = bad.read_text().strip().split("\n")
+    rows[3], rows[7] = rows[7], rows[3]
+    bad.write_text("\n".join(rows) + "\n")
+
+    _write_source(archive, "GOOD2", T0, 48)
+
+    done, skipped, failures = ing.run_all(
+        ["GOOD1", "BAD", "GOOD2"], archive, data_dir)
+
+    assert [r["asset"] for r in done] == ["GOOD1", "GOOD2"]  # continued past BAD
+    assert skipped == []
+    assert len(failures) == 1
+    assert failures[0][0] == "BAD"                    # attributed to BAD, not GOOD1
+    assert isinstance(failures[0][1], ValueError)     # the REAL exception is kept
+    assert (data_dir / "kraken_GOOD1USD_1h.csv").exists()
+    assert (data_dir / "kraken_GOOD2USD_1h.csv").exists()
+
+    # Loud on STDERR, and it names the failing asset (not the first one).
+    err = capsys.readouterr().err
+    assert "[FAIL] BAD" in err
+    assert "[FAIL] GOOD1" not in err
+
+
+def test_run_all_skips_absent_source_without_recording_failure(tmp_path):
+    """The [SKIP]-on-absent-source branch (never hit by the isolation test,
+    whose files all exist): an absent source is skipped, NOT recorded as a
+    failure. Absence is expected (HYPE); a raise is not."""
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _write_source(archive, "GOOD", T0, 48)            # MISSING has no source file
+
+    done, skipped, failures = ing.run_all(["MISSING", "GOOD"], archive, data_dir)
+
+    assert skipped == ["MISSING"]
+    assert [r["asset"] for r in done] == ["GOOD"]
+    assert failures == []                             # absence is not a failure
+
+
+def test_run_all_source_lookup_follows_the_requested_resolution(tmp_path):
+    """run_all must locate the source at the REQUESTED resolution: an archive
+    holding only a _1440 file is ingested at 1440, not skipped as absent (which
+    is what dropping `resolution` from the source lookup would cause)."""
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _write_source(archive, "TEST", T0, 30, resolution=1440)   # only _1440 exists
+
+    done, skipped, failures = ing.run_all(["TEST"], archive, data_dir, 1440)
+
+    assert [r["asset"] for r in done] == ["TEST"]
+    assert skipped == []
+    assert failures == []
+    assert (data_dir / "kraken_TESTUSD_1d.csv").exists()
+
+
+def test_main_exits_nonzero_when_any_asset_failed(monkeypatch, capsys):
+    """A recorded failure makes the whole run exit non-zero AND the FAILURES
+    table names the failing asset on STDERR. run_all is stubbed so no real
+    local_data is read or written."""
+    monkeypatch.setattr(sys, "argv", ["ingest_kraken_archive.py"])
+    monkeypatch.setattr(
+        ing, "run_all",
+        lambda *a, **k: ([], [], [("BAD", RuntimeError("boom"))]),
+    )
+    with pytest.raises(SystemExit) as excinfo:
+        ing.main()
+    assert excinfo.value.code == 1
+    err = capsys.readouterr().err
+    assert "BAD" in err                               # the FAILURES table names it
+
+
+# ---------------------------------------------------------------------------
+# (h) Resolution validation — an unmapped resolution is a STOP, not a mis-file
+#
+# CcxtFetcher snaps candle_interval to the NEAREST ccxt timeframe, so 720m (12h)
+# would land in the 4h slot and merge 12h bars into a legitimate 4h cache; 0 and
+# negatives produce degenerate close_time spans. ingest() refuses before any
+# read or write.
+# ---------------------------------------------------------------------------
+
+def _write_source_at_suffix(archive: Path, asset: str, suffix: int,
+                            start_unix: int, periods: int,
+                            step_seconds: int = H) -> Path:
+    """A monotonic (step_seconds-spaced) source written under an ARBITRARY file
+    suffix, decoupling the on-disk spacing from the resolution ingest() is told.
+    Lets a degenerate resolution reach the value-level code pre-fix instead of
+    tripping the missing-file guard."""
+    archive.mkdir(parents=True, exist_ok=True)
+    path = ing.kraken_source_path(asset, archive, suffix)
+    rows = [f"{start_unix + i * step_seconds},100.0,100.0,100.0,100.0,1.0,1"
+            for i in range(periods)]
+    path.write_text("\n".join(rows) + "\n")
+    return path
+
+
+def test_ingest_720_snaps_to_the_4h_slot_and_is_rejected(tmp_path):
+    """720m (12h) has no exact ccxt timeframe — it snaps to 4h. A _720 source is
+    present, so pre-guard this silently wrote 12h bars into kraken_TESTUSD_4h.
+    ingest() now refuses, naming the 4h slot, and writes nothing."""
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _write_source(archive, "TEST", T0, 10, resolution=720)   # _720 source exists
+
+    with pytest.raises(ValueError, match="4h"):
+        ing.ingest("TEST", archive, data_dir, 720)
+
+    assert not data_dir.exists()                     # nothing written
+
+
+def test_ingest_rejects_zero_resolution(tmp_path):
+    """0 snaps to 1m and (pre-guard) divided by a zero step in the gap stats
+    AFTER writing. The guard stops it before any write."""
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _write_source_at_suffix(archive, "TEST", 0, T0, 10)      # monotonic _0 source
+
+    with pytest.raises(ValueError):
+        ing.ingest("TEST", archive, data_dir, 0)
+
+    assert not data_dir.exists()
+
+
+def test_ingest_rejects_negative_resolution(tmp_path):
+    """-60 snaps to 1m and (pre-guard) wrote a NEGATIVE close_time span silently.
+    The guard stops it before any write."""
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _write_source_at_suffix(archive, "TEST", -60, T0, 10)    # monotonic _-60 source
+
+    with pytest.raises(ValueError):
+        ing.ingest("TEST", archive, data_dir, -60)
+
+    assert not data_dir.exists()
+
+
+def test_ingest_accepts_an_exactly_mapped_4h_resolution(tmp_path):
+    """240m maps EXACTLY to 4h and must NOT be rejected by the guard — it lands
+    in the legitimate kraken_TESTUSD_4h slot."""
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    _write_source(archive, "TEST", T0, 30, resolution=240)
+
+    summary = ing.ingest("TEST", archive, data_dir, 240)
+
+    assert summary["cache_key"] == "kraken_TESTUSD_4h"
+
+
+def test_to_binance_schema_4h_close_time_geometry(tmp_path):
+    """A third geometry point (240-minute / 4h) so a close_time hardcoded to the
+    {60, 1440} test set cannot survive: +14,399,999 ms (= 240*60*1000 - 1)."""
+    src = _write_source(tmp_path, "TEST", T0, 5, resolution=240)
+    raw = ing.load_kraken_ohlcv(src)
+    got = ing.to_binance_schema(raw, 240)
+    delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
+    assert (delta == pd.Timedelta(milliseconds=14_399_999)).all()
