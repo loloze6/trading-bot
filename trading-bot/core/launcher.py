@@ -11,6 +11,8 @@ import sys
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
+import ccxt
+
 from config.settings import ConfigManager
 from core.backtester import BacktestEngine
 from core.trading_bot import TradingBot
@@ -36,6 +38,7 @@ class TradingParams:
     check_interval: int   # price-fetch interval, seconds
     test_mode: bool
     commission_rate: float = DEFAULT_COMMISSION_RATE
+    exchange: str = "binance"
 
 
 @dataclass
@@ -121,6 +124,22 @@ class Launcher:
         interval_default: int = 180,
         check_interval_default: int = 60,
     ) -> TradingParams:
+        # Optional key. It names the venue whose PRICE CACHE the backtest engine
+        # resolves (see CcxtFetcher.cache_key), not the venue orders would be
+        # sent to: run_bot reaches this validation, but the live DataManager it
+        # builds never reads the value.
+        # Absent means 'binance', which is what every config
+        # written before it existed implies. A bogus id would otherwise reach
+        # CcxtFetcher, which logs, leaves its client None, and surfaces a whole
+        # run later as an empty DataFrame and "No data" -- a typo must not be
+        # indistinguishable from missing history.
+        exchange = self.config.get('trading', 'exchange', 'binance')
+        if exchange not in ccxt.exchanges:
+            self.logger.error(
+                f"Unknown trading.exchange '{exchange}': not a ccxt exchange id. "
+                f"Omit the key to use the default 'binance'."
+            )
+            sys.exit(1)
         return TradingParams(
             symbols=self.config.get('trading', 'symbols', ['BTCUSDT']),
             interval=parse_interval_seconds(
@@ -130,6 +149,7 @@ class Launcher:
                 'trading', 'check_interval_seconds', check_interval_default
             ),
             test_mode=self.config.get('trading', 'test_mode', True),
+            exchange=exchange,
         )
 
     def _build_mock_stack(
@@ -279,6 +299,7 @@ class Launcher:
             test_mode=params.test_mode,
             symbols=params.symbols,
             initial_capital=initial_balance,
+            exchange=params.exchange,
         )
 
         try:
@@ -337,6 +358,7 @@ class Launcher:
             test_mode=params.test_mode,
             symbols=params.symbols,
             initial_capital=initial_balance,
+            exchange=params.exchange,
         )
 
         try:
@@ -442,6 +464,7 @@ class Launcher:
                         test_mode=params.test_mode,
                         symbols=params.symbols,
                         initial_capital=initial_balance,
+                        exchange=params.exchange,
                     )
 
                     bot.load_data(start_date=start_date, end_date=end_date)
