@@ -366,3 +366,31 @@ both matching the pre-registered predictions exactly; the skips are the
 designed cache guards (gitignored caches never reach a runner; CI certifies
 the cache-independent surface only, 232/230 of 249). The slow suite is NOT
 in CI (post-row-29 it would be 14 skips on a runner — zero information).
+
+## 2026-08-08 — Row 31: content-aware cache guard (leg 6A) — fork-only until offered post-PR-#12
+
+`fix/degenerate-cache-guard`, merged `9ee3652c` (branch commit `b1ef8251`).
+Replaces the bare `.exists()` cache skip-guard across the 5 `_NEEDED_CACHES`
+convention files (`test_close_positions_at_end`, `test_regression_backtest`,
+`test_warmup_prefetch_bit_identical`, `test_bar_equity_bit_identical`,
+`test_commission_rate_param`) with one shared content-aware predicate
+`tests/_cache_guard.py::cache_skip_reason` (7-mode reason family; per-path
+span memoization; reads header + first data row + last-4096B tail only). A
+degenerate cache — empty / header-only / truncated / valid-but-wrong-window —
+now SKIPS the test instead of running it on garbage (the leg-5 red-team's
+measured 9F/5P). 11 new fast unit tests (U1–U11), 6 mutations killed.
+**Bit-identity:** with healthy caches the fast suite is 249→260/0 (249
+unchanged + 11 new) and slow 14-0-0, and the 5 guarded tests still RUN — no
+healthy-path behaviour change. Adversarial: opus-4.8 red-team SHIP, fable
+verifier MERGE-READY.
+**Contract bound** (stated so no future reader over-trusts the guard): the
+predicate closes every FETCH-pipeline degenerate shape (a truncated/failed
+fetch yields empty/header-only/short/stale data, all caught). A fabricated
+full-span cache with garbage or wrong-symbol content in the MIDDLE is out of
+contract (G1-class mid-file — the engine's gap-guard's problem) and can still
+vacuously green bar_equity's non-numeric tests; not a fetch failure mode.
+**Upstream offer DEFERRED** until PR #12 lands (both touch the same guard
+convention; offering now would make Jeremy review two versions), then
+re-derived against #12's landed shape. `test_funding_rate_component.py`'s
+per-test bare-exists guards (same hole class, different files) are out of
+scope — follow-on ticket filed.
