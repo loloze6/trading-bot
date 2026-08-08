@@ -189,7 +189,7 @@ class CcxtFetcher(BaseFetcher):
 
         # Extra columns kept for Binance format compatibility
         ms = self._timeframe_to_ms(self.ccxt_timeframe)
-        df["close_time"]                   = df["timestamp"] + pd.Timedelta(milliseconds=ms - 1)
+        df["close_time"]                   = df["timestamp"] + datetime.timedelta(milliseconds=ms - 1)
         df["quote_asset_volume"]           = df["volume"] * df["close"]   # estimated
         df["number_of_trades"]             = np.nan
         df["taker_buy_base_asset_volume"]  = np.nan
