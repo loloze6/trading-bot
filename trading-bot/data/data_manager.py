@@ -205,8 +205,8 @@ def _merge_asof_with_causality_guard(
     )
     matched = merged["__src_ts"].notna()
     if matched.any():
-        window_end = merged.loc[matched, "__src_ts"] + pd.Timedelta(seconds=window_seconds)
-        bar_end = merged.loc[matched, "timestamp"] + pd.Timedelta(seconds=interval_seconds)
+        window_end = merged.loc[matched, "__src_ts"] + datetime.timedelta(seconds=window_seconds)
+        bar_end = merged.loc[matched, "timestamp"] + datetime.timedelta(seconds=interval_seconds)
         violations = window_end > bar_end
         if violations.any():
             bad = merged.loc[matched].loc[violations].iloc[0]
@@ -214,7 +214,7 @@ def _merge_asof_with_causality_guard(
                 f"aux feed '{feed_label}' column '{name}': declared source window "
                 f"[{bad['__src_ts']} .. +{window_seconds}s] ends after bar "
                 f"{bad['timestamp']} closes (bar_end="
-                f"{bad['timestamp'] + pd.Timedelta(seconds=interval_seconds)}) — "
+                f"{bad['timestamp'] + datetime.timedelta(seconds=interval_seconds)}) — "
                 f"refusing to attach a value the strategy could not yet have. "
                 f"{int(violations.sum())} bar(s) affected."
             )
