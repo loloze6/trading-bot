@@ -326,13 +326,16 @@ def test_a_readable_file_scans_clean_through_scan_file(tmp_path):
 
 def test_an_os_unreadable_path_is_reported_not_crashed(tmp_path):
     """A directory named *.py (rglob("*.py") would yield it in the real scan)
-    raises IsADirectoryError on read — an OSError, not a content error. That
-    must fail closed the same way a bad encoding does, not crash the scan."""
+    raises an OSError on read — IsADirectoryError on POSIX, PermissionError on
+    Windows — not a content error. That must fail closed the same way a bad
+    encoding does, not crash the scan."""
     fixture = tmp_path / "x.py"
     fixture.mkdir()
     dates, reason = _scan_file(fixture)
     assert dates is None
-    assert reason is not None and reason.startswith("IsADirectoryError"), reason
+    assert reason is not None and reason.startswith(
+        ("IsADirectoryError", "PermissionError")
+    ), reason
 
 
 def test_config_json_lines_are_scanned_with_all_notations(tmp_path):
