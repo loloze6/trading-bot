@@ -519,3 +519,50 @@ candidate config mid-run would stamp a sha the run never used (anchor-risk to fi
 out of scope here). **T2** — latent `NameError` at `backtester.py:293` (`_project_dir`
 bound only in the fallback branch; unreachable via `run_backtest` today, same class as
 the known `_close_all_positions_at_end` NameError).
+
+## 2026-08-08 — Row 35: seal-test Windows portability fix + Rows 32/33/34 offered upstream (PRs #15/#16/#17)
+
+**Row 35 — seal-test Windows-portability fix.** `fix/seal-test-windows-portability`,
+merged `2ab6f2fe` (commit `9a1571bb`). Test-only, one file
+(`trading-bot/tests/test_no_sealed_date_literals.py`). Row 32's new
+`test_an_os_unreadable_path_is_reported_not_crashed` asserted the reported reason
+`.startswith("IsADirectoryError")`; opening a directory raises `IsADirectoryError`
+on POSIX but `PermissionError` on Windows (both `OSError`, both caught by
+`_UNREADABLE_ERRORS`), so the fail-closed FEATURE was always cross-platform — only
+the test pinned the POSIX name. Now accepts either prefix, still non-vacuous
+(reason non-None + names the actual OS error). Fork CI (windows-latest, fast suite)
+had been RED on exactly this test across the whole trust-gap batch (first red = the
+Row-32 seal-test merge; ubuntu + macOS green throughout). After the fix, fork CI is
+green on ubuntu AND windows (run 31272831084). Baselines byte-identical by
+construction. FOLDED INTO the Row-32 upstream offer (PR #16). Row 30's fork CI
+caught a Windows-incompatible test before it reached Jeremy's Windows box — its job.
+
+**Rows 32 / 33 / 34 offered upstream 2026-08-08.** All three built on Jeremy's tip
+`ebe42275`, verified there, opus-4.8 red-teamed (blind, all SHIP, all transcript-
+verified `claude-opus-4-8`), opened as cross-fork PRs:
+- **Row 33 (3c, numpy Timedelta) → PR #15** (`offer/3c-numpy-timedelta`). On
+  `ebe42275`: simulate 5-artifact byte-identical (`5ccbec42`/`5a75366c`/net
+  −23.021/sharpe −5.646/24), fast 257, slow 14, ruff 0-new, basedpyright 0-new
+  (2 pre-existing NaTType resolved). Red-team executed all 8 conversions both ways
+  on pandas 2.3.3/numpy 2.5.1 → nanosecond-identical, fail-loud preserved. Two
+  non-blocking advisories disclosed in the PR body (sub-µs `window_seconds` µs-vs-ns
+  rounding — unreachable on any real feed; AST ban doesn't cover `pd.to_timedelta`/
+  aliased imports — future-proofing).
+- **Row 32 (3a, seal test) + Row 35 → PR #16** (`offer/3a-seal-test-hardening`,
+  FORK-ONLY docstring clause stripped). On `ebe42275`: fast 272, seal test 32/32,
+  ruff clean, basedpyright 0/0/0. Red-team ran 417,280 differential checks → new
+  patterns provably stricter-or-equal to old (zero regressions). Advisory disclosed:
+  the null-byte self-test assumes `SyntaxError` (CPython ≥3.12; ≤3.11 → `ValueError`,
+  still fail-closed) — both trees run 3.13.
+- **Row 34 (3b, config-identity) → PR #17** (`offer/3b-config-identity`). Rebased
+  onto UPSTREAM's existing bare-`.exists()` cache guard — the fork-only `_cache_guard`
+  import stripped — so PURELY ADDITIVE (+129/0) and INDEPENDENT of PR #14. On
+  `ebe42275`: all 6 regression tests pass incl. the 2 new ones RUNNING (not skipping),
+  fast 249, ruff 0-new, basedpyright 0-new. Red-team: no vacuous-green/wrong-pass
+  path, mutation non-degenerate, guard byte-identical to upstream's.
+
+**Merge-tree dry run (authoritative, `git merge-tree --write-tree`, exit 0):** PRs
+#14/#15/#16/#17 merge in ANY order with zero conflicts. The only file overlap is
+#14↔#17 (`test_regression_backtest.py`) and it auto-merges clean; #15 and #16 are
+fully disjoint. Slack merge playbook posted to Jeremy 2026-08-08. Rows 32/33/34/35
+close when their PRs merge.
