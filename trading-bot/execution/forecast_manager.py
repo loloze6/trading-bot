@@ -32,7 +32,7 @@ class ForecastManager:
     (`trading_bot.py:229`) proceeds on `abs(allocation_change) != 0.0`, so the
     engine rebalances toward target on EVERY bar. `config.json`'s
     `risk_management.rebalance_threshold` (0.20) is dead -- its only reference,
-    `core/launcher.py:110`, is commented out. Documented in
+    `core/launcher.py:113`, is commented out. Documented in
     `strategy-research/engineering/improvements/known_divergences.md` (1); do not re-add a threshold
     here without reading it, since archived backtest turnover and cost figures
     all assume the current every-bar behaviour.
