@@ -259,7 +259,7 @@ class BaseFetcher(ABC):
         """
         ts = pd.Timestamp(ts)
         if ts == ts.normalize():
-            return ts + pd.Timedelta(days=1) - pd.Timedelta(milliseconds=1)
+            return ts + datetime.timedelta(days=1) - datetime.timedelta(milliseconds=1)
         return ts
 
     @staticmethod
@@ -346,7 +346,7 @@ class BaseFetcher(ABC):
         ts = pd.to_datetime(pd.Series(timestamps)).sort_values().reset_index(drop=True)
         if len(ts) < 2:
             return []
-        expected = pd.Timedelta(seconds=int(self.interval_seconds))
+        expected = datetime.timedelta(seconds=int(self.interval_seconds))
         threshold = expected * self.expected_gap_tolerance
         spans = []
         deltas = ts.diff()
@@ -383,7 +383,7 @@ class BaseFetcher(ABC):
             return
 
         detail = "; ".join(
-            f"{s} -> {e} ({int((e - s) / pd.Timedelta(seconds=int(self.interval_seconds))) + 1} bars)"
+            f"{s} -> {e} ({int((e - s) / datetime.timedelta(seconds=int(self.interval_seconds))) + 1} bars)"
             for s, e in new_gaps
         )
         raise FetchGapError(
