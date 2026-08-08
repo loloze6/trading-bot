@@ -1,5 +1,5 @@
 """
-No executable production date may sit at or beyond the sealed holdout — FORK-ONLY.
+No executable production date may sit at or beyond the sealed holdout.
 
 Threat model, measured not theoretical: a hardcoded window in production code
 that reaches into holdout_range. `launcher.py`'s `visualize_data` ended
