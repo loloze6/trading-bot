@@ -457,3 +457,34 @@ Jeremy's master (PR #2) at a blob (`aa795260`) IDENTICAL to our pre-hardening
 base `79edac38`, so the hardening applies cleanly. Not yet offered. The module
 docstring's `FORK-ONLY` header is now stale (the test lives upstream) — noted for
 a later touch, not fixed in this test-only branch.
+
+## 2026-08-08 — Row 33: numpy generic-unit Timedelta fix on the data path (3c) — upstream-offer candidate
+
+`fix/numpy-timedelta-deprecation`, merged `7e13bc81` (branch commit `674e49e7`).
+Replaces `pd.Timedelta(...)` with stdlib `datetime.timedelta(...)` at 8
+constructions on 7 lines in `trading-bot/data/` (`data_manager.py:208,209,217`;
+`base_fetcher.py:262,349,386`; `ccxt_fetcher.py:192`) — removes numpy's
+generic-unit Timedelta DeprecationWarning (**5762 → 0** over a full simulate). On
+a future numpy major the deprecation becomes a HARD ERROR, which inside the
+FetchGapError guard at `:349/:386` would crash the guard itself — a crashing
+guard is worse than a noisy one. Value-IDENTICAL: simulate 5-artifact
+byte-identical to reference (`5ccbec42`/`5a75366c`/net −23.021/sharpe −5.646/24
+trades), re-derived BOTH directions (HEAD==control AND pre-fix==control).
+**Why stdlib, not `pd.to_timedelta`:** `pd.Timedelta(seconds=nan)` RAISES today;
+`pd.to_timedelta(nan)` returns NaT, which would silently PASS the aux-feed
+causality (anti-lookahead) guard — a fail-OPEN. `datetime.timedelta(seconds=nan)`
+raises the same ValueError, preserving fail-loud exactly (this trap was caught by
+the fable planner, refuting the lead's initial `pd.to_timedelta` recommendation).
+New `tests/test_no_generic_timedelta_warning.py`: warning-count + exact-value
+locks on the real merge guard / `_inclusive_end` / gap-check, plus an AST scan
+banning BOTH `pd.Timedelta(...)` and the bare-name `Timedelta(...)` form under
+`data/`. Fast 283→291 (+8), slow 14, 0 new ruff/basedpyright (bonus: 2
+pre-existing NaTType-overload diagnostics resolved as a side effect). Gated:
+fable plan+critic, opus-4.8 red-team (blind, SHIP), fable verifier (MERGE-READY;
+byte-identity + fail-loud re-derived independently).
+**Upstream-worthy? Strong candidate — Dorian's call on timing.** Pure engine
+hygiene; prevents a future hard crash inside the gap guard; version-neutral
+(numpy 2.5.x warns, older may not — state this in the PR body, plus the NaN
+fail-loud rationale for stdlib-over-`to_timedelta`). Follow-up ticket: the same
+deprecation lives in `tests/test_kraken_archive_ingest.py` +
+`test_whale_footprint_fetcher.py` (outside `data/`, not on the default bar path).
