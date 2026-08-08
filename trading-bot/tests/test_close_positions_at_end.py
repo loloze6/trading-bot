@@ -42,16 +42,11 @@ import sys
 from pathlib import Path
 
 import pytest
+from _cache_guard import cache_skip_reason
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-
-_NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
-pytestmark = pytest.mark.skipif(
-    not all((PROJECT_ROOT / "local_data" / f).exists() for f in _NEEDED_CACHES),
-    reason="local_data fixtures not present",
-)
 
 # Measured window: the last bar the engine processes for this window is 2024-10-05 21:00,
 # at which the default strategy_config.json holds a LONG BTCUSDT position -- so
@@ -63,6 +58,10 @@ pytestmark = pytest.mark.skipif(
 START_DATE = "2024-09-15"
 END_DATE = "2024-10-05"
 SYMBOL = "BTCUSDT"
+
+_NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
+_CACHE_SKIP = cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_CACHES, START_DATE, END_DATE)
+pytestmark = pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable")
 
 
 class _RecordingHandler(logging.Handler):
