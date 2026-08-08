@@ -412,6 +412,12 @@ vacuously green bar_equity's non-numeric tests; not a fetch failure mode.
 `41d7268e`) and was sync-merged (`da4f1e0d`) — the merge conflicted on exactly
 the 4 guard files and resolved take-ours, so leg-6 A is already re-derived
 against #12's landed shape: the fork's content-aware predicate now replaces
-#12's bare `.exists()` on Jeremy's own tree. Offerable as a post-#12 follow-on,
-bundling the `test_funding_rate_component.py` per-test bare-exists follow-on
-ticket (same hole class, different files). Offer is a queued task — Dorian's call.
+#12's bare `.exists()` on Jeremy's own tree. **Offered 2026-08-08 as loloze6/trading-bot#14** — single cherry-pick of
+`b1ef8251`, all 7 files blob-identical to fork HEAD (tests tree `b2d5b49c`,
+commit tree `e43cfbd9`). Verified on Jeremy's base `ebe42275`: fast 249→260/0,
+slow 14, simulate 5-artifact byte-identical (`5ccbec42`/`5a75366c`), degenerate
+demo 9F/5P (bare guard) → 14-skipped/0-fetch (content-aware), zero new
+basedpyright/ruff. opus-4.8 red-team SHIP + fable verifier MERGE-READY. Row
+closes when the PR merges. The `test_funding_rate_component.py` per-test
+bare-exists follow-on (same hole class, different files) stays a separate
+ticket, disclosed in #14's body.
