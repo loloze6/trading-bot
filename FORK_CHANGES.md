@@ -421,3 +421,39 @@ basedpyright/ruff. opus-4.8 red-team SHIP + fable verifier MERGE-READY. Row
 closes when the PR merges. The `test_funding_rate_component.py` per-test
 bare-exists follow-on (same hole class, different files) stays a separate
 ticket, disclosed in #14's body.
+
+## 2026-08-08 — Row 32: holdout-seal test notation + resilience hardening — upstream-offer candidate
+
+`fix/seal-test-hardening`, merged `d1ee2af0` (branch commit `870cc925`).
+Hardens the holdout-seal guard `trading-bot/tests/test_no_sealed_date_literals.py`
+on two axes; test-only (one file, no production code → backtest baselines
+byte-identical by construction):
+  - **Notation.** `DATE_PATTERNS` replaces the single dash-only `ISO_DATE` and
+    now catches SIX forms — dash (non-padded too), slash, dotted, underscore,
+    compact 8-digit, and compact-plus-time (exactly 12/14 digits, e.g.
+    `20260315123456` / `202603150930`) — each digit-boundary-guarded
+    (`(?<!\d)/(?!\d)`), the fail-safe choice: a word char like `_` does NOT hide
+    a date (`run_20260315_1h` still extracts) while adjacent digits cannot forge
+    one (9/11-digit flanked runs extract nothing). Extraction is centralized in
+    `_dates_in_text()`, shared by the .py token scan AND the two committed-JSON
+    line scans (closes the second, dash-only `findall` site). Extraction stays
+    seal-blind + validation-blind; `_seal_violation()` (now module-level, directly
+    tested) does the fromisoformat parse + `>=` seal comparison.
+  - **Resilience.** `_scan_file()` + `OSError` in `_UNREADABLE_ERRORS` — an
+    unreadable `*.py` (a directory named `*.py`, permission-denied, missing
+    config) now fails CLOSED with a named reason instead of aborting the scan
+    before its vacuity sentinel. Assertion order: SENTINEL → `unreadable` →
+    `violations`.
+File 9→32 tests; fast suite 260→283 / 0 skips; 12 mutations killed (two rounds,
+5 re-derived at the gate); 0 new basedpyright/ruff. Gated: fable plan+critic
+(caught a fail-open trailing-`(?!\d)` regression in the lead's design + the
+un-updated second `findall` site), opus-4.8 red-team (blind, SHIP → found the
+OSError opaque-crash + compact-datetime gaps, folded in per Dorian "fix all"),
+fable verifier (MERGE-READY). Message-only amend `e3c84381`→`870cc925` (tree
+byte-identical) fixed "word-bounded"→"digit-bounded" and dropped git-unverifiable
+intermediate counts.
+**Upstream-worthy? Candidate — Dorian's call on timing.** The seal test is on
+Jeremy's master (PR #2) at a blob (`aa795260`) IDENTICAL to our pre-hardening
+base `79edac38`, so the hardening applies cleanly. Not yet offered. The module
+docstring's `FORK-ONLY` header is now stale (the test lives upstream) — noted for
+a later touch, not fixed in this test-only branch.
