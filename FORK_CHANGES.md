@@ -488,3 +488,34 @@ hygiene; prevents a future hard crash inside the gap guard; version-neutral
 fail-loud rationale for stdlib-over-`to_timedelta`). Follow-up ticket: the same
 deprecation lives in `tests/test_kraken_archive_ingest.py` +
 `test_whale_footprint_fetcher.py` (outside `data/`, not on the default bar path).
+
+## 2026-08-08 — Row 34: config-identity test — real coverage (3b) — upstream-offer candidate
+
+`fix/config-identity-test`, merged `3d957e81` (branch commit `d6402bd8`).
+Test-only (one file, `trading-bot/tests/test_regression_backtest.py`, +129). The old
+`test_config_actually_loaded` was VACUOUS for its named purpose — it launched with
+the DEFAULT `strategy_config.json`, which IS the hardcoded config fallback
+(`backtester.py:284-288`), so a config_path that silently fell back read as a pass.
+Adds a NON-DEFAULT-config run: mutate the single `threshold_filter` transform's
+`min_abs` 15.0→5.0 (output-verified 24→37 trades / net −243.545243 / sha `5e8ef6bd`;
+the default is 24 / `5ccbec42`), and assert **(a)** manifest `config_sha256` == the
+declared config's canonical sha AND != the default's, plus **(b)** `trade_count != 24`.
+(a) and (b) each catch a failure direction the other misses — proven by a 3-mutation
+matrix (ignore-and-record-default → both fail; run-default-record-declared → only (b);
+run-candidate-drop-`_config_path` → only (a)). `min_abs` chosen over `scaling_factor`
+(which cancels EXACTLY through `ratio_to_mean` — an inert false-lock, verified by
+execution). Default-path baselines byte-identical by construction (no production
+touched); fast 291/16-deselected, slow 14→16, 0 new ruff/basedpyright. Gated: fable
+plan (6 backtests; delta + matrix execution-verified), opus-4.8 red-team blind
+(SHIP-clean, matrix re-run independently), fable verifier (MERGE-READY, matrix
+re-derived from scratch, message audited zero-refuted). **No production bug — the
+wiring is sound; this closes a coverage gap.**
+**Upstream-worthy? YES (candidate — Dorian's call).** Upstream master has
+`test_regression_backtest.py` and byte-identical config wiring; an offer must handle
+the fork-only `_cache_guard` import (bundle it or strip the skipif). Follow-up tickets
+filed: **T1** — the manifest RE-READS `_config_path` from disk at end-of-run rather
+than hashing the dict the engine actually used; a campaign loop regenerating a
+candidate config mid-run would stamp a sha the run never used (anchor-risk to fix, so
+out of scope here). **T2** — latent `NameError` at `backtester.py:293` (`_project_dir`
+bound only in the fallback branch; unreachable via `run_backtest` today, same class as
+the known `_close_all_positions_at_end` NameError).
