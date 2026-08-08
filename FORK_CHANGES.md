@@ -566,3 +566,17 @@ verified `claude-opus-4-8`), opened as cross-fork PRs:
 #14↔#17 (`test_regression_backtest.py`) and it auto-merges clean; #15 and #16 are
 fully disjoint. Slack merge playbook posted to Jeremy 2026-08-08. Rows 32/33/34/35
 close when their PRs merge.
+
+## 2026-08-09 — Rows 31–35 CLOSED: PRs #14/#15/#16/#17 merged upstream, fork synced
+
+Jeremy merged all four offered PRs on 2026-08-08 (21:53–21:55Z): #17 (3b config-identity),
+#16 (3a seal test + Row 35 Windows fix), #15 (3c numpy Timedelta), #14 (leg-6A cache guard).
+Row mapping: **#14→Row 31, #15→Row 33, #16→Rows 32+35, #17→Row 34.** Upstream master
+`ebe42275` → `acfa5b63`. Sync-merged into `mac/setup` as `aac3fc12` (merge-tree dry run
+conflict-free, exactly as pre-registered). The ONLY working-tree delta from the sync is one
+cosmetic line in `tests/test_no_sealed_date_literals.py`: the ` — FORK-ONLY` docstring marker
+is dropped (the seal test is no longer fork-only — it now lives on Jeremy's master too). No
+logic change; fast suite **291 passed / 16 deselected** green post-merge. These five rows are
+no longer fork divergences — the content is identical on both trees. Board `Fork location`
+flipped to Merged upstream for the four merged rows (the dual seal row keeps its open Branch-2
+gate portion In progress).
