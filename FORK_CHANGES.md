@@ -265,7 +265,18 @@ gap-exposure measurements moved to the G1 ticket), independent verifier
 (MERGE-READY, message audited claim-by-claim). Acceptance at the merged tip:
 fast **232 / 0 skipped**, slow **14-0-0**, validator 0, `simulate`
 byte-identical on all five files (`5ccbec42` / `5a75366c`), manifest
-`git_sha d2759f80` from a clean tree. Upstream offer: Dorian's call.
+`git_sha d2759f80` from a clean tree.
+
+**Offered upstream 2026-08-08 as loloze6/trading-bot#13** (branch
+`fix/kraken-cache-engine-reachability-upstream`, single commit `9b3ebace`
+cherry-picked onto Jeremy's tip `63bad12c`). All 7 files blob-identical to the
+fork's merged tree (hash gate); the sole `forecast_manager.py` citation
+conflict resolved take-both == the fork-HEAD blob. Verified on Jeremy's base:
+fast **235 / 2 skipped** (both archive-gated), slow **14**, validator 0,
+`simulate` byte-identical ×5 (`5ccbec42` / `5a75366c`), basedpyright 125→125 and
+ruff 59→59 (zero new). PR body discloses the G1 mutate-on-read hazard (this
+plumbing arms it on kraken), the campaign-path High ticket, and aux-feed
+venue-blindness. Red-teamed on opus-4.8 (SHIP). Row closes when the PR merges.
 
 ## 2026-08-06 — Row 27: manifest git_sha dirty detection — divergence until upstream PR #10 merges
 
