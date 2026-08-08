@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from _cache_guard import cache_skip_reason
 
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -27,12 +28,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 FIXTURE_PATH = PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_reference.json"
 
 _NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
+_ref = json.loads(FIXTURE_PATH.read_text())
+_CACHE_SKIP = cache_skip_reason(
+    PROJECT_ROOT / "local_data", _NEEDED_CACHES, _ref["start_date"], _ref["end_date"]
+)
 pytestmark = [
     pytest.mark.slow,
-    pytest.mark.skipif(
-        not all((PROJECT_ROOT / "local_data" / f).exists() for f in _NEEDED_CACHES),
-        reason="local_data fixtures not present",
-    ),
+    pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),
 ]
 
 
