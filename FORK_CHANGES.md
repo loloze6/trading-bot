@@ -278,6 +278,11 @@ ruff 59→59 (zero new). PR body discloses the G1 mutate-on-read hazard (this
 plumbing arms it on kraken), the campaign-path High ticket, and aux-feed
 venue-blindness. Red-teamed on opus-4.8 (SHIP). Row closes when the PR merges.
 
+**CLOSED 2026-08-08.** Jeremy merged PR #13 (his leaf `9b3ebace`, merge commit
+`867f669e`). Pulled back in sync merge `da4f1e0d`: all 7 files blob-identical
+both sides (none appear in `git diff mac/setup upstream/master` at merge time),
+auto-merged with zero conflict. No longer a divergence.
+
 ## 2026-08-06 — Row 27: manifest git_sha dirty detection — divergence until upstream PR #10 merges
 
 `fix/manifest-gitsha-dirty`, merged `87f2b762` (single commit `63fbcf85` on
@@ -329,6 +334,12 @@ call. Residues ticketed, not fixed: typo'd-and-absent resolution exits 0
 (guard closes the dangerous present-sources case); post-write verify ordering
 (pre-existing, leg-2 design); `verify_utc_roundtrip` failures name no dest.
 
+**CLOSED 2026-08-08.** Offered as PR #11 (leg-4), Jeremy merged it (his leaves
+`dc3ee9f7` tool + `8cff3f24` the 19 caches; merge commit `ebe42275` = master
+tip). Pulled back in sync merge `da4f1e0d`: tool + all 19 daily caches
+blob-identical both sides, auto-merged with zero conflict. No longer a
+divergence. Jeremy's P4 (`blocked_on_daily_bar_ingest`) is his to flip.
+
 ## 2026-08-07 — Row 29: slow-suite offline-safety guards — divergence until upstream PR merges
 
 `fix/slow-suite-offline-safety`, merged `fe9d7061` (single message-amended
@@ -349,6 +360,14 @@ socket-blocked slow 14 skipped exit 0, fast 232/17/0 unchanged. Upstream
 offer: YES (Dorian 2026-08-07), PR after this merge. Ticketed, not fixed:
 `exists()` satisfied by a degenerate cache — measured EQUAL to the sibling
 convention's own property, Medium, applies to the whole convention.
+
+**CLOSED 2026-08-08 (with a twist).** Offered as PR #12, Jeremy merged it (his
+leaf `41d7268e`). By merge time the fork had already SUPERSEDED these 4 guard
+files with leg-6 A's content-aware predicate (Row 31), so the sync merge
+`da4f1e0d` conflicted on exactly those 4 and resolved take-ours — the bare
+`.exists()` guard #12 landed is intentionally replaced. The bare-guard intent
+is no longer a divergence; the content-aware upgrade (Row 31) is what now
+diverges, and is offerable upstream as the post-#12 follow-on.
 
 ## 2026-08-07 — Row 30: fast-suite CI (ubuntu + windows) — fork-only, never offered upstream
 
@@ -389,8 +408,10 @@ fetch yields empty/header-only/short/stale data, all caught). A fabricated
 full-span cache with garbage or wrong-symbol content in the MIDDLE is out of
 contract (G1-class mid-file — the engine's gap-guard's problem) and can still
 vacuously green bar_equity's non-numeric tests; not a fetch failure mode.
-**Upstream offer DEFERRED** until PR #12 lands (both touch the same guard
-convention; offering now would make Jeremy review two versions), then
-re-derived against #12's landed shape. `test_funding_rate_component.py`'s
-per-test bare-exists guards (same hole class, different files) are out of
-scope — follow-on ticket filed.
+**Upstream offer NOW UNBLOCKED (2026-08-08).** PR #12 landed (Jeremy's leaf
+`41d7268e`) and was sync-merged (`da4f1e0d`) — the merge conflicted on exactly
+the 4 guard files and resolved take-ours, so leg-6 A is already re-derived
+against #12's landed shape: the fork's content-aware predicate now replaces
+#12's bare `.exists()` on Jeremy's own tree. Offerable as a post-#12 follow-on,
+bundling the `test_funding_rate_component.py` per-test bare-exists follow-on
+ticket (same hole class, different files). Offer is a queued task — Dorian's call.
