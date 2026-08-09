@@ -1034,13 +1034,21 @@ def main():
     config_sha256, config_sha8 = _config_sha(args.config_path)
     symbols = protocol["symbols"]
     # Option Y (locked 2026-08-09, Ticket 13): --exchange -> protocol field ->
-    # explicit "binance". NEVER None -- unlike interval_seconds/commission_rate
-    # below, venue is the knob where falling through to run_backtest's own
-    # config.json-read arm would let ambient, machine-local state silently
-    # decide which market a campaign scores. Every existing campaign (no field,
-    # no flag) resolves to "binance", identical to the venue it already scored
-    # via the engine's own pre-existing default -- byte-identical by construction.
-    exchange = args.exchange or protocol.get("exchange") or "binance"
+    # explicit "binance". Resolved with `is not None` rather than truthiness so
+    # an EXPLICITLY empty venue ("exchange": "" or --exchange "") is preserved
+    # and rejected downstream by _validated_exchange (sys.exit 1), not silently
+    # swallowed to binance (reviewer-48 §2). A genuinely ABSENT source (None)
+    # still coalesces to "binance": unlike interval_seconds/commission_rate
+    # below, venue must NEVER fall through to run_backtest's own config.json-read
+    # arm, where ambient, machine-local state would silently decide which market
+    # a campaign scores. Every existing campaign (no field, no flag) resolves to
+    # "binance", identical to the venue it already scored via the engine's own
+    # pre-existing default -- byte-identical by construction.
+    exchange = args.exchange
+    if exchange is None:
+        exchange = protocol.get("exchange")
+    if exchange is None:
+        exchange = "binance"
     # Protocol-level timeframe (default "1h" preserves exact prior behavior —
     # run_backtest's own interval_seconds=None default falls back identically
     # to the pre-existing global-config-derived interval).
