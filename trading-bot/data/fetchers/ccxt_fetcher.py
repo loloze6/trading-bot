@@ -105,9 +105,12 @@ class CcxtFetcher(BaseFetcher):
         The key is exchange-qualified so caches from different venues can never
         collide among CcxtFetcher-derived caches (e.g. a Kraken instance fetching
         'BTCUSDT' must not overwrite / silently read Binance's 'BTCUSDT_1h.csv').
-        This guarantee is scoped to CcxtFetcher; it does not extend to other
-        BaseFetcher subclasses in the same flat data_dir namespace (e.g.
-        FundingRateFetcher's cache_key() does not use its own exchange_id).
+        This guarantee is scoped to CcxtFetcher; it does not automatically
+        extend to other BaseFetcher subclasses in the same flat data_dir
+        namespace. FundingRateFetcher.cache_key() (funding_rate_fetcher.py:
+        117-118) independently mirrors this same prefix rule as of
+        fix/exchange-plumbing-campaign-aux, but that is a deliberate parallel
+        construction, not an inherited guarantee from this class.
 
         Backward-compatibility (decision (a) of the exchange-qualification
         dispatch): Binance keeps its historical UN-prefixed key, so every
