@@ -108,7 +108,7 @@ class CcxtFetcher(BaseFetcher):
         This guarantee is scoped to CcxtFetcher; it does not automatically
         extend to other BaseFetcher subclasses in the same flat data_dir
         namespace. FundingRateFetcher.cache_key() (funding_rate_fetcher.py:
-        107-116) independently mirrors this same prefix rule as of
+        117-118) independently mirrors this same prefix rule as of
         fix/exchange-plumbing-campaign-aux, but that is a deliberate parallel
         construction, not an inherited guarantee from this class.
 

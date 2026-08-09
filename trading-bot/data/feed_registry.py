@@ -21,7 +21,7 @@ from data.fetchers.whale_footprint_fetcher import DEFAULT_BAR_SECONDS as _WHALE_
 # instance. `exchange` is trailing and keyword-defaulted so pre-existing 4-arg
 # positional callers keep working unchanged (fix/exchange-plumbing-campaign-aux,
 # Ticket 12). 'funding_rate' threads it into FundingRateFetcher's exchange_id,
-# which now also qualifies its cache_key (funding_rate_fetcher.py:107-116) --
+# which now also qualifies its cache_key (funding_rate_fetcher.py:117-118) --
 # adopting exchange_id is what buys a feed the AuxFeedVenueError fail-loud
 # protection at data_manager.py's no-data branch (see AuxFeedVenueError).
 # 'fear_greed' accepts-and-ignores exchange: FearGreedFetcher is a single global
