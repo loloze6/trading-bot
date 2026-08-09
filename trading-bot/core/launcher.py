@@ -86,6 +86,31 @@ def parse_interval_seconds(value, default: int = 900) -> int:
     return default
 
 
+def _validated_exchange(exchange: str, logger: logging.Logger) -> str:
+    """
+    Validate a CCXT exchange id, exiting loudly if it is not one -- the single
+    choke point every venue string passes through before being used to route
+    a fetch (fix/exchange-plumbing-campaign-aux, Ticket 13). Extracted from
+    Launcher._read_trading_params so run_backtest's explicit `exchange`
+    argument gets the identical fail-loud parity as the config-read path
+    instead of a typo silently reaching CcxtFetcher, which logs, leaves its
+    client None, and surfaces as an empty DataFrame and "No data" far from the
+    real cause.
+
+    This is also the designed slot where a future Venue/ExchangeSpec object
+    (deferred epic, see the plan's governance section) would land with a
+    one-site change -- the only place a venue string is interpreted into a
+    routing decision.
+    """
+    if exchange not in ccxt.exchanges:
+        logger.error(
+            f"Unknown trading.exchange '{exchange}': not a ccxt exchange id. "
+            f"Omit the key to use the default 'binance'."
+        )
+        sys.exit(1)
+    return exchange
+
+
 def parse_date_safe(
     date_str: str,
     logger: logging.Logger,
@@ -133,13 +158,9 @@ class Launcher:
         # CcxtFetcher, which logs, leaves its client None, and surfaces a whole
         # run later as an empty DataFrame and "No data" -- a typo must not be
         # indistinguishable from missing history.
-        exchange = self.config.get('trading', 'exchange', 'binance')
-        if exchange not in ccxt.exchanges:
-            self.logger.error(
-                f"Unknown trading.exchange '{exchange}': not a ccxt exchange id. "
-                f"Omit the key to use the default 'binance'."
-            )
-            sys.exit(1)
+        exchange = _validated_exchange(
+            self.config.get('trading', 'exchange', 'binance'), self.logger
+        )
         return TradingParams(
             symbols=self.config.get('trading', 'symbols', ['BTCUSDT']),
             interval=parse_interval_seconds(
@@ -508,7 +529,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  runs_root: str = None, interval_seconds: int = None,
                  warmup_prefetch: bool = False, holdout_start: str = None,
                  commission_rate: float = None, trades_log_file: str = None,
-                 bar_equity: bool = False):
+                 bar_equity: bool = False, exchange: str | None = None):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -574,6 +595,16 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         never inserted into the payload dict -- metrics.json is byte-identical to before
         this parameter existed, by construction, not merely by matching values. See
         tests/test_bar_equity_bit_identical.py.
+    exchange: CCXT exchange id selecting which venue's price (and, for feeds that
+        have adopted exchange_id, aux data) cache this backtest reads -- see
+        CcxtFetcher.cache_key() and FundingRateFetcher.cache_key(). Defaults to
+        None, which resolves to config.json's trading.exchange (absent -> "binance"),
+        exactly the same None-means-prior-behavior contract as commission_rate above
+        -- a caller that omits this must produce bit-identical results to before this
+        parameter existed. Never mutates config.json. An explicit value (e.g.
+        "kraken") is validated the same way simulate() validates trading.exchange
+        (_validated_exchange) and exits loudly on an unknown id -- a typo must not be
+        indistinguishable from missing history. See tests/test_exchange_selection.py.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -585,12 +616,18 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
     resolved_commission_rate = (
         commission_rate if commission_rate is not None else DEFAULT_COMMISSION_RATE
     )
+    resolved_exchange = _validated_exchange(
+        exchange if exchange is not None
+        else launcher.config.get('trading', 'exchange', 'binance'),
+        launcher.logger,
+    )
     params = TradingParams(
         symbols=[symbol],
         interval=interval,
         check_interval=launcher.config.get('trading', 'check_interval_seconds', 3600),
         test_mode=True,
         commission_rate=resolved_commission_rate,
+        exchange=resolved_exchange,
     )
 
     strategy = AdvancedStrategy(config_path=config_path)
@@ -637,6 +674,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         initial_capital=DEFAULT_INITIAL_BALANCE,
         warmup_cutoff_timestamp=warmup_cutoff_timestamp,
         bar_equity=bar_equity,
+        exchange=params.exchange,
     )
 
     engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=FEED_REGISTRY)
