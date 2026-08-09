@@ -31,6 +31,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from core.backtester import BacktestEngine                       # noqa: E402
 from data.data_manager import AuxFeedVenueError, DataManager     # noqa: E402
 from data.feed_registry import FEED_REGISTRY, RESERVED_FEED_REGISTRY  # noqa: E402
+from data.fetchers.base_fetcher import BaseFetcher                    # noqa: E402
 from data.fetchers.funding_rate_fetcher import FundingRateFetcher     # noqa: E402
 from data.fetchers.whale_footprint_fetcher import ReservedDataError   # noqa: E402
 
@@ -146,11 +147,15 @@ def test_engine_without_an_exchange_threads_binance_into_factories():
 # Fail-loud vs. warn+NaN at the no-data branch (T-10, T-11)
 # ---------------------------------------------------------------------------
 
-class _EmptyFeedFetcher:
+class _EmptyFeedFetcher(BaseFetcher):
     """Always reports no data, whatever venue it claims -- drives
     _premerge_aux_feeds straight into the no-data branch under test."""
 
     def __init__(self, exchange_id):
+        super().__init__(
+            start_date="2022-01-01", end_date="2022-01-02",
+            symbols=["BTCUSD"], interval_seconds=0,
+        )
         self.exchange_id = exchange_id
 
     def get_data(self, symbol=None):
@@ -158,6 +163,9 @@ class _EmptyFeedFetcher:
 
     def cache_key(self, symbol):
         return f"{self.exchange_id}_STUB_funding_8h"
+
+    def _fetch_remote(self, symbol, start, end):
+        return pd.DataFrame()
 
 
 def _price_df():
