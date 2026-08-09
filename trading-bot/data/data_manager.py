@@ -368,6 +368,32 @@ class CandleBuilder:
             self._update_candle(current, price, volume)
             return None
 
+    def flush_final_candle(self, symbol: str) -> Optional[Candle]:
+        """
+        Close the still-open final candle at end-of-backtest, mirroring
+        _ingest's close sequence exactly (append → callback → pop). Idempotent:
+        a second call finds no open candle and declines.
+
+        No-lookahead: by the time this runs the replay loop has already fed
+        every row, so the flushed candle exposes only data already seen —
+        strictly less than an in-loop close, which opens the next candle on
+        a later row.
+        """
+        current = self.current_candles.get(symbol)
+        if current is None:
+            logger.warning(f"flush_final_candle: no open candle for {symbol} — declining")
+            return None
+
+        self.completed_candles[symbol].append(current)
+        if self.candle_completion_callback:
+            try:
+                self.candle_completion_callback(symbol)  # pyright: ignore[reportCallIssue]
+            except Exception as e:
+                logger.error(f"Candle callback error for {symbol}: {e}", exc_info=True)
+
+        self.current_candles.pop(symbol, None)
+        return current
+
     def _open_candle(self, symbol, price, volume, timestamp, open=None, high=None, low=None) -> Candle:
         """Open a new candle aligned to the interval boundary."""
         aligned = self._align(timestamp)
@@ -795,6 +821,20 @@ class DataManager:
         """Return the still-open candle at end-of-backtest (or current live candle)."""
         return self.candle_builder.get_current_candle(symbol)
 
+    def flush_final_candle(self, symbol: str) -> Optional[Candle]:
+        """
+        Backtest-only: force-close the final still-open candle through the
+        normal completion path so the last fetched bar is processed like any
+        other (E-012). RAISES in live mode — a live run must never force-close
+        a candle that is still genuinely forming.
+        """
+        if self.mode == "live":
+            raise RuntimeError(
+                "flush_final_candle is backtest-only; refusing to flush a "
+                "live candle that may still be forming"
+            )
+        return self.candle_builder.flush_final_candle(symbol)
+
     def process_next_tick(self, symbol: str) -> Optional[Candle]:
         """
         Advance by one tick; return a completed Candle if the interval closed.
@@ -813,7 +853,7 @@ class DataManager:
             return True
         if symbol not in self.historical_data:
             return False
-        return self._cursor.get(symbol, 0) < len(self.historical_data[symbol]) - 1
+        return self._cursor.get(symbol, 0) < len(self.historical_data[symbol])
 
     def advance(self, symbol: str, steps: int = 1) -> bool:
         """
@@ -825,8 +865,10 @@ class DataManager:
         if symbol not in self.historical_data:
             logger.warning(f"advance: {symbol} not in historical_data")
             return False
+        n = len(self.historical_data[symbol])
         new_idx = self._cursor.get(symbol, 0) + steps
-        if new_idx >= len(self.historical_data[symbol]):
+        if new_idx >= n:
+            self._cursor[symbol] = min(new_idx, n)
             logger.warning(f"DataManager: cursor reached end for {symbol}")
             return False
         self._cursor[symbol] = new_idx
