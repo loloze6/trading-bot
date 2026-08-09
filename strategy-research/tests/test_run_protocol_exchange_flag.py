@@ -173,3 +173,29 @@ def test_cli_exchange_parses_string():
     parser.add_argument("--exchange", default=None)
     args = parser.parse_args(["--exchange", "kraken"])
     assert args.exchange == "kraken"
+
+
+# ---------------------------------------------------------------------------
+# reviewer-48 §2: explicit-empty fails loud (preserved); absent coalesces
+# ---------------------------------------------------------------------------
+
+def test_explicit_empty_exchange_is_preserved_not_swallowed_to_binance(run_main):
+    """An EXPLICIT empty venue ("exchange": "") must reach run_backtest as ""
+    so _validated_exchange rejects it (sys.exit 1) -- not be silently coerced
+    to "binance". The pre-fix `or`-chain swallowed the empty string; Option Y
+    now resolves with `is not None` (reviewer-48 §2)."""
+    calls = run_main(protocol_extra={"exchange": ""})
+    assert calls, "run_backtest was never called"
+    assert all(c["exchange"] == "" for c in calls)
+
+
+def test_null_exchange_field_still_coalesces_to_binance_no_config_leak(run_main):
+    """A JSON null venue ("exchange": null -> None) is a genuine ABSENCE and
+    must coalesce to explicit "binance" -- never pass None through to
+    run_backtest's config.json-read arm. The `is not None` refactor must not
+    reopen the ambient-config leak Option Y closes (this passes on both the
+    pre- and post-fix forms; it pins the no-leak property against a future
+    "simplification" to a single leaky ternary)."""
+    calls = run_main(protocol_extra={"exchange": None})
+    assert calls, "run_backtest was never called"
+    assert all(c["exchange"] == "binance" for c in calls)
