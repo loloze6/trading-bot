@@ -142,6 +142,9 @@ def _load_funding_rate(symbol: str, start: str, end: str) -> pd.DataFrame:
     Returns DataFrame with columns: timestamp (pd.Timestamp), funding_rate (float).
     Empty DataFrame if file not found.
     """
+    # venue-fixed-binance: does not go through FundingRateFetcher.cache_key()'s
+    # venue qualification (trading-bot/data/fetchers/funding_rate_fetcher.py:
+    # 107-116) -- will not resolve a kraken funding cache once one exists.
     fpath = os.path.join(_LOCAL_DATA, f"{symbol}_funding_8h.csv")
     if not os.path.exists(fpath):
         print(f"    ⚠ Funding rate file not found: {fpath}")

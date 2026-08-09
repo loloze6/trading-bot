@@ -121,7 +121,7 @@ class BacktestEngine:
             for feed_name, factory in (extra_feeds or {}).items():
                 self.data_manager.register_feed(
                     name           = feed_name,
-                    fetcher        = factory(self.symbols, start_date, end_date, data_dir = data_storage_dir),
+                    fetcher        = factory(self.symbols, start_date, end_date, data_dir = data_storage_dir, exchange = self.exchange),
                     window_seconds = FEED_WINDOW_SECONDS[feed_name],
                     agg            = 'last',
                 )

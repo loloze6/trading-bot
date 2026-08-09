@@ -170,6 +170,30 @@ class AuxFeedCausalityError(RuntimeError):
     """
 
 
+class AuxFeedVenueError(RuntimeError):
+    """
+    Raised at `_premerge_aux_feeds`'s no-data branch when a NON-binance-venue
+    feed comes back empty (fix/exchange-plumbing-campaign-aux, Ticket 12).
+
+    Binance's degradation contract is unchanged and pre-existing: an empty
+    feed there still warns and fills the column with NaN
+    (data_manager.py:677-678's documented behavior). That silent-NaN path is
+    exactly wrong for any other venue -- a kraken run whose funding feed is
+    empty because no kraken funding cache exists yet must not look
+    indistinguishable from a kraken run whose funding really is flat, so it
+    is refused here instead.
+
+    Scope (read the mechanism, not just the name): this fires only when the
+    feed's OWN fetcher declares a non-binance `exchange_id`. A fetcher with no
+    `exchange_id` attribute at all (e.g. FearGreedFetcher -- a single global
+    index, venue-independent by construction) is exempt by design and keeps
+    the binance warn+NaN path regardless of which venue the backtest itself
+    is running. Only a feed that HAS adopted `exchange_id` gets this
+    protection -- see feed_registry.py's registry comment for what that means
+    for a future feed.
+    """
+
+
 def _merge_asof_with_causality_guard(
     bars: pd.DataFrame,
     feed_data: pd.DataFrame,
@@ -770,9 +794,18 @@ class DataManager:
                 # else:
                 #     logger.debug(f"_premerge '{name}': feed_data is empty after lookup")
             if feed_data.empty or name not in feed_data.columns:
+                exchange_id = getattr(feed.fetcher, "exchange_id", "binance")
+                if exchange_id != "binance":
+                    raise AuxFeedVenueError(
+                        f"aux feed '{name}' (symbol={symbol}) has no data on "
+                        f"exchange '{exchange_id}' — looked for cache file "
+                        f"'{feed.fetcher.cache_key(symbol)}'. Either ingest "
+                        f"'{name}' data for '{exchange_id}', or drop '{name}' "
+                        f"from extra_feeds for this run."
+                    )
                 logger.warning(
                     f"DataManager: no data for aux feed '{name}' "
-                    f"(symbol={symbol}) — column will be NaN"
+                    f"(symbol={symbol}) — column will be all-NaN for every bar"
                 )
                 enriched[name] = np.nan
                 continue
