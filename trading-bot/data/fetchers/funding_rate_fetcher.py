@@ -105,8 +105,17 @@ class FundingRateFetcher(BaseFetcher):
     # -----------------------------------------------------------------------
 
     def cache_key(self, symbol: str) -> str:
-        """e.g. 'BTCUSDT_funding_8h' — clearly separate from OHLCV files."""
-        return f"{symbol}_funding_8h"
+        """
+        e.g. 'BTCUSDT_funding_8h' (Binance) or 'kraken_BTCUSD_funding_8h' (Kraken).
+
+        Mirrors CcxtFetcher's binance-unprefixed prefix rule (ccxt_fetcher.py:
+        123-124): Binance keeps its historical UN-prefixed key, so every
+        existing on-disk cache (local_data/{AVAXUSDT,BTCUSDT,SOLUSDT}_funding_
+        8h.csv) continues to load byte-identically with no migration. Only
+        non-Binance exchange ids receive the '{exchange_id}_' prefix.
+        """
+        prefix = "" if self.exchange_id == "binance" else f"{self.exchange_id}_"
+        return f"{prefix}{symbol}_funding_8h"
 
     def _fetch_remote(
         self,
