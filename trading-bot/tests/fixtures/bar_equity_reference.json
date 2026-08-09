@@ -9,13 +9,14 @@
     "max_drawdown_pct": -24.7684,
     "sharpe": -5.1217,
     "sortino": -5.0479,
-    "exposure_pct": 3.7908,
+    "exposure_pct": 3.785,
     "turnover": 84.67312,
-    "n_bars_total": 1438,
+    "n_bars_total": 1440,
     "n_bars_warmup_excluded": 119,
     "n_daily_returns": 55,
     "n_downside_days": 10,
     "tolerance": 0.001
   },
-  "note": "Measured 2026-07-31 on run 20260731T000021Z_5ccbec42 (config_sha256 5ccbec42, data_sha256 5a75366c) and cross-checked by an independent from-scratch pandas computation over portfolio_states.csv outside performance/bar_equity.py, at the regime != 'NOT_READY' boundary (119 rows). n_bars_total is portfolio_states.csv's row count for this window; n_bars_warmup_excluded is the count of leading NOT_READY rows. Sortino re-measured 2026-07-31 (fix round) under the textbook target-0 downside-deviation convention (sqrt(mean(min(r,0)^2)) over ALL daily returns) -- was -2.9385 under the earlier sample-std-of-negative-days convention; max_drawdown_pct, sharpe, exposure_pct, turnover, n_bars_total, and n_bars_warmup_excluded are unchanged by that switch, confirmed by rerun."
+  "note": "Measured 2026-07-31 on run 20260731T000021Z_5ccbec42 (config_sha256 5ccbec42, data_sha256 5a75366c) and cross-checked by an independent from-scratch pandas computation over portfolio_states.csv outside performance/bar_equity.py, at the regime != 'NOT_READY' boundary (119 rows). n_bars_total is portfolio_states.csv's row count for this window; n_bars_warmup_excluded is the count of leading NOT_READY rows. Sortino re-measured 2026-07-31 (fix round) under the textbook target-0 downside-deviation convention (sqrt(mean(min(r,0)^2)) over ALL daily returns) -- was -2.9385 under the earlier sample-std-of-negative-days convention; max_drawdown_pct, sharpe, exposure_pct, turnover, n_bars_total, and n_bars_warmup_excluded are unchanged by that switch, confirmed by rerun.",
+  "e012_rebaseline_2026-08-09": "fix/e012-last-two-bars corrected the replay-gate off-by-one and the missing end-of-backtest candle flush (data/data_manager.py), which were silently dropping the last 2 fetched bars of every backtest. Re-measured on the same config_sha256 (5ccbec42) and data_sha256 (5a75366c) -- both unchanged, and trades.json is byte-identical (sha256[:12] f73cb9921725 both before and after) because the 2 recovered bars (2024-05-30 22:00, 23:00) are flat/unknown-regime and emit no trade on this window. Only n_bars_total (1438->1440, the 2 recovered bars) and exposure_pct (3.7908->3.785, diluted by 2 more mostly-flat bars) moved; max_drawdown_pct, sharpe, sortino, turnover, n_bars_warmup_excluded, n_daily_returns, and n_downside_days are unchanged. Control run against the pre-fix commit (79bf2796) reproduced every pre-rebaseline value in this fixture byte-for-byte before this update was made -- see PHASE_BC_RESULTS.md."
 }
