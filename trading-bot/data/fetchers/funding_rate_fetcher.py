@@ -109,7 +109,7 @@ class FundingRateFetcher(BaseFetcher):
         e.g. 'BTCUSDT_funding_8h' (Binance) or 'kraken_BTCUSD_funding_8h' (Kraken).
 
         Mirrors CcxtFetcher's binance-unprefixed prefix rule (ccxt_fetcher.py:
-        120-121): Binance keeps its historical UN-prefixed key, so every
+        123-124): Binance keeps its historical UN-prefixed key, so every
         existing on-disk cache (local_data/{AVAXUSDT,BTCUSDT,SOLUSDT}_funding_
         8h.csv) continues to load byte-identically with no migration. Only
         non-Binance exchange ids receive the '{exchange_id}_' prefix.
