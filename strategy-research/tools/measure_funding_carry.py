@@ -35,6 +35,9 @@ DATA_DIR = os.path.join(
 
 def load_bounded(symbol):
     """Load the 8h CSV and IMMEDIATELY restrict to the in-sample window."""
+    # venue-fixed-binance: does not go through FundingRateFetcher.cache_key()'s
+    # venue qualification (trading-bot/data/fetchers/funding_rate_fetcher.py:
+    # 107-116) -- will not resolve a kraken funding cache once one exists.
     path = os.path.join(DATA_DIR, f"{symbol}_funding_8h.csv")
     if not os.path.exists(path):
         raise SystemExit(f"STOP: missing CSV {path}")
