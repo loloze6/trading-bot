@@ -192,6 +192,14 @@ class BacktestEngine:
             if all_symbols_finished:
                 BT_finished = True
 
+        # E-012: the replay loop feeds the last fetched row but leaves its
+        # candle open (has_more_data goes False before that row ever closes).
+        # Flush each symbol's final still-open candle through the normal
+        # completion path so every fetched bar is processed, same as any
+        # other bar. Backtest-only -- flush_final_candle raises in live mode.
+        for symbol in self.symbols:
+            self.data_manager.flush_final_candle(symbol)
+
         return self._end_of_backtest(bot)
 
     def _end_of_backtest(self, bot):
