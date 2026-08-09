@@ -488,7 +488,8 @@ def test_run_backtest_kraken_price_path_is_pure_and_completes(monkeypatch, tmp_p
     if binance_sha_before is not None:
         assert _sha256(BINANCE_BTC_CACHE) == binance_sha_before
 
-    bars = pd.read_csv(Path(run_dir) / "bars.csv")
+    assert run_dir is not None
+    bars = pd.read_csv(run_dir / "bars.csv")
     assert len(bars) == EXPECTED_WINDOW_ROWS, len(bars)
 
 
