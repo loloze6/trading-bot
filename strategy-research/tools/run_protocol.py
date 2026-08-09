@@ -1005,6 +1005,16 @@ def main():
                              "to --cost-product's existing resolution). Intended for controlled "
                              "fee-isolation experiments that need an exact rate cost_model.yaml "
                              "doesn't happen to supply as either 'spot' or 'perp'.")
+    parser.add_argument("--exchange", default=None,
+                        help="2026-08-09 (fix/exchange-plumbing-campaign-aux, Ticket 13): CCXT "
+                             "exchange id for every run_backtest() call this campaign makes. "
+                             "Takes precedence over the protocol file's own top-level 'exchange' "
+                             "field when both are given. Option Y (locked): resolution is "
+                             "--exchange -> protocol field -> explicit 'binance', and this NEVER "
+                             "falls through to run_backtest's own config.json-read arm -- ambient "
+                             "config.json must not silently decide a campaign's venue. Absent "
+                             "both, campaigns resolve to 'binance', identical to the venue every "
+                             "existing campaign already scored via the engine's own default.")
     args = parser.parse_args()
 
     # Holdout gate: require BOTH flags or NEITHER
@@ -1023,6 +1033,14 @@ def main():
 
     config_sha256, config_sha8 = _config_sha(args.config_path)
     symbols = protocol["symbols"]
+    # Option Y (locked 2026-08-09, Ticket 13): --exchange -> protocol field ->
+    # explicit "binance". NEVER None -- unlike interval_seconds/commission_rate
+    # below, venue is the knob where falling through to run_backtest's own
+    # config.json-read arm would let ambient, machine-local state silently
+    # decide which market a campaign scores. Every existing campaign (no field,
+    # no flag) resolves to "binance", identical to the venue it already scored
+    # via the engine's own pre-existing default -- byte-identical by construction.
+    exchange = args.exchange or protocol.get("exchange") or "binance"
     # Protocol-level timeframe (default "1h" preserves exact prior behavior —
     # run_backtest's own interval_seconds=None default falls back identically
     # to the pre-existing global-config-derived interval).
@@ -1071,7 +1089,8 @@ def main():
                               runs_root=_runs_root, interval_seconds=interval_seconds,
                               warmup_prefetch=True,
                               commission_rate=_resolve_commission_rate(
-                                  symbol, cost_model, args.commission_bps, args.cost_product))
+                                  symbol, cost_model, args.commission_bps, args.cost_product),
+                              exchange=exchange)
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             holdout_results[symbol] = {"run_id": rd.name, "core": m["core"]}
@@ -1145,7 +1164,8 @@ def main():
                               runs_root=_runs_root, interval_seconds=interval_seconds,
                               warmup_prefetch=True, holdout_start=_holdout_start,
                               commission_rate=_resolve_commission_rate(
-                                  symbol, cost_model, args.commission_bps, args.cost_product))
+                                  symbol, cost_model, args.commission_bps, args.cost_product),
+                              exchange=exchange)
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             core = m["core"]
