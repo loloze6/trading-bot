@@ -24,12 +24,28 @@ Offline by construction: the reachability test reads a gap-free 5-day slice
 test_kraken_cache_reachability.py audits as gap-free, so the fetcher finds no
 missing period and performs no remote fetch or cache re-save. That is enforced
 here rather than assumed -- see the sha256 assertion in the test. Every other
-test in this file uses a recording stub and never reaches the data layer.
+test in this file uses a recording stub and never reaches the data layer,
+except the run_backtest end-to-end tests further down (T-12/T-13), which
+follow the identical gap-free-window + sha256 pattern.
+
+Ticket 13 (fix/exchange-plumbing-campaign-aux, 2026-08-09): run_backtest() --
+the module-level function the campaign runner (run_protocol.py) calls -- built
+its own TradingParams and BacktestEngine with no `exchange` among their
+arguments, so the engine's own default ("binance") always won regardless of
+what a campaign wanted: a kraken campaign silently scored binance caches, and
+a bogus exchange id ran to completion instead of exiting loudly like
+simulate() does. run_backtest() now takes an optional `exchange` parameter
+(None resolves to config.json's trading.exchange, exactly like
+_read_trading_params) validated through the same _validated_exchange() choke
+point (extracted from _read_trading_params, which now calls it too). See
+that function's docstring and the tests in the "run_backtest() -> engine"
+sections below.
 """
 
 import hashlib
 import json
 import logging
+import socket
 import sys
 from pathlib import Path
 from typing import ClassVar
@@ -47,6 +63,9 @@ from core.backtester import BacktestEngine        # noqa: E402
 from data.data_manager import DataManager         # noqa: E402
 
 KRAKEN_BTC_CACHE = PROJECT_ROOT / "local_data" / "kraken_BTCUSD_1h.csv"
+BINANCE_BTC_CACHE = PROJECT_ROOT / "local_data" / "BTCUSDT_1h.csv"
+KRAKEN_BTC_FUNDING_CACHE = PROJECT_ROOT / "local_data" / "kraken_BTCUSD_funding_8h.csv"
+_RUN_BACKTEST_CONFIG = PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_check_config.json"
 
 WINDOW_START = "2022-01-01"
 WINDOW_END = "2022-01-05"
@@ -234,8 +253,11 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
     Binance caches again. Only `simulate` is driven end-to-end above (the other
     two modes plot and grid-search), so the remaining sites are held statically.
 
-    Scoped to the Launcher class: run_backtest() is module-level and builds its
-    own TradingParams from arguments, with no exchange among them.
+    Scoped to the Launcher class: run_backtest() is module-level, not a
+    Launcher method, so it falls outside ast.walk(launcher_class)'s scope --
+    covered separately by test_run_backtest_forwards_the_resolved_exchange
+    further down, using the identical AST-matching approach and the same
+    evasion caveats.
 
     What this guard is and is not. It matches TEXT, not semantics: it collects
     ast.Call nodes whose func is an ast.Name "BacktestEngine" and compares
@@ -285,3 +307,250 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
             f"BacktestEngine at core/launcher.py:{site.lineno} does not pass "
             f"exchange=params.exchange"
         )
+
+
+# ---------------------------------------------------------------------------
+# TradingParams dataclass contract (T-04)
+# ---------------------------------------------------------------------------
+
+def test_trading_params_exchange_defaults_to_binance():
+    """Dataclass contract pin (M2): TradingParams.exchange's own default must
+    stay 'binance'. run_backtest always resolves and passes exchange=
+    explicitly (E2), so without this pin a default-flip here (launcher.py:41)
+    is a dead mutation nothing else would catch."""
+    params = launcher_mod.TradingParams(
+        symbols=["BTCUSDT"], interval=3600, check_interval=3600, test_mode=True,
+    )
+    assert params.exchange == "binance"
+
+
+# ---------------------------------------------------------------------------
+# run_backtest() -> engine (T-01, T-02, T-03, T-05)
+# ---------------------------------------------------------------------------
+# Unlike the Launcher-based tests above, these call the REAL run_backtest()
+# against the REAL tracked config.json -- no tracked config declares
+# trading.exchange (P0/R-CRUX: cwd tricks cannot redirect a bare Launcher()
+# construction, and the locked parameter design means these tests don't need
+# to try -- `exchange` is passed as an argument, bypassing config entirely).
+# BacktestEngine is monkeypatched to a recording stub so no real fetch or
+# strategy run happens.
+
+class _RecordingRunBacktestEngine:
+    """Stands in for BacktestEngine inside run_backtest(): records
+    construction kwargs, touches no data, runs no strategy."""
+
+    kwargs: ClassVar[dict] = {}
+
+    def __init__(self, **kwargs):
+        type(self).kwargs = kwargs
+        self._last_run_dir = None
+
+    def load_data(self, **kwargs):
+        pass
+
+    def simulate_on_loaded_data(self):
+        pass
+
+
+@pytest.fixture
+def run_backtest_with(monkeypatch, tmp_path):
+    def _run(**kwargs):
+        _RecordingRunBacktestEngine.kwargs = {}
+        monkeypatch.setattr(launcher_mod, "BacktestEngine", _RecordingRunBacktestEngine)
+        from core.launcher import run_backtest
+        run_backtest(
+            config_path=str(_RUN_BACKTEST_CONFIG),
+            symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+            results_root=str(tmp_path / "results"),
+            trades_log_file=str(tmp_path / "trades.json"),
+            **kwargs,
+        )
+        return _RecordingRunBacktestEngine.kwargs.get("exchange", ABSENT)
+    return _run
+
+
+def test_run_backtest_forwards_an_explicit_exchange(run_backtest_with):
+    assert run_backtest_with(exchange="kraken") == "kraken"
+
+
+def test_run_backtest_without_an_exchange_defaults_to_binance(run_backtest_with):
+    """The real tracked config.json declares no trading.exchange key, so the
+    None -> config-read -> absent -> 'binance' chain must resolve exactly
+    like _read_trading_params does."""
+    assert run_backtest_with() == "binance"
+
+
+def test_run_backtest_bogus_exchange_exits_loudly(monkeypatch, tmp_path, caplog):
+    monkeypatch.setattr(launcher_mod, "BacktestEngine", _RecordingRunBacktestEngine)
+    from core.launcher import run_backtest
+
+    with (
+        caplog.at_level(logging.ERROR, logger="trading_bot"),
+        pytest.raises(SystemExit) as exit_info,
+    ):
+        run_backtest(
+            config_path=str(_RUN_BACKTEST_CONFIG),
+            symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+            results_root=str(tmp_path / "results"),
+            trades_log_file=str(tmp_path / "trades.json"),
+            exchange="krakn",
+        )
+
+    assert exit_info.value.code == 1
+    assert "krakn" in caplog.text
+
+
+def test_run_backtest_forwards_the_resolved_exchange_to_the_engine():
+    """
+    Companion to test_every_launcher_mode_forwards_the_configured_exchange
+    above, scoped to run_backtest() -- module-level, not a Launcher method, so
+    outside that test's ast.walk(launcher_class) scope. Same AST-matching
+    approach and the same evasion caveats apply (see that test's docstring);
+    not re-derived here.
+    """
+    import ast
+
+    source = (PROJECT_ROOT / "core" / "launcher.py").read_text(encoding="utf-8")
+    run_backtest_fn = next(
+        node for node in ast.parse(source).body
+        if isinstance(node, ast.FunctionDef) and node.name == "run_backtest"
+    )
+
+    sites = [
+        node for node in ast.walk(run_backtest_fn)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "BacktestEngine"
+    ]
+    assert len(sites) == 1, f"expected 1 BacktestEngine call site in run_backtest, found {len(sites)}"
+
+    forwarded = [
+        kw for kw in sites[0].keywords
+        if kw.arg == "exchange" and ast.unparse(kw.value) == "params.exchange"
+    ]
+    assert forwarded, (
+        f"BacktestEngine at core/launcher.py:{sites[0].lineno} inside run_backtest "
+        f"does not pass exchange=params.exchange"
+    )
+
+
+# ---------------------------------------------------------------------------
+# run_backtest() end-to-end (T-12, T-13) -- real engine, real caches,
+# gap-free window so a pure read never triggers a remote top-up / re-save.
+# ---------------------------------------------------------------------------
+
+class _NoNetworkSocket:
+    """Raises at construction -- no real connection attempt is ever made, not
+    even a DNS lookup (see FundingRateFetcher._fetch_remote's own try/except,
+    which is exactly the boundary this proves reaches its catch clause -- P9)."""
+
+    def __init__(self, *a, **kw):
+        raise OSError("network access blocked in test (T-13 socket-block fixture)")
+
+
+@pytest.fixture
+def block_network(monkeypatch):
+    monkeypatch.setattr(socket, "socket", _NoNetworkSocket)
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(
+    not KRAKEN_BTC_CACHE.exists(),
+    reason=f"Kraken BTC cache not present: {KRAKEN_BTC_CACHE}",
+)
+def test_run_backtest_kraken_price_path_is_pure_and_completes(monkeypatch, tmp_path):
+    """T-12: run_backtest(exchange='kraken') over the gap-free 2022-01-01..05
+    window reaches kraken_BTCUSD_1h.csv end to end. FEED_REGISTRY is blanked
+    to isolate the PRICE path from Ticket 12's aux-feed fail-loud (covered
+    separately by T-13 below) -- completes, produces all 120 bars, and
+    rewrites neither price cache (G1 purity, re-deriving the same invariant
+    test_kraken_cache_is_reachable_through_the_backtest_engine proves for the
+    engine alone, this time through the full run_backtest() campaign path)."""
+    import data.feed_registry as feed_registry_mod
+    from core.launcher import run_backtest
+
+    monkeypatch.setattr(feed_registry_mod, "FEED_REGISTRY", {})
+
+    kraken_sha_before = _sha256(KRAKEN_BTC_CACHE)
+    binance_sha_before = _sha256(BINANCE_BTC_CACHE) if BINANCE_BTC_CACHE.exists() else None
+
+    run_dir = run_backtest(
+        config_path=str(_RUN_BACKTEST_CONFIG),
+        symbol="BTCUSD", start=WINDOW_START, end=WINDOW_END,
+        results_root=str(tmp_path / "results"),
+        trades_log_file=str(tmp_path / "trades.json"),
+        exchange="kraken",
+    )
+
+    assert _sha256(KRAKEN_BTC_CACHE) == kraken_sha_before, (
+        f"{KRAKEN_BTC_CACHE.name} was rewritten by a read."
+    )
+    if binance_sha_before is not None:
+        assert _sha256(BINANCE_BTC_CACHE) == binance_sha_before
+
+    bars = pd.read_csv(Path(run_dir) / "bars.csv")
+    assert len(bars) == EXPECTED_WINDOW_ROWS, len(bars)
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(
+    not KRAKEN_BTC_CACHE.exists(),
+    reason=f"Kraken BTC cache not present: {KRAKEN_BTC_CACHE}",
+)
+def test_run_backtest_kraken_aux_feed_fails_loud(block_network, tmp_path):
+    """
+    T-13 [C-D3]: the REAL FEED_REGISTRY (not blanked this time), so the
+    funding feed is actually constructed with exchange_id='kraken'. No
+    kraken_BTCUSD_funding_8h.csv cache exists, and the socket block proves the
+    empty result comes from a genuinely-attempted, genuinely-failed fetch (P9),
+    not a construction-time short-circuit. run_backtest has no try/except
+    around its BacktestEngine.load_data() call, so the typed AuxFeedVenueError
+    crosses run_backtest's boundary uncaught -- the deliberate fail-fast this
+    ticket exists to produce (D-iii). The price cache is still read purely
+    (the raise fires strictly after the price fetch, per R-G1).
+    """
+    from core.launcher import run_backtest
+    from data.data_manager import AuxFeedVenueError
+
+    assert not KRAKEN_BTC_FUNDING_CACHE.exists()
+    kraken_sha_before = _sha256(KRAKEN_BTC_CACHE)
+
+    with pytest.raises(AuxFeedVenueError):
+        run_backtest(
+            config_path=str(_RUN_BACKTEST_CONFIG),
+            symbol="BTCUSD", start=WINDOW_START, end=WINDOW_END,
+            results_root=str(tmp_path / "results"),
+            trades_log_file=str(tmp_path / "trades.json"),
+            exchange="kraken",
+        )
+
+    assert _sha256(KRAKEN_BTC_CACHE) == kraken_sha_before
+    assert not KRAKEN_BTC_FUNDING_CACHE.exists(), "no funding stub CSV should be written"
+
+
+# ---------------------------------------------------------------------------
+# run_backtest() config-fallback arm (T-16)
+# ---------------------------------------------------------------------------
+
+def test_run_backtest_exchange_none_falls_back_to_config(monkeypatch, tmp_path):
+    """T-16: exchange=None (the default) must fall through to config.json's
+    trading.exchange exactly like _read_trading_params, not silently stay
+    'binance' regardless of what the config says (M14). Injects via a
+    pre-built Launcher instance (Launcher.__new__ + the _launcher() helper
+    above, same mechanism as every config-injection test in this file) --
+    the only test in this section that needs injection at all (R8): T-01/02/
+    03/12/13 pass exchange= directly and never touch config."""
+    prebuilt = _launcher({"symbols": ["BTCUSD"], "exchange": "kraken"}, tmp_path)
+    monkeypatch.setattr(launcher_mod, "Launcher", lambda: prebuilt)
+    monkeypatch.setattr(launcher_mod, "BacktestEngine", _RecordingRunBacktestEngine)
+    from core.launcher import run_backtest
+
+    _RecordingRunBacktestEngine.kwargs = {}
+    run_backtest(
+        config_path=str(_RUN_BACKTEST_CONFIG),
+        symbol="BTCUSD", start="2024-01-01", end="2024-01-02",
+        results_root=str(tmp_path / "results"),
+        trades_log_file=str(tmp_path / "trades.json"),
+    )
+
+    assert _RecordingRunBacktestEngine.kwargs.get("exchange") == "kraken"
