@@ -28,12 +28,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent      # trading-bot/
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from core.backtester import BacktestEngine                       # noqa: E402
-from data.data_manager import AuxFeedVenueError, DataManager     # noqa: E402
+from core.backtester import BacktestEngine  # noqa: E402
+from data.data_manager import AuxFeedVenueError, DataManager  # noqa: E402
 from data.feed_registry import FEED_REGISTRY, RESERVED_FEED_REGISTRY  # noqa: E402
-from data.fetchers.base_fetcher import BaseFetcher                    # noqa: E402
-from data.fetchers.funding_rate_fetcher import FundingRateFetcher     # noqa: E402
-from data.fetchers.whale_footprint_fetcher import ReservedDataError   # noqa: E402
+from data.fetchers.base_fetcher import BaseFetcher  # noqa: E402
+from data.fetchers.funding_rate_fetcher import FundingRateFetcher  # noqa: E402
+from data.fetchers.whale_footprint_fetcher import ReservedDataError  # noqa: E402
 
 TEST_LOGGER = logging.getLogger("test_aux_feed_venue")
 
