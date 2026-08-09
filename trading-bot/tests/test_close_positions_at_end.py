@@ -48,15 +48,21 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-# Measured window: the last bar the engine processes for this window is 2024-10-05 21:00,
+# Measured window (E-012 re-anchor, 2026-08-09): the last bar the engine now processes
+# for this window is 2025-04-15 23:00 (E-012 relaxed the replay gate + added the
+# end-of-backtest flush, so the final fetched bar is fed and closed instead of dropped),
 # at which the default strategy_config.json holds a LONG BTCUSDT position -- so
-# _close_all_positions_at_end runs for real. Found by probing bar-by-bar open-position
-# state; no config tweak needed. Well clear of the sealed 2026 holdout, and the start is
-# late enough to keep the run near 500 bars (~2.5s) rather than marking these tests slow.
+# _close_all_positions_at_end runs for real. The previous window (2024-09-15..2024-10-05)
+# self-exits one bar before its old forced-close bar under the fix and ends flat, which is
+# exactly the fix working (the stale forced close at the dropped bar is replaced by the
+# strategy's own exit) but leaves this file's fixtures vacuous, so it needed a new anchor.
+# Found by probing bar-by-bar open-position state across 2024-2025; no config tweak
+# needed. Well clear of the sealed 2026 holdout, and the window is ~20 days (~480 bars,
+# ~2.5s) rather than marking these tests slow.
 # test_window_still_ends_with_an_open_position below fails loudly if this ever stops
 # holding, since a flat ending would make both regression tests vacuously pass.
-START_DATE = "2024-09-15"
-END_DATE = "2024-10-05"
+START_DATE = "2025-03-26"
+END_DATE = "2025-04-15"
 SYMBOL = "BTCUSDT"
 
 _NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
