@@ -381,7 +381,9 @@ class CandleBuilder:
             self.completed_candles[symbol].append(current) #Enrich the local stored candle history with the completed candle before firing the callback, so that the strategy can access it via get_candle_history() in the callback.
             if self.candle_completion_callback:
                 try:
-                    self.candle_completion_callback(symbol)
+                    self.candle_completion_callback(symbol, current)
+                except (TypeError, AttributeError, NameError):
+                    raise  # structural defect in the callback path — fail loud, don't swallow
                 except Exception as e:
                     logger.error(f"Candle callback error for {symbol}: {e}", exc_info=True)
 
@@ -411,7 +413,9 @@ class CandleBuilder:
         self.completed_candles[symbol].append(current)
         if self.candle_completion_callback:
             try:
-                self.candle_completion_callback(symbol)  # pyright: ignore[reportCallIssue]
+                self.candle_completion_callback(symbol, current)
+            except (TypeError, AttributeError, NameError):
+                raise  # structural defect in the callback path — fail loud, don't swallow
             except Exception as e:
                 logger.error(f"Candle callback error for {symbol}: {e}", exc_info=True)
 
