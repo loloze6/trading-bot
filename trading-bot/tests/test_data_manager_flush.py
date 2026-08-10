@@ -13,11 +13,12 @@ Each row gets a unique volume (10.0 * (i+1)) so "the flushed candle matches
 the LAST row" is actually pinned to that row's identity, not just to some
 row sharing a common constant.
 
-Fixtures wire their OWN 1-arg candle_completion_callback. DataManager's
-default (_enrich_and_notify) is 2-arg; CandleBuilder fires callbacks 1-arg
-(`candle_completion_callback(symbol)`, matching `_ingest`), so a fixture that
-forgets to override the default swallows a TypeError at the same try/except
-that guards `_ingest` and silently reads as "0 callbacks fired".
+Fixtures wire their OWN candle_completion_callback. CandleBuilder fires
+callbacks as `candle_completion_callback(symbol, candle)` (2-arg, matching both
+`_ingest` and DataManager's default `_enrich_and_notify`), so a fixture's
+callback must accept both arguments. A 1-arg callback now raises TypeError
+loudly at the fire site (the narrowed except re-raises it) instead of being
+swallowed and silently reading as "0 callbacks fired".
 """
 import sys
 from pathlib import Path
@@ -29,7 +30,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data.data_manager import DataManager  # noqa: E402
+from data.data_manager import Candle, DataManager  # noqa: E402
 
 SYMBOL = "BTCUSDT"
 INTERVAL_SECONDS = 3600
@@ -49,8 +50,8 @@ def _hourly_frame(n: int, start: str = "2024-01-01 00:00:00") -> pd.DataFrame:
 
 
 class _CallbackRecorder:
-    """1-arg candle_completion_callback matching CandleBuilder's call
-    convention (`self.candle_completion_callback(symbol)`, _ingest :360).
+    """candle_completion_callback matching CandleBuilder's 2-arg call
+    convention (`self.candle_completion_callback(symbol, candle)`, _ingest :384).
     Counts calls and snapshots get_candle_history() as seen from inside
     each call."""
 
@@ -60,7 +61,7 @@ class _CallbackRecorder:
         self.calls = 0
         self.history_snapshots = []
 
-    def __call__(self, symbol: str):
+    def __call__(self, symbol: str, candle=None):
         self.calls += 1
         self.history_snapshots.append(
             self.dm.candle_builder.get_candle_history(symbol, count=1000)
@@ -69,7 +70,7 @@ class _CallbackRecorder:
 
 def _make_dm(n_rows: int, symbol: str = SYMBOL, start: str = "2024-01-01 00:00:00"):
     """Backtest-mode DataManager loaded with n_rows of synthetic data and its
-    own 1-arg callback wired (see module docstring)."""
+    own 2-arg callback wired (see module docstring)."""
     dm = DataManager(symbols=[symbol], interval_seconds=INTERVAL_SECONDS, mode="backtest")
     dm.historical_data[symbol] = _hourly_frame(n_rows, start=start)
     dm.initialize()
@@ -230,7 +231,7 @@ def test_two_symbols_unequal_lengths_each_flush_once():
     for symbol in ("BTCUSDT", "ETHUSDT"):
         recorders[symbol] = _CallbackRecorder(dm, symbol)
     # CandleBuilder has one shared callback slot; route by the symbol argument.
-    dm.candle_builder.candle_completion_callback = lambda symbol: recorders[symbol](symbol)
+    dm.candle_builder.candle_completion_callback = lambda symbol, candle=None: recorders[symbol](symbol, candle)
 
     for symbol, n in (("BTCUSDT", 4), ("ETHUSDT", 2)):
         _replay(dm, symbol, n)
@@ -246,3 +247,44 @@ def test_two_symbols_unequal_lengths_each_flush_once():
     # Each symbol's own flush is idempotent independently of the other.
     assert dm.flush_final_candle("BTCUSDT") is None
     assert dm.flush_final_candle("ETHUSDT") is None
+
+
+# ---------------------------------------------------------------------------
+# Default wiring (issue #20 / A14 regression)
+# ---------------------------------------------------------------------------
+
+class _StrategyRecorder:
+    """2-arg strategy callback — the (symbol, candle) contract that the DEFAULT
+    _enrich_and_notify forwards. Records every pair it receives."""
+
+    def __init__(self):
+        self.received = []
+
+    def __call__(self, symbol, candle):
+        self.received.append((symbol, candle))
+
+
+def test_default_wiring_delivers_candle_to_strategy_callback():
+    """Under the DEFAULT wiring, CandleBuilder fires _enrich_and_notify, which
+    must forward (symbol, candle) to the strategy callback. Before the 2-arg
+    fix the 1-arg call raised TypeError on every close (swallowed), so the
+    strategy was never notified and the whole enrichment layer was inert. This
+    asserts the default path now delivers a real Candle on every close.
+    """
+    n = 4
+    dm = DataManager(symbols=[SYMBOL], interval_seconds=INTERVAL_SECONDS, mode="backtest")
+    dm.historical_data[SYMBOL] = _hourly_frame(n, start="2024-01-01 00:00:00")
+    dm.initialize()
+    # Leave candle_builder.candle_completion_callback at its default
+    # (_enrich_and_notify); inject the strategy end of the chain.
+    strat = _StrategyRecorder()
+    dm._strategy_callback = strat
+
+    _replay(dm, SYMBOL, n)
+    dm.flush_final_candle(SYMBOL)
+
+    # n rows -> (n-1) in-loop closes + 1 flush = n notifications.
+    assert len(strat.received) == n
+    for sym, candle in strat.received:
+        assert sym == SYMBOL
+        assert isinstance(candle, Candle)
