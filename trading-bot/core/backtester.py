@@ -26,6 +26,12 @@ Engine for backtesting trading strategies against historical data.
 """
 
 
+class FeedRequirementError(RuntimeError):
+    """Raised by BacktestEngine.load_data when a strategy's required aux feed
+    (AdvancedStrategy.required_feeds) is absent from extra_feeds at registration
+    time -- see FORK_CHANGES.md / feed-dependency-safety-architecture.md."""
+
+
 class BacktestEngine:
     def __init__(self,
                  data_manager =None,
@@ -113,6 +119,24 @@ class BacktestEngine:
             data_folder = os.path.dirname(os.path.abspath(__file__))
             project_folder = os.path.dirname(data_folder)
             data_storage_dir = os.path.join(project_folder, "local_data")
+
+            # V1 -- registration completeness. No strategy (self.strategy is None)
+            # means no requirements: BacktestEngine.__init__ defaults strategy=None,
+            # and several tests drive load_data on a strategy-less engine (e.g.
+            # tests/test_aux_feed_venue.py, tests/test_exchange_selection.py) -- this
+            # exemption is their regression coverage, not defensive bloat.
+            required_feeds = self.strategy.required_feeds if self.strategy is not None else {}
+            missing = set(required_feeds) - set((extra_feeds or {}).keys())
+            if missing:
+                details = "; ".join(
+                    f"'{feed}' (required by: {', '.join(required_feeds[feed])})"
+                    for feed in sorted(missing)
+                )
+                raise FeedRequirementError(
+                    f"Strategy requires aux feed(s) not present in extra_feeds: {details}. "
+                    "Was the feed dropped via drop_feeds? Reserved feeds need explicit "
+                    "RESERVED_FEED_REGISTRY opt-in."
+                )
 
             # Register before initialize() so the pre-merge picks it up.
             # window_seconds is looked up by name, not defaulted — a feed
