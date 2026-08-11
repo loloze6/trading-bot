@@ -181,12 +181,14 @@ class _RecordingDataManager:
     def __init__(self):
         self.historical_data = {}
         self._aux_feeds = {}
+        self._required_flags = {}
 
     def fetch_historical_data(self, symbol, start_date, end_date, exchange="binance"):
         return pd.DataFrame({"timestamp": [pd.Timestamp("2022-01-01")], "close": [1.0]})
 
-    def register_feed(self, name, fetcher, window_seconds, agg):
+    def register_feed(self, name, fetcher, window_seconds, agg, required=False):
         self._aux_feeds[name] = fetcher
+        self._required_flags[name] = required
 
     def initialize(self):
         pass
@@ -216,6 +218,25 @@ def test_v1_passes_when_required_feed_present_in_extra_feeds():
                       extra_feeds={"fear_greed": factory})
 
     assert "fear_greed" in dm._aux_feeds
+
+
+def test_v1_pass_wires_required_true_only_for_the_required_feed():
+    """Step 3: BacktestEngine.load_data must pass required=True to
+    register_feed for a feed the strategy declares required, and
+    required=False for a feed it doesn't -- proves the register_feed loop's
+    `feed_name in required_feeds` membership test runs correctly across
+    iterations (the loop variable must not shadow the required_feeds dict)."""
+    dm = _RecordingDataManager()
+    strat = _StubStrategy({"fear_greed": ("unknown.fg",)})
+    engine = BacktestEngine(data_manager=dm, strategy=strat, logger=TEST_LOGGER, symbols=["BTCUSD"])
+
+    def factory(symbols, start, end, data_dir, exchange="binance"):
+        return object()
+
+    engine.load_data(start_date="2022-01-01", end_date="2022-01-02",
+                      extra_feeds={"fear_greed": factory, "funding_rate": factory})
+
+    assert dm._required_flags == {"fear_greed": True, "funding_rate": False}
 
 
 # ---------------------------------------------------------------------------
