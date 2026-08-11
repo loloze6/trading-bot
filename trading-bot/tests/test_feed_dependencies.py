@@ -25,9 +25,11 @@ import ast
 import inspect
 import json
 import logging
+import socket
 import sys
 import tempfile
 from pathlib import Path
+from typing import ClassVar
 
 import pandas as pd
 import pytest
@@ -36,6 +38,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent      # trading-bot/
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from _cache_guard import cache_skip_reason  # noqa: E402
+from core import launcher as launcher_mod  # noqa: E402
 from core.backtester import BacktestEngine, FeedRequirementError  # noqa: E402
 from data.feed_registry import FEED_REGISTRY, WHALE_FOOTPRINT_FEEDS  # noqa: E402
 from strategies import strategy_components as sc_module  # noqa: E402
@@ -270,3 +274,210 @@ def test_no_undeclared_feed_reference_drift():
             f"{name} references feed(s) {sorted(undeclared)} in its source but "
             f"does not declare them in consumes_feeds (declared: {sorted(declared)})"
         )
+
+
+# ---------------------------------------------------------------------------
+# Step 2/3: `drop_feeds` param on core.launcher.run_backtest + manifest
+# "feeds" provenance block (reporting/run_artifact.py::write_manifest).
+# Byte-identical at default: drop_feeds=None forwards the SAME FEED_REGISTRY
+# object, and write_manifest(feeds=None) adds no new manifest.json key.
+# ---------------------------------------------------------------------------
+
+_NO_AUX_FEED_CONFIG = PROJECT_ROOT / "tests" / "fixtures" / "no_aux_feed_check_config.json"
+_FEAR_GREED_CONFIG = PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_check_config.json"
+
+
+class _RecordingRunBacktestEngine:
+    """Stands in for BacktestEngine inside run_backtest(): records both
+    construction kwargs and load_data()'s kwargs, touches no data, runs no
+    strategy. Same shape as tests/test_exchange_selection.py's
+    _RecordingRunBacktestEngine (Ticket 13), extended to also capture
+    load_data's extra_feeds -- the thing drop_feeds actually changes."""
+
+    init_kwargs: ClassVar[dict] = {}
+    load_data_kwargs: ClassVar[dict] = {}
+
+    def __init__(self, **kwargs):
+        type(self).init_kwargs = kwargs
+        self._last_run_dir = None
+
+    def load_data(self, **kwargs):
+        type(self).load_data_kwargs = kwargs
+
+    def simulate_on_loaded_data(self):
+        pass
+
+
+def test_run_backtest_drop_feeds_none_forwards_identical_feed_registry(monkeypatch, tmp_path):
+    """drop_feeds=None (the default) must forward the SAME FEED_REGISTRY object
+    to engine.load_data -- byte-identical by construction, not merely by
+    matching keys."""
+    _RecordingRunBacktestEngine.load_data_kwargs = {}
+    monkeypatch.setattr(launcher_mod, "BacktestEngine", _RecordingRunBacktestEngine)
+
+    launcher_mod.run_backtest(
+        config_path=str(_NO_AUX_FEED_CONFIG),
+        symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+        results_root=str(tmp_path / "results"),
+        trades_log_file=str(tmp_path / "trades.json"),
+    )
+
+    assert _RecordingRunBacktestEngine.load_data_kwargs["extra_feeds"] is FEED_REGISTRY
+
+
+def test_run_backtest_drop_feeds_empty_list_takes_non_none_path(monkeypatch, tmp_path):
+    """drop_feeds=[] is non-None: validation is vacuous but the filter still
+    produces a fresh mapping (equal by value, not identical by object), and
+    the raw [] is forwarded to BacktestEngine for manifest provenance."""
+    _RecordingRunBacktestEngine.load_data_kwargs = {}
+    _RecordingRunBacktestEngine.init_kwargs = {}
+    monkeypatch.setattr(launcher_mod, "BacktestEngine", _RecordingRunBacktestEngine)
+
+    launcher_mod.run_backtest(
+        config_path=str(_NO_AUX_FEED_CONFIG),
+        symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+        results_root=str(tmp_path / "results"),
+        trades_log_file=str(tmp_path / "trades.json"),
+        drop_feeds=[],
+    )
+
+    forwarded = _RecordingRunBacktestEngine.load_data_kwargs["extra_feeds"]
+    assert forwarded is not FEED_REGISTRY
+    assert forwarded == FEED_REGISTRY
+    assert _RecordingRunBacktestEngine.init_kwargs["drop_feeds"] == []
+
+
+def test_run_backtest_drop_feeds_unknown_name_raises_value_error(tmp_path):
+    """An unknown drop_feeds name must raise before any Launcher/strategy/data
+    work -- a typo'd drop must not be a silent no-op. config_path is a path
+    that is never read: the raise happens before it would be opened."""
+    with pytest.raises(ValueError) as exc_info:
+        launcher_mod.run_backtest(
+            config_path="/nonexistent/config_never_read.json",
+            symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+            results_root=str(tmp_path / "results"),
+            trades_log_file=str(tmp_path / "trades.json"),
+            drop_feeds=["not_a_real_feed"],
+        )
+    assert "not_a_real_feed" in str(exc_info.value)
+
+
+def test_run_backtest_drop_feeds_required_feed_raises_feed_requirement_error(tmp_path):
+    """Dropping a feed the loaded strategy actually requires must raise V1's
+    FeedRequirementError -- the already-built Step 1 guard, exercised end to
+    end through run_backtest(). Raises inside load_data, right after the
+    (cached, fast) price fetch and before any aux-feed fetch or the
+    simulation loop -- stays fast despite using the real BacktestEngine and
+    DataManager."""
+    with pytest.raises(FeedRequirementError) as exc_info:
+        launcher_mod.run_backtest(
+            config_path=str(_FEAR_GREED_CONFIG),
+            symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+            results_root=str(tmp_path / "results"),
+            trades_log_file=str(tmp_path / "trades.json"),
+            drop_feeds=["fear_greed"],
+        )
+    assert "fear_greed" in str(exc_info.value)
+
+
+def _manifest_fixture_df() -> pd.DataFrame:
+    return pd.DataFrame({
+        "timestamp": pd.to_datetime(["2024-01-01", "2024-01-02"]),
+        "open": [1.0, 1.0], "high": [1.0, 1.0], "low": [1.0, 1.0],
+        "close": [1.0, 1.0], "volume": [1.0, 1.0],
+    })
+
+
+def test_write_manifest_records_feeds_block_with_empty_dropped_list(tmp_path):
+    """Direct unit test of the write_manifest change: a non-None feeds dict
+    (including an empty "dropped" list) is recorded verbatim."""
+    from reporting.run_artifact import write_manifest
+
+    write_manifest(
+        run_dir=tmp_path, config={"x": 1}, data_df=_manifest_fixture_df(),
+        symbols=["BTCUSDT"], timeframe="3600s", git_sha="deadbeef",
+        lookback=10, warmup=5,
+        feeds={"registered": [], "dropped": [], "required": []},
+    )
+    manifest = json.loads((tmp_path / "manifest.json").read_text())
+    assert manifest["feeds"] == {"registered": [], "dropped": [], "required": []}
+
+
+def test_write_manifest_omits_feeds_key_when_feeds_is_none(tmp_path):
+    """feeds=None (the default) must add no "feeds" key at all -- byte-
+    identical manifest.json to before this parameter existed."""
+    from reporting.run_artifact import write_manifest
+
+    write_manifest(
+        run_dir=tmp_path, config={"x": 1}, data_df=_manifest_fixture_df(),
+        symbols=["BTCUSDT"], timeframe="3600s", git_sha="deadbeef",
+        lookback=10, warmup=5,
+    )
+    manifest = json.loads((tmp_path / "manifest.json").read_text())
+    assert "feeds" not in manifest
+
+
+# ---------------------------------------------------------------------------
+# Slow: run_backtest() end to end, real engine, real caches (same shape as
+# T-12/T-13, tests/test_exchange_selection.py).
+# ---------------------------------------------------------------------------
+
+class _NoNetworkSocket:
+    """Raises at construction -- no real connection is ever attempted. Same
+    shape as tests/test_exchange_selection.py's block_network fixture (T-13)."""
+
+    def __init__(self, *a, **kw):
+        raise OSError("network access blocked in test (Step 2 drop_feeds slow fixture)")
+
+
+@pytest.fixture
+def block_network(monkeypatch):
+    monkeypatch.setattr(socket, "socket", _NoNetworkSocket)
+
+
+_DROP_FEEDS_WINDOW_START = "2022-01-01"
+_DROP_FEEDS_WINDOW_END = "2022-01-05"
+_DROP_FEEDS_CACHE_SKIP = cache_skip_reason(
+    PROJECT_ROOT / "local_data", ("BTCUSDT_1h.csv",),
+    _DROP_FEEDS_WINDOW_START, _DROP_FEEDS_WINDOW_END,
+)
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(_DROP_FEEDS_CACHE_SKIP is not None,
+                     reason=_DROP_FEEDS_CACHE_SKIP or "local_data caches usable")
+def test_run_backtest_drop_feeds_completes_and_records_feeds_block(block_network, tmp_path):
+    """Dropping both default feeds on the aux-free config runs to completion
+    (nothing is registered, so block_network proves zero network is touched)
+    and the manifest records the feeds block."""
+    run_dir = launcher_mod.run_backtest(
+        config_path=str(_NO_AUX_FEED_CONFIG),
+        symbol="BTCUSDT", start=_DROP_FEEDS_WINDOW_START, end=_DROP_FEEDS_WINDOW_END,
+        results_root=str(tmp_path / "results"),
+        trades_log_file=str(tmp_path / "trades.json"),
+        drop_feeds=["funding_rate", "fear_greed"],
+    )
+    assert run_dir is not None
+    manifest = json.loads((Path(run_dir) / "manifest.json").read_text())
+    assert manifest["feeds"] == {
+        "registered": [],
+        "dropped": ["fear_greed", "funding_rate"],
+        "required": [],
+    }
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(_DROP_FEEDS_CACHE_SKIP is not None,
+                     reason=_DROP_FEEDS_CACHE_SKIP or "local_data caches usable")
+def test_run_backtest_default_run_manifest_has_no_feeds_key(tmp_path):
+    """Companion to the above: omitting drop_feeds (the default) must produce
+    a manifest with no "feeds" key at all."""
+    run_dir = launcher_mod.run_backtest(
+        config_path=str(_NO_AUX_FEED_CONFIG),
+        symbol="BTCUSDT", start=_DROP_FEEDS_WINDOW_START, end=_DROP_FEEDS_WINDOW_END,
+        results_root=str(tmp_path / "results"),
+        trades_log_file=str(tmp_path / "trades.json"),
+    )
+    assert run_dir is not None
+    manifest = json.loads((Path(run_dir) / "manifest.json").read_text())
+    assert "feeds" not in manifest

@@ -53,6 +53,7 @@ class BacktestEngine:
                  warmup_cutoff_timestamp=None,
                  bar_equity: bool = False,
                  exchange: str = "binance",
+                 drop_feeds: list[str] | None = None,
                  ):
         if symbols is None: symbols = ["BTCUSDT"]
         # 2026-07-07: bars with timestamp < warmup_cutoff_timestamp still update the
@@ -77,6 +78,15 @@ class BacktestEngine:
         # as before; "kraken" reaches the exchange-qualified kraken_*_1h.csv
         # caches (see CcxtFetcher.cache_key).
         self.exchange = exchange
+        # 2026-08-11: campaign-tooling feed-drop provenance
+        # (fix/feed-dependency-safety, Step 2). This engine never filters
+        # FEED_REGISTRY itself -- core/launcher.py::run_backtest does that before
+        # calling load_data -- self.drop_feeds is stored purely so
+        # _end_of_backtest can attach a "feeds" provenance block (registered/
+        # dropped/required) to the run's manifest.json. Default None: no block
+        # is added, manifest.json stays byte-identical to before this parameter
+        # existed.
+        self.drop_feeds = drop_feeds
         self.data_manager = data_manager
         self.strategy = strategy 
         self.execution_handler = execution_handler
@@ -331,6 +341,18 @@ class BacktestEngine:
 
         # Write manifest
         raw_price_df = self.extract_historical_price_data()
+        # fix/feed-dependency-safety, Step 2: non-None self.drop_feeds (including
+        # an explicit []) records the "feeds" provenance block; None (the
+        # default) passes feeds=None below, which write_manifest omits entirely --
+        # manifest.json is byte-identical to before this parameter existed.
+        feeds = None
+        if self.drop_feeds is not None:
+            aux_feeds = self.data_manager._aux_feeds if self.data_manager is not None else {}
+            feeds = {
+                "registered": sorted(aux_feeds.keys()),
+                "dropped": sorted(self.drop_feeds),
+                "required": sorted(self.strategy.required_feeds) if self.strategy is not None else [],
+            }
         write_manifest(
             run_dir=run_dir,
             config=_strategy_config,
@@ -342,6 +364,7 @@ class BacktestEngine:
             git_sha=_get_git_sha(),
             lookback=self.strategy.strategy_engine.lookback,
             warmup=self.strategy.strategy_engine._warmup,
+            feeds=feeds,
         )
 
         # Write trades JSON
