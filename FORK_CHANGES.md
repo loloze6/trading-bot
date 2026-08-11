@@ -646,4 +646,4 @@ gate portion In progress).
 
 **Foundation for Feature B** (real krakenfutures funding via ccxt, ticketed): V2 gives a funding-carry strategy a loud failure on no-funding pairs while breadth runs everywhere; `drop_feeds` lets a breadth campaign run kraken with no funding *now*.
 
-**Fork location: Fork only** — upstream offer deferred (issue-first per plan §7, Dorian's go required; the venue-guard-asymmetry fix is Jeremy's PR #19 territory). Push to origin pending Dorian's OK.
+**Offered upstream 2026-08-11 as loloze6/trading-bot#22** (branch `fix/feed-dependency-safety-upstream`, single squashed commit `e46964a7` on `upstream/master`; fork-context docstring refs stripped, upstream-accurate counts 317→338, red-teamed SHIP; mergeable-CLEAN against `master@9ae7507a` after PR #21 landed — candle-callback and feed-dependency touch disjoint parts of `data_manager.py`, merge-tree confirms zero conflicts). Fork pushed to origin (`e3639279`). **Fork location: In progress — PR #22 OPEN, awaiting Jeremy.** (Minor: the offer strips 2 fork-context docstring lines the fork keeps; reconcile at sync-back.)
