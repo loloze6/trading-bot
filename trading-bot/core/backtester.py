@@ -158,6 +158,7 @@ class BacktestEngine:
                     fetcher        = factory(self.symbols, start_date, end_date, data_dir = data_storage_dir, exchange = self.exchange),
                     window_seconds = FEED_WINDOW_SECONDS[feed_name],
                     agg            = 'last',
+                    required       = feed_name in required_feeds,
                 )
             self.logger.debug(f"Registered feeds before initialize: {list(self.data_manager._aux_feeds.keys())}")
 
