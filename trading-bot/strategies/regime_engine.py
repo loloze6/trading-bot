@@ -96,6 +96,15 @@ class ConfigDrivenRegimeEngine:
     def get_required_periods(self) -> int:
         return max((c.get_required_periods() for c in self._components.values()), default=0)
 
+    def required_feeds(self) -> dict[str, tuple[str, ...]]:
+        """Feed name -> sorted tuple of consuming component names (declared via
+        SubStrategyComponent.consumes_feeds), for every regime-detector component."""
+        by_feed: dict[str, list] = {}
+        for comp in self._components.values():
+            for feed in comp.consumes_feeds:
+                by_feed.setdefault(feed, []).append(comp.name)
+        return {feed: tuple(sorted(names)) for feed, names in by_feed.items()}
+
     # ------------------------------------------------------------------
     def classify(self) -> Tuple[MarketRegime, Dict[str, Any]]:
         if not self.is_ready():
