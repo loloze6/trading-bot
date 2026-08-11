@@ -1,0 +1,35 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 51,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "price_evo",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 200,
+              "scaling_factor": 2.0
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  },
+  "aux_feeds": []
+}

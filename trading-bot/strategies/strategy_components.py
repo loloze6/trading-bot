@@ -690,6 +690,8 @@ class FundingRateMeanReversionComponent(SubStrategyComponent):
     the F5 fixture for this exact failure).
     """
 
+    consumes_feeds = ("funding_rate",)
+
     def __init__(self, name="FundingMR", weight=1.0, parameters=None):
         params = parameters or {}
         params.setdefault("standardized_forecast", False)
@@ -763,6 +765,8 @@ class FearGreedContrarianComponent(SubStrategyComponent):
 
     Requires 'fear_greed' column merged into bar DataFrame by prescreen loader.
     """
+
+    consumes_feeds = ("fear_greed",)
 
     def __init__(self, name="FGContrarian", weight=1.0, parameters=None):
         params = parameters or {}
@@ -1298,6 +1302,8 @@ class WhaleLargeTradeImbalanceComponent(SubStrategyComponent):
     targets. This component reads the merged column and adds no loader of its
     own, exactly as `FundingRateMeanReversionComponent` reads `funding_rate`.
     """
+
+    consumes_feeds = (WHALE_LT_IMBALANCE_COLUMN, WHALE_ATTESTED_COLUMN)
 
     def __init__(self, name="WhaleLTImbalance", weight=1.0, parameters=None):
         params = parameters or {}
