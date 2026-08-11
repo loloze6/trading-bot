@@ -157,17 +157,20 @@ class TradingBot:
 
     def _process_symbol_candle_completion(
         self,
-        symbol: str
+        symbol: str,
+        completed_candle: Optional[Candle] = None,
     ) -> None:
         """
         Process candle completion for a specific symbol.
-        
+
         Called automatically when a candle is completed. Generates signals,
         updates target allocations, and executes rebalancing if needed.
 
         Args:
             symbol: Trading symbol (e.g., 'BTCUSDT')
-            completed_candle: The completed candle object
+            completed_candle: The completed candle object, passed by
+                CandleBuilder's callback contract. Signals are derived from
+                get_data_history(), so this argument is currently unused.
         """
         try:
             # Retrieve stored data around OHLCV and AUX data  
