@@ -138,6 +138,7 @@ class AuxFeedConfig:
     window_seconds: float
     agg:            str = "last"          # 'last' | 'mean' | 'sum'
     live_value:     Optional[float] = None  # updated in live mode by poll thread
+    required:       bool = False          # see AuxFeedRequiredError
 
 
 class AuxFeedCausalityError(RuntimeError):
@@ -192,6 +193,11 @@ class AuxFeedVenueError(RuntimeError):
     protection -- see feed_registry.py's registry comment for what that means
     for a future feed.
     """
+
+
+class AuxFeedRequiredError(RuntimeError):
+    """Raised at `_premerge_aux_feeds`'s no-data branch when a feed registered
+    with `required=True` comes back empty -- venue-agnostic, unlike AuxFeedVenueError."""
 
 
 def _merge_asof_with_causality_guard(
@@ -612,6 +618,7 @@ class DataManager:
         fetcher: BaseFetcher,
         window_seconds: float,
         agg: str = "last",
+        required: bool = False,
     ) -> None:
         """
         Register an auxiliary data feed.
@@ -638,6 +645,12 @@ class DataManager:
                               'last' — most recent value  (default)
                               'mean' — average
                               'sum'  — sum
+            required:       If True, an empty/absent cache for this feed at
+                            merge time raises AuxFeedRequiredError on every
+                            venue, including binance (see
+                            _premerge_aux_feeds). Default False preserves
+                            prior behavior: binance warns and fills NaN,
+                            non-binance raises AuxFeedVenueError.
 
         Can be called at any time before initialize() (backtest) or
         initiate_start_thread() (live).
@@ -652,7 +665,8 @@ class DataManager:
                 "see AuxFeedCausalityError / data/ADDING_A_FEED.md."
             )
         self._aux_feeds[name] = AuxFeedConfig(
-            fetcher=fetcher, column=name, window_seconds=float(window_seconds), agg=agg
+            fetcher=fetcher, column=name, window_seconds=float(window_seconds), agg=agg,
+            required=required,
         )
         logger.info(
             f"DataManager: registered aux feed '{name}' "
@@ -795,6 +809,13 @@ class DataManager:
                 #     logger.debug(f"_premerge '{name}': feed_data is empty after lookup")
             if feed_data.empty or name not in feed_data.columns:
                 exchange_id = getattr(feed.fetcher, "exchange_id", "binance")
+                if feed.required:
+                    raise AuxFeedRequiredError(
+                        f"aux feed '{name}' (symbol={symbol}) is required but has no "
+                        f"data on exchange '{exchange_id}' — looked for cache file "
+                        f"'{feed.fetcher.cache_key(symbol)}'. Ingest '{name}' data for "
+                        f"'{exchange_id}', or remove the component(s) that require it."
+                    )
                 if exchange_id != "binance":
                     raise AuxFeedVenueError(
                         f"aux feed '{name}' (symbol={symbol}) has no data on "

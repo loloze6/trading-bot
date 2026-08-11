@@ -76,6 +76,18 @@ class AdvancedStrategy(MainStrategy):
             return False
         return True
 
+    @property
+    def required_feeds(self) -> dict[str, tuple[str, ...]]:
+        """Feed name -> sorted tuple of consuming component names, merged across
+        both engines. Configuration = intent: a component declared under any
+        regime requires its feeds even if that regime never activates this run.
+        Drives the V1 registration guard in core/backtester.py::load_data."""
+        by_feed: dict[str, set] = {}
+        for engine in (self.regime_engine, self.strategy_engine):
+            for feed, names in engine.required_feeds().items():
+                by_feed.setdefault(feed, set()).update(names)
+        return {feed: tuple(sorted(names)) for feed, names in by_feed.items()}
+
     _MAX_ERROR_SAMPLES = 5
 
     def update(self, new_bar: pd.DataFrame):

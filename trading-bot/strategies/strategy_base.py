@@ -75,7 +75,13 @@ class SubStrategyComponent(StrategyNode):
     Base class for sub-strategy components.
     Each component generates a forecast independently.
     """
-    
+
+    #: Aux-feed columns this component reads from the bar DataFrame. Empty by
+    #: default; subclasses that consume `data[...]` aux columns override it.
+    #: Drives required_feeds() on both engines / AdvancedStrategy and the V1
+    #: registration guard in core/backtester.py.
+    consumes_feeds: tuple[str, ...] = ()
+
     def __init__(self, name: str, weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters)
         

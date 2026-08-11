@@ -66,6 +66,21 @@ KRAKEN_BTC_CACHE = PROJECT_ROOT / "local_data" / "kraken_BTCUSD_1h.csv"
 BINANCE_BTC_CACHE = PROJECT_ROOT / "local_data" / "BTCUSDT_1h.csv"
 KRAKEN_BTC_FUNDING_CACHE = PROJECT_ROOT / "local_data" / "kraken_BTCUSD_funding_8h.csv"
 _RUN_BACKTEST_CONFIG = PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_check_config.json"
+# fix/feed-dependency-safety Step 1: this fixture declares no aux-feed-consuming
+# component, unlike _RUN_BACKTEST_CONFIG above (which loads
+# FearGreedContrarianComponent). T-12 below blanks FEED_REGISTRY to isolate the
+# kraken PRICE path -- with V1's required-feed registration guard, a strategy
+# that actually consumes fear_greed would need it present in extra_feeds, which
+# T-12 deliberately doesn't provide. Using an aux-feed-free strategy keeps T-12's
+# stated isolation intent true instead of relying on the guard being a no-op.
+# Its one PriceEvolutionComponent uses period=200 (> the 120-bar test window), so
+# it never reaches is_ready() and the strategy never trades -- same "always-flat"
+# behavior _RUN_BACKTEST_CONFIG's fear_greed component has here today (its column
+# never merges since FEED_REGISTRY is blanked), which is what pins EXPECTED_WINDOW_ROWS
+# to exactly 120: a real trade open at the final bar makes
+# TradingBot._close_all_positions_at_end() append one more bar_state row at that
+# same timestamp (verified empirically, pre-existing and unrelated to this branch).
+_NO_AUX_FEED_CONFIG = PROJECT_ROOT / "tests" / "fixtures" / "no_aux_feed_check_config.json"
 
 WINDOW_START = "2022-01-01"
 WINDOW_END = "2022-01-05"
@@ -475,7 +490,7 @@ def test_run_backtest_kraken_price_path_is_pure_and_completes(monkeypatch, tmp_p
     binance_sha_before = _sha256(BINANCE_BTC_CACHE) if BINANCE_BTC_CACHE.exists() else None
 
     run_dir = run_backtest(
-        config_path=str(_RUN_BACKTEST_CONFIG),
+        config_path=str(_NO_AUX_FEED_CONFIG),
         symbol="BTCUSD", start=WINDOW_START, end=WINDOW_END,
         results_root=str(tmp_path / "results"),
         trades_log_file=str(tmp_path / "trades.json"),
