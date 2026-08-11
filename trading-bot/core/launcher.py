@@ -529,7 +529,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  runs_root: str = None, interval_seconds: int = None,
                  warmup_prefetch: bool = False, holdout_start: str = None,
                  commission_rate: float = None, trades_log_file: str = None,
-                 bar_equity: bool = False, exchange: str | None = None):
+                 bar_equity: bool = False, exchange: str | None = None,
+                 drop_feeds: list[str] | None = None):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -605,8 +606,38 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         "kraken") is validated the same way simulate() validates trading.exchange
         (_validated_exchange) and exits loudly on an unknown id -- a typo must not be
         indistinguishable from missing history. See tests/test_exchange_selection.py.
+    drop_feeds: names of FEED_REGISTRY entries to exclude from this backtest's aux-feed
+        registry (fix/feed-dependency-safety, Step 2 -- campaign tooling's escape
+        hatch for the venue guard's own documented remedy, "...or drop '{name}' from
+        extra_feeds", data_manager.py:807-808). Defaults to None, which passes the
+        SAME FEED_REGISTRY object through to engine.load_data unchanged -- bit-
+        identical to before this parameter existed. A non-None value (including an
+        explicit empty list) is validated against FEED_REGISTRY's keys -- an unknown
+        name raises ValueError, same fail-loud rationale as _validated_exchange above
+        -- and a filtered copy is passed instead; the global FEED_REGISTRY is never
+        mutated. Dropping a feed the loaded strategy actually requires raises
+        FeedRequirementError at BacktestEngine.load_data's V1 registration guard,
+        before any data fetch (see core/backtester.py). Threaded into BacktestEngine
+        so a non-None value also adds a "feeds" provenance block (registered/dropped/
+        required feed names) to the run's manifest.json; a None value adds no such
+        key, so a default run's manifest.json is unchanged. See
+        tests/test_feed_dependencies.py.
     """
     from data.feed_registry import FEED_REGISTRY
+
+    if drop_feeds is None:
+        effective_feed_registry = FEED_REGISTRY
+    else:
+        unknown = sorted(set(drop_feeds) - set(FEED_REGISTRY.keys()))
+        if unknown:
+            raise ValueError(
+                f"Unknown feed name(s) in drop_feeds: {unknown}. "
+                f"Valid feed names: {sorted(FEED_REGISTRY.keys())}."
+            )
+        effective_feed_registry = {
+            name: factory for name, factory in FEED_REGISTRY.items()
+            if name not in drop_feeds
+        }
 
     launcher = Launcher()
     if interval_seconds is not None:
@@ -675,9 +706,10 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         warmup_cutoff_timestamp=warmup_cutoff_timestamp,
         bar_equity=bar_equity,
         exchange=params.exchange,
+        drop_feeds=drop_feeds,
     )
 
-    engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=FEED_REGISTRY)
+    engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=effective_feed_registry)
 
     if warmup_prefetch:
         # Verify the prefetch actually suffices -- fail loudly rather than silently

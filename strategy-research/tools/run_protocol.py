@@ -1015,6 +1015,15 @@ def main():
                              "config.json must not silently decide a campaign's venue. Absent "
                              "both, campaigns resolve to 'binance', identical to the venue every "
                              "existing campaign already scored via the engine's own default.")
+    parser.add_argument("--drop-feeds", default=None,
+                        help="2026-08-11 (fix/feed-dependency-safety, Step 2): comma-separated "
+                             "FEED_REGISTRY names (e.g. 'funding_rate,fear_greed') to exclude "
+                             "from every run_backtest() call this campaign makes. Takes "
+                             "precedence over the protocol file's own top-level 'drop_feeds' "
+                             "field when both are given. Absent both, no feed is dropped -- "
+                             "byte-identical to today (same resolution shape as --exchange "
+                             "above, but with no forced fallback: None IS the correct "
+                             "'drop nothing' value here, not a placeholder needing one).")
     args = parser.parse_args()
 
     # Holdout gate: require BOTH flags or NEITHER
@@ -1049,6 +1058,14 @@ def main():
         exchange = protocol.get("exchange")
     if exchange is None:
         exchange = "binance"
+    # fix/feed-dependency-safety Step 2: --drop-feeds -> protocol field -> None
+    # ("drop nothing", the pre-existing default). Unlike exchange above, a
+    # genuinely absent source stays None rather than coalescing to a forced
+    # default -- None IS the correct "no drop" value here, not a placeholder.
+    if args.drop_feeds is not None:
+        drop_feeds = [name.strip() for name in args.drop_feeds.split(",") if name.strip()]
+    else:
+        drop_feeds = protocol.get("drop_feeds")
     # Protocol-level timeframe (default "1h" preserves exact prior behavior —
     # run_backtest's own interval_seconds=None default falls back identically
     # to the pre-existing global-config-derived interval).
@@ -1098,7 +1115,7 @@ def main():
                               warmup_prefetch=True,
                               commission_rate=_resolve_commission_rate(
                                   symbol, cost_model, args.commission_bps, args.cost_product),
-                              exchange=exchange)
+                              exchange=exchange, drop_feeds=drop_feeds)
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             holdout_results[symbol] = {"run_id": rd.name, "core": m["core"]}
@@ -1173,7 +1190,7 @@ def main():
                               warmup_prefetch=True, holdout_start=_holdout_start,
                               commission_rate=_resolve_commission_rate(
                                   symbol, cost_model, args.commission_bps, args.cost_product),
-                              exchange=exchange)
+                              exchange=exchange, drop_feeds=drop_feeds)
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             core = m["core"]
