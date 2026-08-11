@@ -624,7 +624,7 @@ gate portion In progress).
 
 **Gated:** author (opus-4.8 lead) → opus-4.8 blind red-team (`redteam-48`, SHIP — independently re-ran slow 18, traced the `current` candle to a bare OHLCV dataclass already in `completed_candles` = no lookahead, proved the except-narrowing strictly safer for live, verified the new test non-vacuous on pre-fix source). Not a market-data experiment → no TRIALS row.
 
-**Offered upstream 2026-08-10 as loloze6/trading-bot#21** (branch `fix/candle-callback-arity-upstream`, single commit `c6107fb1` cherry-picked onto `upstream/master` `62a04569`; all 3 files blob-identical to `mac/setup`, `Closes #20`). **Fork location: In progress — PR #21 OPEN, awaiting Jeremy.**
+**Offered upstream 2026-08-10 as loloze6/trading-bot#21** (branch `fix/candle-callback-arity-upstream`, single commit `c6107fb1` cherry-picked onto `upstream/master` `62a04569`; all 3 files blob-identical to `mac/setup`, `Closes #20`). **MERGED upstream `9ae7507a` (2026-08-11), synced back into `mac/setup` as merge `0b50adae` — byte-identical no-op (`merge-tree --write-tree` diff empty; fork already carried the fix). Fork location: CONVERGED — the candle-callback divergence is now resolved on both sides.**
 
 ## 2026-08-11 — Feed-dependency safety: declarations + V1 + drop_feeds + V2
 
