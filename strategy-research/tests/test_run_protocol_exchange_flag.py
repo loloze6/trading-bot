@@ -40,7 +40,7 @@ class _RecordingRunBacktest:
     def __call__(self, config_path, symbol, start, end, results_root,
                  runs_root=None, interval_seconds=None, warmup_prefetch=False,
                  holdout_start=None, commission_rate=None, trades_log_file=None,
-                 bar_equity=False, exchange=None):
+                 bar_equity=False, exchange=None, drop_feeds=None):
         self.calls.append({"symbol": symbol, "start": start, "exchange": exchange})
         run_dir = self._sandbox_dir / f"stub_run_{len(self.calls)}"
         run_dir.mkdir(parents=True, exist_ok=True)
