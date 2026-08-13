@@ -1,6 +1,6 @@
 # E-022 — Automated "what's happening" digest, every 2 days
 
-**State:** new
+**State:** in-progress
 **Owner:** Jérémy (joint with Dorian — it reports on his work too)
 **Updated:** 2026-08-13
 
@@ -36,11 +36,11 @@ non-empty digest matching the actual repo/board state at that time.
 
 ## Stories
 
-- [ ] S1 — Write the digest logic: what to query for each of the 6
+- [x] S1 — Write the digest logic: what to query for each of the 6
       sections above, and the format (bold section headers + bullets,
       matching Dorian's existing wrap-up style — no markdown tables, reads
       badly in Slack/mobile).
-- [ ] S2 — Wire it as a scheduled routine, firing every 2 days, posting to
+- [x] S2 — Wire it as a scheduled routine, firing every 2 days, posting to
       `#tradingbot`.
 - [ ] S3 — Run it for 1-2 cycles, sanity-check the output against reality,
       adjust based on what's actually useful vs. noise before treating the
@@ -55,3 +55,11 @@ non-empty digest matching the actual repo/board state at that time.
   exact bug caught 3x this week — see E-021), an "aging" flag for
   neglected high-priority items, and switching the open-bugs source from
   Notion to GitHub Issues once E-021 resolves.
+- 2026-08-13 — `new` → `in-progress`. S1+S2 dispatched together: digest
+  logic written directly into the schedule's prompt (no separate code —
+  v1 is agent-generated per firing, not a script) and wired as trigger
+  `trig_01CQM7EHZbCriuViY8bYh1bP`, cron `0 8 */2 * *` (UTC), self-bound to
+  the existing session — same connector-access constraint as E-021's
+  interim sync routine (this org can't grant Notion/Slack access to a
+  freshly spawned session via a trigger). Fired once manually same-day to
+  produce a first real output for the S3 sanity check.
