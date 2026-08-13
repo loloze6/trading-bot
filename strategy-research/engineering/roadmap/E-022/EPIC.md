@@ -63,3 +63,10 @@ non-empty digest matching the actual repo/board state at that time.
   interim sync routine (this org can't grant Notion/Slack access to a
   freshly spawned session via a trigger). Fired once manually same-day to
   produce a first real output for the S3 sanity check.
+- 2026-08-13 — S3, first real run. Posted to #tradingbot
+  (p1786650635663579). Sections 1-3, 5, 6 (completions, next actions,
+  per-collaborator activity, open bugs, northstar) read correctly against
+  real git/GitHub/Notion data. Section 4 (open improvements) listed all 19
+  active epics and was too long for a scan-in-a-minute digest — flagged in
+  the post itself. Candidate v2 fix: show only in-progress + new-this-week
+  by default, cite `EPICS.md` for the rest instead of repeating it.
