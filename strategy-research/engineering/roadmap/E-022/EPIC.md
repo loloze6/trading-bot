@@ -70,3 +70,26 @@ non-empty digest matching the actual repo/board state at that time.
   active epics and was too long for a scan-in-a-minute digest — flagged in
   the post itself. Candidate v2 fix: show only in-progress + new-this-week
   by default, cite `EPICS.md` for the rest instead of repeating it.
+- 2026-08-13 — Cost/architecture concern raised: the self-bound trigger
+  means every firing re-processes this session's entire (growing) history,
+  not just its own ~6-8 tool calls — cost per firing rises over time, and
+  the harness's auto-compaction (which prevents a hard failure at the
+  context limit) trades that off against detail loss on older decisions.
+  Checked whether a genuinely stateless fresh session could work instead:
+  `ListConnectors` confirms Notion and Slack ARE real, connected,
+  account-level connectors (`connected: true`, `enabledInChat: true`) —
+  not an environment-only quirk. The actual blocker is narrower: this
+  session's own `create_trigger` calls cannot attach connector grants to a
+  freshly-spawned session for this org (`connectors` parameter itself
+  disabled — "not available for this organization"), most likely a
+  deliberate gate on agent-initiated recurring connector access rather
+  than a statement that it's impossible. Plan: Jérémy to try creating the
+  equivalent routine directly via the claude.ai Routines UI (human-driven
+  connector grant may not be subject to the same gate). If that works,
+  migrate E-022 off the self-bound session onto a fresh-session routine —
+  fixes the cost/detail-loss concern structurally. If it also blocks
+  connectors, fall back to (a) periodically re-binding this routine to a
+  freshly reset session, or (b) replacing the mechanical
+  query-format-post steps with a plain script against the Notion/GitHub/
+  Slack APIs directly — no LLM/session involved at all for that part,
+  since the job is stateless by nature. Not yet actioned either way.
