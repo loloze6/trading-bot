@@ -31,22 +31,15 @@ import verdict_criteria_evaluator as vce  # noqa: E402
 def test_r2_bypass_1_path_traversal_cannot_borrow_another_runs_result():
     """Re-audit attack 1 — the most consequential bypass found. The ownership
     check substring-matched the UNRESOLVED path, so the literal text contained
-    "/runs/run_058/" while open() followed ".." to run_059's real FAIL: a
-    hypothesis citing its own real (but unrelated) run borrowed a genuine
-    result from a different run.
-
-    The traversal's first path component must be a run dir that actually
-    exists on disk: exists() is checked before resolution, and on POSIX an
-    absent intermediate component makes stat() fail at that check, never
-    reaching the ownership check this test targets (Windows normalizes ".."
-    lexically first, masking the gap). run_058 is a real fixture run, so
-    both platforms exercise the same ownership refusal."""
+    "/runs/run_999_FAKE/" while open() followed ".." to run_059's real FAIL: a
+    fabricated hypothesis citing a run that never executed borrowed a genuine
+    result from an unrelated one."""
     entry = {
         "id": "FAKE_HYPOTHESIS_NEVER_RAN",
         "outcome": "kill_mechanism_falsified",
-        "evidence_runs": ["run_058"],
+        "evidence_runs": ["run_999_FAKE"],
         "pass_rule_evaluation_ref":
-            "runs/run_058/../run_059/artifacts/pass_rule_evaluation.yaml",
+            "runs/run_999_FAKE/../run_059/artifacts/pass_rule_evaluation.yaml",
     }
     with pytest.raises(vce.UngatedVerdictError) as exc:
         vce.validate_verdict_provenance(entry, root=_SR_ROOT)
