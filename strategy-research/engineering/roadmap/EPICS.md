@@ -29,7 +29,7 @@ epic".
 | [E-019](E-019/EPIC.md) | Feature matrix + leakage checks | parked | Blocked on Phase 3 complete |
 | [E-020](E-020/EPIC.md) | Cut per-dispatch codebase context cost (scoped CLAUDE.md, then re-evaluate tree-sitter) | new | S1 — inventory known landmines with file:line refs across both trees |
 | [E-021](E-021/EPIC.md) | Consolidate bug/ticket tracking onto GitHub; narrow Notion's role | new | S1 — joint conversation with Dorian before touching anything he relies on |
-| [E-022](E-022/EPIC.md) | Automated "what's happening" digest, every 2 days | new | S1 — write the digest logic (6 sections, simple v1) |
+| [E-022](E-022/EPIC.md) | Automated "what's happening" digest, every 2 days | in-progress | S3 — run for 1-2 cycles, sanity-check output vs. reality |
 
 ## Done
 
