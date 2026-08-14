@@ -122,3 +122,16 @@ non-empty digest matching the actual repo/board state at that time.
   Northstar line's "unless a later message in this session says it
   changed" instruction, which assumed session continuity that no longer
   exists now that the real routine is stateless per firing.
+- 2026-08-14 — Follow-up pass on all 3 deferred items, plus the GitHub
+  Issues gap Jérémy raised (open improvements/bugs only checked
+  EPICS.md/Notion, never GitHub Issues — 0 open today, but silently
+  invisible if that changes). New boundary found while doing this:
+  `update_trigger` refuses routines not created via this session's own
+  `create_trigger` — "created via http_api, not by an agent. Agents can
+  only update routines they created." So the live routine
+  (`trig_01XUckqVaSTdJ4rjPABhKZWv`, made by Jérémy in the claude.ai UI)
+  can only be disabled by an agent, never edited — the updated v1.1
+  prompt was handed to Jérémy as a file to paste in himself. Worth
+  remembering generally: routine ownership follows *creator*, not
+  account — matches the same shape as the connectors restriction this
+  epic already hit once.
