@@ -135,12 +135,17 @@ direct count, two ways:
   `python -m pytest` from `strategy-research/` = **721** (473 + 248,
   confirmed additive).
 
-**Current expected result** (bare `python -m pytest` from
-`strategy-research/`): **721 collected — 719 passed, 1 skipped, 1 failed.**
-The one failure, `tests/test_c7ext_verdict_gates.py::test_d3_every_committed_generic_protocol_is_marked_unratified`,
-is a known pre-existing failure — not introduced by, or diagnosed as part
-of, this dispatch. No repo record of its root cause was found; treat it as
-still open, not as explained by anything written here.
+**Current expected result** (from `strategy-research/`, no API keys needed):
+the D3 census failure recorded here is now fixed. Keyless bars — `pytest tests
+-m "not slow"` → 482 passed / 7 skipped / 4 deselected / 0 failed; full `pytest
+tests` → 486 passed / 7 skipped / 0 failed. (The recorder-inclusive bare
+`pytest` collected total has grown past the 721 noted here as tests were added.)
+`tests/test_c7ext_verdict_gates.py::test_d3_generic_classifier_agrees_with_independent_derivation_and_all_are_unratified`
+(renamed from `test_d3_every_committed_generic_protocol_is_marked_unratified`)
+was a known pre-existing failure with no recorded root cause. The cause is
+`71573062` (CLEAN-3a) deleting `escalation_dotusdt_4h.json` — the
+generic-protocol count dropped 9 → 8 while the test hardcoded `== 9`. Fixed here
+by pinning an independent-oracle agreement check instead of a file count.
 
 `trading-bot/` suite (run from `trading-bot/`): `python -m pytest` — 227
 collected, 213 selected / 14 deselected, **211 passed, 2 skipped**.

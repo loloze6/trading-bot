@@ -1,5 +1,6 @@
 """
-Feed-dependency safety, Step 1/3: declarations + V1 (registration guard).
+Feed-dependency safety, Step 1/3 (`.omc/plans/feed-dependency-safety-architecture.md`):
+declarations + V1 (registration guard).
 
 Pins:
   - `SubStrategyComponent.consumes_feeds` defaults to `()`; the three real aux-feed

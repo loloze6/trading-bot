@@ -96,5 +96,18 @@ Thumbs.db
 # reject them anyway. Chronology: the runs PREDATE the seal by ~90 minutes.
 strategy-research/quarantine/holdout_contaminated/
 
+# oh-my-claudecode operational state (Dorian's fork only — Jeremy's tree has none).
+# Session state, HUD caches, subagent tracking, mission/PRD scratch. Machine-local
+# runtime artifacts, regenerated on demand, never source. Three of these exist
+# (repo root, trading-bot/, strategy-research/) and the pattern covers any depth.
+# Note: if project-scoped OMC skills are ever wanted under .omc/skills/, they need
+# an explicit exception — a directory excluded here cannot be re-included by a
+# later negation.
+.omc/
+
+# basedpyright project config (Dorian's fork only — machine-local tool wiring
+# pointing diagnostics at the Mac .venv; Jeremy's tree has none). FORK_CHANGES row 24.
+/pyrightconfig.json
+
 # Campaign runtime artifacts
 strategy-research/campaign.pid
