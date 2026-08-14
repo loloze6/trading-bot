@@ -72,6 +72,7 @@ def write_manifest(
     git_sha: str,
     lookback: int,
     warmup: int,
+    feeds: dict | None = None,
 ) -> None:
     canonical = json.dumps(config, sort_keys=True, separators=(",", ":"))
     manifest = {
@@ -93,6 +94,8 @@ def write_manifest(
             "warmup": warmup,
         },
     }
+    if feeds is not None:
+        manifest["feeds"] = feeds
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str))
 
 
