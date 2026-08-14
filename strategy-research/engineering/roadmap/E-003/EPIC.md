@@ -20,6 +20,22 @@ clone (Dorian's fork, a new machine, CI) gets **no gate at all** and can
 commit sealed-window market data with nobody stopping it — the exact failure
 this whole gate exists to prevent.
 
+**2026-08-14, Dorian (Slack):** a second, independent local-only hook exists
+on his machine — a secret-scanner (blocks committing API keys), living
+*only* at his own untracked `.git/hooks/pre-commit`, with no tracked source
+anywhere in the repo (its own header cites a non-existent
+`scripts/pre-commit`). It has a real bug too: `grep -E` matches the bare
+*name* `GEMINI_API_KEY` with no value present, so a diff that only removes a
+line mentioning that env-var name gets blocked with nothing actually
+secret in it. He supplied a tightened pattern (value-required, plus added
+coverage for raw key formats: `AKIA...`, `AIza...`, PEM headers,
+`api_secret=...`) and positive/negative-controlled it. He's offered to PR a
+versioned copy into `tools/hooks/` alongside the holdout gate, so wiring
+`core.hooksPath` for this epic hands a fresh clone **both** gates in one
+shot instead of leaving the secret-scanner exactly as un-shared as the
+holdout gate currently is. Offer accepted (Jérémy, 2026-08-14) — see
+Stories.
+
 ## Done when
 
 `git config core.hooksPath` is set to a repo-tracked directory (e.g.
@@ -40,6 +56,10 @@ having copied anything into `.git/hooks/` by hand.
       exists.
 - [ ] S2 — Wire it up, document the one-time `git config` step (or a setup
       script that runs it) in `RUNBOOK.md`, verify on a fresh clone.
+- [ ] S3 — Dorian to PR his tightened secret-scan hook into `tools/hooks/`
+      (versioned, value-required pattern — see Why for the exact bug it
+      fixes), landing alongside S2 so `core.hooksPath` wiring covers both
+      gates for every clone in one shot, not just the holdout gate.
 
 ## Duplicate tracking
 
@@ -56,3 +76,7 @@ record.
 - 2026-08-03 — Marked provisional; S1 scoped as investigation-only (write
   nothing); duplicate Bugs & Tasks card noted for pointer reduction
   (dispatch W27).
+- 2026-08-14 — Scope widened (still `new`, S1 not yet run): Dorian's
+  secret-scan hook finding added to Why, S3 added to track his offered PR.
+  Not a second epic — same root cause (`core.hooksPath` unwired everywhere
+  but one machine), same fix shape, bundling is cheaper than splitting.
