@@ -29,7 +29,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from core.backtester import BacktestEngine  # noqa: E402
-from data.data_manager import AuxFeedVenueError, DataManager  # noqa: E402
+from data.data_manager import AuxFeedRequiredError, AuxFeedVenueError, DataManager  # noqa: E402
 from data.feed_registry import FEED_REGISTRY, RESERVED_FEED_REGISTRY  # noqa: E402
 from data.fetchers.base_fetcher import BaseFetcher  # noqa: E402
 from data.fetchers.funding_rate_fetcher import FundingRateFetcher  # noqa: E402
@@ -105,7 +105,7 @@ class _RecordingDataManager:
     def fetch_historical_data(self, symbol, start_date, end_date, exchange="binance"):
         return pd.DataFrame({"timestamp": [pd.Timestamp("2022-01-01")], "close": [1.0]})
 
-    def register_feed(self, name, fetcher, window_seconds, agg):
+    def register_feed(self, name, fetcher, window_seconds, agg, required=False):
         self._aux_feeds[name] = fetcher
 
     def initialize(self):
@@ -191,3 +191,53 @@ def test_premerge_binance_empty_feed_still_warns_and_nans(caplog):
 
     assert enriched["funding_rate"].isna().all()
     assert "all-NaN for every bar" in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# Step 3 (feed-dependency-safety, V2) -- required + empty is loud on every
+# venue, including binance. New check sits ABOVE the venue guard tested
+# above; T-10/T-11 above stay unmodified and keep proving the
+# non-required paths are untouched.
+# ---------------------------------------------------------------------------
+
+def test_premerge_raises_aux_feed_required_error_on_binance_when_required_and_empty():
+    dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
+    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("binance"),
+                      window_seconds=0, agg="last", required=True)
+
+    with pytest.raises(AuxFeedRequiredError, match="funding_rate"):
+        dm._premerge_aux_feeds("BTCUSD", _price_df())
+
+
+def test_premerge_raises_aux_feed_required_error_on_kraken_when_required_and_empty():
+    dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
+    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("kraken"),
+                      window_seconds=0, agg="last", required=True)
+
+    with pytest.raises(AuxFeedRequiredError, match="funding_rate"):
+        dm._premerge_aux_feeds("BTCUSD", _price_df())
+
+
+def test_premerge_required_false_binance_empty_feed_still_warns_and_nans(caplog):
+    """Explicit required=False (not just the default) preserves today's
+    binance warn+NaN path unchanged -- companion to the default-arg case
+    already covered by test_premerge_binance_empty_feed_still_warns_and_nans."""
+    dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
+    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("binance"),
+                      window_seconds=0, agg="last", required=False)
+
+    with caplog.at_level(logging.WARNING, logger="trading_bot"):
+        enriched = dm._premerge_aux_feeds("BTCUSD", _price_df())
+
+    assert bool(enriched["funding_rate"].isna().all())
+    assert "all-NaN for every bar" in caplog.text
+
+
+def test_register_feed_default_required_is_false():
+    """register_feed's new `required` kwarg defaults to False -- registration
+    is otherwise byte-identical to before this parameter existed."""
+    dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
+    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("binance"),
+                      window_seconds=0, agg="last")
+
+    assert dm._aux_feeds["funding_rate"].required is False

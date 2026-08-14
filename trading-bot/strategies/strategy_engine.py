@@ -94,6 +94,17 @@ class ConfigDrivenStrategyEngine:
         all_comps = [c for rc in self._components.values() for c in rc.values()]
         return max((c.get_required_periods() for c in all_comps), default=0)
 
+    def required_feeds(self) -> dict[str, tuple[str, ...]]:
+        """Feed name -> sorted tuple of consuming component names (declared via
+        SubStrategyComponent.consumes_feeds), for every strategy component across
+        all regimes -- configuration = intent, regardless of which regime is active."""
+        by_feed: dict[str, list] = {}
+        for regime_comps in self._components.values():
+            for comp in regime_comps.values():
+                for feed in comp.consumes_feeds:
+                    by_feed.setdefault(feed, []).append(comp.name)
+        return {feed: tuple(sorted(names)) for feed, names in by_feed.items()}
+
     def forecast(self, regime: MarketRegime) -> Tuple[float, Dict[str, Any]]:
         rkey = regime.value
         cfg  = self._regime_cfgs.get(rkey)
