@@ -1,13 +1,15 @@
-# Pinned 2026-07-27 (mac-bootstrap). This version set reproduces the reference
-# backtest artifact config_sha 5ccbec42 / data_sha 5a75366c.
-#
-# pandas is capped below 3.0 deliberately. pandas 3.x parses the OHLCV caches to
-# datetime64[us] rather than datetime64[ns]; run_artifact.data_sha256 hashes the
-# timestamp column via hash_pandas_object, so that resolution change alters the
-# data hash and silently breaks comparability with every prior run artifact.
 python-binance==1.0.37
 python-dotenv==1.2.2
 numpy==2.5.1
+# EXACT pin required — not merely "<3". Measured 2026-07-28 on local_data/
+# BTCUSDT_1h.csv: pandas 2.3.3 parses `timestamp` to datetime64[ns] (hash head
+# 0x2e4d238f18634b07), pandas 3.0.5 to datetime64[us] (0xbc4d8b3a3dd41a6e).
+# Same instants, different digest. reporting/run_artifact.py feeds that column
+# to pd.util.hash_pandas_object for data_sha256, so a pandas upgrade silently
+# changes every data hash — no error, no symptom — and every run artifact
+# stops being comparable to prior baselines. Relaxing this to a range would
+# satisfy the "<3" wording while still risking the hash. Do not change the pin
+# without re-proving the reference run's data_sha256 (5a75366c).
 pandas==2.3.3
 plotly==6.9.0
 openpyxl==3.1.5
@@ -16,12 +18,11 @@ scikit-learn==1.9.0
 scipy==1.18.0
 pytest==9.1.1
 pytest-timeout==2.4.0
-
-# Imported by shipped code but previously absent from this file:
-#   ccxt        data/fetchers/ccxt_fetcher.py
-#   matplotlib  visualization paths
-#   requests    data/fetchers/fear_greed_fetcher.py
-#   PyYAML      strategy-research/tools/, imported by trading-bot tests
+# Imported by shipped trading-bot code but absent from the original file:
+# ccxt (data/fetchers), matplotlib and requests (reporting/fetchers), PyYAML
+# (data/fetchers/whale_footprint_fetcher.py, in the reserved-data policy gate;
+# also reached from strategy-research/tools/prescreen_signal.py via
+# test_funding_rate_component).
 ccxt==4.5.68
 matplotlib==3.11.1
 requests==2.34.2

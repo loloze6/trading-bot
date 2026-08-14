@@ -29,7 +29,7 @@ Engine for backtesting trading strategies against historical data.
 class FeedRequirementError(RuntimeError):
     """Raised by BacktestEngine.load_data when a strategy's required aux feed
     (AdvancedStrategy.required_feeds) is absent from extra_feeds at registration
-    time (before any data fetch)."""
+    time -- see FORK_CHANGES.md / feed-dependency-safety-architecture.md."""
 
 
 class BacktestEngine:

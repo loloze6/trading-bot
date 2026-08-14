@@ -851,9 +851,17 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
 
 
 
-# Initialize the Native Client
-# It automatically picks up the GEMINI_API_KEY environment variable
-client = genai.Client()
+# Initialize the Native Client lazily, so importing this module does not
+# construct it or require GEMINI_API_KEY. Construction still auto-reads
+# GEMINI_API_KEY from the environment on first use, as before.
+_client = None
+
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = genai.Client()
+    return _client
 
 async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     print(f"\n✨ [GEMINI INVOKED] Waking up Native Gemini API for: {stage_name}")
@@ -916,7 +924,7 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     print("⏳ Waiting for Gemini API response...")
     
     # --- FIX 1 & 2: Use the async '.aio' client and correct model name ---
-    response = await client.aio.models.generate_content(
+    response = await _get_client().aio.models.generate_content(
         model='gemini-2.5-flash-lite',
         contents=full_prompt,
         config=types.GenerateContentConfig(
@@ -1857,16 +1865,16 @@ def _assert_promotion_ratified(protocol_path: Path) -> None:
     guarding the GENERATOR while leaving the generated artifacts and the default
     selection in place changes nothing for a run that simply loads one.
 
-    The abolished block is still committed and live in NINE protocol files
-    (baseline_v1, baseline_v2, the four escalation_*, and the three
-    run_0NN_generated ones materialized before G7 existed). `_resolve_protocol_path`
-    could hand any of them to a run, and the resulting verdict would once again be
-    computed against thresholds no brief ever froze.
+    The abolished block is still committed and live in several protocol files
+    (baseline_v1/v2, the escalation_* set, and the run_0NN_generated ones
+    materialized before G7 existed). `_resolve_protocol_path` could hand any of
+    them to a run, and the resulting verdict would once again be computed against
+    thresholds no brief ever froze.
 
-    (The audit report said seven. Recounting from the tree gives nine; the
-    discrepancy was a miscount in the report's own file listing, not a change to
-    the tree. test_d3_every_committed_generic_protocol_is_marked_unratified pins
-    the number so it cannot drift again unnoticed.)
+    (test_d3_generic_classifier_agrees_with_independent_derivation_and_all_are_unratified
+    checks that every committed protocol the classifier calls generic is recorded
+    unratified, by agreement with an independent re-derivation rather than a file
+    count -- so the guard cannot silently drift as the protocol set changes.)
 
     So the check moves to the point of USE. A protocol carrying the generic block
     is refused unless the file explicitly ratifies it, via:
