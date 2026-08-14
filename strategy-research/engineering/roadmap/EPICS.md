@@ -29,7 +29,6 @@ epic".
 | [E-019](E-019/EPIC.md) | Feature matrix + leakage checks | parked | Blocked on Phase 3 complete |
 | [E-020](E-020/EPIC.md) | Cut per-dispatch codebase context cost (scoped CLAUDE.md, then re-evaluate tree-sitter) | new | S1 — inventory known landmines with file:line refs across both trees |
 | [E-021](E-021/EPIC.md) | Consolidate bug/ticket tracking onto GitHub; narrow Notion's role | new | S1 — joint conversation with Dorian before touching anything he relies on |
-| [E-022](E-022/EPIC.md) | Automated "what's happening" digest, every 2 days | in-progress | S3 — run for 1-2 cycles, sanity-check output vs. reality |
 
 ## Done
 
@@ -41,6 +40,7 @@ not archived elsewhere.
 | [E-002](E-002/EPIC.md) | Land the parked `strategy-research/` restructure | done | `1787258b` amended the mapping (dropped `protocols/` and `briefs/` as contract migrations); `8f162fa6` (S3-S5, dispatch W44) landed 169 renames plus 94 repointed files — see `E-002/EPIC.md` Log. S6's independent audit was not run |
 | [E-001](E-001/EPIC.md) | Establish the engineering operational process | done | `25960cac` corrected the Done-when; this file's own dispatch (W26) closes it — see `E-001/EPIC.md` Log for the verification output |
 | [E-013](E-013/EPIC.md) | Split docs/ROADMAP.md — retire the name, graduate the engineering items | done | `cd20e6ec` created the six epics (S2); `cc69410f` (S3, W36) closed it but left six live citations unrepointed; this commit (S4, dispatch W37) reopened and re-closed it — see `E-013/EPIC.md` Log for the repoint and re-verification |
+| [E-022](E-022/EPIC.md) | Automated "what's happening" digest, every 2 days | done | Two real firings verified (2026-08-13 p1786650635663579, 2026-08-14 p1786696390584949); moved off the session-bound workaround onto a proper fresh-session claude.ai routine (`trig_01XUckqVaSTdJ4rjPABhKZWv`) — see `E-022/EPIC.md` Log for the 3 sourcing gaps it self-flagged and what's deferred to a later pass |
 
 ## State legend
 

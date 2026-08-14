@@ -1,8 +1,8 @@
 # E-022 — Automated "what's happening" digest, every 2 days
 
-**State:** in-progress
+**State:** done
 **Owner:** Jérémy (joint with Dorian — it reports on his work too)
-**Updated:** 2026-08-13
+**Updated:** 2026-08-14
 
 ## Why
 
@@ -42,7 +42,7 @@ non-empty digest matching the actual repo/board state at that time.
       badly in Slack/mobile).
 - [x] S2 — Wire it as a scheduled routine, firing every 2 days, posting to
       `#tradingbot`.
-- [ ] S3 — Run it for 1-2 cycles, sanity-check the output against reality,
+- [x] S3 — Run it for 1-2 cycles, sanity-check the output against reality,
       adjust based on what's actually useful vs. noise before treating the
       format as settled.
 
@@ -93,3 +93,32 @@ non-empty digest matching the actual repo/board state at that time.
   query-format-post steps with a plain script against the Notion/GitHub/
   Slack APIs directly — no LLM/session involved at all for that part,
   since the job is stateless by nature. Not yet actioned either way.
+- 2026-08-14 — Resolved, and `done`. Jérémy created the equivalent routine
+  directly via the claude.ai Routines UI (`trig_01XUckqVaSTdJ4rjPABhKZWv`,
+  "Updates on engineering progress", same `0 8 */2 * *` schedule, fired
+  manually to test). Confirmed via `list_triggers` that this is a
+  genuinely different, better architecture than the session-bound
+  workaround: its `job_config` shows no `persist_session` and its own
+  dedicated `mcp_connections` (Notion, Slack, plus a `visualize` connector
+  Jérémy also has) — a fresh session per firing, own git branch each time,
+  zero accumulated history. This fully resolves the prior cost/detail-loss
+  concern; the self-bound fallback (`trig_01CQM7EHZbCriuViY8bYh1bP`) is
+  now redundant and was DELETED (it would otherwise have double-posted
+  alongside the new routine on 2026-08-15, same time slot).
+  Done-when evidence — two real firings, each correct and non-empty:
+  1. 2026-08-13 21:50 CEST, self-bound trigger (p1786650635663579).
+  2. 2026-08-14 10:33 CEST, new claude.ai-UI routine (p1786696390584949).
+  Both correctly reflected real git/GitHub/Notion state and, per the
+  plan, self-flagged rather than guessed on 3 real sourcing gaps in run 2:
+  (a) E-020/E-021/E-022 live only on branch `claude/test-5yopd3`, so
+  `EPICS.md` as read from `master` omits them — landing that branch fixes
+  this; (b) Notion's Bugs & Tasks schema has no last-edited timestamp, so
+  "Done in the last 2 days" is inferred from GitHub merge dates, not
+  queried directly; (c) 15 of 66 open cards are untriaged (no status set).
+  None of these block Done — they're the exact kind of finding S3 exists
+  to catch. Deferred to a later pass (small edits to the trigger prompt,
+  not a new epic): trim the *Open improvements* section (still lists all
+  16-19 epics) to in-progress + new-this-week; and reconsider the
+  Northstar line's "unless a later message in this session says it
+  changed" instruction, which assumed session continuity that no longer
+  exists now that the real routine is stateless per firing.
