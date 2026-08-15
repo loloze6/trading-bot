@@ -404,7 +404,44 @@ class PortfolioStateTracker:
         os.makedirs(output_dir, exist_ok=True)
 
         
-    def record_state(self, data: pd.DataFrame, signal=None, **extras):
+    def record_state(self, data: pd.DataFrame, signal=None, *,
+                     replace_if_same_bar: bool = False, **extras):
+        """Append one row of portfolio state for the bar at data.iloc[-1].
+
+        replace_if_same_bar (2026-08-15, off by default): when True AND the most
+        recently recorded row carries the SAME 'timestamp' as this one, update that
+        row in place instead of appending a second one. Exists for exactly one
+        caller -- TradingBot._close_all_positions_at_end, which re-records the final
+        bar after force-closing an open position, a bar the per-bar loop
+        (_process_symbol_candle_completion) already recorded. Without it, every
+        backtest that ends holding a position emits TWO rows claiming the same
+        instant in portfolio_states.csv: one before the forced close, one after.
+        That is wrong for a time series and silently inflates the bar count for
+        every consumer that reads the file as one-row-per-bar (notably
+        performance/bar_equity.py).
+
+        MERGE, not blind overwrite: the surviving row is {old, **new}. Every
+        portfolio/execution field is supplied by both callers, so the new (post-
+        close) values win -- which is the point. The keys the close path does NOT
+        supply are the signal-derived ones (forecast, regime, confidence, ...): it
+        passes signal={}, so a blind overwrite would punch a NaN hole through the
+        forecast/regime series at the final bar of every affected run. Merging
+        keeps the bar's real forecast (the strategy's decision for that bar) while
+        the portfolio numbers reflect the forced close (an end-of-backtest artifact,
+        not a strategy decision).
+
+        Default False leaves this method byte-identical to its pure-append prior
+        behaviour: the per-bar loop does not pass the flag, so no default run's
+        output changes.
+
+        SCOPE: the comparison is against the LAST recorded row only, and rows carry
+        no symbol column, so this is precise for a single-symbol replay -- which is
+        the only shape the backtest engine produces (BacktestEngine.load_data loads
+        self.symbols[0] alone). A hypothetical multi-symbol replay would already
+        write an ambiguous, symbol-less portfolio_states.csv; the caller keys the
+        flag off len(self.symbols) == 1 so that case keeps its current behaviour
+        rather than acquiring a new silent one.
+        """
         last_row = data.iloc[-1].to_dict()
 
         signal_info = {}
@@ -419,6 +456,15 @@ class PortfolioStateTracker:
             **signal_info,
             **extras
         }
+
+        if (
+            replace_if_same_bar
+            and self.states
+            and self.states[-1].get('timestamp') == state.get('timestamp')
+        ):
+            self.states[-1] = {**self.states[-1], **state}
+            return
+
         self.states.append(state)
         
     

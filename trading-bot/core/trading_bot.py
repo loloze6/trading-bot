@@ -383,8 +383,20 @@ class TradingBot:
                 # === RECORD PORTFOLIO STATE === --> This is to store at a bar level and visualize it in a graph.
                 if hasattr(self, 'portfolio_state_tracker'):
                     tracker = getattr(self, 'portfolio_state_tracker', None)
+                    # `data` here is the SAME final bar the per-bar loop already
+                    # recorded (get_data_history defaults to count=1), so a plain
+                    # append would give portfolio_states.csv two rows for one
+                    # instant -- pre-close and post-close. replace_if_same_bar folds
+                    # the post-close numbers onto that existing row instead, keeping
+                    # the file one-row-per-bar. It fires only when the last recorded
+                    # timestamp actually matches, so the paths that record nothing
+                    # for this bar (warmup-gated, or the per-bar body raised) still
+                    # append normally. Single-symbol only: rows carry no symbol, so
+                    # with several replaying symbols the previous row could belong to
+                    # another one -- that case keeps today's behaviour untouched.
                     tracker.record_state(
                         data = data,
+                        replace_if_same_bar=len(self.symbols) == 1,
                         balances=balances,
                         total_portfolio_value=total_value,
                         previous_allocation = actual_allocation,
