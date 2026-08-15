@@ -75,3 +75,14 @@ not fold its scope into this epic.
   deferred execution ("not to do right now but to plan it"). Checked
   `DISPATCH_MODEL.md`'s "Context economy" section and the tree for prior
   art first (Amendment 9) — no overlap found; see Why.
+- 2026-08-15 — Input for S4, not yet actioned: Dorian shared a "code graph" —
+  a 3D visualization of the codebase's call/reference relationships (Slack,
+  2026-08-15) — as a candidate for the same problem this epic targets: an
+  agent looks up "where is X used" instead of reading the whole codebase to
+  find out, same idea as the tree-sitter option S4 is meant to evaluate.
+  His own caveat, worth keeping: it only helps if the index stays in sync
+  with the code — an agent acting on a stale index can make a change that
+  looks correct against the index and is wrong against the real tree. Feed
+  this into S4's go/no-go write-up when S3's numbers are in; not a reason to
+  start early (S3's measured baseline still comes first per Amendment 10 —
+  effect size before mechanism drives a decision).

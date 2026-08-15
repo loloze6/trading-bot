@@ -1,8 +1,8 @@
 # E-015 — Venue/product declared at brief registration
 
-**State:** in-progress
+**State:** planned
 **Owner:** Jeremy
-**Updated:** 2026-08-05
+**Updated:** 2026-08-15
 
 ## Why
 
@@ -108,3 +108,8 @@ it exposes.
   implemented in this dispatch; scoping where the check belongs (promotion,
   walk-forward, holdout entry, or all three) is S3's design work, not a
   bookkeeping fix.
+- 2026-08-15 — `in-progress` → `planned` (PROCESS.md amendment 11). No story
+  has actually been dispatched under this epic since W39 — 10 days at
+  `in-progress` with zero log activity, same pattern as E-014/E-016.
+  Corrected to reflect reality. S3 (the load-bearing safety gap) stays the
+  next real step whenever this is picked up.
