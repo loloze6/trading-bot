@@ -48,6 +48,11 @@ logger = logging.getLogger("trading_bot")
 
 _FUNDING_INTERVAL_SECONDS = 8 * 3600   # 8 hours in seconds
 
+# Per-exchange settlement cadence, applied at construction only when the caller
+# does not pass interval_seconds explicitly. Kraken Futures settles hourly;
+# every other venue keeps Binance's 8h default.
+_EXCHANGE_FUNDING_INTERVALS = {"krakenfutures": 3600}
+
 
 class FundingRateFetcher(BaseFetcher):
     """
@@ -70,15 +75,19 @@ class FundingRateFetcher(BaseFetcher):
         exchange_id: str = "binance",
         localStorage: bool = False,
         data_dir: str = "data",
+        interval_seconds: int | None = None,
     ):
         if symbols is None:
             symbols = ["BTCUSDT"]
+
+        if interval_seconds is None:
+            interval_seconds = _EXCHANGE_FUNDING_INTERVALS.get(exchange_id, _FUNDING_INTERVAL_SECONDS)
 
         super().__init__(
             start_date=start_date,
             end_date=end_date,
             symbols=symbols,
-            interval_seconds=_FUNDING_INTERVAL_SECONDS,
+            interval_seconds=interval_seconds,
             localStorage=localStorage,
             data_dir=data_dir,
         )
@@ -106,16 +115,20 @@ class FundingRateFetcher(BaseFetcher):
 
     def cache_key(self, symbol: str) -> str:
         """
-        e.g. 'BTCUSDT_funding_8h' (Binance) or 'kraken_BTCUSD_funding_8h' (Kraken).
+        e.g. 'BTCUSDT_funding_8h' (Binance 8h) or
+        'krakenfutures_BTCUSD_funding_1h' (Kraken Futures hourly).
 
         Mirrors CcxtFetcher's binance-unprefixed prefix rule (ccxt_fetcher.py:
         123-124): Binance keeps its historical UN-prefixed key, so every
         existing on-disk cache (local_data/{AVAXUSDT,BTCUSDT,SOLUSDT}_funding_
         8h.csv) continues to load byte-identically with no migration. Only
-        non-Binance exchange ids receive the '{exchange_id}_' prefix.
+        non-Binance exchange ids receive the '{exchange_id}_' prefix. The
+        '_{hours}h' suffix is derived from interval_seconds, so a Binance 8h
+        feed stays '_funding_8h' byte-identically.
         """
         prefix = "" if self.exchange_id == "binance" else f"{self.exchange_id}_"
-        return f"{prefix}{symbol}_funding_8h"
+        hours = self.interval_seconds // 3600
+        return f"{prefix}{symbol}_funding_{hours}h"
 
     def _fetch_remote(
         self,
@@ -160,7 +173,7 @@ class FundingRateFetcher(BaseFetcher):
                     })
 
                 last_ts       = rates[-1]["timestamp"]
-                current_since = last_ts + _FUNDING_INTERVAL_SECONDS * 1000
+                current_since = last_ts + self.interval_seconds * 1000
                 time.sleep(self.exchange.rateLimit / 1000)
 
                 if last_ts >= until or len(rates) < 100:

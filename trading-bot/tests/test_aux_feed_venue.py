@@ -58,11 +58,20 @@ def test_funding_cache_key_kraken_gets_prefixed():
 # Factory contract (T-08, T-14, T-15)
 # ---------------------------------------------------------------------------
 
-def test_funding_rate_factory_threads_exchange_id(tmp_path):
+def test_funding_rate_factory_routes_kraken_to_krakenfutures(tmp_path):
+    """The funding factory routes the price venue `kraken` (spot, no funding
+    endpoint) to its funding venue `krakenfutures`, so a kraken run's funding
+    feed resolves exchange_id="krakenfutures" and the venue+cadence-honest cache
+    slot krakenfutures_BTCUSD_funding_1h (the 1h cadence falls out of the
+    fetcher's per-exchange default). This is the routed replacement for the old
+    kraken→kraken pin: removing _FUNDING_VENUE_MAP's entry resolves back to
+    exchange_id="kraken" / kraken_BTCUSD_funding_8h and turns both assertions
+    RED."""
     fetcher = FEED_REGISTRY["funding_rate"](
         ["BTCUSD"], "2022-01-01", "2022-01-02", str(tmp_path), exchange="kraken"
     )
-    assert fetcher.exchange_id == "kraken"
+    assert fetcher.exchange_id == "krakenfutures"
+    assert fetcher.cache_key("BTCUSD") == "krakenfutures_BTCUSD_funding_1h"
 
 
 def test_all_registry_factories_accept_the_exchange_kwarg(tmp_path):

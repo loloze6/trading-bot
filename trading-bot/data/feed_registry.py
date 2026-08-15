@@ -17,11 +17,18 @@ import pandas as pd
 from data.fetchers import FundingRateFetcher, FearGreedFetcher, WhaleFootprintFetcher
 from data.fetchers.whale_footprint_fetcher import DEFAULT_BAR_SECONDS as _WHALE_BAR_SECONDS
 
+# Price venue → funding venue. Spot `kraken` has no funding endpoint at all;
+# BTC perp funding lives on the `krakenfutures` ccxt exchange. Feed-specific by
+# design: only the funding factory below consults this map. Every unlisted venue
+# funds on its own id (binance → binance), so the default path is byte-identical.
+_FUNDING_VENUE_MAP = {'kraken': 'krakenfutures'}
+
 # feed name → lambda(symbols, start, end, data_dir, exchange="binance") → BaseFetcher
 # instance. `exchange` is trailing and keyword-defaulted so pre-existing 4-arg
 # positional callers keep working unchanged (fix/exchange-plumbing-campaign-aux,
-# Ticket 12). 'funding_rate' threads it into FundingRateFetcher's exchange_id,
-# which now also qualifies its cache_key (funding_rate_fetcher.py:117-118) --
+# Ticket 12). 'funding_rate' routes `exchange` through _FUNDING_VENUE_MAP into
+# FundingRateFetcher's exchange_id (the price venue is not always the funding
+# venue), which qualifies its cache_key (funding_rate_fetcher.py:116-131) --
 # adopting exchange_id is what buys a feed the AuxFeedVenueError fail-loud
 # protection at data_manager.py's no-data branch (see AuxFeedVenueError).
 # 'fear_greed' accepts-and-ignores exchange: FearGreedFetcher is a single global
@@ -29,7 +36,9 @@ from data.fetchers.whale_footprint_fetcher import DEFAULT_BAR_SECONDS as _WHALE_
 # it stays exempt from that protection by design, not by oversight.
 FEED_REGISTRY = {
     'funding_rate': lambda symbols, start, end, data_dir, exchange="binance": FundingRateFetcher(
-        start, end, symbols=symbols, exchange_id=exchange, localStorage=True, data_dir=data_dir
+        start, end, symbols=symbols,
+        exchange_id=_FUNDING_VENUE_MAP.get(exchange, exchange),
+        localStorage=True, data_dir=data_dir
     ),
     'fear_greed': lambda symbols, start, end, data_dir, exchange="binance": FearGreedFetcher(
         start, end, localStorage=True, data_dir=data_dir
