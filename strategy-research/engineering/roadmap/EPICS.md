@@ -29,6 +29,7 @@ epic".
 | [E-019](E-019/EPIC.md) | Feature matrix + leakage checks | parked | Blocked on Phase 3 complete |
 | [E-020](E-020/EPIC.md) | Cut per-dispatch codebase context cost (scoped CLAUDE.md, then re-evaluate tree-sitter) | new | S1 — inventory known landmines with file:line refs across both trees |
 | [E-021](E-021/EPIC.md) | Consolidate bug/ticket tracking onto GitHub; narrow Notion's role | new | S1 — joint conversation with Dorian before touching anything he relies on |
+| [E-023](E-023/EPIC.md) | Live-trading path refactor (Binance-only, P3/P4/P5 known-broken) | parked | Deliberately unscoped — priority is the research workflow; unpark only alongside a real live-deployment decision |
 
 ## Done
 
