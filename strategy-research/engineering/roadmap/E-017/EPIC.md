@@ -86,14 +86,30 @@ State stays `parked`: none of the above changes the Phase 2 gate dependency.
 
 ## Pointer
 
-This epic's palette sits on a substrate with an open correctness defect:
-`tools/run_protocol.py`'s exit-reason classifier (`_infer_exit_reason`,
-`_bar_idx_at`) has a measured contradiction (0.85% `end_of_window_pct` vs 15
-of 30 run_054 windows measured ending held) and an unconfirmed hypothesis
-that forced closes are silently relabelled `signal_flip`. Notion ticket
-`3b31d1fb05a281b1b0dacd644023ebae`. Not diagnosed here, not fixed here — if
-confirmed, it affects any exit-reason attribution this epic's autopsy stage
-would draw from.
+**RESOLVED 2026-08-15 — was open, now fixed; keep reading, this still matters
+for this epic's substrate.** `tools/run_protocol.py`'s exit-reason classifier
+(`_infer_exit_reason`, `_bar_idx_at`) is fixed (`_ts_key`-based timestamp
+matching + last-bar-by-timestamp comparison). The confirmed root cause was
+wider than suspected: (1) every open-position backtest before `c5b1dc6`
+(2026-08-15) wrote a duplicated final `bars.csv` row, which made the
+first-match index lookup land one bar short of the true last bar — 15 of 16
+`run_054` windows that genuinely ended held were misclassified `signal_flip`
+(`end_of_window_pct` 0.85% → 13.68%, corrected); (2) independently, on daily
+(`1d`) runs, `bars.csv` renders timestamps date-only while `trades.json`
+keeps full ISO form, so the lookup failed for **100% of `run_059`'s 699
+trades** — not a partial defect, a total one for that run. Notion ticket
+`3b31d1fb05a281b1b0dacd644023ebae`, now Done.
+
+**Why this epic still needs to read this, not just note it closed.** The
+*already-committed* `trade_diagnostics.json` for `run_054`, `run_057`, and
+`run_059` were produced by the broken classifier and are wrong — `run_059`'s
+is fully degenerate (every MAE/MFE 0.0, every efficiency/post-exit-return
+null). If any of this epic's forthcoming palette work (`profit-per-forecast-bin`,
+regime-identification-correctness) reads exit-reason-derived fields from
+those specific run artifacts rather than fresh re-runs, it inherits noise
+that looks like data. Re-running those protocols to regenerate honest
+diagnostics is not scoped here — flag it before S1 consumes anything from
+those three runs specifically.
 
 ## Log
 
