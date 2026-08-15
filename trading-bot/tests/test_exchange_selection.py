@@ -516,27 +516,52 @@ def test_run_backtest_kraken_price_path_is_pure_and_completes(monkeypatch, tmp_p
     not KRAKEN_BTC_CACHE.exists(),
     reason=f"Kraken BTC cache not present: {KRAKEN_BTC_CACHE}",
 )
-def test_run_backtest_kraken_aux_feed_fails_loud(block_network, tmp_path):
+def test_run_backtest_kraken_aux_feed_fails_loud(block_network, monkeypatch, tmp_path):
     """
-    T-13 [C-D3]: the REAL FEED_REGISTRY (not blanked this time), so the
-    funding feed is actually constructed. The funding venue map routes the
-    kraken price venue to its funding venue krakenfutures, so the feed resolves
-    exchange_id='krakenfutures' and looks for krakenfutures_BTCUSD_funding_1h
-    -- which does not exist yet (no capture has been run). The socket block
-    proves the empty result comes from a genuinely-attempted, genuinely-failed
-    fetch (P9), not a construction-time short-circuit. krakenfutures is
-    non-binance, so the empty feed still raises the typed AuxFeedVenueError;
-    run_backtest has no try/except around its BacktestEngine.load_data() call,
-    so it crosses run_backtest's boundary uncaught -- the deliberate fail-fast
-    this ticket exists to produce (D-iii), now via the krakenfutures route.
-    The price cache is still read purely (the raise fires strictly after the
-    price fetch, per R-G1).
+    T-13 [C-D3]: the REAL FEED_REGISTRY funding factory (not blanked this time),
+    so the funding feed is actually constructed and routed. The funding venue map
+    routes the kraken price venue to its funding venue krakenfutures, so the feed
+    resolves exchange_id='krakenfutures'; krakenfutures is non-binance, so an
+    empty feed over the window raises the typed AuxFeedVenueError.
+
+    The funding factory is redirected (setitem, funding slot only -- fear_greed
+    keeps the real dir so the config's strategy still loads) to an EMPTY tmp dir,
+    so the feed is empty over the window on every machine regardless of whether a
+    krakenfutures funding cache exists on disk. seen_data_dirs asserts the engine
+    still hands the factory the real local_data dir; an mtime_ns tripwire proves
+    the redirect actually diverted the write, so a real funding cache is never
+    opened or rewritten (_merge_and_store(save=True) rewrites whatever data_dir it
+    is handed, byte-identical, which a sha check would not catch).
+
+    The socket block guarantees hermeticity: it stops a remote top-up from
+    populating the redirected empty dir (which would flip the feed non-empty and
+    mask the fail-loud) and keeps the offline fetch deterministic. run_backtest has
+    no try/except around its BacktestEngine.load_data() call, so the error crosses
+    run_backtest's boundary uncaught -- the deliberate fail-fast this ticket exists
+    to produce (D-iii). The price cache is still read purely (the raise fires
+    strictly after the price fetch, per R-G1).
     """
+    import data.feed_registry as feed_registry_mod
     from core.launcher import run_backtest
     from data.data_manager import AuxFeedVenueError
 
-    assert not KRAKENFUTURES_BTC_FUNDING_CACHE.exists()
+    funding_dir = tmp_path / "funding_cache"
+    funding_dir.mkdir()
+    real_factory = feed_registry_mod.FEED_REGISTRY["funding_rate"]
+    seen_data_dirs = []
+
+    def redirected(symbols, start, end, data_dir, exchange="binance"):
+        seen_data_dirs.append(data_dir)
+        return real_factory(symbols, start, end, data_dir=str(funding_dir), exchange=exchange)
+
+    monkeypatch.setitem(feed_registry_mod.FEED_REGISTRY, "funding_rate", redirected)
+
     kraken_sha_before = _sha256(KRAKEN_BTC_CACHE)
+    real_funding_mtime = (
+        KRAKENFUTURES_BTC_FUNDING_CACHE.stat().st_mtime_ns
+        if KRAKENFUTURES_BTC_FUNDING_CACHE.exists()
+        else None
+    )
 
     with pytest.raises(AuxFeedVenueError):
         run_backtest(
@@ -548,7 +573,12 @@ def test_run_backtest_kraken_aux_feed_fails_loud(block_network, tmp_path):
         )
 
     assert _sha256(KRAKEN_BTC_CACHE) == kraken_sha_before
-    assert not KRAKENFUTURES_BTC_FUNDING_CACHE.exists(), "no funding stub CSV should be written"
+    assert [Path(d).resolve() for d in seen_data_dirs] == [(PROJECT_ROOT / "local_data").resolve()]
+    assert not (funding_dir / "krakenfutures_BTCUSD_funding_1h.csv").exists(), \
+        "no funding stub CSV should be written"
+    if real_funding_mtime is not None:
+        assert KRAKENFUTURES_BTC_FUNDING_CACHE.stat().st_mtime_ns == real_funding_mtime, \
+            "real capture touched -- redirect not effective"
 
 
 # ---------------------------------------------------------------------------
