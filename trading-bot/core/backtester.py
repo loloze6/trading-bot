@@ -324,10 +324,10 @@ class BacktestEngine:
 
         # === BUILD RUN ARTIFACT DIR ===
         # Read config from the path the strategy actually loaded (may be a candidate config).
+        _strategies_dir = os.path.dirname(os.path.abspath(__file__))
+        _project_dir = os.path.dirname(_strategies_dir)
         _config_path = getattr(self.strategy, '_config_path', None)
         if _config_path is None:
-            _strategies_dir = os.path.dirname(os.path.abspath(__file__))
-            _project_dir = os.path.dirname(_strategies_dir)
             _config_path = os.path.join(_project_dir, 'strategy_config.json')
         with open(_config_path) as _f:
             _strategy_config = json.load(_f)
