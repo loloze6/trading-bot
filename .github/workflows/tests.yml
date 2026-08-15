@@ -27,13 +27,42 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: trading-bot/requirements.txt
+          cache-dependency-path: |
+            trading-bot/requirements.txt
+            strategy-research/config/requirements-mac.txt
+            strategy-research/tools/recorder/requirements.txt
       - name: Install pinned requirements
         run: pip install -r requirements.txt
         working-directory: trading-bot
+      # strategy-research/ imports trading-bot code, so its suite is part of the
+      # gate (see run_tests.py's docstring). Its deps are declared separately and
+      # are NOT in trading-bot/requirements.txt: the workflow's two SDKs, and the
+      # recorder's zstandard/websockets. requirements-mac.txt is fork-only and
+      # mac-NAMED but platform-neutral in content (two pure-Python wheels).
+      - name: Install strategy-research requirements
+        run: |
+          pip install -r strategy-research/config/requirements-mac.txt
+          pip install -r strategy-research/tools/recorder/requirements.txt
       - name: Validate strategy config
         run: python tools/validate_config.py strategy_config.json
         working-directory: trading-bot
-      - name: Fast suite
-        run: python -m pytest -q -rs
-        working-directory: trading-bot
+      # test_k3_protocol_pinning.py resolves a trading-bot interpreter as
+      # ../.venv/bin/python relative to its CWD (see run_phase1_research.py's
+      # _resolve_tbot_python). The tracked venv/Scripts/python.exe is a Windows
+      # binary with no execute bit on a Linux checkout, and nothing else creates
+      # a repo-root .venv on this runner -- so on ubuntu-latest, both resolver
+      # candidates fail and 3 non-slow tests raise before this fix. A symlink is
+      # enough: _resolve_tbot_python only checks is_file() + X_OK, never spawns a
+      # second interpreter (setup-python's own Python is what every test runs
+      # under either way).
+      - name: Provide a resolvable .venv/bin/python (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p .venv/bin
+          ln -s "$(command -v python)" .venv/bin/python
+      # BOTH suites, each from its own directory. Do not collapse this back into
+      # a single trading-bot-scoped pytest run: that is the exact gap this step
+      # closes, and strategy-research/tests/test_k3_protocol_pinning.py resolves
+      # ../.venv relative to the process CWD, so it cannot be run from here.
+      - name: Fast suites (trading-bot + strategy-research)
+        run: python run_tests.py -- -q -rs
