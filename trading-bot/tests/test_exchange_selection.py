@@ -64,7 +64,10 @@ from data.data_manager import DataManager         # noqa: E402
 
 KRAKEN_BTC_CACHE = PROJECT_ROOT / "local_data" / "kraken_BTCUSD_1h.csv"
 BINANCE_BTC_CACHE = PROJECT_ROOT / "local_data" / "BTCUSDT_1h.csv"
-KRAKEN_BTC_FUNDING_CACHE = PROJECT_ROOT / "local_data" / "kraken_BTCUSD_funding_8h.csv"
+# A kraken run's funding feed routes to the krakenfutures venue (spot kraken has
+# no funding endpoint), so the cache slot it would look for is
+# krakenfutures_BTCUSD_funding_1h -- not the old venue-blind kraken name.
+KRAKENFUTURES_BTC_FUNDING_CACHE = PROJECT_ROOT / "local_data" / "krakenfutures_BTCUSD_funding_1h.csv"
 _RUN_BACKTEST_CONFIG = PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_check_config.json"
 # fix/feed-dependency-safety Step 1: this fixture declares no aux-feed-consuming
 # component, unlike _RUN_BACKTEST_CONFIG above (which loads
@@ -516,19 +519,23 @@ def test_run_backtest_kraken_price_path_is_pure_and_completes(monkeypatch, tmp_p
 def test_run_backtest_kraken_aux_feed_fails_loud(block_network, tmp_path):
     """
     T-13 [C-D3]: the REAL FEED_REGISTRY (not blanked this time), so the
-    funding feed is actually constructed with exchange_id='kraken'. No
-    kraken_BTCUSD_funding_8h.csv cache exists, and the socket block proves the
-    empty result comes from a genuinely-attempted, genuinely-failed fetch (P9),
-    not a construction-time short-circuit. run_backtest has no try/except
-    around its BacktestEngine.load_data() call, so the typed AuxFeedVenueError
-    crosses run_backtest's boundary uncaught -- the deliberate fail-fast this
-    ticket exists to produce (D-iii). The price cache is still read purely
-    (the raise fires strictly after the price fetch, per R-G1).
+    funding feed is actually constructed. The funding venue map routes the
+    kraken price venue to its funding venue krakenfutures, so the feed resolves
+    exchange_id='krakenfutures' and looks for krakenfutures_BTCUSD_funding_1h
+    -- which does not exist yet (no capture has been run). The socket block
+    proves the empty result comes from a genuinely-attempted, genuinely-failed
+    fetch (P9), not a construction-time short-circuit. krakenfutures is
+    non-binance, so the empty feed still raises the typed AuxFeedVenueError;
+    run_backtest has no try/except around its BacktestEngine.load_data() call,
+    so it crosses run_backtest's boundary uncaught -- the deliberate fail-fast
+    this ticket exists to produce (D-iii), now via the krakenfutures route.
+    The price cache is still read purely (the raise fires strictly after the
+    price fetch, per R-G1).
     """
     from core.launcher import run_backtest
     from data.data_manager import AuxFeedVenueError
 
-    assert not KRAKEN_BTC_FUNDING_CACHE.exists()
+    assert not KRAKENFUTURES_BTC_FUNDING_CACHE.exists()
     kraken_sha_before = _sha256(KRAKEN_BTC_CACHE)
 
     with pytest.raises(AuxFeedVenueError):
@@ -541,7 +548,7 @@ def test_run_backtest_kraken_aux_feed_fails_loud(block_network, tmp_path):
         )
 
     assert _sha256(KRAKEN_BTC_CACHE) == kraken_sha_before
-    assert not KRAKEN_BTC_FUNDING_CACHE.exists(), "no funding stub CSV should be written"
+    assert not KRAKENFUTURES_BTC_FUNDING_CACHE.exists(), "no funding stub CSV should be written"
 
 
 # ---------------------------------------------------------------------------
