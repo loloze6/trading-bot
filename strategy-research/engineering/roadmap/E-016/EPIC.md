@@ -1,8 +1,8 @@
 # E-016 — Fee-reduction autopsy field
 
-**State:** in-progress
+**State:** planned
 **Owner:** Jeremy
-**Updated:** 2026-08-05
+**Updated:** 2026-08-15
 
 ## Why
 
@@ -93,3 +93,8 @@ today.
   that basis. Unparked; sharpened Done-when to the real gap (non-blocking
   enforcement vs. its two pausing siblings), noting the non-pausing choice is
   documented as deliberate in the code itself.
+- 2026-08-15 — `in-progress` to `planned` (PROCESS.md amendment 11). No story
+  has actually been dispatched under this epic since W38 -- 10 days at
+  `in-progress` with zero log activity, same pattern as E-014/E-015. The W38
+  unparking was correct (the blocker really was false); the state flip to
+  `in-progress` on the same finding was the error being corrected here.

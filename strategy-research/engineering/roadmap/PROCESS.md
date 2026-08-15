@@ -235,3 +235,24 @@ produced it:
     nowhere near the positive threshold in question. The mechanism was
     real; the conclusion did not follow (E-012, dispatch W41, corrected
     W42).*
+11. **RETROACTIVE CREDIT DOES NOT COUNT AS A DISPATCH, AND `in-progress` HAS
+    A WIP LIMIT OF 2.** A tree audit discovering that pre-existing code
+    (shipped before the epic existed) already satisfies one of its stories
+    is a finding, not a dispatch — it earns the story a checkmark, not the
+    epic an `in-progress` stamp. An epic only becomes `in-progress` when a
+    story is actively worked *from its own queue*, going forward. Separately
+    and additionally: **no more than 2 epics may sit at `in-progress`
+    simultaneously.** A `planned` epic (stories written, `done when` defined,
+    nothing dispatched yet) is not blocked — it is simply honest about
+    nothing being actively worked. When a 3rd would-be `in-progress` epic
+    comes up, something at `in-progress` finishes, gets reprioritized to
+    `planned`, or the newcomer waits.
+    *Cause: E-014, E-015, and E-016 were all flipped `new`/`parked` →
+    `in-progress` on the same single dispatch (W38, 2026-08-05), purely
+    because that dispatch's tree audit found pre-existing July code already
+    satisfying part of each — no story was actually dispatched under any of
+    the three. All three then sat at `in-progress` with zero log activity
+    for 10 days (2026-08-05 → 2026-08-15), indistinguishable from genuinely
+    active work to anyone reading the board — which is exactly what
+    prompted Dorian to ask Jérémy for a manual "currently on X" heads-up,
+    a workaround for a state the board itself should have made unnecessary.*

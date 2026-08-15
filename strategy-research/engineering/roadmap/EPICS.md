@@ -21,9 +21,9 @@ epic".
 | [E-010](E-010/EPIC.md) | Slippage and lot-size/min-notional model | new | S1 — implement, with the non-BTCUSDT hard-fail |
 | [E-011](E-011/EPIC.md) | Shared campaign execution location | new | blocked behind E-003 — do not start before it |
 | [E-012](E-012/EPIC.md) | Two-bars manifest/loop defect | new | S1 — measure the delta before designing any fix |
-| [E-014](E-014/EPIC.md) | Venue-parameterized cost model + calibration re-runs | in-progress | S1 — turn the venue fee schedule into a real parameter (today: one hardcoded `{spot,perp}` flag) and wire the unread `execution_style` block in; S2/S3 redo the near-miss re-runs and build the funding retest |
-| [E-015](E-015/EPIC.md) | Venue/product declared at brief registration | in-progress | S1b — make missing venue/product a hard registration failure; S3 — enforce `research_only` at a real downstream gate (currently written, never read) |
-| [E-016](E-016/EPIC.md) | Fee-reduction autopsy field | in-progress | S2 — wire the "yes" branch to brief registration end-to-end; S3 — resolve whether the non-blocking check should become blocking or the "MUST" should be softened |
+| [E-014](E-014/EPIC.md) | Venue-parameterized cost model + calibration re-runs | planned | S1 — turn the venue fee schedule into a real parameter (today: one hardcoded `{spot,perp}` flag) and wire the unread `execution_style` block in; S3 (funding retest) now has a real data source — Dorian's PR #24 |
+| [E-015](E-015/EPIC.md) | Venue/product declared at brief registration | planned | S1b — make missing venue/product a hard registration failure; S3 — enforce `research_only` at a real downstream gate (currently written, never read) |
+| [E-016](E-016/EPIC.md) | Fee-reduction autopsy field | planned | S2 — wire the "yes" branch to brief registration end-to-end; S3 — resolve whether the non-blocking check should become blocking or the "MUST" should be softened |
 | [E-017](E-017/EPIC.md) | Autopsy standard v1 | parked | Blocked on Phase 2's gate (`docs/CAMPAIGN_PROGRAM.md` §Phase 2) — S1 implements the 2 missing palette metrics (profit-per-forecast-bin, regime-ID correctness), S2 builds the sibling-registration hard gate from scratch |
 | [E-018](E-018/EPIC.md) | Near-miss scoreboard | parked | Blocked on Phase 2's gate (`docs/CAMPAIGN_PROGRAM.md` §Phase 2) |
 | [E-019](E-019/EPIC.md) | Feature matrix + leakage checks | parked | Blocked on Phase 3 complete |
@@ -51,3 +51,7 @@ continues as a card reference
 
 `parked` is never a synonym for `done`. `withdrawn` is never a synonym for
 `killed` — the work continues, just not here. See `PROCESS.md`.
+
+**WIP limit (amendment 11): at most 2 epics may be `in-progress` at once**,
+and only via an actual dispatch under the epic — a tree audit crediting
+pre-existing code does not itself count. Currently 0 of 2 slots used.
