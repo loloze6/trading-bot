@@ -114,24 +114,39 @@ Pipeline/autonomy work happens only where it raises verdicts-per-week.
 
 ## Standard verification command
 
-**Run from `strategy-research/`:**
+**Both suites, from the repo root:**
+
+```
+python run_tests.py
+```
+
+`run_tests.py` (repo root, added 2026-08-15) launches each suite as its own
+pytest process from its own directory — that is the whole reason it exists,
+since `strategy-research/tests/test_k3_protocol_pinning.py` resolves
+`../.venv/bin/python` relative to the process CWD and fails if launched from
+the repo root. It defaults to `-m "not slow"` on both halves; `--slow` includes
+the network-fetching tests. The equivalent two commands, if you run them by
+hand, are `cd trading-bot && python -m pytest` and the one below.
+
+**strategy-research alone — run from `strategy-research/`:**
 
 ```
 python -m pytest
 ```
 
-**Do not scope this to `tests/` alone.** `recorder/tests/` is a separate,
-sibling test directory (`strategy-research/recorder/tests/`), and a
-`pytest tests/`-scoped run silently excludes it. Verified this dispatch by
+**Do not scope this to `tests/` alone.** `tools/recorder/tests/` is a separate,
+sibling test directory (path corrected 2026-08-15 — this section previously
+said `strategy-research/recorder/tests/`, stale since the E-002 restructure),
+and a `pytest tests/`-scoped run silently excludes it. Verified this dispatch by
 direct count, two ways:
 
 - **Function count** (`grep -rE "^\s*def test_"`, counts each `def`, not
-  each parametrized case): `tests/` = 411, `recorder/tests/` = 231,
+  each parametrized case): `tests/` = 411, `tools/recorder/tests/` = 231,
   **total = 642**. Recorder tests are **231 of 642 (36%)** of the suite —
   a `tests/`-scoped report silently drops more than a third of it.
 - **Pytest collected-item count** (differs from the function count above
   because parametrization expands one `def` into several collected items):
-  `tests/` alone = 473, `recorder/tests/` alone = 248, bare
+  `tests/` alone = 473, `tools/recorder/tests/` alone = 248, bare
   `python -m pytest` from `strategy-research/` = **721** (473 + 248,
   confirmed additive).
 
