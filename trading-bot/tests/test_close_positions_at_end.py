@@ -88,6 +88,7 @@ class _CloseResult:
         self.records = []
         self.open_symbols_at_close = []
         self.close_rows = []
+        self.pre_stop_final = {}
 
 
 def _run_backtest_with_close_fault(monkeypatch, results_dir, install_fault):
@@ -102,8 +103,12 @@ def _run_backtest_with_close_fault(monkeypatch, results_dir, install_fault):
 
     def stop(self):
         tracker = self.portfolio_state_tracker
-        states_before = len(tracker.states)
         result.open_symbols_at_close = sorted(self.performance_tracker.get_open_positions())
+        # The per-bar loop's final row, snapshotted BEFORE the forced close runs. The
+        # close now MERGES its post-close numbers onto this row (upstream c5b1dc62's
+        # replace_if_same_bar) instead of appending, so this is the pre-merge state the
+        # anti-vacuity guards probe.
+        result.pre_stop_final = dict(tracker.states[-1]) if tracker.states else {}
         self.logger.addHandler(handler)
         closing["active"] = True
         try:
@@ -111,9 +116,17 @@ def _run_backtest_with_close_fault(monkeypatch, results_dir, install_fault):
         finally:
             closing["active"] = False
             self.logger.removeHandler(handler)
-            # The raw appended dicts, not a count: the rows' CONTENT is what
-            # distinguishes the fix from a defined-but-wrong value.
-            result.close_rows = tracker.states[states_before:]
+            # Anchor by the final-bar timestamp, not by append position. The forced
+            # close now MERGES its post-close snapshot onto the per-bar loop's existing
+            # final-bar row (upstream c5b1dc62) rather than appending a duplicate, so a
+            # states_before: slice would capture ZERO rows. Selecting by timestamp finds
+            # the single final-bar row under BOTH regimes -- merge (the per-bar row
+            # existed) and append (the per-bar loop never recorded the bar) -- which is
+            # what makes the len == 1 assertions a true one-row-per-bar invariant. The
+            # rows' CONTENT, not just the count, is what distinguishes the fix from a
+            # defined-but-wrong value.
+            final_ts = result.pre_stop_final.get("timestamp")
+            result.close_rows = [r for r in tracker.states if r.get("timestamp") == final_ts]
 
     monkeypatch.setattr(TradingBot, "stop", stop)
     install_fault(monkeypatch, closing)
@@ -238,8 +251,25 @@ def test_close_survives_a_rejected_close_order(rejected_close):
 
 def test_rejected_close_order_still_records_the_close_bar(rejected_close):
     assert len(rejected_close.close_rows) == 1, (
-        "the close bar must reach the portfolio state tracker even when the close "
-        f"rebalance fails; recorded {len(rejected_close.close_rows)} rows"
+        "exactly one row for the final bar after the forced close merges onto it "
+        "(upstream c5b1dc62 dedup); a second row would mean the close appended a "
+        f"duplicate instead of merging; found {len(rejected_close.close_rows)}"
+    )
+
+
+def test_rejected_close_pre_close_row_did_not_already_carry_the_failure_flag(rejected_close):
+    """Guard: protects the is-False write-proof from passing without a close write.
+
+    If the per-bar final row already recorded succcess=False, the merged row would
+    carry False whether or not the forced close wrote onto it, so
+    test_rejected_close_records_the_handler_failure_flag would hold even under a
+    merge-skipping NameError. Fail loudly and re-probe when that happens.
+    """
+    assert rejected_close.pre_stop_final["succcess_execute_portfolio_rebalance"] is not False, (
+        "the per-bar final row already records succcess=False, so "
+        "test_rejected_close_records_the_handler_failure_flag would hold even if the forced "
+        "close never wrote (a merge-skipping NameError). Re-probe for a window whose final "
+        "per-bar rebalance did not itself fail."
     )
 
 
@@ -300,8 +330,37 @@ def test_close_survives_a_zero_allocation_change(zero_change_close):
 
 def test_zero_allocation_change_still_records_the_close_bar(zero_change_close):
     assert len(zero_change_close.close_rows) == 1, (
-        "the close bar must reach the portfolio state tracker on the zero-change branch; "
-        f"recorded {len(zero_change_close.close_rows)} rows"
+        "exactly one row for the final bar after the forced close merges onto it "
+        "(upstream c5b1dc62 dedup); a second row would mean the close appended a "
+        f"duplicate instead of merging; found {len(zero_change_close.close_rows)}"
+    )
+
+
+def test_zero_change_close_records_the_injected_zero_allocation_change(zero_change_close):
+    """Write-proof: the merged row carries the close's own allocation_change=0.0.
+
+    The existing is-None assertion is vacuous under a merge-skipping NameError, since
+    the per-bar final row records None too. This reads a value the CLOSE supplied
+    (the injected 0.0), so it only holds if the close path actually wrote.
+    """
+    assert zero_change_close.close_rows[0]["allocation_change"] == 0.0, (
+        "the zero-change forced close must record its allocation_change=0.0 onto the final "
+        f"bar; got {zero_change_close.close_rows[0].get('allocation_change')!r} -- the close "
+        "path did not write (a merge-skipping NameError would do this)"
+    )
+
+
+def test_zero_change_pre_close_allocation_change_is_non_zero(zero_change_close):
+    """Guard: keeps the write-proof above non-vacuous.
+
+    If the per-bar final row already carries allocation_change=0.0, the merged row
+    would read 0.0 whether or not the close wrote, so the write-proof would hold under
+    a NameError. Fail loudly and re-probe when that happens.
+    """
+    assert zero_change_close.pre_stop_final["allocation_change"] != 0.0, (
+        "the per-bar final row already carries allocation_change=0.0, so the write-proof "
+        "above is vacuous. Re-probe for a window whose final per-bar bar computes a non-zero "
+        "allocation_change."
     )
 
 
