@@ -37,6 +37,8 @@ class TradingBot:
         test_mode: bool = True,
         symbols: List[str] = None,
         warmup_cutoff_timestamp=None,
+        model_funding: bool = False,
+        funding_daily=None,
     ):
         """
         Initialize the trading bot.
@@ -81,10 +83,12 @@ class TradingBot:
         # byte-identical to before this mechanism existed. Turning it on additionally
         # requires funding_daily to be populated (a per-symbol daily funding COST
         # series, distinct from the forward-filled signal feed; see
-        # data/feed_registry.py::build_daily_funding_series). Neither is wired on by
-        # any production config here — this is mechanism-only.
-        self.model_funding = False
-        self.funding_daily = None
+        # data/feed_registry.py::build_daily_funding_series). Both are threaded in from
+        # run_backtest(model_funding=True) -> BacktestEngine's daily-bar guard -> these
+        # params; no production config sets the flag, and default False leaves behavior
+        # byte-identical.
+        self.model_funding = model_funding
+        self.funding_daily = funding_daily
 
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
