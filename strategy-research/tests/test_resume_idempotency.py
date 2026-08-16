@@ -17,6 +17,12 @@ could re-fire on resume is safe to call twice:
 
 All three operate on a temp-file copy of _KB_PATH / campaign_state, never the real
 campaign_knowledge_base.yaml or campaign_state.yaml.
+
+2026-08-16: the claim in item 1 above that both A8.6 bypass paths were guarded is
+FALSE. Only the validation-gate-bypass site (run_phase1_research.py:4853-4854) carries
+the run_id idempotency guard; the a-priori-power pre-flight site
+(run_phase1_research.py:4874, in run_loop) records unconditionally. Pinned by
+test_trial_accounting_characterization.py::test_h3_a86_preflight_records_unguarded_duplicate.
 """
 import sys
 from pathlib import Path
