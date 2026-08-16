@@ -1086,10 +1086,26 @@ async def run_tool_worker(stage_name: str, run_id: str):
         result = subprocess.run(cmd, capture_output=True, text=True)
         print(result.stdout)
         if result.returncode != 0:
+            # H4-core (issue #28): this data-touching backtest raised before
+            # _record_backtest_trial (:1134) — record the spent look so N counts it.
+            # Wrapped so a recording failure only logs; the original error still raises.
+            try:
+                _record_failed_backtest_trial(
+                    run_id, config_path,
+                    f"run_protocol.py non-zero exit ({result.returncode})")
+            except Exception as _rec_err:
+                print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise RuntimeError(f"run_protocol.py failed:\n{result.stderr}")
 
         summary_path = RUN_DIR / "protocol_summary.json"
         if not summary_path.exists():
+            # H4-core (issue #28): same as above for the missing-summary failure.
+            try:
+                _record_failed_backtest_trial(
+                    run_id, config_path,
+                    "protocol_summary.json missing after protocol run")
+            except Exception as _rec_err:
+                print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise FileNotFoundError("protocol_summary.json not found after protocol run")
 
         with open(summary_path, encoding="utf-8") as f:
@@ -3092,6 +3108,71 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
     _save_campaign_state(state)
     print(f"⚙️  A6.2: backtest trial recorded (sharpe={median_sharpe}, "
           f"n_trades={n_trades}, statistic_valid={statistic_valid})")
+
+
+def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str):
+    """
+    H4-core (E-025, 2026-08-16, issue #28): record a data-touching backtest that
+    RAISED before _record_backtest_trial could run, so the spent look still moves the
+    deflated-Sharpe count. Without this, a backtest that crashed on a non-zero exit
+    (protocol_execution :1089) or a missing summary (:1093) left NO trial row at all —
+    N silently under-counted a look that had already touched market data. Purely
+    additive: appends one distinct-source row, never mutates or drops an existing one.
+
+    source == "backtest_failed" (NOT "backtest"): _record_backtest_trial's
+    (trial_id, "backtest") idempotency guard (:3056) and deflate_sharpe's read-side
+    check_no_duplicate_trial_ids both key on (trial_id, source). A distinct source keeps
+    a later SUCCESSFUL retry's real "backtest" row from being suppressed and does not
+    collide with either guard.
+
+    statistic_valid == "failed" lands in deflate_sharpe.load_sharpe_trials's
+    "statistic_neither" exclusion bucket (deflate_sharpe.py:212-214, no crash) — so a
+    failed row is EXCLUDED from today's DSR N (that exclusion is H1, Jeremy's decision)
+    while total_hypotheses_tested / total_variants_tested count it immediately. The
+    label conflation with a genuine "neither" is conscious.
+
+    Idempotency guard keyed on (trial_id, source) — the SAME key as _record_backtest_trial's
+    success guard (:3056) and deflate_sharpe's read-side check_no_duplicate_trial_ids (:121).
+    A second "backtest_failed" row for the same run_id is suppressed regardless of config, so
+    this writer can never produce a ledger the read-side check rejects. A run_id is one trial
+    slot; a genuine changed-config retry is a NEW run_NNN (different trial_id) and records on
+    its own key. A same-run_id re-invoke with an edited config is the artificial manual case —
+    recording it once as "this trial's backtest failed" is the correct contract. forecast_hash
+    is still carried on the row (provenance + read-time dedup); only the guard key excludes it.
+
+    Conservative by design: recording at the :1089 non-zero-exit site OVER-counts N — a
+    non-zero exit includes pre-data failures (config parse, bad args), not only
+    data-touching crashes. Over-counting N is the anti-flattering direction (a larger
+    trial count only deflates a candidate Sharpe further), so the conservative choice is
+    the honest one.
+    """
+    try:
+        forecast_hash = _compute_forecast_hash(config_path)
+    except Exception:
+        # The config may BE what is broken — a hashless row is legal and always kept
+        # unique in deflate_sharpe.deduplicate_trials (:88-90). Never mask the original
+        # failure by raising out of the hash step.
+        forecast_hash = None
+
+    state  = load_campaign_state()
+    trials = state.setdefault("trial_sharpes", [])
+
+    if any(t.get("trial_id") == run_id and t.get("source") == "backtest_failed" for t in trials):
+        print(f"⏭️  H4: failed-backtest trial for {run_id} already recorded — skipping duplicate.")
+        return
+
+    trials.append({
+        "trial_id":        run_id,
+        "source":          "backtest_failed",
+        "sharpe":          None,
+        "expectancy_bps":  None,
+        "n_trades":        0,
+        "statistic_valid": "failed",
+        "forecast_hash":   forecast_hash,
+        "error":           reason,
+    })
+    _save_campaign_state(state)
+    print(f"⚙️  H4: failed-backtest trial recorded (run={run_id}, reason={reason})")
 
 
 # ---------------------------------------------------------------------------
