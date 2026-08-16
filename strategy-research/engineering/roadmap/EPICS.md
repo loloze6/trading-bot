@@ -31,7 +31,7 @@ epic".
 | [E-021](E-021/EPIC.md) | Consolidate bug/ticket tracking onto GitHub; narrow Notion's role | new | S1 — joint conversation with Dorian before touching anything he relies on |
 | [E-023](E-023/EPIC.md) | Enable live trading, targeting Kraken (P3/P4/P5 migrated in) | parked | Deliberately unscoped — priority is the research workflow; unpark only alongside a real live-deployment decision |
 | [E-024](E-024/EPIC.md) | Mandatory live-trading safety backstop (kill switch, daily loss limit, flatten-all) | parked | Deliberately unscoped — same reasoning as E-023; per-trade sizing/stops stay in the normal strategy-validation workflow, not this epic |
-| [E-025](E-025/EPIC.md) | Trial-ledger dual-writer merge protocol (mechanics) | planned | S1/S2/S3 done; issue #28's H1-H4 all code-complete as of 2026-08-16 (Jeremy: H1/H3, Dorian: H2/H4); S4 mechanics verified (plain merge conflicts, keep-both is correct, merge=union rejected as unsafe) — only a real two-sided PR proving it end to end remains before campaigns |
+| [E-025](E-025/EPIC.md) | Trial-ledger dual-writer merge protocol (mechanics) | planned | S1/S2/S3 done; issue #28's H1-H4 all code-complete as of 2026-08-16 (Jeremy: H1/H3, Dorian: H2/H4); S4 mechanics verified (plain merge conflicts, keep-both is correct; merge=union not adopted — layout-contingent safety + one demonstrated silent scalar-loss mode, does NOT corrupt the file, see EPIC.md log for the correction) — only a real two-sided PR proving it end to end remains before campaigns |
 
 ## Done
 
