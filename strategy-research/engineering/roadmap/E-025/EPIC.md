@@ -173,34 +173,61 @@ is in scope for this epic, not a separate thing.
   E-025 itself is done.**
 - 2026-08-16 (later still) — **S4 mechanics verified against a real
   hermetic git repo** (`tests/test_s4_union_merge.py`, two real clones,
-  real `git merge`, nothing mocked). Three findings, contradicting the
-  "just merges" assumption implicit in the epic's own wording:
-  1. Plain `git merge` on concurrent `campaign_state.yaml` edits (both
-     sides appending to `trial_sharpes`/`runs`) **conflicts loudly** — it
-     does not silently drop either side's trials, but it is not zero-touch
-     either. Every concurrent dual-writer sync on this file will conflict.
+  real `git merge`, nothing mocked). First pass used a toy 3-key fixture
+  (trial_sharpes/runs/updated_at packed with zero separation) and concluded
+  `merge=union` "corrupts campaign_state.yaml into invalid YAML" —
+  published to this log and told to Dorian on Slack. **That claim was
+  wrong; corrected same day on self-re-audit, see next entry.** What held
+  up on the toy fixture and is still true against the real file:
+  1. Plain `git merge` on concurrent `campaign_state.yaml` edits **conflicts
+     loudly** — does not silently drop either side's trials, but is not
+     zero-touch; every concurrent dual-writer sync on this file will
+     conflict.
   2. The correct resolution: **keep every list entry from both sides,
      always** — never `git checkout --ours`/`--theirs` on this file.
      Verified this produces the full union with no duplicate `trial_id`s
      against `check_no_duplicate_trial_ids`.
-  3. **Tried and rejected: `merge=union` .gitattributes driver.** It
-     auto-resolves without a conflict (looks successful, exit 0) but
-     interleaves the unrelated `updated_at` scalar with the adjacent
-     `runs` list's lines, producing a `campaign_state.yaml` that **does
-     not parse as YAML at all** — silent structural corruption, exit 0,
-     no error. This is the exact "naive merge silently drops data" failure
-     the epic named, just one layer down (corrupts the file structure
-     instead of dropping a trial). Do not adopt `merge=union` for this
-     file. Regression-pinned so nobody rediscovers this the hard way.
+- 2026-08-16 (later still) — **Self-correction: re-tested `merge=union`
+  against the REAL file's structure, not a toy fixture, and the "corrupts
+  the file" claim did not hold.** Caught this myself, unprompted by any new
+  external report — a routine "check your own recent work again" pass
+  turned up that the toy fixture's 3 keys (trial_sharpes/runs/updated_at)
+  had zero line separation, which is NOT how the real file is laid out
+  (`runs` is key 3, `updated_at` is key 14, `trial_sharpes` is the last
+  key, `altitude_history` sits right after `runs` and gets co-touched with
+  it by `update_campaign_state_after_run` — the real adjacency pattern).
+  Rebuilt the fixture from the actual `campaign_state.yaml` (real key
+  order, real field shapes — `runs` is a flat list of id strings, not
+  dicts, which the toy fixture also got wrong) and re-ran both the plain
+  merge and the union-merge scenarios against the real co-touch pattern
+  (`runs` + `altitude_history` + `trial_sharpes` all touched in the same
+  commit, matching `update_campaign_state_after_run` exactly).
+  **Result: `merge=union` produced valid, correctly-unioned YAML — it does
+  not corrupt this file under any real-shaped scenario tested.** It does
+  have one real, verified wrinkle: a same-line scalar conflict
+  (`updated_at`, both sides changing it to a different value) resolves as
+  a duplicate YAML key, which `yaml.safe_load` silently collapses to
+  "last one wins" — one side's write vanishes with no error. Low-stakes
+  for `updated_at` specifically, but the same silent-loss *shape* the
+  dual-writer protocol exists to prevent, on a field that happens not to
+  matter yet.
 
-  Procedure landed on: plain git merge (conflict is the expected, correct
-  outcome), manual resolution keeps every list entry from both sides,
-  `check_no_duplicate_trial_ids` is the mechanical backstop on the
-  resolved result before any DSR computation. Flagged to Dorian directly —
-  his next fork PR touching `campaign_state.yaml` will conflict by design,
-  and must not be "resolved" with `--theirs`/`--ours` or a union driver.
+  **Corrected recommendation:** still not adopting `merge=union` — not
+  because it corrupts the file (retracted, it doesn't, under everything
+  tested), but because (a) its safety here is contingent on today's key
+  layout keeping scalar edits away from list regions, which the merge
+  driver does not enforce or guarantee as the file evolves, and (b) it has
+  one demonstrated silent-loss mode already. Plain-merge-plus-manual-
+  keep-both remains the documented procedure, now for the right reason.
+  Test file rewritten to assert the corrected, verified findings; the toy
+  fixture's false claim is documented in the test's own module docstring
+  rather than deleted outright, since the mechanism it demonstrated
+  (scalar-sandwiched-between-lists corruption) is real *in principle* and
+  worth remembering even though it doesn't currently apply here.
+  Retraction sent to Dorian on Slack alongside the original claim's
+  correction — he had already been told the wrong thing once.
 
-  **What's left for S4:** a real two-sided PR proving this procedure
-  end-to-end (a test fixture is not the same as Dorian's actual fork PR
-  workflow) — the one piece that is genuinely joint and can't be verified
-  solo.
+  **What's left for S4:** a real two-sided PR proving the plain-merge +
+  keep-both procedure end-to-end (a test fixture is not the same as
+  Dorian's actual fork PR workflow) — the one piece that is genuinely
+  joint and can't be verified solo.
