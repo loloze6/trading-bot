@@ -1186,26 +1186,6 @@ class DataManager:
             return None
         return self.candle_builder.add_row(df.iloc[idx], symbol)
 
-    # -----------------------------------------------------------------------
-    # Legacy compatibility shim
-    # -----------------------------------------------------------------------
-
-    def get_historical_klines(
-        self, symbol: str, interval: str = None, limit: int = 1
-    ) -> pd.DataFrame:
-        """
-        Backward-compatible shim for strategies that called
-        HistoricalDataManager.get_historical_klines().
-
-        Backtest: returns raw rows up to the current cursor (not enriched).
-        Live:     returns the last `limit` completed enriched candles.
-        """
-        if self.mode == "backtest" and symbol in self.historical_data:
-            idx   = self._cursor.get(symbol, 0)
-            start = max(0, idx - limit + 1)
-            return self.historical_data[symbol].iloc[start : idx + 1].copy()
-        return self.get_data_history(symbol, limit)
-
 
 # ===========================================================================
 # Backward-compatibility re-export
