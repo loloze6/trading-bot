@@ -24,10 +24,19 @@ Tag -> production site (line numbers as of cf7908bc, the H3 fix, 2026-08-16)
        is correct invariant math, NOT the finding. RED = what-is-recorded-or-
        excluded changed; a #20 decision on whether kills count toward N must then
        consciously update this test.
-  H2   run_phase1_research.py:1066-1071 (signal_prescreen record guard)
-       A resumed/re-entered prescreen is SWALLOWED whole — the stale first
-       outcome survives and the new one is dropped.  RED after fix = re-entry
-       now updates (or the guard keys on something finer).
+  H2   run_phase1_research.py:1069 (signal_prescreen record) + :3023
+       (_record_prescreen_trial gained an upsert param).
+       FIXED 2026-08-16 (this fork, E-025 H2, issue #28): the normal call site now
+       passes upsert=True, so a re-entered signal_prescreen — a crash-retry restarting
+       run_loop with a stale pending_stage='signal_prescreen' (NOT resume_pipeline,
+       which resumes at backtest_specification) — REPLACES the prior (trial_id,
+       'prescreen') row with the fresh outcome instead of dropping it under a
+       trial_id-only skip-guard. Still exactly one row (upsert, not append — N is never
+       widened) and never trips deflate's (trial_id, source) dup check. The former
+       CHAR[H2-BUG] pin (len==1 AND ic_pooled==0.01, stale survives) was flipped to
+       CHAR[CONTRACT] asserting the FRESH content wins. The a86 record sites
+       (:4935/:4955) keep upsert=False — their idempotency is H3 territory. RED after
+       this = re-entry stopped updating.
   H3   run_phase1_research.py:1134 (protocol_execution) + :4874 (a86 pre-flight).
        PARTIAL-FIXED UPSTREAM 2026-08-16 (Jeremy, cf7908bc, issue #28):
        _record_backtest_trial gained a (trial_id, source)-keyed idempotency guard
@@ -385,12 +394,20 @@ def test_writer_contract_lifecycle_pair_shares_trial_id(campaign_state_path, tmp
 # LEVEL C — call sites (run_tool_worker / run_loop)
 # ===========================================================================
 
-def test_h2_resumed_prescreen_records_nothing(temp_run, monkeypatch):
-    """C1. A resumed/re-entered signal_prescreen is swallowed WHOLE: the guard
-    (:1068) keys only on run_id, so the NEW outcome is dropped and the STALE
-    first row survives unchanged — not merely a suppressed duplicate, a lost
-    update."""
+def test_h2_resumed_prescreen_upserts_fresh_outcome(temp_run, monkeypatch):
+    """C1. H2 FIXED (E-025, issue #28): a re-entered signal_prescreen — a crash-retry
+    restarting run_loop with a stale pending_stage='signal_prescreen' — now UPSERTS on
+    (trial_id, 'prescreen'): the prior row is REPLACED with the fresh outcome instead of
+    being swallowed by a trial_id-only skip-guard. Still exactly one row (upsert, not
+    append, so N is never widened), but its content is the FRESH re-entry, not the stale
+    first outcome. Was CHAR[H2-BUG] (len==1 AND ic_pooled==0.01, stale survives); flipped
+    to CHAR[CONTRACT] under this branch. RED after this = re-entry stopped updating.
+
+    (The config is seeded here because the fix now reaches _record_prescreen_trial on
+    re-entry — the old skip-guard never called it, so _compute_forecast_hash, which
+    fails loud on a missing config, was never hit on this path before.)"""
     _run_dir, run_id = temp_run
+    _seed_config(_run_dir / "artifacts")
     _seed_state(
         rpr.CAMPAIGN_STATE_PATH,
         [{"trial_id": "run_x", "source": "prescreen", "route": "kill_no_ic",
@@ -404,8 +421,37 @@ def test_h2_resumed_prescreen_records_nothing(temp_run, monkeypatch):
     asyncio.run(rpr.run_tool_worker("signal_prescreen", run_id))
 
     rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
-    assert len(rows) == 1  # CHAR[H2-BUG]: re-entry recorded nothing new.
-    assert rows[0]["ic_pooled"] == 0.01  # CHAR[H2-BUG]: STALE content survives (new route/ic dropped).
+    assert len(rows) == 1  # CHAR[CONTRACT]: upsert keeps one row per (trial_id, "prescreen") slot.
+    assert rows[0]["ic_pooled"] == 0.09  # CHAR[CONTRACT]: FRESH re-entry content wins (was stale 0.01).
+    assert rows[0]["route"] == "advance"  # CHAR[CONTRACT]: fresh route replaces the stale kill.
+
+
+def test_h2_resumed_prescreen_same_outcome_is_noop(temp_run, monkeypatch):
+    """C1a (reject the strongest form). A same-outcome re-entry is a NO-OP: the upsert
+    replaces the existing (trial_id, 'prescreen') row with identical content, so still
+    exactly one row and the content is unchanged. Proves the fix is 'the FRESH outcome
+    wins' — an idempotent replace — not 'always append' (which would widen N on every
+    crash-retry) and not the H2 bug's 'always keep the first'. Paired with C1 (fresh
+    differs → fresh wins), this pins BOTH directions of the upsert contract."""
+    _run_dir, run_id = temp_run
+    _seed_config(_run_dir / "artifacts")
+    _seed_state(
+        rpr.CAMPAIGN_STATE_PATH,
+        [{"trial_id": "run_x", "source": "prescreen", "route": "advance",
+          "sharpe": None, "expectancy_bps": None, "n_trades": 0,
+          "statistic_valid": "neither", "ic_pooled": 0.09, "cost_pass": True}],
+    )
+    _install_fake_subprocess(
+        monkeypatch,
+        prescreen_payload={"route": "advance", "ic_spearman_pooled": 0.09, "cost_check": {"pass": True}},
+    )
+
+    asyncio.run(rpr.run_tool_worker("signal_prescreen", run_id))
+
+    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
+    assert len(rows) == 1  # CHAR[CONTRACT]: same-outcome re-entry stays one row (idempotent).
+    assert rows[0]["route"] == "advance"  # CHAR[CONTRACT]: content unchanged on a no-op re-entry.
+    assert rows[0]["ic_pooled"] == 0.09  # CHAR[CONTRACT]: identical fresh == existing, still one row.
 
 
 def test_h3_protocol_reentry_appends_duplicate_backtest(temp_run, monkeypatch):
