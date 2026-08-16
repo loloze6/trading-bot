@@ -112,7 +112,7 @@ are now populated. Trade counts and win rates unchanged (same trades, reclassifi
 not re-simulated). **Verdicts unaffected** — `run_054`/`057`/`059`'s kill/refine
 calls are driven by `median_sharpe`/`max_drawdown_pct` in `metrics.json`, which this
 classifier never touches; only the descriptive autopsy-layer fields were wrong.
-Detail in `research/LEDGER.md`'s 2026-08-15 entry.
+Detail in `research/ledger/win.md`'s 2026-08-15 entry (pre-split file, renamed 2026-08-16).
 
 This epic's forthcoming palette work (`profit-per-forecast-bin`,
 regime-identification-correctness) can now read exit-reason-derived fields from

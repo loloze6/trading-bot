@@ -1,4 +1,4 @@
-> **Reset 2026-07-28.** This fork was returned to Jeremy's `70dab378` and restarted. The tree is byte-identical to upstream; `research/LEDGER.md` carries everything learned before the reset. Read the ledger before touching anything — it will save you days.
+> **Reset 2026-07-28.** This fork was returned to Jeremy's `70dab378` and restarted. The tree is byte-identical to upstream; `research/LEDGER.md` (split 2026-08-16 into `research/ledger/win.md` + `research/ledger/mac.md`, see the index) carries everything learned before the reset. Read the ledger before touching anything — it will save you days.
 
 # CLAUDE.fork.md — trading-bot-dorian (Dorian's Mac fork)
 
@@ -21,11 +21,11 @@ You work WITH Dorian — capable, learning quant trading. Explain reasoning, tea
 
 ## Operating protocol (every session)
 
-- **Start:** `git status && git log --oneline -5`, then read `research/LEDGER.md`. Orient before acting.
+- **Start:** `git status && git log --oneline -5`, then read `research/ledger/win.md` and `research/ledger/mac.md` (the other writer's recent entries are often exactly the context you need). Orient before acting.
 - **Plan before code.** 3–6 bullets, get Dorian's nod, then execute. **One change per branch**, reviewed and merged before the next.
 - **Verify claims by execution**, not by reading. Fast tests always; `pytest -m slow` whenever output could differ; compare run-artifact metrics + config/data hashes.
 - **Prefer the cheapest control that works.** Static check > runtime guard > convention. Do not add guards to guards.
-- **End:** update `research/LEDGER.md` (2–5 lines: what changed, verdicts, next step) and commit it. Never end a work session without it.
+- **End:** update your own writer file — `research/ledger/win.md` (Jeremy) or `research/ledger/mac.md` (Dorian) — with 2–5 lines: what changed, verdicts, next step, and commit it. Never edit the other writer's file. Never end a work session without it.
 - Spawn a **red-team subagent** (`/red-team`) on: any profitable-looking backtest, any change to metrics/engine/data. Its brief: hunt lookahead, leakage, survivorship, silent behaviour change, overfit.
 - **Lane model pinning (Dorian, 2026-07-31):** executor lanes spawn with `model=opus`; code-reviewer/red-team/verifier stay on the session model (the adversarial layers are where the catches happen); purely mechanical lanes may use sonnet/haiku.
 - **LSP is standing equipment (hybrid, decided by measurement 2026-08-03 — LEDGER has the numbers):** navigation (`lsp_goto_definition`/`lsp_hover`/`lsp_find_references`, grep as fallback) runs on **ty 0.0.65** via OMC's native `lsp_*` bridge — pinned via uv, upgraded only deliberately with a before/after noise-floor diff on `performance/bar_equity.py` + `core/trading_bot.py`. The **commit gate's arbiter is the `basedpyright` CLI** (reads the untracked `pyrightconfig.json`): before any commit, run it on the changed `.py` files alongside ruff — a NEW diagnostic inside changed lines is a finding, pre-existing upstream noise is not; bridge diagnostics are advisory, the CLI verdict decides. Any rename or signature change runs `lsp_find_references` FIRST and the reference list goes into the plan — **re-run until the count is stable, then cross-check with grep before acting** (a cold server under-reports silently, measured 3-of-13; and a stable count is necessary but not sufficient — measured 2026-08-03: two consecutive stable ty runs returned 4 refs for `register_feed` while grep found a fifth at `core/backtester.py:114`). Executor-lane worktree provisioning copies `pyrightconfig.json` in alongside the data CSVs (untracked files don't follow worktrees; the copyable cache set is `BTCUSDT_{1h,1d,funding_8h}.csv` + `fear_greed_daily.csv` + `Kraken_batch/master_q4/XBTUSD_60.csv` (5.6 MB archive-pilot fixture; without it worktrees run 2 fewer fast tests — 247/2 vs the main repo's 249/0, measured 2026-08-07) — no ETHUSDT caches exist, everything else is tracked and follows), symlinks the main `.venv` at the worktree root (three strategy-research tests resolve interpreters relative to it — but never `git add` there: the symlink shows as untracked), runs the gate as `basedpyright --venvpath <main-repo-path>` (the config's `venvPath` is config-relative and reports phantom missing imports in worktrees), and lane briefs name both tools.
@@ -96,7 +96,7 @@ The `strategy-research/tools/` analyzers are reusable libraries — prefer reusi
 
 ## Known bugs, traps, and the environment
 
-**All of it — first-run blockers, the pandas<3 trap, the zero-handler logger, the macOS gotchas, the holdout hazards, the data inventory — lives in `research/LEDGER.md` under CARRIED-FORWARD KNOWLEDGE.** Read it. It is not optional and it is not long.
+**All of it — first-run blockers, the pandas<3 trap, the zero-handler logger, the macOS gotchas, the holdout hazards, the data inventory — lives in `research/ledger/win.md` under CARRIED-FORWARD KNOWLEDGE.** Read it. It is not optional and it is not long.
 
 ```bash
 # working loop, from trading-bot/:
@@ -130,4 +130,4 @@ Mac/Windows results should be bit-identical — divergence = real bug, file it.
 
 ## Definition of done (any change)
 
-Fast tests green; slow tests green or output-change declared with before/after artifact diff; validator passes; no lookahead introduced (state why); no secrets; `FORK_CHANGES.md` updated if it diverges from upstream; `research/LEDGER.md` updated; a paste-ready summary for Jeremy/Notion: what, why, how verified, baseline config hash.
+Fast tests green; slow tests green or output-change declared with before/after artifact diff; validator passes; no lookahead introduced (state why); no secrets; `FORK_CHANGES.md` updated if it diverges from upstream; your writer file (`research/ledger/win.md` or `research/ledger/mac.md`) updated; a paste-ready summary for Jeremy/Notion: what, why, how verified, baseline config hash.
