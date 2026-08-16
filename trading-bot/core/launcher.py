@@ -530,7 +530,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  warmup_prefetch: bool = False, holdout_start: str = None,
                  commission_rate: float = None, trades_log_file: str = None,
                  bar_equity: bool = False, exchange: str | None = None,
-                 drop_feeds: list[str] | None = None):
+                 drop_feeds: list[str] | None = None,
+                 model_funding: bool = False):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -622,6 +623,18 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         required feed names) to the run's manifest.json; a None value adds no such
         key, so a default run's manifest.json is unchanged. See
         tests/test_feed_dependencies.py.
+    model_funding: when True, accrues off-by-default perpetual-funding cash flow on the
+        held position each bar (design 2026-07-24 §5) -- builds the daily-summed funding
+        COST series (data/feed_registry.py::build_daily_funding_series) and threads it
+        through BacktestEngine into TradingBot's per-bar hook (execution/portfolio_info.py
+        ::apply_funding). REQUIRES daily bars: pass interval_seconds=86400, else
+        BacktestEngine raises ValueError naming the reason (the daily-summed series would
+        multiple-charge each intraday bar and charge not-yet-settled funding -- look-
+        ahead). Fails loud when the flag is on but no {symbol}_funding_8h.csv daily series
+        exists, rather than silently reporting a fee-only run as funding-costed. Default
+        False preserves the exact prior behavior: funding_daily is never built and the
+        hook at trading_bot.py:205 is never entered -- byte-identical to before this
+        parameter existed. See tests/test_model_funding_bit_identical.py.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -707,6 +720,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         bar_equity=bar_equity,
         exchange=params.exchange,
         drop_feeds=drop_feeds,
+        model_funding=model_funding,
     )
 
     engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=effective_feed_registry)

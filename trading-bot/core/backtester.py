@@ -9,7 +9,7 @@ import pandas as pd
 from core.trading_bot import TradingBot
 from data.fetchers import CcxtFetcher
 from data.fetchers import FundingRateFetcher, FearGreedFetcher
-from data.feed_registry import FEED_WINDOW_SECONDS
+from data.feed_registry import FEED_WINDOW_SECONDS, build_daily_funding_series
 from data.data_manager import Candle
 from execution.portfolio_info import flatten_dict_columns
 from reporting.run_artifact import (
@@ -54,6 +54,7 @@ class BacktestEngine:
                  bar_equity: bool = False,
                  exchange: str = "binance",
                  drop_feeds: list[str] | None = None,
+                 model_funding: bool = False,
                  ):
         if symbols is None: symbols = ["BTCUSDT"]
         # 2026-07-07: bars with timestamp < warmup_cutoff_timestamp still update the
@@ -98,7 +99,27 @@ class BacktestEngine:
         self.performance_tracker = performance_tracker
         self.price_fetch_interval = price_fetch_interval
         self.candle_interval_seconds = candle_interval_seconds
-        
+        # 2026-07-24: off-by-default perpetual-funding accrual wiring (design
+        # 2026-07-24 §5). When True, simulate_on_loaded_data builds the daily-summed
+        # funding COST series and threads it into TradingBot, whose per-bar hook then
+        # accrues funding on the held position (see core/trading_bot.py::
+        # _process_symbol_candle_completion and execution/portfolio_info.py::
+        # apply_funding). Requires DAILY bars: the series sums each calendar day's
+        # settlements, so on a sub-daily bar it would charge the whole day's funding on
+        # every intraday bar AND charge settlements not yet occurred at the bar's
+        # decision time (look-ahead) -- hence the guard below. Default False: no funding
+        # series is built and the hook is never entered, so output is byte-identical to
+        # before this parameter existed (see tests/test_model_funding_bit_identical.py).
+        if model_funding and candle_interval_seconds != 86400:
+            raise ValueError(
+                "model_funding requires daily bars (candle_interval_seconds=86400); got "
+                f"{candle_interval_seconds}. The daily-summed funding series would "
+                "otherwise multiple-charge each intraday bar AND charge settlements not "
+                "yet occurred at the bar's decision time (look-ahead). Pass "
+                "interval_seconds=86400 or omit model_funding."
+            )
+        self.model_funding = model_funding
+
         # Initialize Binance client
         self.symbols = symbols
         self.test_mode = test_mode
@@ -186,6 +207,19 @@ class BacktestEngine:
             return
         
         self.logger.debug("Initiate Trading bot...")
+        funding_daily = None
+        if self.model_funding:
+            core_dir = os.path.dirname(os.path.abspath(__file__))
+            project_dir = os.path.dirname(core_dir)
+            funding_daily = build_daily_funding_series(self.symbols, os.path.join(project_dir, "local_data"))
+            missing = [s for s in self.symbols if not funding_daily.get(s)]
+            if missing:
+                raise ValueError(
+                    f"model_funding is on but no daily funding series is available for "
+                    f"{missing} (expected {{symbol}}_funding_8h.csv under local_data). A "
+                    f"silent zero-accrual run would report fee-only economics as if "
+                    f"funding-costed -- fetch the funding cache or omit model_funding."
+                )
         bot = TradingBot(
             data_manager=self.data_manager,
             strategy=self.strategy,
@@ -201,6 +235,8 @@ class BacktestEngine:
             test_mode=True,
             symbols=self.symbols,
             warmup_cutoff_timestamp=self.warmup_cutoff_timestamp,
+            model_funding=self.model_funding,
+            funding_daily=funding_daily,
         )
 
         # Wire the candle callback now that bot exists
