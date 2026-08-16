@@ -1059,16 +1059,14 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
         # A6.2: record prescreen as a trial in campaign_state (even kills count as trials)
         # statistic_valid = "neither" for kills (no backtest Sharpe available)
-        # F3 idempotency hardening (2026-07-04): the two A8.6 bypass call sites in
-        # run_loop already guard this with an existing-trial_id check; this, the normal
-        # (non-bypass) call site, did not. Not live-triggered by the run_043 resume
-        # (which restarts past this stage), but a resume that ever re-entered
-        # signal_prescreen would otherwise double-record. Matching the same guard here.
-        _campaign_for_guard = load_campaign_state()
-        if not any(t.get("trial_id") == run_id for t in _campaign_for_guard.get("trial_sharpes", [])):
-            _record_prescreen_trial(run_id, ps, config_path)
-        else:
-            print(f"⏭️  A6.2: trial for {run_id} already recorded — skipping duplicate.")
+        # H2 fix (2026-08-16, issue #28 / E-025): upsert on (trial_id, "prescreen").
+        # A re-entered signal_prescreen -- a crash-retry restarting run_loop with a
+        # stale pending_stage='signal_prescreen' -- REPLACES the prior prescreen row
+        # with the fresh outcome. The former trial_id-only skip-guard swallowed the
+        # re-entry whole, leaving the STALE first outcome in the ledger (a lost update,
+        # not a suppressed duplicate). Upsert keeps one row per slot, so it neither
+        # widens N nor trips deflate_sharpe.check_no_duplicate_trial_ids.
+        _record_prescreen_trial(run_id, ps, config_path, upsert=True)
 
     elif stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
@@ -3022,12 +3020,25 @@ def _compute_forecast_hash(config_path: Path) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path):
+def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path, *, upsert: bool = False):
     """
     A6.2: record a prescreen run as a trial in campaign_state.trial_sharpes.
     Prescreen kills count as trials (statistic_valid='neither', sharpe=null, n_trades=0).
     Prescreen passes that advance to backtest will have their full Sharpe recorded
     after protocol_execution completes.
+
+    H2 fix (2026-08-16, issue #28 / E-025): the normal run_tool_worker call site
+    (:1069) passes upsert=True. On a re-entered signal_prescreen -- a crash-retry that
+    restarts run_loop with a stale pending_stage='signal_prescreen' -- the prior row
+    for this (trial_id, 'prescreen') slot is REPLACED with the fresh outcome instead of
+    being swallowed by a trial_id-only skip-guard that left the STALE first outcome in
+    the ledger. A run_id is one trial slot: a genuine new trial is a new run_NNN with
+    its own trial_id and records on its own key; a same-run_id re-prescreen is a retry
+    (idempotent same-config no-op) or a manual config edit -- neither is a new
+    independent trial, so upsert (not append) is correct and never widens N. Keys on
+    (trial_id, 'prescreen'), so it keeps one row and never trips Jeremy's read-side
+    check_no_duplicate_trial_ids. The a86 call sites (:4935/:4955) keep upsert=False
+    (default) -- their idempotency is H3 territory, a separate ticket.
     """
     state = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
@@ -3044,6 +3055,14 @@ def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path):
         "cost_pass":       ps.get("cost_check", {}).get("pass"),
         "forecast_hash":   _compute_forecast_hash(config_path),
     }
+    if upsert:
+        for i, t in enumerate(trials):
+            if t.get("trial_id") == run_id and t.get("source") == "prescreen":
+                trials[i] = trial_entry
+                _save_campaign_state(state)
+                print(f"⚙️  A6.2/H2: prescreen trial for {run_id} updated in place "
+                      f"(route={route}, statistic_valid=neither)")
+                return
     trials.append(trial_entry)
     _save_campaign_state(state)
     print(f"⚙️  A6.2: prescreen trial recorded in campaign_state.trial_sharpes "
