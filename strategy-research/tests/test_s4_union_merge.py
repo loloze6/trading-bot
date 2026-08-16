@@ -162,6 +162,12 @@ def test_manual_union_resolution_keeps_both_sides_and_has_no_duplicates(divergen
     base = _load_real_base_state()
     resolved = dict(base)
     resolved["runs"] = base["runs"] + ["run_master_new", "run_d_new"]
+    resolved["altitude_history"] = base["altitude_history"] + [
+        {"run": "run_master_new", "altitude": "parameter", "dimension": "x",
+         "family": "f", "outcome": "improved"},
+        {"run": "run_d_new", "altitude": "parameter", "dimension": "y",
+         "family": "g", "outcome": "no_improvement"},
+    ]
     resolved["trial_sharpes"] = base["trial_sharpes"] + [
         {"trial_id": "run_master_new", "source": "backtest", "sharpe": 0.3,
          "statistic_valid": "sharpe", "forecast_hash": "hM"},
@@ -175,6 +181,8 @@ def test_manual_union_resolution_keeps_both_sides_and_has_no_duplicates(divergen
 
     merged = yaml.safe_load(state_path.read_text())
     assert merged["runs"][-2:] == ["run_master_new", "run_d_new"]  # full union, both sides
+    altitudes = [a["run"] for a in merged["altitude_history"][-2:]]
+    assert altitudes == ["run_master_new", "run_d_new"]  # full union here too, not just runs/trial_sharpes
     trial_ids = [t["trial_id"] for t in merged["trial_sharpes"]]
     assert trial_ids[-2:] == ["run_master_new", "run_d_new"]
     ds.check_no_duplicate_trial_ids(merged["trial_sharpes"])  # must not raise
