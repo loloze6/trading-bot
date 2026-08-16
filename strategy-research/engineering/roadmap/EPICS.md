@@ -31,6 +31,7 @@ epic".
 | [E-021](E-021/EPIC.md) | Consolidate bug/ticket tracking onto GitHub; narrow Notion's role | new | S1 — joint conversation with Dorian before touching anything he relies on |
 | [E-023](E-023/EPIC.md) | Enable live trading, targeting Kraken (P3/P4/P5 migrated in) | parked | Deliberately unscoped — priority is the research workflow; unpark only alongside a real live-deployment decision |
 | [E-024](E-024/EPIC.md) | Mandatory live-trading safety backstop (kill switch, daily loss limit, flatten-all) | parked | Deliberately unscoped — same reasoning as E-023; per-trade sizing/stops stay in the normal strategy-validation workflow, not this epic |
+| [E-025](E-025/EPIC.md) | Trial-ledger dual-writer merge protocol (mechanics) | planned | S1 (Jeremy) — `forecast_hash` mandatory emission + idempotency guard on backtest re-entry (issue #28 H3); S2 (Jeremy) — mechanical duplicate-`trial_id` refusal in `deflate_sharpe.py` |
 
 ## Done
 
