@@ -171,6 +171,30 @@ is in scope for this epic, not a separate thing.
   Full suite 762/0 fast. **All four of issue #28's H1-H4 are now
   code-complete. Only S4 (joint, union-merge verification) remains before
   E-025 itself is done.**
+- 2026-08-16 (later still) — **Self-review of the H1 commit before trusting
+  it** (`1bf3bae`). Two real findings: the two mirrored `dsr_error` messages
+  (`deflate_sharpe.py`/`run_phase1_research.py`) had drifted — the inline
+  copy was missing a trailing sentence, aligned exactly. More substantively,
+  neither implementation defended against a caller passing `n_trials`
+  smaller than the real-Sharpe sample it's derived from — silently
+  understating the correction, the flattering direction this fix exists to
+  close. Added `ValueError` guards to both. 2 new tests, full suite 763/0.
+  (Missing from this log until a later completeness pass — logged only in
+  `research/ledger/win.md` at the time; this epic is the declared
+  implementation record, so the gap itself was a finding.)
+- 2026-08-16 (later still) — **H4 bucketing fix** (`03930ed`), found during
+  the H1 self-review, adjacent to but not part of H1-H4 proper.
+  `_write_promotion_audit`'s exclusion loop special-cased `"expectancy"`/
+  `"neither"` and let anything else — including H4's `"failed"`
+  backtest_failed rows — fall through into `excluded["no_sharpe_value"]`,
+  diverging from `deflate_sharpe.py::load_sharpe_trials`'s canonical
+  if/elif/else shape (which buckets non-`"sharpe"`/`"expectancy"` values,
+  `"failed"` included, as `statistic_neither`) and from H4's own docstring.
+  Doesn't change N, `n_trials_used`, or the DSR value — only a diagnostic
+  field in `promotion_audit.yaml`. Restructured to mirror the canonical
+  shape exactly rather than special-case `"failed"`, so it can't drift
+  again for any future `statistic_valid` value. 1 new test, full suite
+  764/0.
 - 2026-08-16 (later still) — **S4 mechanics verified against a real
   hermetic git repo** (`tests/test_s4_union_merge.py`, two real clones,
   real `git merge`, nothing mocked). First pass used a toy 3-key fixture
@@ -226,6 +250,30 @@ is in scope for this epic, not a separate thing.
   worth remembering even though it doesn't currently apply here.
   Retraction sent to Dorian on Slack alongside the original claim's
   correction — he had already been told the wrong thing once.
+- 2026-08-16 (later still) — **Requested full re-review, repeated until a
+  pass found nothing** (`c980bb4`, plus this log-completeness pass itself).
+  Live cross-check of both `compute_promotion_audit` and
+  `_write_promotion_audit` against the actual `campaign_state.yaml` (not
+  synthetic fixtures) — both implementations agree exactly on
+  `total_hypotheses_tested`/`total_variants_tested` (11), `n_trials_used`
+  (1), and every `excluded_trial_counts` bucket, confirming H1 and the
+  bucketing fix hold on real data. Re-confirmed the `get_historical_klines`
+  deletion (issue #33) still has zero callers repo-wide and
+  `campaign_state.yaml` still has zero duplicate `(trial_id, source)`
+  pairs. Two real findings on the S4/LEDGER work specifically:
+  `test_manual_union_resolution_keeps_both_sides_and_has_no_duplicates`
+  rebuilt `runs`/`trial_sharpes`/`updated_at` for the resolved state but
+  never touched `altitude_history` — despite the fixture specifically
+  diverging it and the test's own docstring claiming "keep every list
+  entry from both sides," so the committed resolution silently reverted
+  that field to the base. Fixed, with an assertion. Separately,
+  `CLAUDE.fork.md` lines 31/32 still said bare "LEDGER has the
+  numbers/setup" after the LEDGER-split commit updated every other
+  narrative mention to `ledger/win.md` specifically — an inconsistency in
+  the split itself, missed the first time. Fixed. This log-completeness
+  gap (the missing H1-self-review and H4-bucketing entries above) was the
+  third finding of this pass, backfilled just now. Full suite 768/0 fast,
+  same 4 pre-existing unrelated failures throughout.
 
   **What's left for S4:** a real two-sided PR proving the plain-merge +
   keep-both procedure end-to-end (a test fixture is not the same as
