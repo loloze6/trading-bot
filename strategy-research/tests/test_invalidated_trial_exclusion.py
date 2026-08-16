@@ -168,5 +168,5 @@ def test_write_promotion_audit_h1_uses_honest_n_not_just_sharpe_count(tmp_path, 
     assert audit["dsr_error"] == (
         "N=11 trials recorded (multiple-testing count is honest), but only 1 produced "
         "a real Sharpe value -- need >= 2 real Sharpe values to estimate the trial "
-        "distribution's variance."
+        "distribution's variance. A large N does not fix an unmeasurable variance."
     ), audit["dsr_error"]
