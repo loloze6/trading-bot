@@ -4132,22 +4132,33 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             deduped_trials.append(t)
 
     # A6.2: compute over statistic_valid='sharpe' only
+    #
+    # Bucketing bug fix (2026-08-16, issue #28, adjacent to H1): the previous version
+    # special-cased "expectancy" and "neither" and let anything else (including H4's
+    # "failed" backtest_failed rows) fall through into "no_sharpe_value" once sharpe
+    # was found to be None. deflate_sharpe.py::load_sharpe_trials -- the canonical
+    # implementation these two are supposed to mirror exactly -- instead treats
+    # "sharpe" as the one recognized value and buckets EVERYTHING else (including
+    # "failed") as "statistic_neither". Restructured to match that if/elif/else shape
+    # exactly, so any future statistic_valid value lands in the same bucket in both
+    # implementations without needing a new special case here. Does not change
+    # n_dsr_total, n_trials, or the DSR value -- only which diagnostic bucket a
+    # non-sharpe row is reported under in excluded_trial_counts.
     excluded = {"statistic_expectancy": 0, "statistic_neither": 0, "no_sharpe_value": 0,
                 "dedup_removed": n_dedup_removed, "invalidated_artifact": n_invalidated}
     sharpe_values = []
     for t in deduped_trials:
         sv = t.get("statistic_valid")
-        if sv == "expectancy":
+        if sv == "sharpe":
+            s = t.get("sharpe")
+            if s is None:
+                excluded["no_sharpe_value"] += 1
+            else:
+                sharpe_values.append(float(s))
+        elif sv == "expectancy":
             excluded["statistic_expectancy"] += 1
-            continue
-        if sv == "neither":
+        else:
             excluded["statistic_neither"] += 1
-            continue
-        s = t.get("sharpe")
-        if s is None:
-            excluded["no_sharpe_value"] += 1
-            continue
-        sharpe_values.append(float(s))
 
     n_trials = len(sharpe_values)
     total_tested = len(valid_trials)  # F8b: excludes invalidated_artifact trials

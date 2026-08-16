@@ -743,3 +743,41 @@ def test_h3_a86_validation_bypass_is_guarded(temp_run, monkeypatch):
     Proves the two bypass sites diverge — one guarded, one not."""
     rows = _drive_a86_preflight(temp_run, monkeypatch, seed_prescreen_result=True)
     assert [r["trial_id"] for r in rows] == ["run_x"]  # CHAR[CONTRACT]: guarded path does not duplicate.
+
+
+def test_write_promotion_audit_buckets_failed_rows_as_statistic_neither(tmp_path, monkeypatch):
+    """Bucketing bug fix (2026-08-16, issue #28, adjacent to H1/H4). Before this fix,
+    _write_promotion_audit's exclusion loop bucketed statistic_valid=='failed' rows
+    (H4's backtest_failed trials) into excluded['no_sharpe_value'] -- diverging from
+    the canonical deflate_sharpe.py::load_sharpe_trials, which buckets anything other
+    than 'sharpe'/'expectancy' (including 'failed') as excluded['statistic_neither'],
+    exactly as H4's own docstring claims. Two 'sharpe' trials clear the N>=2 gates so
+    the success path runs and excluded_trial_counts is actually populated."""
+    monkeypatch.setattr(rpr, "CAMPAIGN_STATE_PATH", tmp_path / "campaign_state.yaml")
+    trials = [
+        {"trial_id": "run_a", "source": "backtest", "sharpe": 0.3,
+         "statistic_valid": "sharpe", "forecast_hash": "a"},
+        {"trial_id": "run_b", "source": "backtest", "sharpe": 0.5,
+         "statistic_valid": "sharpe", "forecast_hash": "b"},
+        {"trial_id": "run_failed", "source": "backtest_failed", "sharpe": None,
+         "statistic_valid": "failed", "forecast_hash": "c"},
+    ]
+    (tmp_path / "campaign_state.yaml").write_text(
+        yaml.safe_dump({"trial_sharpes": trials, "runs": []}), encoding="utf-8")
+
+    run_dir = tmp_path / "runs" / "run_test"
+    (run_dir / "artifacts").mkdir(parents=True)
+    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "TEST"}), encoding="utf-8")
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(yaml.safe_dump({
+        "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.4}},
+        "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 0.0}},
+    }), encoding="utf-8")
+
+    rpr._write_promotion_audit(run_dir, "run_test")
+    audit = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+
+    assert audit["excluded_trial_counts"]["statistic_neither"] == 1
+    assert audit["excluded_trial_counts"]["no_sharpe_value"] == 0
+    assert audit["n_trials_used"] == 2  # unaffected: still only the two real sharpe rows.
+    assert audit["total_variants_tested"] == 3  # unaffected: all three rows still counted.
