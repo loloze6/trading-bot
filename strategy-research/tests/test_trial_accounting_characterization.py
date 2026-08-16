@@ -318,6 +318,23 @@ def test_h1_compute_dsr_n_trials_param_changes_the_correction_when_estimable():
     assert omitted == small_n
 
 
+def test_h1_compute_dsr_rejects_n_trials_smaller_than_real_sample():
+    """A1d. Defensive guard added during self-review (2026-08-16): n_trials smaller
+    than len(trial_sharpes) is a caller bug, not a data condition -- every real Sharpe
+    value is itself one of the counted attempts, so N can never legitimately be less
+    than the real-valued sample it's derived from. Must raise, not silently clamp or
+    proceed: a silent pass-through would UNDERSTATE the correction (the flattering
+    direction), which is exactly the class of error this whole fix exists to close.
+    Never fires from compute_promotion_audit's real call site (sharpe_values is
+    always a subset of the same total), so this only guards a future/incorrect
+    caller."""
+    with pytest.raises(ValueError, match="smaller than len\\(trial_sharpes\\)"):
+        ds.compute_dsr(0.5, trial_sharpes=[0.1, 0.2, 0.3], n_trials=2)
+
+    # n_trials == len(trial_sharpes) exactly is the boundary -- must NOT raise.
+    ds.compute_dsr(0.5, trial_sharpes=[0.1, 0.2, 0.3], n_trials=3)
+
+
 def test_forecast_hash_dedup_semantics():
     """A2. Two byte-identical writer rows (shaped as _record_backtest_trial emits:
     NO forecast_hash) must BOTH survive dedup; only the hashed control pair

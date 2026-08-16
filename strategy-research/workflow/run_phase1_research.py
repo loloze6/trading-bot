@@ -4161,6 +4161,18 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     # total_variants_tested below: those stay as-is, already tracked as a distinct,
     # unowned finding by #30.
     n_dsr_total = len(deduped_trials)
+    # Defensive, mirrors deflate_sharpe.py::compute_dsr's same check: n_dsr_total must
+    # be >= n_trials by construction (sharpe_values is a filtered subset of
+    # deduped_trials), so this should never fire -- but a silent violation would
+    # understate the correction, the flattering direction, so fail loud rather than
+    # let it pass quietly if the two ever drift apart.
+    if n_dsr_total < n_trials:
+        raise ValueError(
+            f"n_dsr_total={n_dsr_total} is smaller than n_trials (real Sharpe values)="
+            f"{n_trials} -- every real Sharpe value is itself a counted attempt, so the "
+            f"honest total can never be less than the real-valued sample it's estimated "
+            f"from. This indicates deduped_trials and sharpe_values have diverged."
+        )
 
     # --- Deflated Sharpe computation ---
     dsr_result: dict = {}
@@ -4212,7 +4224,8 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             "dsr_error":             (
                 f"N={n_dsr_total} trials recorded (multiple-testing count is honest), "
                 f"but only {n_trials} produced a real Sharpe value -- need >= 2 real "
-                f"Sharpe values to estimate the trial distribution's variance."
+                f"Sharpe values to estimate the trial distribution's variance. A large "
+                f"N does not fix an unmeasurable variance."
             ),
         }
         passes_deflated = False

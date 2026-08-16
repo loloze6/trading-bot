@@ -263,6 +263,24 @@ def compute_dsr(
     n_sharpe = len(trial_sharpes)
     N        = n_trials if n_trials is not None else n_sharpe
 
+    # Defensive: N (the multiple-testing count) must be at least as large as n_sharpe
+    # (the real-valued sample it's derived from) -- every real attempt with a Sharpe
+    # value is necessarily counted in an honest total. compute_promotion_audit's
+    # single call site provably satisfies this by construction (sharpe_values is a
+    # filtered SUBSET of the same deduped_records total_hypotheses_tested counts), so
+    # this never fires there -- it exists for any future caller. Raising, not
+    # clamping: a violation here would silently UNDERSTATE the correction (the exact
+    # flattering direction this fix exists to close), so it must fail loud rather than
+    # guess which number is right.
+    if n_trials is not None and N < n_sharpe:
+        raise ValueError(
+            f"n_trials={N} is smaller than len(trial_sharpes)={n_sharpe} -- every real "
+            f"Sharpe value is itself a counted attempt, so N can never be less than the "
+            f"real-valued sample it's estimated from. This is a caller bug, not a data "
+            f"condition; passing a too-small n_trials would silently understate the "
+            f"multiple-testing correction."
+        )
+
     if N < 2:
         return {
             "dsr":               None,
