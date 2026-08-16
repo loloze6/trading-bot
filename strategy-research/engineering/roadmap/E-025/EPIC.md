@@ -146,11 +146,25 @@ is in scope for this epic, not a separate thing.
   merge (34 accounting-related tests green, full suite 759/0 fast,
   combined `run_tests.py` PASS). Also: S3 (`run_d_NNN`) confirmed done on
   Dorian's side (`635afa36`, held from upstream pending S4).
-  **Campaign-gate status: H2, H3, H4 are now code-complete. H1 (the
-  methodology decision — kills count toward N) is decided but not yet
-  wired into `deflate_sharpe.py`'s `load_sharpe_trials`/`compute_dsr` —
-  that's Jeremy's remaining piece before S4.** Two adjacent, still-unowned
-  findings from #30's characterization pass remain open and untouched by
-  any of H1-H4: `n_trades` reads the wrong per-symbol key (always 0 on
-  backtest rows), and three different code paths compute "how many trials
-  were tested" on three different bases (COUNT-DIV).
+  **Campaign-gate status at this point: H2, H3, H4 code-complete. H1 (the
+  methodology decision — kills count toward N) decided but not yet wired
+  in.** Two adjacent, still-unowned findings from #30's characterization
+  pass remain open and untouched by any of H1-H4: `n_trades` reads the
+  wrong per-symbol key (always 0 on backtest rows), and three different
+  code paths compute "how many trials were tested" on three different
+  bases (COUNT-DIV).
+- 2026-08-16 (later still) — **H1 wired in.** `compute_dsr` gained an
+  explicit `n_trials` param, splitting N (every real attempt — the
+  multiple-testing count) from the sample used to estimate `mu_sr`/
+  `sigma_sr` (still needs real Sharpe values; a large N does not
+  manufacture an estimable variance). `compute_promotion_audit` now
+  passes `total_hypotheses_tested` — which already existed and already
+  counted honestly, just was never fed into the DSR itself. Mirrored in
+  `run_phase1_research.py::_write_promotion_audit`, deliberately using
+  `len(deduped_trials)` and deliberately not touching that file's own
+  COUNT-DIV mismatch (out of scope, already tracked separately). 5 new
+  tests, including proof the fix moves the actual DSR number under a
+  larger honest N, and the byte-identical-when-omitted default path.
+  Full suite 762/0 fast. **All four of issue #28's H1-H4 are now
+  code-complete. Only S4 (joint, union-merge verification) remains before
+  E-025 itself is done.**

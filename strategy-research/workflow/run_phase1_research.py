@@ -4151,6 +4151,16 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
 
     n_trials = len(sharpe_values)
     total_tested = len(valid_trials)  # F8b: excludes invalidated_artifact trials
+    # H1 fix (2026-08-16, issue #28): the multiple-testing correction's N -- every real
+    # attempt, kills and expectancy-only trials included -- is a different quantity
+    # from n_trials (the real-Sharpe-VALUE sample used to estimate mu_sr/sigma_sr).
+    # Deliberately len(deduped_trials), matching deflate_sharpe.py's
+    # total_hypotheses_tested exactly (post-dedup, post-invalidated-exclusion) -- NOT
+    # total_tested (pre-dedup) or len(campaign.runs) (a third, separate basis; see
+    # COUNT-DIV, out of scope here). Not touching total_hypotheses_tested/
+    # total_variants_tested below: those stay as-is, already tracked as a distinct,
+    # unowned finding by #30.
+    n_dsr_total = len(deduped_trials)
 
     # --- Deflated Sharpe computation ---
     dsr_result: dict = {}
@@ -4181,13 +4191,29 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
                 ),
             },
         }
-    elif n_trials < 2:
+    elif n_dsr_total < 2:
         dsr_result = {
             "deflated_sharpe_ratio": None,
             "expected_max_sharpe":   None,
             "trial_sharpe_variance": None,
             "correction_method":     "baiey_lopez_prado_2014",
-            "dsr_error":             f"Insufficient sharpe-valid trials for DSR (n={n_trials}, need ≥2)",
+            "dsr_error":             f"Insufficient trials: need >= 2, got {n_dsr_total}",
+        }
+        passes_deflated = False
+    elif n_trials < 2:
+        # H1: N (n_dsr_total) can be >= 2 while too few of those trials produced a real
+        # Sharpe value to estimate the distribution's variance -- a large N does not
+        # fix an unmeasurable variance. Distinct error from the n_dsr_total<2 case above.
+        dsr_result = {
+            "deflated_sharpe_ratio": None,
+            "expected_max_sharpe":   None,
+            "trial_sharpe_variance": None,
+            "correction_method":     "baiey_lopez_prado_2014",
+            "dsr_error":             (
+                f"N={n_dsr_total} trials recorded (multiple-testing count is honest), "
+                f"but only {n_trials} produced a real Sharpe value -- need >= 2 real "
+                f"Sharpe values to estimate the trial distribution's variance."
+            ),
         }
         passes_deflated = False
     else:
@@ -4205,7 +4231,11 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             }
             passes_deflated = False
         else:
-            N = n_trials
+            # H1: N is the honest multiple-testing total (n_dsr_total), NOT n_trials
+            # (the real-Sharpe-value sample size) -- mu_sr/sigma_sr above already used
+            # n_trials correctly (statistics.mean/stdev sample size), this is only the
+            # expected-max-Sharpe benchmark's exponent.
+            N = n_dsr_total
             z1 = _phi_inv(1.0 - 1.0 / N)
             z2 = _phi_inv(1.0 - 1.0 / (_math.e * N))
             z_exp_max = (1.0 - EULER_GAMMA) * z1 + EULER_GAMMA * z2
