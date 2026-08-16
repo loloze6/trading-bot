@@ -227,20 +227,41 @@ _EULER_MASCHERONI = 0.5772156649  # γ
 def compute_dsr(
     candidate_sr: float,
     trial_sharpes: list[float],
+    n_trials: int | None = None,
 ) -> dict:
     """
     Compute the Deflated Sharpe Ratio for candidate_sr given a list of trial Sharpes.
+
+    n_trials (H1 fix, 2026-08-16, issue #28): the multiple-testing correction's N --
+    how many independent attempts were made, which sets how hard the expected-max-
+    Sharpe benchmark it must clear rises -- is a DIFFERENT quantity from
+    len(trial_sharpes), the sample of real Sharpe VALUES used to estimate that
+    benchmark's mean/variance. Before this fix the two were silently the same number:
+    N was len(trial_sharpes), so a prescreen kill or expectancy-only trial (a real
+    attempt, recorded, but with no Sharpe value) was invisible to the very correction
+    it exists to be counted by. Measured live: 16 real trials, DSR saw N=1.
+
+    Pass n_trials explicitly (the caller's honest total -- e.g. compute_promotion_audit's
+    total_hypotheses_tested, every recorded trial of any statistic_valid, deduplicated)
+    to count every real attempt toward the correction's strength. trial_sharpes stays
+    the real-valued sample for estimating mu_sr/sigma_sr, which genuinely needs numbers,
+    not just a count -- a large N with too few real Sharpe values still correctly
+    refuses (see the n_sharpe < 2 branch below), because no total count fixes an
+    unmeasurable variance. Omitted, n_trials falls back to len(trial_sharpes) --
+    byte-identical to every pre-existing caller.
 
     Returns a dict with:
       - dsr: float or None on error
       - expected_max_sharpe: float
       - mu_sr: mean of trial Sharpes
       - sigma_sr: std dev of trial Sharpes
-      - n_trials: number of deduplicated trials
+      - n_trials: the N used for the multiple-testing correction (not necessarily
+        len(trial_sharpes) -- see n_trials param above)
       - z: z-score
       - error: str or None
     """
-    N = len(trial_sharpes)
+    n_sharpe = len(trial_sharpes)
+    N        = n_trials if n_trials is not None else n_sharpe
 
     if N < 2:
         return {
@@ -253,9 +274,27 @@ def compute_dsr(
             "error":             f"Insufficient trials: need >= 2, got {N}",
         }
 
-    mu_sr    = sum(trial_sharpes) / N
-    # Population variance (N denominator) for the trial distribution
-    var_sr   = sum((s - mu_sr) ** 2 for s in trial_sharpes) / N
+    if n_sharpe < 2:
+        return {
+            "dsr":               None,
+            "expected_max_sharpe": None,
+            "mu_sr":             None,
+            "sigma_sr":          None,
+            "n_trials":          N,
+            "z":                 None,
+            "error":             (
+                f"N={N} trials recorded (multiple-testing count is honest), but only "
+                f"{n_sharpe} produced a real Sharpe value -- need >= 2 real Sharpe "
+                f"values to estimate the trial distribution's variance. A large N does "
+                f"not fix an unmeasurable variance."
+            ),
+        }
+
+    mu_sr    = sum(trial_sharpes) / n_sharpe
+    # Population variance (n_sharpe denominator, NOT N) for the trial distribution --
+    # this estimates the SHAPE of the Sharpe-generating process from the real values
+    # actually observed, independent of how many total attempts N counts.
+    var_sr   = sum((s - mu_sr) ** 2 for s in trial_sharpes) / n_sharpe
     sigma_sr = math.sqrt(var_sr)
 
     if sigma_sr < 1e-10:
@@ -269,7 +308,9 @@ def compute_dsr(
             "error":             "No trial variance: all trial Sharpes are identical",
         }
 
-    # Expected maximum Sharpe (BLP 2014, equation A.6)
+    # Expected maximum Sharpe (BLP 2014, equation A.6). N here IS the multiple-testing
+    # count (every real attempt) -- this is the whole point of H1: a larger honest N
+    # makes the benchmark harder to clear, exactly as the correction is supposed to.
     # Z_exp_max = (1 - γ) * Φ⁻¹(1 - 1/N) + γ * Φ⁻¹(1 - 1/(e*N))
     gamma   = _EULER_MASCHERONI
     e       = math.e
@@ -379,7 +420,12 @@ def compute_promotion_audit(
     # ------------------------------------------------------------------
     # Sharpe path
     # ------------------------------------------------------------------
-    dsr_result = compute_dsr(candidate_sr, sharpe_values)
+    # H1 fix (2026-08-16, issue #28): feed the HONEST total (every recorded trial --
+    # kills, expectancy-only, sharpe, and now backtest_failed rows -- deduplicated) as
+    # the multiple-testing N, not the len(sharpe_values) subset that has real numbers.
+    # total_hypotheses_tested already computed this correctly (line 328); it was just
+    # never passed to the function that needed it.
+    dsr_result = compute_dsr(candidate_sr, sharpe_values, n_trials=total_hypotheses_tested)
 
     dsr_value   = dsr_result.get("dsr")
     E_max_SR    = dsr_result.get("expected_max_sharpe")

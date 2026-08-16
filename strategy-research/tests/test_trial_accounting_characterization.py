@@ -16,14 +16,20 @@ Two kinds of pin (see the # CHAR[...] tag on each assertion):
 Tag -> production site (line numbers as of cf7908bc, the H3 fix, 2026-08-16)
 -> what is pinned -> what RED means:
 
-  H1   deflate_sharpe.py:204-216 (load_sharpe_trials exclusion) -> N feeds
-       compute_dsr's N<2 refusal :253.  DESIGN DIVERGENCE, not a single-line defect:
-       kills + expectancy are RECORDED but DROPPED from the DSR's N (16 recorded
-       rows, N=1). Pinned entirely by CONTRACT asserts freezing current recorded-vs-
-       counted behaviour — H1 carries no bug-tag at all. compute_dsr refusing N<2
-       is correct invariant math, NOT the finding. RED = what-is-recorded-or-
-       excluded changed; a #20 decision on whether kills count toward N must then
-       consciously update this test.
+  H1   deflate_sharpe.py::compute_dsr (new n_trials param) + ::compute_promotion_audit
+       (:333, passes total_hypotheses_tested) + run_phase1_research.py::
+       _write_promotion_audit (n_dsr_total, mirrored inline path).
+       FIXED 2026-08-16 (Jeremy, issue #28, the #20 decision this test used to wait
+       on): kills/expectancy-only trials now count toward the DSR's multiple-testing
+       N. The fix does NOT append fake Sharpe values for kills -- it splits two
+       previously-conflated quantities: N (every real attempt, for the expected-max-
+       Sharpe exponent) from the sample used to estimate mu_sr/sigma_sr (still only
+       real Sharpe VALUES -- a large N does not make an unmeasurable variance
+       measurable, see the new n_sharpe<2 branch). test_h1_dsr_n_counts_only_sharpe_
+       valid_trials below still calls compute_dsr with n_trials omitted -- that path
+       stays byte-identical to pre-fix by design (every existing direct caller must
+       be unaffected); test_h1_promotion_audit_wires_full_n_into_dsr is the new test
+       that exercises the actual fix through compute_promotion_audit end to end.
   H2   run_phase1_research.py:1069 (signal_prescreen record) + :3023
        (_record_prescreen_trial gained an upsert param).
        FIXED 2026-08-16 (this fork, E-025 H2, issue #28): the normal call site now
@@ -208,19 +214,19 @@ class _SentinelStop(Exception):
 # ===========================================================================
 
 def test_h1_dsr_n_counts_only_sharpe_valid_trials():
-    """A1. H1 is a DESIGN DIVERGENCE, not a single-line defect: kills and
-    expectancy trials are RECORDED into campaign_state.trial_sharpes but DROPPED
-    from the DSR's trial count N. The live campaign_state.yaml holds 16 recorded
-    rows (11 neither + 4 expectancy + 1 sharpe) yet the DSR that gates promotion
-    sees N=1. This synthetic 17-row fixture (adds one sharpe-but-None row) pins the
-    exclusion taxonomy that CAUSES the collapse.
-
-    Resolving H1 is a #20 DECISION — whether kills/expectancy should count toward
-    N — not a code bug to squash. compute_dsr refusing N<2 is CORRECT, invariant
-    math; it is NOT the finding. So every assert here is CHAR[CONTRACT]: they freeze
-    current recorded-vs-counted behaviour, and any change to what is recorded or
-    excluded flips the test and forces the #20 author to decide consciously. There
-    is deliberately NO CHAR[*-BUG] tag on this test."""
+    """A1. FIXED 2026-08-16 (Jeremy, issue #28) -- but this specific test still pins
+    the BYTE-IDENTICAL default path, by design. load_sharpe_trials's exclusion
+    taxonomy (what is a real Sharpe VALUE vs a kill/expectancy row with none) is
+    unchanged and still correct -- kills genuinely have no Sharpe number, so they
+    can never enter sharpe_values, regardless of the H1 fix. What changed is
+    downstream: ds.compute_dsr(0.5, sharpe_values) here, called with n_trials
+    OMITTED, still resolves N = len(sharpe_values) = 1 -- every pre-existing direct
+    caller of compute_dsr must see byte-identical behavior when it doesn't opt in.
+    The actual fix (N drawn from the honest total, not len(sharpe_values)) is
+    exercised by test_h1_promotion_audit_wires_full_n_into_dsr below, which goes
+    through compute_promotion_audit -- the real caller, now passing n_trials
+    explicitly. All asserts stay CHAR[CONTRACT]: this test's job is now "the
+    omitted-n_trials path never silently changes," not "N is wrong" (fixed)."""
     trials = (
         [{"trial_id": f"n{i}", "statistic_valid": "neither", "sharpe": None} for i in range(11)]
         + [{"trial_id": f"e{i}", "statistic_valid": "expectancy", "sharpe": None} for i in range(4)]
@@ -231,23 +237,85 @@ def test_h1_dsr_n_counts_only_sharpe_valid_trials():
 
     sharpe_values, excluded = ds.load_sharpe_trials({"trial_sharpes": trials})
 
-    # The H1 divergence lives HERE: 15 of 17 recorded rows (11 neither + 4 expectancy)
-    # are dropped from the DSR's trial distribution, collapsing N to 1. These two
-    # CONTRACT asserts freeze exactly WHAT is recorded vs WHAT feeds N — so any #20
-    # decision changing whether kills/expectancy count toward N flips the test and
-    # forces a conscious update. This is the pin of the divergence.
+    # load_sharpe_trials' exclusion taxonomy: 15 of 17 recorded rows (11 neither + 4
+    # expectancy) correctly have no real Sharpe VALUE to contribute to sharpe_values --
+    # unaffected by the H1 fix, which changes what N compute_dsr uses, not this list.
     # CHAR[CONTRACT]: only statistic_valid=='sharpe' with a non-None value feeds N (ds:127-132).
     assert sharpe_values == [0.42]
-    # CHAR[CONTRACT]: exclusion taxonomy — what is dropped from N, incl. the sharpe/None branch (ds:129-130).
+    # CHAR[CONTRACT]: exclusion taxonomy — what is dropped from sharpe_values, incl. sharpe/None (ds:129-130).
     assert excluded == {"no_sharpe_value": 1, "statistic_expectancy": 4, "statistic_neither": 11}
 
-    dsr = ds.compute_dsr(0.5, sharpe_values)
-    # NOT a defect: compute_dsr correctly refuses N<2 — this is invariant BLP math, no
-    # #20 fix changes it. Tagged CONTRACT so it is never mistaken for the H1 finding
-    # (the divergence above is), and so a regression in the refusal is caught.
+    dsr = ds.compute_dsr(0.5, sharpe_values)  # n_trials OMITTED -- byte-identical default path.
+    # NOT a defect: compute_dsr correctly refuses N<2 when n_trials is omitted -- this
+    # is the pre-fix behavior every existing direct caller must keep seeing.
     assert dsr["dsr"] is None  # CHAR[CONTRACT]: compute_dsr correctly refuses N<2; invariant, not a defect.
-    assert dsr["n_trials"] == 1  # CHAR[CONTRACT]: N=1 is the composed consequence of the divergence above.
+    assert dsr["n_trials"] == 1  # CHAR[CONTRACT]: n_trials omitted -> N falls back to len(sharpe_values) == 1.
     assert dsr["error"] == "Insufficient trials: need >= 2, got 1"  # CHAR[CONTRACT]: verbatim refusal message.
+
+
+def test_h1_promotion_audit_wires_full_n_into_dsr():
+    """A1b. THE ACTUAL H1 FIX, exercised end to end through compute_promotion_audit --
+    the real caller. Same 17-trial shape as A1 above (11 neither + 4 expectancy + 1
+    real sharpe + 1 sharpe-but-None), but this time going through
+    compute_promotion_audit, which now passes n_trials=total_hypotheses_tested
+    (len(deduped_records) == 17) into compute_dsr instead of leaving it to default to
+    len(sharpe_values) == 1.
+
+    Pre-fix this would have hit the N<2 branch (N=1) and returned dsr=None. Post-fix,
+    N=17 clears the N<2 gate -- but n_sharpe (real Sharpe values) is still only 1, so
+    it now hits the DIFFERENT, honest refusal: "N=17 recorded, but only 1 produced a
+    real Sharpe value." This is the correct outcome, not a partial fix: a large N does
+    not manufacture a variance estimate out of one data point. The fix is proven by
+    the ERROR MESSAGE changing from the N<2 message to the n_sharpe<2 message with the
+    honest N visible in it -- not by a DSR number appearing (this fixture genuinely
+    cannot produce one)."""
+    trials = (
+        [{"trial_id": f"n{i}", "statistic_valid": "neither", "sharpe": None} for i in range(11)]
+        + [{"trial_id": f"e{i}", "statistic_valid": "expectancy", "sharpe": None} for i in range(4)]
+        + [{"trial_id": "s_ok", "statistic_valid": "sharpe", "sharpe": 0.42}]
+        + [{"trial_id": "s_none", "statistic_valid": "sharpe", "sharpe": None}]
+    )
+    audit = ds.compute_promotion_audit("H-test", 0.5, {"trial_sharpes": trials})
+
+    assert audit["total_hypotheses_tested"] == 17  # CHAR[CONTRACT]: the honest total, unaffected by H1.
+    assert audit["n_trials_used"] == 1  # CHAR[CONTRACT]: still only 1 real Sharpe value -- unrelated question.
+    assert audit["deflated_sharpe_ratio"] is None  # H1-FIXED: correctly still None (can't estimate variance).
+    # The load-bearing proof: refused for the NEW reason (N is honest, variance isn't
+    # estimable), not the OLD reason (N itself was too small). Distinguishes "H1 not
+    # fixed" (would say "Insufficient trials: need >= 2, got 1") from "H1 fixed, still
+    # correctly blocked by a separate, real constraint" (this).
+    dsr_error = ds.compute_dsr(0.5, trial_sharpes=[0.42], n_trials=17)["error"]
+    assert dsr_error == (
+        "N=17 trials recorded (multiple-testing count is honest), but only 1 produced "
+        "a real Sharpe value -- need >= 2 real Sharpe values to estimate the trial "
+        "distribution's variance. A large N does not fix an unmeasurable variance."
+    )
+
+
+def test_h1_compute_dsr_n_trials_param_changes_the_correction_when_estimable():
+    """A1c. Proves n_trials actually moves the DSR NUMBER, not just the error path --
+    using a fixture with enough real Sharpe values to clear both gates. Same
+    candidate_sr and trial_sharpes; only n_trials differs. A bigger honest N must make
+    the expected-max-Sharpe benchmark HARDER to clear (E[max of more draws] is higher),
+    so the SAME candidate scores a LOWER (or equal) DSR under the larger N -- proving
+    the correction actually strengthens as N grows, which is H1's entire point."""
+    trial_sharpes = [0.1, 0.3, -0.2, 0.05, 0.4]  # 5 real Sharpe values, non-degenerate variance.
+
+    small_n = ds.compute_dsr(0.8, trial_sharpes, n_trials=5)   # n_trials == len(trial_sharpes)
+    large_n = ds.compute_dsr(0.8, trial_sharpes, n_trials=50)  # same values, honest N much larger
+
+    assert small_n["n_trials"] == 5
+    assert large_n["n_trials"] == 50
+    # Same mu_sr/sigma_sr in both (estimated from the same 5 real values) --
+    # only the multiple-testing exponent differs.
+    assert small_n["mu_sr"] == large_n["mu_sr"]
+    assert small_n["sigma_sr"] == large_n["sigma_sr"]
+    assert large_n["expected_max_sharpe"] > small_n["expected_max_sharpe"]  # harder bar at larger N.
+    assert large_n["dsr"] < small_n["dsr"]  # same candidate, lower DSR under the honest larger N.
+    # Omitting n_trials must match passing it explicitly as len(trial_sharpes) --
+    # the default-fallback path (used by every pre-fix caller) is exactly this case.
+    omitted = ds.compute_dsr(0.8, trial_sharpes)
+    assert omitted == small_n
 
 
 def test_forecast_hash_dedup_semantics():
