@@ -91,10 +91,13 @@ is in scope for this epic, not a separate thing.
       triplicate rows. Done 2026-08-16, see Log — also landed the
       no-DSR-until-merged git check (Done-when #4's other half), not
       originally scoped as a separate story.
-- [ ] S3 — Dorian: adopt the `run_d_NNN` prefix for new fork-originated
-      trials.
-- [ ] S4 — Joint: write + verify the union-merge procedure for a fork PR
+- [x] S3 — Dorian: adopt the `run_d_NNN` prefix for new fork-originated
+      trials. Done (`635afa36`, held from upstream pending S4).
+- [~] S4 — Joint: write + verify the union-merge procedure for a fork PR
       touching `campaign_state.yaml` (test with two divergent trial lists).
+      **Mechanics verified 2026-08-16 (Jeremy) against a real hermetic git
+      repo — see Log.** Still open: land a real two-sided PR (Dorian) to
+      prove the documented procedure end to end, not just in a test fixture.
 
 ## Log
 
@@ -168,3 +171,36 @@ is in scope for this epic, not a separate thing.
   Full suite 762/0 fast. **All four of issue #28's H1-H4 are now
   code-complete. Only S4 (joint, union-merge verification) remains before
   E-025 itself is done.**
+- 2026-08-16 (later still) — **S4 mechanics verified against a real
+  hermetic git repo** (`tests/test_s4_union_merge.py`, two real clones,
+  real `git merge`, nothing mocked). Three findings, contradicting the
+  "just merges" assumption implicit in the epic's own wording:
+  1. Plain `git merge` on concurrent `campaign_state.yaml` edits (both
+     sides appending to `trial_sharpes`/`runs`) **conflicts loudly** — it
+     does not silently drop either side's trials, but it is not zero-touch
+     either. Every concurrent dual-writer sync on this file will conflict.
+  2. The correct resolution: **keep every list entry from both sides,
+     always** — never `git checkout --ours`/`--theirs` on this file.
+     Verified this produces the full union with no duplicate `trial_id`s
+     against `check_no_duplicate_trial_ids`.
+  3. **Tried and rejected: `merge=union` .gitattributes driver.** It
+     auto-resolves without a conflict (looks successful, exit 0) but
+     interleaves the unrelated `updated_at` scalar with the adjacent
+     `runs` list's lines, producing a `campaign_state.yaml` that **does
+     not parse as YAML at all** — silent structural corruption, exit 0,
+     no error. This is the exact "naive merge silently drops data" failure
+     the epic named, just one layer down (corrupts the file structure
+     instead of dropping a trial). Do not adopt `merge=union` for this
+     file. Regression-pinned so nobody rediscovers this the hard way.
+
+  Procedure landed on: plain git merge (conflict is the expected, correct
+  outcome), manual resolution keeps every list entry from both sides,
+  `check_no_duplicate_trial_ids` is the mechanical backstop on the
+  resolved result before any DSR computation. Flagged to Dorian directly —
+  his next fork PR touching `campaign_state.yaml` will conflict by design,
+  and must not be "resolved" with `--theirs`/`--ours` or a union driver.
+
+  **What's left for S4:** a real two-sided PR proving this procedure
+  end-to-end (a test fixture is not the same as Dorian's actual fork PR
+  workflow) — the one piece that is genuinely joint and can't be verified
+  solo.
