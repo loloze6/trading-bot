@@ -135,3 +135,22 @@ is in scope for this epic, not a separate thing.
     (joint — verify the actual union-merge procedure end to end with a real
     two-sided PR) are still open. Done-when #4 (tested merge procedure) is
     not satisfied by this entry.
+- 2026-08-16 (later) — Dorian's H2/H4 (issue #28's other two defects, not
+  part of E-025's own S1-S4 but coordinated through it) landed same day:
+  PR #31 (H4 — a crashed backtest now records one `backtest_failed` row
+  before re-raising, so N counts the spent look) and PR #32 (H2 — a
+  re-entered prescreen now upserts the fresh outcome on `(trial_id,
+  "prescreen")` instead of a stale first result surviving under the old
+  `run_id`-only skip-guard). Both additive, both keyed consistently with
+  S1/S2's `(trial_id, source)` invariant, both verified locally before
+  merge (34 accounting-related tests green, full suite 759/0 fast,
+  combined `run_tests.py` PASS). Also: S3 (`run_d_NNN`) confirmed done on
+  Dorian's side (`635afa36`, held from upstream pending S4).
+  **Campaign-gate status: H2, H3, H4 are now code-complete. H1 (the
+  methodology decision — kills count toward N) is decided but not yet
+  wired into `deflate_sharpe.py`'s `load_sharpe_trials`/`compute_dsr` —
+  that's Jeremy's remaining piece before S4.** Two adjacent, still-unowned
+  findings from #30's characterization pass remain open and untouched by
+  any of H1-H4: `n_trades` reads the wrong per-symbol key (always 0 on
+  backtest rows), and three different code paths compute "how many trials
+  were tested" on three different bases (COUNT-DIV).
