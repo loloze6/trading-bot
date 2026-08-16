@@ -41,8 +41,12 @@ Tag -> production site (line numbers as of cf7908bc, the H3 fix, 2026-08-16)
        record at :4874). RED on the forecast_hash / C2 pins = the H3 fix landed;
        RED on C4a = the remaining a86 gap was closed.
   H4   run_phase1_research.py:1089, 1093 (protocol_execution raises)
-       A failed backtest raises BEFORE _record_backtest_trial — the failure is
-       uncounted.  RED after fix = failure accounting changed.
+       FIXED 2026-08-16 (this fork, E-025 H4-core, issue #28): a failed backtest now
+       records exactly ONE "backtest_failed" row via _record_failed_backtest_trial
+       (:3097) at both raise sites BEFORE re-raising — the spent look is counted.
+       The former CHAR[H4-BUG] pin (_read_trials(...) == []) was flipped under this
+       branch to CHAR[CONTRACT] asserting the recorded row. Propagation is unchanged
+       (pytest.raises still holds). RED after this = failure accounting changed again.
   NTRADES  run_phase1_research.py:3066 (_record_backtest_trial trade_counts)
        Reads per-symbol key "trade_count"; production summaries carry
        "min_trade_count", so n_trades silently collapses to 0. NOT touched by
@@ -449,20 +453,86 @@ def test_h3_protocol_reentry_appends_duplicate_backtest(temp_run, monkeypatch):
 def test_h4_failed_backtest_records_no_trial(
     temp_run, monkeypatch, returncode, write_summary, exc, match
 ):
-    """C3. A failed backtest raises BEFORE _record_backtest_trial (:1089 on a
-    non-zero exit, :1093 on a missing summary) — the failure is uncounted.
-    run_loop's own handler then records status='failed' (:4997, cited by
-    inspection, not executed here) with no trial row ever written."""
-    _run_dir, run_id = temp_run
+    """C3. H4-core FIXED (E-025, issue #28): a failed backtest raises at :1089 (non-zero
+    exit) or :1093 (missing summary), but now records exactly ONE 'backtest_failed' row
+    via _record_failed_backtest_trial BEFORE re-raising — the spent look is counted.
+    Propagation is unchanged: the original exception still fires (pytest.raises holds),
+    so run_loop's own handler still records status='failed'. Was CHAR[H4-BUG]
+    (_read_trials == []); flipped to CHAR[CONTRACT] under this branch."""
+    run_dir, run_id = temp_run
     _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    expected_hash = _seed_config(run_dir / "artifacts")
     _stub_vce(monkeypatch)
     _install_fake_subprocess(monkeypatch, returncode=returncode, write_summary=write_summary,
                              protocol_summary={}, stderr="boom")
 
-    with pytest.raises(exc, match=match):  # CHAR[H4-BUG]: failure raises before recording.
+    with pytest.raises(exc, match=match):  # CHAR[CONTRACT]: original failure still propagates.
         asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
 
-    assert _read_trials(rpr.CAMPAIGN_STATE_PATH) == []  # CHAR[H4-BUG]: no trial counted for the failure.
+    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
+    assert len(rows) == 1  # CHAR[CONTRACT]: the spent look is now counted, exactly once.
+    row = rows[0]
+    assert row["trial_id"] == run_id  # CHAR[CONTRACT]: trial_id == run_id.
+    assert row["source"] == "backtest_failed"  # CHAR[CONTRACT]: distinct source, won't shadow a retry's real row.
+    assert row["sharpe"] is None  # CHAR[CONTRACT]: no Sharpe from a crash.
+    assert row["expectancy_bps"] is None  # CHAR[CONTRACT]: no expectancy from a crash.
+    assert row["n_trades"] == 0  # CHAR[CONTRACT]: no trades from a crash.
+    assert row["statistic_valid"] == "failed"  # CHAR[CONTRACT]: lands in deflate's statistic_neither bucket.
+    assert row["forecast_hash"] == expected_hash  # CHAR[CONTRACT]: config was readable → real hash.
+    assert isinstance(row["error"], str) and row["error"]  # CHAR[CONTRACT]: a short reason is stored.
+
+
+def test_h4_failed_backtest_same_config_repeat_records_one_row(campaign_state_path, tmp_path):
+    """C3a. Own idempotency guard: two failures of the SAME config (same trial_id, same
+    forecast_hash) append only ONE 'backtest_failed' row — a same-(trial_id, source)
+    duplicate would trip deflate_sharpe.check_no_duplicate_trial_ids at DSR time."""
+    _seed_state(campaign_state_path, [])
+    _seed_config(tmp_path / "artifacts")
+    config_path = tmp_path / "artifacts" / "candidate_strategy_config.json"
+    rpr._record_failed_backtest_trial("run_x", config_path, "first failure")
+    rpr._record_failed_backtest_trial("run_x", config_path, "second failure")
+    rows = _read_trials(campaign_state_path)
+    assert [r["source"] for r in rows] == ["backtest_failed"]  # only one row.
+    assert rows[0]["error"] == "first failure"  # first-seen wins; no mutation of the existing row.
+
+
+def test_h4_failed_backtest_changed_config_same_run_id_suppressed(campaign_state_path, tmp_path):
+    """C3b. A second "backtest_failed" for the SAME run_id is suppressed even when the
+    config was edited between attempts — the guard keys on (trial_id, source), matching
+    _record_backtest_trial's success guard and deflate_sharpe.check_no_duplicate_trial_ids.
+    A run_id is one trial slot: a genuine changed-config retry is a NEW run_NNN (different
+    trial_id) and records on its own key; a same-run_id re-invoke with an edited config is
+    the artificial manual case, correctly recorded once. This is the contract that keeps the
+    read-side (trial_id, source) dup check from ever rejecting this writer's ledger."""
+    _seed_state(campaign_state_path, [])
+    artifacts = tmp_path / "artifacts"
+    hash_a = _seed_config(artifacts, {"strategy": "v1", "params": {"a": 1}})
+    config_path = artifacts / "candidate_strategy_config.json"
+    rpr._record_failed_backtest_trial("run_x", config_path, "failure A")
+    _seed_config(artifacts, {"strategy": "v2", "params": {"a": 2}})  # overwrites config
+    rpr._record_failed_backtest_trial("run_x", config_path, "failure B")
+    rows = _read_trials(campaign_state_path)
+    assert [r["source"] for r in rows] == ["backtest_failed"]  # one slot, one row.
+    assert rows[0]["forecast_hash"] == hash_a  # first-seen wins; the existing row is not mutated.
+
+
+def test_h4_failed_backtest_missing_config_records_none_hash_and_reraises(temp_run, monkeypatch):
+    """C3c. When the config is itself missing/broken, the row records forecast_hash=None
+    (deflate's deduplicate_trials keeps hashless rows unique, :88-90) and the ORIGINAL
+    exception type is preserved — the hash step's failure never masks it. No config is
+    seeded here, so _compute_forecast_hash raises internally and is swallowed to None."""
+    _run_dir, run_id = temp_run
+    _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    _stub_vce(monkeypatch)
+    _install_fake_subprocess(monkeypatch, returncode=1, protocol_summary={}, stderr="boom")
+
+    with pytest.raises(RuntimeError, match=r"run_protocol\.py failed"):
+        asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
+
+    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
+    assert len(rows) == 1  # the failure is still counted.
+    assert rows[0]["forecast_hash"] is None  # config unreadable → hashless row.
+    assert rows[0]["source"] == "backtest_failed"
 
 
 _A86_CANNED = {
