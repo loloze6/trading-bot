@@ -1,8 +1,8 @@
-# E-023 — Live-trading path refactor (parked until deployment is a real decision)
+# E-023 — Enable live trading, targeting Kraken (parked until deployment is a real decision)
 
 **State:** parked
 **Owner:** Jeremy
-**Updated:** 2026-08-15
+**Updated:** 2026-08-16
 
 ## Why
 
@@ -35,11 +35,32 @@ regardless — would trade research throughput for readiness nobody's asked
 for yet. This epic exists so the known gaps have one home and aren't lost,
 not to schedule work on them.
 
-**Relationship to the risk layer:** related but separate. The risk layer
-(kill switch, position caps, drawdown limit) is about not blowing up an
-account once live; this epic is about the live *execution* path itself being
-functionally broken (crashes, mislabeled state, no warmup) independent of
-any risk controls. Both gate real money; neither gates research.
+**Relationship to the risk layer:** related but separate. The mandatory
+account-level backstop (kill switch, daily loss limit, flatten-all — see
+**E-024**) is about not blowing up an account once live; this epic is about
+the live *execution* path itself being functionally broken (crashes,
+mislabeled state, no warmup) independent of any risk controls. Both gate
+real money; neither gates research.
+
+**Real target venue is Kraken, not Binance.** The live path today only ever
+talks to Binance, but none of the fork's recent work points there — the
+Kraken ingest, Kraken price/funding feeds (PR #24), and the culi.to Ubuntu
+deployment plan all target Kraken. Retitled 2026-08-16 to say so plainly:
+this epic's actual deliverable is live trading working, on Kraken, not a
+generic multi-venue abstraction and not Binance parity.
+
+## Pointer
+
+**2026-08-16 — P3/P4/P5 migrated in, Dorian confirmed ("go for it. Agree on
+all three.", Slack 2026-08-16 01:57).** These three Notion cards are closed
+(`Won't fix` — not resolved, relocated) with a pointer back to this epic;
+their content is preserved verbatim above and in Notion's own history:
+- P3 — https://app.notion.com/p/3a81d1fb05a281ad8718de4bc553c7a9
+- P4 — https://app.notion.com/p/3a81d1fb05a28131a173f1aac745d777
+- P5 — https://app.notion.com/p/3a81d1fb05a28149b694e151b48ae2b8
+
+Notion mirror for this epic already exists (Dorian created it on sync,
+2026-08-15 23:21): https://app.notion.com/p/3bd1d1fb05a281768d0feb96f894efad
 
 ## Done when
 
@@ -68,3 +89,10 @@ any fix is designed.
   research workflow, and `main.py run_bot` is already forbidden on this fork
   regardless of this epic's state, so there is no urgency pressure to offset
   against research throughput.
+- 2026-08-16 — Retitled to name Kraken as the real target venue (matches
+  where the fork's actual recent work points, not Binance). Dorian confirmed
+  the P3/P4/P5-migration + risk-card-split proposal on Slack; P3/P4/P5
+  closed in Notion (`Won't fix`, pointer to this epic) — see Pointer above.
+  Risk-layer card split out separately as **E-024** (account-level backstop
+  only; per-trade stops/sizing stay in the normal strategy-validation
+  workflow, not an epic).
