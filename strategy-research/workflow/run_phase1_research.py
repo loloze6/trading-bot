@@ -1066,7 +1066,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # signal_prescreen would otherwise double-record. Matching the same guard here.
         _campaign_for_guard = load_campaign_state()
         if not any(t.get("trial_id") == run_id for t in _campaign_for_guard.get("trial_sharpes", [])):
-            _record_prescreen_trial(run_id, ps)
+            _record_prescreen_trial(run_id, ps, config_path)
         else:
             print(f"⏭️  A6.2: trial for {run_id} already recorded — skipping duplicate.")
 
@@ -1131,7 +1131,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                  if _pre_reg_result in ("PASS", "FAIL") else ""))
 
         # A6.2: record full-backtest trial in campaign_state.trial_sharpes
-        _record_backtest_trial(run_id, summary)
+        _record_backtest_trial(run_id, summary, config_path)
 
         # Verify Phase A diagnostics are present
         result_data = load_yaml(ARTIFACTS / "protocol_result.yaml")
@@ -2979,7 +2979,34 @@ def _extract_diagnostics(path: Path) -> dict:
         return {}
 
 
-def _record_prescreen_trial(run_id: str, ps: dict):
+def _compute_forecast_hash(config_path: Path) -> str:
+    """
+    E-025 S1 (2026-08-16, issue #28): fingerprint of the exact strategy config a trial
+    tested, so cross-writer dedup (A6.4, deflate_sharpe.py::deduplicate_trials) can
+    recognize when two trials -- possibly from different machines under the dual-writer
+    protocol -- tested the same idea. Canonical JSON (sorted keys, no whitespace
+    variance) so semantically-identical configs hash identically regardless of key
+    order or formatting.
+
+    Fails loud on a missing config rather than returning None/a placeholder: by the
+    time either trial-recording function calls this, the same config file has already
+    been read by the prescreen/backtest subprocess this trial's result came from, so
+    its absence here means something is structurally wrong with the run's artifacts,
+    not a normal degraded case worth silently tolerating (mandatory per E-025's
+    2026-08-16 decision: forecast_hash on every new trial, both writers).
+    """
+    if not config_path.exists():
+        raise FileNotFoundError(
+            f"forecast_hash requires {config_path}, which does not exist. This trial's "
+            f"own prescreen/backtest step already had to read this file to produce a "
+            f"result -- its absence now means the artifacts directory is in an "
+            f"unexpected state, not a normal case to silently skip hashing for."
+        )
+    canonical = json.dumps(json.loads(config_path.read_text(encoding="utf-8")), sort_keys=True)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path):
     """
     A6.2: record a prescreen run as a trial in campaign_state.trial_sharpes.
     Prescreen kills count as trials (statistic_valid='neither', sharpe=null, n_trades=0).
@@ -2999,6 +3026,7 @@ def _record_prescreen_trial(run_id: str, ps: dict):
         "statistic_valid": "neither",  # no backtest ran
         "ic_pooled":       ps.get("ic_spearman_pooled"),
         "cost_pass":       ps.get("cost_check", {}).get("pass"),
+        "forecast_hash":   _compute_forecast_hash(config_path),
     }
     trials.append(trial_entry)
     _save_campaign_state(state)
@@ -3006,15 +3034,28 @@ def _record_prescreen_trial(run_id: str, ps: dict):
           f"(route={route}, statistic_valid=neither)")
 
 
-def _record_backtest_trial(run_id: str, summary: dict):
+def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
     """
     A6.2: record a completed full-backtest as a trial in campaign_state.trial_sharpes.
     Appends {trial_id, source, sharpe, expectancy_bps, n_trades, statistic_valid}.
     Sparse-trading strategies (A3.4): statistic_valid='expectancy' when median Sharpe
     is null/unreliable; 'sharpe' otherwise.
+
+    H3 fix (2026-08-16, issue #28): idempotency guard keyed on (trial_id, source) --
+    NOT trial_id alone. A prescreen row for this same run_id was already recorded
+    earlier in the run's lifecycle (see _record_prescreen_trial above), so a
+    trial_id-only guard would wrongly treat that as "already recorded" and silently
+    drop this legitimate backtest row. The guard here only suppresses a second
+    "backtest"-source row for the same trial_id, which is the actual re-entry case
+    (protocol_execution re-run via resume/retry) -- measured live in the committed
+    ledger before this fix: run_054 and run_059 were each recorded 3x.
     """
     state  = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
+
+    if any(t.get("trial_id") == run_id and t.get("source") == "backtest" for t in trials):
+        print(f"⏭️  A6.2/H3: backtest trial for {run_id} already recorded — skipping duplicate.")
+        return
 
     hv    = summary.get("hypothesis_verdict") or {}
     diag  = hv.get("diagnostics") or {}
@@ -3045,6 +3086,7 @@ def _record_backtest_trial(run_id: str, summary: dict):
         "n_trades":        n_trades,
         "statistic_valid": statistic_valid,
         "below_floor_pct": below_floor,
+        "forecast_hash":   _compute_forecast_hash(config_path),
     }
     trials.append(trial_entry)
     _save_campaign_state(state)
@@ -4809,7 +4851,7 @@ def run_loop(run_id: str):
                         # A6.2: run_tool_worker is skipped in this path; record trial here (idempotent guard)
                         _cs_check = load_campaign_state()
                         if not any(t.get("trial_id") == run_id for t in _cs_check.get("trial_sharpes", [])):
-                            _record_prescreen_trial(run_id, _ps_data)
+                            _record_prescreen_trial(run_id, _ps_data, ARTIFACTS / "candidate_strategy_config.json")
                 if not _skip_agent:
                     _a86 = _run_a86_power_check(ARTIFACTS)
                     if _a86["verdict"] == "insufficient_power_a_priori":
@@ -4829,7 +4871,7 @@ def run_loop(run_id: str):
                         save_yaml(ARTIFACTS / "prescreen_result.yaml", _a86_ps_data)
                         _skip_agent = True
                         # A6.2: run_tool_worker is skipped in this path; record trial here
-                        _record_prescreen_trial(run_id, _a86_ps_data)
+                        _record_prescreen_trial(run_id, _a86_ps_data, ARTIFACTS / "candidate_strategy_config.json")
 
             if current_stage == "verdict_interpreter":
                 _vi_path = RUN_DIR / "artifacts" / "verdict_interpretation.yaml"

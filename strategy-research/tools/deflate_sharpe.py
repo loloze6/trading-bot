@@ -17,6 +17,7 @@ import sys
 import os
 import math
 import argparse
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import NormalDist, median, variance
@@ -95,6 +96,84 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
             kept.append(rec)
 
     return kept, n_removed
+
+
+# ---------------------------------------------------------------------------
+# E-025 S2 (2026-08-16): dual-writer mechanical guards
+# ---------------------------------------------------------------------------
+
+def check_no_duplicate_trial_ids(records: list[dict]) -> None:
+    """
+    Refuse if the ledger contains two rows with the same (trial_id, source) pair.
+
+    A single trial_id legitimately carries up to two rows -- one 'prescreen' (every
+    trial, kill or pass, per A6.2) and one 'backtest' (only if it advanced). That is
+    not a duplicate. A genuine duplicate is the SAME (trial_id, source) appearing
+    twice: the write-side guard in run_phase1_research.py::_record_backtest_trial
+    (H3, 2026-08-16) prevents this going forward, but this is the read-side backstop
+    for the same invariant -- catching a dual-writer race, a manual ledger edit, or a
+    future writer that skips the write-side guard. Raises rather than silently
+    dropping a row: which copy is correct is not this function's call to make.
+    """
+    seen: set[tuple] = set()
+    dupes: list[tuple] = []
+    for r in records:
+        key = (r.get("trial_id"), r.get("source"))
+        if key in seen and key not in dupes:
+            dupes.append(key)
+        seen.add(key)
+    if dupes:
+        raise ValueError(
+            f"campaign_state.yaml contains duplicate (trial_id, source) rows: {dupes}. "
+            f"DSR computation refuses to run against a ledger with duplicates -- "
+            f"resolve them (a duplicate row skews the trial count) before re-running. "
+            f"See strategy-research/engineering/roadmap/E-025/EPIC.md."
+        )
+
+
+def check_ledger_is_merged(campaign_state_path: Path, allow_unmerged: bool = False) -> None:
+    """
+    Dual-writer protocol's binding rule (E-025, 2026-08-16): no DSR computation until
+    both sides' ledgers are merged. A locally-modified or locally-behind
+    campaign_state.yaml means this machine's view of "how many trials were run" is
+    partial -- exactly the failure the DSR's N exists to prevent (an inflated
+    significance claim from an understated trial count). Checked by comparing the
+    file's actual content against origin/master's tracked copy, not by trusting a
+    "have I merged" claim.
+
+    allow_unmerged is an explicit, named opt-out (this repo's `--no-verify` pattern)
+    for a deliberate exception -- e.g. an offline sanity check with no intent to act
+    on the promotion_audit.yaml this run produces.
+    """
+    if allow_unmerged:
+        return
+
+    repo_root = Path(_REPO)
+    try:
+        subprocess.run(
+            ["git", "fetch", "origin", "master"],
+            cwd=repo_root, check=True, capture_output=True, timeout=30,
+        )
+    except Exception as e:
+        raise RuntimeError(
+            f"Could not fetch origin/master to verify the ledger is merged "
+            f"(no-DSR-until-merged, E-025): {e}. Pass --allow-unmerged to run anyway "
+            f"if this is a deliberate offline exception."
+        )
+
+    rel_path = campaign_state_path.resolve().relative_to(repo_root)
+    diff = subprocess.run(
+        ["git", "diff", "--quiet", "origin/master", "--", str(rel_path)],
+        cwd=repo_root, capture_output=True,
+    )
+    if diff.returncode != 0:
+        raise RuntimeError(
+            f"{rel_path} differs from origin/master -- this machine's ledger is not "
+            f"merged (unpushed local trials, or behind on the other side's). DSR "
+            f"computed against an unmerged ledger understates N. Sync first (push/pull, "
+            f"or land the pending PR), or pass --allow-unmerged if this is a deliberate "
+            f"exception."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -361,6 +440,12 @@ def main() -> None:
         default=None,
         help="Path to campaign_state.yaml. Defaults to strategy-research/campaign_record/campaign_state.yaml.",
     )
+    parser.add_argument(
+        "--allow-unmerged", action="store_true",
+        help="E-025: skip the no-DSR-until-merged check against origin/master. Explicit "
+             "opt-out for a deliberate exception (e.g. an offline sanity check) -- do "
+             "not use to work around a real sync problem.",
+    )
     args = parser.parse_args()
 
     run_id = args.run_id
@@ -376,7 +461,23 @@ def main() -> None:
         print(f"ERROR: campaign_state.yaml not found at {campaign_state_path}", file=sys.stderr)
         sys.exit(1)
 
+    # E-025: dual-writer binding rule -- refuse on an unmerged ledger before trusting
+    # anything it says.
+    try:
+        check_ledger_is_merged(campaign_state_path, allow_unmerged=args.allow_unmerged)
+    except (RuntimeError, ValueError) as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
     campaign_state = _load_yaml(campaign_state_path)
+
+    # E-025: mechanical duplicate-(trial_id, source) refusal -- the read-side backstop
+    # for the write-side idempotency guard (issue #28 H3).
+    try:
+        check_no_duplicate_trial_ids(campaign_state.get("trial_sharpes", []))
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # Load hypothesis_id from hypothesis_card.yaml
     hypothesis_card_path = artifacts_dir / "hypothesis_card.yaml"

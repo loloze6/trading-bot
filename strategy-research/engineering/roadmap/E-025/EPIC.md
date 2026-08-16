@@ -80,14 +80,17 @@ is in scope for this epic, not a separate thing.
 
 ## Stories
 
-- [ ] S1 — Jeremy: `forecast_hash` mandatory emission at both write sites in
+- [x] S1 — Jeremy: `forecast_hash` mandatory emission at both write sites in
       `run_phase1_research.py` (`rpr:2992-3002`, `rpr:3040-3048` per issue
       #28) + the `(trial_id, source)`-keyed idempotency guard on
       `_record_backtest_trial` (`rpr:1134`) that issue #28 warns a naive
-      `run_id`-only guard would get wrong. This is issue #28's H3.
-- [ ] S2 — Jeremy: mechanical duplicate-`trial_id` refusal in
+      `run_id`-only guard would get wrong. This is issue #28's H3. Done
+      2026-08-16, see Log.
+- [x] S2 — Jeremy: mechanical duplicate-`trial_id` refusal in
       `deflate_sharpe.py`, plus resolving `run_054`/`run_059`'s existing
-      triplicate rows.
+      triplicate rows. Done 2026-08-16, see Log — also landed the
+      no-DSR-until-merged git check (Done-when #4's other half), not
+      originally scoped as a separate story.
 - [ ] S3 — Dorian: adopt the `run_d_NNN` prefix for new fork-originated
       trials.
 - [ ] S4 — Joint: write + verify the union-merge procedure for a fork PR
@@ -103,3 +106,32 @@ is in scope for this epic, not a separate thing.
   (`run_054`/`run_059` already triplicated, `forecast_hash` already null
   everywhere sampled). S1 folds in issue #28's H3, which Jeremy already
   claimed in the H2-H4 split (Slack, 2026-08-16).
+- 2026-08-16 — S1 and S2 (Jeremy's stories) landed same day:
+  - `_compute_forecast_hash()` (canonical-JSON sha256 of
+    `candidate_strategy_config.json`) wired into both `_record_prescreen_trial`
+    and `_record_backtest_trial`, all 4 call sites in
+    `run_phase1_research.py`. Fails loud on a missing config rather than
+    writing null.
+  - `_record_backtest_trial` gained the `(trial_id, source)`-keyed
+    idempotency guard issue #28 specified (not a naive `trial_id`-only
+    guard, which would wrongly suppress a legitimate backtest row when a
+    prescreen row for the same `run_id` already exists).
+  - `deflate_sharpe.py` gained `check_no_duplicate_trial_ids` (the read-side
+    backstop for the same invariant) and `check_ledger_is_merged` (the
+    no-DSR-until-merged binding rule — compares the local ledger against
+    `origin/master`, hard-fails on divergence, `--allow-unmerged` is the
+    explicit named opt-out), both wired into `main()`.
+  - `campaign_state.yaml`'s real triplicate rows resolved: `run_054`'s two
+    duplicate backtest rows were byte-identical (mechanical dedup, no
+    judgment call); `run_059`'s two backtest rows were NOT identical — kept
+    the one with real numbers (n=699, matches the trade count confirmed by
+    the same-day `d7f42c6` timestamp-format fix) and removed the degenerate
+    one (all-null fields, the exact fingerprint of that same pre-fix lookup
+    failure). Flagged explicitly in a `dedup_note` on each surviving row for
+    override if this call is wrong.
+  - 12 new tests (`tests/test_dual_writer_guards.py`), full suite 740/0 fast
+    (strategy-research), combined `run_tests.py` both suites PASS.
+  - **Not yet done:** S3 (Dorian — `run_d_NNN` prefix adoption) and S4
+    (joint — verify the actual union-merge procedure end to end with a real
+    two-sided PR) are still open. Done-when #4 (tested merge procedure) is
+    not satisfied by this entry.
