@@ -96,8 +96,11 @@ is in scope for this epic, not a separate thing.
 - [~] S4 — Joint: write + verify the union-merge procedure for a fork PR
       touching `campaign_state.yaml` (test with two divergent trial lists).
       **Mechanics verified 2026-08-16 (Jeremy) against a real hermetic git
-      repo — see Log.** Still open: land a real two-sided PR (Dorian) to
-      prove the documented procedure end to end, not just in a test fixture.
+      repo — see Log.** Design docs (`WRITER_CONTRACT.md` +
+      `S4_UNION_MERGE_DESIGN.md`, Dorian, PR #34) merged `48e0b09` — read,
+      spot-checked against the code, approved. Still open: land a real
+      two-sided PR (Dorian) to prove the documented procedure end to end,
+      not just in a test fixture.
 
 ## Log
 
@@ -279,3 +282,44 @@ is in scope for this epic, not a separate thing.
   keep-both procedure end-to-end (a test fixture is not the same as
   Dorian's actual fork PR workflow) — the one piece that is genuinely
   joint and can't be verified solo.
+- 2026-08-17 — **The unblock: PR #34 (Dorian) merged `48e0b09`** —
+  `WRITER_CONTRACT.md` + `S4_UNION_MERGE_DESIGN.md`, docs only, drafted at
+  fork tip `635afa36`. Read in full, not skimmed: spot-checked every
+  concrete code claim against the actual source (`_record_prescreen_trial`
+  upsert rpr:3058-3065, `_record_backtest_trial`/`_record_failed_backtest_trial`
+  guards rpr:3091/:3179, `check_no_duplicate_trial_ids`/`check_ledger_is_merged`/
+  `deduplicate_trials`/`load_sharpe_trials` ds:105/:134/:76/:183,
+  `CAMPAIGN_STATE_PATH` as a single hardcoded constant rpr:59) — all
+  accurate. Approved and merged.
+
+  **S4 Open Question 1 / Layer 2 — answered, agreed with Dorian's
+  proposal.** Layer 1 (per-campaign DSR-N) default is now **distinct
+  campaign files per writer** — disjoint by construction, no union needed
+  for the common case (which is also just the current reality: RSI
+  mean-reversion vs Kraken breadth are genuinely different research
+  questions). S4's union-merge becomes the opt-in path for a deliberate
+  co-run, not the default traffic pattern on the highest-stakes shared
+  file — a real risk-surface reduction. The reasoning that sold it: pooling
+  trials across genuinely different selection sets isn't "conservative,"
+  it's mis-specified (shifts `mu_sr`/`sigma_sr` too, not just N — not even
+  monotone), so "pool everything, worst case it over-deflates" doesn't
+  hold as a safety argument. Flagged one implementation detail for
+  whoever builds the per-campaign-file default: `CAMPAIGN_STATE_PATH` is
+  one hardcoded constant today with an already-populated file behind it
+  (the live RSI campaign) — the migration needs an explicit step for that
+  existing file, not just a new default assumed empty-start.
+
+  **Layer 2 (family-wise correction on top of `holdout_consumed_by`) —
+  named, not built, tracked as its own issue: loloze6/trading-bot#35.**
+  Gate: due before the first holdout touch under the new per-campaign-file
+  default, since per-campaign DSR alone stops being sufficient holdout
+  protection once many small campaigns are the norm rather than the
+  exception someone has to engineer.
+
+  Also this session: fixed a real holdout-safety hygiene issue Dorian
+  flagged (Slack, #tradingbot) — `research/ledger/win.md`'s 2026-08-14 CBM
+  entry documented the sealed-only canary filename token contiguously
+  (`0GEUR_240`); his holdout tripwire's secondary check keys on exactly
+  that string, so if this file is ever indexed on his side it
+  false-breaches. Split it the same way his tripwire script already does
+  (`0GEUR_` + `240`), confirmed no other occurrence anywhere in the repo.
