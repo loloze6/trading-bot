@@ -62,11 +62,13 @@ Tag -> production site (line numbers as of cf7908bc, the H3 fix, 2026-08-16)
        The former CHAR[H4-BUG] pin (_read_trials(...) == []) was flipped under this
        branch to CHAR[CONTRACT] asserting the recorded row. Propagation is unchanged
        (pytest.raises still holds). RED after this = failure accounting changed again.
-  NTRADES  run_phase1_research.py:3066 (_record_backtest_trial trade_counts)
-       Reads per-symbol key "trade_count"; production summaries carry
-       "min_trade_count", so n_trades silently collapses to 0. NOT touched by
-       cf7908bc (forecast_hash + guard only) — still live.
-       RED after fix = the writer reads the real key.
+  NTRADES  run_phase1_research.py:3101 (_record_backtest_trial trade_counts).
+       FIXED 2026-08-17. Original diagnosis was itself incomplete: per_symbol_summary
+       never carried a "trade_count" key at all (only "min_trade_count", a per-symbol
+       FLOOR across windows). "min_trade_count" is not the real total either — summing
+       it undercounts by ~10x (measured on run_021: 735 vs the true 8701). Fix sums
+       results[].core.trade_count (run_protocol.py:1389), the real per-window data
+       summary already carries. RED after this = the writer stops reading the real total.
   COUNT-DIV  run_phase1_research.py:4131 (total_variants_tested, PRE-dedup) vs
        deflate_sharpe.py:328 (total_hypotheses_tested, POST-dedup) vs
        run_phase1_research.py:4130 (total_hypotheses_tested = len(runs)) —
@@ -416,22 +418,50 @@ def test_prescreen_writer_row_shape(campaign_state_path, tmp_path):
     assert row["forecast_hash"] == expected_hash
 
 
-def test_backtest_writer_n_trades_zero_from_key_mismatch(campaign_state_path, tmp_path):
-    """B2. Production per-symbol summaries carry 'min_trade_count'; the writer
-    reads 'trade_count' (:3066) -> n_trades silently collapses to 0. cf7908bc's H3
-    added forecast_hash + a guard but did NOT touch this key mismatch — still live."""
+def test_backtest_writer_n_trades_sums_results_trade_counts(campaign_state_path, tmp_path):
+    """B2. FIXED (2026-08-17, NTRADES). The original NTRADES finding's own diagnosis was
+    itself incomplete: per_symbol_summary never carried a 'trade_count' key at all (only
+    'median_sharpe'/'max_abs_drawdown_pct'/'min_trade_count'/'zero_trade_slot_pct',
+    run_protocol.py:1316-1321), so n_trades silently collapsed to 0 on every backtest
+    row (measured live: 34 recorded trials, all n_trades=0). But 'min_trade_count' is
+    NOT the real total either — it's a per-symbol FLOOR (the minimum across that
+    symbol's windows); summing it would still be a large undercount (measured on
+    run_021: 735 vs the true 8701). The real total lives in the raw per-window
+    'results' list (run_protocol.py:1389), which summary already carries — the writer
+    now sums results[].core.trade_count. Former CHAR[NTRADES-BUG] pin (n_trades==0)
+    flipped to CHAR[CONTRACT] under this branch, per this project's own convention:
+    flip deliberately, under the fix's own branch, never silently."""
     _seed_state(campaign_state_path, [])
     expected_hash = _seed_config(tmp_path / "artifacts")
-    summary = {"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.2, "min_trade_count": 500}}}
+    summary = {
+        "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.2, "min_trade_count": 500}},
+        "results": [
+            {"symbol": "BTCUSDT", "window": "2024-01", "core": {"trade_count": 414}},
+            {"symbol": "BTCUSDT", "window": "2024-02", "core": {"trade_count": 500}},
+        ],
+    }
     rpr._record_backtest_trial(
         "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
     row = _read_trials(campaign_state_path)[0]
 
-    assert row["n_trades"] == 0  # CHAR[NTRADES-BUG]: real key is 'min_trade_count', writer reads 'trade_count'.
+    assert row["n_trades"] == 914  # CHAR[CONTRACT]: sums results[].core.trade_count, not min_trade_count.
     assert row["sharpe"] == 1.2  # CHAR[CONTRACT]: median Sharpe recorded.
     assert row["statistic_valid"] == "sharpe"  # CHAR[CONTRACT]: sharpe path (median present, floor 0).
     # CHAR[CONTRACT]: H3 (cf7908bc) — backtest writer now emits forecast_hash (:3089).
     assert row["forecast_hash"] == expected_hash
+
+
+def test_backtest_writer_n_trades_zero_when_results_missing(campaign_state_path, tmp_path):
+    """B2b. A prescreen-stub-shaped protocol_result.yaml (no 'results' key, e.g. a
+    killed run's stub — measured live: run_053) must not crash the writer; n_trades
+    stays 0 via the same 'or []' guard that handles a genuinely empty backtest."""
+    _seed_state(campaign_state_path, [])
+    _seed_config(tmp_path / "artifacts")
+    summary = {"per_symbol_summary": {}}
+    rpr._record_backtest_trial(
+        "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
+    row = _read_trials(campaign_state_path)[0]
+    assert row["n_trades"] == 0  # CHAR[CONTRACT]: missing "results" degrades to 0, not a crash.
 
 
 @pytest.mark.parametrize(

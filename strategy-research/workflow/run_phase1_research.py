@@ -3096,10 +3096,18 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
     diag  = hv.get("diagnostics") or {}
     pss   = summary.get("per_symbol_summary") or {}
 
-    # Aggregate Sharpe and trade count across symbols
-    sharpes     = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
-    trade_counts = [v.get("trade_count") or 0 for v in pss.values()]
-    n_trades    = sum(trade_counts)
+    # Aggregate Sharpe across symbols. NOTE: per_symbol_summary entries never
+    # carried a "trade_count" key (run_protocol.py:1316-1321 -- only
+    # median_sharpe/max_abs_drawdown_pct/min_trade_count/zero_trade_slot_pct),
+    # so n_trades read as 0 on every backtest row (measured live: 34 recorded
+    # backtest trials, all n_trades=0). min_trade_count is a per-symbol FLOOR
+    # (the minimum across that symbol's windows), not a total, and summing it
+    # would still be a large undercount (measured on run_021: 735 vs the true
+    # 8701). The real total-trade-count data is the raw per-window "results"
+    # list (run_protocol.py:1389), which summary already carries.
+    sharpes = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
+    results_list  = summary.get("results") or []
+    n_trades      = sum((r.get("core") or {}).get("trade_count", 0) for r in results_list)
     median_sharpe = round(statistics.median(sharpes), 4) if sharpes else None
 
     expectancy   = diag.get("per_trade_expectancy_bps")
