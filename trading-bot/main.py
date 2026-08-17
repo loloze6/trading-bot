@@ -13,7 +13,6 @@ if __name__ == "__main__":
 Examples:
   python main.py run_bot                    # Run live trading bot
   python main.py simulate                   # Run backtest simulation
-  python main.py optimize_strategy          # Optimize strategy parameters
   python main.py visualize_data             # Visualize historical data
   python main.py get_value_portfolio        # Get current portfolio value
         """,
@@ -26,7 +25,6 @@ Examples:
             "get_value_portfolio",
             "visualize_data",
             "simulate",
-            "optimize_strategy",
             "analyze_past_data",
         ],
         help="Specify the function to run",
