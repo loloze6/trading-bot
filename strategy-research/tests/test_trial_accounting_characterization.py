@@ -69,11 +69,20 @@ Tag -> production site (line numbers as of cf7908bc, the H3 fix, 2026-08-16)
        it undercounts by ~10x (measured on run_021: 735 vs the true 8701). Fix sums
        results[].core.trade_count (run_protocol.py:1389), the real per-window data
        summary already carries. RED after this = the writer stops reading the real total.
-  COUNT-DIV  run_phase1_research.py:4131 (total_variants_tested, PRE-dedup) vs
-       deflate_sharpe.py:328 (total_hypotheses_tested, POST-dedup) vs
-       run_phase1_research.py:4130 (total_hypotheses_tested = len(runs)) —
-       three same-named counts, three different bases.  RED after fix = the
-       promotion-audit bases were reconciled.
+  COUNT-DIV  run_phase1_research.py:4292 (audit["total_hypotheses_tested"]).
+       FIXED 2026-08-17. Was an outright promotion_audit.schema.json violation, not
+       just a naming ambiguity: the schema declares total_hypotheses_tested as
+       required, "Total deduplicated trial records ... (N in BLP 2014)" — but rpr
+       wrote len(campaign["runs"]) there, an unrelated data structure (the
+       campaign's run-id list, not trial_sharpes). The correct value (n_dsr_total,
+       rpr:4182) was already computed and used for the DSR math itself, just never
+       exposed in the output. Fix points the field at n_dsr_total (now matches
+       deflate_sharpe.py's own total_hypotheses_tested exactly, closing the
+       cross-tool collision); the displaced len(campaign.runs) metric survives
+       under its own honest name, total_campaign_runs. total_variants_tested
+       (PRE-dedup, rpr:4172) is untouched — distinct legitimate use in the
+       sparse-path Bonferroni note, no schema entry, no collision to fix.
+       RED after this = the promotion-audit field stops matching its own schema.
 
 Isolation: conftest.py::_sandbox_by_default (autouse) already redirects
 rpr.ROOT / rpr.CAMPAIGN_STATE_PATH into a per-test tmp sandbox. These tests ALSO
@@ -362,9 +371,14 @@ def test_forecast_hash_dedup_semantics():
 # ===========================================================================
 
 def test_promotion_audit_total_count_divergence(campaign_state_path, tmp_path):
-    """B-A3. The SAME concept ("how many were tested") is computed on three
-    different bases across the two promotion-audit code paths. Synthetic state:
-    3 valid rows, two sharing forecast_hash='dup'."""
+    """B-A3. FIXED (2026-08-17, COUNT-DIV). Was: the SAME concept ("how many were
+    tested") computed on three different bases across the two promotion-audit code
+    paths, with rpr's "total_hypotheses_tested" outright violating
+    promotion_audit.schema.json's declared meaning ("Total deduplicated trial
+    records ... N in BLP 2014") by holding len(campaign["runs"]) -- an unrelated
+    structure -- instead. Synthetic state: 3 valid rows, two sharing
+    forecast_hash='dup' (dedups to 2), campaign.runs deliberately seeded empty so
+    the old bug's value (0) and the fixed value (2) are unambiguously distinguishable."""
     trials = [
         {"trial_id": "r1", "forecast_hash": "dup", "statistic_valid": "neither", "sharpe": None},
         {"trial_id": "r2", "forecast_hash": "dup", "statistic_valid": "neither", "sharpe": None},
@@ -388,10 +402,18 @@ def test_promotion_audit_total_count_divergence(campaign_state_path, tmp_path):
     audit_rpr = yaml.safe_load(
         (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
 
-    # CHAR[COUNT-DIV-BUG]: rpr's "total_variants_tested" is PRE-dedup (:4011) -> 3, not 2.
+    # CHAR[CONTRACT]: rpr's "total_variants_tested" stays PRE-dedup (:4172) -> 3, not 2.
+    # Unaffected by the COUNT-DIV fix -- distinct, legitimate use in the sparse-path
+    # Bonferroni note, not a schema-declared field, no name collision to fix.
     assert audit_rpr["total_variants_tested"] == 3
-    # CHAR[COUNT-DIV-BUG]: rpr's "total_hypotheses_tested" is a THIRD basis, len(campaign.runs) (:4088).
-    assert audit_rpr["total_hypotheses_tested"] == 0
+    # CHAR[CONTRACT]: FIXED -- rpr's "total_hypotheses_tested" now matches ds's exactly
+    # (both = n_dsr_total = post-dedup, post-invalidated-exclusion), closing the schema
+    # violation and the cross-tool naming collision in one move.
+    assert audit_rpr["total_hypotheses_tested"] == 2
+    assert audit_rpr["total_hypotheses_tested"] == audit_ds["total_hypotheses_tested"]
+    # CHAR[CONTRACT]: the displaced len(campaign.runs) metric survives under its own
+    # honest name rather than being silently dropped.
+    assert audit_rpr["total_campaign_runs"] == 0
 
 
 def test_prescreen_writer_row_shape(campaign_state_path, tmp_path):

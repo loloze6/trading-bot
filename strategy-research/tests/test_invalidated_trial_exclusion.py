@@ -120,13 +120,17 @@ def test_write_promotion_audit_excludes_invalidated_trial(tmp_path, monkeypatch)
     rpr._write_promotion_audit(run_dir, "run_test")
 
     audit = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
-    # NOTE: _write_promotion_audit's "total_hypotheses_tested" field is actually
-    # len(campaign_state.runs) (a different count entirely); the trial-count field
-    # equivalent to deflate_sharpe.py's total_hypotheses_tested is "total_variants_tested".
     assert audit["total_variants_tested"] == 3, (
         f"expected 3 (invalidated trial excluded from _write_promotion_audit's own "
         f"independent count), got {audit['total_variants_tested']}"
     )
+    # COUNT-DIV fix (2026-08-17): "total_hypotheses_tested" now matches
+    # promotion_audit.schema.json's declared meaning (deduplicated trial_sharpes
+    # count) instead of the unrelated len(campaign.runs) it held before. No dedup
+    # collisions in this fixture, so it equals total_variants_tested here (3).
+    assert audit["total_hypotheses_tested"] == 3
+    # The displaced len(campaign.runs) metric survives under its own honest name.
+    assert audit["total_campaign_runs"] == 0
     assert audit["excluded_trial_counts"]["invalidated_artifact"] == 1
 
 
@@ -163,6 +167,10 @@ def test_write_promotion_audit_h1_uses_honest_n_not_just_sharpe_count(tmp_path, 
     audit = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
 
     assert audit["total_variants_tested"] == 11  # all 11 real attempts, kills included.
+    # COUNT-DIV fix (2026-08-17): now matches total_variants_tested (no dedup
+    # collisions in this fixture) instead of the old len(campaign.runs)=0 bug.
+    assert audit["total_hypotheses_tested"] == 11
+    assert audit["total_campaign_runs"] == 0
     assert audit["n_trials_used"] == 1  # still only 1 real Sharpe value -- a separate question.
     assert audit["deflated_sharpe_ratio"] is None  # correctly still None -- can't estimate variance from 1 point.
     assert audit["dsr_error"] == (
