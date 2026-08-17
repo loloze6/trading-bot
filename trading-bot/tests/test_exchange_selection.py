@@ -268,8 +268,11 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
     The defect this parameter closes is an engine reading a venue nobody asked
     for, and it returns the moment a mode builds a BacktestEngine without
     forwarding params.exchange -- a config saying "kraken" would quietly load
-    Binance caches again. Only `simulate` is driven end-to-end above (the other
-    two modes plot and grid-search), so the remaining sites are held statically.
+    Binance caches again. Only `simulate` is driven end-to-end above (the
+    other mode, `analyze_past_data`, plots), so the remaining site is held
+    statically. (`optimize_strategy`, the third static site, was deleted --
+    it never forwarded its grid-search params to the strategy at all, see
+    P6 in the bug tracker -- so the anchor below dropped from 3 to 2.)
 
     Scoped to the Launcher class: run_backtest() is module-level, not a
     Launcher method, so it falls outside ast.walk(launcher_class)'s scope --
@@ -283,7 +286,7 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
     adversarially on this branch (evidence-leg3/rt_E_defeat_ast.out), none of
     which describes code that exists in the tree today:
 
-      * The len(sites) == 3 anchor is FAIL-CLOSED BY DESIGN. A legitimate fourth
+      * The len(sites) == 2 anchor is FAIL-CLOSED BY DESIGN. A legitimate third
         mode that forwards correctly still fails this test until the count is
         raised deliberately. That is the intent -- adding an engine site should
         be a decision someone records here, not a silent event.
@@ -291,7 +294,7 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
         (backtester.BacktestEngine(...)), a call through a module-level alias
         (_Engine = BacktestEngine), and keeping the exact text while rebinding
         `params` so .exchange no longer comes from _read_trading_params. A whole
-        -tree scan confirms none of these exists today; the three live sites are
+        -tree scan confirms none of these exists today; the two live sites are
         all plain Name calls forwarding params.exchange.
       * One false positive: a correct forward written as a splat,
         **{"exchange": params.exchange}, carries no keyword arg named exchange
@@ -314,7 +317,7 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
         and isinstance(node.func, ast.Name)
         and node.func.id == "BacktestEngine"
     ]
-    assert len(sites) == 3, f"expected 3 BacktestEngine call sites, found {len(sites)}"
+    assert len(sites) == 2, f"expected 2 BacktestEngine call sites, found {len(sites)}"
 
     for site in sites:
         forwarded = [
