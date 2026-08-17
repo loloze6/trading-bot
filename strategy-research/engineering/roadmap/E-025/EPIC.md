@@ -323,3 +323,14 @@ is in scope for this epic, not a separate thing.
   that string, so if this file is ever indexed on his side it
   false-breaches. Split it the same way his tripwire script already does
   (`0GEUR_` + `240`), confirmed no other occurrence anywhere in the repo.
+- 2026-08-17 (later) — **Both adjacent #30 findings closed.** NTRADES
+  (`_record_backtest_trial`'s `n_trades` reading a per-symbol key that
+  never existed, always 0) and COUNT-DIV (`_write_promotion_audit`'s
+  `total_hypotheses_tested` outright violating its own declared schema
+  by holding `len(campaign["runs"])` instead of the deduplicated trial
+  count) are both fixed. Neither was E-025-scoped work itself, but both
+  were tracked from #30's characterization pass alongside H1-H4, so
+  logging closure here for findability. Full detail: `research/ledger/
+  win.md`, 2026-08-17 entries. **E-025 status unchanged by this:** S1-S4
+  mechanics/design landed, only Dorian's two-sided PR remains for S4,
+  Layer 2 tracked as issue #35.
