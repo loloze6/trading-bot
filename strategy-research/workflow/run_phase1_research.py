@@ -4175,10 +4175,9 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     # from n_trials (the real-Sharpe-VALUE sample used to estimate mu_sr/sigma_sr).
     # Deliberately len(deduped_trials), matching deflate_sharpe.py's
     # total_hypotheses_tested exactly (post-dedup, post-invalidated-exclusion) -- NOT
-    # total_tested (pre-dedup) or len(campaign.runs) (a third, separate basis; see
-    # COUNT-DIV, out of scope here). Not touching total_hypotheses_tested/
-    # total_variants_tested below: those stay as-is, already tracked as a distinct,
-    # unowned finding by #30.
+    # total_tested (pre-dedup) or len(campaign.runs) (a third, separate basis).
+    # COUNT-DIV fix (2026-08-17): this value is now also the one exposed in the
+    # output audit dict as "total_hypotheses_tested" -- see below.
     n_dsr_total = len(deduped_trials)
     # Defensive, mirrors deflate_sharpe.py::compute_dsr's same check: n_dsr_total must
     # be >= n_trials by construction (sharpe_values is a filtered subset of
@@ -4289,7 +4288,20 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
         "hypothesis_id":              hyp_id,
         "generated_at":               datetime.now(timezone.utc).isoformat(),
         "raw_median_sharpe":          raw_median_sr,
-        "total_hypotheses_tested":    len(campaign.get("runs", [])),
+        # COUNT-DIV fix (2026-08-17): promotion_audit.schema.json declares
+        # total_hypotheses_tested as "Total deduplicated trial records in
+        # campaign_state.trial_sharpes at audit time (N in BLP 2014)" -- i.e.
+        # n_dsr_total, matching deflate_sharpe.py's own total_hypotheses_tested
+        # exactly. This field previously held len(campaign["runs"]) -- an
+        # unrelated data structure (the campaign's run-id list, not
+        # trial_sharpes), an outright schema violation, not just a naming
+        # ambiguity. n_dsr_total is what the DSR math above actually uses
+        # (:4270) but was never exposed in the output before this fix.
+        "total_hypotheses_tested":    n_dsr_total,
+        # The displaced metric keeps its own honest name rather than being
+        # dropped -- a legitimate, different count (this campaign's total run
+        # attempts, not the trial-ledger's deduplicated DSR-N).
+        "total_campaign_runs":        len(campaign.get("runs", [])),
         "total_variants_tested":      total_tested,
         "n_trials_used":              n_trials,
         "is_sparse_trading":          is_sparse,
