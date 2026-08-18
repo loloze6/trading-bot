@@ -793,6 +793,14 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
         return "component_execution_error"
     if flags.get("kb_reactivation_violation") or state.get("kb_reactivation_violations"):
         return "kb_reactivation_violation"
+    # E-015 S3. MUST stay above the promotion_audit branch below: every route into
+    # holdout_evaluation writes promotion_audit.yaml first and holdout_result.yaml is
+    # absent by definition at that point, so this pause would otherwise classify as
+    # `provisional_promote_awaiting_holdout` — whose RUNBOOK row tells the operator to
+    # run the holdout backtest by hand, the exact act the gate that set this flag
+    # exists to prevent.
+    if flags.get("research_only_unverified"):
+        return "research_only_unverified"
 
     artifacts = run_dir / "artifacts"
     audit_path = artifacts / "promotion_audit.yaml"
