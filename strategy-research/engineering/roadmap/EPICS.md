@@ -11,7 +11,7 @@ epic".
 
 | Ref | Title | State | Next step |
 |---|---|---|---|
-| [E-003](E-003/EPIC.md) | Make the holdout seal gate enforceable in every clone | new | Investigate `tools/hooks/` and `core.hooksPath` |
+| [E-003](E-003/EPIC.md) | Make the holdout seal gate enforceable in every clone | planned | S1 done — NOT a single dispatch; S2 blocked on Jeremy's design call between path-exempting known narrative files vs. bumping the exemption registry (see EPIC.md Log 2026-08-18) |
 | [E-004](E-004/EPIC.md) | Settle the shared record taxonomy with the fork | new | Needs a joint decision, not a dispatch |
 | [E-005](E-005/EPIC.md) | Verify master on macOS and Linux | new | Dorian to run both suites on `c4feaf56` |
 | [E-006](E-006/EPIC.md) | Stop shipping a committed Windows venv | new | Agree with Dorian before `git rm -r --cached venv/` |
@@ -19,7 +19,7 @@ epic".
 | [E-008](E-008/EPIC.md) | q1_26 tick archive aggregation | new | Evaluate extending `data_manager.py:637`'s `.resample()` seam |
 | [E-009](E-009/EPIC.md) | Pipeline harmonization (STAGE_CONFIGS/skill_map, sample_split, protocol auto-run, auto-repair) | new | S1 — merge STAGE_CONFIGS/skill_map |
 | [E-010](E-010/EPIC.md) | Slippage and lot-size/min-notional model | new | S1 — implement, with the non-BTCUSDT hard-fail |
-| [E-011](E-011/EPIC.md) | Shared campaign execution location | new | blocked behind E-003 — do not start before it |
+| [E-011](E-011/EPIC.md) | Shared campaign execution location (S1a: host provisioning, folded in from the Ubuntu-deployment bug card) | new | S1a done (`culi.to` live, baseline byte-identical); S1b blocked behind E-003, which is not a quick unblock (see its own Log) |
 | [E-012](E-012/EPIC.md) | Two-bars manifest/loop defect | new | S1 — measure the delta before designing any fix |
 | [E-014](E-014/EPIC.md) | Venue-parameterized cost model + calibration re-runs | planned | S1 — turn the venue fee schedule into a real parameter (today: one hardcoded `{spot,perp}` flag) and wire the unread `execution_style` block in; S3 (funding retest) now has a real data source — Dorian's PR #24 |
 | [E-015](E-015/EPIC.md) | Venue/product declared at brief registration | planned | S1b — make missing venue/product a hard registration failure; S3 — enforce `research_only` at a real downstream gate (currently written, never read) |
