@@ -91,8 +91,8 @@ it exposes.
       and ahead of the human-pause branch. Affirmative check, fail-closed,
       returning `human_pause` + a `research_only_unverified` flag with its own
       classifier bucket and RUNBOOK row (see convention #2 — the original
-      `completed_rejected` plan was superseded in review). 13 tests, 6
-      mutations killed. Closes Done-when #4.
+      `completed_rejected` plan was superseded in review). 17 tests, 14
+      mutations killed across 8 review rounds. Closes Done-when #4.
 
 ## S3 Phase A — characterization (2026-08-18) — resolved, see Log
 
@@ -247,3 +247,35 @@ bookkeeping would fire after the seal was already spent in practice.
   with no `research_brief.yaml` crashed with `FileNotFoundError` instead of
   refusing, since `load_yaml` raises rather than returning None.
   Both suites green.
+
+- 2026-08-18 (later) — **Eight adversarial review rounds on the shipped gate.**
+  Round 1 found three real defects in the delivery (a red CI I had pushed
+  without re-checking; a terminal `completed_rejected` that killed legitimate
+  refine/reframe descendants; a `--check` that always exited 0). Rounds 2-8
+  were almost entirely defects in the FIXES rather than in the original work,
+  and the two worst were mine: a bare `human_pause` classified as
+  `provisional_promote_awaiting_holdout`, whose RUNBOOK row tells the operator
+  to run the holdout backtest — routing them into spending the seal this gate
+  exists to protect, strictly worse than the bug it replaced; and an
+  `update_state` "hardening" that removed a crash loop but silently zeroed
+  `audit_log`, handing a run its full weighted token budget again (reverted,
+  with the reasoning recorded in-code so it is not retried).
+
+  Also found and fixed: the flag was never cleared, deadlocking the documented
+  recovery path; the gate sat above two terminal rejects and halted whole
+  campaigns for runs that would be rejected anyway; the RUNBOOK reset list
+  omitted three of the flags its own classifiers read (a stale one masks every
+  lower-priority reason); and both guard tests passed trivially — one iterated
+  a single flag already ranked below the hold, the other scanned the whole
+  RUNBOOK where every flag is named in prose.
+
+  **Two root causes worth carrying forward.** (1) I repeatedly asserted
+  mechanisms I had not executed — three false claims written into code
+  comments, each costing a round; the `update_state` comment now carries an
+  explicit instruction not to re-describe that route without re-running it.
+  (2) The sticky-flag design chosen in round 2 generated most of the later
+  rounds (clearing, reset lists, priority ordering, ordering tests). The
+  alternative offered at the time — have `_classify_human_pause` re-derive
+  tradability from the brief instead of trusting a stored flag — would have
+  made every one of them impossible by construction. **Recorded as the one
+  worthwhile follow-up refactor; not done here.**
