@@ -50,13 +50,21 @@ having copied anything into `.git/hooks/` by hand.
 - [x] S1 — **Investigation only. Write nothing.** Done 2026-08-18 (see Log)
       — conclusion: this is NOT a single dispatch, epic stays active, does
       NOT close `withdrawn`.
-- [ ] S2 — Wire it up. Blocked on the prose-accrual design decision found by
-      S1 (see Log) — CANNOT be "wire core.hooksPath + add a CI step" as
-      originally scoped without also deciding how the gate treats narrative
-      files that legitimately and repeatedly mention the sealed window
-      (the ledger itself, `FORK_CHANGES.md`, `CLAUDE.fork.md`). Wiring it
-      as a hard blocking gate today would redden CI on the very next commit
-      to any of those files.
+- [x] S2a — **CI enforcement. Done 2026-08-18.** Unblocked by Jeremy's
+      choice of Option A (see the design section below): the gate now passes
+      on a clean tree, so `.github/workflows/tests.yml` runs it on every push
+      and PR. **This is the story that actually closes the epic's headline
+      defect** — client-side hooks structurally cannot, because GitHub never
+      invokes them on a UI merge.
+- [ ] S2b — `core.hooksPath` wiring for local clones, so a fresh clone gets
+      both gates pre-commit without a manual copy. Now a convenience layer
+      rather than the primary control (S2a covers merges regardless of local
+      config). **Do not wire this before fixing the hook's own Linux/macOS
+      bug** recorded in the Log: its test gate hardcodes
+      `venv/Scripts/python`, and a not-found interpreter exits 127, which
+      falls through the hook's explicit 1/2/3 check and prints "Tests
+      passed." Wiring it as-is would hand every non-Windows clone a hook
+      that silently reports success without running anything.
 - [x] S3 — Dorian's tightened secret-scan hook. Landed 2026-08-15 (PR #26,
       `strategy-research/tools/hooks/pre-commit` Gate 0) — done independently
       of S2, no longer blocked on it.
@@ -90,21 +98,40 @@ gate. A registry keyed on "exactly N lines, no more" is fundamentally the
 wrong shape for a file whose job is to keep growing narrative mentions of
 the seal.
 
-Two real options, not decided here:
+Two real options were put to Jeremy:
 - **(A) Path-exempt known narrative files entirely** (ledger files,
   `FORK_CHANGES.md`, `CLAUDE.fork.md`) rather than capping their line
   count — matches how they're actually used, but weakens the deny-by-
   default property for exactly the files most likely to genuinely
-  reference real dates in prose form, so it needs a human call, not an
-  agent's.
+  reference real dates in prose form.
 - **(B) Keep the count-capped model, bump the registry to match current
   reality now**, and accept this as a recurring per-commit maintenance
   tax on ledger writers — safe today, but the same 2026-08-08 entry
   already predicted this leads to `--no-verify` becoming normal, which
   its own docstring calls worse than no gate.
 
-Not implementing either without Jeremy's call — the wrong choice breaks CI
-for both him and Dorian on the very next ordinary ledger commit.
+**DECIDED 2026-08-18 (Jeremy): Option A.** Implemented as a `PROSE` marker
+in the exemption registry — a path may carry `PROSE` instead of a count,
+meaning exempt by path. Five files carry it: the two ledgers, the ledger
+index, `FORK_CHANGES.md`, `CLAUDE.fork.md`. Everything else — code,
+config, fixtures, data — stays count-pinned, and an unregistered file
+still blocks, so deny-by-default survives for every class of file where
+market data could actually land.
+
+The trade-off is real and is written into both the script and the registry
+header rather than left implicit: **a PROSE file is no longer scanned at
+all**, so market data pasted into one would not be caught by this gate.
+Accepted because those five are hand-written `.md` prose nothing writes
+programmatically, while the actual risk surface (`.csv`/`.json` artifacts)
+stays fully guarded.
+
+Not folded into the same change, deliberately: `.gitignore` (3→4) and
+`test_no_sealed_date_literals.py` (9→25) were simply re-registered at
+their true counts, and two funding tests newly registered at 1 and 2.
+All were read line by line first — every hit was a comment naming the
+seal, or `holdout_start="2026-01-01"` passing the boundary *as* the
+boundary. Zero market data, consistent with the 2026-07-26 audit's
+finding of 0 data files in the residual.
 
 ## Duplicate tracking
 
@@ -156,3 +183,24 @@ record.
   through the hook's explicit 1/2/3 check and prints "Tests passed"),
   which matters for the epic's own "every clone" promise but is a separate,
   smaller bug from the prose-accrual blocker.
+- 2026-08-18 (later) — **Option A chosen by Jeremy and implemented; S2a
+  done, epic's headline defect closed.** `holdout_date_gate.sh` gained a
+  `PROSE` registry marker (exempt by path, for running narrative only) plus
+  a fail-closed guard so a registry value that is neither a number nor
+  `PROSE` blocks with a named reason instead of silently passing. Five
+  narrative files registered `PROSE`; four code/config files re-registered
+  at their true audited counts. Gate goes from **7 files blocking → PASS**
+  on a clean tree (7942 files examined, 3 PROSE files skipped — `mac.md`
+  and `LEDGER.md` carry no hits yet and were registered pre-emptively).
+  Then wired into `.github/workflows/tests.yml` as a required step on every
+  push and PR, Linux-only (content check, OS-independent).
+  **Mutation-verified rather than assumed** — four probes, each run against
+  the real index: (M1) a NEW unregistered `.csv` carrying `2026-03-15`
+  → BLOCKED; (M2) a count-pinned file gaining one extra sealed line
+  → BLOCKED; (M3) a typo'd registry value (`PROZE`) → BLOCKED, named
+  `MALFORMED`; (M4) a PROSE file gaining three sealed dates → PASS, the
+  documented and accepted trade-off. Control passes clean before and after.
+  Deny-by-default therefore survives for every file class where market data
+  could land; only hand-written narrative is exempt.
+  Remaining: S2b (`core.hooksPath`), explicitly gated behind fixing the
+  hook's `venv/Scripts/python` no-op on Linux/macOS first.

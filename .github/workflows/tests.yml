@@ -43,6 +43,19 @@ jobs:
         run: |
           pip install -r strategy-research/config/requirements-mac.txt
           pip install -r strategy-research/tools/recorder/requirements.txt
+      # The holdout seal gate, enforced where it actually matters (E-003 S2).
+      # Client-side hooks cannot close this: GitHub never invokes them on a UI
+      # merge, so before this step a PR merged through the web UI was checked by
+      # nothing, regardless of anyone's local git config. Runs on Linux only --
+      # this is a check on repo CONTENT, identical on every OS, so running it
+      # twice in the matrix would only double the failure noise.
+      # Fails the build on any unregistered sealed-window date. If it fires on
+      # prose rather than market data, register the file in
+      # strategy-research/config/holdout_gate_exemptions.txt (read the lines
+      # first -- the registry header explains counts vs. the PROSE marker).
+      - name: Holdout seal gate
+        if: runner.os == 'Linux'
+        run: sh strategy-research/tools/holdout_date_gate.sh
       - name: Validate strategy config
         run: python tools/validate_config.py strategy_config.json
         working-directory: trading-bot
