@@ -793,6 +793,13 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
         return "component_execution_error"
     if flags.get("kb_reactivation_violation") or state.get("kb_reactivation_violations"):
         return "kb_reactivation_violation"
+    # PRE-EXISTING GAP, fixed here because it sits in this function and this file's
+    # RUNBOOK row already documents the reason: run_phase1_research sets this flag on
+    # two human-pause paths (:4786, :4919) but nothing ever read it, so the reason
+    # string was unreachable and those pauses surfaced as `human_pause_unclassified`
+    # — an operator sent to the wrong row for a documented condition.
+    if flags.get("pass_rule_evaluation_disagreement"):
+        return "pass_rule_evaluation_disagreement"
     # E-015 S3. MUST stay above the promotion_audit branch below: every route into
     # holdout_evaluation writes promotion_audit.yaml first and holdout_result.yaml is
     # absent by definition at that point, so this pause would otherwise classify as

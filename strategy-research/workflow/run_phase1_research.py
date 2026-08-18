@@ -437,7 +437,15 @@ def save_yaml(path: Path, data):
         raise
 
 def update_state(path: Path, **kwargs):
-    state = load_yaml(path / "pipeline_state.yaml")
+    # `or {}`: load_yaml returns None for an empty-but-present pipeline_state.yaml
+    # (a truncated or interrupted write), and the subscript below would then raise
+    # TypeError. That is not a loud failure, it is a crash LOOP: run_loop's own
+    # except-block handler (`update_state(status="failed")`) hits the same file and
+    # raises again, so the exception escapes run_loop AND process_once — which has
+    # no try/except around it — leaving the queue entry `in_progress` for
+    # _select_entry to pick straight back up. Rebuilding state from {} is also the
+    # honest recovery here: an empty file carries nothing to preserve.
+    state = load_yaml(path / "pipeline_state.yaml") or {}
     for key, value in kwargs.items():
         if isinstance(value, dict) and key in state and isinstance(state[key], dict):
             state[key].update(value) # Merge nested dicts (like counters)
@@ -4436,16 +4444,6 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
         # have marked the entry done and advanced the queue. That is the intended
         # behaviour for a state needing a human decision, and it is the same shape every
         # other classified pause already has.
-        # Deliberately NOT hardened against an empty-but-present pipeline_state.yaml,
-        # unlike the read on the pass path below. The asymmetry is principled, not an
-        # oversight: that read asks "is a stale flag set?", where absence correctly
-        # means no, so it proceeds. This write RECORDS that the run is held, and a
-        # state file too corrupt to record it into is a real failure that should
-        # surface — the project's own fail-loud-on-degenerate-input rule. It also
-        # fails closed (update_state raises, run_loop marks the run failed, the seal
-        # is untouched); the only cost is a less specific error than this gate's own
-        # message. Hardening update_state itself would change behaviour for every
-        # other call site to buy that message back.
         update_state(path=run_dir, status="paused_for_human",
                      flags={"research_only_unverified": True})
         return "human_pause"
