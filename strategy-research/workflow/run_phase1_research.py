@@ -4321,12 +4321,16 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
 
 def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     """
-    Improvement 06: single-use holdout gate.
-    0. Refuse unless the brief affirmatively declares the strategy tradable (E-015 S3).
-    1. Check campaign_data_policy.yaml — refuse if hypothesis_id already consumed.
-    2. Check promotion_audit.yaml — if passes_deflated_threshold is False, terminal reject.
-    3. Check holdout_result.yaml — if present and status is set, evaluate it.
-    4. If holdout_result.yaml is absent, pause for human (holdout backtest must be run externally).
+    Improvement 06: single-use holdout gate. Steps are listed in EXECUTION order;
+    the order is load-bearing, so keep this list and the code in step.
+    1.  Check promotion_audit.yaml — if passes_deflated_threshold is False, terminal reject.
+    2.  Check campaign_data_policy.yaml — refuse if hypothesis_id already consumed.
+    2b. Hold unless the brief affirmatively declares the strategy tradable (E-015 S3).
+        Below 1 and 2 because both are terminal rejects that never touch the seal;
+        above 3 and 4 because those are the acts it exists to prevent.
+    3.  If holdout_result.yaml is absent, pause for human (holdout backtest must be
+        run externally).
+    4.  Mark the holdout consumed, then evaluate holdout_result.yaml's status.
     """
     ARTIFACTS = run_dir / "artifacts"
 
@@ -4383,10 +4387,10 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     # blocks. The first run it stops is fixed by declaring venue/product on the
     # brief, which is exactly what this epic's registration rule asks for.
     #
-    # Placed FIRST, ahead of step 3's human_pause and not merely ahead of step 4's
-    # holdout_consumed_by write: the pause instructs a human to go run the holdout
-    # backtest, and in this project's doctrine looking is spending. Refusing after
-    # that instruction has been printed would be refusing after the fact.
+    # On the upper bound of that position: ahead of step 3's human_pause, not merely
+    # ahead of step 4's holdout_consumed_by write. Step 3 instructs a human to go run
+    # the holdout backtest, and in this project's doctrine looking is spending, so
+    # holding after that instruction has been printed would be holding after the fact.
     # load_yaml raises FileNotFoundError rather than returning None, and a run dir
     # with no research_brief.yaml at all must refuse like any other undeclared brief
     # — not crash out of the router with a traceback.
@@ -4445,7 +4449,11 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     # run the holdout backtest, while the run's own stdout says to run it, and no
     # action clears the flag. Deadlock, and precisely on the recovery path this
     # whole hold exists to keep open.
-    _state = load_yaml(run_dir / "pipeline_state.yaml") if (run_dir / "pipeline_state.yaml").exists() else {}
+    # `or {}` matches the other four loads in this function: an empty-but-present
+    # pipeline_state.yaml yields None, and .get on it would raise AttributeError —
+    # surfacing as a misleading unhandled_exception instead of the hold.
+    _sp = run_dir / "pipeline_state.yaml"
+    _state = (load_yaml(_sp) or {}) if _sp.exists() else {}
     if (_state.get("flags") or {}).get("research_only_unverified"):
         update_state(path=run_dir, flags={"research_only_unverified": False})
         print(f"✅ {run_id}: tradability now declared — research_only hold cleared.")
