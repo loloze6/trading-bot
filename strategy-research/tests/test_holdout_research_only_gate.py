@@ -47,6 +47,15 @@ def _run_dir(tmp_path: Path, brief: dict | None) -> Path:
     artifacts.mkdir(parents=True, exist_ok=True)
     (tmp_path / "pipeline_state.yaml").write_text(
         yaml.safe_dump({"run_id": "run_test", "flags": {}}), encoding="utf-8")
+    # Step 1 resolves hypothesis_id from promotion_audit.yaml OR, failing that,
+    # verdict_interpretation.yaml -- and load_yaml raises rather than returning
+    # None if neither exists. Every real run arriving here has one; supply the
+    # fallback so these tests exercise gate 2b rather than tripping over an
+    # unrelated missing artifact. (A run with neither would raise out of the
+    # router into run_loop's except -> status=failed, which is safe: raising is
+    # not proceeding to the holdout. Pre-existing, not this gate's concern.)
+    (artifacts / "verdict_interpretation.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8")
     if brief is not None:
         (artifacts / "research_brief.yaml").write_text(
             yaml.safe_dump(brief), encoding="utf-8")
@@ -171,6 +180,58 @@ def test_a_tradable_run_still_reaches_the_awaiting_holdout_bucket(tmp_path):
 
     assert not (state.get("flags") or {}).get("research_only_unverified")
     assert camp._classify_human_pause(run_dir, state) == "provisional_promote_awaiting_holdout"
+
+
+def test_clearing_the_hold_is_possible_at_all(tmp_path):
+    """The recovery path the RUNBOOK documents must actually work.
+
+    The flag is sticky (update_state merges rather than replaces), so if the
+    pass path does not clear it, an operator who does exactly what the RUNBOOK
+    says -- declare tradability, resume -- gets gate 2b passing while the stale
+    flag still classifies the NEXT, legitimate provisional_promote_awaiting_
+    holdout pause as research_only_unverified. That pause is then unresolvable
+    by construction: its row says do NOT run the backtest, the run's own stdout
+    says to run it, and nothing clears the flag. Deadlock, on the exact
+    recovery path this hold exists to keep open.
+
+    Drives the real two-step sequence: hold, then fix the brief and re-enter.
+    """
+    import importlib
+    camp = importlib.import_module("run_campaign")
+
+    run_dir = _run_dir(tmp_path, {"research_only": True})
+    (run_dir / "artifacts" / "promotion_audit.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8")
+
+    r1._route_holdout_evaluation(run_dir, "run_test")           # held
+    assert yaml.safe_load(
+        (run_dir / "pipeline_state.yaml").read_text())["flags"]["research_only_unverified"]
+
+    # Operator declares tradability and resumes.
+    (run_dir / "artifacts" / "research_brief.yaml").write_text(
+        yaml.safe_dump({"research_only": False}), encoding="utf-8")
+    r1._route_holdout_evaluation(run_dir, "run_test")
+
+    state = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text())
+    assert not state["flags"]["research_only_unverified"]
+    assert camp._classify_human_pause(run_dir, state) == "provisional_promote_awaiting_holdout"
+
+
+def test_a_dsr_rejected_run_is_rejected_not_held(tmp_path):
+    """Gate 2b must sit BELOW the two terminal rejects, not above them.
+
+    A run that already failed the deflated-Sharpe gate is going to be rejected
+    regardless of its paperwork. Holding it first would halt the entire
+    campaign (a classified pause makes process_once return False) for a run
+    that resolves into the same rejection anyway -- trading a clean terminal
+    reject for a pointless pause. Gate 2b only needs to precede step 3's
+    "run the holdout backtest" message and step 4's holdout_consumed_by write.
+    """
+    run_dir = _run_dir(tmp_path, {})                     # undeclared brief
+    (run_dir / "artifacts" / "promotion_audit.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "run_test", "passes_deflated_threshold": False}),
+        encoding="utf-8")
+    assert r1._route_holdout_evaluation(run_dir, "run_test") == "completed_rejected"
 
 
 def test_runbook_documents_the_new_pause_reason():

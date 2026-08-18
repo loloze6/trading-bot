@@ -4330,7 +4330,41 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     """
     ARTIFACTS = run_dir / "artifacts"
 
-    # --- 0. research_only / venue gate (E-015 S3) --------------------------------
+    # Load hypothesis_id from promotion_audit or verdict_interpretation
+    audit_path = ARTIFACTS / "promotion_audit.yaml"
+    if audit_path.exists():
+        audit = load_yaml(audit_path) or {}
+        hyp_id = audit.get("hypothesis_id", run_id)
+        passes = audit.get("passes_deflated_threshold")
+    else:
+        interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml") or {}
+        hyp_id = interp.get("hypothesis_id", run_id)
+        passes = None
+
+    # 1. Deflated Sharpe gate (if not sparse / not indeterminate)
+    if passes is False:
+        print(f"\n🛑 HOLDOUT BLOCKED: promotion_audit.yaml passes_deflated_threshold=False "
+              f"for {hyp_id}. DSR too low — trial count and Sharpe distribution do not support promotion.")
+        return "completed_rejected"
+
+    # 2. Single-use enforcement
+    policy = load_yaml(_DATA_POLICY_PATH) or {} if _DATA_POLICY_PATH.exists() else {}
+    consumed = policy.get("holdout_consumed_by", [])
+    if hyp_id in consumed:
+        print(f"\n🛑 HOLDOUT REFUSED: {hyp_id} has already consumed the single holdout evaluation "
+              f"(found in campaign_data_policy.yaml holdout_consumed_by). "
+              f"Second holdout attempt is mechanically forbidden per A6.1.")
+        return "completed_rejected"
+
+    # --- 2b. research_only / venue gate (E-015 S3) -------------------------------
+    # POSITION: deliberately below steps 1-2 and above step 3. It must precede step
+    # 3, whose message tells a human to go run the holdout backtest, and step 4,
+    # which marks the seal consumed — those are the acts this gate exists to stop.
+    # It must NOT precede steps 1-2: both return completed_rejected, which is
+    # terminal and already safe, and holding above them would halt the whole
+    # campaign (a classified pause makes process_once return False) for a run that
+    # step 1 was going to reject anyway — trading a clean terminal reject for a
+    # paperwork pause that resolves into the same rejection.
     # Until now research_only was written by run_campaign.py's _materialize_run and
     # read by nothing, so it protected nothing: a brief for a product we cannot
     # legally trade could reach the holdout and inform a live-money decision on
@@ -4402,31 +4436,19 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
                      flags={"research_only_unverified": True})
         return "human_pause"
 
-    # Load hypothesis_id from promotion_audit or verdict_interpretation
-    audit_path = ARTIFACTS / "promotion_audit.yaml"
-    if audit_path.exists():
-        audit = load_yaml(audit_path) or {}
-        hyp_id = audit.get("hypothesis_id", run_id)
-        passes = audit.get("passes_deflated_threshold")
-    else:
-        interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml") or {}
-        hyp_id = interp.get("hypothesis_id", run_id)
-        passes = None
-
-    # 1. Deflated Sharpe gate (if not sparse / not indeterminate)
-    if passes is False:
-        print(f"\n🛑 HOLDOUT BLOCKED: promotion_audit.yaml passes_deflated_threshold=False "
-              f"for {hyp_id}. DSR too low — trial count and Sharpe distribution do not support promotion.")
-        return "completed_rejected"
-
-    # 2. Single-use enforcement
-    policy = load_yaml(_DATA_POLICY_PATH) or {} if _DATA_POLICY_PATH.exists() else {}
-    consumed = policy.get("holdout_consumed_by", [])
-    if hyp_id in consumed:
-        print(f"\n🛑 HOLDOUT REFUSED: {hyp_id} has already consumed the single holdout evaluation "
-              f"(found in campaign_data_policy.yaml holdout_consumed_by). "
-              f"Second holdout attempt is mechanically forbidden per A6.1.")
-        return "completed_rejected"
+    # Passed: clear any hold left from a previous attempt. The flag is sticky
+    # (update_state merges rather than replaces), so without this the operator who
+    # does exactly what the RUNBOOK row says — declare tradability, resume — gets
+    # gate 2b passing while the stale flag still classifies the NEXT, legitimate
+    # `provisional_promote_awaiting_holdout` pause as `research_only_unverified`.
+    # That pause is then unresolvable by construction: its RUNBOOK row says not to
+    # run the holdout backtest, while the run's own stdout says to run it, and no
+    # action clears the flag. Deadlock, and precisely on the recovery path this
+    # whole hold exists to keep open.
+    _state = load_yaml(run_dir / "pipeline_state.yaml") if (run_dir / "pipeline_state.yaml").exists() else {}
+    if (_state.get("flags") or {}).get("research_only_unverified"):
+        update_state(path=run_dir, flags={"research_only_unverified": False})
+        print(f"✅ {run_id}: tradability now declared — research_only hold cleared.")
 
     # 3. Check if holdout_result.yaml is present
     hr_path = ARTIFACTS / "holdout_result.yaml"
