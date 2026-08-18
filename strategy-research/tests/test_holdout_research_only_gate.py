@@ -271,3 +271,27 @@ def test_refusal_does_not_consume_the_holdout(tmp_path, monkeypatch):
 
     assert policy.read_bytes() == before
     assert yaml.safe_load(policy.read_text())["holdout_consumed_by"] == []
+
+
+def test_every_classifier_flag_is_in_the_runbook_reset_list():
+    """The operator reset snippet must clear every sticky flag the pause
+    classifiers read.
+
+    The classifiers return the FIRST match in priority order, so a flag left
+    out of the reset list masks every lower-priority reason: the operator is
+    shown the wrong pause reason and follows the wrong resolution row. That is
+    the documented 2026-07-09 P4_ts_trend failure mode, and it recurred twice
+    while building this gate -- once for research_only_unverified itself, once
+    for kb_reactivation_violation. Pinned so the next flag added to either
+    classifier cannot quietly skip the runbook.
+    """
+    import re
+    workflow = Path(__file__).parent.parent / "workflow"
+    campaign_src = (workflow / "run_campaign.py").read_text(encoding="utf-8")
+    runbook = (Path(__file__).parent.parent / "docs" / "RUNBOOK.md").read_text(encoding="utf-8")
+
+    read_flags = set(re.findall(r'flags\.get\("([a-z_]+)"\)', campaign_src))
+    assert read_flags, "no classifier flags found -- the scrape pattern has drifted"
+
+    missing = sorted(f for f in read_flags if f"'{f}'" not in runbook)
+    assert not missing, f"flags read by a pause classifier but absent from RUNBOOK's reset list: {missing}"
