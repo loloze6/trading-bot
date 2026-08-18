@@ -93,3 +93,15 @@ are what remain once E-003 clears.
   investigated E-003 the same day and it is NOT a quick unblock (see
   `E-003/EPIC.md` Log) — the seal gate cannot be safely turned on yet, so
   neither can write-serialized shared campaigns.
+- 2026-08-18 (later) — **E-003 closed `done`; this epic's blocker is
+  cleared.** Design input (b) above — "the seal gate must be enforceable
+  there, so this epic is BLOCKED BEHIND E-003" — is satisfied, and in a
+  stronger form than assumed when it was written: enforcement now lives in
+  CI, so it holds on `culi.to` (or any host) with no per-machine setup at
+  all, rather than depending on each clone being configured correctly.
+  Running `setup_hooks.sh` on the server is still worth doing for
+  fast local feedback, but is no longer load-bearing for the gate.
+  S1b (write-serialize `campaign_state`, retire single-writer Option A) is
+  now the live next step. Note it overlaps E-025's S4 — both concern
+  concurrent writers to the same trial ledger — so sequence them together
+  with Dorian rather than solving the race twice.
