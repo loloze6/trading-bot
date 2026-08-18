@@ -345,10 +345,10 @@ orch.update_state(
     # unclaimed, which outranks all of them while status == 'failed'). The list must
     # stay complete AND correctly ordered: a stale higher-priority flag masks every
     # lower one, so the operator is shown the wrong reason and follows the wrong row.
-    flags={'no_signal_artifact_flagged': False, 'conformance_violation': False,
-           'regime_misattribution_flagged': False, 'component_execution_error_flagged': False,
-           'kb_reactivation_violation': False, 'pass_rule_evaluation_disagreement': False,
-           'research_only_unverified': False, 'stale_escalation_unclaimed': False},
+    flags={'research_only_unverified': False, 'no_signal_artifact_flagged': False,
+           'conformance_violation': False, 'regime_misattribution_flagged': False,
+           'component_execution_error_flagged': False, 'kb_reactivation_violation': False,
+           'pass_rule_evaluation_disagreement': False, 'stale_escalation_unclaimed': False},
 )
 "
 ```

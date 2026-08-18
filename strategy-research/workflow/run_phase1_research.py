@@ -437,17 +437,21 @@ def save_yaml(path: Path, data):
         raise
 
 def update_state(path: Path, **kwargs):
-    # NOT `or {}`, tried and reverted 2026-08-18. An empty-but-present
-    # pipeline_state.yaml makes load_yaml return None and the subscript below raise
-    # TypeError, which does escape run_loop and process_once and leave the queue entry
-    # `in_progress` (run_loop's own handler is another update_state on the same file,
-    # so it raises again). Defaulting to {} looked like the fix and is worse: this
-    # function then writes `audit_log: {}`, which zeroes
-    # _compute_weighted_budget_usage and silently hands the run its full weighted
-    # token budget again — trading a loud crash for a flattering, invisible one. The
-    # crash-loop exposure is real but pre-existing, shared by every caller, and wants
-    # its own fix (atomic writes, or a named error naming the file) rather than a
-    # default that launders corrupt state into plausible state.
+    # NOT `or {}`, tried and reverted 2026-08-18. Verified by execution, since two
+    # earlier attempts to describe this path from reading were both wrong:
+    #   * load_yaml on an empty-but-present pipeline_state.yaml returns None, and the
+    #     subscript below then raises TypeError. (Confirmed directly.)
+    #   * run_loop reads the same file unguarded at its top and uses it immediately,
+    #     so on that path it fails there first, before entering its own try — the
+    #     exception escapes run_loop and process_once either way and leaves the queue
+    #     entry `in_progress`. That outcome is verified; do not re-describe the route
+    #     without re-running it.
+    # Defaulting to {} looks like the fix and is worse: this function then writes
+    # `audit_log: {}`, which zeroes _compute_weighted_budget_usage and silently hands
+    # the run its full weighted token budget again — a loud crash traded for a
+    # flattering, invisible one. The escape is real but pre-existing and shared by
+    # every caller; it wants its own fix (atomic writes on the save side) rather than
+    # a default here that launders corrupt state into plausible state.
     state = load_yaml(path / "pipeline_state.yaml")
     for key, value in kwargs.items():
         if isinstance(value, dict) and key in state and isinstance(state[key], dict):
