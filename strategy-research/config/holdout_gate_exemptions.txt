@@ -62,6 +62,12 @@ research/ledger/mac.md	PROSE
 research/LEDGER.md	PROSE
 FORK_CHANGES.md	PROSE
 CLAUDE.fork.md	PROSE
+# Added 2026-08-18, same session, caught by a fresh-clone check: E-003's own epic doc
+# tripped the gate while documenting the fix TO the gate. Epic files carry a running Log
+# section, so they accumulate exactly like a ledger. Registered individually, NOT as a
+# roadmap/** wildcard -- an epic could legitimately quote a declared backtest range, and
+# that should still get a human look.
+strategy-research/engineering/roadmap/E-003/EPIC.md	PROSE
 # -----------------------------------------------------------------------------------
 
 .gitignore	4
@@ -77,7 +83,10 @@ strategy-research/campaign_record/campaign_knowledge_base.yaml	1
 strategy-research/campaign_record/campaign_state.yaml	1
 strategy-research/config/campaign_baseline_runs.yaml	2
 strategy-research/config/campaign_data_policy.yaml	17
-strategy-research/config/holdout_gate_exemptions.txt	2
+# This file stays COUNT-pinned on purpose and must never be marked PROSE: the file that
+# defines exemptions is the last place that should be able to hide content from the gate.
+# 2 -> 3 on 2026-08-18 (the PROSE-marker header added one more explanatory mention).
+strategy-research/config/holdout_gate_exemptions.txt	3
 strategy-research/engineering/improvements/done/design_and_docs/STEP_05_FINDINGS.md	1
 strategy-research/engineering/improvements/done/design_and_docs/K4_routing_registration_design_20260712.md	4
 strategy-research/engineering/improvements/done/design_and_docs/p1b_fetch_manifest.md	6
