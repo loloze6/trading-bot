@@ -28,6 +28,37 @@ cd trading-bot/strategy-research
 
 ---
 
+## 0. One-time per clone: wire up the commit gates
+
+Run this once on every machine and every fresh clone, from the repo root:
+
+```bash
+sh strategy-research/tools/setup_hooks.sh
+```
+
+`.git/hooks/` is never cloned, so without this a new checkout has **no
+pre-commit gate at all** — no secret scan, no holdout-date scan. The script
+points `core.hooksPath` at the tracked hook directory, so the gates travel
+with the repo and a `git pull` updates them.
+
+Check status without changing anything:
+
+```bash
+sh strategy-research/tools/setup_hooks.sh --check
+```
+
+Two gates run on each commit, ~6 seconds combined: a **secret scan**
+(forbidden files plus credential values in the staged diff) and the
+**holdout gate** (no unregistered dates inside the sealed window). Both
+guard things a commit makes permanent — a secret or a sealed date in your
+local history needs a history rewrite to remove, which CI cannot do for you.
+
+Tests deliberately do **not** run in the hook; CI runs both suites on every
+push and pull request. That also covers the case a local hook never can: a
+pull request merged through GitHub's web UI never invokes your hooks.
+
+---
+
 ## 1. Launch the campaign
 
 ### 1a. Dry run first (no LLM spend, zero footprint)
