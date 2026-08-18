@@ -4322,12 +4322,54 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
 def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     """
     Improvement 06: single-use holdout gate.
+    0. Refuse unless the brief affirmatively declares the strategy tradable (E-015 S3).
     1. Check campaign_data_policy.yaml — refuse if hypothesis_id already consumed.
     2. Check promotion_audit.yaml — if passes_deflated_threshold is False, terminal reject.
     3. Check holdout_result.yaml — if present and status is set, evaluate it.
     4. If holdout_result.yaml is absent, pause for human (holdout backtest must be run externally).
     """
     ARTIFACTS = run_dir / "artifacts"
+
+    # --- 0. research_only / venue gate (E-015 S3) --------------------------------
+    # Until now research_only was written by run_campaign.py's _materialize_run and
+    # read by nothing, so it protected nothing: a brief for a product we cannot
+    # legally trade could reach the holdout and inform a live-money decision on
+    # research-only evidence.
+    #
+    # AFFIRMATIVE check, not a negative one. `research_only is True` alone would be
+    # decorative: measured 2026-08-18, 0 of 57 briefs in the tree carry the key at
+    # all, and it is written by only one of the three research_brief.yaml writers,
+    # so it does not survive a refine or a reframe. Requiring research_only is False
+    # makes a missing/undeclared brief refuse instead of sail through, which matches
+    # venue_tradability.yaml's own rule that silence must never resolve to a green
+    # light — and needs no propagation machinery to be correct for child runs.
+    #
+    # Safe to make fail-closed: holdout_consumed_by is empty and no run has ever
+    # reached this gate (measured, same date), so there is no legacy corpus this
+    # blocks. The first run it stops is fixed by declaring venue/product on the
+    # brief, which is exactly what this epic's registration rule asks for.
+    #
+    # Placed FIRST, ahead of step 3's human_pause and not merely ahead of step 4's
+    # holdout_consumed_by write: the pause instructs a human to go run the holdout
+    # backtest, and in this project's doctrine looking is spending. Refusing after
+    # that instruction has been printed would be refusing after the fact.
+    # load_yaml raises FileNotFoundError rather than returning None, and a run dir
+    # with no research_brief.yaml at all must refuse like any other undeclared brief
+    # — not crash out of the router with a traceback.
+    _brief_path = ARTIFACTS / "research_brief.yaml"
+    brief = (load_yaml(_brief_path) or {}) if _brief_path.exists() else {}
+    if brief.get("research_only") is not False:
+        declared = brief.get("research_only", "<absent>")
+        print(f"\n🛑 HOLDOUT REFUSED: {run_id}'s research_brief.yaml does not affirmatively "
+              f"declare the strategy tradable (research_only={declared!r}; a value of False "
+              f"is required to proceed).")
+        print(f"   The holdout is single-use and terminal, so it is spent only on a "
+              f"strategy we could actually trade.")
+        print(f"   Fix: declare venue + product on the brief and re-materialize it through "
+              f"run_campaign.py, which resolves tradability from "
+              f"config/venue_tradability.yaml. Do not hand-set research_only to False to "
+              f"get past this — that is the check, not paperwork.")
+        return "completed_rejected"
 
     # Load hypothesis_id from promotion_audit or verdict_interpretation
     audit_path = ARTIFACTS / "promotion_audit.yaml"

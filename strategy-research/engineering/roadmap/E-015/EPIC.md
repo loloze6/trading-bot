@@ -63,7 +63,10 @@ it exposes.
    `campaign_knowledge_base.yaml`'s `funding_mr_daily_retest_killed.venue_live_tradability`.
 4. NEW: `research_only: true` is actually enforced at at least one downstream
    gate (promotion, walk-forward, or the sealed holdout) — today it is
-   written and never read again.
+   written and never read again. **MET 2026-08-18** — `_route_holdout_evaluation`
+   gate 0, `run_phase1_research.py:4332`. Enforced in the stronger affirmative
+   form: the holdout requires `research_only is False`, so an undeclared or
+   unpropagated brief refuses rather than passes.
 
 ## Stories
 
@@ -78,17 +81,17 @@ it exposes.
 - [ ] S1b — Make missing venue/product a hard registration failure (Done-when
       #1, as originally specified) rather than a silent `research_only`
       default.
-- [ ] S3a — **Make `research_only` propagate.** Prerequisite for S3b, found
-      by S3's Phase A (see below): the flag is written by one of three
-      `research_brief.yaml` writers, so it does not survive a refine or a
-      reframe. Enforcing without this yields a gate every descendant walks
-      around.
-- [ ] S3b — Enforce `research_only` at the holdout gate
-      (`_route_holdout_evaluation`), **before** its human-pause branch, so a
-      `research_only` run cannot reach a live-money decision undetected.
-      Blocked behind S3a.
+- [x] ~~S3a — Make `research_only` propagate.~~ **DROPPED 2026-08-18** as
+      over-engineering (Jeremy's call). Made unnecessary by S3's affirmative
+      form: requiring `research_only is False` means a child that inherits
+      nothing inherits no permission either, so propagation machinery buys
+      nothing a one-line predicate does not already give.
+- [x] S3 — **Enforce `research_only` at the holdout gate. DONE 2026-08-18**
+      (`run_phase1_research.py:4332`, gate 0 of `_route_holdout_evaluation`),
+      ahead of the human-pause branch. Affirmative check, fail-closed,
+      9 tests, 3 mutations killed. Closes Done-when #4.
 
-## S3 Phase A — characterization (2026-08-18, STOPPED for review)
+## S3 Phase A — characterization (2026-08-18) — resolved, see Log
 
 Run before writing any enforcement, per the two-phase convention. It found
 the story as scoped was **not implementable as one change**, for a reason
@@ -203,3 +206,32 @@ bookkeeping would fire after the seal was already spent in practice.
   human-pause branch, not merely ahead of its `holdout_consumed_by` write —
   the pause instructs a human to run the holdout backtest, and looking is
   spending.
+- 2026-08-18 (later) — **S3 DONE; S3a dropped as over-engineering (Jeremy).**
+  Phase A had framed this as two stories (propagate, then enforce) plus a
+  migration decision for 57 legacy runs. Two further measurements collapsed
+  all of that: **0 of 57 briefs declare `venue` or `product` at all** (so the
+  registration mechanism has never been exercised on a real brief), and **0
+  runs have ever reached the holdout gate** — `holdout_consumed_by` is empty,
+  the seal has never been touched. There is therefore no legacy corpus to
+  migrate and no flag anywhere to propagate; both problems were hypothetical.
+
+  Shipped instead as a single affirmative check at
+  `_route_holdout_evaluation`'s gate 0: the holdout requires
+  `research_only is False` and refuses anything else. The affirmative form is
+  what makes S3a unnecessary — a child run that inherits nothing inherits no
+  *permission* either, so the propagation defect stops being exploitable
+  without any propagation machinery. It also does S1b's job in the place that
+  matters: the first run this ever blocks is fixed by declaring venue/product
+  on its brief, which is exactly the registration rule this epic exists to
+  enforce. S1b stays open as the belt-and-braces version at registration time,
+  no longer load-bearing.
+
+  Fail-closed was adopted outright rather than phased, because the
+  measurements above prove it blocks nothing that exists. 9 tests, and the
+  three mutations that matter all killed: gate removed → 8 red; the
+  *decorative* `is True` variant → 5 red (this is the one that would have
+  looked correct and protected nothing); gate relocated after the human-pause
+  branch → 8 red. One real bug caught by the tests before shipping: a run dir
+  with no `research_brief.yaml` crashed with `FileNotFoundError` instead of
+  refusing, since `load_yaml` raises rather than returning None.
+  Both suites green.
