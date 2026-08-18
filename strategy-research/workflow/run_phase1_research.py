@@ -4360,16 +4360,30 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     brief = (load_yaml(_brief_path) or {}) if _brief_path.exists() else {}
     if brief.get("research_only") is not False:
         declared = brief.get("research_only", "<absent>")
-        print(f"\n🛑 HOLDOUT REFUSED: {run_id}'s research_brief.yaml does not affirmatively "
+        print(f"\n⏸️  HOLDOUT HELD: {run_id}'s research_brief.yaml does not affirmatively "
               f"declare the strategy tradable (research_only={declared!r}; a value of False "
               f"is required to proceed).")
         print(f"   The holdout is single-use and terminal, so it is spent only on a "
               f"strategy we could actually trade.")
-        print(f"   Fix: declare venue + product on the brief and re-materialize it through "
-              f"run_campaign.py, which resolves tradability from "
-              f"config/venue_tradability.yaml. Do not hand-set research_only to False to "
-              f"get past this — that is the check, not paperwork.")
-        return "completed_rejected"
+        print(f"   Fix, then resume: declare venue + product on this run's "
+              f"research_brief.yaml so tradability resolves from "
+              f"config/venue_tradability.yaml (run_campaign.py's _materialize_run does "
+              f"this for a fresh launch; a refine/reframe descendant inherits neither the "
+              f"key nor the venue fields, so it must be declared here). Do NOT hand-set "
+              f"research_only to False to get past this, and do NOT run the holdout "
+              f"backtest yet — looking is spending.")
+        # human_pause, NOT completed_rejected. The two existing terminal refusals below
+        # are genuinely unrecoverable states (DSR too low; holdout already consumed).
+        # This one is a fixable declaration gap, and because research_only is not
+        # propagated by the refine path (setup_next_run copies an LLM-authored
+        # proposed_brief.yaml) or the reframe path (_safe_write_new_research_brief), a
+        # legitimately tradable descendant of a correctly-materialized run lands here as
+        # a matter of course. completed_rejected would write status="rejected", which
+        # resume_pipeline refuses to resume — terminally killing a good run over missing
+        # paperwork. Protection is identical either way: the pause halts the pipeline and
+        # holdout_consumed_by is untouched, and re-entry re-runs this same check, so the
+        # run cannot proceed until the brief is actually fixed.
+        return "human_pause"
 
     # Load hypothesis_id from promotion_audit or verdict_interpretation
     audit_path = ARTIFACTS / "promotion_audit.yaml"

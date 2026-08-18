@@ -37,14 +37,25 @@ cd "$ROOT" || exit 1
 current=$(git config --get core.hooksPath || true)
 
 if [ "${1:-}" = "--check" ]; then
+    # Exits NONZERO when anything is not wired, so `--check || setup_hooks.sh` works
+    # and CI/onboarding can gate on it. A --check that always exited 0 could report
+    # "NOT wired" and still look like success to every caller -- the same
+    # silently-passing shape as the non-executable hook this script exists to catch.
+    rc=0
     echo "core.hooksPath : ${current:-<unset>}"
     if [ -x "$HOOKS_DIR/pre-commit" ]; then
         echo "hook executable: yes"
     else
         echo "hook executable: NO — git silently ignores non-executable hooks"
+        rc=1
     fi
-    [ "$current" = "$HOOKS_DIR" ] && echo "STATUS: wired" || echo "STATUS: NOT wired — run without --check"
-    exit 0
+    if [ "$current" = "$HOOKS_DIR" ]; then
+        echo "STATUS: wired"
+    else
+        echo "STATUS: NOT wired — run without --check"
+        rc=1
+    fi
+    exit $rc
 fi
 
 # Git ignores a hook that is not executable, and does so without failing the commit.

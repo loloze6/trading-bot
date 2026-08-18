@@ -44,6 +44,10 @@ def _run_dir(tmp_path: Path, brief: dict | None) -> Path:
     return tmp_path
 
 
+_HELD = "HOLDOUT HELD"
+_BACKTEST_INSTRUCTION = "Run the holdout backtest"
+
+
 @pytest.mark.parametrize("brief,label", [
     ({"research_only": True}, "explicitly research-only"),
     ({}, "key absent (the shape all 57 live briefs have)"),
@@ -52,18 +56,30 @@ def _run_dir(tmp_path: Path, brief: dict | None) -> Path:
     ({"research_only": "false"}, "string 'false', not the boolean"),
     ({"research_only": 0}, "falsy 0 -- must not satisfy an `is False` check"),
 ])
-def test_gate_refuses_unless_tradable_is_affirmed(tmp_path, brief, label):
-    """Every non-affirmative shape terminates the run instead of proceeding."""
-    assert r1._route_holdout_evaluation(
-        _run_dir(tmp_path, brief), "run_test") == "completed_rejected", label
+def test_gate_holds_unless_tradable_is_affirmed(tmp_path, brief, label, capsys):
+    """Every non-affirmative shape is held at gate 0 instead of proceeding.
+
+    Asserted on the PRINTED VERDICT, not the return value: gate 0 and the
+    legitimate no-holdout-result path both return "human_pause", so the return
+    value alone cannot tell "held at the door" from "let through". The message
+    is what distinguishes them, so the message is what this pins -- along with
+    the absence of the backtest instruction (see the ordering test below).
+    """
+    result = r1._route_holdout_evaluation(_run_dir(tmp_path, brief), "run_test")
+    out = capsys.readouterr().out
+    assert _HELD in out, label
+    assert _BACKTEST_INSTRUCTION not in out, label
+    assert result == "human_pause", label
 
 
-def test_gate_lets_an_affirmatively_tradable_brief_through(tmp_path):
-    """research_only False must NOT be refused by gate 0.
+def test_gate_lets_an_affirmatively_tradable_brief_through(tmp_path, capsys):
+    """research_only False must NOT be held by gate 0.
 
-    It proceeds to the later gates and, with no promotion_audit.yaml and no
-    holdout_result.yaml present, lands on the human pause -- proving gate 0
-    let it past rather than that everything returns the same verdict.
+    It proceeds to the later gates and, with no holdout_result.yaml present,
+    lands on the legitimate human pause that asks for the backtest. Pinned on
+    the message rather than the return value, for the reason above: both land
+    on "human_pause", and a gate 0 that wrongly held this run would still
+    return the same string.
     """
     run_dir = _run_dir(tmp_path, {"research_only": False})
     # The downstream gate reads one of promotion_audit / verdict_interpretation;
@@ -71,23 +87,43 @@ def test_gate_lets_an_affirmatively_tradable_brief_through(tmp_path):
     # tripping over an unrelated missing artifact.
     (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
         yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8")
-    assert r1._route_holdout_evaluation(run_dir, "run_test") == "human_pause"
+
+    result = r1._route_holdout_evaluation(run_dir, "run_test")
+    out = capsys.readouterr().out
+    assert _HELD not in out
+    assert _BACKTEST_INSTRUCTION in out
+    assert result == "human_pause"
 
 
-def test_refusal_precedes_the_backtest_instruction(tmp_path, capsys):
-    """The refusal must fire BEFORE the pause that tells a human to run the
+def test_hold_is_recoverable_not_terminal(tmp_path, capsys):
+    """A held run must stay resumable.
+
+    research_only is not propagated by the refine path (setup_next_run copies
+    an LLM-authored proposed_brief.yaml) or the reframe path, so a genuinely
+    tradable descendant of a correctly-materialized run lands here routinely.
+    "completed_rejected" would write status="rejected", which resume_pipeline
+    refuses to resume -- terminally killing a good run over missing paperwork.
+    Pinned because the difference is one string and the protection is identical
+    either way.
+    """
+    assert r1._route_holdout_evaluation(
+        _run_dir(tmp_path, {"research_only": True}), "run_test") != "completed_rejected"
+
+
+def test_hold_precedes_the_backtest_instruction(tmp_path, capsys):
+    """The hold must fire BEFORE the pause that tells a human to run the
     holdout backtest.
 
     This is the whole point of placing gate 0 first rather than merely ahead
-    of the holdout_consumed_by write: the pause branch prints "Run the holdout
+    of the holdout_consumed_by write: the later pause prints "Run the holdout
     backtest on this range", and a human following that instruction opens the
-    sealed data. Looking is spending, so a refusal printed after that text
-    would be a refusal after the fact.
+    sealed data. Looking is spending, so a hold printed after that text would
+    be a hold after the fact.
     """
     r1._route_holdout_evaluation(_run_dir(tmp_path, {"research_only": True}), "run_test")
     out = capsys.readouterr().out
-    assert "HOLDOUT REFUSED" in out
-    assert "Run the holdout backtest" not in out
+    assert _HELD in out
+    assert _BACKTEST_INSTRUCTION not in out
 
 
 def test_refusal_does_not_consume_the_holdout(tmp_path, monkeypatch):
