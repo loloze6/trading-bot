@@ -64,7 +64,7 @@ it exposes.
 4. NEW: `research_only: true` is actually enforced at at least one downstream
    gate (promotion, walk-forward, or the sealed holdout) — today it is
    written and never read again. **MET 2026-08-18** — `_route_holdout_evaluation`
-   gate 0, `run_phase1_research.py:4332`. Enforced in the stronger affirmative
+   gate 2b (below the two terminal rejects, above the human-pause branch). Enforced in the stronger affirmative
    form: the holdout requires `research_only is False`, so an undeclared or
    unpropagated brief refuses rather than passes.
 
@@ -87,8 +87,8 @@ it exposes.
       nothing inherits no permission either, so propagation machinery buys
       nothing a one-line predicate does not already give.
 - [x] S3 — **Enforce `research_only` at the holdout gate. DONE 2026-08-18**
-      (`run_phase1_research.py:4332`, gate 0 of `_route_holdout_evaluation`),
-      ahead of the human-pause branch. Affirmative check, fail-closed,
+      (gate 2b of `_route_holdout_evaluation`), below the two terminal rejects
+      and ahead of the human-pause branch. Affirmative check, fail-closed,
       returning `human_pause` + a `research_only_unverified` flag with its own
       classifier bucket and RUNBOOK row (see convention #2 — the original
       `completed_rejected` plan was superseded in review). 13 tests, 6
@@ -228,7 +228,7 @@ bookkeeping would fire after the seal was already spent in practice.
   migrate and no flag anywhere to propagate; both problems were hypothetical.
 
   Shipped instead as a single affirmative check at
-  `_route_holdout_evaluation`'s gate 0: the holdout requires
+  `_route_holdout_evaluation`'s gate 2b: the holdout requires
   `research_only is False` and refuses anything else. The affirmative form is
   what makes S3a unnecessary — a child run that inherits nothing inherits no
   *permission* either, so the propagation defect stops being exploitable

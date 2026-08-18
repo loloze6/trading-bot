@@ -336,9 +336,16 @@ import run_phase1_research as orch
 from pathlib import Path
 orch.update_state(
     path=Path('runs/<run_id>'), status='active', last_error=None,
+    # State-key counterparts: _classify_human_pause reads these ALONGSIDE their
+    # flags ('conformance_violation OR conformance_violations'), so clearing only
+    # the flag half leaves the pause classifying exactly as before.
+    conformance_violations=[], kb_reactivation_violations=[],
+    # Every flag _classify_human_pause reads, in its own priority order. The list
+    # must stay complete: a stale higher-priority flag masks every lower one, so
+    # the operator is shown the wrong reason and follows the wrong row.
     flags={'no_signal_artifact_flagged': False, 'component_execution_error_flagged': False,
            'conformance_violation': False, 'regime_misattribution_flagged': False,
-           'research_only_unverified': False},
+           'kb_reactivation_violation': False, 'research_only_unverified': False},
 )
 "
 ```
