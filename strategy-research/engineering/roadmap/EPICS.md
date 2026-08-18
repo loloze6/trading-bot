@@ -11,7 +11,6 @@ epic".
 
 | Ref | Title | State | Next step |
 |---|---|---|---|
-| [E-003](E-003/EPIC.md) | Make the holdout seal gate enforceable in every clone | in-progress | S1 + S2a done — Option A (`PROSE` registry marker) chosen and implemented, gate 7-blocking → PASS, now enforced in CI on every push/PR (mutation-verified, 4 probes). Only S2b (`core.hooksPath`) left, gated behind fixing the hook's Windows-only python path |
 | [E-004](E-004/EPIC.md) | Settle the shared record taxonomy with the fork | new | Needs a joint decision, not a dispatch |
 | [E-005](E-005/EPIC.md) | Verify master on macOS and Linux | new | Dorian to run both suites on `c4feaf56` |
 | [E-006](E-006/EPIC.md) | Stop shipping a committed Windows venv | new | Agree with Dorian before `git rm -r --cached venv/` |
@@ -19,7 +18,7 @@ epic".
 | [E-008](E-008/EPIC.md) | q1_26 tick archive aggregation | new | Evaluate extending `data_manager.py:637`'s `.resample()` seam |
 | [E-009](E-009/EPIC.md) | Pipeline harmonization (STAGE_CONFIGS/skill_map, sample_split, protocol auto-run, auto-repair) | new | S1 — merge STAGE_CONFIGS/skill_map |
 | [E-010](E-010/EPIC.md) | Slippage and lot-size/min-notional model | new | S1 — implement, with the non-BTCUSDT hard-fail |
-| [E-011](E-011/EPIC.md) | Shared campaign execution location (S1a: host provisioning, folded in from the Ubuntu-deployment bug card) | new | S1a done (`culi.to` live, baseline byte-identical); S1b blocked behind E-003, which is not a quick unblock (see its own Log) |
+| [E-011](E-011/EPIC.md) | Shared campaign execution location (S1a: host provisioning, folded in from the Ubuntu-deployment bug card) | new | **E-003 blocker cleared 2026-08-18** — S1a done (`culi.to` live, baseline byte-identical); S1b (write-serialize `campaign_state`, retire single-writer Option A) is now the next real step, jointly with Dorian |
 | [E-012](E-012/EPIC.md) | Two-bars manifest/loop defect | new | S1 — measure the delta before designing any fix |
 | [E-014](E-014/EPIC.md) | Venue-parameterized cost model + calibration re-runs | planned | S1 — turn the venue fee schedule into a real parameter (today: one hardcoded `{spot,perp}` flag) and wire the unread `execution_style` block in; S3 (funding retest) now has a real data source — Dorian's PR #24 |
 | [E-015](E-015/EPIC.md) | Venue/product declared at brief registration | planned | S1b — make missing venue/product a hard registration failure; S3 — enforce `research_only` at a real downstream gate (currently written, never read) |
@@ -40,6 +39,7 @@ not archived elsewhere.
 
 | Ref | Title | State | Closing SHA |
 |---|---|---|---|
+| [E-003](E-003/EPIC.md) | Make the holdout seal gate enforceable in every clone | done | S2a `74c7397` (gate green + CI enforcement), S2b `2ea51a3` (hook made real: exec bit, lying test gate removed, `setup_hooks.sh`). Verify: `sh strategy-research/tools/holdout_date_gate.sh` → PASS, 7942 files examined; fresh-clone probes block a credential / a `.env` / a `2026-03-15` CSV and allow an ordinary commit in 1.85s |
 | [E-002](E-002/EPIC.md) | Land the parked `strategy-research/` restructure | done | `1787258b` amended the mapping (dropped `protocols/` and `briefs/` as contract migrations); `8f162fa6` (S3-S5, dispatch W44) landed 169 renames plus 94 repointed files — see `E-002/EPIC.md` Log. S6's independent audit was not run |
 | [E-001](E-001/EPIC.md) | Establish the engineering operational process | done | `25960cac` corrected the Done-when; this file's own dispatch (W26) closes it — see `E-001/EPIC.md` Log for the verification output |
 | [E-013](E-013/EPIC.md) | Split docs/ROADMAP.md — retire the name, graduate the engineering items | done | `cd20e6ec` created the six epics (S2); `cc69410f` (S3, W36) closed it but left six live citations unrepointed; this commit (S4, dispatch W37) reopened and re-closed it — see `E-013/EPIC.md` Log for the repoint and re-verification |
@@ -57,6 +57,5 @@ continues as a card reference
 
 **WIP limit (amendment 11): at most 2 epics may be `in-progress` at once**,
 and only via an actual dispatch under the epic — a tree audit crediting
-pre-existing code does not itself count. Currently 1 of 2 slots used
-(E-003 — S1 + S2a dispatched and landed 2026-08-18; frees up when S2b
-lands or the epic closes).
+pre-existing code does not itself count. Currently 0 of 2 slots used
+(E-003 closed `done` 2026-08-18, freeing its slot).

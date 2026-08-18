@@ -1,12 +1,13 @@
 # E-003 — Make the holdout seal gate enforceable in every clone
 
-**State:** planned
+**State:** done
 **Owner:** Jeremy
 **Updated:** 2026-08-18
 
-**No longer provisional.** S1 ran 2026-08-18: the fix is NOT a single
-dispatch (a real design decision blocks S2, see below), so this stays an
-epic per amendment 7 rather than closing `withdrawn`.
+**No longer provisional.** S1 ran 2026-08-18 and showed this was NOT a
+single dispatch — it carried a real design decision plus three independent
+defects in the hook itself — so it stayed an epic per amendment 7 rather
+than closing `withdrawn`. All stories closed the same day; see Log.
 
 ## Why
 
@@ -37,13 +38,37 @@ Stories.
 
 ## Done when
 
-`git config core.hooksPath` is set to a repo-tracked directory (e.g.
-`tools/hooks`, committed as part of the repo's own setup, not a local-only
-copy), **and** a fresh clone of the repo — with no manual setup beyond
-`git clone` — blocks a commit that introduces an unregistered sealed-window
-date. Verify: clone the repo to a new directory, attempt a commit adding a
-sealed-window date to a non-exempted file, confirm the gate fires without
-having copied anything into `.git/hooks/` by hand.
+**As originally written (2026-08-03), and why it was unsatisfiable:**
+
+> `git config core.hooksPath` is set to a repo-tracked directory ...
+> **and** a fresh clone of the repo — with no manual setup beyond
+> `git clone` — blocks a commit that introduces an unregistered
+> sealed-window date.
+
+The "no manual setup beyond `git clone`" clause **cannot be met by any
+repo**, and this is deliberate on Git's part, not an oversight in our setup:
+if cloning could install hooks, cloning any repository would execute its
+author's code. `core.hooksPath` is local config by design and there is no
+committable equivalent. Written before S1 ran, the criterion assumed a
+mechanism that does not exist.
+
+**Restated 2026-08-18, and met:**
+
+1. **Merges are gated with zero setup, unconditionally** — CI runs the
+   holdout gate on every push and PR, so it holds regardless of anyone's
+   local config, and covers the case no hook ever can (a PR merged through
+   GitHub's web UI never invokes hooks). *This is the half that actually
+   closes the reported defect.*
+2. **A fresh clone is one documented command from full local gating** —
+   `sh strategy-research/tools/setup_hooks.sh`, RUNBOOK section 0. Verified
+   in a real fresh clone: before it, `STATUS: NOT wired`; after it, a staged
+   AWS credential, a `.env`, and a CSV dated `2026-03-15` are each blocked,
+   while an ordinary commit passes in 1.85s.
+
+The residual gap is now honest and small: someone who clones and never runs
+setup gets no *local* gate — but their pull request is still gated by CI, so
+nothing reaches master unchecked. That is a genuinely different risk from
+where this epic started, where nothing was checked anywhere.
 
 ## Stories
 
@@ -56,20 +81,16 @@ having copied anything into `.git/hooks/` by hand.
       and PR. **This is the story that actually closes the epic's headline
       defect** — client-side hooks structurally cannot, because GitHub never
       invokes them on a UI merge.
-- [ ] S2b — `core.hooksPath` wiring for local clones, so a fresh clone gets
-      both gates pre-commit without a manual copy. Now a convenience layer
-      rather than the primary control (S2a covers merges regardless of local
-      config). **Do not wire this before fixing the hook's own Linux/macOS
-      bug** recorded in the Log: its test gate hardcodes
-      `venv/Scripts/python`, and a not-found interpreter exits 127, which
-      falls through the hook's explicit 1/2/3 check and prints "Tests
-      passed." Wiring it as-is would hand every non-Windows clone a hook
-      that silently reports success without running anything.
+- [x] S2b — **`core.hooksPath` wiring. Done 2026-08-18.** `setup_hooks.sh`
+      wires a fresh clone in one command, documented as RUNBOOK section 0.
+      The three reasons the tracked hook was previously inert — mode 100644
+      (git ignores non-executable hooks), the lying test gate, and that gate
+      also being misplaced — are all fixed; see Log.
 - [x] S3 — Dorian's tightened secret-scan hook. Landed 2026-08-15 (PR #26,
       `strategy-research/tools/hooks/pre-commit` Gate 0) — done independently
       of S2, no longer blocked on it.
 
-## Design decision needed before S2 (found 2026-08-18)
+## Design decision that blocked S2 — found and RESOLVED 2026-08-18
 
 Running `strategy-research/tools/holdout_date_gate.sh` against the current
 tree (exactly what a CI step or a wired local hook would do) blocks TODAY,
@@ -204,3 +225,34 @@ record.
   could land; only hand-written narrative is exempt.
   Remaining: S2b (`core.hooksPath`), explicitly gated behind fixing the
   hook's `venv/Scripts/python` no-op on Linux/macOS first.
+- 2026-08-18 (later still) — **S2b done; epic `done`.** Investigating the
+  hook turned up not one blocker but three, each independently enough to
+  make it inert:
+  **(i) mode 100644.** Git ignores a non-executable hook and lets the commit
+  through with only an advisory hint — proven by experiment in a scratch
+  repo, not assumed. Wiring `core.hooksPath` without noticing this would
+  have produced a confident-looking no-op. Both scripts now ship 100755, and
+  `setup_hooks.sh` repairs a lost exec bit before wiring rather than
+  pointing at a path that would silently do nothing.
+  **(ii) the lying test gate** (already recorded above) — removed, not
+  repaired, because of (iii).
+  **(iii) the test gate was misplaced regardless of the bug.** It ran only
+  the trading-bot suite, never strategy-research, at ~1 minute per commit.
+  Jeremy's call, on the argument that the hook should gate what a commit
+  makes *permanent*: a secret or sealed date needs a history rewrite to undo
+  (the `.env` in `91087ed` is the standing example), and CI can reject a
+  push but cannot un-write local history — whereas a failing test damages
+  nothing and is fixed by committing again. Tests belong in CI, which now
+  runs both suites. Hook is now secrets + seal only: **1.85s measured**, low
+  enough that `--no-verify` has no pull.
+  Also rewrote the Done-when: the original's "no manual setup beyond
+  `git clone`" is unsatisfiable by any repository — Git deliberately makes
+  hook installation opt-in, or cloning would execute the author's code. It
+  was written before S1 ran, against a mechanism that does not exist.
+  Restated honestly, and met: merges gated with zero setup via CI, local
+  clones one documented command away.
+  **Verified in a fresh clone end to end**, each gate fired individually:
+  AWS credential → BLOCKED, `.env` → BLOCKED, CSV dated `2026-03-15` →
+  BLOCKED, ordinary commit → ALLOWED in 1.85s, ledger prose naming the seal
+  → ALLOWED (the PROSE exemption working in the real commit path, not just
+  in a script run).
