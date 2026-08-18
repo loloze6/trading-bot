@@ -437,15 +437,18 @@ def save_yaml(path: Path, data):
         raise
 
 def update_state(path: Path, **kwargs):
-    # `or {}`: load_yaml returns None for an empty-but-present pipeline_state.yaml
-    # (a truncated or interrupted write), and the subscript below would then raise
-    # TypeError. That is not a loud failure, it is a crash LOOP: run_loop's own
-    # except-block handler (`update_state(status="failed")`) hits the same file and
-    # raises again, so the exception escapes run_loop AND process_once — which has
-    # no try/except around it — leaving the queue entry `in_progress` for
-    # _select_entry to pick straight back up. Rebuilding state from {} is also the
-    # honest recovery here: an empty file carries nothing to preserve.
-    state = load_yaml(path / "pipeline_state.yaml") or {}
+    # NOT `or {}`, tried and reverted 2026-08-18. An empty-but-present
+    # pipeline_state.yaml makes load_yaml return None and the subscript below raise
+    # TypeError, which does escape run_loop and process_once and leave the queue entry
+    # `in_progress` (run_loop's own handler is another update_state on the same file,
+    # so it raises again). Defaulting to {} looked like the fix and is worse: this
+    # function then writes `audit_log: {}`, which zeroes
+    # _compute_weighted_budget_usage and silently hands the run its full weighted
+    # token budget again — trading a loud crash for a flattering, invisible one. The
+    # crash-loop exposure is real but pre-existing, shared by every caller, and wants
+    # its own fix (atomic writes, or a named error naming the file) rather than a
+    # default that launders corrupt state into plausible state.
+    state = load_yaml(path / "pipeline_state.yaml")
     for key, value in kwargs.items():
         if isinstance(value, dict) and key in state and isinstance(state[key], dict):
             state[key].update(value) # Merge nested dicts (like counters)

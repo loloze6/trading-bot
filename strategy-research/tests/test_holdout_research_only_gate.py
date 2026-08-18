@@ -290,8 +290,45 @@ def test_every_classifier_flag_is_in_the_runbook_reset_list():
     campaign_src = (workflow / "run_campaign.py").read_text(encoding="utf-8")
     runbook = (Path(__file__).parent.parent / "docs" / "RUNBOOK.md").read_text(encoding="utf-8")
 
-    read_flags = set(re.findall(r'flags\.get\("([a-z_]+)"\)', campaign_src))
+    # Both quote styles and digit-bearing names: this repo names flags b10_/k3_/a8_
+    # after the tickets that added them, and a scrape that silently skips those
+    # would pass while guarding nothing.
+    read_flags = set(re.findall(r"""flags\.get\(["']([A-Za-z0-9_]+)["']\)""", campaign_src))
     assert read_flags, "no classifier flags found -- the scrape pattern has drifted"
 
-    missing = sorted(f for f in read_flags if f"'{f}'" not in runbook)
-    assert not missing, f"flags read by a pause classifier but absent from RUNBOOK's reset list: {missing}"
+    # Scope to the reset SNIPPET, not the whole document: every flag is named
+    # somewhere in RUNBOOK (each has a row explaining it), so a doc-wide membership
+    # test passes trivially while the reset list itself stays incomplete -- exactly
+    # the bug this guard exists to catch.
+    m = re.search(r"orch\.update_state\(.*?\n\)", runbook, re.S)
+    assert m, "could not locate the RUNBOOK reset snippet -- has it moved or been renamed?"
+    snippet = m.group(0)
+    assert "update_state" in snippet and "flags=" in snippet
+
+    missing = sorted(f for f in read_flags if f"'{f}'" not in snippet)
+    assert not missing, (
+        f"flags read by a pause classifier but absent from RUNBOOK's reset snippet: {missing}")
+
+
+def test_the_holdout_hold_outranks_the_other_sticky_flags():
+    """research_only_unverified must not be masked by a co-set sticky flag.
+
+    Flags are sticky and several fire strictly earlier in a run than the
+    holdout gate does, so co-occurrence is the normal case rather than an edge
+    case. Whichever branch matches first supplies the operator's entire
+    instruction set, and only this one's row carries the "do NOT run the
+    holdout backtest" warning -- every other row is silent on the seal.
+
+    This regressed once already: the pass_rule_evaluation_disagreement branch
+    was first added above this one, which reintroduced the masking the branch
+    order exists to prevent.
+    """
+    import importlib, tempfile
+    camp = importlib.import_module("run_campaign")
+    run_dir = Path(tempfile.mkdtemp())
+    (run_dir / "artifacts").mkdir()
+
+    for other in ("pass_rule_evaluation_disagreement",):
+        state = {"flags": {other: True, "research_only_unverified": True}}
+        assert camp._classify_human_pause(run_dir, state) == "research_only_unverified", (
+            f"{other!r} masks the holdout hold")
