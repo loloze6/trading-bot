@@ -1,16 +1,35 @@
 #!/bin/sh
 # Pre-commit hook — VERSIONED SOURCE OF TRUTH.
 #
-# .git/hooks/ is not tracked by git, so a fresh clone gets NO hooks and would silently
-# lose the checks below. This file is the copy under version control; install it with:
+# .git/hooks/ is not tracked by git, so a fresh clone gets NO hooks. Install with the
+# one-time setup script (it just sets core.hooksPath at this directory):
 #
-#     cp strategy-research/tools/hooks/pre-commit .git/hooks/pre-commit
-#     chmod +x .git/hooks/pre-commit
+#     sh strategy-research/tools/setup_hooks.sh
 #
-# (or, once, point Git at the tracked directory so a clone needs no manual copy:
-#     git config core.hooksPath strategy-research/tools/hooks)
+# WHAT THIS HOOK IS FOR (scope decided 2026-08-18, Jeremy — E-003 S2b)
+#   It gates the two things a commit can make PERMANENT, and nothing else.
+#   A secret or a sealed-window date, once committed, is in your local history: getting
+#   it out needs a history rewrite (see the .env incident — untracked 2026-07-25, still
+#   present in commit 91087ed). CI cannot help there; it can reject a push, it cannot
+#   un-write a commit that already exists on your disk. So these two checks must run
+#   BEFORE the commit, locally, and they cost ~6 seconds combined.
 #
-# Three gates, in increasing order of cost:
+#   The test suite is deliberately NOT here. It used to be (as "gate 2"), and it was
+#   both broken and misplaced:
+#     * BROKEN — it hardcoded "$ROOT/venv/Scripts/python", a Windows path. On macOS and
+#       Linux that interpreter does not exist, sh returns 127, and 127 is not in the
+#       hook's explicit 1/2/3 failure check — so the hook printed "Tests passed" having
+#       run nothing at all. A gate that lies is worse than a gate that is absent.
+#     * MISPLACED — it ran only the trading-bot suite, never strategy-research (the
+#       exact double-gating gap run_tests.py exists to close), and it cost ~1 minute per
+#       commit. A one-minute pre-commit hook is the classic thing people --no-verify
+#       past, and a routinely-bypassed gate is worse than no gate (this file's own
+#       holdout-gate docstring makes the same argument).
+#   Both suites now run in CI (.github/workflows/tests.yml) on every push and pull
+#   request, which is where a slow, non-destructive check belongs. A failing test
+#   damages nothing and is fixed by committing again.
+#
+# Two gates, in increasing order of cost:
 #   0. Secret scan — blocks committing secrets: forbidden files (.env, venv/, *.key) and
 #      credential VALUES in the staged diff (AWS, Gemini, PEM private keys, quoted
 #      api_secret, and BINANCE/GEMINI key=value). Value-required: a bare env-var NAME in a
@@ -23,8 +42,8 @@
 #      window 2026-01-01..2026-06-30 (campaign_data_policy.yaml:holdout_range).
 #      Added 2026-07-26 by dispatch W5 after two backtest run directories were found
 #      to have crossed the boundary. Fails CLOSED: if it cannot prove a clean scan,
-#      it blocks.
-#   2. Test suite — the pre-existing check.
+#      it blocks. Also enforced in CI, so a PR merged through GitHub's web UI — which
+#      never invokes this hook — is covered too.
 #
 # Emergency bypass for all: git commit --no-verify
 
@@ -65,29 +84,6 @@ fi
 
 sh "$GATE" || exit 1
 
-# --- 2. Test suite --------------------------------------------------------------
-echo "Running tests before commit..."
-
-cd "$ROOT/trading-bot" || exit 1
-
-"$ROOT/venv/Scripts/python" -m pytest tests/ -q --tb=short 2>&1
-
-EXIT_CODE=$?
-
-# pytest exit codes:
-#   0 = all tests passed
-#   1 = some tests failed
-#   2 = interrupted
-#   3 = internal error
-#   4 = usage error
-#   5 = no tests collected (OK while test suite is still being built)
-
-if [ $EXIT_CODE -eq 1 ] || [ $EXIT_CODE -eq 2 ] || [ $EXIT_CODE -eq 3 ]; then
-    echo ""
-    echo "COMMIT BLOCKED: tests failed. Fix the tests above before committing."
-    echo "To bypass in an emergency: git commit --no-verify"
-    exit 1
-fi
-
-echo "Tests passed (or none collected yet)."
+# Tests are NOT run here on purpose — see WHAT THIS HOOK IS FOR at the top of this
+# file. They run in CI on every push and pull request.
 exit 0
