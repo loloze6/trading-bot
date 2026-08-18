@@ -793,13 +793,6 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
         return "component_execution_error"
     if flags.get("kb_reactivation_violation") or state.get("kb_reactivation_violations"):
         return "kb_reactivation_violation"
-    # PRE-EXISTING GAP, fixed here because it sits in this function and this file's
-    # RUNBOOK row already documents the reason: run_phase1_research sets this flag on
-    # two human-pause paths (:4786, :4919) but nothing ever read it, so the reason
-    # string was unreachable and those pauses surfaced as `human_pause_unclassified`
-    # — an operator sent to the wrong row for a documented condition.
-    if flags.get("pass_rule_evaluation_disagreement"):
-        return "pass_rule_evaluation_disagreement"
     # E-015 S3. MUST stay above the promotion_audit branch below: every route into
     # holdout_evaluation writes promotion_audit.yaml first and holdout_result.yaml is
     # absent by definition at that point, so this pause would otherwise classify as
@@ -808,6 +801,16 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # exists to prevent.
     if flags.get("research_only_unverified"):
         return "research_only_unverified"
+    # PRE-EXISTING GAP, fixed here because it sits in this function and its RUNBOOK
+    # row already exists: run_phase1_research sets this flag on two human-pause paths
+    # (:4786, :4919) but nothing read it, so the reason string was unreachable and
+    # those pauses surfaced as `human_pause_unclassified`.
+    # Placed BELOW research_only_unverified deliberately. Flags are sticky and this
+    # one fires strictly earlier in a run (verdict_interpreter), and its own RUNBOOK
+    # row never tells the operator to clear it — so above, it would routinely mask
+    # the holdout hold and replace that hold's message with an unrelated one.
+    if flags.get("pass_rule_evaluation_disagreement"):
+        return "pass_rule_evaluation_disagreement"
 
     artifacts = run_dir / "artifacts"
     audit_path = artifacts / "promotion_audit.yaml"
