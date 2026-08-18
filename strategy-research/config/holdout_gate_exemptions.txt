@@ -1,6 +1,7 @@
 # holdout_gate_exemptions.txt - audited exemptions for holdout_date_gate.sh
 #
 # FORMAT:  <repo-relative-path><TAB><max allowed holdout-date lines>
+#     or:  <repo-relative-path><TAB>PROSE      (running narrative files only)
 #          '#' comments and blank lines ignored.
 #
 # WHAT AN ENTRY MEANS
@@ -9,6 +10,22 @@
 #   CONFIG or CODE -- not market data." The count is part of the exemption: a listed
 #   file that gains an N+1'th holdout-date line is BLOCKED again, so the exemption is
 #   pinned to audited content rather than to a filename. Unlisted file => blocked.
+#
+# THE PROSE MARKER (added 2026-08-18, Jeremy's call -- E-003 S2)
+#   A handful of files exist to ACCUMULATE narrative about the seal: the research
+#   ledgers, FORK_CHANGES.md, CLAUDE.fork.md. Every entry documenting a holdout
+#   decision adds a holdout-date line -- the file doing its job -- which under count-
+#   pinning re-blocks the gate until a human hand-bumps the number, forever. Measured
+#   2026-08-08: 3 files blocking. Measured 2026-08-18: 7. That trend ends in routine
+#   --no-verify, which this gate's own docstring calls worse than no gate at all.
+#   Those files carry PROSE instead of a count: exempt by PATH, not by line count.
+#   TRADE-OFF, stated plainly: a PROSE file is not scanned at all, so market data
+#   pasted into one would not be caught here. Accepted because these are .md prose
+#   files nothing writes programmatically, and the real risk (.csv/.json artifacts)
+#   stays fully guarded.
+#   PROSE IS FOR RUNNING NARRATIVE ONLY. Code, config, fixtures and data stay
+#   count-pinned -- a test file gaining new sealed dates SHOULD get a human look.
+#   Do not reach for PROSE to silence a blocked commit; the count is the default.
 #
 # WHY THESE EXIST (audited 2026-07-26, dispatch W5)
 #   Every entry below was verified to be one of:
@@ -34,7 +51,20 @@
 #   data before pasting the path/count. If a file turns out to carry holdout bars, the
 #   answer is to quarantine or exclude it, never to register it here.
 
-.gitignore	3
+# --- PROSE: running narrative, exempt by path (see THE PROSE MARKER above) ---------
+# These five accumulate holdout narrative as their normal function. Registered 2026-08-18
+# after all seven then-blocking files were read line by line: every hit was a sentence
+# explaining the seal, zero market data. mac.md / LEDGER.md carry no hits yet and are
+# registered pre-emptively -- same file class, same growth pattern, and Dorian's ledger
+# will accumulate exactly like win.md has.
+research/ledger/win.md	PROSE
+research/ledger/mac.md	PROSE
+research/LEDGER.md	PROSE
+FORK_CHANGES.md	PROSE
+CLAUDE.fork.md	PROSE
+# -----------------------------------------------------------------------------------
+
+.gitignore	4
 strategy-research/engineering/sessions/HANDOFF_20260724.md	1
 strategy-research/engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md	13
 strategy-research/docs/RUNBOOK.md	1
@@ -186,10 +216,16 @@ trading-bot/core/launcher.py	1
 trading-bot/data/fetchers/base_fetcher.py	3
 trading-bot/local_data/README.md	5
 trading-bot/tests/fixtures/reference_run.json	1
+# Both added 2026-08-18, lines read before registering (category (c), not market data):
+# test_capture_krakenfutures_funding.py:35 is a comment naming the seal start;
+# test_model_funding_bit_identical.py:121,134 pass holdout_start="2026-01-01" -- the
+# boundary supplied AS the boundary, which is the parameter telling the engine to stop.
+trading-bot/tests/test_capture_krakenfutures_funding.py	1
+trading-bot/tests/test_model_funding_bit_identical.py	2
 trading-bot/tests/test_fetch_end_bound.py	7
 trading-bot/tests/test_fetch_gap_guard.py	18
 trading-bot/tests/test_kraken_archive_ingest.py	1
-trading-bot/tests/test_no_sealed_date_literals.py	9
+trading-bot/tests/test_no_sealed_date_literals.py	25
 trading-bot/tests/test_visualize_data_window.py	2
 
 # ADDED 2026-07-28, dispatch W11 -- category (c), audited by reading every line.

@@ -11,7 +11,7 @@ epic".
 
 | Ref | Title | State | Next step |
 |---|---|---|---|
-| [E-003](E-003/EPIC.md) | Make the holdout seal gate enforceable in every clone | planned | S1 done — NOT a single dispatch; S2 blocked on Jeremy's design call between path-exempting known narrative files vs. bumping the exemption registry (see EPIC.md Log 2026-08-18) |
+| [E-003](E-003/EPIC.md) | Make the holdout seal gate enforceable in every clone | in-progress | S1 + S2a done — Option A (`PROSE` registry marker) chosen and implemented, gate 7-blocking → PASS, now enforced in CI on every push/PR (mutation-verified, 4 probes). Only S2b (`core.hooksPath`) left, gated behind fixing the hook's Windows-only python path |
 | [E-004](E-004/EPIC.md) | Settle the shared record taxonomy with the fork | new | Needs a joint decision, not a dispatch |
 | [E-005](E-005/EPIC.md) | Verify master on macOS and Linux | new | Dorian to run both suites on `c4feaf56` |
 | [E-006](E-006/EPIC.md) | Stop shipping a committed Windows venv | new | Agree with Dorian before `git rm -r --cached venv/` |
@@ -57,4 +57,6 @@ continues as a card reference
 
 **WIP limit (amendment 11): at most 2 epics may be `in-progress` at once**,
 and only via an actual dispatch under the epic — a tree audit crediting
-pre-existing code does not itself count. Currently 0 of 2 slots used.
+pre-existing code does not itself count. Currently 1 of 2 slots used
+(E-003 — S1 + S2a dispatched and landed 2026-08-18; frees up when S2b
+lands or the epic closes).
