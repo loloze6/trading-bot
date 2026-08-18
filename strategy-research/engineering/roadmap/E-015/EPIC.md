@@ -1,8 +1,8 @@
 # E-015 — Venue/product declared at brief registration
 
-**State:** planned
+**State:** in-progress
 **Owner:** Jeremy
-**Updated:** 2026-08-15
+**Updated:** 2026-08-18
 
 ## Why
 
@@ -78,10 +78,84 @@ it exposes.
 - [ ] S1b — Make missing venue/product a hard registration failure (Done-when
       #1, as originally specified) rather than a silent `research_only`
       default.
-- [ ] S3 — Enforce `research_only` at a real downstream gate (promotion,
-      walk-forward, or the sealed holdout) so a `research_only` run cannot
-      reach a live-money decision undetected. This is the load-bearing gap:
-      without it, `research_only` is a label nothing reads.
+- [ ] S3a — **Make `research_only` propagate.** Prerequisite for S3b, found
+      by S3's Phase A (see below): the flag is written by one of three
+      `research_brief.yaml` writers, so it does not survive a refine or a
+      reframe. Enforcing without this yields a gate every descendant walks
+      around.
+- [ ] S3b — Enforce `research_only` at the holdout gate
+      (`_route_holdout_evaluation`), **before** its human-pause branch, so a
+      `research_only` run cannot reach a live-money decision undetected.
+      Blocked behind S3a.
+
+## S3 Phase A — characterization (2026-08-18, STOPPED for review)
+
+Run before writing any enforcement, per the two-phase convention. It found
+the story as scoped was **not implementable as one change**, for a reason
+that was not visible from the epic's own earlier tracing.
+
+**Finding 1 — the flag is written by 1 of 3 writers, so it does not inherit.**
+`research_brief.yaml` has three producers:
+
+| Writer | Path | Sets `research_only`? |
+|---|---|---|
+| `run_campaign.py:277` `_materialize_run()` | fresh campaign launch | **yes** |
+| `run_phase1_research.py:1622` `_safe_write_new_research_brief()` | campaign_review reframe | no |
+| `run_phase1_research.py:1647` `setup_next_run()` | refine (`shutil.copy` of `proposed_brief.yaml`) | no |
+
+(`_materialize_refinement_run` at `run_campaign.py:423` writes only
+`pre_registration.yaml`, never `research_brief.yaml`.)
+
+So a brief correctly flagged `research_only: true` at launch loses the flag
+the moment it is refined or reframed — the child's brief is a copy of an
+LLM-authored `proposed_brief.yaml`, which carries no such key. **Measured: 0
+of 27 `proposed_brief.yaml` files carry it.** A flagged hypothesis's
+grandchild reaches the holdout with a clean brief. That is a propagation
+defect sitting underneath the enforcement defect, and enforcement alone
+would produce a gate with a documented bypass.
+
+**Finding 2 — nothing in the corpus carries the key at all.** Measured
+across the live tree: **0 of 57** existing `research_brief.yaml` files
+contain `research_only`. The venue wiring shipped 2026-07-21; every run
+predates it or came through a non-setting writer. This kills both naive
+implementations:
+
+- *"block when `research_only is True`"* → protects nothing today, on any
+  existing run, and stays inert until a fresh campaign launch happens.
+- *"block when the key is missing"* (fail-closed, matching this project's
+  usual doctrine) → **blocks all 57 existing runs from the holdout.** Correct
+  in spirit, unusable as a default without a migration decision.
+
+**Finding 3 — lineage cannot substitute.** Resolving the flag by walking a
+run's ancestry at gate time was considered instead of propagation, and is
+not viable: only **4 of 59** runs carry a `lineage` block in
+`pre_registration.yaml`.
+
+**Finding 4 — where the gate belongs, and a subtlety about *which line*.**
+`_route_holdout_evaluation` (`run_phase1_research.py:4322`) is the right
+place: it is the single choke point, and it already hosts the DSR gate and
+the single-use refusal. But the check must sit **before step 3's
+`human_pause`**, not merely before step 4's `holdout_consumed_by` write.
+Step 3 prints *"Run the holdout backtest on this range"* — a human obeying
+that instruction opens the sealed data, and in this project's own doctrine
+**looking is spending**. A check placed only ahead of the consumption
+bookkeeping would fire after the seal was already spent in practice.
+
+**Pre-registered conventions for S3a/S3b, for the nod:**
+1. S3a propagates by *writing the resolved flag at every writer*, not by
+   inheriting a parent value — re-resolve `venue`/`product` through
+   `_venue_product_tradable()` at each write, so a refine that legitimately
+   changes venue is re-evaluated rather than inheriting a stale verdict.
+2. S3b blocks with `return "completed_rejected"`, matching the two existing
+   refusals in that function; it does not raise.
+3. Missing key: treated as `research_only: true` (fail-closed, matching
+   `venue_tradability.yaml`'s own "silence must never resolve to a green
+   light"), **but** gated behind an explicit migration for the 57 existing
+   runs — either a one-off backfill or a dated grandfather list. Not chosen
+   here; it is an operator call, and the wrong choice either blocks all
+   existing work or silently exempts it.
+4. Bit-identity: no existing run's artifacts change; the gate only adds a
+   refusal branch.
 
 ## Log
 
@@ -113,3 +187,19 @@ it exposes.
   `in-progress` with zero log activity, same pattern as E-014/E-016.
   Corrected to reflect reality. S3 (the load-bearing safety gap) stays the
   next real step whenever this is picked up.
+- 2026-08-18 — `planned` → `in-progress`. S3 dispatched, Phase A only (the
+  two-phase convention: characterize and STOP). **Result: S3 as scoped is not
+  one change.** The epic had established that `research_only` is never READ;
+  Phase A found it is also never PROPAGATED — written by 1 of the 3
+  `research_brief.yaml` writers, so it does not survive a refine or reframe
+  (0 of 27 `proposed_brief.yaml` carry it). Enforcing alone would ship a gate
+  with a built-in bypass for every descendant run. Also measured: 0 of 57
+  existing briefs carry the key at all, which makes the fail-closed default
+  this project would normally reach for block every existing run from the
+  holdout — a real operator decision, not a detail. Split into S3a
+  (propagate) and S3b (enforce, blocked behind S3a); conventions
+  pre-registered in the Phase A section above. **Nothing implemented; stopped
+  for the nod.** Note the correct insertion point is ahead of the gate's
+  human-pause branch, not merely ahead of its `holdout_consumed_by` write —
+  the pause instructs a human to run the holdout backtest, and looking is
+  spending.
