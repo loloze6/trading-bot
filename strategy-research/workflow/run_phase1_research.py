@@ -4365,24 +4365,41 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
               f"is required to proceed).")
         print(f"   The holdout is single-use and terminal, so it is spent only on a "
               f"strategy we could actually trade.")
-        print(f"   Fix, then resume: declare venue + product on this run's "
-              f"research_brief.yaml so tradability resolves from "
-              f"config/venue_tradability.yaml (run_campaign.py's _materialize_run does "
-              f"this for a fresh launch; a refine/reframe descendant inherits neither the "
-              f"key nor the venue fields, so it must be declared here). Do NOT hand-set "
-              f"research_only to False to get past this, and do NOT run the holdout "
-              f"backtest yet — looking is spending.")
-        # human_pause, NOT completed_rejected. The two existing terminal refusals below
-        # are genuinely unrecoverable states (DSR too low; holdout already consumed).
-        # This one is a fixable declaration gap, and because research_only is not
-        # propagated by the refine path (setup_next_run copies an LLM-authored
-        # proposed_brief.yaml) or the reframe path (_safe_write_new_research_brief), a
-        # legitimately tradable descendant of a correctly-materialized run lands here as
-        # a matter of course. completed_rejected would write status="rejected", which
-        # resume_pipeline refuses to resume — terminally killing a good run over missing
-        # paperwork. Protection is identical either way: the pause halts the pipeline and
-        # holdout_consumed_by is untouched, and re-entry re-runs this same check, so the
-        # run cannot proceed until the brief is actually fixed.
+        print(f"   DO NOT run the holdout backtest to resolve this — looking is spending, "
+              f"and this run has not earned the look yet.")
+        print(f"   Resolve by declaring tradability, then resume. A FRESH-LAUNCH run gets "
+              f"this automatically from run_campaign.py's _materialize_run, which resolves "
+              f"venue+product against config/venue_tradability.yaml. A REFINE/REFRAME "
+              f"DESCENDANT inherits neither the key nor the venue fields and has no "
+              f"automated path (research_only is resolved only at fresh launch), so a "
+              f"human must check this run's venue+product against venue_tradability.yaml "
+              f"and, only if it is genuinely tradable, record venue, product AND "
+              f"research_only: false on this run's research_brief.yaml. Setting the flag "
+              f"without doing that check is the bypass this gate exists to prevent.")
+        # human_pause, NOT completed_rejected. The two terminal refusals below are
+        # genuinely unrecoverable (DSR too low; holdout already consumed). This one is a
+        # fixable declaration gap, and because research_only is not propagated by the
+        # refine path (setup_next_run copies an LLM-authored proposed_brief.yaml) or the
+        # reframe path (_safe_write_new_research_brief), a legitimately tradable
+        # descendant lands here as a matter of course; completed_rejected would write
+        # status="rejected", which resume_pipeline refuses to resume, killing a good run
+        # over missing paperwork.
+        #
+        # The flag is LOAD-BEARING, not decoration. Without it _classify_human_pause
+        # sees promotion_audit.yaml present + holdout_result.yaml absent and returns
+        # `provisional_promote_awaiting_holdout`, whose RUNBOOK row instructs the
+        # operator to "Run the holdout backtest ... by hand" — i.e. a bare human_pause
+        # here would route the operator into spending the seal, which is strictly worse
+        # than the terminal reject it replaced. The flag gives this its own classifier
+        # bucket and its own RUNBOOK row (see run_campaign._classify_human_pause).
+        #
+        # Campaign-level consequence, stated rather than assumed: a classified pause
+        # halts the campaign (process_once returns False) where completed_rejected would
+        # have marked the entry done and advanced the queue. That is the intended
+        # behaviour for a state needing a human decision, and it is the same shape every
+        # other classified pause already has.
+        update_state(path=run_dir, status="paused_for_human",
+                     flags={"research_only_unverified": True})
         return "human_pause"
 
     # Load hypothesis_id from promotion_audit or verdict_interpretation

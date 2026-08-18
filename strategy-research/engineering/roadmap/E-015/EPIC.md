@@ -89,7 +89,10 @@ it exposes.
 - [x] S3 — **Enforce `research_only` at the holdout gate. DONE 2026-08-18**
       (`run_phase1_research.py:4332`, gate 0 of `_route_holdout_evaluation`),
       ahead of the human-pause branch. Affirmative check, fail-closed,
-      9 tests, 3 mutations killed. Closes Done-when #4.
+      returning `human_pause` + a `research_only_unverified` flag with its own
+      classifier bucket and RUNBOOK row (see convention #2 — the original
+      `completed_rejected` plan was superseded in review). 13 tests, 6
+      mutations killed. Closes Done-when #4.
 
 ## S3 Phase A — characterization (2026-08-18) — resolved, see Log
 
@@ -149,8 +152,17 @@ bookkeeping would fire after the seal was already spent in practice.
    inheriting a parent value — re-resolve `venue`/`product` through
    `_venue_product_tradable()` at each write, so a refine that legitimately
    changes venue is re-evaluated rather than inheriting a stale verdict.
-2. S3b blocks with `return "completed_rejected"`, matching the two existing
-   refusals in that function; it does not raise.
+2. ~~S3b blocks with `return "completed_rejected"`~~ — **SUPERSEDED during
+   code review, 2026-08-18.** Shipped as `human_pause` plus a
+   `research_only_unverified` flag and its own `_classify_human_pause`
+   bucket. Two findings forced it: `completed_rejected` writes
+   `status="rejected"`, which `resume_pipeline` refuses to resume, so it
+   terminally killed legitimately-tradable refine/reframe descendants (which
+   land here as a matter of course, since the flag does not propagate); and a
+   *bare* `human_pause` was worse still — it classified as
+   `provisional_promote_awaiting_holdout`, whose RUNBOOK row instructs the
+   operator to run the holdout backtest by hand, i.e. to spend the seal this
+   gate protects. The flag is what makes the pause safe, not decoration.
 3. Missing key: treated as `research_only: true` (fail-closed, matching
    `venue_tradability.yaml`'s own "silence must never resolve to a green
    light"), **but** gated behind an explicit migration for the 57 existing

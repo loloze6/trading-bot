@@ -35,9 +35,18 @@ import run_phase1_research as r1  # noqa: E402
 
 
 def _run_dir(tmp_path: Path, brief: dict | None) -> Path:
-    """A run dir carrying only the artifacts the gate reads."""
+    """A run dir carrying the artifacts the gate reads.
+
+    pipeline_state.yaml is always present, matching every real run: setup_run.py
+    scaffolds it, and the router that calls this gate is itself driven from it.
+    (If it were ever genuinely absent, update_state raises and the exception
+    propagates out of the gate -- which still fails closed, since raising is not
+    proceeding to the holdout, but it is not the shape production is ever in.)
+    """
     artifacts = tmp_path / "artifacts"
     artifacts.mkdir(parents=True, exist_ok=True)
+    (tmp_path / "pipeline_state.yaml").write_text(
+        yaml.safe_dump({"run_id": "run_test", "flags": {}}), encoding="utf-8")
     if brief is not None:
         (artifacts / "research_brief.yaml").write_text(
             yaml.safe_dump(brief), encoding="utf-8")
@@ -45,7 +54,11 @@ def _run_dir(tmp_path: Path, brief: dict | None) -> Path:
 
 
 _HELD = "HOLDOUT HELD"
-_BACKTEST_INSTRUCTION = "Run the holdout backtest"
+# Pinned on the later branch's own distinctive, stable text rather than on the
+# imperative sentence: "Run the holdout backtest" differs from the hold message's
+# "run the holdout backtest" only by capitalisation, so a cosmetic recapitalisation
+# of either message would break these tests with a false ordering failure.
+_BACKTEST_INSTRUCTION = "holdout_result.yaml not yet present"
 
 
 @pytest.mark.parametrize("brief,label", [
@@ -108,6 +121,66 @@ def test_hold_is_recoverable_not_terminal(tmp_path, capsys):
     """
     assert r1._route_holdout_evaluation(
         _run_dir(tmp_path, {"research_only": True}), "run_test") != "completed_rejected"
+
+
+def test_hold_classifies_away_from_the_go_spend_the_seal_bucket(tmp_path):
+    """The hold must NOT classify as provisional_promote_awaiting_holdout.
+
+    This is the finding that makes the flag load-bearing rather than
+    decorative. _classify_human_pause reaches that bucket whenever
+    promotion_audit.yaml exists and holdout_result.yaml does not -- which is
+    exactly the state of every run arriving at the holdout gate. Its RUNBOOK
+    row instructs the operator to "Run the holdout backtest ... by hand", so a
+    bare human_pause here would route a held run straight into spending the
+    single-use seal: strictly worse than the terminal reject it replaced.
+
+    Driven through the real classifier against a run dir in the true arriving
+    shape (promotion_audit present, holdout_result absent), not a stub.
+    """
+    import importlib
+    camp = importlib.import_module("run_campaign")
+
+    run_dir = _run_dir(tmp_path, {"research_only": True})
+    (run_dir / "artifacts" / "promotion_audit.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8")
+
+    r1._route_holdout_evaluation(run_dir, "run_test")
+    state = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text())
+
+    assert state["flags"]["research_only_unverified"] is True
+    assert camp._classify_human_pause(run_dir, state) == "research_only_unverified"
+    assert camp._classify_human_pause(run_dir, state) != "provisional_promote_awaiting_holdout"
+
+
+def test_a_tradable_run_still_reaches_the_awaiting_holdout_bucket(tmp_path):
+    """Control for the test above: the new classifier branch must not swallow
+    the legitimate case. A run that DOES declare itself tradable still
+    classifies as provisional_promote_awaiting_holdout, so the operator still
+    gets told to run the holdout backtest when they have actually earned it.
+    """
+    import importlib
+    camp = importlib.import_module("run_campaign")
+
+    run_dir = _run_dir(tmp_path, {"research_only": False})
+    (run_dir / "artifacts" / "promotion_audit.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8")
+
+    r1._route_holdout_evaluation(run_dir, "run_test")
+    state_path = run_dir / "pipeline_state.yaml"
+    state = yaml.safe_load(state_path.read_text()) if state_path.exists() else {}
+
+    assert not (state.get("flags") or {}).get("research_only_unverified")
+    assert camp._classify_human_pause(run_dir, state) == "provisional_promote_awaiting_holdout"
+
+
+def test_runbook_documents_the_new_pause_reason():
+    """A classifier bucket with no RUNBOOK row leaves the operator with a
+    reason string and no instructions -- and this particular one must actively
+    contradict its neighbour's "go run the holdout backtest" guidance.
+    """
+    runbook = (Path(__file__).parent.parent / "docs" / "RUNBOOK.md").read_text(encoding="utf-8")
+    assert "| `research_only_unverified` |" in runbook
+    assert "Do NOT run the holdout backtest to clear this" in runbook
 
 
 def test_hold_precedes_the_backtest_instruction(tmp_path, capsys):
