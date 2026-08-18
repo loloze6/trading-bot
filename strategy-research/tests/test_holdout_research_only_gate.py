@@ -79,9 +79,9 @@ _BACKTEST_INSTRUCTION = "holdout_result.yaml not yet present"
     ({"research_only": 0}, "falsy 0 -- must not satisfy an `is False` check"),
 ])
 def test_gate_holds_unless_tradable_is_affirmed(tmp_path, brief, label, capsys):
-    """Every non-affirmative shape is held at gate 0 instead of proceeding.
+    """Every non-affirmative shape is held at gate 2b instead of proceeding.
 
-    Asserted on the PRINTED VERDICT, not the return value: gate 0 and the
+    Asserted on the PRINTED VERDICT, not the return value: gate 2b and the
     legitimate no-holdout-result path both return "human_pause", so the return
     value alone cannot tell "held at the door" from "let through". The message
     is what distinguishes them, so the message is what this pins -- along with
@@ -95,21 +95,15 @@ def test_gate_holds_unless_tradable_is_affirmed(tmp_path, brief, label, capsys):
 
 
 def test_gate_lets_an_affirmatively_tradable_brief_through(tmp_path, capsys):
-    """research_only False must NOT be held by gate 0.
+    """research_only False must NOT be held by gate 2b.
 
     It proceeds to the later gates and, with no holdout_result.yaml present,
     lands on the legitimate human pause that asks for the backtest. Pinned on
     the message rather than the return value, for the reason above: both land
-    on "human_pause", and a gate 0 that wrongly held this run would still
+    on "human_pause", and a gate 2b that wrongly held this run would still
     return the same string.
     """
     run_dir = _run_dir(tmp_path, {"research_only": False})
-    # The downstream gate reads one of promotion_audit / verdict_interpretation;
-    # supply the latter so this test exercises gate 0's pass-through rather than
-    # tripping over an unrelated missing artifact.
-    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
-        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8")
-
     result = r1._route_holdout_evaluation(run_dir, "run_test")
     out = capsys.readouterr().out
     assert _HELD not in out
@@ -248,8 +242,9 @@ def test_hold_precedes_the_backtest_instruction(tmp_path, capsys):
     """The hold must fire BEFORE the pause that tells a human to run the
     holdout backtest.
 
-    This is the whole point of placing gate 0 first rather than merely ahead
-    of the holdout_consumed_by write: the later pause prints "Run the holdout
+    This is the upper bound on gate 2b's position: it must sit ahead of the
+    later pause, not merely ahead of the holdout_consumed_by write. That pause
+    prints "Run the holdout
     backtest on this range", and a human following that instruction opens the
     sealed data. Looking is spending, so a hold printed after that text would
     be a hold after the fact.

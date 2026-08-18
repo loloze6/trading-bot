@@ -337,7 +337,8 @@ from pathlib import Path
 orch.update_state(
     path=Path('runs/<run_id>'), status='active', last_error=None,
     flags={'no_signal_artifact_flagged': False, 'component_execution_error_flagged': False,
-           'conformance_violation': False, 'regime_misattribution_flagged': False},
+           'conformance_violation': False, 'regime_misattribution_flagged': False,
+           'research_only_unverified': False},
 )
 "
 ```
