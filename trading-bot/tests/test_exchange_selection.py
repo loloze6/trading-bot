@@ -237,9 +237,16 @@ class _RecordingEngine:
 
     def __init__(self, **kwargs):
         type(self).kwargs = kwargs
+        self._symbols = kwargs.get("symbols") or ["BTCUSDT"]
+        # The real BacktestEngine initialises this in __init__ and load_data
+        # fills it; simulate() now checks it is non-empty before running (an
+        # empty fetch must not report success). Modelled here so this stub
+        # exercises the same contract rather than a narrower one.
+        self.historical_data = {}
 
     def load_data(self, **kwargs):
-        pass
+        self.historical_data[self._symbols[0]] = pd.DataFrame(
+            {"timestamp": [pd.Timestamp("2024-04-01")], "close": [1.0]})
 
     def simulate_on_loaded_data(self):
         pass
@@ -365,9 +372,14 @@ class _RecordingRunBacktestEngine:
     def __init__(self, **kwargs):
         type(self).kwargs = kwargs
         self._last_run_dir = None
+        self._symbols = kwargs.get("symbols") or ["BTCUSDT"]
+        # run_backtest now refuses an empty fetch, so this stub models
+        # historical_data the way the real engine does rather than omitting it.
+        self.historical_data = {}
 
     def load_data(self, **kwargs):
-        pass
+        self.historical_data[self._symbols[0]] = pd.DataFrame(
+            {"timestamp": [pd.Timestamp("2024-04-01")], "close": [1.0]})
 
     def simulate_on_loaded_data(self):
         pass
