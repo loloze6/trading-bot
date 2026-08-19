@@ -67,17 +67,29 @@ _POLICY_PATH = (Path(__file__).resolve().parents[2]
                 / "strategy-research" / "config" / "campaign_data_policy.yaml")
 
 
-def _holdout_start() -> pd.Timestamp:
-    """First sealed timestamp, from the policy file. Deny by default.
+def _holdout_bounds() -> tuple:
+    """(first sealed instant, first instant AFTER the seal), from the policy.
 
-    A reader that cannot locate the seal cannot prove it is not returning sealed
-    candles, so an unreadable policy refuses rather than defaulting to a
-    permissive constant — the same stance `holdout_date_gate.sh` takes.
+    BOTH ends, not just the start. holdout_range is a closed window
+    ["2026-01-01", "2026-06-30"] and the policy itself declares data usable
+    again afterwards (`era_2026_h2_forward_recorded`, from 2026-07-26). A guard
+    keyed on the start alone would refuse every future candle forever, which
+    is not a seal but an expiry date on the whole bot.
+
+    The upper end is INCLUSIVE in the policy (the same reading
+    `tests/test_no_sealed_date_literals.py` documents), so the returned bound is
+    the start of the following day and the comparison against it is strict.
+
+    Deny by default on any failure to read: a reader that cannot locate the seal
+    cannot prove it is not serving sealed candles. The yaml import is inside the
+    try on purpose — an ImportError is just as much a failure to locate the seal
+    as a missing file, and outside it would bypass this refusal.
     """
-    import yaml  # local: this module is imported in contexts without yaml
     try:
+        import yaml  # local: this module is imported in contexts without yaml
         with open(_POLICY_PATH, encoding="utf-8") as fh:
-            return pd.Timestamp(yaml.safe_load(fh)["holdout_range"][0])
+            lo, hi = yaml.safe_load(fh)["holdout_range"][:2]
+        return pd.Timestamp(lo), pd.Timestamp(hi).normalize() + datetime.timedelta(days=1)
     except Exception as exc:                                  # noqa: BLE001
         raise SealedDataError(
             f"Cannot read holdout_range from {_POLICY_PATH}: {exc}. Refusing to "
@@ -102,16 +114,17 @@ def _assert_no_sealed_rows(df: "pd.DataFrame", symbol: str) -> None:
     """
     if df is None or df.empty or "timestamp" not in df.columns:
         return
-    seal = _holdout_start()
-    sealed = df[df["timestamp"] >= seal]
+    lo, hi = _holdout_bounds()
+    sealed = df[(df["timestamp"] >= lo) & (df["timestamp"] < hi)]
     if not sealed.empty:
         raise SealedDataError(
-            f"{symbol}: requested window returned {len(sealed)} row(s) at or past "
-            f"the holdout seal ({seal:%Y-%m-%d}) — first {sealed['timestamp'].min()}, "
-            f"last {sealed['timestamp'].max()}. The committed caches still contain "
-            f"sealed rows; reading them spends a single-use, terminal holdout. "
-            f"Bound the request to <= the day before the seal, or pass "
-            f"allow_sealed=True if this genuinely is the holdout evaluation."
+            f"{symbol}: requested window returned {len(sealed)} row(s) INSIDE the "
+            f"holdout seal [{lo:%Y-%m-%d}, {hi - datetime.timedelta(days=1):%Y-%m-%d}] — "
+            f"first {sealed['timestamp'].min()}, last {sealed['timestamp'].max()}. "
+            f"The committed caches still contain sealed rows; reading them spends a "
+            f"single-use, terminal holdout. Bound the request outside the sealed "
+            f"window, or pass allow_sealed=True if this genuinely is the holdout "
+            f"evaluation."
         )
 
 
@@ -1102,6 +1115,13 @@ class DataManager:
             else:
                 logger.warning(f"No OHLCV data available for {symbol}")
                 return pd.DataFrame()
+        except SealedDataError:
+            # MUST propagate. The blanket handler below degrades every failure to
+            # an empty DataFrame, which would silently defeat the seal guard
+            # entirely — the caller would see "no data" and move on, exactly the
+            # quiet outcome the guard exists to prevent. Same convention, and the
+            # same reason, as base_fetcher._load_local's tz-aware guard.
+            raise
         except Exception as e:
             logger.error(f"Error fetching OHLCV for {symbol}: {e}", stack_info=True, exc_info=True)
             return pd.DataFrame()

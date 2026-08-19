@@ -261,3 +261,23 @@ def test_end_date_still_includes_the_whole_end_day(tmp_path):
 
     # 24 bars of the 1st (00:00..23:00) -> 23 returns. The 2nd's 00:00 is excluded.
     assert len(got) == 23
+
+
+def test_a_time_bearing_end_does_not_widen_past_its_own_day(tmp_path):
+    """end="2025-12-31 23:00" must not admit a whole day of sealed bars.
+
+    Caught in review of the `<=` -> `<` fix: `<` alone was correct only for a
+    date-only `end`. With a time component the bound became 2026-01-01 23:00,
+    so the tool read 24 sealed bars instead of the single one the original bug
+    leaked -- a worse version of the defect being fixed. `.normalize()` pins the
+    bound to the end DAY regardless of any time supplied.
+    """
+    closes = [100.0] * 30                       # 2025-12-31 22:00 .. 2026-01-02 03:00
+    _write_cache(tmp_path, "BTC", closes, start="2025-12-31 22:00:00")
+
+    got = bar_returns_bps("BTC", "2025-12-31", "2025-12-31 23:00", tmp_path)
+
+    # Only 12-31 22:00 and 23:00 are legal -> 1 return.
+    assert len(got) == 1, (
+        f"expected only the two pre-seal bars, got {len(got)} returns -- a "
+        f"time-bearing end widened the window into the holdout")

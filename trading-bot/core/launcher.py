@@ -669,6 +669,21 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
 
     engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=effective_feed_registry)
 
+    # Same guard as Launcher.simulate(), and needed MORE here: this is the entry
+    # point the campaign runner uses, so an empty fetch would write an all-zero
+    # metrics.json that the research pipeline then reads as a real, if
+    # unprofitable, result. Placed before the warmup probe below, which would
+    # otherwise die on a bare KeyError: 'timestamp' against the empty frame and
+    # blame the strategy for what is actually a missing-data failure.
+    _loaded = engine.historical_data.get(symbol)
+    if _loaded is None or len(_loaded) == 0:
+        raise RuntimeError(
+            f"No historical data for {symbol} over {start}..{end} "
+            f"(exchange={resolved_exchange}). The fetch returned nothing, so there "
+            f"is nothing to backtest. Refusing to emit a zero-metric run that would "
+            f"be indistinguishable from a strategy that simply never traded."
+        )
+
     if warmup_prefetch:
         # Verify the prefetch actually suffices -- fail loudly rather than silently
         # score a not-yet-ready strategy. Uses a throwaway probe instance (NOT the

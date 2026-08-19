@@ -166,7 +166,13 @@ def bar_returns_bps(
         # outside holdout_range), and this filter then reads the 2026-01-01 00:00
         # bar, the FIRST sealed timestamp. The tool read one bar past its own
         # assertion, silently, on the exact boundary the assertion exists to defend.
-        df = df[df["timestamp"] < pd.Timestamp(end) + pd.Timedelta(days=1)]
+        # .normalize() so a time-bearing `end` cannot widen the window past its
+        # own day: end="2025-12-31 23:00" passes _assert_window (it is outside
+        # holdout_range) and, without this, the bound became 2026-01-01 23:00 —
+        # admitting a full day of sealed bars instead of one. Same overshoot
+        # `base_fetcher._inclusive_end` exists to prevent, and the reason this
+        # fix is not simply "<" instead of "<=".
+        df = df[df["timestamp"] < pd.Timestamp(end).normalize() + pd.Timedelta(days=1)]
     closes = df["close"].astype(float).tolist()
     out: List[float] = []
     for i in range(len(closes) - 1):
