@@ -215,3 +215,49 @@ def test_module_cannot_reach_the_recorded_capture():
             f"measure_bar_sigma.py references {path_fragment!r} as a path — it "
             "must read only local_data/kraken_<BASE>USD_1h.csv"
         )
+
+
+# ---------------------------------------------------------------------------
+# the seal boundary (2026-08-19): the loader must not out-read its own assertion
+# ---------------------------------------------------------------------------
+
+def test_end_date_does_not_admit_the_first_sealed_bar(tmp_path):
+    """end="2025-12-31" must not pull in the 2026-01-01 00:00 bar.
+
+    This is the one case where the off-by-one mattered. _assert_window
+    correctly PASSES end="2025-12-31" -- it is outside holdout_range -- and the
+    loader then filtered on `<= end + 1 day`, which is exactly 2026-01-01
+    00:00: the first sealed timestamp. So the tool read one bar past the
+    boundary its own assertion exists to defend, silently, and only on the
+    boundary itself.
+
+    The fixture straddles the seal so a regression has something to leak.
+    """
+    # Straddles the boundary on purpose: 12-31 22:00, 12-31 23:00 | 01-01 00:00,
+    # 01-01 01:00. Only the first two are legal to read.
+    closes = [100.0, 101.0, 102.0, 103.0]
+    _write_cache(tmp_path, "BTC", closes, start="2025-12-31 22:00:00")
+
+    got = bar_returns_bps("BTC", "2025-12-31", "2025-12-31", tmp_path)
+
+    # 2 legal bars -> 1 return. Before the fix the filter admitted the
+    # 2026-01-01 00:00 bar as well, giving 3 bars and 2 returns.
+    assert len(got) == 1, (
+        f"expected only pre-seal bars, got {len(got)} returns; >1 means the "
+        f"2026-01-01 00:00 bar was admitted")
+
+
+def test_end_date_still_includes_the_whole_end_day(tmp_path):
+    """Control: the fix must not truncate the end day itself.
+
+    `<` on the following midnight keeps every bar of `end`; a naive fix to
+    `<= end` would silently drop 23 hours of the last day, which would be a
+    quieter bug than the one being fixed.
+    """
+    closes = [100.0] * 25                           # 2025-06-01 00:00 .. 2025-06-02 00:00
+    _write_cache(tmp_path, "BTC", closes, start="2025-06-01 00:00:00")
+
+    got = bar_returns_bps("BTC", "2025-06-01", "2025-06-01", tmp_path)
+
+    # 24 bars of the 1st (00:00..23:00) -> 23 returns. The 2nd's 00:00 is excluded.
+    assert len(got) == 23
