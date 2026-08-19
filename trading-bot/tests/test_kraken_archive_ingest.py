@@ -782,7 +782,10 @@ def test_ingest_still_accepts_a_wholly_pre_seal_tranche(tmp_path):
 
     summary = ing.ingest("TEST", archive, data)
 
-    assert summary["rows_written"] > 0 if "rows_written" in summary else True
+    # `ingest()` returns "rows" -- the first version of this asserted on
+    # "rows_written" behind an `if key in summary` guard, which made the whole
+    # line `assert True`.
+    assert summary["rows"] > 0
     assert list(data.rglob("*.csv")), "a legitimate pre-seal tranche was not written"
 
 
@@ -797,7 +800,7 @@ def test_seal_boundary_is_read_from_policy_not_hardcoded(tmp_path, monkeypatch):
     policy.write_text("holdout_range: ['2025-06-01', '2025-12-31']\n", encoding="utf-8")
     monkeypatch.setattr(ing, "_POLICY_PATH", policy)
 
-    assert ing._holdout_start() == pd.Timestamp("2025-06-01")
+    assert ing._holdout_bounds()[0] == pd.Timestamp("2025-06-01")
 
     archive, data = tmp_path / "arch", tmp_path / "data"
     # Pre-2026 but past the RELOCATED seal -> must now be refused.
