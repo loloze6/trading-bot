@@ -239,9 +239,17 @@ trading-bot/tests/fixtures/reference_run.json	1
 # boundary supplied AS the boundary, which is the parameter telling the engine to stop.
 trading-bot/tests/test_capture_krakenfutures_funding.py	1
 trading-bot/tests/test_model_funding_bit_identical.py	2
+# Added 2026-08-19 with the read/ingest seal guards. Every line read before
+# registering: comments explaining the seal, the module's own boundary constant, and
+# synthetic in-memory fixtures (_frame(...) builds a 3-row DataFrame, not market
+# data). Category (c) -- code that cannot do its job without naming the dates it
+# detects. Count-pinned, never PROSE: a test file gaining new sealed dates should
+# get a human look.
+trading-bot/data/data_manager.py	1
+trading-bot/tests/test_read_path_seal_guard.py	1
 trading-bot/tests/test_fetch_end_bound.py	7
 trading-bot/tests/test_fetch_gap_guard.py	18
-trading-bot/tests/test_kraken_archive_ingest.py	1
+trading-bot/tests/test_kraken_archive_ingest.py	3
 trading-bot/tests/test_no_sealed_date_literals.py	25
 trading-bot/tests/test_visualize_data_window.py	2
 
@@ -252,8 +260,8 @@ trading-bot/tests/test_visualize_data_window.py	2
 # lines are the negative cases proving the refusal fires -- a guard that cannot
 # name the window it guards cannot guard it. Neither file reads or contains market
 # data: the tests build synthetic closes in memory and write them to tmp_path.
-strategy-research/tools/measure_bar_sigma.py	1
-strategy-research/tests/test_measure_bar_sigma.py	3
+strategy-research/tools/measure_bar_sigma.py	2
+strategy-research/tests/test_measure_bar_sigma.py	7
 
 # CORRECTED 2026-07-29, dispatch W17 -- SESSION_LOG.md: 25 -> 23.
 # W16 registered 25 without measuring; the file has carried 23 residual lines.
