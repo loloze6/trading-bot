@@ -159,7 +159,14 @@ def bar_returns_bps(
     if start:
         df = df[df["timestamp"] >= pd.Timestamp(start)]
     if end:
-        df = df[df["timestamp"] <= pd.Timestamp(end) + pd.Timedelta(days=1)]
+        # STRICTLY less than the start of the following day, not <=. The intent is
+        # "include all of the `end` day"; `<=` also admits the next day's 00:00 bar,
+        # which is a different day. That single bar is a seal leak in the only case
+        # that matters: `_assert_window` passes end="2025-12-31" (correctly — it is
+        # outside holdout_range), and this filter then reads the 2026-01-01 00:00
+        # bar, the FIRST sealed timestamp. The tool read one bar past its own
+        # assertion, silently, on the exact boundary the assertion exists to defend.
+        df = df[df["timestamp"] < pd.Timestamp(end) + pd.Timedelta(days=1)]
     closes = df["close"].astype(float).tolist()
     out: List[float] = []
     for i in range(len(closes) - 1):

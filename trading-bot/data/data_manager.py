@@ -52,12 +52,67 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 import threading
 import queue
+from pathlib import Path
 
 # Fetchers are imported here so callers only need to import data_manager
 from data.fetchers.ccxt_fetcher import CcxtFetcher as HistoricalDataFetcher
 from data.fetchers.base_fetcher import BaseFetcher
 
 logger = logging.getLogger("trading_bot")
+
+#: `strategy-research/config/campaign_data_policy.yaml:holdout_range`. Read, never
+#: assumed — the seal moves with the policy, per the rule
+#: `tests/test_no_sealed_date_literals.py` states and follows.
+_POLICY_PATH = (Path(__file__).resolve().parents[2]
+                / "strategy-research" / "config" / "campaign_data_policy.yaml")
+
+
+def _holdout_start() -> pd.Timestamp:
+    """First sealed timestamp, from the policy file. Deny by default.
+
+    A reader that cannot locate the seal cannot prove it is not returning sealed
+    candles, so an unreadable policy refuses rather than defaulting to a
+    permissive constant — the same stance `holdout_date_gate.sh` takes.
+    """
+    import yaml  # local: this module is imported in contexts without yaml
+    try:
+        with open(_POLICY_PATH, encoding="utf-8") as fh:
+            return pd.Timestamp(yaml.safe_load(fh)["holdout_range"][0])
+    except Exception as exc:                                  # noqa: BLE001
+        raise SealedDataError(
+            f"Cannot read holdout_range from {_POLICY_PATH}: {exc}. Refusing to "
+            f"return market data — a read that cannot locate the seal cannot "
+            f"prove it is not serving sealed candles."
+        ) from exc
+
+
+class SealedDataError(RuntimeError):
+    """Requested data reaches into the sealed holdout range."""
+
+
+def _assert_no_sealed_rows(df: "pd.DataFrame", symbol: str) -> None:
+    """Refuse a frame carrying rows at or past the seal.
+
+    Refuses rather than silently dropping them: quietly returning a shorter
+    series than was asked for would hand the caller a backtest over a different
+    window than it believes it ran, which is the flattering-and-invisible
+    failure this project's rules single out. If a run legitimately needs the
+    holdout, that is a deliberate, single-use act — pass allow_sealed=True at
+    the call site so it appears in the diff.
+    """
+    if df is None or df.empty or "timestamp" not in df.columns:
+        return
+    seal = _holdout_start()
+    sealed = df[df["timestamp"] >= seal]
+    if not sealed.empty:
+        raise SealedDataError(
+            f"{symbol}: requested window returned {len(sealed)} row(s) at or past "
+            f"the holdout seal ({seal:%Y-%m-%d}) — first {sealed['timestamp'].min()}, "
+            f"last {sealed['timestamp'].max()}. The committed caches still contain "
+            f"sealed rows; reading them spends a single-use, terminal holdout. "
+            f"Bound the request to <= the day before the seal, or pass "
+            f"allow_sealed=True if this genuinely is the holdout evaluation."
+        )
 
 
 # ===========================================================================
@@ -973,7 +1028,8 @@ class DataManager:
             else:
                 logger.info(f"DataManager: {symbol} initialised ({len(df)} rows)")
 
-    def fetch_historical_data(self, symbol: str, start_date, end_date, exchange: str = "binance") -> pd.DataFrame:
+    def fetch_historical_data(self, symbol: str, start_date, end_date, exchange: str = "binance",
+                              allow_sealed: bool = False) -> pd.DataFrame:
         """
         Fetch raw OHLCV data for one symbol via CcxtFetcher and return it as
         a flat DataFrame.
@@ -1016,6 +1072,32 @@ class DataManager:
                 logger.debug(f"  Continuous: {is_continuous}")
                 if not is_continuous:
                     logger.warning(f"  {len(gaps)} gap(s) detected in {symbol} data")
+
+                # Seal guard on the READ path (2026-08-19).
+                #
+                # The 7 committed Binance caches physically contain sealed 2026
+                # rows -- the seal guards added earlier block NEW leaks but never
+                # removed the existing ones (BTCUSDT_1h.csv alone carries 4,344
+                # rows >= 2026-01-01), and those files are now also on the shared
+                # culi.to server. Trimming them is the eventual fix, but it
+                # changes their content hash and therefore data_sha256, forcing a
+                # rebaseline of the reference run; this guard gets the protection
+                # today without that cost.
+                #
+                # Placed on the RETURNED frame, deliberately, not in
+                # BaseFetcher._load_local: that frame feeds _merge_and_store, so
+                # clamping there would silently rewrite the caches on the next
+                # save -- turning a read guard into an uncontrolled data
+                # mutation, which is the separate bug already tracked against
+                # this same read path.
+                #
+                # Expected to be a no-op for every legitimate run: get_data()
+                # already bounds by the requested window and every non-holdout
+                # window ends <= 2025-12-31, so there is nothing past the seal to
+                # drop. It bites only on a request that reaches into the sealed
+                # range -- which is exactly the thing to refuse.
+                if not allow_sealed:
+                    _assert_no_sealed_rows(data[symbol], symbol)
                 return data[symbol]
             else:
                 logger.warning(f"No OHLCV data available for {symbol}")

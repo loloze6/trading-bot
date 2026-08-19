@@ -732,3 +732,86 @@ def test_to_binance_schema_4h_close_time_geometry(tmp_path):
     got = ing.to_binance_schema(raw, 240)
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
     assert (delta == pd.Timedelta(milliseconds=14_399_999)).all()
+
+
+# ---------------------------------------------------------------------------
+# Seal guard on the WRITE path (2026-08-19)
+# ---------------------------------------------------------------------------
+# Every other holdout control in the tree guards reading or committing. This
+# path writes into a tracked cache, which is the one direction none of them
+# cover: a future bulk tranche extending past 2025-12-31 would have landed
+# sealed candles in the store with nothing objecting.
+
+_SEAL = int(pd.Timestamp("2026-01-01").timestamp())
+
+
+def test_ingest_refuses_a_tranche_carrying_sealed_rows(tmp_path):
+    archive, data = tmp_path / "arch", tmp_path / "data"
+    # Straddles the seal: 2 bars before, 2 at/after.
+    _write_source(archive, "TEST", _SEAL - 2 * 3600, 4)
+
+    with pytest.raises(ValueError, match="holdout seal"):
+        ing.ingest("TEST", archive, data)
+
+
+def test_a_refused_tranche_writes_nothing(tmp_path):
+    """'NOTHING was written' has to be literally true.
+
+    A guard that raises after the store has been touched leaves sealed rows on
+    disk and only *reports* refusing -- worse than no guard, because the
+    message says the opposite of what happened.
+    """
+    archive, data = tmp_path / "arch", tmp_path / "data"
+    _write_source(archive, "TEST", _SEAL - 2 * 3600, 4)
+
+    with pytest.raises(ValueError, match="holdout seal"):
+        ing.ingest("TEST", archive, data)
+
+    written = list(data.rglob("*.csv")) if data.exists() else []
+    assert written == [], f"refused ingest still wrote {written}"
+
+
+def test_ingest_still_accepts_a_wholly_pre_seal_tranche(tmp_path):
+    """Control: the guard must not block legitimate history.
+
+    Without this, a guard that simply refused everything would pass the two
+    tests above.
+    """
+    archive, data = tmp_path / "arch", tmp_path / "data"
+    _write_source(archive, "TEST", _SEAL - 10 * 3600, 5)   # all pre-seal
+
+    summary = ing.ingest("TEST", archive, data)
+
+    assert summary["rows_written"] > 0 if "rows_written" in summary else True
+    assert list(data.rglob("*.csv")), "a legitimate pre-seal tranche was not written"
+
+
+def test_seal_boundary_is_read_from_policy_not_hardcoded(tmp_path, monkeypatch):
+    """The seal must move with campaign_data_policy.yaml.
+
+    Pinned because a hardcoded 2026-01-01 would keep passing every test above
+    while silently ignoring a policy change -- the exact 'correct-looking banner
+    over a stale check' shape flagged for holdout_date_gate.sh's PATTERN.
+    """
+    policy = tmp_path / "campaign_data_policy.yaml"
+    policy.write_text("holdout_range: ['2025-06-01', '2025-12-31']\n", encoding="utf-8")
+    monkeypatch.setattr(ing, "_POLICY_PATH", policy)
+
+    assert ing._holdout_start() == pd.Timestamp("2025-06-01")
+
+    archive, data = tmp_path / "arch", tmp_path / "data"
+    # Pre-2026 but past the RELOCATED seal -> must now be refused.
+    _write_source(archive, "TEST", int(pd.Timestamp("2025-06-02").timestamp()), 3)
+    with pytest.raises(ValueError, match="holdout seal"):
+        ing.ingest("TEST", archive, data)
+
+
+def test_unreadable_policy_refuses_rather_than_defaulting(tmp_path, monkeypatch):
+    """Deny by default: an ingest that cannot locate the seal must not write."""
+    monkeypatch.setattr(ing, "_POLICY_PATH", tmp_path / "does_not_exist.yaml")
+
+    archive, data = tmp_path / "arch", tmp_path / "data"
+    _write_source(archive, "TEST", _SEAL - 10 * 3600, 5)   # otherwise legitimate
+
+    with pytest.raises(RuntimeError, match="Cannot read holdout_range"):
+        ing.ingest("TEST", archive, data)
