@@ -1,8 +1,8 @@
 # E-015 — Venue/product declared at brief registration
 
-**State:** in-progress
+**State:** done
 **Owner:** Jeremy
-**Updated:** 2026-08-18
+**Updated:** 2026-08-20
 
 ## Why
 
@@ -51,8 +51,8 @@ it exposes.
 
 1. The brief registration schema requires a venue field and a product field;
    registration of a brief missing either fails rather than proceeding with
-   an implicit default. (Not met: shipped code defaults silently to
-   `research_only: true` instead of failing — see Why.)
+   an implicit default. **MET 2026-08-20** (S1b) — `_parse_brief_frontmatter`
+   raises on either field missing, at the actual registration choke point.
 2. At registration, any brief whose declared product is not legally tradable
    for the operator (French non-professional) is auto-flagged
    `research-only`, without a manual step. **MET** — `run_campaign.py:265-277`,
@@ -78,9 +78,22 @@ it exposes.
 - [x] S2 — Settle and record the funding family's venue status (live-tradable
       perp access vs. research-only) as the rule's first application. DONE
       2026-07-20, `campaign_knowledge_base.yaml`.
-- [ ] S1b — Make missing venue/product a hard registration failure (Done-when
-      #1, as originally specified) rather than a silent `research_only`
-      default.
+- [x] S1b — **DONE 2026-08-20.** Make missing venue/product a hard registration
+      failure (Done-when #1, as originally specified) rather than a silent
+      `research_only` default. `_parse_brief_frontmatter` (`run_campaign.py`,
+      the single choke point both fresh-launch call sites and
+      `register_hypothesis` go through) now requires `venue` and `product`
+      alongside its 4 existing required fields, raising the same `ValueError`
+      it already raises for those. `_materialize_run`'s own fail-closed
+      default (`_venue_product_tradable`'s "missing → not tradable") is left
+      untouched as a defensive fallback for any caller that constructs a
+      brief dict directly instead of going through the parser (e.g.
+      `test_venue_tradability.py`'s existing direct-dict tests, which still
+      pass unchanged). 4 new tests, 2 confirmed to fail against the pre-fix
+      code before being folded in. One pre-existing test fixture
+      (`test_k3_protocol_pinning.py::_VALID_BRIEF_FRONTMATTER`) needed
+      venue/product added to stay valid under the new requirement — not a
+      regression, a fixture catching up to the tightened contract.
 - [x] ~~S3a — Make `research_only` propagate.~~ **DROPPED 2026-08-18** as
       over-engineering (Jeremy's call). Made unnecessary by S3's affirmative
       form: requiring `research_only is False` means a child that inherits
@@ -279,3 +292,25 @@ bookkeeping would fire after the seal was already spent in practice.
   tradability from the brief instead of trusting a stored flag — would have
   made every one of them impossible by construction. **Recorded as the one
   worthwhile follow-up refactor; not done here.**
+
+- 2026-08-20 — **S1b DONE; epic closed `done`.** All four stories complete
+  (S1a, S2, S1b, S3; S3a dropped 2026-08-18 as unnecessary), all four
+  Done-when items MET. `_parse_brief_frontmatter` now requires `venue` and
+  `product` alongside its existing 4 required fields, raising the same
+  `ValueError` style on either being missing — this is the actual
+  registration choke point (both fresh-launch call sites in
+  `run_campaign.py`, plus `register_hypothesis`'s queue registration, parse
+  a brief through this function before anything else happens with it).
+  `_materialize_run`'s own fail-closed default is left untouched as a
+  defensive fallback for direct-dict callers. 4 new tests
+  (`tests/test_venue_tradability.py`); 2 independently confirmed to fail
+  against the pre-fix code before folding in. One pre-existing fixture
+  (`test_k3_protocol_pinning.py::_VALID_BRIEF_FRONTMATTER`) needed
+  venue/product added to stay valid — a fixture catching up to the
+  tightened contract, not a regression. Both suites green
+  (strategy-research 793/17/0 modulo the 4 pre-existing network/cache-
+  dependent failures unrelated to this change — no BTCUSDT cache or network
+  access in this environment; trading-bot 365/20/0 untouched). Holdout gate
+  PASS. No downstream impact: 0 of 57 existing runs carry venue/product on
+  their briefs (per S3's Phase A measurement), so nothing already on disk
+  is affected — this only gates brand-new registrations from here on.
