@@ -116,3 +116,38 @@ sequence behind E-010 is OPEN and unresolved — not decided here.
   **data feed** (PR #24, 2026-08-15) — confirmed against this file that S3
   (the funding-costed retest) is untouched, so PR #24 is the intended data
   source for S3, not a duplicate of anything on this side.
+- 2026-08-20 — S3 wiring reviewed (PR #29, `feat(funding): wire the existing
+  daily funding accrual through run_backtest`, merged 2026-08-16). The accrual
+  math itself is right and tested (`execution/portfolio_info.py::apply_funding`,
+  standard sign convention: long+positive rate pays, short+positive rate
+  receives — matches every perp venue, not an engine quirk). Two real gaps
+  found reading it against S3's stated intent (Kraken, PR #24's data source):
+  1. **Venue-routing gap.** `data/feed_registry.py::build_daily_funding_series`
+     hardcodes its input path to `f"{symbol}_funding_8h.csv"` (Binance's
+     naming/cadence) rather than going through
+     `FundingRateFetcher.cache_key()`, which already builds the correct
+     venue+cadence-qualified name (`krakenfutures_BTCUSD_funding_1h.csv`).
+     Flagged in the code's own comment ("venue-fixed-binance... will not
+     resolve a kraken cache even after one exists — R-LIT follow-up") but not
+     yet fixed. Net effect: `model_funding=True` today can only ever price
+     Binance's funding, never Kraken's, regardless of which cache exists on
+     disk — a "funding-costed Kraken retest" is not actually runnable until
+     this is fixed. The day-level summation itself (`groupby(day).sum()`) is
+     cadence-agnostic and would work correctly on Kraken's hourly file once
+     pointed at it — this is a routing bug, not a math bug.
+  2. **Bar-granularity mismatch.** `model_funding` is gated to
+     `candle_interval_seconds == 86400` (`core/backtester.py:113`) — daily
+     bars only. The production config trades 1h bars. It cannot be turned on
+     for the currently-tested strategy family at all without a separate
+     redesign (sub-daily accrual against a settlement-boundary-aware series),
+     which is out of scope for what PR #29 built.
+  Estimated profitability impact of NOT having this wired, against the
+  currently-tested strategy family specifically: SMALL, on measured evidence
+  (see below) — 1h mean-reversion holds positions ~2 hours on average
+  (`exposure_pct=3.785%` of 1440 reference-window bars ÷ 24 trades), so most
+  trades close before a single funding settlement, and the mismatch in point
+  2 means the mechanism can't even attach to this family regardless. Where it
+  WOULD matter is a slower, daily-bar, sustained-exposure family (trend/carry
+  — already the roadmap's stated future direction, not the currently-tested
+  one). Not re-prioritized on this basis; S3 stays `planned`, gap 1 needs a
+  small fix before S3 is executable at all once a daily-bar candidate exists.
