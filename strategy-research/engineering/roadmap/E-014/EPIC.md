@@ -141,13 +141,41 @@ sequence behind E-010 is OPEN and unresolved — not decided here.
      for the currently-tested strategy family at all without a separate
      redesign (sub-daily accrual against a settlement-boundary-aware series),
      which is out of scope for what PR #29 built.
-  Estimated profitability impact of NOT having this wired, against the
-  currently-tested strategy family specifically: SMALL, on measured evidence
-  (see below) — 1h mean-reversion holds positions ~2 hours on average
-  (`exposure_pct=3.785%` of 1440 reference-window bars ÷ 24 trades), so most
-  trades close before a single funding settlement, and the mismatch in point
-  2 means the mechanism can't even attach to this family regardless. Where it
-  WOULD matter is a slower, daily-bar, sustained-exposure family (trend/carry
-  — already the roadmap's stated future direction, not the currently-tested
-  one). Not re-prioritized on this basis; S3 stays `planned`, gap 1 needs a
-  small fix before S3 is executable at all once a daily-bar candidate exists.
+  **Estimated profitability impact of NOT having this wired, against the
+  currently-tested strategy family — the arithmetic, so this isn't a bare
+  assertion:**
+  - **Ceiling on what funding is worth even if fully captured.** A prior
+    measurement (`campaign_knowledge_base.yaml`, `funding_mr_daily_retest_killed`,
+    dispatch W1, 2026-07-25) on real Binance funding, 2019-12-01..2023-12-31
+    (1492 days), found realized carry of **15.4367%/yr BTCUSDT, 19.2366%/yr
+    ETHUSDT** — for a strategy staying persistently positioned on the
+    favorable side, the best case obtainable. That measurement's own
+    zero-lag upper bound (16.8029% / 20.5507%) still fell short of the
+    ~27.8%/27.4% required to flip that strategy's verdict, i.e. even the
+    ceiling wasn't a difference-maker there.
+  - **How much of that ceiling the currently-tested family could ever touch.**
+    From the pinned reference backtest (`tests/fixtures/bar_equity_reference.json`,
+    config_sha256 `5ccbec42`, BTCUSDT 1h, 2024-04-01..2024-05-30):
+    `exposure_pct=3.785` (share of the 1440-bar window holding ANY nonzero
+    position, `performance/bar_equity.py::exposure_pct`) across `trade_count=24`
+    (`tests/fixtures/reference_run.json`) → average holding period ≈
+    (0.03785 × 1440) / 24 ≈ **2.3 hours per trade**. Funding settles every 1h
+    (Kraken) or 8h (Binance) — most trades close before a single settlement.
+  - **Order-of-magnitude drag, generous-case.** Taking the worst-case
+    assumption that ALL of that 3.785%-of-time exposure aligned unfavorably
+    with funding at the ~17%/yr midpoint ceiling above: 0.03785 × 17% ≈
+    **0.64% of NAV/yr** — an upper bound, not a measured figure (no actual
+    funding-costed run exists yet; that's exactly what gap 1 blocks).
+  - **Against the strategy's own P&L scale.** The same reference window lost
+    net_pnl=-231.758912 on a $1000 initial balance (`DEFAULT_INITIAL_BALANCE`,
+    `core/launcher.py:29`) over 2 months — a -23.2% window return, roughly
+    -140%/yr simple-annualized. The ~0.6%/yr funding estimate above is
+    roughly two orders of magnitude smaller than the strategy's own
+    trading-decision P&L on this window.
+  - **Conclusion.** Not a re-prioritization case for the currently-tested
+    family. Where this WOULD matter is a slower, daily-bar, sustained-exposure
+    family (trend/carry — already the roadmap's stated future direction, not
+    the currently-tested one), where average exposure and holding period are
+    both far higher and the ~15-19%/yr ceiling stops being a rounding error.
+    S3 stays `planned`; gap 1 needs a small fix before S3 is executable at
+    all once a daily-bar candidate exists to test it against.
