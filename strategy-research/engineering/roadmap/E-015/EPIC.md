@@ -314,3 +314,19 @@ bookkeeping would fire after the seal was already spent in practice.
   PASS. No downstream impact: 0 of 57 existing runs carry venue/product on
   their briefs (per S3's Phase A measurement), so nothing already on disk
   is affected — this only gates brand-new registrations from here on.
+
+- 2026-08-20 (same day) — **Bug review of the S1b change caught a real gap:**
+  `workflow_artifacts/templates/research_brief.yaml`, the brief-authoring
+  template, never mentioned venue/product at all — anyone (human or the LLM
+  hypothesis-generation stage) starting a new brief from it would hit S1b's
+  ValueError with no hint why. Fixed: both fields added as empty
+  placeholders, comment pointing at `config/venue_tradability.yaml`. Also
+  checked all 4 real committed briefs under `briefs/` for live exposure:
+  3 predate venue/product and lack it (`H-041-C-v2.md`,
+  `FUNDING_MR_DAILY_RETEST.md`, `research_brief_P4_ts_trend.md`), but all
+  three are `status: done` or superseded/blocked via a path that never
+  touches `_parse_brief_frontmatter` — confirmed against `campaign_queue.yaml`,
+  not assumed. No live workflow breaks today. Flagging for whoever eventually
+  reactivates `FUNDING_MR_DAILY_RETEST`'s documented-deferred 4h branch: that
+  brief will need venue/product added by hand first, or it refuses at
+  registration.
