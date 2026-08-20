@@ -189,7 +189,7 @@ trading-bot/tests/fixtures/reference_run.json	1
 trading-bot/tests/test_fetch_end_bound.py	7
 trading-bot/tests/test_fetch_gap_guard.py	18
 trading-bot/tests/test_kraken_archive_ingest.py	1
-trading-bot/tests/test_no_sealed_date_literals.py	9
+trading-bot/tests/test_no_sealed_date_literals.py	25
 trading-bot/tests/test_visualize_data_window.py	2
 
 # ADDED 2026-07-28, dispatch W11 -- category (c), audited by reading every line.
@@ -232,6 +232,21 @@ strategy-research/tests/test_measure_bar_sigma.py	3
 #   test_no_sealed_date_literals.py (c) the seal scanner's own test -- cannot
 #                                   function without containing the strings it
 #                                   detects. Same basis as holdout_date_gate.sh.
+
+# BUMPED 2026-08-20 -- test_no_sealed_date_literals.py: 9 -> 25. Branch
+# claude/test-5yopd3 merged PR #21 (candle-callback arity) and PR #22
+# (feed-dependency safety) via merge commits that, like the W20 8-PR fork
+# merge above, bypassed pre-commit; those PRs added more parametrized test
+# cases to this file (more (literal, expected) fixture tuples for the same
+# scanner-testing purpose as the original 9). Read the file in full: every
+# flagged line remains inside a test fixture string or parametrize tuple
+# exercising _dates_in_text/_code_string_dates, same category (c) basis as
+# the original registration -- no market data, no new incident shape.
+# Measured with the gate's own machinery against the index this commit
+# publishes:
+#   sh strategy-research/tools/holdout_date_gate.sh --report-residual \
+#       | grep -P '^trading-bot/tests/test_no_sealed_date_literals\.py\t'
+#   -> trading-bot/tests/test_no_sealed_date_literals.py<TAB>25
 #   test_visualize_data_window.py   (b) docstring prose; its fixture serves a
 #                                   single pre-seal bar and reads the boundary
 #                                   from policy rather than hardcoding it.
