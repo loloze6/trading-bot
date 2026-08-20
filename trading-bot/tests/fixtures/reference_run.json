@@ -13,6 +13,14 @@
     "sharpe_tolerance": 0.005
   },
   "note": "Established after Step 3 parity gate (config-driven engine iso-functional with legacy). Survives: allocation fix, config_path fix. Fails if: PnL computation changes, matching logic changes, engine wiring changes.",
+  "coverage_gap": {
+    "class": "F7 -- regime-classification ordering in AdvancedStrategy.is_ready()",
+    "verified": "2026-08-20",
+    "finding": "This fixture CANNOT detect the F7 defect class. Verified by execution: reverting trading-bot/strategies/main_strategy.py to 16a53f47^ (pre-fix) and re-running `pytest -m slow tests/test_regression_backtest.py --timeout=600` reproduces trade_count=24 / net_pnl=-231.758912 / sharpe=-5.646, identical to the fixed code. A green run here is therefore SILENT on whether F7 is fixed -- it is not evidence that it is.",
+    "why": "Inferred from strategy_config.json, NOT separately executed: only the mean_reversion regime carries components (trending/chop/unknown are null), and required_bars already satisfies that regime's warmup=51 by the time is_ready() is first consulted -- so the stale-vs-current regime read yields the same readiness answer either way. Exercising F7 needs a window/config where the current bar classifies into a regime whose components are not yet warm.",
+    "implication": "16a53f47's commit message predicted this baseline would move. It did not, and the non-movement says nothing about the fix. Do not cite a green run on this fixture as F7 validation; F7's coverage lives in tests/test_ungated_config_pattern.py.",
+    "runner_note": "pytest.ini sets a global --timeout=30, which kills this test inside its module-scoped backtest fixture. Pass --timeout=600."
+  },
   "rebaselined": {
     "date": "2026-07-27",
     "previous": {"trade_count": 76, "net_pnl": -270.797424, "sharpe": -4.364},
