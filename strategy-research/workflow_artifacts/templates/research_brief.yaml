@@ -1,6 +1,12 @@
 strategy_domain: ""
 market_universe: []
 timeframe: ""
+# venue/product (E-015 S1b, 2026-08-20): REQUIRED as of this fix -- registration
+# now fails outright if either is blank, instead of silently going research_only.
+# Valid pairs today are in config/venue_tradability.yaml (kraken/spot,
+# kraken/perp both tradable; kraken/margin unconfirmed -> still research_only).
+venue: ""
+product: ""
 constraints: []
 available_data: []
 research_goal: ""
