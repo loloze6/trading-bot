@@ -47,6 +47,12 @@ class AdvancedStrategy(MainStrategy):
         )
 
         self.last_forecast = 0.0
+        # F7: memoized regime_engine.classify() result for the bar currently being
+        # evaluated. classify() has per-call side effects (veto-bar streak counters,
+        # bars_in_current_regime/regime_change_count via _tick()) so it may run at
+        # most once per bar. Invalidated in update(); populated lazily by whichever
+        # of is_ready()/generate_forecast() runs first each bar (see _classify_once).
+        self._regime_classification = None
 
         # F5b (P1a shakedown, 2026-07-04): update() previously swallowed any component
         # exception with a bare log line and no other trace. A component-level bug
@@ -61,6 +67,15 @@ class AdvancedStrategy(MainStrategy):
 
         logger.debug(f"✅ AdvancedStrategy initialized (required_bars={self.required_bars})")
 
+    def _classify_once(self) -> Tuple[MarketRegime, Dict[str, Any]]:
+        """regime_engine.classify() for the CURRENT bar, memoized so is_ready() and
+        generate_forecast() agree on the same classification within one bar instead
+        of running it twice (which would double-count classify()'s side effects:
+        veto-bar streaks, bars_in_current_regime, regime_change_count)."""
+        if self._regime_classification is None:
+            self._regime_classification = self.regime_engine.classify()
+        return self._regime_classification
+
     def is_ready(self) -> bool:
         if self.data_buffer.size < self.required_bars:
             logger.debug(f"NOT READY: buffer {self.data_buffer.size} / {self.required_bars}")
@@ -68,11 +83,15 @@ class AdvancedStrategy(MainStrategy):
         if not self.regime_engine.is_ready():
             logger.debug(f"NOT READY: regime engine")
             return False
-        # current_regime is from the previous bar (classify() hasn't run yet this bar).
-        # Harmless in practice: regime transitions are rare and generate_forecast() is only
-        # called when is_ready() returns True.
-        if not self.strategy_engine.is_ready(self.regime_engine.current_regime):
-            logger.debug(f"NOT READY: strategy engine for {self.regime_engine.current_regime}")
+        # F7 fix: classify THIS bar before checking strategy-engine readiness, instead
+        # of reading current_regime from before classify() has run (which was always
+        # last bar's regime, or the UNKNOWN class-init default on the very first
+        # ready-candidate bar -- vacuously "ready" for any regime with no components
+        # registered under that key, letting the first forecast fire from under-warmed
+        # per-regime history). See tests/test_ungated_config_pattern.py.
+        regime, _ = self._classify_once()
+        if not self.strategy_engine.is_ready(regime):
+            logger.debug(f"NOT READY: strategy engine for {regime}")
             return False
         return True
 
@@ -92,6 +111,7 @@ class AdvancedStrategy(MainStrategy):
 
     def update(self, new_bar: pd.DataFrame):
         self._update_call_count += 1
+        self._regime_classification = None  # new bar: last bar's classify() memo is stale
         stage = "buffer"
         try:
             self.data_buffer.add_data(new_bar.iloc[-1].to_dict())
@@ -113,7 +133,7 @@ class AdvancedStrategy(MainStrategy):
             logger.error(f"Error updating strategy (stage={stage}, bar={self._update_call_count}): {e}")
 
     def generate_forecast(self) -> Tuple[float, Any, MarketRegime, float, Dict[str, Any]]:
-        regime, debug_regime = self.regime_engine.classify()
+        regime, debug_regime = self._classify_once()
 
         forecast, debug_components = self.strategy_engine.forecast(regime)
         forecast_delta = forecast - self.last_forecast
