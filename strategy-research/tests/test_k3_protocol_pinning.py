@@ -842,6 +842,8 @@ strategy_domain: structural_forced_flow
 market_universe: [BTCUSDT, ETHUSDT]
 timeframe: 1d
 research_goal: Retest funding continuous mean-reversion on daily bars.
+venue: kraken
+product: perp
 ---
 
 Prose body, never read by the orchestrator.

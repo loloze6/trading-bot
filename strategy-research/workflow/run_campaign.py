@@ -232,7 +232,18 @@ def _parse_brief_frontmatter(brief_path: Path) -> dict:
             f"(expected the file to start with '---', then YAML, then '---')."
         )
     data = yaml.safe_load(m.group(1)) or {}
-    for required in ("strategy_domain", "market_universe", "timeframe", "research_goal"):
+    # venue/product added 2026-08-20 (E-015 S1b): Done-when #1 requires missing
+    # venue/product to fail registration outright rather than silently resolving
+    # to research_only=True via _venue_product_tradable's own fail-closed default
+    # (still exercised directly by _materialize_run for any caller that bypasses
+    # this parser, e.g. test_venue_tradability.py's direct-dict tests). No longer
+    # load-bearing for holdout safety -- S3's affirmative research_only is False
+    # check already closes that gap -- this is belt-and-braces at registration
+    # time, which is what the rule was originally written to require.
+    for required in (
+        "strategy_domain", "market_universe", "timeframe", "research_goal",
+        "venue", "product",
+    ):
         if not data.get(required):
             raise ValueError(f"{brief_path}: frontmatter missing required field '{required}'.")
     return data
