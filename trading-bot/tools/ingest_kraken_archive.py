@@ -67,6 +67,39 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from data.fetchers.ccxt_fetcher import CcxtFetcher  # noqa: E402
 
+#: `strategy-research/config/campaign_data_policy.yaml:holdout_range`. Read, never
+#: assumed — the seal moves with the policy, the same rule
+#: `tests/test_no_sealed_date_literals.py` states and follows.
+_POLICY_PATH = PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
+
+
+def _holdout_bounds() -> tuple:
+    """(first sealed instant, first instant AFTER the seal), from the policy.
+
+    BOTH ends. holdout_range is a closed window and the policy declares data
+    usable again after it (`era_2026_h2_forward_recorded`), so keying on the
+    start alone would reject a legitimate 2026-Q3 tranche wholesale rather than
+    just the sealed part. The upper end is INCLUSIVE in the policy, hence the
+    returned bound is the following midnight and the comparison is strict.
+
+    Deny-by-default on every failure to read, INCLUDING an unavailable yaml —
+    hence the import inside the try. An ingest that cannot prove where the seal
+    is must not write. This mirrors `holdout_date_gate.sh`'s stance that silence
+    is never success, and it matters more here than in a scanner because this
+    path WRITES into tracked caches.
+    """
+    try:
+        import yaml  # local: keeps the module importable where yaml is absent
+        with open(_POLICY_PATH, encoding="utf-8") as fh:
+            lo, hi = yaml.safe_load(fh)["holdout_range"][:2]
+        return pd.Timestamp(lo), pd.Timestamp(hi).normalize() + pd.Timedelta(days=1)
+    except Exception as exc:                                  # noqa: BLE001
+        raise RuntimeError(
+            f"Cannot read holdout_range from {_POLICY_PATH}: {exc}. Refusing to "
+            f"ingest — an ingest that cannot locate the seal cannot prove it is "
+            f"not writing sealed rows into a tracked cache. NOTHING was written."
+        ) from exc
+
 # ---------------------------------------------------------------------------
 # Breadth configuration
 # ---------------------------------------------------------------------------
@@ -321,6 +354,28 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
     raw = load_kraken_ohlcv(src)
     converted = to_binance_schema(raw, resolution)
     verify_utc_roundtrip(raw, converted)  # STOP-on-fail
+
+    # Seal guard. Checked HERE — after conversion, before the fetcher is even
+    # constructed — so a violating tranche cannot touch the store at all.
+    #
+    # Today's archive is holdout-clean by inspection (12,027 files ending
+    # 2025-12-31), which is exactly why this is worth pinning: the guard is for
+    # the NEXT bulk tranche, whose extra rows would otherwise be written into a
+    # tracked cache with nothing objecting. Every other seal control in the tree
+    # guards reading or committing; this path writes, which is the one direction
+    # none of them cover.
+    _lo, _hi = _holdout_bounds()
+    sealed = converted[(converted["timestamp"] >= _lo) & (converted["timestamp"] < _hi)]
+    if not sealed.empty:
+        first, last = sealed["timestamp"].min(), sealed["timestamp"].max()
+        raise ValueError(
+            f"{asset}: archive carries {len(sealed)} row(s) inside the holdout "
+            f"seal [{_lo:%Y-%m-%d}, {_hi - pd.Timedelta(days=1):%Y-%m-%d}] — "
+            f"first {first}, last {last}. "
+            f"Ingesting would write sealed candles into the tracked cache "
+            f"{cache_symbol(asset)}. NOTHING was written. Trim the source tranche "
+            f"to pre-seal rows, or quarantine it; do not widen this guard."
+        )
 
     store_symbol = cache_symbol(asset)  # e.g. BTCUSD -> cache_key kraken_BTCUSD_1h
     fetcher = CcxtFetcher(

@@ -28,6 +28,37 @@ cd trading-bot/strategy-research
 
 ---
 
+## 0. One-time per clone: wire up the commit gates
+
+Run this once on every machine and every fresh clone, from the repo root:
+
+```bash
+sh strategy-research/tools/setup_hooks.sh
+```
+
+`.git/hooks/` is never cloned, so without this a new checkout has **no
+pre-commit gate at all** — no secret scan, no holdout-date scan. The script
+points `core.hooksPath` at the tracked hook directory, so the gates travel
+with the repo and a `git pull` updates them.
+
+Check status without changing anything:
+
+```bash
+sh strategy-research/tools/setup_hooks.sh --check
+```
+
+Two gates run on each commit, ~6 seconds combined: a **secret scan**
+(forbidden files plus credential values in the staged diff) and the
+**holdout gate** (no unregistered dates inside the sealed window). Both
+guard things a commit makes permanent — a secret or a sealed date in your
+local history needs a history rewrite to remove, which CI cannot do for you.
+
+Tests deliberately do **not** run in the hook; CI runs both suites on every
+push and pull request. That also covers the case a local hook never can: a
+pull request merged through GitHub's web UI never invokes your hooks.
+
+---
+
 ## 1. Launch the campaign
 
 ### 1a. Dry run first (no LLM spend, zero footprint)
@@ -229,7 +260,8 @@ were known. See `docs/TIMEFRAME_CHANGE_PLAYBOOK.md` section 6/7 and
 
 Hard pauses that remain human-gated, unchanged by this automation:
 `provisional_promote_awaiting_holdout` (single-use, irreversible holdout
-consumption), `budget_breaker`, and every error-class pause
+consumption), `research_only_unverified` (guards that same consumption),
+`budget_breaker`, and every error-class pause
 (`unhandled_exception`, `component_gap`, `component_execution_error`,
 `regime_misattribution`, `data_block_hitl`, `human_pause_unclassified`) — none
 of these are wishlist-trigger questions, and none are auto-resolved.
@@ -244,6 +276,7 @@ of these are wishlist-trigger questions, and none are auto-resolved.
 | `wishlist_trigger:<family>` | `campaign_review` recommended (via `reframe` or `escalate_component`) a run consuming a wishlist family, and `evaluate_wishlist_predicate()` mechanically evaluated its `trigger_condition.predicate` as **`false`** (checked every KB finding; none satisfy all the predicate's conditions) — this was a premature recommendation. The halt detail names which finding came closest and why it didn't qualify. | Read the halt detail and the family's `trigger_condition.predicate` in `config/detector_wishlist.yaml`/`feed_wishlist.yaml` directly. Write a corrected, non-wishlist `next_research_question` yourself (or a fresh brief) before resuming — do not hand-override the predicate's `false` verdict without updating the KB finding it's based on. |
 | `wishlist_trigger_data_gap:<family>` | Same detection as above, but `evaluate_wishlist_predicate()` returned **`missing_field`**: either the family has no `trigger_condition.predicate` at all (still prose-only — rewrite it first), or some finding that could otherwise fully match this predicate is missing (or carries `not_computed_pre_schema` for) the one field that would decide it — a genuine data gap, not merely "some finding somewhere lacks this field" (a finding that already fails on a different, resolvable condition doesn't count — see the 2026-07-10 refinement note above). This is a schema/backfill gap, not a rejection. | If the family lacks a predicate: write one (see either wishlist file's header for the schema), then resume. If a finding is missing the deciding field: backfill it from stored artifacts if possible (compute, don't estimate — cite the source), or set it explicitly to `not_computed_pre_schema` if the artifacts genuinely can't support it. Then resume. |
 | `provisional_promote_awaiting_holdout` | A hypothesis passed walk-forward (`promote`) and `promotion_audit.yaml` is written — the single-use, irreversible holdout evaluation is next. | Run the holdout backtest on the range in `config/campaign_data_policy.yaml`'s `holdout_range` by hand, write `runs/<run_id>/artifacts/holdout_result.yaml` (`status: pass\|fail`), then resume. |
+| `research_only_unverified` | **(E-015 S3)** The run reached the holdout gate but its `research_brief.yaml` does not affirmatively declare the strategy tradable (`research_only` is not `False` — commonly absent entirely). The holdout is single-use and terminal, so it is spent only on a strategy we could actually trade. **Do NOT run the holdout backtest to clear this** — that is the act this pause exists to prevent, and it is why this reason is classified separately from `provisional_promote_awaiting_holdout` (the row directly ABOVE this one, which DOES tell you to run it — that is the row that applies once tradability is declared). | A **fresh-launch** run gets `research_only` automatically from `run_campaign.py`'s `_materialize_run`, which resolves venue+product against `config/venue_tradability.yaml` — if this run came from a queue entry, re-materialize it there. A **refine/reframe descendant** inherits neither the flag nor the venue fields and has no automated path (`research_only` is resolved only at fresh launch), so check this run's venue+product against `venue_tradability.yaml` by hand and, **only if it is genuinely tradable**, record `venue`, `product` and `research_only: false` on `runs/<run_id>/artifacts/research_brief.yaml`. Then resume. Setting the flag without performing that check is the bypass, not the fix. |
 | `provisional_promote_holdout_inconclusive` | `holdout_result.yaml` exists but its `status` isn't `pass`/`fail`. | Investigate and correct `holdout_result.yaml`, then resume. |
 | `budget_breaker` | This run's weighted-token spend exceeded `config/campaign_config.yaml`'s `orchestrator.token_budget_per_run_weighted_units`. | Review why (check `runs/<run_id>/pipeline_state.yaml`'s `audit_log` per-stage breakdown printed to console). Widen the budget constant only if the spend was legitimate, or fix a runaway stage. Then resume. |
 | `unhandled_exception` | `run_loop`'s own except-block caught something. Detail is in the log line and `pipeline_state.yaml`'s `last_error`. **Known specific case (2026-07-16):** `last_error` reading exactly `Claude Code returned an error result: success` is a `claude_agent_sdk==0.2.82` result-misclassification defect (`is_error=True` paired with `subtype="success"` — see `_invoke_agent_with_yaml_retry`'s own code comment, `workflow/run_phase1_research.py`), not a real agent/deliverable failure. As of this commit, `_invoke_agent_with_yaml_retry` auto-retries this EXACT message once per stage invocation before it can ever reach a human as a halt. If it still halts with this exact message, the failure repeated twice in the same stage invocation and is a real, non-transient failure — do not assume it will clear on a bare retry. | Fix the root cause, then resume. For the known SDK case above: confirm `runs/<run_id>/pipeline_state.yaml`'s `last_error` is exactly this string and that it recurred (not a first occurrence — those are now auto-handled); if so, treat as a genuine failure and investigate normally, do not just retry blindly a third time. |
@@ -303,8 +336,19 @@ import run_phase1_research as orch
 from pathlib import Path
 orch.update_state(
     path=Path('runs/<run_id>'), status='active', last_error=None,
-    flags={'no_signal_artifact_flagged': False, 'component_execution_error_flagged': False,
-           'conformance_violation': False, 'regime_misattribution_flagged': False},
+    # State-key counterparts: _classify_human_pause reads these ALONGSIDE their
+    # flags ('conformance_violation OR conformance_violations'), so clearing only
+    # the flag half leaves the pause classifying exactly as before.
+    conformance_violations=[], kb_reactivation_violations=[],
+    # Every sticky flag the pause classifiers read, listed in their real priority
+    # order (_classify_human_pause, then _hard_pause_reason's stale_escalation_
+    # unclaimed, which outranks all of them while status == 'failed'). The list must
+    # stay complete AND correctly ordered: a stale higher-priority flag masks every
+    # lower one, so the operator is shown the wrong reason and follows the wrong row.
+    flags={'research_only_unverified': False, 'no_signal_artifact_flagged': False,
+           'conformance_violation': False, 'regime_misattribution_flagged': False,
+           'component_execution_error_flagged': False, 'kb_reactivation_violation': False,
+           'pass_rule_evaluation_disagreement': False, 'stale_escalation_unclaimed': False},
 )
 "
 ```

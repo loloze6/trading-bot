@@ -157,9 +157,11 @@ yet satisfied.
   `recorder/tests/fixtures/live_book_snapshot.json` was UNTRACKED at HEAD, so
   `test_kraken_crc`'s live-fixture test skipped; restoring blob `189930b5`
   makes it run and pass. The one failure,
-  `test_d3_every_committed_generic_protocol_is_marked_unratified`, fails
-  identically at `f459d3c3` (asserts 9 generic protocols, finds 8) and is
-  pre-existing.
+  `test_d3_every_committed_generic_protocol_is_marked_unratified` (since renamed
+  to `test_d3_generic_classifier_agrees_with_independent_derivation_and_all_are_unratified`
+  and fixed), failed identically at `f459d3c3` (asserts 9 generic protocols,
+  finds 8) and was pre-existing -- root cause `71573062` deleting
+  `escalation_dotusdt_4h.json`.
 
   **Two reference classes are not path strings and no grep will find them.**
   Both were caught only by running the suites, and both are worth knowing

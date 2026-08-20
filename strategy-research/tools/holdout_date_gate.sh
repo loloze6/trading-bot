@@ -33,10 +33,30 @@
 #   (a document naming the holdout window it promises not to touch).
 #   So the gate exempts exactly two narrow, enumerated things, and nothing else:
 #     1. AUTHORSHIP_KEYS below — a closed list of metadata keys.
-#     2. Paths in the exemption registry, each pinned WITH a line count.
-#   Anything in a shape not on those lists blocks. New file, new key, new format, or an
-#   exempt file gaining even one extra holdout-date line => blocked until a human
+#     2. Paths in the exemption registry, each pinned WITH a line count -- or, for
+#        running narrative files only, with the marker PROSE (see below).
+#   Anything in a shape not on those lists blocks. New file, new key, new format, or a
+#   count-pinned file gaining even one extra holdout-date line => blocked until a human
 #   classifies it. That is the deny-by-default property, preserved.
+#
+# THE PROSE MARKER (added 2026-08-18, Jeremy's call — E-003 S2)
+#   A count-pinned exemption is the wrong shape for a file whose PURPOSE is to
+#   accumulate narrative about the seal. research/ledger/*.md gains a holdout-date line
+#   every time someone documents a decision about the holdout — which is the file doing
+#   its job. Under count-pinning, each such entry re-blocks the gate until a human
+#   hand-bumps the number, forever. Measured 2026-08-08: 3 such files. Measured
+#   2026-08-18: 7. The gate's own docstring calls a gate people routinely --no-verify
+#   past "strictly worse than no gate at all", and an ever-growing manual bump is
+#   exactly how that happens.
+#   So a registry entry may read PROSE instead of a number, meaning: this path is a
+#   narrative document, exempt by PATH rather than by line count.
+#   DELIBERATE TRADE-OFF, stated plainly: a PROSE file is no longer scanned at all, so
+#   market data pasted into one would not be caught here. Accepted because (a) these
+#   are .md prose files nothing writes programmatically, (b) the real market-data risk
+#   lives in .csv/.json artifacts, which remain fully guarded, and (c) the alternative
+#   was a gate that blocks the next ordinary ledger commit.
+#   PROSE is for running narrative ONLY. Code, config, fixtures and data stay
+#   count-pinned — a test file gaining new sealed dates SHOULD get a human look.
 #
 # USAGE
 #   sh strategy-research/tools/holdout_date_gate.sh            # scan index (hook mode)
@@ -167,11 +187,18 @@ cut -d: -f1 < "$RESIDUAL" | sort | uniq -c | awk '{print $2"\t"$1}' > "$violatio
 # Gaining even one more re-blocks it: the exemption is pinned to audited content, not
 # to the filename.
 : > "$violations"
+n_prose=0
 while IFS="$(printf '\t')" read -r path count; do
     [ -z "$path" ] && continue
     allowed=$(awk -F'\t' -v p="$path" '$1==p {print $2; exit}' "$REGISTRY")
     if [ -z "$allowed" ]; then
         echo "$path	$count	NOT REGISTERED" >> "$violations"
+    elif [ "$allowed" = "PROSE" ]; then
+        # Narrative file, exempt by path rather than line count (see THE PROSE MARKER).
+        n_prose=$((n_prose + 1))
+    elif ! echo "$allowed" | "$GREP" -q -E '^[0-9]+$'; then
+        # Neither a count nor PROSE: a typo must never read as a pass (deny by default).
+        echo "$path	$count	MALFORMED registry value '$allowed'" >> "$violations"
     elif [ "$count" -gt "$allowed" ]; then
         echo "$path	$count	EXCEEDS registered $allowed" >> "$violations"
     fi
@@ -180,6 +207,7 @@ done < "$violations.counts"
 n_res=$(wc -l < "$violations.counts" | tr -d ' ')
 n_vio=$(wc -l < "$violations" | tr -d ' ')
 info "  holdout-date lines: $(wc -l < "$HITS" | tr -d ' ') total, $(wc -l < "$RESIDUAL" | tr -d ' ') after provenance-key filter, across $n_res file(s)"
+info "  path-exempt (PROSE) files skipped: $n_prose"
 
 if [ "$n_vio" -gt 0 ]; then
     echo ""

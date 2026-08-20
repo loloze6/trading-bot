@@ -37,6 +37,8 @@ class TradingBot:
         test_mode: bool = True,
         symbols: List[str] = None,
         warmup_cutoff_timestamp=None,
+        model_funding: bool = False,
+        funding_daily=None,
     ):
         """
         Initialize the trading bot.
@@ -81,10 +83,12 @@ class TradingBot:
         # byte-identical to before this mechanism existed. Turning it on additionally
         # requires funding_daily to be populated (a per-symbol daily funding COST
         # series, distinct from the forward-filled signal feed; see
-        # data/feed_registry.py::build_daily_funding_series). Neither is wired on by
-        # any production config here — this is mechanism-only.
-        self.model_funding = False
-        self.funding_daily = None
+        # data/feed_registry.py::build_daily_funding_series). Both are threaded in from
+        # run_backtest(model_funding=True) -> BacktestEngine's daily-bar guard -> these
+        # params; no production config sets the flag, and default False leaves behavior
+        # byte-identical.
+        self.model_funding = model_funding
+        self.funding_daily = funding_daily
 
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
@@ -383,8 +387,20 @@ class TradingBot:
                 # === RECORD PORTFOLIO STATE === --> This is to store at a bar level and visualize it in a graph.
                 if hasattr(self, 'portfolio_state_tracker'):
                     tracker = getattr(self, 'portfolio_state_tracker', None)
+                    # `data` here is the SAME final bar the per-bar loop already
+                    # recorded (get_data_history defaults to count=1), so a plain
+                    # append would give portfolio_states.csv two rows for one
+                    # instant -- pre-close and post-close. replace_if_same_bar folds
+                    # the post-close numbers onto that existing row instead, keeping
+                    # the file one-row-per-bar. It fires only when the last recorded
+                    # timestamp actually matches, so the paths that record nothing
+                    # for this bar (warmup-gated, or the per-bar body raised) still
+                    # append normally. Single-symbol only: rows carry no symbol, so
+                    # with several replaying symbols the previous row could belong to
+                    # another one -- that case keeps today's behaviour untouched.
                     tracker.record_state(
                         data = data,
+                        replace_if_same_bar=len(self.symbols) == 1,
                         balances=balances,
                         total_portfolio_value=total_value,
                         previous_allocation = actual_allocation,

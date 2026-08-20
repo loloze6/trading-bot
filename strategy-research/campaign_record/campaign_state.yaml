@@ -659,17 +659,11 @@ trial_sharpes:
   n_trades: 0
   statistic_valid: expectancy
   below_floor_pct: 53.33
-- trial_id: run_054
-  source: backtest
-  sharpe: -1.66
-  expectancy_bps:
-    mean: 1050.5086
-    se: 549.8235
-    t_stat: 1.9106
-    n: 117
-  n_trades: 0
-  statistic_valid: expectancy
-  below_floor_pct: 53.33
+  dedup_note: 'E-025/issue #28 H3 (2026-08-16): this trial was recorded 3x total (2
+    identical duplicates removed here) by protocol_execution being re-entered with no
+    idempotency guard on _record_backtest_trial. Both removed rows were byte-identical
+    to this one -- a clean mechanical dedup, not a judgment call. Fixed going forward
+    by the (trial_id, source)-keyed guard landed the same day.'
 - trial_id: run_057
   source: prescreen
   route: kill_no_ic
@@ -711,13 +705,6 @@ trial_sharpes:
   cost_pass: true
 - trial_id: run_059
   source: backtest
-  sharpe: null
-  expectancy_bps: null
-  n_trades: 0
-  statistic_valid: expectancy
-  below_floor_pct: 100.0
-- trial_id: run_059
-  source: backtest
   sharpe: -0.6375
   expectancy_bps:
     mean: -38.4665
@@ -727,3 +714,14 @@ trial_sharpes:
   n_trades: 0
   statistic_valid: sharpe
   below_floor_pct: 30.61
+  dedup_note: 'E-025/issue #28 H3 (2026-08-16): this trial was recorded 2x by
+    protocol_execution re-entry, but unlike run_054 the two rows were NOT identical
+    -- this is a judgment call, not a mechanical dedup, flagged explicitly for
+    override. The removed row read sharpe=null, statistic_valid=expectancy,
+    below_floor_pct=100.0, n_trades=0 -- the exact fingerprint of a lookup failure
+    (all fields defaulted), matching the pre-fix run_059 timestamp-format bug fixed
+    the same day (d7f42c6: bars.csv date-only vs trades.json full ISO on daily bars,
+    100% lookup failure for this specific run). This row''s n=699 trades matches that
+    fix''s confirmed trade count exactly, so it is kept as the real, later measurement;
+    the degenerate row is removed as a stale artifact of the earlier broken run, not
+    a second genuine trial.'

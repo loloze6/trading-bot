@@ -46,15 +46,33 @@ decisions.
 
 ## Done when
 
-Not yet written. Depends on the E-003 unblock and a decision on the shared
-machine/location itself (overlaps E-007's procurement question). Revisit
-once both are resolved.
+Not yet fully written — still depends on the E-003 unblock (see Log
+2026-08-18: not a quick fix, has an open design question of its own). The
+machine half is no longer an open question: `culi.to` is the shared host
+(see S1a below), so "define the shared location" is done; "write-
+serialization for `campaign_state`" and the actual cutover from Option A
+are what remain once E-003 clears.
 
 ## Stories
 
-- [ ] S1 — (blocked behind E-003) Once the seal gate is enforceable in every
-      clone, define the shared location and its write-serialization for
-      `campaign_state`.
+- [x] S1a — Provision the shared host. Folded in 2026-08-18 from the
+      standalone "Ubuntu server deployment readiness" bug card (Notion,
+      closed as a pointer here): `culi.to` (Ubuntu 24.04, 4c/8GB/145GB) is
+      live, the fork is cloned, and baseline `simulate` reproduces the
+      reference run byte-identically (`5ccbec42`/`5a75366c`/−23.021%/−5.646,
+      deterministic ×2), fast 260/0 + slow 14/0 green — done 2026-08-08.
+      Residual pieces from that card, not yet done: Jeremy's own SSH access
+      (his key sent 2026-08-18, awaiting Dorian adding it to
+      `authorized_keys`); the CI Linux leg is covered by the repo's own
+      `.github/workflows/tests.yml` (ubuntu-latest already in the matrix),
+      so no separate action needed there; the Kraken recorder has still
+      never actually been run on a Linux host (systemd unit + rsync bundle
+      exist in `deploy/kraken_recorder/`, untested); bit-identity on the
+      real server stack was proven once (leg 6B) but wants re-confirming
+      whenever the toolchain there changes.
+- [ ] S1b — (blocked behind E-003) Once the seal gate is enforceable in
+      every clone — including `culi.to` — write-serialize `campaign_state`
+      for concurrent launches and cut over from single-writer Option A.
 
 ## Log
 
@@ -67,3 +85,23 @@ once both are resolved.
   sequencing (interim vs. endpoint, not competing designs); recorded the
   deliberate, temporary relaxation of single-writer for campaigns. See
   PROCESS.md amendment 8(d) for the evidence this addresses.
+- 2026-08-18 — Folded in the standalone "Ubuntu server deployment
+  readiness" Notion bug card as S1a (Jeremy's call: don't run two tracking
+  threads for the same underlying work) and closed that card as a pointer
+  here. S1a is effectively done — the shared machine E-011 needed no longer
+  needs deciding, `culi.to` already is it. Still genuinely blocked on S1b:
+  investigated E-003 the same day and it is NOT a quick unblock (see
+  `E-003/EPIC.md` Log) — the seal gate cannot be safely turned on yet, so
+  neither can write-serialized shared campaigns.
+- 2026-08-18 (later) — **E-003 closed `done`; this epic's blocker is
+  cleared.** Design input (b) above — "the seal gate must be enforceable
+  there, so this epic is BLOCKED BEHIND E-003" — is satisfied, and in a
+  stronger form than assumed when it was written: enforcement now lives in
+  CI, so it holds on `culi.to` (or any host) with no per-machine setup at
+  all, rather than depending on each clone being configured correctly.
+  Running `setup_hooks.sh` on the server is still worth doing for
+  fast local feedback, but is no longer load-bearing for the gate.
+  S1b (write-serialize `campaign_state`, retire single-writer Option A) is
+  now the live next step. Note it overlaps E-025's S4 — both concern
+  concurrent writers to the same trial ledger — so sequence them together
+  with Dorian rather than solving the race twice.

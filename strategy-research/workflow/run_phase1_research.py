@@ -437,6 +437,21 @@ def save_yaml(path: Path, data):
         raise
 
 def update_state(path: Path, **kwargs):
+    # NOT `or {}`, tried and reverted 2026-08-18. Verified by execution, since two
+    # earlier attempts to describe this path from reading were both wrong:
+    #   * load_yaml on an empty-but-present pipeline_state.yaml returns None, and the
+    #     subscript below then raises TypeError. (Confirmed directly.)
+    #   * run_loop reads the same file unguarded at its top and uses it immediately,
+    #     so on that path it fails there first, before entering its own try — the
+    #     exception escapes run_loop and process_once either way and leaves the queue
+    #     entry `in_progress`. That outcome is verified; do not re-describe the route
+    #     without re-running it.
+    # Defaulting to {} looks like the fix and is worse: this function then writes
+    # `audit_log: {}`, which zeroes _compute_weighted_budget_usage and silently hands
+    # the run its full weighted token budget again — a loud crash traded for a
+    # flattering, invisible one. The escape is real but pre-existing and shared by
+    # every caller; it wants its own fix (atomic writes on the save side) rather than
+    # a default here that launders corrupt state into plausible state.
     state = load_yaml(path / "pipeline_state.yaml")
     for key, value in kwargs.items():
         if isinstance(value, dict) and key in state and isinstance(state[key], dict):
@@ -851,9 +866,17 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
 
 
 
-# Initialize the Native Client
-# It automatically picks up the GEMINI_API_KEY environment variable
-client = genai.Client()
+# Initialize the Native Client lazily, so importing this module does not
+# construct it or require GEMINI_API_KEY. Construction still auto-reads
+# GEMINI_API_KEY from the environment on first use, as before.
+_client = None
+
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = genai.Client()
+    return _client
 
 async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     print(f"\n✨ [GEMINI INVOKED] Waking up Native Gemini API for: {stage_name}")
@@ -916,7 +939,7 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     print("⏳ Waiting for Gemini API response...")
     
     # --- FIX 1 & 2: Use the async '.aio' client and correct model name ---
-    response = await client.aio.models.generate_content(
+    response = await _get_client().aio.models.generate_content(
         model='gemini-2.5-flash-lite',
         contents=full_prompt,
         config=types.GenerateContentConfig(
@@ -1051,16 +1074,14 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
         # A6.2: record prescreen as a trial in campaign_state (even kills count as trials)
         # statistic_valid = "neither" for kills (no backtest Sharpe available)
-        # F3 idempotency hardening (2026-07-04): the two A8.6 bypass call sites in
-        # run_loop already guard this with an existing-trial_id check; this, the normal
-        # (non-bypass) call site, did not. Not live-triggered by the run_043 resume
-        # (which restarts past this stage), but a resume that ever re-entered
-        # signal_prescreen would otherwise double-record. Matching the same guard here.
-        _campaign_for_guard = load_campaign_state()
-        if not any(t.get("trial_id") == run_id for t in _campaign_for_guard.get("trial_sharpes", [])):
-            _record_prescreen_trial(run_id, ps)
-        else:
-            print(f"⏭️  A6.2: trial for {run_id} already recorded — skipping duplicate.")
+        # H2 fix (2026-08-16, issue #28 / E-025): upsert on (trial_id, "prescreen").
+        # A re-entered signal_prescreen -- a crash-retry restarting run_loop with a
+        # stale pending_stage='signal_prescreen' -- REPLACES the prior prescreen row
+        # with the fresh outcome. The former trial_id-only skip-guard swallowed the
+        # re-entry whole, leaving the STALE first outcome in the ledger (a lost update,
+        # not a suppressed duplicate). Upsert keeps one row per slot, so it neither
+        # widens N nor trips deflate_sharpe.check_no_duplicate_trial_ids.
+        _record_prescreen_trial(run_id, ps, config_path, upsert=True)
 
     elif stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
@@ -1078,10 +1099,26 @@ async def run_tool_worker(stage_name: str, run_id: str):
         result = subprocess.run(cmd, capture_output=True, text=True)
         print(result.stdout)
         if result.returncode != 0:
+            # H4-core (issue #28): this data-touching backtest raised before
+            # _record_backtest_trial (:1134) — record the spent look so N counts it.
+            # Wrapped so a recording failure only logs; the original error still raises.
+            try:
+                _record_failed_backtest_trial(
+                    run_id, config_path,
+                    f"run_protocol.py non-zero exit ({result.returncode})")
+            except Exception as _rec_err:
+                print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise RuntimeError(f"run_protocol.py failed:\n{result.stderr}")
 
         summary_path = RUN_DIR / "protocol_summary.json"
         if not summary_path.exists():
+            # H4-core (issue #28): same as above for the missing-summary failure.
+            try:
+                _record_failed_backtest_trial(
+                    run_id, config_path,
+                    "protocol_summary.json missing after protocol run")
+            except Exception as _rec_err:
+                print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise FileNotFoundError("protocol_summary.json not found after protocol run")
 
         with open(summary_path, encoding="utf-8") as f:
@@ -1123,7 +1160,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                  if _pre_reg_result in ("PASS", "FAIL") else ""))
 
         # A6.2: record full-backtest trial in campaign_state.trial_sharpes
-        _record_backtest_trial(run_id, summary)
+        _record_backtest_trial(run_id, summary, config_path)
 
         # Verify Phase A diagnostics are present
         result_data = load_yaml(ARTIFACTS / "protocol_result.yaml")
@@ -1857,16 +1894,16 @@ def _assert_promotion_ratified(protocol_path: Path) -> None:
     guarding the GENERATOR while leaving the generated artifacts and the default
     selection in place changes nothing for a run that simply loads one.
 
-    The abolished block is still committed and live in NINE protocol files
-    (baseline_v1, baseline_v2, the four escalation_*, and the three
-    run_0NN_generated ones materialized before G7 existed). `_resolve_protocol_path`
-    could hand any of them to a run, and the resulting verdict would once again be
-    computed against thresholds no brief ever froze.
+    The abolished block is still committed and live in several protocol files
+    (baseline_v1/v2, the escalation_* set, and the run_0NN_generated ones
+    materialized before G7 existed). `_resolve_protocol_path` could hand any of
+    them to a run, and the resulting verdict would once again be computed against
+    thresholds no brief ever froze.
 
-    (The audit report said seven. Recounting from the tree gives nine; the
-    discrepancy was a miscount in the report's own file listing, not a change to
-    the tree. test_d3_every_committed_generic_protocol_is_marked_unratified pins
-    the number so it cannot drift again unnoticed.)
+    (test_d3_generic_classifier_agrees_with_independent_derivation_and_all_are_unratified
+    checks that every committed protocol the classifier calls generic is recorded
+    unratified, by agreement with an independent re-derivation rather than a file
+    count -- so the guard cannot silently drift as the protocol set changes.)
 
     So the check moves to the point of USE. A protocol carrying the generic block
     is refused unless the file explicitly ratifies it, via:
@@ -2971,12 +3008,52 @@ def _extract_diagnostics(path: Path) -> dict:
         return {}
 
 
-def _record_prescreen_trial(run_id: str, ps: dict):
+def _compute_forecast_hash(config_path: Path) -> str:
+    """
+    E-025 S1 (2026-08-16, issue #28): fingerprint of the exact strategy config a trial
+    tested, so cross-writer dedup (A6.4, deflate_sharpe.py::deduplicate_trials) can
+    recognize when two trials -- possibly from different machines under the dual-writer
+    protocol -- tested the same idea. Canonical JSON (sorted keys, no whitespace
+    variance) so semantically-identical configs hash identically regardless of key
+    order or formatting.
+
+    Fails loud on a missing config rather than returning None/a placeholder: by the
+    time either trial-recording function calls this, the same config file has already
+    been read by the prescreen/backtest subprocess this trial's result came from, so
+    its absence here means something is structurally wrong with the run's artifacts,
+    not a normal degraded case worth silently tolerating (mandatory per E-025's
+    2026-08-16 decision: forecast_hash on every new trial, both writers).
+    """
+    if not config_path.exists():
+        raise FileNotFoundError(
+            f"forecast_hash requires {config_path}, which does not exist. This trial's "
+            f"own prescreen/backtest step already had to read this file to produce a "
+            f"result -- its absence now means the artifacts directory is in an "
+            f"unexpected state, not a normal case to silently skip hashing for."
+        )
+    canonical = json.dumps(json.loads(config_path.read_text(encoding="utf-8")), sort_keys=True)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path, *, upsert: bool = False):
     """
     A6.2: record a prescreen run as a trial in campaign_state.trial_sharpes.
     Prescreen kills count as trials (statistic_valid='neither', sharpe=null, n_trades=0).
     Prescreen passes that advance to backtest will have their full Sharpe recorded
     after protocol_execution completes.
+
+    H2 fix (2026-08-16, issue #28 / E-025): the normal run_tool_worker call site
+    (:1069) passes upsert=True. On a re-entered signal_prescreen -- a crash-retry that
+    restarts run_loop with a stale pending_stage='signal_prescreen' -- the prior row
+    for this (trial_id, 'prescreen') slot is REPLACED with the fresh outcome instead of
+    being swallowed by a trial_id-only skip-guard that left the STALE first outcome in
+    the ledger. A run_id is one trial slot: a genuine new trial is a new run_NNN with
+    its own trial_id and records on its own key; a same-run_id re-prescreen is a retry
+    (idempotent same-config no-op) or a manual config edit -- neither is a new
+    independent trial, so upsert (not append) is correct and never widens N. Keys on
+    (trial_id, 'prescreen'), so it keeps one row and never trips Jeremy's read-side
+    check_no_duplicate_trial_ids. The a86 call sites (:4935/:4955) keep upsert=False
+    (default) -- their idempotency is H3 territory, a separate ticket.
     """
     state = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
@@ -2991,31 +3068,61 @@ def _record_prescreen_trial(run_id: str, ps: dict):
         "statistic_valid": "neither",  # no backtest ran
         "ic_pooled":       ps.get("ic_spearman_pooled"),
         "cost_pass":       ps.get("cost_check", {}).get("pass"),
+        "forecast_hash":   _compute_forecast_hash(config_path),
     }
+    if upsert:
+        for i, t in enumerate(trials):
+            if t.get("trial_id") == run_id and t.get("source") == "prescreen":
+                trials[i] = trial_entry
+                _save_campaign_state(state)
+                print(f"⚙️  A6.2/H2: prescreen trial for {run_id} updated in place "
+                      f"(route={route}, statistic_valid=neither)")
+                return
     trials.append(trial_entry)
     _save_campaign_state(state)
     print(f"⚙️  A6.2: prescreen trial recorded in campaign_state.trial_sharpes "
           f"(route={route}, statistic_valid=neither)")
 
 
-def _record_backtest_trial(run_id: str, summary: dict):
+def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
     """
     A6.2: record a completed full-backtest as a trial in campaign_state.trial_sharpes.
     Appends {trial_id, source, sharpe, expectancy_bps, n_trades, statistic_valid}.
     Sparse-trading strategies (A3.4): statistic_valid='expectancy' when median Sharpe
     is null/unreliable; 'sharpe' otherwise.
+
+    H3 fix (2026-08-16, issue #28): idempotency guard keyed on (trial_id, source) --
+    NOT trial_id alone. A prescreen row for this same run_id was already recorded
+    earlier in the run's lifecycle (see _record_prescreen_trial above), so a
+    trial_id-only guard would wrongly treat that as "already recorded" and silently
+    drop this legitimate backtest row. The guard here only suppresses a second
+    "backtest"-source row for the same trial_id, which is the actual re-entry case
+    (protocol_execution re-run via resume/retry) -- measured live in the committed
+    ledger before this fix: run_054 and run_059 were each recorded 3x.
     """
     state  = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
+
+    if any(t.get("trial_id") == run_id and t.get("source") == "backtest" for t in trials):
+        print(f"⏭️  A6.2/H3: backtest trial for {run_id} already recorded — skipping duplicate.")
+        return
 
     hv    = summary.get("hypothesis_verdict") or {}
     diag  = hv.get("diagnostics") or {}
     pss   = summary.get("per_symbol_summary") or {}
 
-    # Aggregate Sharpe and trade count across symbols
-    sharpes     = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
-    trade_counts = [v.get("trade_count") or 0 for v in pss.values()]
-    n_trades    = sum(trade_counts)
+    # Aggregate Sharpe across symbols. NOTE: per_symbol_summary entries never
+    # carried a "trade_count" key (run_protocol.py:1316-1321 -- only
+    # median_sharpe/max_abs_drawdown_pct/min_trade_count/zero_trade_slot_pct),
+    # so n_trades read as 0 on every backtest row (measured live: 34 recorded
+    # backtest trials, all n_trades=0). min_trade_count is a per-symbol FLOOR
+    # (the minimum across that symbol's windows), not a total, and summing it
+    # would still be a large undercount (measured on run_021: 735 vs the true
+    # 8701). The real total-trade-count data is the raw per-window "results"
+    # list (run_protocol.py:1389), which summary already carries.
+    sharpes = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
+    results_list  = summary.get("results") or []
+    n_trades      = sum((r.get("core") or {}).get("trade_count", 0) for r in results_list)
     median_sharpe = round(statistics.median(sharpes), 4) if sharpes else None
 
     expectancy   = diag.get("per_trade_expectancy_bps")
@@ -3037,11 +3144,77 @@ def _record_backtest_trial(run_id: str, summary: dict):
         "n_trades":        n_trades,
         "statistic_valid": statistic_valid,
         "below_floor_pct": below_floor,
+        "forecast_hash":   _compute_forecast_hash(config_path),
     }
     trials.append(trial_entry)
     _save_campaign_state(state)
     print(f"⚙️  A6.2: backtest trial recorded (sharpe={median_sharpe}, "
           f"n_trades={n_trades}, statistic_valid={statistic_valid})")
+
+
+def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str):
+    """
+    H4-core (E-025, 2026-08-16, issue #28): record a data-touching backtest that
+    RAISED before _record_backtest_trial could run, so the spent look still moves the
+    deflated-Sharpe count. Without this, a backtest that crashed on a non-zero exit
+    (protocol_execution :1089) or a missing summary (:1093) left NO trial row at all —
+    N silently under-counted a look that had already touched market data. Purely
+    additive: appends one distinct-source row, never mutates or drops an existing one.
+
+    source == "backtest_failed" (NOT "backtest"): _record_backtest_trial's
+    (trial_id, "backtest") idempotency guard (:3056) and deflate_sharpe's read-side
+    check_no_duplicate_trial_ids both key on (trial_id, source). A distinct source keeps
+    a later SUCCESSFUL retry's real "backtest" row from being suppressed and does not
+    collide with either guard.
+
+    statistic_valid == "failed" lands in deflate_sharpe.load_sharpe_trials's
+    "statistic_neither" exclusion bucket (deflate_sharpe.py:212-214, no crash) — so a
+    failed row is EXCLUDED from today's DSR N (that exclusion is H1, Jeremy's decision)
+    while total_hypotheses_tested / total_variants_tested count it immediately. The
+    label conflation with a genuine "neither" is conscious.
+
+    Idempotency guard keyed on (trial_id, source) — the SAME key as _record_backtest_trial's
+    success guard (:3056) and deflate_sharpe's read-side check_no_duplicate_trial_ids (:121).
+    A second "backtest_failed" row for the same run_id is suppressed regardless of config, so
+    this writer can never produce a ledger the read-side check rejects. A run_id is one trial
+    slot; a genuine changed-config retry is a NEW run_NNN (different trial_id) and records on
+    its own key. A same-run_id re-invoke with an edited config is the artificial manual case —
+    recording it once as "this trial's backtest failed" is the correct contract. forecast_hash
+    is still carried on the row (provenance + read-time dedup); only the guard key excludes it.
+
+    Conservative by design: recording at the :1089 non-zero-exit site OVER-counts N — a
+    non-zero exit includes pre-data failures (config parse, bad args), not only
+    data-touching crashes. Over-counting N is the anti-flattering direction (a larger
+    trial count only deflates a candidate Sharpe further), so the conservative choice is
+    the honest one.
+    """
+    try:
+        forecast_hash = _compute_forecast_hash(config_path)
+    except Exception:
+        # The config may BE what is broken — a hashless row is legal and always kept
+        # unique in deflate_sharpe.deduplicate_trials (:88-90). Never mask the original
+        # failure by raising out of the hash step.
+        forecast_hash = None
+
+    state  = load_campaign_state()
+    trials = state.setdefault("trial_sharpes", [])
+
+    if any(t.get("trial_id") == run_id and t.get("source") == "backtest_failed" for t in trials):
+        print(f"⏭️  H4: failed-backtest trial for {run_id} already recorded — skipping duplicate.")
+        return
+
+    trials.append({
+        "trial_id":        run_id,
+        "source":          "backtest_failed",
+        "sharpe":          None,
+        "expectancy_bps":  None,
+        "n_trades":        0,
+        "statistic_valid": "failed",
+        "forecast_hash":   forecast_hash,
+        "error":           reason,
+    })
+    _save_campaign_state(state)
+    print(f"⚙️  H4: failed-backtest trial recorded (run={run_id}, reason={reason})")
 
 
 # ---------------------------------------------------------------------------
@@ -3982,25 +4155,57 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             deduped_trials.append(t)
 
     # A6.2: compute over statistic_valid='sharpe' only
+    #
+    # Bucketing bug fix (2026-08-16, issue #28, adjacent to H1): the previous version
+    # special-cased "expectancy" and "neither" and let anything else (including H4's
+    # "failed" backtest_failed rows) fall through into "no_sharpe_value" once sharpe
+    # was found to be None. deflate_sharpe.py::load_sharpe_trials -- the canonical
+    # implementation these two are supposed to mirror exactly -- instead treats
+    # "sharpe" as the one recognized value and buckets EVERYTHING else (including
+    # "failed") as "statistic_neither". Restructured to match that if/elif/else shape
+    # exactly, so any future statistic_valid value lands in the same bucket in both
+    # implementations without needing a new special case here. Does not change
+    # n_dsr_total, n_trials, or the DSR value -- only which diagnostic bucket a
+    # non-sharpe row is reported under in excluded_trial_counts.
     excluded = {"statistic_expectancy": 0, "statistic_neither": 0, "no_sharpe_value": 0,
                 "dedup_removed": n_dedup_removed, "invalidated_artifact": n_invalidated}
     sharpe_values = []
     for t in deduped_trials:
         sv = t.get("statistic_valid")
-        if sv == "expectancy":
+        if sv == "sharpe":
+            s = t.get("sharpe")
+            if s is None:
+                excluded["no_sharpe_value"] += 1
+            else:
+                sharpe_values.append(float(s))
+        elif sv == "expectancy":
             excluded["statistic_expectancy"] += 1
-            continue
-        if sv == "neither":
+        else:
             excluded["statistic_neither"] += 1
-            continue
-        s = t.get("sharpe")
-        if s is None:
-            excluded["no_sharpe_value"] += 1
-            continue
-        sharpe_values.append(float(s))
 
     n_trials = len(sharpe_values)
     total_tested = len(valid_trials)  # F8b: excludes invalidated_artifact trials
+    # H1 fix (2026-08-16, issue #28): the multiple-testing correction's N -- every real
+    # attempt, kills and expectancy-only trials included -- is a different quantity
+    # from n_trials (the real-Sharpe-VALUE sample used to estimate mu_sr/sigma_sr).
+    # Deliberately len(deduped_trials), matching deflate_sharpe.py's
+    # total_hypotheses_tested exactly (post-dedup, post-invalidated-exclusion) -- NOT
+    # total_tested (pre-dedup) or len(campaign.runs) (a third, separate basis).
+    # COUNT-DIV fix (2026-08-17): this value is now also the one exposed in the
+    # output audit dict as "total_hypotheses_tested" -- see below.
+    n_dsr_total = len(deduped_trials)
+    # Defensive, mirrors deflate_sharpe.py::compute_dsr's same check: n_dsr_total must
+    # be >= n_trials by construction (sharpe_values is a filtered subset of
+    # deduped_trials), so this should never fire -- but a silent violation would
+    # understate the correction, the flattering direction, so fail loud rather than
+    # let it pass quietly if the two ever drift apart.
+    if n_dsr_total < n_trials:
+        raise ValueError(
+            f"n_dsr_total={n_dsr_total} is smaller than n_trials (real Sharpe values)="
+            f"{n_trials} -- every real Sharpe value is itself a counted attempt, so the "
+            f"honest total can never be less than the real-valued sample it's estimated "
+            f"from. This indicates deduped_trials and sharpe_values have diverged."
+        )
 
     # --- Deflated Sharpe computation ---
     dsr_result: dict = {}
@@ -4031,13 +4236,30 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
                 ),
             },
         }
-    elif n_trials < 2:
+    elif n_dsr_total < 2:
         dsr_result = {
             "deflated_sharpe_ratio": None,
             "expected_max_sharpe":   None,
             "trial_sharpe_variance": None,
             "correction_method":     "baiey_lopez_prado_2014",
-            "dsr_error":             f"Insufficient sharpe-valid trials for DSR (n={n_trials}, need ≥2)",
+            "dsr_error":             f"Insufficient trials: need >= 2, got {n_dsr_total}",
+        }
+        passes_deflated = False
+    elif n_trials < 2:
+        # H1: N (n_dsr_total) can be >= 2 while too few of those trials produced a real
+        # Sharpe value to estimate the distribution's variance -- a large N does not
+        # fix an unmeasurable variance. Distinct error from the n_dsr_total<2 case above.
+        dsr_result = {
+            "deflated_sharpe_ratio": None,
+            "expected_max_sharpe":   None,
+            "trial_sharpe_variance": None,
+            "correction_method":     "baiey_lopez_prado_2014",
+            "dsr_error":             (
+                f"N={n_dsr_total} trials recorded (multiple-testing count is honest), "
+                f"but only {n_trials} produced a real Sharpe value -- need >= 2 real "
+                f"Sharpe values to estimate the trial distribution's variance. A large "
+                f"N does not fix an unmeasurable variance."
+            ),
         }
         passes_deflated = False
     else:
@@ -4055,7 +4277,11 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             }
             passes_deflated = False
         else:
-            N = n_trials
+            # H1: N is the honest multiple-testing total (n_dsr_total), NOT n_trials
+            # (the real-Sharpe-value sample size) -- mu_sr/sigma_sr above already used
+            # n_trials correctly (statistics.mean/stdev sample size), this is only the
+            # expected-max-Sharpe benchmark's exponent.
+            N = n_dsr_total
             z1 = _phi_inv(1.0 - 1.0 / N)
             z2 = _phi_inv(1.0 - 1.0 / (_math.e * N))
             z_exp_max = (1.0 - EULER_GAMMA) * z1 + EULER_GAMMA * z2
@@ -4077,7 +4303,20 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
         "hypothesis_id":              hyp_id,
         "generated_at":               datetime.now(timezone.utc).isoformat(),
         "raw_median_sharpe":          raw_median_sr,
-        "total_hypotheses_tested":    len(campaign.get("runs", [])),
+        # COUNT-DIV fix (2026-08-17): promotion_audit.schema.json declares
+        # total_hypotheses_tested as "Total deduplicated trial records in
+        # campaign_state.trial_sharpes at audit time (N in BLP 2014)" -- i.e.
+        # n_dsr_total, matching deflate_sharpe.py's own total_hypotheses_tested
+        # exactly. This field previously held len(campaign["runs"]) -- an
+        # unrelated data structure (the campaign's run-id list, not
+        # trial_sharpes), an outright schema violation, not just a naming
+        # ambiguity. n_dsr_total is what the DSR math above actually uses
+        # (:4270) but was never exposed in the output before this fix.
+        "total_hypotheses_tested":    n_dsr_total,
+        # The displaced metric keeps its own honest name rather than being
+        # dropped -- a legitimate, different count (this campaign's total run
+        # attempts, not the trial-ledger's deduplicated DSR-N).
+        "total_campaign_runs":        len(campaign.get("runs", [])),
         "total_variants_tested":      total_tested,
         "n_trials_used":              n_trials,
         "is_sparse_trading":          is_sparse,
@@ -4097,11 +4336,16 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
 
 def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     """
-    Improvement 06: single-use holdout gate.
-    1. Check campaign_data_policy.yaml — refuse if hypothesis_id already consumed.
-    2. Check promotion_audit.yaml — if passes_deflated_threshold is False, terminal reject.
-    3. Check holdout_result.yaml — if present and status is set, evaluate it.
-    4. If holdout_result.yaml is absent, pause for human (holdout backtest must be run externally).
+    Improvement 06: single-use holdout gate. Steps are listed in EXECUTION order;
+    the order is load-bearing, so keep this list and the code in step.
+    1.  Check promotion_audit.yaml — if passes_deflated_threshold is False, terminal reject.
+    2.  Check campaign_data_policy.yaml — refuse if hypothesis_id already consumed.
+    2b. Hold unless the brief affirmatively declares the strategy tradable (E-015 S3).
+        Below 1 and 2 because both are terminal rejects that never touch the seal;
+        above 3 and 4 because those are the acts it exists to prevent.
+    3.  If holdout_result.yaml is absent, pause for human (holdout backtest must be
+        run externally).
+    4.  Mark the holdout consumed, then evaluate holdout_result.yaml's status.
     """
     ARTIFACTS = run_dir / "artifacts"
 
@@ -4130,6 +4374,104 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
               f"(found in campaign_data_policy.yaml holdout_consumed_by). "
               f"Second holdout attempt is mechanically forbidden per A6.1.")
         return "completed_rejected"
+
+    # --- 2b. research_only / venue gate (E-015 S3) -------------------------------
+    # POSITION: deliberately below steps 1-2 and above step 3. It must precede step
+    # 3, whose message tells a human to go run the holdout backtest, and step 4,
+    # which marks the seal consumed — those are the acts this gate exists to stop.
+    # It must NOT precede steps 1-2: both return completed_rejected, which is
+    # terminal and already safe, and holding above them would halt the whole
+    # campaign (a classified pause makes process_once return False) for a run that
+    # step 1 was going to reject anyway — trading a clean terminal reject for a
+    # paperwork pause that resolves into the same rejection.
+    # Until now research_only was written by run_campaign.py's _materialize_run and
+    # read by nothing, so it protected nothing: a brief for a product we cannot
+    # legally trade could reach the holdout and inform a live-money decision on
+    # research-only evidence.
+    #
+    # AFFIRMATIVE check, not a negative one. `research_only is True` alone would be
+    # decorative: measured 2026-08-18, 0 of 57 briefs in the tree carry the key at
+    # all, and it is written by only one of the three research_brief.yaml writers,
+    # so it does not survive a refine or a reframe. Requiring research_only is False
+    # makes a missing/undeclared brief refuse instead of sail through, which matches
+    # venue_tradability.yaml's own rule that silence must never resolve to a green
+    # light — and needs no propagation machinery to be correct for child runs.
+    #
+    # Safe to make fail-closed: holdout_consumed_by is empty and no run has ever
+    # reached this gate (measured, same date), so there is no legacy corpus this
+    # blocks. The first run it stops is fixed by declaring venue/product on the
+    # brief, which is exactly what this epic's registration rule asks for.
+    #
+    # On the upper bound of that position: ahead of step 3's human_pause, not merely
+    # ahead of step 4's holdout_consumed_by write. Step 3 instructs a human to go run
+    # the holdout backtest, and in this project's doctrine looking is spending, so
+    # holding after that instruction has been printed would be holding after the fact.
+    # load_yaml raises FileNotFoundError rather than returning None, and a run dir
+    # with no research_brief.yaml at all must refuse like any other undeclared brief
+    # — not crash out of the router with a traceback.
+    _brief_path = ARTIFACTS / "research_brief.yaml"
+    brief = (load_yaml(_brief_path) or {}) if _brief_path.exists() else {}
+    if brief.get("research_only") is not False:
+        declared = brief.get("research_only", "<absent>")
+        print(f"\n⏸️  HOLDOUT HELD: {run_id}'s research_brief.yaml does not affirmatively "
+              f"declare the strategy tradable (research_only={declared!r}; a value of False "
+              f"is required to proceed).")
+        print(f"   The holdout is single-use and terminal, so it is spent only on a "
+              f"strategy we could actually trade.")
+        print(f"   DO NOT run the holdout backtest to resolve this — looking is spending, "
+              f"and this run has not earned the look yet.")
+        print(f"   Resolve by declaring tradability, then resume. A FRESH-LAUNCH run gets "
+              f"this automatically from run_campaign.py's _materialize_run, which resolves "
+              f"venue+product against config/venue_tradability.yaml. A REFINE/REFRAME "
+              f"DESCENDANT inherits neither the key nor the venue fields and has no "
+              f"automated path (research_only is resolved only at fresh launch), so a "
+              f"human must check this run's venue+product against venue_tradability.yaml "
+              f"and, only if it is genuinely tradable, record venue, product AND "
+              f"research_only: false on this run's research_brief.yaml. Setting the flag "
+              f"without doing that check is the bypass this gate exists to prevent.")
+        # human_pause, NOT completed_rejected. The two terminal refusals below are
+        # genuinely unrecoverable (DSR too low; holdout already consumed). This one is a
+        # fixable declaration gap, and because research_only is not propagated by the
+        # refine path (setup_next_run copies an LLM-authored proposed_brief.yaml) or the
+        # reframe path (_safe_write_new_research_brief), a legitimately tradable
+        # descendant lands here as a matter of course; completed_rejected would write
+        # status="rejected", which resume_pipeline refuses to resume, killing a good run
+        # over missing paperwork.
+        #
+        # The flag is LOAD-BEARING, not decoration. Without it _classify_human_pause
+        # sees promotion_audit.yaml present + holdout_result.yaml absent and returns
+        # `provisional_promote_awaiting_holdout`, whose RUNBOOK row instructs the
+        # operator to "Run the holdout backtest ... by hand" — i.e. a bare human_pause
+        # here would route the operator into spending the seal, which is strictly worse
+        # than the terminal reject it replaced. The flag gives this its own classifier
+        # bucket and its own RUNBOOK row (see run_campaign._classify_human_pause).
+        #
+        # Campaign-level consequence, stated rather than assumed: a classified pause
+        # halts the campaign (process_once returns False) where completed_rejected would
+        # have marked the entry done and advanced the queue. That is the intended
+        # behaviour for a state needing a human decision, and it is the same shape every
+        # other classified pause already has.
+        update_state(path=run_dir, status="paused_for_human",
+                     flags={"research_only_unverified": True})
+        return "human_pause"
+
+    # Passed: clear any hold left from a previous attempt. The flag is sticky
+    # (update_state merges rather than replaces), so without this the operator who
+    # does exactly what the RUNBOOK row says — declare tradability, resume — gets
+    # gate 2b passing while the stale flag still classifies the NEXT, legitimate
+    # `provisional_promote_awaiting_holdout` pause as `research_only_unverified`.
+    # That pause is then unresolvable by construction: its RUNBOOK row says not to
+    # run the holdout backtest, while the run's own stdout says to run it, and no
+    # action clears the flag. Deadlock, and precisely on the recovery path this
+    # whole hold exists to keep open.
+    # `or {}` matches the other four loads in this function: an empty-but-present
+    # pipeline_state.yaml yields None, and .get on it would raise AttributeError —
+    # surfacing as a misleading unhandled_exception instead of the hold.
+    _sp = run_dir / "pipeline_state.yaml"
+    _state = (load_yaml(_sp) or {}) if _sp.exists() else {}
+    if (_state.get("flags") or {}).get("research_only_unverified"):
+        update_state(path=run_dir, flags={"research_only_unverified": False})
+        print(f"✅ {run_id}: tradability now declared — research_only hold cleared.")
 
     # 3. Check if holdout_result.yaml is present
     hr_path = ARTIFACTS / "holdout_result.yaml"
@@ -4801,7 +5143,7 @@ def run_loop(run_id: str):
                         # A6.2: run_tool_worker is skipped in this path; record trial here (idempotent guard)
                         _cs_check = load_campaign_state()
                         if not any(t.get("trial_id") == run_id for t in _cs_check.get("trial_sharpes", [])):
-                            _record_prescreen_trial(run_id, _ps_data)
+                            _record_prescreen_trial(run_id, _ps_data, ARTIFACTS / "candidate_strategy_config.json")
                 if not _skip_agent:
                     _a86 = _run_a86_power_check(ARTIFACTS)
                     if _a86["verdict"] == "insufficient_power_a_priori":
@@ -4821,7 +5163,7 @@ def run_loop(run_id: str):
                         save_yaml(ARTIFACTS / "prescreen_result.yaml", _a86_ps_data)
                         _skip_agent = True
                         # A6.2: run_tool_worker is skipped in this path; record trial here
-                        _record_prescreen_trial(run_id, _a86_ps_data)
+                        _record_prescreen_trial(run_id, _a86_ps_data, ARTIFACTS / "candidate_strategy_config.json")
 
             if current_stage == "verdict_interpreter":
                 _vi_path = RUN_DIR / "artifacts" / "verdict_interpretation.yaml"

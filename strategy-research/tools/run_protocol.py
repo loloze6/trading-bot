@@ -161,10 +161,32 @@ def _ts_normalize(ts: str) -> str:
     return ts.replace("T", " ").split("+")[0].split("Z")[0]
 
 
+def _ts_key(ts: str) -> str:
+    """Canonical comparison key for a timestamp string ('YYYY-MM-DD HH:MM:SS').
+
+    2026-08-15: `_bar_idx_at` used to compare raw strings, which is only correct
+    when bars.csv and trades.json happen to render the same instant identically.
+    They do not on daily runs: since the CandleBuilder._align local-timezone fix
+    (2529f5b) 1d bars land on midnight UTC and pandas writes them date-only
+    ('2019-12-01'), while trades.json still carries the full ISO form
+    ('2019-12-01T00:00:00'). Every lookup in such a run missed, returning -1 —
+    measured on run_059: 699 of 699 trades, every MAE/MFE 0.0, every entry/exit
+    efficiency and post-exit return null, every exit_reason defaulted. Padding a
+    date-only stamp to midnight (and dropping fractional seconds) makes the two
+    renderings of one instant compare equal.
+    """
+    t = ts.strip().replace("T", " ").split("+")[0].split("Z")[0].strip()
+    t = t.split(".")[0]          # drop fractional seconds if present
+    if len(t) == 10:             # date-only → the bar at midnight of that day
+        t += " 00:00:00"
+    return t
+
+
 def _bar_idx_at(bars: list, ts_str: str) -> int:
     """Return index of bar with timestamp matching ts_str, or -1."""
+    key = _ts_key(ts_str)
     for i, b in enumerate(bars):
-        if b["timestamp"] == ts_str:
+        if _ts_key(b["timestamp"]) == key:
             return i
     return -1
 
@@ -282,7 +304,27 @@ def _infer_exit_reason(
     window_end_date = window_end[:10] if window_end else ""
     if window_end_date and exit_date >= window_end_date:
         return "end_of_window"
-    if exit_idx == len(bars) - 1:
+    # Exited on the run's LAST bar → the position was still open when the data
+    # ran out and the engine force-closed it.
+    #
+    # 2026-08-15: compare TIMESTAMPS, not indices. `exit_idx == len(bars) - 1`
+    # silently failed whenever bars.csv carried a duplicated final row — which
+    # is exactly the shape every open-position backtest produced before
+    # c5b1dc6 (_close_all_positions_at_end re-recorded the final bar). The
+    # first-match _bar_idx_at then returns len(bars)-2 for a trade that did
+    # exit on the last bar, the index test misses, and the trade falls through
+    # to the signal_flip default. Measured on run_054: 15 of the 16 windows
+    # ending held were misclassified this way (end_of_window_pct 0.85 instead
+    # of ~13.7); the single correct one was the only window whose bars.csv had
+    # no duplicate row. Timestamp equality is also the honest statement of the
+    # intent ("this trade exited on the final bar") and survives a trailing run
+    # of duplicates of any length.
+    #
+    # The window_end check above cannot cover this case: window_end is the
+    # protocol's NOMINAL boundary and the engine's last bar routinely falls
+    # days short of it (run_054: last bar 2018-09-28 vs window_end 2018-10-01),
+    # so `exit_date >= window_end_date` is False for every held-to-end trade.
+    if exit_idx >= 0 and bars and bars[exit_idx]["timestamp"] == bars[-1]["timestamp"]:
         return "end_of_window"
 
     # Signal flip: forecast at exit contradicts the position direction
@@ -335,6 +377,24 @@ def _compute_trade_records_for_window(
 
         entry_idx = _bar_idx_at(bars, entry_ts)
         exit_idx  = _bar_idx_at(bars, exit_ts)
+
+        # 2026-08-15: an unresolved lookup silently degrades EVERY field derived
+        # from bar position (MAE/MFE collapse to 0.0, entry/exit efficiency and
+        # post-exit returns to null, exit_reason to the signal_flip default) and
+        # used to leave no trace at all. It is a data-integrity signal about the
+        # artifact pair, not a normal outcome — say so on stderr rather than
+        # emitting a confident-looking record. Not fatal: partial diagnostics
+        # still beat aborting a completed multi-window protocol run.
+        if bars and (entry_idx < 0 or exit_idx < 0):
+            print(
+                f"    WARNING: bars.csv has no bar matching "
+                f"{'entry ' + entry_ts if entry_idx < 0 else ''}"
+                f"{' and ' if entry_idx < 0 and exit_idx < 0 else ''}"
+                f"{'exit ' + exit_ts if exit_idx < 0 else ''} "
+                f"for trade {trade.get('trade_id', '')} ({symbol} {window}) -- "
+                f"bar-derived diagnostics for this trade are unreliable",
+                file=sys.stderr,
+            )
 
         if entry_idx >= 0 and exit_idx >= 0 and exit_idx >= entry_idx:
             holding_bars = bars[entry_idx : exit_idx + 1]

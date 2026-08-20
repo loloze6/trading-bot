@@ -64,7 +64,10 @@ from data.data_manager import DataManager         # noqa: E402
 
 KRAKEN_BTC_CACHE = PROJECT_ROOT / "local_data" / "kraken_BTCUSD_1h.csv"
 BINANCE_BTC_CACHE = PROJECT_ROOT / "local_data" / "BTCUSDT_1h.csv"
-KRAKEN_BTC_FUNDING_CACHE = PROJECT_ROOT / "local_data" / "kraken_BTCUSD_funding_8h.csv"
+# A kraken run's funding feed routes to the krakenfutures venue (spot kraken has
+# no funding endpoint), so the cache slot it would look for is
+# krakenfutures_BTCUSD_funding_1h -- not the old venue-blind kraken name.
+KRAKENFUTURES_BTC_FUNDING_CACHE = PROJECT_ROOT / "local_data" / "krakenfutures_BTCUSD_funding_1h.csv"
 _RUN_BACKTEST_CONFIG = PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_check_config.json"
 # fix/feed-dependency-safety Step 1: this fixture declares no aux-feed-consuming
 # component, unlike _RUN_BACKTEST_CONFIG above (which loads
@@ -234,9 +237,16 @@ class _RecordingEngine:
 
     def __init__(self, **kwargs):
         type(self).kwargs = kwargs
+        self._symbols = kwargs.get("symbols") or ["BTCUSDT"]
+        # The real BacktestEngine initialises this in __init__ and load_data
+        # fills it; simulate() now checks it is non-empty before running (an
+        # empty fetch must not report success). Modelled here so this stub
+        # exercises the same contract rather than a narrower one.
+        self.historical_data = {}
 
     def load_data(self, **kwargs):
-        pass
+        self.historical_data[self._symbols[0]] = pd.DataFrame(
+            {"timestamp": [pd.Timestamp("2024-04-01")], "close": [1.0]})
 
     def simulate_on_loaded_data(self):
         pass
@@ -265,8 +275,11 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
     The defect this parameter closes is an engine reading a venue nobody asked
     for, and it returns the moment a mode builds a BacktestEngine without
     forwarding params.exchange -- a config saying "kraken" would quietly load
-    Binance caches again. Only `simulate` is driven end-to-end above (the other
-    two modes plot and grid-search), so the remaining sites are held statically.
+    Binance caches again. Only `simulate` is driven end-to-end above (the
+    other mode, `analyze_past_data`, plots), so the remaining site is held
+    statically. (`optimize_strategy`, the third static site, was deleted --
+    it never forwarded its grid-search params to the strategy at all, see
+    P6 in the bug tracker -- so the anchor below dropped from 3 to 2.)
 
     Scoped to the Launcher class: run_backtest() is module-level, not a
     Launcher method, so it falls outside ast.walk(launcher_class)'s scope --
@@ -280,7 +293,7 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
     adversarially on this branch (evidence-leg3/rt_E_defeat_ast.out), none of
     which describes code that exists in the tree today:
 
-      * The len(sites) == 3 anchor is FAIL-CLOSED BY DESIGN. A legitimate fourth
+      * The len(sites) == 2 anchor is FAIL-CLOSED BY DESIGN. A legitimate third
         mode that forwards correctly still fails this test until the count is
         raised deliberately. That is the intent -- adding an engine site should
         be a decision someone records here, not a silent event.
@@ -288,7 +301,7 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
         (backtester.BacktestEngine(...)), a call through a module-level alias
         (_Engine = BacktestEngine), and keeping the exact text while rebinding
         `params` so .exchange no longer comes from _read_trading_params. A whole
-        -tree scan confirms none of these exists today; the three live sites are
+        -tree scan confirms none of these exists today; the two live sites are
         all plain Name calls forwarding params.exchange.
       * One false positive: a correct forward written as a splat,
         **{"exchange": params.exchange}, carries no keyword arg named exchange
@@ -311,7 +324,7 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
         and isinstance(node.func, ast.Name)
         and node.func.id == "BacktestEngine"
     ]
-    assert len(sites) == 3, f"expected 3 BacktestEngine call sites, found {len(sites)}"
+    assert len(sites) == 2, f"expected 2 BacktestEngine call sites, found {len(sites)}"
 
     for site in sites:
         forwarded = [
@@ -359,9 +372,14 @@ class _RecordingRunBacktestEngine:
     def __init__(self, **kwargs):
         type(self).kwargs = kwargs
         self._last_run_dir = None
+        self._symbols = kwargs.get("symbols") or ["BTCUSDT"]
+        # run_backtest now refuses an empty fetch, so this stub models
+        # historical_data the way the real engine does rather than omitting it.
+        self.historical_data = {}
 
     def load_data(self, **kwargs):
-        pass
+        self.historical_data[self._symbols[0]] = pd.DataFrame(
+            {"timestamp": [pd.Timestamp("2024-04-01")], "close": [1.0]})
 
     def simulate_on_loaded_data(self):
         pass
@@ -513,23 +531,52 @@ def test_run_backtest_kraken_price_path_is_pure_and_completes(monkeypatch, tmp_p
     not KRAKEN_BTC_CACHE.exists(),
     reason=f"Kraken BTC cache not present: {KRAKEN_BTC_CACHE}",
 )
-def test_run_backtest_kraken_aux_feed_fails_loud(block_network, tmp_path):
+def test_run_backtest_kraken_aux_feed_fails_loud(block_network, monkeypatch, tmp_path):
     """
-    T-13 [C-D3]: the REAL FEED_REGISTRY (not blanked this time), so the
-    funding feed is actually constructed with exchange_id='kraken'. No
-    kraken_BTCUSD_funding_8h.csv cache exists, and the socket block proves the
-    empty result comes from a genuinely-attempted, genuinely-failed fetch (P9),
-    not a construction-time short-circuit. run_backtest has no try/except
-    around its BacktestEngine.load_data() call, so the typed AuxFeedVenueError
-    crosses run_backtest's boundary uncaught -- the deliberate fail-fast this
-    ticket exists to produce (D-iii). The price cache is still read purely
-    (the raise fires strictly after the price fetch, per R-G1).
+    T-13 [C-D3]: the REAL FEED_REGISTRY funding factory (not blanked this time),
+    so the funding feed is actually constructed and routed. The funding venue map
+    routes the kraken price venue to its funding venue krakenfutures, so the feed
+    resolves exchange_id='krakenfutures'; krakenfutures is non-binance, so an
+    empty feed over the window raises the typed AuxFeedVenueError.
+
+    The funding factory is redirected (setitem, funding slot only -- fear_greed
+    keeps the real dir so the config's strategy still loads) to an EMPTY tmp dir,
+    so the feed is empty over the window on every machine regardless of whether a
+    krakenfutures funding cache exists on disk. seen_data_dirs asserts the engine
+    still hands the factory the real local_data dir; an mtime_ns tripwire proves
+    the redirect actually diverted the write, so a real funding cache is never
+    opened or rewritten (_merge_and_store(save=True) rewrites whatever data_dir it
+    is handed, byte-identical, which a sha check would not catch).
+
+    The socket block guarantees hermeticity: it stops a remote top-up from
+    populating the redirected empty dir (which would flip the feed non-empty and
+    mask the fail-loud) and keeps the offline fetch deterministic. run_backtest has
+    no try/except around its BacktestEngine.load_data() call, so the error crosses
+    run_backtest's boundary uncaught -- the deliberate fail-fast this ticket exists
+    to produce (D-iii). The price cache is still read purely (the raise fires
+    strictly after the price fetch, per R-G1).
     """
+    import data.feed_registry as feed_registry_mod
     from core.launcher import run_backtest
     from data.data_manager import AuxFeedVenueError
 
-    assert not KRAKEN_BTC_FUNDING_CACHE.exists()
+    funding_dir = tmp_path / "funding_cache"
+    funding_dir.mkdir()
+    real_factory = feed_registry_mod.FEED_REGISTRY["funding_rate"]
+    seen_data_dirs = []
+
+    def redirected(symbols, start, end, data_dir, exchange="binance"):
+        seen_data_dirs.append(data_dir)
+        return real_factory(symbols, start, end, data_dir=str(funding_dir), exchange=exchange)
+
+    monkeypatch.setitem(feed_registry_mod.FEED_REGISTRY, "funding_rate", redirected)
+
     kraken_sha_before = _sha256(KRAKEN_BTC_CACHE)
+    real_funding_mtime = (
+        KRAKENFUTURES_BTC_FUNDING_CACHE.stat().st_mtime_ns
+        if KRAKENFUTURES_BTC_FUNDING_CACHE.exists()
+        else None
+    )
 
     with pytest.raises(AuxFeedVenueError):
         run_backtest(
@@ -541,7 +588,12 @@ def test_run_backtest_kraken_aux_feed_fails_loud(block_network, tmp_path):
         )
 
     assert _sha256(KRAKEN_BTC_CACHE) == kraken_sha_before
-    assert not KRAKEN_BTC_FUNDING_CACHE.exists(), "no funding stub CSV should be written"
+    assert [Path(d).resolve() for d in seen_data_dirs] == [(PROJECT_ROOT / "local_data").resolve()]
+    assert not (funding_dir / "krakenfutures_BTCUSD_funding_1h.csv").exists(), \
+        "no funding stub CSV should be written"
+    if real_funding_mtime is not None:
+        assert KRAKENFUTURES_BTC_FUNDING_CACHE.stat().st_mtime_ns == real_funding_mtime, \
+            "real capture touched -- redirect not effective"
 
 
 # ---------------------------------------------------------------------------
