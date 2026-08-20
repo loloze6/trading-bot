@@ -52,12 +52,22 @@ RESULT OF TESTING (not assumed — see the two tests below):
    at warmup=25 (run_043's real signal) exceeds the 24-bar outer gate, which is what
    exposes it. See `test_run_042_precedent_is_latently_affected_at_matched_warmup`.
 
-The root engine defect (main_strategy.is_ready()'s stale-regime check) is NOT fixed
-here — it is a pre-existing, systemic one-bar effect on the very first ready bar of
-ANY strategy config (gated or ungated), in production since the regime-gated
-architecture was built, invisible in aggregate metrics because it touches exactly one
-bar out of thousands. Flagging it for separate follow-up is the correct scope for F1;
-silently fixing engine readiness semantics as a rider on this change is not.
+The root engine defect (main_strategy.is_ready()'s stale-regime check) was NOT fixed
+as part of F1 — flagged for separate follow-up instead, since silently fixing engine
+readiness semantics as a rider on an unrelated config-validation change was not the
+correct scope. It was fixed separately as F7 (Notion "P8: First forecast computed one
+bar early"): `AdvancedStrategy.is_ready()` now classifies the CURRENT bar before
+checking `strategy_engine.is_ready(regime)`, instead of reading the previous bar's
+(or, on the first ready-candidate bar, the class-init UNKNOWN default) `current_regime`.
+`_classify_once()` memoizes the result per bar (invalidated in `update()`) so
+`is_ready()` and `generate_forecast()` agree on one classification per bar rather than
+running `classify()` twice, which would double-count its side effects (veto-bar streak
+counters, `bars_in_current_regime`/`regime_change_count`).
+
+The tests below were written to characterize the BUG and were updated, in the same
+change that fixed it, to assert the FIXED behavior instead — see
+`test_pattern_a_all_four_regime_labels_now_agree` and
+`test_run_042_precedent_current_regime_is_fresh_when_ready_fires`.
 """
 import sys
 import json
@@ -149,16 +159,18 @@ def test_pattern_a_produces_a_nontrivial_sequence(target_regime):
     assert len(set(ready)) > 5, "forecast sequence is degenerate/constant — not a real test"
 
 
-def test_pattern_a_unknown_is_the_unique_warmup_safe_choice():
+def test_pattern_a_all_four_regime_labels_now_agree():
     """
-    THE empirical result this file exists to establish:
-    - mean_reversion, chop, and trending are mutually IDENTICAL to each other (the
-      choice among these three is a pure, inert label — confirming Pattern A's
-      "empty rules" plumbing is genuinely regime-name-agnostic).
-    - "unknown" DIFFERS from the other three at exactly one bar: the first bar where
-      main_strategy.required_bars (=24, independent of the configured `warmup`) is
-      satisfied. The other three fire a real forecast there from under-warmed history;
-      "unknown" correctly waits until `strategies.warmup` (=25) is actually satisfied.
+    Post-F7-fix result (was test_pattern_a_unknown_is_the_unique_warmup_safe_choice,
+    which asserted the BUG: "unknown" diverging from the other three at index 23 by
+    being the only label not vacuously bypassed by the stale pre-classify regime
+    check). Now that `is_ready()` classifies the current bar before checking
+    strategy-engine readiness, ALL FOUR labels correctly wait for
+    `strategies.warmup` (=25) regardless of which regime name carries the real
+    signal — the choice of default_regime is once again a pure, inert label with no
+    warmup-safety implication. Do not restore the old "prefer default_regime=unknown"
+    guidance in workflow_artifacts/skills/backtest-engineering/SKILL.md on the basis
+    of this test; that guidance was a workaround for the bug this fix removes.
     """
     sequences = {r: _run_forecast_sequence(_pattern_a_config(r), BARS) for r in _VALID_REGIMES}
 
@@ -166,35 +178,25 @@ def test_pattern_a_unknown_is_the_unique_warmup_safe_choice():
         sequences["mean_reversion"], sequences["chop"], sequences["trending"], sequences["unknown"]
     )
 
-    assert mr == chop == trending, (
-        "mean_reversion/chop/trending were expected to be mutually identical (pure "
-        "label choice) but diverged — the 'inert label' claim does not hold as tested."
+    assert mr == chop == trending == unknown, (
+        "Expected all four regime-name choices to produce an IDENTICAL forecast "
+        "sequence now that is_ready() classifies the current bar before checking "
+        "strategy-engine readiness. A divergence here means the F7 fix regressed, "
+        "or one label is once again getting a vacuous readiness bypass."
     )
 
-    assert unknown != mr, (
-        "Expected 'unknown' to differ from the other three (it is the only choice that "
-        "isn't vacuously bypassed by main_strategy.is_ready()'s stale pre-classify regime "
-        "check) — but it matched. Either the engine's readiness check changed, or this "
-        "fixture no longer exercises the one-bar warmup gap. Re-verify before trusting "
-        "the 'use unknown' recommendation in workflow_artifacts/skills/backtest-engineering/SKILL.md."
-    )
-
-    first_divergence = next(i for i, (a, b) in enumerate(zip(unknown, mr)) if a != b)
-    required_bars_index = 23  # required_bars=24, 0-indexed -> first ready-candidate bar
-    assert first_divergence == required_bars_index, (
-        f"Expected the sole divergence at index {required_bars_index} (the first bar "
-        f"where the outer required_bars gate opens); got index {first_divergence} instead. "
-        "The mechanism may have changed — re-derive before trusting this test."
-    )
-    assert mr[first_divergence] is not None and unknown[first_divergence] is None, (
-        "Expected mean_reversion/chop/trending to fire an (under-warmed) forecast at "
-        "the divergence bar while 'unknown' correctly stays not-ready there."
-    )
-    # From the point strategies.warmup is genuinely satisfied onward, all four must
-    # agree — the divergence is exactly one bar, not a permanent difference.
-    assert unknown[first_divergence + 1:] == mr[first_divergence + 1:], (
-        "Expected the four variants to reconverge to identical forecasts once the "
-        "configured warmup is genuinely satisfied — divergence should be exactly one bar."
+    ready = [v for v in unknown if v is not None]
+    assert len(ready) > 10, "warmup consumed the whole synthetic window — widen BARS"
+    first_ready_index = next(i for i, v in enumerate(unknown) if v is not None)
+    # Measured, not derived: EMASpreadComponent's own get_required_periods() (driven
+    # by slow_period=21) gates its readiness later than the outer required_bars=24
+    # check, so first readiness now lands at index 40 for every regime label -- later
+    # than the old (buggy) index 23, because index 23 was reached by vacuously
+    # bypassing this component's real warmup rather than by satisfying it.
+    assert first_ready_index == 40, (
+        f"Expected first readiness at index 40 (measured); got index {first_ready_index}. "
+        "Re-derive before trusting this test -- do not just restore 40 without checking "
+        "why it moved."
     )
 
 
@@ -240,29 +242,26 @@ def test_run_042_precedent_is_unaffected_at_its_own_real_warmup():
 
 
 @pytest.mark.skipif(not _RUN_042_CONFIG_PATH.exists(), reason="run_042 artifact not present on disk")
-def test_run_042_precedent_shares_the_stale_regime_readiness_mechanism():
+def test_run_042_precedent_current_regime_is_fresh_when_ready_fires():
     """
-    Per the user's explicit instruction: verify run_042's default_regime='mean_reversion'
-    precedent against this test rather than silently absorbing it.
+    Was test_run_042_precedent_shares_the_stale_regime_readiness_mechanism, which
+    asserted `real_hist_len < 25` as proof of the pre-fix vacuous bypass. Investigating
+    the F7 fix surfaced that this config's EFFECTIVE `strategy_engine._warmup` is not
+    the 25 this test raised `strategies.warmup` to -- it gets capped down to 2 by
+    `min(configured_warmup, min_buf)`, where `min_buf` is the smallest per-component
+    history-deque maxlen across ALL regimes in run_042's real config (some other
+    regime's component declares a small per-component `lookback` override). So
+    `real_hist_len < 25` was true both before AND after the fix -- 2 real bars of
+    fg_contrarian history already satisfies the true warmup of 2 -- and that old
+    assertion could not actually distinguish fixed from buggy behavior here. It
+    happened to keep passing post-fix for the wrong reason.
 
-    A same-numbers comparison (mean_reversion vs. unknown, both at raised warmup=25) does
-    NOT show a divergence for this specific component — but that is a coincidence of
-    calendar alignment, not evidence of safety: FearGreedContrarianComponent only ever
-    produces a nonzero value at hour==0 UTC boundary bars, and the defect's one-bar
-    window (idx=23, i.e. required_bars-1) lands on 2024-01-01 23:00 — not a boundary bar
-    — so BOTH variants correctly return 0.0 there regardless of whether the underlying
-    history is under-warmed. A dense signal (EMASpreadComponent, see
-    test_pattern_a_unknown_is_the_unique_warmup_safe_choice) is active on every bar and
-    therefore DOES expose the gap numerically; a sparse, boundary-gated one may or may
-    not, depending on incidental alignment between the fixed defect bar and the signal's
-    own activation calendar.
-
-    So this test checks the MECHANISM directly instead of relying on the output number:
-    does run_042's config (raised to warmup=25, otherwise verbatim) report itself "ready"
-    at idx=23 even though the real per-regime component history at that point has only
-    ~4 entries — far short of the configured warmup=25? If yes, the mechanical defect is
-    confirmed present in run_042's own plumbing, regardless of whether THIS particular
-    run's numbers happened to look fine.
+    Rewritten to check the mechanism the fix actually changes: at the bar
+    `is_ready()` first returns True, has `classify()` already run THIS bar, i.e. is
+    `regime_engine.current_regime` the real classified regime rather than the
+    class-init `UNKNOWN` default? Pre-fix this would read UNKNOWN (classify() only
+    ran inside generate_forecast(), never yet called); post-fix it must read the
+    real target regime, since is_ready() now classifies before checking.
     """
     with open(_RUN_042_CONFIG_PATH) as f:
         run_042_config = json.load(f)
@@ -284,26 +283,21 @@ def test_run_042_precedent_shares_the_stale_regime_readiness_mechanism():
             strat.update(bars.iloc[:i])
             if strat.is_ready():
                 first_ready_index = i - 1
-                real_hist_len = len(
-                    strat.strategy_engine._history[target_regime]["fg_contrarian"]
-                )
+                current_regime_at_ready = strat.regime_engine.current_regime
                 break
         assert first_ready_index is not None, "strategy never became ready — widen bars"
     finally:
         os.unlink(tmp_path)
 
     assert first_ready_index == 23, (
-        f"Expected the stale-regime bypass to fire at idx=23 (required_bars-1); "
-        f"got {first_ready_index}. Re-derive before trusting this test's conclusion."
+        f"Expected first readiness at idx=23 (required_bars-1, unaffected by the F7 "
+        f"fix since effective warmup here is 2, not 25); got {first_ready_index}. "
+        "Re-derive before trusting this test."
     )
-    assert real_hist_len < 25, (
-        f"MECHANICAL DEFECT NOT CONFIRMED: run_042's config reported ready at idx=23 "
-        f"with real per-regime history already >= configured warmup=25 (len={real_hist_len}) "
-        "— i.e. it was genuinely warmed, not bypassed. This would mean the defect does "
-        "not apply here after all; re-investigate before amending the skill guidance."
+    assert current_regime_at_ready.value == target_regime, (
+        f"F7 REGRESSION: at the bar is_ready() first returned True, "
+        f"regime_engine.current_regime was {current_regime_at_ready.value!r}, not "
+        f"{target_regime!r}. This means is_ready() is once again checking readiness "
+        "against a stale (pre-classify) regime instead of classifying the current "
+        "bar first."
     )
-    # This IS the finding: ready fired via the stale-regime vacuous bypass, with only
-    # `real_hist_len` (~4) of the configured 25 bars of real history — mechanically
-    # identical to the EMASpreadComponent case above. It happens not to change run_042's
-    # own reported numbers only because FearGreedContrarianComponent is zero outside its
-    # sparse boundary condition, which idx=23 does not satisfy on this fixture.
