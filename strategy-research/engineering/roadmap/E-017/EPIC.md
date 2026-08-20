@@ -86,14 +86,37 @@ State stays `parked`: none of the above changes the Phase 2 gate dependency.
 
 ## Pointer
 
-This epic's palette sits on a substrate with an open correctness defect:
-`tools/run_protocol.py`'s exit-reason classifier (`_infer_exit_reason`,
-`_bar_idx_at`) has a measured contradiction (0.85% `end_of_window_pct` vs 15
-of 30 run_054 windows measured ending held) and an unconfirmed hypothesis
-that forced closes are silently relabelled `signal_flip`. Notion ticket
-`3b31d1fb05a281b1b0dacd644023ebae`. Not diagnosed here, not fixed here — if
-confirmed, it affects any exit-reason attribution this epic's autopsy stage
-would draw from.
+**RESOLVED 2026-08-15 — was open, now fixed; keep reading, this still matters
+for this epic's substrate.** `tools/run_protocol.py`'s exit-reason classifier
+(`_infer_exit_reason`, `_bar_idx_at`) is fixed (`_ts_key`-based timestamp
+matching + last-bar-by-timestamp comparison). The confirmed root cause was
+wider than suspected: (1) every open-position backtest before `c5b1dc6`
+(2026-08-15) wrote a duplicated final `bars.csv` row, which made the
+first-match index lookup land one bar short of the true last bar — 15 of 16
+`run_054` windows that genuinely ended held were misclassified `signal_flip`
+(`end_of_window_pct` 0.85% → 13.68%, corrected); (2) independently, on daily
+(`1d`) runs, `bars.csv` renders timestamps date-only while `trades.json`
+keeps full ISO form, so the lookup failed for **100% of `run_059`'s 699
+trades** — not a partial defect, a total one for that run. Notion ticket
+`3b31d1fb05a281b1b0dacd644023ebae`, now Done.
+
+**RESOLVED 2026-08-15 — the three contaminated `trade_diagnostics.json` files are
+regenerated.** Not a fresh backtest re-run (unneeded: `bars.csv`/`trades.json` per
+window were already committed under each run's `results/`) — the fixed classifier
+was re-run directly against those committed artifacts, matching exactly what a
+protocol re-run's Step 03 would have produced. All 170 windows (30 + 42 + 98)
+resolved with zero lookup warnings. Corrected:
+`end_of_window_pct` `run_054` 0.85%→13.68%, `run_057` 0.0%→16.67%,
+`run_059` 0.0%→19.31%; `run_059`'s previously-null MAE/MFE and efficiency fields
+are now populated. Trade counts and win rates unchanged (same trades, reclassified,
+not re-simulated). **Verdicts unaffected** — `run_054`/`057`/`059`'s kill/refine
+calls are driven by `median_sharpe`/`max_drawdown_pct` in `metrics.json`, which this
+classifier never touches; only the descriptive autopsy-layer fields were wrong.
+Detail in `research/ledger/win.md`'s 2026-08-15 entry (pre-split file, renamed 2026-08-16).
+
+This epic's forthcoming palette work (`profit-per-forecast-bin`,
+regime-identification-correctness) can now read exit-reason-derived fields from
+these three runs without inheriting stale noise.
 
 ## Log
 

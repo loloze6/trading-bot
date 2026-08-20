@@ -288,3 +288,18 @@ def test_default_wiring_delivers_candle_to_strategy_callback():
     for sym, candle in strat.received:
         assert sym == SYMBOL
         assert isinstance(candle, Candle)
+
+
+def test_get_historical_klines_shim_removed():
+    """GH #33 (2026-08-16): get_historical_klines was a backward-compat shim for a
+    HistoricalDataManager class that no longer exists anywhere in the tree, with zero
+    callers repo-wide (verified by grep before deletion). During a backtest close
+    callback the replay cursor sits one row past the bar that just closed (the same
+    mechanism B1/B2 above fix for the main candle-completion path), so the shim
+    returned raw rows one full bar ahead of the closed candle -- a silent lookahead
+    trap for the first strategy that ever called it. Deleted rather than clamped:
+    fixing the clamp point correctly would have kept a dead API alive for a class
+    that's already gone. If this ever needs resurrecting, the replacement must NOT
+    slice through self._cursor[symbol] directly -- clamp against the last bar the
+    candle_completion_callback actually fired for, not the replay cursor."""
+    assert not hasattr(DataManager, "get_historical_klines")

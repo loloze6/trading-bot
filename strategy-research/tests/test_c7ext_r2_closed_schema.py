@@ -43,6 +43,39 @@ def test_r2_bypass_1_path_traversal_cannot_borrow_another_runs_result():
     }
     with pytest.raises(vce.UngatedVerdictError) as exc:
         vce.validate_verdict_provenance(entry, root=_SR_ROOT)
+    # Keep this verbatim replay honest across platforms: Windows collapses `..`
+    # lexically so `run_999_FAKE/../run_059` resolves to a real file and the
+    # containment gate fires; POSIX won't walk `..` through the non-existent
+    # run_999_FAKE, so the existence gate fires first with a different message.
+    # Both are the ref-resolution refusal we mean to pin; the containment branch
+    # is exercised on every platform by the hermetic companion below.
+    msg = str(exc.value)
+    assert "does not confer provenance" in msg, msg
+    assert ("does not exist" in msg
+            or "does not lie under any of this entry's own runs" in msg), msg
+
+
+def test_r2_bypass_1a_containment_branch_fires_on_every_platform(tmp_path):
+    """The containment gate — the only thing standing between a fabricated entry
+    and a victim run's real PASS — must fire on every OS, not only where the OS
+    happens to collapse `..` lexically. The cited run EXISTS here, so `..`
+    resolves through it into a DIFFERENT run; existence passes and containment is
+    what refuses it. This is the cross-platform half of the verbatim replay above."""
+    runs = tmp_path / "runs"
+    (runs / "run_B").mkdir(parents=True)
+    victim = runs / "run_A" / "artifacts"
+    victim.mkdir(parents=True)
+    (victim / "pass_rule_evaluation.yaml").write_text("result: PASS\n", encoding="utf-8")
+
+    entry = {
+        "id": "FAKE_BORROWS_RUN_A",
+        "outcome": "kill_mechanism_falsified",
+        "evidence_runs": ["run_B"],  # exists, but is not the victim
+        "pass_rule_evaluation_ref":
+            "runs/run_B/../run_A/artifacts/pass_rule_evaluation.yaml",
+    }
+    with pytest.raises(vce.UngatedVerdictError) as exc:
+        vce.validate_verdict_provenance(entry, root=tmp_path)
     assert "does not lie under any of this entry's own runs" in str(exc.value)
     assert "resolves to" in str(exc.value), "must be refused on the RESOLVED path"
 

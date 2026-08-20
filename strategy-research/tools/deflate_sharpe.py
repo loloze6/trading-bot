@@ -17,6 +17,7 @@ import sys
 import os
 import math
 import argparse
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import NormalDist, median, variance
@@ -98,6 +99,84 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
 
 
 # ---------------------------------------------------------------------------
+# E-025 S2 (2026-08-16): dual-writer mechanical guards
+# ---------------------------------------------------------------------------
+
+def check_no_duplicate_trial_ids(records: list[dict]) -> None:
+    """
+    Refuse if the ledger contains two rows with the same (trial_id, source) pair.
+
+    A single trial_id legitimately carries up to two rows -- one 'prescreen' (every
+    trial, kill or pass, per A6.2) and one 'backtest' (only if it advanced). That is
+    not a duplicate. A genuine duplicate is the SAME (trial_id, source) appearing
+    twice: the write-side guard in run_phase1_research.py::_record_backtest_trial
+    (H3, 2026-08-16) prevents this going forward, but this is the read-side backstop
+    for the same invariant -- catching a dual-writer race, a manual ledger edit, or a
+    future writer that skips the write-side guard. Raises rather than silently
+    dropping a row: which copy is correct is not this function's call to make.
+    """
+    seen: set[tuple] = set()
+    dupes: list[tuple] = []
+    for r in records:
+        key = (r.get("trial_id"), r.get("source"))
+        if key in seen and key not in dupes:
+            dupes.append(key)
+        seen.add(key)
+    if dupes:
+        raise ValueError(
+            f"campaign_state.yaml contains duplicate (trial_id, source) rows: {dupes}. "
+            f"DSR computation refuses to run against a ledger with duplicates -- "
+            f"resolve them (a duplicate row skews the trial count) before re-running. "
+            f"See strategy-research/engineering/roadmap/E-025/EPIC.md."
+        )
+
+
+def check_ledger_is_merged(campaign_state_path: Path, allow_unmerged: bool = False) -> None:
+    """
+    Dual-writer protocol's binding rule (E-025, 2026-08-16): no DSR computation until
+    both sides' ledgers are merged. A locally-modified or locally-behind
+    campaign_state.yaml means this machine's view of "how many trials were run" is
+    partial -- exactly the failure the DSR's N exists to prevent (an inflated
+    significance claim from an understated trial count). Checked by comparing the
+    file's actual content against origin/master's tracked copy, not by trusting a
+    "have I merged" claim.
+
+    allow_unmerged is an explicit, named opt-out (this repo's `--no-verify` pattern)
+    for a deliberate exception -- e.g. an offline sanity check with no intent to act
+    on the promotion_audit.yaml this run produces.
+    """
+    if allow_unmerged:
+        return
+
+    repo_root = Path(_REPO)
+    try:
+        subprocess.run(
+            ["git", "fetch", "origin", "master"],
+            cwd=repo_root, check=True, capture_output=True, timeout=30,
+        )
+    except Exception as e:
+        raise RuntimeError(
+            f"Could not fetch origin/master to verify the ledger is merged "
+            f"(no-DSR-until-merged, E-025): {e}. Pass --allow-unmerged to run anyway "
+            f"if this is a deliberate offline exception."
+        )
+
+    rel_path = campaign_state_path.resolve().relative_to(repo_root)
+    diff = subprocess.run(
+        ["git", "diff", "--quiet", "origin/master", "--", str(rel_path)],
+        cwd=repo_root, capture_output=True,
+    )
+    if diff.returncode != 0:
+        raise RuntimeError(
+            f"{rel_path} differs from origin/master -- this machine's ledger is not "
+            f"merged (unpushed local trials, or behind on the other side's). DSR "
+            f"computed against an unmerged ledger understates N. Sync first (push/pull, "
+            f"or land the pending PR), or pass --allow-unmerged if this is a deliberate "
+            f"exception."
+        )
+
+
+# ---------------------------------------------------------------------------
 # Sharpe trial loading
 # ---------------------------------------------------------------------------
 
@@ -148,20 +227,59 @@ _EULER_MASCHERONI = 0.5772156649  # γ
 def compute_dsr(
     candidate_sr: float,
     trial_sharpes: list[float],
+    n_trials: int | None = None,
 ) -> dict:
     """
     Compute the Deflated Sharpe Ratio for candidate_sr given a list of trial Sharpes.
+
+    n_trials (H1 fix, 2026-08-16, issue #28): the multiple-testing correction's N --
+    how many independent attempts were made, which sets how hard the expected-max-
+    Sharpe benchmark it must clear rises -- is a DIFFERENT quantity from
+    len(trial_sharpes), the sample of real Sharpe VALUES used to estimate that
+    benchmark's mean/variance. Before this fix the two were silently the same number:
+    N was len(trial_sharpes), so a prescreen kill or expectancy-only trial (a real
+    attempt, recorded, but with no Sharpe value) was invisible to the very correction
+    it exists to be counted by. Measured live: 16 real trials, DSR saw N=1.
+
+    Pass n_trials explicitly (the caller's honest total -- e.g. compute_promotion_audit's
+    total_hypotheses_tested, every recorded trial of any statistic_valid, deduplicated)
+    to count every real attempt toward the correction's strength. trial_sharpes stays
+    the real-valued sample for estimating mu_sr/sigma_sr, which genuinely needs numbers,
+    not just a count -- a large N with too few real Sharpe values still correctly
+    refuses (see the n_sharpe < 2 branch below), because no total count fixes an
+    unmeasurable variance. Omitted, n_trials falls back to len(trial_sharpes) --
+    byte-identical to every pre-existing caller.
 
     Returns a dict with:
       - dsr: float or None on error
       - expected_max_sharpe: float
       - mu_sr: mean of trial Sharpes
       - sigma_sr: std dev of trial Sharpes
-      - n_trials: number of deduplicated trials
+      - n_trials: the N used for the multiple-testing correction (not necessarily
+        len(trial_sharpes) -- see n_trials param above)
       - z: z-score
       - error: str or None
     """
-    N = len(trial_sharpes)
+    n_sharpe = len(trial_sharpes)
+    N        = n_trials if n_trials is not None else n_sharpe
+
+    # Defensive: N (the multiple-testing count) must be at least as large as n_sharpe
+    # (the real-valued sample it's derived from) -- every real attempt with a Sharpe
+    # value is necessarily counted in an honest total. compute_promotion_audit's
+    # single call site provably satisfies this by construction (sharpe_values is a
+    # filtered SUBSET of the same deduped_records total_hypotheses_tested counts), so
+    # this never fires there -- it exists for any future caller. Raising, not
+    # clamping: a violation here would silently UNDERSTATE the correction (the exact
+    # flattering direction this fix exists to close), so it must fail loud rather than
+    # guess which number is right.
+    if n_trials is not None and N < n_sharpe:
+        raise ValueError(
+            f"n_trials={N} is smaller than len(trial_sharpes)={n_sharpe} -- every real "
+            f"Sharpe value is itself a counted attempt, so N can never be less than the "
+            f"real-valued sample it's estimated from. This is a caller bug, not a data "
+            f"condition; passing a too-small n_trials would silently understate the "
+            f"multiple-testing correction."
+        )
 
     if N < 2:
         return {
@@ -174,9 +292,27 @@ def compute_dsr(
             "error":             f"Insufficient trials: need >= 2, got {N}",
         }
 
-    mu_sr    = sum(trial_sharpes) / N
-    # Population variance (N denominator) for the trial distribution
-    var_sr   = sum((s - mu_sr) ** 2 for s in trial_sharpes) / N
+    if n_sharpe < 2:
+        return {
+            "dsr":               None,
+            "expected_max_sharpe": None,
+            "mu_sr":             None,
+            "sigma_sr":          None,
+            "n_trials":          N,
+            "z":                 None,
+            "error":             (
+                f"N={N} trials recorded (multiple-testing count is honest), but only "
+                f"{n_sharpe} produced a real Sharpe value -- need >= 2 real Sharpe "
+                f"values to estimate the trial distribution's variance. A large N does "
+                f"not fix an unmeasurable variance."
+            ),
+        }
+
+    mu_sr    = sum(trial_sharpes) / n_sharpe
+    # Population variance (n_sharpe denominator, NOT N) for the trial distribution --
+    # this estimates the SHAPE of the Sharpe-generating process from the real values
+    # actually observed, independent of how many total attempts N counts.
+    var_sr   = sum((s - mu_sr) ** 2 for s in trial_sharpes) / n_sharpe
     sigma_sr = math.sqrt(var_sr)
 
     if sigma_sr < 1e-10:
@@ -190,7 +326,9 @@ def compute_dsr(
             "error":             "No trial variance: all trial Sharpes are identical",
         }
 
-    # Expected maximum Sharpe (BLP 2014, equation A.6)
+    # Expected maximum Sharpe (BLP 2014, equation A.6). N here IS the multiple-testing
+    # count (every real attempt) -- this is the whole point of H1: a larger honest N
+    # makes the benchmark harder to clear, exactly as the correction is supposed to.
     # Z_exp_max = (1 - γ) * Φ⁻¹(1 - 1/N) + γ * Φ⁻¹(1 - 1/(e*N))
     gamma   = _EULER_MASCHERONI
     e       = math.e
@@ -300,7 +438,12 @@ def compute_promotion_audit(
     # ------------------------------------------------------------------
     # Sharpe path
     # ------------------------------------------------------------------
-    dsr_result = compute_dsr(candidate_sr, sharpe_values)
+    # H1 fix (2026-08-16, issue #28): feed the HONEST total (every recorded trial --
+    # kills, expectancy-only, sharpe, and now backtest_failed rows -- deduplicated) as
+    # the multiple-testing N, not the len(sharpe_values) subset that has real numbers.
+    # total_hypotheses_tested already computed this correctly (line 328); it was just
+    # never passed to the function that needed it.
+    dsr_result = compute_dsr(candidate_sr, sharpe_values, n_trials=total_hypotheses_tested)
 
     dsr_value   = dsr_result.get("dsr")
     E_max_SR    = dsr_result.get("expected_max_sharpe")
@@ -361,6 +504,12 @@ def main() -> None:
         default=None,
         help="Path to campaign_state.yaml. Defaults to strategy-research/campaign_record/campaign_state.yaml.",
     )
+    parser.add_argument(
+        "--allow-unmerged", action="store_true",
+        help="E-025: skip the no-DSR-until-merged check against origin/master. Explicit "
+             "opt-out for a deliberate exception (e.g. an offline sanity check) -- do "
+             "not use to work around a real sync problem.",
+    )
     args = parser.parse_args()
 
     run_id = args.run_id
@@ -376,7 +525,23 @@ def main() -> None:
         print(f"ERROR: campaign_state.yaml not found at {campaign_state_path}", file=sys.stderr)
         sys.exit(1)
 
+    # E-025: dual-writer binding rule -- refuse on an unmerged ledger before trusting
+    # anything it says.
+    try:
+        check_ledger_is_merged(campaign_state_path, allow_unmerged=args.allow_unmerged)
+    except (RuntimeError, ValueError) as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
     campaign_state = _load_yaml(campaign_state_path)
+
+    # E-025: mechanical duplicate-(trial_id, source) refusal -- the read-side backstop
+    # for the write-side idempotency guard (issue #28 H3).
+    try:
+        check_no_duplicate_trial_ids(campaign_state.get("trial_sharpes", []))
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # Load hypothesis_id from hypothesis_card.yaml
     hypothesis_card_path = artifacts_dir / "hypothesis_card.yaml"

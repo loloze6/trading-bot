@@ -1,8 +1,8 @@
 # E-014 — Venue-parameterized cost model + calibration re-runs
 
-**State:** in-progress
+**State:** planned
 **Owner:** Jeremy
-**Updated:** 2026-08-05
+**Updated:** 2026-08-15
 
 ## Why
 
@@ -108,3 +108,11 @@ sequence behind E-010 is OPEN and unresolved — not decided here.
   to name the real gaps: venue as a parameter (not a hardcoded flag),
   `execution_style` wiring, a confound-free redo of the near-miss re-runs, and
   a funding-costed retest that doesn't yet exist.
+- 2026-08-15 — `in-progress` → `planned` (PROCESS.md amendment 11). No story
+  has actually been dispatched under this epic since W38 credited pre-existing
+  July code — 10 days at `in-progress` with zero log activity. Corrected to
+  reflect reality: stories are written and ready, nothing is actively being
+  worked. Directly relevant now: Dorian's fork shipped a Kraken funding-rate
+  **data feed** (PR #24, 2026-08-15) — confirmed against this file that S3
+  (the funding-costed retest) is untouched, so PR #24 is the intended data
+  source for S3, not a duplicate of anything on this side.

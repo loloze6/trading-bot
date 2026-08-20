@@ -120,11 +120,61 @@ def test_write_promotion_audit_excludes_invalidated_trial(tmp_path, monkeypatch)
     rpr._write_promotion_audit(run_dir, "run_test")
 
     audit = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
-    # NOTE: _write_promotion_audit's "total_hypotheses_tested" field is actually
-    # len(campaign_state.runs) (a different count entirely); the trial-count field
-    # equivalent to deflate_sharpe.py's total_hypotheses_tested is "total_variants_tested".
     assert audit["total_variants_tested"] == 3, (
         f"expected 3 (invalidated trial excluded from _write_promotion_audit's own "
         f"independent count), got {audit['total_variants_tested']}"
     )
+    # COUNT-DIV fix (2026-08-17): "total_hypotheses_tested" now matches
+    # promotion_audit.schema.json's declared meaning (deduplicated trial_sharpes
+    # count) instead of the unrelated len(campaign.runs) it held before. No dedup
+    # collisions in this fixture, so it equals total_variants_tested here (3).
+    assert audit["total_hypotheses_tested"] == 3
+    # The displaced len(campaign.runs) metric survives under its own honest name.
+    assert audit["total_campaign_runs"] == 0
     assert audit["excluded_trial_counts"]["invalidated_artifact"] == 1
+
+
+def test_write_promotion_audit_h1_uses_honest_n_not_just_sharpe_count(tmp_path, monkeypatch):
+    """H1 fix (2026-08-16, issue #28), mirrored-path proof. 10 prescreen kills + 1
+    real sharpe trial: pre-fix, N (n_trials, the real-Sharpe-value count) was 1, hit
+    the N<2 branch, dsr_error said "Insufficient sharpe-valid trials for DSR (n=1,
+    need >=2)". Post-fix, n_dsr_total (len(deduped_trials) == 11) clears that gate,
+    and the DIFFERENT, honest refusal fires instead -- naming N=11 explicitly. Same
+    shape as deflate_sharpe.py's test_h1_promotion_audit_wires_full_n_into_dsr, for
+    the independent inline implementation."""
+    monkeypatch.setattr(rpr, "CAMPAIGN_STATE_PATH", tmp_path / "campaign_state.yaml")
+    kills = [
+        {"trial_id": f"run_k{i}", "source": "prescreen", "route": "kill_no_ic",
+         "sharpe": None, "statistic_valid": "neither", "forecast_hash": f"kill{i}"}
+        for i in range(10)
+    ]
+    one_real = [{"trial_id": "run_real", "sharpe": 0.42, "statistic_valid": "sharpe",
+                 "forecast_hash": "real1"}]
+    (tmp_path / "campaign_state.yaml").write_text(yaml.safe_dump({
+        "trial_sharpes": kills + one_real, "runs": [],
+    }), encoding="utf-8")
+
+    run_dir = tmp_path / "runs" / "run_test"
+    (run_dir / "artifacts").mkdir(parents=True)
+    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "TEST"}), encoding="utf-8")
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(yaml.safe_dump({
+        "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.5}},
+        "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 0.0}},
+    }), encoding="utf-8")
+
+    rpr._write_promotion_audit(run_dir, "run_test")
+    audit = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+
+    assert audit["total_variants_tested"] == 11  # all 11 real attempts, kills included.
+    # COUNT-DIV fix (2026-08-17): now matches total_variants_tested (no dedup
+    # collisions in this fixture) instead of the old len(campaign.runs)=0 bug.
+    assert audit["total_hypotheses_tested"] == 11
+    assert audit["total_campaign_runs"] == 0
+    assert audit["n_trials_used"] == 1  # still only 1 real Sharpe value -- a separate question.
+    assert audit["deflated_sharpe_ratio"] is None  # correctly still None -- can't estimate variance from 1 point.
+    assert audit["dsr_error"] == (
+        "N=11 trials recorded (multiple-testing count is honest), but only 1 produced "
+        "a real Sharpe value -- need >= 2 real Sharpe values to estimate the trial "
+        "distribution's variance. A large N does not fix an unmeasurable variance."
+    ), audit["dsr_error"]

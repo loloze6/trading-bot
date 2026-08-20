@@ -783,6 +783,21 @@ def _check_wishlist_trigger(review: dict) -> str | None:
 
 def _classify_human_pause(run_dir: Path, state: dict) -> str:
     flags = state.get("flags", {}) or {}
+    # E-015 S3. FIRST, deliberately, and the position is load-bearing twice over.
+    # (a) It must outrank the promotion_audit branch below: every route into
+    #     holdout_evaluation writes promotion_audit.yaml first and holdout_result.yaml
+    #     is absent at that point, so this would otherwise classify as
+    #     `provisional_promote_awaiting_holdout`, whose RUNBOOK row tells the operator
+    #     to run the holdout backtest by hand — the exact act this flag exists to stop.
+    # (b) It must outrank the other sticky flags too. None of them is ever set back to
+    #     False in code, they all fire at earlier stages than the holdout gate, and
+    #     this run has by definition reached the most advanced stage — so a co-set
+    #     flag here is almost always stale. Ranked below, a stale flag would replace
+    #     the one message that warns against spending the seal with a row that is
+    #     silent on it. A genuinely-current error masked this way is not lost: it
+    #     resurfaces on the next pass once tradability is declared.
+    if flags.get("research_only_unverified"):
+        return "research_only_unverified"
     if flags.get("no_signal_artifact_flagged"):
         return "no_signal_artifact"
     if flags.get("conformance_violation") or state.get("conformance_violations"):
@@ -793,6 +808,13 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
         return "component_execution_error"
     if flags.get("kb_reactivation_violation") or state.get("kb_reactivation_violations"):
         return "kb_reactivation_violation"
+    # PRE-EXISTING GAP, fixed here because it sits in this function and its RUNBOOK
+    # row already exists: run_phase1_research sets this flag on two human-pause paths
+    # (in _route_verdict_interpretation and its A8.6 sibling; no line numbers, they
+    # move) but nothing read it, so the reason string was unreachable and those pauses
+    # surfaced as `human_pause_unclassified`.
+    if flags.get("pass_rule_evaluation_disagreement"):
+        return "pass_rule_evaluation_disagreement"
 
     artifacts = run_dir / "artifacts"
     audit_path = artifacts / "promotion_audit.yaml"

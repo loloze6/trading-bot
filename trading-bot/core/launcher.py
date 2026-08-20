@@ -329,8 +329,25 @@ class Launcher:
             bot.load_data(
                 start_date   = start_date,
                 end_date     = end_date,
-                extra_feeds  = FEED_REGISTRY,   
-            )            
+                extra_feeds  = FEED_REGISTRY,
+            )
+
+            # A total fetch failure is not a zero-return backtest. Without this,
+            # an empty fetch runs the loop over nothing, produces all-zero
+            # metrics and an artifact whose data hash is the hash of nothing,
+            # and exits 0 — a failed run that is indistinguishable from a real
+            # one that simply made no money. Raise so the except-block below
+            # turns it into a non-zero exit.
+            loaded = bot.historical_data.get(params.symbols[0])
+            if loaded is None or len(loaded) == 0:
+                raise RuntimeError(
+                    f"No historical data for {params.symbols[0]} over "
+                    f"{start_date:%Y-%m-%d}..{end_date:%Y-%m-%d} "
+                    f"(exchange={params.exchange}). The fetch returned nothing, so "
+                    f"there is nothing to simulate. Refusing to emit a zero-metric "
+                    f"run that would look like a completed backtest."
+                )
+
             self.logger.debug("Running simulation...")
             self.logger.debug("=" * 80)
             bot.simulate_on_loaded_data()
@@ -436,79 +453,6 @@ class Launcher:
             self.logger.error(f"Data visualization failed: {e}", exc_info=True)
             sys.exit(1)
 
-    def optimize_strategy(self):
-        """Run strategy optimization using backtesting with parameter grid search."""
-        self.logger.debug("Starting strategy optimization...")
-        self.logger.debug("=" * 80)
-
-        params = self._read_trading_params()
-        initial_balance = DEFAULT_INITIAL_BALANCE
-        start_date = parse_date_safe('2025-01-01', self.logger, default_days_back=60)
-        end_date = parse_date_safe('2025-03-01', self.logger, default_days_back=0)
-
-        self.logger.debug(f"Optimization period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
-        self.logger.debug(f"Symbols: {', '.join(params.symbols)}")
-
-        stack = self._build_mock_stack(params, initial_balance, with_state_tracker=False)
-
-        short_window_range = [20, 50, 100]
-        long_window_range = [100, 200, 300]
-        total_combinations = sum(1 for s in short_window_range for l in long_window_range if s < l)
-        self.logger.debug(f"Testing {total_combinations} parameter combinations")
-        self.logger.debug("-" * 80)
-
-        best_sharpe = -float('inf')
-        best_params = {}
-        test_count = 0
-
-        try:
-            for short_window in short_window_range:
-                for long_window in long_window_range:
-                    if short_window >= long_window:
-                        continue
-
-                    test_count += 1
-                    self.logger.debug(f"Test {test_count}/{total_combinations}: short={short_window}, long={long_window}")
-
-                    strategy = AdvancedStrategy()
-                    bot = BacktestEngine(
-                        data_manager=stack.data_manager,
-                        strategy=strategy,
-                        execution_handler=stack.execution_handler,
-                        logger=self.logger,
-                        portfolio_info=stack.portfolio_info,
-                        forecast_manager=stack.forecast_manager,
-                        risk_manager=stack.risk_manager,
-                        performance_tracker=stack.performance_tracker,
-                        price_fetch_interval=params.check_interval,
-                        candle_interval_seconds=params.interval,
-                        test_mode=params.test_mode,
-                        symbols=params.symbols,
-                        initial_capital=initial_balance,
-                        exchange=params.exchange,
-                    )
-
-                    bot.load_data(start_date=start_date, end_date=end_date)
-                    metrics = bot.simulate_on_loaded_data()
-
-                    current_sharpe = metrics.get('sharpe_ratio', -float('inf'))
-                    self.logger.debug(f"  Result: Sharpe={current_sharpe:.4f}")
-
-                    if current_sharpe > best_sharpe:
-                        best_sharpe = current_sharpe
-                        best_params = {'short_window': short_window, 'long_window': long_window}
-                        self.logger.debug(f"  NEW BEST: {best_params} with Sharpe={best_sharpe:.4f}")
-
-            self.logger.debug("=" * 80)
-            self.logger.debug("OPTIMIZATION COMPLETED")
-            self.logger.debug("=" * 80)
-            self.logger.debug(f"Best parameters: {best_params}")
-            self.logger.debug(f"Best Sharpe ratio: {best_sharpe:.4f}")
-            self.logger.debug(f"Total tests run: {test_count}")
-        except Exception as e:
-            self.logger.error(f"Optimization failed: {e}", exc_info=True)
-            sys.exit(1)
-
     def get_portfolio_converted(self):
         """Print portfolio holdings converted to USDT."""
         coin_values = OtherPortfolioOperations().get_portfolio_converted('USDT')
@@ -530,7 +474,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  warmup_prefetch: bool = False, holdout_start: str = None,
                  commission_rate: float = None, trades_log_file: str = None,
                  bar_equity: bool = False, exchange: str | None = None,
-                 drop_feeds: list[str] | None = None):
+                 drop_feeds: list[str] | None = None,
+                 model_funding: bool = False):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -622,6 +567,18 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         required feed names) to the run's manifest.json; a None value adds no such
         key, so a default run's manifest.json is unchanged. See
         tests/test_feed_dependencies.py.
+    model_funding: when True, accrues off-by-default perpetual-funding cash flow on the
+        held position each bar (design 2026-07-24 §5) -- builds the daily-summed funding
+        COST series (data/feed_registry.py::build_daily_funding_series) and threads it
+        through BacktestEngine into TradingBot's per-bar hook (execution/portfolio_info.py
+        ::apply_funding). REQUIRES daily bars: pass interval_seconds=86400, else
+        BacktestEngine raises ValueError naming the reason (the daily-summed series would
+        multiple-charge each intraday bar and charge not-yet-settled funding -- look-
+        ahead). Fails loud when the flag is on but no {symbol}_funding_8h.csv daily series
+        exists, rather than silently reporting a fee-only run as funding-costed. Default
+        False preserves the exact prior behavior: funding_daily is never built and the
+        hook at trading_bot.py:205 is never entered -- byte-identical to before this
+        parameter existed. See tests/test_model_funding_bit_identical.py.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -707,9 +664,25 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         bar_equity=bar_equity,
         exchange=params.exchange,
         drop_feeds=drop_feeds,
+        model_funding=model_funding,
     )
 
     engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=effective_feed_registry)
+
+    # Same guard as Launcher.simulate(), and needed MORE here: this is the entry
+    # point the campaign runner uses, so an empty fetch would write an all-zero
+    # metrics.json that the research pipeline then reads as a real, if
+    # unprofitable, result. Placed before the warmup probe below, which would
+    # otherwise die on a bare KeyError: 'timestamp' against the empty frame and
+    # blame the strategy for what is actually a missing-data failure.
+    _loaded = engine.historical_data.get(symbol)
+    if _loaded is None or len(_loaded) == 0:
+        raise RuntimeError(
+            f"No historical data for {symbol} over {start}..{end} "
+            f"(exchange={resolved_exchange}). The fetch returned nothing, so there "
+            f"is nothing to backtest. Refusing to emit a zero-metric run that would "
+            f"be indistinguishable from a strategy that simply never traded."
+        )
 
     if warmup_prefetch:
         # Verify the prefetch actually suffices -- fail loudly rather than silently

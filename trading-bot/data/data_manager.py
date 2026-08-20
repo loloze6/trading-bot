@@ -52,12 +52,80 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 import threading
 import queue
+from pathlib import Path
 
 # Fetchers are imported here so callers only need to import data_manager
 from data.fetchers.ccxt_fetcher import CcxtFetcher as HistoricalDataFetcher
 from data.fetchers.base_fetcher import BaseFetcher
 
 logger = logging.getLogger("trading_bot")
+
+#: `strategy-research/config/campaign_data_policy.yaml:holdout_range`. Read, never
+#: assumed — the seal moves with the policy, per the rule
+#: `tests/test_no_sealed_date_literals.py` states and follows.
+_POLICY_PATH = (Path(__file__).resolve().parents[2]
+                / "strategy-research" / "config" / "campaign_data_policy.yaml")
+
+
+def _holdout_bounds() -> tuple:
+    """(first sealed instant, first instant AFTER the seal), from the policy.
+
+    BOTH ends, not just the start. holdout_range is a closed window
+    ["2026-01-01", "2026-06-30"] and the policy itself declares data usable
+    again afterwards (`era_2026_h2_forward_recorded`, from 2026-07-26). A guard
+    keyed on the start alone would refuse every future candle forever, which
+    is not a seal but an expiry date on the whole bot.
+
+    The upper end is INCLUSIVE in the policy (the same reading
+    `tests/test_no_sealed_date_literals.py` documents), so the returned bound is
+    the start of the following day and the comparison against it is strict.
+
+    Deny by default on any failure to read: a reader that cannot locate the seal
+    cannot prove it is not serving sealed candles. The yaml import is inside the
+    try on purpose — an ImportError is just as much a failure to locate the seal
+    as a missing file, and outside it would bypass this refusal.
+    """
+    try:
+        import yaml  # local: this module is imported in contexts without yaml
+        with open(_POLICY_PATH, encoding="utf-8") as fh:
+            lo, hi = yaml.safe_load(fh)["holdout_range"][:2]
+        return pd.Timestamp(lo), pd.Timestamp(hi).normalize() + datetime.timedelta(days=1)
+    except Exception as exc:                                  # noqa: BLE001
+        raise SealedDataError(
+            f"Cannot read holdout_range from {_POLICY_PATH}: {exc}. Refusing to "
+            f"return market data — a read that cannot locate the seal cannot "
+            f"prove it is not serving sealed candles."
+        ) from exc
+
+
+class SealedDataError(RuntimeError):
+    """Requested data reaches into the sealed holdout range."""
+
+
+def _assert_no_sealed_rows(df: "pd.DataFrame", symbol: str) -> None:
+    """Refuse a frame carrying rows at or past the seal.
+
+    Refuses rather than silently dropping them: quietly returning a shorter
+    series than was asked for would hand the caller a backtest over a different
+    window than it believes it ran, which is the flattering-and-invisible
+    failure this project's rules single out. If a run legitimately needs the
+    holdout, that is a deliberate, single-use act — pass allow_sealed=True at
+    the call site so it appears in the diff.
+    """
+    if df is None or df.empty or "timestamp" not in df.columns:
+        return
+    lo, hi = _holdout_bounds()
+    sealed = df[(df["timestamp"] >= lo) & (df["timestamp"] < hi)]
+    if not sealed.empty:
+        raise SealedDataError(
+            f"{symbol}: requested window returned {len(sealed)} row(s) INSIDE the "
+            f"holdout seal [{lo:%Y-%m-%d}, {hi - datetime.timedelta(days=1):%Y-%m-%d}] — "
+            f"first {sealed['timestamp'].min()}, last {sealed['timestamp'].max()}. "
+            f"The committed caches still contain sealed rows; reading them spends a "
+            f"single-use, terminal holdout. Bound the request outside the sealed "
+            f"window, or pass allow_sealed=True if this genuinely is the holdout "
+            f"evaluation."
+        )
 
 
 # ===========================================================================
@@ -973,7 +1041,8 @@ class DataManager:
             else:
                 logger.info(f"DataManager: {symbol} initialised ({len(df)} rows)")
 
-    def fetch_historical_data(self, symbol: str, start_date, end_date, exchange: str = "binance") -> pd.DataFrame:
+    def fetch_historical_data(self, symbol: str, start_date, end_date, exchange: str = "binance",
+                              allow_sealed: bool = False) -> pd.DataFrame:
         """
         Fetch raw OHLCV data for one symbol via CcxtFetcher and return it as
         a flat DataFrame.
@@ -1016,10 +1085,43 @@ class DataManager:
                 logger.debug(f"  Continuous: {is_continuous}")
                 if not is_continuous:
                     logger.warning(f"  {len(gaps)} gap(s) detected in {symbol} data")
+
+                # Seal guard on the READ path (2026-08-19).
+                #
+                # The 7 committed Binance caches physically contain sealed 2026
+                # rows -- the seal guards added earlier block NEW leaks but never
+                # removed the existing ones (BTCUSDT_1h.csv alone carries 4,344
+                # rows >= 2026-01-01), and those files are now also on the shared
+                # culi.to server. Trimming them is the eventual fix, but it
+                # changes their content hash and therefore data_sha256, forcing a
+                # rebaseline of the reference run; this guard gets the protection
+                # today without that cost.
+                #
+                # Placed on the RETURNED frame, deliberately, not in
+                # BaseFetcher._load_local: that frame feeds _merge_and_store, so
+                # clamping there would silently rewrite the caches on the next
+                # save -- turning a read guard into an uncontrolled data
+                # mutation, which is the separate bug already tracked against
+                # this same read path.
+                #
+                # Expected to be a no-op for every legitimate run: get_data()
+                # already bounds by the requested window and every non-holdout
+                # window ends <= 2025-12-31, so there is nothing past the seal to
+                # drop. It bites only on a request that reaches into the sealed
+                # range -- which is exactly the thing to refuse.
+                if not allow_sealed:
+                    _assert_no_sealed_rows(data[symbol], symbol)
                 return data[symbol]
             else:
                 logger.warning(f"No OHLCV data available for {symbol}")
                 return pd.DataFrame()
+        except SealedDataError:
+            # MUST propagate. The blanket handler below degrades every failure to
+            # an empty DataFrame, which would silently defeat the seal guard
+            # entirely — the caller would see "no data" and move on, exactly the
+            # quiet outcome the guard exists to prevent. Same convention, and the
+            # same reason, as base_fetcher._load_local's tz-aware guard.
+            raise
         except Exception as e:
             logger.error(f"Error fetching OHLCV for {symbol}: {e}", stack_info=True, exc_info=True)
             return pd.DataFrame()
@@ -1185,26 +1287,6 @@ class DataManager:
         if idx >= len(df):
             return None
         return self.candle_builder.add_row(df.iloc[idx], symbol)
-
-    # -----------------------------------------------------------------------
-    # Legacy compatibility shim
-    # -----------------------------------------------------------------------
-
-    def get_historical_klines(
-        self, symbol: str, interval: str = None, limit: int = 1
-    ) -> pd.DataFrame:
-        """
-        Backward-compatible shim for strategies that called
-        HistoricalDataManager.get_historical_klines().
-
-        Backtest: returns raw rows up to the current cursor (not enriched).
-        Live:     returns the last `limit` completed enriched candles.
-        """
-        if self.mode == "backtest" and symbol in self.historical_data:
-            idx   = self._cursor.get(symbol, 0)
-            start = max(0, idx - limit + 1)
-            return self.historical_data[symbol].iloc[start : idx + 1].copy()
-        return self.get_data_history(symbol, limit)
 
 
 # ===========================================================================

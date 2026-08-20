@@ -732,25 +732,50 @@ def test_d3_generic_promotion_block_is_refused_at_selection(tmp_path, monkeypatc
     rpr._assert_promotion_ratified(generic)
 
 
-def test_d3_every_committed_generic_protocol_is_marked_unratified():
-    """The nine committed protocol files carrying the abolished block are
-    recorded as unratified, so selecting one fails loudly instead of silently
-    supplying thresholds no brief ever froze.
-
-    (The audit report said seven; recounting from the tree gives nine --
-    baseline_v1/v2, four escalation_*, and three run_0NN_generated.)"""
+def test_d3_generic_classifier_agrees_with_independent_derivation_and_all_are_unratified():
+    """Every committed protocol the classifier calls generic must be recorded
+    unratified -- and the classifier must agree, file by file, with an independent
+    re-derivation of "carries the abolished block." Pinning agreement (not a file
+    count) catches `promotion_is_generic` drifting to under-classify a generic
+    protocol -- which would let it pass selection ungated -- without re-coupling to
+    the tree census that `71573062` already broke once."""
     import json
     import run_phase1_research as rpr
+
+    # Independent oracle: a hardcoded copy of the abolished block, deliberately NOT
+    # imported from the module under test, so a drift in _GENERIC_PROMOTION or in the
+    # comparison logic shows up as a disagreement. It is a fixed historical fact.
+    abolished_block = {
+        "median_sharpe_gt": 0,
+        "max_abs_drawdown_pct_lt": 30,
+        "min_trade_count_gte": 20,
+        "kill_median_sharpe_lt": -1,
+    }
+
+    def independently_generic(promotion) -> bool:
+        return isinstance(promotion, dict) and promotion == abolished_block
+
     generic_files = []
     for path in sorted((_SR_ROOT / "protocols").glob("*.json")):
         obj = json.loads(path.read_text(encoding="utf-8"))
-        if rpr.promotion_is_generic(obj.get("promotion")):
+        promotion = obj.get("promotion")
+        classifier_says = rpr.promotion_is_generic(promotion)
+        oracle_says = independently_generic(promotion)
+        assert classifier_says == oracle_says, (
+            f"{path.name}: promotion_is_generic={classifier_says} disagrees with the "
+            f"independent abolished-block derivation={oracle_says} -- the classifier "
+            f"has drifted; a generic protocol may now pass selection ungated")
+        if oracle_says:
             generic_files.append(path.name)
             provenance = obj.get("promotion_provenance") or {}
             assert provenance.get("status") == "generic_unratified", path.name
             assert provenance.get("ratified_by") is None, \
                 f"{path.name} was ratified without a human saying so"
-    assert len(generic_files) == 9, generic_files
+
+    assert generic_files, (
+        "no committed protocol carries the abolished generic block -- either the "
+        "classifier under-classifies every file or the protocol corpus is empty; "
+        "either way this guard would otherwise pass vacuously")
 
 
 def test_d3_forced_diagnostic_without_a_named_protocol_no_longer_defaults(tmp_path, monkeypatch):
