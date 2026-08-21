@@ -25,7 +25,7 @@ The seven filters, one line each -- full definitions below:
 - **F4 EVIDENCE CLASS** -- MEASURED / RECORDED / INHERITED / INFERRED, labelled; the constraint itself needs a primary-artifact measurement
 - **F5 PROMOTION PATH** -- a win must be able to reach production and a tradable venue
 - **F6 AUTONOMY** -- less operator work per run, never more
-- **F7 MECHANISM TEST** -- attack your own causal story before presenting it
+- **F7 MECHANISM TEST** -- attack your own causal story before presenting it; every count states its denominator ("36 of 59") and reconciles against the most exhaustive enumeration, not the log you happened to have open
 
 Output always ends with five sections: candidates (each with a pre-registered
 success signal), instrument candidates from your own working, board actions on
@@ -197,6 +197,18 @@ that produced them. Secondary means verdict YAML, `TRIALS.csv`, epics, ledgers.
 If you cannot measure, say the constraint is UNVERIFIED and name the measurement
 that would settle it. Do not upgrade it by confidence.
 
+**[LOCAL]** that list is calibrated for questions about a STRATEGY's signal
+quality. A different class of question -- how much has the SYSTEM itself done,
+how often does it stall, how fast does it run -- has a different primary
+record, and picking the wrong one is a live failure mode, not a hypothetical
+one (see F7's Source coverage check). For system-history questions, primary
+means the exhaustive per-unit enumeration: every `runs/run_*/pipeline_state.yaml`
+(one per run, whatever drove it), or a raw `runs/` directory listing -- NOT
+`campaign_record/campaign_log.md`, which is one orchestrator's own append-only
+log and only covers the era after that orchestrator existed. A hand-maintained
+log is secondary evidence for a system-history claim even though it is a
+primary artifact for reconstructing what that orchestrator itself did.
+
 ### F5 -- PROMOTION PATH. If this succeeds, can the result ever be traded?
 
 A capability that produces unpromotable results is worth less than it looks.
@@ -222,7 +234,7 @@ hypotheses get.
 DISPROVE it.** Report the result whether or not it survives. A mechanism that has
 not been attacked is not a finding; it is a guess with numbers attached.
 
-Three specific checks, each of which has caught a real error here:
+Four specific checks, each of which has caught a real error here:
 
 - **Circularity.** Is your metric definitionally entailed by what you are
   comparing it against? *Measured "every position close happened at forecast
@@ -235,9 +247,26 @@ Three specific checks, each of which has caught a real error here:
   would refute you? *Counting only full exits to zero made "the strategy never
   changes its mind" look true, while 8,335 sign flips and 17,760 partial
   reductions sat outside the bucket.*
-
+- **Source coverage.** Before presenting ANY count, ask what population the
+  record you counted from actually covers -- the whole history, or one era?
+  Reconcile against the most exhaustive independent enumeration available (a
+  raw directory listing, a row count over every per-unit state file) BEFORE
+  presenting. Two rules make this mechanical rather than a matter of noticing:
+  **(a)** if two candidate counts of the same thing are already in your own
+  working, an unreconciled mismatch is an error you have already caught and not
+  yet reported; **(b)** state the denominator with every count -- "36 of 59 run
+  dirs", never a bare "36" -- because a denominator you cannot state is one you
+  have not checked. *Counted DONE lines in a campaign orchestrator's own log and
+  reported "the workflow has completed 4 runs in its entire life". That log
+  begins only when the orchestrator did; 52 earlier runs predate it. A
+  contradicting count (59 run dirs) was already in the same session's working
+  and went unreconciled until the operator caught it. Re-measured from every
+  run's own `pipeline_state.yaml`: 36 completions, not 4. Note the correction
+  STRENGTHENED the proposal -- coverage errors are not reliably conservative,
+  so "my number is probably an underestimate, which is safe" is not a defence.*
 The check is usually cheap -- minutes against artifacts you already have. The
-cost of skipping it is a proposal built on a mechanism that does not exist.
+cost of skipping it is a proposal built on a mechanism that does not exist, or
+on a total that undercounts by an order of magnitude.
 
 ## Method
 
@@ -260,7 +289,10 @@ cost of skipping it is a proposal built on a mechanism that does not exist.
 2. **Name the binding constraint, with evidence.** Read recorded signal
    (verdict fields, status counts, distributions) to find WHERE to look -- then
    go measure the primary artifacts before you name anything (F4 floor). Report
-   counts, not impressions. Do not fix anything you read.
+   counts, not impressions. Do not fix anything you read. Before presenting ANY
+   count -- of the system's activity, of artifacts, of anything -- run F7's
+   Source coverage check and state its denominator, even if that means
+   re-deriving a number you already reported earlier in the same session.
 3. **Generate a rival.** Name one constraint that would be INCONSISTENT with
    the one you are converging on -- and with any inherited finding you were
    handed -- and test that too. Report both. Verifying the framing you were given
@@ -291,6 +323,8 @@ Constraint it attacks : <the named binding constraint>
 Why it helps          : <mechanism -- how it changes future outcomes>
 Instrument or one-shot: <F3 -- what it measures on every run, and what consumes it>
 Evidence              : MEASURED / RECORDED / INHERITED / INFERRED (+ citation)
+Counts + denominators : <every count as "N of M", and what M was enumerated
+                        from -- or "no counts" if none are load-bearing>
 Mechanism test        : <F7 -- the causal story, the check you ran to break it,
                         and what the check returned>
 Promotion path        : <can a win be traded? if not, say what blocks it>
@@ -384,6 +418,15 @@ reading the backlog. Blockers do not announce their own staleness. *Happened
 here: P4's `blocked_on_daily_bar_ingest` flag outlived its blocker by two weeks
 -- the daily caches landed 2026-08-07, nobody flipped the flag, and clearing it
 (verified runnable by execution) was worth more than any new proposal that day.*
+
+**A15 -- Recency bias in evidence source.** Reaching for whichever document you
+most recently read in full and treating it as exhaustive for a NEW question. A
+document earns trust for the question it was read to answer, not for every
+question asked afterward -- "primary" is a property of a source *relative to a
+question*, not of the source itself. The fix is procedural, not attentional:
+F7's Source coverage check and its denominator rule run on every count, so you
+never have to notice the source was partial in the moment. (See F7 for the
+measured case.)
 
 ## Behaviours to keep
 

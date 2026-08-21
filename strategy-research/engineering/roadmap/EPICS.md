@@ -16,7 +16,7 @@ epic".
 | [E-006](E-006/EPIC.md) | Stop shipping a committed Windows venv | new | Agree with Dorian before `git rm -r --cached venv/` |
 | [E-007](E-007/EPIC.md) | Recorder storage and host migration | parked | Operator decision on the R3 storage budget |
 | [E-008](E-008/EPIC.md) | q1_26 tick archive aggregation | new | Evaluate extending `data_manager.py:637`'s `.resample()` seam |
-| [E-009](E-009/EPIC.md) | Pipeline harmonization (STAGE_CONFIGS/skill_map, sample_split, protocol auto-run, auto-repair) | new | S1 — merge STAGE_CONFIGS/skill_map |
+| [E-009](E-009/EPIC.md) | Pipeline harmonization (STAGE_CONFIGS/skill_map, sample_split) | new | S1 — merge STAGE_CONFIGS/skill_map; S3/S4 split to E-030 2026-08-21 |
 | [E-010](E-010/EPIC.md) | Slippage and lot-size/min-notional model | new | S1 — implement, with the non-BTCUSDT hard-fail |
 | [E-011](E-011/EPIC.md) | Shared campaign execution location (S1a: host provisioning, folded in from the Ubuntu-deployment bug card) | new | **E-003 blocker cleared 2026-08-18** — S1a done (`culi.to` live, baseline byte-identical); S1b (write-serialize `campaign_state`, retire single-writer Option A) is now the next real step, jointly with Dorian |
 | [E-012](E-012/EPIC.md) | Two-bars manifest/loop defect | new | S1 — measure the delta before designing any fix |
@@ -33,7 +33,8 @@ epic".
 | [E-026](E-026/EPIC.md) | Cross-sectional strategies: two engines, one decision | new | S1 — characterize `panel_backtester.py` (it already runs the 19-pair universe with an engine-equivalence gate, so this is a consolidation decision, not a build) |
 | [E-027](E-027/EPIC.md) | Exit-cause attribution: stop labelling a switched-off strategy as a signal flip | new | S1 — characterize which of the three zero-forecast paths fired for the 5,094 recorded closes (measured: 0 of them happened with a nonzero forecast; `_infer_exit_reason` calls them all `signal_flip`) |
 | [E-028](E-028/EPIC.md) | Realized allocation must reflect strategy intent, not gate state | new | Needs an operator decision, not a dispatch — S1 characterizes the three policies for "regime has no strategy"; hysteresis/dwell is already closed as `unusable_for_this_symbol_timeframe` |
-| [E-029](E-029/EPIC.md) | The trade record must carry the decision, not just the outcome | new | S1 — characterize where `regime_at_exit` / forecast / allocation-pair can be sourced without changing behaviour, and resolve the 20% of trades recording `regime_at_entry: unknown`. Sequenced BEFORE E-027 |
+| [E-029](E-029/EPIC.md) | The trade record must carry the decision, not just the outcome | new | S1 — characterize where `regime_at_exit` / forecast / allocation-pair can be sourced without changing behaviour, and resolve the 20% of trades recording `regime_at_entry: unknown`. Sequenced BEFORE E-027, and both sequenced BEHIND E-030 (2026-08-21) |
+| [E-030](E-030/EPIC.md) | Halt recovery + a loop-health instrument | planned | S1 — characterize the halt taxonomy (retry-safe / quarantine-safe / must-escalate) against the 14 historical halts already measured |
 
 ## Done
 

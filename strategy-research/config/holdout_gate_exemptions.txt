@@ -324,3 +324,27 @@ strategy-research/tests/test_measure_bar_sigma.py	9
 #                                   key: line. Extending the filter is logged as
 #                                   follow-up, not done here.
 # NO FILE IN THIS AUDIT CONTAINS MARKET DATA FROM THE SEALED WINDOW.
+
+# ADDED 2026-08-22 -- E-030 throughput measurement, category (d) wall-clock
+# provenance (the same basis as reference_run.json above).
+#   measured_throughput_eras.txt is the raw output of
+#   E-030/artifacts/measure_throughput_eras.py, a histogram of RESEARCH RUN
+#   COMPLETIONS per calendar day. The six flagged lines are operational
+#   timestamps -- the dates on which the research workflow itself finished runs,
+#   each line being a day followed by a bar chart and a count of runs completed
+#   that day -- which fall inside the sealed window by calendar coincidence,
+#   because the workflow was running in the last week of that June. They are not
+#   market data, carry no prices, and index nothing in local_data/.
+#   (Written date-literal-free on purpose: quoting a sample line here would add a
+#   sealed date to THIS file and re-block the gate on the registry itself.)
+#   Backtest windows are unaffected: this file records when runs EXECUTED, never
+#   what data they read. Count-pinned at 6, NOT marked PROSE -- it is
+#   programmatically regenerated output, exactly the category the registry's own
+#   note says must stay count-pinned so a human sees any new sealed date.
+#   Verified with the gate's own machinery against the index this commit
+#   publishes:
+#     sh strategy-research/tools/holdout_date_gate.sh --report-residual \
+#         | grep throughput
+#     -> strategy-research/engineering/roadmap/E-030/artifacts/measured_throughput_eras.txt<TAB>6
+#   NO MARKET DATA FROM THE SEALED WINDOW.
+strategy-research/engineering/roadmap/E-030/artifacts/measured_throughput_eras.txt	6

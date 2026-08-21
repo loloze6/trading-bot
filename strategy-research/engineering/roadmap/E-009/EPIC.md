@@ -34,7 +34,7 @@ verified-unchanged gaps in the pipeline machinery:
 ## Done when
 
 Each sub-item closes independently and is checked off here as it does;
-the epic itself closes when all four are done:
+the epic itself closes when both remaining items are done:
 
 1. **STAGE_CONFIGS/skill_map merge:** `grep -n "skill_map = {" workflow/run_phase1_research.py`
    returns zero matches — a single `STAGE_CONFIGS`-derived lookup drives
@@ -42,26 +42,37 @@ the epic itself closes when all four are done:
 2. **sample_split override:** a documented merge/narrowing mechanism exists
    and a test exercises overriding `baseline_v1.json`'s `sample_split` via
    validation config.
-3. **Protocol auto-run:** a test or documented run demonstrates the pipeline
-   invoking `run_tool_worker` end-to-end without a manual intermediate step,
-   or this sub-item is re-scoped once S3 below determines the true gap.
-4. **Auto-repair loop:** a test demonstrates a VIOLATION line in
-   `spec_validation_report.txt` triggering an automatic re-dispatch to the
-   agent, or this sub-item is re-scoped once S4 below determines the true gap.
+3. ~~Protocol auto-run~~ — **split out to E-030, 2026-08-21.** See Log.
+4. ~~Auto-repair loop~~ — **split out to E-030, 2026-08-21.** See Log.
 
 ## Stories
 
 - [ ] S1 — Merge `STAGE_CONFIGS` and `skill_map` into one source of truth.
 - [ ] S2 — Build the `sample_split` override/narrowing merge onto
       `baseline_v1.json`.
-- [ ] S3 — Establish exactly what's missing in `run_tool_worker` integration
-      (read the current call sites first — this dispatch didn't), then close
-      the gap or re-scope.
-- [ ] S4 — Establish exactly what's missing in the auto-repair loop (read
-      `spec_validation_report` consumers first), then build it or re-scope.
+- ~~S3~~ — moved to `E-030` S1/S2.
+- ~~S4~~ — moved to `E-030` S1/S3.
+
+## Relationship to other epics
+
+- **E-030** (halt recovery + a loop-health instrument) owns what were this
+  epic's S3/S4. A `research-system-evolution` review (2026-08-21) measured
+  that halt downtime — not auto-run/auto-repair in the abstract — is the
+  binding constraint on the research loop (127 h of downtime across a 310.5 h
+  campaign span, 84% of it plumbing, 67% still unfixed), which is a bigger and
+  more urgent scope than either S3 or S4 as originally written. Both stories'
+  own Done-when already admitted "or re-scope once the true gap is
+  determined" — this is that re-scope. This epic keeps only the two
+  mechanical refactors (S1, S2), which remain real and unstarted.
 
 ## Log
 
 - 2026-08-03 — `new`. Written up in E-001 S4 (dispatch W24), carrying 4 of
   `BACKLOG_DEFERRED.md`'s 5 items forward (1 dropped as stale — see Why).
   Not started.
+- 2026-08-21 — S3/S4 split out to **E-030**, on measurement from a
+  `research-system-evolution` review (operator-approved same day). Neither
+  story had been dispatched since filing; the split re-scopes them to their
+  measured priority rather than leaving them as an under-sized pair of items
+  inside a lower-urgency epic. Done-when and Stories updated to reflect the
+  two remaining items (S1, S2).
