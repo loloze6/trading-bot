@@ -1,0 +1,33 @@
+source files: 6   total trades: 4392
+  run_030/fee_isolation_pairs_20260720/legA_10bps/trade_diagnostics.json  n=1178
+  run_030/fee_isolation_pairs_20260720/legB_5bps/trade_diagnostics.json  n=1178
+  run_030/perp_recalibration_20260720/trade_diagnostics.json  n=1178
+  run_054/trade_diagnostics.json  n=117
+  run_057/trade_diagnostics.json  n=42
+  run_059/trade_diagnostics.json  n=699
+
+exit_reason distribution:
+  signal_flip     : 4069 (92.6%)
+  end_of_window   : 323 (7.4%)
+
+F7 -- does exit_reason separate outcomes? (if it did not at all, low
+      cardinality would still be tolerable; it does, for one category)
+  signal_flip    n= 4069 median_ret=+0.0677% mean=-0.0258% median_hold=3 bars
+  end_of_window  n=  323 median_ret=-0.2001% mean=+2.8200% median_hold=7 bars
+
+regime_at_entry: {'mean_reversion': 1950, 'trending': 1584, 'unknown': 858}
+direction: {'long': 2354, 'short': 2038}
+symbol: {'AVAXUSDT': 3534, 'ETHUSDT': 442, 'BTCUSDT': 416}
+holding_bars histogram (10 = 10+): {1: 1219, 2: 598, 3: 479, 4: 288, 5: 235, 6: 245, 7: 185, 8: 148, 9: 98, 10: 897}
+
+fields present on trade records:
+  cost_paid, direction, entry_efficiency, entry_time, exit_efficiency, exit_reason, exit_time, holding_bars, mae, mfe, net_portfolio_return_pct, post_exit_return_20bars, post_exit_return_5bars, profitable_net, realized_return, regime_at_entry, symbol, trade_id, window
+
+ABSENT and load-bearing (E-029 Done-when 1):
+  regime_at_exit
+  forecast_at_entry
+  forecast_at_exit
+  allocation_before
+  allocation_after
+  move_shape
+  entry_reason

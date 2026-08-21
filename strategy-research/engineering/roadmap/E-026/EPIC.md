@@ -88,3 +88,26 @@ sense. Recording it early would presume the answer.
   cross-sectional strategies, but `panel_backtester.py` already runs the
   19-pair universe with an engine-equivalence gate, so research is not
   blocked and the epic is a consolidation decision rather than a build.
+
+- 2026-08-21 — Sequencing note from a research-system-evolution review (no state
+  change). Breadth remains the right direction, and the universe is more ready
+  than this epic's Why implies: 19 Kraken symbols now carry engine-format 1h AND
+  1d caches (`local_data/kraken_<SYM>_{1h,1d}.csv`, daily set added by
+  `8cff3f24`, 2026-08-07), all ending at the seal boundary in
+  `config/campaign_data_policy.yaml:holdout_range`. 17 of the 19 cover the full
+  validation window; 6 cover the full training window. No recorded campaign run
+  ever used more than 4 symbols and the modal run used 2, so the same 12 monthly
+  windows would give ~204 window-symbol slots instead of 24.
+
+  **But sequence this AFTER E-027 and E-028.** Every one of the 5,094 position
+  closes in the recorded history happened at a forecast of exactly zero and none
+  happened while the strategy held a view (E-027 artifacts). Running the same
+  rules across 19 symbols before exits are attributable multiplies whatever is
+  producing those closes, and reports the result as evidence.
+
+  Second caution for whoever writes the pass rules: 19 correlated crypto pairs
+  are not 19 independent samples. If pooled trade counts are graded against the
+  existing floors as raw counts, the floors get cleared by correlation rather
+  than by edge. Whether pooled samples count raw or correlation-adjusted is a
+  research-integrity call for the operator, and it changes what every
+  pre-registered threshold means.
