@@ -1092,6 +1092,56 @@ def _flag_ambiguity(state: dict, reason: str) -> str | None:
             f"reliable evidence of what went wrong")
 
 
+def _repeat_quarantine(state: dict, reason: str) -> dict | None:
+    """E-030 S3 / taxonomy R4. Returns the PRECEDING halt_history entry when this
+    halt is the second occurrence in a row of the same reason code on the same run
+    AND the first one was auto-quarantined; None otherwise. A non-None return means
+    "do not quarantine again -- escalate".
+
+    R4 VERBATIM: *"Same reason code twice in a row on the same run => stop retrying,
+    escalate. Supported by both repeat pairs in the record (#4/#5 on run_053,
+    #13/#14 on run_059) and consistent with the existing local precedent -- the A11
+    SDK retry fires once and re-raises on a second occurrence."* R4 was written for
+    retry; S2b (retry) does not exist and stays unbuilt (no second evidenced
+    retry-safe signature -- R2). Quarantine is the auto-action that DOES exist, so
+    this is R4 applied to it, and the wording here says so rather than letting a
+    reader believe retry-vs-escalate was built.
+
+    THE EVIDENCE, on point: halts #13 and #14 are both `component_execution_error`
+    (quarantine-safe), both on run_059, back to back. #13 was a real engine bug
+    (`CandleBuilder._align()` tz round-trip) fixed by a human at the confirmed site;
+    #14 then needed a state-only human intervention -- no commit exists in its
+    window -- after which the run reached terminal in 2m17s. A policy that
+    quarantines the same reason a second time in a row is not recovering, it is
+    laundering a repeating fault into an outcome nobody looks at.
+
+    ADJACENCY, stated because "in a row" needs a definition and this one is tested:
+    only `halt_history[-1]` is consulted -- the IMMEDIATELY preceding halt on this
+    run. Any other halt in between (of any reason) breaks the chain, because the
+    intervening halt is itself evidence the run's situation changed. This function
+    runs BEFORE the current halt is appended, so `[-1]` is genuinely the previous
+    one.
+
+    THE `quarantine` KEY IS REQUIRED, not just the reason match. A previous
+    same-reason halt that ESCALATED means a human already looked at it and resumed;
+    that is a different situation from the loop having silently auto-actioned it,
+    and R4's target is the silent repeat. The key's presence is the only durable
+    on-disk record of "the loop, not a human, handled the last one" (S2a writes it
+    on the quarantine path and nowhere else).
+    """
+    history = state.get("halt_history") or []
+    if not history:
+        return None
+    previous = history[-1]
+    if not isinstance(previous, dict):
+        return None
+    if previous.get("reason") != reason:
+        return None
+    if "quarantine" not in previous:
+        return None
+    return previous
+
+
 _COMPONENT_NAME_RE = re.compile(r"\b([A-Z][A-Za-z0-9_]*Component)\b")
 
 
@@ -1414,6 +1464,218 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
 
 
 # ---------------------------------------------------------------------------
+# E-030 S3 — the loop-health instrument (campaign_record/loop_health.yaml)
+#
+# EPIC.md Done-when #2 asks for "halt count, downtime hours, downtime share of
+# span, cause breakdown, and which causes were auto-recovered vs. escalated",
+# emitted per campaign run / per --once step and CONSUMED BY run_campaign.py
+# itself, not only read by a human (the skill's F3 instrument-shape rule: "An
+# instrument only the operator reads leaves the loop as blind as before").
+#
+# SCOPE NOTE, because Done-when #2's literal words are "decide retry-vs-escalate":
+# there is nothing to decide between today. S2b (retry) does not exist and stays
+# unbuilt -- taxonomy R2 found exactly one evidenced retry-safe signature and it is
+# already handled at the stage level in _invoke_agent_with_yaml_retry (A11). The
+# auto-action that DOES exist is S2a's quarantine, so the decision wired up here is
+# quarantine-vs-escalate, via _repeat_quarantine (R4 extended from retry to
+# quarantine -- see that function). Do not read this module as having built
+# retry-vs-escalate.
+#
+# SHAPE: re-derived from primary records on every call, never accumulated. Same
+# posture as _regenerate_summary -- the file is a projection, so a corrupted or
+# hand-edited copy is repaired by the next step rather than compounding. The two
+# primary records are campaign_log.md (append-only, this module's own writer) and
+# each run's halt_history on pipeline_state.yaml (S1.5 Piece 1).
+# ---------------------------------------------------------------------------
+
+# Same shape as artifacts/measure_halt_cost.py's own parser, deliberately: that
+# script produced E-030's measured_halt_cost.txt, and a human cross-checking this
+# instrument against that artifact should not have to reconcile two parsers.
+_LOG_EVENT_RE = re.compile(r"^- (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})Z (.*)$")
+
+
+def _parse_campaign_log_events(path: Path) -> list:
+    """[(naive-UTC datetime, text)] for every real (non-[DRY RUN]) log event.
+
+    Dry-run lines are excluded for the same reason measure_halt_cost.py excludes
+    them: dry_run_verify() writes HALT-shaped lines with zero campaign meaning, and
+    counting them would inflate halt counts with rehearsals."""
+    if not path.exists():
+        return []
+    events = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        m = _LOG_EVENT_RE.match(line)
+        if not m or "[DRY RUN]" in line:
+            continue
+        try:
+            events.append((datetime.fromisoformat(m.group(1)), m.group(2)))
+        except ValueError:
+            continue
+    return events
+
+
+def _pair_halts_with_downtime(events: list) -> list:
+    """measure_halt_cost.py's pairing algorithm, re-implemented as a function
+    (that file is a flat script and is not importable).
+
+    THE ALGORITHM, verbatim in behavior: each HALT line is paired with the NEXT
+    non-[DRY RUN] log event, and the gap between them is that halt's downtime. It
+    measures latency-to-a-human-noticing, which is what S1 found most of the 127h
+    actually was ("12 of 14 halts were cleared with no production-code commit inside
+    the halt window"). The final halt has no successor event, so its downtime is
+    None -- reported as null, never as 0.0, which would flatter the total."""
+    halts = []
+    for i, (when, text) in enumerate(events):
+        if not text.startswith("HALT"):
+            continue
+        reason = re.sub(r"^HALT [—-] ", "", text).split(":")[0].split(".")[0].strip()[:32]
+        nxt = events[i + 1] if i + 1 < len(events) else None
+        halts.append({
+            "when": when,
+            "reason": reason,
+            "downtime_hours": ((nxt[0] - when).total_seconds() / 3600.0) if nxt else None,
+        })
+    return halts
+
+
+def _iter_halt_histories() -> list:
+    """[(run_id, halt_history list)] over every run on disk that has one."""
+    runs_dir = ROOT / "runs"
+    if not runs_dir.exists():
+        return []
+    out = []
+    for run_dir in sorted(runs_dir.iterdir()):
+        if not run_dir.is_dir():
+            continue
+        ps_path = run_dir / "pipeline_state.yaml"
+        if not ps_path.exists():
+            continue
+        try:
+            state = orch.load_yaml(ps_path) or {}
+        except Exception:
+            continue
+        history = state.get("halt_history")
+        if isinstance(history, list) and history:
+            out.append((run_dir.name, [h for h in history if isinstance(h, dict)]))
+    return out
+
+
+def _compute_loop_health() -> dict:
+    """Re-derives the whole loop-health picture from primary records. Pure read
+    plus one file write; never mutates campaign state."""
+    events = _parse_campaign_log_events(CAMPAIGN_LOG_PATH)
+    halts = _pair_halts_with_downtime(events)
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    span_hours = ((now - events[0][0]).total_seconds() / 3600.0) if events else None
+
+    known = sorted(h["downtime_hours"] for h in halts if h["downtime_hours"] is not None)
+    downtime_hours = sum(known)
+    median = known[len(known) // 2] if known else None
+    # null, not 0.0, when the span is unusable. A degenerate denominator reported as
+    # "0.0% of the span was halted" is the flattering direction, and this file is
+    # meant to be read when the loop is unhealthy.
+    share = (100.0 * downtime_hours / span_hours) if span_hours and span_hours > 0 else None
+
+    # TWO buckets, not three. A retry-safe halt is NOT observable from this layer:
+    # the one evidenced retry-safe signature (the claude_agent_sdk==0.2.82
+    # `error result: success` misclassification, taxonomy #10/#12) is resolved
+    # entirely inside run_phase1_research._invoke_agent_with_yaml_retry BEFORE
+    # _hard_pause_reason is ever consulted, so it never reaches campaign_log.md as a
+    # HALT line at all. A `retry_safe` bucket here would therefore be permanently
+    # empty and would read as "retry never helps", which is the opposite of true.
+    # DO NOT ADD ONE without first moving the measurement to the stage layer.
+    #
+    # `quarantine_safe` here means "a halt whose reason S2a's evidenced set would
+    # permit quarantining" -- it is the size of the prize, not a record of action
+    # taken. With the flag off (the default) every one of these still escalated;
+    # `outcomes` below is what records what actually happened.
+    breakdown = {"quarantine_safe": {}, "escalate": {}}
+    for h in halts:
+        bucket = ("quarantine_safe" if h["reason"] in _QUARANTINE_SAFE_REASONS
+                  else "escalate")
+        cell = breakdown[bucket].setdefault(h["reason"], {"count": 0, "downtime_hours": 0.0})
+        cell["count"] += 1
+        if h["downtime_hours"] is not None:
+            cell["downtime_hours"] = round(cell["downtime_hours"] + h["downtime_hours"], 3)
+
+    # DIFFERENT DENOMINATOR FROM halts.total, on purpose, and disclosed as such.
+    # campaign_log.md carries a HALT line only for halts that ESCALATED -- a
+    # quarantined halt emits a QUARANTINE line and the campaign keeps going. So
+    # auto_recovered can never appear in halts.total. halt_history is the record
+    # that spans both, which is why the outcome split is derived from it.
+    histories = _iter_halt_histories()
+    auto_recovered = 0
+    escalated = 0
+    repeat_pairs = 0
+    for _run_id, history in histories:
+        for i, record in enumerate(history):
+            if "quarantine" in record:
+                auto_recovered += 1
+            else:
+                escalated += 1
+            # The R4 population, computed with the SAME predicate the decision uses
+            # (_repeat_quarantine), so the instrument and the decision cannot drift.
+            if _repeat_quarantine({"halt_history": history[:i]}, record.get("reason")):
+                repeat_pairs += 1
+
+    return {
+        "computed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source": {
+            "campaign_log": str(CAMPAIGN_LOG_PATH.name),
+            "halt_history_runs": len(histories),
+            "note": ("Re-derived from primary records on every process_once() step; "
+                     "never accumulated. Safe to delete -- the next step rewrites it."),
+        },
+        "span_hours": round(span_hours, 2) if span_hours is not None else None,
+        "halts": {
+            "total": len(halts),
+            "downtime_hours": round(downtime_hours, 2),
+            "downtime_share_pct": round(share, 1) if share is not None else None,
+            "median_downtime_hours": round(median, 2) if median is not None else None,
+            "unpaired": sum(1 for h in halts if h["downtime_hours"] is None),
+            "denominator_note": ("campaign_log.md HALT lines only. A quarantined halt "
+                                 "writes a QUARANTINE line, not a HALT line, so it is "
+                                 "NOT counted here -- see outcomes."),
+        },
+        "cause_breakdown": breakdown,
+        "outcomes": {
+            "auto_recovered": auto_recovered,
+            "escalated": escalated,
+            "halt_history_records": auto_recovered + escalated,
+            "repeat_quarantine_escalations": repeat_pairs,
+            "denominator_note": ("halt_history across every run on disk, which covers "
+                                 "both quarantined and escalated halts. Does not equal "
+                                 "halts.total."),
+        },
+        "policy": {
+            "quarantine_enabled": _quarantine_enabled(),
+            "quarantine_safe_reasons": sorted(_QUARANTINE_SAFE_REASONS),
+            "retry_enabled": False,
+            "retry_note": ("S2b is unbuilt: taxonomy R2 found one evidenced retry-safe "
+                           "signature and it is already handled at the stage level in "
+                           "_invoke_agent_with_yaml_retry (A11). There is no "
+                           "retry-vs-escalate decision to make at this layer."),
+        },
+    }
+
+
+def _write_loop_health() -> dict:
+    """Computes and writes campaign_record/loop_health.yaml. Returns the block.
+
+    ROOT is resolved at CALL time rather than baked into a module constant, matching
+    _regenerate_summary's own `kb_path` and _quarantine_enabled: the test sandbox
+    monkeypatches ROOT, and a module constant would send every existing
+    process_once() test's write into the real repository."""
+    path = ROOT / "campaign_record" / "loop_health.yaml"
+    block = _compute_loop_health()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump(block, sort_keys=False, allow_unicode=True),
+                    encoding="utf-8")
+    return block
+
+
+# ---------------------------------------------------------------------------
 # Main queue-processing loop
 # ---------------------------------------------------------------------------
 
@@ -1531,6 +1793,12 @@ def process_once() -> bool:
             _append_halt_history(parent_run_dir, parent_state, reason, detail)
             _log(f"HALT — {reason}: {detail}. Campaign stopped on {entry['id']} / {parent_run_id}. "
                  f"See RUNBOOK.md 'Resume after a pause'.")
+            # E-030 S3. Same BRANCHES as _regenerate_summary, but placed at the END
+            # of each one rather than beside it: this instrument reads campaign_log.md
+            # and halt_history, both of which are written by the two lines above. Run
+            # it where _regenerate_summary sits and every emitted block would be
+            # exactly one halt stale, forever.
+            _write_loop_health()
             return False
 
         brief_path = ROOT / entry["refinement_brief_path"]
@@ -1590,6 +1858,7 @@ def process_once() -> bool:
         # no reordering of the escalate path below (EPIC.md Done-when #3).
         if reason in _QUARANTINE_SAFE_REASONS and _quarantine_enabled():
             ambiguity = _flag_ambiguity(state, reason)
+            repeat = _repeat_quarantine(state, reason)
             if ambiguity:
                 # R11: escalate as today, but say out loud that the check fired.
                 # Silent fallback would make an ambiguous halt indistinguishable
@@ -1597,6 +1866,26 @@ def process_once() -> bool:
                 # let halt #8 be misreported for 0.91h in the first place.
                 _log(f"AMBIGUITY — quarantine declined for '{reason}' on "
                      f"{entry['id']} / {run_id}: {ambiguity}. Escalating to a human.")
+            elif repeat is not None:
+                # E-030 S3 / taxonomy R4, extended from retry to quarantine (the
+                # auto-action that actually exists -- see _repeat_quarantine). This
+                # is THE decision the loop-health instrument exists to feed: the
+                # loop, not a human, reads its own halt record and declines to take
+                # the same automatic action twice in a row on the same run.
+                #
+                # ORDER MATTERS: strictly AFTER R11's ambiguity check. An ambiguous
+                # halt already escalates for a prior and different reason, and if
+                # this check ran first, a NON-repeating ambiguous halt would take
+                # this branch's "clean" path and lose R11's explanation. Nor may
+                # this branch override R11 -- an ambiguous halt is never quarantined
+                # regardless of what the repeat check says.
+                _log(f"REPEAT-ESCALATE — quarantine declined for '{reason}' on "
+                     f"{entry['id']} / {run_id}: the immediately preceding halt on "
+                     f"this run ({repeat.get('timestamp')}) carried the SAME reason "
+                     f"and was auto-quarantined. Taxonomy R4 (same reason code twice "
+                     f"in a row on the same run => stop auto-actioning, escalate); "
+                     f"the evidenced pair is halts #13/#14, both "
+                     f"component_execution_error on run_059. Escalating to a human.")
             else:
                 requeueable = reason in _REQUEUEABLE_QUARANTINE_REASONS
                 if requeueable:
@@ -1640,6 +1929,7 @@ def process_once() -> bool:
                      f"status={entry['status']} outcome={entry.get('outcome') or '-'} "
                      f"(trial accounting: {disposition}). Campaign continues; see this "
                      f"run's pipeline_state.yaml halt_history for the full record.")
+                _write_loop_health()  # E-030 S3 — see the note at the first call site
                 return True
         entry["status"] = f"paused:{reason}"
         _save_queue(queue)
@@ -1651,6 +1941,7 @@ def process_once() -> bool:
         detail_str = f": {detail}" if detail else ""
         _log(f"HALT — {reason}{detail_str}. Campaign stopped on {entry['id']} / {run_id}. "
              f"See RUNBOOK.md 'Resume after a pause'.")
+        _write_loop_health()  # E-030 S3 — see the note at the first call site
         return False
 
     # A1 (K4 kernel): read the run's own PERSISTED continuation intent
@@ -1674,6 +1965,7 @@ def process_once() -> bool:
     _save_queue(queue)
     _regenerate_summary(queue)
     _log(f"DONE {entry['id']} ({run_id}) -> {entry['outcome']}")
+    _write_loop_health()  # E-030 S3 — see the note at the first call site
     return True
 
 
