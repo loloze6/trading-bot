@@ -209,8 +209,28 @@ Relationship to other epics.
           bare retry is not a retry), stop after the same reason code twice on
           the same run, and never stack a campaign-level retry on the two that
           `_invoke_agent_with_yaml_retry` already nests.
-- [ ] S3 — Implement the loop-health instrument (block emitted per run/step,
-      consumed by the retry decision) and wire it into `process_once()`.
+- [x] S3 — **Done 2026-08-23** (`5053148e`). "Consumed by the retry decision"
+      (this story's own original wording) is not literally buildable — S2b
+      stays unbuilt, nothing to decide between. Built instead:
+      `campaign_record/loop_health.yaml`, re-derived from `campaign_log.md` +
+      every run's `halt_history` on each `process_once()` step (halt count,
+      downtime hours/share/median, a two-bucket `quarantine_safe`/`escalate`
+      cause breakdown — a `retry_safe` bucket isn't observable at this layer,
+      the one evidenced case is resolved inside `_invoke_agent_with_yaml_retry`
+      before a halt is ever logged — and auto-recovered vs. escalated counts).
+      F3's actual bar ("the loop can consume it, not only a human") is met by
+      wiring it into the one real decision available: R4 ("same reason code
+      twice in a row ⇒ stop auto-actioning, escalate," evidenced by halts
+      #13/#14, both `component_execution_error` on `run_059`) extended from
+      retry to quarantine — a run that hits the same quarantine-safe reason
+      twice in a row now escalates on the second occurrence instead of being
+      auto-quarantined again. Gate reused `quarantine_enabled` rather than a
+      third flag (when quarantine is off, nothing can ever carry a repeat
+      record, so a separate toggle would be dead config on inspection).
+      23 new tests, including one asserting the block's pairing logic
+      reproduces `measured_halt_cost.txt` verbatim from the real
+      `campaign_log.md`. Suites green: strategy-research 866 passed,
+      trading-bot 383 passed / 2 skipped.
 - [ ] S4 — Bit-identity test + the classification's regression fixture (one
       historical halt of each class, replayed against the policy).
 
