@@ -276,6 +276,15 @@ on a total that undercounts by an order of magnitude.
    (epics/backlog). This is MEASURED evidence about whether the meta-level is
    actually improving the machine -- without it, "logic evolution" has no
    feedback and cannot learn.
+
+   **Also count what you have filed against what has been built.** If unbuilt
+   proposals from previous invocations outnumber this project's own stated
+   build-capacity limit, the binding constraint on the meta-level is
+   throughput, not insight, and this invocation's most valuable output is
+   probably "build one of these," not a new candidate. Say the ratio out loud.
+   **[LOCAL]** the capacity limit here is the roadmap's WIP limit (amendment
+   11, EPICS.md: at most 2 epics `in-progress` at once) -- use whatever the
+   equivalent is elsewhere. (See A16.)
 1. **Review the existing board before deriving anything new.** Read the
    project's epic/backlog tracker in full -- every open item, not a shortlist.
    For each: is it already done in substance (close it)? Is its stated blocker
@@ -427,6 +436,18 @@ question*, not of the source itself. The fix is procedural, not attentional:
 F7's Source coverage check and its denominator rule run on every count, so you
 never have to notice the source was partial in the moment. (See F7 for the
 measured case.)
+
+**A16 -- Proposal inflation.** Filing capability proposals faster than the
+project can build them, so the backlog grows while the machine does not
+change. Distinct from A6: A6 is one candidate sneaking in despite failing F2;
+this is the AGGREGATE across invocations outrunning build capacity even when
+every individual candidate was well-justified. The tell is a success signal
+that cannot fire because nothing was dispatched -- which also means Step 0 has
+no feedback to read, so the meta-level silently stops learning. *Happened
+here: four invocations, four epics (E-027..E-030), zero built, against a WIP
+limit of two.* Default to recommending an existing epic whenever unbuilt
+proposals exceed capacity; require a positive reason to add to the board
+instead of a positive reason not to.
 
 ## Behaviours to keep
 

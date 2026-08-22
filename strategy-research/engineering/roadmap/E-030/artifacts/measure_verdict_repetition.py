@@ -19,22 +19,28 @@ BUCKETS = [
     ("sample",  r"insufficient sample|sample size|sparsity|min-?n"),
 ]
 rows = []
+fallback_n = 0
 for d in sorted((ROOT/"runs").iterdir()):
     if not (d.is_dir() and d.name.startswith("run_")): continue
     v = d/"artifacts"/"verdict_interpretation.yaml"
     if not v.exists(): continue
     y = yaml.safe_load(v.read_text(encoding="utf-8", errors="replace")) or {}
     pf = y.get("primary_failure_mode")
+    via_fallback = pf is None
     if pf is None:
         rc = y.get("root_cause") or {}
         pf = rc.get("mechanism_failure") if isinstance(rc, dict) else None
     if pf is None: continue
+    if via_fallback: fallback_n += 1
     full = " ".join(str(pf).split())
     first = re.split(r"(?<=[.;:])\s", full)[0]  # STRICT: first sentence only
     tags = [name for name, pat in BUCKETS if re.search(pat, first, re.I)] or ["other"]
     rows.append((d.name, tags, first[:60]))
 
-print(f"graded runs carrying primary_failure_mode: {len(rows)}\n")
+print(f"graded runs with a classifiable failure mode: {len(rows)} "
+      f"({len(rows) - fallback_n} carry primary_failure_mode; "
+      f"{fallback_n} via root_cause.mechanism_failure fallback)")
+print()
 print("run       buckets")
 for name, tags, txt in rows:
     print(f"{name:10s} {','.join(tags):22s} {txt}")

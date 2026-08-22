@@ -48,7 +48,8 @@ workflow had completed "4 runs in its entire life" — wrong, caught by the
 operator ("no the research workflow has run 50+ runs.. look locally"), because
 `campaign_log.md` only covers the `run_campaign.py` queue-driver era
 (run_053 onward); runs 001–052 were driven directly and never wrote to that
-log. Re-measured from each run's own `pipeline_state.yaml` (56 runs) instead:
+log. Re-measured from each run's own `pipeline_state.yaml` (58 state files
+across 59 run dirs; 46 with parseable audit timestamps) instead:
 **36 runs reached a terminal `completed_*` state.**
 
 Corrected throughput, by era:
@@ -151,3 +152,23 @@ Relationship to other epics.
   as the primary record instead. The corrected numbers strengthened rather
   than weakened the case for this epic — see "Measured: throughput collapse"
   above.
+
+- 2026-08-22 — **S1 approved by the operator** (characterization only, no
+  code). State stays `planned` until S1 is actually dispatched — approval
+  recorded here so the next session can dispatch without another round-trip.
+  Same review round: two denominator corrections from a follow-up invocation's
+  reconciliation, both verified by execution before landing — the prose above
+  said "(56 runs)" where the true figures are 58 state files / 46 with
+  timestamps (the 36-completions figure was and is correct), and
+  `measure_verdict_repetition.py`'s header label now discloses its
+  `root_cause.mechanism_failure` fallback instead of claiming all counted runs
+  carry `primary_failure_mode` (36 carry the field; 1 counted via the
+  fallback). The companion recommendation to flip P4_ts_trend to `ready` was
+  **held by the operator's reviewer**: the KB reactivation clause for the
+  parent still has three unmet conditions — the trade-floor ruling
+  (`ts_trend_daily_v1.json:132` = 1 vs `campaign_config.yaml:120` = 5, both
+  verified live at HEAD this date), a machine-evaluable pass_rule for the
+  parent (the existing rule covers only the terminally-closed ER variant and
+  resolves `legacy_not_evaluable`), and the daily-panel correlation-adjusted
+  breadth count. Only the data condition (a) is dead. Flipping `ready` with
+  (c) unmet would arm the queue to produce another ungated measurement.
