@@ -14,6 +14,7 @@ process CWD, so pointing it at the real repo would make the tests depend on the
 working state of the branch they are run from.
 """
 
+import os
 import re
 import subprocess
 import sys
@@ -29,11 +30,29 @@ from reporting.run_artifact import _get_git_sha             # noqa: E402
 
 SHA40 = re.compile(r"[0-9a-f]{40}")
 
+# E-030 S2a incident (2026-08-22): when this suite runs INSIDE the repo's own
+# pre-commit hook, the hook's `git commit` has already exported GIT_DIR/
+# GIT_INDEX_FILE/GIT_WORK_TREE for its own subprocess's use. Every `git` call
+# below points at a throwaway tmp_path repo via `-C`, but an explicit GIT_DIR
+# in the environment overrides `-C`'s discovery -- so a leaked GIT_DIR silently
+# redirects `init`/`config`/`add`/`commit` at the REAL repo instead of the
+# intended tmp one. Measured live: five nested `git init` calls against a
+# leaked GIT_DIR flipped the real repo's own `.git/config` to `core.bare = true`
+# (git's bare-repo auto-detection firing on a GIT_DIR/CWD mismatch), blocking
+# all git operations on the real checkout until repaired by hand. Strip the
+# three variables from every subprocess call this file makes; `-C`/`cwd` then
+# work as documented instead of being silently overridden.
+_GIT_ENV_LEAK_KEYS = ("GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE")
+
+
+def _clean_git_env() -> dict:
+    return {k: v for k, v in os.environ.items() if k not in _GIT_ENV_LEAK_KEYS}
+
 
 def _git(repo, *args):
     return subprocess.run(
         ["git", "-C", str(repo), *args],
-        check=True, capture_output=True, text=True,
+        check=True, capture_output=True, text=True, env=_clean_git_env(),
     ).stdout
 
 
@@ -43,7 +62,17 @@ def repo(tmp_path, monkeypatch):
 
     Carries a tracked sub/ directory so a probe can enter it: production runs
     from trading-bot/, a tracked SUBDIRECTORY of the repo, never from the root.
+
+    `_get_git_sha()` (the function under test) makes its OWN bare `git`
+    subprocess calls with no `-C`/`env=` override -- it relies entirely on
+    inherited environment + `monkeypatch.chdir`'s CWD. `_git()`'s `env=`
+    argument above protects this fixture's own setup calls, but not those --
+    so the leaked vars are also removed from THIS PROCESS's environment
+    (monkeypatch auto-restores them at teardown), which inherited subprocess
+    calls see too.
     """
+    for _key in _GIT_ENV_LEAK_KEYS:
+        monkeypatch.delenv(_key, raising=False)
     path = tmp_path / "repo"
     (path / "sub").mkdir(parents=True)
     _git(path, "init", "--quiet")
@@ -103,12 +132,15 @@ def test_an_untracked_file_alone_does_not_mark_the_tree_dirty(repo):
 
 
 def test_outside_a_repo_the_value_degrades_to_unknown(tmp_path, monkeypatch):
+    for _key in _GIT_ENV_LEAK_KEYS:
+        monkeypatch.delenv(_key, raising=False)
     plain = tmp_path / "not-a-repo"
     plain.mkdir()
     # Precondition: git must genuinely fail here. If a parent directory ever
     # carried a .git, this test would otherwise pass for the wrong reason.
     probe = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=str(plain), capture_output=True, text=True
+        ["git", "rev-parse", "HEAD"], cwd=str(plain), capture_output=True, text=True,
+        env=_clean_git_env(),
     )
     assert probe.returncode != 0, probe.stdout
 
