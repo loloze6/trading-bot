@@ -217,6 +217,26 @@ entry `paused:<reason>` in `config/campaign_queue.yaml`, writes a `HALT` line to
 (background mode: the `nohup`'d process ends; `kill -0 "$(cat campaign.pid)"`
 will report `STOPPED`). It will not pick up `XS_momentum` or anything else instead.
 
+**2026-08-22 (E-030 S2a) — that "exits the process" is now conditional, though
+nothing changes today.** `config/campaign_config.yaml`'s
+`orchestrator.halt_policy.quarantine_enabled` ships **`false`**, and while it is
+false every reason in the table below behaves exactly as this section describes —
+`paused:<reason>`, a `HALT` line, and the process exits. Proven byte-identical to
+the pre-S2a code, so this whole section stays correct as written.
+
+If an operator flips that flag to `true`, four reasons — and only these four —
+stop halting the campaign and let the queue advance instead: `no_signal_artifact`
+and `component_execution_error` (marked `status: done`,
+`outcome: quarantined_engineering_failure`), and `component_gap` /
+`new_component_escalation` (marked `status: blocked_on_component:<name>`, which
+`_select_entry` skips, so the hypothesis survives for whoever writes the
+component). Those runs log a `QUARANTINE` line instead of a `HALT` line and never
+appear as a `paused:` entry, so **section 4's `--resume` will not find them** —
+that is intended, not a bug. The full record of each one, including the
+untruncated failure text, is on that run's own `pipeline_state.yaml` under
+`halt_history[-1].quarantine`. Everything else in the table below still halts and
+still escalates to you, `unhandled_exception` included.
+
 **2026-07-10 changelog — wishlist triggers are now mechanically evaluated, not
 human-reviewed prose.** Every `config/detector_wishlist.yaml` and
 `feed_wishlist.yaml` entry's `trigger_condition` is now a structured predicate
