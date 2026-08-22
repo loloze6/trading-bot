@@ -109,6 +109,27 @@ orchestrator:
   distinct_failed_families_trigger: 2   # campaign review triggered when this many distinct families fail
   below_floor_pct_threshold: 50.0       # switch to expectancy mode when > this % of windows are sparse
                                          # (same value as verdict-interpreter; must stay in sync)
+  halt_policy:
+    quarantine_enabled: false
+      # E-030 S2a. OFF BY DEFAULT and read at runtime by run_campaign._quarantine_enabled()
+      # (a second explicit exception to this file's "declared parity only" rule, alongside
+      # token_budget_per_run_weighted_units above — it is an operational knob, not an
+      # architectural constant). While false, EVERY halt behaves exactly as it did before
+      # E-030 S2a landed: `paused:<reason>` on the queue entry, the HALT line in
+      # campaign_log.md, the halt_history append, and the campaign process exits. Proven by
+      # tests/test_halt_quarantine_policy.py's flag-off/flag-on byte-comparison
+      # (EPIC.md Done-when #3).
+      #
+      # While true, and ONLY for the four reasons the S1 taxonomy classified as
+      # quarantine-safe on evidence (no_signal_artifact, component_execution_error,
+      # component_gap, new_component_escalation), the campaign marks the entry and
+      # CONTINUES instead of halting. Everything else — including unhandled_exception,
+      # which covered 6 of the 14 measured halts and at least four unrelated root causes
+      # (taxonomy R2) — still escalates to a human exactly as today. The escalate default
+      # is the point: quarantine is the narrow, evidenced exception.
+      #
+      # NOT a retry switch. S2a deliberately ships the quarantine half only; see
+      # E-030/EPIC.md S2 and the taxonomy's R2.
 
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)

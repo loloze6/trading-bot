@@ -120,6 +120,21 @@ _NON_VERDICT_OUTCOMES = frozenset({
     "campaign_review",
     "completed_reframed", "completed_escalated", "completed_refined",
     "done", "ready", "pending", "superseded", "not_launched",
+    # E-030 S2a. Registered here DELIBERATELY, as the same kind of act the
+    # `outcome_is_verdict_bearing` docstring describes: an unrecognised outcome
+    # defaults to verdict-bearing, so without this line _save_queue would refuse
+    # every quarantine write with UngatedVerdictError -- turning a quarantine into
+    # a crash, which is strictly worse than the halt it replaces.
+    #
+    # It belongs in THIS set, next to `invalidated_artifact`, for the same reason
+    # that one does: it records that the RUN failed for engineering reasons and
+    # that NO scientific claim is being made. That is exactly what the S1 taxonomy's
+    # R8 requires of a quarantine -- "quarantine must never write a scientific
+    # outcome" -- and it is why quarantine writes this value rather than
+    # `completed_rejected`, which IS a claim and is deliberately absent from this
+    # set. A quarantined entry therefore needs no pass_rule_evaluation_ref, and
+    # honest_verdict_count() correctly does not count it.
+    "quarantined_engineering_failure",
 })
 
 # An entry may honestly declare that it holds no gated verdict. This is not a

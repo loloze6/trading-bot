@@ -156,6 +156,59 @@ Relationship to other epics.
           attempt that would have proven it was silently overwritten.
 - [ ] S2 — Implement the retry/quarantine policy in `run_campaign.py`,
       off-by-default disableable for a bit-identity test.
+    - [x] **S2a — quarantine + escalate, done 2026-08-22.** The QUARANTINE half
+          only, and the narrowing is deliberate rather than partial delivery.
+          S1's R2: *"The one proven-retryable signature is an exact string match,
+          and it is already implemented that way"* — the single evidenced
+          retry-safe case (the `claude_agent_sdk==0.2.82` result-misclassification
+          message) is already retried at the STAGE level in
+          `_invoke_agent_with_yaml_retry` (ledger A11, `9bf2a4cf`). There is no
+          second evidenced campaign-level retry-safe signature, so building retry
+          machinery now would mean inventing a heuristic without evidence — the
+          reason-code-keyed guessing R2 exists to forbid. Nothing was stubbed
+          either. **Do not read this as "S2 done": S2b (retry) is unbuilt and
+          stays unbuilt until a dispatch finds a genuine new retry-safe
+          signature.**
+          Quarantine-safe set, from S1's per-halt evidence and nothing else:
+          `no_signal_artifact`, `component_execution_error` (both terminal:
+          `status: done`, `outcome: quarantined_engineering_failure`), plus
+          `component_gap` and `new_component_escalation` (re-queueable:
+          `status: blocked_on_component:<name>`, no outcome — R9). Everything
+          else escalates unchanged, `unhandled_exception` included (R2).
+          Gated off by `orchestrator.halt_policy.quarantine_enabled: false`;
+          flag-off proven byte-identical against this epic's own base commit
+          `842a2788` by dumping every artifact the halt path touches (queue
+          entry, `campaign_log.md`, `campaign_summary.md`, `halt_history`,
+          `campaign_state.yaml`, `process_once`'s return) across all four
+          quarantine-safe reasons plus `unhandled_exception` and diffing:
+          12,343 bytes, zero differences outside wall-clock timestamps.
+          R6's record extends `halt_history` (the queue's closed schema,
+          `record_schema.QUEUE_ENTRY_SCHEMA`, structurally cannot hold it).
+          R7 calls the existing `_mark_trial_invalidated` and adds no new
+          trial-recording function. R11 escalates on flag ambiguity and logs it.
+          Suites green: strategy-research 840 passed / 3 skipped (baseline at
+          `842a2788` in the same worktree: 816 / 3, so +24 = exactly the new
+          tests, zero regressions); trading-bot 381 passed / 4 skipped /
+          26 deselected, untouched by this story.
+          **One premise correction found while implementing** — see S2a's own
+          note in `_apply_trial_accounting`: `new_component_escalation` does NOT
+          fire before any backtest. `_route_escalate` is reachable only from
+          `determine_post_verdict_route` / `determine_post_campaign_review_route`,
+          both of which require `verdict_interpretation.yaml` and therefore a
+          completed `protocol_execution`. A trial row generally DOES exist, and
+          it must be left alone: it is a real measurement whose hypothesis then
+          routed to "the engine needs a new piece" — a research routing decision,
+          not an engineering failure of the measurement. Invalidating it would
+          shrink N in the flattering direction. `no_data_touched` on the
+          quarantine record is therefore measured per-run, never inferred from
+          the reason code.
+    - [ ] **S2b — retry.** Blocked on evidence, not on effort. Needs a genuine,
+          reproducible retry-safe signature that is not already handled at the
+          stage level. R3/R4/R5 are the standing discipline for whenever one
+          appears: clear the previous attempt's flags (halt #5 is the proof a
+          bare retry is not a retry), stop after the same reason code twice on
+          the same run, and never stack a campaign-level retry on the two that
+          `_invoke_agent_with_yaml_retry` already nests.
 - [ ] S3 — Implement the loop-health instrument (block emitted per run/step,
       consumed by the retry decision) and wire it into `process_once()`.
 - [ ] S4 — Bit-identity test + the classification's regression fixture (one

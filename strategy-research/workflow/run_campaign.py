@@ -904,7 +904,8 @@ def _hard_pause_reason(run_dir: Path, state: dict):
     return None
 
 
-def _append_halt_history(run_dir: Path, state: dict, reason: str, detail: str = "") -> None:
+def _append_halt_history(run_dir: Path, state: dict, reason: str, detail: str = "",
+                         quarantine: dict | None = None) -> None:
     """E-030 S1 durable-halt-record fix. `pipeline_state.yaml`'s `last_error` is
     written in full at halt time (run_loop's except-block, `last_error=str(e)`,
     untruncated) but RUNBOOK.md section 4's own documented resume procedure has the
@@ -922,9 +923,21 @@ def _append_halt_history(run_dir: Path, state: dict, reason: str, detail: str = 
     so the append captures what the reset would otherwise destroy. Reads
     `state["last_error"]` directly (untruncated), not the truncated `detail` the
     caller may also be about to log to campaign_log.md.
+
+    E-030 S2a: `quarantine` carries the R6 quarantine record when a halt was
+    quarantined instead of escalated. It rides on THIS entry rather than on the
+    queue entry or in a new artifact for two structural reasons: (a) R6's minimum
+    fields -- reason, untruncated failure text, `pending_stage` at halt, the `flags`
+    dict verbatim -- are already exactly what this snapshot captures, so a separate
+    record would duplicate four of six fields and could drift from them; (b)
+    `config/campaign_queue.yaml` entries are governed by a CLOSED schema
+    (`tools/record_schema.py`'s QUEUE_ENTRY_SCHEMA, which permits neither an unknown
+    field nor a nested mapping inside a permitted one), so the record structurally
+    cannot live there. Additive, not invasive. `None` for an escalated halt, which
+    is every halt while `quarantine_enabled` is false.
     """
     history = list(state.get("halt_history") or [])
-    history.append({
+    record = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "reason": reason,
         "detail": detail,
@@ -933,8 +946,243 @@ def _append_halt_history(run_dir: Path, state: dict, reason: str, detail: str = 
         "flags": dict(state.get("flags") or {}),
         "completed_stages": list(state.get("completed_stages") or []),
         "counters": dict(state.get("counters") or {}),
-    })
+    }
+    if quarantine is not None:
+        record["quarantine"] = quarantine
+    history.append(record)
     orch.update_state(path=run_dir, halt_history=history)
+
+
+# ---------------------------------------------------------------------------
+# E-030 S2a — quarantine + escalate halt policy
+#
+# SCOPE, STATED UP FRONT BECAUSE THE EPIC'S OWN DONE-WHEN IS WIDER THAN THIS:
+# EPIC.md Done-when #1 describes a retry mechanism AND a quarantine mechanism.
+# This is the quarantine half only. The taxonomy's R2 is why: "The one proven-
+# retryable signature is an exact string match, and it is already implemented that
+# way" -- the single evidenced retry-safe case (the claude_agent_sdk==0.2.82
+# result-misclassification message) is already retried at the STAGE level inside
+# run_phase1_research._invoke_agent_with_yaml_retry (ledger A11, commit 9bf2a4cf).
+# There is no second evidenced campaign-level retry-safe signature to wire up, and
+# inventing a heuristic for one now would be exactly the reason-code-keyed guessing
+# R2 exists to forbid. So no retry machinery is built here and none is stubbed.
+#
+# The default is ESCALATE. Quarantine is the narrow exception, and its membership
+# comes from the S1 taxonomy's per-halt evidence, not from judgment applied here.
+# ---------------------------------------------------------------------------
+
+# Quarantine-safe, per E-030/artifacts/s1_halt_taxonomy.md's per-halt classification:
+#   no_signal_artifact          -- halts #6 (run_054). F5c: a component never fired
+#                                  or errored on every bar. The taxonomy states it
+#                                  plainly: "an engineering fact, explicitly not a
+#                                  scientific result."
+#   component_execution_error   -- halts #8 (misreported), #9, #13. A real engine
+#                                  bug; no retry can fix it and the queue has no
+#                                  reason to stop.
+#   component_gap               -- halt #2 (run_053). Re-queueable, not terminal.
+#   new_component_escalation    -- no occurrence among the 14 measured halts; paired
+#                                  with component_gap by R9 because it is the same
+#                                  situation reached from a different stage (the
+#                                  engine lacks a piece), and its queue treatment is
+#                                  identical.
+# EVERYTHING else escalates, including unhandled_exception (R2: 6 of 14 halts, at
+# least four unrelated root causes) and every reason in R1's integrity list.
+_QUARANTINE_SAFE_REASONS = frozenset({
+    "no_signal_artifact",
+    "component_execution_error",
+    "component_gap",
+    "new_component_escalation",
+})
+
+# R9: these two quarantine as RE-QUEUEABLE -- `blocked_on_component:<name>` on the
+# queue entry's `status`, never `done`. The hypothesis is not defective; the engine
+# is simply missing a piece, so the run survives for whoever writes that piece.
+# `_select_entry` already skips every `blocked_on_*` entry ("`blocked_on_*` / `done`
+# / `paused:*` entries are never auto-selected" -- its own docstring, unchanged by
+# this story), and `blocked_on_.+` is already an accepted QUEUE_STATUS shape in
+# tools/record_schema.py. Nothing in the selection path needs to change.
+_REQUEUEABLE_QUARANTINE_REASONS = frozenset({"component_gap", "new_component_escalation"})
+
+# R8/R6: the one outcome value a quarantine may write. Registered as non-verdict-
+# bearing in tools/verdict_criteria_evaluator._NON_VERDICT_OUTCOMES (see that entry's
+# comment) so _save_queue's provenance gate admits it without a
+# pass_rule_evaluation_ref -- because it asserts nothing about the hypothesis.
+# Deliberately NOT `completed_rejected`, which is a scientific claim.
+_QUARANTINE_OUTCOME = "quarantined_engineering_failure"
+
+# R11's cross-check table. Mirrors _classify_human_pause's sticky-flag branches in
+# ITS OWN ORDER, mapping each flag (and the two state-key counterparts that function
+# reads alongside their flags) to the reason it produces. Duplicating that order is a
+# rot risk, so test_halt_quarantine_policy.py drives _classify_human_pause with each
+# flag in isolation and asserts the mapping still holds -- a static table checked by
+# execution, rather than a second hand-maintained list nobody verifies.
+_PAUSE_FLAG_TO_REASON = (
+    ("research_only_unverified", "research_only_unverified"),
+    ("no_signal_artifact_flagged", "no_signal_artifact"),
+    ("conformance_violation", "conformance_gate_failure"),
+    ("regime_misattribution_flagged", "regime_misattribution"),
+    ("component_execution_error_flagged", "component_execution_error"),
+    ("kb_reactivation_violation", "kb_reactivation_violation"),
+    ("pass_rule_evaluation_disagreement", "pass_rule_evaluation_disagreement"),
+    # _hard_pause_reason reads this one BEFORE _classify_human_pause is ever called
+    # (while status == "failed"); it is must-escalate in its own right, so its
+    # presence alongside anything else is unambiguously a reason not to quarantine.
+    ("stale_escalation_unclaimed", "stale_escalation_unclaimed"),
+)
+_PAUSE_STATE_KEY_TO_REASON = (
+    ("conformance_violations", "conformance_gate_failure"),
+    ("kb_reactivation_violations", "kb_reactivation_violation"),
+)
+
+
+def _quarantine_enabled() -> bool:
+    """E-030 S2a gate. False (escalate exactly as before) when the key, the section
+    or the file is absent -- silence is never a green light for a behavior change.
+
+    Read via ROOT rather than a source-file-relative path so the test sandbox
+    (tests/conftest.py's autouse guard patches ROOT) can seed its own value;
+    run_phase1_research._load_symbol_correlation reads campaign_config.yaml the same
+    way. In the real repository the two paths are identical."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    halt_policy = ((cfg.get("orchestrator") or {}).get("halt_policy") or {})
+    return bool(halt_policy.get("quarantine_enabled", False))
+
+
+def _flag_ambiguity(state: dict, reason: str) -> str | None:
+    """R11. Returns a human-readable explanation when the `flags` dict does not
+    unambiguously support `reason`, else None. An ambiguous halt is escalated, never
+    quarantined -- and the fact that the check fired is logged (see process_once).
+
+    THE EVIDENCE. Halt #8 in the taxonomy is a confirmed misreport, documented by
+    date in RUNBOOK.md section 4: a fresh `component_execution_error_flagged: true`
+    pause surfaced as `no_signal_artifact` because #6's flag had never been cleared,
+    and _classify_human_pause checks the stale higher-priority flag first. Both of
+    those reasons are on the quarantine-safe list, and they carry DIFFERENT trial
+    accounting (R7) -- so acting on the reported code would have applied the wrong
+    one, silently.
+
+    THE RULE, and why it is not the literal one-directional wording. Checking only
+    for a flag of HIGHER priority than the returned reason is vacuous by
+    construction: _classify_human_pause returns the highest-priority set flag, so
+    nothing higher can exist by the time this runs. The bug it needs to catch runs
+    the other way -- a stale HIGH flag masking a live LOW one. So the rule is
+    symmetric: quarantine only when the truthy classifier-read flags are either
+    none at all (an artifact-derived reason such as component_gap) or exactly the
+    single flag that maps to this reason. Any other shape escalates. That is
+    strictly safer in both directions and it is what the measured incident requires.
+    """
+    flags = state.get("flags", {}) or {}
+    set_reasons = {mapped for flag, mapped in _PAUSE_FLAG_TO_REASON if flags.get(flag)}
+    set_reasons |= {mapped for key, mapped in _PAUSE_STATE_KEY_TO_REASON if state.get(key)}
+
+    if not set_reasons:
+        # An artifact-derived reason (component_gap / new_component_escalation is
+        # reached only when no sticky flag is set at all). Unambiguous.
+        return None
+    if set_reasons == {reason}:
+        return None
+    others = sorted(set_reasons - {reason})
+    return (f"flags on pipeline_state.yaml resolve to {sorted(set_reasons)} while the halt "
+            f"reported {reason!r}; the extra flag(s) {others} may be stale from an earlier "
+            f"resolved pause (taxonomy halt #8 fingerprint), so the reason code is not "
+            f"reliable evidence of what went wrong")
+
+
+_COMPONENT_NAME_RE = re.compile(r"\b([A-Z][A-Za-z0-9_]*Component)\b")
+
+
+def _blocked_component_name(run_dir: Path, detail: str) -> str:
+    """R9's `<name>` for `blocked_on_component:<name>`, best-effort and honest about it.
+
+    No artifact in this pipeline carries a dedicated component-name field: a
+    component_gap `decision.yaml` holds only stage/status/hypothesis_id/run_id/
+    rationale/blocking_issues (verified against runs/run_047 and runs/run_057, the
+    two component_gap decisions on disk), and a new_component
+    `escalation_request.yaml` holds target/reason. The name that resolved halt #2
+    (`MacdHistogramCrossoverComponent`) survives only in prose -- the human's own
+    RESUME line. So this scans the prose sources for a `*Component` identifier and
+    falls back to a loud placeholder.
+
+    Getting the name wrong costs nothing structural: the status is still
+    `blocked_on_*`, `_select_entry` still skips it, and the untruncated failure text
+    is on halt_history either way. It is a convenience for the human reading the
+    queue, not a load-bearing value -- which is why a heuristic is proportionate here
+    and would not be for a classification decision."""
+    sources = [detail or ""]
+    for name, keys in (("decision.yaml", ("rationale", "blocking_issues")),
+                       ("escalation_request.yaml", ("reason", "detail", "component"))):
+        path = run_dir / "artifacts" / name
+        if not path.exists():
+            continue
+        doc = orch.load_yaml(path) or {}
+        for key in keys:
+            value = doc.get(key)
+            if isinstance(value, str):
+                sources.append(value)
+            elif isinstance(value, list):
+                sources.extend(str(v) for v in value)
+    for text in sources:
+        match = _COMPONENT_NAME_RE.search(text)
+        if match:
+            return match.group(1)
+    return "unnamed"
+
+
+def _run_has_trial_row(run_id: str) -> bool:
+    """Whether campaign_state.trial_sharpes already holds a row for this run --
+    MEASURED, not inferred from which stage the reason implies. Feeds the
+    quarantine record's `no_data_touched` (R7's fourth bullet: the absence of a
+    trial row must be a recorded decision, not a gap someone re-derives later)."""
+    campaign = orch.load_campaign_state()
+    return any(t.get("trial_id") == run_id for t in campaign.get("trial_sharpes", []) or [])
+
+
+def _apply_trial_accounting(reason: str, run_id: str, detail: str) -> str:
+    """R7. CALLS the existing machinery in run_phase1_research; never reimplements it
+    and never adds a new trial-recording function. Returns a one-line disposition for
+    the quarantine record.
+
+    - component_execution_error -> orch._mark_trial_invalidated. F6's own text is
+      binding here (run_phase1_research.determine_post_verdict_route's F6 branch):
+      "Fix the component/config, then re-run fresh. No trial or parameter-dimension
+      slot is consumed; no family is marked failed." Any row already written is
+      marked invalid, never deleted -- run_059 (halts #13/#14) carries both a
+      prescreen and a backtest row, so there is generally something to mark.
+    - no_signal_artifact -> nothing. The A6.2 prescreen row is already written
+      upstream, in run_tool_worker's signal_prescreen branch
+      (`_record_prescreen_trial(run_id, ps, config_path, upsert=True)`), which runs
+      BEFORE determine_post_prescreen_route reads the same prescreen_result.yaml and
+      takes the F5c branch. Confirmed live as well as in code: run_054's row reads
+      route=no_signal_artifact, statistic_valid=neither.
+    - component_gap -> nothing, and no row exists yet. component_gap is decided in
+      determine_post_spec_route, i.e. at `backtest_specification`, which stages.yaml
+      places strictly BEFORE `signal_prescreen` -- the first stage that records a
+      trial at all. Nothing has touched market data.
+    - new_component_escalation -> nothing, but for the OPPOSITE reason, and this
+      corrects a premise: it does NOT fire before any backtest. _route_escalate is
+      reached only from determine_post_verdict_route / determine_post_campaign_review_
+      route, both of which require verdict_interpretation.yaml, which requires
+      protocol_execution to have run. So a trial row generally DOES exist -- and it
+      must be left alone. It is a real measurement of a real run whose hypothesis
+      then routed to "the engine needs a new piece"; that is a research routing
+      decision, not an engineering failure of the measurement, so invalidating it
+      would under-count N in the anti-conservative direction. `no_data_touched` on
+      the quarantine record is therefore measured per-run (_run_has_trial_row), never
+      assumed from the reason code.
+    """
+    if reason == "component_execution_error":
+        marked = orch._mark_trial_invalidated(
+            run_id, f"E-030 S2a quarantine: {reason}"
+                    f"{' — ' + detail if detail else ''}")
+        return ("marked_trial_invalidated" if marked
+                else "no_trial_row_to_invalidate")
+    if reason == "no_signal_artifact":
+        return "prescreen_row_already_recorded_by_a6_2_upstream"
+    return "no_action_required"
 
 
 # ---------------------------------------------------------------------------
@@ -1334,6 +1582,65 @@ def process_once() -> bool:
     pause = _hard_pause_reason(run_dir, state)
     if pause:
         reason, detail = pause
+        # E-030 S2a. Quarantine + escalate. Everything below the `if` is reached
+        # ONLY when the flag is on AND the reason is one of the four the S1 taxonomy
+        # classified quarantine-safe on evidence AND the flags dict unambiguously
+        # supports that reason. With the flag off, _quarantine_enabled() short-
+        # circuits before any of it runs -- no extra log line, no extra state write,
+        # no reordering of the escalate path below (EPIC.md Done-when #3).
+        if reason in _QUARANTINE_SAFE_REASONS and _quarantine_enabled():
+            ambiguity = _flag_ambiguity(state, reason)
+            if ambiguity:
+                # R11: escalate as today, but say out loud that the check fired.
+                # Silent fallback would make an ambiguous halt indistinguishable
+                # from an unclassified one -- the exact indistinguishability that
+                # let halt #8 be misreported for 0.91h in the first place.
+                _log(f"AMBIGUITY — quarantine declined for '{reason}' on "
+                     f"{entry['id']} / {run_id}: {ambiguity}. Escalating to a human.")
+            else:
+                requeueable = reason in _REQUEUEABLE_QUARANTINE_REASONS
+                if requeueable:
+                    component = _blocked_component_name(run_dir, detail)
+                    entry["status"] = f"blocked_on_component:{component}"
+                    # No `outcome`: the lineage has not concluded, it is parked
+                    # pending engine work (R9 -- "not `done`"). Writing a terminal
+                    # outcome onto a re-queueable entry would misreport it as
+                    # finished in campaign_summary.md's own table.
+                else:
+                    # The DONE-path convention, verbatim: `status` says where the
+                    # entry stands in the queue, `outcome` says what it concluded.
+                    # `done` is what makes the queue ADVANCE past it (_select_entry
+                    # never auto-selects `done`), and `outcome` carries the R8 value
+                    # instead of a scientific one.
+                    entry["status"] = "done"
+                    entry["outcome"] = _QUARANTINE_OUTCOME
+                    component = None
+                _save_queue(queue)
+                _regenerate_summary(queue)
+                disposition = _apply_trial_accounting(reason, run_id, detail)
+                quarantine_record = {
+                    "policy": "E-030 S2a quarantine",
+                    "queue_entry_id": entry["id"],
+                    "run_id": run_id,
+                    "queue_status": entry["status"],
+                    "outcome": entry.get("outcome") if not requeueable else None,
+                    "requeueable": requeueable,
+                    "blocked_on_component": component,
+                    "trial_accounting": disposition,
+                    # R7's fourth bullet: record the absence as a DECISION. Measured
+                    # against campaign_state.trial_sharpes rather than inferred from
+                    # the reason -- see the finding noted at _apply_trial_accounting.
+                    "no_data_touched": not _run_has_trial_row(run_id),
+                    "retry_attempts": [],  # S2a builds no retry; see the section header
+                }
+                _append_halt_history(run_dir, state, reason, detail,
+                                     quarantine=quarantine_record)
+                detail_str = f": {detail}" if detail else ""
+                _log(f"QUARANTINE — {reason}{detail_str}. {entry['id']} / {run_id} -> "
+                     f"status={entry['status']} outcome={entry.get('outcome') or '-'} "
+                     f"(trial accounting: {disposition}). Campaign continues; see this "
+                     f"run's pipeline_state.yaml halt_history for the full record.")
+                return True
         entry["status"] = f"paused:{reason}"
         _save_queue(queue)
         _regenerate_summary(queue)
