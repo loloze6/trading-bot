@@ -166,6 +166,22 @@ def _sandbox_by_default(request, tmp_path, monkeypatch):
     rest of the test -- this guard never overrides a test's own explicit
     sandboxing, it only fills the gap when a test provides none.
     """
+    # E-030 dispatch bug hunt (2026-08-23): GIT_DIR/GIT_INDEX_FILE/GIT_WORK_TREE
+    # leaking from an enclosing `git commit` (the pre-commit hook's own subprocess
+    # environment) into a test's `git -C <tmp>`/`cwd=<tmp>` subprocess calls
+    # override that targeting -- an explicit GIT_DIR wins over `-C`/`cwd`. Measured
+    # live: this exact leak, hit via test_gitsha_dirty.py, set the real repo's own
+    # .git/config to `core.bare = true` during an E-030 S2a commit (fixed,
+    # f0ff0432), and three more files in THIS suite build throwaway git repos the
+    # same unprotected way (test_dual_writer_guards.py, test_holdout_date_gate.py,
+    # test_s4_union_merge.py -- one of them runs `git init --bare` on its own
+    # fixture, an even closer match to the incident's mechanism). Scrubbed here,
+    # once, for every test in this suite -- including real_repo_readonly ones,
+    # since an unset GIT_DIR only restores normal directory-based discovery and
+    # cannot be the wrong choice for any test.
+    for _key in ("GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE"):
+        monkeypatch.delenv(_key, raising=False)
+
     if request.node.get_closest_marker("real_repo_readonly"):
         return
 
