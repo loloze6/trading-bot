@@ -823,7 +823,12 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
           f"| Weighted: {weighted_units:,} | Turns: {num_turns}")
 
     # 4. Save to the central audit ledger
-    attempt_num = handoff.get('injected_context', {}).get('refinement_attempt', '0')
+    # E-030 S1.5 Piece 2 (RUNBOOK.md section 4.5's known crash-resume overwrite):
+    # keyed on injected_context["stage_attempt"] (per-stage entry count, independent
+    # of the refinement-budget cycle), not the OLD "refinement_attempt" key -- see
+    # run_loop's own comment at the increment site for why the two happen to
+    # coincide on the non-crash path and diverge only on a genuine crash-resume.
+    attempt_num = handoff.get('injected_context', {}).get('stage_attempt', '0')
     log_entry = {
         f"{stage_name}_attempt_{attempt_num}": {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -981,7 +986,12 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     print(f"⏱️ Finished in {execution_time}s | Output: {exact_output_tokens:,} tokens")
 
     # 4. Save to the central audit ledger
-    attempt_num = handoff.get('injected_context', {}).get('refinement_attempt', '0')
+    # E-030 S1.5 Piece 2 (RUNBOOK.md section 4.5's known crash-resume overwrite):
+    # keyed on injected_context["stage_attempt"] (per-stage entry count, independent
+    # of the refinement-budget cycle), not the OLD "refinement_attempt" key -- see
+    # run_loop's own comment at the increment site for why the two happen to
+    # coincide on the non-crash path and diverge only on a genuine crash-resume.
+    attempt_num = handoff.get('injected_context', {}).get('stage_attempt', '0')
     log_entry = {
         f"{stage_name}_attempt_{attempt_num}": {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -5100,14 +5110,37 @@ def run_loop(run_id: str):
         ensure_files(required_input_paths)
 
         # 2. Update state to running
-        update_state(path=RUN_DIR, current_stage=current_stage, status="running")
+        # E-030 S1.5 Piece 2: stage_attempts[current_stage] counts literal entries of
+        # THIS stage, independent of counters.refinements_used (the refinement-BUDGET
+        # gate -- RUNBOOK.md section 4.5 explicitly forbids hand-bumping that counter
+        # to fix the audit-log overwrite below, since it would falsely consume real
+        # refinement budget). Read BEFORE incrementing so the value used for THIS
+        # attempt's audit-log key matches today's behavior on first entry (0, same as
+        # refinements_used's own default) and every normal (non-crash) refinement
+        # cycle re-entry (both counters increment by exactly 1 per legitimate re-entry,
+        # so the two stay numerically identical on the tested, non-crash path -- they
+        # diverge only on a genuine crash-resume, where refinements_used stays put but
+        # this counter still advances, giving the re-attempt its own key instead of
+        # overwriting the first attempt's audit_log entry).
+        _stage_attempts = dict(state.get("stage_attempts") or {})
+        _this_stage_attempt = _stage_attempts.get(current_stage, 0)
+        _stage_attempts[current_stage] = _this_stage_attempt + 1
+        state["stage_attempts"] = _stage_attempts
+        update_state(path=RUN_DIR, current_stage=current_stage, status="running",
+                     stage_attempts=_stage_attempts)
 
         try:
             # 3. Inject dynamic state directly into the run's existing handoff file
             handoff_data["run_id"] = state.get("run_id", run_id)
-            
+
             # Create or overwrite the injected_context block with the latest dynamic info from the state (like counters or human context)
             handoff_data["injected_context"] = {
+                # E-030 S1.5 Piece 2: per-stage entry counter, NOT the refinement-cycle
+                # counter below -- see the increment comment above for why they
+                # coincide on the non-crash path. Consumed only by the two audit_log
+                # key-building sites (run_claude_worker/run_gemini_worker); nothing
+                # else reads this key.
+                "stage_attempt": str(_this_stage_attempt),
                 "refinement_attempt": str(state.get("counters", {}).get("refinements_used", 0)),
                 "human_data_paths_injected": "true" if state.get("injected_human_context") else "false"
             }

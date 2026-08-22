@@ -114,11 +114,46 @@ Relationship to other epics.
 
 ## Stories
 
-- [ ] S1 — Characterize the halt taxonomy precisely: for each of the 14
+- [x] S1 — Characterize the halt taxonomy precisely: for each of the 14
       historical halts (this epic's own measured evidence) and any additional
       halts found on other run families, classify as
       retry-safe / quarantine-safe / must-escalate, with the reasoning. No
       code changes — this determines what S2 is allowed to automate.
+      **Done 2026-08-22** (`3073ca7e`):
+      `E-030/artifacts/s1_halt_taxonomy.md`. Of 127.0h halted, 37.2h (29%) is
+      automatable and still live (20.4h retry-safe, 16.8h quarantine-safe);
+      21.9h more was retry-safe and already fixed (A11); 21.0h is correctly
+      must-escalate. The largest single halt (46.9h, 37% of all downtime)
+      turned out unclassifiable — see S1.5 below, opened directly from this
+      finding.
+- [x] S1.5 — Durable halt record (not in the original story list; opened from
+      S1's own finding that the retry/quarantine evidence S2 needs to decide
+      on was being destroyed before anyone could read it). Two separate lossy
+      points: `campaign_log.md`'s HALT line truncates `last_error` to 300
+      chars at write time (`run_campaign.py:874-875`), and RUNBOOK.md
+      section 4's own documented resume procedure has the operator null
+      `last_error`/`flags` on every resume, with nothing archiving the value
+      first — standard, sanctioned procedure, not operator error. Two pieces:
+    - [x] **Piece 1 — done 2026-08-22** (`994157ec`): `halt_history` added as
+          an accumulating field on `pipeline_state.yaml` itself (modeled on
+          `completed_stages`/`audit_log`, the two fields on that same file
+          that already accumulate instead of being overwritten — not a new
+          artifact type). Appended at both `HALT` sites in `process_once()`
+          before either resume step can touch `last_error`/`flags`. RUNBOOK.md
+          section 4 annotated: the reset is unchanged and still correct, it's
+          just no longer lossy. Pure addition, no existing key/artifact
+          touched. Suites green: strategy-research 817 passed, trading-bot
+          383 passed / 2 skipped.
+    - [ ] **Piece 2** — decouple the `audit_log` attempt-counter from
+          `counters.refinements_used` (RUNBOOK.md section 4.5's known
+          crash-resume overwrite: `injected_context["refinement_attempt"]` is
+          regenerated from the refinement-budget counter on every loop entry,
+          so a same-counter re-entry overwrites rather than appends the
+          `f"{stage_name}_attempt_{attempt_num}"` audit key). RUNBOOK
+          explicitly forbids hand-bumping `refinements_used` to fix this
+          cosmetically — needs its own, independent counter. This is why
+          halt #14's provenance (S1) was undecidable: the intermediate
+          attempt that would have proven it was silently overwritten.
 - [ ] S2 — Implement the retry/quarantine policy in `run_campaign.py`,
       off-by-default disableable for a bit-identity test.
 - [ ] S3 — Implement the loop-health instrument (block emitted per run/step,
@@ -172,3 +207,14 @@ Relationship to other epics.
   resolves `legacy_not_evaluable`), and the daily-panel correlation-adjusted
   breadth count. Only the data condition (a) is dead. Flipping `ready` with
   (c) unmet would arm the queue to produce another ungated measurement.
+
+- 2026-08-22 (same day) — **S1 done** (`3073ca7e`), **S1.5 opened and its
+  Piece 1 done** (`994157ec`). S1.5 wasn't in the original story list —
+  S1 itself surfaced it: the largest halt in the record (46.9h, 37% of all
+  downtime) turned out unclassifiable because the evidence a retry/quarantine
+  policy would need was being destroyed before it could be read (log-line
+  truncation + the resume procedure's own documented `last_error=None`
+  reset, with no archive). Piece 1 (the `halt_history` accumulating field)
+  is done; Piece 2 (the audit-log attempt-counter decoupling) is scoped and
+  next. State stays `planned` — S2/S3/S4 are unstarted and this remains a
+  prerequisite for them, not a completion of the epic.
