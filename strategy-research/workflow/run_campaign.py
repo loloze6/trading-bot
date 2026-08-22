@@ -904,6 +904,39 @@ def _hard_pause_reason(run_dir: Path, state: dict):
     return None
 
 
+def _append_halt_history(run_dir: Path, state: dict, reason: str, detail: str = "") -> None:
+    """E-030 S1 durable-halt-record fix. `pipeline_state.yaml`'s `last_error` is
+    written in full at halt time (run_loop's except-block, `last_error=str(e)`,
+    untruncated) but RUNBOOK.md section 4's own documented resume procedure has the
+    operator null it on every resume (every reason except data_block_hitl) -- and
+    _hard_pause_reason's own return value truncates it to 300 chars for the
+    campaign_log.md HALT line before this function ever sees it. Neither loss is a
+    bug in isolation; together they meant halt #7 in the E-030 S1 taxonomy
+    (46.85h, the single largest halt in the campaign's history) left no recoverable
+    cause anywhere on disk.
+
+    Modeled on `completed_stages`/`audit_log`, the two fields on this same file that
+    already accumulate across a run's life instead of being overwritten -- one more
+    accumulating field here, not a new artifact type. Called BEFORE any resume step
+    (manual today, possibly automatic once S2 lands) can touch `last_error`/`flags`,
+    so the append captures what the reset would otherwise destroy. Reads
+    `state["last_error"]` directly (untruncated), not the truncated `detail` the
+    caller may also be about to log to campaign_log.md.
+    """
+    history = list(state.get("halt_history") or [])
+    history.append({
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "reason": reason,
+        "detail": detail,
+        "last_error": state.get("last_error"),
+        "pending_stage": state.get("pending_stage"),
+        "flags": dict(state.get("flags") or {}),
+        "completed_stages": list(state.get("completed_stages") or []),
+        "counters": dict(state.get("counters") or {}),
+    })
+    orch.update_state(path=run_dir, halt_history=history)
+
+
 # ---------------------------------------------------------------------------
 # Resuming a halted campaign after a human fix
 # ---------------------------------------------------------------------------
@@ -1245,6 +1278,9 @@ def process_once() -> bool:
             entry["status"] = f"paused:{reason}"
             _save_queue(queue)
             _regenerate_summary(queue)
+            parent_run_dir = ROOT / "runs" / parent_run_id
+            parent_state = orch.load_yaml(parent_run_dir / "pipeline_state.yaml") or {}
+            _append_halt_history(parent_run_dir, parent_state, reason, detail)
             _log(f"HALT — {reason}: {detail}. Campaign stopped on {entry['id']} / {parent_run_id}. "
                  f"See RUNBOOK.md 'Resume after a pause'.")
             return False
@@ -1301,6 +1337,10 @@ def process_once() -> bool:
         entry["status"] = f"paused:{reason}"
         _save_queue(queue)
         _regenerate_summary(queue)
+        # Read state["last_error"] directly, not the truncated `detail` above --
+        # _hard_pause_reason slices last_error to 300 chars for the log line;
+        # this append must not inherit that truncation.
+        _append_halt_history(run_dir, state, reason, detail)
         detail_str = f": {detail}" if detail else ""
         _log(f"HALT — {reason}{detail_str}. Campaign stopped on {entry['id']} / {run_id}. "
              f"See RUNBOOK.md 'Resume after a pause'.")

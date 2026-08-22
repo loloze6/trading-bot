@@ -292,6 +292,16 @@ of these are wishlist-trigger questions, and none are auto-resolved.
 
 ## 4. Resume after a pause
 
+**Nulling `last_error` below is still correct** — it drives
+`_classify_human_pause`'s live check and must be resettable — but it no longer
+loses anything. As of E-030 S1's durable-halt-record fix,
+`process_once()` appends a full, untruncated snapshot (`last_error`, `flags`,
+`pending_stage`, `completed_stages`, `counters`, timestamp) to
+`pipeline_state.yaml`'s `halt_history` list at the moment the halt is
+detected — before this section's reset ever runs. `halt_history` accumulates
+across a run's life exactly like `completed_stages`/`audit_log` on the same
+file; nothing in this procedure touches it.
+
 1. Resolve the specific reason from the table above (fix the config/component/data,
    write whatever artifact the pause is waiting on).
 2. For every reason EXCEPT `data_block_hitl`: `pipeline_state.yaml`'s `status` field
