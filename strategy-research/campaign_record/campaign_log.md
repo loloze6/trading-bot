@@ -127,3 +127,6 @@ C:\Users\alauz\Documents\Projects\trading-bot\trading-bot\core\backtester.py:234
 - 2026-07-19T12:29:11Z DONE FUNDING_MR_DAILY_RETEST (run_059) -> completed_rejected
 - 2026-07-19T12:29:11Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
 - 2026-07-19T12:29:11Z Queue exhausted — no ready or in_progress entries remain.
+- 2026-08-23T16:27:43Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-23T16:27:43Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-23T16:27:43Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal

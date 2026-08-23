@@ -236,3 +236,13 @@ each; recorders running.*"
   *read* access. There is no consumer to wire yet — E-032 is that consumer and
   is unbuilt. S1 delivered the table and the firewall; S2 connects it when
   E-032 exists.
+- 2026-08-23 — **Caveat on the shipped scoreboard, found the same day by an
+  unrelated check.** A reproduction of `run_059` confirmed that E-012's
+  two-bars fix (landed 2026-08-09) changes engine output: BTCUSDT median
+  Sharpe moved -0.296 → +0.016 on an identical config. Every pre-2026-08-09
+  run is therefore on the pre-fix convention — **58 of 59 run dirs.** The
+  scoreboard's `worst_fail_margin_frac` ranking mixes both conventions. It is
+  still directionally useful and its `not_recorded` honesty is unaffected,
+  but a margin must not be quoted as comparable across that date. Recorded
+  rather than patched: the resolution is E-012 S5's call (re-derive vs.
+  label), not this epic's. See E-012's Log for the measurement.
