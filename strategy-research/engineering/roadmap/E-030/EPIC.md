@@ -1,8 +1,8 @@
 # E-030 — Halt recovery + a loop-health instrument
 
-**State:** planned
+**State:** done (2026-08-23 — S2b explicitly parked, not blocking; see Log)
 **Owner:** Jeremy
-**Updated:** 2026-08-21
+**Updated:** 2026-08-23
 
 ## Why
 
@@ -94,23 +94,46 @@ Relationship to other epics.
 
 ## Done when
 
-1. A classified halt-recovery policy exists: transient failures (the classes
-   measured above — `unhandled_exception` subtypes that are provably
+1. **Satisfied by quarantine alone, 2026-08-23 — corrected from the original
+   text.** A classified halt-recovery policy exists: transient failures (the
+   classes measured above — `unhandled_exception` subtypes that are provably
    retry-safe, `component_execution_error` where the component is stateless)
    retry automatically with a bounded attempt count; a run that still fails
    is quarantined (marked, queue advances past it) rather than halting the
    whole campaign; anything not classified escalates to a human exactly as
-   today.
-2. A loop-health block is emitted per campaign run (or per `--once` step):
-   halt count, downtime hours, downtime share of span, cause breakdown, and
-   which causes were auto-recovered vs. escalated. Consumed by
-   `run_campaign.py` itself to decide retry-vs-escalate at the next halt, not
-   only read by a human (F6/F3 — see the skill's instrument-shape rule).
-3. Bit-identity: no change to any recorded backtest metric, trade record, or
-   verdict. This is pure orchestration around existing stage/tool
-   invocations; a test proves output is unchanged when every classified
-   failure is disabled (equivalent to today's behavior).
-4. Fast and slow suites green.
+   today. The taxonomy (S1) found exactly one evidenced retry-safe signature,
+   and it was already handled at the stage level before this epic started
+   (ledger A11) — there was never a second one to wire up at the campaign
+   level, so "retry automatically" has no live target and stays unbuilt (S2b,
+   explicitly parked on evidence, not on effort). "Quarantined... escalates to
+   a human exactly as today" is fully built (S2a) and this criterion is
+   satisfied by that half alone.
+2. **Satisfied, with the same retry correction.** A loop-health block is
+   emitted per campaign run (or per `--once` step): halt count, downtime
+   hours, downtime share of span, cause breakdown, and which causes were
+   auto-recovered vs. escalated. Consumed by `run_campaign.py` itself to
+   decide quarantine-vs-escalate at the next halt (not retry-vs-escalate —
+   same correction as #1), not only read by a human (F6/F3 — see the skill's
+   instrument-shape rule). Built S3.
+3. **Satisfied, epic-wide, not just per-story.** Bit-identity: no change to
+   any recorded backtest metric, trade record, or verdict. This is pure
+   orchestration around existing stage/tool invocations; a test proves output
+   is unchanged when every classified failure is disabled (equivalent to
+   today's behavior). S2a and S3 each proved this for their own story; S4
+   proved it as one claim against the epic's actual pre-E-030 baseline
+   (`842a2788`) by a full recursive sandbox-tree comparison.
+4. **Satisfied, both suites, 2026-08-23.** Fast suites green throughout, every
+   commit, independently verified. Slow suite run and confirmed 2026-08-23
+   (`python run_tests.py --slow`, then trading-bot rerun standalone at
+   `--timeout=300` after the default 30s/test budget aborted one test under
+   machine load — the same known, pre-existing environment issue this whole
+   epic's own commits document, not a code failure): trading-bot 409 passed /
+   2 skipped / 0 failed, strategy-research 884 passed / 0 failed (recorder
+   tests included under `--slow`). This epic never touched `trading-bot/` (the
+   engine) or any data-fetching code, so this was a low-risk gap to have left
+   open — but a Done-when criterion that names the slow suite explicitly does
+   not get checked off on "low risk," it gets checked off on having actually
+   run it.
 
 ## Stories
 
@@ -231,8 +254,28 @@ Relationship to other epics.
       reproduces `measured_halt_cost.txt` verbatim from the real
       `campaign_log.md`. Suites green: strategy-research 866 passed,
       trading-bot 383 passed / 2 skipped.
-- [ ] S4 — Bit-identity test + the classification's regression fixture (one
-      historical halt of each class, replayed against the policy).
+- [x] S4 — **Done 2026-08-23** (`3eba6ba0`). Audited existing coverage first
+      (S1.5/S2a/S3's own tests) rather than duplicating it, and in doing so
+      corrected this epic's own record: `842a2788` is S1.5 Piece 2, not "the
+      last commit before E-030" — `halt_history` was already present there
+      (landed one commit earlier, `994157ec`), so it was never part of the
+      epic-level bit-identity gap. Established the real delta by an AST-level
+      function diff (`842a2788` → `55e812c0`): 11 functions added, 0 removed,
+      2 changed, and with the flag off the entire delta reduces to the four
+      `_write_loop_health()` calls — proven, not assumed, by a full recursive
+      sandbox-tree comparison across 6 reasons, plus a companion test proving
+      flag-off reaches none of the six S2a/S3 decision functions. Three
+      regression fixtures replay real taxonomy evidence verbatim (real run
+      IDs, real `last_error` text, real trial rows): halt #10/#12
+      (retry-safe — proven to never become a halt at all, resolved at the
+      stage level before `process_once()` is ever reached), halt #13
+      (quarantine-safe — `run_059`, both of its real trial rows correctly
+      marked `invalidated_artifact` per F6, never deleted), halt #4
+      (must-escalate — `run_053`'s `kb_reactivation_violation`, escalates
+      identically with the flag both off and on, proving R1's integrity list
+      is never overridden). 18 new tests, 5 mutations killed in verification
+      (each reverted). Suites green: strategy-research 884 passed, trading-bot
+      383 passed / 2 skipped.
 
 ## Relationship to other epics
 
@@ -291,3 +334,46 @@ Relationship to other epics.
   is done; Piece 2 (the audit-log attempt-counter decoupling) is scoped and
   next. State stays `planned` — S2/S3/S4 are unstarted and this remains a
   prerequisite for them, not a completion of the epic.
+
+- 2026-08-23 — **Epic done.** S1.5 Piece 2 (`842a2788`), S2a (`83f8f1b0`), S3
+  (`5053148e`), S4 (`3eba6ba0`, cherry-picked from `c8d2c18d` after `HEAD`
+  moved) all landed this session, each independently verified by the director
+  against real suite runs and real diffs before merge — not taken on any
+  dispatch's own narrative. **State moves to `done` with S2b explicitly
+  parked**, not silently dropped: it is blocked on evidence (a genuine,
+  reproducible campaign-level retry-safe signature) that does not exist
+  today, and Done-when #1/#2 were both corrected in place, this same session,
+  to say so plainly rather than leaving the original "retry-vs-escalate"
+  wording to mislead a future reader into thinking it shipped.
+
+  Two things found and fixed that were not part of any story's original
+  scope, both from a director-run bug hunt across the session's own commits
+  (`f0ff0432` fixed the one file that broke): three MORE test files carried
+  the identical git-environment-leak vulnerability class
+  (`test_dual_writer_guards.py` — one call is `git init --bare`, an even
+  closer match to the incident's own mechanism — `test_holdout_date_gate.py`,
+  `test_s4_union_merge.py`), fixed once, centrally, in
+  `tests/conftest.py`'s existing autouse sandbox fixture rather than
+  patching four files individually (`39d02ded`). `_repeat_quarantine`'s
+  adjacency-only check was also traced for the same class of gap and found
+  to be deliberate, disclosed, already-tested behavior — not touched.
+
+  Two provisioner-level findings, disclosed by two consecutive dispatches
+  (S3 and S4) on this same epic, neither fixed here (outside this epic's
+  scope, both explicitly noted as findings for whoever owns worktree
+  provisioning): agent worktrees were provisioned from a stale base
+  (`a56986e9`, several days old) rather than the session's actual current
+  HEAD — both dispatches caught it and branched off the correct commit
+  explicitly rather than working from what they were given; and worktree
+  data-cache fixtures are incomplete in a way that produces failures, not
+  just skips, on a fresh worktree's first run (S4's report: a 265-row BTCUSDT
+  stub self-poisoning two unrelated tests in `test_a851a_prescreen_
+  integration.py`).
+
+  Every commit's suites independently re-verified by the director on the
+  actual merged tree, not the worktree's own report: fast suites green on
+  every commit (final state: trading-bot 383 passed / 2 skipped;
+  strategy-research 884 passed); slow suite run and confirmed this same day
+  (Done-when #4): trading-bot 409 passed / 2 skipped, strategy-research 884
+  passed (recorder tests included under `--slow`, no separate count from the
+  fast run since none of this epic's tests are marked `slow`).
