@@ -1,6 +1,6 @@
 # E-018 — Near-miss scoreboard
 
-**State:** in-progress (unparked 2026-08-23; S1 dispatched same day)
+**State:** planned (unparked 2026-08-23; S1 done same day, S2 awaits E-032)
 **Owner:** Jeremy
 **Updated:** 2026-08-05
 
