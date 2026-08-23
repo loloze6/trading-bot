@@ -72,7 +72,11 @@ The bright line (frozen rule → one-shot holdout) is untouched.
       versus what they would need to propose something non-adjacent. Where the
       disposition lives (skill file / stage prompt / config). What the
       anti-adjacency gate can key on that already exists. No code.
-- [ ] S2 — The disposition and the anti-adjacency gate.
+- [x] S2a — **The exclusion digest + the deterministic anti-adjacency gate.**
+      No disposition/persona prose (S1 measured that prose alone repeats an
+      already-ineffective pattern). Build only.
+- [ ] S2b — The disposition (skill-prose amendment on the two generating
+      stages, instructing them to consult the digest).
 - [ ] S3 — The external-knowledge dispatch path, with source/date recording.
 
 ## Relationship to other epics
@@ -231,3 +235,124 @@ anti-adjacency gate also counts as the gate working, and is logged.
   gate comfortably and died on Sharpe and drawdown. The a-priori case against
   4h is therefore weaker than the dispatcher stated, and S1's ADMIT verdict is
   better founded than the brief that commissioned it.
+
+- 2026-08-23 — **S2a done (build only, no disposition prose).** Two new
+  tools, both read-only over runs/, no LLM call:
+
+  `tools/build_exclusion_digest.py` -- Task 1, the exclusion digest.
+  Family-scoped `(family, instrument, timeframe)` triples, re-derived FRESH
+  from `runs/run_*/artifacts/hypothesis_card.yaml` every regeneration, never
+  from `campaign_state.yaml`'s stale flat lists. `classify_family()`
+  prioritizes `library_lookup.indicator_id` (structural), then
+  `edge_source.evidence_type`, then a keyword match bounded to
+  `hypothesis_id` + `edge_source.specific_mechanism` + thesis's FIRST
+  SENTENCE ONLY -- never rationale, never full thesis. That restriction is
+  load-bearing, not defensive posture: while building this, S1's own
+  measurement script's free-text "mentions funding" search was found to
+  mis-classify run_048/run_058 (Fear & Greed hypotheses whose rationale
+  incidentally discusses "funding rate availability" as an unrelated
+  structural cause) as funding-family evidence. `classify_family()` correctly
+  separates them (`tests/test_build_exclusion_digest.py::
+  test_classify_family_never_scans_rationale_the_run048_058_false_positive`).
+  Re-derived fresh against the real repo: funding_rate_extreme's triples are
+  exactly `{1h, 1d}` (run_041/044/047/050 at 1h, run_059 at 1d) -- never 4h;
+  keltner_channel is the actual source of the 4h entry. Regenerated snapshot
+  committed at `campaign_record/exclusion_digest.yaml` (46 runs scanned, 2
+  pre-existing unparseable cards skipped gracefully, 12 families, 30 triples).
+
+  `tools/anti_adjacency_gate.py` -- Task 2, the deterministic gate, `tool:`
+  stage documented in `stages.yaml` (declarative only -- `stages.yaml` is not
+  read by the live orchestrator; see the stage's own comment and the scoping
+  note below). Two layers, KB first, digest second, exactly as S1
+  recommended, with one correction found while implementing: **Layer 1 must
+  match at MECHANISM grain (hypothesis_id containment), never at FAMILY
+  grain.** A first implementation attempt matched Layer 1 on the same family
+  classifier as Layer 2 and immediately mis-fired on the calibration case
+  itself -- `funding_rate_mean_reversion_inconclusive` (H-041-A, exhausted,
+  no reactivation_condition) sits in the SAME family bucket
+  (`funding_rate_extreme`) as `funding_rate_continuous_mean_reversion_
+  expanded_auto` but is a wholly unrelated, independently-closed mechanism;
+  matching Layer 1 at family grain let H-041-A's closure wrongly refuse the
+  4h candidate before the correct finding was ever reached -- the exact
+  failure mode this gate exists to prevent, relocated one layer down.
+  Caught by testing against the real KB before writing the fixture tests,
+  not found later.
+
+  **Precedence rule, implemented as specified.** A registered
+  `lineage_routing: terminate` (read from a run's own
+  `pass_rule_evaluation.yaml`) closes only the branch the terminating run
+  itself tested, on a KB entry that explicitly, textually references its
+  parent (`_finding_references_parent`, a literal substring check -- this KB
+  schema has no structured parent-id field). `funding_mr_daily_retest_killed`
+  references `funding_rate_continuous_mean_reversion_expanded_auto` in its
+  own `exhausted_basis` text and its evidence run (run_059) carries
+  `lineage_routing: terminate` -- closes the DAILY branch of that parent
+  only. The 4h branch, never tested by any run, is untouched. A first
+  implementation pass wrote `_finding_references_parent` but never called
+  it (`_branches_closed_by_lineage_routing` only scanned the candidate's own
+  matched-finding set, which never includes the child that does the
+  closing) -- caught immediately by the calibration-case REFUSE test failing
+  where it should have passed, fixed same session.
+
+  **Verified, both directions, against the real repo (not mocked):**
+  the 4h candidate ADMITs (`test_calibration_case_admits_the_4h_funding_
+  retest`); the identical candidate would be wrongly REFUSED by a naive gate
+  keyed on `campaign_state.yaml`'s flat `timeframes_tried` list, which still
+  contains `4h` from the unrelated keltner runs
+  (`test_calibration_case_naive_flat_list_gate_would_refuse_the_same_
+  candidate` -- asserts the two gates DISAGREE, not just that the real one
+  passes); the daily candidate REFUSEs via the precedence rule
+  (`test_precedence_rule_refuses_the_daily_branch_terminated_by_run_059`);
+  and the 4h/daily branches are proven independent
+  (`test_precedence_rule_never_touches_the_sibling_4h_branch`).
+
+  **Required-input wiring (Task 1's "delivered as a new stage input"),
+  off by default.** `config/campaign_config.yaml`'s new
+  `orchestrator.exclusion_digest_input.enabled` (default false, same shape as
+  E-030 S2a's `halt_policy.quarantine_enabled`), read by
+  `run_phase1_research._exclusion_digest_input_enabled()`. When on,
+  `_apply_exclusion_digest_input()` unions `campaign_record/
+  exclusion_digest.yaml` into `hypothesis_generation`/`innovation_expansion`'s
+  `optional_inputs`, mirroring the existing B7 mandatory-input-union pattern.
+  Off-by-default is proven against the actual assembled PROMPT TEXT, not just
+  "the code path is skipped": `run_claude_worker`'s prompt-building logic was
+  extracted verbatim into a new pure function, `_build_stage_prompt()`, so
+  tests can assert flag-off produces a prompt byte-identical to a baseline
+  that never calls the union function at all
+  (`tests/test_exclusion_digest_input.py::
+  test_flag_off_prompt_is_byte_identical_to_never_calling_the_union_at_all`,
+  plus the absent-key/section case). Flag-on is proven to actually change the
+  prompt and carry digest content through to both generating stages.
+
+  **Also found, incidentally, while tracing the input path:** the ALREADY-
+  EXISTING optional_input for `campaign_knowledge_base.yaml` in
+  `workflow_artifacts/templates/handoffs/research_brief_to_hypothesis.yaml`
+  (`path: "../../campaign_knowledge_base.yaml"`) has never once resolved --
+  the real file lives at `campaign_record/campaign_knowledge_base.yaml`,
+  two directories further down than the template's path reaches. Since
+  `run_claude_worker` treats a missing `optional_input` as silent absence
+  (no error, no log), this has been a no-op for every run to date, on top
+  of S1's structural finding that neither generating stage sees campaign
+  history at all. Noted in `_apply_exclusion_digest_input()`'s own docstring;
+  not fixed here -- fixing an unrelated pre-existing path bug is out of this
+  story's scope, flagged for S2b or a follow-up.
+
+  **Deliberately left out of S2a's scope, stated plainly, not silently
+  narrowed:** the gate is NOT wired into the live orchestrator's stage
+  dispatch (`STAGE_CONFIGS`/`run_tool_worker`/the `next:` routing state
+  machine) -- only documented declaratively in `stages.yaml`, which the
+  orchestrator does not read at runtime. Wiring live dispatch means deciding
+  what happens on REFUSE (loop back to `hypothesis_generation`? terminate the
+  run? how many retries?) -- a real orchestration design decision, and this
+  session's hard constraints forbid running a campaign to verify any such
+  wiring behaves correctly. Also not built: a `family` field on
+  `hypothesis_card.schema.json` (S1's build-list item 1) -- the classifier's
+  structural-field-first, keyword-bounded-fallback design does not require
+  it, and adding an unused schema field without a consumer felt like scope
+  creep against "prefer minimal code changes."
+
+  Verification: strategy-research fast suite 954 passed (was 910; +44 new,
+  all in the three new test files, zero regressions). trading-bot fast suite
+  383 passed / 2 skipped, unchanged from the session's own reference figure
+  (nothing under `trading-bot/` was touched). No campaign or backtest run;
+  no LLM call made; `local_data/holdout_sealed/` never read.

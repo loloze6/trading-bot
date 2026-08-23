@@ -130,6 +130,34 @@ orchestrator:
       #
       # NOT a retry switch. S2a deliberately ships the quarantine half only; see
       # E-030/EPIC.md S2 and the taxonomy's R2.
+  exclusion_digest_input:
+    enabled: false
+      # E-032 S2a. OFF BY DEFAULT and read at runtime by
+      # run_phase1_research._exclusion_digest_input_enabled() -- same shape as
+      # halt_policy.quarantine_enabled just above (a third explicit exception to
+      # this file's "declared parity only" rule). While false,
+      # _apply_exclusion_digest_input() is a no-op: hypothesis_generation and
+      # innovation_expansion's handoffs are never mutated, so the fully-assembled
+      # prompt text those stages receive (_build_stage_prompt's output) is
+      # byte-identical to before this feature existed. Proven by
+      # tests/test_exclusion_digest_input.py's flag-off/flag-on prompt-text diff
+      # (E-032 S2a's own off-by-default bar -- comparing assembled PROMPT TEXT,
+      # not just asserting the code path is skipped).
+      #
+      # While true, campaign_record/exclusion_digest.yaml (built by
+      # tools/build_exclusion_digest.py -- family-scoped (family, instrument,
+      # timeframe) triples, freshly derived from run artifacts, never from
+      # campaign_state.yaml's stale flat instruments_tried/timeframes_tried
+      # lists) is unioned into optional_inputs for hypothesis_generation and
+      # innovation_expansion ONLY, and only when the file exists on disk.
+      #
+      # This is raw material for the LLM stage, never a binding gate by itself
+      # -- the mechanical refusal decision is tools/anti_adjacency_gate.py (a
+      # deterministic `tool:` stage, same class as signal_prescreen), which
+      # reads campaign_knowledge_base.yaml directly for its KB layer and this
+      # digest for its per-family fallback layer. See
+      # engineering/roadmap/E-032/EPIC.md and
+      # engineering/roadmap/E-032/artifacts/s1_idea_generation.md Task 3.
 
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)

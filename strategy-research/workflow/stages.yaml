@@ -29,6 +29,41 @@ stages:
     next:
       - validation
 
+  # E-032 S2a: anti-adjacency gate (declarative documentation only -- this
+  # file is not read by the orchestrator's live routing today; STAGE_CONFIGS
+  # and run_tool_worker in workflow/run_phase1_research.py are. Documented
+  # here to match the signal_prescreen contract exactly, per
+  # engineering/roadmap/E-032/artifacts/s1_idea_generation.md Task 3's build
+  # list item 4. NOT wired into the live pipeline's next: graph by this
+  # story -- see EPIC.md's S2a log entry for the scoping decision).
+  # Deterministic tool, not LLM. ADMIT/REFUSE a candidate hypothesis using
+  # two layers, KB-reactivation-clause-first (campaign_knowledge_base.yaml,
+  # matched at mechanism/hypothesis_id grain), refreshed per-family
+  # (family, instrument, timeframe) triples second (campaign_record/
+  # exclusion_digest.yaml, built by tools/build_exclusion_digest.py) --
+  # never campaign_state.yaml's flat instruments_tried/timeframes_tried
+  # lists as a global veto.
+  anti_adjacency_gate:
+    tool: tools/anti_adjacency_gate.py
+    description: >
+      Deterministic tool, mirrors signal_prescreen's pattern. Evaluates a
+      candidate hypothesis_card.yaml/expanded_hypothesis_card.yaml variant
+      against campaign_knowledge_base.yaml (Layer 1, mechanism grain) and
+      campaign_record/exclusion_digest.yaml (Layer 2, family grain). Route:
+      admit | refuse. A precedence rule governs disagreement between a
+      KB parent's open reactivation_condition and a child run's registered
+      lineage_routing=terminate -- see anti_adjacency_gate.py's module
+      docstring.
+    required_inputs:
+      - runs/{run_id}/artifacts/hypothesis_card.yaml
+      - campaign_record/campaign_knowledge_base.yaml
+      - campaign_record/exclusion_digest.yaml
+    outputs:
+      - runs/{run_id}/artifacts/anti_adjacency_result.yaml
+    next:
+      - validation   # route=admit
+      - hypothesis_generation   # route=refuse (not yet wired -- see note above)
+
   refinement_planner:
     skill: workflow_artifacts/skills/refinement-planner/SKILL.md
     required_inputs:
