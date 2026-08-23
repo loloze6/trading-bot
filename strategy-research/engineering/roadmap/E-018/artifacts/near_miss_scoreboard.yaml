@@ -1,0 +1,1709 @@
+generated_by: strategy-research/tools/near_miss_scoreboard.py
+purpose: idea-generation raw material ONLY; not a promotion input
+denominators:
+- 'Total run dirs scanned: 59'
+- 'Have a verdict_interpretation.yaml: 38 of 59'
+- '  full_protocol schema: 36 of 59'
+- '  prescreen_only schema: 2 of 59'
+- 'protocol_verdict recorded (non-absent, within verdict file): 36 of 59'
+- 'status recorded (non-absent, within verdict file): 33 of 59'
+- 'Numeric worst-fail margin recovered: 24 of 59'
+- 'IC recovered (any source): 7 of 59'
+- 'Cost ratio recovered (any source): 5 of 59'
+- 'Era-behaviour text recovered: 4 of 59'
+rows:
+- run_id: run_029
+  hypothesis_id: KELTNER_SCOREMODE_4H
+  hypothesis_family: keltner_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: Regime fires on insufficient bars; sample size too small (27 trades vs 50
+    required) to achieve robust Sharpe. Robustness gate requires >=5 trades in 4 windows; only 3 achieved.
+    min_score=0.25 still excludes moderate ER/VR combinations that would qualify at 0.15.
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 3
+  n_criteria_untested: 2
+  worst_fail_criterion_text: 'Falsification gate (reverse_sharpe < 0.00): FAIL (median_sharpe=0.0, not
+    < 0.0)'
+  worst_fail_margin_frac: 0.0
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 1
+- run_id: run_022
+  hypothesis_id: V3-ESCALATE-4H-KELTNER-PIVOT-RSI
+  hypothesis_family: mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: kill
+  status: pivot
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: Regime classification is uninformative. The 'trending' regime defined by
+    ER≥0.50 and VR≥1.20 captures bars with near-zero or negative forward_return_mean, failing to identify
+    market states with directional bias. Two structurally different signal families (Keltner mean-reversion
+    and RSI mean-reversion) both produce weak correlation (0.0136 and 0.042 respectively) at 4h within
+    this regime. Root caus
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 3
+  n_criteria_untested: 0
+  worst_fail_criterion_text: Trade count ≥ 25 (per-window minimum)
+  worst_fail_margin_frac: -0.24
+  worst_fail_margin_source: structured
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 2
+- run_id: run_031
+  hypothesis_id: KELTNER_THRESHOLD_4H_AVAX
+  hypothesis_family: keltner_breakout
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: escalate
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  - nosignal
+  primary_failure_mode_text: Signal has no directional edge when restricted to threshold-gated regimes;
+    target regime (mean_reversion) is uninformative on AVAX.
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 0
+  n_criteria_fail: 4
+  n_criteria_untested: 1
+  worst_fail_criterion_text: Cost_drag < 80%
+  worst_fail_margin_frac: -0.33
+  worst_fail_margin_source: structured
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 3
+- run_id: run_018
+  hypothesis_id: V2-PIVOT-A
+  hypothesis_family: rsi_momentum_trending
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - cost
+  primary_failure_mode_text: 'Cost drag dominates (272.865%): signal earns positive gross PnL (21.62 median)
+    but fees and excessive trade frequency consume all alpha and more. Sizing problem, not signal problem.'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 0
+  n_criteria_fail: 3
+  n_criteria_untested: 0
+  worst_fail_criterion_text: 'min_trade_count_any_window (>= 30): FAIL — actual 24 (BTCUSDT), 16 (ETHUSDT)'
+  worst_fail_margin_frac: -0.4667
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 4
+- run_id: run_014
+  hypothesis_id: V2-E1
+  hypothesis_family: rsi_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: kill
+  status: pivot
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - cost
+  primary_failure_mode_text: RSI pullback signal generates zero predictive power (median forecast_return_corr
+    = -0.0223, most p-values > 0.05), masked by directional win_rate (51-60%) that collapses under transaction
+    cost drag (142.8% median). Trade count fails (14-21 vs 30 required) as regime frequency remains insufficient
+    even after VR threshold relaxation from 0.90 → 1.00, indicating signal itself lacks edge rather than
+    re
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 2
+  n_criteria_fail: 2
+  n_criteria_untested: 0
+  worst_fail_criterion_text: Trade count ≥ 30 across full backtest period
+  worst_fail_margin_frac: -0.5333
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 5
+- run_id: run_059
+  hypothesis_id: run_059-funding-mr-daily-retest-v1
+  hypothesis_family: funding_rate_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: kill
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - other
+  primary_failure_mode_text: signal_direction_and_magnitude_failure_on_daily_holding_window
+  root_cause_mechanism: already_priced_in
+  root_cause_confidence: high
+  n_criteria_pass: 2
+  n_criteria_fail: 2
+  n_criteria_untested: 0
+  worst_fail_criterion_text: 'criterion_b: max_abs_drawdown_pct < 30% for BOTH symbols'
+  worst_fail_margin_frac: -0.6535
+  worst_fail_margin_source: structured
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 6
+- run_id: run_026
+  hypothesis_id: KELTNER_OR_GATE_REGIME
+  hypothesis_family: keltner_regime_gating
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - cost
+  primary_failure_mode_text: Cost drag (93.99%) destroys profitability despite positive gross PnL (+5.81);
+    OR-gate regime thresholds fire too frequently, triggering excessive trades and accumulated fee erosion.
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 2
+  n_criteria_fail: 2
+  n_criteria_untested: 9
+  worst_fail_criterion_text: 'trade_count (≥30 total): FAIL — BTCUSDT 9, ETHUSDT 16'
+  worst_fail_margin_frac: -0.7
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 7
+- run_id: run_054
+  hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY
+  hypothesis_family: sma_trend_following
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - other
+  primary_failure_mode_text: 'insufficient_sample_at_current_altitude: the signal shows a real, marginally
+    significant positive per-episode edge (per_trade_expectancy_bps mean=1050.5, t_stat=1.91, n=117) and,
+    once measured on a consistent bar-level basis, aggregate risk-adjusted return is NOT confirmed negative
+    (BTCUSDT median_sharpe +0.579, ETHUSDT +0.032 -- ETH indistinguishable from zero). The regime-mismatch/
+    whipsaw story'
+  root_cause_mechanism: lag_mismatch_to_regime_persistence
+  root_cause_confidence: medium
+  n_criteria_pass: 0
+  n_criteria_fail: 1
+  n_criteria_untested: 5
+  worst_fail_criterion_text: 'Walk-forward pooled IC ≥ 1.5–2.0%: FAIL (BTCUSDT actual 0.0372, ETHUSDT
+    actual 0.0199; validation_protocol required=1.5 is specification error — Spearman correlation cannot
+    exceed 1.0. Intended threshold likely 0.015–0.020 decimal, which both symbols meet. Accepting criteria_results.result=FAIL
+    as o'
+  worst_fail_margin_frac: -0.9752
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: 'per_trade_expectancy_bps mean=1050.5 (t_stat=1.91, marginally significant at p<0.10,
+    n=117); median_forecast_return_corr=0.0372 (BTCUSDT) and 0.0199 (ETHUSDT), both positive, indicating
+    some directional edge exists. CORRECTED (2026-07-10): median_sharpe on a bar-level equity-curve basis
+    is +0.579 (BTCUSDT) and +0.032 (ETHUSDT) -- NOT the -1.78/-1.54 previously reported (that figure was
+    a LIFO-frag'
+  era_behavior_source: text_extracted
+  rank: 8
+- run_id: run_039
+  hypothesis_id: TEMPORAL_COVERAGE_MULTI_REGIME
+  hypothesis_family: rsi_secondary_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: 'Regime activation starvation: ER threshold 0.50 is too tight, resulting
+    in trending regime firing in only 4–7 of 11 windows per symbol. Cumulative trade count of 22 across
+    both symbols falls far below the statistical validation floor (50+). Secondary RSI signal cannot compensate
+    when the regime gate itself starves it of opportunity.'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 2
+  n_criteria_untested: 0
+  worst_fail_criterion_text: 'Trade count >= 50: FAIL (actual: 1 BTC, 0 ETH)'
+  worst_fail_margin_frac: -0.98
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 9
+- run_id: run_015
+  hypothesis_id: V1
+  hypothesis_family: keltner_breakout
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: pivot
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - nosignal
+  primary_failure_mode_text: 'Signal inversion across both symbols and timeframes. Forecast-return correlation
+    = -0.1705 (negative), indicating the Keltner upper-band breakout hypothesis is backwards. The signal
+    fires with inverted directional bias: in windows where trending regime fires (e.g., BTCUSDT 2024-04,
+    2024-06), average forecasts are negative (-18.65, -9.06), and trades lose money. Gross PnL = 0.0 across
+    the campaign,'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 0
+  n_criteria_fail: 3
+  n_criteria_untested: 2
+  worst_fail_criterion_text: 'Walk-forward: median Sharpe ≥ 0.5 — FAIL (actual: 0.0 on both symbols)'
+  worst_fail_margin_frac: -1.0
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 10
+- run_id: run_017
+  hypothesis_id: V1-PIVOT-A
+  hypothesis_family: keltner_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: pivot
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - other
+  primary_failure_mode_text: '"Signal has no statistically significant directional edge: median_forecast_return_corr_pvalue
+    is extremely high (median ~0.80 across windows), indicating nominal correlation 0.2145 is noise rather
+    than predictive signal. Combined with insufficient trade frequency (min_trade_count=0 in multiple
+    windows) and 0% win rate on ETHUSDT, the Keltner mean-reversion signal within TRENDING regime does
+    not ge'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 2
+  n_criteria_fail: 2
+  n_criteria_untested: 1
+  worst_fail_criterion_text: V1 win_rate >= 0.49
+  worst_fail_margin_frac: -1.0
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 11
+- run_id: run_019
+  hypothesis_id: V2-PIVOT-A-THRESHOLD
+  hypothesis_family: rsi_momentum
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - other
+  primary_failure_mode_text: threshold_filter.min_abs=20.0 is too strict; filters nearly all RSI signals
+    in TRENDING regime, collapsing median trade count to 0 across 19/24 windows. Sharpe becomes uncomputable
+    (zero trades = undefined/zero volatility). The 33% threshold increase was intended to reduce false
+    positives; instead, it eliminated signal generation entirely.
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 0
+  n_criteria_fail: 1
+  n_criteria_untested: 4
+  worst_fail_criterion_text: 'Median walk-forward sharpe > 0.10 across ≥4 windows: FAIL (actual: 0.0 for
+    BTCUSDT, 0.0 for ETHUSDT)'
+  worst_fail_margin_frac: -1.0
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 12
+- run_id: run_020
+  hypothesis_id: V2-PIVOT-A-THRESHOLD-REFINED
+  hypothesis_family: rsi_momentum_trending
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: escalate
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: Regime gate (ER≥0.50, VR≥1.20) on 1h bars produces insufficient TRENDING
+    regime windows; zero trades generated across all 22 backtested windows despite signal parameter refinement
+    (min_abs 20.0→17.5). Signal parameter is not bottleneck; regime filter is the blocker.
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 2
+  n_criteria_fail: 3
+  n_criteria_untested: 2
+  worst_fail_criterion_text: 'tertiary: regime_frequency ≥10% → FAIL (actual=0.0)'
+  worst_fail_margin_frac: -1.0
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 13
+- run_id: run_024
+  hypothesis_id: POSITION_SIZING_TIMEFRAME_COUPLING
+  hypothesis_family: keltner_trend_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: pivot
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: 'Regime classifier uninformative (RULE 4). The threshold_rules regime (ER>=0.5
+    AND VR>=1.2, threshold_rules mode) identifies as TRENDING in only 2–23 bars per window (too sparse
+    for statistical validity) and does not predict price direction (forward_return_mean across windows:
+    BTC trending=[+0.00221, −0.00068, +0.00207, +0.00059, −0.00104, −0.00038, −0.00130, −0.00418], range
+    −0.00418 to +0.00221, '
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 0
+  n_criteria_fail: 2
+  n_criteria_untested: 4
+  worst_fail_criterion_text: 'V4 success (1h win_rate >= 0.45): FAIL — BTCUSDT=22.22% (PASS), ETHUSDT=0.0%
+    (FAIL)'
+  worst_fail_margin_frac: -1.0
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 14
+- run_id: run_025
+  hypothesis_id: KELTNER_SCORE_MODE_REGIME
+  hypothesis_family: keltner_threshold_regime
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: 'Regime definition uninformative: both trending and unknown regimes have
+    forward_return_mean ≈ 0 across 7+ windows, failing to separate predictive market states. AND logic
+    (ER≥0.3 AND VR≥1.2) too restrictive despite relaxation; 3 windows with 0 trades.'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 0
+  n_criteria_fail: 3
+  n_criteria_untested: 3
+  worst_fail_criterion_text: rule_2_trade_count
+  worst_fail_margin_frac: -1.0
+  worst_fail_margin_source: structured
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 15
+- run_id: run_028
+  hypothesis_id: KELTNER_SCOREMODE_4H
+  hypothesis_family: keltner_scoremode
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: Regime threshold (min_score=0.4) too strict. Threshold admits only ~15 bars
+    as qualifying "trending" across 11 windows. Trade frequency collapsed to 0.18 avg trades/window (need
+    >= 3). Signal itself is predictive when regime fires (forecast_return_corr=0.4859); regime filter
+    prevents execution.
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 3
+  n_criteria_untested: 5
+  worst_fail_criterion_text: sharpe > 0.2
+  worst_fail_margin_frac: -1.0
+  worst_fail_margin_source: structured
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 16
+- run_id: run_032
+  hypothesis_id: RUN017_REPLICATION_DIAGNOSTIC_V1
+  hypothesis_family: keltner_threshold_regime
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: escalate
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  - nosignal
+  primary_failure_mode_text: 'Regime classifier (ER/VR thresholds) produces uninformative signals on test
+    instrument: trending regime fires on < 1% of bars and predicts negative forward returns in 2024-06/07/08.'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 3
+  n_criteria_untested: 0
+  worst_fail_criterion_text: Sharpe (median across walk-forward windows) >= 0.6 on OOS period
+  worst_fail_margin_frac: -1.0
+  worst_fail_margin_source: structured
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 17
+- run_id: run_033
+  hypothesis_id: RUN017_REPLICATION_DIAGNOSTIC
+  hypothesis_family: keltner_breakout
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: 'Regime threshold ER>=0.50 AND VR>=1.20 too restrictive; trending regime
+    fires in <30% of windows, yielding median trade_count=0 for ETHUSDT and insufficient binomial power
+    for Sharpe validation. Signal itself shows edge when regime fires (2024-06 BTCUSDT: forecast_corr=0.625,
+    +3.46% net), but scarcity prevents validation.'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 3
+  n_criteria_untested: 0
+  worst_fail_criterion_text: 'sharpe >= 0.5: FAIL (actual median: 0.0, required: >= 0.5)'
+  worst_fail_margin_frac: -1.0
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 18
+- run_id: run_037
+  hypothesis_id: DIAG_B_ER35_1H_KELTNER_CLEAN
+  hypothesis_family: keltner_breakout
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: 'Regime starvation: TRENDING regime threshold (ER >= 0.35) set above market''s
+    actual ER/VR distribution. Regime did not fire in 4/22 windows (BTCUSDT: 2024-01, 09, 10; ETHUSDT:
+    2024-01), leaving min_trade_count=0.'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 1
+  n_criteria_untested: 3
+  worst_fail_criterion_text: 'median_trade_count >= 5: FAIL (actual min_trade_count=0; insufficient per-window
+    frequency)'
+  worst_fail_margin_frac: -1.0
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 19
+- run_id: run_016
+  hypothesis_id: V1-PIVOT
+  hypothesis_family: keltner_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - cost
+  primary_failure_mode_text: Cost drag exceeds 185% of gross PnL; signal produces weak positive gross
+    profit but transaction costs destroy all net returns
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 2
+  n_criteria_fail: 2
+  n_criteria_untested: 3
+  worst_fail_criterion_text: 'approval_gate_5: max_drawdown_pct <= 15.0'
+  worst_fail_margin_frac: -1.1401
+  worst_fail_margin_source: structured
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 20
+- run_id: run_011
+  hypothesis_id: H-RUN007-V1
+  hypothesis_family: not_recorded
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: Regime detection lag. ER component smooth_period=5 (5 bars = 5 hours in 1h
+    timeframe) delays regime identification until AFTER mean-reversion opportunity window closes. Strategy
+    correctly detects mean-reversion conditions and generates trades, but entry/exit occurs with 5-hour
+    lag relative to optimal timing. Edge magnitude reduced below commission drag threshold (~0.1–0.15%
+    per round-trip). System
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 2
+  n_criteria_untested: 2
+  worst_fail_criterion_text: 'Max drawdown: < 15%'
+  worst_fail_margin_frac: -1.2096
+  worst_fail_margin_source: structured
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 21
+- run_id: run_030
+  hypothesis_id: KELTNER_SCOREMODE_4H_AVAX
+  hypothesis_family: keltner_scoremode
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: pivot
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - cost
+  primary_failure_mode_text: 'Sizing/frequency problem (Rule 1): cost_drag=128% indicates too many marginal
+    trades with weak edge; gross_pnl=44.86 (positive) shows signal has edge but fees destroy it.'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 2
+  n_criteria_fail: 2
+  n_criteria_untested: 3
+  worst_fail_criterion_text: 'V1-Conservative approval: sharpe ≥0.30 (median)'
+  worst_fail_margin_frac: -9.7
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 22
+- run_id: run_034
+  hypothesis_id: RUN017_REPLICATION_REFINE_01
+  hypothesis_family: keltner_breakout
+  evidence_tier: full_protocol
+  protocol_verdict: kill
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - cost
+  primary_failure_mode_text: 'Over-trading destroys weak signal edge via fees. Lowering ER from 0.50 to
+    0.35 increased regime firing from ~25% to ~40-45%, tripling trade frequency. The KeltnerBreakout signal
+    earns barely positive gross_pnl (median 9.38) which is completely erased by fees (cost_drag 413%),
+    leaving median Sharpe of -6.791. This is the sizing problem: signal works, but too many trades amplify
+    costs.'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 2
+  n_criteria_fail: 1
+  n_criteria_untested: 3
+  worst_fail_criterion_text: Sharpe >= 0.5 (required for approval)
+  worst_fail_margin_frac: -14.582
+  worst_fail_margin_source: structured
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 23
+- run_id: run_021
+  hypothesis_id: V3-ESCALATE-4H-KELTNER
+  hypothesis_family: keltner_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: pivot
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - nosignal
+  primary_failure_mode_text: Signal has no directional edge at 4h timeframe; edge that existed at 1h (corr=+0.214,
+    run_017) collapsed to 0.0136 at 4h.
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 3
+  n_criteria_fail: 2
+  n_criteria_untested: 1
+  worst_fail_criterion_text: sharpe >= 0.3
+  worst_fail_margin_frac: -23.6367
+  worst_fail_margin_source: text_approx
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 24
+- run_id: run_048
+  hypothesis_id: H-041-C
+  hypothesis_family: fear_greed_contrarian
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - nosignal
+  primary_failure_mode_text: signal_inversion_prescreen
+  root_cause_mechanism: entry_exit_execution_gap
+  root_cause_confidence: high
+  n_criteria_pass: 0
+  n_criteria_fail: 2
+  n_criteria_untested: 2
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: unparseable_free_text
+  ic: -0.0403
+  ic_source: text_extracted
+  cost_ratio: 1.47
+  cost_ratio_source: text_extracted
+  era_behavior_text: 'ic_active_bars=-0.0403 pooled across 234 episodes (n_bars=1676 active out of 138,430
+    total). Per-era breakdown: 2018-pre-funding BTC ic=-0.0584 (186 bars, 26 episodes), 2019-2023 BTC
+    ic=-0.0726 (495 bars, 57 episodes); 2024-burned BTC ic=+0.1828 (73 bars, 15 episodes), 2024-2025-wf
+    BTC ic=+0.1014 (84 bars, 19 episodes). ETH identical pattern: 2018-2023 range [-0.0709, -0.1346],
+    2024-2025 range [+0'
+  era_behavior_source: text_extracted
+  rank: 25
+- run_id: run_023
+  hypothesis_id: REFRAME-COST-REGIME-VALIDATION
+  hypothesis_family: keltner_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: refine
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - cost
+  primary_failure_mode_text: Cost drag (420% median) destroys positive gross signal (+3.56 median). Signal
+    earns returns in principle but excessive rebalancing via tight Keltner bands renders edge uneconomical.
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 2
+  n_criteria_untested: 1
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: unparseable_free_text
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 26
+- run_id: run_047
+  hypothesis_id: H-041-A
+  hypothesis_family: funding_rate_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: kill
+  status: escalate
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - sample
+  primary_failure_mode_text: 'Sparsity-induced insufficient sample: 8h settlement events on 1h timeframe
+    produce 98.54% sparsity (n_eff=9), making IC measurement unreliable.'
+  root_cause_mechanism: no_informational_content_this_venue
+  root_cause_confidence: high
+  n_criteria_pass: 0
+  n_criteria_fail: 1
+  n_criteria_untested: 0
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: unparseable_free_text
+  ic: 0.008435
+  ic_source: text_extracted
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 27
+- run_id: run_044
+  hypothesis_id: FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED
+  hypothesis_family: funding_rate_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: kill
+  status: escalate
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - nosignal
+  primary_failure_mode_text: No informational content detected on 1h BTC/ETH; IC near zero with high p-value.
+    Mechanism (8h settlement mean-reversion) unproven at this timeframe.
+  root_cause_mechanism: lag_mismatch_to_regime_persistence
+  root_cause_confidence: high
+  n_criteria_pass: 0
+  n_criteria_fail: 3
+  n_criteria_untested: 2
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: unparseable_free_text
+  ic: -0.008706
+  ic_source: text_extracted
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 28
+- run_id: run_035
+  hypothesis_id: REFRAME_REGIME_SELECTIVITY_01
+  hypothesis_family: regime_selectivity
+  evidence_tier: full_protocol
+  protocol_verdict: kill
+  status: escalate
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - nosignal
+  primary_failure_mode_text: Signal has no directional edge at 1h timeframe; forecast_return_corr=0.0662
+    provides no statistical predictive power; mean_reversion regime marked uninformative in protocol diagnostics;
+    gross PnL negative across both symbols.
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 2
+  n_criteria_fail: 0
+  n_criteria_untested: 7
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 29
+- run_id: run_053
+  hypothesis_id: MACD_TREND_CONTINUATION_EXTENDED_2018_2025
+  hypothesis_family: macd_trend_following
+  evidence_tier: full_protocol
+  protocol_verdict: kill
+  status: escalate
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - other
+  primary_failure_mode_text: no_informational_content_prescreen
+  root_cause_mechanism: no_informational_content_this_venue
+  root_cause_confidence: high
+  n_criteria_pass: 0
+  n_criteria_fail: 3
+  n_criteria_untested: 3
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: unparseable_free_text
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: 0.245
+  cost_ratio_source: text_extracted
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 30
+- run_id: run_050
+  hypothesis_id: H-041-A
+  hypothesis_family: funding_rate_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: kill
+  status: pivot
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - other
+  primary_failure_mode_text: no_informational_content_prescreen
+  root_cause_mechanism: already_priced_in
+  root_cause_confidence: high
+  n_criteria_pass: 0
+  n_criteria_fail: 2
+  n_criteria_untested: 4
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: unparseable_free_text
+  ic: 0.000822
+  ic_source: text_extracted
+  cost_ratio: 0.7368
+  cost_ratio_source: text_extracted
+  era_behavior_text: 'ic_all_bars=0.000822 (ungated, pooled across 110,904 bars, 139 episodes, p=0.521).
+    ic_active_bars=0.017764 (gated to 1,887 active bars, 1.7% sparsity). Era stratification shows IC remains
+    near-zero even in historical full-data periods (2019–2023): BTCUSDT=0.025, ETHUSDT=0.007. The structural
+    funding-rate mean-reversion mechanism, if profitable at scale on this venue and timeframe, shows no
+    empiric'
+  era_behavior_source: text_extracted
+  rank: 31
+- run_id: run_043
+  hypothesis_id: EMA_SPREAD_TREND_CONTINUATION_V1
+  hypothesis_family: moving_average_crossover
+  evidence_tier: full_protocol
+  protocol_verdict: kill
+  status: pivot
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - other
+  primary_failure_mode_text: no_informational_content_this_venue
+  root_cause_mechanism: already_priced_in
+  root_cause_confidence: high
+  n_criteria_pass: 0
+  n_criteria_fail: 0
+  n_criteria_untested: 4
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: -0.021091
+  ic_source: text_extracted
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 32
+- run_id: run_027
+  hypothesis_id: TIMEFRAME_ESCALATION_4H
+  hypothesis_family: keltner_mean_reversion
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: pivot
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: 'Regime is uninformative at 4h timeframe. The TRENDING regime (ER≥0.5 AND
+    VR≥1.2) at 4h does not identify a coherent market state; forward_return_mean in trending regime is
+    near-zero or negative across multiple windows (e.g., 2024-04: +0.002071, 2024-07: -0.000387, 2024-08:
+    -0.001306). Zero trades executed in most windows despite signal correlation=0.2145 being identical
+    to run_017 1h baseline. Reg'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 2
+  n_criteria_untested: 2
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: unparseable_free_text
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 33
+- run_id: run_057
+  hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY_ER20GATE
+  hypothesis_family: sma_trend_longonly_with_efficiency_gate
+  evidence_tier: full_protocol
+  protocol_verdict: kill
+  status: kill
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: Gate mechanism hypothesis falsified by S2 validation; excluded-entry expectancy
+    (1395.90 bps) significantly exceeds included-entry expectancy (433.73 bps), proving gate selects lower-quality
+    trades contrary to brief rationale
+  root_cause_mechanism: already_priced_in
+  root_cause_confidence: high
+  n_criteria_pass: 1
+  n_criteria_fail: 2
+  n_criteria_untested: 0
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: unparseable_free_text
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 34
+- run_id: run_042
+  hypothesis_id: H-041-C
+  hypothesis_family: not_recorded
+  evidence_tier: prescreen_only
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: insufficient_sample_inconclusive
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - other
+  primary_failure_mode_text: insufficient_sample_inconclusive
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: 0.190476
+  ic_source: structured
+  cost_ratio: 3.7545
+  cost_ratio_source: structured
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 35
+- run_id: run_041
+  hypothesis_id: H-041-A
+  hypothesis_family: funding_rate_mean_reversion
+  evidence_tier: prescreen_only
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: insufficient_sample_inconclusive
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - other
+  primary_failure_mode_text: insufficient_sample_inconclusive
+  root_cause_mechanism: insufficient_sample_inconclusive
+  root_cause_confidence: low
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: 0.013993
+  ic_source: structured
+  cost_ratio: 0.8314
+  cost_ratio_source: structured
+  era_behavior_text: 'ic_active_bars=0.014 at p=0.9705 with n_eff=10 (block_size=24, active_n=261). At
+    n_eff=10, the 95% CI on IC spans approximately [-0.70, +0.73] — statistically uninformative. Primary
+    cause: funding extremes rarely occur in 2024-2025 BTC/ETH (top-5% rate = 0.0002, versus original 0.001
+    threshold that never activated). Secondary: even at recalibrated threshold, gross edge (14.1 bps)
+    < round-trip cost'
+  era_behavior_source: text_extracted
+  rank: 36
+- run_id: run_012
+  hypothesis_id: H-RUN007
+  hypothesis_family: not_recorded
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: Insufficient mean_reversion regime sample. The strategy exhibits high per-trade
+    profitability (win_rate 51–60%), indicating the RSI signal mechanism generates edge when active. However,
+    min trade_count is only 14–21 per month (vs required ≥30), implying mean_reversion regime fires <15%
+    of bars. This starves the strategy of sample size, amplifying variance and driving Sharpe deeply negative.
+    Root c
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 3
+  n_criteria_untested: 4
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: unparseable_free_text
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 37
+- run_id: run_013
+  hypothesis_id: V1 (H-RUN007 ER-relaxed)
+  hypothesis_family: not_recorded
+  evidence_tier: full_protocol
+  protocol_verdict: refine
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - regime
+  primary_failure_mode_text: 'ER relaxation (0.20→0.25) failed to increase mean_reversion regime frequency.
+    Trade count remains critically low (BTC min: 14, ETH min: 21, vs required ≥30) despite ER threshold
+    loosening. Root cause: both ER and VR must satisfy AND logic; VR ≤ 0.90 filter is now the active bottleneck
+    preventing sufficient regime triggers.'
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: 1
+  n_criteria_fail: 1
+  n_criteria_untested: 2
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: unparseable_free_text
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 38
+- run_id: run_0001
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: not_recorded
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 39
+- run_id: run_002
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: paused_for_human
+  pipeline_stage: refinement_planner
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 40
+- run_id: run_003
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: failed
+  pipeline_stage: backtest_specification
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 41
+- run_id: run_004
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: failed
+  pipeline_stage: validation
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 42
+- run_id: run_005
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: failed
+  pipeline_stage: backtest_specification
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 43
+- run_id: run_006
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: failed
+  pipeline_stage: validation
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 44
+- run_id: run_007
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: rejected_budget_exceeded
+  pipeline_stage: validation
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 45
+- run_id: run_008
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: running
+  pipeline_stage: refinement_planner
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 46
+- run_id: run_009
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: active
+  pipeline_stage: backtest_specification
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 47
+- run_id: run_010
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: active
+  pipeline_stage: backtest_specification
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 48
+- run_id: run_036
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: active
+  pipeline_stage: protocol_execution
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 49
+- run_id: run_038
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: active
+  pipeline_stage: campaign_review
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 50
+- run_id: run_040
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: active
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 51
+- run_id: run_045
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: active
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 52
+- run_id: run_046
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: active
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 53
+- run_id: run_049
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: active
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 54
+- run_id: run_051
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: active
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 55
+- run_id: run_052
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: active
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 56
+- run_id: run_055
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: quarantined_orphan
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 57
+- run_id: run_056
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: quarantined_orphan
+  pipeline_stage: not_recorded
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 58
+- run_id: run_058
+  hypothesis_id: not_recorded
+  hypothesis_family: not_recorded
+  evidence_tier: thin_no_verdict_file
+  protocol_verdict: not_recorded
+  status: not_recorded
+  verdict_label_or_disposition: not_recorded
+  pipeline_status: rejected
+  pipeline_stage: validation
+  primary_failure_mode_bucket:
+  - not_recorded
+  primary_failure_mode_text: not_recorded
+  root_cause_mechanism: not_recorded
+  root_cause_confidence: not_recorded
+  n_criteria_pass: null
+  n_criteria_fail: null
+  n_criteria_untested: null
+  worst_fail_criterion_text: not_recorded
+  worst_fail_margin_frac: null
+  worst_fail_margin_source: not_recorded
+  ic: null
+  ic_source: not_recorded
+  cost_ratio: null
+  cost_ratio_source: not_recorded
+  era_behavior_text: not_recorded
+  era_behavior_source: not_recorded
+  rank: 59
