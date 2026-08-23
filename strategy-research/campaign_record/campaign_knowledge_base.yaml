@@ -1254,7 +1254,43 @@ findings:
     correlation-adjusted breadth count the parent brief requires
     (research_brief_P4_ts_trend.md:41), which this probe explicitly did NOT compute
     (report:471-474). Until (a)-(d) are met this entry stays as it is: no verdict, no
-    reopening.'
+    reopening.
+
+    RESOLUTION 2026-08-22/23 (operator ruling, reactivation package prepared, NOT yet
+    ratified -- see strategy-research/briefs/artifacts/p4_daily_reactivation_20260823/):
+    (a) SATISFIED -- 19 kraken_*USD_1d.csv daily caches landed 2026-08-07 (commit
+    8cff3f24), same header format as the hourly caches, 2013-10-06 to 2025-12-31.
+    (b) RESOLVED 2026-08-22 -- operator ruled the A3.4 five-trade floor (config/
+    campaign_config.yaml:141) governs; protocols/ts_trend_daily_v1.json''s
+    promotion.min_trade_count_gte changed 1 -> 5 the same date, with the 2026-07-08
+    revision''s reasoning retained (superseded) in that file. (c) DRAFTED, NOT
+    RATIFIED -- a run_059-shaped structured pass_rule was authored for the parent
+    rule (criteria a/b inherited unmodified from this protocol''s own pre-registered
+    promotion block; criterion (c), the evaluability/sample-floor gate, could NOT be
+    authored to a passable, honestly pre-registered threshold -- see (d)). (d)
+    MEASURED 2026-08-23, NOT ADEQUATE: correlation-adjusted effective breadth of the
+    daily Kraken panel, same methodology as the ratified 1h prior (pairwise-complete
+    Pearson on log returns, n_eff = n/(1+(n-1)*rho_bar)) -- all-19 rho_bar=+0.5800,
+    n_eff=1.661; primary 17-pair universe (BTC/ETH excluded as an ASSET-level
+    contamination, already measured under this family on Binance in runs 053-057)
+    rho_bar=+0.5646, n_eff=1.694 -- both below the 1h prior''s n_eff=1.767 (higher
+    daily correlation, the expected direction). Against the project''s own standing
+    sample floor for quoting a Sharpe (>=30 independent episodes, CLAUDE.fork.md) and
+    the brief''s own conservative low-end transitions estimate (10/symbol over the
+    registered span, research_brief_P4_ts_trend.md:47-50, the same low-end anchor
+    already used for this protocol''s own floor-1 derivation), the required breadth is
+    n_eff >= 3.0; measured n_eff (~1.66-1.69) clears roughly 56-57% of that bar on
+    either universe, and even the brief''s own midpoint estimate (17.5/symbol,
+    required n_eff=1.71) is not cleared. CONCLUSION: this reactivation, as specified
+    (17- or 19-pair Kraken daily breadth, correlation-adjusted, against the project''s
+    own pre-registered Sharpe-quoting floor), is NOT POWERED for a reliable per-window
+    median_sharpe criterion under the ruled floor-5 gate. This does not reopen or
+    contest power_disposition above (expected_n_eff: 117), which concerns the
+    pooled-all-bars block-bootstrap IC significance test (a different, already-
+    adequately-powered mechanism, unaffected by this finding) -- it is specifically
+    the per-window median_sharpe/A3.4 evaluability path that is underpowered at this
+    breadth. No queue flip to ready follows from this entry; see config/campaign_queue.yaml''s
+    P4_ts_trend entry and E-030/EPIC.md Log (2026-08-23) for the full package pointer.'
   engine_provenance_caveat: 'Filed 2026-07-19 (run_059 close-out, tz-bug arc):
     protocol_version ts_trend_daily_v1 executed on 1d bars BEFORE the 2026-07-18
     CandleBuilder._align() fix (commit 2529f5b). Pre-fix, every daily candle''s

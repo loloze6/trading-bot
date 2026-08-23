@@ -1,0 +1,158 @@
+# P4_ts_trend PARENT-RULE reactivation -- pass_rule DRAFT.
+#
+# STATUS: DRAFT, NOT RATIFIED. Do not paste into a pre_registration.yaml and
+# launch. Precedent for operator ratification before any run: H-041-C-v2
+# (2026-07-15). This draft documents why criterion (c) cannot be honestly
+# completed at this breadth, per the task's MANDATORY EXIT BRANCH instruction:
+# "This reactivation is not powered" is the actual deliverable here, not a
+# ready-to-run rule.
+#
+# SCOPE: the PARENT ungated SMA(100)-daily long-only rule only. The gated
+# ER(20)>=0.30 entry-latch variant is terminally closed on measured grounds
+# (campaign_knowledge_base.yaml p4_sma_trend_longonly_daily_auto
+# reactivation_condition (1)) and is NOT reopened by anything here.
+#
+# Shape follows runs/run_059/artifacts/pre_registration.yaml (top-level
+# `pass_rule` with `criteria`/`outcomes`, separate top-level
+# `machine_constraints` block) -- the shape tools/verdict_criteria_evaluator.py
+# resolves first (_find_pass_rule checks top level before machine_constraints).
+
+run_id: null  # not registered -- draft only, no run has been launched under this rule
+hypothesis_id: P4_SMA_TREND_LONGONLY_DAILY_PARENT_REACTIVATION
+registered_at: null  # DRAFT -- set only at actual registration, after ratification
+reactivation_context: >
+  Reactivation of the PARENT (ungated) SMA(100)-daily long-only rule from
+  campaign_knowledge_base.yaml's p4_sma_trend_longonly_daily_auto entry.
+  Conditions (a) daily bars and (b) trade-floor ruling are met (see
+  reactivation_condition in the KB entry, resolution dated 2026-08-22/23).
+  This document is the (c) deliverable; its own analysis shows (d) is NOT
+  met, so this pass_rule is NOT ready to register or run.
+
+contamination_note: >
+  Universe = the 17 non-BTC/ETH Kraken USD daily pairs (ADA, AAVE, AVAX,
+  DOGE, INJ, LINK, LTC, NEAR, ONDO, SOL, SUI, TAO, TRX, UNI, XMR, XRP, ZEC).
+  BTC and ETH are excluded from the PASS/FAIL decision by operator ruling
+  (2026-08-22, this package): they were already measured under this exact
+  family in runs 053/054/057 (Binance BTCUSDT/ETHUSDT). kraken_BTCUSD /
+  kraken_ETHUSD are the SAME ASSETS on a different venue, not an untouched
+  sample -- exclusion is by ASSET, not by symbol/venue string. BTC/ETH MAY be
+  reported separately (descriptive only, never gating) if a run is ever
+  launched under this rule.
+
+pass_rule:
+  statement: >
+    DRAFT / NOT EVALUABLE AS WRITTEN. Criteria (a) and (b) below are
+    directly inheritable from protocols/ts_trend_daily_v1.json's own
+    pre-registered promotion block (median_sharpe_gt: 0,
+    max_abs_drawdown_pct_lt: 30) and are NOT tuned to any of runs 053/054/057's
+    measured results -- both values were fixed in the protocol before any of
+    those runs executed. Criterion (c), the sample-floor/evaluability gate
+    tied to the operator's 2026-08-22 floor-5 ruling, could NOT be given an
+    honest, a-priori-derived PASSABLE threshold: see
+    honesty_notes.sample_floor_finding below and
+    daily_neff_output.txt in this directory. This pass_rule is therefore
+    published as evidence for the STOP recommendation, not as a rule ready
+    for any run to be evaluated against.
+  window_set_ref: protocols/ts_trend_daily_v1.json  # unmodified by this draft; symbol list would need editing to the 17-pair universe before any run -- NOT done here (out of scope: "do not run any backtest or campaign")
+  honesty_notes:
+    - id: i
+      text: >
+        Criteria (a)/(b) sources and pre-registration dates: (a)
+        median_sharpe_gt: 0 and (b) max_abs_drawdown_pct_lt: 30 both appear at
+        protocols/ts_trend_daily_v1.json:130-131, part of the original
+        promotion block installed 2026-07-08, before run_054 (2026-07-09),
+        run_057 (2026-07-11), or any density probe (2026-07-23/24) existed.
+        Reusing them here is NOT re-deriving from those runs' measured
+        outcomes; it is inheriting a pre-existing, dated, unmodified
+        pre-registration.
+    - id: ii
+      text: >
+        kill_median_sharpe_lt: -1 (ts_trend_daily_v1.json:133) is likewise
+        inherited unmodified and is not encoded as a separate pass_rule
+        criterion here; it is the protocol's own kill-branch threshold and
+        would route to the FAIL-a branch's kill outcome the same as any other
+        criterion-(a) failure once evaluated (median_sharpe <= 0 already
+        fails (a); the -1 kill threshold is redundant with FAIL-a for a
+        long-only signal and is not given a separate criterion id to avoid
+        double-gating the same statistic).
+    - id: sample_floor_finding
+      text: >
+        CRITERION (c) COULD NOT BE COMPLETED. Two SEPARATE power questions
+        exist for this hypothesis and must not be conflated: (1) the
+        pooled-all-bars block-bootstrap IC significance test
+        (pre_registration.significance_methodology_for_single_magnitude_signals
+        in ts_trend_daily_v1.json) -- ALREADY established adequately_powered
+        in the KB (power_disposition.status, expected_n_eff: 117 for the
+        original 2-symbol registration), unaffected by this finding, and if
+        anything reinforced by pooling more (correlated) symbols; and (2) the
+        per-window median_sharpe criterion (a)'s own reliability, which
+        depends on how many window-symbol observations survive the A3.4
+        floor-5 exclusion (config/campaign_config.yaml:141,
+        tools/run_protocol.py's _SPARSE_TRADE_FLOOR=5) and how INDEPENDENT
+        (correlation-discounted) those surviving observations actually are.
+        (2) is what KB condition (d) and this package's Task 2 measure, and
+        (2) is what criterion (c) below was supposed to gate. See
+        compute_daily_neff.py / daily_neff_output.txt for the measurement and
+        REACTIVATION_PACKAGE.md for the full derivation and sensitivity
+        analysis. Bottom line: required n_eff >= 3.0 (derived from
+        CLAUDE.fork.md's standing >=30-independent-episode Sharpe-quoting
+        floor, divided by the brief's own conservative low-end expectation of
+        10 transitions/symbol over the registered span -- both pre-existing,
+        neither tuned to this measurement); measured n_eff = 1.694 (primary
+        17-pair universe, pairwise-complete Pearson) / 1.692 (listwise
+        cross-check) -- roughly 56% of what is required, and even the
+        brief's own MIDPOINT estimate (17.5 transitions/symbol, required
+        n_eff=1.71) is not cleared. Only the brief's own UPPER bound (25/symbol,
+        required n_eff=1.20) would pass, and selecting that endpoint now,
+        after measuring n_eff, is exactly the after-the-fact threshold
+        selection this project's protocol forbids. No criterion (c) is
+        written below with a numeric threshold for this reason.
+  criteria:
+    - id: a
+      metric: median_sharpe
+      metric_basis: bar_level
+      comparator: '>'
+      per_symbol_threshold: {}  # to be populated with the 17-pair primary universe symbols (Kraken ccxt-native tickers) if this rule is ever completed and registered -- NOT done here, no universe was launched
+      null_handling: fails_threshold
+      source: >
+        Inherited verbatim from protocols/ts_trend_daily_v1.json:130
+        (promotion.median_sharpe_gt: 0), pre-registered 2026-07-08, before
+        any of runs 053/054/057 executed.
+    - id: b
+      metric: max_abs_drawdown_pct
+      metric_basis: bar_level
+      comparator: <
+      per_symbol_threshold: {}  # same population note as criterion a
+      null_handling: fails_threshold
+      source: >
+        Inherited verbatim from protocols/ts_trend_daily_v1.json:131
+        (promotion.max_abs_drawdown_pct_lt: 30), pre-registered 2026-07-08.
+    - id: c
+      metric: NOT_AUTHORED
+      status: BLOCKED -- see honesty_notes.sample_floor_finding
+      source: >
+        Would-be metric: below_floor_pct (trade_diagnostics_summary /
+        hypothesis_verdict.diagnostics, pooled across the primary 17-symbol
+        universe x 15 windows -- A3.4-native, tools/run_protocol.py:912-917)
+        thresholded against a correlation-adjusted required sample. No
+        a-priori-derivable passable threshold exists at the measured n_eff;
+        see honesty_notes above. NOT wired into criteria evaluation.
+  outcomes:
+    - branch: PASS
+      hypothesis_verdict: null  # not evaluable -- criterion c is unauthored
+      lineage_routing: null
+    - branch: FAIL-a
+      hypothesis_verdict: kill
+      lineage_routing: terminate
+    - branch: FAIL-b
+      hypothesis_verdict: kill
+      lineage_routing: terminate
+    - branch: FAIL-c
+      hypothesis_verdict: null  # criterion c has no evaluable form -- see honesty_notes
+      lineage_routing: null
+
+machine_constraints:
+  protocol_ref: protocols/ts_trend_daily_v1.json
+  protocol_ref_content_hash: null  # DRAFT -- compute at actual registration, after the protocol's symbol list (currently BTCUSDT/ETHUSDT only) is edited to the ratified universe and criteria a/b per_symbol_threshold populated
+  significance_methodology: block_bootstrap_all_bars_v1  # unchanged from ts_trend_daily_v1.json's own pre_registration -- this pass_rule does not alter it
+  trade_floor_per_window: 5  # A3.4 gate, per the 2026-08-22 operator ruling; matches config/campaign_config.yaml:141 and protocols/ts_trend_daily_v1.json:132 (both now 5)
