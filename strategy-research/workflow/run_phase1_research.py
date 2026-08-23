@@ -683,24 +683,29 @@ def estimate_tokens(text: str) -> int:
         
 #     return estimated_tokens
 
-async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_context: str | None = None):
+# Stage -> SKILL.md directory mapping. Module-level (not nested in
+# run_claude_worker) so _build_stage_prompt can share it without duplication.
+_SKILL_MAP = {
+    "hypothesis_generation": "hypothesis-design",
+    "innovation_expansion": "innovation-expansion",
+    "validation": "quant-validation",
+    "refinement_planner": "refinement-planner",
+    "backtest_specification": "backtest-engineering",
+    "verdict_interpreter": "verdict-interpreter",
+    "campaign_review": "campaign-review",
+}
 
-    print(f"\n🧠 [AGENT INVOKED] Waking up specialist for: {stage_name}"
-          + (" (YAML-repair retry)" if retry_context else ""))
-    
-    
-    # 2. Map the stage to the correct SKILL definition
-    skill_map = {
-        "hypothesis_generation": "hypothesis-design",
-        "innovation_expansion": "innovation-expansion",
-        "validation": "quant-validation",
-        "refinement_planner": "refinement-planner",
-        "backtest_specification": "backtest-engineering",
-        "verdict_interpreter": "verdict-interpreter",
-        "campaign_review": "campaign-review",
-    }
 
-    skill_file_name = skill_map.get(stage_name)
+def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
+                         retry_context: str | None = None) -> str:
+    """Pure function: assembles the exact prompt text run_claude_worker sends
+    to the model. Extracted (2026-08-23, E-032 S2a) so tests can assert on
+    the fully-assembled prompt -- including the exclusion-digest
+    required_input's flag-off/flag-on byte-identity proof -- WITHOUT
+    invoking the agent SDK / spending any tokens. No behavior change: this
+    is the same code that used to live inline in run_claude_worker, moved
+    verbatim."""
+    skill_file_name = _SKILL_MAP.get(stage_name)
     if not skill_file_name:
         raise ValueError(f"No SKILL file mapped for stage: {stage_name}")
 
@@ -711,7 +716,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # 3. Gather Context
     context_blocks = []
     inputs_to_read = handoff.get("required_inputs", []) + handoff.get("optional_inputs", [])
-    
+
     for req in inputs_to_read:
         filepath = path / req["path"]
         if filepath.exists():
@@ -769,6 +774,16 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     Fix the exact issue described above and regenerate ALL deliverables from
     scratch, following the YAML FORMATTING RULES precisely this time.
     """
+
+    return full_prompt
+
+
+async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_context: str | None = None):
+
+    print(f"\n🧠 [AGENT INVOKED] Waking up specialist for: {stage_name}"
+          + (" (YAML-repair retry)" if retry_context else ""))
+
+    full_prompt = _build_stage_prompt(stage_name, handoff, path, retry_context=retry_context)
 
     # --- PRE-FLIGHT SAFETY RADAR ---
     start_time = time.time()
@@ -1238,6 +1253,84 @@ def _apply_b7_mandatory_inputs(stage_name: str, handoff: dict, run_dir: Path) ->
         existing_paths.add(mandatory_path)
 
 
+# E-032 S2a: the exclusion digest as a required_input on the two stages that
+# invent content. See engineering/roadmap/E-032/EPIC.md's 2026-08-23 review
+# entry -- "E-032 is primarily an INPUT problem, not a disposition problem."
+# hypothesis_generation/innovation_expansion structurally cannot see
+# campaign history today (neither stage's handoff template lists
+# campaign_state.yaml, the KB, or the scoreboard; the ONE nominal reference,
+# research_brief_to_hypothesis.yaml's optional campaign_knowledge_base.yaml
+# entry, points at a path -- "../../campaign_knowledge_base.yaml" -- that
+# does not exist; the real file lives under campaign_record/, so that
+# optional_input has always silently no-op'd). This union puts
+# campaign_record/exclusion_digest.yaml (build_exclusion_digest.py's output)
+# in front of the model, gated by config/campaign_config.yaml's
+# orchestrator.exclusion_digest_input.enabled (default false; same
+# off-by-default shape as E-030 S2a's halt_policy.quarantine_enabled --
+# see run_campaign._quarantine_enabled()).
+_EXCLUSION_DIGEST_INPUT_STAGES = {"hypothesis_generation", "innovation_expansion"}
+_EXCLUSION_DIGEST_RELATIVE_PATH = "../../campaign_record/exclusion_digest.yaml"
+
+
+def _exclusion_digest_input_enabled() -> bool:
+    """False (no behavior change) when the key, the section, or the file is
+    absent -- silence is never a green light, mirroring
+    run_campaign._quarantine_enabled()'s own rule verbatim. Reads via ROOT
+    (not a source-file-relative path) for the same reason that function
+    does: so the test sandbox (tests/conftest.py's autouse guard patches
+    ROOT) can seed its own value without touching the real repository."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    digest_cfg = ((cfg.get("orchestrator") or {}).get("exclusion_digest_input") or {})
+    return bool(digest_cfg.get("enabled", False))
+
+
+def _apply_exclusion_digest_input(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """Union campaign_record/exclusion_digest.yaml into
+    handoff['optional_inputs'] for the two generating stages, ONLY when the
+    flag is on and the file exists on disk -- deduplicated, same
+    skip-gracefully-on-absence discipline as _apply_b7_mandatory_inputs.
+    optional_inputs (not required_inputs): a missing digest must never crash
+    a stage that predates this feature; run_claude_worker's context-gathering
+    loop already treats a missing optional_input as silently absent.
+
+    Flag OFF (the default): this function is a no-op -- the handoff dict is
+    never mutated, so _build_stage_prompt's assembled prompt text is
+    byte-identical to before this function existed. This is the actual
+    off-by-default proof point (tests/test_exclusion_digest_input.py), not
+    merely "the gate is skipped" -- adding an optional_input changes what
+    run_claude_worker reads into context_blocks, which changes the prompt
+    text an LLM stage receives, which is a real behavior change if it ever
+    fires unconditionally."""
+    if stage_name not in _EXCLUSION_DIGEST_INPUT_STAGES:
+        return
+    if not _exclusion_digest_input_enabled():
+        return
+    if not (run_dir / _EXCLUSION_DIGEST_RELATIVE_PATH).exists():
+        return
+    optional = handoff.setdefault("optional_inputs", [])
+    existing_paths = {req["path"] for req in optional}
+    if _EXCLUSION_DIGEST_RELATIVE_PATH in existing_paths:
+        return
+    optional.append({
+        "path": _EXCLUSION_DIGEST_RELATIVE_PATH,
+        "reason": (
+            "E-032 S2a: family-scoped (family, instrument, timeframe) triples "
+            "already tried, freshly derived from run artifacts -- NOT "
+            "campaign_state.yaml's stale, family-blind instruments_tried/"
+            "timeframes_tried lists. Prefer a candidate whose family is absent "
+            "here, or whose (instrument, timeframe) triple is absent under its "
+            "family, over a same-family tweak when both are viable. This is "
+            "raw material, not a binding gate -- the anti_adjacency_gate tool "
+            "stage makes the mechanical refusal decision downstream."
+        ),
+    })
+    existing_paths.add(_EXCLUSION_DIGEST_RELATIVE_PATH)
+
+
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
     tool_stages = {"protocol_execution", "signal_prescreen"}
     if stage_name in tool_stages:
@@ -1254,6 +1347,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # B7: deterministic mandatory-inputs union (see helper docstring above).
     _apply_b7_mandatory_inputs(stage_name, handoff, RUN_DIR)
+
+    # E-032 S2a: exclusion-digest union, off by default (see helper docstring above).
+    _apply_exclusion_digest_input(stage_name, handoff, RUN_DIR)
 
     # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")
