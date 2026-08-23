@@ -23,7 +23,7 @@ epic".
 | [E-014](E-014/EPIC.md) | Venue-parameterized cost model + calibration re-runs | planned | S1 — turn the venue fee schedule into a real parameter (today: one hardcoded `{spot,perp}` flag) and wire the unread `execution_style` block in; S3 (funding retest) now has a real data source — Dorian's PR #24 |
 | [E-016](E-016/EPIC.md) | Fee-reduction autopsy field | planned | S2 — wire the "yes" branch to brief registration end-to-end; S3 — resolve whether the non-blocking check should become blocking or the "MUST" should be softened |
 | [E-017](E-017/EPIC.md) | Autopsy standard v1 | parked | Blocked on Phase 2's gate (`docs/CAMPAIGN_PROGRAM.md` §Phase 2) — S1 implements the 2 missing palette metrics (profit-per-forecast-bin, regime-ID correctness), S2 builds the sibling-registration hard gate from scratch; **park reviewed 2026-08-23 and KEPT for S1** — Part 4's standing guarantee 3.4 says palette metrics are added when an autopsy needs them, never speculatively. **S2 (sibling-registration hard gate) is not a metric and inherited its park by adjacency — split it out and judge it on its own** |
-| [E-018](E-018/EPIC.md) | Near-miss scoreboard | in-progress | **Unparked 2026-08-23** (park was inherited from Phase 3's position, not from this epic's inputs — it ranks 38 verdicts already on disk and needs nothing from Phase 2). **S1 dispatched 2026-08-23** — ranked table + the promotion-read firewall, built in the same story. Feedstock for E-032 |
+| [E-018](E-018/EPIC.md) | Near-miss scoreboard | planned | **S1 done 2026-08-23** (`112677e2`) — ranked table over 38 verdicts + a static promotion-read firewall with an injected-violation test. **Moved back to `planned`, not left `in-progress`: S2 (wire idea-generation read access) genuinely cannot proceed — E-032 is the consumer and does not exist yet.** Caveat recorded: its margin column mixes pre/post two-bars-fix conventions (58 of 59 runs are pre-fix) |
 | [E-019](E-019/EPIC.md) | Feature matrix + leakage checks | parked | Blocked on Phase 3 complete |
 | [E-020](E-020/EPIC.md) | Cut per-dispatch codebase context cost (scoped CLAUDE.md, then re-evaluate tree-sitter) | new | S1 — inventory known landmines with file:line refs across both trees |
 | [E-021](E-021/EPIC.md) | Consolidate bug/ticket tracking onto GitHub; narrow Notion's role | new | S1 — joint conversation with Dorian before touching anything he relies on |
@@ -35,7 +35,7 @@ epic".
 | [E-028](E-028/EPIC.md) | Realized allocation must reflect strategy intent, not gate state | new | Needs an operator decision, not a dispatch — S1 characterizes the three policies for "regime has no strategy"; hysteresis/dwell is already closed as `unusable_for_this_symbol_timeframe` |
 | [E-029](E-029/EPIC.md) | The trade record must carry the decision, not just the outcome | new | S1 — characterize where `regime_at_exit` / forecast / allocation-pair can be sourced without changing behaviour, and resolve the 20% of trades recording `regime_at_entry: unknown`. Sequenced BEFORE E-027, and both sequenced BEHIND E-030 (2026-08-21) |
 | [E-031](E-031/EPIC.md) | Queue return edge: the loop must be able to start a new line of inquiry | in-progress | **S1 dispatched 2026-08-23** — characterize-and-STOP: which seed sources can legitimately refill the queue, what each holds today, and the routing policy. S2 (schedulability block) and S3 (return edge + trial accounting) follow |
-| [E-032](E-032/EPIC.md) | Proactive idea generation: propose something not already tried | new | S1 — characterize what the generating stages can see vs. what they need. **Depends on an open operator decision: unpark E-018** (near-miss scoreboard), which the campaign program names as the idea-generation stage's raw material |
+| [E-032](E-032/EPIC.md) | Proactive idea generation: propose something not already tried | in-progress | **S1 done 2026-08-23** (`6ba02ae0`) — adjacency is structural at 3 layers, chief among them that the generating stages are closed-book: no campaign history in their inputs and `allowed_tools=[]`. **Re-scopes the epic: an INPUT problem before a disposition problem.** S2 — land the exclusion digest as a `required_input`, then the deterministic refusal stage; must also state artifact precedence (see Log) |
 
 ## Done
 
@@ -64,5 +64,8 @@ continues as a card reference
 
 **WIP limit (amendment 11): at most 2 epics may be `in-progress` at once**,
 and only via an actual dispatch under the epic — a tree audit crediting
-pre-existing code does not itself count. Currently **2 of 2** slots used — E-031 and E-018 (both S1 dispatched 2026-08-23). At the limit: no third epic may go `in-progress` until one closes.
+pre-existing code does not itself count. Currently **2 of 2** slots used — E-031 (S1 done) and E-032 (S1 dispatched 2026-08-23).
+E-018 was returned to `planned` on 2026-08-23 rather than held `in-progress`: its S1 is
+done and its S2 has no consumer to wire until E-032 exists. `in-progress` means a story is
+dispatched, not that an epic is topical.
 (E-003 closed `done` 2026-08-18; E-030 closed `done` 2026-08-23.)

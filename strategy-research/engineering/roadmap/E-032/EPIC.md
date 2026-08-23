@@ -183,3 +183,51 @@ anti-adjacency gate also counts as the gate working, and is logged.
   demonstrated concretely on run_059's own row in this story. Not wired as an
   input anywhere today (no `stages.yaml` entry references it); E-018 S2 and
   this epic's gate stage should land together.
+
+- 2026-08-23 — **S1 reviewed by the dispatching session; two load-bearing
+  claims verified by execution, one gap added, one of the dispatcher's own
+  claims retracted.**
+
+  VERIFIED. The generating stages are closed-book, and this is the whole
+  explanation for adjacency. `stages.yaml`: `hypothesis_generation` receives
+  only `research_brief.yaml` + `available_feeds.yaml` +
+  `indicator_library.yaml`; `innovation_expansion` only the brief + the card
+  it is expanding. Neither ever receives `campaign_state.yaml`, the KB, or the
+  scoreboard. And `run_phase1_research.py:788` runs every stage agent as
+  `ClaudeAgentOptions(model="claude-haiku-4-5", allowed_tools=[])` — zero
+  tools, by explicit design comment ("prevent it from wandering off").
+  **The idea generator cannot know that 59 runs happened.** It is not
+  conservative; it is amnesiac and blindfolded. Only `campaign_review` gets
+  `campaign_state.yaml`, once per 6 runs, and its output is orphaned
+  (`next: []`).
+
+  Consequence for scoping: **E-032 is primarily an INPUT problem, not a
+  disposition problem.** Prose telling a closed-book agent to be adventurous
+  cannot work; it has nothing to be adventurous about. S2 must land the
+  exclusion digest as a `required_input` before any disposition text is worth
+  writing.
+
+  GAP ADDED — precedence between disagreeing artifacts. S1's gate admits the
+  4h funding retest by reading the KB's parent `reactivation_condition` and
+  the explicit closure note that the child's kill "does NOT itself close the
+  parent." That is well-evidenced and the dispatching session accepts it. But
+  the daily brief's own pre-registered pass rule says the opposite in its own
+  text — *"the mechanism's LAST escalation ... no further timeframe exists
+  under it"* — and registered `lineage_routing: terminate`. Two binding
+  artifacts disagree on their face; S1 resolves it by preferring the KB and
+  does not say that it is doing so. **S2 must state a precedence order
+  explicitly** (proposal: a registered `lineage_routing: terminate` closes the
+  lineage it names, and only the KB's parent entry can keep a sibling branch
+  open — which is what happened here). Left implicit, the gate will one day
+  re-open a genuinely terminated lineage and no rule will have been broken.
+
+  RETRACTED, dispatching session's own error. The dispatch brief and the
+  operator-facing summary both claimed "cost has killed this family twice
+  (1h edge_to_cost_ratio 0.2425; daily cost_ratio 2.2927)" and used it as an
+  argument against 4h. Wrong: 2.2927 was a **PASS**. `run_059`'s
+  `prescreen_result.yaml` records `safety_factor_required: 2.0`,
+  `pass: true`; `run_044`'s records the same threshold with `pass: false` at
+  0.2425. Cost killed the 1h branch once; the daily branch cleared the cost
+  gate comfortably and died on Sharpe and drawdown. The a-priori case against
+  4h is therefore weaker than the dispatcher stated, and S1's ADMIT verdict is
+  better founded than the brief that commissioned it.
