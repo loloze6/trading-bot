@@ -2319,6 +2319,16 @@ choose (`20260724_p4_density_probe_archive.md:361-386`).
 - **NOT RESOLVED HERE.** Choosing between them is a director's call, and this item exists so
   the choice is made once, in the open, rather than silently by whichever artifact a reader
   happens to open first.
+- **RESOLVED 2026-08-22 (operator ruling).** Floor B (5, `campaign_config.yaml:141`'s A3.4
+  gate) governs. `protocols/ts_trend_daily_v1.json`'s `promotion.min_trade_count_gte` was
+  changed from 1 to 5 the same date to match (its 2026-07-08 revision note is retained,
+  superseded, not deleted). This resolves condition (b) of
+  `campaign_knowledge_base.yaml`'s `p4_sma_trend_longonly_daily_auto` `reactivation_condition`.
+  It does not by itself reopen the entry — conditions (c) (machine-evaluable pass_rule) and
+  (d) (correlation-adjusted breadth) were evaluated 2026-08-23 and (d) came back
+  **not adequate** (daily-panel n_eff ≈1.66–1.69 vs a required ≥3.0 — see
+  `strategy-research/briefs/artifacts/p4_daily_reactivation_20260823/` and
+  `engineering/roadmap/E-030/EPIC.md`'s Log, 2026-08-23 entry, for the full package).
 
 ### P4-D3. `panel_backtester.py`'s commission constant is correct for its gate and a trap for anything else costed through that path (P1, FILED — trap, not a defect)
 

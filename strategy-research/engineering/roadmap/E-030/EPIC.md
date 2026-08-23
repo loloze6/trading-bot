@@ -377,3 +377,23 @@ Relationship to other epics.
   (Done-when #4): trading-bot 409 passed / 2 skipped, strategy-research 884
   passed (recorder tests included under `--slow`, no separate count from the
   fast run since none of this epic's tests are marked `slow`).
+
+- 2026-08-23 (unrelated to the epic itself; recorded here only because the
+  2026-08-22 entry above is where the P4_ts_trend trade-floor conflict was
+  last documented) — the operator ruled that day that
+  `config/campaign_config.yaml:141`'s A3.4 floor of 5 governs over
+  `protocols/ts_trend_daily_v1.json:132`'s then-value of 1; that file's
+  `promotion.min_trade_count_gte` was changed 1 → 5 to match, resolving
+  condition (b) of `campaign_knowledge_base.yaml`'s
+  `p4_sma_trend_longonly_daily_auto` `reactivation_condition`. Conditions (c)
+  (machine-evaluable pass_rule) and (d) (correlation-adjusted daily-panel
+  breadth) were then worked: (d) measured n_eff ≈1.66 (all-19) / 1.69
+  (primary 17, BTC/ETH excluded as an asset-level contamination) against a
+  required ≥3.0 (derived from the project's own standing ≥30-independent-
+  episode Sharpe-quoting floor and the brief's conservative low-end
+  transitions estimate) — **not adequate**, so (c) was not authored past a
+  draft that documents the shortfall rather than a ratifiable rule. Full
+  package: `strategy-research/briefs/artifacts/p4_daily_reactivation_20260823/`.
+  P4_ts_trend's queue status is unchanged (still not `ready`) pending the
+  operator's disposition on the power finding — this does NOT reopen or
+  extend this epic's own scope or Done-when.

@@ -1,0 +1,34 @@
+DATA dir: C:\Users\alauz\Documents\Projects\trading-bot\trading-bot\local_data
+Union daily index: 4461 rows, 2013-10-06 00:00:00 -> 2025-12-31 00:00:00
+
+=== RAW pairwise-complete correlation (as-produced method, matches _verify_xs_neff.py's 1h methodology) ===
+all-19                 n=19 rho_bar=+0.5800 n_eff=1.661 minEig=-0.0940 PSD=False
+primary-17-nobtceth    n=17 rho_bar=+0.5646 n_eff=1.694 minEig=+0.0251 PSD=True
+
+=== LISTWISE common-window (all-19) correlation, for comparison (this is what changes if short-history symbols like TAO/ONDO are allowed to set the window) ===
+all-19                 rows= 548 window=2024-07-02 00:00:00 -> 2025-12-31 00:00:00  rho_bar=+0.5837 n_eff=1.651 minEig=+0.1192
+primary-17-nobtceth    rows= 548 window=2024-07-02 00:00:00 -> 2025-12-31 00:00:00  rho_bar=+0.5654 n_eff=1.692 minEig=+0.1343
+
+=== Per-symbol history length (rows, first date) -- context for the pairwise-complete vs listwise divergence above ===
+  BTC    rows= 4457 first=2013-10-06 last=2025-12-31
+  ETH    rows= 3794 first=2015-08-07 last=2025-12-31
+  XRP    rows= 3147 first=2017-05-18 last=2025-12-31
+  SOL    rows= 1659 first=2021-06-17 last=2025-12-31
+  ADA    rows= 2652 first=2018-09-28 last=2025-12-31
+  SUI    rows=  974 first=2023-05-03 last=2025-12-31
+  ZEC    rows= 3350 first=2016-10-29 last=2025-12-31
+  DOGE   rows= 2205 first=2019-12-19 last=2025-12-31
+  XMR    rows= 3285 first=2017-01-02 last=2025-12-31
+  LTC    rows= 4265 first=2013-10-24 last=2025-12-31
+  ONDO   rows=  630 first=2024-04-11 last=2025-12-31
+  NEAR   rows= 1295 first=2022-06-16 last=2025-12-31
+  LINK   rows= 2290 first=2019-09-25 last=2025-12-31
+  TAO    rows=  549 first=2024-07-01 last=2025-12-31
+  AVAX   rows= 1472 first=2021-12-21 last=2025-12-31
+  TRX    rows= 2128 first=2020-03-05 last=2025-12-31
+  AAVE   rows= 1843 first=2020-12-15 last=2025-12-31
+  INJ    rows= 1605 first=2021-08-10 last=2025-12-31
+  UNI    rows= 1904 first=2020-10-15 last=2025-12-31
+
+=== 1h prior (reference, from _verify_xs_neff.py / ratified XS_momentum findings, NOT recomputed here) ===
+  all-19  1h: rho_bar=+0.5419  n_eff=1.767  (quoted, not measured by this script)

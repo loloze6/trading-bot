@@ -7,7 +7,37 @@ queue:
   priority: 1
   source: user_delivered
   relation: refine
-  notes: 'STATUS AS OF 2026-08-05 -- SECOND BLOCKER ADDED (status field unchanged,
+  notes: 'STATUS AS OF 2026-08-23 (reactivation package prepared for operator
+    ratification; status field UNCHANGED -- do not flip to ready off this note
+    alone). Of the parent rule''s four reactivation conditions (campaign_knowledge_base.yaml
+    p4_sma_trend_longonly_daily_auto reactivation_condition, (a)-(d)):
+    (a) daily bars -- already satisfied, 19 kraken_*USD_1d.csv caches landed
+    2026-08-07 (commit 8cff3f24). (b) the P4-D2 trade-floor conflict -- RESOLVED:
+    operator ruled 2026-08-22 that config/campaign_config.yaml:141''s A3.4 floor of
+    5 governs; protocols/ts_trend_daily_v1.json''s promotion.min_trade_count_gte
+    changed 1 -> 5 the same date (2026-07-08 revision''s reasoning retained,
+    superseded, in that file). (c) a machine-evaluable pass_rule -- DRAFTED but not
+    ratified, see the artifacts directory below; criteria (a)/(b) (median_sharpe>0,
+    max_abs_drawdown_pct<30) are directly inheritable from this protocol''s own
+    promotion block, but criterion (c) (evaluability/sample-floor under the ruled
+    floor-5 gate) could not be authored to a threshold that both passes honestly and
+    is derived a-priori -- see (d). (d) correlation-adjusted breadth -- MEASURED
+    2026-08-23, NOT ADEQUATE: daily-panel n_eff (pairwise-complete Pearson,
+    same method as the ratified 1h prior) is 1.661 (all-19) / 1.694 (primary 17,
+    BTC/ETH excluded as an asset-level contamination already measured under this
+    family on Binance in runs 053-057), both below the project''s own standing
+    >=30-independent-episode Sharpe-quoting floor combined with the brief''s
+    conservative low-end transitions estimate, which requires n_eff >= 3.0.
+    CONCLUSION: this reactivation is NOT POWERED as specified; the package (ruling
+    record, n_eff script + raw output, pass_rule draft with per-threshold
+    derivations, and this conclusion) is written up in full at
+    strategy-research/briefs/artifacts/p4_daily_reactivation_20260823/ for operator
+    review. Status stays blocked_on_daily_bar_ingest (misnamed at this point --
+    (a) is satisfied -- but changing it is a separate, deliberate action, not a
+    side effect of this note) pending the operator''s disposition on the power
+    finding. See also E-030/EPIC.md Log, 2026-08-23 entry.
+
+    STATUS AS OF 2026-08-05 -- SECOND BLOCKER ADDED (status field unchanged,
     daily-bar-ingest blocker below unchanged): this brief''s pre-registered pass rule
     is pinned to run_054 baselines (BTCUSDT >=0.5791, ETHUSDT >=0.0318 median Sharpe)
     now known INVALID post-loop-fix -- 15 of 30 run_054 windows measured ending while
