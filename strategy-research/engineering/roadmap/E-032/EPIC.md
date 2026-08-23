@@ -356,3 +356,44 @@ anti-adjacency gate also counts as the gate working, and is logged.
   383 passed / 2 skipped, unchanged from the session's own reference figure
   (nothing under `trading-bot/` was touched). No campaign or backtest run;
   no LLM call made; `local_data/holdout_sealed/` never read.
+
+- 2026-08-23 — **S2a reviewed by the dispatching session.** Verified by
+  execution, not relayed: strategy-research **954 passed** (910 baseline + 44,
+  zero regressions); `orchestrator.exclusion_digest_input.enabled` defaults
+  **false**; both halves of the calibration assertion exist as named tests
+  (`test_calibration_case_admits_the_4h_funding_retest` and
+  `..._naive_flat_list_gate_would_refuse_the_same_candidate`), so the layering
+  is proven to earn its complexity rather than merely to exist.
+
+  **THE CAVEAT THAT MATTERS: the gate is built and tested but NOT WIRED.**
+  Nothing in a live run calls it. `stages.yaml`'s `anti_adjacency_gate` entry
+  is declarative documentation — that file is not read by the live
+  orchestrator. The agent stated this plainly rather than narrowing scope
+  silently, which is the correct call, and the reason is sound: deciding what
+  happens on REFUSE (retry with the exclusion in hand? terminate? escalate?)
+  is an orchestration decision that cannot be verified without running a
+  campaign. **So S2a changes no behaviour whatsoever today** — by design, but
+  it must not be read as "the loop can now avoid repeating itself."
+  That is S2c.
+
+  **Incidental find, verified by the dispatching session, and it compounds
+  S1's headline.** The handoff template's optional
+  `campaign_knowledge_base.yaml` input points at `"../../campaign_knowledge_
+  base.yaml"`, which does not resolve — the real file is
+  `campaign_record/campaign_knowledge_base.yaml`. So it is not merely that the
+  generating stages were never *given* campaign history: the one optional
+  input that would have supplied it **has never resolved, silently**, for the
+  whole life of the pipeline. Left unfixed as out of S2a's scope, which is
+  right, but it belongs in S2b's build list rather than in a code comment —
+  it is a one-line fix standing between the KB and a stage that was already
+  meant to read it.
+
+  Two real bugs the agent found by testing against live data rather than by
+  inspection, both worth recording because both are the epic's own failure
+  mode reproduced in miniature: (1) S1's measurement script mis-classified two
+  Fear & Greed runs into the funding family via naive full-text search over
+  free-text rationale; (2) a first Layer-1 implementation matched at FAMILY
+  grain and wrongly refused the calibration candidate, because a closed,
+  unrelated sibling finding shares the family bucket with the open one. Fixed
+  to mechanism grain. A gate that conflates siblings is exactly what E-032
+  exists to prevent.
