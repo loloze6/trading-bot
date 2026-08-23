@@ -191,3 +191,43 @@ after.
   not the only one, and is hygiene rather than a gate. S5 reworded
   accordingly. See "Correction (2026-08-06)" above and PROCESS.md
   amendment 10.
+- 2026-08-23 — **run_059's baseline is convention-pinned too, MEASURED — not
+  just run_054's.** A pipeline-verification reproduction (operator-directed:
+  re-run a completed run rather than launch a new hypothesis, so the check
+  costs no trial) re-executed `run_059` from its own
+  `candidate_strategy_config.json` against `funding_mr_daily_retest_v1.json`.
+  Config verified identical first: canonical sha256 `d8cd6563…` matches the
+  `config_sha256` recorded in `runs/run_059/artifacts/protocol_result.yaml`.
+
+  ```
+                     run_059 (2026-07-19)   reproduction (2026-08-23)
+  BTCUSDT median_sharpe   -0.296                +0.016
+  ETHUSDT median_sharpe   -0.979                -0.885
+  BTCUSDT max_dd           34.922%               34.9%
+  ETHUSDT max_dd           49.606%               49.5%
+  trades                  699                   736   (+37)
+  protocol verdict        refine                refine
+  ```
+
+  **Cause identified, not guessed: E-012's own two-bars fix**, landed
+  2026-08-09 (`7ad1c42d`/`a781cd52`, "backtests were silently dropping the
+  last 2 fetched bars"), three weeks AFTER run_059 ran. The +37 trades are
+  the mechanism showing itself — more bars at each window's end. The project
+  declared this at the time (`d9c7d637`, "loud baseline-rebaseline
+  declaration"); what was not recorded is that the declaration reaches
+  run_059, not only run_054.
+
+  **Drawdowns reproduce to within rounding and the pass-rule outcome is
+  unchanged** (still FAIL on both criteria on both symbols → kill/terminate),
+  so no decision moves. But BTCUSDT's median Sharpe crosses zero, which means
+  the number is not comparable across the fix and should never be quoted
+  against a post-fix figure.
+
+  **Generalises: every pre-2026-08-09 run's metrics are on the old
+  convention** — that is 58 of 59 run dirs. Anything that ranks or compares
+  runs across that date is mixing two conventions. The near-miss scoreboard
+  (E-018, committed 2026-08-23) is the live instance: its
+  `worst_fail_margin_frac` column draws on pre-fix numbers for every run it
+  ranks. Noted on E-018 as a caveat rather than silently corrected — the fix
+  is a decision (re-derive baselines vs. label the convention), and E-012 S5
+  is where it belongs.
