@@ -94,6 +94,14 @@ rulings/deviations section (K2's and K3's also have a dated rider section;
 K3's rider section additionally carries the 2026-07-15 audit-outcome
 paragraph).
 
+### "Why did my run stop / not stop, and what does the campaign know about its own halts?"
+→ **[`docs/HALT_RECOVERY.md`](docs/HALT_RECOVERY.md)** — the durable halt
+record, the quarantine/escalate policy (which 4 reasons auto-continue and
+why, off by default), and the loop-health instrument
+(`campaign_record/loop_health.yaml`), each with the config flag and what to
+expect. Built in E-030 — see `engineering/roadmap/E-030/EPIC.md` for the
+evidence.
+
 ### "What can run autonomously vs needs a human?"
 → **[`docs/WORKFLOW_CAPABILITIES.md`](docs/WORKFLOW_CAPABILITIES.md)** —
 per-stage autonomy boundary within one run.
