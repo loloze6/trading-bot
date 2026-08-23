@@ -140,3 +140,36 @@ and counting REGISTER lines in `campaign_log.md` (baseline: 1, whole history).
   `_record_backtest_trial` — never collides across writers. Full build list
   for S3 (schema change, refill function, flag, tests) is itemized in the
   artifact so S3 is a dispatch, not a design session.
+
+- 2026-08-23 — **S1 review correction (dispatching session, verified by
+  execution).** S1's artifact states: *"there is no legal way for an entry to
+  say 'a machine minted this' ... S3 cannot ship without touching
+  `tools/record_schema.py`."* **That is wrong, and it shrinks S3.**
+  `_SOURCE_VALUES = frozenset({"agent", "operator_ratified", "user_delivered"})`
+  (`tools/record_schema.py:120`) — `agent` means exactly this. RUNBOOK.md's
+  brief-custody rule (added 2026-07-06, line ~503) defines it as
+  "agent-authored", and it is already in live use on a real queue entry
+  (`config/campaign_queue.yaml:271`). The artifact listed `agent` among the
+  three legal values in the same sentence that denied a machine could declare
+  itself.
+  There is a fair residual distinction — `agent` says "an agent wrote the
+  brief", not "the loop initiated this unprompted". But under S1's OWN
+  recommended policy every auto-minted entry lands in
+  `status: paused:pending_operator_ratification` and is human-ratified before
+  launch, so `source: agent` + that status expresses the state completely.
+  **S3 does not need a `record_schema.py` change on this axis.** Verified
+  separately that `_QUEUE_STATUS_RE` (`record_schema.py:107`) already admits
+  `paused:.+`, so the recommended status needs no change either.
+  Everything else in S1 that this session spot-checked held up, including the
+  two findings below.
+- 2026-08-23 — **S1's incidental finding confirmed independently and it
+  generalises.** `evaluate_and_persist_wishlist_predicate()` (defined
+  `workflow/run_campaign.py:682`, the single sanctioned writer of
+  `detector_wishlist.yaml`'s trigger state) has **zero code callers**. Every
+  other reference in the repo is documentation, an incident report, a skill
+  file instructing an agent to invoke it by hand, or E-031's own artifacts.
+  Together with `register_hypothesis()` (also zero in-pipeline callers) this
+  is not two coincidences but **a pattern: this system builds correct
+  single-authority write paths and then never wires anything to call them.**
+  That pattern, not either individual function, is what E-031 is really
+  fixing.
