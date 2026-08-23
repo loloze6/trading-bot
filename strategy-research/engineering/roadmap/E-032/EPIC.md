@@ -1,6 +1,6 @@
 # E-032 — Proactive idea generation: the loop must be able to propose something it has not already tried
 
-**State:** new
+**State:** in-progress (S1 dispatched 2026-08-23)
 **Owner:** Jeremy
 **Updated:** 2026-08-23
 
@@ -68,7 +68,7 @@ The bright line (frozen rule → one-shot holdout) is untouched.
 
 ## Stories
 
-- [ ] S1 — **Characterize and STOP.** What the generating stages can see today
+- [x] S1 — **Characterize and STOP.** What the generating stages can see today
       versus what they would need to propose something non-adjacent. Where the
       disposition lives (skill file / stage prompt / config). What the
       anti-adjacency gate can key on that already exists. No code.
@@ -112,3 +112,74 @@ anti-adjacency gate also counts as the gate working, and is logged.
   own correction drove the framing: the loop is not idea-poor, it is
   adjacency-bound, and refill without curiosity just repeats dead families at
   higher throughput.
+
+- 2026-08-23 — **S1 done.** See
+  `engineering/roadmap/E-032/artifacts/s1_idea_generation.md` +
+  `.../artifacts/s1_measure_idea_generation.py` (read-only, re-runnable).
+
+  **Adjacency is structural, three independent layers, not a prose problem.**
+  (1) `hypothesis_generation` (3 required_inputs: research_brief, available_feeds,
+  indicator_library) and `innovation_expansion` (2: research_brief,
+  hypothesis_card) never receive `campaign_state.yaml`, the KB, or the
+  near-miss scoreboard — `run_claude_worker` builds the whole prompt from
+  `stages.yaml`'s `required_inputs`/`optional_inputs` and nothing else
+  (`workflow/run_phase1_research.py:686-761`). Only `campaign_review` reads
+  `campaign_state.yaml`, once per 6 runs, and its output is orphaned
+  (`next: []`). (2) `expanded_hypothesis_card.schema.json` requires
+  `base_hypothesis_id` and has no field for an unrelated hypothesis — a
+  schema-conformant expansion is definitionally a child of one parent.
+  (3) Stage agents run with `ClaudeAgentOptions(model="claude-haiku-4-5",
+  allowed_tools=[])` (`run_phase1_research.py:788`) — zero tools, closed-book.
+
+  **Anti-adjacency gate: `instruments_tried`/`timeframes_tried` are confirmed
+  stale, and confirmed WRONG at the grain a gate needs, not just outdated.**
+  `instruments_tried` (4 symbols) predates XS_momentum's 19-pair ratification
+  (2026-07-22). `timeframes_tried` (`1h, 4h, 15m`) is family-blind: direct
+  scan of all 7 funding-family `hypothesis_card.yaml` files found timeframes
+  `{1h, 1d}` only — the `'4h'` entry comes entirely from 11 unrelated
+  `keltner`-family runs. **A gate keyed on the global list would wrongly
+  REFUSE a funding-family 4h proposal.** Recommended fix: layer the gate
+  KB-reactivation-clause-first (per-branch granularity, e.g.
+  `funding_rate_continuous_mean_reversion_expanded_auto`'s `4h or daily`
+  clause, correctly still open after the daily branch was killed as
+  `run_059`/`funding_mr_daily_retest_killed`), refreshed per-family
+  `(family, instrument, timeframe)` triples second, and never trust the flat
+  `campaign_state.yaml` lists as a global veto.
+
+  **Worked calibration case, traced through the recommended gate: ADMIT.**
+  The funding-rate 4h retest matches the still-open, unconsumed 4h branch of
+  `funding_rate_continuous_mean_reversion_expanded_auto` (the daily branch's
+  closure explicitly does not close the parent, per the KB's own text). Had
+  the gate checked the flat `timeframes_tried` list first, it would have
+  produced a false REFUSE — the calibration case is exactly the trap the
+  layering exists to avoid. A same-day reproduction of `run_059` under the
+  post-two-bars-fix engine convention (`E-012/EPIC.md`, 2026-08-23) found
+  BTCUSDT median Sharpe crosses -0.296 → +0.016, but the pass-rule kill is
+  unchanged (still FAIL on drawdown both symbols) — strengthens confidence
+  the daily-branch kill is real, without reopening it.
+
+  **Disposition lands in three places, not one:** a new `required_input` on
+  the two generating stages (a small exclusion-digest artifact, not raw
+  `campaign_state.yaml`), an additive SKILL.md prose section on both skills
+  (matching the project's existing "IMPROVEMENT NN" convention), and a new
+  deterministic `tool:` stage for the refusal itself (`tools/anti_adjacency_gate.py`,
+  same pattern as `signal_prescreen`) — prose alone repeats the existing,
+  measured-ineffective pattern (this project already has prose refusal rules
+  in `hypothesis-design/SKILL.md`; 30 of 36 completions were adjacent anyway).
+
+  **External-knowledge dispatch (Task 4, characterization only):** needs its
+  own stage/tool grant (current stages have `allowed_tools=[]` by deliberate
+  design, not oversight), a trigger keyed to gate-exhaustion (mirroring
+  E-031's "zero admissible candidates" terminal state), and MUST route its
+  output through the SAME `edge_source`/A1.3 anti-confabulation check
+  internally-generated ideas already clear — no parallel, weaker gate for
+  imported ideas.
+
+  **Near-miss scoreboard (E-018 S1) fitness:** usable as raw material but
+  thin (numeric margin recovered 24/59, IC 7/59, cost ratio 5/59) and its
+  `worst_fail_margin_frac` column mixes the pre/post two-bars-fix engine
+  convention (58 of 59 run dirs are pre-fix) — a consuming skill must check a
+  row's run date against 2026-08-09 before treating its margin as current,
+  demonstrated concretely on run_059's own row in this story. Not wired as an
+  input anywhere today (no `stages.yaml` entry references it); E-018 S2 and
+  this epic's gate stage should land together.
