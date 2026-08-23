@@ -70,9 +70,12 @@ are what remain once E-003 clears.
       exist in `deploy/kraken_recorder/`, untested); bit-identity on the
       real server stack was proven once (leg 6B) but wants re-confirming
       whenever the toolchain there changes.
-- [ ] S1b — (blocked behind E-003) Once the seal gate is enforceable in
-      every clone — including `culi.to` — write-serialize `campaign_state`
-      for concurrent launches and cut over from single-writer Option A.
+- [ ] S1b — **Blocker cleared 2026-08-18** (E-003 closed `done`; the seal gate
+      is enforceable in every clone). The "(blocked behind E-003)" note here
+      outlived its blocker by 5 days — EPICS.md's own row already recorded the
+      clearance, this story line did not. Remaining work, unchanged:
+      write-serialize `campaign_state` for concurrent launches and cut over
+      from single-writer Option A. Joint with Dorian.
 
 ## Log
 
