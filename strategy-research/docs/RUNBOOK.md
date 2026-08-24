@@ -283,8 +283,9 @@ Hard pauses that remain human-gated, unchanged by this automation:
 consumption), `research_only_unverified` (guards that same consumption),
 `budget_breaker`, and every error-class pause
 (`unhandled_exception`, `component_gap`, `component_execution_error`,
-`regime_misattribution`, `data_block_hitl`, `human_pause_unclassified`) — none
-of these are wishlist-trigger questions, and none are auto-resolved.
+`regime_misattribution`, `data_block_hitl`, `human_pause_unclassified`,
+`anti_adjacency_gate_exhausted`) — none of these are wishlist-trigger
+questions, and none are auto-resolved.
 
 | Reason (as it appears in the queue/log) | What it means | How to resolve |
 |---|---|---|
@@ -307,6 +308,7 @@ of these are wishlist-trigger questions, and none are auto-resolved.
 | `component_execution_error` | A strategy component threw during the backtest itself — OR, per the run_059 tz-bug arc (2026-07-18/19), silently produced a degenerate result with no exception at all (`FundingRateMeanReversionComponent`'s settlement-boundary check failing on every 1d bar because `CandleBuilder._align()` misaligned every daily candle's timestamp — see `trading-bot/PIPELINE_IMPROVEMENTS_20260712_v4.md`'s A12/A13/C11/D4 for the surrounding arc). Confirmed 4-step procedure from that arc, in order: **(1) fix the component/engine bug** at its confirmed root-cause site (in-process repro FIRST, per the standing NO-SPECULATIVE-FIX rule — do not patch on a hypothesis); **(2) snapshot the STALE pre-fix artifacts before re-running** (e.g. copy `protocol_result.yaml`/`pass_rule_evaluation.yaml` to a `_prefix_snapshot` sidecar, or simply note their timestamps) — these are evidence the bug existed and were produced by DEFECTIVE code, not a real result, and are worth preserving for the KB finding's own honesty note even though they must not be cited as the run's actual verdict; **(3) `update_state` to reset `pending_stage`** back to the correct UPSTREAM stage that must re-run against the fixed engine (per an explicit operator ruling on which stage — for run_059 this was `protocol_execution`, since `signal_prescreen` was independently confirmed unaffected by the specific bug and did not need to re-run); **(4) `--resume`** (section 4 below) to clear both run-level and queue-level state and continue. | Fix the component (root-caused via in-process repro, not assumed), then resume per the 4-step procedure above. |
 | `data_block_hitl` | Refinement planner determined missing data blocks the hypothesis (the original human-in-the-loop pause this pipeline was first built for). | Fetch the data, write `runs/<run_id>/artifacts/human_resolution.yaml` (`status: resolved_proceed` or `unresolvable`), then resume — this ONE reason uses a different resume path (section 4). |
 | `human_pause_unclassified` | A pause the wrapper's classifier doesn't have a specific bucket for yet. | Read `runs/<run_id>/pipeline_state.yaml` directly to see what actually happened, resolve it, then resume. |
+| `anti_adjacency_gate_exhausted` | **(E-032 S2c, gated by `orchestrator.anti_adjacency_retry.enabled`, off by default)** `tools/anti_adjacency_gate.py` REFUSEd this run's `hypothesis_card.yaml` 4 consecutive times — operator ruling 2026-08-23: "Retry up to 4 times with the exclusion list, then escalate to me." Each retry looped back to `hypothesis_generation` carrying the previous refusal's reason. `pipeline_state.yaml`'s `anti_adjacency_gate_retry.history` has the full attempt-by-attempt record (reasons, not just counts). | Read `anti_adjacency_gate_retry.history` and the last `runs/<run_id>/artifacts/anti_adjacency_result.yaml`. Either author a genuinely non-adjacent research direction yourself (new brief/hypothesis registration, same as `kb_reactivation_violation`'s resolution) or, if the gate's refusal was itself wrong (e.g. a KB/digest data error), fix the underlying record it read. Then resume — this pause path leaves `pending_stage` at `innovation_expansion` (the stage that triggered the gate, per `determine_post_refinement_route`'s own human_pause convention), not the literal `human_pause` sentinel some other rows use, so no manual `pending_stage` override is needed. |
 
 ---
 
@@ -378,7 +380,8 @@ orch.update_state(
     flags={'research_only_unverified': False, 'no_signal_artifact_flagged': False,
            'conformance_violation': False, 'regime_misattribution_flagged': False,
            'component_execution_error_flagged': False, 'kb_reactivation_violation': False,
-           'pass_rule_evaluation_disagreement': False, 'stale_escalation_unclaimed': False},
+           'pass_rule_evaluation_disagreement': False, 'stale_escalation_unclaimed': False,
+           'anti_adjacency_gate_exhausted': False},
 )
 "
 ```

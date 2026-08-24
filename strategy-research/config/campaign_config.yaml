@@ -180,6 +180,40 @@ orchestrator:
       # identical stale-path bug, nor verdict_interpreter's one optional
       # instance -- see the code comment above _STALE_INPUT_PATH_FIXES for
       # why those are out of this story's scope.
+  anti_adjacency_retry:
+    enabled: false
+      # E-032 S2c. OFF BY DEFAULT and read at runtime by
+      # run_phase1_research._anti_adjacency_retry_enabled() -- same shape as
+      # exclusion_digest_input.enabled / stale_input_path_fix.enabled just
+      # above (a fifth explicit exception to this file's "declared parity
+      # only" rule). Operator ruling (2026-08-23, E-032/EPIC.md Log):
+      # "Retry up to 4 times with the exclusion list, then escalate to me."
+      #
+      # While false, _route_post_innovation_expansion() returns
+      # STAGE_CONFIGS['innovation_expansion']['default_next'] ('validation')
+      # immediately -- the anti_adjacency_gate tool is never imported, the
+      # exclusion digest / KB are never read, and no new pipeline_state.yaml
+      # field is written. run_loop's stage-advance logic is byte-identical to
+      # its pre-E-032-S2c behavior. Proven by
+      # tests/test_anti_adjacency_retry_policy.py's flag-off/flag-on
+      # behavior comparison (same acceptance bar as S2a/S2b: compare actual
+      # output, not just assert the code path is skipped).
+      #
+      # While true: right after innovation_expansion produces its
+      # deliverables, the run's hypothesis_card.yaml is evaluated by
+      # tools/anti_adjacency_gate.py (Layer 1 campaign_knowledge_base.yaml,
+      # Layer 2 campaign_record/exclusion_digest.yaml). ADMIT -> validation,
+      # attempt counter reset. REFUSE -> loop back to hypothesis_generation
+      # with the refusal reason carried into its next prompt (a dedicated
+      # counter, state['anti_adjacency_gate_retry']['attempts'], independent
+      # of BOTH counters.refinements_used and stage_attempts -- E-030 S1.5
+      # Piece 2 precedent). The 4th CONSECUTIVE REFUSE for the same lineage
+      # step stops auto-actioning and escalates via the project's existing
+      # human_pause mechanism (status=paused_for_human, flags.
+      # anti_adjacency_gate_exhausted -> run_campaign._classify_human_pause).
+      #
+      # See engineering/roadmap/E-032/EPIC.md's S2c story entry and
+      # 2026-08-23 operator-ruling Log entry.
 
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)

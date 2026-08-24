@@ -29,13 +29,23 @@ stages:
     next:
       - validation
 
-  # E-032 S2a: anti-adjacency gate (declarative documentation only -- this
-  # file is not read by the orchestrator's live routing today; STAGE_CONFIGS
-  # and run_tool_worker in workflow/run_phase1_research.py are. Documented
-  # here to match the signal_prescreen contract exactly, per
+  # E-032 S2a: anti-adjacency gate (declarative documentation -- this file is
+  # still not read by the orchestrator's live routing; STAGE_CONFIGS and
+  # run_tool_worker in workflow/run_phase1_research.py are. Documented here
+  # to match the signal_prescreen contract exactly, per
   # engineering/roadmap/E-032/artifacts/s1_idea_generation.md Task 3's build
-  # list item 4. NOT wired into the live pipeline's next: graph by this
-  # story -- see EPIC.md's S2a log entry for the scoping decision).
+  # list item 4.
+  #
+  # E-032 S2c (2026-08-23): the live routing now DOES call this gate, at the
+  # position documented below (right after innovation_expansion, before
+  # validation) -- but as inline logic inside run_loop's own routing
+  # dispatch (_route_post_innovation_expansion +
+  # _apply_anti_adjacency_retry_context in run_phase1_research.py), not as
+  # a STAGE_CONFIGS entry with its own handoff file the way signal_prescreen
+  # is. Gated OFF BY DEFAULT by orchestrator.anti_adjacency_retry.enabled
+  # (config/campaign_config.yaml); the route=refuse retry/escalate policy
+  # (up to 4 attempts, then human_pause) is documented in EPIC.md's S2c
+  # story and 2026-08-23 operator-ruling Log entry.
   # Deterministic tool, not LLM. ADMIT/REFUSE a candidate hypothesis using
   # two layers, KB-reactivation-clause-first (campaign_knowledge_base.yaml,
   # matched at mechanism/hypothesis_id grain), refreshed per-family
@@ -62,7 +72,7 @@ stages:
       - runs/{run_id}/artifacts/anti_adjacency_result.yaml
     next:
       - validation   # route=admit
-      - hypothesis_generation   # route=refuse (not yet wired -- see note above)
+      - hypothesis_generation   # route=refuse; retry up to 4 attempts, then human_pause (S2c)
 
   refinement_planner:
     skill: workflow_artifacts/skills/refinement-planner/SKILL.md
