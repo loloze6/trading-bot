@@ -65,13 +65,14 @@ boundary or invalidating a baseline:
 
 ## Stories
 
-- [ ] S1 — **Characterize and STOP.** Where in the chain is the selection
+- [x] S1 — **Characterize and STOP.** Where in the chain is the selection
       actually made? `determine_post_validation_route` and
       `determine_post_spec_route` are the routing candidates, but the
       narrowing may happen inside the `backtest_specification` LLM stage with
       no routing decision at all — establish which, from the code and the run
       corpus, before designing an artifact. Also: what is the minimum content
       that makes a discarded variant reconsiderable later?
+      **Done 2026-08-24** — `engineering/roadmap/E-034/artifacts/s1_selection_record.md`.
 - [ ] S2 — Emit the selection record and the unpursued-variant pool.
 - [ ] S3 — Point E-032's gate at the recorded selection; retire the
       parent-card read.
@@ -102,3 +103,48 @@ chosen variant's identifier, not the base hypothesis id.
   review that surfaced the 138-generated / ~1-tested / ~0-recorded gap. The
   operator considered a full pre-backtest redesign (now E-033) and chose to
   run this targeted change alongside it rather than instead of it.
+- 2026-08-24 — **S1 done.** Full findings in
+  `engineering/roadmap/E-034/artifacts/s1_selection_record.md`; measurement
+  script alongside it (`s1_measure_variants.py`, re-run any time). Headline:
+  reproduced the EPIC's 138/43/8 and 1-of-59 counts exactly. The narrowing is
+  confirmed to happen **inside `backtest_specification`'s LLM reasoning**,
+  not in either routing function — `determine_post_validation_route` and
+  `determine_post_spec_route` both read only a `status` string and never
+  touch variant identity; `_route_post_innovation_expansion` (E-032's gate
+  call) runs *before* `validation`, structurally too early to see variants at
+  all. Neither `backtest_spec.yaml` nor `decision.yaml` has a schema field
+  for the chosen variant; the identifier sometimes leaks into `decision.
+  yaml`'s free-text `rationale` (6/19 multi-variant runs checked have zero
+  such mentions, several others name multiple candidate IDs with no
+  disambiguation) — not usable as a mechanical source. Corpus reality:
+  `expanded_variants` items are 74 dict / 64 bare-string across the 138
+  (schema declares bare-string-only — real corpus mostly disagrees with its
+  own schema); `variant_id` covers 92% of dicts, no key is universal;
+  instrument/timeframe live on the *parent* `hypothesis_card.yaml`
+  (schema-required there) far more reliably than on the variant itself
+  (~15%/~24% presence) — a selection record must resolve, not just read.
+  Recommendation: split responsibility — LLM picks from a closed set (one
+  new required `selected_variant_id` field on `backtest_spec.yaml`, same
+  shape as its existing `status` field) and a new deterministic function
+  (`_record_variant_selection`, called at the same stage-output-validation
+  lifecycle point `_apply_b7_mandatory_inputs`/friends already use) joins
+  that pick against the menu to write `variant_selection.yaml` and
+  `variants_not_pursued.yaml` verbatim — no second LLM call, no moved stage
+  boundary. `variants_not_pursued` (used once, in `run_0001/artifacts/
+  innovation_notes.yaml`, wrong stage, unschemad, never repeated) should be
+  superseded, not extended. Checked against both downstream consumers named
+  in the epic: E-032's gate can consume the new record via its *existing*,
+  currently-unused `instrument=`/`timeframe=` override parameters on
+  `evaluate_candidate()` — but S3 needs a **new, later gate call site**
+  (after `backtest_specification`, not a redirect of the existing
+  pre-validation call), so S2+S3 together close the defect, not S2 alone.
+  E-031's refill (per its own S1, `engineering/roadmap/E-031/artifacts/
+  s1_refill_sources.md`): a persisted E-034 pool is a legitimate but
+  *lower-tier* candidate than E-031's one open KB-reactivation source — it
+  has no pre-existing evidentiary bar (never itself run or falsified) — and
+  per E-031's own recommended policy it must clear E-032's anti-adjacency
+  gate plus the existing exclusion checks before being admissible, landing
+  `paused:pending_operator_ratification` like every other E-031 source, never
+  auto-`ready`. Sequencing dependency for whoever scopes this: E-034 S2 →
+  E-032 S3 → only then is an E-034 discard pool usable E-031 refill input.
+  No production code touched; no campaign/backtest run; no LLM spend.
