@@ -35,6 +35,23 @@ It is built around three principles:
 
 ## 2. Workflow Overview
 
+> **THIS SECTION IS THE CANONICAL DESCRIPTION OF THE PIPELINE STAGES.**
+> If you are looking for what the process steps are, what each stage is for,
+> what it receives, or what it decides — it is here, and this is the only
+> place that is maintained as authoritative.
+>
+> Anything else that describes stages is either operational (`RUNBOOK.md` —
+> how to resume/halt), per-persona (`workflow_artifacts/skills/*/SKILL.md` —
+> how one stage reasons), or historical (`engineering/improvements/done/` —
+> design notes frozen at their date). **`workflow/stages.yaml` is NOT
+> authoritative and is not read by any code** — see §"Stage Registry" below.
+>
+> Ground truth for the code is `STAGE_CONFIGS` + the handoff templates + the
+> `determine_post_*` routing functions. When this section and the code
+> disagree, the code wins and this section is a bug — fix it here rather than
+> documenting the pipeline somewhere new. Reviewed/corrected 2026-08-24
+> (E-033); the full stage review is E-033 S1.
+
 ### 2.1 Stage Map
 
 ```
@@ -722,9 +739,35 @@ The central state machine. Manages the entire lifecycle of a run.
 
 Creates the directory structure for a new run: `runs/{run_id}/artifacts/`, `runs/{run_id}/handoffs/`, and copies handoff templates. Called automatically by the orchestrator when starting a new run.
 
-### `workflow/stages.yaml` — Stage Registry
+### `workflow/stages.yaml` — Stage Registry (NOT read by the orchestrator)
 
-Declarative configuration mapping each stage name to its skill file path and required inputs/outputs. The orchestrator reads this file — adding a new stage means adding an entry here plus a skill file, with no orchestrator code changes.
+**Corrected 2026-08-24. The previous text here said "the orchestrator reads
+this file — adding a new stage means adding an entry here plus a skill file,
+with no orchestrator code changes." That is false and had been false for some
+time.** Verified by grep across `workflow/` and `tools/`: `stages.yaml` is
+never loaded by any code. Every reference to it is a source comment mentioning
+it. There is no `yaml.safe_load` of this file anywhere in the workflow.
+
+What actually drives the pipeline:
+
+| Concern | Real source |
+|---|---|
+| Which stages exist, and their default next | `STAGE_CONFIGS` (`workflow/run_phase1_research.py`) — **10 stages**, vs 14 declared in `stages.yaml` |
+| What a stage receives | the handoff templates in `workflow_artifacts/templates/handoffs/` |
+| Conditional routing | the `determine_post_*` functions in `run_phase1_research.py` |
+| A stage's behaviour | its skill file under `workflow_artifacts/skills/` |
+
+Consequences of the drift, both found on 2026-08-24: `stages.yaml` declares a
+`research_brief` stage whose `next` is `hypothesis` — no such stage exists (the
+real one is `hypothesis_generation`). It is harmless *because* nothing reads
+`next`, but it is the kind of error a file nobody validates accumulates. It
+also declares `anti_adjacency_gate`, which is real but is dispatched by inline
+routing rather than from this registry.
+
+**Treat this file as non-authoritative documentation until E-033 S2 resolves
+it** (make it genuinely authoritative — see also E-009's `STAGE_CONFIGS`/
+`skill_map` merge — or remove it). Do not add a stage here and expect it to
+run.
 
 ### `tools/run_protocol.py` — Walk-Forward Executor
 
