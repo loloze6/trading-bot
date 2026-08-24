@@ -205,6 +205,69 @@ def test_layer1_does_not_conflate_family_siblings_with_different_verdicts():
     assert expanded_result.route == "admit"
 
 
+def test_layer1_verdict_is_independent_of_kb_finding_list_order():
+    """FIX 1 (review, 2026-08-24): two KB findings can both match the same
+    candidate via hid containment (a closed base entry and its still-open
+    _EXPANDED child). Before the fix, layer1_kb_check returned on the FIRST
+    matching finding in raw YAML list order, so [closed, open] and
+    [open, closed] disagreed. After the fix, matches are evaluated most-
+    specific-first (longest matched hid wins), independent of list order --
+    a literal order-swap must produce the SAME verdict both ways."""
+    closed_base = {
+        "id": "widget_mr_closed_base",
+        "hypothesis_id": "WIDGET_MEAN_REVERSION",
+        "evidence_runs": [],
+        "exhausted": True,
+        "reactivation_condition": None,
+    }
+    open_expanded_child = {
+        "id": "widget_mr_expanded_open_child",
+        "hypothesis_id": "WIDGET_MEAN_REVERSION_EXPANDED",
+        "evidence_runs": [],
+        "exhausted": False,
+        "reactivation_condition": "retest at 4h",
+        "reactivation_consumed_by": None,
+    }
+    candidate_hid = "WIDGET_MEAN_REVERSION_EXPANDED_4H_RETEST"
+
+    order_a = gate.layer1_kb_check(candidate_hid, "4h",
+                                    [closed_base, open_expanded_child], _REAL_RUNS_DIR)
+    order_b = gate.layer1_kb_check(candidate_hid, "4h",
+                                    [open_expanded_child, closed_base], _REAL_RUNS_DIR)
+
+    assert order_a is not None and order_b is not None
+    assert order_a.route == order_b.route == "admit", (
+        f"order-dependent verdict: order_a={order_a.route!r} order_b={order_b.route!r} "
+        "-- the more specific EXPANDED child's still-open branch must win regardless "
+        "of which finding is listed first in the KB"
+    )
+    assert order_a["layer"] == order_b["layer"] == "kb"
+
+
+def test_layer1_reactivation_consumed_by_does_not_close_an_unconsumed_sibling_branch():
+    """FIX 2 (review, 2026-08-24): reactivation_consumed_by used to REFUSE
+    unconditionally for the WHOLE finding, before the branch-aware
+    reactivation_condition logic ever ran. A finding naming TWO branches
+    ('4h or daily') whose consumed_by records that ONE of them (daily) was
+    retested must not also REFUSE the still-open sibling (4h) -- consumed_by
+    can only unambiguously mean 'this branch is closed' when exactly one
+    branch is named."""
+    kb = _kb([{
+        "id": "widget_mr_two_branches",
+        "hypothesis_id": "WIDGET_MEAN_REVERSION_TWO_BRANCH",
+        "evidence_runs": [],
+        "exhausted": False,
+        "reactivation_condition": "retest at 4h or daily",
+        "reactivation_consumed_by": "widget_daily_retest_killed",
+    }])
+    result = gate.layer1_kb_check("WIDGET_MEAN_REVERSION_TWO_BRANCH", "4h",
+                                   kb["findings"], _REAL_RUNS_DIR)
+    assert result is not None and result.route == "admit", (
+        "the 4h branch was never named by any lineage_routing=terminate run, so "
+        "it must still be open even though reactivation_consumed_by is set"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Layer 2 unit tests (synthetic digest)
 # ---------------------------------------------------------------------------
