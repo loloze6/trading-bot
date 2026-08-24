@@ -148,3 +148,59 @@ chosen variant's identifier, not the base hypothesis id.
   auto-`ready`. Sequencing dependency for whoever scopes this: E-034 S2 →
   E-032 S3 → only then is an E-034 discard pool usable E-031 refill input.
   No production code touched; no campaign/backtest run; no LLM spend.
+
+- 2026-08-24 — **S1 reviewed by the dispatching session. Verified, plus one
+  finding that changes S1's own recommendation.**
+
+  VERIFIED independently, not relayed: neither `backtest_spec.schema.json`
+  (`hypothesis_id`, `status`, `config`, `config_rationale`, `component_gap`)
+  nor `decision.schema.json` (`hypothesis_id`, `stage`, `status`, `rationale`,
+  `blocking_issues`) carries any field naming the chosen variant — so the
+  narrowing genuinely has nowhere to be recorded today. Re-derived the corpus
+  split from scratch: **74 dict / 64 bare-string variants, 138 total**, exactly
+  matching S1. Suite after S1's docs-only commit: strategy-research **1003
+  passed**, unchanged.
+
+  **THE FINDING THAT CHANGES THE PLAN.**
+  `expanded_hypothesis_card.schema.json` declares
+  `expanded_variants: {type: array, items: {type: string}}`, and **74 of 138
+  real variants (53%) are dicts** — i.e. most of the corpus violates its own
+  schema. The reason: **no schema in `workflow_artifacts/schemas/` is loaded by
+  any code at all.** Verified by grep across `workflow/` and `tools/` — the only
+  hit is a source comment. Twelve-plus schema files that read as authoritative
+  and enforce nothing.
+
+  **Therefore S1's recommendation as written does not work.** It proposes "one
+  new required `selected_variant_id` field on `backtest_spec.yaml`, same shape
+  as its existing `status` field." Adding a *required* field to an unenforced
+  schema produces a field that is declared and never checked — the LLM stage
+  can omit it and nothing fails. The deterministic join S1 also proposes would
+  then silently receive nothing.
+
+  **S2 must therefore either** (a) enforce the field at the code seam that
+  writes/reads it, independent of the schema file — a real check that raises,
+  in the same fail-loud spirit as the 2026-08-24 gate fix — **or** (b) treat
+  making the schemas live as a prerequisite and hand that to its own epic. (a)
+  is smaller and does not block on a repo-wide change; (b) is the durable fix.
+  S2 should state which it chose and why. **What S2 must NOT do is add the
+  field and assume "required" means anything.**
+
+  **This is now the fifth instance of one pattern**, and it deserves naming as
+  a systemic finding rather than five coincidences: `register_hypothesis`
+  (zero callers), `evaluate_and_persist_wishlist_predicate` (zero callers), the
+  `campaign_knowledge_base.yaml` optional input path (never resolved),
+  `stages.yaml` (never read — archived 2026-08-24), and now
+  `workflow_artifacts/schemas/*.json` (never loaded). **This system reliably
+  builds the correct declarative artifact and never wires anything to enforce
+  it.** Any E-034 design that produces another such artifact repeats the defect
+  it is trying to fix.
+
+  ACCEPTED FROM S1 without change: the narrowing happens inside
+  `backtest_specification`'s own LLM reasoning (neither
+  `determine_post_validation_route` nor `determine_post_spec_route` reads
+  variant identity — both read a bare `status`); the chosen variant leaks into
+  `decision.yaml`'s free-text `rationale` on some runs but is absent on 6 of 18
+  multi-variant runs and ambiguous on others, so it is not mechanically usable;
+  and S3 needs a NEW gate call site after `backtest_specification` rather than
+  a redirect of the existing pre-validation call — meaning **S2+S3 together**
+  close E-032's wrong-artifact defect, not S2 alone.
