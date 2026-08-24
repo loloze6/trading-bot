@@ -35,8 +35,18 @@ def section(title: str) -> None:
 
 
 def measure_stage_inputs() -> None:
-    section("1. required_inputs per generating stage (workflow/stages.yaml)")
-    stages = yaml.safe_load((ROOT / "workflow" / "stages.yaml").read_text(encoding="utf-8"))
+    section("1. required_inputs per generating stage (ARCHIVED stages.yaml; see note)")
+    # stages.yaml was ARCHIVED 2026-08-24 to E-033/artifacts/ (it never drove
+    # the pipeline). Repointed so this measurement stays reproducible. NOTE:
+    # the numbers below were originally measured from this decorative file;
+    # the handoff templates in workflow_artifacts/templates/handoffs/ are what
+    # actually feed the stages. Re-checked 2026-08-24 -- for the generating
+    # stages the two AGREE (research_brief_to_hypothesis.yaml lists the same
+    # three required_inputs and no campaign history), so S1's closed-book
+    # conclusion holds; it was simply read from the wrong source.
+    _archived = (ROOT / "engineering" / "roadmap" / "E-033" / "artifacts"
+                 / "stages_yaml_ARCHIVED_not_authoritative.yaml")
+    stages = yaml.safe_load(_archived.read_text(encoding="utf-8"))
     for name in ("hypothesis_generation", "innovation_expansion", "refinement_planner", "campaign_review"):
         entry = stages["stages"][name]
         req = entry.get("required_inputs", [])

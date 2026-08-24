@@ -114,8 +114,9 @@ mechanically resolved vs. remain human-gated across a whole campaign.
 CANONICAL description of the stages: the stage map, each stage's objective,
 what it receives, what it decides. Single maintained home; start here.
 
-**Not** `workflow/stages.yaml` — it is not read by any code and is not
-authoritative (verified 2026-08-24; status resolved by E-033 S2). Code ground
+**Not** `workflow/stages.yaml` — ARCHIVED 2026-08-24 to
+`engineering/roadmap/E-033/artifacts/` because it never drove the pipeline and
+had drifted; E-033 S2 decides revive-or-delete. Code ground
 truth is `STAGE_CONFIGS` + `workflow_artifacts/templates/handoffs/` + the
 `determine_post_*` routing functions.
 

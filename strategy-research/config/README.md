@@ -88,7 +88,7 @@ therefore which `evidence_type` values a hypothesis may claim.
 this list goes to a wishlist, not the run queue.*
 
 **WHO READS IT (PROD, measured)**
-- `workflow/stages.yaml:14` — a `required_input` of the `hypothesis_generation` stage
+- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:14` — a `required_input` of the `hypothesis_generation` stage
 - `config/cost_model.yaml:212` — cites it for why `order_book` cannot be calibrated
 
 **HOW IT IS CONSUMED** — Stage-level input to hypothesis generation.
@@ -163,7 +163,7 @@ the most consequential file in this directory.*
 - `tools/check_data.py:36` — `_DEFAULT_POLICY`, the holdout-overlap check
 - `tools/validate_regime_detector.py:426`; `tools/measure_bar_sigma.py:105,125` — refuses to read sealed candles
 - `workflow/run_phase1_research.py:3894` — `_DATA_POLICY_PATH`; `:4076,4105` — refuses a second holdout evaluation
-- `workflow/stages.yaml:81,130,162` — required input of three stages
+- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:81,130,162` — required input of three stages
 - `tools/holdout_date_gate.sh:5`, `tools/hooks/pre-commit:12` — the window the commit gate enforces
 
 **HOW IT IS CONSUMED** — Read per run, and per commit via the gate.
@@ -218,7 +218,7 @@ numbers from here, so changing a value here changes which strategies survive.*
 **WHO READS IT (PROD, measured)**
 - `tools/prescreen_signal.py:613` — `_load_cost_model()`, feeds `_round_trip_cost()` (`:644`) and the Layer 2 `_cost_check` (`:665-666`)
 - `tools/run_protocol.py:85` — `_load_cost_model()`, consumed by `_cost_paid_bps()` (`:296`) and `_commission_rate_for_symbol()` (`:96`)
-- `workflow/stages.yaml:80` — declared `required_inputs` of the `signal_prescreen` stage
+- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:80` — declared `required_inputs` of the `signal_prescreen` stage
 - `workflow/run_phase1_research.py:1369` — same requirement, emitted into the stage dispatch as `"../../config/cost_model.yaml"`
 - `config/campaign_data_policy.yaml:130` — cites it to explain why no maker/spread bps figure is derivable from available feeds
 
@@ -290,7 +290,7 @@ typical lag, crowding risk and data requirements.
 so hypothesis generation starts from something better than a guess.*
 
 **WHO READS IT (PROD, measured)**
-- `workflow/stages.yaml:15` — a `required_input` of the `hypothesis_generation` stage
+- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:15` — a `required_input` of the `hypothesis_generation` stage
 
 **HOW IT IS CONSUMED** — Stage-level input to hypothesis generation.
 

@@ -1434,7 +1434,7 @@ def _apply_stale_input_path_fix(stage_name: str, handoff: dict) -> None:
 # Operator ruling (2026-08-23, EPIC.md Log): "Retry up to 4 times with the
 # exclusion list, then escalate to me." Wiring point (Task 1 of this story):
 # right after innovation_expansion produces its deliverables, before
-# validation -- matches stages.yaml's already-declared (but previously
+# validation -- matches stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/]'s already-declared (but previously
 # unread) anti_adjacency_gate `tool:` entry's position and its
 # next: [validation, hypothesis_generation] routing. S1/S2a's build-list
 # item 4 recommended exactly this insertion point.
@@ -1510,7 +1510,7 @@ def _route_post_innovation_expansion(run_dir: Path, run_id: str, state: dict) ->
     candidate = load_yaml(candidate_path) if candidate_path.exists() else {}
     digest_path = ROOT / "campaign_record" / "exclusion_digest.yaml"
     kb_path = ROOT / "campaign_record" / "campaign_knowledge_base.yaml"
-    # FIX 3 (review, 2026-08-24): stages.yaml declares both files
+    # FIX 3 (review, 2026-08-24): stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/] declares both files
     # required_inputs for this stage. A genuinely ABSENT file is a
     # misconfiguration (build_exclusion_digest.py was never run / the KB was
     # never seeded) and must fail loud, per this project's own standing rule
@@ -1524,7 +1524,7 @@ def _route_post_innovation_expansion(run_dir: Path, run_id: str, state: dict) ->
         raise RuntimeError(
             f"[E-032 S2c] anti-adjacency gate cannot evaluate: required input "
             f"missing at {digest_path}. exclusion_digest.yaml is a "
-            f"required_inputs entry for this stage (workflow/stages.yaml) -- "
+            f"required_inputs entry for this stage (stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/] [ARCHIVED 2026-08-24 -> E-033/artifacts/]) -- "
             f"run tools/build_exclusion_digest.py, do not silently ADMIT."
         )
     digest = load_yaml(digest_path) or {}
@@ -1533,7 +1533,7 @@ def _route_post_innovation_expansion(run_dir: Path, run_id: str, state: dict) ->
         raise RuntimeError(
             f"[E-032 S2c] anti-adjacency gate cannot evaluate: required input "
             f"missing at {kb_path}. campaign_knowledge_base.yaml is a "
-            f"required_inputs entry for this stage (workflow/stages.yaml) -- "
+            f"required_inputs entry for this stage (stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/] [ARCHIVED 2026-08-24 -> E-033/artifacts/]) -- "
             f"do not silently ADMIT."
         )
     kb = load_yaml(kb_path) or {}

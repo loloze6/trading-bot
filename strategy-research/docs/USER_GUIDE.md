@@ -739,7 +739,7 @@ The central state machine. Manages the entire lifecycle of a run.
 
 Creates the directory structure for a new run: `runs/{run_id}/artifacts/`, `runs/{run_id}/handoffs/`, and copies handoff templates. Called automatically by the orchestrator when starting a new run.
 
-### `workflow/stages.yaml` — Stage Registry (NOT read by the orchestrator)
+### `workflow/stages.yaml` — ARCHIVED 2026-08-24 (never read by the orchestrator)
 
 **Corrected 2026-08-24. The previous text here said "the orchestrator reads
 this file — adding a new stage means adding an entry here plus a skill file,
@@ -764,8 +764,11 @@ real one is `hypothesis_generation`). It is harmless *because* nothing reads
 also declares `anti_adjacency_gate`, which is real but is dispatched by inline
 routing rather than from this registry.
 
-**Treat this file as non-authoritative documentation until E-033 S2 resolves
-it** (make it genuinely authoritative — see also E-009's `STAGE_CONFIGS`/
+**The file was MOVED OUT of `workflow/` on 2026-08-24** to
+`engineering/roadmap/E-033/artifacts/stages_yaml_ARCHIVED_not_authoritative.yaml`,
+because a wrong, unread file sitting in `workflow/` reads as operational
+regardless of any banner. E-033 S2 decides whether it is revived as the real
+registry or deleted. **Treat it as a historical design sketch** (make it genuinely authoritative — see also E-009's `STAGE_CONFIGS`/
 `skill_map` merge — or remove it). Do not add a stage here and expect it to
 run.
 

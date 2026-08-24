@@ -1229,7 +1229,7 @@ def _apply_trial_accounting(reason: str, run_id: str, detail: str) -> str:
       takes the F5c branch. Confirmed live as well as in code: run_054's row reads
       route=no_signal_artifact, statistic_valid=neither.
     - component_gap -> nothing, and no row exists yet. component_gap is decided in
-      determine_post_spec_route, i.e. at `backtest_specification`, which stages.yaml
+      determine_post_spec_route, i.e. at `backtest_specification`, which stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/]
       places strictly BEFORE `signal_prescreen` -- the first stage that records a
       trial at all. Nothing has touched market data.
     - new_component_escalation -> nothing, but for the OPPOSITE reason, and this

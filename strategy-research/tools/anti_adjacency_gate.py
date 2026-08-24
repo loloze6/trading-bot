@@ -3,7 +3,7 @@ anti_adjacency_gate.py -- E-032 S2a, Task 2.
 
 Deterministic tool stage. No LLM call, no token cost -- same class of stage
 as tools/prescreen_signal.py (the `signal_prescreen` `tool:` entry in
-workflow/stages.yaml): a mechanical pass/fail should not be adjudicated by
+stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/] [ARCHIVED 2026-08-24 -> E-033/artifacts/]): a mechanical pass/fail should not be adjudicated by
 prose. See engineering/roadmap/E-032/artifacts/s1_idea_generation.md Task 3
 for the full design rationale and the worked calibration case this module
 is regression-tested against.

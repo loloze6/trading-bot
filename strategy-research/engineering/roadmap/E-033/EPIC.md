@@ -92,8 +92,16 @@ characterization is read and a direction is chosen by the operator.**
       templates), real outputs, real routing (`determine_post_*`), and what it
       actually decided across the 59 runs. Where does information enter, and
       where is it destroyed? No code changes, no stage moves.
-- [ ] S2 — Consolidate pipeline documentation into one maintained home and
-      resolve `stages.yaml` (Done-when 1 and 2). Depends on S1's findings.
+- [~] S2 — Consolidate pipeline documentation into one maintained home and
+      resolve `stages.yaml` (Done-when 1 and 2).
+      **Partially done 2026-08-24, ahead of S1, at the operator's direction:**
+      `docs/USER_GUIDE.md` §2 declared the single canonical home (banner + a
+      false claim corrected: it had said the orchestrator reads `stages.yaml`);
+      `DOC_INDEX.md` routes there; and **`stages.yaml` was MOVED OUT of
+      `workflow/` to this epic's own `artifacts/`** — the operator's call:
+      a file that is wrong and unread reads as operational wherever it sits,
+      so a banner was not enough. **Remaining for S2:** the revive-or-delete
+      decision itself, which still depends on S1.
 - [ ] S3 — Propose stage changes, if S1 justifies any, with an explicit
       baseline-impact statement per change. Operator chooses before any build.
 
@@ -125,3 +133,24 @@ characterization that produces neither has not been done.
   rationalize, enhance the pre-backtest steps based on the past run."* The
   three measurements above are the opening evidence, taken during the design
   review that prompted it.
+
+- 2026-08-24 — **`stages.yaml` archived out of `workflow/`** to
+  `E-033/artifacts/stages_yaml_ARCHIVED_not_authoritative.yaml`. Operator
+  ruling: *"i do not agree of keeping a file unread, wrong, and standing here
+  while we have a real epic to make it work."* Repointed every live reference
+  (8 README citations, USER_GUIDE, DOC_INDEX, 5 source comments). Suite after
+  the move: strategy-research **1003 passed**, unchanged — confirming by
+  execution that nothing depended on it, which is the same fact that made it
+  safe to move and dangerous to leave.
+
+  **One correction to this session's own earlier claim, found while doing it.**
+  "Nothing loads `stages.yaml`" was true of the orchestrator but NOT globally:
+  `E-032/artifacts/s1_measure_idea_generation.py` did load it, and that is the
+  script behind E-032 S1's headline "the generator is closed-book" finding.
+  So that measurement was taken from the decorative file rather than from the
+  handoff templates that actually feed the stages. **Re-checked against
+  `workflow_artifacts/templates/handoffs/research_brief_to_hypothesis.yaml`:
+  the two AGREE** — same three `required_inputs`, no campaign history — so
+  E-032 S1's conclusion stands. It was right, read from the wrong source. The
+  script is repointed at the archived copy (verified re-runnable, reproduces
+  its original numbers) with that caveat recorded inline.
