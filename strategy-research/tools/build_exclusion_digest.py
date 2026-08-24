@@ -278,19 +278,38 @@ def _refresh_failed_families(campaign_state: dict, digest_families: dict) -> dic
     directly. This is a best-effort passthrough, NOT a replacement for
     Layer 2's fresh per-family triples -- see anti_adjacency_gate.py, which
     never trusts this block as a veto by itself (per the epic's own
-    Done-when #2 and S1's Task 3 recommendation)."""
+    Done-when #2 and S1's Task 3 recommendation).
+
+    FIX 4 (review, 2026-08-24): the docstring above always promised this
+    re-keying, but the body never referenced digest_families -- raw
+    campaign_state strings passed straight through, unreconciled. Matching
+    is done via _normalize_id(), the SAME case/whitespace normalization
+    classify_family() itself uses to build digest_families's keys (via
+    library_lookup.indicator_id / the keyword table's family names), so a
+    differently-cased or -spaced campaign_state name (e.g. 'Keltner Channel'
+    vs. digest's 'keltner_channel') still resolves to the digest's own
+    canonical spelling. No match -> the raw string passes through unchanged,
+    same as before this fix (best-effort passthrough, never a hard
+    requirement)."""
     raw = campaign_state.get("failed_families", [])
+    canonical_by_norm = {_normalize_id(name): name for name in digest_families}
+
+    def _canonicalize(name):
+        if not name:
+            return name
+        return canonical_by_norm.get(_normalize_id(name), name)
+
     refreshed = []
     for entry in raw:
         if isinstance(entry, dict):
             refreshed.append({
-                "family": entry.get("name"),
+                "family": _canonicalize(entry.get("name")),
                 "evidence_window": entry.get("evidence_window"),
                 "root_cause": entry.get("root_cause"),
                 "detail": "dict_entry",
             })
         else:
-            refreshed.append({"family": entry, "detail": "bare_string_low_detail"})
+            refreshed.append({"family": _canonicalize(entry), "detail": "bare_string_low_detail"})
     return refreshed
 
 
