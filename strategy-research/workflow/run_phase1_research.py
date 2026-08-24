@@ -725,6 +725,20 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
             context_blocks.append(f"--- CONTENT OF {req['path']} ---\n{content}\n")
         elif req in handoff.get("required_inputs", []):
             raise FileNotFoundError(f"Agent strictly requires {filepath}, but it is missing.")
+        else:
+            # E-032 S2b: an optional_input that never resolves used to vanish with
+            # zero trace -- exactly how research_brief_to_hypothesis.yaml's
+            # campaign_knowledge_base.yaml entry stayed silently broken for the
+            # pipeline's whole life (a stale path from before the E-002 restructure,
+            # 8f162fa6, moved several top-level artifacts under campaign_record/ --
+            # see EPIC.md's S2a review and this story's Log entry). Diagnostic only:
+            # this print does not touch context_blocks/full_prompt, so it cannot
+            # change what a stage receives -- a correctly-configured, normally-absent
+            # optional input (e.g. artifacts/refinement_notes.yaml outside a
+            # refinement loop) still triggers it and that is expected/benign; the
+            # value is catching a path that is ALWAYS missing, run after run.
+            print(f"⚠️ WARNING: optional_input never resolved, stage continues "
+                  f"without it: {req['path']} (stage={stage_name})")
 
     b7_deference_block = (
         f"\n    {_B7_DEFERENCE_SENTENCE}\n"
@@ -1331,6 +1345,89 @@ def _apply_exclusion_digest_input(stage_name: str, handoff: dict, run_dir: Path)
     existing_paths.add(_EXCLUSION_DIGEST_RELATIVE_PATH)
 
 
+# E-032 S2b: two of hypothesis_generation's OWN declared optional_inputs
+# (research_brief_to_hypothesis.yaml) point at paths that have never resolved,
+# for the same reason and since the same commit -- the E-002 restructure
+# (8f162fa6, 2026-08-06) moved campaign_knowledge_base.yaml and
+# feed_wishlist.yaml from the strategy-research/ root into campaign_record/,
+# and the "../../<name>.yaml" references in this one template were never
+# repointed. Both are OPTIONAL, so run_claude_worker's context-gathering loop
+# has always treated the miss as silent absence (no error) -- this is the
+# specific instance of the general defect the new warning above now surfaces.
+#
+# A same-day scan of every "../../..." path across workflow_artifacts/templates/
+# handoffs/*.yaml found this is not isolated to hypothesis_generation:
+# campaign_review.yaml has the identical stale-path bug on TWO REQUIRED
+# inputs (../../campaign_state.yaml, ../../campaign_knowledge_base.yaml --
+# both belong under campaign_record/), and protocol_to_verdict_interpreter.yaml
+# has it on one optional input (../../coin_universe.yaml, belongs under
+# config/). Those three are NOT fixed here: campaign_review's inputs being
+# required means a fix there is a behavior-enabling change to a stage that is
+# currently guaranteed to crash if ever triggered live (S1: its own output is
+# orphaned, next: [] -- no run has actually invoked it since before the
+# restructure, per runs/run_054 predating 8f162fa6), and
+# verdict_interpreter is outside E-032's two generating stages entirely. Both
+# are a distinct pre-existing bug in stages this epic does not own; fixing
+# them belongs to whoever owns campaign_review/verdict_interpreter next, not
+# to this story. (A structurally identical but separate defect exists in
+# run_gemini_worker's own, un-refactored copy of the context-gathering loop:
+# it has no `else` at all, so it silently skips even a MISSING REQUIRED input
+# instead of raising. Not touched here either -- assigned_engine is "claude"
+# on every template this repo currently ships, so that path is dead code in
+# practice, and fixing an unexercised alternate engine is its own story.)
+#
+# Restoring either path changes what hypothesis_generation actually reads --
+# real KB/wishlist content it has never seen -- so, per the same discipline
+# S2a used for the exclusion digest, this is gated off by default and proven
+# byte-identical at flag-off via _build_stage_prompt
+# (tests/test_stale_input_path_fix.py).
+_STALE_INPUT_PATH_FIXES = {
+    "hypothesis_generation": {
+        "../../campaign_knowledge_base.yaml": "../../campaign_record/campaign_knowledge_base.yaml",
+        "../../feed_wishlist.yaml": "../../campaign_record/feed_wishlist.yaml",
+    },
+}
+
+
+def _stale_input_path_fix_enabled() -> bool:
+    """False when the key, the section, or the config file is absent -- same
+    silence-is-never-a-green-light rule as _exclusion_digest_input_enabled()
+    and run_campaign._quarantine_enabled(). Reads via ROOT so the test
+    sandbox (tests/conftest.py's autouse guard) can seed its own value."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    fix_cfg = ((cfg.get("orchestrator") or {}).get("stale_input_path_fix") or {})
+    return bool(fix_cfg.get("enabled", False))
+
+
+def _apply_stale_input_path_fix(stage_name: str, handoff: dict) -> None:
+    """Rewrite any optional_inputs path that matches a known-stale entry in
+    _STALE_INPUT_PATH_FIXES to its correct, post-E-002-restructure location --
+    IN PLACE, and ONLY when the flag is on. Never touches required_inputs
+    (none of the known stale paths on the two generating stages are
+    required -- campaign_review's required-input instances are deliberately
+    out of scope, see the comment above) and never adds an entry the template
+    does not already declare, so this corrects exactly the known-broken
+    paths rather than becoming a general path-repair pass.
+
+    Flag OFF (the default): no-op -- the handoff dict is never mutated, so
+    _build_stage_prompt's assembled prompt is byte-identical to before this
+    function existed (tests/test_stale_input_path_fix.py, same acceptance
+    bar as _apply_exclusion_digest_input)."""
+    fixes = _STALE_INPUT_PATH_FIXES.get(stage_name)
+    if not fixes:
+        return
+    if not _stale_input_path_fix_enabled():
+        return
+    for req in handoff.get("optional_inputs", []):
+        corrected = fixes.get(req.get("path"))
+        if corrected:
+            req["path"] = corrected
+
+
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
     tool_stages = {"protocol_execution", "signal_prescreen"}
     if stage_name in tool_stages:
@@ -1350,6 +1447,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-032 S2a: exclusion-digest union, off by default (see helper docstring above).
     _apply_exclusion_digest_input(stage_name, handoff, RUN_DIR)
+
+    # E-032 S2b: repoint known-stale optional_input paths, off by default (see helper docstring above).
+    _apply_stale_input_path_fix(stage_name, handoff)
 
     # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")

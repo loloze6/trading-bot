@@ -224,6 +224,54 @@ library_lookup:
 
 ---
 
+## IMPROVEMENT 05 — Exclusion-Digest Awareness: Redirect, Don't Repeat (E-032 S2b)
+
+### Optional, off by default
+
+`campaign_record/exclusion_digest.yaml` is unioned into your context files ONLY when
+`config/campaign_config.yaml`'s `orchestrator.exclusion_digest_input.enabled` is true.
+It will not always be present. **If it is absent from your provided context, this
+section does not apply — proceed as before.** Absence of the digest is not evidence
+of a fresh search space; it may simply mean the flag is off.
+
+### When it IS present: read it before you commit to a family
+
+The digest is family-scoped, not indicator-scoped (IMPROVEMENT 04's
+`campaign_empirical_results` check is per-indicator; this is campaign-wide, across
+every run, keyed at `(family, instrument, timeframe)` — the grain that actually
+distinguishes a fresh cell from a retested one). Its `families` map lists, per family,
+the `(instrument, timeframe)` triples already run and their `run_ids`. Its
+`failed_families_passthrough` lists families with either a recorded `root_cause`
+(`detail: dict_entry`) or, more weakly, a bare name with no diagnosis
+(`detail: bare_string_low_detail`).
+
+**Before finalizing `edge_source` and `signal_concept`:**
+1. Classify your candidate's family the same way IMPROVEMENT 04's lookup does
+   (structural indicator id first, then mechanism keyword).
+2. If the digest's `families` entry for that family already has a triple at the SAME
+   `(instrument, timeframe)` you intend to target — **do not propose it as-is.** Target
+   a different, untried `(instrument, timeframe)` under that family, or move to a
+   different family/category entirely.
+3. If `failed_families_passthrough` names your family with a `root_cause`
+   (`dict_entry`): your redirect must address that root cause structurally — a
+   different `edge_source.category`, a different `evidence_type`, or a materially
+   different `specific_mechanism` — never a parameter change alone. A
+   `bare_string_low_detail` entry is weaker evidence; note it, but it does not by
+   itself forbid a well-argued re-attempt.
+4. **You are empowered, not just permitted, to declare a family exhausted.** If every
+   angle you can honestly construct on a family collides with step 2 or 3, say so
+   directly in `rationale` (name the family, the colliding triples, the root_cause) and
+   select a genuinely different family — not the next parameter over. Record the
+   redirect in `library_lookup.prior_campaign_failures` (cite the colliding `run_ids`
+   from the digest) so the decision is auditable, not just asserted.
+
+**This is raw material, not the gate.** The mechanical refusal is
+`tools/anti_adjacency_gate.py`, downstream and deterministic. Nothing here overrides
+it, and a hypothesis that ignores this section is not thereby invalid — it is simply
+more likely to be refused later, more slowly, after you have already written it.
+
+---
+
 ## A8.6 — Power pre-registration: `plausible_ic_upper` anchor table
 
 **Do not free-hand `plausible_ic_upper` in `power_parameters`.** Pick it from this table by
@@ -264,6 +312,10 @@ literature figure, not "seems reasonable."
 - Check: is `evidence_type` available? If not, add `requires_new_feed` and route to feed_wishlist.
 - Check: is the hypothesis ungated? Any regime condition → reformulate or route to detector_wishlist.
 - Check: indicator library lookup steps 1–4 complete; `library_lookup` field populated in card.
+- If `campaign_record/exclusion_digest.yaml` is present in context: check your
+  candidate's family against it before finalizing `edge_source`. Prefer a
+  family/instrument/timeframe combination absent from `families`, or address a named
+  `root_cause` structurally. (Improvement 05)
 - State the idea in a way that can be tested without unavailable data.
 - Include at least 3 failure modes.
 - Prefer hypotheses that can be integrated as a minimal change in the current strategy architecture.
@@ -279,6 +331,11 @@ literature figure, not "seems reasonable."
 - Do not assume unavailable data.
 - Do not propose ideas that require replacing the whole existing bot architecture.
 - Do not re-propose an indicator + mechanism combination already marked `outcome: failed` in the library's `campaign_empirical_results` for the same symbol/timeframe without a materially new mechanism. (Improvement 04)
+- Do not repropose a family+instrument+timeframe triple already present in the
+  exclusion digest under a materially unchanged mechanism, when the digest is present
+  in context. (Improvement 05)
+- Do not treat digest absence as evidence of a fresh search space — it may simply mean
+  `orchestrator.exclusion_digest_input.enabled` is off. (Improvement 05)
 
 ## Context rule
-Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, and `config/indicator_library.yaml`. Do not read other files unless the handoff explicitly requires them.
+Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Do not read other files unless the handoff explicitly requires them.
