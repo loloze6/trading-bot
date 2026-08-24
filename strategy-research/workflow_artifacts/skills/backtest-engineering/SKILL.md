@@ -49,6 +49,35 @@ The embedded `config` must:
 - rationale: one line on why
 - blocking_issues: the missing piece(s) if component_gap, else []
 
+## IMPROVEMENT 01 — Name the Chosen Variant (E-034 S2)
+
+`expanded_hypothesis_card.yaml`'s `expanded_variants` list is a menu, sometimes several
+entries wide. You pick exactly one to turn into `config` (per the Forbidden rule below:
+"Do not emit more than one config"). Downstream code needs to know mechanically which
+menu entry that was — not by grepping your prose.
+
+**When `status: "spec_ready"`, `backtest_spec.yaml` MUST include a top-level
+`selected_variant_id` field**, copied verbatim from the `expanded_variants` entry you
+implemented:
+- If the entry is a dict with a `variant_id` key, copy that value verbatim.
+- If it is a dict without `variant_id` but with `id`, `name`, `variant_name`, or `label`,
+  copy the first of those present, in that order.
+- If it is a bare string, copy the string itself verbatim.
+
+Pick from the closed set already in front of you in `expanded_hypothesis_card.yaml` — do
+not invent an ID, and do not synthesize a hybrid of two menu entries and label it as one
+of them. **If no single menu entry is a full, honest match for the config you would
+otherwise write, that is a component_gap, exactly like a missing engine piece**: set
+`status: "component_gap"`, leave `config: null`, and describe in `component_gap` why
+none of the offered variants map cleanly. Do not silently pick the closest one and call
+it a match.
+
+`selected_variant_id` is read by deterministic code immediately after this stage
+completes, joined against the same menu — it is a closed-set, machine-checked pick, the
+same shape as `status` itself, not a free-text field. **Required outputs, updated:**
+`backtest_spec.yaml` MUST include `selected_variant_id` (string) whenever
+`status: "spec_ready"`.
+
 YAML formatting rule — applies to ALL string values in both artifacts:
 - Any string value containing a colon (:) MUST use block scalar syntax (| or >) or be
   quoted with single or double quotes.

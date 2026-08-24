@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "E-034 S2, 2026-08-25. Documentation of intent only -- no schema under workflow_artifacts/schemas/ is loaded or validated by any code, anywhere (grep-verified, see EPIC.md's 2026-08-24 S1-review entry). The actual shape is produced by workflow/run_phase1_research.py's _record_variant_selection(), which is the source of truth; keep this file in sync with that function by hand. Supersedes the one-off, unschemad, wrong-stage `variants_not_pursued` list that appeared exactly once in run_0001/artifacts/innovation_notes.yaml (S1 finding).",
+  "title": "Variants Not Pursued",
+  "type": "object",
+  "required": ["variants_not_pursued"],
+  "properties": {
+    "variants_not_pursued": {
+      "type": "array",
+      "description": "Every OTHER expanded_variants entry from this run's expanded_hypothesis_card.yaml -- none dropped, none duplicated, the selected one excluded.",
+      "items": {
+        "type": "object",
+        "required": ["variant_id", "run_id", "hypothesis_id", "variant_definition"],
+        "properties": {
+          "variant_id": {"type": "string"},
+          "run_id": {"type": "string"},
+          "hypothesis_id": {"type": ["string", "null"]},
+          "variant_definition": {
+            "description": "The menu entry, copied verbatim by code -- either a dict or a bare string."
+          },
+          "lost_reason": {
+            "type": "string",
+            "description": "Best-effort, optional. Never fabricated if the source variant carried no lost_reason/why_it_lost field -- an absent reason means 'not chosen this round', not 'contraindicated'."
+          }
+        }
+      }
+    }
+  }
+}

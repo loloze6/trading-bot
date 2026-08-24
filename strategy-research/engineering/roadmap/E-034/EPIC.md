@@ -73,7 +73,8 @@ boundary or invalidating a baseline:
       corpus, before designing an artifact. Also: what is the minimum content
       that makes a discarded variant reconsiderable later?
       **Done 2026-08-24** — `engineering/roadmap/E-034/artifacts/s1_selection_record.md`.
-- [ ] S2 — Emit the selection record and the unpursued-variant pool.
+- [x] S2 — Emit the selection record and the unpursued-variant pool.
+      **Done 2026-08-25.**
 - [ ] S3 — Point E-032's gate at the recorded selection; retire the
       parent-card read.
 
@@ -212,3 +213,97 @@ chosen variant's identifier, not the base hypothesis id.
   🐛 Bugs & Tasks board instead (its current standing tracker — GitHub
   consolidation is E-021, still `new`, unstarted).
   https://app.notion.com/p/3c61d1fb05a28126808cc607601ed1bc
+
+- 2026-08-25 — **S2 done: the selection record and the discard pool, built at
+  the code seam, not the schema.** Implements S1 Task 3 exactly, with the
+  2026-08-24 review's fix baked in from the start (Option A: enforce at the
+  seam, not Option B/schemas-live-repo-wide, which stays out of scope).
+
+  **Task 1 (SKILL.md):** `backtest-engineering/SKILL.md` gets one new
+  "IMPROVEMENT 01 — Name the Chosen Variant" section: `backtest_spec.yaml`
+  MUST carry `selected_variant_id`, copied verbatim from the
+  `expanded_variants` entry implemented (variant_id, else id/name/
+  variant_name/label, else the bare string itself), whenever
+  `status: spec_ready`. If no menu entry honestly matches, that's a
+  `component_gap`, same as a missing engine piece — never a fabricated
+  hybrid. `backtest_spec.schema.json` also gets the field added (documentation
+  only, `$comment`-flagged as unenforced — matches the review's finding that
+  nothing loads these schemas).
+
+  **Task 2 (derivation rule):** one function, `_derive_variant_id(variant,
+  index)` in `workflow/run_phase1_research.py`, implementing S1's rule exactly:
+  dict+`variant_id` verbatim -> dict+`id`/`name`/`variant_name`/`label` (first
+  present) -> bare string or id-less dict -> `str_{index}_{hash8}` (sha256,
+  stable across re-reads, distinct per position even for identical text).
+  Used identically by both the record-writer (this story) and, per S1's note,
+  reusable as-is by S3's future gate-matching code — not duplicated.
+
+  **Task 3 (the enforcement, the real deliverable):** `_record_variant_
+  selection(run_dir)`, called from `run_loop` right where `current_stage ==
+  "backtest_specification"` and `next_stage in ("signal_prescreen",
+  "protocol_execution")` — i.e. only on the confirmed spec_ready path
+  (component_gap means no config/variant was implemented, nothing to record).
+  Flag off (`orchestrator.variant_selection_record.enabled`, default false,
+  same shape as S2a/S2b/S2c's three flags in `config/campaign_config.yaml`):
+  returns before reading anything else — no file touched. Flag on: loads
+  `backtest_spec.yaml.selected_variant_id` — **RAISES if absent** (the actual
+  enforcement; the schema's "required" is decorative, per the 2026-08-24
+  finding that no schema under `workflow_artifacts/schemas/` is loaded by any
+  code, verified again independently this session by grep). Matches it against
+  `expanded_hypothesis_card.yaml.expanded_variants` via `_derive_variant_id` —
+  **RAISES if unmatched** (refuses to write a record pointing at a
+  hallucinated ID). On a match: writes `artifacts/variant_selection.yaml`
+  (`run_id`, `hypothesis_id`, `selected_variant_id`, the matched variant
+  copied verbatim, resolved `instrument`/`timeframe` — variant override else
+  parent `hypothesis_card.yaml`, per S1's Task 2 finding that only ~15%/~24%
+  of variants carry these themselves — and `chosen_rationale` lifted from
+  `backtest_spec.yaml.config_rationale` else `decision.yaml.rationale`) and
+  `artifacts/variants_not_pursued.yaml` (every other menu entry, verbatim,
+  tagged with its derived/native id + `run_id` + `hypothesis_id`, optional
+  best-effort `lost_reason` never fabricated when absent).
+
+  New schema files `variant_selection.schema.json` /
+  `variants_not_pursued.schema.json` added for documentation, both
+  `$comment`-flagged the same way as the `backtest_spec.schema.json` edit:
+  nothing loads them; `_record_variant_selection`'s own code is the source of
+  truth.
+
+  **Flag-off proof (Done-when #4):** `tests/test_variant_selection_record.py`
+  snapshots every file under `artifacts/` (path + byte content) before and
+  after calling `_record_variant_selection` with the flag off — asserts the
+  snapshot is byte-identical and neither new artifact file exists. This is
+  the same "genuine no-op, not run-and-discard" bar as S2a/b/c's own
+  prompt-text diffs, adapted to this function's shape (it never touches
+  prompt assembly — it runs strictly after a stage's output already exists —
+  so the comparable surface is the artifacts directory itself, not
+  `_build_stage_prompt`'s output).
+
+  **Task 4 (tests, 23 new, all passing):** flag-off bit-identity (2 tests,
+  including one proving flag-off doesn't even raise on a broken
+  `backtest_spec.yaml`) + flag-absent-key-and-section (1); derivation rule —
+  dict+variant_id, dict+id-no-variant_id, dict+name-no-id, bare string
+  positional-hash stability and distinctness, id-less dict fallback (7);
+  missing `selected_variant_id` raises (1); unmatched `selected_variant_id`
+  raises (1); dict-with-variant_id end-to-end record correctness (1);
+  bare-string variant selectable via its derived id (1); id-only dict
+  end-to-end (1); instrument/timeframe fallback-to-parent and
+  variant-override-wins (2); `variants_not_pursued` excludes-selected/
+  none-dropped/none-duplicated (1); `lost_reason` carried-when-present/
+  never-fabricated-when-absent (1); **run_019 real-corpus regression fixture**
+  — the three real threshold variants (17.5/20.0/22.5) frozen verbatim from
+  `runs/run_019/artifacts/expanded_hypothesis_card.yaml`, with only the
+  (synthetic — no historical run carries this field yet) `selected_variant_id:
+  V2-THRESHOLD-20p0` added to a copy of the fixture, confirming the selection
+  record matches variant 2 of 3 verbatim and the discard pool holds exactly
+  the other two, by id (1).
+
+  **Suites, full run, both green, MEASURED not estimated:** strategy-research
+  **1026 passed** (reference 1003 + this story's 23 new tests, exact
+  arithmetic match, zero drop elsewhere); trading-bot **383 passed / 2
+  skipped**, unchanged from reference. No campaign or backtest run, no LLM
+  spend, `local_data/holdout_sealed/` never opened.
+
+  **Out of scope, not built, per the dispatch:** S3 (repointing E-032's gate
+  at `variant_selection.yaml`) — `tools/anti_adjacency_gate.py` and
+  `_route_post_innovation_expansion` untouched. Nothing else was narrowed;
+  everything in the dispatch's Tasks 1-4 landed as specified.

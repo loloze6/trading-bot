@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "E-034 S2, 2026-08-25. Documentation of intent only -- no schema under workflow_artifacts/schemas/ is loaded or validated by any code, anywhere (grep-verified, see EPIC.md's 2026-08-24 S1-review entry). The actual shape is produced by workflow/run_phase1_research.py's _record_variant_selection(), which is the source of truth; keep this file in sync with that function by hand.",
+  "title": "Variant Selection Record",
+  "type": "object",
+  "required": [
+    "run_id",
+    "hypothesis_id",
+    "selected_variant_id",
+    "variant_definition",
+    "instrument",
+    "timeframe",
+    "chosen_rationale"
+  ],
+  "properties": {
+    "run_id": {"type": "string"},
+    "hypothesis_id": {"type": ["string", "null"]},
+    "selected_variant_id": {
+      "type": "string",
+      "description": "Verbatim (variant_id/id/name/variant_name/label) or derived (str_{index}_{hash8} for bare strings / id-less dicts) -- see _derive_variant_id's docstring for the priority rule."
+    },
+    "variant_definition": {
+      "description": "The matched expanded_variants entry, copied verbatim by code -- not re-summarized by an LLM. Either a dict (the majority shape) or a bare string."
+    },
+    "instrument": {
+      "type": ["string", "array", "null"],
+      "description": "Resolved: the variant's own override if present, else inherited from the parent hypothesis_card.yaml's target_market."
+    },
+    "timeframe": {
+      "type": ["string", "null"],
+      "description": "Resolved: the variant's own override if present, else inherited from the parent hypothesis_card.yaml's timeframe."
+    },
+    "chosen_rationale": {
+      "description": "Lifted verbatim from backtest_spec.yaml's config_rationale, falling back to decision.yaml's rationale -- already LLM-authored, relocated to where code can find it."
+    }
+  }
+}

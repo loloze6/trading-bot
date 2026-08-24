@@ -1,10 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "NOTE (E-034 S2, 2026-08-25): no schema under workflow_artifacts/schemas/ is loaded or validated by any code, anywhere (grep-verified) -- this file is documentation of intent, not an enforced contract. The actual guarantee for selected_variant_id below is workflow/run_phase1_research.py's _record_variant_selection(), which raises if the field is missing or unmatched. Do not add 'required' fields here and assume they mean anything until that changes repo-wide (see EPIC.md E-034's 2026-08-24 S1-review entry).",
   "type": "object",
   "required": ["hypothesis_id", "status", "config", "config_rationale"],
   "properties": {
     "hypothesis_id": {"type": "string"},
     "status": {"enum": ["spec_ready", "component_gap"]},
+    "selected_variant_id": {
+      "type": "string",
+      "description": "E-034 S2: verbatim copy of the expanded_hypothesis_card.yaml expanded_variants entry actually implemented into `config`. Required (by SKILL.md instruction and by workflow/run_phase1_research.py's _record_variant_selection code seam -- NOT by this JSON Schema file, which nothing loads) whenever status is spec_ready."
+    },
     "config": {
       "type": "object",
       "description": "A strategy_config.json candidate, validated separately against trading-bot/strategy_config.schema.json. Null only when status is component_gap.",
