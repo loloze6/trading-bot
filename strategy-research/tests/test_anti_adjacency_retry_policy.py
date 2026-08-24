@@ -240,6 +240,62 @@ def test_flag_off_run_loop_iteration_unchanged(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# Flag ON -- required inputs genuinely ABSENT (FIX 3, review 2026-08-24):
+# fail loud, never silently substitute {} -- distinct from an EXISTING but
+# empty file, which is a legitimate clean-slate ADMIT (covered above by
+# test_flag_on_admit_routes_to_validation_and_resets_counter's _write_digest
+# (root, {}) / _write_empty_kb(root)).
+# ---------------------------------------------------------------------------
+
+def test_flag_on_raises_when_digest_file_genuinely_absent():
+    root = rpr.ROOT
+    _set_flag(root, True)
+    # Deliberately do NOT call _write_digest -- exclusion_digest.yaml does
+    # not exist at all in this sandbox.
+    _write_empty_kb(root)
+    run_dir = _minimal_run(root, "run_940", hypothesis_card=_ADMIT_CANDIDATE)
+    _write_state(run_dir, _fresh_state("run_940"))
+
+    with pytest.raises((RuntimeError, FileNotFoundError)) as exc_info:
+        rpr._route_post_innovation_expansion(run_dir, "run_940", _read_state(run_dir))
+    assert "exclusion_digest.yaml" in str(exc_info.value)
+
+
+def test_flag_on_raises_when_kb_file_genuinely_absent():
+    root = rpr.ROOT
+    _set_flag(root, True)
+    _write_digest(root, {})
+    # Deliberately do NOT call _write_empty_kb -- campaign_knowledge_base.yaml
+    # does not exist at all in this sandbox.
+    run_dir = _minimal_run(root, "run_941", hypothesis_card=_ADMIT_CANDIDATE)
+    _write_state(run_dir, _fresh_state("run_941"))
+
+    with pytest.raises((RuntimeError, FileNotFoundError)) as exc_info:
+        rpr._route_post_innovation_expansion(run_dir, "run_941", _read_state(run_dir))
+    assert "campaign_knowledge_base.yaml" in str(exc_info.value)
+
+
+def test_flag_on_existing_but_empty_digest_and_kb_still_admit_no_regression():
+    """The legitimate clean-slate case: both files EXIST but are empty --
+    must still ADMIT exactly as before this fix, never raise."""
+    root = rpr.ROOT
+    _set_flag(root, True)
+    digest_path = root / "campaign_record" / "exclusion_digest.yaml"
+    digest_path.parent.mkdir(parents=True, exist_ok=True)
+    digest_path.write_text("", encoding="utf-8")  # genuinely empty YAML document
+    kb_path = root / "campaign_record" / "campaign_knowledge_base.yaml"
+    kb_path.write_text("", encoding="utf-8")
+    run_dir = _minimal_run(root, "run_942", hypothesis_card=_ADMIT_CANDIDATE)
+    _write_state(run_dir, _fresh_state("run_942"))
+
+    next_stage = rpr._route_post_innovation_expansion(run_dir, "run_942", _read_state(run_dir))
+
+    assert next_stage == "validation"
+    result = yaml.safe_load((run_dir / "artifacts" / "anti_adjacency_result.yaml").read_text(encoding="utf-8"))
+    assert result["route"] == "admit"
+
+
+# ---------------------------------------------------------------------------
 # Flag ON -- ADMIT
 # ---------------------------------------------------------------------------
 
