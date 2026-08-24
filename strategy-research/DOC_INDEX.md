@@ -108,6 +108,17 @@ per-stage autonomy boundary within one run.
 → **[`RUNBOOK.md`](RUNBOOK.md) section 3** — which halt conditions are
 mechanically resolved vs. remain human-gated across a whole campaign.
 
+### "What are the pipeline stages / process steps?"
+
+→ **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) §2 Workflow Overview** — the
+CANONICAL description of the stages: the stage map, each stage's objective,
+what it receives, what it decides. Single maintained home; start here.
+
+**Not** `workflow/stages.yaml` — it is not read by any code and is not
+authoritative (verified 2026-08-24; status resolved by E-033 S2). Code ground
+truth is `STAGE_CONFIGS` + `workflow_artifacts/templates/handoffs/` + the
+`determine_post_*` routing functions.
+
 ### "How does stage X decide?"
 Each is an LLM persona in `skills/{name}/SKILL.md`:
 - **`hypothesis-design`** — turns a research brief into one concrete, falsifiable hypothesis.

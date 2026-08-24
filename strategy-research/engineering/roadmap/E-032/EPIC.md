@@ -780,3 +780,31 @@ anti-adjacency gate also counts as the gate working, and is logged.
   swallowing, `timeframe=None` defaulting to ADMIT, phantom-instrument regex
   false positives, dash-pair timeframe misses, missing-`hypothesis_card`
   silent drop from digest counts).
+
+- 2026-08-24 — **OPEN DEFECT: the gate evaluates the wrong candidate. Fix
+  owned by E-034 S3, deliberately not patched here.** Found in the 2026-08-24
+  code review, confirmed by direct read.
+  `_route_post_innovation_expansion` reads
+  `runs/<id>/artifacts/hypothesis_card.yaml` — the *parent* idea, produced by
+  `hypothesis_generation` BEFORE `innovation_expansion` ran. The stage's own
+  output is `expanded_hypothesis_card.yaml`, and S2b's own disposition prose
+  instructs that stage to branch to a different family/instrument/timeframe.
+  So anything the expansion invents is **ungated**: the gate re-checks an idea
+  that was already fine and never sees the variant that will actually be
+  tested. `evaluate_candidate()` even carries `instrument`/`timeframe` override
+  params whose docstring says verbatim they are "required when a caller is
+  evaluating one variant of a multi-symbol card individually (e.g. an
+  expanded_hypothesis_card.yaml variant)" — the call site uses neither.
+  **Why it was not patched in the 2026-08-24 fix pass:** pointing the gate at
+  the other file does not work. `expanded_hypothesis_card.yaml` is a MENU
+  (`expanded_variants`, up to 8; 138 across 43 runs), not a single candidate,
+  and its variants carry no `target_market`/`timeframe` fields. Worse, **no
+  artifact anywhere records which variant was chosen** — verified on `run_019`
+  (three real threshold variants; neither `validation_decision.yaml` nor
+  `backtest_spec.yaml` names one). There is nothing concrete for the gate to
+  read yet. A rushed patch would have silently gated `variants[0]` and given
+  false confidence, which is worse than the current honestly-incomplete state.
+  **E-034 creates the selection record; its S3 then repoints this gate.** Until
+  that lands, treat this gate as catching only "was the ORIGINAL idea a
+  repeat" — real, but a fraction of its stated purpose. This is a reason not
+  to flip `anti_adjacency_retry.enabled` on and consider the job done.

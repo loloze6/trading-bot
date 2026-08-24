@@ -1,3 +1,30 @@
+# =============================================================================
+# NOT AUTHORITATIVE. NOT READ BY ANY CODE.
+#
+# Verified 2026-08-24 by grep across workflow/ and tools/: nothing loads this
+# file. Every reference to it in the codebase is a source comment. Adding a
+# stage here does NOT make it run.
+#
+# Real ground truth:
+#   - which stages exist / default next : STAGE_CONFIGS in
+#                                         workflow/run_phase1_research.py
+#   - what a stage receives             : workflow_artifacts/templates/handoffs/
+#   - conditional routing               : determine_post_* in run_phase1_research.py
+#   - a stage's behaviour               : workflow_artifacts/skills/*/SKILL.md
+#
+# Canonical human-readable description of the pipeline: docs/USER_GUIDE.md §2.
+#
+# Known drift (kept visible rather than quietly fixed, as evidence for E-033):
+#   - declares 14 stages; STAGE_CONFIGS has 10
+#   - research_brief.next -> 'hypothesis', a stage that does not exist
+#     (the real one is hypothesis_generation) -- harmless only because
+#     nothing reads `next`
+#
+# This file's fate is E-033 S2: make it genuinely authoritative (see also
+# E-009's STAGE_CONFIGS/skill_map merge) or remove it. Until then, treat it as
+# a design sketch.
+# =============================================================================
+
 version: 1
 
 stages:
