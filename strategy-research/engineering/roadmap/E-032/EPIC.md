@@ -808,3 +808,7 @@ anti-adjacency gate also counts as the gate working, and is logged.
   that lands, treat this gate as catching only "was the ORIGINAL idea a
   repeat" — real, but a fraction of its stated purpose. This is a reason not
   to flip `anti_adjacency_retry.enabled` on and consider the job done.
+
+- 2026-08-25 — **Filed as a Notion bug** (the "recurring defect class"
+  pattern, of which this epic's KB-path and stages.yaml findings are two of
+  five instances): https://app.notion.com/p/3c61d1fb05a2812f8e25db3f8fecfb71
