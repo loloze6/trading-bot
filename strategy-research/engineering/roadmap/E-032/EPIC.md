@@ -77,6 +77,15 @@ The bright line (frozen rule → one-shot holdout) is untouched.
       already-ineffective pattern). Build only.
 - [x] S2b — The disposition (skill-prose amendment on the two generating
       stages, instructing them to consult the digest).
+- [ ] S2c — Orchestrator wiring: on gate REFUSE, retry up to 4 times with the
+      exclusion reason handed back to the stage, then escalate to a human.
+      Operator ruling recorded 2026-08-23 (see Log). Was referenced
+      throughout S1/S2a/S2b's own Log entries but never added as a checkable
+      story until this correction — an omission caught in review, not by any
+      dispatch. Implementation notes already on record: the attempt counter
+      must be independent of `counters.refinements_used` (E-030 S1.5 Piece 2
+      precedent), and each retry must carry the PREVIOUS refusal's reason,
+      not merely re-invoke the stage (E-030 R3).
 - [ ] S3 — The external-knowledge dispatch path, with source/date recording.
 
 ## Relationship to other epics
