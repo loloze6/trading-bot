@@ -158,6 +158,28 @@ orchestrator:
       # digest for its per-family fallback layer. See
       # engineering/roadmap/E-032/EPIC.md and
       # engineering/roadmap/E-032/artifacts/s1_idea_generation.md Task 3.
+  stale_input_path_fix:
+    enabled: false
+      # E-032 S2b. OFF BY DEFAULT and read at runtime by
+      # run_phase1_research._stale_input_path_fix_enabled() -- same shape as
+      # exclusion_digest_input.enabled just above (a fourth explicit exception
+      # to this file's "declared parity only" rule). Repoints
+      # hypothesis_generation's two OPTIONAL inputs that have never resolved
+      # since the E-002 restructure (8f162fa6, 2026-08-06) moved them under
+      # campaign_record/: campaign_knowledge_base.yaml and feed_wishlist.yaml.
+      # While false, _apply_stale_input_path_fix() is a no-op -- the handoff
+      # dict is never mutated, so the assembled prompt (_build_stage_prompt's
+      # output) is byte-identical to before this feature existed. Proven by
+      # tests/test_stale_input_path_fix.py's flag-off/flag-on prompt-text diff.
+      #
+      # While true, hypothesis_generation actually receives real KB and
+      # feed-wishlist content for the first time in the pipeline's life --
+      # declared here as a behavior change, not slipped in as a silent
+      # bugfix (per the dispatching session's own framing of this class of
+      # bug). Does NOT touch campaign_review's two REQUIRED inputs with the
+      # identical stale-path bug, nor verdict_interpreter's one optional
+      # instance -- see the code comment above _STALE_INPUT_PATH_FIXES for
+      # why those are out of this story's scope.
 
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)

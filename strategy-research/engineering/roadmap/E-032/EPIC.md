@@ -75,7 +75,7 @@ The bright line (frozen rule → one-shot holdout) is untouched.
 - [x] S2a — **The exclusion digest + the deterministic anti-adjacency gate.**
       No disposition/persona prose (S1 measured that prose alone repeats an
       already-ineffective pattern). Build only.
-- [ ] S2b — The disposition (skill-prose amendment on the two generating
+- [x] S2b — The disposition (skill-prose amendment on the two generating
       stages, instructing them to consult the digest).
 - [ ] S3 — The external-knowledge dispatch path, with source/date recording.
 
@@ -397,3 +397,157 @@ anti-adjacency gate also counts as the gate working, and is logged.
   unrelated sibling finding shares the family bucket with the open one. Fixed
   to mechanism grain. A gate that conflates siblings is exactly what E-032
   exists to prevent.
+
+- 2026-08-23 — **OPERATOR RULING, the decision S2c was blocked on.** Verbatim:
+  *"Retry up to 4 times with the exclusion list, then escalate to me."*
+
+  So the REFUSE branch is: hand the refusal reason and the exclusion digest
+  back to the idea-generation stage and ask again, up to **4 attempts on the
+  same lineage step**; on the 4th consecutive refusal, stop auto-actioning and
+  escalate to a human. This is deliberately the same shape as E-030's halt
+  policy (auto-handle the recoverable case, escalate what it cannot resolve),
+  so S2c reuses a tested pattern rather than inventing a second one.
+
+  Two implementation notes for whoever builds S2c, neither of them the
+  operator's to specify: the attempt counter must be **independent of
+  `counters.refinements_used`** — E-030 S1.5 Piece 2 exists precisely because
+  reusing that counter causes same-counter re-entry to overwrite rather than
+  append an audit key, and a retry loop is exactly the re-entry shape that
+  triggers it. And each retry must pass the PREVIOUS refusal's reason, not
+  merely re-invoke the stage: a bare retry is not a retry (E-030 R3, evidenced
+  by halt #5).
+
+- 2026-08-24 — **S2b done: the never-resolved input path fixed (gated), and
+  the disposition written.** Both off by default; no engine change; no
+  campaign or LLM call made.
+
+  **Task 1 — the stale-path defect is a CLASS, not one instance.** Grepped
+  every `"../../..."`-style path across all 9 `workflow_artifacts/templates/
+  handoffs/*.yaml` and checked each against the real repo layout. All five
+  cross-boundary references trace to ONE root cause: the E-002 restructure
+  (`8f162fa6`, 2026-08-06) moved `campaign_state.yaml`, `campaign_knowledge_
+  base.yaml`, and `feed_wishlist.yaml` from the strategy-research/ root into
+  `campaign_record/`, and `coin_universe.yaml` into `config/`, without
+  repointing every template reference. Found, beyond the one this story was
+  dispatched to fix:
+  - `research_brief_to_hypothesis.yaml` (hypothesis_generation) — the named
+    `campaign_knowledge_base.yaml` optional_input, AND a second, previously
+    unnoted one: `feed_wishlist.yaml`. Both silent (optional + missing =
+    no-op, confirmed by reading `run_claude_worker`'s context-gathering loop).
+  - `campaign_review.yaml` (campaign_review) — the SAME broken path on
+    `campaign_state.yaml` AND `campaign_knowledge_base.yaml`, but both
+    **REQUIRED**, not optional — a loud `FileNotFoundError`, not a silent
+    no-op, if that stage is ever actually invoked. Verified by execution,
+    not inference: `runs/run_054`'s materialized handoff/artifact pair is the
+    last real `campaign_review` execution, and its `pipeline_state.yaml`
+    timestamp (2026-07-07) predates the restructure by a month; `run_057`–
+    `run_059` have auto-created handoff templates (copied verbatim, still
+    broken) but no `artifacts/campaign_review.yaml` — the stage has not
+    actually fired since the path broke. Consistent with S1's own finding
+    that `campaign_review`'s output is orphaned (`next: []`).
+  - `protocol_to_verdict_interpreter.yaml` (verdict_interpreter) —
+    `coin_universe.yaml`, optional, silent.
+  - `run_gemini_worker` carries its own, un-refactored copy of the
+    context-gathering loop (never went through S2a's `_build_stage_prompt`
+    extraction) and has **no** required-vs-optional distinction at all — a
+    missing REQUIRED input silently no-ops there too, not just a missing
+    optional one. `assigned_engine` is `"claude"` on every template this repo
+    ships, so this path is currently dead code, not exercised by any run.
+
+  **Fixed here, gated:** the two optional-input paths on `hypothesis_
+  generation` only — `campaign_knowledge_base.yaml` and `feed_wishlist.yaml`
+  — via a new `_apply_stale_input_path_fix()`, keyed off
+  `orchestrator.stale_input_path_fix.enabled` (default `false`,
+  `config/campaign_config.yaml`), same off-by-default shape as S2a's
+  `exclusion_digest_input.enabled`. Flag-off byte-identity proven the same
+  way S2a proved it — against assembled PROMPT TEXT via `_build_stage_prompt`,
+  not just "the code path is skipped"
+  (`tests/test_stale_input_path_fix.py::
+  test_flag_off_prompt_is_byte_identical_to_never_calling_the_fix_at_all`).
+  Flag-on proven to actually carry KB and wishlist content into the prompt.
+  Chosen deliberately as an *enabling* change, not a silent bugfix, per this
+  story's own brief: restoring a path that has never once resolved changes
+  what the stage receives, which is a real behavior change.
+
+  **Not fixed, stated plainly:** `campaign_review`'s two required-input
+  instances and `verdict_interpreter`'s one optional instance. Reason: both
+  are outside E-032's two generating stages; `campaign_review`'s fix is
+  additionally a behavior-*restoring* change to a stage this epic does not
+  own and whose own output routes nowhere today (S1). Fixing them is a
+  distinct, pre-existing bug for whoever owns those stages next, not scope
+  creep to absorb here. The un-refactored Gemini worker is likewise untouched
+  — fixing dead code carries the same review cost as fixing live code, for a
+  path nothing currently exercises.
+
+  **The general defect — a missing optional_input vanishes with zero
+  trace — gets a cheap, unconditional warning**, not a fix, because the
+  general fix (repointing every template) is not this story's to make
+  unilaterally. `_build_stage_prompt`'s context-gathering loop now prints
+  `"WARNING: optional_input never resolved, stage continues without it: 
+  <path> (stage=<name>)"` whenever an optional entry's file is absent. This
+  is diagnostic stdout only — it does not touch `context_blocks` or
+  `full_prompt`, so it cannot change a stage's actual output, proven by the
+  same byte-identity test still passing with the warning wired in. It fires
+  unconditionally (no flag, no gate) because a print statement changing
+  nothing about program state does not carry the same risk `_apply_
+  exclusion_digest_input`/`_apply_stale_input_path_fix` do. It will also fire
+  routinely for by-design conditional artifacts (`artifacts/refinement_
+  notes.yaml` outside a refinement loop, `artifacts/run_context.yaml` outside
+  an escalation run) — that is expected and not a false positive in the
+  literal sense (the input genuinely did not resolve); the value is
+  surfacing a path that is missing **every single run**, which the KB/
+  wishlist/coin_universe/campaign_state cases all were.
+
+  **Task 2 — the disposition, IMPROVEMENT 05 on both generating skills**
+  (`workflow_artifacts/skills/hypothesis-design/SKILL.md`,
+  `.../innovation-expansion/SKILL.md`), matching the project's existing
+  "IMPROVEMENT NN" convention (own section + master Checklist/Forbidden
+  bullets, same as Improvements 01 and 04). Grounded in the exclusion
+  digest's actual measured shape from S2a, not aspiration: `families` keyed
+  at `(family, instrument, timeframe)` with `run_ids`, and
+  `failed_families_passthrough` with `detail: dict_entry` (has a
+  `root_cause`) vs `detail: bare_string_low_detail` (does not) — the
+  disposition text tells the agent to weight these two differently, per
+  S2a's own docstring warning against treating the weak entries as a global
+  veto. Explicitly conditional throughout: the digest is optional and off by
+  default (`exclusion_digest_input.enabled`), so both sections open by
+  stating "if absent, this section does not apply" and close the Forbidden
+  list with "do not treat digest absence as evidence of a fresh search
+  space." No new YAML fields, no schema changes: the proactive/redirect
+  behavior is expressed through fields that already exist and already pass
+  validation — `hypothesis_card.yaml`'s `rationale` and `library_lookup.
+  prior_campaign_failures` (both `additionalProperties: false`, so a new
+  field would have failed validation), and `innovation_notes.yaml`'s
+  `variants_not_pursued`, `summary`, `key_insight` (same constraint, checked
+  first). The "proactive, empowered to declare a direction exhausted"
+  requirement is written as a concrete instruction each skill can act on
+  today, not an adjective: for hypothesis-design, "if every angle you can
+  honestly construct on a family collides with the digest, say so in
+  `rationale` and select a genuinely different family — not the next
+  parameter over, record the redirect in `library_lookup.prior_campaign_
+  failures`"; for innovation-expansion, "if every honestly-constructable
+  variant collides with the digest or a root_cause, say so in `innovation_
+  notes.yaml`'s `summary`/`key_insight` — name the family, the triples, the
+  root_cause — rather than forcing a cosmetic variant through," explicitly
+  preferring an honest, thin `variants_not_pursued`-heavy output over
+  padding the queue, tying it to hypothesis-design's own pre-existing
+  "quality over volume" framing. Both sections also make family saturation
+  itself an expansion signal (2+ digest triples on the base hypothesis's
+  family → at least one variant must cross `library_category`/
+  `data_requirements`, per Improvement 04's diversity test, not a new rule).
+  `## Context rule` in both files updated to name the digest (and, for
+  hypothesis-design, the corrected KB path) as inputs that may be present.
+
+  **Verification.** strategy-research fast suite: **967 passed** (954
+  baseline + 13 new, in `tests/test_stale_input_path_fix.py`; zero
+  regressions). trading-bot fast suite: **383 passed / 2 skipped**, unchanged
+  from the reference figure (nothing under `trading-bot/` touched). No
+  campaign or backtest run; no LLM call made; `local_data/holdout_sealed/`
+  never opened.
+
+  **Left out, stated plainly, not silently narrowed:** the retry/escalate
+  loop and live orchestrator wiring for the anti-adjacency gate — that is
+  S2c, whose ruling is already recorded above and is explicitly out of this
+  story's scope. `campaign_review`'s and `verdict_interpreter`'s own
+  stale-path instances (see Task 1). The Gemini worker's missing required-
+  input enforcement.

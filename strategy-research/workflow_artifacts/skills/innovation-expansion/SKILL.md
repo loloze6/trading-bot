@@ -116,6 +116,50 @@ Before adding a variant, check the base hypothesis indicator's `known_regime_aff
 
 ---
 
+## IMPROVEMENT 05 — Exclusion-Digest-Aware Expansion: Redirect the Lineage, Don't Just Vary It (E-032 S2b)
+
+### Optional, off by default
+
+`campaign_record/exclusion_digest.yaml` is unioned into your context files ONLY when
+`config/campaign_config.yaml`'s `orchestrator.exclusion_digest_input.enabled` is true.
+It will not always be present. **If it is absent from your provided context, this
+section does not apply.**
+
+### When present: check the base hypothesis's OWN family saturation before expanding
+
+This stage is the one most likely to produce adjacent variants by construction — the
+mission is to expand ONE hypothesis. That makes it the stage most in need of a hard
+check against repeating a lineage the campaign has already run.
+
+1. Look up the base hypothesis's family in the digest's `families` map. Count its
+   triples across ALL `(instrument, timeframe)` pairs, not just the base hypothesis's
+   own pair.
+2. If that family already carries triples at 2+ distinct `(instrument, timeframe)`
+   pairs, treat it as heavily searched: at least one variant in `expanded_variants`
+   MUST cross into a different `library_category` or `data_requirements`. IMPROVEMENT
+   04's diversity test already requires this on cosmetic-diversity grounds — the
+   digest is a second, independent reason to enforce it, not a new rule.
+3. For each candidate variant, do not add it to `expanded_variants` if it would land on
+   a `(family, instrument, timeframe)` triple already in the digest under a materially
+   unchanged mechanism. Move it to `variants_not_pursued` in `innovation_notes.yaml`
+   instead, with `reason` citing the specific family/triple, or the
+   `failed_families_passthrough` `root_cause`, that excluded it.
+4. **You are empowered to call the whole lineage exhausted.** If every honestly-
+   constructable variant from this base hypothesis collides with the digest or a
+   recorded `root_cause`, say so directly in `innovation_notes.yaml`'s `summary` and
+   `key_insight` — name the family, the colliding triples, the root_cause — rather
+   than forcing a cosmetic variant through to fill the queue. An honest
+   `variants_not_pursued` list with a thin or empty `expanded_variants` is a better
+   outcome than three variants that only vary parameters within an already-searched
+   family: the same standard `hypothesis-design`'s "quality over volume" section
+   already holds hypothesis count to.
+
+**This is raw material, not the gate.** `tools/anti_adjacency_gate.py` makes the
+mechanical refusal downstream, deterministically. This section governs what a
+proactive stage proposes on its own, before the gate ever has to say no.
+
+---
+
 ## Checklist
 - Add novelty without destroying testability.
 - Suggest alternative data only if the feed is in `available_feeds.yaml.available`.
@@ -128,6 +172,10 @@ Before adding a variant, check the base hypothesis indicator's `known_regime_aff
 - **Improvement 04: run diversity test against indicator_library.yaml; reject cosmetic expansions.**
 - Populate `library_category`, `data_requirements`, `diversity_axis` on every variant.
 - Write `diversity_audit` section in `innovation_notes.yaml`.
+- If `campaign_record/exclusion_digest.yaml` is present in context: check the base
+  hypothesis's family saturation before expanding; route any variant that would
+  repeat a digest triple to `variants_not_pursued` instead of `expanded_variants`.
+  (Improvement 05)
 
 ## Forbidden
 - Do not skip interpretability.
@@ -137,6 +185,11 @@ Before adding a variant, check the base hypothesis indicator's `known_regime_aff
 - Do NOT include regime-gated variants in the run queue (`expanded_variants`). They go in `regime_specific_variants` with `status: detector_wishlist_pending`.
 - If `research_brief.yaml` contains "one variant only", "single variant", or "no variants" in its `constraints` field, do NOT expand into multiple variants. Pass the base hypothesis through to a single variant (V1 only) matching the brief's signal_concept exactly. Expansion is only appropriate when the brief does not constrain variant count.
 - **Improvement 04: Do NOT accept an expansion where all variants share the same library `category` AND `data_requirements`. This is cosmetic diversity — redo it.**
+- Do not repropose a `(family, instrument, timeframe)` triple already present in the
+  exclusion digest under a materially unchanged mechanism, when the digest is present
+  in context. (Improvement 05)
+- Do not treat digest absence as evidence the search space is fresh — it may simply
+  mean `orchestrator.exclusion_digest_input.enabled` is off. (Improvement 05)
 
 ## Context rule
-Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, and `config/indicator_library.yaml`. Do not read other files unless explicitly required.
+Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, `config/indicator_library.yaml`, and, when present, `campaign_record/exclusion_digest.yaml`. Do not read other files unless explicitly required.
