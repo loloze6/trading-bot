@@ -195,6 +195,50 @@ def test_scan_run_triples_deterministic_across_repeated_calls(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# _refresh_failed_families: re-keying onto the digest's family vocabulary
+# ---------------------------------------------------------------------------
+
+def test_refresh_failed_families_rekeys_onto_digest_canonical_name():
+    """FIX 4 (review, 2026-08-24): the docstring promises re-keying onto
+    digest_families's own vocabulary where a name matches (case/whitespace-
+    normalized), but the body used to never reference digest_families at
+    all -- the raw campaign_state string passed straight through. A
+    differently-cased/spaced campaign_state entry that normalizes onto a
+    real digest family key must come out carrying the DIGEST's canonical
+    spelling, not the raw string."""
+    campaign_state = {"failed_families": [
+        {"name": "Keltner  Channel", "evidence_window": "2024-01:2024-06", "root_cause": "no edge"},
+        "  RSI_Mean_Reversion ",
+    ]}
+    digest_families = {"keltner_channel": {}, "rsi_mean_reversion": {}}
+
+    refreshed = bed._refresh_failed_families(campaign_state, digest_families)
+
+    assert refreshed[0]["family"] == "keltner_channel", (
+        f"expected the digest's canonical name, got {refreshed[0]['family']!r}"
+    )
+    assert refreshed[0]["detail"] == "dict_entry"
+    assert refreshed[1]["family"] == "rsi_mean_reversion"
+    assert refreshed[1]["detail"] == "bare_string_low_detail"
+
+
+def test_refresh_failed_families_passes_through_unchanged_on_no_match():
+    """Regression coverage for the existing best-effort-passthrough behavior:
+    a campaign_state family name with no corresponding digest_families key
+    must keep its raw string, exactly as before this fix."""
+    campaign_state = {"failed_families": [
+        {"name": "some_totally_unrelated_family", "evidence_window": None, "root_cause": None},
+        "another_unmatched_bare_string",
+    ]}
+    digest_families = {"keltner_channel": {}}
+
+    refreshed = bed._refresh_failed_families(campaign_state, digest_families)
+
+    assert refreshed[0]["family"] == "some_totally_unrelated_family"
+    assert refreshed[1]["family"] == "another_unmatched_bare_string"
+
+
+# ---------------------------------------------------------------------------
 # Freshness: a fact in run artifacts, absent from stale campaign_state lists
 # ---------------------------------------------------------------------------
 
