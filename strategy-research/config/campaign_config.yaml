@@ -214,6 +214,35 @@ orchestrator:
       #
       # See engineering/roadmap/E-032/EPIC.md's S2c story entry and
       # 2026-08-23 operator-ruling Log entry.
+  variant_selection_record:
+    enabled: false
+      # E-034 S2. OFF BY DEFAULT and read at runtime by
+      # run_phase1_research._variant_selection_record_enabled() -- same
+      # shape as exclusion_digest_input.enabled / stale_input_path_fix.enabled
+      # / anti_adjacency_retry.enabled above (a sixth explicit exception to
+      # this file's "declared parity only" rule).
+      #
+      # While false, _record_variant_selection() is a no-op: it returns
+      # before reading anything else on disk, so no artifact is written and
+      # backtest_specification's own outputs (backtest_spec.yaml,
+      # decision.yaml) and every subsequent stage's inputs are byte-identical
+      # to before this feature existed. Proven by
+      # tests/test_variant_selection_record.py's flag-off/flag-on comparison
+      # (same acceptance bar as S2a/b/c: compare actual pipeline
+      # state/output, not just assert the code path is skipped).
+      #
+      # While true: right after backtest_specification produces a spec_ready
+      # backtest_spec.yaml, its (schema-documented but NOT schema-enforced --
+      # see engineering/roadmap/E-034/EPIC.md's 2026-08-24 S1-review entry --
+      # no schema under workflow_artifacts/schemas/ is loaded by any code)
+      # selected_variant_id field is read and matched against
+      # expanded_hypothesis_card.yaml's expanded_variants menu. Missing or
+      # unmatched -> RAISES (fail loud, halts the run) rather than writing a
+      # broken record. On a match: writes artifacts/variant_selection.yaml
+      # (the chosen variant, resolved instrument/timeframe, the LLM's own
+      # rationale) and artifacts/variants_not_pursued.yaml (every other menu
+      # entry, verbatim). See engineering/roadmap/E-034/artifacts/
+      # s1_selection_record.md Task 3 for the full design.
 
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)

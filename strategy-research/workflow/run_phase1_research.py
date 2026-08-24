@@ -1616,6 +1616,171 @@ def _apply_anti_adjacency_retry_context(stage_name: str, handoff: dict, run_dir:
     )
 
 
+# E-034 S2: record which expanded_variants menu entry backtest_specification
+# actually chose, and persist the discards. See engineering/roadmap/E-034/
+# artifacts/s1_selection_record.md Task 3 for the full design and the
+# 2026-08-24 S1-review Log entry in EPIC.md for why this is NOT built as a
+# "required" field on backtest_spec.schema.json alone: no schema under
+# workflow_artifacts/schemas/ is loaded or validated by any code, anywhere
+# (grep-verified) -- a schema-only "required" is decorative. The actual
+# guarantee is this code seam: it raises if selected_variant_id is missing
+# or does not match anything in the menu, independent of the schema file.
+def _derive_variant_id(variant, index: int) -> str:
+    """Stable identifier for one expanded_hypothesis_card.yaml
+    expanded_variants[] entry. Used identically everywhere a variant needs
+    an ID -- this function is the single source of the S1 Task 3 derivation
+    rule, reused by both record-writing here and (per S1's note) S3's future
+    gate-matching code; do not re-implement it a second time.
+
+    Priority, per S1's measurement of the real 138-variant corpus:
+    1. dict with a truthy 'variant_id' key (92% of the 74 dict-shaped
+       variants) -- use it verbatim.
+    2. dict without 'variant_id' but with 'id'/'name'/'variant_name'/'label'
+       (covers the remaining 8%, and any variant shape) -- use the first of
+       these present, in that priority order.
+    3. bare string (64/138 in the corpus), or a dict with none of the above
+       keys (0/74 measured, but handled rather than crashing) -- a short
+       deterministic hash of the item's own content, prefixed with its
+       positional index so it stays stable across re-reads of the same file
+       and distinct even if two bare-string variants share text.
+    """
+    if isinstance(variant, dict):
+        variant_id = variant.get("variant_id")
+        if variant_id:
+            return str(variant_id)
+        for key in ("id", "name", "variant_name", "label"):
+            value = variant.get(key)
+            if value:
+                return str(value)
+        content = yaml.safe_dump(variant, sort_keys=True)
+    else:
+        content = str(variant)
+    digest = hashlib.sha256(content.encode("utf-8")).hexdigest()[:8]
+    return f"str_{index}_{digest}"
+
+
+def _variant_selection_record_enabled() -> bool:
+    """False when the key, the section, or the config file is absent -- same
+    silence-is-never-a-green-light rule as every other orchestrator.<name>.
+    enabled flag in this module (_exclusion_digest_input_enabled,
+    _stale_input_path_fix_enabled, _anti_adjacency_retry_enabled). Reads via
+    ROOT so the test sandbox (tests/conftest.py's autouse guard) can seed its
+    own value without touching the real repository."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    section = ((cfg.get("orchestrator") or {}).get("variant_selection_record") or {})
+    return bool(section.get("enabled", False))
+
+
+def _record_variant_selection(run_dir: Path) -> None:
+    """Deterministic post-processing, invoked right after
+    backtest_specification's output has been confirmed spec_ready (same
+    stage-output-enrichment lifecycle point _apply_b7_mandatory_inputs and
+    friends hook into, except those run BEFORE a stage; this one runs AFTER).
+
+    Flag OFF (default): returns immediately -- no file is read beyond the
+    flag check, no artifact is written, run_loop's behavior is byte-identical
+    to before this function existed.
+
+    Flag ON: loads backtest_spec.yaml.selected_variant_id (RAISES if absent
+    -- this is the actual enforcement the unread schema cannot provide),
+    matches it against expanded_hypothesis_card.yaml's expanded_variants menu
+    using _derive_variant_id (RAISES if it matches nothing -- a hallucinated
+    or malformed ID must halt the run, not produce a silently-broken record),
+    then writes artifacts/variant_selection.yaml (the chosen variant, copied
+    verbatim, plus resolved instrument/timeframe and the LLM's own rationale
+    relocated to a place code can find it) and
+    artifacts/variants_not_pursued.yaml (every other menu entry, verbatim,
+    none dropped, none duplicated, the selected one excluded).
+    """
+    if not _variant_selection_record_enabled():
+        return
+
+    artifacts = run_dir / "artifacts"
+    backtest_spec = load_yaml(artifacts / "backtest_spec.yaml") or {}
+    selected_variant_id = backtest_spec.get("selected_variant_id")
+    if not selected_variant_id:
+        raise RuntimeError(
+            f"[E-034 S2] {run_dir.name}: backtest_spec.yaml is missing "
+            f"'selected_variant_id'. backtest-engineering/SKILL.md requires "
+            f"the stage to name the exact expanded_variants entry it used. "
+            f"Refusing to proceed without it -- this is the fail-loud code-"
+            f"seam enforcement; the schema field alone is not checked by "
+            f"anything (see EPIC.md's 2026-08-24 S1-review entry)."
+        )
+    selected_variant_id = str(selected_variant_id)
+
+    expanded_card = load_yaml(artifacts / "expanded_hypothesis_card.yaml") or {}
+    variants = expanded_card.get("expanded_variants") or []
+    derived_ids = [_derive_variant_id(v, i) for i, v in enumerate(variants)]
+
+    matched_index = None
+    for idx, vid in enumerate(derived_ids):
+        if vid == selected_variant_id:
+            matched_index = idx
+            break
+    if matched_index is None:
+        raise RuntimeError(
+            f"[E-034 S2] {run_dir.name}: backtest_spec.yaml's "
+            f"selected_variant_id={selected_variant_id!r} does not match any "
+            f"entry in expanded_hypothesis_card.yaml's expanded_variants "
+            f"(derived menu IDs: {derived_ids}). Refusing to write a "
+            f"selection record pointing at a hallucinated or malformed ID."
+        )
+
+    matched_variant = variants[matched_index]
+    hypothesis_card = load_yaml(artifacts / "hypothesis_card.yaml") or {}
+
+    variant_instrument = None
+    variant_timeframe = None
+    if isinstance(matched_variant, dict):
+        variant_instrument = (matched_variant.get("target_market")
+                               or matched_variant.get("target_markets")
+                               or matched_variant.get("instrument"))
+        variant_timeframe = (matched_variant.get("timeframe")
+                              or matched_variant.get("timeframe_expanded")
+                              or matched_variant.get("timeframe_original"))
+    resolved_instrument = variant_instrument if variant_instrument else hypothesis_card.get("target_market")
+    resolved_timeframe = variant_timeframe if variant_timeframe else hypothesis_card.get("timeframe")
+
+    decision = load_yaml(artifacts / "decision.yaml") if (artifacts / "decision.yaml").exists() else {}
+    chosen_rationale = backtest_spec.get("config_rationale") or (decision or {}).get("rationale")
+
+    run_id = run_dir.name
+    hypothesis_id = expanded_card.get("base_hypothesis_id") or hypothesis_card.get("hypothesis_id")
+
+    save_yaml(artifacts / "variant_selection.yaml", {
+        "run_id": run_id,
+        "hypothesis_id": hypothesis_id,
+        "selected_variant_id": selected_variant_id,
+        "variant_definition": matched_variant,
+        "instrument": resolved_instrument,
+        "timeframe": resolved_timeframe,
+        "chosen_rationale": chosen_rationale,
+    })
+
+    not_pursued = []
+    for idx, (vid, variant) in enumerate(zip(derived_ids, variants)):
+        if idx == matched_index:
+            continue
+        entry = {
+            "variant_id": vid,
+            "run_id": run_id,
+            "hypothesis_id": hypothesis_id,
+            "variant_definition": variant,
+        }
+        lost_reason = None
+        if isinstance(variant, dict):
+            lost_reason = variant.get("lost_reason") or variant.get("why_it_lost")
+        if lost_reason:
+            entry["lost_reason"] = lost_reason
+        not_pursued.append(entry)
+    save_yaml(artifacts / "variants_not_pursued.yaml", {"variants_not_pursued": not_pursued})
+
+
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
     tool_stages = {"protocol_execution", "signal_prescreen"}
     if stage_name in tool_stages:
@@ -5668,6 +5833,13 @@ def run_loop(run_id: str):
             elif current_stage == "backtest_specification":
                 next_stage = determine_post_spec_route(RUN_DIR)
                 if next_stage in ("signal_prescreen", "protocol_execution"):
+                    # E-034 S2: record which expanded_variants menu entry was
+                    # chosen (and persist the discards), off by default (see
+                    # _record_variant_selection's own docstring). Runs only on
+                    # the spec_ready path -- component_gap means no
+                    # config/variant was actually implemented, so there is
+                    # nothing to record.
+                    _record_variant_selection(RUN_DIR)
                     spec = load_yaml(ARTIFACTS / "backtest_spec.yaml")
                     config_obj = spec.get("config")
                     # F4d (2026-07-05, run_047): force-inject significance_methodology
