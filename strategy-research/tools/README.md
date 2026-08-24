@@ -70,7 +70,7 @@ discounting a run's Sharpe for how many hypotheses the campaign has already trie
 how good it would have to look to not be luck.*
 
 **WHO READS IT (PROD, measured)**
-- `workflow/stages.yaml:153` — `tool: tools/deflate_sharpe.py` for the robustness stage
+- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:153` — `tool: tools/deflate_sharpe.py` for the robustness stage
 - `workflow/run_phase1_research.py:3940` — mirrors its `exclude_invalidated_trials` logic in a separate copy
 
 **HOW IT IS INVOKED** (docstring `:11-13`, argparse `:351-363`):
@@ -323,7 +323,7 @@ big enough to pay for the trading? Kills bad ideas for pennies.*
 
 **WHO READS IT (PROD, measured)**
 - `workflow/run_phase1_research.py:1002` — the real invocation, `subprocess.run`; `:1011` raises on failure
-- `workflow/stages.yaml:70` — `tool: tools/prescreen_signal.py` for the `signal_prescreen` stage
+- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:70` — `tool: tools/prescreen_signal.py` for the `signal_prescreen` stage
 - `config/campaign_config.yaml:15,24` — the `prescreen:` block; `config/cost_model.yaml:258` — its Layer 2 formula
 - `tools/episode_significance.py:48`, `tools/measure_bar_sigma.py:18`, `tools/fragment_patterns.py:68` — reuse its statistics
 - `config/campaign_queue.yaml:115,176,179` — notes on what it does and does not read
@@ -405,7 +405,7 @@ leak between periods, and writes down what happened.*
 
 **WHO READS IT (PROD, measured)**
 - `workflow/run_phase1_research.py:1048` — the real invocation, `subprocess.run` on the `protocol_execution` stage
-- `workflow/stages.yaml:89` — `tool: tools/run_protocol.py` for that stage
+- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:89` — `tool: tools/run_protocol.py` for that stage
 - `config/cost_model.yaml:4,66,115` — names it as the consumer of the fee blocks
 - `config/campaign_queue.yaml:174` — notes it never reads `timeframe` from the protocol
 - `config/campaign_data_policy.yaml:333` — `run_protocol.py:1173` used as a reproduction fixture
@@ -470,7 +470,7 @@ stable, not hair-trigger, and doesn't fire absurdly often or almost never.*
 
 **WHO READS IT (PROD, measured)**
 - `workflow/run_phase1_research.py:1465` — invokes it via subprocess; `:1439` re-runs it when the report is stale or absent; `:1472` warns on failure
-- `workflow/stages.yaml:122` — `tool: tools/validate_regime_detector.py`
+- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:122` — `tool: tools/validate_regime_detector.py`
 - `config/campaign_config.yaml:64` — the `regime_detector:` thresholds block
 - Reads `config/campaign_data_policy.yaml` at `:426`
 
