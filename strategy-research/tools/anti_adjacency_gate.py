@@ -140,16 +140,36 @@ def _kb_finding_hids(finding: dict) -> list[str]:
 
 
 def _kb_findings_matching_candidate(candidate_hid: str, kb_findings: list[dict]) -> list[dict]:
+    """Findings whose hypothesis_id(s) contain (or are contained by) the
+    candidate's, MOST SPECIFIC FIRST.
+
+    FIX 1 (dispatching session's 2026-08-24 review): a candidate can
+    legitimately match multiple KB findings (e.g. an _EXPANDED child and its
+    base mechanism parent). layer1_kb_check returns on the first REFUSE/ADMIT
+    it sees, so the order findings are evaluated in is load-bearing. Sorting
+    here -- by the length of the matched hid, longest (most specific) first,
+    a stable sort so ties keep their original relative order -- makes that
+    order a property of the match itself (an _EXPANDED child's longer hid
+    always sorts before its shorter base parent's), never of campaign_
+    knowledge_base.yaml's incidental list order. Two findings for the same
+    candidate must reach the same verdict regardless of which is listed
+    first in the YAML.
+    """
     norm_candidate = _normalize_hid(candidate_hid)
     if not norm_candidate:
         return []
-    matches = []
+    scored = []
     for finding in kb_findings:
+        best_len = None
         for hid in _kb_finding_hids(finding):
-            if _hid_contains_match(norm_candidate, _normalize_hid(hid)):
-                matches.append(finding)
-                break
-    return matches
+            norm_hid = _normalize_hid(hid)
+            if _hid_contains_match(norm_candidate, norm_hid):
+                if best_len is None or len(norm_hid) > best_len:
+                    best_len = len(norm_hid)
+        if best_len is not None:
+            scored.append((best_len, finding))
+    scored.sort(key=lambda pair: -pair[0])
+    return [finding for _, finding in scored]
 
 
 # Branch-token vocabulary for parsing KB reactivation_condition PROSE (free
@@ -277,10 +297,6 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
         reactivation_condition = finding.get("reactivation_condition")
         exhausted = bool(finding.get("exhausted"))
 
-        if consumed_by:
-            return REFUSE("kb", f"{fid}: already reactivated by {consumed_by}",
-                           kb_finding_id=fid)
-
         if reactivation_condition:
             named = _extract_named_branches(reactivation_condition)
             if candidate_timeframe in named:
@@ -296,6 +312,19 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
                         f"terminate closes only the branch it named)",
                         kb_finding_id=fid,
                     )
+                # FIX 2 (dispatching session's 2026-08-24 review):
+                # reactivation_consumed_by is a flat, whole-finding field with
+                # no branch attribution of its own. It can only unambiguously
+                # mean "the branch that was consumed" when reactivation_
+                # condition names exactly ONE branch -- with two or more, the
+                # only mechanism that can attribute closure to a SPECIFIC
+                # branch is the mechanical lineage-routing precedence rule
+                # above; consumed_by must not blanket-REFUSE every named
+                # branch just because one of them (unspecified which) was
+                # consumed.
+                if consumed_by and len(named) == 1:
+                    return REFUSE("kb", f"{fid}: already reactivated by {consumed_by}",
+                                   kb_finding_id=fid)
                 return ADMIT(
                     "kb",
                     f"{fid}: matches open, unconsumed branch '{candidate_timeframe}' "
@@ -305,6 +334,13 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
             # named branches exist but candidate's timeframe isn't one of them --
             # this finding has no opinion on this specific candidate; keep looking.
             continue
+
+        if consumed_by:
+            # No reactivation_condition at all here (handled above when
+            # present) -- consumed_by means "the whole finding is closed",
+            # unchanged from before FIX 2.
+            return REFUSE("kb", f"{fid}: already reactivated by {consumed_by}",
+                           kb_finding_id=fid)
 
         if exhausted:
             # exhausted with NO reactivation_condition = a closed leaf with
