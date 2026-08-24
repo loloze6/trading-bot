@@ -826,6 +826,18 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # surfaced as `human_pause_unclassified`.
     if flags.get("pass_rule_evaluation_disagreement"):
         return "pass_rule_evaluation_disagreement"
+    # E-032 S2c (operator ruling 2026-08-23): set by
+    # run_phase1_research._route_post_innovation_expansion after the 4th
+    # CONSECUTIVE anti-adjacency gate REFUSE for one lineage step, only when
+    # orchestrator.anti_adjacency_retry.enabled is true. Named here so this
+    # escalation reads as itself in campaign_log.md / halt_history instead of
+    # falling through to human_pause_unclassified -- same pattern as every
+    # other flag-keyed reason in this function. Not in _QUARANTINE_SAFE_
+    # REASONS or _REQUEUEABLE_QUARANTINE_REASONS below: this is a genuine
+    # must-escalate per the operator's own ruling, not an auto-recoverable
+    # engineering failure.
+    if flags.get("anti_adjacency_gate_exhausted"):
+        return "anti_adjacency_gate_exhausted"
 
     artifacts = run_dir / "artifacts"
     audit_path = artifacts / "promotion_audit.yaml"

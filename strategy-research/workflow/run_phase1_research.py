@@ -1428,6 +1428,169 @@ def _apply_stale_input_path_fix(stage_name: str, handoff: dict) -> None:
             req["path"] = corrected
 
 
+# ---------------------------------------------------------------------------
+# E-032 S2c -- anti-adjacency gate retry/escalate orchestration.
+#
+# Operator ruling (2026-08-23, EPIC.md Log): "Retry up to 4 times with the
+# exclusion list, then escalate to me." Wiring point (Task 1 of this story):
+# right after innovation_expansion produces its deliverables, before
+# validation -- matches stages.yaml's already-declared (but previously
+# unread) anti_adjacency_gate `tool:` entry's position and its
+# next: [validation, hypothesis_generation] routing. S1/S2a's build-list
+# item 4 recommended exactly this insertion point.
+#
+# Two constraints already on record when this story was dispatched, both
+# implemented literally below, not rediscovered:
+#   1. The attempt counter (state["anti_adjacency_gate_retry"]["attempts"])
+#      is a NEW, dedicated top-level state key -- independent of BOTH
+#      counters.refinements_used and stage_attempts (E-030 S1.5 Piece 2:
+#      reusing refinements_used for a re-entry counter causes a same-counter
+#      re-entry to overwrite an audit key instead of appending one; a retry
+#      loop is exactly that re-entry shape).
+#   2. Each retry carries the PREVIOUS refusal's reason into
+#      hypothesis_generation's next prompt via _apply_anti_adjacency_retry_
+#      context below (E-030 R3: "a bare retry is not a retry", evidenced by
+#      halt #5 in E-030's own taxonomy work).
+# ---------------------------------------------------------------------------
+_ANTI_ADJACENCY_RETRY_MAX_ATTEMPTS = 4
+
+
+def _anti_adjacency_retry_enabled() -> bool:
+    """False (no behavior change) when the key, the section, or the config
+    file is absent -- same silence-is-never-a-green-light rule as the other
+    three orchestrator flags (run_campaign._quarantine_enabled(),
+    _exclusion_digest_input_enabled(), _stale_input_path_fix_enabled())."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    retry_cfg = ((cfg.get("orchestrator") or {}).get("anti_adjacency_retry") or {})
+    return bool(retry_cfg.get("enabled", False))
+
+
+def _route_post_innovation_expansion(run_dir: Path, run_id: str, state: dict) -> str:
+    """Decides what happens after innovation_expansion, per the operator
+    ruling above. Flag OFF (the default): returns STAGE_CONFIGS[
+    'innovation_expansion']['default_next'] ('validation') immediately --
+    no digest/KB file is read, no gate is imported, no state field is
+    written. This is the actual off-by-default proof point: not merely
+    'the retry loop never fires' but 'this function's body past the flag
+    check never executes', so run_loop's stage-advance logic is entirely
+    unreached by any new code path (tests/test_anti_adjacency_retry_
+    policy.py).
+
+    Flag ON: evaluates the run's own hypothesis_card.yaml (the base
+    hypothesis innovation_expansion has just produced variants of -- per S1,
+    a schema-conformant expansion is definitionally a child of this one
+    card) against the anti-adjacency gate.
+      - ADMIT -> 'validation' (the unchanged default_next), attempt counter
+        reset to 0 (an ADMIT ends the REFUSE streak for this lineage step).
+      - REFUSE, attempts < 4 -> 'hypothesis_generation' (retry; the refusal
+        reason is stashed on state for _apply_anti_adjacency_retry_context
+        to carry into that stage's next prompt).
+      - REFUSE, attempts == 4 (the 4th CONSECUTIVE refusal) -> 'human_pause',
+        via the project's existing escalation mechanism (status=
+        'paused_for_human', exactly like every other human-in-the-loop stop
+        in this file) plus a flags entry run_campaign._classify_human_pause
+        can name (see its own new branch), rather than falling through to
+        the generic 'human_pause_unclassified' bucket every other flag-keyed
+        pause reason avoids.
+    """
+    default_next = STAGE_CONFIGS["innovation_expansion"]["default_next"]
+    if not _anti_adjacency_retry_enabled():
+        return default_next
+
+    tools_path = str(Path(__file__).parent.parent / "tools")
+    if tools_path not in sys.path:
+        sys.path.insert(0, tools_path)
+    import anti_adjacency_gate as _aag
+
+    candidate_path = run_dir / "artifacts" / "hypothesis_card.yaml"
+    candidate = load_yaml(candidate_path) if candidate_path.exists() else {}
+    digest_path = ROOT / "campaign_record" / "exclusion_digest.yaml"
+    kb_path = ROOT / "campaign_record" / "campaign_knowledge_base.yaml"
+    digest = load_yaml(digest_path) if digest_path.exists() else {}
+    kb = load_yaml(kb_path) if kb_path.exists() else {}
+
+    result = _aag.evaluate_candidate(candidate or {}, digest or {}, kb or {}, ROOT / "runs")
+    save_yaml(run_dir / "artifacts" / "anti_adjacency_result.yaml", dict(result))
+
+    gate_retry = dict(state.get("anti_adjacency_gate_retry") or {})
+    attempts = gate_retry.get("attempts", 0)
+    history = list(gate_retry.get("history", []))
+
+    if result.route == "admit":
+        print(f"✅ [E-032 S2c] anti-adjacency gate ADMIT for {run_id} "
+              f"(layer={result.get('layer')}): {result.get('reasons')}")
+        update_state(path=run_dir, anti_adjacency_gate_retry={
+            "attempts": 0, "last_reason": None, "history": history,
+        })
+        return "validation"
+
+    # REFUSE
+    reason_text = "; ".join(result.get("reasons", []))
+    attempts += 1
+    history.append({"attempt": attempts, "route": "refuse", "reason": reason_text})
+
+    if attempts >= _ANTI_ADJACENCY_RETRY_MAX_ATTEMPTS:
+        update_state(
+            path=run_dir,
+            anti_adjacency_gate_retry={"attempts": attempts, "last_reason": reason_text, "history": history},
+            status="paused_for_human",
+            flags={"anti_adjacency_gate_exhausted": True},
+        )
+        print(f"\n⏸️  PIPELINE PAUSED: anti-adjacency gate REFUSEd {attempts} consecutive "
+              f"times for {run_id}. Escalating per operator ruling (2026-08-23, "
+              f"E-032 EPIC.md): 'retry up to 4 times ... then escalate'.")
+        print(f"   Last refusal: {reason_text}")
+        return "human_pause"
+
+    update_state(
+        path=run_dir,
+        anti_adjacency_gate_retry={"attempts": attempts, "last_reason": reason_text, "history": history},
+    )
+    print(f"🔁 [E-032 S2c] anti-adjacency gate REFUSE ({attempts}/"
+          f"{_ANTI_ADJACENCY_RETRY_MAX_ATTEMPTS}) for {run_id}: {reason_text} -- "
+          f"retrying hypothesis_generation with the refusal reason.")
+    return "hypothesis_generation"
+
+
+def _apply_anti_adjacency_retry_context(stage_name: str, handoff: dict, run_dir: Path) -> None:
+    """Constraint 2 (operator ruling, E-030 R3 precedent): on a gate-REFUSE
+    retry loop-back to hypothesis_generation, inject the PREVIOUS refusal's
+    reason into that stage's next prompt -- not a bare re-invocation. Reads
+    the dedicated anti_adjacency_gate_retry state _route_post_innovation_
+    expansion just wrote.
+
+    Flag OFF, wrong stage, or no retry in progress (attempts == 0, e.g. the
+    FIRST pass through hypothesis_generation, or after an ADMIT reset it):
+    no-op -- the handoff dict is never mutated, matching
+    _apply_exclusion_digest_input/_apply_stale_input_path_fix's own
+    off-by-default proof shape (byte-identical assembled prompt, not merely
+    'the code path is skipped')."""
+    if stage_name != "hypothesis_generation":
+        return
+    if not _anti_adjacency_retry_enabled():
+        return
+    state_path = run_dir / "pipeline_state.yaml"
+    if not state_path.exists():
+        return
+    state = load_yaml(state_path) or {}
+    gate_retry = state.get("anti_adjacency_gate_retry") or {}
+    attempts = gate_retry.get("attempts", 0)
+    last_reason = gate_retry.get("last_reason")
+    if not last_reason or attempts <= 0:
+        return
+    handoff.setdefault("injected_context", {})
+    handoff["injected_context"]["anti_adjacency_gate_refusal"] = (
+        f"Attempt {attempts}/{_ANTI_ADJACENCY_RETRY_MAX_ATTEMPTS}. Your previous "
+        f"proposal was REFUSED by the anti-adjacency gate: {last_reason}. Propose a "
+        f"genuinely different family/instrument/timeframe -- not a cosmetic variant "
+        f"of the refused candidate."
+    )
+
+
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
     tool_stages = {"protocol_execution", "signal_prescreen"}
     if stage_name in tool_stages:
@@ -1450,6 +1613,9 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
 
     # E-032 S2b: repoint known-stale optional_input paths, off by default (see helper docstring above).
     _apply_stale_input_path_fix(stage_name, handoff)
+
+    # E-032 S2c: carry the previous gate-refusal reason into a retry, off by default (see helper docstring above).
+    _apply_anti_adjacency_retry_context(stage_name, handoff, RUN_DIR)
 
     # Select engine from handoff file, default to Claude if not specified
     engine = handoff.get("assigned_engine", "claude")
@@ -5453,7 +5619,16 @@ def run_loop(run_id: str):
             
             if current_stage == "validation":
                 next_stage = determine_post_validation_route(RUN_DIR) # Used to trigger state of refinement until (Artifact State is validated OR max refinement reached OR rejected)
-                
+
+            elif current_stage == "innovation_expansion":
+                # E-032 S2c: anti-adjacency gate + retry/escalate policy, off by
+                # default (see _route_post_innovation_expansion's own docstring).
+                # Flag off: returns config["default_next"] ('validation')
+                # immediately, identical to today's unconditional assignment above.
+                next_stage = _route_post_innovation_expansion(RUN_DIR, run_id, state)
+                if next_stage == "human_pause":
+                    break # Break the while loop to stop the script cleanly, same as every other human-in-the-loop stop below
+
             elif current_stage == "refinement_planner":
                 # Increment the refinement counter
                 current_count = state.get("counters", {}).get("refinements_used", 0)
