@@ -666,3 +666,117 @@ anti-adjacency gate also counts as the gate working, and is logged.
   with `kb_reactivation_violation`'s own resolution pattern) rather than
   adding new automated recovery machinery — a human decision is exactly what
   "escalate to me" asked for.
+
+- 2026-08-24 — **Bug-fix pass on S2a/S2b/S2c, dispatched by a code review.**
+  Six confirmed correctness bugs scoped for a fix; five landed, one skipped
+  as scoped-out. One additional finding (the gate reading
+  `hypothesis_card.yaml` instead of `expanded_hypothesis_card.yaml`) was
+  explicitly excluded from this dispatch — it needs a design decision on
+  which variant to gate, tracked separately.
+
+  **FIX 1 — `layer1_kb_check`'s order-dependent verdict, landed
+  (`tools/anti_adjacency_gate.py`).** `_kb_findings_matching_candidate` now
+  sorts matches by specificity (longest matched `hypothesis_id` first,
+  stable sort) before `layer1_kb_check` iterates them, instead of trusting
+  `campaign_knowledge_base.yaml`'s raw list order. Two findings matching the
+  same candidate (a base mechanism entry and its `_EXPANDED` child) could
+  previously disagree on the verdict depending only on which was listed
+  first. New test: a literal order-swap (`[closed_base, open_child]` vs.
+  `[open_child, closed_base]`) now asserted to agree.
+
+  **FIX 2 — `reactivation_consumed_by` bypassing branch precision, landed
+  (same file).** `reactivation_consumed_by` no longer REFUSEs the whole
+  finding unconditionally, ahead of the branch-aware
+  `reactivation_condition` logic. It now only closes the whole finding when
+  `reactivation_condition` names zero or exactly one branch; with two or
+  more named branches, only the mechanical lineage-routing precedence rule
+  (already built in S1/S2a) can attribute closure to a SPECIFIC branch — a
+  still-open sibling branch is no longer wrongly REFUSEd just because its
+  finding's `consumed_by` field happens to be set. New test: a
+  two-named-branch finding with `consumed_by` set still ADMITs the
+  untouched sibling branch. The real repo's own funding-family finding
+  (`funding_rate_continuous_mean_reversion_expanded_auto`) was checked and
+  never set `reactivation_consumed_by` at all, so this fix does not change
+  the calibration case's verdict — confirmed by re-running
+  `tests/test_anti_adjacency_gate.py`'s calibration tests unchanged.
+
+  **FIX 3 — silent ADMIT on missing gate inputs, landed
+  (`workflow/run_phase1_research.py`, `_route_post_innovation_expansion`).**
+  A genuinely ABSENT `exclusion_digest.yaml`/`campaign_knowledge_base.yaml`
+  (both `required_inputs` per `stages.yaml`) now raises `RuntimeError`
+  naming the missing path, instead of silently substituting `{}` and
+  rubber-stamping ADMIT for every candidate — per this project's own
+  standing rule ("anything feeding decisions raises on degenerate inputs").
+  An EXISTING-but-empty file (the legitimate clean-slate case for a fresh
+  campaign) still ADMITs exactly as before; a dedicated test proves no
+  regression there. Flag-off path untouched (returns before this code is
+  ever reached).
+
+  **FIX 4 — `_refresh_failed_families` ignoring its own `digest_families`
+  parameter, landed (`tools/build_exclusion_digest.py`).** The function's
+  docstring always promised re-keying `campaign_state.yaml`'s
+  `failed_families` onto the digest's own family vocabulary, but the body
+  never referenced `digest_families` — every entry passed through
+  unreconciled. Now builds a normalized-name lookup (same `_normalize_id()`
+  `classify_family()` itself uses) and re-keys onto the digest's canonical
+  spelling when a match exists; no match still passes the raw string
+  through unchanged (existing best-effort behavior, regression-tested).
+
+  **FIX 5 — `RESULT_RE` missing FAILED/PASSED/lowercase untested, landed
+  (`tools/near_miss_scoreboard.py`).** Confirmed against the live corpus:
+  `run_043`'s `"Walk-forward Spearman IC >= 0.2: FAILED at prescreen
+  (ic_all_bars = -0.021091, ...)"` parsed to `result="unknown"` and lost its
+  `ic_all_bars`/p-value evidence entirely (`detail_seg` forced to `""` on a
+  non-match). Widened to `\b(PASS(?:ED)?|FAIL(?:ED)?|UNTESTED)\b` with
+  `re.IGNORECASE`, plus a `_normalize_result_token()` step so every consumer
+  still sees exactly one of `PASS`/`FAIL`/`UNTESTED`. `run_043`'s literal
+  text is now a regression fixture; exact-token PASS/FAIL/UNTESTED behavior
+  is unchanged (regression-tested).
+
+  **FIX 6 — `anti_adjacency_gate_exhausted` missing from
+  `_PAUSE_FLAG_TO_REASON`, landed (`workflow/run_campaign.py`).** S2c added
+  the flag to `_classify_human_pause`'s branches but never mirrored it into
+  the table whose own comment promises exactly that mirroring (load-bearing
+  for R11's stale-flag ambiguity detector). Added in the same relative
+  position as `_classify_human_pause`'s own branch order. Currently inert
+  (deliberately outside `_QUARANTINE_SAFE_REASONS`), but real drift against
+  a stated invariant. New test drives the REVERSE direction the existing
+  mirror test couldn't check — every known sticky-flag branch in
+  `_classify_human_pause` must have a table entry — since the forward-only
+  check (table entry agrees with the classifier) could not have caught a
+  branch missing from the table entirely.
+
+  **Verification.** Per-file test deltas (all 5 touched test files, MEASURED
+  via `pytest --collect-only` before/after): `test_anti_adjacency_gate.py`
+  11→13 (+2), `test_anti_adjacency_retry_policy.py` 22→25 (+3),
+  `test_build_exclusion_digest.py` 19→21 (+2), `test_halt_quarantine_policy.py`
+  24→25 (+1), `test_near_miss_scoreboard.py` 22→26 (+4) — **+12 tests added,
+  all passing.** trading-bot fast suite (pre-commit gate, run after each of
+  the 5 commits): unchanged at **383 passed / 2 skipped** every time —
+  nothing under `trading-bot/` touched. strategy-research full fast suite
+  after all 5 commits, run in place: **1003 passed, 0 skipped, 0 failed**
+  (MEASURED). Against the dispatch's stated reference of 989: this is +14,
+  2 more than the +12 I can account for from my own edits (`git diff --stat
+  008442db..HEAD -- strategy-research/` touches only the 5 source files and
+  5 test files above). Cross-checked with a disposable `git worktree` pinned
+  at `008442db`: it collected exactly 989 tests (979 passed + 10 skipped,
+  matching the reference's total) but the 10 skips are a worktree artifact
+  (untracked local fixtures that don't follow a fresh worktree, same class
+  of gap `CLAUDE.fork.md` documents for the Mac fork's own worktree
+  provisioning) — not a real difference at `008442db` itself. The +2 beyond
+  my own edits is therefore INFERRED to be a pre-existing environment/
+  collection difference between whenever the 989 reference was captured and
+  now, not a regression: no drops, no failures, and `git diff --stat` proves
+  no file outside the 10 listed above was touched.
+
+  **FIX left undone: none of the six were skipped** — all six were judged
+  safely and precisely scopeable as dispatched, all six landed.
+
+  **Out of scope, confirmed still untouched:** the gate reading
+  `hypothesis_card.yaml` instead of `expanded_hypothesis_card.yaml`
+  (tracked separately, needs a design decision); the reuse/efficiency/
+  architecture findings from the review; the remaining lower-severity/latent
+  findings (`_timeframe_of_run`/`_lineage_routing_of_run` exception
+  swallowing, `timeframe=None` defaulting to ADMIT, phantom-instrument regex
+  false positives, dash-pair timeframe misses, missing-`hypothesis_card`
+  silent drop from digest counts).
