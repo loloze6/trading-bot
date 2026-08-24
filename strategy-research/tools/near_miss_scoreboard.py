@@ -105,7 +105,7 @@ CMP_NUM_RE = re.compile(r"(<=|>=|≤|≥|<|>)\s*(-?~?\d+(?:\.\d+)?)\s*%?")
 LABEL_NUM_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]{1,40})\s*[=:]\s*(-?~?\d+(?:\.\d+)?)\s*%?")
 SYM_PAREN_NUM_RE = re.compile(r"(-?~?\d+(?:\.\d+)?)\s*%?\s*\(([A-Z]{2,10})\)")
 SYM_LEAD_NUM_RE = re.compile(r"\b([A-Z]{3,10})\b\s+(-?~?\d+(?:\.\d+)?)\s*%?")
-RESULT_RE = re.compile(r"\b(PASS|FAIL|UNTESTED)\b")
+RESULT_RE = re.compile(r"\b(PASS(?:ED)?|FAIL(?:ED)?|UNTESTED)\b", re.IGNORECASE)
 _EXCLUDE_SYM = {"PASS", "FAIL", "AND", "AND ", "NOT", "RULE", "ANY", "ALL", "AT", "IC", "AT ", "SE"}
 # Labels that restate a REQUIREMENT rather than report an OBSERVATION, seen
 # recurring inside the "detail" segment of free-text criteria (e.g. a
@@ -255,9 +255,24 @@ def parse_dict_criterion(c: dict) -> Criterion:
     return Criterion(raw, result, op, threshold, actual, actual_source, compound)
 
 
+def _normalize_result_token(tok: str) -> str:
+    """FIX 5: RESULT_RE now also matches FAILED/PASSED (past tense) and
+    lowercase untested (re.IGNORECASE), so the captured group can arrive as
+    e.g. 'FAILED' or 'untested' -- normalize to exactly one of PASS/FAIL/
+    UNTESTED before it reaches any consumer (Criterion.result, the safety
+    net in Criterion.__init__, build_row's PASS/FAIL/UNTESTED counts), which
+    all expect precisely those three tokens, never a variant."""
+    t = tok.upper()
+    if t.startswith("PASS"):
+        return "PASS"
+    if t.startswith("FAIL"):
+        return "FAIL"
+    return "UNTESTED"
+
+
 def parse_text_criterion(text: str) -> Criterion:
     rm = RESULT_RE.search(text)
-    result = rm.group(1) if rm else "unknown"
+    result = _normalize_result_token(rm.group(1)) if rm else "unknown"
     req_seg = text[: rm.start()] if rm else text
     detail_seg = text[rm.end():] if rm else ""
 

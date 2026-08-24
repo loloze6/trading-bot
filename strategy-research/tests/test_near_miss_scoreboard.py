@@ -87,6 +87,48 @@ def test_text_criterion_label_equals_form():
     assert c.actual == -0.0403
 
 
+def test_text_criterion_past_tense_failed_parses_as_fail_with_evidence_preserved():
+    """FIX 5 (review, 2026-08-24): the real run_043 verdict text uses 'FAILED'
+    (past tense), which the un-widened RESULT_RE (no word boundary between the
+    'L'/'D' and a following letter is irrelevant here -- the real bug is
+    simply that 'FAILED' != 'FAIL' under an exact-token \\b(...)\\b match)
+    could not match at all, so result fell back to 'unknown' and detail_seg
+    was forced to '' -- silently dropping the ic_all_bars/p-value evidence
+    that follows the result word."""
+    text = ("Walk-forward Spearman IC >= 0.2: FAILED at prescreen (ic_all_bars = "
+            "-0.021091, p = 0.5876 >> 0.10, not significant)")
+    c = nms.parse_text_criterion(text)
+    assert c.result == "FAIL"
+    assert "ic_all_bars" in c.raw  # raw text always preserved regardless
+    # The evidence after the result word must now be reachable by the
+    # detail-segment extractors (label=number form here).
+    detail_seg = text[text.index("FAILED") + len("FAILED"):]
+    assert "-0.021091" in detail_seg
+
+
+def test_text_criterion_lowercase_untested_normalizes():
+    text = "holdout comparison: untested (no holdout split registered for this run)"
+    c = nms.parse_text_criterion(text)
+    assert c.result == "UNTESTED"
+
+
+def test_text_criterion_past_tense_passed_normalizes():
+    text = "sharpe >= 0.8: PASSED (actual 1.2)"
+    c = nms.parse_text_criterion(text)
+    assert c.result == "PASS"
+
+
+@pytest.mark.parametrize("token,expected", [
+    ("PASS", "PASS"), ("FAIL", "FAIL"), ("UNTESTED", "UNTESTED"),
+])
+def test_text_criterion_exact_tokens_unaffected_by_the_widened_regex(token, expected):
+    """Regression: the pre-existing exact-token PASS/FAIL/UNTESTED path must
+    still resolve to exactly the same result after RESULT_RE was widened."""
+    text = f"some criterion (>= 1.0): {token} (actual 2.0)"
+    c = nms.parse_text_criterion(text)
+    assert c.result == expected
+
+
 def test_text_criterion_requirement_label_is_never_mistaken_for_actual():
     """Regression: a rationale that restates the threshold as
     'validation_protocol required=1.5' inside the detail segment must NOT be
