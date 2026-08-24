@@ -550,6 +550,32 @@ def test_pause_flag_table_still_matches_classify_human_pause(tmp_path):
         assert camp._classify_human_pause(run_dir, {"flags": {}, key: ["x"]}) == expected
 
 
+def test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry(tmp_path):
+    """FIX 6 (review, 2026-08-24): the forward-direction check above (each
+    _PAUSE_FLAG_TO_REASON entry agrees with _classify_human_pause) cannot
+    catch a branch _classify_human_pause has that the table is MISSING --
+    exactly the anti_adjacency_gate_exhausted drift this fix closes (the
+    flag was added to _classify_human_pause's branches but never mirrored
+    into the table). This drives every sticky flag KNOWN to be a branch in
+    _classify_human_pause, one at a time, and asserts each one's reason
+    appears somewhere in _PAUSE_FLAG_TO_REASON -- so a future flag added to
+    one and not the other fails here, not silently."""
+    run_dir = tmp_path / "run_y"
+    (run_dir / "artifacts").mkdir(parents=True)
+    known_sticky_flags = (
+        "research_only_unverified", "no_signal_artifact_flagged", "conformance_violation",
+        "regime_misattribution_flagged", "component_execution_error_flagged",
+        "kb_reactivation_violation", "pass_rule_evaluation_disagreement",
+        "anti_adjacency_gate_exhausted",
+    )
+    table_flags = {flag for flag, _ in camp._PAUSE_FLAG_TO_REASON}
+    for flag in known_sticky_flags:
+        classifier_reason = camp._classify_human_pause(run_dir, {"flags": {flag: True}})
+        assert flag in table_flags, (
+            f"{flag!r} is a sticky-flag branch in _classify_human_pause (reason "
+            f"{classifier_reason!r}) but has no entry in _PAUSE_FLAG_TO_REASON")
+
+
 def test_quarantine_outcome_is_admissible_without_a_pass_rule_ref():
     """_save_queue runs every entry through validate_verdict_provenance, whose
     default for an UNRECOGNISED outcome is verdict-bearing -- so an unregistered

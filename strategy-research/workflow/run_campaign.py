@@ -1036,6 +1036,14 @@ _PAUSE_FLAG_TO_REASON = (
     ("component_execution_error_flagged", "component_execution_error"),
     ("kb_reactivation_violation", "kb_reactivation_violation"),
     ("pass_rule_evaluation_disagreement", "pass_rule_evaluation_disagreement"),
+    # E-032 S2c. Mirrors _classify_human_pause's branch for this flag, which
+    # sits immediately after pass_rule_evaluation_disagreement in that
+    # function's own order -- see this flag's comment there. Currently inert
+    # (deliberately outside _QUARANTINE_SAFE_REASONS, so _flag_ambiguity
+    # never fires for it), but the table's own docstring promises it mirrors
+    # every sticky-flag branch, so its absence here was real drift (FIX 6,
+    # review 2026-08-24).
+    ("anti_adjacency_gate_exhausted", "anti_adjacency_gate_exhausted"),
     # _hard_pause_reason reads this one BEFORE _classify_human_pause is ever called
     # (while status == "failed"); it is must-escalate in its own right, so its
     # presence alongside anything else is unambiguously a reason not to quarantine.
