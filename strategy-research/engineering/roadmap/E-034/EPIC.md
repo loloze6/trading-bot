@@ -307,3 +307,29 @@ chosen variant's identifier, not the base hypothesis id.
   at `variant_selection.yaml`) — `tools/anti_adjacency_gate.py` and
   `_route_post_innovation_expansion` untouched. Nothing else was narrowed;
   everything in the dispatch's Tasks 1-4 landed as specified.
+
+- 2026-08-25 — **S2 reviewed by the dispatching session. Verified, not
+  relayed: the fail-loud enforcement is real code, not documentation.**
+
+  Read `_record_variant_selection()` and `_derive_variant_id()` directly:
+  both match S1's Task 3 spec exactly, including the priority-chain
+  derivation and the two RAISE points (missing `selected_variant_id`;
+  `selected_variant_id` naming something outside the menu). Confirmed the
+  schema file was updated for documentation only, with an explicit
+  `$comment` saying nothing loads it — Option A, not Option B, as required.
+
+  Suite run independently: strategy-research **1026 passed** (1003 baseline +
+  23 new, zero regressions). The run_019 regression fixture (real three
+  threshold variants: 17.5/20.0/22.5) passes on its own when isolated.
+
+  **The one flagged concern checked out as a non-issue, not a bug.**
+  `expanded_hypothesis_card.yaml` also carries a separate
+  `regime_specific_variants` list (1 entry on `run_019`). S2 only matches
+  against `expanded_variants`. Verified: `backtest_specification`'s own
+  handoff template and `SKILL.md` never reference `regime_specific_variants`
+  as a pickable option anywhere — it is not part of the stage's contract, so
+  it was never a candidate `selected_variant_id` could legitimately name.
+  If the stage's own reasoning ever did pick something from there against its
+  instructions, S2's fail-loud check would correctly halt the run rather than
+  silently accept an out-of-menu selection — that is the intended behaviour,
+  not a defect to patch. No fix applied; none needed.
