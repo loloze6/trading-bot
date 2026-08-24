@@ -204,3 +204,11 @@ chosen variant's identifier, not the base hypothesis id.
   and S3 needs a NEW gate call site after `backtest_specification` rather than
   a redirect of the existing pre-validation call — meaning **S2+S3 together**
   close E-032's wrong-artifact defect, not S2 alone.
+
+- 2026-08-25 — **Filed as a Notion bug**, at the operator's direction: "each
+  of these files were built for a purpose ... it is a feature that is not
+  working properly." No GitHub CLI/token/MCP available in this environment to
+  file a GitHub issue as first requested; filed on the project's live
+  🐛 Bugs & Tasks board instead (its current standing tracker — GitHub
+  consolidation is E-021, still `new`, unstarted).
+  https://app.notion.com/p/3c61d1fb05a28126808cc607601ed1bc
