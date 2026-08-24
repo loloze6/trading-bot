@@ -77,7 +77,7 @@ The bright line (frozen rule → one-shot holdout) is untouched.
       already-ineffective pattern). Build only.
 - [x] S2b — The disposition (skill-prose amendment on the two generating
       stages, instructing them to consult the digest).
-- [ ] S2c — Orchestrator wiring: on gate REFUSE, retry up to 4 times with the
+- [x] S2c — Orchestrator wiring: on gate REFUSE, retry up to 4 times with the
       exclusion reason handed back to the stage, then escalate to a human.
       Operator ruling recorded 2026-08-23 (see Log). Was referenced
       throughout S1/S2a/S2b's own Log entries but never added as a checkable
@@ -560,3 +560,109 @@ anti-adjacency gate also counts as the gate working, and is logged.
   story's scope. `campaign_review`'s and `verdict_interpreter`'s own
   stale-path instances (see Task 1). The Gemini worker's missing required-
   input enforcement.
+
+- 2026-08-24 — **S2c done: the gate is wired into the live orchestrator, and
+  what it does when refused is finally load-bearing.** Off by default; no
+  campaign or backtest run; no LLM call made; `local_data/holdout_sealed/`
+  never opened.
+
+  **Task 1 — wiring point.** Right after `innovation_expansion` produces its
+  deliverables, before `validation` — matching S1's own recommendation and
+  the position `stages.yaml`'s `anti_adjacency_gate` entry already declared.
+  Implemented as inline routing logic in `run_loop`'s own dispatch (a new
+  `elif current_stage == "innovation_expansion":` branch calling
+  `_route_post_innovation_expansion`), the same shape
+  `backtest_specification`'s inline validator-subprocess branch already
+  uses, NOT a new `STAGE_CONFIGS` "tool:" entry with its own handoff file —
+  that would have duplicated orchestration machinery (audit-log keying,
+  handoff-file creation) this simple a check doesn't need. The candidate
+  evaluated is the run's own `hypothesis_card.yaml` (the base hypothesis
+  `innovation_expansion` has just produced variants of — a schema-conformant
+  expansion is definitionally a child of that one card, per S1), matching
+  `stages.yaml`'s declared `required_inputs`.
+
+  **Task 2 — retry/escalate policy, built per the operator ruling.** New
+  functions in `workflow/run_phase1_research.py`:
+  `_anti_adjacency_retry_enabled()` (4th flag, same shape as the other
+  three), `_route_post_innovation_expansion()` (decides ADMIT → `validation`
+  / REFUSE → `hypothesis_generation` retry or, on the 4th consecutive
+  REFUSE, `human_pause`), and `_apply_anti_adjacency_retry_context()`
+  (carries the immediately-prior refusal's reason into `hypothesis_
+  generation`'s next prompt via the same `injected_context` channel the
+  human-resolution path already uses — called from `async_invoke_agent`
+  alongside S2a/S2b's own `_apply_*` functions).
+
+  Constraint 1 (dedicated counter): `state["anti_adjacency_gate_retry"]`
+  (`attempts`/`last_reason`/`history`) is a new, standalone top-level
+  `pipeline_state.yaml` key — never reuses `counters.refinements_used` or
+  `stage_attempts`. Regression-tested against the EXACT re-entry shape
+  E-030 S1.5 Piece 2 was built for
+  (`test_counter_independent_of_refinements_used_across_same_counter_
+  reentry`: two calls on the same run with `counters.refinements_used`
+  pinned at 0 throughout — the counter still advances 1 → 2, not overwritten
+  or stuck).
+
+  Constraint 2 (reason carried, not a bare retry): each REFUSE stashes its
+  own `reasons` text as `last_reason`; the NEXT `hypothesis_generation`
+  invocation's prompt gets `injected_context.anti_adjacency_gate_refusal`
+  naming the attempt number and quoting that exact reason
+  (`test_flag_on_three_refuses_then_admit_carries_prior_reason_each_time`
+  asserts three consecutive REFUSEs carry three DISTINCT reason strings, not
+  one repeated — E-030 R3's standard, not merely "a retry happened").
+
+  Escalation reuses the project's existing mechanism exactly, not a new one:
+  `status="paused_for_human"` (same field every other human-in-the-loop stop
+  in this file sets) plus a new `flags.anti_adjacency_gate_exhausted` entry
+  wired into `run_campaign._classify_human_pause` (one new `if` branch, same
+  pattern as every other flag-keyed reason there) so the escalation reads as
+  itself in `campaign_log.md`/`halt_history` instead of falling into
+  `human_pause_unclassified`. Deliberately NOT added to
+  `_QUARANTINE_SAFE_REASONS`/`_REQUEUEABLE_QUARANTINE_REASONS` — this is a
+  genuine must-escalate per the operator's own ruling, asserted directly
+  against the real classifier
+  (`test_flag_on_escalation_classifies_via_existing_run_campaign_mechanism`).
+  `RUNBOOK.md` gets a new table row and is added to the sticky-flags reset
+  list, same convention as every other reason.
+
+  **New flag, off by default:** `orchestrator.anti_adjacency_retry.enabled`
+  in `config/campaign_config.yaml`, same shape as S2a/S2b's two flags.
+
+  **Bit-identity, proven by comparing actual output, not asserting the flag
+  is false** (this story's own stated bar, since it changes ORCHESTRATION
+  control flow, not just stage input): `_route_post_innovation_expansion`
+  at flag-off returns `STAGE_CONFIGS['innovation_expansion']['default_next']`
+  before touching anything else, verified three ways —
+  `test_flag_off_route_equals_unconditional_default_next` (return value),
+  `test_flag_off_pipeline_state_file_byte_identical_before_and_after` (raw
+  `pipeline_state.yaml` bytes unchanged, digest/KB present and REFUSE-shaped
+  so the proof isn't "no candidate to refuse"), and
+  `test_flag_off_run_loop_iteration_unchanged` (a REAL `run_loop()` pass
+  through the new `elif` branch, not the helper function in isolation,
+  confirming the live dispatch itself is unaffected). Flag-on is proven to
+  actually change behavior and carry content
+  (`test_flag_on_prompt_differs_and_carries_refusal_reason`, mirroring
+  S2a/S2b's `_build_stage_prompt` acceptance bar for the retry-context half).
+
+  **Calibration case, re-proven through this new layer, not just at the
+  gate's own unit level** (`test_calibration_case_still_admits_through_
+  the_orchestration_layer`): the real `campaign_knowledge_base.yaml` and
+  `run_059` artifacts copied read-only into a sandboxed run, the 4h funding
+  retest candidate routed through `_route_post_innovation_expansion` with
+  the flag on — still ADMITs, still resolves at the KB layer, matching S1/
+  S2a's own finding.
+
+  **Verification.** strategy-research fast suite: **989 passed** (967
+  baseline + 22 new, all in `tests/test_anti_adjacency_retry_policy.py`,
+  zero regressions). trading-bot fast suite: **383 passed / 2 skipped**,
+  exactly unchanged from the reference figure (nothing under `trading-bot/`
+  touched). No campaign or backtest run; no LLM call made;
+  `local_data/holdout_sealed/` never opened; `run_campaign.py` never
+  launched.
+
+  **Left out of this story's scope, per the dispatch:** S3 (external-
+  knowledge dispatch path). Not built and not needed here: the RUNBOOK
+  resume guidance for `anti_adjacency_gate_exhausted` asks the operator to
+  hand-author a genuinely non-adjacent `hypothesis_card.yaml` (consistent
+  with `kb_reactivation_violation`'s own resolution pattern) rather than
+  adding new automated recovery machinery — a human decision is exactly what
+  "escalate to me" asked for.
