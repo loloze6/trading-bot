@@ -87,11 +87,48 @@ characterization is read and a direction is chosen by the operator.**
 
 ## Stories
 
-- [ ] S1 — **Characterize and STOP.** For each of the four stages, from the
+- [x] S1 — **Characterize and STOP.** For each of the four stages, from the
       code and the run corpus, not from `stages.yaml`: real inputs (handoff
       templates), real outputs, real routing (`determine_post_*`), and what it
       actually decided across the 59 runs. Where does information enter, and
       where is it destroyed? No code changes, no stage moves.
+      **Done 2026-08-26.** Full writeup:
+      `E-033/artifacts/s1_stage_characterization.md`; measurement script
+      `E-033/artifacts/s1_measure_pre_backtest_stages.py`. Headline finding
+      (the pre-registered success signal): `validation`'s `conditions` field
+      — attached to 78% of its own decisions (36/46 `conditional_approve`) —
+      is printed to console and never reaches `backtest_specification`;
+      `validation_decision.yaml` isn't in that stage's handoff inputs at all,
+      and the stage agent is closed-book (`allowed_tools=[]`, prompt built
+      only from declared `required_inputs`/`optional_inputs`,
+      `run_phase1_research.py:699-727`). Two more: (a) E-034 S1's
+      "`backtest_specification`'s narrowing has no routing decision" finding
+      generalizes to `innovation_expansion` too — its routing function exists
+      but is flag-gated (`orchestrator.anti_adjacency_retry.enabled`), and
+      that flag was `false` for all 59 corpus runs, so it was a bare
+      passthrough every time; only `validation` has ever branched on content.
+      (b) `regime_specific_variants` (48 entries across 24/43 expansion runs)
+      and `findings_carryover.yaml` (copied across run boundaries by
+      `_route_refine`/`_route_pivot`, not by `setup_next_run`) both cross a
+      stage/run boundary but are named in no handoff template that would let
+      a closed-book stage agent read them back — recorded, then permanently
+      unreachable. Smallest lever named (not built): wire `validation_
+      decision.yaml`'s `conditions` into `backtest_specification`'s handoff,
+      same shape as E-034 S2's `selected_variant_id` — would invalidate
+      baselines on every `conditional_approve` run (78% of validation
+      outcomes) and must ship off-by-default with a byte-identical proof.
+      `docs/USER_GUIDE.md` confirmed as the correct canonical home, with two
+      corrections flagged for whoever next edits it: §3's "all artifacts are
+      schema-validated" claim is false (no schema is loaded by any code —
+      independently reconfirmed via `innovation_notes.schema.json`'s
+      required-but-1/59-honored `variants_not_pursued` field), and §2.2's
+      "3-6 variants" objective should note the `REPLICATION_DIAGNOSTIC`/
+      single-hypothesis-brief exception (18/43 single-variant runs are all
+      upstream-constrained, not stage failures — checked and ruled out before
+      writing this up as a finding). `stages.yaml` archival confirmed as the
+      right call, independently re-derived (characterization never needed
+      it); recommendation for S2's still-open revive-or-delete decision is
+      **delete**.
 - [~] S2 — Consolidate pipeline documentation into one maintained home and
       resolve `stages.yaml` (Done-when 1 and 2).
       **Partially done 2026-08-24, ahead of S1, at the operator's direction:**
@@ -154,3 +191,38 @@ characterization that produces neither has not been done.
   E-032 S1's conclusion stands. It was right, read from the wrong source. The
   script is repointed at the archived copy (verified re-runnable, reproduces
   its original numbers) with that caveat recorded inline.
+
+- 2026-08-26 — **S1 done.** Characterize-and-STOP, per the Method
+  constraint: no code changed, no stage boundary moved. Full findings in
+  `E-033/artifacts/s1_stage_characterization.md`; every MEASURED number
+  reproducible via `E-033/artifacts/s1_measure_pre_backtest_stages.py`.
+  Success signal satisfied: `validation` is named as the stage whose real
+  behaviour diverges from its stated objective — its `conditions` field
+  (attached to 78%, 36/46, of its own decisions) is printed to console and
+  structurally cannot reach `backtest_specification`, whose handoff doesn't
+  list `validation_decision.yaml` and whose stage agent is closed-book
+  (`allowed_tools=[]`). Two findings extend prior epics rather than
+  duplicating them: E-034 S1's "no routing decision on the chosen variant"
+  finding generalizes to `innovation_expansion` (its routing function has
+  never fired live — the gating flag was `false` for all 59 corpus runs);
+  and `regime_specific_variants` (48 entries, 24/43 runs) plus
+  `findings_carryover.yaml` both cross a stage/run boundary on disk but are
+  named in no handoff template, so a closed-book stage agent can never read
+  them back — recorded, not destroyed, but permanently unreachable. One
+  self-check that changed a draft finding before it shipped: an apparent
+  "innovation_expansion violates its own 3-6 variant objective 44% of the
+  time" reading did not survive checking the 18 single-variant runs against
+  their `research_brief.yaml` — all 18 carry an explicit upstream
+  single-hypothesis or replication-diagnostic constraint; excluding those,
+  the stage matches its objective 84% of the time (21/25). Two corrections
+  flagged for `docs/USER_GUIDE.md` (still the correct canonical home): its
+  §3 claim that artifacts are schema-validated before the pipeline advances
+  is false (re-confirmed independently via `innovation_notes.schema.json`'s
+  required `variants_not_pursued` field, honored in 1/59 runs), and §2.2's
+  "3-6 variants" line should note the constrained-brief exception.
+  `stages.yaml` archival re-confirmed as correct; recommendation for S2's
+  open revive-or-delete call is delete. Smallest lever named for S3 (not
+  built): wire `validation_decision.yaml.conditions` into
+  `backtest_specification`'s handoff, E-034 S2's `selected_variant_id`
+  shape — would invalidate baselines on 78% of validation outcomes, must
+  ship off-by-default with a byte-identical proof.
