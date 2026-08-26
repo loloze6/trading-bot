@@ -838,6 +838,21 @@ def _classify_human_pause(run_dir: Path, state: dict) -> str:
     # engineering failure.
     if flags.get("anti_adjacency_gate_exhausted"):
         return "anti_adjacency_gate_exhausted"
+    # E-034 S3. Set by run_phase1_research._route_post_variant_selection when
+    # the anti-adjacency gate REFUSEs the CHOSEN VARIANT (the new, later call
+    # site -- distinct from anti_adjacency_gate_exhausted above, which is the
+    # EARLIER, pre-validation checkpoint's 4-retry exhaustion). Deliberately a
+    # DIFFERENT reason string: this checkpoint escalates on the FIRST REFUSE,
+    # after validation + backtest_specification have already run, so an
+    # operator scanning halts can tell "refused early, cheap" apart from
+    # "refused late, after two stages' spend" at a glance. Named here so this
+    # escalation reads as itself in campaign_log.md / halt_history instead of
+    # falling through to human_pause_unclassified -- same pattern as every
+    # other flag-keyed reason in this function. Not in _QUARANTINE_SAFE_
+    # REASONS or _REQUEUEABLE_QUARANTINE_REASONS below: a genuine
+    # must-escalate, not an auto-recoverable engineering failure.
+    if flags.get("variant_anti_adjacency_gate_refused"):
+        return "variant_anti_adjacency_gate_refused"
 
     artifacts = run_dir / "artifacts"
     audit_path = artifacts / "promotion_audit.yaml"
@@ -1044,6 +1059,15 @@ _PAUSE_FLAG_TO_REASON = (
     # every sticky-flag branch, so its absence here was real drift (FIX 6,
     # review 2026-08-24).
     ("anti_adjacency_gate_exhausted", "anti_adjacency_gate_exhausted"),
+    # E-034 S3. Mirrors _classify_human_pause's branch for this flag, which
+    # sits immediately after anti_adjacency_gate_exhausted in that function's
+    # own order -- see this flag's comment there. Also deliberately outside
+    # _QUARANTINE_SAFE_REASONS/_REQUEUEABLE_QUARANTINE_REASONS. Added here
+    # from the start (not as a later fix) precisely BECAUSE the 2026-08-24
+    # bug-fix pass (FIX 6) added a regression test
+    # (test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry)
+    # specifically to catch a future omission of exactly this kind.
+    ("variant_anti_adjacency_gate_refused", "variant_anti_adjacency_gate_refused"),
     # _hard_pause_reason reads this one BEFORE _classify_human_pause is ever called
     # (while status == "failed"); it is must-escalate in its own right, so its
     # presence alongside anything else is unambiguously a reason not to quarantine.

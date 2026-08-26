@@ -812,3 +812,74 @@ anti-adjacency gate also counts as the gate working, and is logged.
 - 2026-08-25 — **Filed as a Notion bug** (the "recurring defect class"
   pattern, of which this epic's KB-path and stages.yaml findings are two of
   five instances): https://app.notion.com/p/3c61d1fb05a2812f8e25db3f8fecfb71
+
+- 2026-08-26 — **OPEN DEFECT (2026-08-24) CLOSED, by E-034 S3.** The
+  2026-08-24 entry above found that `_route_post_innovation_expansion` runs
+  before variant selection exists and therefore can only ever re-check the
+  pre-expansion parent `hypothesis_card.yaml` — a fraction of the gate's
+  stated purpose. E-034 S2 (2026-08-25, commit `84fc6eb9`) built the missing
+  concrete artifact (`variant_selection.yaml`, the chosen variant plus
+  resolved instrument/timeframe); this story adds the SECOND, LATER gate
+  call site E-032's own entry said was required — not a redirect of this
+  call site, which is untouched and keeps doing its existing, narrower job.
+
+  **What landed** (`strategy-research/workflow/run_phase1_research.py`):
+  `_variant_anti_adjacency_gate_enabled()` (new flag,
+  `orchestrator.variant_anti_adjacency_gate.enabled`, off by default) and
+  `_route_post_variant_selection(run_dir, run_id)`, called immediately after
+  `_record_variant_selection()` succeeds in `run_loop`'s
+  `backtest_specification` branch (same lifecycle point E-034 S2 already
+  hooks into). The candidate handed to `anti_adjacency_gate.evaluate_
+  candidate()` merges the parent `hypothesis_card.yaml`'s classification
+  fields (`library_lookup`/`edge_source`/`thesis` — measured absent from
+  variant definitions themselves) with the chosen variant's own overrides,
+  and passes `variant_selection.yaml`'s already-resolved `instrument`/
+  `timeframe` explicitly via `evaluate_candidate()`'s `instrument=`/
+  `timeframe=` override parameters — the parameters this epic's own
+  2026-08-24 entry noted existed and were never used. `anti_adjacency_
+  gate.py` itself is untouched; the override mechanism already existed and
+  needed no change.
+
+  **REFUSE policy, deliberately NOT copied from S2c.** S2c's "retry 4 times
+  then escalate" ruling was scoped to the earlier, pre-validation checkpoint
+  where only `innovation_expansion`'s output is at stake on a retry. At this
+  new, later checkpoint, `validation` and `backtest_specification` have
+  already run — discarding that work to regenerate an unrelated new
+  hypothesis does not even target the actual failure (a pivot inside an
+  already-admitted idea's chosen variant, not the idea itself), and would
+  throw away the very `variants_not_pursued.yaml` pool E-034 built to avoid
+  wasting. So this checkpoint escalates on the FIRST REFUSE, no automatic
+  retry, via a DISTINCT flag (`variant_anti_adjacency_gate_refused`, never
+  `anti_adjacency_gate_exhausted`) so an operator scanning halts can tell
+  "refused early, cheap" apart from "refused late, after two stages' spend."
+  Mirrored into `run_campaign._classify_human_pause` and
+  `_PAUSE_FLAG_TO_REASON` (same pattern S2c established, including the
+  regression test — FIX 6's precedent — that checks the table doesn't rot
+  away from the classifier).
+
+  **Dependency, fail loud.** `variant_anti_adjacency_gate.enabled=true`
+  with `variant_selection_record.enabled=false` raises `RuntimeError`
+  rather than silently no-op-ing or ADMITting: this gate's only input,
+  `variant_selection.yaml`, is written exclusively by the function the
+  OTHER flag gates.
+
+  **The single most important test, per the dispatch**
+  (`tests/test_variant_anti_adjacency_gate.py::
+  test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site`):
+  same run, a CLEAN parent card (keltner_channel, BTCUSDT/1h — nothing in
+  the digest matches), a chosen variant that pivots to AVAXUSDT/4h — which
+  DOES collide with the digest. The OLD call site
+  (`_route_post_innovation_expansion`, reading only the parent card) ADMITs.
+  The NEW call site (`_route_post_variant_selection`, reading the variant's
+  resolved instrument/timeframe from `variant_selection.yaml`) REFUSEs the
+  SAME run. This is the direct, executable proof the defect is closed, not
+  a theoretical argument. The calibration case (4h funding retest ADMITs)
+  is separately re-proven through this new call site, built via the REAL
+  `_record_variant_selection()` rather than a hand-typed candidate.
+
+  **Verification.** New file `tests/test_variant_anti_adjacency_gate.py`,
+  16 tests, all passing. Full strategy-research fast suite and trading-bot
+  fast suite results are recorded in E-034/EPIC.md's own S3 Log entry (this
+  story lives there; this entry only records the defect's closure and
+  points to it). No campaign or backtest run; no LLM call made;
+  `local_data/holdout_sealed/` never opened.

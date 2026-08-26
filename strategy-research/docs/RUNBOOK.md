@@ -284,8 +284,8 @@ consumption), `research_only_unverified` (guards that same consumption),
 `budget_breaker`, and every error-class pause
 (`unhandled_exception`, `component_gap`, `component_execution_error`,
 `regime_misattribution`, `data_block_hitl`, `human_pause_unclassified`,
-`anti_adjacency_gate_exhausted`) — none of these are wishlist-trigger
-questions, and none are auto-resolved.
+`anti_adjacency_gate_exhausted`, `variant_anti_adjacency_gate_refused`) —
+none of these are wishlist-trigger questions, and none are auto-resolved.
 
 | Reason (as it appears in the queue/log) | What it means | How to resolve |
 |---|---|---|
@@ -309,6 +309,7 @@ questions, and none are auto-resolved.
 | `data_block_hitl` | Refinement planner determined missing data blocks the hypothesis (the original human-in-the-loop pause this pipeline was first built for). | Fetch the data, write `runs/<run_id>/artifacts/human_resolution.yaml` (`status: resolved_proceed` or `unresolvable`), then resume — this ONE reason uses a different resume path (section 4). |
 | `human_pause_unclassified` | A pause the wrapper's classifier doesn't have a specific bucket for yet. | Read `runs/<run_id>/pipeline_state.yaml` directly to see what actually happened, resolve it, then resume. |
 | `anti_adjacency_gate_exhausted` | **(E-032 S2c, gated by `orchestrator.anti_adjacency_retry.enabled`, off by default)** `tools/anti_adjacency_gate.py` REFUSEd this run's `hypothesis_card.yaml` 4 consecutive times — operator ruling 2026-08-23: "Retry up to 4 times with the exclusion list, then escalate to me." Each retry looped back to `hypothesis_generation` carrying the previous refusal's reason. `pipeline_state.yaml`'s `anti_adjacency_gate_retry.history` has the full attempt-by-attempt record (reasons, not just counts). | Read `anti_adjacency_gate_retry.history` and the last `runs/<run_id>/artifacts/anti_adjacency_result.yaml`. Either author a genuinely non-adjacent research direction yourself (new brief/hypothesis registration, same as `kb_reactivation_violation`'s resolution) or, if the gate's refusal was itself wrong (e.g. a KB/digest data error), fix the underlying record it read. Then resume — this pause path leaves `pending_stage` at `innovation_expansion` (the stage that triggered the gate, per `determine_post_refinement_route`'s own human_pause convention), not the literal `human_pause` sentinel some other rows use, so no manual `pending_stage` override is needed. |
+| `variant_anti_adjacency_gate_refused` | **(E-034 S3, gated by `orchestrator.variant_anti_adjacency_gate.enabled`, off by default, requires `orchestrator.variant_selection_record.enabled` also on)** `tools/anti_adjacency_gate.py` REFUSEd the CHOSEN VARIANT — the SECOND, LATER gate call site, right after `variant_selection.yaml` exists, distinct from `anti_adjacency_gate_exhausted` above (which is the earlier, pre-validation checkpoint's 4-retry exhaustion). Deliberately escalates on the FIRST refusal, with NO automatic retry: `validation` and `backtest_specification` have already run for this lineage step by this point, so blindly regenerating a whole new hypothesis at `hypothesis_generation` neither targets the actual failure (a pivot inside an already-admitted idea's chosen variant, not the idea itself) nor is cheap. `runs/<run_id>/artifacts/variant_anti_adjacency_result.yaml` carries the route/layer/reasons plus the refused `selected_variant_id`. | Read `variant_anti_adjacency_result.yaml` and `runs/<run_id>/artifacts/variants_not_pursued.yaml` (the other menu entries this run already generated and reasoned about). Either pick a different already-generated variant by hand (edit `backtest_spec.yaml`'s `selected_variant_id` to name one and re-run `backtest_specification`'s output validation), or author a genuinely different variant/hypothesis yourself if none of the pool clears the gate. Then resume — this pause path leaves `pending_stage` at `backtest_specification` (the stage that triggered the gate), not the literal `human_pause` sentinel some other rows use, so no manual `pending_stage` override is needed. |
 
 ---
 
@@ -381,7 +382,7 @@ orch.update_state(
            'conformance_violation': False, 'regime_misattribution_flagged': False,
            'component_execution_error_flagged': False, 'kb_reactivation_violation': False,
            'pass_rule_evaluation_disagreement': False, 'stale_escalation_unclaimed': False,
-           'anti_adjacency_gate_exhausted': False},
+           'anti_adjacency_gate_exhausted': False, 'variant_anti_adjacency_gate_refused': False},
 )
 "
 ```

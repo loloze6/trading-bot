@@ -75,8 +75,8 @@ boundary or invalidating a baseline:
       **Done 2026-08-24** — `engineering/roadmap/E-034/artifacts/s1_selection_record.md`.
 - [x] S2 — Emit the selection record and the unpursued-variant pool.
       **Done 2026-08-25.**
-- [ ] S3 — Point E-032's gate at the recorded selection; retire the
-      parent-card read.
+- [x] S3 — Point E-032's gate at the recorded selection; retire the
+      parent-card read. **Done 2026-08-26.**
 
 ## Relationship to other epics
 
@@ -333,3 +333,173 @@ chosen variant's identifier, not the base hypothesis id.
   instructions, S2's fail-loud check would correctly halt the run rather than
   silently accept an out-of-menu selection — that is the intended behaviour,
   not a defect to patch. No fix applied; none needed.
+
+- 2026-08-26 — **S3 done: E-032's gate now evaluates the CHOSEN VARIANT, at
+  a NEW, LATER call site — not a redirect of the existing one.** Closes the
+  OPEN DEFECT E-032/EPIC.md logged on 2026-08-24 (see that epic's own
+  2026-08-26 Log entry for the closure record). Off by default; no campaign
+  or backtest run; no LLM spend; `local_data/holdout_sealed/` never opened.
+
+  **Task 1 — the new call site.** `_route_post_variant_selection(run_dir,
+  run_id)` in `workflow/run_phase1_research.py`, called immediately after
+  `_record_variant_selection()` succeeds in `run_loop`'s
+  `backtest_specification` branch (same lifecycle point, same run_loop
+  region S2 already hooks into — right after `variant_selection.yaml` is
+  written, before the config-schema validation subprocess runs). The
+  pre-existing `_route_post_innovation_expansion` is untouched: it still
+  runs before `validation`, still reads the parent `hypothesis_card.yaml`,
+  and still does its own, narrower job ("was the original idea a repeat").
+
+  Candidate construction, per S1 Task 4's explicit recommendation ("merging
+  base-card fields for anything the variant doesn't override"): starts from
+  the parent `hypothesis_card.yaml` (for `library_lookup`/`edge_source`/
+  `thesis` — measured, across the 138-variant corpus, essentially absent
+  from variant definitions themselves), then overlays the chosen variant's
+  own fields (`variant_selection.yaml`'s `variant_definition`) on top, and
+  sets `hypothesis_id` from `variant_selection.yaml`'s own (base-mechanism)
+  value. `instrument`/`timeframe` are NEVER derived from this merged dict —
+  they are passed explicitly via `evaluate_candidate()`'s `instrument=`/
+  `timeframe=` override parameters, sourced verbatim from `variant_
+  selection.yaml`'s already-resolved fields (S2 did the variant-override-
+  else-parent-card resolution once; this story does not redo it). This is
+  the exact override mechanism the E-032 2026-08-24 Log entry flagged as
+  built and never used. `tools/anti_adjacency_gate.py` itself needed no
+  change.
+
+  Why `hypothesis_id` stays the BASE mechanism id, not `selected_variant_
+  id`, despite the epic's own success signal wording ("references the
+  chosen variant's identifier, not the base hypothesis id"): Layer 1 (KB)
+  matches via `hypothesis_id` containment against `campaign_knowledge_
+  base.yaml` findings, which are registered at MECHANISM grain (e.g.
+  `funding_rate_continuous_mean_reversion_expanded_auto`), never per-variant
+  (`V2-THRESHOLD-20p0`-shaped ids never appear in the KB). Using the variant
+  id as the matching key would silently break every KB match, including the
+  calibration case. Resolved by keeping the MATCHING key at mechanism grain
+  and instead recording the variant identifier on the RESULT ARTIFACT:
+  `variant_anti_adjacency_result.yaml` now carries `selected_variant_id`
+  and `hypothesis_id` alongside the gate's own `route`/`layer`/`reasons`, so
+  the success signal is satisfied at the artifact a human/future stage
+  actually reads, without breaking the gate's own logic.
+
+  **Task 2 — REFUSE policy, decided here, not copied from S2c.** S2c's
+  "retry 4 times then escalate" ruling (operator, 2026-08-23) was scoped to
+  the EARLIER, pre-validation checkpoint, where only `innovation_
+  expansion`'s output is at stake on a retry. At THIS checkpoint,
+  `validation` and `backtest_specification` have already run — two
+  additional LLM stages' spend beyond what the earlier checkpoint would
+  lose. Landed: immediate escalation on the FIRST REFUSE, no automatic
+  retry, via a DISTINCT flag (`variant_anti_adjacency_gate_refused`, never
+  `anti_adjacency_gate_exhausted`). Reasoning (full version in
+  `_route_post_variant_selection`'s own docstring):
+  1. **Cost asymmetry** — retrying here throws away strictly more sunk work
+     than S2c's checkpoint ever risked.
+  2. **The lever doesn't fit the failure mode** — S2c's retry (regenerate an
+     entirely new hypothesis) is the right response to "this whole idea is
+     adjacent." A REFUSE here means something narrower: the ALREADY-ADMITTED
+     parent idea's CHOSEN VARIANT pivoted into an excluded combination.
+     Discarding the whole hypothesis doesn't target that, and additionally
+     throws away every OTHER still-viable variant this run already
+     persisted in `variants_not_pursued.yaml` — the exact artifact E-034
+     built so that supply wouldn't be wasted.
+  3. **A human has better information at hand than a blind retry would** —
+     both `variant_selection.yaml` (what collided) and `variants_not_
+     pursued.yaml` (what else was on the menu) are on disk at halt time.
+
+  Escalation reuses the project's existing mechanism exactly:
+  `status="paused_for_human"`, `flags.variant_anti_adjacency_gate_
+  refused=True`, wired into `run_campaign._classify_human_pause` (new
+  branch, positioned immediately after `anti_adjacency_gate_exhausted`) and
+  mirrored into `_PAUSE_FLAG_TO_REASON` in the same commit — not as a later
+  fix, specifically because the 2026-08-24 bug-fix pass's FIX 6 added a
+  regression test
+  (`test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry`,
+  in `tests/test_halt_quarantine_policy.py`) precisely to catch a future
+  omission of this kind — that test's `known_sticky_flags` tuple was
+  extended with the new flag in this story, not left for it to catch later.
+  Deliberately NOT added to `_QUARANTINE_SAFE_REASONS`/
+  `_REQUEUEABLE_QUARANTINE_REASONS` — a genuine must-escalate, same as
+  `anti_adjacency_gate_exhausted`. `docs/RUNBOOK.md` gets a new table row
+  and is added to the sticky-flags reset list — caught immediately by
+  `tests/test_holdout_research_only_gate.py::
+  test_every_classifier_flag_is_in_the_runbook_reset_list` when first
+  omitted, fixed in the same session.
+
+  **Task 3 — off by default, gated, with an explicit dependency check.**
+  New flag `orchestrator.variant_anti_adjacency_gate.enabled` in
+  `config/campaign_config.yaml`, same shape as the five prior flags in this
+  chain. **Depends on `orchestrator.variant_selection_record.enabled` also
+  being on — enforced as a fail-loud `RuntimeError`, not a silent no-op.**
+  Chosen over a silent no-op because this gate's only input,
+  `variant_selection.yaml`, is written exclusively by the function the
+  OTHER flag gates: a silent no-op would either always find the file absent
+  (indistinguishable from a real misconfiguration) or, worse, read a STALE
+  copy left over from an earlier flag-on run and evaluate the WRONG run's
+  artifact — per this project's standing rule ("anything feeding decisions
+  raises on degenerate inputs"), the same class of fix FIX 3 (2026-08-24)
+  applied to the digest/KB required-inputs check at the earlier checkpoint.
+  Flag-off bit-identity proven the same way every prior story in this chain
+  proved it: `_route_post_variant_selection` returns `None` before reading
+  anything else when the flag is off, verified by comparing actual
+  `pipeline_state.yaml` bytes before/after and confirming no new artifact is
+  written — not merely asserting the flag reads `False`
+  (`tests/test_variant_anti_adjacency_gate.py::
+  test_flag_off_returns_none_and_writes_nothing`).
+
+  **Task 4 — tests, `tests/test_variant_anti_adjacency_gate.py`, 16 new,
+  all passing.** Flag-off bit-identity (2); the dependency-on-`variant_
+  selection_record` fail-loud check (1); missing-`variant_selection.yaml`
+  caller-ordering raise (1); missing-digest/missing-KB fail-loud raises (2,
+  mirroring FIX 3's discipline at this new call site); ADMIT writes the
+  result artifact (1); REFUSE policy end to end — immediate escalation, the
+  distinct flag, correct classification via the REAL `run_campaign._
+  classify_human_pause`, confirmed outside both quarantine sets (3); the R11
+  table cross-check for the new flag (1); the calibration case (4h funding
+  retest ADMITs) re-proven through THIS new call site, built via the REAL
+  `_record_variant_selection()` against real KB/run_059 artifacts, not a
+  hand-typed candidate (1) — mirroring `test_anti_adjacency_retry_policy.py
+  ::test_calibration_case_still_admits_through_the_orchestration_layer`'s
+  own "through orchestration, not just the gate's own unit level" bar; and
+  **the single most important test, per the dispatch**
+  (`test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site`):
+  one run, a CLEAN parent card (`keltner_channel`, BTCUSDT/1h — nothing in
+  the digest matches), a chosen variant whose OWN fields pivot to
+  AVAXUSDT/4h — which DOES collide with the digest. The OLD call site
+  (`_route_post_innovation_expansion`, reading only the parent card) ADMITs
+  the run. The NEW call site (`_route_post_variant_selection`, reading the
+  variant's resolved instrument/timeframe from `variant_selection.yaml`)
+  REFUSEs the SAME run. Both routes are asserted directly against the real
+  functions in the same test — this is the direct, executable proof the
+  2026-08-24 defect is closed, not a theoretical argument.
+
+  **Verification, MEASURED.** `tests/test_variant_anti_adjacency_gate.py`
+  alone: 16 passed. Full strategy-research fast suite, run clean (foreground,
+  144.08s): **1042 passed** — exactly 1026 (S2 baseline) + 16 (this story's
+  new file), zero regressions, zero drift elsewhere. A mid-session run
+  caught one real gap before this final count: `tests/test_holdout_
+  research_only_gate.py::test_every_classifier_flag_is_in_the_runbook_
+  reset_list` (a pre-existing regression test, not new) failed once because
+  the new flag wasn't yet in `docs/RUNBOOK.md`'s reset snippet — fixed
+  (see Task 2) and re-verified green, folded into the 1042 above. trading-bot
+  fast suite: **383 passed / 2 skipped**, MEASURED, exactly unchanged from
+  the reference figure — nothing under `trading-bot/` touched. No campaign
+  or backtest run; no LLM call made; `local_data/holdout_sealed/` never
+  opened.
+
+  **Left out, stated plainly, not silently narrowed:** none of Tasks 1-4
+  were narrowed. `tools/anti_adjacency_gate.py` itself needed no change —
+  its `instrument=`/`timeframe=` override parameters already existed and
+  worked exactly as designed. Noted, not fixed here (pre-existing, outside
+  this story's mandate): `_record_variant_selection`'s `instrument`/
+  `timeframe` resolution (E-034 S2) stores the parent card's raw
+  `target_market` field verbatim when the variant carries no override — for
+  a multi-symbol card (a real, common shape: e.g. `run_059`'s own
+  `target_market: [BTCUSDT, ETHUSDT]`) this can be a LIST, not a scalar
+  string. `evaluate_candidate()`'s `instrument=` override expects a single
+  string to compare against digest triples; a list value never equals any
+  triple's `instrument` string, so Layer 2 (digest) would silently never
+  match on such a candidate's fallback-resolved instrument. This does not
+  affect any test or case built in this story (the pivot test's variant
+  carries its own scalar override; the calibration case resolves entirely
+  at Layer 1, which never reads instrument at all) — flagged here as a
+  discovered gap for a follow-up story to fix in `_record_variant_
+  selection` itself, not patched in this one.
