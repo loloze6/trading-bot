@@ -226,3 +226,73 @@ characterization that produces neither has not been done.
   `backtest_specification`'s handoff, E-034 S2's `selected_variant_id`
   shape — would invalidate baselines on 78% of validation outcomes, must
   ship off-by-default with a byte-identical proof.
+
+- 2026-08-25 — **S1 REVIEW: two corrections, both found by the operator
+  challenging the finding rather than by the dispatching session's own
+  verification. Recorded prominently because a future agent reading S1's
+  artifact without these corrections would be actively misled.**
+
+  **CORRECTION 1 — the `anti_adjacency_retry` "finding" is a timeline
+  artifact, not evidence about stage design. RETRACT it.**
+  S1 reports that `innovation_expansion` "has zero live routing decision in
+  the entire 59-run corpus" because `_route_post_innovation_expansion` is
+  gated by `orchestrator.anti_adjacency_retry.enabled`, false for all 59
+  runs. That is true and useless. **That flag and that function were both
+  written THIS SESSION** (E-032 S2c, 2026-08-23/24); the 59 corpus runs all
+  predate the code by weeks. Verified: `_route_post_innovation_expansion` is
+  the ONLY function ever called after `innovation_expansion` — there is no
+  older routing code that was switched off. So the correct statement is
+  "this stage has never had a routing decision, and we added the first one
+  a day ago," NOT "a decision point exists but has never fired," which
+  invites the reader to infer a historical design failure that did not
+  happen. The operator caught this; the dispatching session did not, having
+  verified the claim's mechanics without questioning whether the evidence
+  could bear the weight put on it. **A count over a corpus that predates the
+  code being counted is not evidence about that code.**
+
+  **CORRECTION 2 — the recommended fix targeted the wrong stage, and the
+  underlying problem is a stage-shape problem, not a plumbing gap.**
+  S1's "smallest lever" (wire `validation_decision.yaml.conditions` into
+  `backtest_specification`'s handoff) rests on a premise the operator
+  challenged and which does not survive: **most of those conditions are not
+  build-time instructions at all.** Real examples pulled from the corpus:
+  *"Backtest must achieve Sharpe >= 0.5 AND win_rate >= 0.45 ... Reject if
+  Sharpe < -1.0"* (run_012), *"regime_frequency must be >= 0.15. Reject if
+  <0.10"* (run_012), *"Screening backtest must report mean_reversion
+  regime_frequency. If actual < 0.15, hypothesis moves to reject"*
+  (run_011). These can only be evaluated AFTER a backtest runs.
+  `backtest_specification` could not act on them if it received them. Only a
+  minority (*"Commission configured at 5 bps round-trip"*, run_010) are
+  genuine config instructions.
+
+  **The real finding, which is better than the one S1 reported.**
+  `validation`'s contracted objective is *"Act as a critical gatekeeper to
+  pressure-test the expanded hypothesis for statistical soundness, lookahead
+  bias, and data feasibility"* — a pre-flight check on the IDEA. Grading
+  results against thresholds is `verdict_interpreter`'s contracted job
+  (*"Interpret backtest findings against hypothesis-specific criteria"*).
+  And the correct channel between them **already exists and already works**:
+  `validation` also writes `validation_protocol.yaml` (`falsifiable_
+  statement`, `null_expectation`, `required_evidence`, `failure_modes`,
+  `sample_split_design`, `decision_rules`), and `verdict_interpreter`'s
+  handoff lists it as a REQUIRED input, reason *"original success criteria
+  and failure modes to interpret against."*
+  So `validation_decision.yaml`'s free-prose `conditions` field is a SECOND,
+  PARALLEL channel duplicating what the structured contract already carries
+  — and it is the one nothing reads (verified: no handoff template, and
+  neither `prescreen_signal.py`, `run_protocol.py` nor
+  `verdict_criteria_evaluator.py`, references `validation_decision.yaml`).
+  **The question for S2/S3 is therefore not "where do we plumb this file"
+  but "why does `validation` emit result thresholds in loose prose at all,
+  when it has a structured field for exactly that which the right consumer
+  already reads — and when the pre-registered `pass_rule`, frozen before the
+  run, is supposed to outrank anything a stage decides mid-flight?"**
+  Operator's framing, and it is the correct one.
+
+  **Standing lesson for future dispatches on this epic:** S1's Task-1
+  measurements (input/output/routing per stage, the 36-of-46
+  `conditional_approve` count, the 138-variant corpus stats, the correctly-
+  killed "3-6 variants" false alarm) are sound and independently reproduced.
+  Its INTERPRETATIONS in the verdict and "smallest lever" sections are the
+  parts corrected above. Read the artifact's measurements; do not inherit
+  its recommendation.
