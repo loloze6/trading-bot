@@ -482,3 +482,112 @@ def test_flag_table_carries_the_new_flag():
     assert "variant_anti_adjacency_gate_refused" in table_flags
     mapped = dict(camp._PAUSE_FLAG_TO_REASON)
     assert mapped["variant_anti_adjacency_gate_refused"] == "variant_anti_adjacency_gate_refused"
+
+
+# ---------------------------------------------------------------------------
+# Post-merge review fix (2026-08-25, MEASURED not theoretical): hypothesis_
+# card.yaml's target_market is a LIST for 10 of 46 sampled corpus cards
+# (['BTCUSDT', 'ETHUSDT']) despite the schema declaring it a string. A list
+# used to flow straight into evaluate_candidate()'s instrument= override,
+# where it silently compared False against every digest triple.string --
+# Layer-2 matching quietly never fired for real multi-symbol hypotheses, no
+# error anywhere. Fixed: _coerce_scalar_instrument preserves a clean list of
+# instrument strings as real data; _route_post_variant_selection evaluates
+# EVERY named instrument and REFUSEs if any one of them collides.
+# ---------------------------------------------------------------------------
+
+def test_multi_symbol_parent_card_checks_every_instrument_not_just_one():
+    root = rpr.ROOT
+    multi_symbol_card = {
+        "hypothesis_id": "MULTI_SYM_PARENT",
+        "library_lookup": {"indicator_id": "keltner_channel"},
+        "target_market": ["BTCUSDT", "ETHUSDT"],
+        "timeframe": "4h",
+        "thesis": "Keltner channel mean reversion, BTC and ETH, 4h.",
+    }
+    run_id = "run_960"
+    run_dir = _full_run(root, run_id, hypothesis_card=multi_symbol_card,
+                         expanded_variants=[{"variant_id": "V-BOTH"}],
+                         selected_variant_id="V-BOTH")
+    _record_selection(root, run_dir)
+
+    selection = yaml.safe_load((run_dir / "artifacts" / "variant_selection.yaml").read_text(encoding="utf-8"))
+    assert selection["instrument"] == ["BTCUSDT", "ETHUSDT"], (
+        "a clean multi-symbol list must be preserved verbatim, not collapsed "
+        "to a single element -- collapsing would silently stop checking "
+        "whichever symbol got dropped"
+    )
+
+    # Only ETHUSDT collides in the digest. If the gate only ever checked the
+    # FIRST instrument (BTCUSDT), it would wrongly ADMIT here.
+    _write_digest(root, _kc_digest(("ETHUSDT", "run_030")))
+    _write_empty_kb(root)
+    _write_yaml(run_dir / "pipeline_state.yaml",
+                {"run_id": run_id, "status": "active", "flags": {}, "audit_log": {}})
+    _set_flags(root, variant_gate=True, variant_record=True)
+
+    route = rpr._route_post_variant_selection(run_dir, run_id)
+    assert route == "human_pause", (
+        "a collision on EITHER named instrument must REFUSE -- checking "
+        "only element 0 would have silently ADMITted this candidate"
+    )
+
+
+def test_multi_symbol_parent_card_admits_when_no_instrument_collides():
+    root = rpr.ROOT
+    multi_symbol_card = {
+        "hypothesis_id": "MULTI_SYM_CLEAN",
+        "library_lookup": {"indicator_id": "keltner_channel"},
+        "target_market": ["BTCUSDT", "ETHUSDT"],
+        "timeframe": "4h",
+        "thesis": "Keltner channel mean reversion, BTC and ETH, 4h.",
+    }
+    run_id = "run_961"
+    run_dir = _full_run(root, run_id, hypothesis_card=multi_symbol_card,
+                         expanded_variants=[{"variant_id": "V-BOTH"}],
+                         selected_variant_id="V-BOTH")
+    _record_selection(root, run_dir)
+
+    _write_digest(root, _kc_digest(("ADAUSDT", "run_032")))  # collides with neither
+    _write_empty_kb(root)
+    _set_flags(root, variant_gate=True, variant_record=True)
+
+    route = rpr._route_post_variant_selection(run_dir, run_id)
+    assert route is None, "no collision on any named instrument -- must ADMIT"
+
+
+def test_dict_target_market_with_asset_key_resolves_to_a_scalar():
+    root = rpr.ROOT
+    dict_card = {
+        "hypothesis_id": "DICT_SHAPE_PARENT",
+        "library_lookup": {"indicator_id": "keltner_channel"},
+        "target_market": {"asset": "BTCUSDT", "venue": "spot"},
+        "timeframe": "1h",
+        "thesis": "Keltner channel, structured target_market shape.",
+    }
+    run_id = "run_962"
+    run_dir = _full_run(root, run_id, hypothesis_card=dict_card,
+                         expanded_variants=[{"variant_id": "V-ONE"}],
+                         selected_variant_id="V-ONE")
+    _record_selection(root, run_dir)
+
+    selection = yaml.safe_load((run_dir / "artifacts" / "variant_selection.yaml").read_text(encoding="utf-8"))
+    assert selection["instrument"] == "BTCUSDT"
+
+
+def test_unresolvable_target_market_shape_raises_not_silently_admits():
+    root = rpr.ROOT
+    bad_card = {
+        "hypothesis_id": "BAD_SHAPE_PARENT",
+        "library_lookup": {"indicator_id": "keltner_channel"},
+        "target_market": {"unrelated_key": "no asset here"},
+        "timeframe": "1h",
+        "thesis": "Keltner channel, unresolvable target_market shape.",
+    }
+    run_id = "run_963"
+    run_dir = _full_run(root, run_id, hypothesis_card=bad_card,
+                         expanded_variants=[{"variant_id": "V-ONE"}],
+                         selected_variant_id="V-ONE")
+    _set_flags(root, variant_record=True)
+    with pytest.raises(RuntimeError, match="cannot resolve an instrument"):
+        rpr._record_variant_selection(run_dir)
