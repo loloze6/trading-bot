@@ -1675,6 +1675,57 @@ def _variant_selection_record_enabled() -> bool:
     return bool(section.get("enabled", False))
 
 
+_INSTRUMENT_SINGLE_ASSET_KEYS = ("asset", "symbol", "instrument", "target_market")
+
+
+def _coerce_scalar_instrument(value, run_dir: Path):
+    """E-034 S3 review fix (2026-08-25, MEASURED not theoretical): hypothesis_
+    card.yaml's target_market is declared a string by hypothesis_card.schema.
+    json, but the real corpus does not honor that -- of 46 sampled cards, 34
+    are plain strings, 10 carry a LIST (['BTCUSDT', 'ETHUSDT']), 2 carry a
+    DICT ({'asset': 'BTCUSDT', ...}). All three used to flow straight into
+    variant_selection.yaml's 'instrument' field and from there into
+    evaluate_candidate()'s instrument= override, where a non-string-non-list
+    silently compares False against every digest triple -- Layer-2 matching
+    quietly never fires for roughly a fifth of the corpus's shape, with no
+    error anywhere. Exactly the class of silent-wrong-answer bug this
+    project has spent this whole session finding and refusing to leave in
+    place.
+
+    A dict naming a single asset under one of the common keys is a real,
+    unambiguous answer -- resolve it to that string. A list of distinct
+    string symbols is REAL, LEGITIMATE multi-symbol data (the funding-rate
+    mean-reversion family genuinely targets BOTH BTCUSDT and ETHUSDT
+    identically) -- returned as-is, list[str], for the caller to check EVERY
+    named instrument rather than forcing a false single answer: silently
+    picking element 0 would look plausible and be wrong for every candidate
+    testing the OTHER symbol in that same list. Only a shape with no
+    resolvable single-or-multi string answer (empty list, non-string list
+    items, a dict with none of the known keys) fails loud."""
+    if value is None or isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        for key in _INSTRUMENT_SINGLE_ASSET_KEYS:
+            candidate = value.get(key)
+            if isinstance(candidate, str) and candidate:
+                return candidate
+        raise RuntimeError(
+            f"[E-034 S3] {run_dir.name}: hypothesis_card.yaml's target_market "
+            f"is a dict with none of {_INSTRUMENT_SINGLE_ASSET_KEYS} as a "
+            f"string value ({value!r}) -- cannot resolve an instrument for "
+            f"the anti-adjacency gate. Add one of those keys, or teach this "
+            f"resolver the shape actually in use."
+        )
+    if isinstance(value, list) and value and all(isinstance(v, str) and v for v in value):
+        return list(value)
+    raise RuntimeError(
+        f"[E-034 S3] {run_dir.name}: target_market resolved to "
+        f"{value!r} -- neither a single instrument string, a resolvable "
+        f"single-asset dict, nor a clean list of instrument strings. "
+        f"Cannot evaluate the anti-adjacency gate against this shape."
+    )
+
+
 def _record_variant_selection(run_dir: Path) -> None:
     """Deterministic post-processing, invoked right after
     backtest_specification's output has been confirmed spec_ready (same
@@ -1743,7 +1794,10 @@ def _record_variant_selection(run_dir: Path) -> None:
         variant_timeframe = (matched_variant.get("timeframe")
                               or matched_variant.get("timeframe_expanded")
                               or matched_variant.get("timeframe_original"))
-    resolved_instrument = variant_instrument if variant_instrument else hypothesis_card.get("target_market")
+    resolved_instrument = _coerce_scalar_instrument(
+        variant_instrument if variant_instrument else hypothesis_card.get("target_market"),
+        run_dir,
+    )
     resolved_timeframe = variant_timeframe if variant_timeframe else hypothesis_card.get("timeframe")
 
     decision = load_yaml(artifacts / "decision.yaml") if (artifacts / "decision.yaml").exists() else {}
@@ -1962,10 +2016,27 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
         )
     kb = load_yaml(kb_path) or {}
 
-    result = _aag.evaluate_candidate(
-        candidate, digest or {}, kb or {}, ROOT / "runs",
-        instrument=selection.get("instrument"),
-        timeframe=selection.get("timeframe"),
+    # E-034 S3 review fix (2026-08-25): selection["instrument"] may be a
+    # list[str] -- _coerce_scalar_instrument (S2) now preserves genuine
+    # multi-symbol data (e.g. a funding-family hypothesis naming both
+    # BTCUSDT and ETHUSDT) rather than forcing a false single answer.
+    # Evaluate EVERY named instrument; a collision on ANY of them is a real
+    # collision (REFUSE wins), never silently checked against only one and
+    # reported ADMIT for the rest.
+    instrument_value = selection.get("instrument")
+    instruments_to_check = (
+        instrument_value if isinstance(instrument_value, list) else [instrument_value]
+    )
+    per_instrument_results = [
+        _aag.evaluate_candidate(
+            candidate, digest or {}, kb or {}, ROOT / "runs",
+            instrument=instr, timeframe=selection.get("timeframe"),
+        )
+        for instr in instruments_to_check
+    ]
+    result = next(
+        (r for r in per_instrument_results if r.route == "refuse"),
+        per_instrument_results[0],
     )
     # Success signal (E-034/EPIC.md): "the gate result references the chosen
     # variant's identifier, not the base hypothesis id." The gate's own

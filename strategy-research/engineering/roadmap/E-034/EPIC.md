@@ -503,3 +503,54 @@ chosen variant's identifier, not the base hypothesis id.
   at Layer 1, which never reads instrument at all) — flagged here as a
   discovered gap for a follow-up story to fix in `_record_variant_
   selection` itself, not patched in this one.
+
+- 2026-08-25 — **S3 reviewed by the dispatching session, and a real bug
+  found and fixed directly (not redispatched): non-scalar `target_market`
+  was silently defeating Layer-2 digest matching for real multi-symbol
+  hypotheses.**
+
+  Verified S3's core claims by execution before trusting them: read
+  `_route_post_variant_selection` and its REFUSE-policy reasoning directly
+  (immediate escalation, no retry, distinct flag — genuinely reasoned from
+  cost asymmetry and lever mismatch, not copied from S2c), and ran the
+  single proof test myself in isolation
+  (`test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site`) —
+  passed, confirming the OLD call site ADMITs a clean parent card while the
+  NEW one REFUSEs once the chosen variant's pivot is visible.
+
+  **The bug, MEASURED not theoretical.** S2's own out-of-scope flag
+  (`instrument` sometimes a raw list) turned out to be real and worse than
+  described: of 46 sampled `hypothesis_card.yaml` files, **10 carry a LIST**
+  target_market (`['BTCUSDT', 'ETHUSDT']`) and **2 carry a DICT**
+  (`{'asset': 'BTCUSDT', ...}`), against a schema that declares it a plain
+  string. Both shapes flowed straight into `evaluate_candidate()`'s
+  `instrument=` override, where a non-string silently compares `False`
+  against every digest triple — Layer-2 matching quietly never fired for
+  roughly a fifth of the corpus's real shape, with no error anywhere. This
+  is the exact silent-wrong-answer failure mode this whole session has been
+  finding all day, introduced fresh in code written this morning.
+
+  **First fix attempt was too strict and a real test caught it.** Initially
+  made any non-string `target_market` raise. That broke
+  `test_calibration_case_still_admits_through_the_new_call_site` —
+  `['BTCUSDT', 'ETHUSDT']` on the real funding-family calibration card is
+  not degenerate, it is genuinely, correctly multi-symbol (the family
+  targets both assets identically). Raising there would have made the gate
+  unusable for one of the campaign's most common hypothesis shapes.
+
+  **Corrected fix:** `_coerce_scalar_instrument` now resolves a dict via a
+  known single-asset key (`asset`/`symbol`/`instrument`/`target_market`),
+  preserves a clean list of instrument strings AS REAL DATA rather than
+  collapsing it, and only raises on a genuinely unresolvable shape (empty
+  list, non-string list items, a dict with none of the known keys).
+  `_route_post_variant_selection` now evaluates the gate **once per named
+  instrument** and REFUSEs if **any** of them collides — never silently
+  checks only the first and reports the rest as clean.
+
+  4 new regression tests written and verified passing: multi-symbol REFUSE
+  (a collision on the SECOND instrument only — would have been invisible to
+  a first-element-only check), multi-symbol ADMIT (no collision on either),
+  dict-with-asset-key resolves to a scalar, and an unresolvable shape still
+  raises. Full suites re-run after the fix: strategy-research **1046
+  passed** (1042 S3 baseline + 4, zero regressions); trading-bot **383
+  passed / 2 skipped**, unchanged.
