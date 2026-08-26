@@ -130,3 +130,9 @@ C:\Users\alauz\Documents\Projects\trading-bot\trading-bot\core\backtester.py:234
 - 2026-08-23T16:27:43Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
 - 2026-08-23T16:27:43Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
 - 2026-08-23T16:27:43Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal
+- 2026-08-26T19:16:52Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-26T19:16:52Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-26T19:16:52Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal
+- 2026-08-26T19:17:03Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-26T19:17:03Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-26T19:17:03Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal

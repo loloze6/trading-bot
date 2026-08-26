@@ -177,7 +177,7 @@ and counting REGISTER lines in `campaign_log.md` (baseline: 1, whole history).
 - 2026-08-26 — **S2 done: the schedulability block.** Adds
   `campaign_record/schedulability.yaml`, written by `workflow/run_campaign.py`
   behind a new `orchestrator.schedulability_block.enabled` flag (off by
-  default, same shape as the seven prior `orchestrator.<name>.enabled` flags
+  default, same shape as the five prior `orchestrator.<name>.enabled` flags
   in `config/campaign_config.yaml`).
 
   **Placement, closing the measured blind spot.** `process_once()` now calls

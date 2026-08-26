@@ -210,7 +210,10 @@ def test_counts_and_blocked_entry_dwell_shape(campaign_root):
 
     mentioned = by_id["BLOCKED_WITH_MENTION"]
     assert mentioned["status"] == "blocked_on_daily_bar_ingest"
-    assert mentioned["blocker"] == "blocked_on_daily_bar_ingest"
+    # Review fix 4 (2026-08-26): `blocker` now carries the blocker itself, with
+    # the `blocked_on_` / `paused:` prefix stripped -- previously it was a
+    # verbatim copy of `status` and so carried no information beyond it.
+    assert mentioned["blocker"] == "daily_bar_ingest"
     assert mentioned["dwell_days"] == pytest.approx(5.0, abs=0.02)
     assert "last campaign_log.md mention" in mentioned["dwell_basis"]
 
@@ -230,7 +233,7 @@ def test_degenerate_empty_log_reports_none_not_zero(campaign_root):
     block = camp._compute_schedulability()
 
     assert block["days_since_last_completion"] is None
-    assert block["last_completion_basis"] == "no DONE line found in campaign_log.md"
+    assert block["last_completion_basis"] == "no DONE or QUARANTINE line found in campaign_log.md"
     assert block["blocked_entries"][0]["dwell_days"] is None
 
 
@@ -247,3 +250,88 @@ def test_block_is_a_projection_and_deleting_it_loses_nothing(campaign_root):
     volatile = {"computed_at"}
     assert {k: v for k, v in first.items() if k not in volatile} == \
            {k: v for k, v in second.items() if k not in volatile}
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for the 2026-08-26 code-review findings. The first two are
+# the ones that could silently return a WRONG answer to S3's escalate-vs-refill
+# consumer rather than merely an untidy one.
+# ---------------------------------------------------------------------------
+
+def test_split_child_activity_does_not_reset_the_blocked_parents_dwell(campaign_root):
+    """Review fix 1, HIGH. _add_queue_entry_for_split_child mints child ids as
+    f"{parent_id}__split_{child_id}", so the parent id is ALWAYS a substring of
+    its children's ids. A bare `eid in text` therefore let any activity on a
+    split child reset the blocked PARENT's dwell to ~0 -- the flattering
+    direction _compute_schedulability's own docstring forbids."""
+    _save_queue_entries(campaign_root["queue_path"], [
+        {"id": "P4_ts_trend", "brief_path": "b.yaml",
+         "status": "blocked_on_daily_bar_ingest", "priority": 1, "run_ids": []},
+    ])
+    # Parent last genuinely mentioned 40 days ago; a SPLIT CHILD launched 5
+    # minutes ago. The parent has not moved.
+    old = (datetime.now(timezone.utc) - timedelta(days=40)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    recent = (datetime.now(timezone.utc) - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    camp.CAMPAIGN_LOG_PATH.write_text(
+        "\n".join([
+            f"- {old} LAUNCH P4_ts_trend -> run_054",
+            f"- {recent} LAUNCH P4_ts_trend__split_run_071 -> run_071",
+            "",
+        ]),
+        encoding="utf-8")
+
+    block = camp._compute_schedulability()
+    dwell = block["blocked_entries"][0]["dwell_days"]
+    assert dwell > 39, (
+        f"dwell_days={dwell}: split-child activity reset the blocked parent's "
+        f"dwell -- the longest-blocked entry would read as the freshest")
+
+
+def test_superseded_is_terminal_not_blocked(campaign_root):
+    """Review fix 2. `superseded` is schema-legal and TERMINAL (retired), not
+    blocked. Counting it inflated the backlog S3's escalate decision keys on."""
+    _save_queue_entries(campaign_root["queue_path"], [
+        {"id": "S1", "brief_path": "b.yaml", "status": "superseded", "priority": 1, "run_ids": []},
+        {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_x", "priority": 1, "run_ids": []},
+    ])
+    camp.CAMPAIGN_LOG_PATH.write_text("", encoding="utf-8")
+
+    block = camp._compute_schedulability()
+    assert block["counts"]["blocked"] == 1, "superseded must not count as blocked"
+    assert [e["id"] for e in block["blocked_entries"]] == ["B1"]
+
+
+def test_quarantine_counts_as_a_completion(campaign_root):
+    """Review fix 5. The quarantine path completes an entry (status=done) but
+    logs QUARANTINE, not DONE. Ignoring it made a loop advancing via quarantine
+    read as permanently stalled, contradicting counts.done in the same block."""
+    _save_queue_entries(campaign_root["queue_path"], [
+        {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_x", "priority": 1, "run_ids": []},
+    ])
+    recent = (datetime.now(timezone.utc) - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    camp.CAMPAIGN_LOG_PATH.write_text(
+        f"- {recent} QUARANTINE run_059 -> quarantined_engineering_failure" + "\n",
+        encoding="utf-8")
+
+    block = camp._compute_schedulability()
+    assert block["days_since_last_completion"] is not None
+    assert block["days_since_last_completion"] < 3
+    assert "QUARANTINE" in block["last_completion_basis"]
+
+
+def test_blocker_field_strips_the_prefix_it_exists_to_spare_the_consumer(campaign_root):
+    """Review fix 4. `blocker` was a verbatim copy of `status`, so the field
+    advertised as a blocker string carried no information beyond it."""
+    _save_queue_entries(campaign_root["queue_path"], [
+        {"id": "B1", "brief_path": "b.yaml",
+         "status": "blocked_on_daily_bar_ingest", "priority": 1, "run_ids": []},
+        {"id": "B2", "brief_path": "b.yaml",
+         "status": "paused:pending_operator_ratification", "priority": 1, "run_ids": []},
+    ])
+    camp.CAMPAIGN_LOG_PATH.write_text("", encoding="utf-8")
+
+    by_id = {e["id"]: e for e in camp._compute_schedulability()["blocked_entries"]}
+    assert by_id["B1"]["blocker"] == "daily_bar_ingest"
+    assert by_id["B2"]["blocker"] == "pending_operator_ratification"
+    assert by_id["B1"]["status"] == "blocked_on_daily_bar_ingest"  # status unchanged
+

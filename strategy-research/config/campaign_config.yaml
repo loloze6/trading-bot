@@ -247,8 +247,9 @@ orchestrator:
     enabled: false
       # E-034 S3. OFF BY DEFAULT and read at runtime by
       # run_phase1_research._variant_anti_adjacency_gate_enabled() -- same
-      # shape as the five orchestrator.<name>.enabled flags above (a seventh
-      # explicit exception to this file's "declared parity only" rule).
+      # shape as the four orchestrator.<name>.enabled flags above (the fifth
+      # such flag; a sixth explicit exception to this file's "declared parity
+      # only" rule, counting halt_policy.quarantine_enabled).
       # REQUIRES variant_selection_record.enabled to ALSO be true -- checked
       # at runtime, fail loud (RuntimeError), not a silent no-op: this gate
       # reads artifacts/variant_selection.yaml, which only that OTHER flag's
@@ -291,8 +292,10 @@ orchestrator:
     enabled: false
       # E-031 S2. OFF BY DEFAULT and read at runtime by
       # run_campaign._schedulability_block_enabled() -- same shape as the
-      # seven orchestrator.<name>.enabled flags above (an eighth explicit
-      # exception to this file's "declared parity only" rule).
+      # five orchestrator.<name>.enabled flags above (the sixth such flag; a
+      # seventh explicit exception to this file's "declared parity only" rule,
+      # counting halt_policy.quarantine_enabled). Count corrected 2026-08-26:
+      # the prior "seven above / an eighth" was refutable and wrong.
       #
       # While false, process_once() never computes or writes
       # campaign_record/schedulability.yaml -- byte-for-byte the same

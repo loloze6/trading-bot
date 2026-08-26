@@ -1752,6 +1752,65 @@ def _schedulability_block_enabled() -> bool:
     return bool(section.get("enabled", False))
 
 
+# Statuses that are NOT "blocked" for schedulability purposes. `ready` and
+# `in_progress` are schedulable; `done` and `superseded` are TERMINAL (both are
+# schema-legal per _QUEUE_STATUS_RE). Review fix 2, 2026-08-26: `superseded`
+# was previously bucketed as blocked, emitting a phantom blocker row.
+_SCHEDULABILITY_NON_BLOCKED_STATUSES = ("ready", "in_progress", "done", "superseded")
+
+# An entry id is followed in the log by one of these, or by end-of-line. NOT a
+# bare `in` test -- see _mentions_entry_id.
+_ID_BOUNDARY_RE = re.compile(r"[A-Za-z0-9_-]")
+
+
+def _mentions_entry_id(text: str, entry_id: str) -> bool:
+    """Whole-token match for a queue entry id inside a campaign_log.md line.
+
+    Review fix 1 (2026-08-26), HIGH severity, reproduced before fixing: the
+    previous test was a bare `entry_id in text`. `_add_queue_entry_for_split_
+    child` mints child ids as f"{parent_id}__split_{child_id}", so a parent's
+    id is ALWAYS a substring of every one of its split children's ids. Any
+    activity on a split child therefore reset the blocked PARENT's dwell_days
+    to ~0 -- e.g. `P4_ts_trend` blocked 40 days reported dwell_days: 0.0 given
+    a 5-minute-old `LAUNCH P4_ts_trend__split_run_071` line.
+
+    That is exactly the flattering direction _compute_schedulability's own
+    docstring forbids ("an unknown dwell time must never read as 'just now'"),
+    and it silently defeats the escalate-vs-refill consumer this block exists
+    to feed: the longest-blocked entry reads as the freshest.
+
+    Fixed by requiring the character following the id to not continue the
+    identifier (so `P4_ts_trend__split_x` no longer matches `P4_ts_trend`,
+    while `LAUNCH P4_ts_trend -> run_054` still does)."""
+    if not entry_id:
+        return False
+    start = 0
+    while True:
+        idx = text.find(entry_id, start)
+        if idx == -1:
+            return False
+        after = idx + len(entry_id)
+        if after >= len(text) or not _ID_BOUNDARY_RE.match(text[after]):
+            return True
+        start = after
+
+
+def _blocker_of(status):
+    """The blocker itself, not the raw status string.
+
+    Review fix 4 (2026-08-26): `blocker` was a verbatim copy of `status`, so
+    the field advertised as a "blocker string" carried zero information beyond
+    it -- a consumer still had to re-parse the `blocked_on_` / `paused:`
+    prefix, which is the parse this field exists to spare it."""
+    if not isinstance(status, str):
+        return None
+    if status.startswith("blocked_on_"):
+        return status[len("blocked_on_"):]
+    if status.startswith("paused:"):
+        return status[len("paused:"):]
+    return status
+
+
 def _compute_schedulability() -> dict:
     """Re-derives the whole schedulability picture from primary records
     (campaign_queue.yaml + campaign_log.md). Pure read, no file write --
@@ -1772,16 +1831,30 @@ def _compute_schedulability() -> dict:
     ready = [e for e in entries if e.get("status") == "ready"]
     in_progress = [e for e in entries if e.get("status") == "in_progress"]
     done = [e for e in entries if e.get("status") == "done"]
+    # Review fix 2 (2026-08-26): `superseded` is a schema-legal TERMINAL queue
+    # status (_QUEUE_STATUS_RE, tools/record_schema.py) -- retired, not
+    # blocked. Counting it as blocked emitted a phantom blocked_entries row
+    # with blocker: "superseded" and a dwell time, inflating the very backlog
+    # S3's escalate decision is meant to key on.
     blocked = [e for e in entries
-               if e.get("status") not in ("ready", "in_progress", "done")]
+               if e.get("status") not in _SCHEDULABILITY_NON_BLOCKED_STATUSES]
 
     events = _parse_campaign_log_events(CAMPAIGN_LOG_PATH)
     now = datetime.now(timezone.utc).replace(tzinfo=None)
 
+    # Review fix 5 (2026-08-26): the quarantine path also COMPLETES an entry
+    # (status="done" + outcome set) but logs "QUARANTINE", not "DONE". Counting
+    # only DONE made a loop that advances via quarantine read as permanently
+    # stalled, contradicting counts.done in the same block. Both are
+    # completions; last_completion_basis names which kind was found.
     last_completion_at = None
+    last_completion_kind = None
     for when, text in reversed(events):
         if text.startswith("DONE "):
-            last_completion_at = when
+            last_completion_at, last_completion_kind = when, "DONE"
+            break
+        if text.startswith("QUARANTINE"):
+            last_completion_at, last_completion_kind = when, "QUARANTINE"
             break
     days_since_last_completion = (
         round((now - last_completion_at).total_seconds() / 86400.0, 2)
@@ -1793,13 +1866,13 @@ def _compute_schedulability() -> dict:
         eid = e.get("id")
         last_mention = None
         for when, text in reversed(events):
-            if eid and eid in text:
+            if eid and _mentions_entry_id(text, eid):
                 last_mention = when
                 break
         blocked_entries.append({
             "id": eid,
             "status": e.get("status"),
-            "blocker": e.get("status"),
+            "blocker": _blocker_of(e.get("status")),
             "dwell_days": (round((now - last_mention).total_seconds() / 86400.0, 2)
                            if last_mention is not None else None),
             "dwell_basis": ("last campaign_log.md mention of this entry id"
@@ -1825,8 +1898,10 @@ def _compute_schedulability() -> dict:
             "blocked": len(blocked),
         },
         "days_since_last_completion": days_since_last_completion,
-        "last_completion_basis": ("last campaign_log.md DONE line" if last_completion_at is not None
-                                  else "no DONE line found in campaign_log.md"),
+        "last_completion_basis": (
+            f"last campaign_log.md {last_completion_kind} line"
+            if last_completion_at is not None
+            else "no DONE or QUARANTINE line found in campaign_log.md"),
         "blocked_entries": blocked_entries,
     }
 
@@ -2147,6 +2222,14 @@ def process_once() -> bool:
         entry["run_ids"].append(continuation_child)
         _save_queue(queue)
         _log(f"CONTINUE {entry['id']} lineage {run_id} -> {continuation_child} ({pending})")
+        # Review fix 3 (2026-08-26): this was the one non-terminal exit with no
+        # end-of-branch write, so the record on disk kept the counts computed at
+        # the TOP of the step, before the queue was mutated -- e.g. reporting
+        # ready: 1 for an entry this step had already flipped to in_progress,
+        # under a computed_at stamped this step. That contradicted the epic's
+        # own "a normal step's record is fresh -- not one step stale" claim.
+        if schedulability_enabled:
+            _write_schedulability()
         return True
 
     entry["status"] = "done"
