@@ -70,9 +70,9 @@ exist on disk, because no `process_once()` step has run since it was built.
       `refinement_planner`'s deferred branches), what each can actually supply
       today, and what the routing policy should be. No code. The graph edge is
       trivial; the policy is the work.
-- [ ] S2 — The schedulability block, written before the exhaustion return.
+- [x] S2 — The schedulability block, written before the exhaustion return.
       Standalone value: it makes "the loop is idle" visible even before refill
-      exists.
+      exists. **Done 2026-08-26.**
 - [ ] S3 — The return edge itself, plus trial accounting on auto-minted
       entries, off by default with the bit-identity test.
 
@@ -173,3 +173,54 @@ and counting REGISTER lines in `campaign_log.md` (baseline: 1, whole history).
   single-authority write paths and then never wires anything to call them.**
   That pattern, not either individual function, is what E-031 is really
   fixing.
+
+- 2026-08-26 — **S2 done: the schedulability block.** Adds
+  `campaign_record/schedulability.yaml`, written by `workflow/run_campaign.py`
+  behind a new `orchestrator.schedulability_block.enabled` flag (off by
+  default, same shape as the seven prior `orchestrator.<name>.enabled` flags
+  in `config/campaign_config.yaml`).
+
+  **Placement, closing the measured blind spot.** `process_once()` now calls
+  `_write_schedulability()` unconditionally near the top, BEFORE
+  `_select_entry()`'s result is even inspected — so it runs on the
+  queue-exhausted `entry is None` return, the ONE path E-030's own
+  `_write_loop_health()` never reaches (confirmed again by reading the four
+  call sites directly: all sit strictly after a non-None `_select_entry()`
+  result). It is ALSO called again at the end of every branch that ends in a
+  halt/quarantine/DONE outcome (the same four positions
+  `_write_loop_health()` already occupies), so a normal step's record is
+  fresh — not one step stale — exactly mirroring `_write_loop_health()`'s own
+  "placed at the END of each branch" rationale.
+
+  **Shape.** `_compute_schedulability()` (pure, no I/O) derives
+  ready/in_progress/done/blocked counts from `campaign_queue.yaml`,
+  `days_since_last_completion` from the last `campaign_log.md` `DONE` line,
+  and per-blocked-entry `dwell_days`/`dwell_basis` from that entry's own last
+  `campaign_log.md` mention — the queue entry schema has no per-entry
+  timestamp field, so the append-only log is the only primary record that
+  can answer "how long has this been blocked." An unknown dwell time or
+  completion date reports `None`, never a flattering `0`, matching
+  `_compute_loop_health`'s own degenerate-input convention. Re-derived from
+  primary records on every call, never accumulated — safe to delete.
+
+  **Flag-off bit-identity, MEASURED not asserted.** Compared actual sandbox
+  contents (every file under the sandbox root, byte for byte) before and
+  after `process_once()` on an exhausted queue with the flag off: only
+  `campaign_log.md`'s ordinary log line differs; `schedulability.yaml` is
+  never written.
+
+  **Tests:** `tests/test_schedulability_block.py`, 7 new, all passing --
+  flag-off bit-identity (2, including the absent-key case); written on the
+  exhaustion path specifically (1); written on a normal DONE step too (1);
+  counts/dwell-time shape including the "no log mention" degenerate case (2);
+  the block is a pure re-derivation, safe to delete (1).
+
+  **Verification, MEASURED.** `tests/test_schedulability_block.py` alone: 7
+  passed. Full strategy-research fast suite: **1053 passed** (1046 baseline +
+  7, zero regressions). No campaign or backtest run, no LLM spend,
+  `local_data/holdout_sealed/` never opened.
+
+  **Left out of S2, deliberately -- S3's job:** the refill-vs-escalate
+  decision itself, and the return edge. S2 only makes idleness visible and
+  gives S3 a place to write its own decision record; it does not decide
+  anything.

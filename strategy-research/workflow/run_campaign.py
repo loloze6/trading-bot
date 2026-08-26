@@ -1720,6 +1720,136 @@ def _write_loop_health() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# E-031 S2 -- the schedulability block (campaign_record/schedulability.yaml)
+#
+# EPIC.md Done-when #2: "A schedulability block is written BEFORE the
+# exhaustion return on every process_once() step: ready / in_progress /
+# blocked counts, days since last completion, per-blocked-entry dwell time
+# and blocker string. Consumed by run_campaign.py's own refill-vs-escalate
+# decision, not only read by a human."
+#
+# THE BLIND SPOT THIS CLOSES (measured, not asserted): all four of E-030's
+# _write_loop_health() call sites sit strictly AFTER _select_entry() returns
+# a non-None entry (S1's own Task 2 finding, confirmed again here by reading
+# process_once() directly). The queue-exhausted `entry is None` branch --
+# the ONE condition that actually stopped the loop on 2026-07-19 -- has never
+# produced any instrument at all. This is a DIFFERENT block from
+# loop_health.yaml (that one is about HALTS; this one is about SCHEDULABILITY)
+# and is written unconditionally near the top of process_once(), before
+# _select_entry's result is even inspected, so it runs on every path.
+# ---------------------------------------------------------------------------
+
+def _schedulability_block_enabled() -> bool:
+    """E-031 S2 gate. False (no file written, no behavior change) when the
+    key, the section, or the config file is absent -- same silence-is-never-
+    a-green-light rule as _quarantine_enabled() just above."""
+    path = ROOT / "config" / "campaign_config.yaml"
+    if not path.exists():
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    section = ((cfg.get("orchestrator") or {}).get("schedulability_block") or {})
+    return bool(section.get("enabled", False))
+
+
+def _compute_schedulability() -> dict:
+    """Re-derives the whole schedulability picture from primary records
+    (campaign_queue.yaml + campaign_log.md). Pure read, no file write --
+    same split as _compute_loop_health/_write_loop_health, so a caller that
+    wants to ADD a field (e.g. S3's refill_scan) can do so before the one
+    write actually happens.
+
+    dwell_days is derived from the last campaign_log.md line that mentions
+    a blocked entry's own id -- the queue entry schema
+    (tools/record_schema.py's QUEUE_ENTRY_SCHEMA) has no per-entry timestamp
+    field, so campaign_log.md (this module's own append-only writer) is the
+    only primary record that can answer "how long has this been blocked."
+    None (not 0) when no mention is found -- an unknown dwell time must
+    never read as "just now," which would be the flattering direction."""
+    queue = _load_queue()
+    entries = queue.get("queue") or []
+
+    ready = [e for e in entries if e.get("status") == "ready"]
+    in_progress = [e for e in entries if e.get("status") == "in_progress"]
+    done = [e for e in entries if e.get("status") == "done"]
+    blocked = [e for e in entries
+               if e.get("status") not in ("ready", "in_progress", "done")]
+
+    events = _parse_campaign_log_events(CAMPAIGN_LOG_PATH)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    last_completion_at = None
+    for when, text in reversed(events):
+        if text.startswith("DONE "):
+            last_completion_at = when
+            break
+    days_since_last_completion = (
+        round((now - last_completion_at).total_seconds() / 86400.0, 2)
+        if last_completion_at is not None else None
+    )
+
+    blocked_entries = []
+    for e in blocked:
+        eid = e.get("id")
+        last_mention = None
+        for when, text in reversed(events):
+            if eid and eid in text:
+                last_mention = when
+                break
+        blocked_entries.append({
+            "id": eid,
+            "status": e.get("status"),
+            "blocker": e.get("status"),
+            "dwell_days": (round((now - last_mention).total_seconds() / 86400.0, 2)
+                           if last_mention is not None else None),
+            "dwell_basis": ("last campaign_log.md mention of this entry id"
+                            if last_mention is not None else
+                            "no campaign_log.md mention found for this id -- "
+                            "dwell time unknown, not zero"),
+        })
+
+    return {
+        "computed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source": {
+            "campaign_queue": str(QUEUE_PATH.name),
+            "campaign_log": str(CAMPAIGN_LOG_PATH.name),
+            "note": ("Re-derived from primary records on every process_once() "
+                     "step; never accumulated. Safe to delete -- the next "
+                     "step rewrites it."),
+        },
+        "counts": {
+            "total": len(entries),
+            "ready": len(ready),
+            "in_progress": len(in_progress),
+            "done": len(done),
+            "blocked": len(blocked),
+        },
+        "days_since_last_completion": days_since_last_completion,
+        "last_completion_basis": ("last campaign_log.md DONE line" if last_completion_at is not None
+                                  else "no DONE line found in campaign_log.md"),
+        "blocked_entries": blocked_entries,
+    }
+
+
+def _write_schedulability_block(block: dict) -> dict:
+    path = ROOT / "campaign_record" / "schedulability.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump(block, sort_keys=False, allow_unicode=True),
+                    encoding="utf-8")
+    return block
+
+
+def _write_schedulability() -> dict:
+    """Computes and writes campaign_record/schedulability.yaml in one call --
+    the convenience wrapper process_once() uses on its own unconditional,
+    every-step write. S3's refill path calls _compute_schedulability() and
+    _write_schedulability_block() separately so it can attach refill_scan
+    before the (second, final-for-this-step) write."""
+    return _write_schedulability_block(_compute_schedulability())
+
+
+
+# ---------------------------------------------------------------------------
 # Main queue-processing loop
 # ---------------------------------------------------------------------------
 
@@ -1803,6 +1933,15 @@ def process_once() -> bool:
     caller should keep looping, False if the campaign is done or halted."""
     reconcile_orphans()  # A3: read-only, logs only newly-unexpected orphans
 
+    # E-031 S2. Written BEFORE the queue-exhausted check below on EVERY step
+    # (not only when exhausted) -- closing E-030's own measured blind spot
+    # (all four _write_loop_health() call sites sit after a non-None
+    # _select_entry() result). Flag-off: no-op, byte-identical to before
+    # this feature existed.
+    schedulability_enabled = _schedulability_block_enabled()
+    if schedulability_enabled:
+        _write_schedulability()
+
     queue = _load_queue()
     entry = _select_entry(queue["queue"])
     if entry is None:
@@ -1843,6 +1982,8 @@ def process_once() -> bool:
             # it where _regenerate_summary sits and every emitted block would be
             # exactly one halt stale, forever.
             _write_loop_health()
+            if schedulability_enabled:  # E-031 S2 — same end-of-branch placement
+                _write_schedulability()
             return False
 
         brief_path = ROOT / entry["refinement_brief_path"]
@@ -1974,6 +2115,8 @@ def process_once() -> bool:
                      f"(trial accounting: {disposition}). Campaign continues; see this "
                      f"run's pipeline_state.yaml halt_history for the full record.")
                 _write_loop_health()  # E-030 S3 — see the note at the first call site
+                if schedulability_enabled:  # E-031 S2 — same end-of-branch placement
+                    _write_schedulability()
                 return True
         entry["status"] = f"paused:{reason}"
         _save_queue(queue)
@@ -1986,6 +2129,8 @@ def process_once() -> bool:
         _log(f"HALT — {reason}{detail_str}. Campaign stopped on {entry['id']} / {run_id}. "
              f"See RUNBOOK.md 'Resume after a pause'.")
         _write_loop_health()  # E-030 S3 — see the note at the first call site
+        if schedulability_enabled:  # E-031 S2 — same end-of-branch placement
+            _write_schedulability()
         return False
 
     # A1 (K4 kernel): read the run's own PERSISTED continuation intent
@@ -2010,6 +2155,8 @@ def process_once() -> bool:
     _regenerate_summary(queue)
     _log(f"DONE {entry['id']} ({run_id}) -> {entry['outcome']}")
     _write_loop_health()  # E-030 S3 — see the note at the first call site
+    if schedulability_enabled:  # E-031 S2 — same end-of-branch placement
+        _write_schedulability()
     return True
 
 

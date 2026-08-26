@@ -287,7 +287,36 @@ orchestrator:
       # variant, not the idea itself). See _route_post_variant_selection's
       # own docstring for the full reasoning, and engineering/roadmap/
       # E-034/EPIC.md's S3 Log entry.
-
+  schedulability_block:
+    enabled: false
+      # E-031 S2. OFF BY DEFAULT and read at runtime by
+      # run_campaign._schedulability_block_enabled() -- same shape as the
+      # seven orchestrator.<name>.enabled flags above (an eighth explicit
+      # exception to this file's "declared parity only" rule).
+      #
+      # While false, process_once() never computes or writes
+      # campaign_record/schedulability.yaml -- byte-for-byte the same
+      # behavior as before this feature existed on every path (normal
+      # launch/continue AND the queue-exhausted return). Proven by
+      # tests/test_schedulability_block.py's flag-off/flag-on comparison
+      # (same acceptance bar as every prior story in this chain: compare
+      # actual campaign_record/ contents, not just assert the code path is
+      # skipped).
+      #
+      # While true: run_campaign._write_schedulability() runs on EVERY
+      # process_once() step, BEFORE the queue-exhausted `entry is None`
+      # return -- closing the blind spot E-031/EPIC.md measured directly:
+      # all four of E-030's _write_loop_health() call sites sit strictly
+      # AFTER a non-None _select_entry() result, so the one condition that
+      # actually stopped the loop (2026-07-19, "Queue exhausted") never
+      # produced any instrument at all. Writes ready/in_progress/done/
+      # blocked counts, days since the last campaign_log.md DONE line, and
+      # per-blocked-entry dwell time (derived from that entry's last
+      # campaign_log.md mention -- the queue schema has no per-entry
+      # timestamp field) plus its blocker string. Re-derived from primary
+      # records on every call, never accumulated -- same posture as
+      # loop_health.yaml, safe to delete. See engineering/roadmap/E-031/
+      # EPIC.md's S2 Log entry and artifacts/s1_refill_sources.md Task 2.
 # ---------------------------------------------------------------------------
 # Verdict interpreter thresholds (SKILL.md reference)
 # ---------------------------------------------------------------------------
