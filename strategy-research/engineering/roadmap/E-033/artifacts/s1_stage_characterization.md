@@ -8,6 +8,39 @@ Reproduce all MEASURED numbers with
 `engineering/roadmap/E-033/artifacts/s1_measure_pre_backtest_stages.py`
 (read-only, no network, no LLM — run from `strategy-research/`).
 
+> ## ⚠️ CORRECTED 2026-08-25 — READ THIS BEFORE THE CONCLUSION BELOW
+>
+> Two of this artifact's INTERPRETATIONS were corrected after review. Its
+> MEASUREMENTS are sound and independently reproduced — read those freely.
+> Do NOT inherit its verdict or its "smallest lever" recommendation as
+> written. Full detail in `E-033/EPIC.md`'s 2026-08-25 Log entry.
+>
+> **1. RETRACTED — the `innovation_expansion` "zero live routing decision"
+> point is a timeline artifact, not a design finding.** The flag it depends
+> on (`orchestrator.anti_adjacency_retry.enabled`) and the function it gates
+> were both written on 2026-08-23/24, WEEKS AFTER all 59 corpus runs. A count
+> over a corpus that predates the code being counted is not evidence about
+> that code. The honest statement is "this stage never had a routing
+> decision until one was added a day ago" — not "a decision point exists but
+> has never fired."
+>
+> **2. WRONG TARGET — the recommended fix (wire `validation_decision.yaml.
+> conditions` into `backtest_specification`) does not work, because most of
+> those conditions are RESULT checks, not build instructions.** Real
+> examples: *"Reject if Sharpe < -1.0"* (run_012), *"regime_frequency must be
+> >= 0.15"* (run_011/012). `backtest_specification` could not act on these if
+> it received them.
+>
+> **The corrected finding is better than the one below.** `validation`'s job
+> is pre-flight pressure-testing of the IDEA; grading results is
+> `verdict_interpreter`'s job — and the correct channel between them ALREADY
+> EXISTS AND WORKS (`validation_protocol.yaml`'s `decision_rules` /
+> `failure_modes`, which `verdict_interpreter`'s handoff lists as a required
+> input). `validation_decision.yaml`'s free-prose `conditions` is a second,
+> parallel, unread channel duplicating that structured contract. The S2/S3
+> question is therefore **"why does `validation` emit result thresholds in
+> loose prose at all?"** — not "where do we plumb this file."
+
 ## Conclusion first
 
 **The four stages are not shaped correctly.** Three separate, concrete
