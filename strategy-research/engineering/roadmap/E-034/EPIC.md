@@ -1,6 +1,6 @@
 # E-034 — Record which variant was chosen, and keep the ones that weren't
 
-**State:** new
+**State:** done (2026-08-27 — S1/S2/S3 all closed; see Log)
 **Owner:** Jeremy
 **Updated:** 2026-08-24
 

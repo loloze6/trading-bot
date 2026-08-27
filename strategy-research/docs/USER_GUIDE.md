@@ -129,7 +129,7 @@ It is built around three principles:
 |---|---|---|---|
 | 1 | **research_brief** | Human | Define the research question, target market, constraints, and existing context. Entry point for every run. |
 | 2 | **hypothesis_generation** | Claude | Translate the brief into a single, concrete, testable hypothesis. Must: populate `edge_source` BEFORE `signal_concept` (A1.1–A1.3); look up proposed indicator in `indicator_library.yaml` (A1.4/Impr 04); declare `evidence_type` from `available_feeds.yaml` or route to `feed_wishlist.yaml`. |
-| 3 | **innovation_expansion** | Claude | Expand into 3–6 testable variants. Must: pass real-diversity check (≥2 `library_category` OR `data_requirements`; cosmetic = rejected). |
+| 3 | **innovation_expansion** | Claude | Expand into 3–6 testable variants **when the brief leaves it free to** — a brief carrying `"Single registered hypothesis, no parameter sweep"` or a `REPLICATION_DIAGNOSTIC` constraint correctly yields one variant, and that is obedience, not stage failure (measured 2026-08-26: of 25 *unconstrained* expansion runs, 21 land in [3,6]). Must: pass real-diversity check (≥2 `library_category` OR `data_requirements`; cosmetic = rejected). |
 | 4 | **validation_gate** | Claude | Pressure-test the hypothesis: write falsifiable statements, identify failure modes, run A8.6 a-priori power check deterministically. If `min_detectable_ic > plausible_ic_upper`, routes to `insufficient_power_a_priori` (no component built). Must declare holdout range in `sample_split_design` (A6.1). |
 | 5 | **refinement_planner** | Claude | Convert validation blockers into concrete fixes; decide if implementation is possible in current framework. |
 | 6 | **backtest_specification** | Claude | Translate the validated hypothesis into `strategy_config` JSON for the trading-bot backtest engine. |
@@ -227,7 +227,18 @@ The orchestrator detects search-space exhaustion and forces an altitude climb au
 
 ## 3. Artifacts
 
-Artifacts are YAML files produced and consumed by pipeline stages. They are the only communication channel between stages — no stage reads another stage's raw LLM output. All artifacts are validated against JSON schemas before the pipeline advances.
+Artifacts are YAML files produced and consumed by pipeline stages. They are the only communication channel between stages — no stage reads another stage's raw LLM output.
+
+> **Corrected 2026-08-27.** This paragraph previously ended *"All artifacts are
+> validated against JSON schemas before the pipeline advances."* **That is
+> false.** No schema under `workflow_artifacts/schemas/` is loaded by any code
+> — verified by grep across `workflow/` and `tools/`, where the only hits are
+> source comments. Measured consequence: `expanded_hypothesis_card.schema.json`
+> declares `expanded_variants` as an array of *strings*, and 74 of the 138
+> variants in the real corpus (53%) are dicts. A field a schema calls
+> `required` is not actually required. Tracked as a bug on Notion's
+> 🐛 Bugs & Tasks board. Where enforcement genuinely exists it is written in
+> CODE at the seam that reads the value (see `variant_selection.yaml` below).
 
 Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level artifacts live at the root.
 
@@ -468,6 +479,89 @@ Internal run state — not a research artifact but the orchestrator's working me
 | `audit_log` | Per-stage record of token usage, cost_usd, attempt number, and timestamp |
 
 ---
+
+### `variant_selection.yaml` (per run)
+
+**Objective:** record *which* of `innovation_expansion`'s variants was actually
+chosen for the backtest, and *why*.
+
+**Why it exists:** `backtest_specification` receives the whole menu of variants
+and emits one config. The narrowing happens inside its own reasoning, with no
+routing decision in code, so historically nothing recorded the choice — a run
+with three distinct threshold variants left no trace of which one was tested.
+
+**Logic:** the stage names its pick in `backtest_spec.yaml`'s
+`selected_variant_id`; deterministic code then joins that ID against the menu
+and writes the record. **Enforcement is in code, not the schema** — a missing
+ID raises, and an ID matching nothing in the menu raises, rather than writing a
+silently-broken record. Variant IDs are derived by one shared rule (a dict's
+`variant_id`, else `id`/`name`/`variant_name`/`label`, else a positional hash
+for bare strings) so the same variant resolves identically everywhere.
+
+Carries: `selected_variant_id`, the matched variant verbatim, resolved
+`instrument` and `timeframe`, and the LLM's own rationale relocated where code
+can read it. `instrument` may be a **list** for genuinely multi-symbol
+hypotheses; consumers must check every entry, not just the first.
+
+### `variants_not_pursued.yaml` (per run)
+
+**Objective:** keep the ideas that were generated and discarded.
+
+**Why it exists:** across 43 runs the loop generated 138 variants and tested one
+per run, recording the discards in 1 run out of 59. It then reported *"queue
+exhausted"* and stopped — having thrown away roughly a hundred ideas it had
+already reasoned about. This is the supply side of that problem.
+
+**Logic:** every menu entry except the chosen one, copied verbatim by code with
+its derived ID, plus an optional "why it lost" only when the stage actually
+said so — never fabricated.
+
+### `exclusion_digest.yaml` (campaign level)
+
+**Objective:** tell the idea generator what has already been tried, at a grain
+fine enough to be useful.
+
+**Why it exists:** `campaign_state.yaml`'s flat `instruments_tried` /
+`timeframes_tried` lists are **family-blind** — a `4h` entry contributed by
+Keltner runs makes 4h look "tried" for the funding family too. Gating on them
+refuses good ideas and admits bad ones.
+
+**Logic:** regenerated fresh from `runs/*/artifacts/hypothesis_card.yaml`,
+never read from the stale flat lists. Keyed on
+`(family, instrument, timeframe)` triples.
+
+### `anti_adjacency_result.yaml` (per run)
+
+**Objective:** record whether a candidate is a repeat of something already
+tried, and on what evidence.
+
+**Logic:** two layers, most specific first. **Layer 1** reads the knowledge
+base at *mechanism* grain (matching `hypothesis_id`, sorted longest-first so a
+verdict never depends on YAML ordering) and honours reactivation clauses
+per-branch — a terminated `daily` branch does not close an open `4h` sibling.
+**Layer 2** checks the digest's `(family, instrument, timeframe)` triple.
+Default is ADMIT; a REFUSE must be positively evidenced.
+
+Runs at two points: once on the parent idea before `validation`, and again on
+the **chosen variant** after `backtest_specification` — the second is the one
+that can see a variant that pivoted away from a clean parent.
+
+### `schedulability.yaml` (campaign level)
+
+**Objective:** make "the loop is idle" visible to the loop itself.
+
+**Why it exists:** `process_once()` returns on `"Queue exhausted"` *before* any
+loop-health write, so the one condition that actually stopped this campaign was
+the one condition nothing recorded.
+
+**Logic:** re-derived from primary records (`campaign_queue.yaml` +
+`campaign_log.md`) on every step, written **before** the exhaustion return.
+Carries ready / in_progress / blocked / done counts, days since last completion
+(counting quarantine as a completion, since it also retires an entry), and per
+blocked entry its dwell time and the blocker itself with its prefix stripped.
+A pure projection — safe to delete, the next step rewrites it. Entry IDs are
+matched as whole tokens, so activity on a split child (`{parent}__split_{x}`)
+cannot reset the blocked parent's dwell to zero.
 
 ### `campaign_state.yaml`
 

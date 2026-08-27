@@ -503,3 +503,43 @@ Fixes for 2 and 3 exist in `archive/2026-07-28/fix-fetch-end-bound`. Cherry-pick
   **Root cause 2 — I took a fork at round 2 and never revisited it.** The reviewer offered two shapes: a sticky flag, or have `_classify_human_pause` re-derive tradability from the brief. I picked the flag. Clearing, reset lists, priority ordering, and the ordering guard tests are all downstream of that one choice; the stateless shape makes every one of them impossible by construction. **Lesson: when round N+1 is fixing a consequence of round N's fix, stop patching and re-examine the design.** Logged in `E-015/EPIC.md` as the one worthwhile follow-up refactor; deliberately not done under review pressure.
 
   **Final state:** 17 tests, 14 mutations killed, both suites green, CI green on all six review commits (verified against the run list, not assumed), holdout gate passes. E-015 Done-when #4 closed; S1b remains open, no longer load-bearing since the holdout gate enforces the declaration where it actually matters.
+
+- 2026-08-23 → 2026-08-27 — **E-032, E-034 closed; E-031 S2 landed; E-033 S1
+  characterized. 33 commits, suite 884 → 1057, zero regressions.** Full
+  narrative in `strategy-research/engineering/sessions/SESSION_LOG.md`. Four
+  carry-forward lessons, all of which cost real time here:
+
+  **1. A count over a corpus that predates the code being counted is not
+  evidence about that code.** E-033 S1 reported `innovation_expansion` "has
+  zero live routing decision across all 59 runs" because its routing flag was
+  false for every one of them. True and useless — the flag and the function
+  were both written two days earlier. I verified the claim's *mechanics*
+  without asking whether the evidence could bear the weight put on it. The
+  operator caught it. Retracted in a banner at the top of the artifact,
+  because a future reader would otherwise go hunting for a design failure
+  that never happened.
+
+  **2. "Off by default" is the right call every single time and the wrong
+  aggregate.** Five capabilities shipped this session; all five default to
+  `false`; the loop has now been idle 38 days. Each individual decision was
+  correct under the bit-identity rule. The sum is a machine that got better at
+  things it is not doing — the same defect we filed a Notion bug about
+  (declarative artifact built, never wired). Naming the aggregate is the only
+  defence; no single story review can see it.
+
+  **3. Verify a subagent's *interpretation*, not just its measurements.**
+  Every dispatch this session produced sound numbers. Three produced wrong
+  conclusions from them: the timeline artifact above, a "wire the conditions
+  into `backtest_specification`" recommendation aimed at the wrong stage
+  (most of those conditions are *result* checks), and a proposed fix that
+  added a `required` field to a schema nothing validates. Measurements
+  reproduce; recommendations need re-derivation.
+
+  **4. A dispatched agent that reports "completed" may still be running.**
+  One S2/S3 dispatch reported done twice while actively mutating the repo —
+  I watched a file vanish, reappear and get staged mid-verification. It had
+  implemented S3, then deliberately reverted it to stage a clean S2-only
+  commit, and was killed in that gap. **Verify tree state after a kill before
+  concluding anything**: the work looked lost and wasn't, and the surviving
+  test file was written against functions that no longer existed. Its output
+  was sound; its process was not.

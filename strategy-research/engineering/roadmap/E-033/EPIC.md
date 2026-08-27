@@ -1,6 +1,6 @@
 # E-033 — Review, challenge and rationalize the pre-backtest stages
 
-**State:** new
+**State:** in-progress (S1 done 2026-08-26; S2 partial, S3 awaits an operator decision)
 **Owner:** Jeremy
 **Updated:** 2026-08-24
 
