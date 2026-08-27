@@ -7,81 +7,76 @@ queue:
   priority: 1
   source: user_delivered
   relation: refine
-  notes: 'STATUS AS OF 2026-08-23 (reactivation package prepared for operator
-    ratification; status field UNCHANGED -- do not flip to ready off this note
-    alone). Of the parent rule''s four reactivation conditions (campaign_knowledge_base.yaml
-    p4_sma_trend_longonly_daily_auto reactivation_condition, (a)-(d)):
-    (a) daily bars -- already satisfied, 19 kraken_*USD_1d.csv caches landed
-    2026-08-07 (commit 8cff3f24). (b) the P4-D2 trade-floor conflict -- RESOLVED:
-    operator ruled 2026-08-22 that config/campaign_config.yaml:141''s A3.4 floor of
-    5 governs; protocols/ts_trend_daily_v1.json''s promotion.min_trade_count_gte
-    changed 1 -> 5 the same date (2026-07-08 revision''s reasoning retained,
-    superseded, in that file). (c) a machine-evaluable pass_rule -- DRAFTED but not
-    ratified, see the artifacts directory below; criteria (a)/(b) (median_sharpe>0,
-    max_abs_drawdown_pct<30) are directly inheritable from this protocol''s own
-    promotion block, but criterion (c) (evaluability/sample-floor under the ruled
-    floor-5 gate) could not be authored to a threshold that both passes honestly and
-    is derived a-priori -- see (d). (d) correlation-adjusted breadth -- MEASURED
-    2026-08-23, NOT ADEQUATE: daily-panel n_eff (pairwise-complete Pearson,
-    same method as the ratified 1h prior) is 1.661 (all-19) / 1.694 (primary 17,
-    BTC/ETH excluded as an asset-level contamination already measured under this
-    family on Binance in runs 053-057), both below the project''s own standing
-    >=30-independent-episode Sharpe-quoting floor combined with the brief''s
-    conservative low-end transitions estimate, which requires n_eff >= 3.0.
-    CONCLUSION: this reactivation is NOT POWERED as specified; the package (ruling
-    record, n_eff script + raw output, pass_rule draft with per-threshold
-    derivations, and this conclusion) is written up in full at
-    strategy-research/briefs/artifacts/p4_daily_reactivation_20260823/ for operator
-    review. Status stays blocked_on_daily_bar_ingest (misnamed at this point --
-    (a) is satisfied -- but changing it is a separate, deliberate action, not a
-    side effect of this note) pending the operator''s disposition on the power
+  notes: 'STATUS AS OF 2026-08-23 (reactivation package prepared for operator ratification;
+    status field UNCHANGED -- do not flip to ready off this note alone). Of the parent
+    rule''s four reactivation conditions (campaign_knowledge_base.yaml p4_sma_trend_longonly_daily_auto
+    reactivation_condition, (a)-(d)): (a) daily bars -- already satisfied, 19 kraken_*USD_1d.csv
+    caches landed 2026-08-07 (commit 8cff3f24). (b) the P4-D2 trade-floor conflict
+    -- RESOLVED: operator ruled 2026-08-22 that config/campaign_config.yaml:141''s
+    A3.4 floor of 5 governs; protocols/ts_trend_daily_v1.json''s promotion.min_trade_count_gte
+    changed 1 -> 5 the same date (2026-07-08 revision''s reasoning retained, superseded,
+    in that file). (c) a machine-evaluable pass_rule -- DRAFTED but not ratified,
+    see the artifacts directory below; criteria (a)/(b) (median_sharpe>0, max_abs_drawdown_pct<30)
+    are directly inheritable from this protocol''s own promotion block, but criterion
+    (c) (evaluability/sample-floor under the ruled floor-5 gate) could not be authored
+    to a threshold that both passes honestly and is derived a-priori -- see (d). (d)
+    correlation-adjusted breadth -- MEASURED 2026-08-23, NOT ADEQUATE: daily-panel
+    n_eff (pairwise-complete Pearson, same method as the ratified 1h prior) is 1.661
+    (all-19) / 1.694 (primary 17, BTC/ETH excluded as an asset-level contamination
+    already measured under this family on Binance in runs 053-057), both below the
+    project''s own standing >=30-independent-episode Sharpe-quoting floor combined
+    with the brief''s conservative low-end transitions estimate, which requires n_eff
+    >= 3.0. CONCLUSION: this reactivation is NOT POWERED as specified; the package
+    (ruling record, n_eff script + raw output, pass_rule draft with per-threshold
+    derivations, and this conclusion) is written up in full at strategy-research/briefs/artifacts/p4_daily_reactivation_20260823/
+    for operator review. Status stays blocked_on_daily_bar_ingest (misnamed at this
+    point -- (a) is satisfied -- but changing it is a separate, deliberate action,
+    not a side effect of this note) pending the operator''s disposition on the power
     finding. See also E-030/EPIC.md Log, 2026-08-23 entry.
 
-    STATUS AS OF 2026-08-05 -- SECOND BLOCKER ADDED (status field unchanged,
-    daily-bar-ingest blocker below unchanged): this brief''s pre-registered pass rule
-    is pinned to run_054 baselines (BTCUSDT >=0.5791, ETHUSDT >=0.0318 median Sharpe)
-    now known INVALID post-loop-fix -- 15 of 30 run_054 windows measured ending while
-    holding a position, each an artificial force-close under the pre-fix two-bars
-    loop defect. See E-012/EPIC.md "P4 threshold invalidation" and its S5. E-012 S5
-    (mechanical re-derivation of these baselines under the fixed loop, frozen BEFORE
-    any P4 evaluation) must complete before this entry can be evaluated, independent
-    of and in addition to the daily-bar-ingest blocker below. Do not evaluate P4
-    against the current run_054 thresholds.
+    STATUS AS OF 2026-08-05 -- SECOND BLOCKER ADDED (status field unchanged, daily-bar-ingest
+    blocker below unchanged): this brief''s pre-registered pass rule is pinned to
+    run_054 baselines (BTCUSDT >=0.5791, ETHUSDT >=0.0318 median Sharpe) now known
+    INVALID post-loop-fix -- 15 of 30 run_054 windows measured ending while holding
+    a position, each an artificial force-close under the pre-fix two-bars loop defect.
+    See E-012/EPIC.md "P4 threshold invalidation" and its S5. E-012 S5 (mechanical
+    re-derivation of these baselines under the fixed loop, frozen BEFORE any P4 evaluation)
+    must complete before this entry can be evaluated, independent of and in addition
+    to the daily-bar-ingest blocker below. Do not evaluate P4 against the current
+    run_054 thresholds.
 
     STATUS AS OF 2026-08-06 (correction to the entry directly above; status field
     unchanged, daily-bar-ingest blocker below unchanged): the "now known INVALID"
-    characterization above overstated E-012''s finding -- see E-012/EPIC.md''s
-    2026-08-06 correction and PROCESS.md amendment 10. The pass rule is NOT invalid;
-    it is pinned to a convention (the pre-fix end-of-backtest forced-close
-    behaviour), and this entry must be evaluated under the SAME convention its
-    run_054 baseline used -- whether that means re-deriving the baseline under the
-    fixed loop or evaluating under the pre-fix convention. E-012 S5''s re-derivation
-    is HYGIENE, sequenced with the loop fix, not a gate on this entry by itself. Do
-    not evaluate P4 against the current run_054 thresholds until baseline and
-    candidate share a convention.
+    characterization above overstated E-012''s finding -- see E-012/EPIC.md''s 2026-08-06
+    correction and PROCESS.md amendment 10. The pass rule is NOT invalid; it is pinned
+    to a convention (the pre-fix end-of-backtest forced-close behaviour), and this
+    entry must be evaluated under the SAME convention its run_054 baseline used --
+    whether that means re-deriving the baseline under the fixed loop or evaluating
+    under the pre-fix convention. E-012 S5''s re-derivation is HYGIENE, sequenced
+    with the loop fix, not a gate on this entry by itself. Do not evaluate P4 against
+    the current run_054 thresholds until baseline and candidate share a convention.
 
-    STATUS AS OF 2026-07-24 (routing corrected; supersedes the earlier same-day
-    blocked_on_P2 disposition, which misnamed the blocker). The real blocker is the
-    Track-A daily-bar ingest (ledger item P4-D1), NOT Phase 2. Status is now
-    blocked_on_daily_bar_ingest.
+    STATUS AS OF 2026-07-24 (routing corrected; supersedes the earlier same-day blocked_on_P2
+    disposition, which misnamed the blocker). The real blocker is the Track-A daily-bar
+    ingest (ledger item P4-D1), NOT Phase 2. Status is now blocked_on_daily_bar_ingest.
 
     NO VERDICT WAS PRODUCED BY ANY OF THIS. The 2026-07-24 density probe (0d0f848,
-    engineering/sessions/session_reports/20260724_p4_density_probe_archive.md) was governed by no
-    pre-registered pass_rule, counted entry transitions only, and computed no return,
-    P&L, Sharpe, expectancy, drawdown or cost figure. outcome and verdict_status below
-    are unchanged and the honest gated-verdict count is unmoved.
+    engineering/sessions/session_reports/20260724_p4_density_probe_archive.md) was
+    governed by no pre-registered pass_rule, counted entry transitions only, and computed
+    no return, P&L, Sharpe, expectancy, drawdown or cost figure. outcome and verdict_status
+    below are unchanged and the honest gated-verdict count is unmoved.
 
-    WHY NOT P2: Phase 2 is CLOSED + RATIFIED (2026-07-22) and ingested
-    kraken_<BASE>USD_1h HOURLY ONLY; daily breadth bars were never in P2 scope, so P2
-    closing does not and cannot unblock this entry. The earlier blocked_on_P2 label
-    conflated hourly-panel readiness with the daily-bar need this rule actually has.
+    WHY NOT P2: Phase 2 is CLOSED + RATIFIED (2026-07-22) and ingested kraken_<BASE>USD_1h
+    HOURLY ONLY; daily breadth bars were never in P2 scope, so P2 closing does not
+    and cannot unblock this entry. The earlier blocked_on_P2 label conflated hourly-panel
+    readiness with the daily-bar need this rule actually has.
 
-    WHAT IS ACTUALLY BLOCKED: the parent ungated SMA-trend rule now provably clears the
-    A3.4 five-trade floor -- 80 of 178 evaluable window-symbol slots, 44.9% (density
-    probe 0d0f848). The gated ER(20)>=0.30 entry variant is terminally dead (3 of 178)
-    and stays closed on measured grounds; breadth is not its unblock. Reopening the
-    PARENT requires only daily breadth bars. A candidate source not yet ingested to the
-    cache format the engine reads: trading-bot/local_data/Kraken_batch/master_q4/*_1440.csv
+    WHAT IS ACTUALLY BLOCKED: the parent ungated SMA-trend rule now provably clears
+    the A3.4 five-trade floor -- 80 of 178 evaluable window-symbol slots, 44.9% (density
+    probe 0d0f848). The gated ER(20)>=0.30 entry variant is terminally dead (3 of
+    178) and stays closed on measured grounds; breadth is not its unblock. Reopening
+    the PARENT requires only daily breadth bars. A candidate source not yet ingested
+    to the cache format the engine reads: trading-bot/local_data/Kraken_batch/master_q4/*_1440.csv
     (3,042 headerless daily files).
 
     blocked_on_* is inert to run_campaign._select_entry (exact-equality selector on
@@ -89,30 +84,30 @@ queue:
     so this records a disposition without reopening anything. Full conditions for
     reopening either rule: campaign_knowledge_base.yaml p4_sma_trend_longonly_daily_auto,
     reactivation_condition. Measured basis: exhausted_basis on the same finding. Ledger:
-    engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md items P4-D1 (1h-only breadth cache) and P4-D2
-    (conflicting trade floors).
+    engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md items P4-D1 (1h-only
+    breadth cache) and P4-D2 (conflicting trade floors).
 
-    SUPERSEDED 2026-07-24 -- everything below this line is retained verbatim as
-    history, not as this entry current disposition. The 2026-07-11 block in particular
-    describes a closure under outcome kill_er_gate_mechanism_falsified, a label the KB
-    retracted on 2026-07-22; read it for the run_057 record it carries, not for its
-    verdict language.
+    SUPERSEDED 2026-07-24 -- everything below this line is retained verbatim as history,
+    not as this entry current disposition. The 2026-07-11 block in particular describes
+    a closure under outcome kill_er_gate_mechanism_falsified, a label the KB retracted
+    on 2026-07-22; read it for the run_057 record it carries, not for its verdict
+    language.
 
-    STATUS AS OF 2026-07-11 (updated: run_057 -- the regime-gated ER(20)>=0.30
-    entry-latch refinement -- reached a final KILL verdict and this entry closes.
-    Verdict final per the operator pre-commitment in prescreen_override_20260711.yaml:
-    "the verdict is kill; no further arbitration or gate relief will be sought for
-    this lineage." Pre-registered pass_rule (pre_registration.yaml) applied as sole
-    verdict authority -- FAIL on criterion (a): gated bar-level median Sharpe 0.0000
-    for both BTCUSDT and ETHUSDT (recomputed per the standing metric-basis rule, not
-    the fragment-level protocol_result.yaml nulls) vs required >=0.5791 (BTCUSDT)
-    / >=0.0318 (ETHUSDT); 29/30 window-symbols below the A3.4 five-trade floor. S2
-    secondary mechanism check falsified per s2_mechanism_check_20260711.yaml: identity-verified
-    (42/42 run_057 trades matched to run_054 parent records, 100% percent-return agreement)
-    -- excluded entries (ER<0.30, n=75) mean expectancy +1395.9 bps (SE 821.2) vs
-    included entries (ER>=0.30, n=42) mean +433.7 bps (SE 441.4); the gate anti-selected
-    on this record, roughly 3:1 against its own design rationale. Verdict routing
-    hand-corrected per runs/run_057/artifacts/verdict_interpretation.yaml''s operator_correction_20260711
+    STATUS AS OF 2026-07-11 (updated: run_057 -- the regime-gated ER(20)>=0.30 entry-latch
+    refinement -- reached a final KILL verdict and this entry closes. Verdict final
+    per the operator pre-commitment in prescreen_override_20260711.yaml: "the verdict
+    is kill; no further arbitration or gate relief will be sought for this lineage."
+    Pre-registered pass_rule (pre_registration.yaml) applied as sole verdict authority
+    -- FAIL on criterion (a): gated bar-level median Sharpe 0.0000 for both BTCUSDT
+    and ETHUSDT (recomputed per the standing metric-basis rule, not the fragment-level
+    protocol_result.yaml nulls) vs required >=0.5791 (BTCUSDT) / >=0.0318 (ETHUSDT);
+    29/30 window-symbols below the A3.4 five-trade floor. S2 secondary mechanism check
+    falsified per s2_mechanism_check_20260711.yaml: identity-verified (42/42 run_057
+    trades matched to run_054 parent records, 100% percent-return agreement) -- excluded
+    entries (ER<0.30, n=75) mean expectancy +1395.9 bps (SE 821.2) vs included entries
+    (ER>=0.30, n=42) mean +433.7 bps (SE 441.4); the gate anti-selected on this record,
+    roughly 3:1 against its own design rationale. Verdict routing hand-corrected per
+    runs/run_057/artifacts/verdict_interpretation.yaml''s operator_correction_20260711
     field: the verdict_interpreter stage initially routed refine/pivot (protocol_verdict=refine,
     status=pivot) per the pass_rule''s own "verdict routing decides kill vs pivot"
     delegation, producing a Keltner-family pivot proposal (KB-exhausted, forbidden
@@ -135,10 +130,10 @@ queue:
     pass rule against the independently-recomputed run_054 bar-level baselines (BTCUSDT
     >=0.5791, ETHUSDT >=0.0318 median Sharpe over the same 15-window sets). Operational
     mode: interactive --once stepping only per RUNBOOK 1c / INCIDENT.md (nohup blocked
-    pending operator harness investigation, engineering/sessions/HANDOFF_20260724.md task 1). Ready for dry-run
-    verification, then --once launch on operator go-ahead. Prior brief_path (briefs/research_brief_P4_ts_trend.md,
-    the original parent brief) is superseded for future reference by this refinement
-    brief but not deleted.
+    pending operator harness investigation, engineering/sessions/HANDOFF_20260724.md
+    task 1). Ready for dry-run verification, then --once launch on operator go-ahead.
+    Prior brief_path (briefs/research_brief_P4_ts_trend.md, the original parent brief)
+    is superseded for future reference by this refinement brief but not deleted.
 
     STATUS AS OF 2026-07-10 (updated: metric-basis audit corrected run_054''s verdict
     from protocol_verdict=kill/status=pivot to protocol_verdict=refine/status=refine
@@ -263,64 +258,58 @@ queue:
   verdict_status: ungated
 - id: XS_momentum
   brief_path: briefs/research_brief_XS_momentum.md
-  status: done   # executed 2026-07-22 on the RESEARCH PATH (vectorized panel backtester,
-                 # NOT the production engine -- engine lacks panel support, ledger G3
-                 # blocker). Any promotion/ratification must re-validate once the engine
-                 # gains partitioned multi-symbol + netting support.
+  status: done
   priority: 2
   source: agent
   notes: 'P2 CLOSED + RATIFIED 2026-07-22 (flipped blocked_on_P2 -> ready). Instrument
     universe ratified = all 19 ingested Kraken pairs (USD-quoted, kraken_<BASE>USD_1h),
     NOT liquid-12. Decision statistic corrected from raw n_eff (a directional-concentration
     test, wrong for a dollar-neutral book) to DEMEANED correlation: liquid-12 demeaned
-    rho_bar -0.0800 (floor -0.0909), flagged-7 -0.1588 (floor -0.1667) -- both at the
-    orthogonality floor => genuine idiosyncratic dispersion to rank on. all-19 is PSD on
-    the listwise common window (minEig +0.1575); the as-produced "non-PSD/structural"
+    rho_bar -0.0800 (floor -0.0909), flagged-7 -0.1588 (floor -0.1667) -- both at
+    the orthogonality floor => genuine idiosyncratic dispersion to rank on. all-19
+    is PSD on the listwise common window (minEig +0.1575); the as-produced "non-PSD/structural"
     verdict was a pairwise-deletion estimator artifact. Full record + director-correction
-    appendix: engineering/sessions/session_reports/20260722_xs_momentum_universe.md; recompute:
-    engineering/sessions/session_reports/_verify_xs_neff.py.
+    appendix: engineering/sessions/session_reports/20260722_xs_momentum_universe.md;
+    recompute: engineering/sessions/session_reports/_verify_xs_neff.py.
 
-    2026-07-22 RUN (research path): validation gate PASSED (reproduced all 30
-    run_054 slots exactly, pre-registered tolerance) before any XS result was
-    trusted. XS primary spec (7d trailing-return rank, daily rebalance, dollar-neutral
-    long/short top-bottom third, min n=6, Kraken perp 5bps): net Sharpe 1.325 / gross
-    1.665, cost drag ~0.34 Sharpe, same-bar lookahead ruled out, but DECAYING
-    (post-2021 net 0.77; 2025 net 0.07). Fork to vectorized research path VINDICATED
-    as an ENGINEERING result -- the panel backtester reproduces the archived engine
-    exactly. Tool: strategy-research/tools/panel_backtester.py; ledger G3.
+    2026-07-22 RUN (research path): validation gate PASSED (reproduced all 30 run_054
+    slots exactly, pre-registered tolerance) before any XS result was trusted. XS
+    primary spec (7d trailing-return rank, daily rebalance, dollar-neutral long/short
+    top-bottom third, min n=6, Kraken perp 5bps): net Sharpe 1.325 / gross 1.665,
+    cost drag ~0.34 Sharpe, same-bar lookahead ruled out, but DECAYING (post-2021
+    net 0.77; 2025 net 0.07). Fork to vectorized research path VINDICATED as an ENGINEERING
+    result -- the panel backtester reproduces the archived engine exactly. Tool: strategy-research/tools/panel_backtester.py;
+    ledger G3.
 
     2026-07-22 VERDICT CORRECTION (C7-EXT audit). This entry previously recorded a
-    "C7-style verdict REFINE (positive lean)". WITHDRAWN -- it was never a gated
-    verdict. XS_momentum was pre-registered under NO pass_rule (its brief has no
-    pass_rule and no machine_constraints), has no runs/ directory or
-    pre_registration.yaml, and executed off the orchestrator so the verdict evaluator
-    never ran. The "promote Sharpe bar" and "30% DD bar" it was scored against were
-    the generic code fallback formerly at run_phase1_research.py:1681-1682, not
-    registered criteria -- the exact artifact ledger item C7 exists to abolish.
-    Status is now ungated / verdict void. The MEASUREMENTS stand and are NOT
-    withdrawn; they are simply not a verdict, and XS_momentum is neither promoted,
-    refined, nor killed by them. Re-entry requires a pre-registered pass_rule plus
-    the four C7-EXT preconditions (funding completeness -- a daily-rebalanced perp
-    book spans ~3 funding intervals and funding was never modeled; distribution
-    stats; deployable-today; a written mechanism for the anomalous lag response).
-    See ledger C7-EXT and KB xs_momentum_cost_surviving_but_decaying.
+    "C7-style verdict REFINE (positive lean)". WITHDRAWN -- it was never a gated verdict.
+    XS_momentum was pre-registered under NO pass_rule (its brief has no pass_rule
+    and no machine_constraints), has no runs/ directory or pre_registration.yaml,
+    and executed off the orchestrator so the verdict evaluator never ran. The "promote
+    Sharpe bar" and "30% DD bar" it was scored against were the generic code fallback
+    formerly at run_phase1_research.py:1681-1682, not registered criteria -- the exact
+    artifact ledger item C7 exists to abolish. Status is now ungated / verdict void.
+    The MEASUREMENTS stand and are NOT withdrawn; they are simply not a verdict, and
+    XS_momentum is neither promoted, refined, nor killed by them. Re-entry requires
+    a pre-registered pass_rule plus the four C7-EXT preconditions (funding completeness
+    -- a daily-rebalanced perp book spans ~3 funding intervals and funding was never
+    modeled; distribution stats; deployable-today; a written mechanism for the anomalous
+    lag response). See ledger C7-EXT and KB xs_momentum_cost_surviving_but_decaying.
 
     '
-  run_ids: [research_path_panel_backtester_20260722]
-  # RELABELLED 2026-07-23 via the G6 closed-schema validator (record_schema.py):
-  # ungated_measurement_no_admissible_verdict -> ungated_decayed_measurement_no_admissible_verdict.
-  # The outcome string now carries the edge-decay fact; verdict_status added
-  # explicitly. No verdict count effect -- never gated. Measurements stand (KB).
+  run_ids:
+  - research_path_panel_backtester_20260722
   outcome: ungated_decayed_measurement_no_admissible_verdict
   verdict_status: ungated
-  verdict_void_reason: >
-    Full-sample net Sharpe 1.325 on a gate-validated backtester (30-slot run_054
-    reproduction, exact), decaying to net Sharpe 0.07 in its latest full in-sample
-    year (2025) -- edge decay, explicitly NOT trade sparsity (contrast run_057).
-    No admissible verdict because no pre-registered pass_rule was ever declared AND
-    no obtainable 2026 holdout can statistically resolve the Sharpe this year
+  verdict_void_reason: 'Full-sample net Sharpe 1.325 on a gate-validated backtester
+    (30-slot run_054 reproduction, exact), decaying to net Sharpe 0.07 in its latest
+    full in-sample year (2025) -- edge decay, explicitly NOT trade sparsity (contrast
+    run_057). No admissible verdict because no pre-registered pass_rule was ever declared
+    AND no obtainable 2026 holdout can statistically resolve the Sharpe this year
     (SE >= 1.3 for any T <= 0.56). Re-entry requires a pre-registered pass_rule plus
     the four C7-EXT preconditions. Full record: KB xs_momentum_cost_surviving_but_decaying.
+
+    '
 - id: H-041-C-v2
   brief_path: briefs/H-041-C-v2.md
   status: done
@@ -364,3 +353,18 @@ queue:
   outcome: completed_rejected
   verdict_status: gated
   pass_rule_evaluation_ref: runs/run_059/artifacts/pass_rule_evaluation.yaml
+- id: FUNDING_MR_4H_RETEST
+  brief_path: briefs/FUNDING_MR_4H_RETEST.md
+  status: ready
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: 4h branch of funding_rate_continuous_mean_reversion_expanded_auto's reactivation_condition
+    - the last untested granularity. Thresholds INHERITED verbatim from the daily
+    sibling (median_sharpe>0.8, max_dd<30), never re-derived. Protocol windows copied
+    programmatically from funding_mr_daily_retest_v1.json (verified identical, 49
+    windows). 4h price data fetched 2026-08-27, 9143 bars/symbol, 100% window coverage,
+    ends 2024-01-02 (nowhere near the 2026 seal). research_only=True (binance unlisted
+    in venue_tradability) so this cannot reach the holdout. Operator approved launch
+    2026-08-27; pass_rule presented for ratification per the H-041-C-v2 precedent.
+  run_ids: []
