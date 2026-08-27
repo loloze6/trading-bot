@@ -105,11 +105,49 @@ def _write_empty_kb(root: Path) -> None:
         yaml.safe_dump({"findings": []}, f)
 
 
+def _write_kb(root: Path, findings: list) -> None:
+    kb_path = root / "campaign_record" / "campaign_knowledge_base.yaml"
+    kb_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(kb_path, "w", encoding="utf-8") as f:
+        yaml.safe_dump({"findings": findings}, f)
+
+
+def _refusing_kb_findings(*tags: str) -> list:
+    """E-036 S2: one Layer-1 (KB) 'exhausted, no reactivation clause' finding
+    per tag -- an UNCONDITIONAL REFUSE, independent of instrument/timeframe/
+    composition. Used (instead of a Layer-2 digest collision) to drive the
+    retry/escalation POLICY tests below: this call site
+    (_route_post_innovation_expansion) runs before backtest_specification
+    has produced any candidate_strategy_config.json, so it can never supply
+    a candidate_config -- Layer 2 can therefore never return REPEAT here
+    (design point 3: no fingerprint on the candidate side means no REPEAT is
+    provable), only NEIGHBOUR/NOVEL, both of which ADMIT. A bare digest
+    collision (_kc_digest) can no longer manufacture a repeated REFUSE at
+    this call site; Layer 1 is untouched by E-036 and still can."""
+    return [
+        {"id": f"keltner_{tag.lower()}_no_edge", "hypothesis_id": f"KELTNER_{tag}",
+         "evidence_runs": [], "exhausted": True, "reactivation_condition": None}
+        for tag in tags
+    ]
+
+
 def _refused_candidate(tag: str, instrument: str) -> dict:
-    """A candidate whose (family, instrument, timeframe) exactly matches a
-    digest triple -- Layer 2 REFUSE, distinct text per `tag` so consecutive
-    attempts carry genuinely DIFFERENT refusal reasons (not the same string
-    repeated), matching what a real retry sequence would look like."""
+    """A candidate whose hypothesis_id (KELTNER_<tag>) matches a Layer-1 KB
+    finding built by _refusing_kb_findings() -- an unconditional REFUSE,
+    distinct text per `tag` so consecutive attempts carry genuinely
+    DIFFERENT refusal reasons (not the same string repeated), matching what
+    a real retry sequence would look like.
+
+    E-036 S2 update: before this story, the REFUSE here came from Layer 2
+    (a digest triple collision on family/instrument/timeframe). Since a bare
+    triple collision can now only ever ADMIT as a NEIGHBOUR (this call site
+    never has a candidate_strategy_config to prove a REPEAT), the tests that
+    actually need a REFUSE to drive their retry-counter/escalation policy
+    now pair this candidate with _refusing_kb_findings(tag) instead. The
+    instrument/target_market fields are kept (harmless, Layer 1 is checked
+    first and never looks at them) so callers that only need "a plausible
+    keltner-shaped candidate" (e.g. the flag-off tests, which never invoke
+    the gate at all) are unaffected."""
     return {
         "hypothesis_id": f"KELTNER_{tag}", "target_market": [instrument], "timeframe": "4h",
         "thesis": f"Keltner channel mean reversion on {instrument} ({tag}).",
@@ -322,12 +360,14 @@ def test_flag_on_admit_routes_to_validation_and_resets_counter():
 # ---------------------------------------------------------------------------
 
 def test_flag_on_three_refuses_then_admit_carries_prior_reason_each_time():
+    """E-036 S2: REFUSE for attempts 1-3 is now driven by Layer 1 (KB), not a
+    Layer-2 digest collision -- see _refusing_kb_findings()'s docstring for
+    why a bare digest triple can no longer manufacture a REFUSE at this call
+    site."""
     root = rpr.ROOT
     _set_flag(root, True)
-    _write_digest(root, _kc_digest(
-        ("AVAXUSDT", "run_030"), ("SOLUSDT", "run_031"), ("ETHUSDT", "run_032"),
-    ))
-    _write_empty_kb(root)
+    _write_digest(root, {})
+    _write_kb(root, _refusing_kb_findings("A", "B", "C"))
     run_id = "run_921"
     run_dir = _minimal_run(root, run_id)
 
@@ -370,12 +410,12 @@ def test_flag_on_three_refuses_then_admit_carries_prior_reason_each_time():
 
 
 def test_flag_on_uses_exactly_four_gate_calls_for_three_refuse_then_admit(monkeypatch):
+    """E-036 S2: same KB-based REFUSE fixture as the test above (see
+    _refusing_kb_findings())."""
     root = rpr.ROOT
     _set_flag(root, True)
-    _write_digest(root, _kc_digest(
-        ("AVAXUSDT", "run_030"), ("SOLUSDT", "run_031"), ("ETHUSDT", "run_032"),
-    ))
-    _write_empty_kb(root)
+    _write_digest(root, {})
+    _write_kb(root, _refusing_kb_findings("A", "B", "C"))
     run_id = "run_922"
     run_dir = _minimal_run(root, run_id)
 
@@ -406,12 +446,12 @@ def test_flag_on_uses_exactly_four_gate_calls_for_three_refuse_then_admit(monkey
 # ---------------------------------------------------------------------------
 
 def test_flag_on_four_consecutive_refuses_escalates_and_stops():
+    """E-036 S2: 4 consecutive REFUSEs now come from Layer 1 (KB), not a
+    Layer-2 digest collision -- see _refusing_kb_findings()'s docstring."""
     root = rpr.ROOT
     _set_flag(root, True)
-    _write_digest(root, _kc_digest(
-        ("AVAXUSDT", "run_030"), ("SOLUSDT", "run_031"), ("ETHUSDT", "run_032"), ("DOTUSDT", "run_033"),
-    ))
-    _write_empty_kb(root)
+    _write_digest(root, {})
+    _write_kb(root, _refusing_kb_findings("A", "B", "C", "D"))
     run_id = "run_923"
     run_dir = _minimal_run(root, run_id)
     _write_state(run_dir, _fresh_state(run_id))
@@ -492,10 +532,10 @@ def test_counter_independent_of_refinements_used_across_same_counter_reentry():
     audit_log bug was before E-030 S1.5 Piece 2 fixed it."""
     root = rpr.ROOT
     _set_flag(root, True)
-    _write_digest(root, _kc_digest(
-        ("AVAXUSDT", "run_030"), ("SOLUSDT", "run_031"),
-    ))
-    _write_empty_kb(root)
+    # E-036 S2: KB-based REFUSE, not a Layer-2 digest collision -- see
+    # _refusing_kb_findings()'s docstring.
+    _write_digest(root, {})
+    _write_kb(root, _refusing_kb_findings("A", "B"))
     run_id = "run_925"
     run_dir = _minimal_run(root, run_id, hypothesis_card=_refused_candidate("A", "AVAXUSDT"))
     _write_state(run_dir, _fresh_state(run_id))  # counters.refinements_used == 0

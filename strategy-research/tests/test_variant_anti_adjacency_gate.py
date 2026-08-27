@@ -43,6 +43,7 @@ sys.path.insert(0, str(TOOLS_PATH))
 
 import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
+import build_exclusion_digest as bed  # noqa: E402
 
 _SR = Path(__file__).parent.parent
 _REAL_KB_PATH = _SR / "campaign_record" / "campaign_knowledge_base.yaml"
@@ -78,9 +79,38 @@ def _write_digest(root: Path, families: dict) -> None:
 
 
 def _kc_digest(*instrument_run_pairs, timeframe="4h") -> dict:
+    """Coarse-fidelity entries (no fingerprint) -- exactly the shape a
+    pre-E-036 digest, or a run with no candidate_strategy_config.json, has.
+    E-036 S2 design point 3: a coarse match can never produce REPEAT, only
+    NEIGHBOUR -- so a bare (family, instrument, timeframe) collision built
+    with this helper ADMITs (as a neighbour), it does not REFUSE."""
     return {"keltner_channel": {"confidence": "structural_indicator_id", "triples": [
-        {"instrument": inst, "timeframe": timeframe, "run_ids": [run_id]}
+        {"instrument": inst, "timeframe": timeframe, "fidelity": "coarse",
+         "fingerprint": None, "run_ids": [run_id]}
         for inst, run_id in instrument_run_pairs
+    ]}}
+
+
+def _keltner_config(atr_mult: float = 2.0, regime: str = "mean_reversion") -> dict:
+    """A candidate_strategy_config.json-shaped dict, minimal but realistic
+    (same shape as runs/run_016/artifacts/candidate_strategy_config.json)."""
+    return {
+        "regime_detector": {"mode": "threshold_rules", "rules": [{"regime": regime}]},
+        "strategies": {"regimes": {regime: {"components": [
+            {"id": "keltner", "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+             "params": {"atr_multiplier": atr_mult, "ema_period": 20}, "weight": 1.0, "transforms": []},
+        ]}}},
+    }
+
+
+def _kc_digest_structured(instrument: str, timeframe: str, run_id: str, config: dict) -> dict:
+    """A fidelity=structured digest entry carrying the REAL composition
+    fingerprint of `config` -- used to build a genuine REPEAT (identical
+    fingerprint), as opposed to _kc_digest's coarse, collision-only shape."""
+    fingerprint = bed.composition_fingerprint(config)
+    return {"keltner_channel": {"confidence": "structural_indicator_id", "triples": [
+        {"instrument": instrument, "timeframe": timeframe, "fidelity": "structured",
+         "fingerprint": fingerprint, "run_ids": [run_id]},
     ]}}
 
 
@@ -89,11 +119,20 @@ def _write_empty_kb(root: Path) -> None:
 
 
 def _full_run(root: Path, run_id: str, *, hypothesis_card: dict, expanded_variants: list,
-              selected_variant_id: str, config_rationale=None) -> Path:
+              selected_variant_id: str, config_rationale=None, config: dict = None) -> Path:
     """Same fixture shape as test_variant_selection_record.py's _minimal_run,
     generalized to accept an arbitrary hypothesis_card dict (library_lookup /
     edge_source / thesis / target_market / timeframe) so tests can build
-    realistic, classify_family()-resolvable candidates."""
+    realistic, classify_family()-resolvable candidates.
+
+    config (E-036 S2): backtest_spec.yaml's own `config` field --
+    _route_post_variant_selection reads this as the candidate's structured
+    composition (see that function's own comment for why: it is the exact
+    dict later copied verbatim to candidate_strategy_config.json). Defaults
+    to the pre-E-036 trivial `{"regime_detector": {}}` shape so every
+    existing test that does not care about composition is unaffected;
+    tests that need a genuine REPEAT pass a real one (see
+    _keltner_config())."""
     run_dir = root / "runs" / run_id
     artifacts = run_dir / "artifacts"
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -107,7 +146,7 @@ def _full_run(root: Path, run_id: str, *, hypothesis_card: dict, expanded_varian
     _write_yaml(artifacts / "backtest_spec.yaml", {
         "hypothesis_id": hid,
         "status": "spec_ready",
-        "config": {"regime_detector": {}},
+        "config": config if config is not None else {"regime_detector": {}},
         "config_rationale": config_rationale or [{"hypothesis_claim": "x", "config_choice": "y"}],
         "selected_variant_id": selected_variant_id,
     })
@@ -289,6 +328,15 @@ def test_admit_returns_none_and_writes_result_artifact():
 # ---------------------------------------------------------------------------
 
 def test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site():
+    """E-036 S2 update: the digest/config here now carry a GENUINE repeat
+    (fidelity=structured, identical composition fingerprint on both sides)
+    rather than a bare triple collision -- since E-036, a bare collision can
+    only ever ADMIT as a NEIGHBOUR (see test_multi_symbol_parent_card_
+    checks_every_instrument_not_just_one for that case), so keeping the
+    REFUSE contrast this test exists to prove requires a fixture the new
+    gate would ALSO recognize as a real repeat, not merely an adjacent
+    triple. The thing under test -- the OLD call site structurally cannot
+    see the pivot, the NEW one does -- is unchanged."""
     root = rpr.ROOT
     # Parent card: keltner_channel on BTCUSDT/1h -- CLEAN, nothing in the
     # digest matches this triple.
@@ -299,18 +347,21 @@ def test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site():
         "thesis": "Keltner channel mean reversion on BTC, 1h.",
     }
     # The variant that innovation_expansion/backtest_specification actually
-    # picked pivots to AVAXUSDT/4h -- which DOES collide with the digest.
+    # picked pivots to AVAXUSDT/4h -- which DOES collide with the digest,
+    # with the IDENTICAL composition (atr_mult=2.0) as run_030.
+    pivoted_config = _keltner_config(atr_mult=2.0)
     pivoted_variant = {"variant_id": "V-PIVOT", "target_market": "AVAXUSDT", "timeframe": "4h"}
     run_id = "run_957"
     run_dir = _full_run(root, run_id, hypothesis_card=clean_card,
-                         expanded_variants=[pivoted_variant], selected_variant_id="V-PIVOT")
+                         expanded_variants=[pivoted_variant], selected_variant_id="V-PIVOT",
+                         config=pivoted_config)
     _record_selection(root, run_dir)
 
     selection = yaml.safe_load((run_dir / "artifacts" / "variant_selection.yaml").read_text(encoding="utf-8"))
     assert selection["instrument"] == "AVAXUSDT"
     assert selection["timeframe"] == "4h"
 
-    _write_digest(root, _kc_digest(("AVAXUSDT", "run_030")))
+    _write_digest(root, _kc_digest_structured("AVAXUSDT", "4h", "run_030", pivoted_config))
     _write_empty_kb(root)
 
     # OLD call site: only ever sees the PARENT card -- clean -- ADMITs.
@@ -347,6 +398,10 @@ def test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site():
         (run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").read_text(encoding="utf-8"))
     assert result["route"] == "refuse"
     assert result["layer"] == "digest"
+    assert result["outcome"] == "repeat", (
+        "E-036 S2: REFUSE must only ever be reached via a genuine REPEAT "
+        "(identical composition fingerprint), never a bare triple collision"
+    )
     # Success signal (E-034/EPIC.md): the result artifact must reference the
     # CHOSEN VARIANT's own identifier, not just the base hypothesis id.
     assert result["selected_variant_id"] == "V-PIVOT"
@@ -414,6 +469,10 @@ def test_calibration_case_still_admits_through_the_new_call_site():
 # ---------------------------------------------------------------------------
 
 def test_refuse_escalates_immediately_no_retry_state_written():
+    """E-036 S2: REFUSE now requires a genuine repeat (identical composition
+    fingerprint), not a bare triple collision -- see _kc_digest_structured.
+    The policy under test (immediate escalation, distinct flag, no retry
+    state) is unchanged; only the fixture needed to reach REFUSE changed."""
     root = rpr.ROOT
     card = {
         "hypothesis_id": "KELTNER_REFUSE_TEST",
@@ -421,10 +480,12 @@ def test_refuse_escalates_immediately_no_retry_state_written():
         "target_market": "SOLUSDT", "timeframe": "4h",
         "thesis": "Keltner channel on SOL, 4h.",
     }
+    sol_config = _keltner_config(atr_mult=2.5)
     run_dir = _full_run(root, "run_958", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1")
+                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1",
+                         config=sol_config)
     _record_selection(root, run_dir)
-    _write_digest(root, _kc_digest(("SOLUSDT", "run_031")))
+    _write_digest(root, _kc_digest_structured("SOLUSDT", "4h", "run_031", sol_config))
     _write_empty_kb(root)
     _write_yaml(run_dir / "pipeline_state.yaml",
                 {"run_id": "run_958", "status": "active", "flags": {}, "audit_log": {}})
@@ -447,6 +508,8 @@ def test_refuse_escalates_immediately_no_retry_state_written():
 
 
 def test_refuse_classifies_via_existing_run_campaign_mechanism_and_is_not_quarantine_safe():
+    """E-036 S2: same fixture upgrade as test_refuse_escalates_immediately_
+    no_retry_state_written -- REFUSE now requires a genuine repeat."""
     root = rpr.ROOT
     card = {
         "hypothesis_id": "KELTNER_REFUSE_CLASSIFY_TEST",
@@ -454,10 +517,12 @@ def test_refuse_classifies_via_existing_run_campaign_mechanism_and_is_not_quaran
         "target_market": "ADAUSDT", "timeframe": "4h",
         "thesis": "Keltner channel on ADA, 4h.",
     }
+    ada_config = _keltner_config(atr_mult=1.8)
     run_dir = _full_run(root, "run_959", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1")
+                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1",
+                         config=ada_config)
     _record_selection(root, run_dir)
-    _write_digest(root, _kc_digest(("ADAUSDT", "run_032")))
+    _write_digest(root, _kc_digest_structured("ADAUSDT", "4h", "run_032", ada_config))
     _write_empty_kb(root)
     _write_yaml(run_dir / "pipeline_state.yaml",
                 {"run_id": "run_959", "status": "active", "flags": {}, "audit_log": {}})
@@ -497,6 +562,17 @@ def test_flag_table_carries_the_new_flag():
 # ---------------------------------------------------------------------------
 
 def test_multi_symbol_parent_card_checks_every_instrument_not_just_one():
+    """E-036 S2 update: _kc_digest is coarse (no fingerprint), so a
+    collision on ETHUSDT alone can no longer REFUSE -- it can only ADMIT as
+    a NEIGHBOUR (design point 3: a coarse match never produces REPEAT). The
+    thing this test exists to prove -- that EVERY named instrument is
+    actually checked, not just element 0 -- still holds and is now proven a
+    different way: the ETHUSDT collision must still show up as a neighbour
+    in the result artifact, not silently vanish because BTCUSDT (checked
+    first) came back NOVEL. Before the three-way-outcome-aware selection
+    fix in _route_post_variant_selection, `next((r for r in results if
+    r.route == 'refuse'), results[0])` would have picked BTCUSDT's NOVEL
+    result and discarded the ETHUSDT NEIGHBOUR entirely."""
     root = rpr.ROOT
     multi_symbol_card = {
         "hypothesis_id": "MULTI_SYM_PARENT",
@@ -518,8 +594,7 @@ def test_multi_symbol_parent_card_checks_every_instrument_not_just_one():
         "whichever symbol got dropped"
     )
 
-    # Only ETHUSDT collides in the digest. If the gate only ever checked the
-    # FIRST instrument (BTCUSDT), it would wrongly ADMIT here.
+    # Only ETHUSDT collides in the digest (coarse -- no fingerprint).
     _write_digest(root, _kc_digest(("ETHUSDT", "run_030")))
     _write_empty_kb(root)
     _write_yaml(run_dir / "pipeline_state.yaml",
@@ -527,10 +602,20 @@ def test_multi_symbol_parent_card_checks_every_instrument_not_just_one():
     _set_flags(root, variant_gate=True, variant_record=True)
 
     route = rpr._route_post_variant_selection(run_dir, run_id)
-    assert route == "human_pause", (
-        "a collision on EITHER named instrument must REFUSE -- checking "
-        "only element 0 would have silently ADMITted this candidate"
+    assert route is None, (
+        "a coarse collision (no composition evidence on either side) must "
+        "ADMIT as a NEIGHBOUR, not REFUSE -- this is the E-036 fix, not a "
+        "regression of the 'check every instrument' guarantee"
     )
+    result = yaml.safe_load(
+        (run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").read_text(encoding="utf-8"))
+    assert result["route"] == "admit"
+    assert result["outcome"] == "neighbour", (
+        "the ETHUSDT collision must still be visible as a neighbour in the "
+        "recorded result -- checking only element 0 (BTCUSDT, which is "
+        "NOVEL) would have silently discarded it"
+    )
+    assert any("run_030" in n["run_ids"] for n in result["neighbours"])
 
 
 def test_multi_symbol_parent_card_admits_when_no_instrument_collides():
