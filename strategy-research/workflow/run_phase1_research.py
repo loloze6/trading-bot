@@ -4542,10 +4542,27 @@ def _compare_llm_vs_machine_power(run_id: str, hyp_id: str, machine: dict, card:
         _log_power_check_discrepancy(run_id, hyp_id, machine, llm_reported, discrepancies)
 
 
-# 2026-07-07: A8.6 block_size, timeframe-aware (mirrors prescreen_signal.py's
-# _BLOCK_SIZE_1H/_BLOCK_SIZE_1D — both must be updated together, same as the
-# power_check.py/prescreen_signal.py mirroring this docstring already calls out).
-_A86_BLOCK_SIZE_BY_TIMEFRAME = {"1h": 24, "1d": 1}
+# 2026-08-27: the table is gone. A8.6's block_size is BARS PER DAY, which is
+# arithmetic on the timeframe, not a fact to be remembered -- see
+# tools/timeframe.py for the full history. The previous
+# `{"1h": 24, "1d": 1}` + silent `.get(tf, 24)` fallback gave every other
+# timeframe the 1h value: for 4h that made n_eff 4x too small and killed
+# run_060 with an artifact verdict. The 2026-07-07 fix had already hit this
+# once for 1d and repaired it by ADDING a table entry, which guaranteed the
+# recurrence. Deriving it means a timeframe nobody has tried yet is correct on
+# first use, and all three former mirrors now share one implementation.
+def _a86_block_size(timeframe) -> int:
+    """A8.6 autocorrelation block size = bars per day, DERIVED.
+
+    Imported from tools/timeframe.py so this, tools/power_check.py and
+    tools/prescreen_signal.py cannot drift apart -- previously they were held
+    in sync only by comments saying "both must be updated together", which is a
+    convention, not a mechanism, and they had already drifted."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    from timeframe import bars_per_day
+    return bars_per_day(timeframe)
 
 
 def _run_a86_power_check(artifacts: Path) -> dict:
@@ -4583,7 +4600,7 @@ def _run_a86_power_check(artifacts: Path) -> dict:
     # every prior run's exact behavior when the field is absent.
     brief_path = artifacts / "research_brief.yaml"
     timeframe = (load_yaml(brief_path) or {}).get("timeframe", "1h") if brief_path.exists() else "1h"
-    block_size = _A86_BLOCK_SIZE_BY_TIMEFRAME.get(timeframe, 24)
+    block_size = _a86_block_size(timeframe)
 
     if is_market_wide:
         rho = _load_rho_bar()
