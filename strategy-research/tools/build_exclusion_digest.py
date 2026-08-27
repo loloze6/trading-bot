@@ -44,6 +44,7 @@ generation time, not scoped to one).
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -56,6 +57,11 @@ _SR = _HERE.parent                                # strategy-research/
 DEFAULT_RUNS_DIR = _SR / "runs"
 DEFAULT_CAMPAIGN_STATE_PATH = _SR / "campaign_record" / "campaign_state.yaml"
 DEFAULT_OUT_PATH = _SR / "campaign_record" / "exclusion_digest.yaml"
+
+# E-036 S2: the structured artifact a composition fingerprint is derived
+# from, when it exists. Produced later than hypothesis_card.yaml (by
+# backtest_specification) -- see module docstring addendum below.
+CANDIDATE_CONFIG_FILENAME = "candidate_strategy_config.json"
 
 # ---------------------------------------------------------------------------
 # Family classification
@@ -197,6 +203,83 @@ def extract_timeframes(card: dict) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# Composition fingerprint -- E-036 S2
+#
+# WHY THIS EXISTS (engineering/roadmap/E-036/EPIC.md, "The design", point 1):
+# the (family, instrument, timeframe) triple above says nothing about WHAT
+# was actually run -- a keltner candidate at atr_mult=3.0 reads identically
+# to one at atr_mult=2.0. What a strategy actually is lives in
+# candidate_strategy_config.json's `strategies.regimes.*.components[]`
+# (id/class/params/weight, allocated per regime) plus `regime_detector`
+# (mode + rule count). This section derives a fingerprint from exactly that
+# shape -- see runs/run_009/artifacts/candidate_strategy_config.json for the
+# concrete shape this was built against.
+# ---------------------------------------------------------------------------
+
+def _canon_params(params) -> list:
+    """Sorted (key, value) pairs, JSON/YAML-safe, so two params dicts built
+    in different key order still compare and serialize identically."""
+    if not isinstance(params, dict):
+        return []
+    return [[str(k), params[k]] for k in sorted(params, key=str)]
+
+
+def composition_fingerprint(config: dict) -> dict | None:
+    """Derive the composition fingerprint from a candidate_strategy_config.
+    json-shaped dict: the sorted set of (regime, component_id, sorted(params),
+    weight) across strategies.regimes.*.components[], plus the detector's
+    `mode` and rule count (EPIC.md's design, point 1 -- literal spec, not a
+    paraphrase).
+
+    Returns None for a non-dict/empty input (nothing to fingerprint from) --
+    callers must treat None as "no fingerprint available", never as "empty
+    fingerprint equal to another empty one". A present-but-structurally-bare
+    config (e.g. `{}`) still returns a real fingerprint dict (mode=None,
+    rule_count=0, components=[]) -- the caller HAD a config, it was just
+    empty; that is different from not having one at all.
+
+    Deliberately excludes `transforms`/`history_transforms`,
+    `lookback`, and `warmup` -- the design's point 1 names exactly
+    `(regime, component_id, sorted(params), weight)` plus the detector's
+    `mode` and rule count; nothing else is part of identity. Regime is
+    folded in by keying on the regime each component sits under (point 4) --
+    the same component under a different regime produces a different
+    fingerprint entry."""
+    if not isinstance(config, dict) or not config:
+        return None
+
+    strategies = config.get("strategies") or {}
+    regimes = strategies.get("regimes") or {}
+    components = []
+    if isinstance(regimes, dict):
+        for regime, regime_block in regimes.items():
+            if not isinstance(regime_block, dict):
+                continue  # e.g. a regime with no strategy assigned (null)
+            for comp in regime_block.get("components") or []:
+                if not isinstance(comp, dict):
+                    continue
+                components.append([
+                    str(regime),
+                    str(comp.get("id")),
+                    _canon_params(comp.get("params")),
+                    comp.get("weight"),
+                ])
+    components.sort(key=lambda c: (c[0], c[1], json.dumps(c[2], sort_keys=True),
+                                    c[3] if isinstance(c[3], (int, float)) else 0))
+
+    detector = config.get("regime_detector") or {}
+    mode = detector.get("mode") if isinstance(detector, dict) else None
+    rules = detector.get("rules") if isinstance(detector, dict) else None
+    rule_count = len(rules) if isinstance(rules, list) else 0
+
+    return {"mode": mode, "rule_count": rule_count, "components": components}
+
+
+def _fingerprint_sort_key(fingerprint: dict | None) -> str:
+    return json.dumps(fingerprint, sort_keys=True) if fingerprint is not None else ""
+
+
+# ---------------------------------------------------------------------------
 # Scan
 # ---------------------------------------------------------------------------
 
@@ -205,16 +288,37 @@ def _load_yaml(path: Path):
         return yaml.safe_load(f) or {}
 
 
+def _load_json(path: Path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def scan_run_triples(runs_dir: Path) -> dict:
     """Scan every runs/run_*/artifacts/hypothesis_card.yaml under runs_dir.
 
     Returns {family: {"confidence": str, "triples": [{"instrument": str,
-    "timeframe": str, "run_ids": [str, ...]}, ...]}}.
+    "timeframe": str, "fidelity": "structured"|"coarse",
+    "fingerprint": dict|None, "run_ids": [str, ...]}, ...]}}.
+
+    E-036 S2: each entry now additionally carries a composition fingerprint
+    (see composition_fingerprint()), derived from the run's own
+    candidate_strategy_config.json when one exists, and a `fidelity` tag
+    ("structured" when it does, "coarse" when it doesn't -- see EPIC.md's
+    design point 1). Entries at the SAME (instrument, timeframe) with
+    DIFFERENT fingerprints are kept as SEPARATE triples -- collapsing them
+    is exactly the over-coarse behavior this story exists to fix (a
+    parameter sweep must remain visible as distinct entries). Coarse
+    entries at the same (instrument, timeframe) still merge into one, as
+    before this change -- there is no fingerprint to distinguish them by,
+    and pretending there is would fabricate a distinction the record never
+    captured.
 
     Deterministic: iterates run directories in sorted order, never touches
     anything outside runs_dir, never writes. Malformed/unparseable cards are
     skipped (recorded in the digest's `skipped_runs` list), never raise --
-    a single bad card must not crash the whole scan.
+    a single bad card must not crash the whole scan. An unparseable
+    candidate_strategy_config.json degrades to fidelity="coarse" for that
+    run alone (the card itself is fine) -- it does not skip the run.
     """
     families: dict[str, dict] = {}
     skipped: list[dict] = []
@@ -242,6 +346,23 @@ def scan_run_triples(runs_dir: Path) -> dict:
         instruments = extract_instruments(card)
         timeframes = extract_timeframes(card)
 
+        # E-036 S2, design point 1: prefer the structured config; degrade
+        # honestly (fidelity="coarse") when it is absent or unparseable --
+        # never silently treat "no config" as "no match" (i.e. never drop
+        # the run, only its composition detail).
+        config_path = run_dir / "artifacts" / CANDIDATE_CONFIG_FILENAME
+        fingerprint = None
+        fidelity = "coarse"
+        if config_path.exists():
+            try:
+                config = _load_json(config_path)
+            except Exception:  # noqa: BLE001 -- must not crash the scan
+                config = None
+            if isinstance(config, dict):
+                fingerprint = composition_fingerprint(config)
+                if fingerprint is not None:
+                    fidelity = "structured"
+
         bucket = families.setdefault(family, {"confidence": confidence, "triples": {}})
         # A family can be reached via different confidence levels across
         # runs (e.g. an older card falls to keyword_bounded while a newer
@@ -257,15 +378,25 @@ def scan_run_triples(runs_dir: Path) -> dict:
             timeframes = ["_unspecified"]
         for instrument in instruments:
             for timeframe in timeframes:
-                key = (instrument, timeframe)
-                bucket["triples"].setdefault(key, []).append(run_dir.name)
+                # Coarse entries for the same (instrument, timeframe) merge
+                # (no fingerprint to split them by); structured entries only
+                # merge when the fingerprint is IDENTICAL -- a different
+                # fingerprint is a different entry, even at the same triple.
+                key = (instrument, timeframe, fidelity, _fingerprint_sort_key(fingerprint))
+                bucket["triples"].setdefault(key, {"run_ids": [], "fingerprint": fingerprint})
+                bucket["triples"][key]["run_ids"].append(run_dir.name)
 
     # Flatten triples dicts into lists for a clean, diffable YAML shape.
     out = {}
     for family, bucket in families.items():
         triples = [
-            {"instrument": instrument, "timeframe": timeframe, "run_ids": sorted(run_ids)}
-            for (instrument, timeframe), run_ids in sorted(bucket["triples"].items())
+            {
+                "instrument": instrument, "timeframe": timeframe, "fidelity": fidelity,
+                "fingerprint": entry["fingerprint"], "run_ids": sorted(entry["run_ids"]),
+            }
+            for (instrument, timeframe, fidelity, _fp_key), entry in sorted(
+                bucket["triples"].items(), key=lambda kv: kv[0]
+            )
         ]
         out[family] = {"confidence": bucket["confidence"], "triples": triples}
 

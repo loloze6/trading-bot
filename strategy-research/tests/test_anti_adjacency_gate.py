@@ -280,17 +280,30 @@ def _digest(families, failed_families_passthrough=None):
     }
 
 
-def test_layer2_refuses_exact_family_instrument_timeframe_triple():
+def test_layer2_coarse_triple_match_admits_as_neighbour_not_refuse():
+    """E-036 S2: this test used to assert REFUSE for a bare (family,
+    instrument, timeframe) collision -- exactly the over-coarse behavior
+    E-036 exists to fix (see engineering/roadmap/E-036/EPIC.md: a keltner
+    candidate at a different atr_mult than a prior run was wrongly REFUSEd
+    on this same triple-only key). A digest entry with no fingerprint
+    (fidelity="coarse", the shape every entry had before this story) can
+    now only ever produce NEIGHBOUR, never REPEAT -- design point 3. The
+    genuine-repeat case (identical fingerprint -> REFUSE) is covered
+    separately below."""
     digest = _digest({
         "keltner_channel": {"confidence": "keyword_bounded", "triples": [
-            {"instrument": "AVAXUSDT", "timeframe": "4h", "run_ids": ["run_030"]},
+            {"instrument": "AVAXUSDT", "timeframe": "4h", "fidelity": "coarse",
+             "fingerprint": None, "run_ids": ["run_030"]},
         ]},
     })
     candidate = {"hypothesis_id": "KELTNER_NEW", "target_market": ["AVAXUSDT"], "timeframe": "4h",
                  "thesis": "Keltner mean reversion on AVAX."}
     result = gate.evaluate_candidate(candidate, digest, _kb([]), _REAL_RUNS_DIR)
-    assert result.route == "refuse"
+    assert result.route == "admit"
     assert result["layer"] == "digest"
+    assert result["outcome"] == "neighbour"
+    assert result["neighbours"][0]["run_ids"] == ["run_030"]
+    assert result["neighbours"][0]["fidelity"] == "coarse"
 
 
 def test_layer2_admits_new_instrument_for_known_family():
@@ -315,3 +328,167 @@ def test_layer2_never_auto_refuses_on_bare_string_failed_family():
     result = gate.evaluate_candidate(candidate, digest, _kb([]), _REAL_RUNS_DIR)
     assert result.route == "admit", "a bare-string low-detail entry must never be a silent veto"
     assert result["low_detail_prior_failure"] is True
+
+
+# ---------------------------------------------------------------------------
+# E-036 S2 -- composition fingerprint (mandatory regression tests, per
+# EPIC.md's "Done when" and the dispatching session's test list). These
+# prove the defect measured in EPIC.md is closed: the digest key was
+# (family, instrument, timeframe) alone, which collapsed 21 of 39 runs
+# carrying both a hypothesis_card.yaml and a candidate_strategy_config.json
+# into "already tried" -- a parameter sweep read as a repeat.
+# ---------------------------------------------------------------------------
+
+def _kc_config(atr_mult, regime="mean_reversion", component_id="keltner"):
+    """Same candidate_strategy_config.json shape as the real corpus (e.g.
+    runs/run_016/artifacts/candidate_strategy_config.json)."""
+    return {
+        "regime_detector": {"mode": "threshold_rules", "rules": [{"regime": regime}]},
+        "strategies": {"regimes": {regime: {"components": [
+            {"id": component_id, "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+             "params": {"atr_multiplier": atr_mult, "ema_period": 20}, "weight": 1.0,
+             "transforms": [{"op": "identity"}]},
+        ]}}},
+    }
+
+
+def _kc_digest_structured(instrument, timeframe, run_id, config):
+    fingerprint = bed.composition_fingerprint(config)
+    return _digest({
+        "keltner_channel": {"confidence": "structural_indicator_id", "triples": [
+            {"instrument": instrument, "timeframe": timeframe, "fidelity": "structured",
+             "fingerprint": fingerprint, "run_ids": [run_id]},
+        ]},
+    })
+
+
+_KELTNER_CANDIDATE_BASE = {
+    "hypothesis_id": "KELTNER_ATR_SWEEP", "target_market": ["BTCUSDT"], "timeframe": "1h",
+    "library_lookup": {"indicator_id": "keltner_channel"},
+    "thesis": "Keltner channel mean reversion on BTC, 1h.",
+}
+
+
+def test_reproduced_case_parameter_sweep_admits_as_neighbour_not_refuse():
+    """THE headline case from EPIC.md, reproduced and closed: a keltner
+    candidate at atr_mult=3.0, with a prior run on record at atr_mult=2.0
+    for the SAME (family, instrument, timeframe) -- must ADMIT as a
+    NEIGHBOUR, with the prior run_id attached, not REFUSE. Before E-036,
+    the digest's (family, instrument, timeframe)-only key REFUSEd this
+    exact shape of candidate (EPIC.md: "candidate: keltner_channel,
+    BTCUSDT, 1h, atr_mult 3.0 (prior run used 2.0) ... verdict: refuse")."""
+    prior_config = _kc_config(atr_mult=2.0)
+    digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", prior_config)
+    candidate_config = _kc_config(atr_mult=3.0)
+
+    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
+                                      instrument="BTCUSDT", timeframe="1h",
+                                      candidate_config=candidate_config)
+
+    assert result.route == "admit", (
+        "a parameter sweep (different atr_mult, same family/instrument/timeframe) "
+        "must ADMIT -- this is the exact case the current triple-only key wrongly REFUSEd"
+    )
+    assert result["layer"] == "digest"
+    assert result["outcome"] == "neighbour"
+    assert result["neighbours"][0]["run_ids"] == ["run_016"]
+    assert result["neighbours"][0]["fidelity"] == "structured"
+    assert "differ" in result["neighbours"][0]["differs"]
+
+
+def test_genuine_repeat_identical_fingerprint_refuses():
+    """The only case that blocks (EPIC.md design point 2): SAME family,
+    instrument, timeframe AND an IDENTICAL composition fingerprint on both
+    sides (both fidelity="structured"). This is a genuine re-run and must
+    REFUSE."""
+    config = _kc_config(atr_mult=2.0)
+    digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", config)
+    # A fresh candidate proposing the byte-for-byte identical composition.
+    identical_config = _kc_config(atr_mult=2.0)
+
+    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
+                                      instrument="BTCUSDT", timeframe="1h",
+                                      candidate_config=identical_config)
+
+    assert result.route == "refuse"
+    assert result["layer"] == "digest"
+    assert result["outcome"] == "repeat"
+    assert result["run_ids"] == ["run_016"]
+
+
+def test_same_component_identical_params_different_regime_does_not_collide():
+    """EPIC.md design point 4: (mean_reversion, rsi, period=14) and
+    (trending, rsi, period=14) are different strategies and must not
+    collide. Regime is folded into the fingerprint for free -- an
+    IDENTICAL component/params/weight under a DIFFERENT regime must not
+    read as a REPEAT (nor even collide as a NEIGHBOUR entry sharing the
+    same fingerprint -- the fingerprints themselves must differ)."""
+    mr_config = _kc_config(atr_mult=2.0, regime="mean_reversion")
+    trending_config = _kc_config(atr_mult=2.0, regime="trending")
+    assert bed.composition_fingerprint(mr_config) != bed.composition_fingerprint(trending_config), (
+        "same component, same params, different regime must produce DIFFERENT "
+        "fingerprints -- the regime is part of identity"
+    )
+
+    digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", mr_config)
+    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
+                                      instrument="BTCUSDT", timeframe="1h",
+                                      candidate_config=trending_config)
+
+    assert result.route == "admit"
+    assert result["outcome"] == "neighbour", (
+        "same family/instrument/timeframe still collides at that grain, but the "
+        "differing regime means it is a NEIGHBOUR, never mistaken for the SAME "
+        "strategy"
+    )
+
+
+def test_coarse_fidelity_entry_never_produces_repeat():
+    """Design point 3: a coarse-fidelity match can never produce REPEAT, at
+    most NEIGHBOUR -- even when the candidate itself DOES supply a
+    structured config. We cannot prove an exact repeat from a record that
+    never captured composition."""
+    digest = _digest({
+        "keltner_channel": {"confidence": "structural_indicator_id", "triples": [
+            {"instrument": "BTCUSDT", "timeframe": "1h", "fidelity": "coarse",
+             "fingerprint": None, "run_ids": ["run_777"]},
+        ]},
+    })
+    candidate_config = _kc_config(atr_mult=2.0)
+
+    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
+                                      instrument="BTCUSDT", timeframe="1h",
+                                      candidate_config=candidate_config)
+
+    assert result.route == "admit"
+    assert result["outcome"] == "neighbour"
+    assert result["neighbours"][0]["fidelity"] == "coarse"
+
+
+def test_candidate_with_no_structured_config_never_produces_repeat():
+    """Complement of the coarse-entry case: when the CANDIDATE side has no
+    structured config (candidate_config=None, e.g. the pre-backtest-
+    specification call site), REPEAT must also be unreachable -- there is
+    nothing to compare the prior run's fingerprint against."""
+    config = _kc_config(atr_mult=2.0)
+    digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", config)
+
+    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
+                                      instrument="BTCUSDT", timeframe="1h",
+                                      candidate_config=None)
+
+    assert result.route == "admit"
+    assert result["outcome"] == "neighbour"
+
+
+def test_composition_fingerprint_present_but_empty_config_is_not_none():
+    """A present-but-structurally-bare config (e.g. {"regime_detector": {}},
+    the pre-E-036 fixture default in test_variant_anti_adjacency_gate.py)
+    must still produce a real fingerprint distinguishable from "no config
+    at all" -- composition_fingerprint(None-ish input) is the "never had a
+    config" case, not "had an empty one"."""
+    assert bed.composition_fingerprint({"regime_detector": {}}) == {
+        "mode": None, "rule_count": 0, "components": [],
+    }
+    assert bed.composition_fingerprint({}) is None
+    assert bed.composition_fingerprint(None) is None

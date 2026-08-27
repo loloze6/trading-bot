@@ -20,6 +20,7 @@ Covers:
     triples are exactly {1h, 1d}, never 4h -- the concrete claim S1's
     narrative rests on, re-derived fresh rather than merely cited.
 """
+import json
 import sys
 from pathlib import Path
 
@@ -166,7 +167,12 @@ def test_scan_run_triples_groups_by_family_not_flat(tmp_path):
     assert set(families.keys()) == {"funding_rate_extreme", "keltner_channel_trend"}
 
     funding_triples = families["funding_rate_extreme"]["triples"]
-    assert funding_triples == [{"instrument": "BTCUSDT", "timeframe": "1h", "run_ids": ["run_100"]}]
+    # E-036 S2: every triple now carries fidelity/fingerprint. Neither test
+    # card here has a candidate_strategy_config.json, so both fall back to
+    # fidelity="coarse", fingerprint=None (design point 1's degrade-honestly
+    # path).
+    assert funding_triples == [{"instrument": "BTCUSDT", "timeframe": "1h", "fidelity": "coarse",
+                                 "fingerprint": None, "run_ids": ["run_100"]}]
     # The 4h entry belongs ONLY to keltner -- it must never appear under funding.
     assert all(t["timeframe"] != "4h" for t in funding_triples)
 
@@ -181,6 +187,178 @@ def test_scan_run_triples_skips_unparseable_card_without_crashing(tmp_path):
     assert result["runs_scanned"] == 0
     assert len(result["skipped_runs"]) == 1
     assert result["skipped_runs"][0]["run_id"] == "run_200"
+
+
+# ---------------------------------------------------------------------------
+# E-036 S2 -- composition_fingerprint() and the structured/coarse split in
+# scan_run_triples(). See test_anti_adjacency_gate.py for the Layer-2
+# REPEAT/NEIGHBOUR/NOVEL behavior this feeds.
+# ---------------------------------------------------------------------------
+
+def _write_config(runs_dir: Path, run_id: str, config: dict) -> None:
+    artifacts = runs_dir / run_id / "artifacts"
+    artifacts.mkdir(parents=True, exist_ok=True)
+    with open(artifacts / "candidate_strategy_config.json", "w", encoding="utf-8") as f:
+        json.dump(config, f)
+
+
+def _rsi_config(scaling_factor, regime="mean_reversion", component_id="rsi"):
+    return {
+        "regime_detector": {"mode": "threshold_rules", "rules": [{"regime": regime}]},
+        "strategies": {"regimes": {regime: {"components": [
+            {"id": component_id, "class": "strategies.strategy_components.RSIPullbackComponent",
+             "params": {"period": 14, "scaling_factor": scaling_factor}, "weight": 1.0, "transforms": []},
+        ]}}},
+    }
+
+
+def test_composition_fingerprint_derives_regime_component_params_weight_and_rule_count():
+    config = _rsi_config(0.4)
+    fp = bed.composition_fingerprint(config)
+    assert fp == {
+        "mode": "threshold_rules",
+        "rule_count": 1,
+        "components": [["mean_reversion", "rsi", [["period", 14], ["scaling_factor", 0.4]], 1.0]],
+    }
+
+
+def test_composition_fingerprint_differs_on_params_only():
+    """The reproduced defect at the fingerprint-builder level: two configs
+    differing ONLY in one param value must produce DIFFERENT fingerprints --
+    the current triple key cannot see this at all."""
+    fp_a = bed.composition_fingerprint(_rsi_config(0.01))
+    fp_b = bed.composition_fingerprint(_rsi_config(0.4))
+    assert fp_a != fp_b
+
+
+def test_composition_fingerprint_none_for_absent_or_empty_config():
+    assert bed.composition_fingerprint(None) is None
+    assert bed.composition_fingerprint({}) is None
+    # Present but structurally bare -- a real (if empty) fingerprint, not None.
+    assert bed.composition_fingerprint({"regime_detector": {}}) == {
+        "mode": None, "rule_count": 0, "components": [],
+    }
+
+
+def test_scan_run_triples_prefers_structured_config_and_tags_fidelity(tmp_path):
+    """Design point 1: prefer candidate_strategy_config.json; tag the
+    resulting entry fidelity="structured", carrying its fingerprint."""
+    runs_dir = tmp_path / "runs"
+    config = _rsi_config(0.4)
+    _write_card(runs_dir, "run_500", {
+        "hypothesis_id": "RSI_A", "target_market": ["BTCUSDT"], "timeframe": "1h",
+        "library_lookup": {"indicator_id": "rsi_mean_reversion"},
+    })
+    _write_config(runs_dir, "run_500", config)
+
+    result = bed.scan_run_triples(runs_dir)
+    triples = result["families"]["rsi_mean_reversion"]["triples"]
+    assert len(triples) == 1
+    assert triples[0]["fidelity"] == "structured"
+    assert triples[0]["fingerprint"] == bed.composition_fingerprint(config)
+    assert triples[0]["run_ids"] == ["run_500"]
+
+
+def test_scan_run_triples_falls_back_to_coarse_when_no_config_on_disk(tmp_path):
+    """Design point 1: no candidate_strategy_config.json -> fidelity="coarse",
+    fingerprint=None -- the run is never dropped, only its composition detail."""
+    runs_dir = tmp_path / "runs"
+    _write_card(runs_dir, "run_501", {
+        "hypothesis_id": "RSI_B", "target_market": ["BTCUSDT"], "timeframe": "1h",
+        "library_lookup": {"indicator_id": "rsi_mean_reversion"},
+    })
+
+    result = bed.scan_run_triples(runs_dir)
+    triples = result["families"]["rsi_mean_reversion"]["triples"]
+    assert triples == [{"instrument": "BTCUSDT", "timeframe": "1h", "fidelity": "coarse",
+                         "fingerprint": None, "run_ids": ["run_501"]}]
+
+
+def test_scan_run_triples_splits_a_parameter_sweep_into_distinct_entries(tmp_path):
+    """THE reproduced headline case, at the digest-builder level: two runs
+    at the SAME (family, instrument, timeframe) with DIFFERENT params must
+    produce TWO triples, not one -- collapsing them is exactly the E-036
+    defect (EPIC.md: 'a keltner candidate at atr_mult 3.0 is REFUSED
+    because a prior run used 2.0')."""
+    runs_dir = tmp_path / "runs"
+    for run_id, scaling_factor in (("run_600", 0.01), ("run_601", 0.4)):
+        _write_card(runs_dir, run_id, {
+            "hypothesis_id": f"RSI_SWEEP_{run_id}", "target_market": ["BTCUSDT"], "timeframe": "1h",
+            "library_lookup": {"indicator_id": "rsi_mean_reversion"},
+        })
+        _write_config(runs_dir, run_id, _rsi_config(scaling_factor))
+
+    result = bed.scan_run_triples(runs_dir)
+    triples = result["families"]["rsi_mean_reversion"]["triples"]
+    assert len(triples) == 2, (
+        "a parameter sweep at the same (family, instrument, timeframe) must "
+        "produce distinct entries under the composition fingerprint"
+    )
+    assert {t["run_ids"][0] for t in triples} == {"run_600", "run_601"}
+    assert all(t["fidelity"] == "structured" for t in triples)
+
+
+def test_scan_run_triples_merges_coarse_entries_at_the_same_triple(tmp_path):
+    """Coarse entries (no config either run) still merge at the same
+    (instrument, timeframe), same as pre-E-036 -- there is no fingerprint to
+    split them by, and fabricating one would be dishonest, not more precise."""
+    runs_dir = tmp_path / "runs"
+    _write_card(runs_dir, "run_700", {
+        "hypothesis_id": "RSI_COARSE_A", "target_market": ["BTCUSDT"], "timeframe": "1h",
+        "library_lookup": {"indicator_id": "rsi_mean_reversion"},
+    })
+    _write_card(runs_dir, "run_701", {
+        "hypothesis_id": "RSI_COARSE_B", "target_market": ["BTCUSDT"], "timeframe": "1h",
+        "library_lookup": {"indicator_id": "rsi_mean_reversion"},
+    })
+
+    result = bed.scan_run_triples(runs_dir)
+    triples = result["families"]["rsi_mean_reversion"]["triples"]
+    assert len(triples) == 1
+    assert triples[0]["fidelity"] == "coarse"
+    assert sorted(triples[0]["run_ids"]) == ["run_700", "run_701"]
+
+
+def test_scan_run_triples_same_component_different_regime_produces_distinct_entries(tmp_path):
+    """Design point 4: the same component/params under a different regime
+    must not collide -- regime is folded into the fingerprint."""
+    runs_dir = tmp_path / "runs"
+    _write_card(runs_dir, "run_800", {
+        "hypothesis_id": "RSI_MR", "target_market": ["BTCUSDT"], "timeframe": "1h",
+        "library_lookup": {"indicator_id": "rsi_mean_reversion"},
+    })
+    _write_config(runs_dir, "run_800", _rsi_config(0.4, regime="mean_reversion"))
+    _write_card(runs_dir, "run_801", {
+        "hypothesis_id": "RSI_TR", "target_market": ["BTCUSDT"], "timeframe": "1h",
+        "library_lookup": {"indicator_id": "rsi_mean_reversion"},
+    })
+    _write_config(runs_dir, "run_801", _rsi_config(0.4, regime="trending"))
+
+    result = bed.scan_run_triples(runs_dir)
+    triples = result["families"]["rsi_mean_reversion"]["triples"]
+    assert len(triples) == 2
+    fingerprints = [t["fingerprint"] for t in triples]
+    assert fingerprints[0] != fingerprints[1]
+
+
+def test_scan_run_triples_unparseable_config_degrades_to_coarse_not_a_crash(tmp_path):
+    """An unparseable candidate_strategy_config.json must not crash the scan
+    (same discipline as an unparseable hypothesis_card.yaml) -- it degrades
+    that run's fidelity to coarse; the run itself is still scanned (its
+    hypothesis_card.yaml is fine)."""
+    runs_dir = tmp_path / "runs"
+    _write_card(runs_dir, "run_900", {
+        "hypothesis_id": "RSI_BAD_CONFIG", "target_market": ["BTCUSDT"], "timeframe": "1h",
+        "library_lookup": {"indicator_id": "rsi_mean_reversion"},
+    })
+    artifacts = runs_dir / "run_900" / "artifacts"
+    (artifacts / "candidate_strategy_config.json").write_text("{not valid json", encoding="utf-8")
+
+    result = bed.scan_run_triples(runs_dir)
+    assert result["runs_scanned"] == 1
+    triples = result["families"]["rsi_mean_reversion"]["triples"]
+    assert triples == [{"instrument": "BTCUSDT", "timeframe": "1h", "fidelity": "coarse",
+                         "fingerprint": None, "run_ids": ["run_900"]}]
 
 
 def test_scan_run_triples_deterministic_across_repeated_calls(tmp_path):
@@ -263,7 +441,9 @@ def test_digest_surfaces_a_fact_absent_from_stale_campaign_state(tmp_path):
 
     digest = bed.build_digest(runs_dir=runs_dir, campaign_state_path=campaign_state_path)
     triples = digest["families"]["volume_ratio_momentum"]["triples"]
-    assert {"instrument": "SOLUSDT", "timeframe": "1h", "run_ids": ["run_400"]} in triples, (
+    # E-036 S2: run_400 has no candidate_strategy_config.json -> fidelity="coarse".
+    assert {"instrument": "SOLUSDT", "timeframe": "1h", "fidelity": "coarse",
+            "fingerprint": None, "run_ids": ["run_400"]} in triples, (
         "SOLUSDT must be visible via the fresh scan even though it is absent "
         "from campaign_state.yaml's stale instruments_tried"
     )

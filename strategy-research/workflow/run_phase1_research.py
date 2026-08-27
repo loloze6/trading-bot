@@ -1988,6 +1988,23 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
         candidate.update(variant_definition)
     candidate["hypothesis_id"] = selection.get("hypothesis_id") or candidate.get("hypothesis_id")
 
+    # E-036 S2: the chosen variant's own structured composition, when one is
+    # already on disk. backtest_spec.yaml's `config` field is the SAME dict
+    # that this stage's caller writes verbatim to candidate_strategy_
+    # config.json moments after this function returns (see the
+    # "backtest_specification" branch of run_loop, a few lines below where
+    # candidate_path is written) -- reading it here is not a guess at the
+    # composition, it is the composition, just not yet copied to its final
+    # artifact path. Without it, Layer 2 can only ever return NEIGHBOUR/NOVEL
+    # for a family/instrument/timeframe collision, never REPEAT (see
+    # evaluate_candidate()'s own docstring) -- a real duplicate composition
+    # reaching this checkpoint would otherwise never be caught here.
+    backtest_spec_path = artifacts / "backtest_spec.yaml"
+    backtest_spec = load_yaml(backtest_spec_path) if backtest_spec_path.exists() else {}
+    candidate_config = backtest_spec.get("config") if isinstance(backtest_spec, dict) else None
+    if not isinstance(candidate_config, dict):
+        candidate_config = None
+
     tools_path = str(Path(__file__).parent.parent / "tools")
     if tools_path not in sys.path:
         sys.path.insert(0, tools_path)
@@ -2031,12 +2048,19 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
         _aag.evaluate_candidate(
             candidate, digest or {}, kb or {}, ROOT / "runs",
             instrument=instr, timeframe=selection.get("timeframe"),
+            candidate_config=candidate_config,
         )
         for instr in instruments_to_check
     ]
-    result = next(
-        (r for r in per_instrument_results if r.route == "refuse"),
-        per_instrument_results[0],
+    # E-036 S2: with three Layer-2 outcomes instead of two, "first REFUSE,
+    # else first result" would silently drop a NEIGHBOUR found on one
+    # instrument if a DIFFERENT checked instrument came back NOVEL and
+    # happened to sort first -- exactly the information design point 2 says
+    # must reach the result. Priority: REFUSE > NEIGHBOUR > first result.
+    result = (
+        next((r for r in per_instrument_results if r.route == "refuse"), None)
+        or next((r for r in per_instrument_results if r.get("outcome") == "neighbour"), None)
+        or per_instrument_results[0]
     )
     # Success signal (E-034/EPIC.md): "the gate result references the chosen
     # variant's identifier, not the base hypothesis id." The gate's own
