@@ -64,12 +64,23 @@ from performance.signal_statistics import spearman_correlation as _spearman
 # Constants
 # ---------------------------------------------------------------------------
 
-# Block size for autocorrelation-adjusted significance (24 bars for 1h).
-_BLOCK_SIZE_1H = 24
-# 2026-07-07: a daily bar IS already one calendar day -- no intra-day
-# autocorrelation block to divide out (mirrors _BLOCK_SIZE_1H's own logic:
-# bars-per-day == block_size, which is 1 bar-per-day at daily resolution).
-_BLOCK_SIZE_1D = 1
+# Block size for autocorrelation-adjusted significance = BARS PER DAY, now
+# DERIVED for any timeframe (2026-08-27) rather than branched per-case. See
+# tools/timeframe.py for why: the per-case form kept regenerating the same bug.
+#
+# What was here before, and why it mattered: an if/elif on "1h"/"1d" with a
+# fallback of max(_BLOCK_SIZE_1H // 4, 6) == 6 for EVERY other timeframe. That
+# happened to be exactly right for 4h by coincidence (24//4 == 6), which is why
+# it never surfaced -- but it is 8x too small for 30m, 16x for 15m, 48x for 5m.
+# A block that is too SMALL inflates n_eff, so this mirror failed in the
+# DANGEROUS direction (wrongly declaring significance), while the A8.6 gate's
+# own bug failed conservatively (wrongly killing). The two mirrors were
+# therefore already disagreeing with each other, despite the comments in both
+# files asserting they must be kept in sync -- a convention, not a mechanism.
+from timeframe import bars_per_day  # noqa: E402  (sibling module in tools/)
+
+_BLOCK_SIZE_1H = 24  # regression anchor only: bars_per_day("1h") must equal this
+_BLOCK_SIZE_1D = 1   # regression anchor only: bars_per_day("1d") must equal this
 
 # Significance threshold: p < 0.10 is informative.
 _SIG_THRESHOLD = 0.10
@@ -966,12 +977,7 @@ def run_prescreen(
     # to divide out, matching how "1h" itself is treated: bars-per-day ==
     # block_size). The pre-existing generic fallback for every OTHER non-1h
     # timeframe (4h, 15m, etc.) is untouched.
-    if timeframe == "1h":
-        block_size = _BLOCK_SIZE_1H
-    elif timeframe == "1d":
-        block_size = _BLOCK_SIZE_1D
-    else:
-        block_size = max(_BLOCK_SIZE_1H // 4, 6)
+    block_size = bars_per_day(timeframe)
 
     if out_dir is None:
         out_dir = Path(_SR) / "results" / "prescreens"

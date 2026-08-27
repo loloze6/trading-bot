@@ -145,8 +145,30 @@ def test_a86_power_check_1d_uses_block_size_1(tmp_path):
     assert result["expected_n_eff"] == RUN_050_EXPECTED_N_EFF * 24
 
 
-def test_a86_block_size_dict_has_exactly_the_two_supported_timeframes():
-    assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME == {"1h": 24, "1d": 1}
+def test_a86_block_size_is_derived_not_enumerated():
+    """REPLACED 2026-08-27. This test used to read:
+
+        assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME == {"1h": 24, "1d": 1}
+
+    It did not merely fail to catch the bug -- it PINNED it. The table's
+    two-entry shape was the defect (every other timeframe silently inherited
+    the 1h value of 24, killing run_060 with an artifact verdict), and this
+    assertion made adding a third entry a test failure. A test that locks in
+    the shape of a defect is worse than no test.
+
+    Its replacement asserts the property that actually matters: the block size
+    is DERIVED, so a timeframe nobody has run before is correct on first use
+    and there is no table to forget to update. 1h and 1d still resolve to their
+    known-correct values -- that is the anchor proving the derivation computes
+    the same quantity."""
+    assert not hasattr(rpr, "_A86_BLOCK_SIZE_BY_TIMEFRAME"), (
+        "the enumerated table is back; it is the bug's own mechanism"
+    )
+    assert rpr._a86_block_size("1h") == 24
+    assert rpr._a86_block_size("1d") == 1
+    # Never run before, correct anyway -- the whole point of the change.
+    assert rpr._a86_block_size("4h") == 6
+    assert rpr._a86_block_size("30m") == 48
 
 
 # ---------------------------------------------------------------------------
