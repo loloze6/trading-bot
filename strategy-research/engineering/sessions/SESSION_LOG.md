@@ -4376,3 +4376,14 @@ and ~8 new test files.
 > should `validation` stop emitting them, or should the prose channel be
 > retired? Do not build anything new until those are answered; the highest-
 > value work is turning on what exists, not adding to it.
+
+**Notion, updated 2026-08-27 (consolidation):**
+- Session summary (feature-by-feature mechanics, for sharing):
+  https://app.notion.com/p/3c91d1fb05a281449f0ee1f020953391
+- Bug: schemas declared, never validated (updated with the workaround that
+  works): https://app.notion.com/p/3c61d1fb05a28126808cc607601ed1bc
+- Bug: built-but-never-wired pattern (instance #4 archived; a sixth instance
+  found; and our own seven-off-by-default reproduction recorded):
+  https://app.notion.com/p/3c61d1fb05a2812f8e25db3f8fecfb71
+- Bug: CLAUDE.md mandates tasks/todo.md + tasks/lessons.md but tasks/ is
+  gitignored: https://app.notion.com/p/3c91d1fb05a2811d8c66d8ec05440707
