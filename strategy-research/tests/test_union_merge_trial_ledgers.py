@@ -22,7 +22,6 @@ sys.path.insert(0, str(TOOLS_PATH))
 
 import deflate_sharpe as ds  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Row factories -- fresh objects each call so a and b never share references
 # ---------------------------------------------------------------------------
@@ -132,6 +131,9 @@ def test_union_merge_is_append_only():
     # mutating a merged row must not reach back into a or b (deepcopy, no alias)
     merged[0]["sharpe"] = 999.0
     assert a == a_snapshot
+    assert b == b_snapshot
+    # the appended b-novel row (merged[-1]) must also be a deepcopy, not an alias
+    merged[-1]["sharpe"] = -999.0
     assert b == b_snapshot
 
 
