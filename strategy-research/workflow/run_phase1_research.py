@@ -3918,6 +3918,44 @@ def _compute_forecast_hash(config_path: Path) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+_A_PRIORI_NO_CONFIG_ROUTES = frozenset({"insufficient_power_a_priori"})
+
+
+def _forecast_hash_for_prescreen(route: str, config_path: Path, run_id: str):
+    """forecast_hash for a prescreen trial row, tolerating the ONE route that
+    legitimately has no strategy config.
+
+    BUG FIXED 2026-08-27, found by run_060 -- the first real campaign launch in
+    39 days, which halted the whole campaign immediately after producing a
+    correct verdict.
+
+    `_compute_forecast_hash` fails loud on a missing config, and its docstring
+    justifies that: "by the time either trial-recording function calls this, the
+    same config file has already been read by the prescreen/backtest subprocess
+    this trial's result came from". **That premise is false for
+    `insufficient_power_a_priori`.** The A8.6 gate blocks at `validation`, which
+    is BEFORE `backtest_specification` runs, so no
+    candidate_strategy_config.json is ever written -- the gate's own
+    prescreen_result.yaml says `stage_blocked_at: validation` and "no component
+    built, no trial spent". The guard therefore treated a designed,
+    correctly-functioning path as a structural anomaly and raised
+    `unhandled_exception`, halting the campaign on a run that had just done its
+    job.
+
+    The fail-loud default is KEPT for every other route: a missing config on a
+    path that really did run a prescreen or backtest subprocess still raises,
+    because there it genuinely does mean the artifacts directory is broken. Only
+    the a-priori-power route -- where absence is guaranteed by construction, not
+    symptomatic -- returns None, and the row records that explicitly rather than
+    silently omitting the field.
+    """
+    if route in _A_PRIORI_NO_CONFIG_ROUTES and not config_path.exists():
+        print(f"   forecast_hash: null for {run_id} -- route '{route}' blocks at "
+              f"validation, before any strategy config is built (by design).")
+        return None
+    return _compute_forecast_hash(config_path)
+
+
 def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path, *, upsert: bool = False):
     """
     A6.2: record a prescreen run as a trial in campaign_state.trial_sharpes.
@@ -3951,7 +3989,7 @@ def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path, *, upsert:
         "statistic_valid": "neither",  # no backtest ran
         "ic_pooled":       ps.get("ic_spearman_pooled"),
         "cost_pass":       ps.get("cost_check", {}).get("pass"),
-        "forecast_hash":   _compute_forecast_hash(config_path),
+        "forecast_hash":   _forecast_hash_for_prescreen(route, config_path, run_id),
     }
     if upsert:
         for i, t in enumerate(trials):
