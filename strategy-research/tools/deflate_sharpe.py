@@ -75,12 +75,19 @@ def exclude_invalidated_trials(records: list[dict]) -> tuple[list[dict], int]:
 
 def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
     """
-    Deduplicate trial records by forecast_hash field (A6.4).
+    Deduplicate trial records by (forecast_hash, source) (A6.4; #36).
+
+    Keying on forecast_hash ALONE collapsed a single run's prescreen and backtest
+    rows once forecast_hash was populated (they share the hash), silently dropping
+    the backtest Sharpe from the DSR N. The key includes source to match the
+    read-side (trial_id, source) convention (check_no_duplicate_trial_ids): a run
+    legitimately carries up to one row per source. A genuine duplicate is the SAME
+    (forecast_hash, source) twice.
 
     Trials with no forecast_hash are treated as unique and always kept.
     Returns (deduped_list, n_removed).
     """
-    seen_hashes: set[str] = set()
+    seen_keys: set[tuple] = set()
     kept: list[dict] = []
     n_removed = 0
 
@@ -89,10 +96,12 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
         if fh is None:
             # No hash — treat as unique; always keep
             kept.append(rec)
-        elif fh in seen_hashes:
+            continue
+        key = (fh, rec.get("source"))
+        if key in seen_keys:
             n_removed += 1
         else:
-            seen_hashes.add(fh)
+            seen_keys.add(key)
             kept.append(rec)
 
     return kept, n_removed
