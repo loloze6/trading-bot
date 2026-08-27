@@ -136,3 +136,21 @@ C:\Users\alauz\Documents\Projects\trading-bot\trading-bot\core\backtester.py:234
 - 2026-08-26T19:17:03Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
 - 2026-08-26T19:17:03Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
 - 2026-08-26T19:17:03Z [DRY RUN] DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal
+- 2026-08-27T19:27:02Z REGISTER: queue entry 'FUNDING_MR_4H_RETEST' appended (brief=briefs/FUNDING_MR_4H_RETEST.md, priority=1, status=ready).
+- 2026-08-27T19:27:21Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-27T19:27:21Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T19:27:21Z [DRY RUN] queue: selected entry 'FUNDING_MR_4H_RETEST' (status=ready, brief=briefs/FUNDING_MR_4H_RETEST.md)
+- 2026-08-27T19:27:21Z [DRY RUN] classified next action for 'FUNDING_MR_4H_RETEST': 'fresh_launch'
+- 2026-08-27T19:27:21Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=structural_forced_flow, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-08-27T19:27:36Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-27T19:27:36Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T19:27:36Z [DRY RUN] queue: selected entry 'FUNDING_MR_4H_RETEST' (status=ready, brief=briefs/FUNDING_MR_4H_RETEST.md)
+- 2026-08-27T19:27:36Z [DRY RUN] classified next action for 'FUNDING_MR_4H_RETEST': 'fresh_launch'
+- 2026-08-27T19:27:36Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=structural_forced_flow, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-08-27T19:27:36Z VENUE-CHECK run_dryrun_verify: venue='binance' product='perp' tradable=False research_only=True
+- 2026-08-27T19:27:36Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written (brief has no machine_constraints)
+- 2026-08-27T19:27:37Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-08-27T19:27:37Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-08-27T19:27:37Z [DRY RUN] wishlist-trigger classification OK: detected family="daily_timeframe_er_overlay: checked 19 record(s); none satisfy all 3 condition(s) (source=kb_finding, family='daily_timeframe_er_overlay')"
+- 2026-08-27T19:27:37Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-08-27T19:27:37Z [DRY RUN] === DRY RUN PASSED ===
