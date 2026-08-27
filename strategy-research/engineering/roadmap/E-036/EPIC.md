@@ -133,9 +133,10 @@ each component sits under, so this falls out for free.
       measurements already in hand (the 18-vs-34 count, the reproduced
       parameter refusal, the 41/59 coverage, the real config shape). No
       separate design dispatch was warranted.
-- [ ] S2 — Implement the fingerprint, the three-way outcome, and the fidelity
-      rule. Regression tests must include the reproduced parameter-sweep case
-      and a same-component-different-regime case.
+- [x] S2 — **Build.** Done 2026-08-27. Implemented the fingerprint, the
+      three-way outcome, and the fidelity rule. See the Log entry below for
+      the corpus re-comparison, the regression-test disposition, and both
+      suites' numbers.
 
 ## Relationship to other epics
 
@@ -160,3 +161,85 @@ than 18, and the reproduced keltner `atr_mult 3.0` case returns ADMIT with
   indicator with different parameters?"* Both halves of that were confirmed by
   execution. Notion bug:
   https://app.notion.com/p/3c91d1fb05a2815cb309dc1029fe6ab1
+
+- 2026-08-27 — S2 build complete. Implemented exactly the four design points
+  in `tools/build_exclusion_digest.py` (`composition_fingerprint()`, the
+  structured/coarse split in `scan_run_triples()`) and
+  `tools/anti_adjacency_gate.py` (`layer2_digest_check()`'s REPEAT/NEIGHBOUR/
+  NOVEL outcomes). Layer 1 (`layer1_kb_check`) untouched.
+
+  **MEASURED — corpus re-comparison (denominator stated per number, all via
+  the current `scan_run_triples`/`composition_fingerprint`, not re-derived by
+  hand):**
+  - Full digest, all 46 run dirs with a parseable `hypothesis_card.yaml`
+    (`build_digest()`'s own `runs_scanned`), fanned across every named
+    instrument/timeframe: distinct under the OLD `(family, instrument,
+    timeframe)` key = **30**; distinct entries under the NEW `(family,
+    instrument, timeframe, fingerprint)` key = **73** (2.4x).
+  - Restricted to the 39 runs carrying BOTH `hypothesis_card.yaml` AND
+    `candidate_strategy_config.json` (the epic's own stated denominator),
+    one entry per run using the FIRST-listed instrument/timeframe (matching
+    `evaluate_candidate`'s own default resolution): OLD = **13**, NEW =
+    **36** (2.8x).
+  - Neither reproduces the pre-registered 18/34 exactly — the original count
+    was a one-off measurement whose exact fan-out/dedup convention was not
+    committed as a re-runnable script, so an identical repro wasn't possible.
+    Both re-derivations agree with it in direction and magnitude (roughly
+    2.5-3x more distinct strategies visible under the fingerprint), which is
+    the actual claim being tested. Labelling this a partial repro, not a
+    match, per this project's "measure, don't estimate" rule.
+  - Live proof against the REAL `keltner_channel`/`BTCUSDT`/`1h` bucket (was
+    ONE triple of 11 run_ids under the old key): now **9** distinct
+    structured entries (two genuine internal repeats: `run_025`+`run_032`,
+    `run_033`+`run_034` share identical fingerprints; the rest differ). A
+    synthetic candidate with a novel `atr_multiplier` correctly ADMITs as
+    NEIGHBOUR, with `run_016` present among the attached neighbours —
+    the exact shape of the pre-registered success signal, verified against
+    the live digest rather than only a synthetic fixture.
+
+  **Regression disposition (test_anti_adjacency_gate.py,
+  test_variant_anti_adjacency_gate.py, test_anti_adjacency_retry_policy.py):**
+  every failure after the S2 change was a bare `(family, instrument,
+  timeframe)` collision that used to REFUSE and now correctly ADMITs as
+  NEIGHBOUR (design point 3: a coarse-fidelity or candidate-side-unfingerprinted
+  match can never prove REPEAT). Three tests whose actual subject was the
+  REFUSE-driven retry/escalation POLICY (not Layer 2 itself) were rebuilt on a
+  genuine Layer-1 KB refusal instead, since `_route_post_innovation_expansion`
+  runs before `backtest_specification` ever produces a config and can
+  therefore never supply a candidate fingerprint — REPEAT is structurally
+  unreachable at that call site, by design, not a gap. Two tests whose subject
+  WAS the REFUSE contrast itself (`test_pivot_away_from_clean_parent_...`,
+  `test_refuse_escalates_immediately_...`, `test_refuse_classifies_via_...`)
+  were upgraded to a genuine identical-fingerprint repeat so the REFUSE they
+  test for is still reachable and still real. One test
+  (`test_multi_symbol_parent_card_checks_every_instrument_not_just_one`) was
+  repurposed to prove the per-instrument NEIGHBOUR annotation survives
+  multi-instrument selection (see the `_route_post_variant_selection` REFUSE
+  > NEIGHBOUR > first-result priority fix below) instead of proving REFUSE.
+  No failure was silently reverted to pass; every changed assertion is
+  commented in-file with why.
+
+  **Small necessary extension beyond the four literal design points:**
+  `_route_post_variant_selection` (`workflow/run_phase1_research.py`) now
+  reads `backtest_spec.yaml`'s own `config` field (the exact dict written
+  moments later, verbatim, to `candidate_strategy_config.json`) and passes it
+  as `candidate_config` — without this, the ONE call site with a composition
+  already on disk before file-write would never be able to prove REPEAT
+  either, permanently defeating the fix at the only production call site
+  currently wired to Layer 2 composition data. Its multi-instrument result
+  selection was also changed from "first REFUSE, else first result" to
+  "first REFUSE, else first NEIGHBOUR, else first result" — with three
+  outcomes, the old priority could silently drop a NEIGHBOUR found on one
+  instrument in favour of a NOVEL result on another, exactly the information
+  design point 2 says must reach the result.
+
+  **Both suites green:** `strategy-research`: **1072 passed** (1057 baseline
+  + 15 new tests: 6 in `test_anti_adjacency_gate.py`, 9 in
+  `test_build_exclusion_digest.py` — exact arithmetic match, no unexplained
+  drop). `trading-bot`: **383 passed, 2 skipped** — byte-identical to the
+  reference baseline (no files under `trading-bot/` were touched).
+
+  Flag-off bit-identity for both existing call sites
+  (`anti_adjacency_retry.enabled`, `variant_anti_adjacency_gate.enabled`)
+  re-verified unchanged — neither flag-check function was touched, and their
+  own byte-identical-output tests (`test_flag_off_*`) still pass.
