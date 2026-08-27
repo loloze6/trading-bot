@@ -1,6 +1,6 @@
 # E-031 — Queue return edge: the loop must be able to start a new line of inquiry
 
-**State:** in-progress (S1 dispatched 2026-08-23)
+**State:** in-progress (S1+S2 done 2026-08-26; S3 the return edge itself is NOT built)
 **Owner:** Jeremy
 **Updated:** 2026-08-23
 

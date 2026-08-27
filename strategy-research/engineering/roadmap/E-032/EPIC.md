@@ -1,6 +1,6 @@
 # E-032 — Proactive idea generation: the loop must be able to propose something it has not already tried
 
-**State:** in-progress (S1 dispatched 2026-08-23)
+**State:** done (2026-08-27 — S1/S2a/S2b/S2c closed; S3 external knowledge split out to E-035)
 **Owner:** Jeremy
 **Updated:** 2026-08-23
 
@@ -86,7 +86,13 @@ The bright line (frozen rule → one-shot holdout) is untouched.
       must be independent of `counters.refinements_used` (E-030 S1.5 Piece 2
       precedent), and each retry must carry the PREVIOUS refusal's reason,
       not merely re-invoke the stage (E-030 R3).
-- [ ] S3 — The external-knowledge dispatch path, with source/date recording.
+- [~] S3 — The external-knowledge dispatch path, with source/date recording.
+      **SPLIT OUT to E-035 on 2026-08-27, not abandoned.** This epic's stated
+      objective — stop the loop proposing neighbours of what it already tried
+      — is delivered by S1/S2a/S2b/S2c. External knowledge is a different
+      capability (reaching OUTSIDE the loop's history, vs. remembering what is
+      inside it), and holding a finished epic open for it made the board read
+      as less complete than it is. See E-035.
 
 ## Relationship to other epics
 
@@ -883,3 +889,18 @@ anti-adjacency gate also counts as the gate working, and is logged.
   story lives there; this entry only records the defect's closure and
   points to it). No campaign or backtest run; no LLM call made;
   `local_data/holdout_sealed/` never opened.
+
+- 2026-08-27 — **`in-progress` → `done`. S3 split out to E-035.**
+  Four stories delivered this epic's Why in full: the loop can now see what
+  has already been tried (S2a's exclusion digest), refuse a repeat
+  mechanically rather than by prose (S2a's gate, S2c's wiring), read the
+  knowledge base at all (S2b's never-resolving path fix), and act on a
+  disposition grounded in real inputs (S2b). The 2026-08-24 OPEN DEFECT —
+  the gate evaluating the pre-expansion parent instead of the chosen variant
+  — was closed by E-034 S3 (`2360c2d0`) plus its review fix (`7c6d6c3c`).
+  Everything ships off by default: `exclusion_digest_input`,
+  `anti_adjacency_retry`, `stale_input_path_fix` all `enabled: false`.
+  **What is NOT done and is now E-035's:** the loop still cannot reach
+  outside its own history for an idea. That was always named here as S3 and
+  never built. Splitting it lets a finished epic close honestly instead of
+  sitting `in-progress` on a story that belongs to a different capability.

@@ -19,7 +19,7 @@ are excluded — a tool referenced only from those is still CLI-only, not dead.
 
 ## build_inventory.sh
 
-**PURPOSE** — Regenerates `engineering/improvements/ongoing-improvement-design/INVENTORY.tsv`: every tracked file under
+**PURPOSE** — Regenerates `engineering/improvements/done/restructure-planning-E-002/INVENTORY.tsv`: every tracked file under
 `strategy-research/` with its byte count and git-history aggregates.
 *In plain terms: takes stock of the repo so you can decide what to archive.*
 

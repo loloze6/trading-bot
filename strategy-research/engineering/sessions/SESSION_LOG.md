@@ -4296,3 +4296,83 @@ defects above first — the restructure branch is still explicitly marked DO
 NOT MERGE until its own path constants are repointed.
 
 Phase 2.3 stays PARKED PENDING DATA. Do not mark it closed."
+
+---
+
+## Session: 2026-08-23 to 2026-08-27 — Idea-generation quality, selection recording, and a stage review
+
+**Hypothesis.** The research loop has produced 0 promotions in 59 runs and has
+been idle since 2026-07-19. Entering the session the assumed constraint was
+*liveness* — the loop cannot start a new line of inquiry. Measuring instead
+found a second, deeper constraint: the loop cannot tell whether an idea is one
+it has already killed, because the stages that generate ideas are closed-book.
+
+**Result.** Two epics closed, one advanced, one characterized. 33 commits.
+Suite 884 → 1057 (+173), zero regressions at every step. Every capability
+ships off by default.
+
+- **E-032 — done.** The idea generator was measured closed-book:
+  `hypothesis_generation` receives only the brief + feed list + indicator
+  library, `innovation_expansion` only the brief + the card it expands, and
+  every stage agent runs `allowed_tools=[]`. It literally cannot know 59 runs
+  happened. Shipped: a family-scoped exclusion digest regenerated from run
+  artifacts (never from the stale flat lists, which are family-blind); a
+  two-layer anti-adjacency gate (KB at mechanism grain, then digest triples);
+  a fix to a knowledge-base input path that had never resolved for the
+  pipeline's whole life; and retry-then-escalate wiring under the operator's
+  ruling (4 retries with the refusal reason, then escalate). S3 (external
+  knowledge) split out to **E-035** so a finished epic could close.
+- **E-034 — done.** The pipeline generated 138 variants across 43 runs, tested
+  one per run, and recorded the discards in 1 run out of 59 — then reported
+  "queue exhausted" having thrown away ~100 ideas. Root cause: the narrowing
+  from N variants to 1 happens inside `backtest_specification`'s own LLM
+  reasoning with no code seam. Shipped `variant_selection.yaml` +
+  `variants_not_pursued.yaml`, enforced in CODE (the schema that would have
+  "required" the field is loaded by nothing), and repointed the gate at the
+  chosen variant — closing E-032's OPEN DEFECT, where the gate checked the
+  pre-expansion parent and so could never see a variant that pivoted.
+- **E-031 — S1+S2 done, S3 NOT built.** The schedulability block now writes
+  *before* the queue-exhausted return, closing E-030's measured blind spot.
+  Six review findings fixed, one high-severity and reproduced first: split
+  children are minted `{parent}__split_{child}`, so a bare substring match let
+  activity on a child reset the blocked *parent's* dwell to zero — the
+  longest-blocked entry read as the freshest. **The return edge itself is not
+  built**; a dispatch implemented then reverted it.
+- **E-033 — S1 done, verdict: the stages are not correctly shaped.**
+  `validation` returns `conditional_approve` in 36 of 46 decisions, carrying
+  `conditions` that no downstream stage or tool reads. But the fix is not to
+  plumb that file anywhere: most of those conditions are *result* thresholds
+  ("reject if Sharpe < -1.0"), which is `verdict_interpreter`'s job, and the
+  correct channel already exists and works — `validation_protocol.yaml`'s
+  `decision_rules`, which `verdict_interpreter` already receives as a required
+  input. The free-prose `conditions` field is a redundant parallel channel.
+
+**A pattern worth carrying forward.** Five separate defects this session share
+one root cause: a correct declarative artifact gets built and nothing is wired
+to read or enforce it — `register_hypothesis` (zero callers),
+`evaluate_and_persist_wishlist_predicate` (zero callers), a KB input path that
+never resolved, `stages.yaml` (never read; archived), and 12+ JSON schemas
+(never loaded, 53% of the real corpus violates one). Filed as two Notion bugs.
+We then reproduced it ourselves: five new capabilities, all off by default.
+
+**Files touched.** `workflow/run_campaign.py`, `workflow/run_phase1_research.py`,
+`tools/{anti_adjacency_gate,build_exclusion_digest,near_miss_scoreboard}.py`,
+`config/campaign_config.yaml`, five `workflow_artifacts/skills/*/SKILL.md`,
+`docs/USER_GUIDE.md`, `DOC_INDEX.md`, epics E-018/E-031/E-032/E-033/E-034/E-035,
+and ~8 new test files.
+
+**Next session — paste-ready prompt:**
+
+> Read `strategy-research/engineering/roadmap/EPICS.md`, then E-031's and
+> E-033's EPIC.md. Board state: E-032 and E-034 are done, E-035 (external
+> knowledge) is new, E-031 S3 (the queue return edge) and E-033 S3 (act on the
+> stage-shape finding) are the open work. **Seven orchestrator flags are all
+> `enabled: false` and the loop has not run since 2026-07-19** — nothing built
+> in the last session is live. Two decisions are outstanding and block
+> progress: (1) may a campaign run before E-025's two-sided ledger PR with
+> Dorian lands? (2) E-033 S1 found `validation` emits result thresholds in
+> free prose that nothing reads, duplicating the structured
+> `validation_protocol.yaml` contract `verdict_interpreter` already gets —
+> should `validation` stop emitting them, or should the prose channel be
+> retired? Do not build anything new until those are answered; the highest-
+> value work is turning on what exists, not adding to it.
