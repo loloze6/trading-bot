@@ -543,3 +543,41 @@ Fixes for 2 and 3 exist in `archive/2026-07-28/fix-fetch-end-bound`. Cherry-pick
   concluding anything**: the work looked lost and wasn't, and the surviving
   test file was written against functions that no longer existed. Its output
   was sound; its process was not.
+
+- 2026-08-27 — **Operator correction, and it is a REPEAT: a coarser timeframe
+  is DERIVED from a finer cache, never fetched.** I concluded a 4h retest was
+  blocked on missing `BTCUSDT_4h.csv`/`ETHUSDT_4h.csv` and fetched 9,143 bars
+  per symbol. Wrong, and unnecessary — the 1h caches already span 2018-01 →
+  2026-07, covering the whole window. `CandleBuilder`
+  (`data/data_manager.py:326`) aggregates to its `interval_seconds` on BOTH
+  paths; its `add_row()` docstring literally says *"Backtest path: ingest one
+  historical DataFrame row."* Verified: 48 × 1h rows into
+  `CandleBuilder(interval_seconds=14400)` → 11 completed 4h candles,
+  open/high/close matching the source exactly. The redundant fetch was
+  reverted.
+
+  **How I got it wrong, precisely.** I grepped `data_manager.py` for
+  `resample`, found only the aux-feed path (funding → bar width), and
+  concluded price bars could not be derived. `CandleBuilder` is **in that same
+  file, 570 lines above what I read**. I searched for the mechanism I expected
+  (`resample`) instead of the component that does the job, then treated one
+  negative grep as proof of absence.
+
+  **Why it repeated: the docs actively taught the wrong thing.** The project
+  `CLAUDE.md` architecture diagram read `DataManager (live ticks) ──►
+  CandleBuilder`. "(live ticks)" is the whole error — it presents a
+  dual-path component as live-only, so a reader looking for a *backtest*
+  capability correctly concludes it is not there. The operator has had to
+  correct this more than once, which makes it a documentation defect, not an
+  attention lapse.
+
+  **Fixed in three places** rather than just being noted: the `CLAUDE.md`
+  diagram now shows both paths and states the derive-don't-fetch rule
+  explicitly; `docs/WORKFLOW_CAPABILITIES.md`'s "what looks like it needs a
+  human but doesn't" table gained a row for it, with the verification; and
+  this entry.
+
+  **The transferable rule:** when a capability seems absent, name the
+  COMPONENT that would own it and read that, before concluding from a grep for
+  a mechanism you guessed at. And when an operator has to repeat a correction,
+  the fix belongs in the doc that misled, not only in the session record.
