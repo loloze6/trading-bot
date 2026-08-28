@@ -15,6 +15,7 @@ CLI:
 
 import sys
 import os
+import copy
 import math
 import argparse
 import subprocess
@@ -183,6 +184,96 @@ def check_ledger_is_merged(campaign_state_path: Path, allow_unmerged: bool = Fal
             f"or land the pending PR), or pass --allow-unmerged if this is a deliberate "
             f"exception."
         )
+
+
+def _canonical_equal(x, y) -> bool:
+    """
+    Canonical value equality for trial-ledger rows: Python-native `==` (so
+    0 == 0.0 and True == 1 compare equal) with one carve-out -- a pair of float
+    NaNs is treated as EQUAL. The carve-out is applied PER FIELD, recursively,
+    because a whole-dict `==` is False whenever ANY NaN is present, which would
+    misread "the two rows are byte-identical and happen to hold a NaN" as a
+    divergence. Correct for nested dict/list values, though ledger rows are flat
+    scalar dicts today. A key present on only one side of a dict => not equal
+    (one-sided field enrichment is a real difference, refused upstream).
+    """
+    if isinstance(x, float) and isinstance(y, float) and math.isnan(x) and math.isnan(y):
+        return True
+    if isinstance(x, dict) and isinstance(y, dict):
+        if x.keys() != y.keys():
+            return False
+        return all(_canonical_equal(x[k], y[k]) for k in x)
+    if isinstance(x, list) and isinstance(y, list):
+        if len(x) != len(y):
+            return False
+        return all(_canonical_equal(xi, yi) for xi, yi in zip(x, y, strict=True))
+    return x == y
+
+
+def _row_field_diff(master_row: dict, fork_row: dict) -> dict:
+    """Per-field diff of two rows, {field: (master_value, fork_value)}, for the
+    refuse-message. A field present on only one side reports `<absent>`."""
+    _MISSING = object()
+    diff: dict = {}
+    for k in set(master_row) | set(fork_row):
+        mv = master_row.get(k, _MISSING)
+        fv = fork_row.get(k, _MISSING)
+        if mv is _MISSING or fv is _MISSING or not _canonical_equal(mv, fv):
+            diff[k] = (
+                "<absent>" if mv is _MISSING else mv,
+                "<absent>" if fv is _MISSING else fv,
+            )
+    return diff
+
+
+def union_merge_trial_ledgers(a: list[dict], b: list[dict]) -> list[dict]:
+    """
+    Union-merge two trial-ledger row lists (E-025 S4). Pure -- no I/O, no git.
+
+    `a` is master (authoritative: its rows and their order are preserved
+    verbatim); `b` is fork. Returns a NEW list -- a's rows in a-order, then each
+    of b's rows whose (trial_id, source) key is not already present, in b-order.
+    Inputs are never mutated or aliased: every returned row is a deepcopy.
+
+    A key present on both sides is kept once when the two rows are canonically
+    equal (a shared-ancestor row -- REQUIRED, else every dual-writer sync would
+    refuse on the common base). When the two rows DIFFER, the merge REFUSES with
+    a ValueError: this fn is 2-way with no common base, so "which side edited the
+    shared row" is undecidable and REFUSE is the only safe answer. That refusal
+    is the mechanical signal to sync origin/master and retry (WRITER_CONTRACT
+    rule 2/5 -- an honest state arising from an upsert), not evidence of a bug.
+
+    Scoped to the trial_sharpes region only; the full 16-key file resolution is
+    the manual procedure in research/E025_S4_DESIGN_v5.md. Independent of
+    deduplicate_trials (issue #36): takes no dependency on the forecast_hash key.
+    """
+    check_no_duplicate_trial_ids(a)
+    check_no_duplicate_trial_ids(b)
+
+    merged: list[dict] = [copy.deepcopy(row) for row in a]
+    index: dict[tuple, dict] = {}
+    for row in merged:
+        index[(row.get("trial_id"), row.get("source"))] = row
+
+    for row in b:
+        key = (row.get("trial_id"), row.get("source"))
+        existing = index.get(key)
+        if existing is None:
+            new_row = copy.deepcopy(row)
+            merged.append(new_row)
+            index[key] = new_row
+        elif not _canonical_equal(existing, row):
+            raise ValueError(
+                f"union_merge_trial_ledgers: shared row {key} differs between "
+                f"master and fork: {_row_field_diff(existing, row)}. If you have "
+                f"not merged origin/master since the other writer's last ledger "
+                f"change, sync and retry -- this state arises honestly from an "
+                f"upsert (WRITER_CONTRACT rule 2)."
+            )
+        # key present + canonically equal -> shared ancestor, keep master's copy once
+
+    check_no_duplicate_trial_ids(merged)
+    return merged
 
 
 # ---------------------------------------------------------------------------
