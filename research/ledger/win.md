@@ -668,3 +668,61 @@ run_060's artifact says block_24 when the block was 6 -- same lie as the
 prescreen label just fixed, but that string is a MEMBER of `VALID_METHODS`
 which the conformance gate checks by membership, so fixing it is a gate change.
 Not slipped into this commit.
+
+## 2026-08-28 (later) — four PRs merged, item 5 CLOSED, #40 fixed
+
+**Backlog item 5 is closed on Windows.** Dorian's B2 proof (`26e84063` on
+`dorian/mac/setup`) ported and green here in 41s — real `run_protocol.py`
+subprocess, real engine, real cost model, one self-consistent trial row into a
+sandboxed `campaign_state`. Safe by construction: kraken BTCUSD, whose cache
+physically ends 2025-12-31, so no sealed bar exists to load. **All four "good
+enough to start generating" gates now hold on this machine.**
+
+Three Windows portability fixes were needed. The one worth remembering:
+**the interpreter precondition hardcoded `.venv/bin/python`, so the proof
+SILENTLY SKIPPED** — on the very machine that owed it, inside a green suite. A
+skip that reads as "nothing to do" is worse than a red test. Now asks the
+project's own `_resolve_tbot_python`. The other two: `os.symlink` needs
+Administrator/Developer Mode on Windows (fell back to a `mklink /J` junction,
+deliberately not a copy, because the design depends on `abspath` not
+dereferencing), and `mklink` output is cp1252 so `text=True` threw.
+
+**Merged, in the order the risk demanded:** #39 (live trial-accounting bug on
+master) → #38 (dedup on `(forecast_hash, source)`) → #37 (unwired union-merge)
+→ #42 (ours). Each diff was read before merging, not just its description.
+Master `1d08914d`; zero open PRs.
+
+**The cross-check that mattered.** After #39/#38 landed I merged master into
+#42 LOCALLY and re-ran everything rather than trusting "no textual conflict" —
+all three touched `run_phase1_research.py`. **Dorian's B2 proof still passed on
+the combined tree**, which is the meaningful result because #39 modified
+exactly the code path B2 exercises for real. Final on master:
+strategy-research 904, trading-bot 390 fast + 26 slow, B2 green in 50s.
+
+**#40 fixed (PR #43).** Two DSR paths labelled the same method differently
+(`baiey_lopez_prado_2014` vs `bailey_lopezdeprado_2014`); a filter on the
+correct spelling silently returned NOTHING for pipeline runs. **I corrected my
+own recommendation here:** I had advised making readers accept both spellings,
+assuming historical artifacts carried the typo. Checking showed the misspelling
+was in ONE file, no artifact carried it, and nothing read the field at all — so
+no shim, which would have been complexity paying for a problem that did not
+exist. The test pins AGREEMENT between the two files rather than the literal
+string, because the defect was mirrored sites drifting, not the typo.
+
+**J3 — the operator challenged "wait for a timeslot" and was right.** Going to
+prepare our side revealed the demo base file `campaign_state_corun_demo.yaml`
+is on NEITHER master NOR any of Dorian's pushed branches — it is local to his
+Mac. So J3 was never blocked on scheduling; it is blocked on the base landing.
+Once it is on master the coordination largely dissolves (he lands, we append
+any time, his branch carries his own divergent append). Asked him to push it
+and pre-wrote our exact append against the live row schema.
+
+**Transferable rules.**
+- A per-machine gate is not discharged by the other machine's green run, and
+  the thing that hides this is a SKIP, not a failure. Prefer failing loudly
+  over skipping when a precondition is missing on the machine that owes it.
+- Before merging PRs that touch one file, merge them together LOCALLY and run
+  the suites. "No textual conflict" is not "works."
+- Check the premise of your own recommendation before implementing it. Twice
+  today the cautious version (dual-spelling readers; "name a timeslot") was
+  wrong once the facts were actually looked at.
