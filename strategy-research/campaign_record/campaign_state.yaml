@@ -38,6 +38,7 @@ runs:
 - run_053
 - run_054
 - run_059
+- run_060
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -241,6 +242,11 @@ altitude_history:
   family: sma_trend_following
   outcome: pivot
 - run: run_059
+  altitude: hypothesis
+  dimension: ''
+  family: funding_rate_mean_reversion
+  outcome: kill
+- run: run_060
   altitude: hypothesis
   dimension: ''
   family: funding_rate_mean_reversion
@@ -449,6 +455,11 @@ diagnostics_log:
   cost_drag_pct: 6.5689
   win_rate_vs_sharpe: win_rate PASS + sharpe FAIL
   avg_trade_duration_bars: 6.17
+- run: run_060
+  forecast_return_corr: 0.016237
+  cost_drag_pct: 653.6
+  win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
+  avg_trade_duration_bars: null
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
@@ -509,7 +520,7 @@ notes:
   regime_retune_results.yaml, config/regime_retune_winner.json, runs/run_039/artifacts/regime_audit_decision.yaml.'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-07-19T12:29:10.316253+00:00'
+updated_at: '2026-08-28T19:56:32.530743+00:00'
 last_escalation:
   target: timeframe
   detail: 15m
@@ -660,8 +671,8 @@ trial_sharpes:
   statistic_valid: expectancy
   below_floor_pct: 53.33
   dedup_note: 'E-025/issue #28 H3 (2026-08-16): this trial was recorded 3x total (2
-    identical duplicates removed here) by protocol_execution being re-entered with no
-    idempotency guard on _record_backtest_trial. Both removed rows were byte-identical
+    identical duplicates removed here) by protocol_execution being re-entered with
+    no idempotency guard on _record_backtest_trial. Both removed rows were byte-identical
     to this one -- a clean mechanical dedup, not a judgment call. Fixed going forward
     by the (trial_id, source)-keyed guard landed the same day.'
 - trial_id: run_057
@@ -714,14 +725,23 @@ trial_sharpes:
   n_trades: 0
   statistic_valid: sharpe
   below_floor_pct: 30.61
-  dedup_note: 'E-025/issue #28 H3 (2026-08-16): this trial was recorded 2x by
-    protocol_execution re-entry, but unlike run_054 the two rows were NOT identical
-    -- this is a judgment call, not a mechanical dedup, flagged explicitly for
-    override. The removed row read sharpe=null, statistic_valid=expectancy,
-    below_floor_pct=100.0, n_trades=0 -- the exact fingerprint of a lookup failure
-    (all fields defaulted), matching the pre-fix run_059 timestamp-format bug fixed
-    the same day (d7f42c6: bars.csv date-only vs trades.json full ISO on daily bars,
-    100% lookup failure for this specific run). This row''s n=699 trades matches that
-    fix''s confirmed trade count exactly, so it is kept as the real, later measurement;
-    the degenerate row is removed as a stale artifact of the earlier broken run, not
-    a second genuine trial.'
+  dedup_note: 'E-025/issue #28 H3 (2026-08-16): this trial was recorded 2x by protocol_execution
+    re-entry, but unlike run_054 the two rows were NOT identical -- this is a judgment
+    call, not a mechanical dedup, flagged explicitly for override. The removed row
+    read sharpe=null, statistic_valid=expectancy, below_floor_pct=100.0, n_trades=0
+    -- the exact fingerprint of a lookup failure (all fields defaulted), matching
+    the pre-fix run_059 timestamp-format bug fixed the same day (d7f42c6: bars.csv
+    date-only vs trades.json full ISO on daily bars, 100% lookup failure for this
+    specific run). This row''s n=699 trades matches that fix''s confirmed trade count
+    exactly, so it is kept as the real, later measurement; the degenerate row is removed
+    as a stale artifact of the earlier broken run, not a second genuine trial.'
+- trial_id: run_060
+  source: prescreen
+  route: kill_no_ic
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: 0.016237
+  cost_pass: false
+  forecast_hash: 4aa5c7759102d7c5386899957a90cd6b2c185e56ea30671074606caa20c80b86

@@ -154,3 +154,45 @@ C:\Users\alauz\Documents\Projects\trading-bot\trading-bot\core\backtester.py:234
 - 2026-08-27T19:27:37Z [DRY RUN] wishlist-trigger classification OK: detected family="daily_timeframe_er_overlay: checked 19 record(s); none satisfy all 3 condition(s) (source=kb_finding, family='daily_timeframe_er_overlay')"
 - 2026-08-27T19:27:37Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
 - 2026-08-27T19:27:37Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-08-27T20:54:43Z RECONCILE: 59 run dir(s) scanned, 59 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T20:54:43Z VENUE-CHECK run_060: venue='binance' product='perp' tradable=False research_only=True
+- 2026-08-27T20:54:43Z LAUNCH FUNDING_MR_4H_RETEST -> run_060 (brief=briefs/FUNDING_MR_4H_RETEST.md)
+- 2026-08-27T21:01:38Z STAGE  FUNDING_MR_4H_RETEST / run_060: pending_stage=signal_prescreen status=failed (prescreen_route=insufficient_power_a_priori)
+- 2026-08-27T21:01:38Z HALT — unhandled_exception: forecast_hash requires runs\run_060\artifacts\candidate_strategy_config.json, which does not exist. This trial's own prescreen/backtest step already had to read this file to produce a result -- its absence now means the artifacts directory is in an unexpected state, not a normal case to silently ski. Campaign stopped on FUNDING_MR_4H_RETEST / run_060. See RUNBOOK.md 'Resume after a pause'.
+- 2026-08-27T21:47:56Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-08-27T21:47:56Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T21:47:56Z [DRY RUN] queue: selected entry 'FUNDING_MR_4H_RETEST' (status=in_progress, brief=briefs/FUNDING_MR_4H_RETEST.md)
+- 2026-08-27T21:47:56Z [DRY RUN] classified next action for 'FUNDING_MR_4H_RETEST': 'continue'
+- 2026-08-27T21:47:56Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=structural_forced_flow, market_universe=['BTCUSDT', 'ETHUSDT']
+- 2026-08-27T21:47:56Z VENUE-CHECK run_dryrun_verify: venue='binance' product='perp' tradable=False research_only=True
+- 2026-08-27T21:47:56Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written (brief has no machine_constraints)
+- 2026-08-27T21:47:56Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-08-27T21:47:56Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-08-27T21:47:56Z [DRY RUN] wishlist-trigger classification OK: detected family="daily_timeframe_er_overlay: checked 19 record(s); none satisfy all 3 condition(s) (source=kb_finding, family='daily_timeframe_er_overlay')"
+- 2026-08-27T21:47:57Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-08-27T21:47:57Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-08-27T21:48:08Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T21:50:13Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T21:52:23Z STAGE  FUNDING_MR_4H_RETEST / run_060: pending_stage=signal_prescreen status=failed (no scored artifacts yet)
+- 2026-08-27T21:52:23Z HALT — stale_escalation_unclaimed: [B10] No run_context.yaml override and no machine_constraints.protocol_ref for run_060, and campaign_state.last_escalation (protocol_path='protocols\\escalation_tf_15m.json') is either empty or claimed by a different run ('run_049') -- refusing to silently run against stale, unrelated campaign-wide . Campaign stopped on FUNDING_MR_4H_RETEST / run_060. See RUNBOOK.md 'Resume after a pause'.
+- 2026-08-27T21:59:23Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T21:59:23Z Queue exhausted — no ready or in_progress entries remain.
+- 2026-08-27T22:00:16Z RESUME FUNDING_MR_4H_RETEST / run_060: resolution confirmed for 'stale_escalation_unclaimed', resuming queue processing.
+- 2026-08-27T22:00:16Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-27T22:00:18Z STAGE  FUNDING_MR_4H_RETEST / run_060: pending_stage=human_pause status=active (prescreen_route=no_signal_artifact)
+- 2026-08-27T22:00:19Z HALT — conformance_gate_failure. Campaign stopped on FUNDING_MR_4H_RETEST / run_060. See RUNBOOK.md 'Resume after a pause'.
+- 2026-08-28T00:00:00Z TRIAL LEDGER CORRECTION / run_060: removed one trial row
+  (forecast_hash=ee635abd..., route=no_signal_artifact, statistic_valid=neither).
+  It was recorded by a prescreen that loaded ZERO bars: the loader demanded
+  BTCUSDT_4h.csv/ETHUSDT_4h.csv, neither exists, both symbols were skipped, and
+  the run still emitted a route. The standing rule is that an experiment which
+  TOUCHED MARKET DATA gets a row; this one touched none and tested nothing, so
+  counting it would inflate N against the deflated-Sharpe denominator for a
+  non-experiment. Not a hidden kill -- no result was produced to hide. The
+  defect that allowed a route from zero data is fixed (prescreen_signal.py now
+  raises), so this row cannot recur.
+- 2026-08-28T19:53:21Z RESUME FUNDING_MR_4H_RETEST / run_060: resolution confirmed for 'conformance_gate_failure', resuming queue processing.
+- 2026-08-28T19:53:21Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-28T19:56:32Z STAGE  FUNDING_MR_4H_RETEST / run_060: pending_stage=completed_rejected status=rejected (ic=0.016237, cost_ratio=0.153, prescreen_route=kill_no_ic, backtest_verdict=kill, verdict_status=kill)
+- 2026-08-28T19:59:02Z RECONCILE: 60 run dir(s) scanned, 60 referenced/grandfathered, 0 unexpected (0 known-quarantined)
+- 2026-08-28T19:59:02Z Queue exhausted — no ready or in_progress entries remain.

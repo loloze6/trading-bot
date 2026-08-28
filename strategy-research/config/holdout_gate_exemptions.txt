@@ -349,3 +349,30 @@ strategy-research/tests/test_measure_bar_sigma.py	9
 #     -> strategy-research/engineering/roadmap/E-030/artifacts/measured_throughput_eras.txt<TAB>6
 #   NO MARKET DATA FROM THE SEALED WINDOW.
 strategy-research/engineering/roadmap/E-030/artifacts/measured_throughput_eras.txt	6
+
+# ADDED 2026-08-28 -- run_060 (FUNDING_MR_4H_RETEST), category: POLICY RESTATEMENT.
+#   Two stage artifacts each carry ONE line in which an agent restates the
+#   campaign's own holdout policy while describing the validation flow -- one
+#   naming the sealed span as the frozen, single-use final stage after
+#   walk-forward, the other reproducing campaign_data_policy.yaml's own
+#   holdout_range field with its "FROZEN, do not use in any backtest" note.
+#   They describe the seal; they do not read it.
+#   (Written date-literal-free on purpose: quoting either line here would add a
+#   sealed date to THIS file and re-block the gate on the registry itself.)
+#   run_060 never touched the sealed window and could not have: it resolved
+#   research_only=True (binance is unlisted in venue_tradability.yaml) and was
+#   killed at signal_prescreen with 0 of 49 protocol windows executed. Its own
+#   data range is 2019-12-01..2024-01-01, which ends more than two years before
+#   the seal opens.
+#   Count-pinned at 1 each, NOT marked PROSE: these are stage artifacts, i.e.
+#   the config/fixture category the registry's own note says must stay
+#   count-pinned so a human sees any new sealed date. A second such line in
+#   either file re-blocks the commit, which is the intent.
+#   Verified with the gate's own machinery against the index this commit
+#   publishes:
+#     sh strategy-research/tools/holdout_date_gate.sh --report-residual \
+#         | grep run_060
+#     -> both paths, 1 line each
+#   NO MARKET DATA FROM THE SEALED WINDOW.
+strategy-research/runs/run_060/artifacts/backtest_spec.yaml	1
+strategy-research/runs/run_060/artifacts/validation_protocol.yaml	1

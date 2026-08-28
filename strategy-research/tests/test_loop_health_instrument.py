@@ -13,9 +13,11 @@ quarantine. Nothing in this file tests retry, and that absence is deliberate.
 
 WHAT IS PROVEN HERE
   1. The re-implemented pairing algorithm reproduces `measure_halt_cost.py` EXACTLY
-     against the real, tracked `campaign_record/campaign_log.md` — 14 halts, 127.0 h,
-     median 1.98 h, and the taxonomy's own reason-code tally. A known-answer test
-     against the S1 artifact, not a self-consistent one.
+     against the real, tracked `campaign_record/campaign_log.md` — 17 halts, 129.8 h,
+     median 1.81 h, and the taxonomy's own reason-code tally. A known-answer test
+     against the S1 artifact, not a self-consistent one. (Rebaselined 2026-08-28
+     from 14/127.0/1.98 by RE-RUNNING measure_halt_cost.py and regenerating
+     measured_halt_cost.txt, so both sides stay independently derived.)
   2. The emitted block's shape: the mandated keys, TWO cause buckets (never three),
      null rather than a flattering 0.0 on a degenerate denominator, and the two
      different denominators disclosed rather than silently conflated.
@@ -67,9 +69,19 @@ def test_pairing_reproduces_measured_halt_cost_txt():
     cross-checkable against is worse than no instrument, so this asserts the
     artifact's own published numbers, verbatim:
 
-        halts                    : 14
-        total recorded downtime  : 127.0 h
-        median halt downtime     : 1.98 h
+        halts                    : 17
+        total recorded downtime  : 129.8 h
+        median halt downtime     : 1.81 h
+
+    REBASELINED 2026-08-28 (was 14 / 127.0 h / 1.98 h, measured 2026-08-23).
+    NOT a silent re-pin: `measure_halt_cost.py` was re-run against the current
+    log and `measured_halt_cost.txt` regenerated from that run, so the two
+    sides of this cross-check were re-derived independently and still agree.
+    The original 14 rows are byte-identical; the three additions are this
+    session's own halts while getting run_060 through the pipeline --
+    unhandled_exception (0.77 h), stale_escalation_unclaimed (0.12 h) and
+    conformance_gate_failure (1.99 h) on 2026-08-27. The median moved only
+    because the count went even->odd.
 
     Read-only, and via an INDEPENDENTLY constructed path (the conftest autouse guard
     redirects `camp.CAMPAIGN_LOG_PATH` to a sandbox by default — that redirection is
@@ -80,21 +92,25 @@ def test_pairing_reproduces_measured_halt_cost_txt():
     events = camp._parse_campaign_log_events(log_path)
     halts = camp._pair_halts_with_downtime(events)
 
-    assert len(halts) == 14
+    assert len(halts) == 17
     known = sorted(h["downtime_hours"] for h in halts if h["downtime_hours"] is not None)
-    assert len(known) == 14, "every halt in the record has a successor event"
-    assert round(sum(known), 1) == 127.0
-    assert round(known[len(known) // 2], 2) == 1.98
+    assert len(known) == 17, "every halt in the record has a successor event"
+    assert round(sum(known), 1) == 129.8
+    assert round(known[len(known) // 2], 2) == 1.81
 
-    # And the reason-code tally the taxonomy reconciles against ("unhandled_exception 6,
+    # And the reason-code tally the taxonomy reconciles against ("unhandled_exception 7,
     # component_execution_error 3, no_signal_artifact 2, kb_reactivation_violation 2,
-    # component_gap 1 -- 14 of 14").
+    # component_gap 1, stale_escalation_unclaimed 1, conformance_gate_failure 1 --
+    # 17 of 17"). The last three are 2026-08-27 additions from the run_060 session;
+    # stale_escalation_unclaimed and conformance_gate_failure are NEW reason codes,
+    # both raised by gates doing their job rather than by defects in the loop.
     tally = {}
     for h in halts:
         tally[h["reason"]] = tally.get(h["reason"], 0) + 1
     assert tally == {
-        "unhandled_exception": 6, "component_execution_error": 3,
+        "unhandled_exception": 7, "component_execution_error": 3,
         "no_signal_artifact": 2, "kb_reactivation_violation": 2, "component_gap": 1,
+        "stale_escalation_unclaimed": 1, "conformance_gate_failure": 1,
     }
 
 

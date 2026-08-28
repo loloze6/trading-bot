@@ -581,3 +581,90 @@ Fixes for 2 and 3 exist in `archive/2026-07-28/fix-fetch-end-bound`. Cherry-pick
   COMPONENT that would own it and read that, before concluding from a grep for
   a mechanism you guessed at. And when an operator has to repeat a correction,
   the fix belongs in the doc that misled, not only in the session record.
+
+---
+
+## 2026-08-28 — run_060 finished, and getting it there found four defects (one in the engine)
+
+**Outcome first: the funding mean-reversion mechanism is dead at 4h, on real
+numbers.** IC (active bars) 0.0162, IC (all bars) -0.0069, over 17,854 bars
+pooled across BTCUSDT+ETHUSDT (8,928 active). Cost gate: gross edge 2.60 bps vs
+17.0 bps cost -> edge/cost 0.153 against a required 2.0. Recorded
+`verdict_status: ungated` because the kill landed at PRESCREEN with 0 of 49
+windows executed, so the pre-registered pass rule (median Sharpe > 0.8, maxDD <
+30%) was never evaluated. Measurement-backed kill, not a verdict against the
+registered criteria -- and it must never be cited as one. This was the last
+granularity the parent reactivation clause named, so that KB entry closes.
+
+**The run had to be repaired four times to produce that number, which is the
+real finding.** Each defect was invisible until a campaign actually launched.
+
+1. **A8.6 block size** (fixed previous session): 4h inherited the 1h block of
+   24 -> n_eff 91.9 -> killed as underpowered. Correct block 6 -> n_eff 367.5.
+   The kill was an arithmetic artifact.
+2. **Prescreen could not derive a timeframe.** `_load_ohlcv` mapped timeframe
+   straight to `{SYMBOL}_{tf}.csv`. No `BTCUSDT_4h.csv` exists, so BOTH symbols
+   were skipped -- while `BTCUSDT_1h.csv` sat there spanning 2018-01-01 to
+   2026-07-05.
+3. **It then emitted a verdict from zero bars.** Every symbol failing was only
+   a warning; the tool substituted a placeholder sigma, printed "the cost check
+   below is not valid", routed `no_signal_artifact`, and recorded a trial.
+   `no_signal_artifact` claims a signal did not fire ON DATA; no data was read.
+   Now raises.
+4. **A pinned setting nothing applied.** The brief pinned
+   `significance_methodology: episode_blocked_a851a`, but the prescreen reads
+   that only from `candidate_strategy_config.json` and nothing carried it
+   across. The F4d gate caught the divergence and halted -- correctly -- but
+   the gate is an AUDIT and there was no WIRING. Propagation added.
+
+**The engine bug, found only because the operator insisted on reuse.** The
+instruction was: "i would prefer that A reuse the features already developed in
+trading bot for candlebuilder. this to have a unique source of data logic to
+maintain." Wiring the prescreen onto `CandleBuilder` instead of a private
+resample immediately exposed a disagreement between the two.
+
+`data_manager.py:468` called `self._update_candle(current, price, volume)`,
+dropping the `high`/`low` it had just been handed. `_update_candle`'s fallback
+is `high if high is not None else price`, so every row after the FIRST in a
+candle contributed only its CLOSE. An aggregated candle's high was
+`max(first_row_high, closes of rows 2..n)` -- systematically understating highs
+and overstating lows. Measured on a synthetic 4h bar: high 150 instead of 180,
+low 90 instead of 60.
+
+It survived because it only bites when a candle spans MULTIPLE rows. A 1h run
+over 1h data opens a new candle per row via `_open_candle`, which always
+honoured high/low. Deriving a coarser timeframe -- the documented capability --
+is the only thing that aggregates, and no 4h run had ever been launched. One
+line to fix. Afterwards CandleBuilder and an independent reference agree on 186
+bars with ZERO mismatching fields over a month of real BTCUSDT data.
+
+**Bit-identity holds:** slow suite 26/26 including
+`test_bar_equity_bit_identical` (4), `test_model_funding_bit_identical` (6),
+`test_warmup_prefetch_bit_identical` (3) and `test_regression_backtest` (6). No
+baseline moved, because no baseline aggregates.
+
+**Trial ledger corrected.** The zero-data attempt's trial row was removed and
+the reason logged: it touched no market data, so counting it would inflate N
+against the deflated-Sharpe denominator for a non-experiment. Not a hidden kill
+-- there was no result to hide.
+
+**Transferable rules.**
+- A gate that only AUDITS a declaration leaves a manual repair on every run.
+  Wire the declaration to the thing that reads it; keep the gate as the check.
+- Reusing the engine's component beats reimplementing its behaviour, and not
+  only for maintenance: the disagreement between the two implementations was
+  itself the bug report. A private reimplementation would have hidden it and
+  made the prescreen screen bars the backtest never trades.
+- A test whose premise the campaign has since falsified is obsolete BY DESIGN,
+  not drift. Restate what it actually guards (`run_060 is the ONLY 4h funding
+  run`) rather than deleting or blindly re-pinning it.
+- `pytest -m slow` is killed by `pytest.ini`'s global `--timeout=30`; it needs
+  `--timeout=0`. Pre-existing, but it means the documented command could not
+  verify the slow suite.
+
+**Still open:** `episode_significance.py:209` hardcodes the label
+`"block_24_dense_fallback"` while using the real derived block size, so
+run_060's artifact says block_24 when the block was 6 -- same lie as the
+prescreen label just fixed, but that string is a MEMBER of `VALID_METHODS`
+which the conformance gate checks by membership, so fixing it is a gate change.
+Not slipped into this commit.
