@@ -5046,17 +5046,22 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     n_invalidated = sum(1 for t in all_trials if t.get("invalidated_artifact"))
     valid_trials = [t for t in all_trials if not t.get("invalidated_artifact")]
 
-    # A6.4: deduplicate by forecast_hash
-    seen_hashes: set = set()
+    # A6.4: deduplicate by (forecast_hash, source) -- #36. Keyed on forecast_hash
+    # alone, a run's prescreen and backtest rows (same hash, different source) collided
+    # and the backtest Sharpe was dropped from n_dsr_total. source is in the key to
+    # match deflate_sharpe.py::deduplicate_trials, which this path must mirror exactly
+    # (see the lockstep note at n_dsr_total below).
+    seen_keys: set = set()
     deduped_trials = []
     n_dedup_removed = 0
     for t in valid_trials:
         fh = t.get("forecast_hash")
-        if fh and fh in seen_hashes:
+        key = (fh, t.get("source"))
+        if fh and key in seen_keys:
             n_dedup_removed += 1
         else:
             if fh:
-                seen_hashes.add(fh)
+                seen_keys.add(key)
             deduped_trials.append(t)
 
     # A6.2: compute over statistic_valid='sharpe' only
