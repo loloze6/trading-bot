@@ -416,6 +416,37 @@ def test_promotion_audit_total_count_divergence(campaign_state_path, tmp_path):
     assert audit_rpr["total_campaign_runs"] == 0
 
 
+def test_issue36_inline_path_keeps_prescreen_and_backtest_rows(campaign_state_path, tmp_path):
+    """B-#36. A single run's prescreen and backtest rows share a forecast_hash but
+    differ by source; _write_promotion_audit's inline dedup must count BOTH (feeding
+    n_dsr_total -> total_hypotheses_tested), mirroring ds.deduplicate_trials exactly.
+    RED under the old forecast_hash-only inline key: the two collapsed to 1, silently
+    dropping the backtest Sharpe from the DSR N that gates the single-use holdout."""
+    shared = "run042_forecast_hash"
+    trials = [
+        {"trial_id": "run_042", "source": "prescreen", "forecast_hash": shared,
+         "statistic_valid": "neither", "sharpe": None},
+        {"trial_id": "run_042", "source": "backtest", "forecast_hash": shared,
+         "statistic_valid": "sharpe", "sharpe": 1.2, "n_trades": 120},
+    ]
+    _seed_state(campaign_state_path, trials, runs=[])
+    run_dir = tmp_path / "runs" / "run_042"
+    (run_dir / "artifacts").mkdir(parents=True)
+    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
+        yaml.safe_dump({}), encoding="utf-8")
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(
+        yaml.safe_dump({}), encoding="utf-8")
+
+    rpr._write_promotion_audit(run_dir, "run_042")
+    audit = yaml.safe_load(
+        (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+
+    # CHAR[CONTRACT]: prescreen + backtest of one run are distinct (forecast_hash, source)
+    # keys -- both counted, mirroring ds. RED here means the inline path regressed to the
+    # forecast_hash-only key and #36 is live again on the promotion write path.
+    assert audit["total_hypotheses_tested"] == 2
+
+
 def test_prescreen_writer_row_shape(campaign_state_path, tmp_path):
     """B1. _record_prescreen_trial emits the fixed prescreen-kill row shape and,
     post-cf7908bc (H3), a forecast_hash of the candidate config it read."""
