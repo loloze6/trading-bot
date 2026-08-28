@@ -5151,7 +5151,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             "deflated_sharpe_ratio": None,
             "expected_max_sharpe":   None,
             "trial_sharpe_variance": None,
-            "correction_method":     "baiey_lopez_prado_2014",
+            "correction_method":     "bailey_lopezdeprado_2014",
             "dsr_error":             f"Insufficient trials: need >= 2, got {n_dsr_total}",
         }
         passes_deflated = False
@@ -5163,7 +5163,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             "deflated_sharpe_ratio": None,
             "expected_max_sharpe":   None,
             "trial_sharpe_variance": None,
-            "correction_method":     "baiey_lopez_prado_2014",
+            "correction_method":     "bailey_lopezdeprado_2014",
             "dsr_error":             (
                 f"N={n_dsr_total} trials recorded (multiple-testing count is honest), "
                 f"but only {n_trials} produced a real Sharpe value -- need >= 2 real "
@@ -5182,7 +5182,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
                 "deflated_sharpe_ratio": None,
                 "expected_max_sharpe":   None,
                 "trial_sharpe_variance": round(var_sr, 6),
-                "correction_method":     "baiey_lopez_prado_2014",
+                "correction_method":     "bailey_lopezdeprado_2014",
                 "dsr_error":             "Zero trial Sharpe variance — all trials identical; DSR undefined.",
             }
             passes_deflated = False
@@ -5206,7 +5206,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
                 "deflated_sharpe_ratio": round(dsr, 4),
                 "expected_max_sharpe":   round(e_max_sr, 4),
                 "trial_sharpe_variance": round(var_sr, 6),
-                "correction_method":     "baiey_lopez_prado_2014",
+                "correction_method":     "bailey_lopezdeprado_2014",
             }
 
     audit = {
