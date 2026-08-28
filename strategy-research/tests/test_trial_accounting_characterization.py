@@ -416,6 +416,37 @@ def test_promotion_audit_total_count_divergence(campaign_state_path, tmp_path):
     assert audit_rpr["total_campaign_runs"] == 0
 
 
+def test_issue36_inline_path_keeps_prescreen_and_backtest_rows(campaign_state_path, tmp_path):
+    """B-#36. A single run's prescreen and backtest rows share a forecast_hash but
+    differ by source; _write_promotion_audit's inline dedup must count BOTH (feeding
+    n_dsr_total -> total_hypotheses_tested), mirroring ds.deduplicate_trials exactly.
+    RED under the old forecast_hash-only inline key: the two collapsed to 1, silently
+    dropping the backtest Sharpe from the DSR N that gates the single-use holdout."""
+    shared = "run042_forecast_hash"
+    trials = [
+        {"trial_id": "run_042", "source": "prescreen", "forecast_hash": shared,
+         "statistic_valid": "neither", "sharpe": None},
+        {"trial_id": "run_042", "source": "backtest", "forecast_hash": shared,
+         "statistic_valid": "sharpe", "sharpe": 1.2, "n_trades": 120},
+    ]
+    _seed_state(campaign_state_path, trials, runs=[])
+    run_dir = tmp_path / "runs" / "run_042"
+    (run_dir / "artifacts").mkdir(parents=True)
+    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
+        yaml.safe_dump({}), encoding="utf-8")
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(
+        yaml.safe_dump({}), encoding="utf-8")
+
+    rpr._write_promotion_audit(run_dir, "run_042")
+    audit = yaml.safe_load(
+        (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+
+    # CHAR[CONTRACT]: prescreen + backtest of one run are distinct (forecast_hash, source)
+    # keys -- both counted, mirroring ds. RED here means the inline path regressed to the
+    # forecast_hash-only key and #36 is live again on the promotion write path.
+    assert audit["total_hypotheses_tested"] == 2
+
+
 def test_prescreen_writer_row_shape(campaign_state_path, tmp_path):
     """B1. _record_prescreen_trial emits the fixed prescreen-kill row shape and,
     post-cf7908bc (H3), a forecast_hash of the candidate config it read."""
@@ -716,6 +747,103 @@ def test_h4_failed_backtest_missing_config_records_none_hash_and_reraises(temp_r
     assert len(rows) == 1  # the failure is still counted.
     assert rows[0]["forecast_hash"] is None  # config unreadable → hashless row.
     assert rows[0]["source"] == "backtest_failed"
+
+
+def test_h4b_corrupt_summary_after_success_records_failed_trial(temp_run, monkeypatch):
+    """C3d (B1, issue #28). The exit-0-AND-summary-present path: run_protocol.py
+    really ran (data spent) and wrote protocol_summary.json, but the file is
+    present-but-truncated so json.load (:1164) raises INSIDE the post-success window
+    (:1163-1201) — before _record_backtest_trial (:1202). This window has no failure
+    accounting of its own: the two H4 raise sites (:1140-1161) already returned, so a
+    raise here escapes to run_loop's handler and NO trial row lands — N under-counts a
+    look that already touched market data (the exact H4 defect, one stage too late).
+
+    Pins the CONTRACT after the fix: the completed-but-unparseable look records exactly
+    one 'backtest_failed' row via the same _record_failed_backtest_trial recorder, and
+    the ORIGINAL json.JSONDecodeError still propagates (the loud halt must survive — an
+    accounting add, never an exception swallow). RED against pre-fix mac/setup: the row
+    assertion fails (no row lands today); the propagation assertion holds either way.
+
+    (All :NNNN in this docstring are pre-fix positions, upstream/master af2d91b6 — the
+    fix re-indented the window into a try, so post-fix json.load is :1175, the window is
+    :1163-1211, and _record_backtest_trial's CALL is :1223. Not renumbered inline.)"""
+    run_dir, run_id = temp_run
+    _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    expected_hash = _seed_config(run_dir / "artifacts")
+
+    def _fake_run(cmd, capture_output=True, text=True, **kwargs):
+        out_dir = None
+        for i, tok in enumerate(cmd):
+            if str(tok) == "--out-dir":
+                out_dir = Path(cmd[i + 1])
+                break
+        # returncode 0 (backtest ran) + a PRESENT summary that does not parse: the
+        # exact exit-0-corrupt-summary shape, distinct from the missing-summary branch.
+        assert out_dir is not None
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "protocol_summary.json").write_text('{"per_symbol_summary": {', encoding="utf-8")
+        return _FakeResult(0, "fake-stdout", "")
+
+    monkeypatch.setattr(rpr.subprocess, "run", _fake_run)
+
+    with pytest.raises(json.JSONDecodeError):  # CHAR[CONTRACT]: the loud halt survives the fix.
+        asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
+
+    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
+    assert len(rows) == 1  # CHAR[CONTRACT]: the spent-but-unparseable look is counted, exactly once.
+    row = rows[0]
+    assert row["trial_id"] == run_id  # CHAR[CONTRACT]: trial_id == run_id.
+    assert row["source"] == "backtest_failed"  # CHAR[CONTRACT]: distinct source, won't shadow a retry's real row.
+    assert row["statistic_valid"] == "failed"  # CHAR[CONTRACT]: lands in deflate's statistic_neither bucket.
+    assert row["sharpe"] is None  # CHAR[CONTRACT]: no Sharpe from a crash mid-window.
+    assert row["forecast_hash"] == expected_hash  # CHAR[CONTRACT]: config was readable → real hash.
+    assert isinstance(row["error"], str) and row["error"]  # CHAR[CONTRACT]: a short reason is stored.
+
+
+def test_h4b_vce_raise_after_success_records_failed_trial(temp_run, monkeypatch):
+    """C3e (B1, issue #28). The OTHER raiser in the same post-success window: json.load
+    SUCCEEDS (well-formed summary), then evaluate_pass_rule_criteria raises a TypeError —
+    the documented real-world trigger, a structured (B11) pass-rule whose metric resolves
+    non-numeric and blows up in _apply_comparator. Same window as C3d, different point in
+    it. Its purpose is to defeat the narrowing mutation `except Exception:` ->
+    `except json.JSONDecodeError:` (equivalently, ending the try right after json.load):
+    that mutation keeps C3d green (its trigger IS a JSONDecodeError) while silently
+    dropping accounting for THIS path and any save_yaml I/O failure. This test goes RED
+    under that narrowing, so it pins that the guard catches the WHOLE window, matching the
+    PR's claim that the pass-rule eval path is covered.
+
+    Uses the suite's _stub_vce mechanism with a raising lambda. Same contract as C3d:
+    exactly one 'backtest_failed' row lands AND the original TypeError still propagates.
+    (Window positions are pre-fix; see C3d's docstring for the post-fix anchor.)"""
+    run_dir, run_id = temp_run
+    _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    expected_hash = _seed_config(run_dir / "artifacts")
+    # Well-formed summary so json.load succeeds; the raise must come from the VCE step.
+    _install_fake_subprocess(
+        monkeypatch,
+        protocol_summary={"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.0, "trade_count": 100}}},
+    )
+
+    def _raise_type_error(summary, prereg, brief):
+        raise TypeError("'>' not supported between instances of 'str' and 'float'")
+
+    import types as _types
+    stub = _types.ModuleType("verdict_criteria_evaluator")
+    stub.evaluate_pass_rule_criteria = _raise_type_error  # pyright: ignore[reportAttributeAccessIssue]
+    monkeypatch.setitem(sys.modules, "verdict_criteria_evaluator", stub)
+
+    with pytest.raises(TypeError, match=r"not supported between"):  # CHAR[CONTRACT]: original raise survives.
+        asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
+
+    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
+    assert len(rows) == 1  # CHAR[CONTRACT]: the VCE-raising look is counted, exactly once.
+    row = rows[0]
+    assert row["trial_id"] == run_id  # CHAR[CONTRACT]: trial_id == run_id.
+    assert row["source"] == "backtest_failed"  # CHAR[CONTRACT]: distinct source.
+    assert row["statistic_valid"] == "failed"  # CHAR[CONTRACT]: statistic_neither bucket.
+    assert row["sharpe"] is None  # CHAR[CONTRACT]: no Sharpe from a crash mid-window.
+    assert row["forecast_hash"] == expected_hash  # CHAR[CONTRACT]: config readable → real hash.
+    assert isinstance(row["error"], str) and row["error"]  # CHAR[CONTRACT]: a short reason is stored.
 
 
 _A86_CANNED = {
