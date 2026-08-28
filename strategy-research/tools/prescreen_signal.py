@@ -362,6 +362,8 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
     fpath, source_tf = _resolve_ohlcv_source(symbol, timeframe)
 
     rows = []
+    bad_count = 0
+    bad_samples = []
     with open(fpath, encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -379,8 +381,18 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
                     "close":  float(row["close"]),
                     "volume": float(row.get("volume", 0) or 0),
                 })
-            except (ValueError, KeyError):
-                pass
+            except (ValueError, KeyError) as e:
+                # Silently dropping an interior row corrupts _extract_forecasts'
+                # positional next_ret_bps pairing (F5) -- fail loud instead.
+                bad_count += 1
+                if len(bad_samples) < 3:
+                    bad_samples.append((reader.line_num, repr(e)))
+
+    if bad_count > 0:
+        raise ValueError(
+            f"Unparseable in-range OHLCV rows: {bad_count} in {fpath} "
+            f"(first {len(bad_samples)}: {bad_samples})"
+        )
 
     df = pd.DataFrame(rows)
     if df.empty:
