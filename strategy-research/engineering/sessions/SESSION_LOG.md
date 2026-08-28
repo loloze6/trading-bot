@@ -4387,3 +4387,55 @@ and ~8 new test files.
   https://app.notion.com/p/3c61d1fb05a2812f8e25db3f8fecfb71
 - Bug: CLAUDE.md mandates tasks/todo.md + tasks/lessons.md but tasks/ is
   gitignored: https://app.notion.com/p/3c91d1fb05a2811d8c66d8ec05440707
+
+---
+
+## 2026-08-28 — run_060 to completion, four PRs merged, item 5 closed
+
+**Hypothesis.** Get the campaign loop actually running for the first time in 39
+days and see what breaks. (It broke four times, which was the point.)
+
+**Result.**
+- **run_060 / FUNDING_MR_4H_RETEST: KILLED at prescreen.** IC 0.016237 on 8,928
+  active bars; gross edge 2.60 bps vs 17.0 bps cost → edge/cost **0.153**
+  against a required 2.0. Recorded `verdict_status: ungated` — 0 of 49 windows
+  ran, so the pre-registered pass rule was never evaluated. Measurement-backed
+  kill, NOT a verdict against the criteria. **Funding as a directional
+  predictor is now dead at every granularity its reactivation clause named**;
+  the parent KB entry closes. This says nothing about funding CARRY.
+- **Four defects found, all invisible until a run actually launched:** the A8.6
+  block_size table (killed run_060 on an artifact); the prescreen demanding a
+  `BTCUSDT_4h.csv` that does not exist; a route + trial recorded from ZERO
+  bars; and a pinned `significance_methodology` that nothing propagated.
+- **One engine bug:** `CandleBuilder` dropped intra-bar high/low when
+  aggregating, so every derived-timeframe bar understated highs and overstated
+  lows. Found only because the prescreen was wired onto the engine's builder
+  instead of a private resample — the disagreement between the two
+  implementations WAS the bug report. Bit-identity held (26/26 slow); no
+  baseline aggregates.
+- **Backlog item 5 CLOSED on Windows.** All four "good enough to start
+  generating" gates now hold.
+- **PRs #39, #38, #37, #42, #43 all merged.** Master `1d08914d`, zero open PRs.
+- Suites on master: strategy-research **904**, trading-bot **390 fast + 26
+  slow**, B2 proof green in 50s.
+
+**Process failures worth carrying.** run_060 was launched without checking the
+documented campaign preconditions, and its dry run printed "brief has no
+machine_constraints" TWICE while still reporting PASSED — that warning was the
+exact cause of a later halt. Both are now closed by `docs/RUNBOOK.md` §0b
+(preflight) and §1a-bis (brief authoring contract).
+
+**Files touched.** `trading-bot/data/data_manager.py`,
+`trading-bot/pytest.ini`, `trading-bot/tests/test_candle_builder_aggregation.py`,
+`strategy-research/tools/{prescreen_signal,timeframe,power_check}.py`,
+`strategy-research/workflow/run_phase1_research.py`,
+`strategy-research/docs/{RUNBOOK,TIMEFRAME_CHANGE_PLAYBOOK}.md`,
+`strategy-research/tests/*` (5 new files), `runs/run_060/`, campaign records.
+
+**Next session prompt.** See the handoff at the end of this entry / the ledger.
+The queue is EMPTY and that is the real open item: choose the next lane.
+Funding CARRY is the natural successor but is gated on issue #41
+(`build_daily_funding_series` reads the whole funding cache unguarded, and the
+cache runs through the sealed window) — carry sets `model_funding`, which is
+exactly what arms #41. Alternative lanes: breadth over the 19-pair Kraken
+universe, or reactivating P4_ts_trend.
