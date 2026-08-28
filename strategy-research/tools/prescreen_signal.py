@@ -59,6 +59,7 @@ if _TBOT not in sys.path:
 
 from strategies.main_strategy import AdvancedStrategy
 from performance.signal_statistics import spearman_correlation as _spearman
+from data.data_manager import CandleBuilder
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -77,7 +78,7 @@ from performance.signal_statistics import spearman_correlation as _spearman
 # own bug failed conservatively (wrongly killing). The two mirrors were
 # therefore already disagreeing with each other, despite the comments in both
 # files asserting they must be kept in sync -- a convention, not a mechanism.
-from timeframe import bars_per_day  # noqa: E402  (sibling module in tools/)
+from timeframe import bars_per_day, timeframe_seconds  # noqa: E402  (sibling module in tools/)
 
 _BLOCK_SIZE_1H = 24  # regression anchor only: bars_per_day("1h") must equal this
 _BLOCK_SIZE_1D = 1   # regression anchor only: bars_per_day("1d") must equal this
@@ -277,17 +278,88 @@ def _merge_aux_feeds(
     return result
 
 
+def _available_cached_timeframes(symbol: str) -> dict:
+    """Map {timeframe_string: path} for every local cache of `symbol` whose
+    suffix parses as a real timeframe.
+
+    Non-OHLCV siblings are excluded structurally rather than by a blocklist:
+    "BTCUSDT_funding_8h.csv" has suffix "funding_8h", which is not a
+    <number><unit> timeframe and so never parses. That is why this filters via
+    timeframe_seconds rather than by name.
+    """
+    found = {}
+    prefix = f"{symbol}_"
+    if not os.path.isdir(_LOCAL_DATA):
+        return found
+    for fname in os.listdir(_LOCAL_DATA):
+        if not fname.startswith(prefix) or not fname.endswith(".csv"):
+            continue
+        suffix = fname[len(prefix):-len(".csv")]
+        try:
+            timeframe_seconds(suffix)
+        except ValueError:
+            continue  # not a timeframe suffix (funding_8h, etc.)
+        found[suffix] = os.path.join(_LOCAL_DATA, fname)
+    return found
+
+
+def _resolve_ohlcv_source(symbol: str, timeframe: str) -> tuple:
+    """Return (path, source_timeframe). An exact cache wins; otherwise DERIVE
+    from a finer one, the way the engine's CandleBuilder does.
+
+    WHY THIS EXISTS (2026-08-28, run_060): this loader used to map timeframe
+    straight to a filename. A 4h prescreen therefore demanded BTCUSDT_4h.csv,
+    did not find it, silently skipped BOTH symbols, and emitted a route from
+    zero bars -- while BTCUSDT_1h.csv sat on disk spanning 2018-01-01 to
+    2026-07-05, covering the window completely.
+
+    The engine has never had this problem: CandleBuilder AGGREGATES to its
+    interval on both the live (add_tick) and backtest (add_row) paths, so a
+    coarser timeframe is DERIVED from a finer cache and a <SYMBOL>_<TF>.csv is
+    not fetched when a finer one already spans the window. This tool bypasses
+    the engine and read files directly, so it never inherited that behaviour.
+
+    Chooses the COARSEST cache that divides the target evenly: fewest rows to
+    read and resample, and identical output to any finer source (aggregating
+    1h->4h and 1m->4h give the same 4h bars). A source that does not divide
+    evenly is refused, never rounded -- a 4h bar built from 90m rows would be
+    silently misaligned, which is the class of defect this whole module has
+    been paying for.
+    """
+    exact = os.path.join(_LOCAL_DATA, f"{symbol}_{timeframe}.csv")
+    if os.path.exists(exact):
+        return exact, timeframe
+
+    target_s = timeframe_seconds(timeframe)
+    candidates = []
+    for tf, path in _available_cached_timeframes(symbol).items():
+        src_s = timeframe_seconds(tf)
+        if src_s < target_s and target_s % src_s == 0:
+            candidates.append((src_s, tf, path))
+    if not candidates:
+        have = sorted(_available_cached_timeframes(symbol)) or ["<none>"]
+        raise FileNotFoundError(
+            f"No usable OHLCV cache for {symbol} at {timeframe}: no "
+            f"{symbol}_{timeframe}.csv, and no finer cache divides {timeframe} "
+            f"evenly (have: {', '.join(have)}). Refusing to approximate from a "
+            f"non-dividing timeframe."
+        )
+    src_s, src_tf, src_path = max(candidates)  # coarsest that divides
+    return src_path, src_tf
+
+
 def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.DataFrame:
     """
-    Load OHLCV bars from local_data/{SYMBOL}_{timeframe}.csv filtered to [start, end).
+    Load OHLCV bars for `symbol` at `timeframe`, filtered to [start, end).
+
+    Uses local_data/{SYMBOL}_{timeframe}.csv when it exists; otherwise DERIVES
+    the bars by aggregating a finer cache (see _resolve_ohlcv_source), matching
+    the engine's CandleBuilder rather than demanding a file per timeframe.
 
     Returns a DataFrame with columns: timestamp, open, high, low, close, volume.
     Rows are sorted by timestamp ascending.
     """
-    fname = f"{symbol}_{timeframe}.csv"
-    fpath = os.path.join(_LOCAL_DATA, fname)
-    if not os.path.exists(fpath):
-        raise FileNotFoundError(f"Local data file not found: {fpath}")
+    fpath, source_tf = _resolve_ohlcv_source(symbol, timeframe)
 
     rows = []
     with open(fpath, encoding="utf-8", newline="") as f:
@@ -315,6 +387,33 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
         return df
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df = df.sort_values("timestamp").reset_index(drop=True)
+
+    if source_tf != timeframe:
+        # Aggregate through the ENGINE'S OWN CandleBuilder rather than a private
+        # resample. Operator ruling 2026-08-28: "i would prefer that A reuse the
+        # features already developed in trading bot for candlebuilder. this to
+        # have a unique source of data logic to maintain."
+        #
+        # That is the right call for a reason beyond tidiness: the prescreen
+        # decides which strategies are worth backtesting, so a prescreen bar
+        # that differs from a backtest bar screens something the backtest will
+        # never trade. Sharing the builder makes them the same bar by
+        # construction instead of by two implementations agreeing.
+        #
+        # CandleBuilder is usable standalone -- interval_seconds in, add_row per
+        # row, get_candle_history out; the completion callback defaults to None
+        # and it "knows nothing about auxiliary feeds" (its own docstring).
+        # flush_final_candle mirrors the backtester: a candle stays open until a
+        # later row crosses its boundary, so without the flush the last bar of
+        # the range is silently dropped.
+        builder = CandleBuilder(interval_seconds=timeframe_seconds(timeframe))
+        for _, row in df.iterrows():
+            builder.add_row(row, symbol)
+        builder.flush_final_candle(symbol)
+        df = builder.get_candle_history(symbol, count=len(df))
+        print(f"    Derived {len(df)} {timeframe} bars from {source_tf} cache via "
+              f"CandleBuilder (no {symbol}_{timeframe}.csv on disk -- aggregated, "
+              f"not fetched)")
     return df
 
 
@@ -972,11 +1071,12 @@ def run_prescreen(
     symbols   = protocol["symbols"]
     windows   = protocol["windows"]
     timeframe = protocol.get("timeframe", "1h")
-    # 2026-07-07: added explicit "1d" case (block_size=1 -- each daily bar IS
-    # already one calendar day, so there is no intra-day autocorrelation block
-    # to divide out, matching how "1h" itself is treated: bars-per-day ==
-    # block_size). The pre-existing generic fallback for every OTHER non-1h
-    # timeframe (4h, 15m, etc.) is untouched.
+    # Bars per day, DERIVED (tools/timeframe.py) -- the single source shared
+    # with the A8.6 gate and power_check.py. This was a two-entry lookup with a
+    # silent 1h default until 2026-08-27; the note that used to sit here
+    # described a "generic fallback for every OTHER non-1h timeframe" that was
+    # in fact the bug itself (4h inherited 24, halving n_eff twice over). There
+    # is no fallback now -- an unparseable timeframe raises.
     block_size = bars_per_day(timeframe)
 
     if out_dir is None:
@@ -987,6 +1087,7 @@ def run_prescreen(
     all_records_by_symbol: dict = {}
     n_bars_total = 0
     sigma_estimates: list = []
+    skipped_symbols: list = []  # (symbol, reason) -- see the no-usable-symbol guard below
     total_component_error_count = 0
     component_error_sample: list = []  # capped across all symbols, see below
     _MAX_ERROR_SAMPLE = 5
@@ -1004,10 +1105,13 @@ def run_prescreen(
             bars_df = _load_ohlcv(symbol, range_start, range_end, timeframe)
         except FileNotFoundError as e:
             print(f"    ⚠ {e} — skipping {symbol}")
+            skipped_symbols.append((symbol, str(e)))
             continue
 
         if bars_df.empty:
             print(f"    ⚠ No bars for {symbol} in [{range_start}, {range_end}) — skipping")
+            skipped_symbols.append(
+                (symbol, f"no bars in [{range_start}, {range_end})"))
             continue
 
         print(f"    Loaded {len(bars_df)} bars — running signal extraction ...")
@@ -1031,6 +1135,23 @@ def run_prescreen(
         sig_est = _sigma_from_records(records)
         if sig_est > 0:
             sigma_estimates.append(sig_est)
+
+    # No usable symbol is a BROKEN RUN, not a finding (2026-08-28, run_060).
+    # Previously every symbol could fail to load, each one warning and
+    # `continue`-ing, and the function would carry on to substitute a
+    # placeholder sigma, print "the cost check below is not valid", and still
+    # emit Route=no_signal_artifact plus a recorded trial -- a decision-shaped
+    # output produced from zero bars. "no_signal_artifact" asserts a signal did
+    # not activate ON DATA; with no data loaded, nothing was tested at all and
+    # the two are not the same claim. Standing rule: anything feeding decisions
+    # raises on degenerate inputs.
+    if not all_records_by_symbol:
+        detail = "; ".join(f"{sym}: {why}" for sym, why in skipped_symbols) or "no symbols requested"
+        raise RuntimeError(
+            f"Prescreen loaded NO usable data for any of {len(symbols)} symbol(s) at "
+            f"timeframe={timeframe!r} -- refusing to emit a route or record a trial "
+            f"from zero bars. Reasons: {detail}"
+        )
 
     # Pool records across symbols
     all_records = []
@@ -1061,7 +1182,12 @@ def run_prescreen(
     ic_values_for_sig = [ic_active] if ic_active is not None else []
     ic_sig_block24 = _block_adjusted_significance(ic_values_for_sig, active_n, block_size)
     ic_sig = ic_sig_block24
-    significance_methodology_used = "block_24_fisher_z"
+    # Label derived from the block size actually used, not hardcoded. It read
+    # "block_24_fisher_z" until 2026-08-28 while block_size had already become
+    # a derived per-timeframe value -- so a 4h run would stamp "block_24" into
+    # its artifact while dividing by 6. The name is what a later reader
+    # reconstructs the method from; it has to track the arithmetic.
+    significance_methodology_used = f"block_{block_size}_fisher_z"
     ic_by_era = None
     # Value used for the cost gate's gross-edge estimate (A8.3/A9.1 default: ic_active).
     # Overridden below when ic_active is degenerate (see _is_degenerate_active_forecast).
@@ -1084,7 +1210,8 @@ def run_prescreen(
     # blocked significance method for hypotheses evaluated over multi-era
     # backward-extension data (see engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md "A8.5.1a-spec").
     # Default behavior (flag absent) is UNCHANGED — every prior run's recorded
-    # result stays reproducible under the original block_24_fisher_z method.
+    # result stays reproducible under the original block_<n>_fisher_z method
+    # (block_24_fisher_z for the 1h runs that make up the archive).
     if config_raw.get("significance_methodology") == "episode_blocked_a851a":
         import episode_significance as _es
         policy = _load_campaign_data_policy()

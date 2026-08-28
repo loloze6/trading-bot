@@ -1084,6 +1084,12 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # inline protocol-selection logic (also present in protocol_execution below).
         protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
 
+        # F4d wiring: enforce the pre-registered significance methodology BEFORE
+        # the subprocess reads the config, so the pin actually governs the run
+        # rather than merely being audited against it afterwards.
+        _ensure_significance_methodology_pinned(
+            config_path, _load_machine_constraints(RUN_DIR) or {}, run_id)
+
         out_dir = RUN_DIR / "prescreen"
         cmd = [
             str(TBOT_PYTHON), str(ROOT / "tools" / "prescreen_signal.py"),
@@ -2861,6 +2867,57 @@ def _require_pre_registered_promotion(proto_constraint: dict, run_id: str) -> di
             f"mapping) to the brief's machine_constraints, then re-run."
         )
     return promotion
+
+
+def _ensure_significance_methodology_pinned(config_path: Path, constraints: dict, run_id: str) -> bool:
+    """Carry machine_constraints.significance_methodology into
+    candidate_strategy_config.json, which is the ONLY place prescreen_signal.py
+    looks for it. Returns True if the config was written.
+
+    WHY (2026-08-28, run_060): the brief pinned
+    significance_methodology=episode_blocked_a851a, but prescreen_signal.py
+    reads that flag from the candidate config
+    (`config_raw.get("significance_methodology")`), and nothing carried the
+    value from pre_registration.yaml to that config. The
+    backtest_specification agent simply had not written the field, so the
+    a851a branch never ran, the default block-Fisher path ran instead, and the
+    F4d conformance gate correctly halted the campaign for testing something
+    other than what was pre-registered.
+
+    That gate is the AUDIT. This is the WIRING. Without it the pin is a
+    statement no code acts on, and every run has to be repaired by hand after
+    the gate catches it -- the recurring pattern where this system writes a
+    correct declarative artifact and then leaves it unenforced.
+
+    A config that already names a DIFFERENT methodology is a genuine conflict
+    between two deliberate statements, so it raises rather than being
+    overwritten.
+    """
+    pinned = constraints.get("significance_methodology")
+    if not pinned:
+        return False
+    if not config_path.exists():
+        raise FileNotFoundError(
+            f"[F4d] {run_id}: machine_constraints pins "
+            f"significance_methodology={pinned!r} but {config_path.name} does not exist "
+            f"-- cannot enforce the pin on a config that was never written."
+        )
+    cfg = json.loads(config_path.read_text(encoding="utf-8"))
+    existing = cfg.get("significance_methodology")
+    if existing == pinned:
+        return False  # already conforms -- idempotent across re-entry
+    if existing:
+        raise RuntimeError(
+            f"[F4d] {run_id}: {config_path.name} declares "
+            f"significance_methodology={existing!r} but pre_registration.yaml pins "
+            f"{pinned!r} -- two deliberate, conflicting statements. Refusing to "
+            f"silently overwrite either; reconcile the brief and the config."
+        )
+    cfg["significance_methodology"] = pinned
+    config_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+    print(f"📌 [F4d] Propagated pinned significance_methodology={pinned!r} into "
+          f"{config_path.name} (was absent -- the prescreen reads it only from there)")
+    return True
 
 
 def _compute_protocol_content_hash(path: Path) -> str:
