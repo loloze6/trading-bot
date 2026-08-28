@@ -1,0 +1,41 @@
+hypothesis_id: "FUNDING_MR_4H_RETEST"
+protocol_verdict: kill
+hypothesis_verdict: kill
+lineage_routing: terminate
+status: kill
+criteria_summary:
+  - criterion: "prescreen_ic_gate (ic_active_bars >= 0.015, significant)"
+    result: FAIL
+    value: "ic_active_bars=0.0162, p=0.5315 > 0.10 (not significant)"
+  - criterion: "prescreen_cost_gate (edge_to_cost_ratio >= 2.0)"
+    result: FAIL
+    value: "edge_to_cost_ratio=0.153 < 2.0"
+  - criterion: "walk_forward_sharpe (>= 0.8, both symbols)"
+    result: UNTESTED
+    value: "prescreen kill blocks backtest"
+  - criterion: "max_drawdown (<= 30%, both symbols)"
+    result: UNTESTED
+    value: "prescreen kill blocks backtest"
+primary_failure_mode: "no_informational_content_prescreen"
+config_to_failure_map: "FundingRateMeanReversionComponent (threshold=0.0, ungated) on 4h timeframe produces ic_active_bars=0.0162 (p=0.5315, not significant). Signal shows no detectable directional content; mechanism is either inactive or mean-reversion hypothesis is false at this granularity."
+untested_criteria:
+  - "walk_forward_sharpe (prescreen kill)"
+  - "max_drawdown (prescreen kill)"
+hypothesis_family: "funding_rate_mean_reversion"
+proposed_change_dimension: null
+altitude_justification: "Rule 2 (weak signal): ic_active_bars=0.0162, p=0.5315 > 0.10 — no statistically significant directional content. 4h is the Nyquist-correct granularity for 8h settlement cycle; failure here across both symbols, combined with 1h lag failure and daily aliasing, indicates mechanism is exhausted across all reactivation branches."
+root_cause:
+  mechanism_failure: "already_priced_in"
+  supporting_evidence: "prescreen_result: ic_active_bars=0.0162 (p=0.5315, not significant), ic_all_bars=-0.0069 (weak, negative ungated); 2019-2023 era across both BTCUSDT and ETHUSDT shows no directional IC despite 4h being theoretically optimal. Run_059 (daily) showed significant IC (0.0378, p=0.0406) but negative returns despite edge; run_044 (1h) had zero IC (p=0.881). Pattern across timeframes indicates structural flow edge is present (evidenced by daily IC) but exploited too quickly for slower timeframes to capture."
+  confidence: "high"
+prescreen_evidence:
+  ic_active_bars: 0.016237
+  ic_all_bars: -0.006944
+  p_value: 0.5315
+  forecast_sparsity_pct: 49.99
+  active_n_bars: 8928
+  edge_to_cost_ratio: 0.153
+  cost_bps_per_trade: 17.0
+  estimated_gross_edge_bps_per_trade: 2.6012
+  route: "kill_no_ic"
+trade_attribution: null

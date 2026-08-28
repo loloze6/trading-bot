@@ -118,6 +118,21 @@ prior_evidence_honest_statement:
     existing signal_prescreen cost_check enforces it automatically and no new
     machinery is needed.
 
+# Pins the protocol explicitly, exactly as the daily sibling does
+# (briefs/FUNDING_MR_DAILY_RETEST.md:213). WITHOUT THIS the prescreen cannot
+# resolve which protocol to run: it falls through run_context.yaml ->
+# machine_constraints.protocol_ref -> campaign_state.last_escalation, and the
+# last of those is a STALE entry claimed by run_049 (escalation_tf_15m.json).
+# The B10 guard correctly refuses to run against another run's protocol rather
+# than silently using it -- run_060 halted on exactly that on 2026-08-27
+# (stale_escalation_unclaimed), because this block was omitted when the brief
+# was first authored. The dry run had already said "brief has no
+# machine_constraints" and that warning was not acted on.
+machine_constraints:
+  protocol_ref: protocols/funding_mr_4h_retest_v1.json
+  protocol_ref_content_hash: "sha256:4fda1f39858295b06b81634b474eecb4a0c37c554e94689ec7a54e4204e4ecf9"
+  significance_methodology: episode_blocked_a851a
+
 evaluation:
   pass_rule:
     statement: >
@@ -156,8 +171,21 @@ evaluation:
           INHERITED VERBATIM from the daily sibling (criterion b), same
           provenance and same reasoning as criterion a.
     outcomes:
-      pass: {hypothesis_verdict: promote, lineage_routing: holdout_gate_applies}
-      fail: {hypothesis_verdict: kill, lineage_routing: terminate}
+      # List-of-branches shape, matching the daily sibling verbatim. The map
+      # shape written first was rejected by the B11 total-mapping lint at
+      # materialization (2026-08-27): the lint iterates outcomes expecting a
+      # dict per branch. promote carries lineage_routing: null because promote
+      # never routes -- the holdout gate is a separate, standing gate, not a
+      # lineage route, and naming it here is exactly what B11 rejects.
+      - branch: PASS
+        hypothesis_verdict: promote
+        lineage_routing: null
+      - branch: FAIL-a
+        hypothesis_verdict: kill
+        lineage_routing: terminate
+      - branch: FAIL-b
+        hypothesis_verdict: kill
+        lineage_routing: terminate
 
 honesty_notes:
   - id: i

@@ -450,14 +450,27 @@ def test_digest_surfaces_a_fact_absent_from_stale_campaign_state(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Real-repo regression: the funding family is {1h, 1d}, never 4h
+# Real-repo regression: the funding family's 4h entry is run_060 and ONLY run_060
 # ---------------------------------------------------------------------------
 
-def test_real_repo_funding_family_never_has_4h():
-    """Re-derives, from the real committed runs/ tree, the concrete claim
-    the epic's calibration case depends on: the funding_rate_extreme family
-    has been run at 1h and 1d only. The '4h' entry in campaign_state.yaml's
-    flat timeframes_tried list must come from elsewhere (keltner).
+def test_real_repo_funding_family_4h_is_only_run_060():
+    """Re-derives, from the real committed runs/ tree, the concrete claim the
+    epic's calibration case depends on: at the time the exclusion digest was
+    built, the funding_rate_extreme family had been run at 1h and 1d only, so
+    the '4h' entry in campaign_state.yaml's flat timeframes_tried list came
+    from elsewhere (keltner).
+
+    UPDATED 2026-08-28. This test was `..._never_has_4h` and asserted
+    funding timeframes == {1h, 1d}. run_060 (FUNDING_MR_4H_RETEST) then ran
+    the 4h branch, so that assertion is obsolete BY DESIGN rather than by
+    drift -- the campaign did the thing the test said had not happened.
+
+    The original claim is still what is being guarded, now stated precisely:
+    run_060 must be the ONLY source of a 4h funding triple. That keeps the
+    "the pre-existing 4h entry came from keltner, not funding" reasoning
+    provable, while no longer asserting something the corpus has outgrown. If
+    a second 4h funding run appears, this fails and the calibration case needs
+    re-reading rather than silent rebaselining.
 
     No @real_repo_readonly marker needed: build_exclusion_digest.py's
     default paths are computed from Path(__file__), never from
@@ -469,7 +482,14 @@ def test_real_repo_funding_family_never_has_4h():
     funding = digest["families"].get("funding_rate_extreme")
     assert funding is not None, "expected the real repo to have funding_rate_extreme-classified runs"
     timeframes = {t["timeframe"] for t in funding["triples"]}
-    assert timeframes == {"1h", "1d"}, f"funding family timeframes drifted: {timeframes}"
+    assert timeframes == {"1h", "1d", "4h"}, f"funding family timeframes drifted: {timeframes}"
+
+    fourh_run_ids = {rid for t in funding["triples"] if t["timeframe"] == "4h"
+                     for rid in t["run_ids"]}
+    assert fourh_run_ids == {"run_060"}, (
+        f"run_060 must be the only 4h funding run; found {sorted(fourh_run_ids)}. "
+        f"The calibration case rests on funding having had no 4h history before it."
+    )
 
     keltner = digest["families"].get("keltner_channel")
     assert keltner is not None

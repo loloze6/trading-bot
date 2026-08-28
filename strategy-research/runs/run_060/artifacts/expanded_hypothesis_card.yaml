@@ -1,0 +1,92 @@
+base_hypothesis_id: FUNDING_MR_4H_RETEST
+
+expanded_variants:
+  - variant_id: V1
+    variant_name: "Continuous funding-rate mean-reversion at 4h (threshold=0.0)"
+    signal_concept: "Each 4h bar following an 8h funding settlement (UTC 00:00/08:00/16:00): take forecast opposite to funding-rate sign. Longs overpaid → forecast short; shorts overpaid → forecast long. Hold through next settlement (~8h window). Rebalance on subsequent settlement."
+    evidence_type: funding_open_interest
+    library_category: structural_rate
+    data_requirements: funding_open_interest
+    diversity_axis: "N/A — single variant per brief closure constraint; mechanism tested across all registered timeframes (1h, daily, 4h)."
+    edge_source:
+      category: structural_forced_flow
+      specific_mechanism: "Perpetual funding settles every 8 hours (UTC 00:00/08:00/16:00). Non-zero funding compels one side to pay the other. Extreme rates trigger forced deleveraging that mean-reverts over 1–2 bars post-settlement, visible in funding-rate feed as spike-then-decay around settlement boundary."
+    parameters:
+      threshold: 0.0
+      timeframe_bars: 4h
+      settlement_times: "UTC 00:00/08:00/16:00"
+      hold_period_bars: "~2 (8h settlement cycle sampled at 4h = Nyquist minimum)"
+      component_name: FundingRateMeanReversionComponent
+    activation_rate: 0.125
+    expected_ic_active_bars_range: "0.02–0.04 (sparse feed-based per A8.6 row 2; prior 1h/daily observed 0.017–0.038)"
+    expected_sharpe_minimum: 0.8
+    expected_max_drawdown_pct_maximum: 30
+    targets:
+      - BTCUSDT
+      - ETHUSDT
+    pass_rule_source: "Inherited verbatim from briefs/FUNDING_MR_DAILY_RETEST.md (run_059): median Sharpe > 0.8 AND max abs drawdown < 30 on BOTH symbols; any fail → kill, terminate."
+    status: run_queue
+    rationale: "4h is the Nyquist minimum (2 samples per 8h settlement cycle) that both resolves the aliased 8h impulse and holds positions long enough for mean-reversion to materialize. Unlike daily (3 settlements average internally, mechanism invisible) and 1h (lag_mismatch per run_044 root_cause), 4h uniquely satisfies both conditions. If 4h fails, mechanism is dead across all three registered branches; parent reactivation_condition closes permanently."
+
+alternative_data_candidates:
+  - candidate_id: A1
+    name: "Funding-rate extremes with magnitude gating"
+    evidence_type: funding_open_interest
+    formulation: "Gate activation on |funding rate| > k×sigma(funding) — only trade extreme extremes, skip moderate prints."
+    reason_not_pursued: "Brief explicitly requires threshold=0.0 (continuous, no gating). Magnitude-gated variants are post-hoc if continuous fails, not pre-registered alternatives for this closure run."
+    would_route_to: variants_not_pursued
+
+  - candidate_id: A2
+    name: "Fear & Greed Index as regime-context filter"
+    evidence_type: fear_and_greed
+    formulation: "Trade funding-rate mean-reversion only when F&G Index is in extreme (< 30 or > 70), suppressing sideways market noise."
+    reason_not_pursued: "F&G is market-wide; BTC/ETH correlated (rho ~0.82). n_eff_symbols = 1.1, insufficient power (A8.6: n_eff=13 in 2024–2025 window, required n_eff >> 50 for significance). Reactivation would require 2018+ data. Brief forbids variants; defer to future parent-entry reactivation."
+    would_route_to: variants_not_pursued
+
+  - candidate_id: A3
+    name: "Liquidation-cascade-normalized funding impulse"
+    evidence_type: requires_new_feed
+    requires_new_feed: liquidation_data
+    formulation: "Decompose funding impulses into organic (herding/rebalancing) vs cascade-driven (forced) components; signal different directions depending on source."
+    reason_not_pursued: "liquidation_data not in available_feeds.yaml. Per Improvement 01, any such variant routes to feed_wishlist, not run queue. Brief forbids variants."
+    would_route_to: feed_wishlist
+
+  - candidate_id: A4
+    name: "Cross-exchange funding basis arbitrage"
+    evidence_type: requires_new_feed
+    requires_new_feed: cross_exchange
+    formulation: "Exploit Binance perp–spot basis divergence during funding extremes; synthetic pairs may offer higher unlevered edge than single-venue mean-reversion."
+    reason_not_pursued: "cross_exchange feed not available. Brief is single-venue (Binance perp only) and permits no variants."
+    would_route_to: feed_wishlist
+
+reverse_hypothesis:
+  id: REVERSE_FUNDING_MR_4H
+  name: "Funding-rate momentum (same-sign directional follow)"
+  signal_concept: "Opposite polarity: extreme funding signals cascading leverage (herding/FOMO), so trade in the direction of funding-rate sign rather than opposite. Longs overpaid → forecast long (herding continuation); shorts overpaid → forecast short."
+  rationale: "If run_059 detected ic_active_bars=+0.0378 but Sharpe was deeply negative, mechanism could be real but dominated by momentum (herding) rather than mean-reversion. Documented for falsifiability, but low prior: structural forced-flow theory predicts mean-reversion (forced unwinding), not momentum herding."
+  status: not_pursued_low_prior
+  reason_not_pursued: "Brief constrains to registered mechanism only (mean-reversion polarity). Reverse hypothesis requires parameterized comparison; contradicts single-variant closure constraint."
+
+behavioral_features:
+  - feature_id: B1
+    name: "Leveraged-position liquidation cascade"
+    description: "Extreme positive funding (longs overpaid) triggers forced longs to close → negative feedback loop → sudden mean-reversion impulse. Signal quality highest in first 1–2 bars post-settlement, then decays as cascade exhausts."
+    proxy_measurable_in: "Funding-rate sign + volume spike in funding-rate feed; sharp price deltas in first 1–2 bars following UTC settlement time."
+    regime_context: "Pronounced in high-leverage regimes (2020–2022 extremes). 2024–2025 low-funding environment (per hypothesis_card) may not exhibit sufficient extremes to trade consistently."
+    relevance_to_v1: "Central to mechanism. If 2024–2025 funding never reaches 2020–2022 levels, V1 activation starves."
+
+  - feature_id: B2
+    name: "Position hold-time vs mean-reversion window mismatch"
+    description: "Rebalance-on-settlement (every 8h) may close positions before mean-reversion peaks, or hold past nadir into whipsaw. Actual hold 1–2 bars (4–8h) vs theoretical mean-reversion duration highly dependent on intrabar volatility."
+    proxy_measurable_in: "Bar-by-bar realized P&L; exit reason classification (settlement boundary vs signal cross)."
+    regime_context: "High-volatility regimes compress reversal duration; low-vol extends it. Mismatch risk is regime-sensitive."
+    relevance_to_v1: "4h granularity was chosen specifically to align with hold window; if choice is incorrect, V1 fails."
+
+  - feature_id: B3
+    name: "Cost consumption of sparse signals"
+    description: "Activation sparse (~3 bars per 24h, 12.5%). Turnover 6× higher than daily. Even if ic_active_bars > 0, cost (taker comms + slippage + spread) erodes edge. Run_044 (1h) failed prescreen cost gate (0.2425 vs 2.0 floor). Run_059 (daily) passed by 15% margin (2.2927). 4h turnover scaling makes cost failure highly plausible before backtest."
+    proxy_measurable_in: "edge_to_cost_ratio prescreen; signal_prescreen output; per-window cost breakdown in backtest results."
+    regime_context: "Cost gate is independent of regime; deterministic in backtest but sensitive to market microstructure (execution quality, liquidity) in live."
+    relevance_to_v1: "Cost prescreen is deterministic gating. V1 may fail before backtest if edge_to_cost_ratio < 2.0."
+
+regime_specific_variants: []

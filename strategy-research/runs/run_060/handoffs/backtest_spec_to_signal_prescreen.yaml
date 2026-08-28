@@ -1,0 +1,27 @@
+handoff_version: 1
+run_id: run_060
+from_stage: backtest_specification
+to_stage: signal_prescreen
+assigned_engine: tool
+objective: 'Run signal prescreen — cheap IC + cost gate before full walk-forward.
+  Compute pooled IC, block-adjusted significance, turnover proxy, and cost_check from
+  config/cost_model.yaml. Route: proceed_to_backtest (both IC and cost pass) or kill/refine
+  (skip backtest).'
+required_inputs:
+- path: artifacts/candidate_strategy_config.json
+  reason: strategy config to prescreen
+- path: ../../config/cost_model.yaml
+  reason: Layer 2 cost hurdle parameters
+- path: ../../config/campaign_data_policy.yaml
+  reason: holdout range guard — prescreen must not read holdout data
+deliverables:
+- prescreen_result.yaml
+constraints:
+- 'A8.1: no standalone IC pass — cost_check is always required.'
+- 'A2.3: ic_by_regime is suspended; report ungated IC only.'
+- 'A6.2: prescreen kills must be recorded as trials in campaign_state.'
+- Holdout data must not be used in prescreen windows.
+injected_context:
+  stage_attempt: '3'
+  refinement_attempt: '0'
+  human_data_paths_injected: 'false'

@@ -1,0 +1,58 @@
+hypothesis_id: FUNDING_MR_4H_RETEST
+thesis: "8h funding-rate settlements create measurable mean-reversion impulses at 4h — the Nyquist minimum (2 samples per period) that resolves the cycle and holds positions long enough for reversion to materialize, unlike 1h (lag mismatch) or daily (aliasing)."
+rationale: "Perpetual funding settles every 8h. Extreme funding forces one side to pay, triggering deleveraging mean-reversion. Daily aliases the signal (3 settlements/bar average out); 1h closes positions before reversion completes (run_044 root_cause: lag_mismatch). 4h uniquely satisfies Nyquist resolution and impulse hold-time. Prior: run_059 (daily) ic_active_bars=0.0378 (p=0.0406, significant), confirming mechanism but failing returns (-0.296/-0.979 Sharpe); run_044 (1h) failed cost gate (0.2425 vs 2.0 floor), not mechanism. Last untested branch of parent reactivation_condition."
+
+edge_source:
+  category: structural_forced_flow
+  specific_mechanism: "Perpetual funding settles every 8 hours (UTC 00:00/08:00/16:00). Non-zero funding compels one side to pay the other immediately. Extreme rates trigger forced deleveraging that mean-reverts over 1–2 bars post-settlement, visible in funding-rate feed as spike-then-decay around settlement boundary."
+  why_not_arbitraged: "At 1h: lag_mismatch (run_044 root_cause verified) — position closes before reversion window. At daily: aliasing — sampling 8h cycle once per 24h means 3 settlements average internally, mechanism structurally invisible. 4h is Nyquist minimum (2 samples/period) allowing unaliased resolution and sufficient position hold time."
+  evidence_type: funding_open_interest
+  measurable_proxy: "Sign of 8h-lagged funding rate at each UTC settlement time. Mechanism predicts negative correlation between funding-rate sign and forward 1–2-bar 4h returns (longs overpay → bears, shorts overpay → bulls)."
+
+signal_concept: "Each 4h bar following an 8h funding settlement (UTC 00:00/08:00/16:00): take forecast opposite to funding-rate sign (longs paid → forecast short; shorts paid → forecast long). Hold through next settlement (~8h). Rebalance on subsequent settlement."
+
+target_market:
+  - BTCUSDT
+  - ETHUSDT
+
+timeframe: 4h
+
+assumptions:
+  - "Funding settlements exact at UTC 00:00/08:00/16:00 with negligible drift."
+  - "Mean-reversion impulse resolves within 4h–8h hold window (holds in 2019–2023 backtest; live dynamics may differ)."
+  - "Binance funding-rate feed available with lag < 1 candle."
+  - "Execution costs remain manageable despite 6× higher turnover vs. daily."
+
+expected_failure_modes:
+  - "Cost gate prescreen failure: 4h turnover ~6× daily; edge-to-cost-ratio may drop below 2.0 floor even if ic > 0 (daily margin was 15%, entirely plausible consumed by turnover scaling)."
+  - "Mechanism dead at 4h: if Sharpe < 0.8 or drawdown > 30%, mechanism is dead across all three registered timeframes (1h, daily, 4h), and parent reactivation_condition terminates."
+  - "Return/drawdown failure replicating daily: ic_active_bars positive but returns negative (run_059 pattern), indicating signal is real but market microstructure/slippage dominates expected edge."
+  - "Funding environment decoupling: 2020–2022 funding extremes may not recur in 2023–2025 low-funding regime; mechanism may be historical artifact of past market state."
+
+library_lookup:
+  indicator_id: funding_rate_extreme
+  indicator_note: "Closest library match; brief specifies continuous variant (threshold=0.0, no magnitude gating)."
+  regime_affinity_for_target: neutral
+  affinity_justification: "Structural forced-flow is regime-independent; funding settlements occur in any market condition."
+  prior_campaign_failures:
+    - run_id: run_044
+      outcome: cost_gate_failed
+      mechanism_difference: "1h failure was cost gate + lag_mismatch, not mechanism death; 4h escalation is structural timeframe remedy per brief."
+    - run_id: run_059
+      outcome: pass_rule_failed
+      mechanism_difference: "Daily fails due to aliasing (3 settlements per bar average to near-zero). 4h Nyquist resolution is intended structural remedy."
+  crowding_risk: low
+  crowding_deviation_justification: "Funding-rate feed requires non-standard data access; low market adoption relative to OHLCV indicators."
+
+power_parameters:
+  activation_rate: 0.125
+  activation_rate_note: "Sparse activation at 8h settlement times: ~3 settlements per 24h; at 4h granularity (~6 bars/day) ≈ 12.5%. Consistent with run_044 observed activation (3/24h = 12.5%, accounting for 1–2 bar post-settlement window)."
+  plausible_ic_upper: 0.10
+  plausible_ic_upper_anchor: "A8.6 table row 2 (Sparse feed-based, continuous/non-extreme): range 0.08–0.12. Median anchor 0.10. Funding-rate sign at every 8h settlement is canonical example in anchor documentation."
+  n_bars: 8820
+  n_bars_note: "49 monthly windows (2019-12-01 to 2023-12-31) × ~180 bars/month (6 bars/day × 30 days). Approximate; exact bar count per protocols/funding_mr_4h_retest_v1.json."
+  n_symbols: 2
+  is_market_wide: false
+  power_note: "Symbol-specific signal (funding rates diverge per symbol). BTC/ETH correlated (rho ~0.80+ at 4h), but treat as separate hypothesis instances per symbol; pass rule requires BOTH symbols > 0.8 Sharpe."
+
+validation_strategy: "PASS-GATED WINDOW SET per protocols/funding_mr_4h_retest_v1.json (49 monthly windows, 2019-12-01 to 2023-12-31). PASS iff BOTH BTCUSDT AND ETHUSDT satisfy: (a) median Sharpe > 0.8, (b) max absolute drawdown < 30%. ANY criterion FAIL on EITHER symbol → kill, terminate. This is mechanism's LAST registered branch; kill closes parent reactivation_condition permanently."

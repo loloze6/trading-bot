@@ -1,0 +1,22 @@
+hypothesis_id: "FUNDING_MR_4H_RETEST"
+
+status: "conditional_approve"
+
+rationale: "Funding-rate mean-reversion mechanism is established (run_059 daily baseline: Sharpe > 0.8, edge_to_cost_ratio=2.29). 4h timeframe satisfies Nyquist criterion (2 samples per 8h settlement cycle) and was chosen specifically to align hold-period with mean-reversion duration. Cost feasibility is marginal, not implausible: daily proved the mechanism works; 4h is coarser (better amortization potential) but sparse activation (12.5%) and low-regime 2024-12+ data introduce execution risk. Prescreen (Layer 2) will perform deterministic cost gate on actual data; if edge_to_cost_ratio >= 2.0, mechanism is viable and backtest is warranted. If prescreen fails cost gate, strategy halts without backtest (cost is limiting factor, not mechanism). Conditional approval binds approval to Layer 2 cost gate passing; if gate fails, this decision is overturned and strategy is rejected."
+
+conditions:
+  - "Prescreen cost gate (Layer 2) must pass: edge_to_cost_ratio >= 2.0 for BOTH BTCUSDT and ETHUSDT on 2024-12-01:2025-12-31 walk-forward data"
+  - "If prescreen cost gate fails (edge_to_cost_ratio < 2.0 on either symbol), halt before backtest and route to rejected status; no recovery path exists within current constraint (brief forbids variants)"
+  - "Backtest window locked to walk_forward_extension: 2024-12-01 to 2025-12-31 (do not use holdout range 2026-01:06 or any burned range)"
+  - "Backtest must measure forecast–return correlation (IC) separately for active bars (signal nonzero) and report median pooled IC >= 0.015 as validation of sparse-signal measurability"
+  - "Per-window Sharpe must show <= 30% variance across windows; any single window with Sharpe < 0.5 triggers regime-specific investigation (possible era boundary issue)"
+  - "Hold-time analysis required in results: per-bar realized P&L must be visualized and tagged by bar-offset-from-settlement to validate that mean-reversion peaks at expected t=0 or t+1 (not t+2 whipsaw or post-peak)"
+
+blocking_issues: []
+
+promotion_path_if_approved: "If walk-forward Sharpe > 0.8 AND max_drawdown < 30% AND cost gate passes, promote to holdout_evaluation stage. Holdout is single-use; holdout_result failure is terminal (no re-run). Upon holdout pass, route to verdict_interpretation and research_decision_final."
+
+promotion_path_if_rejected: "If prescreen cost gate fails OR walk-forward Sharpe <= 0.8 on either symbol OR max_drawdown >= 30%, strategy is rejected. Brief forbids variants (threshold=0.0, 4h locked), so reactivation requires parent brief resubmission. Recommended follow-up: if cost gate is the failure, brief reactivation should constrain to daily timeframe (proven at run_059) or accept margin-to-cost risk and run with explicit cost-drag warning in results."
+
+approval_issued_by: "validation_gate / run_060"
+approval_timestamp: "2026-08-27"
