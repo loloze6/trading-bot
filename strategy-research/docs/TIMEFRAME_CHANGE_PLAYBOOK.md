@@ -438,3 +438,82 @@ content into the index; one line, pointer only.
 Cross-linked from `trading-bot/DOC/STRATEGY_EXTENDING.md`,
 `strategy-research/docs/RUNBOOK.md`, `strategy-research/docs/USER_GUIDE.md`, and
 `strategy-research/DOC_INDEX.md`.
+
+---
+
+## 8. Derive, never enumerate — and the three sites that proved it (2026-08-28)
+
+The single most expensive recurring defect in this project is **a lookup table
+or a hardcoded constant standing in for arithmetic.** It has now regenerated
+itself five times, each time in a new place, each time discovered only when a
+new timeframe was tried:
+
+| site | the enumeration | what it did |
+|---|---|---|
+| A8.6 gate | `{"1h": 24, "1d": 1}` + `.get(tf, 24)` | 4h inherited 24 → n_eff 4x too small → **killed run_060 on an artifact** |
+| `power_check.py` | bare constant `BLOCK_SIZE = 24` | silently 1h-only for every hypothesis it ever checked |
+| `prescreen_signal.py` | `max(_BLOCK_SIZE_1H // 4, 6)` | right for 4h by coincidence; 8x too small for 30m, 48x for 5m — failed toward FALSE SIGNIFICANCE |
+| `_load_ohlcv` | timeframe → `{SYMBOL}_{tf}.csv` | demanded a file per timeframe; skipped both symbols on 4h |
+| significance label | `"block_24_fisher_z"` | said block_24 while dividing by 6 |
+
+Four are fixed by deriving from `tools/timeframe.py`. The fifth
+(`episode_significance.py:209`, `block_24_dense_fallback`) is still open
+because that string is a **member of `VALID_METHODS`** which a gate checks by
+membership — so fixing it is a gate change.
+
+**The rule.** If a value is computable from the timeframe, compute it. A table
+is correct for the entries someone remembered and silently wrong for the next
+one, and the silent default is what turns "wrong" into "wrong AND invisible."
+The 2026-07-07 fix for daily bars added `1d` to the table and *kept* the
+default — fixing the instance while guaranteeing the recurrence.
+
+**The tell.** A comment saying two copies "must be kept in sync" is a
+convention, not a mechanism. When we finally checked, the A8.6 gate and
+`prescreen_signal` had ALREADY drifted: 24 vs 6 for the same timeframe, with
+both files asserting they agreed.
+
+### 8a. Bars are DERIVED from a finer cache — and by the engine's own builder
+
+A coarser timeframe is never fetched when a finer cache spans the window:
+`CandleBuilder` aggregates on **both** the live (`add_tick`) and backtest
+(`add_row`) paths. A 4h backtest runs off `BTCUSDT_1h.csv` with no
+`BTCUSDT_4h.csv` on disk. **Do not fetch a `<SYMBOL>_<TF>.csv` when a finer one
+already covers the range** — this has now had to be corrected more than once.
+
+Anything outside the engine that needs bars at a timeframe must go through
+`CandleBuilder` too, not a private resample. It is usable standalone:
+
+```python
+from data.data_manager import CandleBuilder
+builder = CandleBuilder(interval_seconds=timeframe_seconds(tf))   # callback defaults to None
+for _, row in finer_df.iterrows():
+    builder.add_row(row, symbol)
+builder.flush_final_candle(symbol)      # else the LAST bar is silently dropped
+bars = builder.get_candle_history(symbol, count=len(finer_df))
+```
+
+**Why sharing it matters more than tidiness.** The prescreen decides which
+strategies get backtested, so a prescreen bar that differs from a backtest bar
+screens something the backtest will never trade.
+
+And it is how a real engine bug was found: wiring the prescreen onto
+`CandleBuilder` exposed that it disagreed with a straight OHLC resample.
+`data_manager.py:468` was dropping `high`/`low`, so every row after the first
+in an aggregated candle contributed only its CLOSE — understating highs,
+overstating lows (measured: high 150 vs a true 180). Invisible at
+one-row-per-candle, which is why no 1h baseline ever caught it. **The
+disagreement between the two implementations was the bug report; a private
+reimplementation would have hidden it.**
+
+Choose the **coarsest** cache that DIVIDES the target evenly, and refuse a
+non-dividing source rather than rounding — a 4h bar built from 90m rows is
+silently misaligned.
+
+### 8b. Zero data is not a finding
+
+If a timeframe change makes the loader come back empty, the run must RAISE.
+`no_signal_artifact` asserts a signal did not fire **on data**; with no data
+loaded nothing was tested, and the two must not share an output. run_060's
+second attempt emitted a route and recorded a trial from **zero bars** — which
+would have inflated N against the deflated-Sharpe denominator for an
+experiment that never happened.

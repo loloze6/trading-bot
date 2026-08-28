@@ -59,6 +59,46 @@ pull request merged through GitHub's web UI never invokes your hooks.
 
 ---
 
+## 0b. PREFLIGHT — check BEFORE any campaign launch (added 2026-08-28)
+
+Written because it was skipped. On 2026-08-28 run_060 was launched on Windows
+while `CLAUDE.fork.md` backlog item 5 -- killed-run trial accounting proven ON
+THIS MACHINE -- was still open. The accounting turned out correct (verified by
+hand afterwards: 15 rows, kill_no_ic 7->8), but "someone checked afterwards" is
+exactly the assurance the gate exists to replace. The dry run in 1a passes
+happily without any of this, so 1a is NOT a preflight.
+
+**1. The four "good enough to start generating" gates** (`CLAUDE.fork.md`).
+   All four must hold before a campaign runs, and two of them are PER-MACHINE:
+   costs modelled; drawdown honest; holdout guarded; **trials counted**.
+   Trial counting is proven by RUNNING a killed run and seeing its row land --
+   on the machine that will run the campaign. A green run on the other
+   developer's machine does not discharge yours: different OS, different
+   Python, different paths, and the trial write goes through a subprocess and
+   a file write, which is precisely the kind of thing that works on one and
+   silently does not on the other.
+
+**2. Check what the other writer has open.** Both developers run campaigns
+   against one single-use holdout and one trial ledger, so an unmerged fix on
+   their side can be a live bug on yours. Read the recent Slack and:
+
+   ```bash
+   gh pr list --state open --limit 20
+   gh issue list --state open --limit 30
+   ```
+
+   On 2026-08-28 PR #39 was open and fixed a live trial-accounting bug flagged
+   explicitly "before you fire the next campaign".
+
+**3. Confirm the brief passes materialization BEFORE launching** -- see the
+   authoring contract in section 1a-bis. Three of run_060's halts were brief
+   defects that a five-minute check would have caught.
+
+**4. Note the dry run's warnings, do not just read its verdict.** run_060's dry
+   run printed "brief has no machine_constraints" TWICE and still ended
+   `=== DRY RUN PASSED ===`. That warning was the exact cause of a later halt.
+   A passing dry run with warnings is not a green light.
+
 ## 1. Launch the campaign
 
 ### 1a. Dry run first (no LLM spend, zero footprint)
@@ -74,6 +114,64 @@ PYTHONUTF8=1 ../venv/Scripts/python.exe workflow/run_campaign.py --dry-run
 
 Expect the log to end with `=== DRY RUN PASSED ===`. If it doesn't, fix the reported
 assertion before launching the real campaign — do not skip this step.
+
+### 1a-bis. Brief authoring contract — the four things that halt a run (2026-08-28)
+
+run_060 halted three separate times on brief defects, each costing a full
+reset. All four are checkable in minutes, before spending any LLM budget.
+
+**1. `machine_constraints` is effectively mandatory.** Without it no
+`pre_registration.yaml` is materialized at launch, so the prescreen finds no
+`protocol_ref`, falls through to the campaign-wide
+`campaign_state.last_escalation`, and the B10 guard refuses because that
+escalation is claimed by a different run. The halt reads
+`stale_escalation_unclaimed` and names a protocol from an unrelated run, which
+is confusing until you know the chain:
+
+```
+pre_registration.yaml -> _load_machine_constraints -> _ensure_protocol_ref_pinned
+                      -> run_context.yaml           -> the K3 resolver
+```
+
+The resolver reads `run_context.yaml`, NOT `pre_registration.yaml` directly.
+
+**2. `pass_rule.outcomes` is a LIST of branch dicts, not a map.** The B11
+total-mapping lint iterates it expecting `{branch, hypothesis_verdict,
+lineage_routing}` per entry. A map shape raises
+`AttributeError: 'str' object has no attribute 'get'` at materialization.
+Copy the shape from a sibling brief rather than inventing it.
+
+**3. `hypothesis_verdict: promote` must carry `lineage_routing: null`.**
+Promote never routes. Naming the holdout gate there is rejected -- the holdout
+gate is a separate standing gate, not a lineage route.
+
+**4. `protocol_ref_content_hash` is a STRUCTURAL hash, not a file digest.**
+It must equal `_compute_protocol_content_hash(path)`: canonical JSON with
+`protocol_version` and `protocol_content_hash` removed, so it is stable across
+key reordering and non-circular. A raw `sha256` of the file bytes will not
+match and the pin raises. A protocol file's own `protocol_content_hash` field
+must equal the same value.
+
+Check all four without launching:
+
+```bash
+PYTHONUTF8=1 ../venv/Scripts/python.exe -c "
+import sys; sys.path.insert(0,'workflow')
+from pathlib import Path
+import run_campaign as camp, run_phase1_research as orch
+brief = camp._parse_brief_frontmatter(Path('briefs/YOUR_BRIEF.md'))
+mc = brief.get('machine_constraints'); ev = brief.get('evaluation') or {}
+print('machine_constraints:', mc)
+pre = {'run_id':'x','pass_rule':ev.get('pass_rule'),'machine_constraints':mc}
+v,w = orch._lint_pass_rule_total_mapping(pre)
+print('B11:', v or 'clean', '| warnings:', w or 'none')
+print('K3 :', orch._lint_machine_constraints_protocol_selection(mc, pre['pass_rule']) or 'clean')
+if mc and mc.get('protocol_ref'):
+    ref = Path('protocols')/Path(mc['protocol_ref']).name
+    actual = orch._compute_protocol_content_hash(ref)
+    print('hash matches:', actual == mc.get('protocol_ref_content_hash'), actual)
+"
+```
 
 ### 1b. Real launch — process the whole queue continuously
 
