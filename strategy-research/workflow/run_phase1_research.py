@@ -1160,43 +1160,65 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise FileNotFoundError("protocol_summary.json not found after protocol run")
 
-        with open(summary_path, encoding="utf-8") as f:
-            summary = json.load(f)
-        save_yaml(ARTIFACTS / "protocol_result.yaml", summary)
-        hv = (summary.get("hypothesis_verdict") or {}).get("verdict", "unknown")
-        print(f"✅ Protocol complete. Hypothesis verdict: {hv}")
+        # H4-core (E-025 B1, issue #28): the subprocess exited 0 AND wrote
+        # protocol_summary.json -- the backtest really ran and market data was really
+        # spent -- but this post-success window (json.load, save_yaml, the C7 pass-rule
+        # eval) can still raise BEFORE _record_backtest_trial below (a truncated/corrupt
+        # summary at json.load; a non-numeric structured pass-rule metric inside
+        # evaluate_pass_rule_criteria). The two failure branches above (:1140/:1153) each
+        # record a backtest_failed row before re-raising; this window had none, so a raise
+        # here left NO trial row while the look had already touched data -- N under-counted.
+        # Record the spent look, then RE-RAISE the original error unchanged: this is an
+        # accounting add, not an exception swallow -- the loud halt that escalates to a
+        # human must survive. Recording is itself wrapped so its own failure only logs.
+        try:
+            with open(summary_path, encoding="utf-8") as f:
+                summary = json.load(f)
+            save_yaml(ARTIFACTS / "protocol_result.yaml", summary)
+            hv = (summary.get("hypothesis_verdict") or {}).get("verdict", "unknown")
+            print(f"✅ Protocol complete. Hypothesis verdict: {hv}")
 
-        # C7 (K2 kernel, 2026-07-13): machine-checkable pass-rule evaluation --
-        # replaces evaluate_against_decision_rules (tools/run_protocol.py's own
-        # prose-criteria parser) as the DECISION authority; that function's
-        # output remains informational only from here on (see design note
-        # section 6). Writes pass_rule_evaluation.yaml, a REQUIRED input for
-        # the verdict_interpreter stage (workflow_artifacts/skills/verdict-interpreter/SKILL.md).
-        # R3 (K2 Phase B operator ruling): evaluate_pass_rule_criteria() never
-        # raises on a legacy (string-shaped or absent) pass_rule -- it returns
-        # 'legacy_not_evaluable', and the LLM stage's own judgment applies
-        # exactly as it did before K2 (every run's pre_registration.yaml
-        # before this kernel, including run_057's own, is this legacy shape).
-        _tools_path = str(Path(__file__).parent.parent / "tools")
-        if _tools_path not in sys.path:
-            sys.path.insert(0, _tools_path)
-        import verdict_criteria_evaluator as _vce
-        _pre_reg_path = ARTIFACTS / "pre_registration.yaml"
-        _pre_reg_for_eval = load_yaml(_pre_reg_path) if _pre_reg_path.exists() else {}
-        # C7-EXT (2026-07-22): the brief is now an evaluator input -- G1 needs
-        # product/timeframe/rebalance to decide whether funding must be modeled.
-        _brief_path = ARTIFACTS / "research_brief.yaml"
-        _brief_for_eval = (load_yaml(_brief_path) if _brief_path.exists() else {}) or {}
-        _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
-            summary, _pre_reg_for_eval or {}, _brief_for_eval)
-        _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
-        _pass_rule_eval["evaluator_version"] = 2  # C7-EXT: G1-G5 preconditions
-        save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
-        _pre_reg_result = _pass_rule_eval.get("result")
-        print(f"✅ [C7] pass_rule_evaluation.yaml written: result={_pre_reg_result}"
-              + (f" verdict={_pass_rule_eval.get('hypothesis_verdict')}/"
-                 f"{_pass_rule_eval.get('lineage_routing')}"
-                 if _pre_reg_result in ("PASS", "FAIL") else ""))
+            # C7 (K2 kernel, 2026-07-13): machine-checkable pass-rule evaluation --
+            # replaces evaluate_against_decision_rules (tools/run_protocol.py's own
+            # prose-criteria parser) as the DECISION authority; that function's
+            # output remains informational only from here on (see design note
+            # section 6). Writes pass_rule_evaluation.yaml, a REQUIRED input for
+            # the verdict_interpreter stage (workflow_artifacts/skills/verdict-interpreter/SKILL.md).
+            # R3 (K2 Phase B operator ruling): evaluate_pass_rule_criteria() never
+            # raises on a legacy (string-shaped or absent) pass_rule -- it returns
+            # 'legacy_not_evaluable', and the LLM stage's own judgment applies
+            # exactly as it did before K2 (every run's pre_registration.yaml
+            # before this kernel, including run_057's own, is this legacy shape).
+            _tools_path = str(Path(__file__).parent.parent / "tools")
+            if _tools_path not in sys.path:
+                sys.path.insert(0, _tools_path)
+            import verdict_criteria_evaluator as _vce
+            _pre_reg_path = ARTIFACTS / "pre_registration.yaml"
+            _pre_reg_for_eval = load_yaml(_pre_reg_path) if _pre_reg_path.exists() else {}
+            # C7-EXT (2026-07-22): the brief is now an evaluator input -- G1 needs
+            # product/timeframe/rebalance to decide whether funding must be modeled.
+            _brief_path = ARTIFACTS / "research_brief.yaml"
+            _brief_for_eval = (load_yaml(_brief_path) if _brief_path.exists() else {}) or {}
+            _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
+                summary, _pre_reg_for_eval or {}, _brief_for_eval)
+            _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
+            _pass_rule_eval["evaluator_version"] = 2  # C7-EXT: G1-G5 preconditions
+            save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
+            _pre_reg_result = _pass_rule_eval.get("result")
+            print(f"✅ [C7] pass_rule_evaluation.yaml written: result={_pre_reg_result}"
+                  + (f" verdict={_pass_rule_eval.get('hypothesis_verdict')}/"
+                     f"{_pass_rule_eval.get('lineage_routing')}"
+                     if _pre_reg_result in ("PASS", "FAIL") else ""))
+        except Exception as _win_err:
+            try:
+                _record_failed_backtest_trial(
+                    run_id, config_path,
+                    f"post-success window raised {type(_win_err).__name__} "
+                    "(protocol_summary.json parse or pass-rule evaluation) "
+                    "after successful protocol run")
+            except Exception as _rec_err:
+                print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
+            raise
 
         # A6.2: record full-backtest trial in campaign_state.trial_sharpes
         _record_backtest_trial(run_id, summary, config_path)
