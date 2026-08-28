@@ -1,0 +1,180 @@
+run_id: run_060
+status: rejected
+current_stage: verdict_interpreter
+pending_stage: completed_rejected
+completed_stages:
+- hypothesis_generation
+- innovation_expansion
+- validation
+- backtest_specification
+- signal_prescreen
+- verdict_interpreter
+artifacts: {}
+governance:
+  max_hypothesis_variants_per_cycle: 3
+  max_refinements_after_validation: 2
+  max_reruns_after_analysis: 1
+  max_required_reads_per_stage: 3
+counters:
+  refinements_used: 0
+  reruns_used: 0
+flags:
+  holdout_reserved: false
+  validation_approved: true
+  screening_passed: false
+  walk_forward_passed: false
+  stale_escalation_unclaimed: false
+  conformance_violation: false
+last_summary: null
+stage_attempts:
+  hypothesis_generation: 1
+  innovation_expansion: 1
+  validation: 1
+  signal_prescreen: 4
+  backtest_specification: 1
+  verdict_interpreter: 1
+audit_log:
+  hypothesis_generation_attempt_0:
+    timestamp: '2026-08-27T20:57:42.263975+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 178.57
+    cost_usd: 0.13036125
+    num_turns: 1
+    tokens:
+      input: 10
+      output: 14491
+      cache_read: 0
+      cache_creation: 34365
+      total: 48866
+      weighted: 115421.2
+  innovation_expansion_attempt_0:
+    timestamp: '2026-08-27T20:59:30.776161+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 108.4
+    cost_usd: 0.0823077
+    num_turns: 1
+    tokens:
+      input: 10
+      output: 8601
+      cache_read: 13337
+      cache_creation: 19664
+      total: 41612
+      weighted: 68928.7
+  validation_attempt_0:
+    timestamp: '2026-08-27T21:01:37.924138+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 127.05
+    cost_usd: 0.10156795
+    num_turns: 3
+    tokens:
+      input: 26
+      output: 9455
+      cache_read: 78352
+      cache_creation: 32407
+      total: 120240
+      weighted: 95644.9
+  backtest_specification_attempt_0:
+    timestamp: '2026-08-27T21:52:22.049332+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 128.9
+    cost_usd: 0.10337945000000001
+    num_turns: 1
+    tokens:
+      input: 10
+      output: 11043
+      cache_read: 13337
+      cache_creation: 23607
+      total: 47997
+      weighted: 86067.4
+  verdict_interpreter_attempt_0:
+    timestamp: '2026-08-28T19:56:32.425525+00:00'
+    engine: claude-agent-sdk
+    execution_time_seconds: 130.81
+    cost_usd: 0.13348075
+    num_turns: 1
+    tokens:
+      input: 10
+      output: 10929
+      cache_read: 0
+      cache_creation: 43803
+      total: 54742
+      weighted: 109408.8
+updated_at: '2026-08-28T19:56:32.586078+00:00'
+last_error: null
+halt_history:
+- timestamp: '2026-08-27T21:01:38.573866+00:00'
+  reason: unhandled_exception
+  detail: forecast_hash requires runs\run_060\artifacts\candidate_strategy_config.json,
+    which does not exist. This trial's own prescreen/backtest step already had to
+    read this file to produce a result -- its absence now means the artifacts directory
+    is in an unexpected state, not a normal case to silently ski
+  last_error: forecast_hash requires runs\run_060\artifacts\candidate_strategy_config.json,
+    which does not exist. This trial's own prescreen/backtest step already had to
+    read this file to produce a result -- its absence now means the artifacts directory
+    is in an unexpected state, not a normal case to silently skip hashing for.
+  pending_stage: signal_prescreen
+  flags:
+    holdout_reserved: false
+    validation_approved: true
+    screening_passed: false
+    walk_forward_passed: false
+  completed_stages:
+  - hypothesis_generation
+  - innovation_expansion
+  - validation
+  counters:
+    refinements_used: 0
+    reruns_used: 0
+- timestamp: '2026-08-27T21:52:23.773359+00:00'
+  reason: stale_escalation_unclaimed
+  detail: '[B10] No run_context.yaml override and no machine_constraints.protocol_ref
+    for run_060, and campaign_state.last_escalation (protocol_path=''protocols\\escalation_tf_15m.json'')
+    is either empty or claimed by a different run (''run_049'') -- refusing to silently
+    run against stale, unrelated campaign-wide '
+  last_error: '[B10] No run_context.yaml override and no machine_constraints.protocol_ref
+    for run_060, and campaign_state.last_escalation (protocol_path=''protocols\\escalation_tf_15m.json'')
+    is either empty or claimed by a different run (''run_049'') -- refusing to silently
+    run against stale, unrelated campaign-wide state. Pin this run''s protocol explicitly
+    via machine_constraints.protocol_ref in pre_registration.yaml.'
+  pending_stage: signal_prescreen
+  flags:
+    holdout_reserved: false
+    validation_approved: true
+    screening_passed: false
+    walk_forward_passed: false
+    stale_escalation_unclaimed: true
+  completed_stages:
+  - hypothesis_generation
+  - innovation_expansion
+  - validation
+  - backtest_specification
+  counters:
+    refinements_used: 0
+    reruns_used: 0
+- timestamp: '2026-08-27T22:00:19.353610+00:00'
+  reason: conformance_gate_failure
+  detail: ''
+  last_error: null
+  pending_stage: human_pause
+  flags:
+    holdout_reserved: false
+    validation_approved: true
+    screening_passed: false
+    walk_forward_passed: false
+    stale_escalation_unclaimed: false
+    conformance_violation: true
+  completed_stages:
+  - hypothesis_generation
+  - innovation_expansion
+  - validation
+  - backtest_specification
+  - signal_prescreen
+  counters:
+    refinements_used: 0
+    reruns_used: 0
+conformance_violations:
+- significance_methodology_used='block_24_fisher_z' is not an A8.5.1a outcome (['block_24_dense_fallback',
+  'episode_block_bootstrap', 'episode_bootstrap_insufficient_n']) — pre-registered
+  machine_constraints.significance_methodology=episode_blocked_a851a was not honored
+continuation_child: null
+continuation_created_by: _route_kill

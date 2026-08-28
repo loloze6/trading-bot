@@ -326,31 +326,40 @@ def test_main_writes_only_under_requested_out_dir(tmp_path):
 
 @pytest.mark.skipif(not REPO_RUNS_DIR.exists(), reason="runs/ not present in this checkout")
 def test_real_corpus_verdict_field_denominators_match_known_good():
-    """Locks in the dispatch's own pre-verified numbers (measured 2026-08-23)
-    so a future change to the corpus or the parser is caught: 38 of 59 run
-    dirs carry a verdict_interpretation.yaml; protocol_verdict is 26
-    refine / 10 kill / 2 absent-within-file; status is 14 refine / 10 pivot /
-    7 escalate / 2 kill / 5 absent-within-file; and -- the whole reason this
-    is worth locking down -- 'promote' appears in NEITHER field, anywhere."""
+    """Locks in pre-verified corpus numbers so a change to the corpus or the
+    parser is caught: 39 of 60 run dirs carry a verdict_interpretation.yaml;
+    protocol_verdict is 26 refine / 11 kill / 2 absent-within-file; status is
+    14 refine / 10 pivot / 7 escalate / 3 kill / 5 absent-within-file; and --
+    the whole reason this is worth locking down -- 'promote' appears in
+    NEITHER field, anywhere.
+
+    REBASELINED 2026-08-28 from the 2026-08-23 measurement (59 runs, 38 with
+    verdicts, 10 protocol kills, 2 status kills). The ONLY change is run_060
+    (FUNDING_MR_4H_RETEST), which finished as evidence_tier=full_protocol with
+    protocol_verdict=kill and status=kill. Every other cell is untouched:
+    refine stays 26/14, pivot 10, escalate 7, not_recorded 2/5. The rebaseline
+    is therefore fully attributable to one new run rather than absorbing
+    unexplained drift -- which is the only condition under which re-pinning
+    these numbers is legitimate."""
     rows = nms.build_scoreboard(REPO_RUNS_DIR)
-    assert len(rows) == 59
+    assert len(rows) == 60
 
     has_verdict = [r for r in rows if r["evidence_tier"] != "thin_no_verdict_file"]
-    assert len(has_verdict) == 38
+    assert len(has_verdict) == 39
 
     from collections import Counter
     pv = Counter(r["protocol_verdict"] for r in has_verdict)
     st = Counter(r["status"] for r in has_verdict)
 
     assert pv.get("refine", 0) == 26
-    assert pv.get("kill", 0) == 10
+    assert pv.get("kill", 0) == 11
     assert pv.get("not_recorded", 0) == 2
     assert "promote" not in pv
 
     assert st.get("refine", 0) == 14
     assert st.get("pivot", 0) == 10
     assert st.get("escalate", 0) == 7
-    assert st.get("kill", 0) == 2
+    assert st.get("kill", 0) == 3
     assert st.get("not_recorded", 0) == 5
     assert "promote" not in st
 

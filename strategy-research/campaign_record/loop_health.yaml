@@ -1,0 +1,57 @@
+computed_at: '2026-08-27T22:00:19Z'
+source:
+  campaign_log: campaign_log.md
+  halt_history_runs: 1
+  note: Re-derived from primary records on every process_once() step; never accumulated.
+    Safe to delete -- the next step rewrites it.
+span_hours: 1256.02
+halts:
+  total: 17
+  downtime_hours: 127.84
+  downtime_share_pct: 10.2
+  median_downtime_hours: 1.81
+  unpaired: 1
+  denominator_note: campaign_log.md HALT lines only. A quarantined halt writes a QUARANTINE
+    line, not a HALT line, so it is NOT counted here -- see outcomes.
+cause_breakdown:
+  quarantine_safe:
+    component_gap:
+      count: 1
+      downtime_hours: 1.808
+    no_signal_artifact:
+      count: 2
+      downtime_hours: 1.279
+    component_execution_error:
+      count: 3
+      downtime_hours: 32.827
+  escalate:
+    unhandled_exception:
+      count: 7
+      downtime_hours: 72.752
+    kb_reactivation_violation:
+      count: 2
+      downtime_hours: 19.063
+    stale_escalation_unclaimed:
+      count: 1
+      downtime_hours: 0.117
+    conformance_gate_failure:
+      count: 1
+      downtime_hours: 0.0
+outcomes:
+  auto_recovered: 0
+  escalated: 3
+  halt_history_records: 3
+  repeat_quarantine_escalations: 0
+  denominator_note: halt_history across every run on disk, which covers both quarantined
+    and escalated halts. Does not equal halts.total.
+policy:
+  quarantine_enabled: false
+  quarantine_safe_reasons:
+  - component_execution_error
+  - component_gap
+  - new_component_escalation
+  - no_signal_artifact
+  retry_enabled: false
+  retry_note: 'S2b is unbuilt: taxonomy R2 found one evidenced retry-safe signature
+    and it is already handled at the stage level in _invoke_agent_with_yaml_retry
+    (A11). There is no retry-vs-escalate decision to make at this layer.'

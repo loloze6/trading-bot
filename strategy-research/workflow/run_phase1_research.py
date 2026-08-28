@@ -1084,6 +1084,12 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # inline protocol-selection logic (also present in protocol_execution below).
         protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
 
+        # F4d wiring: enforce the pre-registered significance methodology BEFORE
+        # the subprocess reads the config, so the pin actually governs the run
+        # rather than merely being audited against it afterwards.
+        _ensure_significance_methodology_pinned(
+            config_path, _load_machine_constraints(RUN_DIR) or {}, run_id)
+
         out_dir = RUN_DIR / "prescreen"
         cmd = [
             str(TBOT_PYTHON), str(ROOT / "tools" / "prescreen_signal.py"),
@@ -2885,6 +2891,57 @@ def _require_pre_registered_promotion(proto_constraint: dict, run_id: str) -> di
     return promotion
 
 
+def _ensure_significance_methodology_pinned(config_path: Path, constraints: dict, run_id: str) -> bool:
+    """Carry machine_constraints.significance_methodology into
+    candidate_strategy_config.json, which is the ONLY place prescreen_signal.py
+    looks for it. Returns True if the config was written.
+
+    WHY (2026-08-28, run_060): the brief pinned
+    significance_methodology=episode_blocked_a851a, but prescreen_signal.py
+    reads that flag from the candidate config
+    (`config_raw.get("significance_methodology")`), and nothing carried the
+    value from pre_registration.yaml to that config. The
+    backtest_specification agent simply had not written the field, so the
+    a851a branch never ran, the default block-Fisher path ran instead, and the
+    F4d conformance gate correctly halted the campaign for testing something
+    other than what was pre-registered.
+
+    That gate is the AUDIT. This is the WIRING. Without it the pin is a
+    statement no code acts on, and every run has to be repaired by hand after
+    the gate catches it -- the recurring pattern where this system writes a
+    correct declarative artifact and then leaves it unenforced.
+
+    A config that already names a DIFFERENT methodology is a genuine conflict
+    between two deliberate statements, so it raises rather than being
+    overwritten.
+    """
+    pinned = constraints.get("significance_methodology")
+    if not pinned:
+        return False
+    if not config_path.exists():
+        raise FileNotFoundError(
+            f"[F4d] {run_id}: machine_constraints pins "
+            f"significance_methodology={pinned!r} but {config_path.name} does not exist "
+            f"-- cannot enforce the pin on a config that was never written."
+        )
+    cfg = json.loads(config_path.read_text(encoding="utf-8"))
+    existing = cfg.get("significance_methodology")
+    if existing == pinned:
+        return False  # already conforms -- idempotent across re-entry
+    if existing:
+        raise RuntimeError(
+            f"[F4d] {run_id}: {config_path.name} declares "
+            f"significance_methodology={existing!r} but pre_registration.yaml pins "
+            f"{pinned!r} -- two deliberate, conflicting statements. Refusing to "
+            f"silently overwrite either; reconcile the brief and the config."
+        )
+    cfg["significance_methodology"] = pinned
+    config_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+    print(f"📌 [F4d] Propagated pinned significance_methodology={pinned!r} into "
+          f"{config_path.name} (was absent -- the prescreen reads it only from there)")
+    return True
+
+
 def _compute_protocol_content_hash(path: Path) -> str:
     """
     K3/§5: structural hash (tolerant of key reordering from hand edits), computed
@@ -3940,6 +3997,44 @@ def _compute_forecast_hash(config_path: Path) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+_A_PRIORI_NO_CONFIG_ROUTES = frozenset({"insufficient_power_a_priori"})
+
+
+def _forecast_hash_for_prescreen(route: str, config_path: Path, run_id: str):
+    """forecast_hash for a prescreen trial row, tolerating the ONE route that
+    legitimately has no strategy config.
+
+    BUG FIXED 2026-08-27, found by run_060 -- the first real campaign launch in
+    39 days, which halted the whole campaign immediately after producing a
+    correct verdict.
+
+    `_compute_forecast_hash` fails loud on a missing config, and its docstring
+    justifies that: "by the time either trial-recording function calls this, the
+    same config file has already been read by the prescreen/backtest subprocess
+    this trial's result came from". **That premise is false for
+    `insufficient_power_a_priori`.** The A8.6 gate blocks at `validation`, which
+    is BEFORE `backtest_specification` runs, so no
+    candidate_strategy_config.json is ever written -- the gate's own
+    prescreen_result.yaml says `stage_blocked_at: validation` and "no component
+    built, no trial spent". The guard therefore treated a designed,
+    correctly-functioning path as a structural anomaly and raised
+    `unhandled_exception`, halting the campaign on a run that had just done its
+    job.
+
+    The fail-loud default is KEPT for every other route: a missing config on a
+    path that really did run a prescreen or backtest subprocess still raises,
+    because there it genuinely does mean the artifacts directory is broken. Only
+    the a-priori-power route -- where absence is guaranteed by construction, not
+    symptomatic -- returns None, and the row records that explicitly rather than
+    silently omitting the field.
+    """
+    if route in _A_PRIORI_NO_CONFIG_ROUTES and not config_path.exists():
+        print(f"   forecast_hash: null for {run_id} -- route '{route}' blocks at "
+              f"validation, before any strategy config is built (by design).")
+        return None
+    return _compute_forecast_hash(config_path)
+
+
 def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path, *, upsert: bool = False):
     """
     A6.2: record a prescreen run as a trial in campaign_state.trial_sharpes.
@@ -3973,7 +4068,7 @@ def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path, *, upsert:
         "statistic_valid": "neither",  # no backtest ran
         "ic_pooled":       ps.get("ic_spearman_pooled"),
         "cost_pass":       ps.get("cost_check", {}).get("pass"),
-        "forecast_hash":   _compute_forecast_hash(config_path),
+        "forecast_hash":   _forecast_hash_for_prescreen(route, config_path, run_id),
     }
     if upsert:
         for i, t in enumerate(trials):
@@ -4526,10 +4621,27 @@ def _compare_llm_vs_machine_power(run_id: str, hyp_id: str, machine: dict, card:
         _log_power_check_discrepancy(run_id, hyp_id, machine, llm_reported, discrepancies)
 
 
-# 2026-07-07: A8.6 block_size, timeframe-aware (mirrors prescreen_signal.py's
-# _BLOCK_SIZE_1H/_BLOCK_SIZE_1D — both must be updated together, same as the
-# power_check.py/prescreen_signal.py mirroring this docstring already calls out).
-_A86_BLOCK_SIZE_BY_TIMEFRAME = {"1h": 24, "1d": 1}
+# 2026-08-27: the table is gone. A8.6's block_size is BARS PER DAY, which is
+# arithmetic on the timeframe, not a fact to be remembered -- see
+# tools/timeframe.py for the full history. The previous
+# `{"1h": 24, "1d": 1}` + silent `.get(tf, 24)` fallback gave every other
+# timeframe the 1h value: for 4h that made n_eff 4x too small and killed
+# run_060 with an artifact verdict. The 2026-07-07 fix had already hit this
+# once for 1d and repaired it by ADDING a table entry, which guaranteed the
+# recurrence. Deriving it means a timeframe nobody has tried yet is correct on
+# first use, and all three former mirrors now share one implementation.
+def _a86_block_size(timeframe) -> int:
+    """A8.6 autocorrelation block size = bars per day, DERIVED.
+
+    Imported from tools/timeframe.py so this, tools/power_check.py and
+    tools/prescreen_signal.py cannot drift apart -- previously they were held
+    in sync only by comments saying "both must be updated together", which is a
+    convention, not a mechanism, and they had already drifted."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    from timeframe import bars_per_day
+    return bars_per_day(timeframe)
 
 
 def _run_a86_power_check(artifacts: Path) -> dict:
@@ -4567,7 +4679,7 @@ def _run_a86_power_check(artifacts: Path) -> dict:
     # every prior run's exact behavior when the field is absent.
     brief_path = artifacts / "research_brief.yaml"
     timeframe = (load_yaml(brief_path) or {}).get("timeframe", "1h") if brief_path.exists() else "1h"
-    block_size = _A86_BLOCK_SIZE_BY_TIMEFRAME.get(timeframe, 24)
+    block_size = _a86_block_size(timeframe)
 
     if is_market_wide:
         rho = _load_rho_bar()

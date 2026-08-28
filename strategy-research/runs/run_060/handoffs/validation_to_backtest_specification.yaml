@@ -1,0 +1,37 @@
+handoff_version: 1
+run_id: run_060
+from_stage: validation
+to_stage: backtest_specification
+assigned_engine: claude
+objective: 'Produce one strategy config (inside backtest_spec.yaml) implementing the
+  approved, validated hypothesis, or declare a component_gap if the engine lacks a
+  required piece.
+
+  '
+primary_input_artifact: runs/{run_id}/artifacts/expanded_hypothesis_card.yaml
+required_inputs:
+- path: artifacts/expanded_hypothesis_card.yaml
+  reason: the validated hypothesis and variants to implement
+- path: artifacts/validation_protocol.yaml
+  reason: falsification criteria and sample-split decisions that constrain the config
+optional_inputs:
+- path: ../../../trading-bot/DOC/STRATEGY_CONFIG_REFERENCE.md
+  reason: authoritative list of available components, transforms, regimes, parameters
+- path: ../../docs/WORKFLOW_CAPABILITIES.md
+  reason: confirms which signal variants are achievable via config vs require new
+    code
+constraints:
+- Use only components/transforms/regimes in STRATEGY_CONFIG_REFERENCE.md.
+- History-based transform ops precede scalar ops.
+- Do not loosen thresholds or sample-split choices fixed by validation.
+deliverables:
+- backtest_spec.yaml
+- decision.yaml
+stop_conditions:
+- A required component/transform/regime is missing -> decision.status = component_gap.
+notes_for_orchestrator:
+- Routing reads decision.yaml.status (spec_ready | component_gap).
+injected_context:
+  stage_attempt: '0'
+  refinement_attempt: '0'
+  human_data_paths_injected: 'false'

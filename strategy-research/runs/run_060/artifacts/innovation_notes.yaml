@@ -1,0 +1,46 @@
+summary: "Brief explicitly constrains to one variant only (closure run for named KB branch). Expansion not appropriate. V1 passes the base hypothesis through unchanged, matching the registered mechanism (threshold=0.0, 4h bars, FundingRateMeanReversionComponent). No parameter sweep, no alternative formulations in run queue."
+
+key_insight: "This is a **terminating closure run**. The parent reactivation_condition names three timeframes: 1h (run_044, failed cost gate), daily (run_059, failed pass rule), 4h (this run). If V1 fails, the entire parent entry closes permanently. Expansion risks diluting focus on the single critical hypothesis."
+
+variants_not_pursued:
+  - variant: A1 (Funding magnitude gating)
+    reason: "Brief specifies continuous (threshold=0.0) only. Magnitude-gated variants are post-hoc refinements after continuous fails, not pre-registered alternatives for closure run."
+  - variant: A2 (Fear & Greed regime filter)
+    reason: "Market-wide signal, low effective sample size (n_eff ~1.1 for BTC/ETH). Reactivation would require 2018+ data. Brief forbids variants."
+  - variant: REVERSE (Funding-rate momentum)
+    reason: "Contradicts structural forced-flow mechanism (mean-reversion, not herding). Documented for falsifiability, but low prior. Brief allows one mechanism only."
+  - variant: A3, A4 (Liquidation / cross-exchange)
+    reason: "Require unavailable feeds (liquidation_data, cross_exchange). Per Improvement 01, routed to feed_wishlist, not run queue."
+
+diversity_audit:
+  categories_spanned: [structural_rate]
+  data_requirements_spanned: [funding_open_interest]
+  verdict: "N/A (single variant per brief constraint; diversity test applies only to multi-variant expansions)"
+  note: "V1 uses funding_rate_extreme indicator from library (library_category=structural_rate, data_requirements=funding_open_interest, edge_source_compatibility=[structural_forced_flow]). Satisfies Improvement 01 (evidence_type != price_volume_only)."
+
+schema_compliance:
+  required_fields_present: true
+  fields_populated:
+    - base_hypothesis_id: "FUNDING_MR_4H_RETEST ✓"
+    - expanded_variants: "V1 with library_category, data_requirements, diversity_axis ✓"
+    - alternative_data_candidates: "A1–A4 routed to variants_not_pursued ✓"
+    - reverse_hypothesis: "Documented with low-prior rationale ✓"
+    - behavioral_features: "B1–B3 (cascade mechanics, hold-time, cost sensitivity) ✓"
+    - regime_specific_variants: "Empty (no regime-gated variants per POST-A2.3) ✓"
+
+edge_source_inheritance:
+  base_mechanism_preserved: true
+  mechanism_details: "Perpetual funding settles UTC 00:00/08:00/16:00. Extreme funding forces deleveraging → mean-reversion. 4h Nyquist resolution + sufficient hold window. Unlike daily (aliasing) and 1h (lag mismatch)."
+  measurement_proxy: "Sign(8h-lagged funding rate) → opposite forecast (-1 to +1). Proxy directly measurable in funding-rate feed per available_feeds.yaml."
+
+pass_rule_compliance:
+  inherited_from: "briefs/FUNDING_MR_DAILY_RETEST.md (run_059)"
+  pass_criteria: "Median Sharpe > 0.8 AND max abs drawdown < 30 on BOTH BTCUSDT and ETHUSDT (49-window 2019-12-01 to 2023-12-31 pass-gated set)"
+  failure_route: "Any fail → kill, terminate (mechanism dead across all three registered branches)"
+  window_set: "protocols/funding_mr_4h_retest_v1.json (programmatically identical to daily sibling)"
+
+notes:
+  - "Brief honesty note (i): daily sibling's pass_rule claimed 'mechanism's LAST escalation' but KB reactivation_condition explicitly names 4h as untouched. This brief proceeds on KB's explicit record; 4h remains valid closure branch."
+  - "Brief honesty note (ii): thresholds inherited verbatim (no post-hoc selection after seeing sibling results). Protocol window set verified identical (49 windows)."
+  - "Run_044 root cause: lag_mismatch_to_regime_persistence (not mechanism death). Run_059 root cause: return/drawdown failure (not cost). 4h addresses both structural issues (Nyquist + hold window)."
+  - "Cost prescreen plausible fail: daily margin 15% (2.2927 vs 2.0 floor); 6× turnover scaling at 4h may consume this entirely before backtest. Expected failure mode, informative outcome."

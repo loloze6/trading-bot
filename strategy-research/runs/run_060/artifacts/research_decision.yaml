@@ -1,0 +1,32 @@
+hypothesis_id: "FUNDING_MR_4H_RETEST"
+decision: kill
+rationale: "Prescreen IC gate failed (ic_active_bars=0.0162, p=0.5315 >> 0.10, not significant). This is the mechanism's last named branch per pre-registered pass rule: 4h is the Nyquist-correct timeframe for testing 8h-periodic funding-rate mean-reversion. 1h failed on execution lag (not IC), daily failed on Sharpe (aliasing obscures signal). 4h showing zero IC directly falsifies the hypothesis that the mechanism exists at any practical timeframe. Across all three named branches (1h, 4h, daily) of the parent reactivation_condition, the signal has produced either zero IC or unreliable Sharpe despite theoretical soundness. Pre-registered routing rule applies: ANY criterion FAIL on EITHER symbol results in kill, terminate."
+findings_archive:
+  run_060_4h:
+    ic_active_bars: 0.016237
+    ic_p_value: 0.5315
+    significant: false
+    edge_to_cost_ratio: 0.153
+    status: "prescreen_kill"
+    route: "kill_no_ic"
+  run_059_daily:
+    ic_active_bars: 0.037802
+    ic_p_value: 0.0406
+    significant: true
+    median_sharpe_btc: -0.296
+    median_sharpe_eth: -0.979
+    max_drawdown_btc_pct: 34.9
+    max_drawdown_eth_pct: 49.6
+    edge_to_cost_ratio: 2.2927
+    status: "killed on pass rule (Sharpe and drawdown)"
+    route: "terminate"
+  run_044_1h:
+    ic_active_bars: 0.016737
+    ic_p_value: 0.881
+    significant: false
+    edge_to_cost_ratio: 0.2425
+    status: "killed on pass rule"
+    root_cause: "lag_mismatch_to_regime_persistence"
+    route: "escalate (timeframe)"
+mechanism_trajectory: "1h (zero IC, lag confirmed) → 4h (zero IC, Nyquist-correct, no benefit) → daily (IC present but returns negative, aliasing issue). Structural flow edge either gone or arbitraged away in pre-2024 era. Mechanism exhausted."
+kb_entry_closure: "parent_entry: funding_rate_continuous_mean_reversion_expanded_auto; reactivation_condition branches: 1h (run_044, terminate), 4h (run_060, terminate), daily (run_059, terminate). All branches closed. Parent entry marked exhausted."
