@@ -1,0 +1,36 @@
+status: "spec_ready"
+config:
+  aux_feeds:
+    - "funding_rate"
+  regime_detector:
+    mode: "threshold_rules"
+    components: []
+    rules: []
+    default_regime: "unknown"
+  strategies:
+    warmup: 2
+    regimes:
+      unknown:
+        components:
+          - id: "funding_mr"
+            class: "strategies.strategy_components.FundingRateMeanReversionComponent"
+            params:
+              threshold: 0.0
+              scaling_factor: 10.0
+            weight: 1.0
+            lookback: 500
+            transforms:
+              - op: "identity"
+      trending: null
+      mean_reversion: null
+      chop: null
+selected_variant_id: "V1"
+config_rationale:
+  - "Continuous funding-rate mean-reversion (threshold=0.0) at 8h settlement bars: FundingRateMeanReversionComponent fires forecast = −sign(funding_rate)×10.0 (UTC 00:00/08:00/16:00); 0 elsewhere"
+  - "Ungated regime pattern (no gating rules): regime_detector.rules=[], components=[], default_regime='unknown' ensures signal fires every settlement bar regardless of market regime"
+  - "Warmup=2: component requires 2 bars of history; forecast ready from bar 3 onward"
+  - "Transform: identity (component output ±10.0 within target [-20,+20] range; no normalization needed; sparse non-settlement output absorbed by ensemble clipping)"
+  - "aux_feeds: funding_rate merges required funding-rate data column for component to read settlement-synchronized rates"
+  - "Activation: ~3 bars per 24h (12.5%) at deterministic settlement boundaries (Nyquist minimum for 8h settlement cycle sampled at 4h)"
+  - "Validation flow: prescreen Layer 2 cost gate (edge_to_cost_ratio>=2.0) deterministic blocker, then walk-forward windows 2024-12-01:2025-12-31 (Sharpe>=0.8, max_dd<=30%, IC>=0.015 on both BTCUSDT/ETHUSDT), then holdout 2026-01-01:2026-06-30 (frozen, single-use)"
+component_gap: null

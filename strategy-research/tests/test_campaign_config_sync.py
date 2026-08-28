@@ -37,8 +37,13 @@ def campaign_config():
 def test_block_size_1h(campaign_config):
     import prescreen_signal
     expected = campaign_config["prescreen"]["block_size_1h"]
-    assert prescreen_signal._BLOCK_SIZE_1H == expected, (
-        f"prescreen_signal._BLOCK_SIZE_1H={prescreen_signal._BLOCK_SIZE_1H} "
+    # _BLOCK_SIZE_1H survives only as a documented regression anchor since
+    # 2026-08-27 -- the live value is derived by tools/timeframe.py. Both must
+    # still agree with config, or the anchor has stopped anchoring anything.
+    from timeframe import bars_per_day
+    assert prescreen_signal._BLOCK_SIZE_1H == expected
+    assert bars_per_day("1h") == expected, (
+        f"derived bars_per_day('1h')={bars_per_day('1h')} "
         f"!= config prescreen.block_size_1h={expected}"
     )
 
@@ -47,21 +52,33 @@ def test_block_size_1d(campaign_config):
     """2026-07-07: daily-bar engine support (P4_ts_trend/SMA(100)-daily)."""
     import prescreen_signal
     expected = campaign_config["prescreen"]["block_size_1d"]
-    assert prescreen_signal._BLOCK_SIZE_1D == expected, (
-        f"prescreen_signal._BLOCK_SIZE_1D={prescreen_signal._BLOCK_SIZE_1D} "
+    from timeframe import bars_per_day
+    assert prescreen_signal._BLOCK_SIZE_1D == expected
+    assert bars_per_day("1d") == expected, (
+        f"derived bars_per_day('1d')={bars_per_day('1d')} "
         f"!= config prescreen.block_size_1d={expected}"
     )
 
 
 def test_a86_block_size_by_timeframe_matches_config(campaign_config):
-    """_run_a86_power_check's timeframe dispatch must match both prescreen_signal.py's
-    own constants AND campaign_config.yaml — three places, one source of truth."""
+    """The A8.6 gate's block size must match campaign_config.yaml.
+
+    REWRITTEN 2026-08-27. This previously asserted equality between two
+    hand-maintained tables (`_A86_BLOCK_SIZE_BY_TIMEFRAME` and
+    prescreen_signal's `_BLOCK_SIZE_1H/_1D`) at the two keys they both held --
+    and passed, while those same two sites DISAGREED at 4h (24 vs 6). A test
+    that only checks the entries everyone remembered to add cannot catch the
+    entries nobody added. Both sites now derive from tools/timeframe.py, and
+    the cross-site agreement test spanning every timeframe lives in
+    tests/test_timeframe_block_size.py.
+
+    What remains worth guarding here is the CONFIG's declared values still
+    matching the derivation -- config is a fourth mirror, and if someone edits
+    block_size_1h there expecting it to take effect, they should be told it
+    no longer drives anything."""
     import run_phase1_research as rpr
-    import prescreen_signal
-    assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME["1h"] == prescreen_signal._BLOCK_SIZE_1H
-    assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME["1h"] == campaign_config["prescreen"]["block_size_1h"]
-    assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME["1d"] == prescreen_signal._BLOCK_SIZE_1D
-    assert rpr._A86_BLOCK_SIZE_BY_TIMEFRAME["1d"] == campaign_config["prescreen"]["block_size_1d"]
+    assert rpr._a86_block_size("1h") == campaign_config["prescreen"]["block_size_1h"]
+    assert rpr._a86_block_size("1d") == campaign_config["prescreen"]["block_size_1d"]
 
 
 def test_significance_threshold(campaign_config):
@@ -147,13 +164,24 @@ def test_below_floor_pct_matches_config(campaign_config):
 # ---------------------------------------------------------------------------
 
 def test_power_check_block_size_matches_prescreen(campaign_config):
+    """REWRITTEN 2026-08-27. This compared two hand-maintained constants and
+    passed, while the sites they belonged to disagreed at every timeframe
+    except 1h: power_check's BLOCK_SIZE was a BARE CONSTANT 24 (1h-only for
+    every hypothesis it ever checked), and prescreen_signal fell back to 6 for
+    everything non-1h/1d. Comparing only their 1h values could never surface
+    that. Both now derive from tools/timeframe.py; this asserts neither has
+    quietly reintroduced a local constant."""
     import power_check
     import prescreen_signal
-    assert power_check.BLOCK_SIZE == prescreen_signal._BLOCK_SIZE_1H, (
-        f"power_check.BLOCK_SIZE={power_check.BLOCK_SIZE} "
-        f"!= prescreen_signal._BLOCK_SIZE_1H={prescreen_signal._BLOCK_SIZE_1H} — "
-        "both must use the same block size for N_eff computation"
+    from timeframe import bars_per_day
+    assert not hasattr(power_check, "BLOCK_SIZE"), (
+        "power_check.BLOCK_SIZE reintroduced — a bare constant cannot vary by "
+        "timeframe and is what made this mirror 1h-only"
     )
+    assert "bars_per_day" in (TOOLS_PATH / "power_check.py").read_text(encoding="utf-8")
+    assert "bars_per_day" in (TOOLS_PATH / "prescreen_signal.py").read_text(encoding="utf-8")
+    assert prescreen_signal._BLOCK_SIZE_1H == bars_per_day("1h")
+    assert prescreen_signal._BLOCK_SIZE_1D == bars_per_day("1d")
 
 
 # ---------------------------------------------------------------------------
@@ -175,7 +203,11 @@ def test_a86_heuristic_h041c_reproduction(campaign_config):
     The corrected formula (n/( 1+(n-1)*rho )) must reproduce this at the measured rho.
     """
     import math
-    from power_check import run_power_check, BLOCK_SIZE
+    from power_check import run_power_check
+    from timeframe import bars_per_day
+    # H-041-C was a 1h hypothesis, so its block size is bars_per_day("1h") == 24
+    # -- the same value the removed BLOCK_SIZE constant held, now derived.
+    BLOCK_SIZE = bars_per_day("1h")
 
     rho = campaign_config["symbol_correlation"]["btc_eth_return_correlation_1h"]
     n_symbols = 2

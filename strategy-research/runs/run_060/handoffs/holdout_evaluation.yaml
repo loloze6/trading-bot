@@ -1,0 +1,55 @@
+run_id: "template"
+from_stage: "verdict_interpreter"
+to_stage: "holdout_evaluation"
+objective: >
+  Improvement 06: Single-use holdout evaluation gate. This is a TOOL STAGE — no LLM runs.
+  The orchestrator enforces the single-use constraint and deflated Sharpe gate, then
+  evaluates holdout_result.yaml if present. If holdout_result.yaml is absent, the pipeline
+  pauses for human to run the holdout backtest on the frozen holdout_range.
+
+required_inputs:
+  - path: "artifacts/promotion_audit.yaml"
+    reason: "Contains passes_deflated_threshold; if False, terminal reject before holdout."
+  - path: "../../config/campaign_data_policy.yaml"
+    reason: "A6.1: single-use enforcement. holdout_consumed_by list checked here."
+
+optional_inputs:
+  - path: "artifacts/holdout_result.yaml"
+    reason: >
+      If present and status is set (pass/fail/inconclusive), the orchestrator evaluates it.
+      If absent, the pipeline pauses — run the holdout backtest and write this file, then resume.
+
+constraints:
+  - "This is a TOOL STAGE. No LLM is invoked. The orchestrator handles all logic."
+  - "SINGLE-USE: if hypothesis_id appears in campaign_data_policy.holdout_consumed_by, the run is refused immediately."
+  - "DSR GATE: if promotion_audit.passes_deflated_threshold == false, terminal reject before holdout runs."
+  - "HOLDOUT FAILURE IS TERMINAL: status=fail in holdout_result.yaml has no further promotion path."
+  - "Pre-register expected_range in holdout_result.yaml BEFORE running the holdout backtest."
+  - "A3.4 null-floor: holdout_sharpe must be null (not 0.0) when closed trade count < 5 in the holdout window."
+
+deliverables:
+  - "artifacts/holdout_result.yaml"
+
+assigned_engine: "tool_only"
+
+holdout_result_schema:
+  hypothesis_id: "<same as hypothesis_card.yaml hypothesis_id>"
+  holdout_window:
+    start: "<from campaign_data_policy.holdout_range[0]>"
+    end: "<from campaign_data_policy.holdout_range[1]>"
+  expected_range:
+    min_sharpe: "<pre-registered a-priori lower bound — write BEFORE running holdout>"
+    max_sharpe: "<pre-registered a-priori upper bound>"
+    rationale: "<cite walk-forward result and degradation assumptions>"
+  holdout_sharpe: null  # null when trade count < 5 per A3.4
+  holdout_max_drawdown: null
+  walk_forward_sharpe_for_comparison: null
+  degradation_pct: null
+  per_trade_expectancy:
+    mean_bps: null
+    se_bps: null
+    t_stat: null
+    n_trades: null
+  within_expected_range: null
+  status: "<pass | fail | inconclusive>"
+  consumed_at: "<ISO timestamp>"

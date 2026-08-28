@@ -1,0 +1,62 @@
+run_id: run_060
+hypothesis_id: run_060-initial
+registered_at: '2026-08-27'
+reactivation_context: Materialised 2026-08-27 during the reset that followed the A8.6
+  block_size fix. The brief as first written carried no machine_constraints block,
+  so no pre_registration.yaml was produced at launch; the prescreen then found no
+  protocol_ref and fell through to a campaign-wide last_escalation already claimed
+  by run_049, which the B10 guard correctly refused. Content is what a fresh launch
+  would have produced, and it passed the same B11 and K3 materialization lints.
+pass_rule:
+  statement: 'PASS iff, evaluated per symbol over the PASS-GATED windows only (protocols/funding_mr_4h_retest_v1.json,
+    49 monthly windows 2019-12-01 to 2023-12-31), BOTH BTCUSDT AND ETHUSDT satisfy:
+    (a) median Sharpe > 0.8; (b) max abs drawdown < 30%. ANY criterion FAIL on EITHER
+    symbol -> kill, terminate. This is the mechanism''s LAST named branch: the parent
+    reactivation_condition names 4h and daily, and daily is spent. A kill here closes
+    the parent entry - no refine, pivot, or escalate exists in this mapping.
+
+    '
+  window_set_ref: protocols/funding_mr_4h_retest_v1.json
+  criteria:
+  - id: a
+    metric: median_sharpe
+    metric_basis: bar_level
+    comparator: '>'
+    per_symbol_threshold:
+      BTCUSDT: 0.8
+      ETHUSDT: 0.8
+    null_handling: fails_threshold
+    source: 'INHERITED VERBATIM from the daily sibling (briefs/FUNDING_MR_DAILY_RETEST.md
+      criterion a), which sourced it to the operator''s 2026-07-18 registration ruling
+      and the H-041-C-v2 precedent. Deliberately NOT re-derived: the sibling branch
+      has already reported results, so choosing a new threshold now would be selecting
+      one after seeing data. Same mechanism, same universe, same window set, same
+      bar.
+
+      '
+  - id: b
+    metric: max_abs_drawdown_pct
+    metric_basis: bar_level
+    comparator: <
+    per_symbol_threshold:
+      BTCUSDT: 30
+      ETHUSDT: 30
+    null_handling: fails_threshold
+    source: 'INHERITED VERBATIM from the daily sibling (criterion b), same provenance
+      and same reasoning as criterion a.
+
+      '
+  outcomes:
+  - branch: PASS
+    hypothesis_verdict: promote
+    lineage_routing: null
+  - branch: FAIL-a
+    hypothesis_verdict: kill
+    lineage_routing: terminate
+  - branch: FAIL-b
+    hypothesis_verdict: kill
+    lineage_routing: terminate
+machine_constraints:
+  protocol_ref: protocols/funding_mr_4h_retest_v1.json
+  protocol_ref_content_hash: sha256:4fda1f39858295b06b81634b474eecb4a0c37c554e94689ec7a54e4204e4ecf9
+  significance_methodology: episode_blocked_a851a

@@ -355,11 +355,11 @@ queue:
   pass_rule_evaluation_ref: runs/run_059/artifacts/pass_rule_evaluation.yaml
 - id: FUNDING_MR_4H_RETEST
   brief_path: briefs/FUNDING_MR_4H_RETEST.md
-  status: ready
+  status: done
   priority: 1
   source: operator_ratified
   relation: new_registration
-  notes: 4h branch of funding_rate_continuous_mean_reversion_expanded_auto's reactivation_condition
+  notes: '4h branch of funding_rate_continuous_mean_reversion_expanded_auto''s reactivation_condition
     - the last untested granularity. Thresholds INHERITED verbatim from the daily
     sibling (median_sharpe>0.8, max_dd<30), never re-derived. Protocol windows copied
     programmatically from funding_mr_daily_retest_v1.json (verified identical, 49
@@ -367,4 +367,52 @@ queue:
     ends 2024-01-02 (nowhere near the 2026 seal). research_only=True (binance unlisted
     in venue_tradability) so this cannot reach the holdout. Operator approved launch
     2026-08-27; pass_rule presented for ratification per the H-041-C-v2 precedent.
-  run_ids: []
+
+
+    PASS_RULE RATIFIED by the operator 2026-08-27 ("go"), per the H-041-C-v2 precedent
+    that pass rules are operator-ratified before any run. Ratified as registered and
+    UNCHANGED: (a) median_sharpe > 0.8 and (b) max_abs_drawdown_pct < 30, both symbols,
+    ANY failure on EITHER symbol -> kill/terminate. Both thresholds inherited verbatim
+    from the daily sibling; nothing was re-derived after seeing that branch''s results.
+    Launch authorised same message.
+
+
+    RESET 2026-08-27 after the A8.6 block_size fix (commit 6d066acc). run_060''s insufficient_power_a_priori
+    verdict was an ARTIFACT: the gate used the 1h autocorrelation block (24) for a
+    4h hypothesis, making n_eff 4x too small (91.9 vs 367.5) and mde 2x too large
+    (0.1061 vs 0.0524). On correct arithmetic the hypothesis is power_adequate. The
+    void prescreen_result.yaml is preserved as runs/run_060/prescreen_result.VOID_block_size_bug.yaml;
+    the upstream LLM stages (hypothesis_card, validation_decision, validation_protocol)
+    were CORRECT and are kept rather than regenerated. No trial row was ever minted
+    (14 before, 14 after), so N is unaffected. Operator authorised the reset and re-run
+    2026-08-27.
+
+
+    CLOSED 2026-08-28 (run_060). Killed at SIGNAL PRESCREEN, before any window backtest
+    ran, so the pre-registered pass_rule (median Sharpe > 0.8 and max abs drawdown
+    < 30% across the 49 windows of protocols/funding_mr_4h_retest_v1.json) was NEVER
+    EVALUATED -- 0 windows executed. Hence verdict_status: ungated: this is a measurement-backed
+    kill, not a verdict against the registered criteria, and it must not be cited
+    as one.
+
+    Measurements (real data, 17854 bars pooled across BTCUSDT+ETHUSDT, 8928 active):
+    ic_active_bars=0.016237, ic_all_bars=-0.006944, significance=block_24_dense_fallback
+    (the pinned episode_blocked_a851a path did run), sigma_bar_bps=160.19 (measured,
+    not the placeholder). Cost gate: gross edge 2.6012 bps/trade vs 17.0 bps cost
+    -> edge_to_cost_ratio 0.153 against a required safety factor of 2.0.
+
+    Reading: at 4h the mechanism shows essentially no directional content (IC ~0.016)
+    and is an order of magnitude short of paying its costs. This was the LAST untested
+    granularity named by the parent reactivation_condition (4h and daily; daily already
+    spent), so the parent knowledge-base entry closes.
+
+    NOTE on run history: run_060''s first two prescreen attempts produced artifacts
+    that must not be cited. The first was killed by the A8.6 block_size bug (4h inherited
+    the 1h block of 24); the second loaded ZERO bars because the prescreen demanded
+    a BTCUSDT_4h.csv that does not exist and still emitted a route. Both defects are
+    fixed and tested; the numbers above are from the first prescreen that actually
+    read data.'
+  run_ids:
+  - run_060
+  outcome: ungated_prescreen_kill_no_ic_before_windows
+  verdict_status: ungated

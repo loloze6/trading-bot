@@ -465,7 +465,15 @@ class CandleBuilder:
             return current
         else:
             # ── Candle update ─────────────────────────────────────────────
-            self._update_candle(current, price, volume)
+            # high/low MUST be forwarded (2026-08-28). They were dropped here
+            # while _update_candle declared both parameters, so its
+            # `high if high is not None else price` fallback made every row
+            # after the first contribute only its CLOSE -- understating an
+            # aggregated candle's high and overstating its low. Invisible at
+            # one-row-per-candle (that path goes through _open_candle, which
+            # always honoured them); it only bit when a candle spans multiple
+            # rows, i.e. a derived timeframe such as 4h off a 1h cache.
+            self._update_candle(current, price, volume, high, low)
             return None
 
     def flush_final_candle(self, symbol: str) -> Optional[Candle]:

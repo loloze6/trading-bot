@@ -961,3 +961,49 @@ def test_write_promotion_audit_buckets_failed_rows_as_statistic_neither(tmp_path
     assert audit["excluded_trial_counts"]["no_sharpe_value"] == 0
     assert audit["n_trials_used"] == 2  # unaffected: still only the two real sharpe rows.
     assert audit["total_variants_tested"] == 3  # unaffected: all three rows still counted.
+
+
+# ---------------------------------------------------------------------------
+# Regression: run_060 (2026-08-27) -- the first real campaign launch in 39 days
+# halted the WHOLE campaign immediately after producing a correct verdict,
+# because the forecast_hash guard treated a designed no-config path as a
+# structural anomaly. See _forecast_hash_for_prescreen's own docstring.
+# ---------------------------------------------------------------------------
+
+def test_a_priori_power_route_records_a_trial_without_a_config(tmp_path):
+    """The A8.6 power gate blocks at `validation`, BEFORE backtest_specification
+    writes candidate_strategy_config.json. Recording that trial must NOT raise:
+    the config's absence is guaranteed by construction on this route, not
+    symptomatic of a broken artifacts dir.
+
+    Reproduces run_060 exactly -- same route, same missing file."""
+    missing = tmp_path / "candidate_strategy_config.json"
+    assert not missing.exists()
+
+    h = rpr._forecast_hash_for_prescreen("insufficient_power_a_priori", missing, "run_060")
+    assert h is None, (
+        "an a-priori-power trial has no config to hash; the row must record "
+        "forecast_hash=None explicitly rather than raising or omitting the field"
+    )
+
+
+def test_missing_config_still_fails_loud_on_every_other_route(tmp_path):
+    """The fail-loud default is KEPT. On a route that really did run a
+    prescreen/backtest subprocess, a missing config still means the artifacts
+    directory is broken and must raise -- the narrowing is one route wide, not
+    a blanket softening of the guard."""
+    missing = tmp_path / "candidate_strategy_config.json"
+    for route in ("proceed_to_backtest", "kill_no_ic", "unknown"):
+        with pytest.raises(FileNotFoundError):
+            rpr._forecast_hash_for_prescreen(route, missing, "run_999")
+
+
+def test_a_priori_route_still_hashes_when_a_config_does_exist(tmp_path):
+    """The narrowing is conditional on the file actually being absent. If a
+    config IS present on the a-priori route, hash it -- do not skip silently."""
+    cfg = tmp_path / "candidate_strategy_config.json"
+    cfg.write_text(json.dumps({"b": 2, "a": 1}), encoding="utf-8")
+    h = rpr._forecast_hash_for_prescreen("insufficient_power_a_priori", cfg, "run_061")
+    assert h == hashlib.sha256(
+        json.dumps({"a": 1, "b": 2}, sort_keys=True).encode("utf-8")).hexdigest()
+
