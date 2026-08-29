@@ -483,6 +483,13 @@ def compute_promotion_audit(
         {"trial_sharpes": deduped_records}
     )
     excluded_counts["invalidated_artifact"] = n_invalidated
+    # #48 F3: the pipeline reports dedup_removed in its excluded-counts dict
+    # (run_phase1_research.py) while this path did not, so promotion audits from
+    # the two implementations were not field-comparable -- the same drift class
+    # as correction_method (#40/#43) and sigma_sr (#56), in the audit SHAPE
+    # rather than a value. The count was already computed above; it just was not
+    # reported under the shared shape.
+    excluded_counts["dedup_removed"] = n_removed
 
     total_hypotheses_tested = len(deduped_records)
     n_trials_used           = len(sharpe_values)

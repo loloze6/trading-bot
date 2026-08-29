@@ -330,6 +330,15 @@ class CommonPortfolioDef:
     def get_account_balance(self) -> Dict[str, float]:
         return self.local_balance   
 
+def _default_balance():
+    """Fresh default balance dict per construction (#48 F2).
+
+    A function, not a module constant: a constant would reintroduce the shared
+    reference this exists to remove.
+    """
+    return {'USDT': {'free': 1000, 'locked': 0}}
+
+
 class PortfolioInfo(CommonPortfolioDef):
     """
     Live portfolio manager using Binance API.
@@ -339,9 +348,15 @@ class PortfolioInfo(CommonPortfolioDef):
         - Converts portfolio values to any currency
         - Handles multi-step conversions via BTC/ETH bridges
     """
-    def __init__(self, initial_balance={'USDT': {'free': 1000, 'locked': 0}}, commission_rate=0.001):
+    def __init__(self, initial_balance=None, commission_rate=0.001):
+        # #48 F2: `initial_balance={...}` evaluated the dict ONCE at def time and
+        # stored it by reference, and update_local_balance mutates it in place --
+        # so every bare-constructed instance shared one balance. Proven: build
+        # two defaults, trade on the first, the second starts at the mutated
+        # figure. Built per call now.
         self.client = Client(API_KEY, API_SECRET, testnet=USE_TESTNET)
-        self.local_balance = initial_balance
+        self.local_balance = (_default_balance() if initial_balance is None
+                              else initial_balance)
         super().__init__(commission_rate)
         logger.debug(f"💼 Portfolio initialized │ Testnet: {USE_TESTNET} │ Server: {self.client.get_server_time()['serverTime']}")
 
@@ -370,8 +385,15 @@ class MockPortfolioInfo(CommonPortfolioDef):
     Simulates balance changes from trades without API calls.
     Tracks borrowed assets for margin trading simulation.
     """
-    def __init__(self, initial_balance={'USDT': {'free': 1000, 'locked': 0}}, commission_rate=0.001):
-        self.local_balance = initial_balance
+    def __init__(self, initial_balance=None, commission_rate=0.001):
+        # #48 F2, mock twin of the same defect. Inert today only because all five
+        # construction sites pass an explicit balance; campaigns build this
+        # object repeatedly per process (run_protocol.main -> run_backtest ->
+        # _build_mock_stack), so correctness rested entirely on that chokepoint
+        # passing a fresh literal. One bare MockPortfolioInfo() in a new test or
+        # debug script would have silently shared balances across backtest runs.
+        self.local_balance = (_default_balance() if initial_balance is None
+                              else initial_balance)
         logger.debug(f"🧪 Mock Portfolio initialized │ Balance: {self.local_balance} │ Commission: {commission_rate*100:.2f}%")
         super().__init__(commission_rate)
     

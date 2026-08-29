@@ -64,9 +64,13 @@ def _load_bars(run_dir: Path) -> list:
     if not p.exists():
         return []
     rows = []
+    seen = 0
+    bad = 0
+    bad_samples: list = []
     with open(p, encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
+            seen += 1
             try:
                 rows.append({
                     "timestamp": row["timestamp"],
@@ -75,8 +79,41 @@ def _load_bars(run_dir: Path) -> list:
                     "low":   float(row["low"])   if row.get("low")   else None,
                     "close": float(row["close"]) if row.get("close") else None,
                 })
-            except (ValueError, KeyError):
-                pass
+            except (ValueError, KeyError) as e:
+                # #47: this used to be a bare `pass`. A dropped bar silently
+                # degrades every field derived from bar POSITION -- the same
+                # class the :387 warning was added for -- and left no trace.
+                bad += 1
+                if len(bad_samples) < 3:
+                    bad_samples.append((reader.line_num, repr(e)))
+
+    if bad:
+        # Deliberately not fatal, matching this file's documented choice at
+        # :387: "partial diagnostics still beat aborting a completed
+        # multi-window protocol run". Loud, though -- silence was the defect.
+        print(
+            f"    WARNING: bars.csv dropped {bad} of {seen} row(s) as "
+            f"unparseable in {p} (first {len(bad_samples)}: {bad_samples}) -- "
+            f"every bar-position-derived diagnostic (MAE/MFE, entry/exit "
+            f"efficiency, post-exit returns, exit_reason) is unreliable for "
+            f"trades spanning them",
+            file=sys.stderr,
+        )
+
+    if seen and not rows:
+        # #47's nastier half: when EVERY row fails -- a renamed or missing
+        # `timestamp` column makes each one a KeyError -- the list comes back
+        # empty, and the :387 integrity warning cannot fire because it is
+        # gated on `if bars`. So the total failure was quieter than the
+        # partial one. This is a broken artifact, not partial degradation.
+        print(
+            f"    WARNING: bars.csv at {p} has {seen} data row(s) and ALL of "
+            f"them failed to parse -- returning no bars. The per-trade "
+            f"integrity warning cannot fire on an empty list, so this line is "
+            f"the only signal. Most likely a renamed or missing column; "
+            f"expected: timestamp, open, high, low, close",
+            file=sys.stderr,
+        )
     return rows
 
 
