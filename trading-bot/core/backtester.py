@@ -211,12 +211,19 @@ class BacktestEngine:
         if self.model_funding:
             core_dir = os.path.dirname(os.path.abspath(__file__))
             project_dir = os.path.dirname(core_dir)
-            funding_daily = build_daily_funding_series(self.symbols, os.path.join(project_dir, "local_data"))
+            frames = self.data_manager.historical_data.values()
+            bt_start = min(df["timestamp"].min() for df in frames)
+            bt_end = max(df["timestamp"].max() for df in frames)
+            funding_daily = build_daily_funding_series(
+                self.symbols, os.path.join(project_dir, "local_data"),
+                start=bt_start, end=bt_end,
+            )
             missing = [s for s in self.symbols if not funding_daily.get(s)]
             if missing:
                 raise ValueError(
                     f"model_funding is on but no daily funding series is available for "
-                    f"{missing} (expected {{symbol}}_funding_8h.csv under local_data). A "
+                    f"{missing} (expected {{symbol}}_funding_8h.csv under local_data, with "
+                    f"settlements overlapping the backtest window). A "
                     f"silent zero-accrual run would report fee-only economics as if "
                     f"funding-costed -- fetch the funding cache or omit model_funding."
                 )
