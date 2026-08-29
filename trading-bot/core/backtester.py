@@ -467,10 +467,12 @@ class BacktestEngine:
             build_bar_equity(flat_state_df)
             if self.bar_equity and flat_state_df is not None else None
         )
-        # fix/risk-layer, PR-1 (§5d): off-by-default risk_controls block, same
-        # optional-key idiom as bar_equity. Gate off -> None -> key never inserted,
-        # metrics.json byte-identical. Gate on -> effective config echo + count of
-        # cap-clamped bars (kill/daily-halt counts join in PR-2).
+        # fix/risk-layer (§5d): off-by-default risk_controls block, same optional-key
+        # idiom as bar_equity. Gate off -> None -> key never inserted, metrics.json
+        # byte-identical. Gate on -> effective config echo + count of cap-clamped bars
+        # (PR-1); the stateful pair's counts/trips come from the gate itself, which
+        # owns the Paris-date derivation (PR-2). A cap-only gate's stateful_summary is
+        # empty, so its metrics block stays byte-identical to PR-1.
         risk_controls_metrics = None
         if self.risk_gate is not None:
             n_cap_clamped = 0
@@ -481,6 +483,7 @@ class BacktestEngine:
             risk_controls_metrics = {
                 "portfolio_controls": self.risk_gate.config,
                 "n_cap_clamped_bars": n_cap_clamped,
+                **self.risk_gate.stateful_summary(),
             }
         write_metrics_json(
             run_dir, core_metrics, per_regime, forecast_bins, dynamic, regime_validity,

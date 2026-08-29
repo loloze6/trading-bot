@@ -27,3 +27,7 @@ ccxt==4.5.68
 matplotlib==3.11.1
 requests==2.34.2
 PyYAML==6.0.3
+# fix/risk-layer PR-2: IANA tz database for zoneinfo on hosts without a system tz
+# db (Windows). Only reached when daily_loss_limit configures a Europe/Paris day
+# boundary; a default-off run never imports zoneinfo.
+tzdata==2026.3
