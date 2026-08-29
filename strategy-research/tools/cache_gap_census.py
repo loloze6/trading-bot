@@ -117,6 +117,16 @@ def census(rows, lo, hi, step, warmup, block):
     gap_aware = sum(r // block for r in run_recs)
     ratio = (nominal / gap_aware) if gap_aware else float("inf")
 
+    # Admission-gate simulation (policy doc S5). Reported under BOTH sample
+    # models, because which one you use changes the answer and the doc
+    # originally quoted the wrong one:
+    #   no_rewarm -- the model the policy ADOPTS: one global warmup, blocks
+    #                merely have to fit inside a contiguous run.
+    #   rewarm    -- option 3's model, which the policy REJECTS: every segment
+    #                pays the warmup again.
+    blocks_no_rewarm = gap_aware
+    blocks_rewarm = sum(max(length - warmup - 1, 0) // block for length in runs)
+
     return {
         "pairs": pairs, "gaps": gaps,
         "pct": (gaps / pairs * 100) if pairs else 0.0,
@@ -127,6 +137,7 @@ def census(rows, lo, hi, step, warmup, block):
         "median_run": statistics.median(runs) if runs else 0,
         "nominal_neff": nominal, "gap_aware_neff": gap_aware,
         "ratio": ratio, "z_inflation": math.sqrt(ratio) if ratio != float("inf") else float("inf"),
+        "blocks_no_rewarm": blocks_no_rewarm, "blocks_rewarm": blocks_rewarm,
     }
 
 
@@ -140,7 +151,12 @@ def main() -> int:
     ap.add_argument("--block", type=int, default=24,
                     help="bootstrap block size (default: 24, matching "
                          "prescreen_signal._BLOCK_SIZE_1H)")
+    ap.add_argument("--gate-floor", type=int, action="append", default=None,
+                    help="simulate the S5 admission gate at this minimum block "
+                         "count; repeatable (default: 8 = _MIN_N_EPISODES, and "
+                         "30 = the fork promotion bar)")
     args = ap.parse_args()
+    floors = args.gate_floor or [8, 30]
 
     step = _STEPS[args.timeframe]
     pattern = os.path.join(args.data_dir, f"*_{args.timeframe}.csv")
@@ -174,6 +190,22 @@ def main() -> int:
               f"{c['nominal_neff']:6d} {c['gap_aware_neff']:9d} {c['z_inflation']:6.2f}x")
 
     print(f"\n{gappy} of {combos} symbol x window combinations contain at least one gap")
+
+    # --- S5 admission-gate simulation -------------------------------------
+    print("\nADMISSION GATE (policy doc S5) -- would it reject anything?")
+    print("  A block spanning a gap is the defect, so blocks must fit inside a")
+    print("  contiguous run. ADMIT iff placeable blocks >= floor.\n")
+    for model, key in (("no-re-warm (ADOPTED)", "blocks_no_rewarm"),
+                       ("re-warm    (REJECTED)", "blocks_rewarm")):
+        for floor in floors:
+            stopped = [(sym, wn) for _, sym, wn, c in out if c[key] < floor]
+            verdict = ("admits all %d" % combos) if not stopped else \
+                      ("stops %d: %s" % (len(stopped),
+                                         ", ".join(f"{s_} {w_}" for s_, w_ in stopped)))
+            print(f"  {model}  floor {floor:>3}: {verdict}")
+    print("\n  The gate was DROPPED: under the adopted model it rejects nothing at")
+    print("  either floor. Raising the floor until it bit would have been the")
+    print("  post-hoc threshold-fitting the policy exists to prevent.")
     if bad_total:
         print(f"NOTE: {bad_total} row(s) had an unparseable timestamp and were excluded "
               f"from the series (see issue #50's residual on the lexical window filter).")
