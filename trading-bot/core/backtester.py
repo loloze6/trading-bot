@@ -55,6 +55,7 @@ class BacktestEngine:
                  exchange: str = "binance",
                  drop_feeds: list[str] | None = None,
                  model_funding: bool = False,
+                 risk_gate=None,
                  ):
         if symbols is None: symbols = ["BTCUSDT"]
         # 2026-07-07: bars with timestamp < warmup_cutoff_timestamp still update the
@@ -119,6 +120,15 @@ class BacktestEngine:
                 "interval_seconds=86400 or omit model_funding."
             )
         self.model_funding = model_funding
+        # 2026-08-29: off-by-default portfolio risk gate (fix/risk-layer, PR-1).
+        # None (default) -> no gate is threaded into TradingBot, no provenance fold,
+        # no metrics.json risk_controls block: output byte-identical to before this
+        # parameter existed. A gate (built from config.json's
+        # risk_management.portfolio_controls or a run_backtest risk_controls override)
+        # is threaded per-bar into TradingBot and folded into run identity by
+        # _end_of_backtest. See risk/portfolio_risk_gate.py and
+        # tests/test_risk_layer_bit_identical.py.
+        self.risk_gate = risk_gate
 
         # Initialize Binance client
         self.symbols = symbols
@@ -244,6 +254,7 @@ class BacktestEngine:
             warmup_cutoff_timestamp=self.warmup_cutoff_timestamp,
             model_funding=self.model_funding,
             funding_daily=funding_daily,
+            risk_gate=self.risk_gate,
         )
 
         # Wire the candle callback now that bot exists
@@ -375,10 +386,31 @@ class BacktestEngine:
         with open(_config_path) as _f:
             _strategy_config = json.load(_f)
 
+        # fix/risk-layer, PR-1 (§5b): fold the effective portfolio_controls into the
+        # config that drives run identity (dir hash + manifest.config + config_sha256)
+        # so a run WITH risk controls is distinguishable from one without -- closing
+        # the #54 defect class for this feature. Gate off -> _provenance_config IS
+        # _strategy_config, so the hash/manifest are byte-identical to before.
+        # Fail-loud collision guard: the strategy config carries no risk_management key
+        # today, but a silent {**a, "risk_management": b} would MASK a real difference
+        # in run identity if that ever changed -- exactly the defect this fold closes.
+        if self.risk_gate is not None:
+            if "risk_management" in _strategy_config:
+                raise ValueError(
+                    "strategy config already carries a risk_management key; provenance "
+                    "fold would silently overwrite it -- resolve the collision explicitly"
+                )
+            _provenance_config = {
+                **_strategy_config,
+                "risk_management": {"portfolio_controls": self.risk_gate.config},
+            }
+        else:
+            _provenance_config = _strategy_config
+
         results_root = (
             tracker.output_dir if tracker else os.path.join(_project_dir, "results")
         )
-        run_dir = new_run_dir(results_root, _strategy_config,
+        run_dir = new_run_dir(results_root, _provenance_config,
                               runs_dir=getattr(tracker, "runs_dir", None))
         self._last_run_dir = run_dir
         self.logger.info(f"Run artifact dir: {run_dir}")
@@ -399,7 +431,7 @@ class BacktestEngine:
             }
         write_manifest(
             run_dir=run_dir,
-            config=_strategy_config,
+            config=_provenance_config,
             data_df=raw_price_df if raw_price_df is not None else pd.DataFrame(
                 columns=["timestamp", "open", "high", "low", "close", "volume"]
             ),
@@ -435,9 +467,25 @@ class BacktestEngine:
             build_bar_equity(flat_state_df)
             if self.bar_equity and flat_state_df is not None else None
         )
+        # fix/risk-layer, PR-1 (§5d): off-by-default risk_controls block, same
+        # optional-key idiom as bar_equity. Gate off -> None -> key never inserted,
+        # metrics.json byte-identical. Gate on -> effective config echo + count of
+        # cap-clamped bars (kill/daily-halt counts join in PR-2).
+        risk_controls_metrics = None
+        if self.risk_gate is not None:
+            n_cap_clamped = 0
+            if flat_state_df is not None and "risk_cap_clamped" in flat_state_df.columns:
+                n_cap_clamped = int(
+                    flat_state_df["risk_cap_clamped"].fillna(False).astype(bool).sum()
+                )
+            risk_controls_metrics = {
+                "portfolio_controls": self.risk_gate.config,
+                "n_cap_clamped_bars": n_cap_clamped,
+            }
         write_metrics_json(
             run_dir, core_metrics, per_regime, forecast_bins, dynamic, regime_validity,
             bar_equity=bar_equity_metrics,
+            risk_controls=risk_controls_metrics,
         )
 
         # Write bars CSV and forecast distribution

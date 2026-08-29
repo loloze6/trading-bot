@@ -39,6 +39,7 @@ class TradingBot:
         warmup_cutoff_timestamp=None,
         model_funding: bool = False,
         funding_daily=None,
+        risk_gate=None,
     ):
         """
         Initialize the trading bot.
@@ -89,6 +90,14 @@ class TradingBot:
         # byte-identical.
         self.model_funding = model_funding
         self.funding_daily = funding_daily
+
+        # 2026-08-29: off-by-default portfolio risk gate (fix/risk-layer, PR-1). When
+        # None (default) the per-bar hook below is never entered and no state is
+        # recorded, so behavior is byte-identical to before this mechanism existed.
+        # When set (built from config.json's risk_management.portfolio_controls, or a
+        # run_backtest risk_controls override) it clamps the target allocation to the
+        # configured absolute cap. See risk/portfolio_risk_gate.py.
+        self.risk_gate = risk_gate
 
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
@@ -224,6 +233,13 @@ class TradingBot:
             
             target_allocation = self.forecast_manager.forecast_to_allocation(signal.forecast)
 
+            # 2026-08-29 (fix/risk-layer, PR-1): off-by-default portfolio risk gate.
+            # Gate None (default) -> risk_extras stays {} and record_state below adds
+            # no columns, so output is byte-identical. Gate set -> the target is
+            # clamped to the configured cap and the raw/clamped pair is recorded.
+            risk_extras = {}
+            if self.risk_gate is not None:
+                target_allocation, risk_extras = self.risk_gate.apply(target_allocation)
 
             allocation_change = self.forecast_manager.calculate_allocation_change(target_allocation, previous_allocation)
 
@@ -283,7 +299,8 @@ class TradingBot:
                     debug_execute_portfolio_rebalance = debug_execute_portfolio_rebalance if approved_rebalance else {},
                     postRebalance_balances=postRebalance_balances,
                     postRebalance_total_value=postRebalance_total_portfolio_value,
-                    postRebalance_current_allocation=postRebalance_current_allocation
+                    postRebalance_current_allocation=postRebalance_current_allocation,
+                    **risk_extras,
                 )
             
             else: 
