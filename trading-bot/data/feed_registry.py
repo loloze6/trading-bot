@@ -118,7 +118,7 @@ RESERVED_FEED_REGISTRY = {
 FEED_WINDOW_SECONDS.update({name: _WHALE_BAR_SECONDS for name in WHALE_FOOTPRINT_FEEDS})
 
 
-def build_daily_funding_series(symbols, data_dir):
+def build_daily_funding_series(symbols, data_dir, start, end):
     """
     Build a per-symbol DAILY funding COST series from the Binance 8h funding CSVs
     already on disk (``{symbol}_funding_8h.csv``, cols ``timestamp,funding_rate,
@@ -140,12 +140,37 @@ def build_daily_funding_series(symbols, data_dir):
     backtest window naturally bounds it and a bar reads only settlements dated to that
     bar's day — never a settlement dated after it (no look-ahead).
 
+    ``start``/``end`` (required) bound the series to the backtest window: only
+    settlements whose NORMALIZED DAY falls in ``[normalize(start), normalize(end)]``,
+    inclusive on both edges, are read into the series. Day-granular on purpose — a bar
+    dated day D accrues ALL of day D's settlements (00:00/08:00/16:00 UTC), so a raw
+    timestamp cut at the last bar's open would wrongly drop that day's later
+    settlements. Bounding by day keeps the accrual byte-identical for any window while
+    keeping rows outside the loaded window — the sealed holdout included — out of the
+    returned series.
+
     Returns
     -------
     dict[str, dict[pandas.Timestamp, float]]
         ``{symbol: {normalized-day-Timestamp: summed_funding_rate}}``. Symbols whose
         CSV is absent are omitted.
     """
+    start_ts = pd.Timestamp(start)
+    end_ts = pd.Timestamp(end)
+    # A None/NaT bound (e.g. an empty frame's .min()) parses to NaT, which is NOT a
+    # Timestamp instance and has no .normalize() -- reject it here, before normalize,
+    # so it fails loud rather than with an uninformative AttributeError or a silent
+    # unbounded/empty read.
+    if (not isinstance(start_ts, pd.Timestamp) or not isinstance(end_ts, pd.Timestamp)
+            or start_ts.normalize() > end_ts.normalize()):
+        raise ValueError(
+            f"build_daily_funding_series needs a concrete window, got "
+            f"start={start!r}, end={end!r} -- an unbounded read would pull "
+            f"settlements outside the backtest window (sealed holdout included) "
+            f"into the series."
+        )
+    start_day = start_ts.normalize()
+    end_day = end_ts.normalize()
     out = {}
     for symbol in symbols:
         # venue-fixed-binance: this literal does NOT go through
@@ -160,6 +185,7 @@ def build_daily_funding_series(symbols, data_dir):
             continue
         df["timestamp"] = pd.to_datetime(df["timestamp"])
         df["day"] = df["timestamp"].dt.normalize()
+        df = df[(df["day"] >= start_day) & (df["day"] <= end_day)]
         daily = df.groupby("day")["funding_rate"].sum()
         out[symbol] = {day: float(val) for day, val in daily.items()}
     return out

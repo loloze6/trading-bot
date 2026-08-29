@@ -185,7 +185,7 @@ def test_model_funding_moves_value_in_the_funding_direction(wire_off, wire_on):
     pos = wire_off["previous_allocation"].iloc[i]
     assert pos != 0.0, "first-divergence bar holds no position; funding cannot have moved it"
 
-    series = build_daily_funding_series([SYMBOL], str(PROJECT_ROOT / "local_data"))[SYMBOL]
+    series = build_daily_funding_series([SYMBOL], str(PROJECT_ROOT / "local_data"), WIRE_START, WIRE_END)[SYMBOL]
     day = pd.Timestamp(wire_off["timestamp"].iloc[i]).normalize()
     f_bar = series.get(day)
     assert f_bar is not None and f_bar != 0.0, (
