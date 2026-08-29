@@ -158,6 +158,15 @@ are counted, never silently dropped, and surfaced in the prescreen artifact as
 that fit *within* contiguous runs — `sum(records_in_run // block_size)` — rather
 than `total // block_size`. No re-warm, no sample loss beyond (A).
 
+> **Scope limit, added after the red-team pass.** (B) corrects the **Fisher-z**
+> branch (`_block_adjusted_significance`) only. The **stationary block
+> bootstrap** — which §3(ii) also names as a consumer of this defect — still
+> builds blocks positionally and wraps circularly, so a block there can still
+> straddle a hole. That branch fires on the degenerate (constant-magnitude)
+> forecast path, which is the family the committed production strategy belongs
+> to. Filed as a follow-up rather than silently left: this policy claimed
+> "(B) make the effective sample size gap-aware" and only half of it is done.
+
 **Fail-loud, not flattering.** A symbol whose post-(A) record count is zero
 raises, rather than routing on an empty series.
 
@@ -176,6 +185,21 @@ improvement:
 - Prior prescreen ICs on gappy symbols are **not comparable** to post-change ones.
 - Affected artifacts stay in place; they are not retro-corrected. The graveyard
   is the knowledge.
+- **`edge_to_cost_ratio` and `avg_holding_bars` also move**, which this section
+  originally failed to declare (found by the red-team pass). `_compute_turnover_proxy`
+  carries `prev_sign` straight across a hole, so removing gap-spanning pairs
+  changes the turnover estimate and therefore the cost hurdle: measured
+  `edge_to_cost_ratio` 0.2316 → 0.2209 and `avg_holding_bars` 21.35 → 21.6 on
+  kraken_ZECUSD valid. The turnover proxy is **not** made gap-aware here — it is
+  the same defect class in a second consumer and is filed separately.
+- **`forecast_hash` changes on any gappy symbol**, and this one has a
+  consequence beyond comparability: it is the trial-ledger deduplication key
+  (`WRITER_CONTRACT`, `deflate_sharpe.deduplicate_trials`). A post-change trial
+  therefore will **never** dedup against its pre-change counterpart. That is
+  correct — they are different measurements — but it means a re-run of a prior
+  prescreen appends rather than replaces, and N grows. Anyone re-running a
+  recorded prescreen after this change must expect a new trial row, not an
+  upsert.
 - run_060's kill stands regardless: it ran on USDT majors (0.00–0.05% gap
   pairs) and died at a cost hurdle of 0.153 against a required 2.0 — three
   orders of magnitude from anything this could move.

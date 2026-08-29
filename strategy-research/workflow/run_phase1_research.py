@@ -5168,12 +5168,23 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     n_dedup_removed = 0
     for t in valid_trials:
         fh = t.get("forecast_hash")
+        # #57: `is None`, NOT truthiness. These two lockstep paths disagreed --
+        # this site read `if fh`, so a falsy-but-PRESENT hash ("" or 0) was
+        # treated as "no hash recorded" and kept as unique, while
+        # deflate_sharpe.deduplicate_trials treated it as a real hash and
+        # deduped it. Same ledger in, different N out, and N feeds DSR.
+        # `is None` is the intended semantics: "no hash recorded" and "hash
+        # recorded but empty" are different states. Third drift of this class
+        # after correction_method (#40/#43) and sigma_sr (#56); #35's Layer-2
+        # design declares unifying them a blocking dependency.
+        if fh is None:
+            deduped_trials.append(t)
+            continue
         key = (fh, t.get("source"))
-        if fh and key in seen_keys:
+        if key in seen_keys:
             n_dedup_removed += 1
         else:
-            if fh:
-                seen_keys.add(key)
+            seen_keys.add(key)
             deduped_trials.append(t)
 
     # A6.2: compute over statistic_valid='sharpe' only
