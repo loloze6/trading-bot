@@ -1,0 +1,92 @@
+# E-025 S4 co-run demo base state.
+# SYNTHETIC rows, never feeds DSR; exists only to exercise the S4 two-sided
+# merge procedure (research/E025_S4_DESIGN_v5.md §5, option O-A). Every id here
+# carries a `demo_` prefix so it can never collide with a real run_NNN / run_d_NNN
+# ledger row. Structure mirrors the live campaign_record/campaign_state.yaml
+# (same 16 top-level keys, same sub-shapes); content is fabricated.
+# demo_001 (fork) and demo_002 (master) are reserved for the choreography appends.
+campaign_id: e025_s4_corun_demo
+research_question: 'Synthetic co-run demo campaign for E-025 S4. Does the two-sided
+  keep-both merge procedure survive a real GitHub conflict without touching the live
+  RSI ledger? (No market data; rows are fabricated.)
+
+  '
+runs:
+- demo_000
+- demo_005
+altitude_history:
+- run: demo_000
+  altitude: hypothesis
+  dimension: ''
+  family: demo_family
+  outcome: pivot
+- run: demo_005
+  altitude: parameter
+  dimension: demo_dimension
+  family: demo_family
+  outcome: no_improvement
+recent_parameter_dimensions_by_family:
+  demo_family: []
+failed_families:
+- name: demo_family
+  evidence_window: demo_synthetic
+  root_cause: demo_synthetic
+instruments_tried:
+- DEMOUSDT
+components_built: []
+timeframes_tried:
+- 1h
+diagnostics_log:
+- run: demo_000
+  forecast_return_corr: 0.0123
+  cost_drag_pct: 42.5
+  win_rate_vs_sharpe: both PASS or N/A
+- run: demo_005
+  forecast_return_corr: -0.0456
+  cost_drag_pct: 88.1
+  win_rate_vs_sharpe: N/A (prescreen kill — no backtest)
+notes:
+- synthetic rows, never feeds DSR; exists only to exercise the S4 two-sided merge
+  procedure.
+review_every_n_runs: 6
+status: demo_closed
+updated_at: '2026-08-27T00:00:00.000000+00:00'
+last_escalation:
+  target: demo_target
+  detail: demo_detail
+  protocol_path: protocols/demo_escalation.json
+  claimed_by_run: demo_000
+  claimed_at: '2026-08-27'
+trial_sharpes:
+- trial_id: demo_000
+  source: prescreen
+  route: proceed_to_backtest
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: 0.031415
+  cost_pass: true
+  forecast_hash: demo00000000a1b2
+- trial_id: demo_000
+  source: backtest
+  sharpe: -0.42
+  expectancy_bps:
+    mean: -12.3456
+    se: 20.1234
+    t_stat: -0.6135
+    n: 120
+  n_trades: 120
+  statistic_valid: sharpe
+  below_floor_pct: 61.11
+  forecast_hash: demo00000000a1b2
+- trial_id: demo_005
+  source: prescreen
+  route: kill_no_ic
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  ic_pooled: -0.008901
+  cost_pass: false
+  forecast_hash: demo00000000c3d4
