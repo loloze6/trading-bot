@@ -246,8 +246,7 @@ class Manifest:
             f"root            {self.root}",
             f"files           {len(self.files)} ({self.compressed_files} zstd-compacted)",
             f"bytes           {self.total_bytes:,}",
-            f"journal         {self.journal_path.name} "
-            f"({'present' if self.journal_path.exists() else 'ABSENT'})",
+            f"journal         {self.journal_path.name} ({'present' if self.journal_path.exists() else 'ABSENT'})",
             f"period keys     {self.period_keys[0] if self.period_keys else '-'}"
             f" .. {self.period_keys[-1] if self.period_keys else '-'}",
         ]
@@ -301,9 +300,7 @@ class ShardReader:
         stamps = [parse_iso(r["ts"]) for r in self.journal_records() if r.get("ts")]
         return (min(stamps), max(stamps)) if stamps else None
 
-    def gaps(
-        self, symbol: str, channel: str, start: datetime, end: datetime
-    ) -> List[Gap]:
+    def gaps(self, symbol: str, channel: str, start: datetime, end: datetime) -> List[Gap]:
         """
         Uncaptured sub-spans of [start, end] for one (symbol, channel).
 
@@ -439,9 +436,7 @@ class ShardReader:
         if pending is not None:
             self.truncations[path] = pending[0]
 
-    def _to_envelope(
-        self, rec: Any, path: Path, stream: str, symbol: str, lineno: int
-    ) -> Envelope:
+    def _to_envelope(self, rec: Any, path: Path, stream: str, symbol: str, lineno: int) -> Envelope:
         where = f"{path}:{lineno}"
         if not isinstance(rec, dict):
             raise ShardReadError(f"{where}: record is {type(rec).__name__}, expected object")
@@ -489,18 +484,11 @@ class ShardReader:
             raise ShardReadError(f"{where}: raw is missing a string channel/type")
         allowed = STREAM_CHANNELS.get(stream)
         if allowed is None:
-            raise ShardReadError(
-                f"{where}: stream {stream!r} is not one of {sorted(STREAM_CHANNELS)}"
-            )
+            raise ShardReadError(f"{where}: stream {stream!r} is not one of {sorted(STREAM_CHANNELS)}")
         if channel not in allowed:
-            raise ShardReadError(
-                f"{where}: channel {channel!r} in stream {stream!r}, which carries "
-                f"{sorted(allowed)}"
-            )
+            raise ShardReadError(f"{where}: channel {channel!r} in stream {stream!r}, which carries {sorted(allowed)}")
         if msg_type not in MESSAGE_TYPES:
-            raise ShardReadError(
-                f"{where}: message type {msg_type!r} is not one of {sorted(MESSAGE_TYPES)}"
-            )
+            raise ShardReadError(f"{where}: message type {msg_type!r} is not one of {sorted(MESSAGE_TYPES)}")
         if not isinstance(data, list):
             raise ShardReadError(f"{where}: raw.data is {type(data).__name__}, expected array")
 
@@ -573,9 +561,7 @@ class ShardReader:
         for item in heapq.merge(*streams_in, key=lambda x: x.order_key):
             yield item
 
-    def _symbol_stream(
-        self, stream: str, symbol: str, start: datetime, end: datetime
-    ) -> Iterator[Envelope]:
+    def _symbol_stream(self, stream: str, symbol: str, start: datetime, end: datetime) -> Iterator[Envelope]:
         for path in self.shard_paths(stream, symbol):
             for env in self.read_shard(path, stream, symbol):
                 if env.recv_ts < start:
@@ -639,9 +625,7 @@ class ShardReader:
             raise ShardReadError(f"{where}: trade entry is missing {missing}")
         side = entry["side"]
         if side not in TAKER_SIDES:
-            raise ShardReadError(
-                f"{where}: trade side {side!r} is not one of {sorted(TAKER_SIDES)}"
-            )
+            raise ShardReadError(f"{where}: trade side {side!r} is not one of {sorted(TAKER_SIDES)}")
         try:
             price = float(entry["price"])
             qty = float(entry["qty"])
@@ -656,8 +640,7 @@ class ShardReader:
             )
         if disk_symbol(entry["symbol"]) != env.symbol:
             raise ShardReadError(
-                f"{where}: payload symbol {entry['symbol']!r} does not match the shard "
-                f"it was read from ({env.symbol})."
+                f"{where}: payload symbol {entry['symbol']!r} does not match the shard it was read from ({env.symbol})."
             )
         return Trade(
             ts=parse_iso(entry["timestamp"]),

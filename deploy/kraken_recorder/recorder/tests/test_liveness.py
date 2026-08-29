@@ -67,21 +67,31 @@ def _journal(tmp_path: Path, rollup_extra: dict) -> None:
 
     now = datetime.now(timezone.utc)
     recs = [
-        {"jseq": 1, "run_id": "r", "ts": _iso(now - timedelta(seconds=90)),
-         "type": "RECORDER_START"},
+        {"jseq": 1, "run_id": "r", "ts": _iso(now - timedelta(seconds=90)), "type": "RECORDER_START"},
     ]
     for i, sym in enumerate(["BTC/USD"], start=2):
-        recs.append({"jseq": i, "run_id": "r",
-                     "ts": _iso(now - timedelta(seconds=89)),
-                     "type": "SUBSCRIBE_ACK", "symbol": sym, "channel": "book"})
-    rollup = {"jseq": 50, "run_id": "r", "ts": _iso(now - timedelta(seconds=5)),
-              "type": "HEARTBEAT_ROLLUP", "heartbeats": 60,
-              "frames_total": 19, "symbols_seen": 1}
+        recs.append(
+            {
+                "jseq": i,
+                "run_id": "r",
+                "ts": _iso(now - timedelta(seconds=89)),
+                "type": "SUBSCRIBE_ACK",
+                "symbol": sym,
+                "channel": "book",
+            }
+        )
+    rollup = {
+        "jseq": 50,
+        "run_id": "r",
+        "ts": _iso(now - timedelta(seconds=5)),
+        "type": "HEARTBEAT_ROLLUP",
+        "heartbeats": 60,
+        "frames_total": 19,
+        "symbols_seen": 1,
+    }
     rollup.update(rollup_extra)
     recs.append(rollup)
-    (tmp_path / JOURNAL_FILENAME).write_text(
-        "".join(json.dumps(r) + "\n" for r in recs), encoding="utf-8"
-    )
+    (tmp_path / JOURNAL_FILENAME).write_text("".join(json.dumps(r) + "\n" for r in recs), encoding="utf-8")
 
 
 def _iso(dt: datetime) -> str:
@@ -93,10 +103,7 @@ def _shard(tmp_path: Path) -> Path:
     d.mkdir(parents=True, exist_ok=True)
     p = d / "2026-07-26T11.ndjson"
     with open(p, "a", encoding="utf-8") as fh:
-        fh.write(
-            '{"recv_ts":"%s","mono":1.0,"run_id":"r","seq":1,"raw":{}}\n'
-            % _iso(datetime.now(timezone.utc))
-        )
+        fh.write('{"recv_ts":"%s","mono":1.0,"run_id":"r","seq":1,"raw":{}}\n' % _iso(datetime.now(timezone.utc)))
     return p
 
 
@@ -113,15 +120,13 @@ def _run_check(tmp_path: Path):
         with open(p, "a", encoding="utf-8") as fh:
             for _ in range(40):
                 fh.write(
-                    '{"recv_ts":"%s","mono":2.0,"run_id":"r","seq":2,"raw":{}}\n'
-                    % _iso(datetime.now(timezone.utc))
+                    '{"recv_ts":"%s","mono":2.0,"run_id":"r","seq":2,"raw":{}}\n' % _iso(datetime.now(timezone.utc))
                 )
 
     timer = threading.Timer(0.05, append)
     timer.start()
     try:
-        return check(tmp_path, window_s=0.4, expect_symbols=1,
-                     max_staleness_s=30.0)
+        return check(tmp_path, window_s=0.4, expect_symbols=1, max_staleness_s=30.0)
     finally:
         timer.cancel()
 
@@ -132,8 +137,7 @@ def test_snapshot_mode_with_a_dead_feed_is_unhealthy(tmp_path):
     looks fine. `book_frames_folded == 0` is the only thing that shows the venue
     stopped sending, and it must fail the check.
     """
-    _journal(tmp_path, {"book_mode": "snapshot", "snapshot_interval_s": 5.0,
-                        "book_frames_folded": 0})
+    _journal(tmp_path, {"book_mode": "snapshot", "snapshot_interval_s": 5.0, "book_frames_folded": 0})
     ok, lines = _run_check(tmp_path)
     assert not ok
     assert any("feed is dead" in ln for ln in lines), lines
@@ -142,13 +146,12 @@ def test_snapshot_mode_with_a_dead_feed_is_unhealthy(tmp_path):
 
 
 def test_snapshot_mode_with_a_live_feed_is_healthy(tmp_path):
-    _journal(tmp_path, {"book_mode": "snapshot", "snapshot_interval_s": 5.0,
-                        "book_frames_folded": 4210})
+    _journal(tmp_path, {"book_mode": "snapshot", "snapshot_interval_s": 5.0, "book_frames_folded": 4210})
     ok, lines = _run_check(tmp_path)
     assert ok, lines
 
 
 def test_delta_mode_rollup_is_unaffected_by_the_snapshot_check(tmp_path):
-    _journal(tmp_path, {})          # no book_mode key at all — delta
+    _journal(tmp_path, {})  # no book_mode key at all — delta
     ok, lines = _run_check(tmp_path)
     assert ok, lines

@@ -14,6 +14,7 @@ into metrics.json at all (reporting/run_artifact.py::write_metrics_json).
 IMPORTANT: this is a SLOW INTEGRATION TEST. Run explicitly:
   pytest tests/test_bar_equity_bit_identical.py -v -m slow
 """
+
 import json
 import sys
 from pathlib import Path
@@ -28,9 +29,7 @@ FIXTURE_PATH = PROJECT_ROOT / "tests" / "fixtures" / "bar_equity_reference.json"
 
 _NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
 _ref = json.loads(FIXTURE_PATH.read_text())
-_CACHE_SKIP = cache_skip_reason(
-    PROJECT_ROOT / "local_data", _NEEDED_CACHES, _ref["start_date"], _ref["end_date"]
-)
+_CACHE_SKIP = cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_CACHES, _ref["start_date"], _ref["end_date"])
 pytestmark = [
     pytest.mark.slow,
     pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),
@@ -102,8 +101,7 @@ def test_bar_equity_matches_reference(reference, tmp_path):
 
     for key in ("max_drawdown_pct", "sharpe", "sortino", "exposure_pct", "turnover"):
         assert abs(block[key] - expected[key]) <= tolerance, (
-            f"bar_equity[{key!r}] regression: expected {expected[key]} ± {tolerance}, "
-            f"got {block[key]}."
+            f"bar_equity[{key!r}] regression: expected {expected[key]} ± {tolerance}, got {block[key]}."
         )
     assert block["n_bars_total"] == expected["n_bars_total"]
     assert block["n_bars_warmup_excluded"] == expected["n_bars_warmup_excluded"]

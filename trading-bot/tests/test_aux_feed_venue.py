@@ -17,6 +17,7 @@ This file pins:
   - the new fail-loud AuxFeedVenueError for a non-binance empty feed (T-10)
   - the untouched binance warn+NaN degradation, log text corrected (T-11)
 """
+
 import logging
 import sys
 from pathlib import Path
@@ -24,7 +25,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent      # trading-bot/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent  # trading-bot/
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -42,21 +43,21 @@ TEST_LOGGER = logging.getLogger("test_aux_feed_venue")
 # cache_key venue qualification (T-06, T-07)
 # ---------------------------------------------------------------------------
 
+
 def test_funding_cache_key_binance_stays_unprefixed():
-    fetcher = FundingRateFetcher("2022-01-01", "2022-01-02", symbols=["BTCUSDT"],
-                                  exchange_id="binance")
+    fetcher = FundingRateFetcher("2022-01-01", "2022-01-02", symbols=["BTCUSDT"], exchange_id="binance")
     assert fetcher.cache_key("BTCUSDT") == "BTCUSDT_funding_8h"
 
 
 def test_funding_cache_key_kraken_gets_prefixed():
-    fetcher = FundingRateFetcher("2022-01-01", "2022-01-02", symbols=["BTCUSD"],
-                                  exchange_id="kraken")
+    fetcher = FundingRateFetcher("2022-01-01", "2022-01-02", symbols=["BTCUSD"], exchange_id="kraken")
     assert fetcher.cache_key("BTCUSD") == "kraken_BTCUSD_funding_8h"
 
 
 # ---------------------------------------------------------------------------
 # Factory contract (T-08, T-14, T-15)
 # ---------------------------------------------------------------------------
+
 
 def test_funding_rate_factory_routes_kraken_to_krakenfutures(tmp_path):
     """The funding factory routes the price venue `kraken` (spot, no funding
@@ -67,9 +68,7 @@ def test_funding_rate_factory_routes_kraken_to_krakenfutures(tmp_path):
     kraken→kraken pin: removing _FUNDING_VENUE_MAP's entry resolves back to
     exchange_id="kraken" / kraken_BTCUSD_funding_8h and turns both assertions
     RED."""
-    fetcher = FEED_REGISTRY["funding_rate"](
-        ["BTCUSD"], "2022-01-01", "2022-01-02", str(tmp_path), exchange="kraken"
-    )
+    fetcher = FEED_REGISTRY["funding_rate"](["BTCUSD"], "2022-01-01", "2022-01-02", str(tmp_path), exchange="kraken")
     assert fetcher.exchange_id == "krakenfutures"
     assert fetcher.cache_key("BTCUSD") == "krakenfutures_BTCUSD_funding_1h"
 
@@ -103,6 +102,7 @@ def test_funding_rate_factory_default_is_binance_positional(tmp_path):
 # Engine -> factory threading (T-09)
 # ---------------------------------------------------------------------------
 
+
 class _RecordingDataManager:
     """Stands in for DataManager inside load_data(): serves one bar, records
     register_feed() calls, never touches the network."""
@@ -129,10 +129,8 @@ def test_engine_threads_its_own_exchange_into_every_factory_call():
         return object()
 
     dm = _RecordingDataManager()
-    engine = BacktestEngine(data_manager=dm, logger=TEST_LOGGER, symbols=["BTCUSD"],
-                             exchange="kraken")
-    engine.load_data(start_date="2022-01-01", end_date="2022-01-02",
-                      extra_feeds={"funding_rate": recording_factory})
+    engine = BacktestEngine(data_manager=dm, logger=TEST_LOGGER, symbols=["BTCUSD"], exchange="kraken")
+    engine.load_data(start_date="2022-01-01", end_date="2022-01-02", extra_feeds={"funding_rate": recording_factory})
 
     assert captured["exchange"] == "kraken"
 
@@ -146,8 +144,7 @@ def test_engine_without_an_exchange_threads_binance_into_factories():
 
     dm = _RecordingDataManager()
     engine = BacktestEngine(data_manager=dm, logger=TEST_LOGGER, symbols=["BTCUSD"])
-    engine.load_data(start_date="2022-01-01", end_date="2022-01-02",
-                      extra_feeds={"funding_rate": recording_factory})
+    engine.load_data(start_date="2022-01-01", end_date="2022-01-02", extra_feeds={"funding_rate": recording_factory})
 
     assert captured["exchange"] == "binance"
 
@@ -156,14 +153,17 @@ def test_engine_without_an_exchange_threads_binance_into_factories():
 # Fail-loud vs. warn+NaN at the no-data branch (T-10, T-11)
 # ---------------------------------------------------------------------------
 
+
 class _EmptyFeedFetcher(BaseFetcher):
     """Always reports no data, whatever venue it claims -- drives
     _premerge_aux_feeds straight into the no-data branch under test."""
 
     def __init__(self, exchange_id):
         super().__init__(
-            start_date="2022-01-01", end_date="2022-01-02",
-            symbols=["BTCUSD"], interval_seconds=0,
+            start_date="2022-01-01",
+            end_date="2022-01-02",
+            symbols=["BTCUSD"],
+            interval_seconds=0,
         )
         self.exchange_id = exchange_id
 
@@ -183,8 +183,7 @@ def _price_df():
 
 def test_premerge_raises_aux_feed_venue_error_for_nonbinance_empty_feed():
     dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
-    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("kraken"),
-                      window_seconds=0, agg="last")
+    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("kraken"), window_seconds=0, agg="last")
 
     with pytest.raises(AuxFeedVenueError, match="kraken"):
         dm._premerge_aux_feeds("BTCUSD", _price_df())
@@ -192,8 +191,7 @@ def test_premerge_raises_aux_feed_venue_error_for_nonbinance_empty_feed():
 
 def test_premerge_binance_empty_feed_still_warns_and_nans(caplog):
     dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
-    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("binance"),
-                      window_seconds=0, agg="last")
+    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("binance"), window_seconds=0, agg="last")
 
     with caplog.at_level(logging.WARNING, logger="trading_bot"):
         enriched = dm._premerge_aux_feeds("BTCUSD", _price_df())
@@ -209,10 +207,12 @@ def test_premerge_binance_empty_feed_still_warns_and_nans(caplog):
 # non-required paths are untouched.
 # ---------------------------------------------------------------------------
 
+
 def test_premerge_raises_aux_feed_required_error_on_binance_when_required_and_empty():
     dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
-    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("binance"),
-                      window_seconds=0, agg="last", required=True)
+    dm.register_feed(
+        name="funding_rate", fetcher=_EmptyFeedFetcher("binance"), window_seconds=0, agg="last", required=True
+    )
 
     with pytest.raises(AuxFeedRequiredError, match="funding_rate"):
         dm._premerge_aux_feeds("BTCUSD", _price_df())
@@ -220,8 +220,9 @@ def test_premerge_raises_aux_feed_required_error_on_binance_when_required_and_em
 
 def test_premerge_raises_aux_feed_required_error_on_kraken_when_required_and_empty():
     dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
-    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("kraken"),
-                      window_seconds=0, agg="last", required=True)
+    dm.register_feed(
+        name="funding_rate", fetcher=_EmptyFeedFetcher("kraken"), window_seconds=0, agg="last", required=True
+    )
 
     with pytest.raises(AuxFeedRequiredError, match="funding_rate"):
         dm._premerge_aux_feeds("BTCUSD", _price_df())
@@ -232,8 +233,9 @@ def test_premerge_required_false_binance_empty_feed_still_warns_and_nans(caplog)
     binance warn+NaN path unchanged -- companion to the default-arg case
     already covered by test_premerge_binance_empty_feed_still_warns_and_nans."""
     dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
-    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("binance"),
-                      window_seconds=0, agg="last", required=False)
+    dm.register_feed(
+        name="funding_rate", fetcher=_EmptyFeedFetcher("binance"), window_seconds=0, agg="last", required=False
+    )
 
     with caplog.at_level(logging.WARNING, logger="trading_bot"):
         enriched = dm._premerge_aux_feeds("BTCUSD", _price_df())
@@ -246,7 +248,6 @@ def test_register_feed_default_required_is_false():
     """register_feed's new `required` kwarg defaults to False -- registration
     is otherwise byte-identical to before this parameter existed."""
     dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
-    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("binance"),
-                      window_seconds=0, agg="last")
+    dm.register_feed(name="funding_rate", fetcher=_EmptyFeedFetcher("binance"), window_seconds=0, agg="last")
 
     assert dm._aux_feeds["funding_rate"].required is False

@@ -94,8 +94,25 @@ _LOCAL_DATA = _REPO / "trading-bot" / "local_data"
 #: The 19 bases of `campaign_data_policy.yaml:kraken_breadth_19pair`, in the
 #: order the pre-registration lists them.
 DEFAULT_BASES = (
-    "BTC", "ETH", "XRP", "SOL", "ADA", "SUI", "ZEC", "DOGE", "XMR", "LTC",
-    "ONDO", "NEAR", "LINK", "TAO", "AVAX", "TRX", "AAVE", "INJ", "UNI",
+    "BTC",
+    "ETH",
+    "XRP",
+    "SOL",
+    "ADA",
+    "SUI",
+    "ZEC",
+    "DOGE",
+    "XMR",
+    "LTC",
+    "ONDO",
+    "NEAR",
+    "LINK",
+    "TAO",
+    "AVAX",
+    "TRX",
+    "AAVE",
+    "INJ",
+    "UNI",
 )
 
 #: `campaign_data_policy.yaml:walk_forward_extension`.
@@ -233,8 +250,7 @@ def report(
         "=" * 78,
         f"source     local_data/kraken_<BASE>USD_1h.csv",
         f"window     {start} .. {end}  (campaign_data_policy walk_forward_extension)",
-        f"definition stdev of (close[i+1]-close[i])/close[i]*1e4, "
-        f"== prescreen_signal._sigma_from_records",
+        f"definition stdev of (close[i+1]-close[i])/close[i]*1e4, == prescreen_signal._sigma_from_records",
         "",
         f"{'pair':<8}{'bars':>9}{'sigma_bps':>12}",
         "-" * 29,
@@ -243,16 +259,12 @@ def report(
     counts: Dict[str, int] = m["n_bars"]  # type: ignore[assignment]
     for b in bases:
         v = per_pair.get(b)
-        out.append(
-            f"{b:<8}{counts.get(b, 0):>9}"
-            f"{(f'{v:.4f}' if v is not None else '-'):>12}"
-        )
+        out.append(f"{b:<8}{counts.get(b, 0):>9}{(f'{v:.4f}' if v is not None else '-'):>12}")
     out += [
         "-" * 29,
         "",
         "POOLED CANDIDATES",
-        f"  pooled (all returns concatenated)   {m['pooled']:.4f}   "
-        f"n={m['n_returns_pooled']:,}",
+        f"  pooled (all returns concatenated)   {m['pooled']:.4f}   n={m['n_returns_pooled']:,}",
         f"  mean of per-pair sigmas             {m['mean']:.4f}",
         f"  median of per-pair sigmas           {m['median']:.4f}",
         f"  min  (conservative: highest req IC) {m['min']:.4f}",
@@ -279,13 +291,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--local-data", type=Path, default=_LOCAL_DATA)
     ap.add_argument("--full-history", action="store_true")
     args = ap.parse_args(argv)
-    print(report(
-        bases=args.pairs,
-        start=args.start,
-        end=args.end,
-        local_data=args.local_data,
-        full_history=args.full_history,
-    ))
+    print(
+        report(
+            bases=args.pairs,
+            start=args.start,
+            end=args.end,
+            local_data=args.local_data,
+            full_history=args.full_history,
+        )
+    )
     return 0
 
 

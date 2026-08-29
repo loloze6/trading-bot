@@ -94,6 +94,7 @@ _LINEAGE_CONTINUATION_STAGES = ("completed_reframed", "completed_escalated", "co
 # Queue I/O
 # ---------------------------------------------------------------------------
 
+
 def _load_queue() -> dict:
     with open(QUEUE_PATH, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
@@ -120,11 +121,13 @@ def _save_queue(queue: dict):
             # C7-EXT-R2: the QUEUE schema, not the KB one -- `status`, `priority`
             # and `relation` are legitimate here and meaningless there.
             vce.validate_verdict_provenance(
-                entry, entry_ref=f"campaign_queue.yaml entry {entry.get('id')!r}",
-                root=ROOT, schema=record_schema.QUEUE_ENTRY_SCHEMA)
+                entry,
+                entry_ref=f"campaign_queue.yaml entry {entry.get('id')!r}",
+                root=ROOT,
+                schema=record_schema.QUEUE_ENTRY_SCHEMA,
+            )
 
-    fd, tmp_name = tempfile.mkstemp(prefix=".campaign_queue.", suffix=".tmp",
-                                     dir=str(QUEUE_PATH.parent))
+    fd, tmp_name = tempfile.mkstemp(prefix=".campaign_queue.", suffix=".tmp", dir=str(QUEUE_PATH.parent))
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             yaml.safe_dump(queue, f, sort_keys=False, allow_unicode=True)
@@ -164,8 +167,10 @@ def _next_action_for_entry(entry: dict) -> str:
     Returns "refinement_brief" (an unconsumed refinement_brief_path is
     present -- takes precedence over a plain continuation), "fresh_launch"
     (no run_ids yet), or "continue" (follow the existing lineage)."""
-    if entry.get("refinement_brief_path") and \
-       entry.get("refinement_brief_consumed_for") != entry["refinement_brief_path"]:
+    if (
+        entry.get("refinement_brief_path")
+        and entry.get("refinement_brief_consumed_for") != entry["refinement_brief_path"]
+    ):
         return "refinement_brief"
     if not entry.get("run_ids"):
         return "fresh_launch"
@@ -241,8 +246,12 @@ def _parse_brief_frontmatter(brief_path: Path) -> dict:
     # check already closes that gap -- this is belt-and-braces at registration
     # time, which is what the rule was originally written to require.
     for required in (
-        "strategy_domain", "market_universe", "timeframe", "research_goal",
-        "venue", "product",
+        "strategy_domain",
+        "market_universe",
+        "timeframe",
+        "research_goal",
+        "venue",
+        "product",
     ):
         if not data.get(required):
             raise ValueError(f"{brief_path}: frontmatter missing required field '{required}'.")
@@ -283,8 +292,7 @@ def _materialize_run(run_id: str, brief: dict):
     product = brief.get("product")
     tradable = _venue_product_tradable(venue, product)
     research_brief["research_only"] = not tradable
-    _log(f"VENUE-CHECK {run_id}: venue={venue!r} product={product!r} tradable={tradable} "
-         f"research_only={not tradable}")
+    _log(f"VENUE-CHECK {run_id}: venue={venue!r} product={product!r} tradable={tradable} research_only={not tradable}")
     orch.save_yaml(artifacts / "research_brief.yaml", research_brief)
 
     machine_constraints = brief.get("machine_constraints")
@@ -351,6 +359,7 @@ def _materialize_run(run_id: str, brief: dict):
 # tool's own write path.
 # ---------------------------------------------------------------------------
 
+
 def register_hypothesis(brief_path: Path, priority: int, notes: str) -> int:
     """Parse `brief_path` via the EXISTING _parse_brief_frontmatter (propagates
     its own ValueError, unmodified, on a malformed brief); derive the queue id
@@ -392,8 +401,7 @@ def register_hypothesis(brief_path: Path, priority: int, notes: str) -> int:
     }
     queue["queue"].append(entry)
     _save_queue(queue)
-    _log(f"REGISTER: queue entry '{new_id}' appended (brief={brief_rel_str}, "
-         f"priority={priority}, status=ready).")
+    _log(f"REGISTER: queue entry '{new_id}' appended (brief={brief_rel_str}, priority={priority}, status=ready).")
     return 0
 
 
@@ -506,6 +514,7 @@ def _materialize_refinement_run(child_id: str, brief: dict, brief_path: Path):
 # Wishlist-trigger detection (hard pause condition #3)
 # ---------------------------------------------------------------------------
 
+
 def _wishlist_family_names() -> list:
     names = []
     dw_path = ROOT / "config" / "detector_wishlist.yaml"
@@ -544,13 +553,20 @@ def _get_dotted_field(d: dict, dotted_path: str):
 
 
 def _apply_predicate_op(op: str, actual, value) -> bool:
-    if op == ">":  return actual > value
-    if op == ">=": return actual >= value
-    if op == "<":  return actual < value
-    if op == "<=": return actual <= value
-    if op == "==": return actual == value
-    if op == "!=": return actual != value
-    if op == "in": return actual in value
+    if op == ">":
+        return actual > value
+    if op == ">=":
+        return actual >= value
+    if op == "<":
+        return actual < value
+    if op == "<=":
+        return actual <= value
+    if op == "==":
+        return actual == value
+    if op == "!=":
+        return actual != value
+    if op == "in":
+        return actual in value
     raise ValueError(f"unknown predicate op {op!r}")
 
 
@@ -607,22 +623,29 @@ def _evaluate_all_of_against_records(conditions: list, records: list, id_field: 
             if not _apply_predicate_op(cond["op"], actual, cond["value"]):
                 failed = True
         if not failed and not unresolved:
-            return {"result": "true", "matched_id": record.get(id_field),
-                    "detail": f"all {len(conditions)} condition(s) hold on record "
-                              f"{record.get(id_field)!r}"}
+            return {
+                "result": "true",
+                "matched_id": record.get(id_field),
+                "detail": f"all {len(conditions)} condition(s) hold on record {record.get(id_field)!r}",
+            }
         if failed:
             continue  # clean non-match -- an unresolved field here doesn't matter
         if unresolved and best_missing is None:
             best_missing = record.get(id_field)
 
     if best_missing is not None:
-        return {"result": "missing_field", "matched_id": best_missing,
-                "detail": f"no record satisfies all conditions; record {best_missing!r} "
-                          f"could otherwise match but is missing (or has not_computed_pre_schema "
-                          f"for) at least one required field -- genuine data gap"}
-    return {"result": "false", "matched_id": None,
-            "detail": f"checked {len(records)} record(s); none satisfy all "
-                      f"{len(conditions)} condition(s)"}
+        return {
+            "result": "missing_field",
+            "matched_id": best_missing,
+            "detail": f"no record satisfies all conditions; record {best_missing!r} "
+            f"could otherwise match but is missing (or has not_computed_pre_schema "
+            f"for) at least one required field -- genuine data gap",
+        }
+    return {
+        "result": "false",
+        "matched_id": None,
+        "detail": f"checked {len(records)} record(s); none satisfy all {len(conditions)} condition(s)",
+    }
 
 
 def evaluate_wishlist_predicate(family_name: str) -> dict:
@@ -648,14 +671,20 @@ def evaluate_wishlist_predicate(family_name: str) -> dict:
     """
     entry = _find_wishlist_entry(family_name)
     if entry is None:
-        return {"result": "missing_field", "matched_finding_id": None,
-                "detail": f"no wishlist entry found for family {family_name!r}"}
+        return {
+            "result": "missing_field",
+            "matched_finding_id": None,
+            "detail": f"no wishlist entry found for family {family_name!r}",
+        }
 
     predicate = (entry.get("trigger_condition") or {}).get("predicate")
     if not predicate:
-        return {"result": "missing_field", "matched_finding_id": None,
-                "detail": f"family {family_name!r} has no trigger_condition.predicate "
-                          f"(still prose-only -- rewrite it before this can auto-evaluate)"}
+        return {
+            "result": "missing_field",
+            "matched_finding_id": None,
+            "detail": f"family {family_name!r} has no trigger_condition.predicate "
+            f"(still prose-only -- rewrite it before this can auto-evaluate)",
+        }
 
     source = predicate.get("source")
     conditions = predicate.get("all_of", [])
@@ -668,12 +697,18 @@ def evaluate_wishlist_predicate(family_name: str) -> dict:
         queue = orch.load_yaml(QUEUE_PATH) or {}
         records = queue.get("queue", [])
     else:
-        return {"result": "missing_field", "matched_finding_id": None,
-                "detail": f"unsupported predicate source {source!r}"}
+        return {
+            "result": "missing_field",
+            "matched_finding_id": None,
+            "detail": f"unsupported predicate source {source!r}",
+        }
 
     outcome = _evaluate_all_of_against_records(conditions, records, id_field="id")
-    return {"result": outcome["result"], "matched_finding_id": outcome["matched_id"],
-            "detail": outcome["detail"] + f" (source={source}, family={family_name!r})"}
+    return {
+        "result": outcome["result"],
+        "matched_finding_id": outcome["matched_id"],
+        "detail": outcome["detail"] + f" (source={source}, family={family_name!r})",
+    }
 
 
 _RESULT_TO_STATUS = {"true": "triggered", "false": "not_triggered", "missing_field": "data_gap"}
@@ -791,6 +826,7 @@ def _check_wishlist_trigger(review: dict) -> str | None:
 # ---------------------------------------------------------------------------
 # Hard-pause classification
 # ---------------------------------------------------------------------------
+
 
 def _classify_human_pause(run_dir: Path, state: dict) -> str:
     flags = state.get("flags", {}) or {}
@@ -931,8 +967,9 @@ def _hard_pause_reason(run_dir: Path, state: dict):
     return None
 
 
-def _append_halt_history(run_dir: Path, state: dict, reason: str, detail: str = "",
-                         quarantine: dict | None = None) -> None:
+def _append_halt_history(
+    run_dir: Path, state: dict, reason: str, detail: str = "", quarantine: dict | None = None
+) -> None:
     """E-030 S1 durable-halt-record fix. `pipeline_state.yaml`'s `last_error` is
     written in full at halt time (run_loop's except-block, `last_error=str(e)`,
     untruncated) but RUNBOOK.md section 4's own documented resume procedure has the
@@ -1014,12 +1051,14 @@ def _append_halt_history(run_dir: Path, state: dict, reason: str, detail: str = 
 #                                  identical.
 # EVERYTHING else escalates, including unhandled_exception (R2: 6 of 14 halts, at
 # least four unrelated root causes) and every reason in R1's integrity list.
-_QUARANTINE_SAFE_REASONS = frozenset({
-    "no_signal_artifact",
-    "component_execution_error",
-    "component_gap",
-    "new_component_escalation",
-})
+_QUARANTINE_SAFE_REASONS = frozenset(
+    {
+        "no_signal_artifact",
+        "component_execution_error",
+        "component_gap",
+        "new_component_escalation",
+    }
+)
 
 # R9: these two quarantine as RE-QUEUEABLE -- `blocked_on_component:<name>` on the
 # queue entry's `status`, never `done`. The hypothesis is not defective; the engine
@@ -1092,7 +1131,7 @@ def _quarantine_enabled() -> bool:
         return False
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
-    halt_policy = ((cfg.get("orchestrator") or {}).get("halt_policy") or {})
+    halt_policy = (cfg.get("orchestrator") or {}).get("halt_policy") or {}
     return bool(halt_policy.get("quarantine_enabled", False))
 
 
@@ -1130,10 +1169,12 @@ def _flag_ambiguity(state: dict, reason: str) -> str | None:
     if set_reasons == {reason}:
         return None
     others = sorted(set_reasons - {reason})
-    return (f"flags on pipeline_state.yaml resolve to {sorted(set_reasons)} while the halt "
-            f"reported {reason!r}; the extra flag(s) {others} may be stale from an earlier "
-            f"resolved pause (taxonomy halt #8 fingerprint), so the reason code is not "
-            f"reliable evidence of what went wrong")
+    return (
+        f"flags on pipeline_state.yaml resolve to {sorted(set_reasons)} while the halt "
+        f"reported {reason!r}; the extra flag(s) {others} may be stale from an earlier "
+        f"resolved pause (taxonomy halt #8 fingerprint), so the reason code is not "
+        f"reliable evidence of what went wrong"
+    )
 
 
 def _repeat_quarantine(state: dict, reason: str) -> dict | None:
@@ -1207,8 +1248,10 @@ def _blocked_component_name(run_dir: Path, detail: str) -> str:
     queue, not a load-bearing value -- which is why a heuristic is proportionate here
     and would not be for a classification decision."""
     sources = [detail or ""]
-    for name, keys in (("decision.yaml", ("rationale", "blocking_issues")),
-                       ("escalation_request.yaml", ("reason", "detail", "component"))):
+    for name, keys in (
+        ("decision.yaml", ("rationale", "blocking_issues")),
+        ("escalation_request.yaml", ("reason", "detail", "component")),
+    ):
         path = run_dir / "artifacts" / name
         if not path.exists():
             continue
@@ -1270,10 +1313,9 @@ def _apply_trial_accounting(reason: str, run_id: str, detail: str) -> str:
     """
     if reason == "component_execution_error":
         marked = orch._mark_trial_invalidated(
-            run_id, f"E-030 S2a quarantine: {reason}"
-                    f"{' — ' + detail if detail else ''}")
-        return ("marked_trial_invalidated" if marked
-                else "no_trial_row_to_invalidate")
+            run_id, f"E-030 S2a quarantine: {reason}{' — ' + detail if detail else ''}"
+        )
+        return "marked_trial_invalidated" if marked else "no_trial_row_to_invalidate"
     if reason == "no_signal_artifact":
         return "prescreen_row_already_recorded_by_a6_2_upstream"
     return "no_action_required"
@@ -1282,6 +1324,7 @@ def _apply_trial_accounting(reason: str, run_id: str, detail: str) -> str:
 # ---------------------------------------------------------------------------
 # Resuming a halted campaign after a human fix
 # ---------------------------------------------------------------------------
+
 
 def resume_paused_entry(queue: dict) -> bool:
     """Called for --resume. Verifies the human has actually resolved the
@@ -1305,13 +1348,17 @@ def resume_paused_entry(queue: dict) -> bool:
     if reason == "data_block_hitl":
         state = orch.load_yaml(run_dir / "pipeline_state.yaml")
         if state.get("status") != "paused_for_human":
-            print(f"{run_id}: status is {state.get('status')!r}, expected 'paused_for_human' "
-                  f"for a data_block_hitl resume.")
+            print(
+                f"{run_id}: status is {state.get('status')!r}, expected 'paused_for_human' "
+                f"for a data_block_hitl resume."
+            )
             return False
         resolution_path = run_dir / "artifacts" / "human_resolution.yaml"
         if not resolution_path.exists():
-            print(f"Missing {resolution_path} — write it first (status: resolved_proceed or "
-                  f"unresolvable), per RUNBOOK.md, then retry --resume.")
+            print(
+                f"Missing {resolution_path} — write it first (status: resolved_proceed or "
+                f"unresolvable), per RUNBOOK.md, then retry --resume."
+            )
             return False
         entry["status"] = "in_progress"
         _save_queue(queue)
@@ -1321,24 +1368,25 @@ def resume_paused_entry(queue: dict) -> bool:
 
     state = orch.load_yaml(run_dir / "pipeline_state.yaml")
     still_stuck = (
-        state.get("status") in ("paused_for_human", "failed")
-        or (state.get("pending_stage") or "") == "human_pause"
+        state.get("status") in ("paused_for_human", "failed") or (state.get("pending_stage") or "") == "human_pause"
     )
     if still_stuck:
-        print(f"{run_id} still shows status={state.get('status')!r}, "
-              f"pending_stage={state.get('pending_stage')!r}. Resolve the '{reason}' pause "
-              f"first (see RUNBOOK.md), then retry --resume.")
+        print(
+            f"{run_id} still shows status={state.get('status')!r}, "
+            f"pending_stage={state.get('pending_stage')!r}. Resolve the '{reason}' pause "
+            f"first (see RUNBOOK.md), then retry --resume."
+        )
         return False
     entry["status"] = "in_progress"
     _save_queue(queue)
-    _log(f"RESUME {entry['id']} / {run_id}: resolution confirmed for '{reason}', "
-         f"resuming queue processing.")
+    _log(f"RESUME {entry['id']} / {run_id}: resolution confirmed for '{reason}', resuming queue processing.")
     return True
 
 
 # ---------------------------------------------------------------------------
 # Observability: campaign_log.md (append-only) and campaign_summary.md (regenerated)
 # ---------------------------------------------------------------------------
+
 
 def _log(line: str, dry_run: bool = False):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1409,6 +1457,7 @@ def _log_transition(entry: dict, run_id: str, state: dict, dry_run: bool = False
 # distinct hypothesis that happens to share an ancestor.
 # ---------------------------------------------------------------------------
 
+
 def _snapshot_hypothesis_splits() -> list:
     campaign = orch.load_campaign_state()
     return list(campaign.get("hypothesis_splits") or [])
@@ -1416,21 +1465,23 @@ def _snapshot_hypothesis_splits() -> list:
 
 def _add_queue_entry_for_split_child(queue: dict, parent_entry: dict, parent_run_id: str, child_id: str):
     new_id = f"{parent_entry['id']}__split_{child_id}"
-    queue["queue"].append({
-        "id": new_id,
-        "brief_path": parent_entry.get("brief_path"),
-        "status": "in_progress",
-        "priority": parent_entry.get("priority", 999),
-        "notes": (
-            f"Split off {parent_run_id}'s multi-card hypothesis_generation output "
-            f"(architecture rule: one hypothesis per run — see "
-            f"campaign_state.yaml hypothesis_splits for the parent linkage). "
-            f"{child_id}'s pipeline_state.yaml already carries hypothesis_card.yaml "
-            f"and is past hypothesis_generation."
-        ),
-        "run_ids": [child_id],
-        "outcome": None,
-    })
+    queue["queue"].append(
+        {
+            "id": new_id,
+            "brief_path": parent_entry.get("brief_path"),
+            "status": "in_progress",
+            "priority": parent_entry.get("priority", 999),
+            "notes": (
+                f"Split off {parent_run_id}'s multi-card hypothesis_generation output "
+                f"(architecture rule: one hypothesis per run — see "
+                f"campaign_state.yaml hypothesis_splits for the parent linkage). "
+                f"{child_id}'s pipeline_state.yaml already carries hypothesis_card.yaml "
+                f"and is past hypothesis_generation."
+            ),
+            "run_ids": [child_id],
+            "outcome": None,
+        }
+    )
 
 
 def _total_campaign_spend() -> tuple:
@@ -1477,8 +1528,7 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
     lines = [
         "# Campaign summary",
         "",
-        f"_Regenerated: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}"
-        f"{' [DRY RUN]' if dry_run else ''}_",
+        f"_Regenerated: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}{' [DRY RUN]' if dry_run else ''}_",
         "",
         "## Queue",
         "",
@@ -1574,11 +1624,13 @@ def _pair_halts_with_downtime(events: list) -> list:
             continue
         reason = re.sub(r"^HALT [—-] ", "", text).split(":")[0].split(".")[0].strip()[:32]
         nxt = events[i + 1] if i + 1 < len(events) else None
-        halts.append({
-            "when": when,
-            "reason": reason,
-            "downtime_hours": ((nxt[0] - when).total_seconds() / 3600.0) if nxt else None,
-        })
+        halts.append(
+            {
+                "when": when,
+                "reason": reason,
+                "downtime_hours": ((nxt[0] - when).total_seconds() / 3600.0) if nxt else None,
+            }
+        )
     return halts
 
 
@@ -1636,8 +1688,7 @@ def _compute_loop_health() -> dict:
     # `outcomes` below is what records what actually happened.
     breakdown = {"quarantine_safe": {}, "escalate": {}}
     for h in halts:
-        bucket = ("quarantine_safe" if h["reason"] in _QUARANTINE_SAFE_REASONS
-                  else "escalate")
+        bucket = "quarantine_safe" if h["reason"] in _QUARANTINE_SAFE_REASONS else "escalate"
         cell = breakdown[bucket].setdefault(h["reason"], {"count": 0, "downtime_hours": 0.0})
         cell["count"] += 1
         if h["downtime_hours"] is not None:
@@ -1668,8 +1719,10 @@ def _compute_loop_health() -> dict:
         "source": {
             "campaign_log": str(CAMPAIGN_LOG_PATH.name),
             "halt_history_runs": len(histories),
-            "note": ("Re-derived from primary records on every process_once() step; "
-                     "never accumulated. Safe to delete -- the next step rewrites it."),
+            "note": (
+                "Re-derived from primary records on every process_once() step; "
+                "never accumulated. Safe to delete -- the next step rewrites it."
+            ),
         },
         "span_hours": round(span_hours, 2) if span_hours is not None else None,
         "halts": {
@@ -1678,9 +1731,11 @@ def _compute_loop_health() -> dict:
             "downtime_share_pct": round(share, 1) if share is not None else None,
             "median_downtime_hours": round(median, 2) if median is not None else None,
             "unpaired": sum(1 for h in halts if h["downtime_hours"] is None),
-            "denominator_note": ("campaign_log.md HALT lines only. A quarantined halt "
-                                 "writes a QUARANTINE line, not a HALT line, so it is "
-                                 "NOT counted here -- see outcomes."),
+            "denominator_note": (
+                "campaign_log.md HALT lines only. A quarantined halt "
+                "writes a QUARANTINE line, not a HALT line, so it is "
+                "NOT counted here -- see outcomes."
+            ),
         },
         "cause_breakdown": breakdown,
         "outcomes": {
@@ -1688,18 +1743,22 @@ def _compute_loop_health() -> dict:
             "escalated": escalated,
             "halt_history_records": auto_recovered + escalated,
             "repeat_quarantine_escalations": repeat_pairs,
-            "denominator_note": ("halt_history across every run on disk, which covers "
-                                 "both quarantined and escalated halts. Does not equal "
-                                 "halts.total."),
+            "denominator_note": (
+                "halt_history across every run on disk, which covers "
+                "both quarantined and escalated halts. Does not equal "
+                "halts.total."
+            ),
         },
         "policy": {
             "quarantine_enabled": _quarantine_enabled(),
             "quarantine_safe_reasons": sorted(_QUARANTINE_SAFE_REASONS),
             "retry_enabled": False,
-            "retry_note": ("S2b is unbuilt: taxonomy R2 found one evidenced retry-safe "
-                           "signature and it is already handled at the stage level in "
-                           "_invoke_agent_with_yaml_retry (A11). There is no "
-                           "retry-vs-escalate decision to make at this layer."),
+            "retry_note": (
+                "S2b is unbuilt: taxonomy R2 found one evidenced retry-safe "
+                "signature and it is already handled at the stage level in "
+                "_invoke_agent_with_yaml_retry (A11). There is no "
+                "retry-vs-escalate decision to make at this layer."
+            ),
         },
     }
 
@@ -1714,8 +1773,7 @@ def _write_loop_health() -> dict:
     path = ROOT / "campaign_record" / "loop_health.yaml"
     block = _compute_loop_health()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(block, sort_keys=False, allow_unicode=True),
-                    encoding="utf-8")
+    path.write_text(yaml.safe_dump(block, sort_keys=False, allow_unicode=True), encoding="utf-8")
     return block
 
 
@@ -1739,6 +1797,7 @@ def _write_loop_health() -> dict:
 # _select_entry's result is even inspected, so it runs on every path.
 # ---------------------------------------------------------------------------
 
+
 def _schedulability_block_enabled() -> bool:
     """E-031 S2 gate. False (no file written, no behavior change) when the
     key, the section, or the config file is absent -- same silence-is-never-
@@ -1748,7 +1807,7 @@ def _schedulability_block_enabled() -> bool:
         return False
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
-    section = ((cfg.get("orchestrator") or {}).get("schedulability_block") or {})
+    section = (cfg.get("orchestrator") or {}).get("schedulability_block") or {}
     return bool(section.get("enabled", False))
 
 
@@ -1805,9 +1864,9 @@ def _blocker_of(status):
     if not isinstance(status, str):
         return None
     if status.startswith("blocked_on_"):
-        return status[len("blocked_on_"):]
+        return status[len("blocked_on_") :]
     if status.startswith("paused:"):
-        return status[len("paused:"):]
+        return status[len("paused:") :]
     return status
 
 
@@ -1836,8 +1895,7 @@ def _compute_schedulability() -> dict:
     # blocked. Counting it as blocked emitted a phantom blocked_entries row
     # with blocker: "superseded" and a dwell time, inflating the very backlog
     # S3's escalate decision is meant to key on.
-    blocked = [e for e in entries
-               if e.get("status") not in _SCHEDULABILITY_NON_BLOCKED_STATUSES]
+    blocked = [e for e in entries if e.get("status") not in _SCHEDULABILITY_NON_BLOCKED_STATUSES]
 
     events = _parse_campaign_log_events(CAMPAIGN_LOG_PATH)
     now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -1857,8 +1915,7 @@ def _compute_schedulability() -> dict:
             last_completion_at, last_completion_kind = when, "QUARANTINE"
             break
     days_since_last_completion = (
-        round((now - last_completion_at).total_seconds() / 86400.0, 2)
-        if last_completion_at is not None else None
+        round((now - last_completion_at).total_seconds() / 86400.0, 2) if last_completion_at is not None else None
     )
 
     blocked_entries = []
@@ -1869,26 +1926,32 @@ def _compute_schedulability() -> dict:
             if eid and _mentions_entry_id(text, eid):
                 last_mention = when
                 break
-        blocked_entries.append({
-            "id": eid,
-            "status": e.get("status"),
-            "blocker": _blocker_of(e.get("status")),
-            "dwell_days": (round((now - last_mention).total_seconds() / 86400.0, 2)
-                           if last_mention is not None else None),
-            "dwell_basis": ("last campaign_log.md mention of this entry id"
-                            if last_mention is not None else
-                            "no campaign_log.md mention found for this id -- "
-                            "dwell time unknown, not zero"),
-        })
+        blocked_entries.append(
+            {
+                "id": eid,
+                "status": e.get("status"),
+                "blocker": _blocker_of(e.get("status")),
+                "dwell_days": (
+                    round((now - last_mention).total_seconds() / 86400.0, 2) if last_mention is not None else None
+                ),
+                "dwell_basis": (
+                    "last campaign_log.md mention of this entry id"
+                    if last_mention is not None
+                    else "no campaign_log.md mention found for this id -- dwell time unknown, not zero"
+                ),
+            }
+        )
 
     return {
         "computed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source": {
             "campaign_queue": str(QUEUE_PATH.name),
             "campaign_log": str(CAMPAIGN_LOG_PATH.name),
-            "note": ("Re-derived from primary records on every process_once() "
-                     "step; never accumulated. Safe to delete -- the next "
-                     "step rewrites it."),
+            "note": (
+                "Re-derived from primary records on every process_once() "
+                "step; never accumulated. Safe to delete -- the next "
+                "step rewrites it."
+            ),
         },
         "counts": {
             "total": len(entries),
@@ -1901,7 +1964,8 @@ def _compute_schedulability() -> dict:
         "last_completion_basis": (
             f"last campaign_log.md {last_completion_kind} line"
             if last_completion_at is not None
-            else "no DONE or QUARANTINE line found in campaign_log.md"),
+            else "no DONE or QUARANTINE line found in campaign_log.md"
+        ),
         "blocked_entries": blocked_entries,
     }
 
@@ -1909,8 +1973,7 @@ def _compute_schedulability() -> dict:
 def _write_schedulability_block(block: dict) -> dict:
     path = ROOT / "campaign_record" / "schedulability.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(block, sort_keys=False, allow_unicode=True),
-                    encoding="utf-8")
+    path.write_text(yaml.safe_dump(block, sort_keys=False, allow_unicode=True), encoding="utf-8")
     return block
 
 
@@ -1923,10 +1986,10 @@ def _write_schedulability() -> dict:
     return _write_schedulability_block(_compute_schedulability())
 
 
-
 # ---------------------------------------------------------------------------
 # Main queue-processing loop
 # ---------------------------------------------------------------------------
+
 
 def _snapshot_run_dirs() -> set:
     runs_dir = ROOT / "runs"
@@ -1938,6 +2001,7 @@ def _snapshot_run_dirs() -> set:
 # ---------------------------------------------------------------------------
 # A3 (K4 kernel): scaffold/registration reconciler. See design note section 6.
 # ---------------------------------------------------------------------------
+
 
 def _referenced_run_ids() -> set:
     """Every run_id counted as 'registered' by ANY of: campaign_queue.yaml's
@@ -1952,8 +2016,7 @@ def _referenced_run_ids() -> set:
         referenced.update(e.get("run_ids") or [])
     campaign = orch.load_campaign_state()
     referenced.update(campaign.get("runs", []))
-    referenced.update(t["trial_id"] for t in campaign.get("trial_sharpes", [])
-                       if t.get("trial_id"))
+    referenced.update(t["trial_id"] for t in campaign.get("trial_sharpes", []) if t.get("trial_id"))
     for ev in campaign.get("hypothesis_splits") or []:
         if ev.get("parent_run"):
             referenced.add(ev["parent_run"])
@@ -1994,12 +2057,16 @@ def reconcile_orphans() -> list:
     orphans = sorted(on_disk - referenced)
     unexpected = [o for o in orphans if not _is_quarantined_orphan(o)]
     if unexpected:
-        _log(f"RECONCILE: {len(unexpected)} unreferenced run dir(s) not in "
-             f"campaign_queue.yaml/campaign_state.yaml/{BASELINE_PATH.name}: {unexpected}")
+        _log(
+            f"RECONCILE: {len(unexpected)} unreferenced run dir(s) not in "
+            f"campaign_queue.yaml/campaign_state.yaml/{BASELINE_PATH.name}: {unexpected}"
+        )
     else:
         covered = len(on_disk) - len(orphans)
-        _log(f"RECONCILE: {len(on_disk)} run dir(s) scanned, {covered} "
-             f"referenced/grandfathered, 0 unexpected ({len(orphans)} known-quarantined)")
+        _log(
+            f"RECONCILE: {len(on_disk)} run dir(s) scanned, {covered} "
+            f"referenced/grandfathered, 0 unexpected ({len(orphans)} known-quarantined)"
+        )
     return orphans
 
 
@@ -2049,8 +2116,10 @@ def process_once() -> bool:
             parent_run_dir = ROOT / "runs" / parent_run_id
             parent_state = orch.load_yaml(parent_run_dir / "pipeline_state.yaml") or {}
             _append_halt_history(parent_run_dir, parent_state, reason, detail)
-            _log(f"HALT — {reason}: {detail}. Campaign stopped on {entry['id']} / {parent_run_id}. "
-                 f"See RUNBOOK.md 'Resume after a pause'.")
+            _log(
+                f"HALT — {reason}: {detail}. Campaign stopped on {entry['id']} / {parent_run_id}. "
+                f"See RUNBOOK.md 'Resume after a pause'."
+            )
             # E-030 S3. Same BRANCHES as _regenerate_summary, but placed at the END
             # of each one rather than beside it: this instrument reads campaign_log.md
             # and halt_history, both of which are written by the two lines above. Run
@@ -2093,7 +2162,7 @@ def process_once() -> bool:
     # call (whether on run_id itself or an internal reframe/escalate continuation
     # within the same call) get their OWN queue entries — checked before the
     # lineage-continuation logic below so a split sibling is never mistaken for one.
-    new_split_events = after_splits[len(before_splits):]
+    new_split_events = after_splits[len(before_splits) :]
     split_child_ids = set()
     for ev in new_split_events:
         for child_id in ev.get("children", []):
@@ -2101,8 +2170,10 @@ def process_once() -> bool:
             _add_queue_entry_for_split_child(queue, entry, ev.get("parent_run", run_id), child_id)
     if split_child_ids:
         _save_queue(queue)
-        _log(f"SPLIT {entry['id']}: {len(split_child_ids)} sibling hypothesis run(s) "
-             f"{sorted(split_child_ids)} each given their own queue entry.")
+        _log(
+            f"SPLIT {entry['id']}: {len(split_child_ids)} sibling hypothesis run(s) "
+            f"{sorted(split_child_ids)} each given their own queue entry."
+        )
 
     state = orch.load_yaml(run_dir / "pipeline_state.yaml")
     _log_transition(entry, run_id, state)
@@ -2124,8 +2195,10 @@ def process_once() -> bool:
                 # Silent fallback would make an ambiguous halt indistinguishable
                 # from an unclassified one -- the exact indistinguishability that
                 # let halt #8 be misreported for 0.91h in the first place.
-                _log(f"AMBIGUITY — quarantine declined for '{reason}' on "
-                     f"{entry['id']} / {run_id}: {ambiguity}. Escalating to a human.")
+                _log(
+                    f"AMBIGUITY — quarantine declined for '{reason}' on "
+                    f"{entry['id']} / {run_id}: {ambiguity}. Escalating to a human."
+                )
             elif repeat is not None:
                 # E-030 S3 / taxonomy R4, extended from retry to quarantine (the
                 # auto-action that actually exists -- see _repeat_quarantine). This
@@ -2139,13 +2212,15 @@ def process_once() -> bool:
                 # this branch's "clean" path and lose R11's explanation. Nor may
                 # this branch override R11 -- an ambiguous halt is never quarantined
                 # regardless of what the repeat check says.
-                _log(f"REPEAT-ESCALATE — quarantine declined for '{reason}' on "
-                     f"{entry['id']} / {run_id}: the immediately preceding halt on "
-                     f"this run ({repeat.get('timestamp')}) carried the SAME reason "
-                     f"and was auto-quarantined. Taxonomy R4 (same reason code twice "
-                     f"in a row on the same run => stop auto-actioning, escalate); "
-                     f"the evidenced pair is halts #13/#14, both "
-                     f"component_execution_error on run_059. Escalating to a human.")
+                _log(
+                    f"REPEAT-ESCALATE — quarantine declined for '{reason}' on "
+                    f"{entry['id']} / {run_id}: the immediately preceding halt on "
+                    f"this run ({repeat.get('timestamp')}) carried the SAME reason "
+                    f"and was auto-quarantined. Taxonomy R4 (same reason code twice "
+                    f"in a row on the same run => stop auto-actioning, escalate); "
+                    f"the evidenced pair is halts #13/#14, both "
+                    f"component_execution_error on run_059. Escalating to a human."
+                )
             else:
                 requeueable = reason in _REQUEUEABLE_QUARANTINE_REASONS
                 if requeueable:
@@ -2182,13 +2257,14 @@ def process_once() -> bool:
                     "no_data_touched": not _run_has_trial_row(run_id),
                     "retry_attempts": [],  # S2a builds no retry; see the section header
                 }
-                _append_halt_history(run_dir, state, reason, detail,
-                                     quarantine=quarantine_record)
+                _append_halt_history(run_dir, state, reason, detail, quarantine=quarantine_record)
                 detail_str = f": {detail}" if detail else ""
-                _log(f"QUARANTINE — {reason}{detail_str}. {entry['id']} / {run_id} -> "
-                     f"status={entry['status']} outcome={entry.get('outcome') or '-'} "
-                     f"(trial accounting: {disposition}). Campaign continues; see this "
-                     f"run's pipeline_state.yaml halt_history for the full record.")
+                _log(
+                    f"QUARANTINE — {reason}{detail_str}. {entry['id']} / {run_id} -> "
+                    f"status={entry['status']} outcome={entry.get('outcome') or '-'} "
+                    f"(trial accounting: {disposition}). Campaign continues; see this "
+                    f"run's pipeline_state.yaml halt_history for the full record."
+                )
                 _write_loop_health()  # E-030 S3 — see the note at the first call site
                 if schedulability_enabled:  # E-031 S2 — same end-of-branch placement
                     _write_schedulability()
@@ -2201,8 +2277,10 @@ def process_once() -> bool:
         # this append must not inherit that truncation.
         _append_halt_history(run_dir, state, reason, detail)
         detail_str = f": {detail}" if detail else ""
-        _log(f"HALT — {reason}{detail_str}. Campaign stopped on {entry['id']} / {run_id}. "
-             f"See RUNBOOK.md 'Resume after a pause'.")
+        _log(
+            f"HALT — {reason}{detail_str}. Campaign stopped on {entry['id']} / {run_id}. "
+            f"See RUNBOOK.md 'Resume after a pause'."
+        )
         _write_loop_health()  # E-030 S3 — see the note at the first call site
         if schedulability_enabled:  # E-031 S2 — same end-of-branch placement
             _write_schedulability()
@@ -2217,8 +2295,7 @@ def process_once() -> bool:
     # correctly, since the intent lives on disk, not in this call's locals.
     pending = state.get("pending_stage") or ""
     continuation_child = state.get("continuation_child")
-    if pending in _LINEAGE_CONTINUATION_STAGES and continuation_child and \
-            continuation_child not in split_child_ids:
+    if pending in _LINEAGE_CONTINUATION_STAGES and continuation_child and continuation_child not in split_child_ids:
         entry["run_ids"].append(continuation_child)
         _save_queue(queue)
         _log(f"CONTINUE {entry['id']} lineage {run_id} -> {continuation_child} ({pending})")
@@ -2254,6 +2331,7 @@ def run_forever(once: bool = False):
 # Dry-run verification (no LLM spend, zero footprint on real campaign state)
 # ---------------------------------------------------------------------------
 
+
 def dry_run_verify():
     _log("=== DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===", dry_run=True)
 
@@ -2267,11 +2345,9 @@ def dry_run_verify():
         # done/blocked_on_*) is a legitimate, informative outcome, not an
         # assertion failure. Previously raised AssertionError here, which
         # is indistinguishable from a real wiring defect.
-        _log("DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal",
-             dry_run=True)
+        _log("DRY RUN: no ready/in_progress entry — nothing to verify; queue is all-terminal", dry_run=True)
         return
-    _log(f"queue: selected entry '{entry['id']}' (status={entry['status']}, "
-         f"brief={entry['brief_path']})", dry_run=True)
+    _log(f"queue: selected entry '{entry['id']}' (status={entry['status']}, brief={entry['brief_path']})", dry_run=True)
 
     # B1/B2-non-regression: classify via the SAME function process_once() uses,
     # so a broken refinement_brief_path is caught before a real launch. This
@@ -2283,8 +2359,11 @@ def dry_run_verify():
 
     brief_path = ROOT / entry["brief_path"]
     brief = _parse_brief_frontmatter(brief_path)
-    _log(f"brief frontmatter parsed OK: strategy_domain={brief['strategy_domain']}, "
-         f"market_universe={brief['market_universe']}", dry_run=True)
+    _log(
+        f"brief frontmatter parsed OK: strategy_domain={brief['strategy_domain']}, "
+        f"market_universe={brief['market_universe']}",
+        dry_run=True,
+    )
 
     dry_run_id = "run_dryrun_verify"
     dry_run_dir = ROOT / "runs" / dry_run_id
@@ -2298,9 +2377,11 @@ def dry_run_verify():
             raise AssertionError("research_brief.yaml was not written")
         pr_path = dry_run_dir / "artifacts" / "pre_registration.yaml"
         has_pr = pr_path.exists()
-        _log(f"setup_run + brief materialization OK: {rb_path.relative_to(ROOT)} written"
-             f"{', pre_registration.yaml written' if has_pr else ' (brief has no machine_constraints)'}",
-             dry_run=True)
+        _log(
+            f"setup_run + brief materialization OK: {rb_path.relative_to(ROOT)} written"
+            f"{', pre_registration.yaml written' if has_pr else ' (brief has no machine_constraints)'}",
+            dry_run=True,
+        )
 
         if action == "refinement_brief":
             rb_source = ROOT / entry["refinement_brief_path"]
@@ -2309,8 +2390,11 @@ def dry_run_verify():
             verbatim_path = dry_run_dir / "artifacts" / "user_brief_verbatim.yaml"
             if not verbatim_path.exists():
                 raise AssertionError("user_brief_verbatim.yaml was not written")
-            _log(f"refinement-brief materialization OK: {verbatim_path.relative_to(ROOT)} written "
-                 f"(checksum recorded in pre_registration.yaml)", dry_run=True)
+            _log(
+                f"refinement-brief materialization OK: {verbatim_path.relative_to(ROOT)} written "
+                f"(checksum recorded in pre_registration.yaml)",
+                dry_run=True,
+            )
 
         # Simulate a normal terminal outcome (no LLM calls) — prove terminal
         # classification does NOT misfire as a pause.
@@ -2319,12 +2403,18 @@ def dry_run_verify():
         pause = _hard_pause_reason(dry_run_dir, state)
         if pause is not None:
             raise AssertionError(f"synthetic normal-terminal state was misclassified as a pause: {pause}")
-        _log("terminal-state classification OK: pending_stage=completed_rejected -> "
-             "no pause, queue would advance", dry_run=True)
+        _log(
+            "terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance",
+            dry_run=True,
+        )
 
         # Simulate a no_signal_artifact hard pause — prove halt-and-do-not-advance.
-        orch.update_state(path=dry_run_dir, pending_stage="human_pause", status="paused_for_human",
-                           flags={"no_signal_artifact_flagged": True})
+        orch.update_state(
+            path=dry_run_dir,
+            pending_stage="human_pause",
+            status="paused_for_human",
+            flags={"no_signal_artifact_flagged": True},
+        )
         state = orch.load_yaml(dry_run_dir / "pipeline_state.yaml")
         pause = _hard_pause_reason(dry_run_dir, state)
         if pause is None or pause[0] != "no_signal_artifact":
@@ -2336,11 +2426,14 @@ def dry_run_verify():
         names = _wishlist_family_names()
         probe_family = names[0] if names else "daily_timeframe_er_overlay"
         cr_path = dry_run_dir / "artifacts" / "campaign_review.yaml"
-        orch.save_yaml(cr_path, {
-            "recommendation": "reframe",
-            "recommendation_rationale": f"Testing {probe_family} looks promising now.",
-            "next_research_question": {"strategy_domain": probe_family},
-        })
+        orch.save_yaml(
+            cr_path,
+            {
+                "recommendation": "reframe",
+                "recommendation_rationale": f"Testing {probe_family} looks promising now.",
+                "next_research_question": {"strategy_domain": probe_family},
+            },
+        )
         state = orch.load_yaml(dry_run_dir / "pipeline_state.yaml")
         pause = _hard_pause_reason(dry_run_dir, state)
         if pause is None or pause[0] != "wishlist_trigger":
@@ -2353,8 +2446,7 @@ def dry_run_verify():
         if generated.exists():
             generated.unlink()
 
-    _log("cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml "
-         "were touched.", dry_run=True)
+    _log("cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.", dry_run=True)
     _log("=== DRY RUN PASSED ===", dry_run=True)
 
 
@@ -2364,29 +2456,36 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Multi-run campaign entry point (thin wrapper over run_phase1_research.py)."
     )
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Verify queue->launch->pause wiring with zero LLM spend, then exit.")
-    parser.add_argument("--once", action="store_true",
-                        help="Process a single queue step (one launch/continue/advance), then exit.")
-    parser.add_argument("--resume", action="store_true",
-                        help="Resume a campaign halted at a hard pause, after the human has resolved it.")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Verify queue->launch->pause wiring with zero LLM spend, then exit."
+    )
+    parser.add_argument(
+        "--once", action="store_true", help="Process a single queue step (one launch/continue/advance), then exit."
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume a campaign halted at a hard pause, after the human has resolved it.",
+    )
     subparsers = parser.add_subparsers(dest="command")
     register_parser = subparsers.add_parser(
-        "register",
-        help="B15: register a fully-authored brief as a new, schedulable queue entry."
+        "register", help="B15: register a fully-authored brief as a new, schedulable queue entry."
     )
-    register_parser.add_argument("--brief", required=True, type=Path,
-                                  help="Path to the brief .md (frontmatter-format).")
-    register_parser.add_argument("--priority", required=True, type=int,
-                                  help="Queue priority (lower sorts first, matching _select_entry).")
-    register_parser.add_argument("--notes", required=True,
-                                  help="One-line-or-more notes recorded on the queue entry.")
+    register_parser.add_argument(
+        "--brief", required=True, type=Path, help="Path to the brief .md (frontmatter-format)."
+    )
+    register_parser.add_argument(
+        "--priority", required=True, type=int, help="Queue priority (lower sorts first, matching _select_entry)."
+    )
+    register_parser.add_argument("--notes", required=True, help="One-line-or-more notes recorded on the queue entry.")
     args = parser.parse_args()
 
     if Path(".").resolve() != ROOT:
-        print(f"This must be run with CWD = {ROOT} (matches run_phase1_research.py's own "
-              f"ROOT=Path('.') convention). Current CWD: {Path('.').resolve()}. "
-              f"cd into strategy-research/ and retry.")
+        print(
+            f"This must be run with CWD = {ROOT} (matches run_phase1_research.py's own "
+            f"ROOT=Path('.') convention). Current CWD: {Path('.').resolve()}. "
+            f"cd into strategy-research/ and retry."
+        )
         sys.exit(1)
 
     if args.command == "register":

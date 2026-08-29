@@ -7,6 +7,7 @@ nothing and re-runs nothing.
 Usage:  python engineering/roadmap/E-029/artifacts/measure_trade_records.py
         (cwd = strategy-research/)
 """
+
 import collections
 import glob
 import json

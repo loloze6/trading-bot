@@ -58,9 +58,7 @@ def _load_rho(config_path: Path | str | None = None) -> float:
         return 0.82
 
 
-def run_power_check(hypothesis_card_path: Path | str,
-                    config_path: Path | str | None = None,
-                    timeframe=None) -> dict:
+def run_power_check(hypothesis_card_path: Path | str, config_path: Path | str | None = None, timeframe=None) -> dict:
     """
     Load a hypothesis_card.yaml and compute A8.6 power metrics.
     Returns a result dict with 'verdict' key.
@@ -113,11 +111,7 @@ def run_power_check(hypothesis_card_path: Path | str,
     expected_n_eff = expected_active_n / block_size
     min_detectable_ic = 1.0 / math.sqrt(max(expected_n_eff - 3.0, 1.0))
 
-    verdict = (
-        "insufficient_power_a_priori"
-        if min_detectable_ic > plausible_ic_upper
-        else "power_adequate"
-    )
+    verdict = "insufficient_power_a_priori" if min_detectable_ic > plausible_ic_upper else "power_adequate"
 
     result = {
         "verdict": verdict,
@@ -142,12 +136,11 @@ def run_power_check(hypothesis_card_path: Path | str,
 
 def _main():
     parser = argparse.ArgumentParser(description="A8.6 a-priori power check")
-    parser.add_argument("--hypothesis-card", required=True,
-                        help="Path to hypothesis_card.yaml")
-    parser.add_argument("--config", default=None,
-                        help="Path to campaign_config.yaml (default: ../config/campaign_config.yaml)")
-    parser.add_argument("--out", default=None,
-                        help="Optional path to write result YAML")
+    parser.add_argument("--hypothesis-card", required=True, help="Path to hypothesis_card.yaml")
+    parser.add_argument(
+        "--config", default=None, help="Path to campaign_config.yaml (default: ../config/campaign_config.yaml)"
+    )
+    parser.add_argument("--out", default=None, help="Optional path to write result YAML")
     args = parser.parse_args()
 
     result = run_power_check(args.hypothesis_card, args.config)

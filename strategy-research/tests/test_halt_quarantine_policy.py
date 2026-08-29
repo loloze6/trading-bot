@@ -27,6 +27,7 @@ from tests/test_halt_history.py, itself copied from
 tests/test_k4_routing_registration.py's proven hermetic setup: nothing here touches
 the real repository, and no LLM or subprocess is spawned.
 """
+
 import sys
 from pathlib import Path
 
@@ -54,8 +55,10 @@ _FRESH_STATE_TEMPLATE = {
     },
     "counters": {"refinements_used": 0, "reruns_used": 0},
     "flags": {
-        "holdout_reserved": False, "validation_approved": False,
-        "screening_passed": False, "walk_forward_passed": False,
+        "holdout_reserved": False,
+        "validation_approved": False,
+        "screening_passed": False,
+        "walk_forward_passed": False,
     },
     "last_summary": None,
 }
@@ -94,11 +97,15 @@ def campaign_root(tmp_path, monkeypatch):
 
     def _fake_setup_run(run_id):
         _write_fresh_scaffold(runs_dir, run_id)
+
     monkeypatch.setattr(camp, "setup_run", _fake_setup_run)
 
     return {
-        "root": tmp_path, "runs_dir": runs_dir, "queue_path": queue_path,
-        "config_dir": config_dir, "campaign_state_path": campaign_state_path,
+        "root": tmp_path,
+        "runs_dir": runs_dir,
+        "queue_path": queue_path,
+        "config_dir": config_dir,
+        "campaign_state_path": campaign_state_path,
     }
 
 
@@ -109,8 +116,7 @@ def _set_quarantine_flag(config_dir: Path, enabled):
     cfg = {"orchestrator": {"token_budget_per_run_weighted_units": 1500000}}
     if enabled is not None:
         cfg["orchestrator"]["halt_policy"] = {"quarantine_enabled": enabled}
-    (config_dir / "campaign_config.yaml").write_text(
-        yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
+    (config_dir / "campaign_config.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
 
 
 def _save_queue_entries(queue_path: Path, entries: list):
@@ -120,10 +126,17 @@ def _save_queue_entries(queue_path: Path, entries: list):
 
 def _write_campaign_state(path: Path, **fields):
     state = {
-        "campaign_id": "test", "research_question": "", "runs": [],
-        "altitude_history": [], "recent_parameter_dimensions_by_family": {},
-        "failed_families": [], "instruments_tried": [], "components_built": [],
-        "timeframes_tried": ["1h"], "diagnostics_log": [], "status": "active",
+        "campaign_id": "test",
+        "research_question": "",
+        "runs": [],
+        "altitude_history": [],
+        "recent_parameter_dimensions_by_family": {},
+        "failed_families": [],
+        "instruments_tried": [],
+        "components_built": [],
+        "timeframes_tried": ["1h"],
+        "diagnostics_log": [],
+        "status": "active",
     }
     state.update(fields)
     with open(path, "w", encoding="utf-8") as f:
@@ -136,13 +149,16 @@ def _read_state(runs_dir: Path, run_id: str) -> dict:
 
 def _entry(run_id: str, entry_id: str = "TEST_ENTRY") -> dict:
     return {
-        "id": entry_id, "brief_path": "briefs/irrelevant.yaml",
-        "status": "in_progress", "priority": 1, "run_ids": [run_id], "outcome": None,
+        "id": entry_id,
+        "brief_path": "briefs/irrelevant.yaml",
+        "status": "in_progress",
+        "priority": 1,
+        "run_ids": [run_id],
+        "outcome": None,
     }
 
 
-def _stage_halt(campaign_root, run_id: str, reason: str, *, flags=None,
-                trial_rows=None, **state_overrides):
+def _stage_halt(campaign_root, run_id: str, reason: str, *, flags=None, trial_rows=None, **state_overrides):
     """Puts the sandbox in the state that produces `reason` from
     _hard_pause_reason, and returns the run_dir. Each reason is staged through the
     SAME mechanism the real pipeline uses, so the classification under test is the
@@ -152,23 +168,45 @@ def _stage_halt(campaign_root, run_id: str, reason: str, *, flags=None,
 
     if reason == "unhandled_exception":
         run_dir = _write_fresh_scaffold(
-            runs_dir, run_id, status="failed", pending_stage="human_pause",
-            last_error="boom", flags=base_flags, **state_overrides)
+            runs_dir,
+            run_id,
+            status="failed",
+            pending_stage="human_pause",
+            last_error="boom",
+            flags=base_flags,
+            **state_overrides,
+        )
     elif reason in ("component_gap", "new_component_escalation"):
         run_dir = _write_fresh_scaffold(
-            runs_dir, run_id, status="paused_for_human", pending_stage="human_pause",
-            flags=base_flags, **state_overrides)
+            runs_dir,
+            run_id,
+            status="paused_for_human",
+            pending_stage="human_pause",
+            flags=base_flags,
+            **state_overrides,
+        )
         if reason == "component_gap":
-            (run_dir / "artifacts" / "decision.yaml").write_text(yaml.safe_dump({
-                "stage": "backtest_specification", "status": "component_gap",
-                "rationale": "needs MacdHistogramCrossoverComponent, which does not exist",
-                "blocking_issues": ["engine lacks MacdHistogramCrossoverComponent"],
-            }), encoding="utf-8")
+            (run_dir / "artifacts" / "decision.yaml").write_text(
+                yaml.safe_dump(
+                    {
+                        "stage": "backtest_specification",
+                        "status": "component_gap",
+                        "rationale": "needs MacdHistogramCrossoverComponent, which does not exist",
+                        "blocking_issues": ["engine lacks MacdHistogramCrossoverComponent"],
+                    }
+                ),
+                encoding="utf-8",
+            )
         else:
-            (run_dir / "artifacts" / "escalation_request.yaml").write_text(yaml.safe_dump({
-                "target": "new_component",
-                "reason": "family exhausted; needs a FundingBasisCarryComponent",
-            }), encoding="utf-8")
+            (run_dir / "artifacts" / "escalation_request.yaml").write_text(
+                yaml.safe_dump(
+                    {
+                        "target": "new_component",
+                        "reason": "family exhausted; needs a FundingBasisCarryComponent",
+                    }
+                ),
+                encoding="utf-8",
+            )
     elif reason == "stale_escalation_unclaimed":
         # B10's flag is read by _hard_pause_reason while status == "failed" (it is
         # set by _resolve_protocol_path BEFORE the RuntimeError is raised), NOT by
@@ -176,35 +214,52 @@ def _stage_halt(campaign_root, run_id: str, reason: str, *, flags=None,
         # human_pause_unclassified and prove nothing about this reason.
         base_flags["stale_escalation_unclaimed"] = True
         run_dir = _write_fresh_scaffold(
-            runs_dir, run_id, status="failed", pending_stage="human_pause",
-            last_error="no claimed escalation", flags=base_flags, **state_overrides)
+            runs_dir,
+            run_id,
+            status="failed",
+            pending_stage="human_pause",
+            last_error="no claimed escalation",
+            flags=base_flags,
+            **state_overrides,
+        )
     else:
         # Every flag-driven reason, staged by setting the flag the real pipeline sets.
         flag = next(f for f, mapped in camp._PAUSE_FLAG_TO_REASON if mapped == reason)
         base_flags[flag] = True
         run_dir = _write_fresh_scaffold(
-            runs_dir, run_id, status="paused_for_human", pending_stage="human_pause",
-            flags=base_flags, **state_overrides)
+            runs_dir,
+            run_id,
+            status="paused_for_human",
+            pending_stage="human_pause",
+            flags=base_flags,
+            **state_overrides,
+        )
 
     _save_queue_entries(campaign_root["queue_path"], [_entry(run_id)])
-    _write_campaign_state(campaign_root["campaign_state_path"], runs=[run_id],
-                          trial_sharpes=list(trial_rows or []))
+    _write_campaign_state(campaign_root["campaign_state_path"], runs=[run_id], trial_sharpes=list(trial_rows or []))
     return run_dir
 
 
 def _prescreen_row(run_id, route="no_signal_artifact"):
-    return {"trial_id": run_id, "source": "prescreen", "route": route, "sharpe": None,
-            "expectancy_bps": None, "n_trades": 0, "statistic_valid": "neither"}
+    return {
+        "trial_id": run_id,
+        "source": "prescreen",
+        "route": route,
+        "sharpe": None,
+        "expectancy_bps": None,
+        "n_trades": 0,
+        "statistic_valid": "neither",
+    }
 
 
 # ---------------------------------------------------------------------------
 # 1. Bit-identity: the SAME halt, flag off vs flag on (EPIC.md Done-when #3)
 # ---------------------------------------------------------------------------
 
+
 def _run_one_halt(campaign_root, run_id, reason, flag):
     _set_quarantine_flag(campaign_root["config_dir"], flag)
-    _stage_halt(campaign_root, run_id, reason,
-                trial_rows=[_prescreen_row(run_id)])
+    _stage_halt(campaign_root, run_id, reason, trial_rows=[_prescreen_row(run_id)])
     keep_going = camp.process_once()
     root = campaign_root["root"]
     queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
@@ -253,8 +308,7 @@ def test_flag_off_is_byte_identical_to_head_behavior(campaign_root, flag_off_val
     assert "quarantine" not in history[0]
 
     # And no trial row was touched.
-    campaign = yaml.safe_load(
-        campaign_root["campaign_state_path"].read_text(encoding="utf-8"))
+    campaign = yaml.safe_load(campaign_root["campaign_state_path"].read_text(encoding="utf-8"))
     assert campaign["trial_sharpes"] == [_prescreen_row("run_800")]
 
 
@@ -286,6 +340,7 @@ def test_quarantine_never_writes_completed_rejected(campaign_root):
 # 2. The quarantine record (R6) and trial accounting (R7)
 # ---------------------------------------------------------------------------
 
+
 def test_quarantine_record_carries_untruncated_error_and_flags(campaign_root):
     """R6's minimum fields. The untruncated `last_error` is the whole reason S1.5
     Piece 1 exists -- a quarantine record built on the 300-char campaign_log.md
@@ -295,8 +350,13 @@ def test_quarantine_record_carries_untruncated_error_and_flags(campaign_root):
     _stage_halt(campaign_root, "run_802", "unhandled_exception")
     # unhandled_exception is NOT quarantine-safe; restage as a flag-driven one that
     # is, but keep a long last_error on the state.
-    _stage_halt(campaign_root, "run_802", "component_execution_error",
-                last_error=long_error, trial_rows=[_prescreen_row("run_802")])
+    _stage_halt(
+        campaign_root,
+        "run_802",
+        "component_execution_error",
+        last_error=long_error,
+        trial_rows=[_prescreen_row("run_802")],
+    )
 
     camp.process_once()
     history = _read_state(campaign_root["runs_dir"], "run_802")["halt_history"]
@@ -320,14 +380,19 @@ def test_component_execution_error_marks_the_existing_trial_invalidated(campaign
     Marked invalid via the EXISTING _mark_trial_invalidated, never deleted, and no
     new trial-recording function is called."""
     _set_quarantine_flag(campaign_root["config_dir"], True)
-    _stage_halt(campaign_root, "run_803", "component_execution_error",
-                trial_rows=[_prescreen_row("run_803", route="proceed_to_backtest"),
-                            {"trial_id": "run_803", "source": "backtest", "sharpe": -0.64}])
+    _stage_halt(
+        campaign_root,
+        "run_803",
+        "component_execution_error",
+        trial_rows=[
+            _prescreen_row("run_803", route="proceed_to_backtest"),
+            {"trial_id": "run_803", "source": "backtest", "sharpe": -0.64},
+        ],
+    )
 
     camp.process_once()
 
-    campaign = yaml.safe_load(
-        campaign_root["campaign_state_path"].read_text(encoding="utf-8"))
+    campaign = yaml.safe_load(campaign_root["campaign_state_path"].read_text(encoding="utf-8"))
     rows = campaign["trial_sharpes"]
     assert len(rows) == 2, "rows are marked, never deleted"
     assert all(r["invalidated_artifact"] is True for r in rows)
@@ -348,18 +413,17 @@ def test_no_signal_artifact_writes_no_new_trial_row(campaign_root):
 
     camp.process_once()
 
-    campaign = yaml.safe_load(
-        campaign_root["campaign_state_path"].read_text(encoding="utf-8"))
+    campaign = yaml.safe_load(campaign_root["campaign_state_path"].read_text(encoding="utf-8"))
     assert campaign["trial_sharpes"] == before, "unchanged: not added to, not invalidated"
     record = _read_state(campaign_root["runs_dir"], "run_804")["halt_history"][-1]
-    assert record["quarantine"]["trial_accounting"] == \
-        "prescreen_row_already_recorded_by_a6_2_upstream"
+    assert record["quarantine"]["trial_accounting"] == "prescreen_row_already_recorded_by_a6_2_upstream"
     assert record["quarantine"]["no_data_touched"] is False
 
 
 # ---------------------------------------------------------------------------
 # 3. R9 — component_gap / new_component_escalation are RE-QUEUEABLE
 # ---------------------------------------------------------------------------
+
 
 def test_component_gap_quarantines_as_blocked_on_component(campaign_root):
     """R9: `blocked_on_component:<name>` on `status`, never `done`, and no terminal
@@ -398,8 +462,12 @@ def test_blocked_on_component_entry_is_never_auto_selected(campaign_root):
     its docstring. Nothing in _select_entry changes for this story; this asserts
     that the status this story WRITES is one that selector already skips."""
     entries = [
-        {"id": "PARKED", "status": "blocked_on_component:MacdHistogramCrossoverComponent",
-         "priority": 1, "run_ids": ["run_805"]},
+        {
+            "id": "PARKED",
+            "status": "blocked_on_component:MacdHistogramCrossoverComponent",
+            "priority": 1,
+            "run_ids": ["run_805"],
+        },
         {"id": "NEXT", "status": "ready", "priority": 5, "run_ids": []},
     ]
     assert camp._select_entry(entries)["id"] == "NEXT"
@@ -411,10 +479,17 @@ def test_unnamed_component_falls_back_without_breaking_the_status(campaign_root)
     valid, selector-skipped status. The name is a convenience, not load-bearing."""
     _set_quarantine_flag(campaign_root["config_dir"], True)
     run_dir = _stage_halt(campaign_root, "run_807", "component_gap")
-    (run_dir / "artifacts" / "decision.yaml").write_text(yaml.safe_dump({
-        "stage": "backtest_specification", "status": "component_gap",
-        "rationale": "the engine cannot express this signal", "blocking_issues": [],
-    }), encoding="utf-8")
+    (run_dir / "artifacts" / "decision.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "stage": "backtest_specification",
+                "status": "component_gap",
+                "rationale": "the engine cannot express this signal",
+                "blocking_issues": [],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     camp.process_once()
     queue = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))
@@ -426,15 +501,19 @@ def test_unnamed_component_falls_back_without_breaking_the_status(campaign_root)
 # 4. Escalate is the DEFAULT — everything not on the evidenced list still halts
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("reason", [
-    "unhandled_exception",              # R2: 6 of 14 halts, >=4 unrelated root causes
-    "research_only_unverified",         # R1 integrity list
-    "conformance_gate_failure",         # R1
-    "kb_reactivation_violation",        # R1
-    "pass_rule_evaluation_disagreement",  # R1
-    "stale_escalation_unclaimed",       # R1
-    "regime_misattribution",            # not on the quarantine-safe list
-])
+
+@pytest.mark.parametrize(
+    "reason",
+    [
+        "unhandled_exception",  # R2: 6 of 14 halts, >=4 unrelated root causes
+        "research_only_unverified",  # R1 integrity list
+        "conformance_gate_failure",  # R1
+        "kb_reactivation_violation",  # R1
+        "pass_rule_evaluation_disagreement",  # R1
+        "stale_escalation_unclaimed",  # R1
+        "regime_misattribution",  # not on the quarantine-safe list
+    ],
+)
 def test_non_quarantine_safe_reasons_still_escalate_with_the_flag_on(campaign_root, reason):
     _set_quarantine_flag(campaign_root["config_dir"], True)
     _stage_halt(campaign_root, "run_810", reason)
@@ -456,16 +535,21 @@ def test_quarantine_safe_set_is_exactly_the_four_evidenced_reasons():
     """A change to this set is a change to what the campaign will do unattended.
     Pinning it means widening it cannot happen as a side effect of an unrelated
     edit -- it has to be done here, deliberately, with new evidence cited."""
-    assert camp._QUARANTINE_SAFE_REASONS == frozenset({
-        "no_signal_artifact", "component_execution_error",
-        "component_gap", "new_component_escalation",
-    })
+    assert camp._QUARANTINE_SAFE_REASONS == frozenset(
+        {
+            "no_signal_artifact",
+            "component_execution_error",
+            "component_gap",
+            "new_component_escalation",
+        }
+    )
     assert camp._REQUEUEABLE_QUARANTINE_REASONS <= camp._QUARANTINE_SAFE_REASONS
 
 
 # ---------------------------------------------------------------------------
 # 5. R11 — ambiguity escalates, visibly
 # ---------------------------------------------------------------------------
+
 
 def test_stale_flag_alongside_a_fresh_one_escalates_instead_of_quarantining(campaign_root):
     """Reconstructs halt #8 (2026-07-09, run_054), the taxonomy's one confirmed
@@ -475,9 +559,13 @@ def test_stale_flag_alongside_a_fresh_one_escalates_instead_of_quarantining(camp
     they carry DIFFERENT trial accounting (R7), so acting on the reported code
     would have applied the wrong one silently. Escalate, and say why."""
     _set_quarantine_flag(campaign_root["config_dir"], True)
-    _stage_halt(campaign_root, "run_808", "no_signal_artifact",
-                flags={"component_execution_error_flagged": True},
-                trial_rows=[_prescreen_row("run_808")])
+    _stage_halt(
+        campaign_root,
+        "run_808",
+        "no_signal_artifact",
+        flags={"component_execution_error_flagged": True},
+        trial_rows=[_prescreen_row("run_808")],
+    )
 
     keep_going = camp.process_once()
 
@@ -495,8 +583,7 @@ def test_stale_flag_alongside_a_fresh_one_escalates_instead_of_quarantining(camp
     record = _read_state(campaign_root["runs_dir"], "run_808")["halt_history"][-1]
     assert "quarantine" not in record
     # And no trial accounting ran off the wrong reason code.
-    campaign = yaml.safe_load(
-        campaign_root["campaign_state_path"].read_text(encoding="utf-8"))
+    campaign = yaml.safe_load(campaign_root["campaign_state_path"].read_text(encoding="utf-8"))
     assert "invalidated_artifact" not in campaign["trial_sharpes"][0]
 
 
@@ -506,8 +593,12 @@ def test_state_key_counterpart_also_triggers_ambiguity(campaign_root):
     RUNBOOK section 4's own note). A stale state-key with its flag already cleared
     is the same masking hazard and must be caught too."""
     _set_quarantine_flag(campaign_root["config_dir"], True)
-    _stage_halt(campaign_root, "run_809", "component_execution_error",
-                kb_reactivation_violations=[{"finding": "H-041-A", "note": "stale"}])
+    _stage_halt(
+        campaign_root,
+        "run_809",
+        "component_execution_error",
+        kb_reactivation_violations=[{"finding": "H-041-A", "note": "stale"}],
+    )
 
     assert camp.process_once() is False
     log = (campaign_root["root"] / "campaign_log.md").read_text(encoding="utf-8")
@@ -517,9 +608,14 @@ def test_state_key_counterpart_also_triggers_ambiguity(campaign_root):
 def test_clean_single_flag_is_not_ambiguous(campaign_root):
     """The negative control: the guard must not fire on a normal, unambiguous halt,
     or it would silently disable the whole policy."""
-    state = {"flags": {"no_signal_artifact_flagged": True,
-                       # Non-classifier flags must be ignored entirely.
-                       "holdout_reserved": False, "validation_approved": True}}
+    state = {
+        "flags": {
+            "no_signal_artifact_flagged": True,
+            # Non-classifier flags must be ignored entirely.
+            "holdout_reserved": False,
+            "validation_approved": True,
+        }
+    }
     assert camp._flag_ambiguity(state, "no_signal_artifact") is None
     assert camp._flag_ambiguity({"flags": {}}, "component_gap") is None
 
@@ -527,6 +623,7 @@ def test_clean_single_flag_is_not_ambiguous(campaign_root):
 # ---------------------------------------------------------------------------
 # 6. The R11 table must not rot away from _classify_human_pause
 # ---------------------------------------------------------------------------
+
 
 def test_pause_flag_table_still_matches_classify_human_pause(tmp_path):
     """_PAUSE_FLAG_TO_REASON duplicates _classify_human_pause's branch order, which
@@ -538,13 +635,13 @@ def test_pause_flag_table_still_matches_classify_human_pause(tmp_path):
         if expected == "stale_escalation_unclaimed":
             # Read by _hard_pause_reason (status == "failed"), not by
             # _classify_human_pause -- asserted through the right door.
-            reason, _ = camp._hard_pause_reason(
-                run_dir, {"status": "failed", "flags": {flag: True}})
+            reason, _ = camp._hard_pause_reason(run_dir, {"status": "failed", "flags": {flag: True}})
             assert reason == expected
             continue
         assert camp._classify_human_pause(run_dir, {"flags": {flag: True}}) == expected, (
             f"_PAUSE_FLAG_TO_REASON maps {flag!r} -> {expected!r}, but "
-            f"_classify_human_pause disagrees -- the R11 cross-check has rotted")
+            f"_classify_human_pause disagrees -- the R11 cross-check has rotted"
+        )
 
     for key, expected in camp._PAUSE_STATE_KEY_TO_REASON:
         assert camp._classify_human_pause(run_dir, {"flags": {}, key: ["x"]}) == expected
@@ -563,17 +660,23 @@ def test_every_known_sticky_flag_branch_has_a_pause_flag_to_reason_entry(tmp_pat
     run_dir = tmp_path / "run_y"
     (run_dir / "artifacts").mkdir(parents=True)
     known_sticky_flags = (
-        "research_only_unverified", "no_signal_artifact_flagged", "conformance_violation",
-        "regime_misattribution_flagged", "component_execution_error_flagged",
-        "kb_reactivation_violation", "pass_rule_evaluation_disagreement",
-        "anti_adjacency_gate_exhausted", "variant_anti_adjacency_gate_refused",
+        "research_only_unverified",
+        "no_signal_artifact_flagged",
+        "conformance_violation",
+        "regime_misattribution_flagged",
+        "component_execution_error_flagged",
+        "kb_reactivation_violation",
+        "pass_rule_evaluation_disagreement",
+        "anti_adjacency_gate_exhausted",
+        "variant_anti_adjacency_gate_refused",
     )
     table_flags = {flag for flag, _ in camp._PAUSE_FLAG_TO_REASON}
     for flag in known_sticky_flags:
         classifier_reason = camp._classify_human_pause(run_dir, {"flags": {flag: True}})
         assert flag in table_flags, (
             f"{flag!r} is a sticky-flag branch in _classify_human_pause (reason "
-            f"{classifier_reason!r}) but has no entry in _PAUSE_FLAG_TO_REASON")
+            f"{classifier_reason!r}) but has no entry in _PAUSE_FLAG_TO_REASON"
+        )
 
 
 def test_quarantine_outcome_is_admissible_without_a_pass_rule_ref():
@@ -587,12 +690,13 @@ def test_quarantine_outcome_is_admissible_without_a_pass_rule_ref():
     import record_schema
 
     assert vce.outcome_is_verdict_bearing(camp._QUARANTINE_OUTCOME) is False
-    assert vce.outcome_is_verdict_bearing("completed_rejected") is True, \
+    assert vce.outcome_is_verdict_bearing("completed_rejected") is True, (
         "sanity: a real scientific claim still needs provenance"
+    )
     vce.validate_verdict_provenance(
-        {"id": "E", "status": "done", "outcome": camp._QUARANTINE_OUTCOME,
-         "run_ids": ["run_803"]},
-        entry_ref="<quarantined entry>", schema=record_schema.QUEUE_ENTRY_SCHEMA)
+        {"id": "E", "status": "done", "outcome": camp._QUARANTINE_OUTCOME, "run_ids": ["run_803"]},
+        entry_ref="<quarantined entry>",
+        schema=record_schema.QUEUE_ENTRY_SCHEMA,
+    )
     # And it is not counted as a gated verdict.
-    assert vce.honest_verdict_count(
-        {}, {"queue": [{"id": "E", "outcome": camp._QUARANTINE_OUTCOME}]}) == []
+    assert vce.honest_verdict_count({}, {"queue": [{"id": "E", "outcome": camp._QUARANTINE_OUTCOME}]}) == []

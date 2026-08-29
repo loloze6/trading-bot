@@ -15,6 +15,7 @@ warmup_prefetch defaults to False. This test proves that default is a true no-op
 IMPORTANT: this is a SLOW INTEGRATION TEST. Run explicitly:
   pytest tests/test_warmup_prefetch_bit_identical.py -v -m slow
 """
+
 import json
 import sys
 from pathlib import Path
@@ -29,9 +30,7 @@ FIXTURE_PATH = PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_reference.
 
 _NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
 _ref = json.loads(FIXTURE_PATH.read_text())
-_CACHE_SKIP = cache_skip_reason(
-    PROJECT_ROOT / "local_data", _NEEDED_CACHES, _ref["start_date"], _ref["end_date"]
-)
+_CACHE_SKIP = cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_CACHES, _ref["start_date"], _ref["end_date"])
 pytestmark = [
     pytest.mark.slow,
     pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),

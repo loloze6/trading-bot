@@ -11,26 +11,28 @@ logger = logging.getLogger("trading_bot")
 
 # >>>>>>>>>>> Component implementations <<<<<<<<<<<
 
+
 class RSquaredRegimeComponent(SubStrategyComponent):
     """
     Measures linear trend strength using the R-squared (Coefficient of Determination)
     of closing prices over time.
     Outputs a value between 0.0 (pure noise/chop) and 1.0 (perfect straight line).
     """
+
     def __init__(self, name: str = "RSquared_Regime", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters or {})
-        self.period = self.parameters.get('period', 48)
+        self.period = self.parameters.get("period", 48)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close'].values[-self.period:]
+            close = data["close"].values[-self.period :]
             x = np.arange(self.period)
             correlation_matrix = np.corrcoef(x, close)
             r_squared = correlation_matrix[0, 1] ** 2
             self._raw_value = r_squared
             self.confidence = 1.0
-            self.debug_info = {'r_squared': float(r_squared)}
+            self.debug_info = {"r_squared": float(r_squared)}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.period
@@ -38,23 +40,25 @@ class RSquaredRegimeComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.period
 
+
 class EfficiencyRatioRegimeComponent(SubStrategyComponent):
     """
     Measures trend efficiency using Kaufman's Efficiency Ratio (ER).
     Outputs a smoothed value between 0.0 (pure chop) and 1.0 (perfectly directional trend).
     """
+
     def __init__(self, name: str = "ER_Regime", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters or {})
-        self.period = self.parameters.get('period', 24)
-        self.smooth_period = self.parameters.get('smooth_period', 5)
+        self.period = self.parameters.get("period", 24)
+        self.smooth_period = self.parameters.get("smooth_period", 5)
         self.er_history = []
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close'].values
+            close = data["close"].values
             raw_change = abs(close[-1] - close[-(self.period + 1)])
-            path_length = np.sum(np.abs(np.diff(close[-(self.period + 1):])))
+            path_length = np.sum(np.abs(np.diff(close[-(self.period + 1) :])))
             raw_er = float(raw_change / path_length) if path_length != 0 else 0.0
             self.er_history.append(raw_er)
             if len(self.er_history) > self.smooth_period * 3:
@@ -63,7 +67,7 @@ class EfficiencyRatioRegimeComponent(SubStrategyComponent):
             smoothed_er = float(er_series.ewm(span=self.smooth_period, adjust=False).mean().iloc[-1])
             self._raw_value = smoothed_er
             self.confidence = 1.0
-            self.debug_info = {'er_raw': raw_er, 'er_smoothed': smoothed_er}
+            self.debug_info = {"er_raw": raw_er, "er_smoothed": smoothed_er}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.period + 1
@@ -71,24 +75,26 @@ class EfficiencyRatioRegimeComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.period + 1
 
+
 class VolatilityPercentileRegimeComponent(SubStrategyComponent):
     """
     Calculates the Smoothed percentile rank of current volatility.
     Outputs a value between 0.0 (dead chop) and 1.0 (explosive volatility).
     """
+
     def __init__(self, name: str = "VolRank_Regime", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters or {})
-        self.vol_period = self.parameters.get('vol_period', 20)
-        self.lookback_period = self.parameters.get('lookback_period', 100)
-        self.smooth_period = self.parameters.get('smooth_period', 5)
+        self.vol_period = self.parameters.get("vol_period", 20)
+        self.lookback_period = self.parameters.get("lookback_period", 100)
+        self.smooth_period = self.parameters.get("smooth_period", 5)
         self.rank_history = []
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close'].values
+            close = data["close"].values
             total_lookback = self.lookback_period + self.vol_period
-            rets = np.diff(close[-total_lookback:]) / close[-total_lookback+1:]
+            rets = np.diff(close[-total_lookback:]) / close[-total_lookback + 1 :]
             vols = pd.Series(rets).rolling(self.vol_period).std().dropna().values
             current_vol = vols[-1]
             if len(vols) > 0:
@@ -102,16 +108,14 @@ class VolatilityPercentileRegimeComponent(SubStrategyComponent):
             smoothed_rank = float(rank_series.ewm(span=self.smooth_period, adjust=False).mean().iloc[-1])
             self._raw_value = smoothed_rank
             self.confidence = 1.0
-            self.debug_info = {
-                'vol_raw_rank': raw_percentile,
-                'vol_percentile_smoothed': smoothed_rank
-            }
+            self.debug_info = {"vol_raw_rank": raw_percentile, "vol_percentile_smoothed": smoothed_rank}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.lookback_period + self.vol_period
 
     def get_required_periods(self) -> int:
         return self.lookback_period + self.vol_period
+
 
 class ADXDirectionalComponent(SubStrategyComponent):
     """
@@ -120,26 +124,24 @@ class ADXDirectionalComponent(SubStrategyComponent):
     During downtrend pauses: -DI stays elevated → |DI-Ratio| > 0.35 → TRENDING maintained,
     blocking the "ER collapse → false RANGING" failure mode. Requires OHLCV (high/low).
     """
+
     def __init__(self, name: str = "ADX_Directional", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters or {})
-        self.period = self.parameters.get('period', 24)
+        self.period = self.parameters.get("period", 24)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            high = data['high'].values
-            low = data['low'].values
-            close = data['close'].values
+            high = data["high"].values
+            low = data["low"].values
+            close = data["close"].values
 
             h_diff = np.diff(high)
             l_diff = np.diff(low)
             plus_dm = np.where((h_diff > -l_diff) & (h_diff > 0), h_diff, 0.0)
             minus_dm = np.where((-l_diff > h_diff) & (-l_diff > 0), -l_diff, 0.0)
 
-            tr = np.maximum(
-                high[1:] - low[1:],
-                np.maximum(np.abs(high[1:] - close[:-1]), np.abs(low[1:] - close[:-1]))
-            )
+            tr = np.maximum(high[1:] - low[1:], np.maximum(np.abs(high[1:] - close[:-1]), np.abs(low[1:] - close[:-1])))
 
             alpha = 1.0 / self.period
             n = len(tr)
@@ -148,9 +150,9 @@ class ADXDirectionalComponent(SubStrategyComponent):
             mdm_s = np.zeros(n)
             tr_s[0], pdm_s[0], mdm_s[0] = tr[0], plus_dm[0], minus_dm[0]
             for i in range(1, n):
-                tr_s[i] = tr_s[i-1] + alpha * (tr[i] - tr_s[i-1])
-                pdm_s[i] = pdm_s[i-1] + alpha * (plus_dm[i] - pdm_s[i-1])
-                mdm_s[i] = mdm_s[i-1] + alpha * (minus_dm[i] - mdm_s[i-1])
+                tr_s[i] = tr_s[i - 1] + alpha * (tr[i] - tr_s[i - 1])
+                pdm_s[i] = pdm_s[i - 1] + alpha * (plus_dm[i] - pdm_s[i - 1])
+                mdm_s[i] = mdm_s[i - 1] + alpha * (minus_dm[i] - mdm_s[i - 1])
 
             eps = 1e-10
             plus_di = 100.0 * pdm_s / (tr_s + eps)
@@ -165,15 +167,15 @@ class ADXDirectionalComponent(SubStrategyComponent):
             adx_s = np.zeros(n)
             adx_s[0] = dx[0]
             for i in range(1, n):
-                adx_s[i] = adx_s[i-1] + alpha * (dx[i] - adx_s[i-1])
+                adx_s[i] = adx_s[i - 1] + alpha * (dx[i] - adx_s[i - 1])
 
             self._raw_value = di_ratio
             self.confidence = 1.0
             self.debug_info = {
-                'adx_value': float(adx_s[-1]),
-                'di_ratio': di_ratio,
-                'plus_di': p_di,
-                'minus_di': m_di,
+                "adx_value": float(adx_s[-1]),
+                "di_ratio": di_ratio,
+                "plus_di": p_di,
+                "minus_di": m_di,
             }
 
     def is_ready(self) -> bool:
@@ -181,6 +183,7 @@ class ADXDirectionalComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.period + 1
+
 
 class VarianceRatioComponent(SubStrategyComponent):
     """
@@ -191,31 +194,29 @@ class VarianceRatioComponent(SubStrategyComponent):
     VR ≈ 1.0 → random walk (trend pause, ambiguous).
     Uses close prices only. Requires window + k bars minimum.
     """
+
     def __init__(self, name: str = "VR5_100", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters or {})
-        self.k = self.parameters.get('k', 5)
-        self.window = self.parameters.get('window', 100)
+        self.k = self.parameters.get("k", 5)
+        self.window = self.parameters.get("window", 100)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close'].values[-(self.window + self.k):]
+            close = data["close"].values[-(self.window + self.k) :]
             log_returns = np.diff(np.log(close))
 
-            var1 = float(np.var(log_returns[-self.window:], ddof=1))
+            var1 = float(np.var(log_returns[-self.window :], ddof=1))
 
-            k_returns = np.array([
-                np.sum(log_returns[i:i + self.k])
-                for i in range(len(log_returns) - self.k + 1)
-            ])
-            var_k = float(np.var(k_returns[-self.window:], ddof=1))
+            k_returns = np.array([np.sum(log_returns[i : i + self.k]) for i in range(len(log_returns) - self.k + 1)])
+            var_k = float(np.var(k_returns[-self.window :], ddof=1))
 
             eps = 1e-12
             vr = var_k / (self.k * var1 + eps)
 
             self._raw_value = vr
             self.confidence = 1.0
-            self.debug_info = {'vr5': vr, 'var1': var1, 'var_k': var_k}
+            self.debug_info = {"vr5": vr, "var1": var1, "var_k": var_k}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.window + self.k
@@ -223,26 +224,28 @@ class VarianceRatioComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.window + self.k
 
+
 class PriceEvolutionComponent(SubStrategyComponent):
     """
     TRENDING REGIME - Primary directional alpha generator.
     Measures the net percentage price change over a specific window and scales it into a forecast.
     """
+
     def __init__(self, name: str = "PriceEvo", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters or {})
-        self.period = self.parameters.get('period', 20)
-        self.scaling_factor = self.parameters.get('scaling_factor', 2.0)
+        self.period = self.parameters.get("period", 20)
+        self.scaling_factor = self.parameters.get("scaling_factor", 2.0)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close'].values
+            close = data["close"].values
             trend_pct = (close[-1] - close[-(self.period + 1)]) / close[-(self.period + 1)] * 100
             self._raw_value = float(trend_pct * self.scaling_factor)
             self.confidence = 1.0
             self.debug_info = {
-                'trend_pct': float(trend_pct),
-                'scaling_factor': float(self.scaling_factor),
+                "trend_pct": float(trend_pct),
+                "scaling_factor": float(self.scaling_factor),
             }
 
     def is_ready(self) -> bool:
@@ -251,26 +254,28 @@ class PriceEvolutionComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.period + 1
 
+
 class RSIPullbackComponent(SubStrategyComponent):
     """
     HEDGE FOR TRENDING REGIME.
     Acts as a micro mean-reversion filter. When the market is overextended in the
     direction of the trend, this outputs a contrarian forecast to dampen the primary signal.
     """
+
     def __init__(self, name: str = "RSIPullback", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters or {})
-        self.period = self.parameters.get('period', 14)
-        self.scaling_factor = self.parameters.get('scaling_factor', 0.4)
-        self.long_only = self.parameters.get('long_only', False)
-        self.entry_threshold = self.parameters.get('entry_threshold', 0.0)
+        self.period = self.parameters.get("period", 14)
+        self.scaling_factor = self.parameters.get("scaling_factor", 0.4)
+        self.long_only = self.parameters.get("long_only", False)
+        self.entry_threshold = self.parameters.get("entry_threshold", 0.0)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close']
+            close = data["close"]
             delta = close.diff()
-            gain = delta.clip(lower=0).ewm(alpha=1/self.period, adjust=False).mean()
-            loss = -delta.clip(upper=0).ewm(alpha=1/self.period, adjust=False).mean()
+            gain = delta.clip(lower=0).ewm(alpha=1 / self.period, adjust=False).mean()
+            loss = -delta.clip(upper=0).ewm(alpha=1 / self.period, adjust=False).mean()
             rs = gain / loss
             rsi_series = 100.0 - (100.0 / (1.0 + rs))
             current_rsi = float(rsi_series.iloc[-1])
@@ -281,13 +286,14 @@ class RSIPullbackComponent(SubStrategyComponent):
                 pullback_score = max(0.0, pullback_score)
             self._raw_value = float(pullback_score)
             self.confidence = 1.0
-            self.debug_info = {'current_rsi': float(current_rsi)}
+            self.debug_info = {"current_rsi": float(current_rsi)}
 
     def generate_forecast(self) -> ComponentOutput:
         output = super().generate_forecast()
         if self.entry_threshold > 0 and abs(output.forecast) < self.entry_threshold:
-            return ComponentOutput(0.0, 0.0, self.name, self.parameters, self.weight,
-                                   {**output.debug_info, 'threshold_filtered': True})
+            return ComponentOutput(
+                0.0, 0.0, self.name, self.parameters, self.weight, {**output.debug_info, "threshold_filtered": True}
+            )
         return output
 
     def is_ready(self) -> bool:
@@ -296,31 +302,33 @@ class RSIPullbackComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.period + 1
 
+
 class EMASpreadComponent(SubStrategyComponent):
     """
     TRENDING REGIME - Primary Directional Alpha.
     Measures the percentage spread between a Fast EMA and a Slow EMA.
     Provides a smoothed, persistent directional forecast that ignores single-candle noise.
     """
+
     def __init__(self, name: str = "EMASpread", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters or {})
-        self.fast_period = self.parameters.get('fast_period', 9)
-        self.slow_period = self.parameters.get('slow_period', 21)
-        self.scaling_factor = self.parameters.get('scaling_factor', 5.0)
+        self.fast_period = self.parameters.get("fast_period", 9)
+        self.slow_period = self.parameters.get("slow_period", 21)
+        self.scaling_factor = self.parameters.get("scaling_factor", 5.0)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close']
+            close = data["close"]
             fast_ema = close.ewm(span=self.fast_period, adjust=False).mean().iloc[-1]
             slow_ema = close.ewm(span=self.slow_period, adjust=False).mean().iloc[-1]
             spread_pct = ((fast_ema - slow_ema) / slow_ema) * 100.0
             self._raw_value = float(spread_pct * self.scaling_factor)
             self.confidence = 1.0
             self.debug_info = {
-                'fast_ema': float(fast_ema),
-                'slow_ema': float(slow_ema),
-                'spread_pct': float(spread_pct),
+                "fast_ema": float(fast_ema),
+                "slow_ema": float(slow_ema),
+                "spread_pct": float(spread_pct),
             }
 
     def is_ready(self) -> bool:
@@ -329,6 +337,7 @@ class EMASpreadComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.slow_period
 
+
 class PriceOverextensionHedgeComponent(SubStrategyComponent):
     """
     HEDGE FOR TRENDING REGIME.
@@ -336,15 +345,18 @@ class PriceOverextensionHedgeComponent(SubStrategyComponent):
     When price deviates too far (exhaustion climax), it outputs a contrarian
     forecast to dynamically reduce position size and protect profits.
     """
-    def __init__(self, name: str = "OverextensionHedge", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self, name: str = "OverextensionHedge", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None
+    ):
         super().__init__(name, weight, parameters or {})
-        self.period = self.parameters.get('period', 21)
-        self.scaling_factor = self.parameters.get('scaling_factor', 2.0)
+        self.period = self.parameters.get("period", 21)
+        self.scaling_factor = self.parameters.get("scaling_factor", 2.0)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close']
+            close = data["close"]
             baseline_ema = close.ewm(span=self.period, adjust=False).mean().iloc[-1]
             rolling_std = close.rolling(window=self.period).std().iloc[-1]
             current_price = close.iloc[-1]
@@ -355,8 +367,8 @@ class PriceOverextensionHedgeComponent(SubStrategyComponent):
             self._raw_value = -float(z_score * self.scaling_factor)
             self.confidence = 1.0
             self.debug_info = {
-                'baseline_ema': float(baseline_ema),
-                'z_score': float(z_score),
+                "baseline_ema": float(baseline_ema),
+                "z_score": float(z_score),
             }
 
     def is_ready(self) -> bool:
@@ -364,6 +376,7 @@ class PriceOverextensionHedgeComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.period
+
 
 class MacroTrendFilterComponent(SubStrategyComponent):
     """
@@ -372,23 +385,26 @@ class MacroTrendFilterComponent(SubStrategyComponent):
     Outputs a baseline directional forecast to prevent shorting in a macro bull market
     and prevent longing in a macro bear market.
     """
-    def __init__(self, name: str = "MacroTrendFilter", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self, name: str = "MacroTrendFilter", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None
+    ):
         super().__init__(name, weight, parameters or {})
-        self.period = self.parameters.get('period', 200)
-        self.scaling_factor = self.parameters.get('scaling_factor', 2.0)
+        self.period = self.parameters.get("period", 200)
+        self.scaling_factor = self.parameters.get("scaling_factor", 2.0)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close']
+            close = data["close"]
             macro_ema = close.ewm(span=self.period, adjust=False).mean().iloc[-1]
             current_price = close.iloc[-1]
             distance_pct = ((current_price - macro_ema) / macro_ema) * 100.0
             self._raw_value = float(distance_pct * self.scaling_factor)
             self.confidence = 1.0
             self.debug_info = {
-                'macro_ema': float(macro_ema),
-                'distance_pct': float(distance_pct),
+                "macro_ema": float(macro_ema),
+                "distance_pct": float(distance_pct),
             }
 
     def is_ready(self) -> bool:
@@ -397,21 +413,25 @@ class MacroTrendFilterComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.period
 
+
 class DonchianBreakoutComponent(SubStrategyComponent):
     """
     TRENDING REGIME - Primary Directional Alpha.
     Measures where the current close sits within the recent N-period High-Low range.
     Zero-lag breakout detection that naturally neutralizes during pullbacks.
     """
-    def __init__(self, name: str = "DonchianBreakout", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self, name: str = "DonchianBreakout", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None
+    ):
         super().__init__(name, weight, parameters or {})
-        self.period = self.parameters.get('period', 48)
-        self.scaling_factor = self.parameters.get('scaling_factor', 20.0)
+        self.period = self.parameters.get("period", 48)
+        self.scaling_factor = self.parameters.get("scaling_factor", 20.0)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close']
+            close = data["close"]
             recent_high = close.rolling(window=self.period).max().iloc[-1]
             recent_low = close.rolling(window=self.period).min().iloc[-1]
             current_price = close.iloc[-1]
@@ -423,9 +443,9 @@ class DonchianBreakoutComponent(SubStrategyComponent):
             self._raw_value = float(oscillator * self.scaling_factor)
             self.confidence = 1.0
             self.debug_info = {
-                'recent_high': float(recent_high),
-                'recent_low': float(recent_low),
-                'oscillator': float(oscillator),
+                "recent_high": float(recent_high),
+                "recent_low": float(recent_low),
+                "oscillator": float(oscillator),
             }
 
     def is_ready(self) -> bool:
@@ -433,6 +453,7 @@ class DonchianBreakoutComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.period
+
 
 class VolumeExpansionHedgeComponent(SubStrategyComponent):
     """
@@ -442,16 +463,19 @@ class VolumeExpansionHedgeComponent(SubStrategyComponent):
     If the market pushes higher on declining/weak volume (Bull Trap),
     this component outputs a contrarian forecast to block the long signal.
     """
-    def __init__(self, name: str = "VolumeExpansionHedge", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
+
+    def __init__(
+        self, name: str = "VolumeExpansionHedge", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None
+    ):
         super().__init__(name, weight, parameters or {})
-        self.vol_period = self.parameters.get('vol_period', 24)
-        self.scaling_factor = self.parameters.get('scaling_factor', 20.0)
+        self.vol_period = self.parameters.get("vol_period", 24)
+        self.scaling_factor = self.parameters.get("scaling_factor", 20.0)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            volume = data['volume'].values
-            close = data['close'].values
+            volume = data["volume"].values
+            close = data["close"].values
             avg_volume = pd.Series(volume).rolling(window=self.vol_period).mean().iloc[-1]
             current_volume = volume[-1]
             price_change = close[-1] - close[-2]
@@ -462,8 +486,8 @@ class VolumeExpansionHedgeComponent(SubStrategyComponent):
                 self._raw_value = 0.0
             self.confidence = 1.0
             self.debug_info = {
-                'avg_volume': float(avg_volume),
-                'current_volume': float(current_volume),
+                "avg_volume": float(avg_volume),
+                "current_volume": float(current_volume),
             }
 
     def is_ready(self) -> bool:
@@ -472,25 +496,27 @@ class VolumeExpansionHedgeComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.vol_period + 1
 
+
 class KeltnerBreakoutComponent(SubStrategyComponent):
     """
     TRENDING REGIME - Primary Directional Alpha.
     Uses Volatility-Adjusted Keltner Channels to filter out slow-grind fakeouts.
     Only generates strong forecasts when price forcefully breaks the ATR bands.
     """
+
     def __init__(self, name: str = "KeltnerBreakout", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters or {})
-        self.ema_period = self.parameters.get('ema_period', 20)
-        self.atr_period = self.parameters.get('atr_period', 20)
-        self.atr_multiplier = self.parameters.get('atr_multiplier', 1.5)
-        self.scaling_factor = self.parameters.get('scaling_factor', 20.0)
+        self.ema_period = self.parameters.get("ema_period", 20)
+        self.atr_period = self.parameters.get("atr_period", 20)
+        self.atr_multiplier = self.parameters.get("atr_multiplier", 1.5)
+        self.scaling_factor = self.parameters.get("scaling_factor", 20.0)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            high = data['high']
-            low = data['low']
-            close = data['close']
+            high = data["high"]
+            low = data["low"]
+            close = data["close"]
             tr1 = high - low
             tr2 = (high - close.shift(1)).abs()
             tr3 = (low - close.shift(1)).abs()
@@ -510,11 +536,11 @@ class KeltnerBreakoutComponent(SubStrategyComponent):
             self._raw_value = float(oscillator * self.scaling_factor)
             self.confidence = 1.0
             self.debug_info = {
-                'baseline_ema': float(baseline_ema),
-                'upper_band': float(upper_band),
-                'lower_band': float(lower_band),
-                'atr': float(atr),
-                'oscillator': float(oscillator),
+                "baseline_ema": float(baseline_ema),
+                "upper_band": float(upper_band),
+                "lower_band": float(lower_band),
+                "atr": float(atr),
+                "oscillator": float(oscillator),
             }
 
     def is_ready(self) -> bool:
@@ -523,9 +549,11 @@ class KeltnerBreakoutComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return max(self.ema_period, self.atr_period) + 1
 
+
 # ============================================================================
 # COMPONENT : BUY AND HOLD STRATEGY
 # ============================================================================
+
 
 class BuyAndHoldStrategy(SubStrategyComponent):
     """Simple buy-and-hold strategy."""
@@ -546,25 +574,28 @@ class BuyAndHoldStrategy(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return 0
 
+
 # ============================================================================
 # COMPONENT : PRICE PERCENTAGE INDICATOR
 # ============================================================================
+
 
 class PriceEvolutionOnPeriodComponent(SubStrategyComponent):
     """
     TRENDING REGIME - Primary trend signal generator.
     Measures net directional momentum over recent window.
     """
+
     def __init__(self, name: str = "PriceEvolutionOnPeriodComponent", weight: float = 0.7, parameters=None):
         super().__init__(name, weight, parameters or {})
-        self.comparison_period = self.parameters.get('comparison_period', 20)
-        self.scaling_factor = self.parameters.get('scaling_factor', 20)
+        self.comparison_period = self.parameters.get("comparison_period", 20)
+        self.scaling_factor = self.parameters.get("scaling_factor", 20)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close'].values
-            trend_pct = (close[-1] - close[-(self.comparison_period+1)]) / close[-(self.comparison_period+1)] * 100
+            close = data["close"].values
+            trend_pct = (close[-1] - close[-(self.comparison_period + 1)]) / close[-(self.comparison_period + 1)] * 100
             self._raw_value = trend_pct
             self.confidence = min(abs(trend_pct) / 10.0, 1.0)
             self.debug_info = {}
@@ -580,29 +611,31 @@ class PriceEvolutionOnPeriodComponent(SubStrategyComponent):
 # COMPONENT DIVERGENCE CHECK BETWEEN MA INDICATOR
 # ============================================================================
 
+
 class MomentumDivergenceComponent(SubStrategyComponent):
     """
     TRENDING REGIME - Secondary trend confirmation.
     Confirms primary trend direction by checking short-term vs long-term momentum alignment.
     """
+
     def __init__(self, name: str = "TrendConfirm5x20", weight: float = 0.3, parameters: Optional[Dict[str, Any]] = {}):
         super().__init__(name, weight, parameters=parameters)
-        self.short_period = self.parameters.get('short_period', 5)
-        self.long_period = self.parameters.get('long_period', 20)
-        self.scaling_factor = self.parameters.get('scaling_factor', 1.5)
+        self.short_period = self.parameters.get("short_period", 5)
+        self.long_period = self.parameters.get("long_period", 20)
+        self.scaling_factor = self.parameters.get("scaling_factor", 1.5)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close'].values
+            close = data["close"].values
             short_trend = (close[-1] - close[-self.short_period]) / close[-self.short_period] * 100
             long_trend = (close[-1] - close[-self.long_period]) / close[-self.long_period] * 100
             alignment = float(short_trend * long_trend)
             self._raw_value = alignment
             self.confidence = min(abs(alignment) / 20.0, 1.0)
             self.debug_info = {
-                'short_trend_pct': float(short_trend),
-                'long_trend_pct': float(long_trend),
+                "short_trend_pct": float(short_trend),
+                "long_trend_pct": float(long_trend),
             }
 
     def is_ready(self) -> bool:
@@ -611,23 +644,25 @@ class MomentumDivergenceComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.long_period
 
+
 # ============================================================================
 # COMPONENT VOLATILITY INDICATOR
 # ============================================================================
+
 
 class VolatilityFromStdDevComponent(SubStrategyComponent):
     """Volatility filter based on standard deviation of price returns."""
 
     def __init__(self, name="RegimeVol", weight=0.3, parameters=None):
         super().__init__(name, weight, parameters or {})
-        self.vol_period = self.parameters.get('vol_period', 20)
-        self.scaling_factor = self.parameters.get('scaling_factor', 1.0)
+        self.vol_period = self.parameters.get("vol_period", 20)
+        self.scaling_factor = self.parameters.get("scaling_factor", 1.0)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            close = data['close'].values
-            rets = np.diff(close[-self.vol_period:]) / close[-self.vol_period+1:]
+            close = data["close"].values
+            rets = np.diff(close[-self.vol_period :]) / close[-self.vol_period + 1 :]
             vol_pct = np.std(rets) * 100
             self._raw_value = vol_pct
             self.confidence = min(vol_pct / 5.0, 1.0)
@@ -639,23 +674,25 @@ class VolatilityFromStdDevComponent(SubStrategyComponent):
     def get_required_periods(self) -> int:
         return self.vol_period
 
+
 # ============================================================================
 # COMPONENT EMA DIFFERENCES
 # ============================================================================
+
 
 class EMADiff(SubStrategyComponent):
     """Forecast based on Short vs Long EMA gap."""
 
     def __init__(self, name="RegimeVol", weight=0.3, parameters=None):
         super().__init__(name, weight, parameters or {})
-        self.ST_EMA_period = self.parameters.get('ST_EMA_period', 12)
-        self.LT_EMA_period = self.parameters.get('LT_EMA_period', 26)
+        self.ST_EMA_period = self.parameters.get("ST_EMA_period", 12)
+        self.LT_EMA_period = self.parameters.get("LT_EMA_period", 26)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
-            ST_EMA = data['close'].ewm(span=self.ST_EMA_period).mean().iloc[-1]
-            LT_EMA = data['close'].ewm(span=self.LT_EMA_period).mean().iloc[-1]
+            ST_EMA = data["close"].ewm(span=self.ST_EMA_period).mean().iloc[-1]
+            LT_EMA = data["close"].ewm(span=self.LT_EMA_period).mean().iloc[-1]
             self._raw_value = ST_EMA - LT_EMA
             self.confidence = min(self._raw_value / 5.0, 1.0)
             self.debug_info = {}
@@ -671,6 +708,7 @@ class EMADiff(SubStrategyComponent):
 # COMPONENT: FUNDING RATE MEAN REVERSION  (H-041-A, Improvement 01)
 # edge_source.category: structural_forced_flow
 # ============================================================================
+
 
 class FundingRateMeanReversionComponent(SubStrategyComponent):
     """
@@ -754,6 +792,7 @@ class FundingRateMeanReversionComponent(SubStrategyComponent):
 # edge_source.category: persistent_behavioral_bias
 # ============================================================================
 
+
 class FearGreedContrarianComponent(SubStrategyComponent):
     """
     Contrarian sentiment signal firing at daily boundary bars (UTC hour == 0).
@@ -802,9 +841,9 @@ class FearGreedContrarianComponent(SubStrategyComponent):
         fg = float(fg)
 
         if fg < self.fear_threshold:
-            signal = self.scaling_factor          # contrarian: buy into fear
+            signal = self.scaling_factor  # contrarian: buy into fear
         elif fg > self.greed_threshold:
-            signal = -self.scaling_factor         # contrarian: sell into greed
+            signal = -self.scaling_factor  # contrarian: sell into greed
         else:
             return
 
@@ -827,6 +866,7 @@ class FearGreedContrarianComponent(SubStrategyComponent):
 # COMPONENT: MACD HISTOGRAM CROSSOVER  (H-MACD, run_053)
 # edge_source.category: persistent_behavioral_bias
 # ============================================================================
+
 
 class MacdHistogramCrossoverComponent(SubStrategyComponent):
     """
@@ -865,7 +905,7 @@ class MacdHistogramCrossoverComponent(SubStrategyComponent):
         if not self.is_ready():
             return
 
-        close = data['close']
+        close = data["close"]
         fast_ema = close.ewm(span=self.fast_period, adjust=False).mean()
         slow_ema = close.ewm(span=self.slow_period, adjust=False).mean()
         macd_line = fast_ema - slow_ema
@@ -891,10 +931,10 @@ class MacdHistogramCrossoverComponent(SubStrategyComponent):
             self.confidence = 0.0
 
         self.debug_info = {
-            'macd_line': float(macd_line.iloc[-1]),
-            'signal_line': float(signal_line.iloc[-1]),
-            'histogram': current_hist,
-            'crossover_direction': crossover_direction,
+            "macd_line": float(macd_line.iloc[-1]),
+            "signal_line": float(signal_line.iloc[-1]),
+            "histogram": current_hist,
+            "crossover_direction": crossover_direction,
         }
 
         self._prev_histogram_sign = current_sign
@@ -910,6 +950,7 @@ class MacdHistogramCrossoverComponent(SubStrategyComponent):
 # COMPONENT: SMA TREND, LONG-ONLY (P4_ts_trend, SMA(100)-daily)
 # edge_source.category: persistent_behavioral_bias
 # ============================================================================
+
 
 class SmaTrendLongOnlyComponent(SubStrategyComponent):
     """
@@ -957,35 +998,36 @@ class SmaTrendLongOnlyComponent(SubStrategyComponent):
         if not self.is_ready():
             return
 
-        close = data['close']
+        close = data["close"]
         sma = close.rolling(self.lookback_L).mean()
 
         # One-bar lag (see class docstring "ENGINE LIMITATION") -- use the
         # PRIOR bar's fully-formed close/SMA, not the current bar's, so the
         # signal a bar acts on was already determined before that bar started.
         prior_close = float(close.iloc[-2])
-        prior_sma   = float(sma.iloc[-2])
-        is_long     = prior_close > prior_sma
+        prior_sma = float(sma.iloc[-2])
+        is_long = prior_close > prior_sma
 
         self._raw_value = self.scaling_factor if is_long else 0.0
         self.confidence = 1.0
         self.debug_info = {
-            'prior_close': prior_close,
-            'prior_sma': prior_sma,
-            'is_long': is_long,
+            "prior_close": prior_close,
+            "prior_sma": prior_sma,
+            "is_long": is_long,
         }
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
-        return self.lookback_L + 1   # +1 for the one-bar lag (bar T-1 must be fully formed)
+        return self.lookback_L + 1  # +1 for the one-bar lag (bar T-1 must be fully formed)
 
 
 # ============================================================================
 # COMPONENT: GATED SMA TREND, LONG-ONLY (P4_ts_trend_r1_er_gate, entry-latch)
 # edge_source.category: persistent_behavioral_bias
 # ============================================================================
+
 
 class GatedSmaTrendLongOnlyComponent(SubStrategyComponent):
     """
@@ -1058,9 +1100,9 @@ class GatedSmaTrendLongOnlyComponent(SubStrategyComponent):
         self._raw_value = 0.0
         self._in_position = False
         self._prior_signal = False  # False until the first computable bar --
-                                     # matches SmaTrendLongOnlyComponent/
-                                     # MacdHistogramCrossoverComponent's
-                                     # "no fabricated transition at warmup" rule
+        # matches SmaTrendLongOnlyComponent/
+        # MacdHistogramCrossoverComponent's
+        # "no fabricated transition at warmup" rule
 
     def update(self, data: pd.DataFrame):
         self.data = data
@@ -1070,7 +1112,7 @@ class GatedSmaTrendLongOnlyComponent(SubStrategyComponent):
         if not self.is_ready():
             return
 
-        close = data['close']
+        close = data["close"]
         sma = close.rolling(self.lookback_L).mean()
 
         # One-bar lag (see class docstring "ENGINE CAVEAT") -- identical
@@ -1083,7 +1125,7 @@ class GatedSmaTrendLongOnlyComponent(SubStrategyComponent):
         # Kaufman ER(er_period), RAW (unsmoothed), same one-bar lag: window
         # ends at the same prior bar (T-1) the SMA comparison uses.
         close_vals = close.values
-        er_window = close_vals[-(self.er_period + 2):-1]  # er_period+1 closes ending at T-1
+        er_window = close_vals[-(self.er_period + 2) : -1]  # er_period+1 closes ending at T-1
         raw_change = abs(float(er_window[-1]) - float(er_window[0]))
         path_length = float(np.sum(np.abs(np.diff(er_window))))
         prior_er = raw_change / path_length if path_length != 0 else 0.0
@@ -1114,14 +1156,14 @@ class GatedSmaTrendLongOnlyComponent(SubStrategyComponent):
         self.confidence = 1.0
 
         self.debug_info = {
-            'prior_close': prior_close,
-            'prior_sma': prior_sma,
-            'is_long_signal': is_long_signal,
-            'prior_er': prior_er,
-            'gate_threshold': self.gate_threshold,
-            'in_position': self._in_position,
-            'entered_this_bar': entered_this_bar,
-            'gate_rejected_this_bar': gate_rejected_this_bar,
+            "prior_close": prior_close,
+            "prior_sma": prior_sma,
+            "is_long_signal": is_long_signal,
+            "prior_er": prior_er,
+            "gate_threshold": self.gate_threshold,
+            "in_position": self._in_position,
+            "entered_this_bar": entered_this_bar,
+            "gate_rejected_this_bar": gate_rejected_this_bar,
         }
 
         self._prior_signal = is_long_signal
@@ -1337,10 +1379,7 @@ class WhaleLargeTradeImbalanceComponent(SubStrategyComponent):
         if not self.is_ready():
             return
 
-        missing = [
-            c for c in (WHALE_LT_IMBALANCE_COLUMN, WHALE_ATTESTED_COLUMN)
-            if c not in data.columns
-        ]
+        missing = [c for c in (WHALE_LT_IMBALANCE_COLUMN, WHALE_ATTESTED_COLUMN) if c not in data.columns]
         if missing:
             self._abstain("aux_feed_columns_absent", missing_columns=missing)
             return

@@ -104,9 +104,7 @@ def validate(config: dict) -> List[str]:
         for k, step in enumerate(transforms):
             op = step.get("op")
             if op not in TRANSFORM_OPS_REGISTRY:
-                violations.append(
-                    f"VIOLATION V3 {loc}[{k}].op: '{op}' not in TRANSFORM_OPS_REGISTRY"
-                )
+                violations.append(f"VIOLATION V3 {loc}[{k}].op: '{op}' not in TRANSFORM_OPS_REGISTRY")
 
     # V4: every op has a TRANSFORM_MIN_PERIODS entry
     for loc, transforms in _all_transform_lists(config):
@@ -116,9 +114,7 @@ def validate(config: dict) -> List[str]:
                 try:
                     transform_min_periods(op, step.get("params", {}))
                 except KeyError:
-                    violations.append(
-                        f"VIOLATION V4 {loc}[{k}].op: '{op}' has no TRANSFORM_MIN_PERIODS entry"
-                    )
+                    violations.append(f"VIOLATION V4 {loc}[{k}].op: '{op}' has no TRANSFORM_MIN_PERIODS entry")
 
     # V5: in every transforms list, no history-based op appears after a scalar/data-aware op
     for loc, transforms in _all_transform_lists(config):
@@ -148,9 +144,7 @@ def validate(config: dict) -> List[str]:
         except KeyError:
             return  # V4 already flagged missing entry
         if lookback < min_needed:
-            violations.append(
-                f"VIOLATION V6 {loc}: lookback={lookback} < transform min_periods={min_needed}"
-            )
+            violations.append(f"VIOLATION V6 {loc}: lookback={lookback} < transform min_periods={min_needed}")
 
     for rname, rcfg in rd.get("regimes", {}).items():
         if rcfg is None:
@@ -273,9 +267,7 @@ def validate(config: dict) -> List[str]:
             else:
                 total_weight += float(w)
         if all_numeric and total_weight <= 0:
-            violations.append(
-                f"VIOLATION V8 strategies.regimes.{rname}: total weight {total_weight} is not > 0"
-            )
+            violations.append(f"VIOLATION V8 strategies.regimes.{rname}: total weight {total_weight} is not > 0")
 
     return violations
 

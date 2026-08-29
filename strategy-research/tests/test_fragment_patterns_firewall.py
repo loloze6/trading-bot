@@ -6,6 +6,7 @@ be a decision-path input. These are static/import-graph checks, not
 convention -- if any of them fail, the firewall has been breached in code or
 in a skill's documented required inputs, regardless of intent.
 """
+
 import ast
 from pathlib import Path
 
@@ -50,8 +51,9 @@ def test_no_decision_path_module_imports_fragment_patterns():
     allowed."""
     allowed = {"fragment_patterns.py", "test_fragment_patterns_firewall.py"}
     offenders = []
-    for py_path in list((STRATEGY_RESEARCH / "tools").glob("*.py")) + \
-                    list((STRATEGY_RESEARCH / "workflow").glob("*.py")):
+    for py_path in list((STRATEGY_RESEARCH / "tools").glob("*.py")) + list(
+        (STRATEGY_RESEARCH / "workflow").glob("*.py")
+    ):
         if py_path.name in allowed:
             continue
         if "fragment_patterns" in _imported_module_names(py_path):
@@ -85,6 +87,7 @@ def test_fragment_patterns_module_has_no_decision_rule_functions():
     which would suggest scope creep back into the decision path."""
     import importlib
     import sys
+
     sys.path.insert(0, str(TOOLS))
     fp = importlib.import_module("fragment_patterns")
     forbidden_substrings = ["evaluate_against_decision_rules", "decision_rule", "_verdict"]

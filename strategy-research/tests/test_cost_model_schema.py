@@ -41,6 +41,7 @@ def cost_model():
 # verdict_execution_style hard rule
 # ---------------------------------------------------------------------------
 
+
 def test_verdict_execution_style_present_and_taker(cost_model):
     assert "verdict_execution_style" in cost_model, (
         "cost_model.yaml is missing verdict_execution_style — gates and promotion "
@@ -57,17 +58,30 @@ def test_verdict_execution_style_present_and_taker(cost_model):
 # prescreen_signal.py._load_cost_model / run_protocol.py._cost_paid_bps)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("key", [
-    "fee_rate_bps", "spread_estimate_bps", "slippage_estimate_bps",
-    "round_trip_cost_bps", "safety_factor",
-])
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "fee_rate_bps",
+        "spread_estimate_bps",
+        "slippage_estimate_bps",
+        "round_trip_cost_bps",
+        "safety_factor",
+    ],
+)
 def test_required_top_level_key_present(cost_model, key):
     assert key in cost_model, f"cost_model.yaml missing required top-level key: {key}"
 
 
-@pytest.mark.parametrize("block_key", [
-    "fee_rate_bps", "spread_estimate_bps", "slippage_estimate_bps", "round_trip_cost_bps",
-])
+@pytest.mark.parametrize(
+    "block_key",
+    [
+        "fee_rate_bps",
+        "spread_estimate_bps",
+        "slippage_estimate_bps",
+        "round_trip_cost_bps",
+    ],
+)
 @pytest.mark.parametrize("symbol", P2_SYMBOLS)
 def test_p2_symbol_present_in_taker_blocks(cost_model, block_key, symbol):
     block = cost_model[block_key]
@@ -86,8 +100,7 @@ def test_safety_factor_plausible(cost_model):
 def test_taker_fee_bounds(cost_model, symbol):
     fee = cost_model["fee_rate_bps"][symbol]
     assert FEE_BPS_MIN <= fee <= FEE_BPS_MAX, (
-        f"fee_rate_bps[{symbol}]={fee} outside plausible Binance spot range "
-        f"[{FEE_BPS_MIN}, {FEE_BPS_MAX}] bps"
+        f"fee_rate_bps[{symbol}]={fee} outside plausible Binance spot range [{FEE_BPS_MIN}, {FEE_BPS_MAX}] bps"
     )
 
 
@@ -95,8 +108,7 @@ def test_taker_fee_bounds(cost_model, symbol):
 def test_taker_spread_bounds(cost_model, symbol):
     spread = cost_model["spread_estimate_bps"][symbol]
     assert SPREAD_BPS_MIN <= spread <= SPREAD_BPS_MAX, (
-        f"spread_estimate_bps[{symbol}]={spread} outside plausible range "
-        f"[{SPREAD_BPS_MIN}, {SPREAD_BPS_MAX}] bps"
+        f"spread_estimate_bps[{symbol}]={spread} outside plausible range [{SPREAD_BPS_MIN}, {SPREAD_BPS_MAX}] bps"
     )
 
 
@@ -104,8 +116,7 @@ def test_taker_spread_bounds(cost_model, symbol):
 def test_taker_slippage_bounds(cost_model, symbol):
     slip = cost_model["slippage_estimate_bps"][symbol]
     assert SLIPPAGE_BPS_MIN <= slip <= SLIPPAGE_BPS_MAX, (
-        f"slippage_estimate_bps[{symbol}]={slip} outside plausible range "
-        f"[{SLIPPAGE_BPS_MIN}, {SLIPPAGE_BPS_MAX}] bps"
+        f"slippage_estimate_bps[{symbol}]={slip} outside plausible range [{SLIPPAGE_BPS_MIN}, {SLIPPAGE_BPS_MAX}] bps"
     )
 
 
@@ -113,8 +124,7 @@ def test_taker_slippage_bounds(cost_model, symbol):
 def test_round_trip_cost_bounds_and_arithmetic(cost_model, symbol):
     rtc = cost_model["round_trip_cost_bps"][symbol]
     assert ROUND_TRIP_BPS_MIN <= rtc <= ROUND_TRIP_BPS_MAX, (
-        f"round_trip_cost_bps[{symbol}]={rtc} outside plausible range "
-        f"[{ROUND_TRIP_BPS_MIN}, {ROUND_TRIP_BPS_MAX}] bps"
+        f"round_trip_cost_bps[{symbol}]={rtc} outside plausible range [{ROUND_TRIP_BPS_MIN}, {ROUND_TRIP_BPS_MAX}] bps"
     )
     fee = cost_model["fee_rate_bps"][symbol]
     spread = cost_model["spread_estimate_bps"][symbol]
@@ -129,6 +139,7 @@ def test_round_trip_cost_bounds_and_arithmetic(cost_model, symbol):
 # ---------------------------------------------------------------------------
 # execution_style block (additive maker/taker variants)
 # ---------------------------------------------------------------------------
+
 
 def test_execution_style_present(cost_model):
     assert "execution_style" in cost_model, "cost_model.yaml missing execution_style block"
@@ -161,9 +172,7 @@ def test_execution_style_maker_fee_never_worse_than_taker(cost_model, symbol):
 @pytest.mark.parametrize("symbol", P2_SYMBOLS)
 def test_execution_style_maker_fill_rate_is_probability(cost_model, symbol):
     rate = cost_model["execution_style"]["maker"]["assumed_fill_rate"][symbol]
-    assert 0.0 < rate <= 1.0, (
-        f"assumed_fill_rate[{symbol}]={rate} must be a probability in (0, 1]"
-    )
+    assert 0.0 < rate <= 1.0, f"assumed_fill_rate[{symbol}]={rate} must be a probability in (0, 1]"
 
 
 @pytest.mark.parametrize("symbol", P2_SYMBOLS)
@@ -179,13 +188,11 @@ def test_execution_style_maker_blended_between_if_filled_and_taker(cost_model, s
     blended = maker["round_trip_cost_bps_blended"][symbol]
     lo, hi = min(if_filled, taker_rtc), max(if_filled, taker_rtc)
     assert lo - 0.01 <= blended <= hi + 0.01, (
-        f"round_trip_cost_bps_blended[{symbol}]={blended} outside "
-        f"[if_filled={if_filled}, taker={taker_rtc}]"
+        f"round_trip_cost_bps_blended[{symbol}]={blended} outside [if_filled={if_filled}, taker={taker_rtc}]"
     )
 
     fill_rate = maker["assumed_fill_rate"][symbol]
     expected = round(fill_rate * if_filled + (1 - fill_rate) * taker_rtc, 2)
     assert abs(blended - expected) < 0.02, (
-        f"round_trip_cost_bps_blended[{symbol}]={blended} != "
-        f"fill_rate*if_filled + (1-fill_rate)*taker={expected}"
+        f"round_trip_cost_bps_blended[{symbol}]={blended} != fill_rate*if_filled + (1-fill_rate)*taker={expected}"
     )

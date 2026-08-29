@@ -14,6 +14,7 @@ Covers:
 All tests are fast (no full launcher backtest): the byte-identity / integration cases
 drive TradingBot._process_symbol_candle_completion directly over lightweight stubs.
 """
+
 import logging
 import sys
 from pathlib import Path
@@ -35,11 +36,14 @@ SYMBOL = "BTCUSDT"
 # §5(d) examples 1-4, 7 — apply_funding accrual mechanics
 # ---------------------------------------------------------------------------
 
+
 def _portfolio(free_qty=0.0, locked_qty=0.0, usdt_free=100000.0):
-    p = MockPortfolioInfo(initial_balance={
-        "USDT": {"free": usdt_free, "locked": 0.0},
-        SYMBOL: {"free": free_qty, "locked": locked_qty},
-    })
+    p = MockPortfolioInfo(
+        initial_balance={
+            "USDT": {"free": usdt_free, "locked": 0.0},
+            SYMBOL: {"free": free_qty, "locked": locked_qty},
+        }
+    )
     return p
 
 
@@ -106,6 +110,7 @@ def test_example7_fee_funding_orthogonality():
 # §5(d) examples 5-6 + settlement-boundary timing — the daily series builder
 # ---------------------------------------------------------------------------
 
+
 def _write_funding_csv(data_dir, rows):
     """rows: list of (timestamp_str, funding_rate)."""
     df = pd.DataFrame(rows, columns=["timestamp", "funding_rate"])
@@ -118,11 +123,14 @@ def _write_funding_csv(data_dir, rows):
 def test_example5_daily_aggregation_by_sum(tmp_path):
     """8h rates [+0.0001, +0.0001, -0.0002] for a day → f_bar = 0.0 (SUM, not
     forward-fill-last which would wrongly use -0.0002)."""
-    _write_funding_csv(tmp_path, [
-        ("2024-01-01 00:00:00", 0.0001),
-        ("2024-01-01 08:00:00", 0.0001),
-        ("2024-01-01 16:00:00", -0.0002),
-    ])
+    _write_funding_csv(
+        tmp_path,
+        [
+            ("2024-01-01 00:00:00", 0.0001),
+            ("2024-01-01 08:00:00", 0.0001),
+            ("2024-01-01 16:00:00", -0.0002),
+        ],
+    )
     series = build_daily_funding_series([SYMBOL], str(tmp_path), "2024-01-01", "2024-01-01")
     day = pd.Timestamp("2024-01-01")
     assert series[SYMBOL][day] == pytest.approx(0.0)
@@ -133,11 +141,14 @@ def test_example5_daily_aggregation_by_sum(tmp_path):
 
 def test_example6_partial_day_no_imputation(tmp_path):
     """Only two settlements present → f_bar sums the two; no third is imputed."""
-    _write_funding_csv(tmp_path, [
-        ("2024-01-02 00:00:00", 0.0001),
-        ("2024-01-02 08:00:00", 0.0004),
-        # 16:00 missing
-    ])
+    _write_funding_csv(
+        tmp_path,
+        [
+            ("2024-01-02 00:00:00", 0.0001),
+            ("2024-01-02 08:00:00", 0.0004),
+            # 16:00 missing
+        ],
+    )
     series = build_daily_funding_series([SYMBOL], str(tmp_path), "2024-01-02", "2024-01-02")
     assert series[SYMBOL][pd.Timestamp("2024-01-02")] == pytest.approx(0.0005)
 
@@ -145,17 +156,20 @@ def test_example6_partial_day_no_imputation(tmp_path):
 def test_settlement_boundary_00utc_lands_on_exactly_one_bar(tmp_path):
     """The 00:00 UTC settlement is dated to its OWN day, counted once — no double-count
     or leak across the daily boundary."""
-    _write_funding_csv(tmp_path, [
-        ("2024-01-03 00:00:00", 0.0001),
-        ("2024-01-03 08:00:00", 0.0002),
-        ("2024-01-03 16:00:00", 0.0003),
-        ("2024-01-04 00:00:00", 0.0007),   # belongs to Jan-04, not Jan-03
-        ("2024-01-04 08:00:00", 0.0001),
-    ])
+    _write_funding_csv(
+        tmp_path,
+        [
+            ("2024-01-03 00:00:00", 0.0001),
+            ("2024-01-03 08:00:00", 0.0002),
+            ("2024-01-03 16:00:00", 0.0003),
+            ("2024-01-04 00:00:00", 0.0007),  # belongs to Jan-04, not Jan-03
+            ("2024-01-04 08:00:00", 0.0001),
+        ],
+    )
     series = build_daily_funding_series([SYMBOL], str(tmp_path), "2024-01-03", "2024-01-04")[SYMBOL]
     d3, d4 = pd.Timestamp("2024-01-03"), pd.Timestamp("2024-01-04")
-    assert series[d3] == pytest.approx(0.0001 + 0.0002 + 0.0003)   # only Jan-03's three
-    assert series[d4] == pytest.approx(0.0007 + 0.0001)            # Jan-04's 00:00 counted here
+    assert series[d3] == pytest.approx(0.0001 + 0.0002 + 0.0003)  # only Jan-03's three
+    assert series[d4] == pytest.approx(0.0007 + 0.0001)  # Jan-04's 00:00 counted here
     # total across days equals sum of every settlement exactly once (no leak/dup)
     assert sum(series.values()) == pytest.approx(0.0001 + 0.0002 + 0.0003 + 0.0007 + 0.0001)
 
@@ -163,6 +177,7 @@ def test_settlement_boundary_00utc_lands_on_exactly_one_bar(tmp_path):
 # ---------------------------------------------------------------------------
 # Lightweight stub stack to drive _process_symbol_candle_completion
 # ---------------------------------------------------------------------------
+
 
 class _FakeSignal:
     def __init__(self, forecast=0.0):
@@ -182,7 +197,7 @@ class _NoRebalanceForecastManager:
         return 0.0
 
     def calculate_allocation_change(self, target, previous):
-        return 0.0   # never rebalance → isolate the funding accrual
+        return 0.0  # never rebalance → isolate the funding accrual
 
 
 class _AlwaysRebalanceForecastManager:
@@ -190,7 +205,7 @@ class _AlwaysRebalanceForecastManager:
         return 1.0
 
     def calculate_allocation_change(self, target, previous):
-        return 1.0   # always enter the rebalance branch
+        return 1.0  # always enter the rebalance branch
 
 
 class _ApproveAllRisk:
@@ -201,6 +216,7 @@ class _ApproveAllRisk:
 class _FlipExec:
     """On rebalance, replace the held position with a fixed long (proves funding is
     charged on the PRE-trade held position, not the rebalanced-into one)."""
+
     def __init__(self, portfolio):
         self.portfolio = portfolio
 
@@ -232,6 +248,7 @@ class _CaptureTracker:
 
 class _SpyPortfolio(MockPortfolioInfo):
     """Records the net position quantity seen at each apply_funding call."""
+
     def __init__(self, *a, **k):
         super().__init__(*a, **k)
         self.funding_qty_seen = []
@@ -247,8 +264,7 @@ def _bar(ts, close):
     return pd.DataFrame({"timestamp": [pd.Timestamp(ts)], "close": [close]})
 
 
-def _build_bot(portfolio, forecast_manager, tracker,
-               data_manager, execution_handler=None, risk_manager=None):
+def _build_bot(portfolio, forecast_manager, tracker, data_manager, execution_handler=None, risk_manager=None):
     return TradingBot(
         data_manager=data_manager,
         strategy=_FakeStrategy(),
@@ -267,10 +283,12 @@ def _run_two_flat_bars(model_funding, funding_daily):
     """Held short across two flat-price bars; return the recorded bar-level
     total_portfolio_value series. USDT free 20,000; short 0.5 BTC @ 20,000
     (total = 20,000 - 10,000 = 10,000)."""
-    portfolio = MockPortfolioInfo(initial_balance={
-        "USDT": {"free": 20000.0, "locked": 0.0},
-        SYMBOL: {"free": 0.0, "locked": 0.5},
-    })
+    portfolio = MockPortfolioInfo(
+        initial_balance={
+            "USDT": {"free": 20000.0, "locked": 0.0},
+            SYMBOL: {"free": 0.0, "locked": 0.5},
+        }
+    )
     tracker = _CaptureTracker()
     dm = _FakeDataManager()
     bot = _build_bot(portfolio, _NoRebalanceForecastManager(), tracker, dm)
@@ -287,15 +305,17 @@ def test_flag_off_byte_identity_regardless_of_feed():
     """FLAG-OFF BYTE-IDENTITY: with model_funding=False the bar-level
     total_portfolio_value series is identical whether or not a funding feed is
     present — the default path is untouched by the new mechanism."""
-    feed = {SYMBOL: {
-        pd.Timestamp("2024-01-01"): 0.0003,
-        pd.Timestamp("2024-01-02"): 0.0003,
-    }}
+    feed = {
+        SYMBOL: {
+            pd.Timestamp("2024-01-01"): 0.0003,
+            pd.Timestamp("2024-01-02"): 0.0003,
+        }
+    }
     baseline_no_feed = _run_two_flat_bars(model_funding=False, funding_daily=None)
     off_with_feed = _run_two_flat_bars(model_funding=False, funding_daily=feed)
 
     assert baseline_no_feed == [10000.0, 10000.0]
-    assert off_with_feed == baseline_no_feed   # feed presence makes no difference when off
+    assert off_with_feed == baseline_no_feed  # feed presence makes no difference when off
 
 
 def test_example8_bar_level_integration_short_earns_credit():
@@ -303,10 +323,12 @@ def test_example8_bar_level_integration_short_earns_credit():
     bar-level total_portfolio_value rises by exactly the credit each bar — confirming
     funding reaches the metrics series. Short 0.5 BTC @ 20,000, f_bar=+0.0003 →
     +3.00/bar credit."""
-    feed = {SYMBOL: {
-        pd.Timestamp("2024-01-01"): 0.0003,
-        pd.Timestamp("2024-01-02"): 0.0003,
-    }}
+    feed = {
+        SYMBOL: {
+            pd.Timestamp("2024-01-01"): 0.0003,
+            pd.Timestamp("2024-01-02"): 0.0003,
+        }
+    }
     on = _run_two_flat_bars(model_funding=True, funding_daily=feed)
     # credit per bar = -(-1) * (0.5*20000) * 0.0003 = +3.00, cumulative in USDT.free
     assert on == [pytest.approx(10003.0), pytest.approx(10006.0)]
@@ -321,20 +343,30 @@ def test_funding_charged_on_position_held_into_bar_not_rebalanced_into():
     balances), never the one the bar rebalances into. Bar 1 holds a short 0.5 then
     rebalances to long 2.0; bar 2 holds that long 2.0. apply_funding must see the
     held-into quantity each bar."""
-    portfolio = _SpyPortfolio(initial_balance={
-        "USDT": {"free": 20000.0, "locked": 0.0},
-        SYMBOL: {"free": 0.0, "locked": 0.5},
-    })
+    portfolio = _SpyPortfolio(
+        initial_balance={
+            "USDT": {"free": 20000.0, "locked": 0.0},
+            SYMBOL: {"free": 0.0, "locked": 0.5},
+        }
+    )
     tracker = _CaptureTracker()
     dm = _FakeDataManager()
     execn = _FlipExec(portfolio)
-    bot = _build_bot(portfolio, _AlwaysRebalanceForecastManager(), tracker, dm,
-                     execution_handler=execn, risk_manager=_ApproveAllRisk())
+    bot = _build_bot(
+        portfolio,
+        _AlwaysRebalanceForecastManager(),
+        tracker,
+        dm,
+        execution_handler=execn,
+        risk_manager=_ApproveAllRisk(),
+    )
     bot.model_funding = True
-    bot.funding_daily = {SYMBOL: {
-        pd.Timestamp("2024-01-01"): 0.0003,
-        pd.Timestamp("2024-01-02"): 0.0003,
-    }}
+    bot.funding_daily = {
+        SYMBOL: {
+            pd.Timestamp("2024-01-01"): 0.0003,
+            pd.Timestamp("2024-01-02"): 0.0003,
+        }
+    }
 
     for ts in ("2024-01-01 00:00:00", "2024-01-02 00:00:00"):
         dm.set_bar(_bar(ts, 20000.0))

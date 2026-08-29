@@ -63,6 +63,7 @@ terminating run did not itself test.
 CLI:
   python strategy-research/tools/anti_adjacency_gate.py <candidate.yaml> [--digest ...] [--kb ...] [--out ...]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -112,6 +113,7 @@ def _hid_contains_match(a: str, b: str) -> bool:
 # GateResult
 # ---------------------------------------------------------------------------
 
+
 class GateResult(dict):
     """Thin dict wrapper so tests can do result.route / result["route"] and
     so the CLI can yaml.safe_dump(result) directly."""
@@ -136,6 +138,7 @@ def REFUSE(layer: str, reason: str, **extra) -> GateResult:
 # ---------------------------------------------------------------------------
 # Layer 1 -- KB, mechanism grain
 # ---------------------------------------------------------------------------
+
 
 def _kb_finding_hids(finding: dict) -> list[str]:
     ids = finding.get("hypothesis_ids")
@@ -232,8 +235,9 @@ def _lineage_routing_of_run(run_id: str, runs_dir: Path) -> str | None:
     return data.get("lineage_routing")
 
 
-def _branches_closed_by_lineage_routing(matching_findings: list[dict], all_kb_findings: list[dict],
-                                         runs_dir: Path) -> dict:
+def _branches_closed_by_lineage_routing(
+    matching_findings: list[dict], all_kb_findings: list[dict], runs_dir: Path
+) -> dict:
     """PRECEDENCE RULE, mechanical form.
 
     A branch of a matched (parent) finding's reactivation_condition is
@@ -284,13 +288,13 @@ def _finding_references_parent(child: dict, parent_id: str) -> bool:
     cross-reference is deliberately conservative: it only fires on an
     EXPLICIT textual reference, never inferred from family/mechanism
     similarity alone."""
-    haystack = " ".join(str(child.get(k, "")) for k in
-                         ("mechanism", "exhausted_basis", "outcome_reason"))
+    haystack = " ".join(str(child.get(k, "")) for k in ("mechanism", "exhausted_basis", "outcome_reason"))
     return parent_id in haystack
 
 
-def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
-                     kb_findings: list[dict], runs_dir: Path) -> GateResult | None:
+def layer1_kb_check(
+    candidate_hid: str, candidate_timeframe: str, kb_findings: list[dict], runs_dir: Path
+) -> GateResult | None:
     matching = _kb_findings_matching_candidate(candidate_hid, kb_findings)
     if not matching:
         return None
@@ -329,8 +333,7 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
                 # branch just because one of them (unspecified which) was
                 # consumed.
                 if consumed_by and len(named) == 1:
-                    return REFUSE("kb", f"{fid}: already reactivated by {consumed_by}",
-                                   kb_finding_id=fid)
+                    return REFUSE("kb", f"{fid}: already reactivated by {consumed_by}", kb_finding_id=fid)
                 return ADMIT(
                     "kb",
                     f"{fid}: matches open, unconsumed branch '{candidate_timeframe}' "
@@ -345,8 +348,7 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
             # No reactivation_condition at all here (handled above when
             # present) -- consumed_by means "the whole finding is closed",
             # unchanged from before FIX 2.
-            return REFUSE("kb", f"{fid}: already reactivated by {consumed_by}",
-                           kb_finding_id=fid)
+            return REFUSE("kb", f"{fid}: already reactivated by {consumed_by}", kb_finding_id=fid)
 
         if exhausted:
             # exhausted with NO reactivation_condition = a closed leaf with
@@ -355,8 +357,7 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
             # containment grain) -- an unrelated sibling finding in the
             # same family never reaches this branch of the loop for a
             # candidate it wasn't matched to.
-            return REFUSE("kb", f"{fid}: closed, no open reactivation clause",
-                           kb_finding_id=fid)
+            return REFUSE("kb", f"{fid}: closed, no open reactivation clause", kb_finding_id=fid)
 
         # Neither consumed, nor a reactivation clause, nor exhausted (e.g. an
         # invalidated_artifact placeholder like funding_rate_continuous_mean_
@@ -369,16 +370,19 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
 # Layer 2 -- exclusion digest, family grain THEN composition grain (E-036 S2)
 # ---------------------------------------------------------------------------
 
-def _describe_fingerprint_diff(candidate_fingerprint: dict | None,
-                                entry_fingerprint: dict | None,
-                                entry_fidelity: str) -> str:
+
+def _describe_fingerprint_diff(
+    candidate_fingerprint: dict | None, entry_fingerprint: dict | None, entry_fidelity: str
+) -> str:
     """Human-readable "how they differ" note attached to a NEIGHBOUR result
     (EPIC.md design point 2: "attach the near neighbours to the result --
     run_ids and how they differ"). Never asserts a difference it cannot see:
     a coarse entry or a candidate with no config on hand yields an honest
     "cannot be verified" note, not a fabricated diff."""
     if entry_fidelity != "structured" or entry_fingerprint is None:
-        return "prior run recorded at fidelity=coarse (no structured config on record) -- composition cannot be compared"
+        return (
+            "prior run recorded at fidelity=coarse (no structured config on record) -- composition cannot be compared"
+        )
     if candidate_fingerprint is None:
         return "candidate has no structured config available -- composition cannot be compared"
     if candidate_fingerprint == entry_fingerprint:
@@ -389,11 +393,9 @@ def _describe_fingerprint_diff(candidate_fingerprint: dict | None,
 
     diffs = []
     if candidate_fingerprint.get("mode") != entry_fingerprint.get("mode"):
-        diffs.append(f"regime_detector.mode {entry_fingerprint.get('mode')!r} -> "
-                      f"{candidate_fingerprint.get('mode')!r}")
+        diffs.append(f"regime_detector.mode {entry_fingerprint.get('mode')!r} -> {candidate_fingerprint.get('mode')!r}")
     if candidate_fingerprint.get("rule_count") != entry_fingerprint.get("rule_count"):
-        diffs.append(f"rule_count {entry_fingerprint.get('rule_count')} -> "
-                      f"{candidate_fingerprint.get('rule_count')}")
+        diffs.append(f"rule_count {entry_fingerprint.get('rule_count')} -> {candidate_fingerprint.get('rule_count')}")
     cand_components = {json.dumps(c, sort_keys=True) for c in candidate_fingerprint.get("components", [])}
     entry_components = {json.dumps(c, sort_keys=True) for c in entry_fingerprint.get("components", [])}
     if cand_components != entry_components:
@@ -403,8 +405,9 @@ def _describe_fingerprint_diff(candidate_fingerprint: dict | None,
     return "; ".join(diffs) if diffs else "differs in composition fingerprint (unrecognized shape)"
 
 
-def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
-                         digest: dict, candidate_config: dict | None = None) -> GateResult:
+def layer2_digest_check(
+    candidate: dict, instrument: str, timeframe: str, digest: dict, candidate_config: dict | None = None
+) -> GateResult:
     """E-036 S2: three outcomes, not two (EPIC.md's design, point 2).
 
       REPEAT -> REFUSE. Same family/instrument/timeframe AND an identical
@@ -438,7 +441,8 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
     families = digest.get("families", {})
     entry = families.get(family)
     matches = [
-        triple for triple in (entry.get("triples", []) if entry else [])
+        triple
+        for triple in (entry.get("triples", []) if entry else [])
         if triple.get("instrument") == instrument and triple.get("timeframe") == timeframe
     ]
 
@@ -453,18 +457,27 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
         return ADMIT(
             "digest",
             f"no matching family/instrument/timeframe triple in the digest for "
-            f"family '{family}'" + (" (weak prior: bare-string failed_families entry "
-                                     "exists for this family, not gating)" if low_detail_flag else ""),
-            family=family, family_confidence=confidence, outcome="novel",
+            f"family '{family}'"
+            + (
+                " (weak prior: bare-string failed_families entry exists for this family, not gating)"
+                if low_detail_flag
+                else ""
+            ),
+            family=family,
+            family_confidence=confidence,
+            outcome="novel",
             low_detail_prior_failure=low_detail_flag,
         )
 
     repeat = next(
-        (triple for triple in matches
-         if triple.get("fidelity") == "structured"
-         and triple.get("fingerprint") is not None
-         and candidate_fingerprint is not None
-         and triple["fingerprint"] == candidate_fingerprint),
+        (
+            triple
+            for triple in matches
+            if triple.get("fidelity") == "structured"
+            and triple.get("fingerprint") is not None
+            and candidate_fingerprint is not None
+            and triple["fingerprint"] == candidate_fingerprint
+        ),
         None,
     )
     if repeat is not None:
@@ -472,7 +485,9 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
             "digest",
             f"family '{family}' already run at ({instrument}, {timeframe}) with an "
             f"identical composition -- run_ids={repeat['run_ids']}",
-            family=family, family_confidence=confidence, outcome="repeat",
+            family=family,
+            family_confidence=confidence,
+            outcome="repeat",
             run_ids=repeat["run_ids"],
         )
 
@@ -481,7 +496,8 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
             "run_ids": triple["run_ids"],
             "fidelity": triple.get("fidelity", "coarse"),
             "differs": _describe_fingerprint_diff(
-                candidate_fingerprint, triple.get("fingerprint"), triple.get("fidelity", "coarse")),
+                candidate_fingerprint, triple.get("fingerprint"), triple.get("fidelity", "coarse")
+            ),
         }
         for triple in matches
     ]
@@ -491,7 +507,9 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
         f"family '{family}' already run at ({instrument}, {timeframe}) but no "
         f"identical composition on record -- admitted as a neighbour, "
         f"run_ids={all_run_ids}",
-        family=family, family_confidence=confidence, outcome="neighbour",
+        family=family,
+        family_confidence=confidence,
+        outcome="neighbour",
         neighbours=neighbours,
     )
 
@@ -500,9 +518,16 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
 # Top-level
 # ---------------------------------------------------------------------------
 
-def evaluate_candidate(candidate: dict, digest: dict, kb: dict, runs_dir: Path,
-                        instrument: str | None = None, timeframe: str | None = None,
-                        candidate_config: dict | None = None) -> GateResult:
+
+def evaluate_candidate(
+    candidate: dict,
+    digest: dict,
+    kb: dict,
+    runs_dir: Path,
+    instrument: str | None = None,
+    timeframe: str | None = None,
+    candidate_config: dict | None = None,
+) -> GateResult:
     """candidate: a hypothesis_card.yaml-shaped dict (or close enough --
     only hypothesis_id, edge_source, library_lookup, thesis, target_market,
     timeframe are read). instrument/timeframe: override the values that
@@ -543,11 +568,15 @@ def main(argv=None) -> int:
     parser.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR)
     parser.add_argument("--instrument", default=None)
     parser.add_argument("--timeframe", default=None)
-    parser.add_argument("--candidate-config", type=Path, default=None,
-                         help="candidate_strategy_config.json-shaped file for the candidate "
-                              "being evaluated (E-036 S2) -- enables REPEAT detection; "
-                              "without it, a family/instrument/timeframe collision can only "
-                              "ever resolve to NEIGHBOUR or NOVEL, never REPEAT.")
+    parser.add_argument(
+        "--candidate-config",
+        type=Path,
+        default=None,
+        help="candidate_strategy_config.json-shaped file for the candidate "
+        "being evaluated (E-036 S2) -- enables REPEAT detection; "
+        "without it, a family/instrument/timeframe collision can only "
+        "ever resolve to NEIGHBOUR or NOVEL, never REPEAT.",
+    )
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
 
@@ -559,9 +588,15 @@ def main(argv=None) -> int:
         with open(args.candidate_config, encoding="utf-8") as f:
             candidate_config = json.load(f)
 
-    result = evaluate_candidate(candidate, digest, kb, args.runs_dir,
-                                 instrument=args.instrument, timeframe=args.timeframe,
-                                 candidate_config=candidate_config)
+    result = evaluate_candidate(
+        candidate,
+        digest,
+        kb,
+        args.runs_dir,
+        instrument=args.instrument,
+        timeframe=args.timeframe,
+        candidate_config=candidate_config,
+    )
 
     out_data = dict(result)
     if args.out:

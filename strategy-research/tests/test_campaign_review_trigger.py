@@ -13,6 +13,7 @@ backfilled manually, never exercising this exact function.
 Fixture below is the real six entries verbatim from campaign_state.yaml as of
 2026-07-04 (see strategy-research/campaign_record/campaign_state.yaml `failed_families`).
 """
+
 import sys
 from pathlib import Path
 

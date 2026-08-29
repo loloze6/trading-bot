@@ -79,9 +79,7 @@ def _inspect(path: Path) -> tuple[date, date] | str:
                     else:
                         tail_lines = [
                             ln
-                            for ln in raw[-_TAIL_READ_BYTES:]
-                            .decode("utf-8", errors="ignore")
-                            .splitlines()
+                            for ln in raw[-_TAIL_READ_BYTES:].decode("utf-8", errors="ignore").splitlines()
                             if ln.strip()
                         ]
                         last_ts = None
@@ -90,11 +88,7 @@ def _inspect(path: Path) -> tuple[date, date] | str:
                                 last_ts = _parse_date(_first_field(tail_lines[-1]))
                             except ValueError:
                                 last_ts = None
-                        result = (
-                            (first_ts, last_ts)
-                            if last_ts is not None
-                            else "unparseable final row (truncated?)"
-                        )
+                        result = (first_ts, last_ts) if last_ts is not None else "unparseable final row (truncated?)"
     except Exception as exc:
         result = f"unreadable ({type(exc).__name__})"
 

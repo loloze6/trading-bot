@@ -38,6 +38,7 @@ final bar is guaranteed to hold a position and the forced close is guaranteed to
 run. test_fixture_actually_ends_holding_a_position fails loudly if that ever stops
 being true, since a flat ending would make the rest of this file vacuous.
 """
+
 import inspect
 import json
 import math
@@ -229,14 +230,13 @@ def ends_long(tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def ends_flat(tmp_path_factory):
-    return _replay(
-        _NEVER_TRADES_CONFIG, tmp_path_factory.mktemp("ends_flat"), _flat_price_bars()
-    )
+    return _replay(_NEVER_TRADES_CONFIG, tmp_path_factory.mktemp("ends_flat"), _flat_price_bars())
 
 
 # --------------------------------------------------------------------------
 # Anti-vacuity: the fixture must reach the forced close
 # --------------------------------------------------------------------------
+
 
 def test_fixture_actually_ends_holding_a_position(ends_long):
     """Without an open position at the last bar, _close_all_positions_at_end returns
@@ -262,22 +262,18 @@ def test_fixture_forced_close_actually_executed(ends_long):
 # The invariant
 # --------------------------------------------------------------------------
 
+
 def test_one_state_row_per_bar_when_the_run_ends_long(ends_long):
     """The defect's direct signature: 301 rows for 300 bars, the last timestamp twice."""
     recorded = [s["timestamp"] for s in ends_long.states]
     expected = list(ends_long.bars["timestamp"])
-    duplicates = sorted(
-        {str(ts) for ts in recorded if recorded.count(ts) > 1}
-    )
+    duplicates = sorted({str(ts) for ts in recorded if recorded.count(ts) > 1})
     assert not duplicates, (
         "portfolio_states carries more than one row for the same instant "
         f"{duplicates}; two rows claiming one bar is wrong for a time series and "
         "inflates the bar count for every consumer that reads the file per-bar"
     )
-    assert recorded == expected, (
-        f"expected exactly one row per replayed bar ({len(expected)}), got "
-        f"{len(recorded)}"
-    )
+    assert recorded == expected, f"expected exactly one row per replayed bar ({len(expected)}), got {len(recorded)}"
 
 
 def test_surviving_final_row_holds_the_post_close_portfolio_state(ends_long):
@@ -295,9 +291,7 @@ def test_surviving_final_row_holds_the_post_close_portfolio_state(ends_long):
         f"allocation ({last_bar['postRebalance_current_allocation']!r}) -- it is the "
         "pre-close snapshot, not the post-close one"
     )
-    assert last_bar["allocation_change"] == pytest.approx(
-        -last_bar["previous_allocation"]
-    ), (
+    assert last_bar["allocation_change"] == pytest.approx(-last_bar["previous_allocation"]), (
         "the surviving row's allocation_change is not the forced close's "
         "0.0 - actual_allocation, so it came from the per-bar loop rather than from "
         "_close_all_positions_at_end"
@@ -319,22 +313,20 @@ def test_surviving_final_row_keeps_the_bar_signal_fields(ends_long):
         "the final bar lost the forecast the strategy produced for it; the "
         "post-close row overwrote it instead of merging onto it"
     )
-    assert last_bar.get("regime") == "unknown", (
-        "the final bar lost its regime label"
-    )
+    assert last_bar.get("regime") == "unknown", "the final bar lost its regime label"
 
 
 # --------------------------------------------------------------------------
 # The default (reference) path must be untouched
 # --------------------------------------------------------------------------
 
+
 def test_run_ending_flat_records_one_row_per_bar_and_never_force_closes(ends_flat):
     """The reference window's shape: no open position, so the close path returns
     early and record_state's new branch is never reached. Row count is one per bar
     for the ordinary reason, not because anything was de-duplicated."""
     assert ends_flat.open_positions_at_end == [], (
-        "the never-trades control ended holding a position; it is no longer a "
-        "control for the early-return path"
+        "the never-trades control ended holding a position; it is no longer a control for the early-return path"
     )
     recorded = [s["timestamp"] for s in ends_flat.states]
     assert recorded == list(ends_flat.bars["timestamp"])
@@ -401,6 +393,5 @@ def test_only_the_close_path_opts_into_replacement():
         "exactly once and must stay a pure append, or every prior baseline is void"
     )
     assert "replace_if_same_bar" in closing, (
-        "_close_all_positions_at_end no longer opts into row replacement, so the "
-        "duplicate final-bar row is back"
+        "_close_all_positions_at_end no longer opts into row replacement, so the duplicate final-bar row is back"
     )

@@ -12,6 +12,7 @@ fixed: it fails the run if ANY test mutated a tracked file under
 trading-bot/results/, independent of test order. The strategy-research suite
 carries a twin guard (strategy-research/tests/conftest.py).
 """
+
 import subprocess
 from pathlib import Path
 
@@ -29,7 +30,9 @@ def _tracked_results_status():
     try:
         out = subprocess.run(
             ["git", "-C", str(_REPO_ROOT), "status", "--porcelain", "--", _RESULTS_REL],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
     except Exception:
         return None

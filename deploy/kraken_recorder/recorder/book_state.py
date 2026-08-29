@@ -76,8 +76,7 @@ class BookState:
     the point (same argument as `kraken_crc.checksum_payload`).
     """
 
-    __slots__ = ("depth", "bids", "asks", "checksum", "timestamp",
-                 "applied", "applied_since_emit", "have_snapshot")
+    __slots__ = ("depth", "bids", "asks", "checksum", "timestamp", "applied", "applied_since_emit", "have_snapshot")
 
     def __init__(self, depth: int = 10):
         self.depth = depth
@@ -142,14 +141,8 @@ class BookState:
     def levels(self) -> Dict[str, List[Dict[str, Any]]]:
         """Top-`depth` levels per side: bids price-descending, asks ascending."""
         return {
-            "bids": [
-                {"price": p, "qty": self.bids[p]}
-                for p in self._sorted(self.bids, reverse=True)[: self.depth]
-            ],
-            "asks": [
-                {"price": p, "qty": self.asks[p]}
-                for p in self._sorted(self.asks, reverse=False)[: self.depth]
-            ],
+            "bids": [{"price": p, "qty": self.bids[p]} for p in self._sorted(self.bids, reverse=True)[: self.depth]],
+            "asks": [{"price": p, "qty": self.asks[p]} for p in self._sorted(self.asks, reverse=False)[: self.depth]],
         }
 
     def snapshot_payload(self, symbol: str) -> Dict[str, Any]:

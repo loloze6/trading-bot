@@ -9,6 +9,7 @@ naming the file and count, rather than swallowing them.
 Fixtures point the module's _LOCAL_DATA constant at tmp_path (monkeypatch) so the
 repo's real local_data/ is never touched.
 """
+
 import csv
 import re
 import sys

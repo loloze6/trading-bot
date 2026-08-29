@@ -17,6 +17,7 @@ Acceptance bar (same as test_exclusion_digest_input.py, not merely "the code
 path is skipped"): flag-off must produce a BYTE-IDENTICAL fully-assembled
 prompt to a baseline that never calls _apply_stale_input_path_fix at all.
 """
+
 import sys
 from pathlib import Path
 
@@ -32,8 +33,7 @@ import run_phase1_research as rpr  # noqa: E402
 def _minimal_run(root: Path, run_id: str) -> Path:
     run_dir = root / "runs" / run_id
     (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
-    (run_dir / "artifacts" / "research_brief.yaml").write_text(
-        "asset: BTCUSDT\n", encoding="utf-8")
+    (run_dir / "artifacts" / "research_brief.yaml").write_text("asset: BTCUSDT\n", encoding="utf-8")
     return run_dir
 
 
@@ -62,14 +62,15 @@ def _write_real_kb_and_wishlist(root: Path) -> None:
     record_dir = root / "campaign_record"
     record_dir.mkdir(parents=True, exist_ok=True)
     (record_dir / "campaign_knowledge_base.yaml").write_text(
-        "exhausted_mechanisms: []\ncoverage_matrix: {}\n", encoding="utf-8")
-    (record_dir / "feed_wishlist.yaml").write_text(
-        "- liquidation_data\n", encoding="utf-8")
+        "exhausted_mechanisms: []\ncoverage_matrix: {}\n", encoding="utf-8"
+    )
+    (record_dir / "feed_wishlist.yaml").write_text("- liquidation_data\n", encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
 # _stale_input_path_fix_enabled
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("enabled,expected", [(True, True), (False, False), (None, False)])
 def test_stale_input_path_fix_enabled_reads_flag(enabled, expected):
@@ -86,6 +87,7 @@ def test_stale_input_path_fix_enabled_false_when_config_file_absent():
 # ---------------------------------------------------------------------------
 # _apply_stale_input_path_fix -- handoff mutation
 # ---------------------------------------------------------------------------
+
 
 def test_apply_stale_input_path_fix_noop_when_flag_off():
     root = rpr.ROOT
@@ -129,8 +131,7 @@ def test_apply_stale_input_path_fix_does_not_add_entries_that_are_not_declared()
     }
     rpr._apply_stale_input_path_fix("hypothesis_generation", handoff)
     assert handoff["optional_inputs"] == [], (
-        "the fix must only correct paths already present in the handoff, "
-        "never add a new optional_input entry"
+        "the fix must only correct paths already present in the handoff, never add a new optional_input entry"
     )
 
 
@@ -139,7 +140,8 @@ def test_apply_stale_input_path_fix_leaves_unrelated_optional_inputs_alone():
     _set_flag(root, True)
     handoff = _base_handoff()
     handoff["optional_inputs"].append(
-        {"path": "artifacts/run_context.yaml", "reason": "instrument escalation override"})
+        {"path": "artifacts/run_context.yaml", "reason": "instrument escalation override"}
+    )
     rpr._apply_stale_input_path_fix("hypothesis_generation", handoff)
     paths = {req["path"] for req in handoff["optional_inputs"]}
     assert "artifacts/run_context.yaml" in paths
@@ -149,6 +151,7 @@ def test_apply_stale_input_path_fix_leaves_unrelated_optional_inputs_alone():
 # Off-by-default acceptance bar: fully-assembled PROMPT TEXT, flag off vs.
 # a baseline that never calls _apply_stale_input_path_fix at all.
 # ---------------------------------------------------------------------------
+
 
 def test_flag_off_prompt_is_byte_identical_to_never_calling_the_fix_at_all():
     root = rpr.ROOT
@@ -190,6 +193,7 @@ def test_flag_on_prompt_actually_carries_kb_and_wishlist_content():
 # not change context_blocks/full_prompt (proven by the byte-identity test
 # above, which still passes with the warning wired in).
 # ---------------------------------------------------------------------------
+
 
 def test_missing_optional_input_warns_instead_of_vanishing_silently(capsys):
     root = rpr.ROOT

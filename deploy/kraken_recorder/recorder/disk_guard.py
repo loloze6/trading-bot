@@ -114,10 +114,7 @@ class GuardReading:
     def summary(self) -> str:
         if self.free_bytes is None:
             return f"free space UNDETERMINABLE at {self.path} ({self.reason})"
-        return (
-            f"free {self.free_gb:.2f} GB vs floor {self.min_free_gb:.2f} GB "
-            f"at {self.path}"
-        )
+        return f"free {self.free_gb:.2f} GB vs floor {self.min_free_gb:.2f} GB at {self.path}"
 
 
 class DiskGuard:

@@ -56,6 +56,7 @@ The seal moves with the policy: `holdout_range` is read, never assumed, so a
 literal that becomes unsafe under a policy change fails on the same commit
 that changes it.
 """
+
 import ast
 import datetime
 import io
@@ -75,11 +76,11 @@ EXCLUDED_PARTS = ("tests", "venv", ".venv", "__pycache__", "results", "local_dat
 # silently emptying the scan — a seal check that examines nothing reports green.
 SENTINEL = Path("core") / "launcher.py"
 DATE_PATTERNS = (
-    re.compile(r"(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})"),      # dash, non-padded ok
-    re.compile(r"(?<!\d)(\d{4})/(\d{1,2})/(\d{1,2})"),      # slash
-    re.compile(r"(?<!\d)(\d{4})\.(\d{1,2})\.(\d{1,2})"),    # dotted
-    re.compile(r"(?<!\d)(\d{4})_(\d{1,2})_(\d{1,2})(?!\d)"),          # underscore — leading AND trailing guard
-    re.compile(r"(?<!\d)(\d{4})(\d{2})(\d{2})(?!\d)"),                # compact — ONLY trailing guard
+    re.compile(r"(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})"),  # dash, non-padded ok
+    re.compile(r"(?<!\d)(\d{4})/(\d{1,2})/(\d{1,2})"),  # slash
+    re.compile(r"(?<!\d)(\d{4})\.(\d{1,2})\.(\d{1,2})"),  # dotted
+    re.compile(r"(?<!\d)(\d{4})_(\d{1,2})_(\d{1,2})(?!\d)"),  # underscore — leading AND trailing guard
+    re.compile(r"(?<!\d)(\d{4})(\d{2})(\d{2})(?!\d)"),  # compact — ONLY trailing guard
     re.compile(r"(?<!\d)(\d{4})(\d{2})(\d{2})(?:\d{6}|\d{4})(?!\d)"),  # compact + time, exactly 12 or 14 digits
 )
 _UNREADABLE_ERRORS = (OSError, UnicodeDecodeError, SyntaxError, tokenize.TokenError)
@@ -92,9 +93,12 @@ def _docstring_spans(source: str) -> list:
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
             body = node.body
-            if (body and isinstance(body[0], ast.Expr)
-                    and isinstance(body[0].value, ast.Constant)
-                    and isinstance(body[0].value.value, str)):
+            if (
+                body
+                and isinstance(body[0], ast.Expr)
+                and isinstance(body[0].value, ast.Constant)
+                and isinstance(body[0].value.value, str)
+            ):
                 spans.append((body[0].lineno, body[0].end_lineno))
     return spans
 
@@ -155,8 +159,7 @@ def _scan_file(path: Path) -> tuple[list[tuple[int, str]] | None, str | None]:
 
 def test_no_executable_production_date_reaches_the_seal():
     with open(_POLICY, encoding="utf-8") as fh:
-        lo, hi = [datetime.date.fromisoformat(d)
-                  for d in yaml.safe_load(fh)["holdout_range"]]   # hi is INCLUSIVE
+        lo, hi = [datetime.date.fromisoformat(d) for d in yaml.safe_load(fh)["holdout_range"]]  # hi is INCLUSIVE
 
     violations = []
     unreadable = []
@@ -192,18 +195,21 @@ def test_no_executable_production_date_reaches_the_seal():
     assert SENTINEL in scanned, (
         f"seal scan never reached {SENTINEL} — the exclusion filter or checkout "
         f"layout emptied the scan, so a green result would be vacuous "
-        f"({len(scanned)} files scanned)")
+        f"({len(scanned)} files scanned)"
+    )
 
     assert not unreadable, (
         "file(s) could not be read or tokenized — failing closed instead of "
-        "skipping them unseen:\n  " + "\n  ".join(unreadable))
+        "skipping them unseen:\n  " + "\n  ".join(unreadable)
+    )
 
     assert not violations, (
         f"executable date literal(s) at or beyond the sealed holdout's start "
         f"{lo} (seal {lo}..{hi}, strategy-research/config/"
         f"campaign_data_policy.yaml). A window bound at or past the seal pulls "
         f"sealed rows on the way there; reading sealed data spends it "
-        f"permanently:\n  " + "\n  ".join(violations))
+        f"permanently:\n  " + "\n  ".join(violations)
+    )
 
 
 @pytest.mark.parametrize(
@@ -333,9 +339,7 @@ def test_an_os_unreadable_path_is_reported_not_crashed(tmp_path):
     fixture.mkdir()
     dates, reason = _scan_file(fixture)
     assert dates is None
-    assert reason is not None and reason.startswith(
-        ("IsADirectoryError", "PermissionError")
-    ), reason
+    assert reason is not None and reason.startswith(("IsADirectoryError", "PermissionError")), reason
 
 
 def test_config_json_lines_are_scanned_with_all_notations(tmp_path):

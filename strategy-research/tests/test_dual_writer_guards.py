@@ -6,6 +6,7 @@ idempotency guard on _record_backtest_trial, run_phase1_research.py) and the
 read-side backstops (the mechanical duplicate-(trial_id, source) refusal and the
 no-DSR-until-merged git check, deflate_sharpe.py).
 """
+
 import json
 import subprocess
 import sys
@@ -96,8 +97,7 @@ def test_record_backtest_trial_reentry_is_idempotent(campaign_env):
     rpr._record_backtest_trial("run_901", _MINIMAL_SUMMARY, config_path)
     rpr._record_backtest_trial("run_901", _MINIMAL_SUMMARY, config_path)
     state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
-    backtest_rows = [t for t in state["trial_sharpes"]
-                      if t["trial_id"] == "run_901" and t["source"] == "backtest"]
+    backtest_rows = [t for t in state["trial_sharpes"] if t["trial_id"] == "run_901" and t["source"] == "backtest"]
     assert len(backtest_rows) == 1
 
 
@@ -108,11 +108,16 @@ def test_record_backtest_trial_not_suppressed_by_existing_prescreen_row(campaign
     case: every trial gets a prescreen row, and only those that advance also get a
     backtest row)."""
     state_path, config_path = campaign_env
-    state_path.write_text(yaml.safe_dump({
-        "trial_sharpes": [
-            {"trial_id": "run_902", "source": "prescreen", "statistic_valid": "neither"},
-        ]
-    }), encoding="utf-8")
+    state_path.write_text(
+        yaml.safe_dump(
+            {
+                "trial_sharpes": [
+                    {"trial_id": "run_902", "source": "prescreen", "statistic_valid": "neither"},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
 
     rpr._record_backtest_trial("run_902", _MINIMAL_SUMMARY, config_path)
 

@@ -29,6 +29,7 @@ real chosen value, confirmed by S1's spot check: decision.yaml's rationale
 names "V2-THRESHOLD-20p0" as the config actually implemented), synthetically,
 since no historical run carries it yet.
 """
+
 import sys
 from pathlib import Path
 
@@ -45,6 +46,7 @@ import run_phase1_research as rpr  # noqa: E402
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
+
 
 def _set_flag(root: Path, enabled) -> None:
     """enabled: True, False, or None (key/section absent entirely)."""
@@ -63,23 +65,37 @@ def _write_yaml(path: Path, data) -> None:
         yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
 
 
-def _minimal_run(root: Path, run_id: str, *, expanded_variants, selected_variant_id="present",
-                  base_hypothesis_id="H-TEST", hypothesis_id="H-TEST",
-                  target_market="BTCUSDT", timeframe="1h",
-                  omit_selected_variant_id=False) -> Path:
+def _minimal_run(
+    root: Path,
+    run_id: str,
+    *,
+    expanded_variants,
+    selected_variant_id="present",
+    base_hypothesis_id="H-TEST",
+    hypothesis_id="H-TEST",
+    target_market="BTCUSDT",
+    timeframe="1h",
+    omit_selected_variant_id=False,
+) -> Path:
     run_dir = root / "runs" / run_id
     artifacts = run_dir / "artifacts"
     artifacts.mkdir(parents=True, exist_ok=True)
 
-    _write_yaml(artifacts / "expanded_hypothesis_card.yaml", {
-        "base_hypothesis_id": base_hypothesis_id,
-        "expanded_variants": expanded_variants,
-    })
-    _write_yaml(artifacts / "hypothesis_card.yaml", {
-        "hypothesis_id": hypothesis_id,
-        "target_market": target_market,
-        "timeframe": timeframe,
-    })
+    _write_yaml(
+        artifacts / "expanded_hypothesis_card.yaml",
+        {
+            "base_hypothesis_id": base_hypothesis_id,
+            "expanded_variants": expanded_variants,
+        },
+    )
+    _write_yaml(
+        artifacts / "hypothesis_card.yaml",
+        {
+            "hypothesis_id": hypothesis_id,
+            "target_market": target_market,
+            "timeframe": timeframe,
+        },
+    )
     spec = {
         "hypothesis_id": hypothesis_id,
         "status": "spec_ready",
@@ -89,12 +105,15 @@ def _minimal_run(root: Path, run_id: str, *, expanded_variants, selected_variant
     if not omit_selected_variant_id:
         spec["selected_variant_id"] = selected_variant_id
     _write_yaml(artifacts / "backtest_spec.yaml", spec)
-    _write_yaml(artifacts / "decision.yaml", {
-        "stage": "backtest_specification",
-        "status": "spec_ready",
-        "rationale": "test rationale",
-        "blocking_issues": [],
-    })
+    _write_yaml(
+        artifacts / "decision.yaml",
+        {
+            "stage": "backtest_specification",
+            "status": "spec_ready",
+            "rationale": "test rationale",
+            "blocking_issues": [],
+        },
+    )
     return run_dir
 
 
@@ -103,15 +122,13 @@ def _snapshot(run_dir: Path) -> dict:
     run_dir/artifacts. Used to prove flag-off writes nothing and mutates
     nothing."""
     artifacts = run_dir / "artifacts"
-    return {
-        str(p.relative_to(run_dir)): p.read_bytes()
-        for p in sorted(artifacts.rglob("*")) if p.is_file()
-    }
+    return {str(p.relative_to(run_dir)): p.read_bytes() for p in sorted(artifacts.rglob("*")) if p.is_file()}
 
 
 # ---------------------------------------------------------------------------
 # _variant_selection_record_enabled
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("enabled,expected", [(True, True), (False, False), (None, False)])
 def test_variant_selection_record_enabled_reads_flag(enabled, expected):
@@ -128,6 +145,7 @@ def test_variant_selection_record_enabled_false_when_config_file_absent():
 # ---------------------------------------------------------------------------
 # _derive_variant_id -- the derivation rule (S1 Task 3 / S2 Task 2)
 # ---------------------------------------------------------------------------
+
 
 def test_derive_variant_id_dict_with_variant_id_uses_it_verbatim():
     variant = {"variant_id": "V2-THRESHOLD-20p0", "label": "ignored", "id": "also-ignored"}
@@ -176,11 +194,13 @@ def test_derive_variant_id_dict_with_no_id_like_key_falls_back_to_content_hash()
 # _record_variant_selection -- flag off: genuine no-op
 # ---------------------------------------------------------------------------
 
+
 def test_flag_off_writes_nothing_and_mutates_nothing():
     root = rpr.ROOT
     _set_flag(root, False)
     run_dir = _minimal_run(
-        root, "run_900",
+        root,
+        "run_900",
         expanded_variants=[{"variant_id": "V1"}, {"variant_id": "V2"}],
         selected_variant_id="V1",
     )
@@ -199,7 +219,8 @@ def test_flag_off_is_a_noop_even_when_selected_variant_id_is_missing():
     root = rpr.ROOT
     _set_flag(root, False)
     run_dir = _minimal_run(
-        root, "run_901",
+        root,
+        "run_901",
         expanded_variants=[{"variant_id": "V1"}],
         omit_selected_variant_id=True,
     )
@@ -211,7 +232,8 @@ def test_flag_none_absent_is_also_a_noop():
     root = rpr.ROOT
     _set_flag(root, None)
     run_dir = _minimal_run(
-        root, "run_902",
+        root,
+        "run_902",
         expanded_variants=[{"variant_id": "V1"}],
         selected_variant_id="V1",
     )
@@ -225,11 +247,13 @@ def test_flag_none_absent_is_also_a_noop():
 # _record_variant_selection -- fail-loud paths (flag ON)
 # ---------------------------------------------------------------------------
 
+
 def test_missing_selected_variant_id_raises():
     root = rpr.ROOT
     _set_flag(root, True)
     run_dir = _minimal_run(
-        root, "run_903",
+        root,
+        "run_903",
         expanded_variants=[{"variant_id": "V1"}],
         omit_selected_variant_id=True,
     )
@@ -242,7 +266,8 @@ def test_selected_variant_id_not_in_menu_raises():
     root = rpr.ROOT
     _set_flag(root, True)
     run_dir = _minimal_run(
-        root, "run_904",
+        root,
+        "run_904",
         expanded_variants=[{"variant_id": "V1"}, {"variant_id": "V2"}],
         selected_variant_id="V-DOES-NOT-EXIST",
     )
@@ -255,13 +280,15 @@ def test_selected_variant_id_not_in_menu_raises():
 # _record_variant_selection -- correct recording (flag ON)
 # ---------------------------------------------------------------------------
 
+
 def test_dict_variant_with_variant_id_recorded_correctly():
     root = rpr.ROOT
     _set_flag(root, True)
     v1 = {"variant_id": "V1", "parameters": {"threshold": 1.0}}
     v2 = {"variant_id": "V2", "parameters": {"threshold": 2.0}}
     run_dir = _minimal_run(
-        root, "run_905",
+        root,
+        "run_905",
         expanded_variants=[v1, v2],
         selected_variant_id="V2",
         hypothesis_id="H-905",
@@ -293,7 +320,8 @@ def test_bare_string_variant_gets_derived_id_and_is_selectable():
     bare = "a bare string variant description"
     dict_variant = {"variant_id": "V-OTHER"}
     run_dir = _minimal_run(
-        root, "run_906",
+        root,
+        "run_906",
         expanded_variants=[bare, dict_variant],
     )
     derived_id = rpr._derive_variant_id(bare, 0)
@@ -321,7 +349,8 @@ def test_dict_with_id_but_no_variant_id_falls_through_priority_chain_end_to_end(
     v_with_id = {"id": "ID-ONLY", "parameters": {"x": 1}}
     v_other = {"variant_id": "V-OTHER"}
     run_dir = _minimal_run(
-        root, "run_907",
+        root,
+        "run_907",
         expanded_variants=[v_with_id, v_other],
         selected_variant_id="ID-ONLY",
     )
@@ -334,7 +363,8 @@ def test_instrument_timeframe_fall_back_to_parent_card_when_variant_has_no_overr
     root = rpr.ROOT
     _set_flag(root, True)
     run_dir = _minimal_run(
-        root, "run_908",
+        root,
+        "run_908",
         expanded_variants=[{"variant_id": "V1"}],  # no target_market/timeframe on the variant
         selected_variant_id="V1",
         target_market="ETHUSDT",
@@ -351,7 +381,8 @@ def test_instrument_timeframe_variant_override_wins_over_parent_card():
     _set_flag(root, True)
     variant = {"variant_id": "V1", "target_market": "SOLUSDT", "timeframe": "15m"}
     run_dir = _minimal_run(
-        root, "run_909",
+        root,
+        "run_909",
         expanded_variants=[variant],
         selected_variant_id="V1",
         target_market="ETHUSDT",
@@ -368,7 +399,8 @@ def test_variants_not_pursued_excludes_selected_none_dropped_none_duplicated():
     _set_flag(root, True)
     variants = [{"variant_id": f"V{i}"} for i in range(5)]
     run_dir = _minimal_run(
-        root, "run_910",
+        root,
+        "run_910",
         expanded_variants=variants,
         selected_variant_id="V2",
     )
@@ -389,7 +421,8 @@ def test_lost_reason_carried_when_present_never_fabricated_when_absent():
         {"variant_id": "V3"},
     ]
     run_dir = _minimal_run(
-        root, "run_911",
+        root,
+        "run_911",
         expanded_variants=variants,
         selected_variant_id="V3",
     )
@@ -457,7 +490,8 @@ def test_run_019_real_corpus_regression_fixture():
     root = rpr.ROOT
     _set_flag(root, True)
     run_dir = _minimal_run(
-        root, "run_019",
+        root,
+        "run_019",
         expanded_variants=RUN_019_EXPANDED_VARIANTS,
         selected_variant_id="V2-THRESHOLD-20p0",  # per S1's spot check: decision.yaml's
         # rationale names this as the config actually implemented.

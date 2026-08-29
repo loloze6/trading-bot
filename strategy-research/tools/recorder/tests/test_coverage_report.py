@@ -15,7 +15,12 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from recorder.coverage_report import (
-    Gap, covered_spans, gaps, journal_window, main, render,
+    Gap,
+    covered_spans,
+    gaps,
+    journal_window,
+    main,
+    render,
 )
 from recorder.journal import JOURNAL_FILENAME
 
@@ -80,8 +85,7 @@ def test_a_known_gap_is_reported_with_start_end_duration_and_cause():
 def test_captured_versus_elapsed_percentage(tmp_path):
     records = _disconnect_journal()
     found, window, covered = gaps(records)
-    lines = render(tmp_path / JOURNAL_FILENAME, records, found, window, covered,
-                   None, None)
+    lines = render(tmp_path / JOURNAL_FILENAME, records, found, window, covered, None, None)
     text = "\n".join(lines)
     # 200 s captured of 300 s elapsed.
     assert "66.667%" in text
@@ -110,8 +114,15 @@ def test_a_guard_abort_gap_names_the_disk_not_a_crash():
     records = [
         _rec(1, 0, "RECORDER_START"),
         _rec(2, 0, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
-        _rec(3, 60, "DISK_GUARD_ABORT", free_gb=1.2, min_free_gb=5.0,
-             reason="free space below configured floor", determinable=True),
+        _rec(
+            3,
+            60,
+            "DISK_GUARD_ABORT",
+            free_gb=1.2,
+            min_free_gb=5.0,
+            reason="free space below configured floor",
+            determinable=True,
+        ),
     ]
     found, _w, _c = gaps(records, window=(_at(0), _at(120)))
     assert len(found) == 1
@@ -140,8 +151,16 @@ def test_a_supervisor_restart_gap_carries_the_dead_processs_exit_code():
         _rec(2, 0, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
         _rec(3, 50, "HEARTBEAT_ROLLUP", heartbeats=50, frames_total=10),
         # process dies here without attesting anything
-        _rec(4, 55, "RESTART_BOUNDARY", run_id="supervisor", exit_code=1,
-             attempt=2, backoff_s=10, reason="recorder exited 1"),
+        _rec(
+            4,
+            55,
+            "RESTART_BOUNDARY",
+            run_id="supervisor",
+            exit_code=1,
+            attempt=2,
+            backoff_s=10,
+            reason="recorder exited 1",
+        ),
         _rec(5, 65, "RECORDER_START", run_id="run-b", prev_clean_shutdown=False),
         _rec(6, 65, "SUBSCRIBE_ACK", run_id="run-b", symbol="BTC/USD", channel="book"),
         _rec(7, 120, "RECORDER_STOP", run_id="run-b"),
@@ -160,8 +179,7 @@ def test_an_unsupervised_crash_gap_is_labelled_crash():
         _rec(1, 0, "RECORDER_START"),
         _rec(2, 0, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
         _rec(3, 50, "HEARTBEAT_ROLLUP", heartbeats=50, frames_total=10),
-        _rec(4, 90, "RECORDER_START", run_id="run-b", prev_clean_shutdown=False,
-             prev_run_id="run-a"),
+        _rec(4, 90, "RECORDER_START", run_id="run-b", prev_clean_shutdown=False, prev_run_id="run-a"),
         _rec(5, 90, "SUBSCRIBE_ACK", run_id="run-b", symbol="BTC/USD", channel="book"),
         _rec(6, 120, "RECORDER_STOP", run_id="run-b"),
     ]
@@ -222,8 +240,7 @@ def test_a_frozen_process_gap_is_labelled_no_attestation_not_invisible():
 def test_a_long_healthy_run_with_realistic_cadence_reports_no_false_gap():
     """Clean run must not report false gaps: two hours of real ~60s-cadence
     heartbeats must read as fully covered end to end."""
-    records = [_rec(1, 0, "RECORDER_START"), _rec(2, 0, "SUBSCRIBE_ACK",
-               symbol="BTC/USD", channel="book")]
+    records = [_rec(1, 0, "RECORDER_START"), _rec(2, 0, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book")]
     jseq = 3
     n_rollups = int(2 * 3600 // 60)
     for i in range(1, n_rollups + 1):
@@ -294,13 +311,16 @@ def test_cli_fail_on_gap_exits_nonzero(tmp_path):
 
 
 def test_cli_on_a_clean_journal_says_none_and_exits_zero(tmp_path, capsys):
-    _write(tmp_path, [
-        _rec(1, 0, "RECORDER_START"),
-        _rec(2, 0, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
-        _rec(3, 100, "HEARTBEAT_ROLLUP", frames_total=5),
-        _rec(4, 200, "HEARTBEAT_ROLLUP", frames_total=5),
-        _rec(5, 300, "RECORDER_STOP"),
-    ])
+    _write(
+        tmp_path,
+        [
+            _rec(1, 0, "RECORDER_START"),
+            _rec(2, 0, "SUBSCRIBE_ACK", symbol="BTC/USD", channel="book"),
+            _rec(3, 100, "HEARTBEAT_ROLLUP", frames_total=5),
+            _rec(4, 200, "HEARTBEAT_ROLLUP", frames_total=5),
+            _rec(5, 300, "RECORDER_STOP"),
+        ],
+    )
     assert main(["--out", str(tmp_path), "--fail-on-gap"]) == 0
     assert "GAPS: none" in capsys.readouterr().out
 

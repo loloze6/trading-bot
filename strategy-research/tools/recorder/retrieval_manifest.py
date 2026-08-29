@@ -126,9 +126,7 @@ def build_manifest(out_dir: Path) -> Dict[str, Dict[str, Any]]:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(
-        description="Emit a JSON manifest of retrievable recorder output (W15 step 4)"
-    )
+    ap = argparse.ArgumentParser(description="Emit a JSON manifest of retrievable recorder output (W15 step 4)")
     ap.add_argument("--out", default=str(DEFAULT_OUT))
     args = ap.parse_args(argv)
 

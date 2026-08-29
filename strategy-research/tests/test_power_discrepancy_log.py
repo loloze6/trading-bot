@@ -9,6 +9,7 @@ n_eff=182.5 for the same inputs (activation_rate=0.125, n_bars=17520, n_symbols=
 is_market_wide=false). This was never caught live because the run crashed one stage
 earlier (innovation_expansion YAML error) before _run_a86_power_check ever ran on it.
 """
+
 import sys
 from pathlib import Path
 
@@ -20,9 +21,7 @@ sys.path.insert(0, str(WORKFLOW_PATH))
 
 import run_phase1_research as rpr
 
-_RUN_044_HYPOTHESIS_CARD = (
-    Path(__file__).parent.parent / "runs" / "run_044" / "artifacts" / "hypothesis_card.yaml"
-)
+_RUN_044_HYPOTHESIS_CARD = Path(__file__).parent.parent / "runs" / "run_044" / "artifacts" / "hypothesis_card.yaml"
 
 
 @pytest.fixture
@@ -70,7 +69,8 @@ def test_no_discrepancy_logged_when_llm_and_machine_agree(temp_log):
     card = {
         "hypothesis_id": "AGREES",
         "power_parameters": {
-            "is_market_wide": False, "n_symbols": 2,
+            "is_market_wide": False,
+            "n_symbols": 2,
             "n_symbols_effective": 2.0,
             "a_priori_calculation": "expected_n_eff = 182.5; min_detectable_ic ≈ 0.0746",
         },

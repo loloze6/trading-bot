@@ -97,8 +97,7 @@ ALL_MARKER = "slow or not slow"
 
 def run_suite(name: str, directory: Path, args: list[str]) -> tuple[int, float]:
     cmd = [sys.executable, "-m", "pytest", *args]
-    print(f"\n{'=' * 78}\n== {name}: {' '.join(cmd)}\n== cwd: {directory}\n{'=' * 78}",
-          flush=True)
+    print(f"\n{'=' * 78}\n== {name}: {' '.join(cmd)}\n== cwd: {directory}\n{'=' * 78}", flush=True)
     started = time.monotonic()
     completed = subprocess.run(cmd, cwd=str(directory))
     return completed.returncode, time.monotonic() - started
@@ -110,13 +109,16 @@ def main(argv: list[str] | None = None) -> int:
         epilog="Anything after a bare -- is forwarded verbatim to every pytest invocation.",
     )
     parser.add_argument(
-        "--slow", action="store_true",
+        "--slow",
+        action="store_true",
         help="include tests marked slow (these fetch live market data and need network).",
     )
     parser.add_argument(
-        "--suite", action="append", choices=[s[0] for s in SUITES], metavar="NAME",
-        help="run only this suite (repeatable). Choices: "
-             + ", ".join(s[0] for s in SUITES),
+        "--suite",
+        action="append",
+        choices=[s[0] for s in SUITES],
+        metavar="NAME",
+        help="run only this suite (repeatable). Choices: " + ", ".join(s[0] for s in SUITES),
     )
     parsed, forwarded = parser.parse_known_args(argv if argv is not None else sys.argv[1:])
     if forwarded and forwarded[0] == "--":
@@ -139,8 +141,7 @@ def main(argv: list[str] | None = None) -> int:
     width = max(len(name) for name, _, _ in results)
     print(f"\n{'=' * 78}\n== combined result ({'with' if parsed.slow else 'without'} slow tests)\n{'=' * 78}")
     for name, code, elapsed in results:
-        print(f"  {name:<{width}}  {'PASS' if code == 0 else f'FAIL (exit {code})'}"
-              f"   {elapsed:6.1f}s")
+        print(f"  {name:<{width}}  {'PASS' if code == 0 else f'FAIL (exit {code})'}   {elapsed:6.1f}s")
     failed = [name for name, code, _ in results if code != 0]
     print(f"\n{'ALL SUITES PASSED' if not failed else 'FAILED: ' + ', '.join(failed)}\n")
     return 0 if not failed else 1

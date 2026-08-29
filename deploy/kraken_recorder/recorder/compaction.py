@@ -90,9 +90,7 @@ class ShardVerificationError(RuntimeError):
 
 def _require_zstd() -> None:
     if zstd is None:  # pragma: no cover
-        raise RuntimeError(
-            "zstandard is not installed. Run:  python -m pip install -r requirements.txt"
-        )
+        raise RuntimeError("zstandard is not installed. Run:  python -m pip install -r requirements.txt")
 
 
 def compressed_path(shard: Path) -> Path:
@@ -124,15 +122,11 @@ def verify_against(archive: Path, source: Path) -> None:
                 if got != want:
                     if len(got) != len(want):
                         raise ShardVerificationError(
-                            f"{archive.name}: decompressed stream is longer than "
-                            f"the source at byte {pos + len(want)}"
+                            f"{archive.name}: decompressed stream is longer than the source at byte {pos + len(want)}"
                         )
-                    off = next(
-                        i for i in range(len(got)) if got[i] != want[i]
-                    )
+                    off = next(i for i in range(len(got)) if got[i] != want[i])
                     raise ShardVerificationError(
-                        f"{archive.name}: byte mismatch at offset {pos + off} "
-                        f"(got {got[off]!r}, source {want[off]!r})"
+                        f"{archive.name}: byte mismatch at offset {pos + off} (got {got[off]!r}, source {want[off]!r})"
                     )
                 pos += len(got)
         if sfh.read(1):

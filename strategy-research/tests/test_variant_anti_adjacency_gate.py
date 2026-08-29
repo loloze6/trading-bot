@@ -30,6 +30,7 @@ hand-typed variant_selection.yaml -- so the gate is proven "through
 orchestration," the same bar test_anti_adjacency_retry_policy.py's own
 calibration-case test set for S2c.
 """
+
 import sys
 from pathlib import Path
 
@@ -54,6 +55,7 @@ _REAL_RUN_059_DIR = _SR / "runs" / "run_059"
 # Fixture helpers
 # ---------------------------------------------------------------------------
 
+
 def _write_yaml(path: Path, data) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
@@ -73,9 +75,10 @@ def _set_flags(root: Path, *, variant_gate=None, variant_record=None) -> None:
 
 
 def _write_digest(root: Path, families: dict) -> None:
-    _write_yaml(root / "campaign_record" / "exclusion_digest.yaml",
-                {"families": families, "failed_families_passthrough": [],
-                 "components_built_passthrough": []})
+    _write_yaml(
+        root / "campaign_record" / "exclusion_digest.yaml",
+        {"families": families, "failed_families_passthrough": [], "components_built_passthrough": []},
+    )
 
 
 def _kc_digest(*instrument_run_pairs, timeframe="4h") -> dict:
@@ -84,11 +87,21 @@ def _kc_digest(*instrument_run_pairs, timeframe="4h") -> dict:
     E-036 S2 design point 3: a coarse match can never produce REPEAT, only
     NEIGHBOUR -- so a bare (family, instrument, timeframe) collision built
     with this helper ADMITs (as a neighbour), it does not REFUSE."""
-    return {"keltner_channel": {"confidence": "structural_indicator_id", "triples": [
-        {"instrument": inst, "timeframe": timeframe, "fidelity": "coarse",
-         "fingerprint": None, "run_ids": [run_id]}
-        for inst, run_id in instrument_run_pairs
-    ]}}
+    return {
+        "keltner_channel": {
+            "confidence": "structural_indicator_id",
+            "triples": [
+                {
+                    "instrument": inst,
+                    "timeframe": timeframe,
+                    "fidelity": "coarse",
+                    "fingerprint": None,
+                    "run_ids": [run_id],
+                }
+                for inst, run_id in instrument_run_pairs
+            ],
+        }
+    }
 
 
 def _keltner_config(atr_mult: float = 2.0, regime: str = "mean_reversion") -> dict:
@@ -96,10 +109,21 @@ def _keltner_config(atr_mult: float = 2.0, regime: str = "mean_reversion") -> di
     (same shape as runs/run_016/artifacts/candidate_strategy_config.json)."""
     return {
         "regime_detector": {"mode": "threshold_rules", "rules": [{"regime": regime}]},
-        "strategies": {"regimes": {regime: {"components": [
-            {"id": "keltner", "class": "strategies.strategy_components.KeltnerBreakoutComponent",
-             "params": {"atr_multiplier": atr_mult, "ema_period": 20}, "weight": 1.0, "transforms": []},
-        ]}}},
+        "strategies": {
+            "regimes": {
+                regime: {
+                    "components": [
+                        {
+                            "id": "keltner",
+                            "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+                            "params": {"atr_multiplier": atr_mult, "ema_period": 20},
+                            "weight": 1.0,
+                            "transforms": [],
+                        },
+                    ]
+                }
+            }
+        },
     }
 
 
@@ -108,18 +132,36 @@ def _kc_digest_structured(instrument: str, timeframe: str, run_id: str, config: 
     fingerprint of `config` -- used to build a genuine REPEAT (identical
     fingerprint), as opposed to _kc_digest's coarse, collision-only shape."""
     fingerprint = bed.composition_fingerprint(config)
-    return {"keltner_channel": {"confidence": "structural_indicator_id", "triples": [
-        {"instrument": instrument, "timeframe": timeframe, "fidelity": "structured",
-         "fingerprint": fingerprint, "run_ids": [run_id]},
-    ]}}
+    return {
+        "keltner_channel": {
+            "confidence": "structural_indicator_id",
+            "triples": [
+                {
+                    "instrument": instrument,
+                    "timeframe": timeframe,
+                    "fidelity": "structured",
+                    "fingerprint": fingerprint,
+                    "run_ids": [run_id],
+                },
+            ],
+        }
+    }
 
 
 def _write_empty_kb(root: Path) -> None:
     _write_yaml(root / "campaign_record" / "campaign_knowledge_base.yaml", {"findings": []})
 
 
-def _full_run(root: Path, run_id: str, *, hypothesis_card: dict, expanded_variants: list,
-              selected_variant_id: str, config_rationale=None, config: dict = None) -> Path:
+def _full_run(
+    root: Path,
+    run_id: str,
+    *,
+    hypothesis_card: dict,
+    expanded_variants: list,
+    selected_variant_id: str,
+    config_rationale=None,
+    config: dict = None,
+) -> Path:
     """Same fixture shape as test_variant_selection_record.py's _minimal_run,
     generalized to accept an arbitrary hypothesis_card dict (library_lookup /
     edge_source / thesis / target_market / timeframe) so tests can build
@@ -138,22 +180,33 @@ def _full_run(root: Path, run_id: str, *, hypothesis_card: dict, expanded_varian
     artifacts.mkdir(parents=True, exist_ok=True)
 
     hid = hypothesis_card.get("hypothesis_id", "H-TEST")
-    _write_yaml(artifacts / "expanded_hypothesis_card.yaml", {
-        "base_hypothesis_id": hid,
-        "expanded_variants": expanded_variants,
-    })
+    _write_yaml(
+        artifacts / "expanded_hypothesis_card.yaml",
+        {
+            "base_hypothesis_id": hid,
+            "expanded_variants": expanded_variants,
+        },
+    )
     _write_yaml(artifacts / "hypothesis_card.yaml", hypothesis_card)
-    _write_yaml(artifacts / "backtest_spec.yaml", {
-        "hypothesis_id": hid,
-        "status": "spec_ready",
-        "config": config if config is not None else {"regime_detector": {}},
-        "config_rationale": config_rationale or [{"hypothesis_claim": "x", "config_choice": "y"}],
-        "selected_variant_id": selected_variant_id,
-    })
-    _write_yaml(artifacts / "decision.yaml", {
-        "stage": "backtest_specification", "status": "spec_ready",
-        "rationale": "test rationale", "blocking_issues": [],
-    })
+    _write_yaml(
+        artifacts / "backtest_spec.yaml",
+        {
+            "hypothesis_id": hid,
+            "status": "spec_ready",
+            "config": config if config is not None else {"regime_detector": {}},
+            "config_rationale": config_rationale or [{"hypothesis_claim": "x", "config_choice": "y"}],
+            "selected_variant_id": selected_variant_id,
+        },
+    )
+    _write_yaml(
+        artifacts / "decision.yaml",
+        {
+            "stage": "backtest_specification",
+            "status": "spec_ready",
+            "rationale": "test rationale",
+            "blocking_issues": [],
+        },
+    )
     return run_dir
 
 
@@ -170,6 +223,7 @@ def _record_selection(root: Path, run_dir: Path) -> None:
 # _variant_anti_adjacency_gate_enabled -- same 4-case shape as the other
 # five orchestrator.<name>.enabled flags.
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("enabled,expected", [(True, True), (False, False), (None, False)])
 def test_variant_anti_adjacency_gate_enabled_reads_flag(enabled, expected):
@@ -188,15 +242,19 @@ def test_variant_anti_adjacency_gate_enabled_false_when_config_file_absent():
 # itself (S2a/b/c, E-034 S2).
 # ---------------------------------------------------------------------------
 
+
 def test_flag_off_returns_none_and_writes_nothing():
     root = rpr.ROOT
     card = {
-        "hypothesis_id": "KELTNER_PIVOT_TEST", "target_market": "AVAXUSDT", "timeframe": "4h",
+        "hypothesis_id": "KELTNER_PIVOT_TEST",
+        "target_market": "AVAXUSDT",
+        "timeframe": "4h",
         "library_lookup": {"indicator_id": "keltner_channel"},
         "thesis": "Keltner channel mean reversion.",
     }
-    run_dir = _full_run(root, "run_950", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1")
+    run_dir = _full_run(
+        root, "run_950", hypothesis_card=card, expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1"
+    )
     _record_selection(root, run_dir)
     # Digest shaped to REFUSE if the gate were ever consulted -- proves
     # flag-off isn't merely "nothing to refuse", it's "the gate is never
@@ -213,17 +271,16 @@ def test_flag_off_returns_none_and_writes_nothing():
     result = rpr._route_post_variant_selection(run_dir, "run_950")
 
     assert result is None
-    assert state_path.read_bytes() == before, (
-        "flag-off must not write to pipeline_state.yaml at all"
-    )
+    assert state_path.read_bytes() == before, "flag-off must not write to pipeline_state.yaml at all"
     assert not (run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").exists()
 
 
 def test_flag_off_key_and_section_absent_also_a_noop():
     root = rpr.ROOT
     card = {"hypothesis_id": "X", "target_market": "BTCUSDT", "timeframe": "1h"}
-    run_dir = _full_run(root, "run_951", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1")
+    run_dir = _full_run(
+        root, "run_951", hypothesis_card=card, expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1"
+    )
     _record_selection(root, run_dir)
     _set_flags(root, variant_gate=None, variant_record=True)  # variant_gate key absent entirely
 
@@ -236,11 +293,13 @@ def test_flag_off_key_and_section_absent_also_a_noop():
 # silently no-op and not silently ADMIT.
 # ---------------------------------------------------------------------------
 
+
 def test_flag_on_without_variant_selection_record_flag_raises():
     root = rpr.ROOT
     card = {"hypothesis_id": "X", "target_market": "BTCUSDT", "timeframe": "1h"}
-    run_dir = _full_run(root, "run_952", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1")
+    run_dir = _full_run(
+        root, "run_952", hypothesis_card=card, expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1"
+    )
     # Deliberately do NOT produce variant_selection.yaml.
     _set_flags(root, variant_gate=True, variant_record=False)
 
@@ -254,8 +313,9 @@ def test_flag_on_missing_variant_selection_yaml_raises_caller_ordering_error():
     was never reached) -- must raise, not silently ADMIT."""
     root = rpr.ROOT
     card = {"hypothesis_id": "X", "target_market": "BTCUSDT", "timeframe": "1h"}
-    run_dir = _full_run(root, "run_953", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1")
+    run_dir = _full_run(
+        root, "run_953", hypothesis_card=card, expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1"
+    )
     _set_flags(root, variant_gate=True, variant_record=True)
 
     with pytest.raises(RuntimeError, match="variant_selection.yaml"):
@@ -265,8 +325,9 @@ def test_flag_on_missing_variant_selection_yaml_raises_caller_ordering_error():
 def test_flag_on_raises_when_digest_genuinely_absent():
     root = rpr.ROOT
     card = {"hypothesis_id": "X", "target_market": "BTCUSDT", "timeframe": "1h"}
-    run_dir = _full_run(root, "run_954", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1")
+    run_dir = _full_run(
+        root, "run_954", hypothesis_card=card, expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1"
+    )
     _record_selection(root, run_dir)
     _write_empty_kb(root)
     # Deliberately do NOT call _write_digest.
@@ -279,8 +340,9 @@ def test_flag_on_raises_when_digest_genuinely_absent():
 def test_flag_on_raises_when_kb_genuinely_absent():
     root = rpr.ROOT
     card = {"hypothesis_id": "X", "target_market": "BTCUSDT", "timeframe": "1h"}
-    run_dir = _full_run(root, "run_955", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1")
+    run_dir = _full_run(
+        root, "run_955", hypothesis_card=card, expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1"
+    )
     _record_selection(root, run_dir)
     _write_digest(root, {})
     # Deliberately do NOT call _write_empty_kb.
@@ -295,14 +357,18 @@ def test_flag_on_raises_when_kb_genuinely_absent():
 # untouched.
 # ---------------------------------------------------------------------------
 
+
 def test_admit_returns_none_and_writes_result_artifact():
     root = rpr.ROOT
     card = {
-        "hypothesis_id": "FEAR_GREED_NOVEL_ANGLE", "target_market": "DOTUSDT", "timeframe": "1h",
+        "hypothesis_id": "FEAR_GREED_NOVEL_ANGLE",
+        "target_market": "DOTUSDT",
+        "timeframe": "1h",
         "thesis": "Fear & Greed index contrarian positioning on DOT, never tried.",
     }
-    run_dir = _full_run(root, "run_956", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1")
+    run_dir = _full_run(
+        root, "run_956", hypothesis_card=card, expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1"
+    )
     _record_selection(root, run_dir)
     _write_digest(root, {})
     _write_empty_kb(root)
@@ -311,8 +377,7 @@ def test_admit_returns_none_and_writes_result_artifact():
     result = rpr._route_post_variant_selection(run_dir, "run_956")
 
     assert result is None
-    written = yaml.safe_load(
-        (run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").read_text(encoding="utf-8"))
+    written = yaml.safe_load((run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").read_text(encoding="utf-8"))
     assert written["route"] == "admit"
 
 
@@ -326,6 +391,7 @@ def test_admit_returns_none_and_writes_result_artifact():
 # 2026-08-24 defect is closed: the OLD gate is demonstrated blind to a
 # collision the NEW gate catches.
 # ---------------------------------------------------------------------------
+
 
 def test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site():
     """E-036 S2 update: the digest/config here now carry a GENUINE repeat
@@ -343,7 +409,8 @@ def test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site():
     clean_card = {
         "hypothesis_id": "KELTNER_PIVOT_PARENT",
         "library_lookup": {"indicator_id": "keltner_channel"},
-        "target_market": "BTCUSDT", "timeframe": "1h",
+        "target_market": "BTCUSDT",
+        "timeframe": "1h",
         "thesis": "Keltner channel mean reversion on BTC, 1h.",
     }
     # The variant that innovation_expansion/backtest_specification actually
@@ -352,9 +419,14 @@ def test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site():
     pivoted_config = _keltner_config(atr_mult=2.0)
     pivoted_variant = {"variant_id": "V-PIVOT", "target_market": "AVAXUSDT", "timeframe": "4h"}
     run_id = "run_957"
-    run_dir = _full_run(root, run_id, hypothesis_card=clean_card,
-                         expanded_variants=[pivoted_variant], selected_variant_id="V-PIVOT",
-                         config=pivoted_config)
+    run_dir = _full_run(
+        root,
+        run_id,
+        hypothesis_card=clean_card,
+        expanded_variants=[pivoted_variant],
+        selected_variant_id="V-PIVOT",
+        config=pivoted_config,
+    )
     _record_selection(root, run_dir)
 
     selection = yaml.safe_load((run_dir / "artifacts" / "variant_selection.yaml").read_text(encoding="utf-8"))
@@ -365,17 +437,28 @@ def test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site():
     _write_empty_kb(root)
 
     # OLD call site: only ever sees the PARENT card -- clean -- ADMITs.
-    old_state = {"run_id": run_id, "status": "active", "flags": {}, "audit_log": {},
-                 "counters": {"refinements_used": 0}}
+    old_state = {
+        "run_id": run_id,
+        "status": "active",
+        "flags": {},
+        "audit_log": {},
+        "counters": {"refinements_used": 0},
+    }
     _write_yaml(run_dir / "pipeline_state.yaml", old_state)
-    _write_yaml(root / "config" / "campaign_config.yaml", {"orchestrator": {
-        "variant_selection_record": {"enabled": True},
-        "anti_adjacency_retry": {"enabled": True},
-        "variant_anti_adjacency_gate": {"enabled": False},
-    }})
+    _write_yaml(
+        root / "config" / "campaign_config.yaml",
+        {
+            "orchestrator": {
+                "variant_selection_record": {"enabled": True},
+                "anti_adjacency_retry": {"enabled": True},
+                "variant_anti_adjacency_gate": {"enabled": False},
+            }
+        },
+    )
 
-    old_route = rpr._route_post_innovation_expansion(run_dir, run_id, yaml.safe_load(
-        (run_dir / "pipeline_state.yaml").read_text(encoding="utf-8")))
+    old_route = rpr._route_post_innovation_expansion(
+        run_dir, run_id, yaml.safe_load((run_dir / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    )
     assert old_route == "validation", (
         "the OLD, pre-existing gate call site reads only the parent card and "
         "must ADMIT here -- it structurally cannot see the pivot"
@@ -383,19 +466,23 @@ def test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site():
 
     # NEW call site: sees the CHOSEN VARIANT's resolved instrument/timeframe
     # (AVAXUSDT/4h) -- collides with the digest -- REFUSEs.
-    _write_yaml(root / "config" / "campaign_config.yaml", {"orchestrator": {
-        "variant_selection_record": {"enabled": True},
-        "anti_adjacency_retry": {"enabled": True},
-        "variant_anti_adjacency_gate": {"enabled": True},
-    }})
+    _write_yaml(
+        root / "config" / "campaign_config.yaml",
+        {
+            "orchestrator": {
+                "variant_selection_record": {"enabled": True},
+                "anti_adjacency_retry": {"enabled": True},
+                "variant_anti_adjacency_gate": {"enabled": True},
+            }
+        },
+    )
 
     new_route = rpr._route_post_variant_selection(run_dir, run_id)
     assert new_route == "human_pause", (
         "the NEW gate call site must REFUSE the same run the old one just "
         "ADMITted -- this is the direct proof the 2026-08-24 defect is closed"
     )
-    result = yaml.safe_load(
-        (run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").read_text(encoding="utf-8"))
+    result = yaml.safe_load((run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").read_text(encoding="utf-8"))
     assert result["route"] == "refuse"
     assert result["layer"] == "digest"
     assert result["outcome"] == "repeat", (
@@ -418,6 +505,7 @@ def test_pivot_away_from_clean_parent_is_caught_only_by_the_new_call_site():
 # _record_variant_selection(), not a hand-typed hypothesis_card.yaml.
 # ---------------------------------------------------------------------------
 
+
 def test_calibration_case_still_admits_through_the_new_call_site():
     root = rpr.ROOT
     kb_dest = root / "campaign_record" / "campaign_knowledge_base.yaml"
@@ -434,16 +522,22 @@ def test_calibration_case_still_admits_through_the_new_call_site():
 
     funding_4h_card = {
         "hypothesis_id": "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED_4H_RETEST",
-        "edge_source": {"evidence_type": "funding_open_interest",
-                         "specific_mechanism": "Continuous funding-rate sign mean-reversion re-tested at 4h."},
+        "edge_source": {
+            "evidence_type": "funding_open_interest",
+            "specific_mechanism": "Continuous funding-rate sign mean-reversion re-tested at 4h.",
+        },
         "target_market": ["BTCUSDT", "ETHUSDT"],
         "timeframe": "4h",
         "thesis": "Re-test the identical continuous funding-rate mean-reversion mechanism at 4h bars.",
     }
     run_id = "run_926"
-    run_dir = _full_run(root, run_id, hypothesis_card=funding_4h_card,
-                         expanded_variants=[{"variant_id": "V-4H-RETEST"}],
-                         selected_variant_id="V-4H-RETEST")
+    run_dir = _full_run(
+        root,
+        run_id,
+        hypothesis_card=funding_4h_card,
+        expanded_variants=[{"variant_id": "V-4H-RETEST"}],
+        selected_variant_id="V-4H-RETEST",
+    )
     _record_selection(root, run_dir)
     _set_flags(root, variant_gate=True, variant_record=True)
 
@@ -455,8 +549,7 @@ def test_calibration_case_still_admits_through_the_new_call_site():
         "only at the gate's own unit-test level or through the OLD S2c "
         "call site"
     )
-    result = yaml.safe_load(
-        (run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").read_text(encoding="utf-8"))
+    result = yaml.safe_load((run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").read_text(encoding="utf-8"))
     assert result["route"] == "admit"
     assert result["layer"] == "kb"
     assert result["selected_variant_id"] == "V-4H-RETEST"
@@ -468,6 +561,7 @@ def test_calibration_case_still_admits_through_the_new_call_site():
 # by the project's existing escalation mechanism.
 # ---------------------------------------------------------------------------
 
+
 def test_refuse_escalates_immediately_no_retry_state_written():
     """E-036 S2: REFUSE now requires a genuine repeat (identical composition
     fingerprint), not a bare triple collision -- see _kc_digest_structured.
@@ -477,18 +571,25 @@ def test_refuse_escalates_immediately_no_retry_state_written():
     card = {
         "hypothesis_id": "KELTNER_REFUSE_TEST",
         "library_lookup": {"indicator_id": "keltner_channel"},
-        "target_market": "SOLUSDT", "timeframe": "4h",
+        "target_market": "SOLUSDT",
+        "timeframe": "4h",
         "thesis": "Keltner channel on SOL, 4h.",
     }
     sol_config = _keltner_config(atr_mult=2.5)
-    run_dir = _full_run(root, "run_958", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1",
-                         config=sol_config)
+    run_dir = _full_run(
+        root,
+        "run_958",
+        hypothesis_card=card,
+        expanded_variants=[{"variant_id": "V1"}],
+        selected_variant_id="V1",
+        config=sol_config,
+    )
     _record_selection(root, run_dir)
     _write_digest(root, _kc_digest_structured("SOLUSDT", "4h", "run_031", sol_config))
     _write_empty_kb(root)
-    _write_yaml(run_dir / "pipeline_state.yaml",
-                {"run_id": "run_958", "status": "active", "flags": {}, "audit_log": {}})
+    _write_yaml(
+        run_dir / "pipeline_state.yaml", {"run_id": "run_958", "status": "active", "flags": {}, "audit_log": {}}
+    )
     _set_flags(root, variant_gate=True, variant_record=True)
 
     route = rpr._route_post_variant_selection(run_dir, "run_958")
@@ -514,18 +615,25 @@ def test_refuse_classifies_via_existing_run_campaign_mechanism_and_is_not_quaran
     card = {
         "hypothesis_id": "KELTNER_REFUSE_CLASSIFY_TEST",
         "library_lookup": {"indicator_id": "keltner_channel"},
-        "target_market": "ADAUSDT", "timeframe": "4h",
+        "target_market": "ADAUSDT",
+        "timeframe": "4h",
         "thesis": "Keltner channel on ADA, 4h.",
     }
     ada_config = _keltner_config(atr_mult=1.8)
-    run_dir = _full_run(root, "run_959", hypothesis_card=card,
-                         expanded_variants=[{"variant_id": "V1"}], selected_variant_id="V1",
-                         config=ada_config)
+    run_dir = _full_run(
+        root,
+        "run_959",
+        hypothesis_card=card,
+        expanded_variants=[{"variant_id": "V1"}],
+        selected_variant_id="V1",
+        config=ada_config,
+    )
     _record_selection(root, run_dir)
     _write_digest(root, _kc_digest_structured("ADAUSDT", "4h", "run_032", ada_config))
     _write_empty_kb(root)
-    _write_yaml(run_dir / "pipeline_state.yaml",
-                {"run_id": "run_959", "status": "active", "flags": {}, "audit_log": {}})
+    _write_yaml(
+        run_dir / "pipeline_state.yaml", {"run_id": "run_959", "status": "active", "flags": {}, "audit_log": {}}
+    )
     _set_flags(root, variant_gate=True, variant_record=True)
 
     rpr._route_post_variant_selection(run_dir, "run_959")
@@ -561,6 +669,7 @@ def test_flag_table_carries_the_new_flag():
 # EVERY named instrument and REFUSEs if any one of them collides.
 # ---------------------------------------------------------------------------
 
+
 def test_multi_symbol_parent_card_checks_every_instrument_not_just_one():
     """E-036 S2 update: _kc_digest is coarse (no fingerprint), so a
     collision on ETHUSDT alone can no longer REFUSE -- it can only ADMIT as
@@ -582,9 +691,13 @@ def test_multi_symbol_parent_card_checks_every_instrument_not_just_one():
         "thesis": "Keltner channel mean reversion, BTC and ETH, 4h.",
     }
     run_id = "run_960"
-    run_dir = _full_run(root, run_id, hypothesis_card=multi_symbol_card,
-                         expanded_variants=[{"variant_id": "V-BOTH"}],
-                         selected_variant_id="V-BOTH")
+    run_dir = _full_run(
+        root,
+        run_id,
+        hypothesis_card=multi_symbol_card,
+        expanded_variants=[{"variant_id": "V-BOTH"}],
+        selected_variant_id="V-BOTH",
+    )
     _record_selection(root, run_dir)
 
     selection = yaml.safe_load((run_dir / "artifacts" / "variant_selection.yaml").read_text(encoding="utf-8"))
@@ -597,8 +710,7 @@ def test_multi_symbol_parent_card_checks_every_instrument_not_just_one():
     # Only ETHUSDT collides in the digest (coarse -- no fingerprint).
     _write_digest(root, _kc_digest(("ETHUSDT", "run_030")))
     _write_empty_kb(root)
-    _write_yaml(run_dir / "pipeline_state.yaml",
-                {"run_id": run_id, "status": "active", "flags": {}, "audit_log": {}})
+    _write_yaml(run_dir / "pipeline_state.yaml", {"run_id": run_id, "status": "active", "flags": {}, "audit_log": {}})
     _set_flags(root, variant_gate=True, variant_record=True)
 
     route = rpr._route_post_variant_selection(run_dir, run_id)
@@ -607,8 +719,7 @@ def test_multi_symbol_parent_card_checks_every_instrument_not_just_one():
         "ADMIT as a NEIGHBOUR, not REFUSE -- this is the E-036 fix, not a "
         "regression of the 'check every instrument' guarantee"
     )
-    result = yaml.safe_load(
-        (run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").read_text(encoding="utf-8"))
+    result = yaml.safe_load((run_dir / "artifacts" / "variant_anti_adjacency_result.yaml").read_text(encoding="utf-8"))
     assert result["route"] == "admit"
     assert result["outcome"] == "neighbour", (
         "the ETHUSDT collision must still be visible as a neighbour in the "
@@ -628,9 +739,13 @@ def test_multi_symbol_parent_card_admits_when_no_instrument_collides():
         "thesis": "Keltner channel mean reversion, BTC and ETH, 4h.",
     }
     run_id = "run_961"
-    run_dir = _full_run(root, run_id, hypothesis_card=multi_symbol_card,
-                         expanded_variants=[{"variant_id": "V-BOTH"}],
-                         selected_variant_id="V-BOTH")
+    run_dir = _full_run(
+        root,
+        run_id,
+        hypothesis_card=multi_symbol_card,
+        expanded_variants=[{"variant_id": "V-BOTH"}],
+        selected_variant_id="V-BOTH",
+    )
     _record_selection(root, run_dir)
 
     _write_digest(root, _kc_digest(("ADAUSDT", "run_032")))  # collides with neither
@@ -651,9 +766,13 @@ def test_dict_target_market_with_asset_key_resolves_to_a_scalar():
         "thesis": "Keltner channel, structured target_market shape.",
     }
     run_id = "run_962"
-    run_dir = _full_run(root, run_id, hypothesis_card=dict_card,
-                         expanded_variants=[{"variant_id": "V-ONE"}],
-                         selected_variant_id="V-ONE")
+    run_dir = _full_run(
+        root,
+        run_id,
+        hypothesis_card=dict_card,
+        expanded_variants=[{"variant_id": "V-ONE"}],
+        selected_variant_id="V-ONE",
+    )
     _record_selection(root, run_dir)
 
     selection = yaml.safe_load((run_dir / "artifacts" / "variant_selection.yaml").read_text(encoding="utf-8"))
@@ -670,9 +789,9 @@ def test_unresolvable_target_market_shape_raises_not_silently_admits():
         "thesis": "Keltner channel, unresolvable target_market shape.",
     }
     run_id = "run_963"
-    run_dir = _full_run(root, run_id, hypothesis_card=bad_card,
-                         expanded_variants=[{"variant_id": "V-ONE"}],
-                         selected_variant_id="V-ONE")
+    run_dir = _full_run(
+        root, run_id, hypothesis_card=bad_card, expanded_variants=[{"variant_id": "V-ONE"}], selected_variant_id="V-ONE"
+    )
     _set_flags(root, variant_record=True)
     with pytest.raises(RuntimeError, match="cannot resolve an instrument"):
         rpr._record_variant_selection(run_dir)

@@ -37,9 +37,7 @@ def posix(p: Path) -> str:
     """
     if CYGPATH is None:
         return str(p)
-    return subprocess.run(
-        [CYGPATH, "-u", str(p)], capture_output=True, text=True, check=True
-    ).stdout.strip()
+    return subprocess.run([CYGPATH, "-u", str(p)], capture_output=True, text=True, check=True).stdout.strip()
 
 
 def _run(out_dir: Path, original_command: str):
@@ -50,7 +48,9 @@ def _run(out_dir: Path, original_command: str):
             "KRAKEN_RECORDER_OUT": posix(out_dir),
             "SSH_ORIGINAL_COMMAND": original_command,
         },
-        capture_output=True, text=True, timeout=60,
+        capture_output=True,
+        text=True,
+        timeout=60,
     )
 
 

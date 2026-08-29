@@ -26,6 +26,7 @@ backtest runs off BTCUSDT_1h.csv" path -- aggregate, and no 4h run had ever
 been launched. The whole fast suite (383 tests) passed both before and after
 the fix.
 """
+
 import datetime
 
 import pandas as pd
@@ -48,13 +49,15 @@ def _build(rows, interval_seconds, symbol="X"):
     return cb.get_candle_history(symbol, count=len(rows))
 
 
-FOUR_1H_ROWS = _rows([
-    # extremes deliberately invisible in any close price
-    ("2020-01-01 00:00:00", 100, 150, 90, 110, 1),
-    ("2020-01-01 01:00:00", 110, 160, 80, 120, 1),
-    ("2020-01-01 02:00:00", 120, 170, 70, 130, 1),
-    ("2020-01-01 03:00:00", 130, 180, 60, 140, 1),
-])
+FOUR_1H_ROWS = _rows(
+    [
+        # extremes deliberately invisible in any close price
+        ("2020-01-01 00:00:00", 100, 150, 90, 110, 1),
+        ("2020-01-01 01:00:00", 110, 160, 80, 120, 1),
+        ("2020-01-01 02:00:00", 120, 170, 70, 130, 1),
+        ("2020-01-01 03:00:00", 130, 180, 60, 140, 1),
+    ]
+)
 
 
 def test_aggregated_candle_keeps_the_true_high_and_low():
@@ -69,9 +72,9 @@ def test_aggregated_candle_keeps_the_true_high_and_low():
 def test_aggregated_candle_keeps_open_close_and_volume():
     """The fields that were already correct must stay correct."""
     bar = _build(FOUR_1H_ROWS, 4 * 3600).iloc[0]
-    assert bar["open"] == 100      # first row's open
-    assert bar["close"] == 140     # last row's close
-    assert bar["volume"] == 4      # sum
+    assert bar["open"] == 100  # first row's open
+    assert bar["close"] == 140  # last row's close
+    assert bar["volume"] == 4  # sum
     assert bar["timestamp"] == datetime.datetime(2020, 1, 1, 0, 0)
 
 
@@ -88,11 +91,12 @@ def test_one_row_per_candle_is_unchanged():
 def test_matches_a_straight_ohlc_resample():
     """Independent oracle: pandas resample with the engine's own convention
     (closed/label='left'), as used at core/backtester.py:296."""
-    ref = (FOUR_1H_ROWS.set_index("timestamp")
-           .resample("14400s", closed="left", label="left")
-           .agg({"open": "first", "high": "max", "low": "min",
-                 "close": "last", "volume": "sum"})
-           .reset_index())
+    ref = (
+        FOUR_1H_ROWS.set_index("timestamp")
+        .resample("14400s", closed="left", label="left")
+        .agg({"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"})
+        .reset_index()
+    )
     got = _build(FOUR_1H_ROWS, 4 * 3600)
     for col in ["open", "high", "low", "close", "volume"]:
         assert float(got.iloc[0][col]) == float(ref.iloc[0][col]), col
@@ -110,12 +114,14 @@ def test_extremes_survive_when_the_open_row_is_the_calmest():
     """Directional check: the first row having the NARROWEST range is exactly
     the case the old code got wrong, because it seeded high/low from that row
     and then only ever saw later closes."""
-    rows = _rows([
-        ("2020-01-01 00:00:00", 100, 101, 99, 100, 1),   # calm opener
-        ("2020-01-01 01:00:00", 100, 500, 10, 100, 1),   # the real extremes
-        ("2020-01-01 02:00:00", 100, 102, 98, 100, 1),
-        ("2020-01-01 03:00:00", 100, 103, 97, 100, 1),
-    ])
+    rows = _rows(
+        [
+            ("2020-01-01 00:00:00", 100, 101, 99, 100, 1),  # calm opener
+            ("2020-01-01 01:00:00", 100, 500, 10, 100, 1),  # the real extremes
+            ("2020-01-01 02:00:00", 100, 102, 98, 100, 1),
+            ("2020-01-01 03:00:00", 100, 103, 97, 100, 1),
+        ]
+    )
     bar = _build(rows, 4 * 3600).iloc[0]
     assert bar["high"] == 500
     assert bar["low"] == 10

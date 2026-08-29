@@ -2,39 +2,38 @@
 =============================================================================
 PHASE 1 ORCHESTRATOR: HYPOTHESIS & VALIDATION STATE MACHINE
 =============================================================================
-This script runs a file-driven, autonomous state machine that generates and 
-ruthlessly validates quantitative trading hypotheses BEFORE any backtest code 
+This script runs a file-driven, autonomous state machine that generates and
+ruthlessly validates quantitative trading hypotheses BEFORE any backtest code
 is written.
 
 THE AGENTS (DIVISION OF LABOR):
 1. Hypothesis Design    : Invents the core thesis (The Concept).
 2. Innovation Expansion : Designs specific, testable variants (The Blueprints).
-3. Quant Validation     : The Gatekeeper. Finds lookahead bias, overfitting, 
+3. Quant Validation     : The Gatekeeper. Finds lookahead bias, overfitting,
                           or missing data. (Outputs: Approve, Refine, or Reject).
-4. Refinement Planner   : Translates "Refine" rejections into concrete action 
+4. Refinement Planner   : Translates "Refine" rejections into concrete action
                           plans to fix the strategy or flag missing data.
 
 THE ROUTING LOGIC:
 - ✅ Path A (Approval)  : Validation -> [Approve] -> Moves to Phase 2 (Code).
-- 🔄 Path B (Logic Fix) : Validation -> [Refine] -> Refinement Planner -> 
-                          Loops back to Innovation Expansion to redraw the 
+- 🔄 Path B (Logic Fix) : Validation -> [Refine] -> Refinement Planner ->
+                          Loops back to Innovation Expansion to redraw the
                           variants using the new plan.
-- ⏸️ Path C (Data Block): Validation -> [Refine] -> Refinement Planner detects 
+- ⏸️ Path C (Data Block): Validation -> [Refine] -> Refinement Planner detects
                           missing data -> Pipeline PAUSES for human audit.
 
 THE HUMAN-IN-THE-LOOP (HITL) RESUME:
-If paused for a data audit, the human downloads the data, writes 
-`human_resolution.yaml`, and runs this script with `--resume`. 
-Crucially, the pipeline resumes back to QUANT VALIDATION (not Phase 2), 
+If paused for a data audit, the human downloads the data, writes
+`human_resolution.yaml`, and runs this script with `--resume`.
+Crucially, the pipeline resumes back to QUANT VALIDATION (not Phase 2),
 forcing the agent to officially review the human's data before approving.
 
 SAFETY GUARDRAILS:
 Controlled by `pipeline_state.yaml`. If the `refinements_used` counter hits
-`max_refinements_after_validation`, the loop terminates to prevent infinite 
+`max_refinements_after_validation`, the loop terminates to prevent infinite
 AI hallucination cycles.
 =============================================================================
 """
-
 
 from pathlib import Path
 import yaml
@@ -104,12 +103,12 @@ STAGE_CONFIGS = {
         #     ARTIFACTS / "validation_protocol.yaml",
         #     ARTIFACTS / "validation_decision.yaml",
         # ],
-        "default_next": "dynamic_routing", # Validation decides the next step
+        "default_next": "dynamic_routing",  # Validation decides the next step
     },
     "refinement_planner": {
         "handoff": "validation_to_refinement.yaml",
         # "required_outputs": [ARTIFACTS / "refinement_notes.yaml"],
-        "default_next": "innovation_expansion", # Route back to innovation after planning
+        "default_next": "innovation_expansion",  # Route back to innovation after planning
     },
     "backtest_specification": {
         "handoff": "validation_to_backtest_specification.yaml",
@@ -143,30 +142,34 @@ STAGE_CONFIGS = {
 # Campaign state (B3) — cross-run memory spanning all runs of one research question
 # ---------------------------------------------------------------------------
 
+
 def load_campaign_state() -> dict:
     """Load campaign_state.yaml, creating a blank one if absent."""
     if not CAMPAIGN_STATE_PATH.exists():
         return {
-            "campaign_id":               "default",
-            "research_question":         "",
-            "runs":                      [],
-            "altitude_history":          [],
+            "campaign_id": "default",
+            "research_question": "",
+            "runs": [],
+            "altitude_history": [],
             "recent_parameter_dimensions_by_family": {},
-            "failed_families":           [],
-            "instruments_tried":         [],
-            "components_built":          [],
-            "timeframes_tried":          ["1h"],
-            "diagnostics_log":           [],
-            "status":                    "active",
+            "failed_families": [],
+            "instruments_tried": [],
+            "components_built": [],
+            "timeframes_tried": ["1h"],
+            "diagnostics_log": [],
+            "status": "active",
         }
     return load_yaml(CAMPAIGN_STATE_PATH)
+
 
 def _save_campaign_state(state: dict):
     state["updated_at"] = datetime.now(timezone.utc).isoformat()
     save_yaml(CAMPAIGN_STATE_PATH, state)
 
-def update_campaign_state_after_run(run_id: str, altitude: str, dimension: str,
-                                     family: str, outcome: str, diagnostics: dict):
+
+def update_campaign_state_after_run(
+    run_id: str, altitude: str, dimension: str, family: str, outcome: str, diagnostics: dict
+):
     """Append one run's outcome to campaign history and update derived fields."""
     state = load_campaign_state()
     state.setdefault("runs", [])
@@ -174,10 +177,15 @@ def update_campaign_state_after_run(run_id: str, altitude: str, dimension: str,
         state["runs"].append(run_id)
 
     state.setdefault("altitude_history", [])
-    state["altitude_history"].append({
-        "run": run_id, "altitude": altitude,
-        "dimension": dimension, "family": family, "outcome": outcome,
-    })
+    state["altitude_history"].append(
+        {
+            "run": run_id,
+            "altitude": altitude,
+            "dimension": dimension,
+            "family": family,
+            "outcome": outcome,
+        }
+    )
 
     # F6 (2026-07-04): scoped PER hypothesis family — a global list let stale
     # dimension history from one family (e.g. Keltner-era 'regime_filter_er_threshold')
@@ -194,6 +202,7 @@ def update_campaign_state_after_run(run_id: str, altitude: str, dimension: str,
 
     _save_campaign_state(state)
 
+
 def record_pivot(family: str):
     """Record a failed hypothesis family and reset ITS parameter-dimension counter
     only (F6, 2026-07-04) — other families' dimension history must survive untouched."""
@@ -203,6 +212,7 @@ def record_pivot(family: str):
         state["failed_families"].append(family)
     state.setdefault("recent_parameter_dimensions_by_family", {})[family] = []
     _save_campaign_state(state)
+
 
 def record_escalation(target: str, detail: str, protocol_path: str = None, claimed_by_run: str = None):
     """
@@ -247,9 +257,11 @@ def _mark_campaign_status(status: str):
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _quote_yaml_line(line: str) -> str:
     """Quote the value portion of a single YAML line that is causing a parse error."""
     import re
+
     stripped = line.lstrip()
     indent = len(line) - len(stripped)
     # List item scalar
@@ -259,7 +271,7 @@ def _quote_yaml_line(line: str) -> str:
             q = value.replace('"', "'")
             return " " * indent + '- "' + q + '"'
     # Mapping value
-    m = re.match(r'^(\s*)([\w _\-./]+):\s+(.+)$', line)
+    m = re.match(r"^(\s*)([\w _\-./]+):\s+(.+)$", line)
     if m:
         pre, key, value = m.groups()
         if value and not value[0] in ('"', "'", "|", ">", "{", "[", "~"):
@@ -273,7 +285,7 @@ def _is_list_item_start(stripped: str) -> bool:
 
 
 def _is_mapping_start(stripped: str) -> bool:
-    return bool(re.match(r'^[\w _\-./]+:\s', stripped)) or stripped.endswith(":")
+    return bool(re.match(r"^[\w _\-./]+:\s", stripped)) or stripped.endswith(":")
 
 
 def _repair_multiline_list_item(lines: list, line_idx: int):
@@ -352,7 +364,7 @@ def _repair_multiline_list_item(lines: list, line_idx: int):
     quoted = merged.replace('"', "'")
     new_line = " " * marker_indent + '- "' + quoted + '"'
 
-    return lines[:start_idx] + [new_line] + lines[end_idx + 1:]
+    return lines[:start_idx] + [new_line] + lines[end_idx + 1 :]
 
 
 def _repair_yaml(content: str, source: str = "") -> str:
@@ -379,9 +391,11 @@ def _repair_yaml(content: str, source: str = "") -> str:
             fixed_line = _quote_yaml_line(original)
             if fixed_line != original:
                 tag = f" [{source}]" if source else ""
-                print(f"[YAML-REPAIR]{tag} line {line_idx + 1} quoted"
-                      f"\n    was: {original[:120]}"
-                      f"\n    now: {fixed_line[:120]}")
+                print(
+                    f"[YAML-REPAIR]{tag} line {line_idx + 1} quoted"
+                    f"\n    was: {original[:120]}"
+                    f"\n    now: {fixed_line[:120]}"
+                )
                 lines[line_idx] = fixed_line
                 attempt = "\n".join(lines)
                 continue
@@ -390,9 +404,11 @@ def _repair_yaml(content: str, source: str = "") -> str:
             new_lines = _repair_multiline_list_item(lines, line_idx)
             if new_lines is not None:
                 tag = f" [{source}]" if source else ""
-                print(f"[YAML-REPAIR]{tag} line {line_idx + 1} folded a wrapped "
-                      f"multi-line list item and quoted it"
-                      f"\n    was: {original[:120]}")
+                print(
+                    f"[YAML-REPAIR]{tag} line {line_idx + 1} folded a wrapped "
+                    f"multi-line list item and quoted it"
+                    f"\n    was: {original[:120]}"
+                )
                 attempt = "\n".join(new_lines)
                 continue
             break  # no change possible — give up
@@ -412,6 +428,7 @@ def load_yaml(path: Path):
     repaired = _repair_yaml(content, source=Path(path).name)
     docs = list(yaml.safe_load_all(repaired))
     return docs[0] if docs else None
+
 
 def save_yaml(path: Path, data):
     """
@@ -436,6 +453,7 @@ def save_yaml(path: Path, data):
             pass
         raise
 
+
 def update_state(path: Path, **kwargs):
     # NOT `or {}`, tried and reverted 2026-08-18. Verified by execution, since two
     # earlier attempts to describe this path from reading were both wrong:
@@ -455,7 +473,7 @@ def update_state(path: Path, **kwargs):
     state = load_yaml(path / "pipeline_state.yaml")
     for key, value in kwargs.items():
         if isinstance(value, dict) and key in state and isinstance(state[key], dict):
-            state[key].update(value) # Merge nested dicts (like counters)
+            state[key].update(value)  # Merge nested dicts (like counters)
         else:
             state[key] = value
 
@@ -465,10 +483,12 @@ def update_state(path: Path, **kwargs):
     state["updated_at"] = datetime.now(timezone.utc).isoformat()
     save_yaml(path / "pipeline_state.yaml", state)
 
+
 class UnrepairableYAMLError(ValueError):
     """F4b: carries the offending path/content/parse-error so a caller can build
     a useful retry-with-context prompt, while remaining a plain ValueError for
     any existing `except ValueError` handling."""
+
     def __init__(self, path: Path, raw_content: str, parse_error: Exception):
         self.path = path
         self.raw_content = raw_content
@@ -497,8 +517,8 @@ def ensure_files(paths):
         raise FileNotFoundError(f"Missing files: {missing}")
     for p in paths:
         p = Path(p)
-        if p.suffix in ('.yaml', '.yml'):
-            content = p.read_text(encoding='utf-8')
+        if p.suffix in (".yaml", ".yml"):
+            content = p.read_text(encoding="utf-8")
             try:
                 list(yaml.safe_load_all(content))
                 continue
@@ -510,8 +530,9 @@ def ensure_files(paths):
             except yaml.YAMLError as e:
                 raise UnrepairableYAMLError(p, content, e)
             if repaired != content:
-                p.write_text(repaired, encoding='utf-8')
+                p.write_text(repaired, encoding="utf-8")
                 print(f"[YAML-REPAIR] {p.name} auto-repaired and written back to disk.")
+
 
 def _build_yaml_retry_context(err: "UnrepairableYAMLError") -> str:
     """F4b: turn an UnrepairableYAMLError into a prompt-ready context block —
@@ -531,7 +552,6 @@ def _build_yaml_retry_context(err: "UnrepairableYAMLError") -> str:
         f"value, INCLUDING one on a wrapped continuation line of a multi-line "
         f"list item. Quote the whole value, or keep it on one physical line."
     )
-
 
 
 # SDK result-misclassification rider (2026-07-16, run_054+run_058 prior art;
@@ -578,9 +598,11 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
                 break
             except Exception as sdk_err:
                 if sdk_attempt == 0 and str(sdk_err) == _SDK_ERROR_RESULT_SUCCESS_MSG:
-                    print(f"⚠️ [SDK-RETRY] {current_stage}: claude_agent_sdk 0.2.82 "
-                          f"result-misclassification defect (is_error=True/subtype="
-                          f"'success' contradiction) — re-invoking once, prompt unchanged.")
+                    print(
+                        f"⚠️ [SDK-RETRY] {current_stage}: claude_agent_sdk 0.2.82 "
+                        f"result-misclassification defect (is_error=True/subtype="
+                        f"'success' contradiction) — re-invoking once, prompt unchanged."
+                    )
                     continue
                 raise  # any other message, or a second occurrence — unchanged
         try:
@@ -590,9 +612,11 @@ def _invoke_agent_with_yaml_retry(current_stage: str, run_id: str, run_dir: Path
             if attempt == 0:
                 retry_count = state.get("yaml_retry_count", 0) + 1
                 update_state(path=run_dir, yaml_retry_count=retry_count)
-                print(f"⚠️ [F4b] {current_stage}: unrepairable YAML on first attempt — "
-                      f"retrying once with error context appended "
-                      f"(yaml_retry_count={retry_count}).\n    {err}")
+                print(
+                    f"⚠️ [F4b] {current_stage}: unrepairable YAML on first attempt — "
+                    f"retrying once with error context appended "
+                    f"(yaml_retry_count={retry_count}).\n    {err}"
+                )
                 retry_ctx = _build_yaml_retry_context(err)
                 continue
             raise  # retry ALSO failed — fail to human as before, unchanged
@@ -639,8 +663,10 @@ def _compute_weighted_budget_usage(audit_log: dict) -> tuple:
                 w = tokens["weighted"]
             else:
                 w = _weighted_token_units(
-                    tokens.get("input", 0), tokens.get("output", 0),
-                    tokens.get("cache_read", 0), tokens.get("cache_creation", 0),
+                    tokens.get("input", 0),
+                    tokens.get("output", 0),
+                    tokens.get("cache_read", 0),
+                    tokens.get("cache_creation", 0),
                 )
         else:
             w = entry.get("total_estimated_tokens", 0)  # manual estimator path
@@ -671,16 +697,17 @@ def estimate_tokens(text: str) -> int:
     """Provides a rough token estimation (1 token ≈ 4 chars)."""
     return len(str(text)) // 4
 
+
 # def check_context_limits(stage_name: str, full_prompt: str, max_window: int = 100000):
 #     """Monitors the payload size and warns/halts if nearing limits."""
 #     estimated_tokens = estimate_tokens(full_prompt)
 #     # print(f"📊 [METRICS] {stage_name} Payload: ~{estimated_tokens:,} tokens")
-    
+
 #     if estimated_tokens > max_window * 0.8:
 #         print("⚠️ WARNING: Context window is at 80% capacity. Risk of model degradation.")
 #     if estimated_tokens > max_window:
 #         raise ValueError(f"CRITICAL: Context window exceeded ({estimated_tokens:,} > {max_window:,}). Pipeline halted.")
-        
+
 #     return estimated_tokens
 
 # Stage -> SKILL.md directory mapping. Module-level (not nested in
@@ -696,8 +723,7 @@ _SKILL_MAP = {
 }
 
 
-def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
-                         retry_context: str | None = None) -> str:
+def _build_stage_prompt(stage_name: str, handoff: dict, path: Path, retry_context: str | None = None) -> str:
     """Pure function: assembles the exact prompt text run_claude_worker sends
     to the model. Extracted (2026-08-23, E-032 S2a) so tests can assert on
     the fully-assembled prompt -- including the exclusion-digest
@@ -737,13 +763,12 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
             # optional input (e.g. artifacts/refinement_notes.yaml outside a
             # refinement loop) still triggers it and that is expected/benign; the
             # value is catching a path that is ALWAYS missing, run after run.
-            print(f"⚠️ WARNING: optional_input never resolved, stage continues "
-                  f"without it: {req['path']} (stage={stage_name})")
+            print(
+                f"⚠️ WARNING: optional_input never resolved, stage continues "
+                f"without it: {req['path']} (stage={stage_name})"
+            )
 
-    b7_deference_block = (
-        f"\n    {_B7_DEFERENCE_SENTENCE}\n"
-        if stage_name in _B7_MANDATORY_INPUT_STAGES else ""
-    )
+    b7_deference_block = f"\n    {_B7_DEFERENCE_SENTENCE}\n" if stage_name in _B7_MANDATORY_INPUT_STAGES else ""
 
     # 4. Construct the strict prompt (Combining Persona + Instructions)
     full_prompt = f"""
@@ -794,8 +819,10 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
 
 async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_context: str | None = None):
 
-    print(f"\n🧠 [AGENT INVOKED] Waking up specialist for: {stage_name}"
-          + (" (YAML-repair retry)" if retry_context else ""))
+    print(
+        f"\n🧠 [AGENT INVOKED] Waking up specialist for: {stage_name}"
+        + (" (YAML-repair retry)" if retry_context else "")
+    )
 
     full_prompt = _build_stage_prompt(stage_name, handoff, path, retry_context=retry_context)
 
@@ -813,8 +840,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # We pass an empty allowed_tools list to prevent it from wandering off
     # and strictly enforce our handoff file constraints.
     async for message in query(
-        prompt=full_prompt,
-        options=ClaudeAgentOptions(model= "claude-haiku-4-5",allowed_tools=[])
+        prompt=full_prompt, options=ClaudeAgentOptions(model="claude-haiku-4-5", allowed_tools=[])
     ):
         # Accumulate text content from assistant messages
         if isinstance(message, AssistantMessage):
@@ -843,13 +869,13 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # internal turns will show a much larger token count than its final
     # deliverable's file size would suggest; num_turns is what makes that
     # attributable at a glance instead of looking like unexplained bloat.
-    weighted_units = round(_weighted_token_units(
-        input_tokens, output_tokens, cache_read, cache_creation
-    ), 1)
+    weighted_units = round(_weighted_token_units(input_tokens, output_tokens, cache_read, cache_creation), 1)
 
     print(f"⏱️ Finished in {execution_time}s")
-    print(f"💰 Cost Estimate: ${total_cost:.4f} | Tokens: {total_tokens:,} (Cache Read: {cache_read:,}) "
-          f"| Weighted: {weighted_units:,} | Turns: {num_turns}")
+    print(
+        f"💰 Cost Estimate: ${total_cost:.4f} | Tokens: {total_tokens:,} (Cache Read: {cache_read:,}) "
+        f"| Weighted: {weighted_units:,} | Turns: {num_turns}"
+    )
 
     # 4. Save to the central audit ledger
     # E-030 S1.5 Piece 2 (RUNBOOK.md section 4.5's known crash-resume overwrite):
@@ -857,7 +883,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # of the refinement-budget cycle), not the OLD "refinement_attempt" key -- see
     # run_loop's own comment at the increment site for why the two happen to
     # coincide on the non-crash path and diverge only on a genuine crash-resume.
-    attempt_num = handoff.get('injected_context', {}).get('stage_attempt', '0')
+    attempt_num = handoff.get("injected_context", {}).get("stage_attempt", "0")
     log_entry = {
         f"{stage_name}_attempt_{attempt_num}": {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -872,16 +898,15 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
                 "cache_creation": cache_creation,
                 "total": total_tokens,
                 "weighted": weighted_units,
-            }
+            },
         }
     }
     update_state(path=path, audit_log=log_entry)
 
-
     # 6. Parse and Save the Deliverables
     pattern = r"```yaml\s*#\s*([a-zA-Z0-9_.]+\.yaml)\s*(.*?)```"
     matches = re.findall(pattern, agent_output, re.DOTALL)
-    
+
     if not matches:
         print("⚠️ Warning: Could not parse standard YAML blocks. Saving raw output for debug.")
         debug_path = path / "artifacts" / f"debug_{stage_name}_raw_output.txt"
@@ -895,9 +920,8 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         with open(dest_path, "w", encoding="utf-8") as f:
             f.write(yaml_content.strip())
         saved_files.append(filename.strip())
-        
-    print(f"✅ [AGENT COMPLETE] Successfully wrote deliverables: {', '.join(saved_files)}")
 
+    print(f"✅ [AGENT COMPLETE] Successfully wrote deliverables: {', '.join(saved_files)}")
 
 
 # Initialize the Native Client lazily, so importing this module does not
@@ -912,9 +936,10 @@ def _get_client():
         _client = genai.Client()
     return _client
 
+
 async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     print(f"\n✨ [GEMINI INVOKED] Waking up Native Gemini API for: {stage_name}")
-    
+
     # 2. Map the stage to the correct SKILL definition
     skill_map = {
         "hypothesis_generation": "hypothesis-design",
@@ -929,7 +954,7 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     skill_file_name = skill_map.get(stage_name)
     if not skill_file_name:
         raise ValueError(f"No SKILL file mapped for Gemini stage: {stage_name}")
-        
+
     # --- FIX 3: Point to the 'skills' directory ---
     skill_path = Path(".") / "workflow_artifacts" / "skills" / skill_file_name / "SKILL.md"
     with open(skill_path, "r", encoding="utf-8") as f:
@@ -938,7 +963,7 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     # 2. Gather Context
     context_blocks = []
     inputs_to_read = handoff.get("required_inputs", []) + handoff.get("optional_inputs", [])
-    
+
     for req in inputs_to_read:
         filepath = run_dir / req["path"]
         if filepath.exists():
@@ -946,10 +971,7 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
                 content = f.read()
             context_blocks.append(f"--- CONTENT OF {req['path']} ---\n{content}\n")
 
-    b7_deference_block = (
-        f"\n    {_B7_DEFERENCE_SENTENCE}\n"
-        if stage_name in _B7_MANDATORY_INPUT_STAGES else ""
-    )
+    b7_deference_block = f"\n    {_B7_DEFERENCE_SENTENCE}\n" if stage_name in _B7_MANDATORY_INPUT_STAGES else ""
 
     full_prompt = f"""
     YOUR HANDOFF INSTRUCTIONS:
@@ -971,15 +993,15 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     # estimated_prompt_tokens = check_context_limits(stage_name, full_prompt, max_window=200000)
 
     print("⏳ Waiting for Gemini API response...")
-    
+
     # --- FIX 1 & 2: Use the async '.aio' client and correct model name ---
     response = await _get_client().aio.models.generate_content(
-        model='gemini-2.5-flash-lite',
+        model="gemini-2.5-flash-lite",
         contents=full_prompt,
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
-            temperature=0.2, # Keep the quant bot logical and deterministic
-            max_output_tokens=4000, # <-- LAYER 3 HARD LIMIT
+            temperature=0.2,  # Keep the quant bot logical and deterministic
+            max_output_tokens=4000,  # <-- LAYER 3 HARD LIMIT
             safety_settings=[
                 {
                     "category": types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
@@ -997,16 +1019,15 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
                     "category": types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
                     "threshold": types.HarmBlockThreshold.BLOCK_NONE,
                 },
-            ]
+            ],
         ),
-        
     )
-    
+
     agent_output = response.text
 
     # --- METRICS POST-FLIGHT CALCULATION ---
     execution_time = round(time.time() - start_time, 2)
-    
+
     # Extract perfect Native Token tracking from the response object
     exact_input_tokens = response.usage_metadata.prompt_token_count
     exact_output_tokens = response.usage_metadata.candidates_token_count
@@ -1020,55 +1041,52 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     # of the refinement-budget cycle), not the OLD "refinement_attempt" key -- see
     # run_loop's own comment at the increment site for why the two happen to
     # coincide on the non-crash path and diverge only on a genuine crash-resume.
-    attempt_num = handoff.get('injected_context', {}).get('stage_attempt', '0')
+    attempt_num = handoff.get("injected_context", {}).get("stage_attempt", "0")
     log_entry = {
         f"{stage_name}_attempt_{attempt_num}": {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "engine": "gemini-native-api",
             "execution_time_seconds": execution_time,
-            "tokens": {
-                "input": exact_input_tokens,
-                "output": exact_output_tokens,
-                "total": total_tokens
-            }
+            "tokens": {"input": exact_input_tokens, "output": exact_output_tokens, "total": total_tokens},
         }
     }
     update_state(path=run_dir, audit_log=log_entry)
 
     # 5. Simple Stage-Based Saving
-    blocks = re.sub(r'^[a-zA-Z0-9_\-.]+\.yaml\s*\n', '', agent_output.strip())
+    blocks = re.sub(r"^[a-zA-Z0-9_\-.]+\.yaml\s*\n", "", agent_output.strip())
     yaml_blocks = re.findall(r"```yaml\s*(.*?)\s*```", blocks, re.DOTALL)
-    
+
     if yaml_blocks:
         # Define exactly what files each stage is supposed to emit in order
         stage_outputs = {
             "hypothesis_generation": ["hypothesis_card.yaml"],
             "innovation_expansion": ["expanded_hypothesis_card.yaml", "innovation_notes.yaml"],
             "validation": ["validation_protocol.yaml", "validation_decision.yaml"],
-            "refinement_planner": ["refinement_notes.yaml"]
+            "refinement_planner": ["refinement_notes.yaml"],
         }
-        
+
         expected_files = stage_outputs.get(stage_name, [f"{stage_name}_output.yaml"])
         saved_files = []
-        
+
         # Match each extracted block to its expected filename
         for i, block_content in enumerate(yaml_blocks):
             if i < len(expected_files):
                 filename = expected_files[i]
             else:
                 filename = f"{stage_name}_extra_{i}.yaml"
-                
+
             dest_path = run_dir / "artifacts" / filename
             with open(dest_path, "w", encoding="utf-8") as f:
                 f.write(block_content.strip())
             saved_files.append(filename)
-            
+
         print(f"✅ [WORKER COMPLETE] Successfully wrote deliverables: {', '.join(saved_files)}")
     else:
         print(f"⚠️ Warning: No yaml blocks found in output. Saving raw debug file.")
         debug_path = run_dir / "artifacts" / f"debug_{stage_name}_raw_output.txt"
         with open(debug_path, "w", encoding="utf-8") as f:
             f.write(agent_output)
+
 
 async def run_tool_worker(stage_name: str, run_id: str):
     """Executes a deterministic tool stage. No LLM call. No token cost."""
@@ -1087,15 +1105,18 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # F4d wiring: enforce the pre-registered significance methodology BEFORE
         # the subprocess reads the config, so the pin actually governs the run
         # rather than merely being audited against it afterwards.
-        _ensure_significance_methodology_pinned(
-            config_path, _load_machine_constraints(RUN_DIR) or {}, run_id)
+        _ensure_significance_methodology_pinned(config_path, _load_machine_constraints(RUN_DIR) or {}, run_id)
 
         out_dir = RUN_DIR / "prescreen"
         cmd = [
-            str(TBOT_PYTHON), str(ROOT / "tools" / "prescreen_signal.py"),
-            str(config_path), str(protocol_path),
-            "--run-id", run_id,
-            "--out-dir", str(out_dir),
+            str(TBOT_PYTHON),
+            str(ROOT / "tools" / "prescreen_signal.py"),
+            str(config_path),
+            str(protocol_path),
+            "--run-id",
+            run_id,
+            "--out-dir",
+            str(out_dir),
         ]
         print("🔬 Running signal prescreen (Improvement 08+09)...")
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -1109,13 +1130,16 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
         # Copy to artifacts so verdict_interpreter can read it
         import shutil as _ps_shutil
+
         _ps_shutil.copy(prescreen_path, ARTIFACTS / "prescreen_result.yaml")
 
         ps = load_yaml(ARTIFACTS / "prescreen_result.yaml")
         route = ps.get("route", "unknown")
-        print(f"✅ Prescreen complete. Route: {route} | "
-              f"IC={ps.get('ic_spearman_pooled')} | "
-              f"cost_pass={ps.get('cost_check', {}).get('pass')}")
+        print(
+            f"✅ Prescreen complete. Route: {route} | "
+            f"IC={ps.get('ic_spearman_pooled')} | "
+            f"cost_pass={ps.get('cost_check', {}).get('pass')}"
+        )
 
         # A6.2: record prescreen as a trial in campaign_state (even kills count as trials)
         # statistic_valid = "neither" for kills (no backtest Sharpe available)
@@ -1129,17 +1153,21 @@ async def run_tool_worker(stage_name: str, run_id: str):
         _record_prescreen_trial(run_id, ps, config_path, upsert=True)
 
     elif stage_name == "protocol_execution":
-        config_path     = ARTIFACTS / "candidate_strategy_config.json"
+        config_path = ARTIFACTS / "candidate_strategy_config.json"
         # K3/§9 Q4: consolidated resolver, replaces the previously-duplicated
         # inline protocol-selection logic (also present in signal_prescreen above).
         protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
         validation_path = ARTIFACTS / "validation_protocol.yaml"
 
         cmd = [
-            str(TBOT_PYTHON), str(ROOT / "tools" / "run_protocol.py"),
-            str(config_path), str(protocol_path),
-            "--validation-protocol", str(validation_path),
-            "--out-dir", str(RUN_DIR),
+            str(TBOT_PYTHON),
+            str(ROOT / "tools" / "run_protocol.py"),
+            str(config_path),
+            str(protocol_path),
+            "--validation-protocol",
+            str(validation_path),
+            "--out-dir",
+            str(RUN_DIR),
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
         print(result.stdout)
@@ -1149,8 +1177,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # Wrapped so a recording failure only logs; the original error still raises.
             try:
                 _record_failed_backtest_trial(
-                    run_id, config_path,
-                    f"run_protocol.py non-zero exit ({result.returncode})")
+                    run_id, config_path, f"run_protocol.py non-zero exit ({result.returncode})"
+                )
             except Exception as _rec_err:
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise RuntimeError(f"run_protocol.py failed:\n{result.stderr}")
@@ -1159,9 +1187,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         if not summary_path.exists():
             # H4-core (issue #28): same as above for the missing-summary failure.
             try:
-                _record_failed_backtest_trial(
-                    run_id, config_path,
-                    "protocol_summary.json missing after protocol run")
+                _record_failed_backtest_trial(run_id, config_path, "protocol_summary.json missing after protocol run")
             except Exception as _rec_err:
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise FileNotFoundError("protocol_summary.json not found after protocol run")
@@ -1199,29 +1225,35 @@ async def run_tool_worker(stage_name: str, run_id: str):
             if _tools_path not in sys.path:
                 sys.path.insert(0, _tools_path)
             import verdict_criteria_evaluator as _vce
+
             _pre_reg_path = ARTIFACTS / "pre_registration.yaml"
             _pre_reg_for_eval = load_yaml(_pre_reg_path) if _pre_reg_path.exists() else {}
             # C7-EXT (2026-07-22): the brief is now an evaluator input -- G1 needs
             # product/timeframe/rebalance to decide whether funding must be modeled.
             _brief_path = ARTIFACTS / "research_brief.yaml"
             _brief_for_eval = (load_yaml(_brief_path) if _brief_path.exists() else {}) or {}
-            _pass_rule_eval = _vce.evaluate_pass_rule_criteria(
-                summary, _pre_reg_for_eval or {}, _brief_for_eval)
+            _pass_rule_eval = _vce.evaluate_pass_rule_criteria(summary, _pre_reg_for_eval or {}, _brief_for_eval)
             _pass_rule_eval["evaluated_at"] = datetime.now(timezone.utc).isoformat()
             _pass_rule_eval["evaluator_version"] = 2  # C7-EXT: G1-G5 preconditions
             save_yaml(ARTIFACTS / "pass_rule_evaluation.yaml", _pass_rule_eval)
             _pre_reg_result = _pass_rule_eval.get("result")
-            print(f"✅ [C7] pass_rule_evaluation.yaml written: result={_pre_reg_result}"
-                  + (f" verdict={_pass_rule_eval.get('hypothesis_verdict')}/"
-                     f"{_pass_rule_eval.get('lineage_routing')}"
-                     if _pre_reg_result in ("PASS", "FAIL") else ""))
+            print(
+                f"✅ [C7] pass_rule_evaluation.yaml written: result={_pre_reg_result}"
+                + (
+                    f" verdict={_pass_rule_eval.get('hypothesis_verdict')}/{_pass_rule_eval.get('lineage_routing')}"
+                    if _pre_reg_result in ("PASS", "FAIL")
+                    else ""
+                )
+            )
         except Exception as _win_err:
             try:
                 _record_failed_backtest_trial(
-                    run_id, config_path,
+                    run_id,
+                    config_path,
                     f"post-success window raised {type(_win_err).__name__} "
                     "(protocol_summary.json parse or pass-rule evaluation) "
-                    "after successful protocol run")
+                    "after successful protocol run",
+                )
             except Exception as _rec_err:
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise
@@ -1233,16 +1265,21 @@ async def run_tool_worker(stage_name: str, run_id: str):
         result_data = load_yaml(ARTIFACTS / "protocol_result.yaml")
         hv_block = result_data.get("hypothesis_verdict") or {}
         diagnostics = hv_block.get("diagnostics") or {}
-        missing = [f for f in ["median_gross_pnl", "median_forecast_return_corr",
-                                "median_cost_drag_pct"] if diagnostics.get(f) is None]
+        missing = [
+            f
+            for f in ["median_gross_pnl", "median_forecast_return_corr", "median_cost_drag_pct"]
+            if diagnostics.get(f) is None
+        ]
         if missing:
             print(f"⚠️ WARNING: diagnostics block missing fields: {missing}")
             print("   Phase A metrics unavailable — verdict_interpreter will have reduced signal.")
             print("   Check run_artifact.py build_core and ensure trading-bot venv has scipy.")
         else:
-            print(f"✅ Diagnostics verified: corr={diagnostics['median_forecast_return_corr']:.3f}, "
-                  f"cost_drag={diagnostics['median_cost_drag_pct']:.1f}%, "
-                  f"gross_pnl={diagnostics['median_gross_pnl']:.2f}")
+            print(
+                f"✅ Diagnostics verified: corr={diagnostics['median_forecast_return_corr']:.3f}, "
+                f"cost_drag={diagnostics['median_cost_drag_pct']:.1f}%, "
+                f"gross_pnl={diagnostics['median_gross_pnl']:.2f}"
+            )
     else:
         raise ValueError(f"No tool implementation for stage: {stage_name}")
 
@@ -1288,10 +1325,12 @@ def _apply_b7_mandatory_inputs(stage_name: str, handoff: dict, run_dir: Path) ->
             continue
         if not (run_dir / mandatory_path).exists():
             continue
-        required.append({
-            "path": mandatory_path,
-            "reason": "B7 mandatory input: pre-registered pass_rule/brief outrank stage-generated cards on any conflict.",
-        })
+        required.append(
+            {
+                "path": mandatory_path,
+                "reason": "B7 mandatory input: pre-registered pass_rule/brief outrank stage-generated cards on any conflict.",
+            }
+        )
         existing_paths.add(mandatory_path)
 
 
@@ -1326,7 +1365,7 @@ def _exclusion_digest_input_enabled() -> bool:
         return False
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
-    digest_cfg = ((cfg.get("orchestrator") or {}).get("exclusion_digest_input") or {})
+    digest_cfg = (cfg.get("orchestrator") or {}).get("exclusion_digest_input") or {}
     return bool(digest_cfg.get("enabled", False))
 
 
@@ -1357,19 +1396,21 @@ def _apply_exclusion_digest_input(stage_name: str, handoff: dict, run_dir: Path)
     existing_paths = {req["path"] for req in optional}
     if _EXCLUSION_DIGEST_RELATIVE_PATH in existing_paths:
         return
-    optional.append({
-        "path": _EXCLUSION_DIGEST_RELATIVE_PATH,
-        "reason": (
-            "E-032 S2a: family-scoped (family, instrument, timeframe) triples "
-            "already tried, freshly derived from run artifacts -- NOT "
-            "campaign_state.yaml's stale, family-blind instruments_tried/"
-            "timeframes_tried lists. Prefer a candidate whose family is absent "
-            "here, or whose (instrument, timeframe) triple is absent under its "
-            "family, over a same-family tweak when both are viable. This is "
-            "raw material, not a binding gate -- the anti_adjacency_gate tool "
-            "stage makes the mechanical refusal decision downstream."
-        ),
-    })
+    optional.append(
+        {
+            "path": _EXCLUSION_DIGEST_RELATIVE_PATH,
+            "reason": (
+                "E-032 S2a: family-scoped (family, instrument, timeframe) triples "
+                "already tried, freshly derived from run artifacts -- NOT "
+                "campaign_state.yaml's stale, family-blind instruments_tried/"
+                "timeframes_tried lists. Prefer a candidate whose family is absent "
+                "here, or whose (instrument, timeframe) triple is absent under its "
+                "family, over a same-family tweak when both are viable. This is "
+                "raw material, not a binding gate -- the anti_adjacency_gate tool "
+                "stage makes the mechanical refusal decision downstream."
+            ),
+        }
+    )
     existing_paths.add(_EXCLUSION_DIGEST_RELATIVE_PATH)
 
 
@@ -1427,7 +1468,7 @@ def _stale_input_path_fix_enabled() -> bool:
         return False
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
-    fix_cfg = ((cfg.get("orchestrator") or {}).get("stale_input_path_fix") or {})
+    fix_cfg = (cfg.get("orchestrator") or {}).get("stale_input_path_fix") or {}
     return bool(fix_cfg.get("enabled", False))
 
 
@@ -1493,7 +1534,7 @@ def _anti_adjacency_retry_enabled() -> bool:
         return False
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
-    retry_cfg = ((cfg.get("orchestrator") or {}).get("anti_adjacency_retry") or {})
+    retry_cfg = (cfg.get("orchestrator") or {}).get("anti_adjacency_retry") or {}
     return bool(retry_cfg.get("enabled", False))
 
 
@@ -1574,11 +1615,18 @@ def _route_post_innovation_expansion(run_dir: Path, run_id: str, state: dict) ->
     history = list(gate_retry.get("history", []))
 
     if result.route == "admit":
-        print(f"✅ [E-032 S2c] anti-adjacency gate ADMIT for {run_id} "
-              f"(layer={result.get('layer')}): {result.get('reasons')}")
-        update_state(path=run_dir, anti_adjacency_gate_retry={
-            "attempts": 0, "last_reason": None, "history": history,
-        })
+        print(
+            f"✅ [E-032 S2c] anti-adjacency gate ADMIT for {run_id} "
+            f"(layer={result.get('layer')}): {result.get('reasons')}"
+        )
+        update_state(
+            path=run_dir,
+            anti_adjacency_gate_retry={
+                "attempts": 0,
+                "last_reason": None,
+                "history": history,
+            },
+        )
         return "validation"
 
     # REFUSE
@@ -1593,9 +1641,11 @@ def _route_post_innovation_expansion(run_dir: Path, run_id: str, state: dict) ->
             status="paused_for_human",
             flags={"anti_adjacency_gate_exhausted": True},
         )
-        print(f"\n⏸️  PIPELINE PAUSED: anti-adjacency gate REFUSEd {attempts} consecutive "
-              f"times for {run_id}. Escalating per operator ruling (2026-08-23, "
-              f"E-032 EPIC.md): 'retry up to 4 times ... then escalate'.")
+        print(
+            f"\n⏸️  PIPELINE PAUSED: anti-adjacency gate REFUSEd {attempts} consecutive "
+            f"times for {run_id}. Escalating per operator ruling (2026-08-23, "
+            f"E-032 EPIC.md): 'retry up to 4 times ... then escalate'."
+        )
         print(f"   Last refusal: {reason_text}")
         return "human_pause"
 
@@ -1603,9 +1653,11 @@ def _route_post_innovation_expansion(run_dir: Path, run_id: str, state: dict) ->
         path=run_dir,
         anti_adjacency_gate_retry={"attempts": attempts, "last_reason": reason_text, "history": history},
     )
-    print(f"🔁 [E-032 S2c] anti-adjacency gate REFUSE ({attempts}/"
-          f"{_ANTI_ADJACENCY_RETRY_MAX_ATTEMPTS}) for {run_id}: {reason_text} -- "
-          f"retrying hypothesis_generation with the refusal reason.")
+    print(
+        f"🔁 [E-032 S2c] anti-adjacency gate REFUSE ({attempts}/"
+        f"{_ANTI_ADJACENCY_RETRY_MAX_ATTEMPTS}) for {run_id}: {reason_text} -- "
+        f"retrying hypothesis_generation with the refusal reason."
+    )
     return "hypothesis_generation"
 
 
@@ -1699,7 +1751,7 @@ def _variant_selection_record_enabled() -> bool:
         return False
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
-    section = ((cfg.get("orchestrator") or {}).get("variant_selection_record") or {})
+    section = (cfg.get("orchestrator") or {}).get("variant_selection_record") or {}
     return bool(section.get("enabled", False))
 
 
@@ -1816,12 +1868,16 @@ def _record_variant_selection(run_dir: Path) -> None:
     variant_instrument = None
     variant_timeframe = None
     if isinstance(matched_variant, dict):
-        variant_instrument = (matched_variant.get("target_market")
-                               or matched_variant.get("target_markets")
-                               or matched_variant.get("instrument"))
-        variant_timeframe = (matched_variant.get("timeframe")
-                              or matched_variant.get("timeframe_expanded")
-                              or matched_variant.get("timeframe_original"))
+        variant_instrument = (
+            matched_variant.get("target_market")
+            or matched_variant.get("target_markets")
+            or matched_variant.get("instrument")
+        )
+        variant_timeframe = (
+            matched_variant.get("timeframe")
+            or matched_variant.get("timeframe_expanded")
+            or matched_variant.get("timeframe_original")
+        )
     resolved_instrument = _coerce_scalar_instrument(
         variant_instrument if variant_instrument else hypothesis_card.get("target_market"),
         run_dir,
@@ -1834,15 +1890,18 @@ def _record_variant_selection(run_dir: Path) -> None:
     run_id = run_dir.name
     hypothesis_id = expanded_card.get("base_hypothesis_id") or hypothesis_card.get("hypothesis_id")
 
-    save_yaml(artifacts / "variant_selection.yaml", {
-        "run_id": run_id,
-        "hypothesis_id": hypothesis_id,
-        "selected_variant_id": selected_variant_id,
-        "variant_definition": matched_variant,
-        "instrument": resolved_instrument,
-        "timeframe": resolved_timeframe,
-        "chosen_rationale": chosen_rationale,
-    })
+    save_yaml(
+        artifacts / "variant_selection.yaml",
+        {
+            "run_id": run_id,
+            "hypothesis_id": hypothesis_id,
+            "selected_variant_id": selected_variant_id,
+            "variant_definition": matched_variant,
+            "instrument": resolved_instrument,
+            "timeframe": resolved_timeframe,
+            "chosen_rationale": chosen_rationale,
+        },
+    )
 
     not_pursued = []
     for idx, (vid, variant) in enumerate(zip(derived_ids, variants)):
@@ -1885,6 +1944,7 @@ def _record_variant_selection(run_dir: Path) -> None:
 # whenever this function's body runs past its own flag check.
 # ---------------------------------------------------------------------------
 
+
 def _variant_anti_adjacency_gate_enabled() -> bool:
     """False (no behavior change) when the key, the section, or the config
     file is absent -- same silence-is-never-a-green-light rule as the other
@@ -1896,7 +1956,7 @@ def _variant_anti_adjacency_gate_enabled() -> bool:
         return False
     with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
-    section = ((cfg.get("orchestrator") or {}).get("variant_anti_adjacency_gate") or {})
+    section = (cfg.get("orchestrator") or {}).get("variant_anti_adjacency_gate") or {}
     return bool(section.get("enabled", False))
 
 
@@ -2069,13 +2129,15 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
     # collision (REFUSE wins), never silently checked against only one and
     # reported ADMIT for the rest.
     instrument_value = selection.get("instrument")
-    instruments_to_check = (
-        instrument_value if isinstance(instrument_value, list) else [instrument_value]
-    )
+    instruments_to_check = instrument_value if isinstance(instrument_value, list) else [instrument_value]
     per_instrument_results = [
         _aag.evaluate_candidate(
-            candidate, digest or {}, kb or {}, ROOT / "runs",
-            instrument=instr, timeframe=selection.get("timeframe"),
+            candidate,
+            digest or {},
+            kb or {},
+            ROOT / "runs",
+            instrument=instr,
+            timeframe=selection.get("timeframe"),
             candidate_config=candidate_config,
         )
         for instr in instruments_to_check
@@ -2101,15 +2163,20 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
     # is exactly where the variant identifier belongs -- so it is recorded
     # here, verbatim from variant_selection.yaml, alongside the gate's own
     # route/layer/reasons.
-    save_yaml(artifacts / "variant_anti_adjacency_result.yaml", {
-        **dict(result),
-        "selected_variant_id": selection.get("selected_variant_id"),
-        "hypothesis_id": candidate.get("hypothesis_id"),
-    })
+    save_yaml(
+        artifacts / "variant_anti_adjacency_result.yaml",
+        {
+            **dict(result),
+            "selected_variant_id": selection.get("selected_variant_id"),
+            "hypothesis_id": candidate.get("hypothesis_id"),
+        },
+    )
 
     if result.route == "admit":
-        print(f"✅ [E-034 S3] variant anti-adjacency gate ADMIT for {run_id} "
-              f"(layer={result.get('layer')}): {result.get('reasons')}")
+        print(
+            f"✅ [E-034 S3] variant anti-adjacency gate ADMIT for {run_id} "
+            f"(layer={result.get('layer')}): {result.get('reasons')}"
+        )
         return None
 
     reason_text = "; ".join(result.get("reasons", []))
@@ -2118,15 +2185,19 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
         status="paused_for_human",
         flags={"variant_anti_adjacency_gate_refused": True},
         variant_anti_adjacency_gate={
-            "route": "refuse", "layer": result.get("layer"), "reason": reason_text,
+            "route": "refuse",
+            "layer": result.get("layer"),
+            "reason": reason_text,
         },
     )
-    print(f"\n⏸️  PIPELINE PAUSED: variant anti-adjacency gate REFUSEd the "
-          f"CHOSEN VARIANT for {run_id} (layer={result.get('layer')}): "
-          f"{reason_text}. Escalating immediately -- no auto-retry at this "
-          f"later checkpoint (two stages already spent; see this "
-          f"function's own docstring for why that differs from the "
-          f"earlier, cheaper anti_adjacency_retry checkpoint).")
+    print(
+        f"\n⏸️  PIPELINE PAUSED: variant anti-adjacency gate REFUSEd the "
+        f"CHOSEN VARIANT for {run_id} (layer={result.get('layer')}): "
+        f"{reason_text}. Escalating immediately -- no auto-retry at this "
+        f"later checkpoint (two stages already spent; see this "
+        f"function's own docstring for why that differs from the "
+        f"earlier, cheaper anti_adjacency_retry checkpoint)."
+    )
     return "human_pause"
 
 
@@ -2166,22 +2237,24 @@ async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | 
         # Fires the Gemini API worker
         return await run_gemini_worker(stage_name, handoff, RUN_DIR)
 
+
 def determine_post_refinement_route(path: Path):
     """Checks if refinement requires a human pause or loops back to innovation."""
     refinement_path = path / "artifacts" / "refinement_notes.yaml"
     refinement = load_yaml(refinement_path)
-    
+
     # Check the flag from the Refinement Planner
     implementation_allowed = refinement.get("decision", {}).get("implementation_allowed", True)
-    
+
     if not implementation_allowed:
         print("\n⏸️ PIPELINE PAUSED: Human Intervention Required.")
         print("Please review artifacts/refinement_notes.yaml.")
         print("When complete, create artifacts/human_resolution.yaml and run with --resume.")
         update_state(path=path, status="paused_for_human")
-        return "human_pause" # Halts the while loop
-    
-    return "innovation_expansion" # Otherwise, loop back for another try
+        return "human_pause"  # Halts the while loop
+
+    return "innovation_expansion"  # Otherwise, loop back for another try
+
 
 def _create_a86_validation_bypass_handoffs(run_id: str, run_dir: Path):
     """
@@ -2195,50 +2268,66 @@ def _create_a86_validation_bypass_handoffs(run_id: str, run_dir: Path):
 
     # Overwrite signal_prescreen handoff with a minimal version that has no missing inputs
     sp_path = handoffs / "backtest_spec_to_signal_prescreen.yaml"
-    save_yaml(sp_path, {
-        "handoff_version": 1, "run_id": run_id,
-        "from_stage": "validation", "to_stage": "signal_prescreen",
-        "assigned_engine": "tool",
-        "objective": (
-            "A8.6 power gate triggered at validation — prescreen_result.yaml already written. "
-            "No prescreen tool runs; prescreen stage is a pass-through."
-        ),
-        "required_inputs": [
-            {"path": "artifacts/prescreen_result.yaml",
-             "reason": "A8.6 power gate output — written at validation stage"},
-        ],
-        "deliverables": [],
-    })
+    save_yaml(
+        sp_path,
+        {
+            "handoff_version": 1,
+            "run_id": run_id,
+            "from_stage": "validation",
+            "to_stage": "signal_prescreen",
+            "assigned_engine": "tool",
+            "objective": (
+                "A8.6 power gate triggered at validation — prescreen_result.yaml already written. "
+                "No prescreen tool runs; prescreen stage is a pass-through."
+            ),
+            "required_inputs": [
+                {
+                    "path": "artifacts/prescreen_result.yaml",
+                    "reason": "A8.6 power gate output — written at validation stage",
+                },
+            ],
+            "deliverables": [],
+        },
+    )
 
     # Create verdict_interpreter handoff for the A8.6 path
     vi_path = handoffs / "protocol_to_verdict_interpreter.yaml"
     if not vi_path.exists():
-        save_yaml(vi_path, {
-            "handoff_version": 1, "run_id": run_id,
-            "from_stage": "signal_prescreen", "to_stage": "verdict_interpreter",
-            "assigned_engine": "claude",
-            "objective": (
-                "Interpret A8.6 power gate result. Hypothesis was blocked before component build. "
-                "Produce verdict_interpretation.yaml with parked disposition and data requirement."
-            ),
-            "required_inputs": [
-                {"path": "artifacts/prescreen_result.yaml",
-                 "reason": "A8.6 power check result — no IC computed; power metrics are the evidence"},
-                {"path": "artifacts/hypothesis_card.yaml",
-                 "reason": "hypothesis parameters for reactivation_condition"},
-            ],
-            "deliverables": ["verdict_interpretation.yaml"],
-            "constraints": [
-                (
-                    "A8.6 POWER GATE: This hypothesis was blocked before prescreen. "
-                    "Use verdict_label: insufficient_power_a_priori. "
-                    "disposition: parked. do_not_add_to_failed_families: true. "
-                    "reactivation_trigger: the data_requirement from prescreen_result.yaml.a86_power_check. "
-                    "trial_count: 0 (no IC computed, no trial spent). "
-                    "sharpe: null, n_trades: 0, statistic_valid: neither."
+        save_yaml(
+            vi_path,
+            {
+                "handoff_version": 1,
+                "run_id": run_id,
+                "from_stage": "signal_prescreen",
+                "to_stage": "verdict_interpreter",
+                "assigned_engine": "claude",
+                "objective": (
+                    "Interpret A8.6 power gate result. Hypothesis was blocked before component build. "
+                    "Produce verdict_interpretation.yaml with parked disposition and data requirement."
                 ),
-            ],
-        })
+                "required_inputs": [
+                    {
+                        "path": "artifacts/prescreen_result.yaml",
+                        "reason": "A8.6 power check result — no IC computed; power metrics are the evidence",
+                    },
+                    {
+                        "path": "artifacts/hypothesis_card.yaml",
+                        "reason": "hypothesis parameters for reactivation_condition",
+                    },
+                ],
+                "deliverables": ["verdict_interpretation.yaml"],
+                "constraints": [
+                    (
+                        "A8.6 POWER GATE: This hypothesis was blocked before prescreen. "
+                        "Use verdict_label: insufficient_power_a_priori. "
+                        "disposition: parked. do_not_add_to_failed_families: true. "
+                        "reactivation_trigger: the data_requirement from prescreen_result.yaml.a86_power_check. "
+                        "trial_count: 0 (no IC computed, no trial spent). "
+                        "sharpe: null, n_trades: 0, statistic_valid: neither."
+                    ),
+                ],
+            },
+        )
 
 
 def determine_post_validation_route(path: Path):
@@ -2274,9 +2363,7 @@ def determine_post_validation_route(path: Path):
             # per-variant conditions instead (see the status fallback above).
             conditions = decision.get("conditions")
             if conditions is None:
-                conditions = [
-                    c for v in decision.get("variant_decisions", []) for c in v.get("conditions", [])
-                ]
+                conditions = [c for v in decision.get("variant_decisions", []) for c in v.get("conditions", [])]
             print(f"\n⚠️  CONDITIONAL APPROVAL — conditions to respect in backtest config:")
             for c in conditions:
                 print(f"   - {c}")
@@ -2287,35 +2374,43 @@ def determine_post_validation_route(path: Path):
         if _a86["verdict"] == "insufficient_power_a_priori":
             run_id = path.name
             print(f"\n⚡ A8.6: Power gate blocked at validation — no component will be built.")
-            print(f"   min_detectable_ic={_a86['min_detectable_ic']:.4f} > "
-                  f"plausible_ic_upper={_a86['plausible_ic_upper']}")
-            print(f"   expected_n_eff={_a86['expected_n_eff']:.1f} "
-                  f"(active_n={_a86['expected_active_n']:.0f}, "
-                  f"n_eff_symbols={_a86.get('n_eff_symbols', 'n/a')}, rho={_a86.get('rho_bar')})")
+            print(
+                f"   min_detectable_ic={_a86['min_detectable_ic']:.4f} > "
+                f"plausible_ic_upper={_a86['plausible_ic_upper']}"
+            )
+            print(
+                f"   expected_n_eff={_a86['expected_n_eff']:.1f} "
+                f"(active_n={_a86['expected_active_n']:.0f}, "
+                f"n_eff_symbols={_a86.get('n_eff_symbols', 'n/a')}, rho={_a86.get('rho_bar')})"
+            )
             print(f"   Data requirement: {_a86.get('data_requirement')}")
-            save_yaml(path / "artifacts" / "prescreen_result.yaml", {
-                "run_id": run_id,
-                "route": "insufficient_power_a_priori",
-                "a86_power_check": _a86,
-                "stage_blocked_at": "validation",
-                "note": "A8.6 power gate: no component built, no trial spent.",
-            })
+            save_yaml(
+                path / "artifacts" / "prescreen_result.yaml",
+                {
+                    "run_id": run_id,
+                    "route": "insufficient_power_a_priori",
+                    "a86_power_check": _a86,
+                    "stage_blocked_at": "validation",
+                    "note": "A8.6 power gate: no component built, no trial spent.",
+                },
+            )
             _create_a86_validation_bypass_handoffs(run_id, path)
             return "signal_prescreen"
 
         return "backtest_specification"
-    
+
     elif status == "refine":
         if refinements_used >= max_refinements:
             print(f"🛑 Refinement limit reached ({max_refinements}). Rejecting hypothesis.")
             return "completed_rejected"
         return "refinement_planner"
-    
+
     elif status == "reject":
         return "completed_rejected"
-    
+
     else:
         raise ValueError(f"Unknown validation status: {status}")
+
 
 def _create_remaining_handoffs(run_id: str, run_dir: Path):
     """Write signal_prescreen, protocol_execution, and verdict_interpreter handoffs."""
@@ -2326,84 +2421,107 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
 
     # Improvement 08+09: signal_prescreen handoff
     if not sp_path.exists():
-        save_yaml(sp_path, {
-            "handoff_version": 1, "run_id": run_id,
-            "from_stage": "backtest_specification", "to_stage": "signal_prescreen",
-            "assigned_engine": "tool",
-            "objective": (
-                "Run signal prescreen — cheap IC + cost gate before full walk-forward. "
-                "Compute pooled IC, block-adjusted significance, turnover proxy, and "
-                "cost_check from config/cost_model.yaml. Route: proceed_to_backtest "
-                "(both IC and cost pass) or kill/refine (skip backtest)."
-            ),
-            "required_inputs": [
-                {"path": "artifacts/candidate_strategy_config.json",
-                 "reason": "strategy config to prescreen"},
-                {"path": "../../config/cost_model.yaml",
-                 "reason": "Layer 2 cost hurdle parameters"},
-                {"path": "../../config/campaign_data_policy.yaml",
-                 "reason": "holdout range guard — prescreen must not read holdout data"},
-            ],
-            "deliverables": ["prescreen_result.yaml"],
-            "constraints": [
-                "A8.1: no standalone IC pass — cost_check is always required.",
-                "A2.3: ic_by_regime is suspended; report ungated IC only.",
-                "A6.2: prescreen kills must be recorded as trials in campaign_state.",
-                "Holdout data must not be used in prescreen windows.",
-            ],
-        })
+        save_yaml(
+            sp_path,
+            {
+                "handoff_version": 1,
+                "run_id": run_id,
+                "from_stage": "backtest_specification",
+                "to_stage": "signal_prescreen",
+                "assigned_engine": "tool",
+                "objective": (
+                    "Run signal prescreen — cheap IC + cost gate before full walk-forward. "
+                    "Compute pooled IC, block-adjusted significance, turnover proxy, and "
+                    "cost_check from config/cost_model.yaml. Route: proceed_to_backtest "
+                    "(both IC and cost pass) or kill/refine (skip backtest)."
+                ),
+                "required_inputs": [
+                    {"path": "artifacts/candidate_strategy_config.json", "reason": "strategy config to prescreen"},
+                    {"path": "../../config/cost_model.yaml", "reason": "Layer 2 cost hurdle parameters"},
+                    {
+                        "path": "../../config/campaign_data_policy.yaml",
+                        "reason": "holdout range guard — prescreen must not read holdout data",
+                    },
+                ],
+                "deliverables": ["prescreen_result.yaml"],
+                "constraints": [
+                    "A8.1: no standalone IC pass — cost_check is always required.",
+                    "A2.3: ic_by_regime is suspended; report ungated IC only.",
+                    "A6.2: prescreen kills must be recorded as trials in campaign_state.",
+                    "Holdout data must not be used in prescreen windows.",
+                ],
+            },
+        )
 
     if not pe_path.exists():
-        save_yaml(pe_path, {
-            "handoff_version": 1, "run_id": run_id,
-            "from_stage": "backtest_specification", "to_stage": "protocol_execution",
-            "assigned_engine": "tool",
-            "objective": "Run the full walk-forward protocol against the emitted config, "
-                         "evaluated against this hypothesis's specific validation criteria.",
-            "required_inputs": [
-                {"path": "artifacts/candidate_strategy_config.json",
-                 "reason": "the config to backtest"},
-                {"path": "artifacts/validation_protocol.yaml",
-                 "reason": "hypothesis-specific success criteria for verdict evaluation"},
-            ],
-            "deliverables": ["protocol_result.yaml"],
-        })
+        save_yaml(
+            pe_path,
+            {
+                "handoff_version": 1,
+                "run_id": run_id,
+                "from_stage": "backtest_specification",
+                "to_stage": "protocol_execution",
+                "assigned_engine": "tool",
+                "objective": "Run the full walk-forward protocol against the emitted config, "
+                "evaluated against this hypothesis's specific validation criteria.",
+                "required_inputs": [
+                    {"path": "artifacts/candidate_strategy_config.json", "reason": "the config to backtest"},
+                    {
+                        "path": "artifacts/validation_protocol.yaml",
+                        "reason": "hypothesis-specific success criteria for verdict evaluation",
+                    },
+                ],
+                "deliverables": ["protocol_result.yaml"],
+            },
+        )
 
     if not vi_path.exists():
-        save_yaml(vi_path, {
-            "handoff_version": 1, "run_id": run_id,
-            "from_stage": "protocol_execution", "to_stage": "verdict_interpreter",
-            "assigned_engine": "claude",
-            "objective": "Interpret backtest findings against hypothesis-specific criteria. "
-                         "Choose the correct altitude (refine/pivot/escalate/kill/promote) "
-                         "based on diagnostics and campaign history. Produce the matching artifact.",
-            "required_inputs": [
-                {"path": "artifacts/protocol_result.yaml",
-                 "reason": "backtest findings, hypothesis verdict, and diagnostics block"},
-                {"path": "artifacts/validation_protocol.yaml",
-                 "reason": "original success criteria and failure modes to interpret against"},
-                {"path": "artifacts/backtest_spec.yaml",
-                 "reason": "maps config choices to hypothesis claims for failure attribution"},
-                {"path": "artifacts/research_brief.yaml",
-                 "reason": "original research question and constraints"},
-            ],
-            "optional_inputs": [
-                {"path": "../../campaign_state.yaml",
-                 "reason": "cross-run altitude history; drives circuit-breaker altitude decisions"},
-            ],
-            "deliverables": ["verdict_interpretation.yaml"],
-            "constraints": [
-                "Change at most one hypothesis dimension in proposed_brief.yaml (refine case).",
-                "Do not recommend components absent from STRATEGY_CONFIG_REFERENCE.md.",
-                "Accept protocol_result.yaml numbers as truth — do not re-evaluate.",
-                "Populate altitude_justification with the specific diagnostic value used.",
-                "Do not emit both proposed_brief.yaml AND escalation_request.yaml.",
-            ],
-            "stop_conditions": [
-                "All evaluable approve criteria pass → status: promote, emit research_decision.yaml.",
-                "Two or more reject criteria confirmed → status: kill, emit research_decision.yaml.",
-            ],
-        })
+        save_yaml(
+            vi_path,
+            {
+                "handoff_version": 1,
+                "run_id": run_id,
+                "from_stage": "protocol_execution",
+                "to_stage": "verdict_interpreter",
+                "assigned_engine": "claude",
+                "objective": "Interpret backtest findings against hypothesis-specific criteria. "
+                "Choose the correct altitude (refine/pivot/escalate/kill/promote) "
+                "based on diagnostics and campaign history. Produce the matching artifact.",
+                "required_inputs": [
+                    {
+                        "path": "artifacts/protocol_result.yaml",
+                        "reason": "backtest findings, hypothesis verdict, and diagnostics block",
+                    },
+                    {
+                        "path": "artifacts/validation_protocol.yaml",
+                        "reason": "original success criteria and failure modes to interpret against",
+                    },
+                    {
+                        "path": "artifacts/backtest_spec.yaml",
+                        "reason": "maps config choices to hypothesis claims for failure attribution",
+                    },
+                    {"path": "artifacts/research_brief.yaml", "reason": "original research question and constraints"},
+                ],
+                "optional_inputs": [
+                    {
+                        "path": "../../campaign_state.yaml",
+                        "reason": "cross-run altitude history; drives circuit-breaker altitude decisions",
+                    },
+                ],
+                "deliverables": ["verdict_interpretation.yaml"],
+                "constraints": [
+                    "Change at most one hypothesis dimension in proposed_brief.yaml (refine case).",
+                    "Do not recommend components absent from STRATEGY_CONFIG_REFERENCE.md.",
+                    "Accept protocol_result.yaml numbers as truth — do not re-evaluate.",
+                    "Populate altitude_justification with the specific diagnostic value used.",
+                    "Do not emit both proposed_brief.yaml AND escalation_request.yaml.",
+                ],
+                "stop_conditions": [
+                    "All evaluable approve criteria pass → status: promote, emit research_decision.yaml.",
+                    "Two or more reject criteria confirmed → status: kill, emit research_decision.yaml.",
+                ],
+            },
+        )
 
 
 def _ensure_regime_detector_report(run_id: str, run_dir: Path) -> dict | None:
@@ -2413,6 +2531,7 @@ def _ensure_regime_detector_report(run_id: str, run_dir: Path) -> dict | None:
     Returns the loaded report dict, or None if it could not be produced.
     """
     import datetime as _dt
+
     report_path = ROOT / "regime_detector_report.yaml"
     stale = True
     if report_path.exists():
@@ -2436,7 +2555,8 @@ def _ensure_regime_detector_report(run_id: str, run_dir: Path) -> dict | None:
         cmd = [
             str(TBOT_PYTHON),
             str(ROOT / "tools" / "validate_regime_detector.py"),
-            "--config", str(config_path),
+            "--config",
+            str(config_path),
         ]
         print("🔍 Running regime detector validation (Improvement 02)...")
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -2451,9 +2571,16 @@ def _ensure_regime_detector_report(run_id: str, run_dir: Path) -> dict | None:
 
 
 _RETUNE_FORBIDDEN_TERMS = {
-    "pnl", "sharpe", "ic", "backtest", "cost_drag",
-    "forecast_return_corr", "per_trade", "expectancy",
+    "pnl",
+    "sharpe",
+    "ic",
+    "backtest",
+    "cost_drag",
+    "forecast_return_corr",
+    "per_trade",
+    "expectancy",
 }
+
 
 def _validate_retune_firewall(regime_audit: dict) -> list:
     """
@@ -2471,8 +2598,9 @@ def _validate_retune_firewall(regime_audit: dict) -> list:
     return violations
 
 
-def _inject_regime_context_into_handoff(handoff_path: Path, regime_report: dict,
-                                         regime_audit: dict | None, run_id: str):
+def _inject_regime_context_into_handoff(
+    handoff_path: Path, regime_report: dict, regime_audit: dict | None, run_id: str
+):
     """
     Improvement 02: update the verdict_interpreter handoff to include regime detector
     confidence and the A2.1 ungated-escape flag. Adds optional_inputs and a constraint.
@@ -2486,16 +2614,17 @@ def _inject_regime_context_into_handoff(handoff_path: Path, regime_report: dict,
     opt = handoff.setdefault("optional_inputs", [])
     paths_present = {x.get("path") for x in opt}
     if "../../regime_detector_report.yaml" not in paths_present:
-        opt.append({
-            "path": "../../regime_detector_report.yaml",
-            "reason": "Improvement 02: detector confidence per symbol/timeframe; "
-                      "required before any regime-attribution conclusion",
-        })
+        opt.append(
+            {
+                "path": "../../regime_detector_report.yaml",
+                "reason": "Improvement 02: detector confidence per symbol/timeframe; "
+                "required before any regime-attribution conclusion",
+            }
+        )
 
     # Summarise confidence per entry for the skill
     conf_summary = {
-        f'{e["symbol"]}_{e["timeframe"]}': e["confidence"]
-        for e in regime_report.get("per_symbol_per_timeframe", [])
+        f"{e['symbol']}_{e['timeframe']}": e["confidence"] for e in regime_report.get("per_symbol_per_timeframe", [])
     }
     handoff["regime_detector_confidence"] = conf_summary
 
@@ -2569,7 +2698,7 @@ def _scaffold_next_run(next_run_id: str):
 def setup_next_run(current_run_path: Path, next_run_id: str):
     """Scaffold next run and copy proposed_brief as its research_brief. Refine path only."""
     _scaffold_next_run(next_run_id)
-    proposed  = current_run_path / "artifacts" / "proposed_brief.yaml"
+    proposed = current_run_path / "artifacts" / "proposed_brief.yaml"
     next_brief = ROOT / "runs" / next_run_id / "artifacts" / "research_brief.yaml"
     shutil.copy(proposed, next_brief)
     print(f"✅ {next_run_id} scaffolded with proposed brief from {current_run_path.name}")
@@ -2591,6 +2720,7 @@ def setup_next_run(current_run_path: Path, next_run_id: str):
 # entry to verdict_interpreter — a mismatch is an engineering failure, never a
 # scientific result, exactly like F5c's no_signal_artifact.
 # ---------------------------------------------------------------------------
+
 
 def _load_machine_constraints(run_dir: Path) -> dict | None:
     pr_path = run_dir / "artifacts" / "pre_registration.yaml"
@@ -2637,14 +2767,12 @@ def _load_holdout_range(policy_path=None) -> tuple:
     hr = policy.get("holdout_range")
     if not isinstance(hr, (list, tuple)) or len(hr) != 2 or not all(hr):
         raise HoldoutBoundaryBreach(
-            f"{p} has no usable holdout_range (got {hr!r}). Refusing to generate "
-            "windows against an unknown seal."
+            f"{p} has no usable holdout_range (got {hr!r}). Refusing to generate windows against an unknown seal."
         )
     return str(hr[0]), str(hr[1])
 
 
-def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
-                                     holdout_end: str) -> None:
+def _assert_windows_clear_of_holdout(windows: list, holdout_start: str, holdout_end: str) -> None:
     """
     Refuse any window whose bars would land at or after `holdout_start`.
 
@@ -2694,6 +2822,7 @@ def _generate_monthly_windows(start: str, end: str, holdout_range=None) -> list:
     exclusive bound it looks like. `holdout_range` overrides the policy file
     (tests only)."""
     from datetime import date as _date
+
     y, m = int(start[:4]), int(start[5:7])
     end_y, end_m = int(end[:4]), int(end[5:7])
     windows = []
@@ -2751,15 +2880,15 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
         "symbols": symbols,
         "timeframe": timeframe,
         "windows": windows,
-        "holdout": proto_constraint.get(
-            "holdout", {"start": policy_start, "end": policy_end}
-        ),
+        "holdout": proto_constraint.get("holdout", {"start": policy_start, "end": policy_end}),
         "promotion": _require_pre_registered_promotion(proto_constraint, run_id),
     }
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(protocol_obj, f, indent=2)
-    print(f"✅ [F4d] Generated protocol from pre-registered machine_constraints: {out_path}"
-          f" ({len(windows)} windows, {start} -> {end})")
+    print(
+        f"✅ [F4d] Generated protocol from pre-registered machine_constraints: {out_path}"
+        f" ({len(windows)} windows, {start} -> {end})"
+    )
 
     # run_type MUST be "forced_diagnostic" — both signal_prescreen's and
     # protocol_execution's protocol-resolution logic only consult run_context's
@@ -2937,8 +3066,10 @@ def _ensure_significance_methodology_pinned(config_path: Path, constraints: dict
         )
     cfg["significance_methodology"] = pinned
     config_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
-    print(f"📌 [F4d] Propagated pinned significance_methodology={pinned!r} into "
-          f"{config_path.name} (was absent -- the prescreen reads it only from there)")
+    print(
+        f"📌 [F4d] Propagated pinned significance_methodology={pinned!r} into "
+        f"{config_path.name} (was absent -- the prescreen reads it only from there)"
+    )
     return True
 
 
@@ -2976,9 +3107,7 @@ def _lint_machine_constraints_protocol_selection(constraints: dict, pass_rule: d
 
     if ref is not None:
         if not isinstance(ref, str) or not ref.strip():
-            violations.append(
-                f"machine_constraints.protocol_ref={ref!r} must be a non-empty string."
-            )
+            violations.append(f"machine_constraints.protocol_ref={ref!r} must be a non-empty string.")
         else:
             ref_path = Path(ref)
             if ref_path.parent != Path("protocols"):
@@ -3051,11 +3180,14 @@ def _ensure_protocol_ref_pinned(run_dir: Path, run_id: str, constraints: dict) -
             )
 
     run_ctx_path.parent.mkdir(parents=True, exist_ok=True)
-    save_yaml(run_ctx_path, {
-        "run_type": "protocol_ref_pinned",
-        "protocol": bare_name,
-        "protocol_ref_pinned": True,
-    })
+    save_yaml(
+        run_ctx_path,
+        {
+            "run_type": "protocol_ref_pinned",
+            "protocol": bare_name,
+            "protocol_ref_pinned": True,
+        },
+    )
     print(f"📌 [B3] Wrote run_context.yaml pin: run_type=protocol_ref_pinned, protocol={bare_name}")
     return ref_path
 
@@ -3125,10 +3257,12 @@ def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
         # correct FOR THIS ONE RUN, not stale reuse. Still printed loudly (never
         # silent) and still exactly one hop -- claimed_by is not transitively
         # inherited by any further lineage continuation from this run.
-        print(f"⚠️  [B10] Using campaign_state.last_escalation.protocol_path "
-              f"({protocol_path_str}) -- this run ({run_id}) is its claimed "
-              f"consumer. Fragile: prefer machine_constraints.protocol_ref on "
-              f"this run's own pre_registration.yaml instead.")
+        print(
+            f"⚠️  [B10] Using campaign_state.last_escalation.protocol_path "
+            f"({protocol_path_str}) -- this run ({run_id}) is its claimed "
+            f"consumer. Fragile: prefer machine_constraints.protocol_ref on "
+            f"this run's own pre_registration.yaml instead."
+        )
         return _selected(Path(protocol_path_str))
 
     update_state(path=run_dir, flags={"stale_escalation_unclaimed": True})
@@ -3163,6 +3297,7 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
         if _tools_path not in sys.path:
             sys.path.insert(0, _tools_path)
         import episode_significance as _es
+
         actual_sig = prescreen_result.get("significance_methodology_used")
         if actual_sig not in _es.VALID_METHODS:
             violations.append(
@@ -3183,9 +3318,7 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
         expected_symbols = set(proto_constraint.get("symbols", []))
         actual_symbols = set(protocol_obj.get("symbols", []))
         if expected_symbols and expected_symbols != actual_symbols:
-            violations.append(
-                f"protocol symbols {sorted(actual_symbols)} != pre-registered {sorted(expected_symbols)}"
-            )
+            violations.append(f"protocol symbols {sorted(actual_symbols)} != pre-registered {sorted(expected_symbols)}")
 
         actual_windows = protocol_obj.get("windows", [])
         actual_start = min((w["test"]["start"] for w in actual_windows), default=None)
@@ -3254,8 +3387,9 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
         # _check_prescreen_conformance only (K3 rider scope).
         expected_hash = constraints.get("protocol_ref_content_hash")
         if expected_hash and protocol_obj:
-            _stripped = {k: v for k, v in protocol_obj.items()
-                         if k not in ("protocol_version", "protocol_content_hash")}
+            _stripped = {
+                k: v for k, v in protocol_obj.items() if k not in ("protocol_version", "protocol_content_hash")
+            }
             _canonical = json.dumps(_stripped, sort_keys=True)
             actual_hash = "sha256:" + hashlib.sha256(_canonical.encode("utf-8")).hexdigest()
             if actual_hash != expected_hash:
@@ -3312,8 +3446,10 @@ def _lint_pass_rule_total_mapping(pre_registration: dict) -> tuple:
     outcomes = pass_rule.get("outcomes") or []
 
     if not outcomes:
-        violations.append("pass_rule is dict-shaped but has no outcomes -- a structured "
-                           "pass rule must enumerate every branch's verdict+routing mapping")
+        violations.append(
+            "pass_rule is dict-shaped but has no outcomes -- a structured "
+            "pass rule must enumerate every branch's verdict+routing mapping"
+        )
 
     seen_branches = set()
     for outcome in outcomes:
@@ -3326,22 +3462,29 @@ def _lint_pass_rule_total_mapping(pre_registration: dict) -> tuple:
         if discretion == "stage":
             continue  # explicit opt-in -- no pair required
         if discretion is not None:
-            violations.append(f"branch {branch!r}: discretion={discretion!r} is not a "
-                               f"recognized opt-in value (only 'stage' is)")
+            violations.append(
+                f"branch {branch!r}: discretion={discretion!r} is not a recognized opt-in value (only 'stage' is)"
+            )
             continue
         hv = outcome.get("hypothesis_verdict")
         lr = outcome.get("lineage_routing")
         if hv not in _VALID_HYPOTHESIS_VERDICTS:
-            violations.append(f"branch {branch!r}: hypothesis_verdict={hv!r} is missing or "
-                               f"not one of {_VALID_HYPOTHESIS_VERDICTS} (no discretion opt-in present)")
+            violations.append(
+                f"branch {branch!r}: hypothesis_verdict={hv!r} is missing or "
+                f"not one of {_VALID_HYPOTHESIS_VERDICTS} (no discretion opt-in present)"
+            )
         if hv == "promote":
             if lr is not None:
-                violations.append(f"branch {branch!r}: hypothesis_verdict=promote must have "
-                                   f"lineage_routing=null (promote never routes); got {lr!r}")
+                violations.append(
+                    f"branch {branch!r}: hypothesis_verdict=promote must have "
+                    f"lineage_routing=null (promote never routes); got {lr!r}"
+                )
         else:
             if lr not in _VALID_LINEAGE_ROUTINGS:
-                violations.append(f"branch {branch!r}: lineage_routing={lr!r} is missing or "
-                                   f"not one of {_VALID_LINEAGE_ROUTINGS} (no discretion opt-in present)")
+                violations.append(
+                    f"branch {branch!r}: lineage_routing={lr!r} is missing or "
+                    f"not one of {_VALID_LINEAGE_ROUTINGS} (no discretion opt-in present)"
+                )
 
     # C7/C8: every criterion states its metric, comparator, and metric_basis
     # (bar_level/episode_level -- never fragment_level, per the standing
@@ -3354,13 +3497,17 @@ def _lint_pass_rule_total_mapping(pre_registration: dict) -> tuple:
         if criterion.get("comparator") not in _VALID_CRITERION_COMPARATORS:
             violations.append(f"criterion {cid!r}: missing or invalid 'comparator'")
         if not criterion.get("metric_basis"):
-            violations.append(f"criterion {cid!r}: missing 'metric_basis' (bar_level / "
-                               f"episode_level -- fragment_level is itself inadmissible for "
-                               f"a verdict, per the standing metric-basis rule)")
+            violations.append(
+                f"criterion {cid!r}: missing 'metric_basis' (bar_level / "
+                f"episode_level -- fragment_level is itself inadmissible for "
+                f"a verdict, per the standing metric-basis rule)"
+            )
         if criterion.get("per_symbol_threshold") and not criterion.get("null_handling"):
-            violations.append(f"criterion {cid!r}: has per_symbol_threshold (a per-symbol, "
-                               f"sparse-eligible statistic) but no null_handling policy -- "
-                               f"A3.4 requires stating what a null aggregate means here")
+            violations.append(
+                f"criterion {cid!r}: has per_symbol_threshold (a per-symbol, "
+                f"sparse-eligible statistic) but no null_handling policy -- "
+                f"A3.4 requires stating what a null aggregate means here"
+            )
 
     # A1 (K2 Phase B operator amendment): WARN (never reject) when multiple
     # FAIL-<id> branches carry DIFFERING verdict pairs -- id-order resolution
@@ -3383,11 +3530,13 @@ def _lint_pass_rule_total_mapping(pre_registration: dict) -> tuple:
     statement = str(pass_rule.get("statement") or "")
     if statement:
         for branch in seen_branches:
-            label = branch[len("FAIL-"):] if branch.startswith("FAIL-") else branch
+            label = branch[len("FAIL-") :] if branch.startswith("FAIL-") else branch
             if branch.lower() not in statement.lower() and label.lower() not in statement.lower():
-                warnings.append(f"branch {branch!r} is registered in outcomes but its label "
-                                 f"was not found in pass_rule.statement's own prose -- "
-                                 f"cross-check the human-readable rule still matches")
+                warnings.append(
+                    f"branch {branch!r} is registered in outcomes but its label "
+                    f"was not found in pass_rule.statement's own prose -- "
+                    f"cross-check the human-readable rule still matches"
+                )
 
     return violations, warnings
 
@@ -3426,7 +3575,7 @@ def _check_kb_reactivation_conformance(next_research_question: dict, kb: dict) -
         return []
 
     violations = []
-    for f in (kb.get("findings") or []):
+    for f in kb.get("findings") or []:
         # R4/C9 (K2 kernel, 2026-07-13) bug fix: this KB's `findings` schema is
         # NOT uniform -- 9 of 15 findings use a singular `hypothesis_id`, but 5
         # (including all three Keltner findings, the exact family this ledger
@@ -3573,10 +3722,12 @@ def _handle_hypothesis_generation_multi_card_split(run_id: str, run_dir: Path) -
     if len(cards) < 2:
         return False  # genuinely missing, not a multi-card split — let the caller raise
 
-    print(f"\n🔀 ARCHITECTURE RULE (one hypothesis per run): hypothesis_generation produced "
-          f"{len(cards)} hypothesis cards instead of one ({[c.name for c in cards]}). "
-          f"Splitting: this run keeps the first card; a sibling run is scaffolded per "
-          f"additional card.")
+    print(
+        f"\n🔀 ARCHITECTURE RULE (one hypothesis per run): hypothesis_generation produced "
+        f"{len(cards)} hypothesis cards instead of one ({[c.name for c in cards]}). "
+        f"Splitting: this run keeps the first card; a sibling run is scaffolded per "
+        f"additional card."
+    )
 
     first, rest = cards[0], cards[1:]
     shutil.copy(first, expected)
@@ -3594,16 +3745,25 @@ def _handle_hypothesis_generation_multi_card_split(run_id: str, run_dir: Path) -
         shutil.copy(card, child_artifacts / "hypothesis_card.yaml")
         # Skip straight to innovation_expansion — this card is already a completed
         # hypothesis_generation deliverable, not a fresh one to regenerate.
-        update_state(path=child_dir, pending_stage="innovation_expansion",
-                     current_stage="hypothesis_generation",
-                     completed_stages=["hypothesis_generation"], status="active")
+        update_state(
+            path=child_dir,
+            pending_stage="innovation_expansion",
+            current_stage="hypothesis_generation",
+            completed_stages=["hypothesis_generation"],
+            status="active",
+        )
         children.append(child_id)
         print(f"   {child_id} scaffolded from {card.name}")
 
     state = load_campaign_state()
     splits = state.setdefault("hypothesis_splits", [])
-    splits.append({"parent_run": run_id, "children": children,
-                    "reason": "hypothesis_generation produced multiple hypothesis cards"})
+    splits.append(
+        {
+            "parent_run": run_id,
+            "children": children,
+            "reason": "hypothesis_generation produced multiple hypothesis cards",
+        }
+    )
     _save_campaign_state(state)
 
     return True
@@ -3615,6 +3775,7 @@ def _next_instrument_from_universe(campaign: dict) -> dict:
     Returns: {symbol, category, timeframe} or None if all tried.
     """
     import yaml
+
     universe_path = ROOT / "config" / "coin_universe.yaml"
     if not universe_path.exists():
         return None
@@ -3625,12 +3786,12 @@ def _next_instrument_from_universe(campaign: dict) -> dict:
     # Guard: timeframes_tried may contain prose strings if a corruption occurred.
     # Extract the first clean timeframe identifier; default to "1h" if none found.
     import re as _re
-    _tf_match = _re.search(r'\b(1m|5m|15m|30m|1h|2h|4h|6h|12h|1d|3d|1w)\b', raw_tf)
+
+    _tf_match = _re.search(r"\b(1m|5m|15m|30m|1h|2h|4h|6h|12h|1d|3d|1w)\b", raw_tf)
     current_tf = _tf_match.group(1) if _tf_match else "1h"
 
     # Walk escalation_order by priority
-    for step in sorted(universe["escalation_order"]["sequence"],
-                       key=lambda x: x["priority"]):
+    for step in sorted(universe["escalation_order"]["sequence"], key=lambda x: x["priority"]):
         cat_name = step["category"]
         cat = universe["categories"].get(cat_name, {})
         for coin in cat.get("coins", []):
@@ -3643,12 +3804,13 @@ def _next_instrument_from_universe(campaign: dict) -> dict:
                     "strategy_affinity": cat.get("strategy_affinity", []),
                     "data_cached": coin.get("data_cached", False),
                 }
-    return None   # all instruments exhausted
+    return None  # all instruments exhausted
 
 
 def _next_timeframe_from_universe(campaign: dict):
     """Return the next timeframe to try, or None if all tried."""
     import yaml
+
     universe = yaml.safe_load((ROOT / "config" / "coin_universe.yaml").read_text(encoding="utf-8"))
     tried = set(campaign.get("timeframes_tried", ["1h"]))
     for step in universe["timeframe_escalation"]["sequence"]:
@@ -3664,14 +3826,14 @@ def _create_escalation_protocol(symbol: str, timeframe: str) -> Path:
     Returns the path to the new protocol file.
     """
     import json
+
     baseline_path = ROOT / "protocols" / "baseline_v1.json"
     baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
     escalation = dict(baseline)
     escalation["symbols"] = [symbol]
     escalation["timeframe"] = timeframe
     escalation["_escalation_note"] = (
-        f"Auto-generated for instrument escalation to {symbol}. "
-        f"Derived from baseline_v1.json. Do not edit manually."
+        f"Auto-generated for instrument escalation to {symbol}. Derived from baseline_v1.json. Do not edit manually."
     )
     proto_name = f"escalation_{symbol.lower()}_{timeframe}.json"
     proto_path = ROOT / "protocols" / proto_name
@@ -3683,13 +3845,13 @@ def _create_escalation_protocol(symbol: str, timeframe: str) -> Path:
 def _create_timeframe_protocol(timeframe: str) -> Path:
     """Create a new protocol file for a timeframe escalation."""
     import json
+
     baseline_path = ROOT / "protocols" / "baseline_v1.json"
     baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
     escalation = dict(baseline)
     escalation["timeframe"] = timeframe
     escalation["_escalation_note"] = (
-        f"Auto-generated for timeframe escalation to {timeframe}. "
-        f"Derived from baseline_v1.json."
+        f"Auto-generated for timeframe escalation to {timeframe}. Derived from baseline_v1.json."
     )
     proto_name = f"escalation_tf_{timeframe.replace('/', '_')}.json"
     proto_path = ROOT / "protocols" / proto_name
@@ -3703,7 +3865,7 @@ def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
         print("\n⏸️ REFINE verdict but no proposed_brief.yaml found. Human review needed.")
         return "human_pause"
     state = load_yaml(path / "pipeline_state.yaml")
-    used  = state.get("counters", {}).get("refinements_used", 0)
+    used = state.get("counters", {}).get("refinements_used", 0)
     max_r = state.get("governance", {}).get("max_refinements_after_validation", 2)
     if used >= max_r:
         print(f"\n🛑 Refinement budget exhausted ({used}/{max_r}). Killing hypothesis.")
@@ -3722,13 +3884,15 @@ def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     _kb = load_yaml(_KB_PATH) if _KB_PATH.exists() else {}
     _kb_violations = _check_kb_reactivation_conformance(proposed_content, _kb or {})
     if _kb_violations:
-        print("\n🛑 [C9] KB-EXHAUSTION CHECK — refine proposal targets an "
-              "already-closed/exhausted family:")
+        print("\n🛑 [C9] KB-EXHAUSTION CHECK — refine proposal targets an already-closed/exhausted family:")
         for v in _kb_violations:
             print(f"   - {v}")
-        update_state(path=path, status="paused_for_human",
-                     flags={"kb_reactivation_violation": True},
-                     kb_reactivation_violations=_kb_violations)
+        update_state(
+            path=path,
+            status="paused_for_human",
+            flags={"kb_reactivation_violation": True},
+            kb_reactivation_violations=_kb_violations,
+        )
         return "human_pause"
 
     next_id = _next_run_id(run_id)
@@ -3739,6 +3903,7 @@ def _route_refine(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     if carryover_src.exists():
         carryover_dst = ROOT / "runs" / next_id / "artifacts" / "findings_carryover.yaml"
         import shutil as _shutil
+
         _shutil.copy(carryover_src, carryover_dst)
         print(f"  findings_carryover.yaml copied to {next_id}")
     # Record in campaign state
@@ -3784,18 +3949,22 @@ def _route_pivot(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     _kb = load_yaml(_KB_PATH) if _KB_PATH.exists() else {}
     _kb_violations = _check_kb_reactivation_conformance({"research_goal": _pivot_text}, _kb or {})
     if _kb_violations:
-        print("\n🛑 [C9] KB-EXHAUSTION CHECK — pivot direction targets an "
-              "already-closed/exhausted family:")
+        print("\n🛑 [C9] KB-EXHAUSTION CHECK — pivot direction targets an already-closed/exhausted family:")
         for v in _kb_violations:
             print(f"   - {v}")
-        update_state(path=path, status="paused_for_human",
-                     flags={"kb_reactivation_violation": True},
-                     kb_reactivation_violations=_kb_violations)
+        update_state(
+            path=path,
+            status="paused_for_human",
+            flags={"kb_reactivation_violation": True},
+            kb_reactivation_violations=_kb_violations,
+        )
         return "human_pause"
 
     next_id = _next_run_id(run_id)
-    print(f"\n🔀 PIVOT (altitude 2): hypothesis family '{family}' exhausted. "
-          f"Setting up {next_id} for fresh hypothesis generation.")
+    print(
+        f"\n🔀 PIVOT (altitude 2): hypothesis family '{family}' exhausted. "
+        f"Setting up {next_id} for fresh hypothesis generation."
+    )
     # Scaffold directory only — no proposed_brief to copy. The next run's brief
     # is produced by hypothesis_generation using findings_carryover.yaml as input.
     subprocess.run([sys.executable, str(ROOT / "workflow" / "setup_run.py"), next_id])
@@ -3804,6 +3973,7 @@ def _route_pivot(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     if carryover_src.exists():
         carryover_dst = ROOT / "runs" / next_id / "artifacts" / "findings_carryover.yaml"
         import shutil as _shutil
+
         _shutil.copy(carryover_src, carryover_dst)
         print(f"  findings_carryover.yaml copied to {next_id}")
     record_pivot(family)
@@ -3849,19 +4019,22 @@ def _route_escalate(path: Path, run_id: str, interp: dict, campaign: dict) -> st
         # Write run_context.yaml so hypothesis_generation knows the escalation target.
         # research_brief.yaml carries the hypothesis methodology; run_context overrides asset.
         next_run_ctx = ROOT / "runs" / next_run_id / "artifacts" / "run_context.yaml"
-        save_yaml(next_run_ctx, {
-            "escalation_type": "instrument",
-            "target_symbol": next_inst["symbol"],
-            "target_timeframe": next_inst["timeframe"],
-            "escalation_reason": "hypothesis_family_exhausted",
-            "source_run": run_id,
-            "note": (
-                "This run is an instrument escalation. research_brief.yaml carries the "
-                "hypothesis methodology from the previous run. Override the asset target to "
-                f"{next_inst['symbol']} — do NOT use the asset listed in research_brief.yaml. "
-                f"All stages must target {next_inst['symbol']} at {next_inst['timeframe']} timeframe."
-            ),
-        })
+        save_yaml(
+            next_run_ctx,
+            {
+                "escalation_type": "instrument",
+                "target_symbol": next_inst["symbol"],
+                "target_timeframe": next_inst["timeframe"],
+                "escalation_reason": "hypothesis_family_exhausted",
+                "source_run": run_id,
+                "note": (
+                    "This run is an instrument escalation. research_brief.yaml carries the "
+                    "hypothesis methodology from the previous run. Override the asset target to "
+                    f"{next_inst['symbol']} — do NOT use the asset listed in research_brief.yaml. "
+                    f"All stages must target {next_inst['symbol']} at {next_inst['timeframe']} timeframe."
+                ),
+            },
+        )
         record_escalation("instrument", next_inst["symbol"], protocol_path=str(proto_path), claimed_by_run=next_run_id)
         diag = _extract_diagnostics(path)
         update_campaign_state_after_run(run_id, "search_space", "instrument", "", "escalate", diag)
@@ -3915,8 +4088,7 @@ def _route_kill(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     """
     print("\n🛑 KILL: hypothesis dead (mechanism falsified / no edge / question answered negatively).")
     diag = _extract_diagnostics(path)
-    update_campaign_state_after_run(run_id, "hypothesis", "",
-                                     interp.get("hypothesis_family", ""), "kill", diag)
+    update_campaign_state_after_run(run_id, "hypothesis", "", interp.get("hypothesis_family", ""), "kill", diag)
     # K4 symmetry: record the (null) continuation explicitly, same site A1's
     # other routing functions use -- this lineage has no child.
     update_state(path=path, continuation_child=None, continuation_created_by="_route_kill")
@@ -3939,7 +4111,7 @@ def _route_campaign_terminate(path: Path, run_id: str, interp_or_review: dict, c
         "terminal_run": run_id,
         "decision": "kill",
         "rationale": interp_or_review.get("primary_failure_mode")
-                     or interp_or_review.get("recommendation_rationale", "no rationale provided"),
+        or interp_or_review.get("recommendation_rationale", "no rationale provided"),
         "altitude_justification": interp_or_review.get("altitude_justification", ""),
         "runs_attempted": campaign.get("runs", []),
         "families_tried": campaign.get("failed_families", []),
@@ -3961,10 +4133,10 @@ def _extract_diagnostics(path: Path) -> dict:
         pr = load_yaml(path / "artifacts" / "protocol_result.yaml")
         diag = (pr.get("hypothesis_verdict") or {}).get("diagnostics", {})
         return {
-            "forecast_return_corr":      diag.get("median_forecast_return_corr"),
-            "cost_drag_pct":             diag.get("median_cost_drag_pct"),
-            "win_rate_vs_sharpe":        diag.get("win_rate_vs_sharpe"),
-            "avg_trade_duration_bars":   diag.get("median_avg_trade_duration_bars"),
+            "forecast_return_corr": diag.get("median_forecast_return_corr"),
+            "cost_drag_pct": diag.get("median_cost_drag_pct"),
+            "win_rate_vs_sharpe": diag.get("win_rate_vs_sharpe"),
+            "avg_trade_duration_bars": diag.get("median_avg_trade_duration_bars"),
         }
     except Exception:
         return {}
@@ -4029,8 +4201,10 @@ def _forecast_hash_for_prescreen(route: str, config_path: Path, run_id: str):
     silently omitting the field.
     """
     if route in _A_PRIORI_NO_CONFIG_ROUTES and not config_path.exists():
-        print(f"   forecast_hash: null for {run_id} -- route '{route}' blocks at "
-              f"validation, before any strategy config is built (by design).")
+        print(
+            f"   forecast_hash: null for {run_id} -- route '{route}' blocks at "
+            f"validation, before any strategy config is built (by design)."
+        )
         return None
     return _compute_forecast_hash(config_path)
 
@@ -4057,31 +4231,32 @@ def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path, *, upsert:
     """
     state = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
-    route  = ps.get("route", "unknown")
+    route = ps.get("route", "unknown")
     trial_entry = {
-        "trial_id":        run_id,
-        "source":          "prescreen",
-        "route":           route,
-        "sharpe":          None,
-        "expectancy_bps":  None,
-        "n_trades":        0,
+        "trial_id": run_id,
+        "source": "prescreen",
+        "route": route,
+        "sharpe": None,
+        "expectancy_bps": None,
+        "n_trades": 0,
         "statistic_valid": "neither",  # no backtest ran
-        "ic_pooled":       ps.get("ic_spearman_pooled"),
-        "cost_pass":       ps.get("cost_check", {}).get("pass"),
-        "forecast_hash":   _forecast_hash_for_prescreen(route, config_path, run_id),
+        "ic_pooled": ps.get("ic_spearman_pooled"),
+        "cost_pass": ps.get("cost_check", {}).get("pass"),
+        "forecast_hash": _forecast_hash_for_prescreen(route, config_path, run_id),
     }
     if upsert:
         for i, t in enumerate(trials):
             if t.get("trial_id") == run_id and t.get("source") == "prescreen":
                 trials[i] = trial_entry
                 _save_campaign_state(state)
-                print(f"⚙️  A6.2/H2: prescreen trial for {run_id} updated in place "
-                      f"(route={route}, statistic_valid=neither)")
+                print(
+                    f"⚙️  A6.2/H2: prescreen trial for {run_id} updated in place "
+                    f"(route={route}, statistic_valid=neither)"
+                )
                 return
     trials.append(trial_entry)
     _save_campaign_state(state)
-    print(f"⚙️  A6.2: prescreen trial recorded in campaign_state.trial_sharpes "
-          f"(route={route}, statistic_valid=neither)")
+    print(f"⚙️  A6.2: prescreen trial recorded in campaign_state.trial_sharpes (route={route}, statistic_valid=neither)")
 
 
 def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
@@ -4100,16 +4275,16 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
     (protocol_execution re-run via resume/retry) -- measured live in the committed
     ledger before this fix: run_054 and run_059 were each recorded 3x.
     """
-    state  = load_campaign_state()
+    state = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
 
     if any(t.get("trial_id") == run_id and t.get("source") == "backtest" for t in trials):
         print(f"⏭️  A6.2/H3: backtest trial for {run_id} already recorded — skipping duplicate.")
         return
 
-    hv    = summary.get("hypothesis_verdict") or {}
-    diag  = hv.get("diagnostics") or {}
-    pss   = summary.get("per_symbol_summary") or {}
+    hv = summary.get("hypothesis_verdict") or {}
+    diag = hv.get("diagnostics") or {}
+    pss = summary.get("per_symbol_summary") or {}
 
     # Aggregate Sharpe across symbols. NOTE: per_symbol_summary entries never
     # carried a "trade_count" key (run_protocol.py:1316-1321 -- only
@@ -4121,12 +4296,12 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
     # 8701). The real total-trade-count data is the raw per-window "results"
     # list (run_protocol.py:1389), which summary already carries.
     sharpes = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
-    results_list  = summary.get("results") or []
-    n_trades      = sum((r.get("core") or {}).get("trade_count", 0) for r in results_list)
+    results_list = summary.get("results") or []
+    n_trades = sum((r.get("core") or {}).get("trade_count", 0) for r in results_list)
     median_sharpe = round(statistics.median(sharpes), 4) if sharpes else None
 
-    expectancy   = diag.get("per_trade_expectancy_bps")
-    below_floor  = diag.get("below_floor_pct", 0.0) or 0.0
+    expectancy = diag.get("per_trade_expectancy_bps")
+    below_floor = diag.get("below_floor_pct", 0.0) or 0.0
 
     # A6.2 extension: sparse-trading strategies use expectancy, not Sharpe
     if below_floor > 50.0:
@@ -4137,19 +4312,21 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
         statistic_valid = "neither"
 
     trial_entry = {
-        "trial_id":        run_id,
-        "source":          "backtest",
-        "sharpe":          median_sharpe,
-        "expectancy_bps":  expectancy,
-        "n_trades":        n_trades,
+        "trial_id": run_id,
+        "source": "backtest",
+        "sharpe": median_sharpe,
+        "expectancy_bps": expectancy,
+        "n_trades": n_trades,
         "statistic_valid": statistic_valid,
         "below_floor_pct": below_floor,
-        "forecast_hash":   _compute_forecast_hash(config_path),
+        "forecast_hash": _compute_forecast_hash(config_path),
     }
     trials.append(trial_entry)
     _save_campaign_state(state)
-    print(f"⚙️  A6.2: backtest trial recorded (sharpe={median_sharpe}, "
-          f"n_trades={n_trades}, statistic_valid={statistic_valid})")
+    print(
+        f"⚙️  A6.2: backtest trial recorded (sharpe={median_sharpe}, "
+        f"n_trades={n_trades}, statistic_valid={statistic_valid})"
+    )
 
 
 def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str):
@@ -4196,23 +4373,25 @@ def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str):
         # failure by raising out of the hash step.
         forecast_hash = None
 
-    state  = load_campaign_state()
+    state = load_campaign_state()
     trials = state.setdefault("trial_sharpes", [])
 
     if any(t.get("trial_id") == run_id and t.get("source") == "backtest_failed" for t in trials):
         print(f"⏭️  H4: failed-backtest trial for {run_id} already recorded — skipping duplicate.")
         return
 
-    trials.append({
-        "trial_id":        run_id,
-        "source":          "backtest_failed",
-        "sharpe":          None,
-        "expectancy_bps":  None,
-        "n_trades":        0,
-        "statistic_valid": "failed",
-        "forecast_hash":   forecast_hash,
-        "error":           reason,
-    })
+    trials.append(
+        {
+            "trial_id": run_id,
+            "source": "backtest_failed",
+            "sharpe": None,
+            "expectancy_bps": None,
+            "n_trades": 0,
+            "statistic_valid": "failed",
+            "forecast_hash": forecast_hash,
+            "error": reason,
+        }
+    )
     _save_campaign_state(state)
     print(f"⚙️  H4: failed-backtest trial recorded (run={run_id}, reason={reason})")
 
@@ -4263,8 +4442,7 @@ def _verdict_provenance_stamp(run_id_str: str) -> dict:
         sys.path.insert(0, _tools_path)
     import verdict_criteria_evaluator as _vce
 
-    ok, _detail = _vce.resolve_evaluation_ref(
-        ref, {"evidence_runs": [run_id_str]}, root=ROOT)
+    ok, _detail = _vce.resolve_evaluation_ref(ref, {"evidence_runs": [run_id_str]}, root=ROOT)
     if ok:
         return {"verdict_status": "gated", "pass_rule_evaluation_ref": ref}
     return {"verdict_status": "ungated"}
@@ -4291,17 +4469,16 @@ def _recompute_kb_views(kb: dict):
     for f in findings:
         cat = f.get("edge_source_category") or "unclassified"
         outcome = f.get("outcome", "unknown")
-        hyp_ids = (
-            [f["hypothesis_id"]] if f.get("hypothesis_id")
-            else f.get("hypothesis_ids", [])
-        )
+        hyp_ids = [f["hypothesis_id"]] if f.get("hypothesis_id") else f.get("hypothesis_ids", [])
         for hyp_id in hyp_ids:
-            coverage.setdefault(cat, []).append({
-                "hypothesis_id": hyp_id,
-                "finding_id": f.get("id"),
-                "outcome": outcome,
-                "evidence_count": f.get("evidence_count", 0),
-            })
+            coverage.setdefault(cat, []).append(
+                {
+                    "hypothesis_id": hyp_id,
+                    "finding_id": f.get("id"),
+                    "outcome": outcome,
+                    "evidence_count": f.get("evidence_count", 0),
+                }
+            )
     kb["coverage_matrix"] = coverage
 
     exhausted = []
@@ -4312,16 +4489,20 @@ def _recompute_kb_views(kb: dict):
         basis = (f.get("exhausted_basis") or "").lower()
         is_analytic = "analytic" in basis
         if ec >= 3 or is_analytic:
-            exhausted.append({
-                "id": f.get("id"),
-                "mechanism": f.get("mechanism"),
-                "outcome": f.get("outcome"),
-                "evidence_count": ec,
-                "basis": "analytic" if is_analytic else "empirical",
-            })
+            exhausted.append(
+                {
+                    "id": f.get("id"),
+                    "mechanism": f.get("mechanism"),
+                    "outcome": f.get("outcome"),
+                    "evidence_count": ec,
+                    "basis": "analytic" if is_analytic else "empirical",
+                }
+            )
         else:
-            print(f"⚠️  A5.1: KB entry '{f.get('id')}' has exhausted=true but "
-                  f"evidence_count={ec} with no analytic basis — omitted from exhausted_mechanisms view")
+            print(
+                f"⚠️  A5.1: KB entry '{f.get('id')}' has exhausted=true but "
+                f"evidence_count={ec} with no analytic basis — omitted from exhausted_mechanisms view"
+            )
     kb["exhausted_mechanisms"] = exhausted
 
 
@@ -4380,8 +4561,7 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
         if run_id_str not in runs:
             runs.append(run_id_str)
             existing["evidence_count"] = len(runs)
-        print(f"⚙️  A5.1: KB entry for {hyp_id} updated "
-              f"(evidence_count={existing['evidence_count']}, run={run_id_str})")
+        print(f"⚙️  A5.1: KB entry for {hyp_id} updated (evidence_count={existing['evidence_count']}, run={run_id_str})")
 
         # F09 (2026-07-06, run_053 postmortem): a run that consumes an OPEN
         # reactivation_condition must close it here — otherwise the KB entry stays
@@ -4412,7 +4592,8 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
                 ps = interp.get("prescreen_result_summary", {})
                 if ps:
                     existing["signal_property"] = {
-                        k: ps.get(k) for k in ("ic_active_bars", "p_value", "n_eff", "n_episodes")
+                        k: ps.get(k)
+                        for k in ("ic_active_bars", "p_value", "n_eff", "n_episodes")
                         if ps.get(k) is not None
                     }
                 power = interp.get("power_disposition")
@@ -4427,9 +4608,11 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
                     f"sign, or anything a plain outcome enum can't capture); a stub close "
                     f"is a starting point for the human-authored narrative, not a substitute."
                 )
-                print(f"🔒 F09: reactivation_condition for {hyp_id} consumed by {run_id_str} "
-                      f"— KB entry closed (outcome={outcome}). Review exhausted_basis for "
-                      f"accuracy if the result is nuanced.")
+                print(
+                    f"🔒 F09: reactivation_condition for {hyp_id} consumed by {run_id_str} "
+                    f"— KB entry closed (outcome={outcome}). Review exhausted_basis for "
+                    f"accuracy if the result is nuanced."
+                )
     else:
         ps = interp.get("prescreen_result_summary", {})
         power = interp.get("power_disposition")
@@ -4443,9 +4626,9 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
             "outcome_reason": verdict_label,
             "protocol_version": interp.get("protocol_version", "baseline_v2"),
             "detector_version": "not_applicable",
-            "power_disposition": power if power else (
-                "underpowered" if "insufficient_sample" in verdict_label else "not_applicable"
-            ),
+            "power_disposition": power
+            if power
+            else ("underpowered" if "insufficient_sample" in verdict_label else "not_applicable"),
             "exhausted": False,
             "exhausted_basis": None,
             "reactivation_condition": interp.get("reactivation_trigger"),
@@ -4467,12 +4650,12 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
     if _tools_path not in sys.path:
         sys.path.insert(0, _tools_path)
     import verdict_criteria_evaluator as _vce
+
     for f_entry in findings:
         if isinstance(f_entry, dict):
             # C7-EXT-R/D-4: `root` is what lets the evaluator RESOLVE a cited
             # pass_rule_evaluation_ref rather than accept any truthy string.
-            _vce.validate_verdict_provenance(
-                f_entry, entry_ref=f"KB finding {f_entry.get('id')!r}", root=ROOT)
+            _vce.validate_verdict_provenance(f_entry, entry_ref=f"KB finding {f_entry.get('id')!r}", root=ROOT)
 
     _recompute_kb_views(kb)
     save_yaml(_KB_PATH, kb)
@@ -4481,6 +4664,7 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
 # ---------------------------------------------------------------------------
 # A8.6: A-priori power pre-flight (inline of power_check.py logic)
 # ---------------------------------------------------------------------------
+
 
 def _load_rho_bar() -> float:
     """Load measured ρ̄ from campaign_config.yaml. Falls back to 0.82 if unavailable."""
@@ -4527,9 +4711,7 @@ def _extract_llm_reported_power(card: dict) -> dict:
     if isinstance(params.get("n_symbols_effective"), (int, float)):
         out["n_symbols_effective"] = float(params["n_symbols_effective"])
 
-    prose = " ".join(
-        str(params.get(k, "")) for k in ("a_priori_calculation", "power_notes", "power_note")
-    )
+    prose = " ".join(str(params.get(k, "")) for k in ("a_priori_calculation", "power_notes", "power_note"))
 
     _NUM = r"(\d+\.\d+|\d+)"
     m = re.search(r"expected_n_eff\s*=?\s*[^=]*?=\s*" + _NUM, prose)
@@ -4550,30 +4732,32 @@ def _extract_llm_reported_power(card: dict) -> dict:
     return out
 
 
-def _log_power_check_discrepancy(run_id: str, hyp_id: str, machine: dict, llm_reported: dict,
-                                  discrepancies: list):
+def _log_power_check_discrepancy(run_id: str, hyp_id: str, machine: dict, llm_reported: dict, discrepancies: list):
     """Append one entry to the running discrepancy log. Never raises — this is an
     observability aid, not a gate; a logging bug must not block the pipeline."""
     try:
         existing = load_yaml(_POWER_DISCREPANCY_LOG_PATH) if _POWER_DISCREPANCY_LOG_PATH.exists() else None
         log = existing or {"entries": []}
-        log.setdefault("entries", []).append({
-            "run_id": run_id,
-            "hypothesis_id": hyp_id,
-            "logged_at": datetime.now(timezone.utc).isoformat(),
-            "machine_computed": machine,
-            "llm_reported": llm_reported,
-            "discrepancies": discrepancies,
-        })
+        log.setdefault("entries", []).append(
+            {
+                "run_id": run_id,
+                "hypothesis_id": hyp_id,
+                "logged_at": datetime.now(timezone.utc).isoformat(),
+                "machine_computed": machine,
+                "llm_reported": llm_reported,
+                "discrepancies": discrepancies,
+            }
+        )
         save_yaml(_POWER_DISCREPANCY_LOG_PATH, log)
-        print(f"⚠️  A8.6 discrepancy log: {len(discrepancies)} field(s) diverged for "
-              f"{hyp_id} ({run_id}) — see {_POWER_DISCREPANCY_LOG_PATH.name}")
+        print(
+            f"⚠️  A8.6 discrepancy log: {len(discrepancies)} field(s) diverged for "
+            f"{hyp_id} ({run_id}) — see {_POWER_DISCREPANCY_LOG_PATH.name}"
+        )
     except Exception as e:
         print(f"⚠️  Could not write power_check_discrepancy_log.yaml: {e}")
 
 
-def _compare_llm_vs_machine_power(run_id: str, hyp_id: str, machine: dict, card: dict,
-                                   rel_tol: float = 0.20):
+def _compare_llm_vs_machine_power(run_id: str, hyp_id: str, machine: dict, card: dict, rel_tol: float = 0.20):
     """Compare the machine-computed A8.6 result against whatever the LLM self-reported.
     Logs (does not gate) any field that diverges by more than rel_tol (relative) or any
     outright contradiction (is_market_wide=false but a correlation discount applied)."""
@@ -4585,8 +4769,11 @@ def _compare_llm_vs_machine_power(run_id: str, hyp_id: str, machine: dict, card:
 
     params = card.get("power_parameters", {}) or {}
     is_market_wide = bool(params.get("is_market_wide", False))
-    if not is_market_wide and llm_reported.get("n_symbols_effective") not in (None,) \
-            and abs(llm_reported["n_symbols_effective"] - float(params.get("n_symbols", 2))) > 1e-6:
+    if (
+        not is_market_wide
+        and llm_reported.get("n_symbols_effective") not in (None,)
+        and abs(llm_reported["n_symbols_effective"] - float(params.get("n_symbols", 2))) > 1e-6
+    ):
         discrepancies.append(
             f"is_market_wide=false but n_symbols_effective={llm_reported['n_symbols_effective']} "
             f"!= n_symbols={params.get('n_symbols', 2)} — a correlation discount was applied "
@@ -4607,8 +4794,9 @@ def _compare_llm_vs_machine_power(run_id: str, hyp_id: str, machine: dict, card:
             )
 
     if llm_reported.get("power_verdict") and machine.get("verdict"):
-        llm_says_adequate = "adequate" in llm_reported["power_verdict"].lower() or \
-            "sufficient" in llm_reported["power_verdict"].lower()
+        llm_says_adequate = (
+            "adequate" in llm_reported["power_verdict"].lower() or "sufficient" in llm_reported["power_verdict"].lower()
+        )
         machine_says_adequate = machine["verdict"] == "power_adequate"
         if llm_says_adequate != machine_says_adequate:
             discrepancies.append(
@@ -4641,6 +4829,7 @@ def _a86_block_size(timeframe) -> int:
     if _tools not in sys.path:
         sys.path.insert(0, _tools)
     from timeframe import bars_per_day
+
     return bars_per_day(timeframe)
 
 
@@ -4654,6 +4843,7 @@ def _run_a86_power_check(artifacts: Path) -> dict:
     sqrt(n) heuristic is NOT used; it materially overstates power for correlated symbols.
     """
     import math as _math
+
     card_path = artifacts / "hypothesis_card.yaml"
     if not card_path.exists():
         return {"verdict": "skip", "reason": "hypothesis_card.yaml not found"}
@@ -4666,7 +4856,10 @@ def _run_a86_power_check(artifacts: Path) -> dict:
     activation_rate = params.get("activation_rate")
     plausible_ic_upper = params.get("plausible_ic_upper")
     if activation_rate is None or plausible_ic_upper is None:
-        return {"verdict": "skip", "reason": "power_parameters incomplete (activation_rate or plausible_ic_upper is null)"}
+        return {
+            "verdict": "skip",
+            "reason": "power_parameters incomplete (activation_rate or plausible_ic_upper is null)",
+        }
 
     n_bars = params.get("n_bars", 17520)
     n_symbols = params.get("n_symbols", 2)
@@ -4707,8 +4900,10 @@ def _run_a86_power_check(artifacts: Path) -> dict:
 
     # Soft patch (b): log (never gate on) any LLM-vs-machine power discrepancy.
     _compare_llm_vs_machine_power(
-        run_id=artifacts.parent.name, hyp_id=card.get("hypothesis_id", "unknown"),
-        machine=result, card=card,
+        run_id=artifacts.parent.name,
+        hyp_id=card.get("hypothesis_id", "unknown"),
+        machine=result,
+        card=card,
     )
 
     return result
@@ -4728,10 +4923,10 @@ def _create_protocol_result_from_prescreen(path: Path, ps: dict):
     if pr_path.exists():
         return  # don't overwrite an existing real result
 
-    ic_pooled   = ps.get("ic_spearman_pooled")
-    cost_pass   = ps.get("cost_check", {}).get("pass", False)
-    ratio       = ps.get("cost_check", {}).get("edge_to_cost_ratio")
-    route       = ps.get("route", "unknown")
+    ic_pooled = ps.get("ic_spearman_pooled")
+    cost_pass = ps.get("cost_check", {}).get("pass", False)
+    ratio = ps.get("cost_check", {}).get("edge_to_cost_ratio")
+    route = ps.get("route", "unknown")
 
     # Estimate cost_drag_pct from edge_to_cost_ratio:
     # if ratio = 0.5, edge covers 50% of cost → cost_drag ≈ 200% (cost > gross edge).
@@ -4744,31 +4939,30 @@ def _create_protocol_result_from_prescreen(path: Path, ps: dict):
         estimated_cost_drag = None
 
     stub = {
-        "source":           "prescreen_stub",
-        "prescreen_route":  route,
+        "source": "prescreen_stub",
+        "prescreen_route": route,
         "hypothesis_verdict": {
             "verdict": "kill" if route.startswith("kill_") else "refine",
             "criteria_results": [],
             "verdict_reason": f"Prescreen gate: {ps.get('route_rationale', '')}",
             "diagnostics": {
-                "median_forecast_return_corr":    ic_pooled,
-                "median_cost_drag_pct":           estimated_cost_drag,
-                "median_gross_pnl":               None,
+                "median_forecast_return_corr": ic_pooled,
+                "median_cost_drag_pct": estimated_cost_drag,
+                "median_gross_pnl": None,
                 "median_avg_trade_duration_bars": None,
-                "uninformative_regimes":          [],
-                "win_rate_vs_sharpe":             "N/A (prescreen kill — no backtest)",
-                "below_floor_pct":                100.0,  # no trades
-                "per_trade_expectancy_bps":       None,
-                "zero_trade_slot_pct":            100.0,
+                "uninformative_regimes": [],
+                "win_rate_vs_sharpe": "N/A (prescreen kill — no backtest)",
+                "below_floor_pct": 100.0,  # no trades
+                "per_trade_expectancy_bps": None,
+                "zero_trade_slot_pct": 100.0,
             },
         },
         "per_symbol_summary": {},
-        "results":           [],
+        "results": [],
         "prescreen_kill_reason": ps.get("prescreen_kill_reason"),
     }
     save_yaml(pr_path, stub)
-    print(f"⚙️  Created protocol_result.yaml stub from prescreen evidence "
-          f"(route={route}, IC={ic_pooled})")
+    print(f"⚙️  Created protocol_result.yaml stub from prescreen evidence (route={route}, IC={ic_pooled})")
 
 
 def determine_post_prescreen_route(path: Path) -> str:
@@ -4784,7 +4978,7 @@ def determine_post_prescreen_route(path: Path) -> str:
         print("⚠️  prescreen_result.yaml missing — skipping prescreen gate, continuing to backtest.")
         return "protocol_execution"
 
-    ps    = load_yaml(ps_path)
+    ps = load_yaml(ps_path)
 
     # F4d (2026-07-05, run_047): pre-registration conformance gate. A prescreen
     # that silently used the wrong protocol range or dropped a MANDATORY
@@ -4806,15 +5000,20 @@ def determine_post_prescreen_route(path: Path) -> str:
                     protocol_obj = json.load(f)
         violations = _check_prescreen_conformance(ps, constraints, protocol_obj)
         if violations:
-            print("\n🛑 [F4d] PRE-REGISTRATION CONFORMANCE VIOLATION — this prescreen did "
-                  "NOT test what was pre-registered:")
+            print(
+                "\n🛑 [F4d] PRE-REGISTRATION CONFORMANCE VIOLATION — this prescreen did "
+                "NOT test what was pre-registered:"
+            )
             for v in violations:
                 print(f"   - {v}")
             run_id = path.name
             _mark_trial_invalidated(run_id, "; ".join(violations))
-            update_state(path=path, status="paused_for_human",
-                         flags={"conformance_violation": True},
-                         conformance_violations=violations)
+            update_state(
+                path=path,
+                status="paused_for_human",
+                flags={"conformance_violation": True},
+                conformance_violations=violations,
+            )
             return "human_pause"
 
     route = ps.get("route", "proceed_to_backtest")
@@ -4830,20 +5029,21 @@ def determine_post_prescreen_route(path: Path) -> str:
     # Pause for a human to fix the component/config; no trial is spent, no
     # findings_carryover is produced, no proposed_brief pivots the hypothesis away.
     if route == "no_signal_artifact":
-        print(f"\n⏸️  ENGINEERING PAUSE (F5c): prescreen route=no_signal_artifact. "
-              f"{ps.get('route_rationale', '')}")
-        print(f"   component_error_count={ps.get('component_error_count', 0)} — "
-              f"see component_error_sample in {ps_path.name}.")
-        print("   This is NOT a kill/refine/pivot verdict. Fix the underlying component "
-              "or config, then re-run signal_prescreen fresh (do not resume into "
-              "verdict_interpreter — there is nothing for it to interpret).")
-        update_state(path=path, status="paused_for_human",
-                     flags={"no_signal_artifact_flagged": True})
+        print(f"\n⏸️  ENGINEERING PAUSE (F5c): prescreen route=no_signal_artifact. {ps.get('route_rationale', '')}")
+        print(
+            f"   component_error_count={ps.get('component_error_count', 0)} — "
+            f"see component_error_sample in {ps_path.name}."
+        )
+        print(
+            "   This is NOT a kill/refine/pivot verdict. Fix the underlying component "
+            "or config, then re-run signal_prescreen fresh (do not resume into "
+            "verdict_interpreter — there is nothing for it to interpret)."
+        )
+        update_state(path=path, status="paused_for_human", flags={"no_signal_artifact_flagged": True})
         return "human_pause"
 
     # All other routes (kill_* or refine_*) skip the full backtest
-    print(f"🔬 Prescreen gate triggered: {route}. "
-          f"Creating stub protocol_result and routing to verdict_interpreter.")
+    print(f"🔬 Prescreen gate triggered: {route}. Creating stub protocol_result and routing to verdict_interpreter.")
     _create_protocol_result_from_prescreen(path, ps)
     return "verdict_interpreter"
 
@@ -4863,11 +5063,13 @@ def _inject_prescreen_context_into_verdict_handoff(handoff_path: Path, ps: dict)
     req = handoff.setdefault("required_inputs", [])
     paths_present = {x.get("path") for x in req}
     if "artifacts/prescreen_result.yaml" not in paths_present:
-        req.append({
-            "path":   "artifacts/prescreen_result.yaml",
-            "reason": "Prescreen killed this run — protocol_result.yaml is a stub. "
-                      "Use prescreen_result.yaml as the primary evidence source.",
-        })
+        req.append(
+            {
+                "path": "artifacts/prescreen_result.yaml",
+                "reason": "Prescreen killed this run — protocol_result.yaml is a stub. "
+                "Use prescreen_result.yaml as the primary evidence source.",
+            }
+        )
 
     # Note for the skill
     constraints = handoff.setdefault("constraints", [])
@@ -4888,10 +5090,9 @@ def _inject_prescreen_context_into_verdict_handoff(handoff_path: Path, ps: dict)
         constraints.append(ps_note)
 
     handoff["prescreen_route"] = ps.get("route")
-    handoff["prescreen_ic"]    = ps.get("ic_spearman_pooled")
+    handoff["prescreen_ic"] = ps.get("ic_spearman_pooled")
     save_yaml(handoff_path, handoff)
-    print(f"✅ Prescreen context injected into verdict_interpreter handoff "
-          f"(route={ps.get('route')})")
+    print(f"✅ Prescreen context injected into verdict_interpreter handoff (route={ps.get('route')})")
 
 
 def _auto_generate_findings_carryover(path: Path, interp: dict, lineage_routing: str = None):
@@ -4923,7 +5124,9 @@ def _auto_generate_findings_carryover(path: Path, interp: dict, lineage_routing:
     altitude_just = interp.get("altitude_justification", "")
 
     # First sentence of altitude_justification → diagnostic_rule_applied
-    first_sentence = altitude_just.split(". ")[0].strip() if altitude_just else "Rule unknown: no altitude_justification provided"
+    first_sentence = (
+        altitude_just.split(". ")[0].strip() if altitude_just else "Rule unknown: no altitude_justification provided"
+    )
 
     def _extract_float(pattern: str, text: str):
         m = re.search(pattern, text, re.IGNORECASE)
@@ -4934,9 +5137,9 @@ def _auto_generate_findings_carryover(path: Path, interp: dict, lineage_routing:
                 return None
         return None
 
-    corr      = _extract_float(r'(?:forecast_return_corr|corr)=([+-]?[\d.]+)', altitude_just)
-    cost_drag = _extract_float(r'cost_drag(?:_pct)?=([+-]?[\d.]+)', altitude_just)
-    gross_pnl = _extract_float(r'gross_pnl=([+-]?[\d.]+)', altitude_just)
+    corr = _extract_float(r"(?:forecast_return_corr|corr)=([+-]?[\d.]+)", altitude_just)
+    cost_drag = _extract_float(r"cost_drag(?:_pct)?=([+-]?[\d.]+)", altitude_just)
+    gross_pnl = _extract_float(r"gross_pnl=([+-]?[\d.]+)", altitude_just)
 
     what_failed = [
         c.get("criterion", str(c))
@@ -4946,36 +5149,42 @@ def _auto_generate_findings_carryover(path: Path, interp: dict, lineage_routing:
     if not what_failed:
         what_failed = ["No explicit FAIL criteria found — see altitude_justification"]
 
-    dim    = interp.get("proposed_change_dimension", "")
+    dim = interp.get("proposed_change_dimension", "")
     family = interp.get("hypothesis_family", "")
     if status == "refine":
         what_not_to_try = [
             f"Do not change {dim} further without addressing the root cause cited in altitude_justification"
-            if dim else "Do not repeat the same parameter dimension"
+            if dim
+            else "Do not repeat the same parameter dimension"
         ]
     elif status == "pivot":
         what_not_to_try = [
             f"Do not retry {family} hypothesis family — parameter space exhausted"
-            if family else "Do not retry this hypothesis family"
+            if family
+            else "Do not retry this hypothesis family"
         ]
     else:  # escalate
         what_not_to_try = [
             f"Do not apply {family} signal further on current instrument — regime/signal failure confirmed"
-            if family else "Do not apply this signal on the current instrument"
+            if family
+            else "Do not apply this signal on the current instrument"
         ]
 
-    save_yaml(carryover_path, {
-        "hypothesis_id":           interp.get("hypothesis_id", "unknown"),
-        "what_failed":             what_failed,
-        "diagnostic_rule_applied": first_sentence,
-        "diagnostic_snapshot": {
-            "forecast_return_corr": corr,
-            "cost_drag_pct":        cost_drag,
-            "gross_pnl":            gross_pnl,
+    save_yaml(
+        carryover_path,
+        {
+            "hypothesis_id": interp.get("hypothesis_id", "unknown"),
+            "what_failed": what_failed,
+            "diagnostic_rule_applied": first_sentence,
+            "diagnostic_snapshot": {
+                "forecast_return_corr": corr,
+                "cost_drag_pct": cost_drag,
+                "gross_pnl": gross_pnl,
+            },
+            "what_not_to_try": what_not_to_try,
+            "next_altitude": status,
         },
-        "what_not_to_try": what_not_to_try,
-        "next_altitude":   status,
-    })
+    )
     print("⚙️ Auto-generated findings_carryover.yaml from verdict artifacts.")
 
 
@@ -5016,13 +5225,9 @@ def _verify_verdict_outputs(run_dir: Path) -> list:
         else:
             carryover = load_yaml(carryover_path)
             if not carryover.get("diagnostic_rule_applied"):
-                violations.append(
-                    "pivot: findings_carryover.yaml missing diagnostic_rule_applied field"
-                )
+                violations.append("pivot: findings_carryover.yaml missing diagnostic_rule_applied field")
             if not carryover.get("what_not_to_try"):
-                violations.append(
-                    "pivot: findings_carryover.yaml missing what_not_to_try field"
-                )
+                violations.append("pivot: findings_carryover.yaml missing what_not_to_try field")
 
     if status == "refine":
         proposed_path = ARTIFACTS / "proposed_brief.yaml"
@@ -5032,7 +5237,7 @@ def _verify_verdict_outputs(run_dir: Path) -> list:
             dim = interp.get("proposed_change_dimension", "")
             family = interp.get("hypothesis_family", "")
             campaign = load_campaign_state()
-            recent   = campaign.get("recent_parameter_dimensions_by_family", {}).get(family, [])
+            recent = campaign.get("recent_parameter_dimensions_by_family", {}).get(family, [])
             if dim and dim in recent:
                 violations.append(
                     f"refine: proposed_change_dimension '{dim}' was already tried for "
@@ -5040,9 +5245,7 @@ def _verify_verdict_outputs(run_dir: Path) -> list:
                     f"Should have pivoted."
                 )
             if not interp.get("proposed_change_dimension"):
-                violations.append(
-                    "refine: verdict_interpretation.yaml missing proposed_change_dimension"
-                )
+                violations.append("refine: verdict_interpretation.yaml missing proposed_change_dimension")
 
         # findings_carryover must exist for refine (cross-run directional memory)
         carryover_path = ARTIFACTS / "findings_carryover.yaml"
@@ -5051,13 +5254,9 @@ def _verify_verdict_outputs(run_dir: Path) -> list:
         else:
             carryover = load_yaml(carryover_path)
             if not carryover.get("diagnostic_rule_applied"):
-                violations.append(
-                    "refine: findings_carryover.yaml missing diagnostic_rule_applied field"
-                )
+                violations.append("refine: findings_carryover.yaml missing diagnostic_rule_applied field")
             if not carryover.get("what_not_to_try"):
-                violations.append(
-                    "refine: findings_carryover.yaml missing what_not_to_try field"
-                )
+                violations.append("refine: findings_carryover.yaml missing what_not_to_try field")
 
     if status == "escalate":
         carryover_path = ARTIFACTS / "findings_carryover.yaml"
@@ -5094,11 +5293,11 @@ def _should_trigger_campaign_review(campaign: dict) -> bool:
     distinct family NAME from either shape instead of hashing the raw entry.
     """
     failed = campaign.get("failed_families", [])
-    runs   = campaign.get("runs", [])
+    runs = campaign.get("runs", [])
     review_n = campaign.get("review_every_n_runs", 6)
     distinct_names = {(f.get("name") if isinstance(f, dict) else f) for f in failed}
-    families_trigger = len(distinct_names) >= 2   # distinct families, not total entries
-    budget_trigger   = len(runs) > 0 and len(runs) % review_n == 0
+    families_trigger = len(distinct_names) >= 2  # distinct families, not total entries
+    budget_trigger = len(runs) > 0 and len(runs) % review_n == 0
     return families_trigger or budget_trigger
 
 
@@ -5131,21 +5330,21 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     DSR_THRESHOLD = 0.95
 
     # --- Load verdict interpretation for hypothesis_id and candidate SR ---
-    interp      = load_yaml(run_dir / "artifacts" / "verdict_interpretation.yaml") or {}
-    hyp_id      = interp.get("hypothesis_id", run_id)
-    pr_path     = run_dir / "artifacts" / "protocol_result.yaml"
-    pr          = load_yaml(pr_path) if pr_path.exists() else {}
-    pss         = pr.get("per_symbol_summary") or {}
-    hv_diag     = (pr.get("hypothesis_verdict") or {}).get("diagnostics") or {}
+    interp = load_yaml(run_dir / "artifacts" / "verdict_interpretation.yaml") or {}
+    hyp_id = interp.get("hypothesis_id", run_id)
+    pr_path = run_dir / "artifacts" / "protocol_result.yaml"
+    pr = load_yaml(pr_path) if pr_path.exists() else {}
+    pss = pr.get("per_symbol_summary") or {}
+    hv_diag = (pr.get("hypothesis_verdict") or {}).get("diagnostics") or {}
 
-    sharpes_raw   = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
+    sharpes_raw = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
     raw_median_sr = round(statistics.median(sharpes_raw), 4) if sharpes_raw else None
-    below_floor   = hv_diag.get("below_floor_pct", 0.0) or 0.0
-    is_sparse     = below_floor > 50.0
+    below_floor = hv_diag.get("below_floor_pct", 0.0) or 0.0
+    is_sparse = below_floor > 50.0
     expectancy_bps = hv_diag.get("per_trade_expectancy_bps")
 
     # --- Load and filter trial_sharpes from campaign_state ---
-    campaign   = load_campaign_state()
+    campaign = load_campaign_state()
     all_trials = campaign.get("trial_sharpes", [])
 
     # F8b (2026-07-04): exclude invalidated_artifact trials FIRST, before dedup or any
@@ -5189,8 +5388,13 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     # implementations without needing a new special case here. Does not change
     # n_dsr_total, n_trials, or the DSR value -- only which diagnostic bucket a
     # non-sharpe row is reported under in excluded_trial_counts.
-    excluded = {"statistic_expectancy": 0, "statistic_neither": 0, "no_sharpe_value": 0,
-                "dedup_removed": n_dedup_removed, "invalidated_artifact": n_invalidated}
+    excluded = {
+        "statistic_expectancy": 0,
+        "statistic_neither": 0,
+        "no_sharpe_value": 0,
+        "dedup_removed": n_dedup_removed,
+        "invalidated_artifact": n_invalidated,
+    }
     sharpe_values = []
     for t in deduped_trials:
         sv = t.get("statistic_valid")
@@ -5236,23 +5440,23 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     if is_sparse:
         # Sparse path: expectancy t-stat
         n_trades = sum(t.get("n_trades", 0) for t in deduped_trials if t.get("statistic_valid") == "expectancy")
-        exp_se   = None  # SE not yet stored in protocol_result; placeholder
-        t_stat   = None
+        exp_se = None  # SE not yet stored in protocol_result; placeholder
+        t_stat = None
         if expectancy_bps is not None and n_trades > 1:
             # SE approximation: stdev of per-trade PnL / sqrt(n_trades).
             # We don't store this yet; flag as indeterminate.
             pass
         passes_deflated = None  # indeterminate without SE
         dsr_result = {
-            "deflated_sharpe_ratio":   None,
-            "expected_max_sharpe":     None,
-            "trial_sharpe_variance":   None,
-            "correction_method":       "expectancy_t_stat_bonferroni",
+            "deflated_sharpe_ratio": None,
+            "expected_max_sharpe": None,
+            "trial_sharpe_variance": None,
+            "correction_method": "expectancy_t_stat_bonferroni",
             "expectancy_promotion": {
-                "t_stat":          t_stat,
-                "passes":          passes_deflated,
+                "t_stat": t_stat,
+                "passes": passes_deflated,
                 "bonferroni_note": (
-                    f"Bonferroni-adjusted alpha = 0.05/{max(total_tested,1)} = {0.05/max(total_tested,1):.4f}; "
+                    f"Bonferroni-adjusted alpha = 0.05/{max(total_tested, 1)} = {0.05 / max(total_tested, 1):.4f}; "
                     f"threshold t > 2.0 used as conservative approximation. "
                     f"Expectancy SE not yet stored in protocol_result — passes=null until SE is available."
                 ),
@@ -5261,10 +5465,10 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     elif n_dsr_total < 2:
         dsr_result = {
             "deflated_sharpe_ratio": None,
-            "expected_max_sharpe":   None,
+            "expected_max_sharpe": None,
             "trial_sharpe_variance": None,
-            "correction_method":     "bailey_lopezdeprado_2014",
-            "dsr_error":             f"Insufficient trials: need >= 2, got {n_dsr_total}",
+            "correction_method": "bailey_lopezdeprado_2014",
+            "dsr_error": f"Insufficient trials: need >= 2, got {n_dsr_total}",
         }
         passes_deflated = False
     elif n_trials < 2:
@@ -5273,10 +5477,10 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
         # fix an unmeasurable variance. Distinct error from the n_dsr_total<2 case above.
         dsr_result = {
             "deflated_sharpe_ratio": None,
-            "expected_max_sharpe":   None,
+            "expected_max_sharpe": None,
             "trial_sharpe_variance": None,
-            "correction_method":     "bailey_lopezdeprado_2014",
-            "dsr_error":             (
+            "correction_method": "bailey_lopezdeprado_2014",
+            "dsr_error": (
                 f"N={n_dsr_total} trials recorded (multiple-testing count is honest), "
                 f"but only {n_trials} produced a real Sharpe value -- need >= 2 real "
                 f"Sharpe values to estimate the trial distribution's variance. A large "
@@ -5285,17 +5489,17 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
         }
         passes_deflated = False
     else:
-        mu_sr    = statistics.mean(sharpe_values)
+        mu_sr = statistics.mean(sharpe_values)
         sigma_sr = statistics.stdev(sharpe_values)
-        var_sr   = sigma_sr ** 2
+        var_sr = sigma_sr**2
 
         if sigma_sr < 1e-10:
             dsr_result = {
                 "deflated_sharpe_ratio": None,
-                "expected_max_sharpe":   None,
+                "expected_max_sharpe": None,
                 "trial_sharpe_variance": round(var_sr, 6),
-                "correction_method":     "bailey_lopezdeprado_2014",
-                "dsr_error":             "Zero trial Sharpe variance — all trials identical; DSR undefined.",
+                "correction_method": "bailey_lopezdeprado_2014",
+                "dsr_error": "Zero trial Sharpe variance — all trials identical; DSR undefined.",
             }
             passes_deflated = False
         else:
@@ -5307,7 +5511,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             z1 = _phi_inv(1.0 - 1.0 / N)
             z2 = _phi_inv(1.0 - 1.0 / (_math.e * N))
             z_exp_max = (1.0 - EULER_GAMMA) * z1 + EULER_GAMMA * z2
-            e_max_sr  = mu_sr + sigma_sr * z_exp_max
+            e_max_sr = mu_sr + sigma_sr * z_exp_max
 
             candidate = raw_median_sr if raw_median_sr is not None else 0.0
             z = (candidate - e_max_sr) / sigma_sr
@@ -5316,15 +5520,15 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             passes_deflated = dsr > DSR_THRESHOLD
             dsr_result = {
                 "deflated_sharpe_ratio": round(dsr, 4),
-                "expected_max_sharpe":   round(e_max_sr, 4),
+                "expected_max_sharpe": round(e_max_sr, 4),
                 "trial_sharpe_variance": round(var_sr, 6),
-                "correction_method":     "bailey_lopezdeprado_2014",
+                "correction_method": "bailey_lopezdeprado_2014",
             }
 
     audit = {
-        "hypothesis_id":              hyp_id,
-        "generated_at":               datetime.now(timezone.utc).isoformat(),
-        "raw_median_sharpe":          raw_median_sr,
+        "hypothesis_id": hyp_id,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "raw_median_sharpe": raw_median_sr,
         # COUNT-DIV fix (2026-08-17): promotion_audit.schema.json declares
         # total_hypotheses_tested as "Total deduplicated trial records in
         # campaign_state.trial_sharpes at audit time (N in BLP 2014)" -- i.e.
@@ -5334,26 +5538,28 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
         # trial_sharpes), an outright schema violation, not just a naming
         # ambiguity. n_dsr_total is what the DSR math above actually uses
         # (:4270) but was never exposed in the output before this fix.
-        "total_hypotheses_tested":    n_dsr_total,
+        "total_hypotheses_tested": n_dsr_total,
         # The displaced metric keeps its own honest name rather than being
         # dropped -- a legitimate, different count (this campaign's total run
         # attempts, not the trial-ledger's deduplicated DSR-N).
-        "total_campaign_runs":        len(campaign.get("runs", [])),
-        "total_variants_tested":      total_tested,
-        "n_trials_used":              n_trials,
-        "is_sparse_trading":          is_sparse,
-        "passes_deflated_threshold":  passes_deflated,
-        "promotion_threshold_raw":    0.0,
+        "total_campaign_runs": len(campaign.get("runs", [])),
+        "total_variants_tested": total_tested,
+        "n_trials_used": n_trials,
+        "is_sparse_trading": is_sparse,
+        "passes_deflated_threshold": passes_deflated,
+        "promotion_threshold_raw": 0.0,
         "promotion_threshold_deflated": DSR_THRESHOLD,
-        "excluded_trial_counts":      excluded,
+        "excluded_trial_counts": excluded,
         **dsr_result,
     }
 
     audit_path = run_dir / "artifacts" / "promotion_audit.yaml"
     save_yaml(audit_path, audit)
     status_str = "PASS" if passes_deflated else ("INDETERMINATE" if passes_deflated is None else "FAIL")
-    print(f"⚙️  A6.2: promotion_audit.yaml written (DSR={dsr_result.get('deflated_sharpe_ratio')}, "
-          f"n_trials={n_trials}, passes={status_str})")
+    print(
+        f"⚙️  A6.2: promotion_audit.yaml written (DSR={dsr_result.get('deflated_sharpe_ratio')}, "
+        f"n_trials={n_trials}, passes={status_str})"
+    )
 
 
 def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
@@ -5384,17 +5590,21 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
 
     # 1. Deflated Sharpe gate (if not sparse / not indeterminate)
     if passes is False:
-        print(f"\n🛑 HOLDOUT BLOCKED: promotion_audit.yaml passes_deflated_threshold=False "
-              f"for {hyp_id}. DSR too low — trial count and Sharpe distribution do not support promotion.")
+        print(
+            f"\n🛑 HOLDOUT BLOCKED: promotion_audit.yaml passes_deflated_threshold=False "
+            f"for {hyp_id}. DSR too low — trial count and Sharpe distribution do not support promotion."
+        )
         return "completed_rejected"
 
     # 2. Single-use enforcement
     policy = load_yaml(_DATA_POLICY_PATH) or {} if _DATA_POLICY_PATH.exists() else {}
     consumed = policy.get("holdout_consumed_by", [])
     if hyp_id in consumed:
-        print(f"\n🛑 HOLDOUT REFUSED: {hyp_id} has already consumed the single holdout evaluation "
-              f"(found in campaign_data_policy.yaml holdout_consumed_by). "
-              f"Second holdout attempt is mechanically forbidden per A6.1.")
+        print(
+            f"\n🛑 HOLDOUT REFUSED: {hyp_id} has already consumed the single holdout evaluation "
+            f"(found in campaign_data_policy.yaml holdout_consumed_by). "
+            f"Second holdout attempt is mechanically forbidden per A6.1."
+        )
         return "completed_rejected"
 
     # --- 2b. research_only / venue gate (E-015 S3) -------------------------------
@@ -5435,22 +5645,27 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     brief = (load_yaml(_brief_path) or {}) if _brief_path.exists() else {}
     if brief.get("research_only") is not False:
         declared = brief.get("research_only", "<absent>")
-        print(f"\n⏸️  HOLDOUT HELD: {run_id}'s research_brief.yaml does not affirmatively "
-              f"declare the strategy tradable (research_only={declared!r}; a value of False "
-              f"is required to proceed).")
-        print(f"   The holdout is single-use and terminal, so it is spent only on a "
-              f"strategy we could actually trade.")
-        print(f"   DO NOT run the holdout backtest to resolve this — looking is spending, "
-              f"and this run has not earned the look yet.")
-        print(f"   Resolve by declaring tradability, then resume. A FRESH-LAUNCH run gets "
-              f"this automatically from run_campaign.py's _materialize_run, which resolves "
-              f"venue+product against config/venue_tradability.yaml. A REFINE/REFRAME "
-              f"DESCENDANT inherits neither the key nor the venue fields and has no "
-              f"automated path (research_only is resolved only at fresh launch), so a "
-              f"human must check this run's venue+product against venue_tradability.yaml "
-              f"and, only if it is genuinely tradable, record venue, product AND "
-              f"research_only: false on this run's research_brief.yaml. Setting the flag "
-              f"without doing that check is the bypass this gate exists to prevent.")
+        print(
+            f"\n⏸️  HOLDOUT HELD: {run_id}'s research_brief.yaml does not affirmatively "
+            f"declare the strategy tradable (research_only={declared!r}; a value of False "
+            f"is required to proceed)."
+        )
+        print(f"   The holdout is single-use and terminal, so it is spent only on a strategy we could actually trade.")
+        print(
+            f"   DO NOT run the holdout backtest to resolve this — looking is spending, "
+            f"and this run has not earned the look yet."
+        )
+        print(
+            f"   Resolve by declaring tradability, then resume. A FRESH-LAUNCH run gets "
+            f"this automatically from run_campaign.py's _materialize_run, which resolves "
+            f"venue+product against config/venue_tradability.yaml. A REFINE/REFRAME "
+            f"DESCENDANT inherits neither the key nor the venue fields and has no "
+            f"automated path (research_only is resolved only at fresh launch), so a "
+            f"human must check this run's venue+product against venue_tradability.yaml "
+            f"and, only if it is genuinely tradable, record venue, product AND "
+            f"research_only: false on this run's research_brief.yaml. Setting the flag "
+            f"without doing that check is the bypass this gate exists to prevent."
+        )
         # human_pause, NOT completed_rejected. The two terminal refusals below are
         # genuinely unrecoverable (DSR too low; holdout already consumed). This one is a
         # fixable declaration gap, and because research_only is not propagated by the
@@ -5473,8 +5688,7 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
         # have marked the entry done and advanced the queue. That is the intended
         # behaviour for a state needing a human decision, and it is the same shape every
         # other classified pause already has.
-        update_state(path=run_dir, status="paused_for_human",
-                     flags={"research_only_unverified": True})
+        update_state(path=run_dir, status="paused_for_human", flags={"research_only_unverified": True})
         return "human_pause"
 
     # Passed: clear any hold left from a previous attempt. The flag is sticky
@@ -5501,8 +5715,7 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
         holdout_range = policy.get("holdout_range", [])
         print(f"\n⏸️  HOLDOUT: holdout_result.yaml not yet present for {hyp_id}.")
         print(f"   Holdout range: {holdout_range}")
-        print(f"   Run the holdout backtest on this range, write holdout_result.yaml, "
-              f"then resume the pipeline.")
+        print(f"   Run the holdout backtest on this range, write holdout_result.yaml, then resume the pipeline.")
         return "human_pause"
 
     hr = load_yaml(hr_path) or {}
@@ -5514,13 +5727,17 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     print(f"⚙️  A6.1: {hyp_id} marked in holdout_consumed_by (single-use consumed).")
 
     if status == "pass":
-        print(f"\n🏆 TERMINAL PROMOTE: holdout_result.yaml status=pass for {hyp_id}. "
-              f"This is a confirmed edge (post-holdout, post-deflation).")
+        print(
+            f"\n🏆 TERMINAL PROMOTE: holdout_result.yaml status=pass for {hyp_id}. "
+            f"This is a confirmed edge (post-holdout, post-deflation)."
+        )
         return "completed_promoted"
 
     if status == "fail":
-        print(f"\n🛑 TERMINAL REJECT: holdout_result.yaml status=fail for {hyp_id}. "
-              f"Holdout failure is terminal per A6.1 — no further promotion path.")
+        print(
+            f"\n🛑 TERMINAL REJECT: holdout_result.yaml status=fail for {hyp_id}. "
+            f"Holdout failure is terminal per A6.1 — no further promotion path."
+        )
         return "completed_rejected"
 
     # inconclusive
@@ -5562,8 +5779,11 @@ def _apply_circuit_breaker(status: str, interp: dict, campaign: dict) -> str:
         dim = interp.get("proposed_change_dimension", "")
         recent_dims = campaign.get("recent_parameter_dimensions_by_family", {}).get(family, [])
         if dim in recent_dims or len(recent_dims) >= 2:
-            reason = (f"tried dimension '{dim}' before for family '{family}'" if dim in recent_dims
-                      else f"2 parameter dimensions already tried for family '{family}' ({recent_dims})")
+            reason = (
+                f"tried dimension '{dim}' before for family '{family}'"
+                if dim in recent_dims
+                else f"2 parameter dimensions already tried for family '{family}' ({recent_dims})"
+            )
             print(f"⚠️  CIRCUIT BREAKER: parameter altitude exhausted ({reason}). Forcing pivot.")
             status = "pivot"
 
@@ -5571,8 +5791,10 @@ def _apply_circuit_breaker(status: str, interp: dict, campaign: dict) -> str:
         failed_names = _family_names(campaign.get("failed_families", []))
         count = failed_names.count(family)
         if count >= 2:
-            print(f"⚠️  CIRCUIT BREAKER: hypothesis family '{family}' exhausted "
-                  f"(appeared {count}x in failed_families). Forcing escalate.")
+            print(
+                f"⚠️  CIRCUIT BREAKER: hypothesis family '{family}' exhausted "
+                f"(appeared {count}x in failed_families). Forcing escalate."
+            )
             status = "escalate"
 
     return status
@@ -5587,10 +5809,10 @@ def _apply_circuit_breaker(status: str, interp: dict, campaign: dict) -> str:
 # "campaign routes elsewhere" -- this is a backward-compat approximation for
 # OLD artifacts only, never used for a new-schema run).
 _LEGACY_STATUS_TO_VERDICT_ROUTING = {
-    "promote":  ("promote", None),
-    "kill":     ("kill", "terminate"),
-    "refine":   ("refine", "refine"),
-    "pivot":    ("kill", "pivot"),
+    "promote": ("promote", None),
+    "kill": ("kill", "terminate"),
+    "refine": ("refine", "refine"),
+    "pivot": ("kill", "pivot"),
     "escalate": ("kill", "escalate"),
 }
 
@@ -5632,8 +5854,7 @@ def _resolve_verdict_fields(interp: dict, original_status: str, breaker_status: 
     return mapped
 
 
-def _check_pass_rule_evaluation_conformance(path: Path, hypothesis_verdict: str,
-                                             lineage_routing: str) -> list:
+def _check_pass_rule_evaluation_conformance(path: Path, hypothesis_verdict: str, lineage_routing: str) -> list:
     """
     C7 (K2 kernel, 2026-07-13): if pass_rule_evaluation.yaml carries a BINDING
     verdict (result PASS/FAIL, with a concrete hypothesis_verdict/
@@ -5674,8 +5895,9 @@ def _check_pass_rule_evaluation_conformance(path: Path, hypothesis_verdict: str,
     return violations
 
 
-def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dict,
-                             hypothesis_verdict: str, lineage_routing: str | None) -> str:
+def _dispatch_verdict_route(
+    path: Path, run_id: str, interp: dict, campaign: dict, hypothesis_verdict: str, lineage_routing: str | None
+) -> str:
     """
     A8 (K2 kernel), R1 (operator ruling): the SINGLE verdict->route dispatcher,
     shared by determine_post_verdict_route and
@@ -5705,8 +5927,11 @@ def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dic
     never silently dispatched on lineage_routing alone.
     """
     valid_pairs = {
-        ("kill", "terminate"), ("kill", "pivot"), ("kill", "escalate"),
-        ("refine", "refine"), ("promote", None),
+        ("kill", "terminate"),
+        ("kill", "pivot"),
+        ("kill", "escalate"),
+        ("refine", "refine"),
+        ("promote", None),
     }
     if (hypothesis_verdict, lineage_routing) not in valid_pairs:
         raise ValueError(
@@ -5718,7 +5943,9 @@ def _dispatch_verdict_route(path: Path, run_id: str, interp: dict, campaign: dic
 
     if hypothesis_verdict == "promote":
         update_state(path=path, flags={"walk_forward_passed": True})
-        print("\n🎯 PROVISIONAL PROMOTE: walk-forward passed. Writing promotion_audit and routing to holdout_evaluation.")
+        print(
+            "\n🎯 PROVISIONAL PROMOTE: walk-forward passed. Writing promotion_audit and routing to holdout_evaluation."
+        )
         _write_promotion_audit(path, run_id)
         return "holdout_evaluation"
 
@@ -5748,14 +5975,17 @@ def determine_post_verdict_route(path: Path, run_id: str):
     # backtest, not just a prescreen kill).
     root_cause = interp.get("root_cause") or {}
     if root_cause.get("mechanism_failure") == "component_execution_error":
-        print("\n⚠️  F6: root_cause.mechanism_failure = component_execution_error — "
-              "an engineering/component bug, not a research finding. The circuit "
-              "breaker must not override this into refine/pivot/escalate/kill.")
+        print(
+            "\n⚠️  F6: root_cause.mechanism_failure = component_execution_error — "
+            "an engineering/component bug, not a research finding. The circuit "
+            "breaker must not override this into refine/pivot/escalate/kill."
+        )
         print(f"   supporting_evidence: {root_cause.get('supporting_evidence', '')}")
-        print("   Fix the component/config, then re-run fresh. No trial or parameter-"
-              "dimension slot is consumed; no family is marked failed.")
-        update_state(path=path, status="paused_for_human",
-                     flags={"component_execution_error_flagged": True})
+        print(
+            "   Fix the component/config, then re-run fresh. No trial or parameter-"
+            "dimension slot is consumed; no family is marked failed."
+        )
+        update_state(path=path, status="paused_for_human", flags={"component_execution_error_flagged": True})
         return "human_pause"
 
     original_status = status
@@ -5773,8 +6003,7 @@ def determine_post_verdict_route(path: Path, run_id: str):
         print("   before spawning the next run. Per A2.3, if the detector remains unusable,")
         print("   switch to ungated-only hypothesis generation for this symbol/timeframe.")
         print("   When resolved, create artifacts/human_resolution.yaml and resume.")
-        update_state(path=path, status="paused_for_human",
-                     flags={"regime_misattribution_flagged": True})
+        update_state(path=path, status="paused_for_human", flags={"regime_misattribution_flagged": True})
         return "human_pause"
 
     # Phase 1.4 (docs/CAMPAIGN_PROGRAM.md): a cost-dominated kill must answer "is there
@@ -5789,14 +6018,19 @@ def determine_post_verdict_route(path: Path, run_id: str):
     # file). A print-level nudge, mirroring the warning style (not the routing
     # behavior) of the component_execution_error/regime_misattribution blocks
     # above, rather than silently passing.
-    if root_cause.get("mechanism_failure") == "signal_real_but_subscale_vs_costs" \
-            and not root_cause.get("fee_reduction_assessment"):
-        print("\n⚠️  Phase 1.4: root_cause.mechanism_failure = signal_real_but_subscale_vs_costs "
-              "but root_cause.fee_reduction_assessment is missing.")
-        print("   Mandatory: is there a system that reduces these fees (maker-only execution, "
-              "lower-frequency variant, different product, venue tier, batching)? If yes, "
-              "register the cheap variant as a new idea and name it in "
-              "fee_reduction_assessment.registered_as.")
+    if root_cause.get("mechanism_failure") == "signal_real_but_subscale_vs_costs" and not root_cause.get(
+        "fee_reduction_assessment"
+    ):
+        print(
+            "\n⚠️  Phase 1.4: root_cause.mechanism_failure = signal_real_but_subscale_vs_costs "
+            "but root_cause.fee_reduction_assessment is missing."
+        )
+        print(
+            "   Mandatory: is there a system that reduces these fees (maker-only execution, "
+            "lower-frequency variant, different product, venue tier, batching)? If yes, "
+            "register the cheap variant as a new idea and name it in "
+            "fee_reduction_assessment.registered_as."
+        )
     # --- end mechanism_failure routing ---
 
     # A8 (K2 kernel): resolve the two-field pair (preferring the artifact's own
@@ -5811,9 +6045,12 @@ def determine_post_verdict_route(path: Path, run_id: str):
         print("\n🛑 [C7] STAGE OUTPUT DISAGREES WITH pass_rule_evaluation.yaml:")
         for v in _prc_violations:
             print(f"   - {v}")
-        update_state(path=path, status="paused_for_human",
-                     flags={"pass_rule_evaluation_disagreement": True},
-                     pass_rule_evaluation_violations=_prc_violations)
+        update_state(
+            path=path,
+            status="paused_for_human",
+            flags={"pass_rule_evaluation_disagreement": True},
+            pass_rule_evaluation_violations=_prc_violations,
+        )
         return "human_pause"
 
     # Short-circuit ordering UNCHANGED from pre-K2 behavior: promote and a
@@ -5876,13 +6113,18 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
             _kb = load_yaml(_KB_PATH) if _KB_PATH.exists() else {}
             _kb_violations = _check_kb_reactivation_conformance(_nrq, _kb or {})
             if _kb_violations:
-                print("\n🛑 [A5.4] KB-REACTIVATION CONFORMANCE VIOLATION — this reframe "
-                      "targets an already-closed KB entry:")
+                print(
+                    "\n🛑 [A5.4] KB-REACTIVATION CONFORMANCE VIOLATION — this reframe "
+                    "targets an already-closed KB entry:"
+                )
                 for v in _kb_violations:
                     print(f"   - {v}")
-                update_state(path=path, status="paused_for_human",
-                             flags={"kb_reactivation_violation": True},
-                             kb_reactivation_violations=_kb_violations)
+                update_state(
+                    path=path,
+                    status="paused_for_human",
+                    flags={"kb_reactivation_violation": True},
+                    kb_reactivation_violations=_kb_violations,
+                )
                 return "human_pause"
 
     if rec == "continue":
@@ -5891,14 +6133,19 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         nrq = review.get("next_research_question")
         if nrq and isinstance(nrq, dict) and len(nrq) > 0:
             import yaml as _yaml_nrq
+
             if isinstance(nrq, str):
                 nrq = _yaml_nrq.safe_load(nrq)
             next_run_id = _next_run_id(run_id)
             _scaffold_next_run(next_run_id)
             _safe_write_new_research_brief(next_run_id, nrq)
             update_campaign_state_after_run(
-                run_id=run_id, altitude="campaign", dimension="research_question",
-                family="", outcome="reframed", diagnostics=_extract_diagnostics(path),
+                run_id=run_id,
+                altitude="campaign",
+                dimension="research_question",
+                family="",
+                outcome="reframed",
+                diagnostics=_extract_diagnostics(path),
             )
             print(f"\n🔄 CAMPAIGN REVIEW (continue+reframe): next_research_question -> {next_run_id}")
             return "completed_reframed"
@@ -5912,11 +6159,12 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         # F6 (2026-07-04): same engineering-failure immunity as determine_post_verdict_route.
         root_cause = interp.get("root_cause") or {}
         if root_cause.get("mechanism_failure") == "component_execution_error":
-            print("\n⚠️  F6: root_cause.mechanism_failure = component_execution_error — "
-                  "an engineering/component bug. The circuit breaker (and campaign_review) "
-                  "must not override this into refine/pivot/escalate/kill.")
-            update_state(path=path, status="paused_for_human",
-                         flags={"component_execution_error_flagged": True})
+            print(
+                "\n⚠️  F6: root_cause.mechanism_failure = component_execution_error — "
+                "an engineering/component bug. The circuit breaker (and campaign_review) "
+                "must not override this into refine/pivot/escalate/kill."
+            )
+            update_state(path=path, status="paused_for_human", flags={"component_execution_error_flagged": True})
             return "human_pause"
 
         # Apply circuit-breaker overrides exactly as determine_post_verdict_route would,
@@ -5944,9 +6192,12 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
             print("\n🛑 [C7] STAGE OUTPUT DISAGREES WITH pass_rule_evaluation.yaml:")
             for v in _prc_violations:
                 print(f"   - {v}")
-            update_state(path=path, status="paused_for_human",
-                         flags={"pass_rule_evaluation_disagreement": True},
-                         pass_rule_evaluation_violations=_prc_violations)
+            update_state(
+                path=path,
+                status="paused_for_human",
+                flags={"pass_rule_evaluation_disagreement": True},
+                pass_rule_evaluation_violations=_prc_violations,
+            )
             return "human_pause"
 
         return _dispatch_verdict_route(path, run_id, interp, campaign, hypothesis_verdict, lineage_routing)
@@ -5958,6 +6209,7 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         nrq = review.get("next_research_question", {})
         if nrq:
             import yaml as _yaml
+
             if isinstance(nrq, str):
                 nrq = _yaml.safe_load(nrq)
             _safe_write_new_research_brief(next_run_id, nrq)
@@ -5981,8 +6233,7 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         # Ensure escalation_request.yaml exists with the right target for _route_escalate
         esc_path = path / "artifacts" / "escalation_request.yaml"
         if not esc_path.exists():
-            save_yaml(esc_path, {"target": target,
-                                 "reason": review.get("recommendation_rationale", "")})
+            save_yaml(esc_path, {"target": target, "reason": review.get("recommendation_rationale", "")})
         return _route_escalate(path, run_id, interp, load_campaign_state())
 
     if rec == "terminate":
@@ -6011,15 +6262,20 @@ def determine_post_spec_route(path: Path):
         return "signal_prescreen"
     if status == "component_gap":
         update_state(path=path, status="paused_for_human")
-        print("\n⏸️ COMPONENT GAP: hypothesis needs an engine piece that does not exist. "
-              "See artifacts/decision.yaml; extend the engine per STRATEGY_EXTENDING.md, then resume.")
+        print(
+            "\n⏸️ COMPONENT GAP: hypothesis needs an engine piece that does not exist. "
+            "See artifacts/decision.yaml; extend the engine per STRATEGY_EXTENDING.md, then resume."
+        )
         return "human_pause"
     if status not in KNOWN_STATUSES:
         update_state(path=path, status="paused_for_human")
-        print(f"\n⏸️ UNEXPECTED STATUS '{status}' from backtest_specification — "
-              f"SKILL.md may need a new status case, or this run had bad inputs. "
-              f"Rationale: {decision.get('rationale', '<none>')}")
+        print(
+            f"\n⏸️ UNEXPECTED STATUS '{status}' from backtest_specification — "
+            f"SKILL.md may need a new status case, or this run had bad inputs. "
+            f"Rationale: {decision.get('rationale', '<none>')}"
+        )
         return "human_pause"
+
 
 def resume_pipeline(run_id: str):
     RUN_DIR = ROOT / "runs" / run_id
@@ -6030,22 +6286,23 @@ def resume_pipeline(run_id: str):
 
     resolution_path = RUN_DIR / "artifacts" / "human_resolution.yaml"
     ensure_files([resolution_path])
-    
+
     resolution = load_yaml(resolution_path)
     if resolution.get("status") == "resolved_proceed":
         print("✅ Human resolution verified. Resuming pipeline...")
         # Inject the human's paths directly into the state so the next agent can see them
         update_state(
-            path=RUN_DIR, 
+            path=RUN_DIR,
             status="active",
             current_stage="human_resolution",
-            pending_stage="backtest_specification", # Move to Phase 2
-            injected_human_context=resolution.get("injected_context")
+            pending_stage="backtest_specification",  # Move to Phase 2
+            injected_human_context=resolution.get("injected_context"),
         )
         run_loop(run_id)
     else:
         print("❌ Human marked issue as unresolvable. Ending run.")
         update_state(path=RUN_DIR, status="rejected", pending_stage="completed_rejected")
+
 
 def run_loop(run_id: str):
     """Main loop to run through the stages of Phase 1 with dynamic routing and state management.
@@ -6058,12 +6315,12 @@ def run_loop(run_id: str):
         6.1 For validation, route to refinement if "refine", completed_rejected if "reject", or next phase if "approve"
         6.2 For refinement planner, increment a refinement counter and route back to innovation expansion
     7 -Mark completed and stage next phase
-    
+
     """
     RUN_DIR = ROOT / "runs" / run_id
     ARTIFACTS = RUN_DIR / "artifacts"
     HANDOFFS = RUN_DIR / "handoffs"
-    STATE_FILE = RUN_DIR / "pipeline_state.yaml" # Updated to your new state file
+    STATE_FILE = RUN_DIR / "pipeline_state.yaml"  # Updated to your new state file
     state = load_yaml(STATE_FILE)
 
     # F4d: generate the protocol + run_context override from pre_registration.yaml's
@@ -6089,7 +6346,7 @@ def run_loop(run_id: str):
 
     while True:
         current_stage = state.get("pending_stage")
-         
+
         TERMINAL_PREFIXES = ("completed", "rejected", "human_pause", "failed_validation")
         if not current_stage or current_stage.startswith(TERMINAL_PREFIXES):
             print(f"🏁 Pipeline finished. Final state: {current_stage}")
@@ -6100,8 +6357,7 @@ def run_loop(run_id: str):
         total_weighted_used, stage_breakdown = _compute_weighted_budget_usage(state.get("audit_log", {}))
 
         if total_weighted_used > budget:
-            print(f"🛑 RUN TERMINATED: Weighted token budget exceeded "
-                  f"({total_weighted_used:,.0f} > {budget:,.0f}).")
+            print(f"🛑 RUN TERMINATED: Weighted token budget exceeded ({total_weighted_used:,.0f} > {budget:,.0f}).")
             print("   Per-stage weighted breakdown:")
             for name, w in stage_breakdown:
                 print(f"     {name}: {w:,.0f}")
@@ -6111,10 +6367,8 @@ def run_loop(run_id: str):
 
         print(f"\n⚙️ Starting stage: {current_stage}")
         config = STAGE_CONFIGS[current_stage]
-        #Each stage has Handodff YAML (inputs) / required output and default next stage
+        # Each stage has Handodff YAML (inputs) / required output and default next stage
         handoff_path = HANDOFFS / config["handoff"]
-        
-
 
         # 1. Verify required inputs exist before invoking the agent
         handoff_data = load_yaml(handoff_path)
@@ -6138,8 +6392,7 @@ def run_loop(run_id: str):
         _this_stage_attempt = _stage_attempts.get(current_stage, 0)
         _stage_attempts[current_stage] = _this_stage_attempt + 1
         state["stage_attempts"] = _stage_attempts
-        update_state(path=RUN_DIR, current_stage=current_stage, status="running",
-                     stage_attempts=_stage_attempts)
+        update_state(path=RUN_DIR, current_stage=current_stage, status="running", stage_attempts=_stage_attempts)
 
         try:
             # 3. Inject dynamic state directly into the run's existing handoff file
@@ -6154,9 +6407,11 @@ def run_loop(run_id: str):
                 # else reads this key.
                 "stage_attempt": str(_this_stage_attempt),
                 "refinement_attempt": str(state.get("counters", {}).get("refinements_used", 0)),
-                "human_data_paths_injected": "true" if state.get("injected_human_context") else "false"
+                "human_data_paths_injected": "true" if state.get("injected_human_context") else "false",
             }
-            if state.get("injected_human_context"): # If there is human context in the state, merge it into the injected_context for the agent to consume
+            if state.get(
+                "injected_human_context"
+            ):  # If there is human context in the state, merge it into the injected_context for the agent to consume
                 handoff_data["injected_context"].update(state.get("injected_human_context"))
 
             # Save it right back over the existing file
@@ -6170,6 +6425,7 @@ def run_loop(run_id: str):
                 if _cr_path.exists():
                     try:
                         import yaml as _yaml_check
+
                         _yaml_check.safe_load(_cr_path.read_text(encoding="utf-8"))
                         _skip_agent = True
                         print(f"⏭️  campaign_review.yaml already valid — skipping LLM re-run.")
@@ -6183,7 +6439,9 @@ def run_loop(run_id: str):
                 if _ps_existing.exists():
                     _ps_data = load_yaml(_ps_existing) or {}
                     if _ps_data.get("route") == "insufficient_power_a_priori":
-                        print("⏭️  A8.6: prescreen_result.yaml already written (validation-gate bypass) — skipping prescreen tool.")
+                        print(
+                            "⏭️  A8.6: prescreen_result.yaml already written (validation-gate bypass) — skipping prescreen tool."
+                        )
                         _skip_agent = True
                         # A6.2: run_tool_worker is skipped in this path; record trial here (idempotent guard)
                         _cs_check = load_campaign_state()
@@ -6193,11 +6451,15 @@ def run_loop(run_id: str):
                     _a86 = _run_a86_power_check(ARTIFACTS)
                     if _a86["verdict"] == "insufficient_power_a_priori":
                         print(f"\n⚡ A8.6: Insufficient a-priori power — skipping prescreen tool.")
-                        print(f"   min_detectable_ic={_a86['min_detectable_ic']:.4f} > "
-                              f"plausible_ic_upper={_a86['plausible_ic_upper']}")
-                        print(f"   expected_n_eff={_a86['expected_n_eff']:.1f} "
-                              f"(active_n={_a86['expected_active_n']:.0f}, "
-                              f"n_eff_symbols={_a86.get('n_eff_symbols','n/a')}, rho={_a86.get('rho_bar')})")
+                        print(
+                            f"   min_detectable_ic={_a86['min_detectable_ic']:.4f} > "
+                            f"plausible_ic_upper={_a86['plausible_ic_upper']}"
+                        )
+                        print(
+                            f"   expected_n_eff={_a86['expected_n_eff']:.1f} "
+                            f"(active_n={_a86['expected_active_n']:.0f}, "
+                            f"n_eff_symbols={_a86.get('n_eff_symbols', 'n/a')}, rho={_a86.get('rho_bar')})"
+                        )
                         print(f"   Data requirement: {_a86.get('data_requirement')}")
                         _a86_ps_data = {
                             "run_id": run_id,
@@ -6215,6 +6477,7 @@ def run_loop(run_id: str):
                 if _vi_path.exists():
                     try:
                         import yaml as _yaml_check
+
                         _yaml_check.safe_load(_vi_path.read_text(encoding="utf-8"))
                         _skip_agent = True
                         print(f"⏭️  verdict_interpretation.yaml already valid — skipping LLM re-run.")
@@ -6255,20 +6518,22 @@ def run_loop(run_id: str):
             # 4b. For campaign_review: validate YAML is parseable (LLM often emits colons in list items)
             if current_stage == "campaign_review" and not _skip_agent:
                 import yaml as _yaml_val
+
                 _cr_out = RUN_DIR / "artifacts" / "campaign_review.yaml"
                 try:
                     _yaml_val.safe_load(_cr_out.read_text(encoding="utf-8"))
                 except Exception as _ye:
                     raise ValueError(
-                        f"YAML parse error in campaign_review.yaml: {_ye}\n"
-                        f"Fix the file manually and re-run to resume."
+                        f"YAML parse error in campaign_review.yaml: {_ye}\nFix the file manually and re-run to resume."
                     )
 
             # 5. Handle Dynamic Routing & Counters
             next_stage = config["default_next"]
-            
+
             if current_stage == "validation":
-                next_stage = determine_post_validation_route(RUN_DIR) # Used to trigger state of refinement until (Artifact State is validated OR max refinement reached OR rejected)
+                next_stage = determine_post_validation_route(
+                    RUN_DIR
+                )  # Used to trigger state of refinement until (Artifact State is validated OR max refinement reached OR rejected)
 
             elif current_stage == "innovation_expansion":
                 # E-032 S2c: anti-adjacency gate + retry/escalate policy, off by
@@ -6277,7 +6542,7 @@ def run_loop(run_id: str):
                 # immediately, identical to today's unconditional assignment above.
                 next_stage = _route_post_innovation_expansion(RUN_DIR, run_id, state)
                 if next_stage == "human_pause":
-                    break # Break the while loop to stop the script cleanly, same as every other human-in-the-loop stop below
+                    break  # Break the while loop to stop the script cleanly, same as every other human-in-the-loop stop below
 
             elif current_stage == "refinement_planner":
                 # Increment the refinement counter
@@ -6285,10 +6550,12 @@ def run_loop(run_id: str):
                 update_state(path=RUN_DIR, counters={"refinements_used": current_count + 1})
 
                 # Ask the new function where to go next
-                next_stage = determine_post_refinement_route(RUN_DIR) #Checks if refinement requires a human pause or loops back to innovation.
+                next_stage = determine_post_refinement_route(
+                    RUN_DIR
+                )  # Checks if refinement requires a human pause or loops back to innovation.
 
                 if next_stage == "human_pause":
-                    break # Break the while loop to stop the script cleanly
+                    break  # Break the while loop to stop the script cleanly
 
             elif current_stage == "backtest_specification":
                 next_stage = determine_post_spec_route(RUN_DIR)
@@ -6323,11 +6590,10 @@ def run_loop(run_id: str):
                     candidate_path = ARTIFACTS / "candidate_strategy_config.json"
                     with open(candidate_path, "w", encoding="utf-8") as f:
                         json.dump(config_obj, f, indent=2)
-                    validator  = Path("..") / "trading-bot" / "tools" / "validate_config.py"
+                    validator = Path("..") / "trading-bot" / "tools" / "validate_config.py"
                     TBOT_PYTHON = _resolve_tbot_python()
                     result = subprocess.run(
-                        [str(TBOT_PYTHON), str(validator), str(candidate_path)],
-                        capture_output=True, text=True
+                        [str(TBOT_PYTHON), str(validator), str(candidate_path)], capture_output=True, text=True
                     )
                     if result.returncode != 0:
                         report = result.stdout + result.stderr
@@ -6386,14 +6652,15 @@ def run_loop(run_id: str):
             # 6. Mark completed and stage next phase
             completed = state.get("completed_stages", [])
             completed.append(current_stage)
-            
-            update_state(path=RUN_DIR, 
+
+            update_state(
+                path=RUN_DIR,
                 status="active" if next_stage != "completed_rejected" else "rejected",
                 completed_stages=completed,
                 current_stage=current_stage,
-                pending_stage=next_stage
+                pending_stage=next_stage,
             )
-            
+
             # Reload state for the next while loop iteration
             state = load_yaml(STATE_FILE)
 
@@ -6401,6 +6668,7 @@ def run_loop(run_id: str):
             print(f"❌ Error in stage {current_stage}: {e}")
             update_state(path=RUN_DIR, status="failed", last_error=str(e))
             break
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

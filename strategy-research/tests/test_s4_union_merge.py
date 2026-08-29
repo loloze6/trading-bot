@@ -52,6 +52,7 @@ corrupt the file (it wasn't, on retest), but because its safety here is
 contingent on a file layout nobody has committed to preserving, and it has
 one demonstrated silent-loss mode already.
 """
+
 import subprocess
 import sys
 from pathlib import Path
@@ -109,10 +110,18 @@ def divergent_branches_realistic(tmp_path):
     _git(work, "checkout", "-b", "master-continues")
     d = yaml.safe_load(state_path.read_text())
     d["runs"].append("run_master_new")
-    d["altitude_history"].append({"run": "run_master_new", "altitude": "parameter",
-                                   "dimension": "x", "family": "f", "outcome": "improved"})
-    d["trial_sharpes"].append({"trial_id": "run_master_new", "source": "backtest",
-                                "sharpe": 0.3, "statistic_valid": "sharpe", "forecast_hash": "hM"})
+    d["altitude_history"].append(
+        {"run": "run_master_new", "altitude": "parameter", "dimension": "x", "family": "f", "outcome": "improved"}
+    )
+    d["trial_sharpes"].append(
+        {
+            "trial_id": "run_master_new",
+            "source": "backtest",
+            "sharpe": 0.3,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "hM",
+        }
+    )
     d["updated_at"] = "2026-08-16T09:00:00Z"
     _write_state(state_path, d)
     _git(work, "commit", "-am", "master run")
@@ -121,10 +130,18 @@ def divergent_branches_realistic(tmp_path):
     _git(work, "checkout", "-b", "fork-branch")
     d = yaml.safe_load(state_path.read_text())
     d["runs"].append("run_d_new")
-    d["altitude_history"].append({"run": "run_d_new", "altitude": "parameter",
-                                   "dimension": "y", "family": "g", "outcome": "no_improvement"})
-    d["trial_sharpes"].append({"trial_id": "run_d_new", "source": "backtest",
-                                "sharpe": 0.15, "statistic_valid": "sharpe", "forecast_hash": "hD"})
+    d["altitude_history"].append(
+        {"run": "run_d_new", "altitude": "parameter", "dimension": "y", "family": "g", "outcome": "no_improvement"}
+    )
+    d["trial_sharpes"].append(
+        {
+            "trial_id": "run_d_new",
+            "source": "backtest",
+            "sharpe": 0.15,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "hD",
+        }
+    )
     d["updated_at"] = "2026-08-16T10:00:00Z"
     _write_state(state_path, d)
     _git(work, "commit", "-am", "fork run")
@@ -163,16 +180,24 @@ def test_manual_union_resolution_keeps_both_sides_and_has_no_duplicates(divergen
     resolved = dict(base)
     resolved["runs"] = base["runs"] + ["run_master_new", "run_d_new"]
     resolved["altitude_history"] = base["altitude_history"] + [
-        {"run": "run_master_new", "altitude": "parameter", "dimension": "x",
-         "family": "f", "outcome": "improved"},
-        {"run": "run_d_new", "altitude": "parameter", "dimension": "y",
-         "family": "g", "outcome": "no_improvement"},
+        {"run": "run_master_new", "altitude": "parameter", "dimension": "x", "family": "f", "outcome": "improved"},
+        {"run": "run_d_new", "altitude": "parameter", "dimension": "y", "family": "g", "outcome": "no_improvement"},
     ]
     resolved["trial_sharpes"] = base["trial_sharpes"] + [
-        {"trial_id": "run_master_new", "source": "backtest", "sharpe": 0.3,
-         "statistic_valid": "sharpe", "forecast_hash": "hM"},
-        {"trial_id": "run_d_new", "source": "backtest", "sharpe": 0.15,
-         "statistic_valid": "sharpe", "forecast_hash": "hD"},
+        {
+            "trial_id": "run_master_new",
+            "source": "backtest",
+            "sharpe": 0.3,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "hM",
+        },
+        {
+            "trial_id": "run_d_new",
+            "source": "backtest",
+            "sharpe": 0.15,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "hD",
+        },
     ]
     resolved["updated_at"] = "2026-08-16T10:00:00Z"
     _write_state(state_path, resolved)

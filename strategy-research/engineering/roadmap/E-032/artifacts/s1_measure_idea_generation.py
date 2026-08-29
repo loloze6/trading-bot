@@ -19,6 +19,7 @@ Produces, on stdout, the exact counts cited in s1_idea_generation.md:
   4. Whether run_claude_worker's tool grant (ClaudeAgentOptions) permits any
      network/browse tool today -- read directly from run_phase1_research.py.
 """
+
 from __future__ import annotations
 
 import re
@@ -44,8 +45,7 @@ def measure_stage_inputs() -> None:
     # stages the two AGREE (research_brief_to_hypothesis.yaml lists the same
     # three required_inputs and no campaign history), so S1's closed-book
     # conclusion holds; it was simply read from the wrong source.
-    _archived = (ROOT / "engineering" / "roadmap" / "E-033" / "artifacts"
-                 / "stages_yaml_ARCHIVED_not_authoritative.yaml")
+    _archived = ROOT / "engineering" / "roadmap" / "E-033" / "artifacts" / "stages_yaml_ARCHIVED_not_authoritative.yaml"
     stages = yaml.safe_load(_archived.read_text(encoding="utf-8"))
     for name in ("hypothesis_generation", "innovation_expansion", "refinement_planner", "campaign_review"):
         entry = stages["stages"][name]
@@ -70,8 +70,10 @@ def measure_campaign_state() -> None:
     print(f"  failed_families: {len(ff)} entries (denominator: this list)")
     for f in ff:
         print(f"    - {f if isinstance(f, str) else f.get('name')}")
-    print(f"  recent_parameter_dimensions_by_family: {len(rpd)} families tracked, "
-          f"{sum(1 for v in rpd.values() if v)} with a non-empty dimension list")
+    print(
+        f"  recent_parameter_dimensions_by_family: {len(rpd)} families tracked, "
+        f"{sum(1 for v in rpd.values() if v)} with a non-empty dimension list"
+    )
     print(f"  instruments_tried: {len(it)} -> {it}")
     print(f"  timeframes_tried: {len(tt)} -> {tt}")
     print(f"  components_built: {len(cb)} (empty list means zero, denominator: field itself)")

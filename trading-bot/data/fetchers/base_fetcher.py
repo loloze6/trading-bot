@@ -92,18 +92,18 @@ class BaseFetcher(ABC):
                               ['fear_greed'] — whatever the subclass understands).
             interval_seconds: Native resolution of this feed in seconds.
                               Used for gap detection arithmetic.
-            localStorage:     If True, save fetched data to disk and load from 
+            localStorage:     If True, save fetched data to disk and load from
                               there on subsequent calls.
             data_dir:         Root directory for all cached CSV files.
         """
-        self.start_date      = pd.to_datetime(start_date) if isinstance(start_date, str) else start_date
-        self.end_date        = pd.to_datetime(end_date)   if isinstance(end_date,   str) else end_date
-        self.symbols         = symbols
+        self.start_date = pd.to_datetime(start_date) if isinstance(start_date, str) else start_date
+        self.end_date = pd.to_datetime(end_date) if isinstance(end_date, str) else end_date
+        self.symbols = symbols
         self.interval_seconds = interval_seconds
-        self.localStorage    = localStorage
-        self.data_dir        = data_dir
+        self.localStorage = localStorage
+        self.data_dir = data_dir
 
-        self.data_cache: dict  = {}   # symbol → DataFrame
+        self.data_cache: dict = {}  # symbol → DataFrame
         self.data_loaded: bool = False
 
         os.makedirs(self.data_dir, exist_ok=True)
@@ -113,9 +113,7 @@ class BaseFetcher(ABC):
     # -----------------------------------------------------------------------
 
     @abstractmethod
-    def _fetch_remote(
-        self, symbol: str, start: datetime.datetime, end: datetime.datetime
-    ) -> pd.DataFrame:
+    def _fetch_remote(self, symbol: str, start: datetime.datetime, end: datetime.datetime) -> pd.DataFrame:
         """
         Fetch one contiguous block of data from the remote source.
 
@@ -167,15 +165,14 @@ class BaseFetcher(ABC):
         if symbol not in self.data_cache or self.data_cache[symbol].empty:
             return False, []
 
-        data       = self.data_cache[symbol].sort_values("timestamp")
-        expected   = np.timedelta64(int(self.interval_seconds), "s")
+        data = self.data_cache[symbol].sort_values("timestamp")
+        expected = np.timedelta64(int(self.interval_seconds), "s")
         timestamps = data["timestamp"].values
 
         gaps = [
             (timestamps[i - 1], timestamps[i])
             for i in range(1, len(timestamps))
-            if timestamps[i] - timestamps[i - 1]
-            > expected * self.expected_gap_tolerance
+            if timestamps[i] - timestamps[i - 1] > expected * self.expected_gap_tolerance
         ]
         return len(gaps) == 0, gaps
 
@@ -197,7 +194,7 @@ class BaseFetcher(ABC):
             # per-period instead is not possible -- a type-1 end computed as
             # `earliest - 1ms` can equal end_date by coincidence, and then no
             # value comparison can tell a derived bound from the caller's.
-            missing  = self._identify_missing_periods(existing, self.start_date, window_end)
+            missing = self._identify_missing_periods(existing, self.start_date, window_end)
 
             if missing:
                 logger.info(f"[{self.__class__.__name__}] {len(missing)} missing period(s) for {symbol}")
@@ -210,8 +207,7 @@ class BaseFetcher(ABC):
                     else:
                         logger.warning(f"  No data returned for {symbol} {ps} → {pe}")
                 if pieces:
-                    self._merge_and_store(symbol, pieces, save=self.localStorage,
-                                          existing=existing)
+                    self._merge_and_store(symbol, pieces, save=self.localStorage, existing=existing)
                 else:
                     logger.warning(f"  No valid data assembled for {symbol}")
                     self.data_cache[symbol] = pd.DataFrame()
@@ -223,12 +219,12 @@ class BaseFetcher(ABC):
             if symbol in self.data_cache and not self.data_cache[symbol].empty:
                 df = self.data_cache[symbol]
                 self.data_cache[symbol] = df[
-                    (df["timestamp"] >= self.start_date) &
-                    (df["timestamp"] <= window_end)
+                    (df["timestamp"] >= self.start_date) & (df["timestamp"] <= window_end)
                 ].copy()
                 n = len(self.data_cache[symbol])
-                logger.info(f"  {symbol}: {n} records after date filter") if n > 0 \
-                    else logger.warning(f"  {symbol}: no records after date filter")
+                logger.info(f"  {symbol}: {n} records after date filter") if n > 0 else logger.warning(
+                    f"  {symbol}: no records after date filter"
+                )
 
         self.data_loaded = True
 
@@ -355,8 +351,7 @@ class BaseFetcher(ABC):
                 spans.append((ts.iloc[i - 1] + expected, ts.iloc[i] - expected))
         return spans
 
-    def _assert_no_new_gap(self, symbol: str, existing: pd.DataFrame,
-                           combined: pd.DataFrame) -> None:
+    def _assert_no_new_gap(self, symbol: str, existing: pd.DataFrame, combined: pd.DataFrame) -> None:
         """
         Refuse a write that introduces a hole where the series was previously
         continuous. See FetchGapError for the defect this exists to catch.
@@ -375,10 +370,7 @@ class BaseFetcher(ABC):
         before = self._gap_intervals(existing["timestamp"])
         after = self._gap_intervals(combined["timestamp"])
 
-        new_gaps = [
-            (s, e) for (s, e) in after
-            if not any(bs <= s and e <= be for (bs, be) in before)
-        ]
+        new_gaps = [(s, e) for (s, e) in after if not any(bs <= s and e <= be for (bs, be) in before)]
         if not new_gaps:
             return
 
@@ -395,8 +387,7 @@ class BaseFetcher(ABC):
             f"written; the existing cache is unchanged."
         )
 
-    def _merge_and_store(self, symbol: str, pieces: list, save: bool = False,
-                         existing: pd.DataFrame = None):
+    def _merge_and_store(self, symbol: str, pieces: list, save: bool = False, existing: pd.DataFrame = None):
         """
         Concatenate DataFrames, deduplicate on timestamp, sort, cache in memory,
         and optionally write to disk.
@@ -442,19 +433,18 @@ class BaseFetcher(ABC):
         if existing.empty:
             return [(start_date, end_date)]
 
-        data       = existing.copy()
+        data = existing.copy()
         data["timestamp"] = pd.to_datetime(data["timestamp"])
-        data       = data.sort_values("timestamp")
-        expected   = np.timedelta64(int(self.interval_seconds), "s")
-        missing    = []
+        data = data.sort_values("timestamp")
+        expected = np.timedelta64(int(self.interval_seconds), "s")
+        missing = []
 
         # ── Gap type 1: before earliest stored row ─────────────────────────
         earliest = data["timestamp"].min()
         if start_date < earliest:
-            missing.append((
-                start_date,
-                min(pd.Timestamp(earliest).to_pydatetime() - datetime.timedelta(milliseconds=1), end_date)
-            ))
+            missing.append(
+                (start_date, min(pd.Timestamp(earliest).to_pydatetime() - datetime.timedelta(milliseconds=1), end_date))
+            )
 
         # ── Gap type 2: after latest stored row ────────────────────────────
         # A bar can only exist on the interval grid, so data is missing after
@@ -466,10 +456,9 @@ class BaseFetcher(ABC):
         # page opens past the requested end.
         latest = data["timestamp"].max()
         if end_date >= pd.Timestamp(latest) + expected:
-            missing.append((
-                max(pd.Timestamp(latest).to_pydatetime() + datetime.timedelta(milliseconds=1), start_date),
-                end_date
-            ))
+            missing.append(
+                (max(pd.Timestamp(latest).to_pydatetime() + datetime.timedelta(milliseconds=1), start_date), end_date)
+            )
 
         # ── Gap type 3: internal gaps ───────────────────────────────────────
         timestamps = data["timestamp"].sort_values().values

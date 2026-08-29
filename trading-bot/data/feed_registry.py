@@ -21,7 +21,7 @@ from data.fetchers.whale_footprint_fetcher import DEFAULT_BAR_SECONDS as _WHALE_
 # BTC perp funding lives on the `krakenfutures` ccxt exchange. Feed-specific by
 # design: only the funding factory below consults this map. Every unlisted venue
 # funds on its own id (binance → binance), so the default path is byte-identical.
-_FUNDING_VENUE_MAP = {'kraken': 'krakenfutures'}
+_FUNDING_VENUE_MAP = {"kraken": "krakenfutures"}
 
 # feed name → lambda(symbols, start, end, data_dir, exchange="binance") → BaseFetcher
 # instance. `exchange` is trailing and keyword-defaulted so pre-existing 4-arg
@@ -35,12 +35,15 @@ _FUNDING_VENUE_MAP = {'kraken': 'krakenfutures'}
 # index with no per-venue variant (fear_greed_fetcher.py has no exchange_id), so
 # it stays exempt from that protection by design, not by oversight.
 FEED_REGISTRY = {
-    'funding_rate': lambda symbols, start, end, data_dir, exchange="binance": FundingRateFetcher(
-        start, end, symbols=symbols,
+    "funding_rate": lambda symbols, start, end, data_dir, exchange="binance": FundingRateFetcher(
+        start,
+        end,
+        symbols=symbols,
         exchange_id=_FUNDING_VENUE_MAP.get(exchange, exchange),
-        localStorage=True, data_dir=data_dir
+        localStorage=True,
+        data_dir=data_dir,
     ),
-    'fear_greed': lambda symbols, start, end, data_dir, exchange="binance": FearGreedFetcher(
+    "fear_greed": lambda symbols, start, end, data_dir, exchange="binance": FearGreedFetcher(
         start, end, localStorage=True, data_dir=data_dir
     ),
 }
@@ -62,8 +65,8 @@ FEED_REGISTRY = {
 #                        factory below never overrides it.
 # ---------------------------------------------------------------------------
 FEED_WINDOW_SECONDS = {
-    'funding_rate': 0,
-    'fear_greed': 0,
+    "funding_rate": 0,
+    "fear_greed": 0,
 }
 
 # ---------------------------------------------------------------------------
@@ -95,12 +98,12 @@ FEED_WINDOW_SECONDS = {
 # names; sharing the cache_key means the CSV is still computed once.
 # ---------------------------------------------------------------------------
 WHALE_FOOTPRINT_FEEDS = (
-    'whale_lt_imbalance',
-    'whale_lt_count',
-    'whale_cvd_delta',
-    'whale_size_shift',
-    'whale_trade_count',
-    'whale_attested',
+    "whale_lt_imbalance",
+    "whale_lt_count",
+    "whale_cvd_delta",
+    "whale_size_shift",
+    "whale_trade_count",
+    "whale_attested",
 )
 
 # Same trailing exchange="binance" contract as FEED_REGISTRY above. Whale
@@ -109,9 +112,11 @@ WHALE_FOOTPRINT_FEEDS = (
 # venue to thread -- and it has no exchange_id attribute, so it too is exempt
 # from AuxFeedVenueError by design (it is reserved-gated anyway).
 RESERVED_FEED_REGISTRY = {
-    name: (lambda symbols, start, end, data_dir, exchange="binance": WhaleFootprintFetcher(
-        start, end, symbols=symbols, localStorage=True, data_dir=data_dir
-    ))
+    name: (
+        lambda symbols, start, end, data_dir, exchange="binance": WhaleFootprintFetcher(
+            start, end, symbols=symbols, localStorage=True, data_dir=data_dir
+        )
+    )
     for name in WHALE_FOOTPRINT_FEEDS
 }
 
@@ -161,8 +166,11 @@ def build_daily_funding_series(symbols, data_dir, start, end):
     # Timestamp instance and has no .normalize() -- reject it here, before normalize,
     # so it fails loud rather than with an uninformative AttributeError or a silent
     # unbounded/empty read.
-    if (not isinstance(start_ts, pd.Timestamp) or not isinstance(end_ts, pd.Timestamp)
-            or start_ts.normalize() > end_ts.normalize()):
+    if (
+        not isinstance(start_ts, pd.Timestamp)
+        or not isinstance(end_ts, pd.Timestamp)
+        or start_ts.normalize() > end_ts.normalize()
+    ):
         raise ValueError(
             f"build_daily_funding_series needs a concrete window, got "
             f"start={start!r}, end={end!r} -- an unbounded read would pull "

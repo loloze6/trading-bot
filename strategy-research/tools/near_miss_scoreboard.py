@@ -68,6 +68,7 @@ E-018/EPIC.md's Log for what that wiring would need.)
     <out-dir>/near_miss_scoreboard.yaml   -- structured, machine-readable
     <out-dir>/near_miss_scoreboard.md     -- rendered ranked table + denominators
 """
+
 from __future__ import annotations
 
 import argparse
@@ -84,10 +85,13 @@ STRATEGY_RESEARCH_ROOT = Path(__file__).resolve().parent.parent
 # regexes, same "first sentence only" discipline -- reused rather than
 # reimplemented per the dispatch's instruction). ---------------------------
 FAILURE_BUCKETS = [
-    ("regime",   r"regime|gat(e|ing)|activation|starvation"),
-    ("cost",     r"cost.drag|fee|over-?trad|turnover|sizing/frequency"),
-    ("nosignal", r"no (statistically |directional )?(significant )?edge|no informational|no predictive|inversion|uninformative signal"),
-    ("sample",   r"insufficient sample|sample size|sparsity|min-?n"),
+    ("regime", r"regime|gat(e|ing)|activation|starvation"),
+    ("cost", r"cost.drag|fee|over-?trad|turnover|sizing/frequency"),
+    (
+        "nosignal",
+        r"no (statistically |directional )?(significant )?edge|no informational|no predictive|inversion|uninformative signal",
+    ),
+    ("sample", r"insufficient sample|sample size|sparsity|min-?n"),
 ]
 
 
@@ -150,8 +154,7 @@ def _margin_frac(op, threshold, actual):
 
 
 class Criterion:
-    __slots__ = ("raw", "result", "op", "threshold", "actual", "actual_source",
-                 "margin_frac", "compound")
+    __slots__ = ("raw", "result", "op", "threshold", "actual", "actual_source", "margin_frac", "compound")
 
     def __init__(self, raw, result, op, threshold, actual, actual_source, compound):
         self.raw = raw
@@ -274,7 +277,7 @@ def parse_text_criterion(text: str) -> Criterion:
     rm = RESULT_RE.search(text)
     result = _normalize_result_token(rm.group(1)) if rm else "unknown"
     req_seg = text[: rm.start()] if rm else text
-    detail_seg = text[rm.end():] if rm else ""
+    detail_seg = text[rm.end() :] if rm else ""
 
     m = CMP_NUM_RE.search(req_seg)
     op = _OP_NORM.get(m.group(1)) if m else None
@@ -299,8 +302,12 @@ def parse_text_criterion(text: str) -> Criterion:
             actual_source = "text_extracted_label"
         elif len(pairs) > 1:
             req_norm = re.sub(r"[^a-z0-9]", "", req_seg.lower())
-            matches = [p for p in pairs if re.sub(r"[^a-z0-9]", "", p[0].lower()) in req_norm
-                       or req_norm[:12] in re.sub(r"[^a-z0-9]", "", p[0].lower())]
+            matches = [
+                p
+                for p in pairs
+                if re.sub(r"[^a-z0-9]", "", p[0].lower()) in req_norm
+                or req_norm[:12] in re.sub(r"[^a-z0-9]", "", p[0].lower())
+            ]
             if len(matches) == 1:
                 actual = _to_float(matches[0][1])
                 actual_source = "text_extracted_label_matched"
@@ -327,8 +334,12 @@ def extract_ic_cost(y: dict):
             ic = blk.get("ic_active_bars", blk.get("ic_all_bars"))
             cost = blk.get("edge_to_cost_ratio")
             if ic is not None or cost is not None:
-                return (ic, "structured" if ic is not None else "not_recorded",
-                         cost, "structured" if cost is not None else "not_recorded")
+                return (
+                    ic,
+                    "structured" if ic is not None else "not_recorded",
+                    cost,
+                    "structured" if cost is not None else "not_recorded",
+                )
 
     # Fallback: opportunistic regex over the free-text fields most likely to
     # carry these numbers when the run used the "protocol" schema but the
@@ -351,8 +362,12 @@ def extract_ic_cost(y: dict):
     cost_m = COST_RATIO_TEXT_RE.search(haystack)
     if cost_m:
         cost = _to_float(cost_m.group(1))
-    return (ic, "text_extracted" if ic is not None else "not_recorded",
-            cost, "text_extracted" if cost is not None else "not_recorded")
+    return (
+        ic,
+        "text_extracted" if ic is not None else "not_recorded",
+        cost,
+        "text_extracted" if cost is not None else "not_recorded",
+    )
 
 
 def extract_era_behavior(y: dict):
@@ -561,19 +576,40 @@ def render_markdown(rows, denom_lines) -> str:
     out.append("")
     out.append("## Table")
     out.append("")
-    headers = ["rank", "run_id", "hypothesis_family", "evidence_tier", "protocol_verdict",
-               "status", "failure_bucket", "worst_fail_margin_frac", "margin_source",
-               "root_cause_mechanism", "ic", "cost_ratio", "era_behavior"]
+    headers = [
+        "rank",
+        "run_id",
+        "hypothesis_family",
+        "evidence_tier",
+        "protocol_verdict",
+        "status",
+        "failure_bucket",
+        "worst_fail_margin_frac",
+        "margin_source",
+        "root_cause_mechanism",
+        "ic",
+        "cost_ratio",
+        "era_behavior",
+    ]
     out.append("| " + " | ".join(headers) + " |")
     out.append("|" + "|".join(["---"] * len(headers)) + "|")
     for r in rows:
-        bucket = ",".join(r["primary_failure_mode_bucket"]) if isinstance(r["primary_failure_mode_bucket"], list) else r["primary_failure_mode_bucket"]
+        bucket = (
+            ",".join(r["primary_failure_mode_bucket"])
+            if isinstance(r["primary_failure_mode_bucket"], list)
+            else r["primary_failure_mode_bucket"]
+        )
         era = r["era_behavior_text"]
         if era and era != "not_recorded":
             era = era[:60].replace("|", "/") + ("..." if len(era) > 60 else "")
         cells = [
-            r["rank"], r["run_id"], r["hypothesis_family"], r["evidence_tier"],
-            r["protocol_verdict"], r["status"], bucket,
+            r["rank"],
+            r["run_id"],
+            r["hypothesis_family"],
+            r["evidence_tier"],
+            r["protocol_verdict"],
+            r["status"],
+            bucket,
             "not_recorded" if r["worst_fail_margin_frac"] is None else r["worst_fail_margin_frac"],
             r["worst_fail_margin_source"],
             r["root_cause_mechanism"],
@@ -586,9 +622,7 @@ def render_markdown(rows, denom_lines) -> str:
 
 
 def build_scoreboard(runs_dir: Path):
-    run_dirs = sorted(
-        d for d in runs_dir.iterdir() if d.is_dir() and d.name.startswith("run_")
-    )
+    run_dirs = sorted(d for d in runs_dir.iterdir() if d.is_dir() and d.name.startswith("run_"))
     rows = [build_row(d) for d in run_dirs]
     rank_rows(rows)
     return rows
@@ -597,7 +631,9 @@ def build_scoreboard(runs_dir: Path):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--runs-dir", default=str(STRATEGY_RESEARCH_ROOT / "runs"))
-    ap.add_argument("--out-dir", default=str(STRATEGY_RESEARCH_ROOT / "engineering" / "roadmap" / "E-018" / "artifacts"))
+    ap.add_argument(
+        "--out-dir", default=str(STRATEGY_RESEARCH_ROOT / "engineering" / "roadmap" / "E-018" / "artifacts")
+    )
     args = ap.parse_args(argv)
 
     runs_dir = Path(args.runs_dir)

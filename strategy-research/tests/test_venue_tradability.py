@@ -12,6 +12,7 @@ Every test drives _materialize_run() directly (not just
 _venue_product_tradable() in isolation) so the assertions cover the actual
 wiring point: research_brief.yaml's written research_only key.
 """
+
 import sys
 from pathlib import Path
 
@@ -36,16 +37,21 @@ _MINIMAL_BRIEF = {
 def _write_venue_tradability(root: Path):
     config_dir = root / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
-    (config_dir / "venue_tradability.yaml").write_text(yaml.safe_dump({
-        "version": "1.0",
-        "venues": {
-            "kraken": {
-                "spot": {"tradable": True},
-                "perp": {"tradable": True},
-                "margin": {"tradable": "unconfirmed"},
-            },
-        },
-    }), encoding="utf-8")
+    (config_dir / "venue_tradability.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "version": "1.0",
+                "venues": {
+                    "kraken": {
+                        "spot": {"tradable": True},
+                        "perp": {"tradable": True},
+                        "margin": {"tradable": "unconfirmed"},
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def _materialize_and_read(run_id: str, brief: dict, runs_dir: Path) -> dict:

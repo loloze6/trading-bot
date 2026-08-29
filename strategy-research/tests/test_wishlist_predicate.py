@@ -6,6 +6,7 @@ trigger_condition -- see meta_findings.daily_regime_overlay_recommended_before_a
 in campaign_knowledge_base.yaml. Now every trigger_condition is a structured
 predicate, mechanically evaluated against the KB.
 """
+
 import sys
 from pathlib import Path
 
@@ -73,20 +74,30 @@ def test_predicate_false_when_no_finding_satisfies_all_conditions(tmp_path, monk
     all_of means every condition on the SAME finding."""
     kb = {
         "findings": [
-            {"id": "partial_match", "outcome": "kill_ungated_regime_mismatch",
-             "signal_property": {"per_trade_expectancy_bps": -50.0,  # fails: not > 0
-                                  "per_trade_expectancy_t_stat": 2.0}},
+            {
+                "id": "partial_match",
+                "outcome": "kill_ungated_regime_mismatch",
+                "signal_property": {
+                    "per_trade_expectancy_bps": -50.0,  # fails: not > 0
+                    "per_trade_expectancy_t_stat": 2.0,
+                },
+            },
         ]
     }
     wishlist = {
         "candidates": [
-            {"family": "test_family", "trigger_condition": {"predicate": {
-                "source": "kb_finding",
-                "all_of": [
-                    {"field": "signal_property.per_trade_expectancy_bps", "op": ">", "value": 0},
-                    {"field": "outcome", "op": "in", "value": ["kill_ungated_regime_mismatch"]},
-                ],
-            }}},
+            {
+                "family": "test_family",
+                "trigger_condition": {
+                    "predicate": {
+                        "source": "kb_finding",
+                        "all_of": [
+                            {"field": "signal_property.per_trade_expectancy_bps", "op": ">", "value": 0},
+                            {"field": "outcome", "op": "in", "value": ["kill_ungated_regime_mismatch"]},
+                        ],
+                    }
+                },
+            },
         ]
     }
     (tmp_path / "campaign_record").mkdir(exist_ok=True)
@@ -115,19 +126,27 @@ def test_sentinel_absence_on_dead_record_does_not_mask_clean_false(tmp_path, mon
     per_trade_expectancy_bps must not turn a clean false into missing_field."""
     kb = {
         "findings": [
-            {"id": "dead_record_pre_schema", "outcome": "no_edge_observed",
-             "signal_property": {"per_trade_expectancy_bps": rc.NOT_COMPUTED_SENTINEL}},
+            {
+                "id": "dead_record_pre_schema",
+                "outcome": "no_edge_observed",
+                "signal_property": {"per_trade_expectancy_bps": rc.NOT_COMPUTED_SENTINEL},
+            },
         ]
     }
     wishlist = {
         "candidates": [
-            {"family": "test_family3", "trigger_condition": {"predicate": {
-                "source": "kb_finding",
-                "all_of": [
-                    {"field": "signal_property.per_trade_expectancy_bps", "op": ">", "value": 0},
-                    {"field": "outcome", "op": "in", "value": ["kill_ungated_regime_mismatch"]},
-                ],
-            }}},
+            {
+                "family": "test_family3",
+                "trigger_condition": {
+                    "predicate": {
+                        "source": "kb_finding",
+                        "all_of": [
+                            {"field": "signal_property.per_trade_expectancy_bps", "op": ">", "value": 0},
+                            {"field": "outcome", "op": "in", "value": ["kill_ungated_regime_mismatch"]},
+                        ],
+                    }
+                },
+            },
         ]
     }
     (tmp_path / "campaign_record").mkdir(exist_ok=True)
@@ -149,19 +168,27 @@ def test_sentinel_absence_on_record_that_could_otherwise_match_is_missing_field(
     still report missing_field."""
     kb = {
         "findings": [
-            {"id": "could_match_but_unscored", "outcome": "kill_ungated_regime_mismatch",
-             "signal_property": {"per_trade_expectancy_bps": rc.NOT_COMPUTED_SENTINEL}},
+            {
+                "id": "could_match_but_unscored",
+                "outcome": "kill_ungated_regime_mismatch",
+                "signal_property": {"per_trade_expectancy_bps": rc.NOT_COMPUTED_SENTINEL},
+            },
         ]
     }
     wishlist = {
         "candidates": [
-            {"family": "test_family4", "trigger_condition": {"predicate": {
-                "source": "kb_finding",
-                "all_of": [
-                    {"field": "signal_property.per_trade_expectancy_bps", "op": ">", "value": 0},
-                    {"field": "outcome", "op": "in", "value": ["kill_ungated_regime_mismatch"]},
-                ],
-            }}},
+            {
+                "family": "test_family4",
+                "trigger_condition": {
+                    "predicate": {
+                        "source": "kb_finding",
+                        "all_of": [
+                            {"field": "signal_property.per_trade_expectancy_bps", "op": ">", "value": 0},
+                            {"field": "outcome", "op": "in", "value": ["kill_ungated_regime_mismatch"]},
+                        ],
+                    }
+                },
+            },
         ]
     }
     (tmp_path / "campaign_record").mkdir(exist_ok=True)
@@ -187,12 +214,17 @@ def test_predicate_missing_field_when_finding_lacks_required_field(tmp_path, mon
     }
     wishlist = {
         "candidates": [
-            {"family": "test_family2", "trigger_condition": {"predicate": {
-                "source": "kb_finding",
-                "all_of": [
-                    {"field": "signal_property.per_trade_expectancy_bps", "op": ">", "value": 0},
-                ],
-            }}},
+            {
+                "family": "test_family2",
+                "trigger_condition": {
+                    "predicate": {
+                        "source": "kb_finding",
+                        "all_of": [
+                            {"field": "signal_property.per_trade_expectancy_bps", "op": ">", "value": 0},
+                        ],
+                    }
+                },
+            },
         ]
     }
     (tmp_path / "campaign_record").mkdir(exist_ok=True)

@@ -39,15 +39,14 @@ from tools.measure_bar_sigma import (  # noqa: E402
 
 def _write_cache(tmp_path: Path, base: str, closes, start="2025-01-01 00:00:00"):
     ts = pd.date_range(start, periods=len(closes), freq="h")
-    pd.DataFrame({"timestamp": ts, "close": closes}).to_csv(
-        tmp_path / f"kraken_{base}USD_1h.csv", index=False
-    )
+    pd.DataFrame({"timestamp": ts, "close": closes}).to_csv(tmp_path / f"kraken_{base}USD_1h.csv", index=False)
     return tmp_path
 
 
 # ---------------------------------------------------------------------------
 # the return definition
 # ---------------------------------------------------------------------------
+
 
 def test_returns_are_close_to_close_in_bps(tmp_path):
     # +1%, -1% -> +100 bps, -100 bps
@@ -65,10 +64,7 @@ def test_sigma_matches_hand_computed_stdev(tmp_path):
     closes = [100.0, 101.0, 100.0, 102.0, 101.0, 103.0]
     _write_cache(tmp_path, "TEST", closes)
     rets = bar_returns_bps("TEST", None, None, tmp_path)
-    expected = [
-        (closes[i + 1] - closes[i]) / closes[i] * 10_000.0
-        for i in range(len(closes) - 1)
-    ]
+    expected = [(closes[i + 1] - closes[i]) / closes[i] * 10_000.0 for i in range(len(closes) - 1)]
     assert sigma_bar_bps(rets) == pytest.approx(statistics.stdev(expected))
 
 
@@ -105,6 +101,7 @@ def test_window_filters(tmp_path):
 # holdout protection
 # ---------------------------------------------------------------------------
 
+
 def test_holdout_window_is_refused():
     with pytest.raises(HoldoutViolation):
         _assert_window("2026-01-01", "2026-03-31")
@@ -138,6 +135,7 @@ def test_measure_refuses_a_holdout_window(tmp_path):
 # pooling
 # ---------------------------------------------------------------------------
 
+
 def test_pooled_is_over_concatenated_returns_not_a_mean_of_sigmas(tmp_path):
     _write_cache(tmp_path, "CALM", [100.0, 100.1, 100.0, 100.1, 100.0, 100.1])
     _write_cache(tmp_path, "WILD", [100.0, 110.0, 100.0, 110.0, 100.0, 110.0])
@@ -166,11 +164,29 @@ def test_missing_cache_raises_rather_than_silently_dropping(tmp_path):
 # registration invariants
 # ---------------------------------------------------------------------------
 
+
 def test_default_bases_are_the_nineteen_recorded_pairs():
     assert len(DEFAULT_BASES) == 19
     assert set(DEFAULT_BASES) == {
-        "BTC", "ETH", "XRP", "SOL", "ADA", "SUI", "ZEC", "DOGE", "XMR", "LTC",
-        "ONDO", "NEAR", "LINK", "TAO", "AVAX", "TRX", "AAVE", "INJ", "UNI",
+        "BTC",
+        "ETH",
+        "XRP",
+        "SOL",
+        "ADA",
+        "SUI",
+        "ZEC",
+        "DOGE",
+        "XMR",
+        "LTC",
+        "ONDO",
+        "NEAR",
+        "LINK",
+        "TAO",
+        "AVAX",
+        "TRX",
+        "AAVE",
+        "INJ",
+        "UNI",
     }
 
 
@@ -181,6 +197,7 @@ def test_cache_path_uses_the_kraken_exchange_qualified_convention():
 # ---------------------------------------------------------------------------
 # the module cannot see a whale feature — structural no-peek guarantee
 # ---------------------------------------------------------------------------
+
 
 def test_module_cannot_reach_the_recorded_capture():
     """
@@ -201,12 +218,17 @@ def test_module_cannot_reach_the_recorded_capture():
             imported.add(node.module.split(".")[0])
 
     assert "recorder" not in imported, (
-        "measure_bar_sigma.py imports recorder.* — it must not be able to read "
-        "the forward capture or any whale feature"
+        "measure_bar_sigma.py imports recorder.* — it must not be able to read the forward capture or any whale feature"
     )
     assert imported <= {
-        "__future__", "argparse", "math", "os", "statistics", "pathlib",
-        "typing", "pandas",
+        "__future__",
+        "argparse",
+        "math",
+        "os",
+        "statistics",
+        "pathlib",
+        "typing",
+        "pandas",
     }, f"unexpected imports in measure_bar_sigma.py: {imported}"
 
     src = open(mbs.__file__, encoding="utf-8").read()
@@ -220,6 +242,7 @@ def test_module_cannot_reach_the_recorded_capture():
 # ---------------------------------------------------------------------------
 # the seal boundary (2026-08-19): the loader must not out-read its own assertion
 # ---------------------------------------------------------------------------
+
 
 def test_end_date_does_not_admit_the_first_sealed_bar(tmp_path):
     """end="2025-12-31" must not pull in the 2026-01-01 00:00 bar.
@@ -243,8 +266,8 @@ def test_end_date_does_not_admit_the_first_sealed_bar(tmp_path):
     # 2 legal bars -> 1 return. Before the fix the filter admitted the
     # 2026-01-01 00:00 bar as well, giving 3 bars and 2 returns.
     assert len(got) == 1, (
-        f"expected only pre-seal bars, got {len(got)} returns; >1 means the "
-        f"2026-01-01 00:00 bar was admitted")
+        f"expected only pre-seal bars, got {len(got)} returns; >1 means the 2026-01-01 00:00 bar was admitted"
+    )
 
 
 def test_end_date_still_includes_the_whole_end_day(tmp_path):
@@ -254,7 +277,7 @@ def test_end_date_still_includes_the_whole_end_day(tmp_path):
     `<= end` would silently drop 23 hours of the last day, which would be a
     quieter bug than the one being fixed.
     """
-    closes = [100.0] * 25                           # 2025-06-01 00:00 .. 2025-06-02 00:00
+    closes = [100.0] * 25  # 2025-06-01 00:00 .. 2025-06-02 00:00
     _write_cache(tmp_path, "BTC", closes, start="2025-06-01 00:00:00")
 
     got = bar_returns_bps("BTC", "2025-06-01", "2025-06-01", tmp_path)
@@ -272,7 +295,7 @@ def test_a_time_bearing_end_does_not_widen_past_its_own_day(tmp_path):
     leaked -- a worse version of the defect being fixed. `.normalize()` pins the
     bound to the end DAY regardless of any time supplied.
     """
-    closes = [100.0] * 30                       # 2025-12-31 22:00 .. 2026-01-02 03:00
+    closes = [100.0] * 30  # 2025-12-31 22:00 .. 2026-01-02 03:00
     _write_cache(tmp_path, "BTC", closes, start="2025-12-31 22:00:00")
 
     got = bar_returns_bps("BTC", "2025-12-31", "2025-12-31 23:00", tmp_path)
@@ -280,4 +303,5 @@ def test_a_time_bearing_end_does_not_widen_past_its_own_day(tmp_path):
     # Only 12-31 22:00 and 23:00 are legal -> 1 return.
     assert len(got) == 1, (
         f"expected only the two pre-seal bars, got {len(got)} returns -- a "
-        f"time-bearing end widened the window into the holdout")
+        f"time-bearing end widened the window into the holdout"
+    )

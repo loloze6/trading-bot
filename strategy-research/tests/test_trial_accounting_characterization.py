@@ -90,6 +90,7 @@ keep their own explicit monkeypatches (self-documenting; a test's own setattr
 runs after the autouse one and wins). No market data, no LLM, no subprocess —
 subprocess.run is faked; state is per-test tmp only.
 """
+
 import asyncio
 import hashlib
 import json
@@ -110,6 +111,7 @@ import run_phase1_research as rpr  # noqa: E402
 # ---------------------------------------------------------------------------
 # Shared helpers / fixtures
 # ---------------------------------------------------------------------------
+
 
 def _seed_state(path: Path, trials: list[dict], **extra) -> None:
     data: dict = {"trial_sharpes": [dict(t) for t in trials]}
@@ -175,11 +177,13 @@ class _FakeResult:
         self.stderr = stderr
 
 
-def _install_fake_subprocess(monkeypatch, *, returncode=0, prescreen_payload=None,
-                             protocol_summary=None, write_summary=True, stderr=""):
+def _install_fake_subprocess(
+    monkeypatch, *, returncode=0, prescreen_payload=None, protocol_summary=None, write_summary=True, stderr=""
+):
     """Replace rpr.subprocess.run. Parses --out-dir from cmd; for a prescreen cmd
     writes <out_dir>/prescreen_result.yaml, for a protocol cmd writes
     <out_dir>/protocol_summary.json (--out-dir IS RUN_DIR for run_protocol.py)."""
+
     def _fake_run(cmd, capture_output=True, text=True, **kwargs):
         out_dir = None
         for i, tok in enumerate(cmd):
@@ -191,11 +195,11 @@ def _install_fake_subprocess(monkeypatch, *, returncode=0, prescreen_payload=Non
             if "prescreen_signal.py" in joined:
                 out_dir.mkdir(parents=True, exist_ok=True)
                 (out_dir / "prescreen_result.yaml").write_text(
-                    yaml.safe_dump(prescreen_payload or {}), encoding="utf-8")
+                    yaml.safe_dump(prescreen_payload or {}), encoding="utf-8"
+                )
             elif "run_protocol.py" in joined and write_summary:
                 out_dir.mkdir(parents=True, exist_ok=True)
-                (out_dir / "protocol_summary.json").write_text(
-                    json.dumps(protocol_summary or {}), encoding="utf-8")
+                (out_dir / "protocol_summary.json").write_text(json.dumps(protocol_summary or {}), encoding="utf-8")
         return _FakeResult(returncode, "fake-stdout", stderr)
 
     monkeypatch.setattr(rpr.subprocess, "run", _fake_run)
@@ -208,9 +212,11 @@ def _stub_vce(monkeypatch):
     comment, :1100-1114); this stub pins that outcome so the characterization
     target stays the TRIAL RECORDING, not the verdict kernel."""
     import types as _types
+
     stub = _types.ModuleType("verdict_criteria_evaluator")
     stub.evaluate_pass_rule_criteria = (  # pyright: ignore[reportAttributeAccessIssue]
-        lambda summary, prereg, brief: {"result": "legacy_not_evaluable"})
+        lambda summary, prereg, brief: {"result": "legacy_not_evaluable"}
+    )
     monkeypatch.setitem(sys.modules, "verdict_criteria_evaluator", stub)
 
 
@@ -223,6 +229,7 @@ class _SentinelStop(Exception):
 # ===========================================================================
 # LEVEL A — pure functions (deflate_sharpe.py)
 # ===========================================================================
+
 
 def test_h1_dsr_n_counts_only_sharpe_valid_trials():
     """A1. FIXED 2026-08-16 (Jeremy, issue #28) -- but this specific test still pins
@@ -312,7 +319,7 @@ def test_h1_compute_dsr_n_trials_param_changes_the_correction_when_estimable():
     the correction actually strengthens as N grows, which is H1's entire point."""
     trial_sharpes = [0.1, 0.3, -0.2, 0.05, 0.4]  # 5 real Sharpe values, non-degenerate variance.
 
-    small_n = ds.compute_dsr(0.8, trial_sharpes, n_trials=5)   # n_trials == len(trial_sharpes)
+    small_n = ds.compute_dsr(0.8, trial_sharpes, n_trials=5)  # n_trials == len(trial_sharpes)
     large_n = ds.compute_dsr(0.8, trial_sharpes, n_trials=50)  # same values, honest N much larger
 
     assert small_n["n_trials"] == 5
@@ -351,8 +358,12 @@ def test_forecast_hash_dedup_semantics():
     NO forecast_hash) must BOTH survive dedup; only the hashed control pair
     collapses. Pins the hashless-is-unique rule (ds:88-90)."""
     twin = {
-        "trial_id": "run_dup", "source": "backtest", "sharpe": 1.0,
-        "expectancy_bps": None, "n_trades": 100, "statistic_valid": "sharpe",
+        "trial_id": "run_dup",
+        "source": "backtest",
+        "sharpe": 1.0,
+        "expectancy_bps": None,
+        "n_trades": 100,
+        "statistic_valid": "sharpe",
         "below_floor_pct": 0.0,
     }
     ctrl_a = {"trial_id": "run_a", "forecast_hash": "x"}
@@ -369,6 +380,7 @@ def test_forecast_hash_dedup_semantics():
 # ===========================================================================
 # LEVEL B — writers + file-backed promotion audit
 # ===========================================================================
+
 
 def test_promotion_audit_total_count_divergence(campaign_state_path, tmp_path):
     """B-A3. FIXED (2026-08-17, COUNT-DIV). Was: the SAME concept ("how many were
@@ -393,14 +405,11 @@ def test_promotion_audit_total_count_divergence(campaign_state_path, tmp_path):
     _seed_state(campaign_state_path, trials, runs=[])
     run_dir = tmp_path / "runs" / "run_t"
     (run_dir / "artifacts").mkdir(parents=True)
-    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
-        yaml.safe_dump({}), encoding="utf-8")
-    (run_dir / "artifacts" / "protocol_result.yaml").write_text(
-        yaml.safe_dump({}), encoding="utf-8")
+    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(yaml.safe_dump({}), encoding="utf-8")
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(yaml.safe_dump({}), encoding="utf-8")
 
     rpr._write_promotion_audit(run_dir, "run_t")
-    audit_rpr = yaml.safe_load(
-        (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+    audit_rpr = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
 
     # CHAR[CONTRACT]: rpr's "total_variants_tested" stays PRE-dedup (:4172) -> 3, not 2.
     # Unaffected by the COUNT-DIV fix -- distinct, legitimate use in the sparse-path
@@ -424,22 +433,30 @@ def test_issue36_inline_path_keeps_prescreen_and_backtest_rows(campaign_state_pa
     dropping the backtest Sharpe from the DSR N that gates the single-use holdout."""
     shared = "run042_forecast_hash"
     trials = [
-        {"trial_id": "run_042", "source": "prescreen", "forecast_hash": shared,
-         "statistic_valid": "neither", "sharpe": None},
-        {"trial_id": "run_042", "source": "backtest", "forecast_hash": shared,
-         "statistic_valid": "sharpe", "sharpe": 1.2, "n_trades": 120},
+        {
+            "trial_id": "run_042",
+            "source": "prescreen",
+            "forecast_hash": shared,
+            "statistic_valid": "neither",
+            "sharpe": None,
+        },
+        {
+            "trial_id": "run_042",
+            "source": "backtest",
+            "forecast_hash": shared,
+            "statistic_valid": "sharpe",
+            "sharpe": 1.2,
+            "n_trades": 120,
+        },
     ]
     _seed_state(campaign_state_path, trials, runs=[])
     run_dir = tmp_path / "runs" / "run_042"
     (run_dir / "artifacts").mkdir(parents=True)
-    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
-        yaml.safe_dump({}), encoding="utf-8")
-    (run_dir / "artifacts" / "protocol_result.yaml").write_text(
-        yaml.safe_dump({}), encoding="utf-8")
+    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(yaml.safe_dump({}), encoding="utf-8")
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(yaml.safe_dump({}), encoding="utf-8")
 
     rpr._write_promotion_audit(run_dir, "run_042")
-    audit = yaml.safe_load(
-        (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+    audit = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
 
     # CHAR[CONTRACT]: prescreen + backtest of one run are distinct (forecast_hash, source)
     # keys -- both counted, mirroring ds. RED here means the inline path regressed to the
@@ -493,8 +510,7 @@ def test_backtest_writer_n_trades_sums_results_trade_counts(campaign_state_path,
             {"symbol": "BTCUSDT", "window": "2024-02", "core": {"trade_count": 500}},
         ],
     }
-    rpr._record_backtest_trial(
-        "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
+    rpr._record_backtest_trial("run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
     row = _read_trials(campaign_state_path)[0]
 
     assert row["n_trades"] == 914  # CHAR[CONTRACT]: sums results[].core.trade_count, not min_trade_count.
@@ -511,8 +527,7 @@ def test_backtest_writer_n_trades_zero_when_results_missing(campaign_state_path,
     _seed_state(campaign_state_path, [])
     _seed_config(tmp_path / "artifacts")
     summary = {"per_symbol_summary": {}}
-    rpr._record_backtest_trial(
-        "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
+    rpr._record_backtest_trial("run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
     row = _read_trials(campaign_state_path)[0]
     assert row["n_trades"] == 0  # CHAR[CONTRACT]: missing "results" degrades to 0, not a crash.
 
@@ -521,8 +536,14 @@ def test_backtest_writer_n_trades_zero_when_results_missing(campaign_state_path,
     "summary, expected_stat, expected_sharpe_is_none",
     [
         # below_floor_pct > 50 => 'expectancy' regardless of a present median (:3074-3075).
-        ({"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.0}},
-          "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 60}}}, "expectancy", False),
+        (
+            {
+                "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.0}},
+                "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 60}},
+            },
+            "expectancy",
+            False,
+        ),
         # median present + floor 0 => 'sharpe' (:3076-3077).
         ({"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.0}}}, "sharpe", False),
         # empty per_symbol_summary => 'neither', sharpe None (:3078-3079).
@@ -535,8 +556,7 @@ def test_backtest_writer_statistic_valid_taxonomy(
     """B3. Pins the statistic_valid decision ladder (:3074-3079)."""
     _seed_state(campaign_state_path, [])
     _seed_config(tmp_path / "artifacts")
-    rpr._record_backtest_trial(
-        "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
+    rpr._record_backtest_trial("run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
     row = _read_trials(campaign_state_path)[0]
     assert row["statistic_valid"] == expected_stat  # CHAR[CONTRACT]: statistic_valid ladder.
     assert (row["sharpe"] is None) == expected_sharpe_is_none  # CHAR[CONTRACT]: sharpe presence.
@@ -554,8 +574,8 @@ def test_writer_contract_lifecycle_pair_shares_trial_id(campaign_state_path, tmp
     config_path = tmp_path / "artifacts" / "candidate_strategy_config.json"
     rpr._record_prescreen_trial("run_x", {"route": "advance", "ic_spearman_pooled": 0.09}, config_path)
     rpr._record_backtest_trial(
-        "run_x", {"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.5, "trade_count": 120}}},
-        config_path)
+        "run_x", {"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.5, "trade_count": 120}}}, config_path
+    )
     rows = _read_trials(campaign_state_path)
     assert len(rows) == 2  # CHAR[CONTRACT]: prescreen + backtest, one legit lifecycle.
     assert [r["trial_id"] for r in rows] == ["run_x", "run_x"]  # CHAR[CONTRACT]: shared trial_id.
@@ -565,6 +585,7 @@ def test_writer_contract_lifecycle_pair_shares_trial_id(campaign_state_path, tmp
 # ===========================================================================
 # LEVEL C — call sites (run_tool_worker / run_loop)
 # ===========================================================================
+
 
 def test_h2_resumed_prescreen_upserts_fresh_outcome(temp_run, monkeypatch):
     """C1. H2 FIXED (E-025, issue #28): a re-entered signal_prescreen — a crash-retry
@@ -582,8 +603,17 @@ def test_h2_resumed_prescreen_upserts_fresh_outcome(temp_run, monkeypatch):
     _seed_config(_run_dir / "artifacts")
     _seed_state(
         rpr.CAMPAIGN_STATE_PATH,
-        [{"trial_id": "run_x", "source": "prescreen", "route": "kill_no_ic",
-          "sharpe": None, "n_trades": 0, "statistic_valid": "neither", "ic_pooled": 0.01}],
+        [
+            {
+                "trial_id": "run_x",
+                "source": "prescreen",
+                "route": "kill_no_ic",
+                "sharpe": None,
+                "n_trades": 0,
+                "statistic_valid": "neither",
+                "ic_pooled": 0.01,
+            }
+        ],
     )
     _install_fake_subprocess(
         monkeypatch,
@@ -609,9 +639,19 @@ def test_h2_resumed_prescreen_same_outcome_is_noop(temp_run, monkeypatch):
     _seed_config(_run_dir / "artifacts")
     _seed_state(
         rpr.CAMPAIGN_STATE_PATH,
-        [{"trial_id": "run_x", "source": "prescreen", "route": "advance",
-          "sharpe": None, "expectancy_bps": None, "n_trades": 0,
-          "statistic_valid": "neither", "ic_pooled": 0.09, "cost_pass": True}],
+        [
+            {
+                "trial_id": "run_x",
+                "source": "prescreen",
+                "route": "advance",
+                "sharpe": None,
+                "expectancy_bps": None,
+                "n_trades": 0,
+                "statistic_valid": "neither",
+                "ic_pooled": 0.09,
+                "cost_pass": True,
+            }
+        ],
     )
     _install_fake_subprocess(
         monkeypatch,
@@ -660,13 +700,11 @@ def test_h3_protocol_reentry_appends_duplicate_backtest(temp_run, monkeypatch):
 @pytest.mark.parametrize(
     "returncode, write_summary, exc, match",
     [
-        (1, True, RuntimeError, "run_protocol.py failed"),                       # :1089
+        (1, True, RuntimeError, "run_protocol.py failed"),  # :1089
         (0, False, FileNotFoundError, "protocol_summary.json not found after protocol run"),  # :1093
     ],
 )
-def test_h4_failed_backtest_records_no_trial(
-    temp_run, monkeypatch, returncode, write_summary, exc, match
-):
+def test_h4_failed_backtest_records_no_trial(temp_run, monkeypatch, returncode, write_summary, exc, match):
     """C3. H4-core FIXED (E-025, issue #28): a failed backtest raises at :1089 (non-zero
     exit) or :1093 (missing summary), but now records exactly ONE 'backtest_failed' row
     via _record_failed_backtest_trial BEFORE re-raising — the spent look is counted.
@@ -677,8 +715,9 @@ def test_h4_failed_backtest_records_no_trial(
     _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
     expected_hash = _seed_config(run_dir / "artifacts")
     _stub_vce(monkeypatch)
-    _install_fake_subprocess(monkeypatch, returncode=returncode, write_summary=write_summary,
-                             protocol_summary={}, stderr="boom")
+    _install_fake_subprocess(
+        monkeypatch, returncode=returncode, write_summary=write_summary, protocol_summary={}, stderr="boom"
+    )
 
     with pytest.raises(exc, match=match):  # CHAR[CONTRACT]: original failure still propagates.
         asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
@@ -828,6 +867,7 @@ def test_h4b_vce_raise_after_success_records_failed_trial(temp_run, monkeypatch)
         raise TypeError("'>' not supported between instances of 'str' and 'float'")
 
     import types as _types
+
     stub = _types.ModuleType("verdict_criteria_evaluator")
     stub.evaluate_pass_rule_criteria = _raise_type_error  # pyright: ignore[reportAttributeAccessIssue]
     monkeypatch.setitem(sys.modules, "verdict_criteria_evaluator", stub)
@@ -876,19 +916,28 @@ def _drive_a86_preflight(temp_run, monkeypatch, *, seed_prescreen_result: bool):
     handoffs = run_dir / "handoffs"
     handoffs.mkdir(parents=True)
     (handoffs / rpr.STAGE_CONFIGS["signal_prescreen"]["handoff"]).write_text(
-        yaml.safe_dump({"required_inputs": []}), encoding="utf-8")
+        yaml.safe_dump({"required_inputs": []}), encoding="utf-8"
+    )
     (run_dir / "pipeline_state.yaml").write_text(
-        yaml.safe_dump({"run_id": run_id, "pending_stage": "signal_prescreen", "audit_log": {}}),
-        encoding="utf-8")
+        yaml.safe_dump({"run_id": run_id, "pending_stage": "signal_prescreen", "audit_log": {}}), encoding="utf-8"
+    )
     _seed_state(
         rpr.CAMPAIGN_STATE_PATH,
-        [{"trial_id": run_id, "source": "prescreen", "route": "kill_no_ic",
-          "sharpe": None, "n_trades": 0, "statistic_valid": "neither"}],
+        [
+            {
+                "trial_id": run_id,
+                "source": "prescreen",
+                "route": "kill_no_ic",
+                "sharpe": None,
+                "n_trades": 0,
+                "statistic_valid": "neither",
+            }
+        ],
     )
     if seed_prescreen_result:
         (run_dir / "artifacts" / "prescreen_result.yaml").write_text(
-            yaml.safe_dump({"run_id": run_id, "route": "insufficient_power_a_priori"}),
-            encoding="utf-8")
+            yaml.safe_dump({"run_id": run_id, "route": "insufficient_power_a_priori"}), encoding="utf-8"
+        )
 
     monkeypatch.setattr(rpr, "_load_token_budget", lambda: 1e9)
     monkeypatch.setattr(rpr, "_run_a86_power_check", lambda artifacts: dict(_A86_CANNED))
@@ -935,24 +984,34 @@ def test_write_promotion_audit_buckets_failed_rows_as_statistic_neither(tmp_path
     the success path runs and excluded_trial_counts is actually populated."""
     monkeypatch.setattr(rpr, "CAMPAIGN_STATE_PATH", tmp_path / "campaign_state.yaml")
     trials = [
-        {"trial_id": "run_a", "source": "backtest", "sharpe": 0.3,
-         "statistic_valid": "sharpe", "forecast_hash": "a"},
-        {"trial_id": "run_b", "source": "backtest", "sharpe": 0.5,
-         "statistic_valid": "sharpe", "forecast_hash": "b"},
-        {"trial_id": "run_failed", "source": "backtest_failed", "sharpe": None,
-         "statistic_valid": "failed", "forecast_hash": "c"},
+        {"trial_id": "run_a", "source": "backtest", "sharpe": 0.3, "statistic_valid": "sharpe", "forecast_hash": "a"},
+        {"trial_id": "run_b", "source": "backtest", "sharpe": 0.5, "statistic_valid": "sharpe", "forecast_hash": "b"},
+        {
+            "trial_id": "run_failed",
+            "source": "backtest_failed",
+            "sharpe": None,
+            "statistic_valid": "failed",
+            "forecast_hash": "c",
+        },
     ]
     (tmp_path / "campaign_state.yaml").write_text(
-        yaml.safe_dump({"trial_sharpes": trials, "runs": []}), encoding="utf-8")
+        yaml.safe_dump({"trial_sharpes": trials, "runs": []}), encoding="utf-8"
+    )
 
     run_dir = tmp_path / "runs" / "run_test"
     (run_dir / "artifacts").mkdir(parents=True)
     (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
-        yaml.safe_dump({"hypothesis_id": "TEST"}), encoding="utf-8")
-    (run_dir / "artifacts" / "protocol_result.yaml").write_text(yaml.safe_dump({
-        "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.4}},
-        "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 0.0}},
-    }), encoding="utf-8")
+        yaml.safe_dump({"hypothesis_id": "TEST"}), encoding="utf-8"
+    )
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.4}},
+                "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 0.0}},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     rpr._write_promotion_audit(run_dir, "run_test")
     audit = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
@@ -969,6 +1028,7 @@ def test_write_promotion_audit_buckets_failed_rows_as_statistic_neither(tmp_path
 # because the forecast_hash guard treated a designed no-config path as a
 # structural anomaly. See _forecast_hash_for_prescreen's own docstring.
 # ---------------------------------------------------------------------------
+
 
 def test_a_priori_power_route_records_a_trial_without_a_config(tmp_path):
     """The A8.6 power gate blocks at `validation`, BEFORE backtest_specification
@@ -1004,6 +1064,4 @@ def test_a_priori_route_still_hashes_when_a_config_does_exist(tmp_path):
     cfg = tmp_path / "candidate_strategy_config.json"
     cfg.write_text(json.dumps({"b": 2, "a": 1}), encoding="utf-8")
     h = rpr._forecast_hash_for_prescreen("insufficient_power_a_priori", cfg, "run_061")
-    assert h == hashlib.sha256(
-        json.dumps({"a": 1, "b": 2}, sort_keys=True).encode("utf-8")).hexdigest()
-
+    assert h == hashlib.sha256(json.dumps({"a": 1, "b": 2}, sort_keys=True).encode("utf-8")).hexdigest()

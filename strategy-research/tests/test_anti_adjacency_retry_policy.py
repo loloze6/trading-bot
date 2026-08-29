@@ -17,6 +17,7 @@ _classify_human_pause) into a per-test tmp_path sandbox before any test body
 runs -- same precedent as test_exclusion_digest_input.py /
 test_stale_input_path_fix.py.
 """
+
 import sys
 from pathlib import Path
 
@@ -40,6 +41,7 @@ _REAL_RUN_059_DIR = _SR / "runs" / "run_059"
 # Fixture helpers
 # ---------------------------------------------------------------------------
 
+
 def _minimal_run(root: Path, run_id: str, hypothesis_card: dict | None = None) -> Path:
     run_dir = root / "runs" / run_id
     (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
@@ -52,8 +54,12 @@ def _minimal_run(root: Path, run_id: str, hypothesis_card: dict | None = None) -
 
 def _fresh_state(run_id: str, **overrides) -> dict:
     state = {
-        "run_id": run_id, "status": "active", "pending_stage": "innovation_expansion",
-        "completed_stages": [], "flags": {}, "audit_log": {},
+        "run_id": run_id,
+        "status": "active",
+        "pending_stage": "innovation_expansion",
+        "completed_stages": [],
+        "flags": {},
+        "audit_log": {},
         "counters": {"refinements_used": 0, "reruns_used": 0},
     }
     state.update(overrides)
@@ -84,18 +90,21 @@ def _write_digest(root: Path, families: dict) -> None:
     digest_path = root / "campaign_record" / "exclusion_digest.yaml"
     digest_path.parent.mkdir(parents=True, exist_ok=True)
     with open(digest_path, "w", encoding="utf-8") as f:
-        yaml.safe_dump({"families": families, "failed_families_passthrough": [],
-                         "components_built_passthrough": []}, f)
+        yaml.safe_dump({"families": families, "failed_families_passthrough": [], "components_built_passthrough": []}, f)
 
 
 def _kc_digest(*instrument_run_pairs) -> dict:
     """{'keltner_channel': {..., 'triples': [{instrument, timeframe='4h', run_ids}, ...]}}
     for each (instrument, run_id) pair -- factored out because the literal
     nested-brace form was error-prone to hand-write repeatedly inline."""
-    return {"keltner_channel": {"confidence": "structural_indicator_id", "triples": [
-        {"instrument": inst, "timeframe": "4h", "run_ids": [run_id]}
-        for inst, run_id in instrument_run_pairs
-    ]}}
+    return {
+        "keltner_channel": {
+            "confidence": "structural_indicator_id",
+            "triples": [
+                {"instrument": inst, "timeframe": "4h", "run_ids": [run_id]} for inst, run_id in instrument_run_pairs
+            ],
+        }
+    }
 
 
 def _write_empty_kb(root: Path) -> None:
@@ -125,8 +134,13 @@ def _refusing_kb_findings(*tags: str) -> list:
     collision (_kc_digest) can no longer manufacture a repeated REFUSE at
     this call site; Layer 1 is untouched by E-036 and still can."""
     return [
-        {"id": f"keltner_{tag.lower()}_no_edge", "hypothesis_id": f"KELTNER_{tag}",
-         "evidence_runs": [], "exhausted": True, "reactivation_condition": None}
+        {
+            "id": f"keltner_{tag.lower()}_no_edge",
+            "hypothesis_id": f"KELTNER_{tag}",
+            "evidence_runs": [],
+            "exhausted": True,
+            "reactivation_condition": None,
+        }
         for tag in tags
     ]
 
@@ -149,13 +163,17 @@ def _refused_candidate(tag: str, instrument: str) -> dict:
     keltner-shaped candidate" (e.g. the flag-off tests, which never invoke
     the gate at all) are unaffected."""
     return {
-        "hypothesis_id": f"KELTNER_{tag}", "target_market": [instrument], "timeframe": "4h",
+        "hypothesis_id": f"KELTNER_{tag}",
+        "target_market": [instrument],
+        "timeframe": "4h",
         "thesis": f"Keltner channel mean reversion on {instrument} ({tag}).",
     }
 
 
 _ADMIT_CANDIDATE = {
-    "hypothesis_id": "FEAR_GREED_NOVEL_ANGLE", "target_market": ["DOTUSDT"], "timeframe": "1h",
+    "hypothesis_id": "FEAR_GREED_NOVEL_ANGLE",
+    "target_market": ["DOTUSDT"],
+    "timeframe": "1h",
     "thesis": "Fear & Greed index contrarian positioning on DOT, never tried.",
 }
 
@@ -163,6 +181,7 @@ _ADMIT_CANDIDATE = {
 # ---------------------------------------------------------------------------
 # _anti_adjacency_retry_enabled -- same 4-case shape as the other 3 flags
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("enabled,expected", [(True, True), (False, False), (None, False)])
 def test_anti_adjacency_retry_enabled_reads_flag(enabled, expected):
@@ -179,6 +198,7 @@ def test_anti_adjacency_retry_enabled_false_when_config_file_absent():
 # Flag-off bit-identity (the acceptance bar this story sets for itself):
 # compare actual output, not just assert the flag is False.
 # ---------------------------------------------------------------------------
+
 
 def test_flag_off_route_equals_unconditional_default_next():
     root = rpr.ROOT
@@ -256,17 +276,22 @@ def test_flag_off_run_loop_iteration_unchanged(monkeypatch):
     _write_empty_kb(root)
     run_dir = _minimal_run(root, "run_914", hypothesis_card=_refused_candidate("A", "AVAXUSDT"))
     (run_dir / "handoffs" / "hypothesis_to_innovation_expansion.yaml").write_text(
-        yaml.safe_dump({"required_inputs": [], "deliverables": []}), encoding="utf-8")
+        yaml.safe_dump({"required_inputs": [], "deliverables": []}), encoding="utf-8"
+    )
 
     async def _noop_invoke(stage_name, run_id, retry_context=None):
         return
+
     monkeypatch.setattr(rpr, "async_invoke_agent", _noop_invoke)
     # Make the real default_next ('validation') terminal-shaped for this test
     # only, so run_loop stops right after processing innovation_expansion
     # without needing a real validation_decision.yaml -- same technique
     # test_stage_attempt_counter.py uses for its synthetic stage.
-    monkeypatch.setitem(rpr.STAGE_CONFIGS, "innovation_expansion",
-                         {**rpr.STAGE_CONFIGS["innovation_expansion"], "default_next": "completed_rejected"})
+    monkeypatch.setitem(
+        rpr.STAGE_CONFIGS,
+        "innovation_expansion",
+        {**rpr.STAGE_CONFIGS["innovation_expansion"], "default_next": "completed_rejected"},
+    )
 
     _write_state(run_dir, _fresh_state("run_914"))
     rpr.run_loop("run_914")
@@ -284,6 +309,7 @@ def test_flag_off_run_loop_iteration_unchanged(monkeypatch):
 # test_flag_on_admit_routes_to_validation_and_resets_counter's _write_digest
 # (root, {}) / _write_empty_kb(root)).
 # ---------------------------------------------------------------------------
+
 
 def test_flag_on_raises_when_digest_file_genuinely_absent():
     root = rpr.ROOT
@@ -337,6 +363,7 @@ def test_flag_on_existing_but_empty_digest_and_kb_still_admit_no_regression():
 # Flag ON -- ADMIT
 # ---------------------------------------------------------------------------
 
+
 def test_flag_on_admit_routes_to_validation_and_resets_counter():
     root = rpr.ROOT
     _set_flag(root, True)
@@ -359,6 +386,7 @@ def test_flag_on_admit_routes_to_validation_and_resets_counter():
 # each retry carries the PREVIOUS attempt's specific reason.
 # ---------------------------------------------------------------------------
 
+
 def test_flag_on_three_refuses_then_admit_carries_prior_reason_each_time():
     """E-036 S2: REFUSE for attempts 1-3 is now driven by Layer 1 (KB), not a
     Layer-2 digest collision -- see _refusing_kb_findings()'s docstring for
@@ -372,10 +400,10 @@ def test_flag_on_three_refuses_then_admit_carries_prior_reason_each_time():
     run_dir = _minimal_run(root, run_id)
 
     candidates = [
-        _refused_candidate("A", "AVAXUSDT"),   # attempt 1 -- REFUSE
-        _refused_candidate("B", "SOLUSDT"),    # attempt 2 -- REFUSE (different reason text)
-        _refused_candidate("C", "ETHUSDT"),    # attempt 3 -- REFUSE (different reason text)
-        _ADMIT_CANDIDATE,                       # attempt 4 -- ADMIT
+        _refused_candidate("A", "AVAXUSDT"),  # attempt 1 -- REFUSE
+        _refused_candidate("B", "SOLUSDT"),  # attempt 2 -- REFUSE (different reason text)
+        _refused_candidate("C", "ETHUSDT"),  # attempt 3 -- REFUSE (different reason text)
+        _ADMIT_CANDIDATE,  # attempt 4 -- ADMIT
     ]
     expected_next = ["hypothesis_generation", "hypothesis_generation", "hypothesis_generation", "validation"]
     reasons_seen = []
@@ -420,17 +448,21 @@ def test_flag_on_uses_exactly_four_gate_calls_for_three_refuse_then_admit(monkey
     run_dir = _minimal_run(root, run_id)
 
     import anti_adjacency_gate as aag
+
     call_count = {"n": 0}
     real_evaluate = aag.evaluate_candidate
 
     def _counting_evaluate(*args, **kwargs):
         call_count["n"] += 1
         return real_evaluate(*args, **kwargs)
+
     monkeypatch.setattr(aag, "evaluate_candidate", _counting_evaluate)
 
     candidates = [
-        _refused_candidate("A", "AVAXUSDT"), _refused_candidate("B", "SOLUSDT"),
-        _refused_candidate("C", "ETHUSDT"), _ADMIT_CANDIDATE,
+        _refused_candidate("A", "AVAXUSDT"),
+        _refused_candidate("B", "SOLUSDT"),
+        _refused_candidate("C", "ETHUSDT"),
+        _ADMIT_CANDIDATE,
     ]
     _write_state(run_dir, _fresh_state(run_id))
     for candidate in candidates:
@@ -445,6 +477,7 @@ def test_flag_on_uses_exactly_four_gate_calls_for_three_refuse_then_admit(monkey
 # Flag ON -- 4 consecutive REFUSEs: escalates, does not attempt a 5th.
 # ---------------------------------------------------------------------------
 
+
 def test_flag_on_four_consecutive_refuses_escalates_and_stops():
     """E-036 S2: 4 consecutive REFUSEs now come from Layer 1 (KB), not a
     Layer-2 digest collision -- see _refusing_kb_findings()'s docstring."""
@@ -456,8 +489,10 @@ def test_flag_on_four_consecutive_refuses_escalates_and_stops():
     run_dir = _minimal_run(root, run_id)
     _write_state(run_dir, _fresh_state(run_id))
 
-    candidates = [_refused_candidate(tag, inst) for tag, inst in
-                  [("A", "AVAXUSDT"), ("B", "SOLUSDT"), ("C", "ETHUSDT"), ("D", "DOTUSDT")]]
+    candidates = [
+        _refused_candidate(tag, inst)
+        for tag, inst in [("A", "AVAXUSDT"), ("B", "SOLUSDT"), ("C", "ETHUSDT"), ("D", "DOTUSDT")]
+    ]
     routes = []
     for candidate in candidates:
         with open(run_dir / "artifacts" / "hypothesis_card.yaml", "w", encoding="utf-8") as f:
@@ -504,16 +539,25 @@ def test_flag_on_escalation_classifies_via_existing_run_campaign_mechanism():
     _write_empty_kb(root)
     run_id = "run_924"
     run_dir = _minimal_run(root, run_id)
-    _write_state(run_dir, _fresh_state(run_id, anti_adjacency_gate_retry={
-        "attempts": 4, "last_reason": "family already run", "history": [{}] * 4,
-    }, status="paused_for_human", flags={"anti_adjacency_gate_exhausted": True}))
+    _write_state(
+        run_dir,
+        _fresh_state(
+            run_id,
+            anti_adjacency_gate_retry={
+                "attempts": 4,
+                "last_reason": "family already run",
+                "history": [{}] * 4,
+            },
+            status="paused_for_human",
+            flags={"anti_adjacency_gate_exhausted": True},
+        ),
+    )
 
     state = _read_state(run_dir)
     reason = camp._classify_human_pause(run_dir, state)
     assert reason == "anti_adjacency_gate_exhausted"
     assert reason not in camp._QUARANTINE_SAFE_REASONS, (
-        "a genuine must-escalate per the operator's own ruling -- must never "
-        "be auto-quarantined/auto-continued"
+        "a genuine must-escalate per the operator's own ruling -- must never be auto-quarantined/auto-continued"
     )
 
 
@@ -522,6 +566,7 @@ def test_flag_on_escalation_classifies_via_existing_run_campaign_mechanism():
 # stage_attempts -- a REAL regression test for the E-030 S1.5 Piece 2
 # re-entry shape, not just a comment citing the precedent.
 # ---------------------------------------------------------------------------
+
 
 def test_counter_independent_of_refinements_used_across_same_counter_reentry():
     """Reproduces RUNBOOK.md section 4.5's exact crash-resume condition
@@ -576,12 +621,15 @@ def test_counter_independent_of_refinements_used_across_same_counter_reentry():
 # _apply_stale_input_path_fix.
 # ---------------------------------------------------------------------------
 
+
 def test_apply_retry_context_noop_when_flag_off():
     root = rpr.ROOT
     _set_flag(root, False)
     run_dir = _minimal_run(root, "run_930")
-    _write_state(run_dir, _fresh_state("run_930", anti_adjacency_gate_retry={
-        "attempts": 2, "last_reason": "collision", "history": []}))
+    _write_state(
+        run_dir,
+        _fresh_state("run_930", anti_adjacency_gate_retry={"attempts": 2, "last_reason": "collision", "history": []}),
+    )
     handoff = {"required_inputs": [], "optional_inputs": []}
     rpr._apply_anti_adjacency_retry_context("hypothesis_generation", handoff, run_dir)
     assert "injected_context" not in handoff
@@ -601,8 +649,10 @@ def test_apply_retry_context_noop_for_non_hypothesis_generation_stage():
     root = rpr.ROOT
     _set_flag(root, True)
     run_dir = _minimal_run(root, "run_932")
-    _write_state(run_dir, _fresh_state("run_932", anti_adjacency_gate_retry={
-        "attempts": 1, "last_reason": "collision", "history": []}))
+    _write_state(
+        run_dir,
+        _fresh_state("run_932", anti_adjacency_gate_retry={"attempts": 1, "last_reason": "collision", "history": []}),
+    )
     handoff = {"required_inputs": [], "optional_inputs": []}
     rpr._apply_anti_adjacency_retry_context("innovation_expansion", handoff, run_dir)
     assert "injected_context" not in handoff
@@ -612,8 +662,17 @@ def test_apply_retry_context_carries_reason_when_flag_on_and_retry_in_progress()
     root = rpr.ROOT
     _set_flag(root, True)
     run_dir = _minimal_run(root, "run_933")
-    _write_state(run_dir, _fresh_state("run_933", anti_adjacency_gate_retry={
-        "attempts": 2, "last_reason": "keltner_channel already run at (AVAXUSDT, 4h)", "history": []}))
+    _write_state(
+        run_dir,
+        _fresh_state(
+            "run_933",
+            anti_adjacency_gate_retry={
+                "attempts": 2,
+                "last_reason": "keltner_channel already run at (AVAXUSDT, 4h)",
+                "history": [],
+            },
+        ),
+    )
     handoff = {"required_inputs": [], "optional_inputs": []}
     rpr._apply_anti_adjacency_retry_context("hypothesis_generation", handoff, run_dir)
     injected = handoff["injected_context"]["anti_adjacency_gate_refusal"]
@@ -626,15 +685,21 @@ def test_flag_off_prompt_is_byte_identical_to_never_calling_retry_context_at_all
     _set_flag(root, False)
     run_dir = _minimal_run(root, "run_934")
     (run_dir / "artifacts" / "research_brief.yaml").write_text("asset: BTCUSDT\n", encoding="utf-8")
-    _write_state(run_dir, _fresh_state("run_934", anti_adjacency_gate_retry={
-        "attempts": 3, "last_reason": "collision", "history": []}))
+    _write_state(
+        run_dir,
+        _fresh_state("run_934", anti_adjacency_gate_retry={"attempts": 3, "last_reason": "collision", "history": []}),
+    )
 
-    base_handoff = {"required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
-                     "optional_inputs": []}
+    base_handoff = {
+        "required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
+        "optional_inputs": [],
+    }
     baseline_prompt = rpr._build_stage_prompt("hypothesis_generation", dict(base_handoff), run_dir)
 
-    flag_off_handoff = {"required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
-                         "optional_inputs": []}
+    flag_off_handoff = {
+        "required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
+        "optional_inputs": [],
+    }
     rpr._apply_anti_adjacency_retry_context("hypothesis_generation", flag_off_handoff, run_dir)
     flag_off_prompt = rpr._build_stage_prompt("hypothesis_generation", flag_off_handoff, run_dir)
 
@@ -646,15 +711,28 @@ def test_flag_on_prompt_differs_and_carries_refusal_reason():
     _set_flag(root, True)
     run_dir = _minimal_run(root, "run_935")
     (run_dir / "artifacts" / "research_brief.yaml").write_text("asset: BTCUSDT\n", encoding="utf-8")
-    _write_state(run_dir, _fresh_state("run_935", anti_adjacency_gate_retry={
-        "attempts": 1, "last_reason": "keltner_channel already run at (AVAXUSDT, 4h)", "history": []}))
+    _write_state(
+        run_dir,
+        _fresh_state(
+            "run_935",
+            anti_adjacency_gate_retry={
+                "attempts": 1,
+                "last_reason": "keltner_channel already run at (AVAXUSDT, 4h)",
+                "history": [],
+            },
+        ),
+    )
 
-    baseline_handoff = {"required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
-                         "optional_inputs": []}
+    baseline_handoff = {
+        "required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
+        "optional_inputs": [],
+    }
     baseline_prompt = rpr._build_stage_prompt("hypothesis_generation", dict(baseline_handoff), run_dir)
 
-    on_handoff = {"required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
-                  "optional_inputs": []}
+    on_handoff = {
+        "required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
+        "optional_inputs": [],
+    }
     rpr._apply_anti_adjacency_retry_context("hypothesis_generation", on_handoff, run_dir)
     on_prompt = rpr._build_stage_prompt("hypothesis_generation", on_handoff, run_dir)
 
@@ -667,6 +745,7 @@ def test_flag_on_prompt_differs_and_carries_refusal_reason():
 # flat-list gate would REFUSE it -- still holds through this new
 # orchestration layer, not only at the gate's own unit level.
 # ---------------------------------------------------------------------------
+
 
 def test_calibration_case_still_admits_through_the_orchestration_layer():
     root = rpr.ROOT
@@ -690,8 +769,10 @@ def test_calibration_case_still_admits_through_the_orchestration_layer():
 
     funding_4h_candidate = {
         "hypothesis_id": "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED_4H_RETEST",
-        "edge_source": {"evidence_type": "funding_open_interest",
-                         "specific_mechanism": "Continuous funding-rate sign mean-reversion re-tested at 4h."},
+        "edge_source": {
+            "evidence_type": "funding_open_interest",
+            "specific_mechanism": "Continuous funding-rate sign mean-reversion re-tested at 4h.",
+        },
         "target_market": ["BTCUSDT", "ETHUSDT"],
         "timeframe": "4h",
         "thesis": "Re-test the identical continuous funding-rate mean-reversion mechanism at 4h bars.",

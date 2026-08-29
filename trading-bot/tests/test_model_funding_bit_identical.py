@@ -23,6 +23,7 @@ local_data caches (hence slow + cache-guarded):
 SLOW INTEGRATION TEST. Run explicitly:
   pytest tests/test_model_funding_bit_identical.py -v -m slow
 """
+
 import sys
 from pathlib import Path
 
@@ -50,9 +51,8 @@ SYMBOL = "BTCUSDT"
 
 _NEEDED_1H = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
 _NEEDED_1D = ("BTCUSDT_1d.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
-_CACHE_SKIP = (
-    cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_1H, IDENT_START, IDENT_END)
-    or cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_1D, WIRE_START, WIRE_END)
+_CACHE_SKIP = cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_1H, IDENT_START, IDENT_END) or cache_skip_reason(
+    PROJECT_ROOT / "local_data", _NEEDED_1D, WIRE_START, WIRE_END
 )
 pytestmark = [
     pytest.mark.slow,
@@ -94,9 +94,7 @@ def ident_explicit_false(tmp_path_factory):
 def test_default_omitted_matches_explicit_false_metrics(ident_default, ident_explicit_false):
     """model_funding omitted (default) must yield a BYTE-IDENTICAL metrics.json to
     model_funding=False -- compares raw file text, not parsed dicts."""
-    assert (ident_default / "metrics.json").read_text() == (
-        ident_explicit_false / "metrics.json"
-    ).read_text()
+    assert (ident_default / "metrics.json").read_text() == (ident_explicit_false / "metrics.json").read_text()
 
 
 def test_default_omitted_matches_explicit_false_portfolio_states(ident_default, ident_explicit_false):
@@ -177,9 +175,7 @@ def test_model_funding_moves_value_in_the_funding_direction(wire_off, wire_on):
     off = wire_off["total_portfolio_value"].to_numpy()
     on = wire_on["total_portfolio_value"].to_numpy()
     diverged = [i for i in range(len(off)) if abs(on[i] - off[i]) > 1e-9]
-    assert diverged, (
-        "no divergence bar -- covered by test_model_funding_on_changes_portfolio_states"
-    )
+    assert diverged, "no divergence bar -- covered by test_model_funding_on_changes_portfolio_states"
     i = diverged[0]
 
     pos = wire_off["previous_allocation"].iloc[i]

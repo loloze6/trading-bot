@@ -28,12 +28,19 @@ def test_prescreen_and_backtest_rows_both_survive_dedup():
     reaches the DSR sample. RED under the forecast_hash-only key (n_removed==1)."""
     shared = "run_042_forecast_deadbeef"
     prescreen = {
-        "trial_id": "run_042", "source": "prescreen", "sharpe": None,
-        "forecast_hash": shared, "statistic_valid": "expectancy",
+        "trial_id": "run_042",
+        "source": "prescreen",
+        "sharpe": None,
+        "forecast_hash": shared,
+        "statistic_valid": "expectancy",
     }
     backtest = {
-        "trial_id": "run_042", "source": "backtest", "sharpe": 1.37,
-        "forecast_hash": shared, "statistic_valid": "sharpe", "n_trades": 120,
+        "trial_id": "run_042",
+        "source": "backtest",
+        "sharpe": 1.37,
+        "forecast_hash": shared,
+        "statistic_valid": "sharpe",
+        "n_trades": 120,
     }
 
     kept, n_removed = ds.deduplicate_trials([prescreen, backtest])
@@ -65,10 +72,7 @@ def test_null_hash_rows_are_byte_identical_noop():
     """No-op guarantee: today's live ledger is all null forecast_hash. Every row
     stays, in order, N unchanged — proving the fix does not perturb existing
     campaign_state (Jeremy validated N=14 byte-identical on the live ledger)."""
-    records = [
-        {"trial_id": f"run_{i:03d}", "source": "backtest", "sharpe": float(i)}
-        for i in range(14)
-    ]
+    records = [{"trial_id": f"run_{i:03d}", "source": "backtest", "sharpe": float(i)} for i in range(14)]
 
     kept, n_removed = ds.deduplicate_trials(records)
 

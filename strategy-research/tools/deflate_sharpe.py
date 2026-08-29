@@ -29,9 +29,9 @@ import yaml
 # Path setup
 # ---------------------------------------------------------------------------
 
-_HERE = os.path.dirname(os.path.abspath(__file__))   # strategy-research/tools/
-_SR   = os.path.dirname(_HERE)                        # strategy-research/
-_REPO = os.path.dirname(_SR)                          # repo root
+_HERE = os.path.dirname(os.path.abspath(__file__))  # strategy-research/tools/
+_SR = os.path.dirname(_HERE)  # strategy-research/
+_REPO = os.path.dirname(_SR)  # repo root
 
 # ---------------------------------------------------------------------------
 # Normal distribution helpers (stdlib only — no scipy)
@@ -55,6 +55,7 @@ def _phi_inv(p: float) -> float:
 # Invalidated-artifact exclusion (F8b, 2026-07-04)
 # ---------------------------------------------------------------------------
 
+
 def exclude_invalidated_trials(records: list[dict]) -> tuple[list[dict], int]:
     """
     Exclude trials explicitly marked `invalidated_artifact: true` — these represent
@@ -73,6 +74,7 @@ def exclude_invalidated_trials(records: list[dict]) -> tuple[list[dict], int]:
 # ---------------------------------------------------------------------------
 # Trial deduplication (A6.4)
 # ---------------------------------------------------------------------------
+
 
 def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
     """
@@ -111,6 +113,7 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
 # ---------------------------------------------------------------------------
 # E-025 S2 (2026-08-16): dual-writer mechanical guards
 # ---------------------------------------------------------------------------
+
 
 def check_no_duplicate_trial_ids(records: list[dict]) -> None:
     """
@@ -162,7 +165,10 @@ def check_ledger_is_merged(campaign_state_path: Path, allow_unmerged: bool = Fal
     try:
         subprocess.run(
             ["git", "fetch", "origin", "master"],
-            cwd=repo_root, check=True, capture_output=True, timeout=30,
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            timeout=30,
         )
     except Exception as e:
         raise RuntimeError(
@@ -174,7 +180,8 @@ def check_ledger_is_merged(campaign_state_path: Path, allow_unmerged: bool = Fal
     rel_path = campaign_state_path.resolve().relative_to(repo_root)
     diff = subprocess.run(
         ["git", "diff", "--quiet", "origin/master", "--", str(rel_path)],
-        cwd=repo_root, capture_output=True,
+        cwd=repo_root,
+        capture_output=True,
     )
     if diff.returncode != 0:
         raise RuntimeError(
@@ -280,6 +287,7 @@ def union_merge_trial_ledgers(a: list[dict], b: list[dict]) -> list[dict]:
 # Sharpe trial loading
 # ---------------------------------------------------------------------------
 
+
 def load_sharpe_trials(campaign_state: dict) -> tuple[list[float], dict]:
     """
     Extract Sharpe values from campaign_state["trial_sharpes"].
@@ -296,9 +304,9 @@ def load_sharpe_trials(campaign_state: dict) -> tuple[list[float], dict]:
 
     sharpe_values: list[float] = []
     excluded: dict[str, int] = {
-        "no_sharpe_value":    0,
+        "no_sharpe_value": 0,
         "statistic_expectancy": 0,
-        "statistic_neither":  0,
+        "statistic_neither": 0,
     }
 
     for rec in records:
@@ -361,7 +369,7 @@ def compute_dsr(
       - error: str or None
     """
     n_sharpe = len(trial_sharpes)
-    N        = n_trials if n_trials is not None else n_sharpe
+    N = n_trials if n_trials is not None else n_sharpe
 
     # Defensive: N (the multiple-testing count) must be at least as large as n_sharpe
     # (the real-valued sample it's derived from) -- every real attempt with a Sharpe
@@ -383,24 +391,24 @@ def compute_dsr(
 
     if N < 2:
         return {
-            "dsr":               None,
+            "dsr": None,
             "expected_max_sharpe": None,
-            "mu_sr":             None,
-            "sigma_sr":          None,
-            "n_trials":          N,
-            "z":                 None,
-            "error":             f"Insufficient trials: need >= 2, got {N}",
+            "mu_sr": None,
+            "sigma_sr": None,
+            "n_trials": N,
+            "z": None,
+            "error": f"Insufficient trials: need >= 2, got {N}",
         }
 
     if n_sharpe < 2:
         return {
-            "dsr":               None,
+            "dsr": None,
             "expected_max_sharpe": None,
-            "mu_sr":             None,
-            "sigma_sr":          None,
-            "n_trials":          N,
-            "z":                 None,
-            "error":             (
+            "mu_sr": None,
+            "sigma_sr": None,
+            "n_trials": N,
+            "z": None,
+            "error": (
                 f"N={N} trials recorded (multiple-testing count is honest), but only "
                 f"{n_sharpe} produced a real Sharpe value -- need >= 2 real Sharpe "
                 f"values to estimate the trial distribution's variance. A large N does "
@@ -408,52 +416,53 @@ def compute_dsr(
             ),
         }
 
-    mu_sr    = sum(trial_sharpes) / n_sharpe
+    mu_sr = sum(trial_sharpes) / n_sharpe
     # Population variance (n_sharpe denominator, NOT N) for the trial distribution --
     # this estimates the SHAPE of the Sharpe-generating process from the real values
     # actually observed, independent of how many total attempts N counts.
-    var_sr   = sum((s - mu_sr) ** 2 for s in trial_sharpes) / n_sharpe
+    var_sr = sum((s - mu_sr) ** 2 for s in trial_sharpes) / n_sharpe
     sigma_sr = math.sqrt(var_sr)
 
     if sigma_sr < 1e-10:
         return {
-            "dsr":               None,
+            "dsr": None,
             "expected_max_sharpe": None,
-            "mu_sr":             mu_sr,
-            "sigma_sr":          sigma_sr,
-            "n_trials":          N,
-            "z":                 None,
-            "error":             "No trial variance: all trial Sharpes are identical",
+            "mu_sr": mu_sr,
+            "sigma_sr": sigma_sr,
+            "n_trials": N,
+            "z": None,
+            "error": "No trial variance: all trial Sharpes are identical",
         }
 
     # Expected maximum Sharpe (BLP 2014, equation A.6). N here IS the multiple-testing
     # count (every real attempt) -- this is the whole point of H1: a larger honest N
     # makes the benchmark harder to clear, exactly as the correction is supposed to.
     # Z_exp_max = (1 - γ) * Φ⁻¹(1 - 1/N) + γ * Φ⁻¹(1 - 1/(e*N))
-    gamma   = _EULER_MASCHERONI
-    e       = math.e
-    arg1    = 1.0 - 1.0 / N
-    arg2    = 1.0 - 1.0 / (e * N)
-    Z_exp_max    = (1.0 - gamma) * _phi_inv(arg1) + gamma * _phi_inv(arg2)
-    E_max_SR     = mu_sr + sigma_sr * Z_exp_max
+    gamma = _EULER_MASCHERONI
+    e = math.e
+    arg1 = 1.0 - 1.0 / N
+    arg2 = 1.0 - 1.0 / (e * N)
+    Z_exp_max = (1.0 - gamma) * _phi_inv(arg1) + gamma * _phi_inv(arg2)
+    E_max_SR = mu_sr + sigma_sr * Z_exp_max
 
-    z   = (candidate_sr - E_max_SR) / sigma_sr
+    z = (candidate_sr - E_max_SR) / sigma_sr
     dsr = _phi(z)
 
     return {
-        "dsr":               dsr,
+        "dsr": dsr,
         "expected_max_sharpe": E_max_SR,
-        "mu_sr":             mu_sr,
-        "sigma_sr":          sigma_sr,
-        "n_trials":          N,
-        "z":                 z,
-        "error":             None,
+        "mu_sr": mu_sr,
+        "sigma_sr": sigma_sr,
+        "n_trials": N,
+        "z": z,
+        "error": None,
     }
 
 
 # ---------------------------------------------------------------------------
 # Full promotion audit
 # ---------------------------------------------------------------------------
+
 
 def compute_promotion_audit(
     hypothesis_id: str,
@@ -479,16 +488,14 @@ def compute_promotion_audit(
     # A6.4: deduplicate before any computation
     deduped_records, n_removed = deduplicate_trials(valid_records)
 
-    sharpe_values, excluded_counts = load_sharpe_trials(
-        {"trial_sharpes": deduped_records}
-    )
+    sharpe_values, excluded_counts = load_sharpe_trials({"trial_sharpes": deduped_records})
     excluded_counts["invalidated_artifact"] = n_invalidated
 
     total_hypotheses_tested = len(deduped_records)
-    n_trials_used           = len(sharpe_values)
+    n_trials_used = len(sharpe_values)
 
     # Determine if sparse-trading path
-    is_sparse = (candidate_sr is None)
+    is_sparse = candidate_sr is None
 
     # Variance across Sharpe trials
     trial_sharpe_variance: float | None = None
@@ -508,8 +515,8 @@ def compute_promotion_audit(
         passes_expectancy = bool(t_stat is not None and t_stat > 2.0)
 
         expectancy_promotion = {
-            "t_stat":          t_stat,
-            "passes":          passes_expectancy,
+            "t_stat": t_stat,
+            "passes": passes_expectancy,
             "bonferroni_note": (
                 f"Strict Bonferroni threshold with N={total_hypotheses_tested} trials "
                 f"would be t > {_phi_inv(1.0 - 0.05 / max(total_hypotheses_tested, 1)) if total_hypotheses_tested >= 1 else 'N/A':.2f}. "
@@ -518,21 +525,21 @@ def compute_promotion_audit(
         }
 
         return {
-            "hypothesis_id":             hypothesis_id,
-            "raw_median_sharpe":         None,
-            "total_hypotheses_tested":   total_hypotheses_tested,
-            "trial_sharpe_variance":     trial_sharpe_variance,
-            "deflated_sharpe_ratio":     None,
-            "correction_method":         "bailey_lopezdeprado_2014",
-            "promotion_threshold_raw":   None,
+            "hypothesis_id": hypothesis_id,
+            "raw_median_sharpe": None,
+            "total_hypotheses_tested": total_hypotheses_tested,
+            "trial_sharpe_variance": trial_sharpe_variance,
+            "deflated_sharpe_ratio": None,
+            "correction_method": "bailey_lopezdeprado_2014",
+            "promotion_threshold_raw": None,
             "promotion_threshold_deflated": 0.95,
             "passes_deflated_threshold": passes_expectancy,
-            "excluded_trial_counts":     excluded_counts,
-            "n_trials_used":             n_trials_used,
-            "expected_max_sharpe":       None,
-            "is_sparse_trading":         True,
-            "expectancy_promotion":      expectancy_promotion,
-            "generated_at":              datetime.now(timezone.utc).isoformat(),
+            "excluded_trial_counts": excluded_counts,
+            "n_trials_used": n_trials_used,
+            "expected_max_sharpe": None,
+            "is_sparse_trading": True,
+            "expectancy_promotion": expectancy_promotion,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
         }
 
     # ------------------------------------------------------------------
@@ -545,8 +552,8 @@ def compute_promotion_audit(
     # never passed to the function that needed it.
     dsr_result = compute_dsr(candidate_sr, sharpe_values, n_trials=total_hypotheses_tested)
 
-    dsr_value   = dsr_result.get("dsr")
-    E_max_SR    = dsr_result.get("expected_max_sharpe")
+    dsr_value = dsr_result.get("dsr")
+    E_max_SR = dsr_result.get("expected_max_sharpe")
 
     # raw_median_sharpe is the candidate from the current run
     raw_median_sharpe = candidate_sr
@@ -558,27 +565,28 @@ def compute_promotion_audit(
     passes = bool(dsr_value is not None and dsr_value > 0.95)
 
     return {
-        "hypothesis_id":             hypothesis_id,
-        "raw_median_sharpe":         raw_median_sharpe,
-        "total_hypotheses_tested":   total_hypotheses_tested,
-        "trial_sharpe_variance":     trial_sharpe_variance,
-        "deflated_sharpe_ratio":     dsr_value,
-        "correction_method":         "bailey_lopezdeprado_2014",
-        "promotion_threshold_raw":   promotion_threshold_raw,
+        "hypothesis_id": hypothesis_id,
+        "raw_median_sharpe": raw_median_sharpe,
+        "total_hypotheses_tested": total_hypotheses_tested,
+        "trial_sharpe_variance": trial_sharpe_variance,
+        "deflated_sharpe_ratio": dsr_value,
+        "correction_method": "bailey_lopezdeprado_2014",
+        "promotion_threshold_raw": promotion_threshold_raw,
         "promotion_threshold_deflated": 0.95,
         "passes_deflated_threshold": passes,
-        "excluded_trial_counts":     excluded_counts,
-        "n_trials_used":             n_trials_used,
-        "expected_max_sharpe":       E_max_SR,
-        "is_sparse_trading":         False,
-        "expectancy_promotion":      None,
-        "generated_at":              datetime.now(timezone.utc).isoformat(),
+        "excluded_trial_counts": excluded_counts,
+        "n_trials_used": n_trials_used,
+        "expected_max_sharpe": E_max_SR,
+        "is_sparse_trading": False,
+        "expectancy_promotion": None,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
 # ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
+
 
 def _load_yaml(path: Path) -> dict:
     with open(path, encoding="utf-8") as f:
@@ -605,10 +613,11 @@ def main() -> None:
         help="Path to campaign_state.yaml. Defaults to strategy-research/campaign_record/campaign_state.yaml.",
     )
     parser.add_argument(
-        "--allow-unmerged", action="store_true",
+        "--allow-unmerged",
+        action="store_true",
         help="E-025: skip the no-DSR-until-merged check against origin/master. Explicit "
-             "opt-out for a deliberate exception (e.g. an offline sanity check) -- do "
-             "not use to work around a real sync problem.",
+        "opt-out for a deliberate exception (e.g. an offline sanity check) -- do "
+        "not use to work around a real sync problem.",
     )
     args = parser.parse_args()
 
@@ -650,7 +659,7 @@ def main() -> None:
         sys.exit(1)
 
     hypothesis_card = _load_yaml(hypothesis_card_path)
-    hypothesis_id   = hypothesis_card.get("hypothesis_id", run_id)
+    hypothesis_id = hypothesis_card.get("hypothesis_id", run_id)
 
     # Load candidate_sr and trade info from protocol_result.yaml
     protocol_result_path = artifacts_dir / "protocol_result.yaml"
@@ -662,16 +671,14 @@ def main() -> None:
 
     # Extract candidate_sr: median Sharpe from per_symbol_summary
     # Also check statistic_valid / is_sparse from hypothesis_verdict diagnostics
-    candidate_sr:    float | None = None
-    n_trades:        int          = 0
-    expectancy_bps:  float | None = None
-    expectancy_se:   float | None = None
+    candidate_sr: float | None = None
+    n_trades: int = 0
+    expectancy_bps: float | None = None
+    expectancy_se: float | None = None
 
     per_symbol = protocol_result.get("per_symbol_summary", {})
     sharpes = [
-        v["median_sharpe"]
-        for v in per_symbol.values()
-        if isinstance(v, dict) and v.get("median_sharpe") is not None
+        v["median_sharpe"] for v in per_symbol.values() if isinstance(v, dict) and v.get("median_sharpe") is not None
     ]
     if sharpes:
         candidate_sr = median(sharpes)
@@ -684,26 +691,23 @@ def main() -> None:
     if below_floor_pct is not None and below_floor_pct > 50.0:
         # Sparse trading path: median_sharpe is null, use per-trade expectancy
         candidate_sr = None
-        exp_block    = diag.get("per_trade_expectancy_bps") or {}
+        exp_block = diag.get("per_trade_expectancy_bps") or {}
         expectancy_bps = exp_block.get("mean")
-        expectancy_se  = exp_block.get("se")
-        n_trades       = exp_block.get("n", 0)
+        expectancy_se = exp_block.get("se")
+        n_trades = exp_block.get("n", 0)
 
     # Total trade count from all results
     if n_trades == 0:
-        n_trades = sum(
-            r.get("core", {}).get("trade_count", 0)
-            for r in protocol_result.get("results", [])
-        )
+        n_trades = sum(r.get("core", {}).get("trade_count", 0) for r in protocol_result.get("results", []))
 
     # Compute audit
     audit = compute_promotion_audit(
-        hypothesis_id  = hypothesis_id,
-        candidate_sr   = candidate_sr,
-        campaign_state = campaign_state,
-        n_trades       = n_trades,
-        expectancy_bps = expectancy_bps,
-        expectancy_se  = expectancy_se,
+        hypothesis_id=hypothesis_id,
+        candidate_sr=candidate_sr,
+        campaign_state=campaign_state,
+        n_trades=n_trades,
+        expectancy_bps=expectancy_bps,
+        expectancy_se=expectancy_se,
     )
 
     # Write output

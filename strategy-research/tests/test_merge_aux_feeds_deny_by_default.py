@@ -10,6 +10,7 @@ This is now DENY BY DEFAULT: any name outside `_KNOWN_AUX_FEEDS` raises
 `UnrecognizedAuxFeedError` before any merge is attempted, naming the feed.
 Not whale-specific — the fix is the general guarantee.
 """
+
 import sys
 from pathlib import Path
 
@@ -25,10 +26,16 @@ _SYMBOL = "NOT_A_REAL_SYMBOL_FIXTURE"
 
 
 def _bars(n: int = 5) -> pd.DataFrame:
-    return pd.DataFrame({
-        "timestamp": pd.date_range("2024-01-01", periods=n, freq="h"),
-        "open": 100.0, "high": 101.0, "low": 99.0, "close": 100.5, "volume": 1.0,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2024-01-01", periods=n, freq="h"),
+            "open": 100.0,
+            "high": 101.0,
+            "low": 99.0,
+            "close": 100.5,
+            "volume": 1.0,
+        }
+    )
 
 
 def test_unknown_feed_raises_and_names_the_feed():
@@ -41,9 +48,7 @@ def test_unknown_feed_raises_even_mixed_with_a_known_one():
     and one unknown name must still raise, not silently merge the known one
     and drop the other."""
     with pytest.raises(ps.UnrecognizedAuxFeedError, match="not_a_registered_feed"):
-        ps._merge_aux_feeds(
-            _bars(), ["funding_rate", "not_a_registered_feed"], _SYMBOL, "2024-01-01", "2024-01-06"
-        )
+        ps._merge_aux_feeds(_bars(), ["funding_rate", "not_a_registered_feed"], _SYMBOL, "2024-01-01", "2024-01-06")
 
 
 def test_multiple_unknown_feeds_are_all_named_in_one_error():

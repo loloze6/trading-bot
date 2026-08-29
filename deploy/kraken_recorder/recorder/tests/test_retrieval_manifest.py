@@ -7,7 +7,9 @@ from pathlib import Path
 
 from recorder.journal import JOURNAL_FILENAME
 from recorder.retrieval_manifest import (
-    build_manifest, sha256_of_file, sha256_of_prefix,
+    build_manifest,
+    sha256_of_file,
+    sha256_of_prefix,
 )
 
 

@@ -26,6 +26,7 @@ logic a third time:
   - Zero variance in EITHER series -> return None. Never 0.0, never False.
   - No p-value is ever computed from an undefined (None) correlation.
 """
+
 import math
 from typing import Optional, Sequence
 
@@ -117,5 +118,5 @@ def t_test_pvalue(corr: Optional[float], n: int) -> Optional[float]:
         from scipy.stats import t as t_dist
     except ImportError:
         return None
-    t_stat = corr * math.sqrt((n - 2) / (1.0 - corr ** 2))
+    t_stat = corr * math.sqrt((n - 2) / (1.0 - corr**2))
     return float(2 * t_dist.sf(abs(t_stat), df=n - 2))

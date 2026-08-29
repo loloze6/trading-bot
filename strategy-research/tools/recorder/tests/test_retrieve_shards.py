@@ -15,7 +15,11 @@ from pathlib import Path
 
 from recorder.journal import JOURNAL_FILENAME
 from recorder.retrieve_shards import (
-    LEDGER_FILENAME, LocalDirTransport, load_ledger, prune_confirmed, pull,
+    LEDGER_FILENAME,
+    LocalDirTransport,
+    load_ledger,
+    prune_confirmed,
+    pull,
 )
 
 

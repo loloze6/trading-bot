@@ -49,10 +49,10 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-_HERE = os.path.dirname(os.path.abspath(__file__))   # strategy-research/tools/
-_SR   = os.path.dirname(_HERE)                        # strategy-research/
-_REPO = os.path.dirname(_SR)                          # repo root
-_TBOT = os.path.join(_REPO, "trading-bot")            # trading-bot/
+_HERE = os.path.dirname(os.path.abspath(__file__))  # strategy-research/tools/
+_SR = os.path.dirname(_HERE)  # strategy-research/
+_REPO = os.path.dirname(_SR)  # repo root
+_TBOT = os.path.join(_REPO, "trading-bot")  # trading-bot/
 
 if _TBOT not in sys.path:
     sys.path.insert(0, _TBOT)
@@ -81,7 +81,7 @@ from data.data_manager import CandleBuilder
 from timeframe import bars_per_day, timeframe_seconds  # noqa: E402  (sibling module in tools/)
 
 _BLOCK_SIZE_1H = 24  # regression anchor only: bars_per_day("1h") must equal this
-_BLOCK_SIZE_1D = 1   # regression anchor only: bars_per_day("1d") must equal this
+_BLOCK_SIZE_1D = 1  # regression anchor only: bars_per_day("1d") must equal this
 
 # Significance threshold: p < 0.10 is informative.
 _SIG_THRESHOLD = 0.10
@@ -148,6 +148,7 @@ _LOCAL_DATA = os.path.join(_TBOT, "local_data")
 # Data loading
 # ---------------------------------------------------------------------------
 
+
 def _load_funding_rate(symbol: str, start: str, end: str) -> pd.DataFrame:
     """
     Load 8h funding rate from local_data/{SYMBOL}_funding_8h.csv for [start, end).
@@ -163,8 +164,7 @@ def _load_funding_rate(symbol: str, start: str, end: str) -> pd.DataFrame:
         return pd.DataFrame(columns=["timestamp", "funding_rate"])
     df = pd.read_csv(fpath)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
-    df = df[(df["timestamp"].dt.strftime("%Y-%m-%d") >= start) &
-            (df["timestamp"].dt.strftime("%Y-%m-%d") < end)]
+    df = df[(df["timestamp"].dt.strftime("%Y-%m-%d") >= start) & (df["timestamp"].dt.strftime("%Y-%m-%d") < end)]
     return df[["timestamp", "funding_rate"]].sort_values("timestamp").reset_index(drop=True)
 
 
@@ -183,8 +183,7 @@ def _load_fear_greed(start: str, end: str) -> pd.DataFrame:
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     # A8.4 fix: +1 day shift so day D value is visible only from day D+1 onward
     df["timestamp"] = df["timestamp"] + pd.Timedelta(days=1)
-    df = df[(df["timestamp"].dt.strftime("%Y-%m-%d") >= start) &
-            (df["timestamp"].dt.strftime("%Y-%m-%d") < end)]
+    df = df[(df["timestamp"].dt.strftime("%Y-%m-%d") >= start) & (df["timestamp"].dt.strftime("%Y-%m-%d") < end)]
     return df[["timestamp", "fear_greed"]].sort_values("timestamp").reset_index(drop=True)
 
 
@@ -253,8 +252,7 @@ def _merge_aux_feeds(
                 direction="backward",
             )
             n_active = (result["funding_rate"].abs() > 0).sum()
-            print(f"    Merged funding_rate: {len(fund_df)} settlement records, "
-                  f"{n_active} bars with non-zero rate")
+            print(f"    Merged funding_rate: {len(fund_df)} settlement records, {n_active} bars with non-zero rate")
         else:
             result["funding_rate"] = float("nan")
             print(f"    ⚠ No funding rate data for {symbol} — funding_rate set to NaN")
@@ -269,8 +267,10 @@ def _merge_aux_feeds(
                 direction="backward",
             )
             n_extreme = ((result["fear_greed"] < 25) | (result["fear_greed"] > 75)).sum()
-            print(f"    Merged fear_greed: {len(fng_df)} daily records (+1d shift applied), "
-                  f"{n_extreme} bars in extreme zone (25/75 thresholds)")
+            print(
+                f"    Merged fear_greed: {len(fng_df)} daily records (+1d shift applied), "
+                f"{n_extreme} bars in extreme zone (25/75 thresholds)"
+            )
         else:
             result["fear_greed"] = float("nan")
             print(f"    ⚠ No Fear & Greed data — fear_greed set to NaN")
@@ -294,7 +294,7 @@ def _available_cached_timeframes(symbol: str) -> dict:
     for fname in os.listdir(_LOCAL_DATA):
         if not fname.startswith(prefix) or not fname.endswith(".csv"):
             continue
-        suffix = fname[len(prefix):-len(".csv")]
+        suffix = fname[len(prefix) : -len(".csv")]
         try:
             timeframe_seconds(suffix)
         except ValueError:
@@ -373,14 +373,16 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
             if ts_date < start or ts_date >= end:
                 continue
             try:
-                rows.append({
-                    "timestamp": ts,
-                    "open":   float(row["open"]),
-                    "high":   float(row["high"]),
-                    "low":    float(row["low"]),
-                    "close":  float(row["close"]),
-                    "volume": float(row.get("volume", 0) or 0),
-                })
+                rows.append(
+                    {
+                        "timestamp": ts,
+                        "open": float(row["open"]),
+                        "high": float(row["high"]),
+                        "low": float(row["low"]),
+                        "close": float(row["close"]),
+                        "volume": float(row.get("volume", 0) or 0),
+                    }
+                )
             except (ValueError, KeyError) as e:
                 # Silently dropping an interior row corrupts _extract_forecasts'
                 # positional next_ret_bps pairing (F5) -- fail loud instead.
@@ -390,8 +392,7 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
 
     if bad_count > 0:
         raise ValueError(
-            f"Unparseable in-range OHLCV rows: {bad_count} in {fpath} "
-            f"(first {len(bad_samples)}: {bad_samples})"
+            f"Unparseable in-range OHLCV rows: {bad_count} in {fpath} (first {len(bad_samples)}: {bad_samples})"
         )
 
     df = pd.DataFrame(rows)
@@ -423,9 +424,11 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
             builder.add_row(row, symbol)
         builder.flush_final_candle(symbol)
         df = builder.get_candle_history(symbol, count=len(df))
-        print(f"    Derived {len(df)} {timeframe} bars from {source_tf} cache via "
-              f"CandleBuilder (no {symbol}_{timeframe}.csv on disk -- aggregated, "
-              f"not fetched)")
+        print(
+            f"    Derived {len(df)} {timeframe} bars from {source_tf} cache via "
+            f"CandleBuilder (no {symbol}_{timeframe}.csv on disk -- aggregated, "
+            f"not fetched)"
+        )
     return df
 
 
@@ -440,6 +443,7 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
 # ---------------------------------------------------------------------------
 # Forecast extraction (signal layer only, no portfolio simulation)
 # ---------------------------------------------------------------------------
+
 
 def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> tuple:
     """
@@ -476,15 +480,17 @@ def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> tuple:
         forecast, *_ = strategy.generate_forecast()
         next_ret_bps = (closes[i + 1] - closes[i]) / closes[i] * 10_000.0
 
-        records.append({
-            "forecast":       float(forecast),
-            "next_return_bps": float(next_ret_bps),
-            "active":          abs(forecast) > _ACTIVE_THRESHOLD,
-            # A8.5.1a: timestamp carried through so episode_significance.py can
-            # map bars to era boundaries. Additive field, does not affect any
-            # existing consumer of this record shape.
-            "timestamp":       bars_df["timestamp"].iloc[i],
-        })
+        records.append(
+            {
+                "forecast": float(forecast),
+                "next_return_bps": float(next_ret_bps),
+                "active": abs(forecast) > _ACTIVE_THRESHOLD,
+                # A8.5.1a: timestamp carried through so episode_significance.py can
+                # map bars to era boundaries. Additive field, does not affect any
+                # existing consumer of this record shape.
+                "timestamp": bars_df["timestamp"].iloc[i],
+            }
+        )
 
     return records, strategy.component_error_count, strategy.component_error_samples
 
@@ -493,6 +499,7 @@ def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> tuple:
 # IC and sparsity computation
 # ---------------------------------------------------------------------------
 
+
 def _compute_ic_fields(records: list) -> dict:
     """
     Compute ic_all_bars, ic_active_bars, forecast_sparsity_pct, active_n_bars,
@@ -500,22 +507,22 @@ def _compute_ic_fields(records: list) -> dict:
     """
     if not records:
         return {
-            "ic_all_bars":          None,
-            "ic_active_bars":       None,
+            "ic_all_bars": None,
+            "ic_active_bars": None,
             "forecast_sparsity_pct": 100.0,
-            "active_n_bars":        0,
-            "forecast_hash":        None,
+            "active_n_bars": 0,
+            "forecast_hash": None,
             "active_forecast_distinct_count": 0,
         }
 
-    all_f  = [r["forecast"]        for r in records]
-    all_r  = [r["next_return_bps"] for r in records]
+    all_f = [r["forecast"] for r in records]
+    all_r = [r["next_return_bps"] for r in records]
 
     active_records = [r for r in records if r["active"]]
-    act_f = [r["forecast"]        for r in active_records]
+    act_f = [r["forecast"] for r in active_records]
     act_r = [r["next_return_bps"] for r in active_records]
 
-    ic_all   = _spearman(all_f, all_r)
+    ic_all = _spearman(all_f, all_r)
     ic_active = _spearman(act_f, act_r) if act_f else None
     # 2026-07-07: distinct forecast magnitudes among ACTIVE bars only. A long-only
     # constant-magnitude signal (e.g. always exactly +10.0 when active) has exactly
@@ -523,7 +530,7 @@ def _compute_ic_fields(records: list) -> dict:
     # small-sample or no-edge failure. See _is_degenerate_active_forecast.
     active_distinct_count = len({round(v, 10) for v in act_f})
 
-    n_total  = len(records)
+    n_total = len(records)
     n_active = len(active_records)
     sparsity = (1.0 - n_active / n_total) * 100.0 if n_total > 0 else 100.0
 
@@ -532,11 +539,11 @@ def _compute_ic_fields(records: list) -> dict:
     f_hash = sha256(forecast_str.encode()).hexdigest()[:16]
 
     return {
-        "ic_all_bars":          round(ic_all, 6)    if ic_all    is not None else None,
-        "ic_active_bars":       round(ic_active, 6) if ic_active is not None else None,
+        "ic_all_bars": round(ic_all, 6) if ic_all is not None else None,
+        "ic_active_bars": round(ic_active, 6) if ic_active is not None else None,
         "forecast_sparsity_pct": round(sparsity, 2),
-        "active_n_bars":        n_active,
-        "forecast_hash":        f_hash,
+        "active_n_bars": n_active,
+        "forecast_hash": f_hash,
         "active_forecast_distinct_count": active_distinct_count,
     }
 
@@ -544,6 +551,7 @@ def _compute_ic_fields(records: list) -> dict:
 # ---------------------------------------------------------------------------
 # Block-adjusted significance (on active-bar n per A8.3)
 # ---------------------------------------------------------------------------
+
 
 def _block_adjusted_significance(
     ic_values: list,
@@ -559,9 +567,12 @@ def _block_adjusted_significance(
     """
     if not ic_values:
         return {
-            "pooled_ic": None, "z_stat": None, "p_value": 1.0,
+            "pooled_ic": None,
+            "z_stat": None,
+            "p_value": 1.0,
             "n_eff": n_active_bars // max(block_size, 1),
-            "block_size": block_size, "significant": False,
+            "block_size": block_size,
+            "significant": False,
         }
 
     pooled_ic = statistics.mean([v for v in ic_values if v is not None])
@@ -569,23 +580,26 @@ def _block_adjusted_significance(
 
     if abs(pooled_ic) >= 1.0:
         return {
-            "pooled_ic": round(pooled_ic, 4), "z_stat": None,
-            "p_value": 0.0, "n_eff": n_eff, "block_size": block_size,
+            "pooled_ic": round(pooled_ic, 4),
+            "z_stat": None,
+            "p_value": 0.0,
+            "n_eff": n_eff,
+            "block_size": block_size,
             "significant": True,
         }
 
     # Fisher z: z = IC * sqrt(N_eff - 3)
     dof = max(n_eff - 3, 1)
     z_stat = pooled_ic * math.sqrt(dof)
-    abs_z  = abs(z_stat)
+    abs_z = abs(z_stat)
     p_value = 2.0 * (1.0 - 0.5 * (1.0 + math.erf(abs_z / math.sqrt(2.0))))
 
     return {
-        "pooled_ic":   round(pooled_ic, 4),
-        "z_stat":      round(z_stat, 4),
-        "p_value":     round(p_value, 4),
-        "n_eff":       n_eff,
-        "block_size":  block_size,
+        "pooled_ic": round(pooled_ic, 4),
+        "z_stat": round(z_stat, 4),
+        "p_value": round(p_value, 4),
+        "n_eff": n_eff,
+        "block_size": block_size,
         "significant": bool(p_value < _SIG_THRESHOLD),
     }
 
@@ -593,6 +607,7 @@ def _block_adjusted_significance(
 # ---------------------------------------------------------------------------
 # Degenerate active-bar forecast fallback (2026-07-07)
 # ---------------------------------------------------------------------------
+
 
 def _is_degenerate_active_forecast(ic_active: float | None, active_n: int, active_distinct_count: int) -> bool:
     """
@@ -631,7 +646,7 @@ def _stationary_block_bootstrap_ic_significance(
     symbol_arrays = {}
     observed_all_f, observed_all_r = [], []
     for sym, recs in records_by_symbol.items():
-        f   = [r["forecast"]        for r in recs]
+        f = [r["forecast"] for r in recs]
         ret = [r["next_return_bps"] for r in recs]
         symbol_arrays[sym] = (f, ret)
         observed_all_f.extend(f)
@@ -639,13 +654,12 @@ def _stationary_block_bootstrap_ic_significance(
 
     observed_ic = _spearman(observed_all_f, observed_all_r)
     result_base = {
-        "method":       "block_bootstrap_all_bars_v1",
-        "block_size":   block_size,
-        "n_resamples":  n_resamples,
+        "method": "block_bootstrap_all_bars_v1",
+        "block_size": block_size,
+        "n_resamples": n_resamples,
     }
     if observed_ic is None:
-        return {**result_base, "pooled_ic": None, "p_value": 1.0,
-                "significant": False, "n_bootstrap_valid": 0}
+        return {**result_base, "pooled_ic": None, "p_value": 1.0, "significant": False, "n_bootstrap_valid": 0}
 
     rng = random.Random(seed)
     boot_ics = []
@@ -667,8 +681,13 @@ def _stationary_block_bootstrap_ic_significance(
             boot_ics.append(ic)
 
     if not boot_ics:
-        return {**result_base, "pooled_ic": round(observed_ic, 6), "p_value": 1.0,
-                "significant": False, "n_bootstrap_valid": 0}
+        return {
+            **result_base,
+            "pooled_ic": round(observed_ic, 6),
+            "p_value": 1.0,
+            "significant": False,
+            "n_bootstrap_valid": 0,
+        }
 
     frac_le_0 = sum(1 for v in boot_ics if v <= 0) / len(boot_ics)
     frac_ge_0 = sum(1 for v in boot_ics if v >= 0) / len(boot_ics)
@@ -676,16 +695,17 @@ def _stationary_block_bootstrap_ic_significance(
 
     return {
         **result_base,
-        "pooled_ic":         round(observed_ic, 6),
-        "p_value":           round(p_value, 4),
-        "significant":       bool(p_value < _SIG_THRESHOLD),
-        "n_bootstrap_valid":  len(boot_ics),
+        "pooled_ic": round(observed_ic, 6),
+        "p_value": round(p_value, 4),
+        "significant": bool(p_value < _SIG_THRESHOLD),
+        "n_bootstrap_valid": len(boot_ics),
     }
 
 
 # ---------------------------------------------------------------------------
 # Turnover proxy (2026-07-07 redefinition -- see run_prescreen's call site)
 # ---------------------------------------------------------------------------
+
 
 def _compute_turnover_proxy(records_by_symbol: dict) -> dict:
     """
@@ -713,8 +733,7 @@ def _compute_turnover_proxy(records_by_symbol: dict) -> dict:
     for recs in records_by_symbol.values():
         prev_sign = 0  # 0 = flat; tracks the actual PRIOR bar's state, flat included
         for r in recs:
-            curr_sign = 1 if r["forecast"] > _ACTIVE_THRESHOLD else (
-                       -1 if r["forecast"] < -_ACTIVE_THRESHOLD else 0)
+            curr_sign = 1 if r["forecast"] > _ACTIVE_THRESHOLD else (-1 if r["forecast"] < -_ACTIVE_THRESHOLD else 0)
             if curr_sign != 0:
                 total_active += 1
                 if curr_sign != prev_sign:
@@ -724,9 +743,9 @@ def _compute_turnover_proxy(records_by_symbol: dict) -> dict:
     implied_trades = max(total_opens, 1)
     avg_holding_bars = total_active / implied_trades if implied_trades > 0 else None
     return {
-        "active_bars_total":        total_active,
+        "active_bars_total": total_active,
         "implied_trades_estimated": implied_trades,
-        "avg_holding_bars":         avg_holding_bars,
+        "avg_holding_bars": avg_holding_bars,
     }
 
 
@@ -734,13 +753,14 @@ def _compute_turnover_proxy(records_by_symbol: dict) -> dict:
 # Cost check (Layer 2, Improvement 09)
 # ---------------------------------------------------------------------------
 
+
 def _load_cost_model() -> dict:
     p = Path(_SR) / "config" / "cost_model.yaml"
     if not p.exists():
         return {
-            "fee_rate_bps":        {"default": 7.5},
+            "fee_rate_bps": {"default": 7.5},
             "round_trip_cost_bps": {"default": 18.5},
-            "safety_factor":       2.0,
+            "safety_factor": 2.0,
         }
     with open(p, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
@@ -788,38 +808,39 @@ def _cost_check(
     Uses ic_active_bars per A8.3 — the IC that reflects actual signal quality.
     """
     rtc_bps = _round_trip_cost(symbol, cost_model)
-    safety  = float(cost_model.get("safety_factor", 2.0))
+    safety = float(cost_model.get("safety_factor", 2.0))
 
     if ic_active is None or avg_holding_bars is None or avg_holding_bars <= 0:
         return {
-            "symbol":                              symbol,
-            "implied_trades_per_window":           None,
-            "estimated_gross_edge_bps_per_trade":  None,
-            "cost_bps_per_trade":                  rtc_bps,
-            "edge_to_cost_ratio":                  None,
-            "safety_factor_required":              safety,
-            "pass":                                False,
-            "ic_used":                             "ic_active_bars",
+            "symbol": symbol,
+            "implied_trades_per_window": None,
+            "estimated_gross_edge_bps_per_trade": None,
+            "cost_bps_per_trade": rtc_bps,
+            "edge_to_cost_ratio": None,
+            "safety_factor_required": safety,
+            "pass": False,
+            "ic_used": "ic_active_bars",
         }
 
     gross_edge = abs(ic_active) * sigma_bar_bps * math.sqrt(max(avg_holding_bars, 1.0))
-    ratio      = gross_edge / rtc_bps if rtc_bps > 0 else 0.0
+    ratio = gross_edge / rtc_bps if rtc_bps > 0 else 0.0
 
     return {
-        "symbol":                              symbol,
-        "implied_trades_per_window":           None,  # set by caller
-        "estimated_gross_edge_bps_per_trade":  round(gross_edge, 4),
-        "cost_bps_per_trade":                  rtc_bps,
-        "edge_to_cost_ratio":                  round(ratio, 4),
-        "safety_factor_required":              safety,
-        "pass":                                bool(ratio >= safety),
-        "ic_used":                             "ic_active_bars",
+        "symbol": symbol,
+        "implied_trades_per_window": None,  # set by caller
+        "estimated_gross_edge_bps_per_trade": round(gross_edge, 4),
+        "cost_bps_per_trade": rtc_bps,
+        "edge_to_cost_ratio": round(ratio, 4),
+        "safety_factor_required": safety,
+        "pass": bool(ratio >= safety),
+        "ic_used": "ic_active_bars",
     }
 
 
 # ---------------------------------------------------------------------------
 # Sigma estimation from returns
 # ---------------------------------------------------------------------------
+
 
 def _sigma_from_records(records: list) -> float:
     """
@@ -848,6 +869,7 @@ def _sigma_from_records(records: list) -> float:
 # Routing logic (A8.1)
 # ---------------------------------------------------------------------------
 
+
 def _fmt_ic(ic: float | None) -> str:
     """Render an IC value for a rationale string. None means undefined (e.g. a
     degenerate constant-magnitude active-bar forecast, see
@@ -866,23 +888,24 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
     3. IC significant, positive, cost fails → refine_cost_hurdle (or kill_cost_hurdle)
     4. Both pass → proceed_to_backtest
     """
-    sig          = ic_sig.get("significant", False)
+    sig = ic_sig.get("significant", False)
     pooled_ic_raw = ic_sig.get("pooled_ic")
     # 2026-07-07: pooled_ic=None means UNDEFINED (e.g. degenerate constant-magnitude
     # active-bar forecast -- see _is_degenerate_active_forecast), not a measured
     # zero. Rendering None as "0.0000" claims a result was measured when it wasn't;
     # _fmt_ic keeps the two cases visually distinct in every rationale string below.
     pooled_ic = pooled_ic_raw if pooled_ic_raw is not None else 0.0
-    ic_str    = _fmt_ic(pooled_ic_raw)
-    p_value   = ic_sig.get("p_value")
-    p_value   = p_value if p_value is not None else 1.0
-    ratio     = cost.get("edge_to_cost_ratio")
+    ic_str = _fmt_ic(pooled_ic_raw)
+    p_value = ic_sig.get("p_value")
+    p_value = p_value if p_value is not None else 1.0
+    ratio = cost.get("edge_to_cost_ratio")
     cost_pass = cost.get("pass", False)
 
     if not sig:
         disposition_note = ic_sig.get("disposition_note")
         kill_reason = (
-            "insufficient_episodes_a851a" if disposition_note == "insufficient_sample_inconclusive"
+            "insufficient_episodes_a851a"
+            if disposition_note == "insufficient_sample_inconclusive"
             else "no_informational_content_this_venue"
         )
         rationale = (
@@ -910,12 +933,13 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
     # IC positive and significant
     if not cost_pass:
         ratio_str = f"{ratio:.4f}" if ratio is not None else "N/A"
-        edge_str  = (
+        edge_str = (
             f"{cost.get('estimated_gross_edge_bps_per_trade', 'N/A'):.1f} bps"
-            if cost.get("estimated_gross_edge_bps_per_trade") is not None else "N/A"
+            if cost.get("estimated_gross_edge_bps_per_trade") is not None
+            else "N/A"
         )
-        cost_str  = f"{cost.get('cost_bps_per_trade', 'N/A')} bps"
-        safety    = cost.get("safety_factor_required", 2.0)
+        cost_str = f"{cost.get('cost_bps_per_trade', 'N/A')} bps"
+        safety = cost.get("safety_factor_required", 2.0)
         if p_value > 0.05 or (ratio is not None and ratio < 0.5):
             return (
                 "kill_cost_hurdle",
@@ -954,6 +978,7 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
 # Config fingerprint
 # ---------------------------------------------------------------------------
 
+
 def _config_sha(config_path: str) -> tuple:
     with open(config_path, encoding="utf-8") as f:
         cfg = json.load(f)
@@ -965,6 +990,7 @@ def _config_sha(config_path: str) -> tuple:
 # ---------------------------------------------------------------------------
 # run_039 ungated_escape write-back (A9.1 side effect)
 # ---------------------------------------------------------------------------
+
 
 def _resolve_ungated_escape(
     run_id: str | None,
@@ -1059,6 +1085,7 @@ def _resolve_ungated_escape(
 # Main prescreen function
 # ---------------------------------------------------------------------------
 
+
 def run_prescreen(
     config_path: str,
     protocol_path: str,
@@ -1076,12 +1103,12 @@ def run_prescreen(
     with open(protocol_path, encoding="utf-8") as f:
         protocol = json.load(f)
 
-    aux_feeds      = config_raw.get("aux_feeds", [])
-    cost_model     = _load_cost_model()
+    aux_feeds = config_raw.get("aux_feeds", [])
+    cost_model = _load_cost_model()
     config_sha256, config_sha8 = _config_sha(config_path)
 
-    symbols   = protocol["symbols"]
-    windows   = protocol["windows"]
+    symbols = protocol["symbols"]
+    windows = protocol["windows"]
     timeframe = protocol.get("timeframe", "1h")
     # Bars per day, DERIVED (tools/timeframe.py) -- the single source shared
     # with the A8.6 gate and power_check.py. This was a two-entry lookup with a
@@ -1107,9 +1134,9 @@ def run_prescreen(
     for symbol in symbols:
         # Determine full protocol range: earliest start to latest end across all windows
         all_starts = [w["test"]["start"] for w in windows]
-        all_ends   = [w["test"]["end"]   for w in windows]
+        all_ends = [w["test"]["end"] for w in windows]
         range_start = min(all_starts)
-        range_end   = max(all_ends)
+        range_end = max(all_ends)
 
         print(f"  [prescreen] {symbol}  full range {range_start} to {range_end} ...")
 
@@ -1122,8 +1149,7 @@ def run_prescreen(
 
         if bars_df.empty:
             print(f"    ⚠ No bars for {symbol} in [{range_start}, {range_end}) — skipping")
-            skipped_symbols.append(
-                (symbol, f"no bars in [{range_start}, {range_end})"))
+            skipped_symbols.append((symbol, f"no bars in [{range_start}, {range_end})"))
             continue
 
         print(f"    Loaded {len(bars_df)} bars — running signal extraction ...")
@@ -1134,8 +1160,10 @@ def run_prescreen(
             r["symbol"] = symbol  # A8.5.1a: needed to keep episodes symbol-bounded when pooled
         print(f"    {len(records)} forecast records; active={sum(1 for r in records if r['active'])}")
         if error_count:
-            print(f"    ⚠ {error_count} bar(s) raised a swallowed component exception "
-                  f"during update() — see component_error_count/component_error_sample")
+            print(
+                f"    ⚠ {error_count} bar(s) raised a swallowed component exception "
+                f"during update() — see component_error_count/component_error_sample"
+            )
             total_component_error_count += error_count
             for s in error_samples:
                 if len(component_error_sample) < _MAX_ERROR_SAMPLE:
@@ -1184,10 +1212,10 @@ def run_prescreen(
         )
     sigma_bar_bps = statistics.mean(sigma_estimates) if sigma_estimates else _DEFAULT_SIGMA_BAR_BPS
 
-    ic_active      = ic_fields["ic_active_bars"]
-    ic_all         = ic_fields["ic_all_bars"]
-    active_n       = ic_fields["active_n_bars"]
-    sparsity_pct   = ic_fields["forecast_sparsity_pct"]
+    ic_active = ic_fields["ic_active_bars"]
+    ic_all = ic_fields["ic_all_bars"]
+    active_n = ic_fields["active_n_bars"]
+    sparsity_pct = ic_fields["forecast_sparsity_pct"]
     active_distinct = ic_fields["active_forecast_distinct_count"]
 
     # Block-adjusted significance on ACTIVE-BAR n (A8.3)
@@ -1226,6 +1254,7 @@ def run_prescreen(
     # (block_24_fisher_z for the 1h runs that make up the archive).
     if config_raw.get("significance_methodology") == "episode_blocked_a851a":
         import episode_significance as _es
+
         policy = _load_campaign_data_policy()
         eras = policy.get("eras", [])
         es_cfg = policy.get("episode_significance", {})
@@ -1246,36 +1275,40 @@ def run_prescreen(
         significance_methodology_used = a851a_result["method"]
         if eras:
             ic_by_era = _es.per_era_report(all_records, _era_of)
-        print(f"    A8.5.1a significance: method={a851a_result['method']} "
-              f"n_episodes={a851a_result.get('n_episodes')} "
-              f"pooled_ic={a851a_result.get('pooled_ic')} "
-              f"p_value={a851a_result.get('p_value')} "
-              f"significant={a851a_result.get('significant')}")
+        print(
+            f"    A8.5.1a significance: method={a851a_result['method']} "
+            f"n_episodes={a851a_result.get('n_episodes')} "
+            f"pooled_ic={a851a_result.get('pooled_ic')} "
+            f"p_value={a851a_result.get('p_value')} "
+            f"significant={a851a_result.get('significant')}"
+        )
     elif degenerate_active_forecast:
         bootstrap_result = _stationary_block_bootstrap_ic_significance(all_records_by_symbol)
         ic_sig = bootstrap_result
         significance_methodology_used = bootstrap_result["method"]
         ic_for_cost = bootstrap_result["pooled_ic"]
-        print(f"    Degenerate active-bar forecast (active_forecast_distinct_count="
-              f"{active_distinct}) -- ic_active_bars is undefined by construction, "
-              f"not a no-edge result. Falling back to {bootstrap_result['method']}: "
-              f"pooled_ic={bootstrap_result['pooled_ic']} p_value={bootstrap_result['p_value']} "
-              f"significant={bootstrap_result['significant']}")
+        print(
+            f"    Degenerate active-bar forecast (active_forecast_distinct_count="
+            f"{active_distinct}) -- ic_active_bars is undefined by construction, "
+            f"not a no-edge result. Falling back to {bootstrap_result['method']}: "
+            f"pooled_ic={bootstrap_result['pooled_ic']} p_value={bootstrap_result['p_value']} "
+            f"significant={bootstrap_result['significant']}"
+        )
 
     # Turnover proxy: active bars per trade implies holding period. See
     # _compute_turnover_proxy's docstring for the 2026-07-07 activity-transition
     # redefinition (supersedes the prior sign-flip-only counter, which silently
     # merged long-only/short-only episodes across flat gaps into one trade).
     _turnover = _compute_turnover_proxy(all_records_by_symbol)
-    total_active     = _turnover["active_bars_total"]
-    implied_trades   = _turnover["implied_trades_estimated"]
+    total_active = _turnover["active_bars_total"]
+    implied_trades = _turnover["implied_trades_estimated"]
     avg_holding_bars = _turnover["avg_holding_bars"]
 
     turnover_proxy = {
-        "active_bars_total":           total_active,
-        "implied_trades_estimated":    implied_trades,
-        "avg_holding_bars":            round(avg_holding_bars, 2) if avg_holding_bars else None,
-        "forecast_sparsity_pct":       sparsity_pct,
+        "active_bars_total": total_active,
+        "implied_trades_estimated": implied_trades,
+        "avg_holding_bars": round(avg_holding_bars, 2) if avg_holding_bars else None,
+        "forecast_sparsity_pct": sparsity_pct,
     }
 
     # Cost check uses ic_active_bars (A8.3 and A9.1), or ic_for_cost's block-bootstrap
@@ -1338,44 +1371,44 @@ def run_prescreen(
     windows_used = [w["label"] for w in windows]
 
     result = {
-        "run_id":                   run_id or "unknown",
-        "config_sha8":              config_sha8,
-        "computed_at":              datetime.now(timezone.utc).isoformat(),
-        "protocol_version":         protocol.get("_version", protocol_path),
-        "symbols":                  symbols,
-        "prescreen_windows_used":   windows_used,
-        "n_bars_total":             n_bars_total,
+        "run_id": run_id or "unknown",
+        "config_sha8": config_sha8,
+        "computed_at": datetime.now(timezone.utc).isoformat(),
+        "protocol_version": protocol.get("_version", protocol_path),
+        "symbols": symbols,
+        "prescreen_windows_used": windows_used,
+        "n_bars_total": n_bars_total,
         # A8.3 fields
-        "ic_all_bars":              ic_all,
-        "ic_active_bars":           ic_active,
-        "forecast_sparsity_pct":    sparsity_pct,
-        "active_n_bars":            active_n,
-        "forecast_hash":            ic_fields["forecast_hash"],
+        "ic_all_bars": ic_all,
+        "ic_active_bars": ic_active,
+        "forecast_sparsity_pct": sparsity_pct,
+        "active_n_bars": active_n,
+        "forecast_hash": ic_fields["forecast_hash"],
         # 2026-07-07: structural flag, not a threshold -- see _is_degenerate_active_forecast.
         "active_forecast_distinct_count": active_distinct,
-        "degenerate_active_forecast":     degenerate_active_forecast,
+        "degenerate_active_forecast": degenerate_active_forecast,
         # Legacy pooled field (= ic_active_bars for backward compat)
-        "ic_spearman_pooled":       ic_active,
-        "ic_by_regime":             ic_by_regime,
-        "ic_significance":          ic_sig,
+        "ic_spearman_pooled": ic_active,
+        "ic_by_regime": ic_by_regime,
+        "ic_significance": ic_sig,
         # A8.5.1a: always compute+report the original block_24 method for
         # continuity/comparison, and which method actually decided `route` above.
-        "ic_significance_block24":  ic_sig_block24,
+        "ic_significance_block24": ic_sig_block24,
         "significance_methodology_used": significance_methodology_used,
-        "ic_by_era":                ic_by_era,
-        "turnover_proxy":           turnover_proxy,
-        "sigma_bar_bps":            round(sigma_bar_bps, 4),
+        "ic_by_era": ic_by_era,
+        "turnover_proxy": turnover_proxy,
+        "sigma_bar_bps": round(sigma_bar_bps, 4),
         # True when sigma_bar_bps above is _DEFAULT_SIGMA_BAR_BPS rather than a
         # measurement. Any cost_check or required-IC figure in this artifact is
         # invalid when this is true -- see the constant's comment.
-        "sigma_is_placeholder":     sigma_is_placeholder,
-        "cost_check":               cost,
-        "route":                    route,
-        "route_rationale":          rationale,
-        "prescreen_kill_reason":    kill_reason,
+        "sigma_is_placeholder": sigma_is_placeholder,
+        "cost_check": cost,
+        "route": route,
+        "route_rationale": rationale,
+        "prescreen_kill_reason": kill_reason,
         # F5b/F5c
-        "component_error_count":    total_component_error_count,
-        "component_error_sample":   component_error_sample,
+        "component_error_count": total_component_error_count,
+        "component_error_sample": component_error_sample,
     }
 
     # A9.1 side effect: resolve ungated_escape_eligible using ic_all_bars (A2.1 admissible metric)
@@ -1402,6 +1435,7 @@ def run_prescreen(
 # ---------------------------------------------------------------------------
 # Synthetic boundary-case unit test (A8.3 acceptance criterion 3)
 # ---------------------------------------------------------------------------
+
 
 def _run_boundary_test() -> None:
     """
@@ -1461,11 +1495,11 @@ def _run_boundary_test() -> None:
 
     # Mock a significant IC result (p=0.04, significant=True)
     ic_sig_mock = {
-        "pooled_ic":   ic_a91,
-        "z_stat":      2.05,
-        "p_value":     0.04,
-        "n_eff":       420,  # 10080 active bars / 24 block
-        "block_size":  24,
+        "pooled_ic": ic_a91,
+        "z_stat": 2.05,
+        "p_value": 0.04,
+        "n_eff": 420,  # 10080 active bars / 24 block
+        "block_size": 24,
         "significant": True,
     }
     route, rationale, kill_reason = _determine_route(ic_sig_mock, c_a91)
@@ -1475,10 +1509,14 @@ def _run_boundary_test() -> None:
     expected_route = "kill_cost_hurdle"
     ok_route = route == expected_route
     ok_cost_fail = not c_a91["pass"]
-    ok_ic_pass   = ic_sig_mock["significant"] and ic_a91 > 0
+    ok_ic_pass = ic_sig_mock["significant"] and ic_a91 > 0
 
-    print(f"  IC gate:   pooled_ic={ic_a91:.2f} p={ic_sig_mock['p_value']:.2f} significant={ic_sig_mock['significant']} => {'PASS' if ok_ic_pass else 'FAIL'}")
-    print(f"  Cost gate: gross={c_a91['estimated_gross_edge_bps_per_trade']:.1f} bps ratio={c_a91['edge_to_cost_ratio']:.4f} pass={c_a91['pass']} => {'FAIL (expected)' if ok_cost_fail else 'UNEXPECTED PASS'}")
+    print(
+        f"  IC gate:   pooled_ic={ic_a91:.2f} p={ic_sig_mock['p_value']:.2f} significant={ic_sig_mock['significant']} => {'PASS' if ok_ic_pass else 'FAIL'}"
+    )
+    print(
+        f"  Cost gate: gross={c_a91['estimated_gross_edge_bps_per_trade']:.1f} bps ratio={c_a91['edge_to_cost_ratio']:.4f} pass={c_a91['pass']} => {'FAIL (expected)' if ok_cost_fail else 'UNEXPECTED PASS'}"
+    )
     print(f"  Route:     {route} => {'OK' if ok_route else f'FAIL (expected {expected_route})'}")
     print(f"  Rationale: {rationale[:120]}...")
 
@@ -1496,25 +1534,26 @@ def _run_boundary_test() -> None:
 # CLI entry point
 # ---------------------------------------------------------------------------
 
+
 def main():
     # Handle --boundary-test early before positional args are required.
     if "--boundary-test" in sys.argv:
         _run_boundary_test()
         return
 
-    parser = argparse.ArgumentParser(
-        description="Signal prescreen — cheap IC+cost gate before full walk-forward."
-    )
-    parser.add_argument("config_path",    help="Path to candidate_strategy_config.json")
-    parser.add_argument("protocol_path",  help="Path to protocol JSON spec")
-    parser.add_argument("--run-id",       default=None, help="Run ID for artifact labelling")
-    parser.add_argument("--out-dir",      default=None, help="Output directory override")
+    parser = argparse.ArgumentParser(description="Signal prescreen — cheap IC+cost gate before full walk-forward.")
+    parser.add_argument("config_path", help="Path to candidate_strategy_config.json")
+    parser.add_argument("protocol_path", help="Path to protocol JSON spec")
+    parser.add_argument("--run-id", default=None, help="Run ID for artifact labelling")
+    parser.add_argument("--out-dir", default=None, help="Output directory override")
     args = parser.parse_args()
 
     out_dir = Path(args.out_dir) if args.out_dir else None
-    result  = run_prescreen(
-        args.config_path, args.protocol_path,
-        run_id=args.run_id, out_dir=out_dir,
+    result = run_prescreen(
+        args.config_path,
+        args.protocol_path,
+        run_id=args.run_id,
+        out_dir=out_dir,
     )
     print(f"\nPrescreen complete. Route: {result['route']}")
     print(f"Rationale: {result['route_rationale']}")

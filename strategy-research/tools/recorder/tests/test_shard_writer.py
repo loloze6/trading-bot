@@ -76,9 +76,7 @@ def test_each_frame_is_exactly_one_line(tmp_path):
     for _ in range(5):
         w.write_frame("trades", "ETHUSD", RAW_TRADE)
     w.close()
-    lines = (tmp_path / "trades" / "ETHUSD" / f"{_today()}.ndjson").read_text(
-        "utf-8"
-    ).splitlines()
+    lines = (tmp_path / "trades" / "ETHUSD" / f"{_today()}.ndjson").read_text("utf-8").splitlines()
     assert len(lines) == 5
     for line in lines:
         json.loads(line)  # each line independently parseable
@@ -118,7 +116,7 @@ def test_frame_containing_a_newline_falls_back_to_string_encoding(tmp_path):
     nasty = '{"channel":"meta","note":"line1\\nline2"}'
     raw_with_real_newline = '{"channel":"meta",\n"note":"x"}'
     w = ShardWriter(tmp_path, run_id="r1", compress=False)
-    w.write_frame("meta", "_session", nasty)                 # escaped \n: spliced
+    w.write_frame("meta", "_session", nasty)  # escaped \n: spliced
     w.write_frame("meta", "_session", raw_with_real_newline)  # real \n: stringified
     w.close()
 

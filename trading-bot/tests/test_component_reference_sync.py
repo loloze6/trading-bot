@@ -17,6 +17,7 @@ prose note) — it only asserts the bare class name appears somewhere, which is 
 to stop an LLM reading top-to-bottom from concluding "not in STRATEGY_CONFIG_REFERENCE.md
 == doesn't exist."
 """
+
 import re
 import sys
 from pathlib import Path

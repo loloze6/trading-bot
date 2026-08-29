@@ -22,6 +22,7 @@ guard logic) and assert both the absence of the warning and the exact
 values the guard/fetcher produce, so a fix that merely silences the warning
 while shifting a boundary by even one second still fails.
 """
+
 import ast
 import sys
 import warnings
@@ -47,10 +48,16 @@ def _generic_unit_count(records) -> int:
 def _bars(start, periods: int, freq: str = "1h") -> pd.DataFrame:
     """OHLCV-shaped frame; only `timestamp` matters to the guards under test."""
     ts = pd.date_range(start=start, periods=periods, freq=freq)
-    return pd.DataFrame({
-        "timestamp": ts,
-        "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "volume": 1.0,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": ts,
+            "open": 1.0,
+            "high": 1.0,
+            "low": 1.0,
+            "close": 1.0,
+            "volume": 1.0,
+        }
+    )
 
 
 class _StubFetcher(BaseFetcher):
@@ -59,9 +66,12 @@ class _StubFetcher(BaseFetcher):
 
     def __init__(self, tmp_dir, interval_seconds=3600):
         super().__init__(
-            start_date="2024-01-01", end_date="2024-01-02",
-            symbols=["BTCUSD"], interval_seconds=interval_seconds,
-            localStorage=True, data_dir=str(tmp_dir),
+            start_date="2024-01-01",
+            end_date="2024-01-02",
+            symbols=["BTCUSD"],
+            interval_seconds=interval_seconds,
+            localStorage=True,
+            data_dir=str(tmp_dir),
         )
 
     def _fetch_remote(self, symbol, start, end):  # pragma: no cover
@@ -75,19 +85,28 @@ class _StubFetcher(BaseFetcher):
 # data_manager.py:208/209/217 -- _merge_asof_with_causality_guard
 # ---------------------------------------------------------------------------
 
+
 def test_merge_guard_emits_no_generic_unit_warning_and_identical_values():
-    bars = pd.DataFrame({
-        "timestamp": pd.date_range("2024-01-01", periods=3, freq="1h"),
-        "close": [100.0, 101.0, 102.0],
-    })
-    feed = pd.DataFrame({
-        "timestamp": pd.date_range("2024-01-01", periods=3, freq="1h"),
-        "aux": [1.5, 2.5, 3.5],
-    })
+    bars = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2024-01-01", periods=3, freq="1h"),
+            "close": [100.0, 101.0, 102.0],
+        }
+    )
+    feed = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2024-01-01", periods=3, freq="1h"),
+            "aux": [1.5, 2.5, 3.5],
+        }
+    )
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         merged = _merge_asof_with_causality_guard(
-            bars, feed, "aux", window_seconds=0, interval_seconds=3600,
+            bars,
+            feed,
+            "aux",
+            window_seconds=0,
+            interval_seconds=3600,
             feed_label="test_feed",
         )
     assert _generic_unit_count(w) == 0
@@ -106,8 +125,12 @@ def test_merge_guard_boundary_equality_passes_violation_raises():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         merged = _merge_asof_with_causality_guard(
-            bars, feed, "aux", window_seconds=interval_seconds,
-            interval_seconds=interval_seconds, feed_label="test_feed",
+            bars,
+            feed,
+            "aux",
+            window_seconds=interval_seconds,
+            interval_seconds=interval_seconds,
+            feed_label="test_feed",
         )
     assert _generic_unit_count(w) == 0
     assert merged["aux"].iloc[0] == 10.0
@@ -116,8 +139,12 @@ def test_merge_guard_boundary_equality_passes_violation_raises():
         warnings.simplefilter("always")
         with pytest.raises(AuxFeedCausalityError, match="ends after bar"):
             _merge_asof_with_causality_guard(
-                bars, feed, "aux", window_seconds=interval_seconds + 1,
-                interval_seconds=interval_seconds, feed_label="test_feed",
+                bars,
+                feed,
+                "aux",
+                window_seconds=interval_seconds + 1,
+                interval_seconds=interval_seconds,
+                feed_label="test_feed",
             )
     assert _generic_unit_count(w2) == 0
 
@@ -125,6 +152,7 @@ def test_merge_guard_boundary_equality_passes_violation_raises():
 # ---------------------------------------------------------------------------
 # base_fetcher.py:262 -- BaseFetcher._inclusive_end
 # ---------------------------------------------------------------------------
+
 
 def test_inclusive_end_date_only_no_warning_exact_value():
     with warnings.catch_warnings(record=True) as w:
@@ -138,11 +166,13 @@ def test_inclusive_end_date_only_no_warning_exact_value():
 # base_fetcher.py:349/386 -- _gap_intervals / _assert_no_new_gap
 # ---------------------------------------------------------------------------
 
+
 def test_gap_intervals_no_warning_exact_spans(tmp_path):
     f = _StubFetcher(tmp_path, interval_seconds=3600)
-    existing = _bars("2024-01-01 00:00", 3)                       # -> 02:00
+    existing = _bars("2024-01-01 00:00", 3)  # -> 02:00
     combined = pd.concat(
-        [existing, _bars("2024-01-01 10:00", 2)], ignore_index=True,
+        [existing, _bars("2024-01-01 10:00", 2)],
+        ignore_index=True,
     )  # gap 03:00 -> 09:00
 
     with warnings.catch_warnings(record=True) as w:
@@ -172,6 +202,7 @@ def test_gap_intervals_no_warning_exact_spans(tmp_path):
 # `datetime.timedelta(...)`, so neither shape has any legitimate use here.
 # ---------------------------------------------------------------------------
 
+
 def _pd_timedelta_calls(source: str):
     """Yield lineno for every banned Timedelta(...) construction in `source`:
     `pd.Timedelta(...)` or a bare `Timedelta(...)`. Takes a source string
@@ -182,8 +213,9 @@ def _pd_timedelta_calls(source: str):
         if not isinstance(node, ast.Call):
             continue
         func = node.func
-        if (isinstance(func, ast.Attribute) and func.attr == "Timedelta") \
-                or (isinstance(func, ast.Name) and func.id == "Timedelta"):
+        if (isinstance(func, ast.Attribute) and func.attr == "Timedelta") or (
+            isinstance(func, ast.Name) and func.id == "Timedelta"
+        ):
             yield node.lineno
 
 
@@ -213,11 +245,13 @@ def test_data_tree_bans_pd_timedelta_construction():
 
     assert files_scanned >= 4, (
         f"scan reached only {files_scanned} files under data/ -- exclusion "
-        f"or checkout layout emptied it, so a green result would be vacuous")
+        f"or checkout layout emptied it, so a green result would be vacuous"
+    )
     assert not violations, (
         "Timedelta(...) construction found in data/ (banned -- numpy "
         "generic-unit deprecation, backlog 3c; use datetime.timedelta(...) "
-        "instead):\n  " + "\n  ".join(violations))
+        "instead):\n  " + "\n  ".join(violations)
+    )
 
 
 if __name__ == "__main__":

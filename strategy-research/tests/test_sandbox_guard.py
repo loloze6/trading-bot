@@ -16,6 +16,7 @@ step 4's explicitly-required test actually execute as part of the suite;
 flagged here and in the session report as a scope decision, not something
 done quietly.
 """
+
 from pathlib import Path
 
 import run_campaign as _camp
@@ -42,8 +43,7 @@ def test_sandbox_by_default_guard_writes_land_in_tmp_not_real_repo(_sandbox_by_d
 
     assert written_path.exists(), "the write must actually have happened somewhere"
     assert written_path.is_relative_to(sandbox_resolved), (
-        f"expected the write under the tmp_path sandbox ({sandbox_resolved}), "
-        f"landed at {written_path} instead"
+        f"expected the write under the tmp_path sandbox ({sandbox_resolved}), landed at {written_path} instead"
     )
     assert not written_path.is_relative_to(_REAL_REPO_ROOT), (
         f"the write must NOT land anywhere under the real repository root ({_REAL_REPO_ROOT})"

@@ -78,9 +78,7 @@ def timeframe_seconds(timeframe) -> int:
             raise ValueError(f"timeframe seconds must be positive, got {timeframe!r}")
         return int(timeframe)
     if not isinstance(timeframe, str):
-        raise ValueError(
-            f"cannot derive a timeframe from {type(timeframe).__name__}: {timeframe!r}"
-        )
+        raise ValueError(f"cannot derive a timeframe from {type(timeframe).__name__}: {timeframe!r}")
     m = _TIMEFRAME_RE.match(timeframe)
     if not m:
         raise ValueError(

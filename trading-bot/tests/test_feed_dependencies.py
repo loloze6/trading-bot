@@ -21,6 +21,7 @@ needs no new test here: five existing call sites already drive
 `BacktestEngine.load_data` with no strategy (tests/test_aux_feed_venue.py,
 tests/test_exchange_selection.py) and are its regression coverage.
 """
+
 import ast
 import inspect
 import json
@@ -34,7 +35,7 @@ from typing import ClassVar
 import pandas as pd
 import pytest
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent      # trading-bot/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent  # trading-bot/
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -63,6 +64,7 @@ TEST_LOGGER = logging.getLogger("test_feed_dependencies")
 # consumes_feeds declarations
 # ---------------------------------------------------------------------------
 
+
 def test_base_default_consumes_feeds_is_empty():
     assert PriceEvolutionComponent.consumes_feeds == ()
 
@@ -77,7 +79,8 @@ def test_feargreed_component_declares_fear_greed():
 
 def test_whale_component_declares_both_columns():
     assert WhaleLargeTradeImbalanceComponent.consumes_feeds == (
-        WHALE_LT_IMBALANCE_COLUMN, WHALE_ATTESTED_COLUMN,
+        WHALE_LT_IMBALANCE_COLUMN,
+        WHALE_ATTESTED_COLUMN,
     )
 
 
@@ -85,13 +88,16 @@ def test_whale_component_declares_both_columns():
 # required_feeds() -- per engine, over a MIXED config
 # ---------------------------------------------------------------------------
 
+
 def test_regime_engine_required_feeds():
     config = {
         "mode": "threshold_rules",
         "components": [
-            {"id": "funding_probe",
-             "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
-             "params": {}},
+            {
+                "id": "funding_probe",
+                "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
+                "params": {},
+            },
         ],
         "rules": [],
         "default_regime": "unknown",
@@ -104,12 +110,20 @@ def test_strategy_engine_required_feeds():
     config = {
         "warmup": 3,
         "regimes": {
-            "unknown": {"components": [
-                {"id": "fg",
-                 "class": "strategies.strategy_components.FearGreedContrarianComponent",
-                 "weight": 1.0, "transforms": [{"op": "identity"}], "params": {}},
-            ]},
-            "trending": None, "mean_reversion": None, "chop": None,
+            "unknown": {
+                "components": [
+                    {
+                        "id": "fg",
+                        "class": "strategies.strategy_components.FearGreedContrarianComponent",
+                        "weight": 1.0,
+                        "transforms": [{"op": "identity"}],
+                        "params": {},
+                    },
+                ]
+            },
+            "trending": None,
+            "mean_reversion": None,
+            "chop": None,
         },
     }
     engine = ConfigDrivenStrategyEngine(config)
@@ -124,9 +138,11 @@ def _mixed_config():
         "regime_detector": {
             "mode": "threshold_rules",
             "components": [
-                {"id": "funding_probe",
-                 "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
-                 "params": {}},
+                {
+                    "id": "funding_probe",
+                    "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
+                    "params": {},
+                },
             ],
             "rules": [],
             "default_regime": "unknown",
@@ -134,12 +150,20 @@ def _mixed_config():
         "strategies": {
             "warmup": 3,
             "regimes": {
-                "unknown": {"components": [
-                    {"id": "fg",
-                     "class": "strategies.strategy_components.FearGreedContrarianComponent",
-                     "weight": 1.0, "transforms": [{"op": "identity"}], "params": {}},
-                ]},
-                "trending": None, "mean_reversion": None, "chop": None,
+                "unknown": {
+                    "components": [
+                        {
+                            "id": "fg",
+                            "class": "strategies.strategy_components.FearGreedContrarianComponent",
+                            "weight": 1.0,
+                            "transforms": [{"op": "identity"}],
+                            "params": {},
+                        },
+                    ]
+                },
+                "trending": None,
+                "mean_reversion": None,
+                "chop": None,
             },
         },
     }
@@ -162,6 +186,7 @@ def test_advanced_strategy_required_feeds_merges_both_engines():
 # ---------------------------------------------------------------------------
 # V1 -- registration completeness at BacktestEngine.load_data
 # ---------------------------------------------------------------------------
+
 
 class _StubStrategy:
     """Stands in for AdvancedStrategy: only `.required_feeds` matters to V1."""
@@ -214,8 +239,7 @@ def test_v1_passes_when_required_feed_present_in_extra_feeds():
     def factory(symbols, start, end, data_dir, exchange="binance"):
         return object()
 
-    engine.load_data(start_date="2022-01-01", end_date="2022-01-02",
-                      extra_feeds={"fear_greed": factory})
+    engine.load_data(start_date="2022-01-01", end_date="2022-01-02", extra_feeds={"fear_greed": factory})
 
     assert "fear_greed" in dm._aux_feeds
 
@@ -233,8 +257,9 @@ def test_v1_pass_wires_required_true_only_for_the_required_feed():
     def factory(symbols, start, end, data_dir, exchange="binance"):
         return object()
 
-    engine.load_data(start_date="2022-01-01", end_date="2022-01-02",
-                      extra_feeds={"fear_greed": factory, "funding_rate": factory})
+    engine.load_data(
+        start_date="2022-01-01", end_date="2022-01-02", extra_feeds={"fear_greed": factory, "funding_rate": factory}
+    )
 
     assert dm._required_flags == {"fear_greed": True, "funding_rate": False}
 
@@ -248,11 +273,7 @@ _KNOWN_FEEDS = set(FEED_REGISTRY.keys()) | set(WHALE_FOOTPRINT_FEEDS)
 
 
 def _is_docstring(stmt) -> bool:
-    return (
-        isinstance(stmt, ast.Expr)
-        and isinstance(stmt.value, ast.Constant)
-        and isinstance(stmt.value.value, str)
-    )
+    return isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, str)
 
 
 def _referenced_known_feeds(cls) -> set:
@@ -331,7 +352,8 @@ class _RecordingRunBacktestEngine:
     def load_data(self, **kwargs):
         type(self).load_data_kwargs = kwargs
         self.historical_data[self._symbols[0]] = pd.DataFrame(
-            {"timestamp": [pd.Timestamp("2024-04-01")], "close": [1.0]})
+            {"timestamp": [pd.Timestamp("2024-04-01")], "close": [1.0]}
+        )
 
     def simulate_on_loaded_data(self):
         pass
@@ -346,7 +368,9 @@ def test_run_backtest_drop_feeds_none_forwards_identical_feed_registry(monkeypat
 
     launcher_mod.run_backtest(
         config_path=str(_NO_AUX_FEED_CONFIG),
-        symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+        symbol="BTCUSDT",
+        start="2024-01-01",
+        end="2024-01-02",
         results_root=str(tmp_path / "results"),
         trades_log_file=str(tmp_path / "trades.json"),
     )
@@ -364,7 +388,9 @@ def test_run_backtest_drop_feeds_empty_list_takes_non_none_path(monkeypatch, tmp
 
     launcher_mod.run_backtest(
         config_path=str(_NO_AUX_FEED_CONFIG),
-        symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+        symbol="BTCUSDT",
+        start="2024-01-01",
+        end="2024-01-02",
         results_root=str(tmp_path / "results"),
         trades_log_file=str(tmp_path / "trades.json"),
         drop_feeds=[],
@@ -383,7 +409,9 @@ def test_run_backtest_drop_feeds_unknown_name_raises_value_error(tmp_path):
     with pytest.raises(ValueError) as exc_info:
         launcher_mod.run_backtest(
             config_path="/nonexistent/config_never_read.json",
-            symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+            symbol="BTCUSDT",
+            start="2024-01-01",
+            end="2024-01-02",
             results_root=str(tmp_path / "results"),
             trades_log_file=str(tmp_path / "trades.json"),
             drop_feeds=["not_a_real_feed"],
@@ -401,7 +429,9 @@ def test_run_backtest_drop_feeds_required_feed_raises_feed_requirement_error(tmp
     with pytest.raises(FeedRequirementError) as exc_info:
         launcher_mod.run_backtest(
             config_path=str(_FEAR_GREED_CONFIG),
-            symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+            symbol="BTCUSDT",
+            start="2024-01-01",
+            end="2024-01-02",
             results_root=str(tmp_path / "results"),
             trades_log_file=str(tmp_path / "trades.json"),
             drop_feeds=["fear_greed"],
@@ -410,11 +440,16 @@ def test_run_backtest_drop_feeds_required_feed_raises_feed_requirement_error(tmp
 
 
 def _manifest_fixture_df() -> pd.DataFrame:
-    return pd.DataFrame({
-        "timestamp": pd.to_datetime(["2024-01-01", "2024-01-02"]),
-        "open": [1.0, 1.0], "high": [1.0, 1.0], "low": [1.0, 1.0],
-        "close": [1.0, 1.0], "volume": [1.0, 1.0],
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(["2024-01-01", "2024-01-02"]),
+            "open": [1.0, 1.0],
+            "high": [1.0, 1.0],
+            "low": [1.0, 1.0],
+            "close": [1.0, 1.0],
+            "volume": [1.0, 1.0],
+        }
+    )
 
 
 def test_write_manifest_records_feeds_block_with_empty_dropped_list(tmp_path):
@@ -423,9 +458,14 @@ def test_write_manifest_records_feeds_block_with_empty_dropped_list(tmp_path):
     from reporting.run_artifact import write_manifest
 
     write_manifest(
-        run_dir=tmp_path, config={"x": 1}, data_df=_manifest_fixture_df(),
-        symbols=["BTCUSDT"], timeframe="3600s", git_sha="deadbeef",
-        lookback=10, warmup=5,
+        run_dir=tmp_path,
+        config={"x": 1},
+        data_df=_manifest_fixture_df(),
+        symbols=["BTCUSDT"],
+        timeframe="3600s",
+        git_sha="deadbeef",
+        lookback=10,
+        warmup=5,
         feeds={"registered": [], "dropped": [], "required": []},
     )
     manifest = json.loads((tmp_path / "manifest.json").read_text())
@@ -438,9 +478,14 @@ def test_write_manifest_omits_feeds_key_when_feeds_is_none(tmp_path):
     from reporting.run_artifact import write_manifest
 
     write_manifest(
-        run_dir=tmp_path, config={"x": 1}, data_df=_manifest_fixture_df(),
-        symbols=["BTCUSDT"], timeframe="3600s", git_sha="deadbeef",
-        lookback=10, warmup=5,
+        run_dir=tmp_path,
+        config={"x": 1},
+        data_df=_manifest_fixture_df(),
+        symbols=["BTCUSDT"],
+        timeframe="3600s",
+        git_sha="deadbeef",
+        lookback=10,
+        warmup=5,
     )
     manifest = json.loads((tmp_path / "manifest.json").read_text())
     assert "feeds" not in manifest
@@ -450,6 +495,7 @@ def test_write_manifest_omits_feeds_key_when_feeds_is_none(tmp_path):
 # Slow: run_backtest() end to end, real engine, real caches (same shape as
 # T-12/T-13, tests/test_exchange_selection.py).
 # ---------------------------------------------------------------------------
+
 
 class _NoNetworkSocket:
     """Raises at construction -- no real connection is ever attempted. Same
@@ -467,21 +513,24 @@ def block_network(monkeypatch):
 _DROP_FEEDS_WINDOW_START = "2022-01-01"
 _DROP_FEEDS_WINDOW_END = "2022-01-05"
 _DROP_FEEDS_CACHE_SKIP = cache_skip_reason(
-    PROJECT_ROOT / "local_data", ("BTCUSDT_1h.csv",),
-    _DROP_FEEDS_WINDOW_START, _DROP_FEEDS_WINDOW_END,
+    PROJECT_ROOT / "local_data",
+    ("BTCUSDT_1h.csv",),
+    _DROP_FEEDS_WINDOW_START,
+    _DROP_FEEDS_WINDOW_END,
 )
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(_DROP_FEEDS_CACHE_SKIP is not None,
-                     reason=_DROP_FEEDS_CACHE_SKIP or "local_data caches usable")
+@pytest.mark.skipif(_DROP_FEEDS_CACHE_SKIP is not None, reason=_DROP_FEEDS_CACHE_SKIP or "local_data caches usable")
 def test_run_backtest_drop_feeds_completes_and_records_feeds_block(block_network, tmp_path):
     """Dropping both default feeds on the aux-free config runs to completion
     (nothing is registered, so block_network proves zero network is touched)
     and the manifest records the feeds block."""
     run_dir = launcher_mod.run_backtest(
         config_path=str(_NO_AUX_FEED_CONFIG),
-        symbol="BTCUSDT", start=_DROP_FEEDS_WINDOW_START, end=_DROP_FEEDS_WINDOW_END,
+        symbol="BTCUSDT",
+        start=_DROP_FEEDS_WINDOW_START,
+        end=_DROP_FEEDS_WINDOW_END,
         results_root=str(tmp_path / "results"),
         trades_log_file=str(tmp_path / "trades.json"),
         drop_feeds=["funding_rate", "fear_greed"],
@@ -496,14 +545,15 @@ def test_run_backtest_drop_feeds_completes_and_records_feeds_block(block_network
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(_DROP_FEEDS_CACHE_SKIP is not None,
-                     reason=_DROP_FEEDS_CACHE_SKIP or "local_data caches usable")
+@pytest.mark.skipif(_DROP_FEEDS_CACHE_SKIP is not None, reason=_DROP_FEEDS_CACHE_SKIP or "local_data caches usable")
 def test_run_backtest_default_run_manifest_has_no_feeds_key(tmp_path):
     """Companion to the above: omitting drop_feeds (the default) must produce
     a manifest with no "feeds" key at all."""
     run_dir = launcher_mod.run_backtest(
         config_path=str(_NO_AUX_FEED_CONFIG),
-        symbol="BTCUSDT", start=_DROP_FEEDS_WINDOW_START, end=_DROP_FEEDS_WINDOW_END,
+        symbol="BTCUSDT",
+        start=_DROP_FEEDS_WINDOW_START,
+        end=_DROP_FEEDS_WINDOW_END,
         results_root=str(tmp_path / "results"),
         trades_log_file=str(tmp_path / "trades.json"),
     )

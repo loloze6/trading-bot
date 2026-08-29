@@ -33,6 +33,7 @@ reused from tests/test_halt_quarantine_policy.py, itself from
 test_k4_routing_registration.py's hermetic setup: nothing here touches the
 real repository, and no LLM or subprocess is spawned.
 """
+
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -46,7 +47,10 @@ sys.path.insert(0, str(WORKFLOW_PATH))
 import run_campaign as camp  # noqa: E402
 
 from test_halt_quarantine_policy import (  # noqa: E402
-    _entry, _save_queue_entries, _write_campaign_state, _write_fresh_scaffold,
+    _entry,
+    _save_queue_entries,
+    _write_campaign_state,
+    _write_fresh_scaffold,
     campaign_root,
 )
 
@@ -56,6 +60,7 @@ __all__ = ["campaign_root"]
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _set_flags(config_dir: Path, *, schedulability=None, auto_refill=None):
     """None means the key is omitted entirely (absent-key-and-section case),
@@ -67,7 +72,8 @@ def _set_flags(config_dir: Path, *, schedulability=None, auto_refill=None):
     if auto_refill is not None:
         orchestrator["auto_refill"] = {"enabled": bool(auto_refill)}
     (config_dir / "campaign_config.yaml").write_text(
-        yaml.safe_dump({"orchestrator": orchestrator}, sort_keys=False), encoding="utf-8")
+        yaml.safe_dump({"orchestrator": orchestrator}, sort_keys=False), encoding="utf-8"
+    )
 
 
 def _sched_path(campaign_root) -> Path:
@@ -96,11 +102,15 @@ def _iso(dt: datetime) -> str:
 # 1. Flag-off bit-identity
 # ---------------------------------------------------------------------------
 
+
 def test_flag_off_bit_identity_on_exhaustion(campaign_root):
     _set_flags(campaign_root["config_dir"], schedulability=False)
-    _save_queue_entries(campaign_root["queue_path"], [
-        {**_entry("run_900"), "status": "done", "outcome": "completed_rejected"},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {**_entry("run_900"), "status": "done", "outcome": "completed_rejected"},
+        ],
+    )
 
     before = _snapshot_tree(campaign_root["root"])
     keep_going = camp.process_once()
@@ -111,14 +121,12 @@ def test_flag_off_bit_identity_on_exhaustion(campaign_root):
     log_lines = camp.CAMPAIGN_LOG_PATH.read_text(encoding="utf-8").splitlines()
     # reconcile_orphans() always logs its own line first, flag-independent --
     # the assertion here is about the SCHEDULABILITY feature, not that line.
-    assert any("Queue exhausted — no ready or in_progress entries remain." in ln
-               for ln in log_lines)
+    assert any("Queue exhausted — no ready or in_progress entries remain." in ln for ln in log_lines)
     # Only campaign_log.md may have changed (the one log line _log() always
     # writes, on or off) -- everything else must be untouched.
     diff_paths = {p for p in set(before) | set(after) if before.get(p) != after.get(p)}
     assert diff_paths <= {"campaign_log.md"}, (
-        f"flag-off must not write anything besides the ordinary log line; "
-        f"changed: {diff_paths}"
+        f"flag-off must not write anything besides the ordinary log line; changed: {diff_paths}"
     )
 
 
@@ -126,9 +134,12 @@ def test_flag_off_key_absent_is_also_a_no_op(campaign_root):
     """Absent key/section, not just an explicit false, must behave identically --
     silence is never a green light."""
     _set_flags(campaign_root["config_dir"])  # no schedulability_block key at all
-    _save_queue_entries(campaign_root["queue_path"], [
-        {**_entry("run_900"), "status": "done", "outcome": "completed_rejected"},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {**_entry("run_900"), "status": "done", "outcome": "completed_rejected"},
+        ],
+    )
 
     assert camp.process_once() is False
     assert not _sched_path(campaign_root).exists()
@@ -138,20 +149,22 @@ def test_flag_off_key_absent_is_also_a_no_op(campaign_root):
 # 2. The block IS written on the exhaustion path -- E-030's own measured gap
 # ---------------------------------------------------------------------------
 
+
 def test_written_on_the_exhaustion_path(campaign_root):
     _set_flags(campaign_root["config_dir"], schedulability=True)
-    _save_queue_entries(campaign_root["queue_path"], [
-        {**_entry("run_900"), "status": "done", "outcome": "completed_rejected"},
-        {"id": "E2", "brief_path": "b.yaml", "status": "blocked_on_daily_bar_ingest",
-         "priority": 1, "run_ids": []},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {**_entry("run_900"), "status": "done", "outcome": "completed_rejected"},
+            {"id": "E2", "brief_path": "b.yaml", "status": "blocked_on_daily_bar_ingest", "priority": 1, "run_ids": []},
+        ],
+    )
 
     keep_going = camp.process_once()
 
     assert keep_going is False, "unchanged behavior: exhaustion still returns False"
     assert _sched_path(campaign_root).exists(), (
-        "E-031 S2's whole point: this file must exist on the exact path "
-        "loop_health.yaml never reaches"
+        "E-031 S2's whole point: this file must exist on the exact path loop_health.yaml never reaches"
     )
     block = yaml.safe_load(_sched_path(campaign_root).read_text(encoding="utf-8"))
     assert block["counts"] == {"total": 2, "ready": 0, "in_progress": 0, "done": 1, "blocked": 1}
@@ -164,8 +177,7 @@ def test_written_on_a_normal_non_exhaustion_step_too(campaign_root):
     (a healthy step) must refresh the block just as the exhaustion branch
     does."""
     _set_flags(campaign_root["config_dir"], schedulability=False)  # off during setup
-    _write_fresh_scaffold(campaign_root["runs_dir"], "run_912",
-                          status="completed", pending_stage="completed_reframed")
+    _write_fresh_scaffold(campaign_root["runs_dir"], "run_912", status="completed", pending_stage="completed_reframed")
     _save_queue_entries(campaign_root["queue_path"], [_entry("run_912")])
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_912"], trial_sharpes=[])
     _set_flags(campaign_root["config_dir"], schedulability=True)  # on for the real call
@@ -180,24 +192,39 @@ def test_written_on_a_normal_non_exhaustion_step_too(campaign_root):
 # 3. Shape: counts, days_since_last_completion, per-blocked-entry dwell time
 # ---------------------------------------------------------------------------
 
+
 def test_counts_and_blocked_entry_dwell_shape(campaign_root):
     now = datetime.now(timezone.utc)
     five_days_ago = now - timedelta(days=5)
 
-    _save_queue_entries(campaign_root["queue_path"], [
-        {"id": "R1", "brief_path": "b.yaml", "status": "ready", "priority": 1, "run_ids": []},
-        {"id": "R2", "brief_path": "b.yaml", "status": "ready", "priority": 2, "run_ids": []},
-        {**_entry("run_1"), "id": "IP1", "status": "in_progress"},
-        {"id": "D1", "brief_path": "b.yaml", "status": "done", "priority": 1, "run_ids": ["run_0"]},
-        {"id": "BLOCKED_WITH_MENTION", "brief_path": "b.yaml",
-         "status": "blocked_on_daily_bar_ingest", "priority": 1, "run_ids": []},
-        {"id": "BLOCKED_NO_MENTION", "brief_path": "b.yaml",
-         "status": "paused:some_reason", "priority": 1, "run_ids": []},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {"id": "R1", "brief_path": "b.yaml", "status": "ready", "priority": 1, "run_ids": []},
+            {"id": "R2", "brief_path": "b.yaml", "status": "ready", "priority": 2, "run_ids": []},
+            {**_entry("run_1"), "id": "IP1", "status": "in_progress"},
+            {"id": "D1", "brief_path": "b.yaml", "status": "done", "priority": 1, "run_ids": ["run_0"]},
+            {
+                "id": "BLOCKED_WITH_MENTION",
+                "brief_path": "b.yaml",
+                "status": "blocked_on_daily_bar_ingest",
+                "priority": 1,
+                "run_ids": [],
+            },
+            {
+                "id": "BLOCKED_NO_MENTION",
+                "brief_path": "b.yaml",
+                "status": "paused:some_reason",
+                "priority": 1,
+                "run_ids": [],
+            },
+        ],
+    )
     camp.CAMPAIGN_LOG_PATH.write_text(
         f"- {_iso(five_days_ago)} STAGE BLOCKED_WITH_MENTION / run_0: something happened\n"
         f"- {_iso(now - timedelta(days=1))} DONE D1 (run_0) -> completed_rejected\n",
-        encoding="utf-8")
+        encoding="utf-8",
+    )
 
     block = camp._compute_schedulability()
 
@@ -218,16 +245,17 @@ def test_counts_and_blocked_entry_dwell_shape(campaign_root):
     assert "last campaign_log.md mention" in mentioned["dwell_basis"]
 
     unmentioned = by_id["BLOCKED_NO_MENTION"]
-    assert unmentioned["dwell_days"] is None, (
-        "an unknown dwell time must read as unknown, never as a flattering 0"
-    )
+    assert unmentioned["dwell_days"] is None, "an unknown dwell time must read as unknown, never as a flattering 0"
     assert "no campaign_log.md mention found" in unmentioned["dwell_basis"]
 
 
 def test_degenerate_empty_log_reports_none_not_zero(campaign_root):
-    _save_queue_entries(campaign_root["queue_path"], [
-        {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_x", "priority": 1, "run_ids": []},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_x", "priority": 1, "run_ids": []},
+        ],
+    )
     camp.CAMPAIGN_LOG_PATH.write_text("", encoding="utf-8")
 
     block = camp._compute_schedulability()
@@ -238,9 +266,12 @@ def test_degenerate_empty_log_reports_none_not_zero(campaign_root):
 
 
 def test_block_is_a_projection_and_deleting_it_loses_nothing(campaign_root):
-    _save_queue_entries(campaign_root["queue_path"], [
-        {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_x", "priority": 1, "run_ids": []},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_x", "priority": 1, "run_ids": []},
+        ],
+    )
     camp.CAMPAIGN_LOG_PATH.write_text("", encoding="utf-8")
 
     first = camp._write_schedulability()
@@ -248,8 +279,9 @@ def test_block_is_a_projection_and_deleting_it_loses_nothing(campaign_root):
     second = camp._write_schedulability()
 
     volatile = {"computed_at"}
-    assert {k: v for k, v in first.items() if k not in volatile} == \
-           {k: v for k, v in second.items() if k not in volatile}
+    assert {k: v for k, v in first.items() if k not in volatile} == {
+        k: v for k, v in second.items() if k not in volatile
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -258,42 +290,58 @@ def test_block_is_a_projection_and_deleting_it_loses_nothing(campaign_root):
 # consumer rather than merely an untidy one.
 # ---------------------------------------------------------------------------
 
+
 def test_split_child_activity_does_not_reset_the_blocked_parents_dwell(campaign_root):
     """Review fix 1, HIGH. _add_queue_entry_for_split_child mints child ids as
     f"{parent_id}__split_{child_id}", so the parent id is ALWAYS a substring of
     its children's ids. A bare `eid in text` therefore let any activity on a
     split child reset the blocked PARENT's dwell to ~0 -- the flattering
     direction _compute_schedulability's own docstring forbids."""
-    _save_queue_entries(campaign_root["queue_path"], [
-        {"id": "P4_ts_trend", "brief_path": "b.yaml",
-         "status": "blocked_on_daily_bar_ingest", "priority": 1, "run_ids": []},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "P4_ts_trend",
+                "brief_path": "b.yaml",
+                "status": "blocked_on_daily_bar_ingest",
+                "priority": 1,
+                "run_ids": [],
+            },
+        ],
+    )
     # Parent last genuinely mentioned 40 days ago; a SPLIT CHILD launched 5
     # minutes ago. The parent has not moved.
     old = (datetime.now(timezone.utc) - timedelta(days=40)).strftime("%Y-%m-%dT%H:%M:%SZ")
     recent = (datetime.now(timezone.utc) - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
     camp.CAMPAIGN_LOG_PATH.write_text(
-        "\n".join([
-            f"- {old} LAUNCH P4_ts_trend -> run_054",
-            f"- {recent} LAUNCH P4_ts_trend__split_run_071 -> run_071",
-            "",
-        ]),
-        encoding="utf-8")
+        "\n".join(
+            [
+                f"- {old} LAUNCH P4_ts_trend -> run_054",
+                f"- {recent} LAUNCH P4_ts_trend__split_run_071 -> run_071",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
 
     block = camp._compute_schedulability()
     dwell = block["blocked_entries"][0]["dwell_days"]
     assert dwell > 39, (
         f"dwell_days={dwell}: split-child activity reset the blocked parent's "
-        f"dwell -- the longest-blocked entry would read as the freshest")
+        f"dwell -- the longest-blocked entry would read as the freshest"
+    )
 
 
 def test_superseded_is_terminal_not_blocked(campaign_root):
     """Review fix 2. `superseded` is schema-legal and TERMINAL (retired), not
     blocked. Counting it inflated the backlog S3's escalate decision keys on."""
-    _save_queue_entries(campaign_root["queue_path"], [
-        {"id": "S1", "brief_path": "b.yaml", "status": "superseded", "priority": 1, "run_ids": []},
-        {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_x", "priority": 1, "run_ids": []},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {"id": "S1", "brief_path": "b.yaml", "status": "superseded", "priority": 1, "run_ids": []},
+            {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_x", "priority": 1, "run_ids": []},
+        ],
+    )
     camp.CAMPAIGN_LOG_PATH.write_text("", encoding="utf-8")
 
     block = camp._compute_schedulability()
@@ -305,13 +353,16 @@ def test_quarantine_counts_as_a_completion(campaign_root):
     """Review fix 5. The quarantine path completes an entry (status=done) but
     logs QUARANTINE, not DONE. Ignoring it made a loop advancing via quarantine
     read as permanently stalled, contradicting counts.done in the same block."""
-    _save_queue_entries(campaign_root["queue_path"], [
-        {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_x", "priority": 1, "run_ids": []},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_x", "priority": 1, "run_ids": []},
+        ],
+    )
     recent = (datetime.now(timezone.utc) - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
     camp.CAMPAIGN_LOG_PATH.write_text(
-        f"- {recent} QUARANTINE run_059 -> quarantined_engineering_failure" + "\n",
-        encoding="utf-8")
+        f"- {recent} QUARANTINE run_059 -> quarantined_engineering_failure" + "\n", encoding="utf-8"
+    )
 
     block = camp._compute_schedulability()
     assert block["days_since_last_completion"] is not None
@@ -322,16 +373,22 @@ def test_quarantine_counts_as_a_completion(campaign_root):
 def test_blocker_field_strips_the_prefix_it_exists_to_spare_the_consumer(campaign_root):
     """Review fix 4. `blocker` was a verbatim copy of `status`, so the field
     advertised as a blocker string carried no information beyond it."""
-    _save_queue_entries(campaign_root["queue_path"], [
-        {"id": "B1", "brief_path": "b.yaml",
-         "status": "blocked_on_daily_bar_ingest", "priority": 1, "run_ids": []},
-        {"id": "B2", "brief_path": "b.yaml",
-         "status": "paused:pending_operator_ratification", "priority": 1, "run_ids": []},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {"id": "B1", "brief_path": "b.yaml", "status": "blocked_on_daily_bar_ingest", "priority": 1, "run_ids": []},
+            {
+                "id": "B2",
+                "brief_path": "b.yaml",
+                "status": "paused:pending_operator_ratification",
+                "priority": 1,
+                "run_ids": [],
+            },
+        ],
+    )
     camp.CAMPAIGN_LOG_PATH.write_text("", encoding="utf-8")
 
     by_id = {e["id"]: e for e in camp._compute_schedulability()["blocked_entries"]}
     assert by_id["B1"]["blocker"] == "daily_bar_ingest"
     assert by_id["B2"]["blocker"] == "pending_operator_ratification"
     assert by_id["B1"]["status"] == "blocked_on_daily_bar_ingest"  # status unchanged
-

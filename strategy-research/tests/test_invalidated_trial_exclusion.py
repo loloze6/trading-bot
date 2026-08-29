@@ -9,6 +9,7 @@ with no check for invalidated_artifact. run_044's real trial_sharpes entry
 (FundingRateMeanReversionComponent's threshold=0 divide-by-zero, F5a — the hypothesis
 was never actually tested) is the fixture: it must be excluded from both.
 """
+
 import sys
 from pathlib import Path
 
@@ -64,6 +65,7 @@ _GENUINE_SHARPE_TRIALS = [
 # tools/deflate_sharpe.py
 # ---------------------------------------------------------------------------
 
+
 def test_exclude_invalidated_trials_removes_run_044():
     records = _GENUINE_SHARPE_TRIALS + [_RUN_044_INVALIDATED_TRIAL, _RUN_044_POST_F5_VALID_TRIAL]
     kept, n_excluded = ds.exclude_invalidated_trials(records)
@@ -75,7 +77,9 @@ def test_exclude_invalidated_trials_removes_run_044():
 def test_promotion_audit_total_hypotheses_tested_excludes_invalidated():
     campaign_state = {"trial_sharpes": _GENUINE_SHARPE_TRIALS + [_RUN_044_INVALIDATED_TRIAL]}
     audit = ds.compute_promotion_audit(
-        hypothesis_id="TEST", candidate_sr=0.4, campaign_state=campaign_state,
+        hypothesis_id="TEST",
+        candidate_sr=0.4,
+        campaign_state=campaign_state,
     )
     assert audit["total_hypotheses_tested"] == 3, (
         f"expected 3 (invalidated trial excluded), got {audit['total_hypotheses_tested']}"
@@ -89,9 +93,7 @@ def test_promotion_audit_dsr_unaffected_by_invalidated_trial_with_no_sharpe():
     with_invalidated = ds.compute_promotion_audit(
         "TEST", 0.4, {"trial_sharpes": _GENUINE_SHARPE_TRIALS + [_RUN_044_INVALIDATED_TRIAL]}
     )
-    without_invalidated = ds.compute_promotion_audit(
-        "TEST", 0.4, {"trial_sharpes": _GENUINE_SHARPE_TRIALS}
-    )
+    without_invalidated = ds.compute_promotion_audit("TEST", 0.4, {"trial_sharpes": _GENUINE_SHARPE_TRIALS})
     assert with_invalidated["deflated_sharpe_ratio"] == without_invalidated["deflated_sharpe_ratio"]
     assert with_invalidated["total_hypotheses_tested"] == without_invalidated["total_hypotheses_tested"]
 
@@ -100,22 +102,33 @@ def test_promotion_audit_dsr_unaffected_by_invalidated_trial_with_no_sharpe():
 # workflow/run_phase1_research.py::_write_promotion_audit (independent implementation)
 # ---------------------------------------------------------------------------
 
+
 def test_write_promotion_audit_excludes_invalidated_trial(tmp_path, monkeypatch):
     monkeypatch.setattr(rpr, "CAMPAIGN_STATE_PATH", tmp_path / "campaign_state.yaml")
-    (tmp_path / "campaign_state.yaml").write_text(yaml.safe_dump({
-        "trial_sharpes": _GENUINE_SHARPE_TRIALS + [_RUN_044_INVALIDATED_TRIAL],
-        "runs": [],
-    }), encoding="utf-8")
+    (tmp_path / "campaign_state.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "trial_sharpes": _GENUINE_SHARPE_TRIALS + [_RUN_044_INVALIDATED_TRIAL],
+                "runs": [],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     run_dir = tmp_path / "runs" / "run_test"
     (run_dir / "artifacts").mkdir(parents=True)
     (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
         yaml.safe_dump({"hypothesis_id": "TEST"}), encoding="utf-8"
     )
-    (run_dir / "artifacts" / "protocol_result.yaml").write_text(yaml.safe_dump({
-        "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.4}},
-        "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 0.0}},
-    }), encoding="utf-8")
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.4}},
+                "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 0.0}},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     rpr._write_promotion_audit(run_dir, "run_test")
 
@@ -144,24 +157,41 @@ def test_write_promotion_audit_h1_uses_honest_n_not_just_sharpe_count(tmp_path, 
     the independent inline implementation."""
     monkeypatch.setattr(rpr, "CAMPAIGN_STATE_PATH", tmp_path / "campaign_state.yaml")
     kills = [
-        {"trial_id": f"run_k{i}", "source": "prescreen", "route": "kill_no_ic",
-         "sharpe": None, "statistic_valid": "neither", "forecast_hash": f"kill{i}"}
+        {
+            "trial_id": f"run_k{i}",
+            "source": "prescreen",
+            "route": "kill_no_ic",
+            "sharpe": None,
+            "statistic_valid": "neither",
+            "forecast_hash": f"kill{i}",
+        }
         for i in range(10)
     ]
-    one_real = [{"trial_id": "run_real", "sharpe": 0.42, "statistic_valid": "sharpe",
-                 "forecast_hash": "real1"}]
-    (tmp_path / "campaign_state.yaml").write_text(yaml.safe_dump({
-        "trial_sharpes": kills + one_real, "runs": [],
-    }), encoding="utf-8")
+    one_real = [{"trial_id": "run_real", "sharpe": 0.42, "statistic_valid": "sharpe", "forecast_hash": "real1"}]
+    (tmp_path / "campaign_state.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "trial_sharpes": kills + one_real,
+                "runs": [],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     run_dir = tmp_path / "runs" / "run_test"
     (run_dir / "artifacts").mkdir(parents=True)
     (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
-        yaml.safe_dump({"hypothesis_id": "TEST"}), encoding="utf-8")
-    (run_dir / "artifacts" / "protocol_result.yaml").write_text(yaml.safe_dump({
-        "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.5}},
-        "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 0.0}},
-    }), encoding="utf-8")
+        yaml.safe_dump({"hypothesis_id": "TEST"}), encoding="utf-8"
+    )
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.5}},
+                "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 0.0}},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     rpr._write_promotion_audit(run_dir, "run_test")
     audit = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))

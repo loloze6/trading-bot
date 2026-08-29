@@ -31,6 +31,7 @@ is False for every held-to-end trade.
 These tests run on committed artifacts and in-memory fixtures only -- no
 network, no engine, no caches.
 """
+
 import csv
 import json
 import sys
@@ -58,8 +59,7 @@ def _write_run_dir(tmp_path, timestamps, trades, duplicate_final_bar=False):
     run_dir = tmp_path / "run"
     run_dir.mkdir(exist_ok=True)
     rows = [
-        {"timestamp": ts, "open": 100.0 + i, "high": 101.0 + i,
-         "low": 99.0 + i, "close": 100.5 + i}
+        {"timestamp": ts, "open": 100.0 + i, "high": 101.0 + i, "low": 99.0 + i, "close": 100.5 + i}
         for i, ts in enumerate(timestamps)
     ]
     if duplicate_final_bar:
@@ -99,29 +99,30 @@ _HOURLY = [f"2024-01-0{d} 0{h}:00:00" for d in (1, 2, 3) for h in range(3)]
 # Cause 2 -- duplicated final bar row (the run_054 discrepancy)
 # ---------------------------------------------------------------------------
 
+
 def test_exit_on_final_bar_is_end_of_window_despite_duplicate_final_row(tmp_path):
     """The regression itself: last bar recorded twice, trade exits on it.
 
     Under the old `exit_idx == len(bars) - 1` test this returned "signal_flip".
     """
     run_dir = _write_run_dir(
-        tmp_path, _HOURLY,
+        tmp_path,
+        _HOURLY,
         [_trade("2024-01-01T00:00:00", "2024-01-03T02:00:00")],
         duplicate_final_bar=True,
     )
-    recs = rp._compute_trade_records_for_window(
-        run_dir, "BTCUSDT", "2024-01", "2024-01-04", cost_model=None)
+    recs = rp._compute_trade_records_for_window(run_dir, "BTCUSDT", "2024-01", "2024-01-04", cost_model=None)
     assert [r["exit_reason"] for r in recs] == ["end_of_window"]
 
 
 def test_exit_on_final_bar_is_end_of_window_without_duplicate_row(tmp_path):
     """Control: the un-duplicated shape classified correctly before and after."""
     run_dir = _write_run_dir(
-        tmp_path, _HOURLY,
+        tmp_path,
+        _HOURLY,
         [_trade("2024-01-01T00:00:00", "2024-01-03T02:00:00")],
     )
-    recs = rp._compute_trade_records_for_window(
-        run_dir, "BTCUSDT", "2024-01", "2024-01-04", cost_model=None)
+    recs = rp._compute_trade_records_for_window(run_dir, "BTCUSDT", "2024-01", "2024-01-04", cost_model=None)
     assert [r["exit_reason"] for r in recs] == ["end_of_window"]
 
 
@@ -133,20 +134,18 @@ def test_nominal_window_end_beyond_last_bar_does_not_rescue_the_classification(t
     only thing standing between a held-to-end trade and the signal_flip default.
     """
     bars = [{"timestamp": ts} for ts in _HOURLY]
-    assert rp._infer_exit_reason(
-        "LONG", 5.0, bars, exit_idx=len(bars) - 1, window_end="2024-01-06"
-    ) == "end_of_window"
+    assert rp._infer_exit_reason("LONG", 5.0, bars, exit_idx=len(bars) - 1, window_end="2024-01-06") == "end_of_window"
 
 
 def test_mid_window_exit_is_still_signal_flip(tmp_path):
     """Negative control: the fix must not relabel ordinary exits."""
     run_dir = _write_run_dir(
-        tmp_path, _HOURLY,
+        tmp_path,
+        _HOURLY,
         [_trade("2024-01-01T00:00:00", "2024-01-02T00:00:00")],
         duplicate_final_bar=True,
     )
-    recs = rp._compute_trade_records_for_window(
-        run_dir, "BTCUSDT", "2024-01", "2024-01-04", cost_model=None)
+    recs = rp._compute_trade_records_for_window(run_dir, "BTCUSDT", "2024-01", "2024-01-04", cost_model=None)
     assert [r["exit_reason"] for r in recs] == ["signal_flip"]
 
 
@@ -154,9 +153,9 @@ def test_mid_window_exit_is_still_signal_flip(tmp_path):
 # Cause 1 -- date-only bars.csv timestamps vs full-ISO trade timestamps
 # ---------------------------------------------------------------------------
 
+
 def test_date_only_bar_timestamps_match_midnight_trade_timestamps():
-    bars = [{"timestamp": "2019-12-01"}, {"timestamp": "2019-12-02"},
-            {"timestamp": "2019-12-03"}]
+    bars = [{"timestamp": "2019-12-01"}, {"timestamp": "2019-12-02"}, {"timestamp": "2019-12-03"}]
     assert rp._bar_idx_at(bars, rp._ts_normalize("2019-12-02T00:00:00")) == 1
     assert rp._bar_idx_at(bars, rp._ts_normalize("2019-12-03T00:00:00")) == 2
     # A day that is genuinely absent must still miss.
@@ -175,9 +174,8 @@ def test_daily_run_diagnostics_are_not_degenerate(tmp_path):
         [f"2019-12-0{d}" for d in range(1, 10)],
         [_trade("2019-12-01T00:00:00", "2019-12-04T00:00:00")],
     )
-    (rec,) = rp._compute_trade_records_for_window(
-        run_dir, "BTCUSDT", "2019-12", "2019-12-31", cost_model=None)
-    assert rec["holding_bars"] == 3            # not 72
+    (rec,) = rp._compute_trade_records_for_window(run_dir, "BTCUSDT", "2019-12", "2019-12-31", cost_model=None)
+    assert rec["holding_bars"] == 3  # not 72
     assert rec["mae"] > 0.0 and rec["mfe"] > 0.0
     assert rec["exit_efficiency"] is not None
     assert rec["entry_efficiency"] is not None
@@ -188,11 +186,11 @@ def test_unresolvable_timestamp_warns_instead_of_passing_silently(tmp_path, caps
     """A lookup that cannot be resolved is a data-integrity signal, not a
     normal outcome -- it must leave a trace on stderr."""
     run_dir = _write_run_dir(
-        tmp_path, _HOURLY,
+        tmp_path,
+        _HOURLY,
         [_trade("2024-01-01T00:00:00", "2024-06-30T02:00:00")],
     )
-    recs = rp._compute_trade_records_for_window(
-        run_dir, "BTCUSDT", "2024-01", "2024-01-04", cost_model=None)
+    recs = rp._compute_trade_records_for_window(run_dir, "BTCUSDT", "2024-01", "2024-01-04", cost_model=None)
     assert len(recs) == 1
     err = capsys.readouterr().err
     assert "WARNING" in err
@@ -208,8 +206,7 @@ _RUN_054 = ROOT / "runs" / "run_054"
 
 def _run_054_windows():
     summary = json.loads((_RUN_054 / "protocol_summary.json").read_text(encoding="utf-8"))
-    protocol = json.loads(
-        (ROOT / "protocols" / "ts_trend_daily_v1.json").read_text(encoding="utf-8"))
+    protocol = json.loads((ROOT / "protocols" / "ts_trend_daily_v1.json").read_text(encoding="utf-8"))
     window_end = {w["label"]: w["test"]["end"] for w in protocol["windows"]}
     out = []
     for r in summary["results"]:
@@ -235,8 +232,7 @@ def test_run_054_end_of_window_matches_the_windows_that_actually_ended_held():
 
     reasons, held, held_misclassified = [], 0, 0
     for run_dir, symbol, label, window_end in windows:
-        recs = rp._compute_trade_records_for_window(
-            run_dir, symbol, label, window_end, cost_model=None)
+        recs = rp._compute_trade_records_for_window(run_dir, symbol, label, window_end, cost_model=None)
         reasons.extend(r["exit_reason"] for r in recs)
         bars = rp._load_bars(run_dir)
         trades = rp._load_trades(run_dir)
@@ -253,4 +249,4 @@ def test_run_054_end_of_window_matches_the_windows_that_actually_ended_held():
     assert held_misclassified == 0
     n_eow = reasons.count("end_of_window")
     assert n_eow == 16
-    assert round(n_eow / len(reasons) * 100, 2) == 13.68   # was 0.85
+    assert round(n_eow / len(reasons) * 100, 2) == 13.68  # was 0.85

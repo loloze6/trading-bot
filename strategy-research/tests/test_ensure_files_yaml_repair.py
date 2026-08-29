@@ -13,6 +13,7 @@ tests/fixtures/ (the live runs/run_044/artifacts/ copy was legitimately overwrit
 the subsequent successful relaunch — this fixture is deliberately independent of that
 directory's current contents so the regression test doesn't silently go stale).
 """
+
 import shutil
 import sys
 from pathlib import Path
@@ -25,9 +26,7 @@ sys.path.insert(0, str(WORKFLOW_PATH))
 
 from run_phase1_research import ensure_files
 
-_RUN_044_BROKEN_FIXTURE = (
-    Path(__file__).parent / "fixtures" / "run_044_broken_expanded_hypothesis_card.yaml"
-)
+_RUN_044_BROKEN_FIXTURE = Path(__file__).parent / "fixtures" / "run_044_broken_expanded_hypothesis_card.yaml"
 
 
 @pytest.fixture

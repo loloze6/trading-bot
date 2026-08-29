@@ -1,7 +1,10 @@
 import logging
 import os
 
-def setup_logger(name: str, log_file: str = "logs/bot.log", level: int = logging.INFO, console: bool = False, mode : str ='w') -> logging.Logger:
+
+def setup_logger(
+    name: str, log_file: str = "logs/bot.log", level: int = logging.INFO, console: bool = False, mode: str = "w"
+) -> logging.Logger:
     """
     Setup and return a logger instance with a file handler and console stream handler.
 
@@ -23,12 +26,12 @@ def setup_logger(name: str, log_file: str = "logs/bot.log", level: int = logging
 
     # Define log message format including timestamp, severity, logger name, and message
     formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s',  
-    datefmt='%Y-%m-%d %H:%M:%S'  # ← Custom date format
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",  # ← Custom date format
     )
 
     # Create or get logger instance by name
-    logger = logging.getLogger(name) 
+    logger = logging.getLogger(name)
     logger.setLevel(level)
 
     # Attach your custom parameter directly to the logger object
@@ -37,11 +40,9 @@ def setup_logger(name: str, log_file: str = "logs/bot.log", level: int = logging
     # Add handlers only if not already configured to avoid duplicate logs
     if not logger.hasHandlers():
         # File handler logs messages to specified file, appending by default
-        file_handler = logging.FileHandler(log_file, mode=mode, encoding='utf-8')
+        file_handler = logging.FileHandler(log_file, mode=mode, encoding="utf-8")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
-
-        
 
         # Stream handler outputs logs to console
         if console:
@@ -51,16 +52,15 @@ def setup_logger(name: str, log_file: str = "logs/bot.log", level: int = logging
 
     return logger
 
+
 # def setup_logger(name, log_file="logs/bot.log", level=logging.INFO):
 #     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    
-#     handler = logging.FileHandler(log_file, mode='w')        
+
+#     handler = logging.FileHandler(log_file, mode='w')
 #     handler.setFormatter(formatter)
-    
+
 #     logger = logging.getLogger(name)
 #     logger.setLevel(level)
 #     logger.addHandler(handler)
-    
+
 #     return logger
-
-

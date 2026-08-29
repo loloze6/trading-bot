@@ -8,6 +8,7 @@ project's standing rule, regression tests use the actual historical failure as
 fixture, frozen so a later successful re-run of the live directory can't
 invalidate the test.
 """
+
 import sys
 from pathlib import Path
 

@@ -9,6 +9,7 @@ pipeline_state.yaml on the retry.
 The LLM call itself is mocked (no real API call) — this tests the retry
 plumbing, not model behavior.
 """
+
 import sys
 from pathlib import Path
 

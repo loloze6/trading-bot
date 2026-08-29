@@ -9,6 +9,7 @@ network, no LLM, no writes to the run corpus. Read-only.
 Run from strategy-research/:
     python engineering/roadmap/E-033/artifacts/s1_measure_pre_backtest_stages.py
 """
+
 import json
 from pathlib import Path
 from collections import Counter
@@ -57,16 +58,18 @@ def main():
 
     n_expansion_cards = len(variant_counts)
     total_variants = sum(c for _, c in variant_counts)
-    print(f"\n[innovation_expansion] expanded_hypothesis_card.yaml with expanded_variants: "
-          f"{n_expansion_cards}/{n_runs}")
+    print(
+        f"\n[innovation_expansion] expanded_hypothesis_card.yaml with expanded_variants: {n_expansion_cards}/{n_runs}"
+    )
     print(f"  total variants across those {n_expansion_cards} runs: {total_variants}")
     if variant_counts:
         max_run, max_n = max(variant_counts, key=lambda t: t[1])
         print(f"  max variants in one run: {max_n} ({max_run})")
         print(f"  min variants in one run: {min(c for _, c in variant_counts)}")
         print(f"  mean variants per card: {total_variants / n_expansion_cards:.2f}")
-    print(f"  diversity_axis tag distribution (of {sum(diversity_axes.values())} tagged variants): "
-          f"{dict(diversity_axes)}")
+    print(
+        f"  diversity_axis tag distribution (of {sum(diversity_axes.values())} tagged variants): {dict(diversity_axes)}"
+    )
 
     # ---- Stage 3: validation ----
     val_statuses = Counter()
@@ -123,17 +126,14 @@ def main():
     for status, n in spec_statuses.most_common():
         print(f"  {status}: {n}")
 
-    n_candidate_configs = sum(1 for d in run_dirs
-                               if (d / "artifacts" / "candidate_strategy_config.json").exists())
+    n_candidate_configs = sum(1 for d in run_dirs if (d / "artifacts" / "candidate_strategy_config.json").exists())
     print(f"  candidate_strategy_config.json emitted: {n_candidate_configs}/{n_runs}")
 
     # ---- E-034 artifacts: variant_selection.yaml / variants_not_pursued.yaml ----
     n_var_sel = sum(1 for d in run_dirs if (d / "artifacts" / "variant_selection.yaml").exists())
     n_var_not_pursued = sum(1 for d in run_dirs if (d / "artifacts" / "variants_not_pursued.yaml").exists())
-    print(f"\n[E-034 artifacts, off-by-default] variant_selection.yaml present: "
-          f"{n_var_sel}/{n_runs}")
-    print(f"[E-034 artifacts, off-by-default] variants_not_pursued.yaml present: "
-          f"{n_var_not_pursued}/{n_runs}")
+    print(f"\n[E-034 artifacts, off-by-default] variant_selection.yaml present: {n_var_sel}/{n_runs}")
+    print(f"[E-034 artifacts, off-by-default] variants_not_pursued.yaml present: {n_var_not_pursued}/{n_runs}")
 
     # Grep-equivalent: does ANY artifact in ANY run record an unpursued variant
     # (the "1 file out of 59" claim in EPIC.md) -- re-derive independently by
@@ -150,8 +150,10 @@ def main():
                 continue
             if "not_pursued" in text or "unpursued" in text or "not pursued" in text:
                 hits.append(f"{d.name}/{fname}")
-    print(f"\n[grep-equivalent] runs whose artifacts mention an unpursued/not_pursued variant: "
-          f"{len(hits)}/{n_runs} -> {hits}")
+    print(
+        f"\n[grep-equivalent] runs whose artifacts mention an unpursued/not_pursued variant: "
+        f"{len(hits)}/{n_runs} -> {hits}"
+    )
 
     # ---- verdict_interpreter outcomes (proxy for "what backtest_specification's
     # one chosen config actually achieved") ----
@@ -202,7 +204,7 @@ def main():
         by_label.setdefault(label, []).append(vc)
     print("  mean variant_count by verdict_label:")
     for label, vcs in sorted(by_label.items()):
-        print(f"    {label}: n={len(vcs)} mean_variants={sum(vcs)/len(vcs):.2f}")
+        print(f"    {label}: n={len(vcs)} mean_variants={sum(vcs) / len(vcs):.2f}")
 
 
 if __name__ == "__main__":

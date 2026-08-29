@@ -64,10 +64,7 @@ else:
         whale_bar_features,
     )
 
-DEFAULT_ROOT = (
-    Path(__file__).resolve().parents[3]
-    / "trading-bot" / "local_data" / "recorded_reserved" / "kraken_ws_v2"
-)
+DEFAULT_ROOT = Path(__file__).resolve().parents[3] / "trading-bot" / "local_data" / "recorded_reserved" / "kraken_ws_v2"
 
 
 def _fmt(x: float, nd: int = 4) -> str:
@@ -99,8 +96,7 @@ def report(
         "=" * 78,
         "PARAMETERS",
         "=" * 78,
-        f"bar_seconds={bar_seconds}  large_quantile={large_quantile}  "
-        f"baseline_seconds={baseline_seconds}",
+        f"bar_seconds={bar_seconds}  large_quantile={large_quantile}  baseline_seconds={baseline_seconds}",
         f"min_baseline_trades={min_baseline_trades}  min_bar_trades={min_bar_trades}",
         "",
         "=" * 78,
@@ -181,15 +177,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--min-bar-trades", type=int, default=DEFAULT_MIN_BAR_TRADES)
     args = ap.parse_args(argv)
 
-    print(report(
-        root=args.root,
-        symbols=args.symbols,
-        bar_seconds=args.bar_seconds,
-        large_quantile=args.large_quantile,
-        baseline_seconds=args.baseline_seconds,
-        min_baseline_trades=args.min_baseline_trades,
-        min_bar_trades=args.min_bar_trades,
-    ))
+    print(
+        report(
+            root=args.root,
+            symbols=args.symbols,
+            bar_seconds=args.bar_seconds,
+            large_quantile=args.large_quantile,
+            baseline_seconds=args.baseline_seconds,
+            min_baseline_trades=args.min_baseline_trades,
+            min_bar_trades=args.min_bar_trades,
+        )
+    )
     return 0
 
 

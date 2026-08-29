@@ -5,6 +5,7 @@ long-only signal whose active-bar forecast is a single constant magnitude)
 directly against build_core, proving it now reports None/None instead of the
 old hardcoded corr=0.0, p=1.0.
 """
+
 import sys
 from pathlib import Path
 
@@ -17,11 +18,13 @@ from reporting.run_artifact import build_core
 
 
 def _bars(forecasts, closes):
-    return pd.DataFrame({
-        "timestamp": pd.date_range("2020-01-01", periods=len(forecasts), freq="D"),
-        "forecast": forecasts,
-        "close": closes,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2020-01-01", periods=len(forecasts), freq="D"),
+            "forecast": forecasts,
+            "close": closes,
+        }
+    )
 
 
 def test_long_only_constant_forecast_gives_none_not_zero():
@@ -54,7 +57,7 @@ def test_two_sided_varying_forecast_gives_a_real_value():
     forecast_return_corr silently None."""
     n = 40
     forecasts = [((-1) ** i) * (5 + i % 5) for i in range(n)]  # varies in magnitude and sign
-    closes = [100 + sum(forecasts[:i + 1]) * 0.01 for i in range(n)]
+    closes = [100 + sum(forecasts[: i + 1]) * 0.01 for i in range(n)]
 
     core = build_core(metrics_dict={}, completed_trades=[], bars_df=_bars(forecasts, closes))
 

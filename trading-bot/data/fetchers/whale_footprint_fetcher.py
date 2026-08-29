@@ -192,9 +192,7 @@ def assert_designated(
 
     entry = policy.get(POLICY_KEY)
     if not isinstance(entry, dict):
-        raise ReservedDataError(
-            f"{policy_path} has no '{POLICY_KEY}' entry. Denying."
-        )
+        raise ReservedDataError(f"{policy_path} has no '{POLICY_KEY}' entry. Denying.")
 
     designations = entry.get("designations") or []
     req_start = pd.Timestamp(start).normalize()
@@ -204,9 +202,11 @@ def assert_designated(
             continue
         if pd.Timestamp(d["start"]) <= req_start and req_end <= pd.Timestamp(d["end"]):
             logger.info(
-                "WhaleFootprintFetcher: window %s..%s released by designation "
-                "%s..%s (ratified %s)",
-                req_start.date(), req_end.date(), d["start"], d["end"],
+                "WhaleFootprintFetcher: window %s..%s released by designation %s..%s (ratified %s)",
+                req_start.date(),
+                req_end.date(),
+                d["start"],
+                d["end"],
                 d.get("ratified", "?"),
             )
             return
@@ -264,9 +264,7 @@ class WhaleFootprintFetcher(BaseFetcher):
         # Before anything else, and before any path is even resolved.
         assert_designated(self.start_date, self.end_date, policy_path)
 
-        self.capture_root = (
-            Path(capture_root) if capture_root else Path(data_dir) / DEFAULT_CAPTURE_SUBDIR
-        )
+        self.capture_root = Path(capture_root) if capture_root else Path(data_dir) / DEFAULT_CAPTURE_SUBDIR
         self.bar_seconds = int(bar_seconds)
         self.large_quantile = float(large_quantile)
         self.baseline_seconds = int(baseline_seconds)
@@ -297,9 +295,7 @@ class WhaleFootprintFetcher(BaseFetcher):
             return f"{s // 60}m"
         return f"{s}s"
 
-    def _fetch_remote(
-        self, symbol: str, start: datetime.datetime, end: datetime.datetime
-    ) -> pd.DataFrame:
+    def _fetch_remote(self, symbol: str, start: datetime.datetime, end: datetime.datetime) -> pd.DataFrame:
         """
         Read the recorded shards for `symbol` and aggregate them to bars.
 
@@ -314,16 +310,15 @@ class WhaleFootprintFetcher(BaseFetcher):
         missing or silently filled.
         """
         if not self.capture_root.is_dir():
-            logger.warning(
-                "WhaleFootprintFetcher: no capture at %s", self.capture_root
-            )
+            logger.warning("WhaleFootprintFetcher: no capture at %s", self.capture_root)
             return pd.DataFrame()
 
         reader = ShardReader(self.capture_root)
         if not reader.shard_paths("trades", symbol):
             logger.warning(
                 "WhaleFootprintFetcher: no trade shards for %s under %s",
-                symbol, self.capture_root,
+                symbol,
+                self.capture_root,
             )
             return pd.DataFrame()
 
@@ -331,9 +326,7 @@ class WhaleFootprintFetcher(BaseFetcher):
         window_end = _end_of_day_if_midnight(_to_utc(end))
 
         df = whale_bar_features(
-            reader.iter_trades(
-                symbols=[symbol], start=window_start, end=window_end, emit_gaps=True
-            ),
+            reader.iter_trades(symbols=[symbol], start=window_start, end=window_end, emit_gaps=True),
             bar_seconds=self.bar_seconds,
             large_quantile=self.large_quantile,
             baseline_seconds=self.baseline_seconds,
@@ -345,7 +338,8 @@ class WhaleFootprintFetcher(BaseFetcher):
         if reader.truncations:
             logger.info(
                 "WhaleFootprintFetcher: %d truncated shard tail(s) tolerated for %s",
-                len(reader.truncations), symbol,
+                len(reader.truncations),
+                symbol,
             )
         if df.empty:
             logger.warning("WhaleFootprintFetcher: no bars produced for %s", symbol)
@@ -353,6 +347,8 @@ class WhaleFootprintFetcher(BaseFetcher):
 
         logger.info(
             "WhaleFootprintFetcher: %s -> %d bars (%d attested)",
-            symbol, len(df), int(df["whale_attested"].sum()),
+            symbol,
+            len(df),
+            int(df["whale_attested"].sum()),
         )
         return df[["timestamp", *FEATURE_COLUMNS]]

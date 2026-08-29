@@ -74,6 +74,7 @@ need the marker: it queries a family name guaranteed absent from either a
 real or an empty wishlist file, so `missing_field` is the correct result
 either way -- confirmed by it passing unmarked under this guard.
 """
+
 import shutil
 import subprocess
 import sys
@@ -98,7 +99,9 @@ def _mutated_tracked_results_files():
     try:
         out = subprocess.run(
             ["git", "-C", str(_REPO_ROOT), "status", "--porcelain", "--", _RESULTS_REL],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
     except Exception:
         return None

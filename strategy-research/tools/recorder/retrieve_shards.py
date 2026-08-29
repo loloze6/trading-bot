@@ -69,7 +69,8 @@ from typing import Any, Dict, List, Optional, Protocol
 if __package__ in (None, ""):  # allow direct execution
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from recorder.retrieval_manifest import (  # type: ignore
-        sha256_of_file, sha256_of_prefix,
+        sha256_of_file,
+        sha256_of_prefix,
     )
 else:
     from .retrieval_manifest import sha256_of_file, sha256_of_prefix
@@ -134,18 +135,15 @@ class SshRsyncTransport:
             remote_cmd = f"cd {self.remote_module_root!r} && {remote_cmd}"
         proc = subprocess.run(
             self._ssh_prefix() + [remote_cmd],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         if proc.returncode != 0:
-            raise TransportError(
-                f"manifest fetch failed (exit {proc.returncode}): {proc.stderr}"
-            )
+            raise TransportError(f"manifest fetch failed (exit {proc.returncode}): {proc.stderr}")
         try:
             return json.loads(proc.stdout)
         except json.JSONDecodeError as exc:
-            raise TransportError(
-                f"manifest fetch returned non-JSON stdout: {proc.stdout[:500]!r}"
-            ) from exc
+            raise TransportError(f"manifest fetch returned non-JSON stdout: {proc.stdout[:500]!r}") from exc
 
     def pull(self, relative_path: str, dest: Path) -> None:
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -156,20 +154,17 @@ class SshRsyncTransport:
         cmd += [remote_spec, str(dest)]
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0:
-            raise TransportError(
-                f"rsync pull of {relative_path!r} failed (exit {proc.returncode}): {proc.stderr}"
-            )
+            raise TransportError(f"rsync pull of {relative_path!r} failed (exit {proc.returncode}): {proc.stderr}")
 
     def delete(self, relative_path: str) -> None:
         remote_cmd = f"rm -f {self.remote_out}/{relative_path}"
         proc = subprocess.run(
             self._ssh_prefix() + [remote_cmd],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         if proc.returncode != 0:
-            raise TransportError(
-                f"remote delete of {relative_path!r} failed (exit {proc.returncode}): {proc.stderr}"
-            )
+            raise TransportError(f"remote delete of {relative_path!r} failed (exit {proc.returncode}): {proc.stderr}")
 
 
 class LocalDirTransport:
@@ -383,7 +378,8 @@ def main(argv=None) -> int:
         p.add_argument("--remote-module-root", default=None)
         p.add_argument("--local-out", required=True)
         p.add_argument(
-            "--local-source", default=None,
+            "--local-source",
+            default=None,
             help="testing/mounted-drive only: treat this local directory as remote, bypassing SSH/rsync",
         )
 
@@ -393,7 +389,8 @@ def main(argv=None) -> int:
     p_prune = sub.add_parser("prune", help="delete remote copies already confirmed received")
     common(p_prune)
     p_prune.add_argument(
-        "--yes-delete-confirmed-only", action="store_true",
+        "--yes-delete-confirmed-only",
+        action="store_true",
         help="required: acknowledges this deletes remote files (only ones re-verified as confirmed)",
     )
 
@@ -402,8 +399,10 @@ def main(argv=None) -> int:
 
     if args.mode == "pull":
         result = pull(transport, Path(args.local_out))
-        print(f"pulled {len(result.pulled)}, verified {len(result.verified)}, "
-              f"failed {len(result.failed)}, already-confirmed {len(result.already_confirmed)}")
+        print(
+            f"pulled {len(result.pulled)}, verified {len(result.verified)}, "
+            f"failed {len(result.failed)}, already-confirmed {len(result.already_confirmed)}"
+        )
         if result.failed:
             print("FAILED (not added to ledger, will retry next run):")
             for rel in result.failed:
@@ -415,10 +414,12 @@ def main(argv=None) -> int:
             print("refusing to prune without --yes-delete-confirmed-only", file=sys.stderr)
             return 2
         result = prune_confirmed(transport, Path(args.local_out))
-        print(f"deleted {len(result.deleted)}, "
-              f"skipped (not confirmed) {len(result.skipped_not_confirmed)}, "
-              f"skipped (changed since confirmation) {len(result.skipped_changed_since_confirmation)}, "
-              f"skipped (local mismatch) {len(result.skipped_local_mismatch)}")
+        print(
+            f"deleted {len(result.deleted)}, "
+            f"skipped (not confirmed) {len(result.skipped_not_confirmed)}, "
+            f"skipped (changed since confirmation) {len(result.skipped_changed_since_confirmation)}, "
+            f"skipped (local mismatch) {len(result.skipped_local_mismatch)}"
+        )
         return 0
 
     return 2

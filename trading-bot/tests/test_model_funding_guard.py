@@ -8,6 +8,7 @@ Covers the two fail-loud contracts that do not need a real backtest run:
   * simulate_on_loaded_data refuses to run with model_funding on but no daily funding
     series for a symbol, rather than silently reporting a fee-only run as funding-costed.
 """
+
 import json
 import logging
 import sys
@@ -126,9 +127,7 @@ def test_model_funding_missing_series_fails_loud(tmp_path):
     config_path.write_text(json.dumps(_NO_FEED_CONFIG))
 
     launcher = Launcher()
-    params = TradingParams(
-        symbols=[FAKE_SYMBOL], interval=86400, check_interval=86400, test_mode=True
-    )
+    params = TradingParams(symbols=[FAKE_SYMBOL], interval=86400, check_interval=86400, test_mode=True)
     stack = launcher._build_mock_stack(
         params,
         DEFAULT_INITIAL_BALANCE,

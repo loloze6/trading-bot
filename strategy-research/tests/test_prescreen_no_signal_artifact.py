@@ -8,6 +8,7 @@ errors on every bar" case (F5a's actual ZeroDivisionError is now fixed and can't
 used to trigger this directly anymore); a real, healthy but never-firing config
 covers the "zero activation, no errors" case.
 """
+
 import json
 import sys
 import tempfile
@@ -40,14 +41,25 @@ def _write(obj, path):
 def test_component_errors_route_to_no_signal_artifact(tmp_path):
     config = {
         "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
-        "strategies": {"warmup": 3, "regimes": {
-            "unknown": {"components": [{
-                "id": "broken",
-                "class": "tests.test_main_strategy_error_surfacing._AlwaysThrowsComponent",
-                "weight": 1.0, "transforms": [{"op": "identity"}], "params": {},
-            }]},
-            "trending": None, "mean_reversion": None, "chop": None,
-        }},
+        "strategies": {
+            "warmup": 3,
+            "regimes": {
+                "unknown": {
+                    "components": [
+                        {
+                            "id": "broken",
+                            "class": "tests.test_main_strategy_error_surfacing._AlwaysThrowsComponent",
+                            "weight": 1.0,
+                            "transforms": [{"op": "identity"}],
+                            "params": {},
+                        }
+                    ]
+                },
+                "trending": None,
+                "mean_reversion": None,
+                "chop": None,
+            },
+        },
     }
     config_path = _write(config, tmp_path / "config.json")
     protocol_path = _write(_PROTOCOL, tmp_path / "protocol.json")
@@ -71,15 +83,25 @@ def test_zero_activation_no_errors_still_routes_to_no_signal_artifact(tmp_path):
     config = {
         "aux_feeds": ["funding_rate"],
         "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
-        "strategies": {"warmup": 3, "regimes": {
-            "unknown": {"components": [{
-                "id": "funding_rate_mean_reversion",
-                "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
-                "weight": 1.0, "transforms": [{"op": "identity"}],
-                "params": {"threshold": 999.0, "scaling_factor": 10.0},  # never exceeded
-            }]},
-            "trending": None, "mean_reversion": None, "chop": None,
-        }},
+        "strategies": {
+            "warmup": 3,
+            "regimes": {
+                "unknown": {
+                    "components": [
+                        {
+                            "id": "funding_rate_mean_reversion",
+                            "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
+                            "weight": 1.0,
+                            "transforms": [{"op": "identity"}],
+                            "params": {"threshold": 999.0, "scaling_factor": 10.0},  # never exceeded
+                        }
+                    ]
+                },
+                "trending": None,
+                "mean_reversion": None,
+                "chop": None,
+            },
+        },
     }
     config_path = _write(config, tmp_path / "config2.json")
     protocol_path = _write(_PROTOCOL, tmp_path / "protocol2.json")
@@ -100,14 +122,25 @@ def test_healthy_active_signal_does_not_get_flagged_as_no_signal_artifact(tmp_pa
     no_signal_artifact by an overly broad condition."""
     config = {
         "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
-        "strategies": {"warmup": 25, "regimes": {
-            "unknown": {"components": [{
-                "id": "ema_spread", "class": "strategies.strategy_components.EMASpreadComponent",
-                "weight": 1.0, "transforms": [{"op": "identity"}],
-                "params": {"fast_period": 9, "slow_period": 21, "scaling_factor": 5.0},
-            }]},
-            "trending": None, "mean_reversion": None, "chop": None,
-        }},
+        "strategies": {
+            "warmup": 25,
+            "regimes": {
+                "unknown": {
+                    "components": [
+                        {
+                            "id": "ema_spread",
+                            "class": "strategies.strategy_components.EMASpreadComponent",
+                            "weight": 1.0,
+                            "transforms": [{"op": "identity"}],
+                            "params": {"fast_period": 9, "slow_period": 21, "scaling_factor": 5.0},
+                        }
+                    ]
+                },
+                "trending": None,
+                "mean_reversion": None,
+                "chop": None,
+            },
+        },
     }
     config_path = _write(config, tmp_path / "config3.json")
     protocol_path = _write(_PROTOCOL, tmp_path / "protocol3.json")
@@ -124,9 +157,7 @@ def test_run_044_real_config_no_longer_produces_no_signal_artifact_after_f5a(tmp
     """End-to-end confirmation that F5a's fix + F5c's routing together mean run_044's
     ACTUAL config (threshold=0.0) now produces a real IC result, not the previous
     active_n_bars=0 artifact."""
-    run_044_config = (
-        Path(__file__).parent.parent / "runs" / "run_044" / "artifacts" / "candidate_strategy_config.json"
-    )
+    run_044_config = Path(__file__).parent.parent / "runs" / "run_044" / "artifacts" / "candidate_strategy_config.json"
     if not run_044_config.exists():
         pytest.skip("run_044 config not present on disk")
 

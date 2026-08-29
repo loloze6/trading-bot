@@ -69,6 +69,7 @@ change that fixed it, to assert the FIXED behavior instead — see
 `test_pattern_a_all_four_regime_labels_now_agree` and
 `test_run_042_precedent_current_regime_is_fresh_when_ready_fires`.
 """
+
 import sys
 import json
 import tempfile
@@ -79,8 +80,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-PROJECT_ROOT = Path(__file__).parent.parent          # trading-bot/ (inner)
-REPO_ROOT = PROJECT_ROOT.parent                       # repo root
+PROJECT_ROOT = Path(__file__).parent.parent  # trading-bot/ (inner)
+REPO_ROOT = PROJECT_ROOT.parent  # repo root
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from strategies.main_strategy import AdvancedStrategy
@@ -118,11 +119,16 @@ def _synthetic_bars(n: int = 70, seed: int = 42) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     steps = rng.normal(loc=0.05, scale=1.0, size=n).cumsum()
     close = 100.0 + steps
-    return pd.DataFrame({
-        "timestamp": pd.date_range("2024-01-01", periods=n, freq="h", tz="UTC"),
-        "open": close, "high": close + 0.5, "low": close - 0.5,
-        "close": close, "volume": 1.0,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2024-01-01", periods=n, freq="h", tz="UTC"),
+            "open": close,
+            "high": close + 0.5,
+            "low": close - 0.5,
+            "close": close,
+            "volume": 1.0,
+        }
+    )
 
 
 def _run_forecast_sequence(config: dict, bars: pd.DataFrame) -> list:
@@ -175,7 +181,10 @@ def test_pattern_a_all_four_regime_labels_now_agree():
     sequences = {r: _run_forecast_sequence(_pattern_a_config(r), BARS) for r in _VALID_REGIMES}
 
     mr, chop, trending, unknown = (
-        sequences["mean_reversion"], sequences["chop"], sequences["trending"], sequences["unknown"]
+        sequences["mean_reversion"],
+        sequences["chop"],
+        sequences["trending"],
+        sequences["unknown"],
     )
 
     assert mr == chop == trending == unknown, (

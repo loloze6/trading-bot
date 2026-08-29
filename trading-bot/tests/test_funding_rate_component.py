@@ -14,6 +14,7 @@ Fixture: run_044's actual candidate_strategy_config.json + real cached BTC bars,
 reproducing the exact failure end-to-end (not just unit-testing the component in
 isolation) via AdvancedStrategy directly, the same path prescreen_signal.py uses.
 """
+
 import json
 import sys
 from pathlib import Path
@@ -38,12 +39,14 @@ def test_threshold_zero_no_longer_raises_directly():
     """Unit-level: the component itself, called with threshold=0.0 and a nonzero
     funding rate at a settlement bar, must not raise."""
     comp = FundingRateMeanReversionComponent(parameters={"threshold": 0.0, "scaling_factor": 10.0})
-    bars = pd.DataFrame({
-        # Last row must land on a settlement boundary (UTC hour % 8 == 0).
-        "timestamp": [pd.Timestamp("2023-12-31 23:00:00"), pd.Timestamp("2024-01-01 00:00:00")],
-        "close": [100.0, 100.1],
-        "funding_rate": [0.000374, 0.000374],
-    })
+    bars = pd.DataFrame(
+        {
+            # Last row must land on a settlement boundary (UTC hour % 8 == 0).
+            "timestamp": [pd.Timestamp("2023-12-31 23:00:00"), pd.Timestamp("2024-01-01 00:00:00")],
+            "close": [100.0, 100.1],
+            "funding_rate": [0.000374, 0.000374],
+        }
+    )
     comp.update(bars)  # must not raise ZeroDivisionError
     assert comp.raw_value() != 0.0, "component should fire: nonzero funding rate at a settlement bar (hour=0)"
     assert comp.confidence == 1.0, "continuous mode (threshold=0) should report full confidence"
@@ -102,8 +105,9 @@ _FUNDING_CSV_1D = PROJECT_ROOT / "local_data" / "BTCUSDT_funding_8h.csv"
 _OHLCV_CSV_1D = PROJECT_ROOT / "local_data" / "BTCUSDT_1d.csv"
 
 
-@pytest.mark.skipif(not _FUNDING_CSV_1D.exists() or not _OHLCV_CSV_1D.exists(),
-                     reason="local_data fixtures not present")
+@pytest.mark.skipif(
+    not _FUNDING_CSV_1D.exists() or not _OHLCV_CSV_1D.exists(), reason="local_data fixtures not present"
+)
 def test_daily_bars_with_merged_funding_produce_nonzero_forecasts():
     """Component-level: FundingRateMeanReversionComponent on DAILY (86400s-
     aligned, hour=00:00) bars with real merged funding data over a small
@@ -116,8 +120,9 @@ def test_daily_bars_with_merged_funding_produce_nonzero_forecasts():
     merged = ps._merge_aux_feeds(bars, ["funding_rate"], "BTCUSDT", "2019-12-01", "2019-12-06")
 
     assert len(merged) >= 3, "fixture window too small to be a meaningful regression test"
-    assert all(pd.Timestamp(t).hour == 0 for t in merged["timestamp"]), \
+    assert all(pd.Timestamp(t).hour == 0 for t in merged["timestamp"]), (
         "fixture bars must be at hour=00:00 (the whole point of a DAILY bar)"
+    )
 
     comp = FundingRateMeanReversionComponent(parameters={"threshold": 0.0, "scaling_factor": 10.0})
     fired_days = 0
@@ -127,18 +132,16 @@ def test_daily_bars_with_merged_funding_produce_nonzero_forecasts():
         if comp.is_ready() and abs(comp.raw_value()) > 1e-9:
             fired_days += 1
 
-    assert fired_days > 0, (
-        "no daily bar fired -- the 1d silent-zero-forecast regression (run_059) "
-        "has recurred"
-    )
+    assert fired_days > 0, "no daily bar fired -- the 1d silent-zero-forecast regression (run_059) has recurred"
     assert fired_days == len(merged) - 1, (
         f"expected every ready bar to fire (continuous mode, threshold=0, real "
         f"funding rate never exactly 0.0 in this fixture) -- got {fired_days}/{len(merged) - 1}"
     )
 
 
-@pytest.mark.skipif(not _FUNDING_CSV_1D.exists() or not _OHLCV_CSV_1D.exists(),
-                     reason="local_data fixtures not present")
+@pytest.mark.skipif(
+    not _FUNDING_CSV_1D.exists() or not _OHLCV_CSV_1D.exists(), reason="local_data fixtures not present"
+)
 def test_data_manager_merge_attach_chain_yields_funding_column_at_1d():
     """Chain-level: the REAL DataManager merge/attach path (register_feed ->
     initialize -> _premerge_aux_feeds -> CandleBuilder.add_row -> _align ->
@@ -156,8 +159,9 @@ def test_data_manager_merge_attach_chain_yields_funding_column_at_1d():
     dm = DataManager([symbol], interval_seconds=86400, mode="backtest")
     dm.register_feed(
         name="funding_rate",
-        fetcher=FundingRateFetcher(start, end, symbols=[symbol],
-                                    localStorage=True, data_dir=str(PROJECT_ROOT / "local_data")),
+        fetcher=FundingRateFetcher(
+            start, end, symbols=[symbol], localStorage=True, data_dir=str(PROJECT_ROOT / "local_data")
+        ),
         window_seconds=0,  # published instantaneously — no forward window
         agg="last",
     )

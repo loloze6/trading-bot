@@ -30,9 +30,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def _git(repo, *args):
-    return subprocess.run(
-        ["git", *args], cwd=repo, capture_output=True, text=True, check=True
-    )
+    return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, check=True)
 
 
 def _gate_self_count():
@@ -139,8 +137,8 @@ def test_holdout_date_in_data_file_blocks(tmp_path):
 
     assert r.returncode == 1, out
     assert "COMMIT BLOCKED" in out
-    assert "results/bars.csv" in out          # names the file
-    assert "2026-01-01" in out                # names the offending line
+    assert "results/bars.csv" in out  # names the file
+    assert "2026-01-01" in out  # names the offending line
 
 
 def test_boundary_dates(tmp_path):
@@ -163,9 +161,7 @@ def test_authorship_timestamp_is_not_a_hit(tmp_path):
     Without this carve-out the gate would flag ~99% of the repo's artifacts, since the
     campaign was authored during 2026 H1.
     """
-    repo = _make_repo(
-        tmp_path, {"run/manifest.json": '{\n  "created_utc": "2026-03-14T10:00:00Z"\n}\n'}
-    )
+    repo = _make_repo(tmp_path, {"run/manifest.json": '{\n  "created_utc": "2026-03-14T10:00:00Z"\n}\n'})
     r = _run_gate(repo)
     assert r.returncode == 0, r.stdout + r.stderr
 
@@ -263,7 +259,9 @@ def test_self_test_only_mode(tmp_path):
     repo = _make_repo(tmp_path, {"docs/clean.md": "x\n"})
     r = subprocess.run(
         [SH, "strategy-research/tools/holdout_date_gate.sh", "--self-test-only"],
-        cwd=repo, capture_output=True, text=True,
+        cwd=repo,
+        capture_output=True,
+        text=True,
     )
     out = r.stdout + r.stderr
     assert r.returncode == 0, out

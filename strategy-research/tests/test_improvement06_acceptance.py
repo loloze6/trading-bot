@@ -15,12 +15,15 @@ from statistics import NormalDist
 
 _NDIST = NormalDist(0, 1)
 
+
 def _phi(x: float) -> float:
     return _NDIST.cdf(x)
+
 
 def _phi_inv(p: float) -> float:
     p = max(1e-10, min(1 - 1e-10, p))
     return _NDIST.inv_cdf(p)
+
 
 EULER_GAMMA = 0.5772156649
 DSR_THRESHOLD = 0.95
@@ -41,16 +44,16 @@ def _compute_dsr(candidate_sr: float, trial_sharpes: list[float]) -> dict:
     z1 = _phi_inv(1.0 - 1.0 / n)
     z2 = _phi_inv(1.0 - 1.0 / (math.e * n))
     z_exp_max = (1.0 - EULER_GAMMA) * z1 + EULER_GAMMA * z2
-    e_max_sr  = mu + sigma * z_exp_max
+    e_max_sr = mu + sigma * z_exp_max
 
-    z   = (candidate_sr - e_max_sr) / sigma
+    z = (candidate_sr - e_max_sr) / sigma
     dsr = _phi(z)
 
     return {
-        "dsr":               round(dsr, 6),
+        "dsr": round(dsr, 6),
         "expected_max_sharpe": round(e_max_sr, 6),
-        "n_trials":          n,
-        "passes":            dsr > DSR_THRESHOLD,
+        "n_trials": n,
+        "passes": dsr > DSR_THRESHOLD,
     }
 
 
@@ -81,6 +84,7 @@ def _check_holdout_single_use(hypothesis_id: str, consumed_list: list[str]) -> d
 # AC2 — Deflated Sharpe monotonicity: same raw Sharpe, more trials → lower DSR
 # ---------------------------------------------------------------------------
 
+
 def test_deflated_sharpe_monotonic():
     """
     Increasing N with fixed μ and σ → monotonically decreasing DSR.
@@ -93,8 +97,8 @@ def test_deflated_sharpe_monotonic():
     We hold μ and σ constant rather than computing from sample to isolate the N effect.
     """
     candidate_sr = 1.0
-    mu_fixed     = 0.1
-    sigma_fixed  = 0.2
+    mu_fixed = 0.1
+    sigma_fixed = 0.2
 
     def _dsr_fixed_params(n: int) -> float:
         z1 = _phi_inv(1.0 - 1.0 / n)
@@ -109,18 +113,16 @@ def test_deflated_sharpe_monotonic():
 
     for i in range(1, len(dsrs)):
         assert dsrs[i] < dsrs[i - 1], (
-            f"DSR must decrease as N grows: "
-            f"DSR(N={ns[i]})={dsrs[i]:.6f} is not < DSR(N={ns[i-1]})={dsrs[i-1]:.6f}"
+            f"DSR must decrease as N grows: DSR(N={ns[i]})={dsrs[i]:.6f} is not < DSR(N={ns[i - 1]})={dsrs[i - 1]:.6f}"
         )
     # Boundary: small N → high DSR; large N → low DSR
-    assert dsrs[0] > dsrs[-1], (
-        f"DSR(N={ns[0]})={dsrs[0]:.6f} must exceed DSR(N={ns[-1]})={dsrs[-1]:.6f}"
-    )
+    assert dsrs[0] > dsrs[-1], f"DSR(N={ns[0]})={dsrs[0]:.6f} must exceed DSR(N={ns[-1]})={dsrs[-1]:.6f}"
 
 
 # ---------------------------------------------------------------------------
 # A6.4 — Dedup: runs 017/024/027/033 with shared forecast_hash → 1 trial
 # ---------------------------------------------------------------------------
+
 
 def test_dedup_017_024_027_033():
     """
@@ -130,27 +132,49 @@ def test_dedup_017_024_027_033():
     SHARED_HASH = "keltner_v1_forecast_abc123"
 
     records = [
-        {"trial_id": "run_017", "sharpe": 0.0, "statistic_valid": "sharpe",
-         "forecast_hash": SHARED_HASH, "n_trades": 163},
-        {"trial_id": "run_024", "sharpe": 0.0, "statistic_valid": "sharpe",
-         "forecast_hash": SHARED_HASH, "n_trades": 163},
-        {"trial_id": "run_027", "sharpe": 0.0, "statistic_valid": "sharpe",
-         "forecast_hash": SHARED_HASH, "n_trades": 163},
-        {"trial_id": "run_033", "sharpe": 0.0, "statistic_valid": "sharpe",
-         "forecast_hash": SHARED_HASH, "n_trades": 163},
+        {
+            "trial_id": "run_017",
+            "sharpe": 0.0,
+            "statistic_valid": "sharpe",
+            "forecast_hash": SHARED_HASH,
+            "n_trades": 163,
+        },
+        {
+            "trial_id": "run_024",
+            "sharpe": 0.0,
+            "statistic_valid": "sharpe",
+            "forecast_hash": SHARED_HASH,
+            "n_trades": 163,
+        },
+        {
+            "trial_id": "run_027",
+            "sharpe": 0.0,
+            "statistic_valid": "sharpe",
+            "forecast_hash": SHARED_HASH,
+            "n_trades": 163,
+        },
+        {
+            "trial_id": "run_033",
+            "sharpe": 0.0,
+            "statistic_valid": "sharpe",
+            "forecast_hash": SHARED_HASH,
+            "n_trades": 163,
+        },
         # One genuinely distinct trial
-        {"trial_id": "run_040", "sharpe": 0.3, "statistic_valid": "sharpe",
-         "forecast_hash": "different_signal_xyz789", "n_trades": 50},
+        {
+            "trial_id": "run_040",
+            "sharpe": 0.3,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "different_signal_xyz789",
+            "n_trades": 50,
+        },
     ]
 
     deduped, n_removed = _deduplicate_trials(records)
 
-    assert n_removed == 3, (
-        f"Expected 3 duplicate runs removed (017/024/027 → same hash as 033), got {n_removed}"
-    )
+    assert n_removed == 3, f"Expected 3 duplicate runs removed (017/024/027 → same hash as 033), got {n_removed}"
     assert len(deduped) == 2, (
-        f"Expected 2 unique trials after dedup, got {len(deduped)}: "
-        f"{[r['trial_id'] for r in deduped]}"
+        f"Expected 2 unique trials after dedup, got {len(deduped)}: {[r['trial_id'] for r in deduped]}"
     )
     trial_ids = {r["trial_id"] for r in deduped}
     assert "run_040" in trial_ids, "The distinct trial (run_040) must survive dedup"
@@ -175,6 +199,7 @@ def test_dedup_no_hash_always_kept():
 # AC3 — Single-use holdout: second attempt for same hypothesis_id is refused
 # ---------------------------------------------------------------------------
 
+
 def test_single_use_holdout_refused():
     """
     A hypothesis_id that already appears in holdout_consumed_by must be refused
@@ -184,21 +209,18 @@ def test_single_use_holdout_refused():
 
     # Already consumed — must be refused
     result = _check_holdout_single_use("H-041-A", consumed)
-    assert result["verdict"] == "refused", (
-        f"Expected 'refused' for H-041-A (already consumed), got: {result}"
-    )
+    assert result["verdict"] == "refused", f"Expected 'refused' for H-041-A (already consumed), got: {result}"
     assert "holdout_consumed_by" in result["reason"].lower() or "already" in result["reason"].lower()
 
     # New hypothesis — must be allowed
     result_new = _check_holdout_single_use("H-042-A", consumed)
-    assert result_new["verdict"] == "allowed", (
-        f"Expected 'allowed' for H-042-A (not consumed), got: {result_new}"
-    )
+    assert result_new["verdict"] == "allowed", f"Expected 'allowed' for H-042-A (not consumed), got: {result_new}"
 
 
 # ---------------------------------------------------------------------------
 # Overlap guard regression (A6.1 / A7.x) — holdout range must not overlap protocol
 # ---------------------------------------------------------------------------
+
 
 def test_overlap_guard_regression():
     """
@@ -209,8 +231,8 @@ def test_overlap_guard_regression():
     This is a structural invariant — not a live data check.
     """
     holdout_start = "2026-01-01"
-    holdout_end   = "2026-06-30"
-    wf_end        = "2025-12-31"
+    holdout_end = "2026-06-30"
+    wf_end = "2025-12-31"
 
     # Walk-forward range ends before holdout starts → no overlap
     assert wf_end < holdout_start, (
@@ -228,21 +250,18 @@ def test_overlap_guard_regression():
         ("2026-03-01", "2026-06-30"),  # entirely inside holdout
     ]
     for wstart, wend in invalid_windows:
-        assert _overlaps_holdout(wstart, wend), (
-            f"Overlap guard must flag window {wstart}–{wend} as overlapping holdout"
-        )
+        assert _overlaps_holdout(wstart, wend), f"Overlap guard must flag window {wstart}–{wend} as overlapping holdout"
 
     # Valid walk-forward window: entirely before holdout
     valid_window = ("2025-10-01", "2025-12-31")
     overlap = valid_window[0] <= holdout_end and valid_window[1] >= holdout_start
-    assert not overlap, (
-        f"Valid walk-forward window {valid_window} must NOT overlap holdout range"
-    )
+    assert not overlap, f"Valid walk-forward window {valid_window} must NOT overlap holdout range"
 
 
 # ---------------------------------------------------------------------------
 # AC5 — Keltner must NOT pass; synthetic genuine edge must pass
 # ---------------------------------------------------------------------------
+
 
 def test_keltner_must_not_pass():
     """
@@ -250,9 +269,20 @@ def test_keltner_must_not_pass():
     DSR for a 0.0 Sharpe candidate against a trial distribution must not exceed DSR_THRESHOLD.
     """
     # Realistic campaign trial distribution (mixed strategies, varied Sharpes)
-    trial_sharpes = [0.0, 0.0, 0.0, 0.0,   # Keltner family: all 0.0 (A3.4 sparse)
-                     0.15, -0.1, 0.05, 0.2,  # Other strategy family
-                     -0.05, 0.08, 0.12, -0.15]
+    trial_sharpes = [
+        0.0,
+        0.0,
+        0.0,
+        0.0,  # Keltner family: all 0.0 (A3.4 sparse)
+        0.15,
+        -0.1,
+        0.05,
+        0.2,  # Other strategy family
+        -0.05,
+        0.08,
+        0.12,
+        -0.15,
+    ]
 
     candidate_sr = 0.0  # Keltner median Sharpe
 
@@ -260,12 +290,9 @@ def test_keltner_must_not_pass():
 
     assert result["dsr"] is not None, "DSR must be computable"
     assert not result["passes"], (
-        f"Keltner (candidate_sr=0.0) must NOT pass DSR threshold {DSR_THRESHOLD}: "
-        f"DSR={result['dsr']}"
+        f"Keltner (candidate_sr=0.0) must NOT pass DSR threshold {DSR_THRESHOLD}: DSR={result['dsr']}"
     )
-    assert result["dsr"] < DSR_THRESHOLD, (
-        f"Keltner DSR={result['dsr']} must be < {DSR_THRESHOLD}"
-    )
+    assert result["dsr"] < DSR_THRESHOLD, f"Keltner DSR={result['dsr']} must be < {DSR_THRESHOLD}"
 
 
 def test_synthetic_genuine_edge_passes():
@@ -286,9 +313,6 @@ def test_synthetic_genuine_edge_passes():
 
     assert result["dsr"] is not None, "DSR must be computable"
     assert result["passes"], (
-        f"Strong synthetic candidate (candidate_sr=2.5) must pass DSR threshold {DSR_THRESHOLD}: "
-        f"DSR={result['dsr']}"
+        f"Strong synthetic candidate (candidate_sr=2.5) must pass DSR threshold {DSR_THRESHOLD}: DSR={result['dsr']}"
     )
-    assert result["dsr"] >= DSR_THRESHOLD, (
-        f"Synthetic DSR={result['dsr']} must be >= {DSR_THRESHOLD}"
-    )
+    assert result["dsr"] >= DSR_THRESHOLD, f"Synthetic DSR={result['dsr']} must be >= {DSR_THRESHOLD}"

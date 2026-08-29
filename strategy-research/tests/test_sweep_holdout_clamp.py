@@ -34,9 +34,7 @@ sys.path.insert(0, str(ROOT / "workflow"))
 import run_phase1_research as rpr  # noqa: E402
 
 POLICY = ROOT / "config" / "campaign_data_policy.yaml"
-HOLDOUT_START, HOLDOUT_END = yaml.safe_load(
-    POLICY.read_text(encoding="utf-8")
-)["holdout_range"]
+HOLDOUT_START, HOLDOUT_END = yaml.safe_load(POLICY.read_text(encoding="utf-8"))["holdout_range"]
 
 # One day before the seal, and the month it closes -- derived, never spelled out,
 # so this file carries no literal sealed-window date of its own.
@@ -108,15 +106,11 @@ def test_the_preexisting_generator_contract_is_unchanged():
 def test_the_boundary_comes_from_the_policy_file_not_from_code():
     """Move the seal in an injected policy and the generator moves with it."""
     with pytest.raises(rpr.HoldoutBoundaryBreach) as exc:
-        rpr._generate_monthly_windows(
-            "2020-01-01", "2020-06-01", holdout_range=("2020-03-01", "2020-09-30")
-        )
+        rpr._generate_monthly_windows("2020-01-01", "2020-06-01", holdout_range=("2020-03-01", "2020-09-30"))
     assert "2020-03-01" in str(exc.value)
 
     # ...and the same request is fine against a seal that is out of the way.
-    windows = rpr._generate_monthly_windows(
-        "2020-01-01", "2020-06-01", holdout_range=("2021-01-01", "2021-06-30")
-    )
+    windows = rpr._generate_monthly_windows("2020-01-01", "2020-06-01", holdout_range=("2021-01-01", "2021-06-30"))
     assert len(windows) == 5
 
 

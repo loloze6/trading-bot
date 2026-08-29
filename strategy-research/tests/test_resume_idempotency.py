@@ -24,6 +24,7 @@ the run_id idempotency guard; the a-priori-power pre-flight site
 (run_phase1_research.py:4874, in run_loop) records unconditionally. Pinned by
 test_trial_accounting_characterization.py::test_h3_a86_preflight_records_unguarded_duplicate.
 """
+
 import sys
 from pathlib import Path
 
@@ -82,8 +83,14 @@ def test_write_kb_findings_entry_is_idempotent_on_resume(temp_kb, tmp_path):
 def test_recompute_kb_views_is_deterministic(temp_kb):
     kb = {
         "findings": [
-            {"id": "a", "hypothesis_id": "H1", "outcome": "no_edge_observed",
-             "evidence_count": 1, "exhausted": True, "exhausted_basis": "analytic"},
+            {
+                "id": "a",
+                "hypothesis_id": "H1",
+                "outcome": "no_edge_observed",
+                "evidence_count": 1,
+                "exhausted": True,
+                "exhausted_basis": "analytic",
+            },
             {"id": "b", "hypothesis_id": "H2", "outcome": "inconclusive", "evidence_count": 1},
         ]
     }
@@ -113,6 +120,4 @@ def test_trial_sharpes_guard_pattern_skips_existing_trial_id():
     assert would_skip(campaign_with_existing_trial, "run_043") is True, (
         "resuming run_043 a second time must not re-append its trial"
     )
-    assert would_skip(campaign_without, "run_043") is False, (
-        "a genuinely new run_id must still be recorded"
-    )
+    assert would_skip(campaign_without, "run_043") is False, "a genuinely new run_id must still be recorded"

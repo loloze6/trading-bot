@@ -12,6 +12,7 @@ Reproduces the ACTUAL double-collision sequence from this session:
 The fix must compute the true next-free ID by scanning runs/ + campaign_state.yaml's
 runs list, not "current + 1" -- avoiding both collisions on the first try.
 """
+
 import sys
 from pathlib import Path
 
@@ -29,13 +30,25 @@ def _make_run_with_progress(runs_dir: Path, run_id: str):
     what a run-ID collision actually destroys."""
     run_dir = runs_dir / run_id
     (run_dir / "artifacts").mkdir(parents=True)
-    (run_dir / "pipeline_state.yaml").write_text(yaml.safe_dump({
-        "run_id": run_id, "status": "active", "current_stage": "verdict_interpreter",
-        "pending_stage": "campaign_review",
-        "completed_stages": ["hypothesis_generation", "innovation_expansion",
-                              "validation", "backtest_specification",
-                              "signal_prescreen", "verdict_interpreter"],
-    }), encoding="utf-8")
+    (run_dir / "pipeline_state.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "run_id": run_id,
+                "status": "active",
+                "current_stage": "verdict_interpreter",
+                "pending_stage": "campaign_review",
+                "completed_stages": [
+                    "hypothesis_generation",
+                    "innovation_expansion",
+                    "validation",
+                    "backtest_specification",
+                    "signal_prescreen",
+                    "verdict_interpreter",
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     (run_dir / "artifacts" / "research_brief.yaml").write_text(
         f"hypothesis_id: REAL_HYPOTHESIS_{run_id.upper()}\n", encoding="utf-8"
     )
@@ -58,9 +71,14 @@ def test_reproduces_real_double_collision_sequence_and_avoids_both(campaign_dir)
     # in campaign_state.runs (run_044 was launched independently, in the same batch).
     _make_run_with_progress(runs_dir, "run_043")
     _make_run_with_progress(runs_dir, "run_044")
-    campaign_state_path.write_text(yaml.safe_dump({
-        "runs": ["run_039", "run_043", "run_044"],
-    }), encoding="utf-8")
+    campaign_state_path.write_text(
+        yaml.safe_dump(
+            {
+                "runs": ["run_039", "run_043", "run_044"],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     # Collision #1 in the real sequence: run_043 reframes.
     allocated_1 = rpr._next_run_id("run_043")
@@ -95,6 +113,7 @@ def test_setup_run_refuses_to_overwrite_a_run_with_progress(campaign_dir, monkey
     sys.path.insert(0, str(setup_run_path.parent))
     import importlib
     import setup_run as sr
+
     importlib.reload(sr)
     monkeypatch.setattr(sr, "ROOT", tmp_path)
 

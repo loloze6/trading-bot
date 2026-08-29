@@ -10,6 +10,7 @@ and the run logs success — leaving a 4,151-bar hole nothing reports.
 These tests use FIXTURES, never a live call: the failure shape is reproduced by
 handing the fetcher a chunk that starts after the requested `since`.
 """
+
 import sys
 from pathlib import Path
 
@@ -28,10 +29,16 @@ HOUR = 3600
 def _bars(start: str, periods: int, freq: str = "1h") -> pd.DataFrame:
     """OHLCV-shaped frame; only `timestamp` matters to the guard."""
     ts = pd.date_range(start=start, periods=periods, freq=freq)
-    return pd.DataFrame({
-        "timestamp": ts,
-        "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "volume": 1.0,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": ts,
+            "open": 1.0,
+            "high": 1.0,
+            "low": 1.0,
+            "close": 1.0,
+            "volume": 1.0,
+        }
+    )
 
 
 class _StubFetcher(BaseFetcher):
@@ -41,9 +48,12 @@ class _StubFetcher(BaseFetcher):
 
     def __init__(self, tmp_dir, interval_seconds=HOUR):
         super().__init__(
-            start_date="2025-01-01", end_date="2026-12-31",
-            symbols=["BTCUSD"], interval_seconds=interval_seconds,
-            localStorage=True, data_dir=str(tmp_dir),
+            start_date="2025-01-01",
+            end_date="2026-12-31",
+            symbols=["BTCUSD"],
+            interval_seconds=interval_seconds,
+            localStorage=True,
+            data_dir=str(tmp_dir),
         )
 
     def _fetch_remote(self, symbol, start, end):  # pragma: no cover
@@ -57,12 +67,13 @@ class _StubFetcher(BaseFetcher):
 # The real failure shape
 # ---------------------------------------------------------------------------
 
+
 def test_rolling_window_fetch_raises_and_writes_nothing(tmp_path):
     """The Kraken shape, to scale: archive ends 2025-12-31 23:00, the endpoint
     returns a window opening 2026-06-22 23:00. Must raise, not write."""
     f = _StubFetcher(tmp_path)
-    existing = _bars("2025-12-01 00:00", 744)          # ... -> 2025-12-31 23:00
-    chunk = _bars("2026-06-22 23:00", 721)             # the rolling window
+    existing = _bars("2025-12-01 00:00", 744)  # ... -> 2025-12-31 23:00
+    chunk = _bars("2026-06-22 23:00", 721)  # the rolling window
 
     assert existing["timestamp"].iloc[-1] == pd.Timestamp("2025-12-31 23:00")
 
@@ -70,9 +81,9 @@ def test_rolling_window_fetch_raises_and_writes_nothing(tmp_path):
         f._merge_and_store("BTCUSD", [existing, chunk], save=True, existing=existing)
 
     msg = str(exc.value)
-    assert "2026-01-01 00:00:00" in msg      # names the missing span
+    assert "2026-01-01 00:00:00" in msg  # names the missing span
     assert "2026-06-22 22:00:00" in msg
-    assert "4151 bars" in msg                 # and its size
+    assert "4151 bars" in msg  # and its size
     assert "NOTHING was written" in msg
 
     # No trace in memory or on disk.
@@ -98,12 +109,13 @@ def test_gap_size_reported_matches_the_measured_seam(tmp_path):
 # The case the guard must NOT block
 # ---------------------------------------------------------------------------
 
+
 def test_contiguous_top_up_still_writes(tmp_path):
     """STOP condition: the guard must not block a legitimate contiguous
     top-up — the case it exists to protect."""
     f = _StubFetcher(tmp_path)
-    existing = _bars("2026-01-01 00:00", 100)          # ... -> 2026-01-05 03:00
-    chunk = _bars("2026-01-05 04:00", 50)              # picks up exactly next bar
+    existing = _bars("2026-01-01 00:00", 100)  # ... -> 2026-01-05 03:00
+    chunk = _bars("2026-01-05 04:00", 50)  # picks up exactly next bar
 
     f._merge_and_store("BTCUSD", [existing, chunk], save=True, existing=existing)
 
@@ -120,9 +132,9 @@ def test_preexisting_natural_gaps_do_not_block_a_write(tmp_path):
     the guard is differential, so these must pass through untouched."""
     f = _StubFetcher(tmp_path)
     head = _bars("2026-01-01 00:00", 50)
-    tail = _bars("2026-01-10 00:00", 50)               # a large pre-existing hole
+    tail = _bars("2026-01-10 00:00", 50)  # a large pre-existing hole
     existing = pd.concat([head, tail], ignore_index=True)
-    chunk = _bars("2026-01-12 02:00", 24)              # contiguous with tail's end
+    chunk = _bars("2026-01-12 02:00", 24)  # contiguous with tail's end
 
     f._merge_and_store("BTCUSD", [existing, chunk], save=True, existing=existing)
     assert (tmp_path / "kraken_BTCUSD_1h.csv").exists()
@@ -132,10 +144,10 @@ def test_partially_filling_an_existing_gap_is_allowed(tmp_path):
     """A fetch that shrinks a pre-existing hole is an improvement. Containment,
     not equality, is why this passes."""
     f = _StubFetcher(tmp_path)
-    head = _bars("2026-01-01 00:00", 24)               # -> 2026-01-01 23:00
+    head = _bars("2026-01-01 00:00", 24)  # -> 2026-01-01 23:00
     tail = _bars("2026-01-05 00:00", 24)
     existing = pd.concat([head, tail], ignore_index=True)
-    fill = _bars("2026-01-02 00:00", 24)               # fills one day of the hole
+    fill = _bars("2026-01-02 00:00", 24)  # fills one day of the hole
 
     f._merge_and_store("BTCUSD", [existing, fill], save=True, existing=existing)
     assert (tmp_path / "kraken_BTCUSD_1h.csv").exists()
@@ -153,6 +165,7 @@ def test_first_fetch_with_no_existing_cache_is_not_guarded(tmp_path):
 # ---------------------------------------------------------------------------
 # Existing caches must remain loadable and byte-identical
 # ---------------------------------------------------------------------------
+
 
 def test_real_archive_cache_still_loads_unchanged(tmp_path):
     """STOP condition: no archive-ingested cache may change. Loads a real

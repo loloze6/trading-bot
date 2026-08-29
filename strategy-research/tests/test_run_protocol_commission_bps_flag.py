@@ -18,6 +18,7 @@ test_absent_flag_end_to_end_matches_fixture are SLOW INTEGRATION TESTS (run
 the real backtest engine). Run explicitly:
   pytest tests/test_run_protocol_commission_bps_flag.py -v -m slow
 """
+
 import argparse
 import json
 import sys
@@ -40,17 +41,16 @@ FIXTURE_PATH = TBOT_ROOT / "tests" / "fixtures" / "warmup_prefetch_reference.jso
 # Unit: resolver precedence and pass-through
 # ---------------------------------------------------------------------------
 
+
 def test_absent_flag_falls_through_to_cost_product_spot():
-    cost_model = {"fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
-                  "perp": {"fee_rate_bps": {"default": 5.0}}}
+    cost_model = {"fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0}, "perp": {"fee_rate_bps": {"default": 5.0}}}
     resolved = rp._resolve_commission_rate("BTCUSDT", cost_model, None, "spot")
     expected = rp._commission_rate_for_symbol("BTCUSDT", cost_model, product="spot")
     assert resolved == expected == pytest.approx(0.008)
 
 
 def test_absent_flag_falls_through_to_cost_product_perp():
-    cost_model = {"fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
-                  "perp": {"fee_rate_bps": {"default": 5.0}}}
+    cost_model = {"fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0}, "perp": {"fee_rate_bps": {"default": 5.0}}}
     resolved = rp._resolve_commission_rate("BTCUSDT", cost_model, None, "perp")
     expected = rp._commission_rate_for_symbol("BTCUSDT", cost_model, product="perp")
     assert resolved == expected == pytest.approx(0.0005)
@@ -92,6 +92,7 @@ def test_cli_commission_bps_parses_float():
 # ---------------------------------------------------------------------------
 # Integration: flag absent is byte-identical; flag present reaches real trades
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.slow
 @pytest.mark.real_repo_readonly

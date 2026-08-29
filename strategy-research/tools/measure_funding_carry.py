@@ -96,7 +96,7 @@ def main():
         print(f"[L7] calendar span (days)   : {span_days}  (missing days: {span_days - n_days})")
 
         prev = f.shift(1)
-        lagged = f.iloc[1:]           # days with a defined predecessor
+        lagged = f.iloc[1:]  # days with a defined predecessor
         prev_lagged = prev.iloc[1:]
         n_lagged = len(lagged)
 

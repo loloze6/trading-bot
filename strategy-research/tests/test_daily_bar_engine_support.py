@@ -17,6 +17,7 @@ behavior is bit-identical to before the change (using real historical fixture
 values, not synthetic ones, per this project's standing rule), and a test
 proving correct "1d" behavior.
 """
+
 import sys
 from pathlib import Path
 
@@ -35,6 +36,7 @@ import prescreen_signal  # noqa: E402
 # ---------------------------------------------------------------------------
 # prescreen_signal.py block_size dispatch
 # ---------------------------------------------------------------------------
+
 
 def test_block_size_1h_unchanged():
     """Bit-identical: "1h" must still resolve to 24, exactly as before this change."""
@@ -99,9 +101,13 @@ RUN_050_EXPECTED_MDE = pytest.approx(0.08623, abs=1e-4)
 
 def _write_hypothesis_card_and_brief(artifacts: Path, power_parameters: dict, timeframe: str | None):
     artifacts.mkdir(parents=True, exist_ok=True)
-    rpr.save_yaml(artifacts / "hypothesis_card.yaml", {
-        "hypothesis_id": "TEST", "power_parameters": power_parameters,
-    })
+    rpr.save_yaml(
+        artifacts / "hypothesis_card.yaml",
+        {
+            "hypothesis_id": "TEST",
+            "power_parameters": power_parameters,
+        },
+    )
     if timeframe is not None:
         rpr.save_yaml(artifacts / "research_brief.yaml", {"timeframe": timeframe})
 
@@ -123,9 +129,13 @@ def test_a86_power_check_missing_research_brief_defaults_to_1h_unchanged(tmp_pat
     must default to '1h' behavior exactly (block_size=24), not error or change."""
     artifacts = tmp_path / "artifacts"
     artifacts.mkdir(parents=True)
-    rpr.save_yaml(artifacts / "hypothesis_card.yaml", {
-        "hypothesis_id": "TEST", "power_parameters": RUN_050_POWER_PARAMETERS,
-    })
+    rpr.save_yaml(
+        artifacts / "hypothesis_card.yaml",
+        {
+            "hypothesis_id": "TEST",
+            "power_parameters": RUN_050_POWER_PARAMETERS,
+        },
+    )
     # No research_brief.yaml at all.
     result = rpr._run_a86_power_check(artifacts)
     assert result["expected_n_eff"] == RUN_050_EXPECTED_N_EFF
@@ -177,9 +187,11 @@ def test_a86_block_size_is_derived_not_enumerated():
 # exact conditional this change added).
 # ---------------------------------------------------------------------------
 
+
 def _resolve_interval(interval_seconds, config_interval_value):
     """Mirrors run_backtest's exact new dispatch logic."""
     from core.launcher import parse_interval_seconds
+
     if interval_seconds is not None:
         return interval_seconds
     return parse_interval_seconds(config_interval_value)
@@ -202,6 +214,7 @@ def test_run_backtest_interval_explicit_override_used():
 # run_protocol.py timeframe -> interval_seconds derivation
 # ---------------------------------------------------------------------------
 
+
 def test_run_protocol_1h_protocol_passes_none_bit_identical():
     """A protocol with timeframe absent or '1h' must compute interval_seconds=None
     (run_backtest's own default), not 3600 explicitly — proving a plain "1h"
@@ -210,6 +223,7 @@ def test_run_protocol_1h_protocol_passes_none_bit_identical():
     interval_seconds = None
     if protocol_timeframe != "1h":
         from core.launcher import parse_interval_seconds
+
         interval_seconds = parse_interval_seconds(protocol_timeframe)
     assert protocol_timeframe == "1h"
     assert interval_seconds is None
@@ -218,6 +232,7 @@ def test_run_protocol_1h_protocol_passes_none_bit_identical():
 def test_run_protocol_1d_protocol_derives_86400():
     sys.path.insert(0, str(Path(__file__).parent.parent.parent / "trading-bot"))
     from core.launcher import parse_interval_seconds
+
     protocol_timeframe = {"timeframe": "1d"}.get("timeframe", "1h")
     interval_seconds = None
     if protocol_timeframe != "1h":
@@ -229,12 +244,15 @@ def test_run_protocol_1d_protocol_derives_86400():
 # check_data.py timeframe parameterization
 # ---------------------------------------------------------------------------
 
+
 def test_check_data_1h_default_unchanged():
     import check_data
+
     assert check_data._TIMEFRAME_SECONDS["1h"] == 3600
     assert check_data._DEFAULT_TIMEFRAME == "1h"
 
 
 def test_check_data_1d_registered():
     import check_data
+
     assert check_data._TIMEFRAME_SECONDS["1d"] == 86400

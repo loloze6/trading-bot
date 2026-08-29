@@ -20,6 +20,7 @@ each chunk to its requested period before merging. One edit covers every fetcher
 These tests use FIXTURES, never a live call — the overshoot is reproduced by a
 stub whose `_fetch_remote` ignores `end`, exactly as the real one does.
 """
+
 import sys
 from pathlib import Path
 
@@ -37,10 +38,16 @@ HOUR = 3600
 def _bars(start, periods: int, freq: str = "1h") -> pd.DataFrame:
     """OHLCV-shaped frame; only `timestamp` matters to the guard."""
     ts = pd.date_range(start=start, periods=periods, freq=freq)
-    return pd.DataFrame({
-        "timestamp": ts,
-        "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "volume": 1.0,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": ts,
+            "open": 1.0,
+            "high": 1.0,
+            "low": 1.0,
+            "close": 1.0,
+            "volume": 1.0,
+        }
+    )
 
 
 class _OvershootingFetcher(BaseFetcher):
@@ -52,8 +59,11 @@ class _OvershootingFetcher(BaseFetcher):
 
     def __init__(self, tmp_dir, start, end, page: int = 1000, interval_seconds=HOUR):
         super().__init__(
-            start_date=start, end_date=end, symbols=["BTCUSDT"],
-            interval_seconds=interval_seconds, localStorage=True,
+            start_date=start,
+            end_date=end,
+            symbols=["BTCUSDT"],
+            interval_seconds=interval_seconds,
+            localStorage=True,
             data_dir=str(tmp_dir),
         )
         self.page = page
@@ -77,6 +87,7 @@ def _written(tmp_path) -> pd.DataFrame:
 # The real failure shape
 # ---------------------------------------------------------------------------
 
+
 def test_overshooting_chunk_is_not_written_past_the_requested_end(tmp_path):
     """
     The measured defect, to scale. A 1000-bar page opened at 2025-12-01 runs to
@@ -88,8 +99,7 @@ def test_overshooting_chunk_is_not_written_past_the_requested_end(tmp_path):
 
     written = _written(tmp_path)
     assert written["timestamp"].max() == pd.Timestamp("2025-12-31 23:00")
-    assert not (written["timestamp"] >= pd.Timestamp("2026-01-01")).any(), \
-        "holdout rows reached disk"
+    assert not (written["timestamp"] >= pd.Timestamp("2026-01-01")).any(), "holdout rows reached disk"
 
 
 def test_in_memory_frame_matches_what_was_written(tmp_path):
@@ -107,6 +117,7 @@ def test_in_memory_frame_matches_what_was_written(tmp_path):
 # ---------------------------------------------------------------------------
 # The `+1 day` window filter — same bug class, a different line
 # ---------------------------------------------------------------------------
+
 
 def test_end_date_carrying_a_time_does_not_admit_the_following_day(tmp_path):
     """
@@ -130,7 +141,7 @@ def test_a_complete_cache_is_still_bounded_by_the_window(tmp_path):
     `< end_date + 1 day` leaves every test in this file green while the returned
     frame runs a full day past the bound the caller stated.
     """
-    seed = _bars("2025-06-01", 40 * 24)                  # -> 2025-07-10 23:00
+    seed = _bars("2025-06-01", 40 * 24)  # -> 2025-07-10 23:00
     seed.to_csv(tmp_path / "BTCUSDT_1h.csv", index=False)
 
     f = _OvershootingFetcher(tmp_path, "2025-06-01", "2025-06-30 23:00")
@@ -155,10 +166,8 @@ def test_a_computed_period_end_on_midnight_is_not_widened_by_a_day(tmp_path):
     seed = _bars("2025-03-05 00:00:00.001", 3, freq="8h")
     seed.to_csv(tmp_path / "BTCUSDT_1h.csv", index=False)
 
-    f = _OvershootingFetcher(tmp_path, "2025-03-01", "2025-03-05",
-                             page=40, interval_seconds=eight_h)
-    f._fetch_remote = lambda symbol, start, end: (
-        f.requested_periods.append((start, end)) or _bars(start, 40, freq="8h"))
+    f = _OvershootingFetcher(tmp_path, "2025-03-01", "2025-03-05", page=40, interval_seconds=eight_h)
+    f._fetch_remote = lambda symbol, start, end: f.requested_periods.append((start, end)) or _bars(start, 40, freq="8h")
     f.get_data()
 
     written = set(_written(tmp_path)["timestamp"])
@@ -169,8 +178,9 @@ def test_a_computed_period_end_on_midnight_is_not_widened_by_a_day(tmp_path):
     _, pe = f.requested_periods[0]
     assert pd.Timestamp(pe) == pd.Timestamp("2025-03-05 00:00:00")
 
-    assert pd.Timestamp("2025-03-05 08:00:00") not in written, \
+    assert pd.Timestamp("2025-03-05 08:00:00") not in written, (
         "chunk kept rows past its computed period end — bound widened to end-of-day"
+    )
 
 
 def test_date_only_end_stays_inclusive_of_that_whole_day(tmp_path):
@@ -199,7 +209,7 @@ def test_a_cache_covering_the_window_is_left_alone(tmp_path):
     last bar is the final bar of the window must produce zero fetches and a
     byte-untouched file.
     """
-    seed = _bars("2025-12-01", 31 * 24)                    # -> 2025-12-31 23:00
+    seed = _bars("2025-12-01", 31 * 24)  # -> 2025-12-31 23:00
     seed.to_csv(tmp_path / "BTCUSDT_1h.csv", index=False)
     before = (tmp_path / "BTCUSDT_1h.csv").read_bytes()
 
@@ -207,8 +217,7 @@ def test_a_cache_covering_the_window_is_left_alone(tmp_path):
     got = f.get_data("BTCUSDT")
 
     assert f.requested_periods == [], "complete cache scheduled a phantom top-up fetch"
-    assert (tmp_path / "BTCUSDT_1h.csv").read_bytes() == before, \
-        "cache rewritten with no new data"
+    assert (tmp_path / "BTCUSDT_1h.csv").read_bytes() == before, "cache rewritten with no new data"
     assert got["timestamp"].max() == pd.Timestamp("2025-12-31 23:00")
 
 
@@ -221,15 +230,15 @@ def test_a_genuinely_missing_final_bar_is_still_fetched(tmp_path):
     consumer. A cache one bar short must schedule exactly one trailing period
     and land the missing bar on disk.
     """
-    seed = _bars("2025-12-01", 31 * 24 - 1)                # -> 2025-12-31 22:00
+    seed = _bars("2025-12-01", 31 * 24 - 1)  # -> 2025-12-31 22:00
     seed.to_csv(tmp_path / "BTCUSDT_1h.csv", index=False)
 
     f = _OvershootingFetcher(tmp_path, "2025-12-01", "2025-12-31")
     # Snap to the venue grid, as real endpoints do (openTime >= since); the
     # default stub echoes the off-grid `latest + 1ms` period start.
     f._fetch_remote = lambda symbol, start, end: (
-        f.requested_periods.append((start, end))
-        or _bars(pd.Timestamp(start).ceil("h"), f.page))
+        f.requested_periods.append((start, end)) or _bars(pd.Timestamp(start).ceil("h"), f.page)
+    )
     got = f.get_data("BTCUSDT")
 
     assert len(f.requested_periods) == 1, "missing final bar was not scheduled"
@@ -246,11 +255,12 @@ def test_fear_greed_fetch_respects_a_literal_end(monkeypatch):
     """
     from data.fetchers import fear_greed_fetcher as fg_mod
 
-    payload = {"data": [
-        {"timestamp": str(int(pd.Timestamp(d).timestamp())),
-         "value": "50", "value_classification": "Neutral"}
-        for d in pd.date_range("2025-12-28", "2026-01-03")
-    ]}
+    payload = {
+        "data": [
+            {"timestamp": str(int(pd.Timestamp(d).timestamp())), "value": "50", "value_classification": "Neutral"}
+            for d in pd.date_range("2025-12-28", "2026-01-03")
+        ]
+    }
 
     class _Resp:
         def raise_for_status(self):
@@ -262,17 +272,18 @@ def test_fear_greed_fetch_respects_a_literal_end(monkeypatch):
     monkeypatch.setattr(fg_mod.requests, "get", lambda *a, **k: _Resp())
 
     f = fg_mod.FearGreedFetcher("2025-12-28", "2025-12-31")
-    got = f._fetch_remote("fear_greed", pd.Timestamp("2025-12-28"),
-                          pd.Timestamp("2025-12-31 23:59:59.999"))
+    got = f._fetch_remote("fear_greed", pd.Timestamp("2025-12-28"), pd.Timestamp("2025-12-31 23:59:59.999"))
 
     assert got["timestamp"].max() == pd.Timestamp("2025-12-31")
-    assert not (got["timestamp"] >= pd.Timestamp("2026-01-01")).any(), \
+    assert not (got["timestamp"] >= pd.Timestamp("2026-01-01")).any(), (
         "rows past the literal period end left _fetch_remote"
+    )
 
 
 # ---------------------------------------------------------------------------
 # The case the fix must NOT break
 # ---------------------------------------------------------------------------
+
 
 def test_a_narrow_request_does_not_truncate_a_wider_existing_cache(tmp_path):
     """
@@ -285,15 +296,16 @@ def test_a_narrow_request_does_not_truncate_a_wider_existing_cache(tmp_path):
     Here the cache runs to 2025-06-30 23:00, the request ends 2025-06-20, and a
     backfill of earlier bars triggers a write. Every existing row must survive it.
     """
-    seed = _bars("2025-06-10", 21 * 24)                    # -> 2025-06-30 23:00
+    seed = _bars("2025-06-10", 21 * 24)  # -> 2025-06-30 23:00
     seed.to_csv(tmp_path / "BTCUSDT_1h.csv", index=False)
 
     f = _OvershootingFetcher(tmp_path, "2025-06-01", "2025-06-20")
     got = f.get_data("BTCUSDT")
 
     written = _written(tmp_path)
-    assert written["timestamp"].max() == pd.Timestamp("2025-06-30 23:00"), \
+    assert written["timestamp"].max() == pd.Timestamp("2025-06-30 23:00"), (
         "existing rows beyond the requested end were destroyed"
+    )
     assert written["timestamp"].min() == pd.Timestamp("2025-06-01 00:00")
 
     # The returned frame is still trimmed to the requested window — that part of

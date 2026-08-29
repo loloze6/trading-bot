@@ -12,6 +12,7 @@ for pure run_phase1_research.py calls. Tests exercising materialization
 import the campaign_root fixture from test_k4_routing_registration.py, same
 precedent test_k2_verdict_machinery.py already established.
 """
+
 import asyncio
 import json
 import sys
@@ -30,7 +31,10 @@ import run_campaign as camp  # noqa: E402
 import stamp_protocol  # noqa: E402
 
 from test_k4_routing_registration import (  # noqa: E402
-    campaign_root, _write_fresh_scaffold, _save_queue_entries, _write_campaign_state,
+    campaign_root,
+    _write_fresh_scaffold,
+    _save_queue_entries,
+    _write_campaign_state,
 )
 
 
@@ -49,8 +53,11 @@ def _minimal_run(root: Path, run_id: str) -> Path:
     run_dir = root / "runs" / run_id
     (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
     state = {
-        "run_id": run_id, "status": "active", "pending_stage": "signal_prescreen",
-        "flags": {}, "audit_log": {},
+        "run_id": run_id,
+        "status": "active",
+        "pending_stage": "signal_prescreen",
+        "flags": {},
+        "audit_log": {},
     }
     with open(run_dir / "pipeline_state.yaml", "w", encoding="utf-8") as f:
         yaml.safe_dump(state, f, sort_keys=False)
@@ -60,6 +67,7 @@ def _minimal_run(root: Path, run_id: str) -> Path:
 # ---------------------------------------------------------------------------
 # _ensure_protocol_ref_pinned -- direct-call fixtures (§3, §9 A1)
 # ---------------------------------------------------------------------------
+
 
 def test_ensure_protocol_ref_pinned_pins_existing_protocol():
     root = rpr.ROOT
@@ -136,6 +144,7 @@ def test_ensure_protocol_ref_pinned_content_hash_match_passes():
 # _resolve_protocol_path -- consolidated resolver (§9 Q4), no path doubling (A1)
 # ---------------------------------------------------------------------------
 
+
 def test_resolve_protocol_path_replication_diagnostic():
     root = rpr.ROOT
     run_dir = _minimal_run(root, "run_510")
@@ -149,8 +158,10 @@ def test_resolve_protocol_path_forced_diagnostic_generated():
     root = rpr.ROOT
     run_dir = _minimal_run(root, "run_511")
     _write_protocol(root, "run_511_generated.json")
-    rpr.save_yaml(run_dir / "artifacts" / "run_context.yaml",
-                   {"run_type": "forced_diagnostic", "protocol": "run_511_generated.json"})
+    rpr.save_yaml(
+        run_dir / "artifacts" / "run_context.yaml",
+        {"run_type": "forced_diagnostic", "protocol": "run_511_generated.json"},
+    )
     result = rpr._resolve_protocol_path(run_dir, "run_511")
     assert result == root / "protocols" / "run_511_generated.json"
 
@@ -182,16 +193,20 @@ def test_resolve_protocol_path_pinned_run_malformed_missing_protocol_key_raises(
 # B10 -- claim-checked last_escalation hard-fail (§4)
 # ---------------------------------------------------------------------------
 
+
 def test_resolve_protocol_path_stale_escalation_unclaimed_hard_fails():
     root = rpr.ROOT
     run_dir = _minimal_run(root, "run_520")
-    rpr._save_campaign_state({
-        "last_escalation": {
-            "target": "timeframe", "detail": "15m",
-            "protocol_path": str(root / "protocols" / "escalation_tf_15m.json"),
-            "claimed_by_run": "run_049",
+    rpr._save_campaign_state(
+        {
+            "last_escalation": {
+                "target": "timeframe",
+                "detail": "15m",
+                "protocol_path": str(root / "protocols" / "escalation_tf_15m.json"),
+                "claimed_by_run": "run_049",
+            }
         }
-    })
+    )
     with pytest.raises(RuntimeError, match="B10"):
         rpr._resolve_protocol_path(run_dir, "run_520")
 
@@ -210,12 +225,17 @@ def test_resolve_protocol_path_claimed_run_uses_fallback_legitimately():
     root = rpr.ROOT
     escalation_proto = _write_protocol(root, "escalation_tf_15m.json")
     run_dir = _minimal_run(root, "run_049")
-    rpr._save_campaign_state({
-        "last_escalation": {
-            "target": "timeframe", "detail": "15m", "protocol_path": str(escalation_proto),
-            "claimed_by_run": "run_049", "claimed_at": "2026-07-06",
+    rpr._save_campaign_state(
+        {
+            "last_escalation": {
+                "target": "timeframe",
+                "detail": "15m",
+                "protocol_path": str(escalation_proto),
+                "claimed_by_run": "run_049",
+                "claimed_at": "2026-07-06",
+            }
         }
-    })
+    )
     result = rpr._resolve_protocol_path(run_dir, "run_049")
     assert result == escalation_proto
 
@@ -225,12 +245,17 @@ def test_resolve_protocol_path_second_different_run_still_fails():
     transitively inherited by any later run."""
     root = rpr.ROOT
     escalation_proto = _write_protocol(root, "escalation_tf_15m.json")
-    rpr._save_campaign_state({
-        "last_escalation": {
-            "target": "timeframe", "detail": "15m", "protocol_path": str(escalation_proto),
-            "claimed_by_run": "run_049", "claimed_at": "2026-07-06",
+    rpr._save_campaign_state(
+        {
+            "last_escalation": {
+                "target": "timeframe",
+                "detail": "15m",
+                "protocol_path": str(escalation_proto),
+                "claimed_by_run": "run_049",
+                "claimed_at": "2026-07-06",
+            }
         }
-    })
+    )
     run_dir_other = _minimal_run(root, "run_050")
     with pytest.raises(RuntimeError, match="B10"):
         rpr._resolve_protocol_path(run_dir_other, "run_050")
@@ -239,6 +264,7 @@ def test_resolve_protocol_path_second_different_run_still_fails():
 # ---------------------------------------------------------------------------
 # B10 negative-proof: the hard-fail fires BEFORE any subprocess spend (§9 A2)
 # ---------------------------------------------------------------------------
+
 
 def test_run_tool_worker_signal_prescreen_hard_fail_never_invokes_subprocess(monkeypatch):
     root = rpr.ROOT
@@ -250,6 +276,7 @@ def test_run_tool_worker_signal_prescreen_hard_fail_never_invokes_subprocess(mon
     def _spy_subprocess_run(cmd, *args, **kwargs):
         calls.append(cmd)
         raise AssertionError("subprocess.run must never be invoked when protocol resolution hard-fails")
+
     monkeypatch.setattr(rpr.subprocess, "run", _spy_subprocess_run)
 
     with pytest.raises(RuntimeError, match="B10"):
@@ -266,6 +293,7 @@ def test_run_tool_worker_signal_prescreen_hard_fail_never_invokes_subprocess(mon
 # (not executed, not merely "never called") -- the fixture shape that would
 # have caught A1's path-doubling bug before Phase A approval.
 # ---------------------------------------------------------------------------
+
 
 def test_run_tool_worker_signal_prescreen_uses_pinned_protocol_exactly(monkeypatch):
     root = rpr.ROOT
@@ -286,10 +314,16 @@ def test_run_tool_worker_signal_prescreen_uses_pinned_protocol_exactly(monkeypat
         captured["cmd"] = cmd
         out_dir = Path(cmd[cmd.index("--out-dir") + 1])
         out_dir.mkdir(parents=True, exist_ok=True)
-        rpr.save_yaml(out_dir / "prescreen_result.yaml", {
-            "route": "kill", "ic_spearman_pooled": 0.0, "cost_check": {"pass": False},
-        })
+        rpr.save_yaml(
+            out_dir / "prescreen_result.yaml",
+            {
+                "route": "kill",
+                "ic_spearman_pooled": 0.0,
+                "cost_check": {"pass": False},
+            },
+        )
         return _FakeCompletedProcess()
+
     monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
 
     asyncio.run(rpr.run_tool_worker("signal_prescreen", "run_540"))
@@ -304,6 +338,7 @@ def test_run_tool_worker_signal_prescreen_uses_pinned_protocol_exactly(monkeypat
 # shared resolver, no independent copy-pasted logic left in either branch.
 # ---------------------------------------------------------------------------
 
+
 def test_both_run_tool_worker_branches_call_the_shared_resolver(monkeypatch):
     root = rpr.ROOT
     proto_path = _write_protocol(root, "shared_resolver_check.json")
@@ -313,6 +348,7 @@ def test_both_run_tool_worker_branches_call_the_shared_resolver(monkeypatch):
     def _spy_resolve(run_dir, run_id):
         calls.append((run_dir, run_id))
         return proto_path
+
     monkeypatch.setattr(rpr, "_resolve_protocol_path", _spy_resolve)
 
     class _FakeCompletedProcess:
@@ -326,9 +362,12 @@ def test_both_run_tool_worker_branches_call_the_shared_resolver(monkeypatch):
     def _fake_subprocess_run_prescreen(cmd, *a, **kw):
         out_dir = Path(cmd[cmd.index("--out-dir") + 1])
         out_dir.mkdir(parents=True, exist_ok=True)
-        rpr.save_yaml(out_dir / "prescreen_result.yaml",
-                      {"route": "kill", "ic_spearman_pooled": 0.0, "cost_check": {"pass": False}})
+        rpr.save_yaml(
+            out_dir / "prescreen_result.yaml",
+            {"route": "kill", "ic_spearman_pooled": 0.0, "cost_check": {"pass": False}},
+        )
         return _FakeCompletedProcess()
+
     monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run_prescreen)
     asyncio.run(rpr.run_tool_worker("signal_prescreen", "run_550"))
 
@@ -341,6 +380,7 @@ def test_both_run_tool_worker_branches_call_the_shared_resolver(monkeypatch):
         out_dir.mkdir(parents=True, exist_ok=True)
         (out_dir / "protocol_summary.json").write_text("{}", encoding="utf-8")
         return _FakeCompletedProcess()
+
     monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run_protocol)
     asyncio.run(rpr.run_tool_worker("protocol_execution", "run_551"))
 
@@ -353,11 +393,14 @@ def test_both_run_tool_worker_branches_call_the_shared_resolver(monkeypatch):
 # Materialization-time lint: _lint_machine_constraints_protocol_selection (§3, §9 Q1)
 # ---------------------------------------------------------------------------
 
+
 def test_lint_rejects_both_protocol_and_protocol_ref():
-    violations = rpr._lint_machine_constraints_protocol_selection({
-        "protocol": {"symbols": ["BTCUSDT"], "start": "2024-01-01", "end": "2024-06-01"},
-        "protocol_ref": "protocols/foo.json",
-    })
+    violations = rpr._lint_machine_constraints_protocol_selection(
+        {
+            "protocol": {"symbols": ["BTCUSDT"], "start": "2024-01-01", "end": "2024-06-01"},
+            "protocol_ref": "protocols/foo.json",
+        }
+    )
     assert violations
     assert any("protocol" in v and "protocol_ref" in v for v in violations)
 
@@ -416,6 +459,7 @@ def test_lint_skips_legacy_string_pass_rule_for_window_set_ref_check():
 # _materialize_refinement_run, not just as a standalone function
 # ---------------------------------------------------------------------------
 
+
 def test_materialize_run_rejects_incoherent_protocol_selection(campaign_root):
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_900")
@@ -440,6 +484,7 @@ def test_materialize_run_rejects_incoherent_protocol_selection(campaign_root):
 # block yet").
 # ---------------------------------------------------------------------------
 
+
 def _fresh_launch_brief_with_pass_rule(protocol_ref: str = "protocols/foo.json") -> dict:
     return {
         "strategy_domain": "test",
@@ -449,9 +494,14 @@ def _fresh_launch_brief_with_pass_rule(protocol_ref: str = "protocols/foo.json")
                 "statement": "PASS iff x.",
                 "window_set_ref": protocol_ref,
                 "criteria": [
-                    {"id": "a", "metric": "median_sharpe", "metric_basis": "bar_level",
-                     "comparator": ">=", "per_symbol_threshold": {"BTCUSDT": 0.1},
-                     "null_handling": "fails_threshold"},
+                    {
+                        "id": "a",
+                        "metric": "median_sharpe",
+                        "metric_basis": "bar_level",
+                        "comparator": ">=",
+                        "per_symbol_threshold": {"BTCUSDT": 0.1},
+                        "null_handling": "fails_threshold",
+                    },
                 ],
                 "outcomes": [
                     {"branch": "PASS", "hypothesis_verdict": "promote", "lineage_routing": None},
@@ -506,8 +556,12 @@ def test_materialize_refinement_run_rejects_nested_protocol_ref(campaign_root):
     _write_fresh_scaffold(runs_dir, "run_910")
     brief = {
         "brief_id": "BAD_PIN",
-        "lineage": {"parent_queue_entry": "X", "parent_run": "run_910",
-                    "relation": "refine", "parent_verdict": "refine"},
+        "lineage": {
+            "parent_queue_entry": "X",
+            "parent_run": "run_910",
+            "relation": "refine",
+            "parent_verdict": "refine",
+        },
         "hypothesis": {"primary": "test"},
         "gate_definition": {"indicator": "test"},
         "evaluation": {},
@@ -525,6 +579,7 @@ def test_materialize_refinement_run_rejects_nested_protocol_ref(campaign_root):
 # B10 Part 1 -- _route_escalate's record_escalation writes claimed_by_run (§4)
 # ---------------------------------------------------------------------------
 
+
 def test_route_escalate_instrument_writes_claimed_by_run(campaign_root):
     runs_dir = campaign_root["runs_dir"]
     root = campaign_root["root"]
@@ -536,11 +591,17 @@ def test_route_escalate_instrument_writes_claimed_by_run(campaign_root):
         '{"symbols": ["BTCUSDT"], "timeframe": "1h", "windows": []}', encoding="utf-8"
     )
     (root / "config").mkdir(exist_ok=True)
-    (root / "config" / "coin_universe.yaml").write_text(yaml.safe_dump({
-        "escalation_order": {"sequence": [{"category": "majors", "priority": 1}]},
-        "categories": {"majors": {"coins": [{"symbol": "ETHUSDT", "data_cached": True}],
-                                   "strategy_affinity": []}},
-    }), encoding="utf-8")
+    (root / "config" / "coin_universe.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "escalation_order": {"sequence": [{"category": "majors", "priority": 1}]},
+                "categories": {
+                    "majors": {"coins": [{"symbol": "ETHUSDT", "data_cached": True}], "strategy_affinity": []}
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_600"])
 
     next_stage = rpr._route_escalate(run_dir, "run_600", {}, {})
@@ -555,6 +616,7 @@ def test_route_escalate_instrument_writes_claimed_by_run(campaign_root):
 # ---------------------------------------------------------------------------
 # Q2 -- run_campaign.py's classifier recognizes the stale_escalation_unclaimed flag
 # ---------------------------------------------------------------------------
+
 
 def test_hard_pause_reason_classifies_stale_escalation_unclaimed_flag(tmp_path):
     run_dir = tmp_path / "runs" / "run_570"
@@ -577,6 +639,7 @@ def test_hard_pause_reason_generic_unhandled_exception_without_flag(tmp_path):
 # A4 -- runtime mutual-exclusion guard at run_loop()'s own top
 # ---------------------------------------------------------------------------
 
+
 def test_run_loop_top_hard_fails_on_both_protocol_keys_before_anything_else(monkeypatch):
     """Protects a hand-authored/hand-edited pre_registration.yaml fed directly
     to this script, bypassing run_campaign.py's materialization-time lint
@@ -593,6 +656,7 @@ def test_run_loop_top_hard_fails_on_both_protocol_keys_before_anything_else(monk
 
     def _fail_if_called(*a, **kw):
         raise AssertionError("must never reach _ensure_protocol_from_constraints/_ensure_protocol_ref_pinned")
+
     monkeypatch.setattr(rpr, "_ensure_protocol_from_constraints", _fail_if_called)
     monkeypatch.setattr(rpr, "_ensure_protocol_ref_pinned", _fail_if_called)
 
@@ -606,6 +670,7 @@ def test_run_loop_top_hard_fails_on_both_protocol_keys_before_anything_else(monk
 # A4/Q1 are registration-time only and never catch an EXECUTED prescreen that
 # silently ran against a different file than the one pinned).
 # ---------------------------------------------------------------------------
+
 
 def test_check_prescreen_conformance_protocol_ref_mismatch_names_both():
     prescreen_result = {"protocol_version": str(Path("C:/somewhere/protocols/actually_used.json"))}
@@ -657,6 +722,7 @@ def test_check_prescreen_conformance_no_protocol_ref_skips_new_branch():
 # Q3 -- tools/stamp_protocol.py round-trip
 # ---------------------------------------------------------------------------
 
+
 def test_stamp_protocol_round_trip_matches_rpr_hash_formula(tmp_path):
     proto_path = tmp_path / "sample.json"
     proto_path.write_text(json.dumps({"symbols": ["BTCUSDT"], "timeframe": "1d", "windows": []}), encoding="utf-8")
@@ -688,6 +754,7 @@ def test_stamp_protocol_hash_stable_across_key_reordering():
 # _invoke_agent_with_yaml_retry now retries exactly once on this exact
 # message before re-raising unchanged.
 # ---------------------------------------------------------------------------
+
 
 def test_invoke_agent_with_yaml_retry_recovers_from_sdk_error_result_success(monkeypatch, capsys):
     root = rpr.ROOT
@@ -763,6 +830,7 @@ def test_invoke_agent_with_yaml_retry_does_not_catch_other_messages(monkeypatch)
 # reading pre_registration.yaml, most recently run_058).
 # ---------------------------------------------------------------------------
 
+
 def test_apply_b7_mandatory_inputs_adds_pre_registration_when_handoff_omits_it():
     root = rpr.ROOT
     run_dir = _minimal_run(root, "run_610")
@@ -772,8 +840,9 @@ def test_apply_b7_mandatory_inputs_adds_pre_registration_when_handoff_omits_it()
     rpr._apply_b7_mandatory_inputs("validation", handoff, run_dir)
 
     paths = {req["path"] for req in handoff["required_inputs"]}
-    assert "artifacts/pre_registration.yaml" in paths, \
+    assert "artifacts/pre_registration.yaml" in paths, (
         "validation must see pre_registration.yaml even when the handoff omits it"
+    )
     assert "artifacts/expanded_hypothesis_card.yaml" in paths, "must not drop the original entry"
 
 
@@ -786,8 +855,9 @@ def test_apply_b7_mandatory_inputs_skips_missing_file_without_crashing():
     rpr._apply_b7_mandatory_inputs("validation", handoff, run_dir)  # must not raise
 
     paths = {req["path"] for req in handoff["required_inputs"]}
-    assert "artifacts/pre_registration.yaml" not in paths, \
+    assert "artifacts/pre_registration.yaml" not in paths, (
         "a missing file must degrade gracefully, never be force-required"
+    )
     assert "artifacts/user_brief_verbatim.yaml" not in paths
 
 
@@ -811,14 +881,18 @@ def test_apply_b7_mandatory_inputs_noop_for_non_mandatory_stage():
     handoff = {"required_inputs": []}
     rpr._apply_b7_mandatory_inputs("innovation_expansion", handoff, run_dir)
 
-    assert handoff["required_inputs"] == [], \
-        "stages upstream of validation must be untouched by the B7 union"
+    assert handoff["required_inputs"] == [], "stages upstream of validation must be untouched by the B7 union"
 
 
 def test_apply_b7_mandatory_inputs_covers_every_downstream_llm_stage():
     root = rpr.ROOT
-    for stage in ("validation", "refinement_planner", "backtest_specification",
-                  "verdict_interpreter", "campaign_review"):
+    for stage in (
+        "validation",
+        "refinement_planner",
+        "backtest_specification",
+        "verdict_interpreter",
+        "campaign_review",
+    ):
         run_dir = _minimal_run(root, f"run_614_{stage}")
         (run_dir / "artifacts" / "pre_registration.yaml").write_text("pass_rule: {}\n", encoding="utf-8")
         (run_dir / "artifacts" / "user_brief_verbatim.yaml").write_text("strategy_domain: x\n", encoding="utf-8")
@@ -827,8 +901,9 @@ def test_apply_b7_mandatory_inputs_covers_every_downstream_llm_stage():
         rpr._apply_b7_mandatory_inputs(stage, handoff, run_dir)
 
         paths = {req["path"] for req in handoff["required_inputs"]}
-        assert paths == {"artifacts/pre_registration.yaml", "artifacts/user_brief_verbatim.yaml"}, \
+        assert paths == {"artifacts/pre_registration.yaml", "artifacts/user_brief_verbatim.yaml"}, (
             f"stage {stage} must receive both mandatory inputs"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -883,11 +958,21 @@ def test_register_hypothesis_refuses_duplicate_id(campaign_root):
     brief_path = briefs_dir / "FUNDING_MR_DAILY_RETEST.md"
     brief_path.write_text(_VALID_BRIEF_FRONTMATTER, encoding="utf-8")
 
-    _save_queue_entries(campaign_root["queue_path"], [{
-        "id": "FUNDING_MR_DAILY_RETEST", "brief_path": "briefs/FUNDING_MR_DAILY_RETEST.md",
-        "status": "done", "priority": 1, "source": "x", "relation": "x", "notes": "",
-        "run_ids": ["run_001"],
-    }])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "FUNDING_MR_DAILY_RETEST",
+                "brief_path": "briefs/FUNDING_MR_DAILY_RETEST.md",
+                "status": "done",
+                "priority": 1,
+                "source": "x",
+                "relation": "x",
+                "notes": "",
+                "run_ids": ["run_001"],
+            }
+        ],
+    )
 
     rc = camp.register_hypothesis(brief_path, priority=1, notes="attempted duplicate")
 

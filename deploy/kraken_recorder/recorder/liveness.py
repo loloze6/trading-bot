@@ -48,7 +48,9 @@ from typing import Dict, List, Optional, Tuple
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from recorder.journal import (  # type: ignore
-        JOURNAL_FILENAME, load_records, parse_iso,
+        JOURNAL_FILENAME,
+        load_records,
+        parse_iso,
     )
     from recorder.record_kraken_ws import DEFAULT_OUT, SYMBOLS  # type: ignore
 else:
@@ -115,7 +117,7 @@ def newest_recv_ts(out_dir: Path) -> Optional[datetime]:
             if i < 0:
                 continue
             j = line.find('"', i + len(key))
-            ts = parse_iso(line[i + len(key): j])
+            ts = parse_iso(line[i + len(key) : j])
         except (OSError, IndexError, ValueError):
             continue
         if newest is None or ts > newest:
@@ -158,12 +160,10 @@ def check(
     elif b1 == 0:
         fail("shards exist but total size is 0 bytes — this is DOWN, not a quiet market")
     elif written <= 0:
-        fail(f"no bytes written over {window_s:.0f}s "
-             "— heartbeat guarantees traffic, so flat means dead")
+        fail(f"no bytes written over {window_s:.0f}s — heartbeat guarantees traffic, so flat means dead")
     else:
         rate = written / max(1e-9, (t1 - t0).total_seconds())
-        good(f"growth {written} bytes over {(t1 - t0).total_seconds():.1f}s "
-             f"({rate / 1024:.1f} KiB/s)")
+        good(f"growth {written} bytes over {(t1 - t0).total_seconds():.1f}s ({rate / 1024:.1f} KiB/s)")
 
     # ---- 2. FRESH ----
     newest = newest_recv_ts(out_dir)
@@ -172,8 +172,7 @@ def check(
     else:
         age = (datetime.now(timezone.utc) - newest).total_seconds()
         (good if age <= max_staleness_s else fail)(
-            f"newest recv_ts {newest.isoformat()} ({age:.1f}s old, "
-            f"limit {max_staleness_s:.0f}s)"
+            f"newest recv_ts {newest.isoformat()} ({age:.1f}s old, limit {max_staleness_s:.0f}s)"
         )
 
     # ---- 3. COVERAGE (journal) ----
@@ -195,18 +194,15 @@ def check(
         elif rec.get("type") in _CLOSING:
             open_syms.clear()
     if not open_syms:
-        fail("journal shows NO open coverage interval — last event was a "
-             "disconnect or stop; nothing is being captured")
+        fail("journal shows NO open coverage interval — last event was a disconnect or stop; nothing is being captured")
     else:
         (good if len(open_syms) >= expect_symbols else fail)(
-            f"open coverage intervals for {len(open_syms)} symbols "
-            f"(expected {expect_symbols})"
+            f"open coverage intervals for {len(open_syms)} symbols (expected {expect_symbols})"
         )
 
     rollups = [r for r in records if r.get("type") == "HEARTBEAT_ROLLUP"]
     if not rollups:
-        fail("no HEARTBEAT_ROLLUP yet — recorder younger than one rollup "
-             "interval (60s), or the rollup task is dead")
+        fail("no HEARTBEAT_ROLLUP yet — recorder younger than one rollup interval (60s), or the rollup task is dead")
     else:
         r = rollups[-1]
         rage = (datetime.now(timezone.utc) - parse_iso(r["ts"])).total_seconds()
@@ -219,15 +215,18 @@ def check(
             # not frames the venue sent, so it keeps ticking over a dead feed.
             # `book_frames_folded` is the venue-side counter and is the one that
             # can distinguish the two.
-            fail("snapshot mode: 0 venue book frames folded in the last rollup "
-                 "— the emitter is still writing, but the feed is dead")
+            fail(
+                "snapshot mode: 0 venue book frames folded in the last rollup "
+                "— the emitter is still writing, but the feed is dead"
+            )
         elif r.get("symbols_seen", 0) < expect_symbols:
-            fail(f"last rollup saw {r.get('symbols_seen')} symbols, "
-                 f"expected {expect_symbols} — a pair has dropped out")
+            fail(f"last rollup saw {r.get('symbols_seen')} symbols, expected {expect_symbols} — a pair has dropped out")
         else:
-            good(f"rollup @ {r['ts']}: {r.get('frames_total')} frames, "
-                 f"{r.get('heartbeats')} heartbeats, "
-                 f"{r.get('symbols_seen')}/{expect_symbols} symbols")
+            good(
+                f"rollup @ {r['ts']}: {r.get('frames_total')} frames, "
+                f"{r.get('heartbeats')} heartbeats, "
+                f"{r.get('symbols_seen')}/{expect_symbols} symbols"
+            )
 
     return ok, lines
 
@@ -235,15 +234,12 @@ def check(
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description="Kraken recorder liveness check")
     ap.add_argument("--out", default=str(DEFAULT_OUT))
-    ap.add_argument("--window", type=float, default=70.0,
-                    help="seconds between the two size readings (default 70)")
+    ap.add_argument("--window", type=float, default=70.0, help="seconds between the two size readings (default 70)")
     ap.add_argument("--expect-symbols", type=int, default=len(SYMBOLS))
     ap.add_argument("--max-staleness", type=float, default=30.0)
     args = ap.parse_args(argv)
 
-    ok, lines = check(
-        Path(args.out), args.window, args.expect_symbols, args.max_staleness
-    )
+    ok, lines = check(Path(args.out), args.window, args.expect_symbols, args.max_staleness)
     for line in lines:
         print(line)
     print("HEALTHY" if ok else "UNHEALTHY")

@@ -256,9 +256,7 @@ def size_threshold(
     return float(np.quantile(np.asarray(baseline_notionals, dtype=float), quantile))
 
 
-def large_trade_imbalance(
-    trades: Iterable[Trade], threshold: float
-) -> LargeTradeImbalance:
+def large_trade_imbalance(trades: Iterable[Trade], threshold: float) -> LargeTradeImbalance:
     """
     Feature (a). Signed share of the bar's LARGE-trade notional.
 
@@ -429,9 +427,7 @@ def whale_bar_features(
             "whale_lt_imbalance": lti.value,
             "whale_lt_count": float(lti.count),
             "whale_cvd_delta": cumulative_volume_delta(in_bar),
-            "whale_size_shift": trade_size_shift(
-                in_bar, baseline_notionals, min_bar_trades, min_baseline_trades
-            ),
+            "whale_size_shift": trade_size_shift(in_bar, baseline_notionals, min_bar_trades, min_baseline_trades),
             "whale_trade_count": float(len(in_bar)),
             "whale_attested": 1.0 if attested else 0.0,
         }

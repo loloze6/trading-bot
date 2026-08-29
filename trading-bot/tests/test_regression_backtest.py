@@ -10,6 +10,7 @@ Catches: engine wiring regressions, PnL computation changes, config loading bugs
 This test uses the DEFAULT strategy_config.json (not a candidate config) so it
 always produces a deterministic, fixture-comparable result.
 """
+
 import copy
 import hashlib
 import json
@@ -28,9 +29,7 @@ FIXTURE_PATH = PROJECT_ROOT / "tests" / "fixtures" / "reference_run.json"
 
 _NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
 _ref = json.loads(FIXTURE_PATH.read_text())
-_CACHE_SKIP = cache_skip_reason(
-    PROJECT_ROOT / "local_data", _NEEDED_CACHES, _ref["start_date"], _ref["end_date"]
-)
+_CACHE_SKIP = cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_CACHES, _ref["start_date"], _ref["end_date"])
 pytestmark = [
     pytest.mark.slow,  # run with: pytest -m slow
     pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),
@@ -112,9 +111,7 @@ def nondefault_backtest_result(reference):
     )
     filters[0]["params"]["min_abs"] = 5.0
 
-    expected_sha = hashlib.sha256(
-        json.dumps(mutated, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+    expected_sha = hashlib.sha256(json.dumps(mutated, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
     with tempfile.TemporaryDirectory() as tmp:
         # The config file must outlive the run: BacktestEngine._end_of_backtest
@@ -248,9 +245,11 @@ def test_config_actually_loaded(backtest_result, reference):
     candidate config, tracked separately, to catch that class of bug.
     """
     import hashlib
+
     config_path = PROJECT_ROOT / reference["config"]
     with open(config_path) as f:
         import json as _json
+
         config_content = _json.dumps(_json.load(f), sort_keys=True, separators=(",", ":"))
     # sort_keys/separators here must stay in lockstep with write_manifest's own
     # canonicalization (reporting/run_artifact.py:68) — they agree by construction

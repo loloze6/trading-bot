@@ -19,6 +19,7 @@ top-level-pass_rule convention from K4 -- run_057's OWN real
 pre_registration.yaml predates that convention and nests pass_rule under
 machine_constraints instead; noted, not treated as a contradiction).
 """
+
 import sys
 from pathlib import Path
 
@@ -35,12 +36,13 @@ import run_campaign as camp  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
 
 from test_k4_routing_registration import (  # noqa: E402
-    campaign_root, _write_fresh_scaffold, _save_queue_entries, _write_campaign_state,
+    campaign_root,
+    _write_fresh_scaffold,
+    _save_queue_entries,
+    _write_campaign_state,
 )
 
-REAL_RUN_057_PROTOCOL_RESULT = (
-    Path(__file__).parent.parent / "runs" / "run_057" / "artifacts" / "protocol_result.yaml"
-)
+REAL_RUN_057_PROTOCOL_RESULT = Path(__file__).parent.parent / "runs" / "run_057" / "artifacts" / "protocol_result.yaml"
 
 _PASS_RULE_STATEMENT = (
     "PASS (-> refine/promote routing per verdict-interpreter) iff: (a) gated "
@@ -62,14 +64,20 @@ def _run_057_structured_pre_registration() -> dict:
             "window_set_ref": "protocols/ts_trend_daily_v1.json",
             "criteria": [
                 {
-                    "id": "a", "metric": "median_sharpe", "metric_basis": "bar_level",
+                    "id": "a",
+                    "metric": "median_sharpe",
+                    "metric_basis": "bar_level",
                     "comparator": ">=",
                     "per_symbol_threshold": {"BTCUSDT": 0.5791, "ETHUSDT": 0.0318},
                     "null_handling": "fails_threshold",
                 },
                 {
-                    "id": "b", "metric": "per_trade_expectancy_bps", "metric_basis": "episode_level",
-                    "comparator": ">", "threshold": 0, "statistic": "mean",
+                    "id": "b",
+                    "metric": "per_trade_expectancy_bps",
+                    "metric_basis": "episode_level",
+                    "comparator": ">",
+                    "threshold": 0,
+                    "statistic": "mean",
                 },
             ],
             "outcomes": [
@@ -84,6 +92,7 @@ def _run_057_structured_pre_registration() -> dict:
 # ---------------------------------------------------------------------------
 # C7 -- known-answer fixture over run_057's REAL protocol_result.yaml
 # ---------------------------------------------------------------------------
+
 
 def test_c7_run_057_known_answer_fail_a_kill_terminate():
     assert REAL_RUN_057_PROTOCOL_RESULT.exists(), "run_057's real protocol_result.yaml is missing"
@@ -138,8 +147,7 @@ def test_c7ext_run_057_is_blocked_at_the_public_entry_point():
     kill/terminate the kernel itself still resolves. Pinned explicitly so the
     repointing of the two tests above cannot quietly hide the new gate."""
     protocol_result = yaml.safe_load(REAL_RUN_057_PROTOCOL_RESULT.read_text(encoding="utf-8"))
-    result = vce.evaluate_pass_rule_criteria(
-        protocol_result, _run_057_structured_pre_registration())
+    result = vce.evaluate_pass_rule_criteria(protocol_result, _run_057_structured_pre_registration())
 
     assert result["result"] == "VERDICT_BLOCKED"
     assert result.get("hypothesis_verdict") is None
@@ -154,6 +162,7 @@ def test_c7ext_run_057_is_blocked_at_the_public_entry_point():
 # public entry point's precondition gate sits in front of it and is covered by
 # tests/test_c7ext_verdict_gates.py (G5).
 # ---------------------------------------------------------------------------
+
 
 def test_r3_string_shaped_pass_rule_never_raises():
     protocol_result = {"per_symbol_summary": {}}
@@ -176,6 +185,7 @@ def test_r3_non_string_non_dict_pass_rule_never_raises():
 # ---------------------------------------------------------------------------
 # B11 -- materialization-time total-mapping lint
 # ---------------------------------------------------------------------------
+
 
 def test_b11_lint_rejects_unmapped_fail_branch_naming_it():
     """A registered branch (FAIL-b) missing its verdict+routing pair, with
@@ -228,16 +238,27 @@ def test_b11_lint_wired_into_refinement_brief_materialization(campaign_root):
     brief_path = briefs_dir / "bad_refinement.yaml"
     bad_brief = {
         "brief_id": "BAD_REFINEMENT",
-        "lineage": {"parent_queue_entry": "X", "parent_run": "run_900",
-                    "relation": "refine", "parent_verdict": "refine"},
+        "lineage": {
+            "parent_queue_entry": "X",
+            "parent_run": "run_900",
+            "relation": "refine",
+            "parent_verdict": "refine",
+        },
         "hypothesis": {"primary": "test"},
         "gate_definition": {"indicator": "test"},
         "evaluation": {
             "pass_rule": {
                 "statement": "PASS iff x.",
-                "criteria": [{"id": "a", "metric": "median_sharpe", "metric_basis": "bar_level",
-                              "comparator": ">=", "per_symbol_threshold": {"BTCUSDT": 0.1},
-                              "null_handling": "fails_threshold"}],
+                "criteria": [
+                    {
+                        "id": "a",
+                        "metric": "median_sharpe",
+                        "metric_basis": "bar_level",
+                        "comparator": ">=",
+                        "per_symbol_threshold": {"BTCUSDT": 0.1},
+                        "null_handling": "fails_threshold",
+                    }
+                ],
                 "outcomes": [{"branch": "PASS", "hypothesis_verdict": "promote", "lineage_routing": "refine"}],
                 # PASS branch has an invalid non-null routing -- must be rejected.
             },
@@ -255,17 +276,33 @@ def test_b11_lint_wired_into_refinement_brief_materialization(campaign_root):
 # A9 -- _route_kill (per-hypothesis) vs _route_campaign_terminate (campaign-wide)
 # ---------------------------------------------------------------------------
 
+
 def test_a9_route_kill_leaves_campaign_status_untouched_and_second_entry_schedulable(campaign_root):
     runs_dir = campaign_root["runs_dir"]
     root = campaign_root["root"]
     _write_fresh_scaffold(runs_dir, "run_100")
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_100"], status="active")
-    _save_queue_entries(campaign_root["queue_path"], [
-        {"id": "ENTRY_A", "brief_path": "briefs/a.yaml", "status": "in_progress",
-         "priority": 1, "run_ids": ["run_100"], "outcome": None},
-        {"id": "ENTRY_B", "brief_path": "briefs/b.yaml", "status": "ready",
-         "priority": 2, "run_ids": [], "outcome": None},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "ENTRY_A",
+                "brief_path": "briefs/a.yaml",
+                "status": "in_progress",
+                "priority": 1,
+                "run_ids": ["run_100"],
+                "outcome": None,
+            },
+            {
+                "id": "ENTRY_B",
+                "brief_path": "briefs/b.yaml",
+                "status": "ready",
+                "priority": 2,
+                "run_ids": [],
+                "outcome": None,
+            },
+        ],
+    )
 
     interp = {"primary_failure_mode": "no edge", "hypothesis_family": "test_family"}
     next_stage = rpr._route_kill(runs_dir / "run_100", "run_100", interp, {})
@@ -290,7 +327,9 @@ def test_a9_route_campaign_terminate_writes_campaign_wide_decision(campaign_root
     review = {"recommendation": "terminate", "recommendation_rationale": "search space exhausted"}
 
     next_stage = rpr._route_campaign_terminate(
-        campaign_root["runs_dir"] / "run_200", "run_200", review,
+        campaign_root["runs_dir"] / "run_200",
+        "run_200",
+        review,
         rpr.load_campaign_state(),
     )
 
@@ -304,19 +343,25 @@ def test_a9_route_campaign_terminate_writes_campaign_wide_decision(campaign_root
 # A8 -- verdict/routing split: separately auditable, correct scaffold count
 # ---------------------------------------------------------------------------
 
+
 def test_a8_kill_plus_terminate_produces_no_scaffold(campaign_root):
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_300")
     vi_path = runs_dir / "run_300" / "artifacts" / "verdict_interpretation.yaml"
-    vi_path.write_text(yaml.safe_dump({
-        "hypothesis_id": "TEST", "hypothesis_verdict": "kill", "lineage_routing": "terminate",
-        "primary_failure_mode": "no edge",
-    }), encoding="utf-8")
+    vi_path.write_text(
+        yaml.safe_dump(
+            {
+                "hypothesis_id": "TEST",
+                "hypothesis_verdict": "kill",
+                "lineage_routing": "terminate",
+                "primary_failure_mode": "no edge",
+            }
+        ),
+        encoding="utf-8",
+    )
     interp = yaml.safe_load(vi_path.read_text(encoding="utf-8"))
 
-    next_stage = rpr._dispatch_verdict_route(
-        runs_dir / "run_300", "run_300", interp, {}, "kill", "terminate"
-    )
+    next_stage = rpr._dispatch_verdict_route(runs_dir / "run_300", "run_300", interp, {}, "kill", "terminate")
 
     assert next_stage == "completed_rejected"
     on_disk_after = {p.name for p in runs_dir.iterdir() if p.is_dir()}
@@ -335,16 +380,21 @@ def test_a8_kill_plus_pivot_produces_exactly_one_scaffold(campaign_root):
     _write_fresh_scaffold(runs_dir, "run_400")
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_400"])
     vi_path = runs_dir / "run_400" / "artifacts" / "verdict_interpretation.yaml"
-    vi_path.write_text(yaml.safe_dump({
-        "hypothesis_id": "TEST", "hypothesis_verdict": "kill", "lineage_routing": "pivot",
-        "hypothesis_family": "test_family_exhausted",
-        "primary_failure_mode": "mechanism falsified, pivot to a different family",
-    }), encoding="utf-8")
+    vi_path.write_text(
+        yaml.safe_dump(
+            {
+                "hypothesis_id": "TEST",
+                "hypothesis_verdict": "kill",
+                "lineage_routing": "pivot",
+                "hypothesis_family": "test_family_exhausted",
+                "primary_failure_mode": "mechanism falsified, pivot to a different family",
+            }
+        ),
+        encoding="utf-8",
+    )
     interp = yaml.safe_load(vi_path.read_text(encoding="utf-8"))
 
-    next_stage = rpr._dispatch_verdict_route(
-        runs_dir / "run_400", "run_400", interp, {}, "kill", "pivot"
-    )
+    next_stage = rpr._dispatch_verdict_route(runs_dir / "run_400", "run_400", interp, {}, "kill", "pivot")
 
     assert next_stage == "completed_refined"
     on_disk_after = {p.name for p in runs_dir.iterdir() if p.is_dir()}
@@ -424,10 +474,16 @@ def test_c9_refine_route_pauses_before_scaffold_no_child_directory(campaign_root
     kb_path.write_text(yaml.safe_dump({"findings": [_PLURAL_KELTNER_SHAPED_FINDING]}), encoding="utf-8")
 
     proposed_path = runs_dir / "run_600" / "artifacts" / "proposed_brief.yaml"
-    proposed_path.write_text(yaml.safe_dump({
-        "strategy_domain": "test", "timeframe": "1h",
-        "research_goal": "Refine toward keltner_trend_mean_reversion parameters.",
-    }), encoding="utf-8")
+    proposed_path.write_text(
+        yaml.safe_dump(
+            {
+                "strategy_domain": "test",
+                "timeframe": "1h",
+                "research_goal": "Refine toward keltner_trend_mean_reversion parameters.",
+            }
+        ),
+        encoding="utf-8",
+    )
     interp = {"proposed_change_dimension": "threshold", "hypothesis_family": "keltner_family"}
 
     with pytest.MonkeyPatch.context() as mp:
@@ -446,6 +502,7 @@ def test_c9_refine_route_pauses_before_scaffold_no_child_directory(campaign_root
 # and the holdout-path guard test (regression for deviation 2's fix)
 # ---------------------------------------------------------------------------
 
+
 def test_pair_validation_rejects_incoherent_pair_naming_both_values():
     with pytest.raises(ValueError) as exc_info:
         rpr._dispatch_verdict_route(Path("."), "run_x", {}, {}, "refine", "terminate")
@@ -454,14 +511,17 @@ def test_pair_validation_rejects_incoherent_pair_naming_both_values():
     assert "terminate" in msg, "the error must name the lineage_routing value"
 
 
-@pytest.mark.parametrize("hypothesis_verdict,lineage_routing", [
-    ("promote", "pivot"),
-    ("refine", "pivot"),
-    ("refine", "escalate"),
-    ("promote", "refine"),
-    ("kill", None),
-    ("bogus", "refine"),
-])
+@pytest.mark.parametrize(
+    "hypothesis_verdict,lineage_routing",
+    [
+        ("promote", "pivot"),
+        ("refine", "pivot"),
+        ("refine", "escalate"),
+        ("promote", "refine"),
+        ("kill", None),
+        ("bogus", "refine"),
+    ],
+)
 def test_pair_validation_rejects_every_other_incoherent_combination(hypothesis_verdict, lineage_routing):
     with pytest.raises(ValueError) as exc_info:
         rpr._dispatch_verdict_route(Path("."), "run_x", {}, {}, hypothesis_verdict, lineage_routing)
@@ -496,11 +556,17 @@ def test_pair_validation_accepts_kill_escalate(campaign_root):
         '{"symbols": ["BTCUSDT"], "timeframe": "1h", "windows": []}', encoding="utf-8"
     )
     (root / "config").mkdir(exist_ok=True)
-    (root / "config" / "coin_universe.yaml").write_text(yaml.safe_dump({
-        "escalation_order": {"sequence": [{"category": "majors", "priority": 1}]},
-        "categories": {"majors": {"coins": [{"symbol": "ETHUSDT", "data_cached": True}],
-                                   "strategy_affinity": []}},
-    }), encoding="utf-8")
+    (root / "config" / "coin_universe.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "escalation_order": {"sequence": [{"category": "majors", "priority": 1}]},
+                "categories": {
+                    "majors": {"coins": [{"symbol": "ETHUSDT", "data_cached": True}], "strategy_affinity": []}
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_803"])
     next_stage = rpr._dispatch_verdict_route(runs_dir / "run_803", "run_803", {}, {}, "kill", "escalate")
     assert next_stage == "completed_escalated"
@@ -542,13 +608,25 @@ def test_holdout_path_guard_campaign_review_continue_promote_reaches_holdout_gat
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_700")
     run_dir = runs_dir / "run_700"
-    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(yaml.safe_dump({
-        "hypothesis_id": "TEST_PROMOTE", "hypothesis_verdict": "promote", "lineage_routing": None,
-        "status": "promote",
-    }), encoding="utf-8")
-    (run_dir / "artifacts" / "campaign_review.yaml").write_text(yaml.safe_dump({
-        "recommendation": "continue",
-    }), encoding="utf-8")
+    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "hypothesis_id": "TEST_PROMOTE",
+                "hypothesis_verdict": "promote",
+                "lineage_routing": None,
+                "status": "promote",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "artifacts" / "campaign_review.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "recommendation": "continue",
+            }
+        ),
+        encoding="utf-8",
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_700"], trial_sharpes=[])
 
     next_stage = rpr.determine_post_campaign_review_route(run_dir, "run_700")

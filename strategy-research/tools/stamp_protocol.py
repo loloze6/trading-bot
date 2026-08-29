@@ -19,6 +19,7 @@ CLI:
   python strategy-research/tools/stamp_protocol.py protocols/ts_trend_daily_v2.json
   python strategy-research/tools/stamp_protocol.py protocols/ts_trend_daily_v2.json --version 2026-07-15
 """
+
 import argparse
 import hashlib
 import json
@@ -26,8 +27,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
-_HERE = Path(__file__).resolve().parent      # strategy-research/tools/
-_SR = _HERE.parent                            # strategy-research/
+_HERE = Path(__file__).resolve().parent  # strategy-research/tools/
+_SR = _HERE.parent  # strategy-research/
 
 
 def compute_protocol_content_hash(obj: dict) -> str:
@@ -55,7 +56,7 @@ def stamp(path: Path, version: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Stamp a protocol JSON with protocol_version/protocol_content_hash "
-                     "and print the hash for machine_constraints.protocol_ref_content_hash."
+        "and print the hash for machine_constraints.protocol_ref_content_hash."
     )
     parser.add_argument("protocol_path", help="Path to the protocol JSON file (e.g. protocols/ts_trend_daily_v2.json).")
     parser.add_argument(

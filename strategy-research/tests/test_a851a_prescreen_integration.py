@@ -5,6 +5,7 @@ from the default block_24_fisher_z method to the new A8.5.1a episode bootstrap â
 and, critically, the DEFAULT (flag absent) behavior must be byte-for-byte
 unchanged, so every prior recorded prescreen result stays reproducible.
 """
+
 import json
 import sys
 from pathlib import Path
@@ -33,14 +34,25 @@ _PROTOCOL = {
 _BASE_CONFIG = {
     "aux_feeds": ["funding_rate"],
     "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
-    "strategies": {"warmup": 3, "regimes": {
-        "unknown": {"components": [{
-            "id": "funding_mr",
-            "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
-            "weight": 1.0, "transforms": [], "params": {"threshold": 0.0002, "scaling_factor": 10.0},
-        }]},
-        "trending": None, "mean_reversion": None, "chop": None,
-    }},
+    "strategies": {
+        "warmup": 3,
+        "regimes": {
+            "unknown": {
+                "components": [
+                    {
+                        "id": "funding_mr",
+                        "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
+                        "weight": 1.0,
+                        "transforms": [],
+                        "params": {"threshold": 0.0002, "scaling_factor": 10.0},
+                    }
+                ]
+            },
+            "trending": None,
+            "mean_reversion": None,
+            "chop": None,
+        },
+    },
 }
 
 
@@ -72,7 +84,9 @@ def test_a851a_flag_switches_methodology_and_reports_per_era(tmp_path):
     result = ps.run_prescreen(str(config_path), str(protocol_path), run_id="test_a851a", out_dir=tmp_path)
 
     assert result["significance_methodology_used"] in (
-        "episode_block_bootstrap", "episode_bootstrap_insufficient_n", "block_24_dense_fallback",
+        "episode_block_bootstrap",
+        "episode_bootstrap_insufficient_n",
+        "block_24_dense_fallback",
     )
     # The old method must STILL be computed and reported for comparison, even
     # though it did not decide `route` this time.

@@ -23,6 +23,7 @@ mirror EnhancedPerformanceTracker.calculate_sharpe_ratio's own convention of ret
 0.0 (never NaN or inf) when volatility is undefined -- zero variance, or fewer than two
 observations.
 """
+
 import math
 
 import pandas as pd
@@ -52,13 +53,7 @@ def daily_returns(equity: pd.Series, timestamps: pd.Series) -> pd.Series:
     right call over fabricating a flat 0.0 for it; the gap's true multi-day
     span is just not separately recoverable from this series.
     """
-    daily = (
-        pd.Series(equity.values, index=pd.to_datetime(timestamps.values))
-        .sort_index()
-        .resample("D")
-        .last()
-        .dropna()
-    )
+    daily = pd.Series(equity.values, index=pd.to_datetime(timestamps.values)).sort_index().resample("D").last().dropna()
     return daily.pct_change().dropna()
 
 

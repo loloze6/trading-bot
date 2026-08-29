@@ -9,6 +9,7 @@ backtest of a strategy that simply never traded, so it can be read as evidence.
 Drives the real Launcher.simulate() with a stubbed engine, so the assertion is
 about the CLI path's own behaviour rather than a helper's.
 """
+
 import sys
 from pathlib import Path
 
@@ -62,4 +63,5 @@ def test_empty_fetch_does_not_run_the_simulation(_stubbed):
         launcher_mod.Launcher().simulate()
     assert not _stubbed.simulated, (
         "the simulation ran despite there being no data -- the guard is placed "
-        "after simulate_on_loaded_data() instead of before it")
+        "after simulate_on_loaded_data() instead of before it"
+    )

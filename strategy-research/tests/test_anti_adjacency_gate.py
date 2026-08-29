@@ -16,6 +16,7 @@ this is the actual historical case S1 traced by hand
 synthetic stand-in would not be testing the same thing. Read-only; nothing
 here writes to the real repository.
 """
+
 import sys
 from pathlib import Path
 
@@ -44,8 +45,10 @@ def _load_real_kb() -> dict:
 
 _FUNDING_4H_CANDIDATE = {
     "hypothesis_id": "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED_4H_RETEST",
-    "edge_source": {"evidence_type": "funding_open_interest",
-                     "specific_mechanism": "Continuous funding-rate sign mean-reversion re-tested at 4h."},
+    "edge_source": {
+        "evidence_type": "funding_open_interest",
+        "specific_mechanism": "Continuous funding-rate sign mean-reversion re-tested at 4h.",
+    },
     "target_market": ["BTCUSDT", "ETHUSDT"],
     "timeframe": "4h",
     "thesis": "Re-test the identical continuous funding-rate mean-reversion mechanism at 4h bars.",
@@ -53,8 +56,10 @@ _FUNDING_4H_CANDIDATE = {
 
 _FUNDING_DAILY_CANDIDATE = {
     "hypothesis_id": "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION_EXPANDED_DAILY_RETEST",
-    "edge_source": {"evidence_type": "funding_open_interest",
-                     "specific_mechanism": "Continuous funding-rate sign mean-reversion re-tested at daily."},
+    "edge_source": {
+        "evidence_type": "funding_open_interest",
+        "specific_mechanism": "Continuous funding-rate sign mean-reversion re-tested at daily.",
+    },
     "target_market": ["BTCUSDT", "ETHUSDT"],
     "timeframe": "1d",
     "thesis": "Re-test the identical continuous funding-rate mean-reversion mechanism at daily bars.",
@@ -69,8 +74,9 @@ def test_calibration_case_admits_the_4h_funding_retest():
     tested) -- Layer 1 must ADMIT."""
     kb = _load_real_kb()
     digest = bed.build_digest()  # empty campaign_state ok; Layer 1 resolves this before Layer 2
-    result = gate.evaluate_candidate(_FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="4h")
+    result = gate.evaluate_candidate(
+        _FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR, instrument="BTCUSDT", timeframe="4h"
+    )
     assert result.route == "admit"
     assert result["layer"] == "kb"
     assert "funding_rate_continuous_mean_reversion_expanded_auto" in result["reasons"][0]
@@ -90,16 +96,16 @@ def test_calibration_case_naive_flat_list_gate_would_refuse_the_same_candidate()
         return "refuse" if candidate_timeframe in campaign_state["timeframes_tried"] else "admit"
 
     assert "4h" in campaign_state["timeframes_tried"], (
-        "precondition: campaign_state.yaml's flat list must still contain '4h' "
-        "for this contrast to mean anything"
+        "precondition: campaign_state.yaml's flat list must still contain '4h' for this contrast to mean anything"
     )
     naive_route = naive_flat_list_gate("4h")
     assert naive_route == "refuse", "the naive flat-list gate must wrongly refuse 4h"
 
     kb = _load_real_kb()
     digest = bed.build_digest()
-    real_route = gate.evaluate_candidate(_FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                          instrument="BTCUSDT", timeframe="4h").route
+    real_route = gate.evaluate_candidate(
+        _FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR, instrument="BTCUSDT", timeframe="4h"
+    ).route
     assert real_route == "admit"
     assert real_route != naive_route, (
         "the layered gate and the naive flat-list gate must DISAGREE on this "
@@ -120,8 +126,9 @@ def test_precedence_rule_refuses_the_daily_branch_terminated_by_run_059():
     still nominally lists 'daily' as a branch."""
     kb = _load_real_kb()
     digest = bed.build_digest()
-    result = gate.evaluate_candidate(_FUNDING_DAILY_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1d")
+    result = gate.evaluate_candidate(
+        _FUNDING_DAILY_CANDIDATE, digest, kb, _REAL_RUNS_DIR, instrument="BTCUSDT", timeframe="1d"
+    )
     assert result.route == "refuse"
     assert result["layer"] == "kb"
     assert "closed by a run registered lineage_routing=terminate" in result["reasons"][0]
@@ -133,10 +140,12 @@ def test_precedence_rule_never_touches_the_sibling_4h_branch():
     parent would do exactly that, wrongly)."""
     kb = _load_real_kb()
     digest = bed.build_digest()
-    admit_4h = gate.evaluate_candidate(_FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                        instrument="BTCUSDT", timeframe="4h")
-    refuse_1d = gate.evaluate_candidate(_FUNDING_DAILY_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                         instrument="BTCUSDT", timeframe="1d")
+    admit_4h = gate.evaluate_candidate(
+        _FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR, instrument="BTCUSDT", timeframe="4h"
+    )
+    refuse_1d = gate.evaluate_candidate(
+        _FUNDING_DAILY_CANDIDATE, digest, kb, _REAL_RUNS_DIR, instrument="BTCUSDT", timeframe="1d"
+    )
     assert admit_4h.route == "admit"
     assert refuse_1d.route == "refuse"
 
@@ -145,44 +154,57 @@ def test_precedence_rule_never_touches_the_sibling_4h_branch():
 # Layer 1 unit tests (synthetic KB)
 # ---------------------------------------------------------------------------
 
+
 def _kb(findings):
     return {"findings": findings}
 
 
 def test_layer1_refuses_exhausted_finding_with_no_reactivation_clause():
-    kb = _kb([{
-        "id": "widget_mean_reversion_no_edge",
-        "hypothesis_id": "WIDGET_MEAN_REVERSION",
-        "evidence_runs": [],
-        "exhausted": True,
-        "reactivation_condition": None,
-    }])
+    kb = _kb(
+        [
+            {
+                "id": "widget_mean_reversion_no_edge",
+                "hypothesis_id": "WIDGET_MEAN_REVERSION",
+                "evidence_runs": [],
+                "exhausted": True,
+                "reactivation_condition": None,
+            }
+        ]
+    )
     result = gate.layer1_kb_check("WIDGET_MEAN_REVERSION", "1h", kb["findings"], _REAL_RUNS_DIR)
     assert result is not None and result.route == "refuse"
 
 
 def test_layer1_refuses_consumed_reactivation():
-    kb = _kb([{
-        "id": "widget_mean_reversion_parked",
-        "hypothesis_id": "WIDGET_MEAN_REVERSION",
-        "evidence_runs": [],
-        "exhausted": False,
-        "reactivation_condition": "retest at 4h",
-        "reactivation_consumed_by": "widget_4h_retest_killed",
-    }])
+    kb = _kb(
+        [
+            {
+                "id": "widget_mean_reversion_parked",
+                "hypothesis_id": "WIDGET_MEAN_REVERSION",
+                "evidence_runs": [],
+                "exhausted": False,
+                "reactivation_condition": "retest at 4h",
+                "reactivation_consumed_by": "widget_4h_retest_killed",
+            }
+        ]
+    )
     result = gate.layer1_kb_check("WIDGET_MEAN_REVERSION", "4h", kb["findings"], _REAL_RUNS_DIR)
     assert result is not None and result.route == "refuse"
     assert "already reactivated by" in result["reasons"][0]
 
 
 def test_layer1_returns_none_when_no_finding_matches_candidate():
-    kb = _kb([{
-        "id": "unrelated_finding",
-        "hypothesis_id": "SOMETHING_ELSE_ENTIRELY",
-        "evidence_runs": [],
-        "exhausted": True,
-        "reactivation_condition": None,
-    }])
+    kb = _kb(
+        [
+            {
+                "id": "unrelated_finding",
+                "hypothesis_id": "SOMETHING_ELSE_ENTIRELY",
+                "evidence_runs": [],
+                "exhausted": True,
+                "reactivation_condition": None,
+            }
+        ]
+    )
     result = gate.layer1_kb_check("BRAND_NEW_MECHANISM", "1h", kb["findings"], _REAL_RUNS_DIR)
     assert result is None
 
@@ -200,8 +222,9 @@ def test_layer1_does_not_conflate_family_siblings_with_different_verdicts():
     assert h041a_result is not None and h041a_result.route == "refuse"
     # ...but must have NO bearing on the unrelated EXPANDED lineage's candidate.
     digest = bed.build_digest()
-    expanded_result = gate.evaluate_candidate(_FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR,
-                                               instrument="BTCUSDT", timeframe="4h")
+    expanded_result = gate.evaluate_candidate(
+        _FUNDING_4H_CANDIDATE, digest, kb, _REAL_RUNS_DIR, instrument="BTCUSDT", timeframe="4h"
+    )
     assert expanded_result.route == "admit"
 
 
@@ -230,10 +253,8 @@ def test_layer1_verdict_is_independent_of_kb_finding_list_order():
     }
     candidate_hid = "WIDGET_MEAN_REVERSION_EXPANDED_4H_RETEST"
 
-    order_a = gate.layer1_kb_check(candidate_hid, "4h",
-                                    [closed_base, open_expanded_child], _REAL_RUNS_DIR)
-    order_b = gate.layer1_kb_check(candidate_hid, "4h",
-                                    [open_expanded_child, closed_base], _REAL_RUNS_DIR)
+    order_a = gate.layer1_kb_check(candidate_hid, "4h", [closed_base, open_expanded_child], _REAL_RUNS_DIR)
+    order_b = gate.layer1_kb_check(candidate_hid, "4h", [open_expanded_child, closed_base], _REAL_RUNS_DIR)
 
     assert order_a is not None and order_b is not None
     assert order_a.route == order_b.route == "admit", (
@@ -252,16 +273,19 @@ def test_layer1_reactivation_consumed_by_does_not_close_an_unconsumed_sibling_br
     retested must not also REFUSE the still-open sibling (4h) -- consumed_by
     can only unambiguously mean 'this branch is closed' when exactly one
     branch is named."""
-    kb = _kb([{
-        "id": "widget_mr_two_branches",
-        "hypothesis_id": "WIDGET_MEAN_REVERSION_TWO_BRANCH",
-        "evidence_runs": [],
-        "exhausted": False,
-        "reactivation_condition": "retest at 4h or daily",
-        "reactivation_consumed_by": "widget_daily_retest_killed",
-    }])
-    result = gate.layer1_kb_check("WIDGET_MEAN_REVERSION_TWO_BRANCH", "4h",
-                                   kb["findings"], _REAL_RUNS_DIR)
+    kb = _kb(
+        [
+            {
+                "id": "widget_mr_two_branches",
+                "hypothesis_id": "WIDGET_MEAN_REVERSION_TWO_BRANCH",
+                "evidence_runs": [],
+                "exhausted": False,
+                "reactivation_condition": "retest at 4h or daily",
+                "reactivation_consumed_by": "widget_daily_retest_killed",
+            }
+        ]
+    )
+    result = gate.layer1_kb_check("WIDGET_MEAN_REVERSION_TWO_BRANCH", "4h", kb["findings"], _REAL_RUNS_DIR)
     assert result is not None and result.route == "admit", (
         "the 4h branch was never named by any lineage_routing=terminate run, so "
         "it must still be open even though reactivation_consumed_by is set"
@@ -271,6 +295,7 @@ def test_layer1_reactivation_consumed_by_does_not_close_an_unconsumed_sibling_br
 # ---------------------------------------------------------------------------
 # Layer 2 unit tests (synthetic digest)
 # ---------------------------------------------------------------------------
+
 
 def _digest(families, failed_families_passthrough=None):
     return {
@@ -290,14 +315,28 @@ def test_layer2_coarse_triple_match_admits_as_neighbour_not_refuse():
     now only ever produce NEIGHBOUR, never REPEAT -- design point 3. The
     genuine-repeat case (identical fingerprint -> REFUSE) is covered
     separately below."""
-    digest = _digest({
-        "keltner_channel": {"confidence": "keyword_bounded", "triples": [
-            {"instrument": "AVAXUSDT", "timeframe": "4h", "fidelity": "coarse",
-             "fingerprint": None, "run_ids": ["run_030"]},
-        ]},
-    })
-    candidate = {"hypothesis_id": "KELTNER_NEW", "target_market": ["AVAXUSDT"], "timeframe": "4h",
-                 "thesis": "Keltner mean reversion on AVAX."}
+    digest = _digest(
+        {
+            "keltner_channel": {
+                "confidence": "keyword_bounded",
+                "triples": [
+                    {
+                        "instrument": "AVAXUSDT",
+                        "timeframe": "4h",
+                        "fidelity": "coarse",
+                        "fingerprint": None,
+                        "run_ids": ["run_030"],
+                    },
+                ],
+            },
+        }
+    )
+    candidate = {
+        "hypothesis_id": "KELTNER_NEW",
+        "target_market": ["AVAXUSDT"],
+        "timeframe": "4h",
+        "thesis": "Keltner mean reversion on AVAX.",
+    }
     result = gate.evaluate_candidate(candidate, digest, _kb([]), _REAL_RUNS_DIR)
     assert result.route == "admit"
     assert result["layer"] == "digest"
@@ -307,13 +346,22 @@ def test_layer2_coarse_triple_match_admits_as_neighbour_not_refuse():
 
 
 def test_layer2_admits_new_instrument_for_known_family():
-    digest = _digest({
-        "keltner_channel": {"confidence": "keyword_bounded", "triples": [
-            {"instrument": "AVAXUSDT", "timeframe": "4h", "run_ids": ["run_030"]},
-        ]},
-    })
-    candidate = {"hypothesis_id": "KELTNER_NEW_SYMBOL", "target_market": ["DOTUSDT"], "timeframe": "4h",
-                 "thesis": "Keltner mean reversion on DOT."}
+    digest = _digest(
+        {
+            "keltner_channel": {
+                "confidence": "keyword_bounded",
+                "triples": [
+                    {"instrument": "AVAXUSDT", "timeframe": "4h", "run_ids": ["run_030"]},
+                ],
+            },
+        }
+    )
+    candidate = {
+        "hypothesis_id": "KELTNER_NEW_SYMBOL",
+        "target_market": ["DOTUSDT"],
+        "timeframe": "4h",
+        "thesis": "Keltner mean reversion on DOT.",
+    }
     result = gate.evaluate_candidate(candidate, digest, _kb([]), _REAL_RUNS_DIR)
     assert result.route == "admit"
 
@@ -323,8 +371,12 @@ def test_layer2_never_auto_refuses_on_bare_string_failed_family():
         {},
         failed_families_passthrough=[{"family": "sma_trend", "detail": "bare_string_low_detail"}],
     )
-    candidate = {"hypothesis_id": "SMA_NEW", "target_market": ["BTCUSDT"], "timeframe": "1h",
-                 "thesis": "SMA crossover on BTC."}
+    candidate = {
+        "hypothesis_id": "SMA_NEW",
+        "target_market": ["BTCUSDT"],
+        "timeframe": "1h",
+        "thesis": "SMA crossover on BTC.",
+    }
     result = gate.evaluate_candidate(candidate, digest, _kb([]), _REAL_RUNS_DIR)
     assert result.route == "admit", "a bare-string low-detail entry must never be a silent veto"
     assert result["low_detail_prior_failure"] is True
@@ -339,31 +391,54 @@ def test_layer2_never_auto_refuses_on_bare_string_failed_family():
 # into "already tried" -- a parameter sweep read as a repeat.
 # ---------------------------------------------------------------------------
 
+
 def _kc_config(atr_mult, regime="mean_reversion", component_id="keltner"):
     """Same candidate_strategy_config.json shape as the real corpus (e.g.
     runs/run_016/artifacts/candidate_strategy_config.json)."""
     return {
         "regime_detector": {"mode": "threshold_rules", "rules": [{"regime": regime}]},
-        "strategies": {"regimes": {regime: {"components": [
-            {"id": component_id, "class": "strategies.strategy_components.KeltnerBreakoutComponent",
-             "params": {"atr_multiplier": atr_mult, "ema_period": 20}, "weight": 1.0,
-             "transforms": [{"op": "identity"}]},
-        ]}}},
+        "strategies": {
+            "regimes": {
+                regime: {
+                    "components": [
+                        {
+                            "id": component_id,
+                            "class": "strategies.strategy_components.KeltnerBreakoutComponent",
+                            "params": {"atr_multiplier": atr_mult, "ema_period": 20},
+                            "weight": 1.0,
+                            "transforms": [{"op": "identity"}],
+                        },
+                    ]
+                }
+            }
+        },
     }
 
 
 def _kc_digest_structured(instrument, timeframe, run_id, config):
     fingerprint = bed.composition_fingerprint(config)
-    return _digest({
-        "keltner_channel": {"confidence": "structural_indicator_id", "triples": [
-            {"instrument": instrument, "timeframe": timeframe, "fidelity": "structured",
-             "fingerprint": fingerprint, "run_ids": [run_id]},
-        ]},
-    })
+    return _digest(
+        {
+            "keltner_channel": {
+                "confidence": "structural_indicator_id",
+                "triples": [
+                    {
+                        "instrument": instrument,
+                        "timeframe": timeframe,
+                        "fidelity": "structured",
+                        "fingerprint": fingerprint,
+                        "run_ids": [run_id],
+                    },
+                ],
+            },
+        }
+    )
 
 
 _KELTNER_CANDIDATE_BASE = {
-    "hypothesis_id": "KELTNER_ATR_SWEEP", "target_market": ["BTCUSDT"], "timeframe": "1h",
+    "hypothesis_id": "KELTNER_ATR_SWEEP",
+    "target_market": ["BTCUSDT"],
+    "timeframe": "1h",
     "library_lookup": {"indicator_id": "keltner_channel"},
     "thesis": "Keltner channel mean reversion on BTC, 1h.",
 }
@@ -381,9 +456,15 @@ def test_reproduced_case_parameter_sweep_admits_as_neighbour_not_refuse():
     digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", prior_config)
     candidate_config = _kc_config(atr_mult=3.0)
 
-    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1h",
-                                      candidate_config=candidate_config)
+    result = gate.evaluate_candidate(
+        _KELTNER_CANDIDATE_BASE,
+        digest,
+        _kb([]),
+        _REAL_RUNS_DIR,
+        instrument="BTCUSDT",
+        timeframe="1h",
+        candidate_config=candidate_config,
+    )
 
     assert result.route == "admit", (
         "a parameter sweep (different atr_mult, same family/instrument/timeframe) "
@@ -406,9 +487,15 @@ def test_genuine_repeat_identical_fingerprint_refuses():
     # A fresh candidate proposing the byte-for-byte identical composition.
     identical_config = _kc_config(atr_mult=2.0)
 
-    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1h",
-                                      candidate_config=identical_config)
+    result = gate.evaluate_candidate(
+        _KELTNER_CANDIDATE_BASE,
+        digest,
+        _kb([]),
+        _REAL_RUNS_DIR,
+        instrument="BTCUSDT",
+        timeframe="1h",
+        candidate_config=identical_config,
+    )
 
     assert result.route == "refuse"
     assert result["layer"] == "digest"
@@ -431,9 +518,15 @@ def test_same_component_identical_params_different_regime_does_not_collide():
     )
 
     digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", mr_config)
-    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1h",
-                                      candidate_config=trending_config)
+    result = gate.evaluate_candidate(
+        _KELTNER_CANDIDATE_BASE,
+        digest,
+        _kb([]),
+        _REAL_RUNS_DIR,
+        instrument="BTCUSDT",
+        timeframe="1h",
+        candidate_config=trending_config,
+    )
 
     assert result.route == "admit"
     assert result["outcome"] == "neighbour", (
@@ -448,17 +541,33 @@ def test_coarse_fidelity_entry_never_produces_repeat():
     most NEIGHBOUR -- even when the candidate itself DOES supply a
     structured config. We cannot prove an exact repeat from a record that
     never captured composition."""
-    digest = _digest({
-        "keltner_channel": {"confidence": "structural_indicator_id", "triples": [
-            {"instrument": "BTCUSDT", "timeframe": "1h", "fidelity": "coarse",
-             "fingerprint": None, "run_ids": ["run_777"]},
-        ]},
-    })
+    digest = _digest(
+        {
+            "keltner_channel": {
+                "confidence": "structural_indicator_id",
+                "triples": [
+                    {
+                        "instrument": "BTCUSDT",
+                        "timeframe": "1h",
+                        "fidelity": "coarse",
+                        "fingerprint": None,
+                        "run_ids": ["run_777"],
+                    },
+                ],
+            },
+        }
+    )
     candidate_config = _kc_config(atr_mult=2.0)
 
-    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1h",
-                                      candidate_config=candidate_config)
+    result = gate.evaluate_candidate(
+        _KELTNER_CANDIDATE_BASE,
+        digest,
+        _kb([]),
+        _REAL_RUNS_DIR,
+        instrument="BTCUSDT",
+        timeframe="1h",
+        candidate_config=candidate_config,
+    )
 
     assert result.route == "admit"
     assert result["outcome"] == "neighbour"
@@ -473,9 +582,15 @@ def test_candidate_with_no_structured_config_never_produces_repeat():
     config = _kc_config(atr_mult=2.0)
     digest = _kc_digest_structured("BTCUSDT", "1h", "run_016", config)
 
-    result = gate.evaluate_candidate(_KELTNER_CANDIDATE_BASE, digest, _kb([]), _REAL_RUNS_DIR,
-                                      instrument="BTCUSDT", timeframe="1h",
-                                      candidate_config=None)
+    result = gate.evaluate_candidate(
+        _KELTNER_CANDIDATE_BASE,
+        digest,
+        _kb([]),
+        _REAL_RUNS_DIR,
+        instrument="BTCUSDT",
+        timeframe="1h",
+        candidate_config=None,
+    )
 
     assert result.route == "admit"
     assert result["outcome"] == "neighbour"
@@ -488,7 +603,9 @@ def test_composition_fingerprint_present_but_empty_config_is_not_none():
     at all" -- composition_fingerprint(None-ish input) is the "never had a
     config" case, not "had an empty one"."""
     assert bed.composition_fingerprint({"regime_detector": {}}) == {
-        "mode": None, "rule_count": 0, "components": [],
+        "mode": None,
+        "rule_count": 0,
+        "components": [],
     }
     assert bed.composition_fingerprint({}) is None
     assert bed.composition_fingerprint(None) is None

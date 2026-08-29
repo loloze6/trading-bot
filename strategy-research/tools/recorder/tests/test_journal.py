@@ -32,8 +32,13 @@ T0 = datetime(2026, 7, 26, 12, 0, 0, tzinfo=timezone.utc)
 
 
 def _rec(jseq, ts, rtype, run_id="run-a", **kw):
-    d = {"jseq": jseq, "run_id": run_id, "ts": ts.strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z",
-         "mono": float(jseq), "type": rtype}
+    d = {
+        "jseq": jseq,
+        "run_id": run_id,
+        "ts": ts.strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z",
+        "mono": float(jseq),
+        "type": rtype,
+    }
     d.update(kw)
     return d
 
@@ -191,8 +196,7 @@ def test_frozen_process_produces_a_no_attestation_gap():
         _rec(3, T0 + timedelta(seconds=60), "HEARTBEAT_ROLLUP", frames_total=5),
         # <-- process frozen here (system suspend): nothing scheduled, nothing
         # written, for far longer than any normal rollup gap.
-        _rec(4, T0 + timedelta(seconds=60 + frozen_for), "HEARTBEAT_ROLLUP",
-             frames_total=5),
+        _rec(4, T0 + timedelta(seconds=60 + frozen_for), "HEARTBEAT_ROLLUP", frames_total=5),
         _rec(5, T0 + timedelta(seconds=120 + frozen_for), "RECORDER_STOP"),
     ]
     ivs = coverage_intervals(recs)[("BTC/USD", "book")]
@@ -218,8 +222,7 @@ def test_a_long_healthy_run_with_realistic_cadence_reports_no_gap():
     jseq = 3
     n_rollups = int(2 * 3600 // ROLLUP_INTERVAL_S)
     for i in range(1, n_rollups + 1):
-        recs.append(_rec(jseq, T0 + timedelta(seconds=i * ROLLUP_INTERVAL_S),
-                          "HEARTBEAT_ROLLUP", frames_total=5))
+        recs.append(_rec(jseq, T0 + timedelta(seconds=i * ROLLUP_INTERVAL_S), "HEARTBEAT_ROLLUP", frames_total=5))
         jseq += 1
     end = T0 + timedelta(seconds=n_rollups * ROLLUP_INTERVAL_S)
     recs.append(_rec(jseq, end, "RECORDER_STOP"))

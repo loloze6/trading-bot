@@ -16,15 +16,16 @@ Exit codes:
   1  — holdout overlap detected (hard rejection)
   2  — data gap > 1 day detected
 """
+
 import sys
 import os
 import json
 import argparse
 import datetime
 
-_HERE = os.path.dirname(os.path.abspath(__file__))   # strategy-research/tools/
-_SR   = os.path.dirname(_HERE)                        # strategy-research/
-_REPO = os.path.dirname(_SR)                          # repo root
+_HERE = os.path.dirname(os.path.abspath(__file__))  # strategy-research/tools/
+_SR = os.path.dirname(_HERE)  # strategy-research/
+_REPO = os.path.dirname(_SR)  # repo root
 _TBOT = os.path.join(_REPO, "trading-bot")
 
 if _TBOT not in sys.path:
@@ -37,7 +38,7 @@ _DEFAULT_POLICY = os.path.join(_SR, "config", "campaign_data_policy.yaml")
 
 # Default data check range (covers all baseline_v2 walk-forward windows).
 _DEFAULT_START = "2024-01-01"
-_DEFAULT_END   = "2025-12-31"
+_DEFAULT_END = "2025-12-31"
 _DEFAULT_TIMEFRAME = "1h"
 
 # Timeframe -> (candle interval seconds, max-allowed-gap seconds before flagging).
@@ -52,6 +53,7 @@ _TIMEFRAME_SECONDS = {"1h": 3600, "1d": 86400}
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _parse_date(s: str) -> datetime.date:
     return datetime.datetime.strptime(s, "%Y-%m-%d").date()
 
@@ -59,14 +61,14 @@ def _parse_date(s: str) -> datetime.date:
 def _load_policy(policy_path: str) -> dict:
     try:
         import yaml
+
         with open(policy_path, encoding="utf-8") as f:
             return yaml.safe_load(f)
     except ImportError:
         # Minimal YAML parse for simple key: value / list structures.
         # Falls back to a best-effort plain reader if PyYAML is unavailable.
         raise RuntimeError(
-            "PyYAML is required for loading campaign_data_policy.yaml. "
-            "Install it with: pip install pyyaml"
+            "PyYAML is required for loading campaign_data_policy.yaml. Install it with: pip install pyyaml"
         )
 
 
@@ -79,6 +81,7 @@ def _load_protocol(protocol_path: str) -> dict:
 # Holdout overlap guard
 # ---------------------------------------------------------------------------
 
+
 def check_holdout_overlap(protocol: dict, policy: dict) -> bool:
     """Return True (safe) if no protocol window overlaps holdout_range; False otherwise."""
     holdout = policy.get("holdout_range")
@@ -87,21 +90,20 @@ def check_holdout_overlap(protocol: dict, policy: dict) -> bool:
         return True
 
     h_start = _parse_date(holdout[0])
-    h_end   = _parse_date(holdout[1])
+    h_end = _parse_date(holdout[1])
 
     windows = protocol.get("windows", [])
     violations = []
     for w in windows:
         test = w.get("test", {})
         w_start = _parse_date(test["start"])
-        w_end   = _parse_date(test["end"])
+        w_end = _parse_date(test["end"])
         # Overlap: intervals [a,b) and [c,d) overlap iff a < d and c < b
         if w_start < h_end and h_start < w_end:
             violations.append(w.get("label", f"{test['start']}–{test['end']}"))
 
     if violations:
-        print("ERROR: Protocol window(s) overlap the frozen holdout range "
-              f"[{holdout[0]}, {holdout[1]}]:")
+        print(f"ERROR: Protocol window(s) overlap the frozen holdout range [{holdout[0]}, {holdout[1]}]:")
         for v in violations:
             print(f"  - {v}")
         print("Action: remove overlapping windows or choose a different protocol.")
@@ -111,13 +113,15 @@ def check_holdout_overlap(protocol: dict, policy: dict) -> bool:
     proto_holdout = protocol.get("holdout", {})
     if proto_holdout:
         ph_start_s = proto_holdout.get("start")
-        ph_end_s   = proto_holdout.get("end")
+        ph_end_s = proto_holdout.get("end")
         if ph_start_s and ph_end_s:
             ph_start = _parse_date(ph_start_s)
-            ph_end   = _parse_date(ph_end_s)
+            ph_end = _parse_date(ph_end_s)
             if ph_start != h_start or ph_end != h_end:
-                print(f"WARNING: Protocol holdout [{ph_start_s}, {ph_end_s}] does not match "
-                      f"policy holdout [{holdout[0]}, {holdout[1]}].")
+                print(
+                    f"WARNING: Protocol holdout [{ph_start_s}, {ph_end_s}] does not match "
+                    f"policy holdout [{holdout[0]}, {holdout[1]}]."
+                )
 
     print(f"OK: No protocol window overlaps holdout range [{holdout[0]}, {holdout[1]}].")
     return True
@@ -127,8 +131,8 @@ def check_holdout_overlap(protocol: dict, policy: dict) -> bool:
 # Data availability check
 # ---------------------------------------------------------------------------
 
-def check_data_availability(symbols: list, start: str, end: str,
-                             timeframe: str = _DEFAULT_TIMEFRAME) -> bool:
+
+def check_data_availability(symbols: list, start: str, end: str, timeframe: str = _DEFAULT_TIMEFRAME) -> bool:
     interval_seconds = _TIMEFRAME_SECONDS.get(timeframe)
     if interval_seconds is None:
         print(f"ERROR: unknown timeframe {timeframe!r} — supported: {sorted(_TIMEFRAME_SECONDS)}")
@@ -140,7 +144,7 @@ def check_data_availability(symbols: list, start: str, end: str,
     max_gap_seconds = interval_seconds * 2
 
     start_dt = datetime.datetime.strptime(start, "%Y-%m-%d")
-    end_dt   = datetime.datetime.strptime(end,   "%Y-%m-%d")
+    end_dt = datetime.datetime.strptime(end, "%Y-%m-%d")
     expected_bars = int((end_dt - start_dt).total_seconds() / interval_seconds)
 
     print(f"\nData availability check: {start} to {end} ({timeframe})")
@@ -176,10 +180,10 @@ def check_data_availability(symbols: list, start: str, end: str,
         else:
             for idx in gaps.index:
                 gap_start = df.loc[idx - 1, "timestamp"]
-                gap_end   = df.loc[idx,     "timestamp"]
-                duration  = gap_end - gap_start
-                dur_h     = duration.total_seconds() / 3600
-                flag = f" *** > {max_gap_seconds/3600:.0f}H ***" if duration.total_seconds() > max_gap_seconds else ""
+                gap_end = df.loc[idx, "timestamp"]
+                duration = gap_end - gap_start
+                dur_h = duration.total_seconds() / 3600
+                flag = f" *** > {max_gap_seconds / 3600:.0f}H ***" if duration.total_seconds() > max_gap_seconds else ""
                 print(f"  gap: {gap_start} to {gap_end}  ({dur_h:.1f}h){flag}")
                 if duration.total_seconds() > max_gap_seconds:
                     any_large_gap = True
@@ -192,24 +196,31 @@ def check_data_availability(symbols: list, start: str, end: str,
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(description="Data availability check + holdout overlap guard.")
     parser.add_argument(
-        "--protocol", metavar="PATH",
-        help="Protocol JSON file to validate against holdout_range and use for symbol/date derivation."
+        "--protocol",
+        metavar="PATH",
+        help="Protocol JSON file to validate against holdout_range and use for symbol/date derivation.",
     )
     parser.add_argument(
-        "--policy", metavar="PATH", default=_DEFAULT_POLICY,
-        help=f"campaign_data_policy.yaml path (default: {_DEFAULT_POLICY})"
+        "--policy",
+        metavar="PATH",
+        default=_DEFAULT_POLICY,
+        help=f"campaign_data_policy.yaml path (default: {_DEFAULT_POLICY})",
     )
     parser.add_argument(
-        "--skip-data-check", action="store_true",
-        help="Only run holdout overlap check, skip the data availability download."
+        "--skip-data-check",
+        action="store_true",
+        help="Only run holdout overlap check, skip the data availability download.",
     )
     parser.add_argument(
-        "--timeframe", default=None, choices=sorted(_TIMEFRAME_SECONDS),
+        "--timeframe",
+        default=None,
+        choices=sorted(_TIMEFRAME_SECONDS),
         help="Override timeframe for the data check (default: from --protocol's "
-             "'timeframe' field if given, else '1h')."
+        "'timeframe' field if given, else '1h').",
     )
     args = parser.parse_args()
 
@@ -225,7 +236,7 @@ def main():
             sys.exit(1)
 
         protocol = _load_protocol(args.protocol)
-        policy   = _load_policy(args.policy)
+        policy = _load_policy(args.policy)
 
         print(f"Checking holdout overlap for protocol: {args.protocol}")
         overlap_ok = check_holdout_overlap(protocol, policy)
@@ -233,22 +244,22 @@ def main():
             sys.exit(1)
 
         # Derive symbols, date range, and timeframe from the protocol
-        symbols   = protocol.get("symbols", ["BTCUSDT", "ETHUSDT"])
+        symbols = protocol.get("symbols", ["BTCUSDT", "ETHUSDT"])
         timeframe = args.timeframe or protocol.get("timeframe", _DEFAULT_TIMEFRAME)
         windows = protocol.get("windows", [])
         if windows:
             starts = [w["test"]["start"] for w in windows]
-            ends   = [w["test"]["end"]   for w in windows]
+            ends = [w["test"]["end"] for w in windows]
             data_start = min(starts)
-            data_end   = max(ends)
+            data_end = max(ends)
         else:
             data_start = _DEFAULT_START
-            data_end   = _DEFAULT_END
+            data_end = _DEFAULT_END
     else:
-        symbols    = ["BTCUSDT", "ETHUSDT"]
-        timeframe  = args.timeframe or _DEFAULT_TIMEFRAME
+        symbols = ["BTCUSDT", "ETHUSDT"]
+        timeframe = args.timeframe or _DEFAULT_TIMEFRAME
         data_start = _DEFAULT_START
-        data_end   = _DEFAULT_END
+        data_end = _DEFAULT_END
 
     # --- Step 2: data availability check ---
     if args.skip_data_check:

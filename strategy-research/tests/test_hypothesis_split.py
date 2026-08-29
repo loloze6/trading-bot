@@ -27,6 +27,7 @@ already past hypothesis_generation, recorded in campaign_state.yaml's
 hypothesis_splits. workflow/run_campaign.py reads that list to give each sibling
 its own queue entry rather than treating it as the same brief's lineage.
 """
+
 import sys
 from pathlib import Path
 
@@ -78,12 +79,20 @@ def _fake_scaffold_next_run(next_run_id: str):
     run_dir = rpr.ROOT / "runs" / next_run_id
     (run_dir / "artifacts").mkdir(parents=True)
     (run_dir / "handoffs").mkdir(parents=True)
-    rpr.save_yaml(run_dir / "pipeline_state.yaml", {
-        "run_id": next_run_id, "status": "active", "current_stage": None,
-        "pending_stage": "hypothesis_generation", "completed_stages": [],
-        "artifacts": {}, "counters": {"refinements_used": 0, "reruns_used": 0},
-        "flags": {}, "audit_log": {},
-    })
+    rpr.save_yaml(
+        run_dir / "pipeline_state.yaml",
+        {
+            "run_id": next_run_id,
+            "status": "active",
+            "current_stage": None,
+            "pending_stage": "hypothesis_generation",
+            "completed_stages": [],
+            "artifacts": {},
+            "counters": {"refinements_used": 0, "reruns_used": 0},
+            "flags": {},
+            "audit_log": {},
+        },
+    )
 
 
 @pytest.fixture

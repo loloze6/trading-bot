@@ -22,6 +22,7 @@ run had ever reached this gate, so there is no legacy corpus being blocked.
 The tests drive _route_holdout_evaluation() itself rather than a helper, so
 they cover the real routing decision.
 """
+
 import sys
 from pathlib import Path
 
@@ -45,8 +46,7 @@ def _run_dir(tmp_path: Path, brief: dict | None) -> Path:
     """
     artifacts = tmp_path / "artifacts"
     artifacts.mkdir(parents=True, exist_ok=True)
-    (tmp_path / "pipeline_state.yaml").write_text(
-        yaml.safe_dump({"run_id": "run_test", "flags": {}}), encoding="utf-8")
+    (tmp_path / "pipeline_state.yaml").write_text(yaml.safe_dump({"run_id": "run_test", "flags": {}}), encoding="utf-8")
     # Step 1 resolves hypothesis_id from promotion_audit.yaml OR, failing that,
     # verdict_interpretation.yaml -- and load_yaml raises rather than returning
     # None if neither exists. Every real run arriving here has one; supply the
@@ -55,10 +55,10 @@ def _run_dir(tmp_path: Path, brief: dict | None) -> Path:
     # router into run_loop's except -> status=failed, which is safe: raising is
     # not proceeding to the holdout. Pre-existing, not this gate's concern.)
     (artifacts / "verdict_interpretation.yaml").write_text(
-        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8")
+        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8"
+    )
     if brief is not None:
-        (artifacts / "research_brief.yaml").write_text(
-            yaml.safe_dump(brief), encoding="utf-8")
+        (artifacts / "research_brief.yaml").write_text(yaml.safe_dump(brief), encoding="utf-8")
     return tmp_path
 
 
@@ -70,14 +70,17 @@ _HELD = "HOLDOUT HELD"
 _BACKTEST_INSTRUCTION = "holdout_result.yaml not yet present"
 
 
-@pytest.mark.parametrize("brief,label", [
-    ({"research_only": True}, "explicitly research-only"),
-    ({}, "key absent (the shape all 57 live briefs have)"),
-    (None, "no research_brief.yaml at all"),
-    ({"research_only": None}, "explicit null"),
-    ({"research_only": "false"}, "string 'false', not the boolean"),
-    ({"research_only": 0}, "falsy 0 -- must not satisfy an `is False` check"),
-])
+@pytest.mark.parametrize(
+    "brief,label",
+    [
+        ({"research_only": True}, "explicitly research-only"),
+        ({}, "key absent (the shape all 57 live briefs have)"),
+        (None, "no research_brief.yaml at all"),
+        ({"research_only": None}, "explicit null"),
+        ({"research_only": "false"}, "string 'false', not the boolean"),
+        ({"research_only": 0}, "falsy 0 -- must not satisfy an `is False` check"),
+    ],
+)
 def test_gate_holds_unless_tradable_is_affirmed(tmp_path, brief, label, capsys):
     """Every non-affirmative shape is held at gate 2b instead of proceeding.
 
@@ -122,8 +125,7 @@ def test_hold_is_recoverable_not_terminal(tmp_path, capsys):
     Pinned because the difference is one string and the protection is identical
     either way.
     """
-    assert r1._route_holdout_evaluation(
-        _run_dir(tmp_path, {"research_only": True}), "run_test") != "completed_rejected"
+    assert r1._route_holdout_evaluation(_run_dir(tmp_path, {"research_only": True}), "run_test") != "completed_rejected"
 
 
 def test_hold_classifies_away_from_the_go_spend_the_seal_bucket(tmp_path):
@@ -141,11 +143,13 @@ def test_hold_classifies_away_from_the_go_spend_the_seal_bucket(tmp_path):
     shape (promotion_audit present, holdout_result absent), not a stub.
     """
     import importlib
+
     camp = importlib.import_module("run_campaign")
 
     run_dir = _run_dir(tmp_path, {"research_only": True})
     (run_dir / "artifacts" / "promotion_audit.yaml").write_text(
-        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8")
+        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8"
+    )
 
     r1._route_holdout_evaluation(run_dir, "run_test")
     state = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text())
@@ -162,11 +166,13 @@ def test_a_tradable_run_still_reaches_the_awaiting_holdout_bucket(tmp_path):
     gets told to run the holdout backtest when they have actually earned it.
     """
     import importlib
+
     camp = importlib.import_module("run_campaign")
 
     run_dir = _run_dir(tmp_path, {"research_only": False})
     (run_dir / "artifacts" / "promotion_audit.yaml").write_text(
-        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8")
+        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8"
+    )
 
     r1._route_holdout_evaluation(run_dir, "run_test")
     state_path = run_dir / "pipeline_state.yaml"
@@ -191,19 +197,21 @@ def test_clearing_the_hold_is_possible_at_all(tmp_path):
     Drives the real two-step sequence: hold, then fix the brief and re-enter.
     """
     import importlib
+
     camp = importlib.import_module("run_campaign")
 
     run_dir = _run_dir(tmp_path, {"research_only": True})
     (run_dir / "artifacts" / "promotion_audit.yaml").write_text(
-        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8")
+        yaml.safe_dump({"hypothesis_id": "run_test"}), encoding="utf-8"
+    )
 
-    r1._route_holdout_evaluation(run_dir, "run_test")           # held
-    assert yaml.safe_load(
-        (run_dir / "pipeline_state.yaml").read_text())["flags"]["research_only_unverified"]
+    r1._route_holdout_evaluation(run_dir, "run_test")  # held
+    assert yaml.safe_load((run_dir / "pipeline_state.yaml").read_text())["flags"]["research_only_unverified"]
 
     # Operator declares tradability and resumes.
     (run_dir / "artifacts" / "research_brief.yaml").write_text(
-        yaml.safe_dump({"research_only": False}), encoding="utf-8")
+        yaml.safe_dump({"research_only": False}), encoding="utf-8"
+    )
     r1._route_holdout_evaluation(run_dir, "run_test")
 
     state = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text())
@@ -221,10 +229,10 @@ def test_a_dsr_rejected_run_is_rejected_not_held(tmp_path):
     reject for a pointless pause. Gate 2b only needs to precede step 3's
     "run the holdout backtest" message and step 4's holdout_consumed_by write.
     """
-    run_dir = _run_dir(tmp_path, {})                     # undeclared brief
+    run_dir = _run_dir(tmp_path, {})  # undeclared brief
     (run_dir / "artifacts" / "promotion_audit.yaml").write_text(
-        yaml.safe_dump({"hypothesis_id": "run_test", "passes_deflated_threshold": False}),
-        encoding="utf-8")
+        yaml.safe_dump({"hypothesis_id": "run_test", "passes_deflated_threshold": False}), encoding="utf-8"
+    )
     assert r1._route_holdout_evaluation(run_dir, "run_test") == "completed_rejected"
 
 
@@ -286,6 +294,7 @@ def test_every_classifier_flag_is_in_the_runbook_reset_list():
     classifier cannot quietly skip the runbook.
     """
     import re
+
     workflow = Path(__file__).parent.parent / "workflow"
     campaign_src = (workflow / "run_campaign.py").read_text(encoding="utf-8")
     runbook = (Path(__file__).parent.parent / "docs" / "RUNBOOK.md").read_text(encoding="utf-8")
@@ -310,12 +319,11 @@ def test_every_classifier_flag_is_in_the_runbook_reset_list():
     assert m, "could not locate the RUNBOOK reset snippet's flags={...} block"
     snippet = m.group(0)
     assert len(snippet.splitlines()) <= 8, (
-        f"reset-snippet match ran to {len(snippet.splitlines())} lines -- it is "
-        f"capturing surrounding prose again")
+        f"reset-snippet match ran to {len(snippet.splitlines())} lines -- it is capturing surrounding prose again"
+    )
 
     missing = sorted(f for f in read_flags if f"'{f}'" not in snippet)
-    assert not missing, (
-        f"flags read by a pause classifier but absent from RUNBOOK's reset snippet: {missing}")
+    assert not missing, f"flags read by a pause classifier but absent from RUNBOOK's reset snippet: {missing}"
 
 
 def test_the_holdout_hold_outranks_every_other_sticky_flag():
@@ -335,11 +343,11 @@ def test_the_holdout_hold_outranks_every_other_sticky_flag():
     its predecessor's docstring claimed to guard.
     """
     import importlib, re, tempfile
+
     camp = importlib.import_module("run_campaign")
     src = (Path(__file__).parent.parent / "workflow" / "run_campaign.py").read_text(encoding="utf-8")
 
-    others = [f for f in re.findall(r"""flags\.get\(["']([A-Za-z0-9_]+)["']""", src)
-              if f != "research_only_unverified"]
+    others = [f for f in re.findall(r"""flags\.get\(["']([A-Za-z0-9_]+)["']""", src) if f != "research_only_unverified"]
     assert len(others) >= 5, f"expected the other sticky flags to be found, got {others}"
 
     run_dir = Path(tempfile.mkdtemp())
@@ -347,4 +355,5 @@ def test_the_holdout_hold_outranks_every_other_sticky_flag():
     for other in others:
         state = {"flags": {other: True, "research_only_unverified": True}}
         assert camp._classify_human_pause(run_dir, state) == "research_only_unverified", (
-            f"{other!r} masks the holdout hold")
+            f"{other!r} masks the holdout hold"
+        )

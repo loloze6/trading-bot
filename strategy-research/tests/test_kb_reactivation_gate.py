@@ -21,6 +21,7 @@ findings for H-041-A/H-041-C (the actual post-fix campaign_knowledge_base.yaml
 content), per this project's standing rule that regression tests use the actual
 historical failure as fixture.
 """
+
 import sys
 from pathlib import Path
 
@@ -51,8 +52,7 @@ RUN_053_NEXT_RESEARCH_QUESTION = {
     ),
     "existing_context": [
         "use_existing_backtest_framework",
-        "reuse_scheduled_backward_extension_pass (per KB operational.backward_extension_pass: "
-        "H-041-A and H-041-C)",
+        "reuse_scheduled_backward_extension_pass (per KB operational.backward_extension_pass: H-041-A and H-041-C)",
     ],
 }
 

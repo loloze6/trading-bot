@@ -29,6 +29,7 @@ before anyone updates this docstring's inspection notes.
 The `test_scanner_actually_detects_an_injected_violation` test proves the
 scanner itself is not vacuous (i.e. it isn't silently matching nothing).
 """
+
 import ast
 from pathlib import Path
 
@@ -102,6 +103,7 @@ def _sweep(root: Path):
 
 # --- the actual firewall assertions -----------------------------------------
 
+
 def test_named_promotion_modules_do_not_reference_the_scoreboard():
     offenders = []
     for path in _NAMED_PROMOTION_MODULES:
@@ -152,11 +154,11 @@ def test_scoreboard_module_defines_no_decision_rule_functions():
     decision rule, which would suggest scope creep back toward promotion."""
     import importlib
     import sys
+
     sys.path.insert(0, str(TOOLS))
     mod = importlib.import_module("near_miss_scoreboard")
     forbidden_substrings = ["evaluate_against_decision_rules", "decision_rule", "promote", "_verdict_gate"]
-    offenders = [name for name in dir(mod)
-                 if any(s in name.lower() for s in forbidden_substrings)]
+    offenders = [name for name in dir(mod) if any(s in name.lower() for s in forbidden_substrings)]
     assert not offenders, f"near_miss_scoreboard.py defines decision-path-shaped name(s): {offenders}"
 
 

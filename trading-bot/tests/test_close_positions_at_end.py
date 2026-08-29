@@ -37,6 +37,7 @@ ForecastManager.calculate_allocation_change) and scoped to the close by a flag r
 around TradingBot.stop() -- the private method under test is never called directly, and
 every value it reads is one the engine actually produced.
 """
+
 import logging
 import sys
 from pathlib import Path
@@ -156,9 +157,7 @@ def _reject_the_close_order(monkeypatch, closing):
             return False, {"error": "injected: close order rejected"}
         return original(self, *args, **kwargs)
 
-    monkeypatch.setattr(
-        MockExecutionHandler, "_execute_portfolio_rebalance", _execute_portfolio_rebalance
-    )
+    monkeypatch.setattr(MockExecutionHandler, "_execute_portfolio_rebalance", _execute_portfolio_rebalance)
 
 
 def _zero_the_close_allocation_change(monkeypatch, closing):
@@ -179,9 +178,7 @@ def _zero_the_close_allocation_change(monkeypatch, closing):
             return 0.0
         return original(self, target_allocation, current_allocation)
 
-    monkeypatch.setattr(
-        ForecastManager, "calculate_allocation_change", calculate_allocation_change
-    )
+    monkeypatch.setattr(ForecastManager, "calculate_allocation_change", calculate_allocation_change)
 
 
 def _close_path_errors(records):
@@ -194,10 +191,7 @@ def _matching(records, fragment):
 
 
 def _describe(records):
-    return "; ".join(
-        f"{r.getMessage()} [{r.exc_info[1]!r}]" if r.exc_info else r.getMessage()
-        for r in records
-    )
+    return "; ".join(f"{r.getMessage()} [{r.exc_info[1]!r}]" if r.exc_info else r.getMessage() for r in records)
 
 
 @pytest.fixture(scope="module")
@@ -244,8 +238,7 @@ def test_rejected_close_fixture_reaches_the_failed_close_branch(rejected_close):
 def test_close_survives_a_rejected_close_order(rejected_close):
     errors = _close_path_errors(rejected_close.records)
     assert not errors, (
-        "_close_all_positions_at_end raised when the close rebalance reported failure: "
-        f"{_describe(errors)}"
+        f"_close_all_positions_at_end raised when the close rebalance reported failure: {_describe(errors)}"
     )
 
 
@@ -322,10 +315,7 @@ def test_zero_change_fixture_reaches_the_zero_change_branch(zero_change_close):
 
 def test_close_survives_a_zero_allocation_change(zero_change_close):
     errors = _close_path_errors(zero_change_close.records)
-    assert not errors, (
-        "_close_all_positions_at_end raised on the zero-allocation-change branch: "
-        f"{_describe(errors)}"
-    )
+    assert not errors, f"_close_all_positions_at_end raised on the zero-allocation-change branch: {_describe(errors)}"
 
 
 def test_zero_allocation_change_still_records_the_close_bar(zero_change_close):

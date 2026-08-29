@@ -89,6 +89,7 @@ def _build_fixture_records():
 # Fixture (a): recovered CI covers the true point IC
 # ---------------------------------------------------------------------------
 
+
 def test_fixture_a_recovered_ci_covers_truth():
     records = _build_fixture_records()
     episodes = es.identify_episodes(records, gap_bars=48)
@@ -106,14 +107,12 @@ def test_fixture_a_recovered_ci_covers_truth():
     # which is our best unbiased estimate of the population IC under this generative
     # model) — the CI must cover it (it is definitionally the resampling center).
     assert result["ci_low"] <= result["pooled_ic"] <= result["ci_high"], (
-        f"CI [{result['ci_low']}, {result['ci_high']}] does not cover the point "
-        f"estimate {result['pooled_ic']}"
+        f"CI [{result['ci_low']}, {result['ci_high']}] does not cover the point estimate {result['pooled_ic']}"
     )
     # And the point estimate should be positive and non-trivial given true_ic_scale > 0
     # dominates episode_shock_sd/per_bar_noise_sd at this magnitude.
     assert result["pooled_ic"] > 0.05, (
-        f"pooled_ic={result['pooled_ic']} should reflect the known positive "
-        f"true_ic_scale={_TRUE_IC_SCALE} signal"
+        f"pooled_ic={result['pooled_ic']} should reflect the known positive true_ic_scale={_TRUE_IC_SCALE} signal"
     )
     assert result["n_episodes"] == _N_EPISODES
 
@@ -123,6 +122,7 @@ def test_fixture_a_recovered_ci_covers_truth():
 # episode method on the SAME data, because it doesn't know the within-episode
 # shared shock makes 30 consecutive active bars far less than 30 independent draws.
 # ---------------------------------------------------------------------------
+
 
 def test_fixture_b_naive_block_is_overconfident_vs_episode_method():
     records = _build_fixture_records()
@@ -142,7 +142,7 @@ def test_fixture_b_naive_block_is_overconfident_vs_episode_method():
     # half-width = 1.645 / sqrt(dof) for a 90% CI, matching the p<0.10 convention
     # used throughout this codebase).
     dof = max(naive_sig["n_eff"] - 3, 1)
-    naive_half_width = 1.645 / (dof ** 0.5)
+    naive_half_width = 1.645 / (dof**0.5)
     naive_ci_width = 2 * naive_half_width
 
     assert naive_ci_width < episode_ci_width, (
@@ -158,6 +158,7 @@ def test_fixture_b_naive_block_is_overconfident_vs_episode_method():
 # ---------------------------------------------------------------------------
 # Fixture (c): n_episodes < 8 -> significance suppressed regardless of p-value
 # ---------------------------------------------------------------------------
+
 
 def test_fixture_c_below_floor_suppresses_significance():
     # Only 4 episodes — deliberately below the n_episodes >= 8 floor. Use a huge
@@ -187,6 +188,7 @@ def test_fixture_c_below_floor_suppresses_significance():
 # ---------------------------------------------------------------------------
 # Supporting unit tests: episode construction respects era boundaries and gaps
 # ---------------------------------------------------------------------------
+
 
 def test_identify_episodes_respects_era_boundary():
     # Two active bars only 2 bars apart (well within gap_bars=48) but on opposite

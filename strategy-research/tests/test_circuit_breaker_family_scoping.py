@@ -11,6 +11,7 @@ never been refined even once. Also covers _family_names() (shares the F3 dict/st
 mismatch bug, here in the escalate-to-pivot counter) and the
 component_execution_error breaker-immunity rule.
 """
+
 import sys
 from pathlib import Path
 
@@ -127,24 +128,41 @@ def test_component_execution_error_is_immune_to_the_breaker(tmp_path, monkeypatc
     run_dir = tmp_path / "runs" / "run_test"
     (run_dir / "artifacts").mkdir(parents=True)
     interp_with_engineering_failure = {
-        "hypothesis_id": "X", "status": "refine", "hypothesis_family": "some_family",
+        "hypothesis_id": "X",
+        "status": "refine",
+        "hypothesis_family": "some_family",
         "proposed_change_dimension": "whatever",
-        "root_cause": {"mechanism_failure": "component_execution_error",
-                        "supporting_evidence": "active_n_bars=0, component_error_count=8040"},
+        "root_cause": {
+            "mechanism_failure": "component_execution_error",
+            "supporting_evidence": "active_n_bars=0, component_error_count=8040",
+        },
     }
     (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
         yaml.safe_dump(interp_with_engineering_failure), encoding="utf-8"
     )
-    (run_dir / "pipeline_state.yaml").write_text(yaml.safe_dump({
-        "run_id": "run_test", "status": "running", "current_stage": "verdict_interpreter",
-        "pending_stage": "verdict_interpreter", "completed_stages": [],
-    }), encoding="utf-8")
+    (run_dir / "pipeline_state.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "run_id": "run_test",
+                "status": "running",
+                "current_stage": "verdict_interpreter",
+                "pending_stage": "verdict_interpreter",
+                "completed_stages": [],
+            }
+        ),
+        encoding="utf-8",
+    )
     # campaign_state.yaml with 2 stale dims for "some_family" — if the breaker ran at
     # all, it would force pivot; must never get the chance.
-    (tmp_path / "campaign_state.yaml").write_text(yaml.safe_dump({
-        "recent_parameter_dimensions_by_family": {"some_family": ["dim_a", "dim_b"]},
-        "failed_families": [],
-    }), encoding="utf-8")
+    (tmp_path / "campaign_state.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "recent_parameter_dimensions_by_family": {"some_family": ["dim_a", "dim_b"]},
+                "failed_families": [],
+            }
+        ),
+        encoding="utf-8",
+    )
     monkeypatch.setattr(rpr, "CAMPAIGN_STATE_PATH", tmp_path / "campaign_state.yaml")
 
     next_stage = determine_post_verdict_route(run_dir, "run_test")

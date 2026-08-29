@@ -14,6 +14,7 @@ changes what run_claude_worker reads into context_blocks, which changes the
 prompt text an LLM stage receives. Comparing prompt TEXT, not just asserting
 the handoff dict/code path, is the actual proof.
 """
+
 import sys
 from pathlib import Path
 
@@ -29,8 +30,7 @@ import run_phase1_research as rpr  # noqa: E402
 def _minimal_run(root: Path, run_id: str) -> Path:
     run_dir = root / "runs" / run_id
     (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
-    (run_dir / "artifacts" / "research_brief.yaml").write_text(
-        "asset: BTCUSDT\n", encoding="utf-8")
+    (run_dir / "artifacts" / "research_brief.yaml").write_text("asset: BTCUSDT\n", encoding="utf-8")
     return run_dir
 
 
@@ -56,18 +56,24 @@ def _write_digest(root: Path) -> None:
     digest_path = root / "campaign_record" / "exclusion_digest.yaml"
     digest_path.parent.mkdir(parents=True, exist_ok=True)
     with open(digest_path, "w", encoding="utf-8") as f:
-        yaml.safe_dump({
-            "schema_version": 1,
-            "families": {"funding_rate_extreme": {"confidence": "structural_indicator_id",
-                                                    "triples": [{"instrument": "BTCUSDT",
-                                                                  "timeframe": "1h",
-                                                                  "run_ids": ["run_044"]}]}},
-        }, f)
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "families": {
+                    "funding_rate_extreme": {
+                        "confidence": "structural_indicator_id",
+                        "triples": [{"instrument": "BTCUSDT", "timeframe": "1h", "run_ids": ["run_044"]}],
+                    }
+                },
+            },
+            f,
+        )
 
 
 # ---------------------------------------------------------------------------
 # _exclusion_digest_input_enabled
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("enabled,expected", [(True, True), (False, False), (None, False)])
 def test_exclusion_digest_input_enabled_reads_flag(enabled, expected):
@@ -84,6 +90,7 @@ def test_exclusion_digest_input_enabled_false_when_config_file_absent():
 # ---------------------------------------------------------------------------
 # _apply_exclusion_digest_input -- handoff mutation
 # ---------------------------------------------------------------------------
+
 
 def test_apply_exclusion_digest_input_noop_when_flag_off():
     root = rpr.ROOT
@@ -132,11 +139,11 @@ def test_apply_exclusion_digest_input_deduplicates_already_listed_path():
     _write_digest(root)
     run_dir = _minimal_run(root, "run_904")
     handoff = _base_handoff()
-    handoff["optional_inputs"].append({"path": "../../campaign_record/exclusion_digest.yaml",
-                                        "reason": "already listed"})
+    handoff["optional_inputs"].append(
+        {"path": "../../campaign_record/exclusion_digest.yaml", "reason": "already listed"}
+    )
     rpr._apply_exclusion_digest_input("hypothesis_generation", handoff, run_dir)
-    matching = [r for r in handoff["optional_inputs"]
-                if r["path"] == "../../campaign_record/exclusion_digest.yaml"]
+    matching = [r for r in handoff["optional_inputs"] if r["path"] == "../../campaign_record/exclusion_digest.yaml"]
     assert len(matching) == 1
 
 
@@ -156,6 +163,7 @@ def test_apply_exclusion_digest_input_covers_both_generating_stages():
 # Off-by-default acceptance bar: fully-assembled PROMPT TEXT, flag off vs.
 # a baseline that never calls _apply_exclusion_digest_input at all.
 # ---------------------------------------------------------------------------
+
 
 def test_flag_off_prompt_is_byte_identical_to_never_calling_the_union_at_all():
     root = rpr.ROOT
@@ -218,8 +226,7 @@ def test_flag_on_innovation_expansion_prompt_also_carries_digest_content():
     _set_flag(root, True)
     _write_digest(root)
     run_dir = _minimal_run(root, "run_909")
-    (run_dir / "artifacts" / "hypothesis_card.yaml").write_text(
-        "hypothesis_id: X\n", encoding="utf-8")
+    (run_dir / "artifacts" / "hypothesis_card.yaml").write_text("hypothesis_id: X\n", encoding="utf-8")
 
     handoff = {
         "required_inputs": [

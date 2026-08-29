@@ -17,8 +17,8 @@ class AdvancedStrategy(MainStrategy):
     def __init__(self, config_path: Optional[str] = None):
         if config_path is None:
             strategies_dir = os.path.dirname(os.path.abspath(__file__))
-            project_dir    = os.path.dirname(strategies_dir)
-            config_path    = os.path.join(project_dir, 'strategy_config.json')
+            project_dir = os.path.dirname(strategies_dir)
+            config_path = os.path.join(project_dir, "strategy_config.json")
 
         self._config_path = config_path
 
@@ -31,7 +31,7 @@ class AdvancedStrategy(MainStrategy):
                 logger.error(e)
             raise ValueError("invalid strategy_config")
 
-        self.regime_engine   = ConfigDrivenRegimeEngine(config["regime_detector"])
+        self.regime_engine = ConfigDrivenRegimeEngine(config["regime_detector"])
         self.strategy_engine = ConfigDrivenStrategyEngine(config["strategies"])
 
         std_dev_period = 24
@@ -42,9 +42,7 @@ class AdvancedStrategy(MainStrategy):
         )
 
         self.data_buffer = RollingBuffer(self.required_bars + 100)
-        self.data_buffer.register_calculated_column(
-            'stddev_24', lambda df: df['close'].rolling(std_dev_period).std()
-        )
+        self.data_buffer.register_calculated_column("stddev_24", lambda df: df["close"].rolling(std_dev_period).std())
 
         self.last_forecast = 0.0
         # F7: memoized regime_engine.classify() result for the bar currently being
@@ -124,12 +122,14 @@ class AdvancedStrategy(MainStrategy):
             # F5b: count and classify instead of a bare log line (see __init__ note).
             self.component_error_count += 1
             if len(self.component_error_samples) < self._MAX_ERROR_SAMPLES:
-                self.component_error_samples.append({
-                    "bar_index": self._update_call_count,
-                    "stage": stage,
-                    "error_type": type(e).__name__,
-                    "error_message": str(e),
-                })
+                self.component_error_samples.append(
+                    {
+                        "bar_index": self._update_call_count,
+                        "stage": stage,
+                        "error_type": type(e).__name__,
+                        "error_message": str(e),
+                    }
+                )
             logger.error(f"Error updating strategy (stage={stage}, bar={self._update_call_count}): {e}")
 
     def generate_forecast(self) -> Tuple[float, Any, MarketRegime, float, Dict[str, Any]]:
@@ -140,13 +140,12 @@ class AdvancedStrategy(MainStrategy):
         self.last_forecast = forecast
 
         debug_info = {
-            'regime':        regime.value,
-            'forecast_delta': forecast_delta,
-            'regime_scores': debug_regime.get('scores', {}),
-            'regime_margin': debug_regime.get('margin'),
-            'bars_in_regime': self.regime_engine.bars_in_current_regime,
-            'components': debug_components,
+            "regime": regime.value,
+            "forecast_delta": forecast_delta,
+            "regime_scores": debug_regime.get("scores", {}),
+            "regime_margin": debug_regime.get("margin"),
+            "bars_in_regime": self.regime_engine.bars_in_current_regime,
+            "components": debug_components,
         }
 
         return forecast, None, regime, 0.0, debug_info
-

@@ -20,6 +20,7 @@ callback must accept both arguments. A 1-arg callback now raises TypeError
 loudly at the fire site (the narrowed except re-raises it) instead of being
 swallowed and silently reading as "0 callbacks fired".
 """
+
 import sys
 from pathlib import Path
 
@@ -39,14 +40,16 @@ INTERVAL_SECONDS = 3600
 def _hourly_frame(n: int, start: str = "2024-01-01 00:00:00") -> pd.DataFrame:
     """n hourly OHLCV rows with a unique volume per row (10.0 * (i+1))."""
     ts = pd.date_range(start, periods=n, freq="1h")
-    return pd.DataFrame({
-        "timestamp": ts,
-        "open":   [100.0 + i for i in range(n)],
-        "high":   [100.5 + i for i in range(n)],
-        "low":    [99.5 + i for i in range(n)],
-        "close":  [100.2 + i for i in range(n)],
-        "volume": [10.0 * (i + 1) for i in range(n)],
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": ts,
+            "open": [100.0 + i for i in range(n)],
+            "high": [100.5 + i for i in range(n)],
+            "low": [99.5 + i for i in range(n)],
+            "close": [100.2 + i for i in range(n)],
+            "volume": [10.0 * (i + 1) for i in range(n)],
+        }
+    )
 
 
 class _CallbackRecorder:
@@ -63,9 +66,7 @@ class _CallbackRecorder:
 
     def __call__(self, symbol: str, candle=None):
         self.calls += 1
-        self.history_snapshots.append(
-            self.dm.candle_builder.get_candle_history(symbol, count=1000)
-        )
+        self.history_snapshots.append(self.dm.candle_builder.get_candle_history(symbol, count=1000))
 
 
 def _make_dm(n_rows: int, symbol: str = SYMBOL, start: str = "2024-01-01 00:00:00"):
@@ -99,6 +100,7 @@ def _replay(dm: DataManager, symbol: str, n_rows: int) -> int:
 # ---------------------------------------------------------------------------
 # Core replay + flush behaviour
 # ---------------------------------------------------------------------------
+
 
 def test_replay_feeds_every_row_exactly_once():
     n = 5
@@ -164,8 +166,7 @@ def test_flush_final_bar_visible_in_history_exactly_once():
     assert len(snapshot) == n, f"expected {n} completed candles visible at flush time, got {len(snapshot)}"
     matches = snapshot[snapshot["timestamp"] == final.start_time]
     assert len(matches) == 1, (
-        f"the flushed bar's timestamp must appear exactly once in get_candle_history(); "
-        f"found {len(matches)}"
+        f"the flushed bar's timestamp must appear exactly once in get_candle_history(); found {len(matches)}"
     )
 
 
@@ -196,6 +197,7 @@ def test_flush_wrapper_raises_in_live_mode():
 # Edge cases: N=0, N=1
 # ---------------------------------------------------------------------------
 
+
 def test_zero_rows_zero_feeds_zero_callbacks():
     dm, recorder = _make_dm(0)
     feeds = _replay(dm, SYMBOL, 0)
@@ -220,6 +222,7 @@ def test_one_row_zero_in_loop_callbacks_one_after_flush():
 # ---------------------------------------------------------------------------
 # Multi-symbol
 # ---------------------------------------------------------------------------
+
 
 def test_two_symbols_unequal_lengths_each_flush_once():
     dm = DataManager(symbols=["BTCUSDT", "ETHUSDT"], interval_seconds=INTERVAL_SECONDS, mode="backtest")
@@ -252,6 +255,7 @@ def test_two_symbols_unequal_lengths_each_flush_once():
 # ---------------------------------------------------------------------------
 # Default wiring (issue #20 / A14 regression)
 # ---------------------------------------------------------------------------
+
 
 class _StrategyRecorder:
     """2-arg strategy callback — the (symbol, candle) contract that the DEFAULT

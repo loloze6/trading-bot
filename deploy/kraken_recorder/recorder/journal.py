@@ -342,9 +342,7 @@ class Interval:
         return self.start <= t <= self.end
 
 
-def coverage_intervals(
-    records: Sequence[Dict[str, Any]]
-) -> Dict[Tuple[str, str], List[Interval]]:
+def coverage_intervals(records: Sequence[Dict[str, Any]]) -> Dict[Tuple[str, str], List[Interval]]:
     """
     Reconstruct, per (symbol, channel), the wall-clock spans the journal
     attests were captured.
@@ -488,9 +486,7 @@ def _merge(intervals: List[Interval]) -> List[Interval]:
     return merged
 
 
-def uncovered(
-    intervals: Iterable[Interval], start: datetime, end: datetime
-) -> List[Tuple[datetime, datetime]]:
+def uncovered(intervals: Iterable[Interval], start: datetime, end: datetime) -> List[Tuple[datetime, datetime]]:
     """Sub-spans of [start, end] that no interval attests. Empty == fully covered."""
     if end < start:
         raise ValueError("end precedes start")
@@ -528,9 +524,7 @@ def assert_covered(
     ivs = coverage_intervals(load_records(journal_path)).get((symbol, channel), [])
     gaps = uncovered(ivs, start, end)
     if gaps:
-        rendered = ", ".join(
-            f"[{g[0].isoformat()} .. {g[1].isoformat()}]" for g in gaps
-        )
+        rendered = ", ".join(f"[{g[0].isoformat()} .. {g[1].isoformat()}]" for g in gaps)
         raise CoverageGapError(
             f"{symbol}/{channel}: journal does not attest "
             f"{len(gaps)} sub-window(s) of the requested range: {rendered}. "

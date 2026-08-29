@@ -12,6 +12,7 @@ Two separate defects, tested separately here:
      has always done exactly that, on both the live and backtest paths);
   B. losing every symbol produced a VERDICT instead of an error.
 """
+
 import json
 import sys
 from pathlib import Path
@@ -27,14 +28,16 @@ import prescreen_signal as ps  # noqa: E402
 
 def _write_csv(path, start, periods, freq_seconds):
     ts = pd.date_range(start, periods=periods, freq=f"{freq_seconds}s")
-    pd.DataFrame({
-        "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
-        "open":   [100.0 + i for i in range(periods)],
-        "high":   [101.0 + i for i in range(periods)],
-        "low":    [99.0 + i for i in range(periods)],
-        "close":  [100.5 + i for i in range(periods)],
-        "volume": [1.0] * periods,
-    }).to_csv(path, index=False)
+    pd.DataFrame(
+        {
+            "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
+            "open": [100.0 + i for i in range(periods)],
+            "high": [101.0 + i for i in range(periods)],
+            "low": [99.0 + i for i in range(periods)],
+            "close": [100.5 + i for i in range(periods)],
+            "volume": [1.0] * periods,
+        }
+    ).to_csv(path, index=False)
 
 
 @pytest.fixture
@@ -46,6 +49,7 @@ def local_data(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # A. Derivation
 # ---------------------------------------------------------------------------
+
 
 def test_derives_4h_from_a_1h_cache(local_data):
     """The exact run_060 case: no _4h.csv, a _1h.csv that covers the window."""
@@ -65,11 +69,11 @@ def test_derived_bars_use_the_engines_own_aggregation(local_data):
     df = ps._load_ohlcv("FOOUSDT", "2020-01-01", "2020-01-02", "4h")
 
     first = df.iloc[0]
-    assert first["open"] == 100.0            # first of bars 0-3
-    assert first["high"] == 104.0            # max
-    assert first["low"] == 99.0              # min
-    assert first["close"] == 103.5           # last of bars 0-3
-    assert first["volume"] == 4.0            # sum
+    assert first["open"] == 100.0  # first of bars 0-3
+    assert first["high"] == 104.0  # max
+    assert first["low"] == 99.0  # min
+    assert first["close"] == 103.5  # last of bars 0-3
+    assert first["volume"] == 4.0  # sum
     assert str(first["timestamp"]) == "2020-01-01 00:00:00"  # label='left'
 
 
@@ -82,10 +86,17 @@ def test_an_exact_cache_still_wins_over_derivation(local_data):
     assert df.iloc[0]["open"] == 100.0
 
 
-@pytest.mark.parametrize("target,expected_bars", [
-    ("2h", 12 * 5), ("4h", 6 * 5), ("6h", 4 * 5),
-    ("8h", 3 * 5), ("12h", 2 * 5), ("1d", 5),
-])
+@pytest.mark.parametrize(
+    "target,expected_bars",
+    [
+        ("2h", 12 * 5),
+        ("4h", 6 * 5),
+        ("6h", 4 * 5),
+        ("8h", 3 * 5),
+        ("12h", 2 * 5),
+        ("1d", 5),
+    ],
+)
 def test_derives_any_dividing_timeframe(local_data, target, expected_bars):
     """Not just 4h -- the point of the fix is that the NEXT timeframe works too."""
     _write_csv(local_data / "FOOUSDT_1h.csv", "2020-01-01", 24 * 5, 3600)
@@ -99,10 +110,16 @@ def test_picks_the_coarsest_cache_that_divides(local_data):
     and would be visible in the output if it had been chosen."""
     _write_csv(local_data / "FOOUSDT_1h.csv", "2020-01-01", 24, 3600)
     ts = pd.date_range("2020-01-01", periods=24 * 60, freq="60s")
-    pd.DataFrame({
-        "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
-        "open": 1000.0, "high": 1000.0, "low": 1000.0, "close": 1000.0, "volume": 1.0,
-    }).to_csv(local_data / "FOOUSDT_1m.csv", index=False)
+    pd.DataFrame(
+        {
+            "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
+            "open": 1000.0,
+            "high": 1000.0,
+            "low": 1000.0,
+            "close": 1000.0,
+            "volume": 1.0,
+        }
+    ).to_csv(local_data / "FOOUSDT_1m.csv", index=False)
 
     _, src = ps._resolve_ohlcv_source("FOOUSDT", "4h")
     assert src == "1h"
@@ -148,16 +165,21 @@ def test_error_names_what_is_actually_on_disk(local_data):
 # B. Zero usable data is an ERROR, not a route
 # ---------------------------------------------------------------------------
 
+
 def _minimal_run_inputs(tmp_path, symbols):
     cfg = tmp_path / "candidate_strategy_config.json"
-    cfg.write_text(json.dumps(
-        {"aux_feeds": [], "regime_detector": {}, "strategies": {}}), encoding="utf-8")
+    cfg.write_text(json.dumps({"aux_feeds": [], "regime_detector": {}, "strategies": {}}), encoding="utf-8")
     proto = tmp_path / "p.json"
-    proto.write_text(json.dumps({
-        "timeframe": "4h",
-        "symbols": symbols,
-        "windows": [{"test": {"start": "2020-01-01", "end": "2020-01-06"}}],
-    }), encoding="utf-8")
+    proto.write_text(
+        json.dumps(
+            {
+                "timeframe": "4h",
+                "symbols": symbols,
+                "windows": [{"test": {"start": "2020-01-01", "end": "2020-01-06"}}],
+            }
+        ),
+        encoding="utf-8",
+    )
     return cfg, proto
 
 
@@ -167,13 +189,11 @@ def test_no_usable_symbol_raises_rather_than_routing(local_data, tmp_path):
     was loaded' are different claims and must not share an output."""
     cfg, proto = _minimal_run_inputs(tmp_path, ["FOOUSDT"])
     with pytest.raises(RuntimeError, match="NO usable data"):
-        ps.run_prescreen(str(cfg), str(proto), run_id="test_run",
-                         out_dir=tmp_path / "out")
+        ps.run_prescreen(str(cfg), str(proto), run_id="test_run", out_dir=tmp_path / "out")
 
 
 def test_the_message_names_why_each_symbol_was_lost(local_data, tmp_path):
     cfg, proto = _minimal_run_inputs(tmp_path, ["FOOUSDT", "BARUSDT"])
     with pytest.raises(RuntimeError) as e:
-        ps.run_prescreen(str(cfg), str(proto), run_id="test_run",
-                         out_dir=tmp_path / "out")
+        ps.run_prescreen(str(cfg), str(proto), run_id="test_run", out_dir=tmp_path / "out")
     assert "FOOUSDT" in str(e.value) and "BARUSDT" in str(e.value)

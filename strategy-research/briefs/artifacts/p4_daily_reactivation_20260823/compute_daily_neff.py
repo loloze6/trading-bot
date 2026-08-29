@@ -33,6 +33,7 @@ holdout_range) -- this reads the DAILY caches whose generation script logs
 2013-10-06 through end-of-2025, not the sealed local_data/holdout_sealed/
 directory, which is never opened here.
 """
+
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -41,8 +42,27 @@ DATA = Path(__file__).resolve().parents[3] / ".." / "trading-bot" / "local_data"
 DATA = DATA.resolve()
 
 # All 19 Kraken USD daily pairs landed 2026-08-07 (commit 8cff3f24).
-SYMS_19 = ["BTC", "ETH", "XRP", "SOL", "ADA", "SUI", "ZEC", "DOGE", "XMR", "LTC",
-           "ONDO", "NEAR", "LINK", "TAO", "AVAX", "TRX", "AAVE", "INJ", "UNI"]
+SYMS_19 = [
+    "BTC",
+    "ETH",
+    "XRP",
+    "SOL",
+    "ADA",
+    "SUI",
+    "ZEC",
+    "DOGE",
+    "XMR",
+    "LTC",
+    "ONDO",
+    "NEAR",
+    "LINK",
+    "TAO",
+    "AVAX",
+    "TRX",
+    "AAVE",
+    "INJ",
+    "UNI",
+]
 # Primary universe for the P4 parent-rule pass_rule: BTC/ETH excluded as an
 # ASSET-level contamination (operator ruling) -- measured under this family on
 # Binance in runs 053-057; Kraken BTC/ETH are the same assets, different venue.
@@ -79,40 +99,42 @@ def main():
     print(f"Union daily index: {len(idx)} rows, {idx[0]} -> {idx[-1]}")
     print()
 
-    print("=== RAW pairwise-complete correlation (as-produced method, matches "
-          "_verify_xs_neff.py's 1h methodology) ===")
+    print("=== RAW pairwise-complete correlation (as-produced method, matches _verify_xs_neff.py's 1h methodology) ===")
     for name, cols in [("all-19", SYMS_19), ("primary-17-nobtceth", SYMS_17)]:
         M = logret[cols].corr(method="pearson", min_periods=100)
         rb = rho_bar(M)
         me = mineig(M)
         ne = n_eff(len(cols), rb)
-        print(f"{name:22s} n={len(cols):2d} rho_bar={rb:+.4f} n_eff={ne:.3f} "
-              f"minEig={me:+.4f} PSD={me >= -1e-8}")
+        print(f"{name:22s} n={len(cols):2d} rho_bar={rb:+.4f} n_eff={ne:.3f} minEig={me:+.4f} PSD={me >= -1e-8}")
 
     print()
-    print("=== LISTWISE common-window (all-19) correlation, for comparison "
-          "(this is what changes if short-history symbols like TAO/ONDO are "
-          "allowed to set the window) ===")
+    print(
+        "=== LISTWISE common-window (all-19) correlation, for comparison "
+        "(this is what changes if short-history symbols like TAO/ONDO are "
+        "allowed to set the window) ==="
+    )
     for name, cols in [("all-19", SYMS_19), ("primary-17-nobtceth", SYMS_17)]:
         common = logret[cols].dropna()
         Mlw = common.corr()
         rb = rho_bar(Mlw)
         me = mineig(Mlw)
         ne = n_eff(len(cols), rb)
-        print(f"{name:22s} rows={len(common):4d} window={common.index.min()} -> "
-              f"{common.index.max()}  rho_bar={rb:+.4f} n_eff={ne:.3f} minEig={me:+.4f}")
+        print(
+            f"{name:22s} rows={len(common):4d} window={common.index.min()} -> "
+            f"{common.index.max()}  rho_bar={rb:+.4f} n_eff={ne:.3f} minEig={me:+.4f}"
+        )
 
     print()
-    print("=== Per-symbol history length (rows, first date) -- context for the "
-          "pairwise-complete vs listwise divergence above ===")
+    print(
+        "=== Per-symbol history length (rows, first date) -- context for the "
+        "pairwise-complete vs listwise divergence above ==="
+    )
     for s in SYMS_19:
         c = closes[s]
-        print(f"  {s:6s} rows={len(c):5d} first={c.index.min().date()} "
-              f"last={c.index.max().date()}")
+        print(f"  {s:6s} rows={len(c):5d} first={c.index.min().date()} last={c.index.max().date()}")
 
     print()
-    print("=== 1h prior (reference, from _verify_xs_neff.py / ratified XS_momentum "
-          "findings, NOT recomputed here) ===")
+    print("=== 1h prior (reference, from _verify_xs_neff.py / ratified XS_momentum findings, NOT recomputed here) ===")
     print("  all-19  1h: rho_bar=+0.5419  n_eff=1.767  (quoted, not measured by this script)")
 
 

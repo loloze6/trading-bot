@@ -74,6 +74,7 @@ on the raw feature column, while `prescreen_signal.py::_extract_forecasts`
 computes a strategy FORECAST — a different, gated subset of the same feature.
 Only the two statistics primitives are shared; the evaluation path is not.
 """
+
 from __future__ import annotations
 
 import json
@@ -93,9 +94,9 @@ import yaml
 # regardless of how the caller set up sys.path (mirrors
 # tests/test_whale_footprint_evaluation.py's own TOOLS_PATH insertion).
 # ---------------------------------------------------------------------------
-_HERE = Path(__file__).resolve().parent          # strategy-research/tools/
-_REPO = _HERE.parent.parent                       # repo root
-_TBOT = _REPO / "trading-bot"                     # trading-bot/
+_HERE = Path(__file__).resolve().parent  # strategy-research/tools/
+_REPO = _HERE.parent.parent  # repo root
+_TBOT = _REPO / "trading-bot"  # trading-bot/
 
 for _p in (str(_HERE), str(_TBOT)):
     if _p not in sys.path:
@@ -113,7 +114,7 @@ MIN_BARS_FOR_PER_PAIR_SIGN = 30  # prereg verdict.sign_consistency: pairs below 
 @dataclass
 class EvaluationResult:
     status: str  # "BLOCKED_SINGLE_USE" | "BLOCKED_ECONOMIC_INFEASIBILITY" |
-                 # "BLOCKED_COVERAGE_FLOOR" | "BLOCKED_MIN_N" | "VERDICT"
+    # "BLOCKED_COVERAGE_FLOOR" | "BLOCKED_MIN_N" | "VERDICT"
     verdict: Optional[str] = None  # "PASS" | "UNSTABLE" | "NULL", only when status == "VERDICT"
     detail: Dict[str, Any] = field(default_factory=dict)
 
@@ -141,10 +142,17 @@ def _read_consumption(prereg_path: Path) -> Optional[Dict[str, Any]]:
 
 def _write_consumption(prereg_path: Path, run_id: str, hypothesis_id: str) -> None:
     p = _consumption_path(prereg_path)
-    p.write_text(json.dumps({
-        "hypothesis_id": hypothesis_id, "run_id": run_id,
-        "consumed_at": pd.Timestamp.utcnow().isoformat(),
-    }, indent=2), encoding="utf-8")
+    p.write_text(
+        json.dumps(
+            {
+                "hypothesis_id": hypothesis_id,
+                "run_id": run_id,
+                "consumed_at": pd.Timestamp.utcnow().isoformat(),
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
 
 def _pooled_attested(panels: Dict[str, pd.DataFrame], column: str) -> pd.DataFrame:
@@ -171,8 +179,9 @@ def _attested_bars_per_pair_avg(panels: Dict[str, pd.DataFrame]) -> float:
     return float(np.mean(counts)) if counts else 0.0
 
 
-def _sign_consistency(panels: Dict[str, pd.DataFrame], column: str,
-                       pooled_sign: int, floor: float = 0.80) -> Dict[str, Any]:
+def _sign_consistency(
+    panels: Dict[str, pd.DataFrame], column: str, pooled_sign: int, floor: float = 0.80
+) -> Dict[str, Any]:
     per_pair_signs = []
     for pair, df in panels.items():
         sub = df[df["attested"].astype(bool)][[column, "target"]].dropna()
@@ -192,17 +201,22 @@ def _sign_consistency(panels: Dict[str, pd.DataFrame], column: str,
     return {"holds": agree >= floor, "agree_fraction": agree, "n_pairs_signed": len(per_pair_signs)}
 
 
-def _feature_verdict(panels: Dict[str, pd.DataFrame], column: str,
-                      alpha_corrected: float, sign_floor: float) -> Dict[str, Any]:
+def _feature_verdict(
+    panels: Dict[str, pd.DataFrame], column: str, alpha_corrected: float, sign_floor: float
+) -> Dict[str, Any]:
     pooled = _pooled_attested(panels, column)
     n_attested = len(pooled)
     if n_attested < 3 or pooled[column].nunique() < 2 or pooled["target"].nunique() < 2:
-        return {"feature": column, "verdict": "NULL", "ic": None, "p_value": None,
-                "reason": "insufficient pooled data"}
+        return {"feature": column, "verdict": "NULL", "ic": None, "p_value": None, "reason": "insufficient pooled data"}
     ic = _spearman(pooled[column].tolist(), pooled["target"].tolist())
     if ic is None:
-        return {"feature": column, "verdict": "NULL", "ic": None, "p_value": None,
-                "reason": "degenerate pooled correlation (zero variance)"}
+        return {
+            "feature": column,
+            "verdict": "NULL",
+            "ic": None,
+            "p_value": None,
+            "reason": "degenerate pooled correlation (zero variance)",
+        }
     # W14 R3: block-24 Fisher-z significance (the same estimator every 1h
     # prescreen decision in this campaign is gated on), NOT the raw scipy
     # p-value -- see the module docstring "STATISTICS ARE SHARED" section.
@@ -216,12 +230,23 @@ def _feature_verdict(panels: Dict[str, pd.DataFrame], column: str,
     # own unrelated routing constant.
     clears = bool(p_value < alpha_corrected)
     if not clears:
-        return {"feature": column, "verdict": "NULL", "ic": float(ic), "p_value": float(p_value),
-                "significance": significance}
+        return {
+            "feature": column,
+            "verdict": "NULL",
+            "ic": float(ic),
+            "p_value": float(p_value),
+            "significance": significance,
+        }
     sc = _sign_consistency(panels, column, int(np.sign(ic)), floor=sign_floor)
     verdict = "PASS" if sc["holds"] else "UNSTABLE"
-    return {"feature": column, "verdict": verdict, "ic": float(ic), "p_value": float(p_value),
-            "sign_consistency": sc, "significance": significance}
+    return {
+        "feature": column,
+        "verdict": verdict,
+        "ic": float(ic),
+        "p_value": float(p_value),
+        "sign_consistency": sc,
+        "significance": significance,
+    }
 
 
 def evaluate(
@@ -287,14 +312,19 @@ def evaluate(
         _write_consumption(prereg_path, run_id=run_id, hypothesis_id=hypothesis_id)
 
     return EvaluationResult(
-        status="VERDICT", verdict=total,
-        detail={"per_feature": per_feature, "attested_fraction": attested_fraction,
-                "attested_bars_per_pair_avg": avg_attested},
+        status="VERDICT",
+        verdict=total,
+        detail={
+            "per_feature": per_feature,
+            "attested_fraction": attested_fraction,
+            "attested_bars_per_pair_avg": avg_attested,
+        },
     )
 
 
 def main(argv=None) -> int:
     import argparse
+
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--prereg", required=True, type=Path)
     ap.add_argument("--run-id", default="manual_run")

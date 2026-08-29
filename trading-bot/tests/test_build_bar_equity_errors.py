@@ -7,6 +7,7 @@ The bar_equity flag is an explicit opt-in, so degenerate input must raise
 ValueError, never silently return an empty/misleading block -- see
 build_bar_equity's own docstring for the exact list of conditions.
 """
+
 import sys
 from pathlib import Path
 
@@ -20,8 +21,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from reporting.run_artifact import build_bar_equity
 
 _REQUIRED_COLS = [
-    "regime", "timestamp", "postRebalance_total_value",
-    "postRebalance_current_allocation", "previous_allocation",
+    "regime",
+    "timestamp",
+    "postRebalance_total_value",
+    "postRebalance_current_allocation",
+    "previous_allocation",
 ]
 
 
@@ -31,13 +35,15 @@ def _bars(regimes, values=None, timestamps=None, alloc=None, prev_alloc=None):
     timestamps = timestamps if timestamps is not None else pd.date_range("2024-01-01", periods=n, freq="h")
     alloc = alloc if alloc is not None else [0.0] * n
     prev_alloc = prev_alloc if prev_alloc is not None else [0.0] * n
-    return pd.DataFrame({
-        "regime": regimes,
-        "timestamp": timestamps,
-        "postRebalance_total_value": values,
-        "postRebalance_current_allocation": alloc,
-        "previous_allocation": prev_alloc,
-    })
+    return pd.DataFrame(
+        {
+            "regime": regimes,
+            "timestamp": timestamps,
+            "postRebalance_total_value": values,
+            "postRebalance_current_allocation": alloc,
+            "previous_allocation": prev_alloc,
+        }
+    )
 
 
 def test_missing_required_column_raises():

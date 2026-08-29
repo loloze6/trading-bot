@@ -10,6 +10,7 @@ run_047's pipeline_state.yaml (frozen — see this project's standing rule that
 regression fixtures use the real historical failure, frozen so a later
 successful re-run of the live directory can't invalidate the test).
 """
+
 import sys
 from pathlib import Path
 
@@ -83,8 +84,14 @@ def test_backward_compatible_with_post_f4c_entries_carrying_weighted_field():
     must be used directly, not recomputed (avoids double-applying weights)."""
     audit_log = {
         "some_stage_attempt_0": {
-            "tokens": {"input": 10, "output": 10, "cache_read": 10, "cache_creation": 10,
-                       "total": 40, "weighted": 999.0},
+            "tokens": {
+                "input": 10,
+                "output": 10,
+                "cache_read": 10,
+                "cache_creation": 10,
+                "total": 40,
+                "weighted": 999.0,
+            },
         },
     }
     weighted_total, breakdown = rpr._compute_weighted_budget_usage(audit_log)

@@ -19,6 +19,7 @@ Read-only with respect to production code: consumes trades.json/bars.csv as
 existing artifacts. performance/metrics.py and all production matching code
 are never imported, never modified.
 """
+
 import json
 import statistics
 from pathlib import Path
@@ -79,22 +80,32 @@ def compute_episode_boundaries(bars_df: pd.DataFrame) -> list:
         curr_sign = 1 if fc > _ACTIVE_THRESHOLD else (-1 if fc < -_ACTIVE_THRESHOLD else 0)
         if curr_sign != prev_sign:
             if open_idx is not None:
-                episodes.append({
-                    "open_idx": open_idx, "close_idx": i,
-                    "entry_time": timestamps[open_idx], "exit_time": timestamps[i],
-                    "direction": open_sign, "duration_bars": i - open_idx,
-                })
+                episodes.append(
+                    {
+                        "open_idx": open_idx,
+                        "close_idx": i,
+                        "entry_time": timestamps[open_idx],
+                        "exit_time": timestamps[i],
+                        "direction": open_sign,
+                        "duration_bars": i - open_idx,
+                    }
+                )
                 open_idx = None
             if curr_sign != 0:
                 open_idx = i
                 open_sign = curr_sign
         prev_sign = curr_sign
     if open_idx is not None:
-        episodes.append({
-            "open_idx": open_idx, "close_idx": len(forecasts) - 1,
-            "entry_time": timestamps[open_idx], "exit_time": timestamps[-1],
-            "direction": open_sign, "duration_bars": len(forecasts) - 1 - open_idx,
-        })
+        episodes.append(
+            {
+                "open_idx": open_idx,
+                "close_idx": len(forecasts) - 1,
+                "entry_time": timestamps[open_idx],
+                "exit_time": timestamps[-1],
+                "direction": open_sign,
+                "duration_bars": len(forecasts) - 1 - open_idx,
+            }
+        )
     return episodes
 
 
@@ -129,20 +140,23 @@ def group_fragments_into_episodes(fragments: list, episodes: list) -> list:
         if not frags:
             continue
         real_pnl = sum(f.get("net_profit_loss_absolute", 0.0) for f in frags)
-        out.append({
-            **e,
-            "fragments": frags,
-            "n_fragments": len(frags),
-            "is_scaled": len(frags) > 1,
-            "episode_pnl_net": real_pnl,
-            "episode_profitable": real_pnl > 0,
-        })
+        out.append(
+            {
+                **e,
+                "fragments": frags,
+                "n_fragments": len(frags),
+                "is_scaled": len(frags) > 1,
+                "episode_pnl_net": real_pnl,
+                "episode_profitable": real_pnl > 0,
+            }
+        )
     return out, unassigned
 
 
 # ---------------------------------------------------------------------------
 # 1. Forecast-bin outcome table
 # ---------------------------------------------------------------------------
+
 
 def build_forecast_bin_table(fragments: list, episodes: list) -> dict:
     """Fragments bucketed by entry-forecast level. basis: lifo_fragment,
@@ -154,10 +168,15 @@ def build_forecast_bin_table(fragments: list, episodes: list) -> dict:
 
     for frag in fragments:
         label = _forecast_bin_label(frag.get("entry_forecast"))
-        b = bins.setdefault(label, {
-            "fragment_count": 0, "episode_count": 0,
-            "aggregate_pnl_net": 0.0, "aggregate_cost": 0.0,
-        })
+        b = bins.setdefault(
+            label,
+            {
+                "fragment_count": 0,
+                "episode_count": 0,
+                "aggregate_pnl_net": 0.0,
+                "aggregate_cost": 0.0,
+            },
+        )
         b["fragment_count"] += 1
         b["aggregate_pnl_net"] += frag.get("net_profit_loss_absolute", 0.0)
         b["aggregate_cost"] += frag.get("total_commission", 0.0)
@@ -165,10 +184,15 @@ def build_forecast_bin_table(fragments: list, episodes: list) -> dict:
     for ep in episodes:
         opening_frag = ep["fragments"][0]
         label = _forecast_bin_label(opening_frag.get("entry_forecast"))
-        bins.setdefault(label, {
-            "fragment_count": 0, "episode_count": 0,
-            "aggregate_pnl_net": 0.0, "aggregate_cost": 0.0,
-        })
+        bins.setdefault(
+            label,
+            {
+                "fragment_count": 0,
+                "episode_count": 0,
+                "aggregate_pnl_net": 0.0,
+                "aggregate_cost": 0.0,
+            },
+        )
         bins[label]["episode_count"] += 1
 
     for label, b in bins.items():
@@ -187,12 +211,16 @@ def build_forecast_bin_table(fragments: list, episodes: list) -> dict:
 # 2. Forecast composition at entry/exit (component attribution)
 # ---------------------------------------------------------------------------
 
+
 def _component_contributions(debug_info: Optional[dict]) -> dict:
     if not debug_info or not isinstance(debug_info, dict):
         return {}
     comps = debug_info.get("components") or {}
-    return {name: c.get("weighted_contribution") for name, c in comps.items()
-            if isinstance(c, dict) and c.get("weighted_contribution") is not None}
+    return {
+        name: c.get("weighted_contribution")
+        for name, c in comps.items()
+        if isinstance(c, dict) and c.get("weighted_contribution") is not None
+    }
 
 
 def build_forecast_composition(fragments: list) -> dict:
@@ -215,7 +243,11 @@ def build_forecast_composition(fragments: list) -> dict:
     for label, b in per_bin.items():
         entry_means = {name: round(statistics.mean(vals), 4) for name, vals in b["entry_contributions"].items()}
         exit_means = {name: round(statistics.mean(vals), 4) for name, vals in b["exit_contributions"].items()}
-        result[label] = {"n_fragments": b["n"], "entry_component_means": entry_means, "exit_component_means": exit_means}
+        result[label] = {
+            "n_fragments": b["n"],
+            "entry_component_means": entry_means,
+            "exit_component_means": exit_means,
+        }
 
     return {"basis": "lifo_fragment, ideation_only", "by_bin": result}
 
@@ -223,6 +255,7 @@ def build_forecast_composition(fragments: list) -> dict:
 # ---------------------------------------------------------------------------
 # 3. Increment anatomy (initial-entry vs scale-up fragments)
 # ---------------------------------------------------------------------------
+
 
 def build_increment_anatomy(episodes: list) -> dict:
     """Compares initial-entry fragments (each episode's first fragment)
@@ -259,7 +292,9 @@ def build_increment_anatomy(episodes: list) -> dict:
             "episode has exactly one fragment. initial_entry and scale_up "
             "summaries below are structurally uninformative (scale_up is "
             "empty by construction), not a finding."
-        ) if inert else None,
+        )
+        if inert
+        else None,
         "initial_entry": _summ(initial),
         "scale_up": _summ(scale_up),
     }
@@ -268,6 +303,7 @@ def build_increment_anatomy(episodes: list) -> dict:
 # ---------------------------------------------------------------------------
 # 4. Episode anatomy by duration and regime
 # ---------------------------------------------------------------------------
+
 
 def _duration_bucket(duration_bars: int) -> str:
     if duration_bars <= 5:
@@ -295,13 +331,15 @@ def build_episode_anatomy(episodes: list) -> dict:
 
     table = []
     for (dur_bucket, regime), c in cells.items():
-        table.append({
-            "duration_bucket": dur_bucket,
-            "regime": regime,
-            "n_episodes": c["n_episodes"],
-            "win_rate_pct": round(100 * c["n_profitable"] / c["n_episodes"], 2),
-            "aggregate_pnl_net": round(c["aggregate_pnl_net"], 4),
-        })
+        table.append(
+            {
+                "duration_bucket": dur_bucket,
+                "regime": regime,
+                "n_episodes": c["n_episodes"],
+                "win_rate_pct": round(100 * c["n_profitable"] / c["n_episodes"], 2),
+                "aggregate_pnl_net": round(c["aggregate_pnl_net"], 4),
+            }
+        )
     table.sort(key=lambda r: (r["regime"], r["duration_bucket"]))
 
     return {"basis": "lifo_fragment, ideation_only", "table": table}
@@ -310,6 +348,7 @@ def build_episode_anatomy(episodes: list) -> dict:
 # ---------------------------------------------------------------------------
 # Orchestration
 # ---------------------------------------------------------------------------
+
 
 def compute_fragment_patterns_for_run(run_dir: Path, protocol_result: dict) -> dict:
     """Aggregates all four fragment_patterns tables across every

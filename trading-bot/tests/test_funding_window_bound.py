@@ -14,6 +14,7 @@ series. These tests pin:
 
 Fast: tmp_path CSV fixtures for T1-T4(a/b); a stubbed engine for T4(c)/T5.
 """
+
 import logging
 import sys
 import types
@@ -43,12 +44,15 @@ def _write_funding_csv(data_dir, rows):
 def test_bound_applied_keeps_only_in_window_days(tmp_path):
     """T1 -- only the in-window day survives, value-exact. Keys-equality (not `in`)
     makes an out-of-window day leaking through a failure, not a pass."""
-    _write_funding_csv(tmp_path, [
-        ("2024-01-01 00:00:00", 0.0001),
-        ("2024-01-02 00:00:00", 0.0002),
-        ("2024-01-02 08:00:00", 0.0004),
-        ("2024-01-03 00:00:00", 0.0009),
-    ])
+    _write_funding_csv(
+        tmp_path,
+        [
+            ("2024-01-01 00:00:00", 0.0001),
+            ("2024-01-02 00:00:00", 0.0002),
+            ("2024-01-02 08:00:00", 0.0004),
+            ("2024-01-03 00:00:00", 0.0009),
+        ],
+    )
     series = build_daily_funding_series([SYMBOL], str(tmp_path), "2024-01-02", "2024-01-02")[SYMBOL]
     assert set(series.keys()) == {pd.Timestamp("2024-01-02")}
     assert series[pd.Timestamp("2024-01-02")] == pytest.approx(0.0002 + 0.0004)
@@ -61,29 +65,35 @@ def test_boundary_days_inclusive_day_normalized(tmp_path):
     # End edge: a daily bar opens 00:00; that day's 08:00/16:00 settle AFTER the bound.
     end_dir = tmp_path / "end_edge"
     end_dir.mkdir()
-    _write_funding_csv(end_dir, [
-        ("2024-01-02 00:00:00", 0.0001),
-        ("2024-01-02 08:00:00", 0.0002),
-        ("2024-01-02 16:00:00", 0.0003),
-    ])
-    end_series = build_daily_funding_series(
-        [SYMBOL], str(end_dir), "2024-01-02 00:00:00", "2024-01-02 00:00:00"
-    )[SYMBOL]
+    _write_funding_csv(
+        end_dir,
+        [
+            ("2024-01-02 00:00:00", 0.0001),
+            ("2024-01-02 08:00:00", 0.0002),
+            ("2024-01-02 16:00:00", 0.0003),
+        ],
+    )
+    end_series = build_daily_funding_series([SYMBOL], str(end_dir), "2024-01-02 00:00:00", "2024-01-02 00:00:00")[
+        SYMBOL
+    ]
     assert end_series[pd.Timestamp("2024-01-02")] == pytest.approx(0.0001 + 0.0002 + 0.0003)
 
     # Start edge: a 1h-style last-bar open at 23:00; that day's earlier settlements
     # precede the bound and a raw `>=` cut would drop them.
     start_dir = tmp_path / "start_edge"
     start_dir.mkdir()
-    _write_funding_csv(start_dir, [
-        ("2024-01-01 00:00:00", 0.0005),
-        ("2024-01-01 08:00:00", 0.0006),
-        ("2024-01-01 16:00:00", 0.0007),
-        ("2024-01-02 00:00:00", 0.0002),
-    ])
-    start_series = build_daily_funding_series(
-        [SYMBOL], str(start_dir), "2024-01-01 23:00:00", "2024-01-02 00:00:00"
-    )[SYMBOL]
+    _write_funding_csv(
+        start_dir,
+        [
+            ("2024-01-01 00:00:00", 0.0005),
+            ("2024-01-01 08:00:00", 0.0006),
+            ("2024-01-01 16:00:00", 0.0007),
+            ("2024-01-02 00:00:00", 0.0002),
+        ],
+    )
+    start_series = build_daily_funding_series([SYMBOL], str(start_dir), "2024-01-01 23:00:00", "2024-01-02 00:00:00")[
+        SYMBOL
+    ]
     assert start_series[pd.Timestamp("2024-01-01")] == pytest.approx(0.0005 + 0.0006 + 0.0007)
 
 
@@ -91,10 +101,13 @@ def test_sealed_side_rows_not_loaded(tmp_path):
     """T3 -- a settlement dated into the sealed window is provably excluded when the
     window ends before it. (Test fixtures may reference sealed dates -- see
     test_no_sealed_date_literals.py: "tests" is in EXCLUDED_PARTS.)"""
-    _write_funding_csv(tmp_path, [
-        ("2025-12-31 00:00:00", 0.0008),
-        ("2026-01-02 00:00:00", 0.0011),
-    ])
+    _write_funding_csv(
+        tmp_path,
+        [
+            ("2025-12-31 00:00:00", 0.0008),
+            ("2026-01-02 00:00:00", 0.0011),
+        ],
+    )
     series = build_daily_funding_series([SYMBOL], str(tmp_path), "2025-12-01", "2025-12-31")[SYMBOL]
     assert set(series.keys()) == {pd.Timestamp("2025-12-31")}
     assert series[pd.Timestamp("2025-12-31")] == pytest.approx(0.0008)
@@ -140,11 +153,17 @@ def test_call_site_degenerate_frames_raise_per_shape():
 def test_call_site_bounds_are_loaded_frame_extents(monkeypatch):
     """T5 -- the window passed to the builder is the loaded frames' (min, max)
     timestamp extents, not the request or a hardcode."""
-    frame = pd.DataFrame({
-        "timestamp": pd.to_datetime([
-            "2024-02-01 00:00:00", "2024-02-10 00:00:00", "2024-02-05 00:00:00",
-        ]),
-    })
+    frame = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(
+                [
+                    "2024-02-01 00:00:00",
+                    "2024-02-10 00:00:00",
+                    "2024-02-05 00:00:00",
+                ]
+            ),
+        }
+    )
     engine = _engine_with_frames({SYMBOL: frame})
 
     captured = {}
@@ -177,16 +196,19 @@ def test_call_site_bounds_reduce_across_multiple_frames(monkeypatch):
     Guards the single-symbol reduction (backtester.py: min/max over
     historical_data.values()), a no-op today because load_data populates one frame,
     but armed the moment the engine goes multi-symbol -- a documented trap."""
-    interior = pd.DataFrame({"timestamp": pd.to_datetime(
-        ["2024-02-08 00:00:00", "2024-02-10 00:00:00", "2024-02-12 00:00:00"])})
-    holds_min = pd.DataFrame({"timestamp": pd.to_datetime(
-        ["2024-02-01 00:00:00", "2024-02-03 00:00:00"])})
-    holds_max = pd.DataFrame({"timestamp": pd.to_datetime(
-        ["2024-02-18 00:00:00", "2024-02-20 00:00:00"])})
+    interior = pd.DataFrame(
+        {"timestamp": pd.to_datetime(["2024-02-08 00:00:00", "2024-02-10 00:00:00", "2024-02-12 00:00:00"])}
+    )
+    holds_min = pd.DataFrame({"timestamp": pd.to_datetime(["2024-02-01 00:00:00", "2024-02-03 00:00:00"])})
+    holds_max = pd.DataFrame({"timestamp": pd.to_datetime(["2024-02-18 00:00:00", "2024-02-20 00:00:00"])})
     # Insertion order == iteration order: the interior frame is first.
-    engine = _engine_with_frames({
-        "BTCUSDT": interior, "ETHUSDT": holds_min, "SOLUSDT": holds_max,
-    })
+    engine = _engine_with_frames(
+        {
+            "BTCUSDT": interior,
+            "ETHUSDT": holds_min,
+            "SOLUSDT": holds_max,
+        }
+    )
 
     captured = {}
 
