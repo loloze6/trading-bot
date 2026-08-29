@@ -1546,13 +1546,25 @@ class EnhancedPerformanceTracker:
         # { 'DETECTED_REGIME': { 'GROUND_TRUTH_REGIME': count } }
         confusion_matrix = confusion_df.to_dict(orient='index')
         
+        # #48 F4: on the default path (price_data is None) every
+        # ground_truth_regime is the constant 'UNKNOWN', so `accuracy_pct`
+        # measures agreement with a constant while the workbook legend promises
+        # "Target: >90%". A believable-looking number that means nothing. Report
+        # it as undefined when the ground truth is degenerate rather than
+        # printing a figure a human will read as a result.
+        gt_unique = ground_truth.unique().tolist()
+        ground_truth_degenerate = len(gt_unique) < 2
         return {
             'total_trades_analyzed': total,
             'agreements': int(agreements),
-            'accuracy_pct': round(accuracy, 2),
+            'accuracy_pct': None if ground_truth_degenerate else round(accuracy, 2),
+            'accuracy_undefined_reason': (
+                f"ground truth is constant ({gt_unique[0]!r} on every row) -- "
+                f"agreement with a constant is not an accuracy"
+            ) if ground_truth_degenerate else None,
             'confusion_matrix': confusion_matrix,
             'detected_regimes': sorted(detected.unique().tolist()),
-            'ground_truth_regimes': sorted(ground_truth.unique().tolist())
+            'ground_truth_regimes': sorted(gt_unique)
         }
 
 

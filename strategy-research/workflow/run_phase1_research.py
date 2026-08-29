@@ -49,6 +49,7 @@ import subprocess
 import json
 import sys
 import shutil
+import math
 import statistics
 import hashlib
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBlock
@@ -5297,8 +5298,20 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
         passes_deflated = False
     else:
         mu_sr    = statistics.mean(sharpe_values)
-        sigma_sr = statistics.stdev(sharpe_values)
-        var_sr   = sigma_sr ** 2
+        # #56: POPULATION variance (n denominator), matching
+        # deflate_sharpe.py's reasoned choice. This site used
+        # statistics.stdev -- the SAMPLE form, n-1 denominator, with no
+        # rationale attached -- so the two lockstep paths returned different
+        # sigma_sr, hence different E_max_SR and different DSR, for identical
+        # trial Sharpes. The pipeline always reported the LARGER sigma, by
+        # sqrt(n/(n-1)): ~5.4% at n=10, ~1% at n=50.
+        # The population form is the intended one: it estimates the SHAPE of
+        # the Sharpe-generating process from the values actually observed,
+        # independent of how many total attempts N counts.
+        # Second drift of this class after correction_method (#40/#43), third
+        # counting the dedup predicate (#57).
+        var_sr   = sum((v - mu_sr) ** 2 for v in sharpe_values) / len(sharpe_values)
+        sigma_sr = math.sqrt(var_sr)
 
         if sigma_sr < 1e-10:
             dsr_result = {
