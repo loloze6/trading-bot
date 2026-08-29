@@ -726,3 +726,82 @@ and pre-wrote our exact append against the live row schema.
 - Check the premise of your own recommendation before implementing it. Twice
   today the cautious version (dual-spelling readers; "name a timeslot") was
   wrong once the facts were actually looked at.
+
+## 2026-08-29 — #50 settled as pre-registration; #45/#46 merged; J3 landed
+
+**The queue was not empty.** Session opened expecting to pick a lane from an
+empty board. Dorian had shipped overnight: PRs #45/#46 and issues #47-#51.
+Reading Slack BEFORE choosing was the whole difference — #50 changes the
+sequencing, and the lane choice was never the real decision.
+
+**#50 verified before being believed.** Wrote an independent census rather than
+accepting his numbers: they reproduce EXACTLY (SUIUSD train 549 gap pairs /
+10.93%, INJUSD 1472 / 7.84%, ZECUSD 2100 / 4.22% worst 53h, kraken_BTCUSD
+12 / 0.02%). 36 of 38 combinations gappy here vs his 37/40 — the delta is
+precisely the two BTCUSDT rows whose cache is untracked and absent from this
+clone. His "wrong horizon, not a magnitude effect" non-claim also holds.
+
+**Two things the issue does not carry, both found by measuring:**
+
+1. **Re-warmed segmentation is unaffordable exactly where it is needed.** It is
+   the only option that fixes the FORECAST side (bars feed `strategy.update()`
+   sequentially, so rolling indicators span the hole too — #50 treats this as
+   a return-side defect only). At a 120-bar warmup it leaves **9.2%** of
+   SUIUSD train — median contiguous run **3 bars** — 22.3% of INJUSD, 35.4% of
+   ZECUSD. Killed the option on numbers, kept its bootstrap half.
+2. **`n_eff` counts blocks that cannot be placed.**
+   `_block_adjusted_significance` (`prescreen_signal.py:568`) computes
+   `n_active_bars // block_size` with no gap awareness. Since
+   `z = IC * sqrt(n_eff - 3)`, significance inflates by up to **1.67x**
+   (SUIUSD train: 204 nominal vs 73 gap-aware), 1.35x INJUSD, 1.21x ZECUSD,
+   <=1.1x on 33 of 38. Bounded, but it points the wrong way — it makes junk
+   look significant. Fixing it is free; the run-length structure is already
+   computed for the primary fix.
+
+**I dropped my own proposal after simulating it.** The plan Jeremy approved was
+"skip the pair + a per-symbol admission gate." Deriving the gate's floor only
+from constants that already exist (`_MIN_N_EPISODES=8`, `block_size=24`) — so
+no threshold was chosen after seeing data — it admits **38 of 38**. At the
+fork's promotion bar it stops one combination, which the promotion bar already
+stops downstream. Raising the floor to make it bite would have been exactly the
+threshold-fitting the document exists to prevent, so the gate is gone and the
+simulation is retained instead. Policy is now (A) skip the gap-spanning pair +
+(B) gap-aware `n_eff`, with the forecast-side residual DISCLOSED, not papered
+over.
+
+**Residual found reviewing #45.** `_load_ohlcv`'s window filter compares
+`ts[:10]` as a STRING before the parse guard, so a malformed-timestamp row is
+dropped without ever reaching the counter #45 adds. Verified by execution:
+`'garbage'`, `''`, `'NaN'` all skip silently. Same consequence as the bug #45
+fixes; folded into the #50 spec, since (A) must parse timestamps anyway.
+
+**#45/#46 merged after combining them locally first** (last session's rule).
+Combined tree added exactly #45's 4 tests and moved nothing else. Mutation-
+checked #45: 2 of its 4 go red when the fix is reverted, the other 2 being
+negative controls that correctly stay green.
+
+**J3 landed.** Used the base file's OWN reserved id for the master side
+(`demo_002`) over the id agreed in Slack — the committed artifact reserves it
+explicitly, and the artifact outranks the message. Corrected the row shape too:
+Dorian was right that our pre-written row carried prescreen fields under
+`source: backtest`. Union merge exercised for real: 4 + 4 -> 5, both divergent
+appends survive, no duplicate `(trial_id, source)`.
+
+**Environment note.** This ran in a fresh remote Linux container, NOT Windows.
+`numpy==2.5.1` needs Python >=3.12 (container default is 3.11 — build the venv
+with `python3.12` explicitly). 4 strategy-research failures and 24 of 26 slow
+tests are unavoidable here: all trace to untracked BTCUSDT caches, and they
+fail identically on pristine master. **Per-machine gates are NOT discharged by
+this box** — the B2 machine proof still belongs to the real Windows machine.
+
+**Transferable rules.**
+- Read the other writer's Slack before picking work, not after. The board being
+  "clear" in your own notes says nothing about theirs.
+- Simulate a proposed gate before building it. Mine was principled and
+  non-binding; discovering that after implementing would have meant either dead
+  machinery or a fitted threshold.
+- When a committed artifact and a chat message disagree about a detail, the
+  artifact wins.
+
+**Next:** #50 policy needs Jeremy + Dorian sign-off before implementation.
+Then #41's window-bound PR (Dorian, in flight) and the carry lane behind it.

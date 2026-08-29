@@ -368,6 +368,26 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
         reader = csv.DictReader(f)
         for row in reader:
             ts = row.get("timestamp", "")
+            # #50 section 8: the window filter below is a LEXICAL string compare
+            # that runs BEFORE the parse guard, so a malformed timestamp sorts
+            # unpredictably and vanishes without ever reaching the counter added
+            # for #45 -- the same dropped-interior-row corruption #45 exists to
+            # prevent (verified: 'garbage', '' and 'NaN' all skip silently).
+            # Validate the timestamp FIRST so an unparseable one is counted and
+            # raised on, exactly as an unparseable close already is.
+            try:
+                _parsed_ts = pd.Timestamp(ts)
+                # pd.Timestamp("NaN") and pd.Timestamp("") return NaT WITHOUT
+                # raising, so an exception guard alone still lets those two
+                # through -- the very silent-drop class this closes. Caught by
+                # test_c5_malformed_timestamp_raises_not_silently_dropped.
+                if pd.isna(_parsed_ts):
+                    raise ValueError("timestamp parsed to NaT")
+            except (ValueError, TypeError):
+                bad_count += 1
+                if len(bad_samples) < 3:
+                    bad_samples.append((reader.line_num, f"unparseable timestamp {ts!r}"))
+                continue
             # Accept either "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD"
             ts_date = ts[:10]
             if ts_date < start or ts_date >= end:
@@ -381,6 +401,12 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
                     "close":  float(row["close"]),
                     "volume": float(row.get("volume", 0) or 0),
                 })
+                # #50 section 8, second half: float("NaN") and float("inf") parse
+                # successfully, so a poisonous-but-parseable close would sail
+                # through the guard above and corrupt the same positional pairing.
+                if not all(math.isfinite(rows[-1][k]) for k in ("open", "high", "low", "close")):
+                    rows.pop()
+                    raise ValueError(f"non-finite OHLC in row {reader.line_num}")
             except (ValueError, KeyError) as e:
                 # Silently dropping an interior row corrupts _extract_forecasts'
                 # positional next_ret_bps pairing (F5) -- fail loud instead.
@@ -441,7 +467,8 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
 # Forecast extraction (signal layer only, no portfolio simulation)
 # ---------------------------------------------------------------------------
 
-def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> tuple:
+def _extract_forecasts(config_path: str, bars_df: pd.DataFrame,
+                       expected_step: pd.Timedelta | None = None) -> tuple:
     """
     Instantiate AdvancedStrategy from config_path, feed bars sequentially,
     collect (forecast, next_return_bps) pairs for every bar where is_ready().
@@ -449,8 +476,25 @@ def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> tuple:
     next_return_bps: close-to-close return of the bar following the forecast bar,
     in basis points. The last bar in the window has no successor and is excluded.
 
-    Returns (records, component_error_count, component_error_samples):
+    CONTINUITY (issue #50, policy docs/analysis-reports/PRESCREEN_GAP_POLICY.md
+    part A). The successor is the next ROW, which is not necessarily the next
+    BAR: the caches contain real holes (36 of 38 symbol x window combinations;
+    up to 10.93% of pairs on kraken_SUIUSD train, individual gaps to 53h). A
+    pair spanning a hole is a multi-hour or multi-day move wearing a one-bar
+    label, and it flows into the pooled IC, the bootstrap p-value and the sigma
+    behind the cost hurdle -- i.e. into the route verdict. When `expected_step`
+    is given, a pair is emitted ONLY if the successor is exactly one step later;
+    skipped pairs are COUNTED and returned, never silently dropped.
+
+    `expected_step=None` preserves the pre-#50 behaviour exactly and is retained
+    so existing callers and tests keep their meaning; the prescreen passes the
+    real step.
+
+    Returns (records, component_error_count, component_error_samples,
+    gap_skipped_pairs):
     - records: list of dicts {forecast, next_return_bps, active}
+    - gap_skipped_pairs: pairs suppressed because the successor was not exactly
+      one `expected_step` later (0 when expected_step is None)
     - component_error_count: F5b — bars where AdvancedStrategy.update() swallowed a
       component exception. A signal that errors on every bar produces active_n=0
       identically to a signal that genuinely never fires — this count is what lets
@@ -460,7 +504,9 @@ def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> tuple:
     strategy = AdvancedStrategy(config_path=config_path)
     records = []
     closes = bars_df["close"].tolist()
+    times = bars_df["timestamp"].tolist()
     n = len(bars_df)
+    gap_skipped_pairs = 0
 
     for i in range(n):
         bar_row = bars_df.iloc[i : i + 1]
@@ -471,6 +517,12 @@ def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> tuple:
 
         # Skip the last bar — no successor to compute next_return
         if i >= n - 1:
+            continue
+
+        # #50(A): the successor must be the next BAR, not merely the next ROW.
+        # Checked BEFORE generate_forecast() so a suppressed pair costs nothing.
+        if expected_step is not None and (times[i + 1] - times[i]) != expected_step:
+            gap_skipped_pairs += 1
             continue
 
         forecast, *_ = strategy.generate_forecast()
@@ -486,7 +538,8 @@ def _extract_forecasts(config_path: str, bars_df: pd.DataFrame) -> tuple:
             "timestamp":       bars_df["timestamp"].iloc[i],
         })
 
-    return records, strategy.component_error_count, strategy.component_error_samples
+    return (records, strategy.component_error_count,
+            strategy.component_error_samples, gap_skipped_pairs)
 
 
 # ---------------------------------------------------------------------------
@@ -545,10 +598,53 @@ def _compute_ic_fields(records: list) -> dict:
 # Block-adjusted significance (on active-bar n per A8.3)
 # ---------------------------------------------------------------------------
 
+def _gap_aware_block_count(records: list, block_size: int,
+                           expected_step: "pd.Timedelta | None") -> int:
+    """
+    Blocks of ACTIVE bars that can be placed without spanning a data gap
+    (issue #50, policy part B).
+
+    `_block_adjusted_significance` divides the active-bar count by `block_size`
+    to get an effective sample size, which silently assumes the bars are
+    contiguous. They are not: a block laid across a hole is exactly the defect
+    #50 describes, so such a block does not exist and must not be counted.
+    Since z = IC * sqrt(n_eff - 3), counting them inflates significance --
+    measured up to 1.67x on kraken_SUIUSD train (204 nominal vs 73 gap-aware),
+    1.35x INJUSD, 1.21x ZECUSD, <=1.1x on 33 of 38 combinations. It errs toward
+    making junk look significant.
+
+    Partitions the records into maximal runs of consecutive bars, counts the
+    ACTIVE bars within each run, and sums `active_in_run // block_size`. No
+    re-warm and no sample loss: option 3 (segment AND re-warm per segment) was
+    rejected because it destroys 91% of kraken_SUIUSD train; only the block
+    placement is corrected here, not the strategy's warmup.
+
+    `expected_step=None` returns the ungapped count, so the caller reproduces
+    the pre-#50 value exactly.
+    """
+    if block_size < 1:
+        raise ValueError(f"block_size must be >= 1, got {block_size!r}")
+    active_flags = [bool(r.get("active")) for r in records]
+    if expected_step is None:
+        return sum(active_flags) // block_size
+
+    total = 0
+    run_active = 0
+    for i, rec in enumerate(records):
+        run_active += 1 if active_flags[i] else 0
+        is_last = i == len(records) - 1
+        breaks = is_last or (records[i + 1]["timestamp"] - rec["timestamp"]) != expected_step
+        if breaks:
+            total += run_active // block_size
+            run_active = 0
+    return total
+
+
 def _block_adjusted_significance(
     ic_values: list,
     n_active_bars: int,
     block_size: int = _BLOCK_SIZE_1H,
+    placeable_blocks: int | None = None,
 ) -> dict:
     """
     Block-adjusted z-significance.
@@ -556,16 +652,43 @@ def _block_adjusted_significance(
     N_eff = n_active_bars / block_size (not total bars — A8.3 requires active-bar n).
     Fisher z-transformation: z = IC * sqrt(N_eff - 3).
     Two-tailed normal approximation.
+
+    `placeable_blocks` (#50 part B): when given, it REPLACES the
+    `n_active_bars // block_size` term with the count of blocks that can
+    actually be placed without spanning a data gap (see
+    _gap_aware_block_count). Passing None keeps the pre-#50 arithmetic byte for
+    byte, which is what keeps `episode_significance.py:207` unchanged.
+
+    NOT byte-identical on a gap-free MULTI-SYMBOL run, and this is deliberate
+    (red-team D2). The caller sums a per-symbol floor while the old term was a
+    pooled floor, and sum(floor(a_i/b)) <= floor(sum(a_i)/b), so n_eff can drop
+    by up to (n_symbols - 1) blocks with ZERO gaps present. That is the correct
+    direction: the discarded remainder is exactly the partial blocks that would
+    otherwise be completed by splicing one symbol's bars onto another's, and a
+    block spanning a symbol boundary is as meaningless as one spanning a gap.
+    Single-symbol runs remain byte-identical. Measured on two clean synthetic
+    caches: n_eff 9 -> 8 (p 0.6227 -> 0.6533) at 160 bars each.
+
+    ORDERING IS LOAD-BEARING. The `max(..., len(ic_values))` floor is applied
+    AFTER the gap-aware term, never instead of it -- otherwise a floor above the
+    placeable count would silently restore the inflated n_eff and undo part B.
+    Raised by Dorian on #50 (R1); measured inert today, because both call sites
+    pass a single-element `ic_values`, so the floor is at most 1 and can bite
+    only when the placeable count is 0. It is pinned by test rather than left to
+    the current callers' shape.
     """
     if not ic_values:
         return {
             "pooled_ic": None, "z_stat": None, "p_value": 1.0,
-            "n_eff": n_active_bars // max(block_size, 1),
+            "n_eff": (n_active_bars // max(block_size, 1)
+                      if placeable_blocks is None else placeable_blocks),
             "block_size": block_size, "significant": False,
         }
 
     pooled_ic = statistics.mean([v for v in ic_values if v is not None])
-    n_eff = max(n_active_bars // max(block_size, 1), len(ic_values))
+    blocks = (n_active_bars // max(block_size, 1) if placeable_blocks is None
+              else placeable_blocks)
+    n_eff = max(blocks, len(ic_values))
 
     if abs(pooled_ic) >= 1.0:
         return {
@@ -1097,6 +1220,13 @@ def run_prescreen(
 
     # Collect per-symbol results over the full range
     all_records_by_symbol: dict = {}
+    # #50(A)/(B) accounting: pairs suppressed for spanning a data gap, and the
+    # per-symbol bar step used both to suppress them and to count placeable
+    # blocks. Kept per symbol because the step is a property of the series.
+    total_gap_skipped = 0
+    total_candidate_pairs = 0
+    expected_step_by_symbol: dict = {}
+    per_symbol_gap_stats: dict = {}
     n_bars_total = 0
     sigma_estimates: list = []
     skipped_symbols: list = []  # (symbol, reason) -- see the no-usable-symbol guard below
@@ -1129,7 +1259,37 @@ def run_prescreen(
         print(f"    Loaded {len(bars_df)} bars — running signal extraction ...")
         if aux_feeds:
             bars_df = _merge_aux_feeds(bars_df, aux_feeds, symbol, range_start, range_end)
-        records, error_count, error_samples = _extract_forecasts(config_path, bars_df)
+        expected_step = pd.Timedelta(seconds=timeframe_seconds(timeframe))
+        expected_step_by_symbol[symbol] = expected_step
+        records, error_count, error_samples, gap_skipped = _extract_forecasts(
+            config_path, bars_df, expected_step=expected_step
+        )
+        total_gap_skipped += gap_skipped
+        # D5 (red-team): the numerator is gated by is_ready(), so the denominator
+        # must be too, or the percentage divides two different populations.
+        # Pairs REACHED = records emitted + pairs suppressed for a gap.
+        total_candidate_pairs += len(records) + gap_skipped
+        per_symbol_gap_stats[symbol] = {
+            "gap_skipped_pairs": gap_skipped,
+            "pairs_reached": len(records) + gap_skipped,
+            "records": len(records),
+        }
+
+        # Policy section 6: "a symbol whose post-(A) record count is zero raises,
+        # rather than routing on an empty series." Part (A) made this newly
+        # reachable -- before it, a loaded symbol always produced a record for
+        # every ready bar. Without this, a fully gap-contaminated symbol yields
+        # {symbol: []}, which is TRUTHY, so the run_060 zero-data guard below is
+        # bypassed and a route is emitted from zero records (red-team D3).
+        if not records and gap_skipped:
+            raise RuntimeError(
+                f"Prescreen for {symbol!r} at timeframe={timeframe!r} produced ZERO "
+                f"usable forecast records: all {gap_skipped} candidate pair(s) span a "
+                f"data gap. Refusing to emit a route or record a trial from an empty "
+                f"series -- 'no_signal_artifact' asserts a signal did not activate ON "
+                f"DATA, and nothing was tested here. Check the cache's continuity with "
+                f"tools/cache_gap_census.py."
+            )
         for r in records:
             r["symbol"] = symbol  # A8.5.1a: needed to keep episodes symbol-bounded when pooled
         print(f"    {len(records)} forecast records; active={sum(1 for r in records if r['active'])}")
@@ -1157,7 +1317,7 @@ def run_prescreen(
     # not activate ON DATA; with no data loaded, nothing was tested at all and
     # the two are not the same claim. Standing rule: anything feeding decisions
     # raises on degenerate inputs.
-    if not all_records_by_symbol:
+    if not any(all_records_by_symbol.values()):
         detail = "; ".join(f"{sym}: {why}" for sym, why in skipped_symbols) or "no symbols requested"
         raise RuntimeError(
             f"Prescreen loaded NO usable data for any of {len(symbols)} symbol(s) at "
@@ -1192,7 +1352,22 @@ def run_prescreen(
 
     # Block-adjusted significance on ACTIVE-BAR n (A8.3)
     ic_values_for_sig = [ic_active] if ic_active is not None else []
-    ic_sig_block24 = _block_adjusted_significance(ic_values_for_sig, active_n, block_size)
+    # #50(B): a block that cannot be placed without spanning a gap does not
+    # exist and must not enter n_eff. Summed PER SYMBOL -- pooling the records
+    # first and walking them as one series would read the seam between two
+    # symbols as a contiguous step.
+    placeable_blocks = sum(
+        # [sym], not .get(sym): a missing entry would yield None, which by this
+        # function's contract means "ungapped count" and would silently restore
+        # the inflated n_eff part (B) exists to remove (red-team D1). The two
+        # dicts are assigned in the same loop iteration, so a miss is a bug --
+        # let it raise rather than degrade quietly.
+        _gap_aware_block_count(recs, block_size, expected_step_by_symbol[sym])
+        for sym, recs in all_records_by_symbol.items()
+    )
+    ic_sig_block24 = _block_adjusted_significance(
+        ic_values_for_sig, active_n, block_size, placeable_blocks=placeable_blocks
+    )
     ic_sig = ic_sig_block24
     # Label derived from the block size actually used, not hardcoded. It read
     # "block_24_fisher_z" until 2026-08-28 while block_size had already become
@@ -1369,6 +1544,30 @@ def run_prescreen(
         # measurement. Any cost_check or required-IC figure in this artifact is
         # invalid when this is true -- see the constant's comment.
         "sigma_is_placeholder":     sigma_is_placeholder,
+        # #50(A): pairs suppressed for spanning a data gap. Surfaced so a reader
+        # sees the contamination level without re-running the census, and so the
+        # forecast-side residual the policy ACCEPTS stays visible: rolling
+        # indicators still span these holes -- (A) fixes the return label and
+        # (B) the block count, neither fixes the indicator. Segment-and-re-warm
+        # would fix it and was rejected: it destroys 91% of kraken_SUIUSD train.
+        "gap_skipped_pairs":        total_gap_skipped,
+        # Over pairs actually REACHED (post-warmup), matching the numerator's
+        # population. NOT the cache's contamination rate: gaps inside the
+        # warmup are never reached, so this reads lower than
+        # cache_gap_census.py by a config-dependent amount (red-team D4/D5).
+        # For the cache rate, run the census.
+        "gap_skipped_pct":          (round(total_gap_skipped / total_candidate_pairs * 100.0, 4)
+                                     if total_candidate_pairs else 0.0),
+        # PER SYMBOL, because both pooled figures below can report "no gap
+        # effect" while one symbol's entire sample was destroyed -- its zero
+        # records contribute nothing to either term (red-team D6). The pooled
+        # numbers cannot show that; this can.
+        "gap_stats_by_symbol":      per_symbol_gap_stats,
+        "n_eff_placeable_blocks":   placeable_blocks,
+        # Pooled floor over the POST-(A) active count -- the like-for-like
+        # comparison against n_eff_placeable_blocks, NOT the pre-#50 value,
+        # which was computed over a larger active set (red-team).
+        "n_eff_nominal_blocks":     active_n // max(block_size, 1),
         "cost_check":               cost,
         "route":                    route,
         "route_rationale":          rationale,
