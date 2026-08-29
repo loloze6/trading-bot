@@ -657,8 +657,17 @@ def _block_adjusted_significance(
     `n_active_bars // block_size` term with the count of blocks that can
     actually be placed without spanning a data gap (see
     _gap_aware_block_count). Passing None keeps the pre-#50 arithmetic byte for
-    byte, which is what keeps `episode_significance.py:207` and every gap-free
-    symbol unchanged.
+    byte, which is what keeps `episode_significance.py:207` unchanged.
+
+    NOT byte-identical on a gap-free MULTI-SYMBOL run, and this is deliberate
+    (red-team D2). The caller sums a per-symbol floor while the old term was a
+    pooled floor, and sum(floor(a_i/b)) <= floor(sum(a_i)/b), so n_eff can drop
+    by up to (n_symbols - 1) blocks with ZERO gaps present. That is the correct
+    direction: the discarded remainder is exactly the partial blocks that would
+    otherwise be completed by splicing one symbol's bars onto another's, and a
+    block spanning a symbol boundary is as meaningless as one spanning a gap.
+    Single-symbol runs remain byte-identical. Measured on two clean synthetic
+    caches: n_eff 9 -> 8 (p 0.6227 -> 0.6533) at 160 bars each.
 
     ORDERING IS LOAD-BEARING. The `max(..., len(ic_values))` floor is applied
     AFTER the gap-aware term, never instead of it -- otherwise a floor above the
@@ -1217,6 +1226,7 @@ def run_prescreen(
     total_gap_skipped = 0
     total_candidate_pairs = 0
     expected_step_by_symbol: dict = {}
+    per_symbol_gap_stats: dict = {}
     n_bars_total = 0
     sigma_estimates: list = []
     skipped_symbols: list = []  # (symbol, reason) -- see the no-usable-symbol guard below
@@ -1255,7 +1265,31 @@ def run_prescreen(
             config_path, bars_df, expected_step=expected_step
         )
         total_gap_skipped += gap_skipped
-        total_candidate_pairs += max(len(bars_df) - 1, 0)
+        # D5 (red-team): the numerator is gated by is_ready(), so the denominator
+        # must be too, or the percentage divides two different populations.
+        # Pairs REACHED = records emitted + pairs suppressed for a gap.
+        total_candidate_pairs += len(records) + gap_skipped
+        per_symbol_gap_stats[symbol] = {
+            "gap_skipped_pairs": gap_skipped,
+            "pairs_reached": len(records) + gap_skipped,
+            "records": len(records),
+        }
+
+        # Policy section 6: "a symbol whose post-(A) record count is zero raises,
+        # rather than routing on an empty series." Part (A) made this newly
+        # reachable -- before it, a loaded symbol always produced a record for
+        # every ready bar. Without this, a fully gap-contaminated symbol yields
+        # {symbol: []}, which is TRUTHY, so the run_060 zero-data guard below is
+        # bypassed and a route is emitted from zero records (red-team D3).
+        if not records and gap_skipped:
+            raise RuntimeError(
+                f"Prescreen for {symbol!r} at timeframe={timeframe!r} produced ZERO "
+                f"usable forecast records: all {gap_skipped} candidate pair(s) span a "
+                f"data gap. Refusing to emit a route or record a trial from an empty "
+                f"series -- 'no_signal_artifact' asserts a signal did not activate ON "
+                f"DATA, and nothing was tested here. Check the cache's continuity with "
+                f"tools/cache_gap_census.py."
+            )
         for r in records:
             r["symbol"] = symbol  # A8.5.1a: needed to keep episodes symbol-bounded when pooled
         print(f"    {len(records)} forecast records; active={sum(1 for r in records if r['active'])}")
@@ -1283,7 +1317,7 @@ def run_prescreen(
     # not activate ON DATA; with no data loaded, nothing was tested at all and
     # the two are not the same claim. Standing rule: anything feeding decisions
     # raises on degenerate inputs.
-    if not all_records_by_symbol:
+    if not any(all_records_by_symbol.values()):
         detail = "; ".join(f"{sym}: {why}" for sym, why in skipped_symbols) or "no symbols requested"
         raise RuntimeError(
             f"Prescreen loaded NO usable data for any of {len(symbols)} symbol(s) at "
@@ -1323,7 +1357,12 @@ def run_prescreen(
     # first and walking them as one series would read the seam between two
     # symbols as a contiguous step.
     placeable_blocks = sum(
-        _gap_aware_block_count(recs, block_size, expected_step_by_symbol.get(sym))
+        # [sym], not .get(sym): a missing entry would yield None, which by this
+        # function's contract means "ungapped count" and would silently restore
+        # the inflated n_eff part (B) exists to remove (red-team D1). The two
+        # dicts are assigned in the same loop iteration, so a miss is a bug --
+        # let it raise rather than degrade quietly.
+        _gap_aware_block_count(recs, block_size, expected_step_by_symbol[sym])
         for sym, recs in all_records_by_symbol.items()
     )
     ic_sig_block24 = _block_adjusted_significance(
@@ -1512,9 +1551,22 @@ def run_prescreen(
         # (B) the block count, neither fixes the indicator. Segment-and-re-warm
         # would fix it and was rejected: it destroys 91% of kraken_SUIUSD train.
         "gap_skipped_pairs":        total_gap_skipped,
+        # Over pairs actually REACHED (post-warmup), matching the numerator's
+        # population. NOT the cache's contamination rate: gaps inside the
+        # warmup are never reached, so this reads lower than
+        # cache_gap_census.py by a config-dependent amount (red-team D4/D5).
+        # For the cache rate, run the census.
         "gap_skipped_pct":          (round(total_gap_skipped / total_candidate_pairs * 100.0, 4)
                                      if total_candidate_pairs else 0.0),
+        # PER SYMBOL, because both pooled figures below can report "no gap
+        # effect" while one symbol's entire sample was destroyed -- its zero
+        # records contribute nothing to either term (red-team D6). The pooled
+        # numbers cannot show that; this can.
+        "gap_stats_by_symbol":      per_symbol_gap_stats,
         "n_eff_placeable_blocks":   placeable_blocks,
+        # Pooled floor over the POST-(A) active count -- the like-for-like
+        # comparison against n_eff_placeable_blocks, NOT the pre-#50 value,
+        # which was computed over a larger active set (red-team).
         "n_eff_nominal_blocks":     active_n // max(block_size, 1),
         "cost_check":               cost,
         "route":                    route,

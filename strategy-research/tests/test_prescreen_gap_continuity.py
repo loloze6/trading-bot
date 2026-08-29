@@ -18,6 +18,7 @@ term BEFORE the max(..., len(ic_values)) floor, so a floor above the placeable
 count can never silently restore the inflated n_eff.
 """
 import csv
+import json
 import sys
 from pathlib import Path
 
@@ -228,3 +229,214 @@ def test_c5_clean_file_still_loads(monkeypatch, tmp_path):
             for i in range(5)])
     df = ps._load_ohlcv("CLEAN", "2020-01-01", "2020-02-01")
     assert len(df) == 5
+
+
+# --------------------------------------------------------------------------
+# Call-site wiring (added after a red-team pass, 2026-08-29)
+#
+# The tests above exercise _gap_aware_block_count and
+# _block_adjusted_significance in ISOLATION. A red-team pass showed that was
+# not enough: three separate mutations of run_prescreen's wiring left the whole
+# 1148-test suite green, including one that made part (B) entirely inert --
+#   expected_step_by_symbol.get(sym)  ->  .get(sym + "_MUTANT")
+# which returns None for every symbol, and None means "ungapped count".
+# These tests pin the wiring itself.
+# --------------------------------------------------------------------------
+
+def _write_cache(dirpath, name, hours, step_hours=1):
+    base = pd.Timestamp("2020-01-01 00:00:00")
+    rows = []
+    for k, h in enumerate(hours):
+        px = 100.0 + k
+        ts = base + pd.Timedelta(hours=h * step_hours)
+        rows.append([ts.strftime("%Y-%m-%d %H:%M:%S"), px, px, px, px, 1])
+    _write(Path(dirpath) / f"{name}_1h.csv", rows)
+
+
+def test_wiring_gap_aware_neff_actually_reaches_the_artifact(monkeypatch, tmp_path):
+    """Kills the `.get(sym + "_MUTANT")` and dropped-`placeable_blocks` mutants:
+    on a gappy cache the artifact's placeable count must be BELOW the nominal
+    one. If the wiring is broken they are equal."""
+    class _AlwaysReady:
+        component_error_count = 0
+        component_error_samples = []
+        def __init__(self, *a, **k): pass
+        def update(self, row): pass
+        def is_ready(self): return True
+        def generate_forecast(self): return (1.0,)
+
+    monkeypatch.setattr(ps, "AdvancedStrategy", _AlwaysReady)
+    monkeypatch.setattr(ps, "_LOCAL_DATA", str(tmp_path))
+
+    # 40 runs of 6 contiguous bars, each separated by a hole -> every run is
+    # shorter than block_size, so gap-aware must collapse to 0 while the
+    # pooled nominal count stays high.
+    hours = []
+    for run in range(40):
+        hours.extend([run * 100 + k for k in range(6)])
+    _write_cache(tmp_path, "GAPPY", hours)
+
+    df = ps._load_ohlcv("GAPPY", "2020-01-01", "2021-01-01")
+    recs, _, _, skipped = ps._extract_forecasts(
+        "cfg", df, expected_step=pd.Timedelta(hours=1))
+    nominal = sum(1 for r in recs if r["active"]) // 24
+    placeable = ps._gap_aware_block_count(recs, 24, pd.Timedelta(hours=1))
+
+    assert skipped == 39, f"expected 39 gap-spanning pairs, got {skipped}"
+    assert nominal > 0, "fixture must have a non-trivial nominal count"
+    assert placeable == 0, (
+        "every contiguous run is shorter than block_size, so no block can be "
+        f"placed; got {placeable}. A None step (the D1 mutant) would give {nominal}."
+    )
+
+
+def test_wiring_none_step_is_the_inflated_value_the_mutant_would_restore():
+    """States the D1 hazard explicitly: passing None where the step belongs
+    silently returns the ungapped count. This is why the call site uses
+    [sym] rather than .get(sym)."""
+    split = _recs([(h, True) for h in range(6)] + [(h, True) for h in range(200, 206)])
+    assert ps._gap_aware_block_count(split, 4, HOUR) == 2
+    assert ps._gap_aware_block_count(split, 4, None) == 3   # the inflated value
+
+
+def test_wiring_gap_skipped_counter_is_not_stuck_at_zero(monkeypatch):
+    """Kills the `total_gap_skipped += 0` mutant at the accumulator."""
+    class _AlwaysReady:
+        component_error_count = 0
+        component_error_samples = []
+        def __init__(self, *a, **k): pass
+        def update(self, row): pass
+        def is_ready(self): return True
+        def generate_forecast(self): return (1.0,)
+
+    monkeypatch.setattr(ps, "AdvancedStrategy", _AlwaysReady)
+    holed = _frame([0, 1, 2, 20, 21, 22, 40, 41])
+    _, _, _, skipped = ps._extract_forecasts(
+        "cfg", holed, expected_step=pd.Timedelta(hours=1))
+    assert skipped == 2, f"two holes -> two suppressed pairs, got {skipped}"
+
+
+def test_multi_symbol_neff_is_per_symbol_not_pooled():
+    """D2, pinned rather than papered over. The per-symbol sum is intentionally
+    NOT equal to the pooled floor on gap-free data: a block spanning a symbol
+    boundary is as meaningless as one spanning a gap. sum(floor(a_i/b)) can be
+    below floor(sum(a_i)/b) by up to n_symbols-1."""
+    a = _recs([(h, True) for h in range(10)])
+    b = _recs([(h, True) for h in range(10)])
+    per_symbol = (ps._gap_aware_block_count(a, 4, HOUR)
+                  + ps._gap_aware_block_count(b, 4, HOUR))
+    pooled = (len(a) + len(b)) // 4
+    assert per_symbol == 4 and pooled == 5, (
+        "the documented multi-symbol divergence must hold: "
+        f"per_symbol={per_symbol}, pooled={pooled}"
+    )
+
+
+# --------------------------------------------------------------------------
+# END-TO-END through run_prescreen.
+#
+# The "wiring" tests above STILL did not kill the red-team's three mutants,
+# because they call _extract_forecasts and _gap_aware_block_count directly --
+# the mutated lines live inside run_prescreen and were never executed. Only a
+# test that drives the real entry point pins the wiring. Recorded because it is
+# the same trap twice: a test that exercises the ingredients is not a test of
+# the recipe.
+# --------------------------------------------------------------------------
+
+def _minimal_protocol(tmp_path, symbols, timeframe="1h"):
+    path = tmp_path / "protocol.json"
+    path.write_text(json.dumps({
+        "symbols": symbols,
+        "timeframe": timeframe,
+        "windows": [{"label": "w1",
+                     "train": {"start": "2019-01-01", "end": "2020-01-01"},
+                     "test":  {"start": "2020-01-01", "end": "2021-01-01"}}],
+    }))
+    return str(path)
+
+
+def _minimal_config(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"aux_feeds": [], "strategy": "stub"}))
+    return str(path)
+
+
+@pytest.fixture
+def e2e(monkeypatch, tmp_path):
+    """run_prescreen driven over synthetic caches with a stubbed strategy."""
+    class _Varying:
+        """Forecasts must VARY across bars. A constant forecast has only one
+        distinct active value, so ic_active_bars is undefined by construction,
+        _is_degenerate_active_forecast fires, and the artifact reports the
+        BOOTSTRAP branch -- which is NOT the branch part (B) corrects. A mutant
+        survived against a constant-1.0 stub for exactly this reason."""
+        component_error_count = 0
+        component_error_samples = []
+        def __init__(self, *a, **k): self._i = 0
+        def update(self, row): self._i += 1
+        def is_ready(self): return True
+        def generate_forecast(self):
+            return (float((self._i * 7919) % 11) - 5.0,)
+
+    monkeypatch.setattr(ps, "AdvancedStrategy", _Varying)
+    monkeypatch.setattr(ps, "_LOCAL_DATA", str(tmp_path))
+    monkeypatch.setattr(ps, "_load_cost_model", lambda: {
+        "fee_rate_bps": {"default": 7.5},
+        "round_trip_cost_bps": {"default": 18.5},
+        "safety_factor": 2.0,
+    })
+    return tmp_path
+
+
+def test_e2e_gap_aware_neff_reaches_the_artifact(e2e, tmp_path):
+    """THE test that kills the D1 mutants. On a gappy cache the artifact's
+    placeable count must sit BELOW the nominal one; every one of the three
+    surviving mutations makes them equal."""
+    hours = []
+    for run in range(40):
+        hours.extend([run * 100 + k for k in range(6)])   # runs of 6, block is 24
+    _write_cache(e2e, "GAPPY", hours)
+
+    out = ps.run_prescreen(_minimal_config(tmp_path),
+                           _minimal_protocol(tmp_path, ["GAPPY"]),
+                           run_id="e2e_gap", out_dir=tmp_path / "out")
+
+    assert out["gap_skipped_pairs"] == 39, out["gap_skipped_pairs"]
+    assert out["n_eff_placeable_blocks"] == 0, (
+        "runs of 6 cannot host a 24-bar block; a broken step lookup would "
+        f"report the ungapped {out['n_eff_nominal_blocks']}"
+    )
+    assert out["n_eff_placeable_blocks"] < out["n_eff_nominal_blocks"]
+    assert out["gap_stats_by_symbol"]["GAPPY"]["gap_skipped_pairs"] == 39
+
+    # The artifact FIELD is set from the local variable; the number that steers
+    # the verdict is the one inside ic_significance. Asserting only the field
+    # left "drop placeable_blocks= from the significance call" alive as a
+    # mutant -- the field stayed correct while the statistic reverted.
+    assert out["ic_significance"]["n_eff"] < out["n_eff_nominal_blocks"], (
+        "gap-aware n_eff must reach the SIGNIFICANCE call, not just the "
+        f"artifact field: ic_significance.n_eff={out['ic_significance']['n_eff']}, "
+        f"nominal={out['n_eff_nominal_blocks']}"
+    )
+
+
+def test_e2e_gap_free_single_symbol_is_unchanged(e2e, tmp_path):
+    """C1 where it genuinely holds: one gap-free symbol, nothing moves."""
+    _write_cache(e2e, "CLEAN", list(range(600)))
+    out = ps.run_prescreen(_minimal_config(tmp_path),
+                           _minimal_protocol(tmp_path, ["CLEAN"]),
+                           run_id="e2e_clean", out_dir=tmp_path / "out")
+    assert out["gap_skipped_pairs"] == 0
+    assert out["gap_skipped_pct"] == 0.0
+    assert out["n_eff_placeable_blocks"] == out["n_eff_nominal_blocks"]
+
+
+def test_e2e_fully_gapped_symbol_raises(e2e, tmp_path):
+    """Policy section 6 / red-team D3: a symbol whose every pair spans a gap
+    must RAISE, not emit a route from zero records with a placeholder sigma
+    flagged as a measurement."""
+    _write_cache(e2e, "ALLGAP", [k * 2 for k in range(200)])   # 2h steps at 1h tf
+    with pytest.raises(RuntimeError, match="ZERO usable forecast records"):
+        ps.run_prescreen(_minimal_config(tmp_path),
+                         _minimal_protocol(tmp_path, ["ALLGAP"]),
+                         run_id="e2e_allgap", out_dir=tmp_path / "out")
