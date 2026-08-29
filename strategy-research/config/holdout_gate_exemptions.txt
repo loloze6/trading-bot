@@ -376,3 +376,25 @@ strategy-research/engineering/roadmap/E-030/artifacts/measured_throughput_eras.t
 #   NO MARKET DATA FROM THE SEALED WINDOW.
 strategy-research/runs/run_060/artifacts/backtest_spec.yaml	1
 strategy-research/runs/run_060/artifacts/validation_protocol.yaml	1
+
+# trading-bot/tests/test_funding_window_bound.py (2026-08-29, PR #52 / issue #41)
+#   ONE line, in test_sealed_side_rows_not_loaded: a fabricated funding rate on a
+#   settlement dated just inside the sealed window. The test's whole purpose is to
+#   prove that row is EXCLUDED when the backtest window ends before it -- the
+#   fixture must sit inside the window or it proves nothing. The value is invented
+#   (a round 0.0011), not fetched: no market data from the sealed window is
+#   involved, and the file writes its own CSV into tmp_path.
+#
+#   HOW IT GOT PAST THE GATE, which is the part worth remembering: this file
+#   arrived via a GitHub merge of PR #52. Server-side merges do not run
+#   .git/hooks/pre-commit, so the gate never saw it -- and because the gate scans
+#   the whole INDEX rather than the diff, it then blocked the NEXT local commit by
+#   an author who had not touched the file. Registering it here is the audited fix;
+#   the process gap is filed separately.
+#
+#   Verified before registering:
+#     sh strategy-research/tools/holdout_date_gate.sh --report-residual \
+#         | grep test_funding_window_bound
+#     -> 1 line
+#   NO MARKET DATA FROM THE SEALED WINDOW.
+trading-bot/tests/test_funding_window_bound.py	1
