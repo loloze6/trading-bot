@@ -123,7 +123,7 @@ def test_example5_daily_aggregation_by_sum(tmp_path):
         ("2024-01-01 08:00:00", 0.0001),
         ("2024-01-01 16:00:00", -0.0002),
     ])
-    series = build_daily_funding_series([SYMBOL], str(tmp_path))
+    series = build_daily_funding_series([SYMBOL], str(tmp_path), "2024-01-01", "2024-01-01")
     day = pd.Timestamp("2024-01-01")
     assert series[SYMBOL][day] == pytest.approx(0.0)
     # long accrual on a 0.0 daily funding is exactly 0
@@ -138,7 +138,7 @@ def test_example6_partial_day_no_imputation(tmp_path):
         ("2024-01-02 08:00:00", 0.0004),
         # 16:00 missing
     ])
-    series = build_daily_funding_series([SYMBOL], str(tmp_path))
+    series = build_daily_funding_series([SYMBOL], str(tmp_path), "2024-01-02", "2024-01-02")
     assert series[SYMBOL][pd.Timestamp("2024-01-02")] == pytest.approx(0.0005)
 
 
@@ -152,7 +152,7 @@ def test_settlement_boundary_00utc_lands_on_exactly_one_bar(tmp_path):
         ("2024-01-04 00:00:00", 0.0007),   # belongs to Jan-04, not Jan-03
         ("2024-01-04 08:00:00", 0.0001),
     ])
-    series = build_daily_funding_series([SYMBOL], str(tmp_path))[SYMBOL]
+    series = build_daily_funding_series([SYMBOL], str(tmp_path), "2024-01-03", "2024-01-04")[SYMBOL]
     d3, d4 = pd.Timestamp("2024-01-03"), pd.Timestamp("2024-01-04")
     assert series[d3] == pytest.approx(0.0001 + 0.0002 + 0.0003)   # only Jan-03's three
     assert series[d4] == pytest.approx(0.0007 + 0.0001)            # Jan-04's 00:00 counted here
