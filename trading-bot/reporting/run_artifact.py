@@ -125,6 +125,7 @@ def write_metrics_json(
     dynamic: dict,
     regime_validity: Optional[dict] = None,
     bar_equity: Optional[dict] = None,
+    risk_controls: Optional[dict] = None,
 ) -> None:
     payload = {
         "core": {
@@ -139,6 +140,8 @@ def write_metrics_json(
         payload["regime_validity"] = regime_validity
     if bar_equity is not None:
         payload["bar_equity"] = bar_equity
+    if risk_controls is not None:
+        payload["risk_controls"] = risk_controls
     (run_dir / "metrics.json").write_text(json.dumps(payload, indent=2, default=str))
 
 
