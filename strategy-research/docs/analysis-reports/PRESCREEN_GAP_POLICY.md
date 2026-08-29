@@ -119,16 +119,31 @@ honest the threshold was derived only from constants that already exist
 (`episode_significance._MIN_N_EPISODES = 8`, `block_size = 24`) rather than
 chosen after seeing the census.
 
-**Simulated before implementing, it admits 38 of 38 combinations.** At the
-stricter fork promotion bar (≥30 independent episodes) it stops exactly one:
-SUIUSD train. The gate is nearly non-binding, and the one combination it would
-stop is already stopped downstream by the promotion bar that exists today.
+**Simulated before implementing, it admits 38 of 38 — at both floors.**
 
-We are not raising the floor to make it bite: choosing a threshold because the
-principled one failed to reject anything is exactly the threshold-fitting this
-document exists to prevent. Per `CLAUDE.fork.md` — *"prefer the cheapest control
-that works … do not add guards to guards"* — the gate is dropped. Its
-simulation is retained in the census tool so the reasoning is re-checkable.
+> **Corrected 2026-08-29 (Dorian, #50 R2).** This section first reported that
+> the ≥30 floor "stops exactly one: SUIUSD train." That number was computed
+> under the **re-warm** sample model — option 3's model, the one §4 *rejects* —
+> while the policy adopts the no-re-warm model. Under the model actually
+> adopted, SUIUSD train has 73 placeable blocks, not 17, and passes both floors.
+> Dorian could not reproduce the original claim because he reconstructed it
+> against the adopted model; he was right, and the error was ours. The
+> simulation now ships in the census tool under **both** models so the
+> discrepancy is visible rather than re-derivable only by argument.
+
+| model | floor 8 | floor 30 |
+|---|---|---|
+| no-re-warm (**adopted**) | admits all 38 | admits all 38 |
+| re-warm (rejected, §4) | admits all 38 | stops 1 — SUIUSD train |
+
+Reproduce with `tools/cache_gap_census.py` (see `--gate-floor`).
+
+The correction strengthens the conclusion rather than weakening it: under the
+model we actually use, the gate rejects **nothing at either floor**. We are not
+raising the floor to make it bite — choosing a threshold because the principled
+one failed to reject anything is exactly the threshold-fitting this document
+exists to prevent. Per `CLAUDE.fork.md` — *"prefer the cheapest control that
+works … do not add guards to guards"* — the gate is dropped.
 
 ---
 
@@ -202,7 +217,27 @@ Fixed before implementation:
    valid (0 gap pairs) is **byte-identical** before and after. If it moves, (A)
    is wrong.
 2. `gap_skipped_pairs` equals the census count for that symbol×window exactly.
-3. Gap-aware `n_eff` matches the census's `gapaware` column exactly.
+3. **(revised — Dorian, #50 R1)** Gap-aware `n_eff` is validated against a
+   synthetic series with a known gap structure *and* a known active-bar
+   pattern, **not** against the census's `gapaware` column. The original
+   criterion was unmeetable: the real statistic at `prescreen_signal.py:568` is
+
+   ```python
+   n_eff = max(n_active_bars // max(block_size, 1), len(ic_values))
+   ```
+
+   — computed over **active** bars (a strategy-dependent subset), whereas the
+   census counts **total rows**. The two are only equal when every bar is
+   active, so the census column validates (B) *only* in that degenerate case,
+   which the test states explicitly rather than assuming.
+
+   On the `len(ic_values)` floor Dorian flags as able to "silently undo (B)":
+   confirmed structurally, but measured inert today — both call sites
+   (`prescreen_signal.py:1195` and `episode_significance.py:207`) pass
+   `[ic_active]`, a **single-element** list, so the floor is at most 1 and can
+   bite only when the gap-aware count would be 0. It is a real latent hazard
+   for any future caller passing a longer list, so (B) applies gap-awareness to
+   the block term **before** the floor is taken, and a test pins that ordering.
 4. A synthetic series with one known hole scores the gap-spanning pair as
    skipped, and the surrounding contiguous pairs unchanged.
 5. A malformed-timestamp row raises, naming file and count (§8).
