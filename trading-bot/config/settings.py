@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
 
+from risk.portfolio_risk_gate import validate_portfolio_controls
+
 load_dotenv(override = True)
 
 USE_TESTNET = os.getenv("USE_TESTNET", "True").lower() == "true"
@@ -137,6 +139,18 @@ class ConfigManager:
                 self.logger.error("No trading symbols specified")
                 return False
             
+            # fix/risk-layer, PR-1: validate risk_management.portfolio_controls when
+            # present (absent block -> no check, committed config unaffected). Unknown
+            # keys / bad ranges fail loud rather than silently arming or skipping a
+            # control. Same rule set as the run_backtest risk_controls override path.
+            portfolio_controls = self.config.get('risk_management', {}).get('portfolio_controls')
+            if portfolio_controls is not None:
+                pc_errors = validate_portfolio_controls(portfolio_controls)
+                if pc_errors:
+                    for err in pc_errors:
+                        self.logger.error(f"risk_management.portfolio_controls: {err}")
+                    return False
+
             self.logger.debug("Configuration validation passed")
             return True
             
