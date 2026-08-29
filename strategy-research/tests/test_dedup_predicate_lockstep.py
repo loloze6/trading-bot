@@ -13,6 +13,7 @@ PATHS rather than either one's literal predicate, because the defect class here
 is mirrored sites drifting, not any particular wrong constant. Third instance
 after correction_method (#40) and sigma_sr (#56).
 """
+
 import math
 import statistics
 import sys
@@ -46,17 +47,35 @@ def _pipeline_dedup(valid_trials):
     return deduped, n_removed
 
 
+def _norm(text: str) -> str:
+    """Collapse all whitespace, so a source-level assertion survives a
+    formatter. The source-text guards below exist because the pipeline cannot
+    be imported (genai.Client() at import time); they must pin the SEMANTICS,
+    not the layout. A `ruff format` sweep broke the literal-substring form of
+    these three assertions on 2026-08-29 -- the guard was right, its
+    implementation was brittle."""
+    return " ".join(text.split())
+
 def _row(trial_id, fh, source="backtest"):
-    return {"trial_id": trial_id, "forecast_hash": fh, "source": source,
-            "sharpe": 0.1, "statistic_valid": "sharpe", "n_trades": 100}
+    return {
+        "trial_id": trial_id,
+        "forecast_hash": fh,
+        "source": source,
+        "sharpe": 0.1,
+        "statistic_valid": "sharpe",
+        "n_trades": 100,
+    }
 
 
-@pytest.mark.parametrize("hash_value, expect_deduped", [
-    ("", True),        # THE #57 case: falsy but PRESENT -> a real hash, dedups
-    (0, True),         # same class, numeric
-    ("abc123", True),  # ordinary hash, control
-    (None, False),     # genuinely absent -> always unique, never deduped
-])
+@pytest.mark.parametrize(
+    "hash_value, expect_deduped",
+    [
+        ("", True),  # THE #57 case: falsy but PRESENT -> a real hash, dedups
+        (0, True),  # same class, numeric
+        ("abc123", True),  # ordinary hash, control
+        (None, False),  # genuinely absent -> always unique, never deduped
+    ],
+)
 def test_both_paths_agree_on_falsy_but_present_hash(hash_value, expect_deduped):
     ledger = [_row("t1", hash_value), _row("t2", hash_value)]
 
@@ -105,14 +124,14 @@ def test_the_real_pipeline_site_uses_the_unified_predicate():
     back. Crude, deliberately -- it is the cheapest control that actually reads
     the shipped file.
     """
-    src = (_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
+    src = _norm((_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8"))
     block_start = src.index("deduped_trials = []")
-    block = src[block_start:block_start + 1600]
+    block = src[block_start : block_start + 1600]
 
-    assert 'if fh is None:' in block, (
+    assert "if fh is None:" in block, (
         "the pipeline dedup site must use the `is None` predicate (#57)"
     )
-    assert 'if fh and key in seen_keys' not in block, (
+    assert "if fh and key in seen_keys" not in block, (
         "the truthiness predicate is back at the pipeline dedup site -- a "
         'falsy-but-present forecast_hash ("" or 0) would again be kept as '
         "unique here while deflate_sharpe dedups it, so the two paths would "
@@ -129,6 +148,7 @@ def test_the_real_pipeline_site_uses_the_unified_predicate():
 # drifting apart rather than any one wrong formula.
 # --------------------------------------------------------------------------
 
+
 def _library_sigma_sr(sharpes):
     """deflate_sharpe.py's form: POPULATION variance, n denominator."""
     n = len(sharpes)
@@ -143,12 +163,15 @@ def _pipeline_sigma_sr(sharpes):
     return math.sqrt(var)
 
 
-@pytest.mark.parametrize("sharpes", [
-    [0.1, 0.4, -0.2, 0.9, 0.3],
-    [1.0, 1.0000001],                      # near-degenerate, n=2
-    [-0.5, -0.4, -0.45, -0.6, -0.2, 0.1],
-    [0.2] * 3 + [0.9],
-])
+@pytest.mark.parametrize(
+    "sharpes",
+    [
+        [0.1, 0.4, -0.2, 0.9, 0.3],
+        [1.0, 1.0000001],  # near-degenerate, n=2
+        [-0.5, -0.4, -0.45, -0.6, -0.2, 0.1],
+        [0.2] * 3 + [0.9],
+    ],
+)
 def test_sigma_sr_agrees_between_paths(sharpes):
     lib = _library_sigma_sr(sharpes)
     pipe = _pipeline_sigma_sr(sharpes)
@@ -161,20 +184,21 @@ def test_sample_stdev_would_be_caught():
     """Sentinel: the pre-#56 sample form must NOT agree, or the test above is
     vacuous. sqrt(n/(n-1)) is ~5.4% at n=10."""
     sharpes = [0.1, 0.4, -0.2, 0.9, 0.3]
-    assert statistics.stdev(sharpes) != pytest.approx(_library_sigma_sr(sharpes), rel=1e-6)
+    assert statistics.stdev(sharpes) != pytest.approx(
+        _library_sigma_sr(sharpes), rel=1e-6
+    )
 
 
 def test_the_real_pipeline_site_uses_the_population_denominator():
     """Guards the shipped file, not a transcription -- same reasoning as the
     dedup guard above."""
-    src = (_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
-    idx = src.index("mu_sr    = statistics.mean(sharpe_values)")
-    block = src[idx:idx + 1200]
-    assert "sum((v - mu_sr) ** 2 for v in sharpe_values) / len(sharpe_values)" in block, (
-        "the pipeline must use the POPULATION denominator to match "
-        "deflate_sharpe (#56)"
-    )
-    assert "statistics.stdev(sharpe_values)" not in block, (
+    src = _norm((_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8"))
+    idx = src.index("mu_sr = statistics.mean(sharpe_values)")
+    block = src[idx : idx + 1200]
+    assert (
+        "sum((v - mu_sr) ** 2 for v in sharpe_values) / len(sharpe_values)" in block
+    ), "the pipeline must use the POPULATION denominator to match deflate_sharpe (#56)"
+    assert _norm("statistics.stdev(sharpe_values)") not in block, (
         "statistics.stdev (SAMPLE, n-1) is back at the pipeline sigma_sr site -- "
         "the two lockstep DSR paths would again return different sigma_sr, "
         "E_max_SR and DSR for identical trial Sharpes (#56)"
@@ -192,8 +216,11 @@ def test_the_real_pipeline_site_uses_the_population_denominator():
 # --------------------------------------------------------------------------
 
 _PIPELINE_EXCLUDED_KEYS = {
-    "statistic_expectancy", "statistic_neither", "no_sharpe_value",
-    "dedup_removed", "invalidated_artifact",
+    "statistic_expectancy",
+    "statistic_neither",
+    "no_sharpe_value",
+    "dedup_removed",
+    "invalidated_artifact",
 }
 
 
@@ -203,8 +230,11 @@ def test_library_excluded_counts_carry_the_pipeline_key_set():
     from deflate_sharpe import compute_promotion_audit
 
     ledger = [
-        _row("t1", "h1"), _row("t2", "h2"), _row("t3", "h3"),
-        _row("t4", "h4"), _row("t5", "h5"),
+        _row("t1", "h1"),
+        _row("t2", "h2"),
+        _row("t3", "h3"),
+        _row("t4", "h4"),
+        _row("t5", "h5"),
     ]
     for i, r in enumerate(ledger):
         r["sharpe"] = 0.1 * (i + 1)
@@ -227,9 +257,9 @@ def test_library_excluded_counts_carry_the_pipeline_key_set():
 def test_the_real_pipeline_site_still_emits_the_same_key_set():
     """Guards the shipped pipeline file, so the agreement above cannot be
     satisfied by the library alone drifting to match a stale expectation."""
-    src = (_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
-    idx = src.index('excluded = {"statistic_expectancy"')
-    block = src[idx:idx + 300]
+    src = _norm((_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8"))
+    idx = src.index("excluded = {")
+    block = src[idx : idx + 300]
     for key in _PIPELINE_EXCLUDED_KEYS:
         assert f'"{key}"' in block, (
             f"pipeline excluded-counts dict no longer carries {key!r} (#48 F3)"
