@@ -23,6 +23,7 @@ from execution.forecast_manager import ForecastManager
 from execution.portfolio_info import MockPortfolioInfo, PortfolioInfo, PortfolioStateTracker, OtherPortfolioOperations
 from performance.metrics import EnhancedPerformanceTracker, DEFAULT_COMMISSION_RATE
 from risk.risk_manager import RiskManager
+from risk.portfolio_risk_gate import PortfolioRiskGate, validate_portfolio_controls
 from strategies.main_strategy import AdvancedStrategy
 from utils.logger import setup_logger
 
@@ -50,6 +51,7 @@ class MockStack:
     risk_manager: RiskManager
     forecast_manager: ForecastManager
     portfolio_state_tracker: Optional[PortfolioStateTracker]
+    risk_gate: Optional[PortfolioRiskGate]
 
 
 def initialize_config_and_logger() -> Tuple[Optional[ConfigManager], Optional[logging.Logger]]:
@@ -142,7 +144,15 @@ class Launcher:
         )
         forecast_manager = ForecastManager(
         )
-        return risk_manager, forecast_manager
+        # fix/risk-layer, PR-1: build the portfolio risk gate from config.json's
+        # risk_management.portfolio_controls when non-empty, else None. Absent block
+        # (the committed config) -> None -> no gate is threaded anywhere and every
+        # output is byte-identical. ConfigManager.validate has already vetted the
+        # block by the time this runs (launcher.py init path), so PortfolioRiskGate's
+        # own ctor validation is defense in depth here.
+        portfolio_controls = self.config.get('risk_management', 'portfolio_controls', {})
+        risk_gate = PortfolioRiskGate(portfolio_controls) if portfolio_controls else None
+        return risk_manager, forecast_manager, risk_gate
 
     def _read_trading_params(
         self,
@@ -180,7 +190,7 @@ class Launcher:
         with_state_tracker: bool = True,
         trades_log_file: Optional[str] = None,
     ) -> MockStack:
-        risk_manager, forecast_manager = self._build_risk_and_forecast_managers()
+        risk_manager, forecast_manager, risk_gate = self._build_risk_and_forecast_managers()
 
         # Backtest DataManager — no thread, no Binance client
         data_manager = DataManager(
@@ -225,6 +235,7 @@ class Launcher:
             risk_manager=risk_manager,
             forecast_manager=forecast_manager,
             portfolio_state_tracker=portfolio_state_tracker,
+            risk_gate=risk_gate,
         )
 
     def run_bot(self):
@@ -239,7 +250,7 @@ class Launcher:
         self.logger.debug(f"Candle interval: {params.interval}s, Check interval: {params.check_interval}s")
 
         strategy = AdvancedStrategy()
-        risk_manager, forecast_manager = self._build_risk_and_forecast_managers()
+        risk_manager, forecast_manager, risk_gate = self._build_risk_and_forecast_managers()
 
         # Live DataManager — owns REST thread and CandleBuilder internally
         data_manager = DataManager(
@@ -265,6 +276,7 @@ class Launcher:
             candle_interval_seconds=params.interval,
             test_mode=params.test_mode,
             symbols=params.symbols,
+            risk_gate=risk_gate,
         )
 
         # Wire candle callback now that bot exists
@@ -321,6 +333,7 @@ class Launcher:
             symbols=params.symbols,
             initial_capital=initial_balance,
             exchange=params.exchange,
+            risk_gate=stack.risk_gate,
         )
 
         try:
@@ -397,6 +410,7 @@ class Launcher:
             symbols=params.symbols,
             initial_capital=initial_balance,
             exchange=params.exchange,
+            risk_gate=stack.risk_gate,
         )
 
         try:
@@ -475,7 +489,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  commission_rate: float = None, trades_log_file: str = None,
                  bar_equity: bool = False, exchange: str | None = None,
                  drop_feeds: list[str] | None = None,
-                 model_funding: bool = False):
+                 model_funding: bool = False,
+                 risk_controls: dict | None = None):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -579,6 +594,20 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         False preserves the exact prior behavior: funding_daily is never built and the
         hook at trading_bot.py:205 is never entered -- byte-identical to before this
         parameter existed. See tests/test_model_funding_bit_identical.py.
+    risk_controls: full-replacement override for this backtest's
+        risk_management.portfolio_controls (fix/risk-layer, PR-1). Defaults to None,
+        which means "use config.json's portfolio_controls exactly as live would" --
+        with the committed config that block is absent, so no gate is built and output
+        is byte-identical to before this parameter existed. A dict IS the complete
+        portfolio_controls for this run (no merge): {} explicitly means no controls
+        (gate off); {"absolute_allocation_cap": {"cap": 1.0}} clamps the target
+        allocation. Validated by validate_portfolio_controls (fail-loud ValueError on
+        bad shapes/ranges/unknown keys), the same rule set ConfigManager.validate
+        applies to config.json. When a gate is active the effective block is folded
+        into run identity (dir hash + manifest config_sha256) so the run is
+        distinguishable from a no-controls one, and a "risk_controls" block is added to
+        metrics.json. Does NOT touch RiskManager's band controls. See
+        risk/portfolio_risk_gate.py and tests/test_risk_layer_bit_identical.py.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -622,6 +651,20 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
     stack = launcher._build_mock_stack(
         params, DEFAULT_INITIAL_BALANCE, trades_log_file=trades_log_file
     )
+    # fix/risk-layer, PR-1: risk_controls is a FULL-REPLACEMENT override of the
+    # config.json-derived gate in the stack. None -> keep the config-derived gate
+    # (absent block -> None -> byte-identical). A dict IS the run's complete
+    # portfolio_controls, validated fail-loud here (the override path bypasses
+    # ConfigManager.validate); {} means no controls (gate off).
+    if risk_controls is not None:
+        _risk_errors = validate_portfolio_controls(risk_controls)
+        if _risk_errors:
+            raise ValueError(
+                "Invalid risk_controls override: " + "; ".join(_risk_errors)
+            )
+        risk_gate = PortfolioRiskGate(risk_controls) if risk_controls else None
+    else:
+        risk_gate = stack.risk_gate
     stack.portfolio_state_tracker.output_dir = results_root
     if runs_root is not None:
         stack.portfolio_state_tracker.runs_dir = runs_root
@@ -665,6 +708,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         exchange=params.exchange,
         drop_feeds=drop_feeds,
         model_funding=model_funding,
+        risk_gate=risk_gate,
     )
 
     engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=effective_feed_registry)
