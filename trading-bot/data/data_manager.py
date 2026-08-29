@@ -63,8 +63,12 @@ logger = logging.getLogger("trading_bot")
 #: `strategy-research/config/campaign_data_policy.yaml:holdout_range`. Read, never
 #: assumed — the seal moves with the policy, per the rule
 #: `tests/test_no_sealed_date_literals.py` states and follows.
-_POLICY_PATH = (Path(__file__).resolve().parents[2]
-                / "strategy-research" / "config" / "campaign_data_policy.yaml")
+_POLICY_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "strategy-research"
+    / "config"
+    / "campaign_data_policy.yaml"
+)
 
 
 def _holdout_bounds() -> tuple:
@@ -87,10 +91,13 @@ def _holdout_bounds() -> tuple:
     """
     try:
         import yaml  # local: this module is imported in contexts without yaml
+
         with open(_POLICY_PATH, encoding="utf-8") as fh:
             lo, hi = yaml.safe_load(fh)["holdout_range"][:2]
-        return pd.Timestamp(lo), pd.Timestamp(hi).normalize() + datetime.timedelta(days=1)
-    except Exception as exc:                                  # noqa: BLE001
+        return pd.Timestamp(lo), pd.Timestamp(hi).normalize() + datetime.timedelta(
+            days=1
+        )
+    except Exception as exc:  # noqa: BLE001
         raise SealedDataError(
             f"Cannot read holdout_range from {_POLICY_PATH}: {exc}. Refusing to "
             f"return market data — a read that cannot locate the seal cannot "
@@ -132,6 +139,7 @@ def _assert_no_sealed_rows(df: "pd.DataFrame", symbol: str) -> None:
 # Core data structures  (unchanged)
 # ===========================================================================
 
+
 @dataclass
 class PriceTick:
     """
@@ -143,6 +151,7 @@ class PriceTick:
                       DataFrame row.
     Volume is optional because get_symbol_ticker() does not return it.
     """
+
     symbol: str
     price: float
     timestamp: datetime.datetime
@@ -158,6 +167,7 @@ class Candle:
     CandleBuilder._align().  tick_count records how many raw ticks contributed
     (useful for diagnosing sparse backtest data).
     """
+
     symbol: str
     open: float
     high: float
@@ -198,15 +208,17 @@ class Candle:
 #                     enrichment value at candle close.
 # ===========================================================================
 
+
 @dataclass
 class AuxFeedConfig:
     """Descriptor for one registered auxiliary data feed."""
-    fetcher:        BaseFetcher
-    column:         str
+
+    fetcher: BaseFetcher
+    column: str
     window_seconds: float
-    agg:            str = "last"          # 'last' | 'mean' | 'sum'
-    live_value:     Optional[float] = None  # updated in live mode by poll thread
-    required:       bool = False          # see AuxFeedRequiredError
+    agg: str = "last"  # 'last' | 'mean' | 'sum'
+    live_value: Optional[float] = None  # updated in live mode by poll thread
+    required: bool = False  # see AuxFeedRequiredError
 
 
 class AuxFeedCausalityError(RuntimeError):
@@ -303,8 +315,12 @@ def _merge_asof_with_causality_guard(
     )
     matched = merged["__src_ts"].notna()
     if matched.any():
-        window_end = merged.loc[matched, "__src_ts"] + datetime.timedelta(seconds=window_seconds)
-        bar_end = merged.loc[matched, "timestamp"] + datetime.timedelta(seconds=interval_seconds)
+        window_end = merged.loc[matched, "__src_ts"] + datetime.timedelta(
+            seconds=window_seconds
+        )
+        bar_end = merged.loc[matched, "timestamp"] + datetime.timedelta(
+            seconds=interval_seconds
+        )
         violations = window_end > bar_end
         if violations.any():
             bad = merged.loc[matched].loc[violations].iloc[0]
@@ -322,6 +338,7 @@ def _merge_asof_with_causality_guard(
 # ===========================================================================
 # CandleBuilder  (unchanged from previous version — no awareness of aux feeds)
 # ===========================================================================
+
 
 class CandleBuilder:
     """
@@ -377,9 +394,9 @@ class CandleBuilder:
             price=float(row["close"]),
             volume=float(row.get("volume", 0.0)),
             timestamp=timestamp,
-            open=float(row["open"])  if "open"  in row.index else None,
-            high=float(row["high"])  if "high"  in row.index else None,
-            low=float(row["low"])    if "low"   in row.index else None,
+            open=float(row["open"]) if "open" in row.index else None,
+            high=float(row["high"]) if "high" in row.index else None,
+            low=float(row["low"]) if "low" in row.index else None,
         )
 
     def get_candle_history(self, symbol: str, count: int = 1) -> pd.DataFrame:
@@ -389,20 +406,22 @@ class CandleBuilder:
         present here — use DataManager.get_data_history() for enriched data.
         """
         candles = self.completed_candles.get(symbol, [])[-count:]
-        
+
         if not candles:
             return pd.DataFrame()
-        return pd.DataFrame([
-            {
-                "timestamp": c.start_time,
-                "open":      c.open,
-                "high":      c.high,
-                "low":       c.low,
-                "close":     c.close,
-                "volume":    c.volume,
-            }
-            for c in candles
-        ])
+        return pd.DataFrame(
+            [
+                {
+                    "timestamp": c.start_time,
+                    "open": c.open,
+                    "high": c.high,
+                    "low": c.low,
+                    "close": c.close,
+                    "volume": c.volume,
+                }
+                for c in candles
+            ]
+        )
 
     def get_current_candle(self, symbol: str) -> Optional[Candle]:
         """Return the still-open candle for a symbol, or None."""
@@ -445,23 +464,31 @@ class CandleBuilder:
         a complete, closed bar.
         """
         if symbol not in self.current_candles:
-            self.current_candles[symbol] = self._open_candle(symbol, price, volume, timestamp, open, high, low)
+            self.current_candles[symbol] = self._open_candle(
+                symbol, price, volume, timestamp, open, high, low
+            )
             return None
 
         current = self.current_candles[symbol]
 
         if (timestamp - current.start_time).total_seconds() >= self.interval_seconds:
             # ── Candle close ──────────────────────────────────────────────
-            self.completed_candles[symbol].append(current) #Enrich the local stored candle history with the completed candle before firing the callback, so that the strategy can access it via get_candle_history() in the callback.
+            self.completed_candles[symbol].append(
+                current
+            )  # Enrich the local stored candle history with the completed candle before firing the callback, so that the strategy can access it via get_candle_history() in the callback.
             if self.candle_completion_callback:
                 try:
                     self.candle_completion_callback(symbol, current)
                 except (TypeError, AttributeError, NameError):
                     raise  # structural defect in the callback path — fail loud, don't swallow
                 except Exception as e:
-                    logger.error(f"Candle callback error for {symbol}: {e}", exc_info=True)
+                    logger.error(
+                        f"Candle callback error for {symbol}: {e}", exc_info=True
+                    )
 
-            self.current_candles[symbol] = self._open_candle(symbol, price, volume, timestamp, open, high, low)
+            self.current_candles[symbol] = self._open_candle(
+                symbol, price, volume, timestamp, open, high, low
+            )
             return current
         else:
             # ── Candle update ─────────────────────────────────────────────
@@ -489,7 +516,9 @@ class CandleBuilder:
         """
         current = self.current_candles.get(symbol)
         if current is None:
-            logger.warning(f"flush_final_candle: no open candle for {symbol} — declining")
+            logger.warning(
+                f"flush_final_candle: no open candle for {symbol} — declining"
+            )
             return None
 
         self.completed_candles[symbol].append(current)
@@ -504,14 +533,16 @@ class CandleBuilder:
         self.current_candles.pop(symbol, None)
         return current
 
-    def _open_candle(self, symbol, price, volume, timestamp, open=None, high=None, low=None) -> Candle:
+    def _open_candle(
+        self, symbol, price, volume, timestamp, open=None, high=None, low=None
+    ) -> Candle:
         """Open a new candle aligned to the interval boundary."""
         aligned = self._align(timestamp)
         return Candle(
-            symbol=symbol, 
-            open=open  if open  is not None else price,
-            high=high  if high  is not None else price,
-            low=low    if low   is not None else price,
+            symbol=symbol,
+            open=open if open is not None else price,
+            high=high if high is not None else price,
+            low=low if low is not None else price,
             close=price,
             volume=volume,
             start_time=aligned,
@@ -520,12 +551,18 @@ class CandleBuilder:
         )
 
     @staticmethod
-    def _update_candle(candle: Candle, price: float, volume: float, high: float = None, low: float = None):
+    def _update_candle(
+        candle: Candle,
+        price: float,
+        volume: float,
+        high: float = None,
+        low: float = None,
+    ):
         """Merge a tick into an open candle in-place."""
-        candle.high      = max(candle.high, high if high is not None else price)
-        candle.low       = min(candle.low,  low  if low  is not None else price)
-        candle.close     = price
-        candle.volume   += volume
+        candle.high = max(candle.high, high if high is not None else price)
+        candle.low = min(candle.low, low if low is not None else price)
+        candle.close = price
+        candle.volume += volume
         candle.tick_count += 1
 
     def _align(self, timestamp: datetime.datetime) -> datetime.datetime:
@@ -588,6 +625,7 @@ class CandleBuilder:
 #     code path in the hot loop.
 # ===========================================================================
 
+
 class DataManager:
     """
     Single data manager for live trading and backtesting.
@@ -645,9 +683,9 @@ class DataManager:
         if mode not in ("live", "backtest"):
             raise ValueError(f"mode must be 'live' or 'backtest', got '{mode}'")
 
-        self.symbols              = symbols
-        self.interval_seconds     = interval_seconds
-        self.mode                 = mode
+        self.symbols = symbols
+        self.interval_seconds = interval_seconds
+        self.mode = mode
         self.price_fetch_interval = price_fetch_interval
 
         # ── Registered auxiliary feeds ─────────────────────────────────────
@@ -680,12 +718,12 @@ class DataManager:
 
         # ── Live-only state ────────────────────────────────────────────────
         if mode == "live":
-            self.client      = Client(API_KEY, API_SECRET, testnet=USE_TESTNET)
+            self.client = Client(API_KEY, API_SECRET, testnet=USE_TESTNET)
             self.price_queue: queue.Queue = queue.Queue()
-            self.running     = False
+            self.running = False
 
         # ── Backtest-only state ────────────────────────────────────────────
-        self.historical_data: Dict[str, pd.DataFrame] = {}   # symbol → DataFrame
+        self.historical_data: Dict[str, pd.DataFrame] = {}  # symbol → DataFrame
         self._cursor: Dict[str, int] = {}
 
     # -----------------------------------------------------------------------
@@ -737,15 +775,21 @@ class DataManager:
         """
         if agg not in ("last", "mean", "sum"):
             raise ValueError(f"agg must be 'last', 'mean', or 'sum' — got '{agg}'")
-        if not isinstance(window_seconds, (int, float)) or isinstance(window_seconds, bool) \
-                or window_seconds < 0:
+        if (
+            not isinstance(window_seconds, (int, float))
+            or isinstance(window_seconds, bool)
+            or window_seconds < 0
+        ):
             raise ValueError(
                 f"window_seconds must be a non-negative number — got {window_seconds!r}. "
                 "This is a required causality declaration, not an optional tuning knob: "
                 "see AuxFeedCausalityError / data/ADDING_A_FEED.md."
             )
         self._aux_feeds[name] = AuxFeedConfig(
-            fetcher=fetcher, column=name, window_seconds=float(window_seconds), agg=agg,
+            fetcher=fetcher,
+            column=name,
+            window_seconds=float(window_seconds),
+            agg=agg,
             required=required,
         )
         logger.info(
@@ -776,11 +820,11 @@ class DataManager:
             try:
                 self._strategy_callback(symbol, candle)
             except Exception as e:
-                logger.error(f"Strategy callback error for {symbol}: {e}", exc_info=True)
+                logger.error(
+                    f"Strategy callback error for {symbol}: {e}", exc_info=True
+                )
 
-    def _attach_aux_columns(
-        self, symbol: str, df: pd.DataFrame
-    ) -> pd.DataFrame:
+    def _attach_aux_columns(self, symbol: str, df: pd.DataFrame) -> pd.DataFrame:
         """
         Merge registered aux feed values into a candle history DataFrame.
 
@@ -795,7 +839,7 @@ class DataManager:
         mutated.  If a feed has no data for the requested window, the column is
         filled with NaN so the strategy can handle missing data gracefully.
         """
-        
+
         if not self._aux_feeds or df.empty:
             return df
 
@@ -816,8 +860,12 @@ class DataManager:
                     # declared window for defense-in-depth at this second,
                     # independent merge_asof call site.
                     result = _merge_asof_with_causality_guard(
-                        result, enriched, name, feed.window_seconds,
-                        self.interval_seconds, feed_label=name,
+                        result,
+                        enriched,
+                        name,
+                        feed.window_seconds,
+                        self.interval_seconds,
+                        feed_label=name,
                     )
                 else:
                     result[name] = np.nan
@@ -837,7 +885,6 @@ class DataManager:
         should not be called directly by strategies.
         """
         df = self.candle_builder.get_candle_history(symbol, count)
-        
 
         return self._attach_aux_columns(symbol, df)
 
@@ -872,7 +919,7 @@ class DataManager:
             feed_data = feed.fetcher.get_data(symbol)
 
             if feed_data.empty:
-                all_data  = feed.fetcher.get_data()
+                all_data = feed.fetcher.get_data()
                 feed_data = (
                     next(iter(all_data.values()), pd.DataFrame())
                     if isinstance(all_data, dict)
@@ -917,8 +964,7 @@ class DataManager:
             effective_window_seconds = feed.window_seconds
             if feed.agg != "last":
                 feed_data = (
-                    feed_data
-                    .set_index("timestamp")
+                    feed_data.set_index("timestamp")
                     .resample(f"{self.interval_seconds}s")
                     .agg({name: feed.agg})
                     .reset_index()
@@ -929,11 +975,17 @@ class DataManager:
                 # a 'sum'/'mean' over [T, T+interval_seconds) is exactly the
                 # forward window whale features already declare on their own
                 # grid, so this only ever widens (never narrows) the check.
-                effective_window_seconds = max(feed.window_seconds, self.interval_seconds)
+                effective_window_seconds = max(
+                    feed.window_seconds, self.interval_seconds
+                )
 
             enriched = _merge_asof_with_causality_guard(
-                enriched, feed_data, name, effective_window_seconds,
-                self.interval_seconds, feed_label=name,
+                enriched,
+                feed_data,
+                name,
+                effective_window_seconds,
+                self.interval_seconds,
+                feed_label=name,
             )
             logger.info(
                 f"DataManager: pre-merged '{name}' into {symbol} "
@@ -1036,11 +1088,13 @@ class DataManager:
                 # so that _process_backtest_tick feeds pre-enriched rows to CandleBuilder
                 # (price columns are what CandleBuilder uses; aux columns ride along
                 # and are picked up by _attach_aux_columns at get_candle_history time)
-                if df.empty or 'timestamp' not in df.columns:
-                    logger.error(f"No valid price data for {symbol} — skipping aux feed merge")
+                if df.empty or "timestamp" not in df.columns:
+                    logger.error(
+                        f"No valid price data for {symbol} — skipping aux feed merge"
+                    )
                     continue  # or return, depending on loop structure
-                
-                self._premerge_aux_feeds(symbol, df) 
+
+                self._premerge_aux_feeds(symbol, df)
                 logger.info(
                     f"DataManager: {symbol} initialised with "
                     f"{len(self._aux_feeds)} aux feed(s) — "
@@ -1049,8 +1103,14 @@ class DataManager:
             else:
                 logger.info(f"DataManager: {symbol} initialised ({len(df)} rows)")
 
-    def fetch_historical_data(self, symbol: str, start_date, end_date, exchange: str = "binance",
-                              allow_sealed: bool = False) -> pd.DataFrame:
+    def fetch_historical_data(
+        self,
+        symbol: str,
+        start_date,
+        end_date,
+        exchange: str = "binance",
+        allow_sealed: bool = False,
+    ) -> pd.DataFrame:
         """
         Fetch raw OHLCV data for one symbol via CcxtFetcher and return it as
         a flat DataFrame.
@@ -1068,21 +1128,25 @@ class DataManager:
 
         Returns an empty DataFrame on failure.
         """
-        logger.debug(f"Fetching OHLCV for {symbol}  {start_date} → {end_date}  (exchange={exchange})")
+        logger.debug(
+            f"Fetching OHLCV for {symbol}  {start_date} → {end_date}  (exchange={exchange})"
+        )
 
         data_folder = os.path.dirname(os.path.abspath(__file__))
         project_folder = os.path.dirname(data_folder)
         data_storage_dir = os.path.join(project_folder, "local_data")
 
         fetcher = HistoricalDataFetcher(
-            start_date, end_date, [symbol],
+            start_date,
+            end_date,
+            [symbol],
             candle_interval_seconds=self.interval_seconds,
             exchange=exchange,
             localStorage=True,
-            data_dir = data_storage_dir
+            data_dir=data_storage_dir,
         )
         try:
-            data = fetcher.get_data()   # {symbol: DataFrame}
+            data = fetcher.get_data()  # {symbol: DataFrame}
             if symbol in data and not data[symbol].empty:
                 is_continuous, gaps = fetcher.validate_data_continuity(symbol)
                 logger.debug(f"  Records   : {len(data[symbol])}")
@@ -1131,7 +1195,11 @@ class DataManager:
             # same reason, as base_fetcher._load_local's tz-aware guard.
             raise
         except Exception as e:
-            logger.error(f"Error fetching OHLCV for {symbol}: {e}", stack_info=True, exc_info=True)
+            logger.error(
+                f"Error fetching OHLCV for {symbol}: {e}",
+                stack_info=True,
+                exc_info=True,
+            )
             return pd.DataFrame()
 
     # -----------------------------------------------------------------------
@@ -1194,12 +1262,14 @@ class DataManager:
                     past = df_sorted[df_sorted["timestamp"] <= pd.Timestamp(now)]
                     if not past.empty:
                         feed.live_value = float(past[feed.column].iloc[-1])
-                        logger.debug(f"Aux feed '{name}': live_value = {feed.live_value}")
+                        logger.debug(
+                            f"Aux feed '{name}': live_value = {feed.live_value}"
+                        )
 
             except Exception as e:
                 logger.error(f"Aux feed poll error for '{name}': {e}", exc_info=True)
 
-            time.sleep(self.interval_seconds)   # poll once per candle interval
+            time.sleep(self.interval_seconds)  # poll once per candle interval
 
     def _rest_price_fetcher(self):
         """
@@ -1275,8 +1345,8 @@ class DataManager:
         try:
             completed = None
             while not self.price_queue.empty():
-                tick    = self.price_queue.get_nowait()
-                result  = self.candle_builder.add_tick(tick)
+                tick = self.price_queue.get_nowait()
+                result = self.candle_builder.add_tick(tick)
                 if result and result.symbol == symbol:
                     completed = result
             return completed
@@ -1290,7 +1360,7 @@ class DataManager:
         """Feed the row at the current cursor to CandleBuilder."""
         if symbol not in self.historical_data:
             return None
-        df  = self.historical_data[symbol]
+        df = self.historical_data[symbol]
         idx = self._cursor.get(symbol, 0)
         if idx >= len(df):
             return None
@@ -1308,5 +1378,5 @@ __all__ = [
     "CandleBuilder",
     "DataManager",
     "AuxFeedConfig",
-    "HistoricalDataFetcher",   # re-exported from ccxt_fetcher
+    "HistoricalDataFetcher",  # re-exported from ccxt_fetcher
 ]

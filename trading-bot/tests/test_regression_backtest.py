@@ -10,6 +10,7 @@ Catches: engine wiring regressions, PnL computation changes, config loading bugs
 This test uses the DEFAULT strategy_config.json (not a candidate config) so it
 always produces a deterministic, fixture-comparable result.
 """
+
 import copy
 import hashlib
 import json
@@ -33,7 +34,9 @@ _CACHE_SKIP = cache_skip_reason(
 )
 pytestmark = [
     pytest.mark.slow,  # run with: pytest -m slow
-    pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),
+    pytest.mark.skipif(
+        _CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"
+    ),
 ]
 
 
@@ -248,10 +251,14 @@ def test_config_actually_loaded(backtest_result, reference):
     candidate config, tracked separately, to catch that class of bug.
     """
     import hashlib
+
     config_path = PROJECT_ROOT / reference["config"]
     with open(config_path) as f:
         import json as _json
-        config_content = _json.dumps(_json.load(f), sort_keys=True, separators=(",", ":"))
+
+        config_content = _json.dumps(
+            _json.load(f), sort_keys=True, separators=(",", ":")
+        )
     # sort_keys/separators here must stay in lockstep with write_manifest's own
     # canonicalization (reporting/run_artifact.py:68) — they agree by construction
     # today; nothing enforces the coupling if either changes independently.

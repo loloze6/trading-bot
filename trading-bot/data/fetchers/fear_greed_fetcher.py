@@ -40,6 +40,7 @@ import pandas as pd
 
 try:
     import requests
+
     _REQUESTS_AVAILABLE = True
 except ImportError:
     _REQUESTS_AVAILABLE = False
@@ -49,7 +50,7 @@ from data.fetchers.base_fetcher import BaseFetcher
 logger = logging.getLogger("trading_bot")
 
 _API_URL = "https://api.alternative.me/fng/"
-_FEAR_GREED_INTERVAL_SECONDS = 24 * 3600   # 24 hours in seconds
+_FEAR_GREED_INTERVAL_SECONDS = 24 * 3600  # 24 hours in seconds
 
 
 class FearGreedFetcher(BaseFetcher):
@@ -58,7 +59,7 @@ class FearGreedFetcher(BaseFetcher):
 
     The API returns up to 'limit' days of history in a single call, so no
     pagination loop is needed.  We request the full window in one shot and
-    rely on BaseFetcher for local caching and gap-fill logic. 
+    rely on BaseFetcher for local caching and gap-fill logic.
     """
 
     # Daily data — tolerate gaps up to 2× the 86400s interval before alerting.
@@ -79,8 +80,8 @@ class FearGreedFetcher(BaseFetcher):
         super().__init__(
             start_date=start_date,
             end_date=end_date,
-            symbols=["fear_greed"],       # single global feed, keyed by name
-            interval_seconds=_FEAR_GREED_INTERVAL_SECONDS,       # published daily
+            symbols=["fear_greed"],  # single global feed, keyed by name
+            interval_seconds=_FEAR_GREED_INTERVAL_SECONDS,  # published daily
             localStorage=localStorage,
             data_dir=data_dir,
         )
@@ -128,7 +129,9 @@ class FearGreedFetcher(BaseFetcher):
 
             records = [
                 {
-                    "timestamp": pd.Timestamp(datetime.datetime.utcfromtimestamp(int(entry["timestamp"]))).floor("D"),
+                    "timestamp": pd.Timestamp(
+                        datetime.datetime.utcfromtimestamp(int(entry["timestamp"]))
+                    ).floor("D"),
                     "fear_greed": int(entry["value"]),
                     "classification": entry.get("value_classification", ""),
                 }

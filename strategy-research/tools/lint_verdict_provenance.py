@@ -28,6 +28,7 @@ pass_rule_evaluation.yaml or honestly declares `verdict_status: ungated`.
 Exit 1 = at least one record asserts something about a hypothesis that nothing
 in the repository backs.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -60,10 +61,18 @@ def lint_verdict_provenance(root=None) -> list:
     violations = []
 
     sources = (
-        ("campaign_knowledge_base.yaml", "findings", base / "campaign_record" / "campaign_knowledge_base.yaml",
-         record_schema.KB_FINDING_SCHEMA),
-        ("campaign_queue.yaml", "queue", base / "config" / "campaign_queue.yaml",
-         record_schema.QUEUE_ENTRY_SCHEMA),
+        (
+            "campaign_knowledge_base.yaml",
+            "findings",
+            base / "campaign_record" / "campaign_knowledge_base.yaml",
+            record_schema.KB_FINDING_SCHEMA,
+        ),
+        (
+            "campaign_queue.yaml",
+            "queue",
+            base / "config" / "campaign_queue.yaml",
+            record_schema.QUEUE_ENTRY_SCHEMA,
+        ),
     )
     for label, key, path, schema in sources:
         document = _load(path)
@@ -75,8 +84,8 @@ def lint_verdict_provenance(root=None) -> list:
                 # C7-EXT-R2: this now checks the closed record schema as well as
                 # provenance -- an unknown field is a violation in its own right.
                 vce.validate_verdict_provenance(
-                    entry, entry_ref=f"{label} entry {name!r}", root=base,
-                    schema=schema)
+                    entry, entry_ref=f"{label} entry {name!r}", root=base, schema=schema
+                )
             except vce.UngatedVerdictError as exc:
                 violations.append(str(exc))
     return violations
@@ -84,8 +93,11 @@ def lint_verdict_provenance(root=None) -> list:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[1])
-    parser.add_argument("--root", default=None,
-                        help="strategy-research/ root (defaults to this file's parent)")
+    parser.add_argument(
+        "--root",
+        default=None,
+        help="strategy-research/ root (defaults to this file's parent)",
+    )
     args = parser.parse_args(argv)
 
     base = Path(args.root) if args.root else _HERE.parent
@@ -95,14 +107,17 @@ def main(argv=None) -> int:
         print(f"FAIL  {len(violations)} ungated verdict(s) in the campaign record:\n")
         for violation in violations:
             print(f"  - {violation}\n")
-        print("Each must either cite a pass_rule_evaluation.yaml that resolves, or "
-              "declare `verdict_status: ungated` and keep its measurements.")
+        print(
+            "Each must either cite a pass_rule_evaluation.yaml that resolves, or "
+            "declare `verdict_status: ungated` and keep its measurements."
+        )
         return 1
 
     gated = vce.honest_verdict_count(
         _load(base / "campaign_record" / "campaign_knowledge_base.yaml"),
         _load(base / "config" / "campaign_queue.yaml"),
-        root=base)
+        root=base,
+    )
     print("OK  every verdict-bearing record is either gated or declared ungated.")
     print(f"    gated verdicts: {len(gated)} {gated}")
     return 0

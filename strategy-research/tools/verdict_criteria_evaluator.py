@@ -34,6 +34,7 @@ self-declared ones) and D-7 (G1's product allowlist is exact-match on a
 free-text brief field; G2/G3 accept placeholder and wrong-typed values) are
 OPEN and recorded as such in the ledger.
 """
+
 from __future__ import annotations
 
 import sys
@@ -52,10 +53,10 @@ _VALID_COMPARATORS = (">=", ">", "<=", "<", "==")
 
 # C7-EXT: the four verdict PRECONDITIONS (G1-G4). Enumerated for callers/tests.
 VERDICT_PRECONDITION_IDS = (
-    "cost_model_completeness",   # G1
-    "distribution_stats",        # G2
-    "deployable_today",          # G3
-    "robustness_mechanism",      # G4
+    "cost_model_completeness",  # G1
+    "distribution_stats",  # G2
+    "deployable_today",  # G3
+    "robustness_mechanism",  # G4
 )
 
 # Default perp funding interval, in hours. Overridable per-brief via
@@ -94,48 +95,70 @@ _VERDICT_FIELDS = ("verdict_c7", "hypothesis_verdict", "verdict")
 # gate. A verdict is a claim about whether the hypothesis is true, and only
 # those need provenance.
 _VERDICT_BEARING_OUTCOME_PREFIXES = ("kill", "promote", "refine")
-_VERDICT_BEARING_OUTCOMES = frozenset({
-    "no_edge_observed",
-    "era_conditional_instability",
-    "completed_rejected",
-})
+_VERDICT_BEARING_OUTCOMES = frozenset(
+    {
+        "no_edge_observed",
+        "era_conditional_instability",
+        "completed_rejected",
+    }
+)
 # Process/engineering states, and honest self-declarations of non-verdict. These
 # are admissible with no provenance BECAUSE they claim nothing about the
 # hypothesis. `ungated_*` and `measurement_only_*` are the vocabulary a corrected
 # record uses (XS_momentum's own corrected outcome is one of them).
-_NON_VERDICT_OUTCOME_PREFIXES = ("ungated", "measurement_only", "blocked", "unusable",
-                                 "paused", "in_progress")
-_NON_VERDICT_OUTCOMES = frozenset({
-    "invalidated_artifact",
-    "inconclusive",
-    # config/campaign_queue.yaml reuses `outcome` for WHERE A LINEAGE GOT TO as
-    # well as for what it concluded. A stage name or a lineage-continuation
-    # marker asserts nothing about the hypothesis and needs no gate; only a
-    # terminal scientific claim does. `completed_rejected` is deliberately NOT in
-    # this set -- it is a claim, and it is how the campaign's one genuinely gated
-    # verdict (run_059) is recorded.
-    "hypothesis_generation", "innovation_expansion", "validation",
-    "backtest_specification", "signal_prescreen", "protocol_execution",
-    "verdict_interpreter", "refinement_planner", "holdout_evaluation",
-    "campaign_review",
-    "completed_reframed", "completed_escalated", "completed_refined",
-    "done", "ready", "pending", "superseded", "not_launched",
-    # E-030 S2a. Registered here DELIBERATELY, as the same kind of act the
-    # `outcome_is_verdict_bearing` docstring describes: an unrecognised outcome
-    # defaults to verdict-bearing, so without this line _save_queue would refuse
-    # every quarantine write with UngatedVerdictError -- turning a quarantine into
-    # a crash, which is strictly worse than the halt it replaces.
-    #
-    # It belongs in THIS set, next to `invalidated_artifact`, for the same reason
-    # that one does: it records that the RUN failed for engineering reasons and
-    # that NO scientific claim is being made. That is exactly what the S1 taxonomy's
-    # R8 requires of a quarantine -- "quarantine must never write a scientific
-    # outcome" -- and it is why quarantine writes this value rather than
-    # `completed_rejected`, which IS a claim and is deliberately absent from this
-    # set. A quarantined entry therefore needs no pass_rule_evaluation_ref, and
-    # honest_verdict_count() correctly does not count it.
-    "quarantined_engineering_failure",
-})
+_NON_VERDICT_OUTCOME_PREFIXES = (
+    "ungated",
+    "measurement_only",
+    "blocked",
+    "unusable",
+    "paused",
+    "in_progress",
+)
+_NON_VERDICT_OUTCOMES = frozenset(
+    {
+        "invalidated_artifact",
+        "inconclusive",
+        # config/campaign_queue.yaml reuses `outcome` for WHERE A LINEAGE GOT TO as
+        # well as for what it concluded. A stage name or a lineage-continuation
+        # marker asserts nothing about the hypothesis and needs no gate; only a
+        # terminal scientific claim does. `completed_rejected` is deliberately NOT in
+        # this set -- it is a claim, and it is how the campaign's one genuinely gated
+        # verdict (run_059) is recorded.
+        "hypothesis_generation",
+        "innovation_expansion",
+        "validation",
+        "backtest_specification",
+        "signal_prescreen",
+        "protocol_execution",
+        "verdict_interpreter",
+        "refinement_planner",
+        "holdout_evaluation",
+        "campaign_review",
+        "completed_reframed",
+        "completed_escalated",
+        "completed_refined",
+        "done",
+        "ready",
+        "pending",
+        "superseded",
+        "not_launched",
+        # E-030 S2a. Registered here DELIBERATELY, as the same kind of act the
+        # `outcome_is_verdict_bearing` docstring describes: an unrecognised outcome
+        # defaults to verdict-bearing, so without this line _save_queue would refuse
+        # every quarantine write with UngatedVerdictError -- turning a quarantine into
+        # a crash, which is strictly worse than the halt it replaces.
+        #
+        # It belongs in THIS set, next to `invalidated_artifact`, for the same reason
+        # that one does: it records that the RUN failed for engineering reasons and
+        # that NO scientific claim is being made. That is exactly what the S1 taxonomy's
+        # R8 requires of a quarantine -- "quarantine must never write a scientific
+        # outcome" -- and it is why quarantine writes this value rather than
+        # `completed_rejected`, which IS a claim and is deliberately absent from this
+        # set. A quarantined entry therefore needs no pass_rule_evaluation_ref, and
+        # honest_verdict_count() correctly does not count it.
+        "quarantined_engineering_failure",
+    }
+)
 
 # An entry may honestly declare that it holds no gated verdict. This is not a
 # loophole -- it is the entire point. The defect was that an ungated verdict was
@@ -218,8 +241,11 @@ def _evaluate_one_criterion(criterion: dict, protocol_result: dict) -> dict:
     metric = criterion.get("metric")
     comparator = criterion.get("comparator")
     if not metric or comparator not in _VALID_COMPARATORS:
-        return {"id": criterion.get("id"), "result": "SPEC_ERROR",
-                "reason": f"criterion missing metric or invalid comparator {comparator!r}"}
+        return {
+            "id": criterion.get("id"),
+            "result": "SPEC_ERROR",
+            "reason": f"criterion missing metric or invalid comparator {comparator!r}",
+        }
 
     per_symbol_threshold = criterion.get("per_symbol_threshold")
     null_handling = criterion.get("null_handling")
@@ -238,42 +264,70 @@ def _evaluate_one_criterion(criterion: dict, protocol_result: dict) -> dict:
                     # the exact fix for run_057's own BTCUSDT gap (design note
                     # section 3): the value is present-and-null, not absent.
                     per_symbol_results[symbol] = {
-                        "value": None, "threshold": threshold, "result": "FAIL",
-                        "reason": (f"{symbol} {metric} is null (A3.4: all windows below "
-                                   f"the trade floor) -- a null aggregate cannot satisfy "
-                                   f"{comparator} {threshold}, resolved as FAIL per the "
-                                   f"pre-registered null_handling policy"),
+                        "value": None,
+                        "threshold": threshold,
+                        "result": "FAIL",
+                        "reason": (
+                            f"{symbol} {metric} is null (A3.4: all windows below "
+                            f"the trade floor) -- a null aggregate cannot satisfy "
+                            f"{comparator} {threshold}, resolved as FAIL per the "
+                            f"pre-registered null_handling policy"
+                        ),
                     }
                     overall = "FAIL"
                 else:
                     per_symbol_results[symbol] = {
-                        "value": None, "threshold": threshold, "result": "SPEC_ERROR",
-                        "reason": (f"{symbol} {metric} is null and this criterion has no "
-                                   f"null_handling policy -- pre_registration.yaml is "
-                                   f"missing a required field for this criterion"),
+                        "value": None,
+                        "threshold": threshold,
+                        "result": "SPEC_ERROR",
+                        "reason": (
+                            f"{symbol} {metric} is null and this criterion has no "
+                            f"null_handling policy -- pre_registration.yaml is "
+                            f"missing a required field for this criterion"
+                        ),
                     }
                     if overall != "FAIL":
                         overall = "SPEC_ERROR"
                 continue
             met = _apply_comparator(comparator, value, threshold)
             result = "PASS" if met else "FAIL"
-            per_symbol_results[symbol] = {"value": value, "threshold": threshold, "result": result}
+            per_symbol_results[symbol] = {
+                "value": value,
+                "threshold": threshold,
+                "result": result,
+            }
             if result == "FAIL":
                 overall = "FAIL"
-        return {"id": criterion.get("id"), "result": overall, "per_symbol": per_symbol_results}
+        return {
+            "id": criterion.get("id"),
+            "result": overall,
+            "per_symbol": per_symbol_results,
+        }
 
     threshold = criterion.get("threshold")
     value = _lookup_metric_value(protocol_result, criterion, None)
     if value is None:
         if null_handling == "fails_threshold":
-            return {"id": criterion.get("id"), "result": "FAIL", "value": None,
-                    "threshold": threshold,
-                    "reason": f"{metric} is null -- cannot satisfy {comparator} {threshold}"}
-        return {"id": criterion.get("id"), "result": "SPEC_ERROR", "value": None,
-                "reason": f"{metric} is null and this criterion has no null_handling policy"}
+            return {
+                "id": criterion.get("id"),
+                "result": "FAIL",
+                "value": None,
+                "threshold": threshold,
+                "reason": f"{metric} is null -- cannot satisfy {comparator} {threshold}",
+            }
+        return {
+            "id": criterion.get("id"),
+            "result": "SPEC_ERROR",
+            "value": None,
+            "reason": f"{metric} is null and this criterion has no null_handling policy",
+        }
     met = _apply_comparator(comparator, value, threshold)
-    return {"id": criterion.get("id"), "result": "PASS" if met else "FAIL",
-            "value": value, "threshold": threshold}
+    return {
+        "id": criterion.get("id"),
+        "result": "PASS" if met else "FAIL",
+        "value": value,
+        "threshold": threshold,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -324,8 +378,11 @@ def _holding_period_hours(protocol_result: dict, research_brief: dict):
     diag = (protocol_result.get("hypothesis_verdict") or {}).get("diagnostics") or {}
     tds = protocol_result.get("trade_diagnostics_summary") or {}
     for src in (diag, tds, protocol_result):
-        for key in ("median_holding_hours", "avg_holding_hours",
-                    "median_holding_period_hours"):
+        for key in (
+            "median_holding_hours",
+            "avg_holding_hours",
+            "median_holding_period_hours",
+        ):
             val = src.get(key)
             if isinstance(val, (int, float)):
                 return float(val)
@@ -341,8 +398,9 @@ def _holding_period_hours(protocol_result: dict, research_brief: dict):
     return None
 
 
-def _gate_cost_model_completeness(protocol_result: dict, pre_registration: dict,
-                                  research_brief: dict) -> dict:
+def _gate_cost_model_completeness(
+    protocol_result: dict, pre_registration: dict, research_brief: dict
+) -> dict:
     """G1 -- cost-model completeness. If product is a perp AND the holding
     period exceeds the funding interval, funding must be MODELED or explicitly
     BOUNDED with a cited magnitude. Otherwise the verdict is BLOCKED, not
@@ -354,7 +412,9 @@ def _gate_cost_model_completeness(protocol_result: dict, pre_registration: dict,
     if product not in ("perp", "perpetual", "perpetual_future", "swap"):
         return _met(gid, f"product={product!r} is not a perp -- funding does not apply")
 
-    interval = research_brief.get("funding_interval_hours") or _DEFAULT_FUNDING_INTERVAL_HOURS
+    interval = (
+        research_brief.get("funding_interval_hours") or _DEFAULT_FUNDING_INTERVAL_HOURS
+    )
     holding = _holding_period_hours(protocol_result, research_brief)
     if holding is None:
         return _blocked(
@@ -366,16 +426,25 @@ def _gate_cost_model_completeness(protocol_result: dict, pre_registration: dict,
             "record a holding-period statistic, or model/bound funding unconditionally",
         )
     if holding <= interval:
-        return _met(gid, f"perp holding period {holding}h <= funding interval "
-                         f"{interval}h -- positions close before funding accrues")
+        return _met(
+            gid,
+            f"perp holding period {holding}h <= funding interval "
+            f"{interval}h -- positions close before funding accrues",
+        )
 
-    cm = (pre_registration.get("cost_model_completeness")
-          or protocol_result.get("cost_model_completeness") or {})
+    cm = (
+        pre_registration.get("cost_model_completeness")
+        or protocol_result.get("cost_model_completeness")
+        or {}
+    )
     funding = cm.get("funding") or {}
     treatment = str(funding.get("treatment") or "").strip().lower()
     if treatment == "modeled":
-        return _met(gid, f"perp holding period {holding}h > funding interval "
-                         f"{interval}h and funding treatment=modeled")
+        return _met(
+            gid,
+            f"perp holding period {holding}h > funding interval "
+            f"{interval}h and funding treatment=modeled",
+        )
     if treatment == "bounded":
         bound = funding.get("bound_bps_per_interval")
         citation = funding.get("citation")
@@ -387,9 +456,12 @@ def _gate_cost_model_completeness(protocol_result: dict, pre_registration: dict,
                 f"uncited or absent magnitude is not a bound",
                 "supply bound_bps_per_interval AND a citation for it",
             )
-        return _met(gid, f"perp holding period {holding}h > funding interval "
-                         f"{interval}h; funding bounded at {bound} bps/interval "
-                         f"({citation})")
+        return _met(
+            gid,
+            f"perp holding period {holding}h > funding interval "
+            f"{interval}h; funding bounded at {bound} bps/interval "
+            f"({citation})",
+        )
     return _blocked(
         gid,
         f"product=perp with holding period {holding}h > funding interval "
@@ -414,8 +486,15 @@ def _gate_distribution_stats(protocol_result: dict) -> dict:
     def _present(names):
         return any(src.get(n) is not None for src in sources for n in names)
 
-    if not _present(("median_sharpe", "sharpe", "net_sharpe", "sharpe_ratio",
-                     "net_sharpe_full_sample")):
+    if not _present(
+        (
+            "median_sharpe",
+            "sharpe",
+            "net_sharpe",
+            "sharpe_ratio",
+            "net_sharpe_full_sample",
+        )
+    ):
         return _met(gid, "no Sharpe reported -- distribution stats not required")
 
     missing = []
@@ -423,9 +502,18 @@ def _gate_distribution_stats(protocol_result: dict) -> dict:
         missing.append("skew")
     if not _present(("kurtosis", "excess_kurtosis", "return_kurtosis")):
         missing.append("kurtosis")
-    if not _present(("worst_period_return_pct", "tail_ratio", "cvar_95",
-                     "worst_month_return_pct", "var_95")):
-        missing.append("a tail statistic (worst_period_return_pct / cvar_95 / tail_ratio)")
+    if not _present(
+        (
+            "worst_period_return_pct",
+            "tail_ratio",
+            "cvar_95",
+            "worst_month_return_pct",
+            "var_95",
+        )
+    ):
+        missing.append(
+            "a tail statistic (worst_period_return_pct / cvar_95 / tail_ratio)"
+        )
     if missing:
         return _blocked(
             gid,
@@ -434,7 +522,9 @@ def _gate_distribution_stats(protocol_result: dict) -> dict:
             f"from a short-volatility payoff",
             "report skew, kurtosis, and at least one tail statistic alongside every Sharpe",
         )
-    return _met(gid, "skew, kurtosis and a tail statistic accompany the reported Sharpe")
+    return _met(
+        gid, "skew, kurtosis and a tail statistic accompany the reported Sharpe"
+    )
 
 
 def _gate_deployable_today(protocol_result: dict) -> dict:
@@ -461,8 +551,11 @@ def _gate_deployable_today(protocol_result: dict) -> dict:
             "populate year (most recent FULL year), net_sharpe, and cost_basis "
             "(the current-cost schedule used)",
         )
-    return _met(gid, f"deployable_today: {dt.get('year')} net_sharpe="
-                     f"{dt.get('net_sharpe')} at cost_basis={dt.get('cost_basis')!r}")
+    return _met(
+        gid,
+        f"deployable_today: {dt.get('year')} net_sharpe="
+        f"{dt.get('net_sharpe')} at cost_basis={dt.get('cost_basis')!r}",
+    )
 
 
 def _gate_robustness_mechanism(protocol_result: dict) -> dict:
@@ -495,8 +588,9 @@ def _gate_robustness_mechanism(protocol_result: dict) -> dict:
     return _met(gid, f"{len(checks)} robustness check(s); no unexplained anomalies")
 
 
-def evaluate_verdict_preconditions(protocol_result: dict, pre_registration: dict,
-                                   research_brief: dict | None = None) -> list[dict]:
+def evaluate_verdict_preconditions(
+    protocol_result: dict, pre_registration: dict, research_brief: dict | None = None
+) -> list[dict]:
     """G1-G4, evaluated in VERDICT_PRECONDITION_IDS order. Callable standalone
     so a research-path run -- which has no orchestrator, and was exactly how
     XS_momentum escaped -- can still be checked against them."""
@@ -517,6 +611,7 @@ def evaluate_verdict_preconditions(protocol_result: dict, pre_registration: dict
 # research-path tool (panel_backtester.py) write `verdict_c7: refine` into
 # the KB with no pass rule, no evaluator call, and no run directory.
 # ---------------------------------------------------------------------------
+
 
 class UngatedVerdictError(ValueError):
     """Raised when a KB/queue entry carries a verdict without evaluator
@@ -566,9 +661,11 @@ def resolve_evaluation_ref(ref, entry: dict, root=None) -> tuple:
     candidate = Path(ref)
     path = candidate if candidate.is_absolute() else base / ref
     if not path.exists():
-        return False, (f"pass_rule_evaluation_ref={ref!r} does not exist "
-                       f"(resolved to {path}) -- a path that resolves to nothing "
-                       f"is not provenance")
+        return False, (
+            f"pass_rule_evaluation_ref={ref!r} does not exist "
+            f"(resolved to {path}) -- a path that resolves to nothing "
+            f"is not provenance"
+        )
 
     # C7-EXT-R2: containment is checked on the RESOLVED path, and only after it is
     # resolved. The previous version substring-matched the UNRESOLVED string, so
@@ -584,18 +681,23 @@ def resolve_evaluation_ref(ref, entry: dict, root=None) -> tuple:
         # ids the ownership check used to be SKIPPED, so an entry naming no run at
         # all could cite any evaluation in the tree. An entry that claims a verdict
         # must say which run earned it.
-        return False, (f"pass_rule_evaluation_ref={ref!r} is cited by an entry that "
-                       f"names no run (evidence_runs/run_ids/run_id all absent) -- "
-                       f"ownership cannot be established, so the citation confers "
-                       f"nothing")
+        return False, (
+            f"pass_rule_evaluation_ref={ref!r} is cited by an entry that "
+            f"names no run (evidence_runs/run_ids/run_id all absent) -- "
+            f"ownership cannot be established, so the citation confers "
+            f"nothing"
+        )
     owning_dirs = [(base / "runs" / rid).resolve() for rid in run_ids]
     if not any(resolved == owner or owner in resolved.parents for owner in owning_dirs):
-        return False, (f"pass_rule_evaluation_ref={ref!r} resolves to {resolved}, which "
-                       f"does not lie under any of this entry's own runs {run_ids} -- an "
-                       f"entry may not borrow another run's evaluation as its provenance")
+        return False, (
+            f"pass_rule_evaluation_ref={ref!r} resolves to {resolved}, which "
+            f"does not lie under any of this entry's own runs {run_ids} -- an "
+            f"entry may not borrow another run's evaluation as its provenance"
+        )
 
     try:
         import yaml
+
         with open(path, "r", encoding="utf-8") as fh:
             evaluation = yaml.safe_load(fh) or {}
     except Exception as exc:  # unreadable/unparseable is a failed resolution
@@ -606,15 +708,18 @@ def resolve_evaluation_ref(ref, entry: dict, root=None) -> tuple:
 
     result = str(evaluation.get("result") or "").strip().upper()
     if result not in _BINDING_EVALUATION_RESULTS:
-        return False, (f"pass_rule_evaluation_ref={ref!r} has result={result!r}, which "
-                       f"is not a resolved verdict (expected one of "
-                       f"{sorted(_BINDING_EVALUATION_RESULTS)}) -- the evaluator "
-                       f"declined to decide, so there is no verdict to cite")
+        return False, (
+            f"pass_rule_evaluation_ref={ref!r} has result={result!r}, which "
+            f"is not a resolved verdict (expected one of "
+            f"{sorted(_BINDING_EVALUATION_RESULTS)}) -- the evaluator "
+            f"declined to decide, so there is no verdict to cite"
+        )
     return True, f"{ref} (result={result})"
 
 
-def validate_verdict_provenance(entry: dict, entry_ref: str = "<entry>",
-                                root=None, schema=None) -> dict:
+def validate_verdict_provenance(
+    entry: dict, entry_ref: str = "<entry>", root=None, schema=None
+) -> dict:
     """G6. Returns the entry unchanged when admissible; raises
     UngatedVerdictError otherwise.
 
@@ -645,8 +750,10 @@ def validate_verdict_provenance(entry: dict, entry_ref: str = "<entry>",
     because that is the stricter of the two."""
     try:
         _record_schema.validate_record_schema(
-            entry, schema if schema is not None else _record_schema.KB_FINDING_SCHEMA,
-            entry_ref)
+            entry,
+            schema if schema is not None else _record_schema.KB_FINDING_SCHEMA,
+            entry_ref,
+        )
     except _record_schema.RecordSchemaError as exc:
         # Re-raised as UngatedVerdictError so every existing call site -- the KB
         # writer, the queue writer, the standalone lint -- refuses on a schema
@@ -679,8 +786,11 @@ def validate_verdict_provenance(entry: dict, entry_ref: str = "<entry>",
         return entry
 
     if not ref:
-        what = (f"verdict field(s) {strict_fields}" if strict_fields
-                else f"verdict-bearing `outcome: {outcome}`")
+        what = (
+            f"verdict field(s) {strict_fields}"
+            if strict_fields
+            else f"verdict-bearing `outcome: {outcome}`"
+        )
         raise UngatedVerdictError(
             f"{entry_ref} carries {what} but no `pass_rule_evaluation_ref` -- this "
             f"run did not pass through the verdict evaluator and is structurally "
@@ -710,20 +820,27 @@ def honest_verdict_count(kb: dict, queue: dict, root=None) -> list:
 
     Returns a sorted list of hypothesis_ids holding an admissible gated verdict."""
     gated = set()
-    for entry in list((kb or {}).get("findings") or []) + list((queue or {}).get("queue") or []):
+    for entry in list((kb or {}).get("findings") or []) + list(
+        (queue or {}).get("queue") or []
+    ):
         if not isinstance(entry, dict):
             continue
-        if not (outcome_is_verdict_bearing(entry.get("outcome"))
-                or any(entry.get(f) is not None for f in _VERDICT_FIELDS)):
+        if not (
+            outcome_is_verdict_bearing(entry.get("outcome"))
+            or any(entry.get(f) is not None for f in _VERDICT_FIELDS)
+        ):
             continue
-        ok, _ = resolve_evaluation_ref(entry.get("pass_rule_evaluation_ref"), entry, root)
+        ok, _ = resolve_evaluation_ref(
+            entry.get("pass_rule_evaluation_ref"), entry, root
+        )
         if ok:
             gated.add(str(entry.get("hypothesis_id") or entry.get("id")))
     return sorted(gated)
 
 
-def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
-                                research_brief: dict | None = None) -> dict:
+def evaluate_pass_rule_criteria(
+    protocol_result: dict, pre_registration: dict, research_brief: dict | None = None
+) -> dict:
     """
     Evaluates a run's protocol_result.yaml against pre_registration.yaml's
     structured pass_rule (B11/C7 schema). Returns a dict written verbatim
@@ -742,7 +859,8 @@ def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
     can hand the run to stage discretion.
     """
     precondition_results = evaluate_verdict_preconditions(
-        protocol_result, pre_registration, research_brief)
+        protocol_result, pre_registration, research_brief
+    )
     blocked = [g for g in precondition_results if g["result"] == "BLOCKED"]
     if blocked:
         return {
@@ -753,8 +871,8 @@ def evaluate_pass_rule_criteria(protocol_result: dict, pre_registration: dict,
                 "verdict precondition(s) "
                 + ", ".join(f"{g['id']} ({g['reason']})" for g in blocked)
                 + " -- no verdict of any kind (PASS, FAIL, or stage-discretion) may "
-                  "be issued on this run until they are met. This is NOT a failed "
-                  "hypothesis; it is inadmissible evidence."
+                "be issued on this run until they are met. This is NOT a failed "
+                "hypothesis; it is inadmissible evidence."
             ),
         }
 
@@ -804,26 +922,40 @@ def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
     including the `legacy_not_evaluable` ones."""
     pass_rule = _find_pass_rule(pre_registration)
     if pass_rule is None:
-        return {"result": "legacy_not_evaluable",
-                "reason": ("pre_registration.yaml has no pass_rule field at all -- "
-                           "checked both the top level and machine_constraints "
-                           "(C7-EXT-R/D-6)")}
+        return {
+            "result": "legacy_not_evaluable",
+            "reason": (
+                "pre_registration.yaml has no pass_rule field at all -- "
+                "checked both the top level and machine_constraints "
+                "(C7-EXT-R/D-6)"
+            ),
+        }
     if isinstance(pass_rule, str):
-        return {"result": "legacy_not_evaluable",
-                "reason": ("pass_rule is a plain string (pre-K2 legacy schema), not the "
-                           "structured {statement, criteria, outcomes} shape -- this run's "
-                           "verdict is not machine-evaluable; falls through to the LLM "
-                           "stage's own judgment, unchanged from pre-K2 behavior")}
+        return {
+            "result": "legacy_not_evaluable",
+            "reason": (
+                "pass_rule is a plain string (pre-K2 legacy schema), not the "
+                "structured {statement, criteria, outcomes} shape -- this run's "
+                "verdict is not machine-evaluable; falls through to the LLM "
+                "stage's own judgment, unchanged from pre-K2 behavior"
+            ),
+        }
     if not isinstance(pass_rule, dict):
-        return {"result": "legacy_not_evaluable",
-                "reason": f"pass_rule is neither a string nor a dict (got {type(pass_rule).__name__})"}
+        return {
+            "result": "legacy_not_evaluable",
+            "reason": f"pass_rule is neither a string nor a dict (got {type(pass_rule).__name__})",
+        }
 
     criteria = pass_rule.get("criteria") or []
     outcomes = pass_rule.get("outcomes") or []
     if not criteria or not outcomes:
-        return {"result": "legacy_not_evaluable",
-                "reason": ("pass_rule is dict-shaped but missing criteria or outcomes -- "
-                           "not a conformant K2 structured pass rule")}
+        return {
+            "result": "legacy_not_evaluable",
+            "reason": (
+                "pass_rule is dict-shaped but missing criteria or outcomes -- "
+                "not a conformant K2 structured pass rule"
+            ),
+        }
 
     # A3 (K2 Phase B operator amendment): NAME-level window_set_ref check
     # only. Content-hash pinning (verifying the actual window set's
@@ -837,12 +969,16 @@ def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
         ref_name = str(window_set_ref).replace("\\", "/").rsplit("/", 1)[-1]
         actual_name = str(protocol_file).replace("\\", "/").rsplit("/", 1)[-1]
         if ref_name != actual_name:
-            return {"result": "SPEC_ERROR",
-                    "reason": (f"window_set_ref={window_set_ref!r} (pre-registered) != "
-                               f"protocol_file={protocol_file!r} (actually executed) -- "
-                               f"refusing to evaluate a pass rule against a mismatched "
-                               f"protocol/window set (name-level check only; K3/B3+B10 "
-                               f"adds content-hash pinning)")}
+            return {
+                "result": "SPEC_ERROR",
+                "reason": (
+                    f"window_set_ref={window_set_ref!r} (pre-registered) != "
+                    f"protocol_file={protocol_file!r} (actually executed) -- "
+                    f"refusing to evaluate a pass rule against a mismatched "
+                    f"protocol/window set (name-level check only; K3/B3+B10 "
+                    f"adds content-hash pinning)"
+                ),
+            }
 
     criteria_results = [_evaluate_one_criterion(c, protocol_result) for c in criteria]
 
@@ -853,9 +989,11 @@ def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
         return {
             "result": "SPEC_ERROR",
             "criteria_results": criteria_results,
-            "reason": (f"criteria {spec_error_ids} could not be evaluated (missing "
-                       f"null_handling or unresolvable metric) -- pre_registration.yaml "
-                       f"needs correction"),
+            "reason": (
+                f"criteria {spec_error_ids} could not be evaluated (missing "
+                f"null_handling or unresolvable metric) -- pre_registration.yaml "
+                f"needs correction"
+            ),
         }
 
     outcomes_by_branch = {o["branch"]: o for o in outcomes}
@@ -866,9 +1004,12 @@ def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
     if not fail_ids:
         pass_branch = outcomes_by_branch.get("PASS")
         if pass_branch is None:
-            return {"result": "legacy_not_evaluable", "criteria_results": criteria_results,
-                     "branches_failed": [],
-                     "reason": "all criteria PASS but pre_registration.yaml's outcomes has no 'PASS' branch"}
+            return {
+                "result": "legacy_not_evaluable",
+                "criteria_results": criteria_results,
+                "branches_failed": [],
+                "reason": "all criteria PASS but pre_registration.yaml's outcomes has no 'PASS' branch",
+            }
         return {
             "result": "PASS",
             "criteria_results": criteria_results,
@@ -885,11 +1026,16 @@ def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
     statement_branch_matched = branches_failed[0]
     matched_outcome = outcomes_by_branch.get(statement_branch_matched)
     if matched_outcome is None:
-        return {"result": "legacy_not_evaluable", "criteria_results": criteria_results,
-                "branches_failed": branches_failed,
-                "reason": (f"criterion {fail_ids[0]!r} FAILed but pre_registration.yaml's "
-                           f"outcomes has no {statement_branch_matched!r} branch -- B11 "
-                           f"lint should have caught this at materialization time")}
+        return {
+            "result": "legacy_not_evaluable",
+            "criteria_results": criteria_results,
+            "branches_failed": branches_failed,
+            "reason": (
+                f"criterion {fail_ids[0]!r} FAILed but pre_registration.yaml's "
+                f"outcomes has no {statement_branch_matched!r} branch -- B11 "
+                f"lint should have caught this at materialization time"
+            ),
+        }
 
     result = {
         "result": "FAIL",
@@ -912,8 +1058,12 @@ def _resolve_pass_rule(protocol_result: dict, pre_registration: dict) -> dict:
     # author must know that at registration time.
     if len(fail_ids) > 1:
         distinct_pairs = {
-            (outcomes_by_branch[b].get("hypothesis_verdict"), outcomes_by_branch[b].get("lineage_routing"))
-            for b in branches_failed if b in outcomes_by_branch
+            (
+                outcomes_by_branch[b].get("hypothesis_verdict"),
+                outcomes_by_branch[b].get("lineage_routing"),
+            )
+            for b in branches_failed
+            if b in outcomes_by_branch
         }
         if len(distinct_pairs) > 1:
             result["warning"] = (

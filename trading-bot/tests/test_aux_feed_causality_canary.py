@@ -58,6 +58,7 @@ Keep this test whenever a new feed is added to FEED_REGISTRY /
 RESERVED_FEED_REGISTRY: swap in that feed's real fetcher output shape and
 re-run both fixtures.
 """
+
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -131,8 +132,11 @@ class _CanaryStrategy(MainStrategy):
     def generate_signals(self) -> StrategyOutput:
         forecast, _active, debug = self.generate_forecast()
         return StrategyOutput(
-            forecast=forecast, confidence=1.0, regime="CANARY",
-            strategy=None, debug_info=debug,
+            forecast=forecast,
+            confidence=1.0,
+            regime="CANARY",
+            strategy=None,
+            debug_info=debug,
         )
 
 
@@ -141,10 +145,16 @@ def _price_series(n=N_BARS, sigma=SIGMA, seed=SEED) -> pd.DataFrame:
     log_rets = rng.normal(loc=0.0, scale=sigma, size=n)
     close = 100.0 * np.exp(np.cumsum(log_rets))
     ts = pd.date_range("2024-01-01", periods=n, freq="h")
-    return pd.DataFrame({
-        "timestamp": ts, "open": close, "high": close, "low": close,
-        "close": close, "volume": 1.0,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": ts,
+            "open": close,
+            "high": close,
+            "low": close,
+            "close": close,
+            "volume": 1.0,
+        }
+    )
 
 
 def _own_returns(price_df: pd.DataFrame) -> pd.Series:
@@ -174,12 +184,17 @@ def _run_canary(
     expected), drives TradingBot._process_symbol_candle_completion bar-by-bar
     through the REAL forecast/risk/execution/portfolio path, and returns the
     total return (final / initial - 1) over the run."""
-    feed_df = pd.DataFrame({
-        "timestamp": price_df["timestamp"], "canary": canary_values.values,
-    }).dropna(subset=["canary"])
+    feed_df = pd.DataFrame(
+        {
+            "timestamp": price_df["timestamp"],
+            "canary": canary_values.values,
+        }
+    ).dropna(subset=["canary"])
 
     dm = DataManager(symbols=[SYMBOL], interval_seconds=3600, mode="backtest")
-    dm.register_feed("canary", _CanaryFetcher(feed_df), window_seconds=window_seconds, agg="last")
+    dm.register_feed(
+        "canary", _CanaryFetcher(feed_df), window_seconds=window_seconds, agg="last"
+    )
     # REAL merge_asof + causality-guard code path (data_manager.py's
     # _premerge_aux_feeds / _merge_asof_with_causality_guard), not a stand-in.
     dm._premerge_aux_feeds(SYMBOL, price_df[["timestamp", "close"]].copy())

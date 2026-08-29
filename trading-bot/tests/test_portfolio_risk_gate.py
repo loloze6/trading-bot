@@ -68,7 +68,9 @@ def test_cap_must_be_present():
     assert any('requires a "cap"' in e for e in errs)
 
 
-@pytest.mark.parametrize("bad", [0, -1.0, float("inf"), float("nan"), "1.0", True, None])
+@pytest.mark.parametrize(
+    "bad", [0, -1.0, float("inf"), float("nan"), "1.0", True, None]
+)
 def test_cap_value_range_and_type(bad):
     errs = validate_portfolio_controls({"absolute_allocation_cap": {"cap": bad}})
     assert any("finite number > 0" in e for e in errs), f"{bad!r} should be rejected"
@@ -179,7 +181,9 @@ def test_provenance_fold_changes_run_hash(tmp_path):
     cfg = {"strategies": {"a": 1}, "regime_detector": {"b": 2}}
     folded = {
         **cfg,
-        "risk_management": {"portfolio_controls": {"absolute_allocation_cap": {"cap": 1.0}}},
+        "risk_management": {
+            "portfolio_controls": {"absolute_allocation_cap": {"cap": 1.0}}
+        },
     }
 
     def _hash(root, c):
@@ -205,11 +209,15 @@ def test_config_manager_validate_rejects_bad_portfolio_controls():
     cm = ConfigManager("config.json")
     cm.config = {
         "trading": {"symbols": ["BTCUSDT"]},
-        "risk_management": {"portfolio_controls": {"absolute_allocation_cap": {"cap": -1.0}}},
+        "risk_management": {
+            "portfolio_controls": {"absolute_allocation_cap": {"cap": -1.0}}
+        },
     }
     assert cm.validate() is False
 
-    cm.config["risk_management"]["portfolio_controls"] = {"absolute_allocation_cap": {"cap": 1.0}}
+    cm.config["risk_management"]["portfolio_controls"] = {
+        "absolute_allocation_cap": {"cap": 1.0}
+    }
     assert cm.validate() is True
 
 
@@ -257,14 +265,23 @@ def _ts(s):
 def test_new_controls_are_known():
     assert validate_portfolio_controls({"max_drawdown_kill": {"threshold": 0.25}}) == []
     assert validate_portfolio_controls({"daily_loss_limit": {"threshold": 0.05}}) == []
-    assert validate_portfolio_controls({"daily_loss_limit": {"threshold": 0.05, "tz": "Europe/Paris"}}) == []
+    assert (
+        validate_portfolio_controls(
+            {"daily_loss_limit": {"threshold": 0.05, "tz": "Europe/Paris"}}
+        )
+        == []
+    )
 
 
 @pytest.mark.parametrize("control", ["max_drawdown_kill", "daily_loss_limit"])
-@pytest.mark.parametrize("bad", [0, 1, 1.5, -0.1, float("inf"), float("nan"), "0.2", True, None])
+@pytest.mark.parametrize(
+    "bad", [0, 1, 1.5, -0.1, float("inf"), float("nan"), "0.2", True, None]
+)
 def test_threshold_range_and_type(control, bad):
     errs = validate_portfolio_controls({control: {"threshold": bad}})
-    assert any("finite number in (0, 1)" in e for e in errs), f"{bad!r} should be rejected"
+    assert any("finite number in (0, 1)" in e for e in errs), (
+        f"{bad!r} should be rejected"
+    )
 
 
 @pytest.mark.parametrize("control", ["max_drawdown_kill", "daily_loss_limit"])
@@ -274,22 +291,30 @@ def test_threshold_required(control):
 
 
 def test_dd_unknown_subkey_fails():
-    errs = validate_portfolio_controls({"max_drawdown_kill": {"threshold": 0.25, "tz": "x"}})
+    errs = validate_portfolio_controls(
+        {"max_drawdown_kill": {"threshold": 0.25, "tz": "x"}}
+    )
     assert any("unknown max_drawdown_kill key" in e for e in errs)
 
 
 def test_dl_unknown_subkey_fails():
-    errs = validate_portfolio_controls({"daily_loss_limit": {"threshold": 0.05, "cap": 1.0}})
+    errs = validate_portfolio_controls(
+        {"daily_loss_limit": {"threshold": 0.05, "cap": 1.0}}
+    )
     assert any("unknown daily_loss_limit key" in e for e in errs)
 
 
 def test_dl_bad_tz_fails():
-    errs = validate_portfolio_controls({"daily_loss_limit": {"threshold": 0.05, "tz": "Mars/Olympus"}})
+    errs = validate_portfolio_controls(
+        {"daily_loss_limit": {"threshold": 0.05, "tz": "Mars/Olympus"}}
+    )
     assert any("not a known timezone" in e for e in errs)
 
 
 def test_dl_non_string_tz_fails():
-    errs = validate_portfolio_controls({"daily_loss_limit": {"threshold": 0.05, "tz": 42}})
+    errs = validate_portfolio_controls(
+        {"daily_loss_limit": {"threshold": 0.05, "tz": 42}}
+    )
     assert any("must be a string" in e for e in errs)
 
 
@@ -300,7 +325,10 @@ def test_dl_tz_defaults_when_absent():
 
 def test_ctor_parses_thresholds():
     gate = PortfolioRiskGate(
-        {"max_drawdown_kill": {"threshold": 0.3}, "daily_loss_limit": {"threshold": 0.04, "tz": "UTC"}}
+        {
+            "max_drawdown_kill": {"threshold": 0.3},
+            "daily_loss_limit": {"threshold": 0.04, "tz": "UTC"},
+        }
     )
     assert gate.dd_threshold == 0.3
     assert gate.dl_threshold == 0.04
@@ -368,7 +396,9 @@ def test_daily_trip_halts_rest_of_day_then_rearms():
     gate.observe(_ts("2024-07-15 10:00:00"), 94.0)  # 6% >= 5% -> trip
     assert gate.daily_halted is True
     assert gate._bar_trip == "daily_loss_limit"
-    gate.observe(_ts("2024-07-15 12:00:00"), 99.0)  # recovered, still halted (day-scoped)
+    gate.observe(
+        _ts("2024-07-15 12:00:00"), 99.0
+    )  # recovered, still halted (day-scoped)
     assert gate.daily_halted is True
     # 22:00 UTC == 00:00 Paris next day -> rollover, re-arm, fresh anchor.
     gate.observe(_ts("2024-07-15 22:00:00"), 99.0)
@@ -416,26 +446,43 @@ def test_dst_spring_forward_2024_03_31():
     # Spring-forward day: Paris jumps UTC+1 -> UTC+2 at 01:00 UTC. Before the clock
     # change the day boundary sits at 23:00 UTC (winter); after, at 22:00 UTC.
     gate = PortfolioRiskGate({"daily_loss_limit": {"threshold": 0.9}})
-    assert gate._paris_day(_ts("2024-03-30 23:00:00")) == pd.Timestamp("2024-03-31").date()
-    assert gate._paris_day(_ts("2024-03-31 00:00:00")) == pd.Timestamp("2024-03-31").date()
+    assert (
+        gate._paris_day(_ts("2024-03-30 23:00:00")) == pd.Timestamp("2024-03-31").date()
+    )
+    assert (
+        gate._paris_day(_ts("2024-03-31 00:00:00")) == pd.Timestamp("2024-03-31").date()
+    )
     # 22:00 UTC 2024-03-31 is now UTC+2 -> 00:00 Paris on 2024-04-01.
-    assert gate._paris_day(_ts("2024-03-31 22:00:00")) == pd.Timestamp("2024-04-01").date()
+    assert (
+        gate._paris_day(_ts("2024-03-31 22:00:00")) == pd.Timestamp("2024-04-01").date()
+    )
 
 
 def test_dst_fall_back_2024_10_27():
     # Fall-back day: Paris drops UTC+2 -> UTC+1 at 01:00 UTC. The boundary INTO the
     # next day moves from 22:00 UTC (summer) to 23:00 UTC (winter).
     gate = PortfolioRiskGate({"daily_loss_limit": {"threshold": 0.9}})
-    assert gate._paris_day(_ts("2024-10-26 22:00:00")) == pd.Timestamp("2024-10-27").date()
-    assert gate._paris_day(_ts("2024-10-27 22:00:00")) == pd.Timestamp("2024-10-27").date()
-    assert gate._paris_day(_ts("2024-10-27 23:00:00")) == pd.Timestamp("2024-10-28").date()
+    assert (
+        gate._paris_day(_ts("2024-10-26 22:00:00")) == pd.Timestamp("2024-10-27").date()
+    )
+    assert (
+        gate._paris_day(_ts("2024-10-27 22:00:00")) == pd.Timestamp("2024-10-27").date()
+    )
+    assert (
+        gate._paris_day(_ts("2024-10-27 23:00:00")) == pd.Timestamp("2024-10-28").date()
+    )
 
 
 # --- interaction ordering (b before c) ---
 
 
 def test_both_trip_same_bar_kill_is_recorded_cause():
-    gate = PortfolioRiskGate({"max_drawdown_kill": {"threshold": 0.25}, "daily_loss_limit": {"threshold": 0.05}})
+    gate = PortfolioRiskGate(
+        {
+            "max_drawdown_kill": {"threshold": 0.25},
+            "daily_loss_limit": {"threshold": 0.05},
+        }
+    )
     gate.observe(_ts("2024-07-15 00:00:00"), 100.0)
     gate.observe(_ts("2024-07-15 01:00:00"), 70.0)  # dd 30% AND daily 30% same bar
     assert gate.killed is True
@@ -447,10 +494,17 @@ def test_both_trip_same_bar_kill_is_recorded_cause():
 def test_daily_unreachable_once_killed():
     # A daily loss on a LATER day, after the kill has latched, never trips: the book
     # is already flat to run end.
-    gate = PortfolioRiskGate({"max_drawdown_kill": {"threshold": 0.1}, "daily_loss_limit": {"threshold": 0.05}})
+    gate = PortfolioRiskGate(
+        {
+            "max_drawdown_kill": {"threshold": 0.1},
+            "daily_loss_limit": {"threshold": 0.05},
+        }
+    )
     gate.observe(_ts("2024-07-15 00:00:00"), 100.0)
     gate.observe(_ts("2024-07-15 01:00:00"), 85.0)  # kill trips (15% dd)
-    gate.observe(_ts("2024-07-16 00:00:00"), 60.0)  # new Paris day, huge loss, but killed
+    gate.observe(
+        _ts("2024-07-16 00:00:00"), 60.0
+    )  # new Paris day, huge loss, but killed
     assert gate.daily_halted is False
     assert gate._bar_trip is None
     assert gate.stateful_summary()["daily_trips"] == []
@@ -481,7 +535,13 @@ def test_dd_only_extras_have_no_daily_columns():
     gate = PortfolioRiskGate({"max_drawdown_kill": {"threshold": 0.25}})
     gate.observe(_ts("2024-04-01 00:00:00"), 100.0)
     _, extras = gate.apply(0.5)
-    assert set(extras) == {"risk_target_raw", "risk_cap_clamped", "risk_killed", "risk_drawdown", "risk_trip"}
+    assert set(extras) == {
+        "risk_target_raw",
+        "risk_cap_clamped",
+        "risk_killed",
+        "risk_drawdown",
+        "risk_trip",
+    }
     assert "risk_daily_halted" not in extras
 
 
@@ -489,7 +549,13 @@ def test_dl_only_extras_have_no_drawdown_columns():
     gate = PortfolioRiskGate({"daily_loss_limit": {"threshold": 0.05}})
     gate.observe(_ts("2024-07-15 00:00:00"), 100.0)
     _, extras = gate.apply(0.5)
-    assert set(extras) == {"risk_target_raw", "risk_cap_clamped", "risk_daily_halted", "risk_daily_loss", "risk_trip"}
+    assert set(extras) == {
+        "risk_target_raw",
+        "risk_cap_clamped",
+        "risk_daily_halted",
+        "risk_daily_loss",
+        "risk_trip",
+    }
     assert "risk_killed" not in extras
 
 
@@ -515,7 +581,10 @@ def test_cap_only_observe_ignores_equity():
 
 
 def test_stateful_summary_empty_for_cap_only():
-    assert PortfolioRiskGate({"absolute_allocation_cap": {"cap": 1.0}}).stateful_summary() == {}
+    assert (
+        PortfolioRiskGate({"absolute_allocation_cap": {"cap": 1.0}}).stateful_summary()
+        == {}
+    )
 
 
 def test_stateful_summary_no_trips():

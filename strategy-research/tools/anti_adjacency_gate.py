@@ -63,6 +63,7 @@ terminating run did not itself test.
 CLI:
   python strategy-research/tools/anti_adjacency_gate.py <candidate.yaml> [--digest ...] [--kb ...] [--out ...]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -112,6 +113,7 @@ def _hid_contains_match(a: str, b: str) -> bool:
 # GateResult
 # ---------------------------------------------------------------------------
 
+
 class GateResult(dict):
     """Thin dict wrapper so tests can do result.route / result["route"] and
     so the CLI can yaml.safe_dump(result) directly."""
@@ -137,6 +139,7 @@ def REFUSE(layer: str, reason: str, **extra) -> GateResult:
 # Layer 1 -- KB, mechanism grain
 # ---------------------------------------------------------------------------
 
+
 def _kb_finding_hids(finding: dict) -> list[str]:
     ids = finding.get("hypothesis_ids")
     if ids:
@@ -145,7 +148,9 @@ def _kb_finding_hids(finding: dict) -> list[str]:
     return [str(single)] if single else []
 
 
-def _kb_findings_matching_candidate(candidate_hid: str, kb_findings: list[dict]) -> list[dict]:
+def _kb_findings_matching_candidate(
+    candidate_hid: str, kb_findings: list[dict]
+) -> list[dict]:
     """Findings whose hypothesis_id(s) contain (or are contained by) the
     candidate's, MOST SPECIFIC FIRST.
 
@@ -183,7 +188,9 @@ def _kb_findings_matching_candidate(candidate_hid: str, kb_findings: list[dict])
 # build_exclusion_digest.extract_timeframes, which parses the STRUCTURED
 # hypothesis_card.yaml `timeframe` field -- KB prose uses word forms
 # ("daily") that field never does.
-_KB_BRANCH_RE = re.compile(r"\b(15m|30m|1h|2h|4h|6h|8h|12h|1d|1w|daily|weekly|hourly)\b", re.I)
+_KB_BRANCH_RE = re.compile(
+    r"\b(15m|30m|1h|2h|4h|6h|8h|12h|1d|1w|daily|weekly|hourly)\b", re.I
+)
 _KB_BRANCH_WORD_MAP = {"daily": "1d", "weekly": "1w", "hourly": "1h"}
 
 
@@ -232,8 +239,9 @@ def _lineage_routing_of_run(run_id: str, runs_dir: Path) -> str | None:
     return data.get("lineage_routing")
 
 
-def _branches_closed_by_lineage_routing(matching_findings: list[dict], all_kb_findings: list[dict],
-                                         runs_dir: Path) -> dict:
+def _branches_closed_by_lineage_routing(
+    matching_findings: list[dict], all_kb_findings: list[dict], runs_dir: Path
+) -> dict:
     """PRECEDENCE RULE, mechanical form.
 
     A branch of a matched (parent) finding's reactivation_condition is
@@ -284,18 +292,26 @@ def _finding_references_parent(child: dict, parent_id: str) -> bool:
     cross-reference is deliberately conservative: it only fires on an
     EXPLICIT textual reference, never inferred from family/mechanism
     similarity alone."""
-    haystack = " ".join(str(child.get(k, "")) for k in
-                         ("mechanism", "exhausted_basis", "outcome_reason"))
+    haystack = " ".join(
+        str(child.get(k, ""))
+        for k in ("mechanism", "exhausted_basis", "outcome_reason")
+    )
     return parent_id in haystack
 
 
-def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
-                     kb_findings: list[dict], runs_dir: Path) -> GateResult | None:
+def layer1_kb_check(
+    candidate_hid: str,
+    candidate_timeframe: str,
+    kb_findings: list[dict],
+    runs_dir: Path,
+) -> GateResult | None:
     matching = _kb_findings_matching_candidate(candidate_hid, kb_findings)
     if not matching:
         return None
 
-    closed_by_lineage = _branches_closed_by_lineage_routing(matching, kb_findings, runs_dir)
+    closed_by_lineage = _branches_closed_by_lineage_routing(
+        matching, kb_findings, runs_dir
+    )
 
     for finding in matching:
         fid = finding.get("id")
@@ -329,8 +345,11 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
                 # branch just because one of them (unspecified which) was
                 # consumed.
                 if consumed_by and len(named) == 1:
-                    return REFUSE("kb", f"{fid}: already reactivated by {consumed_by}",
-                                   kb_finding_id=fid)
+                    return REFUSE(
+                        "kb",
+                        f"{fid}: already reactivated by {consumed_by}",
+                        kb_finding_id=fid,
+                    )
                 return ADMIT(
                     "kb",
                     f"{fid}: matches open, unconsumed branch '{candidate_timeframe}' "
@@ -345,8 +364,9 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
             # No reactivation_condition at all here (handled above when
             # present) -- consumed_by means "the whole finding is closed",
             # unchanged from before FIX 2.
-            return REFUSE("kb", f"{fid}: already reactivated by {consumed_by}",
-                           kb_finding_id=fid)
+            return REFUSE(
+                "kb", f"{fid}: already reactivated by {consumed_by}", kb_finding_id=fid
+            )
 
         if exhausted:
             # exhausted with NO reactivation_condition = a closed leaf with
@@ -355,8 +375,9 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
             # containment grain) -- an unrelated sibling finding in the
             # same family never reaches this branch of the loop for a
             # candidate it wasn't matched to.
-            return REFUSE("kb", f"{fid}: closed, no open reactivation clause",
-                           kb_finding_id=fid)
+            return REFUSE(
+                "kb", f"{fid}: closed, no open reactivation clause", kb_finding_id=fid
+            )
 
         # Neither consumed, nor a reactivation clause, nor exhausted (e.g. an
         # invalidated_artifact placeholder like funding_rate_continuous_mean_
@@ -369,9 +390,12 @@ def layer1_kb_check(candidate_hid: str, candidate_timeframe: str,
 # Layer 2 -- exclusion digest, family grain THEN composition grain (E-036 S2)
 # ---------------------------------------------------------------------------
 
-def _describe_fingerprint_diff(candidate_fingerprint: dict | None,
-                                entry_fingerprint: dict | None,
-                                entry_fidelity: str) -> str:
+
+def _describe_fingerprint_diff(
+    candidate_fingerprint: dict | None,
+    entry_fingerprint: dict | None,
+    entry_fidelity: str,
+) -> str:
     """Human-readable "how they differ" note attached to a NEIGHBOUR result
     (EPIC.md design point 2: "attach the near neighbours to the result --
     run_ids and how they differ"). Never asserts a difference it cannot see:
@@ -389,22 +413,42 @@ def _describe_fingerprint_diff(candidate_fingerprint: dict | None,
 
     diffs = []
     if candidate_fingerprint.get("mode") != entry_fingerprint.get("mode"):
-        diffs.append(f"regime_detector.mode {entry_fingerprint.get('mode')!r} -> "
-                      f"{candidate_fingerprint.get('mode')!r}")
+        diffs.append(
+            f"regime_detector.mode {entry_fingerprint.get('mode')!r} -> "
+            f"{candidate_fingerprint.get('mode')!r}"
+        )
     if candidate_fingerprint.get("rule_count") != entry_fingerprint.get("rule_count"):
-        diffs.append(f"rule_count {entry_fingerprint.get('rule_count')} -> "
-                      f"{candidate_fingerprint.get('rule_count')}")
-    cand_components = {json.dumps(c, sort_keys=True) for c in candidate_fingerprint.get("components", [])}
-    entry_components = {json.dumps(c, sort_keys=True) for c in entry_fingerprint.get("components", [])}
+        diffs.append(
+            f"rule_count {entry_fingerprint.get('rule_count')} -> "
+            f"{candidate_fingerprint.get('rule_count')}"
+        )
+    cand_components = {
+        json.dumps(c, sort_keys=True)
+        for c in candidate_fingerprint.get("components", [])
+    }
+    entry_components = {
+        json.dumps(c, sort_keys=True) for c in entry_fingerprint.get("components", [])
+    }
     if cand_components != entry_components:
         added = len(cand_components - entry_components)
         removed = len(entry_components - cand_components)
-        diffs.append(f"components differ ({removed} not in candidate, {added} not in prior run)")
-    return "; ".join(diffs) if diffs else "differs in composition fingerprint (unrecognized shape)"
+        diffs.append(
+            f"components differ ({removed} not in candidate, {added} not in prior run)"
+        )
+    return (
+        "; ".join(diffs)
+        if diffs
+        else "differs in composition fingerprint (unrecognized shape)"
+    )
 
 
-def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
-                         digest: dict, candidate_config: dict | None = None) -> GateResult:
+def layer2_digest_check(
+    candidate: dict,
+    instrument: str,
+    timeframe: str,
+    digest: dict,
+    candidate_config: dict | None = None,
+) -> GateResult:
     """E-036 S2: three outcomes, not two (EPIC.md's design, point 2).
 
       REPEAT -> REFUSE. Same family/instrument/timeframe AND an identical
@@ -433,13 +477,17 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
     period=14) never produce equal fingerprints.
     """
     family, confidence = classify_family(candidate)
-    candidate_fingerprint = composition_fingerprint(candidate_config) if candidate_config else None
+    candidate_fingerprint = (
+        composition_fingerprint(candidate_config) if candidate_config else None
+    )
 
     families = digest.get("families", {})
     entry = families.get(family)
     matches = [
-        triple for triple in (entry.get("triples", []) if entry else [])
-        if triple.get("instrument") == instrument and triple.get("timeframe") == timeframe
+        triple
+        for triple in (entry.get("triples", []) if entry else [])
+        if triple.get("instrument") == instrument
+        and triple.get("timeframe") == timeframe
     ]
 
     if not matches:
@@ -453,18 +501,28 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
         return ADMIT(
             "digest",
             f"no matching family/instrument/timeframe triple in the digest for "
-            f"family '{family}'" + (" (weak prior: bare-string failed_families entry "
-                                     "exists for this family, not gating)" if low_detail_flag else ""),
-            family=family, family_confidence=confidence, outcome="novel",
+            f"family '{family}'"
+            + (
+                " (weak prior: bare-string failed_families entry "
+                "exists for this family, not gating)"
+                if low_detail_flag
+                else ""
+            ),
+            family=family,
+            family_confidence=confidence,
+            outcome="novel",
             low_detail_prior_failure=low_detail_flag,
         )
 
     repeat = next(
-        (triple for triple in matches
-         if triple.get("fidelity") == "structured"
-         and triple.get("fingerprint") is not None
-         and candidate_fingerprint is not None
-         and triple["fingerprint"] == candidate_fingerprint),
+        (
+            triple
+            for triple in matches
+            if triple.get("fidelity") == "structured"
+            and triple.get("fingerprint") is not None
+            and candidate_fingerprint is not None
+            and triple["fingerprint"] == candidate_fingerprint
+        ),
         None,
     )
     if repeat is not None:
@@ -472,7 +530,9 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
             "digest",
             f"family '{family}' already run at ({instrument}, {timeframe}) with an "
             f"identical composition -- run_ids={repeat['run_ids']}",
-            family=family, family_confidence=confidence, outcome="repeat",
+            family=family,
+            family_confidence=confidence,
+            outcome="repeat",
             run_ids=repeat["run_ids"],
         )
 
@@ -481,7 +541,10 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
             "run_ids": triple["run_ids"],
             "fidelity": triple.get("fidelity", "coarse"),
             "differs": _describe_fingerprint_diff(
-                candidate_fingerprint, triple.get("fingerprint"), triple.get("fidelity", "coarse")),
+                candidate_fingerprint,
+                triple.get("fingerprint"),
+                triple.get("fidelity", "coarse"),
+            ),
         }
         for triple in matches
     ]
@@ -491,7 +554,9 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
         f"family '{family}' already run at ({instrument}, {timeframe}) but no "
         f"identical composition on record -- admitted as a neighbour, "
         f"run_ids={all_run_ids}",
-        family=family, family_confidence=confidence, outcome="neighbour",
+        family=family,
+        family_confidence=confidence,
+        outcome="neighbour",
         neighbours=neighbours,
     )
 
@@ -500,9 +565,16 @@ def layer2_digest_check(candidate: dict, instrument: str, timeframe: str,
 # Top-level
 # ---------------------------------------------------------------------------
 
-def evaluate_candidate(candidate: dict, digest: dict, kb: dict, runs_dir: Path,
-                        instrument: str | None = None, timeframe: str | None = None,
-                        candidate_config: dict | None = None) -> GateResult:
+
+def evaluate_candidate(
+    candidate: dict,
+    digest: dict,
+    kb: dict,
+    runs_dir: Path,
+    instrument: str | None = None,
+    timeframe: str | None = None,
+    candidate_config: dict | None = None,
+) -> GateResult:
     """candidate: a hypothesis_card.yaml-shaped dict (or close enough --
     only hypothesis_id, edge_source, library_lookup, thesis, target_market,
     timeframe are read). instrument/timeframe: override the values that
@@ -528,26 +600,36 @@ def evaluate_candidate(candidate: dict, digest: dict, kb: dict, runs_dir: Path,
         instrument = instruments[0] if instruments else None
 
     kb_findings = kb.get("findings", [])
-    result = layer1_kb_check(candidate.get("hypothesis_id", ""), timeframe, kb_findings, runs_dir)
+    result = layer1_kb_check(
+        candidate.get("hypothesis_id", ""), timeframe, kb_findings, runs_dir
+    )
     if result is not None:
         return result
 
-    return layer2_digest_check(candidate, instrument, timeframe, digest, candidate_config=candidate_config)
+    return layer2_digest_check(
+        candidate, instrument, timeframe, digest, candidate_config=candidate_config
+    )
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("candidate", type=Path, help="hypothesis_card.yaml-shaped candidate")
+    parser.add_argument(
+        "candidate", type=Path, help="hypothesis_card.yaml-shaped candidate"
+    )
     parser.add_argument("--digest", type=Path, default=DEFAULT_DIGEST_PATH)
     parser.add_argument("--kb", type=Path, default=DEFAULT_KB_PATH)
     parser.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR)
     parser.add_argument("--instrument", default=None)
     parser.add_argument("--timeframe", default=None)
-    parser.add_argument("--candidate-config", type=Path, default=None,
-                         help="candidate_strategy_config.json-shaped file for the candidate "
-                              "being evaluated (E-036 S2) -- enables REPEAT detection; "
-                              "without it, a family/instrument/timeframe collision can only "
-                              "ever resolve to NEIGHBOUR or NOVEL, never REPEAT.")
+    parser.add_argument(
+        "--candidate-config",
+        type=Path,
+        default=None,
+        help="candidate_strategy_config.json-shaped file for the candidate "
+        "being evaluated (E-036 S2) -- enables REPEAT detection; "
+        "without it, a family/instrument/timeframe collision can only "
+        "ever resolve to NEIGHBOUR or NOVEL, never REPEAT.",
+    )
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
 
@@ -559,16 +641,24 @@ def main(argv=None) -> int:
         with open(args.candidate_config, encoding="utf-8") as f:
             candidate_config = json.load(f)
 
-    result = evaluate_candidate(candidate, digest, kb, args.runs_dir,
-                                 instrument=args.instrument, timeframe=args.timeframe,
-                                 candidate_config=candidate_config)
+    result = evaluate_candidate(
+        candidate,
+        digest,
+        kb,
+        args.runs_dir,
+        instrument=args.instrument,
+        timeframe=args.timeframe,
+        candidate_config=candidate_config,
+    )
 
     out_data = dict(result)
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
             yaml.safe_dump(out_data, f, sort_keys=False, allow_unicode=True)
         print(f"anti_adjacency_result.yaml written to {args.out}")
-    print(f"route={result['route']} layer={result['layer']} reasons={result['reasons']}")
+    print(
+        f"route={result['route']} layer={result['layer']} reasons={result['reasons']}"
+    )
     return 0 if result["route"] == "admit" else 1
 
 

@@ -15,6 +15,7 @@ ccxt's krakenfutures adapter does). Pins:
 
 All assertions are on SYNTHETIC values only.
 """
+
 import datetime
 import sys
 from pathlib import Path
@@ -23,7 +24,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent      # trading-bot/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent  # trading-bot/
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -91,9 +92,11 @@ def _read_cache(dest: str) -> pd.DataFrame:
 # (a) venue -> interval + cache-name resolution
 # ---------------------------------------------------------------------------
 
+
 def test_krakenfutures_resolves_hourly_interval_and_cache_name(tmp_path):
-    fetcher = cap.build_fetcher(SYMBOL, BASE, BASE + datetime.timedelta(days=1),
-                                str(tmp_path))
+    fetcher = cap.build_fetcher(
+        SYMBOL, BASE, BASE + datetime.timedelta(days=1), str(tmp_path)
+    )
     assert fetcher.exchange_id == "krakenfutures"
     assert fetcher.interval_seconds == 3600
     assert fetcher.cache_key(SYMBOL) == "krakenfutures_BTCUSD_funding_1h"
@@ -102,8 +105,9 @@ def test_krakenfutures_resolves_hourly_interval_and_cache_name(tmp_path):
 def test_build_fetcher_uses_local_storage(tmp_path):
     """localStorage must be on, else get_data never loads/merges/writes a cache
     and every 'capture' would silently no-op to disk."""
-    fetcher = cap.build_fetcher(SYMBOL, BASE, BASE + datetime.timedelta(days=1),
-                                str(tmp_path))
+    fetcher = cap.build_fetcher(
+        SYMBOL, BASE, BASE + datetime.timedelta(days=1), str(tmp_path)
+    )
     assert fetcher.localStorage is True
 
 
@@ -111,10 +115,12 @@ def test_build_fetcher_uses_local_storage(tmp_path):
 # (b) first capture writes the slot; (c) a clean second capture APPENDS
 # ---------------------------------------------------------------------------
 
+
 def test_first_capture_writes_krakenfutures_slot(tmp_path):
     records = _hourly_records(BASE, 48)
-    fetcher = _fetcher_with_mock(records, BASE, BASE + datetime.timedelta(days=1),
-                                 tmp_path)
+    fetcher = _fetcher_with_mock(
+        records, BASE, BASE + datetime.timedelta(days=1), tmp_path
+    )
 
     summary = cap.capture(fetcher, SYMBOL)
 
@@ -131,14 +137,12 @@ def test_second_capture_appends_not_overwrites(tmp_path):
     records = _hourly_records(BASE, 60)
 
     # Run 1: window ends 09-02 -> keeps 09-01 00:00 .. 09-02 23:00 (48 rows).
-    f1 = _fetcher_with_mock(records, BASE, BASE + datetime.timedelta(days=1),
-                            tmp_path)
+    f1 = _fetcher_with_mock(records, BASE, BASE + datetime.timedelta(days=1), tmp_path)
     s1 = cap.capture(f1, SYMBOL)
     run1 = _read_cache(s1["dest"])
 
     # Run 2: window extends to 09-03 -> appends 09-03 00:00 .. 09-03 11:00.
-    f2 = _fetcher_with_mock(records, BASE, BASE + datetime.timedelta(days=2),
-                            tmp_path)
+    f2 = _fetcher_with_mock(records, BASE, BASE + datetime.timedelta(days=2), tmp_path)
     s2 = cap.capture(f2, SYMBOL)
     run2 = _read_cache(s2["dest"])
 
@@ -167,24 +171,23 @@ def test_second_capture_appends_not_overwrites(tmp_path):
 # (c) the reused gap-guard FIRES on a discontinuous second capture
 # ---------------------------------------------------------------------------
 
+
 def test_discontinuous_second_capture_raises_fetch_gap_error(tmp_path):
     # Continuous 09-01 00:00 .. 09-02 23:00, then a 25h hole, then 09-04 00:00+.
     cont = _hourly_records(BASE, 48)
-    resume = BASE + datetime.timedelta(hours=72)   # 09-04 00:00 (skips all 09-03)
+    resume = BASE + datetime.timedelta(hours=72)  # 09-04 00:00 (skips all 09-03)
     jump = _hourly_records(resume, 6)
     records = cont + jump
 
     # Run 1 (ends 09-02): only the continuous block lands.
-    f1 = _fetcher_with_mock(records, BASE, BASE + datetime.timedelta(days=1),
-                            tmp_path)
+    f1 = _fetcher_with_mock(records, BASE, BASE + datetime.timedelta(days=1), tmp_path)
     cap.capture(f1, SYMBOL)
     before = _read_cache(f1._csv_path(SYMBOL))
 
     # Run 2 (ends 09-04): the append fetch returns the post-hole block, which
     # does not connect to the cache -> the reused _assert_no_new_gap must reject
     # it, leaving the cache untouched.
-    f2 = _fetcher_with_mock(records, BASE, BASE + datetime.timedelta(days=3),
-                            tmp_path)
+    f2 = _fetcher_with_mock(records, BASE, BASE + datetime.timedelta(days=3), tmp_path)
     with pytest.raises(FetchGapError):
         cap.capture(f2, SYMBOL)
 
@@ -196,13 +199,18 @@ def test_discontinuous_second_capture_raises_fetch_gap_error(tmp_path):
 # (d) main() exits cleanly with a mocked exchange (no live fetch)
 # ---------------------------------------------------------------------------
 
+
 def test_main_returns_zero_and_writes_cache(tmp_path, monkeypatch):
     records = _hourly_records(BASE, 48)
 
     def fake_build(symbol, start, end, data_dir, exchange_id=cap.EXCHANGE_ID):
         fetcher = FundingRateFetcher(
-            start_date=start, end_date=end, symbols=[symbol],
-            exchange_id=exchange_id, localStorage=True, data_dir=data_dir,
+            start_date=start,
+            end_date=end,
+            symbols=[symbol],
+            exchange_id=exchange_id,
+            localStorage=True,
+            data_dir=data_dir,
         )
         fetcher.exchange = _FakeKrakenFuturesExchange(records)
         return fetcher
@@ -218,8 +226,12 @@ def test_main_returns_zero_and_writes_cache(tmp_path, monkeypatch):
 def test_main_returns_one_when_exchange_uninitialised(tmp_path, monkeypatch):
     def fake_build(symbol, start, end, data_dir, exchange_id=cap.EXCHANGE_ID):
         fetcher = FundingRateFetcher(
-            start_date=start, end_date=end, symbols=[symbol],
-            exchange_id=exchange_id, localStorage=True, data_dir=data_dir,
+            start_date=start,
+            end_date=end,
+            symbols=[symbol],
+            exchange_id=exchange_id,
+            localStorage=True,
+            data_dir=data_dir,
         )
         fetcher.exchange = None
         return fetcher

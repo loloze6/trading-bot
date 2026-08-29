@@ -23,6 +23,7 @@ This test pins AGREEMENT rather than the literal string, because the defect was
 divergence between two mirrored sites, not the typo itself. Renaming the method
 in future is fine; renaming it in only one of the two places is not.
 """
+
 import re
 import sys
 from pathlib import Path

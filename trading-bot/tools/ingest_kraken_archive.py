@@ -70,7 +70,9 @@ from data.fetchers.ccxt_fetcher import CcxtFetcher  # noqa: E402
 #: `strategy-research/config/campaign_data_policy.yaml:holdout_range`. Read, never
 #: assumed — the seal moves with the policy, the same rule
 #: `tests/test_no_sealed_date_literals.py` states and follows.
-_POLICY_PATH = PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
+_POLICY_PATH = (
+    PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
+)
 
 
 def _holdout_bounds() -> tuple:
@@ -90,15 +92,17 @@ def _holdout_bounds() -> tuple:
     """
     try:
         import yaml  # local: keeps the module importable where yaml is absent
+
         with open(_POLICY_PATH, encoding="utf-8") as fh:
             lo, hi = yaml.safe_load(fh)["holdout_range"][:2]
         return pd.Timestamp(lo), pd.Timestamp(hi).normalize() + pd.Timedelta(days=1)
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         raise RuntimeError(
             f"Cannot read holdout_range from {_POLICY_PATH}: {exc}. Refusing to "
             f"ingest — an ingest that cannot locate the seal cannot prove it is "
             f"not writing sealed rows into a tracked cache. NOTHING was written."
         ) from exc
+
 
 # ---------------------------------------------------------------------------
 # Breadth configuration
@@ -116,26 +120,59 @@ KRAKEN_SOURCE_BASE = {
 # 20-pair USD breadth set (standard base tickers). Order = the recon's volume
 # ranking source list. HYPE has no bulk-archive file and is skipped at runtime.
 BREADTH_ASSETS = [
-    "BTC", "ETH", "XRP", "SOL", "ADA", "SUI", "ZEC", "DOGE", "HYPE", "XMR",
-    "LTC", "ONDO", "NEAR", "LINK", "TAO", "AVAX", "TRX", "AAVE", "INJ", "UNI",
+    "BTC",
+    "ETH",
+    "XRP",
+    "SOL",
+    "ADA",
+    "SUI",
+    "ZEC",
+    "DOGE",
+    "HYPE",
+    "XMR",
+    "LTC",
+    "ONDO",
+    "NEAR",
+    "LINK",
+    "TAO",
+    "AVAX",
+    "TRX",
+    "AAVE",
+    "INJ",
+    "UNI",
 ]
-QUOTE = "USD"                # Kraken's primary USD quote. NB: the Binance breadth
-                             # cache is USDT-quoted — a documented venue divergence,
-                             # not a bug (see ledger entry).
-RESOLUTION_MINUTES = 60      # 1h — matches the dominant Binance breadth cache
-                             # resolution (BTCUSDT_1h / ETHUSDT_1h / SOLUSDT_1h).
-CANDLE_INTERVAL_SECONDS = RESOLUTION_MINUTES * 60          # -> ccxt_timeframe "1h"
+QUOTE = "USD"  # Kraken's primary USD quote. NB: the Binance breadth
+# cache is USDT-quoted — a documented venue divergence,
+# not a bug (see ledger entry).
+RESOLUTION_MINUTES = 60  # 1h — matches the dominant Binance breadth cache
+# resolution (BTCUSDT_1h / ETHUSDT_1h / SOLUSDT_1h).
+CANDLE_INTERVAL_SECONDS = RESOLUTION_MINUTES * 60  # -> ccxt_timeframe "1h"
 TIMEFRAME_MS = RESOLUTION_MINUTES * 60 * 1000
 
 # Binance cache column order — target schema, reproduced exactly.
 BINANCE_COLUMNS = [
-    "timestamp", "open", "high", "low", "close", "volume",
-    "close_time", "quote_asset_volume", "number_of_trades",
-    "taker_buy_base_asset_volume", "taker_buy_quote_asset_volume", "ignore",
+    "timestamp",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "close_time",
+    "quote_asset_volume",
+    "number_of_trades",
+    "taker_buy_base_asset_volume",
+    "taker_buy_quote_asset_volume",
+    "ignore",
 ]
 
 KRAKEN_RAW_COLUMNS = [
-    "unix_s", "open", "high", "low", "close", "volume", "trade_count",
+    "unix_s",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "trade_count",
 ]
 
 
@@ -161,8 +198,9 @@ def cache_symbol(asset: str) -> str:
     return f"{asset}{QUOTE}"
 
 
-def kraken_source_path(asset: str, archive_dir: Path,
-                       resolution: int = RESOLUTION_MINUTES) -> Path:
+def kraken_source_path(
+    asset: str, archive_dir: Path, resolution: int = RESOLUTION_MINUTES
+) -> Path:
     return archive_dir / f"{kraken_source_pair(asset)}_{resolution}.csv"
 
 
@@ -194,8 +232,9 @@ def load_kraken_ohlcv(path: Path) -> pd.DataFrame:
     return raw
 
 
-def to_binance_schema(raw: pd.DataFrame,
-                      resolution_minutes: int = RESOLUTION_MINUTES) -> pd.DataFrame:
+def to_binance_schema(
+    raw: pd.DataFrame, resolution_minutes: int = RESOLUTION_MINUTES
+) -> pd.DataFrame:
     """
     Map Kraken raw OHLCV to the exact Binance cache column schema/order.
 
@@ -214,20 +253,23 @@ def to_binance_schema(raw: pd.DataFrame,
     """
     ts = pd.to_datetime(raw["unix_s"], unit="s")  # tz-naive, epoch == UTC
     close_time_ms = resolution_minutes * 60 * 1000
-    out = pd.DataFrame({
-        "timestamp": ts,
-        "open": raw["open"].astype(float),
-        "high": raw["high"].astype(float),
-        "low": raw["low"].astype(float),
-        "close": raw["close"].astype(float),
-        "volume": raw["volume"].astype(float),
-        "close_time": ts + pd.Timedelta(milliseconds=close_time_ms - 1),
-        "quote_asset_volume": raw["volume"].astype(float) * raw["close"].astype(float),
-        "number_of_trades": raw["trade_count"].astype("int64"),
-        "taker_buy_base_asset_volume": np.nan,
-        "taker_buy_quote_asset_volume": np.nan,
-        "ignore": 0,
-    })
+    out = pd.DataFrame(
+        {
+            "timestamp": ts,
+            "open": raw["open"].astype(float),
+            "high": raw["high"].astype(float),
+            "low": raw["low"].astype(float),
+            "close": raw["close"].astype(float),
+            "volume": raw["volume"].astype(float),
+            "close_time": ts + pd.Timedelta(milliseconds=close_time_ms - 1),
+            "quote_asset_volume": raw["volume"].astype(float)
+            * raw["close"].astype(float),
+            "number_of_trades": raw["trade_count"].astype("int64"),
+            "taker_buy_base_asset_volume": np.nan,
+            "taker_buy_quote_asset_volume": np.nan,
+            "ignore": 0,
+        }
+    )
     return out[BINANCE_COLUMNS]
 
 
@@ -246,7 +288,8 @@ def verify_utc_roundtrip(raw: pd.DataFrame, converted: pd.DataFrame) -> None:
         # naive-UTC convention the Binance cache stores). Avoids deprecated
         # utcfromtimestamp while remaining an explicit UTC assertion.
         expected = datetime.datetime.fromtimestamp(
-            unix_s, datetime.timezone.utc).replace(tzinfo=None)
+            unix_s, datetime.timezone.utc
+        ).replace(tzinfo=None)
         got = pd.Timestamp(converted["timestamp"].iloc[pos]).to_pydatetime()
         if got != expected:
             raise IngestUTCError(
@@ -256,8 +299,9 @@ def verify_utc_roundtrip(raw: pd.DataFrame, converted: pd.DataFrame) -> None:
             )
 
 
-def verify_boundary_values(converted: pd.DataFrame, archive_span: pd.DataFrame,
-                           dest: Path) -> None:
+def verify_boundary_values(
+    converted: pd.DataFrame, archive_span: pd.DataFrame, dest: Path
+) -> None:
     """
     Value-level companion to verify_utc_roundtrip's timestamp comparison, and
     the half that stays live on a top-up.
@@ -292,8 +336,9 @@ def verify_boundary_values(converted: pd.DataFrame, archive_span: pd.DataFrame,
                 )
 
 
-def compute_gap_stats(ts: pd.Series, resolution: int = RESOLUTION_MINUTES,
-                      since_year: int = 2017) -> dict:
+def compute_gap_stats(
+    ts: pd.Series, resolution: int = RESOLUTION_MINUTES, since_year: int = 2017
+) -> dict:
     """
     Coverage stats over a timestamp column, matching the audit's methodology
     (expected = span/interval + 1 inclusive; missing = expected - actual).
@@ -306,23 +351,33 @@ def compute_gap_stats(ts: pd.Series, resolution: int = RESOLUTION_MINUTES,
 
     def _rate(series: pd.Series) -> dict:
         if len(series) < 2:
-            return {"rows": len(series), "expected": len(series),
-                    "missing": 0, "pct": 0.0}
+            return {
+                "rows": len(series),
+                "expected": len(series),
+                "missing": 0,
+                "pct": 0.0,
+            }
         span_h = (series.iloc[-1] - series.iloc[0]).total_seconds() / 3600.0
         expected = int(round(span_h / step_h)) + 1
         missing = expected - len(series)
         pct = 100.0 * missing / expected if expected else 0.0
-        return {"rows": len(series), "expected": expected,
-                "missing": missing, "pct": pct}
+        return {
+            "rows": len(series),
+            "expected": expected,
+            "missing": missing,
+            "pct": pct,
+        }
 
     full = _rate(ts)
-    post = _rate(ts[ts >= pd.Timestamp(year=since_year, month=1, day=1)]
-                 .reset_index(drop=True))
+    post = _rate(
+        ts[ts >= pd.Timestamp(year=since_year, month=1, day=1)].reset_index(drop=True)
+    )
     return {"full": full, "post": post, "since_year": since_year}
 
 
-def ingest(asset: str, archive_dir: Path, data_dir: Path,
-           resolution: int = RESOLUTION_MINUTES) -> dict:
+def ingest(
+    asset: str, archive_dir: Path, data_dir: Path, resolution: int = RESOLUTION_MINUTES
+) -> dict:
     """
     Ingest one breadth asset. Returns a summary dict. The file is written
     through the real fetcher plumbing (`_merge_and_store` -> `_csv_path` -> the
@@ -426,8 +481,9 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
     # (drop_duplicates keeps the first occurrence): a re-ingest must be able to
     # correct a bad cached row, not be a no-op for every timestamp it already
     # has. `existing` is an empty frame on a fresh slot; pd.concat handles it.
-    fetcher._merge_and_store(store_symbol, [converted, existing],
-                             save=True, existing=existing)
+    fetcher._merge_and_store(
+        store_symbol, [converted, existing], save=True, existing=existing
+    )
 
     # Reload-from-disk round trip, then re-assert UTC survived the write.
     reloaded = pd.read_csv(dest)
@@ -441,8 +497,8 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
     # .min()/.max() so the mask and the fetcher's own window (built above from
     # the same two values) are derived identically.
     archive_span = reloaded.loc[
-        (reloaded["timestamp"] >= converted["timestamp"].min()) &
-        (reloaded["timestamp"] <= converted["timestamp"].max())
+        (reloaded["timestamp"] >= converted["timestamp"].min())
+        & (reloaded["timestamp"] <= converted["timestamp"].max())
     ]
     verify_utc_roundtrip(raw, archive_span)
     # Timestamps alone go blind once a cache brackets the archive's span.
@@ -465,8 +521,12 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
     }
 
 
-def run_all(assets: list, archive_dir: Path, data_dir: Path,
-            resolution: int = RESOLUTION_MINUTES) -> tuple:
+def run_all(
+    assets: list,
+    archive_dir: Path,
+    data_dir: Path,
+    resolution: int = RESOLUTION_MINUTES,
+) -> tuple:
     """
     Ingest every asset, isolating failures. Returns (done, skipped, failures).
 
@@ -488,12 +548,13 @@ def run_all(assets: list, archive_dir: Path, data_dir: Path,
             r = ingest(asset, archive_dir, data_dir, resolution)
         except Exception as exc:
             failures.append((asset, exc))
-            print(f"[FAIL] {asset:5s} {type(exc).__name__}: {exc}",
-                  file=sys.stderr)
+            print(f"[FAIL] {asset:5s} {type(exc).__name__}: {exc}", file=sys.stderr)
             continue
         done.append(r)
-        print(f"[OK] {asset:5s} {r['cache_key']:20s} rows={r['rows']:>7} "
-              f"{r['first']} -> {r['last']}")
+        print(
+            f"[OK] {asset:5s} {r['cache_key']:20s} rows={r['rows']:>7} "
+            f"{r['first']} -> {r['last']}"
+        )
     return done, skipped, failures
 
 
@@ -502,10 +563,12 @@ def main() -> None:
         description="Ingest Kraken bulk-archive OHLCV CSVs into local cache slots."
     )
     parser.add_argument(
-        "--resolution", type=int, default=RESOLUTION_MINUTES,
+        "--resolution",
+        type=int,
+        default=RESOLUTION_MINUTES,
         help="Candle resolution in MINUTES (60 = 1h, 1440 = 1d). "
-             "Selects the source-file suffix (_60 / _1440) and the cache "
-             f"timeframe. Default {RESOLUTION_MINUTES}.",
+        "Selects the source-file suffix (_60 / _1440) and the cache "
+        f"timeframe. Default {RESOLUTION_MINUTES}.",
     )
     args = parser.parse_args()
     resolution = args.resolution
@@ -517,18 +580,21 @@ def main() -> None:
     print(f"Cache data_dir : {data_dir}")
     print(f"Breadth assets : {len(BREADTH_ASSETS)} @ {QUOTE} {resolution}m\n")
 
-    done, skipped, failures = run_all(BREADTH_ASSETS, archive_dir, data_dir,
-                                      resolution)
+    done, skipped, failures = run_all(BREADTH_ASSETS, archive_dir, data_dir, resolution)
 
     # Coverage table
-    print(f"\n{'asset':6}{'cache_key':22}{'rows':>8}  {'first':16} {'last':16}"
-          f"{'miss':>7}{'full%':>8}{'2017+%':>9}")
+    print(
+        f"\n{'asset':6}{'cache_key':22}{'rows':>8}  {'first':16} {'last':16}"
+        f"{'miss':>7}{'full%':>8}{'2017+%':>9}"
+    )
     for r in done:
         g = r["gaps"]
         f, p = g["full"], g["post"]
-        print(f"{r['asset']:6}{r['cache_key']:22}{r['rows']:>8}  "
-              f"{str(r['first'])[:16]:16} {str(r['last'])[:16]:16}"
-              f"{f['missing']:>7}{f['pct']:>7.2f}%{p['pct']:>8.2f}%")
+        print(
+            f"{r['asset']:6}{r['cache_key']:22}{r['rows']:>8}  "
+            f"{str(r['first'])[:16]:16} {str(r['last'])[:16]:16}"
+            f"{f['missing']:>7}{f['pct']:>7.2f}%{p['pct']:>8.2f}%"
+        )
 
     # Failures table — loud, on stderr (stdout stays the [OK]/coverage channel).
     if failures:
@@ -536,9 +602,11 @@ def main() -> None:
         for asset, exc in failures:
             print(f"{asset:6}{type(exc).__name__}: {exc}", file=sys.stderr)
 
-    print(f"\nIngested {len(done)}/{len(BREADTH_ASSETS)}; skipped "
-          f"{skipped or 'none'}; failed {[a for a, _ in failures] or 'none'}. "
-          f"Pilot 2017+ BTC benchmark = 0.11%.")
+    print(
+        f"\nIngested {len(done)}/{len(BREADTH_ASSETS)}; skipped "
+        f"{skipped or 'none'}; failed {[a for a, _ in failures] or 'none'}. "
+        f"Pilot 2017+ BTC benchmark = 0.11%."
+    )
 
     if failures:
         sys.exit(1)

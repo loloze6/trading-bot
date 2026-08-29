@@ -90,6 +90,7 @@ keep their own explicit monkeypatches (self-documenting; a test's own setattr
 runs after the autouse one and wins). No market data, no LLM, no subprocess —
 subprocess.run is faked; state is per-test tmp only.
 """
+
 import asyncio
 import hashlib
 import json
@@ -111,6 +112,7 @@ import run_phase1_research as rpr  # noqa: E402
 # Shared helpers / fixtures
 # ---------------------------------------------------------------------------
 
+
 def _seed_state(path: Path, trials: list[dict], **extra) -> None:
     data: dict = {"trial_sharpes": [dict(t) for t in trials]}
     data.update(extra)
@@ -119,7 +121,9 @@ def _seed_state(path: Path, trials: list[dict], **extra) -> None:
 
 
 def _read_trials(path: Path) -> list[dict]:
-    return (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("trial_sharpes", [])
+    return (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get(
+        "trial_sharpes", []
+    )
 
 
 def _seed_config(artifacts_dir: Path, config: dict | None = None) -> str:
@@ -132,7 +136,11 @@ def _seed_config(artifacts_dir: Path, config: dict | None = None) -> str:
     sha256 hexdigest. Recomputed by reading the file back through that identical
     pipeline, so the expected value tracks the production canonicalization byte-for-
     byte regardless of how this fixture formats what it writes."""
-    config = config if config is not None else {"strategy": "char_fixture", "params": {"b": 2, "a": 1}}
+    config = (
+        config
+        if config is not None
+        else {"strategy": "char_fixture", "params": {"b": 2, "a": 1}}
+    )
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     path = artifacts_dir / "candidate_strategy_config.json"
     path.write_text(json.dumps(config), encoding="utf-8")
@@ -155,7 +163,9 @@ def temp_run(tmp_path, monkeypatch):
     run_id = "run_x"
     monkeypatch.setattr(rpr, "ROOT", tmp_path)
     monkeypatch.setattr(rpr, "CAMPAIGN_STATE_PATH", tmp_path / "campaign_state.yaml")
-    monkeypatch.setattr(rpr, "_resolve_protocol_path", lambda run_dir, run_id: run_dir / "protocol.yaml")
+    monkeypatch.setattr(
+        rpr, "_resolve_protocol_path", lambda run_dir, run_id: run_dir / "protocol.yaml"
+    )
     # Hermeticity: rpr._resolve_tbot_python() (run_phase1_research.py:62) searches
     # ../.venv/bin/python RELATIVE TO os.getcwd() and RAISES when no candidate is
     # found — so run_tool_worker (:1023) would fail purely on which directory pytest
@@ -175,11 +185,19 @@ class _FakeResult:
         self.stderr = stderr
 
 
-def _install_fake_subprocess(monkeypatch, *, returncode=0, prescreen_payload=None,
-                             protocol_summary=None, write_summary=True, stderr=""):
+def _install_fake_subprocess(
+    monkeypatch,
+    *,
+    returncode=0,
+    prescreen_payload=None,
+    protocol_summary=None,
+    write_summary=True,
+    stderr="",
+):
     """Replace rpr.subprocess.run. Parses --out-dir from cmd; for a prescreen cmd
     writes <out_dir>/prescreen_result.yaml, for a protocol cmd writes
     <out_dir>/protocol_summary.json (--out-dir IS RUN_DIR for run_protocol.py)."""
+
     def _fake_run(cmd, capture_output=True, text=True, **kwargs):
         out_dir = None
         for i, tok in enumerate(cmd):
@@ -191,11 +209,13 @@ def _install_fake_subprocess(monkeypatch, *, returncode=0, prescreen_payload=Non
             if "prescreen_signal.py" in joined:
                 out_dir.mkdir(parents=True, exist_ok=True)
                 (out_dir / "prescreen_result.yaml").write_text(
-                    yaml.safe_dump(prescreen_payload or {}), encoding="utf-8")
+                    yaml.safe_dump(prescreen_payload or {}), encoding="utf-8"
+                )
             elif "run_protocol.py" in joined and write_summary:
                 out_dir.mkdir(parents=True, exist_ok=True)
                 (out_dir / "protocol_summary.json").write_text(
-                    json.dumps(protocol_summary or {}), encoding="utf-8")
+                    json.dumps(protocol_summary or {}), encoding="utf-8"
+                )
         return _FakeResult(returncode, "fake-stdout", stderr)
 
     monkeypatch.setattr(rpr.subprocess, "run", _fake_run)
@@ -208,9 +228,11 @@ def _stub_vce(monkeypatch):
     comment, :1100-1114); this stub pins that outcome so the characterization
     target stays the TRIAL RECORDING, not the verdict kernel."""
     import types as _types
+
     stub = _types.ModuleType("verdict_criteria_evaluator")
     stub.evaluate_pass_rule_criteria = (  # pyright: ignore[reportAttributeAccessIssue]
-        lambda summary, prereg, brief: {"result": "legacy_not_evaluable"})
+        lambda summary, prereg, brief: {"result": "legacy_not_evaluable"}
+    )
     monkeypatch.setitem(sys.modules, "verdict_criteria_evaluator", stub)
 
 
@@ -223,6 +245,7 @@ class _SentinelStop(Exception):
 # ===========================================================================
 # LEVEL A — pure functions (deflate_sharpe.py)
 # ===========================================================================
+
 
 def test_h1_dsr_n_counts_only_sharpe_valid_trials():
     """A1. FIXED 2026-08-16 (Jeremy, issue #28) -- but this specific test still pins
@@ -239,8 +262,14 @@ def test_h1_dsr_n_counts_only_sharpe_valid_trials():
     explicitly. All asserts stay CHAR[CONTRACT]: this test's job is now "the
     omitted-n_trials path never silently changes," not "N is wrong" (fixed)."""
     trials = (
-        [{"trial_id": f"n{i}", "statistic_valid": "neither", "sharpe": None} for i in range(11)]
-        + [{"trial_id": f"e{i}", "statistic_valid": "expectancy", "sharpe": None} for i in range(4)]
+        [
+            {"trial_id": f"n{i}", "statistic_valid": "neither", "sharpe": None}
+            for i in range(11)
+        ]
+        + [
+            {"trial_id": f"e{i}", "statistic_valid": "expectancy", "sharpe": None}
+            for i in range(4)
+        ]
         + [{"trial_id": "s_ok", "statistic_valid": "sharpe", "sharpe": 0.42}]
         + [{"trial_id": "s_none", "statistic_valid": "sharpe", "sharpe": None}]
     )
@@ -254,14 +283,26 @@ def test_h1_dsr_n_counts_only_sharpe_valid_trials():
     # CHAR[CONTRACT]: only statistic_valid=='sharpe' with a non-None value feeds N (ds:127-132).
     assert sharpe_values == [0.42]
     # CHAR[CONTRACT]: exclusion taxonomy — what is dropped from sharpe_values, incl. sharpe/None (ds:129-130).
-    assert excluded == {"no_sharpe_value": 1, "statistic_expectancy": 4, "statistic_neither": 11}
+    assert excluded == {
+        "no_sharpe_value": 1,
+        "statistic_expectancy": 4,
+        "statistic_neither": 11,
+    }
 
-    dsr = ds.compute_dsr(0.5, sharpe_values)  # n_trials OMITTED -- byte-identical default path.
+    dsr = ds.compute_dsr(
+        0.5, sharpe_values
+    )  # n_trials OMITTED -- byte-identical default path.
     # NOT a defect: compute_dsr correctly refuses N<2 when n_trials is omitted -- this
     # is the pre-fix behavior every existing direct caller must keep seeing.
-    assert dsr["dsr"] is None  # CHAR[CONTRACT]: compute_dsr correctly refuses N<2; invariant, not a defect.
-    assert dsr["n_trials"] == 1  # CHAR[CONTRACT]: n_trials omitted -> N falls back to len(sharpe_values) == 1.
-    assert dsr["error"] == "Insufficient trials: need >= 2, got 1"  # CHAR[CONTRACT]: verbatim refusal message.
+    assert (
+        dsr["dsr"] is None
+    )  # CHAR[CONTRACT]: compute_dsr correctly refuses N<2; invariant, not a defect.
+    assert (
+        dsr["n_trials"] == 1
+    )  # CHAR[CONTRACT]: n_trials omitted -> N falls back to len(sharpe_values) == 1.
+    assert (
+        dsr["error"] == "Insufficient trials: need >= 2, got 1"
+    )  # CHAR[CONTRACT]: verbatim refusal message.
 
 
 def test_h1_promotion_audit_wires_full_n_into_dsr():
@@ -281,16 +322,28 @@ def test_h1_promotion_audit_wires_full_n_into_dsr():
     honest N visible in it -- not by a DSR number appearing (this fixture genuinely
     cannot produce one)."""
     trials = (
-        [{"trial_id": f"n{i}", "statistic_valid": "neither", "sharpe": None} for i in range(11)]
-        + [{"trial_id": f"e{i}", "statistic_valid": "expectancy", "sharpe": None} for i in range(4)]
+        [
+            {"trial_id": f"n{i}", "statistic_valid": "neither", "sharpe": None}
+            for i in range(11)
+        ]
+        + [
+            {"trial_id": f"e{i}", "statistic_valid": "expectancy", "sharpe": None}
+            for i in range(4)
+        ]
         + [{"trial_id": "s_ok", "statistic_valid": "sharpe", "sharpe": 0.42}]
         + [{"trial_id": "s_none", "statistic_valid": "sharpe", "sharpe": None}]
     )
     audit = ds.compute_promotion_audit("H-test", 0.5, {"trial_sharpes": trials})
 
-    assert audit["total_hypotheses_tested"] == 17  # CHAR[CONTRACT]: the honest total, unaffected by H1.
-    assert audit["n_trials_used"] == 1  # CHAR[CONTRACT]: still only 1 real Sharpe value -- unrelated question.
-    assert audit["deflated_sharpe_ratio"] is None  # H1-FIXED: correctly still None (can't estimate variance).
+    assert (
+        audit["total_hypotheses_tested"] == 17
+    )  # CHAR[CONTRACT]: the honest total, unaffected by H1.
+    assert (
+        audit["n_trials_used"] == 1
+    )  # CHAR[CONTRACT]: still only 1 real Sharpe value -- unrelated question.
+    assert (
+        audit["deflated_sharpe_ratio"] is None
+    )  # H1-FIXED: correctly still None (can't estimate variance).
     # The load-bearing proof: refused for the NEW reason (N is honest, variance isn't
     # estimable), not the OLD reason (N itself was too small). Distinguishes "H1 not
     # fixed" (would say "Insufficient trials: need >= 2, got 1") from "H1 fixed, still
@@ -310,10 +363,20 @@ def test_h1_compute_dsr_n_trials_param_changes_the_correction_when_estimable():
     the expected-max-Sharpe benchmark HARDER to clear (E[max of more draws] is higher),
     so the SAME candidate scores a LOWER (or equal) DSR under the larger N -- proving
     the correction actually strengthens as N grows, which is H1's entire point."""
-    trial_sharpes = [0.1, 0.3, -0.2, 0.05, 0.4]  # 5 real Sharpe values, non-degenerate variance.
+    trial_sharpes = [
+        0.1,
+        0.3,
+        -0.2,
+        0.05,
+        0.4,
+    ]  # 5 real Sharpe values, non-degenerate variance.
 
-    small_n = ds.compute_dsr(0.8, trial_sharpes, n_trials=5)   # n_trials == len(trial_sharpes)
-    large_n = ds.compute_dsr(0.8, trial_sharpes, n_trials=50)  # same values, honest N much larger
+    small_n = ds.compute_dsr(
+        0.8, trial_sharpes, n_trials=5
+    )  # n_trials == len(trial_sharpes)
+    large_n = ds.compute_dsr(
+        0.8, trial_sharpes, n_trials=50
+    )  # same values, honest N much larger
 
     assert small_n["n_trials"] == 5
     assert large_n["n_trials"] == 50
@@ -321,8 +384,12 @@ def test_h1_compute_dsr_n_trials_param_changes_the_correction_when_estimable():
     # only the multiple-testing exponent differs.
     assert small_n["mu_sr"] == large_n["mu_sr"]
     assert small_n["sigma_sr"] == large_n["sigma_sr"]
-    assert large_n["expected_max_sharpe"] > small_n["expected_max_sharpe"]  # harder bar at larger N.
-    assert large_n["dsr"] < small_n["dsr"]  # same candidate, lower DSR under the honest larger N.
+    assert (
+        large_n["expected_max_sharpe"] > small_n["expected_max_sharpe"]
+    )  # harder bar at larger N.
+    assert (
+        large_n["dsr"] < small_n["dsr"]
+    )  # same candidate, lower DSR under the honest larger N.
     # Omitting n_trials must match passing it explicitly as len(trial_sharpes) --
     # the default-fallback path (used by every pre-fix caller) is exactly this case.
     omitted = ds.compute_dsr(0.8, trial_sharpes)
@@ -351,8 +418,12 @@ def test_forecast_hash_dedup_semantics():
     NO forecast_hash) must BOTH survive dedup; only the hashed control pair
     collapses. Pins the hashless-is-unique rule (ds:88-90)."""
     twin = {
-        "trial_id": "run_dup", "source": "backtest", "sharpe": 1.0,
-        "expectancy_bps": None, "n_trades": 100, "statistic_valid": "sharpe",
+        "trial_id": "run_dup",
+        "source": "backtest",
+        "sharpe": 1.0,
+        "expectancy_bps": None,
+        "n_trades": 100,
+        "statistic_valid": "sharpe",
         "below_floor_pct": 0.0,
     }
     ctrl_a = {"trial_id": "run_a", "forecast_hash": "x"}
@@ -363,12 +434,15 @@ def test_forecast_hash_dedup_semantics():
 
     # CHAR[CONTRACT]: only the hashed pair collapses; hashless twins are unique.
     assert n_removed == 1
-    assert sum(1 for r in kept if r.get("source") == "backtest") == 2  # CHAR[CONTRACT]: both twins kept.
+    assert (
+        sum(1 for r in kept if r.get("source") == "backtest") == 2
+    )  # CHAR[CONTRACT]: both twins kept.
 
 
 # ===========================================================================
 # LEVEL B — writers + file-backed promotion audit
 # ===========================================================================
+
 
 def test_promotion_audit_total_count_divergence(campaign_state_path, tmp_path):
     """B-A3. FIXED (2026-08-17, COUNT-DIV). Was: the SAME concept ("how many were
@@ -380,27 +454,49 @@ def test_promotion_audit_total_count_divergence(campaign_state_path, tmp_path):
     forecast_hash='dup' (dedups to 2), campaign.runs deliberately seeded empty so
     the old bug's value (0) and the fixed value (2) are unambiguously distinguishable."""
     trials = [
-        {"trial_id": "r1", "forecast_hash": "dup", "statistic_valid": "neither", "sharpe": None},
-        {"trial_id": "r2", "forecast_hash": "dup", "statistic_valid": "neither", "sharpe": None},
-        {"trial_id": "r3", "forecast_hash": "uniq", "statistic_valid": "neither", "sharpe": None},
+        {
+            "trial_id": "r1",
+            "forecast_hash": "dup",
+            "statistic_valid": "neither",
+            "sharpe": None,
+        },
+        {
+            "trial_id": "r2",
+            "forecast_hash": "dup",
+            "statistic_valid": "neither",
+            "sharpe": None,
+        },
+        {
+            "trial_id": "r3",
+            "forecast_hash": "uniq",
+            "statistic_valid": "neither",
+            "sharpe": None,
+        },
     ]
 
     # Probe 1 (pure, deflate_sharpe.py): total_hypotheses_tested is POST-dedup (ds:242,249).
-    audit_ds = ds.compute_promotion_audit("T", 0.4, {"trial_sharpes": [dict(t) for t in trials]})
-    assert audit_ds["total_hypotheses_tested"] == 2  # CHAR[CONTRACT]: ds's canonical post-dedup count.
+    audit_ds = ds.compute_promotion_audit(
+        "T", 0.4, {"trial_sharpes": [dict(t) for t in trials]}
+    )
+    assert (
+        audit_ds["total_hypotheses_tested"] == 2
+    )  # CHAR[CONTRACT]: ds's canonical post-dedup count.
 
     # Probe 2 (file, run_phase1_research.py::_write_promotion_audit).
     _seed_state(campaign_state_path, trials, runs=[])
     run_dir = tmp_path / "runs" / "run_t"
     (run_dir / "artifacts").mkdir(parents=True)
     (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
-        yaml.safe_dump({}), encoding="utf-8")
+        yaml.safe_dump({}), encoding="utf-8"
+    )
     (run_dir / "artifacts" / "protocol_result.yaml").write_text(
-        yaml.safe_dump({}), encoding="utf-8")
+        yaml.safe_dump({}), encoding="utf-8"
+    )
 
     rpr._write_promotion_audit(run_dir, "run_t")
     audit_rpr = yaml.safe_load(
-        (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+        (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8")
+    )
 
     # CHAR[CONTRACT]: rpr's "total_variants_tested" stays PRE-dedup (:4172) -> 3, not 2.
     # Unaffected by the COUNT-DIV fix -- distinct, legitimate use in the sparse-path
@@ -416,7 +512,9 @@ def test_promotion_audit_total_count_divergence(campaign_state_path, tmp_path):
     assert audit_rpr["total_campaign_runs"] == 0
 
 
-def test_issue36_inline_path_keeps_prescreen_and_backtest_rows(campaign_state_path, tmp_path):
+def test_issue36_inline_path_keeps_prescreen_and_backtest_rows(
+    campaign_state_path, tmp_path
+):
     """B-#36. A single run's prescreen and backtest rows share a forecast_hash but
     differ by source; _write_promotion_audit's inline dedup must count BOTH (feeding
     n_dsr_total -> total_hypotheses_tested), mirroring ds.deduplicate_trials exactly.
@@ -424,22 +522,36 @@ def test_issue36_inline_path_keeps_prescreen_and_backtest_rows(campaign_state_pa
     dropping the backtest Sharpe from the DSR N that gates the single-use holdout."""
     shared = "run042_forecast_hash"
     trials = [
-        {"trial_id": "run_042", "source": "prescreen", "forecast_hash": shared,
-         "statistic_valid": "neither", "sharpe": None},
-        {"trial_id": "run_042", "source": "backtest", "forecast_hash": shared,
-         "statistic_valid": "sharpe", "sharpe": 1.2, "n_trades": 120},
+        {
+            "trial_id": "run_042",
+            "source": "prescreen",
+            "forecast_hash": shared,
+            "statistic_valid": "neither",
+            "sharpe": None,
+        },
+        {
+            "trial_id": "run_042",
+            "source": "backtest",
+            "forecast_hash": shared,
+            "statistic_valid": "sharpe",
+            "sharpe": 1.2,
+            "n_trades": 120,
+        },
     ]
     _seed_state(campaign_state_path, trials, runs=[])
     run_dir = tmp_path / "runs" / "run_042"
     (run_dir / "artifacts").mkdir(parents=True)
     (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
-        yaml.safe_dump({}), encoding="utf-8")
+        yaml.safe_dump({}), encoding="utf-8"
+    )
     (run_dir / "artifacts" / "protocol_result.yaml").write_text(
-        yaml.safe_dump({}), encoding="utf-8")
+        yaml.safe_dump({}), encoding="utf-8"
+    )
 
     rpr._write_promotion_audit(run_dir, "run_042")
     audit = yaml.safe_load(
-        (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+        (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8")
+    )
 
     # CHAR[CONTRACT]: prescreen + backtest of one run are distinct (forecast_hash, source)
     # keys -- both counted, mirroring ds. RED here means the inline path regressed to the
@@ -454,7 +566,11 @@ def test_prescreen_writer_row_shape(campaign_state_path, tmp_path):
     expected_hash = _seed_config(tmp_path / "artifacts")
     rpr._record_prescreen_trial(
         "run_x",
-        {"route": "kill_no_ic", "ic_spearman_pooled": 0.01, "cost_check": {"pass": False}},
+        {
+            "route": "kill_no_ic",
+            "ic_spearman_pooled": 0.01,
+            "cost_check": {"pass": False},
+        },
         tmp_path / "artifacts" / "candidate_strategy_config.json",
     )
     rows = _read_trials(campaign_state_path)
@@ -471,7 +587,9 @@ def test_prescreen_writer_row_shape(campaign_state_path, tmp_path):
     assert row["forecast_hash"] == expected_hash
 
 
-def test_backtest_writer_n_trades_sums_results_trade_counts(campaign_state_path, tmp_path):
+def test_backtest_writer_n_trades_sums_results_trade_counts(
+    campaign_state_path, tmp_path
+):
     """B2. FIXED (2026-08-17, NTRADES). The original NTRADES finding's own diagnosis was
     itself incomplete: per_symbol_summary never carried a 'trade_count' key at all (only
     'median_sharpe'/'max_abs_drawdown_pct'/'min_trade_count'/'zero_trade_slot_pct',
@@ -487,24 +605,33 @@ def test_backtest_writer_n_trades_sums_results_trade_counts(campaign_state_path,
     _seed_state(campaign_state_path, [])
     expected_hash = _seed_config(tmp_path / "artifacts")
     summary = {
-        "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.2, "min_trade_count": 500}},
+        "per_symbol_summary": {
+            "BTCUSDT": {"median_sharpe": 1.2, "min_trade_count": 500}
+        },
         "results": [
             {"symbol": "BTCUSDT", "window": "2024-01", "core": {"trade_count": 414}},
             {"symbol": "BTCUSDT", "window": "2024-02", "core": {"trade_count": 500}},
         ],
     }
     rpr._record_backtest_trial(
-        "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
+        "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json"
+    )
     row = _read_trials(campaign_state_path)[0]
 
-    assert row["n_trades"] == 914  # CHAR[CONTRACT]: sums results[].core.trade_count, not min_trade_count.
+    assert (
+        row["n_trades"] == 914
+    )  # CHAR[CONTRACT]: sums results[].core.trade_count, not min_trade_count.
     assert row["sharpe"] == 1.2  # CHAR[CONTRACT]: median Sharpe recorded.
-    assert row["statistic_valid"] == "sharpe"  # CHAR[CONTRACT]: sharpe path (median present, floor 0).
+    assert (
+        row["statistic_valid"] == "sharpe"
+    )  # CHAR[CONTRACT]: sharpe path (median present, floor 0).
     # CHAR[CONTRACT]: H3 (cf7908bc) — backtest writer now emits forecast_hash (:3089).
     assert row["forecast_hash"] == expected_hash
 
 
-def test_backtest_writer_n_trades_zero_when_results_missing(campaign_state_path, tmp_path):
+def test_backtest_writer_n_trades_zero_when_results_missing(
+    campaign_state_path, tmp_path
+):
     """B2b. A prescreen-stub-shaped protocol_result.yaml (no 'results' key, e.g. a
     killed run's stub — measured live: run_053) must not crash the writer; n_trades
     stays 0 via the same 'or []' guard that handles a genuinely empty backtest."""
@@ -512,17 +639,26 @@ def test_backtest_writer_n_trades_zero_when_results_missing(campaign_state_path,
     _seed_config(tmp_path / "artifacts")
     summary = {"per_symbol_summary": {}}
     rpr._record_backtest_trial(
-        "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
+        "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json"
+    )
     row = _read_trials(campaign_state_path)[0]
-    assert row["n_trades"] == 0  # CHAR[CONTRACT]: missing "results" degrades to 0, not a crash.
+    assert (
+        row["n_trades"] == 0
+    )  # CHAR[CONTRACT]: missing "results" degrades to 0, not a crash.
 
 
 @pytest.mark.parametrize(
     "summary, expected_stat, expected_sharpe_is_none",
     [
         # below_floor_pct > 50 => 'expectancy' regardless of a present median (:3074-3075).
-        ({"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.0}},
-          "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 60}}}, "expectancy", False),
+        (
+            {
+                "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.0}},
+                "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 60}},
+            },
+            "expectancy",
+            False,
+        ),
         # median present + floor 0 => 'sharpe' (:3076-3077).
         ({"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.0}}}, "sharpe", False),
         # empty per_symbol_summary => 'neither', sharpe None (:3078-3079).
@@ -536,10 +672,15 @@ def test_backtest_writer_statistic_valid_taxonomy(
     _seed_state(campaign_state_path, [])
     _seed_config(tmp_path / "artifacts")
     rpr._record_backtest_trial(
-        "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json")
+        "run_x", summary, tmp_path / "artifacts" / "candidate_strategy_config.json"
+    )
     row = _read_trials(campaign_state_path)[0]
-    assert row["statistic_valid"] == expected_stat  # CHAR[CONTRACT]: statistic_valid ladder.
-    assert (row["sharpe"] is None) == expected_sharpe_is_none  # CHAR[CONTRACT]: sharpe presence.
+    assert (
+        row["statistic_valid"] == expected_stat
+    )  # CHAR[CONTRACT]: statistic_valid ladder.
+    assert (
+        row["sharpe"] is None
+    ) == expected_sharpe_is_none  # CHAR[CONTRACT]: sharpe presence.
 
 
 def test_writer_contract_lifecycle_pair_shares_trial_id(campaign_state_path, tmp_path):
@@ -552,19 +693,30 @@ def test_writer_contract_lifecycle_pair_shares_trial_id(campaign_state_path, tmp
     _seed_state(campaign_state_path, [])
     _seed_config(tmp_path / "artifacts")
     config_path = tmp_path / "artifacts" / "candidate_strategy_config.json"
-    rpr._record_prescreen_trial("run_x", {"route": "advance", "ic_spearman_pooled": 0.09}, config_path)
+    rpr._record_prescreen_trial(
+        "run_x", {"route": "advance", "ic_spearman_pooled": 0.09}, config_path
+    )
     rpr._record_backtest_trial(
-        "run_x", {"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.5, "trade_count": 120}}},
-        config_path)
+        "run_x",
+        {"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.5, "trade_count": 120}}},
+        config_path,
+    )
     rows = _read_trials(campaign_state_path)
     assert len(rows) == 2  # CHAR[CONTRACT]: prescreen + backtest, one legit lifecycle.
-    assert [r["trial_id"] for r in rows] == ["run_x", "run_x"]  # CHAR[CONTRACT]: shared trial_id.
-    assert [r["source"] for r in rows] == ["prescreen", "backtest"]  # CHAR[CONTRACT]: order + sources.
+    assert [r["trial_id"] for r in rows] == [
+        "run_x",
+        "run_x",
+    ]  # CHAR[CONTRACT]: shared trial_id.
+    assert [r["source"] for r in rows] == [
+        "prescreen",
+        "backtest",
+    ]  # CHAR[CONTRACT]: order + sources.
 
 
 # ===========================================================================
 # LEVEL C — call sites (run_tool_worker / run_loop)
 # ===========================================================================
+
 
 def test_h2_resumed_prescreen_upserts_fresh_outcome(temp_run, monkeypatch):
     """C1. H2 FIXED (E-025, issue #28): a re-entered signal_prescreen — a crash-retry
@@ -582,20 +734,39 @@ def test_h2_resumed_prescreen_upserts_fresh_outcome(temp_run, monkeypatch):
     _seed_config(_run_dir / "artifacts")
     _seed_state(
         rpr.CAMPAIGN_STATE_PATH,
-        [{"trial_id": "run_x", "source": "prescreen", "route": "kill_no_ic",
-          "sharpe": None, "n_trades": 0, "statistic_valid": "neither", "ic_pooled": 0.01}],
+        [
+            {
+                "trial_id": "run_x",
+                "source": "prescreen",
+                "route": "kill_no_ic",
+                "sharpe": None,
+                "n_trades": 0,
+                "statistic_valid": "neither",
+                "ic_pooled": 0.01,
+            }
+        ],
     )
     _install_fake_subprocess(
         monkeypatch,
-        prescreen_payload={"route": "advance", "ic_spearman_pooled": 0.09, "cost_check": {"pass": True}},
+        prescreen_payload={
+            "route": "advance",
+            "ic_spearman_pooled": 0.09,
+            "cost_check": {"pass": True},
+        },
     )
 
     asyncio.run(rpr.run_tool_worker("signal_prescreen", run_id))
 
     rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
-    assert len(rows) == 1  # CHAR[CONTRACT]: upsert keeps one row per (trial_id, "prescreen") slot.
-    assert rows[0]["ic_pooled"] == 0.09  # CHAR[CONTRACT]: FRESH re-entry content wins (was stale 0.01).
-    assert rows[0]["route"] == "advance"  # CHAR[CONTRACT]: fresh route replaces the stale kill.
+    assert (
+        len(rows) == 1
+    )  # CHAR[CONTRACT]: upsert keeps one row per (trial_id, "prescreen") slot.
+    assert (
+        rows[0]["ic_pooled"] == 0.09
+    )  # CHAR[CONTRACT]: FRESH re-entry content wins (was stale 0.01).
+    assert (
+        rows[0]["route"] == "advance"
+    )  # CHAR[CONTRACT]: fresh route replaces the stale kill.
 
 
 def test_h2_resumed_prescreen_same_outcome_is_noop(temp_run, monkeypatch):
@@ -609,21 +780,41 @@ def test_h2_resumed_prescreen_same_outcome_is_noop(temp_run, monkeypatch):
     _seed_config(_run_dir / "artifacts")
     _seed_state(
         rpr.CAMPAIGN_STATE_PATH,
-        [{"trial_id": "run_x", "source": "prescreen", "route": "advance",
-          "sharpe": None, "expectancy_bps": None, "n_trades": 0,
-          "statistic_valid": "neither", "ic_pooled": 0.09, "cost_pass": True}],
+        [
+            {
+                "trial_id": "run_x",
+                "source": "prescreen",
+                "route": "advance",
+                "sharpe": None,
+                "expectancy_bps": None,
+                "n_trades": 0,
+                "statistic_valid": "neither",
+                "ic_pooled": 0.09,
+                "cost_pass": True,
+            }
+        ],
     )
     _install_fake_subprocess(
         monkeypatch,
-        prescreen_payload={"route": "advance", "ic_spearman_pooled": 0.09, "cost_check": {"pass": True}},
+        prescreen_payload={
+            "route": "advance",
+            "ic_spearman_pooled": 0.09,
+            "cost_check": {"pass": True},
+        },
     )
 
     asyncio.run(rpr.run_tool_worker("signal_prescreen", run_id))
 
     rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
-    assert len(rows) == 1  # CHAR[CONTRACT]: same-outcome re-entry stays one row (idempotent).
-    assert rows[0]["route"] == "advance"  # CHAR[CONTRACT]: content unchanged on a no-op re-entry.
-    assert rows[0]["ic_pooled"] == 0.09  # CHAR[CONTRACT]: identical fresh == existing, still one row.
+    assert (
+        len(rows) == 1
+    )  # CHAR[CONTRACT]: same-outcome re-entry stays one row (idempotent).
+    assert (
+        rows[0]["route"] == "advance"
+    )  # CHAR[CONTRACT]: content unchanged on a no-op re-entry.
+    assert (
+        rows[0]["ic_pooled"] == 0.09
+    )  # CHAR[CONTRACT]: identical fresh == existing, still one row.
 
 
 def test_h3_protocol_reentry_appends_duplicate_backtest(temp_run, monkeypatch):
@@ -638,12 +829,23 @@ def test_h3_protocol_reentry_appends_duplicate_backtest(temp_run, monkeypatch):
     _seed_config(_run_dir / "artifacts")
     _seed_state(
         rpr.CAMPAIGN_STATE_PATH,
-        [{"trial_id": "run_x", "source": "prescreen", "statistic_valid": "neither", "sharpe": None}],
+        [
+            {
+                "trial_id": "run_x",
+                "source": "prescreen",
+                "statistic_valid": "neither",
+                "sharpe": None,
+            }
+        ],
     )
     _stub_vce(monkeypatch)
     _install_fake_subprocess(
         monkeypatch,
-        protocol_summary={"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.0, "trade_count": 100}}},
+        protocol_summary={
+            "per_symbol_summary": {
+                "BTCUSDT": {"median_sharpe": 1.0, "trade_count": 100}
+            }
+        },
     )
 
     asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
@@ -652,16 +854,25 @@ def test_h3_protocol_reentry_appends_duplicate_backtest(temp_run, monkeypatch):
     rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
     sources = [r["source"] for r in rows]
     assert all(r["trial_id"] == "run_x" for r in rows)
-    assert sources.count("prescreen") == 1  # CHAR[CONTRACT]: the one legit prescreen row.
-    assert sources.count("backtest") == 1  # CHAR[CONTRACT]: H3 guard (:3056) suppresses the re-entry dup.
+    assert (
+        sources.count("prescreen") == 1
+    )  # CHAR[CONTRACT]: the one legit prescreen row.
+    assert (
+        sources.count("backtest") == 1
+    )  # CHAR[CONTRACT]: H3 guard (:3056) suppresses the re-entry dup.
     assert len(rows) == 2
 
 
 @pytest.mark.parametrize(
     "returncode, write_summary, exc, match",
     [
-        (1, True, RuntimeError, "run_protocol.py failed"),                       # :1089
-        (0, False, FileNotFoundError, "protocol_summary.json not found after protocol run"),  # :1093
+        (1, True, RuntimeError, "run_protocol.py failed"),  # :1089
+        (
+            0,
+            False,
+            FileNotFoundError,
+            "protocol_summary.json not found after protocol run",
+        ),  # :1093
     ],
 )
 def test_h4_failed_backtest_records_no_trial(
@@ -677,26 +888,45 @@ def test_h4_failed_backtest_records_no_trial(
     _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
     expected_hash = _seed_config(run_dir / "artifacts")
     _stub_vce(monkeypatch)
-    _install_fake_subprocess(monkeypatch, returncode=returncode, write_summary=write_summary,
-                             protocol_summary={}, stderr="boom")
+    _install_fake_subprocess(
+        monkeypatch,
+        returncode=returncode,
+        write_summary=write_summary,
+        protocol_summary={},
+        stderr="boom",
+    )
 
-    with pytest.raises(exc, match=match):  # CHAR[CONTRACT]: original failure still propagates.
+    with pytest.raises(
+        exc, match=match
+    ):  # CHAR[CONTRACT]: original failure still propagates.
         asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
 
     rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
-    assert len(rows) == 1  # CHAR[CONTRACT]: the spent look is now counted, exactly once.
+    assert (
+        len(rows) == 1
+    )  # CHAR[CONTRACT]: the spent look is now counted, exactly once.
     row = rows[0]
     assert row["trial_id"] == run_id  # CHAR[CONTRACT]: trial_id == run_id.
-    assert row["source"] == "backtest_failed"  # CHAR[CONTRACT]: distinct source, won't shadow a retry's real row.
+    assert (
+        row["source"] == "backtest_failed"
+    )  # CHAR[CONTRACT]: distinct source, won't shadow a retry's real row.
     assert row["sharpe"] is None  # CHAR[CONTRACT]: no Sharpe from a crash.
     assert row["expectancy_bps"] is None  # CHAR[CONTRACT]: no expectancy from a crash.
     assert row["n_trades"] == 0  # CHAR[CONTRACT]: no trades from a crash.
-    assert row["statistic_valid"] == "failed"  # CHAR[CONTRACT]: lands in deflate's statistic_neither bucket.
-    assert row["forecast_hash"] == expected_hash  # CHAR[CONTRACT]: config was readable → real hash.
-    assert isinstance(row["error"], str) and row["error"]  # CHAR[CONTRACT]: a short reason is stored.
+    assert (
+        row["statistic_valid"] == "failed"
+    )  # CHAR[CONTRACT]: lands in deflate's statistic_neither bucket.
+    assert (
+        row["forecast_hash"] == expected_hash
+    )  # CHAR[CONTRACT]: config was readable → real hash.
+    assert (
+        isinstance(row["error"], str) and row["error"]
+    )  # CHAR[CONTRACT]: a short reason is stored.
 
 
-def test_h4_failed_backtest_same_config_repeat_records_one_row(campaign_state_path, tmp_path):
+def test_h4_failed_backtest_same_config_repeat_records_one_row(
+    campaign_state_path, tmp_path
+):
     """C3a. Own idempotency guard: two failures of the SAME config (same trial_id, same
     forecast_hash) append only ONE 'backtest_failed' row — a same-(trial_id, source)
     duplicate would trip deflate_sharpe.check_no_duplicate_trial_ids at DSR time."""
@@ -707,10 +937,14 @@ def test_h4_failed_backtest_same_config_repeat_records_one_row(campaign_state_pa
     rpr._record_failed_backtest_trial("run_x", config_path, "second failure")
     rows = _read_trials(campaign_state_path)
     assert [r["source"] for r in rows] == ["backtest_failed"]  # only one row.
-    assert rows[0]["error"] == "first failure"  # first-seen wins; no mutation of the existing row.
+    assert (
+        rows[0]["error"] == "first failure"
+    )  # first-seen wins; no mutation of the existing row.
 
 
-def test_h4_failed_backtest_changed_config_same_run_id_suppressed(campaign_state_path, tmp_path):
+def test_h4_failed_backtest_changed_config_same_run_id_suppressed(
+    campaign_state_path, tmp_path
+):
     """C3b. A second "backtest_failed" for the SAME run_id is suppressed even when the
     config was edited between attempts — the guard keys on (trial_id, source), matching
     _record_backtest_trial's success guard and deflate_sharpe.check_no_duplicate_trial_ids.
@@ -727,10 +961,14 @@ def test_h4_failed_backtest_changed_config_same_run_id_suppressed(campaign_state
     rpr._record_failed_backtest_trial("run_x", config_path, "failure B")
     rows = _read_trials(campaign_state_path)
     assert [r["source"] for r in rows] == ["backtest_failed"]  # one slot, one row.
-    assert rows[0]["forecast_hash"] == hash_a  # first-seen wins; the existing row is not mutated.
+    assert (
+        rows[0]["forecast_hash"] == hash_a
+    )  # first-seen wins; the existing row is not mutated.
 
 
-def test_h4_failed_backtest_missing_config_records_none_hash_and_reraises(temp_run, monkeypatch):
+def test_h4_failed_backtest_missing_config_records_none_hash_and_reraises(
+    temp_run, monkeypatch
+):
     """C3c. When the config is itself missing/broken, the row records forecast_hash=None
     (deflate's deduplicate_trials keeps hashless rows unique, :88-90) and the ORIGINAL
     exception type is preserved — the hash step's failure never masks it. No config is
@@ -738,7 +976,9 @@ def test_h4_failed_backtest_missing_config_records_none_hash_and_reraises(temp_r
     _run_dir, run_id = temp_run
     _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
     _stub_vce(monkeypatch)
-    _install_fake_subprocess(monkeypatch, returncode=1, protocol_summary={}, stderr="boom")
+    _install_fake_subprocess(
+        monkeypatch, returncode=1, protocol_summary={}, stderr="boom"
+    )
 
     with pytest.raises(RuntimeError, match=r"run_protocol\.py failed"):
         asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
@@ -781,23 +1021,37 @@ def test_h4b_corrupt_summary_after_success_records_failed_trial(temp_run, monkey
         # exact exit-0-corrupt-summary shape, distinct from the missing-summary branch.
         assert out_dir is not None
         out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / "protocol_summary.json").write_text('{"per_symbol_summary": {', encoding="utf-8")
+        (out_dir / "protocol_summary.json").write_text(
+            '{"per_symbol_summary": {', encoding="utf-8"
+        )
         return _FakeResult(0, "fake-stdout", "")
 
     monkeypatch.setattr(rpr.subprocess, "run", _fake_run)
 
-    with pytest.raises(json.JSONDecodeError):  # CHAR[CONTRACT]: the loud halt survives the fix.
+    with pytest.raises(
+        json.JSONDecodeError
+    ):  # CHAR[CONTRACT]: the loud halt survives the fix.
         asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
 
     rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
-    assert len(rows) == 1  # CHAR[CONTRACT]: the spent-but-unparseable look is counted, exactly once.
+    assert (
+        len(rows) == 1
+    )  # CHAR[CONTRACT]: the spent-but-unparseable look is counted, exactly once.
     row = rows[0]
     assert row["trial_id"] == run_id  # CHAR[CONTRACT]: trial_id == run_id.
-    assert row["source"] == "backtest_failed"  # CHAR[CONTRACT]: distinct source, won't shadow a retry's real row.
-    assert row["statistic_valid"] == "failed"  # CHAR[CONTRACT]: lands in deflate's statistic_neither bucket.
+    assert (
+        row["source"] == "backtest_failed"
+    )  # CHAR[CONTRACT]: distinct source, won't shadow a retry's real row.
+    assert (
+        row["statistic_valid"] == "failed"
+    )  # CHAR[CONTRACT]: lands in deflate's statistic_neither bucket.
     assert row["sharpe"] is None  # CHAR[CONTRACT]: no Sharpe from a crash mid-window.
-    assert row["forecast_hash"] == expected_hash  # CHAR[CONTRACT]: config was readable → real hash.
-    assert isinstance(row["error"], str) and row["error"]  # CHAR[CONTRACT]: a short reason is stored.
+    assert (
+        row["forecast_hash"] == expected_hash
+    )  # CHAR[CONTRACT]: config was readable → real hash.
+    assert (
+        isinstance(row["error"], str) and row["error"]
+    )  # CHAR[CONTRACT]: a short reason is stored.
 
 
 def test_h4b_vce_raise_after_success_records_failed_trial(temp_run, monkeypatch):
@@ -821,29 +1075,44 @@ def test_h4b_vce_raise_after_success_records_failed_trial(temp_run, monkeypatch)
     # Well-formed summary so json.load succeeds; the raise must come from the VCE step.
     _install_fake_subprocess(
         monkeypatch,
-        protocol_summary={"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.0, "trade_count": 100}}},
+        protocol_summary={
+            "per_symbol_summary": {
+                "BTCUSDT": {"median_sharpe": 1.0, "trade_count": 100}
+            }
+        },
     )
 
     def _raise_type_error(summary, prereg, brief):
         raise TypeError("'>' not supported between instances of 'str' and 'float'")
 
     import types as _types
+
     stub = _types.ModuleType("verdict_criteria_evaluator")
     stub.evaluate_pass_rule_criteria = _raise_type_error  # pyright: ignore[reportAttributeAccessIssue]
     monkeypatch.setitem(sys.modules, "verdict_criteria_evaluator", stub)
 
-    with pytest.raises(TypeError, match=r"not supported between"):  # CHAR[CONTRACT]: original raise survives.
+    with pytest.raises(
+        TypeError, match=r"not supported between"
+    ):  # CHAR[CONTRACT]: original raise survives.
         asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
 
     rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
-    assert len(rows) == 1  # CHAR[CONTRACT]: the VCE-raising look is counted, exactly once.
+    assert (
+        len(rows) == 1
+    )  # CHAR[CONTRACT]: the VCE-raising look is counted, exactly once.
     row = rows[0]
     assert row["trial_id"] == run_id  # CHAR[CONTRACT]: trial_id == run_id.
     assert row["source"] == "backtest_failed"  # CHAR[CONTRACT]: distinct source.
-    assert row["statistic_valid"] == "failed"  # CHAR[CONTRACT]: statistic_neither bucket.
+    assert (
+        row["statistic_valid"] == "failed"
+    )  # CHAR[CONTRACT]: statistic_neither bucket.
     assert row["sharpe"] is None  # CHAR[CONTRACT]: no Sharpe from a crash mid-window.
-    assert row["forecast_hash"] == expected_hash  # CHAR[CONTRACT]: config readable → real hash.
-    assert isinstance(row["error"], str) and row["error"]  # CHAR[CONTRACT]: a short reason is stored.
+    assert (
+        row["forecast_hash"] == expected_hash
+    )  # CHAR[CONTRACT]: config readable → real hash.
+    assert (
+        isinstance(row["error"], str) and row["error"]
+    )  # CHAR[CONTRACT]: a short reason is stored.
 
 
 _A86_CANNED = {
@@ -876,29 +1145,46 @@ def _drive_a86_preflight(temp_run, monkeypatch, *, seed_prescreen_result: bool):
     handoffs = run_dir / "handoffs"
     handoffs.mkdir(parents=True)
     (handoffs / rpr.STAGE_CONFIGS["signal_prescreen"]["handoff"]).write_text(
-        yaml.safe_dump({"required_inputs": []}), encoding="utf-8")
+        yaml.safe_dump({"required_inputs": []}), encoding="utf-8"
+    )
     (run_dir / "pipeline_state.yaml").write_text(
-        yaml.safe_dump({"run_id": run_id, "pending_stage": "signal_prescreen", "audit_log": {}}),
-        encoding="utf-8")
+        yaml.safe_dump(
+            {"run_id": run_id, "pending_stage": "signal_prescreen", "audit_log": {}}
+        ),
+        encoding="utf-8",
+    )
     _seed_state(
         rpr.CAMPAIGN_STATE_PATH,
-        [{"trial_id": run_id, "source": "prescreen", "route": "kill_no_ic",
-          "sharpe": None, "n_trades": 0, "statistic_valid": "neither"}],
+        [
+            {
+                "trial_id": run_id,
+                "source": "prescreen",
+                "route": "kill_no_ic",
+                "sharpe": None,
+                "n_trades": 0,
+                "statistic_valid": "neither",
+            }
+        ],
     )
     if seed_prescreen_result:
         (run_dir / "artifacts" / "prescreen_result.yaml").write_text(
             yaml.safe_dump({"run_id": run_id, "route": "insufficient_power_a_priori"}),
-            encoding="utf-8")
+            encoding="utf-8",
+        )
 
     monkeypatch.setattr(rpr, "_load_token_budget", lambda: 1e9)
-    monkeypatch.setattr(rpr, "_run_a86_power_check", lambda artifacts: dict(_A86_CANNED))
+    monkeypatch.setattr(
+        rpr, "_run_a86_power_check", lambda artifacts: dict(_A86_CANNED)
+    )
 
     def _raise_stop(path):
         raise _SentinelStop()
 
     monkeypatch.setattr(rpr, "determine_post_prescreen_route", _raise_stop)
 
-    rpr.run_loop(run_id)  # _SentinelStop is caught by run_loop's own except -> status='failed', break.
+    rpr.run_loop(
+        run_id
+    )  # _SentinelStop is caught by run_loop's own except -> status='failed', break.
     return _read_trials(rpr.CAMPAIGN_STATE_PATH)
 
 
@@ -914,7 +1200,10 @@ def test_h3_a86_preflight_records_unguarded_duplicate(temp_run, monkeypatch):
     :4871 immediately before this record, so in a real run the guarded sibling path
     would fire on re-entry — a genuine double here needs that artifact wiped."""
     rows = _drive_a86_preflight(temp_run, monkeypatch, seed_prescreen_result=False)
-    assert [r["trial_id"] for r in rows] == ["run_x", "run_x"]  # CHAR[H3-BUG]: unguarded pre-flight dup (:4874).
+    assert [r["trial_id"] for r in rows] == [
+        "run_x",
+        "run_x",
+    ]  # CHAR[H3-BUG]: unguarded pre-flight dup (:4874).
 
 
 def test_h3_a86_validation_bypass_is_guarded(temp_run, monkeypatch):
@@ -922,10 +1211,14 @@ def test_h3_a86_validation_bypass_is_guarded(temp_run, monkeypatch):
     carry the run_id idempotency guard, so an existing row is not duplicated.
     Proves the two bypass sites diverge — one guarded, one not."""
     rows = _drive_a86_preflight(temp_run, monkeypatch, seed_prescreen_result=True)
-    assert [r["trial_id"] for r in rows] == ["run_x"]  # CHAR[CONTRACT]: guarded path does not duplicate.
+    assert [r["trial_id"] for r in rows] == [
+        "run_x"
+    ]  # CHAR[CONTRACT]: guarded path does not duplicate.
 
 
-def test_write_promotion_audit_buckets_failed_rows_as_statistic_neither(tmp_path, monkeypatch):
+def test_write_promotion_audit_buckets_failed_rows_as_statistic_neither(
+    tmp_path, monkeypatch
+):
     """Bucketing bug fix (2026-08-16, issue #28, adjacent to H1/H4). Before this fix,
     _write_promotion_audit's exclusion loop bucketed statistic_valid=='failed' rows
     (H4's backtest_failed trials) into excluded['no_sharpe_value'] -- diverging from
@@ -935,32 +1228,60 @@ def test_write_promotion_audit_buckets_failed_rows_as_statistic_neither(tmp_path
     the success path runs and excluded_trial_counts is actually populated."""
     monkeypatch.setattr(rpr, "CAMPAIGN_STATE_PATH", tmp_path / "campaign_state.yaml")
     trials = [
-        {"trial_id": "run_a", "source": "backtest", "sharpe": 0.3,
-         "statistic_valid": "sharpe", "forecast_hash": "a"},
-        {"trial_id": "run_b", "source": "backtest", "sharpe": 0.5,
-         "statistic_valid": "sharpe", "forecast_hash": "b"},
-        {"trial_id": "run_failed", "source": "backtest_failed", "sharpe": None,
-         "statistic_valid": "failed", "forecast_hash": "c"},
+        {
+            "trial_id": "run_a",
+            "source": "backtest",
+            "sharpe": 0.3,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "a",
+        },
+        {
+            "trial_id": "run_b",
+            "source": "backtest",
+            "sharpe": 0.5,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "b",
+        },
+        {
+            "trial_id": "run_failed",
+            "source": "backtest_failed",
+            "sharpe": None,
+            "statistic_valid": "failed",
+            "forecast_hash": "c",
+        },
     ]
     (tmp_path / "campaign_state.yaml").write_text(
-        yaml.safe_dump({"trial_sharpes": trials, "runs": []}), encoding="utf-8")
+        yaml.safe_dump({"trial_sharpes": trials, "runs": []}), encoding="utf-8"
+    )
 
     run_dir = tmp_path / "runs" / "run_test"
     (run_dir / "artifacts").mkdir(parents=True)
     (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
-        yaml.safe_dump({"hypothesis_id": "TEST"}), encoding="utf-8")
-    (run_dir / "artifacts" / "protocol_result.yaml").write_text(yaml.safe_dump({
-        "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.4}},
-        "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 0.0}},
-    }), encoding="utf-8")
+        yaml.safe_dump({"hypothesis_id": "TEST"}), encoding="utf-8"
+    )
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.4}},
+                "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 0.0}},
+            }
+        ),
+        encoding="utf-8",
+    )
 
     rpr._write_promotion_audit(run_dir, "run_test")
-    audit = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+    audit = yaml.safe_load(
+        (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8")
+    )
 
     assert audit["excluded_trial_counts"]["statistic_neither"] == 1
     assert audit["excluded_trial_counts"]["no_sharpe_value"] == 0
-    assert audit["n_trials_used"] == 2  # unaffected: still only the two real sharpe rows.
-    assert audit["total_variants_tested"] == 3  # unaffected: all three rows still counted.
+    assert (
+        audit["n_trials_used"] == 2
+    )  # unaffected: still only the two real sharpe rows.
+    assert (
+        audit["total_variants_tested"] == 3
+    )  # unaffected: all three rows still counted.
 
 
 # ---------------------------------------------------------------------------
@@ -969,6 +1290,7 @@ def test_write_promotion_audit_buckets_failed_rows_as_statistic_neither(tmp_path
 # because the forecast_hash guard treated a designed no-config path as a
 # structural anomaly. See _forecast_hash_for_prescreen's own docstring.
 # ---------------------------------------------------------------------------
+
 
 def test_a_priori_power_route_records_a_trial_without_a_config(tmp_path):
     """The A8.6 power gate blocks at `validation`, BEFORE backtest_specification
@@ -980,7 +1302,9 @@ def test_a_priori_power_route_records_a_trial_without_a_config(tmp_path):
     missing = tmp_path / "candidate_strategy_config.json"
     assert not missing.exists()
 
-    h = rpr._forecast_hash_for_prescreen("insufficient_power_a_priori", missing, "run_060")
+    h = rpr._forecast_hash_for_prescreen(
+        "insufficient_power_a_priori", missing, "run_060"
+    )
     assert h is None, (
         "an a-priori-power trial has no config to hash; the row must record "
         "forecast_hash=None explicitly rather than raising or omitting the field"
@@ -1004,6 +1328,9 @@ def test_a_priori_route_still_hashes_when_a_config_does_exist(tmp_path):
     cfg = tmp_path / "candidate_strategy_config.json"
     cfg.write_text(json.dumps({"b": 2, "a": 1}), encoding="utf-8")
     h = rpr._forecast_hash_for_prescreen("insufficient_power_a_priori", cfg, "run_061")
-    assert h == hashlib.sha256(
-        json.dumps({"a": 1, "b": 2}, sort_keys=True).encode("utf-8")).hexdigest()
-
+    assert (
+        h
+        == hashlib.sha256(
+            json.dumps({"a": 1, "b": 2}, sort_keys=True).encode("utf-8")
+        ).hexdigest()
+    )

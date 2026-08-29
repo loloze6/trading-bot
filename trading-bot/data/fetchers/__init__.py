@@ -15,9 +15,9 @@ Base class (for writing new fetchers):
     from data.fetchers import BaseFetcher
 """
 
-from data.fetchers.base_fetcher        import BaseFetcher
-from data.fetchers.ccxt_fetcher        import CcxtFetcher, HistoricalDataFetcher
-from data.fetchers.fear_greed_fetcher  import FearGreedFetcher
+from data.fetchers.base_fetcher import BaseFetcher
+from data.fetchers.ccxt_fetcher import CcxtFetcher, HistoricalDataFetcher
+from data.fetchers.fear_greed_fetcher import FearGreedFetcher
 from data.fetchers.funding_rate_fetcher import FundingRateFetcher
 from data.fetchers.whale_footprint_fetcher import (
     ReservedDataError,
@@ -27,7 +27,7 @@ from data.fetchers.whale_footprint_fetcher import (
 __all__ = [
     "BaseFetcher",
     "CcxtFetcher",
-    "HistoricalDataFetcher",   # backward-compatibility alias
+    "HistoricalDataFetcher",  # backward-compatibility alias
     "FearGreedFetcher",
     "FundingRateFetcher",
     "WhaleFootprintFetcher",

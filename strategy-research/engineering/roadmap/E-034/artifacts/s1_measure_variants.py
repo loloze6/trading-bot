@@ -13,6 +13,7 @@ Run from strategy-research/:
 
 Read-only. Does not touch local_data/holdout_sealed/ (never globbed).
 """
+
 from __future__ import annotations
 
 import glob
@@ -42,13 +43,19 @@ def main():
     #        (attempt_1_blocked/ copies are a separate, superseded attempt of
     #        the same run and are reported but not double-counted).
     artifact_files = sorted((RUNS).glob("*/artifacts/expanded_hypothesis_card.yaml"))
-    blocked_files = sorted((RUNS).glob("*/attempt_*_blocked/expanded_hypothesis_card.yaml"))
+    blocked_files = sorted(
+        (RUNS).glob("*/attempt_*_blocked/expanded_hypothesis_card.yaml")
+    )
 
-    print(f"expanded_hypothesis_card.yaml under */artifacts/: {len(artifact_files)} files "
-          f"(denominator: {len(list(RUNS.glob('run_*')))} run dirs under runs/)")
-    print(f"expanded_hypothesis_card.yaml under */attempt_*_blocked/ (superseded attempts, "
-          f"not counted in the total below): {len(blocked_files)} files -> "
-          f"{[str(p.relative_to(RUNS)) for p in blocked_files]}")
+    print(
+        f"expanded_hypothesis_card.yaml under */artifacts/: {len(artifact_files)} files "
+        f"(denominator: {len(list(RUNS.glob('run_*')))} run dirs under runs/)"
+    )
+    print(
+        f"expanded_hypothesis_card.yaml under */attempt_*_blocked/ (superseded attempts, "
+        f"not counted in the total below): {len(blocked_files)} files -> "
+        f"{[str(p.relative_to(RUNS)) for p in blocked_files]}"
+    )
 
     total_variants = 0
     max_in_one_run = 0
@@ -64,7 +71,9 @@ def main():
         run_id = run_dir.name
         d = load_yaml(f)
         if not d or "__PARSE_ERROR__" in d:
-            parse_errors.append((run_id, d.get("__PARSE_ERROR__") if d else "empty file"))
+            parse_errors.append(
+                (run_id, d.get("__PARSE_ERROR__") if d else "empty file")
+            )
             continue
         variants = d.get("expanded_variants")
         if variants is None:
@@ -83,14 +92,20 @@ def main():
         per_run_rows.append((run_id, n))
 
     print()
-    print(f"MEASURED: total expanded_variants across {len(per_run_rows)} successfully-parsed "
-          f"runs (denominator: {len(artifact_files)} artifact files, "
-          f"{len(parse_errors)} parse errors, {len(no_key)} missing the key): {total_variants}")
+    print(
+        f"MEASURED: total expanded_variants across {len(per_run_rows)} successfully-parsed "
+        f"runs (denominator: {len(artifact_files)} artifact files, "
+        f"{len(parse_errors)} parse errors, {len(no_key)} missing the key): {total_variants}"
+    )
     print(f"MEASURED: max variants in a single run: {max_in_one_run} ({max_run})")
-    print(f"MEASURED: variant item shapes (type name -> count of items, "
-          f"denominator {total_variants} total items): {shapes}")
-    print(f"MEASURED: keys seen across all dict-shaped variants (union, informational): "
-          f"{sorted(dict_keys_seen)}")
+    print(
+        f"MEASURED: variant item shapes (type name -> count of items, "
+        f"denominator {total_variants} total items): {shapes}"
+    )
+    print(
+        f"MEASURED: keys seen across all dict-shaped variants (union, informational): "
+        f"{sorted(dict_keys_seen)}"
+    )
     if parse_errors:
         print(f"PARSE ERRORS: {parse_errors}")
     if no_key:
@@ -107,9 +122,11 @@ def main():
             if "variants_not_pursued" in text:
                 hits.append(str(p.relative_to(RUNS)))
     print()
-    print(f"MEASURED: files under runs/ containing the literal string "
-          f"'variants_not_pursued' (denominator: all .yaml/.yml/.json/.md files under runs/): "
-          f"{len(hits)} -> {hits}")
+    print(
+        f"MEASURED: files under runs/ containing the literal string "
+        f"'variants_not_pursued' (denominator: all .yaml/.yml/.json/.md files under runs/): "
+        f"{len(hits)} -> {hits}"
+    )
 
     # --- 3. run_019 spot check: is the chosen variant named anywhere?
     print()
@@ -120,15 +137,23 @@ def main():
     for v in ehc.get("expanded_variants", []):
         print(f"  - {v!r}")
     vd = load_yaml(r19 / "validation_decision.yaml")
-    print(f"run_019 validation_decision.yaml keys: {sorted(vd.keys()) if isinstance(vd, dict) else vd}")
+    print(
+        f"run_019 validation_decision.yaml keys: {sorted(vd.keys()) if isinstance(vd, dict) else vd}"
+    )
     bs_path = r19 / "backtest_spec.yaml"
     if not bs_path.exists():
         bs_path = r19 / "backtest_spec.yaml"
-    bs = load_yaml(r19 / "backtest_spec.yaml") if (r19 / "backtest_spec.yaml").exists() else None
+    bs = (
+        load_yaml(r19 / "backtest_spec.yaml")
+        if (r19 / "backtest_spec.yaml").exists()
+        else None
+    )
     print(f"run_019 backtest_spec.yaml present: {bs is not None}")
     if bs:
         print(f"run_019 backtest_spec.yaml keys: {sorted(bs.keys())}")
-        print(f"run_019 backtest_spec.yaml config_rationale: {bs.get('config_rationale')}")
+        print(
+            f"run_019 backtest_spec.yaml config_rationale: {bs.get('config_rationale')}"
+        )
 
     # --- 4. cross-run: which runs have BOTH >1 variant AND a backtest_spec.yaml,
     #        and whether hypothesis_claim/config_choice text in config_rationale
@@ -142,8 +167,10 @@ def main():
         spec_path = RUNS / run_id / "artifacts" / "backtest_spec.yaml"
         if not spec_path.exists():
             continue
-        print(f"{run_id}: {n} variants, backtest_spec.yaml exists -> inspect manually "
-              f"(listed for S1 report, not auto-verdicted)")
+        print(
+            f"{run_id}: {n} variants, backtest_spec.yaml exists -> inspect manually "
+            f"(listed for S1 report, not auto-verdicted)"
+        )
 
 
 if __name__ == "__main__":

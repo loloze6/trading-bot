@@ -53,22 +53,26 @@ from typing import ClassVar
 import pandas as pd
 import pytest
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent      # trading-bot/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent  # trading-bot/
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config.settings import ConfigManager         # noqa: E402
-from core import launcher as launcher_mod         # noqa: E402
-from core.backtester import BacktestEngine        # noqa: E402
-from data.data_manager import DataManager         # noqa: E402
+from config.settings import ConfigManager  # noqa: E402
+from core import launcher as launcher_mod  # noqa: E402
+from core.backtester import BacktestEngine  # noqa: E402
+from data.data_manager import DataManager  # noqa: E402
 
 KRAKEN_BTC_CACHE = PROJECT_ROOT / "local_data" / "kraken_BTCUSD_1h.csv"
 BINANCE_BTC_CACHE = PROJECT_ROOT / "local_data" / "BTCUSDT_1h.csv"
 # A kraken run's funding feed routes to the krakenfutures venue (spot kraken has
 # no funding endpoint), so the cache slot it would look for is
 # krakenfutures_BTCUSD_funding_1h -- not the old venue-blind kraken name.
-KRAKENFUTURES_BTC_FUNDING_CACHE = PROJECT_ROOT / "local_data" / "krakenfutures_BTCUSD_funding_1h.csv"
-_RUN_BACKTEST_CONFIG = PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_check_config.json"
+KRAKENFUTURES_BTC_FUNDING_CACHE = (
+    PROJECT_ROOT / "local_data" / "krakenfutures_BTCUSD_funding_1h.csv"
+)
+_RUN_BACKTEST_CONFIG = (
+    PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_check_config.json"
+)
 # fix/feed-dependency-safety Step 1: this fixture declares no aux-feed-consuming
 # component, unlike _RUN_BACKTEST_CONFIG above (which loads
 # FearGreedContrarianComponent). T-12 below blanks FEED_REGISTRY to isolate the
@@ -83,7 +87,9 @@ _RUN_BACKTEST_CONFIG = PROJECT_ROOT / "tests" / "fixtures" / "warmup_prefetch_ch
 # to exactly 120: a real trade open at the final bar makes
 # TradingBot._close_all_positions_at_end() append one more bar_state row at that
 # same timestamp (verified empirically, pre-existing and unrelated to this branch).
-_NO_AUX_FEED_CONFIG = PROJECT_ROOT / "tests" / "fixtures" / "no_aux_feed_check_config.json"
+_NO_AUX_FEED_CONFIG = (
+    PROJECT_ROOT / "tests" / "fixtures" / "no_aux_feed_check_config.json"
+)
 
 WINDOW_START = "2022-01-01"
 WINDOW_END = "2022-01-05"
@@ -146,9 +152,12 @@ def _launcher(trading_section, tmp_path):
 # Engine -> data layer
 # ---------------------------------------------------------------------------
 
+
 def test_engine_forwards_the_configured_exchange_to_the_data_layer():
     dm = _RecordingDataManager()
-    _engine(dm, exchange="kraken").load_data(start_date=WINDOW_START, end_date=WINDOW_END)
+    _engine(dm, exchange="kraken").load_data(
+        start_date=WINDOW_START, end_date=WINDOW_END
+    )
     assert dm.exchange_arg == "kraken"
 
 
@@ -201,6 +210,7 @@ def test_kraken_cache_is_reachable_through_the_backtest_engine():
 # config.json -> TradingParams
 # ---------------------------------------------------------------------------
 
+
 def test_absent_exchange_key_resolves_to_binance(tmp_path):
     params = _launcher({"symbols": ["BTCUSDT"]}, tmp_path)._read_trading_params()
     assert params.exchange == "binance"
@@ -230,6 +240,7 @@ def test_a_bogus_exchange_exits_loudly_instead_of_fetching_nothing(tmp_path, cap
 # Launcher -> engine
 # ---------------------------------------------------------------------------
 
+
 class _RecordingEngine:
     """Stands in for BacktestEngine; records its construction kwargs."""
 
@@ -246,7 +257,8 @@ class _RecordingEngine:
 
     def load_data(self, **kwargs):
         self.historical_data[self._symbols[0]] = pd.DataFrame(
-            {"timestamp": [pd.Timestamp("2024-04-01")], "close": [1.0]})
+            {"timestamp": [pd.Timestamp("2024-04-01")], "close": [1.0]}
+        )
 
     def simulate_on_loaded_data(self):
         pass
@@ -259,6 +271,7 @@ def simulate_with(monkeypatch, tmp_path):
         monkeypatch.setattr(launcher_mod, "BacktestEngine", _RecordingEngine)
         _launcher(trading_section, tmp_path).simulate()
         return _RecordingEngine.kwargs.get("exchange", ABSENT)
+
     return _run
 
 
@@ -314,12 +327,14 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
 
     source = (PROJECT_ROOT / "core" / "launcher.py").read_text(encoding="utf-8")
     launcher_class = next(
-        node for node in ast.parse(source).body
+        node
+        for node in ast.parse(source).body
         if isinstance(node, ast.ClassDef) and node.name == "Launcher"
     )
 
     sites = [
-        node for node in ast.walk(launcher_class)
+        node
+        for node in ast.walk(launcher_class)
         if isinstance(node, ast.Call)
         and isinstance(node.func, ast.Name)
         and node.func.id == "BacktestEngine"
@@ -328,7 +343,8 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
 
     for site in sites:
         forwarded = [
-            kw for kw in site.keywords
+            kw
+            for kw in site.keywords
             if kw.arg == "exchange" and ast.unparse(kw.value) == "params.exchange"
         ]
         assert forwarded, (
@@ -341,13 +357,17 @@ def test_every_launcher_mode_forwards_the_configured_exchange():
 # TradingParams dataclass contract (T-04)
 # ---------------------------------------------------------------------------
 
+
 def test_trading_params_exchange_defaults_to_binance():
     """Dataclass contract pin (M2): TradingParams.exchange's own default must
     stay 'binance'. run_backtest always resolves and passes exchange=
     explicitly (E2), so without this pin a default-flip here (launcher.py:41)
     is a dead mutation nothing else would catch."""
     params = launcher_mod.TradingParams(
-        symbols=["BTCUSDT"], interval=3600, check_interval=3600, test_mode=True,
+        symbols=["BTCUSDT"],
+        interval=3600,
+        check_interval=3600,
+        test_mode=True,
     )
     assert params.exchange == "binance"
 
@@ -362,6 +382,7 @@ def test_trading_params_exchange_defaults_to_binance():
 # to try -- `exchange` is passed as an argument, bypassing config entirely).
 # BacktestEngine is monkeypatched to a recording stub so no real fetch or
 # strategy run happens.
+
 
 class _RecordingRunBacktestEngine:
     """Stands in for BacktestEngine inside run_backtest(): records
@@ -379,7 +400,8 @@ class _RecordingRunBacktestEngine:
 
     def load_data(self, **kwargs):
         self.historical_data[self._symbols[0]] = pd.DataFrame(
-            {"timestamp": [pd.Timestamp("2024-04-01")], "close": [1.0]})
+            {"timestamp": [pd.Timestamp("2024-04-01")], "close": [1.0]}
+        )
 
     def simulate_on_loaded_data(self):
         pass
@@ -391,14 +413,18 @@ def run_backtest_with(monkeypatch, tmp_path):
         _RecordingRunBacktestEngine.kwargs = {}
         monkeypatch.setattr(launcher_mod, "BacktestEngine", _RecordingRunBacktestEngine)
         from core.launcher import run_backtest
+
         run_backtest(
             config_path=str(_RUN_BACKTEST_CONFIG),
-            symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+            symbol="BTCUSDT",
+            start="2024-01-01",
+            end="2024-01-02",
             results_root=str(tmp_path / "results"),
             trades_log_file=str(tmp_path / "trades.json"),
             **kwargs,
         )
         return _RecordingRunBacktestEngine.kwargs.get("exchange", ABSENT)
+
     return _run
 
 
@@ -423,7 +449,9 @@ def test_run_backtest_bogus_exchange_exits_loudly(monkeypatch, tmp_path, caplog)
     ):
         run_backtest(
             config_path=str(_RUN_BACKTEST_CONFIG),
-            symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+            symbol="BTCUSDT",
+            start="2024-01-01",
+            end="2024-01-02",
             results_root=str(tmp_path / "results"),
             trades_log_file=str(tmp_path / "trades.json"),
             exchange="krakn",
@@ -445,20 +473,25 @@ def test_run_backtest_forwards_the_resolved_exchange_to_the_engine():
 
     source = (PROJECT_ROOT / "core" / "launcher.py").read_text(encoding="utf-8")
     run_backtest_fn = next(
-        node for node in ast.parse(source).body
+        node
+        for node in ast.parse(source).body
         if isinstance(node, ast.FunctionDef) and node.name == "run_backtest"
     )
 
     sites = [
-        node for node in ast.walk(run_backtest_fn)
+        node
+        for node in ast.walk(run_backtest_fn)
         if isinstance(node, ast.Call)
         and isinstance(node.func, ast.Name)
         and node.func.id == "BacktestEngine"
     ]
-    assert len(sites) == 1, f"expected 1 BacktestEngine call site in run_backtest, found {len(sites)}"
+    assert len(sites) == 1, (
+        f"expected 1 BacktestEngine call site in run_backtest, found {len(sites)}"
+    )
 
     forwarded = [
-        kw for kw in sites[0].keywords
+        kw
+        for kw in sites[0].keywords
         if kw.arg == "exchange" and ast.unparse(kw.value) == "params.exchange"
     ]
     assert forwarded, (
@@ -471,6 +504,7 @@ def test_run_backtest_forwards_the_resolved_exchange_to_the_engine():
 # run_backtest() end-to-end (T-12, T-13) -- real engine, real caches,
 # gap-free window so a pure read never triggers a remote top-up / re-save.
 # ---------------------------------------------------------------------------
+
 
 class _NoNetworkSocket:
     """Raises at construction -- no real connection attempt is ever made, not
@@ -505,11 +539,15 @@ def test_run_backtest_kraken_price_path_is_pure_and_completes(monkeypatch, tmp_p
     monkeypatch.setattr(feed_registry_mod, "FEED_REGISTRY", {})
 
     kraken_sha_before = _sha256(KRAKEN_BTC_CACHE)
-    binance_sha_before = _sha256(BINANCE_BTC_CACHE) if BINANCE_BTC_CACHE.exists() else None
+    binance_sha_before = (
+        _sha256(BINANCE_BTC_CACHE) if BINANCE_BTC_CACHE.exists() else None
+    )
 
     run_dir = run_backtest(
         config_path=str(_NO_AUX_FEED_CONFIG),
-        symbol="BTCUSD", start=WINDOW_START, end=WINDOW_END,
+        symbol="BTCUSD",
+        start=WINDOW_START,
+        end=WINDOW_END,
         results_root=str(tmp_path / "results"),
         trades_log_file=str(tmp_path / "trades.json"),
         exchange="kraken",
@@ -567,7 +605,9 @@ def test_run_backtest_kraken_aux_feed_fails_loud(block_network, monkeypatch, tmp
 
     def redirected(symbols, start, end, data_dir, exchange="binance"):
         seen_data_dirs.append(data_dir)
-        return real_factory(symbols, start, end, data_dir=str(funding_dir), exchange=exchange)
+        return real_factory(
+            symbols, start, end, data_dir=str(funding_dir), exchange=exchange
+        )
 
     monkeypatch.setitem(feed_registry_mod.FEED_REGISTRY, "funding_rate", redirected)
 
@@ -581,24 +621,31 @@ def test_run_backtest_kraken_aux_feed_fails_loud(block_network, monkeypatch, tmp
     with pytest.raises(AuxFeedVenueError):
         run_backtest(
             config_path=str(_RUN_BACKTEST_CONFIG),
-            symbol="BTCUSD", start=WINDOW_START, end=WINDOW_END,
+            symbol="BTCUSD",
+            start=WINDOW_START,
+            end=WINDOW_END,
             results_root=str(tmp_path / "results"),
             trades_log_file=str(tmp_path / "trades.json"),
             exchange="kraken",
         )
 
     assert _sha256(KRAKEN_BTC_CACHE) == kraken_sha_before
-    assert [Path(d).resolve() for d in seen_data_dirs] == [(PROJECT_ROOT / "local_data").resolve()]
-    assert not (funding_dir / "krakenfutures_BTCUSD_funding_1h.csv").exists(), \
+    assert [Path(d).resolve() for d in seen_data_dirs] == [
+        (PROJECT_ROOT / "local_data").resolve()
+    ]
+    assert not (funding_dir / "krakenfutures_BTCUSD_funding_1h.csv").exists(), (
         "no funding stub CSV should be written"
+    )
     if real_funding_mtime is not None:
-        assert KRAKENFUTURES_BTC_FUNDING_CACHE.stat().st_mtime_ns == real_funding_mtime, \
-            "real capture touched -- redirect not effective"
+        assert (
+            KRAKENFUTURES_BTC_FUNDING_CACHE.stat().st_mtime_ns == real_funding_mtime
+        ), "real capture touched -- redirect not effective"
 
 
 # ---------------------------------------------------------------------------
 # run_backtest() config-fallback arm (T-16)
 # ---------------------------------------------------------------------------
+
 
 def test_run_backtest_exchange_none_falls_back_to_config(monkeypatch, tmp_path):
     """T-16: exchange=None (the default) must fall through to config.json's
@@ -616,7 +663,9 @@ def test_run_backtest_exchange_none_falls_back_to_config(monkeypatch, tmp_path):
     _RecordingRunBacktestEngine.kwargs = {}
     run_backtest(
         config_path=str(_RUN_BACKTEST_CONFIG),
-        symbol="BTCUSD", start="2024-01-01", end="2024-01-02",
+        symbol="BTCUSD",
+        start="2024-01-01",
+        end="2024-01-02",
         results_root=str(tmp_path / "results"),
         trades_log_file=str(tmp_path / "trades.json"),
     )

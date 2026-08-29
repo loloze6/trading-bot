@@ -23,6 +23,7 @@ local_data caches (hence slow + cache-guarded):
 SLOW INTEGRATION TEST. Run explicitly:
   pytest tests/test_model_funding_bit_identical.py -v -m slow
 """
+
 import sys
 from pathlib import Path
 
@@ -50,13 +51,14 @@ SYMBOL = "BTCUSDT"
 
 _NEEDED_1H = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
 _NEEDED_1D = ("BTCUSDT_1d.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
-_CACHE_SKIP = (
-    cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_1H, IDENT_START, IDENT_END)
-    or cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_1D, WIRE_START, WIRE_END)
-)
+_CACHE_SKIP = cache_skip_reason(
+    PROJECT_ROOT / "local_data", _NEEDED_1H, IDENT_START, IDENT_END
+) or cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_1D, WIRE_START, WIRE_END)
 pytestmark = [
     pytest.mark.slow,
-    pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),
+    pytest.mark.skipif(
+        _CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"
+    ),
 ]
 
 
@@ -78,7 +80,9 @@ def _run(tmp_dir, **kwargs) -> Path:
 
 @pytest.fixture(scope="module")
 def ident_default(tmp_path_factory):
-    return _run(tmp_path_factory.mktemp("ident_default"), start=IDENT_START, end=IDENT_END)
+    return _run(
+        tmp_path_factory.mktemp("ident_default"), start=IDENT_START, end=IDENT_END
+    )
 
 
 @pytest.fixture(scope="module")
@@ -91,7 +95,9 @@ def ident_explicit_false(tmp_path_factory):
     )
 
 
-def test_default_omitted_matches_explicit_false_metrics(ident_default, ident_explicit_false):
+def test_default_omitted_matches_explicit_false_metrics(
+    ident_default, ident_explicit_false
+):
     """model_funding omitted (default) must yield a BYTE-IDENTICAL metrics.json to
     model_funding=False -- compares raw file text, not parsed dicts."""
     assert (ident_default / "metrics.json").read_text() == (
@@ -99,7 +105,9 @@ def test_default_omitted_matches_explicit_false_metrics(ident_default, ident_exp
     ).read_text()
 
 
-def test_default_omitted_matches_explicit_false_portfolio_states(ident_default, ident_explicit_false):
+def test_default_omitted_matches_explicit_false_portfolio_states(
+    ident_default, ident_explicit_false
+):
     """Same byte-identity contract for the per-bar portfolio_states.csv -- the series
     the funding hook would perturb if the off path were not a true no-op."""
     assert (ident_default / "portfolio_states.csv").read_text() == (
@@ -183,9 +191,13 @@ def test_model_funding_moves_value_in_the_funding_direction(wire_off, wire_on):
     i = diverged[0]
 
     pos = wire_off["previous_allocation"].iloc[i]
-    assert pos != 0.0, "first-divergence bar holds no position; funding cannot have moved it"
+    assert pos != 0.0, (
+        "first-divergence bar holds no position; funding cannot have moved it"
+    )
 
-    series = build_daily_funding_series([SYMBOL], str(PROJECT_ROOT / "local_data"), WIRE_START, WIRE_END)[SYMBOL]
+    series = build_daily_funding_series(
+        [SYMBOL], str(PROJECT_ROOT / "local_data"), WIRE_START, WIRE_END
+    )[SYMBOL]
     day = pd.Timestamp(wire_off["timestamp"].iloc[i]).normalize()
     f_bar = series.get(day)
     assert f_bar is not None and f_bar != 0.0, (

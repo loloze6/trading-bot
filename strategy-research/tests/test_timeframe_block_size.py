@@ -18,6 +18,7 @@ timeframe, so nobody meets this again on the next one.
 These tests exist so that promise is mechanically enforced rather than
 remembered.
 """
+
 import sys
 from pathlib import Path
 
@@ -35,6 +36,7 @@ from timeframe import bars_per_day, timeframe_seconds  # noqa: E402
 #    If these ever change, the derivation has changed MEANING, not just form.
 # ---------------------------------------------------------------------------
 
+
 def test_reproduces_the_two_known_good_values():
     assert bars_per_day("1h") == 24, "1h must still be 24 bars/day"
     assert bars_per_day("1d") == 1, "a daily bar is already one episode"
@@ -44,15 +46,19 @@ def test_reproduces_the_two_known_good_values():
 # 2. Timeframes never used before are correct on FIRST use -- the whole point.
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("timeframe,expected", [
-    ("4h", 6),      # the run_060 case
-    ("30m", 48),
-    ("15m", 96),
-    ("5m", 288),
-    ("1m", 1440),
-    ("2h", 12),
-    ("12h", 2),
-])
+
+@pytest.mark.parametrize(
+    "timeframe,expected",
+    [
+        ("4h", 6),  # the run_060 case
+        ("30m", 48),
+        ("15m", 96),
+        ("5m", 288),
+        ("1m", 1440),
+        ("2h", 12),
+        ("12h", 2),
+    ],
+)
 def test_covers_timeframes_that_have_never_been_run(timeframe, expected):
     assert bars_per_day(timeframe) == expected
 
@@ -68,6 +74,7 @@ def test_timeframes_of_a_day_or_longer_floor_at_one():
 # ---------------------------------------------------------------------------
 # 3. Unknown input RAISES. The silent default is the bug's actual mechanism.
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("bad", ["banana", "", "h", "1y", "4 hours", None, [], 0, -5])
 def test_unparseable_timeframe_raises_rather_than_assuming_1h(bad):
@@ -93,6 +100,7 @@ _ALL_TIMEFRAMES = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "12h", "1d"]
 @pytest.mark.parametrize("timeframe", _ALL_TIMEFRAMES)
 def test_a86_gate_agrees_with_the_shared_derivation(timeframe):
     import run_phase1_research as rpr
+
     assert rpr._a86_block_size(timeframe) == bars_per_day(timeframe)
 
 
@@ -100,11 +108,22 @@ def test_a86_gate_agrees_with_the_shared_derivation(timeframe):
 def test_power_check_mirror_agrees_with_the_shared_derivation(timeframe, tmp_path):
     import yaml
     import power_check as pc
+
     card = tmp_path / "hypothesis_card.yaml"
-    card.write_text(yaml.safe_dump({"power_parameters": {
-        "activation_rate": 0.125, "plausible_ic_upper": 0.1,
-        "n_bars": 8820, "n_symbols": 2, "is_market_wide": False,
-    }}), encoding="utf-8")
+    card.write_text(
+        yaml.safe_dump(
+            {
+                "power_parameters": {
+                    "activation_rate": 0.125,
+                    "plausible_ic_upper": 0.1,
+                    "n_bars": 8820,
+                    "n_symbols": 2,
+                    "is_market_wide": False,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     r = pc.run_power_check(card, timeframe=timeframe)
     assert r["block_size"] == bars_per_day(timeframe)
 
@@ -114,16 +133,22 @@ def test_prescreen_no_longer_carries_its_own_fallback():
     for EVERY non-1h/1d timeframe -- right for 4h by coincidence, but 8x too
     small for 30m and 48x for 5m, inflating n_eff toward false significance."""
     src = (_SR / "tools" / "prescreen_signal.py").read_text(encoding="utf-8")
-    assert "block_size = bars_per_day(timeframe)" in src, "must use the shared derivation"
-    assert "block_size = max(_BLOCK_SIZE_1H // 4, 6)" not in src, "the guessed fallback must be gone"
+    assert "block_size = bars_per_day(timeframe)" in src, (
+        "must use the shared derivation"
+    )
+    assert "block_size = max(_BLOCK_SIZE_1H // 4, 6)" not in src, (
+        "the guessed fallback must be gone"
+    )
 
 
 # ---------------------------------------------------------------------------
 # 5. The reported bug itself, end to end, with run_060's real numbers.
 # ---------------------------------------------------------------------------
 
+
 def test_run_060_case_is_power_adequate_not_killed(tmp_path):
     import math
+
     active_n = 0.125 * 8820 * 2
     assert active_n == 2205
 

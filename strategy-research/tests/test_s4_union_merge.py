@@ -52,6 +52,7 @@ corrupt the file (it wasn't, on retest), but because its safety here is
 contingent on a file layout nobody has committed to preserving, and it has
 one demonstrated silent-loss mode already.
 """
+
 import subprocess
 import sys
 from pathlib import Path
@@ -69,7 +70,9 @@ REAL_CAMPAIGN_STATE = REPO_ROOT / "campaign_record" / "campaign_state.yaml"
 
 
 def _git(repo, *args, check=True):
-    return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, check=check)
+    return subprocess.run(
+        ["git", *args], cwd=repo, capture_output=True, text=True, check=check
+    )
 
 
 def _write_state(path: Path, data: dict) -> None:
@@ -109,10 +112,24 @@ def divergent_branches_realistic(tmp_path):
     _git(work, "checkout", "-b", "master-continues")
     d = yaml.safe_load(state_path.read_text())
     d["runs"].append("run_master_new")
-    d["altitude_history"].append({"run": "run_master_new", "altitude": "parameter",
-                                   "dimension": "x", "family": "f", "outcome": "improved"})
-    d["trial_sharpes"].append({"trial_id": "run_master_new", "source": "backtest",
-                                "sharpe": 0.3, "statistic_valid": "sharpe", "forecast_hash": "hM"})
+    d["altitude_history"].append(
+        {
+            "run": "run_master_new",
+            "altitude": "parameter",
+            "dimension": "x",
+            "family": "f",
+            "outcome": "improved",
+        }
+    )
+    d["trial_sharpes"].append(
+        {
+            "trial_id": "run_master_new",
+            "source": "backtest",
+            "sharpe": 0.3,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "hM",
+        }
+    )
     d["updated_at"] = "2026-08-16T09:00:00Z"
     _write_state(state_path, d)
     _git(work, "commit", "-am", "master run")
@@ -121,10 +138,24 @@ def divergent_branches_realistic(tmp_path):
     _git(work, "checkout", "-b", "fork-branch")
     d = yaml.safe_load(state_path.read_text())
     d["runs"].append("run_d_new")
-    d["altitude_history"].append({"run": "run_d_new", "altitude": "parameter",
-                                   "dimension": "y", "family": "g", "outcome": "no_improvement"})
-    d["trial_sharpes"].append({"trial_id": "run_d_new", "source": "backtest",
-                                "sharpe": 0.15, "statistic_valid": "sharpe", "forecast_hash": "hD"})
+    d["altitude_history"].append(
+        {
+            "run": "run_d_new",
+            "altitude": "parameter",
+            "dimension": "y",
+            "family": "g",
+            "outcome": "no_improvement",
+        }
+    )
+    d["trial_sharpes"].append(
+        {
+            "trial_id": "run_d_new",
+            "source": "backtest",
+            "sharpe": 0.15,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "hD",
+        }
+    )
     d["updated_at"] = "2026-08-16T10:00:00Z"
     _write_state(state_path, d)
     _git(work, "commit", "-am", "fork run")
@@ -133,7 +164,9 @@ def divergent_branches_realistic(tmp_path):
     return work, state_path
 
 
-def test_concurrent_trial_additions_conflict_not_silently_drop(divergent_branches_realistic):
+def test_concurrent_trial_additions_conflict_not_silently_drop(
+    divergent_branches_realistic,
+):
     """Finding 1: plain git merge on concurrent campaign_state.yaml edits CONFLICTS
     (exit != 0) rather than silently picking one side. Both sides' new entries
     must be visibly present (inside conflict markers) -- proving neither is
@@ -141,7 +174,9 @@ def test_concurrent_trial_additions_conflict_not_silently_drop(divergent_branche
     work, state_path = divergent_branches_realistic
 
     result = _git(work, "merge", "fork-branch", "--no-edit", check=False)
-    assert result.returncode != 0, "expected a real merge conflict on concurrent trial additions"
+    assert result.returncode != 0, (
+        "expected a real merge conflict on concurrent trial additions"
+    )
 
     conflicted = state_path.read_text()
     assert "run_master_new" in conflicted
@@ -151,7 +186,9 @@ def test_concurrent_trial_additions_conflict_not_silently_drop(divergent_branche
     _git(work, "merge", "--abort")
 
 
-def test_manual_union_resolution_keeps_both_sides_and_has_no_duplicates(divergent_branches_realistic):
+def test_manual_union_resolution_keeps_both_sides_and_has_no_duplicates(
+    divergent_branches_realistic,
+):
     """Finding 2: the correct resolution procedure -- keep every list entry from
     BOTH sides (never git checkout --ours/--theirs on this file) -- produces the
     full union with no duplicate trial_ids, verified against the mechanical
@@ -163,16 +200,36 @@ def test_manual_union_resolution_keeps_both_sides_and_has_no_duplicates(divergen
     resolved = dict(base)
     resolved["runs"] = base["runs"] + ["run_master_new", "run_d_new"]
     resolved["altitude_history"] = base["altitude_history"] + [
-        {"run": "run_master_new", "altitude": "parameter", "dimension": "x",
-         "family": "f", "outcome": "improved"},
-        {"run": "run_d_new", "altitude": "parameter", "dimension": "y",
-         "family": "g", "outcome": "no_improvement"},
+        {
+            "run": "run_master_new",
+            "altitude": "parameter",
+            "dimension": "x",
+            "family": "f",
+            "outcome": "improved",
+        },
+        {
+            "run": "run_d_new",
+            "altitude": "parameter",
+            "dimension": "y",
+            "family": "g",
+            "outcome": "no_improvement",
+        },
     ]
     resolved["trial_sharpes"] = base["trial_sharpes"] + [
-        {"trial_id": "run_master_new", "source": "backtest", "sharpe": 0.3,
-         "statistic_valid": "sharpe", "forecast_hash": "hM"},
-        {"trial_id": "run_d_new", "source": "backtest", "sharpe": 0.15,
-         "statistic_valid": "sharpe", "forecast_hash": "hD"},
+        {
+            "trial_id": "run_master_new",
+            "source": "backtest",
+            "sharpe": 0.3,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "hM",
+        },
+        {
+            "trial_id": "run_d_new",
+            "source": "backtest",
+            "sharpe": 0.15,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "hD",
+        },
     ]
     resolved["updated_at"] = "2026-08-16T10:00:00Z"
     _write_state(state_path, resolved)
@@ -180,15 +237,23 @@ def test_manual_union_resolution_keeps_both_sides_and_has_no_duplicates(divergen
     _git(work, "commit", "--no-edit")
 
     merged = yaml.safe_load(state_path.read_text())
-    assert merged["runs"][-2:] == ["run_master_new", "run_d_new"]  # full union, both sides
+    assert merged["runs"][-2:] == [
+        "run_master_new",
+        "run_d_new",
+    ]  # full union, both sides
     altitudes = [a["run"] for a in merged["altitude_history"][-2:]]
-    assert altitudes == ["run_master_new", "run_d_new"]  # full union here too, not just runs/trial_sharpes
+    assert altitudes == [
+        "run_master_new",
+        "run_d_new",
+    ]  # full union here too, not just runs/trial_sharpes
     trial_ids = [t["trial_id"] for t in merged["trial_sharpes"]]
     assert trial_ids[-2:] == ["run_master_new", "run_d_new"]
     ds.check_no_duplicate_trial_ids(merged["trial_sharpes"])  # must not raise
 
 
-def test_merge_union_handles_realistic_concurrent_touches_correctly(divergent_branches_realistic):
+def test_merge_union_handles_realistic_concurrent_touches_correctly(
+    divergent_branches_realistic,
+):
     """Finding 3 (corrects an earlier, wrong finding -- see module docstring):
     against the REAL file's key order and the real co-touch pattern (runs +
     altitude_history + trial_sharpes all touched together, exactly as
@@ -198,7 +263,9 @@ def test_merge_union_handles_realistic_concurrent_touches_correctly(divergent_br
     3-key fixture with zero separation between fields, not a property of this
     file."""
     work, state_path = divergent_branches_realistic
-    (work / ".gitattributes").write_text("campaign_state.yaml merge=union\n", encoding="utf-8")
+    (work / ".gitattributes").write_text(
+        "campaign_state.yaml merge=union\n", encoding="utf-8"
+    )
     _git(work, "add", ".gitattributes")
     _git(work, "commit", "-m", "attr")
 
@@ -213,7 +280,9 @@ def test_merge_union_handles_realistic_concurrent_touches_correctly(divergent_br
     assert trial_ids == ["run_master_new", "run_d_new"]
 
 
-def test_merge_union_silently_drops_one_side_of_a_scalar_conflict(divergent_branches_realistic):
+def test_merge_union_silently_drops_one_side_of_a_scalar_conflict(
+    divergent_branches_realistic,
+):
     """Finding 4: merge=union's real, verified wrinkle. Both sides change the
     SAME scalar line (`updated_at`) to different values -- union keeps both as
     a duplicate YAML key with no conflict signal, and PyYAML's safe_load
@@ -223,14 +292,20 @@ def test_merge_union_silently_drops_one_side_of_a_scalar_conflict(divergent_bran
     prevent -- the reason merge=union is not adopted, even though finding 3
     shows it doesn't corrupt the file under tested conditions."""
     work, state_path = divergent_branches_realistic
-    (work / ".gitattributes").write_text("campaign_state.yaml merge=union\n", encoding="utf-8")
+    (work / ".gitattributes").write_text(
+        "campaign_state.yaml merge=union\n", encoding="utf-8"
+    )
     _git(work, "add", ".gitattributes")
     _git(work, "commit", "-m", "attr")
 
     raw_before_parse = None
     _git(work, "merge", "fork-branch", "--no-edit", check=False)
     raw_before_parse = state_path.read_text()
-    assert raw_before_parse.count("updated_at:") == 2  # duplicate key, both values present in the text
+    assert (
+        raw_before_parse.count("updated_at:") == 2
+    )  # duplicate key, both values present in the text
 
     merged = yaml.safe_load(state_path.read_text())
-    assert merged["updated_at"] == "2026-08-16T10:00:00Z"  # last-wins: master's value silently lost
+    assert (
+        merged["updated_at"] == "2026-08-16T10:00:00Z"
+    )  # last-wins: master's value silently lost

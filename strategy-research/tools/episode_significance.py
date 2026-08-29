@@ -70,7 +70,10 @@ _SIG_THRESHOLD = 0.10
 # Episode construction
 # ---------------------------------------------------------------------------
 
-def identify_episodes(records: list, gap_bars: int = _DEFAULT_GAP_BARS, era_of=None) -> list:
+
+def identify_episodes(
+    records: list, gap_bars: int = _DEFAULT_GAP_BARS, era_of=None
+) -> list:
     """
     records: list of per-bar dicts (order = original bar sequence) each with an
         "active" bool key (as produced by prescreen_signal._extract_forecasts).
@@ -111,6 +114,7 @@ def _pooled_ic(records: list, indices: list):
 # Episode block bootstrap
 # ---------------------------------------------------------------------------
 
+
 def episode_block_bootstrap(
     records: list,
     episodes: list,
@@ -131,9 +135,12 @@ def episode_block_bootstrap(
     if point_ic is None:
         return {
             "method": "episode_block_bootstrap",
-            "pooled_ic": None, "p_value": 1.0,
-            "ci_low": None, "ci_high": None,
-            "n_episodes": n_ep, "n_resamples": n_resamples,
+            "pooled_ic": None,
+            "p_value": 1.0,
+            "ci_low": None,
+            "ci_high": None,
+            "n_episodes": n_ep,
+            "n_resamples": n_resamples,
             "significant": False,
         }
 
@@ -148,9 +155,12 @@ def episode_block_bootstrap(
     if not boot_ics:
         return {
             "method": "episode_block_bootstrap",
-            "pooled_ic": round(point_ic, 6), "p_value": 1.0,
-            "ci_low": None, "ci_high": None,
-            "n_episodes": n_ep, "n_resamples": n_resamples,
+            "pooled_ic": round(point_ic, 6),
+            "p_value": 1.0,
+            "ci_low": None,
+            "ci_high": None,
+            "n_episodes": n_ep,
+            "n_resamples": n_resamples,
             "significant": False,
         }
 
@@ -181,6 +191,7 @@ def episode_block_bootstrap(
 # Main entry point
 # ---------------------------------------------------------------------------
 
+
 def compute_a851a_significance(
     records: list,
     era_of=None,
@@ -204,12 +215,15 @@ def compute_a851a_significance(
     if density_pct >= density_fallback_pct:
         ic_active = _pooled_ic(records, active_idx_all)
         ic_values_for_sig = [ic_active] if ic_active is not None else []
-        sig = prescreen_signal._block_adjusted_significance(ic_values_for_sig, n_active, block_size)
+        sig = prescreen_signal._block_adjusted_significance(
+            ic_values_for_sig, n_active, block_size
+        )
         return {
             "method": "block_24_dense_fallback",
             "pooled_ic": sig["pooled_ic"],
             "p_value": sig["p_value"],
-            "ci_low": None, "ci_high": None,
+            "ci_low": None,
+            "ci_high": None,
             "n_episodes": None,
             "density_pct": round(density_pct, 2),
             "significant": sig["significant"],
@@ -224,14 +238,17 @@ def compute_a851a_significance(
             "method": "episode_bootstrap_insufficient_n",
             "pooled_ic": round(ic_active, 6) if ic_active is not None else None,
             "p_value": None,
-            "ci_low": None, "ci_high": None,
+            "ci_low": None,
+            "ci_high": None,
             "n_episodes": n_episodes,
             "density_pct": round(density_pct, 2),
             "significant": False,
             "disposition_note": "insufficient_sample_inconclusive",
         }
 
-    result = episode_block_bootstrap(records, episodes, n_resamples=n_resamples, seed=seed)
+    result = episode_block_bootstrap(
+        records, episodes, n_resamples=n_resamples, seed=seed
+    )
     result["density_pct"] = round(density_pct, 2)
     return result
 
@@ -264,7 +281,11 @@ def per_era_report(records: list, era_of, gap_bars: int = _DEFAULT_GAP_BARS) -> 
         # Python list, not a tuple. Stringify at this output boundary only — all
         # internal grouping above still uses the raw (hashable) era_of() return
         # value, which is correct and unaffected.
-        key = "::".join(str(part) for part in era_id) if isinstance(era_id, tuple) else str(era_id)
+        key = (
+            "::".join(str(part) for part in era_id)
+            if isinstance(era_id, tuple)
+            else str(era_id)
+        )
         report[key] = {
             "ic_active_bars": round(ic, 6) if ic is not None else None,
             "active_n_bars": len(idxs),

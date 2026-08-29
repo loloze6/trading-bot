@@ -8,6 +8,7 @@ Covers the two fail-loud contracts that do not need a real backtest run:
   * simulate_on_loaded_data refuses to run with model_funding on but no daily funding
     series for a symbol, rather than silently reporting a fee-only run as funding-costed.
 """
+
 import json
 import logging
 import sys
@@ -24,7 +25,9 @@ if str(PROJECT_ROOT) not in sys.path:
 def _engine(**kwargs):
     from core.backtester import BacktestEngine
 
-    return BacktestEngine(logger=logging.getLogger("test_model_funding_guard"), **kwargs)
+    return BacktestEngine(
+        logger=logging.getLogger("test_model_funding_guard"), **kwargs
+    )
 
 
 # --- interval guard ---

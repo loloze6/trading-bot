@@ -3,16 +3,20 @@ from typing import Dict, Any, List, Tuple
 import pandas as pd
 import logging
 
-from strategies.registry import apply_transform_pipeline, _load_class, component_effective_lookback
+from strategies.registry import (
+    apply_transform_pipeline,
+    _load_class,
+    component_effective_lookback,
+)
 from strategies.strategy_base import MarketRegime, SubStrategyComponent
 
 logger = logging.getLogger("trading_bot")
 
 _REGIME_MAP = {
-    "trending":       MarketRegime.TRENDING,
+    "trending": MarketRegime.TRENDING,
     "mean_reversion": MarketRegime.MEAN_REVERSION,
-    "chop":           MarketRegime.CHOP,
-    "unknown":        MarketRegime.UNKNOWN,
+    "chop": MarketRegime.CHOP,
+    "unknown": MarketRegime.UNKNOWN,
 }
 
 
@@ -24,8 +28,8 @@ class ConfigDrivenRegimeEngine:
     """
 
     def __init__(self, config: Dict[str, Any]):
-        self._mode      = config.get("mode", "threshold_rules")
-        self.min_score  = config.get("min_score", 0.35)
+        self._mode = config.get("mode", "threshold_rules")
+        self.min_score = config.get("min_score", 0.35)
         self.min_margin = config.get("min_margin", 0.05)
 
         self._veto_cfgs = config.get("vetoes", [])
@@ -40,7 +44,7 @@ class ConfigDrivenRegimeEngine:
 
         # Validate veto IDs reference declared components
         veto_ids = {v["id"] for v in self._veto_cfgs}
-        missing  = veto_ids - self._components.keys()
+        missing = veto_ids - self._components.keys()
         if missing:
             raise ValueError(f"Veto references undeclared component IDs: {missing}")
 
@@ -48,8 +52,7 @@ class ConfigDrivenRegimeEngine:
         # Detector components have no transforms; score-mode regime components do and share
         # the same history deques, so their transform minimums must also be accounted for.
         base_periods = {
-            cid: comp.get_required_periods()
-            for cid, comp in self._components.items()
+            cid: comp.get_required_periods() for cid, comp in self._components.items()
         }
         # Score mode: each regime's scoring components may declare transforms
         for rcfg in config.get("regimes", {}).values():
@@ -66,19 +69,19 @@ class ConfigDrivenRegimeEngine:
         self._veto_bars: Dict[str, int] = {v["id"]: 0 for v in self._veto_cfgs}
 
         # threshold_rules config
-        self._rules          = config.get("rules", [])
+        self._rules = config.get("rules", [])
         self._default_regime = config.get("default_regime", "unknown")
 
         # score mode config
         self._regime_names = list(config.get("regimes", {}).keys())
-        self._regime_cfgs  = config.get("regimes", {})
+        self._regime_cfgs = config.get("regimes", {})
 
         # State
-        self.current_regime         = MarketRegime.UNKNOWN
-        self.previous_regime        = MarketRegime.UNKNOWN
+        self.current_regime = MarketRegime.UNKNOWN
+        self.previous_regime = MarketRegime.UNKNOWN
         self.bars_in_current_regime = 0
-        self.regime_change_count    = 0
-        self._data: pd.DataFrame    = None
+        self.regime_change_count = 0
+        self._data: pd.DataFrame = None
 
     # ------------------------------------------------------------------
     def update(self, data: pd.DataFrame) -> None:
@@ -94,7 +97,9 @@ class ConfigDrivenRegimeEngine:
         return all(len(h) >= self.lookback for h in self._history.values())
 
     def get_required_periods(self) -> int:
-        return max((c.get_required_periods() for c in self._components.values()), default=0)
+        return max(
+            (c.get_required_periods() for c in self._components.values()), default=0
+        )
 
     def required_feeds(self) -> dict[str, tuple[str, ...]]:
         """Feed name -> sorted tuple of consuming component names (declared via
@@ -115,12 +120,16 @@ class ConfigDrivenRegimeEngine:
 
         # Vetoes — evaluated first regardless of mode
         for veto in self._veto_cfgs:
-            cid   = veto["id"]
-            val   = apply_transform_pipeline(self._series(cid), veto["transforms"], self._data)
+            cid = veto["id"]
+            val = apply_transform_pipeline(
+                self._series(cid), veto["transforms"], self._data
+            )
             fired = all(self._compare(val, rule) for rule in veto["rules"])
             self._veto_bars[cid] = self._veto_bars[cid] + 1 if fired else 0
             if self._veto_bars[cid] >= veto.get("consecutive_bars", 1):
-                self.current_regime = _REGIME_MAP.get(veto["result"], MarketRegime.UNKNOWN)
+                self.current_regime = _REGIME_MAP.get(
+                    veto["result"], MarketRegime.UNKNOWN
+                )
                 self._tick(debug)
                 debug["forced_by_veto"] = veto["result"]
                 return self.current_regime, debug
@@ -139,7 +148,11 @@ class ConfigDrivenRegimeEngine:
     # threshold_rules mode
     # ------------------------------------------------------------------
     def _classify_threshold_rules(self) -> MarketRegime:
-        raw = {cid: list(self._history[cid])[-1] for cid in self._components if self._history[cid]}
+        raw = {
+            cid: list(self._history[cid])[-1]
+            for cid in self._components
+            if self._history[cid]
+        }
         for rule in self._rules:
             if self._matches_rule(rule, raw):
                 return _REGIME_MAP.get(rule["regime"], MarketRegime.UNKNOWN)
@@ -155,11 +168,16 @@ class ConfigDrivenRegimeEngine:
     def _compare(val: float, cond: Dict) -> bool:
         """Evaluate one op/value condition against a scalar. Used by both vetoes and rules."""
         op = cond["op"]
-        if op == "gte":     return val >= cond["value"]
-        if op == "gt":      return val >  cond["value"]
-        if op == "lte":     return val <= cond["value"]
-        if op == "lt":      return val <  cond["value"]
-        if op == "between": return cond["low"] <= val <= cond["high"]
+        if op == "gte":
+            return val >= cond["value"]
+        if op == "gt":
+            return val > cond["value"]
+        if op == "lte":
+            return val <= cond["value"]
+        if op == "lt":
+            return val < cond["value"]
+        if op == "between":
+            return cond["low"] <= val <= cond["high"]
         return False
 
     @staticmethod
@@ -174,15 +192,18 @@ class ConfigDrivenRegimeEngine:
         scores: Dict[str, float] = {}
         for rname, rcfg in self._regime_cfgs.items():
             total_w = sum(c["weight"] for c in rcfg["components"])
-            score   = sum(
-                c["weight"] * apply_transform_pipeline(self._series(c["id"]), c["transforms"], self._data)
+            score = sum(
+                c["weight"]
+                * apply_transform_pipeline(
+                    self._series(c["id"]), c["transforms"], self._data
+                )
                 for c in rcfg["components"]
             )
             scores[rname] = score / total_w if total_w > 0 else 0.0
 
-        winner      = max(scores, key=scores.get)
+        winner = max(scores, key=scores.get)
         sorted_vals = sorted(scores.values(), reverse=True)
-        margin      = sorted_vals[0] - sorted_vals[1] if len(sorted_vals) > 1 else 1.0
+        margin = sorted_vals[0] - sorted_vals[1] if len(sorted_vals) > 1 else 1.0
 
         debug["scores"] = {r: round(s, 4) for r, s in scores.items()}
         debug["winner"] = winner
@@ -200,14 +221,16 @@ class ConfigDrivenRegimeEngine:
         for rname, rcfg in self._regime_cfgs.items():
             product = 1.0
             for c in rcfg["components"]:
-                val     = apply_transform_pipeline(self._series(c["id"]), c["transforms"], self._data)
+                val = apply_transform_pipeline(
+                    self._series(c["id"]), c["transforms"], self._data
+                )
                 divisor = c.get("divisor", 1.0)
                 product *= (val / divisor) if divisor != 0.0 else val
             scores[rname] = product
 
-        winner      = max(scores, key=scores.get)
+        winner = max(scores, key=scores.get)
         sorted_vals = sorted(scores.values(), reverse=True)
-        margin      = sorted_vals[0] - sorted_vals[1] if len(sorted_vals) > 1 else 1.0
+        margin = sorted_vals[0] - sorted_vals[1] if len(sorted_vals) > 1 else 1.0
 
         debug["scores"] = {r: round(s, 4) for r, s in scores.items()}
         debug["winner"] = winner
@@ -226,7 +249,7 @@ class ConfigDrivenRegimeEngine:
             self.bars_in_current_regime += 1
         else:
             self.bars_in_current_regime = 1
-            self.regime_change_count   += 1
+            self.regime_change_count += 1
             logger.debug(
                 f"REGIME CHANGE #{self.regime_change_count}: "
                 f"{self.previous_regime.value} → {self.current_regime.value}"

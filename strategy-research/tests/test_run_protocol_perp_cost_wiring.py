@@ -21,6 +21,7 @@ IMPORTANT: test_perp_rate_changes_engine_output is a SLOW INTEGRATION TEST
 (runs the real backtest engine twice). Run explicitly:
   pytest tests/test_run_protocol_perp_cost_wiring.py -v -m slow
 """
+
 import json
 import sys
 from pathlib import Path
@@ -42,24 +43,31 @@ FIXTURE_PATH = TBOT_ROOT / "tests" / "fixtures" / "warmup_prefetch_reference.jso
 # Unit: product selection, bps -> fraction conversion
 # ---------------------------------------------------------------------------
 
+
 def test_default_product_is_spot():
-    cost_model = {"fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
-                  "perp": {"fee_rate_bps": {"default": 5.0}}}
+    cost_model = {
+        "fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
+        "perp": {"fee_rate_bps": {"default": 5.0}},
+    }
     # product omitted -> must read the top-level (spot) block, not perp.
     assert rp._commission_rate_for_symbol("BTCUSDT", cost_model) == pytest.approx(0.008)
 
 
 def test_perp_product_reads_perp_block():
-    cost_model = {"fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
-                  "perp": {"fee_rate_bps": {"default": 5.0}}}
+    cost_model = {
+        "fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
+        "perp": {"fee_rate_bps": {"default": 5.0}},
+    }
     assert rp._commission_rate_for_symbol(
         "BTCUSDT", cost_model, product="perp"
     ) == pytest.approx(0.0005)
 
 
 def test_perp_product_falls_back_to_perp_default_not_spot_default():
-    cost_model = {"fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
-                  "perp": {"fee_rate_bps": {"default": 5.0}}}
+    cost_model = {
+        "fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
+        "perp": {"fee_rate_bps": {"default": 5.0}},
+    }
     # ETHUSDT has no perp-specific entry -> must fall back to perp's OWN
     # default (5.0), never leak into the spot block's default (10.0).
     assert rp._commission_rate_for_symbol(
@@ -93,10 +101,14 @@ def test_real_cost_model_perp_block_matches_kraken_perp_taker():
 # CLI: --cost-product flag
 # ---------------------------------------------------------------------------
 
+
 def test_cli_cost_product_defaults_to_spot():
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cost-product", default="spot", choices=["spot", "perp"], dest="cost_product")
+    parser.add_argument(
+        "--cost-product", default="spot", choices=["spot", "perp"], dest="cost_product"
+    )
     args = parser.parse_args([])
     assert args.cost_product == "spot"
 
@@ -104,6 +116,7 @@ def test_cli_cost_product_defaults_to_spot():
 # ---------------------------------------------------------------------------
 # Integration: the perp rate actually reaches the engine
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.slow
 @pytest.mark.real_repo_readonly
@@ -135,7 +148,9 @@ def test_perp_rate_changes_engine_output(tmp_path):
             commission_rate=commission_rate,
             # Keep the tracker's interim trades.json inside tmp_path; without this
             # it falls back to the shared trading-bot/results/trades.json (D4).
-            trades_log_file=str(tmp_path / f"interim_trades_{Path(results_root).name}.json"),
+            trades_log_file=str(
+                tmp_path / f"interim_trades_{Path(results_root).name}.json"
+            ),
         )
         with open(Path(run_dir) / "metrics.json", encoding="utf-8") as f:
             return json.load(f)["core"]
@@ -143,8 +158,11 @@ def test_perp_rate_changes_engine_output(tmp_path):
     spot_core = _run(tmp_path / "spot", commission_rate=spot_rate)
     perp_core = _run(tmp_path / "perp", commission_rate=perp_rate)
 
-    assert spot_core["trade_count"] == perp_core["trade_count"] == \
-        reference["expected"]["trade_count"]
+    assert (
+        spot_core["trade_count"]
+        == perp_core["trade_count"]
+        == reference["expected"]["trade_count"]
+    )
     # Cheaper (perp) rate -> less cost drag, less fees paid, on this fixture.
     assert perp_core["cost_drag_pct"] < spot_core["cost_drag_pct"], (
         f"cost_drag_pct did not decrease under the cheaper perp rate: "

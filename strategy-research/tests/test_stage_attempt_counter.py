@@ -41,6 +41,7 @@ SDK's internal message-streaming boundary, matching this suite's existing
 convention (test_k3_protocol_pinning.py's SDK-retry tests monkeypatch at the
 same `async_invoke_agent`/one-level-in boundary).
 """
+
 import sys
 from pathlib import Path
 
@@ -69,8 +70,12 @@ def _read_handoff(run_dir: Path, filename: str) -> dict:
     return yaml.safe_load((run_dir / "handoffs" / filename).read_text(encoding="utf-8"))
 
 
-def test_stage_attempt_counter_survives_reentry_without_refinements_used_changing(monkeypatch):
-    root = rpr.ROOT  # already sandboxed to a per-test tmp_path by conftest's autouse fixture
+def test_stage_attempt_counter_survives_reentry_without_refinements_used_changing(
+    monkeypatch,
+):
+    root = (
+        rpr.ROOT
+    )  # already sandboxed to a per-test tmp_path by conftest's autouse fixture
     run_dir = root / "runs" / "run_800"
     (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
     _write_handoff(run_dir, "synth_handoff.yaml")
@@ -78,17 +83,27 @@ def test_stage_attempt_counter_survives_reentry_without_refinements_used_changin
     # A synthetic stage, not one of the real routed ones -- default_next is a
     # TERMINAL_PREFIXES value so run_loop stops after exactly one stage per call,
     # without needing to satisfy the real routing graph's downstream stages.
-    monkeypatch.setitem(rpr.STAGE_CONFIGS, "synth_stage", {
-        "handoff": "synth_handoff.yaml", "default_next": "completed_rejected",
-    })
+    monkeypatch.setitem(
+        rpr.STAGE_CONFIGS,
+        "synth_stage",
+        {
+            "handoff": "synth_handoff.yaml",
+            "default_next": "completed_rejected",
+        },
+    )
 
     async def _noop_invoke(stage_name, run_id, retry_context=None):
         return
+
     monkeypatch.setattr(rpr, "async_invoke_agent", _noop_invoke)
 
     state = {
-        "run_id": "run_800", "status": "active", "pending_stage": "synth_stage",
-        "completed_stages": [], "flags": {}, "audit_log": {},
+        "run_id": "run_800",
+        "status": "active",
+        "pending_stage": "synth_stage",
+        "completed_stages": [],
+        "flags": {},
+        "audit_log": {},
         "counters": {"refinements_used": 0, "reruns_used": 0},
     }
     with open(run_dir / "pipeline_state.yaml", "w", encoding="utf-8") as f:
@@ -100,8 +115,9 @@ def test_stage_attempt_counter_survives_reentry_without_refinements_used_changin
     assert state["pending_stage"] == "completed_rejected"
     assert state["stage_attempts"] == {"synth_stage": 1}
     handoff = _read_handoff(run_dir, "synth_handoff.yaml")
-    assert handoff["injected_context"]["stage_attempt"] == "0", \
+    assert handoff["injected_context"]["stage_attempt"] == "0", (
         "first entry must read 0, matching refinements_used's own default -- bit-identity for the non-crash path"
+    )
 
     # Simulate a crash-resume: a fresh process re-enters the SAME stage with
     # counters.refinements_used UNCHANGED -- exactly RUNBOOK section 4.5's
@@ -112,16 +128,20 @@ def test_stage_attempt_counter_survives_reentry_without_refinements_used_changin
     rpr.run_loop("run_800")
 
     state = _read_state(run_dir)
-    assert state["stage_attempts"] == {"synth_stage": 2}, \
+    assert state["stage_attempts"] == {"synth_stage": 2}, (
         "counter must advance on re-entry even though refinements_used never changed"
+    )
     handoff = _read_handoff(run_dir, "synth_handoff.yaml")
-    assert handoff["injected_context"]["stage_attempt"] == "1", \
+    assert handoff["injected_context"]["stage_attempt"] == "1", (
         "second entry must get a DIFFERENT stage_attempt, or the audit_log key would collide and overwrite"
+    )
     # The old field is untouched -- still tracks refinements_used, still "0" both times.
     assert handoff["injected_context"]["refinement_attempt"] == "0"
 
 
-def test_run_claude_worker_keys_audit_log_on_stage_attempt_not_refinement_attempt(monkeypatch):
+def test_run_claude_worker_keys_audit_log_on_stage_attempt_not_refinement_attempt(
+    monkeypatch,
+):
     root = rpr.ROOT
     run_dir = root / "runs" / "run_801"
     (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
@@ -131,10 +151,12 @@ def test_run_claude_worker_keys_audit_log_on_stage_attempt_not_refinement_attemp
     async def _empty_query(*args, **kwargs):
         return
         yield  # noqa -- makes this an async generator that yields zero messages
+
     monkeypatch.setattr(rpr, "query", _empty_query)
 
     handoff = {
-        "required_inputs": [], "optional_inputs": [],
+        "required_inputs": [],
+        "optional_inputs": [],
         # The two fields deliberately DIFFER, proving the audit_log key follows
         # stage_attempt (7), not the old refinement_attempt (0) -- if the fix
         # regressed to reading the old key, this assertion would catch it.
@@ -142,10 +164,13 @@ def test_run_claude_worker_keys_audit_log_on_stage_attempt_not_refinement_attemp
     }
 
     import asyncio
+
     asyncio.run(rpr.run_claude_worker("hypothesis_generation", handoff, run_dir))
 
     state = _read_state(run_dir)
-    assert "hypothesis_generation_attempt_7" in state["audit_log"], \
+    assert "hypothesis_generation_attempt_7" in state["audit_log"], (
         f"expected key using stage_attempt=7, got keys: {list(state['audit_log'].keys())}"
-    assert "hypothesis_generation_attempt_0" not in state["audit_log"], \
+    )
+    assert "hypothesis_generation_attempt_0" not in state["audit_log"], (
         "must not have keyed on the old refinement_attempt value"
+    )

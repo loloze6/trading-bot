@@ -62,8 +62,11 @@ if __package__ in (None, ""):  # allow `python record_kraken_ws.py`
     from recorder.book_state import BookBook  # type: ignore
     from recorder.compaction import DEFAULT_LEVEL, sweep  # type: ignore
     from recorder.disk_guard import (  # type: ignore
-        DEFAULT_CHECK_INTERVAL_S, DEFAULT_MIN_FREE_GB, EXIT_DISK_GUARD_ABORT,
-        DiskGuard, GB,
+        DEFAULT_CHECK_INTERVAL_S,
+        DEFAULT_MIN_FREE_GB,
+        EXIT_DISK_GUARD_ABORT,
+        DiskGuard,
+        GB,
     )
     from recorder.journal import CoverageJournal  # type: ignore
     from recorder.shard_writer import ShardWriter, disk_symbol  # type: ignore
@@ -71,8 +74,11 @@ else:
     from .book_state import BookBook
     from .compaction import DEFAULT_LEVEL, sweep
     from .disk_guard import (
-        DEFAULT_CHECK_INTERVAL_S, DEFAULT_MIN_FREE_GB, EXIT_DISK_GUARD_ABORT,
-        DiskGuard, GB,
+        DEFAULT_CHECK_INTERVAL_S,
+        DEFAULT_MIN_FREE_GB,
+        EXIT_DISK_GUARD_ABORT,
+        DiskGuard,
+        GB,
     )
     from .journal import CoverageJournal
     from .shard_writer import ShardWriter, disk_symbol
@@ -91,8 +97,25 @@ WS_URL = "wss://ws.kraken.com/v2"
 #: Quote is USD, not USDT — a documented venue divergence, not a typo. WS v2 uses
 #: 'BTC/USD', not the legacy 'XBT' spelling.
 BREADTH_BASES = [
-    "BTC", "ETH", "XRP", "SOL", "ADA", "SUI", "ZEC", "DOGE", "XMR", "LTC",
-    "ONDO", "NEAR", "LINK", "TAO", "AVAX", "TRX", "AAVE", "INJ", "UNI",
+    "BTC",
+    "ETH",
+    "XRP",
+    "SOL",
+    "ADA",
+    "SUI",
+    "ZEC",
+    "DOGE",
+    "XMR",
+    "LTC",
+    "ONDO",
+    "NEAR",
+    "LINK",
+    "TAO",
+    "AVAX",
+    "TRX",
+    "AAVE",
+    "INJ",
+    "UNI",
 ]
 SYMBOLS = [f"{b}/USD" for b in BREADTH_BASES]
 
@@ -142,7 +165,9 @@ class Recorder:
         disk_probe=None,
     ):
         if book_mode not in BOOK_MODES:
-            raise ValueError(f"book_mode must be one of {BOOK_MODES}, got {book_mode!r}")
+            raise ValueError(
+                f"book_mode must be one of {BOOK_MODES}, got {book_mode!r}"
+            )
         if snapshot_interval_s <= 0:
             raise ValueError("snapshot_interval_s must be > 0")
         if disk_check_interval_s <= 0:
@@ -278,8 +303,11 @@ class Recorder:
             expected = len(self.symbols) * 2
             if self._acks >= expected and not self._subscription_logged:
                 self._subscription_logged = True
-                log.info("subscription complete: %d/%d (symbol, channel) acks",
-                         self._acks, expected)
+                log.info(
+                    "subscription complete: %d/%d (symbol, channel) acks",
+                    self._acks,
+                    expected,
+                )
 
     # -- disk guard --------------------------------------------------------
 
@@ -305,8 +333,11 @@ class Recorder:
             log.error("disk guard: flush failed during abort: %r", exc)
         self.journal.write("DISK_GUARD_ABORT", **reading.as_journal_fields())
         self._guard_abort = True
-        log.error("DISK GUARD ABORT: %s — flushed, attested, stopping (exit %d)",
-                  reading.summary(), EXIT_DISK_GUARD_ABORT)
+        log.error(
+            "DISK GUARD ABORT: %s — flushed, attested, stopping (exit %d)",
+            reading.summary(),
+            EXIT_DISK_GUARD_ABORT,
+        )
         self._stop.set()
         return False
 
@@ -355,8 +386,10 @@ class Recorder:
                 STREAM_FOR_CHANNEL["book"],
                 disk_symbol(symbol),
                 json.dumps(payload, separators=(",", ":")),
-                extra={"synth": "book_snapshot",
-                       "interval_s": self.snapshot_interval_s},
+                extra={
+                    "synth": "book_snapshot",
+                    "interval_s": self.snapshot_interval_s,
+                },
             )
             st.mark_emitted()
             written += 1
@@ -471,8 +504,12 @@ class Recorder:
                 await ws.send(json.dumps(sub))
             self._acks = 0
             self._subscription_logged = False
-            log.info("ws connected, subscriptions sent: channels=book,trade,instrument "
-                     "symbols=%d depth=%d", len(self.symbols), self.depth)
+            log.info(
+                "ws connected, subscriptions sent: channels=book,trade,instrument "
+                "symbols=%d depth=%d",
+                len(self.symbols),
+                self.depth,
+            )
 
             while not self._stop.is_set():
                 try:
@@ -490,8 +527,10 @@ class Recorder:
                         silent_s=time.monotonic() - self._last_frame_mono,
                         connection_id=self._connection_id,
                     )
-                    log.warning("ws silent for %.0fs — heartbeat watchdog fired",
-                                HEARTBEAT_TIMEOUT_S)
+                    log.warning(
+                        "ws silent for %.0fs — heartbeat watchdog fired",
+                        HEARTBEAT_TIMEOUT_S,
+                    )
                     await ws.close()
                     return
                 if isinstance(raw, bytes):
@@ -522,11 +561,17 @@ class Recorder:
         log.info(
             "recorder start: out=%s mode=%s%s symbols=%d depth=%d roll=%s compress=%s "
             "floor=%.2fGB %s",
-            self.out_dir, self.book_mode,
+            self.out_dir,
+            self.book_mode,
             f" interval={self.snapshot_interval_s}s"
-            if self.book_mode == MODE_SNAPSHOT else "",
-            len(self.symbols), self.depth, self.writer.roll, self.writer.compress,
-            self.guard.min_free_bytes / GB, boot.summary(),
+            if self.book_mode == MODE_SNAPSHOT
+            else "",
+            len(self.symbols),
+            self.depth,
+            self.writer.roll,
+            self.writer.compress,
+            self.guard.min_free_bytes / GB,
+            boot.summary(),
         )
         # Before the startup sweep, not after: compaction writes a `.part` file
         # the size of an hour of capture, so a boot that is already under the
@@ -541,9 +586,12 @@ class Recorder:
         # rather than surfacing an hour later.
         if self.writer.compress:
             try:
-                made = sweep(self.out_dir, self.writer.open_keys(),
-                             level=self.writer.compress_level,
-                             roll=self.writer.roll)
+                made = sweep(
+                    self.out_dir,
+                    self.writer.open_keys(),
+                    level=self.writer.compress_level,
+                    roll=self.writer.roll,
+                )
                 if made:
                     self.journal.write(
                         "RESUBSCRIBE",
@@ -554,7 +602,9 @@ class Recorder:
                     )
             except Exception as exc:  # noqa: BLE001 - surfaced, never swallowed
                 self.journal.write(
-                    "RECONNECT_ATTEMPT", attempt=-2, backoff_s=0,
+                    "RECONNECT_ATTEMPT",
+                    attempt=-2,
+                    backoff_s=0,
                     note=f"STARTUP COMPACTION FAILED, raw retained: {exc!r}",
                 )
                 raise
@@ -605,7 +655,9 @@ class Recorder:
             self.writer.close()
             for err in self.writer.compaction_errors():
                 self.journal.write(
-                    "RECONNECT_ATTEMPT", attempt=-2, backoff_s=0,
+                    "RECONNECT_ATTEMPT",
+                    attempt=-2,
+                    backoff_s=0,
                     note=f"COMPACTION FAILED, raw shard retained: {err!r}",
                 )
             self.journal.close()
@@ -634,11 +686,19 @@ async def selftest(timeout_s: float = 30.0, symbols: Optional[List[str]] = None)
     deadline = time.monotonic() + timeout_s
     try:
         async with websockets.connect(WS_URL, ping_interval=None, max_size=None) as ws:
-            await ws.send(json.dumps({
-                "method": "subscribe",
-                "params": {"channel": "book", "symbol": syms,
-                           "depth": BOOK_DEPTH, "snapshot": True},
-            }))
+            await ws.send(
+                json.dumps(
+                    {
+                        "method": "subscribe",
+                        "params": {
+                            "channel": "book",
+                            "symbol": syms,
+                            "depth": BOOK_DEPTH,
+                            "snapshot": True,
+                        },
+                    }
+                )
+            )
             while time.monotonic() < deadline and len(seen) < len(syms):
                 try:
                     raw = await asyncio.wait_for(
@@ -703,38 +763,60 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description="Kraken WS v2 forward recorder")
     ap.add_argument("mode", choices=["run", "selftest"])
     ap.add_argument("--out", default=str(DEFAULT_OUT), help="output directory")
-    ap.add_argument("--depth", type=int, default=BOOK_DEPTH, choices=[10, 25, 100, 500, 1000])
-    ap.add_argument("--timeout", type=float, default=30.0, help="selftest timeout (s)")
-    ap.add_argument("--duration", type=float, default=0.0,
-                    help="run mode: stop after N seconds (0 = forever)")
     ap.add_argument(
-        "--book-mode", choices=list(BOOK_MODES), default=MODE_DELTA,
-        help="delta (default, lossless: every book frame verbatim) or snapshot "
-             "(lossy: one synthesised full depth book per --snapshot-interval). "
-             "SNAPSHOT DISCARDS INTRA-INTERVAL BOOK HISTORY IRRECOVERABLY.",
+        "--depth", type=int, default=BOOK_DEPTH, choices=[10, 25, 100, 500, 1000]
+    )
+    ap.add_argument("--timeout", type=float, default=30.0, help="selftest timeout (s)")
+    ap.add_argument(
+        "--duration",
+        type=float,
+        default=0.0,
+        help="run mode: stop after N seconds (0 = forever)",
     )
     ap.add_argument(
-        "--snapshot-interval", type=float, default=DEFAULT_SNAPSHOT_INTERVAL_S,
+        "--book-mode",
+        choices=list(BOOK_MODES),
+        default=MODE_DELTA,
+        help="delta (default, lossless: every book frame verbatim) or snapshot "
+        "(lossy: one synthesised full depth book per --snapshot-interval). "
+        "SNAPSHOT DISCARDS INTRA-INTERVAL BOOK HISTORY IRRECOVERABLY.",
+    )
+    ap.add_argument(
+        "--snapshot-interval",
+        type=float,
+        default=DEFAULT_SNAPSHOT_INTERVAL_S,
         help="seconds between synthesised book snapshots (--book-mode snapshot)",
     )
-    ap.add_argument("--roll", choices=["hour", "day"], default="hour",
-                    help="shard roll period (default hour)")
-    ap.add_argument("--no-compress", action="store_true",
-                    help="do not zstd-compact closed shards")
+    ap.add_argument(
+        "--roll",
+        choices=["hour", "day"],
+        default="hour",
+        help="shard roll period (default hour)",
+    )
+    ap.add_argument(
+        "--no-compress", action="store_true", help="do not zstd-compact closed shards"
+    )
     ap.add_argument("--compress-level", type=int, default=DEFAULT_LEVEL)
     ap.add_argument(
-        "--min-free-gb", type=float, default=DEFAULT_MIN_FREE_GB,
+        "--min-free-gb",
+        type=float,
+        default=DEFAULT_MIN_FREE_GB,
         help=f"free-space floor in decimal GB (default {DEFAULT_MIN_FREE_GB}). On "
-             f"breach the recorder flushes, writes DISK_GUARD_ABORT to the coverage "
-             f"journal and exits {EXIT_DISK_GUARD_ABORT}. Cannot be disabled.",
+        f"breach the recorder flushes, writes DISK_GUARD_ABORT to the coverage "
+        f"journal and exits {EXIT_DISK_GUARD_ABORT}. Cannot be disabled.",
     )
     ap.add_argument(
-        "--disk-check-interval", type=float, default=DEFAULT_CHECK_INTERVAL_S,
+        "--disk-check-interval",
+        type=float,
+        default=DEFAULT_CHECK_INTERVAL_S,
         help=f"seconds between free-space checks while running "
-             f"(default {DEFAULT_CHECK_INTERVAL_S})",
+        f"(default {DEFAULT_CHECK_INTERVAL_S})",
     )
-    ap.add_argument("--log-file", default=None,
-                    help="append operational logging here as well as stderr")
+    ap.add_argument(
+        "--log-file",
+        default=None,
+        help="append operational logging here as well as stderr",
+    )
     args = ap.parse_args(argv)
 
     setup_logging(args.log_file)

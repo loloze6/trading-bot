@@ -43,15 +43,29 @@ else:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    ap = argparse.ArgumentParser(description="Append a supervisor record to the coverage journal")
+    ap = argparse.ArgumentParser(
+        description="Append a supervisor record to the coverage journal"
+    )
     ap.add_argument("mode", choices=["restart"])
     ap.add_argument("--out", default=str(DEFAULT_OUT))
-    ap.add_argument("--exit-code", type=int, required=True,
-                    help="exit code of the recorder process that just died")
-    ap.add_argument("--attempt", type=int, default=0,
-                    help="restart attempt number within the supervisor's window")
-    ap.add_argument("--backoff", type=float, default=0.0,
-                    help="seconds the supervisor will wait before relaunching")
+    ap.add_argument(
+        "--exit-code",
+        type=int,
+        required=True,
+        help="exit code of the recorder process that just died",
+    )
+    ap.add_argument(
+        "--attempt",
+        type=int,
+        default=0,
+        help="restart attempt number within the supervisor's window",
+    )
+    ap.add_argument(
+        "--backoff",
+        type=float,
+        default=0.0,
+        help="seconds the supervisor will wait before relaunching",
+    )
     ap.add_argument("--reason", default="", help="human-readable cause")
     args = ap.parse_args(argv)
 
@@ -67,7 +81,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         )
     finally:
         journal.close()
-    print(f"RESTART_BOUNDARY jseq={rec['jseq']} ts={rec['ts']} exit_code={args.exit_code}")
+    print(
+        f"RESTART_BOUNDARY jseq={rec['jseq']} ts={rec['ts']} exit_code={args.exit_code}"
+    )
     return 0
 
 

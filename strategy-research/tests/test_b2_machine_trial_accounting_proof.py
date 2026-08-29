@@ -1,4 +1,4 @@
-﻿"""
+"""
 B2 -- machine-local trial-accounting proof (CLAUDE.fork.md backlog item 5, Mac half).
 
 Runs the REAL tools/run_protocol.py subprocess via
@@ -82,6 +82,7 @@ Run it:  B2_MACHINE_PROOF=1 pytest tests/test_b2_machine_trial_accounting_proof.
 (from strategy-research/ -- the suite is CWD-sensitive; the fixture also chdirs there
 so _resolve_tbot_python resolves ../.venv/bin/python regardless.)
 """
+
 import asyncio
 import hashlib
 import json
@@ -95,12 +96,14 @@ from pathlib import Path
 import pytest
 import yaml
 
-_SR = Path(__file__).resolve().parent.parent          # strategy-research/
-_REPO = _SR.parent                                     # repo root
+_SR = Path(__file__).resolve().parent.parent  # strategy-research/
+_REPO = _SR.parent  # repo root
 _TBOT = _REPO / "trading-bot"
 _RESULTS = _TBOT / "results"
 _KRAKEN_CACHE = _TBOT / "local_data" / "kraken_BTCUSD_1h.csv"
 _REAL_CAMPAIGN_STATE = _SR / "campaign_record" / "campaign_state.yaml"
+
+
 # WINDOWS PORT (Jeremy, 2026-08-28): was hardcoded to the POSIX layout
 # `_REPO/.venv/bin/python`, so on Windows -- where the interpreter is
 # `venv/Scripts/python.exe` -- the precondition below skipped the whole proof
@@ -122,6 +125,7 @@ def _tbot_interpreter_or_none():
         return None
     finally:
         os.chdir(_cwd)
+
 
 for _p in (_SR / "tools", _SR / "workflow"):
     if str(_p) not in sys.path:
@@ -158,7 +162,8 @@ def _snapshot_bytes(d: Path) -> dict[str, bytes]:
         return {}
     return {
         str(p.relative_to(d)): p.read_bytes()
-        for p in sorted(d.rglob("*")) if p.is_file()
+        for p in sorted(d.rglob("*"))
+        if p.is_file()
     }
 
 
@@ -167,12 +172,12 @@ def _restore_snapshot(d: Path, before: dict[str, bytes]) -> bool:
     created -> delete, modified/appended -> rewrite prior bytes, deleted -> recreate.
     Prunes any empty directory the run created. Returns True iff d is now byte-identical."""
     after = _snapshot_bytes(d)
-    for rel in set(after) - set(before):          # created
+    for rel in set(after) - set(before):  # created
         (d / rel).unlink()
-    for rel in set(before) & set(after):          # possibly modified/appended
+    for rel in set(before) & set(after):  # possibly modified/appended
         if after[rel] != before[rel]:
             (d / rel).write_bytes(before[rel])
-    for rel in set(before) - set(after):          # deleted
+    for rel in set(before) - set(after):  # deleted
         (d / rel).parent.mkdir(parents=True, exist_ok=True)
         (d / rel).write_bytes(before[rel])
     for p in sorted(d.rglob("*"), reverse=True):
@@ -214,7 +219,9 @@ def _link_dir(link: Path, target: Path) -> None:
     # for path resolution and needs no elevation.
     result = subprocess.run(
         ["cmd", "/c", "mklink", "/J", str(link), str(target)],
-        capture_output=True, text=True, errors="replace",  # console may not be UTF-8 (e.g. cp1252)
+        capture_output=True,
+        text=True,
+        errors="replace",  # console may not be UTF-8 (e.g. cp1252)
     )
     if result.returncode != 0 or not link.exists():
         raise OSError(
@@ -246,7 +253,9 @@ def sandbox(tmp_path, monkeypatch):
     root = tmp_path / "sr_root"
     (root / "config").mkdir(parents=True)
     _link_dir(root / "tools", _SR / "tools")
-    shutil.copyfile(_SR / "config" / "cost_model.yaml", root / "config" / "cost_model.yaml")
+    shutil.copyfile(
+        _SR / "config" / "cost_model.yaml", root / "config" / "cost_model.yaml"
+    )
     _link_dir(tmp_path / "trading-bot", _TBOT)
 
     run_dir = root / "runs" / _RUN_ID
@@ -255,7 +264,9 @@ def sandbox(tmp_path, monkeypatch):
     config_path = artifacts / "candidate_strategy_config.json"
     shutil.copyfile(_TBOT / "strategy_config.json", config_path)
     (artifacts / "validation_protocol.yaml").write_text(
-        yaml.safe_dump({"decision_rules": {}, "required_evidence": []}), encoding="utf-8")
+        yaml.safe_dump({"decision_rules": {}, "required_evidence": []}),
+        encoding="utf-8",
+    )
 
     protocol = {
         "symbols": ["BTCUSD"],
@@ -272,15 +283,18 @@ def sandbox(tmp_path, monkeypatch):
             "kill_median_sharpe_lt": -1,
         },
     }
-    (run_dir / "protocol.json").write_text(json.dumps(protocol, indent=2), encoding="utf-8")
+    (run_dir / "protocol.json").write_text(
+        json.dumps(protocol, indent=2), encoding="utf-8"
+    )
 
     campaign_state = root / "campaign_state.yaml"
     campaign_state.write_text(yaml.safe_dump({"trial_sharpes": []}), encoding="utf-8")
 
     monkeypatch.setattr(rpr, "ROOT", root)
     monkeypatch.setattr(rpr, "CAMPAIGN_STATE_PATH", campaign_state)
-    monkeypatch.setattr(rpr, "_resolve_protocol_path",
-                        lambda run_dir, run_id: run_dir / "protocol.json")
+    monkeypatch.setattr(
+        rpr, "_resolve_protocol_path", lambda run_dir, run_id: run_dir / "protocol.json"
+    )
     monkeypatch.chdir(str(_SR))
     return run_dir, config_path, campaign_state
 
@@ -290,9 +304,11 @@ def test_completed_real_backtest_lands_one_self_consistent_trial_row(sandbox):
         pytest.skip(f"prerequisite missing: kraken cache {_KRAKEN_CACHE}")
     _interpreter = _tbot_interpreter_or_none()
     if _interpreter is None:
-        pytest.skip("prerequisite missing: no runnable trading-bot interpreter "
-                    "(_resolve_tbot_python found neither venv/Scripts/python.exe "
-                    "nor .venv/bin/python)")
+        pytest.skip(
+            "prerequisite missing: no runnable trading-bot interpreter "
+            "(_resolve_tbot_python found neither venv/Scripts/python.exe "
+            "nor .venv/bin/python)"
+        )
 
     run_dir, config_path, campaign_state = sandbox
 
@@ -305,24 +321,34 @@ def test_completed_real_backtest_lands_one_self_consistent_trial_row(sandbox):
         asyncio.run(rpr.run_tool_worker("protocol_execution", _RUN_ID))
 
         # --- Independently recompute the row from the run's OWN protocol_summary.json ---
-        summary = json.loads((run_dir / "protocol_summary.json").read_text(encoding="utf-8"))
+        summary = json.loads(
+            (run_dir / "protocol_summary.json").read_text(encoding="utf-8")
+        )
         results_list = summary.get("results") or []
         pss = summary.get("per_symbol_summary") or {}
         diag = (summary.get("hypothesis_verdict") or {}).get("diagnostics") or {}
 
         # Sanity (lead's request): both windows genuinely executed end to end, not a
         # short-circuit -- two result entries and two populated per-window bars.csv.
-        assert len(results_list) == 2, f"expected 2 window results, got {len(results_list)}"
+        assert len(results_list) == 2, (
+            f"expected 2 window results, got {len(results_list)}"
+        )
 
         # Blocker 1: n_trades is the sum of results[].core.trade_count (the real total),
         # NOT per_symbol_summary (no such key) and NOT min_trade_count (a floor).
-        expected_n_trades = sum((r.get("core") or {}).get("trade_count", 0) for r in results_list)
+        expected_n_trades = sum(
+            (r.get("core") or {}).get("trade_count", 0) for r in results_list
+        )
         assert expected_n_trades > 0, (
             "Blocker 1: total trade_count is 0 -- the oracle cannot discriminate the "
             "n_trades bug from the fix at zero trades. The windows must produce trades."
         )
 
-        sharpes = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
+        sharpes = [
+            v.get("median_sharpe")
+            for v in pss.values()
+            if v.get("median_sharpe") is not None
+        ]
         expected_sharpe = round(statistics.median(sharpes), 4) if sharpes else None
         below_floor = diag.get("below_floor_pct", 0.0) or 0.0
         expected_expectancy = diag.get("per_trade_expectancy_bps")
@@ -333,25 +359,33 @@ def test_completed_real_backtest_lands_one_self_consistent_trial_row(sandbox):
         else:
             expected_stat = "neither"
 
-        canonical = json.dumps(json.loads(config_path.read_text(encoding="utf-8")), sort_keys=True)
+        canonical = json.dumps(
+            json.loads(config_path.read_text(encoding="utf-8")), sort_keys=True
+        )
         expected_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
         # --- Assert on the ROW in the sandboxed campaign_state ---
-        rows = (yaml.safe_load(campaign_state.read_text(encoding="utf-8")) or {}).get("trial_sharpes", [])
-        assert len(rows) == 1, f"expected exactly one trial row, got {len(rows)}: {rows}"
+        rows = (yaml.safe_load(campaign_state.read_text(encoding="utf-8")) or {}).get(
+            "trial_sharpes", []
+        )
+        assert len(rows) == 1, (
+            f"expected exactly one trial row, got {len(rows)}: {rows}"
+        )
         row = rows[0]
         assert row["trial_id"] == _RUN_ID
         assert row["source"] == "backtest"
-        assert row["n_trades"] == expected_n_trades           # Blocker 1: the real total, > 0
+        assert row["n_trades"] == expected_n_trades  # Blocker 1: the real total, > 0
         assert row["sharpe"] == expected_sharpe
         assert row["expectancy_bps"] == expected_expectancy
         assert row["statistic_valid"] == expected_stat
         assert row["below_floor_pct"] == below_floor
-        assert row["forecast_hash"] == expected_hash          # recomputed independently
+        assert row["forecast_hash"] == expected_hash  # recomputed independently
 
         # --- Seal proximity: every window run dir's bars.csv ends before the holdout ---
         bars_files = sorted((run_dir / "results").rglob("bars.csv"))
-        assert len(bars_files) == 2, f"expected 2 per-window bars.csv, got {len(bars_files)}"
+        assert len(bars_files) == 2, (
+            f"expected 2 per-window bars.csv, got {len(bars_files)}"
+        )
         for bars in bars_files:
             with bars.open(encoding="utf-8") as f:
                 header = f.readline().rstrip("\n").split(",")
@@ -363,7 +397,9 @@ def test_completed_real_backtest_lands_one_self_consistent_trial_row(sandbox):
             )
 
         # --- Nothing outside the sandbox moved ---
-        assert _sha256_file(_KRAKEN_CACHE) == cache_sha_before, "kraken cache was mutated"
+        assert _sha256_file(_KRAKEN_CACHE) == cache_sha_before, (
+            "kraken cache was mutated"
+        )
         assert _sha256_file(_REAL_CAMPAIGN_STATE) == real_state_sha_before, (
             "the REAL campaign_record/campaign_state.yaml was written -- the sandbox leaked"
         )

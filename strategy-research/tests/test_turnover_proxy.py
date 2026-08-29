@@ -11,6 +11,7 @@ ENTIRE pooled active-bar count treated as one trade) and the cost ratio to 44.9x
 These fixtures build records with trade counts known BY CONSTRUCTION (not just a
 routing outcome) and assert the exact implied_trades_estimated / avg_holding_bars.
 """
+
 import sys
 from pathlib import Path
 
@@ -66,10 +67,13 @@ def test_two_sided_signal_with_flat_gaps_and_a_direct_flip():
     same bar) = 4 opens. Active bars = 3+4+2+3 = 12. avg_holding = 12/4 = 3.0.
     """
     forecasts = (
-        [10.0] * 3 + [0.0] * 2 +
-        [-10.0] * 4 + [0.0] * 2 +
-        [10.0] * 2 + [-10.0] * 3 +
-        [0.0] * 1
+        [10.0] * 3
+        + [0.0] * 2
+        + [-10.0] * 4
+        + [0.0] * 2
+        + [10.0] * 2
+        + [-10.0] * 3
+        + [0.0] * 1
     )
     records_by_symbol = {"SYNTH": _bars(*forecasts)}
 
@@ -107,5 +111,7 @@ def test_never_active_gives_zero_active_and_fallback_one_trade():
     result = ps._compute_turnover_proxy(records_by_symbol)
 
     assert result["active_bars_total"] == 0
-    assert result["implied_trades_estimated"] == 1  # fallback floor, not 0 (avoid div-by-zero)
+    assert (
+        result["implied_trades_estimated"] == 1
+    )  # fallback floor, not 0 (avoid div-by-zero)
     assert result["avg_holding_bars"] == 0.0

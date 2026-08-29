@@ -14,6 +14,7 @@ Fixture: run_044's actual candidate_strategy_config.json + real cached BTC bars,
 reproducing the exact failure end-to-end (not just unit-testing the component in
 isolation) via AdvancedStrategy directly, the same path prescreen_signal.py uses.
 """
+
 import json
 import sys
 from pathlib import Path
@@ -29,7 +30,14 @@ sys.path.insert(0, str(REPO_ROOT / "strategy-research" / "tools"))
 from strategies.strategy_components import FundingRateMeanReversionComponent
 from strategies.main_strategy import AdvancedStrategy
 
-_RUN_044_CONFIG = REPO_ROOT / "strategy-research" / "runs" / "run_044" / "artifacts" / "candidate_strategy_config.json"
+_RUN_044_CONFIG = (
+    REPO_ROOT
+    / "strategy-research"
+    / "runs"
+    / "run_044"
+    / "artifacts"
+    / "candidate_strategy_config.json"
+)
 _FUNDING_CSV = PROJECT_ROOT / "local_data" / "BTCUSDT_funding_8h.csv"
 _OHLCV_CSV = PROJECT_ROOT / "local_data" / "BTCUSDT_1h.csv"
 
@@ -37,20 +45,36 @@ _OHLCV_CSV = PROJECT_ROOT / "local_data" / "BTCUSDT_1h.csv"
 def test_threshold_zero_no_longer_raises_directly():
     """Unit-level: the component itself, called with threshold=0.0 and a nonzero
     funding rate at a settlement bar, must not raise."""
-    comp = FundingRateMeanReversionComponent(parameters={"threshold": 0.0, "scaling_factor": 10.0})
-    bars = pd.DataFrame({
-        # Last row must land on a settlement boundary (UTC hour % 8 == 0).
-        "timestamp": [pd.Timestamp("2023-12-31 23:00:00"), pd.Timestamp("2024-01-01 00:00:00")],
-        "close": [100.0, 100.1],
-        "funding_rate": [0.000374, 0.000374],
-    })
+    comp = FundingRateMeanReversionComponent(
+        parameters={"threshold": 0.0, "scaling_factor": 10.0}
+    )
+    bars = pd.DataFrame(
+        {
+            # Last row must land on a settlement boundary (UTC hour % 8 == 0).
+            "timestamp": [
+                pd.Timestamp("2023-12-31 23:00:00"),
+                pd.Timestamp("2024-01-01 00:00:00"),
+            ],
+            "close": [100.0, 100.1],
+            "funding_rate": [0.000374, 0.000374],
+        }
+    )
     comp.update(bars)  # must not raise ZeroDivisionError
-    assert comp.raw_value() != 0.0, "component should fire: nonzero funding rate at a settlement bar (hour=0)"
-    assert comp.confidence == 1.0, "continuous mode (threshold=0) should report full confidence"
+    assert comp.raw_value() != 0.0, (
+        "component should fire: nonzero funding rate at a settlement bar (hour=0)"
+    )
+    assert comp.confidence == 1.0, (
+        "continuous mode (threshold=0) should report full confidence"
+    )
 
 
-@pytest.mark.skipif(not _RUN_044_CONFIG.exists(), reason="run_044 config not present on disk")
-@pytest.mark.skipif(not _FUNDING_CSV.exists() or not _OHLCV_CSV.exists(), reason="local_data fixtures not present")
+@pytest.mark.skipif(
+    not _RUN_044_CONFIG.exists(), reason="run_044 config not present on disk"
+)
+@pytest.mark.skipif(
+    not _FUNDING_CSV.exists() or not _OHLCV_CSV.exists(),
+    reason="local_data fixtures not present",
+)
 def test_run_044_config_now_produces_real_active_bars():
     """THE regression: this exact config previously produced active_n_bars=0 (silent
     ZeroDivisionError on every settlement bar). Must now fire."""
@@ -58,7 +82,9 @@ def test_run_044_config_now_produces_real_active_bars():
     import prescreen_signal as ps
 
     bars = ps._load_ohlcv("BTCUSDT", "2024-01-01", "2024-01-08")
-    merged = ps._merge_aux_feeds(bars, ["funding_rate"], "BTCUSDT", "2024-01-01", "2024-01-08")
+    merged = ps._merge_aux_feeds(
+        bars, ["funding_rate"], "BTCUSDT", "2024-01-01", "2024-01-08"
+    )
 
     with open(_RUN_044_CONFIG) as f:
         config = json.load(f)
@@ -69,7 +95,9 @@ def test_run_044_config_now_produces_real_active_bars():
         active_count = 0
         for i in range(len(merged)):
             bar_row = merged.iloc[i : i + 1]
-            strat.update(bar_row)  # must not silently swallow a ZeroDivisionError anymore
+            strat.update(
+                bar_row
+            )  # must not silently swallow a ZeroDivisionError anymore
             if strat.is_ready():
                 forecast, *_ = strat.generate_forecast()
                 if abs(forecast) > 1e-6:
@@ -102,8 +130,10 @@ _FUNDING_CSV_1D = PROJECT_ROOT / "local_data" / "BTCUSDT_funding_8h.csv"
 _OHLCV_CSV_1D = PROJECT_ROOT / "local_data" / "BTCUSDT_1d.csv"
 
 
-@pytest.mark.skipif(not _FUNDING_CSV_1D.exists() or not _OHLCV_CSV_1D.exists(),
-                     reason="local_data fixtures not present")
+@pytest.mark.skipif(
+    not _FUNDING_CSV_1D.exists() or not _OHLCV_CSV_1D.exists(),
+    reason="local_data fixtures not present",
+)
 def test_daily_bars_with_merged_funding_produce_nonzero_forecasts():
     """Component-level: FundingRateMeanReversionComponent on DAILY (86400s-
     aligned, hour=00:00) bars with real merged funding data over a small
@@ -113,13 +143,20 @@ def test_daily_bars_with_merged_funding_produce_nonzero_forecasts():
     import prescreen_signal as ps
 
     bars = ps._load_ohlcv("BTCUSDT", "2019-12-01", "2019-12-06", timeframe="1d")
-    merged = ps._merge_aux_feeds(bars, ["funding_rate"], "BTCUSDT", "2019-12-01", "2019-12-06")
+    merged = ps._merge_aux_feeds(
+        bars, ["funding_rate"], "BTCUSDT", "2019-12-01", "2019-12-06"
+    )
 
-    assert len(merged) >= 3, "fixture window too small to be a meaningful regression test"
-    assert all(pd.Timestamp(t).hour == 0 for t in merged["timestamp"]), \
+    assert len(merged) >= 3, (
+        "fixture window too small to be a meaningful regression test"
+    )
+    assert all(pd.Timestamp(t).hour == 0 for t in merged["timestamp"]), (
         "fixture bars must be at hour=00:00 (the whole point of a DAILY bar)"
+    )
 
-    comp = FundingRateMeanReversionComponent(parameters={"threshold": 0.0, "scaling_factor": 10.0})
+    comp = FundingRateMeanReversionComponent(
+        parameters={"threshold": 0.0, "scaling_factor": 10.0}
+    )
     fired_days = 0
     for i in range(1, len(merged) + 1):
         window = merged.iloc[:i]
@@ -137,8 +174,10 @@ def test_daily_bars_with_merged_funding_produce_nonzero_forecasts():
     )
 
 
-@pytest.mark.skipif(not _FUNDING_CSV_1D.exists() or not _OHLCV_CSV_1D.exists(),
-                     reason="local_data fixtures not present")
+@pytest.mark.skipif(
+    not _FUNDING_CSV_1D.exists() or not _OHLCV_CSV_1D.exists(),
+    reason="local_data fixtures not present",
+)
 def test_data_manager_merge_attach_chain_yields_funding_column_at_1d():
     """Chain-level: the REAL DataManager merge/attach path (register_feed ->
     initialize -> _premerge_aux_feeds -> CandleBuilder.add_row -> _align ->
@@ -156,14 +195,21 @@ def test_data_manager_merge_attach_chain_yields_funding_column_at_1d():
     dm = DataManager([symbol], interval_seconds=86400, mode="backtest")
     dm.register_feed(
         name="funding_rate",
-        fetcher=FundingRateFetcher(start, end, symbols=[symbol],
-                                    localStorage=True, data_dir=str(PROJECT_ROOT / "local_data")),
+        fetcher=FundingRateFetcher(
+            start,
+            end,
+            symbols=[symbol],
+            localStorage=True,
+            data_dir=str(PROJECT_ROOT / "local_data"),
+        ),
         window_seconds=0,  # published instantaneously — no forward window
         agg="last",
     )
     dm.historical_data[symbol] = dm.fetch_historical_data(symbol, start, end)
     dm.initialize()
-    dm.candle_builder.candle_completion_callback = None  # bypass default callback wiring (see repro note)
+    dm.candle_builder.candle_completion_callback = (
+        None  # bypass default callback wiring (see repro note)
+    )
 
     n_rows = len(dm.historical_data[symbol])
     assert n_rows >= 3, "fixture window too small to be a meaningful regression test"

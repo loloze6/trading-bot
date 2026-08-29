@@ -73,7 +73,18 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 if __package__ in (None, ""):  # allow direct execution
     import sys
@@ -120,7 +131,15 @@ _REQUIRED_ENVELOPE_FIELDS = ("recv_ts", "mono", "run_id", "seq", "raw")
 _OPTIONAL_ENVELOPE_FIELDS = frozenset({"raw_is_string", "synth"})
 
 #: Trade payload keys required by :func:`iter_trades`. Kraken WS v2 `trade`.
-_REQUIRED_TRADE_FIELDS = ("symbol", "side", "price", "qty", "ord_type", "trade_id", "timestamp")
+_REQUIRED_TRADE_FIELDS = (
+    "symbol",
+    "side",
+    "price",
+    "qty",
+    "ord_type",
+    "trade_id",
+    "timestamp",
+)
 
 #: Taker side as published by the venue. `side` is the AGGRESSOR's side: `buy`
 #: means a taker lifted the offer. This is what makes signed volume meaningful;
@@ -271,7 +290,9 @@ class ShardReader:
         self.root = Path(root)
         if not self.root.is_dir():
             raise ShardReadError(f"capture root does not exist: {self.root}")
-        self.journal_path = Path(journal_path) if journal_path else self.root / JOURNAL_FILENAME
+        self.journal_path = (
+            Path(journal_path) if journal_path else self.root / JOURNAL_FILENAME
+        )
         if not self.journal_path.exists():
             raise ShardReadError(
                 f"no coverage journal at {self.journal_path}. Shards without a journal "
@@ -322,7 +343,9 @@ class ShardReader:
                 cause = "not_yet_started"
             else:
                 cause = "between_intervals"
-            out.append(Gap(symbol=symbol, channel=channel, start=gs, end=ge, cause=cause))
+            out.append(
+                Gap(symbol=symbol, channel=channel, start=gs, end=ge, cause=cause)
+            )
         return out
 
     # -- manifest ----------------------------------------------------------
@@ -444,7 +467,9 @@ class ShardReader:
     ) -> Envelope:
         where = f"{path}:{lineno}"
         if not isinstance(rec, dict):
-            raise ShardReadError(f"{where}: record is {type(rec).__name__}, expected object")
+            raise ShardReadError(
+                f"{where}: record is {type(rec).__name__}, expected object"
+            )
         missing = [k for k in _REQUIRED_ENVELOPE_FIELDS if k not in rec]
         if missing:
             raise ShardReadError(f"{where}: envelope is missing {missing}")
@@ -464,7 +489,9 @@ class ShardReader:
             # no payload so a consumer can see it existed; `iter_trades` refuses
             # to guess at its contents.
             if not isinstance(raw, str):
-                raise ShardReadError(f"{where}: raw_is_string set but raw is not a string")
+                raise ShardReadError(
+                    f"{where}: raw_is_string set but raw is not a string"
+                )
             return Envelope(
                 recv_ts=parse_iso(rec["recv_ts"]),
                 mono=float(rec["mono"]),
@@ -481,7 +508,9 @@ class ShardReader:
             )
 
         if not isinstance(raw, dict):
-            raise ShardReadError(f"{where}: raw is {type(raw).__name__}, expected object")
+            raise ShardReadError(
+                f"{where}: raw is {type(raw).__name__}, expected object"
+            )
         channel = raw.get("channel")
         msg_type = raw.get("type")
         data = raw.get("data")
@@ -502,7 +531,9 @@ class ShardReader:
                 f"{where}: message type {msg_type!r} is not one of {sorted(MESSAGE_TYPES)}"
             )
         if not isinstance(data, list):
-            raise ShardReadError(f"{where}: raw.data is {type(data).__name__}, expected array")
+            raise ShardReadError(
+                f"{where}: raw.data is {type(data).__name__}, expected array"
+            )
 
         return Envelope(
             recv_ts=parse_iso(rec["recv_ts"]),
@@ -553,7 +584,11 @@ class ShardReader:
         # nothing to report, which is different from choosing not to report it.
         # A meta consumer that needs coverage must ask about the channel whose
         # subscription actually carried the frame.
-        channel = sorted(STREAM_CHANNELS[stream])[0] if len(STREAM_CHANNELS[stream]) == 1 else None
+        channel = (
+            sorted(STREAM_CHANNELS[stream])[0]
+            if len(STREAM_CHANNELS[stream]) == 1
+            else None
+        )
 
         if start is None or end is None:
             extent = self.journal_extent()
@@ -647,7 +682,9 @@ class ShardReader:
             qty = float(entry["qty"])
             trade_id = int(entry["trade_id"])
         except (TypeError, ValueError) as exc:
-            raise ShardReadError(f"{where}: non-numeric price/qty/trade_id: {exc}") from exc
+            raise ShardReadError(
+                f"{where}: non-numeric price/qty/trade_id: {exc}"
+            ) from exc
         if not (price > 0.0 and qty > 0.0):
             raise ShardReadError(
                 f"{where}: trade_id={trade_id} has price={price} qty={qty}; a public "

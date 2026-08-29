@@ -60,6 +60,7 @@ with `ast`, its own source segment is compiled and executed in a fresh namespace
 and that real function is driven against fake trees. The code under test is the
 code that ships; nothing here is a re-implementation.
 """
+
 import ast
 import os
 import sys
@@ -77,8 +78,14 @@ REPO_ANCHORED = "repo"
 PATH_LITERAL = "Scripts"
 
 LAYOUTS = (
-    (REPO_ROOT / "strategy-research" / "workflow" / "run_phase1_research.py", CWD_RELATIVE),
-    (REPO_ROOT / "strategy-research" / "tools" / "retune_regime_detector.py", REPO_ANCHORED),
+    (
+        REPO_ROOT / "strategy-research" / "workflow" / "run_phase1_research.py",
+        CWD_RELATIVE,
+    ),
+    (
+        REPO_ROOT / "strategy-research" / "tools" / "retune_regime_detector.py",
+        REPO_ANCHORED,
+    ),
 )
 ANCHORED_LAYOUTS = tuple(layout for layout in LAYOUTS if layout[1] == REPO_ANCHORED)
 # An empty parametrize list collects zero cases and reports green, so the filter
@@ -91,8 +98,11 @@ def _module_tree(path: Path) -> ast.Module:
 
 
 def _resolver_defs(tree: ast.Module) -> list:
-    return [node for node in tree.body
-            if isinstance(node, ast.FunctionDef) and node.name == RESOLVER_NAME]
+    return [
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == RESOLVER_NAME
+    ]
 
 
 def _resolver_source(path: Path) -> str:
@@ -103,11 +113,13 @@ def _resolver_source(path: Path) -> str:
             segment = ast.get_source_segment(source, node)
             assert segment and segment.startswith(f"def {RESOLVER_NAME}"), (
                 f"extracted an empty or wrong segment for {RESOLVER_NAME} in {path} — "
-                f"every assertion downstream would be vacuous")
+                f"every assertion downstream would be vacuous"
+            )
             return segment
     raise AssertionError(
         f"no module-level {RESOLVER_NAME}() in {path}; the four hardcoded "
-        f"Windows interpreter paths are unported or the resolver was renamed")
+        f"Windows interpreter paths are unported or the resolver was renamed"
+    )
 
 
 def _load_resolver(path: Path, repo_root: Path):
@@ -121,9 +133,14 @@ def _load_resolver(path: Path, repo_root: Path):
     return namespace[RESOLVER_NAME]
 
 
-def _make_tree(tmp_path: Path, *, windows: bool, mac: bool,
-               windows_executable: bool = True,
-               windows_as_dir: bool = False) -> Path:
+def _make_tree(
+    tmp_path: Path,
+    *,
+    windows: bool,
+    mac: bool,
+    windows_executable: bool = True,
+    windows_as_dir: bool = False,
+) -> Path:
     """Build a fake repo root and return the CWD the scripts are run from."""
     cwd = tmp_path / "strategy-research"
     cwd.mkdir()
@@ -146,8 +163,7 @@ def _make_tree(tmp_path: Path, *, windows: bool, mac: bool,
 def _tried_paths(mode: str, tmp_path: Path):
     """The candidate strings the failure message is required to name."""
     base = Path("..") if mode == CWD_RELATIVE else tmp_path
-    return (base / "venv" / "Scripts" / "python.exe",
-            base / ".venv" / "bin" / "python")
+    return (base / "venv" / "Scripts" / "python.exe", base / ".venv" / "bin" / "python")
 
 
 def _ids(value):
@@ -173,7 +189,9 @@ def test_mac_layout_alone_resolves_to_it(source, mode, tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
-def test_windows_wins_when_both_layouts_are_present(source, mode, tmp_path, monkeypatch):
+def test_windows_wins_when_both_layouts_are_present(
+    source, mode, tmp_path, monkeypatch
+):
     """Upstream's tree must resolve exactly as it does today.
 
     The Windows candidate is created executable because that is what upstream's
@@ -190,17 +208,19 @@ def test_windows_wins_when_both_layouts_are_present(source, mode, tmp_path, monk
 @pytest.mark.skipif(
     sys.platform == "win32",
     reason="Fixture premise unconstructible on Windows: chmod(0o644) "
-           "yields mode 0o100777 and os.access(X_OK) is unconditionally "
-           "True for any existing file, so a present-but-unrunnable "
-           "candidate cannot be built. The guard this exercises is "
-           "macOS-specific (upstream's committed Windows venv).",
+    "yields mode 0o100777 and os.access(X_OK) is unconditionally "
+    "True for any existing file, so a present-but-unrunnable "
+    "candidate cannot be built. The guard this exercises is "
+    "macOS-specific (upstream's committed Windows venv).",
 )
 @pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
 def test_unrunnable_windows_candidate_does_not_shadow_the_mac_one(
-        source, mode, tmp_path, monkeypatch):
+    source, mode, tmp_path, monkeypatch
+):
     """The committed-Windows-venv case: present, so `.exists()`, but not runnable."""
     monkeypatch.chdir(
-        _make_tree(tmp_path, windows=True, mac=True, windows_executable=False))
+        _make_tree(tmp_path, windows=True, mac=True, windows_executable=False)
+    )
 
     resolved = Path(_load_resolver(source, tmp_path)()).resolve()
 
@@ -208,7 +228,9 @@ def test_unrunnable_windows_candidate_does_not_shadow_the_mac_one(
 
 
 @pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
-def test_no_candidate_raises_naming_both_tried_paths(source, mode, tmp_path, monkeypatch):
+def test_no_candidate_raises_naming_both_tried_paths(
+    source, mode, tmp_path, monkeypatch
+):
     monkeypatch.chdir(_make_tree(tmp_path, windows=False, mac=False))
 
     with pytest.raises(RuntimeError) as excinfo:
@@ -218,12 +240,14 @@ def test_no_candidate_raises_naming_both_tried_paths(source, mode, tmp_path, mon
     for candidate in _tried_paths(mode, tmp_path):
         assert str(candidate) in message, (
             f"the failure must name every path it tried; {candidate} is missing "
-            f"from: {message}")
+            f"from: {message}"
+        )
 
 
 @pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
 def test_a_directory_at_a_candidate_path_is_not_selected(
-        source, mode, tmp_path, monkeypatch):
+    source, mode, tmp_path, monkeypatch
+):
     """Directories are searchable, so a directory passes `os.access(X_OK)`.
 
     Without a file-ness check a directory sitting at the Windows candidate is
@@ -231,8 +255,7 @@ def test_a_directory_at_a_candidate_path_is_not_selected(
     with `PermissionError [Errno 13]` — the same errno the committed PE binary
     produces, and reached without ever raising the resolver's own RuntimeError.
     """
-    monkeypatch.chdir(
-        _make_tree(tmp_path, windows=True, mac=True, windows_as_dir=True))
+    monkeypatch.chdir(_make_tree(tmp_path, windows=True, mac=True, windows_as_dir=True))
 
     resolved = Path(_load_resolver(source, tmp_path)()).resolve()
 
@@ -243,7 +266,8 @@ def test_a_directory_at_a_candidate_path_is_not_selected(
 def test_a_directory_as_the_only_candidate_raises(source, mode, tmp_path, monkeypatch):
     """No usable interpreter must stay loud, not degrade into returning a directory."""
     monkeypatch.chdir(
-        _make_tree(tmp_path, windows=True, mac=False, windows_as_dir=True))
+        _make_tree(tmp_path, windows=True, mac=False, windows_as_dir=True)
+    )
 
     with pytest.raises(RuntimeError):
         _load_resolver(source, tmp_path)()
@@ -266,17 +290,21 @@ def test_no_interpreter_path_literal_outside_the_resolver(source, mode):
     inside, outside = [], []
     for node in ast.walk(tree):
         if isinstance(node, ast.Constant) and node.value == PATH_LITERAL:
-            target = inside if any(lo <= node.lineno <= hi for lo, hi in spans) else outside
+            target = (
+                inside if any(lo <= node.lineno <= hi for lo, hi in spans) else outside
+            )
             target.append(node.lineno)
 
     assert inside, (
         f"no {PATH_LITERAL!r} literal inside {RESOLVER_NAME}() in {source} — the "
         f"resolver stopped naming the Windows layout, so this guard would pass "
-        f"vacuously no matter what the call sites do")
+        f"vacuously no matter what the call sites do"
+    )
     assert not outside, (
         f"interpreter path literal {PATH_LITERAL!r} at {source.name}:{outside}, "
         f"outside {RESOLVER_NAME}(); a call site has been re-hardcoded and now "
-        f"bypasses the resolver without failing anything else")
+        f"bypasses the resolver without failing anything else"
+    )
 
 
 @pytest.mark.parametrize(("source", "mode"), LAYOUTS, ids=_ids)
@@ -292,7 +320,8 @@ def test_exactly_one_module_level_resolver_is_defined(source, mode):
     assert len(defs) == 1, (
         f"{len(defs)} module-level {RESOLVER_NAME}() definitions in {source} at "
         f"lines {[node.lineno for node in defs]}; runtime uses the last, this "
-        f"file's extraction uses the first")
+        f"file's extraction uses the first"
+    )
 
 
 @pytest.mark.parametrize(("source", "mode"), ANCHORED_LAYOUTS, ids=_ids)
@@ -312,4 +341,5 @@ def test_the_repo_anchored_copy_ignores_the_cwd(source, mode, tmp_path, monkeypa
     for invocation_dir in (cwd, tmp_path, tmp_path.parent):
         monkeypatch.chdir(invocation_dir)
         assert Path(resolver()).resolve() == expected, (
-            f"anchored resolver changed answer when run from {invocation_dir}")
+            f"anchored resolver changed answer when run from {invocation_dir}"
+        )

@@ -45,7 +45,9 @@ _NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.
 _CACHE_SKIP = cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_CACHES, START, END)
 pytestmark = [
     pytest.mark.slow,
-    pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),
+    pytest.mark.skipif(
+        _CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"
+    ),
 ]
 
 
@@ -160,7 +162,9 @@ def test_cap_run_provenance_differs_from_off(on_cap, off_default):
     man_on = json.loads((on_cap / "manifest.json").read_text())
     man_off = json.loads((off_default / "manifest.json").read_text())
     assert man_on["config_sha256"] != man_off["config_sha256"]
-    assert man_on["config"]["risk_management"] == {"portfolio_controls": {"absolute_allocation_cap": {"cap": 1.0}}}
+    assert man_on["config"]["risk_management"] == {
+        "portfolio_controls": {"absolute_allocation_cap": {"cap": 1.0}}
+    }
 
 
 # --- fold-collision guard ---
@@ -174,7 +178,9 @@ def test_fold_collision_guard_raises(tmp_path):
     from core.launcher import run_backtest
 
     base = json.loads((PROJECT_ROOT / "strategy_config.json").read_text())
-    base["risk_management"] = {"portfolio_controls": {"absolute_allocation_cap": {"cap": 9.9}}}
+    base["risk_management"] = {
+        "portfolio_controls": {"absolute_allocation_cap": {"cap": 9.9}}
+    }
     planted = tmp_path / "planted_strategy_config.json"
     planted.write_text(json.dumps(base))
 
@@ -198,7 +204,13 @@ def test_cap_only_run_has_no_stateful_columns(on_cap):
     keys' absence is byte-clean end to end, so PR-1's cap behaviour is unchanged under
     PR-2 code."""
     bars = pd.read_csv(on_cap / "bars.csv")
-    for col in ("risk_killed", "risk_daily_halted", "risk_drawdown", "risk_daily_loss", "risk_trip"):
+    for col in (
+        "risk_killed",
+        "risk_daily_halted",
+        "risk_drawdown",
+        "risk_daily_loss",
+        "risk_trip",
+    ):
         assert col not in bars.columns, col
     block = json.loads((on_cap / "metrics.json").read_text())["risk_controls"]
     for key in ("n_bars_killed", "n_bars_daily_halted", "first_trip", "daily_trips"):
@@ -250,4 +262,6 @@ def test_kill_run_metrics_matches_bars_count(on_kill):
 def test_kill_run_provenance_differs_from_off(on_kill, off_default):
     assert on_kill.name.split("_")[-1] != off_default.name.split("_")[-1]
     man_on = json.loads((on_kill / "manifest.json").read_text())
-    assert man_on["config"]["risk_management"] == {"portfolio_controls": {"max_drawdown_kill": {"threshold": 0.05}}}
+    assert man_on["config"]["risk_management"] == {
+        "portfolio_controls": {"max_drawdown_kill": {"threshold": 0.05}}
+    }

@@ -17,6 +17,7 @@ Plus the ordering the policy promises: gap-awareness is applied to the block
 term BEFORE the max(..., len(ic_values)) floor, so a floor above the placeable
 count can never silently restore the inflated n_eff.
 """
+
 import csv
 import json
 import sys
@@ -45,6 +46,7 @@ def _recs(spec):
 # --------------------------------------------------------------------------
 # C3 + the ordering guarantee
 # --------------------------------------------------------------------------
+
 
 def test_c3_gap_aware_block_count_on_known_active_pattern():
     """C3: blocks are counted WITHIN contiguous runs. 12 consecutive active
@@ -88,7 +90,9 @@ def test_floor_is_applied_after_gap_awareness_not_instead():
     nominal = ps._block_adjusted_significance([0.05], 480, 24)
     assert nominal["n_eff"] == 20
 
-    floored = ps._block_adjusted_significance([0.05, 0.06, 0.07], 480, 24, placeable_blocks=2)
+    floored = ps._block_adjusted_significance(
+        [0.05, 0.06, 0.07], 480, 24, placeable_blocks=2
+    )
     assert floored["n_eff"] == 3
 
 
@@ -113,16 +117,19 @@ def test_block_size_zero_raises():
 # C1 / C2 / C4 -- _extract_forecasts
 # --------------------------------------------------------------------------
 
+
 def _frame(hours):
     base = pd.Timestamp("2024-01-01 00:00:00")
-    return pd.DataFrame({
-        "timestamp": [base + pd.Timedelta(hours=h) for h in hours],
-        "open":  [100.0 + h for h in hours],
-        "high":  [100.0 + h for h in hours],
-        "low":   [100.0 + h for h in hours],
-        "close": [100.0 + h for h in hours],
-        "volume": [1.0] * len(hours),
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": [base + pd.Timedelta(hours=h) for h in hours],
+            "open": [100.0 + h for h in hours],
+            "high": [100.0 + h for h in hours],
+            "low": [100.0 + h for h in hours],
+            "close": [100.0 + h for h in hours],
+            "volume": [1.0] * len(hours),
+        }
+    )
 
 
 @pytest.fixture
@@ -146,36 +153,50 @@ def test_c1_c2_c4_gap_free_is_identical_and_hole_is_skipped(monkeypatch):
         neighbours keep their original returns.
     C2: the skip count is exact.
     """
+
     class _AlwaysReady:
         component_error_count = 0
         component_error_samples = []
-        def __init__(self, *a, **k): pass
-        def update(self, row): pass
-        def is_ready(self): return True
-        def generate_forecast(self): return (1.0,)
+
+        def __init__(self, *a, **k):
+            pass
+
+        def update(self, row):
+            pass
+
+        def is_ready(self):
+            return True
+
+        def generate_forecast(self):
+            return (1.0,)
 
     monkeypatch.setattr(ps, "AdvancedStrategy", _AlwaysReady)
 
     # ---- C1: gap-free, bounded vs unbounded must agree exactly
     clean = _frame(range(6))
     unbounded, _, _, skipped_u = ps._extract_forecasts("ignored", clean)
-    bounded, _, _, skipped_b = ps._extract_forecasts("ignored", clean, expected_step=HOUR)
+    bounded, _, _, skipped_b = ps._extract_forecasts(
+        "ignored", clean, expected_step=HOUR
+    )
     assert skipped_u == 0 and skipped_b == 0
-    assert [r["next_return_bps"] for r in unbounded] == [r["next_return_bps"] for r in bounded]
+    assert [r["next_return_bps"] for r in unbounded] == [
+        r["next_return_bps"] for r in bounded
+    ]
     assert [r["timestamp"] for r in unbounded] == [r["timestamp"] for r in bounded]
 
     # ---- C4/C2: one 5-hour hole between index 2 and 3
     holed = _frame([0, 1, 2, 8, 9, 10])
     recs, _, _, skipped = ps._extract_forecasts("ignored", holed, expected_step=HOUR)
-    assert skipped == 1                                    # C2: exact
+    assert skipped == 1  # C2: exact
     base = pd.Timestamp("2024-01-01 00:00:00")
     kept = [r["timestamp"] for r in recs]
-    assert base + pd.Timedelta(hours=2) not in kept        # the spanning pair is gone
+    assert base + pd.Timedelta(hours=2) not in kept  # the spanning pair is gone
     # neighbours keep their ORIGINAL one-bar returns
     by_ts = {r["timestamp"]: r["next_return_bps"] for r in recs}
     assert by_ts[base] == pytest.approx((101.0 - 100.0) / 100.0 * 10_000.0)
     assert by_ts[base + pd.Timedelta(hours=8)] == pytest.approx(
-        (109.0 - 108.0) / 108.0 * 10_000.0)
+        (109.0 - 108.0) / 108.0 * 10_000.0
+    )
 
     # and without the step, the corrupt pair is still present -- proving the
     # fixture actually exercises the defect
@@ -186,6 +207,7 @@ def test_c1_c2_c4_gap_free_is_identical_and_hole_is_skipped(monkeypatch):
 # --------------------------------------------------------------------------
 # C5 -- section 8, malformed timestamps and non-finite values
 # --------------------------------------------------------------------------
+
 
 def _write(path, rows):
     with open(path, "w", encoding="utf-8", newline="") as f:
@@ -199,8 +221,10 @@ def test_c5_malformed_timestamp_raises_not_silently_dropped(monkeypatch, tmp_pat
     could see them. Each of these sorts PAST the window end and vanished."""
     monkeypatch.setattr(ps, "_LOCAL_DATA", str(tmp_path))
     for bad in ("garbage", "NaN", "not-a-date"):
-        rows = [[f"2020-01-01 {i:02d}:00:00", 100 + i, 100 + i, 100 + i, 100 + i, 1]
-                for i in range(4)]
+        rows = [
+            [f"2020-01-01 {i:02d}:00:00", 100 + i, 100 + i, 100 + i, 100 + i, 1]
+            for i in range(4)
+        ]
         rows.insert(2, [bad, 1, 1, 1, 1, 1])
         _write(tmp_path / "BADTS_1h.csv", rows)
         with pytest.raises(ValueError) as exc:
@@ -213,8 +237,10 @@ def test_c5_non_finite_close_raises(monkeypatch, tmp_path):
     passes them through. They must not reach the positional pairing."""
     for poison in ("NaN", "inf", "-inf"):
         monkeypatch.setattr(ps, "_LOCAL_DATA", str(tmp_path))
-        rows = [[f"2020-01-01 {i:02d}:00:00", 100 + i, 100 + i, 100 + i, 100 + i, 1]
-                for i in range(4)]
+        rows = [
+            [f"2020-01-01 {i:02d}:00:00", 100 + i, 100 + i, 100 + i, 100 + i, 1]
+            for i in range(4)
+        ]
         rows[2][4] = poison
         _write(tmp_path / "POISON_1h.csv", rows)
         with pytest.raises(ValueError):
@@ -224,9 +250,13 @@ def test_c5_non_finite_close_raises(monkeypatch, tmp_path):
 def test_c5_clean_file_still_loads(monkeypatch, tmp_path):
     """Negative control: the guards must not reject a clean file."""
     monkeypatch.setattr(ps, "_LOCAL_DATA", str(tmp_path))
-    _write(tmp_path / "CLEAN_1h.csv",
-           [[f"2020-01-01 {i:02d}:00:00", 100 + i, 100 + i, 100 + i, 100 + i, 1]
-            for i in range(5)])
+    _write(
+        tmp_path / "CLEAN_1h.csv",
+        [
+            [f"2020-01-01 {i:02d}:00:00", 100 + i, 100 + i, 100 + i, 100 + i, 1]
+            for i in range(5)
+        ],
+    )
     df = ps._load_ohlcv("CLEAN", "2020-01-01", "2020-02-01")
     assert len(df) == 5
 
@@ -243,6 +273,7 @@ def test_c5_clean_file_still_loads(monkeypatch, tmp_path):
 # These tests pin the wiring itself.
 # --------------------------------------------------------------------------
 
+
 def _write_cache(dirpath, name, hours, step_hours=1):
     base = pd.Timestamp("2020-01-01 00:00:00")
     rows = []
@@ -257,13 +288,22 @@ def test_wiring_gap_aware_neff_actually_reaches_the_artifact(monkeypatch, tmp_pa
     """Kills the `.get(sym + "_MUTANT")` and dropped-`placeable_blocks` mutants:
     on a gappy cache the artifact's placeable count must be BELOW the nominal
     one. If the wiring is broken they are equal."""
+
     class _AlwaysReady:
         component_error_count = 0
         component_error_samples = []
-        def __init__(self, *a, **k): pass
-        def update(self, row): pass
-        def is_ready(self): return True
-        def generate_forecast(self): return (1.0,)
+
+        def __init__(self, *a, **k):
+            pass
+
+        def update(self, row):
+            pass
+
+        def is_ready(self):
+            return True
+
+        def generate_forecast(self):
+            return (1.0,)
 
     monkeypatch.setattr(ps, "AdvancedStrategy", _AlwaysReady)
     monkeypatch.setattr(ps, "_LOCAL_DATA", str(tmp_path))
@@ -278,7 +318,8 @@ def test_wiring_gap_aware_neff_actually_reaches_the_artifact(monkeypatch, tmp_pa
 
     df = ps._load_ohlcv("GAPPY", "2020-01-01", "2021-01-01")
     recs, _, _, skipped = ps._extract_forecasts(
-        "cfg", df, expected_step=pd.Timedelta(hours=1))
+        "cfg", df, expected_step=pd.Timedelta(hours=1)
+    )
     nominal = sum(1 for r in recs if r["active"]) // 24
     placeable = ps._gap_aware_block_count(recs, 24, pd.Timedelta(hours=1))
 
@@ -296,23 +337,33 @@ def test_wiring_none_step_is_the_inflated_value_the_mutant_would_restore():
     [sym] rather than .get(sym)."""
     split = _recs([(h, True) for h in range(6)] + [(h, True) for h in range(200, 206)])
     assert ps._gap_aware_block_count(split, 4, HOUR) == 2
-    assert ps._gap_aware_block_count(split, 4, None) == 3   # the inflated value
+    assert ps._gap_aware_block_count(split, 4, None) == 3  # the inflated value
 
 
 def test_wiring_gap_skipped_counter_is_not_stuck_at_zero(monkeypatch):
     """Kills the `total_gap_skipped += 0` mutant at the accumulator."""
+
     class _AlwaysReady:
         component_error_count = 0
         component_error_samples = []
-        def __init__(self, *a, **k): pass
-        def update(self, row): pass
-        def is_ready(self): return True
-        def generate_forecast(self): return (1.0,)
+
+        def __init__(self, *a, **k):
+            pass
+
+        def update(self, row):
+            pass
+
+        def is_ready(self):
+            return True
+
+        def generate_forecast(self):
+            return (1.0,)
 
     monkeypatch.setattr(ps, "AdvancedStrategy", _AlwaysReady)
     holed = _frame([0, 1, 2, 20, 21, 22, 40, 41])
     _, _, _, skipped = ps._extract_forecasts(
-        "cfg", holed, expected_step=pd.Timedelta(hours=1))
+        "cfg", holed, expected_step=pd.Timedelta(hours=1)
+    )
     assert skipped == 2, f"two holes -> two suppressed pairs, got {skipped}"
 
 
@@ -323,8 +374,9 @@ def test_multi_symbol_neff_is_per_symbol_not_pooled():
     below floor(sum(a_i)/b) by up to n_symbols-1."""
     a = _recs([(h, True) for h in range(10)])
     b = _recs([(h, True) for h in range(10)])
-    per_symbol = (ps._gap_aware_block_count(a, 4, HOUR)
-                  + ps._gap_aware_block_count(b, 4, HOUR))
+    per_symbol = ps._gap_aware_block_count(a, 4, HOUR) + ps._gap_aware_block_count(
+        b, 4, HOUR
+    )
     pooled = (len(a) + len(b)) // 4
     assert per_symbol == 4 and pooled == 5, (
         "the documented multi-symbol divergence must hold: "
@@ -343,15 +395,24 @@ def test_multi_symbol_neff_is_per_symbol_not_pooled():
 # the recipe.
 # --------------------------------------------------------------------------
 
+
 def _minimal_protocol(tmp_path, symbols, timeframe="1h"):
     path = tmp_path / "protocol.json"
-    path.write_text(json.dumps({
-        "symbols": symbols,
-        "timeframe": timeframe,
-        "windows": [{"label": "w1",
-                     "train": {"start": "2019-01-01", "end": "2020-01-01"},
-                     "test":  {"start": "2020-01-01", "end": "2021-01-01"}}],
-    }))
+    path.write_text(
+        json.dumps(
+            {
+                "symbols": symbols,
+                "timeframe": timeframe,
+                "windows": [
+                    {
+                        "label": "w1",
+                        "train": {"start": "2019-01-01", "end": "2020-01-01"},
+                        "test": {"start": "2020-01-01", "end": "2021-01-01"},
+                    }
+                ],
+            }
+        )
+    )
     return str(path)
 
 
@@ -364,27 +425,40 @@ def _minimal_config(tmp_path):
 @pytest.fixture
 def e2e(monkeypatch, tmp_path):
     """run_prescreen driven over synthetic caches with a stubbed strategy."""
+
     class _Varying:
         """Forecasts must VARY across bars. A constant forecast has only one
         distinct active value, so ic_active_bars is undefined by construction,
         _is_degenerate_active_forecast fires, and the artifact reports the
         BOOTSTRAP branch -- which is NOT the branch part (B) corrects. A mutant
         survived against a constant-1.0 stub for exactly this reason."""
+
         component_error_count = 0
         component_error_samples = []
-        def __init__(self, *a, **k): self._i = 0
-        def update(self, row): self._i += 1
-        def is_ready(self): return True
+
+        def __init__(self, *a, **k):
+            self._i = 0
+
+        def update(self, row):
+            self._i += 1
+
+        def is_ready(self):
+            return True
+
         def generate_forecast(self):
             return (float((self._i * 7919) % 11) - 5.0,)
 
     monkeypatch.setattr(ps, "AdvancedStrategy", _Varying)
     monkeypatch.setattr(ps, "_LOCAL_DATA", str(tmp_path))
-    monkeypatch.setattr(ps, "_load_cost_model", lambda: {
-        "fee_rate_bps": {"default": 7.5},
-        "round_trip_cost_bps": {"default": 18.5},
-        "safety_factor": 2.0,
-    })
+    monkeypatch.setattr(
+        ps,
+        "_load_cost_model",
+        lambda: {
+            "fee_rate_bps": {"default": 7.5},
+            "round_trip_cost_bps": {"default": 18.5},
+            "safety_factor": 2.0,
+        },
+    )
     return tmp_path
 
 
@@ -394,12 +468,15 @@ def test_e2e_gap_aware_neff_reaches_the_artifact(e2e, tmp_path):
     surviving mutations makes them equal."""
     hours = []
     for run in range(40):
-        hours.extend([run * 100 + k for k in range(6)])   # runs of 6, block is 24
+        hours.extend([run * 100 + k for k in range(6)])  # runs of 6, block is 24
     _write_cache(e2e, "GAPPY", hours)
 
-    out = ps.run_prescreen(_minimal_config(tmp_path),
-                           _minimal_protocol(tmp_path, ["GAPPY"]),
-                           run_id="e2e_gap", out_dir=tmp_path / "out")
+    out = ps.run_prescreen(
+        _minimal_config(tmp_path),
+        _minimal_protocol(tmp_path, ["GAPPY"]),
+        run_id="e2e_gap",
+        out_dir=tmp_path / "out",
+    )
 
     assert out["gap_skipped_pairs"] == 39, out["gap_skipped_pairs"]
     assert out["n_eff_placeable_blocks"] == 0, (
@@ -423,9 +500,12 @@ def test_e2e_gap_aware_neff_reaches_the_artifact(e2e, tmp_path):
 def test_e2e_gap_free_single_symbol_is_unchanged(e2e, tmp_path):
     """C1 where it genuinely holds: one gap-free symbol, nothing moves."""
     _write_cache(e2e, "CLEAN", list(range(600)))
-    out = ps.run_prescreen(_minimal_config(tmp_path),
-                           _minimal_protocol(tmp_path, ["CLEAN"]),
-                           run_id="e2e_clean", out_dir=tmp_path / "out")
+    out = ps.run_prescreen(
+        _minimal_config(tmp_path),
+        _minimal_protocol(tmp_path, ["CLEAN"]),
+        run_id="e2e_clean",
+        out_dir=tmp_path / "out",
+    )
     assert out["gap_skipped_pairs"] == 0
     assert out["gap_skipped_pct"] == 0.0
     assert out["n_eff_placeable_blocks"] == out["n_eff_nominal_blocks"]
@@ -435,8 +515,11 @@ def test_e2e_fully_gapped_symbol_raises(e2e, tmp_path):
     """Policy section 6 / red-team D3: a symbol whose every pair spans a gap
     must RAISE, not emit a route from zero records with a placeholder sigma
     flagged as a measurement."""
-    _write_cache(e2e, "ALLGAP", [k * 2 for k in range(200)])   # 2h steps at 1h tf
+    _write_cache(e2e, "ALLGAP", [k * 2 for k in range(200)])  # 2h steps at 1h tf
     with pytest.raises(RuntimeError, match="ZERO usable forecast records"):
-        ps.run_prescreen(_minimal_config(tmp_path),
-                         _minimal_protocol(tmp_path, ["ALLGAP"]),
-                         run_id="e2e_allgap", out_dir=tmp_path / "out")
+        ps.run_prescreen(
+            _minimal_config(tmp_path),
+            _minimal_protocol(tmp_path, ["ALLGAP"]),
+            run_id="e2e_allgap",
+            out_dir=tmp_path / "out",
+        )

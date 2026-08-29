@@ -16,7 +16,11 @@ from pathlib import Path
 
 from recorder.journal import JOURNAL_FILENAME
 from recorder.retrieve_shards import (
-    LEDGER_FILENAME, LocalDirTransport, load_ledger, prune_confirmed, pull,
+    LEDGER_FILENAME,
+    LocalDirTransport,
+    load_ledger,
+    prune_confirmed,
+    pull,
 )
 
 
@@ -40,7 +44,9 @@ def test_first_pull_fetches_and_confirms_everything(tmp_path):
     }
     assert result.verified == result.pulled
     assert result.failed == []
-    assert (local / "book_d10/BTCUSD/2026-07-26T00.ndjson.zst").read_bytes() == b"archive-one"
+    assert (
+        local / "book_d10/BTCUSD/2026-07-26T00.ndjson.zst"
+    ).read_bytes() == b"archive-one"
 
     ledger = load_ledger(local)
     assert set(ledger) == set(result.pulled)

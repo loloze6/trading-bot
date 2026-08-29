@@ -116,9 +116,9 @@ def checksum_payload(
             f"{len(asks)} asks / {len(bids)} bids"
         )
     asks_sorted = sorted(asks, key=lambda e: Decimal(str(_level(e)[0])))[:depth]
-    bids_sorted = sorted(
-        bids, key=lambda e: Decimal(str(_level(e)[0])), reverse=True
-    )[:depth]
+    bids_sorted = sorted(bids, key=lambda e: Decimal(str(_level(e)[0])), reverse=True)[
+        :depth
+    ]
 
     parts = []
     for side in (asks_sorted, bids_sorted):
@@ -159,7 +159,10 @@ def verify_book_frame(
         raise ChecksumInputError("frame carries no 'checksum' field")
     expected = int(book["checksum"]) & 0xFFFFFFFF
     actual = book_checksum(
-        book.get("asks", []), book.get("bids", []),
-        price_precision, qty_precision, depth,
+        book.get("asks", []),
+        book.get("bids", []),
+        price_precision,
+        qty_precision,
+        depth,
     )
     return actual == expected

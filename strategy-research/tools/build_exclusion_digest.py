@@ -41,6 +41,7 @@ not per-run -- this mirrors campaign_state.yaml's own location, not a
 runs/{run_id}/artifacts/ path, since the digest is TRUE for every run at
 generation time, not scoped to one).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -51,8 +52,8 @@ from pathlib import Path
 
 import yaml
 
-_HERE = Path(__file__).resolve().parent          # strategy-research/tools/
-_SR = _HERE.parent                                # strategy-research/
+_HERE = Path(__file__).resolve().parent  # strategy-research/tools/
+_SR = _HERE.parent  # strategy-research/
 
 DEFAULT_RUNS_DIR = _SR / "runs"
 DEFAULT_CAMPAIGN_STATE_PATH = _SR / "campaign_record" / "campaign_state.yaml"
@@ -146,11 +147,13 @@ def classify_family(card: dict) -> tuple[str, str]:
         return "fear_greed_index_contrarian", "structural_evidence_type"
 
     scan_text = " ".join(
-        str(x) for x in (
+        str(x)
+        for x in (
             card.get("hypothesis_id", ""),
             edge_source.get("specific_mechanism", ""),
             _thesis_first_sentence(card.get("thesis")),
-        ) if x
+        )
+        if x
     )
     for family, pattern in _FAMILY_KEYWORDS:
         if pattern.search(scan_text):
@@ -216,6 +219,7 @@ def extract_timeframes(card: dict) -> list[str]:
 # concrete shape this was built against.
 # ---------------------------------------------------------------------------
 
+
 def _canon_params(params) -> list:
     """Sorted (key, value) pairs, JSON/YAML-safe, so two params dicts built
     in different key order still compare and serialize identically."""
@@ -258,14 +262,22 @@ def composition_fingerprint(config: dict) -> dict | None:
             for comp in regime_block.get("components") or []:
                 if not isinstance(comp, dict):
                     continue
-                components.append([
-                    str(regime),
-                    str(comp.get("id")),
-                    _canon_params(comp.get("params")),
-                    comp.get("weight"),
-                ])
-    components.sort(key=lambda c: (c[0], c[1], json.dumps(c[2], sort_keys=True),
-                                    c[3] if isinstance(c[3], (int, float)) else 0))
+                components.append(
+                    [
+                        str(regime),
+                        str(comp.get("id")),
+                        _canon_params(comp.get("params")),
+                        comp.get("weight"),
+                    ]
+                )
+    components.sort(
+        key=lambda c: (
+            c[0],
+            c[1],
+            json.dumps(c[2], sort_keys=True),
+            c[3] if isinstance(c[3], (int, float)) else 0,
+        )
+    )
 
     detector = config.get("regime_detector") or {}
     mode = detector.get("mode") if isinstance(detector, dict) else None
@@ -282,6 +294,7 @@ def _fingerprint_sort_key(fingerprint: dict | None) -> str:
 # ---------------------------------------------------------------------------
 # Scan
 # ---------------------------------------------------------------------------
+
 
 def _load_yaml(path: Path):
     with open(path, encoding="utf-8") as f:
@@ -338,7 +351,12 @@ def scan_run_triples(runs_dir: Path) -> dict:
             skipped.append({"run_id": run_dir.name, "reason": f"unparseable: {exc}"})
             continue
         if not isinstance(card, dict):
-            skipped.append({"run_id": run_dir.name, "reason": "hypothesis_card.yaml is not a mapping"})
+            skipped.append(
+                {
+                    "run_id": run_dir.name,
+                    "reason": "hypothesis_card.yaml is not a mapping",
+                }
+            )
             continue
 
         scanned += 1
@@ -367,8 +385,12 @@ def scan_run_triples(runs_dir: Path) -> dict:
         # A family can be reached via different confidence levels across
         # runs (e.g. an older card falls to keyword_bounded while a newer
         # sibling has library_lookup). Keep the STRONGEST confidence seen.
-        _RANK = {"structural_indicator_id": 3, "structural_evidence_type": 2,
-                 "keyword_bounded": 1, "unclassified": 0}
+        _RANK = {
+            "structural_indicator_id": 3,
+            "structural_evidence_type": 2,
+            "keyword_bounded": 1,
+            "unclassified": 0,
+        }
         if _RANK.get(confidence, 0) > _RANK.get(bucket["confidence"], 0):
             bucket["confidence"] = confidence
 
@@ -382,8 +404,15 @@ def scan_run_triples(runs_dir: Path) -> dict:
                 # (no fingerprint to split them by); structured entries only
                 # merge when the fingerprint is IDENTICAL -- a different
                 # fingerprint is a different entry, even at the same triple.
-                key = (instrument, timeframe, fidelity, _fingerprint_sort_key(fingerprint))
-                bucket["triples"].setdefault(key, {"run_ids": [], "fingerprint": fingerprint})
+                key = (
+                    instrument,
+                    timeframe,
+                    fidelity,
+                    _fingerprint_sort_key(fingerprint),
+                )
+                bucket["triples"].setdefault(
+                    key, {"run_ids": [], "fingerprint": fingerprint}
+                )
                 bucket["triples"][key]["run_ids"].append(run_dir.name)
 
     # Flatten triples dicts into lists for a clean, diffable YAML shape.
@@ -391,8 +420,11 @@ def scan_run_triples(runs_dir: Path) -> dict:
     for family, bucket in families.items():
         triples = [
             {
-                "instrument": instrument, "timeframe": timeframe, "fidelity": fidelity,
-                "fingerprint": entry["fingerprint"], "run_ids": sorted(entry["run_ids"]),
+                "instrument": instrument,
+                "timeframe": timeframe,
+                "fidelity": fidelity,
+                "fingerprint": entry["fingerprint"],
+                "run_ids": sorted(entry["run_ids"]),
             }
             for (instrument, timeframe, fidelity, _fp_key), entry in sorted(
                 bucket["triples"].items(), key=lambda kv: kv[0]
@@ -433,19 +465,25 @@ def _refresh_failed_families(campaign_state: dict, digest_families: dict) -> dic
     refreshed = []
     for entry in raw:
         if isinstance(entry, dict):
-            refreshed.append({
-                "family": _canonicalize(entry.get("name")),
-                "evidence_window": entry.get("evidence_window"),
-                "root_cause": entry.get("root_cause"),
-                "detail": "dict_entry",
-            })
+            refreshed.append(
+                {
+                    "family": _canonicalize(entry.get("name")),
+                    "evidence_window": entry.get("evidence_window"),
+                    "root_cause": entry.get("root_cause"),
+                    "detail": "dict_entry",
+                }
+            )
         else:
-            refreshed.append({"family": _canonicalize(entry), "detail": "bare_string_low_detail"})
+            refreshed.append(
+                {"family": _canonicalize(entry), "detail": "bare_string_low_detail"}
+            )
     return refreshed
 
 
-def build_digest(runs_dir: Path = DEFAULT_RUNS_DIR,
-                  campaign_state_path: Path = DEFAULT_CAMPAIGN_STATE_PATH) -> dict:
+def build_digest(
+    runs_dir: Path = DEFAULT_RUNS_DIR,
+    campaign_state_path: Path = DEFAULT_CAMPAIGN_STATE_PATH,
+) -> dict:
     scan = scan_run_triples(runs_dir)
     campaign_state = {}
     if campaign_state_path.exists():
@@ -471,7 +509,9 @@ def build_digest(runs_dir: Path = DEFAULT_RUNS_DIR,
             "evidence_window/root_cause and must be weighted weaker than a dict entry."
         ),
         "families": scan["families"],
-        "failed_families_passthrough": _refresh_failed_families(campaign_state, scan["families"]),
+        "failed_families_passthrough": _refresh_failed_families(
+            campaign_state, scan["families"]
+        ),
         "components_built_passthrough": campaign_state.get("components_built", []),
     }
     return digest
@@ -480,11 +520,15 @@ def build_digest(runs_dir: Path = DEFAULT_RUNS_DIR,
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR)
-    parser.add_argument("--campaign-state", type=Path, default=DEFAULT_CAMPAIGN_STATE_PATH)
+    parser.add_argument(
+        "--campaign-state", type=Path, default=DEFAULT_CAMPAIGN_STATE_PATH
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_PATH)
     args = parser.parse_args(argv)
 
-    digest = build_digest(runs_dir=args.runs_dir, campaign_state_path=args.campaign_state)
+    digest = build_digest(
+        runs_dir=args.runs_dir, campaign_state_path=args.campaign_state
+    )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         yaml.safe_dump(digest, f, sort_keys=False, allow_unicode=True)
@@ -492,9 +536,11 @@ def main(argv=None) -> int:
     n_families = len(digest["families"])
     n_triples = sum(len(v["triples"]) for v in digest["families"].values())
     print(f"exclusion_digest.yaml written to {args.out}")
-    print(f"  runs_scanned={digest['source']['runs_scanned']} "
-          f"skipped={len(digest['source']['skipped_runs'])} "
-          f"families={n_families} triples={n_triples}")
+    print(
+        f"  runs_scanned={digest['source']['runs_scanned']} "
+        f"skipped={len(digest['source']['skipped_runs'])} "
+        f"families={n_families} triples={n_triples}"
+    )
     return 0
 
 

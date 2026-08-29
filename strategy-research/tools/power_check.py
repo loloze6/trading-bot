@@ -44,7 +44,9 @@ except ImportError:
 # why the old lookup/constant approach kept regenerating this bug.
 from timeframe import bars_per_day  # noqa: E402  (sibling module in tools/)
 
-BLOCK_SIZE_1H_LEGACY = 24  # retained ONLY as the regression anchor: bars_per_day("1h") must equal this
+BLOCK_SIZE_1H_LEGACY = (
+    24  # retained ONLY as the regression anchor: bars_per_day("1h") must equal this
+)
 _DEFAULT_CONFIG = Path(__file__).parent.parent / "config" / "campaign_config.yaml"
 
 
@@ -53,27 +55,37 @@ def _load_rho(config_path: Path | str | None = None) -> float:
     path = Path(config_path) if config_path else _DEFAULT_CONFIG
     try:
         cfg = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        return float(cfg.get("symbol_correlation", {}).get("btc_eth_return_correlation_1h", 0.82))
+        return float(
+            cfg.get("symbol_correlation", {}).get("btc_eth_return_correlation_1h", 0.82)
+        )
     except Exception:
         return 0.82
 
 
-def run_power_check(hypothesis_card_path: Path | str,
-                    config_path: Path | str | None = None,
-                    timeframe=None) -> dict:
+def run_power_check(
+    hypothesis_card_path: Path | str,
+    config_path: Path | str | None = None,
+    timeframe=None,
+) -> dict:
     """
     Load a hypothesis_card.yaml and compute A8.6 power metrics.
     Returns a result dict with 'verdict' key.
     """
     card_path = Path(hypothesis_card_path)
     if not card_path.exists():
-        return {"verdict": "skip", "reason": f"hypothesis_card.yaml not found: {card_path}"}
+        return {
+            "verdict": "skip",
+            "reason": f"hypothesis_card.yaml not found: {card_path}",
+        }
 
     card = yaml.safe_load(card_path.read_text(encoding="utf-8")) or {}
     params = card.get("power_parameters", {})
 
     if not params:
-        return {"verdict": "skip", "reason": "no power_parameters block in hypothesis_card.yaml"}
+        return {
+            "verdict": "skip",
+            "reason": "no power_parameters block in hypothesis_card.yaml",
+        }
 
     activation_rate = params.get("activation_rate")
     plausible_ic_upper = params.get("plausible_ic_upper")
@@ -91,7 +103,9 @@ def run_power_check(hypothesis_card_path: Path | str,
     if timeframe is None:
         brief = card_path.parent / "research_brief.yaml"
         if brief.exists():
-            timeframe = (yaml.safe_load(brief.read_text(encoding="utf-8")) or {}).get("timeframe", "1h")
+            timeframe = (yaml.safe_load(brief.read_text(encoding="utf-8")) or {}).get(
+                "timeframe", "1h"
+            )
         else:
             timeframe = "1h"
     block_size = bars_per_day(timeframe)
@@ -135,19 +149,26 @@ def run_power_check(hypothesis_card_path: Path | str,
         "timeframe": timeframe,
     }
     if verdict == "insufficient_power_a_priori":
-        result["data_requirement"] = data_requirement or "extend data window (e.g. to 2018+)"
+        result["data_requirement"] = (
+            data_requirement or "extend data window (e.g. to 2018+)"
+        )
 
     return result
 
 
 def _main():
     parser = argparse.ArgumentParser(description="A8.6 a-priori power check")
-    parser.add_argument("--hypothesis-card", required=True,
-                        help="Path to hypothesis_card.yaml")
-    parser.add_argument("--config", default=None,
-                        help="Path to campaign_config.yaml (default: ../config/campaign_config.yaml)")
-    parser.add_argument("--out", default=None,
-                        help="Optional path to write result YAML")
+    parser.add_argument(
+        "--hypothesis-card", required=True, help="Path to hypothesis_card.yaml"
+    )
+    parser.add_argument(
+        "--config",
+        default=None,
+        help="Path to campaign_config.yaml (default: ../config/campaign_config.yaml)",
+    )
+    parser.add_argument(
+        "--out", default=None, help="Optional path to write result YAML"
+    )
     args = parser.parse_args()
 
     result = run_power_check(args.hypothesis_card, args.config)

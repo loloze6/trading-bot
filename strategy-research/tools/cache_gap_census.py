@@ -23,6 +23,7 @@ Usage (from strategy-research/):
     ../.venv/bin/python tools/cache_gap_census.py
     ../.venv/bin/python tools/cache_gap_census.py --timeframe 1d --warmup 120
 """
+
 from __future__ import annotations
 
 import argparse
@@ -44,7 +45,8 @@ _STEPS = {"1h": timedelta(hours=1), "4h": timedelta(hours=4), "1d": timedelta(da
 
 _DEFAULT_DATA = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "trading-bot", "local_data",
+    "trading-bot",
+    "local_data",
 )
 
 
@@ -128,33 +130,51 @@ def census(rows, lo, hi, step, warmup, block):
     blocks_rewarm = sum(max(length - warmup - 1, 0) // block for length in runs)
 
     return {
-        "pairs": pairs, "gaps": gaps,
+        "pairs": pairs,
+        "gaps": gaps,
         "pct": (gaps / pairs * 100) if pairs else 0.0,
         "worst_h": worst,
         "med_gap_ret": statistics.median(gap_rets) if gap_rets else None,
         "med_ok_ret": statistics.median(ok_rets) if ok_rets else None,
         "n_runs": len(runs),
         "median_run": statistics.median(runs) if runs else 0,
-        "nominal_neff": nominal, "gap_aware_neff": gap_aware,
-        "ratio": ratio, "z_inflation": math.sqrt(ratio) if ratio != float("inf") else float("inf"),
-        "blocks_no_rewarm": blocks_no_rewarm, "blocks_rewarm": blocks_rewarm,
+        "nominal_neff": nominal,
+        "gap_aware_neff": gap_aware,
+        "ratio": ratio,
+        "z_inflation": math.sqrt(ratio) if ratio != float("inf") else float("inf"),
+        "blocks_no_rewarm": blocks_no_rewarm,
+        "blocks_rewarm": blocks_rewarm,
     }
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--data-dir", default=_DEFAULT_DATA)
     ap.add_argument("--timeframe", default="1h", choices=sorted(_STEPS))
-    ap.add_argument("--warmup", type=int, default=120,
-                    help="bars the strategy needs before is_ready() (default: 120)")
-    ap.add_argument("--block", type=int, default=24,
-                    help="bootstrap block size (default: 24, matching "
-                         "prescreen_signal._BLOCK_SIZE_1H)")
-    ap.add_argument("--gate-floor", type=int, action="append", default=None,
-                    help="simulate the S5 admission gate at this minimum block "
-                         "count; repeatable (default: 8 = _MIN_N_EPISODES, and "
-                         "30 = the fork promotion bar)")
+    ap.add_argument(
+        "--warmup",
+        type=int,
+        default=120,
+        help="bars the strategy needs before is_ready() (default: 120)",
+    )
+    ap.add_argument(
+        "--block",
+        type=int,
+        default=24,
+        help="bootstrap block size (default: 24, matching "
+        "prescreen_signal._BLOCK_SIZE_1H)",
+    )
+    ap.add_argument(
+        "--gate-floor",
+        type=int,
+        action="append",
+        default=None,
+        help="simulate the S5 admission gate at this minimum block "
+        "count; repeatable (default: 8 = _MIN_N_EPISODES, and "
+        "30 = the fork promotion bar)",
+    )
     args = ap.parse_args()
     floors = args.gate_floor or [8, 30]
 
@@ -164,9 +184,13 @@ def main() -> int:
     if not files:
         raise SystemExit(f"no caches matched {pattern}")
 
-    print(f"{len(files)} {args.timeframe} caches | warmup={args.warmup} block={args.block}\n")
-    hdr = (f"{'symbol':22} {'win':6} {'pairs':>7} {'gaps':>6} {'%':>7} {'worst':>7} "
-           f"{'runs':>6} {'medrun':>7} {'nom':>6} {'gapaware':>9} {'z infl':>7}")
+    print(
+        f"{len(files)} {args.timeframe} caches | warmup={args.warmup} block={args.block}\n"
+    )
+    hdr = (
+        f"{'symbol':22} {'win':6} {'pairs':>7} {'gaps':>6} {'%':>7} {'worst':>7} "
+        f"{'runs':>6} {'medrun':>7} {'nom':>6} {'gapaware':>9} {'z infl':>7}"
+    )
     print(hdr)
     print("-" * len(hdr))
 
@@ -185,30 +209,43 @@ def main() -> int:
 
     for _, sym, wname, c in sorted(out, reverse=True):
         worst = f"{c['worst_h']:.0f}h" if c["gaps"] else "-"
-        print(f"{sym:22} {wname:6} {c['pairs']:7d} {c['gaps']:6d} {c['pct']:6.2f}% "
-              f"{worst:>7} {c['n_runs']:6d} {c['median_run']:7.0f} "
-              f"{c['nominal_neff']:6d} {c['gap_aware_neff']:9d} {c['z_inflation']:6.2f}x")
+        print(
+            f"{sym:22} {wname:6} {c['pairs']:7d} {c['gaps']:6d} {c['pct']:6.2f}% "
+            f"{worst:>7} {c['n_runs']:6d} {c['median_run']:7.0f} "
+            f"{c['nominal_neff']:6d} {c['gap_aware_neff']:9d} {c['z_inflation']:6.2f}x"
+        )
 
-    print(f"\n{gappy} of {combos} symbol x window combinations contain at least one gap")
+    print(
+        f"\n{gappy} of {combos} symbol x window combinations contain at least one gap"
+    )
 
     # --- S5 admission-gate simulation -------------------------------------
     print("\nADMISSION GATE (policy doc S5) -- would it reject anything?")
     print("  A block spanning a gap is the defect, so blocks must fit inside a")
     print("  contiguous run. ADMIT iff placeable blocks >= floor.\n")
-    for model, key in (("no-re-warm (ADOPTED)", "blocks_no_rewarm"),
-                       ("re-warm    (REJECTED)", "blocks_rewarm")):
+    for model, key in (
+        ("no-re-warm (ADOPTED)", "blocks_no_rewarm"),
+        ("re-warm    (REJECTED)", "blocks_rewarm"),
+    ):
         for floor in floors:
             stopped = [(sym, wn) for _, sym, wn, c in out if c[key] < floor]
-            verdict = ("admits all %d" % combos) if not stopped else \
-                      ("stops %d: %s" % (len(stopped),
-                                         ", ".join(f"{s_} {w_}" for s_, w_ in stopped)))
+            verdict = (
+                ("admits all %d" % combos)
+                if not stopped
+                else (
+                    "stops %d: %s"
+                    % (len(stopped), ", ".join(f"{s_} {w_}" for s_, w_ in stopped))
+                )
+            )
             print(f"  {model}  floor {floor:>3}: {verdict}")
     print("\n  The gate was DROPPED: under the adopted model it rejects nothing at")
     print("  either floor. Raising the floor until it bit would have been the")
     print("  post-hoc threshold-fitting the policy exists to prevent.")
     if bad_total:
-        print(f"NOTE: {bad_total} row(s) had an unparseable timestamp and were excluded "
-              f"from the series (see issue #50's residual on the lexical window filter).")
+        print(
+            f"NOTE: {bad_total} row(s) had an unparseable timestamp and were excluded "
+            f"from the series (see issue #50's residual on the lexical window filter)."
+        )
     return 0
 
 

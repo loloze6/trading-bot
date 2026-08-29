@@ -24,6 +24,7 @@ repository, and no LLM/subprocess is spawned. `pending_stage` is always set
 to a TERMINAL_PREFIXES-matching value ("human_pause") so `run_loop` breaks
 immediately without attempting to process a real stage.
 """
+
 import sys
 from pathlib import Path
 
@@ -51,8 +52,10 @@ _FRESH_STATE_TEMPLATE = {
     },
     "counters": {"refinements_used": 0, "reruns_used": 0},
     "flags": {
-        "holdout_reserved": False, "validation_approved": False,
-        "screening_passed": False, "walk_forward_passed": False,
+        "holdout_reserved": False,
+        "validation_approved": False,
+        "screening_passed": False,
+        "walk_forward_passed": False,
     },
     "last_summary": None,
 }
@@ -91,6 +94,7 @@ def campaign_root(tmp_path, monkeypatch):
 
     def _fake_setup_run(run_id):
         _write_fresh_scaffold(runs_dir, run_id)
+
     monkeypatch.setattr(camp, "setup_run", _fake_setup_run)
 
     class _FakeCompletedProcess:
@@ -100,11 +104,15 @@ def campaign_root(tmp_path, monkeypatch):
         next_run_id = cmd[-1]
         _write_fresh_scaffold(runs_dir, next_run_id)
         return _FakeCompletedProcess()
+
     monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
 
     return {
-        "root": tmp_path, "runs_dir": runs_dir, "queue_path": queue_path,
-        "baseline_path": baseline_path, "campaign_state_path": campaign_state_path,
+        "root": tmp_path,
+        "runs_dir": runs_dir,
+        "queue_path": queue_path,
+        "baseline_path": baseline_path,
+        "campaign_state_path": campaign_state_path,
     }
 
 
@@ -115,10 +123,17 @@ def _save_queue_entries(queue_path: Path, entries: list):
 
 def _write_campaign_state(path: Path, **fields):
     state = {
-        "campaign_id": "test", "research_question": "", "runs": [],
-        "altitude_history": [], "recent_parameter_dimensions_by_family": {},
-        "failed_families": [], "instruments_tried": [], "components_built": [],
-        "timeframes_tried": ["1h"], "diagnostics_log": [], "status": "active",
+        "campaign_id": "test",
+        "research_question": "",
+        "runs": [],
+        "altitude_history": [],
+        "recent_parameter_dimensions_by_family": {},
+        "failed_families": [],
+        "instruments_tried": [],
+        "components_built": [],
+        "timeframes_tried": ["1h"],
+        "diagnostics_log": [],
+        "status": "active",
     }
     state.update(fields)
     with open(path, "w", encoding="utf-8") as f:
@@ -126,10 +141,13 @@ def _write_campaign_state(path: Path, **fields):
 
 
 def _read_state(runs_dir: Path, run_id: str) -> dict:
-    return yaml.safe_load((runs_dir / run_id / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    return yaml.safe_load(
+        (runs_dir / run_id / "pipeline_state.yaml").read_text(encoding="utf-8")
+    )
 
 
 # ---------------------------------------------------------------------------
+
 
 def test_hard_pause_appends_untruncated_last_error_to_halt_history(campaign_root):
     runs_dir = campaign_root["runs_dir"]
@@ -137,13 +155,25 @@ def test_hard_pause_appends_untruncated_last_error_to_halt_history(campaign_root
 
     long_error = "X" * 500  # over the 300-char campaign_log.md truncation
     _write_fresh_scaffold(
-        runs_dir, "run_700",
-        status="failed", pending_stage="human_pause", last_error=long_error,
+        runs_dir,
+        "run_700",
+        status="failed",
+        pending_stage="human_pause",
+        last_error=long_error,
     )
-    _save_queue_entries(campaign_root["queue_path"], [{
-        "id": "TEST_ENTRY", "brief_path": "briefs/irrelevant.yaml",
-        "status": "in_progress", "priority": 1, "run_ids": ["run_700"], "outcome": None,
-    }])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "TEST_ENTRY",
+                "brief_path": "briefs/irrelevant.yaml",
+                "status": "in_progress",
+                "priority": 1,
+                "run_ids": ["run_700"],
+                "outcome": None,
+            }
+        ],
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_700"])
 
     keep_going = camp.process_once()
@@ -154,13 +184,17 @@ def test_hard_pause_appends_untruncated_last_error_to_halt_history(campaign_root
     assert history is not None and len(history) == 1
     entry = history[0]
     assert entry["reason"] == "unhandled_exception"
-    assert entry["last_error"] == long_error, "halt_history must carry the FULL, untruncated last_error"
+    assert entry["last_error"] == long_error, (
+        "halt_history must carry the FULL, untruncated last_error"
+    )
     assert len(entry["last_error"]) == 500
 
     log_text = (root / "campaign_log.md").read_text(encoding="utf-8")
     # The campaign_log.md HALT line is still truncated to 300 chars, unchanged --
     # this fix adds a durable record, it does not touch campaign_log.md's format.
-    assert "X" * 500 not in log_text, "campaign_log.md's HALT line must remain truncated, unchanged by this fix"
+    assert "X" * 500 not in log_text, (
+        "campaign_log.md's HALT line must remain truncated, unchanged by this fix"
+    )
     assert "X" * 300 in log_text
 
 
@@ -171,13 +205,25 @@ def test_halt_history_accumulates_across_repeated_halts_same_run(campaign_root):
     prior entry the way `last_error` itself is overwritten on each halt."""
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(
-        runs_dir, "run_701",
-        status="failed", pending_stage="human_pause", last_error="first failure",
+        runs_dir,
+        "run_701",
+        status="failed",
+        pending_stage="human_pause",
+        last_error="first failure",
     )
-    _save_queue_entries(campaign_root["queue_path"], [{
-        "id": "TEST_ENTRY", "brief_path": "briefs/irrelevant.yaml",
-        "status": "in_progress", "priority": 1, "run_ids": ["run_701"], "outcome": None,
-    }])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "TEST_ENTRY",
+                "brief_path": "briefs/irrelevant.yaml",
+                "status": "in_progress",
+                "priority": 1,
+                "run_ids": ["run_701"],
+                "outcome": None,
+            }
+        ],
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_701"])
 
     camp.process_once()
@@ -188,8 +234,11 @@ def test_halt_history_accumulates_across_repeated_halts_same_run(campaign_root):
     # last_error/status) followed by a SECOND, different halt on the same run --
     # the accumulated first entry must survive the reset that clears the
     # CURRENT-state fields.
-    rpr.update_state(path=runs_dir / "run_701", status="failed",
-                      last_error="second, different failure")
+    rpr.update_state(
+        path=runs_dir / "run_701",
+        status="failed",
+        last_error="second, different failure",
+    )
     queue = camp._load_queue()
     queue["queue"][0]["status"] = "in_progress"
     _save_queue_entries(campaign_root["queue_path"], queue["queue"])
@@ -211,23 +260,42 @@ def test_refinement_brief_conflict_appends_to_halt_history_on_parent(campaign_ro
     root = campaign_root["root"]
     _write_fresh_scaffold(runs_dir, "run_702", pending_stage="completed_refined")
     _write_fresh_scaffold(runs_dir, "run_703_internal")
-    rpr.update_state(path=runs_dir / "run_702", continuation_child="run_703_internal",
-                      continuation_created_by="_route_refine", pending_stage="completed_refined")
+    rpr.update_state(
+        path=runs_dir / "run_702",
+        continuation_child="run_703_internal",
+        continuation_created_by="_route_refine",
+        pending_stage="completed_refined",
+    )
 
     briefs_dir = root / "briefs"
     briefs_dir.mkdir()
     briefs_dir.joinpath("test_refinement.yaml").write_text(
-        yaml.safe_dump({
-            "hypothesis_id": "test_hyp", "new_research_question": "q",
-            "parameter_dimension": {"name": "d", "value": "v"},
-            "rationale": "r", "expected_impact": "i",
-        }), encoding="utf-8")
+        yaml.safe_dump(
+            {
+                "hypothesis_id": "test_hyp",
+                "new_research_question": "q",
+                "parameter_dimension": {"name": "d", "value": "v"},
+                "rationale": "r",
+                "expected_impact": "i",
+            }
+        ),
+        encoding="utf-8",
+    )
 
-    _save_queue_entries(campaign_root["queue_path"], [{
-        "id": "TEST_ENTRY", "brief_path": "briefs/irrelevant.yaml",
-        "status": "in_progress", "priority": 1, "run_ids": ["run_702"], "outcome": None,
-        "refinement_brief_path": "briefs/test_refinement.yaml",
-    }])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "TEST_ENTRY",
+                "brief_path": "briefs/irrelevant.yaml",
+                "status": "in_progress",
+                "priority": 1,
+                "run_ids": ["run_702"],
+                "outcome": None,
+                "refinement_brief_path": "briefs/test_refinement.yaml",
+            }
+        ],
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_702"])
 
     keep_going = camp.process_once()
@@ -236,5 +304,7 @@ def test_refinement_brief_conflict_appends_to_halt_history_on_parent(campaign_ro
     state = _read_state(runs_dir, "run_702")
     history = state.get("halt_history")
     assert history is not None and len(history) == 1
-    assert history[0]["reason"] == "refinement_brief_conflicts_with_existing_continuation"
+    assert (
+        history[0]["reason"] == "refinement_brief_conflicts_with_existing_continuation"
+    )
     assert "run_703_internal" in history[0]["detail"]

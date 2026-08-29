@@ -15,6 +15,7 @@ warmup_prefetch defaults to False. This test proves that default is a true no-op
 IMPORTANT: this is a SLOW INTEGRATION TEST. Run explicitly:
   pytest tests/test_warmup_prefetch_bit_identical.py -v -m slow
 """
+
 import json
 import sys
 from pathlib import Path
@@ -34,7 +35,9 @@ _CACHE_SKIP = cache_skip_reason(
 )
 pytestmark = [
     pytest.mark.slow,
-    pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),
+    pytest.mark.skipif(
+        _CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"
+    ),
 ]
 
 
@@ -88,4 +91,7 @@ def test_warmup_prefetch_true_changes_fetch_behavior(reference, tmp_path):
     """
     default_metrics = _run(reference, tmp_path / "default2")
     prefetch_metrics = _run(reference, tmp_path / "prefetch", warmup_prefetch=True)
-    assert prefetch_metrics["core"]["trade_count"] >= default_metrics["core"]["trade_count"]
+    assert (
+        prefetch_metrics["core"]["trade_count"]
+        >= default_metrics["core"]["trade_count"]
+    )

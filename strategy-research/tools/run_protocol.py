@@ -5,6 +5,7 @@ CLI (run from repo root or strategy-research/):
   python strategy-research/tools/run_protocol.py <config_path> <protocol_path>
   python strategy-research/tools/run_protocol.py <config_path> <protocol_path> --holdout --i-understand
 """
+
 import sys
 import os
 import csv
@@ -17,10 +18,10 @@ from datetime import datetime, timezone, date
 from hashlib import sha256
 from pathlib import Path
 
-_HERE = os.path.dirname(os.path.abspath(__file__))   # strategy-research/tools/
-_SR   = os.path.dirname(_HERE)                        # strategy-research/
-_REPO = os.path.dirname(_SR)                          # repo root
-_TBOT = os.path.join(_REPO, "trading-bot")            # trading-bot/
+_HERE = os.path.dirname(os.path.abspath(__file__))  # strategy-research/tools/
+_SR = os.path.dirname(_HERE)  # strategy-research/
+_REPO = os.path.dirname(_SR)  # repo root
+_TBOT = os.path.join(_REPO, "trading-bot")  # trading-bot/
 
 if _TBOT not in sys.path:
     sys.path.insert(0, _TBOT)
@@ -49,6 +50,7 @@ def _protocol_run_id(sha8: str) -> str:
 # Trade-level diagnostics (Step 03 + A3.1–A3.5)
 # ---------------------------------------------------------------------------
 
+
 def _load_trades(run_dir: Path) -> list:
     """Load trades.json; return [] if missing or empty."""
     p = run_dir / "trades.json"
@@ -72,13 +74,15 @@ def _load_bars(run_dir: Path) -> list:
         for row in reader:
             seen += 1
             try:
-                rows.append({
-                    "timestamp": row["timestamp"],
-                    "open":  float(row["open"])  if row.get("open")  else None,
-                    "high":  float(row["high"])  if row.get("high")  else None,
-                    "low":   float(row["low"])   if row.get("low")   else None,
-                    "close": float(row["close"]) if row.get("close") else None,
-                })
+                rows.append(
+                    {
+                        "timestamp": row["timestamp"],
+                        "open": float(row["open"]) if row.get("open") else None,
+                        "high": float(row["high"]) if row.get("high") else None,
+                        "low": float(row["low"]) if row.get("low") else None,
+                        "close": float(row["close"]) if row.get("close") else None,
+                    }
+                )
             except (ValueError, KeyError) as e:
                 # #47: this used to be a bare `pass`. A dropped bar silently
                 # degrades every field derived from bar POSITION -- the same
@@ -124,13 +128,16 @@ def _load_cost_model() -> dict | None:
         return None
     try:
         import yaml
+
         with open(p, encoding="utf-8") as f:
             return yaml.safe_load(f)
     except Exception:
         return None
 
 
-def _commission_rate_for_symbol(symbol: str, cost_model: dict | None, product: str = "spot") -> float | None:
+def _commission_rate_for_symbol(
+    symbol: str, cost_model: dict | None, product: str = "spot"
+) -> float | None:
     """
     2026-07-20 (Dispatch H): convert cost_model.yaml's fee_rate_bps[symbol] (a
     ONE-WAY taker fee in bps, per that file's own header) into launcher.run_backtest's
@@ -213,8 +220,8 @@ def _ts_key(ts: str) -> str:
     renderings of one instant compare equal.
     """
     t = ts.strip().replace("T", " ").split("+")[0].split("Z")[0].strip()
-    t = t.split(".")[0]          # drop fractional seconds if present
-    if len(t) == 10:             # date-only → the bar at midnight of that day
+    t = t.split(".")[0]  # drop fractional seconds if present
+    if len(t) == 10:  # date-only → the bar at midnight of that day
         t += " 00:00:00"
     return t
 
@@ -240,10 +247,10 @@ def _compute_mae_mfe(side: str, entry_price: float, holding_bars: list) -> tuple
         if h is None or l is None:
             continue
         if side == "LONG":
-            adverse   = (entry_price - l) / entry_price
+            adverse = (entry_price - l) / entry_price
             favorable = (h - entry_price) / entry_price
         else:  # SHORT
-            adverse   = (h - entry_price) / entry_price
+            adverse = (h - entry_price) / entry_price
             favorable = (entry_price - l) / entry_price
         mae = max(mae, adverse)
         mfe = max(mfe, favorable)
@@ -265,10 +272,10 @@ def _compute_entry_efficiency(
         return None
     if side == "LONG":
         actual = (exit_price - entry_price) / entry_price * 100
-        hypo   = (exit_price - next_open)   / next_open   * 100
+        hypo = (exit_price - next_open) / next_open * 100
     else:
         actual = (entry_price - exit_price) / entry_price * 100
-        hypo   = (next_open   - exit_price) / next_open   * 100
+        hypo = (next_open - exit_price) / next_open * 100
     return round(actual - hypo, 4)
 
 
@@ -284,8 +291,10 @@ def _compute_exit_efficiency(
     if not holding_bars:
         return None
     if side == "LONG":
-        realized  = (exit_price - entry_price) / entry_price
-        best_high = max((b["high"] for b in holding_bars if b.get("high")), default=None)
+        realized = (exit_price - entry_price) / entry_price
+        best_high = max(
+            (b["high"] for b in holding_bars if b.get("high")), default=None
+        )
         if best_high is None:
             return None
         best = (best_high - entry_price) / entry_price
@@ -405,15 +414,15 @@ def _compute_trade_records_for_window(
 
     records = []
     for trade in trades:
-        side         = trade.get("side", "LONG")
-        entry_price  = float(trade.get("entry_price", 0) or 0)
-        exit_price   = float(trade.get("exit_price",  0) or 0)
-        entry_ts     = _ts_normalize(trade.get("entry_time", ""))
-        exit_ts      = _ts_normalize(trade.get("exit_time",  ""))
+        side = trade.get("side", "LONG")
+        entry_price = float(trade.get("entry_price", 0) or 0)
+        exit_price = float(trade.get("exit_price", 0) or 0)
+        entry_ts = _ts_normalize(trade.get("entry_time", ""))
+        exit_ts = _ts_normalize(trade.get("exit_time", ""))
         exit_forecast = trade.get("exit_forecast")
 
         entry_idx = _bar_idx_at(bars, entry_ts)
-        exit_idx  = _bar_idx_at(bars, exit_ts)
+        exit_idx = _bar_idx_at(bars, exit_ts)
 
         # 2026-08-15: an unresolved lookup silently degrades EVERY field derived
         # from bar position (MAE/MFE collapse to 0.0, entry/exit efficiency and
@@ -440,45 +449,59 @@ def _compute_trade_records_for_window(
         else:
             holding_bars = []
 
-        holding_bars_count = max(len(holding_bars) - 1, 1) if holding_bars else max(
-            round((trade.get("duration_minutes") or 60) / 60), 1
+        holding_bars_count = (
+            max(len(holding_bars) - 1, 1)
+            if holding_bars
+            else max(round((trade.get("duration_minutes") or 60) / 60), 1)
         )
 
-        mae, mfe = _compute_mae_mfe(side, entry_price, holding_bars) if holding_bars else (0.0, 0.0)
-        entry_eff = _compute_entry_efficiency(side, entry_price, exit_price, bars, entry_idx)
-        exit_eff  = _compute_exit_efficiency(side, entry_price, exit_price, holding_bars)
+        mae, mfe = (
+            _compute_mae_mfe(side, entry_price, holding_bars)
+            if holding_bars
+            else (0.0, 0.0)
+        )
+        entry_eff = _compute_entry_efficiency(
+            side, entry_price, exit_price, bars, entry_idx
+        )
+        exit_eff = _compute_exit_efficiency(side, entry_price, exit_price, holding_bars)
         post_5, post_20 = _compute_post_exit_returns(side, exit_price, bars, exit_idx)
-        exit_reason = _infer_exit_reason(side, exit_forecast, bars, exit_idx, window_end)
+        exit_reason = _infer_exit_reason(
+            side, exit_forecast, bars, exit_idx, window_end
+        )
         cost_bps = _cost_paid_bps(trade, cost_model)
 
-        records.append({
-            "trade_id":                trade.get("trade_id", ""),
-            "symbol":                  symbol,
-            "window":                  window,
-            "regime_at_entry":         trade.get("entry_regime", "unknown"),
-            "direction":               "long" if side == "LONG" else "short",
-            "entry_time":              trade.get("entry_time", ""),
-            "exit_time":               trade.get("exit_time",  ""),
-            "holding_bars":            holding_bars_count,
-            # Gross position-level return (% of position value) — used for MAE/MFE comparisons
-            # and entry/exit_efficiency (all denominated relative to entry price).
-            "realized_return":         round(float(trade.get("profit_loss_percent", 0) or 0), 4),
-            # Net portfolio-level return (% of total portfolio value, after commission).
-            # This is what investors experience; used for per_trade_expectancy_bps and
-            # win classification. Matches the engine's own PerformanceTracker records.
-            "profitable_net":          bool(trade.get("profitable_net", False)),
-            "net_portfolio_return_pct": round(
-                float(trade.get("net_portfolio_profit_loss_percent", 0) or 0), 6
-            ),
-            "mae":                     mae,
-            "mfe":                     mfe,
-            "entry_efficiency":        entry_eff,
-            "exit_efficiency":         exit_eff,
-            "exit_reason":             exit_reason,
-            "post_exit_return_5bars":  post_5,   # A3.1
-            "post_exit_return_20bars": post_20,  # A3.1
-            "cost_paid":               cost_bps, # A3.2
-        })
+        records.append(
+            {
+                "trade_id": trade.get("trade_id", ""),
+                "symbol": symbol,
+                "window": window,
+                "regime_at_entry": trade.get("entry_regime", "unknown"),
+                "direction": "long" if side == "LONG" else "short",
+                "entry_time": trade.get("entry_time", ""),
+                "exit_time": trade.get("exit_time", ""),
+                "holding_bars": holding_bars_count,
+                # Gross position-level return (% of position value) — used for MAE/MFE comparisons
+                # and entry/exit_efficiency (all denominated relative to entry price).
+                "realized_return": round(
+                    float(trade.get("profit_loss_percent", 0) or 0), 4
+                ),
+                # Net portfolio-level return (% of total portfolio value, after commission).
+                # This is what investors experience; used for per_trade_expectancy_bps and
+                # win classification. Matches the engine's own PerformanceTracker records.
+                "profitable_net": bool(trade.get("profitable_net", False)),
+                "net_portfolio_return_pct": round(
+                    float(trade.get("net_portfolio_profit_loss_percent", 0) or 0), 6
+                ),
+                "mae": mae,
+                "mfe": mfe,
+                "entry_efficiency": entry_eff,
+                "exit_efficiency": exit_eff,
+                "exit_reason": exit_reason,
+                "post_exit_return_5bars": post_5,  # A3.1
+                "post_exit_return_20bars": post_20,  # A3.1
+                "cost_paid": cost_bps,  # A3.2
+            }
+        )
     return records
 
 
@@ -494,9 +517,19 @@ def _aggregate_trade_diagnostics(all_records: list, results: list) -> dict:
     if not all_records:
         return {}
 
-    entry_effs = [r["entry_efficiency"]  for r in all_records if r.get("entry_efficiency") is not None]
-    exit_effs  = [r["exit_efficiency"]   for r in all_records if r.get("exit_efficiency")  is not None]
-    holdings   = [r["holding_bars"]      for r in all_records if r.get("holding_bars")     is not None]
+    entry_effs = [
+        r["entry_efficiency"]
+        for r in all_records
+        if r.get("entry_efficiency") is not None
+    ]
+    exit_effs = [
+        r["exit_efficiency"]
+        for r in all_records
+        if r.get("exit_efficiency") is not None
+    ]
+    holdings = [
+        r["holding_bars"] for r in all_records if r.get("holding_bars") is not None
+    ]
 
     # MAE/MFE ratio — high ratio with low realized return flags premature exits
     mae_mfe_ratios = [
@@ -511,12 +544,14 @@ def _aggregate_trade_diagnostics(all_records: list, results: list) -> dict:
     n = len(portf_returns_sorted)
     top_n = max(1, n // 10)
     total_pnl = sum(portf_returns_sorted)
-    top_pnl   = sum(portf_returns_sorted[:top_n])
-    pnl_conc  = (top_pnl / total_pnl * 100) if total_pnl != 0 else None
+    top_pnl = sum(portf_returns_sorted[:top_n])
+    pnl_conc = (top_pnl / total_pnl * 100) if total_pnl != 0 else None
 
     # Loss concentration: worst-decile contribution (sorted ascending: worst first)
-    worst_n   = max(1, n // 10)
-    worst_pnl = sum(portf_returns_sorted[n - worst_n:])  # bottom decile (worst returns)
+    worst_n = max(1, n // 10)
+    worst_pnl = sum(
+        portf_returns_sorted[n - worst_n :]
+    )  # bottom decile (worst returns)
     loss_conc = (worst_pnl / total_pnl * 100) if total_pnl != 0 else None
 
     # Exit reason breakdown
@@ -527,35 +562,51 @@ def _aggregate_trade_diagnostics(all_records: list, results: list) -> dict:
     # The backlog item (trading-bot PerformanceTracker) is to record exit_reason as an event
     # at execution time so this inference step becomes unnecessary.
     n_inferred = sum(1 for r in all_records if r.get("exit_reason") == "signal_flip")
+
     def _pct(reason):
-        return round(sum(1 for x in reasons if x == reason) / total_trades * 100, 2) if total_trades else 0.0
+        return (
+            round(sum(1 for x in reasons if x == reason) / total_trades * 100, 2)
+            if total_trades
+            else 0.0
+        )
 
     # A3.1: stop_loss recovery rate
     sl_trades = [r for r in all_records if r.get("exit_reason") == "stop_loss"]
     sl_recovery = 0.0
     if sl_trades:
-        recovered = sum(1 for r in sl_trades if (r.get("post_exit_return_20bars") or 0) > 0)
+        recovered = sum(
+            1 for r in sl_trades if (r.get("post_exit_return_20bars") or 0) > 0
+        )
         sl_recovery = round(recovered / len(sl_trades), 4)
 
     # A3.4: per_trade_expectancy_bps — net portfolio return in bps (matches engine's own records)
     n_trades = len(portf_returns_bps)
     mean_bps = statistics.mean(portf_returns_bps) if portf_returns_bps else None
-    se_bps   = (statistics.stdev(portf_returns_bps) / math.sqrt(n_trades)
-                if n_trades > 1 else None)
-    t_stat   = (round(mean_bps / se_bps, 4)
-                if mean_bps is not None and se_bps and se_bps > 0 else None)
+    se_bps = (
+        statistics.stdev(portf_returns_bps) / math.sqrt(n_trades)
+        if n_trades > 1
+        else None
+    )
+    t_stat = (
+        round(mean_bps / se_bps, 4)
+        if mean_bps is not None and se_bps and se_bps > 0
+        else None
+    )
 
     # A3.4: win_rate (net-of-commission, matches engine's PerformanceTracker)
-    n_wins   = sum(1 for r in all_records if r.get("profitable_net", False))
+    n_wins = sum(1 for r in all_records if r.get("profitable_net", False))
     win_rate = round(n_wins / n_trades * 100, 2) if n_trades else None
 
     # A3.4: zero_trade_slot_pct
     total_slots = len(results)
-    zero_slots  = sum(1 for r in results if r["core"].get("trade_count", 0) == 0)
-    zero_trade_slot_pct = round(zero_slots / total_slots * 100, 2) if total_slots else 0.0
+    zero_slots = sum(1 for r in results if r["core"].get("trade_count", 0) == 0)
+    zero_trade_slot_pct = (
+        round(zero_slots / total_slots * 100, 2) if total_slots else 0.0
+    )
 
     # Holding period distribution (percentiles)
     hs = sorted(holdings)
+
     def _pct_val(lst, p):
         if not lst:
             return None
@@ -563,35 +614,47 @@ def _aggregate_trade_diagnostics(all_records: list, results: list) -> dict:
         return lst[idx]
 
     return {
-        "mae_mfe_ratio_median":    round(statistics.median(mae_mfe_ratios), 4) if mae_mfe_ratios else None,
-        "entry_efficiency_median": round(statistics.median(entry_effs),     4) if entry_effs     else None,
-        "exit_efficiency_median":  round(statistics.median(exit_effs),       4) if exit_effs      else None,
-        "win_rate_net":            win_rate,  # net-of-commission win rate (matches engine)
+        "mae_mfe_ratio_median": round(statistics.median(mae_mfe_ratios), 4)
+        if mae_mfe_ratios
+        else None,
+        "entry_efficiency_median": round(statistics.median(entry_effs), 4)
+        if entry_effs
+        else None,
+        "exit_efficiency_median": round(statistics.median(exit_effs), 4)
+        if exit_effs
+        else None,
+        "win_rate_net": win_rate,  # net-of-commission win rate (matches engine)
         "holding_period_distribution": {
             "p10_bars": _pct_val(hs, 10),
             "p50_bars": _pct_val(hs, 50),
             "p90_bars": _pct_val(hs, 90),
         },
         "pnl_concentration": {
-            "pct_pnl_from_top_decile_trades":  round(pnl_conc,  2) if pnl_conc  is not None else None,
-            "pct_pnl_from_worst_decile_trades": round(loss_conc, 2) if loss_conc is not None else None,
+            "pct_pnl_from_top_decile_trades": round(pnl_conc, 2)
+            if pnl_conc is not None
+            else None,
+            "pct_pnl_from_worst_decile_trades": round(loss_conc, 2)
+            if loss_conc is not None
+            else None,
         },
         "exit_reason_breakdown": {
-            "signal_flip_pct":   _pct("signal_flip"),
-            "stop_loss_pct":     _pct("stop_loss"),
-            "time_stop_pct":     _pct("time_stop"),
+            "signal_flip_pct": _pct("signal_flip"),
+            "stop_loss_pct": _pct("stop_loss"),
+            "time_stop_pct": _pct("time_stop"),
             "end_of_window_pct": _pct("end_of_window"),
             # Fraction of exits classified by post-hoc inference (signal_flip) vs
             # definitively detected (end_of_window by timestamp matching). The engine
             # does not record exit_reason directly; see backlog note in PerformanceTracker.
-            "inferred_classification_pct": round(n_inferred / total_trades * 100, 2) if total_trades else 0.0,
+            "inferred_classification_pct": round(n_inferred / total_trades * 100, 2)
+            if total_trades
+            else 0.0,
         },
         "stop_loss_recovery_rate": sl_recovery,  # A3.1
-        "per_trade_expectancy_bps": {            # A3.4: net portfolio bps (NOT position-level gross)
-            "mean":   round(mean_bps, 4) if mean_bps is not None else None,
-            "se":     round(se_bps,   4) if se_bps   is not None else None,
+        "per_trade_expectancy_bps": {  # A3.4: net portfolio bps (NOT position-level gross)
+            "mean": round(mean_bps, 4) if mean_bps is not None else None,
+            "se": round(se_bps, 4) if se_bps is not None else None,
             "t_stat": t_stat,
-            "n":      n_trades,
+            "n": n_trades,
         },
         "zero_trade_slot_pct": zero_trade_slot_pct,  # A3.4
     }
@@ -602,17 +665,36 @@ def _aggregate_trade_diagnostics(all_records: list, results: list) -> dict:
 # ---------------------------------------------------------------------------
 
 _UNTESTED_KEYWORDS = [
-    'delta', 'walk-forward pe', 'holdout pe', ' pe ', ' lag',
-    'conditional sharpe', 'regime-conditional', 'v5', 'reverse control',
-    'parameter drift', 'generalization', 'buy-hold', 'buy.hold',
+    "delta",
+    "walk-forward pe",
+    "holdout pe",
+    " pe ",
+    " lag",
+    "conditional sharpe",
+    "regime-conditional",
+    "v5",
+    "reverse control",
+    "parameter drift",
+    "generalization",
+    "buy-hold",
+    "buy.hold",
 ]
 
 _KEYWORD_TO_FIELD = [
-    (['mr frequency', 'mr freq', 'regime frequency', 'regime_frequency', 'mr regime'], 'regime_frequency'),
-    (['win rate', 'win_rate', 'hit rate'],                          'median_win_rate'),
-    (['sharpe'],                                                     'median_sharpe'),
-    (['drawdown'],                                                   'max_abs_drawdown_pct'),
-    (['trade count', 'trade_count', 'trades'],                      'min_trade_count'),
+    (
+        [
+            "mr frequency",
+            "mr freq",
+            "regime frequency",
+            "regime_frequency",
+            "mr regime",
+        ],
+        "regime_frequency",
+    ),
+    (["win rate", "win_rate", "hit rate"], "median_win_rate"),
+    (["sharpe"], "median_sharpe"),
+    (["drawdown"], "max_abs_drawdown_pct"),
+    (["trade count", "trade_count", "trades"], "min_trade_count"),
     # 2026-07-09: previously unmapped -- "Walk-forward pooled IC >= ..." criteria were
     # ALWAYS UNTESTED (no matching keyword), regardless of what forecast_return_corr
     # actually contained. Now resolves to median_forecast_return_corr, which
@@ -626,7 +708,10 @@ _KEYWORD_TO_FIELD = [
     # Only match the specific "walk-forward pooled ic" phrase this brief's
     # validation_protocol.yaml actually uses for the MAGNITUDE criterion, and
     # explicitly exclude anything mentioning significance/p-value wording.
-    (['walk-forward pooled ic', 'walk forward pooled ic'], 'median_forecast_return_corr'),
+    (
+        ["walk-forward pooled ic", "walk forward pooled ic"],
+        "median_forecast_return_corr",
+    ),
 ]
 # KNOWN UNIT AMBIGUITY (2026-07-09, deliberately unresolved): this criterion's
 # threshold is worded as a percentage ("IC >= 1.5-2.0%"), but
@@ -639,9 +724,11 @@ _KEYWORD_TO_FIELD = [
 # ever becomes the deciding criterion for a promote/kill call, resolve the
 # ambiguity explicitly before trusting it.
 
+
 def _is_untested(text: str) -> bool:
     lower = text.lower()
     return any(kw in lower for kw in _UNTESTED_KEYWORDS)
+
 
 # 2026-07-09: significance/p-value wording that must NEVER resolve to
 # median_forecast_return_corr -- a criterion phrased as "pooled_ic is
@@ -649,31 +736,38 @@ def _is_untested(text: str) -> bool:
 # an IC magnitude threshold. Conflating the two let a real IC value (0.037)
 # coincidentally satisfy an unrelated "< 0.05" p-value threshold and flip a
 # verdict to a false PROMOTE -- see _KEYWORD_TO_FIELD's own note.
-_SIGNIFICANCE_WORDING = ['p<', 'p <', 'p-value', 'significant']
+_SIGNIFICANCE_WORDING = ["p<", "p <", "p-value", "significant"]
 
 
 def _resolve_field(text: str):
     lower = text.lower()
     for keywords, field in _KEYWORD_TO_FIELD:
         if any(kw in lower for kw in keywords):
-            if field == 'median_forecast_return_corr' and any(
+            if field == "median_forecast_return_corr" and any(
                 w in lower for w in _SIGNIFICANCE_WORDING
             ):
                 continue
             return field
     return None
 
+
 def _parse_op_value(text: str):
-    m = re.search(r'([≥>≤<]=?)\s*([0-9]+\.?[0-9]*)\s*%?', text)
+    m = re.search(r"([≥>≤<]=?)\s*([0-9]+\.?[0-9]*)\s*%?", text)
     if not m:
         return None, None
-    op  = m.group(1).replace('≥', '>=').replace('≤', '<=')
+    op = m.group(1).replace("≥", ">=").replace("≤", "<=")
     val = float(m.group(2))
     return op, val
 
+
 def _apply_op(op: str, actual: float, threshold: float) -> bool:
-    return {'>': actual > threshold, '>=': actual >= threshold,
-            '<': actual < threshold, '<=': actual <= threshold}.get(op, False)
+    return {
+        ">": actual > threshold,
+        ">=": actual >= threshold,
+        "<": actual < threshold,
+        "<=": actual <= threshold,
+    }.get(op, False)
+
 
 def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
     """
@@ -701,87 +795,113 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
     rescuing the hypothesis -- median_sharpe/min_trade_count (already computed,
     never contaminated by this bug) remain the primary evidence either way.
     """
-    corrs = [r['core'].get('forecast_return_corr') for r in rows
-             if r.get('core', {}).get('forecast_return_corr') is not None]
+    corrs = [
+        r["core"].get("forecast_return_corr")
+        for r in rows
+        if r.get("core", {}).get("forecast_return_corr") is not None
+    ]
     if corrs:
-        return round(statistics.median(corrs), 4), 'per_window_median_pearson'
+        return round(statistics.median(corrs), 4), "per_window_median_pearson"
     if runs_root is None:
         return None, None
 
     import pandas as pd
+
     sys.path.insert(0, _HERE)
     import prescreen_signal as _ps
 
     records = []
-    for r in sorted(rows, key=lambda x: x['window']):
-        bars_path = Path(runs_root) / r['run_id'] / 'bars.csv'
+    for r in sorted(rows, key=lambda x: x["window"]):
+        bars_path = Path(runs_root) / r["run_id"] / "bars.csv"
         if not bars_path.exists():
             continue
         bdf = pd.read_csv(bars_path)
-        if 'forecast' not in bdf.columns or 'close' not in bdf.columns:
+        if "forecast" not in bdf.columns or "close" not in bdf.columns:
             continue
-        closes = bdf['close'].tolist()
-        forecasts = bdf['forecast'].tolist()
+        closes = bdf["close"].tolist()
+        forecasts = bdf["forecast"].tolist()
         for i in range(len(bdf) - 1):
             if closes[i] == 0:
                 continue
-            records.append({
-                'forecast': float(forecasts[i]),
-                'next_return_bps': (closes[i + 1] - closes[i]) / closes[i] * 10000.0,
-            })
+            records.append(
+                {
+                    "forecast": float(forecasts[i]),
+                    "next_return_bps": (closes[i + 1] - closes[i])
+                    / closes[i]
+                    * 10000.0,
+                }
+            )
     if not records:
         return None, None
 
-    symbol = rows[0]['symbol']
+    symbol = rows[0]["symbol"]
     boot = _ps._stationary_block_bootstrap_ic_significance({symbol: records})
-    return boot.get('pooled_ic'), boot['method']
+    return boot.get("pooled_ic"), boot["method"]
 
 
-def _build_extended_summary(per_symbol_summary: dict, results: list, runs_root=None) -> dict:
+def _build_extended_summary(
+    per_symbol_summary: dict, results: list, runs_root=None
+) -> dict:
     """Augment per_symbol_summary with median_win_rate, regime_frequency, and
     median_forecast_return_corr (with a degenerate-signal bootstrap fallback --
     see _pooled_ic_with_bootstrap_fallback)."""
     extended = {s: dict(v) for s, v in per_symbol_summary.items()}
     for symbol in extended:
-        rows = [r for r in results if r['symbol'] == symbol]
-        win_rates = [r['core']['win_rate'] for r in rows
-                     if r.get('core', {}).get('win_rate') is not None]
-        extended[symbol]['median_win_rate'] = (
+        rows = [r for r in results if r["symbol"] == symbol]
+        win_rates = [
+            r["core"]["win_rate"]
+            for r in rows
+            if r.get("core", {}).get("win_rate") is not None
+        ]
+        extended[symbol]["median_win_rate"] = (
             round(statistics.median(win_rates), 4) if win_rates else None
         )
         freqs = []
         for r in rows:
-            pr = r.get('per_regime')
+            pr = r.get("per_regime")
             if pr:
-                mr_bars = pr.get('mean_reversion', {}).get('bar_count', 0)
-                total   = sum(v.get('bar_count', 0) for v in pr.values())
+                mr_bars = pr.get("mean_reversion", {}).get("bar_count", 0)
+                total = sum(v.get("bar_count", 0) for v in pr.values())
                 if total > 0:
                     freqs.append(mr_bars / total * 100)  # as %, to match "≥ 5%" in text
-        extended[symbol]['regime_frequency'] = (
+        extended[symbol]["regime_frequency"] = (
             round(statistics.median(freqs), 4) if freqs else None
         )
         corr, method = _pooled_ic_with_bootstrap_fallback(rows, runs_root)
-        extended[symbol]['median_forecast_return_corr'] = corr
-        extended[symbol]['median_forecast_return_corr_method'] = method
+        extended[symbol]["median_forecast_return_corr"] = corr
+        extended[symbol]["median_forecast_return_corr_method"] = method
     return extended
 
+
 def _split_criteria(text: str) -> list:
-    return [p.strip().rstrip('.')
-            for p in re.split(r'\bAND\b|\bOR\b', text, flags=re.IGNORECASE)
-            if p.strip()]
+    return [
+        p.strip().rstrip(".")
+        for p in re.split(r"\bAND\b|\bOR\b", text, flags=re.IGNORECASE)
+        if p.strip()
+    ]
+
 
 def _evaluate_criterion(text: str, extended: dict, is_reject: bool) -> dict:
     if _is_untested(text):
-        return {'criterion': text, 'result': 'UNTESTED',
-                'reason': 'not available in current metrics pipeline'}
+        return {
+            "criterion": text,
+            "result": "UNTESTED",
+            "reason": "not available in current metrics pipeline",
+        }
     field = _resolve_field(text)
     if field is None:
-        return {'criterion': text, 'result': 'UNTESTED',
-                'reason': 'no matching metric keyword'}
+        return {
+            "criterion": text,
+            "result": "UNTESTED",
+            "reason": "no matching metric keyword",
+        }
     op, threshold = _parse_op_value(text)
     if op is None:
-        return {'criterion': text, 'result': 'UNTESTED',
-                'reason': 'could not parse numeric threshold'}
+        return {
+            "criterion": text,
+            "result": "UNTESTED",
+            "reason": "could not parse numeric threshold",
+        }
     # 2026-07-09: sanity check for an impossible threshold -- a correlation
     # coefficient can never exceed 1.0 in absolute value, so a criterion like
     # "IC >= 1.5%" parsed as a raw threshold of 1.5 (not 0.015) is structurally
@@ -789,29 +909,58 @@ def _evaluate_criterion(text: str, extended: dict, is_reject: bool) -> dict:
     # LLM-authored validation_protocol.yaml, not a real evidentiary FAIL. See
     # workflow_artifacts/skills/quant-validation/SKILL.md's changelog for the incident this closes
     # (P4_ts_trend/run_054's "Walk-forward pooled IC >= 1.5-2.0%").
-    if field == 'median_forecast_return_corr' and abs(threshold) > 1.0:
-        return {'criterion': text, 'field': field, 'result': 'SPEC_ERROR',
-                'reason': (f'threshold={threshold} exceeds 1.0 -- impossible for a '
-                           f'correlation coefficient; likely a percent/decimal unit '
-                           f'mismatch in validation_protocol.yaml, not a real criterion')}
+    if field == "median_forecast_return_corr" and abs(threshold) > 1.0:
+        return {
+            "criterion": text,
+            "field": field,
+            "result": "SPEC_ERROR",
+            "reason": (
+                f"threshold={threshold} exceeds 1.0 -- impossible for a "
+                f"correlation coefficient; likely a percent/decimal unit "
+                f"mismatch in validation_protocol.yaml, not a real criterion"
+            ),
+        }
     per_symbol = []
     for symbol, vals in extended.items():
         actual = vals.get(field)
         if actual is None:
-            per_symbol.append({'symbol': symbol, 'result': 'UNTESTED',
-                                'reason': f'{field} not computed'})
+            per_symbol.append(
+                {
+                    "symbol": symbol,
+                    "result": "UNTESTED",
+                    "reason": f"{field} not computed",
+                }
+            )
             continue
         condition_met = _apply_op(op, actual, threshold)
-        result = ('FAIL' if (is_reject and condition_met)
-                         or (not is_reject and not condition_met)
-                  else 'PASS')
-        per_symbol.append({'symbol': symbol, 'actual': round(actual, 4),
-                            'required': f'{op} {threshold}', 'result': result})
-    overall = ('UNTESTED' if all(r['result'] == 'UNTESTED' for r in per_symbol)
-               else 'FAIL'  if any(r['result'] == 'FAIL'    for r in per_symbol)
-               else 'PASS')
-    return {'criterion': text, 'field': field, 'required': threshold,
-            'result': overall, 'per_symbol': per_symbol}
+        result = (
+            "FAIL"
+            if (is_reject and condition_met) or (not is_reject and not condition_met)
+            else "PASS"
+        )
+        per_symbol.append(
+            {
+                "symbol": symbol,
+                "actual": round(actual, 4),
+                "required": f"{op} {threshold}",
+                "result": result,
+            }
+        )
+    overall = (
+        "UNTESTED"
+        if all(r["result"] == "UNTESTED" for r in per_symbol)
+        else "FAIL"
+        if any(r["result"] == "FAIL" for r in per_symbol)
+        else "PASS"
+    )
+    return {
+        "criterion": text,
+        "field": field,
+        "required": threshold,
+        "result": overall,
+        "per_symbol": per_symbol,
+    }
+
 
 def evaluate_against_decision_rules(
     per_symbol_summary: dict,
@@ -833,21 +982,22 @@ def evaluate_against_decision_rules(
     """
     extended = _build_extended_summary(per_symbol_summary, results, runs_root)
 
-    decision_rules    = validation_protocol.get('decision_rules', {})
-    required_evidence = validation_protocol.get('required_evidence', []) or []
+    decision_rules = validation_protocol.get("decision_rules", {})
+    required_evidence = validation_protocol.get("required_evidence", []) or []
 
     def _normalize_evidence_item(item) -> str:
         if isinstance(item, dict):
             k, v = next(iter(item.items()))
             return f"{k}: {v}"
         return str(item)
+
     required_evidence = [_normalize_evidence_item(i) for i in required_evidence]
 
     def _dict_to_criterion_text(d: dict) -> str:
-        metric    = d.get('metric',    d.get('criterion', ''))
-        operator  = d.get('operator',  d.get('op', ''))
-        threshold = d.get('threshold', d.get('value', ''))
-        window    = d.get('window', '')
+        metric = d.get("metric", d.get("criterion", ""))
+        operator = d.get("operator", d.get("op", ""))
+        threshold = d.get("threshold", d.get("value", ""))
+        window = d.get("window", "")
         text = f"{metric}: {operator} {threshold}"
         if window:
             text += f" ({window})"
@@ -865,40 +1015,43 @@ def evaluate_against_decision_rules(
             elif isinstance(item, str):
                 approve_texts.append(item)
         reject_texts = []
-    elif 'approve_if_all_met' in decision_rules:
-        approve_texts = list(decision_rules['approve_if_all_met'])
-        reject_texts  = list(decision_rules.get('reject_if_any_met', []))
+    elif "approve_if_all_met" in decision_rules:
+        approve_texts = list(decision_rules["approve_if_all_met"])
+        reject_texts = list(decision_rules.get("reject_if_any_met", []))
     else:
-        approve_texts = _split_criteria(decision_rules.get('approve', ''))
-        reject_texts  = _split_criteria(decision_rules.get('reject',  ''))
+        approve_texts = _split_criteria(decision_rules.get("approve", ""))
+        reject_texts = _split_criteria(decision_rules.get("reject", ""))
 
     criteria_results = []
     approve_rows, reject_rows, evidence_rows = [], [], []
 
     for text in approve_texts:
         row = _evaluate_criterion(text, extended, is_reject=False)
-        criteria_results.append(row); approve_rows.append(row)
+        criteria_results.append(row)
+        approve_rows.append(row)
 
     for text in reject_texts:
         row = _evaluate_criterion(text, extended, is_reject=True)
-        criteria_results.append(row); reject_rows.append(row)
+        criteria_results.append(row)
+        reject_rows.append(row)
 
     for text in required_evidence:
         row = _evaluate_criterion(text, extended, is_reject=False)
-        criteria_results.append(row); evidence_rows.append(row)
+        criteria_results.append(row)
+        evidence_rows.append(row)
 
     # Deduplicate by resolved metric field
     seen = set()
     deduped = []
     for row in criteria_results:
-        key = row.get('field') or row['criterion'].lower().strip()
+        key = row.get("field") or row["criterion"].lower().strip()
         if key not in seen:
             seen.add(key)
             deduped.append(row)
     criteria_results = deduped
     row_ids = {id(r) for r in criteria_results}
-    approve_rows  = [r for r in approve_rows  if id(r) in row_ids]
-    reject_rows   = [r for r in reject_rows   if id(r) in row_ids]
+    approve_rows = [r for r in approve_rows if id(r) in row_ids]
+    reject_rows = [r for r in reject_rows if id(r) in row_ids]
     evidence_rows = [r for r in evidence_rows if id(r) in row_ids]
 
     # 2026-07-09: SPEC_ERROR (an impossible threshold, e.g. a percent/decimal unit
@@ -907,27 +1060,49 @@ def evaluate_against_decision_rules(
     # mathematically pass OR fail would still count toward approve_evaluated,
     # and if it's the only criterion evaluated, approve_fails==0 (SPEC_ERROR != FAIL)
     # would incorrectly satisfy the promote condition.
-    _NOT_REALLY_EVALUATED = ('UNTESTED', 'SPEC_ERROR')
-    reject_triggered  = any(r['result'] == 'FAIL' for r in reject_rows)
-    approve_fails     = sum(1 for r in approve_rows + evidence_rows if r['result'] == 'FAIL')
-    approve_evaluated = sum(1 for r in approve_rows + evidence_rows if r['result'] not in _NOT_REALLY_EVALUATED)
+    _NOT_REALLY_EVALUATED = ("UNTESTED", "SPEC_ERROR")
+    reject_triggered = any(r["result"] == "FAIL" for r in reject_rows)
+    approve_fails = sum(
+        1 for r in approve_rows + evidence_rows if r["result"] == "FAIL"
+    )
+    approve_evaluated = sum(
+        1
+        for r in approve_rows + evidence_rows
+        if r["result"] not in _NOT_REALLY_EVALUATED
+    )
 
     if reject_triggered:
-        verdict = 'kill'
+        verdict = "kill"
     elif approve_fails == 0 and approve_evaluated > 0:
-        verdict = 'promote'
+        verdict = "promote"
     else:
-        verdict = 'refine'
+        verdict = "refine"
 
-    tested   = [r for r in criteria_results if r['result'] not in _NOT_REALLY_EVALUATED]
-    untested = [r for r in criteria_results if r['result'] in _NOT_REALLY_EVALUATED]
-    fail_n   = sum(1 for r in tested if r['result'] == 'FAIL')
+    tested = [r for r in criteria_results if r["result"] not in _NOT_REALLY_EVALUATED]
+    untested = [r for r in criteria_results if r["result"] in _NOT_REALLY_EVALUATED]
+    fail_n = sum(1 for r in tested if r["result"] == "FAIL")
 
     # Diagnostics block — evidence for altitude decision by verdict_interpreter
-    gross_pnls  = [r["core"].get("gross_pnl")                for r in results if r["core"].get("gross_pnl")                is not None]
-    cost_drags  = [r["core"].get("cost_drag_pct")            for r in results if r["core"].get("cost_drag_pct")            is not None]
-    corrs       = [r["core"].get("forecast_return_corr")     for r in results if r["core"].get("forecast_return_corr")     is not None]
-    durations   = [r["core"].get("avg_trade_duration_bars")  for r in results if r["core"].get("avg_trade_duration_bars")  is not None]
+    gross_pnls = [
+        r["core"].get("gross_pnl")
+        for r in results
+        if r["core"].get("gross_pnl") is not None
+    ]
+    cost_drags = [
+        r["core"].get("cost_drag_pct")
+        for r in results
+        if r["core"].get("cost_drag_pct") is not None
+    ]
+    corrs = [
+        r["core"].get("forecast_return_corr")
+        for r in results
+        if r["core"].get("forecast_return_corr") is not None
+    ]
+    durations = [
+        r["core"].get("avg_trade_duration_bars")
+        for r in results
+        if r["core"].get("avg_trade_duration_bars") is not None
+    ]
 
     uninformative: list = []
     for r in results:
@@ -935,9 +1110,11 @@ def evaluate_against_decision_rules(
             if not stats.get("informative", True) and regime not in uninformative:
                 uninformative.append(regime)
 
-    wr_rows     = [row for row in criteria_results if row.get("field") == "median_win_rate"]
-    sharpe_rows = [row for row in criteria_results if row.get("field") == "median_sharpe"]
-    wr_pass     = bool(wr_rows)     and all(r["result"] == "PASS" for r in wr_rows)
+    wr_rows = [row for row in criteria_results if row.get("field") == "median_win_rate"]
+    sharpe_rows = [
+        row for row in criteria_results if row.get("field") == "median_sharpe"
+    ]
+    wr_pass = bool(wr_rows) and all(r["result"] == "PASS" for r in wr_rows)
     sharpe_fail = bool(sharpe_rows) and any(r["result"] == "FAIL" for r in sharpe_rows)
     if wr_pass and sharpe_fail:
         wr_vs_sharpe = "win_rate PASS + sharpe FAIL"
@@ -951,33 +1128,49 @@ def evaluate_against_decision_rules(
     sparse_windows = sum(
         1 for r in results if r["core"].get("trade_count", 0) < _SPARSE_TRADE_FLOOR
     )
-    below_floor_pct = round(sparse_windows / total_windows * 100, 2) if total_windows else 0.0
+    below_floor_pct = (
+        round(sparse_windows / total_windows * 100, 2) if total_windows else 0.0
+    )
 
     diagnostics = {
-        "median_gross_pnl":               round(statistics.median(gross_pnls),  4) if gross_pnls  else None,
-        "median_cost_drag_pct":           round(statistics.median(cost_drags),  4) if cost_drags  else None,
-        "median_forecast_return_corr":    round(statistics.median(corrs),       4) if corrs       else None,
-        "median_avg_trade_duration_bars": round(statistics.median(durations),   2) if durations   else None,
-        "uninformative_regimes":          uninformative,
-        "win_rate_vs_sharpe":             wr_vs_sharpe,
-        "below_floor_pct":                below_floor_pct,  # A3.4
+        "median_gross_pnl": round(statistics.median(gross_pnls), 4)
+        if gross_pnls
+        else None,
+        "median_cost_drag_pct": round(statistics.median(cost_drags), 4)
+        if cost_drags
+        else None,
+        "median_forecast_return_corr": round(statistics.median(corrs), 4)
+        if corrs
+        else None,
+        "median_avg_trade_duration_bars": round(statistics.median(durations), 2)
+        if durations
+        else None,
+        "uninformative_regimes": uninformative,
+        "win_rate_vs_sharpe": wr_vs_sharpe,
+        "below_floor_pct": below_floor_pct,  # A3.4
     }
 
     # A3.4: inject per_trade_expectancy_bps and zero_trade_slot_pct from trade diagnostics
     if trade_diagnostics_summary:
-        diagnostics["per_trade_expectancy_bps"] = trade_diagnostics_summary.get("per_trade_expectancy_bps")
-        diagnostics["zero_trade_slot_pct"]       = trade_diagnostics_summary.get("zero_trade_slot_pct")
+        diagnostics["per_trade_expectancy_bps"] = trade_diagnostics_summary.get(
+            "per_trade_expectancy_bps"
+        )
+        diagnostics["zero_trade_slot_pct"] = trade_diagnostics_summary.get(
+            "zero_trade_slot_pct"
+        )
 
     return {
-        'verdict':          verdict,
-        'criteria_results': criteria_results,
-        'verdict_reason':   f"{fail_n} of {len(tested)} evaluable criteria FAIL; "
-                            f"{len(untested)} UNTESTED",
-        'diagnostics':      diagnostics,
+        "verdict": verdict,
+        "criteria_results": criteria_results,
+        "verdict_reason": f"{fail_n} of {len(tested)} evaluable criteria FAIL; "
+        f"{len(untested)} UNTESTED",
+        "diagnostics": diagnostics,
     }
 
 
-def _cross_check_prescreen_vs_backtest(out_dir: Path, results: list, extended: dict | None = None) -> dict | None:
+def _cross_check_prescreen_vs_backtest(
+    out_dir: Path, results: list, extended: dict | None = None
+) -> dict | None:
     """
     2026-07-09: institutionalized after the P4_ts_trend incident where prescreen's
     bootstrap IC (pooled_ic=0.0359, p=0.004, significant) and the full backtest's
@@ -1006,6 +1199,7 @@ def _cross_check_prescreen_vs_backtest(out_dir: Path, results: list, extended: d
     if not prescreen_path.exists():
         return None
     import yaml
+
     with open(prescreen_path, encoding="utf-8") as f:
         prescreen = yaml.safe_load(f) or {}
 
@@ -1016,8 +1210,12 @@ def _cross_check_prescreen_vs_backtest(out_dir: Path, results: list, extended: d
     if extended:
         # Resolved values (post block-bootstrap-fallback) -- the honest, final
         # per-symbol IC this run actually used for its criteria evaluation.
-        resolved_corrs = [vals.get("median_forecast_return_corr") for vals in extended.values()]
-        resolved_methods = {vals.get("median_forecast_return_corr_method") for vals in extended.values()}
+        resolved_corrs = [
+            vals.get("median_forecast_return_corr") for vals in extended.values()
+        ]
+        resolved_methods = {
+            vals.get("median_forecast_return_corr_method") for vals in extended.values()
+        }
         defined_corrs = [c for c in resolved_corrs if c is not None]
         n_total = len(resolved_corrs)
         n_defined = len(defined_corrs)
@@ -1055,84 +1253,113 @@ def _cross_check_prescreen_vs_backtest(out_dir: Path, results: list, extended: d
                 )
 
     result = {
-        "prescreen_significant":       prescreen_significant,
-        "prescreen_pooled_ic":         prescreen_pooled_ic,
-        "backtest_n_windows_defined":  n_defined,
-        "backtest_n_windows_total":    n_total,
+        "prescreen_significant": prescreen_significant,
+        "prescreen_pooled_ic": prescreen_pooled_ic,
+        "backtest_n_windows_defined": n_defined,
+        "backtest_n_windows_total": n_total,
         "backtest_bootstrap_fallback_used": fallback_used,
-        "disagreement_detected":       disagreement,
-        "detail":                      detail,
+        "disagreement_detected": disagreement,
+        "detail": detail,
     }
     if disagreement:
         print(f"\n⚠️⚠️⚠️ [CROSS-CHECK] prescreen/backtest DISAGREEMENT: {detail}")
-        print("⚠️⚠️⚠️ Treat any verdict_interpreter narrative citing forecast_return_corr "
-              "with suspicion until this is investigated.\n")
+        print(
+            "⚠️⚠️⚠️ Treat any verdict_interpreter narrative citing forecast_return_corr "
+            "with suspicion until this is investigated.\n"
+        )
     elif fallback_used:
-        print(f"\n✅ [CROSS-CHECK] prescreen/backtest agree after block-bootstrap fallback "
-              f"(prescreen pooled_ic={prescreen_pooled_ic}, backtest resolved "
-              f"{n_defined}/{n_total} symbols to the same sign).\n")
+        print(
+            f"\n✅ [CROSS-CHECK] prescreen/backtest agree after block-bootstrap fallback "
+            f"(prescreen pooled_ic={prescreen_pooled_ic}, backtest resolved "
+            f"{n_defined}/{n_total} symbols to the same sign).\n"
+        )
     return result
 
 
 def main():
     parser = argparse.ArgumentParser(description="Walk-forward protocol runner")
-    parser.add_argument("config_path",   help="Path to strategy_config.json")
+    parser.add_argument("config_path", help="Path to strategy_config.json")
     parser.add_argument("protocol_path", help="Path to protocol JSON spec")
-    parser.add_argument("--holdout",      action="store_true")
+    parser.add_argument("--holdout", action="store_true")
     parser.add_argument("--i-understand", action="store_true", dest="i_understand")
-    parser.add_argument("--validation-protocol", default=None,
-                        help="Path to validation_protocol.yaml for hypothesis-specific verdict")
-    parser.add_argument("--out-dir", default=None,
-                        help="Override output directory (default: results/protocols/<run_id>)")
-    parser.add_argument("--cost-product", default="spot", choices=["spot", "perp"],
-                        dest="cost_product",
-                        help="2026-07-20 (Dispatch H): which cost_model.yaml fee block to "
-                             "cost this re-run at. Default 'spot' preserves exact prior "
-                             "behavior (top-level fee_rate_bps). 'perp' reads the additive "
-                             "cost_model['perp']['fee_rate_bps'] block instead -- valid only "
-                             "for price-based strategies (funding cash flows are not modeled; "
-                             "do not use for funding-carry strategies, see cost_model.yaml's "
-                             "PERP CALIBRATION block).")
-    parser.add_argument("--commission-bps", type=float, default=None, dest="commission_bps",
-                        help="2026-07-20 (Dispatch L): explicit one-way taker commission in bps "
-                             "per leg (e.g. 10 for the historical 0.001 default, 5 for the perp "
-                             "0.0005 rate), converted the same way as --cost-product (/10000, no "
-                             "double-charge). Takes precedence over --cost-product when both are "
-                             "given. Absent, behavior is byte-identical to today (falls through "
-                             "to --cost-product's existing resolution). Intended for controlled "
-                             "fee-isolation experiments that need an exact rate cost_model.yaml "
-                             "doesn't happen to supply as either 'spot' or 'perp'.")
-    parser.add_argument("--exchange", default=None,
-                        help="2026-08-09 (fix/exchange-plumbing-campaign-aux, Ticket 13): CCXT "
-                             "exchange id for every run_backtest() call this campaign makes. "
-                             "Takes precedence over the protocol file's own top-level 'exchange' "
-                             "field when both are given. Option Y (locked): resolution is "
-                             "--exchange -> protocol field -> explicit 'binance', and this NEVER "
-                             "falls through to run_backtest's own config.json-read arm -- ambient "
-                             "config.json must not silently decide a campaign's venue. Absent "
-                             "both, campaigns resolve to 'binance', identical to the venue every "
-                             "existing campaign already scored via the engine's own default.")
-    parser.add_argument("--drop-feeds", default=None,
-                        help="2026-08-11 (fix/feed-dependency-safety, Step 2): comma-separated "
-                             "FEED_REGISTRY names (e.g. 'funding_rate,fear_greed') to exclude "
-                             "from every run_backtest() call this campaign makes. Takes "
-                             "precedence over the protocol file's own top-level 'drop_feeds' "
-                             "field when both are given. Absent both, no feed is dropped -- "
-                             "byte-identical to today (same resolution shape as --exchange "
-                             "above, but with no forced fallback: None IS the correct "
-                             "'drop nothing' value here, not a placeholder needing one).")
+    parser.add_argument(
+        "--validation-protocol",
+        default=None,
+        help="Path to validation_protocol.yaml for hypothesis-specific verdict",
+    )
+    parser.add_argument(
+        "--out-dir",
+        default=None,
+        help="Override output directory (default: results/protocols/<run_id>)",
+    )
+    parser.add_argument(
+        "--cost-product",
+        default="spot",
+        choices=["spot", "perp"],
+        dest="cost_product",
+        help="2026-07-20 (Dispatch H): which cost_model.yaml fee block to "
+        "cost this re-run at. Default 'spot' preserves exact prior "
+        "behavior (top-level fee_rate_bps). 'perp' reads the additive "
+        "cost_model['perp']['fee_rate_bps'] block instead -- valid only "
+        "for price-based strategies (funding cash flows are not modeled; "
+        "do not use for funding-carry strategies, see cost_model.yaml's "
+        "PERP CALIBRATION block).",
+    )
+    parser.add_argument(
+        "--commission-bps",
+        type=float,
+        default=None,
+        dest="commission_bps",
+        help="2026-07-20 (Dispatch L): explicit one-way taker commission in bps "
+        "per leg (e.g. 10 for the historical 0.001 default, 5 for the perp "
+        "0.0005 rate), converted the same way as --cost-product (/10000, no "
+        "double-charge). Takes precedence over --cost-product when both are "
+        "given. Absent, behavior is byte-identical to today (falls through "
+        "to --cost-product's existing resolution). Intended for controlled "
+        "fee-isolation experiments that need an exact rate cost_model.yaml "
+        "doesn't happen to supply as either 'spot' or 'perp'.",
+    )
+    parser.add_argument(
+        "--exchange",
+        default=None,
+        help="2026-08-09 (fix/exchange-plumbing-campaign-aux, Ticket 13): CCXT "
+        "exchange id for every run_backtest() call this campaign makes. "
+        "Takes precedence over the protocol file's own top-level 'exchange' "
+        "field when both are given. Option Y (locked): resolution is "
+        "--exchange -> protocol field -> explicit 'binance', and this NEVER "
+        "falls through to run_backtest's own config.json-read arm -- ambient "
+        "config.json must not silently decide a campaign's venue. Absent "
+        "both, campaigns resolve to 'binance', identical to the venue every "
+        "existing campaign already scored via the engine's own default.",
+    )
+    parser.add_argument(
+        "--drop-feeds",
+        default=None,
+        help="2026-08-11 (fix/feed-dependency-safety, Step 2): comma-separated "
+        "FEED_REGISTRY names (e.g. 'funding_rate,fear_greed') to exclude "
+        "from every run_backtest() call this campaign makes. Takes "
+        "precedence over the protocol file's own top-level 'drop_feeds' "
+        "field when both are given. Absent both, no feed is dropped -- "
+        "byte-identical to today (same resolution shape as --exchange "
+        "above, but with no forced fallback: None IS the correct "
+        "'drop nothing' value here, not a placeholder needing one).",
+    )
     args = parser.parse_args()
 
     # Holdout gate: require BOTH flags or NEITHER
     if args.holdout != args.i_understand:
-        print("ERROR: --holdout requires --i-understand (and vice versa). Pass both or neither.",
-              file=sys.stderr)
+        print(
+            "ERROR: --holdout requires --i-understand (and vice versa). Pass both or neither.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     if args.commission_bps is not None:
-        print(f"[cost-override] --commission-bps={args.commission_bps} -> "
-              f"commission_rate={float(args.commission_bps) / 10000.0} "
-              f"(takes precedence over --cost-product={args.cost_product!r} for this entire run)")
+        print(
+            f"[cost-override] --commission-bps={args.commission_bps} -> "
+            f"commission_rate={float(args.commission_bps) / 10000.0} "
+            f"(takes precedence over --cost-product={args.cost_product!r} for this entire run)"
+        )
 
     with open(args.protocol_path, encoding="utf-8") as f:
         protocol = json.load(f)
@@ -1160,14 +1387,20 @@ def main():
     # genuinely absent source stays None rather than coalescing to a forced
     # default -- None IS the correct "no drop" value here, not a placeholder.
     if args.drop_feeds is not None:
-        drop_feeds = [name.strip() for name in args.drop_feeds.split(",") if name.strip()]
+        drop_feeds = [
+            name.strip() for name in args.drop_feeds.split(",") if name.strip()
+        ]
     else:
         drop_feeds = protocol.get("drop_feeds")
     # Protocol-level timeframe (default "1h" preserves exact prior behavior —
     # run_backtest's own interval_seconds=None default falls back identically
     # to the pre-existing global-config-derived interval).
     protocol_timeframe = protocol.get("timeframe", "1h")
-    interval_seconds = parse_interval_seconds(protocol_timeframe) if protocol_timeframe != "1h" else None
+    interval_seconds = (
+        parse_interval_seconds(protocol_timeframe)
+        if protocol_timeframe != "1h"
+        else None
+    )
     os.makedirs(_RESULTS_ROOT, exist_ok=True)
 
     run_id = _protocol_run_id(config_sha8)
@@ -1196,7 +1429,7 @@ def main():
     if args.holdout:
         h = protocol["holdout"]
         start = h["start"]
-        end   = h["end"] if h["end"] is not None else date.today().isoformat()
+        end = h["end"] if h["end"] is not None else date.today().isoformat()
 
         _runs_root = str(out_dir / "results") if args.out_dir else None
         holdout_results = {}
@@ -1207,21 +1440,30 @@ def main():
             # loop's OWN start IS the holdout start, so its prefetch legitimately
             # reaches backward into pre-holdout training data for warmup only
             # (never scored) -- that's the intended, correct behavior.
-            rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
-                              runs_root=_runs_root, interval_seconds=interval_seconds,
-                              warmup_prefetch=True,
-                              commission_rate=_resolve_commission_rate(
-                                  symbol, cost_model, args.commission_bps, args.cost_product),
-                              exchange=exchange, drop_feeds=drop_feeds)
+            rd = run_backtest(
+                args.config_path,
+                symbol,
+                start,
+                end,
+                _RESULTS_ROOT,
+                runs_root=_runs_root,
+                interval_seconds=interval_seconds,
+                warmup_prefetch=True,
+                commission_rate=_resolve_commission_rate(
+                    symbol, cost_model, args.commission_bps, args.cost_product
+                ),
+                exchange=exchange,
+                drop_feeds=drop_feeds,
+            )
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             holdout_results[symbol] = {"run_id": rd.name, "core": m["core"]}
 
         payload = {
             "protocol_run_id": run_id,
-            "config_sha256":   config_sha256,
-            "holdout_window":  {"start": start, "end": end},
-            "results":         holdout_results,
+            "config_sha256": config_sha256,
+            "holdout_window": {"start": start, "end": end},
+            "results": holdout_results,
         }
         (out_dir / "holdout_result.json").write_text(
             json.dumps(payload, indent=2, default=str), encoding="utf-8"
@@ -1230,10 +1472,10 @@ def main():
 
         log_path = Path(_RESULTS_ROOT) / "holdout_log.jsonl"
         line = {
-            "utc":             datetime.now(timezone.utc).isoformat(),
-            "config_sha256":   config_sha256,
+            "utc": datetime.now(timezone.utc).isoformat(),
+            "config_sha256": config_sha256,
             "protocol_run_id": run_id,
-            "symbols_core":    {s: holdout_results[s]["core"] for s in symbols},
+            "symbols_core": {s: holdout_results[s]["core"] for s in symbols},
         }
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(line, default=str) + "\n")
@@ -1247,7 +1489,9 @@ def main():
     n_new = len(symbols) * len(protocol["windows"])
     print(f"Budget used for this config: {prior_runs}/20 scored runs")
     if prior_runs + n_new > 20:
-        print(f"WARNING: this run adds {n_new}, bringing total to {prior_runs + n_new}/20 (over budget). Continuing.")
+        print(
+            f"WARNING: this run adds {n_new}, bringing total to {prior_runs + n_new}/20 (over budget). Continuing."
+        )
 
     _runs_root = str(out_dir / "results") if args.out_dir else None
     results = []
@@ -1262,9 +1506,9 @@ def main():
 
     for symbol in symbols:
         for window in protocol["windows"]:
-            label     = window["label"]
-            start     = window["test"]["start"]
-            end       = window["test"]["end"]
+            label = window["label"]
+            start = window["test"]["start"]
+            end = window["test"]["end"]
             if _holdout_start is not None:
                 # STRICTLY less than, not <=. `end` reads as an exclusive bound
                 # (the next window starts on the same date) but it is not one:
@@ -1282,12 +1526,22 @@ def main():
                     f"bars. Fix the protocol's windows before proceeding."
                 )
             print(f"  {symbol}  window={label}  {start} to {end} ...")
-            rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
-                              runs_root=_runs_root, interval_seconds=interval_seconds,
-                              warmup_prefetch=True, holdout_start=_holdout_start,
-                              commission_rate=_resolve_commission_rate(
-                                  symbol, cost_model, args.commission_bps, args.cost_product),
-                              exchange=exchange, drop_feeds=drop_feeds)
+            rd = run_backtest(
+                args.config_path,
+                symbol,
+                start,
+                end,
+                _RESULTS_ROOT,
+                runs_root=_runs_root,
+                interval_seconds=interval_seconds,
+                warmup_prefetch=True,
+                holdout_start=_holdout_start,
+                commission_rate=_resolve_commission_rate(
+                    symbol, cost_model, args.commission_bps, args.cost_product
+                ),
+                exchange=exchange,
+                drop_feeds=drop_feeds,
+            )
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
             core = m["core"]
@@ -1298,11 +1552,11 @@ def main():
                 core["sharpe"] = None
 
             result_entry = {
-                "symbol":          symbol,
-                "window":          label,
-                "run_id":          rd.name,
-                "core":            core,
-                "per_regime":      m.get("per_regime", {}),
+                "symbol": symbol,
+                "window": label,
+                "run_id": rd.name,
+                "core": core,
+                "per_regime": m.get("per_regime", {}),
                 "regime_validity": m.get("regime_validity", {}),
             }
             results.append(result_entry)
@@ -1313,8 +1567,10 @@ def main():
             )
             all_trade_records.extend(trade_records)
 
-            print(f"    sharpe={core.get('sharpe') or 0:.3f}  trades={m['core'].get('trade_count', 0)}"
-                  f"  dd={m['core'].get('max_drawdown_pct', 0):.1f}%")
+            print(
+                f"    sharpe={core.get('sharpe') or 0:.3f}  trades={m['core'].get('trade_count', 0)}"
+                f"  dd={m['core'].get('max_drawdown_pct', 0):.1f}%"
+            )
 
     # Step 03: aggregate trade diagnostics and write trade_diagnostics.json
     trade_diagnostics_summary = _aggregate_trade_diagnostics(all_trade_records, results)
@@ -1324,46 +1580,67 @@ def main():
             # fixture tests against. Run against strategy-research/results/protocols/
             # 20260702T091324Z_18fad381/protocol_summary.json to reproduce the known signature:
             # win rate 51%→57% from 2024→2025 cohorts while per-trade expectancy −26→−58 bps.
-            "trades":  all_trade_records,
+            "trades": all_trade_records,
             "summary": trade_diagnostics_summary,
         }
         (out_dir / "trade_diagnostics.json").write_text(
             json.dumps(td_payload, indent=2, default=str), encoding="utf-8"
         )
-        print(f"Trade diagnostics: {out_dir / 'trade_diagnostics.json'} "
-              f"({len(all_trade_records)} trades)")
+        print(
+            f"Trade diagnostics: {out_dir / 'trade_diagnostics.json'} "
+            f"({len(all_trade_records)} trades)"
+        )
 
     # Per-symbol summary (A3.4: median_sharpe excludes null-sharpe sparse windows)
     promo = protocol["promotion"]
     per_symbol = {}
     for symbol in symbols:
-        rows    = [r for r in results if r["symbol"] == symbol]
-        sharpes = [r["core"]["sharpe"] for r in rows if r["core"].get("sharpe") is not None]
-        dds     = [abs(m["core"]["max_drawdown_pct"])
-                   for r in rows
-                   for m in [{"core": {**r["core"], "max_drawdown_pct":
-                               r["core"].get("max_drawdown_pct", 0) or 0}}]]
-        trades  = [r["core"].get("trade_count", 0) for r in rows]
+        rows = [r for r in results if r["symbol"] == symbol]
+        sharpes = [
+            r["core"]["sharpe"] for r in rows if r["core"].get("sharpe") is not None
+        ]
+        dds = [
+            abs(m["core"]["max_drawdown_pct"])
+            for r in rows
+            for m in [
+                {
+                    "core": {
+                        **r["core"],
+                        "max_drawdown_pct": r["core"].get("max_drawdown_pct", 0) or 0,
+                    }
+                }
+            ]
+        ]
+        trades = [r["core"].get("trade_count", 0) for r in rows]
 
         # A3.4: zero_trade_slot_pct per symbol
-        sym_zero_pct = round(
-            sum(1 for r in rows if r["core"].get("trade_count", 0) == 0) / len(rows) * 100, 2
-        ) if rows else 0.0
+        sym_zero_pct = (
+            round(
+                sum(1 for r in rows if r["core"].get("trade_count", 0) == 0)
+                / len(rows)
+                * 100,
+                2,
+            )
+            if rows
+            else 0.0
+        )
 
         per_symbol[symbol] = {
-            "median_sharpe":        round(statistics.median(sharpes), 4) if sharpes else None,
+            "median_sharpe": round(statistics.median(sharpes), 4) if sharpes else None,
             "max_abs_drawdown_pct": round(max(dds), 4) if dds else 0.0,
-            "min_trade_count":      min(trades) if trades else 0,
-            "zero_trade_slot_pct":  sym_zero_pct,  # A3.4
+            "min_trade_count": min(trades) if trades else 0,
+            "zero_trade_slot_pct": sym_zero_pct,  # A3.4
         }
 
     def _promote(s):
         p = per_symbol[s]
         if p["median_sharpe"] is None:
             return False
-        return (p["median_sharpe"]        >  promo["median_sharpe_gt"]
-                and p["max_abs_drawdown_pct"] <  promo["max_abs_drawdown_pct_lt"]
-                and p["min_trade_count"]       >= promo["min_trade_count_gte"])
+        return (
+            p["median_sharpe"] > promo["median_sharpe_gt"]
+            and p["max_abs_drawdown_pct"] < promo["max_abs_drawdown_pct_lt"]
+            and p["min_trade_count"] >= promo["min_trade_count_gte"]
+        )
 
     def _kill(s):
         p = per_symbol[s]
@@ -1373,14 +1650,19 @@ def main():
 
     if all(_promote(s) for s in symbols):
         verdict = "promote"
-        parts = [f"{s}: median_sharpe={per_symbol[s]['median_sharpe']:.3f}>0"
-                 f" max_dd={per_symbol[s]['max_abs_drawdown_pct']:.1f}%<30"
-                 f" min_trades={per_symbol[s]['min_trade_count']}>=20"
-                 for s in symbols]
+        parts = [
+            f"{s}: median_sharpe={per_symbol[s]['median_sharpe']:.3f}>0"
+            f" max_dd={per_symbol[s]['max_abs_drawdown_pct']:.1f}%<30"
+            f" min_trades={per_symbol[s]['min_trade_count']}>=20"
+            for s in symbols
+        ]
         verdict_reason = "; ".join(parts)
     elif all(_kill(s) for s in symbols):
         verdict = "kill"
-        parts = [f"{s}: median_sharpe={per_symbol[s]['median_sharpe']:.3f}<-1" for s in symbols]
+        parts = [
+            f"{s}: median_sharpe={per_symbol[s]['median_sharpe']:.3f}<-1"
+            for s in symbols
+        ]
         verdict_reason = "both symbols below kill threshold: " + ", ".join(parts)
     else:
         verdict = "refine"
@@ -1398,37 +1680,49 @@ def main():
                 fails.append(f"min_trades={p['min_trade_count']}<20")
             if fails:
                 parts.append(f"{s}: " + ", ".join(fails))
-        verdict_reason = "; ".join(parts) if parts else "mixed — not all pass promote, not all fail at kill"
+        verdict_reason = (
+            "; ".join(parts)
+            if parts
+            else "mixed — not all pass promote, not all fail at kill"
+        )
 
     # 2026-07-09: compute the extended (bootstrap-fallback-resolved) per-symbol
     # summary BEFORE the cross-check, so the check reports whether the
     # fallback already reconciled prescreen/backtest, rather than flagging a
     # "disagreement" that's actually been resolved elsewhere in this same file.
     extended_for_cross_check = _build_extended_summary(per_symbol, results, _runs_root)
-    cross_check = _cross_check_prescreen_vs_backtest(out_dir, results, extended_for_cross_check)
+    cross_check = _cross_check_prescreen_vs_backtest(
+        out_dir, results, extended_for_cross_check
+    )
 
     hypothesis_verdict = None
     if args.validation_protocol:
         import yaml
+
         with open(args.validation_protocol, encoding="utf-8") as f:
             vp = yaml.safe_load(f)
         hypothesis_verdict = evaluate_against_decision_rules(
-            per_symbol, results, vp, trade_diagnostics_summary or None,
+            per_symbol,
+            results,
+            vp,
+            trade_diagnostics_summary or None,
             runs_root=_runs_root,
         )
         print(f"Hypothesis verdict : {hypothesis_verdict['verdict']}")
         print(f"Reason             : {hypothesis_verdict['verdict_reason']}")
 
     summary = {
-        "protocol_run_id":        run_id,
-        "config_sha256":          config_sha256,
-        "protocol_file":          args.protocol_path,
-        "results":                results,
-        "per_symbol_summary":     per_symbol,
-        "verdict":                verdict,
-        "verdict_reason":         verdict_reason,
-        "hypothesis_verdict":     hypothesis_verdict,
-        "trade_diagnostics_summary": trade_diagnostics_summary if all_trade_records else None,
+        "protocol_run_id": run_id,
+        "config_sha256": config_sha256,
+        "protocol_file": args.protocol_path,
+        "results": results,
+        "per_symbol_summary": per_symbol,
+        "verdict": verdict,
+        "verdict_reason": verdict_reason,
+        "hypothesis_verdict": hypothesis_verdict,
+        "trade_diagnostics_summary": trade_diagnostics_summary
+        if all_trade_records
+        else None,
         "prescreen_backtest_cross_check": cross_check,
     }
     (out_dir / "protocol_summary.json").write_text(

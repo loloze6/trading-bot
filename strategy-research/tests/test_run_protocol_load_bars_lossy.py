@@ -12,6 +12,7 @@ Not fatal by design, matching the file's documented choice at :387 -- partial
 diagnostics beat aborting a completed multi-window protocol run. The defect was
 the silence, not the tolerance.
 """
+
 import csv
 import sys
 from pathlib import Path
@@ -33,8 +34,10 @@ def _write_bars(run_dir, rows, header=_HDR):
 
 
 def _clean(n):
-    return [[f"2024-01-01 {i:02d}:00:00", 100 + i, 101 + i, 99 + i, 100 + i]
-            for i in range(n)]
+    return [
+        [f"2024-01-01 {i:02d}:00:00", 100 + i, 101 + i, 99 + i, 100 + i]
+        for i in range(n)
+    ]
 
 
 def test_clean_bars_load_silently(tmp_path, capsys):
@@ -46,7 +49,7 @@ def test_clean_bars_load_silently(tmp_path, capsys):
 
 def test_partial_drop_warns_with_the_count(tmp_path, capsys):
     rows = _clean(6)
-    rows[2][4] = "x"                     # interior close, unparseable
+    rows[2][4] = "x"  # interior close, unparseable
     _write_bars(tmp_path, rows)
 
     bars = rp._load_bars(tmp_path)

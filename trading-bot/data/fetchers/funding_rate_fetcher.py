@@ -38,6 +38,7 @@ import pandas as pd
 
 try:
     import ccxt
+
     _CCXT_AVAILABLE = True
 except ImportError:
     _CCXT_AVAILABLE = False
@@ -46,7 +47,7 @@ from data.fetchers.base_fetcher import BaseFetcher
 
 logger = logging.getLogger("trading_bot")
 
-_FUNDING_INTERVAL_SECONDS = 8 * 3600   # 8 hours in seconds
+_FUNDING_INTERVAL_SECONDS = 8 * 3600  # 8 hours in seconds
 
 # Per-exchange settlement cadence, applied at construction only when the caller
 # does not pass interval_seconds explicitly. Kraken Futures settles hourly;
@@ -81,7 +82,9 @@ class FundingRateFetcher(BaseFetcher):
             symbols = ["BTCUSDT"]
 
         if interval_seconds is None:
-            interval_seconds = _EXCHANGE_FUNDING_INTERVALS.get(exchange_id, _FUNDING_INTERVAL_SECONDS)
+            interval_seconds = _EXCHANGE_FUNDING_INTERVALS.get(
+                exchange_id, _FUNDING_INTERVAL_SECONDS
+            )
 
         super().__init__(
             start_date=start_date,
@@ -97,11 +100,15 @@ class FundingRateFetcher(BaseFetcher):
             try:
                 exchange_class = getattr(ccxt, self.exchange_id)
                 # Must use futures market type for funding rates
-                self.exchange  = exchange_class({
-                    "enableRateLimit": True,
-                    "options": {"defaultType": "future"},
-                })
-                logger.info(f"FundingRateFetcher: initialised {self.exchange_id} (futures)")
+                self.exchange = exchange_class(
+                    {
+                        "enableRateLimit": True,
+                        "options": {"defaultType": "future"},
+                    }
+                )
+                logger.info(
+                    f"FundingRateFetcher: initialised {self.exchange_id} (futures)"
+                )
             except Exception as e:
                 logger.error(f"FundingRateFetcher: failed to initialise exchange: {e}")
                 self.exchange = None
@@ -150,9 +157,9 @@ class FundingRateFetcher(BaseFetcher):
         # CCXT expects 'BTC/USDT:USDT' format for perpetual futures
         exchange_symbol = self._to_perp_symbol(symbol)
 
-        since         = int(start.timestamp() * 1000)
-        until         = int(end.timestamp()   * 1000)
-        all_records   = []
+        since = int(start.timestamp() * 1000)
+        until = int(end.timestamp() * 1000)
+        all_records = []
         current_since = since
 
         while current_since < until:
@@ -166,13 +173,17 @@ class FundingRateFetcher(BaseFetcher):
                     break
 
                 for r in rates:
-                    all_records.append({
-                        "timestamp":    pd.to_datetime(r["timestamp"], unit="ms"),
-                        "funding_rate": float(r.get("fundingRate", 0.0)),
-                        "mark_price":   float(r.get("markPrice", 0.0)) if r.get("markPrice") else None,
-                    })
+                    all_records.append(
+                        {
+                            "timestamp": pd.to_datetime(r["timestamp"], unit="ms"),
+                            "funding_rate": float(r.get("fundingRate", 0.0)),
+                            "mark_price": float(r.get("markPrice", 0.0))
+                            if r.get("markPrice")
+                            else None,
+                        }
+                    )
 
-                last_ts       = rates[-1]["timestamp"]
+                last_ts = rates[-1]["timestamp"]
                 current_since = last_ts + self.interval_seconds * 1000
                 time.sleep(self.exchange.rateLimit / 1000)
 
@@ -188,7 +199,9 @@ class FundingRateFetcher(BaseFetcher):
             return pd.DataFrame()
 
         df = pd.DataFrame(all_records).sort_values("timestamp").reset_index(drop=True)
-        logger.info(f"FundingRateFetcher: fetched {len(df)} funding events for {symbol}")
+        logger.info(
+            f"FundingRateFetcher: fetched {len(df)} funding events for {symbol}"
+        )
         return df
 
     # -----------------------------------------------------------------------
@@ -205,6 +218,6 @@ class FundingRateFetcher(BaseFetcher):
             return symbol
         for quote in ["USDT", "USD", "BUSD", "USDC"]:
             if symbol.endswith(quote):
-                base = symbol[:-len(quote)]
+                base = symbol[: -len(quote)]
                 return f"{base}/{quote}:{quote}"
         return symbol

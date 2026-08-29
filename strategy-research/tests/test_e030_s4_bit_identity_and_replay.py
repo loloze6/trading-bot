@@ -95,6 +95,7 @@ here reads or writes anything under `runs/`, `config/campaign_queue.yaml`, or
 `local_data/`. The real queue entry `P4_ts_trend` is referenced only as a string
 inside a throwaway sandbox queue.
 """
+
 import re
 import sys
 from pathlib import Path
@@ -109,8 +110,14 @@ import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
 
 from test_halt_quarantine_policy import (  # noqa: E402
-    _entry, _prescreen_row, _read_state, _save_queue_entries, _set_quarantine_flag,
-    _stage_halt, _write_fresh_scaffold, campaign_root,
+    _entry,
+    _prescreen_row,
+    _read_state,
+    _save_queue_entries,
+    _set_quarantine_flag,
+    _stage_halt,
+    _write_fresh_scaffold,
+    campaign_root,
 )
 
 # `campaign_root` is imported for its fixture effect; naming it keeps linters quiet.
@@ -187,14 +194,21 @@ def _build_sandbox(base: Path, monkeypatch) -> dict:
     monkeypatch.setattr(camp, "QUEUE_PATH", queue_path)
     monkeypatch.setattr(camp, "CAMPAIGN_LOG_PATH", base / "campaign_log.md")
     monkeypatch.setattr(camp, "CAMPAIGN_SUMMARY_PATH", base / "campaign_summary.md")
-    monkeypatch.setattr(camp, "BASELINE_PATH", config_dir / "campaign_baseline_runs.yaml")
+    monkeypatch.setattr(
+        camp, "BASELINE_PATH", config_dir / "campaign_baseline_runs.yaml"
+    )
     monkeypatch.setattr(rpr, "ROOT", base)
     monkeypatch.setattr(rpr, "CAMPAIGN_STATE_PATH", campaign_state_path)
-    monkeypatch.setattr(camp, "setup_run", lambda run_id: _write_fresh_scaffold(runs_dir, run_id))
+    monkeypatch.setattr(
+        camp, "setup_run", lambda run_id: _write_fresh_scaffold(runs_dir, run_id)
+    )
 
     return {
-        "root": base, "runs_dir": runs_dir, "queue_path": queue_path,
-        "config_dir": config_dir, "campaign_state_path": campaign_state_path,
+        "root": base,
+        "runs_dir": runs_dir,
+        "queue_path": queue_path,
+        "config_dir": config_dir,
+        "campaign_state_path": campaign_state_path,
     }
 
 
@@ -204,8 +218,11 @@ def _snapshot_tree(root: Path) -> dict:
     and fails the comparison, which is the point of diffing the tree rather than a
     hand-listed set of artifacts."""
     return {
-        p.relative_to(root).as_posix(): _ISO_RE.sub("<TS>", p.read_text(encoding="utf-8"))
-        for p in sorted(root.rglob("*")) if p.is_file()
+        p.relative_to(root).as_posix(): _ISO_RE.sub(
+            "<TS>", p.read_text(encoding="utf-8")
+        )
+        for p in sorted(root.rglob("*"))
+        if p.is_file()
     }
 
 
@@ -213,8 +230,11 @@ def _snapshot_tree(root: Path) -> dict:
 # PART A — epic-level bit-identity (EPIC.md Done-when #3)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("reason", _ALL_HALT_REASONS)
-def test_flag_off_whole_tree_matches_842a2788_except_loop_health(tmp_path, monkeypatch, reason):
+def test_flag_off_whole_tree_matches_842a2788_except_loop_health(
+    tmp_path, monkeypatch, reason
+):
     """The epic-wide claim, as one claim.
 
     Runs the SAME halt scenario twice into two independent sandboxes:
@@ -274,11 +294,14 @@ def test_flag_off_never_invokes_any_s2a_machinery(campaign_root, monkeypatch, re
     the flag could ever divert. See `_S2A_DECISION_FUNCTIONS` for what is left live
     and why.
     """
+
     def _forbidden(name):
         def _raise(*args, **kwargs):
             raise AssertionError(
                 f"{name} was called with quarantine_enabled off — Done-when #3 says "
-                f"flag-off must be equivalent to the pre-E-030 behavior")
+                f"flag-off must be equivalent to the pre-E-030 behavior"
+            )
+
         return _raise
 
     monkeypatch.setattr(camp, "_write_loop_health", lambda: {})
@@ -289,16 +312,23 @@ def test_flag_off_never_invokes_any_s2a_machinery(campaign_root, monkeypatch, re
     _stage_halt(campaign_root, "run_701", reason)
 
     assert camp.process_once() is False
-    entry = yaml.safe_load(
-        campaign_root["queue_path"].read_text(encoding="utf-8"))["queue"][0]
+    entry = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))[
+        "queue"
+    ][0]
     assert entry["status"] == f"paused:{reason}"
 
 
 # `842a2788`'s own record literal in `_append_halt_history`, read off
 # `git show 842a2788:strategy-research/workflow/run_campaign.py`.
 _842A2788_HALT_RECORD_KEYS = {
-    "timestamp", "reason", "detail", "last_error", "pending_stage", "flags",
-    "completed_stages", "counters",
+    "timestamp",
+    "reason",
+    "detail",
+    "last_error",
+    "pending_stage",
+    "flags",
+    "completed_stages",
+    "counters",
 }
 
 
@@ -310,11 +340,18 @@ def test_append_halt_history_default_record_has_the_842a2788_key_set(campaign_ro
     present-and-null, since a null key would change every escalated halt's
     `pipeline_state.yaml` bytes and break Done-when #3 on its own."""
     import inspect
-    assert inspect.signature(camp._append_halt_history).parameters["quarantine"].default is None
 
-    run_dir = _write_fresh_scaffold(campaign_root["runs_dir"], "run_702",
-                                    status="failed", last_error="boom")
-    state = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    assert (
+        inspect.signature(camp._append_halt_history).parameters["quarantine"].default
+        is None
+    )
+
+    run_dir = _write_fresh_scaffold(
+        campaign_root["runs_dir"], "run_702", status="failed", last_error="boom"
+    )
+    state = yaml.safe_load(
+        (run_dir / "pipeline_state.yaml").read_text(encoding="utf-8")
+    )
     camp._append_halt_history(run_dir, state, "unhandled_exception", "boom")
 
     record = _read_state(campaign_root["runs_dir"], "run_702")["halt_history"][-1]
@@ -340,7 +377,9 @@ def test_append_halt_history_default_record_has_the_842a2788_key_set(campaign_ro
 _HALT_10_12_ERROR = "Claude Code returned an error result: success"
 
 
-def test_retry_safe_halt_10_12_is_resolved_before_it_can_become_a_halt(campaign_root, monkeypatch):
+def test_retry_safe_halt_10_12_is_resolved_before_it_can_become_a_halt(
+    campaign_root, monkeypatch
+):
     """REGRESSION FIXTURE — class: retry-safe. Halts #10 (run_054) and #12 (run_058).
 
     Taxonomy #10, verbatim: *"Detail: `Claude Code returned an error result: success`.
@@ -375,9 +414,19 @@ def test_retry_safe_halt_10_12_is_resolved_before_it_can_become_a_halt(campaign_
     """
     run_dir = campaign_root["runs_dir"] / "run_054"
     (run_dir / "artifacts").mkdir(parents=True)
-    (run_dir / "pipeline_state.yaml").write_text(yaml.safe_dump(
-        {"run_id": "run_054", "status": "active", "pending_stage": "validation",
-         "flags": {}, "audit_log": {}}, sort_keys=False), encoding="utf-8")
+    (run_dir / "pipeline_state.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "run_id": "run_054",
+                "status": "active",
+                "pending_stage": "validation",
+                "flags": {},
+                "audit_log": {},
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
     deliverable = run_dir / "artifacts" / "decision.yaml"
     deliverable.write_text("status: approve\n", encoding="utf-8")
 
@@ -389,7 +438,9 @@ def test_retry_safe_halt_10_12_is_resolved_before_it_can_become_a_halt(campaign_
             raise Exception(_HALT_10_12_ERROR)
 
     monkeypatch.setattr(rpr, "async_invoke_agent", _sdk_misclassifies_once)
-    rpr._invoke_agent_with_yaml_retry("validation", "run_054", run_dir, [deliverable], {})
+    rpr._invoke_agent_with_yaml_retry(
+        "validation", "run_054", run_dir, [deliverable], {}
+    )
 
     # (a) precondition: the stage recovered in-place.
     assert calls["n"] == 2
@@ -397,20 +448,29 @@ def test_retry_safe_halt_10_12_is_resolved_before_it_can_become_a_halt(campaign_
     # (b) the campaign layer never sees a halt. The state is untouched by the SDK
     # fault: still active, still mid-pipeline, nothing for _hard_pause_reason to fire
     # on.
-    state = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    state = yaml.safe_load(
+        (run_dir / "pipeline_state.yaml").read_text(encoding="utf-8")
+    )
     assert state["status"] == "active"
     assert camp._hard_pause_reason(run_dir, state) is None
 
     # The counterfactual, which is what makes this a classification fixture rather
     # than a retry test: unresolved, this halt's reason code is `unhandled_exception`
     # — the exact code campaign_log.md recorded twice — and that code escalates.
-    would_have_been = camp._hard_pause_reason(run_dir, {
-        "status": "failed", "pending_stage": "human_pause",
-        "last_error": _HALT_10_12_ERROR, "flags": {}})
+    would_have_been = camp._hard_pause_reason(
+        run_dir,
+        {
+            "status": "failed",
+            "pending_stage": "human_pause",
+            "last_error": _HALT_10_12_ERROR,
+            "flags": {},
+        },
+    )
     assert would_have_been == ("unhandled_exception", _HALT_10_12_ERROR)
     assert "unhandled_exception" not in camp._QUARANTINE_SAFE_REASONS, (
         "taxonomy R2: unhandled_exception covers 6 of 14 halts and at least four "
-        "unrelated root causes; it must never be quarantine-safe")
+        "unrelated root causes; it must never be quarantine-safe"
+    )
 
 
 # --- quarantine-safe: halt #13 ---------------------------------------------
@@ -428,15 +488,30 @@ _HALT_13_DETAIL = (
 # the taxonomy says so explicitly: "run_059 (halts #13/#14) carries both a prescreen
 # and a backtest row, so there is generally something to mark."
 _RUN_059_TRIAL_ROWS = [
-    {"trial_id": "run_059", "source": "prescreen", "route": "proceed_to_backtest",
-     "sharpe": None, "expectancy_bps": None, "n_trades": 0,
-     "statistic_valid": "neither", "ic_pooled": 0.037802, "cost_pass": True},
-    {"trial_id": "run_059", "source": "backtest", "sharpe": -0.6375,
-     "n_trades": 0, "statistic_valid": "expectancy"},
+    {
+        "trial_id": "run_059",
+        "source": "prescreen",
+        "route": "proceed_to_backtest",
+        "sharpe": None,
+        "expectancy_bps": None,
+        "n_trades": 0,
+        "statistic_valid": "neither",
+        "ic_pooled": 0.037802,
+        "cost_pass": True,
+    },
+    {
+        "trial_id": "run_059",
+        "source": "backtest",
+        "sharpe": -0.6375,
+        "n_trades": 0,
+        "statistic_valid": "expectancy",
+    },
 ]
 
 
-def test_quarantine_safe_halt_13_quarantines_and_invalidates_run_059s_trials(campaign_root):
+def test_quarantine_safe_halt_13_quarantines_and_invalidates_run_059s_trials(
+    campaign_root,
+):
     """REGRESSION FIXTURE — class: quarantine-safe. Halt #13
     (2026-07-18T05:38:24Z, `component_execution_error`, run_059,
     queue entry FUNDING_MR_DAILY_RETEST, 10.27 h).
@@ -461,33 +536,54 @@ def test_quarantine_safe_halt_13_quarantines_and_invalidates_run_059s_trials(cam
     """
     _set_quarantine_flag(campaign_root["config_dir"], True)
     run_dir = _stage_halt(
-        campaign_root, "run_059", "component_execution_error",
-        last_error=_HALT_13_DETAIL, trial_rows=_RUN_059_TRIAL_ROWS)
-    _save_queue_entries(campaign_root["queue_path"],
-                        [_entry("run_059", entry_id=_HALT_13_ENTRY_ID)])
+        campaign_root,
+        "run_059",
+        "component_execution_error",
+        last_error=_HALT_13_DETAIL,
+        trial_rows=_RUN_059_TRIAL_ROWS,
+    )
+    _save_queue_entries(
+        campaign_root["queue_path"], [_entry("run_059", entry_id=_HALT_13_ENTRY_ID)]
+    )
 
-    assert camp.process_once() is True, "quarantine advances the queue; halt #13 cost 10.27h"
+    assert camp.process_once() is True, (
+        "quarantine advances the queue; halt #13 cost 10.27h"
+    )
 
-    entry = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))["queue"][0]
+    entry = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))[
+        "queue"
+    ][0]
     assert entry["id"] == _HALT_13_ENTRY_ID
     assert entry["status"] == "done"
-    assert entry["outcome"] == camp._QUARANTINE_OUTCOME == "quarantined_engineering_failure"
-    assert entry["outcome"] != "completed_rejected", "R8: never launder an engine bug into a null"
+    assert (
+        entry["outcome"]
+        == camp._QUARANTINE_OUTCOME
+        == "quarantined_engineering_failure"
+    )
+    assert entry["outcome"] != "completed_rejected", (
+        "R8: never launder an engine bug into a null"
+    )
 
-    record = _read_state(campaign_root["runs_dir"], "run_059")["halt_history"][-1]["quarantine"]
+    record = _read_state(campaign_root["runs_dir"], "run_059")["halt_history"][-1][
+        "quarantine"
+    ]
     assert record["run_id"] == "run_059"
     assert record["queue_entry_id"] == _HALT_13_ENTRY_ID
     assert record["requeueable"] is False
     assert record["trial_accounting"] == "marked_trial_invalidated"
     assert record["no_data_touched"] is False, (
         "run_059 reached protocol_execution and carries a backtest row — the absence "
-        "must be MEASURED (R7's fourth bullet), and here it is not absent")
+        "must be MEASURED (R7's fourth bullet), and here it is not absent"
+    )
     assert record["retry_attempts"] == []
 
     # F6, binding: marked invalid, never deleted, and both rows.
     rows = yaml.safe_load(
-        campaign_root["campaign_state_path"].read_text(encoding="utf-8"))["trial_sharpes"]
-    assert len(rows) == 2, "R7: rows are marked, never removed — deletion would shrink N"
+        campaign_root["campaign_state_path"].read_text(encoding="utf-8")
+    )["trial_sharpes"]
+    assert len(rows) == 2, (
+        "R7: rows are marked, never removed — deletion would shrink N"
+    )
     assert all(r["invalidated_artifact"] is True for r in rows)
     assert all("component_execution_error" in r["invalidation_reason"] for r in rows)
 
@@ -515,7 +611,9 @@ _RUN_053_KB_VIOLATIONS = [
 
 
 @pytest.mark.parametrize("quarantine_flag", [False, True])
-def test_must_escalate_halt_4_escalates_with_the_flag_off_AND_on(campaign_root, quarantine_flag):
+def test_must_escalate_halt_4_escalates_with_the_flag_off_AND_on(
+    campaign_root, quarantine_flag
+):
     """REGRESSION FIXTURE — class: must-escalate. Halt #4
     (2026-07-06T18:23:42Z, `kb_reactivation_violation`, run_053,
     queue entry P4_ts_trend, 19.04 h).
@@ -535,15 +633,24 @@ def test_must_escalate_halt_4_escalates_with_the_flag_off_AND_on(campaign_root, 
     happened and really cost 19 hours.
     """
     _set_quarantine_flag(campaign_root["config_dir"], quarantine_flag)
-    _stage_halt(campaign_root, "run_053", "kb_reactivation_violation",
-                kb_reactivation_violations=list(_RUN_053_KB_VIOLATIONS),
-                trial_rows=[_prescreen_row("run_053")])
-    _save_queue_entries(campaign_root["queue_path"],
-                        [_entry("run_053", entry_id=_HALT_4_ENTRY_ID)])
+    _stage_halt(
+        campaign_root,
+        "run_053",
+        "kb_reactivation_violation",
+        kb_reactivation_violations=list(_RUN_053_KB_VIOLATIONS),
+        trial_rows=[_prescreen_row("run_053")],
+    )
+    _save_queue_entries(
+        campaign_root["queue_path"], [_entry("run_053", entry_id=_HALT_4_ENTRY_ID)]
+    )
 
-    assert camp.process_once() is False, "an integrity halt stops the campaign, flag or no flag"
+    assert camp.process_once() is False, (
+        "an integrity halt stops the campaign, flag or no flag"
+    )
 
-    entry = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))["queue"][0]
+    entry = yaml.safe_load(campaign_root["queue_path"].read_text(encoding="utf-8"))[
+        "queue"
+    ][0]
     assert entry["status"] == "paused:kb_reactivation_violation"
     assert entry["outcome"] is None
 
@@ -554,11 +661,14 @@ def test_must_escalate_halt_4_escalates_with_the_flag_off_AND_on(campaign_root, 
 
     entry_record = _read_state(campaign_root["runs_dir"], "run_053")["halt_history"][-1]
     assert entry_record["reason"] == "kb_reactivation_violation"
-    assert "quarantine" not in entry_record, "an escalated halt carries no quarantine record"
+    assert "quarantine" not in entry_record, (
+        "an escalated halt carries no quarantine record"
+    )
 
     # And the trial row is untouched: escalation makes no accounting decision at all.
     rows = yaml.safe_load(
-        campaign_root["campaign_state_path"].read_text(encoding="utf-8"))["trial_sharpes"]
+        campaign_root["campaign_state_path"].read_text(encoding="utf-8")
+    )["trial_sharpes"]
     assert rows == [_prescreen_row("run_053")]
 
 
@@ -573,7 +683,9 @@ def test_the_three_replayed_classes_cover_the_taxonomys_own_partition():
     of `_QUARANTINE_SAFE_REASONS` the taxonomy put them on, so a change to that set
     that contradicts the measured evidence fails here as well as in
     `test_quarantine_safe_set_is_exactly_the_four_evidenced_reasons`."""
-    assert "component_execution_error" in camp._QUARANTINE_SAFE_REASONS   # #13
+    assert "component_execution_error" in camp._QUARANTINE_SAFE_REASONS  # #13
     assert "kb_reactivation_violation" not in camp._QUARANTINE_SAFE_REASONS  # #4
-    assert "unhandled_exception" not in camp._QUARANTINE_SAFE_REASONS     # #10/#12 counterfactual
+    assert (
+        "unhandled_exception" not in camp._QUARANTINE_SAFE_REASONS
+    )  # #10/#12 counterfactual
     assert "component_execution_error" not in camp._REQUEUEABLE_QUARANTINE_REASONS

@@ -69,7 +69,8 @@ from typing import Any, Dict, List, Optional, Protocol
 if __package__ in (None, ""):  # allow direct execution
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from recorder.retrieval_manifest import (  # type: ignore
-        sha256_of_file, sha256_of_prefix,
+        sha256_of_file,
+        sha256_of_prefix,
     )
 else:
     from .retrieval_manifest import sha256_of_file, sha256_of_prefix
@@ -134,7 +135,8 @@ class SshRsyncTransport:
             remote_cmd = f"cd {self.remote_module_root!r} && {remote_cmd}"
         proc = subprocess.run(
             self._ssh_prefix() + [remote_cmd],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         if proc.returncode != 0:
             raise TransportError(
@@ -164,7 +166,8 @@ class SshRsyncTransport:
         remote_cmd = f"rm -f {self.remote_out}/{relative_path}"
         proc = subprocess.run(
             self._ssh_prefix() + [remote_cmd],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         if proc.returncode != 0:
             raise TransportError(
@@ -258,7 +261,11 @@ def pull(transport: Transport, local_out: Path) -> RetrievalResult:
 
     for rel_path, entry in sorted(manifest.items()):
         confirmed = ledger.get(rel_path)
-        if confirmed and confirmed.get("sha256") == entry["sha256"] and confirmed.get("bytes") == entry.get("bytes"):
+        if (
+            confirmed
+            and confirmed.get("sha256") == entry["sha256"]
+            and confirmed.get("bytes") == entry.get("bytes")
+        ):
             result.already_confirmed.append(rel_path)
             continue
 
@@ -361,7 +368,9 @@ def _build_transport(args: argparse.Namespace) -> Transport:
     if args.local_source:
         return LocalDirTransport(Path(args.local_source))
     if not args.host or not args.remote_out:
-        raise SystemExit("--host and --remote-out are required (or use --local-source for testing)")
+        raise SystemExit(
+            "--host and --remote-out are required (or use --local-source for testing)"
+        )
     return SshRsyncTransport(
         host=args.host,
         remote_out=args.remote_out,
@@ -372,7 +381,9 @@ def _build_transport(args: argparse.Namespace) -> Transport:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Retrieve recorder shards from a capture host (W15 step 4)")
+    ap = argparse.ArgumentParser(
+        description="Retrieve recorder shards from a capture host (W15 step 4)"
+    )
     sub = ap.add_subparsers(dest="mode", required=True)
 
     def common(p):
@@ -383,17 +394,23 @@ def main(argv=None) -> int:
         p.add_argument("--remote-module-root", default=None)
         p.add_argument("--local-out", required=True)
         p.add_argument(
-            "--local-source", default=None,
+            "--local-source",
+            default=None,
             help="testing/mounted-drive only: treat this local directory as remote, bypassing SSH/rsync",
         )
 
-    p_pull = sub.add_parser("pull", help="incrementally pull and verify new/unconfirmed files")
+    p_pull = sub.add_parser(
+        "pull", help="incrementally pull and verify new/unconfirmed files"
+    )
     common(p_pull)
 
-    p_prune = sub.add_parser("prune", help="delete remote copies already confirmed received")
+    p_prune = sub.add_parser(
+        "prune", help="delete remote copies already confirmed received"
+    )
     common(p_prune)
     p_prune.add_argument(
-        "--yes-delete-confirmed-only", action="store_true",
+        "--yes-delete-confirmed-only",
+        action="store_true",
         help="required: acknowledges this deletes remote files (only ones re-verified as confirmed)",
     )
 
@@ -402,8 +419,10 @@ def main(argv=None) -> int:
 
     if args.mode == "pull":
         result = pull(transport, Path(args.local_out))
-        print(f"pulled {len(result.pulled)}, verified {len(result.verified)}, "
-              f"failed {len(result.failed)}, already-confirmed {len(result.already_confirmed)}")
+        print(
+            f"pulled {len(result.pulled)}, verified {len(result.verified)}, "
+            f"failed {len(result.failed)}, already-confirmed {len(result.already_confirmed)}"
+        )
         if result.failed:
             print("FAILED (not added to ledger, will retry next run):")
             for rel in result.failed:
@@ -412,13 +431,17 @@ def main(argv=None) -> int:
 
     if args.mode == "prune":
         if not args.yes_delete_confirmed_only:
-            print("refusing to prune without --yes-delete-confirmed-only", file=sys.stderr)
+            print(
+                "refusing to prune without --yes-delete-confirmed-only", file=sys.stderr
+            )
             return 2
         result = prune_confirmed(transport, Path(args.local_out))
-        print(f"deleted {len(result.deleted)}, "
-              f"skipped (not confirmed) {len(result.skipped_not_confirmed)}, "
-              f"skipped (changed since confirmation) {len(result.skipped_changed_since_confirmation)}, "
-              f"skipped (local mismatch) {len(result.skipped_local_mismatch)}")
+        print(
+            f"deleted {len(result.deleted)}, "
+            f"skipped (not confirmed) {len(result.skipped_not_confirmed)}, "
+            f"skipped (changed since confirmation) {len(result.skipped_changed_since_confirmation)}, "
+            f"skipped (local mismatch) {len(result.skipped_local_mismatch)}"
+        )
         return 0
 
     return 2

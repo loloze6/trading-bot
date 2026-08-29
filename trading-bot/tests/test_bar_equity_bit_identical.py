@@ -14,6 +14,7 @@ into metrics.json at all (reporting/run_artifact.py::write_metrics_json).
 IMPORTANT: this is a SLOW INTEGRATION TEST. Run explicitly:
   pytest tests/test_bar_equity_bit_identical.py -v -m slow
 """
+
 import json
 import sys
 from pathlib import Path
@@ -33,7 +34,9 @@ _CACHE_SKIP = cache_skip_reason(
 )
 pytestmark = [
     pytest.mark.slow,
-    pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),
+    pytest.mark.skipif(
+        _CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"
+    ),
 ]
 
 
@@ -77,7 +80,9 @@ def test_explicit_false_matches_omitted_default(reference, tmp_path):
     repr differences; this test's own docstring claims byte-identity, so it
     must check bytes."""
     default_path = _run_metrics_path(reference, tmp_path / "default")
-    explicit_path = _run_metrics_path(reference, tmp_path / "explicit", bar_equity=False)
+    explicit_path = _run_metrics_path(
+        reference, tmp_path / "explicit", bar_equity=False
+    )
     assert default_path.read_text() == explicit_path.read_text()
 
 
@@ -87,7 +92,9 @@ def test_bar_equity_flag_does_not_change_core_or_other_sections(reference, tmp_p
     off_metrics = _run(reference, tmp_path / "off")
     on_metrics = _run(reference, tmp_path / "on", bar_equity=True)
     for key in ("core", "per_regime", "forecast_bins", "dynamic", "regime_validity"):
-        assert on_metrics[key] == off_metrics[key], f"bar_equity=True changed metrics.json[{key!r}]"
+        assert on_metrics[key] == off_metrics[key], (
+            f"bar_equity=True changed metrics.json[{key!r}]"
+        )
     assert "bar_equity" not in off_metrics
     assert "bar_equity" in on_metrics
 

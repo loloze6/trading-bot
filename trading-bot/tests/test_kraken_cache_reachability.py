@@ -28,12 +28,12 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent      # trading-bot/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent  # trading-bot/
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data.fetchers.ccxt_fetcher import CcxtFetcher   # noqa: E402
-from data.data_manager import DataManager            # noqa: E402
+from data.fetchers.ccxt_fetcher import CcxtFetcher  # noqa: E402
+from data.data_manager import DataManager  # noqa: E402
 
 REAL_LOCAL_DATA = PROJECT_ROOT / "local_data"
 KRAKEN_BTC_CACHE = REAL_LOCAL_DATA / "kraken_BTCUSD_1h.csv"
@@ -51,6 +51,7 @@ WINDOW_LAST = pd.Timestamp("2022-12-31 23:00:00")
 # ---------------------------------------------------------------------------
 # (a) tz-naive convention guard
 # ---------------------------------------------------------------------------
+
 
 def test_load_local_raises_on_tz_aware_cache(tmp_path):
     """
@@ -107,6 +108,7 @@ def test_load_local_accepts_naive_cache(tmp_path):
 # (b) End-to-end reachability via DataManager.fetch_historical_data(exchange=...)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.skipif(
     not KRAKEN_BTC_CACHE.exists(),
     reason=f"Kraken BTC cache not present: {KRAKEN_BTC_CACHE}",
@@ -123,9 +125,7 @@ def test_kraken_cache_reachable_via_data_manager_exchange_param():
     """
     dm = DataManager(symbols=["BTCUSD"], interval_seconds=3600, mode="backtest")
 
-    df = dm.fetch_historical_data(
-        "BTCUSD", WINDOW_START, WINDOW_END, exchange="kraken"
-    )
+    df = dm.fetch_historical_data("BTCUSD", WINDOW_START, WINDOW_END, exchange="kraken")
 
     assert not df.empty
     assert len(df) == EXPECTED_WINDOW_ROWS, len(df)
@@ -154,7 +154,9 @@ def test_default_exchange_still_binance_unqualified():
     assert not qualified_variant.exists()
 
     dm = DataManager(symbols=["BTCUSDT"], interval_seconds=3600, mode="backtest")
-    df = dm.fetch_historical_data("BTCUSDT", "2018-01-01", "2018-01-02")  # no exchange kwarg
+    df = dm.fetch_historical_data(
+        "BTCUSDT", "2018-01-01", "2018-01-02"
+    )  # no exchange kwarg
 
     assert not df.empty
     assert BINANCE_BTC_CACHE.exists()

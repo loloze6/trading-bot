@@ -29,6 +29,7 @@ before anyone updates this docstring's inspection notes.
 The `test_scanner_actually_detects_an_injected_violation` test proves the
 scanner itself is not vacuous (i.e. it isn't silently matching nothing).
 """
+
 import ast
 from pathlib import Path
 
@@ -102,6 +103,7 @@ def _sweep(root: Path):
 
 # --- the actual firewall assertions -----------------------------------------
 
+
 def test_named_promotion_modules_do_not_reference_the_scoreboard():
     offenders = []
     for path in _NAMED_PROMOTION_MODULES:
@@ -124,7 +126,9 @@ def test_no_workflow_or_tools_module_reads_the_scoreboard():
     promotion-adjacent module gaining read access is caught here even before
     this file's own docstring is updated to name it."""
     offenders = _sweep(WORKFLOW) + _sweep(TOOLS)
-    assert not offenders, f"Unexpected near-miss-scoreboard reference(s) in decision-path code: {offenders}"
+    assert not offenders, (
+        f"Unexpected near-miss-scoreboard reference(s) in decision-path code: {offenders}"
+    )
 
 
 def test_no_skill_lists_the_scoreboard_as_a_required_input():
@@ -152,12 +156,23 @@ def test_scoreboard_module_defines_no_decision_rule_functions():
     decision rule, which would suggest scope creep back toward promotion."""
     import importlib
     import sys
+
     sys.path.insert(0, str(TOOLS))
     mod = importlib.import_module("near_miss_scoreboard")
-    forbidden_substrings = ["evaluate_against_decision_rules", "decision_rule", "promote", "_verdict_gate"]
-    offenders = [name for name in dir(mod)
-                 if any(s in name.lower() for s in forbidden_substrings)]
-    assert not offenders, f"near_miss_scoreboard.py defines decision-path-shaped name(s): {offenders}"
+    forbidden_substrings = [
+        "evaluate_against_decision_rules",
+        "decision_rule",
+        "promote",
+        "_verdict_gate",
+    ]
+    offenders = [
+        name
+        for name in dir(mod)
+        if any(s in name.lower() for s in forbidden_substrings)
+    ]
+    assert not offenders, (
+        f"near_miss_scoreboard.py defines decision-path-shaped name(s): {offenders}"
+    )
 
 
 def test_scanner_actually_detects_an_injected_violation(tmp_path):
@@ -180,6 +195,8 @@ def test_scanner_ignores_the_generator_and_its_own_tests():
     the allow-list in _sweep() is what keeps it out of the offender list
     (not some accidental non-match)."""
     self_path = TOOLS / "near_miss_scoreboard.py"
-    assert _references_scoreboard(self_path), "detector should see the generator's own self-references"
+    assert _references_scoreboard(self_path), (
+        "detector should see the generator's own self-references"
+    )
     offenders = _sweep(TOOLS)
     assert str(self_path.relative_to(STRATEGY_RESEARCH)) not in offenders

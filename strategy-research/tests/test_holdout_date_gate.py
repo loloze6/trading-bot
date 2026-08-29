@@ -65,7 +65,9 @@ def _make_repo(tmp_path, files, registry_lines=""):
     (repo / "strategy-research" / "tools").mkdir(parents=True)
 
     shutil.copy(GATE, repo / "strategy-research" / "tools" / "holdout_date_gate.sh")
-    gate_entry = "strategy-research/tools/holdout_date_gate.sh\t%d\n" % _gate_self_count()
+    gate_entry = (
+        "strategy-research/tools/holdout_date_gate.sh\t%d\n" % _gate_self_count()
+    )
     (repo / "strategy-research" / "config" / "holdout_gate_exemptions.txt").write_text(
         "# test registry\n" + gate_entry + registry_lines, encoding="utf-8"
     )
@@ -132,15 +134,17 @@ def test_holdout_date_in_data_file_blocks(tmp_path):
     """
     repo = _make_repo(
         tmp_path,
-        {"results/bars.csv": "ts,open\n2025-12-31 23:00:00,100\n2026-01-01 00:00:00,101\n"},
+        {
+            "results/bars.csv": "ts,open\n2025-12-31 23:00:00,100\n2026-01-01 00:00:00,101\n"
+        },
     )
     r = _run_gate(repo)
     out = r.stdout + r.stderr
 
     assert r.returncode == 1, out
     assert "COMMIT BLOCKED" in out
-    assert "results/bars.csv" in out          # names the file
-    assert "2026-01-01" in out                # names the offending line
+    assert "results/bars.csv" in out  # names the file
+    assert "2026-01-01" in out  # names the offending line
 
 
 def test_boundary_dates(tmp_path):
@@ -164,7 +168,8 @@ def test_authorship_timestamp_is_not_a_hit(tmp_path):
     campaign was authored during 2026 H1.
     """
     repo = _make_repo(
-        tmp_path, {"run/manifest.json": '{\n  "created_utc": "2026-03-14T10:00:00Z"\n}\n'}
+        tmp_path,
+        {"run/manifest.json": '{\n  "created_utc": "2026-03-14T10:00:00Z"\n}\n'},
     )
     r = _run_gate(repo)
     assert r.returncode == 0, r.stdout + r.stderr
@@ -206,7 +211,9 @@ def test_registered_file_blocks_when_it_gains_a_line(tmp_path):
     """The exemption is pinned to the audited line count, not to the filename."""
     repo = _make_repo(
         tmp_path,
-        {"docs/policy.md": "holdout is 2026-01-01 to 2026-06-30\nand also 2026-02-05\n"},
+        {
+            "docs/policy.md": "holdout is 2026-01-01 to 2026-06-30\nand also 2026-02-05\n"
+        },
         registry_lines="docs/policy.md\t1\n",
     )
     r = _run_gate(repo)
@@ -263,7 +270,9 @@ def test_self_test_only_mode(tmp_path):
     repo = _make_repo(tmp_path, {"docs/clean.md": "x\n"})
     r = subprocess.run(
         [SH, "strategy-research/tools/holdout_date_gate.sh", "--self-test-only"],
-        cwd=repo, capture_output=True, text=True,
+        cwd=repo,
+        capture_output=True,
+        text=True,
     )
     out = r.stdout + r.stderr
     assert r.returncode == 0, out

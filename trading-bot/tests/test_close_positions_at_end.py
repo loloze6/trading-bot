@@ -37,6 +37,7 @@ ForecastManager.calculate_allocation_change) and scoped to the close by a flag r
 around TradingBot.stop() -- the private method under test is never called directly, and
 every value it reads is one the engine actually produced.
 """
+
 import logging
 import sys
 from pathlib import Path
@@ -66,8 +67,12 @@ END_DATE = "2025-04-15"
 SYMBOL = "BTCUSDT"
 
 _NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
-_CACHE_SKIP = cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_CACHES, START_DATE, END_DATE)
-pytestmark = pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable")
+_CACHE_SKIP = cache_skip_reason(
+    PROJECT_ROOT / "local_data", _NEEDED_CACHES, START_DATE, END_DATE
+)
+pytestmark = pytest.mark.skipif(
+    _CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"
+)
 
 
 class _RecordingHandler(logging.Handler):
@@ -103,7 +108,9 @@ def _run_backtest_with_close_fault(monkeypatch, results_dir, install_fault):
 
     def stop(self):
         tracker = self.portfolio_state_tracker
-        result.open_symbols_at_close = sorted(self.performance_tracker.get_open_positions())
+        result.open_symbols_at_close = sorted(
+            self.performance_tracker.get_open_positions()
+        )
         # The per-bar loop's final row, snapshotted BEFORE the forced close runs. The
         # close now MERGES its post-close numbers onto this row (upstream c5b1dc62's
         # replace_if_same_bar) instead of appending, so this is the pre-merge state the
@@ -126,7 +133,9 @@ def _run_backtest_with_close_fault(monkeypatch, results_dir, install_fault):
             # rows' CONTENT, not just the count, is what distinguishes the fix from a
             # defined-but-wrong value.
             final_ts = result.pre_stop_final.get("timestamp")
-            result.close_rows = [r for r in tracker.states if r.get("timestamp") == final_ts]
+            result.close_rows = [
+                r for r in tracker.states if r.get("timestamp") == final_ts
+            ]
 
     monkeypatch.setattr(TradingBot, "stop", stop)
     install_fault(monkeypatch, closing)
@@ -157,7 +166,9 @@ def _reject_the_close_order(monkeypatch, closing):
         return original(self, *args, **kwargs)
 
     monkeypatch.setattr(
-        MockExecutionHandler, "_execute_portfolio_rebalance", _execute_portfolio_rebalance
+        MockExecutionHandler,
+        "_execute_portfolio_rebalance",
+        _execute_portfolio_rebalance,
     )
 
 
@@ -204,7 +215,9 @@ def _describe(records):
 def rejected_close(tmp_path_factory):
     with pytest.MonkeyPatch.context() as monkeypatch:
         yield _run_backtest_with_close_fault(
-            monkeypatch, tmp_path_factory.mktemp("rejected_close"), _reject_the_close_order
+            monkeypatch,
+            tmp_path_factory.mktemp("rejected_close"),
+            _reject_the_close_order,
         )
 
 
@@ -257,7 +270,9 @@ def test_rejected_close_order_still_records_the_close_bar(rejected_close):
     )
 
 
-def test_rejected_close_pre_close_row_did_not_already_carry_the_failure_flag(rejected_close):
+def test_rejected_close_pre_close_row_did_not_already_carry_the_failure_flag(
+    rejected_close,
+):
     """Guard: protects the is-False write-proof from passing without a close write.
 
     If the per-bar final row already recorded succcess=False, the merged row would
@@ -265,7 +280,10 @@ def test_rejected_close_pre_close_row_did_not_already_carry_the_failure_flag(rej
     test_rejected_close_records_the_handler_failure_flag would hold even under a
     merge-skipping NameError. Fail loudly and re-probe when that happens.
     """
-    assert rejected_close.pre_stop_final["succcess_execute_portfolio_rebalance"] is not False, (
+    assert (
+        rejected_close.pre_stop_final["succcess_execute_portfolio_rebalance"]
+        is not False
+    ), (
         "the per-bar final row already records succcess=False, so "
         "test_rejected_close_records_the_handler_failure_flag would hold even if the forced "
         "close never wrote (a merge-skipping NameError). Re-probe for a window whose final "
@@ -305,7 +323,9 @@ def test_rejected_close_records_the_allocation_unchanged_including_sign(rejected
 def test_rejected_close_records_the_handler_failure_flag(rejected_close):
     # Three c's: record_state's keyword is misspelled in core/trading_bot.py, so the
     # recorded column carries the typo. Not a typo here.
-    assert rejected_close.close_rows[0]["succcess_execute_portfolio_rebalance"] is False, (
+    assert (
+        rejected_close.close_rows[0]["succcess_execute_portfolio_rebalance"] is False
+    ), (
         "a close whose rebalance reported failure must record that failure, so a later "
         "reader of portfolio_states.csv can tell the position was NOT flattened"
     )
@@ -336,7 +356,9 @@ def test_zero_allocation_change_still_records_the_close_bar(zero_change_close):
     )
 
 
-def test_zero_change_close_records_the_injected_zero_allocation_change(zero_change_close):
+def test_zero_change_close_records_the_injected_zero_allocation_change(
+    zero_change_close,
+):
     """Write-proof: the merged row carries the close's own allocation_change=0.0.
 
     The existing is-None assertion is vacuous under a merge-skipping NameError, since
@@ -382,7 +404,9 @@ def test_zero_allocation_change_records_the_skipped_call_as_none(zero_change_clo
     Asserted against the tracker's in-memory row, which holds the raw object. The CSV
     serialises it as an empty field, which pandas reads back as NaN.
     """
-    assert zero_change_close.close_rows[0]["succcess_execute_portfolio_rebalance"] is None, (
+    assert (
+        zero_change_close.close_rows[0]["succcess_execute_portfolio_rebalance"] is None
+    ), (
         "a skipped no-op close must record None, the per-bar path's convention for a "
         "rebalance that was never attempted -- not a success or a failure that never "
         "happened"

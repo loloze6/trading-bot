@@ -56,6 +56,7 @@ The seal moves with the policy: `holdout_range` is read, never assumed, so a
 literal that becomes unsafe under a policy change fails on the same commit
 that changes it.
 """
+
 import ast
 import datetime
 import io
@@ -67,7 +68,9 @@ import pytest
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_POLICY = PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
+_POLICY = (
+    PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
+)
 
 EXCLUDED_PARTS = ("tests", "venv", ".venv", "__pycache__", "results", "local_data")
 # Positive control: the scan must at least reach the file where the incident
@@ -75,12 +78,16 @@ EXCLUDED_PARTS = ("tests", "venv", ".venv", "__pycache__", "results", "local_dat
 # silently emptying the scan — a seal check that examines nothing reports green.
 SENTINEL = Path("core") / "launcher.py"
 DATE_PATTERNS = (
-    re.compile(r"(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})"),      # dash, non-padded ok
-    re.compile(r"(?<!\d)(\d{4})/(\d{1,2})/(\d{1,2})"),      # slash
-    re.compile(r"(?<!\d)(\d{4})\.(\d{1,2})\.(\d{1,2})"),    # dotted
-    re.compile(r"(?<!\d)(\d{4})_(\d{1,2})_(\d{1,2})(?!\d)"),          # underscore — leading AND trailing guard
-    re.compile(r"(?<!\d)(\d{4})(\d{2})(\d{2})(?!\d)"),                # compact — ONLY trailing guard
-    re.compile(r"(?<!\d)(\d{4})(\d{2})(\d{2})(?:\d{6}|\d{4})(?!\d)"),  # compact + time, exactly 12 or 14 digits
+    re.compile(r"(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})"),  # dash, non-padded ok
+    re.compile(r"(?<!\d)(\d{4})/(\d{1,2})/(\d{1,2})"),  # slash
+    re.compile(r"(?<!\d)(\d{4})\.(\d{1,2})\.(\d{1,2})"),  # dotted
+    re.compile(
+        r"(?<!\d)(\d{4})_(\d{1,2})_(\d{1,2})(?!\d)"
+    ),  # underscore — leading AND trailing guard
+    re.compile(r"(?<!\d)(\d{4})(\d{2})(\d{2})(?!\d)"),  # compact — ONLY trailing guard
+    re.compile(
+        r"(?<!\d)(\d{4})(\d{2})(\d{2})(?:\d{6}|\d{4})(?!\d)"
+    ),  # compact + time, exactly 12 or 14 digits
 )
 _UNREADABLE_ERRORS = (OSError, UnicodeDecodeError, SyntaxError, tokenize.TokenError)
 _STRING_TOKENS = {tokenize.STRING, getattr(tokenize, "FSTRING_MIDDLE", tokenize.STRING)}
@@ -90,11 +97,16 @@ def _docstring_spans(source: str) -> list:
     """(first_line, last_line) of every docstring, located by AST position."""
     spans = []
     for node in ast.walk(ast.parse(source)):
-        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+        if isinstance(
+            node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+        ):
             body = node.body
-            if (body and isinstance(body[0], ast.Expr)
-                    and isinstance(body[0].value, ast.Constant)
-                    and isinstance(body[0].value.value, str)):
+            if (
+                body
+                and isinstance(body[0], ast.Expr)
+                and isinstance(body[0].value, ast.Constant)
+                and isinstance(body[0].value.value, str)
+            ):
                 spans.append((body[0].lineno, body[0].end_lineno))
     return spans
 
@@ -135,7 +147,9 @@ def _config_json_dates(path: Path) -> list[tuple[int, str]]:
     return dates
 
 
-def _seal_violation(rel: Path, lineno: int, literal: str, lo: datetime.date) -> str | None:
+def _seal_violation(
+    rel: Path, lineno: int, literal: str, lo: datetime.date
+) -> str | None:
     try:
         found = datetime.date.fromisoformat(literal)
     except ValueError:
@@ -155,8 +169,9 @@ def _scan_file(path: Path) -> tuple[list[tuple[int, str]] | None, str | None]:
 
 def test_no_executable_production_date_reaches_the_seal():
     with open(_POLICY, encoding="utf-8") as fh:
-        lo, hi = [datetime.date.fromisoformat(d)
-                  for d in yaml.safe_load(fh)["holdout_range"]]   # hi is INCLUSIVE
+        lo, hi = [
+            datetime.date.fromisoformat(d) for d in yaml.safe_load(fh)["holdout_range"]
+        ]  # hi is INCLUSIVE
 
     violations = []
     unreadable = []
@@ -192,18 +207,21 @@ def test_no_executable_production_date_reaches_the_seal():
     assert SENTINEL in scanned, (
         f"seal scan never reached {SENTINEL} — the exclusion filter or checkout "
         f"layout emptied the scan, so a green result would be vacuous "
-        f"({len(scanned)} files scanned)")
+        f"({len(scanned)} files scanned)"
+    )
 
     assert not unreadable, (
         "file(s) could not be read or tokenized — failing closed instead of "
-        "skipping them unseen:\n  " + "\n  ".join(unreadable))
+        "skipping them unseen:\n  " + "\n  ".join(unreadable)
+    )
 
     assert not violations, (
         f"executable date literal(s) at or beyond the sealed holdout's start "
         f"{lo} (seal {lo}..{hi}, strategy-research/config/"
         f"campaign_data_policy.yaml). A window bound at or past the seal pulls "
         f"sealed rows on the way there; reading sealed data spends it "
-        f"permanently:\n  " + "\n  ".join(violations))
+        f"permanently:\n  " + "\n  ".join(violations)
+    )
 
 
 @pytest.mark.parametrize(
@@ -217,14 +235,18 @@ def test_no_executable_production_date_reaches_the_seal():
         ("12026-03-15", []),
     ],
 )
-def test_a_date_is_extracted_despite_adjacent_word_characters(tmp_path, literal, expected):
+def test_a_date_is_extracted_despite_adjacent_word_characters(
+    tmp_path, literal, expected
+):
     """A word character (digit, letter, underscore) flanking the date on either
     side must not hide it — timestamps put 'T' after it, filename/run-id joins
     put '_' before and after it. A 5-digit year must still be refused."""
     fixture = tmp_path / "sample.py"
     fixture.write_text(f'end_date = "{literal}"\n', encoding="utf-8")
     extracted = [found for _, found in _code_string_dates(fixture)]
-    assert extracted == expected, f"{literal!r} extracted {extracted}, expected {expected}"
+    assert extracted == expected, (
+        f"{literal!r} extracted {extracted}, expected {expected}"
+    )
 
 
 def test_a_preseal_date_is_extracted_because_extraction_is_seal_blind(tmp_path):
@@ -242,7 +264,9 @@ def test_a_date_inside_an_fstring_literal_part_is_extracted(tmp_path):
     STRING — an f-string's literal text must be scanned too, not just plain
     string literals."""
     fixture = tmp_path / "sample.py"
-    fixture.write_text('n = 1\nwindow_start = f"batch{n}: 2026-03-15"\n', encoding="utf-8")
+    fixture.write_text(
+        'n = 1\nwindow_start = f"batch{n}: 2026-03-15"\n', encoding="utf-8"
+    )
     extracted = [found for _, found in _code_string_dates(fixture)]
     assert extracted == ["2026-03-15"]
 
@@ -308,7 +332,9 @@ def test_the_seal_boundary_is_inclusive():
         ("null_byte.py", b"x = 'a\x00b'\n", "SyntaxError"),
     ],
 )
-def test_an_unreadable_file_is_reported_not_skipped(tmp_path, name, content, error_type):
+def test_an_unreadable_file_is_reported_not_skipped(
+    tmp_path, name, content, error_type
+):
     fixture = tmp_path / name
     fixture.write_bytes(content)
     dates, reason = _scan_file(fixture)

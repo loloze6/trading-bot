@@ -128,7 +128,10 @@ else:
 
 DEFAULT_ROOT = (
     Path(__file__).resolve().parents[3]
-    / "trading-bot" / "local_data" / "recorded_reserved" / "kraken_ws_v2"
+    / "trading-bot"
+    / "local_data"
+    / "recorded_reserved"
+    / "kraken_ws_v2"
 )
 
 #: The three features the pre-registration names. `whale_lt_count`,
@@ -367,8 +370,8 @@ def pool(results: Sequence[PersistenceResult], feature: str) -> PersistenceResul
     if pooled.active_bars:
         pooled.avg_holding_bars = pooled.active_bars / max(pooled.opens, 1)
     if pooled.bridged_active_bars:
-        pooled.avg_holding_bars_nan_bridged = (
-            pooled.bridged_active_bars / max(pooled.bridged_opens, 1)
+        pooled.avg_holding_bars_nan_bridged = pooled.bridged_active_bars / max(
+            pooled.bridged_opens, 1
         )
     return pooled
 
@@ -404,12 +407,14 @@ def stability_verdict(
     """
     worst_precision = min(pooled, key=lambda r: r.opens)
     worst_censor = max(
-        pooled, key=lambda r: (r.censored_fraction if r.censored_fraction is not None else 0.0)
+        pooled,
+        key=lambda r: r.censored_fraction if r.censored_fraction is not None else 0.0,
     )
 
     rate = (
         (worst_precision.opens / worst_precision.bars_attested)
-        if worst_precision.bars_attested else 0.0
+        if worst_precision.bars_attested
+        else 0.0
     )
     needed_pooled_bars = math.ceil(MIN_OPENS_FOR_STABLE_H / rate) if rate > 0 else None
     extra_bars_per_pair = None
@@ -449,7 +454,8 @@ def stability_verdict(
         "limiting_censor_feature": worst_censor.feature,
         "worst_censored_fraction": (
             round(worst_censor.censored_fraction, 4)
-            if worst_censor.censored_fraction is not None else None
+            if worst_censor.censored_fraction is not None
+            else None
         ),
         "max_censored_fraction_allowed": MAX_CENSORED_FRACTION,
         "mean_attested_segment_bars": round(mean_seg, 3),
@@ -532,7 +538,8 @@ def report(
         "-" * len(header),
         "",
         f"ATTESTED-BAR FRACTION  {att}/{tot} = {att / tot:.4f}"
-        if tot else "ATTESTED-BAR FRACTION  (no bars)",
+        if tot
+        else "ATTESTED-BAR FRACTION  (no bars)",
         "  NB this is a BAR fraction, not the journal's TIME-coverage fraction. A bar is",
         "  attested only if NO gap of any length touches it, so a 2-second reconnect",
         "  costs a whole 1h bar. The two figures are not interchangeable.",
@@ -546,9 +553,7 @@ def report(
     out += [ph, "-" * len(ph)]
     for r in pooled:
         eps = r.episode_lengths
-        why = "OK" if r.stable else (
-            "CENSORED" if not r.uncensored else "IMPRECISE"
-        )
+        why = "OK" if r.stable else ("CENSORED" if not r.uncensored else "IMPRECISE")
         out.append(
             f"{r.feature:<20}{r.active_bars:>8}{r.opens:>7}"
             f"{_num(r.avg_holding_bars):>9}{_num(r.avg_holding_bars_nan_bridged):>9}"
@@ -560,8 +565,11 @@ def report(
         )
 
     per_pair_H = {
-        c: [r.avg_holding_bars for r in all_results
-            if r.feature == c and r.avg_holding_bars is not None]
+        c: [
+            r.avg_holding_bars
+            for r in all_results
+            if r.feature == c and r.avg_holding_bars is not None
+        ]
         for c in SIGNAL_COLUMNS
     }
     out += ["", "DISPERSION OF PER-PAIR H  (pairs with a defined H only)"]
@@ -581,9 +589,10 @@ def report(
     out += [
         "",
         "ATTESTED SEGMENT LENGTHS  (the hard ceiling on any episode)",
-        f"  segments {len(seg_all)}   mean {sum(seg_all)/len(seg_all):.3f} bars   "
+        f"  segments {len(seg_all)}   mean {sum(seg_all) / len(seg_all):.3f} bars   "
         f"median {statistics.median(seg_all):.1f}   max {max(seg_all)} bars"
-        if seg_all else "  (none)",
+        if seg_all
+        else "  (none)",
     ]
 
     v = stability_verdict(pooled)
@@ -641,20 +650,24 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--bar-seconds", type=int, default=DEFAULT_BAR_SECONDS)
     ap.add_argument("--large-quantile", type=float, default=DEFAULT_LARGE_QUANTILE)
     ap.add_argument("--baseline-seconds", type=int, default=DEFAULT_BASELINE_SECONDS)
-    ap.add_argument("--min-baseline-trades", type=int, default=DEFAULT_MIN_BASELINE_TRADES)
+    ap.add_argument(
+        "--min-baseline-trades", type=int, default=DEFAULT_MIN_BASELINE_TRADES
+    )
     ap.add_argument("--min-bar-trades", type=int, default=DEFAULT_MIN_BAR_TRADES)
     args = ap.parse_args(argv)
-    print(report(
-        root=args.root,
-        symbols=args.symbols,
-        start=args.start,
-        end=args.end,
-        bar_seconds=args.bar_seconds,
-        large_quantile=args.large_quantile,
-        baseline_seconds=args.baseline_seconds,
-        min_baseline_trades=args.min_baseline_trades,
-        min_bar_trades=args.min_bar_trades,
-    ))
+    print(
+        report(
+            root=args.root,
+            symbols=args.symbols,
+            start=args.start,
+            end=args.end,
+            bar_seconds=args.bar_seconds,
+            large_quantile=args.large_quantile,
+            baseline_seconds=args.baseline_seconds,
+            min_baseline_trades=args.min_baseline_trades,
+            min_bar_trades=args.min_bar_trades,
+        )
+    )
     return 0
 
 

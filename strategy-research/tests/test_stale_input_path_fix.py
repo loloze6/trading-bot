@@ -17,6 +17,7 @@ Acceptance bar (same as test_exclusion_digest_input.py, not merely "the code
 path is skipped"): flag-off must produce a BYTE-IDENTICAL fully-assembled
 prompt to a baseline that never calls _apply_stale_input_path_fix at all.
 """
+
 import sys
 from pathlib import Path
 
@@ -33,16 +34,25 @@ def _minimal_run(root: Path, run_id: str) -> Path:
     run_dir = root / "runs" / run_id
     (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
     (run_dir / "artifacts" / "research_brief.yaml").write_text(
-        "asset: BTCUSDT\n", encoding="utf-8")
+        "asset: BTCUSDT\n", encoding="utf-8"
+    )
     return run_dir
 
 
 def _base_handoff() -> dict:
     return {
-        "required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
+        "required_inputs": [
+            {"path": "artifacts/research_brief.yaml", "reason": "base"}
+        ],
         "optional_inputs": [
-            {"path": "../../campaign_knowledge_base.yaml", "reason": "A5.1: coverage_matrix + exhausted_mechanisms."},
-            {"path": "../../feed_wishlist.yaml", "reason": "A1.2: append new feed requests here if needed."},
+            {
+                "path": "../../campaign_knowledge_base.yaml",
+                "reason": "A5.1: coverage_matrix + exhausted_mechanisms.",
+            },
+            {
+                "path": "../../feed_wishlist.yaml",
+                "reason": "A1.2: append new feed requests here if needed.",
+            },
         ],
     }
 
@@ -52,26 +62,35 @@ def _set_flag(root: Path, enabled) -> None:
     config_dir = root / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
     if enabled is None:
-        (config_dir / "campaign_config.yaml").write_text("orchestrator: {}\n", encoding="utf-8")
+        (config_dir / "campaign_config.yaml").write_text(
+            "orchestrator: {}\n", encoding="utf-8"
+        )
         return
     with open(config_dir / "campaign_config.yaml", "w", encoding="utf-8") as f:
-        yaml.safe_dump({"orchestrator": {"stale_input_path_fix": {"enabled": bool(enabled)}}}, f)
+        yaml.safe_dump(
+            {"orchestrator": {"stale_input_path_fix": {"enabled": bool(enabled)}}}, f
+        )
 
 
 def _write_real_kb_and_wishlist(root: Path) -> None:
     record_dir = root / "campaign_record"
     record_dir.mkdir(parents=True, exist_ok=True)
     (record_dir / "campaign_knowledge_base.yaml").write_text(
-        "exhausted_mechanisms: []\ncoverage_matrix: {}\n", encoding="utf-8")
+        "exhausted_mechanisms: []\ncoverage_matrix: {}\n", encoding="utf-8"
+    )
     (record_dir / "feed_wishlist.yaml").write_text(
-        "- liquidation_data\n", encoding="utf-8")
+        "- liquidation_data\n", encoding="utf-8"
+    )
 
 
 # ---------------------------------------------------------------------------
 # _stale_input_path_fix_enabled
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("enabled,expected", [(True, True), (False, False), (None, False)])
+
+@pytest.mark.parametrize(
+    "enabled,expected", [(True, True), (False, False), (None, False)]
+)
 def test_stale_input_path_fix_enabled_reads_flag(enabled, expected):
     root = rpr.ROOT
     _set_flag(root, enabled)
@@ -86,6 +105,7 @@ def test_stale_input_path_fix_enabled_false_when_config_file_absent():
 # ---------------------------------------------------------------------------
 # _apply_stale_input_path_fix -- handoff mutation
 # ---------------------------------------------------------------------------
+
 
 def test_apply_stale_input_path_fix_noop_when_flag_off():
     root = rpr.ROOT
@@ -124,7 +144,9 @@ def test_apply_stale_input_path_fix_does_not_add_entries_that_are_not_declared()
     root = rpr.ROOT
     _set_flag(root, True)
     handoff = {
-        "required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
+        "required_inputs": [
+            {"path": "artifacts/research_brief.yaml", "reason": "base"}
+        ],
         "optional_inputs": [],
     }
     rpr._apply_stale_input_path_fix("hypothesis_generation", handoff)
@@ -139,7 +161,11 @@ def test_apply_stale_input_path_fix_leaves_unrelated_optional_inputs_alone():
     _set_flag(root, True)
     handoff = _base_handoff()
     handoff["optional_inputs"].append(
-        {"path": "artifacts/run_context.yaml", "reason": "instrument escalation override"})
+        {
+            "path": "artifacts/run_context.yaml",
+            "reason": "instrument escalation override",
+        }
+    )
     rpr._apply_stale_input_path_fix("hypothesis_generation", handoff)
     paths = {req["path"] for req in handoff["optional_inputs"]}
     assert "artifacts/run_context.yaml" in paths
@@ -150,18 +176,25 @@ def test_apply_stale_input_path_fix_leaves_unrelated_optional_inputs_alone():
 # a baseline that never calls _apply_stale_input_path_fix at all.
 # ---------------------------------------------------------------------------
 
+
 def test_flag_off_prompt_is_byte_identical_to_never_calling_the_fix_at_all():
     root = rpr.ROOT
     _set_flag(root, False)
-    _write_real_kb_and_wishlist(root)  # present on disk but must not matter -- flag is off
+    _write_real_kb_and_wishlist(
+        root
+    )  # present on disk but must not matter -- flag is off
     run_dir = _minimal_run(root, "run_910")
 
     baseline_handoff = _base_handoff()
-    baseline_prompt = rpr._build_stage_prompt("hypothesis_generation", baseline_handoff, run_dir)
+    baseline_prompt = rpr._build_stage_prompt(
+        "hypothesis_generation", baseline_handoff, run_dir
+    )
 
     flag_off_handoff = _base_handoff()
     rpr._apply_stale_input_path_fix("hypothesis_generation", flag_off_handoff)
-    flag_off_prompt = rpr._build_stage_prompt("hypothesis_generation", flag_off_handoff, run_dir)
+    flag_off_prompt = rpr._build_stage_prompt(
+        "hypothesis_generation", flag_off_handoff, run_dir
+    )
 
     assert flag_off_prompt == baseline_prompt, (
         "flag-off must be byte-identical to the code path that never calls "
@@ -180,8 +213,12 @@ def test_flag_on_prompt_actually_carries_kb_and_wishlist_content():
     rpr._apply_stale_input_path_fix("hypothesis_generation", handoff)
     prompt = rpr._build_stage_prompt("hypothesis_generation", handoff, run_dir)
 
-    assert "exhausted_mechanisms" in prompt, "corrected KB path must actually resolve into the prompt"
-    assert "liquidation_data" in prompt, "corrected feed_wishlist path must actually resolve into the prompt"
+    assert "exhausted_mechanisms" in prompt, (
+        "corrected KB path must actually resolve into the prompt"
+    )
+    assert "liquidation_data" in prompt, (
+        "corrected feed_wishlist path must actually resolve into the prompt"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -190,6 +227,7 @@ def test_flag_on_prompt_actually_carries_kb_and_wishlist_content():
 # not change context_blocks/full_prompt (proven by the byte-identity test
 # above, which still passes with the warning wired in).
 # ---------------------------------------------------------------------------
+
 
 def test_missing_optional_input_warns_instead_of_vanishing_silently(capsys):
     root = rpr.ROOT
@@ -213,9 +251,14 @@ def test_present_optional_input_suppresses_its_own_warning(capsys):
     # Use the CORRECT paths directly (flag-independent: this test exercises
     # the warning, not the path-fix union).
     handoff = {
-        "required_inputs": [{"path": "artifacts/research_brief.yaml", "reason": "base"}],
+        "required_inputs": [
+            {"path": "artifacts/research_brief.yaml", "reason": "base"}
+        ],
         "optional_inputs": [
-            {"path": "../../campaign_record/campaign_knowledge_base.yaml", "reason": "kb"},
+            {
+                "path": "../../campaign_record/campaign_knowledge_base.yaml",
+                "reason": "kb",
+            },
         ],
     }
 

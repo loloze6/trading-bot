@@ -22,13 +22,13 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent      # trading-bot/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent  # trading-bot/
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from data.fetchers.base_fetcher import FetchGapError  # noqa: E402
 from data.fetchers.ccxt_fetcher import CcxtFetcher  # noqa: E402
-from tools import ingest_kraken_archive as ing       # noqa: E402
+from tools import ingest_kraken_archive as ing  # noqa: E402
 
 ARCHIVE_DIR = PROJECT_ROOT / "local_data" / "Kraken_batch" / "master_q4"
 
@@ -42,7 +42,7 @@ def _fetcher(exchange: str, data_dir: str) -> CcxtFetcher:
         start_date="2020-01-01",
         end_date="2020-01-02",
         symbols=["BTCUSDT"],
-        candle_interval_seconds=3600,   # -> "1h"
+        candle_interval_seconds=3600,  # -> "1h"
         exchange=exchange,
         localStorage=False,
         data_dir=data_dir,
@@ -52,6 +52,7 @@ def _fetcher(exchange: str, data_dir: str) -> CcxtFetcher:
 # ---------------------------------------------------------------------------
 # (a) cache_key behaviour
 # ---------------------------------------------------------------------------
+
 
 def test_binance_cache_key_unprefixed_backward_compatible(tmp_path):
     """Binance keeps its historical UN-prefixed key — no migration needed."""
@@ -89,6 +90,7 @@ def test_nonbinance_exchanges_all_prefixed(tmp_path):
 # (b) Round-trip integrity of an ingested pilot file
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.skipif(
     not PILOT_SOURCE.exists(),
     reason=f"Kraken pilot archive not present: {PILOT_SOURCE}",
@@ -117,9 +119,14 @@ def test_ingest_roundtrip_integrity(tmp_path):
 
     # First/last timestamps match stdlib UTC conversion of raw unix seconds.
     import datetime as _dt
+
     _utc = _dt.timezone.utc
-    exp_first = _dt.datetime.fromtimestamp(int(raw["unix_s"].iloc[0]), _utc).replace(tzinfo=None)
-    exp_last = _dt.datetime.fromtimestamp(int(raw["unix_s"].iloc[-1]), _utc).replace(tzinfo=None)
+    exp_first = _dt.datetime.fromtimestamp(int(raw["unix_s"].iloc[0]), _utc).replace(
+        tzinfo=None
+    )
+    exp_last = _dt.datetime.fromtimestamp(int(raw["unix_s"].iloc[-1]), _utc).replace(
+        tzinfo=None
+    )
     assert got["timestamp"].iloc[0].to_pydatetime() == exp_first
     assert got["timestamp"].iloc[-1].to_pydatetime() == exp_last
 
@@ -128,7 +135,9 @@ def test_ingest_roundtrip_integrity(tmp_path):
         for col in ("open", "high", "low", "close", "volume"):
             assert got[col].iloc[pos] == pytest.approx(raw[col].iloc[pos]), (col, pos)
         # number_of_trades carries Kraken's real per-candle count.
-        assert int(got["number_of_trades"].iloc[pos]) == int(raw["trade_count"].iloc[pos])
+        assert int(got["number_of_trades"].iloc[pos]) == int(
+            raw["trade_count"].iloc[pos]
+        )
         # Derived quote volume = volume * close (estimated), matches CcxtFetcher.
         assert got["quote_asset_volume"].iloc[pos] == pytest.approx(
             raw["volume"].iloc[pos] * raw["close"].iloc[pos]
@@ -149,8 +158,7 @@ def test_ingest_roundtrip_integrity(tmp_path):
 )
 def test_utc_roundtrip_guard_raises_on_shift():
     """The UTC guard must actually fire when timestamps don't match UTC."""
-    raw = pd.read_csv(PILOT_SOURCE, header=None,
-                      names=ing.KRAKEN_RAW_COLUMNS).head(10)
+    raw = pd.read_csv(PILOT_SOURCE, header=None, names=ing.KRAKEN_RAW_COLUMNS).head(10)
     converted = ing.to_binance_schema(raw)
     # Corrupt the converted timestamps by a +1h shift -> guard must raise.
     bad = converted.copy()
@@ -163,12 +171,13 @@ def test_utc_roundtrip_guard_raises_on_shift():
 # (c) Symbol convention: store standard-base, source Kraken-altname
 # ---------------------------------------------------------------------------
 
+
 def test_store_symbol_is_standard_base_not_kraken_altname():
     """The cache key must use the standard base (BTC/DOGE), never Kraken's
     legacy altname (XBT/XDG) — the load-bearing correction to the pilot."""
     assert ing.cache_symbol("BTC") == "BTCUSD"
     assert ing.cache_symbol("DOGE") == "DOGEUSD"
-    assert ing.cache_symbol("ETH") == "ETHUSD"      # unaffected pair unchanged
+    assert ing.cache_symbol("ETH") == "ETHUSD"  # unaffected pair unchanged
 
 
 def test_source_pair_uses_kraken_altname_base():
@@ -183,16 +192,19 @@ def _normalize_like_fetch_remote(symbol: str) -> str:
     if "/" not in symbol and len(symbol) > 3:
         for q in ("USDT", "USD", "BUSD", "USDC", "ETH", "BTC"):
             if symbol.endswith(q):
-                return f"{symbol[:-len(q)]}/{q}"
+                return f"{symbol[: -len(q)]}/{q}"
     return symbol
 
 
-@pytest.mark.parametrize("asset,unified", [
-    ("BTC", "BTC/USD"),    # NOT XBT/USD — ccxt would reject the altname form
-    ("DOGE", "DOGE/USD"),  # NOT XDG/USD
-    ("ETH", "ETH/USD"),
-    ("SOL", "SOL/USD"),
-])
+@pytest.mark.parametrize(
+    "asset,unified",
+    [
+        ("BTC", "BTC/USD"),  # NOT XBT/USD — ccxt would reject the altname form
+        ("DOGE", "DOGE/USD"),  # NOT XDG/USD
+        ("ETH", "ETH/USD"),
+        ("SOL", "SOL/USD"),
+    ],
+)
 def test_store_symbol_normalizes_to_ccxt_unified(asset, unified):
     """Top-up composability invariant: the stored symbol, run through the
     fetcher's own normalization, yields ccxt's unified 'BASE/USD' (the only
@@ -205,9 +217,13 @@ def test_topup_key_matches_archive_slot(tmp_path):
     the archive rows occupy — proved by key derivation, no fetch performed."""
     archive = _fetcher("kraken", str(tmp_path)).cache_key(ing.cache_symbol("BTC"))
     topup = CcxtFetcher(
-        start_date="2026-01-01", end_date="2026-07-22",
-        symbols=[ing.cache_symbol("BTC")], candle_interval_seconds=3600,
-        exchange="kraken", localStorage=True, data_dir=str(tmp_path),
+        start_date="2026-01-01",
+        end_date="2026-07-22",
+        symbols=[ing.cache_symbol("BTC")],
+        candle_interval_seconds=3600,
+        exchange="kraken",
+        localStorage=True,
+        data_dir=str(tmp_path),
     ).cache_key("BTCUSD")
     assert archive == topup == "kraken_BTCUSD_1h"
 
@@ -225,23 +241,32 @@ def test_topup_key_matches_archive_slot(tmp_path):
 # ---------------------------------------------------------------------------
 
 H = 3600
-T0 = 1577836800          # 2020-01-01 00:00:00 UTC
+T0 = 1577836800  # 2020-01-01 00:00:00 UTC
 
 
-def _write_source(archive_dir: Path, asset: str, start_unix: int, periods: int,
-                  close: float = 100.0, resolution: int = 60) -> Path:
+def _write_source(
+    archive_dir: Path,
+    asset: str,
+    start_unix: int,
+    periods: int,
+    close: float = 100.0,
+    resolution: int = 60,
+) -> Path:
     """Headerless Kraken bulk CSV: unix_s,open,high,low,close,volume,count."""
     archive_dir.mkdir(parents=True, exist_ok=True)
     path = ing.kraken_source_path(asset, archive_dir, resolution)
     step = resolution * 60
-    rows = [f"{start_unix + i * step},{close},{close},{close},{close},1.0,1"
-            for i in range(periods)]
+    rows = [
+        f"{start_unix + i * step},{close},{close},{close},{close},1.0,1"
+        for i in range(periods)
+    ]
     path.write_text("\n".join(rows) + "\n")
     return path
 
 
-def _seed_cache(data_dir: Path, asset: str, start_unix: int, periods: int,
-                close: float = 999.0) -> Path:
+def _seed_cache(
+    data_dir: Path, asset: str, start_unix: int, periods: int, close: float = 999.0
+) -> Path:
     """
     Pre-existing cache in the exact slot `ingest` writes to, built through the
     real schema converter so the columns match byte-for-byte.
@@ -265,7 +290,7 @@ def test_ingest_does_not_truncate_a_wider_existing_cache(tmp_path):
     data_dir = tmp_path / "cache"
     archive = tmp_path / "archive"
     _seed_cache(data_dir, "TEST", T0, 500)
-    _write_source(archive, "TEST", T0, 10)          # narrow, overlapping tranche
+    _write_source(archive, "TEST", T0, 10)  # narrow, overlapping tranche
 
     ing.ingest("TEST", archive, data_dir)
 
@@ -287,8 +312,10 @@ def test_archive_values_win_over_stale_cached_values(tmp_path):
     """
     data_dir = tmp_path / "cache"
     archive = tmp_path / "archive"
-    _seed_cache(data_dir, "TEST", T0, 100, close=999.0)              # stale, wide
-    _write_source(archive, "TEST", T0 + 50 * H, 20, close=111.0)     # authoritative, inside
+    _seed_cache(data_dir, "TEST", T0, 100, close=999.0)  # stale, wide
+    _write_source(
+        archive, "TEST", T0 + 50 * H, 20, close=111.0
+    )  # authoritative, inside
 
     ing.ingest("TEST", archive, data_dir)
 
@@ -309,9 +336,9 @@ def test_ingest_refuses_to_open_a_new_hole_in_a_continuous_cache(tmp_path):
     """
     data_dir = tmp_path / "cache"
     archive = tmp_path / "archive"
-    dest = _seed_cache(data_dir, "TEST", T0, 100)        # continuous
+    dest = _seed_cache(data_dir, "TEST", T0, 100)  # continuous
     before = dest.read_bytes()
-    _write_source(archive, "TEST", T0 + 500 * H, 50)     # far-later, disjoint
+    _write_source(archive, "TEST", T0 + 500 * H, 50)  # far-later, disjoint
 
     with pytest.raises(FetchGapError):
         ing.ingest("TEST", archive, data_dir)
@@ -328,7 +355,7 @@ def test_an_out_of_order_source_is_rejected_by_name(tmp_path):
     archive = tmp_path / "archive"
     src = _write_source(archive, "TEST", T0, 10)
     rows = src.read_text().strip().split("\n")
-    rows[3], rows[7] = rows[7], rows[3]                  # interior swap
+    rows[3], rows[7] = rows[7], rows[3]  # interior swap
     src.write_text("\n".join(rows) + "\n")
 
     with pytest.raises(ValueError, match="Out-of-order"):
@@ -350,7 +377,7 @@ def test_a_duplicate_timestamp_is_rejected(tmp_path):
     archive = tmp_path / "archive"
     src = _write_source(archive, "TEST", T0, 4)
     rows = src.read_text().strip().split("\n")
-    rows[2] = rows[1].replace("100.0", "555.0")          # same timestamp, other prices
+    rows[2] = rows[1].replace("100.0", "555.0")  # same timestamp, other prices
     src.write_text("\n".join(rows) + "\n")
 
     with pytest.raises(ValueError, match="strictly chronological"):
@@ -375,7 +402,9 @@ def test_reingesting_the_same_archive_is_byte_identical(tmp_path):
     first = dest.read_bytes()
     ing.ingest("TEST", archive, data_dir)
 
-    assert dest.read_bytes() == first, "re-ingesting an unchanged archive rewrote the file"
+    assert dest.read_bytes() == first, (
+        "re-ingesting an unchanged archive rewrote the file"
+    )
 
 
 def test_a_cache_that_exists_but_parses_empty_is_refused(tmp_path):
@@ -426,9 +455,9 @@ def test_utc_roundtrip_survives_a_union_with_a_wider_cache(tmp_path):
     data_dir = tmp_path / "cache"
     archive = tmp_path / "archive"
     _seed_cache(data_dir, "TEST", T0, 300)
-    _write_source(archive, "TEST", T0 + 50 * H, 20)     # strictly inside the cache
+    _write_source(archive, "TEST", T0 + 50 * H, 20)  # strictly inside the cache
 
-    summary = ing.ingest("TEST", archive, data_dir)     # must not raise
+    summary = ing.ingest("TEST", archive, data_dir)  # must not raise
 
     assert summary["rows"] == 300
     # gaps describe the WHOLE merged cache, not the ingested tranche.
@@ -447,8 +476,9 @@ def _shift_the_write(monkeypatch, hours: int = 1) -> None:
     def patched(self, *args, **kwargs):
         if "timestamp" in getattr(self, "columns", []):
             shifted = self.copy()
-            shifted["timestamp"] = (pd.to_datetime(shifted["timestamp"])
-                                    + pd.Timedelta(hours=hours))
+            shifted["timestamp"] = pd.to_datetime(shifted["timestamp"]) + pd.Timedelta(
+                hours=hours
+            )
             return original(shifted, *args, **kwargs)
         return original(self, *args, **kwargs)
 
@@ -470,11 +500,15 @@ def test_a_shifted_write_is_caught_at_the_archive_boundary(tmp_path, monkeypatch
     """
     data_dir = tmp_path / "cache"
     archive = tmp_path / "archive"
-    _seed_cache(data_dir, "TEST", T0, 300, close=999.0)      # brackets the archive
+    _seed_cache(data_dir, "TEST", T0, 300, close=999.0)  # brackets the archive
     archive.mkdir(parents=True, exist_ok=True)
-    ing.kraken_source_path("TEST", archive, 60).write_text("\n".join(
-        f"{T0 + (50 + i) * H},{111.0 + i},{111.0 + i},{111.0 + i},{111.0 + i},1.0,1"
-        for i in range(20)) + "\n")
+    ing.kraken_source_path("TEST", archive, 60).write_text(
+        "\n".join(
+            f"{T0 + (50 + i) * H},{111.0 + i},{111.0 + i},{111.0 + i},{111.0 + i},1.0,1"
+            for i in range(20)
+        )
+        + "\n"
+    )
 
     _shift_the_write(monkeypatch, hours=1)
 
@@ -486,14 +520,15 @@ def test_a_shifted_write_is_caught_at_the_archive_boundary(tmp_path, monkeypatch
 # (d) Gap-stat arithmetic
 # ---------------------------------------------------------------------------
 
+
 def test_compute_gap_stats_counts_missing_hours():
     """Deterministic series with a known hole -> exact missing count/%."""
     # 10 contiguous hourly bars, then drop 3 (a 3-hour gap), keep 10 after.
     full = pd.date_range("2020-01-01", periods=23, freq="h")
-    kept = full.delete([10, 11, 12])                 # remove 3 interior bars
+    kept = full.delete([10, 11, 12])  # remove 3 interior bars
     stats = ing.compute_gap_stats(pd.Series(kept), resolution=60)
     assert stats["full"]["rows"] == 20
-    assert stats["full"]["expected"] == 23           # span 22h /1h + 1
+    assert stats["full"]["expected"] == 23  # span 22h /1h + 1
     assert stats["full"]["missing"] == 3
     assert stats["full"]["pct"] == pytest.approx(100 * 3 / 23)
 
@@ -512,6 +547,7 @@ def test_compute_gap_stats_perfect_series_zero_missing():
 # regardless of the requested resolution, so a daily tranche was written with
 # 1-HOUR close_times, silently. close_time now follows the passed resolution.
 # ---------------------------------------------------------------------------
+
 
 def test_to_binance_schema_daily_close_time_geometry(tmp_path):
     """A daily (1440-minute) tranche carries a full-day close_time:
@@ -554,7 +590,9 @@ def test_ingest_at_daily_resolution_writes_1d_cache_and_is_idempotent(tmp_path):
 
     first = dest.read_bytes()
     ing.ingest("TEST", archive, data_dir, 1440)
-    assert dest.read_bytes() == first, "re-ingesting an unchanged daily archive rewrote the file"
+    assert dest.read_bytes() == first, (
+        "re-ingesting an unchanged daily archive rewrote the file"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -564,6 +602,7 @@ def test_ingest_at_daily_resolution_writes_1d_cache_and_is_idempotent(tmp_path):
 # asset, records (asset, error), continues, and reports a non-empty failures
 # list that main() turns into a non-zero exit.
 # ---------------------------------------------------------------------------
+
 
 def test_run_all_isolates_a_failing_asset_and_continues(tmp_path, capsys):
     """A raising asset does not abort the rest, AND the failure is attributed to
@@ -584,14 +623,13 @@ def test_run_all_isolates_a_failing_asset_and_continues(tmp_path, capsys):
 
     _write_source(archive, "GOOD2", T0, 48)
 
-    done, skipped, failures = ing.run_all(
-        ["GOOD1", "BAD", "GOOD2"], archive, data_dir)
+    done, skipped, failures = ing.run_all(["GOOD1", "BAD", "GOOD2"], archive, data_dir)
 
     assert [r["asset"] for r in done] == ["GOOD1", "GOOD2"]  # continued past BAD
     assert skipped == []
     assert len(failures) == 1
-    assert failures[0][0] == "BAD"                    # attributed to BAD, not GOOD1
-    assert isinstance(failures[0][1], ValueError)     # the REAL exception is kept
+    assert failures[0][0] == "BAD"  # attributed to BAD, not GOOD1
+    assert isinstance(failures[0][1], ValueError)  # the REAL exception is kept
     assert (data_dir / "kraken_GOOD1USD_1h.csv").exists()
     assert (data_dir / "kraken_GOOD2USD_1h.csv").exists()
 
@@ -607,13 +645,13 @@ def test_run_all_skips_absent_source_without_recording_failure(tmp_path):
     failure. Absence is expected (HYPE); a raise is not."""
     data_dir = tmp_path / "cache"
     archive = tmp_path / "archive"
-    _write_source(archive, "GOOD", T0, 48)            # MISSING has no source file
+    _write_source(archive, "GOOD", T0, 48)  # MISSING has no source file
 
     done, skipped, failures = ing.run_all(["MISSING", "GOOD"], archive, data_dir)
 
     assert skipped == ["MISSING"]
     assert [r["asset"] for r in done] == ["GOOD"]
-    assert failures == []                             # absence is not a failure
+    assert failures == []  # absence is not a failure
 
 
 def test_run_all_source_lookup_follows_the_requested_resolution(tmp_path):
@@ -622,7 +660,7 @@ def test_run_all_source_lookup_follows_the_requested_resolution(tmp_path):
     is what dropping `resolution` from the source lookup would cause)."""
     data_dir = tmp_path / "cache"
     archive = tmp_path / "archive"
-    _write_source(archive, "TEST", T0, 30, resolution=1440)   # only _1440 exists
+    _write_source(archive, "TEST", T0, 30, resolution=1440)  # only _1440 exists
 
     done, skipped, failures = ing.run_all(["TEST"], archive, data_dir, 1440)
 
@@ -638,14 +676,15 @@ def test_main_exits_nonzero_when_any_asset_failed(monkeypatch, capsys):
     local_data is read or written."""
     monkeypatch.setattr(sys, "argv", ["ingest_kraken_archive.py"])
     monkeypatch.setattr(
-        ing, "run_all",
+        ing,
+        "run_all",
         lambda *a, **k: ([], [], [("BAD", RuntimeError("boom"))]),
     )
     with pytest.raises(SystemExit) as excinfo:
         ing.main()
     assert excinfo.value.code == 1
     err = capsys.readouterr().err
-    assert "BAD" in err                               # the FAILURES table names it
+    assert "BAD" in err  # the FAILURES table names it
 
 
 # ---------------------------------------------------------------------------
@@ -657,17 +696,25 @@ def test_main_exits_nonzero_when_any_asset_failed(monkeypatch, capsys):
 # read or write.
 # ---------------------------------------------------------------------------
 
-def _write_source_at_suffix(archive: Path, asset: str, suffix: int,
-                            start_unix: int, periods: int,
-                            step_seconds: int = H) -> Path:
+
+def _write_source_at_suffix(
+    archive: Path,
+    asset: str,
+    suffix: int,
+    start_unix: int,
+    periods: int,
+    step_seconds: int = H,
+) -> Path:
     """A monotonic (step_seconds-spaced) source written under an ARBITRARY file
     suffix, decoupling the on-disk spacing from the resolution ingest() is told.
     Lets a degenerate resolution reach the value-level code pre-fix instead of
     tripping the missing-file guard."""
     archive.mkdir(parents=True, exist_ok=True)
     path = ing.kraken_source_path(asset, archive, suffix)
-    rows = [f"{start_unix + i * step_seconds},100.0,100.0,100.0,100.0,1.0,1"
-            for i in range(periods)]
+    rows = [
+        f"{start_unix + i * step_seconds},100.0,100.0,100.0,100.0,1.0,1"
+        for i in range(periods)
+    ]
     path.write_text("\n".join(rows) + "\n")
     return path
 
@@ -678,12 +725,12 @@ def test_ingest_720_snaps_to_the_4h_slot_and_is_rejected(tmp_path):
     ingest() now refuses, naming the 4h slot, and writes nothing."""
     data_dir = tmp_path / "cache"
     archive = tmp_path / "archive"
-    _write_source(archive, "TEST", T0, 10, resolution=720)   # _720 source exists
+    _write_source(archive, "TEST", T0, 10, resolution=720)  # _720 source exists
 
     with pytest.raises(ValueError, match="4h"):
         ing.ingest("TEST", archive, data_dir, 720)
 
-    assert not data_dir.exists()                     # nothing written
+    assert not data_dir.exists()  # nothing written
 
 
 def test_ingest_rejects_zero_resolution(tmp_path):
@@ -691,7 +738,7 @@ def test_ingest_rejects_zero_resolution(tmp_path):
     AFTER writing. The guard stops it before any write."""
     data_dir = tmp_path / "cache"
     archive = tmp_path / "archive"
-    _write_source_at_suffix(archive, "TEST", 0, T0, 10)      # monotonic _0 source
+    _write_source_at_suffix(archive, "TEST", 0, T0, 10)  # monotonic _0 source
 
     with pytest.raises(ValueError):
         ing.ingest("TEST", archive, data_dir, 0)
@@ -704,7 +751,7 @@ def test_ingest_rejects_negative_resolution(tmp_path):
     The guard stops it before any write."""
     data_dir = tmp_path / "cache"
     archive = tmp_path / "archive"
-    _write_source_at_suffix(archive, "TEST", -60, T0, 10)    # monotonic _-60 source
+    _write_source_at_suffix(archive, "TEST", -60, T0, 10)  # monotonic _-60 source
 
     with pytest.raises(ValueError):
         ing.ingest("TEST", archive, data_dir, -60)
@@ -778,7 +825,7 @@ def test_ingest_still_accepts_a_wholly_pre_seal_tranche(tmp_path):
     tests above.
     """
     archive, data = tmp_path / "arch", tmp_path / "data"
-    _write_source(archive, "TEST", _SEAL - 10 * 3600, 5)   # all pre-seal
+    _write_source(archive, "TEST", _SEAL - 10 * 3600, 5)  # all pre-seal
 
     summary = ing.ingest("TEST", archive, data)
 
@@ -814,7 +861,7 @@ def test_unreadable_policy_refuses_rather_than_defaulting(tmp_path, monkeypatch)
     monkeypatch.setattr(ing, "_POLICY_PATH", tmp_path / "does_not_exist.yaml")
 
     archive, data = tmp_path / "arch", tmp_path / "data"
-    _write_source(archive, "TEST", _SEAL - 10 * 3600, 5)   # otherwise legitimate
+    _write_source(archive, "TEST", _SEAL - 10 * 3600, 5)  # otherwise legitimate
 
     with pytest.raises(RuntimeError, match="Cannot read holdout_range"):
         ing.ingest("TEST", archive, data)

@@ -22,11 +22,11 @@ from pathlib import Path
 
 import pytest
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent      # trading-bot/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent  # trading-bot/
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from reporting.run_artifact import _get_git_sha             # noqa: E402
+from reporting.run_artifact import _get_git_sha  # noqa: E402
 
 SHA40 = re.compile(r"[0-9a-f]{40}")
 
@@ -52,7 +52,10 @@ def _clean_git_env() -> dict:
 def _git(repo, *args):
     return subprocess.run(
         ["git", "-C", str(repo), *args],
-        check=True, capture_output=True, text=True, env=_clean_git_env(),
+        check=True,
+        capture_output=True,
+        text=True,
+        env=_clean_git_env(),
     ).stdout
 
 
@@ -139,7 +142,10 @@ def test_outside_a_repo_the_value_degrades_to_unknown(tmp_path, monkeypatch):
     # Precondition: git must genuinely fail here. If a parent directory ever
     # carried a .git, this test would otherwise pass for the wrong reason.
     probe = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=str(plain), capture_output=True, text=True,
+        ["git", "rev-parse", "HEAD"],
+        cwd=str(plain),
+        capture_output=True,
+        text=True,
         env=_clean_git_env(),
     )
     assert probe.returncode != 0, probe.stdout

@@ -12,6 +12,7 @@ Every test drives _materialize_run() directly (not just
 _venue_product_tradable() in isolation) so the assertions cover the actual
 wiring point: research_brief.yaml's written research_only key.
 """
+
 import sys
 from pathlib import Path
 
@@ -36,16 +37,21 @@ _MINIMAL_BRIEF = {
 def _write_venue_tradability(root: Path):
     config_dir = root / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
-    (config_dir / "venue_tradability.yaml").write_text(yaml.safe_dump({
-        "version": "1.0",
-        "venues": {
-            "kraken": {
-                "spot": {"tradable": True},
-                "perp": {"tradable": True},
-                "margin": {"tradable": "unconfirmed"},
-            },
-        },
-    }), encoding="utf-8")
+    (config_dir / "venue_tradability.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "version": "1.0",
+                "venues": {
+                    "kraken": {
+                        "spot": {"tradable": True},
+                        "perp": {"tradable": True},
+                        "margin": {"tradable": "unconfirmed"},
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def _materialize_and_read(run_id: str, brief: dict, runs_dir: Path) -> dict:
@@ -169,7 +175,9 @@ def test_frontmatter_with_venue_and_product_parses_clean(tmp_path):
     assert data["product"] == "spot"
 
 
-def test_frontmatter_missing_venue_never_reaches_materialize_run(campaign_root, tmp_path):
+def test_frontmatter_missing_venue_never_reaches_materialize_run(
+    campaign_root, tmp_path
+):
     """End-to-end: a brief.md missing venue must never produce a
     research_brief.yaml at all -- the refusal happens before _materialize_run
     is ever called, not as a silent research_only=True downstream of it."""

@@ -17,8 +17,8 @@ class AdvancedStrategy(MainStrategy):
     def __init__(self, config_path: Optional[str] = None):
         if config_path is None:
             strategies_dir = os.path.dirname(os.path.abspath(__file__))
-            project_dir    = os.path.dirname(strategies_dir)
-            config_path    = os.path.join(project_dir, 'strategy_config.json')
+            project_dir = os.path.dirname(strategies_dir)
+            config_path = os.path.join(project_dir, "strategy_config.json")
 
         self._config_path = config_path
 
@@ -31,7 +31,7 @@ class AdvancedStrategy(MainStrategy):
                 logger.error(e)
             raise ValueError("invalid strategy_config")
 
-        self.regime_engine   = ConfigDrivenRegimeEngine(config["regime_detector"])
+        self.regime_engine = ConfigDrivenRegimeEngine(config["regime_detector"])
         self.strategy_engine = ConfigDrivenStrategyEngine(config["strategies"])
 
         std_dev_period = 24
@@ -43,7 +43,7 @@ class AdvancedStrategy(MainStrategy):
 
         self.data_buffer = RollingBuffer(self.required_bars + 100)
         self.data_buffer.register_calculated_column(
-            'stddev_24', lambda df: df['close'].rolling(std_dev_period).std()
+            "stddev_24", lambda df: df["close"].rolling(std_dev_period).std()
         )
 
         self.last_forecast = 0.0
@@ -65,7 +65,9 @@ class AdvancedStrategy(MainStrategy):
         self.component_error_samples = []  # capped list; see _MAX_ERROR_SAMPLES
         self._update_call_count = 0
 
-        logger.debug(f"✅ AdvancedStrategy initialized (required_bars={self.required_bars})")
+        logger.debug(
+            f"✅ AdvancedStrategy initialized (required_bars={self.required_bars})"
+        )
 
     def _classify_once(self) -> Tuple[MarketRegime, Dict[str, Any]]:
         """regime_engine.classify() for the CURRENT bar, memoized so is_ready() and
@@ -78,7 +80,9 @@ class AdvancedStrategy(MainStrategy):
 
     def is_ready(self) -> bool:
         if self.data_buffer.size < self.required_bars:
-            logger.debug(f"NOT READY: buffer {self.data_buffer.size} / {self.required_bars}")
+            logger.debug(
+                f"NOT READY: buffer {self.data_buffer.size} / {self.required_bars}"
+            )
             return False
         if not self.regime_engine.is_ready():
             logger.debug(f"NOT READY: regime engine")
@@ -111,7 +115,9 @@ class AdvancedStrategy(MainStrategy):
 
     def update(self, new_bar: pd.DataFrame):
         self._update_call_count += 1
-        self._regime_classification = None  # new bar: last bar's classify() memo is stale
+        self._regime_classification = (
+            None  # new bar: last bar's classify() memo is stale
+        )
         stage = "buffer"
         try:
             self.data_buffer.add_data(new_bar.iloc[-1].to_dict())
@@ -124,15 +130,21 @@ class AdvancedStrategy(MainStrategy):
             # F5b: count and classify instead of a bare log line (see __init__ note).
             self.component_error_count += 1
             if len(self.component_error_samples) < self._MAX_ERROR_SAMPLES:
-                self.component_error_samples.append({
-                    "bar_index": self._update_call_count,
-                    "stage": stage,
-                    "error_type": type(e).__name__,
-                    "error_message": str(e),
-                })
-            logger.error(f"Error updating strategy (stage={stage}, bar={self._update_call_count}): {e}")
+                self.component_error_samples.append(
+                    {
+                        "bar_index": self._update_call_count,
+                        "stage": stage,
+                        "error_type": type(e).__name__,
+                        "error_message": str(e),
+                    }
+                )
+            logger.error(
+                f"Error updating strategy (stage={stage}, bar={self._update_call_count}): {e}"
+            )
 
-    def generate_forecast(self) -> Tuple[float, Any, MarketRegime, float, Dict[str, Any]]:
+    def generate_forecast(
+        self,
+    ) -> Tuple[float, Any, MarketRegime, float, Dict[str, Any]]:
         regime, debug_regime = self._classify_once()
 
         forecast, debug_components = self.strategy_engine.forecast(regime)
@@ -140,13 +152,12 @@ class AdvancedStrategy(MainStrategy):
         self.last_forecast = forecast
 
         debug_info = {
-            'regime':        regime.value,
-            'forecast_delta': forecast_delta,
-            'regime_scores': debug_regime.get('scores', {}),
-            'regime_margin': debug_regime.get('margin'),
-            'bars_in_regime': self.regime_engine.bars_in_current_regime,
-            'components': debug_components,
+            "regime": regime.value,
+            "forecast_delta": forecast_delta,
+            "regime_scores": debug_regime.get("scores", {}),
+            "regime_margin": debug_regime.get("margin"),
+            "bars_in_regime": self.regime_engine.bars_in_current_regime,
+            "components": debug_components,
         }
 
         return forecast, None, regime, 0.0, debug_info
-

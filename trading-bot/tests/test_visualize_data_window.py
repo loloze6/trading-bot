@@ -23,6 +23,7 @@ commit that moves it.
 
 These tests drive the real method with a stub fetcher — no network, no disk.
 """
+
 import sys
 from pathlib import Path
 from typing import ClassVar
@@ -37,7 +38,9 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from core import launcher as launcher_mod  # noqa: E402
 
-_POLICY = PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
+_POLICY = (
+    PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
+)
 with open(_POLICY, encoding="utf-8") as fh:
     HOLDOUT_START = pd.Timestamp(yaml.safe_load(fh)["holdout_range"][0])
 
@@ -48,17 +51,21 @@ class _RecordingFetcher:
     calls: ClassVar[list] = []
 
     def __init__(self, start_date, end_date, symbols, **kwargs):
-        type(self).calls.append({
-            "start": pd.Timestamp(start_date),
-            "end": pd.Timestamp(end_date),
-            "symbols": symbols,
-            "kwargs": kwargs,
-        })
+        type(self).calls.append(
+            {
+                "start": pd.Timestamp(start_date),
+                "end": pd.Timestamp(end_date),
+                "symbols": symbols,
+                "kwargs": kwargs,
+            }
+        )
         self.symbols = symbols
 
     def get_data(self):
-        return {s: pd.DataFrame({"timestamp": [pd.Timestamp("2025-06-01")]})
-                for s in self.symbols}
+        return {
+            s: pd.DataFrame({"timestamp": [pd.Timestamp("2025-06-01")]})
+            for s in self.symbols
+        }
 
     def validate_data_continuity(self, symbol):
         return True, []
@@ -74,6 +81,7 @@ def run_visualize(monkeypatch):
         lau.logger = launcher_mod.logging.getLogger("trading_bot")
         lau.visualize_data()
         return _RecordingFetcher.calls
+
     return _run
 
 
@@ -102,4 +110,4 @@ def test_it_completes_instead_of_dying_on_a_missing_method(run_visualize):
     AttributeError while the typo is present -- and `sys.exit(1)` from the
     handler surfaces as SystemExit, so a regression cannot pass quietly.
     """
-    run_visualize()   # must not raise, must not SystemExit
+    run_visualize()  # must not raise, must not SystemExit

@@ -40,14 +40,14 @@ def _side(n, price0, step, qty="1.5"):
 @pytest.mark.parametrize(
     "value,precision,expected",
     [
-        ("0.05005", 5, "5005"),        # leading zeros stripped, point removed
-        ("4", 8, "400000000"),         # padded out to full precision
+        ("0.05005", 5, "5005"),  # leading zeros stripped, point removed
+        ("4", 8, "400000000"),  # padded out to full precision
         ("45283.5", 1, "452835"),
-        ("45283.50", 2, "4528350"),    # padding is significant to the checksum
+        ("45283.50", 2, "4528350"),  # padding is significant to the checksum
         ("0.00000100", 8, "100"),
         ("1.0", 1, "10"),
-        (45283.5, 1, "452835"),        # float input accepted
-        ("0.1", 8, "10000000"),        # float(0.1) binary error would break this
+        (45283.5, 1, "452835"),  # float input accepted
+        ("0.1", 8, "10000000"),  # float(0.1) binary error would break this
     ],
 )
 def test_render_token(value, precision, expected):
@@ -110,10 +110,11 @@ def test_depth_truncates_to_top_10():
     """Only the top 10 per side enter the checksum, whatever else is present."""
     asks10 = _side(10, 100.0, 0.1)
     bids10 = _side(10, 99.0, -0.1)
-    deep_asks = asks10 + _side(5, 200.0, 0.1)      # far from the touch
+    deep_asks = asks10 + _side(5, 200.0, 0.1)  # far from the touch
     deep_bids = bids10 + _side(5, 50.0, -0.1)
-    assert (book_checksum(asks10, bids10, 2, 8)
-            == book_checksum(deep_asks, deep_bids, 2, 8))
+    assert book_checksum(asks10, bids10, 2, 8) == book_checksum(
+        deep_asks, deep_bids, 2, 8
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -146,8 +147,7 @@ def test_precision_changes_the_checksum():
 
 def test_verify_book_frame_accepts_matching_and_rejects_corrupt():
     asks, bids = _side(10, 100.0, 0.1), _side(10, 99.0, -0.1)
-    good = {"asks": asks, "bids": bids,
-            "checksum": book_checksum(asks, bids, 2, 8)}
+    good = {"asks": asks, "bids": bids, "checksum": book_checksum(asks, bids, 2, 8)}
     assert verify_book_frame(good, 2, 8) is True
 
     bad = dict(good, checksum=(good["checksum"] + 1) & 0xFFFFFFFF)
@@ -167,7 +167,9 @@ def test_verify_book_frame_without_checksum_raises():
 _FIXTURE = Path(__file__).parent / "fixtures" / "live_book_snapshot.json"
 
 
-@pytest.mark.skipif(not _FIXTURE.exists(), reason="live fixture not present (untracked)")
+@pytest.mark.skipif(
+    not _FIXTURE.exists(), reason="live fixture not present (untracked)"
+)
 def test_live_fixture_agrees():
     payload = json.loads(_FIXTURE.read_text(encoding="utf-8"))
     for case in payload["cases"]:

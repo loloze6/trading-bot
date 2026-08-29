@@ -70,12 +70,18 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 if __package__ in (None, ""):  # allow `python coverage_report.py`
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from recorder.journal import (  # type: ignore
-        JOURNAL_FILENAME, coverage_intervals, load_records, parse_iso,
+        JOURNAL_FILENAME,
+        coverage_intervals,
+        load_records,
+        parse_iso,
     )
     from recorder.record_kraken_ws import DEFAULT_OUT  # type: ignore
 else:
     from .journal import (
-        JOURNAL_FILENAME, coverage_intervals, load_records, parse_iso,
+        JOURNAL_FILENAME,
+        coverage_intervals,
+        load_records,
+        parse_iso,
     )
     from .record_kraken_ws import DEFAULT_OUT
 
@@ -145,7 +151,8 @@ def covered_spans(
     """
     by_key = coverage_intervals(records)
     keys = [
-        k for k in by_key
+        k
+        for k in by_key
         if (symbol is None or k[0] == symbol) and (channel is None or k[1] == channel)
     ]
     if not keys:
@@ -225,7 +232,8 @@ def _attribute(
         return cause, detail
 
     inside = [
-        r for r in records
+        r
+        for r in records
         if r.get("type") == "RESTART_BOUNDARY"
         and r.get("ts")
         and start <= parse_iso(r["ts"]) <= end
@@ -238,7 +246,8 @@ def _attribute(
         )
 
     later_starts = [
-        r for r in records
+        r
+        for r in records
         if r.get("type") == "RECORDER_START"
         and r.get("ts")
         and parse_iso(r["ts"]) >= end
@@ -299,7 +308,8 @@ def gaps(
     covered = _merge(covered)
 
     acks = [
-        parse_iso(r["ts"]) for r in records
+        parse_iso(r["ts"])
+        for r in records
         if r.get("type") == "SUBSCRIBE_ACK" and r.get("ts")
     ]
     first_ack = min(acks) if acks else None
@@ -347,7 +357,8 @@ def render(
     uncaptured = sum(g.duration_s for g in found)
     keys = coverage_intervals(records)
     selected = [
-        k for k in keys
+        k
+        for k in keys
         if (symbol is None or k[0] == symbol) and (channel is None or k[1] == channel)
     ]
 
@@ -367,9 +378,7 @@ def render(
         lines.append("GAPS: none — every instant of the window is attested.")
     else:
         lines.append(f"GAPS ({len(found)}):")
-        lines.append(
-            f"  {'#':>3}  {'start':<32} {'end':<32} {'duration':>12}  cause"
-        )
+        lines.append(f"  {'#':>3}  {'start':<32} {'end':<32} {'duration':>12}  cause")
         for i, g in enumerate(found, 1):
             lines.append(
                 f"  {i:>3}  {g.start.isoformat():<32} {g.end.isoformat():<32} "
@@ -394,23 +403,35 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(
         description="Report every interval the coverage journal does NOT attest"
     )
-    ap.add_argument("--out", default=str(DEFAULT_OUT),
-                    help="recorder output directory (holds the coverage journal)")
-    ap.add_argument("--journal", default=None,
-                    help="path to the journal directly (overrides --out)")
-    ap.add_argument("--start", default=None,
-                    help="window start, ISO8601 (default: first journal record)")
-    ap.add_argument("--end", default=None,
-                    help="window end, ISO8601 (default: newest journal record)")
+    ap.add_argument(
+        "--out",
+        default=str(DEFAULT_OUT),
+        help="recorder output directory (holds the coverage journal)",
+    )
+    ap.add_argument(
+        "--journal", default=None, help="path to the journal directly (overrides --out)"
+    )
+    ap.add_argument(
+        "--start",
+        default=None,
+        help="window start, ISO8601 (default: first journal record)",
+    )
+    ap.add_argument(
+        "--end",
+        default=None,
+        help="window end, ISO8601 (default: newest journal record)",
+    )
     ap.add_argument("--symbol", default=None, help="restrict to one venue symbol")
     ap.add_argument("--channel", default=None, help="restrict to one channel")
-    ap.add_argument("--fail-on-gap", action="store_true",
-                    help="exit 1 if any gap is found (for unattended checks)")
+    ap.add_argument(
+        "--fail-on-gap",
+        action="store_true",
+        help="exit 1 if any gap is found (for unattended checks)",
+    )
     args = ap.parse_args(argv)
 
     journal_path = (
-        Path(args.journal) if args.journal
-        else Path(args.out) / JOURNAL_FILENAME
+        Path(args.journal) if args.journal else Path(args.out) / JOURNAL_FILENAME
     )
     records = load_records(journal_path)
     if not records:
@@ -428,8 +449,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     found, win, covered = gaps(
         records, window=window, symbol=args.symbol, channel=args.channel
     )
-    for line in render(journal_path, records, found, win, covered,
-                       args.symbol, args.channel):
+    for line in render(
+        journal_path, records, found, win, covered, args.symbol, args.channel
+    ):
         print(line)
     return 1 if (found and args.fail_on_gap) else 0
 

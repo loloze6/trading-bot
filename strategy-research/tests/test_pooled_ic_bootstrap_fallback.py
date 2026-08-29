@@ -8,6 +8,7 @@ a real IC value coincidentally satisfy an unrelated p<0.05 threshold and flip
 a verdict to a false PROMOTE. These tests lock in both the fallback's
 correctness and the collision fix.
 """
+
 import json
 import sys
 from pathlib import Path
@@ -24,11 +25,13 @@ import run_protocol as rp
 
 def _write_bars(run_dir: Path, forecasts, closes):
     run_dir.mkdir(parents=True, exist_ok=True)
-    df = pd.DataFrame({
-        "timestamp": pd.date_range("2020-01-01", periods=len(forecasts), freq="D"),
-        "forecast": forecasts,
-        "close": closes,
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2020-01-01", periods=len(forecasts), freq="D"),
+            "forecast": forecasts,
+            "close": closes,
+        }
+    )
     df.to_csv(run_dir / "bars.csv", index=False)
 
 
@@ -57,11 +60,27 @@ def test_impossible_ic_threshold_returns_spec_error_not_fail():
 def test_spec_error_does_not_count_as_evaluated_for_promote(tmp_path):
     """A SPEC_ERROR criterion must not let a hypothesis reach 'promote' just
     because it technically isn't a FAIL."""
-    per_symbol_summary = {"BTCUSDT": {"median_sharpe": 1.0, "max_abs_drawdown_pct": 5.0, "min_trade_count": 5}}
+    per_symbol_summary = {
+        "BTCUSDT": {
+            "median_sharpe": 1.0,
+            "max_abs_drawdown_pct": 5.0,
+            "min_trade_count": 5,
+        }
+    }
     results = [
-        {"symbol": "BTCUSDT", "window": "2020-01", "run_id": "r1",
-         "core": {"win_rate": 60.0, "forecast_return_corr": 0.03, "gross_pnl": 10.0,
-                   "cost_drag_pct": 1.0, "avg_trade_duration_bars": 5.0, "trade_count": 5}},
+        {
+            "symbol": "BTCUSDT",
+            "window": "2020-01",
+            "run_id": "r1",
+            "core": {
+                "win_rate": 60.0,
+                "forecast_return_corr": 0.03,
+                "gross_pnl": 10.0,
+                "cost_drag_pct": 1.0,
+                "avg_trade_duration_bars": 5.0,
+                "trade_count": 5,
+            },
+        },
     ]
     vp = {
         "decision_rules": {
@@ -71,16 +90,26 @@ def test_spec_error_does_not_count_as_evaluated_for_promote(tmp_path):
             "reject_if_any_met": [],
         },
     }
-    hv = rp.evaluate_against_decision_rules(per_symbol_summary, results, vp, None, runs_root=None)
+    hv = rp.evaluate_against_decision_rules(
+        per_symbol_summary, results, vp, None, runs_root=None
+    )
     assert hv["verdict"] != "promote"
 
 
 def test_non_degenerate_uses_plain_median_not_bootstrap():
     rows = [
-        {"symbol": "BTCUSDT", "window": "2020-01", "run_id": "r1",
-         "core": {"forecast_return_corr": 0.05}},
-        {"symbol": "BTCUSDT", "window": "2020-02", "run_id": "r2",
-         "core": {"forecast_return_corr": 0.07}},
+        {
+            "symbol": "BTCUSDT",
+            "window": "2020-01",
+            "run_id": "r1",
+            "core": {"forecast_return_corr": 0.05},
+        },
+        {
+            "symbol": "BTCUSDT",
+            "window": "2020-02",
+            "run_id": "r2",
+            "core": {"forecast_return_corr": 0.07},
+        },
     ]
     corr, method = rp._pooled_ic_with_bootstrap_fallback(rows, runs_root=None)
     assert method == "per_window_median_pearson"
@@ -107,10 +136,18 @@ def test_degenerate_falls_back_to_bootstrap(tmp_path):
     )
 
     rows = [
-        {"symbol": "BTCUSDT", "window": "2020-01", "run_id": "run_w1",
-         "core": {"forecast_return_corr": None}},
-        {"symbol": "BTCUSDT", "window": "2020-02", "run_id": "run_w2",
-         "core": {"forecast_return_corr": None}},
+        {
+            "symbol": "BTCUSDT",
+            "window": "2020-01",
+            "run_id": "run_w1",
+            "core": {"forecast_return_corr": None},
+        },
+        {
+            "symbol": "BTCUSDT",
+            "window": "2020-02",
+            "run_id": "run_w2",
+            "core": {"forecast_return_corr": None},
+        },
     ]
     corr, method = rp._pooled_ic_with_bootstrap_fallback(rows, runs_root=str(runs_root))
     assert method == "block_bootstrap_all_bars_v1"
@@ -119,10 +156,16 @@ def test_degenerate_falls_back_to_bootstrap(tmp_path):
 
 def test_degenerate_no_bars_csv_returns_none():
     rows = [
-        {"symbol": "BTCUSDT", "window": "2020-01", "run_id": "missing",
-         "core": {"forecast_return_corr": None}},
+        {
+            "symbol": "BTCUSDT",
+            "window": "2020-01",
+            "run_id": "missing",
+            "core": {"forecast_return_corr": None},
+        },
     ]
-    corr, method = rp._pooled_ic_with_bootstrap_fallback(rows, runs_root="/nonexistent/path")
+    corr, method = rp._pooled_ic_with_bootstrap_fallback(
+        rows, runs_root="/nonexistent/path"
+    )
     assert corr is None
     assert method is None
 
@@ -136,8 +179,12 @@ def test_build_extended_summary_populates_ic_fields(tmp_path):
     )
     per_symbol_summary = {"BTCUSDT": {"median_sharpe": -1.0}}
     results = [
-        {"symbol": "BTCUSDT", "window": "2020-01", "run_id": "run_a",
-         "core": {"win_rate": 40.0, "forecast_return_corr": None}},
+        {
+            "symbol": "BTCUSDT",
+            "window": "2020-01",
+            "run_id": "run_a",
+            "core": {"win_rate": 40.0, "forecast_return_corr": None},
+        },
     ]
     extended = rp._build_extended_summary(per_symbol_summary, results, str(runs_root))
     assert "median_forecast_return_corr" in extended["BTCUSDT"]

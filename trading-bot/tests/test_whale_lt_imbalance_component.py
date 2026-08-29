@@ -26,6 +26,7 @@ What is proved:
      declaration registered for the whale feeds, and the guard rejects a
      mis-declared wider window.
 """
+
 import json
 import os
 import sys
@@ -65,6 +66,7 @@ _REQUIRED_BARS = 24
 # Fixture construction
 # ---------------------------------------------------------------------------
 
+
 def _whale_component(**overrides) -> WhaleLargeTradeImbalanceComponent:
     params = {
         "persistence_bars": PERSISTENCE_BARS,
@@ -99,17 +101,19 @@ def _pattern_a_config(warmup: int = 3) -> dict:
                 "mean_reversion": None,
                 "chop": None,
                 "unknown": {
-                    "components": [{
-                        "id": "whale_lti",
-                        "class": "strategies.strategy_components.WhaleLargeTradeImbalanceComponent",
-                        "weight": 1.0,
-                        "params": {
-                            "persistence_bars": PERSISTENCE_BARS,
-                            "min_abs_imbalance": MIN_ABS_IMBALANCE,
-                            "scaling_factor": SCALING_FACTOR,
-                        },
-                        "transforms": [{"op": "identity"}],
-                    }],
+                    "components": [
+                        {
+                            "id": "whale_lti",
+                            "class": "strategies.strategy_components.WhaleLargeTradeImbalanceComponent",
+                            "weight": 1.0,
+                            "params": {
+                                "persistence_bars": PERSISTENCE_BARS,
+                                "min_abs_imbalance": MIN_ABS_IMBALANCE,
+                                "scaling_factor": SCALING_FACTOR,
+                            },
+                            "transforms": [{"op": "identity"}],
+                        }
+                    ],
                 },
             },
         },
@@ -127,13 +131,18 @@ def _bars(imbalance, attested, n_pad: int = 30) -> pd.DataFrame:
     tail = len(imbalance)
     n = n_pad + tail
     close = 100.0 + np.arange(n, dtype=float) * 0.01
-    return pd.DataFrame({
-        "timestamp": pd.date_range("2026-07-27", periods=n, freq="h", tz=None),
-        "open": close, "high": close + 0.5, "low": close - 0.5,
-        "close": close, "volume": 1.0,
-        WHALE_LT_IMBALANCE_COLUMN: [np.nan] * n_pad + list(imbalance),
-        WHALE_ATTESTED_COLUMN: [1.0] * n_pad + list(attested),
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2026-07-27", periods=n, freq="h", tz=None),
+            "open": close,
+            "high": close + 0.5,
+            "low": close - 0.5,
+            "close": close,
+            "volume": 1.0,
+            WHALE_LT_IMBALANCE_COLUMN: [np.nan] * n_pad + list(imbalance),
+            WHALE_ATTESTED_COLUMN: [1.0] * n_pad + list(attested),
+        }
+    )
 
 
 def _forecast_sequence(bars: pd.DataFrame, warmup: int = 3) -> list:
@@ -148,7 +157,7 @@ def _forecast_sequence(bars: pd.DataFrame, warmup: int = 3) -> list:
         strat = AdvancedStrategy(config_path=tmp_path)
         out = []
         for i in range(1, len(bars) + 1):
-            strat.update(bars.iloc[i - 1: i])
+            strat.update(bars.iloc[i - 1 : i])
             out.append(strat.generate_forecast()[0] if strat.is_ready() else None)
         return out
     finally:
@@ -159,17 +168,22 @@ def _forecast_sequence(bars: pd.DataFrame, warmup: int = 3) -> list:
 # 1. Direction: strong positive -> positive, strong negative -> negative
 # ---------------------------------------------------------------------------
 
+
 def test_sustained_positive_imbalance_yields_positive_forecast():
     bars = _bars([0.9, 0.9, 0.9], [1.0, 1.0, 1.0])
     seq = _forecast_sequence(bars)
     final = seq[-1]
     assert final is not None, "strategy never became ready — widen the fixture"
-    assert not np.isnan(final), "sustained, fully attested window must produce a forecast"
+    assert not np.isnan(final), (
+        "sustained, fully attested window must produce a forecast"
+    )
     assert final > 0.0, f"positive sustained imbalance must forecast long, got {final}"
     assert final == pytest.approx(0.9 * SCALING_FACTOR), (
         "forecast must be mean(imbalance) x scaling_factor — continuation, sign NOT inverted"
     )
-    assert -20.0 <= final <= 20.0, "forecast must respect the -20..+20 pipeline convention"
+    assert -20.0 <= final <= 20.0, (
+        "forecast must respect the -20..+20 pipeline convention"
+    )
 
 
 def test_sustained_negative_imbalance_yields_negative_forecast():
@@ -185,6 +199,7 @@ def test_sustained_negative_imbalance_yields_negative_forecast():
 # 2. Abstention: an unattested bar yields NO forecast, and no stale carry
 # ---------------------------------------------------------------------------
 
+
 def test_unattested_bar_yields_no_forecast_not_zero_and_not_stale():
     """THE central NaN requirement. Bars 0-2 are a strong, fully attested
     positive run (forecast fires). Bar 3 is UNATTESTED. Its forecast must be
@@ -197,12 +212,16 @@ def test_unattested_bar_yields_no_forecast_not_zero_and_not_stale():
     assert fired is not None and fired == pytest.approx(0.9 * SCALING_FACTOR), (
         "the attested run must fire first — otherwise the abstention below proves nothing"
     )
-    assert abstained is not None, "strategy readiness must not itself hide the abstention"
+    assert abstained is not None, (
+        "strategy readiness must not itself hide the abstention"
+    )
     assert np.isnan(abstained), (
         f"an unattested bar must produce NO forecast; got {abstained!r}"
     )
     assert abstained != 0.0, "zero would assert 'balanced', which is a claim"
-    assert not (abstained == fired), "the abstained bar must not carry the prior forecast"
+    assert not (abstained == fired), (
+        "the abstained bar must not carry the prior forecast"
+    )
 
 
 def test_unattested_bar_earlier_in_the_window_also_abstains():
@@ -238,6 +257,7 @@ def test_missing_aux_columns_abstain_rather_than_read_as_balanced():
 # ---------------------------------------------------------------------------
 # 3. Zero is a measurement, and only where it is one
 # ---------------------------------------------------------------------------
+
 
 def test_measured_but_not_sustained_yields_exactly_zero():
     """Fully attested, fully measured, sign flips inside the window: the flow WAS
@@ -299,6 +319,7 @@ def test_persistence_bars_must_be_positive():
 # 4. The real aux-feed path and the W9 causality declaration
 # ---------------------------------------------------------------------------
 
+
 class _StubWhaleFetcher:
     """Matches the `feed.fetcher.get_data(symbol)` contract `_premerge_aux_feeds`
     expects (data_manager.py:729) — the same minimal stand-in
@@ -334,15 +355,21 @@ def _premerge(window_seconds: float) -> pd.DataFrame:
     n = 6
     ts = pd.date_range("2026-07-27", periods=n, freq="h")
     price = pd.DataFrame({"timestamp": ts, "close": 100.0 + np.arange(n)})
-    feed = pd.DataFrame({
-        "timestamp": ts,
-        WHALE_LT_IMBALANCE_COLUMN: [0.9, 0.9, 0.9, -0.9, -0.9, -0.9],
-        WHALE_ATTESTED_COLUMN: [1.0] * n,
-    })
+    feed = pd.DataFrame(
+        {
+            "timestamp": ts,
+            WHALE_LT_IMBALANCE_COLUMN: [0.9, 0.9, 0.9, -0.9, -0.9, -0.9],
+            WHALE_ATTESTED_COLUMN: [1.0] * n,
+        }
+    )
 
-    dm = DataManager(symbols=[SYMBOL], interval_seconds=INTERVAL_SECONDS, mode="backtest")
+    dm = DataManager(
+        symbols=[SYMBOL], interval_seconds=INTERVAL_SECONDS, mode="backtest"
+    )
     for name in (WHALE_LT_IMBALANCE_COLUMN, WHALE_ATTESTED_COLUMN):
-        dm.register_feed(name, _StubWhaleFetcher(feed), window_seconds=window_seconds, agg="last")
+        dm.register_feed(
+            name, _StubWhaleFetcher(feed), window_seconds=window_seconds, agg="last"
+        )
     return dm._premerge_aux_feeds(SYMBOL, price)
 
 
@@ -351,7 +378,14 @@ def test_real_aux_merge_attaches_each_bars_own_value():
     same-grid forward-window feature: the guard allows it (equality is allowed)
     and each bar receives its OWN value, never the next bar's."""
     enriched = _premerge(INTERVAL_SECONDS)
-    assert list(enriched[WHALE_LT_IMBALANCE_COLUMN]) == [0.9, 0.9, 0.9, -0.9, -0.9, -0.9]
+    assert list(enriched[WHALE_LT_IMBALANCE_COLUMN]) == [
+        0.9,
+        0.9,
+        0.9,
+        -0.9,
+        -0.9,
+        -0.9,
+    ]
     assert enriched[WHALE_ATTESTED_COLUMN].eq(1.0).all()
 
 
@@ -367,7 +401,9 @@ def test_component_reads_the_merged_columns_end_to_end():
     the sustained negative tail must produce a negative forecast, proving the
     component consumes what `_premerge_aux_feeds` actually produces (column
     names and dtypes included) rather than a hand-built frame."""
-    enriched = _premerge(INTERVAL_SECONDS).sort_values("timestamp").reset_index(drop=True)
+    enriched = (
+        _premerge(INTERVAL_SECONDS).sort_values("timestamp").reset_index(drop=True)
+    )
     comp = _whale_component()
     comp.update(enriched)
     assert comp.raw_value() == pytest.approx(-0.9 * SCALING_FACTOR)

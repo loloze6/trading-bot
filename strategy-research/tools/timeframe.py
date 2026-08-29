@@ -72,7 +72,9 @@ def timeframe_seconds(timeframe) -> int:
     value feeding a kill/no-kill decision must never be quietly assumed.
     """
     if isinstance(timeframe, bool):
-        raise ValueError(f"timeframe must be a string or number, got bool: {timeframe!r}")
+        raise ValueError(
+            f"timeframe must be a string or number, got bool: {timeframe!r}"
+        )
     if isinstance(timeframe, (int, float)):
         if timeframe <= 0:
             raise ValueError(f"timeframe seconds must be positive, got {timeframe!r}")

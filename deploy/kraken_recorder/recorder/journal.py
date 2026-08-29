@@ -343,7 +343,7 @@ class Interval:
 
 
 def coverage_intervals(
-    records: Sequence[Dict[str, Any]]
+    records: Sequence[Dict[str, Any]],
 ) -> Dict[Tuple[str, str], List[Interval]]:
     """
     Reconstruct, per (symbol, channel), the wall-clock spans the journal
@@ -409,7 +409,9 @@ def coverage_intervals(
         start = covered_since.get(key)
         if start is not None and end >= start:
             result.setdefault(key, []).append(
-                Interval(start=start, end=end, closed_by=reason, run_id=open_since[key][1])
+                Interval(
+                    start=start, end=end, closed_by=reason, run_id=open_since[key][1]
+                )
             )
         covered_since[key] = None
 
@@ -435,7 +437,10 @@ def coverage_intervals(
         # of its type: any record proves the journal has reached `ts` without
         # an intervening attestation, for every key still open.
         for key in list(open_since.keys()):
-            if covered_since.get(key) is not None and ts - last_attested[key] > tolerance:
+            if (
+                covered_since.get(key) is not None
+                and ts - last_attested[key] > tolerance
+            ):
                 flush(key, last_attested[key], "NO_ATTESTATION")
 
         if rtype == _OPENING:

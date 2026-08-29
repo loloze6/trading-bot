@@ -11,7 +11,14 @@ if _ROOT not in sys.path:
 from strategies.registry import TRANSFORM_OPS_REGISTRY, transform_min_periods
 
 _VALID_REGIMES = {"trending", "mean_reversion", "chop", "unknown"}
-_HISTORY_OPS = {"identity", "percentile", "negate_percentile", "zscore", "ratio_to_mean", "ema"}
+_HISTORY_OPS = {
+    "identity",
+    "percentile",
+    "negate_percentile",
+    "zscore",
+    "ratio_to_mean",
+    "ema",
+}
 
 
 def _all_transform_lists(config: dict):
@@ -32,7 +39,10 @@ def _all_transform_lists(config: dict):
                 yield f"regime_detector.regimes.{rname}.components[{j}].transforms", tfs
             htfs = comp.get("history_transforms", [])
             if htfs:
-                yield f"regime_detector.regimes.{rname}.components[{j}].history_transforms", htfs
+                yield (
+                    f"regime_detector.regimes.{rname}.components[{j}].history_transforms",
+                    htfs,
+                )
 
     strat = config.get("strategies", {})
     for rname, rcfg in strat.get("regimes", {}).items():
@@ -44,7 +54,10 @@ def _all_transform_lists(config: dict):
                 yield f"strategies.regimes.{rname}.components[{j}].transforms", tfs
             htfs = comp.get("history_transforms", [])
             if htfs:
-                yield f"strategies.regimes.{rname}.components[{j}].history_transforms", htfs
+                yield (
+                    f"strategies.regimes.{rname}.components[{j}].history_transforms",
+                    htfs,
+                )
 
 
 def validate(config: dict) -> List[str]:
@@ -52,7 +65,9 @@ def validate(config: dict) -> List[str]:
 
     # V1: structure
     if "regime_detector" not in config:
-        violations.append("VIOLATION V1 config: missing top-level key 'regime_detector'")
+        violations.append(
+            "VIOLATION V1 config: missing top-level key 'regime_detector'"
+        )
     if "strategies" not in config:
         violations.append("VIOLATION V1 config: missing top-level key 'strategies'")
 
@@ -139,12 +154,16 @@ def validate(config: dict) -> List[str]:
         lookback = comp_spec.get("lookback")
         if lookback is None:
             return
-        all_steps = comp_spec.get("transforms", []) + comp_spec.get("history_transforms", [])
+        all_steps = comp_spec.get("transforms", []) + comp_spec.get(
+            "history_transforms", []
+        )
         known = [s for s in all_steps if s.get("op") in TRANSFORM_OPS_REGISTRY]
         if not known:
             return
         try:
-            min_needed = max(transform_min_periods(s["op"], s.get("params", {})) for s in known)
+            min_needed = max(
+                transform_min_periods(s["op"], s.get("params", {})) for s in known
+            )
         except KeyError:
             return  # V4 already flagged missing entry
         if lookback < min_needed:

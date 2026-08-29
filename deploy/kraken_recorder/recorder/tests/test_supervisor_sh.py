@@ -28,16 +28,15 @@ from recorder.journal import JOURNAL_FILENAME, load_records
 SUPERVISOR = Path(__file__).resolve().parents[2] / "supervise.sh"
 BASH = shutil.which("bash")
 
-pytestmark = pytest.mark.skipif(
-    BASH is None, reason="no bash on this machine"
-)
+pytestmark = pytest.mark.skipif(BASH is None, reason="no bash on this machine")
 
 
 def _stub(tmp_path: Path, codes) -> Path:
     """A fake recorder driven by a scripted sequence of exit codes."""
     counter = tmp_path / "invocations.txt"
     script = tmp_path / "stub_recorder.py"
-    script.write_text(textwrap.dedent(f"""
+    script.write_text(
+        textwrap.dedent(f"""
         import sys
         from pathlib import Path
         counter = Path(r"{counter}")
@@ -46,7 +45,9 @@ def _stub(tmp_path: Path, codes) -> Path:
         counter.write_text(str(n))
         codes = {list(codes)!r}
         sys.exit(codes[min(n, len(codes)) - 1])
-    """), encoding="utf-8")
+    """),
+        encoding="utf-8",
+    )
     return script
 
 
@@ -55,14 +56,24 @@ def _run(tmp_path, codes, extra=()):
     out.mkdir()
     stub = _stub(tmp_path, codes)
     proc = subprocess.run(
-        [BASH, str(SUPERVISOR),
-         "--out", str(out),
-         "--python-exe", sys.executable,
-         "--recorder-command", str(stub),
-         "--backoff-initial-seconds", "0",
-         "--log-file", str(tmp_path / "recorder.log"),
-         *extra],
-        capture_output=True, text=True, timeout=180,
+        [
+            BASH,
+            str(SUPERVISOR),
+            "--out",
+            str(out),
+            "--python-exe",
+            sys.executable,
+            "--recorder-command",
+            str(stub),
+            "--backoff-initial-seconds",
+            "0",
+            "--log-file",
+            str(tmp_path / "recorder.log"),
+            *extra,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=180,
     )
     invocations = tmp_path / "invocations.txt"
     return (
@@ -88,9 +99,7 @@ def test_a_crash_is_relaunched_and_the_gap_is_attested(tmp_path):
 
 
 def test_a_disk_guard_abort_is_never_relaunched(tmp_path):
-    proc, invocations, records, _out = _run(
-        tmp_path, codes=[EXIT_DISK_GUARD_ABORT, 0]
-    )
+    proc, invocations, records, _out = _run(tmp_path, codes=[EXIT_DISK_GUARD_ABORT, 0])
 
     assert invocations == 1, "restarting into a full disk is a loop, not a recovery"
     assert proc.returncode == EXIT_DISK_GUARD_ABORT
@@ -143,7 +152,8 @@ def test_healthy_run_resets_the_backoff_ladder(tmp_path):
     as "healthy".
     """
     proc, invocations, _records, _out = _run(
-        tmp_path, codes=[1, 1, 0],
+        tmp_path,
+        codes=[1, 1, 0],
         extra=("--healthy-run-seconds", "0", "--backoff-initial-seconds", "1"),
     )
     assert invocations == 3
