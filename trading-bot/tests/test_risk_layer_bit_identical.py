@@ -188,3 +188,66 @@ def test_fold_collision_guard_raises(tmp_path):
             trades_log_file=str(tmp_path / "run_t.json"),
             risk_controls={"absolute_allocation_cap": {"cap": 1.0}},
         )
+
+
+# --- PR-2: cap-only run carries NO stateful columns (new keys' absence) ---
+
+
+def test_cap_only_run_has_no_stateful_columns(on_cap):
+    """A cap-only gate must not leak the PR-2 stateful columns/metrics -- proof the new
+    keys' absence is byte-clean end to end, so PR-1's cap behaviour is unchanged under
+    PR-2 code."""
+    bars = pd.read_csv(on_cap / "bars.csv")
+    for col in ("risk_killed", "risk_daily_halted", "risk_drawdown", "risk_daily_loss", "risk_trip"):
+        assert col not in bars.columns, col
+    block = json.loads((on_cap / "metrics.json").read_text())["risk_controls"]
+    for key in ("n_bars_killed", "n_bars_daily_halted", "first_trip", "daily_trips"):
+        assert key not in block, key
+
+
+# --- PR-2: max_drawdown_kill bites end to end ---
+
+
+@pytest.fixture(scope="module")
+def on_kill(tmp_path_factory):
+    # The reference window draws down ~24%, so a 5% kill trips well inside it.
+    return _run(
+        tmp_path_factory.mktemp("on_kill"),
+        risk_controls={"max_drawdown_kill": {"threshold": 0.05}},
+    )
+
+
+def test_kill_run_metrics_block(on_kill):
+    block = json.loads((on_kill / "metrics.json").read_text())["risk_controls"]
+    assert block["portfolio_controls"] == {"max_drawdown_kill": {"threshold": 0.05}}
+    assert block["n_bars_killed"] >= 1
+    assert block["first_trip"]["control"] == "max_drawdown_kill"
+    assert block["daily_trips"] == []  # no daily control configured
+
+
+def test_kill_run_latches_and_flattens(on_kill):
+    """Once risk_killed goes True it stays True (latch) and exposure is held flat for
+    the rest of the run."""
+    bars = pd.read_csv(on_kill / "bars.csv")
+    assert "risk_killed" in bars.columns
+    killed = bars["risk_killed"].astype(bool)
+    assert bool(killed.any()), "the kill must trip on this drawdown window"
+    first = killed.idxmax()
+    assert bool(killed.loc[first:].all()), "kill must latch (never un-set) once tripped"
+    # From the trip bar onward the book is forced flat: exposure collapses from the
+    # strategy's ~2.0 long toward 0 and stays there.
+    assert bars.loc[first:, "postRebalance_current_allocation"].abs().max() < 0.1
+
+
+def test_kill_run_metrics_matches_bars_count(on_kill):
+    """The gate-owned n_bars_killed equals the recorded risk_killed count (the book is
+    flat at run end, so no end-of-run row replacement perturbs the last bar)."""
+    bars = pd.read_csv(on_kill / "bars.csv")
+    block = json.loads((on_kill / "metrics.json").read_text())["risk_controls"]
+    assert int(bars["risk_killed"].astype(bool).sum()) == block["n_bars_killed"]
+
+
+def test_kill_run_provenance_differs_from_off(on_kill, off_default):
+    assert on_kill.name.split("_")[-1] != off_default.name.split("_")[-1]
+    man_on = json.loads((on_kill / "manifest.json").read_text())
+    assert man_on["config"]["risk_management"] == {"portfolio_controls": {"max_drawdown_kill": {"threshold": 0.05}}}
