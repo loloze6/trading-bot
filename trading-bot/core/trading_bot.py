@@ -223,6 +223,14 @@ class TradingBot:
             total_portfolio_value = self.portfolio_info._calculate_total_portfolio_value(balances, close)
             self.logger.debug(f"   💼 Portfolio: ${total_portfolio_value:.2f}")
 
+            # 2026-08-29 (fix/risk-layer, PR-2): fold this bar's decision-time equity
+            # into the stateful controls (drawdown peak, Paris-day loss anchor) BEFORE
+            # the forecast is mapped, so a trip forces the target flat below. Gate None
+            # (default) or cap-only -> no state tracked, output byte-identical. Reads
+            # only this bar's close-derived equity -> no look-ahead.
+            if self.risk_gate is not None:
+                self.risk_gate.observe(data_time, total_portfolio_value)
+
             previous_allocation = self.portfolio_info._calculate_actual_allocation(close, balances, total_portfolio_value, symbol)
 
             # Update strategy with data history and generate signals
@@ -233,10 +241,12 @@ class TradingBot:
             
             target_allocation = self.forecast_manager.forecast_to_allocation(signal.forecast)
 
-            # 2026-08-29 (fix/risk-layer, PR-1): off-by-default portfolio risk gate.
+            # 2026-08-29 (fix/risk-layer): off-by-default portfolio risk gate.
             # Gate None (default) -> risk_extras stays {} and record_state below adds
             # no columns, so output is byte-identical. Gate set -> the target is
-            # clamped to the configured cap and the raw/clamped pair is recorded.
+            # clamped to the configured cap (PR-1), or forced to 0.0 while the gate is
+            # latched flat by max_drawdown_kill / daily_loss_limit (PR-2); the raw/
+            # clamped/killed/halted telemetry is recorded.
             risk_extras = {}
             if self.risk_gate is not None:
                 target_allocation, risk_extras = self.risk_gate.apply(target_allocation)
@@ -249,7 +259,37 @@ class TradingBot:
             success_execute_portfolio_rebalance = None
             debug_execute_portfolio_rebalance = {}
             
-            if abs(allocation_change) != 0.0:
+            # PR-2: when the gate is latched flat (killed / daily-halted, whether it
+            # tripped this bar or earlier) the forced close is routed DIRECTLY through
+            # _execute_portfolio_rebalance, bypassing approve_allocation_change exactly
+            # as _close_all_positions_at_end does -- otherwise the min-Δ band rejects a
+            # residual position smaller than 0.2 and the kill never flattens (Phase-A
+            # trap Q1). Keying off the latch (not "tripped this bar") means a failed
+            # flatten retries next bar through the same bypass. Gate None -> False ->
+            # the existing per-trade flow below is byte-identical.
+            risk_forced_flat = self.risk_gate is not None and (self.risk_gate.killed or self.risk_gate.daily_halted)
+
+            if risk_forced_flat:
+                if abs(allocation_change) != 0.0:
+                    self.logger.debug(
+                        f"   🛑 RISK FLATTEN │ Actual: {previous_allocation} → 0.0 (gate latched)"
+                    )
+                    success_execute_portfolio_rebalance , debug_execute_portfolio_rebalance = self.execution_handler._execute_portfolio_rebalance(
+                        symbol=symbol,
+                        target_allocation=target_allocation,
+                        actual_allocation=previous_allocation,
+                        allocation_change=allocation_change,
+                        balances=balances,
+                        total_portfolio_value=total_portfolio_value,
+                        data=data,
+                        signal=signal
+                    )
+                    if success_execute_portfolio_rebalance:
+                        self.logger.debug("   ✓ RISK FLATTEN executed successfully")
+                    else:
+                        self.logger.error(f"   ✗ RISK FLATTEN execution failed. Debug info: {debug_execute_portfolio_rebalance}")
+
+            elif abs(allocation_change) != 0.0:
                 # Check if rebalance is ok from risk management perspective
                 approved_rebalance, debug_approve_allocation_change = self.risk_manager.approve_allocation_change(symbol, allocation_change, data)
 
@@ -295,8 +335,8 @@ class TradingBot:
                     allocation_change = allocation_change,
                     approved_rebalance=approved_rebalance if abs(allocation_change) != 0.0 else None,
                     debug_approve_allocation_change=debug_approve_allocation_change if abs(allocation_change) != 0.0 else {},
-                    succcess_execute_portfolio_rebalance = success_execute_portfolio_rebalance if approved_rebalance else None,
-                    debug_execute_portfolio_rebalance = debug_execute_portfolio_rebalance if approved_rebalance else {},
+                    succcess_execute_portfolio_rebalance = success_execute_portfolio_rebalance if (approved_rebalance or risk_forced_flat) else None,
+                    debug_execute_portfolio_rebalance = debug_execute_portfolio_rebalance if (approved_rebalance or risk_forced_flat) else {},
                     postRebalance_balances=postRebalance_balances,
                     postRebalance_total_value=postRebalance_total_portfolio_value,
                     postRebalance_current_allocation=postRebalance_current_allocation,
