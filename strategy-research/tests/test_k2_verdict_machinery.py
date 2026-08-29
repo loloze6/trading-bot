@@ -19,6 +19,7 @@ top-level-pass_rule convention from K4 -- run_057's OWN real
 pre_registration.yaml predates that convention and nests pass_rule under
 machine_constraints instead; noted, not treated as a contradiction).
 """
+
 import sys
 from pathlib import Path
 
@@ -35,11 +36,18 @@ import run_campaign as camp  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
 
 from test_k4_routing_registration import (  # noqa: E402
-    campaign_root, _write_fresh_scaffold, _save_queue_entries, _write_campaign_state,
+    campaign_root,
+    _write_fresh_scaffold,
+    _save_queue_entries,
+    _write_campaign_state,
 )
 
 REAL_RUN_057_PROTOCOL_RESULT = (
-    Path(__file__).parent.parent / "runs" / "run_057" / "artifacts" / "protocol_result.yaml"
+    Path(__file__).parent.parent
+    / "runs"
+    / "run_057"
+    / "artifacts"
+    / "protocol_result.yaml"
 )
 
 _PASS_RULE_STATEMENT = (
@@ -62,20 +70,38 @@ def _run_057_structured_pre_registration() -> dict:
             "window_set_ref": "protocols/ts_trend_daily_v1.json",
             "criteria": [
                 {
-                    "id": "a", "metric": "median_sharpe", "metric_basis": "bar_level",
+                    "id": "a",
+                    "metric": "median_sharpe",
+                    "metric_basis": "bar_level",
                     "comparator": ">=",
                     "per_symbol_threshold": {"BTCUSDT": 0.5791, "ETHUSDT": 0.0318},
                     "null_handling": "fails_threshold",
                 },
                 {
-                    "id": "b", "metric": "per_trade_expectancy_bps", "metric_basis": "episode_level",
-                    "comparator": ">", "threshold": 0, "statistic": "mean",
+                    "id": "b",
+                    "metric": "per_trade_expectancy_bps",
+                    "metric_basis": "episode_level",
+                    "comparator": ">",
+                    "threshold": 0,
+                    "statistic": "mean",
                 },
             ],
             "outcomes": [
-                {"branch": "PASS", "hypothesis_verdict": "promote", "lineage_routing": None},
-                {"branch": "FAIL-a", "hypothesis_verdict": "kill", "lineage_routing": "terminate"},
-                {"branch": "FAIL-b", "hypothesis_verdict": "kill", "lineage_routing": "terminate"},
+                {
+                    "branch": "PASS",
+                    "hypothesis_verdict": "promote",
+                    "lineage_routing": None,
+                },
+                {
+                    "branch": "FAIL-a",
+                    "hypothesis_verdict": "kill",
+                    "lineage_routing": "terminate",
+                },
+                {
+                    "branch": "FAIL-b",
+                    "hypothesis_verdict": "kill",
+                    "lineage_routing": "terminate",
+                },
             ],
         },
     }
@@ -85,9 +111,14 @@ def _run_057_structured_pre_registration() -> dict:
 # C7 -- known-answer fixture over run_057's REAL protocol_result.yaml
 # ---------------------------------------------------------------------------
 
+
 def test_c7_run_057_known_answer_fail_a_kill_terminate():
-    assert REAL_RUN_057_PROTOCOL_RESULT.exists(), "run_057's real protocol_result.yaml is missing"
-    protocol_result = yaml.safe_load(REAL_RUN_057_PROTOCOL_RESULT.read_text(encoding="utf-8"))
+    assert REAL_RUN_057_PROTOCOL_RESULT.exists(), (
+        "run_057's real protocol_result.yaml is missing"
+    )
+    protocol_result = yaml.safe_load(
+        REAL_RUN_057_PROTOCOL_RESULT.read_text(encoding="utf-8")
+    )
     pre_registration = _run_057_structured_pre_registration()
 
     # C7-EXT (2026-07-22): the PASS-RULE RESOLUTION semantics this known-answer
@@ -103,8 +134,12 @@ def test_c7_run_057_known_answer_fail_a_kill_terminate():
     assert result["result"] == "FAIL"
     crit_a = next(c for c in result["criteria_results"] if c["id"] == "a")
     assert crit_a["result"] == "FAIL"
-    assert "value" in crit_a["per_symbol"]["BTCUSDT"], "BTCUSDT must be PRESENT, not absent/UNTESTED"
-    assert crit_a["per_symbol"]["BTCUSDT"]["value"] is None, "BTCUSDT median_sharpe is null (A3.4), not absent"
+    assert "value" in crit_a["per_symbol"]["BTCUSDT"], (
+        "BTCUSDT must be PRESENT, not absent/UNTESTED"
+    )
+    assert crit_a["per_symbol"]["BTCUSDT"]["value"] is None, (
+        "BTCUSDT median_sharpe is null (A3.4), not absent"
+    )
     assert crit_a["per_symbol"]["BTCUSDT"]["result"] == "FAIL"
     assert crit_a["per_symbol"]["ETHUSDT"]["value"] == -0.686
     assert crit_a["per_symbol"]["ETHUSDT"]["result"] == "FAIL"
@@ -121,11 +156,17 @@ def test_c7_run_057_known_answer_fail_a_kill_terminate():
 
 def test_c7_window_set_ref_mismatch_refuses_evaluation():
     """A3 (K2 Phase B amendment): name-level window_set_ref check."""
-    protocol_result = yaml.safe_load(REAL_RUN_057_PROTOCOL_RESULT.read_text(encoding="utf-8"))
+    protocol_result = yaml.safe_load(
+        REAL_RUN_057_PROTOCOL_RESULT.read_text(encoding="utf-8")
+    )
     pre_registration = _run_057_structured_pre_registration()
-    pre_registration["pass_rule"]["window_set_ref"] = "protocols/some_other_protocol_v2.json"
+    pre_registration["pass_rule"]["window_set_ref"] = (
+        "protocols/some_other_protocol_v2.json"
+    )
 
-    result = vce._resolve_pass_rule(protocol_result, pre_registration)  # C7-EXT: see above
+    result = vce._resolve_pass_rule(
+        protocol_result, pre_registration
+    )  # C7-EXT: see above
     assert result["result"] == "SPEC_ERROR"
     assert "some_other_protocol_v2.json" in result["reason"]
     assert "ts_trend_daily_v1.json" in result["reason"]
@@ -137,9 +178,12 @@ def test_c7ext_run_057_is_blocked_at_the_public_entry_point():
     gated public entry point must refuse to issue ANY verdict — including the
     kill/terminate the kernel itself still resolves. Pinned explicitly so the
     repointing of the two tests above cannot quietly hide the new gate."""
-    protocol_result = yaml.safe_load(REAL_RUN_057_PROTOCOL_RESULT.read_text(encoding="utf-8"))
+    protocol_result = yaml.safe_load(
+        REAL_RUN_057_PROTOCOL_RESULT.read_text(encoding="utf-8")
+    )
     result = vce.evaluate_pass_rule_criteria(
-        protocol_result, _run_057_structured_pre_registration())
+        protocol_result, _run_057_structured_pre_registration()
+    )
 
     assert result["result"] == "VERDICT_BLOCKED"
     assert result.get("hypothesis_verdict") is None
@@ -154,6 +198,7 @@ def test_c7ext_run_057_is_blocked_at_the_public_entry_point():
 # public entry point's precondition gate sits in front of it and is covered by
 # tests/test_c7ext_verdict_gates.py (G5).
 # ---------------------------------------------------------------------------
+
 
 def test_r3_string_shaped_pass_rule_never_raises():
     protocol_result = {"per_symbol_summary": {}}
@@ -177,6 +222,7 @@ def test_r3_non_string_non_dict_pass_rule_never_raises():
 # B11 -- materialization-time total-mapping lint
 # ---------------------------------------------------------------------------
 
+
 def test_b11_lint_rejects_unmapped_fail_branch_naming_it():
     """A registered branch (FAIL-b) missing its verdict+routing pair, with
     no discretion opt-in, must be rejected BY NAME."""
@@ -184,8 +230,12 @@ def test_b11_lint_rejects_unmapped_fail_branch_naming_it():
     pre_registration["pass_rule"]["outcomes"][2]["hypothesis_verdict"] = None
     pre_registration["pass_rule"]["outcomes"][2]["lineage_routing"] = None
     violations, _ = rpr._lint_pass_rule_total_mapping(pre_registration)
-    assert violations, "an outcomes branch missing both fields (no discretion opt-in) must be rejected"
-    assert any("FAIL-b" in v for v in violations), "the violation must name the specific branch"
+    assert violations, (
+        "an outcomes branch missing both fields (no discretion opt-in) must be rejected"
+    )
+    assert any("FAIL-b" in v for v in violations), (
+        "the violation must name the specific branch"
+    )
 
 
 def test_b11_lint_accepts_total_mapping():
@@ -196,7 +246,9 @@ def test_b11_lint_accepts_total_mapping():
 
 def test_b11_lint_rejects_promote_with_non_null_routing():
     pre_registration = _run_057_structured_pre_registration()
-    pre_registration["pass_rule"]["outcomes"][0]["lineage_routing"] = "refine"  # PASS branch
+    pre_registration["pass_rule"]["outcomes"][0]["lineage_routing"] = (
+        "refine"  # PASS branch
+    )
     violations, _ = rpr._lint_pass_rule_total_mapping(pre_registration)
     assert violations
     assert any("promote" in v.lower() and "lineage_routing" in v for v in violations)
@@ -205,7 +257,9 @@ def test_b11_lint_rejects_promote_with_non_null_routing():
 def test_b11_lint_warns_on_differing_fail_pairs():
     """A1 (operator amendment): multiple FAIL branches with DIFFERING pairs -> WARNING."""
     pre_registration = _run_057_structured_pre_registration()
-    pre_registration["pass_rule"]["outcomes"][2]["lineage_routing"] = "pivot"  # FAIL-b now differs from FAIL-a
+    pre_registration["pass_rule"]["outcomes"][2]["lineage_routing"] = (
+        "pivot"  # FAIL-b now differs from FAIL-a
+    )
     violations, warnings = rpr._lint_pass_rule_total_mapping(pre_registration)
     assert violations == [], "differing pairs is a WARNING, never a rejection"
     assert any("DIFFERING" in w for w in warnings)
@@ -228,17 +282,34 @@ def test_b11_lint_wired_into_refinement_brief_materialization(campaign_root):
     brief_path = briefs_dir / "bad_refinement.yaml"
     bad_brief = {
         "brief_id": "BAD_REFINEMENT",
-        "lineage": {"parent_queue_entry": "X", "parent_run": "run_900",
-                    "relation": "refine", "parent_verdict": "refine"},
+        "lineage": {
+            "parent_queue_entry": "X",
+            "parent_run": "run_900",
+            "relation": "refine",
+            "parent_verdict": "refine",
+        },
         "hypothesis": {"primary": "test"},
         "gate_definition": {"indicator": "test"},
         "evaluation": {
             "pass_rule": {
                 "statement": "PASS iff x.",
-                "criteria": [{"id": "a", "metric": "median_sharpe", "metric_basis": "bar_level",
-                              "comparator": ">=", "per_symbol_threshold": {"BTCUSDT": 0.1},
-                              "null_handling": "fails_threshold"}],
-                "outcomes": [{"branch": "PASS", "hypothesis_verdict": "promote", "lineage_routing": "refine"}],
+                "criteria": [
+                    {
+                        "id": "a",
+                        "metric": "median_sharpe",
+                        "metric_basis": "bar_level",
+                        "comparator": ">=",
+                        "per_symbol_threshold": {"BTCUSDT": 0.1},
+                        "null_handling": "fails_threshold",
+                    }
+                ],
+                "outcomes": [
+                    {
+                        "branch": "PASS",
+                        "hypothesis_verdict": "promote",
+                        "lineage_routing": "refine",
+                    }
+                ],
                 # PASS branch has an invalid non-null routing -- must be rejected.
             },
         },
@@ -248,32 +319,60 @@ def test_b11_lint_wired_into_refinement_brief_materialization(campaign_root):
     with pytest.raises(ValueError, match="B11 total-mapping lint"):
         camp._materialize_refinement_run("run_901", bad_brief, brief_path)
     assert not (runs_dir / "run_901" / "artifacts" / "pre_registration.yaml").exists()
-    assert not (runs_dir / "run_901" / "artifacts" / "user_brief_verbatim.yaml").exists()
+    assert not (
+        runs_dir / "run_901" / "artifacts" / "user_brief_verbatim.yaml"
+    ).exists()
 
 
 # ---------------------------------------------------------------------------
 # A9 -- _route_kill (per-hypothesis) vs _route_campaign_terminate (campaign-wide)
 # ---------------------------------------------------------------------------
 
-def test_a9_route_kill_leaves_campaign_status_untouched_and_second_entry_schedulable(campaign_root):
+
+def test_a9_route_kill_leaves_campaign_status_untouched_and_second_entry_schedulable(
+    campaign_root,
+):
     runs_dir = campaign_root["runs_dir"]
     root = campaign_root["root"]
     _write_fresh_scaffold(runs_dir, "run_100")
-    _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_100"], status="active")
-    _save_queue_entries(campaign_root["queue_path"], [
-        {"id": "ENTRY_A", "brief_path": "briefs/a.yaml", "status": "in_progress",
-         "priority": 1, "run_ids": ["run_100"], "outcome": None},
-        {"id": "ENTRY_B", "brief_path": "briefs/b.yaml", "status": "ready",
-         "priority": 2, "run_ids": [], "outcome": None},
-    ])
+    _write_campaign_state(
+        campaign_root["campaign_state_path"], runs=["run_100"], status="active"
+    )
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "ENTRY_A",
+                "brief_path": "briefs/a.yaml",
+                "status": "in_progress",
+                "priority": 1,
+                "run_ids": ["run_100"],
+                "outcome": None,
+            },
+            {
+                "id": "ENTRY_B",
+                "brief_path": "briefs/b.yaml",
+                "status": "ready",
+                "priority": 2,
+                "run_ids": [],
+                "outcome": None,
+            },
+        ],
+    )
 
     interp = {"primary_failure_mode": "no edge", "hypothesis_family": "test_family"}
     next_stage = rpr._route_kill(runs_dir / "run_100", "run_100", interp, {})
 
     assert next_stage == "completed_rejected"
-    campaign_state = yaml.safe_load(campaign_root["campaign_state_path"].read_text(encoding="utf-8"))
-    assert campaign_state.get("status") == "active", "campaign_state.status must be untouched by a per-hypothesis kill"
-    assert not (root / "campaign_decision.yaml").exists(), "no campaign-wide decision file from a per-hypothesis kill"
+    campaign_state = yaml.safe_load(
+        campaign_root["campaign_state_path"].read_text(encoding="utf-8")
+    )
+    assert campaign_state.get("status") == "active", (
+        "campaign_state.status must be untouched by a per-hypothesis kill"
+    )
+    assert not (root / "campaign_decision.yaml").exists(), (
+        "no campaign-wide decision file from a per-hypothesis kill"
+    )
 
     queue = camp._load_queue()
     entry = camp._select_entry(queue["queue"])
@@ -286,17 +385,28 @@ def test_a9_route_kill_leaves_campaign_status_untouched_and_second_entry_schedul
 
 def test_a9_route_campaign_terminate_writes_campaign_wide_decision(campaign_root):
     root = campaign_root["root"]
-    _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_200"], status="active")
-    review = {"recommendation": "terminate", "recommendation_rationale": "search space exhausted"}
+    _write_campaign_state(
+        campaign_root["campaign_state_path"], runs=["run_200"], status="active"
+    )
+    review = {
+        "recommendation": "terminate",
+        "recommendation_rationale": "search space exhausted",
+    }
 
     next_stage = rpr._route_campaign_terminate(
-        campaign_root["runs_dir"] / "run_200", "run_200", review,
+        campaign_root["runs_dir"] / "run_200",
+        "run_200",
+        review,
         rpr.load_campaign_state(),
     )
 
     assert next_stage == "completed_rejected"
-    assert (root / "campaign_decision.yaml").exists(), "campaign-wide decision IS expected here (explicit terminate)"
-    campaign_state = yaml.safe_load(campaign_root["campaign_state_path"].read_text(encoding="utf-8"))
+    assert (root / "campaign_decision.yaml").exists(), (
+        "campaign-wide decision IS expected here (explicit terminate)"
+    )
+    campaign_state = yaml.safe_load(
+        campaign_root["campaign_state_path"].read_text(encoding="utf-8")
+    )
     assert campaign_state["status"] == "space_empty"
 
 
@@ -304,14 +414,22 @@ def test_a9_route_campaign_terminate_writes_campaign_wide_decision(campaign_root
 # A8 -- verdict/routing split: separately auditable, correct scaffold count
 # ---------------------------------------------------------------------------
 
+
 def test_a8_kill_plus_terminate_produces_no_scaffold(campaign_root):
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_300")
     vi_path = runs_dir / "run_300" / "artifacts" / "verdict_interpretation.yaml"
-    vi_path.write_text(yaml.safe_dump({
-        "hypothesis_id": "TEST", "hypothesis_verdict": "kill", "lineage_routing": "terminate",
-        "primary_failure_mode": "no edge",
-    }), encoding="utf-8")
+    vi_path.write_text(
+        yaml.safe_dump(
+            {
+                "hypothesis_id": "TEST",
+                "hypothesis_verdict": "kill",
+                "lineage_routing": "terminate",
+                "primary_failure_mode": "no edge",
+            }
+        ),
+        encoding="utf-8",
+    )
     interp = yaml.safe_load(vi_path.read_text(encoding="utf-8"))
 
     next_stage = rpr._dispatch_verdict_route(
@@ -335,11 +453,18 @@ def test_a8_kill_plus_pivot_produces_exactly_one_scaffold(campaign_root):
     _write_fresh_scaffold(runs_dir, "run_400")
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_400"])
     vi_path = runs_dir / "run_400" / "artifacts" / "verdict_interpretation.yaml"
-    vi_path.write_text(yaml.safe_dump({
-        "hypothesis_id": "TEST", "hypothesis_verdict": "kill", "lineage_routing": "pivot",
-        "hypothesis_family": "test_family_exhausted",
-        "primary_failure_mode": "mechanism falsified, pivot to a different family",
-    }), encoding="utf-8")
+    vi_path.write_text(
+        yaml.safe_dump(
+            {
+                "hypothesis_id": "TEST",
+                "hypothesis_verdict": "kill",
+                "lineage_routing": "pivot",
+                "hypothesis_family": "test_family_exhausted",
+                "primary_failure_mode": "mechanism falsified, pivot to a different family",
+            }
+        ),
+        encoding="utf-8",
+    )
     interp = yaml.safe_load(vi_path.read_text(encoding="utf-8"))
 
     next_stage = rpr._dispatch_verdict_route(
@@ -348,13 +473,17 @@ def test_a8_kill_plus_pivot_produces_exactly_one_scaffold(campaign_root):
 
     assert next_stage == "completed_refined"
     on_disk_after = {p.name for p in runs_dir.iterdir() if p.is_dir()}
-    assert on_disk_after == {"run_400", "run_401"}, "kill+pivot must scaffold EXACTLY one child"
+    assert on_disk_after == {"run_400", "run_401"}, (
+        "kill+pivot must scaffold EXACTLY one child"
+    )
 
     reread = yaml.safe_load(vi_path.read_text(encoding="utf-8"))
     assert reread["hypothesis_verdict"] == "kill"
     assert reread["lineage_routing"] == "pivot"
 
-    parent_state = yaml.safe_load((runs_dir / "run_400" / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    parent_state = yaml.safe_load(
+        (runs_dir / "run_400" / "pipeline_state.yaml").read_text(encoding="utf-8")
+    )
     assert parent_state["continuation_child"] == "run_401"
 
 
@@ -396,7 +525,9 @@ def test_c9_pivot_route_pauses_before_scaffold_no_child_directory(campaign_root)
     root = campaign_root["root"]
     _write_fresh_scaffold(runs_dir, "run_500")
     kb_path = root / "campaign_knowledge_base.yaml"
-    kb_path.write_text(yaml.safe_dump({"findings": [_PLURAL_KELTNER_SHAPED_FINDING]}), encoding="utf-8")
+    kb_path.write_text(
+        yaml.safe_dump({"findings": [_PLURAL_KELTNER_SHAPED_FINDING]}), encoding="utf-8"
+    )
 
     interp = {
         "hypothesis_family": "keltner_mean_reversion",
@@ -410,9 +541,13 @@ def test_c9_pivot_route_pauses_before_scaffold_no_child_directory(campaign_root)
 
     assert next_stage == "human_pause"
     on_disk_after = {p.name for p in runs_dir.iterdir() if p.is_dir()}
-    assert on_disk_after == {"run_500"}, "no child directory must be scaffolded when the gate fires"
+    assert on_disk_after == {"run_500"}, (
+        "no child directory must be scaffolded when the gate fires"
+    )
 
-    state = yaml.safe_load((runs_dir / "run_500" / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    state = yaml.safe_load(
+        (runs_dir / "run_500" / "pipeline_state.yaml").read_text(encoding="utf-8")
+    )
     assert state.get("flags", {}).get("kb_reactivation_violation") is True
     assert state.get("kb_reactivation_violations")
 
@@ -421,14 +556,25 @@ def test_c9_refine_route_pauses_before_scaffold_no_child_directory(campaign_root
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_600")
     kb_path = campaign_root["root"] / "campaign_knowledge_base.yaml"
-    kb_path.write_text(yaml.safe_dump({"findings": [_PLURAL_KELTNER_SHAPED_FINDING]}), encoding="utf-8")
+    kb_path.write_text(
+        yaml.safe_dump({"findings": [_PLURAL_KELTNER_SHAPED_FINDING]}), encoding="utf-8"
+    )
 
     proposed_path = runs_dir / "run_600" / "artifacts" / "proposed_brief.yaml"
-    proposed_path.write_text(yaml.safe_dump({
-        "strategy_domain": "test", "timeframe": "1h",
-        "research_goal": "Refine toward keltner_trend_mean_reversion parameters.",
-    }), encoding="utf-8")
-    interp = {"proposed_change_dimension": "threshold", "hypothesis_family": "keltner_family"}
+    proposed_path.write_text(
+        yaml.safe_dump(
+            {
+                "strategy_domain": "test",
+                "timeframe": "1h",
+                "research_goal": "Refine toward keltner_trend_mean_reversion parameters.",
+            }
+        ),
+        encoding="utf-8",
+    )
+    interp = {
+        "proposed_change_dimension": "threshold",
+        "hypothesis_family": "keltner_family",
+    }
 
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(rpr, "_KB_PATH", kb_path)
@@ -436,8 +582,12 @@ def test_c9_refine_route_pauses_before_scaffold_no_child_directory(campaign_root
 
     assert next_stage == "human_pause"
     on_disk_after = {p.name for p in runs_dir.iterdir() if p.is_dir()}
-    assert on_disk_after == {"run_600"}, "no child directory must be scaffolded when the gate fires"
-    state = yaml.safe_load((runs_dir / "run_600" / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    assert on_disk_after == {"run_600"}, (
+        "no child directory must be scaffolded when the gate fires"
+    )
+    state = yaml.safe_load(
+        (runs_dir / "run_600" / "pipeline_state.yaml").read_text(encoding="utf-8")
+    )
     assert state.get("flags", {}).get("kb_reactivation_violation") is True
 
 
@@ -445,6 +595,7 @@ def test_c9_refine_route_pauses_before_scaffold_no_child_directory(campaign_root
 # K2 rider (2026-07-13) -- pair validation (closes K2 Phase B deviation 3)
 # and the holdout-path guard test (regression for deviation 2's fix)
 # ---------------------------------------------------------------------------
+
 
 def test_pair_validation_rejects_incoherent_pair_naming_both_values():
     with pytest.raises(ValueError) as exc_info:
@@ -454,17 +605,24 @@ def test_pair_validation_rejects_incoherent_pair_naming_both_values():
     assert "terminate" in msg, "the error must name the lineage_routing value"
 
 
-@pytest.mark.parametrize("hypothesis_verdict,lineage_routing", [
-    ("promote", "pivot"),
-    ("refine", "pivot"),
-    ("refine", "escalate"),
-    ("promote", "refine"),
-    ("kill", None),
-    ("bogus", "refine"),
-])
-def test_pair_validation_rejects_every_other_incoherent_combination(hypothesis_verdict, lineage_routing):
+@pytest.mark.parametrize(
+    "hypothesis_verdict,lineage_routing",
+    [
+        ("promote", "pivot"),
+        ("refine", "pivot"),
+        ("refine", "escalate"),
+        ("promote", "refine"),
+        ("kill", None),
+        ("bogus", "refine"),
+    ],
+)
+def test_pair_validation_rejects_every_other_incoherent_combination(
+    hypothesis_verdict, lineage_routing
+):
     with pytest.raises(ValueError) as exc_info:
-        rpr._dispatch_verdict_route(Path("."), "run_x", {}, {}, hypothesis_verdict, lineage_routing)
+        rpr._dispatch_verdict_route(
+            Path("."), "run_x", {}, {}, hypothesis_verdict, lineage_routing
+        )
     msg = str(exc_info.value)
     assert str(hypothesis_verdict) in msg and str(lineage_routing) in msg
 
@@ -473,7 +631,9 @@ def test_pair_validation_accepts_kill_terminate(campaign_root):
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_800")
     interp = {"primary_failure_mode": "no edge", "hypothesis_family": "f"}
-    next_stage = rpr._dispatch_verdict_route(runs_dir / "run_800", "run_800", interp, {}, "kill", "terminate")
+    next_stage = rpr._dispatch_verdict_route(
+        runs_dir / "run_800", "run_800", interp, {}, "kill", "terminate"
+    )
     assert next_stage == "completed_rejected"
 
 
@@ -482,7 +642,9 @@ def test_pair_validation_accepts_kill_pivot(campaign_root):
     _write_fresh_scaffold(runs_dir, "run_801")
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_801"])
     interp = {"hypothesis_family": "f", "primary_failure_mode": "dead, pivot"}
-    next_stage = rpr._dispatch_verdict_route(runs_dir / "run_801", "run_801", interp, {}, "kill", "pivot")
+    next_stage = rpr._dispatch_verdict_route(
+        runs_dir / "run_801", "run_801", interp, {}, "kill", "pivot"
+    )
     assert next_stage == "completed_refined"
     assert (runs_dir / "run_802").exists()
 
@@ -496,13 +658,26 @@ def test_pair_validation_accepts_kill_escalate(campaign_root):
         '{"symbols": ["BTCUSDT"], "timeframe": "1h", "windows": []}', encoding="utf-8"
     )
     (root / "config").mkdir(exist_ok=True)
-    (root / "config" / "coin_universe.yaml").write_text(yaml.safe_dump({
-        "escalation_order": {"sequence": [{"category": "majors", "priority": 1}]},
-        "categories": {"majors": {"coins": [{"symbol": "ETHUSDT", "data_cached": True}],
-                                   "strategy_affinity": []}},
-    }), encoding="utf-8")
+    (root / "config" / "coin_universe.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "escalation_order": {
+                    "sequence": [{"category": "majors", "priority": 1}]
+                },
+                "categories": {
+                    "majors": {
+                        "coins": [{"symbol": "ETHUSDT", "data_cached": True}],
+                        "strategy_affinity": [],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_803"])
-    next_stage = rpr._dispatch_verdict_route(runs_dir / "run_803", "run_803", {}, {}, "kill", "escalate")
+    next_stage = rpr._dispatch_verdict_route(
+        runs_dir / "run_803", "run_803", {}, {}, "kill", "escalate"
+    )
     assert next_stage == "completed_escalated"
     assert (runs_dir / "run_804").exists()
 
@@ -511,12 +686,20 @@ def test_pair_validation_accepts_refine_refine(campaign_root):
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_805")
     (runs_dir / "run_805" / "artifacts" / "proposed_brief.yaml").write_text(
-        yaml.safe_dump({"strategy_domain": "test", "timeframe": "1h", "research_goal": "refine test"}),
+        yaml.safe_dump(
+            {
+                "strategy_domain": "test",
+                "timeframe": "1h",
+                "research_goal": "refine test",
+            }
+        ),
         encoding="utf-8",
     )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_805"])
     interp = {"proposed_change_dimension": "threshold", "hypothesis_family": "f"}
-    next_stage = rpr._dispatch_verdict_route(runs_dir / "run_805", "run_805", interp, {}, "refine", "refine")
+    next_stage = rpr._dispatch_verdict_route(
+        runs_dir / "run_805", "run_805", interp, {}, "refine", "refine"
+    )
     assert next_stage == "completed_refined"
     assert (runs_dir / "run_806").exists()
 
@@ -525,16 +708,28 @@ def test_pair_validation_accepts_promote_null(campaign_root):
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_807")
     (runs_dir / "run_807" / "artifacts" / "verdict_interpretation.yaml").write_text(
-        yaml.safe_dump({"hypothesis_id": "TEST", "hypothesis_verdict": "promote", "lineage_routing": None}),
+        yaml.safe_dump(
+            {
+                "hypothesis_id": "TEST",
+                "hypothesis_verdict": "promote",
+                "lineage_routing": None,
+            }
+        ),
         encoding="utf-8",
     )
-    _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_807"], trial_sharpes=[])
-    next_stage = rpr._dispatch_verdict_route(runs_dir / "run_807", "run_807", {}, {}, "promote", None)
+    _write_campaign_state(
+        campaign_root["campaign_state_path"], runs=["run_807"], trial_sharpes=[]
+    )
+    next_stage = rpr._dispatch_verdict_route(
+        runs_dir / "run_807", "run_807", {}, {}, "promote", None
+    )
     assert next_stage == "holdout_evaluation"
     assert (runs_dir / "run_807" / "artifacts" / "promotion_audit.yaml").exists()
 
 
-def test_holdout_path_guard_campaign_review_continue_promote_reaches_holdout_gate(campaign_root):
+def test_holdout_path_guard_campaign_review_continue_promote_reaches_holdout_gate(
+    campaign_root,
+):
     """Regression for K2 Phase B deviation 2: the campaign-review
     continue-branch's promote path must reach the SAME holdout-gated flow
     as the primary dispatch (_write_promotion_audit + holdout_evaluation),
@@ -542,14 +737,28 @@ def test_holdout_path_guard_campaign_review_continue_promote_reaches_holdout_gat
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_700")
     run_dir = runs_dir / "run_700"
-    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(yaml.safe_dump({
-        "hypothesis_id": "TEST_PROMOTE", "hypothesis_verdict": "promote", "lineage_routing": None,
-        "status": "promote",
-    }), encoding="utf-8")
-    (run_dir / "artifacts" / "campaign_review.yaml").write_text(yaml.safe_dump({
-        "recommendation": "continue",
-    }), encoding="utf-8")
-    _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_700"], trial_sharpes=[])
+    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "hypothesis_id": "TEST_PROMOTE",
+                "hypothesis_verdict": "promote",
+                "lineage_routing": None,
+                "status": "promote",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "artifacts" / "campaign_review.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "recommendation": "continue",
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write_campaign_state(
+        campaign_root["campaign_state_path"], runs=["run_700"], trial_sharpes=[]
+    )
 
     next_stage = rpr.determine_post_campaign_review_route(run_dir, "run_700")
 

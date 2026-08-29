@@ -32,6 +32,7 @@ all of which are real exits or partial exits and none of which touch zero:
 Usage:  python engineering/roadmap/E-027/artifacts/measure_exit_causes.py <run_id> [...]
         (cwd = strategy-research/)
 """
+
 import csv
 import glob
 import sys
@@ -44,7 +45,13 @@ def _f(row, key):
         return 0.0
 
 
-CATS = ("open_from_flat", "full_exit_to_zero", "sign_flip", "partial_reduce", "increase")
+CATS = (
+    "open_from_flat",
+    "full_exit_to_zero",
+    "sign_flip",
+    "partial_reduce",
+    "increase",
+)
 
 
 def measure(run, quiet=False):
@@ -65,12 +72,18 @@ def measure(run, quiet=False):
                     switches += 1
                 prev_regime = regime
 
-                approved = (row.get("approved_rebalance") or "").strip().lower() in ("true", "1")
+                approved = (row.get("approved_rebalance") or "").strip().lower() in (
+                    "true",
+                    "1",
+                )
                 if _f(row, "allocation_change") != 0.0:
                     attempts += 1
                     if not approved:
                         refused += 1
-                if regime not in ("unknown", "NOT_READY", "") and _f(row, "forecast") == 0.0:
+                if (
+                    regime not in ("unknown", "NOT_READY", "")
+                    and _f(row, "forecast") == 0.0
+                ):
                     mapped_zero_bars += 1
                 if not approved:
                     continue
@@ -101,14 +114,22 @@ def measure(run, quiet=False):
 
     if not quiet:
         pct = lambda n, d: (100.0 * n / d) if d else 0.0
-        print(f"{run}: bars={bars}  regime_switches={switches}  strategy_off={pct(off_bars, bars):.0f}% of bars")
+        print(
+            f"{run}: bars={bars}  regime_switches={switches}  strategy_off={pct(off_bars, bars):.0f}% of bars"
+        )
         print(f"   approved allocation moves = {moves}")
         for c in CATS:
             print(f"     {c:18s}: {t[c]} ({pct(t[c], moves):.0f}%)")
-        print(f"   moves made with a NONZERO forecast: {nonzero_fc_moves} ({pct(nonzero_fc_moves, moves):.0f}%)")
-        print(f"   rebalance attempts={attempts}  refused_by_risk_band={refused} ({pct(refused, attempts):.0f}%)")
+        print(
+            f"   moves made with a NONZERO forecast: {nonzero_fc_moves} ({pct(nonzero_fc_moves, moves):.0f}%)"
+        )
+        print(
+            f"   rebalance attempts={attempts}  refused_by_risk_band={refused} ({pct(refused, attempts):.0f}%)"
+        )
         print(f"   regime label at each full_exit_to_zero: {zero_labels}")
-        print(f"   CONTROL -- bars in a MAPPED regime whose forecast was 0.0: {mapped_zero_bars}")
+        print(
+            f"   CONTROL -- bars in a MAPPED regime whose forecast was 0.0: {mapped_zero_bars}"
+        )
         print()
     return t, moves, nonzero_fc_moves, attempts, refused
 
@@ -133,4 +154,6 @@ if __name__ == "__main__":
         for c in CATS:
             print(f"    {c:18s}: {agg[c]} ({pct(agg[c], m):.0f}%)")
         print(f"  moves with a NONZERO forecast      : {nz} ({pct(nz, m):.0f}%)")
-        print(f"  rebalance attempts / refused       : {at} / {rf} ({pct(rf, at):.0f}%)")
+        print(
+            f"  rebalance attempts / refused       : {at} / {rf} ({pct(rf, at):.0f}%)"
+        )

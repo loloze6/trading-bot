@@ -16,6 +16,7 @@ step 4's explicitly-required test actually execute as part of the suite;
 flagged here and in the session report as a scope decision, not something
 done quietly.
 """
+
 from pathlib import Path
 
 import run_campaign as _camp
@@ -33,9 +34,13 @@ def test_sandbox_by_default_guard_writes_land_in_tmp_not_real_repo(_sandbox_by_d
     requesting an autouse fixture like any other.
     """
     real_queue_path = (_REAL_REPO_ROOT / "config" / "campaign_queue.yaml").resolve()
-    real_queue_before = real_queue_path.read_bytes() if real_queue_path.exists() else None
+    real_queue_before = (
+        real_queue_path.read_bytes() if real_queue_path.exists() else None
+    )
 
-    _camp._save_queue({"queue": []})  # a real write, through the real function, unsandboxed by this test itself
+    _camp._save_queue(
+        {"queue": []}
+    )  # a real write, through the real function, unsandboxed by this test itself
 
     written_path = _camp.QUEUE_PATH.resolve()
     sandbox_resolved = _sandbox_by_default.resolve()

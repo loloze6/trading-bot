@@ -85,10 +85,12 @@ class CcxtFetcher(BaseFetcher):
         self.exchange_id = exchange
         try:
             exchange_class = getattr(ccxt, self.exchange_id)
-            self.exchange  = exchange_class({
-                "enableRateLimit": True,
-                "options": {"defaultType": "spot"},
-            })
+            self.exchange = exchange_class(
+                {
+                    "enableRateLimit": True,
+                    "options": {"defaultType": "spot"},
+                }
+            )
             logger.info(f"CcxtFetcher: initialised {self.exchange_id}")
         except Exception as e:
             logger.error(f"CcxtFetcher: failed to initialise {self.exchange_id}: {e}")
@@ -144,9 +146,9 @@ class CcxtFetcher(BaseFetcher):
             logger.error("CcxtFetcher: exchange not initialised")
             return pd.DataFrame()
 
-        since         = int(start.timestamp() * 1000)   # ms epoch
-        until         = int(end.timestamp()   * 1000)
-        all_candles   = []
+        since = int(start.timestamp() * 1000)  # ms epoch
+        until = int(end.timestamp() * 1000)
+        all_candles = []
         current_since = since
 
         while current_since < until:
@@ -156,7 +158,7 @@ class CcxtFetcher(BaseFetcher):
                 if "/" not in symbol and len(symbol) > 3:
                     for quote in ["USDT", "USD", "BUSD", "USDC", "ETH", "BTC"]:
                         if symbol.endswith(quote):
-                            exchange_symbol = f"{symbol[:-len(quote)]}/{quote}"
+                            exchange_symbol = f"{symbol[: -len(quote)]}/{quote}"
                             break
 
                 candles = self.exchange.fetch_ohlcv(
@@ -169,12 +171,12 @@ class CcxtFetcher(BaseFetcher):
                     break
 
                 all_candles.extend(candles)
-                last_ts       = candles[-1][0]
+                last_ts = candles[-1][0]
                 current_since = last_ts + self._timeframe_to_ms(self.ccxt_timeframe)
-                time.sleep(self.exchange.rateLimit / 1000)   # respect rate limit
+                time.sleep(self.exchange.rateLimit / 1000)  # respect rate limit
 
                 if last_ts >= until or len(candles) < 100:
-                    break   # reached end of window or end of available data
+                    break  # reached end of window or end of available data
 
             except Exception as e:
                 logger.error(f"CcxtFetcher: error fetching {symbol}: {e}")
@@ -192,13 +194,15 @@ class CcxtFetcher(BaseFetcher):
 
         # Extra columns kept for Binance format compatibility
         ms = self._timeframe_to_ms(self.ccxt_timeframe)
-        df["close_time"]                   = df["timestamp"] + datetime.timedelta(milliseconds=ms - 1)
-        df["quote_asset_volume"]           = df["volume"] * df["close"]   # estimated
-        df["number_of_trades"]             = np.nan
-        df["taker_buy_base_asset_volume"]  = np.nan
+        df["close_time"] = df["timestamp"] + datetime.timedelta(milliseconds=ms - 1)
+        df["quote_asset_volume"] = df["volume"] * df["close"]  # estimated
+        df["number_of_trades"] = np.nan
+        df["taker_buy_base_asset_volume"] = np.nan
         df["taker_buy_quote_asset_volume"] = np.nan
-        df["ignore"]                       = 0
-        print(f"CcxtFetcher: fetched {len(df)} candles for {symbol} from {self.exchange_id}, example row:\n{df.iloc[0:5].to_dict()}")
+        df["ignore"] = 0
+        print(
+            f"CcxtFetcher: fetched {len(df)} candles for {symbol} from {self.exchange_id}, example row:\n{df.iloc[0:5].to_dict()}"
+        )
         return df
 
     # -----------------------------------------------------------------------
@@ -215,8 +219,13 @@ class CcxtFetcher(BaseFetcher):
         during replay.
         """
         intervals = {
-            60: "1m", 300: "5m", 900: "15m", 1800: "30m",
-            3600: "1h", 14400: "4h", 86400: "1d",
+            60: "1m",
+            300: "5m",
+            900: "15m",
+            1800: "30m",
+            3600: "1h",
+            14400: "4h",
+            86400: "1d",
         }
         return intervals[min(intervals, key=lambda x: abs(x - seconds))]
 
@@ -224,9 +233,13 @@ class CcxtFetcher(BaseFetcher):
     def _timeframe_to_ms(timeframe: str) -> int:
         """Convert a CCXT timeframe string to milliseconds."""
         amount = int("".join(filter(str.isdigit, timeframe)))
-        unit   = "".join(filter(str.isalpha, timeframe))
-        return amount * {"m": 60_000, "h": 3_600_000, "d": 86_400_000,
-                         "w": 604_800_000}.get(unit, 3_600_000)
+        unit = "".join(filter(str.isalpha, timeframe))
+        return amount * {
+            "m": 60_000,
+            "h": 3_600_000,
+            "d": 86_400_000,
+            "w": 604_800_000,
+        }.get(unit, 3_600_000)
 
     # -----------------------------------------------------------------------
     # Kept for backward compatibility with callers that used the old class name

@@ -13,10 +13,11 @@ Classes:
     - RiskManager: Risk management with trade frequency limits
 """
 
+
 class RiskManager:
     """
     Risk manager for live trading.
-    
+
     Features:
         - Validates allocation changes (min/max limits)
     """
@@ -25,7 +26,7 @@ class RiskManager:
         self.controls = controls_cfg
 
     def approve_allocation_change(self, symbol, change, data):
-        time = data['timestamp'].iloc[-1]
+        time = data["timestamp"].iloc[-1]
         debug = {"symbol": symbol, "time": time, "controls": {}}
 
         for name, params in self.controls.items():
@@ -35,18 +36,23 @@ class RiskManager:
             passed = method(change, symbol, params)
             debug["controls"][name] = {
                 "passed": passed,
-                }
-            if not passed: return False, debug
-        return True, debug 
+            }
+            if not passed:
+                return False, debug
+        return True, debug
 
     def _ctrl_max_allocation_change(self, change, symbol, p):
         if abs(change) > p["max"] + 1e-6:
-            logger.warning(f"RISK MANAGER - |{change:.3f}| > max {p['max']} for {symbol}")
+            logger.warning(
+                f"RISK MANAGER - |{change:.3f}| > max {p['max']} for {symbol}"
+            )
             return False
         return True
 
     def _ctrl_min_allocation_change(self, change, symbol, p):
         if abs(change) < p["threshold"] - 1e-6:
-            logger.warning(f"RISK MANAGER - |{change:.3f}| < threshold {p['threshold']} for {symbol}")
+            logger.warning(
+                f"RISK MANAGER - |{change:.3f}| < threshold {p['threshold']} for {symbol}"
+            )
             return False
         return True

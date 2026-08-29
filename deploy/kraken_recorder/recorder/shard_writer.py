@@ -72,6 +72,7 @@ from typing import Any, Dict, List, Optional, TextIO, Tuple
 
 if __package__ in (None, ""):  # allow direct execution
     import sys
+
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from recorder.compaction import DEFAULT_LEVEL, compress_shard  # type: ignore
 else:
@@ -99,7 +100,9 @@ class ShardWriter:
         compress_level: int = DEFAULT_LEVEL,
     ):
         if roll not in PERIOD_FORMATS:
-            raise ValueError(f"roll must be one of {sorted(PERIOD_FORMATS)}, got {roll!r}")
+            raise ValueError(
+                f"roll must be one of {sorted(PERIOD_FORMATS)}, got {roll!r}"
+            )
         self.out_dir = Path(out_dir)
         self.run_id = run_id
         self.fsync_interval_s = fsync_interval_s
@@ -122,7 +125,8 @@ class ShardWriter:
         #: working set predictable. Never runs on the receive path.
         self._pool: Optional[ThreadPoolExecutor] = (
             ThreadPoolExecutor(max_workers=1, thread_name_prefix="shard-compact")
-            if compress else None
+            if compress
+            else None
         )
         self._pending: List[Future] = []
 
@@ -212,14 +216,11 @@ class ShardWriter:
         self._seq += 1
         text = raw.strip()
 
-        head = (
-            '{"recv_ts":"%s","mono":%.6f,"run_id":"%s","seq":%d,'
-            % (
-                now.strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z",
-                time.monotonic() - self._t0,
-                self.run_id,
-                self._seq,
-            )
+        head = '{"recv_ts":"%s","mono":%.6f,"run_id":"%s","seq":%d,' % (
+            now.strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z",
+            time.monotonic() - self._t0,
+            self.run_id,
+            self._seq,
         )
         if extra:
             head += (
@@ -254,9 +255,7 @@ class ShardWriter:
 
     def current_shards(self) -> Dict[Tuple[str, str], Path]:
         day = self.period_key()
-        return {
-            key: self.shard_path(key[0], key[1], day) for key in self._files
-        }
+        return {key: self.shard_path(key[0], key[1], day) for key in self._files}
 
     def sync(self) -> None:
         for _day, fh in self._files.values():

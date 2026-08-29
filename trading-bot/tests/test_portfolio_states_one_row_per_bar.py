@@ -38,6 +38,7 @@ final bar is guaranteed to hold a position and the forced close is guaranteed to
 run. test_fixture_actually_ends_holding_a_position fails loudly if that ever stops
 being true, since a flat ending would make the rest of this file vacuous.
 """
+
 import inspect
 import json
 import math
@@ -238,6 +239,7 @@ def ends_flat(tmp_path_factory):
 # Anti-vacuity: the fixture must reach the forced close
 # --------------------------------------------------------------------------
 
+
 def test_fixture_actually_ends_holding_a_position(ends_long):
     """Without an open position at the last bar, _close_all_positions_at_end returns
     early and every duplicate-row test below passes for the wrong reason."""
@@ -262,13 +264,12 @@ def test_fixture_forced_close_actually_executed(ends_long):
 # The invariant
 # --------------------------------------------------------------------------
 
+
 def test_one_state_row_per_bar_when_the_run_ends_long(ends_long):
     """The defect's direct signature: 301 rows for 300 bars, the last timestamp twice."""
     recorded = [s["timestamp"] for s in ends_long.states]
     expected = list(ends_long.bars["timestamp"])
-    duplicates = sorted(
-        {str(ts) for ts in recorded if recorded.count(ts) > 1}
-    )
+    duplicates = sorted({str(ts) for ts in recorded if recorded.count(ts) > 1})
     assert not duplicates, (
         "portfolio_states carries more than one row for the same instant "
         f"{duplicates}; two rows claiming one bar is wrong for a time series and "
@@ -319,14 +320,13 @@ def test_surviving_final_row_keeps_the_bar_signal_fields(ends_long):
         "the final bar lost the forecast the strategy produced for it; the "
         "post-close row overwrote it instead of merging onto it"
     )
-    assert last_bar.get("regime") == "unknown", (
-        "the final bar lost its regime label"
-    )
+    assert last_bar.get("regime") == "unknown", "the final bar lost its regime label"
 
 
 # --------------------------------------------------------------------------
 # The default (reference) path must be untouched
 # --------------------------------------------------------------------------
+
 
 def test_run_ending_flat_records_one_row_per_bar_and_never_force_closes(ends_flat):
     """The reference window's shape: no open position, so the close path returns
@@ -352,7 +352,9 @@ def test_record_state_default_is_still_a_pure_append():
 
     tracker = PortfolioStateTracker.__new__(PortfolioStateTracker)  # no output dir
     tracker.states = []
-    bar = pd.DataFrame([{"timestamp": pd.Timestamp("2024-04-01 00:00:00"), "close": 1.0}])
+    bar = pd.DataFrame(
+        [{"timestamp": pd.Timestamp("2024-04-01 00:00:00"), "close": 1.0}]
+    )
 
     tracker.record_state(data=bar, marker="first")
     tracker.record_state(data=bar, marker="second")
@@ -373,8 +375,12 @@ def test_replace_if_same_bar_appends_when_the_timestamp_differs():
 
     tracker = PortfolioStateTracker.__new__(PortfolioStateTracker)
     tracker.states = []
-    first = pd.DataFrame([{"timestamp": pd.Timestamp("2024-04-01 00:00:00"), "close": 1.0}])
-    second = pd.DataFrame([{"timestamp": pd.Timestamp("2024-04-01 01:00:00"), "close": 2.0}])
+    first = pd.DataFrame(
+        [{"timestamp": pd.Timestamp("2024-04-01 00:00:00"), "close": 1.0}]
+    )
+    second = pd.DataFrame(
+        [{"timestamp": pd.Timestamp("2024-04-01 01:00:00"), "close": 2.0}]
+    )
 
     tracker.record_state(data=first, marker="bar_0")
     tracker.record_state(data=second, replace_if_same_bar=True, marker="bar_1")

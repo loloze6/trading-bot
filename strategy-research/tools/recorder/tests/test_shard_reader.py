@@ -31,32 +31,54 @@ from recorder.shard_writer import ShardWriter
 
 BASELINE_CAPTURE = (
     Path(__file__).resolve().parents[4]
-    / "trading-bot" / "local_data" / "recorded_reserved" / "kraken_ws_v2"
+    / "trading-bot"
+    / "local_data"
+    / "recorded_reserved"
+    / "kraken_ws_v2"
 )
 
 T0 = datetime(2026, 7, 26, 12, 0, 0, tzinfo=timezone.utc)
 
 
-def _trade_frame(symbol="BTC/USD", trade_id=1, side="buy", price=64000.0,
-                 qty=0.5, ts=None, msg_type="update"):
+def _trade_frame(
+    symbol="BTC/USD",
+    trade_id=1,
+    side="buy",
+    price=64000.0,
+    qty=0.5,
+    ts=None,
+    msg_type="update",
+):
     ts = ts or T0
-    return json.dumps({
-        "channel": "trade",
-        "type": msg_type,
-        "data": [{
-            "symbol": symbol,
-            "side": side,
-            "price": price,
-            "qty": qty,
-            "ord_type": "market",
-            "trade_id": trade_id,
-            "timestamp": ts.strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z",
-        }],
-    }, separators=(",", ":"))
+    return json.dumps(
+        {
+            "channel": "trade",
+            "type": msg_type,
+            "data": [
+                {
+                    "symbol": symbol,
+                    "side": side,
+                    "price": price,
+                    "qty": qty,
+                    "ord_type": "market",
+                    "trade_id": trade_id,
+                    "timestamp": ts.strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z",
+                }
+            ],
+        },
+        separators=(",", ":"),
+    )
 
 
-def _capture(tmp_path, frames, *, subscribe=("BTC/USD",), channels=("trade",),
-             stop=True, roll="day"):
+def _capture(
+    tmp_path,
+    frames,
+    *,
+    subscribe=("BTC/USD",),
+    channels=("trade",),
+    stop=True,
+    roll="day",
+):
     """
     Build a small capture root: shards plus a coverage journal that attests
     them. `frames` is a list of (stream, disk_symbol, raw_text).
@@ -138,7 +160,9 @@ def test_records_are_ordered_across_pairs(tmp_path):
     frames = []
     for i in range(6):
         sym = "BTC/USD" if i % 2 == 0 else "ETH/USD"
-        frames.append(("trades", disk_symbol(sym), _trade_frame(symbol=sym, trade_id=i)))
+        frames.append(
+            ("trades", disk_symbol(sym), _trade_frame(symbol=sym, trade_id=i))
+        )
     root = _capture(tmp_path, frames, subscribe=("BTC/USD", "ETH/USD"))
     got = [x for x in ShardReader(root).iter_trades() if isinstance(x, Trade)]
     assert len(got) == 6
@@ -149,22 +173,29 @@ def test_records_are_ordered_across_pairs(tmp_path):
 def test_duplicate_trade_ids_are_deduplicated(tmp_path):
     # A resubscribe re-delivers a snapshot whose trades overlap what was already
     # captured. Counting them twice would inflate every volume figure.
-    root = _capture(tmp_path, [
-        ("trades", "BTCUSD", _trade_frame(trade_id=42)),
-        ("trades", "BTCUSD", _trade_frame(trade_id=42, msg_type="snapshot")),
-        ("trades", "BTCUSD", _trade_frame(trade_id=43)),
-    ])
+    root = _capture(
+        tmp_path,
+        [
+            ("trades", "BTCUSD", _trade_frame(trade_id=42)),
+            ("trades", "BTCUSD", _trade_frame(trade_id=42, msg_type="snapshot")),
+            ("trades", "BTCUSD", _trade_frame(trade_id=43)),
+        ],
+    )
     trades = [x for x in ShardReader(root).iter_trades() if isinstance(x, Trade)]
     assert sorted(t.trade_id for t in trades) == [42, 43]
 
 
 def test_snapshot_provenance_is_carried_not_dropped(tmp_path):
-    root = _capture(tmp_path, [
-        ("trades", "BTCUSD", _trade_frame(trade_id=1, msg_type="snapshot")),
-        ("trades", "BTCUSD", _trade_frame(trade_id=2)),
-    ])
-    trades = {t.trade_id: t for t in ShardReader(root).iter_trades()
-              if isinstance(t, Trade)}
+    root = _capture(
+        tmp_path,
+        [
+            ("trades", "BTCUSD", _trade_frame(trade_id=1, msg_type="snapshot")),
+            ("trades", "BTCUSD", _trade_frame(trade_id=2)),
+        ],
+    )
+    trades = {
+        t.trade_id: t for t in ShardReader(root).iter_trades() if isinstance(t, Trade)
+    }
     assert trades[1].from_snapshot is True
     assert trades[2].from_snapshot is False
 
@@ -242,10 +273,10 @@ def test_gap_causes_are_distinguished(tmp_path):
     root = _capture(tmp_path, [("trades", "BTCUSD", _trade_frame())])
     reader = ShardReader(root)
     ivs = reader.coverage()[("BTC/USD", "trade")]
-    before = reader.gaps("BTCUSD", "trade",
-                         ivs[0].start - timedelta(hours=2), ivs[0].start)
-    after = reader.gaps("BTCUSD", "trade",
-                        ivs[0].end, ivs[0].end + timedelta(hours=2))
+    before = reader.gaps(
+        "BTCUSD", "trade", ivs[0].start - timedelta(hours=2), ivs[0].start
+    )
+    after = reader.gaps("BTCUSD", "trade", ivs[0].end, ivs[0].end + timedelta(hours=2))
     assert before and before[0].cause == "not_yet_started"
     assert after and after[0].cause == "after_last_attested"
     assert after[0].duration_s == pytest.approx(7200, abs=1)
@@ -264,10 +295,13 @@ def test_fully_covered_window_yields_no_gap(tmp_path):
 
 
 def test_truncated_final_line_is_tolerated_and_recorded(tmp_path):
-    root = _capture(tmp_path, [
-        ("trades", "BTCUSD", _trade_frame(trade_id=1)),
-        ("trades", "BTCUSD", _trade_frame(trade_id=2)),
-    ])
+    root = _capture(
+        tmp_path,
+        [
+            ("trades", "BTCUSD", _trade_frame(trade_id=1)),
+            ("trades", "BTCUSD", _trade_frame(trade_id=2)),
+        ],
+    )
     path = ShardReader(root).shard_paths("trades", "BTCUSD")[0]
     with open(path, "a", encoding="utf-8") as fh:
         fh.write('{"recv_ts":"2026-07-26T12:00:02.0Z","mono":1.0,"run_i')
@@ -279,10 +313,13 @@ def test_truncated_final_line_is_tolerated_and_recorded(tmp_path):
 
 
 def test_unparseable_line_in_the_middle_raises(tmp_path):
-    root = _capture(tmp_path, [
-        ("trades", "BTCUSD", _trade_frame(trade_id=1)),
-        ("trades", "BTCUSD", _trade_frame(trade_id=2)),
-    ])
+    root = _capture(
+        tmp_path,
+        [
+            ("trades", "BTCUSD", _trade_frame(trade_id=1)),
+            ("trades", "BTCUSD", _trade_frame(trade_id=2)),
+        ],
+    )
     path = ShardReader(root).shard_paths("trades", "BTCUSD")[0]
     lines = path.read_text(encoding="utf-8").splitlines()
     path.write_text(
@@ -298,16 +335,25 @@ def test_unparseable_line_in_the_middle_raises(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("mutate,match", [
-    (lambda r: r.pop("seq"), "missing"),
-    (lambda r: r.update(surprise=1), "unrecognised envelope field"),
-    (lambda r: r.update(raw={"channel": "ticker", "type": "update", "data": []}),
-     "channel 'ticker'"),
-    (lambda r: r.update(raw={"channel": "trade", "type": "delta", "data": []}),
-     "message type 'delta'"),
-    (lambda r: r.update(raw={"channel": "trade", "type": "update", "data": {}}),
-     "raw.data is dict"),
-])
+@pytest.mark.parametrize(
+    "mutate,match",
+    [
+        (lambda r: r.pop("seq"), "missing"),
+        (lambda r: r.update(surprise=1), "unrecognised envelope field"),
+        (
+            lambda r: r.update(raw={"channel": "ticker", "type": "update", "data": []}),
+            "channel 'ticker'",
+        ),
+        (
+            lambda r: r.update(raw={"channel": "trade", "type": "delta", "data": []}),
+            "message type 'delta'",
+        ),
+        (
+            lambda r: r.update(raw={"channel": "trade", "type": "update", "data": {}}),
+            "raw.data is dict",
+        ),
+    ],
+)
 def test_unrecognised_record_shapes_raise_rather_than_skip(tmp_path, mutate, match):
     root = _capture(tmp_path, [("trades", "BTCUSD", _trade_frame())])
     path = ShardReader(root).shard_paths("trades", "BTCUSD")[0]
@@ -318,19 +364,58 @@ def test_unrecognised_record_shapes_raise_rather_than_skip(tmp_path, mutate, mat
         list(ShardReader(root).iter_trades())
 
 
-@pytest.mark.parametrize("entry,match", [
-    ({"symbol": "BTC/USD", "side": "buy", "price": 1.0, "qty": 1.0,
-      "ord_type": "market", "trade_id": 1}, "missing"),
-    ({"symbol": "BTC/USD", "side": "maker", "price": 1.0, "qty": 1.0,
-      "ord_type": "market", "trade_id": 1, "timestamp": "2026-07-26T12:00:00.0Z"},
-     "side 'maker'"),
-    ({"symbol": "BTC/USD", "side": "buy", "price": 0.0, "qty": 1.0,
-      "ord_type": "market", "trade_id": 1, "timestamp": "2026-07-26T12:00:00.0Z"},
-     "non-positive price"),
-    ({"symbol": "ETH/USD", "side": "buy", "price": 1.0, "qty": 1.0,
-      "ord_type": "market", "trade_id": 1, "timestamp": "2026-07-26T12:00:00.0Z"},
-     "does not match the shard"),
-])
+@pytest.mark.parametrize(
+    "entry,match",
+    [
+        (
+            {
+                "symbol": "BTC/USD",
+                "side": "buy",
+                "price": 1.0,
+                "qty": 1.0,
+                "ord_type": "market",
+                "trade_id": 1,
+            },
+            "missing",
+        ),
+        (
+            {
+                "symbol": "BTC/USD",
+                "side": "maker",
+                "price": 1.0,
+                "qty": 1.0,
+                "ord_type": "market",
+                "trade_id": 1,
+                "timestamp": "2026-07-26T12:00:00.0Z",
+            },
+            "side 'maker'",
+        ),
+        (
+            {
+                "symbol": "BTC/USD",
+                "side": "buy",
+                "price": 0.0,
+                "qty": 1.0,
+                "ord_type": "market",
+                "trade_id": 1,
+                "timestamp": "2026-07-26T12:00:00.0Z",
+            },
+            "non-positive price",
+        ),
+        (
+            {
+                "symbol": "ETH/USD",
+                "side": "buy",
+                "price": 1.0,
+                "qty": 1.0,
+                "ord_type": "market",
+                "trade_id": 1,
+                "timestamp": "2026-07-26T12:00:00.0Z",
+            },
+            "does not match the shard",
+        ),
+    ],
+)
 def test_bad_trade_payloads_raise(tmp_path, entry, match):
     raw = json.dumps({"channel": "trade", "type": "update", "data": [entry]})
     root = _capture(tmp_path, [("trades", "BTCUSD", raw)])
@@ -352,7 +437,8 @@ def test_snapshot_cadence_extra_field_is_accepted(tmp_path):
     j.write("SUBSCRIBE_ACK", symbol="BTC/USD", channel="book")
     w = ShardWriter(tmp_path, run_id=j.run_id, compress=False, roll="day")
     w.write_frame(
-        "book_d10", "BTCUSD",
+        "book_d10",
+        "BTCUSD",
         '{"channel":"book","type":"snapshot","data":[{"symbol":"BTC/USD",'
         '"bids":[],"asks":[],"checksum":1,"timestamp":"2026-07-26T12:00:00.0Z"}]}',
         extra={"synth": "book_snapshot"},
@@ -373,11 +459,13 @@ def test_snapshot_cadence_extra_field_is_accepted(tmp_path):
 def test_compacted_shard_reads_identically(tmp_path):
     from recorder.compaction import compress_shard
 
-    root = _capture(tmp_path, [
-        ("trades", "BTCUSD", _trade_frame(trade_id=i)) for i in range(1, 4)
-    ])
+    root = _capture(
+        tmp_path, [("trades", "BTCUSD", _trade_frame(trade_id=i)) for i in range(1, 4)]
+    )
     path = ShardReader(root).shard_paths("trades", "BTCUSD")[0]
-    plain = [t.trade_id for t in ShardReader(root).iter_trades() if isinstance(t, Trade)]
+    plain = [
+        t.trade_id for t in ShardReader(root).iter_trades() if isinstance(t, Trade)
+    ]
 
     compress_shard(path)
     reader = ShardReader(root)

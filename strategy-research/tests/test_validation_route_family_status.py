@@ -9,6 +9,7 @@ blocking_issues; `family_status` isn't even a schema-valid key). This halted
 the whole campaign_queue run (run_campaign.py) with an unhandled_exception
 hard-pause. Fixture: run_053's real validation_decision.yaml content, frozen.
 """
+
 import sys
 from pathlib import Path
 
@@ -49,10 +50,17 @@ variant_decisions:
 def _make_run(tmp_path, decision_yaml_text):
     run_dir = tmp_path / "run_test"
     (run_dir / "artifacts").mkdir(parents=True)
-    (run_dir / "artifacts" / "validation_decision.yaml").write_text(decision_yaml_text, encoding="utf-8")
+    (run_dir / "artifacts" / "validation_decision.yaml").write_text(
+        decision_yaml_text, encoding="utf-8"
+    )
     (run_dir / "pipeline_state.yaml").write_text(
-        yaml.safe_dump({"run_id": "run_test", "counters": {"refinements_used": 0},
-                        "governance": {"max_refinements_after_validation": 2}}),
+        yaml.safe_dump(
+            {
+                "run_id": "run_test",
+                "counters": {"refinements_used": 0},
+                "governance": {"max_refinements_after_validation": 2},
+            }
+        ),
         encoding="utf-8",
     )
     return run_dir
@@ -65,7 +73,9 @@ def test_family_status_fixture_previously_crashed_now_routes(tmp_path, monkeypat
 
     # A8.6 power check and downstream state writes aren't the point of this test —
     # stub them out so we isolate the status-parsing fix.
-    monkeypatch.setattr(rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"})
+    monkeypatch.setattr(
+        rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"}
+    )
     monkeypatch.setattr(rpr, "update_state", lambda **kwargs: None)
 
     # Must not raise.
@@ -74,7 +84,9 @@ def test_family_status_fixture_previously_crashed_now_routes(tmp_path, monkeypat
 
 
 def test_conditional_approve_aggregates_per_variant_conditions(tmp_path, monkeypatch):
-    monkeypatch.setattr(rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"})
+    monkeypatch.setattr(
+        rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"}
+    )
     monkeypatch.setattr(rpr, "update_state", lambda **kwargs: None)
 
     decision_text = """
@@ -97,19 +109,28 @@ variant_decisions:
 
 
 def test_neither_status_nor_family_status_fails_loudly(tmp_path, monkeypatch):
-    monkeypatch.setattr(rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"})
+    monkeypatch.setattr(
+        rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"}
+    )
     monkeypatch.setattr(rpr, "update_state", lambda **kwargs: None)
 
-    run_dir = _make_run(tmp_path, "hypothesis_id: H-TEST\nrationale: no status field at all\n")
+    run_dir = _make_run(
+        tmp_path, "hypothesis_id: H-TEST\nrationale: no status field at all\n"
+    )
     with pytest.raises(ValueError, match="neither 'status' nor 'family_status'"):
         rpr.determine_post_validation_route(run_dir)
 
 
 def test_normal_single_hypothesis_status_still_works_unchanged(tmp_path, monkeypatch):
     """Non-regression: the standard, schema-conformant shape must be unaffected."""
-    monkeypatch.setattr(rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"})
+    monkeypatch.setattr(
+        rpr, "_run_a86_power_check", lambda artifacts_dir: {"verdict": "power_adequate"}
+    )
     monkeypatch.setattr(rpr, "update_state", lambda **kwargs: None)
 
-    run_dir = _make_run(tmp_path, 'hypothesis_id: "H-TEST"\nstatus: "approve"\nrationale: "fine"\nblocking_issues: []\n')
+    run_dir = _make_run(
+        tmp_path,
+        'hypothesis_id: "H-TEST"\nstatus: "approve"\nrationale: "fine"\nblocking_issues: []\n',
+    )
     result = rpr.determine_post_validation_route(run_dir)
     assert result is not None

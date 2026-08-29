@@ -34,13 +34,16 @@ def campaign_config():
 # prescreen_signal.py constants
 # ---------------------------------------------------------------------------
 
+
 def test_block_size_1h(campaign_config):
     import prescreen_signal
+
     expected = campaign_config["prescreen"]["block_size_1h"]
     # _BLOCK_SIZE_1H survives only as a documented regression anchor since
     # 2026-08-27 -- the live value is derived by tools/timeframe.py. Both must
     # still agree with config, or the anchor has stopped anchoring anything.
     from timeframe import bars_per_day
+
     assert prescreen_signal._BLOCK_SIZE_1H == expected
     assert bars_per_day("1h") == expected, (
         f"derived bars_per_day('1h')={bars_per_day('1h')} "
@@ -51,8 +54,10 @@ def test_block_size_1h(campaign_config):
 def test_block_size_1d(campaign_config):
     """2026-07-07: daily-bar engine support (P4_ts_trend/SMA(100)-daily)."""
     import prescreen_signal
+
     expected = campaign_config["prescreen"]["block_size_1d"]
     from timeframe import bars_per_day
+
     assert prescreen_signal._BLOCK_SIZE_1D == expected
     assert bars_per_day("1d") == expected, (
         f"derived bars_per_day('1d')={bars_per_day('1d')} "
@@ -77,12 +82,14 @@ def test_a86_block_size_by_timeframe_matches_config(campaign_config):
     block_size_1h there expecting it to take effect, they should be told it
     no longer drives anything."""
     import run_phase1_research as rpr
+
     assert rpr._a86_block_size("1h") == campaign_config["prescreen"]["block_size_1h"]
     assert rpr._a86_block_size("1d") == campaign_config["prescreen"]["block_size_1d"]
 
 
 def test_significance_threshold(campaign_config):
     import prescreen_signal
+
     expected = campaign_config["prescreen"]["significance_threshold"]
     assert prescreen_signal._SIG_THRESHOLD == expected, (
         f"prescreen_signal._SIG_THRESHOLD={prescreen_signal._SIG_THRESHOLD} "
@@ -99,6 +106,7 @@ def test_sigma_bar_bps_degenerate_fallback(campaign_config):
     engineering/improvements/done/design_and_docs/11_viable_space_map.md Part 1 for the misreading this caused.
     """
     import prescreen_signal
+
     expected = campaign_config["prescreen"]["sigma_bar_bps_degenerate_fallback"]
     assert prescreen_signal._DEFAULT_SIGMA_BAR_BPS == expected, (
         f"prescreen_signal._DEFAULT_SIGMA_BAR_BPS={prescreen_signal._DEFAULT_SIGMA_BAR_BPS} "
@@ -110,8 +118,10 @@ def test_sigma_bar_bps_degenerate_fallback(campaign_config):
 # validate_regime_detector.py constants
 # ---------------------------------------------------------------------------
 
+
 def test_activation_band_min(campaign_config):
     import validate_regime_detector
+
     expected = campaign_config["regime_detector"]["activation_band_min"]
     assert validate_regime_detector.ACTIVATION_BAND_MIN == expected, (
         f"validate_regime_detector.ACTIVATION_BAND_MIN={validate_regime_detector.ACTIVATION_BAND_MIN} "
@@ -121,6 +131,7 @@ def test_activation_band_min(campaign_config):
 
 def test_activation_band_max(campaign_config):
     import validate_regime_detector
+
     expected = campaign_config["regime_detector"]["activation_band_max"]
     assert validate_regime_detector.ACTIVATION_BAND_MAX == expected, (
         f"validate_regime_detector.ACTIVATION_BAND_MAX={validate_regime_detector.ACTIVATION_BAND_MAX} "
@@ -130,6 +141,7 @@ def test_activation_band_max(campaign_config):
 
 def test_default_date_range(campaign_config):
     import validate_regime_detector
+
     cfg = campaign_config["regime_detector"]
     assert validate_regime_detector._DEFAULT_START == cfg["default_start"], (
         f"validate_regime_detector._DEFAULT_START={validate_regime_detector._DEFAULT_START!r} "
@@ -144,6 +156,7 @@ def test_default_date_range(campaign_config):
 # ---------------------------------------------------------------------------
 # run_phase1_research.py constants (below_floor_pct threshold)
 # ---------------------------------------------------------------------------
+
 
 def test_below_floor_pct_matches_config(campaign_config):
     """
@@ -163,6 +176,7 @@ def test_below_floor_pct_matches_config(campaign_config):
 # power_check.py BLOCK_SIZE matches prescreen block_size_1h
 # ---------------------------------------------------------------------------
 
+
 def test_power_check_block_size_matches_prescreen(campaign_config):
     """REWRITTEN 2026-08-27. This compared two hand-maintained constants and
     passed, while the sites they belonged to disagreed at every timeframe
@@ -174,12 +188,15 @@ def test_power_check_block_size_matches_prescreen(campaign_config):
     import power_check
     import prescreen_signal
     from timeframe import bars_per_day
+
     assert not hasattr(power_check, "BLOCK_SIZE"), (
         "power_check.BLOCK_SIZE reintroduced — a bare constant cannot vary by "
         "timeframe and is what made this mirror 1h-only"
     )
     assert "bars_per_day" in (TOOLS_PATH / "power_check.py").read_text(encoding="utf-8")
-    assert "bars_per_day" in (TOOLS_PATH / "prescreen_signal.py").read_text(encoding="utf-8")
+    assert "bars_per_day" in (TOOLS_PATH / "prescreen_signal.py").read_text(
+        encoding="utf-8"
+    )
     assert prescreen_signal._BLOCK_SIZE_1H == bars_per_day("1h")
     assert prescreen_signal._BLOCK_SIZE_1D == bars_per_day("1d")
 
@@ -188,11 +205,16 @@ def test_power_check_block_size_matches_prescreen(campaign_config):
 # A8.6 formula self-check: verify H-041-C reproduces n_eff=13
 # ---------------------------------------------------------------------------
 
+
 def test_episode_significance_constants(campaign_config):
     import episode_significance
+
     cfg = campaign_config["episode_significance"]
     assert episode_significance._DEFAULT_GAP_BARS == cfg["gap_bars"]
-    assert episode_significance._DEFAULT_DENSITY_FALLBACK_PCT == cfg["density_fallback_pct"]
+    assert (
+        episode_significance._DEFAULT_DENSITY_FALLBACK_PCT
+        == cfg["density_fallback_pct"]
+    )
     assert episode_significance._MIN_N_EPISODES == cfg["min_n_episodes"]
     assert episode_significance._DEFAULT_N_RESAMPLES == cfg["n_resamples"]
 
@@ -205,6 +227,7 @@ def test_a86_heuristic_h041c_reproduction(campaign_config):
     import math
     from power_check import run_power_check
     from timeframe import bars_per_day
+
     # H-041-C was a 1h hypothesis, so its block size is bars_per_day("1h") == 24
     # -- the same value the removed BLOCK_SIZE constant held, now derived.
     BLOCK_SIZE = bars_per_day("1h")

@@ -30,13 +30,17 @@ from data.fetchers.funding_rate_fetcher import FundingRateFetcher  # noqa: E402
 
 
 def test_krakenfutures_defaults_to_hourly_cadence():
-    f = FundingRateFetcher("2025-08-13", "2025-08-14", symbols=["BTCUSD"], exchange_id="krakenfutures")
+    f = FundingRateFetcher(
+        "2025-08-13", "2025-08-14", symbols=["BTCUSD"], exchange_id="krakenfutures"
+    )
     assert f.interval_seconds == 3600
     assert f.cache_key("BTCUSD") == "krakenfutures_BTCUSD_funding_1h"
 
 
 def test_binance_cadence_and_cache_key_unchanged():
-    f = FundingRateFetcher("2025-08-13", "2025-08-14", symbols=["BTCUSDT"], exchange_id="binance")
+    f = FundingRateFetcher(
+        "2025-08-13", "2025-08-14", symbols=["BTCUSDT"], exchange_id="binance"
+    )
     assert f.interval_seconds == 28800
     assert f.cache_key("BTCUSDT") == "BTCUSDT_funding_8h"
 
@@ -45,7 +49,9 @@ def test_kraken_spot_id_keeps_the_8h_default():
     # The cadence map keys on "krakenfutures", NOT "kraken" (spot): a bare
     # exchange_id="kraken" construction still resolves 8h -- this is why the
     # direct-construction pin in test_aux_feed_venue.py survives.
-    f = FundingRateFetcher("2025-08-13", "2025-08-14", symbols=["BTCUSD"], exchange_id="kraken")
+    f = FundingRateFetcher(
+        "2025-08-13", "2025-08-14", symbols=["BTCUSD"], exchange_id="kraken"
+    )
     assert f.interval_seconds == 28800
     assert f.cache_key("BTCUSD") == "kraken_BTCUSD_funding_8h"
 
@@ -53,7 +59,11 @@ def test_kraken_spot_id_keeps_the_8h_default():
 def test_explicit_interval_overrides_the_exchange_default():
     # Explicit arg wins over the per-exchange map (krakenfutures would be 3600).
     f = FundingRateFetcher(
-        "2025-08-13", "2025-08-14", symbols=["BTCUSD"], exchange_id="krakenfutures", interval_seconds=28800
+        "2025-08-13",
+        "2025-08-14",
+        symbols=["BTCUSD"],
+        exchange_id="krakenfutures",
+        interval_seconds=28800,
     )
     assert f.interval_seconds == 28800
     assert f.cache_key("BTCUSD") == "krakenfutures_BTCUSD_funding_8h"
@@ -77,7 +87,9 @@ class _RollingWindowStub:
 
     def fetch_funding_rate_history(self, symbol, since, limit):
         rows = [ts for ts in self._grid if ts >= since][:limit]
-        return [{"timestamp": ts, "fundingRate": 1e-5, "markPrice": None} for ts in rows]
+        return [
+            {"timestamp": ts, "fundingRate": 1e-5, "markPrice": None} for ts in rows
+        ]
 
 
 def test_stride_uses_interval_no_page_boundary_thinning():
@@ -104,7 +116,9 @@ def test_stride_uses_interval_no_page_boundary_thinning():
     n = 1500  # > one 1000-row page: forces a page boundary
     grid_ms = [since_ms + i * 3_600_000 for i in range(n)]  # hourly grid
 
-    fetcher = FundingRateFetcher(start, end, symbols=["BTCUSD"], exchange_id="krakenfutures")
+    fetcher = FundingRateFetcher(
+        start, end, symbols=["BTCUSD"], exchange_id="krakenfutures"
+    )
     assert fetcher.interval_seconds == 3600  # precondition: hourly cadence resolved
     fetcher.exchange = _RollingWindowStub(grid_ms)
 

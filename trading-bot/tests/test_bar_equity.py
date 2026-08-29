@@ -13,6 +13,7 @@ for the trade-exit equivalents this module deliberately does NOT reuse: those
 operate on a ~24-point per-trade curve; this operates on the full per-bar
 portfolio_states series.
 """
+
 import math
 import statistics
 import sys
@@ -50,6 +51,7 @@ def _daily_index(n):
 # ---------------------------------------------------------------------------
 # max_drawdown_pct
 # ---------------------------------------------------------------------------
+
 
 def test_max_drawdown_single_drawdown_and_partial_recovery():
     """5-bar series, one drawdown, partial recovery before the end.
@@ -100,6 +102,7 @@ def test_max_drawdown_uses_running_max_not_global_max():
 # ---------------------------------------------------------------------------
 # sharpe_ratio_daily / sortino_ratio_daily
 # ---------------------------------------------------------------------------
+
 
 def test_sharpe_ratio_daily_known_returns():
     """returns=[0.02, 0.04, 0.03] -> mean=0.03, sample std=0.01 exactly ->
@@ -155,7 +158,11 @@ def test_sortino_ratio_daily_known_downside():
     assert abs(result - expected) < 1e-6
     # the old (rejected) formula's answer must NOT match -- proves this fixture
     # actually discriminates between the two conventions, not just coincidence
-    old_formula = statistics.mean(returns) / statistics.stdev([r for r in returns if r < 0]) * math.sqrt(365)
+    old_formula = (
+        statistics.mean(returns)
+        / statistics.stdev([r for r in returns if r < 0])
+        * math.sqrt(365)
+    )
     assert abs(result - old_formula) > 1.0
 
 
@@ -188,13 +195,20 @@ def test_sharpe_resample_multiple_bars_per_day_asserts_real_value_not_a_guard():
     instead and compute a different, wrong sharpe here).
     """
     equity = pd.Series([1000.0, 1050.0, 1100.0, 1210.0, 1300.0, 1400.0])
-    timestamps = pd.Series([
-        pd.Timestamp("2024-01-01 00:00"), pd.Timestamp("2024-01-01 12:00"),
-        pd.Timestamp("2024-01-02 00:00"), pd.Timestamp("2024-01-02 12:00"),
-        pd.Timestamp("2024-01-03 00:00"), pd.Timestamp("2024-01-03 12:00"),
-    ])
+    timestamps = pd.Series(
+        [
+            pd.Timestamp("2024-01-01 00:00"),
+            pd.Timestamp("2024-01-01 12:00"),
+            pd.Timestamp("2024-01-02 00:00"),
+            pd.Timestamp("2024-01-02 12:00"),
+            pd.Timestamp("2024-01-03 00:00"),
+            pd.Timestamp("2024-01-03 12:00"),
+        ]
+    )
     daily_closes = [1050.0, 1210.0, 1400.0]
-    returns = [daily_closes[i + 1] / daily_closes[i] - 1 for i in range(len(daily_closes) - 1)]
+    returns = [
+        daily_closes[i + 1] / daily_closes[i] - 1 for i in range(len(daily_closes) - 1)
+    ]
 
     result = sharpe_ratio_daily(equity, timestamps)
     expected = statistics.mean(returns) / statistics.stdev(returns) * math.sqrt(365)
@@ -204,10 +218,13 @@ def test_sharpe_resample_multiple_bars_per_day_asserts_real_value_not_a_guard():
     # materially different sharpe. Confirms this fixture actually discriminates.
     first_bug_closes = [1000.0, 1100.0, 1300.0]
     first_bug_returns = [
-        first_bug_closes[i + 1] / first_bug_closes[i] - 1 for i in range(len(first_bug_closes) - 1)
+        first_bug_closes[i + 1] / first_bug_closes[i] - 1
+        for i in range(len(first_bug_closes) - 1)
     ]
     first_bug_expected = (
-        statistics.mean(first_bug_returns) / statistics.stdev(first_bug_returns) * math.sqrt(365)
+        statistics.mean(first_bug_returns)
+        / statistics.stdev(first_bug_returns)
+        * math.sqrt(365)
     )
     assert abs(result - first_bug_expected) > 1.0
 
@@ -217,11 +234,16 @@ def test_daily_returns_resamples_to_last_close_of_each_day():
     (used by both sharpe_ratio_daily and sortino_ratio_daily, and by
     build_bar_equity for n_daily_returns/n_downside_days)."""
     equity = pd.Series([1000.0, 1050.0, 1100.0, 1210.0, 1300.0, 1400.0])
-    timestamps = pd.Series([
-        pd.Timestamp("2024-01-01 00:00"), pd.Timestamp("2024-01-01 12:00"),
-        pd.Timestamp("2024-01-02 00:00"), pd.Timestamp("2024-01-02 12:00"),
-        pd.Timestamp("2024-01-03 00:00"), pd.Timestamp("2024-01-03 12:00"),
-    ])
+    timestamps = pd.Series(
+        [
+            pd.Timestamp("2024-01-01 00:00"),
+            pd.Timestamp("2024-01-01 12:00"),
+            pd.Timestamp("2024-01-02 00:00"),
+            pd.Timestamp("2024-01-02 12:00"),
+            pd.Timestamp("2024-01-03 00:00"),
+            pd.Timestamp("2024-01-03 12:00"),
+        ]
+    )
     result = daily_returns(equity, timestamps)
     assert len(result) == 2
     assert abs(result.iloc[0] - (1210.0 / 1050.0 - 1)) < 1e-9
@@ -235,7 +257,9 @@ def test_daily_returns_sorts_out_of_order_input():
     sorted_equity = pd.Series([1000.0, 1100.0, 1200.0])
     sorted_timestamps = pd.Series(_daily_index(3))
     shuffled_equity = pd.Series([1100.0, 1000.0, 1200.0])
-    shuffled_timestamps = pd.Series([sorted_timestamps[1], sorted_timestamps[0], sorted_timestamps[2]])
+    shuffled_timestamps = pd.Series(
+        [sorted_timestamps[1], sorted_timestamps[0], sorted_timestamps[2]]
+    )
 
     expected = daily_returns(sorted_equity, sorted_timestamps)
     actual = daily_returns(shuffled_equity, shuffled_timestamps)
@@ -245,6 +269,7 @@ def test_daily_returns_sorts_out_of_order_input():
 # ---------------------------------------------------------------------------
 # turnover / exposure_pct
 # ---------------------------------------------------------------------------
+
 
 def test_turnover_sums_executed_allocation_deltas():
     """post=[0, 0.5, 0], previous=[0, 0, 0.5] -> |0.5-0| + |0-0.5| = 1.0.

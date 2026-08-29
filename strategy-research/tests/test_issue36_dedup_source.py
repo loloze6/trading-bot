@@ -28,12 +28,19 @@ def test_prescreen_and_backtest_rows_both_survive_dedup():
     reaches the DSR sample. RED under the forecast_hash-only key (n_removed==1)."""
     shared = "run_042_forecast_deadbeef"
     prescreen = {
-        "trial_id": "run_042", "source": "prescreen", "sharpe": None,
-        "forecast_hash": shared, "statistic_valid": "expectancy",
+        "trial_id": "run_042",
+        "source": "prescreen",
+        "sharpe": None,
+        "forecast_hash": shared,
+        "statistic_valid": "expectancy",
     }
     backtest = {
-        "trial_id": "run_042", "source": "backtest", "sharpe": 1.37,
-        "forecast_hash": shared, "statistic_valid": "sharpe", "n_trades": 120,
+        "trial_id": "run_042",
+        "source": "backtest",
+        "sharpe": 1.37,
+        "forecast_hash": shared,
+        "statistic_valid": "sharpe",
+        "n_trades": 120,
     }
 
     kept, n_removed = ds.deduplicate_trials([prescreen, backtest])
@@ -52,8 +59,18 @@ def test_same_hash_same_source_still_deduped():
     """The fix must still collapse a GENUINE duplicate: identical forecast_hash
     AND identical source (a dual-writer race or replayed row)."""
     shared = "keltner_v1_forecast_abc123"
-    a = {"trial_id": "run_a", "source": "backtest", "forecast_hash": shared, "sharpe": 1.0}
-    b = {"trial_id": "run_b", "source": "backtest", "forecast_hash": shared, "sharpe": 1.0}
+    a = {
+        "trial_id": "run_a",
+        "source": "backtest",
+        "forecast_hash": shared,
+        "sharpe": 1.0,
+    }
+    b = {
+        "trial_id": "run_b",
+        "source": "backtest",
+        "forecast_hash": shared,
+        "sharpe": 1.0,
+    }
 
     kept, n_removed = ds.deduplicate_trials([a, b])
 

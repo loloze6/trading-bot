@@ -15,6 +15,7 @@ These tests instead monkeypatch the NAMES actually invoked
 fakes that replicate the real functions' on-disk output shape, so nothing
 here ever touches the real repository, and no LLM/subprocess is spawned.
 """
+
 import hashlib
 import sys
 from pathlib import Path
@@ -28,7 +29,9 @@ sys.path.insert(0, str(WORKFLOW_PATH))
 import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
 
-assert camp.orch is rpr, "run_campaign.orch must be the same module object as run_phase1_research"
+assert camp.orch is rpr, (
+    "run_campaign.orch must be the same module object as run_phase1_research"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -49,8 +52,10 @@ _FRESH_STATE_TEMPLATE = {
     },
     "counters": {"refinements_used": 0, "reruns_used": 0},
     "flags": {
-        "holdout_reserved": False, "validation_approved": False,
-        "screening_passed": False, "walk_forward_passed": False,
+        "holdout_reserved": False,
+        "validation_approved": False,
+        "screening_passed": False,
+        "walk_forward_passed": False,
     },
     "last_summary": None,
 }
@@ -87,6 +92,7 @@ def campaign_root(tmp_path, monkeypatch):
 
     def _fake_setup_run(run_id):
         _write_fresh_scaffold(runs_dir, run_id)
+
     monkeypatch.setattr(camp, "setup_run", _fake_setup_run)
 
     class _FakeCompletedProcess:
@@ -97,11 +103,15 @@ def campaign_root(tmp_path, monkeypatch):
         next_run_id = cmd[-1]
         _write_fresh_scaffold(runs_dir, next_run_id)
         return _FakeCompletedProcess()
+
     monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
 
     return {
-        "root": tmp_path, "runs_dir": runs_dir, "queue_path": queue_path,
-        "baseline_path": baseline_path, "campaign_state_path": campaign_state_path,
+        "root": tmp_path,
+        "runs_dir": runs_dir,
+        "queue_path": queue_path,
+        "baseline_path": baseline_path,
+        "campaign_state_path": campaign_state_path,
     }
 
 
@@ -112,10 +122,17 @@ def _save_queue_entries(queue_path: Path, entries: list):
 
 def _write_campaign_state(path: Path, **fields):
     state = {
-        "campaign_id": "test", "research_question": "", "runs": [],
-        "altitude_history": [], "recent_parameter_dimensions_by_family": {},
-        "failed_families": [], "instruments_tried": [], "components_built": [],
-        "timeframes_tried": ["1h"], "diagnostics_log": [], "status": "active",
+        "campaign_id": "test",
+        "research_question": "",
+        "runs": [],
+        "altitude_history": [],
+        "recent_parameter_dimensions_by_family": {},
+        "failed_families": [],
+        "instruments_tried": [],
+        "components_built": [],
+        "timeframes_tried": ["1h"],
+        "diagnostics_log": [],
+        "status": "active",
     }
     state.update(fields)
     with open(path, "w", encoding="utf-8") as f:
@@ -125,6 +142,7 @@ def _write_campaign_state(path: Path, **fields):
 # ---------------------------------------------------------------------------
 # A1 -- persisted continuation intent
 # ---------------------------------------------------------------------------
+
 
 def test_route_refine_persists_continuation_child(campaign_root):
     """_route_refine must write continuation_child/continuation_created_by
@@ -138,11 +156,16 @@ def test_route_refine_persists_continuation_child(campaign_root):
     )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_100"])
 
-    interp = {"proposed_change_dimension": "test_dim", "hypothesis_family": "test_family"}
+    interp = {
+        "proposed_change_dimension": "test_dim",
+        "hypothesis_family": "test_family",
+    }
     next_stage = rpr._route_refine(run_dir, "run_100", interp, {})
 
     assert next_stage == "completed_refined"
-    state = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    state = yaml.safe_load(
+        (run_dir / "pipeline_state.yaml").read_text(encoding="utf-8")
+    )
     assert state["continuation_child"] == "run_101", state.get("continuation_child")
     assert state["continuation_created_by"] == "_route_refine"
     assert (runs_dir / "run_101").exists(), "child scaffold must exist on disk"
@@ -158,7 +181,9 @@ def test_route_pivot_persists_continuation_child(campaign_root):
     next_stage = rpr._route_pivot(run_dir, "run_200", interp, {})
 
     assert next_stage == "completed_refined"
-    state = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    state = yaml.safe_load(
+        (run_dir / "pipeline_state.yaml").read_text(encoding="utf-8")
+    )
     assert state["continuation_child"] == "run_201"
     assert state["continuation_created_by"] == "_route_pivot"
     assert (runs_dir / "run_201").exists()
@@ -175,17 +200,30 @@ def test_route_escalate_instrument_persists_continuation_child(campaign_root):
         '{"symbols": ["BTCUSDT"], "timeframe": "1h", "windows": []}', encoding="utf-8"
     )
     (root / "config").mkdir(exist_ok=True)
-    (root / "config" / "coin_universe.yaml").write_text(yaml.safe_dump({
-        "escalation_order": {"sequence": [{"category": "majors", "priority": 1}]},
-        "categories": {"majors": {"coins": [{"symbol": "ETHUSDT", "data_cached": True}],
-                                   "strategy_affinity": []}},
-    }), encoding="utf-8")
+    (root / "config" / "coin_universe.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "escalation_order": {
+                    "sequence": [{"category": "majors", "priority": 1}]
+                },
+                "categories": {
+                    "majors": {
+                        "coins": [{"symbol": "ETHUSDT", "data_cached": True}],
+                        "strategy_affinity": [],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_300"])
 
     next_stage = rpr._route_escalate(run_dir, "run_300", {}, {})
 
     assert next_stage == "completed_escalated"
-    state = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    state = yaml.safe_load(
+        (run_dir / "pipeline_state.yaml").read_text(encoding="utf-8")
+    )
     assert state["continuation_child"] == "run_301"
     assert state["continuation_created_by"] == "_route_escalate"
     assert (runs_dir / "run_301").exists()
@@ -208,19 +246,35 @@ def test_fresh_process_continuation_across_separate_process_once_calls(campaign_
 
     # Step 1: drive the verdict-stage routing directly (see module docstring
     # for why this replaces invoking orch.run_loop() end-to-end).
-    interp = {"proposed_change_dimension": "test_dim", "hypothesis_family": "test_family"}
+    interp = {
+        "proposed_change_dimension": "test_dim",
+        "hypothesis_family": "test_family",
+    }
     next_stage = rpr._route_refine(run_dir, "run_100", interp, {})
     # Simulate run_loop's own step-6 update_state call, which is what
     # actually persists pending_stage after determine_post_verdict_route
     # returns -- the one piece of run_loop's behavior this test doesn't
     # get by calling _route_refine directly.
-    rpr.update_state(path=run_dir, pending_stage=next_stage, status="active",
-                      completed_stages=["verdict_interpreter"])
+    rpr.update_state(
+        path=run_dir,
+        pending_stage=next_stage,
+        status="active",
+        completed_stages=["verdict_interpreter"],
+    )
 
-    _save_queue_entries(queue_path, [{
-        "id": "TEST_ENTRY", "brief_path": "briefs/irrelevant.yaml",
-        "status": "in_progress", "priority": 1, "run_ids": ["run_100"], "outcome": None,
-    }])
+    _save_queue_entries(
+        queue_path,
+        [
+            {
+                "id": "TEST_ENTRY",
+                "brief_path": "briefs/irrelevant.yaml",
+                "status": "in_progress",
+                "priority": 1,
+                "run_ids": ["run_100"],
+                "outcome": None,
+            }
+        ],
+    )
 
     # Step 2: a SEPARATE process_once() call -- nothing carried over except
     # what's on disk (queue file + run_100's own pipeline_state.yaml).
@@ -231,7 +285,9 @@ def test_fresh_process_continuation_across_separate_process_once_calls(campaign_
     entry = queue["queue"][0]
     assert entry["run_ids"] == ["run_100", "run_101"], entry["run_ids"]
     assert entry["status"] == "in_progress", entry["status"]
-    log_text = campaign_root["root"].joinpath("campaign_log.md").read_text(encoding="utf-8")
+    log_text = (
+        campaign_root["root"].joinpath("campaign_log.md").read_text(encoding="utf-8")
+    )
     assert "CONTINUE TEST_ENTRY" in log_text
     assert "DONE TEST_ENTRY" not in log_text
 
@@ -239,6 +295,7 @@ def test_fresh_process_continuation_across_separate_process_once_calls(campaign_
 # ---------------------------------------------------------------------------
 # A3 -- reconciler
 # ---------------------------------------------------------------------------
+
 
 def test_reconciler_flags_crash_window_orphan(campaign_root):
     """A run dir materialized but never registered anywhere (the exact
@@ -250,11 +307,15 @@ def test_reconciler_flags_crash_window_orphan(campaign_root):
 
     orphans = camp.reconcile_orphans()
     assert "run_400" in orphans
-    log_text = campaign_root["root"].joinpath("campaign_log.md").read_text(encoding="utf-8")
+    log_text = (
+        campaign_root["root"].joinpath("campaign_log.md").read_text(encoding="utf-8")
+    )
     assert "run_400" in log_text and "RECONCILE" in log_text
 
 
-def test_reconciler_exempts_quarantined_orphan_and_never_selected_or_renumbered(campaign_root):
+def test_reconciler_exempts_quarantined_orphan_and_never_selected_or_renumbered(
+    campaign_root,
+):
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_500")
     (runs_dir / "run_500" / "ORPHANED_README.md").write_text(
@@ -303,8 +364,11 @@ def test_reconciler_does_not_flag_trial_sharpes_only_id(campaign_root):
 def _count_reconcile_lines(log_path: Path) -> int:
     if not log_path.exists():
         return 0
-    return sum(1 for line in log_path.read_text(encoding="utf-8").splitlines()
-               if "RECONCILE:" in line)
+    return sum(
+        1
+        for line in log_path.read_text(encoding="utf-8").splitlines()
+        if "RECONCILE:" in line
+    )
 
 
 def test_reconcile_orphans_emits_exactly_one_line_clean_case(campaign_root):
@@ -314,17 +378,30 @@ def test_reconcile_orphans_emits_exactly_one_line_clean_case(campaign_root):
     having run at all."""
     runs_dir = campaign_root["runs_dir"]
     _write_fresh_scaffold(runs_dir, "run_700")
-    _save_queue_entries(campaign_root["queue_path"], [{
-        "id": "TEST_ENTRY", "brief_path": "briefs/irrelevant.yaml",
-        "status": "in_progress", "priority": 1, "run_ids": ["run_700"], "outcome": None,
-    }])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "TEST_ENTRY",
+                "brief_path": "briefs/irrelevant.yaml",
+                "status": "in_progress",
+                "priority": 1,
+                "run_ids": ["run_700"],
+                "outcome": None,
+            }
+        ],
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_700"])
 
     orphans = camp.reconcile_orphans()
-    assert orphans == [], "run_700 is referenced via campaign_state.runs -- no orphans expected"
+    assert orphans == [], (
+        "run_700 is referenced via campaign_state.runs -- no orphans expected"
+    )
 
     log_path = campaign_root["root"] / "campaign_log.md"
-    assert _count_reconcile_lines(log_path) == 1, "exactly one RECONCILE line, never zero"
+    assert _count_reconcile_lines(log_path) == 1, (
+        "exactly one RECONCILE line, never zero"
+    )
     log_text = log_path.read_text(encoding="utf-8")
     assert "0 unexpected" in log_text
     assert "1 run dir(s) scanned" in log_text
@@ -343,10 +420,14 @@ def test_reconcile_orphans_emits_exactly_one_line_non_clean_case(campaign_root):
     assert orphans == ["run_701"]
 
     log_path = campaign_root["root"] / "campaign_log.md"
-    assert _count_reconcile_lines(log_path) == 1, "exactly one RECONCILE line, never two"
+    assert _count_reconcile_lines(log_path) == 1, (
+        "exactly one RECONCILE line, never two"
+    )
     log_text = log_path.read_text(encoding="utf-8")
     assert "run_701" in log_text
-    assert "0 unexpected" not in log_text, "non-clean line's content is unchanged -- no clean-case wording"
+    assert "0 unexpected" not in log_text, (
+        "non-clean line's content is unchanged -- no clean-case wording"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -354,17 +435,33 @@ def test_reconcile_orphans_emits_exactly_one_line_non_clean_case(campaign_root):
 # "Queue exhausted" handling on an all-terminal queue
 # ---------------------------------------------------------------------------
 
+
 def test_dry_run_verify_on_all_terminal_queue_returns_cleanly(campaign_root):
     """The real-world trigger for this rider: campaign_queue.yaml with every
     entry done/blocked_on_* (P4_ts_trend done, XS_momentum blocked_on_P2) --
     _select_entry() returns None. Previously raised AssertionError; must now
     log an informative line and return without raising."""
-    _save_queue_entries(campaign_root["queue_path"], [
-        {"id": "P4_ts_trend", "brief_path": "briefs/irrelevant.yaml", "status": "done",
-         "priority": 1, "run_ids": ["run_800"], "outcome": "kill"},
-        {"id": "XS_momentum", "brief_path": "briefs/irrelevant2.yaml", "status": "blocked_on_P2",
-         "priority": 2, "run_ids": [], "outcome": None},
-    ])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "P4_ts_trend",
+                "brief_path": "briefs/irrelevant.yaml",
+                "status": "done",
+                "priority": 1,
+                "run_ids": ["run_800"],
+                "outcome": "kill",
+            },
+            {
+                "id": "XS_momentum",
+                "brief_path": "briefs/irrelevant2.yaml",
+                "status": "blocked_on_P2",
+                "priority": 2,
+                "run_ids": [],
+                "outcome": None,
+            },
+        ],
+    )
     _write_campaign_state(campaign_root["campaign_state_path"])
 
     camp.dry_run_verify()  # must not raise
@@ -380,14 +477,20 @@ def test_dry_run_verify_on_all_terminal_queue_returns_cleanly(campaign_root):
 
 _MINIMAL_REFINEMENT_BRIEF = {
     "brief_id": "TEST_REFINEMENT_r1",
-    "lineage": {"parent_queue_entry": "TEST_ENTRY", "parent_run": "run_600",
-                "relation": "refine", "parent_verdict": "refine_pending_test"},
+    "lineage": {
+        "parent_queue_entry": "TEST_ENTRY",
+        "parent_run": "run_600",
+        "relation": "refine",
+        "parent_verdict": "refine_pending_test",
+    },
     "source": "user_delivered",
     "status": "ready",
     "hypothesis": {"primary": "test hypothesis text"},
     "gate_definition": {"indicator": "test_indicator", "threshold": 0.3},
-    "evaluation": {"pass_rule": "PASS iff test condition holds.",
-                   "baseline_comparators": {"x": 1.0}},
+    "evaluation": {
+        "pass_rule": "PASS iff test condition holds.",
+        "baseline_comparators": {"x": 1.0},
+    },
 }
 
 
@@ -399,7 +502,9 @@ def _write_refinement_brief(path: Path, overrides: dict | None = None):
     return path
 
 
-def test_refinement_brief_materializes_checksum_identical_and_pre_registration(campaign_root):
+def test_refinement_brief_materializes_checksum_identical_and_pre_registration(
+    campaign_root,
+):
     runs_dir = campaign_root["runs_dir"]
     root = campaign_root["root"]
     _write_fresh_scaffold(runs_dir, "run_600")
@@ -408,11 +513,20 @@ def test_refinement_brief_materializes_checksum_identical_and_pre_registration(c
     brief_path = _write_refinement_brief(briefs_dir / "test_refinement.yaml")
     source_checksum = hashlib.sha256(brief_path.read_bytes()).hexdigest()
 
-    _save_queue_entries(campaign_root["queue_path"], [{
-        "id": "TEST_ENTRY", "brief_path": "briefs/irrelevant.yaml",
-        "status": "in_progress", "priority": 1, "run_ids": ["run_600"], "outcome": None,
-        "refinement_brief_path": "briefs/test_refinement.yaml",
-    }])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "TEST_ENTRY",
+                "brief_path": "briefs/irrelevant.yaml",
+                "status": "in_progress",
+                "priority": 1,
+                "run_ids": ["run_600"],
+                "outcome": None,
+                "refinement_brief_path": "briefs/test_refinement.yaml",
+            }
+        ],
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_600"])
 
     # The materialized child starts fresh at hypothesis_generation (R1: no
@@ -435,18 +549,24 @@ def test_refinement_brief_materializes_checksum_identical_and_pre_registration(c
     assert verbatim_path.read_bytes() == brief_path.read_bytes()
     assert hashlib.sha256(verbatim_path.read_bytes()).hexdigest() == source_checksum
 
-    pre_reg = yaml.safe_load((child_artifacts / "pre_registration.yaml").read_text(encoding="utf-8"))
+    pre_reg = yaml.safe_load(
+        (child_artifacts / "pre_registration.yaml").read_text(encoding="utf-8")
+    )
     assert pre_reg["lineage"] == _MINIMAL_REFINEMENT_BRIEF["lineage"]
     assert pre_reg["gate_definition"] == _MINIMAL_REFINEMENT_BRIEF["gate_definition"]
     assert pre_reg["pass_rule"] == _MINIMAL_REFINEMENT_BRIEF["evaluation"]["pass_rule"]
     assert pre_reg["user_brief_checksum"] == f"sha256:{source_checksum}"
 
     # R1: no stage-skip -- child starts at the existing default.
-    child_state = yaml.safe_load((runs_dir / "run_601" / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    child_state = yaml.safe_load(
+        (runs_dir / "run_601" / "pipeline_state.yaml").read_text(encoding="utf-8")
+    )
     assert child_state["pending_stage"] == "hypothesis_generation"
 
 
-def test_refinement_brief_one_character_corruption_fails_checksum_assertion(campaign_root):
+def test_refinement_brief_one_character_corruption_fails_checksum_assertion(
+    campaign_root,
+):
     """A corrupted verbatim copy must NOT match the source's checksum --
     proves the checksum assertion is load-bearing, not a tautology."""
     runs_dir = campaign_root["runs_dir"]
@@ -467,8 +587,10 @@ def test_refinement_brief_one_character_corruption_fails_checksum_assertion(camp
     corrupted[0] ^= 0xFF
     verbatim_path.write_bytes(bytes(corrupted))
 
-    assert hashlib.sha256(verbatim_path.read_bytes()).hexdigest() != \
-        hashlib.sha256(brief_path.read_bytes()).hexdigest()
+    assert (
+        hashlib.sha256(verbatim_path.read_bytes()).hexdigest()
+        != hashlib.sha256(brief_path.read_bytes()).hexdigest()
+    )
 
 
 def test_refinement_brief_idempotency_guard(campaign_root):
@@ -481,11 +603,20 @@ def test_refinement_brief_idempotency_guard(campaign_root):
     briefs_dir.mkdir()
     _write_refinement_brief(briefs_dir / "test_refinement.yaml")
 
-    _save_queue_entries(campaign_root["queue_path"], [{
-        "id": "TEST_ENTRY", "brief_path": "briefs/irrelevant.yaml",
-        "status": "in_progress", "priority": 1, "run_ids": ["run_600"], "outcome": None,
-        "refinement_brief_path": "briefs/test_refinement.yaml",
-    }])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "TEST_ENTRY",
+                "brief_path": "briefs/irrelevant.yaml",
+                "status": "in_progress",
+                "priority": 1,
+                "run_ids": ["run_600"],
+                "outcome": None,
+                "refinement_brief_path": "briefs/test_refinement.yaml",
+            }
+        ],
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_600"])
 
     # Both calls: run_601 (fresh, pending_stage hypothesis_generation) would
@@ -526,18 +657,31 @@ def test_refinement_brief_conflict_pauses_with_both_children_intact(campaign_roo
     # Simulate internal routing having already fired: an internally-scaffolded
     # child + the continuation_child record on the parent.
     _write_fresh_scaffold(runs_dir, "run_601_internal")
-    rpr.update_state(path=runs_dir / "run_600", continuation_child="run_601_internal",
-                      continuation_created_by="_route_refine", pending_stage="completed_refined")
+    rpr.update_state(
+        path=runs_dir / "run_600",
+        continuation_child="run_601_internal",
+        continuation_created_by="_route_refine",
+        pending_stage="completed_refined",
+    )
 
     briefs_dir = root / "briefs"
     briefs_dir.mkdir()
     _write_refinement_brief(briefs_dir / "test_refinement.yaml")
 
-    _save_queue_entries(campaign_root["queue_path"], [{
-        "id": "TEST_ENTRY", "brief_path": "briefs/irrelevant.yaml",
-        "status": "in_progress", "priority": 1, "run_ids": ["run_600"], "outcome": None,
-        "refinement_brief_path": "briefs/test_refinement.yaml",
-    }])
+    _save_queue_entries(
+        campaign_root["queue_path"],
+        [
+            {
+                "id": "TEST_ENTRY",
+                "brief_path": "briefs/irrelevant.yaml",
+                "status": "in_progress",
+                "priority": 1,
+                "run_ids": ["run_600"],
+                "outcome": None,
+                "refinement_brief_path": "briefs/test_refinement.yaml",
+            }
+        ],
+    )
     _write_campaign_state(campaign_root["campaign_state_path"], runs=["run_600"])
 
     keep_going = camp.process_once()
@@ -545,10 +689,19 @@ def test_refinement_brief_conflict_pauses_with_both_children_intact(campaign_roo
     assert keep_going is False, "a conflict must halt the campaign, not proceed"
     queue = camp._load_queue()
     entry = queue["queue"][0]
-    assert entry["status"] == "paused:refinement_brief_conflicts_with_existing_continuation"
+    assert (
+        entry["status"]
+        == "paused:refinement_brief_conflicts_with_existing_continuation"
+    )
     # Neither child was touched/created a second time.
     assert (runs_dir / "run_601_internal").exists()
-    assert not (runs_dir / "run_601").exists(), "no second child scaffolded for the conflicted entry"
+    assert not (runs_dir / "run_601").exists(), (
+        "no second child scaffolded for the conflicted entry"
+    )
     log_text = root.joinpath("campaign_log.md").read_text(encoding="utf-8")
-    assert "briefs/test_refinement.yaml" in log_text, "log must name the refinement_brief_path verbatim"
-    assert "run_601_internal" in log_text, "log must name the existing continuation_child verbatim"
+    assert "briefs/test_refinement.yaml" in log_text, (
+        "log must name the refinement_brief_path verbatim"
+    )
+    assert "run_601_internal" in log_text, (
+        "log must name the existing continuation_child verbatim"
+    )

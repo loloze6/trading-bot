@@ -70,8 +70,9 @@ DEFAULT_SYMBOL = "BTCUSD"
 DEFAULT_LOOKBACK_DAYS = 400
 
 
-def build_fetcher(symbol: str, start, end, data_dir: str,
-                  exchange_id: str = EXCHANGE_ID) -> FundingRateFetcher:
+def build_fetcher(
+    symbol: str, start, end, data_dir: str, exchange_id: str = EXCHANGE_ID
+) -> FundingRateFetcher:
     """Construct the parametrized fetcher for the funding venue.
 
     localStorage=True so the fetch loads the existing cache, merges, and writes
@@ -115,21 +116,25 @@ def capture(fetcher: FundingRateFetcher, symbol: str) -> dict:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Capture Kraken Futures funding rates into a local cache "
-                    "slot (append/merge, gap-guarded). Manual invocation only."
+        "slot (append/merge, gap-guarded). Manual invocation only."
     )
     parser.add_argument(
-        "--symbol", default=DEFAULT_SYMBOL,
+        "--symbol",
+        default=DEFAULT_SYMBOL,
         help=f"Store symbol (default {DEFAULT_SYMBOL}); resolves the perp market "
-             f"on {EXCHANGE_ID} and the cache slot krakenfutures_<symbol>_funding_1h.",
+        f"on {EXCHANGE_ID} and the cache slot krakenfutures_<symbol>_funding_1h.",
     )
     parser.add_argument(
-        "--lookback-days", type=int, default=DEFAULT_LOOKBACK_DAYS,
+        "--lookback-days",
+        type=int,
+        default=DEFAULT_LOOKBACK_DAYS,
         help=f"Days of history to request back from now (default "
-             f"{DEFAULT_LOOKBACK_DAYS}); the endpoint serves at most its "
-             f"~366-day rolling window regardless.",
+        f"{DEFAULT_LOOKBACK_DAYS}); the endpoint serves at most its "
+        f"~366-day rolling window regardless.",
     )
     parser.add_argument(
-        "--data-dir", default=str(PROJECT_ROOT / "local_data"),
+        "--data-dir",
+        default=str(PROJECT_ROOT / "local_data"),
         help="Cache directory (default trading-bot/local_data).",
     )
     args = parser.parse_args(argv)
@@ -141,18 +146,26 @@ def main(argv=None) -> int:
 
     fetcher = build_fetcher(args.symbol, start, end, args.data_dir)
     if fetcher.exchange is None:
-        print(f"[FAIL] {EXCHANGE_ID} exchange not initialised (ccxt missing or "
-              f"init error) — nothing captured.", file=sys.stderr)
+        print(
+            f"[FAIL] {EXCHANGE_ID} exchange not initialised (ccxt missing or "
+            f"init error) — nothing captured.",
+            file=sys.stderr,
+        )
         return 1
 
     summary = capture(fetcher, args.symbol)
     if summary["rows"] == 0:
-        print(f"[WARN] no funding rows captured for {args.symbol} on "
-              f"{EXCHANGE_ID} — cache unchanged.", file=sys.stderr)
+        print(
+            f"[WARN] no funding rows captured for {args.symbol} on "
+            f"{EXCHANGE_ID} — cache unchanged.",
+            file=sys.stderr,
+        )
         return 1
 
-    print(f"[OK] {summary['cache_key']}  rows={summary['rows']}  "
-          f"{summary['first']} -> {summary['last']}")
+    print(
+        f"[OK] {summary['cache_key']}  rows={summary['rows']}  "
+        f"{summary['first']} -> {summary['last']}"
+    )
     print(f"     dest: {summary['dest']} (gitignored; holdout-carrying)")
     return 0
 

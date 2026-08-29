@@ -126,8 +126,11 @@ def test_no_breach_writes_no_record(tmp_path):
     assert rec.check_disk() is True
     assert rec._guard_abort is False
     assert not rec._stop.is_set()
-    assert [r for r in load_records(tmp_path / JOURNAL_FILENAME)
-            if r["type"] == "DISK_GUARD_ABORT"] == []
+    assert [
+        r
+        for r in load_records(tmp_path / JOURNAL_FILENAME)
+        if r["type"] == "DISK_GUARD_ABORT"
+    ] == []
     rec.writer.close()
     rec.journal.close()
 
@@ -135,8 +138,11 @@ def test_no_breach_writes_no_record(tmp_path):
 def test_undeterminable_stops_the_recorder_too(tmp_path):
     rec = _recorder(tmp_path, free=None)
     assert rec.check_disk() is False
-    abort = [r for r in load_records(tmp_path / JOURNAL_FILENAME)
-             if r["type"] == "DISK_GUARD_ABORT"][0]
+    abort = [
+        r
+        for r in load_records(tmp_path / JOURNAL_FILENAME)
+        if r["type"] == "DISK_GUARD_ABORT"
+    ][0]
     assert abort["determinable"] is False
     assert abort["free_bytes"] is None
     rec.writer.close()
@@ -170,8 +176,16 @@ def test_the_guard_never_re_arms(tmp_path):
     assert rec.check_disk() is False
     rec.guard._probe = _probe(500 * GB)
     assert rec.check_disk() is False
-    assert len([r for r in load_records(tmp_path / JOURNAL_FILENAME)
-                if r["type"] == "DISK_GUARD_ABORT"]) == 1
+    assert (
+        len(
+            [
+                r
+                for r in load_records(tmp_path / JOURNAL_FILENAME)
+                if r["type"] == "DISK_GUARD_ABORT"
+            ]
+        )
+        == 1
+    )
     rec.writer.close()
     rec.journal.close()
 

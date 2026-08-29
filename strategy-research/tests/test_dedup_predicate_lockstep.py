@@ -56,6 +56,7 @@ def _norm(text: str) -> str:
     implementation was brittle."""
     return " ".join(text.split())
 
+
 def _row(trial_id, fh, source="backtest"):
     return {
         "trial_id": trial_id,
@@ -124,7 +125,9 @@ def test_the_real_pipeline_site_uses_the_unified_predicate():
     back. Crude, deliberately -- it is the cheapest control that actually reads
     the shipped file.
     """
-    src = _norm((_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8"))
+    src = _norm(
+        (_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
+    )
     block_start = src.index("deduped_trials = []")
     block = src[block_start : block_start + 1600]
 
@@ -192,7 +195,9 @@ def test_sample_stdev_would_be_caught():
 def test_the_real_pipeline_site_uses_the_population_denominator():
     """Guards the shipped file, not a transcription -- same reasoning as the
     dedup guard above."""
-    src = _norm((_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8"))
+    src = _norm(
+        (_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
+    )
     idx = src.index("mu_sr = statistics.mean(sharpe_values)")
     block = src[idx : idx + 1200]
     assert (
@@ -257,7 +262,9 @@ def test_library_excluded_counts_carry_the_pipeline_key_set():
 def test_the_real_pipeline_site_still_emits_the_same_key_set():
     """Guards the shipped pipeline file, so the agreement above cannot be
     satisfied by the library alone drifting to match a stale expectation."""
-    src = _norm((_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8"))
+    src = _norm(
+        (_SR / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
+    )
     idx = src.index("excluded = {")
     block = src[idx : idx + 300]
     for key in _PIPELINE_EXCLUDED_KEYS:

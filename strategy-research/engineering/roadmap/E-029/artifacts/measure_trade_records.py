@@ -7,6 +7,7 @@ nothing and re-runs nothing.
 Usage:  python engineering/roadmap/E-029/artifacts/measure_trade_records.py
         (cwd = strategy-research/)
 """
+
 import collections
 import glob
 import json
@@ -46,7 +47,11 @@ def main():
     print("F7 -- does exit_reason separate outcomes? (if it did not at all, low")
     print("      cardinality would still be tolerable; it does, for one category)")
     for reason in counts:
-        rets = [t["net_portfolio_return_pct"] for t in trades if t.get("exit_reason") == reason]
+        rets = [
+            t["net_portfolio_return_pct"]
+            for t in trades
+            if t.get("exit_reason") == reason
+        ]
         holds = [t["holding_bars"] for t in trades if t.get("exit_reason") == reason]
         print(
             f"  {reason:14s} n={len(rets):5d} median_ret={st.median(rets):+.4f}% "

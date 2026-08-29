@@ -34,9 +34,9 @@ sys.path.insert(0, str(ROOT / "workflow"))
 import run_phase1_research as rpr  # noqa: E402
 
 POLICY = ROOT / "config" / "campaign_data_policy.yaml"
-HOLDOUT_START, HOLDOUT_END = yaml.safe_load(
-    POLICY.read_text(encoding="utf-8")
-)["holdout_range"]
+HOLDOUT_START, HOLDOUT_END = yaml.safe_load(POLICY.read_text(encoding="utf-8"))[
+    "holdout_range"
+]
 
 # One day before the seal, and the month it closes -- derived, never spelled out,
 # so this file carries no literal sealed-window date of its own.

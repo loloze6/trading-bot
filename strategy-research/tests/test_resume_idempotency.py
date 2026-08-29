@@ -24,6 +24,7 @@ the run_id idempotency guard; the a-priori-power pre-flight site
 (run_phase1_research.py:4874, in run_loop) records unconditionally. Pinned by
 test_trial_accounting_characterization.py::test_h3_a86_preflight_records_unguarded_duplicate.
 """
+
 import sys
 from pathlib import Path
 
@@ -64,7 +65,11 @@ def test_write_kb_findings_entry_is_idempotent_on_resume(temp_kb, tmp_path):
 
     rpr._write_kb_findings_entry(run_dir, "run_999", _INTERP)
     kb_after_first = yaml.safe_load(temp_kb.read_text(encoding="utf-8"))
-    entry = next(f for f in kb_after_first["findings"] if f["hypothesis_id"] == "TEST_HYPOTHESIS_V1")
+    entry = next(
+        f
+        for f in kb_after_first["findings"]
+        if f["hypothesis_id"] == "TEST_HYPOTHESIS_V1"
+    )
     assert entry["evidence_runs"] == ["run_999"]
     assert entry["evidence_count"] == 1
 
@@ -72,19 +77,36 @@ def test_write_kb_findings_entry_is_idempotent_on_resume(temp_kb, tmp_path):
     # valid), but determine_post_verdict_route still runs _write_kb_findings_entry again.
     rpr._write_kb_findings_entry(run_dir, "run_999", _INTERP)
     kb_after_second = yaml.safe_load(temp_kb.read_text(encoding="utf-8"))
-    entries = [f for f in kb_after_second["findings"] if f["hypothesis_id"] == "TEST_HYPOTHESIS_V1"]
+    entries = [
+        f
+        for f in kb_after_second["findings"]
+        if f["hypothesis_id"] == "TEST_HYPOTHESIS_V1"
+    ]
 
     assert len(entries) == 1, "resume must not create a second findings entry"
-    assert entries[0]["evidence_runs"] == ["run_999"], "resume must not duplicate the run_id"
+    assert entries[0]["evidence_runs"] == ["run_999"], (
+        "resume must not duplicate the run_id"
+    )
     assert entries[0]["evidence_count"] == 1, "resume must not double-count evidence"
 
 
 def test_recompute_kb_views_is_deterministic(temp_kb):
     kb = {
         "findings": [
-            {"id": "a", "hypothesis_id": "H1", "outcome": "no_edge_observed",
-             "evidence_count": 1, "exhausted": True, "exhausted_basis": "analytic"},
-            {"id": "b", "hypothesis_id": "H2", "outcome": "inconclusive", "evidence_count": 1},
+            {
+                "id": "a",
+                "hypothesis_id": "H1",
+                "outcome": "no_edge_observed",
+                "evidence_count": 1,
+                "exhausted": True,
+                "exhausted_basis": "analytic",
+            },
+            {
+                "id": "b",
+                "hypothesis_id": "H2",
+                "outcome": "inconclusive",
+                "evidence_count": 1,
+            },
         ]
     }
     rpr._recompute_kb_views(kb)
@@ -103,12 +125,18 @@ def test_trial_sharpes_guard_pattern_skips_existing_trial_id():
     """Direct check of the boolean guard now used at all three record-trial call sites
     (the two A8.6 bypass paths, and the normal signal_prescreen path after this fix)."""
     campaign_with_existing_trial = {
-        "trial_sharpes": [{"trial_id": "run_043", "source": "prescreen", "route": "kill_no_ic"}]
+        "trial_sharpes": [
+            {"trial_id": "run_043", "source": "prescreen", "route": "kill_no_ic"}
+        ]
     }
-    campaign_without = {"trial_sharpes": [{"trial_id": "run_041", "source": "prescreen_backfill"}]}
+    campaign_without = {
+        "trial_sharpes": [{"trial_id": "run_041", "source": "prescreen_backfill"}]
+    }
 
     def would_skip(campaign, run_id):
-        return any(t.get("trial_id") == run_id for t in campaign.get("trial_sharpes", []))
+        return any(
+            t.get("trial_id") == run_id for t in campaign.get("trial_sharpes", [])
+        )
 
     assert would_skip(campaign_with_existing_trial, "run_043") is True, (
         "resuming run_043 a second time must not re-append its trial"

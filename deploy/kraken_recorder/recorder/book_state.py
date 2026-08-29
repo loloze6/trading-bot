@@ -76,8 +76,16 @@ class BookState:
     the point (same argument as `kraken_crc.checksum_payload`).
     """
 
-    __slots__ = ("depth", "bids", "asks", "checksum", "timestamp",
-                 "applied", "applied_since_emit", "have_snapshot")
+    __slots__ = (
+        "depth",
+        "bids",
+        "asks",
+        "checksum",
+        "timestamp",
+        "applied",
+        "applied_since_emit",
+        "have_snapshot",
+    )
 
     def __init__(self, depth: int = 10):
         self.depth = depth

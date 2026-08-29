@@ -21,6 +21,7 @@ proves:
 IMPORTANT: this is a SLOW INTEGRATION TEST. Run explicitly:
   pytest tests/test_commission_rate_param.py -v -m slow
 """
+
 import json
 import sys
 from pathlib import Path
@@ -40,7 +41,9 @@ _CACHE_SKIP = cache_skip_reason(
 )
 pytestmark = [
     pytest.mark.slow,
-    pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),
+    pytest.mark.skipif(
+        _CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"
+    ),
 ]
 
 

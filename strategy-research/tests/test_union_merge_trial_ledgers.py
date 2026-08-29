@@ -26,6 +26,7 @@ import deflate_sharpe as ds  # noqa: E402
 # Row factories -- fresh objects each call so a and b never share references
 # ---------------------------------------------------------------------------
 
+
 def _counted(trial_id, sharpe, fh):
     return {
         "trial_id": trial_id,
@@ -59,6 +60,7 @@ def _shared_base():
 # ---------------------------------------------------------------------------
 # Test 1 -- two divergent ledgers union into base-once + all 4 novel rows
 # ---------------------------------------------------------------------------
+
 
 def test_union_merge_two_divergent_ledgers():
     a = [
@@ -99,6 +101,7 @@ def test_union_merge_two_divergent_ledgers():
 # Test 2 -- a genuinely divergent shared row refuses
 # ---------------------------------------------------------------------------
 
+
 def test_union_merge_refuses_true_collision():
     a = [_counted("run_045", 0.3, "h_045b")]
     b = [_counted("run_045", 0.9, "h_045b_alt")]
@@ -114,6 +117,7 @@ def test_union_merge_refuses_true_collision():
 # ---------------------------------------------------------------------------
 # Test 3 -- append-only; inputs untouched; no aliasing
 # ---------------------------------------------------------------------------
+
 
 def test_union_merge_is_append_only():
     a = [*_shared_base(), _counted("run_045", 0.3, "h_045b")]
@@ -141,6 +145,7 @@ def test_union_merge_is_append_only():
 # Test 4 -- same trial_id, different source, straddling both sides: keep both
 # ---------------------------------------------------------------------------
 
+
 def test_union_merge_keeps_second_source_row_for_same_trial_id():
     a = [_prescreen("run_d_007", "h_d007p")]
     b = [_counted("run_d_007", 0.42, "h_d007b")]
@@ -156,6 +161,7 @@ def test_union_merge_keeps_second_source_row_for_same_trial_id():
 # Test 5 -- identical rows on both sides collapse to one, no refuse
 # ---------------------------------------------------------------------------
 
+
 def test_union_merge_tolerates_shared_ancestor_rows():
     a = [_counted("run_030", -0.6375, "h_030")]
     b = [_counted("run_030", -0.6375, "h_030")]
@@ -169,6 +175,7 @@ def test_union_merge_tolerates_shared_ancestor_rows():
 # ---------------------------------------------------------------------------
 # Test 6 -- byte-identical shared row carrying NaN is not falsely refused
 # ---------------------------------------------------------------------------
+
 
 def test_union_merge_shared_row_with_nan_sharpe_not_false_refused():
     row_a = _counted("run_030", float("nan"), "h_030")
@@ -185,6 +192,7 @@ def test_union_merge_shared_row_with_nan_sharpe_not_false_refused():
 # ---------------------------------------------------------------------------
 # Test 7 -- order is a's rows (a-order) then b's novel rows (b-order)
 # ---------------------------------------------------------------------------
+
 
 def test_union_merge_preserves_order_a_then_b():
     a = [

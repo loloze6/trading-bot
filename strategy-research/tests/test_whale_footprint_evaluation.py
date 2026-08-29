@@ -5,6 +5,7 @@ Every case here is a SYNTHETIC, planted-answer fixture. Nothing in this file
 reads trading-bot/local_data/recorded_reserved/ — the harness is built and
 tested here but deliberately never run against the real capture.
 """
+
 import math
 import sys
 from pathlib import Path
@@ -21,11 +22,19 @@ from whale_footprint_evaluation import evaluate, load_prereg  # noqa: E402
 FEATURES = ["f_signal", "f_noise_a", "f_noise_b"]
 
 
-def _prereg(required_n=50, coverage_floor=0.05, alpha_corrected=0.0125, fires_once=True,
-            economically_untradeable=False, required_ic=None):
+def _prereg(
+    required_n=50,
+    coverage_floor=0.05,
+    alpha_corrected=0.0125,
+    fires_once=True,
+    economically_untradeable=False,
+    required_ic=None,
+):
     return {
         "features": {"names": list(FEATURES)},
-        "test_statistic": {"multiple_comparison_correction": {"alpha_corrected": alpha_corrected}},
+        "test_statistic": {
+            "multiple_comparison_correction": {"alpha_corrected": alpha_corrected}
+        },
         "minimum_n_gate": {"required_attested_bars_per_pair": required_n},
         "required_coverage_floor": {"floor": coverage_floor},
         "single_use": {"fires_exactly_once": fires_once},
@@ -37,8 +46,9 @@ def _prereg(required_n=50, coverage_floor=0.05, alpha_corrected=0.0125, fires_on
     }
 
 
-def _panel(n_pairs, n_bars, *, attested_fraction=1.0, seed=0,
-           signal_strength=0.9, flip_pairs=0):
+def _panel(
+    n_pairs, n_bars, *, attested_fraction=1.0, seed=0, signal_strength=0.9, flip_pairs=0
+):
     """
     Builds `n_pairs` synthetic panels of `n_bars` rows each.
 
@@ -58,10 +68,15 @@ def _panel(n_pairs, n_bars, *, attested_fraction=1.0, seed=0,
         f_noise_a = rng.normal(size=n_bars)
         f_noise_b = rng.normal(size=n_bars)
         attested = rng.uniform(size=n_bars) < attested_fraction
-        panels[f"PAIR{i}"] = pd.DataFrame({
-            "f_signal": f_signal, "f_noise_a": f_noise_a, "f_noise_b": f_noise_b,
-            "target": target, "attested": attested,
-        })
+        panels[f"PAIR{i}"] = pd.DataFrame(
+            {
+                "f_signal": f_signal,
+                "f_noise_a": f_noise_a,
+                "f_noise_b": f_noise_b,
+                "target": target,
+                "attested": attested,
+            }
+        )
     return panels
 
 
@@ -74,7 +89,9 @@ def test_pass_when_a_feature_clears_significance_with_consistent_sign():
     result = evaluate(prereg, panels)
     assert result.status == "VERDICT"
     assert result.verdict == "PASS"
-    f_signal = next(f for f in result.detail["per_feature"] if f["feature"] == "f_signal")
+    f_signal = next(
+        f for f in result.detail["per_feature"] if f["feature"] == "f_signal"
+    )
     assert f_signal["verdict"] == "PASS"
     assert f_signal["sign_consistency"]["holds"] is True
 
@@ -82,8 +99,9 @@ def test_pass_when_a_feature_clears_significance_with_consistent_sign():
 def test_null_when_no_feature_clears_significance():
     prereg = _prereg(required_n=50, coverage_floor=0.05)
     # signal_strength=0 -> f_signal degenerates to noise too
-    panels = _panel(n_pairs=10, n_bars=200, attested_fraction=1.0,
-                     signal_strength=0.0, seed=2)
+    panels = _panel(
+        n_pairs=10, n_bars=200, attested_fraction=1.0, signal_strength=0.0, seed=2
+    )
     result = evaluate(prereg, panels)
     assert result.status == "VERDICT"
     assert result.verdict == "NULL"
@@ -95,11 +113,19 @@ def test_unstable_when_a_feature_clears_but_sign_flips_across_pairs():
     # 10 pairs, 3 flipped (30% disagreement) -> pooled correlation stays
     # significant (majority direction, large N) but per-pair agreement (70%)
     # falls below the 80% sign_consistency floor.
-    panels = _panel(n_pairs=10, n_bars=300, attested_fraction=1.0,
-                     flip_pairs=3, signal_strength=0.9, seed=3)
+    panels = _panel(
+        n_pairs=10,
+        n_bars=300,
+        attested_fraction=1.0,
+        flip_pairs=3,
+        signal_strength=0.9,
+        seed=3,
+    )
     result = evaluate(prereg, panels)
     assert result.status == "VERDICT"
-    f_signal = next(f for f in result.detail["per_feature"] if f["feature"] == "f_signal")
+    f_signal = next(
+        f for f in result.detail["per_feature"] if f["feature"] == "f_signal"
+    )
     assert f_signal["verdict"] == "UNSTABLE", (
         f"expected f_signal UNSTABLE (sign flips on 3/10 pairs), got {f_signal!r}"
     )
@@ -123,8 +149,12 @@ def test_blocked_by_economic_infeasibility_before_any_panel_is_touched():
     threshold. Checked ahead of the coverage floor and minimum-N: pass a
     panel that would otherwise clear both, to prove this gate is what stops
     it, not a downstream one."""
-    prereg = _prereg(required_n=1, coverage_floor=0.0,
-                      economically_untradeable=True, required_ic=2.4667)
+    prereg = _prereg(
+        required_n=1,
+        coverage_floor=0.0,
+        economically_untradeable=True,
+        required_ic=2.4667,
+    )
     panels = _panel(n_pairs=10, n_bars=200, attested_fraction=1.0, seed=8)
     result = evaluate(prereg, panels)
     assert result.status == "BLOCKED_ECONOMIC_INFEASIBILITY"
@@ -150,9 +180,14 @@ def test_economic_gate_absent_or_false_does_not_block():
 
 def test_economic_infeasibility_block_does_not_consume_single_use(tmp_path):
     prereg_path = tmp_path / "prereg.yaml"
-    prereg = _prereg(required_n=1, coverage_floor=0.0,
-                      economically_untradeable=True, required_ic=2.4667)
+    prereg = _prereg(
+        required_n=1,
+        coverage_floor=0.0,
+        economically_untradeable=True,
+        required_ic=2.4667,
+    )
     import yaml
+
     prereg_path.write_text(yaml.safe_dump(prereg), encoding="utf-8")
     loaded = load_prereg(prereg_path)
 
@@ -160,7 +195,9 @@ def test_economic_infeasibility_block_does_not_consume_single_use(tmp_path):
     blocked = evaluate(loaded, panels, prereg_path=prereg_path, run_id="run_a")
     assert blocked.status == "BLOCKED_ECONOMIC_INFEASIBILITY"
 
-    loaded["economic_ic_threshold"]["economically_untradeable_at_registered_frequency"] = False
+    loaded["economic_ic_threshold"][
+        "economically_untradeable_at_registered_frequency"
+    ] = False
     ok = evaluate(loaded, panels, prereg_path=prereg_path, run_id="run_b")
     assert ok.status == "VERDICT"
 
@@ -177,6 +214,7 @@ def test_blocked_by_single_use_after_first_execution(tmp_path):
     prereg_path = tmp_path / "prereg.yaml"
     prereg = _prereg(required_n=50, coverage_floor=0.05)
     import yaml
+
     prereg_path.write_text(yaml.safe_dump(prereg), encoding="utf-8")
 
     panels = _panel(n_pairs=10, n_bars=200, attested_fraction=1.0, seed=6)
@@ -196,6 +234,7 @@ def test_blocked_run_does_not_consume_single_use(tmp_path):
     prereg_path = tmp_path / "prereg.yaml"
     prereg = _prereg(required_n=10_000, coverage_floor=0.05)  # forces BLOCKED_MIN_N
     import yaml
+
     prereg_path.write_text(yaml.safe_dump(prereg), encoding="utf-8")
     loaded = load_prereg(prereg_path)
 
@@ -211,11 +250,15 @@ def test_blocked_run_does_not_consume_single_use(tmp_path):
 
 def _tiny_whale_panels(n_pairs=3, n_bars=5):
     return {
-        f"PAIR{i}": pd.DataFrame({
-            "whale_lt_imbalance": np.zeros(n_bars), "whale_cvd_delta": np.zeros(n_bars),
-            "whale_size_shift": np.zeros(n_bars), "target": np.zeros(n_bars),
-            "attested": [True] * n_bars,
-        })
+        f"PAIR{i}": pd.DataFrame(
+            {
+                "whale_lt_imbalance": np.zeros(n_bars),
+                "whale_cvd_delta": np.zeros(n_bars),
+                "whale_size_shift": np.zeros(n_bars),
+                "target": np.zeros(n_bars),
+                "attested": [True] * n_bars,
+            }
+        )
         for i in range(n_pairs)
     }
 
@@ -226,11 +269,14 @@ def test_the_real_v1_pre_registration_loads_and_wires_into_the_harness():
     note). Not a real evaluation (the synthetic panel below is far too small
     to clear its minimum_n_gate, which is the point: it proves the wiring
     without ever approaching real capture data)."""
-    real_path = (Path(__file__).parent.parent / "protocols" /
-                 "prereg_whale_footprint_v1.yaml")
+    real_path = (
+        Path(__file__).parent.parent / "protocols" / "prereg_whale_footprint_v1.yaml"
+    )
     prereg = load_prereg(real_path)
     assert prereg["features"]["names"] == [
-        "whale_lt_imbalance", "whale_cvd_delta", "whale_size_shift",
+        "whale_lt_imbalance",
+        "whale_cvd_delta",
+        "whale_size_shift",
     ]
     result = evaluate(prereg, _tiny_whale_panels())
     assert result.status == "BLOCKED_MIN_N", (
@@ -257,11 +303,14 @@ def test_the_real_v2_pre_registration_loads_and_refuses_below_the_gate():
     The economic gate MECHANISM is unchanged and still covered -- see the two
     tests above that drive it with a synthetic prereg whose flag is true.
     Not a real evaluation; nothing here reads recorded_reserved/."""
-    real_path = (Path(__file__).parent.parent / "protocols" /
-                 "prereg_whale_footprint_v2.yaml")
+    real_path = (
+        Path(__file__).parent.parent / "protocols" / "prereg_whale_footprint_v2.yaml"
+    )
     prereg = load_prereg(real_path)
     assert prereg["features"]["names"] == [
-        "whale_lt_imbalance", "whale_cvd_delta", "whale_size_shift",
+        "whale_lt_imbalance",
+        "whale_cvd_delta",
+        "whale_size_shift",
     ]
     assert prereg["metadata"]["supersedes"] == "prereg_whale_footprint_v1.yaml"
     econ = prereg["economic_ic_threshold"]
@@ -288,8 +337,9 @@ def test_w11_amendment_invariants():
     written down, so a later amendment cannot quietly loosen one of them while
     editing the derivation around it.
     """
-    real_path = (Path(__file__).parent.parent / "protocols" /
-                 "prereg_whale_footprint_v2.yaml")
+    real_path = (
+        Path(__file__).parent.parent / "protocols" / "prereg_whale_footprint_v2.yaml"
+    )
     prereg = load_prereg(real_path)
     econ = prereg["economic_ic_threshold"]
     assumptions = econ["assumptions_stated"]
@@ -357,10 +407,14 @@ def test_r3_block_adjusted_significance_disagrees_with_raw_scipy_pvalue():
     # signal_strength=0.02 against noise scale 0.4 (see _panel) gives a real
     # but weak pooled IC; n_pairs x n_bars is large enough that raw-p treats
     # it as overwhelming evidence purely from bar count.
-    panels = _panel(n_pairs=20, n_bars=1400, attested_fraction=1.0,
-                     signal_strength=0.02, seed=1)
+    panels = _panel(
+        n_pairs=20, n_bars=1400, attested_fraction=1.0, signal_strength=0.02, seed=1
+    )
     pooled = pd.concat(
-        [df.loc[df["attested"].astype(bool), ["f_signal", "target"]] for df in panels.values()],
+        [
+            df.loc[df["attested"].astype(bool), ["f_signal", "target"]]
+            for df in panels.values()
+        ],
         ignore_index=True,
     )
     n_pooled = len(pooled)
@@ -376,7 +430,9 @@ def test_r3_block_adjusted_significance_disagrees_with_raw_scipy_pvalue():
     prereg = _prereg(required_n=10, coverage_floor=0.0, alpha_corrected=alpha_corrected)
     result = evaluate(prereg, panels)
     assert result.status == "VERDICT"
-    f_signal = next(f for f in result.detail["per_feature"] if f["feature"] == "f_signal")
+    f_signal = next(
+        f for f in result.detail["per_feature"] if f["feature"] == "f_signal"
+    )
 
     # "AFTER" behaviour: the harness's own block-adjusted p-value, on the
     # EXACT SAME pooled data, is orders of magnitude larger and does NOT
@@ -408,16 +464,23 @@ def test_null_scope_is_registered_and_bounded():
     asserted: the scope section exists, and the condition is still the plain
     alpha_corrected test.
     """
-    real_path = (Path(__file__).parent.parent / "protocols" /
-                 "prereg_whale_footprint_v2.yaml")
+    real_path = (
+        Path(__file__).parent.parent / "protocols" / "prereg_whale_footprint_v2.yaml"
+    )
     prereg = load_prereg(real_path)
     verdict = prereg["verdict"]
     assert "null_scope" in verdict, "NULL's scope must be registered, not implied"
     scope = verdict["null_scope"]
-    for key in ("what_null_means", "it_is_not_a_statement_that",
-                "what_null_routes_to", "what_null_does_not_authorize"):
+    for key in (
+        "what_null_means",
+        "it_is_not_a_statement_that",
+        "what_null_routes_to",
+        "what_null_does_not_authorize",
+    ):
         assert key in scope and scope[key].strip(), f"null_scope.{key} is missing"
     # the threshold itself is untouched
     assert "alpha_corrected" in verdict["mapping"]["NULL"]
-    assert prereg["test_statistic"]["multiple_comparison_correction"][
-        "alpha_corrected"] == 0.0125
+    assert (
+        prereg["test_statistic"]["multiple_comparison_correction"]["alpha_corrected"]
+        == 0.0125
+    )

@@ -19,6 +19,7 @@ Produces, on stdout, the exact counts cited in s1_idea_generation.md:
   4. Whether run_claude_worker's tool grant (ClaudeAgentOptions) permits any
      network/browse tool today -- read directly from run_phase1_research.py.
 """
+
 from __future__ import annotations
 
 import re
@@ -44,10 +45,21 @@ def measure_stage_inputs() -> None:
     # stages the two AGREE (research_brief_to_hypothesis.yaml lists the same
     # three required_inputs and no campaign history), so S1's closed-book
     # conclusion holds; it was simply read from the wrong source.
-    _archived = (ROOT / "engineering" / "roadmap" / "E-033" / "artifacts"
-                 / "stages_yaml_ARCHIVED_not_authoritative.yaml")
+    _archived = (
+        ROOT
+        / "engineering"
+        / "roadmap"
+        / "E-033"
+        / "artifacts"
+        / "stages_yaml_ARCHIVED_not_authoritative.yaml"
+    )
     stages = yaml.safe_load(_archived.read_text(encoding="utf-8"))
-    for name in ("hypothesis_generation", "innovation_expansion", "refinement_planner", "campaign_review"):
+    for name in (
+        "hypothesis_generation",
+        "innovation_expansion",
+        "refinement_planner",
+        "campaign_review",
+    ):
         entry = stages["stages"][name]
         req = entry.get("required_inputs", [])
         print(f"  {name}:")
@@ -61,7 +73,9 @@ def measure_stage_inputs() -> None:
 
 def measure_campaign_state() -> None:
     section("2. campaign_state.yaml exclusion-context fields")
-    cs = yaml.safe_load((ROOT / "campaign_record" / "campaign_state.yaml").read_text(encoding="utf-8"))
+    cs = yaml.safe_load(
+        (ROOT / "campaign_record" / "campaign_state.yaml").read_text(encoding="utf-8")
+    )
     ff = cs.get("failed_families", [])
     rpd = cs.get("recent_parameter_dimensions_by_family", {})
     it = cs.get("instruments_tried", [])
@@ -70,17 +84,23 @@ def measure_campaign_state() -> None:
     print(f"  failed_families: {len(ff)} entries (denominator: this list)")
     for f in ff:
         print(f"    - {f if isinstance(f, str) else f.get('name')}")
-    print(f"  recent_parameter_dimensions_by_family: {len(rpd)} families tracked, "
-          f"{sum(1 for v in rpd.values() if v)} with a non-empty dimension list")
+    print(
+        f"  recent_parameter_dimensions_by_family: {len(rpd)} families tracked, "
+        f"{sum(1 for v in rpd.values() if v)} with a non-empty dimension list"
+    )
     print(f"  instruments_tried: {len(it)} -> {it}")
     print(f"  timeframes_tried: {len(tt)} -> {tt}")
-    print(f"  components_built: {len(cb)} (empty list means zero, denominator: field itself)")
+    print(
+        f"  components_built: {len(cb)} (empty list means zero, denominator: field itself)"
+    )
 
 
 def measure_funding_family_timeframes() -> None:
     section("3. Staleness cross-check: timeframe actually used, PER FAMILY")
     runs_dir = ROOT / "runs"
-    run_dirs = sorted(d for d in runs_dir.iterdir() if d.is_dir() and d.name.startswith("run_"))
+    run_dirs = sorted(
+        d for d in runs_dir.iterdir() if d.is_dir() and d.name.startswith("run_")
+    )
     print(f"  run directories scanned: {len(run_dirs)}")
 
     families = {
@@ -111,17 +131,23 @@ def measure_funding_family_timeframes() -> None:
                 by_family_runs[fam].append(f"{d.name}:{tf}")
 
     for fam in families:
-        print(f"  family~='{fam}': timeframes actually seen = {sorted(by_family_timeframe[fam])}")
+        print(
+            f"  family~='{fam}': timeframes actually seen = {sorted(by_family_timeframe[fam])}"
+        )
         print(f"    runs: {by_family_runs[fam]}")
 
-    cs = yaml.safe_load((ROOT / "campaign_record" / "campaign_state.yaml").read_text(encoding="utf-8"))
+    cs = yaml.safe_load(
+        (ROOT / "campaign_record" / "campaign_state.yaml").read_text(encoding="utf-8")
+    )
     tt = set(cs.get("timeframes_tried", []))
     print(f"\n  campaign_state.yaml timeframes_tried (family-blind): {sorted(tt)}")
     funding_tf = by_family_timeframe["funding"]
     print(f"  '4h' in global timeframes_tried: {'4h' in tt}")
     print(f"  '4h' ever used by a funding-family run: {'4h' in funding_tf}")
     if "4h" in tt and "4h" not in funding_tf:
-        print("  ==> CONFIRMED TRAP: a gate keyed on the global list alone would refuse")
+        print(
+            "  ==> CONFIRMED TRAP: a gate keyed on the global list alone would refuse"
+        )
         print("      a funding-family 4h proposal even though this (family, timeframe)")
         print("      pair has zero prior runs -- the '4h' entry in timeframes_tried")
         print("      comes entirely from the unrelated keltner family.")
@@ -129,7 +155,9 @@ def measure_funding_family_timeframes() -> None:
 
 def measure_tool_grant() -> None:
     section("4. Tool grant for stage agents (workflow/run_phase1_research.py)")
-    src = (ROOT / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8", errors="replace")
+    src = (ROOT / "workflow" / "run_phase1_research.py").read_text(
+        encoding="utf-8", errors="replace"
+    )
     for m in re.finditer(r"ClaudeAgentOptions\(([^)]*)\)", src):
         print(f"  ClaudeAgentOptions({m.group(1)})")
     if "allowed_tools=[]" in src:

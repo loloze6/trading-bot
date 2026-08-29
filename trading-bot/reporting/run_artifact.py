@@ -23,6 +23,7 @@ from performance.signal_statistics import pearson_correlation, t_test_pvalue
 # Directory creation
 # ---------------------------------------------------------------------------
 
+
 def new_run_dir(results_root: str, config: dict, *, runs_dir: str = None) -> Path:
     canonical = json.dumps(config, sort_keys=True, separators=(",", ":"))
     config_hash = sha256(canonical.encode()).hexdigest()[:8]
@@ -36,6 +37,7 @@ def new_run_dir(results_root: str, config: dict, *, runs_dir: str = None) -> Pat
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def data_sha256(df: pd.DataFrame) -> str:
     hash_bytes = pd.util.hash_pandas_object(
@@ -51,9 +53,13 @@ def _get_git_sha() -> str:
         # results/runs/ evidence dirs, so an untracked-inclusive check would stamp every
         # run dirty and the marker would stop discriminating. A modified TRACKED file is
         # the signal that the tree differs from the commit this manifest names.
-        dirty = subprocess.check_output(
-            ["git", "status", "--porcelain", "--untracked-files=no"]
-        ).decode().strip()
+        dirty = (
+            subprocess.check_output(
+                ["git", "status", "--porcelain", "--untracked-files=no"]
+            )
+            .decode()
+            .strip()
+        )
         return f"{sha}-dirty" if dirty else sha
     except Exception:
         return "unknown"
@@ -62,6 +68,7 @@ def _get_git_sha() -> str:
 # ---------------------------------------------------------------------------
 # Manifest
 # ---------------------------------------------------------------------------
+
 
 def write_manifest(
     run_dir: Path,
@@ -103,6 +110,7 @@ def write_manifest(
 # Trades
 # ---------------------------------------------------------------------------
 
+
 def write_trades_json(run_dir: Path, completed_trades: list) -> None:
     records = []
     for t in completed_trades:
@@ -116,6 +124,7 @@ def write_trades_json(run_dir: Path, completed_trades: list) -> None:
 # ---------------------------------------------------------------------------
 # Metrics
 # ---------------------------------------------------------------------------
+
 
 def write_metrics_json(
     run_dir: Path,
@@ -149,6 +158,7 @@ def write_metrics_json(
 # Bars CSV
 # ---------------------------------------------------------------------------
 
+
 def write_bars_csv(run_dir: Path, state_df: pd.DataFrame) -> None:
     state_df.round(6).to_csv(run_dir / "bars.csv", index=False)
 
@@ -157,26 +167,39 @@ def write_bars_csv(run_dir: Path, state_df: pd.DataFrame) -> None:
 # Forecast distribution
 # ---------------------------------------------------------------------------
 
+
 def write_forecast_distribution(run_dir: Path, bars_df: pd.DataFrame) -> None:
     if "forecast" not in bars_df.columns or "regime" not in bars_df.columns:
         return
     bins = [-np.inf, -15, -10, -5, 0, 5, 10, 15, np.inf]
-    bin_labels = ["lt_-15", "-15_-10", "-10_-5", "-5_0", "0_5", "5_10", "10_15", "gt_15"]
+    bin_labels = [
+        "lt_-15",
+        "-15_-10",
+        "-10_-5",
+        "-5_0",
+        "0_5",
+        "5_10",
+        "10_15",
+        "gt_15",
+    ]
     records = []
     for regime, group in bars_df.groupby("regime"):
         counts = pd.cut(group["forecast"], bins=bins, labels=bin_labels).value_counts()
         for bl in bin_labels:
-            records.append({
-                "regime": regime,
-                "bin": bl,
-                "count_final_forecast": int(counts.get(bl, 0)),
-            })
+            records.append(
+                {
+                    "regime": regime,
+                    "bin": bl,
+                    "count_final_forecast": int(counts.get(bl, 0)),
+                }
+            )
     pd.DataFrame(records).to_csv(run_dir / "forecast_distribution.csv", index=False)
 
 
 # ---------------------------------------------------------------------------
 # Metrics section builders
 # ---------------------------------------------------------------------------
+
 
 def build_core(
     metrics_dict: dict,
@@ -193,9 +216,11 @@ def build_core(
     # A1: gross/net PnL + cost drag
     # gross_pnl: pre-commission PnL; net_pnl: post-commission
     gross_pnl = sum(t.profit_loss_absolute for t in completed_trades)
-    net_pnl   = sum(t.net_profit_loss_absolute for t in completed_trades)
+    net_pnl = sum(t.net_profit_loss_absolute for t in completed_trades)
     cost_drag_pct = (
-        round((gross_pnl - net_pnl) / abs(gross_pnl) * 100, 4) if gross_pnl != 0 else None
+        round((gross_pnl - net_pnl) / abs(gross_pnl) * 100, 4)
+        if gross_pnl != 0
+        else None
     )
 
     # A2: forecast→return correlation
@@ -210,9 +235,13 @@ def build_core(
     # correlation. See that module's docstring for the incident this fixes: the
     # prior hardcoded corr=0.0 fallback produced a p=1.0 "confirmed no-edge"
     # result that was actually just an artifact of the signal's shape.
-    forecast_return_corr       = None
+    forecast_return_corr = None
     forecast_return_corr_pvalue = None
-    if bars_df is not None and "forecast" in bars_df.columns and "close" in bars_df.columns:
+    if (
+        bars_df is not None
+        and "forecast" in bars_df.columns
+        and "close" in bars_df.columns
+    ):
         df = bars_df[["forecast", "close"]].copy()
         df["forward_return"] = df["close"].shift(-1) / df["close"] - 1
         df = df.dropna()
@@ -223,34 +252,46 @@ def build_core(
             corr = pearson_correlation(x, y)
             forecast_return_corr = round(corr, 6) if corr is not None else None
             pvalue = t_test_pvalue(corr, len(x))
-            forecast_return_corr_pvalue = round(pvalue, 6) if pvalue is not None else None
+            forecast_return_corr_pvalue = (
+                round(pvalue, 6) if pvalue is not None else None
+            )
 
     # Avg trade duration in bars (derived from trade timestamps + bar interval)
     avg_trade_duration_bars = None
-    if n > 0 and bars_df is not None and "timestamp" in bars_df.columns and len(bars_df) >= 2:
+    if (
+        n > 0
+        and bars_df is not None
+        and "timestamp" in bars_df.columns
+        and len(bars_df) >= 2
+    ):
         ts_diffs = pd.Series(bars_df["timestamp"].values).diff().dropna()
         if len(ts_diffs) > 0:
             med = ts_diffs.median()
-            bar_minutes = med.total_seconds() / 60 if hasattr(med, "total_seconds") else float(med) / 60
+            bar_minutes = (
+                med.total_seconds() / 60
+                if hasattr(med, "total_seconds")
+                else float(med) / 60
+            )
             if bar_minutes > 0:
                 avg_trade_duration_bars = round(
-                    sum(t.duration_minutes for t in completed_trades) / n / bar_minutes, 2
+                    sum(t.duration_minutes for t in completed_trades) / n / bar_minutes,
+                    2,
                 )
 
     return {
-        "net_return_pct":              overall.get("[OVERALL ONLY] total_return_pct", 0.0),
-        "sharpe":                      overall.get("sharpe_ratio", 0.0),
-        "max_drawdown_pct":            overall.get("max_drawdown_pct", 0.0),
-        "trade_count":                 n,
-        "win_rate":                    overall.get("net_win_rate_pct", 0.0),
-        "avg_trade_net_pnl":           round(avg_net_pnl, 6),
-        "fees_paid":                   round(fees_paid, 6),
-        "gross_pnl":                   round(gross_pnl, 6),
-        "net_pnl":                     round(net_pnl, 6),
-        "cost_drag_pct":               cost_drag_pct,
-        "forecast_return_corr":        forecast_return_corr,
+        "net_return_pct": overall.get("[OVERALL ONLY] total_return_pct", 0.0),
+        "sharpe": overall.get("sharpe_ratio", 0.0),
+        "max_drawdown_pct": overall.get("max_drawdown_pct", 0.0),
+        "trade_count": n,
+        "win_rate": overall.get("net_win_rate_pct", 0.0),
+        "avg_trade_net_pnl": round(avg_net_pnl, 6),
+        "fees_paid": round(fees_paid, 6),
+        "gross_pnl": round(gross_pnl, 6),
+        "net_pnl": round(net_pnl, 6),
+        "cost_drag_pct": cost_drag_pct,
+        "forecast_return_corr": forecast_return_corr,
         "forecast_return_corr_pvalue": forecast_return_corr_pvalue,
-        "avg_trade_duration_bars":     avg_trade_duration_bars,
+        "avg_trade_duration_bars": avg_trade_duration_bars,
     }
 
 
@@ -259,7 +300,9 @@ def build_per_regime(bars_df: pd.DataFrame, trades: list) -> dict:
 
     if "regime" in bars_df.columns:
         for regime, grp in bars_df.groupby("regime"):
-            avg_fc = float(grp["forecast"].mean()) if "forecast" in grp.columns else None
+            avg_fc = (
+                float(grp["forecast"].mean()) if "forecast" in grp.columns else None
+            )
             result.setdefault(str(regime), {})["bar_count"] = len(grp)
             if avg_fc is not None:
                 result[str(regime)]["avg_forecast"] = round(avg_fc, 6)
@@ -295,7 +338,8 @@ def build_forecast_bins(trades: list) -> dict:
 def build_dynamic(bars_df: pd.DataFrame) -> dict:
     prefix = "debug_info.components."
     component_cols = [
-        c for c in bars_df.columns
+        c
+        for c in bars_df.columns
         if c.startswith(prefix) and pd.api.types.is_numeric_dtype(bars_df[c])
     ]
     if not component_cols or "regime" not in bars_df.columns:
@@ -308,7 +352,7 @@ def build_dynamic(bars_df: pd.DataFrame) -> dict:
             series = grp[col].dropna()
             col_stats[str(regime)] = {
                 "mean": round(float(series.mean()), 6) if len(series) > 0 else None,
-                "std":  round(float(series.std()),  6) if len(series) > 1 else None,
+                "std": round(float(series.std()), 6) if len(series) > 1 else None,
             }
         result[col] = col_stats
     return result
@@ -331,9 +375,9 @@ def build_regime_validity(bars_df: pd.DataFrame) -> dict:
         mean_fwd = round(float(fwd.mean()), 8)
         result[str(regime)] = {
             "forward_return_mean": mean_fwd,
-            "forward_return_std":  round(float(fwd.std()), 8) if len(fwd) > 1 else None,
-            "n_bars":              int(len(fwd)),
-            "informative":         abs(mean_fwd) >= 0.0001,
+            "forward_return_std": round(float(fwd.std()), 8) if len(fwd) > 1 else None,
+            "n_bars": int(len(fwd)),
+            "informative": abs(mean_fwd) >= 0.0001,
         }
     return result
 
@@ -361,17 +405,26 @@ def build_bar_equity(bars_df: pd.DataFrame) -> dict:
     the field itself, not treated as degenerate.
     """
     from performance.bar_equity import (
-        daily_returns, exposure_pct, max_drawdown_pct, sharpe_ratio_daily,
-        sortino_ratio_daily, turnover,
+        daily_returns,
+        exposure_pct,
+        max_drawdown_pct,
+        sharpe_ratio_daily,
+        sortino_ratio_daily,
+        turnover,
     )
 
     required = {
-        "regime", "timestamp", "postRebalance_total_value",
-        "postRebalance_current_allocation", "previous_allocation",
+        "regime",
+        "timestamp",
+        "postRebalance_total_value",
+        "postRebalance_current_allocation",
+        "previous_allocation",
     }
     missing = required - set(bars_df.columns)
     if missing:
-        raise ValueError(f"build_bar_equity: missing required columns: {sorted(missing)}")
+        raise ValueError(
+            f"build_bar_equity: missing required columns: {sorted(missing)}"
+        )
 
     n_total = len(bars_df)
     normalized_regime = bars_df["regime"].astype(str).str.strip().str.upper()
@@ -394,22 +447,29 @@ def build_bar_equity(bars_df: pd.DataFrame) -> dict:
 
     maxdd = max_drawdown_pct(equity)
     if not np.isfinite(maxdd):
-        raise ValueError(f"build_bar_equity: computed max_drawdown_pct is non-finite ({maxdd})")
+        raise ValueError(
+            f"build_bar_equity: computed max_drawdown_pct is non-finite ({maxdd})"
+        )
 
     dr = daily_returns(equity, timestamps)
 
     return {
         "max_drawdown_pct": round(maxdd, 4),
-        "sharpe":           round(sharpe_ratio_daily(equity, timestamps), 4),
-        "sortino":          round(sortino_ratio_daily(equity, timestamps), 4),
-        "exposure_pct":     round(exposure_pct(ready["postRebalance_current_allocation"]), 4),
-        "turnover":         round(
-            turnover(ready["postRebalance_current_allocation"], ready["previous_allocation"]), 6
+        "sharpe": round(sharpe_ratio_daily(equity, timestamps), 4),
+        "sortino": round(sortino_ratio_daily(equity, timestamps), 4),
+        "exposure_pct": round(
+            exposure_pct(ready["postRebalance_current_allocation"]), 4
         ),
-        "n_bars_total":           n_total,
+        "turnover": round(
+            turnover(
+                ready["postRebalance_current_allocation"], ready["previous_allocation"]
+            ),
+            6,
+        ),
+        "n_bars_total": n_total,
         "n_bars_warmup_excluded": n_total - len(ready),
-        "n_daily_returns":        len(dr),
-        "n_downside_days":        int((dr < 0).sum()),
+        "n_daily_returns": len(dr),
+        "n_downside_days": int((dr < 0).sum()),
         "basis": (
             "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); "
             "sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); "

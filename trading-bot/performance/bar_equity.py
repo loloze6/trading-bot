@@ -23,6 +23,7 @@ mirror EnhancedPerformanceTracker.calculate_sharpe_ratio's own convention of ret
 0.0 (never NaN or inf) when volatility is undefined -- zero variance, or fewer than two
 observations.
 """
+
 import math
 
 import pandas as pd
@@ -86,7 +87,9 @@ def sortino_ratio_daily(equity: pd.Series, timestamps: pd.Series) -> float:
     return float(daily_ret.mean() / downside_deviation * math.sqrt(365))
 
 
-def turnover(post_rebalance_allocation: pd.Series, previous_allocation: pd.Series) -> float:
+def turnover(
+    post_rebalance_allocation: pd.Series, previous_allocation: pd.Series
+) -> float:
     """Sum of |executed allocation change| per bar. Uses the two allocation
     columns directly rather than the raw allocation_change field, which also
     counts rebalance attempts the risk manager rejected -- never executed,

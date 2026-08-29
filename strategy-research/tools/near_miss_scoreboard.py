@@ -68,6 +68,7 @@ E-018/EPIC.md's Log for what that wiring would need.)
     <out-dir>/near_miss_scoreboard.yaml   -- structured, machine-readable
     <out-dir>/near_miss_scoreboard.md     -- rendered ranked table + denominators
 """
+
 from __future__ import annotations
 
 import argparse
@@ -84,10 +85,13 @@ STRATEGY_RESEARCH_ROOT = Path(__file__).resolve().parent.parent
 # regexes, same "first sentence only" discipline -- reused rather than
 # reimplemented per the dispatch's instruction). ---------------------------
 FAILURE_BUCKETS = [
-    ("regime",   r"regime|gat(e|ing)|activation|starvation"),
-    ("cost",     r"cost.drag|fee|over-?trad|turnover|sizing/frequency"),
-    ("nosignal", r"no (statistically |directional )?(significant )?edge|no informational|no predictive|inversion|uninformative signal"),
-    ("sample",   r"insufficient sample|sample size|sparsity|min-?n"),
+    ("regime", r"regime|gat(e|ing)|activation|starvation"),
+    ("cost", r"cost.drag|fee|over-?trad|turnover|sizing/frequency"),
+    (
+        "nosignal",
+        r"no (statistically |directional )?(significant )?edge|no informational|no predictive|inversion|uninformative signal",
+    ),
+    ("sample", r"insufficient sample|sample size|sparsity|min-?n"),
 ]
 
 
@@ -102,17 +106,40 @@ def classify_bucket(text: str) -> list[str]:
 
 # --- generic comparator/number extraction ---------------------------------
 CMP_NUM_RE = re.compile(r"(<=|>=|≤|≥|<|>)\s*(-?~?\d+(?:\.\d+)?)\s*%?")
-LABEL_NUM_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]{1,40})\s*[=:]\s*(-?~?\d+(?:\.\d+)?)\s*%?")
+LABEL_NUM_RE = re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]{1,40})\s*[=:]\s*(-?~?\d+(?:\.\d+)?)\s*%?"
+)
 SYM_PAREN_NUM_RE = re.compile(r"(-?~?\d+(?:\.\d+)?)\s*%?\s*\(([A-Z]{2,10})\)")
 SYM_LEAD_NUM_RE = re.compile(r"\b([A-Z]{3,10})\b\s+(-?~?\d+(?:\.\d+)?)\s*%?")
 RESULT_RE = re.compile(r"\b(PASS(?:ED)?|FAIL(?:ED)?|UNTESTED)\b", re.IGNORECASE)
-_EXCLUDE_SYM = {"PASS", "FAIL", "AND", "AND ", "NOT", "RULE", "ANY", "ALL", "AT", "IC", "AT ", "SE"}
+_EXCLUDE_SYM = {
+    "PASS",
+    "FAIL",
+    "AND",
+    "AND ",
+    "NOT",
+    "RULE",
+    "ANY",
+    "ALL",
+    "AT",
+    "IC",
+    "AT ",
+    "SE",
+}
 # Labels that restate a REQUIREMENT rather than report an OBSERVATION, seen
 # recurring inside the "detail" segment of free-text criteria (e.g. a
 # rationale that says "...validation_protocol required=1.5 is a spec
 # error..."). Picking these up as the "actual" value silently substitutes
 # the threshold for the observation and produces a bogus zero margin.
-_REQUIREMENT_LABELS = {"required", "threshold", "target", "min", "max", "expected", "requirement"}
+_REQUIREMENT_LABELS = {
+    "required",
+    "threshold",
+    "target",
+    "min",
+    "max",
+    "expected",
+    "requirement",
+}
 
 _OP_NORM = {"≤": "<=", "≥": ">=", "<=": "<=", ">=": ">=", "<": "<", ">": ">"}
 
@@ -150,8 +177,16 @@ def _margin_frac(op, threshold, actual):
 
 
 class Criterion:
-    __slots__ = ("raw", "result", "op", "threshold", "actual", "actual_source",
-                 "margin_frac", "compound")
+    __slots__ = (
+        "raw",
+        "result",
+        "op",
+        "threshold",
+        "actual",
+        "actual_source",
+        "margin_frac",
+        "compound",
+    )
 
     def __init__(self, raw, result, op, threshold, actual, actual_source, compound):
         self.raw = raw
@@ -191,7 +226,9 @@ class Criterion:
             "threshold": self.threshold,
             "actual_binding_value": self.actual,
             "actual_source": self.actual_source,
-            "margin_frac": None if self.margin_frac is None else round(self.margin_frac, 4),
+            "margin_frac": None
+            if self.margin_frac is None
+            else round(self.margin_frac, 4),
             "compound_requirement": self.compound,
         }
 
@@ -199,7 +236,11 @@ class Criterion:
 def _extract_symbol_values(text: str):
     pairs = SYM_PAREN_NUM_RE.findall(text)
     if not pairs:
-        pairs = [(n, s) for s, n in SYM_LEAD_NUM_RE.findall(text) if s.upper() not in _EXCLUDE_SYM]
+        pairs = [
+            (n, s)
+            for s, n in SYM_LEAD_NUM_RE.findall(text)
+            if s.upper() not in _EXCLUDE_SYM
+        ]
         pairs = [(n, s) for n, s in pairs]
     else:
         pairs = [(n, s) for n, s in pairs]
@@ -244,7 +285,9 @@ def parse_dict_criterion(c: dict) -> Criterion:
     if actual is None:
         # Some runs split per-symbol actuals into separate keys instead of a
         # nested dict/string (e.g. run_016: actual_btc / actual_eth).
-        per_symbol_keys = [k for k in c.keys() if k.lower().startswith("actual") and k != "actual"]
+        per_symbol_keys = [
+            k for k in c.keys() if k.lower().startswith("actual") and k != "actual"
+        ]
         if per_symbol_keys:
             vals = [_to_float(c.get(k)) for k in per_symbol_keys]
             vals = [v for v in vals if v is not None]
@@ -274,7 +317,7 @@ def parse_text_criterion(text: str) -> Criterion:
     rm = RESULT_RE.search(text)
     result = _normalize_result_token(rm.group(1)) if rm else "unknown"
     req_seg = text[: rm.start()] if rm else text
-    detail_seg = text[rm.end():] if rm else ""
+    detail_seg = text[rm.end() :] if rm else ""
 
     m = CMP_NUM_RE.search(req_seg)
     op = _OP_NORM.get(m.group(1)) if m else None
@@ -299,8 +342,12 @@ def parse_text_criterion(text: str) -> Criterion:
             actual_source = "text_extracted_label"
         elif len(pairs) > 1:
             req_norm = re.sub(r"[^a-z0-9]", "", req_seg.lower())
-            matches = [p for p in pairs if re.sub(r"[^a-z0-9]", "", p[0].lower()) in req_norm
-                       or req_norm[:12] in re.sub(r"[^a-z0-9]", "", p[0].lower())]
+            matches = [
+                p
+                for p in pairs
+                if re.sub(r"[^a-z0-9]", "", p[0].lower()) in req_norm
+                or req_norm[:12] in re.sub(r"[^a-z0-9]", "", p[0].lower())
+            ]
             if len(matches) == 1:
                 actual = _to_float(matches[0][1])
                 actual_source = "text_extracted_label_matched"
@@ -327,8 +374,12 @@ def extract_ic_cost(y: dict):
             ic = blk.get("ic_active_bars", blk.get("ic_all_bars"))
             cost = blk.get("edge_to_cost_ratio")
             if ic is not None or cost is not None:
-                return (ic, "structured" if ic is not None else "not_recorded",
-                         cost, "structured" if cost is not None else "not_recorded")
+                return (
+                    ic,
+                    "structured" if ic is not None else "not_recorded",
+                    cost,
+                    "structured" if cost is not None else "not_recorded",
+                )
 
     # Fallback: opportunistic regex over the free-text fields most likely to
     # carry these numbers when the run used the "protocol" schema but the
@@ -351,8 +402,12 @@ def extract_ic_cost(y: dict):
     cost_m = COST_RATIO_TEXT_RE.search(haystack)
     if cost_m:
         cost = _to_float(cost_m.group(1))
-    return (ic, "text_extracted" if ic is not None else "not_recorded",
-            cost, "text_extracted" if cost is not None else "not_recorded")
+    return (
+        ic,
+        "text_extracted" if ic is not None else "not_recorded",
+        cost,
+        "text_extracted" if cost is not None else "not_recorded",
+    )
 
 
 def extract_era_behavior(y: dict):
@@ -420,7 +475,10 @@ def build_row(run_dir: Path) -> dict:
     if not verdict_path.exists():
         ps_path = run_dir / "pipeline_state.yaml"
         if ps_path.exists():
-            ps = yaml.safe_load(ps_path.read_text(encoding="utf-8", errors="replace")) or {}
+            ps = (
+                yaml.safe_load(ps_path.read_text(encoding="utf-8", errors="replace"))
+                or {}
+            )
             row["pipeline_status"] = ps.get("status", "not_recorded")
             row["pipeline_stage"] = ps.get("current_stage") or "not_recorded"
         return row
@@ -436,7 +494,9 @@ def build_row(run_dir: Path) -> dict:
         row["evidence_tier"] = "full_protocol"
     elif "verdict_label" in y or "disposition" in y:
         row["evidence_tier"] = "prescreen_only"
-        row["verdict_label_or_disposition"] = y.get("verdict_label", y.get("disposition", "not_recorded"))
+        row["verdict_label_or_disposition"] = y.get(
+            "verdict_label", y.get("disposition", "not_recorded")
+        )
     else:
         row["evidence_tier"] = "verdict_file_unrecognized_schema"
 
@@ -461,13 +521,19 @@ def build_row(run_dir: Path) -> dict:
         row["n_criteria_pass"] = sum(1 for c in criteria if c.result == "PASS")
         row["n_criteria_fail"] = sum(1 for c in criteria if c.result == "FAIL")
         row["n_criteria_untested"] = sum(1 for c in criteria if c.result == "UNTESTED")
-        fails_with_margin = [c for c in criteria if c.result == "FAIL" and c.margin_frac is not None]
+        fails_with_margin = [
+            c for c in criteria if c.result == "FAIL" and c.margin_frac is not None
+        ]
         if fails_with_margin:
-            worst = max(fails_with_margin, key=lambda c: c.margin_frac)  # closest to 0 = nearest miss
+            worst = max(
+                fails_with_margin, key=lambda c: c.margin_frac
+            )  # closest to 0 = nearest miss
             row["worst_fail_criterion_text"] = " ".join(worst.raw.split())[:300]
             row["worst_fail_margin_frac"] = round(worst.margin_frac, 4)
             row["worst_fail_margin_source"] = (
-                "text_approx" if worst.compound or "text" in worst.actual_source else "structured"
+                "text_approx"
+                if worst.compound or "text" in worst.actual_source
+                else "structured"
             )
         elif any(c.result == "FAIL" for c in criteria):
             row["worst_fail_margin_source"] = "unparseable_free_text"
@@ -486,14 +552,26 @@ def build_row(run_dir: Path) -> dict:
 
 
 # --- ranking ----------------------------------------------------------------
-_VERDICT_PRIORITY = {"refine": 0, "escalate": 1, "pivot": 2, "kill": 3, "not_recorded": 4}
+_VERDICT_PRIORITY = {
+    "refine": 0,
+    "escalate": 1,
+    "pivot": 2,
+    "kill": 3,
+    "not_recorded": 4,
+}
 
 
 def _tier_sort_key(row):
     if row["worst_fail_margin_frac"] is not None:
         tier = 0
-        key2 = -row["worst_fail_margin_frac"]  # ascending on -margin == descending on margin
-    elif row["evidence_tier"] in ("full_protocol", "prescreen_only", "verdict_file_unrecognized_schema"):
+        key2 = -row[
+            "worst_fail_margin_frac"
+        ]  # ascending on -margin == descending on margin
+    elif row["evidence_tier"] in (
+        "full_protocol",
+        "prescreen_only",
+        "verdict_file_unrecognized_schema",
+    ):
         tier = 1
         vp = _VERDICT_PRIORITY.get(row["status"], 4)
         key2 = vp
@@ -523,8 +601,12 @@ def _denominator_report(rows):
     lines.append(f"  prescreen_only schema: {len(prescreen)} of {n}")
     pv_present = sum(1 for r in rows if r["protocol_verdict"] != "not_recorded")
     st_present = sum(1 for r in rows if r["status"] != "not_recorded")
-    lines.append(f"protocol_verdict recorded (non-absent, within verdict file): {pv_present} of {n}")
-    lines.append(f"status recorded (non-absent, within verdict file): {st_present} of {n}")
+    lines.append(
+        f"protocol_verdict recorded (non-absent, within verdict file): {pv_present} of {n}"
+    )
+    lines.append(
+        f"status recorded (non-absent, within verdict file): {st_present} of {n}"
+    )
     margin = sum(1 for r in rows if r["worst_fail_margin_frac"] is not None)
     lines.append(f"Numeric worst-fail margin recovered: {margin} of {n}")
     ic_n = sum(1 for r in rows if r["ic"] is not None)
@@ -542,7 +624,9 @@ def render_markdown(rows, denom_lines) -> str:
     out.append("")
     out.append("Ranked table over every tested idea in `runs/`, for the")
     out.append("idea-generation stage to read as raw material only. **Not a")
-    out.append("promotion input** -- see `tests/test_near_miss_scoreboard_firewall.py`.")
+    out.append(
+        "promotion input** -- see `tests/test_near_miss_scoreboard_firewall.py`."
+    )
     out.append("")
     out.append("Ranked BY: numeric near-miss quality first (tier 0 -- FAIL")
     out.append("criteria with a recoverable margin, ordered by the *smallest*")
@@ -561,20 +645,43 @@ def render_markdown(rows, denom_lines) -> str:
     out.append("")
     out.append("## Table")
     out.append("")
-    headers = ["rank", "run_id", "hypothesis_family", "evidence_tier", "protocol_verdict",
-               "status", "failure_bucket", "worst_fail_margin_frac", "margin_source",
-               "root_cause_mechanism", "ic", "cost_ratio", "era_behavior"]
+    headers = [
+        "rank",
+        "run_id",
+        "hypothesis_family",
+        "evidence_tier",
+        "protocol_verdict",
+        "status",
+        "failure_bucket",
+        "worst_fail_margin_frac",
+        "margin_source",
+        "root_cause_mechanism",
+        "ic",
+        "cost_ratio",
+        "era_behavior",
+    ]
     out.append("| " + " | ".join(headers) + " |")
     out.append("|" + "|".join(["---"] * len(headers)) + "|")
     for r in rows:
-        bucket = ",".join(r["primary_failure_mode_bucket"]) if isinstance(r["primary_failure_mode_bucket"], list) else r["primary_failure_mode_bucket"]
+        bucket = (
+            ",".join(r["primary_failure_mode_bucket"])
+            if isinstance(r["primary_failure_mode_bucket"], list)
+            else r["primary_failure_mode_bucket"]
+        )
         era = r["era_behavior_text"]
         if era and era != "not_recorded":
             era = era[:60].replace("|", "/") + ("..." if len(era) > 60 else "")
         cells = [
-            r["rank"], r["run_id"], r["hypothesis_family"], r["evidence_tier"],
-            r["protocol_verdict"], r["status"], bucket,
-            "not_recorded" if r["worst_fail_margin_frac"] is None else r["worst_fail_margin_frac"],
+            r["rank"],
+            r["run_id"],
+            r["hypothesis_family"],
+            r["evidence_tier"],
+            r["protocol_verdict"],
+            r["status"],
+            bucket,
+            "not_recorded"
+            if r["worst_fail_margin_frac"] is None
+            else r["worst_fail_margin_frac"],
             r["worst_fail_margin_source"],
             r["root_cause_mechanism"],
             "not_recorded" if r["ic"] is None else r["ic"],
@@ -597,7 +704,12 @@ def build_scoreboard(runs_dir: Path):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--runs-dir", default=str(STRATEGY_RESEARCH_ROOT / "runs"))
-    ap.add_argument("--out-dir", default=str(STRATEGY_RESEARCH_ROOT / "engineering" / "roadmap" / "E-018" / "artifacts"))
+    ap.add_argument(
+        "--out-dir",
+        default=str(
+            STRATEGY_RESEARCH_ROOT / "engineering" / "roadmap" / "E-018" / "artifacts"
+        ),
+    )
     args = ap.parse_args(argv)
 
     runs_dir = Path(args.runs_dir)

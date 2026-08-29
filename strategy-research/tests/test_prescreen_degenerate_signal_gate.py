@@ -13,6 +13,7 @@ SmaTrendLongOnlyComponent -- before trusting the gate to judge the real
 SMA(100)-daily registration. Only the underlying synthetic price series differs
 between the two tests; the component/config is identical.
 """
+
 import json
 import random
 import sys
@@ -34,22 +35,39 @@ PHASE_LEN = 500  # >> lookback_L=100, so SMA(100) has time to catch up with each
 LOOKBACK_L = 100
 
 _CONFIG = {
-    "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
-    "strategies": {"warmup": LOOKBACK_L + 1, "regimes": {
-        "unknown": {"components": [{
-            "id": "sma_trend_long_only",
-            "class": "strategies.strategy_components.SmaTrendLongOnlyComponent",
-            "weight": 1.0, "transforms": [{"op": "identity"}],
-            "params": {"lookback_L": LOOKBACK_L, "scaling_factor": 10.0},
-        }]},
-        "trending": None, "mean_reversion": None, "chop": None,
-    }},
+    "regime_detector": {
+        "mode": "threshold_rules",
+        "components": [],
+        "rules": [],
+        "default_regime": "unknown",
+    },
+    "strategies": {
+        "warmup": LOOKBACK_L + 1,
+        "regimes": {
+            "unknown": {
+                "components": [
+                    {
+                        "id": "sma_trend_long_only",
+                        "class": "strategies.strategy_components.SmaTrendLongOnlyComponent",
+                        "weight": 1.0,
+                        "transforms": [{"op": "identity"}],
+                        "params": {"lookback_L": LOOKBACK_L, "scaling_factor": 10.0},
+                    }
+                ]
+            },
+            "trending": None,
+            "mean_reversion": None,
+            "chop": None,
+        },
+    },
 }
 
 _PROTOCOL = {
     "symbols": ["SYNTHUSDT"],
     "timeframe": "1d",
-    "windows": [{"label": "test", "test": {"start": "2018-01-01", "end": "2020-09-27"}}],
+    "windows": [
+        {"label": "test", "test": {"start": "2018-01-01", "end": "2020-09-27"}}
+    ],
 }
 
 
@@ -76,31 +94,45 @@ def _make_bars(mode: str) -> pd.DataFrame:
             ret = rng.choice([-0.005, 0.005])
         open_ = price
         price = price * (1.0 + ret)
-        rows.append({
-            "timestamp": ts, "open": open_, "high": max(open_, price),
-            "low": min(open_, price), "close": price, "volume": 1000.0,
-        })
+        rows.append(
+            {
+                "timestamp": ts,
+                "open": open_,
+                "high": max(open_, price),
+                "low": min(open_, price),
+                "close": price,
+                "volume": 1000.0,
+            }
+        )
     return pd.DataFrame(rows)
 
 
 def _run(mode: str, monkeypatch, tmp_path) -> dict:
     bars = _make_bars(mode)
-    monkeypatch.setattr(ps, "_load_ohlcv", lambda symbol, start, end, timeframe="1h": bars.copy())
+    monkeypatch.setattr(
+        ps, "_load_ohlcv", lambda symbol, start, end, timeframe="1h": bars.copy()
+    )
 
     config_path = tmp_path / "candidate_strategy_config.json"
     protocol_path = tmp_path / "protocol.json"
     config_path.write_text(json.dumps(_CONFIG), encoding="utf-8")
     protocol_path.write_text(json.dumps(_PROTOCOL), encoding="utf-8")
 
-    return ps.run_prescreen(str(config_path), str(protocol_path),
-                             run_id=f"test_synthetic_{mode}", out_dir=tmp_path)
+    return ps.run_prescreen(
+        str(config_path),
+        str(protocol_path),
+        run_id=f"test_synthetic_{mode}",
+        out_dir=tmp_path,
+    )
 
 
 def test_synthetic_null_routes_kill_no_ic(monkeypatch, tmp_path):
     result = _run("null", monkeypatch, tmp_path)
 
     assert result["active_n_bars"] > 0, "signal must actually activate on this fixture"
-    assert result["ic_active_bars"] is None, "long-only constant magnitude -- must be undefined, not 0.0"
+    assert result["ic_active_bars"] is None, (
+        "long-only constant magnitude -- must be undefined, not 0.0"
+    )
     assert result["degenerate_active_forecast"] is True
     assert result["significance_methodology_used"] == "block_bootstrap_all_bars_v1"
     assert result["ic_significance"]["significant"] is False, (

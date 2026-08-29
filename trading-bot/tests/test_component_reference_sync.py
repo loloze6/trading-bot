@@ -17,6 +17,7 @@ prose note) — it only asserts the bare class name appears somewhere, which is 
 to stop an LLM reading top-to-bottom from concluding "not in STRATEGY_CONFIG_REFERENCE.md
 == doesn't exist."
 """
+
 import re
 import sys
 from pathlib import Path
@@ -35,7 +36,9 @@ def _all_component_classes() -> set:
 
 def test_every_component_class_is_documented_in_reference():
     classes = _all_component_classes()
-    assert classes, "no component classes found — regex or path is stale, fix the test first"
+    assert classes, (
+        "no component classes found — regex or path is stale, fix the test first"
+    )
 
     doc = REFERENCE_DOC_PATH.read_text(encoding="utf-8")
     missing = sorted(cls for cls in classes if cls not in doc)
@@ -54,4 +57,6 @@ def test_known_previously_missing_components_are_now_present():
     scan above."""
     doc = REFERENCE_DOC_PATH.read_text(encoding="utf-8")
     for cls in ("FundingRateMeanReversionComponent", "FearGreedContrarianComponent"):
-        assert cls in doc, f"{cls} missing from {REFERENCE_DOC_PATH.name} (run_044 regression)"
+        assert cls in doc, (
+            f"{cls} missing from {REFERENCE_DOC_PATH.name} (run_044 regression)"
+        )

@@ -7,7 +7,9 @@ from pathlib import Path
 
 from recorder.journal import JOURNAL_FILENAME
 from recorder.retrieval_manifest import (
-    build_manifest, sha256_of_file, sha256_of_prefix,
+    build_manifest,
+    sha256_of_file,
+    sha256_of_prefix,
 )
 
 
@@ -44,7 +46,9 @@ def test_journal_gets_a_prefix_hash_not_a_full_hash(tmp_path):
     entry = manifest[JOURNAL_FILENAME]
     assert entry["prefix"] is True
     assert entry["bytes"] == journal.stat().st_size
-    assert entry["sha256"] == sha256_of_file(journal)  # whole file == its own full prefix here
+    assert entry["sha256"] == sha256_of_file(
+        journal
+    )  # whole file == its own full prefix here
 
 
 def test_sha256_of_prefix_matches_a_slice_of_a_larger_file(tmp_path):

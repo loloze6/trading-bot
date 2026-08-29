@@ -12,6 +12,7 @@ baseline_v1.json protocol it silently fell back to (frozen — per this project'
 standing rule that regression tests use the actual historical failure as
 fixture). Verifies the conformance gate would have caught this exact case.
 """
+
 import copy
 import sys
 from pathlib import Path
@@ -65,7 +66,9 @@ def test_generate_monthly_windows_covers_full_range_without_overshoot():
 
 def test_conformance_gate_catches_the_real_run_047_protocol_mismatch():
     violations = rpr._check_prescreen_conformance(
-        RUN_047_REAL_PRESCREEN_RESULT, RUN_047_MACHINE_CONSTRAINTS, BASELINE_V1_PROTOCOL,
+        RUN_047_REAL_PRESCREEN_RESULT,
+        RUN_047_MACHINE_CONSTRAINTS,
+        BASELINE_V1_PROTOCOL,
     )
     assert len(violations) >= 2  # both the range AND the methodology were wrong
     joined = " ".join(violations)
@@ -85,25 +88,39 @@ def test_conformance_gate_passes_when_everything_matches():
         "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31"),
     }
     violations = rpr._check_prescreen_conformance(
-        conforming_result, RUN_047_MACHINE_CONSTRAINTS, conforming_protocol,
+        conforming_result,
+        RUN_047_MACHINE_CONSTRAINTS,
+        conforming_protocol,
     )
     assert violations == []
 
 
-@pytest.mark.parametrize("legitimate_outcome", [
-    "episode_block_bootstrap", "episode_bootstrap_insufficient_n", "block_24_dense_fallback",
-])
+@pytest.mark.parametrize(
+    "legitimate_outcome",
+    [
+        "episode_block_bootstrap",
+        "episode_bootstrap_insufficient_n",
+        "block_24_dense_fallback",
+    ],
+)
 def test_conformance_gate_accepts_every_legitimate_a851a_outcome(legitimate_outcome):
     """Caught during test-writing, fixed before shipping: a literal-equality check
     against the family name "episode_blocked_a851a" would have wrongly flagged the
     legitimate density-fallback (A8.5.1a rule 4) and insufficient-episode (rule 3)
     outcomes as conformance violations, even though both are correct, spec'd
     behavior. The gate must accept ANY member of episode_significance.VALID_METHODS."""
-    result = {"protocol_version": "protocols/run_test_generated.json",
-              "significance_methodology_used": legitimate_outcome}
-    protocol = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
-                "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31")}
-    violations = rpr._check_prescreen_conformance(result, RUN_047_MACHINE_CONSTRAINTS, protocol)
+    result = {
+        "protocol_version": "protocols/run_test_generated.json",
+        "significance_methodology_used": legitimate_outcome,
+    }
+    protocol = {
+        "symbols": ["BTCUSDT", "ETHUSDT"],
+        "timeframe": "1h",
+        "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31"),
+    }
+    violations = rpr._check_prescreen_conformance(
+        result, RUN_047_MACHINE_CONSTRAINTS, protocol
+    )
     assert violations == []
 
 
@@ -111,11 +128,18 @@ def test_conformance_gate_flags_the_old_default_path_as_a_real_violation():
     """block_24_fisher_z (prescreen_signal.py's own default label) means the
     significance_methodology flag was absent/ignored entirely — this is exactly
     run_047's real failure and MUST be flagged."""
-    result = {"protocol_version": "protocols/run_test_generated.json",
-              "significance_methodology_used": "block_24_fisher_z"}
-    protocol = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
-                "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31")}
-    violations = rpr._check_prescreen_conformance(result, RUN_047_MACHINE_CONSTRAINTS, protocol)
+    result = {
+        "protocol_version": "protocols/run_test_generated.json",
+        "significance_methodology_used": "block_24_fisher_z",
+    }
+    protocol = {
+        "symbols": ["BTCUSDT", "ETHUSDT"],
+        "timeframe": "1h",
+        "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31"),
+    }
+    violations = rpr._check_prescreen_conformance(
+        result, RUN_047_MACHINE_CONSTRAINTS, protocol
+    )
     assert any("significance_methodology_used" in v for v in violations)
 
 
@@ -131,10 +155,14 @@ def test_g7_run_047_real_constraints_are_now_refused_as_ungated(tmp_path, monkey
     monkeypatch.setattr(rpr, "ROOT", tmp_path)
 
     with pytest.raises(rpr.UngatedProtocolError):
-        rpr._ensure_protocol_from_constraints(run_dir, "run_test", RUN_047_MACHINE_CONSTRAINTS)
+        rpr._ensure_protocol_from_constraints(
+            run_dir, "run_test", RUN_047_MACHINE_CONSTRAINTS
+        )
 
 
-def test_ensure_protocol_from_constraints_generates_and_is_idempotent(tmp_path, monkeypatch):
+def test_ensure_protocol_from_constraints_generates_and_is_idempotent(
+    tmp_path, monkeypatch
+):
     run_dir = tmp_path / "run_test"
     (run_dir / "artifacts").mkdir(parents=True)
     monkeypatch.setattr(rpr, "ROOT", tmp_path)
@@ -145,14 +173,20 @@ def test_ensure_protocol_from_constraints_generates_and_is_idempotent(tmp_path, 
     # about — window generation, run_context wiring, and idempotency.
     constraints = copy.deepcopy(RUN_047_MACHINE_CONSTRAINTS)
     constraints["protocol"]["promotion"] = {
-        "median_sharpe_gt": 0, "max_abs_drawdown_pct_lt": 30,
-        "min_trade_count_gte": 20, "kill_median_sharpe_lt": -1,
+        "median_sharpe_gt": 0,
+        "max_abs_drawdown_pct_lt": 30,
+        "min_trade_count_gte": 20,
+        "kill_median_sharpe_lt": -1,
     }
 
     path = rpr._ensure_protocol_from_constraints(run_dir, "run_test", constraints)
     assert path is not None
     assert path.exists()
-    proto = yaml.safe_load(path.read_text(encoding="utf-8")) if path.suffix != ".json" else __import__("json").loads(path.read_text(encoding="utf-8"))
+    proto = (
+        yaml.safe_load(path.read_text(encoding="utf-8"))
+        if path.suffix != ".json"
+        else __import__("json").loads(path.read_text(encoding="utf-8"))
+    )
     assert proto["symbols"] == ["BTCUSDT", "ETHUSDT"]
     assert proto["windows"][0]["test"]["start"] == "2019-09-01"
     assert proto["windows"][-1]["test"]["end"] == "2025-12-31"
@@ -175,16 +209,29 @@ def test_ensure_protocol_from_constraints_generates_and_is_idempotent(tmp_path, 
 
 def test_mark_trial_invalidated(tmp_path, monkeypatch):
     campaign_path = tmp_path / "campaign_state.yaml"
-    campaign_path.write_text(yaml.safe_dump({
-        "trial_sharpes": [{"trial_id": "run_test", "route": "kill_no_ic"}],
-    }), encoding="utf-8")
+    campaign_path.write_text(
+        yaml.safe_dump(
+            {
+                "trial_sharpes": [{"trial_id": "run_test", "route": "kill_no_ic"}],
+            }
+        ),
+        encoding="utf-8",
+    )
 
-    monkeypatch.setattr(rpr, "load_campaign_state", lambda: yaml.safe_load(campaign_path.read_text(encoding="utf-8")))
-    monkeypatch.setattr(rpr, "_save_campaign_state", lambda state: campaign_path.write_text(
-        yaml.safe_dump(state), encoding="utf-8"
-    ))
+    monkeypatch.setattr(
+        rpr,
+        "load_campaign_state",
+        lambda: yaml.safe_load(campaign_path.read_text(encoding="utf-8")),
+    )
+    monkeypatch.setattr(
+        rpr,
+        "_save_campaign_state",
+        lambda state: campaign_path.write_text(yaml.safe_dump(state), encoding="utf-8"),
+    )
 
-    marked = rpr._mark_trial_invalidated("run_test", "conformance violation: wrong protocol range")
+    marked = rpr._mark_trial_invalidated(
+        "run_test", "conformance violation: wrong protocol range"
+    )
     assert marked is True
 
     updated = yaml.safe_load(campaign_path.read_text(encoding="utf-8"))

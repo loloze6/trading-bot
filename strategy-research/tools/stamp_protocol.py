@@ -19,6 +19,7 @@ CLI:
   python strategy-research/tools/stamp_protocol.py protocols/ts_trend_daily_v2.json
   python strategy-research/tools/stamp_protocol.py protocols/ts_trend_daily_v2.json --version 2026-07-15
 """
+
 import argparse
 import hashlib
 import json
@@ -26,14 +27,18 @@ import sys
 from datetime import date
 from pathlib import Path
 
-_HERE = Path(__file__).resolve().parent      # strategy-research/tools/
-_SR = _HERE.parent                            # strategy-research/
+_HERE = Path(__file__).resolve().parent  # strategy-research/tools/
+_SR = _HERE.parent  # strategy-research/
 
 
 def compute_protocol_content_hash(obj: dict) -> str:
     """Same formula as run_phase1_research.py's _compute_protocol_content_hash,
     operating on an already-loaded dict rather than re-reading the file."""
-    stripped = {k: v for k, v in obj.items() if k not in ("protocol_version", "protocol_content_hash")}
+    stripped = {
+        k: v
+        for k, v in obj.items()
+        if k not in ("protocol_version", "protocol_content_hash")
+    }
     canonical = json.dumps(stripped, sort_keys=True)
     return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -55,9 +60,12 @@ def stamp(path: Path, version: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Stamp a protocol JSON with protocol_version/protocol_content_hash "
-                     "and print the hash for machine_constraints.protocol_ref_content_hash."
+        "and print the hash for machine_constraints.protocol_ref_content_hash."
     )
-    parser.add_argument("protocol_path", help="Path to the protocol JSON file (e.g. protocols/ts_trend_daily_v2.json).")
+    parser.add_argument(
+        "protocol_path",
+        help="Path to the protocol JSON file (e.g. protocols/ts_trend_daily_v2.json).",
+    )
     parser.add_argument(
         "--version",
         default=None,

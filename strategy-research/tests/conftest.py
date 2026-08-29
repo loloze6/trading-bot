@@ -74,6 +74,7 @@ need the marker: it queries a family name guaranteed absent from either a
 real or an empty wishlist file, so `missing_field` is the correct result
 either way -- confirmed by it passing unmarked under this guard.
 """
+
 import shutil
 import subprocess
 import sys
@@ -98,14 +99,18 @@ def _mutated_tracked_results_files():
     try:
         out = subprocess.run(
             ["git", "-C", str(_REPO_ROOT), "status", "--porcelain", "--", _RESULTS_REL],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
     except Exception:
         return None
     if out.returncode != 0:
         return None
     # Skip untracked entries ('??'); we assert only on mutations of TRACKED files.
-    return [ln for ln in out.stdout.splitlines() if ln.strip() and not ln.startswith("??")]
+    return [
+        ln for ln in out.stdout.splitlines() if ln.strip() and not ln.startswith("??")
+    ]
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -208,13 +213,21 @@ def _sandbox_by_default(request, tmp_path, monkeypatch):
     monkeypatch.setattr(_camp, "QUEUE_PATH", sandbox / "config" / "campaign_queue.yaml")
     monkeypatch.setattr(_camp, "CAMPAIGN_LOG_PATH", sandbox / "campaign_log.md")
     monkeypatch.setattr(_camp, "CAMPAIGN_SUMMARY_PATH", sandbox / "campaign_summary.md")
-    monkeypatch.setattr(_camp, "BASELINE_PATH", sandbox / "config" / "campaign_baseline_runs.yaml")
+    monkeypatch.setattr(
+        _camp, "BASELINE_PATH", sandbox / "config" / "campaign_baseline_runs.yaml"
+    )
 
     monkeypatch.setattr(_rpr, "ROOT", sandbox)
     monkeypatch.setattr(_rpr, "CAMPAIGN_STATE_PATH", sandbox / "campaign_state.yaml")
     monkeypatch.setattr(_rpr, "_KB_PATH", sandbox / "campaign_knowledge_base.yaml")
-    monkeypatch.setattr(_rpr, "_POWER_DISCREPANCY_LOG_PATH", sandbox / "power_check_discrepancy_log.yaml")
-    monkeypatch.setattr(_rpr, "_DATA_POLICY_PATH", sandbox / "config" / "campaign_data_policy.yaml")
+    monkeypatch.setattr(
+        _rpr,
+        "_POWER_DISCREPANCY_LOG_PATH",
+        sandbox / "power_check_discrepancy_log.yaml",
+    )
+    monkeypatch.setattr(
+        _rpr, "_DATA_POLICY_PATH", sandbox / "config" / "campaign_data_policy.yaml"
+    )
 
     monkeypatch.setattr(_setup_run, "ROOT", sandbox)
 

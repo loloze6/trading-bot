@@ -56,7 +56,13 @@ def _make_clustered_records(
             records.append({"forecast": base, "next_return_bps": ret, "active": True})
         # inactive gap between episodes
         for _ in range(gap_between):
-            records.append({"forecast": 0.0, "next_return_bps": rng.gauss(0, noise_sd), "active": False})
+            records.append(
+                {
+                    "forecast": 0.0,
+                    "next_return_bps": rng.gauss(0, noise_sd),
+                    "active": False,
+                }
+            )
     return records
 
 
@@ -88,6 +94,7 @@ def _build_fixture_records():
 # ---------------------------------------------------------------------------
 # Fixture (a): recovered CI covers the true point IC
 # ---------------------------------------------------------------------------
+
 
 def test_fixture_a_recovered_ci_covers_truth():
     records = _build_fixture_records()
@@ -124,25 +131,30 @@ def test_fixture_a_recovered_ci_covers_truth():
 # shared shock makes 30 consecutive active bars far less than 30 independent draws.
 # ---------------------------------------------------------------------------
 
+
 def test_fixture_b_naive_block_is_overconfident_vs_episode_method():
     records = _build_fixture_records()
     episodes = es.identify_episodes(records, gap_bars=48)
     n_active = sum(1 for r in records if r["active"])
 
-    episode_result = es.episode_block_bootstrap(records, episodes, n_resamples=2000, seed=42)
+    episode_result = es.episode_block_bootstrap(
+        records, episodes, n_resamples=2000, seed=42
+    )
     episode_ci_width = episode_result["ci_high"] - episode_result["ci_low"]
 
     # Naive method: existing 24-bar Fisher-z significance, fed the single pooled
     # active-bar IC (exactly what prescreen_signal.py does today).
     active_idx = [i for i, r in enumerate(records) if r["active"]]
     pooled_ic = es._pooled_ic(records, active_idx)
-    naive_sig = prescreen_signal._block_adjusted_significance([pooled_ic], n_active, block_size=24)
+    naive_sig = prescreen_signal._block_adjusted_significance(
+        [pooled_ic], n_active, block_size=24
+    )
 
     # Reconstruct the naive method's implied CI from its z-statistic (Fisher z: CI
     # half-width = 1.645 / sqrt(dof) for a 90% CI, matching the p<0.10 convention
     # used throughout this codebase).
     dof = max(naive_sig["n_eff"] - 3, 1)
-    naive_half_width = 1.645 / (dof ** 0.5)
+    naive_half_width = 1.645 / (dof**0.5)
     naive_ci_width = 2 * naive_half_width
 
     assert naive_ci_width < episode_ci_width, (
@@ -158,6 +170,7 @@ def test_fixture_b_naive_block_is_overconfident_vs_episode_method():
 # ---------------------------------------------------------------------------
 # Fixture (c): n_episodes < 8 -> significance suppressed regardless of p-value
 # ---------------------------------------------------------------------------
+
 
 def test_fixture_c_below_floor_suppresses_significance():
     # Only 4 episodes — deliberately below the n_episodes >= 8 floor. Use a huge
@@ -187,6 +200,7 @@ def test_fixture_c_below_floor_suppresses_significance():
 # ---------------------------------------------------------------------------
 # Supporting unit tests: episode construction respects era boundaries and gaps
 # ---------------------------------------------------------------------------
+
 
 def test_identify_episodes_respects_era_boundary():
     # Two active bars only 2 bars apart (well within gap_bars=48) but on opposite
@@ -238,7 +252,12 @@ def test_per_era_report_survives_yaml_roundtrip_with_tuple_era_of():
     """
     records = [
         {"forecast": 1.0, "next_return_bps": 5.0, "active": True, "symbol": "BTCUSDT"},
-        {"forecast": -1.0, "next_return_bps": -3.0, "active": True, "symbol": "BTCUSDT"},
+        {
+            "forecast": -1.0,
+            "next_return_bps": -3.0,
+            "active": True,
+            "symbol": "BTCUSDT",
+        },
         {"forecast": 1.0, "next_return_bps": 2.0, "active": True, "symbol": "ETHUSDT"},
     ]
 

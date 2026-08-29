@@ -122,7 +122,9 @@ def _to_utc(when) -> datetime.datetime:
     rather than rejected.
     """
     ts = pd.Timestamp(when)
-    return (ts.tz_localize("UTC") if ts.tzinfo is None else ts.tz_convert("UTC")).to_pydatetime()
+    return (
+        ts.tz_localize("UTC") if ts.tzinfo is None else ts.tz_convert("UTC")
+    ).to_pydatetime()
 
 
 def _end_of_day_if_midnight(when: datetime.datetime) -> datetime.datetime:
@@ -188,13 +190,13 @@ def assert_designated(
         with open(policy_path, "r", encoding="utf-8") as fh:
             policy = yaml.safe_load(fh) or {}
     except yaml.YAMLError as exc:
-        raise ReservedDataError(f"{policy_path} did not parse: {exc}. Denying.") from exc
+        raise ReservedDataError(
+            f"{policy_path} did not parse: {exc}. Denying."
+        ) from exc
 
     entry = policy.get(POLICY_KEY)
     if not isinstance(entry, dict):
-        raise ReservedDataError(
-            f"{policy_path} has no '{POLICY_KEY}' entry. Denying."
-        )
+        raise ReservedDataError(f"{policy_path} has no '{POLICY_KEY}' entry. Denying.")
 
     designations = entry.get("designations") or []
     req_start = pd.Timestamp(start).normalize()
@@ -206,7 +208,10 @@ def assert_designated(
             logger.info(
                 "WhaleFootprintFetcher: window %s..%s released by designation "
                 "%s..%s (ratified %s)",
-                req_start.date(), req_end.date(), d["start"], d["end"],
+                req_start.date(),
+                req_end.date(),
+                d["start"],
+                d["end"],
                 d.get("ratified", "?"),
             )
             return
@@ -265,7 +270,9 @@ class WhaleFootprintFetcher(BaseFetcher):
         assert_designated(self.start_date, self.end_date, policy_path)
 
         self.capture_root = (
-            Path(capture_root) if capture_root else Path(data_dir) / DEFAULT_CAPTURE_SUBDIR
+            Path(capture_root)
+            if capture_root
+            else Path(data_dir) / DEFAULT_CAPTURE_SUBDIR
         )
         self.bar_seconds = int(bar_seconds)
         self.large_quantile = float(large_quantile)
@@ -314,16 +321,15 @@ class WhaleFootprintFetcher(BaseFetcher):
         missing or silently filled.
         """
         if not self.capture_root.is_dir():
-            logger.warning(
-                "WhaleFootprintFetcher: no capture at %s", self.capture_root
-            )
+            logger.warning("WhaleFootprintFetcher: no capture at %s", self.capture_root)
             return pd.DataFrame()
 
         reader = ShardReader(self.capture_root)
         if not reader.shard_paths("trades", symbol):
             logger.warning(
                 "WhaleFootprintFetcher: no trade shards for %s under %s",
-                symbol, self.capture_root,
+                symbol,
+                self.capture_root,
             )
             return pd.DataFrame()
 
@@ -345,7 +351,8 @@ class WhaleFootprintFetcher(BaseFetcher):
         if reader.truncations:
             logger.info(
                 "WhaleFootprintFetcher: %d truncated shard tail(s) tolerated for %s",
-                len(reader.truncations), symbol,
+                len(reader.truncations),
+                symbol,
             )
         if df.empty:
             logger.warning("WhaleFootprintFetcher: no bars produced for %s", symbol)
@@ -353,6 +360,8 @@ class WhaleFootprintFetcher(BaseFetcher):
 
         logger.info(
             "WhaleFootprintFetcher: %s -> %d bars (%d attested)",
-            symbol, len(df), int(df["whale_attested"].sum()),
+            symbol,
+            len(df),
+            int(df["whale_attested"].sum()),
         )
         return df[["timestamp", *FEATURE_COLUMNS]]

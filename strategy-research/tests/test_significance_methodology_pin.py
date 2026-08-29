@@ -14,6 +14,7 @@ The gate is the audit; _ensure_significance_methodology_pinned is the wiring.
 Without the wiring the pin is a statement no code acts on, and each run has to
 be repaired by hand after the gate catches it.
 """
+
 import json
 import sys
 from pathlib import Path
@@ -29,8 +30,10 @@ import run_phase1_research as rpr  # noqa: E402
 
 def _config(tmp_path, **extra):
     p = tmp_path / "candidate_strategy_config.json"
-    p.write_text(json.dumps(
-        {"aux_feeds": [], "regime_detector": {}, "strategies": {}, **extra}), encoding="utf-8")
+    p.write_text(
+        json.dumps({"aux_feeds": [], "regime_detector": {}, "strategies": {}, **extra}),
+        encoding="utf-8",
+    )
     return p
 
 
@@ -40,11 +43,14 @@ def test_pin_is_propagated_into_the_config(tmp_path):
     assert "significance_methodology" not in json.loads(cfg.read_text(encoding="utf-8"))
 
     wrote = rpr._ensure_significance_methodology_pinned(
-        cfg, {"significance_methodology": "episode_blocked_a851a"}, "run_test")
+        cfg, {"significance_methodology": "episode_blocked_a851a"}, "run_test"
+    )
 
     assert wrote is True
-    assert json.loads(cfg.read_text(encoding="utf-8"))["significance_methodology"] \
+    assert (
+        json.loads(cfg.read_text(encoding="utf-8"))["significance_methodology"]
         == "episode_blocked_a851a"
+    )
 
 
 def test_it_is_idempotent(tmp_path):
@@ -52,7 +58,8 @@ def test_it_is_idempotent(tmp_path):
     cfg = _config(tmp_path, significance_methodology="episode_blocked_a851a")
     before = cfg.read_text(encoding="utf-8")
     wrote = rpr._ensure_significance_methodology_pinned(
-        cfg, {"significance_methodology": "episode_blocked_a851a"}, "run_test")
+        cfg, {"significance_methodology": "episode_blocked_a851a"}, "run_test"
+    )
     assert wrote is False
     assert cfg.read_text(encoding="utf-8") == before
 
@@ -63,9 +70,12 @@ def test_a_conflicting_config_raises_rather_than_being_overwritten(tmp_path):
     cfg = _config(tmp_path, significance_methodology="something_else")
     with pytest.raises(RuntimeError, match="conflicting"):
         rpr._ensure_significance_methodology_pinned(
-            cfg, {"significance_methodology": "episode_blocked_a851a"}, "run_test")
-    assert json.loads(cfg.read_text(encoding="utf-8"))["significance_methodology"] \
-        == "something_else", "the config must be left untouched"
+            cfg, {"significance_methodology": "episode_blocked_a851a"}, "run_test"
+        )
+    assert (
+        json.loads(cfg.read_text(encoding="utf-8"))["significance_methodology"]
+        == "something_else"
+    ), "the config must be left untouched"
 
 
 def test_no_pin_is_a_no_op(tmp_path):
@@ -82,7 +92,9 @@ def test_a_pin_with_no_config_raises(tmp_path):
     with pytest.raises(FileNotFoundError):
         rpr._ensure_significance_methodology_pinned(
             tmp_path / "missing.json",
-            {"significance_methodology": "episode_blocked_a851a"}, "run_test")
+            {"significance_methodology": "episode_blocked_a851a"},
+            "run_test",
+        )
 
 
 def test_the_pinned_value_actually_reaches_the_prescreen_branch(tmp_path):
@@ -91,7 +103,8 @@ def test_the_pinned_value_actually_reaches_the_prescreen_branch(tmp_path):
     exactly this expression."""
     cfg = _config(tmp_path)
     rpr._ensure_significance_methodology_pinned(
-        cfg, {"significance_methodology": "episode_blocked_a851a"}, "run_test")
+        cfg, {"significance_methodology": "episode_blocked_a851a"}, "run_test"
+    )
     config_raw = json.loads(cfg.read_text(encoding="utf-8"))
     assert config_raw.get("significance_methodology") == "episode_blocked_a851a"
 
@@ -100,11 +113,13 @@ def test_the_pinned_value_actually_reaches_the_prescreen_branch(tmp_path):
 # The methodology LABEL now tracks the block size it was computed with.
 # ---------------------------------------------------------------------------
 
+
 def test_label_is_unchanged_at_1h_so_the_archive_reproduces():
     """block_24_fisher_z was hardcoded. Deriving it must not rename a single
     archived 1h result: at 1h the derived block size is 24, so the label is
     byte-identical."""
     from timeframe import bars_per_day
+
     assert f"block_{bars_per_day('1h')}_fisher_z" == "block_24_fisher_z"
 
 
@@ -112,6 +127,7 @@ def test_label_tracks_the_block_size_on_other_timeframes():
     """A 4h run used to stamp 'block_24' into its artifact while dividing by 6.
     The label is what a later reader reconstructs the method from."""
     from timeframe import bars_per_day
+
     assert f"block_{bars_per_day('4h')}_fisher_z" == "block_6_fisher_z"
     assert f"block_{bars_per_day('1d')}_fisher_z" == "block_1_fisher_z"
 
@@ -122,5 +138,6 @@ def test_a_derived_label_is_still_not_an_a851a_outcome():
     must not accidentally make it look like a valid a851a outcome."""
     import episode_significance as es
     from timeframe import bars_per_day
+
     for tf in ("1h", "4h", "1d", "15m"):
         assert f"block_{bars_per_day(tf)}_fisher_z" not in es.VALID_METHODS

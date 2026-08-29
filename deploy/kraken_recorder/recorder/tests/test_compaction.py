@@ -88,9 +88,12 @@ def test_compress_replaces_the_raw_only_after_verifying(tmp_path):
     assert arc.exists()
     assert not src.exists(), "raw must be gone once the archive verified"
     assert not part_path(src).exists()
-    assert zstd.ZstdDecompressor().decompress(
-        arc.read_bytes(), max_output_size=len(original) * 2
-    ) == original
+    assert (
+        zstd.ZstdDecompressor().decompress(
+            arc.read_bytes(), max_output_size=len(original) * 2
+        )
+        == original
+    )
     assert arc.stat().st_size < len(original)
 
 
@@ -180,7 +183,7 @@ def test_sweep_leaves_shards_from_another_roll_regime_alone(tmp_path):
     rewrite them just because it does not recognise the name: that would be a
     silent modification of reserved data triggered by an unrelated startup.
     """
-    legacy = _shard(tmp_path, "2026-07-26.ndjson")     # daily regime
+    legacy = _shard(tmp_path, "2026-07-26.ndjson")  # daily regime
     stale_hour = _shard(tmp_path, "2026-07-26T10.ndjson")
 
     made = sweep(tmp_path, current_keys=["2026-07-26T11"], roll="hour")
@@ -213,8 +216,8 @@ def test_writer_rolls_hourly_and_compacts_the_closed_hour(tmp_path):
     w.period_key = lambda when=None: next(keys)  # type: ignore[assignment]
 
     for _ in range(3):
-        w.write_frame("book_d10", "BTCUSD", RAW)      # hour 10
-    w.write_frame("book_d10", "BTCUSD", RAW)          # rolls into hour 11
+        w.write_frame("book_d10", "BTCUSD", RAW)  # hour 10
+    w.write_frame("book_d10", "BTCUSD", RAW)  # rolls into hour 11
     w.close()
 
     d = tmp_path / "book_d10" / "BTCUSD"

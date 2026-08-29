@@ -18,6 +18,7 @@ test_absent_flag_end_to_end_matches_fixture are SLOW INTEGRATION TESTS (run
 the real backtest engine). Run explicitly:
   pytest tests/test_run_protocol_commission_bps_flag.py -v -m slow
 """
+
 import argparse
 import json
 import sys
@@ -40,17 +41,22 @@ FIXTURE_PATH = TBOT_ROOT / "tests" / "fixtures" / "warmup_prefetch_reference.jso
 # Unit: resolver precedence and pass-through
 # ---------------------------------------------------------------------------
 
+
 def test_absent_flag_falls_through_to_cost_product_spot():
-    cost_model = {"fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
-                  "perp": {"fee_rate_bps": {"default": 5.0}}}
+    cost_model = {
+        "fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
+        "perp": {"fee_rate_bps": {"default": 5.0}},
+    }
     resolved = rp._resolve_commission_rate("BTCUSDT", cost_model, None, "spot")
     expected = rp._commission_rate_for_symbol("BTCUSDT", cost_model, product="spot")
     assert resolved == expected == pytest.approx(0.008)
 
 
 def test_absent_flag_falls_through_to_cost_product_perp():
-    cost_model = {"fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
-                  "perp": {"fee_rate_bps": {"default": 5.0}}}
+    cost_model = {
+        "fee_rate_bps": {"BTCUSDT": 80.0, "default": 10.0},
+        "perp": {"fee_rate_bps": {"default": 5.0}},
+    }
     resolved = rp._resolve_commission_rate("BTCUSDT", cost_model, None, "perp")
     expected = rp._commission_rate_for_symbol("BTCUSDT", cost_model, product="perp")
     assert resolved == expected == pytest.approx(0.0005)
@@ -60,31 +66,46 @@ def test_commission_bps_10_resolves_to_historical_default_rate():
     # 10bps -> 0.001, the historical DEFAULT_COMMISSION_RATE -- neither
     # cost_model.yaml block (spot=7.5bps, perp=5bps) can express this, which is
     # exactly why this flag exists.
-    assert rp._resolve_commission_rate("BTCUSDT", None, 10.0, "spot") == pytest.approx(0.001)
+    assert rp._resolve_commission_rate("BTCUSDT", None, 10.0, "spot") == pytest.approx(
+        0.001
+    )
 
 
 def test_commission_bps_5_resolves_to_perp_rate():
-    assert rp._resolve_commission_rate("BTCUSDT", None, 5.0, "perp") == pytest.approx(0.0005)
+    assert rp._resolve_commission_rate("BTCUSDT", None, 5.0, "perp") == pytest.approx(
+        0.0005
+    )
 
 
 def test_commission_bps_takes_precedence_over_cost_product():
     """Both given: --commission-bps must win, regardless of --cost-product's value."""
-    cost_model = {"fee_rate_bps": {"default": 80.0}, "perp": {"fee_rate_bps": {"default": 5.0}}}
-    resolved_over_spot = rp._resolve_commission_rate("BTCUSDT", cost_model, 10.0, "spot")
-    resolved_over_perp = rp._resolve_commission_rate("BTCUSDT", cost_model, 10.0, "perp")
+    cost_model = {
+        "fee_rate_bps": {"default": 80.0},
+        "perp": {"fee_rate_bps": {"default": 5.0}},
+    }
+    resolved_over_spot = rp._resolve_commission_rate(
+        "BTCUSDT", cost_model, 10.0, "spot"
+    )
+    resolved_over_perp = rp._resolve_commission_rate(
+        "BTCUSDT", cost_model, 10.0, "perp"
+    )
     assert resolved_over_spot == resolved_over_perp == pytest.approx(0.001)
 
 
 def test_cli_commission_bps_defaults_to_none():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--commission-bps", type=float, default=None, dest="commission_bps")
+    parser.add_argument(
+        "--commission-bps", type=float, default=None, dest="commission_bps"
+    )
     args = parser.parse_args([])
     assert args.commission_bps is None
 
 
 def test_cli_commission_bps_parses_float():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--commission-bps", type=float, default=None, dest="commission_bps")
+    parser.add_argument(
+        "--commission-bps", type=float, default=None, dest="commission_bps"
+    )
     args = parser.parse_args(["--commission-bps", "10"])
     assert args.commission_bps == 10.0
 
@@ -92,6 +113,7 @@ def test_cli_commission_bps_parses_float():
 # ---------------------------------------------------------------------------
 # Integration: flag absent is byte-identical; flag present reaches real trades
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.slow
 @pytest.mark.real_repo_readonly

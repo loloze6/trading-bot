@@ -33,6 +33,7 @@ CLI:
   python strategy-research/tools/validate_regime_detector.py --config <path/to/strategy_config.json>
   python strategy-research/tools/validate_regime_detector.py --start 2024-01-01 --end 2025-12-31
 """
+
 import sys, os, json, copy, argparse, statistics
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -40,7 +41,7 @@ from pathlib import Path
 from collections import defaultdict
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_SR   = os.path.dirname(_HERE)
+_SR = os.path.dirname(_HERE)
 _REPO = os.path.dirname(_SR)
 _TBOT = os.path.join(_REPO, "trading-bot")
 if _TBOT not in sys.path:
@@ -58,35 +59,50 @@ from strategies.strategy_base import MarketRegime
 # Campaign defaults
 # ---------------------------------------------------------------------------
 
-_DEFAULT_CONFIG = os.path.join(_SR, "runs", "run_033", "artifacts", "candidate_strategy_config.json")
-_DEFAULT_SYMBOLS   = ["BTCUSDT", "ETHUSDT"]
+_DEFAULT_CONFIG = os.path.join(
+    _SR, "runs", "run_033", "artifacts", "candidate_strategy_config.json"
+)
+_DEFAULT_SYMBOLS = ["BTCUSDT", "ETHUSDT"]
 _DEFAULT_TIMEFRAME = "1h"
-_DEFAULT_START     = "2024-01-01"
-_DEFAULT_END       = "2025-12-31"   # walk-forward range only, never holdout
-_OUTPUT_PATH       = os.path.join(_SR, "regime_detector_report.yaml")
+_DEFAULT_START = "2024-01-01"
+_DEFAULT_END = "2025-12-31"  # walk-forward range only, never holdout
+_OUTPUT_PATH = os.path.join(_SR, "regime_detector_report.yaml")
 
 # Zero-trade slots from Keltner v2 re-run (Improvement 07 A2.1 seed)
 _V2_ZERO_TRADE_MONTHS = {
-    "BTCUSDT": ["2024-01", "2024-09", "2024-10", "2024-12", "2025-03", "2025-04", "2025-05", "2025-09", "2025-12"],
+    "BTCUSDT": [
+        "2024-01",
+        "2024-09",
+        "2024-10",
+        "2024-12",
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-09",
+        "2025-12",
+    ],
     "ETHUSDT": ["2024-01", "2024-03", "2024-11", "2024-12", "2025-02"],
 }
 
 # Confidence thresholds
-_HIGH_PERSISTENCE   = 24
-_HIGH_TRANSITIONS   = 4
-_HIGH_SENSITIVITY   = 0.15   # gate sensitivity (class-conditional or all-bars per A2.2 rule)
+_HIGH_PERSISTENCE = 24
+_HIGH_TRANSITIONS = 4
+_HIGH_SENSITIVITY = (
+    0.15  # gate sensitivity (class-conditional or all-bars per A2.2 rule)
+)
 _MEDIUM_PERSISTENCE = 12
 _MEDIUM_SENSITIVITY = 0.25
 
 # A2.2: activation plausibility band for a trend label on 1h crypto
-ACTIVATION_BAND_MIN = 0.10   # 10%
-ACTIVATION_BAND_MAX = 0.40   # 40%
+ACTIVATION_BAND_MIN = 0.10  # 10%
+ACTIVATION_BAND_MAX = 0.40  # 40%
 RARE_LABEL_THRESHOLD = 0.10  # use class-conditional when activation < this
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _config_hash(detector_cfg: dict) -> str:
     canonical = json.dumps(detector_cfg, sort_keys=True, separators=(",", ":"))
@@ -163,7 +179,9 @@ def _compute_all_bars_sensitivity(labels_orig, labels_perturbed):
     return diffs / n
 
 
-def _compute_class_conditional_sensitivity(labels_orig, labels_perturbed, label_name: str) -> dict:
+def _compute_class_conditional_sensitivity(
+    labels_orig, labels_perturbed, label_name: str
+) -> dict:
     """
     A2.2: for bars carrying `label_name` at baseline, compute:
       - class_conditional_sensitivity: fraction that lose that label under perturbation
@@ -181,11 +199,13 @@ def _compute_class_conditional_sensitivity(labels_orig, labels_perturbed, label_
     perturbed_total_count = sum(1 for _, r in labels_perturbed[:n] if r == label_name)
 
     return {
-        "baseline_count":               baseline_count,
-        "lost_count":                   lost,
+        "baseline_count": baseline_count,
+        "lost_count": lost,
         "class_conditional_sensitivity": round(lost / baseline_count, 4),
-        "perturbed_count":              perturbed_total_count,
-        "relative_population_change":   round((perturbed_total_count - baseline_count) / baseline_count, 4),
+        "perturbed_count": perturbed_total_count,
+        "relative_population_change": round(
+            (perturbed_total_count - baseline_count) / baseline_count, 4
+        ),
     }
 
 
@@ -197,8 +217,10 @@ def _compute_per_label_class_conditional(labels_orig, labels_down, labels_up):
     all_labels = {r for _, r in labels_orig}
     result = {}
     for label in all_labels:
-        down_stats = _compute_class_conditional_sensitivity(labels_orig, labels_down, label)
-        up_stats   = _compute_class_conditional_sensitivity(labels_orig, labels_up,   label)
+        down_stats = _compute_class_conditional_sensitivity(
+            labels_orig, labels_down, label
+        )
+        up_stats = _compute_class_conditional_sensitivity(labels_orig, labels_up, label)
         if down_stats is None and up_stats is None:
             continue
         # worst-case direction = highest class-conditional sensitivity
@@ -208,20 +230,22 @@ def _compute_per_label_class_conditional(labels_orig, labels_down, labels_up):
         elif up_stats is None:
             worst = down_stats
             direction = "down"
-        elif (down_stats["class_conditional_sensitivity"]
-              >= up_stats["class_conditional_sensitivity"]):
+        elif (
+            down_stats["class_conditional_sensitivity"]
+            >= up_stats["class_conditional_sensitivity"]
+        ):
             worst = down_stats
             direction = "down"
         else:
             worst = up_stats
             direction = "up"
         result[label] = {
-            "baseline_count":               worst["baseline_count"],
+            "baseline_count": worst["baseline_count"],
             "class_conditional_sensitivity": worst["class_conditional_sensitivity"],
-            "worst_case_direction":         direction,
-            "relative_population_change":   worst["relative_population_change"],
+            "worst_case_direction": direction,
+            "relative_population_change": worst["relative_population_change"],
             "down": down_stats,
-            "up":   up_stats,
+            "up": up_stats,
         }
     return result
 
@@ -238,15 +262,24 @@ def _monthly_activation(labels):
     trending_total = sum(1 for _, r in labels if r == "trending")
     activation_rate = trending_total / len(labels) if labels else 0.0
     month_fired = {m: any(r == "trending" for r in rs) for m, rs in monthly.items()}
-    zero_slot_pct = sum(1 for f in month_fired.values() if not f) / len(month_fired) if month_fired else 0.0
+    zero_slot_pct = (
+        sum(1 for f in month_fired.values() if not f) / len(month_fired)
+        if month_fired
+        else 0.0
+    )
 
     return activation_rate, zero_slot_pct, month_fired
 
 
-def _assign_confidence(persistence, transitions_per_window,
-                       all_bars_sensitivity, activation_rate,
-                       class_cond_sens_trending,
-                       band_min=ACTIVATION_BAND_MIN, band_max=ACTIVATION_BAND_MAX):
+def _assign_confidence(
+    persistence,
+    transitions_per_window,
+    all_bars_sensitivity,
+    activation_rate,
+    class_cond_sens_trending,
+    band_min=ACTIVATION_BAND_MIN,
+    band_max=ACTIVATION_BAND_MAX,
+):
     """
     A2.2 revised confidence rule.
     Gate sensitivity: class-conditional for rare labels (activation < RARE_LABEL_THRESHOLD),
@@ -255,21 +288,23 @@ def _assign_confidence(persistence, transitions_per_window,
     """
     rare = activation_rate < RARE_LABEL_THRESHOLD
     if rare and class_cond_sens_trending is not None:
-        gate_sens  = class_cond_sens_trending
-        sens_label = f"class_cond_sensitivity(TRENDING)={gate_sens:.3f} [rare label: activation={100*activation_rate:.2f}%<10%]"
+        gate_sens = class_cond_sens_trending
+        sens_label = f"class_cond_sensitivity(TRENDING)={gate_sens:.3f} [rare label: activation={100 * activation_rate:.2f}%<10%]"
     else:
-        gate_sens  = all_bars_sensitivity
+        gate_sens = all_bars_sensitivity
         sens_label = f"all_bars_sensitivity={gate_sens:.3f}"
 
     in_band = band_min <= activation_rate <= band_max
-    band_note = f"activation={100*activation_rate:.2f}% in [{100*band_min:.0f}%,{100*band_max:.0f}%]"
-    band_fail_note = f"activation={100*activation_rate:.2f}% outside [{100*band_min:.0f}%,{100*band_max:.0f}%] (cap: medium)"
+    band_note = f"activation={100 * activation_rate:.2f}% in [{100 * band_min:.0f}%,{100 * band_max:.0f}%]"
+    band_fail_note = f"activation={100 * activation_rate:.2f}% outside [{100 * band_min:.0f}%,{100 * band_max:.0f}%] (cap: medium)"
 
     # High requires: persistence, transitions, gate_sensitivity, AND activation in band
-    if (persistence >= _HIGH_PERSISTENCE
-            and transitions_per_window <= _HIGH_TRANSITIONS
-            and gate_sens <= _HIGH_SENSITIVITY
-            and in_band):
+    if (
+        persistence >= _HIGH_PERSISTENCE
+        and transitions_per_window <= _HIGH_TRANSITIONS
+        and gate_sens <= _HIGH_SENSITIVITY
+        and in_band
+    ):
         return "high", (
             f"persistence={persistence:.1f}>=24, transitions={transitions_per_window:.1f}<=4, "
             f"{sens_label}<=0.15, {band_note}"
@@ -310,6 +345,7 @@ def _known_weak_periods(symbol: str, month_fired: dict) -> list:
 # Main validation function
 # ---------------------------------------------------------------------------
 
+
 def validate(config_path: str, symbols: list, start: str, end: str) -> dict:
     with open(config_path, encoding="utf-8") as f:
         strategy_cfg = json.load(f)
@@ -320,7 +356,7 @@ def validate(config_path: str, symbols: list, start: str, end: str) -> dict:
 
     det_hash = _config_hash(detector_cfg)
     cfg_down = _perturb_thresholds(detector_cfg, 0.90)
-    cfg_up   = _perturb_thresholds(detector_cfg, 1.10)
+    cfg_up = _perturb_thresholds(detector_cfg, 1.10)
 
     per_symbol = []
     for symbol in symbols:
@@ -335,27 +371,34 @@ def validate(config_path: str, symbols: list, start: str, end: str) -> dict:
 
         labels_orig = _run_detector(detector_cfg, df)
         labels_down = _run_detector(cfg_down, df)
-        labels_up   = _run_detector(cfg_up,   df)
+        labels_up = _run_detector(cfg_up, df)
 
         # All-bars metrics
-        persistence    = _compute_persistence(labels_orig)
+        persistence = _compute_persistence(labels_orig)
         transitions_pw = _compute_transition_frequency(labels_orig)
-        all_bars_sens  = max(
+        all_bars_sens = max(
             _compute_all_bars_sensitivity(labels_orig, labels_down),
             _compute_all_bars_sensitivity(labels_orig, labels_up),
         )
 
         # A2.2: class-conditional sensitivity per label
-        per_label_cc = _compute_per_label_class_conditional(labels_orig, labels_down, labels_up)
-        cc_trending = (per_label_cc.get("trending") or {}).get("class_conditional_sensitivity")
+        per_label_cc = _compute_per_label_class_conditional(
+            labels_orig, labels_down, labels_up
+        )
+        cc_trending = (per_label_cc.get("trending") or {}).get(
+            "class_conditional_sensitivity"
+        )
 
         # Activation
         activation_rate, zero_slot_pct, month_fired = _monthly_activation(labels_orig)
         in_band = ACTIVATION_BAND_MIN <= activation_rate <= ACTIVATION_BAND_MAX
 
         confidence, rationale = _assign_confidence(
-            persistence, transitions_pw, all_bars_sens,
-            activation_rate, cc_trending,
+            persistence,
+            transitions_pw,
+            all_bars_sens,
+            activation_rate,
+            cc_trending,
         )
         weak_periods = _known_weak_periods(symbol, month_fired)
 
@@ -364,49 +407,60 @@ def validate(config_path: str, symbols: list, start: str, end: str) -> dict:
         print(
             f"confidence={confidence}  persistence={persistence:.1f}  "
             f"all_bars_sens={all_bars_sens:.3f}  cc_trending={cc_str}  "
-            f"activation={100*activation_rate:.2f}%  in_band={in_band}  zero_slots={100*zero_slot_pct:.0f}%"
+            f"activation={100 * activation_rate:.2f}%  in_band={in_band}  zero_slots={100 * zero_slot_pct:.0f}%"
         )
 
-        per_symbol.append({
-            "symbol":    symbol,
-            "timeframe": "1h",
-            "metrics": {
-                "regime_persistence_median_bars":  round(persistence, 2),
-                "transition_frequency_per_window": round(transitions_pw, 2),
-                # All-bars figure — retained but CANNOT upgrade confidence for rare labels
-                "parameter_sensitivity":           round(all_bars_sens, 4),
-                "trending_activation_rate":        round(activation_rate, 4),
-                "zero_trade_slot_pct":             round(zero_slot_pct, 4),
-                "agreement_with_reference_labels": None,
-                # A2.2 additions
-                "class_conditional_sensitivity_per_label": {
-                    label: {
-                        "baseline_count":               v["baseline_count"],
-                        "class_conditional_sensitivity": v["class_conditional_sensitivity"],
-                        "worst_case_direction":         v["worst_case_direction"],
-                        "relative_population_change":   v["relative_population_change"],
-                    }
-                    for label, v in per_label_cc.items()
+        per_symbol.append(
+            {
+                "symbol": symbol,
+                "timeframe": "1h",
+                "metrics": {
+                    "regime_persistence_median_bars": round(persistence, 2),
+                    "transition_frequency_per_window": round(transitions_pw, 2),
+                    # All-bars figure — retained but CANNOT upgrade confidence for rare labels
+                    "parameter_sensitivity": round(all_bars_sens, 4),
+                    "trending_activation_rate": round(activation_rate, 4),
+                    "zero_trade_slot_pct": round(zero_slot_pct, 4),
+                    "agreement_with_reference_labels": None,
+                    # A2.2 additions
+                    "class_conditional_sensitivity_per_label": {
+                        label: {
+                            "baseline_count": v["baseline_count"],
+                            "class_conditional_sensitivity": v[
+                                "class_conditional_sensitivity"
+                            ],
+                            "worst_case_direction": v["worst_case_direction"],
+                            "relative_population_change": v[
+                                "relative_population_change"
+                            ],
+                        }
+                        for label, v in per_label_cc.items()
+                    },
+                    "activation_band_check": {
+                        "within_band": in_band,
+                        "band_min": ACTIVATION_BAND_MIN,
+                        "band_max": ACTIVATION_BAND_MAX,
+                        "rare_label_threshold": RARE_LABEL_THRESHOLD,
+                        "gate_metric_used": "class_conditional"
+                        if (
+                            activation_rate < RARE_LABEL_THRESHOLD
+                            and cc_trending is not None
+                        )
+                        else "all_bars",
+                    },
                 },
-                "activation_band_check": {
-                    "within_band":           in_band,
-                    "band_min":              ACTIVATION_BAND_MIN,
-                    "band_max":              ACTIVATION_BAND_MAX,
-                    "rare_label_threshold":  RARE_LABEL_THRESHOLD,
-                    "gate_metric_used":      "class_conditional" if (activation_rate < RARE_LABEL_THRESHOLD and cc_trending is not None) else "all_bars",
-                },
-            },
-            "confidence":           confidence,
-            "confidence_rationale": rationale,
-            "known_weak_periods":   weak_periods,
-        })
+                "confidence": confidence,
+                "confidence_rationale": rationale,
+                "known_weak_periods": weak_periods,
+            }
+        )
 
     return {
-        "detector_version":          det_hash,
-        "evaluated_at":              datetime.now(timezone.utc).isoformat(),
-        "data_range":                {"start": start, "end": end},
-        "config_source":             config_path,
-        "per_symbol_per_timeframe":  per_symbol,
+        "detector_version": det_hash,
+        "evaluated_at": datetime.now(timezone.utc).isoformat(),
+        "data_range": {"start": start, "end": end},
+        "config_source": config_path,
+        "per_symbol_per_timeframe": per_symbol,
     }
 
 
@@ -414,13 +468,14 @@ def validate(config_path: str, symbols: list, start: str, end: str) -> dict:
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(description="Validate regime detector standalone.")
     parser.add_argument("--config", default=_DEFAULT_CONFIG)
     parser.add_argument("--symbols", nargs="+", default=_DEFAULT_SYMBOLS)
-    parser.add_argument("--start",   default=_DEFAULT_START)
-    parser.add_argument("--end",     default=_DEFAULT_END)
-    parser.add_argument("--out",     default=_OUTPUT_PATH)
+    parser.add_argument("--start", default=_DEFAULT_START)
+    parser.add_argument("--end", default=_DEFAULT_END)
+    parser.add_argument("--out", default=_OUTPUT_PATH)
     args = parser.parse_args()
 
     policy_path = os.path.join(_SR, "config", "campaign_data_policy.yaml")
@@ -429,7 +484,9 @@ def main():
             policy = yaml.safe_load(f)
         holdout_start = policy.get("holdout_range", [None, None])[0]
         if holdout_start and args.end >= holdout_start:
-            print(f"WARNING: --end {args.end} >= holdout_start {holdout_start}. Clamping.")
+            print(
+                f"WARNING: --end {args.end} >= holdout_start {holdout_start}. Clamping."
+            )
             args.end = holdout_start
 
     print(f"Regime detector validation: {args.symbols} {args.start} to {args.end}")
@@ -441,17 +498,21 @@ def main():
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
-        yaml.dump(report, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
+        yaml.dump(
+            report, f, allow_unicode=True, sort_keys=False, default_flow_style=False
+        )
 
     print(f"\nWrote: {out_path}")
     print("Summary:")
     for e in report["per_symbol_per_timeframe"]:
-        m  = e["metrics"]
-        cc = (m.get("class_conditional_sensitivity_per_label") or {}).get("trending") or {}
+        m = e["metrics"]
+        cc = (m.get("class_conditional_sensitivity_per_label") or {}).get(
+            "trending"
+        ) or {}
         ab = m.get("activation_band_check") or {}
         print(
             f"  {e['symbol']}: {e['confidence']}  "
-            f"activation={100*m['trending_activation_rate']:.2f}%  "
+            f"activation={100 * m['trending_activation_rate']:.2f}%  "
             f"in_band={ab.get('within_band')}  "
             f"cc_sensitivity(TRENDING)={cc.get('class_conditional_sensitivity', 'n/a')}  "
             f"rel_pop_change={cc.get('relative_population_change', 'n/a')}"

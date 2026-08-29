@@ -16,6 +16,7 @@ Covers:
   point default_regime at a null strategies.regimes entry — that combination silently
   forecasts 0.0 on every bar forever.
 """
+
 import json
 import sys
 from pathlib import Path
@@ -27,13 +28,20 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from tools.validate_config import validate
 
 _RUN_043_ATTEMPT_1_CONFIG = (
-    REPO_ROOT / "strategy-research" / "runs" / "run_043" / "attempt_1_blocked"
+    REPO_ROOT
+    / "strategy-research"
+    / "runs"
+    / "run_043"
+    / "attempt_1_blocked"
     / "candidate_strategy_config.json"
 )
 
 
 def _minimal_config(regime_detector: dict, regimes: dict) -> dict:
-    return {"regime_detector": regime_detector, "strategies": {"warmup": 25, "regimes": regimes}}
+    return {
+        "regime_detector": regime_detector,
+        "strategies": {"warmup": 25, "regimes": regimes},
+    }
 
 
 EMA = {
@@ -49,6 +57,7 @@ EMA = {
 # Non-regression: the actual run_043 attempt-1 failure fixture
 # ---------------------------------------------------------------------------
 
+
 def test_run_043_attempt_1_invented_regime_name_is_still_rejected():
     """Non-regression: V7 must still catch the invented 'active' regime name that
     caused run_043's first blocker (2026-07-04). This test does not depend on F1's
@@ -56,6 +65,7 @@ def test_run_043_attempt_1_invented_regime_name_is_still_rejected():
     must keep working after the V9/V10 changes above."""
     if not _RUN_043_ATTEMPT_1_CONFIG.exists():
         import pytest
+
         pytest.skip("run_043 attempt_1_blocked fixture not present on disk")
 
     with open(_RUN_043_ATTEMPT_1_CONFIG) as f:
@@ -72,18 +82,33 @@ def test_run_043_attempt_1_invented_regime_name_is_still_rejected():
 # mean_reversion/chop as well as trending.
 # ---------------------------------------------------------------------------
 
+
 def _gated_config(default_regime: str) -> dict:
     """A REAL gate exists here (rules is non-empty) — aliasing default_regime to one
     of the gated regime names is a genuine bypass and must be forbidden."""
     return _minimal_config(
         regime_detector={
             "mode": "threshold_rules",
-            "components": [{"id": "er", "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent"}],
-            "rules": [{"regime": "trending", "any_of": [[{"id": "er", "op": "gte", "value": 0.5}]]}],
+            "components": [
+                {
+                    "id": "er",
+                    "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+                }
+            ],
+            "rules": [
+                {
+                    "regime": "trending",
+                    "any_of": [[{"id": "er", "op": "gte", "value": 0.5}]],
+                }
+            ],
             "default_regime": default_regime,
         },
-        regimes={"trending": {"components": [EMA]}, "mean_reversion": {"components": [EMA]},
-                 "chop": {"components": [EMA]}, "unknown": None},
+        regimes={
+            "trending": {"components": [EMA]},
+            "mean_reversion": {"components": [EMA]},
+            "chop": {"components": [EMA]},
+            "unknown": None,
+        },
     )
 
 
@@ -119,7 +144,9 @@ def _ungated_pattern_a_config(default_regime: str) -> dict:
     regimes[default_regime] = {"components": [EMA]}
     return _minimal_config(
         regime_detector={
-            "mode": "threshold_rules", "components": [], "rules": [],
+            "mode": "threshold_rules",
+            "components": [],
+            "rules": [],
             "default_regime": default_regime,
         },
         regimes=regimes,
@@ -148,6 +175,7 @@ def test_v9_permits_mean_reversion_and_chop_default_when_fully_ungated():
 # V10 (new): fully-ungated config must not point default_regime at a null block
 # ---------------------------------------------------------------------------
 
+
 def test_v10_flags_dead_ungated_config():
     """components=[] and rules=[] means EVERY bar resolves to default_regime — if that
     key's strategies.regimes block is null, the config forecasts 0.0 forever with no
@@ -155,10 +183,17 @@ def test_v10_flags_dead_ungated_config():
     pattern (moving default_regime without moving its components block)."""
     config = _minimal_config(
         regime_detector={
-            "mode": "threshold_rules", "components": [], "rules": [],
+            "mode": "threshold_rules",
+            "components": [],
+            "rules": [],
             "default_regime": "mean_reversion",
         },
-        regimes={"trending": None, "mean_reversion": None, "chop": None, "unknown": None},
+        regimes={
+            "trending": None,
+            "mean_reversion": None,
+            "chop": None,
+            "unknown": None,
+        },
     )
     violations = validate(config)
     assert any("VIOLATION V10" in v for v in violations), (
@@ -169,7 +204,9 @@ def test_v10_flags_dead_ungated_config():
 def test_v10_permits_correctly_populated_fully_ungated_config():
     for name in ("trending", "mean_reversion", "chop", "unknown"):
         violations = validate(_ungated_pattern_a_config(name))
-        assert not any("VIOLATION V10" in v for v in violations), f"{name}: {violations}"
+        assert not any("VIOLATION V10" in v for v in violations), (
+            f"{name}: {violations}"
+        )
 
 
 def test_v10_does_not_fire_for_gated_configs():
@@ -197,13 +234,18 @@ def test_v10_does_not_fire_for_gated_configs():
 # means "unknown", not "null". Only an explicit null is an error.
 # ---------------------------------------------------------------------------
 
+
 def _gated_config_no_default_regime() -> dict:
     detector = _gated_config("unknown")["regime_detector"]
     del detector["default_regime"]
     return _minimal_config(
         regime_detector=detector,
-        regimes={"trending": {"components": [EMA]}, "mean_reversion": {"components": [EMA]},
-                 "chop": {"components": [EMA]}, "unknown": None},
+        regimes={
+            "trending": {"components": [EMA]},
+            "mean_reversion": {"components": [EMA]},
+            "chop": {"components": [EMA]},
+            "unknown": None,
+        },
     )
 
 
@@ -220,11 +262,17 @@ def test_v7_rejects_explicit_null_default_regime_when_fully_ungated():
     fall-through fires on EVERY bar, so the whole config is inert."""
     config = _minimal_config(
         regime_detector={
-            "mode": "threshold_rules", "components": [], "rules": [],
+            "mode": "threshold_rules",
+            "components": [],
+            "rules": [],
             "default_regime": None,
         },
-        regimes={"trending": None, "mean_reversion": {"components": [EMA]},
-                 "chop": None, "unknown": None},
+        regimes={
+            "trending": None,
+            "mean_reversion": {"components": [EMA]},
+            "chop": None,
+            "unknown": None,
+        },
     )
     violations = validate(config)
     assert any("VIOLATION V7" in v and "default_regime" in v for v in violations), (
@@ -253,10 +301,17 @@ def test_null_default_regime_reports_v7_only_and_not_a_garbled_v10():
     """
     config = _minimal_config(
         regime_detector={
-            "mode": "threshold_rules", "components": [], "rules": [],
+            "mode": "threshold_rules",
+            "components": [],
+            "rules": [],
             "default_regime": None,
         },
-        regimes={"trending": None, "mean_reversion": None, "chop": None, "unknown": None},
+        regimes={
+            "trending": None,
+            "mean_reversion": None,
+            "chop": None,
+            "unknown": None,
+        },
     )
     violations = validate(config)
     assert any("VIOLATION V7" in v and "default_regime" in v for v in violations)
@@ -270,9 +325,9 @@ def test_valid_default_regime_names_still_pass_v7():
     """The fix must not become over-strict: all four mapped names stay clean."""
     for name in ("trending", "mean_reversion", "chop", "unknown"):
         violations = validate(_gated_config(name))
-        assert not any("VIOLATION V7" in v and "default_regime" in v for v in violations), (
-            f"{name}: V7 wrongly rejected a valid default_regime; got: {violations}"
-        )
+        assert not any(
+            "VIOLATION V7" in v and "default_regime" in v for v in violations
+        ), f"{name}: V7 wrongly rejected a valid default_regime; got: {violations}"
 
 
 def test_v10_flags_a_dead_ungated_config_that_omits_default_regime():
@@ -286,7 +341,12 @@ def test_v10_flags_a_dead_ungated_config_that_omits_default_regime():
     detector = {"mode": "threshold_rules", "components": [], "rules": []}
     config = _minimal_config(
         regime_detector=detector,
-        regimes={"trending": None, "mean_reversion": None, "chop": None, "unknown": None},
+        regimes={
+            "trending": None,
+            "mean_reversion": None,
+            "chop": None,
+            "unknown": None,
+        },
     )
     assert "default_regime" not in detector, "fixture must omit the key, not null it"
     violations = validate(config)
@@ -301,8 +361,12 @@ def test_v10_still_permits_an_omitted_default_regime_with_a_populated_unknown_bl
     the implied 'unknown' regime actually carries components."""
     config = _minimal_config(
         regime_detector={"mode": "threshold_rules", "components": [], "rules": []},
-        regimes={"trending": None, "mean_reversion": None, "chop": None,
-                 "unknown": {"components": [EMA]}},
+        regimes={
+            "trending": None,
+            "mean_reversion": None,
+            "chop": None,
+            "unknown": {"components": [EMA]},
+        },
     )
     violations = validate(config)
     assert not violations, f"Expected a clean config; got: {violations}"

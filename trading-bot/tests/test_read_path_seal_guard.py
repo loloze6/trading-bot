@@ -11,6 +11,7 @@ REFUSES rather than silently dropping: quietly returning a shorter series than
 was requested hands the caller a backtest over a different window than it
 believes it ran.
 """
+
 import sys
 from pathlib import Path
 
@@ -28,8 +29,9 @@ from data.data_manager import (  # noqa: E402
 
 
 def _frame(*stamps):
-    return pd.DataFrame({"timestamp": [pd.Timestamp(s) for s in stamps],
-                         "close": [1.0] * len(stamps)})
+    return pd.DataFrame(
+        {"timestamp": [pd.Timestamp(s) for s in stamps], "close": [1.0] * len(stamps)}
+    )
 
 
 def test_seal_is_read_from_policy_not_hardcoded(tmp_path, monkeypatch):
@@ -37,6 +39,7 @@ def test_seal_is_read_from_policy_not_hardcoded(tmp_path, monkeypatch):
     the 'correct-looking banner over a stale check' shape already flagged
     against holdout_date_gate.sh's PATTERN."""
     import data.data_manager as dm
+
     policy = tmp_path / "p.yaml"
     policy.write_text("holdout_range: ['2025-06-01', '2025-12-31']\n", encoding="utf-8")
     monkeypatch.setattr(dm, "_POLICY_PATH", policy)
@@ -45,6 +48,7 @@ def test_seal_is_read_from_policy_not_hardcoded(tmp_path, monkeypatch):
 
 def test_unreadable_policy_refuses_rather_than_defaulting(tmp_path, monkeypatch):
     import data.data_manager as dm
+
     monkeypatch.setattr(dm, "_POLICY_PATH", tmp_path / "nope.yaml")
     with pytest.raises(SealedDataError, match="Cannot read holdout_range"):
         dm._holdout_bounds()
@@ -69,7 +73,7 @@ def test_a_wholly_pre_seal_frame_passes_untouched():
     """Control, and the bit-identity claim in miniature: every legitimate window
     ends <= the day before the seal, so the guard must be a no-op for them."""
     df = _frame("2024-04-01", "2025-06-15", "2025-12-31 23:00")
-    _assert_no_sealed_rows(df, "BTCUSDT")          # must not raise
+    _assert_no_sealed_rows(df, "BTCUSDT")  # must not raise
 
 
 def test_empty_and_columnless_frames_are_tolerated():
@@ -115,7 +119,7 @@ def test_the_guard_is_not_swallowed_by_the_fetch_error_handler(monkeypatch):
             pass
 
         def get_data(self):
-            return {"BTCUSDT": _frame("2026-02-01 00:00")}   # inside the seal
+            return {"BTCUSDT": _frame("2026-02-01 00:00")}  # inside the seal
 
         def validate_data_continuity(self, _symbol):
             return True, []
@@ -148,5 +152,6 @@ def test_allow_sealed_opt_in_still_returns_the_data(monkeypatch):
     mgr.interval_seconds = 3600
 
     got = dm.DataManager.fetch_historical_data(
-        mgr, "BTCUSDT", "2026-01-01", "2026-02-28", allow_sealed=True)
+        mgr, "BTCUSDT", "2026-01-01", "2026-02-28", allow_sealed=True
+    )
     assert len(got) == 1

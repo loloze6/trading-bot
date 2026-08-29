@@ -50,7 +50,9 @@ def _run(out_dir: Path, original_command: str):
             "KRAKEN_RECORDER_OUT": posix(out_dir),
             "SSH_ORIGINAL_COMMAND": original_command,
         },
-        capture_output=True, text=True, timeout=60,
+        capture_output=True,
+        text=True,
+        timeout=60,
     )
 
 
@@ -120,19 +122,25 @@ def test_the_observed_baseline_option_cluster_is_allowed(out_dir):
 
 def test_copy_links_is_refused(out_dir):
     """-L would let the client read through a symlink out of the capture dir."""
-    proc = _run(out_dir, f"rsync --server --sender -lLogDtprcze.iLsfxCIvu . {posix(out_dir)}")
+    proc = _run(
+        out_dir, f"rsync --server --sender -lLogDtprcze.iLsfxCIvu . {posix(out_dir)}"
+    )
     assert proc.returncode == 1
     assert "-L is not on the retrieval whitelist" in proc.stderr
 
 
 def test_copy_dirlinks_is_refused(out_dir):
-    proc = _run(out_dir, f"rsync --server --sender -lkogDtprcze.iLsfxCIvu . {posix(out_dir)}")
+    proc = _run(
+        out_dir, f"rsync --server --sender -lkogDtprcze.iLsfxCIvu . {posix(out_dir)}"
+    )
     assert proc.returncode == 1
     assert "-k is not on the retrieval whitelist" in proc.stderr
 
 
 def test_protect_args_is_refused(out_dir):
-    proc = _run(out_dir, f"rsync --server --sender -slogDtprcze.iLsfxCIvu . {posix(out_dir)}")
+    proc = _run(
+        out_dir, f"rsync --server --sender -slogDtprcze.iLsfxCIvu . {posix(out_dir)}"
+    )
     assert proc.returncode == 1
     assert "-s is not on the retrieval whitelist" in proc.stderr
 
@@ -170,7 +178,9 @@ def test_the_capital_L_in_the_compat_blob_is_not_mistaken_for_copy_links(out_dir
 
 
 def test_a_forged_protocol_blob_is_refused(out_dir):
-    proc = _run(out_dir, f"rsync --server --sender -logDtprcze.iLsfx/../ . {posix(out_dir)}")
+    proc = _run(
+        out_dir, f"rsync --server --sender -logDtprcze.iLsfx/../ . {posix(out_dir)}"
+    )
     assert proc.returncode == 1
     assert "REFUSED" in proc.stderr
 

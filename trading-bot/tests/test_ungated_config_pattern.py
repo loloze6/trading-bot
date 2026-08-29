@@ -69,6 +69,7 @@ change that fixed it, to assert the FIXED behavior instead — see
 `test_pattern_a_all_four_regime_labels_now_agree` and
 `test_run_042_precedent_current_regime_is_fresh_when_ready_fires`.
 """
+
 import sys
 import json
 import tempfile
@@ -79,8 +80,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-PROJECT_ROOT = Path(__file__).parent.parent          # trading-bot/ (inner)
-REPO_ROOT = PROJECT_ROOT.parent                       # repo root
+PROJECT_ROOT = Path(__file__).parent.parent  # trading-bot/ (inner)
+REPO_ROOT = PROJECT_ROOT.parent  # repo root
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from strategies.main_strategy import AdvancedStrategy
@@ -118,11 +119,16 @@ def _synthetic_bars(n: int = 70, seed: int = 42) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     steps = rng.normal(loc=0.05, scale=1.0, size=n).cumsum()
     close = 100.0 + steps
-    return pd.DataFrame({
-        "timestamp": pd.date_range("2024-01-01", periods=n, freq="h", tz="UTC"),
-        "open": close, "high": close + 0.5, "low": close - 0.5,
-        "close": close, "volume": 1.0,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2024-01-01", periods=n, freq="h", tz="UTC"),
+            "open": close,
+            "high": close + 0.5,
+            "low": close - 0.5,
+            "close": close,
+            "volume": 1.0,
+        }
+    )
 
 
 def _run_forecast_sequence(config: dict, bars: pd.DataFrame) -> list:
@@ -156,7 +162,9 @@ def test_pattern_a_produces_a_nontrivial_sequence(target_regime):
     seq = _run_forecast_sequence(_pattern_a_config(target_regime), BARS)
     ready = [v for v in seq if v is not None]
     assert len(ready) > 10, "warmup consumed the whole synthetic window — widen BARS"
-    assert len(set(ready)) > 5, "forecast sequence is degenerate/constant — not a real test"
+    assert len(set(ready)) > 5, (
+        "forecast sequence is degenerate/constant — not a real test"
+    )
 
 
 def test_pattern_a_all_four_regime_labels_now_agree():
@@ -172,10 +180,15 @@ def test_pattern_a_all_four_regime_labels_now_agree():
     guidance in workflow_artifacts/skills/backtest-engineering/SKILL.md on the basis
     of this test; that guidance was a workaround for the bug this fix removes.
     """
-    sequences = {r: _run_forecast_sequence(_pattern_a_config(r), BARS) for r in _VALID_REGIMES}
+    sequences = {
+        r: _run_forecast_sequence(_pattern_a_config(r), BARS) for r in _VALID_REGIMES
+    }
 
     mr, chop, trending, unknown = (
-        sequences["mean_reversion"], sequences["chop"], sequences["trending"], sequences["unknown"]
+        sequences["mean_reversion"],
+        sequences["chop"],
+        sequences["trending"],
+        sequences["unknown"],
     )
 
     assert mr == chop == trending == unknown, (
@@ -205,7 +218,12 @@ def test_pattern_a_all_four_regime_labels_now_agree():
 # ---------------------------------------------------------------------------
 
 _RUN_042_CONFIG_PATH = (
-    REPO_ROOT / "strategy-research" / "runs" / "run_042" / "artifacts" / "candidate_strategy_config.json"
+    REPO_ROOT
+    / "strategy-research"
+    / "runs"
+    / "run_042"
+    / "artifacts"
+    / "candidate_strategy_config.json"
 )
 
 
@@ -220,7 +238,9 @@ def _fear_greed_bars(n: int = 70, seed: int = 7) -> pd.DataFrame:
     return bars
 
 
-@pytest.mark.skipif(not _RUN_042_CONFIG_PATH.exists(), reason="run_042 artifact not present on disk")
+@pytest.mark.skipif(
+    not _RUN_042_CONFIG_PATH.exists(), reason="run_042 artifact not present on disk"
+)
 def test_run_042_precedent_is_unaffected_at_its_own_real_warmup():
     """
     Direct check at run_042's ACTUAL config, unmodified: with its real warmup=3,
@@ -238,10 +258,14 @@ def test_run_042_precedent_is_unaffected_at_its_own_real_warmup():
     bars = _fear_greed_bars()
     seq = _run_forecast_sequence(run_042_config, bars)
     ready = [v for v in seq if v is not None]
-    assert len(set(ready)) > 1, "fixture degenerate — widen fear_greed cycle before trusting this test"
+    assert len(set(ready)) > 1, (
+        "fixture degenerate — widen fear_greed cycle before trusting this test"
+    )
 
 
-@pytest.mark.skipif(not _RUN_042_CONFIG_PATH.exists(), reason="run_042 artifact not present on disk")
+@pytest.mark.skipif(
+    not _RUN_042_CONFIG_PATH.exists(), reason="run_042 artifact not present on disk"
+)
 def test_run_042_precedent_current_regime_is_fresh_when_ready_fires():
     """
     Was test_run_042_precedent_shares_the_stale_regime_readiness_mechanism, which

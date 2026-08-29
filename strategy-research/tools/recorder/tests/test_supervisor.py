@@ -40,7 +40,8 @@ def _stub(tmp_path: Path, codes) -> Path:
     """
     counter = tmp_path / "invocations.txt"
     script = tmp_path / "stub_recorder.py"
-    script.write_text(textwrap.dedent(f"""
+    script.write_text(
+        textwrap.dedent(f"""
         import sys
         from pathlib import Path
         counter = Path(r"{counter}")
@@ -49,7 +50,9 @@ def _stub(tmp_path: Path, codes) -> Path:
         counter.write_text(str(n))
         codes = {list(codes)!r}
         sys.exit(codes[min(n, len(codes)) - 1])
-    """), encoding="utf-8")
+    """),
+        encoding="utf-8",
+    )
     return script
 
 
@@ -58,15 +61,28 @@ def _run(tmp_path, codes, extra=()):
     out.mkdir()
     stub = _stub(tmp_path, codes)
     proc = subprocess.run(
-        [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass",
-         "-File", str(SUPERVISOR),
-         "-Out", str(out),
-         "-PythonExe", sys.executable,
-         "-RecorderCommand", str(stub),
-         "-BackoffInitialSeconds", "0",
-         "-LogFile", str(tmp_path / "recorder.log"),
-         *extra],
-        capture_output=True, text=True, timeout=180,
+        [
+            POWERSHELL,
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(SUPERVISOR),
+            "-Out",
+            str(out),
+            "-PythonExe",
+            sys.executable,
+            "-RecorderCommand",
+            str(stub),
+            "-BackoffInitialSeconds",
+            "0",
+            "-LogFile",
+            str(tmp_path / "recorder.log"),
+            *extra,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=180,
     )
     invocations = tmp_path / "invocations.txt"
     return (
@@ -92,9 +108,7 @@ def test_a_crash_is_relaunched_and_the_gap_is_attested(tmp_path):
 
 
 def test_a_disk_guard_abort_is_never_relaunched(tmp_path):
-    proc, invocations, records, _out = _run(
-        tmp_path, codes=[EXIT_DISK_GUARD_ABORT, 0]
-    )
+    proc, invocations, records, _out = _run(tmp_path, codes=[EXIT_DISK_GUARD_ABORT, 0])
 
     assert invocations == 1, "restarting into a full disk is a loop, not a recovery"
     assert proc.returncode == EXIT_DISK_GUARD_ABORT

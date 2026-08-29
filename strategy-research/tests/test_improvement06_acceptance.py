@@ -15,12 +15,15 @@ from statistics import NormalDist
 
 _NDIST = NormalDist(0, 1)
 
+
 def _phi(x: float) -> float:
     return _NDIST.cdf(x)
+
 
 def _phi_inv(p: float) -> float:
     p = max(1e-10, min(1 - 1e-10, p))
     return _NDIST.inv_cdf(p)
+
 
 EULER_GAMMA = 0.5772156649
 DSR_THRESHOLD = 0.95
@@ -30,7 +33,11 @@ def _compute_dsr(candidate_sr: float, trial_sharpes: list[float]) -> dict:
     """Mirror of deflate_sharpe.py core logic — deterministic, no file I/O."""
     n = len(trial_sharpes)
     if n < 2:
-        return {"verdict": "insufficient_trials", "dsr": None, "expected_max_sharpe": None}
+        return {
+            "verdict": "insufficient_trials",
+            "dsr": None,
+            "expected_max_sharpe": None,
+        }
 
     mu = statistics.mean(trial_sharpes)
     sigma = statistics.stdev(trial_sharpes)
@@ -41,16 +48,16 @@ def _compute_dsr(candidate_sr: float, trial_sharpes: list[float]) -> dict:
     z1 = _phi_inv(1.0 - 1.0 / n)
     z2 = _phi_inv(1.0 - 1.0 / (math.e * n))
     z_exp_max = (1.0 - EULER_GAMMA) * z1 + EULER_GAMMA * z2
-    e_max_sr  = mu + sigma * z_exp_max
+    e_max_sr = mu + sigma * z_exp_max
 
-    z   = (candidate_sr - e_max_sr) / sigma
+    z = (candidate_sr - e_max_sr) / sigma
     dsr = _phi(z)
 
     return {
-        "dsr":               round(dsr, 6),
+        "dsr": round(dsr, 6),
         "expected_max_sharpe": round(e_max_sr, 6),
-        "n_trials":          n,
-        "passes":            dsr > DSR_THRESHOLD,
+        "n_trials": n,
+        "passes": dsr > DSR_THRESHOLD,
     }
 
 
@@ -73,13 +80,17 @@ def _deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
 def _check_holdout_single_use(hypothesis_id: str, consumed_list: list[str]) -> dict:
     """Mirror of _route_holdout_evaluation single-use check."""
     if hypothesis_id in consumed_list:
-        return {"verdict": "refused", "reason": f"{hypothesis_id} already in holdout_consumed_by"}
+        return {
+            "verdict": "refused",
+            "reason": f"{hypothesis_id} already in holdout_consumed_by",
+        }
     return {"verdict": "allowed"}
 
 
 # ---------------------------------------------------------------------------
 # AC2 — Deflated Sharpe monotonicity: same raw Sharpe, more trials → lower DSR
 # ---------------------------------------------------------------------------
+
 
 def test_deflated_sharpe_monotonic():
     """
@@ -93,8 +104,8 @@ def test_deflated_sharpe_monotonic():
     We hold μ and σ constant rather than computing from sample to isolate the N effect.
     """
     candidate_sr = 1.0
-    mu_fixed     = 0.1
-    sigma_fixed  = 0.2
+    mu_fixed = 0.1
+    sigma_fixed = 0.2
 
     def _dsr_fixed_params(n: int) -> float:
         z1 = _phi_inv(1.0 - 1.0 / n)
@@ -110,7 +121,7 @@ def test_deflated_sharpe_monotonic():
     for i in range(1, len(dsrs)):
         assert dsrs[i] < dsrs[i - 1], (
             f"DSR must decrease as N grows: "
-            f"DSR(N={ns[i]})={dsrs[i]:.6f} is not < DSR(N={ns[i-1]})={dsrs[i-1]:.6f}"
+            f"DSR(N={ns[i]})={dsrs[i]:.6f} is not < DSR(N={ns[i - 1]})={dsrs[i - 1]:.6f}"
         )
     # Boundary: small N → high DSR; large N → low DSR
     assert dsrs[0] > dsrs[-1], (
@@ -122,6 +133,7 @@ def test_deflated_sharpe_monotonic():
 # A6.4 — Dedup: runs 017/024/027/033 with shared forecast_hash → 1 trial
 # ---------------------------------------------------------------------------
 
+
 def test_dedup_017_024_027_033():
     """
     Runs 017, 024, 027, 033 share the same Keltner signal parameters (identical forecast series).
@@ -130,17 +142,42 @@ def test_dedup_017_024_027_033():
     SHARED_HASH = "keltner_v1_forecast_abc123"
 
     records = [
-        {"trial_id": "run_017", "sharpe": 0.0, "statistic_valid": "sharpe",
-         "forecast_hash": SHARED_HASH, "n_trades": 163},
-        {"trial_id": "run_024", "sharpe": 0.0, "statistic_valid": "sharpe",
-         "forecast_hash": SHARED_HASH, "n_trades": 163},
-        {"trial_id": "run_027", "sharpe": 0.0, "statistic_valid": "sharpe",
-         "forecast_hash": SHARED_HASH, "n_trades": 163},
-        {"trial_id": "run_033", "sharpe": 0.0, "statistic_valid": "sharpe",
-         "forecast_hash": SHARED_HASH, "n_trades": 163},
+        {
+            "trial_id": "run_017",
+            "sharpe": 0.0,
+            "statistic_valid": "sharpe",
+            "forecast_hash": SHARED_HASH,
+            "n_trades": 163,
+        },
+        {
+            "trial_id": "run_024",
+            "sharpe": 0.0,
+            "statistic_valid": "sharpe",
+            "forecast_hash": SHARED_HASH,
+            "n_trades": 163,
+        },
+        {
+            "trial_id": "run_027",
+            "sharpe": 0.0,
+            "statistic_valid": "sharpe",
+            "forecast_hash": SHARED_HASH,
+            "n_trades": 163,
+        },
+        {
+            "trial_id": "run_033",
+            "sharpe": 0.0,
+            "statistic_valid": "sharpe",
+            "forecast_hash": SHARED_HASH,
+            "n_trades": 163,
+        },
         # One genuinely distinct trial
-        {"trial_id": "run_040", "sharpe": 0.3, "statistic_valid": "sharpe",
-         "forecast_hash": "different_signal_xyz789", "n_trades": 50},
+        {
+            "trial_id": "run_040",
+            "sharpe": 0.3,
+            "statistic_valid": "sharpe",
+            "forecast_hash": "different_signal_xyz789",
+            "n_trades": 50,
+        },
     ]
 
     deduped, n_removed = _deduplicate_trials(records)
@@ -155,9 +192,9 @@ def test_dedup_017_024_027_033():
     trial_ids = {r["trial_id"] for r in deduped}
     assert "run_040" in trial_ids, "The distinct trial (run_040) must survive dedup"
     # One of the four Keltner runs must survive (the first encountered)
-    assert any(tid in trial_ids for tid in ("run_017", "run_024", "run_027", "run_033")), (
-        "Exactly one Keltner run must survive dedup"
-    )
+    assert any(
+        tid in trial_ids for tid in ("run_017", "run_024", "run_027", "run_033")
+    ), "Exactly one Keltner run must survive dedup"
 
 
 def test_dedup_no_hash_always_kept():
@@ -175,6 +212,7 @@ def test_dedup_no_hash_always_kept():
 # AC3 — Single-use holdout: second attempt for same hypothesis_id is refused
 # ---------------------------------------------------------------------------
 
+
 def test_single_use_holdout_refused():
     """
     A hypothesis_id that already appears in holdout_consumed_by must be refused
@@ -187,7 +225,10 @@ def test_single_use_holdout_refused():
     assert result["verdict"] == "refused", (
         f"Expected 'refused' for H-041-A (already consumed), got: {result}"
     )
-    assert "holdout_consumed_by" in result["reason"].lower() or "already" in result["reason"].lower()
+    assert (
+        "holdout_consumed_by" in result["reason"].lower()
+        or "already" in result["reason"].lower()
+    )
 
     # New hypothesis — must be allowed
     result_new = _check_holdout_single_use("H-042-A", consumed)
@@ -200,6 +241,7 @@ def test_single_use_holdout_refused():
 # Overlap guard regression (A6.1 / A7.x) — holdout range must not overlap protocol
 # ---------------------------------------------------------------------------
 
+
 def test_overlap_guard_regression():
     """
     The holdout window [2026-01-01, 2026-06-30] must not overlap the walk-forward
@@ -209,8 +251,8 @@ def test_overlap_guard_regression():
     This is a structural invariant — not a live data check.
     """
     holdout_start = "2026-01-01"
-    holdout_end   = "2026-06-30"
-    wf_end        = "2025-12-31"
+    holdout_end = "2026-06-30"
+    wf_end = "2025-12-31"
 
     # Walk-forward range ends before holdout starts → no overlap
     assert wf_end < holdout_start, (
@@ -244,15 +286,27 @@ def test_overlap_guard_regression():
 # AC5 — Keltner must NOT pass; synthetic genuine edge must pass
 # ---------------------------------------------------------------------------
 
+
 def test_keltner_must_not_pass():
     """
     Keltner config: median_sharpe ≈ 0.0, many trials, campaign variance exists.
     DSR for a 0.0 Sharpe candidate against a trial distribution must not exceed DSR_THRESHOLD.
     """
     # Realistic campaign trial distribution (mixed strategies, varied Sharpes)
-    trial_sharpes = [0.0, 0.0, 0.0, 0.0,   # Keltner family: all 0.0 (A3.4 sparse)
-                     0.15, -0.1, 0.05, 0.2,  # Other strategy family
-                     -0.05, 0.08, 0.12, -0.15]
+    trial_sharpes = [
+        0.0,
+        0.0,
+        0.0,
+        0.0,  # Keltner family: all 0.0 (A3.4 sparse)
+        0.15,
+        -0.1,
+        0.05,
+        0.2,  # Other strategy family
+        -0.05,
+        0.08,
+        0.12,
+        -0.15,
+    ]
 
     candidate_sr = 0.0  # Keltner median Sharpe
 

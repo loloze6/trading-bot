@@ -36,12 +36,13 @@ forecasting 0.0 on every bar with nothing reporting why. Validator alone was not
 enough either, because of the unvalidated construction path above. Reverting
 either layer breaks tests the other does not cover.
 """
+
 import sys
 from pathlib import Path
 
 import pytest
 
-PROJECT_ROOT = Path(__file__).parent.parent          # trading-bot/ (inner)
+PROJECT_ROOT = Path(__file__).parent.parent  # trading-bot/ (inner)
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from strategies.regime_engine import ConfigDrivenRegimeEngine
@@ -59,21 +60,55 @@ def _gated_detector(default_regime) -> dict:
     return {
         "mode": "threshold_rules",
         "components": [
-            {"id": "er", "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
-             "params": {"period": 24, "smooth_period": 5}},
-            {"id": "vr", "class": "strategies.strategy_components.VarianceRatioComponent",
-             "params": {"k": 5, "window": 100}},
-            {"id": "vol", "class": "strategies.strategy_components.VolatilityPercentileRegimeComponent",
-             "params": {"vol_period": 20, "lookback_period": 100, "smooth_period": 5}},
+            {
+                "id": "er",
+                "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+                "params": {"period": 24, "smooth_period": 5},
+            },
+            {
+                "id": "vr",
+                "class": "strategies.strategy_components.VarianceRatioComponent",
+                "params": {"k": 5, "window": 100},
+            },
+            {
+                "id": "vol",
+                "class": "strategies.strategy_components.VolatilityPercentileRegimeComponent",
+                "params": {
+                    "vol_period": 20,
+                    "lookback_period": 100,
+                    "smooth_period": 5,
+                },
+            },
         ],
         "vetoes": [],
         "rules": [
-            {"regime": "trending", "any_of": [
-                [{"id": "er", "op": "gte", "value": 0.25}, {"id": "vr", "op": "gte", "value": 1.10}]]},
-            {"regime": "mean_reversion", "any_of": [
-                [{"id": "er", "op": "lte", "value": 0.20}, {"id": "vr", "op": "lte", "value": 0.90}]]},
-            {"regime": "chop", "any_of": [
-                [{"id": "er", "op": "lte", "value": 0.15}, {"id": "vol", "op": "lte", "value": 0.35}]]},
+            {
+                "regime": "trending",
+                "any_of": [
+                    [
+                        {"id": "er", "op": "gte", "value": 0.25},
+                        {"id": "vr", "op": "gte", "value": 1.10},
+                    ]
+                ],
+            },
+            {
+                "regime": "mean_reversion",
+                "any_of": [
+                    [
+                        {"id": "er", "op": "lte", "value": 0.20},
+                        {"id": "vr", "op": "lte", "value": 0.90},
+                    ]
+                ],
+            },
+            {
+                "regime": "chop",
+                "any_of": [
+                    [
+                        {"id": "er", "op": "lte", "value": 0.15},
+                        {"id": "vol", "op": "lte", "value": 0.35},
+                    ]
+                ],
+            },
         ],
         "default_regime": default_regime,
     }
@@ -144,13 +179,16 @@ def test_missing_default_regime_key_remains_safe():
 # where a bad default is most damaging because EVERY bar resolves through it.
 # ----------------------------------------------------------------------------
 
+
 def _ungated_engine(default_regime) -> ConfigDrivenRegimeEngine:
-    return ConfigDrivenRegimeEngine({
-        "mode": "threshold_rules",
-        "components": [],
-        "rules": [],
-        "default_regime": default_regime,
-    })
+    return ConfigDrivenRegimeEngine(
+        {
+            "mode": "threshold_rules",
+            "components": [],
+            "rules": [],
+            "default_regime": default_regime,
+        }
+    )
 
 
 def test_null_default_regime_resolves_to_unknown_through_classify():
@@ -192,9 +230,15 @@ def test_advanced_strategy_rejects_a_null_default_regime():
 
     config = {
         "regime_detector": {
-            "mode": "threshold_rules", "components": [], "rules": [], "default_regime": None,
+            "mode": "threshold_rules",
+            "components": [],
+            "rules": [],
+            "default_regime": None,
         },
-        "strategies": {"warmup": 25, "regimes": {name: None for name in _VALID_REGIMES}},
+        "strategies": {
+            "warmup": 25,
+            "regimes": {name: None for name in _VALID_REGIMES},
+        },
     }
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(config, f)

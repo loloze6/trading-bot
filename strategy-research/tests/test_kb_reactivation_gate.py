@@ -21,6 +21,7 @@ findings for H-041-A/H-041-C (the actual post-fix campaign_knowledge_base.yaml
 content), per this project's standing rule that regression tests use the actual
 historical failure as fixture.
 """
+
 import sys
 from pathlib import Path
 
@@ -105,8 +106,12 @@ STALE_KB = {
 
 
 def test_gate_catches_the_real_run_053_reframe_against_corrected_kb():
-    violations = rpr._check_kb_reactivation_conformance(RUN_053_NEXT_RESEARCH_QUESTION, CORRECTED_KB)
-    assert len(violations) == 2  # both H-041-A and H-041-C are named and both are consumed
+    violations = rpr._check_kb_reactivation_conformance(
+        RUN_053_NEXT_RESEARCH_QUESTION, CORRECTED_KB
+    )
+    assert (
+        len(violations) == 2
+    )  # both H-041-A and H-041-C are named and both are consumed
     joined = " ".join(violations)
     assert "H-041-A" in joined and "run_050" in joined
     assert "H-041-C" in joined and "run_048" in joined
@@ -115,7 +120,9 @@ def test_gate_catches_the_real_run_053_reframe_against_corrected_kb():
 def test_gate_allows_the_same_reframe_when_reactivation_is_genuinely_still_open():
     # Sanity: the gate must not false-positive on a legitimately open reactivation —
     # only reactivation_consumed_by / bare-exhausted findings are violations.
-    violations = rpr._check_kb_reactivation_conformance(RUN_053_NEXT_RESEARCH_QUESTION, STALE_KB)
+    violations = rpr._check_kb_reactivation_conformance(
+        RUN_053_NEXT_RESEARCH_QUESTION, STALE_KB
+    )
     assert violations == []
 
 

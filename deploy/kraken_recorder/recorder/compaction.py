@@ -127,9 +127,7 @@ def verify_against(archive: Path, source: Path) -> None:
                             f"{archive.name}: decompressed stream is longer than "
                             f"the source at byte {pos + len(want)}"
                         )
-                    off = next(
-                        i for i in range(len(got)) if got[i] != want[i]
-                    )
+                    off = next(i for i in range(len(got)) if got[i] != want[i])
                     raise ShardVerificationError(
                         f"{archive.name}: byte mismatch at offset {pos + off} "
                         f"(got {got[off]!r}, source {want[off]!r})"

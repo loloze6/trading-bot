@@ -55,7 +55,9 @@ def _threshold_errors(control: str, threshold) -> list[str]:
         or not math.isfinite(threshold)
         or not (0 < threshold < 1)
     ):
-        return [f"{control}.threshold must be a finite number in (0, 1), got {threshold!r}"]
+        return [
+            f"{control}.threshold must be a finite number in (0, 1), got {threshold!r}"
+        ]
     return []
 
 
@@ -93,7 +95,9 @@ def validate_portfolio_controls(cfg) -> list[str]:
 
     unknown = set(cfg) - _KNOWN_CONTROLS
     if unknown:
-        errors.append(f"unknown portfolio_controls key(s): {sorted(unknown)}; known: {sorted(_KNOWN_CONTROLS)}")
+        errors.append(
+            f"unknown portfolio_controls key(s): {sorted(unknown)}; known: {sorted(_KNOWN_CONTROLS)}"
+        )
 
     cap_cfg = cfg.get("absolute_allocation_cap")
     if cap_cfg is not None:
@@ -102,15 +106,24 @@ def validate_portfolio_controls(cfg) -> list[str]:
         else:
             cap_unknown = set(cap_cfg) - {"cap"}
             if cap_unknown:
-                errors.append(f"unknown absolute_allocation_cap key(s): {sorted(cap_unknown)}")
+                errors.append(
+                    f"unknown absolute_allocation_cap key(s): {sorted(cap_unknown)}"
+                )
             if "cap" not in cap_cfg:
                 errors.append('absolute_allocation_cap requires a "cap" value')
             else:
                 cap = cap_cfg["cap"]
                 # bool is an int subclass -- reject it explicitly so True never
                 # reads as cap=1.0.
-                if isinstance(cap, bool) or not isinstance(cap, (int, float)) or not math.isfinite(cap) or cap <= 0:
-                    errors.append(f"absolute_allocation_cap.cap must be a finite number > 0, got {cap!r}")
+                if (
+                    isinstance(cap, bool)
+                    or not isinstance(cap, (int, float))
+                    or not math.isfinite(cap)
+                    or cap <= 0
+                ):
+                    errors.append(
+                        f"absolute_allocation_cap.cap must be a finite number > 0, got {cap!r}"
+                    )
 
     dd_cfg = cfg.get("max_drawdown_kill")
     if dd_cfg is not None:
@@ -128,7 +141,9 @@ def validate_portfolio_controls(cfg) -> list[str]:
     dl_cfg = cfg.get("daily_loss_limit")
     if dl_cfg is not None:
         if not isinstance(dl_cfg, dict):
-            errors.append('daily_loss_limit must be a dict, e.g. {"threshold": 0.05, "tz": "Europe/Paris"}')
+            errors.append(
+                'daily_loss_limit must be a dict, e.g. {"threshold": 0.05, "tz": "Europe/Paris"}'
+            )
         else:
             dl_unknown = set(dl_cfg) - {"threshold", "tz"}
             if dl_unknown:
@@ -159,7 +174,9 @@ class PortfolioRiskGate:
         else clamp to the cap; return (final_target, per-bar extras).
     """
 
-    def __init__(self, portfolio_controls_cfg: dict, *, tz_default: str = "Europe/Paris"):
+    def __init__(
+        self, portfolio_controls_cfg: dict, *, tz_default: str = "Europe/Paris"
+    ):
         errors = validate_portfolio_controls(portfolio_controls_cfg)
         if errors:
             # Defense in depth behind the validator wired into both entry points.
@@ -229,7 +246,9 @@ class PortfolioRiskGate:
         # every drawdown / daily-loss fraction meaningless (and would divide by a
         # zero anchor). Never a legitimate decision-time equity in a solvent run.
         if not math.isfinite(equity) or equity <= 0:
-            raise ValueError(f"PortfolioRiskGate.observe got non-finite/non-positive equity {equity!r}")
+            raise ValueError(
+                f"PortfolioRiskGate.observe got non-finite/non-positive equity {equity!r}"
+            )
 
         self._bar_drawdown = None
         self._bar_daily_loss = None
@@ -246,7 +265,13 @@ class PortfolioRiskGate:
                 self.killed = True
                 self.kill_ts = _iso(data_time)
                 self._bar_trip = "max_drawdown_kill"
-                self.trip_log.append({"control": "max_drawdown_kill", "timestamp": self.kill_ts, "day": None})
+                self.trip_log.append(
+                    {
+                        "control": "max_drawdown_kill",
+                        "timestamp": self.kill_ts,
+                        "day": None,
+                    }
+                )
 
         # (c) daily_loss_limit -- day-scoped. Guarded by `not self.killed`: once the
         # terminal kill latches we are flat to run end, so a daily trip is
@@ -260,7 +285,11 @@ class PortfolioRiskGate:
                 self.daily_halted = False
             daily_loss = (anchor - equity) / anchor
             self._bar_daily_loss = daily_loss
-            if not self.killed and not self.daily_halted and daily_loss >= self.dl_threshold:
+            if (
+                not self.killed
+                and not self.daily_halted
+                and daily_loss >= self.dl_threshold
+            ):
                 self.daily_halted = True
                 if self._bar_trip is None:
                     self._bar_trip = "daily_loss_limit"
@@ -328,7 +357,11 @@ class PortfolioRiskGate:
         if self.dd_threshold is not None or self.dl_threshold is not None:
             first = self.trip_log[0] if self.trip_log else None
             out["first_trip"] = (
-                {"control": first["control"], "timestamp": first["timestamp"]} if first is not None else None
+                {"control": first["control"], "timestamp": first["timestamp"]}
+                if first is not None
+                else None
             )
-            out["daily_trips"] = [e["day"] for e in self.trip_log if e["control"] == "daily_loss_limit"]
+            out["daily_trips"] = [
+                e["day"] for e in self.trip_log if e["control"] == "daily_loss_limit"
+            ]
         return out

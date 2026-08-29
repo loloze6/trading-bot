@@ -94,8 +94,25 @@ _LOCAL_DATA = _REPO / "trading-bot" / "local_data"
 #: The 19 bases of `campaign_data_policy.yaml:kraken_breadth_19pair`, in the
 #: order the pre-registration lists them.
 DEFAULT_BASES = (
-    "BTC", "ETH", "XRP", "SOL", "ADA", "SUI", "ZEC", "DOGE", "XMR", "LTC",
-    "ONDO", "NEAR", "LINK", "TAO", "AVAX", "TRX", "AAVE", "INJ", "UNI",
+    "BTC",
+    "ETH",
+    "XRP",
+    "SOL",
+    "ADA",
+    "SUI",
+    "ZEC",
+    "DOGE",
+    "XMR",
+    "LTC",
+    "ONDO",
+    "NEAR",
+    "LINK",
+    "TAO",
+    "AVAX",
+    "TRX",
+    "AAVE",
+    "INJ",
+    "UNI",
 )
 
 #: `campaign_data_policy.yaml:walk_forward_extension`.
@@ -244,8 +261,7 @@ def report(
     for b in bases:
         v = per_pair.get(b)
         out.append(
-            f"{b:<8}{counts.get(b, 0):>9}"
-            f"{(f'{v:.4f}' if v is not None else '-'):>12}"
+            f"{b:<8}{counts.get(b, 0):>9}{(f'{v:.4f}' if v is not None else '-'):>12}"
         )
     out += [
         "-" * 29,
@@ -279,13 +295,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--local-data", type=Path, default=_LOCAL_DATA)
     ap.add_argument("--full-history", action="store_true")
     args = ap.parse_args(argv)
-    print(report(
-        bases=args.pairs,
-        start=args.start,
-        end=args.end,
-        local_data=args.local_data,
-        full_history=args.full_history,
-    ))
+    print(
+        report(
+            bases=args.pairs,
+            start=args.start,
+            end=args.end,
+            local_data=args.local_data,
+            full_history=args.full_history,
+        )
+    )
     return 0
 
 

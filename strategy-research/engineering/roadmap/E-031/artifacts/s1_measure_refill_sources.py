@@ -10,6 +10,7 @@ Usage (from repo root):
 Touches no files. Does not open local_data/holdout_sealed/ (not referenced
 at all). Does not invoke run_campaign.py or any campaign/backtest code.
 """
+
 import re
 import sys
 from pathlib import Path
@@ -42,16 +43,22 @@ def main() -> int:
 
     altitude_history = cs.get("altitude_history", [])
     escalate = [a for a in altitude_history if a.get("outcome") == "escalate"]
-    print(f"altitude_history: {len(altitude_history)} entries total; "
-          f"{len(escalate)} with outcome=escalate (denominator: altitude_history list)")
+    print(
+        f"altitude_history: {len(altitude_history)} entries total; "
+        f"{len(escalate)} with outcome=escalate (denominator: altitude_history list)"
+    )
     for e in escalate:
-        print(f"    - run={e.get('run')} dimension={e.get('dimension')!r} "
-              f"family={e.get('family')!r}")
+        print(
+            f"    - run={e.get('run')} dimension={e.get('dimension')!r} "
+            f"family={e.get('family')!r}"
+        )
 
     rpd = cs.get("recent_parameter_dimensions_by_family", {})
     nonempty = {k: v for k, v in rpd.items() if v}
-    print(f"recent_parameter_dimensions_by_family: {len(rpd)} families tracked, "
-          f"{len(nonempty)} with a non-empty dimension list (denominator: this dict)")
+    print(
+        f"recent_parameter_dimensions_by_family: {len(rpd)} families tracked, "
+        f"{len(nonempty)} with a non-empty dimension list (denominator: this dict)"
+    )
     for k, v in rpd.items():
         print(f"    - {k}: {v!r}")
 
@@ -68,9 +75,11 @@ def main() -> int:
     cu_text = cu_path.read_text(encoding="utf-8")
     n_symbols = len(re.findall(r"^\s*- symbol:", cu_text, flags=re.M))
     section(f"coin_universe.yaml ({cu_path.relative_to(ROOT)})")
-    print(f"symbol entries: {n_symbols} (cross-check only -- instruments_tried above "
-          f"is {len(instruments)}, and campaign_queue.yaml's XS_momentum note ratifies "
-          f"a 19-pair Kraken universe separately from this field)")
+    print(
+        f"symbol entries: {n_symbols} (cross-check only -- instruments_tried above "
+        f"is {len(instruments)}, and campaign_queue.yaml's XS_momentum note ratifies "
+        f"a 19-pair Kraken universe separately from this field)"
+    )
 
     # ------------------------------------------------------------------
     # 3. feed_wishlist.yaml
@@ -79,12 +88,16 @@ def main() -> int:
     fw = load_yaml(fw_path)
     wishlist = fw.get("wishlist", [])
     section(f"feed_wishlist.yaml ({fw_path.relative_to(ROOT)})")
-    print(f"wishlist entries: {len(wishlist)} (denominator: this list; the file's own "
-          f"'Example entry (template)' block is a '#' comment, not live YAML, so it is "
-          f"correctly excluded by safe_load)")
+    print(
+        f"wishlist entries: {len(wishlist)} (denominator: this list; the file's own "
+        f"'Example entry (template)' block is a '#' comment, not live YAML, so it is "
+        f"correctly excluded by safe_load)"
+    )
     for w in wishlist:
-        print(f"    - feed_name={w.get('feed_name')} "
-              f"hypotheses_blocked={len(w.get('hypotheses_blocked', []))}")
+        print(
+            f"    - feed_name={w.get('feed_name')} "
+            f"hypotheses_blocked={len(w.get('hypotheses_blocked', []))}"
+        )
 
     # Cross-check against available_feeds.yaml
     af_path = SR / "config" / "available_feeds.yaml"
@@ -93,7 +106,11 @@ def main() -> int:
     section(f"available_feeds.yaml ({af_path.relative_to(ROOT)}) cross-check")
     for w in wishlist:
         et = w.get("evidence_type")
-        status = "UNAVAILABLE (still routed to feed_wishlist)" if et in unavailable else "AVAILABLE"
+        status = (
+            "UNAVAILABLE (still routed to feed_wishlist)"
+            if et in unavailable
+            else "AVAILABLE"
+        )
         print(f"    - {w.get('feed_name')} / evidence_type={et}: {status}")
 
     # ------------------------------------------------------------------
@@ -104,18 +121,28 @@ def main() -> int:
     findings = kb.get("findings", [])
     meta_findings = kb.get("meta_findings", [])
     section(f"campaign_knowledge_base.yaml ({kb_path.relative_to(ROOT)})")
-    print(f"findings: {len(findings)} (hypothesis-outcome records -- this is the "
-          f"denominator for reactivation_condition below)")
-    print(f"meta_findings: {len(meta_findings)} (process/methodology records -- "
-          f"a distinct category, no reactivation_condition field by design)")
-    print(f"exhausted_mechanisms index: {len(kb.get('exhausted_mechanisms', []))} "
-          f"(cross-reference index into findings above, not additional records)")
+    print(
+        f"findings: {len(findings)} (hypothesis-outcome records -- this is the "
+        f"denominator for reactivation_condition below)"
+    )
+    print(
+        f"meta_findings: {len(meta_findings)} (process/methodology records -- "
+        f"a distinct category, no reactivation_condition field by design)"
+    )
+    print(
+        f"exhausted_mechanisms index: {len(kb.get('exhausted_mechanisms', []))} "
+        f"(cross-reference index into findings above, not additional records)"
+    )
 
     with_reactivation = [f for f in findings if f.get("reactivation_condition")]
-    print(f"findings carrying a non-null reactivation_condition: {len(with_reactivation)}")
+    print(
+        f"findings carrying a non-null reactivation_condition: {len(with_reactivation)}"
+    )
     for f in with_reactivation:
-        print(f"    - id={f.get('id')} hypothesis_id={f.get('hypothesis_id')} "
-              f"exhausted={f.get('exhausted')}")
+        print(
+            f"    - id={f.get('id')} hypothesis_id={f.get('hypothesis_id')} "
+            f"exhausted={f.get('exhausted')}"
+        )
 
     # ------------------------------------------------------------------
     # 5. detector_wishlist.yaml
@@ -127,20 +154,26 @@ def main() -> int:
     print(f"candidates: {len(candidates)}")
     for c in candidates:
         tc = c.get("trigger_condition", {})
-        print(f"    - family={c.get('family')} status={tc.get('status')} "
-              f"last_evaluated_at={tc.get('last_evaluated_at')}")
+        print(
+            f"    - family={c.get('family')} status={tc.get('status')} "
+            f"last_evaluated_at={tc.get('last_evaluated_at')}"
+        )
 
     # Is the KB newer than the last predicate evaluation? (staleness signal)
     kb_mtime = kb_path.stat().st_mtime
     dw_mtime = dw_path.stat().st_mtime
-    print(f"campaign_knowledge_base.yaml mtime={kb_mtime:.0f}  "
-          f"detector_wishlist.yaml mtime={dw_mtime:.0f}  "
-          f"(KB modified after wishlist file: {kb_mtime > dw_mtime})")
+    print(
+        f"campaign_knowledge_base.yaml mtime={kb_mtime:.0f}  "
+        f"detector_wishlist.yaml mtime={dw_mtime:.0f}  "
+        f"(KB modified after wishlist file: {kb_mtime > dw_mtime})"
+    )
 
     # ------------------------------------------------------------------
     # 6. register_hypothesis / evaluate_and_persist_wishlist_predicate callers
     # ------------------------------------------------------------------
-    section("call-site grep (register_hypothesis / evaluate_and_persist_wishlist_predicate)")
+    section(
+        "call-site grep (register_hypothesis / evaluate_and_persist_wishlist_predicate)"
+    )
     self_path = Path(__file__).resolve()
     for fn in ("register_hypothesis(", "evaluate_and_persist_wishlist_predicate("):
         hits = []
@@ -162,12 +195,18 @@ def main() -> int:
     # 7. refinement_notes.yaml presence across runs/
     # ------------------------------------------------------------------
     runs_dir = SR / "runs"
-    run_dirs = [p for p in runs_dir.iterdir() if p.is_dir() and p.name.startswith("run_")]
-    with_notes = [p for p in run_dirs if (p / "artifacts" / "refinement_notes.yaml").exists()]
+    run_dirs = [
+        p for p in runs_dir.iterdir() if p.is_dir() and p.name.startswith("run_")
+    ]
+    with_notes = [
+        p for p in run_dirs if (p / "artifacts" / "refinement_notes.yaml").exists()
+    ]
     section(f"refinement_notes.yaml presence ({runs_dir.relative_to(ROOT)})")
     print(f"run directories: {len(run_dirs)} (denominator)")
-    print(f"with refinement_notes.yaml: {len(with_notes)} -> "
-          f"{[p.name for p in with_notes]}")
+    print(
+        f"with refinement_notes.yaml: {len(with_notes)} -> "
+        f"{[p.name for p in with_notes]}"
+    )
 
     # ------------------------------------------------------------------
     # 8. campaign_queue.yaml -- _select_entry schedulability today
@@ -178,11 +217,14 @@ def main() -> int:
     section(f"campaign_queue.yaml ({cq_path.relative_to(ROOT)})")
     print(f"entries: {len(entries)} (denominator: this queue)")
     from collections import Counter
+
     statuses = Counter(e.get("status") for e in entries)
     print(f"status breakdown: {dict(statuses)}")
     schedulable = [e for e in entries if e.get("status") in ("ready", "in_progress")]
-    print(f"schedulable today (_select_entry semantics: status in "
-          f"{{'ready','in_progress'}}): {len(schedulable)}")
+    print(
+        f"schedulable today (_select_entry semantics: status in "
+        f"{{'ready','in_progress'}}): {len(schedulable)}"
+    )
 
     return 0
 

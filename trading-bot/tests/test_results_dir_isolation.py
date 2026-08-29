@@ -7,6 +7,7 @@ This is the fast, order-independent counterpart to the session-finish guard in
 conftest.py. The guard fails the run if the shared file is dirtied by anyone;
 this test proves the mechanism the fix relies on to keep it clean.
 """
+
 import sys
 from pathlib import Path
 

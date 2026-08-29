@@ -13,6 +13,7 @@ tests/fixtures/ (the live runs/run_044/artifacts/ copy was legitimately overwrit
 the subsequent successful relaunch — this fixture is deliberately independent of that
 directory's current contents so the regression test doesn't silently go stale).
 """
+
 import shutil
 import sys
 from pathlib import Path
@@ -66,7 +67,9 @@ def test_ensure_files_persists_the_repair_to_disk(broken_copy):
     ensure_files([broken_copy])
     repaired = broken_copy.read_text(encoding="utf-8")
     assert repaired != original
-    yaml.safe_load(repaired)  # re-confirm on the persisted content, not just the return value
+    yaml.safe_load(
+        repaired
+    )  # re-confirm on the persisted content, not just the return value
 
 
 def test_ensure_files_still_rejects_genuinely_unrepairable_yaml(tmp_path):

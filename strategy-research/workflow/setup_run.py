@@ -26,7 +26,8 @@ def _is_fresh_or_absent(state_path: Path) -> bool:
         return False  # unparseable — do not blindly overwrite
     return (
         not existing.get("completed_stages")
-        and existing.get("pending_stage", "hypothesis_generation") == "hypothesis_generation"
+        and existing.get("pending_stage", "hypothesis_generation")
+        == "hypothesis_generation"
     )
 
 
@@ -58,26 +59,23 @@ def create_pipeline_state(run_dir: Path, run_id: str):
             "max_hypothesis_variants_per_cycle": 3,
             "max_refinements_after_validation": 2,
             "max_reruns_after_analysis": 1,
-            "max_required_reads_per_stage": 3
+            "max_required_reads_per_stage": 3,
         },
-        "counters": {
-            "refinements_used": 0,
-            "reruns_used": 0
-        },
+        "counters": {"refinements_used": 0, "reruns_used": 0},
         "flags": {
             "holdout_reserved": False,
             "validation_approved": False,
             "screening_passed": False,
-            "walk_forward_passed": False
+            "walk_forward_passed": False,
         },
-        "last_summary": None
+        "last_summary": None,
     }
 
-        
     state_path = run_dir / "pipeline_state.yaml"
     with open(state_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(state, f, sort_keys=False)
     print(f"✅ Created: {state_path}")
+
 
 def setup_run(run_id: str):
     run_dir = ROOT / "runs" / run_id
@@ -89,7 +87,7 @@ def setup_run(run_id: str):
     handoffs_dir.mkdir(parents=True, exist_ok=True)
     print(f"📁 Created directories for {run_id}")
 
-    # 2. Generate initial pipeline state yaml 
+    # 2. Generate initial pipeline state yaml
     create_pipeline_state(run_dir, run_id)
 
     # 3. Take templates in template / handoff and copy them into the new run's handoff directory.
@@ -113,9 +111,12 @@ def setup_run(run_id: str):
 
     print(f"\n🚀 Setup complete! Fill out {brief_path} and execute your run.")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scaffold a new quant research run.")
-    parser.add_argument("run_id", type=str, help="The ID for the new run (e.g., run_002)")
+    parser.add_argument(
+        "run_id", type=str, help="The ID for the new run (e.g., run_002)"
+    )
     args = parser.parse_args()
-    
+
     setup_run(args.run_id)

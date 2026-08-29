@@ -41,6 +41,7 @@ def cost_model():
 # verdict_execution_style hard rule
 # ---------------------------------------------------------------------------
 
+
 def test_verdict_execution_style_present_and_taker(cost_model):
     assert "verdict_execution_style" in cost_model, (
         "cost_model.yaml is missing verdict_execution_style — gates and promotion "
@@ -57,17 +58,30 @@ def test_verdict_execution_style_present_and_taker(cost_model):
 # prescreen_signal.py._load_cost_model / run_protocol.py._cost_paid_bps)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("key", [
-    "fee_rate_bps", "spread_estimate_bps", "slippage_estimate_bps",
-    "round_trip_cost_bps", "safety_factor",
-])
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "fee_rate_bps",
+        "spread_estimate_bps",
+        "slippage_estimate_bps",
+        "round_trip_cost_bps",
+        "safety_factor",
+    ],
+)
 def test_required_top_level_key_present(cost_model, key):
     assert key in cost_model, f"cost_model.yaml missing required top-level key: {key}"
 
 
-@pytest.mark.parametrize("block_key", [
-    "fee_rate_bps", "spread_estimate_bps", "slippage_estimate_bps", "round_trip_cost_bps",
-])
+@pytest.mark.parametrize(
+    "block_key",
+    [
+        "fee_rate_bps",
+        "spread_estimate_bps",
+        "slippage_estimate_bps",
+        "round_trip_cost_bps",
+    ],
+)
 @pytest.mark.parametrize("symbol", P2_SYMBOLS)
 def test_p2_symbol_present_in_taker_blocks(cost_model, block_key, symbol):
     block = cost_model[block_key]
@@ -130,8 +144,11 @@ def test_round_trip_cost_bounds_and_arithmetic(cost_model, symbol):
 # execution_style block (additive maker/taker variants)
 # ---------------------------------------------------------------------------
 
+
 def test_execution_style_present(cost_model):
-    assert "execution_style" in cost_model, "cost_model.yaml missing execution_style block"
+    assert "execution_style" in cost_model, (
+        "cost_model.yaml missing execution_style block"
+    )
     assert set(cost_model["execution_style"].keys()) >= {"taker", "maker"}, (
         "execution_style must define both 'taker' and 'maker'"
     )
@@ -142,9 +159,16 @@ def test_execution_style_taker_mirrors_top_level(cost_model, symbol):
     """execution_style.taker must stay in sync with the top-level (code-consumed) keys."""
     es_taker = cost_model["execution_style"]["taker"]
     assert es_taker["fee_bps"][symbol] == cost_model["fee_rate_bps"][symbol]
-    assert es_taker["spread_cost_bps"][symbol] == cost_model["spread_estimate_bps"][symbol]
-    assert es_taker["slippage_bps"][symbol] == cost_model["slippage_estimate_bps"][symbol]
-    assert es_taker["round_trip_cost_bps"][symbol] == cost_model["round_trip_cost_bps"][symbol]
+    assert (
+        es_taker["spread_cost_bps"][symbol] == cost_model["spread_estimate_bps"][symbol]
+    )
+    assert (
+        es_taker["slippage_bps"][symbol] == cost_model["slippage_estimate_bps"][symbol]
+    )
+    assert (
+        es_taker["round_trip_cost_bps"][symbol]
+        == cost_model["round_trip_cost_bps"][symbol]
+    )
 
 
 @pytest.mark.parametrize("symbol", P2_SYMBOLS)

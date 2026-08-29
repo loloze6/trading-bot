@@ -13,6 +13,7 @@ backfilled manually, never exercising this exact function.
 Fixture below is the real six entries verbatim from campaign_state.yaml as of
 2026-07-04 (see strategy-research/campaign_record/campaign_state.yaml `failed_families`).
 """
+
 import sys
 from pathlib import Path
 
@@ -22,12 +23,36 @@ sys.path.insert(0, str(WORKFLOW_PATH))
 from run_phase1_research import _should_trigger_campaign_review
 
 _REAL_FAILED_FAMILIES_2026_07_04 = [
-    {"name": "rsi_mean_reversion", "evidence_window": "2024_only", "root_cause": "signal_quality"},
-    {"name": "keltner_breakout", "evidence_window": "2024_only", "root_cause": "signal_inversion"},
-    {"name": "keltner_mean_reversion", "evidence_window": "2024_only", "root_cause": "regime_availability"},
-    {"name": "rsi_momentum_trending", "evidence_window": "2024_only", "root_cause": "cost_drag"},
-    {"name": "keltner_trend_mean_reversion", "evidence_window": "2024_only", "root_cause": "regime_availability"},
-    {"name": "keltner_scoremode", "evidence_window": "2024_only", "root_cause": "signal_quality"},
+    {
+        "name": "rsi_mean_reversion",
+        "evidence_window": "2024_only",
+        "root_cause": "signal_quality",
+    },
+    {
+        "name": "keltner_breakout",
+        "evidence_window": "2024_only",
+        "root_cause": "signal_inversion",
+    },
+    {
+        "name": "keltner_mean_reversion",
+        "evidence_window": "2024_only",
+        "root_cause": "regime_availability",
+    },
+    {
+        "name": "rsi_momentum_trending",
+        "evidence_window": "2024_only",
+        "root_cause": "cost_drag",
+    },
+    {
+        "name": "keltner_trend_mean_reversion",
+        "evidence_window": "2024_only",
+        "root_cause": "regime_availability",
+    },
+    {
+        "name": "keltner_scoremode",
+        "evidence_window": "2024_only",
+        "root_cause": "signal_quality",
+    },
 ]
 
 

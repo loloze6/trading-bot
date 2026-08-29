@@ -89,14 +89,18 @@ def main():
         f = daily_series(bounded)
         n_days = len(f)
         print(f"[L5] N_days                 : {n_days}")
-        print(f"[L6] actual date range      : {f.index.min().date()} .. {f.index.max().date()}")
+        print(
+            f"[L6] actual date range      : {f.index.min().date()} .. {f.index.max().date()}"
+        )
 
         # calendar-gap diagnostic: days absent from the series (no settlement)
         span_days = (f.index.max() - f.index.min()).days + 1
-        print(f"[L7] calendar span (days)   : {span_days}  (missing days: {span_days - n_days})")
+        print(
+            f"[L7] calendar span (days)   : {span_days}  (missing days: {span_days - n_days})"
+        )
 
         prev = f.shift(1)
-        lagged = f.iloc[1:]           # days with a defined predecessor
+        lagged = f.iloc[1:]  # days with a defined predecessor
         prev_lagged = prev.iloc[1:]
         n_lagged = len(lagged)
 

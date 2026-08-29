@@ -9,6 +9,7 @@ n_eff=182.5 for the same inputs (activation_rate=0.125, n_bars=17520, n_symbols=
 is_market_wide=false). This was never caught live because the run crashed one stage
 earlier (innovation_expansion YAML error) before _run_a86_power_check ever ran on it.
 """
+
 import sys
 from pathlib import Path
 
@@ -21,7 +22,11 @@ sys.path.insert(0, str(WORKFLOW_PATH))
 import run_phase1_research as rpr
 
 _RUN_044_HYPOTHESIS_CARD = (
-    Path(__file__).parent.parent / "runs" / "run_044" / "artifacts" / "hypothesis_card.yaml"
+    Path(__file__).parent.parent
+    / "runs"
+    / "run_044"
+    / "artifacts"
+    / "hypothesis_card.yaml"
 )
 
 
@@ -55,7 +60,9 @@ def test_run_044_fixture_produces_a_logged_discrepancy(temp_log):
         "min_detectable_ic": 0.0746,
     }
 
-    rpr._compare_llm_vs_machine_power("run_044", "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION", machine, card)
+    rpr._compare_llm_vs_machine_power(
+        "run_044", "FUNDING_RATE_CONTINUOUS_MEAN_REVERSION", machine, card
+    )
 
     assert temp_log.exists(), "a material discrepancy must be logged"
     log = yaml.safe_load(temp_log.read_text(encoding="utf-8"))
@@ -63,19 +70,26 @@ def test_run_044_fixture_produces_a_logged_discrepancy(temp_log):
     assert entry["run_id"] == "run_044"
     joined = " ".join(entry["discrepancies"])
     assert "is_market_wide=false but n_symbols_effective=1.1" in joined
-    assert "expected_n_eff" in joined  # the ~100 vs ~182 divergence must also be flagged
+    assert (
+        "expected_n_eff" in joined
+    )  # the ~100 vs ~182 divergence must also be flagged
 
 
 def test_no_discrepancy_logged_when_llm_and_machine_agree(temp_log):
     card = {
         "hypothesis_id": "AGREES",
         "power_parameters": {
-            "is_market_wide": False, "n_symbols": 2,
+            "is_market_wide": False,
+            "n_symbols": 2,
             "n_symbols_effective": 2.0,
             "a_priori_calculation": "expected_n_eff = 182.5; min_detectable_ic ≈ 0.0746",
         },
     }
-    machine = {"verdict": "power_adequate", "expected_n_eff": 182.5, "min_detectable_ic": 0.0746}
+    machine = {
+        "verdict": "power_adequate",
+        "expected_n_eff": 182.5,
+        "min_detectable_ic": 0.0746,
+    }
     rpr._compare_llm_vs_machine_power("run_999", "AGREES", machine, card)
     assert not temp_log.exists(), "agreement must not produce a log entry"
 
@@ -83,7 +97,14 @@ def test_no_discrepancy_logged_when_llm_and_machine_agree(temp_log):
 def test_no_extraction_means_no_crash_and_no_log(temp_log):
     """A card with no self-computed power numbers at all (schema-minimal) must not
     error and must not produce a spurious log entry."""
-    card = {"hypothesis_id": "MINIMAL", "power_parameters": {"is_market_wide": False, "n_symbols": 2}}
-    machine = {"verdict": "power_adequate", "expected_n_eff": 100.0, "min_detectable_ic": 0.1}
+    card = {
+        "hypothesis_id": "MINIMAL",
+        "power_parameters": {"is_market_wide": False, "n_symbols": 2},
+    }
+    machine = {
+        "verdict": "power_adequate",
+        "expected_n_eff": 100.0,
+        "min_detectable_ic": 0.1,
+    }
     rpr._compare_llm_vs_machine_power("run_998", "MINIMAL", machine, card)
     assert not temp_log.exists()

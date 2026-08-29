@@ -18,6 +18,7 @@ never at the data; the aggregation tests build their own capture root under
 tmp_path with a fixture policy that designates it. That is not merely hygiene —
 a test suite that read reserved out-of-sample on every run would spend it.
 """
+
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -130,14 +131,18 @@ def test_fetcher_refuses_to_construct_against_the_real_policy():
 
 def test_denies_when_nothing_is_designated(tmp_path):
     with pytest.raises(ReservedDataError, match="no designation covers"):
-        assert_designated(pd.Timestamp("2026-07-26"), pd.Timestamp("2026-07-27"),
-                          _policy(tmp_path))
+        assert_designated(
+            pd.Timestamp("2026-07-26"), pd.Timestamp("2026-07-27"), _policy(tmp_path)
+        )
 
 
 def test_denies_when_the_policy_file_is_missing(tmp_path):
     with pytest.raises(ReservedDataError, match="cannot prove"):
-        assert_designated(pd.Timestamp("2026-07-26"), pd.Timestamp("2026-07-27"),
-                          tmp_path / "absent.yaml")
+        assert_designated(
+            pd.Timestamp("2026-07-26"),
+            pd.Timestamp("2026-07-27"),
+            tmp_path / "absent.yaml",
+        )
 
 
 def test_denies_when_the_policy_does_not_parse(tmp_path):
@@ -149,14 +154,20 @@ def test_denies_when_the_policy_does_not_parse(tmp_path):
 
 def test_denies_when_the_entry_is_absent(tmp_path):
     with pytest.raises(ReservedDataError, match="has no"):
-        assert_designated(pd.Timestamp("2026-07-26"), pd.Timestamp("2026-07-27"),
-                          _policy(tmp_path, key="something_else"))
+        assert_designated(
+            pd.Timestamp("2026-07-26"),
+            pd.Timestamp("2026-07-27"),
+            _policy(tmp_path, key="something_else"),
+        )
 
 
 def test_a_covering_designation_releases_the_window(tmp_path):
-    policy = _policy(tmp_path, [
-        {"start": "2026-07-01", "end": "2026-07-31", "ratified": "2026-07-27"},
-    ])
+    policy = _policy(
+        tmp_path,
+        [
+            {"start": "2026-07-01", "end": "2026-07-31", "ratified": "2026-07-27"},
+        ],
+    )
     assert_designated(pd.Timestamp("2026-07-26"), pd.Timestamp("2026-07-27"), policy)
 
 
@@ -165,17 +176,24 @@ def test_a_partial_overlap_releases_nothing(tmp_path):
     The un-designated remainder would be read alongside the released part, so a
     partial overlap is not a partial release.
     """
-    policy = _policy(tmp_path, [
-        {"start": "2026-07-01", "end": "2026-07-26", "ratified": "2026-07-27"},
-    ])
+    policy = _policy(
+        tmp_path,
+        [
+            {"start": "2026-07-01", "end": "2026-07-26", "ratified": "2026-07-27"},
+        ],
+    )
     with pytest.raises(ReservedDataError):
-        assert_designated(pd.Timestamp("2026-07-20"), pd.Timestamp("2026-07-31"), policy)
+        assert_designated(
+            pd.Timestamp("2026-07-20"), pd.Timestamp("2026-07-31"), policy
+        )
 
 
 def test_a_malformed_designation_entry_is_ignored_not_honoured(tmp_path):
     policy = _policy(tmp_path, [{"ratified": "2026-07-27"}, "not-a-mapping"])
     with pytest.raises(ReservedDataError):
-        assert_designated(pd.Timestamp("2026-07-26"), pd.Timestamp("2026-07-27"), policy)
+        assert_designated(
+            pd.Timestamp("2026-07-26"), pd.Timestamp("2026-07-27"), policy
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -222,27 +240,37 @@ def test_opting_in_by_name_still_hits_the_gate(tmp_path):
 
 
 def _fetcher(tmp_path, **kw):
-    policy = _policy(tmp_path, [
-        {"start": "2000-01-01", "end": "2100-01-01", "ratified": "test"},
-    ])
+    policy = _policy(
+        tmp_path,
+        [
+            {"start": "2000-01-01", "end": "2100-01-01", "ratified": "test"},
+        ],
+    )
     return WhaleFootprintFetcher(
-        TODAY.strftime("%Y-%m-%d"), TODAY.strftime("%Y-%m-%d"),
-        symbols=["BTCUSD"], data_dir=str(tmp_path / "local_data"),
-        capture_root=tmp_path / "capture", policy_path=policy, **kw,
+        TODAY.strftime("%Y-%m-%d"),
+        TODAY.strftime("%Y-%m-%d"),
+        symbols=["BTCUSD"],
+        data_dir=str(tmp_path / "local_data"),
+        capture_root=tmp_path / "capture",
+        policy_path=policy,
+        **kw,
     )
 
 
 def test_cache_key_follows_the_exchange_qualified_convention(tmp_path):
     f = _fetcher(tmp_path)
     assert f.cache_key("BTCUSD") == "kraken_BTCUSD_whale_1h"
-    assert _fetcher(tmp_path, bar_seconds=60).cache_key("ETHUSD") == \
-        "kraken_ETHUSD_whale_1m"
+    assert (
+        _fetcher(tmp_path, bar_seconds=60).cache_key("ETHUSD")
+        == "kraken_ETHUSD_whale_1m"
+    )
 
 
 def test_fetch_returns_the_documented_columns(tmp_path):
     _capture(tmp_path / "capture")
     df = _fetcher(tmp_path, min_baseline_trades=1, min_bar_trades=1)._fetch_remote(
-        "BTCUSD", DAY, DAY)
+        "BTCUSD", DAY, DAY
+    )
     assert list(df.columns) == ["timestamp", *FEATURE_COLUMNS]
     assert not df.empty
     assert df["timestamp"].dt.tz is None, "base_fetcher raises on tz-aware timestamps"
@@ -251,7 +279,8 @@ def test_fetch_returns_the_documented_columns(tmp_path):
 def test_fetch_counts_every_captured_trade(tmp_path):
     _capture(tmp_path / "capture", n=40)
     df = _fetcher(tmp_path, min_baseline_trades=1, min_bar_trades=1)._fetch_remote(
-        "BTCUSD", DAY, DAY)
+        "BTCUSD", DAY, DAY
+    )
     assert df["whale_trade_count"].sum() == 40.0
 
 
@@ -262,7 +291,8 @@ def test_fetch_marks_bars_the_journal_does_not_attest(tmp_path):
     """
     _capture(tmp_path / "capture", n=30)
     df = _fetcher(tmp_path, min_baseline_trades=1, min_bar_trades=1)._fetch_remote(
-        "BTCUSD", DAY, DAY)
+        "BTCUSD", DAY, DAY
+    )
     assert (df["whale_attested"] == 0.0).any(), "unattested bars must be marked"
     assert set(df["whale_attested"].unique()) <= {0.0, 1.0}
     # and a marked bar serves no value
@@ -278,7 +308,8 @@ def test_fetch_emits_a_complete_bar_grid_with_no_timestamp_gaps(tmp_path):
     """
     _capture(tmp_path / "capture", n=30)
     df = _fetcher(tmp_path, min_baseline_trades=1, min_bar_trades=1)._fetch_remote(
-        "BTCUSD", DAY, DAY)
+        "BTCUSD", DAY, DAY
+    )
     deltas = df["timestamp"].diff().dropna().unique()
     assert list(deltas) == [pd.Timedelta(hours=1)]
 
@@ -297,7 +328,8 @@ def test_counts_survive_marking_but_values_do_not(tmp_path):
     """
     _capture(tmp_path / "capture", n=300, qty=1.0, whale_qty=5000.0)
     df = _fetcher(tmp_path, min_baseline_trades=1, min_bar_trades=1)._fetch_remote(
-        "BTCUSD", DAY, DAY)
+        "BTCUSD", DAY, DAY
+    )
     active = df[df["whale_trade_count"] > 0]
     assert len(active) == 1
     assert active["whale_trade_count"].sum() == 300.0

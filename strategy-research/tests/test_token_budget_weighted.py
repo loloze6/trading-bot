@@ -10,6 +10,7 @@ run_047's pipeline_state.yaml (frozen — see this project's standing rule that
 regression fixtures use the real historical failure, frozen so a later
 successful re-run of the live directory can't invalidate the test).
 """
+
 import sys
 from pathlib import Path
 
@@ -27,15 +28,33 @@ import run_phase1_research as rpr  # noqa: E402
 RUN_047_REAL_AUDIT_LOG = {
     "hypothesis_generation_attempt_0": {
         "cost_usd": 0.08771495,
-        "tokens": {"input": 10, "output": 6257, "cache_read": 13337, "cache_creation": 26441, "total": 46045},
+        "tokens": {
+            "input": 10,
+            "output": 6257,
+            "cache_read": 13337,
+            "cache_creation": 26441,
+            "total": 46045,
+        },
     },
     "innovation_expansion_attempt_0": {
         "cost_usd": 0.07643845,
-        "tokens": {"input": 10, "output": 8680, "cache_read": 13337, "cache_creation": 16047, "total": 38074},
+        "tokens": {
+            "input": 10,
+            "output": 8680,
+            "cache_read": 13337,
+            "cache_creation": 16047,
+            "total": 38074,
+        },
     },
     "validation_attempt_0": {
         "cost_usd": 0.3512201,
-        "tokens": {"input": 164, "output": 37610, "cache_read": 836461, "cache_creation": 60544, "total": 934779},
+        "tokens": {
+            "input": 164,
+            "output": 37610,
+            "cache_read": 836461,
+            "cache_creation": 60544,
+            "total": 934779,
+        },
     },
 }
 
@@ -54,7 +73,9 @@ def test_run_047_raw_total_matches_what_actually_tripped_the_old_breaker():
 
 
 def test_weighted_total_is_materially_lower_than_raw_for_run_047():
-    weighted_total, breakdown = rpr._compute_weighted_budget_usage(RUN_047_REAL_AUDIT_LOG)
+    weighted_total, breakdown = rpr._compute_weighted_budget_usage(
+        RUN_047_REAL_AUDIT_LOG
+    )
     raw_total = sum(e["tokens"]["total"] for e in RUN_047_REAL_AUDIT_LOG.values())
 
     assert weighted_total < raw_total
@@ -74,8 +95,12 @@ def test_run_047_real_case_and_new_budget():
 
     old_raw_budget = 300000
     raw_total = sum(e["tokens"]["total"] for e in RUN_047_REAL_AUDIT_LOG.values())
-    assert raw_total > old_raw_budget, "the old breaker genuinely did trip on this real data"
-    assert weighted_total < budget, "the new weighted breaker must clear this real, legitimate run"
+    assert raw_total > old_raw_budget, (
+        "the old breaker genuinely did trip on this real data"
+    )
+    assert weighted_total < budget, (
+        "the new weighted breaker must clear this real, legitimate run"
+    )
 
 
 def test_backward_compatible_with_post_f4c_entries_carrying_weighted_field():
@@ -83,8 +108,14 @@ def test_backward_compatible_with_post_f4c_entries_carrying_weighted_field():
     must be used directly, not recomputed (avoids double-applying weights)."""
     audit_log = {
         "some_stage_attempt_0": {
-            "tokens": {"input": 10, "output": 10, "cache_read": 10, "cache_creation": 10,
-                       "total": 40, "weighted": 999.0},
+            "tokens": {
+                "input": 10,
+                "output": 10,
+                "cache_read": 10,
+                "cache_creation": 10,
+                "total": 40,
+                "weighted": 999.0,
+            },
         },
     }
     weighted_total, breakdown = rpr._compute_weighted_budget_usage(audit_log)
