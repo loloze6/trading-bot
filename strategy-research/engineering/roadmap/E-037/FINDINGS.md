@@ -46,8 +46,10 @@ contract, so nobody could see them.
 | [F21](#f21) | **high** | documents-inactive-machinery | `docs/USER_GUIDE.md` §3 |
 | [F22](#f22) | **high** | phantom-fields | `docs/USER_GUIDE.md` §3 (`verdict_interpretation.yaml`) |
 | [F23](#f23) | medium | phantom-values + unhandled-status | `docs/USER_GUIDE.md` §3 (`decision.yaml`) |
+| [F24](#f24) | **high** | phantom-fields (systemic) | `docs/USER_GUIDE.md` §3 — 5 entries |
+| [F25](#f25) | medium | incomplete-index | `docs/USER_GUIDE.md` §5 |
 
-**Counts:** 7 high · 13 medium · 3 low. By type: 5 doc-vs-code, 2
+**Counts:** 8 high · 14 medium · 3 low. By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -738,6 +740,113 @@ in others, and the guide does not distinguish them.
 **Proposed disposition (S3 decides, not this file):** Correct the documented
 values to `spec_ready` / `component_gap`, and decide whether
 `validation_incomplete` should become a known status or remain a pause.
+
+---
+
+## F24
+
+**Severity:** high · **Type:** phantom-fields (systemic) · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §3 — five entries
+
+**Found by:** S2 mechanical audit, 2026-08-30
+
+[F22](#f22) was not an isolated bad entry. Auditing **every** §3 field table
+against **every** matching artifact on disk shows the same defect in five
+entries. Reproduce with
+[`E-037/tools/audit_field_tables.py`](tools/audit_field_tables.py).
+
+| Entry | Real files | Documented fields never present | Rate |
+|---|---|---|---|
+| `escalation_request.yaml` | 7 | `target_symbol`, `target_timeframe`, `rationale` | **3 of 3** |
+| `protocol_result.yaml` | 38 | `per_window_metrics`, `per_symbol_metrics`, `per_regime_metrics`, `median_sharpe`, `promotion_criteria`, `diagnostic_metrics` | **6 of 7** |
+| `verdict_interpretation.yaml` | 39 | `altitude`, `verdict`, `diagnostic_rule_applied`, `parameter_bracket`, `next_altitude` | 5 of 6 — [F22](#f22) |
+| `regime_detector_report.yaml` | 1 | `persistence_score`, `class_conditional_sensitivity`, `activation_rate` | 3 of 8 |
+| `regime_audit_decision.yaml` | 1 | `retune_firewall_check` | 1 of 3 |
+
+**Not a nesting artefact — the names themselves are wrong.** Checked
+individually:
+
+- `escalation_request.yaml` really carries `target`, `reason`,
+  `proposed_capability`. The documented names are different words for the same
+  three concepts.
+- `regime_detector_report.yaml` really nests its metrics under
+  `per_symbol_per_timeframe[].metrics` as
+  `regime_persistence_median_bars`, `class_conditional_sensitivity_per_label`
+  and `trending_activation_rate` — different names *and* a different shape.
+- `protocol_result.yaml` really carries `hypothesis_verdict`,
+  `per_symbol_summary`, `results`, `source`, `prescreen_route`,
+  `prescreen_kill_reason`. Six of the seven documented names describe a
+  structure the file does not have.
+
+**What this means.** §3's field tables were written from **intended design**,
+not from artifacts, and were never re-checked against output. That is the
+same root as [F14](#f14) (`required_gross_edge_bps`, a `cost_check` subkey no
+code emits) and [F21](#f21) (entries for flag-gated features that never ran).
+The guide is not so much out of date as never having been reconciled with
+reality in this section.
+
+**`protocol_result.yaml` is the one that matters operationally.** It is the
+backtest result — the evidence every verdict rests on — and an operator
+reading §3 would look for `median_sharpe` and `per_window_metrics` and find
+neither.
+
+**Method note.** This was found mechanically, in one pass, after [F22](#f22)
+suggested the class might be systemic. The audit is cheap and repeatable;
+running it is a better acceptance gate for S2 and S4 than any amount of
+careful reading. Its limitation is honest: it detects *documented-but-absent*
+keys, and cannot tell a renamed field from a deleted one — that distinction
+needed a human read of each artifact, which is what the three bullets above
+are.
+
+**Proposed disposition (S3 decides, not this file):** Rewrite the five tables
+from real artifacts, preserving the old names as intended-design notes rather
+than deleting them (the treatment already applied to
+`verdict_interpretation.yaml`). Then add
+`tools/audit_field_tables.py` to whatever gate S4 lands behind, so the tables
+cannot silently drift again.
+
+---
+
+## F25
+
+**Severity:** medium · **Type:** incomplete-index · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §5
+
+**Found by:** S2, 2026-08-30
+
+§5 is titled "Tools & Scripts" and documents **3 of the 22** Python files in
+`tools/`. The omissions include the two most load-bearing tools in the
+repository:
+
+- **`tools/prescreen_signal.py`** — implements stage 7 in its entirety.
+- **`tools/verdict_criteria_evaluator.py`** — produces
+  `pass_rule_evaluation.yaml`, the decision authority since 2026-07-13
+  (see [F19](#f19)).
+
+Also absent: `power_check.py` (the A8.6 gate), `deflate_sharpe.py` (the DSR
+gate before the holdout), `validate_regime_detector.py` (stage 9),
+`episode_significance.py` (the A8.5.1a path, and the site of
+[F10](#f10)), `timeframe.py` (the single source of `bars_per_day`, whose
+enumerated predecessor caused the 4h `n_eff` bug), and `cache_gap_census.py`
+(which stage 7's own notes tell the reader to run).
+
+**The composition is what makes this a finding rather than a gap.** §5 has a
+32-line entry for `workflow/stages.yaml`, explicitly marked *"ARCHIVED
+2026-08-24 (never read by the orchestrator)"* — a longer treatment than any
+live tool receives, while the tool implementing a pipeline stage has none.
+The section documents what someone once wrote about, not what runs.
+
+**Not every omission is equally serious.** `panel_backtester.py` is explicitly
+research-only and out of the production path; `whale_footprint_evaluation.py`
+is one hypothesis's harness. The argument is not that all 22 need prose — it
+is that a section presenting itself as the tools index should be an index.
+
+**Proposed disposition (S3 decides, not this file):** S2 has added a complete
+inventory table with a one-line purpose each, grouped by role. S3 decides which
+deserve full entries. Consider whether the archived `stages.yaml` entry should
+shrink to a pointer.
 
 ---
 

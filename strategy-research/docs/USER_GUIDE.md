@@ -1036,6 +1036,16 @@ prints that the SKILL may need a new status case and pauses
 ---
 
 ### `protocol_result.yaml` / `protocol_summary.json`
+> ⚠️ **Six of the seven fields below are absent from every real
+> `protocol_result.yaml`** (38 files, measured 2026-08-30):
+> `per_window_metrics`, `per_symbol_metrics`, `per_regime_metrics`,
+> `median_sharpe`, `promotion_criteria`, `diagnostic_metrics`. The artifact
+> really carries `hypothesis_verdict`, `per_symbol_summary`, `results`,
+> `source`, `prescreen_route` and `prescreen_kill_reason`. This is the backtest
+> result every verdict rests on, so the gap matters operationally. Names below
+> preserved as intended design. See
+> [F24](../engineering/roadmap/E-037/FINDINGS.md#f24).
+
 
 
 > **Why this file exists.** What actually happened when the strategy was traded across every window. The raw evidence every later judgment rests on.
@@ -1108,6 +1118,13 @@ The pre-filled research_brief for the next run. Includes the `existing_context` 
 ---
 
 ### `escalation_request.yaml`
+> ⚠️ **All three fields below are absent from every real
+> `escalation_request.yaml`** (7 files, measured 2026-08-30). The artifact
+> really carries `target` (e.g. `timeframe`), `reason`, and
+> `proposed_capability`. The names below are preserved as intended design —
+> they describe the same three concepts under different names. See
+> [F24](../engineering/roadmap/E-037/FINDINGS.md#f24).
+
 
 
 > **Why this file exists.** The record that a search space was widened, and why — so widening cannot happen silently.
@@ -1368,6 +1385,15 @@ same portability issue as [F11](../engineering/roadmap/E-037/FINDINGS.md#f11).
 ---
 
 ### `regime_audit_decision.yaml`
+> ⚠️ **`retune_firewall_check` is absent from the real artifact.** The firewall
+> itself is real and enforced in code — `_validate_retune_firewall`
+> (`run_phase1_research.py:2459`) raises on a violation — but the decision file
+> does not carry a field recording that it passed. Note also that this file is
+> **updated in place by stage 7**, which resolves `ungated_escape_eligible`
+> here; the entry has no `Updated by` line. See
+> [F7](../engineering/roadmap/E-037/FINDINGS.md#f7) and
+> [F24](../engineering/roadmap/E-037/FINDINGS.md#f24).
+
 
 > **Why this file exists.** The human judgment on the detector, made under a firewall that keeps profitability out of the decision.
 
@@ -1590,6 +1616,17 @@ product are not `tradable: true` — **or are undeclared**
 
 ## 4. Skills
 
+> **Scope of this section.** The seven skills below are exactly the seven the
+> orchestrator can dispatch — `_SKILL_MAP` in `workflow/run_phase1_research.py:689`,
+> verified 2026-08-30. Three more exist under `workflow_artifacts/skills/` and
+> are **not** dispatchable: `regime-auditor` (invoked by a human on a paused
+> pipeline — see stage 10 and [F16](../engineering/roadmap/E-037/FINDINGS.md#f16)),
+> `quant-fundamentals` and `research-system-evolution` (reference/strategic, not
+> pipeline stages). `_build_stage_prompt` raises for any stage not in the map,
+> so the seven below are an exhaustive list of automated stages, not a
+> selection.
+
+
 Skills are LLM persona prompts stored in `skills/{name}/SKILL.md`. Each skill defines a role, a checklist, constraints, and forbidden actions for a Claude agent acting as a specialist. The orchestrator loads the relevant skill at each stage and passes it as the system prompt.
 
 ---
@@ -1785,6 +1822,66 @@ JSON files specifying the exact windows, symbols, timeframes, and thresholds for
 
 ---
 
+### Tool inventory — everything in `tools/`
+
+The entries above cover 3 of the **22** Python files in `tools/`. The rest are
+listed here so the section is a complete index rather than a selection. Ordered
+by how load-bearing they are, not alphabetically.
+
+**Run the pipeline**
+
+| Tool | What it does |
+|---|---|
+| `tools/prescreen_signal.py` | **Implements stage 7 in full** — IC, significance, cost gate, routing. The single largest tool in the directory. |
+| `tools/run_protocol.py` | Walk-forward executor for stage 8 *(documented above)*. |
+| `tools/verdict_criteria_evaluator.py` | **The K2/C7 machine verdict** — scores a run against its pre-registered `pass_rule` and writes `pass_rule_evaluation.yaml`. Since 2026-07-13 this is the decision authority, not an advisory. |
+| `tools/power_check.py` | The A8.6 a-priori power check: episode-clustered, symbol-correlation-aware. Shares `timeframe.py` with the prescreen so both derive the same block size. |
+| `tools/episode_significance.py` | The A8.5.1a episode-blocked significance path used by the prescreen. |
+| `tools/timeframe.py` | Timeframe arithmetic, **derived rather than enumerated** — the single source of `bars_per_day`. A lookup table here was the 4h `n_eff` bug. |
+| `tools/validate_regime_detector.py` | Stage 9's detector validation; computes the A2.2 metrics. |
+| `tools/retune_regime_detector.py` | One-shot grid search over `(ER_enter, ER_exit, min_dwell)`. Scoring is detector-intrinsic only — the A2.2 retune firewall in tool form. |
+
+**Gate promotion**
+
+| Tool | What it does |
+|---|---|
+| `tools/deflate_sharpe.py` | Bailey & López de Prado deflated Sharpe — the gate between a good backtest and the holdout. Also where duplicate trial IDs are mechanically refused. |
+| `tools/lint_verdict_provenance.py` | Standalone G6 provenance checker (C7-EXT-R / D-4), deliberately separate from the evaluator. |
+| `tools/stamp_protocol.py` | Version-stamps a protocol JSON and prints its content hash, for the `protocol_ref_content_hash` pin in `pre_registration.yaml`. |
+| `tools/record_schema.py` | Closed schema for `campaign_knowledge_base.yaml` findings and `config/campaign_queue.yaml`. |
+
+**Flag-gated stages** *(see the flag table in §3 — all currently off)*
+
+| Tool | What it does |
+|---|---|
+| `tools/anti_adjacency_gate.py` | Deterministic tool stage: is this candidate a restatement of something already killed? |
+| `tools/build_exclusion_digest.py` | Read-only, regenerable digest of what the campaign has already excluded. |
+
+**Data and measurement**
+
+| Tool | What it does |
+|---|---|
+| `tools/check_data.py` | Data validator *(documented above)*. |
+| `tools/cache_gap_census.py` | Timestamp-continuity census over the local OHLCV caches. Written for the issue #50 policy decision — **this, not `gap_skipped_pct`, is the cache's contamination rate**. |
+| `tools/measure_bar_sigma.py` | Per-bar return volatility in bps for a recorded pair set. |
+| `tools/measure_funding_carry.py` | Realized funding-carry magnitude, in-sample window only, read-only. |
+
+**Analysis and reporting**
+
+| Tool | What it does |
+|---|---|
+| `tools/fragment_patterns.py` | Ideation-only fragment diagnostics *(documented above)*. |
+| `tools/near_miss_scoreboard.py` | Ranked table over every tested idea (E-018 S1) — the campaign's "what came closest" view. |
+| `tools/panel_backtester.py` | **RESEARCH-ONLY** vectorized panel backtester. Explicitly *not* part of the production engine; results from it are not comparable with `run_protocol.py` output. |
+| `tools/whale_footprint_evaluation.py` | Evaluation harness for `prereg_whale_footprint_v2.yaml`. |
+
+> **Why this list matters.** Before it, §5 documented three tools. The tool
+> that implements stage 7 and the tool that produces the decision authority
+> were both absent, while `workflow/stages.yaml` — archived and read by nothing
+> — had a full entry. See
+> [F25](../engineering/roadmap/E-037/FINDINGS.md#f25).
+
+---
 ## 6. Glossary
 
 | Term | Definition |
