@@ -37,24 +37,18 @@ Fewer lines is not success. If shortening costs a fact, keep the fact.
 **Recommendation: two layers, not a 7-column table.**
 
 The EPIC asks for three more columns (`stage input`, `stage output`,
-`features / logic`). I recommend **not** adding them as columns. Argument:
+`features / logic`). I recommend **not** adding them as columns:
 
-- **The existing cells are already prose, not cells.** §2.2's stage-3
-  Objective is 68 words and contains a quoted string, a parenthetical, a
-  measured count and a date. Stage 4's contains a conditional
-  (`if min_detectable_ic > plausible_ic_upper`). These are paragraphs living
-  in a table because there was nowhere else to put them.
-- **Markdown tables cannot hold what the new columns must hold.** A stage
-  input is a *list* of files with provenance. Logic is a *numbered sequence*.
-  Neither survives a `|`-delimited cell — no line breaks, no nesting, no code
-  fences. The only way to fit them is to compress, and compressing is exactly
-  how the hard constraint gets violated.
-- **7 columns of prose is unreadable at any terminal width.** The current
-  4-column table already wraps badly. 7 would be worse, and the widest column
-  (logic) is the one the operator most needs to read carefully.
+- **The cells are already prose.** §2.2's stage-3 Objective is 68 words with a
+  quoted string, a measured count and a date. Stage 4's holds a conditional.
+  These are paragraphs living in a table because there was nowhere else.
+- **A cell cannot hold what the new columns need.** Inputs are a *list* of
+  files with provenance; logic is a *numbered sequence*. Neither survives a
+  `|`-delimited cell. The only way to fit them is to compress — which is how
+  the no-information-loss constraint gets broken.
 - **The bug-list symptom needs precision, not glanceability.** "Which
-  sub-steps does this feature reach?" is answered by an exact I/O contract
-  with `file:line` anchors. That is a block, not a cell.
+  sub-steps does this feature reach?" is answered by an I/O contract with
+  `file:line` anchors. That is a block, not a cell.
 
 So:
 
@@ -108,13 +102,23 @@ buys, what it costs, why the work happens here rather than earlier or later.
 Side-effect writes to artifacts owned by another stage are listed here
 explicitly. They are the ones that surprise people.
 
+**Terms used in this block**
+
+| Term | In plain words |
+|---|---|
+| **jargon term** | One line, no jargon in the explanation. |
+| **A8.3** | The rule, stated as a rule, in one line. |
+
 **Features / logic in place**
 
-Numbered, concrete, in execution order. Each step names the amendment code
-it implements where one exists, and carries a `file:line` anchor.
+In execution order. Each step is a **title plus a one-line summary**, then
+details underneath. The titles alone should read as a summary of the stage.
 
-1. Step … (A8.3) — `tools/x.py:123`
-2. Step … — `tools/x.py:456`
+**1. Short title — what this step does, in one line.**
+Details: the how, the amendment code, the `file:line`, the trap.
+
+**2. Next title — …**
+Details …
 
 **Routes / outcomes** *(stages that decide)*
 
@@ -133,39 +137,23 @@ here with its original wording.
 `file:line` list — the anchors that make this block re-verifiable.
 ```
 
-**Amendment codes must be resolvable where they are used.** A bare `A6.2` is
-an unexpandable reference: it is load-bearing, so it must survive verbatim,
-but a reader who does not already know it has nowhere to go. On **first use
-within a stage block**, every code gets a short gloss and a link to its
-definition:
+**No jargon and no code without a plain-language line.** A bare `A6.2`, or a
+bare `n_eff`, is an unexpandable reference: load-bearing, so it survives
+verbatim, but useless to anyone who does not already know it — and anyone who
+does know it did not need the document. The **Terms used in this block** table
+carries them: one line each, no jargon inside the explanation, plus a single
+link to the codes' source text. After that the bare term is fine.
 
-> A6.2 ([trials need cross-trial Sharpe variance, so every evaluation counts
-> as a trial](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md))
+A terms table beats glossing inline: five inline parentheticals bury the steps
+they are attached to, and the same code recurs across stages.
 
-Thereafter the bare code is fine within that block. This is not pedantry —
-the project has already been bitten: incident **C4, "Rule-citation
-confabulation"** records a card citing *"A3.6, n_episodes >= 8 per window"*
-where the label was wrong (the real rule was A8.5.1a-spec rule 3) and the
-qualifier was invented, and concludes *"plausible-looking fake citations
-survive until someone quotes the source verbatim"*
-(`engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md:216`). Codes
-that cannot be resolved in one hop are codes nobody checks. See findings
+This is not pedantry. Incident **C4, "Rule-citation confabulation"** records a
+card citing *"A3.6, n_episodes >= 8 per window"* where the label was wrong
+(the real rule was A8.5.1a-spec rule 3) and the qualifier invented, concluding:
+*"Plausible-looking fake citations survive until someone quotes the source
+verbatim"* (`engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md:216`).
+Codes nobody can resolve in one hop are codes nobody checks. See
 [F12](FINDINGS.md#f12) and [F13](FINDINGS.md#f13).
-
-**Why the fields are these:**
-
-- **Engine / Runs** — separated because "who executes" and "when" were
-  conflated. Stage 9 is auto-triggered; stage 1 is a human. The current table
-  buries "auto-triggered before verdict when the report is stale" inside the
-  Objective.
-- **Required?** on inputs — the difference between "the stage cannot run" and
-  "the stage degrades" is the single most useful thing to know before you
-  change a producer.
-- **Side effects called out in output** — see finding F7 below. Stage 7
-  writes into stage 10's artifact and no reader of the guide could know.
-- **`file:line` anchors** — the guide's §2 preamble already says "when this
-  section and the code disagree, the code wins and this section is a bug."
-  Anchors are what make that checkable instead of aspirational.
 
 ---
 
@@ -193,53 +181,47 @@ description of what the artifact was *meant* to look like, not a guarantee.
 something other than they look like.
 ```
 
-**Rules that make the metadata normalised:**
+**Rules**
 
-1. **All five metadata lines are always present.** Absence is written
-   explicitly — `*(none — write-once)*`, `*(none)*` — never omitted. Today a
-   missing line is ambiguous between "does not apply" and "nobody checked".
-   `trade_diagnostics.json` has no `Schema` and no `Updated by`; a reader
-   cannot tell which case it is.
-2. **`Created by` lists every path.** If two different pieces of code can
-   write the file, both are named. See finding F4.
-3. **`Schema` says plainly that nothing checks it.** §3's preamble already
-   records that no schema is loaded by any code, but a reader who lands on one
-   entry does not see the preamble. The word "schema" makes people assume
-   validation; the line has to say, in one clause, that there is none and what
-   that means in practice — a wrong value still flows through.
-4. **The rationale headliner is one line and blockquoted**, so it is visually
-   distinct from the metadata and cannot be mistaken for another field.
-5. **Field tables stay descriptive, not exhaustive** — but if the table is a
-   selection from a larger real artifact, that is stated. Otherwise a reader
-   concludes a field does not exist. See finding F3.
-6. **The definition says what the field MEANS; the values live in their own
-   column.** A definition that only lists the strings a field can hold is not
-   a definition — it tells a reader what is legal without telling them what
-   the field is for. `route` is not "one of seven strings"; it is *the
-   decision the prescreen reached, and the single field the orchestrator reads
-   to choose the next stage*. Split them: **Definition** = purpose, one or two
-   sentences. **Values / range** = every value it can take, each with a
-   one-or-two-word gloss in brackets — `kill_no_ic` (tested, no directional
-   content) — or, for a scalar, its type, range and what `null` means there.
-   The gloss is where most of the lost knowledge is: nothing in the old table
-   told a reader that `no_signal_artifact` means *never actually tested*
-   rather than *tested and failed*, which is the whole point of it existing.
-7. **Every field carries a real example value, copied from a real run, with
-   that run's id and date in the column header.** A definition tells you what
-   a field means; an example tells you what it looks like — whether `route` is
-   a string or an enum object, whether `ic_active_bars` is `0.016` or `1.6`,
-   whether `cost_check` is a scalar or a dict. Values are transcribed from the
-   artifact on disk, never invented, and never "corrected" to look tidier.
-   **The header's run id and date are load-bearing, not decoration:** artifacts
-   drift, so an undated example silently becomes a false claim about the
-   current shape. Proof from this very sample — the newest real
-   `prescreen_result.yaml` on disk is run_060 (2026-08-28) and it has none of
-   the `#50` gap fields, because those landed the next day in `97d3bd7a`
-   (2026-08-29). Fields the example predates are marked `—` with the reason,
-   which is itself information a reader wants.
-8. **"Logic" prose does not live here.** Per the EPIC, it relocates to the
-   owning stage's block. The artifact entry describes the *file*; the stage
-   block describes the *computation*. (Relocation, not deletion — §4.)
+1. **All five metadata lines always appear.** Absence is stated —
+   `*(none — write-once)*` — never omitted. Today a missing line is ambiguous
+   between "does not apply" and "nobody checked": `trade_diagnostics.json` has
+   no `Schema` and no `Updated by`, and a reader cannot tell which.
+2. **`Created by` lists every path.** Two pieces of code can write the same
+   file; name both. See [F4](FINDINGS.md#f4).
+3. **`Schema` says plainly that nothing checks it.** The word "schema" makes
+   people assume validation. A reader landing on one entry never sees §3's
+   preamble, so the line itself must say there is none.
+4. **The rationale headliner is one blockquoted line**, so it cannot be
+   mistaken for another metadata field.
+5. **Field tables may be a selection, but must say so** — otherwise absence
+   reads as non-existence. See [F3](FINDINGS.md#f3).
+6. **Definition = what the field is FOR. Values = what it can hold.**
+   A list of legal strings is not a definition. `route` is not "one of seven
+   strings"; it is *the decision the prescreen reached, and the field the
+   orchestrator reads to pick the next stage*. Each value gets a two-word
+   gloss — `kill_no_ic` (tested, no directional content). Scalars get type,
+   range, and what `null` means. The glosses carry real knowledge: nothing in
+   the old table said `no_signal_artifact` means *never tested* rather than
+   *tested and failed*.
+7. **Examples are real values from a real run, dated in the column header.**
+   Never invented, never tidied. The date is load-bearing: artifacts drift, so
+   an undated example becomes a false claim. Proof — the newest real
+   `prescreen_result.yaml` is run_060 (2026-08-28) and lacks the `#50` gap
+   fields, which landed next day in `97d3bd7a` (2026-08-29). Fields the
+   example predates are marked `—` with the reason.
+8. **No jargon without a plain-language explanation, and no key name without
+   one either.** This is the rule the operator asked for directly. A term like
+   IC, `n_eff`, episode or bps, and a code like A8.6, is meaningless to anyone
+   who does not already know it — and someone who already knows it does not
+   need the document. Each block opens with a **Terms used in this block**
+   table: one line each, no jargon inside the explanation. Anything not
+   explained there gets explained where it is used. Codes additionally link
+   once to their source text. See [F12](FINDINGS.md#f12) for what the guide
+   does today: 14 codes, 26 mentions, zero pointers.
+9. **"Logic" prose does not live here.** It belongs in the owning stage's
+   block. The artifact entry describes the *file*; the stage block describes
+   the *computation*. Relocation, not deletion — see §4.
 
 ---
 
@@ -262,21 +244,37 @@ runs an A8.6 power pre-flight *around* the tool first — see logic step 0.
 deserves an expensive walk-forward backtest.
 
 **Design rationale.**
-- A full protocol run costs compute, and — because every run is recorded as a
-  trial whether it passes or dies (A6.2 — [deflated Sharpe needs the variance
-  across trials, so every evaluation counts, kills included](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md)) — it also
-  costs statistical budget.
-  Trials spent on hopeless signals raise the deflated-Sharpe bar for the
-  candidates that are actually promising.
-- The prescreen buys that decision for one pass over the forecast series: no
-  portfolio simulation, no backtest engine, no LLM call, no token cost.
-- It asks only the two questions answerable without simulating a portfolio:
-  does the signal carry directional information at all (IC), and could it
-  clear its own trading costs if it did (cost_check). A8.1 requires both —
-  either one alone is not evidence.
-- It runs *after* specification rather than before, because the questions are
-  asked of the compiled `strategy_config`, not of the prose hypothesis. That
-  is what makes the answer about the thing that would actually be backtested.
+- A full backtest costs compute, and every run is counted as a trial whether
+  it passes or dies, so it also costs statistical budget. Trials spent on
+  hopeless signals raise the bar for the promising ones.
+- The prescreen answers the question for one pass over the forecast series:
+  no portfolio simulation, no backtest engine, no LLM call.
+- It asks only the two things answerable without simulating a portfolio: does
+  the signal predict anything, and could it out-earn its trading costs.
+- It runs after specification, not before, so the answer is about the compiled
+  config that would actually be backtested — not about the prose hypothesis.
+
+**Terms used in this block**
+
+| Term | In plain words |
+|---|---|
+| **IC** (information coefficient) | How well the forecast ranked what actually happened next. `+1` perfect, `0` useless, `-1` perfectly backwards. Measured with Spearman rank correlation. |
+| **active bar** | A bar where the signal actually said something (forecast non-zero/changing). A selective signal is silent most of the time. |
+| **bps** (basis point) | One hundredth of a percent. Costs and edges are quoted in bps per trade. |
+| **effective sample** (`n_eff`) | How many genuinely *independent* observations there are. Adjacent hours move together, so 8928 bars are worth far fewer independent facts — dividing by a block size is how that is accounted for. |
+| **episode** | A burst of consecutive active bars treated as **one** event rather than many, for signals that fire in clusters. |
+| **A8.6** | Rule: check up front that the sample is even big enough to detect the effect. If not, do not spend the trial. |
+| **A8.3** | Rule: score a selective signal on the bars where it spoke. An IC over all bars is swamped by the silent ones and collapses toward zero by construction. |
+| **A8.1** | Rule: a good IC alone is never a pass — the cost gate must clear too. A signal with IC 0.2145 still lost 26 bps per trade. |
+| **A8.5.1a** | Rule: for signals that fire in bursts, count events, not bars. |
+| **A2.1** | "Detector-confidence deadlock escape" — the rule letting a hypothesis be judged without a trusted regime detector. Requires all-bars IC. |
+| **A2.3** | "Post-`unusable` policy" — with no trustworthy detector, regime-conditioned numbers are not evidence. Rule 5 says the escape test must use all-bars IC. |
+| **A6.2** | Rule: deflated Sharpe needs the spread of results across trials, so every evaluation counts as a trial — kills included. |
+| **F5c** | Rule: "the code broke" must never be recorded as "the idea failed". |
+| **#50** | Issue: a forecast/return pair straddling a hole in the data cache is not a real observation. |
+
+Full text of every amendment code:
+[`AMENDMENTS_01-06.md`](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md).
 
 **Stage input**
 
@@ -284,125 +282,125 @@ deserves an expensive walk-forward backtest.
 |---|---|---|
 | `artifacts/candidate_strategy_config.json` | stage 6 `backtest_specification` | yes |
 | protocol JSON (`symbols`, `windows`, `timeframe`) | `_resolve_protocol_path()` — `run_phase1_research.py:1086` | yes |
-| `config/cost_model.yaml` | repo config — round-trip cost bps per symbol, `safety_factor` (default 2.0) | yes |
-| `trading-bot/local_data/{SYMBOL}_{tf}.csv` | data cache; a coarser timeframe is DERIVED from a finer one (`_resolve_ohlcv_source`, `prescreen_signal.py:306`) | yes |
-| aux feeds — funding rate, fear & greed | `config` `aux_feeds` list; loaded at `prescreen_signal.py:151`/`:171` | only if config declares them |
-| `config/campaign_data_policy.yaml` | eras + `episode_significance` settings | only on the A8.5.1a path |
-| `runs/{run_id}/artifacts/regime_audit_decision.yaml` | stage 10 | only if present — read to resolve A9.1, see side effect below |
-| `campaign_state.yaml` | campaign root | read by the orchestrator wrapper, not the tool |
+| `config/cost_model.yaml` | round-trip cost in bps per symbol, plus `safety_factor` (default 2.0) | yes |
+| `trading-bot/local_data/{SYMBOL}_{tf}.csv` | price cache; a coarser timeframe is derived from a finer one (`_resolve_ohlcv_source`, `prescreen_signal.py:306`) | yes |
+| aux feeds — funding rate, fear & greed | `prescreen_signal.py:151` / `:171` | only if the config declares them |
+| `config/campaign_data_policy.yaml` | era boundaries and episode settings | only on the A8.5.1a path |
+| `runs/{run_id}/artifacts/regime_audit_decision.yaml` | stage 10 | only if present — see the side effect below |
+| `campaign_state.yaml` | read by the orchestrator wrapper, not the tool | yes |
 
 **Stage output**
 
 | What | Written where | Read by |
 |---|---|---|
-| `prescreen_result.yaml` | `runs/{run_id}/prescreen/`, copied to `runs/{run_id}/artifacts/` (`run_phase1_research.py:1113`) | `verdict_interpreter`, orchestrator routing |
-| *(side effect)* `regime_audit_decision.yaml` — field `ungated_escape_eligible` resolved in place | `runs/{run_id}/artifacts/` | `verdict_interpreter`, orchestrator — **stage 10's artifact, rewritten by stage 7** (`prescreen_signal.py:1582` → `:1092`) |
-| *(side effect, orchestrator not tool)* a row in `campaign_state.trial_sharpes` | campaign root | `deflate_sharpe.py`, campaign accounting |
+| `prescreen_result.yaml` | `runs/{run_id}/prescreen/`, copied to `artifacts/` (`run_phase1_research.py:1113`) | `verdict_interpreter`, orchestrator routing |
+| *(side effect)* `regime_audit_decision.yaml` — `ungated_escape_eligible` rewritten in place | `runs/{run_id}/artifacts/` | **stage 10's file, edited by stage 7** (`prescreen_signal.py:1582` → `:1092`) |
+| *(side effect, orchestrator not tool)* one row in `campaign_state.trial_sharpes` | campaign root | `deflate_sharpe.py`, campaign accounting |
 
 **Features / logic in place**
 
-0. **A8.6 a-priori power pre-flight — orchestrator, before the tool starts**
-   (A8.6 = [a-priori power check at hypothesis registration: if the sample
-   cannot detect the effect even if real, do not spend the trial](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md))
-   (`run_phase1_research.py:6217`). If `min_detectable_ic > plausible_ic_upper`
-   the tool is never launched: the orchestrator writes
-   `prescreen_result.yaml` itself with `route: insufficient_power_a_priori`
-   and records the trial (`:6232`, `:6235`). The same check also runs earlier,
-   at the validation gate (`determine_post_validation_route`, `:2287`), which
-   can write the artifact before stage 7 is reached — the orchestrator then
-   detects the existing file and skips the tool (`:6207`).
-   **This step is not in `prescreen_signal.py` at all.** See finding F1.
-1. Load config + protocol; derive `block_size = bars_per_day(timeframe)` from
-   `tools/timeframe.py` — the single source shared with the A8.6 gate and
-   `power_check.py`. There is no fallback; an unparseable timeframe raises.
-   (`prescreen_signal.py:1215`)
-2. Per symbol: load OHLCV over the full protocol range (earliest window start
-   → latest window end), merge aux feeds, extract the forecast series by
-   driving the real strategy through `CandleBuilder` (`_extract_forecasts`,
-   `:470`).
-3. **Gap suppression (#50 A — [issue #50, parts (A) and (B)](https://github.com/loloze6/trading-bot/issues/50): a forecast/return pair straddling a cache hole is not a real observation).** A forecast/return pair whose two bars are not
-   one expected step apart spans a data gap and is dropped. Counts are
-   surfaced per symbol, because pooled figures can read "no gap effect" while
-   one symbol's entire sample was destroyed (red-team D6). (`:1264`, `:1267`)
-4. **Degenerate-input guards — fail loud, not flattering.** A symbol whose
-   usable record count is zero *because of* gap suppression raises (`:1284`).
-   If no symbol loaded any usable data at all, the run raises rather than
-   emitting a route from zero bars (`:1320`, added 2026-08-28 after run_060).
-5. Pool records across symbols; compute `ic_all_bars` and `ic_active_bars`
-   separately (A8.3 — [sparse-forecast IC methodology: an IC over all bars is
-   tie-dominated and collapses toward zero by construction, so a selective
-   signal must be scored on the bars where it spoke](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md)). Active-bar IC —
-   conditional on a non-zero/changing
-   forecast — is the primary gate; all-bars IC is tie-dominated for sparse
-   signals and is reserved for A2.1.
-6. **Significance on active-bar n.** Default method is **block-deflated
-   Fisher z**: `n_eff = active_n / block_size`, `z = IC * sqrt(n_eff - 3)`,
-   labelled `block_{block_size}_fisher_z` (`:643`, `:1377`). The label is
-   derived from the block size actually used — it read `block_24_fisher_z`
-   until 2026-08-28 while `block_size` had already become per-timeframe, so a
-   4h run stamped `block_24` while dividing by 6.
-   **#50 (B):** a block that cannot be placed without spanning a gap does not
-   exist and does not enter `n_eff`; counted per symbol, because pooling
-   first would read the seam between two symbols as a contiguous step
-   (`:1359`).
-   Two alternative methods replace it:
-   - **A8.5.1a episode-blocked** ([episode-blocked significance for signals
-     that fire in bursts, where adjacent active bars are one event, not many](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md); opt-in, config `significance_methodology:
-     episode_blocked_a851a`) for multi-era backward-extension data (`:1402`).
-     Default behaviour with the flag absent is unchanged, so every archived
-     run stays reproducible.
-   - **Stationary block bootstrap** (automatic fallback) when the active-bar
-     forecast is *structurally* degenerate — one constant magnitude whenever
-     active, so `ic_active_bars` is undefined by construction rather than a
-     no-edge result (`:730`, branch at `:1429`, detector `:720`; found 2026-07-07 via the P4_ts_trend
-     shakedown). A merely-small active sample is a power problem, not a
-     structural one, and is left to A8.5.1a's own disposition.
-7. **Turnover proxy** — active bars per trade implies a holding period
-   (`_compute_turnover_proxy`, `:813`). Redefined 2026-07-07 to count
-   activity transitions; the prior sign-flip-only counter silently merged
-   long-only episodes across flat gaps into one trade.
-8. **Cost check (Layer 2).** Estimated gross edge from `ic_for_cost` ×
-   `sigma_bar_bps` × holding period, versus round-trip cost from
-   `cost_model.yaml`. Passes when `edge_to_cost_ratio >= safety_factor`
-   (default 2.0) (`:897`). `sigma_bar_bps` is measured from the records; if no
-   symbol yields an estimate, a placeholder `_DEFAULT_SIGMA_BAR_BPS = 15.0` is
-   substituted and `sigma_is_placeholder: true` is carried into the artifact —
-   **when that flag is true the cost check and every required-IC figure in the
-   artifact are invalid.**
-9. **Route decision** (`_determine_route`, `:982`) — see the route table.
-   A8.1 ([IC alone is never a pass — a signal with IC 0.2145 delivered −26
-   bps/trade net; the cost layer must land with the IC layer](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md)): both IC
-   significance **and** `cost_check.pass` are required for
-   `proceed_to_backtest`.
-10. **F5c zero-signal-artifact override** (`:1481`), which takes priority over
-    every route above. If `active_n_bars == 0`, or swallowed component
-    exceptions exceed 5% of processed bars, the route becomes
-    `no_signal_artifact`. This must not be scored as `kill_no_ic`:
-    `kill_no_ic` says "tested, found nothing", whereas here the hypothesis was
-    never tested. From run_044 (2026-07-04) — a
-    `FundingRateMeanReversionComponent` divide-by-zero produced
-    `active_n_bars=0`, which read as a real `kill_no_ic` verdict and nearly
-    closed an otherwise-untested hypothesis family.
-11. **A2.3** ([post-`unusable` policy: with no trustworthy regime detector,
-    regime-conditioned metrics are not evidence](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md))**:** `ic_by_regime` is
-    emitted as `{suspended: true}` — suspended
-    until a trustworthy detector exists. Only ungated IC decides the
-    prescreen.
-12. **A9.1 side effect** (the code's own label — but see [F13](FINDINGS.md#f13):
-    A9.1 as written is the `keltner_163` must-reject fixture and says nothing
-    about ungated escape; the governing rules here look like A2.1 and A2.3
-    rule 5)**:** resolve `ungated_escape_eligible` in stage 10's
-    `regime_audit_decision.yaml` using `ic_all_bars` — the all-bars IC is the
-    only metric A2.1 ([detector-confidence deadlock escape](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md)) admits,
-    because an IC computed on detector-gated bars is
-    not admissible for or against the escape (A2.3 rule 5) (`:1582`, `:1092`).
-13. Write `prescreen_result.yaml` (`:1585`).
-14. **A6.2 trial recording — orchestrator, after the tool returns**
-    (`_record_prescreen_trial`, `run_phase1_research.py:4039`, called at
-    `:1130`). Kills count as trials; `statistic_valid = "neither"` when there
-    is no backtest Sharpe. Upsert on `(trial_id, "prescreen")` since 2026-08-16
-    (issue #28 / E-025) so a crash-retry replaces the stale row instead of
-    being swallowed. **Not in `prescreen_signal.py`.** See finding F6.
+Each step: **title — one-line summary.** Details follow.
+
+**0. A8.6 power pre-flight — the orchestrator can kill the run before the tool starts.**
+If the sample is too small to detect the effect even if it were real, the tool
+is never launched. The orchestrator writes `prescreen_result.yaml` itself with
+`route: insufficient_power_a_priori` and records the trial
+(`run_phase1_research.py:6217`, `:6232`, `:6235`). The same check runs earlier
+at the validation gate (`:2287`); if it already wrote the file, the
+orchestrator skips the tool (`:6207`). **None of this is in
+`prescreen_signal.py`** — see [F1](FINDINGS.md#f1).
+
+**1. Setup — load the config and protocol, and fix the block size.**
+`block_size = bars_per_day(timeframe)` comes from `tools/timeframe.py`, the
+same source the A8.6 gate uses. No fallback: an unparseable timeframe raises
+(`prescreen_signal.py:1215`).
+
+**2. Extract the forecast — replay the real strategy over the full range.**
+Per symbol, load prices from the earliest window start to the latest window
+end, merge aux feeds, and drive the actual strategy through `CandleBuilder` to
+produce a forecast per bar (`_extract_forecasts`, `:470`).
+
+**3. Gap suppression (#50 A) — drop pairs that straddle a hole in the data.**
+If two bars are not one expected step apart, the "next-bar return" is not a
+next-bar return, so the pair is discarded. Counts are surfaced per symbol,
+because a pooled figure can read "no gap effect" while one symbol's whole
+sample was destroyed (red-team D6) (`:1264`, `:1267`).
+
+**4. Degenerate-input guards — fail loud rather than flattering.**
+A symbol left with zero usable records by step 3 raises (`:1284`). If no symbol
+loaded usable data at all, the run raises rather than emitting a route from
+zero bars (`:1320`, added 2026-08-28 after run_060).
+
+**5. Compute the IC — two of them, for two different jobs (A8.3).**
+`ic_active_bars` (only bars where the signal spoke) is the primary gate.
+`ic_all_bars` is tie-dominated for a sparse signal and is reserved for the
+A2.1 escape test, which requires it.
+
+**6. Significance — is the IC bigger than luck, given how few independent observations there are?**
+Default method is **block-deflated Fisher z**: `n_eff = active_n / block_size`,
+then `z = IC * sqrt(n_eff - 3)`, labelled `block_{block_size}_fisher_z`
+(`:643`, `:1377`). The label is derived from the block size actually used — it
+read `block_24_fisher_z` until 2026-08-28 while `block_size` had already become
+per-timeframe, so a 4h run stamped `block_24` while dividing by 6.
+- **#50 (B):** a block that cannot be placed without spanning a gap does not
+  exist and does not count toward `n_eff`. Counted per symbol, because pooling
+  first would read the seam between two symbols as a contiguous step (`:1359`).
+- **A8.5.1a episode-blocked** replaces it on request (config
+  `significance_methodology: episode_blocked_a851a`) for multi-era data
+  (`:1402`). With the flag absent, behaviour is unchanged, so archived runs
+  stay reproducible.
+- **Stationary block bootstrap** replaces it automatically when the active-bar
+  forecast is *structurally* degenerate — one constant magnitude whenever
+  active, which makes `ic_active_bars` undefined by construction rather than a
+  no-edge result (`:730`, branch `:1429`, detector `:720`; found 2026-07-07 via
+  the P4_ts_trend shakedown). A merely small active sample is a power problem,
+  not a structural one, and is left to A8.5.1a.
+
+**7. Turnover proxy — infer how often this would trade.**
+Active bars per trade implies a holding period (`_compute_turnover_proxy`,
+`:813`). Redefined 2026-07-07 to count activity transitions; the previous
+sign-flip-only counter silently merged long-only episodes across flat gaps
+into a single trade.
+
+**8. Cost check (Layer 2) — could the edge out-earn the fees?**
+Estimated gross edge (`ic_for_cost` × `sigma_bar_bps` × holding period) versus
+round-trip cost from `cost_model.yaml`. Passes when `edge_to_cost_ratio >=
+safety_factor` (default 2.0) (`:897`).
+- `sigma_bar_bps` is measured from the records. If no symbol yields an
+  estimate, the placeholder `_DEFAULT_SIGMA_BAR_BPS = 15.0` is substituted and
+  `sigma_is_placeholder: true` is written into the artifact. **When that flag
+  is true, the cost check and every required-IC figure are invalid.**
+
+**9. Route decision — combine the two gates (A8.1).**
+`_determine_route` (`:982`); see the route table below. Both IC significance
+**and** `cost_check.pass` are required for `proceed_to_backtest`.
+
+**10. F5c override — "the code broke" is not "the idea failed".**
+Takes priority over every route above (`:1481`). If `active_n_bars == 0`, or
+swallowed component exceptions exceed 5% of processed bars, the route becomes
+`no_signal_artifact` rather than `kill_no_ic` — the latter claims the idea was
+tested, and here it was not. From run_044 (2026-07-04): a
+`FundingRateMeanReversionComponent` divide-by-zero produced `active_n_bars=0`,
+which read as a real `kill_no_ic` and nearly closed an untested family.
+
+**11. A2.3 — per-regime IC is deliberately not computed.**
+`ic_by_regime` is emitted as `{suspended: true}` with its reason, so the
+absence cannot be mistaken for an oversight. Only ungated IC decides.
+
+**12. Side effect — stage 7 rewrites stage 10's file.**
+`ungated_escape_eligible` in `regime_audit_decision.yaml` is resolved using
+`ic_all_bars`, because an IC measured on detector-gated bars is not admissible
+for or against the escape (A2.3 rule 5) (`:1582`, `:1092`). The code labels
+this "A9.1", which appears to be the wrong code — see [F13](FINDINGS.md#f13).
+
+**13. Write the artifact.** `prescreen_result.yaml` (`:1585`).
+
+**14. A6.2 trial recording — the orchestrator logs the trial after the tool returns.**
+`_record_prescreen_trial` (`run_phase1_research.py:4039`, called at `:1130`).
+Kills count as trials; `statistic_valid = "neither"` when there is no backtest
+Sharpe. Upsert on `(trial_id, "prescreen")` since 2026-08-16 (issue #28 /
+E-025), so a crash-retry replaces the stale row instead of being swallowed.
+**Not in `prescreen_signal.py`** — see [F6](FINDINGS.md#f6).
 
 **Routes / outcomes**
 
@@ -418,22 +416,20 @@ deserves an expensive walk-forward backtest.
 
 **Notes, history and traps**
 
-- Signal layer only — no portfolio simulation, no backtest engine invocation.
-- Two significance thresholds operate in one function and only the first is
-  documented anywhere: `_SIG_THRESHOLD = 0.10` is the main IC gate
-  (`prescreen_signal.py:87`), while `p > 0.05` is a *secondary* test inside
-  the cost branch separating `kill_cost_hurdle` from `refine_cost_hurdle`.
-- `gap_skipped_pct` is computed over pairs actually **reached** (post-warmup).
-  It is **not** the cache's contamination rate — gaps inside the warmup are
-  never reached, so it reads lower than `tools/cache_gap_census.py` by a
-  config-dependent amount (red-team D4/D5). For the cache rate, run the census.
-- The gap fix is partial and knowingly so: (A) fixes the return label and (B)
-  the block count. **Neither fixes rolling indicators, which still span the
-  holes.** Segment-and-re-warm would fix it and was rejected — it destroys 91%
-  of the `kraken_SUIUSD` train sample.
-- `n_eff_nominal_blocks` is computed over the *post-*(A) active count, so it
-  is a like-for-like comparison against `n_eff_placeable_blocks`, not the
-  pre-#50 value.
+- Signal layer only — no portfolio simulation, no backtest engine.
+- **Two thresholds, one documented.** `_SIG_THRESHOLD = 0.10` is the main IC
+  gate (`prescreen_signal.py:87`); a separate `p > 0.05` inside the cost
+  branch decides `kill_cost_hurdle` vs `refine_cost_hurdle`.
+- **`gap_skipped_pct` is not the cache's contamination rate.** It counts pairs
+  actually reached after warmup; gaps inside the warmup are never reached, so
+  it reads lower than `tools/cache_gap_census.py` by a config-dependent amount
+  (red-team D4/D5). For the cache rate, run the census.
+- **The gap fix is partial, knowingly.** (A) fixes the return label, (B) the
+  block count. Neither fixes rolling indicators, which still span the holes.
+  Segment-and-re-warm would, and was rejected: it destroys 91% of the
+  `kraken_SUIUSD` train sample.
+- `n_eff_nominal_blocks` is computed over the post-(A) active count, so it
+  compares like-for-like with `n_eff_placeable_blocks`, not the pre-#50 value.
 
 **Owned by which code**
 
@@ -522,8 +518,8 @@ itself informative and is not padded with an invented value.
 
 ## 4. Information-loss checklist
 
-The procedure S2 and S4 are held to. It is a **relocation inventory**, not an
-eyeball pass. A rewrite that cannot produce this table does not land.
+The procedure S2 and S4 are held to: a **relocation inventory**, not an eyeball
+pass. A rewrite that cannot produce it does not land.
 
 ### 4.1 Before rewriting a section
 
@@ -599,18 +595,24 @@ reason. A count that goes **up** is fine (enrichment is the point).
 
 ### 4.4 Why mechanical, and its limits
 
-The failure mode the EPIC names is "an agent optimising for a tidy document
-and quietly dropping the sentence that explains why a guard exists." An agent
-reviewing its own rewrite by reading it will not catch that — it already
-believes the result is complete. The token diff does not care what the agent
-believes.
+The EPIC's named failure mode is "an agent optimising for a tidy document and
+quietly dropping the sentence that explains why a guard exists." An agent
+re-reading its own rewrite will not catch that — it already believes the
+result is complete. The token diff does not care what the agent believes.
 
-**Limits, stated honestly:** the check catches dropped *tokens*, not dropped
-*reasoning*. A sentence rewritten from "rejected because it destroys 91% of
-the sample" to "rejected (91%)" passes the mechanical check and loses the
-reason. That is what the relocation inventory's `Verbatim?` column is for,
-and it is why prose rationale is required to move **verbatim** by default.
-The two controls are complementary; neither alone is sufficient.
+**It works, measured on this document.** Rewriting §3.2's field table, the
+check flagged five vanished tokens. Four were genuine losses, restored: `F5c`
+and its 5% threshold, `update()`, the `insufficient_power_a_priori` route
+name, and the term "Layer 2". The fifth, `required_gross_edge_bps`, had never
+existed — the guide documents a `cost_check` subkey no code emits, which
+became [F14](FINDINGS.md#f14). **The check finds phantom content as well as
+lost content**, and none of the five was visible on a read-through.
+
+**Limits, stated honestly:** it catches dropped *tokens*, not dropped
+*reasoning*. "Rejected because it destroys 91% of the sample" → "rejected
+(91%)" passes the check and loses the reason. That is what the inventory's
+`Verbatim?` column is for, and why prose rationale moves verbatim by default.
+Neither control is sufficient alone.
 
 ### 4.5 Landing criteria
 
