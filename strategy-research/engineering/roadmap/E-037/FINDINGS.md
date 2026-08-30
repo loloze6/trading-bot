@@ -41,8 +41,9 @@ contract, so nobody could see them.
 | [F16](#f16) | **high** | stage-does-not-run | `docs/USER_GUIDE.md` §2.1/§2.2 (stage 10) |
 | [F17](#f17) | medium | silent-no-op | `run_phase1_research.py:2410` |
 | [F18](#f18) | **high** | unenforced-rule | `docs/USER_GUIDE.md` §2.2 (stage 3) |
+| [F19](#f19) | **high** | missing-artifacts | `docs/USER_GUIDE.md` §3 |
 
-**Counts:** 4 high · 11 medium · 3 low. By type: 5 doc-vs-code, 2
+**Counts:** 5 high · 11 medium · 3 low. By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -497,6 +498,45 @@ is what makes it look built.
 skill-guidance, or build the check. Worth a sweep of every other "Must:" in
 §2.2 for the same pattern — this is now two confirmed instances of a stated
 guarantee with no enforcement, which makes it a class, not an incident.
+
+---
+
+## F19
+
+**Severity:** high · **Type:** missing-artifacts · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §3
+
+**Found by:** S2, 2026-08-30
+
+§3 presents itself as the catalogue of pipeline artifacts — *"Artifacts are
+YAML files produced and consumed by pipeline stages. They are the only
+communication channel between stages."* **Five real ones have no entry.**
+Counts are files on disk under `runs/`, measured 2026-08-30:
+
+| Artifact | On disk | Why it matters |
+|---|---|---|
+| `pass_rule_evaluation.yaml` | 2 | **The decision authority.** Written by stage 8 via `tools/verdict_criteria_evaluator.py`, and a **REQUIRED input** to verdict_interpreter — its SKILL.md says so at line 16 and treats a verdict contradicting it without flagging as a conformance failure. C7/K2 kernel, 2026-07-13: it *replaced* `evaluate_against_decision_rules` as the authority, which is now informational only. |
+| `pre_registration.yaml` | 10 | Carries the pre-registered `pass_rule` that the above evaluates, and the `machine_constraints` block — which is not a separate file, but the thing that pins stage 7's significance methodology before the prescreen subprocess reads the config. |
+| `run_context.yaml` | 14 | Per-run protocol binding; holds the bare-filename `protocol` key the prescreen conformance gate compares against (`run_phase1_research.py:3013`). |
+| `human_resolution.yaml` | 4 | Required to resume a pipeline paused at `paused_for_human` — the state the `regime_misattribution` path leaves it in (see [F16](#f16)). Without it, a paused campaign cannot restart, and nothing in the guide names it. |
+| `config/venue_tradability.yaml` | config | Single source of truth for the holdout tradability gate (`run_campaign.py:196`). §3's "Config files" addendum lists eight config files and not this one. |
+
+The pattern is that **the artifacts added most recently are the ones missing**
+— the C7/K2 kernel (2026-07-13), the E-015 venue gate, the human-pause path.
+§3 documents the pipeline as it was, and additions did not come with an entry.
+That is the accretion the epic was raised about, visible as a measurable gap
+rather than a feeling.
+
+`pass_rule_evaluation.yaml` is the serious one: an operator reading §3 to
+learn how a verdict is reached will find `protocol_result.yaml` and
+`verdict_interpretation.yaml` and conclude the LLM decides from the backtest.
+Since 2026-07-13 a machine-authored verdict has been the authority, and it is
+invisible here.
+
+**Proposed disposition (S3 decides, not this file):** Add all five. Then check
+whether any other post-2026-07 artifact is missing — the sample here is five
+of five recent additions, so a sweep is warranted rather than optional.
 
 ---
 
