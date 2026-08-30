@@ -77,10 +77,18 @@ index is a table of contents for it.
 **Engine:** Human | Claude | Python tool
 **Runs:** when / what triggers it
 
-**Objective.** One sentence. WHY this stage exists, in plain language, in
-terms of what it buys the campaign. Not a call sequence. Not a list of
-amendment codes. If you cannot say it without naming a function, it is not
-an objective yet.
+**Objective.** EXACTLY one sentence. What this stage is for, in plain
+language. Not a call sequence, not a list of amendment codes. If you cannot
+say it without naming a function, it is not an objective yet.
+
+**Design rationale.** 2-4 bullets. WHY the stage exists in this form: what it
+buys, what it costs, why the work happens here rather than earlier or later.
+
+> **The split rule.** If your objective sentence needs a "because", the
+> "because" is design rationale and belongs in the field below it. Objective
+> answers *what is this for*; design rationale answers *why is it built this
+> way*. Both are "why" questions, which is why they get merged by accident --
+> keeping them apart is what makes the objective scannable in the index table.
 
 **Stage input**
 
@@ -154,10 +162,13 @@ here with its original wording.
 **Updated by:** … | *(none — write-once)*
 **Read by:** …
 **Written to:** `path/…`
-**Schema:** `path/…` — *(declared; not enforced at runtime, see §3 preamble)* | *(none)*
+**Schema:** `path/…` — **declared, never checked.** Nothing loads this file, so
+a value that violates it still flows through the pipeline. Treat it as a
+description of what the artifact was *meant* to look like, not a guarantee.
+| *(no schema file exists)*
 
-| Field | Definition |
-|---|---|
+| Field | Definition | Example (`run_NNN`, YYYY-MM-DD) |
+|---|---|---|
 
 **Notes** *(optional)* — traps, invalidation conditions, fields that mean
 something other than they look like.
@@ -172,16 +183,30 @@ something other than they look like.
    cannot tell which case it is.
 2. **`Created by` lists every path.** If two different pieces of code can
    write the file, both are named. See finding F4.
-3. **`Schema` states enforcement status inline.** §3's preamble already
-   records that no schema is loaded by any code; repeating the status at each
-   entry stops the per-entry line from implying validation that does not
-   happen.
+3. **`Schema` says plainly that nothing checks it.** §3's preamble already
+   records that no schema is loaded by any code, but a reader who lands on one
+   entry does not see the preamble. The word "schema" makes people assume
+   validation; the line has to say, in one clause, that there is none and what
+   that means in practice — a wrong value still flows through.
 4. **The rationale headliner is one line and blockquoted**, so it is visually
    distinct from the metadata and cannot be mistaken for another field.
 5. **Field tables stay descriptive, not exhaustive** — but if the table is a
    selection from a larger real artifact, that is stated. Otherwise a reader
    concludes a field does not exist. See finding F3.
-6. **"Logic" prose does not live here.** Per the EPIC, it relocates to the
+6. **Every field carries a real example value, copied from a real run, with
+   that run's id and date in the column header.** A definition tells you what
+   a field means; an example tells you what it looks like — whether `route` is
+   a string or an enum object, whether `ic_active_bars` is `0.016` or `1.6`,
+   whether `cost_check` is a scalar or a dict. Values are transcribed from the
+   artifact on disk, never invented, and never "corrected" to look tidier.
+   **The header's run id and date are load-bearing, not decoration:** artifacts
+   drift, so an undated example silently becomes a false claim about the
+   current shape. Proof from this very sample — the newest real
+   `prescreen_result.yaml` on disk is run_060 (2026-08-28) and it has none of
+   the `#50` gap fields, because those landed the next day in `97d3bd7a`
+   (2026-08-29). Fields the example predates are marked `—` with the reason,
+   which is itself information a reader wants.
+7. **"Logic" prose does not live here.** Per the EPIC, it relocates to the
    owning stage's block. The artifact entry describes the *file*; the stage
    block describes the *computation*. (Relocation, not deletion — §4.)
 
@@ -202,12 +227,23 @@ subprocess by the orchestrator (`workflow/run_phase1_research.py:1074`
 **Runs:** after `backtest_specification` emits `spec_ready`. The orchestrator
 runs an A8.6 power pre-flight *around* the tool first — see logic step 0.
 
-**Objective.** Decide cheaply, on the signal alone, whether this idea
-deserves an expensive walk-forward backtest. A full protocol run costs
-compute and — because every run counts as a trial — it costs statistical
-budget. The prescreen buys that decision for the price of one pass over the
-forecast series: does the signal carry directional information at all, and
-could it clear its own trading costs if it did?
+**Objective.** Decide cheaply, on the signal alone, whether this hypothesis
+deserves an expensive walk-forward backtest.
+
+**Design rationale.**
+- A full protocol run costs compute, and — because every run is recorded as a
+  trial whether it passes or dies (A6.2) — it also costs statistical budget.
+  Trials spent on hopeless signals raise the deflated-Sharpe bar for the
+  candidates that are actually promising.
+- The prescreen buys that decision for one pass over the forecast series: no
+  portfolio simulation, no backtest engine, no LLM call, no token cost.
+- It asks only the two questions answerable without simulating a portfolio:
+  does the signal carry directional information at all (IC), and could it
+  clear its own trading costs if it did (cost_check). A8.1 requires both —
+  either one alone is not evidence.
+- It runs *after* specification rather than before, because the questions are
+  asked of the compiled `strategy_config`, not of the prose hypothesis. That
+  is what makes the answer about the thing that would actually be backtested.
 
 **Stage input**
 
@@ -391,34 +427,41 @@ could it clear its own trading costs if it did?
 *Selected fields — the artifact carries roughly 30 top-level keys; this table
 covers the decision-bearing ones.*
 
-| Field | Definition |
-|---|---|
-| `route` | Routing decision: `proceed_to_backtest`, `kill_no_ic`, `refine_inverted_ic`, `refine_cost_hurdle`, `kill_cost_hurdle`, `no_signal_artifact`, `insufficient_power_a_priori` |
-| `route_rationale` | Human-readable sentence explaining the route, with the numbers that drove it |
-| `prescreen_kill_reason` | `no_informational_content_this_venue`, `insufficient_episodes_a851a`, `cost_drag_structural`, `component_error`, `zero_activation`, or null |
-| `ic_all_bars` | Spearman IC over all bars (tie-dominated for sparse signals); the only metric A2.1 admits for the ungated escape |
-| `ic_active_bars` | Spearman IC conditional on non-zero/changing forecast — the primary IC gate |
-| `ic_spearman_pooled` | Legacy alias, equals `ic_active_bars`; kept for backward compatibility |
-| `active_n_bars` | Count of active bars; `0` forces `no_signal_artifact` |
-| `forecast_sparsity_pct` | Fraction of bars with zero/unchanging forecast |
-| `forecast_hash` | Fingerprint of the forecast series — the dedup key for trial counting |
-| `ic_significance` | Result of the significance test that **decided the route** |
-| `ic_significance_block24` | The original block Fisher-z result, always computed for continuity even when another method decided |
-| `significance_methodology_used` | Which of the three methods decided: `block_{n}_fisher_z`, `episode_blocked_a851a`, or the stationary block bootstrap |
-| `degenerate_active_forecast` | Structural flag: the component emits one constant magnitude when active, so `ic_active_bars` is undefined rather than zero |
-| `active_forecast_distinct_count` | Distinct active-bar forecast values; the input to the flag above |
-| `cost_check` | `{pass, edge_to_cost_ratio, required_gross_edge_bps, safety_factor_required, …}` — Layer 2 gate |
-| `sigma_bar_bps` | Per-bar volatility in bps used by the cost check |
-| `sigma_is_placeholder` | **`true` invalidates `cost_check` and every required-IC figure in this file** — the sigma is a default constant, not a measurement |
-| `turnover_proxy` | `{active_bars_total, implied_trades_estimated, avg_holding_bars, forecast_sparsity_pct}` |
-| `gap_skipped_pairs` / `gap_skipped_pct` | Pairs suppressed for spanning a data gap; the pct is over pairs **reached**, not over the cache |
-| `gap_stats_by_symbol` | Per-symbol gap accounting — a pooled "no gap effect" can hide one symbol's sample being destroyed |
-| `n_eff_placeable_blocks` / `n_eff_nominal_blocks` | Gap-aware vs nominal effective sample, for like-for-like comparison |
-| `ic_by_era` | Per-era IC report; populated only on the A8.5.1a path, else null |
-| `ic_by_regime` | `{suspended: true}` — A2.3, until a trustworthy detector exists |
-| `component_error_count` / `component_error_sample` | Swallowed component exceptions during `update()`; > 5% forces `no_signal_artifact` (F5c) |
-| `a86_power_check` | Present **only** on the `insufficient_power_a_priori` path; carries `min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, `data_requirement` |
-| `config_sha8` / `computed_at` / `protocol_version` / `symbols` / `prescreen_windows_used` / `n_bars_total` | Provenance |
+**Example column provenance.** Values transcribed verbatim from
+`runs/run_060/artifacts/prescreen_result.yaml`, written 2026-08-28T19:54Z —
+the newest real prescreen artifact on disk. run_060 was a 4h funding
+mean-reversion retest on BTCUSDT + ETHUSDT that died at `kill_no_ic`. Fields
+marked `—` are absent from that file, with the reason given; that absence is
+itself informative and is not padded with an invented value.
+
+| Field | Definition | Example (`run_060`, 2026-08-28) |
+|---|---|---|
+| `route` | Routing decision: `proceed_to_backtest`, `kill_no_ic`, `refine_inverted_ic`, `refine_cost_hurdle`, `kill_cost_hurdle`, `no_signal_artifact`, `insufficient_power_a_priori` | `kill_no_ic` |
+| `route_rationale` | Human-readable sentence explaining the route, with the numbers that drove it | `Active-bar IC=0.0162, p=0.5315 >= 0.1. Signal has no detectable directional content on this venue/timeframe.` |
+| `prescreen_kill_reason` | `no_informational_content_this_venue`, `insufficient_episodes_a851a`, `cost_drag_structural`, `component_error`, `zero_activation`, or null | `no_informational_content_this_venue` |
+| `ic_all_bars` | Spearman IC over all bars (tie-dominated for sparse signals); the only metric A2.1 admits for the ungated escape | `-0.006944` |
+| `ic_active_bars` | Spearman IC conditional on non-zero/changing forecast — the primary IC gate | `0.016237` |
+| `ic_spearman_pooled` | Legacy alias, equals `ic_active_bars`; kept for backward compatibility | `0.016237` |
+| `active_n_bars` | Count of active bars; `0` forces `no_signal_artifact` | `8928` (of `n_bars_total: 17854`) |
+| `forecast_sparsity_pct` | Fraction of bars with zero/unchanging forecast | `49.99` |
+| `forecast_hash` | Fingerprint of the forecast series — the dedup key for trial counting | `5b0dee1781bc716f` |
+| `ic_significance` | Result of the significance test that **decided the route** | `{method: block_24_dense_fallback, pooled_ic: 0.0162, p_value: 0.5315, density_pct: 50.01, significant: false}` |
+| `ic_significance_block24` | The original block Fisher-z result, always computed for continuity even when another method decided | `{pooled_ic: 0.0162, z_stat: 0.6257, p_value: 0.5315, n_eff: 1488, block_size: 6, significant: false}` |
+| `significance_methodology_used` | Which of the three methods decided: `block_{n}_fisher_z`, `episode_blocked_a851a` (reported as `episode_block_bootstrap` / `episode_bootstrap_insufficient_n` / `block_24_dense_fallback`), or the stationary block bootstrap | `block_24_dense_fallback` — **note the literal `24` while `block_size` is `6`; see finding F10** |
+| `degenerate_active_forecast` | Structural flag: the component emits one constant magnitude when active, so `ic_active_bars` is undefined rather than zero | `false` |
+| `active_forecast_distinct_count` | Distinct active-bar forecast values; the input to the flag above | `2` |
+| `cost_check` | `{pass, edge_to_cost_ratio, required_gross_edge_bps, safety_factor_required, …}` — Layer 2 gate | `{symbol: BTCUSDT, estimated_gross_edge_bps_per_trade: 2.6012, cost_bps_per_trade: 17.0, edge_to_cost_ratio: 0.153, safety_factor_required: 2.0, pass: false, ic_used: ic_active_bars}` |
+| `sigma_bar_bps` | Per-bar volatility in bps used by the cost check | `160.1854` |
+| `sigma_is_placeholder` | **`true` invalidates `cost_check` and every required-IC figure in this file** — the sigma is a default constant, not a measurement | `false` |
+| `turnover_proxy` | `{active_bars_total, implied_trades_estimated, avg_holding_bars, forecast_sparsity_pct}` | `{active_bars_total: 8928, implied_trades_estimated: 8926, avg_holding_bars: 1.0, forecast_sparsity_pct: 49.99}` |
+| `gap_skipped_pairs` / `gap_skipped_pct` | Pairs suppressed for spanning a data gap; the pct is over pairs **reached**, not over the cache | — *absent: added by `97d3bd7a` on 2026-08-29, one day after this run* |
+| `gap_stats_by_symbol` | Per-symbol gap accounting — a pooled "no gap effect" can hide one symbol's sample being destroyed | — *absent, same reason* |
+| `n_eff_placeable_blocks` / `n_eff_nominal_blocks` | Gap-aware vs nominal effective sample, for like-for-like comparison | — *absent, same reason* |
+| `ic_by_era` | Per-era IC report; populated only on the A8.5.1a path, else null | `{BTCUSDT::era_2019_2023_full_feed: {ic_active_bars: 0.02237, active_n_bars: 4464, n_episodes: 1}, ETHUSDT::…: {ic_active_bars: 0.010224, …}}` |
+| `ic_by_regime` | `{suspended: true}` — A2.3, until a trustworthy detector exists | `{suspended: true, reason: "A2.3: ic_by_regime suspended until a trustworthy detector exists. …"}` |
+| `component_error_count` / `component_error_sample` | Swallowed component exceptions during `update()`; > 5% forces `no_signal_artifact` (F5c) | `0` / `[]` |
+| `a86_power_check` | Present **only** on the `insufficient_power_a_priori` path; carries `min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, `data_requirement` | — *absent: run_060 took the normal path* |
+| `config_sha8` / `computed_at` / `protocol_version` / `symbols` / `prescreen_windows_used` / `n_bars_total` | Provenance | `041ea0ef` / `2026-08-28T19:54:01.052853+00:00` / `protocols\funding_mr_4h_retest_v1.json` (**backslash — see F11**) / `[BTCUSDT, ETHUSDT]` / 49 month labels `2019-12`…`2023-12` / `17854` |
 
 **Notes**
 
@@ -551,6 +594,9 @@ seed `E-037/FINDINGS.md` in S2. No code and no guide text was changed.
 | **F8** | low | Two significance thresholds live in `_determine_route` and only the stricter one is documented anywhere: `_SIG_THRESHOLD = 0.10` gates IC significance (`prescreen_signal.py:87`), while a second `p > 0.05` test inside the cost branch decides `kill_cost_hurdle` vs `refine_cost_hurdle` (`:1042`). Neither §2.2 nor §3 mentions either number. |
 
 | **F9** | medium | `strategy-research/CLAUDE.md` — loaded into every session in this directory — contradicts `USER_GUIDE.md` twice. (a) It lists a **10-stage** workflow (`screening_backtest`, `walk_forward_validation`, `final_holdout_test`, `robustness_analysis`, `research_decision`) that does not match the guide's canonical 13 stages; four of those five names exist nowhere in the guide. (b) Its global rule "Validate outputs against schemas before moving to the next stage" asserts exactly the schema enforcement that §3's own 2026-08-27 correction records as **false**. The guide's §2 preamble claims to be "the only place that is maintained as authoritative", but the file an agent reads *first* says something else. Out of scope to fix here; noted because S4's cross-linking work has to decide whether `CLAUDE.md` points at the guide or restates it. |
+
+| **F10** | **high** | **A stale hardcoded `24` survives in the A8.5.1a label, and a real run proves it.** `prescreen_signal.py:1371-1376` records that the method label used to read `block_24_fisher_z` while `block_size` had become a derived per-timeframe value, and that this was fixed on 2026-08-28 so "the name is what a later reader reconstructs the method from; it has to track the arithmetic." That fix was applied to the **default path only**. The A8.5.1a dense-fallback branch still returns the hardcoded string `"block_24_dense_fallback"` (`tools/episode_significance.py:209`) while passing the derived `block_size` into `_block_adjusted_significance`. `runs/run_060/artifacts/prescreen_result.yaml` (2026-08-28) carries `significance_methodology_used: block_24_dense_fallback` next to `ic_significance_block24.block_size: 6` — the artifact asserts 24 and the arithmetic used 6, which is exactly the defect the comment claims closed. **Not a one-line fix:** the literal is also a member of `VALID_METHODS` (`episode_significance.py:59`), which the orchestrator's F4d conformance gate matches against, so the label and the gate must change together. |
+| **F11** | medium | `protocol_version` is stamped as a **platform-dependent path string**. run_060 recorded `protocols\funding_mr_4h_retest_v1.json` with a Windows backslash. `_check_prescreen_conformance` compares it by bare filename via `Path(executed_identity).name` (`run_phase1_research.py:3237-3241`); on Windows that yields `funding_mr_4h_retest_v1.json`, but on macOS/Linux `PosixPath` does not treat `\` as a separator, so `.name` returns the **entire string** and the pre-registration check reports a spurious violation. Reachability, stated honestly: within a single run the artifact is produced and checked on the same machine, so this does not bite today. It bites when an artifact crosses platforms — which is precisely the dual-writer research model the fork operates under, and the fork's standing rule is that Mac and Windows results should be identical. |
 
 **Verified consistent** (no finding): §2.2's "A8.1: both IC significance AND
 `cost_check.pass` required for `proceed_to_backtest`" matches
