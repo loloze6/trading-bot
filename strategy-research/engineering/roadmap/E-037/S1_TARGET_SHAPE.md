@@ -233,6 +233,13 @@ existing text. Disagreements are in §5.
 
 ### 3.1 Stage 7
 
+> **Superseded as a reference — kept as the S1 record.** This worked sample has
+> since been folded into `docs/USER_GUIDE.md` §2.2 stage 7, which is now the
+> authoritative copy. Read it there. This one is preserved unchanged because it
+> is the artifact S1 was approved on; if the two ever differ, the guide is right
+> and this is history.
+
+
 #### Stage 7 — `signal_prescreen`
 **Engine:** Python tool (`tools/prescreen_signal.py`), launched as a
 subprocess by the orchestrator (`workflow/run_phase1_research.py:1074`

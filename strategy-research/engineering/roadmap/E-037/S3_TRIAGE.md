@@ -139,6 +139,87 @@ anyway. F13 needs one question answered by whoever wrote the A9.1 comments.
 
 ---
 
+---
+
+## Maintenance of E-037's own output
+
+Raised by Jérémy, 2026-08-31: *"if you mention a code line, is it really
+maintainable? Should we implement a hook or a routine? If not maintainable, is
+it really necessary — could we mention function or class instead?"*
+
+### Are `file:line` anchors maintainable? No.
+
+E-037 wrote **78 explicit line anchors**, plus 163 bare `:N` shorthands inside
+stage blocks. Evidence that they rot:
+
+- **Nine of roughly forty were wrong when first written** and were corrected by
+  hand during S2. Not after a refactor — on the day they were written.
+- Any edit above a line shifts every anchor below it. `run_phase1_research.py`
+  is over 6,000 lines and changes often.
+
+An anchor that is confidently wrong is worse than no anchor: it sends a reader
+to the wrong place and they trust it.
+
+### Function/class names are the better form — agreed
+
+`run_phase1_research.py::_route_holdout_evaluation` beats
+`run_phase1_research.py:5383` on every axis that matters. It survives edits
+above it, it is greppable, and it tells the reader *what* to look for instead of
+*where* it was on one particular day.
+
+**Mapping is feasible:** 67 of the 78 explicit anchors resolve to a top-level
+function or class, and the other 11 resolve to a module-level named constant
+(`STAGE_CONFIGS`, `_SIG_THRESHOLD`, `_SKILL_MAP`, `VALID_METHODS`). Only one
+points at a bare comment. **So every explicit anchor has a stable name
+available.**
+
+### Why it was not converted in this session
+
+Two automated conversions were attempted and **both were reverted**. The blocker
+is the 163 bare `:N` shorthands: resolving which file each belongs to requires
+the enclosing prose context, and both attempts mis-attributed anchors — the
+second run's validation gate refused to write and reported 47 unresolved, and
+the first run had already produced wrong attributions in `FINDINGS.md`
+(`::run_tool_worker` credited to `prescreen_signal.py`). Everything was reverted
+and re-applied by hand; `git status` was verified clean afterwards.
+
+The lesson is the same one this epic keeps producing: a mechanical rewrite of
+prose needs a gate that refuses on doubt, and a half-converted document is worse
+than an unconverted one.
+
+**Recommendation:** do the migration as part of **S4**, where the sections are
+being edited anyway and each anchor is converted in view of its own paragraph.
+Until then, `test_doc_anchors.py` keeps the existing ones honest, and **new
+anchors should be written in `file.py::symbol` form**.
+
+### The routine, and where it belongs
+
+Two tests now exist. Both are ratchets: green today, failing only on new drift.
+
+| Test | Catches |
+|---|---|
+| `tests/test_user_guide_field_tables.py` | A documented artifact field that exists in no real artifact (F22/F24's defect class). |
+| `tests/test_doc_anchors.py` | An anchor pointing past the end of a file, or naming a function/constant that no longer exists. |
+
+Both were verified in both directions — injecting a fault fails them, and
+`test_user_guide_field_tables.py` caught its own stale baseline entry on first
+run.
+
+**A git hook is the wrong home for these, and there is evidence.** See
+[F27](FINDINGS.md#f27): the pre-commit hook runs only `trading-bot/tests/`, so
+nothing under `strategy-research/tests/` runs on commit at all. CI runs both
+suites, so **both new tests are already gated by CI** on every push and PR —
+which is the right layer, because it also covers merges made through the GitHub
+UI, where client-side hooks never fire.
+
+The gap worth closing is F27's, not these tests': the pre-commit hook's scope,
+and the fact that data-gated tests skip silently in CI. Fixing that is worth
+more than any new routine, because it is what let a real regression sit on
+master behind a green tick.
+
+**No new hook is recommended.** The infrastructure already exists and already
+covers these; adding a hook would be a guard on a guard.
+
 ## What I recommend doing first
 
 **F9**, because it is small and it is the file an agent reads before anything
