@@ -12,7 +12,7 @@ a handful of calls rather than twenty-five.
 
 ## The short version
 
-Of 25 findings, **21 are documentation** and **4 touch code**. Only the code
+Of 26 findings, **21 are documentation** and **5 touch code**. Only the code
 ones can hurt a running campaign; the documentation ones are what made the
 system hard to reason about in the first place.
 
@@ -27,18 +27,19 @@ Three questions decide almost everything:
 
 ---
 
-## Group A — Code defects (4)
+## Group A — Code defects (5)
 
 The only group that can affect results. Recommend these become issues.
 
 | ID | Severity | What | Why it is not cosmetic |
 |---|---|---|---|
+| [F26](FINDINGS.md#f26) | **high** | The run_060 zero-data guard (`prescreen_signal.py:1320`) raises before F5c's component-error override can fire. **The suite is RED on `origin/master`.** | F5c exists to stop an engineering failure being scored as a scientific kill -- the run_044 lesson. Its component-error branch is now unreachable. Fails loud rather than silent, so no wrong verdicts today, but the error message misreports the cause: it says "no symbols requested" on a run that loaded 168 bars. **The only finding that is failing right now rather than merely wrong.** |
 | [F10](FINDINGS.md#f10) | **high** | `episode_significance.py:209` hardcodes `block_24_dense_fallback` while passing a derived `block_size`. run_060 stamps that label beside `block_size: 6`. | The 2026-08-28 fix that made the label track the arithmetic covered the default path only. An artifact asserting a method it did not use is exactly what that fix existed to prevent. **Not a one-line change** — the literal is in `VALID_METHODS`, which the F4d conformance gate matches on, so label and gate move together. Also needs a decision on already-archived artifacts carrying the wrong label. |
 | [F16](FINDINGS.md#f16) | **high** | `regime_auditor` is documented as an automated stage; nothing dispatches it and nothing writes `regime_audit_decision.yaml`. | Everything downstream that assumes that file exists — the A2.2 retune firewall, stage 7's `ungated_escape_eligible` write-back — is silently conditional on a human having produced it. **Design decision required:** make it a stage, or re-document it as a human step. |
 | [F17](FINDINGS.md#f17) | medium | `_ensure_regime_detector_report` returns `None` silently when the config is missing or the subprocess fails. | The verdict then proceeds with no detector report and the only trace is stdout. Sits against the project's own rule that anything feeding decisions raises on degenerate inputs — the rule that produced the run_060 guards. |
 | [F11](FINDINGS.md#f11) | medium | `protocol_version` is stamped as a platform-dependent path; `Path(...).name` mis-parses a Windows path on POSIX. | Does not bite within one run. Bites when an artifact crosses machines — the dual-writer model. |
 
-**Recommendation:** F10 as an issue now. F16 needs your design call before it
+**Recommendation:** **F26 first — master is red.** Then F10 as an issue. F16 needs your design call before it
 can be written as an issue at all. F17 and F11 are real but can wait.
 
 ---

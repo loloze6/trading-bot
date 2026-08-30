@@ -48,8 +48,9 @@ contract, so nobody could see them.
 | [F23](#f23) | medium | phantom-values + unhandled-status | `docs/USER_GUIDE.md` §3 (`decision.yaml`) |
 | [F24](#f24) | **high** | phantom-fields (systemic) | `docs/USER_GUIDE.md` §3 — 5 entries |
 | [F25](#f25) | medium | incomplete-index | `docs/USER_GUIDE.md` §5 |
+| [F26](#f26) | **high** | code-regression (suite red on master) | `strategy-research/tools/prescreen_signal.py:1320` |
 
-**Counts:** 8 high · 14 medium · 3 low. By type: 5 doc-vs-code, 2
+**Counts:** 9 high · 14 medium · 3 low. By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -847,6 +848,76 @@ is that a section presenting itself as the tools index should be an index.
 inventory table with a one-line purpose each, grouped by role. S3 decides which
 deserve full entries. Consider whether the archived `stages.yaml` entry should
 shrink to a pointer.
+
+---
+
+## F26
+
+**Severity:** high · **Type:** code-regression · **Status:** open, untriaged —
+**the test suite is currently RED on `origin/master`**
+
+**Lands on:** `strategy-research/tools/prescreen_signal.py:1320`
+
+**Found by:** S3, 2026-08-31, running the suite before landing an unrelated change
+
+`tests/test_prescreen_no_signal_artifact.py::test_component_errors_route_to_no_signal_artifact`
+**fails on `origin/master`**. Verified by checking the commit out directly, not
+inferred — it is not caused by any E-037 work, all of which is documentation.
+
+### What broke
+
+The run_060 zero-data guard (`:1320`, added 2026-08-28 in `58e3c21e`) raises
+**before** the F5c component-error override (`:1481`) can run. The two now
+contradict each other:
+
+| Step | Line | Behaviour |
+|---|---|---|
+| Zero-data guard | `:1320` | `if not any(all_records_by_symbol.values()): raise RuntimeError` |
+| F5c override | `:1481` | if `active_n == 0` **or** component-error rate > 5% → `route = no_signal_artifact`, `kill_reason = component_error` |
+
+When a component throws on **every** bar, `records` is empty, so
+`all_records_by_symbol[symbol] == []`, so the guard raises and `:1481` is
+unreachable.
+
+### Why it matters more than a red test
+
+**F5c exists to stop an engineering failure being scored as a scientific
+result.** Its own comment records the incident: run_044 (2026-07-04), where a
+`FundingRateMeanReversionComponent` divide-by-zero produced `active_n_bars=0`,
+which read as a genuine `kill_no_ic` and *"nearly closed an otherwise-untested
+hypothesis family."* The component-error branch of that safety net is now
+unreachable.
+
+The failure mode is loud rather than silent — a `RuntimeError`, not a false
+kill — so it is **not** currently producing wrong verdicts. But the guard's
+premise is wrong in this case, and the message says so:
+
+> `RuntimeError: Prescreen loaded NO usable data for any of 1 symbol(s) ...
+> Reasons: no symbols requested`
+
+**Both clauses are false.** The run loaded **168 bars** for BTCUSDT — stdout
+says so two lines earlier. And a symbol *was* requested; `skipped_symbols` is
+empty precisely because loading succeeded, so the detail string falls through
+to its "no symbols requested" default. An operator hitting this is told to go
+look at data availability, when the actual cause is a throwing component.
+
+### The distinction the guard misses
+
+Its comment draws the right line and then applies it too widely:
+
+> *"'no_signal_artifact' asserts a signal did not activate ON DATA, and nothing
+> was tested here."*
+
+Correct for the run_060 case — **no data loaded**. Wrong here: data loaded
+fine and the component failed on it. That is exactly the case F5c was built
+for, and the two conditions are distinguishable — `n_bars_total > 0` with
+`total_component_error_count > 0` is a component failure, not a data failure.
+
+**Proposed disposition (S3 decides, not this file):** Make the `:1320` guard
+fire only when no data was *loaded*, letting the component-error case reach
+F5c. Fix the "no symbols requested" message to report the real reason.
+Whichever way it is resolved, **master should not stay red** — this is the
+first item in the triage that is failing right now rather than merely wrong.
 
 ---
 
