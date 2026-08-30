@@ -324,7 +324,7 @@ handoff `innovation_expansion_to_validation.yaml`, `pipeline_state.yaml`
 (for the refinement counter).
 
 **Stage output:** `validation_protocol.yaml`, `validation_decision.yaml`; on
-the power-gate path, `prescreen_result.yaml` as a 4-key stub.
+the power-gate path, `prescreen_result.yaml` as a **5-key stub** carrying `stage_blocked_at: validation` (the run_loop pre-flight writes a 4-key one without it).
 
 **Features / logic in place**
 
@@ -950,11 +950,21 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 **Read by:** orchestrator (for routing), refinement_planner  
 **Schema:** `workflow_artifacts/schemas/validation_decision.schema.json`
 
-| Field | Definition |
-|---|---|
-| `status` | `approve`, `conditional_approve`, `refine`, or `reject` |
-| `rationale` | Brief explanation of the decision |
-| `blocking_issues` | List of specific problems that must be fixed before backtest (only present when status = refine) |
+| Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-27) |
+|---|---|---|---|
+| `status` | The gate's verdict — the field the router reads to decide the whole run's next step. | `approve` (proceed to spec) · `conditional_approve` (proceed, conditions printed) · `refine` (back to the planner, bounded) · `reject` (terminal) | `conditional_approve` |
+| `rationale` | Why that verdict, in prose, so the decision can be audited later. | prose | *"Funding-rate mean-reversion mechanism is established (run_059 daily baseline: Sharpe > 0.8 …)"* |
+| `conditions` | Conditions the backtest config must respect. Only meaningful on `conditional_approve`. | list of strings | *"Prescreen cost gate (Layer 2) must pass: edge_to_cost_ratio >= 2.0 for BOTH BTCUSDT and ETHUSDT"* |
+| `blocking_issues` | What must be fixed before this can proceed. Non-empty normally implies `refine` or `reject`. | list | `[]` |
+| `promotion_path_if_approved` / `..._if_rejected` | Written in advance: what happens on each outcome, so the route is not invented after the result. | prose | *"If walk-forward Sharpe > 0.8 AND max_drawdown < 30% AND cost gate passes, promote to holdout_evaluation"* |
+| `hypothesis_id` / `approval_issued_by` / `approval_timestamp` | Provenance. | string / string / date | `FUNDING_MR_4H_RETEST` / `validation_gate / run_060` / `2026-08-27` |
+
+⚠️ **`family_status` is an accepted alternative to `status`.** The
+quant-validation skill's real output for a multi-variant family validation used
+it instead (run_053, 2026-07-06, F4f), and the router falls back to it. If
+neither key is present the router raises rather than guessing
+(`run_phase1_research.py:2262`). Note also that §2.3 lists three statuses;
+`conditional_approve` is a fourth, and is what run_060 actually returned.
 
 ---
 
@@ -1004,11 +1014,24 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 
 A simple gate artifact confirming whether the backtest_spec is valid and executable.
 
-| Field | Definition |
-|---|---|
-| `stage` | Stage that produced this decision |
-| `status` | `approved`, `blocked`, etc. |
-| `blocking_issues` | Any config problems found during validation |
+| Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-27) |
+|---|---|---|---|
+| `status` | Whether a runnable spec was produced. Two words that route the run — and anything unrecognised pauses it. | `spec_ready` (→ stage 7 prescreen) · `component_gap` (→ human pause; the engine lacks a piece) · **any other value** (→ human pause, deliberately fail-closed) | `spec_ready` |
+| `rationale` | Why, naming the component or the gap. | prose | *"FundingRateMeanReversionComponent exists in STRATEGY_CONFIG_REFERENCE.md with full threshold=0.0 continuous-forecast support"* |
+| `blocking_issues` | What is missing, when there is a gap. | list | `[]` |
+| `stage` | Which stage wrote it. | string | `backtest_specification` |
+
+⚠️ **The values this entry used to list — `approved`, `blocked` — have never
+occurred.** Measured across the **39** real `decision.yaml` files: `spec_ready`
+**38**, `validation_incomplete` **1**. Neither `approved` nor `blocked` appears
+once, and neither is in the router's `KNOWN_STATUSES`. Note also that
+`validation_incomplete` is **not** a known status either, so that run took the
+fail-closed human-pause branch. See
+[F23](../engineering/roadmap/E-037/FINDINGS.md#f23).
+
+An unknown status is **not** treated as a soft failure: `determine_post_spec_route`
+prints that the SKILL may need a new status case and pauses
+(`run_phase1_research.py:6029-6046`).
 
 ---
 
@@ -1040,14 +1063,35 @@ A simple gate artifact confirming whether the backtest_spec is valid and executa
 **Created by:** verdict-interpreter skill  
 **Read by:** orchestrator (for routing), campaign_review  
 
-| Field | Definition |
-|---|---|
-| `altitude` | Numeric altitude of the decision (1 = refine, 2 = pivot, 3 = escalate) |
-| `verdict` | `refine`, `pivot`, `escalate`, `promote`, or `kill` |
-| `diagnostic_rule_applied` | Which named diagnostic rule triggered this verdict (e.g., `cost_drag`, `signal_inversion`) |
-| `root_cause` | The underlying problem identified from diagnostics |
-| `parameter_bracket` | If refining a parameter, the [min, max, step] range to search next |
-| `next_altitude` | Fallback altitude if the current verdict fails again |
+| Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-28) |
+|---|---|---|---|
+| `status` | The altitude decision — what happens next, and at what size of change. Falls back to `protocol_verdict` on older runs. | `refine` (same family, new parameter) · `pivot` (new family) · `escalate` (new instrument/timeframe) · `promote` (provisional → holdout) · `kill` (terminal) | `kill` |
+| `hypothesis_verdict` / `lineage_routing` | The verdict on the hypothesis, and what it means for its lineage. | string / `terminate`, `continue`, … | `kill` / `terminate` |
+| `criteria_summary` | Each pre-registered criterion with its measured value and result — the audit trail from evidence to verdict. | list of `{criterion, result, value}` | criterion `prescreen_ic_gate (ic_active_bars >= 0.015, significant)` → `FAIL` |
+| `untested_criteria` | Criteria that were never reached, kept explicit so a partial test is not read as a complete one. | list | `["walk_forward_sharpe (prescreen kill)", "max_drawdown (prescreen kill)"]` |
+| `root_cause` | The diagnosis. **`mechanism_failure` is load-bearing:** two of its values divert the run away from any scientific verdict. | dict; `mechanism_failure` ∈ `already_priced_in`, `component_execution_error` (→ human pause, immune to the circuit breaker), `regime_misattribution` (→ human pause for the regime auditor), … | `{mechanism_failure: already_priced_in, supporting_evidence: "prescreen_result: ic_active_bars=0.0162 (p=…)"}` |
+| `primary_failure_mode` | Short label for how it failed. | string | `no_informational_content_prescreen` |
+| `hypothesis_family` | Scopes the circuit breaker. Per-family since F6 (2026-07-04) — a global scope let a dead family's history force an unrelated family straight to pivot. | string | `funding_rate_mean_reversion` |
+| `proposed_change_dimension` | Which parameter a `refine` would move. The breaker counts repeats of this within a family. | string or `null` | `null` |
+| `altitude_justification` | Why this altitude and not a larger or smaller one. | prose | *"Rule 2 (weak signal): ic_active_bars=0.0162, p=0.5315 > 0.10 — no statistically significant directional …"* |
+| `config_to_failure_map` | Ties the failure back to the exact config that produced it. | prose | *"FundingRateMeanReversionComponent (threshold=0.0, ungated) on 4h timeframe produces ic_active_bars=0.0162"* |
+| `prescreen_evidence` | The prescreen numbers carried forward, so the verdict is auditable without opening another file. | dict | `{ic_active_bars: 0.016237, ic_all_bars: -0.006944, p_value: 0.5315, forecast_sparsity_pct: 49.99, …}` |
+
+⚠️ **This entry previously documented five fields that no artifact has ever
+contained.** Measured 2026-08-30 across the **39** real
+`verdict_interpretation.yaml` files on disk, each of the following appears
+**0 times**: `altitude` (described as "numeric altitude, 1 = refine, 2 = pivot,
+3 = escalate"), `verdict`, `diagnostic_rule_applied` (e.g. `cost_drag`,
+`signal_inversion`), `parameter_bracket` ("[min, max, step] range to search
+next"), and `next_altitude` ("fallback altitude if the current verdict fails
+again"). The real fields are `status` (34 of 39) and `root_cause` (11 of 39).
+The former descriptions are preserved here rather than deleted, because they
+record an intended design; they do not describe the artifact. See
+[F22](../engineering/roadmap/E-037/FINDINGS.md#f22).
+
+⚠️ **A verdict that contradicts `pass_rule_evaluation.yaml` without flagging the
+contradiction is a conformance failure** — that file, not this one, is the
+decision authority where a structured `pass_rule` exists.
 
 ---
 
@@ -1120,6 +1164,32 @@ Internal run state — not a research artifact but the orchestrator's working me
 | `audit_log` | Per-stage record of token usage, cost_usd, attempt number, and timestamp |
 
 ---
+
+> ### ⚠️ Flag-gated artifacts — not produced by default
+>
+> The five entries that follow (`variant_selection.yaml`,
+> `variants_not_pursued.yaml`, `exclusion_digest.yaml`,
+> `anti_adjacency_result.yaml`, `schedulability.yaml`) are written **only when
+> an orchestrator feature flag is enabled**. As of 2026-08-30 **every flag is
+> `false`**, so no run produces them — measured instance counts on disk are 0,
+> 0, 1 (at `campaign_record/`, not under a run), 0 and 0, against 103
+> `hypothesis_card.yaml` and 119 `pipeline_state.yaml`.
+>
+> | Flag in `config/campaign_config.yaml` | Gates |
+> |---|---|
+> | `orchestrator.variant_selection_record.enabled` | `variant_selection.yaml`, `variants_not_pursued.yaml` |
+> | `orchestrator.variant_anti_adjacency_gate.enabled` | `anti_adjacency_result.yaml` |
+> | `orchestrator.exclusion_digest_input.enabled` | `exclusion_digest.yaml` |
+> | `orchestrator.schedulability_block.enabled` | `schedulability.yaml` |
+>
+> Flags are read **at runtime**, so this table states the committed default,
+> not a permanent fact. A missing key, section or file resolves to `false` —
+> silence is never a green light. `variant_anti_adjacency_gate` additionally
+> requires `variant_selection_record` to be on and raises loudly if it is not.
+>
+> This is the project's off-by-default discipline working as intended. It is
+> flagged here only because these entries would otherwise read as describing
+> what a run writes. See [F21](../engineering/roadmap/E-037/FINDINGS.md#f21).
 
 ### `variant_selection.yaml` (per run)
 
@@ -1280,12 +1350,20 @@ Per-trade records (one row per closed trade) with fields: `entry_bar`, `exit_bar
 **Created by:** `tools/validate_regime_detector.py`
 **Read by:** regime_auditor skill
 
-| Field | Definition |
-|---|---|
-| `detector_version` | Hash of the detector config (used to tag findings in KB, per A5.3) |
-| `persistence_score` | Fraction of regime transitions that persist ≥ dwell_period |
-| `class_conditional_sensitivity` | Per-label flip rate under ±10% parameter perturbation |
-| `activation_rate` | Fraction of bars per regime label (must be in [10%, 40%] for trend labels) |
+| Field | Definition — what it means | Values / range (meaning of each) | Example (campaign root, 2026-08-28) |
+|---|---|---|---|
+| `detector_version` | Hash of the detector config, so a finding can be tied to the exact detector that produced it (A5.3). | hex8 | `04cd1e16` |
+| `per_symbol_per_timeframe` | The A2.2 gate metrics, per symbol and timeframe — persistence, transition count, class-conditional sensitivity, activation rate. | list of `{symbol, timeframe, metrics{…}}` | `[{symbol: BTCUSDT, timeframe: 1h, metrics: {regime_persistence_median_bars: 17544, …}}]` |
+| `persistence_score` | Fraction of regime transitions lasting at least the dwell period. A detector that flips constantly is not measuring a regime. | float 0–1 | see `per_symbol_per_timeframe` |
+| `class_conditional_sensitivity` | Per-label flip rate under ±10% parameter perturbation. High sensitivity means the labels are noise. | float per label | — |
+| `activation_rate` | Fraction of bars per label; must sit in [10%, 40%] for trend labels. | float 0–1 | — |
+| `data_range` / `config_source` / `evaluated_at` | Provenance. `evaluated_at` drives the 30-day staleness check. | dict / path / ISO-8601 | `{start: 2024-01-01, end: 2025-12-31}` / `runs\run_060\artifacts\candidate_strategy_config.json` / `2026-08-28T19:54:21Z` |
+
+⚠️ **This file lives at the campaign root, not under a run** — one file shared
+by every run, regenerated when older than 30 days
+(`run_phase1_research.py:2425`). `config_source` records which run's config
+last produced it. Note the example's `config_source` is a **Windows path**, the
+same portability issue as [F11](../engineering/roadmap/E-037/FINDINGS.md#f11).
 
 ---
 

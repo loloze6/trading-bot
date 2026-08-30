@@ -503,14 +503,25 @@ itself informative and is not padded with an invented value.
 | `ic_by_era` | IC broken out per market era, so a result that only exists in one regime-era is visible rather than averaged away. | dict keyed `SYMBOL::era_id`; `null` off the A8.5.1a path | `{BTCUSDT::era_2019_2023_full_feed: {ic_active_bars: 0.02237, active_n_bars: 4464, n_episodes: 1}, ETHUSDT::…: {ic_active_bars: 0.010224, …}}` |
 | `ic_by_regime` | Reserved for per-regime IC. Deliberately not computed — A2.3 suspends it until a trustworthy detector exists, and the field carries that reason so nobody reads the absence as an oversight. | always `{suspended: true, reason: …}` | `{suspended: true, reason: "A2.3: ic_by_regime suspended until a trustworthy detector exists. …"}` |
 | `component_error_count` / `component_error_sample` | How many bars threw a swallowed exception inside the strategy's `update()`, plus a capped sample of them. Separates "the signal is bad" from "the code is broken". | integer >= 0 — a rate above **5%** of processed bars forces `route: no_signal_artifact` (F5c) / list, capped at 5 entries | `0` / `[]` |
-| `a86_power_check` | The a-priori power verdict, present **only** on the `insufficient_power_a_priori` path, where the run died before any IC was computed. Its presence means this file is the 4-key stub, not a result. | dict: `min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, `data_requirement`; absent otherwise | — *absent: run_060 took the normal path* |
+| `a86_power_check` | The a-priori power verdict, present **only** on the `insufficient_power_a_priori` path, where the run died before any IC was computed. Its presence means this file is one of the two A8.6 stubs, not a result. | dict: `min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, `data_requirement`; absent otherwise | — *absent: run_060 took the normal path* |
 | `config_sha8` / `computed_at` / `protocol_version` / `symbols` / `prescreen_windows_used` / `n_bars_total` | Provenance — what was run, against what, when. Makes the result reproducible and comparable. | hex8 / ISO-8601 UTC / path string / list / list of month labels / integer | `041ea0ef` / `2026-08-28T19:54:01.052853+00:00` / `protocols\funding_mr_4h_retest_v1.json` (**backslash — see [F11](FINDINGS.md#f11)**) / `[BTCUSDT, ETHUSDT]` / 49 month labels `2019-12`…`2023-12` / `17854` |
 
 **Notes**
 
-- The file has **two shapes**. On the A8.6 path it is a four-key stub
-  (`run_id`, `route`, `a86_power_check`, `note`) — none of the IC, cost or
-  provenance fields exist. Any consumer must tolerate that.
+- ⚠️ **Three shapes, not one.** Besides the full result, the A8.6 power gate
+  writes a stub — and the *two* gate sites write **different** stubs:
+  - **validation-gate path** (`run_phase1_research.py:2297`) — 5 keys:
+    `run_id`, `route`, `a86_power_check`, **`stage_blocked_at: validation`**,
+    `note: "A8.6 power gate: no component built, no trial spent."`
+  - **pre-flight path in `run_loop`** (`:6226`) — 4 keys, the same minus
+    `stage_blocked_at`, and a different note: *"A8.6 pre-flight: power
+    insufficient before any prescreen IC computed."*
+
+  Neither carries any IC, cost or provenance field. A consumer that needs to
+  know *where* the run was stopped must key on `stage_blocked_at`, which only
+  one of the two writes. Both shapes are real: `runs/run_060/` holds a voided
+  5-key stub (`prescreen_result.VOID_block_size_bug.yaml`) from the
+  validation-gate path, alongside the full result the re-run produced.
 - `sigma_is_placeholder: true` is the one flag that invalidates other fields
   in the same file. Read it before reading `cost_check`.
 

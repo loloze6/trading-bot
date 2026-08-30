@@ -43,8 +43,11 @@ contract, so nobody could see them.
 | [F18](#f18) | **high** | unenforced-rule | `docs/USER_GUIDE.md` §2.2 (stage 3) |
 | [F19](#f19) | **high** | missing-artifacts | `docs/USER_GUIDE.md` §3 |
 | [F20](#f20) | medium | inconsistent-metadata | `docs/USER_GUIDE.md` §3 |
+| [F21](#f21) | **high** | documents-inactive-machinery | `docs/USER_GUIDE.md` §3 |
+| [F22](#f22) | **high** | phantom-fields | `docs/USER_GUIDE.md` §3 (`verdict_interpretation.yaml`) |
+| [F23](#f23) | medium | phantom-values + unhandled-status | `docs/USER_GUIDE.md` §3 (`decision.yaml`) |
 
-**Counts:** 5 high · 12 medium · 3 low. By type: 5 doc-vs-code, 2
+**Counts:** 7 high · 13 medium · 3 low. By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -590,6 +593,151 @@ headliners across 33 entries.
 migrate the other, preserving both texts where they differ in content. Fill
 `Updated by` everywhere, including the explicit `*(none — write-once)*` case,
 so its absence stops being meaningless.
+
+---
+
+## F21
+
+**Severity:** high · **Type:** documents-inactive-machinery · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §3
+
+**Found by:** S2, 2026-08-30
+
+§3 documents five artifacts as part of the pipeline. **None of them is
+produced by any run, because each sits behind a feature flag, and every
+orchestrator flag is off.** Read from `config/campaign_config.yaml`,
+2026-08-30:
+
+| Flag | Value | Artifact it gates |
+|---|---|---|
+| `orchestrator.variant_selection_record.enabled` | `false` | `variant_selection.yaml`, `variants_not_pursued.yaml` |
+| `orchestrator.variant_anti_adjacency_gate.enabled` | `false` | `anti_adjacency_result.yaml` |
+| `orchestrator.exclusion_digest_input.enabled` | `false` | `exclusion_digest.yaml` |
+| `orchestrator.schedulability_block.enabled` | `false` | `schedulability.yaml` |
+| `orchestrator.anti_adjacency_retry.enabled` | `false` | — (routing behaviour) |
+| `orchestrator.stale_input_path_fix.enabled` | `false` | — (input-path behaviour) |
+
+Instance counts on disk confirm it: `variant_selection.yaml` **0**,
+`variants_not_pursued.yaml` **0**, `anti_adjacency_result.yaml` **0**,
+`schedulability.yaml` **0**, against 103 `hypothesis_card.yaml` and 119
+`pipeline_state.yaml`. (`exclusion_digest.yaml` has exactly one, at
+`campaign_record/`, not under any run.) The single hits an unqualified `find`
+returns for the others are their **schema files**, not instances.
+
+**This is not a defect.** Shipping a new feature off-by-default with a
+bit-identity proof is the project's own discipline, and these flags are that
+discipline working. The defect is that §3 presents the output of unshipped
+machinery indistinguishably from the artifacts every run actually writes, and
+never mentions the flags.
+
+**It also explains [F20](#f20).** The five entries with no `Created by` /
+`Read by` / `Schema` metadata are **exactly** the five flag-gated artifacts —
+a one-to-one match, not an overlap. They were written as design records for
+features that then shipped disabled, using an `**Objective:**` convention
+suited to a design note rather than to a catalogue entry. F20's "two
+conventions" and F21's "inactive machinery" are the same event seen twice.
+
+**Consequence for an operator:** someone reading §3 to learn what a run
+produces will look for `variant_selection.yaml` in the run directory and not
+find it, with nothing in the guide explaining why. Someone auditing trial
+counting will believe an anti-adjacency gate is filtering candidates. It is
+not.
+
+**Proposed disposition (S3 decides, not this file):** Mark the flag-gated
+entries as such, with the flag name and its current value, and state that the
+value is read at runtime rather than baked in. S2 has added a §3 subsection
+doing this as an interim.
+
+---
+
+## F22
+
+**Severity:** high · **Type:** phantom-fields · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §3, `verdict_interpretation.yaml`
+
+**Found by:** S2 loss check, 2026-08-30
+
+**The entire field table for `verdict_interpretation.yaml` describes fields
+that do not exist.** Measured across the **39** real files on disk:
+
+| Documented field | Occurrences in 39 real files |
+|---|---|
+| `altitude` ("numeric altitude of the decision, 1 = refine, 2 = pivot, 3 = escalate") | **0** |
+| `verdict` ("`refine`, `pivot`, `escalate`, `promote`, or `kill`") | **0** |
+| `diagnostic_rule_applied` ("which named diagnostic rule triggered this, e.g. `cost_drag`, `signal_inversion`") | **0** |
+| `parameter_bracket` ("[min, max, step] range to search next") | **0** |
+| `next_altitude` ("fallback altitude if the current verdict fails again") | **0** |
+| `root_cause` | 11 |
+
+The fields the artifact actually carries — `status` (34 of 39),
+`hypothesis_verdict`, `lineage_routing`, `criteria_summary`,
+`untested_criteria`, `primary_failure_mode`, `hypothesis_family`,
+`proposed_change_dimension`, `altitude_justification`, `config_to_failure_map`,
+`prescreen_evidence` — were **none of them documented**.
+
+Five of six documented fields are phantom, and eleven real ones were missing.
+This is [F14](#f14) again at whole-table scale: F14 was one phantom key inside
+`cost_check`; this is an entire entry describing an intended design rather than
+the artifact.
+
+**Two consequences worth separating.** As documentation it is simply wrong. But
+the router reads `status` with a fallback to `protocol_verdict`
+(`run_phase1_research.py:5762`) — **not** `verdict`, the field this entry names
+— so anyone writing a consumer from the guide would read a key that is never
+present and get `None`.
+
+**How it was found:** not by reading. S2 replaced the table with one built from
+run_060, and the mechanical loss check flagged `altitude`, `verdict`,
+`diagnostic_rule_applied`, `parameter_bracket` and `next_altitude` as tokens
+that had vanished. Checking where they went is what established they had never
+been anywhere. The descriptions are now preserved in the entry as intended
+design, explicitly marked as absent.
+
+**Proposed disposition (S3 decides, not this file):** Decide whether the
+documented design was abandoned or never built, then either implement or
+retire it. The prose is worth keeping either way — it is the only record of
+what the altitude system was meant to look like.
+
+---
+
+## F23
+
+**Severity:** medium · **Type:** phantom-values + unhandled-status · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §3 (`decision.yaml`) ·
+`strategy-research/workflow/run_phase1_research.py:6030`
+
+**Found by:** S2 loss check, 2026-08-30
+
+Two things, one measurement. Across the **39** real `decision.yaml` files:
+
+| Status | Count |
+|---|---|
+| `spec_ready` | 38 |
+| `validation_incomplete` | 1 |
+| `approved` | 0 |
+| `blocked` | 0 |
+
+1. **The guide's documented values are phantom.** §3 said status is
+   "`approved`, `blocked`, etc." Neither has ever occurred, and neither is in
+   the router's `KNOWN_STATUSES = {"spec_ready", "component_gap"}`.
+2. **A real run produced a status the router does not know.**
+   `validation_incomplete` is in neither the guide nor `KNOWN_STATUSES`, so
+   that run hit the fail-closed branch and paused for a human with *"UNEXPECTED
+   STATUS … SKILL.md may need a new status case"*. The fail-closed design
+   worked exactly as intended — this is the guard doing its job, and it is
+   evidence that the skill emits statuses nobody enumerated.
+
+Note the asymmetry with [F18](#f18): here the code fails closed on an
+unrecognised value, while stage 3's diversity rule has no enforcement at all.
+The engine is not uniformly permissive — it is strict in some places and absent
+in others, and the guide does not distinguish them.
+
+**Proposed disposition (S3 decides, not this file):** Correct the documented
+values to `spec_ready` / `component_gap`, and decide whether
+`validation_incomplete` should become a known status or remain a pause.
 
 ---
 
