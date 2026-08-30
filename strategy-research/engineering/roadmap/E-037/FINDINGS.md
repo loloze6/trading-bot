@@ -37,8 +37,12 @@ contract, so nobody could see them.
 | [F12](#f12) | medium | doc-unresolvable-reference | `docs/USER_GUIDE.md` (whole document) |
 | [F13](#f13) | medium | wrong-citation | `strategy-research/tools/prescreen_signal.py:1089,1100,1580` |
 | [F14](#f14) | medium | phantom-field | `docs/USER_GUIDE.md:613` |
+| [F15](#f15) | medium | doc-vs-code | `docs/USER_GUIDE.md` §2.2 · `run_phase1_research.py:88` |
+| [F16](#f16) | **high** | stage-does-not-run | `docs/USER_GUIDE.md` §2.1/§2.2 (stage 10) |
+| [F17](#f17) | medium | silent-no-op | `run_phase1_research.py:2410` |
+| [F18](#f18) | **high** | unenforced-rule | `docs/USER_GUIDE.md` §2.2 (stage 3) |
 
-**Counts:** 2 high · 9 medium · 3 low. By type: 5 doc-vs-code, 2
+**Counts:** 4 high · 11 medium · 3 low. By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -353,6 +357,146 @@ treating it as a formality.
 description with the real eight, or mark it explicitly as a partial list.
 Worth checking the other artifact entries for the same defect during S2 —
 this one was invisible until an artifact was opened.
+
+---
+
+## F15
+
+**Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §2.2 · `strategy-research/workflow/run_phase1_research.py:88`
+
+**Found by:** S2, 2026-08-30
+
+The guide numbers **13 stages**. The engine's own registry, `STAGE_CONFIGS`
+(`run_phase1_research.py:88`), has **10 entries**. Three of the guide's stages
+are not in it:
+
+- **stage 1 `research_brief`** — a human input, not an orchestrator stage.
+- **stage 9 `regime_detector_validation`** — a helper function, see [F17](#f17).
+- **stage 10 `regime_auditor`** — never dispatched at all, see [F16](#f16).
+
+Separately, **stage 4 is named `validation` in code and `validation_gate` in
+the guide** (`STAGE_CONFIGS["validation"]`, `determine_post_validation_route`,
+`_SKILL_MAP["validation"]`). The guide uses `validation_gate` in §2.1, §2.2 and
+§2.3. Neither name is wrong, but only one is the key you would grep for.
+
+This matters for the epic's core purpose: a reader trying to trace "which
+sub-steps does my change reach?" cannot map the guide's numbering onto the
+code's dispatch table.
+
+**Proposed disposition (S3 decides, not this file):** Mark which entries are
+engine stages and which are not, and give stage 4 both names.
+
+---
+
+## F16
+
+**Severity:** high · **Type:** stage-does-not-run · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §2.1 and §2.2 (stage 10)
+
+**Found by:** S2, 2026-08-30
+
+**The guide documents `regime_auditor` as an automated Claude stage. The
+orchestrator never dispatches it.**
+
+- It is absent from `STAGE_CONFIGS` (`:88`), so it is never a `current_stage`.
+- It is absent from `_SKILL_MAP` (`:689`), which maps the **7** dispatchable
+  Claude stages. `_build_stage_prompt` raises `ValueError(f"No SKILL file
+  mapped for stage: {stage_name}")` for anything not in that map (`:711`), so
+  it could not be dispatched even if it were reached.
+- **No code writes `regime_audit_decision.yaml`.** The orchestrator only
+  *reads* it if it happens to exist (`:6251`, `:6382`), and the only writer
+  anywhere is `prescreen_signal.py:1118`, which updates an existing file and
+  returns early if there is none.
+
+What actually happens: on the `regime_misattribution` path the pipeline
+**pauses for a human** (`status="paused_for_human"`) and prints *"consult
+regime-auditor skill and regime_detector_report.yaml"* (`:5788-5796`). The
+skill at `workflow_artifacts/skills/regime-auditor/` is real; it is invoked by
+a person, not the engine, and only on that one path.
+
+§2.1's map draws it inline between stages 9 and 11 as if it always runs, and
+§2.2 gives it Engine = *Claude*, which reads as automated.
+
+**Consequence:** every downstream statement that assumes
+`regime_audit_decision.yaml` exists — including the A2.2 retune firewall check
+and stage 7's `ungated_escape_eligible` write-back — is conditional on a human
+having produced it. Nothing says so.
+
+**Proposed disposition (S3 decides, not this file):** Re-label stage 10 as a
+human-invoked skill on a paused pipeline, or make it a real stage. This is a
+design question, not a wording fix.
+
+---
+
+## F17
+
+**Severity:** medium · **Type:** silent-no-op · **Status:** open, untriaged
+
+**Lands on:** `strategy-research/workflow/run_phase1_research.py:2410`
+(`_ensure_regime_detector_report`)
+
+**Found by:** S2, 2026-08-30
+
+Stage 9 is a helper called from inside the `verdict_interpreter` stage
+(`:6250`, `:6381`), not a registry stage. Three facts about it that the guide
+does not carry:
+
+1. **It can silently do nothing.** If `candidate_strategy_config.json` is
+   missing it prints a warning and returns `None` (`:2433-2434`); if
+   `validate_regime_detector.py` exits non-zero it prints and returns `None`
+   (`:2445-2447`). Neither raises. The verdict then proceeds with no detector
+   report, and the only trace is stdout.
+2. **The report is campaign-level, not per-run.** It is written to
+   `ROOT / "regime_detector_report.yaml"` — one file shared by every run.
+   §3 does not say this, and the artifact's placement implies per-run.
+3. **"Stale" means older than 30 days** (`:2425`), a threshold documented
+   nowhere.
+
+Point 1 sits badly next to the project's own standing rule that anything
+feeding decisions should raise on degenerate inputs — the rule that produced
+the run_060 guards in `prescreen_signal.py`.
+
+**Proposed disposition (S3 decides, not this file):** Document all three.
+Whether the silent return should raise is a separate code decision.
+
+---
+
+## F18
+
+**Severity:** high · **Type:** unenforced-rule · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §2.2 (stage 3)
+
+**Found by:** S2, 2026-08-30
+
+§2.2 states stage 3 **"Must: pass real-diversity check (≥2 `library_category`
+OR `data_requirements`; cosmetic = rejected)."** That reads as a mechanical
+gate. **Nothing enforces it.**
+
+`library_category` appears exactly **once** in all of `workflow/` and `tools/`
+— inside a prompt string at `run_phase1_research.py:490`. No code reads the
+field from `expanded_hypothesis_card.yaml`, counts distinct categories, or
+rejects an expansion. The rule lives entirely in
+`workflow_artifacts/skills/innovation-expansion/SKILL.md:74-105`, as an
+instruction to the model, including the `diversity_audit` block the model is
+asked to self-report with `verdict: real_diversity`.
+
+So the "check" is the model grading its own homework, and "cosmetic =
+rejected" describes an outcome no code can produce.
+
+This is the **same defect class** the guide already corrected once: §3's
+preamble was fixed on 2026-08-27 after "all artifacts are validated against
+JSON schemas" turned out to be false. The pattern is a stated guarantee whose
+enforcement was never built — and the guide's phrasing ("Must:", "rejected")
+is what makes it look built.
+
+**Proposed disposition (S3 decides, not this file):** Restate as
+skill-guidance, or build the check. Worth a sweep of every other "Must:" in
+§2.2 for the same pattern — this is now two confirmed instances of a stated
+guarantee with no enforcement, which makes it a class, not an incident.
 
 ---
 
