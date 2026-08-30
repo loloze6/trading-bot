@@ -42,8 +42,9 @@ contract, so nobody could see them.
 | [F17](#f17) | medium | silent-no-op | `run_phase1_research.py:2410` |
 | [F18](#f18) | **high** | unenforced-rule | `docs/USER_GUIDE.md` §2.2 (stage 3) |
 | [F19](#f19) | **high** | missing-artifacts | `docs/USER_GUIDE.md` §3 |
+| [F20](#f20) | medium | inconsistent-metadata | `docs/USER_GUIDE.md` §3 |
 
-**Counts:** 5 high · 11 medium · 3 low. By type: 5 doc-vs-code, 2
+**Counts:** 5 high · 12 medium · 3 low. By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -537,6 +538,58 @@ invisible here.
 **Proposed disposition (S3 decides, not this file):** Add all five. Then check
 whether any other post-2026-07 artifact is missing — the sample here is five
 of five recent additions, so a sweep is warranted rather than optional.
+
+---
+
+## F20
+
+**Severity:** medium · **Type:** inconsistent-metadata · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §3
+
+**Found by:** S2, 2026-08-30
+
+The EPIC recorded that §3's metadata is inconsistent. Measured, it is worse
+than "inconsistent" — **two incompatible conventions coexist**, and one of them
+carries no provenance at all. Counts over the 28 pre-S2 entries:
+
+| Metadata line | Entries carrying it |
+|---|---|
+| `Created by` | 23 of 28 |
+| `Read by` | 23 of 28 |
+| `Schema` | 7 of 28 |
+| **`Updated by`** | **2 of 28** (`pipeline_state.yaml`, `campaign_state.yaml`, both as "Created by / Updated by") |
+
+**Five entries have no metadata whatsoever** — `variant_selection.yaml`,
+`variants_not_pursued.yaml`, `exclusion_digest.yaml`,
+`anti_adjacency_result.yaml`, `schedulability.yaml`. They open with an
+`**Objective:**` prose line instead. For those five a reader cannot determine
+who writes the file, who reads it, or whether a schema exists.
+
+Two observations that matter more than the counts:
+
+1. **The `Objective:` convention is not an error, it is a second design.**
+   Those five are the E-025/E-026-era additions, and their `Objective:` line is
+   doing exactly the job the EPIC's "rationale headliner" asks for. Two people
+   solved the same problem twice without noticing, which is the accretion
+   pattern this epic exists to stop. **S2 deliberately did not rewrite them** —
+   silently normalising would have destroyed the evidence that the split
+   happened.
+2. **`Updated by` at 2 of 28 is why [F7](#f7) was invisible.** Stage 7 rewrites
+   `regime_audit_decision.yaml` in place, and that entry has no `Updated by`
+   line — but neither does almost anything else, so its absence signalled
+   nothing. A field that is nearly always missing cannot carry information by
+   being missing.
+
+**What S2 did do:** added a `Why this file exists` headliner to the 22 entries
+lacking one (the five `Objective:` entries already had the equivalent), and
+gave all five new artifact entries the full five-line block. §3 now has 27
+headliners across 33 entries.
+
+**Proposed disposition (S3 decides, not this file):** Pick one convention and
+migrate the other, preserving both texts where they differ in content. Fill
+`Updated by` everywhere, including the explicit `*(none — write-once)*` case,
+so its absence stops being meaningless.
 
 ---
 
