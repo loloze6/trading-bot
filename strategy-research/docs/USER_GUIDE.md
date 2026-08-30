@@ -842,6 +842,9 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 
 ### `research_brief.yaml`
 
+
+> **Why this file exists.** The question this run exists to answer, and the limits it must respect. Everything downstream is derived from it, so an unstated constraint here is unstated everywhere.
+
 **Created by:** Human (or proposed_brief from previous run's verdict_interpreter)  
 **Read by:** hypothesis_generation  
 **Schema:** `schemas/research_brief.schema.json`
@@ -858,6 +861,9 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 ---
 
 ### `hypothesis_card.yaml`
+
+
+> **Why this file exists.** The one concrete claim being tested. It is what makes the run falsifiable rather than exploratory.
 
 **Created by:** hypothesis_generation skill  
 **Read by:** innovation_expansion, validation_gate  
@@ -877,6 +883,9 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 
 ### `expanded_hypothesis_card.yaml`
 
+
+> **Why this file exists.** The variants that separate "the idea is wrong" from "this one setting is wrong". Without them a kill cannot tell you which it was.
+
 **Created by:** innovation_expansion skill  
 **Read by:** validation_gate, backtest_specification  
 **Schema:** `workflow_artifacts/schemas/expanded_hypothesis_card.schema.json`
@@ -894,6 +903,9 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 
 ### `innovation_notes.yaml`
 
+
+> **Why this file exists.** The reasoning behind the variant set, including the self-reported diversity audit — the record of *why* these variants and not others.
+
 **Created by:** innovation_expansion skill  
 **Read by:** verdict_interpreter (for carryover), campaign_review  
 **Schema:** `workflow_artifacts/schemas/innovation_notes.schema.json`
@@ -909,6 +921,9 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 ---
 
 ### `validation_protocol.yaml`
+
+
+> **Why this file exists.** The plan for how this hypothesis will be tested, fixed before any result exists.
 
 **Created by:** quant-validation skill  
 **Read by:** validation_gate (self-produces it), backtest_specification, protocol_execution  
@@ -928,6 +943,9 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 
 ### `validation_decision.yaml`
 
+
+> **Why this file exists.** The gate's verdict on whether the idea survives paper falsification — the field the router reads to decide what happens next.
+
 **Created by:** quant-validation skill  
 **Read by:** orchestrator (for routing), refinement_planner  
 **Schema:** `workflow_artifacts/schemas/validation_decision.schema.json`
@@ -942,6 +960,9 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 
 ### `refinement_notes.yaml`
 
+
+> **Why this file exists.** What would have to change for a blocked hypothesis to become testable, and whether the engine can even do it.
+
 **Created by:** refinement-planner skill  
 **Read by:** innovation_expansion (next iteration), orchestrator  
 **Schema:** `workflow_artifacts/schemas/refinement_notes.schema.json`
@@ -955,6 +976,9 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 ---
 
 ### `backtest_spec.yaml`
+
+
+> **Why this file exists.** The bridge from prose to executable config — the point where the idea stops being a description.
 
 **Created by:** backtest-engineering skill  
 **Read by:** protocol_execution tool  
@@ -971,6 +995,9 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 
 ### `decision.yaml`
 
+
+> **Why this file exists.** Whether a runnable spec was actually produced, or the engine is missing a piece. Two words that route the whole run.
+
 **Created by:** backtest-engineering skill (config validation step)  
 **Read by:** orchestrator  
 **Schema:** `workflow_artifacts/schemas/decision.schema.json`
@@ -986,6 +1013,9 @@ A simple gate artifact confirming whether the backtest_spec is valid and executa
 ---
 
 ### `protocol_result.yaml` / `protocol_summary.json`
+
+
+> **Why this file exists.** What actually happened when the strategy was traded across every window. The raw evidence every later judgment rests on.
 
 **Created by:** protocol_execution tool (`tools/run_protocol.py`)  
 **Read by:** verdict_interpreter  
@@ -1004,6 +1034,9 @@ A simple gate artifact confirming whether the backtest_spec is valid and executa
 
 ### `verdict_interpretation.yaml`
 
+
+> **Why this file exists.** What the result means and what to do next — kept separate from the measurement so the interpretation stays auditable.
+
 **Created by:** verdict-interpreter skill  
 **Read by:** orchestrator (for routing), campaign_review  
 
@@ -1020,6 +1053,9 @@ A simple gate artifact confirming whether the backtest_spec is valid and executa
 
 ### `proposed_brief.yaml`
 
+
+> **Why this file exists.** The next question, written by the run that just finished. This is how a campaign continues rather than restarts.
+
 **Created by:** verdict-interpreter skill (when verdict = refine or pivot)  
 **Read by:** next run's hypothesis_generation (becomes that run's research_brief)  
 
@@ -1028,6 +1064,9 @@ The pre-filled research_brief for the next run. Includes the `existing_context` 
 ---
 
 ### `escalation_request.yaml`
+
+
+> **Why this file exists.** The record that a search space was widened, and why — so widening cannot happen silently.
 
 **Created by:** verdict-interpreter skill (when verdict = escalate)  
 **Read by:** orchestrator  
@@ -1041,6 +1080,9 @@ The pre-filled research_brief for the next run. Includes the `existing_context` 
 ---
 
 ### `findings_carryover.yaml`
+
+
+> **Why this file exists.** What the next run must not re-learn. Campaign memory in its most direct form.
 
 **Created by:** verdict-interpreter skill  
 **Read by:** next run's hypothesis_generation and verdict_interpreter  
@@ -1058,6 +1100,9 @@ Cross-run diagnostic memory. Prevents the next run from re-testing parameters or
 ---
 
 ### `pipeline_state.yaml`
+
+
+> **Why this file exists.** Where this run is, what it has spent, and whether it is paused. The file that makes a run resumable.
 
 **Created by / Updated by:** orchestrator (`workflow/run_phase1_research.py`)  
 **Read by:** orchestrator (on resume), any stage needing run context  
@@ -1161,6 +1206,9 @@ cannot reset the blocked parent's dwell to zero.
 
 ### `campaign_state.yaml`
 
+
+> **Why this file exists.** The campaign memory across every run: what was tried, what failed, and -- via trial_sharpes -- how much statistical budget has been spent.
+
 **Created by / Updated by:** orchestrator  
 **Read by:** orchestrator, campaign-review skill  
 
@@ -1196,6 +1244,9 @@ Handoffs are the formal interface contract between stages. Each stage reads its 
 ---
 
 ### `prescreen_result.yaml`
+
+> **Why this file exists.** The cheap go/no-go on a signal: the evidence that justified spending a full backtest, or killing without one. Also the trial's receipt.
+
 **Created by:** signal_prescreen tool (`tools/prescreen_signal.py`)
 **Read by:** verdict_interpreter, orchestrator
 **Schema:** `workflow_artifacts/schemas/prescreen_result.schema.json`
@@ -1212,6 +1263,9 @@ Handoffs are the formal interface contract between stages. Each stage reads its 
 ---
 
 ### `trade_diagnostics.json`
+
+> **Why this file exists.** Per-trade records, because aggregate medians hide the failure channel — the finding A3.6 was written for.
+
 **Created by:** protocol_execution tool
 **Read by:** verdict_interpreter
 
@@ -1220,6 +1274,9 @@ Per-trade records (one row per closed trade) with fields: `entry_bar`, `exit_bar
 ---
 
 ### `regime_detector_report.yaml`
+
+> **Why this file exists.** Whether the regime detector is trustworthy enough for its labels to be allowed to condition any metric.
+
 **Created by:** `tools/validate_regime_detector.py`
 **Read by:** regime_auditor skill
 
@@ -1233,6 +1290,9 @@ Per-trade records (one row per closed trade) with fields: `entry_bar`, `exit_bar
 ---
 
 ### `regime_audit_decision.yaml`
+
+> **Why this file exists.** The human judgment on the detector, made under a firewall that keeps profitability out of the decision.
+
 **Created by:** regime-auditor skill
 **Read by:** verdict_interpreter, orchestrator
 
@@ -1245,6 +1305,9 @@ Per-trade records (one row per closed trade) with fields: `entry_bar`, `exit_bar
 ---
 
 ### `promotion_audit.yaml`
+
+> **Why this file exists.** Whether a promising result survives being corrected for how many things were tried. The gate that stands between a good backtest and the holdout.
+
 **Created by:** orchestrator / `tools/deflate_sharpe.py`
 **Read by:** holdout_evaluation tool
 **Schema:** `workflow_artifacts/schemas/promotion_audit.schema.json`
@@ -1262,6 +1325,9 @@ Per-trade records (one row per closed trade) with fields: `entry_bar`, `exit_bar
 ---
 
 ### `holdout_result.yaml`
+
+> **Why this file exists.** The one-shot final exam. Single-use, terminal, and pre-registered — reading it is spending it.
+
 **Created by:** Human (after running holdout backtest) + orchestrator (marks consumed_at)
 **Read by:** holdout_evaluation tool
 **Schema:** `workflow_artifacts/schemas/holdout_result.schema.json`
@@ -1274,6 +1340,158 @@ Per-trade records (one row per closed trade) with fields: `entry_bar`, `exit_bar
 | `within_expected_range` | Whether holdout_sharpe fell within the pre-registered range |
 | `status` | `pass`, `fail`, or `inconclusive` |
 | `consumed_at` | ISO timestamp when holdout was spent (single-use enforcement) |
+
+---
+
+### `pre_registration.yaml`
+
+> **Why this file exists.** It is the promise made *before* the data was
+> looked at: what result would count as success, and what would count as
+> failure. Without it, a verdict is written after seeing the numbers, which is
+> how a kill quietly becomes a "learning".
+
+**Created by:** `workflow/run_campaign.py` `_materialize_run()` (alongside `research_brief.yaml`)
+**Updated by:** *(none — write-once; rewriting it after a run is the failure it exists to prevent)*
+**Read by:** `tools/verdict_criteria_evaluator.py` via stage 8; `_load_machine_constraints()` (`run_phase1_research.py:2596`) for the stage 7 methodology pin; `_check_prescreen_conformance`
+**Written to:** `runs/{run_id}/artifacts/pre_registration.yaml`
+**Schema:** *(none)*
+
+| Field | Definition — what it means | Values / range | Example (`run_060`, 2026-08-28) |
+|---|---|---|---|
+| `pass_rule` | The pre-registered success condition, structured so a machine can evaluate it rather than a human reading prose. | dict with `statement`, `window_set_ref`, `criteria[]`; **or absent** = legacy | `{statement: "PASS iff … BOTH BTCUSDT AND ETHUSDT satisfy: (a) median Sharpe > 0.8; (b) max abs drawdown < 30% …", criteria: [{id: a, metric: median_sharpe, metric_basis: bar_level, comparator: ">"}, …]}` |
+| `machine_constraints` | Things pinned before the run that later stages must obey — not advice, but a contract the conformance gate checks. | dict: `protocol_ref`, `protocol_ref_content_hash`, `significance_methodology` | `{protocol_ref: protocols/funding_mr_4h_retest_v1.json, protocol_ref_content_hash: sha256:4fda1f39…, significance_methodology: episode_blocked_a851a}` |
+| `expected_*` / `min_detectable_ic` / `plausible_ic_upper` / `power_verdict` | The A8.6 a-priori power figures, recorded at registration. | floats / verdict string | present on the legacy shape (e.g. run_043) |
+| `disconfirming_outcome` | Written in advance: what result would falsify the hypothesis. | prose | — |
+| `run_id` / `hypothesis_id` / `registered_at` | Provenance. | string / string / ISO-8601 | `run_060` / … / … |
+
+**Notes**
+
+- ⚠️ **Two shapes, and most of the corpus is the older one.** Measured
+  2026-08-30 over the 10 files on disk: **7 have no `pass_rule` at all**
+  (run_043–run_057) and only run_058/059/060 carry the structured dict.
+  `machine_constraints` first appears at run_048.
+- The consequence is in [`pass_rule_evaluation.yaml`](#pass_rule_evaluationyaml)
+  below: where `pass_rule` is absent the machine verdict returns
+  `legacy_not_evaluable` and the LLM's judgment decides, exactly as before the
+  K2 kernel. "The machine decides" is true for 3 of 10 runs.
+
+---
+
+### `pass_rule_evaluation.yaml`
+
+> **Why this file exists.** It is the verdict a machine reached by checking the
+> pre-registered rule against the result — computed before any LLM reads the
+> backtest, so the interpretation cannot drift toward the answer someone
+> wanted.
+
+**Created by:** stage 8 `protocol_execution`, via
+`tools/verdict_criteria_evaluator.py::evaluate_pass_rule_criteria()`
+(`run_phase1_research.py:1206-1215`)
+**Updated by:** *(none — write-once per run)*
+**Read by:** `verdict_interpreter` — **a REQUIRED input**
+(`workflow_artifacts/skills/verdict-interpreter/SKILL.md:16`)
+**Written to:** `runs/{run_id}/artifacts/pass_rule_evaluation.yaml`
+**Schema:** *(none)*
+
+| Field | Definition — what it means | Values / range | Example (`run_060`, 2026-08-28) |
+|---|---|---|---|
+| `result` | The machine's overall verdict on the pre-registered rule. | `PASS` · `FAIL` · `legacy_not_evaluable` (no structured `pass_rule` to check) | `FAIL` |
+| `criteria_results` | Per-criterion, per-symbol breakdown — so a failure names *which* clause failed on *which* symbol, not just that something did. | list of `{id, result, per_symbol: {SYM: {value, threshold, result}}}` | criterion `a`: BTCUSDT `value: -0.296` vs `threshold: 0.8` → FAIL; criterion `c`: PASS |
+| `hypothesis_verdict` / `lineage_routing` | The routing the machine's verdict implies, when it is binding. | string | present when `result` is PASS or FAIL |
+| `evaluated_at` / `evaluator_version` | Provenance. `2` since C7-EXT added the G1–G5 preconditions (2026-07-22). | ISO-8601 / integer | `2` |
+
+**Notes**
+
+- ⚠️ **This is the decision authority, not a second opinion.** Since the K2
+  kernel (2026-07-13) it *replaced* `evaluate_against_decision_rules` in
+  `tools/run_protocol.py`, whose prose-criteria output is informational only
+  from that date. A verdict that contradicts this file without flagging the
+  contradiction is a conformance failure.
+- **It is only binding where a structured `pass_rule` exists.** On the legacy
+  shape it returns `legacy_not_evaluable` and the LLM decides (R3 ruling) — see
+  `pre_registration.yaml` above for how much of the corpus that is.
+
+---
+
+### `run_context.yaml`
+
+> **Why this file exists.** It records what makes *this* run different from the
+> brief it inherited — the escalation target, or the forced protocol — so a
+> child run does not silently re-test its parent's asset.
+
+**Created by:** `run_phase1_research.py:2736` (escalation spawn) and `:2775`
+(forced-diagnostic override)
+**Updated by:** *(none — write-once per run)*
+**Read by:** the stage prompts; `_check_prescreen_conformance` compares its
+bare-filename `protocol` key (`:3013`)
+**Written to:** `runs/{run_id}/artifacts/run_context.yaml`
+**Schema:** *(none)*
+
+| Field | Definition — what it means | Values / range | Example (real run) |
+|---|---|---|---|
+| `escalation_type` | Which axis was escalated when this run was spawned. | `instrument` · `timeframe` · `new_component` | `instrument` |
+| `target_symbol` / `target_timeframe` | The override the child run must apply instead of inheriting the parent's. | symbol / timeframe | `SOLUSDT` / `4h` |
+| `escalation_reason` | Why the escalation happened. | string | `hypothesis_family_exhausted` |
+| `source_run` | The parent run. | run id | `run_027` |
+| `protocol` | Bare filename of the protocol this run is pinned to. Compared by basename, never by path. | filename | — |
+| `note` | Instruction to the stages, in prose. | prose | *"Override the asset target to SOLUSDT — do NOT carry forward BTCUSDT or ETHUSDT…"* |
+
+---
+
+### `human_resolution.yaml`
+
+> **Why this file exists.** It is the only way to restart a pipeline that
+> paused for a human. Without it the run stays paused forever, and nothing else
+> in the guide names it.
+
+**Created by:** Human, by hand
+**Updated by:** *(none — write-once)*
+**Read by:** `resume_pipeline()` (`run_phase1_research.py:6048`)
+**Written to:** `runs/{run_id}/artifacts/human_resolution.yaml`
+**Schema:** *(none)*
+
+| Field | Definition — what it means | Values / range | Example (real run) |
+|---|---|---|---|
+| `status` | Whether the human considers the blocker cleared. Only one value resumes the run. | `resolved_proceed` resumes; anything else does not | `resolved_proceed` |
+| `resolution_notes` | What was actually done, for the record. | prose | *"Data audit complete. Downloaded 1h Binance liquidation tick data… Verified >150 qualifying events for both BTC and ETH."* |
+| `injected_context` | Facts the resolution supplies to the resumed stages. | dict | `{liquidation_data_path: data/historical/binance_liquidations_1h.parquet, verified_event_count_btc: "185", verified_event_count_eth: "162"}` |
+| `run_id` / `hypothesis_id` | Provenance. | string | `run_0001` / `H-0001` |
+
+**Which pauses need this file:** refinement with
+`implementation_allowed: false` (stage 5), `component_gap` or an unknown status
+from stage 6, `component_execution_error` or `regime_misattribution` at stage
+11, and the holdout's missing-result pause (stage 13).
+
+---
+
+### `config/venue_tradability.yaml` *(config)*
+
+> **Why this file exists.** It records which venue/product combinations this
+> operator can legally trade *now*, so research on something untradable cannot
+> reach a live-money decision by accident.
+
+**Created by:** Human, from the venue survey
+**Updated by:** Human, when the legal or venue position changes
+**Read by:** `run_campaign.py::_load_venue_tradability()` (`:190`), used by
+`_materialize_run()` to auto-flag `research_only` on any brief whose venue and
+product are not `tradable: true` — **or are undeclared**
+**Written to:** `config/venue_tradability.yaml`
+**Schema:** *(none)*
+
+| Field | Definition — what it means | Values / range | Example |
+|---|---|---|---|
+| `venues.<venue>.<product>.tradable` | Whether this operator may trade this product on this venue today. | `true` / `false` | `venues.kraken.spot.tradable: true` |
+| `version` / `created_at` | Provenance of the table itself. | string / date | `"1.0"` / `"2026-07-21"` |
+
+**Notes**
+
+- Scope is **French non-professional retail**; it is not a general statement
+  about the venue.
+- Sources are named in the file header: `docs/analysis-reports/venue_survey_20260719.md`
+  (+ 2026-07-20 supplement), the EEA perp fee verification session report, and
+  the KB's `venue_live_tradability` field.
+- **Undeclared resolves to not-tradable.** Silence is never a green light —
+  the same rule the holdout's gate 2b applies.
 
 ---
 
