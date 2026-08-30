@@ -34,10 +34,14 @@ contract, so nobody could see them.
 | [F9](#f9) | medium | doc-vs-doc | `strategy-research/CLAUDE.md` |
 | [F10](#f10) | **high** | code-defect | `strategy-research/tools/episode_significance.py:209` |
 | [F11](#f11) | medium | code-fragility | `strategy-research/workflow/run_phase1_research.py:3237` |
+| [F12](#f12) | medium | doc-unresolvable-reference | `docs/USER_GUIDE.md` (whole document) |
+| [F13](#f13) | medium | wrong-citation | `strategy-research/tools/prescreen_signal.py:1089,1100,1580` |
+| [F14](#f14) | medium | phantom-field | `docs/USER_GUIDE.md:613` |
 
-**Counts:** 2 high · 6 medium · 3 low. By type: 5 doc-vs-code, 2
-doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1 code-defect, 1
-code-fragility.
+**Counts:** 2 high · 9 medium · 3 low. By type: 5 doc-vs-code, 2
+doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
+doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
+1 code-fragility.
 
 **The two that are code, not documentation** — F10 and F11 — are the ones that
 do not go away by editing a sentence. F10 in particular is a fix that looked
@@ -229,6 +233,126 @@ Two significance thresholds live in `_determine_route` and only the stricter one
 
 **Proposed disposition (S3 decides, not this file):** Normalise protocol_version to a POSIX-style relative path at write time, or compare by basename in a separator-agnostic way.
 
+
+---
+
+## F12
+
+**Severity:** medium · **Type:** doc-unresolvable-reference · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` (whole document)
+
+**Found by:** S1 review follow-up, 2026-08-30
+
+`USER_GUIDE.md` cites **14 distinct amendment codes across 26 mentions**
+(`A1.1`, `A1.3`, `A1.4`, `A2.1`, `A2.2`, `A2.3`, `A3.4`, `A3.6`, `A5.3`,
+`A6.1`, `A6.2`, `A8.1`, `A8.6`, `A9.1`) and **never once says where any of
+them is defined**. The definitions live in
+`engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md`, a file
+the guide does not reference at any point — verified by grep for
+`AMENDMENT` across all 976 lines: zero hits. A reader who meets "records
+trial in `campaign_state.trial_sharpes` (A6.2)" has no path to what A6.2
+actually says, which is that deflated Sharpe needs the *variance* across
+trials and therefore every evaluation counts as a trial, kills included.
+That reason is the entire justification for the sentence, and it is one
+unreferenced file away.
+
+This is the epic's central complaint in miniature — the knowledge exists and
+is correct, but cannot be assembled from one place. It is also a known
+failure mode with a recorded incident: **C4, "Rule-citation confabulation"**
+(`engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md:216`) records a
+card citing *"A3.6, n_episodes >= 8 per window"* where the label was wrong
+(the real rule was A8.5.1a-spec rule 3) and the qualifier was invented, and
+concludes: *"Plausible-looking fake citations survive until someone quotes
+the source verbatim."* Its prescribed fix was a machine-readable rule index
+(id → verbatim text → source line) plus a lint step. **No such index exists**,
+and the guide is the document most likely to be cited from.
+
+Note: S1's own first draft reproduced the defect — it used `A6.2` four times
+without ever expanding it. That is how cheaply this propagates.
+
+**Proposed disposition (S3 decides, not this file):** Either add a rule index
+(id → one-line gloss → `file:line`) to `USER_GUIDE.md` §6 and link every
+citation to it, or at minimum reference `AMENDMENTS_01-06.md` once and gloss
+each code on first use. The S1 stage template now requires the gloss-and-link
+on first use within a block; that convention is worth applying guide-wide.
+
+---
+
+## F13
+
+**Severity:** medium · **Type:** wrong-citation · **Status:** open, untriaged — needs the author's confirmation
+
+**Lands on:** `strategy-research/tools/prescreen_signal.py:1089`, `:1100`, `:1580`
+
+**Found by:** S1 review follow-up, 2026-08-30
+
+Three sites label the `ungated_escape_eligible` write-back as an "A9.1 side
+effect": the section comment at `:1089`, the `_resolve_ungated_escape`
+docstring at `:1100`, and the call site at `:1580`.
+
+**A9.1 as defined** (`AMENDMENTS_01-06.md:156`) is *"Named must-reject
+fixture: `keltner_163`"* — an Improvement 09 acceptance criterion requiring
+the cost gate to reject the Keltner config despite its passing IC. It says
+nothing about ungated escape. There is exactly one `A9.1` heading in the
+repository, so this is not a renumbering collision — verified by grep across
+all markdown.
+
+The rules that **do** govern the behaviour are cited correctly in the same
+docstring's body: A2.1 (detector-confidence deadlock escape) supplies the
+`ungated_escape_eligible` concept, and A2.3 rule 5 supplies the requirement
+that the metric be all-bars IC. So the docstring contradicts its own heading.
+
+Stated fairly: the same file uses A9.1 **correctly** at five other sites
+(`:20`, `:1607`, `:1614`, `:1651`, `:1656`), all about the keltner_163
+two-stage rejection. This looks like a label attached to the wrong paragraph
+rather than a systematic misunderstanding, and it has **no runtime effect** —
+it is comment text. It is recorded because it misleads readers and because
+S1 propagated it into the documentation before catching it, which is exactly
+the C4 pattern described in [F12](#f12).
+
+**Proposed disposition (S3 decides, not this file):** Confirm with the author
+whether A9.1 was intended, then relabel the three sites to A2.1 / A2.3 rule 5
+if not. Cheap to fix, but it is a citation correctness question, so it should
+be answered rather than guessed.
+
+---
+
+## F14
+
+**Severity:** medium · **Type:** phantom-field · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md:613`
+
+**Found by:** S1 information-loss check, 2026-08-30
+
+`USER_GUIDE.md:613` documents the `cost_check` field as
+`{pass: bool, edge_to_cost_ratio, required_gross_edge_bps}`.
+**`required_gross_edge_bps` does not exist.** It is emitted by no Python file
+in the repository — verified by grep across `strategy-research/` and
+`trading-bot/` — and it is absent from every real artifact, including
+`runs/run_060/artifacts/prescreen_result.yaml`.
+
+The dict the code actually emits has **eight** keys: `symbol`,
+`implied_trades_per_window`, `estimated_gross_edge_bps_per_trade`,
+`cost_bps_per_trade`, `edge_to_cost_ratio`, `safety_factor_required`, `pass`,
+`ic_used`. So the guide names three keys, one of which is imaginary, and omits
+six real ones — including `safety_factor_required`, which is the threshold the
+gate compares against, and `ic_used`, which records *which* IC fed the
+estimate.
+
+**How it was found is the point.** This did not turn up by reading the guide;
+it turned up because the epic's own information-loss check flagged
+`required_gross_edge_bps` as a token that disappeared between drafts. The
+check asked "where did this fact go?", and the answer was "it was never a
+fact." A mechanical residue check catches phantom content as well as lost
+content — an argument for running it on every S2 and S4 section rather than
+treating it as a formality.
+
+**Proposed disposition (S3 decides, not this file):** Replace the three-key
+description with the real eight, or mark it explicitly as a partial list.
+Worth checking the other artifact entries for the same defect during S2 —
+this one was invisible until an artifact was opened.
 
 ---
 

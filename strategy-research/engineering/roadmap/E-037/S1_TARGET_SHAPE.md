@@ -133,6 +133,25 @@ here with its original wording.
 `file:line` list — the anchors that make this block re-verifiable.
 ```
 
+**Amendment codes must be resolvable where they are used.** A bare `A6.2` is
+an unexpandable reference: it is load-bearing, so it must survive verbatim,
+but a reader who does not already know it has nowhere to go. On **first use
+within a stage block**, every code gets a short gloss and a link to its
+definition:
+
+> A6.2 ([trials need cross-trial Sharpe variance, so every evaluation counts
+> as a trial](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md))
+
+Thereafter the bare code is fine within that block. This is not pedantry —
+the project has already been bitten: incident **C4, "Rule-citation
+confabulation"** records a card citing *"A3.6, n_episodes >= 8 per window"*
+where the label was wrong (the real rule was A8.5.1a-spec rule 3) and the
+qualifier was invented, and concludes *"plausible-looking fake citations
+survive until someone quotes the source verbatim"*
+(`engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md:216`). Codes
+that cannot be resolved in one hop are codes nobody checks. See findings
+[F12](FINDINGS.md#f12) and [F13](FINDINGS.md#f13).
+
 **Why the fields are these:**
 
 - **Engine / Runs** — separated because "who executes" and "when" were
@@ -167,8 +186,8 @@ a value that violates it still flows through the pipeline. Treat it as a
 description of what the artifact was *meant* to look like, not a guarantee.
 | *(no schema file exists)*
 
-| Field | Definition | Example (`run_NNN`, YYYY-MM-DD) |
-|---|---|---|
+| Field | Definition — what it means | Values / range (meaning of each) | Example (`run_NNN`, YYYY-MM-DD) |
+|---|---|---|---|
 
 **Notes** *(optional)* — traps, invalidation conditions, fields that mean
 something other than they look like.
@@ -193,7 +212,19 @@ something other than they look like.
 5. **Field tables stay descriptive, not exhaustive** — but if the table is a
    selection from a larger real artifact, that is stated. Otherwise a reader
    concludes a field does not exist. See finding F3.
-6. **Every field carries a real example value, copied from a real run, with
+6. **The definition says what the field MEANS; the values live in their own
+   column.** A definition that only lists the strings a field can hold is not
+   a definition — it tells a reader what is legal without telling them what
+   the field is for. `route` is not "one of seven strings"; it is *the
+   decision the prescreen reached, and the single field the orchestrator reads
+   to choose the next stage*. Split them: **Definition** = purpose, one or two
+   sentences. **Values / range** = every value it can take, each with a
+   one-or-two-word gloss in brackets — `kill_no_ic` (tested, no directional
+   content) — or, for a scalar, its type, range and what `null` means there.
+   The gloss is where most of the lost knowledge is: nothing in the old table
+   told a reader that `no_signal_artifact` means *never actually tested*
+   rather than *tested and failed*, which is the whole point of it existing.
+7. **Every field carries a real example value, copied from a real run, with
    that run's id and date in the column header.** A definition tells you what
    a field means; an example tells you what it looks like — whether `route` is
    a string or an enum object, whether `ic_active_bars` is `0.016` or `1.6`,
@@ -206,7 +237,7 @@ something other than they look like.
    the `#50` gap fields, because those landed the next day in `97d3bd7a`
    (2026-08-29). Fields the example predates are marked `—` with the reason,
    which is itself information a reader wants.
-7. **"Logic" prose does not live here.** Per the EPIC, it relocates to the
+8. **"Logic" prose does not live here.** Per the EPIC, it relocates to the
    owning stage's block. The artifact entry describes the *file*; the stage
    block describes the *computation*. (Relocation, not deletion — §4.)
 
@@ -232,7 +263,9 @@ deserves an expensive walk-forward backtest.
 
 **Design rationale.**
 - A full protocol run costs compute, and — because every run is recorded as a
-  trial whether it passes or dies (A6.2) — it also costs statistical budget.
+  trial whether it passes or dies (A6.2 — [deflated Sharpe needs the variance
+  across trials, so every evaluation counts, kills included](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md)) — it also
+  costs statistical budget.
   Trials spent on hopeless signals raise the deflated-Sharpe bar for the
   candidates that are actually promising.
 - The prescreen buys that decision for one pass over the forecast series: no
@@ -269,6 +302,8 @@ deserves an expensive walk-forward backtest.
 **Features / logic in place**
 
 0. **A8.6 a-priori power pre-flight — orchestrator, before the tool starts**
+   (A8.6 = [a-priori power check at hypothesis registration: if the sample
+   cannot detect the effect even if real, do not spend the trial](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md))
    (`run_phase1_research.py:6217`). If `min_detectable_ic > plausible_ic_upper`
    the tool is never launched: the orchestrator writes
    `prescreen_result.yaml` itself with `route: insufficient_power_a_priori`
@@ -285,7 +320,7 @@ deserves an expensive walk-forward backtest.
    → latest window end), merge aux feeds, extract the forecast series by
    driving the real strategy through `CandleBuilder` (`_extract_forecasts`,
    `:470`).
-3. **Gap suppression (#50 A).** A forecast/return pair whose two bars are not
+3. **Gap suppression (#50 A — [issue #50, parts (A) and (B)](https://github.com/loloze6/trading-bot/issues/50): a forecast/return pair straddling a cache hole is not a real observation).** A forecast/return pair whose two bars are not
    one expected step apart spans a data gap and is dropped. Counts are
    surfaced per symbol, because pooled figures can read "no gap effect" while
    one symbol's entire sample was destroyed (red-team D6). (`:1264`, `:1267`)
@@ -294,7 +329,10 @@ deserves an expensive walk-forward backtest.
    If no symbol loaded any usable data at all, the run raises rather than
    emitting a route from zero bars (`:1320`, added 2026-08-28 after run_060).
 5. Pool records across symbols; compute `ic_all_bars` and `ic_active_bars`
-   separately (A8.3). Active-bar IC — conditional on a non-zero/changing
+   separately (A8.3 — [sparse-forecast IC methodology: an IC over all bars is
+   tie-dominated and collapses toward zero by construction, so a selective
+   signal must be scored on the bars where it spoke](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md)). Active-bar IC —
+   conditional on a non-zero/changing
    forecast — is the primary gate; all-bars IC is tie-dominated for sparse
    signals and is reserved for A2.1.
 6. **Significance on active-bar n.** Default method is **block-deflated
@@ -308,7 +346,8 @@ deserves an expensive walk-forward backtest.
    first would read the seam between two symbols as a contiguous step
    (`:1359`).
    Two alternative methods replace it:
-   - **A8.5.1a episode-blocked** (opt-in, config `significance_methodology:
+   - **A8.5.1a episode-blocked** ([episode-blocked significance for signals
+     that fire in bursts, where adjacent active bars are one event, not many](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md); opt-in, config `significance_methodology:
      episode_blocked_a851a`) for multi-era backward-extension data (`:1402`).
      Default behaviour with the flag absent is unchanged, so every archived
      run stays reproducible.
@@ -331,7 +370,9 @@ deserves an expensive walk-forward backtest.
    **when that flag is true the cost check and every required-IC figure in the
    artifact are invalid.**
 9. **Route decision** (`_determine_route`, `:982`) — see the route table.
-   A8.1: both IC significance **and** `cost_check.pass` are required for
+   A8.1 ([IC alone is never a pass — a signal with IC 0.2145 delivered −26
+   bps/trade net; the cost layer must land with the IC layer](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md)): both IC
+   significance **and** `cost_check.pass` are required for
    `proceed_to_backtest`.
 10. **F5c zero-signal-artifact override** (`:1481`), which takes priority over
     every route above. If `active_n_bars == 0`, or swallowed component
@@ -342,12 +383,18 @@ deserves an expensive walk-forward backtest.
     `FundingRateMeanReversionComponent` divide-by-zero produced
     `active_n_bars=0`, which read as a real `kill_no_ic` verdict and nearly
     closed an otherwise-untested hypothesis family.
-11. **A2.3:** `ic_by_regime` is emitted as `{suspended: true}` — suspended
+11. **A2.3** ([post-`unusable` policy: with no trustworthy regime detector,
+    regime-conditioned metrics are not evidence](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md))**:** `ic_by_regime` is
+    emitted as `{suspended: true}` — suspended
     until a trustworthy detector exists. Only ungated IC decides the
     prescreen.
-12. **A9.1 side effect:** resolve `ungated_escape_eligible` in stage 10's
+12. **A9.1 side effect** (the code's own label — but see [F13](FINDINGS.md#f13):
+    A9.1 as written is the `keltner_163` must-reject fixture and says nothing
+    about ungated escape; the governing rules here look like A2.1 and A2.3
+    rule 5)**:** resolve `ungated_escape_eligible` in stage 10's
     `regime_audit_decision.yaml` using `ic_all_bars` — the all-bars IC is the
-    only metric A2.1 admits, because an IC computed on detector-gated bars is
+    only metric A2.1 ([detector-confidence deadlock escape](../../improvements/done/design_and_docs/AMENDMENTS_01-06.md)) admits,
+    because an IC computed on detector-gated bars is
     not admissible for or against the escape (A2.3 rule 5) (`:1582`, `:1092`).
 13. Write `prescreen_result.yaml` (`:1585`).
 14. **A6.2 trial recording — orchestrator, after the tool returns**
@@ -434,34 +481,34 @@ mean-reversion retest on BTCUSDT + ETHUSDT that died at `kill_no_ic`. Fields
 marked `—` are absent from that file, with the reason given; that absence is
 itself informative and is not padded with an invented value.
 
-| Field | Definition | Example (`run_060`, 2026-08-28) |
-|---|---|---|
-| `route` | Routing decision: `proceed_to_backtest`, `kill_no_ic`, `refine_inverted_ic`, `refine_cost_hurdle`, `kill_cost_hurdle`, `no_signal_artifact`, `insufficient_power_a_priori` | `kill_no_ic` |
-| `route_rationale` | Human-readable sentence explaining the route, with the numbers that drove it | `Active-bar IC=0.0162, p=0.5315 >= 0.1. Signal has no detectable directional content on this venue/timeframe.` |
-| `prescreen_kill_reason` | `no_informational_content_this_venue`, `insufficient_episodes_a851a`, `cost_drag_structural`, `component_error`, `zero_activation`, or null | `no_informational_content_this_venue` |
-| `ic_all_bars` | Spearman IC over all bars (tie-dominated for sparse signals); the only metric A2.1 admits for the ungated escape | `-0.006944` |
-| `ic_active_bars` | Spearman IC conditional on non-zero/changing forecast — the primary IC gate | `0.016237` |
-| `ic_spearman_pooled` | Legacy alias, equals `ic_active_bars`; kept for backward compatibility | `0.016237` |
-| `active_n_bars` | Count of active bars; `0` forces `no_signal_artifact` | `8928` (of `n_bars_total: 17854`) |
-| `forecast_sparsity_pct` | Fraction of bars with zero/unchanging forecast | `49.99` |
-| `forecast_hash` | Fingerprint of the forecast series — the dedup key for trial counting | `5b0dee1781bc716f` |
-| `ic_significance` | Result of the significance test that **decided the route** | `{method: block_24_dense_fallback, pooled_ic: 0.0162, p_value: 0.5315, density_pct: 50.01, significant: false}` |
-| `ic_significance_block24` | The original block Fisher-z result, always computed for continuity even when another method decided | `{pooled_ic: 0.0162, z_stat: 0.6257, p_value: 0.5315, n_eff: 1488, block_size: 6, significant: false}` |
-| `significance_methodology_used` | Which of the three methods decided: `block_{n}_fisher_z`, `episode_blocked_a851a` (reported as `episode_block_bootstrap` / `episode_bootstrap_insufficient_n` / `block_24_dense_fallback`), or the stationary block bootstrap | `block_24_dense_fallback` — **note the literal `24` while `block_size` is `6`; see finding F10** |
-| `degenerate_active_forecast` | Structural flag: the component emits one constant magnitude when active, so `ic_active_bars` is undefined rather than zero | `false` |
-| `active_forecast_distinct_count` | Distinct active-bar forecast values; the input to the flag above | `2` |
-| `cost_check` | `{pass, edge_to_cost_ratio, required_gross_edge_bps, safety_factor_required, …}` — Layer 2 gate | `{symbol: BTCUSDT, estimated_gross_edge_bps_per_trade: 2.6012, cost_bps_per_trade: 17.0, edge_to_cost_ratio: 0.153, safety_factor_required: 2.0, pass: false, ic_used: ic_active_bars}` |
-| `sigma_bar_bps` | Per-bar volatility in bps used by the cost check | `160.1854` |
-| `sigma_is_placeholder` | **`true` invalidates `cost_check` and every required-IC figure in this file** — the sigma is a default constant, not a measurement | `false` |
-| `turnover_proxy` | `{active_bars_total, implied_trades_estimated, avg_holding_bars, forecast_sparsity_pct}` | `{active_bars_total: 8928, implied_trades_estimated: 8926, avg_holding_bars: 1.0, forecast_sparsity_pct: 49.99}` |
-| `gap_skipped_pairs` / `gap_skipped_pct` | Pairs suppressed for spanning a data gap; the pct is over pairs **reached**, not over the cache | — *absent: added by `97d3bd7a` on 2026-08-29, one day after this run* |
-| `gap_stats_by_symbol` | Per-symbol gap accounting — a pooled "no gap effect" can hide one symbol's sample being destroyed | — *absent, same reason* |
-| `n_eff_placeable_blocks` / `n_eff_nominal_blocks` | Gap-aware vs nominal effective sample, for like-for-like comparison | — *absent, same reason* |
-| `ic_by_era` | Per-era IC report; populated only on the A8.5.1a path, else null | `{BTCUSDT::era_2019_2023_full_feed: {ic_active_bars: 0.02237, active_n_bars: 4464, n_episodes: 1}, ETHUSDT::…: {ic_active_bars: 0.010224, …}}` |
-| `ic_by_regime` | `{suspended: true}` — A2.3, until a trustworthy detector exists | `{suspended: true, reason: "A2.3: ic_by_regime suspended until a trustworthy detector exists. …"}` |
-| `component_error_count` / `component_error_sample` | Swallowed component exceptions during `update()`; > 5% forces `no_signal_artifact` (F5c) | `0` / `[]` |
-| `a86_power_check` | Present **only** on the `insufficient_power_a_priori` path; carries `min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, `data_requirement` | — *absent: run_060 took the normal path* |
-| `config_sha8` / `computed_at` / `protocol_version` / `symbols` / `prescreen_windows_used` / `n_bars_total` | Provenance | `041ea0ef` / `2026-08-28T19:54:01.052853+00:00` / `protocols\funding_mr_4h_retest_v1.json` (**backslash — see F11**) / `[BTCUSDT, ETHUSDT]` / 49 month labels `2019-12`…`2023-12` / `17854` |
+| Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-28) |
+|---|---|---|---|
+| `route` | The decision the prescreen reached. The single field the orchestrator reads to choose the next stage. | `proceed_to_backtest` (send to full walk-forward) · `kill_no_ic` (tested, no directional content) · `refine_inverted_ic` (signal works backwards) · `refine_cost_hurdle` (edge real but too small, fixable) · `kill_cost_hurdle` (edge structurally below cost) · `no_signal_artifact` (never actually tested — engineering failure) · `insufficient_power_a_priori` (sample too small to detect the effect even if real) | `kill_no_ic` |
+| `route_rationale` | Prose sentence justifying the route, carrying the numbers that drove it, so a human can audit the decision without re-running. | free text | `Active-bar IC=0.0162, p=0.5315 >= 0.1. Signal has no detectable directional content on this venue/timeframe.` |
+| `prescreen_kill_reason` | Machine-readable cause of death; distinguishes *scientific* kills from *engineering* ones. | `no_informational_content_this_venue` (signal carries nothing here) · `insufficient_episodes_a851a` (too few episodes to judge) · `cost_drag_structural` (costs exceed any plausible edge) · `component_error` (code threw) · `zero_activation` (signal never fired) · `null` (not a kill) | `no_informational_content_this_venue` |
+| `ic_all_bars` | Rank correlation between forecast and next-bar return across **every** bar. Tie-dominated when the signal is sparse, so it understates a selective signal — reserved for the A2.1 ungated-escape test, which requires it. | float in [-1, 1]; `null` if undefined | `-0.006944` |
+| `ic_active_bars` | The same correlation but only over bars where the forecast was non-zero/changing — i.e. where the signal actually made a claim. **The primary gate.** | float in [-1, 1]; `null` if undefined | `0.016237` |
+| `ic_spearman_pooled` | Legacy alias of `ic_active_bars`, retained so older consumers keep working. | same as `ic_active_bars` | `0.016237` |
+| `active_n_bars` | How many bars the signal was actually live on. The real sample size behind the IC. | integer >= 0; `0` forces `no_signal_artifact` | `8928` (of `n_bars_total: 17854`) |
+| `forecast_sparsity_pct` | How often the signal said nothing. High sparsity means the headline IC rests on few bars. | float 0-100 | `49.99` |
+| `forecast_hash` | Fingerprint of the forecast series. Two configs producing identical forecasts are **one** trial, however much else differs — this is the dedup key that stops N being inflated. | 16-char hex | `5b0dee1781bc716f` |
+| `ic_significance` | The significance test that **decided the route**. Which test ran depends on the path taken. | dict: `method`, `pooled_ic`, `p_value`, `significant` (bool), plus method-specific keys | `{method: block_24_dense_fallback, pooled_ic: 0.0162, p_value: 0.5315, density_pct: 50.01, significant: false}` |
+| `ic_significance_block24` | The default block Fisher-z result, always computed even when another method decided — so runs stay comparable across methodology changes. | dict: `pooled_ic`, `z_stat`, `p_value`, `n_eff`, `block_size`, `significant` | `{pooled_ic: 0.0162, z_stat: 0.6257, p_value: 0.5315, n_eff: 1488, block_size: 6, significant: false}` |
+| `significance_methodology_used` | Which test decided. Needed because three can, and a later reader reconstructs the maths from this name. Note the config flag that *requests* A8.5.1a is `episode_blocked_a851a`, which is **not** itself a value of this field — the field records which of A8.5.1a's three outcomes actually ran. | `block_{n}_fisher_z` (default, n_eff-deflated) · `episode_block_bootstrap` (A8.5.1a, episode resampling) · `episode_bootstrap_insufficient_n` (A8.5.1a, too few episodes — descriptive only) · `block_24_dense_fallback` (A8.5.1a, signal too dense for episodes) · stationary-bootstrap label (degenerate-forecast fallback) | `block_24_dense_fallback` — **the literal `24` while `block_size` is `6`; see [F10](FINDINGS.md#f10)** |
+| `degenerate_active_forecast` | Flags that the component emits one constant magnitude whenever active, which makes `ic_active_bars` mathematically undefined rather than "zero edge". Prevents a code shape being read as a scientific result. | `true` / `false` | `false` |
+| `active_forecast_distinct_count` | How many distinct forecast values occurred on active bars. The measurement behind the flag above. | integer >= 0; `1` means constant | `2` |
+| `cost_check` | Whether the estimated gross edge could survive round-trip trading costs at the implied turnover. The second of the two gates, known in the amendments as **Layer 2**. | dict; `pass` true only when `edge_to_cost_ratio >= safety_factor_required` | `{symbol: BTCUSDT, estimated_gross_edge_bps_per_trade: 2.6012, cost_bps_per_trade: 17.0, edge_to_cost_ratio: 0.153, safety_factor_required: 2.0, pass: false, ic_used: ic_active_bars}` |
+| `sigma_bar_bps` | Per-bar volatility in basis points. Converts a unitless IC into an expected edge in bps, which is what the cost comparison needs. | float > 0 | `160.1854` |
+| `sigma_is_placeholder` | Whether `sigma_bar_bps` was measured or defaulted. **`true` invalidates `cost_check` and every required-IC figure in this file** — read it before trusting any of them. | `true` (default constant, not a measurement) / `false` (measured) | `false` |
+| `turnover_proxy` | How often the signal would trade, inferred from activity transitions. Drives the per-trade cost estimate. | dict: `active_bars_total`, `implied_trades_estimated`, `avg_holding_bars`, `forecast_sparsity_pct` | `{active_bars_total: 8928, implied_trades_estimated: 8926, avg_holding_bars: 1.0, forecast_sparsity_pct: 49.99}` |
+| `gap_skipped_pairs` / `gap_skipped_pct` | How much of the sample was discarded for straddling a hole in the data cache. The pct is over pairs **reached** post-warmup, **not** the cache's contamination rate. | integer >= 0 / float 0-100 | — *absent: added by `97d3bd7a` on 2026-08-29, one day after this run* |
+| `gap_stats_by_symbol` | The same accounting per symbol, because a pooled "no gap effect" can conceal one symbol's sample being wiped out. | dict keyed by symbol | — *absent, same reason* |
+| `n_eff_placeable_blocks` / `n_eff_nominal_blocks` | Effective sample size with and without gap-awareness. The pair shows how much the gaps cost in statistical power. | integer >= 0 | — *absent, same reason* |
+| `ic_by_era` | IC broken out per market era, so a result that only exists in one regime-era is visible rather than averaged away. | dict keyed `SYMBOL::era_id`; `null` off the A8.5.1a path | `{BTCUSDT::era_2019_2023_full_feed: {ic_active_bars: 0.02237, active_n_bars: 4464, n_episodes: 1}, ETHUSDT::…: {ic_active_bars: 0.010224, …}}` |
+| `ic_by_regime` | Reserved for per-regime IC. Deliberately not computed — A2.3 suspends it until a trustworthy detector exists, and the field carries that reason so nobody reads the absence as an oversight. | always `{suspended: true, reason: …}` | `{suspended: true, reason: "A2.3: ic_by_regime suspended until a trustworthy detector exists. …"}` |
+| `component_error_count` / `component_error_sample` | How many bars threw a swallowed exception inside the strategy's `update()`, plus a capped sample of them. Separates "the signal is bad" from "the code is broken". | integer >= 0 — a rate above **5%** of processed bars forces `route: no_signal_artifact` (F5c) / list, capped at 5 entries | `0` / `[]` |
+| `a86_power_check` | The a-priori power verdict, present **only** on the `insufficient_power_a_priori` path, where the run died before any IC was computed. Its presence means this file is the 4-key stub, not a result. | dict: `min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, `data_requirement`; absent otherwise | — *absent: run_060 took the normal path* |
+| `config_sha8` / `computed_at` / `protocol_version` / `symbols` / `prescreen_windows_used` / `n_bars_total` | Provenance — what was run, against what, when. Makes the result reproducible and comparable. | hex8 / ISO-8601 UTC / path string / list / list of month labels / integer | `041ea0ef` / `2026-08-28T19:54:01.052853+00:00` / `protocols\funding_mr_4h_retest_v1.json` (**backslash — see [F11](FINDINGS.md#f11)**) / `[BTCUSDT, ETHUSDT]` / 49 month labels `2019-12`…`2023-12` / `17854` |
 
 **Notes**
 
@@ -601,6 +648,9 @@ code and no guide text was changed.
 | [F9](FINDINGS.md#f9) | medium | `strategy-research/CLAUDE.md` lists a different 10-stage workflow and asserts the schema validation §3 records as false. |
 | [F10](FINDINGS.md#f10) | **high** | The 2026-08-28 "label must track the arithmetic" fix missed the A8.5.1a path; run_060 stamps `block_24_dense_fallback` with `block_size: 6`. Code defect. |
 | [F11](FINDINGS.md#f11) | medium | `protocol_version` is stamped as a platform-dependent path; `Path(...).name` mis-parses it on POSIX. |
+| [F12](FINDINGS.md#f12) | medium | The guide cites 14 distinct amendment codes across 26 mentions and never once says where any of them is defined. Unresolvable references are how the documented C4 confabulation incident happened. |
+| [F13](FINDINGS.md#f13) | medium | `prescreen_signal.py` labels the ungated-escape write-back "A9.1", but A9.1 is the `keltner_163` must-reject fixture; the governing rules look like A2.1 / A2.3 rule 5. |
+| [F14](FINDINGS.md#f14) | medium | The guide documents a `cost_check` subkey `required_gross_edge_bps` that no code emits, while omitting six real ones. |
 
 **Verified consistent** (no finding): §2.2's "A8.1: both IC significance AND
 `cost_check.pass` required for `proceed_to_backtest`" matches
