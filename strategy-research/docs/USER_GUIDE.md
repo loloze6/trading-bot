@@ -167,6 +167,13 @@ stage differs from this guide's, both are given.
 | **altitude** | How big a change the verdict proposes: parameter → component → family → instrument. |
 | **handoff** | The YAML file one stage writes to tell the next what to do and what inputs exist. |
 | **DSR** (deflated Sharpe) | A Sharpe corrected for how many things you tried. More trials, higher bar. |
+| **warmup** | The first stretch of bars an indicator needs before its output means anything. Decisions are not taken during it. |
+| **turnover** | How often a strategy trades. High turnover pays the cost more often, so it needs a bigger edge to survive. |
+| **Fisher z** | A transform that turns a correlation into something you can do normal statistics on, to ask "is this bigger than luck?". |
+| **block** / **block bootstrap** | Nearby bars are not independent, so statistics are computed over *blocks* of bars rather than single ones. A **bootstrap** re-shuffles those blocks many times to see how often chance alone would produce the result. **Stationary block bootstrap** is one variant of that shuffle. |
+| **firewall** (retune firewall) | A rule that keeps profitability out of a decision that is supposed to be about instrument quality. You may not retune a regime detector because it made more money. |
+| **conformance gate** | A check that a run actually obeyed what it registered in advance — the protocol it pinned, the method it declared. |
+| **upsert** | Write-or-replace. Used for trial rows so a re-run replaces its earlier row instead of adding a second one and inflating the count. |
 
 Amendment codes (`A2.1`, `A8.6`, …) are defined in
 [`AMENDMENTS_01-06.md`](../engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md);
@@ -435,13 +442,210 @@ printing that the SKILL may need a new status case rather than guessing
 ---
 
 #### Stage 7 — `signal_prescreen`
-
-*(Worked sample — the full block is in
-[`E-037/S1_TARGET_SHAPE.md` §3.1](../engineering/roadmap/E-037/S1_TARGET_SHAPE.md#31-stage-7)
-and is folded in here by S2's own pass.)*
+**Engine:** Python tool (`tools/prescreen_signal.py`), launched as a
+subprocess by the orchestrator (`workflow/run_phase1_research.py:1074`
+`run_tool_worker`). No LLM call, no token cost.
+**Runs:** after `backtest_specification` emits `spec_ready`. The orchestrator
+runs an A8.6 power pre-flight *around* the tool first — see logic step 0.
 
 **Objective.** Decide cheaply, on the signal alone, whether this hypothesis
 deserves an expensive walk-forward backtest.
+
+**Design rationale.**
+- A full backtest costs compute, and every run is counted as a trial whether
+  it passes or dies, so it also costs statistical budget. Trials spent on
+  hopeless signals raise the bar for the promising ones.
+- The prescreen answers the question for one pass over the forecast series:
+  no portfolio simulation, no backtest engine, no LLM call.
+- It asks only the two things answerable without simulating a portfolio: does
+  the signal predict anything, and could it out-earn its trading costs.
+- It runs after specification, not before, so the answer is about the compiled
+  config that would actually be backtested — not about the prose hypothesis.
+
+**Terms used in this block**
+
+| Term | In plain words |
+|---|---|
+| **IC** (information coefficient) | How well the forecast ranked what actually happened next. `+1` perfect, `0` useless, `-1` perfectly backwards. Measured with Spearman rank correlation. |
+| **active bar** | A bar where the signal actually said something (forecast non-zero/changing). A selective signal is silent most of the time. |
+| **bps** (basis point) | One hundredth of a percent. Costs and edges are quoted in bps per trade. |
+| **effective sample** (`n_eff`) | How many genuinely *independent* observations there are. Adjacent hours move together, so 8928 bars are worth far fewer independent facts — dividing by a block size is how that is accounted for. |
+| **episode** | A burst of consecutive active bars treated as **one** event rather than many, for signals that fire in clusters. |
+| **A8.6** | Rule: check up front that the sample is even big enough to detect the effect. If not, do not spend the trial. |
+| **A8.3** | Rule: score a selective signal on the bars where it spoke. An IC over all bars is swamped by the silent ones and collapses toward zero by construction. |
+| **A8.1** | Rule: a good IC alone is never a pass — the cost gate must clear too. A signal with IC 0.2145 still lost 26 bps per trade. |
+| **A8.5.1a** | Rule: for signals that fire in bursts, count events, not bars. |
+| **A2.1** | "Detector-confidence deadlock escape" — the rule letting a hypothesis be judged without a trusted regime detector. Requires all-bars IC. |
+| **A2.3** | "Post-`unusable` policy" — with no trustworthy detector, regime-conditioned numbers are not evidence. Rule 5 says the escape test must use all-bars IC. |
+| **A6.2** | Rule: deflated Sharpe needs the spread of results across trials, so every evaluation counts as a trial — kills included. |
+| **F5c** | Rule: "the code broke" must never be recorded as "the idea failed". |
+| **#50** | Issue: a forecast/return pair straddling a hole in the data cache is not a real observation. |
+
+Full text of every amendment code:
+[`AMENDMENTS_01-06.md`](../engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md).
+
+**Stage input**
+
+| What | Where it comes from | Required? |
+|---|---|---|
+| `artifacts/candidate_strategy_config.json` | stage 6 `backtest_specification` | yes |
+| protocol JSON (`symbols`, `windows`, `timeframe`) | `_resolve_protocol_path()` — `run_phase1_research.py:1086` | yes |
+| `config/cost_model.yaml` | round-trip cost in bps per symbol, plus `safety_factor` (default 2.0) | yes |
+| `trading-bot/local_data/{SYMBOL}_{tf}.csv` | price cache; a coarser timeframe is derived from a finer one (`_resolve_ohlcv_source`, `prescreen_signal.py:306`) | yes |
+| aux feeds — funding rate, fear & greed | `prescreen_signal.py:151` / `:171` | only if the config declares them |
+| `config/campaign_data_policy.yaml` | era boundaries and episode settings | only on the A8.5.1a path |
+| `runs/{run_id}/artifacts/regime_audit_decision.yaml` | stage 10 | only if present — see the side effect below |
+| `campaign_state.yaml` | read by the orchestrator wrapper, not the tool | yes |
+
+**Stage output**
+
+| What | Written where | Read by |
+|---|---|---|
+| `prescreen_result.yaml` | `runs/{run_id}/prescreen/`, copied to `artifacts/` (`run_phase1_research.py:1113`) | `verdict_interpreter`, orchestrator routing |
+| *(side effect)* `regime_audit_decision.yaml` — `ungated_escape_eligible` rewritten in place | `runs/{run_id}/artifacts/` | **stage 10's file, edited by stage 7** (`prescreen_signal.py:1582` → `:1092`) |
+| *(side effect, orchestrator not tool)* one row in `campaign_state.trial_sharpes` | campaign root | `deflate_sharpe.py`, campaign accounting |
+
+**Features / logic in place**
+
+Each step: **title — one-line summary.** Details follow.
+
+**0. A8.6 power pre-flight — the orchestrator can kill the run before the tool starts.**
+If the sample is too small to detect the effect even if it were real, the tool
+is never launched. The orchestrator writes `prescreen_result.yaml` itself with
+`route: insufficient_power_a_priori` and records the trial
+(`run_phase1_research.py:6217`, `:6232`, `:6235`). The same check runs earlier
+at the validation gate (`:2287`); if it already wrote the file, the
+orchestrator skips the tool (`:6207`). **None of this is in
+`prescreen_signal.py`** — see [F1](../engineering/roadmap/E-037/FINDINGS.md#f1).
+
+**1. Setup — load the config and protocol, and fix the block size.**
+`block_size = bars_per_day(timeframe)` comes from `tools/timeframe.py`, the
+same source the A8.6 gate uses. No fallback: an unparseable timeframe raises
+(`prescreen_signal.py:1215`).
+
+**2. Extract the forecast — replay the real strategy over the full range.**
+Per symbol, load prices from the earliest window start to the latest window
+end, merge aux feeds, and drive the actual strategy through `CandleBuilder` to
+produce a forecast per bar (`_extract_forecasts`, `:470`).
+
+**3. Gap suppression (#50 A) — drop pairs that straddle a hole in the data.**
+If two bars are not one expected step apart, the "next-bar return" is not a
+next-bar return, so the pair is discarded. Counts are surfaced per symbol,
+because a pooled figure can read "no gap effect" while one symbol's whole
+sample was destroyed (red-team D6) (`:1264`, `:1267`).
+
+**4. Degenerate-input guards — fail loud rather than flattering.**
+A symbol left with zero usable records by step 3 raises (`:1284`). If no symbol
+loaded usable data at all, the run raises rather than emitting a route from
+zero bars (`:1320`, added 2026-08-28 after run_060).
+
+**5. Compute the IC — two of them, for two different jobs (A8.3).**
+`ic_active_bars` (only bars where the signal spoke) is the primary gate.
+`ic_all_bars` is tie-dominated for a sparse signal and is reserved for the
+A2.1 escape test, which requires it.
+
+**6. Significance — is the IC bigger than luck, given how few independent observations there are?**
+Default method is **block-deflated Fisher z**: `n_eff = active_n / block_size`,
+then `z = IC * sqrt(n_eff - 3)`, labelled `block_{block_size}_fisher_z`
+(`:643`, `:1377`). The label is derived from the block size actually used — it
+read `block_24_fisher_z` until 2026-08-28 while `block_size` had already become
+per-timeframe, so a 4h run stamped `block_24` while dividing by 6.
+- **#50 (B):** a block that cannot be placed without spanning a gap does not
+  exist and does not count toward `n_eff`. Counted per symbol, because pooling
+  first would read the seam between two symbols as a contiguous step (`:1359`).
+- **A8.5.1a episode-blocked** replaces it on request (config
+  `significance_methodology: episode_blocked_a851a`) for multi-era data
+  (`:1402`). With the flag absent, behaviour is unchanged, so archived runs
+  stay reproducible.
+- **Stationary block bootstrap** replaces it automatically when the active-bar
+  forecast is *structurally* degenerate — one constant magnitude whenever
+  active, which makes `ic_active_bars` undefined by construction rather than a
+  no-edge result (`:730`, branch `:1429`, detector `:720`; found 2026-07-07 via
+  the P4_ts_trend shakedown). A merely small active sample is a power problem,
+  not a structural one, and is left to A8.5.1a.
+
+**7. Turnover proxy — infer how often this would trade.**
+Active bars per trade implies a holding period (`_compute_turnover_proxy`,
+`:813`). Redefined 2026-07-07 to count activity transitions; the previous
+sign-flip-only counter silently merged long-only episodes across flat gaps
+into a single trade.
+
+**8. Cost check (Layer 2) — could the edge out-earn the fees?**
+Estimated gross edge (`ic_for_cost` × `sigma_bar_bps` × holding period) versus
+round-trip cost from `cost_model.yaml`. Passes when `edge_to_cost_ratio >=
+safety_factor` (default 2.0) (`:897`).
+- `sigma_bar_bps` is measured from the records. If no symbol yields an
+  estimate, the placeholder `_DEFAULT_SIGMA_BAR_BPS = 15.0` is substituted and
+  `sigma_is_placeholder: true` is written into the artifact. **When that flag
+  is true, the cost check and every required-IC figure are invalid.**
+
+**9. Route decision — combine the two gates (A8.1).**
+`_determine_route` (`:982`); see the route table below. Both IC significance
+**and** `cost_check.pass` are required for `proceed_to_backtest`.
+
+**10. F5c override — "the code broke" is not "the idea failed".**
+Takes priority over every route above (`:1481`). If `active_n_bars == 0`, or
+swallowed component exceptions exceed 5% of processed bars, the route becomes
+`no_signal_artifact` rather than `kill_no_ic` — the latter claims the idea was
+tested, and here it was not. From run_044 (2026-07-04): a
+`FundingRateMeanReversionComponent` divide-by-zero produced `active_n_bars=0`,
+which read as a real `kill_no_ic` and nearly closed an untested family.
+
+**11. A2.3 — per-regime IC is deliberately not computed.**
+`ic_by_regime` is emitted as `{suspended: true}` with its reason, so the
+absence cannot be mistaken for an oversight. Only ungated IC decides.
+
+**12. Side effect — stage 7 rewrites stage 10's file.**
+`ungated_escape_eligible` in `regime_audit_decision.yaml` is resolved using
+`ic_all_bars`, because an IC measured on detector-gated bars is not admissible
+for or against the escape (A2.3 rule 5) (`:1582`, `:1092`). The code labels
+this "A9.1", which appears to be the wrong code — see [F13](../engineering/roadmap/E-037/FINDINGS.md#f13).
+
+**13. Write the artifact.** `prescreen_result.yaml` (`:1585`).
+
+**14. A6.2 trial recording — the orchestrator logs the trial after the tool returns.**
+`_record_prescreen_trial` (`run_phase1_research.py:4039`, called at `:1130`).
+Kills count as trials; `statistic_valid = "neither"` when there is no backtest
+Sharpe. Upsert on `(trial_id, "prescreen")` since 2026-08-16 (issue #28 /
+E-025), so a crash-retry replaces the stale row instead of being swallowed.
+**Not in `prescreen_signal.py`** — see [F6](../engineering/roadmap/E-037/FINDINGS.md#f6).
+
+**Routes / outcomes**
+
+| Route | Condition | Next |
+|---|---|---|
+| `no_signal_artifact` | `active_n_bars == 0`, or component-error rate > 5% — overrides everything (F5c) | verdict_interpreter; engineering failure, not evidence |
+| `insufficient_power_a_priori` | A8.6: `min_detectable_ic > plausible_ic_upper` — tool never runs | `completed_rejected`, no component built |
+| `kill_no_ic` | IC not significant at `p < 0.10` | verdict_interpreter |
+| `refine_inverted_ic` | IC significant but negative | verdict_interpreter — flip polarity |
+| `kill_cost_hurdle` | IC significant positive, cost fails, and `p > 0.05` or `ratio < 0.5` — structural barrier | verdict_interpreter |
+| `refine_cost_hurdle` | IC significant positive, cost fails, but marginally — widen threshold or lengthen holding | verdict_interpreter |
+| `proceed_to_backtest` | IC significant positive **and** `cost_check.pass` (A8.1) | stage 8 `protocol_execution` |
+
+**Notes, history and traps**
+
+- Signal layer only — no portfolio simulation, no backtest engine.
+- **Two thresholds, one documented.** `_SIG_THRESHOLD = 0.10` is the main IC
+  gate (`prescreen_signal.py:87`); a separate `p > 0.05` inside the cost
+  branch decides `kill_cost_hurdle` vs `refine_cost_hurdle`.
+- **`gap_skipped_pct` is not the cache's contamination rate.** It counts pairs
+  actually reached after warmup; gaps inside the warmup are never reached, so
+  it reads lower than `tools/cache_gap_census.py` by a config-dependent amount
+  (red-team D4/D5). For the cache rate, run the census.
+- **The gap fix is partial, knowingly.** (A) fixes the return label, (B) the
+  block count. Neither fixes rolling indicators, which still span the holes.
+  Segment-and-re-warm would, and was rejected: it destroys 91% of the
+  `kraken_SUIUSD` train sample.
+- `n_eff_nominal_blocks` is computed over the post-(A) active count, so it
+  compares like-for-like with `n_eff_placeable_blocks`, not the pre-#50 value.
+
+**Owned by which code**
+
+`tools/prescreen_signal.py:1185` (`run_prescreen`) · `:982` (`_determine_route`)
+· `:643` (`_block_adjusted_significance`) · `:730` (stationary block bootstrap)
+· `:897` (`_cost_check`) · `:1092` (`_resolve_ungated_escape`) ·
+`workflow/run_phase1_research.py:1074` (`run_tool_worker`) · `:6217` and `:2287`
+(A8.6) · `:4039` (`_record_prescreen_trial`)
 
 ---
 

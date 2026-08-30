@@ -48,9 +48,10 @@ contract, so nobody could see them.
 | [F23](#f23) | medium | phantom-values + unhandled-status | `docs/USER_GUIDE.md` §3 (`decision.yaml`) |
 | [F24](#f24) | **high** | phantom-fields (systemic) | `docs/USER_GUIDE.md` §3 — 5 entries |
 | [F25](#f25) | medium | incomplete-index | `docs/USER_GUIDE.md` §5 |
-| [F26](#f26) | **high** | code-regression (suite red on master) | `strategy-research/tools/prescreen_signal.py:1320` |
+| [F26](#f26) | **high** | code-regression | `strategy-research/tools/prescreen_signal.py:1320` |
+| [F27](#f27) | **high** | gap-in-the-gate | `.git/hooks/pre-commit` · `.github/workflows/tests.yml` |
 
-**Counts:** 9 high · 14 medium · 3 low. By type: 5 doc-vs-code, 2
+**Counts:** 10 high · 14 medium · 3 low. By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -854,7 +855,7 @@ shrink to a pointer.
 ## F26
 
 **Severity:** high · **Type:** code-regression · **Status:** open, untriaged —
-**the test suite is currently RED on `origin/master`**
+**red on any machine with the data cache; green in CI, which skips it**
 
 **Lands on:** `strategy-research/tools/prescreen_signal.py:1320`
 
@@ -863,6 +864,16 @@ shrink to a pointer.
 `tests/test_prescreen_no_signal_artifact.py::test_component_errors_route_to_no_signal_artifact`
 **fails on `origin/master`**. Verified by checking the commit out directly, not
 inferred — it is not caused by any E-037 work, all of which is documentation.
+
+> **Corrected 2026-08-31, same session.** This entry first said "the test suite
+> is currently RED on `origin/master`" without qualification. That was
+> incomplete in a way that matters: **GitHub Actions reports master green**
+> (`gh run list --branch master` → `success`). The test carries
+> `@pytest.mark.skipif(not (trading-bot/local_data/BTCUSDT_1h.csv).exists())`
+> and `local_data/` is untracked, so on a CI runner it **skips** rather than
+> passes. It fails only where the data cache exists — a developer machine. The
+> defect is real, and the green tick is not evidence against it. See
+> [F27](#f27) for why nothing catches this class.
 
 ### What broke
 
@@ -918,6 +929,57 @@ fire only when no data was *loaded*, letting the component-error case reach
 F5c. Fix the "no symbols requested" message to report the real reason.
 Whichever way it is resolved, **master should not stay red** — this is the
 first item in the triage that is failing right now rather than merely wrong.
+
+---
+
+## F27
+
+**Severity:** high · **Type:** gap-in-the-gate · **Status:** open, untriaged
+
+**Lands on:** `.git/hooks/pre-commit` (versioned at
+`strategy-research/tools/hooks/pre-commit`) · `.github/workflows/tests.yml`
+
+**Found by:** S3, 2026-08-31, while explaining why [F26](#f26) is red locally
+and green in CI
+
+**A class of test runs in neither gate.** Not "runs rarely" — neither.
+
+| Gate | Runs `trading-bot/tests/` | Runs `strategy-research/tests/` | Has `local_data/` |
+|---|---|---|---|
+| pre-commit hook | **yes** | **no** — it does `cd "$ROOT/trading-bot"` then `pytest tests/` | yes (developer machine) |
+| GitHub Actions | yes | **yes** | **no** — `local_data/` is untracked |
+
+So a `strategy-research` test guarded by
+`@pytest.mark.skipif(not <a local_data file>.exists())` is **skipped in CI** for
+want of data and **never invoked** by the commit hook. It runs only when a human
+types `pytest` in `strategy-research/` on a machine that has the cache.
+
+**Measured 2026-08-31:** 10 such guards across 4 files, out of 802 test
+functions in `strategy-research/tests/` —
+`test_prescreen_no_signal_artifact.py`, `test_a851a_prescreen_integration.py`,
+`test_near_miss_scoreboard.py`, `test_holdout_date_gate.py`.
+
+**Why these are the worst ones to lose.** They are a small share of the suite,
+but they are the tests that drive the real engine over real bars. A synthetic
+unit test cannot catch [F26](#f26): the guard that broke it fires on the
+interaction between data loading, gap suppression and the F5c override, and
+that interaction only exists with data.
+
+**Consequence, plainly.** A green tick on a PR does not mean the prescreen still
+routes correctly. F26 sat on master with CI green, and it surfaced only because
+S3 ran the full suite by hand before landing an unrelated documentation change.
+
+**Not the same as the fork's worktree note.** `CLAUDE.fork.md` records that
+worktrees run 2 fewer fast tests without the copyable cache set — that is about
+*worktrees*. This is about CI and the commit hook, where the same cause has a
+larger effect and nothing is written down.
+
+**Proposed disposition (S3 decides, not this file):** three options, cheapest
+first — (a) make the pre-commit hook run both suites, closing the local half at
+the cost of a slower commit; (b) commit a small fixture cache so these tests can
+run in CI; (c) fail the CI step if more than N tests skip, so silent erosion is
+visible. (a) and (c) are cheap and independent; (b) is the only one that makes
+CI actually cover the class, and needs a decision about committing data.
 
 ---
 
