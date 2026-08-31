@@ -142,6 +142,43 @@ characterization is read and a direction is chosen by the operator.**
 - [ ] S3 — Propose stage changes, if S1 justifies any, with an explicit
       baseline-impact statement per change. Operator chooses before any build.
 
+## Independent confirmation from E-037 (2026-08-31)
+
+E-037's audit re-measured the narrowing without knowing S1 had already found
+it. The numbers agree and extend slightly, one run later:
+
+```
+runs producing variants                    44      (S1: 43)
+variants GENERATED                        139      (S1: 138)
+variants built as a config and tested      36
+discarded without ever being tested       103   (74%)
+most configs ever built in a single run     1      (S1: exactly 1)
+```
+
+Two things this adds to S1's evidence:
+
+1. **The trial-accounting consequence.** Seven variants generated and one
+   tested costs **one** trial. The other six were selected against — a real
+   multiple comparison — and are never counted, so the deflated-Sharpe
+   denominator is too small and every promotion bar sits too low. S3 should
+   decide the accounting rule for discarded variants, not only whether to test
+   them.
+2. **Jérémy's framing, 2026-08-31**, which is the argument for S3 choosing to
+   test rather than to restate: *"to reach the objective it would mean we test
+   each and every variant. Here I understand we are not doing that."* The stage
+   exists to test a mechanism rather than one arbitrary parameterisation, and
+   the pipeline tests exactly one arbitrary parameterisation — so a kill still
+   cannot separate "the mechanism is wrong" from "this setting was wrong".
+
+**The campaign currently pays the cost of breadth and gets the evidence of a
+single test.** Either half alone is defensible; together they are not. That is
+the decision S3 has been holding.
+
+Recorded in E-037 as [E037-36](../E-037/FINDINGS.md#e037-36). A separate epic
+was drafted for this on 2026-08-31 and **deleted on discovering S1 had already
+found it** — the duplicate is itself recorded as
+[E037-43](../E-037/FINDINGS.md#e037-43).
+
 ## Relationship to other epics
 
 - **E-032** (proactive idea generation) — S1's finding that the generating

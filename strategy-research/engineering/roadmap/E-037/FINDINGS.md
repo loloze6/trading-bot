@@ -78,8 +78,9 @@ contract, so nobody could see them.
 | [E037-40](#e037-40) | medium | missing-handoff-input | `handoffs/validation_to_backtest_specification.yaml` |
 | [E037-41](#e037-41) | medium | gate-ordering | `run_phase1_research.py::_route_holdout_evaluation` |
 | [E037-42](#e037-42) | **high** | built-but-never-switched-on (class) | `trading-bot/core/*` · `config/campaign_config.yaml` |
+| [E037-43](#e037-43) | medium | audit-did-not-check-prior-art | E-037's own method |
 
-**Counts:** 19 high · 18 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
+**Counts:** 19 high · 19 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -1743,6 +1744,57 @@ code. Every off-by-default flag needs a named owner and a switch-on criterion
 recorded when it is created — "on once X is true" — otherwise it is not a safe
 default, it is an abandoned feature with a test suite. Then decide each of the
 eight on its merits.
+
+---
+
+## E037-43
+
+**Severity:** medium · **Type:** audit-did-not-check-prior-art · **Status:** open, untriaged
+
+**Lands on:** E-037's own method
+
+**Found by:** drafting epics from the findings, 2026-08-31 — the roadmap was
+read for the first time at that point, after 43 findings had been recorded
+
+**E-037 rediscovered things another epic had already found, and nearly filed
+two duplicate epics.**
+
+| Drafted | Already owned by | Prior art |
+|---|---|---|
+| "Test what you generate" | **E-033 S3** (`in-progress`) | S1, 2026-08-26: *"138 variants… Exactly 1 configuration is ever backtested."* |
+| "Cost funding at the run's own interval" | **E-014** (`planned`) | Done-when 3: *"`perp.funding.modeled` is currently `false`; a funding-costed re-run does not yet exist and is in scope here."* |
+
+Both were deleted before landing and their measurements folded into the
+existing epics instead.
+
+**It goes further than the two epics.** E-033's S1 writeup, dated 2026-08-26,
+also already recorded:
+
+- that §3's *"all artifacts are schema-validated"* claim is false — which
+  E-037 rediscovered independently as [E037-34](#e037-34), and flagged as
+  living in three places;
+- that §2.2's "3–6 variants" objective needs the `REPLICATION_DIAGNOSTIC`
+  exception noted — which E-037 rediscovered while writing stage 3's block;
+- that `docs/USER_GUIDE.md` is the correct canonical home, *"with two
+  corrections flagged for whoever next edits it"*.
+
+**E-037 was that editor, and never read the note.**
+
+**The cause is a gap in E-037's own method.** Its scans were exhaustive against
+*code and artifacts* and never once looked at `engineering/roadmap/`. Eight
+mechanical passes over the pipeline, and the file that says "here is what we
+already know is wrong with the guide" was not among the inputs.
+
+**Why it is worth recording rather than quietly fixing.** The whole epic is
+about a system where the same fact lives in several places and drifts. This is
+that failure committed by the audit itself: two efforts measuring the same
+narrowing a week apart, neither aware of the other, and only caught because
+epic-drafting finally required reading the index.
+
+**Proposed disposition (S3 decides, not this file):** a first step for any
+audit or epic — read `EPICS.md` and grep the roadmap for the topic before
+recording a finding as new. Cheap, and it would have saved two epics and
+several rediscoveries here.
 
 ---
 
