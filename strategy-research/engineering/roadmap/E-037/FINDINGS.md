@@ -68,8 +68,11 @@ contract, so nobody could see them.
 | [E037-30](#e037-30) | low | orphan-glossary-terms | `docs/USER_GUIDE.md` §6 |
 | [E037-31](#e037-31) | **high** | undocumented-terminal-states | `docs/USER_GUIDE.md` §3 (`pipeline_state.yaml`) |
 | [E037-32](#e037-32) | **high** | routing-tables-vs-code | `docs/USER_GUIDE.md` §2.3 |
+| [E037-33](#e037-33) | medium | false-claim + incomplete-index | `docs/USER_GUIDE.md` §5 |
+| [E037-34](#e037-34) | **high** | false-claim + unactioned-scope | `docs/USER_GUIDE.md` §1 |
+| [E037-35](#e037-35) | **high** | missing-fixture | `docs/USER_GUIDE.md` §7 · `tools/run_protocol.py` |
 
-**Counts:** 13 high · 14 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
+**Counts:** 15 high · 15 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -1286,6 +1289,158 @@ document after the stage blocks themselves.
 place with the old text preserved as ⚠️ annotations. Worth deciding whether the
 `no_signal_artifact` omission across two sections means E037-02 should be
 reopened as a class rather than an instance.
+
+---
+
+## E037-33
+
+**Severity:** medium · **Type:** false-claim + incomplete-index · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §5
+
+**Found by:** second mechanical review, 2026-08-31 — checking §5's *original*
+entries, which E-037 had only appended to, never verified
+
+**1. "The only fully deterministic tool (no LLM)" is false**, and contradicts
+this guide's own §2.2. `tools/run_protocol.py` is not the only one: measured,
+`prescreen_signal.py`, `power_check.py`, `validate_regime_detector.py`,
+`deflate_sharpe.py` and `episode_significance.py` each contain **zero** LLM
+imports. §2.2's stage 7 block already describes the prescreen as *"Python tool
+… No LLM call, no token cost"*, so the document asserted both things at once.
+
+The claim matters because determinism is what makes a result reproducible.
+Telling an operator only one tool is deterministic implies the others might not
+be — the opposite of the truth, and it undersells the parts of the pipeline that
+are most trustworthy.
+
+**2. The `protocols/` table lists 4 of 13 files.** The nine missing include
+**`baseline_v2.json`**, which is the protocol behind `keltner_163` — the
+standing known-answer fixture §7 names as the basis of the entire metrics
+acceptance protocol. The guide referenced it in prose and omitted it from the
+index of the very directory it lives in. Also missing:
+`funding_mr_4h_retest_v1.json`, the protocol run_060 actually executed.
+
+Same shape as [E037-25](#e037-25) (§5 documenting 3 of 22 tools) and
+[E037-19](#e037-19) (§3 missing six artifacts): an index written once and never
+grown.
+
+**Verified and correct, recorded so the negative is on the record:**
+`baseline_v1.json`'s description — *"BTCUSDT + ETHUSDT, 1h, 11 monthly windows
+(2024-01 to 2024-11)"* — was checked against the file and is exactly right.
+
+**Proposed disposition (S3 decides, not this file):** both corrected in place.
+The determinism claim is a one-line fix; the protocols table now lists all 13.
+
+---
+
+## E037-34
+
+**Severity:** high · **Type:** false-claim + unactioned-scope · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §1
+
+**Found by:** second mechanical review, 2026-08-31 — §1 is 14 lines and no stage
+of this epic had opened it
+
+**1. The schema falsehood, third instance — in the opening statement of
+principles.** §1's first principle read *"every stage communicates via
+**validated** YAML files"*. Nothing validates them; no schema under
+`workflow_artifacts/schemas/` is loaded by any code.
+
+This is the **third** place the same false claim lived:
+
+| Where | Status |
+|---|---|
+| §3's preamble | corrected 2026-08-27, before this epic |
+| `strategy-research/CLAUDE.md` | corrected by this epic, [E037-09](#e037-09) |
+| **§1, the guide's opening principles** | **still there until today** |
+
+The 2026-08-27 correction fixed the instance someone happened to be reading and
+never swept for others. Two more survived, one of them in the first fifteen
+lines of the document. **This is the strongest single argument for the
+enforcement ledger in §8**: a claim about enforcement, repeated in three places,
+wrong in all three, and caught only when someone finally checked whether the
+enforcement existed.
+
+**2. Both of the EPIC's §1 instructions were never actioned.** The epic's seed
+list is explicit:
+
+> - Falsification-first is stated as *the* philosophy. It is **a feature, not
+>   the key alpha.** Demote it.
+> - **Missing principle to add:** *understand the observation — do not run tries
+>   without knowing what happened in the previous run and why.* … Its absence is
+>   visible in the results: 35 runs before anyone asked why the kills kept
+>   recurring.
+
+S1 designed templates, S2 filled stages and artifacts, S4 restructured §2.1 and
+§2.2. **§1 fell outside every stage's mandate** — the same gap that left §2.3
+unverified ([E037-32](#e037-32)). Two sections, both between mandates, both
+holding defects.
+
+**Now corrected:** four principles, "understand the observation" first with the
+35-run evidence, falsification-first demoted to a feature of the validation gate
+with a note that it was called the philosophy until today.
+
+**Proposed disposition (S3 decides, not this file):** the sweep is the real
+action. If a claim about enforcement was wrong in three places, the others in
+§8's ledger deserve the same treatment — grep for every enforcement verb in the
+guide, not just the ones someone noticed.
+
+---
+
+## E037-35
+
+**Severity:** high · **Type:** missing-fixture · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §7 · `strategy-research/tools/run_protocol.py`
+
+**Found by:** second mechanical review, 2026-08-31 — sweeping every enforcement
+claim in the guide, as [E037-34](#e037-34) recommended
+
+**The standing known-answer fixture does not exist.** §7 opens the Acceptance
+Culture section with:
+
+> *"All quantitative tools are validated against a named fixture whose correct
+> output is known in advance. The standing fixture is `keltner_163` … A tool
+> that cannot reproduce this is not calibrated."*
+
+Measured:
+
+| Check | Result |
+|---|---|
+| A `keltner_163` fixture file anywhere | **none** — no `*keltner*` file in the repo |
+| Tests referencing `keltner_163` | **0** |
+| `trades.json` with 150–175 trades | **0 of 955** (909 in `runs/`, 46 in `archive/`) |
+| The path `run_protocol.py` names for it | `results/protocols/20260702T091324Z_18fad381/` — **does not exist** |
+| `results/protocols/` | **empty**, and not gitignored |
+
+`keltner_163` appears in 13 files, all of them prose or comments — the
+knowledge base, the amendments, this guide, and two docstrings in
+`prescreen_signal.py` and `run_protocol.py`. Nothing loads it.
+
+**Why this is high.** §7 is where the guide states how quality is assured, and
+its first protocol is the one governing **every quantitative tool** — the
+metrics, the prescreen, the deflated Sharpe. A3.5 designates the fixture
+"permanent". A9.1 makes "the prescreen must reject the Keltner config" an
+acceptance criterion. Both rest on an artifact that is not here.
+
+The consequence is not that the tools are wrong — it is that **the stated way of
+knowing they are right cannot be run.** Every downstream claim of the form "this
+tool is calibrated" currently has nothing behind it.
+
+**Stated fairly:** `results/` holds run outputs and may simply never have been
+committed, in which case the fixture existed on one machine and was lost rather
+than deleted. That distinction matters for how to fix it, not for whether it is
+broken now. Either way, no one reading this guide can execute the protocol it
+describes.
+
+**It is also a dangling reference in production code**, not only in docs:
+`run_protocol.py` instructs a reader to run against a path that is not there.
+
+**Proposed disposition (S3 decides, not this file):** decide whether to
+regenerate the fixture from `baseline_v2` and commit it, or retire A3.5/A9.1's
+"permanent fixture" language. If regenerated, it needs a test — the reason this
+went unnoticed is that nothing ever asserted on it.
 
 ---
 
