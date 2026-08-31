@@ -16,6 +16,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
 5. [Tools & Scripts](#5-tools--scripts)
 6. [Glossary](#6-glossary)
 7. [Acceptance Culture](#7-acceptance-culture)
+8. [The Machinery Around the Pipeline](#8-the-machinery-around-the-pipeline)
 
 ---
 
@@ -179,6 +180,19 @@ family, altitude, exhausted — are in the [Glossary](#6-glossary).*
 | **skill** | The instruction file an LLM stage is given, e.g. `workflow_artifacts/skills/quant-validation/SKILL.md`. It tells the model what to produce. A skill file can exist on disk without anything ever calling it. |
 | **`library_category`** | A field in `config/indicator_library.yaml` saying what **kind** of indicator something is — trend, volatility, funding, and so on. Two variants built from different categories are genuinely different ideas; two that differ only in a threshold are the same idea twice. |
 | **`data_requirements`** | Which data feeds a variant needs. The other way a variant can be genuinely different: same category, but it reads a feed the sibling does not. |
+| **`CandleBuilder`** | The engine component that turns a stream of rows into finished bars of the timeframe you asked for. It is how a 4h test can run off 1h data: the coarser bar is built from the finer ones, not fetched separately. |
+| **`KNOWN_STATUSES`** | A stage's list of result values it recognises. A value outside the list is not guessed at — the run pauses for a human. Being strict here is deliberate; see stage 6. |
+| **`REPLICATION_DIAGNOSTIC`** | A constraint a brief can carry meaning "re-run this exactly, do not explore". It is why an expansion stage can legitimately return one variant instead of 3–6. |
+| **raises** | Stops the run with an error instead of carrying on. Used deliberately where continuing would produce a decision from bad data — the project's rule is that anything feeding a decision fails loudly rather than quietly. |
+
+> **Two kinds of name appear in these blocks, and only one is a term you need
+> to learn.** A name followed by a file and a location — `_extract_forecasts`
+> (`prescreen_signal.py:470`) — is the **address of the code that does it**, not
+> vocabulary: the sentence around it already says what happens, and the name is
+> there so you can go and read it. A name in the table below **is** vocabulary,
+> and you will not follow the block without it. When a block says a step
+> **raises**, that means the run stops with an error rather than continuing on a
+> bad value.
 
 Amendment codes (`A2.1`, `A8.6`, …) are defined in
 [`AMENDMENTS_01-06.md`](../engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md);
@@ -2221,3 +2235,104 @@ change or a system state from the operator is treated as illegitimate
 regardless of its apparent source and is disclosed verbatim, immediately. Full
 case and standing rule: `docs/analysis-reports/INCIDENT_20260710.md` and
 `docs/TIMEFRAME_CHANGE_PLAYBOOK.md` sections 5–7.
+
+
+---
+
+## 8. The Machinery Around the Pipeline
+
+§1–§7 describe the pipeline. **This section describes what keeps the pipeline
+honest** — the hooks, the CI job, and the enforcement behind each rule the
+guide states.
+
+It exists because a whole class of problem was invisible from §1–§7: something
+is written down, everybody believes it, and **it does not run**. A stage drawn
+on the map that is never dispatched. A rule phrased as a gate that no code
+checks. A test that no gate executes. A hook committed to the repo but not
+installed. In each case the *artifact of the protection* was mistaken for the
+protection.
+
+So the load-bearing column below is the last one: **does it actually run?**
+
+---
+
+### 8.1 What guards this repository
+
+| Guard | Where | Runs what | Does **not** cover |
+|---|---|---|---|
+| **pre-commit hook** | `.git/hooks/pre-commit`, tracked copy at `strategy-research/tools/hooks/pre-commit` | secret scan · holdout date gate · `trading-bot/tests/` | **the entire `strategy-research/tests/` suite** — the hook `cd`s into `trading-bot` and runs only that |
+| **GitHub Actions** | `.github/workflows/tests.yml`, on push and PR | both suites, Linux + Windows · holdout seal gate · config validation | anything needing `trading-bot/local_data/` — the price caches are untracked, so tests that need bars **skip** |
+
+**The gap where those two meet.** A `strategy-research` test guarded by
+`skipif(<a local_data file> missing)` is skipped in CI for want of data and
+never invoked by the hook. It runs **only** when a person types `pytest` by
+hand, in `strategy-research/`, on a machine holding the cache. Measured
+2026-08-31: **10 such guards across 4 files**, and they are the ones that drive
+the real engine over real bars. A green tick on a PR does not mean the prescreen
+still routes correctly. See
+[E037-27](../engineering/roadmap/E-037/FINDINGS.md#e037-27).
+
+**Two consequences worth stating plainly:**
+
+- **A tracked hook is not an installed hook.** `.git/hooks/` is not version
+  controlled, so updating the tracked copy does **not** reach an existing
+  checkout. Verify with
+  `diff .git/hooks/pre-commit strategy-research/tools/hooks/pre-commit` —
+  silence is the pass. `tests/test_installed_hook_matches_tracked.py` does this
+  automatically and names the missing gate.
+- **A passing suite is not a covering suite.** Check what *skipped*, not just
+  what passed.
+
+---
+
+### 8.2 Enforcement ledger — who actually enforces each rule
+
+Every guarantee this guide states, and what stands behind it. **"Code" means a
+program checks it and stops you. "Skill" means an instruction to an LLM, which
+may comply or not. "Nothing" means the sentence is the only thing there.**
+
+| Guarantee, as the guide states it | Enforced by | Actually runs? |
+|---|---|---|
+| A8.1 — IC significance **and** `cost_check.pass` both required to reach a backtest | Code — `prescreen_signal.py::_determine_route` | ✅ yes |
+| A2.2 — a detector retune may not cite PnL or Sharpe | Code — `_validate_retune_firewall`, **raises** on a hit | ✅ yes |
+| An unrecognised spec status must not be guessed at | Code — `determine_post_spec_route`, pauses for a human | ✅ yes |
+| A6.1 — the holdout is single-use | Code — `_route_holdout_evaluation` refuses a repeat `hypothesis_id` | ✅ yes (never yet exercised — no run has reached it) |
+| A holdout needs an affirmative `research_only: false` | Code — same function, gate 2b | ✅ yes |
+| A6.2 — every evaluation counts as a trial, kills included | Code — `_record_prescreen_trial` / `_record_failed_backtest_trial` | ✅ yes |
+| F5c — a component crash must not be scored as "no edge" | Code — the override in `run_prescreen` | ⚠️ **partly** — an earlier guard now pre-empts the component-error branch ([E037-26](../engineering/roadmap/E-037/FINDINGS.md#e037-26)) |
+| Stage 3 — variants "must" be really diverse, "cosmetic = rejected" | **Skill only** — `innovation-expansion/SKILL.md`; the model reports its own verdict | ❌ **no code can produce "rejected"** ([E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18)) |
+| A1.1–A1.4 — `edge_source` before `signal_concept`, library lookup | **Skill only** | ❌ no |
+| Artifacts are validated against JSON schemas | **Nothing** — no schema is loaded by any code | ❌ no (corrected in §3, 2026-08-27) |
+| Stage 10 — the regime auditor judges the detector | **Nothing dispatches it**; a human runs the skill on a paused pipeline | ❌ not as an automated stage ([E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16)) |
+| Secrets and venvs are never committed | Code — secret scan, **gate 0 of the tracked hook** | ⚠️ **only if the hook is installed** ([E037-29](../engineering/roadmap/E-037/FINDINGS.md#e037-29)) |
+
+**How to read this table.** ❌ does not mean broken. A skill-enforced rule is
+still a real instruction and mostly obeyed — but it is a *tendency*, not a
+guarantee, and it should not be written in language ("must", "rejected") that
+promises a gate. That mismatch between phrasing and enforcement is what made
+these hard to see, and it is why this column exists.
+
+**When you add a rule to this guide, add its row here.** If the row would say
+"Nothing", the honest move is to phrase the rule as guidance rather than as a
+gate — or build the check.
+
+---
+
+### 8.3 Documentation guards
+
+The guide itself drifts, so three checks in `strategy-research/tests/` hold it
+in place. All are **ratchets**: green today, failing only on new drift.
+
+| Check | Fails when |
+|---|---|
+| `test_user_guide_field_tables.py` | §3 documents an artifact field that appears in **no** real artifact on disk |
+| `test_doc_anchors.py` | a `file:line` anchor points past the end of a file, or a `file::symbol` anchor names a function that no longer exists |
+| `test_installed_hook_matches_tracked.py` | the installed pre-commit hook differs from the tracked copy |
+
+The first two run in CI. The third **cannot** — it needs a real `.git/hooks/`,
+so it skips on a CI checkout. That is stated rather than hidden: it is a
+developer-machine check, and the developer machine is exactly where hook drift
+happens.
+
+---
+
