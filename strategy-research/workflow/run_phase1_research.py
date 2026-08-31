@@ -56,6 +56,20 @@ from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBl
 from google import genai
 from google.genai import types
 
+# CUL-11: opt-in workflow-artifact schema validation (warn-by-default, exception-proof).
+# Reuses the shared tools/ helper so save_yaml/load_yaml validate against
+# workflow_artifacts/schemas/{stem}.schema.json when one exists.
+_tools_dir = str(Path(__file__).resolve().parent.parent / "tools")
+if _tools_dir not in sys.path:
+    sys.path.insert(0, _tools_dir)
+try:
+    from workflow_artifact_validation import validate_workflow_artifact
+except Exception:  # helper unimportable -> validation is a no-op, never break the pipeline
+
+    def validate_workflow_artifact(path, data):  # type: ignore[misc]
+        return
+
+
 ROOT = Path(".")
 CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
 
@@ -406,13 +420,16 @@ def load_yaml(path: Path):
     # First pass: standard parse (handles well-formed YAML)
     try:
         docs = list(yaml.safe_load_all(content))
-        return docs[0] if docs else None
     except yaml.YAMLError:
-        pass
-    # Second pass: iterative repair (handles LLM colon/multi-doc errors)
-    repaired = _repair_yaml(content, source=Path(path).name)
-    docs = list(yaml.safe_load_all(repaired))
-    return docs[0] if docs else None
+        # Second pass: iterative repair (handles LLM colon/multi-doc errors)
+        repaired = _repair_yaml(content, source=Path(path).name)
+        docs = list(yaml.safe_load_all(repaired))
+    result = docs[0] if docs else None
+    # CUL-11: opt-in read-side schema check — catches drift in LLM-authored artifacts
+    # (which have no Python writer) when the orchestrator reads them back.
+    if result is not None:
+        validate_workflow_artifact(path, result)
+    return result
 
 def save_yaml(path: Path, data):
     """
@@ -424,6 +441,9 @@ def save_yaml(path: Path, data):
     readers always see either the old complete content or the new complete
     content, never a partial one.
     """
+    # CUL-11: opt-in write-side schema check. Warn-by-default (no-op if no schema for
+    # path.stem); under WORKFLOW_ARTIFACT_VALIDATION=raise a violation blocks the write.
+    validate_workflow_artifact(path, data)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
     try:

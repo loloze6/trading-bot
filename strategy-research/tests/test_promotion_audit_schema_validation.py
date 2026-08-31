@@ -12,9 +12,12 @@ import json
 import sys
 from pathlib import Path
 
-import jsonschema
 import pytest
 import yaml
+
+# jsonschema is an undeclared transitive (via mcp); skip cleanly in a leaned-out env
+# rather than failing collection (D1 pending with Dorian).
+jsonschema = pytest.importorskip("jsonschema")
 
 TOOLS_PATH = Path(__file__).parent.parent / "tools"
 WORKFLOW_PATH = Path(__file__).parent.parent / "workflow"
