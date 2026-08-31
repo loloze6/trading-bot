@@ -55,6 +55,7 @@ Run:
 
 import argparse
 import datetime
+import os
 import sys
 from pathlib import Path
 
@@ -231,7 +232,8 @@ def to_binance_schema(raw: pd.DataFrame,
     return out[BINANCE_COLUMNS]
 
 
-def verify_utc_roundtrip(raw: pd.DataFrame, converted: pd.DataFrame) -> None:
+def verify_utc_roundtrip(raw: pd.DataFrame, converted: pd.DataFrame,
+                         dest: Path | None = None) -> None:
     """
     Concrete UTC check (standing timezone lesson, commit 2529f5b): the
     fetch/cache layer does NOT inherit CandleBuilder._align()'s UTC guard, so
@@ -239,6 +241,13 @@ def verify_utc_roundtrip(raw: pd.DataFrame, converted: pd.DataFrame) -> None:
     we verify that each of the first AND last raw unix epochs maps to the
     stdlib UTC wall-clock and survives unchanged in the converted frame.
     Raises IngestUTCError on any mismatch (STOP condition — no silent shift).
+
+    `dest` (optional, keyword — backward compatible with any other caller) names
+    the REAL destination file in the error, mirroring the sibling
+    verify_boundary_values(..., dest). Under the write-to-temp ingest design the
+    post-write verification reads from a staged temp file, but the temp name is
+    an implementation detail no operator should have to recognise — the path
+    worth naming is where the file would have landed.
     """
     for pos in (0, -1):
         unix_s = int(raw["unix_s"].iloc[pos])
@@ -249,8 +258,9 @@ def verify_utc_roundtrip(raw: pd.DataFrame, converted: pd.DataFrame) -> None:
             unix_s, datetime.timezone.utc).replace(tzinfo=None)
         got = pd.Timestamp(converted["timestamp"].iloc[pos]).to_pydatetime()
         if got != expected:
+            where = f" in {dest}" if dest is not None else ""
             raise IngestUTCError(
-                f"UTC round-trip FAILED at row {pos}: unix {unix_s} -> "
+                f"UTC round-trip FAILED at row {pos}{where}: unix {unix_s} -> "
                 f"expected {expected} (UTC) but got {got}. Data is not UTC "
                 f"as assumed — halting; timestamps were NOT shifted."
             )
@@ -353,7 +363,7 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
 
     raw = load_kraken_ohlcv(src)
     converted = to_binance_schema(raw, resolution)
-    verify_utc_roundtrip(raw, converted)  # STOP-on-fail
+    verify_utc_roundtrip(raw, converted, src)  # STOP-on-fail (pre-write: no dest yet)
 
     # Seal guard. Checked HERE — after conversion, before the fetcher is even
     # constructed — so a violating tranche cannot touch the store at all.
@@ -417,27 +427,48 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
     # (drop_duplicates keeps the first occurrence): a re-ingest must be able to
     # correct a bad cached row, not be a no-op for every timestamp it already
     # has. `existing` is an empty frame on a fresh slot; pd.concat handles it.
+    # Write-to-temp + verify + atomic rename. `dest` is NEVER touched until the
+    # merged content passes BOTH post-write verifications, so a failing merge
+    # cannot destroy the pre-existing cache: a top-up over the master_q4 slot
+    # replaces years of rows in place, and _merge_and_store's `to_csv` keeps no
+    # copy of what it overwrote — there is nothing to restore after the fact.
+    # save=False runs the same unconditional continuity guard
+    # (_assert_no_new_gap, ahead of the `if save:` branch) and populates
+    # data_cache, but skips the write; we stage the union to a sibling temp file
+    # (same directory -> same filesystem, so os.replace is atomic), verify THAT,
+    # and swap it in only on success.
     fetcher._merge_and_store(store_symbol, [converted, existing],
-                             save=True, existing=existing)
+                             save=False, existing=existing)
 
-    # Reload-from-disk round trip, then re-assert UTC survived the write.
-    reloaded = pd.read_csv(dest)
-    reloaded["timestamp"] = pd.to_datetime(reloaded["timestamp"])
-
-    # Scoped to the ARCHIVE's own span, not the whole file. verify_utc_roundtrip
-    # compares `raw`'s FIRST and LAST rows against its second argument's, and the
-    # merge above is a real union, so the file's bounds are the CACHE's whenever
-    # the cache is wider — comparing wholesale raises a spurious IngestUTCError
-    # on every top-up of an existing slot.
-    # .min()/.max() so the mask and the fetcher's own window (built above from
-    # the same two values) are derived identically.
-    archive_span = reloaded.loc[
-        (reloaded["timestamp"] >= converted["timestamp"].min()) &
-        (reloaded["timestamp"] <= converted["timestamp"].max())
-    ]
-    verify_utc_roundtrip(raw, archive_span)
-    # Timestamps alone go blind once a cache brackets the archive's span.
-    verify_boundary_values(converted, archive_span, dest)
+    tmp = dest.with_name(dest.name + f".tmp{os.getpid()}")
+    try:
+        # Inside the try so a to_csv failure mid-write (disk full, permissions)
+        # also unlinks the partial temp — dest is untouched either way, this is
+        # cleanup robustness only.
+        fetcher.data_cache[store_symbol].to_csv(tmp, index=False)
+        # Reload-from-disk round trip (from tmp, not dest), then re-assert UTC
+        # survived the write. Scoped to the ARCHIVE's own span, not the whole
+        # file: verify_utc_roundtrip compares `raw`'s FIRST and LAST rows against
+        # its second argument's, and the merge is a real union, so the file's
+        # bounds are the CACHE's whenever the cache is wider — comparing
+        # wholesale raises a spurious IngestUTCError on every top-up. .min()/.max()
+        # so the mask and the fetcher's own window are derived identically.
+        reloaded = pd.read_csv(tmp)
+        reloaded["timestamp"] = pd.to_datetime(reloaded["timestamp"])
+        archive_span = reloaded.loc[
+            (reloaded["timestamp"] >= converted["timestamp"].min()) &
+            (reloaded["timestamp"] <= converted["timestamp"].max())
+        ]
+        # dest (not tmp) named in any error — the operator-facing path.
+        verify_utc_roundtrip(raw, archive_span, dest)
+        # Timestamps alone go blind once a cache brackets the archive's span.
+        verify_boundary_values(converted, archive_span, dest)
+    except Exception:
+        # dest was never written; drop only the staged temp and re-raise. The
+        # pre-existing cache is provably byte-identical to its pre-ingest state.
+        tmp.unlink(missing_ok=True)
+        raise
+    os.replace(tmp, dest)
 
     # rows/first/last/gaps describe the WHOLE merged cache on disk, not the
     # tranche this call ingested. That is what the coverage table and the
@@ -510,6 +541,21 @@ def main() -> None:
 
     done, skipped, failures = run_all(BREADTH_ASSETS, archive_dir, data_dir,
                                       resolution)
+
+    # A resolution that matches NO source file for ANY asset skips everything
+    # and, with no failures, would otherwise exit 0 having ingested nothing — a
+    # silent success a CI/CLI caller checking only the exit code cannot see.
+    # "Nothing ingested, nothing failed" means every asset was skipped, which is
+    # a hard failure distinct from the legitimate per-asset [SKIP] (e.g. HYPE
+    # absent while the rest ingest). Fail loudly, naming the likely cause.
+    if not done and not failures:
+        print(
+            f"[FATAL] Nothing ingested: all {len(BREADTH_ASSETS)} assets were "
+            f"skipped for resolution {resolution}m — no *_{resolution}.csv source "
+            f"files under {archive_dir}. Likely a --resolution typo.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     # Coverage table
     print(f"\n{'asset':6}{'cache_key':22}{'rows':>8}  {'first':16} {'last':16}"
