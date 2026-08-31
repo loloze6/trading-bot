@@ -5244,6 +5244,10 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     # --- Deflated Sharpe computation ---
     dsr_result: dict = {}
     passes_deflated = None
+    # promotion_threshold_raw is E_max_SR (raw Sharpe space); None outside the
+    # happy path, matching deflate_sharpe.compute_promotion_audit exactly. The
+    # Sharpe branch below reassigns this to the computed e_max_sr.
+    e_max_sr = None
 
     if is_sparse:
         # Sparse path: expectancy t-stat
@@ -5367,7 +5371,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
         "n_trials_used":              n_trials,
         "is_sparse_trading":          is_sparse,
         "passes_deflated_threshold":  passes_deflated,
-        "promotion_threshold_raw":    0.0,
+        "promotion_threshold_raw":    e_max_sr,
         "promotion_threshold_deflated": DSR_THRESHOLD,
         "excluded_trial_counts":      excluded,
         **dsr_result,

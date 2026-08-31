@@ -564,7 +564,7 @@ def compute_promotion_audit(
 
     passes = bool(dsr_value is not None and dsr_value > 0.95)
 
-    return {
+    audit = {
         "hypothesis_id":             hypothesis_id,
         "raw_median_sharpe":         raw_median_sharpe,
         "total_hypotheses_tested":   total_hypotheses_tested,
@@ -581,6 +581,15 @@ def compute_promotion_audit(
         "expectancy_promotion":      None,
         "generated_at":              datetime.now(timezone.utc).isoformat(),
     }
+    # dsr_error parity with run_phase1_research._write_promotion_audit: when
+    # compute_dsr could not compute the DSR (insufficient trials, too few real
+    # Sharpe values, or zero variance) it returns a diagnostic under "error".
+    # The pipeline path exposes that text as "dsr_error"; mirror it here so the
+    # two lockstep audits carry the same field. Present only when non-None,
+    # matching the pipeline (absent on the happy path).
+    if dsr_result.get("error") is not None:
+        audit["dsr_error"] = dsr_result["error"]
+    return audit
 
 
 # ---------------------------------------------------------------------------
