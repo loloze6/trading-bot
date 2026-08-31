@@ -10,6 +10,7 @@ an LLM-authored artifact stem via run_phase1_research.load_yaml.
 """
 
 import json
+import logging
 import sys
 from pathlib import Path
 
@@ -240,3 +241,40 @@ def test_protocol_result_invalid_summary_caught_via_ref(monkeypatch):
     bad = dict(_VALID_PROTOCOL_RESULT, trade_diagnostics_summary={"win_rate_net": "not a number"})
     with pytest.raises(jsonschema.ValidationError):
         wav.validate_workflow_artifact(Path("protocol_result.yaml"), bad)
+
+
+# ---------------------------------------------------------------------------
+# CUL-164: the 0-byte robustness_report.schema.json + template stubs were removed.
+# robustness_analysis (workflow stage 9) is aspirational — no producer skill, no template,
+# no instance anywhere (incl. runs/), and the schema was 0 bytes since origin. An empty
+# schema for a stem is strictly WORSE than absence: as the target stem it hits json.loads
+# and, under the raise flag, PROPAGATES JSONDecodeError (blocking the write). Removal
+# restores the helper's intended opt-in-by-existence no-op. These two pin that.
+# ---------------------------------------------------------------------------
+
+
+def test_robustness_report_stem_is_clean_noop_after_stub_removal(monkeypatch, caplog):
+    """With no schema on disk for the stem (stub removed), a robustness_report-shaped write
+    is a clean opt-in no-op through the REAL helper — even in raise mode (schema absent ->
+    skip) — and nothing is logged for the stem. RED before removal: the 0-byte file made
+    this raise JSONDecodeError under the flag and log a per-write warning in warn mode."""
+    _raise_mode(monkeypatch)  # real _SCHEMAS_DIR, no monkeypatch of it
+    with caplog.at_level(logging.WARNING):
+        wav.validate_workflow_artifact(
+            Path("robustness_report.yaml"),
+            {"robustness_summary": "anything", "score": 1},
+        )
+    assert not any("robustness_report" in r.getMessage() for r in caplog.records)
+
+
+def test_empty_schema_reproduces_raise_mode_landmine(monkeypatch, tmp_path):
+    """Mutation/pin for WHY removal was right, scratch-file based so it survives the on-disk
+    removal: a 0-byte schema for the stem PROPAGATES JSONDecodeError under the raise flag
+    (blocking the write) and is merely swallowed in warn mode. Absence (test above) is a
+    clean skip; the empty stub is a landmine."""
+    _install_schema(monkeypatch, tmp_path, "robustness_report", "")  # 0-byte stub
+    _raise_mode(monkeypatch)
+    with pytest.raises(json.JSONDecodeError):
+        wav.validate_workflow_artifact(Path("robustness_report.yaml"), {"x": 1})
+    _warn_mode(monkeypatch)
+    wav.validate_workflow_artifact(Path("robustness_report.yaml"), {"x": 1})  # swallowed
