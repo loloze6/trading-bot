@@ -535,7 +535,7 @@ guarantee with no enforcement, which makes it a class, not an incident.
 
 §3 presents itself as the catalogue of pipeline artifacts — *"Artifacts are
 YAML files produced and consumed by pipeline stages. They are the only
-communication channel between stages."* **Five real ones have no entry.**
+communication channel between stages."* **Six real ones have no entry.**
 Counts are files on disk under `runs/`, measured 2026-08-30:
 
 | Artifact | On disk | Why it matters |
@@ -545,6 +545,7 @@ Counts are files on disk under `runs/`, measured 2026-08-30:
 | `run_context.yaml` | 14 | Per-run protocol binding; holds the bare-filename `protocol` key the prescreen conformance gate compares against (`run_phase1_research.py:3013`). |
 | `human_resolution.yaml` | 4 | Required to resume a pipeline paused at `paused_for_human` — the state the `regime_misattribution` path leaves it in (see [E037-16](#e037-16)). Without it, a paused campaign cannot restart, and nothing in the guide names it. |
 | `config/venue_tradability.yaml` | config | Single source of truth for the holdout tradability gate (`run_campaign.py:196`). §3's "Config files" addendum lists eight config files and not this one. |
+| `research_decision.yaml` | 2 | **Added to this finding 2026-08-31.** The campaign's closing statement on a hypothesis — decision, rationale, findings archive, and the `mechanism_trajectory` line that stops a dead mechanism being re-proposed. Present in run_059 and run_060, the two most recent runs, and referenced by §2.3's routing table and the campaign-review skill, but with no §3 entry until now. |
 
 The pattern is that **the artifacts added most recently are the ones missing**
 — the C7/K2 kernel (2026-07-13), the E-015 venue gate, the human-pause path.

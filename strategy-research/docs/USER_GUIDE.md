@@ -68,6 +68,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
   - [`run_context.yaml`](#run_contextyaml)
   - [`human_resolution.yaml`](#human_resolutionyaml)
   - [`config/venue_tradability.yaml` *(config)*](#configvenue_tradabilityyaml-config)
+  - [`research_decision.yaml`](#research_decisionyaml)
   - [Config files (section 3 addendum)](#config-files-section-3-addendum)
 - [4. Skills](#4-skills)
   - [`hypothesis-design`](#hypothesis-design)
@@ -106,13 +107,13 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
 
 This is an **automated strategy research factory**. Its goal is to take a high-level research question ("can volume-confirmed momentum work on BTC?") and systematically generate, validate, backtest, interpret, and decide on trading strategy hypotheses — with minimal human intervention.
 
-The system follows a strict **falsification-first** philosophy: a hypothesis must be formally pressure-tested for failure modes *before* any code is run. This prevents wasting compute on structurally broken ideas.
+The system follows a strict **falsification-first** philosophy: a [hypothesis](#g-hypothesis) must be formally pressure-tested for failure modes *before* any code is [run](#g-run). This prevents wasting compute on structurally broken ideas.
 
 It is built around three principles:
 
 - **Structured artifacts over prose** — every stage communicates via validated YAML files, not free text.
 - **Automated routing** — the pipeline decides its own next step based on rules, not human judgment.
-- **Campaign memory** — across many runs, the system tracks what has been tried and detects dead ends automatically.
+- **[Campaign](#g-campaign) memory** — across many runs, the system tracks what has been tried and detects dead ends automatically.
 
 ---
 
@@ -185,12 +186,12 @@ orchestrator dispatches · `[Tool]` a deterministic Python stage, no LLM call.
 ⚠️ **Stage 10 is drawn as `[Human]` deliberately.** The orchestrator never
 dispatches it — it is absent from both `STAGE_CONFIGS` and `_SKILL_MAP`, and no
 code writes `regime_audit_decision.yaml`. In practice the pipeline pauses and a
-person runs the skill. Whether it should become a real stage is an open
+person runs the [skill](#g-skill). Whether it should become a real stage is an open
 decision: see [E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16).
 
-**Ungated-only standing policy** *(a campaign policy, not a step — kept here
-because it constrains every hypothesis on the map)*: ER-based regime detection
-is unusable on BTC/ETH 1h (A2.3). All hypotheses in the run queue are ungated. A
+**Ungated-only standing policy** *(a [campaign](#g-campaign) policy, not a step — kept here
+because it constrains every [hypothesis](#g-hypothesis) on the map)*: ER-based [regime](#g-regime) detection
+is unusable on BTC/ETH 1h (A2.3). All hypotheses in the [run](#g-run) queue are ungated. A
 regime gate is only permitted after: (1) a trustworthy detector exists per the
 A2.2 gate, and (2) an ungated edge already confirmed showing regime-dependent
 performance.
@@ -208,7 +209,7 @@ one place to read when the answer matters.
 |---|---|---|---|
 | 1 | [**research_brief**](#stage-1--research_brief) | Human | State the question this run exists to answer, and the limits it must respect. |
 | 2 | [**hypothesis_generation**](#stage-2--hypothesis_generation) | Claude | Turn the research question into one concrete, testable claim. |
-| 3 | [**innovation_expansion**](#stage-3--innovation_expansion) | Claude | Produce variants that differ in kind, so a kill blames the idea rather than one setting. |
+| 3 | [**innovation_expansion**](#stage-3--innovation_expansion) | Claude | Produce variants that differ in kind, so a [kill](#g-kill) blames the idea rather than one setting. |
 | 4 | [**validation_gate**](#stage-4--validation_gate) | Claude | Try to kill the hypothesis on paper, before any code is written for it. |
 | 5 | [**refinement_planner**](#stage-5--refinement_planner) | Claude | Decide whether the blockers can be fixed inside the current engine, and how. |
 | 6 | [**backtest_specification**](#stage-6--backtest_specification) | Claude | Compile the validated idea into a config the engine can actually execute. |
@@ -236,25 +237,25 @@ stage differs from this guide's, both are given.
 **Terms used throughout this section**
 
 *Stage-reading vocabulary. Campaign-level terms — campaign, run, hypothesis
-family, altitude, exhausted — are in the [Glossary](#6-glossary).*
+family, [altitude](#g-altitude), exhausted — are in the [Glossary](#6-glossary).*
 
 | Term | In plain words |
 |---|---|
-| **IC** (information coefficient) | How well a forecast ranked what actually happened next. `+1` perfect, `0` useless, `-1` perfectly backwards. Spearman rank correlation. |
+| **IC** (information coefficient) | How well a [forecast](#g-forecast) ranked what actually happened next. `+1` perfect, `0` useless, `-1` perfectly backwards. Spearman rank correlation. |
 | **active bar** | A bar where the signal actually said something. A selective signal is silent most of the time. |
 | **bps** (basis point) | One hundredth of a percent. Costs and edges are quoted in bps per trade. |
 | **effective sample** (`n_eff`) | How many genuinely *independent* observations there are. Adjacent hours move together, so bar count overstates it. |
 | **episode** | A burst of consecutive active bars treated as one event rather than many. |
-| **trial** | One evaluation counted against the multiple-testing budget. Kills count. |
-| **altitude** | How big a change the verdict proposes: parameter → component → family → instrument. |
-| **handoff** | The YAML file one stage writes to tell the next what to do and what inputs exist. |
+| **[trial](#g-trial)** | One evaluation counted against the multiple-testing budget. Kills count. |
+| **altitude** | How big a change the [verdict](#g-verdict) proposes: parameter → [component](#g-component) → family → instrument. |
+| **[handoff](#g-handoff)** | The YAML file one stage writes to tell the next what to do and what inputs exist. |
 | **DSR** (deflated Sharpe) | A Sharpe corrected for how many things you tried. More trials, higher bar. |
 | **warmup** | The first stretch of bars an indicator needs before its output means anything. Decisions are not taken during it. |
 | **turnover** | How often a strategy trades. High turnover pays the cost more often, so it needs a bigger edge to survive. |
 | **Fisher z** | A transform that turns a correlation into something you can do normal statistics on, to ask "is this bigger than luck?". |
 | **block** / **block bootstrap** | Nearby bars are not independent, so statistics are computed over *blocks* of bars rather than single ones. A **bootstrap** re-shuffles those blocks many times to see how often chance alone would produce the result. **Stationary block bootstrap** is one variant of that shuffle. |
 | **firewall** (retune firewall) | A rule that keeps profitability out of a decision that is supposed to be about instrument quality. You may not retune a regime detector because it made more money. |
-| **conformance gate** | A check that a run actually obeyed what it registered in advance — the protocol it pinned, the method it declared. |
+| **conformance gate** | A check that a run actually obeyed what it registered in advance — the [protocol](#g-protocol) it pinned, the method it declared. |
 | **upsert** | Write-or-replace. Used for trial rows so a re-run replaces its earlier row instead of adding a second one and inflating the count. |
 | **orchestrator** | The Python program that actually runs the pipeline: `workflow/run_phase1_research.py`. It decides which stage runs next and calls it. When this guide says "the orchestrator does X", it means that file. |
 | **`STAGE_CONFIGS`** | The orchestrator's **list of stages it knows how to run**. If a stage name is not a key in it, the orchestrator has no way to reach that stage. It holds 10 entries. |
@@ -435,7 +436,7 @@ for it.
 **Design rationale.**
 - Falsification is cheapest before implementation. A failure mode found here
   costs a paragraph; found after a backtest it costs a trial.
-- The A8.6 power check is deterministic and runs here specifically so that a
+- The A8.6 [power check](#g-power-check) is deterministic and runs here specifically so that a
   hypothesis the data *cannot* answer is stopped **before a component is
   built** — no engineering effort, no trial spent on an unanswerable question.
 
@@ -448,7 +449,7 @@ the power-gate path, `prescreen_result.yaml` as a **5-key stub** carrying `stage
 
 **Features / logic in place**
 
-**1. Read the decision, tolerating a known schema drift.**
+**1. Read the decision, tolerating a known [schema](#g-schema) drift.**
 `status`, falling back to `family_status` — the skill's real output for a
 multi-variant family validation used the latter (run_053, 2026-07-06, F4f).
 If neither key is present it raises rather than proceeding (`:2262`).
@@ -568,7 +569,7 @@ deserves an expensive walk-forward backtest.
 - A full backtest costs compute, and every run is counted as a trial whether
   it passes or dies, so it also costs statistical budget. Trials spent on
   hopeless signals raise the bar for the promising ones.
-- The prescreen answers the question for one pass over the forecast series:
+- The [prescreen](#g-prescreen) answers the question for one pass over the forecast series:
   no portfolio simulation, no backtest engine, no LLM call.
 - It asks only the two things answerable without simulating a portfolio: does
   the signal predict anything, and could it out-earn its trading costs.
@@ -627,7 +628,7 @@ If the sample is too small to detect the effect even if it were real, the tool
 is never launched. The orchestrator writes `prescreen_result.yaml` itself with
 `route: insufficient_power_a_priori` and records the trial
 (`run_phase1_research.py:6217`, `:6232`, `:6235`). The same check runs earlier
-at the validation gate (`:2287`); if it already wrote the file, the
+at the [validation gate](#g-validation-gate) (`:2287`); if it already wrote the file, the
 orchestrator skips the tool (`:6207`). **None of this is in
 `prescreen_signal.py`** — see [E037-01](../engineering/roadmap/E-037/FINDINGS.md#e037-01).
 
@@ -689,7 +690,7 @@ round-trip cost from `cost_model.yaml`. Passes when `edge_to_cost_ratio >=
 safety_factor` (default 2.0) (`:897`).
 - `sigma_bar_bps` is measured from the records. If no symbol yields an
   estimate, the placeholder `_DEFAULT_SIGMA_BAR_BPS = 15.0` is substituted and
-  `sigma_is_placeholder: true` is written into the artifact. **When that flag
+  `sigma_is_placeholder: true` is written into the [artifact](#g-artifact). **When that flag
   is true, the cost check and every required-IC figure are invalid.**
 
 **9. Route decision — combine the two gates (A8.1).**
@@ -958,9 +959,9 @@ override, applied one layer up — a component bug is not a research finding.
 `mechanism_failure == regime_misattribution` pauses for the regime-auditor
 (`:5788-5796`) — see stage 10 for what that actually means.
 
-**3. Circuit breaker — anti-loop protection, scoped per family.**
+**3. [Circuit breaker](#g-circuit-breaker) — anti-loop protection, scoped per family.**
 `_apply_circuit_breaker` (`:5567`) can force `refine` up to `pivot` when the
-same parameter dimension keeps recurring. **Scoped per hypothesis family since
+same parameter dimension keeps recurring. **Scoped per [hypothesis family](#g-hypothesis-family) since
 F6 (2026-07-04)**: a global list let stale dimensions from the long-closed
 Keltner/RSI families force run_044's first-ever refine straight to pivot.
 
@@ -978,7 +979,7 @@ see [E037-22](../engineering/roadmap/E-037/FINDINGS.md#e037-22). The ladder is r
 the ordering is meaningful; the numeric field was intended and never built.
 What the artifact carries is `status`.
 
-**6. Promote is provisional.**
+**6. [Promote](#g-promote) is provisional.**
 A pass writes `promotion_audit.yaml` and routes to `holdout_evaluation`
 (`:5745-5747`); it is not a promotion.
 
@@ -1096,7 +1097,7 @@ number. Failure is terminal.
 | `implementation_allowed` | Next stage |
 |---|---|
 | `true` | → innovation_expansion (refinement loop) |
-| `false` | → human pause (pipeline suspended, awaiting audit) |
+| `false` | → [human pause](#g-human-pause) (pipeline suspended, awaiting audit) |
 
 #### After backtest_specification
 
@@ -1134,7 +1135,7 @@ The orchestrator detects search-space exhaustion and forces an altitude climb au
 
 | Trigger | Action |
 |---|---|
-| Same hypothesis family pivoted 2× with identical root cause | Force escalate (altitude 3) |
+| Same hypothesis family pivoted 2× with identical root cause | Force [escalate (altitude 3)](#g-escalate) |
 | Same instrument/timeframe escalated 2× with no improvement | Force terminate or campaign_review |
 | Refinement budget exhausted (`max_refinements_after_validation`, default 2) | Reject hypothesis |
 | Run token budget exceeded (default 300,000 tokens) | Halt run, preserve state |
@@ -1177,7 +1178,7 @@ Artifacts are YAML files produced and consumed by pipeline stages. They are the 
 > 🐛 Bugs & Tasks board. Where enforcement genuinely exists it is written in
 > CODE at the seam that reads the value (see `variant_selection.yaml` below).
 
-Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level artifacts live at the root.
+Each [run](#g-run) stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level artifacts live at the root.
 
 ---
 
@@ -1188,7 +1189,7 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 
 **Created by:** Human (or proposed_brief from previous run's verdict_interpreter)  
 **Read by:** hypothesis_generation  
-**Schema:** `schemas/research_brief.schema.json`
+**[Schema](#g-schema):** `schemas/research_brief.schema.json`
 
 | Field | Definition |
 |---|---|
@@ -1196,7 +1197,7 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 | `market_universe` | List of symbols to focus on (e.g., `[BTCUSDT]`) |
 | `timeframe` | Candle resolution (e.g., `1h`) |
 | `research_goal` | The central question this run tries to answer |
-| `constraints` | Hard limits the hypothesis must respect (e.g., use existing backtest framework) |
+| `constraints` | Hard limits the [hypothesis](#g-hypothesis) must respect (e.g., use existing backtest framework) |
 | `existing_context` | What is already known or already tried — prevents re-exploring dead ends |
 
 ---
@@ -1206,7 +1207,7 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 
 > **Why this file exists.** The one concrete claim being tested. It is what makes the run falsifiable rather than exploratory.
 
-**Created by:** hypothesis_generation skill  
+**Created by:** hypothesis_generation [skill](#g-skill)  
 **Read by:** innovation_expansion, validation_gate  
 **Schema:** `workflow_artifacts/schemas/hypothesis_card.schema.json`
 
@@ -1216,7 +1217,7 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 | `thesis` | One-sentence plain-English claim about why this strategy should work |
 | `rationale` | Market microstructure or behavioral reason supporting the thesis |
 | `signal_concept` | Pseudo-formula or English description of the signal computation |
-| `target_market` | Symbol, timeframe, and regime conditions where the signal applies |
+| `target_market` | Symbol, timeframe, and [regime](#g-regime) conditions where the signal applies |
 | `assumptions` | List of things that must be true for the signal to work (falsifiable) |
 | `expected_failure_modes` | Pre-enumerated ways this hypothesis could fail in practice |
 
@@ -1293,11 +1294,11 @@ Each run stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level arti
 
 | Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-27) |
 |---|---|---|---|
-| `status` | The gate's verdict — the field the router reads to decide the whole run's next step. | `approve` (proceed to spec) · `conditional_approve` (proceed, conditions printed) · `refine` (back to the planner, bounded) · `reject` (terminal) | `conditional_approve` |
+| `status` | The gate's [verdict](#g-verdict) — the field the router reads to decide the whole run's next step. | `approve` (proceed to spec) · `conditional_approve` (proceed, conditions printed) · `refine` (back to the planner, bounded) · `reject` (terminal) | `conditional_approve` |
 | `rationale` | Why that verdict, in prose, so the decision can be audited later. | prose | *"Funding-rate mean-reversion mechanism is established (run_059 daily baseline: Sharpe > 0.8 …)"* |
-| `conditions` | Conditions the backtest config must respect. Only meaningful on `conditional_approve`. | list of strings | *"Prescreen cost gate (Layer 2) must pass: edge_to_cost_ratio >= 2.0 for BOTH BTCUSDT and ETHUSDT"* |
+| `conditions` | Conditions the backtest config must respect. Only meaningful on `conditional_approve`. | list of strings | *"[Prescreen](#g-prescreen) cost gate (Layer 2) must pass: edge_to_cost_ratio >= 2.0 for BOTH BTCUSDT and ETHUSDT"* |
 | `blocking_issues` | What must be fixed before this can proceed. Non-empty normally implies `refine` or `reject`. | list | `[]` |
-| `promotion_path_if_approved` / `..._if_rejected` | Written in advance: what happens on each outcome, so the route is not invented after the result. | prose | *"If walk-forward Sharpe > 0.8 AND max_drawdown < 30% AND cost gate passes, promote to holdout_evaluation"* |
+| `promotion_path_if_approved` / `..._if_rejected` | Written in advance: what happens on each outcome, so the route is not invented after the result. | prose | *"If walk-forward Sharpe > 0.8 AND max_drawdown < 30% AND cost gate passes, [promote](#g-promote) to holdout_evaluation"* |
 | `hypothesis_id` / `approval_issued_by` / `approval_timestamp` | Provenance. | string / string / date | `FUNDING_MR_4H_RETEST` / `validation_gate / run_060` / `2026-08-27` |
 
 ⚠️ **`family_status` is an accepted alternative to `status`.** The
@@ -1337,7 +1338,7 @@ neither key is present the router raises rather than guessing
 
 | Field | Definition |
 |---|---|
-| `status` | `spec_ready` (config is complete) or `component_gap` (a missing bot component blocks execution) |
+| `status` | `spec_ready` (config is complete) or `component_gap` (a missing bot [component](#g-component) blocks execution) |
 | `config` | Full `strategy_config` JSON that plugs directly into the trading-bot |
 | `config_rationale` | For each config parameter, why that value was chosen |
 | `component_gap` | Description of the missing component if `status = component_gap` |
@@ -1353,11 +1354,11 @@ neither key is present the router raises rather than guessing
 **Read by:** orchestrator  
 **Schema:** `workflow_artifacts/schemas/decision.schema.json`
 
-A simple gate artifact confirming whether the backtest_spec is valid and executable.
+A simple gate [artifact](#g-artifact) confirming whether the backtest_spec is valid and executable.
 
 | Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-27) |
 |---|---|---|---|
-| `status` | Whether a runnable spec was produced. Two words that route the run — and anything unrecognised pauses it. | `spec_ready` (→ stage 7 prescreen) · `component_gap` (→ human pause; the engine lacks a piece) · **any other value** (→ human pause, deliberately fail-closed) | `spec_ready` |
+| `status` | Whether a runnable spec was produced. Two words that route the run — and anything unrecognised pauses it. | `spec_ready` (→ stage 7 prescreen) · `component_gap` (→ [human pause](#g-human-pause); the engine lacks a piece) · **any other value** (→ human pause, deliberately fail-closed) | `spec_ready` |
 | `rationale` | Why, naming the component or the gap. | prose | *"FundingRateMeanReversionComponent exists in STRATEGY_CONFIG_REFERENCE.md with full threshold=0.0 continuous-forecast support"* |
 | `blocking_issues` | What is missing, when there is a gap. | list | `[]` |
 | `stage` | Which stage wrote it. | string | `backtest_specification` |
@@ -1398,7 +1399,7 @@ prints that the SKILL may need a new status case and pauses
 
 | Field | Definition |
 |---|---|
-| `per_window_metrics` | Sharpe ratio, max drawdown, trade count, win rate per backtest window |
+| `per_window_metrics` | Sharpe ratio, max drawdown, trade count, win rate per [backtest window](#g-backtest-window) |
 | `per_symbol_metrics` | Aggregated results per symbol |
 | `per_regime_metrics` | Results split by detected market regime |
 | `median_sharpe` | Median Sharpe across all windows — primary promotion gate. **Basis matters (2026-07-10):** the decision-consumed value must be computed on a bar-level equity curve (`bars.csv` `total_portfolio_value`, full-window daily returns) — a LIFO-fragment/trade-exit-day version of the same statistic can disagree sharply under sparse trading and must never feed a verdict; it may exist elsewhere labeled `basis: lifo_fragment, descriptive_only`. See `docs/TIMEFRAME_CHANGE_PLAYBOOK.md` section 2(c) for the mechanism and a worked example. |
@@ -1418,11 +1419,11 @@ prints that the SKILL may need a new status case and pauses
 
 | Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-28) |
 |---|---|---|---|
-| `status` | The altitude decision — what happens next, and at what size of change. Falls back to `protocol_verdict` on older runs. | `refine` (same family, new parameter) · `pivot` (new family) · `escalate` (new instrument/timeframe) · `promote` (provisional → holdout) · `kill` (terminal) | `kill` |
+| `status` | The [altitude](#g-altitude) decision — what happens next, and at what size of change. Falls back to `protocol_verdict` on older runs. | `refine` (same family, new parameter) · `pivot` (new family) · `escalate` (new instrument/timeframe) · `promote` (provisional → holdout) · `kill` (terminal) | `kill` |
 | `hypothesis_verdict` / `lineage_routing` | The verdict on the hypothesis, and what it means for its lineage. | string / `terminate`, `continue`, … | `kill` / `terminate` |
 | `criteria_summary` | Each pre-registered criterion with its measured value and result — the audit trail from evidence to verdict. | list of `{criterion, result, value}` | criterion `prescreen_ic_gate (ic_active_bars >= 0.015, significant)` → `FAIL` |
 | `untested_criteria` | Criteria that were never reached, kept explicit so a partial test is not read as a complete one. | list | `["walk_forward_sharpe (prescreen kill)", "max_drawdown (prescreen kill)"]` |
-| `root_cause` | The diagnosis. **`mechanism_failure` is load-bearing:** two of its values divert the run away from any scientific verdict. | dict; `mechanism_failure` ∈ `already_priced_in`, `component_execution_error` (→ human pause, immune to the circuit breaker), `regime_misattribution` (→ human pause for the regime auditor), … | `{mechanism_failure: already_priced_in, supporting_evidence: "prescreen_result: ic_active_bars=0.0162 (p=…)"}` |
+| `root_cause` | The diagnosis. **`mechanism_failure` is load-bearing:** two of its values divert the run away from any scientific verdict. | dict; `mechanism_failure` ∈ `already_priced_in`, `component_execution_error` (→ human pause, immune to the [circuit breaker](#g-circuit-breaker)), `regime_misattribution` (→ human pause for the regime auditor), … | `{mechanism_failure: already_priced_in, supporting_evidence: "prescreen_result: ic_active_bars=0.0162 (p=…)"}` |
 | `primary_failure_mode` | Short label for how it failed. | string | `no_informational_content_prescreen` |
 | `hypothesis_family` | Scopes the circuit breaker. Per-family since F6 (2026-07-04) — a global scope let a dead family's history force an unrelated family straight to pivot. | string | `funding_rate_mean_reversion` |
 | `proposed_change_dimension` | Which parameter a `refine` would move. The breaker counts repeats of this within a family. | string or `null` | `null` |
@@ -1629,7 +1630,7 @@ that can see a variant that pivoted away from a clean parent.
 **Objective:** make "the loop is idle" visible to the loop itself.
 
 **Why it exists:** `process_once()` returns on `"Queue exhausted"` *before* any
-loop-health write, so the one condition that actually stopped this campaign was
+loop-health write, so the one condition that actually stopped this [campaign](#g-campaign) was
 the one condition nothing recorded.
 
 **Logic:** re-derived from primary records (`campaign_queue.yaml` +
@@ -1667,7 +1668,7 @@ Root-level file tracking the entire campaign across all runs.
 **Created by:** orchestrator (from templates)  
 **Read by:** the receiving skill at stage start  
 
-Handoffs are the formal interface contract between stages. Each stage reads its handoff file to know exactly what inputs are available and what it must produce.
+Handoffs are the formal interface contract between stages. Each stage reads its [handoff](#g-handoff) file to know exactly what inputs are available and what it must produce.
 
 | Field | Definition |
 |---|---|
@@ -1692,7 +1693,7 @@ Handoffs are the formal interface contract between stages. Each stage reads its 
 |---|---|
 | `route` | Routing decision: `proceed_to_backtest`, `kill_no_ic`, `refine_inverted_ic`, `refine_cost_hurdle`, `kill_cost_hurdle`, `insufficient_power_a_priori` |
 | `ic_all_bars` | Spearman IC computed over all bars (tie-dominated for sparse signals) |
-| `ic_active_bars` | Spearman IC conditional on non-zero/changing forecast — the primary IC gate |
+| `ic_active_bars` | Spearman IC conditional on non-zero/changing [forecast](#g-forecast) — the primary IC gate |
 | `forecast_sparsity_pct` | Fraction of bars with zero/unchanging forecast |
 | `cost_check` | `{pass: bool, edge_to_cost_ratio, required_gross_edge_bps}` — Layer 2 gate |
 | `ic_significance` | Whether `ic_active_bars` is statistically significant (block-bootstrap) |
@@ -1771,9 +1772,9 @@ same portability issue as [E037-11](../engineering/roadmap/E-037/FINDINGS.md#e03
 | Field | Definition |
 |---|---|
 | `deflated_sharpe_ratio` | Bailey & López de Prado DSR; `null` for sparse-trading candidates |
-| `trial_sharpe_variance` | Variance of the trial Sharpe distribution used for DSR |
+| `trial_sharpe_variance` | Variance of the [trial](#g-trial) Sharpe distribution used for DSR |
 | `n_trials_used` | Trial count after dedup by `forecast_hash` |
-| `passes_deflated_threshold` | `true` if DSR > 0.95 (Sharpe path) or t_stat > 2.0 (expectancy path) |
+| `passes_deflated_threshold` | `true` if DSR > 0.95 (Sharpe path) or t_stat > 2.0 ([expectancy path](#g-expectancy-path)) |
 | `excluded_trial_counts` | Breakdown of excluded trials by reason (statistic_expectancy, statistic_neither, no_sharpe_value, dedup_removed) |
 | `expectancy_promotion` | Present on sparse-trading path: `{t_stat, passes, bonferroni_note}` |
 | `is_sparse_trading` | `true` when below_floor_pct > 50% (A3.4) |
@@ -1889,7 +1890,7 @@ bare-filename `protocol` key (`:3013`)
 | `target_symbol` / `target_timeframe` | The override the child run must apply instead of inheriting the parent's. | symbol / timeframe | `SOLUSDT` / `4h` |
 | `escalation_reason` | Why the escalation happened. | string | `hypothesis_family_exhausted` |
 | `source_run` | The parent run. | run id | `run_027` |
-| `protocol` | Bare filename of the protocol this run is pinned to. Compared by basename, never by path. | filename | — |
+| `protocol` | Bare filename of the [protocol](#g-protocol) this run is pinned to. Compared by basename, never by path. | filename | — |
 | `note` | Instruction to the stages, in prose. | prose | *"Override the asset target to SOLUSDT — do NOT carry forward BTCUSDT or ETHUSDT…"* |
 
 ---
@@ -1951,6 +1952,40 @@ product are not `tradable: true` — **or are undeclared**
 
 ---
 
+### `research_decision.yaml`
+
+> **Why this file exists.** The campaign's closing statement for a hypothesis:
+> what was decided, why, and what the next person must not have to rediscover.
+> It is the last thing written before a mechanism is closed, and the only place
+> the whole trajectory across runs is recorded in one paragraph.
+
+**Created by:** `campaign_review` / `verdict_interpreter` on a terminal outcome — the skill is instructed to emit it on `promote` or `kill` (`run_phase1_research.py:2404-2405`)
+**Updated by:** *(none — write-once; it closes the entry)*
+**Read by:** humans, and the next campaign's `existing_context`
+**Written to:** `runs/{run_id}/artifacts/research_decision.yaml`
+**Schema:** *(none)*
+
+| Field | Definition — what it means | Values / range | Example (`run_060`, 2026-08-28) |
+|---|---|---|---|
+| `decision` | The terminal call on this hypothesis. | `kill` · `promote` | `kill` |
+| `rationale` | Why, against the pre-registered criteria. A list when several criteria decided it. | prose or list | *"Prescreen IC gate failed (ic_active_bars=0.0162, p=0.5315 >> 0.10, not significant)."* |
+| `findings_archive` | The numbers worth keeping, so a later run does not have to re-run to learn them. | dict keyed by run/window | `{run_060_4h: {ic_active_bars: 0.016237, ic_p_value: 0.5315, significant: false, …}}` |
+| `mechanism_trajectory` | The whole arc across runs in one line — what was tried, in what order, and what each attempt showed. This is the field that stops a dead mechanism being re-proposed. | prose | *"1h (zero IC, lag confirmed) → 4h (zero IC, Nyquist-correct, no benefit) → daily (IC present but ret…)"* |
+| `kb_entry_closure` | Which knowledge-base entry this closes, and which reactivation branches are now spent. | prose | *"parent_entry: funding_rate_continuous_mean_reversion_expanded_auto; reactivation_condition branches: …"* |
+| `hypothesis_id` | Provenance. | string | `FUNDING_MR_4H_RETEST` |
+
+**Notes**
+
+- Only `hypothesis_id`, `decision`, `rationale` and `findings_archive` appear in
+  both real files; `mechanism_trajectory` and `kb_entry_closure` are in run_060
+  only. The shape is **skill-authored prose, not a fixed schema** — treat the
+  field list as observed rather than guaranteed.
+- Measured 2026-08-31: **2 on disk**, run_059 and run_060, the two most recent
+  runs. It is a recent addition, which is why it had no entry until now — the
+  same pattern as [E037-19](../engineering/roadmap/E-037/FINDINGS.md#e037-19).
+
+---
+
 ### Config files (section 3 addendum)
 
 | File | Purpose |
@@ -1958,7 +1993,7 @@ product are not `tradable: true` — **or are undeclared**
 | `config/campaign_data_policy.yaml` | Frozen holdout range (2026-H1), burned ranges, `holdout_consumed_by` list |
 | `config/cost_model.yaml` | Single source of truth for round-trip cost per symbol (bps); read by prescreen and validation |
 | `config/available_feeds.yaml` | Which data feeds are testable today; constrains `evidence_type` in hypothesis_card |
-| `config/campaign_config.yaml` | Named constants for prescreen, orchestrator, power check; drift-guarded by test |
+| `config/campaign_config.yaml` | Named constants for prescreen, orchestrator, [power check](#g-power-check); drift-guarded by test |
 | `config/indicator_library.yaml` | 15 seeded entries: regime_affinity, crowding_risk, data_requirements per indicator class |
 | `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each. `trigger_condition.predicate` is mechanically evaluated (see `detector_wishlist.yaml` row below — same mechanism, same file format). |
 | `config/detector_wishlist.yaml` | Detector families to build when an ungated edge exists. Each candidate's `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/TIMEFRAME_CHANGE_PLAYBOOK.md` section 6. |
@@ -1979,13 +2014,13 @@ product are not `tradable: true` — **or are undeclared**
 > selection.
 
 
-Skills are LLM persona prompts stored in `skills/{name}/SKILL.md`. Each skill defines a role, a checklist, constraints, and forbidden actions for a Claude agent acting as a specialist. The orchestrator loads the relevant skill at each stage and passes it as the system prompt.
+Skills are LLM persona prompts stored in `skills/{name}/SKILL.md`. Each [skill](#g-skill) defines a role, a checklist, constraints, and forbidden actions for a Claude agent acting as a specialist. The orchestrator loads the relevant skill at each stage and passes it as the system prompt.
 
 ---
 
 ### `hypothesis-design`
 
-**Goal:** Transform an open research brief into a single, concrete, testable hypothesis.  
+**Goal:** Transform an open [research brief](#g-research-brief) into a single, concrete, testable [hypothesis](#g-hypothesis).  
 **Why it exists:** Research briefs are necessarily vague. This skill bridges the gap between "I think volume matters" and a signal formula with explicit assumptions. Without this step, the downstream validation stage has nothing concrete to falsify.
 
 Key constraints the skill enforces:
@@ -2010,12 +2045,12 @@ Key outputs:
 ### `quant-validation`
 
 **Goal:** Pressure-test the hypothesis for structural flaws before any backtest runs.  
-**Why it exists:** Backtesting is expensive and noisy. Running a broken hypothesis wastes compute and pollutes campaign history. This skill acts as a pre-flight check: if the idea cannot survive theoretical scrutiny, it should not enter the backtest queue.
+**Why it exists:** Backtesting is expensive and noisy. Running a broken hypothesis wastes compute and pollutes [campaign](#g-campaign) history. This skill acts as a pre-flight check: if the idea cannot survive theoretical scrutiny, it should not enter the backtest queue.
 
 Key outputs:
-- A **falsifiable statement** (a single prediction that can be proven wrong).
+- A **[falsifiable statement](#g-falsifiable-statement)** (a single prediction that can be proven wrong).
 - At least **5 failure modes** (named, specific failure scenarios).
-- **Bias risks** (look-ahead contamination, selection bias, regime endogeneity).
+- **Bias risks** (look-ahead contamination, selection bias, [regime](#g-regime) endogeneity).
 - **Decision rules** (the exact conditions that trigger approve / refine / reject).
 
 The skill is explicitly forbidden from approving a hypothesis that has no falsifiable statement or fewer than 5 failure modes.
@@ -2025,14 +2060,14 @@ The skill is explicitly forbidden from approving a hypothesis that has no falsif
 ### `refinement-planner`
 
 **Goal:** Convert validation blockers into concrete, implementable fixes.  
-**Why it exists:** When validation returns `refine`, the system needs specific instructions — not vague suggestions. This skill reads each blocking issue and produces an actionable response: which parameter to change, which assumption to drop, which variant to prioritize. It also acts as a circuit breaker: if the fixes require capabilities the bot doesn't have, it sets `implementation_allowed = false` and suspends the pipeline for human review.
+**Why it exists:** When validation returns `refine`, the system needs specific instructions — not vague suggestions. This skill reads each blocking issue and produces an actionable response: which parameter to change, which assumption to drop, which variant to prioritize. It also acts as a [circuit breaker](#g-circuit-breaker): if the fixes require capabilities the bot doesn't have, it sets `implementation_allowed = false` and suspends the pipeline for human review.
 
 ---
 
 ### `backtest-engineering`
 
 **Goal:** Translate an approved, validated hypothesis into a `strategy_config` JSON that the trading-bot can execute verbatim.  
-**Why it exists:** The hypothesis exists in conceptual form (thesis, signal formula, regime gate). The backtest engine needs exact parameters: lookback windows, thresholds, component weights, regime definitions. This skill handles that translation, validates the output against `STRATEGY_CONFIG_REFERENCE.md`, and flags any component that doesn't yet exist in the bot.
+**Why it exists:** The hypothesis exists in conceptual form (thesis, signal formula, regime gate). The backtest engine needs exact parameters: lookback windows, thresholds, [component](#g-component) weights, regime definitions. This skill handles that translation, validates the output against `STRATEGY_CONFIG_REFERENCE.md`, and flags any component that doesn't yet exist in the bot.
 
 The skill is forbidden from:
 - Bypassing regime gates.
@@ -2043,7 +2078,7 @@ The skill is forbidden from:
 
 ### `verdict-interpreter`
 
-**Goal:** Read backtest diagnostics, identify root causes, and issue an altitude decision.  
+**Goal:** Read backtest diagnostics, identify root causes, and issue an [altitude](#g-altitude) decision.  
 **Why it exists:** Raw backtest results (Sharpe = 0.2, drawdown = 18%) don't tell you *why* the strategy underperformed. This skill applies named diagnostic rules to map metric patterns to root causes, then prescribes the correct next action. Without this step, the system would either blindly retry failures or discard salvageable ideas.
 
 The 6 diagnostic rules (applied in order, first match wins — see the skill file
@@ -2059,14 +2094,14 @@ top, e.g. sparse-trader gates, prescreen-kill routing, regime attribution):
 | 5 | Signal works but regime fires too rarely | Relax regime thresholds, or switch to a more-frequent regime |
 | 6 | No diagnostic signal (all metrics null) | Distinguish instrumentation failure vs. genuine regime starvation before deciding |
 
-Also produces **parameter brackets**: if refinement is prescribed, the skill narrows the search range [min, max, step] so the next run doesn't blindly retry the same value. See `workflow_artifacts/skills/verdict-interpreter/SKILL.md` directly for the current full rule set — this table is a map, not the authority.
+Also produces **parameter brackets**: if refinement is prescribed, the skill narrows the search range [min, max, step] so the next [run](#g-run) doesn't blindly retry the same value. See `workflow_artifacts/skills/verdict-interpreter/SKILL.md` directly for the current full rule set — this table is a map, not the authority.
 
 ---
 
 ### `campaign-review`
 
 **Goal:** After multiple hypothesis families have failed, step back and assess whether the campaign direction is still sound.  
-**Why it exists:** The per-run verdict_interpreter only has local context. After 2+ families fail, the system needs a higher-level question: is this research question fundamentally unanswerable with current data/components, or just poorly explored? Campaign review can reframe the question, target a new instrument, or terminate the campaign entirely — decisions no single-run skill can make.
+**Why it exists:** The per-run verdict_interpreter only has local context. After 2+ families fail, the system needs a higher-level question: is this research question fundamentally unanswerable with current data/components, or just poorly explored? [Campaign review](#g-campaign-review) can reframe the question, target a new instrument, or terminate the campaign entirely — decisions no single-run skill can make.
 
 Key outputs:
 - A campaign-level `continue / reframe / escalate / terminate` decision.
@@ -2089,9 +2124,9 @@ the config-files table above). Full operating detail: `RUNBOOK.md`.
 
 ### `tools/fragment_patterns.py` — Ideation-Only Fragment Diagnostics
 
-Computes `fragment_patterns.yaml` from a completed run's `trades.json`/`bars.csv`:
-forecast-bin outcome tables, entry/exit component attribution, initial-entry-
-vs-scale-up cost comparison, duration/regime cross-tabs. Strictly ideation-only
+Computes `fragment_patterns.yaml` from a completed [run](#g-run)'s `trades.json`/`bars.csv`:
+forecast-bin outcome tables, entry/exit [component](#g-component) attribution, initial-entry-
+vs-scale-up cost comparison, duration/[regime](#g-regime) cross-tabs. Strictly ideation-only
 — never a decision-path input (mechanically enforced, see
 `tests/test_fragment_patterns_firewall.py`). This is the "diagnosis" role in
 the three-role model for fragment data: `docs/TIMEFRAME_CHANGE_PLAYBOOK.md`
@@ -2103,10 +2138,10 @@ The central state machine. Manages the entire lifecycle of a run.
 
 **Responsibilities:**
 - Loads/saves `pipeline_state.yaml` and `campaign_state.yaml` at every transition.
-- Invokes skills by building prompts from handoff files + skill personas and sending them to the Claude SDK or Gemini API.
-- Routes between stages based on artifact contents (e.g., reads `validation_decision.yaml.status` to decide next step).
-- Enforces circuit breakers (refinement budget, token budget, altitude escalation logic).
-- Tracks token usage and cost per stage in the audit log.
+- Invokes skills by building prompts from [handoff](#g-handoff) files + [skill](#g-skill) personas and sending them to the Claude SDK or Gemini API.
+- Routes between stages based on [artifact](#g-artifact) contents (e.g., reads `validation_decision.yaml.status` to decide next step).
+- Enforces circuit breakers (refinement budget, token budget, [altitude](#g-altitude) escalation logic).
+- Tracks token usage and cost per stage in the [audit log](#g-audit-log).
 - Includes iterative YAML repair: if a model produces malformed YAML, it attempts up to 3 auto-repairs before halting.
 - Supports **resume**: a human-paused run can be restarted mid-pipeline without re-running completed stages.
 
@@ -2150,10 +2185,10 @@ run.
 ### `tools/run_protocol.py` — Walk-Forward Executor
 
 The only fully deterministic tool (no LLM). Given a `backtest_spec.yaml`, it:
-1. Loads the protocol definition (`protocols/baseline_v1.json` or an escalation protocol).
+1. Loads the [protocol](#g-protocol) definition (`protocols/baseline_v1.json` or an escalation protocol).
 2. Runs the trading-bot backtest engine across each walk-forward window.
 3. Aggregates per-window metrics (Sharpe, drawdown, trade count, win rate).
-4. Evaluates promotion/kill thresholds.
+4. Evaluates promotion/[kill](#g-kill) thresholds.
 5. Computes diagnostic metrics (`forecast_return_corr`, `cost_drag_pct`).
 6. Writes `protocol_result.yaml` and `protocol_summary.json`.
 
@@ -2186,8 +2221,8 @@ by how load-bearing they are, not alphabetically.
 |---|---|
 | `tools/prescreen_signal.py` | **Implements stage 7 in full** — IC, significance, cost gate, routing. The single largest tool in the directory. |
 | `tools/run_protocol.py` | Walk-forward executor for stage 8 *(documented above)*. |
-| `tools/verdict_criteria_evaluator.py` | **The K2/C7 machine verdict** — scores a run against its pre-registered `pass_rule` and writes `pass_rule_evaluation.yaml`. Since 2026-07-13 this is the decision authority, not an advisory. |
-| `tools/power_check.py` | The A8.6 a-priori power check: episode-clustered, symbol-correlation-aware. Shares `timeframe.py` with the prescreen so both derive the same block size. |
+| `tools/verdict_criteria_evaluator.py` | **The K2/C7 machine [verdict](#g-verdict)** — scores a run against its pre-registered `pass_rule` and writes `pass_rule_evaluation.yaml`. Since 2026-07-13 this is the decision authority, not an advisory. |
+| `tools/power_check.py` | The A8.6 a-priori [power check](#g-power-check): episode-clustered, symbol-correlation-aware. Shares `timeframe.py` with the [prescreen](#g-prescreen) so both derive the same block size. |
 | `tools/episode_significance.py` | The A8.5.1a episode-blocked significance path used by the prescreen. |
 | `tools/timeframe.py` | Timeframe arithmetic, **derived rather than enumerated** — the single source of `bars_per_day`. A lookup table here was the 4h `n_eff` bug. |
 | `tools/validate_regime_detector.py` | Stage 9's detector validation; computes the A2.2 metrics. |
@@ -2197,17 +2232,17 @@ by how load-bearing they are, not alphabetically.
 
 | Tool | What it does |
 |---|---|
-| `tools/deflate_sharpe.py` | Bailey & López de Prado deflated Sharpe — the gate between a good backtest and the holdout. Also where duplicate trial IDs are mechanically refused. |
+| `tools/deflate_sharpe.py` | Bailey & López de Prado deflated Sharpe — the gate between a good backtest and the holdout. Also where duplicate [trial](#g-trial) IDs are mechanically refused. |
 | `tools/lint_verdict_provenance.py` | Standalone G6 provenance checker (C7-EXT-R / D-4), deliberately separate from the evaluator. |
 | `tools/stamp_protocol.py` | Version-stamps a protocol JSON and prints its content hash, for the `protocol_ref_content_hash` pin in `pre_registration.yaml`. |
-| `tools/record_schema.py` | Closed schema for `campaign_knowledge_base.yaml` findings and `config/campaign_queue.yaml`. |
+| `tools/record_schema.py` | Closed [schema](#g-schema) for `campaign_knowledge_base.yaml` findings and `config/campaign_queue.yaml`. |
 
 **Flag-gated stages** *(see the flag table in §3 — all currently off)*
 
 | Tool | What it does |
 |---|---|
 | `tools/anti_adjacency_gate.py` | Deterministic tool stage: is this candidate a restatement of something already killed? |
-| `tools/build_exclusion_digest.py` | Read-only, regenerable digest of what the campaign has already excluded. |
+| `tools/build_exclusion_digest.py` | Read-only, regenerable digest of what the [campaign](#g-campaign) has already excluded. |
 
 **Data and measurement**
 
@@ -2242,6 +2277,15 @@ turnover, firewall, upsert — see
 [**Terms used throughout this section**](#22x-stage-detail-blocks) in §2.2,
 which explains each in one line without jargon.
 
+> ⚠️ **Two entries are marked ⚠️ because they describe fields that are not on
+> the artifact their definition names.** `Parameter Bracket` and
+> `Diagnostic Rule` are both defined as products of `verdict_interpreter`; they
+> appear **0 times** in `verdict_interpretation.yaml` and live instead in
+> `findings_carryover.yaml` (14 and 31 files). The concepts are real, the
+> attribution is not. See
+> [E037-22](../engineering/roadmap/E-037/FINDINGS.md#e037-22) and
+> [E037-30](../engineering/roadmap/E-037/FINDINGS.md#e037-30).
+
 > ⚠️ **The "10-stage pipeline" in the `Run` entry below is stale.** This guide
 > documents **13** numbered stages (§2.2). Ten is the size of the engine's
 > `STAGE_CONFIGS` registry, which excludes the human brief and the two regime
@@ -2251,52 +2295,52 @@ which explains each in one line without jargon.
 
 | Term | Definition |
 |---|---|
-| **Campaign** | A sustained research effort around a single research question, spanning multiple runs and hypothesis families. A campaign ends when a strategy is promoted or the question is declared unanswerable. Example: "Can volume-based signals generate edge on BTC 1h?" |
-| **Run** | One complete execution of the 10-stage pipeline for a specific hypothesis. Each run lives in `runs/{run_id}/` and produces its own set of artifacts. A campaign contains many runs. |
-| **Research Brief** | The entry document for a run. Written by a human (or auto-generated from a previous run's proposed_brief), it defines the research question, target market, constraints, and what has already been tried. |
-| **Hypothesis** | A single, falsifiable claim about a trading signal: what it is, why it should work, and under what conditions. More specific than a "strategy idea" — it must include a signal formula and explicit assumptions. |
-| **Hypothesis Family** | A group of related hypotheses that share a core thesis but differ in implementation (e.g., all volume-momentum variants). If all variants in a family fail, the family is marked exhausted and excluded from future runs. |
-| **Innovation Expansion** | The stage that multiplies a single hypothesis into a family of variants. Not random creativity — it follows a structured template: reverse, behavioral, regime-specific, alternative-data. |
-| **Falsifiable Statement** | A prediction specific enough to be proven wrong by data. Required before any backtest. Example: "When momentum > 0 AND vol_ratio > 1.5, next-bar close is higher at least 55% of the time." Without this, a hypothesis cannot be rigorously tested. |
-| **Validation Gate** | The pre-backtest quality check. An LLM agent acts as a skeptical quant and tries to find reasons to reject the hypothesis before any compute is spent. Passes → backtest. Fails → refine or reject. |
-| **Walk-Forward Test** | A backtesting methodology where the model is evaluated on sequential, non-overlapping out-of-sample windows. Prevents overfitting by ensuring no window's results are used to tune the strategy. The baseline protocol uses 11 monthly windows. |
-| **Holdout Period** | A final date range deliberately kept separate from all walk-forward windows. The strategy is never tuned on holdout data. It is only tested once, at the very end, to get an unbiased performance estimate. |
-| **Protocol** | A JSON specification of the backtest conditions: which symbols, which timeframe, which windows, and what thresholds trigger promote/kill. Separating protocol from strategy config allows the same strategy to be tested under different conditions. |
-| **Altitude** | A measure of how far from the original hypothesis the next search step will move. Altitude 1 = parameter tweak (same hypothesis). Altitude 2 = new hypothesis family (same question). Altitude 3 = new instrument or timeframe (same methodology). Higher altitude = larger change. |
-| **Verdict** | The final word from the verdict_interpreter after a backtest: `refine`, `pivot`, `escalate`, `promote`, or `kill`. Each verdict maps to an altitude and a next action. |
-| **Refine (altitude 1)** | Adjust a specific parameter of the current hypothesis based on diagnostic findings. The hypothesis family stays the same. Example: raise the threshold filter from 0.5 to 1.0. |
-| **Pivot (altitude 2)** | Abandon the current hypothesis family and start a new one. The research question stays the same. Triggered when diagnostics show the core signal has no predictive content. |
-| **Escalate (altitude 3)** | Keep the methodology but test it on a different symbol or timeframe. Triggered when the signal shows theoretical promise but the current market environment doesn't support it. |
-| **Promote** | Terminal positive verdict. The strategy passed all validation gates, walk-forward windows, and (optionally) holdout. It is added to the campaign's approved strategy list and handed off to the deployment pipeline. |
-| **Kill** | Terminal negative verdict. The hypothesis (or entire campaign) is declared unworkable. Root cause and lessons are archived in `research_decision.yaml` to inform future campaigns. |
-| **Diagnostic Rule** | A named rule in the verdict_interpreter that maps a specific metric pattern to a root cause and a prescribed action. Example: `cost_drag` rule fires when trading costs consume > 80% of gross returns, prescribing a higher trade filter. |
-| **Forecast** | A continuous signal in the range [-20, +20] produced by the strategy. Positive = bullish view, negative = bearish. The forecast drives portfolio allocation: it is converted to a target allocation [-1, +1] and triggers a rebalance when the gap between current and target exceeds the rebalance threshold. |
-| **Regime** | A classification of current market conditions (e.g., `TRENDING`, `RANGING`, `HIGH_VOL`). Strategies can be gated to only activate in specific regimes. The regime detector runs in parallel with the signal and can suppress or amplify the forecast. |
-| **Component** | A self-contained signal unit within the trading-bot strategy framework. Components implement `SubStrategyComponent` and produce a `ComponentOutput` with a forecast and confidence. Multiple components are combined by a `CompositeStrategy` via weighted sum. |
-| **Strategy Config** | A JSON structure that fully specifies a strategy: which components to use, their parameters, regime gates, and combination weights. This is the machine-readable form of a hypothesis and the only input the backtest engine accepts. |
-| **Handoff** | A YAML file that formally passes context from one stage to the next. It lists required inputs, optional inputs, constraints, and expected deliverables. Stages only read what their handoff specifies — they do not have access to the full conversation history. |
-| **Circuit Breaker** | An automatic rule that interrupts a search loop when exhaustion is detected. Prevents infinite refinement of a dead-end hypothesis by forcing an altitude climb after a fixed number of failed attempts. |
-| **Findings Carryover** | An artifact that preserves diagnostic memory across run boundaries. It tells the next run what was tried, what failed, and what parameter range to search next — preventing the campaign from cycling through the same dead ends. |
-| **Artifact** | Any structured YAML or JSON file produced by a pipeline stage. Artifacts are the only allowed communication between stages. They must conform to their schema before the pipeline advances. |
-| **Schema** | A JSON Schema definition (Draft 7) in `schemas/` that specifies the required fields and types for an artifact. Validation against the schema is a hard gate — a stage cannot advance if its output fails schema validation. |
-| **Skill** | A Markdown file in `skills/` that defines a specialist LLM persona: its mission, required inputs/outputs, checklists, constraints, and forbidden actions. The orchestrator loads the relevant skill as the system prompt for each stage. |
-| **Backtest Window** | A single contiguous date range used for one out-of-sample evaluation. The baseline protocol uses 11 monthly windows (January–November 2024). Results from all windows are aggregated to produce the final verdict. |
-| **Forecast-Return Correlation** | A diagnostic metric measuring how well the strategy's forecast predicts next-bar returns. A value near 0 means the signal is noise. A negative value means the signal is inverted. The verdict_interpreter uses this as the primary signal-quality gate. |
-| **Cost Drag %** | The fraction of gross returns consumed by trading costs (spreads, fees). A value above 80% means the strategy's edge is real but smaller than transaction costs — the fix is to trade less frequently. |
-| **Parameter Bracket** | A [min, max, step] range produced by the verdict_interpreter when prescribing a refine verdict. Narrows the parameter search space based on current run results, enabling convergent search rather than random re-tries. |
-| **Human Pause** | A pipeline state where automated execution is suspended pending human review. Triggered by `implementation_allowed = false` (a fix requires a new bot component) or by a `component_gap` in the backtest_spec. The pipeline resumes after the human resolves the blocker and restarts the orchestrator. |
-| **Audit Log** | A per-stage record in `pipeline_state.yaml` tracking token usage, cost in USD, attempt number, and timestamp. Used to enforce token budgets and debug expensive runs. |
-| **Campaign Review** | A special stage triggered after 2+ hypothesis families fail. Unlike the per-run verdict_interpreter, it has access to the full campaign history and can issue campaign-level decisions (reframe, terminate) that no single-run stage can make. |
-| **Research Decision** | The terminal artifact of a campaign, written when a strategy is promoted or the campaign is terminated. Captures the final verdict, the lessons learned, and (if promoted) the approved strategy config. |
-| **Burnt data** | Date ranges already used in any walk-forward window. Cannot serve as unbiased holdout. Tracked in `config/campaign_data_policy.yaml.burned_ranges`. |
-| **Trial** | Any comparison of a strategy config against historical data: prescreen kills, walk-forward runs, refinement iterations. All count. Deduplicated by `forecast_hash` (identical forecasts on identical data = one trial regardless of config differences). |
-| **Prescreen** | Cheap IC + cost-hurdle gate run before full walk-forward. A8.1: both `ic_significance` AND `cost_check.pass` required; neither alone is a pass. Records a trial in `campaign_state.trial_sharpes` even when it kills. |
-| **Active-bar IC** | Spearman correlation between forecast and return, restricted to bars where the forecast is non-zero or changing. The gate statistic for sparse/event-driven signals; all-bars IC is misleading for these (dominated by the tie mass at forecast=0). |
-| **Power check** | Deterministic arithmetic (A8.6) run before any component is built: computes `min_detectable_ic` from `activation_rate × n_bars × n_eff_symbols / block_size`. If MDE > `plausible_ic_upper`, the hypothesis is parked with a data requirement. Market-wide signals use `n/(1+(n−1)·ρ̄)` effective symbols (not sqrt(n)). |
-| **Dormant mechanism** | A hypothesis whose activating condition never fired in the test window. Disposition: backward data extension (pre-2024 history where the condition demonstrably occurred) OR parking with a condition-based reactivation trigger. |
-| **Holdout consumption** | The irreversible event where a hypothesis_id enters `campaign_data_policy.holdout_consumed_by`. From this point, no further holdout evaluation is possible for that hypothesis_id. Failure is terminal. |
-| **DSR (Deflated Sharpe Ratio)** | Bailey & López de Prado (2014) correction for selection bias across multiple trials. `E_max = μ_SR + σ_SR × [(1−γ)Φ⁻¹(1−1/N) + γΦ⁻¹(1−1/(eN))]`; DSR = Φ[(candidate_SR − E_max)/σ_SR]. Threshold: 0.95. Falls monotonically as trial count grows for fixed true Sharpe. |
-| **Expectancy path** | Promotion route for sparse-trading strategies (below_floor_pct > 50%). Uses per-trade expectancy t-stat instead of DSR; threshold t > 2.0 (Bonferroni note recorded in promotion_audit). |
+| <a id="g-campaign"></a>**Campaign** | A sustained research effort around a single research question, spanning multiple runs and hypothesis families. A campaign ends when a strategy is promoted or the question is declared unanswerable. Example: "Can volume-based signals generate edge on BTC 1h?" |
+| <a id="g-run"></a>**Run** | One complete execution of the 10-stage pipeline for a specific hypothesis. Each run lives in `runs/{run_id}/` and produces its own set of artifacts. A campaign contains many runs. |
+| <a id="g-research-brief"></a>**Research Brief** | The entry document for a run. Written by a human (or auto-generated from a previous run's proposed_brief), it defines the research question, target market, constraints, and what has already been tried. |
+| <a id="g-hypothesis"></a>**Hypothesis** | A single, falsifiable claim about a trading signal: what it is, why it should work, and under what conditions. More specific than a "strategy idea" — it must include a signal formula and explicit assumptions. |
+| <a id="g-hypothesis-family"></a>**Hypothesis Family** | A group of related hypotheses that share a core thesis but differ in implementation (e.g., all volume-momentum variants). If all variants in a family fail, the family is marked exhausted and excluded from future runs. |
+| <a id="g-innovation-expansion"></a>**Innovation Expansion** | The stage that multiplies a single hypothesis into a family of variants. Not random creativity — it follows a structured template: reverse, behavioral, regime-specific, alternative-data. |
+| <a id="g-falsifiable-statement"></a>**Falsifiable Statement** | A prediction specific enough to be proven wrong by data. Required before any backtest. Example: "When momentum > 0 AND vol_ratio > 1.5, next-bar close is higher at least 55% of the time." Without this, a hypothesis cannot be rigorously tested. |
+| <a id="g-validation-gate"></a>**Validation Gate** | The pre-backtest quality check. An LLM agent acts as a skeptical quant and tries to find reasons to reject the hypothesis before any compute is spent. Passes → backtest. Fails → refine or reject. |
+| <a id="g-walk-forward-test"></a>**Walk-Forward Test** | A backtesting methodology where the model is evaluated on sequential, non-overlapping out-of-sample windows. Prevents overfitting by ensuring no window's results are used to tune the strategy. The baseline protocol uses 11 monthly windows. |
+| <a id="g-holdout-period"></a>**Holdout Period** | A final date range deliberately kept separate from all walk-forward windows. The strategy is never tuned on holdout data. It is only tested once, at the very end, to get an unbiased performance estimate. |
+| <a id="g-protocol"></a>**Protocol** | A JSON specification of the backtest conditions: which symbols, which timeframe, which windows, and what thresholds trigger promote/kill. Separating protocol from strategy config allows the same strategy to be tested under different conditions. |
+| <a id="g-altitude"></a>**Altitude** | A measure of how far from the original hypothesis the next search step will move. Altitude 1 = parameter tweak (same hypothesis). Altitude 2 = new hypothesis family (same question). Altitude 3 = new instrument or timeframe (same methodology). Higher altitude = larger change. |
+| <a id="g-verdict"></a>**Verdict** | The final word from the verdict_interpreter after a backtest: `refine`, `pivot`, `escalate`, `promote`, or `kill`. Each verdict maps to an altitude and a next action. |
+| <a id="g-refine"></a>**Refine (altitude 1)** | Adjust a specific parameter of the current hypothesis based on diagnostic findings. The hypothesis family stays the same. Example: raise the threshold filter from 0.5 to 1.0. |
+| <a id="g-pivot"></a>**Pivot (altitude 2)** | Abandon the current hypothesis family and start a new one. The research question stays the same. Triggered when diagnostics show the core signal has no predictive content. |
+| <a id="g-escalate"></a>**Escalate (altitude 3)** | Keep the methodology but test it on a different symbol or timeframe. Triggered when the signal shows theoretical promise but the current market environment doesn't support it. |
+| <a id="g-promote"></a>**Promote** | Terminal positive verdict. The strategy passed all validation gates, walk-forward windows, and (optionally) holdout. It is added to the campaign's approved strategy list and handed off to the deployment pipeline. |
+| <a id="g-kill"></a>**Kill** | Terminal negative verdict. The hypothesis (or entire campaign) is declared unworkable. Root cause and lessons are archived in `research_decision.yaml` to inform future campaigns. |
+| <a id="g-diagnostic-rule"></a>**Diagnostic Rule** ⚠️ | A named rule in the verdict_interpreter that maps a specific metric pattern to a root cause and a prescribed action. Example: `cost_drag` rule fires when trading costs consume > 80% of gross returns, prescribing a higher trade filter. |
+| <a id="g-forecast"></a>**Forecast** | A continuous signal in the range [-20, +20] produced by the strategy. Positive = bullish view, negative = bearish. The forecast drives portfolio allocation: it is converted to a target allocation [-1, +1] and triggers a rebalance when the gap between current and target exceeds the rebalance threshold. |
+| <a id="g-regime"></a>**Regime** | A classification of current market conditions (e.g., `TRENDING`, `RANGING`, `HIGH_VOL`). Strategies can be gated to only activate in specific regimes. The regime detector runs in parallel with the signal and can suppress or amplify the forecast. |
+| <a id="g-component"></a>**Component** | A self-contained signal unit within the trading-bot strategy framework. Components implement `SubStrategyComponent` and produce a `ComponentOutput` with a forecast and confidence. Multiple components are combined by a `CompositeStrategy` via weighted sum. |
+| <a id="g-strategy-config"></a>**Strategy Config** | A JSON structure that fully specifies a strategy: which components to use, their parameters, regime gates, and combination weights. This is the machine-readable form of a hypothesis and the only input the backtest engine accepts. |
+| <a id="g-handoff"></a>**Handoff** | A YAML file that formally passes context from one stage to the next. It lists required inputs, optional inputs, constraints, and expected deliverables. Stages only read what their handoff specifies — they do not have access to the full conversation history. |
+| <a id="g-circuit-breaker"></a>**Circuit Breaker** | An automatic rule that interrupts a search loop when exhaustion is detected. Prevents infinite refinement of a dead-end hypothesis by forcing an altitude climb after a fixed number of failed attempts. |
+| <a id="g-findings-carryover"></a>**Findings Carryover** | An artifact that preserves diagnostic memory across run boundaries. It tells the next run what was tried, what failed, and what parameter range to search next — preventing the campaign from cycling through the same dead ends. |
+| <a id="g-artifact"></a>**Artifact** | Any structured YAML or JSON file produced by a pipeline stage. Artifacts are the only allowed communication between stages. They must conform to their schema before the pipeline advances. |
+| <a id="g-schema"></a>**Schema** | A JSON Schema definition (Draft 7) in `schemas/` that specifies the required fields and types for an artifact. Validation against the schema is a hard gate — a stage cannot advance if its output fails schema validation. |
+| <a id="g-skill"></a>**Skill** | A Markdown file in `skills/` that defines a specialist LLM persona: its mission, required inputs/outputs, checklists, constraints, and forbidden actions. The orchestrator loads the relevant skill as the system prompt for each stage. |
+| <a id="g-backtest-window"></a>**Backtest Window** | A single contiguous date range used for one out-of-sample evaluation. The baseline protocol uses 11 monthly windows (January–November 2024). Results from all windows are aggregated to produce the final verdict. |
+| <a id="g-forecast-return-correlation"></a>**Forecast-Return Correlation** | A diagnostic metric measuring how well the strategy's forecast predicts next-bar returns. A value near 0 means the signal is noise. A negative value means the signal is inverted. The verdict_interpreter uses this as the primary signal-quality gate. |
+| <a id="g-cost-drag-"></a>**Cost Drag %** | The fraction of gross returns consumed by trading costs (spreads, fees). A value above 80% means the strategy's edge is real but smaller than transaction costs — the fix is to trade less frequently. |
+| <a id="g-parameter-bracket"></a>**Parameter Bracket** ⚠️ | A [min, max, step] range produced by the verdict_interpreter when prescribing a refine verdict. Narrows the parameter search space based on current run results, enabling convergent search rather than random re-tries. |
+| <a id="g-human-pause"></a>**Human Pause** | A pipeline state where automated execution is suspended pending human review. Triggered by `implementation_allowed = false` (a fix requires a new bot component) or by a `component_gap` in the backtest_spec. The pipeline resumes after the human resolves the blocker and restarts the orchestrator. |
+| <a id="g-audit-log"></a>**Audit Log** | A per-stage record in `pipeline_state.yaml` tracking token usage, cost in USD, attempt number, and timestamp. Used to enforce token budgets and debug expensive runs. |
+| <a id="g-campaign-review"></a>**Campaign Review** | A special stage triggered after 2+ hypothesis families fail. Unlike the per-run verdict_interpreter, it has access to the full campaign history and can issue campaign-level decisions (reframe, terminate) that no single-run stage can make. |
+| <a id="g-research-decision"></a>**Research Decision** | The terminal artifact of a campaign, written when a strategy is promoted or the campaign is terminated. Captures the final verdict, the lessons learned, and (if promoted) the approved strategy config. |
+| <a id="g-burnt-data"></a>**Burnt data** | Date ranges already used in any walk-forward window. Cannot serve as unbiased holdout. Tracked in `config/campaign_data_policy.yaml.burned_ranges`. |
+| <a id="g-trial"></a>**Trial** | Any comparison of a strategy config against historical data: prescreen kills, walk-forward runs, refinement iterations. All count. Deduplicated by `forecast_hash` (identical forecasts on identical data = one trial regardless of config differences). |
+| <a id="g-prescreen"></a>**Prescreen** | Cheap IC + cost-hurdle gate run before full walk-forward. A8.1: both `ic_significance` AND `cost_check.pass` required; neither alone is a pass. Records a trial in `campaign_state.trial_sharpes` even when it kills. |
+| <a id="g-active-bar-ic"></a>**Active-bar IC** | Spearman correlation between forecast and return, restricted to bars where the forecast is non-zero or changing. The gate statistic for sparse/event-driven signals; all-bars IC is misleading for these (dominated by the tie mass at forecast=0). |
+| <a id="g-power-check"></a>**Power check** | Deterministic arithmetic (A8.6) run before any component is built: computes `min_detectable_ic` from `activation_rate × n_bars × n_eff_symbols / block_size`. If MDE > `plausible_ic_upper`, the hypothesis is parked with a data requirement. Market-wide signals use `n/(1+(n−1)·ρ̄)` effective symbols (not sqrt(n)). |
+| <a id="g-dormant-mechanism"></a>**Dormant mechanism** | A hypothesis whose activating condition never fired in the test window. Disposition: backward data extension (pre-2024 history where the condition demonstrably occurred) OR parking with a condition-based reactivation trigger. |
+| <a id="g-holdout-consumption"></a>**Holdout consumption** | The irreversible event where a hypothesis_id enters `campaign_data_policy.holdout_consumed_by`. From this point, no further holdout evaluation is possible for that hypothesis_id. Failure is terminal. |
+| <a id="g-dsr"></a>**DSR (Deflated Sharpe Ratio)** | Bailey & López de Prado (2014) correction for selection bias across multiple trials. `E_max = μ_SR + σ_SR × [(1−γ)Φ⁻¹(1−1/N) + γΦ⁻¹(1−1/(eN))]`; DSR = Φ[(candidate_SR − E_max)/σ_SR]. Threshold: 0.95. Falls monotonically as trial count grows for fixed true Sharpe. |
+| <a id="g-expectancy-path"></a>**Expectancy path** | Promotion route for sparse-trading strategies (below_floor_pct > 50%). Uses per-trade expectancy t-stat instead of DSR; threshold t > 2.0 (Bonferroni note recorded in promotion_audit). |
 
 ---
 

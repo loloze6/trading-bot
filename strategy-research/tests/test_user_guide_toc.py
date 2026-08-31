@@ -53,6 +53,9 @@ def test_toc_is_current() -> None:
 def test_internal_anchors_resolve() -> None:
     s = _GUIDE.read_text(encoding="utf-8")
     valid = {_slug(h) for h in re.findall(r"^#{2,4} (.+)$", s, re.M)}
+    # Glossary terms are table rows, not headings, so they carry explicit HTML
+    # anchors (<a id="g-..."></a>) to be linkable at their point of use.
+    valid |= set(re.findall(r'<a id="([^"]+)"></a>', s))
     links = set(re.findall(r"\]\(#([^)]+)\)", s))
     broken = sorted(links - valid)
     assert not broken, (
