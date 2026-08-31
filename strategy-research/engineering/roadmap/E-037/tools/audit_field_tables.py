@@ -24,6 +24,19 @@ for e in entries:
         documented[head] = fields
 
 # map entry heading -> glob for real instances
+def _all_keys(node):
+    """Every key at EVERY depth. Top-level-only was the original bug: it reported
+    median_sharpe as absent from protocol_result.yaml, where it appears 57 times
+    nested. "Not a top-level key" is not the same claim as "does not exist"."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield k
+            yield from _all_keys(v)
+    elif isinstance(node, list):
+        for x in node:
+            yield from _all_keys(x)
+
+
 def globs(head):
     m = re.match(r"`([^`]+)`", head)
     if not m:
@@ -59,12 +72,13 @@ for head, fields in documented.items():
         if not isinstance(d, dict):
             continue
         n += 1
-        real_keys |= set(d.keys())
+        file_keys = set(_all_keys(d))
+        real_keys |= file_keys
         for k in fields:
-            if k in d:
+            if k in file_keys:      # at ANY depth, not just top level
                 seen[k] += 1
     phantom = [k for k in fields if seen[k] == 0]
-    undoc = sorted(real_keys - set(fields))
+    undoc = sorted(str(k) for k in real_keys - set(fields))
     report[head] = (n, phantom, undoc)
     flag = "  <== PHANTOM" if phantom else ""
     print(f"{head[:43]:44} {n:>5}  {len(phantom)}/{len(fields)}{' ':18}{len(undoc)}{flag}")

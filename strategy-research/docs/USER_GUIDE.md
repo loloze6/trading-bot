@@ -1377,10 +1377,12 @@ prints that the SKILL may need a new status case and pauses
 ---
 
 ### `protocol_result.yaml` / `protocol_summary.json`
-> ⚠️ **Six of the seven fields below are absent from every real
-> `protocol_result.yaml`** (38 files, measured 2026-08-30):
+> ⚠️ **Five of the seven fields below are absent from every real
+> `protocol_result.yaml`** (38 files, re-measured 2026-08-31):
 > `per_window_metrics`, `per_symbol_metrics`, `per_regime_metrics`,
-> `median_sharpe`, `promotion_criteria`, `diagnostic_metrics`. The artifact
+> `promotion_criteria`, `diagnostic_metrics`. **`median_sharpe` is real** — it
+> appears, nested, in 31 of the 38; an earlier version of this note wrongly
+> listed it as absent because the audit inspected only top-level keys. The artifact
 > really carries `hypothesis_verdict`, `per_symbol_summary`, `results`,
 > `source`, `prescreen_route` and `prescreen_kill_reason`. This is the backtest
 > result every verdict rests on, so the gap matters operationally. Names below
@@ -1431,11 +1433,18 @@ prints that the SKILL may need a new status case and pauses
 ⚠️ **This entry previously documented five fields that no artifact has ever
 contained.** Measured 2026-08-30 across the **39** real
 `verdict_interpretation.yaml` files on disk, each of the following appears
-**0 times**: `altitude` (described as "numeric altitude, 1 = refine, 2 = pivot,
-3 = escalate"), `verdict`, `diagnostic_rule_applied` (e.g. `cost_drag`,
-`signal_inversion`), `parameter_bracket` ("[min, max, step] range to search
-next"), and `next_altitude` ("fallback altitude if the current verdict fails
-again"). The real fields are `status` (34 of 39) and `root_cause` (11 of 39).
+**0 times in this artifact**: `altitude` (described as "numeric altitude, 1 =
+refine, 2 = pivot, 3 = escalate"), `verdict`, `diagnostic_rule_applied` (e.g.
+`cost_drag`, `signal_inversion`), `parameter_bracket` ("[min, max, step] range
+to search next"), and `next_altitude` ("fallback altitude if the current verdict
+fails again"). The real fields here are `status` (34 of 39) and `root_cause`
+(11 of 39).
+
+**But four of those five exist elsewhere, and are populated** — re-measured
+2026-08-31. They were documented on the wrong artifact rather than invented:
+`verdict` in `protocol_result.yaml` (31), and `diagnostic_rule_applied` (31),
+`next_altitude` (30) and `parameter_bracket` (14, of which 2 non-null) in
+`findings_carryover.yaml`. Only **`altitude`** appears in no artifact at all.
 The former descriptions are preserved here rather than deleted, because they
 record an intended design; they do not describe the artifact. See
 [E037-22](../engineering/roadmap/E-037/FINDINGS.md#e037-22).
@@ -1726,7 +1735,9 @@ same portability issue as [E037-11](../engineering/roadmap/E-037/FINDINGS.md#e03
 ---
 
 ### `regime_audit_decision.yaml`
-> ⚠️ **`retune_firewall_check` is absent from the real artifact.** The firewall
+> ⚠️ **`retune_firewall_check` is absent from the real artifact.** (Note
+> `class_conditional_sensitivity`, previously listed here as absent, **is
+> present** — nested rather than top-level; corrected 2026-08-31.) The firewall
 > itself is real and enforced in code — `_validate_retune_firewall`
 > (`run_phase1_research.py:2459`) raises on a violation — but the decision file
 > does not carry a field recording that it passed. Note also that this file is
