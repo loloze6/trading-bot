@@ -120,16 +120,39 @@ verified present in concept before the original was cut.
 
 ## 5. What S4 did not do
 
-- **Did not move the five flag-gated artifacts' `Objective:` prose into stage
-  blocks**, which the EPIC lists for S4. There is nowhere to move it: those
-  artifacts belong to features that are off by default and have no stage block
-  ([E037-21](FINDINGS.md#e037-21)). Forcing the move would also destroy the evidence
-  for [E037-20](FINDINGS.md#e037-20). Recorded rather than forced.
-- **Did not migrate `file:line` anchors to `file::symbol`.** Recommended, and
-  the reason it was deferred is in [`S3_TRIAGE.md`](S3_TRIAGE.md) — two
-  automated attempts were reverted. It wants a deliberate pass, not a
-  session-end rewrite.
-- **Did not hyperlink every glossary term at its point of use.** §6 and the
-  §2.2 terms table now cross-reference each other, which covers the reader's
-  actual need; per-term anchors for 30+ table rows is available if wanted.
+- **Dropped: moving the five flag-gated artifacts' `Objective:` prose into
+  stage blocks**, which the EPIC lists for S4.
+
+  **Reviewed 2026-08-31 at Jérémy's challenge, and the original reasoning did
+  not hold.** It claimed there was "nowhere to move it". That was wrong — those
+  artifacts attach to real stages: `variant_selection.yaml` and
+  `variants_not_pursued.yaml` are written just after stage 6, and
+  `exclusion_digest.yaml` / `schedulability.yaml` are campaign-level. It also
+  claimed moving the prose would destroy [E037-20](FINDINGS.md#e037-20)'s
+  evidence; it would not, because that evidence is now recorded in
+  `FINDINGS.md` with counts and does not depend on the guide staying as it is.
+
+  **Dropped anyway, for the honest reason:** the value is low. It would
+  relocate design prose for machinery that **does not run** — all six
+  orchestrator flags are off ([E037-21](FINDINGS.md#e037-21)) — into blocks for
+  stages that never invoke it. §3 now flags those five entries as flag-gated,
+  which is what a reader actually needs. If a flag is ever turned on, that is
+  the moment to write the stage-block text, against behaviour someone can
+  observe rather than infer.
+
+  Recorded this way rather than silently deleted, because "parked for good
+  reasons" and "dropped after the reasons turned out to be weak" are different
+  states and the second is the true one.
+- **Deferred by decision, not dropped: migrating `file:line` anchors to
+  `file::symbol`.** Two automated attempts were reverted (see
+  [`S3_TRIAGE.md`](S3_TRIAGE.md)); it needs a deliberate pass with the
+  per-block resolution rule. **Scheduled 2026-08-31 as its own task, to run
+  before Jérémy's review** — see [`S5_ANCHOR_MIGRATION.md`](S5_ANCHOR_MIGRATION.md).
+- ✅ **Done 2026-08-31: glossary terms are hyperlinked at their point of use.**
+  Parked in error — the EPIC asked for it by name. Taken literally it is
+  unworkable: 46 terms across **613** occurrences, "Run" alone appearing 131
+  times, which would be unreadable. Implemented to the intent instead — *a
+  reader should know a definition exists* — as **first use per section**: 46
+  HTML anchors in the glossary and **74** links in the body, about one per 32
+  lines. `tests/test_user_guide_toc.py` now validates those anchors too.
 - Fixed no findings. E037-28 was raised, not corrected.
