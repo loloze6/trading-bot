@@ -33,6 +33,10 @@ _HERE = os.path.dirname(os.path.abspath(__file__))   # strategy-research/tools/
 _SR   = os.path.dirname(_HERE)                        # strategy-research/
 _REPO = os.path.dirname(_SR)                          # repo root
 
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+from workflow_artifact_validation import validate_workflow_artifact  # noqa: E402  (CUL-11 sibling helper)
+
 # ---------------------------------------------------------------------------
 # Normal distribution helpers (stdlib only — no scipy)
 # ---------------------------------------------------------------------------
@@ -608,6 +612,7 @@ def _load_yaml(path: Path) -> dict:
 
 
 def _write_yaml(path: Path, data: dict) -> None:
+    validate_workflow_artifact(path, data)  # CUL-11: opt-in schema check (warn-by-default)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
