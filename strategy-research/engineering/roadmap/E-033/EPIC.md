@@ -139,8 +139,11 @@ characterization is read and a direction is chosen by the operator.**
       a file that is wrong and unread reads as operational wherever it sits,
       so a banner was not enough. **Remaining for S2:** the revive-or-delete
       decision itself, which still depends on S1.
-- [ ] S3 — Propose stage changes, if S1 justifies any, with an explicit
+- [~] S3 — Propose stage changes, if S1 justifies any, with an explicit
       baseline-impact statement per change. Operator chooses before any build.
+      **Proposals written 2026-08-31** from S1's evidence plus Jérémy's review
+      of §1–§2.2 during E-037 — see "S3 proposals" below. **Six decisions are
+      open; none has been built.**
 
 ## Independent confirmation from E-037 (2026-08-31)
 
@@ -178,6 +181,122 @@ Recorded in E-037 as [E037-36](../E-037/FINDINGS.md#e037-36). A separate epic
 was drafted for this on 2026-08-31 and **deleted on discovering S1 had already
 found it** — the duplicate is itself recorded as
 [E037-43](../E-037/FINDINGS.md#e037-43).
+
+---
+
+## S3 proposals (2026-08-31) — six open decisions
+
+Written from S1's characterization and Jérémy's §1–§2.2 review. **Nothing here
+is built.** Each carries the baseline-impact statement Done-when 4 requires.
+
+### D1 — Variants: test each survivor, or stop generating them
+
+**Evidence.** 139 generated, 36 tested, 103 discarded untested (74%); never
+more than one config per run.
+
+**The choice.** Build a config for each surviving variant and backtest each —
+which makes the stage's objective true and fixes the trial count — **or** stop
+generating variants and restate the objective for a single-candidate pipeline.
+
+**Why not deciding is the worst option:** the campaign pays the cost of breadth
+(tokens to generate up to 8 variants, plus the diversity reasoning) and gets
+the evidence of a single test. Either half alone is defensible.
+
+**Baseline impact.** Testing each variant does **not** invalidate past results —
+it adds runs. But it **raises the promotion bar** for everything, because the
+trial count grows (see D2). Stopping generation invalidates nothing and saves
+tokens.
+
+**Depends on** [E-039](../E-039/EPIC.md): if the go/no-go moves after the
+backtest, "test each variant" means "backtest each variant", which is the
+expensive reading. Sequence them together.
+
+### D2 — How discarded variants count as trials
+
+**Evidence.** Seven variants generated and one tested currently costs **one**
+trial. The other six were selected against — a real multiple comparison — and
+are never counted, so the deflated-Sharpe denominator is too small and every
+promotion bar sits too low.
+
+**The choice.** Count only tested variants; count all generated; or count with
+a discount for the selection. **Pre-register the rule before implementing D1** —
+choosing it after seeing which strategies pass is the exact failure the DSR
+machinery exists to prevent.
+
+**Baseline impact.** Any rule but "count only tested" retroactively raises the
+bar on the existing corpus. That is a real re-grading and must be declared.
+
+### D3 — Merge `validation_gate` and `refinement_planner`
+
+**Evidence.** With A8.6 removed ([E-039](../E-039/EPIC.md), Jérémy's call
+2026-08-31), `validation_gate`'s remaining work overlaps the planner's.
+Jérémy: *"indeed I would merge them."*
+
+**One thing must survive the merge:** pre-registering what would count as
+success **before any result exists** — the holdout split (A6.1) and the
+`pass_rule` the C7 evaluator scores against. That is scientific integrity, not
+feasibility; without it a verdict can be written after seeing the number.
+
+**Open sub-question:** does pre-registration need a stage, or is it a field on
+the brief validated at registration? If the latter, the merge is clean; if the
+former, one stage survives with a much narrower job.
+
+**Baseline impact.** None on results. Changes stage names and routing, so it
+invalidates nothing but touches every handoff template.
+
+### D4 — Where implementation feasibility is answered
+
+**Evidence.** The router reads `implementation_allowed`, **defaulting to
+`True`** when absent — and the planner's skill is never told to write it (0
+mentions in `SKILL.md`; 2 of 4 real files omit it). Meanwhile stage 6 already
+answers the question by emitting `component_gap`.
+
+**The choice.** Instruct the skill and default the router **closed**, or move
+the question wholly to stage 6 and delete `implementation_allowed`.
+
+**Why it cannot stay:** it is the only open default in a module whose stated
+convention is *"silence is never a green light"*.
+
+**Baseline impact.** None on results — no run has been routed by it in a way
+that changed an outcome, because the 2 files that omit it both looped back as
+the default intended.
+
+### D5 — `stages.yaml`: revive or delete *(Done-when 2, still open)*
+
+S1's recommendation is **delete**. The file has been moved out of `workflow/`
+to this epic's `artifacts/`, so it no longer reads as operational. What remains
+is the decision itself.
+
+**Baseline impact.** None. Nothing reads it.
+
+### D6 — Wire `validation_decision.yaml`'s `conditions` into `backtest_specification`
+
+S1's own "smallest lever", still unbuilt. The `conditions` field is attached to
+**78% of validation decisions** (36/46 `conditional_approve`), is printed to
+console, and never reaches the stage that builds the config — which is
+closed-book and can only read its declared handoff inputs.
+
+**Related and found independently by E-037:** the same handoff also omits
+`refinement_notes.yaml` ([E037-40](../E-037/FINDINGS.md#e037-40)), so on a
+refine loop the planner's conclusions reach the spec stage only if the expanded
+card happened to carry them. **Both are the same defect** — a stage that cannot
+see what an earlier stage decided — and should be fixed in one change.
+
+**Baseline impact.** **Invalidates baselines on every `conditional_approve`
+run — 78% of validation outcomes.** Must ship off-by-default with a
+byte-identical proof, and per [E-041](../E-041/EPIC.md) with a written
+switch-on criterion.
+
+---
+
+### What S3 does *not* propose
+
+- **Changing what `innovation_expansion` generates.** The generation side is
+  sound; only the testing side fails to match it.
+- **Removing the prescreen's IC computation.** Useful and cheap; the question
+  of whether it may *terminate* a run belongs to [E-039](../E-039/EPIC.md).
+- **Any build.** Every item above is a decision for the operator first.
+
 
 ## Relationship to other epics
 

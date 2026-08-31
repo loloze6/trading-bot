@@ -255,6 +255,14 @@ one place to read when the answer matters.
 The table above is the index. Each block below answers, for one stage: what it
 consumes, what it produces, what logic runs, and why it exists.
 
+> **How rules are worded here, and why it matters.** A rule enforced by code
+> is written as a fact — *"the run pauses"*, *"it raises"*, *"a second attempt
+> is refused"*. A rule that only instructs the model is written as **"the skill
+> is instructed to…"**. The difference is deliberate: several rules in earlier
+> versions of this guide were phrased as gates — *"Must…"*, *"…= rejected"* —
+> when nothing in the code could produce that outcome, so readers reasonably
+> assumed a check existed. §8.2's ledger lists which is which.
+
 **Terms used throughout this section**
 
 *Stage-reading vocabulary. Campaign-level terms — campaign, run, hypothesis
@@ -370,11 +378,13 @@ rebalance frequency; the holdout gate reads it to check tradability.
   forced seller, a flow that ignores fees, someone constrained by a mandate.
   "RSI crosses 30" names an indicator but no counterparty, so there is nothing
   to disprove — it either worked or it didn't, and you learn nothing either
-  way. Writing `edge_source` before `signal_concept` is what forces the
-  counterparty to be named first.
+  way. **The skill is instructed to** write `edge_source` before
+  `signal_concept`, so the counterparty is named before the formula. Nothing in
+  the code checks the ordering.
 - **Check the library before inventing.** `indicator_library.yaml` records
   which indicator classes have already been tried and what killed them, so the
-  campaign does not rediscover a dead end.
+  campaign does not rediscover a dead end. **The skill is instructed to** do
+  this lookup (A1.4 / Improvement 04); no code verifies that it did.
 
 **Stage input**
 
@@ -424,9 +434,18 @@ parameterisation.
 **Design rationale.**
 - Testing one parameterisation confounds "the idea is wrong" with "this
   setting is wrong".
-- Variants must differ in *kind*, not in threshold value, or the set is one
-  trial wearing several hats — and it would inflate the trial count without
-  adding information.
+- **The skill is instructed to** make variants differ in *kind* rather than in
+  threshold value — otherwise the set is one trial wearing several hats, and it
+  inflates the count without adding information. This is guidance to the model,
+  not a check; see logic step 2.
+
+> ⚠️ **This stage generates 3–8 variants and the pipeline tests one.** Measured
+> across every run: **139 generated, 36 tested, 103 discarded untested (74%)**,
+> and no run has ever built more than one config. So the objective above is not
+> currently achieved — a kill still cannot separate "the mechanism is wrong"
+> from "this setting was wrong". Owned by
+> [E-033](../engineering/roadmap/E-033/EPIC.md) S3; recorded as
+> [E037-36](../engineering/roadmap/E-037/FINDINGS.md#e037-36).
 
 **Stage input:** `hypothesis_card.yaml`, handoff
 `hypothesis_to_innovation_expansion.yaml`, `config/indicator_library.yaml`.
