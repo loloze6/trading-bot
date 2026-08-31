@@ -298,8 +298,15 @@ class Launcher:
             sys.exit(1)
 
 
-    def simulate(self):
-        """Run backtest simulation."""
+    def simulate(self, feed_local_storage: bool = True):
+        """Run backtest simulation.
+
+        feed_local_storage: default True preserves the historical aux-feed
+            write-through-on-read behaviour (bit-identical — main.py's
+            Launcher().simulate() passes nothing). False threads a pure read
+            into every aux-feed factory so a gapped read cannot mutate a tracked
+            cache (CUL-161).
+        """
         self.logger.debug("Starting backtest simulation...")
         self.logger.debug("-" * 80)
 
@@ -343,6 +350,7 @@ class Launcher:
                 start_date   = start_date,
                 end_date     = end_date,
                 extra_feeds  = FEED_REGISTRY,
+                feed_local_storage = feed_local_storage,
             )
 
             # A total fetch failure is not a zero-return backtest. Without this,
@@ -490,7 +498,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  bar_equity: bool = False, exchange: str | None = None,
                  drop_feeds: list[str] | None = None,
                  model_funding: bool = False,
-                 risk_controls: dict | None = None):
+                 risk_controls: dict | None = None,
+                 feed_local_storage: bool = True):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -608,6 +617,14 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         distinguishable from a no-controls one, and a "risk_controls" block is added to
         metrics.json. Does NOT touch RiskManager's band controls. See
         risk/portfolio_risk_gate.py and tests/test_risk_layer_bit_identical.py.
+    feed_local_storage: controls whether the aux-feed read may write-through to
+        the on-disk cache. Defaults to True -- the historical write-through-on-read
+        behaviour, bit-identical to before this parameter existed (forwarded to
+        engine.load_data unchanged). False threads localStorage=False into every
+        aux-feed factory, so a gapped aux-feed read reaches the (still-allowed)
+        remote but cannot MUTATE a tracked cache -- the same opt-out CUL-26 added
+        for OHLCV (fetch_historical_data), extended to the feed path (CUL-161).
+        See tests/test_aux_feed_localstorage_flag.py.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -711,7 +728,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         risk_gate=risk_gate,
     )
 
-    engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=effective_feed_registry)
+    engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=effective_feed_registry,
+                     feed_local_storage=feed_local_storage)
 
     # Same guard as Launcher.simulate(), and needed MORE here: this is the entry
     # point the campaign runner uses, so an empty fetch would write an all-zero
