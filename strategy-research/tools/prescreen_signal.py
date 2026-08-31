@@ -1317,7 +1317,14 @@ def run_prescreen(
     # not activate ON DATA; with no data loaded, nothing was tested at all and
     # the two are not the same claim. Standing rule: anything feeding decisions
     # raises on degenerate inputs.
-    if not any(all_records_by_symbol.values()):
+    # F5c interaction: a symbol that LOADED but produced zero records because its
+    # component errored on EVERY bar (so the strategy never became ready) is not the
+    # "no data loaded" case this guard exists for -- that component-error outcome is a
+    # tested result that must route to no_signal_artifact / component_error
+    # (tests/test_prescreen_no_signal_artifact.py). Gate on the error count: the guard
+    # still fires for a genuine no-data run (every symbol failed to load -> count 0)
+    # but yields to F5c routing when component errors explain the emptiness.
+    if not any(all_records_by_symbol.values()) and total_component_error_count == 0:
         detail = "; ".join(f"{sym}: {why}" for sym, why in skipped_symbols) or "no symbols requested"
         raise RuntimeError(
             f"Prescreen loaded NO usable data for any of {len(symbols)} symbol(s) at "
