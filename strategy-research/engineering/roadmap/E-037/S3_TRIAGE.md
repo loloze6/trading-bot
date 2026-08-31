@@ -1,7 +1,7 @@
 # E-037 S3 — Triage
 
 **State:** proposed — awaiting Jérémy's decisions
-**Input:** the 30 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
+**Input:** the 31 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
 **Last synced:** 2026-08-31, after S5. A mechanical completeness check confirms every finding appears below.
 **What this file is for:** S3's job per the EPIC is *"each becomes a card or
 issue. Jérémy decides what gets worked."* This groups them so that decision is
@@ -13,7 +13,7 @@ a handful of calls rather than twenty-five.
 
 ## The short version
 
-Of 30 findings, **23 are documentation** and **7 touch code or the machinery around it**. One (E037-29) is already closed. Only the code
+Of 31 findings, **24 are documentation** and **7 touch code or the machinery around it**. One (E037-29) is already closed. Only the code
 ones can hurt a running campaign; the documentation ones are what made the
 system hard to reason about in the first place.
 
@@ -123,7 +123,7 @@ pass during S4.
 
 ---
 
-## Group F — Raised after the first triage pass (4)
+## Group F — Raised after the first triage pass (5)
 
 Added 2026-08-31. Three were found after S3 was written. **E037-07 was missed by
 the original grouping and is high severity** — recorded as a miss rather than
@@ -135,6 +135,8 @@ quietly slotted in.
 | [E037-29](FINDINGS.md#e037-29) | **high** | The pre-commit secret scan was not installed here — two gates running of three. | CLOSED 2026-08-31. Hook re-installed, `diff` silent, and `tests/test_installed_hook_matches_tracked.py` now guards recurrence. |
 | [E037-28](FINDINGS.md#e037-28) | low | The glossary says "10-stage pipeline"; the guide documents 13. Ten is the size of `STAGE_CONFIGS`. | Fold into cleanup. One phrasing — "13 documented, 10 dispatched" — stays true if either number changes. |
 | [E037-30](FINDINGS.md#e037-30) | low | 13 of 46 glossary terms appear nowhere else; two describe fields that live on a different artifact. | Partly addressed: the two misattributed terms are marked in §6. The rest is a cleanup decision. |
+
+| [E037-31](FINDINGS.md#e037-31) | **high** | The three terminal run states that actually occur (34 runs) were undocumented, while the one documented since the beginning has never happened. | Guide corrected with measured counts. Decide whether §2.3's tables should name them too. |
 
 **Why E037-07 being missed is worth stating.** The first triage grouped 25
 findings by hand and dropped one of the highest-severity items in the set. That

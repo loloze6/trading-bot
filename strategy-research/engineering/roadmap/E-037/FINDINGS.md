@@ -66,8 +66,9 @@ contract, so nobody could see them.
 | [E037-28](#e037-28) | low | stale-count | `docs/USER_GUIDE.md` §6 (`Run`) |
 | [E037-29](#e037-29) | **high** | guard-not-installed | `.git/hooks/pre-commit` (this machine) |
 | [E037-30](#e037-30) | low | orphan-glossary-terms | `docs/USER_GUIDE.md` §6 |
+| [E037-31](#e037-31) | **high** | undocumented-terminal-states | `docs/USER_GUIDE.md` §3 (`pipeline_state.yaml`) |
 
-**Counts:** 11 high · 14 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
+**Counts:** 12 high · 14 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -1176,6 +1177,57 @@ paid for two high-severity corrections.
 update the definitions or mark them as intended-design like their §3
 counterparts. For group 1, consider linking the glossary term to the name the
 document actually uses. Group 2 needs nothing.
+
+---
+
+## E037-31
+
+**Severity:** high · **Type:** undocumented-terminal-states · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §3, `pipeline_state.yaml`
+
+**Found by:** second mechanical review, 2026-08-31 — comparing every string a
+routing function can `return` against the guide's text
+
+**The guide documents the ending that has never happened and omits the three
+that actually do.** Measured over the runs on disk:
+
+| Terminal `status` | Real runs | Mentions in the guide (before this) |
+|---|---|---|
+| `completed_refined` | **20** | **0** |
+| `completed_reframed` | **11** | **0** |
+| `completed_escalated` | **3** | **0** |
+| `completed_rejected` | 4 | 11 |
+| `completed_promoted` | **0** | 2 |
+
+All three are returned by real routing code — `completed_refined` at
+`run_phase1_research.py:3755` and `:3815`, `completed_escalated` at `:3871` and
+`:3892`, `completed_reframed` at `:5928` and `:5997`.
+
+**Why this is high rather than cosmetic.** `pipeline_state.yaml` is how you find
+out what a run did. Someone opening a finished run — 34 of them — reads a
+`status` the guide does not contain, and the §3 entry's list of five values
+gives no hint that it is incomplete. It reads as an enumeration, not a
+selection. An operator could reasonably conclude the value is an error.
+
+It also quietly misrepresents the campaign's history: a reader of §3 would infer
+that runs end in `promoted` or `rejected`, when in fact **31 of 38 end in
+refined, reframed or escalated** — the campaign has been iterating, not
+concluding, and nothing in the artifact documentation says so.
+
+**How it was found, because the method is the point.** Not by reading. By
+walking the AST of every `determine_post_*` and `_route_*` function, collecting
+every string constant they can `return`, and grepping each against the guide.
+Two probes in a few minutes: the first checked sibling docs for stale stage
+names and found none, the second found this.
+
+This is the fifth consecutive review pass to find something, and the fifth to
+find it mechanically rather than by re-reading.
+
+**Proposed disposition (S3 decides, not this file):** the guide now lists all
+five terminal states with their measured counts. Worth deciding separately
+whether §2.3's decision tables should name them too, since that is where a
+reader traces what a route leads to.
 
 ---
 
