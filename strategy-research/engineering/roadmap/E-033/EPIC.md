@@ -456,14 +456,54 @@ would be equally blind.
 the planner's feasibility conclusions would not reach the spec stage either.
 **One change fixes both.**
 
-**Still to decide:** whether to wire it. **Baseline impact is the reason it is
-not automatic — it invalidates every `conditional_approve` run, 78% of the
-corpus.** Must ship off-by-default with a byte-identical proof and, per
-[E-041](../E-041/EPIC.md), a written switch-on criterion.
+#### Jérémy's challenge, 2026-09-01: *"conditions around what?"*
 
-### D5 — STILL OPEN
+Fair question, and reading the real values answers it. **37 files carry
+non-empty `conditions`, and they are three different kinds of thing:**
 
-`stages.yaml` revive-or-delete. S1 recommends **delete**; no impact either way.
+**1. Anti-lookahead and correctness constraints** — the implementer must obey
+these or the backtest is invalid:
+
+> *"ER/VR computation must use only historical bars [t-window:t]. Verify no
+> lookahead in code before backtest execution."* (run_011)
+>
+> *"Walk-forward test must recompute regime model in-sample only; no regime
+> flags from data beyond walk-forward window date."* (run_009)
+
+**2. Cost and configuration requirements:**
+
+> *"Commission configured at 5 bps round-trip in backtest config.json."*
+> (run_010)
+
+**3. Pass/reject thresholds** — pre-registered acceptance criteria, in prose:
+
+> *"Reject if Sharpe < -1.0."* · *"`regime_frequency` must be ≥ 0.15."* ·
+> *"`min_trade_count` must be ≥ 5 per walk-forward window."* (run_011, run_012)
+
+**This changes the proposal.** "Wire the field" was too blunt — the three kinds
+have different destinations:
+
+| Kind | Where it belongs | Status |
+|---|---|---|
+| **1. Correctness / anti-lookahead** | **Must reach `backtest_specification`.** A config built blind to these can be silently invalid — lookahead is the one defect a backtest cannot self-detect. | **The real gap.** Wire it. |
+| **2. Cost / config** | Same — the implementer needs it. | Wire it. |
+| **3. Pass thresholds** | **Superseded.** This is `pre_registration.yaml`'s `pass_rule`, which the C7 evaluator machine-checks since 2026-07-13. Prose thresholds here are a second, unchecked copy. | **Do not wire. Retire**, or the same criterion exists in two places and drifts — the failure this whole review is about. |
+
+**Revised decision needed:** not "wire `conditions`" but **"split `conditions`
+into constraints that reach the implementer and acceptance criteria that belong
+in `pass_rule`."** The first is the safety-relevant half; the second is
+duplication that should stop being written.
+
+**Baseline impact** is unchanged for the half that gets wired — it invalidates
+every `conditional_approve` run, 78% of the corpus — so it ships off-by-default
+with a byte-identical proof and, per [E-041](../E-041/EPIC.md), a written
+switch-on criterion.
+
+### D5 — DECIDED: delete `stages.yaml`
+
+Jérémy, 2026-09-01: *"yes delete."* Matches S1's recommendation. The file is
+already out of `workflow/` and read by nothing; Done-when 2 closes on the
+deletion. No baseline impact.
 
 ---
 
