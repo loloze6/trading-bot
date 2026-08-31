@@ -1,7 +1,7 @@
 # E-037 S3 — Triage
 
 **State:** proposed — awaiting Jérémy's decisions
-**Input:** the 32 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
+**Input:** the 35 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
 **Last synced:** 2026-08-31, after S5. A mechanical completeness check confirms every finding appears below.
 **What this file is for:** S3's job per the EPIC is *"each becomes a card or
 issue. Jérémy decides what gets worked."* This groups them so that decision is
@@ -13,7 +13,7 @@ a handful of calls rather than twenty-five.
 
 ## The short version
 
-Of 32 findings, **25 are documentation** and **7 touch code or the machinery around it**. One (E037-29) is already closed. Only the code
+Of 35 findings, **27 are documentation** and **8 touch code or the machinery** and **7 touch code or the machinery around it**. One (E037-29) is already closed. Only the code
 ones can hurt a running campaign; the documentation ones are what made the
 system hard to reason about in the first place.
 
@@ -123,7 +123,7 @@ pass during S4.
 
 ---
 
-## Group F — Raised after the first triage pass (6)
+## Group F — Raised after the first triage pass (9)
 
 Added 2026-08-31. Three were found after S3 was written. **E037-07 was missed by
 the original grouping and is high severity** — recorded as a miss rather than
@@ -139,6 +139,12 @@ quietly slotted in.
 | [E037-31](FINDINGS.md#e037-31) | **high** | The three terminal run states that actually occur (34 runs) were undocumented, while the one documented since the beginning has never happened. | Guide corrected with measured counts. Decide whether §2.3's tables should name them too. |
 
 | [E037-32](FINDINGS.md#e037-32) | **high** | §2.3's routing tables, never verified by E-037, hold five defects — a missing override route, a missing fail-closed branch, the most-triggered circuit breaker absent, a misstated condition, and a token budget quoted at 1/5 its real value in the wrong unit. | Corrected in place with the old text preserved. Decide whether E037-02 reopens as a class. |
+
+| [E037-33](FINDINGS.md#e037-33) | medium | §5 claimed `run_protocol.py` is "the only fully deterministic tool", contradicting §2.2; and its `protocols/` table listed 4 of 13, omitting `baseline_v2.json`, the protocol behind the `keltner_163` fixture §7 depends on. | Both corrected in place. |
+
+| [E037-34](FINDINGS.md#e037-34) | **high** | §1's opening principles carried the schema-validation falsehood — third instance of the same claim, after §3 (fixed August) and CLAUDE.md (fixed by this epic). Both of the EPIC's own §1 instructions were also never actioned by any stage. | Corrected: four principles, "understand the observation" added first, falsification-first demoted. **The sweep is the real action** — grep every enforcement verb in the guide. |
+
+| [E037-35](FINDINGS.md#e037-35) | **high** | The `keltner_163` known-answer fixture that §7 makes the basis of all quantitative-tool acceptance **does not exist** — no file, no test, 0 of 955 trades.json match, and the path `run_protocol.py` names is empty. | Decide: regenerate from `baseline_v2` and commit with a test, or retire A3.5/A9.1's "permanent fixture" language. |
 
 **Why E037-07 being missed is worth stating.** The first triage grouped 25
 findings by hand and dropped one of the highest-severity items in the set. That
