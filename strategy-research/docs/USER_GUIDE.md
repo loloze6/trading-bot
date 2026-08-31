@@ -12,7 +12,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
   - [2.1 Stage Map](#21-stage-map)
   - [2.2 Stage Objectives](#22-stage-objectives)
   - [2.2.x Stage detail blocks](#22x-stage-detail-blocks)
-    - [Stage 1 — `research_brief`](#stage-1--research_brief)
+    - [The input — `research_brief`](#the-input--research_brief)
     - [Stage 2 — `hypothesis_generation`](#stage-2--hypothesis_generation)
     - [Stage 3 — `innovation_expansion`](#stage-3--innovation_expansion)
     - [Stage 4 — `validation_gate`](#stage-4--validation_gate)
@@ -21,7 +21,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [Stage 7 — `signal_prescreen`](#stage-7--signal_prescreen)
     - [Stage 8 — `protocol_execution`](#stage-8--protocol_execution)
     - [Stage 9 — `regime_detector_validation`](#stage-9--regime_detector_validation)
-    - [Stage 10 — `regime_auditor`](#stage-10--regime_auditor)
+    - [Not a stage — `regime_auditor` (a human procedure)](#not-a-stage--regime_auditor-a-human-procedure)
     - [Stage 11 — `verdict_interpreter`](#stage-11--verdict_interpreter)
     - [Stage 12 — `campaign_review`](#stage-12--campaign_review)
     - [Stage 13 — `holdout_evaluation`](#stage-13--holdout_evaluation)
@@ -107,29 +107,43 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
 
 This is an **automated strategy research factory**. Its goal is to take a high-level research question ("can volume-confirmed momentum work on BTC?") and systematically generate, validate, backtest, interpret, and decide on trading strategy hypotheses — with minimal human intervention.
 
-It is built around four principles:
+It is built around five principles.
 
-- **Understand the observation** — do not run the next attempt without knowing
-  what the last one did and why. This is first because its absence is the
-  costliest failure the campaign has had: **35 runs before anyone asked why the
-  kills kept recurring.** A loop that produces results faster than they are
-  understood is not research.
-- **Structured artifacts over prose** — every stage communicates through YAML
-  files rather than free text, so a decision can be re-read later. ⚠️ This line
-  previously said *"validated* YAML files". **Nothing validates them:** no
-  schema under `workflow_artifacts/schemas/` is loaded by any code. See §3's
-  preamble and [E037-34](../engineering/roadmap/E-037/FINDINGS.md#e037-34).
-- **Automated routing** — the pipeline decides its own next step from rules
+- **Learn from the failure, don't just discard it.** A strategy that loses money
+  is not a wasted run — it is the only evidence you have about *why* the idea
+  does not work, and the input to the next one. The unit that fails is never
+  "an indicator": it is a whole composition — a regime rule, a set of weighted
+  sub-strategies, and the allocation between them. Discarding a run because it
+  was unprofitable throws away the attribution that would tell you which part
+  was wrong.
+- **Understand the observation.** Do not run the next attempt without knowing
+  what the last one did and why. Its absence is the costliest failure this
+  campaign has had: **35 runs before anyone asked why the kills kept
+  recurring.** A loop that produces results faster than they are understood is
+  not research.
+- **Structured artifacts over prose.** Every stage communicates through YAML
+  files rather than free text, so a decision can be re-read later.
+- **Automated routing.** The pipeline decides its own next step from rules
   rather than human judgment.
-- **[Campaign](#g-campaign) memory** — across many runs the system tracks what
+- **[Campaign](#g-campaign) memory.** Across many runs the system tracks what
   has been tried and detects dead ends.
 
-**Falsification-first** — a [hypothesis](#g-hypothesis) is pressure-tested for
-failure modes *before* any code is [run](#g-run), so compute is not spent on
-structurally broken ideas — is a **feature of the validation gate, not the
-system's governing philosophy**. It was stated as the latter here until
-2026-08-31; it earns its place, but it is one gate among several, and calling it
-*the* philosophy crowded out the principle above it.
+**Falsification-first** — pressure-testing a [hypothesis](#g-hypothesis) for
+failure modes before any code is [run](#g-run) — is a **feature of the
+validation gate, not the governing philosophy**. It earns its place, but it is
+one gate among several.
+
+<details>
+<summary>Corrections to this section (2026-08-31)</summary>
+
+- "Structured artifacts" previously read *"validated* YAML files". **Nothing
+  validates them** — no schema under `workflow_artifacts/schemas/` is loaded by
+  any code. This was the third place that same false claim lived; see §3's
+  preamble and [E037-34](../engineering/roadmap/E-037/FINDINGS.md#e037-34).
+- Falsification-first was stated as *the* philosophy until 2026-08-31, which
+  crowded out the two principles now above it.
+
+</details>
 
 ---
 
@@ -160,7 +174,7 @@ used to be drawn on this diagram now lives in that stage's block in
 block answers *"what does it do and why"*.
 
 ```
-   [Human]  1  research_brief
+   [input]     research_brief          written by a human or the campaign runner
                │
    [Claude]  2  hypothesis_generation
                │
@@ -180,7 +194,6 @@ block answers *"what does it do and why"*.
    [Tool]    8  protocol_execution
                │
    [Tool]    9  regime_detector_validation      (before the verdict, if stale)
-   [Human]  10  regime_auditor                  (not dispatched — see the block)
                │
    [Claude] 11  verdict_interpreter
                ├── refine / pivot / escalate ──► new run
@@ -196,21 +209,19 @@ block answers *"what does it do and why"*.
                └── fail ─► kill                  ─ terminal
 ```
 
-**Engine tags:** `[Human]` a person does it · `[Claude]` an LLM stage the
-orchestrator dispatches · `[Tool]` a deterministic Python stage, no LLM call.
+**Engine tags:** `[input]` not a step — an artifact the flow starts from ·
+`[Claude]` an LLM stage the orchestrator dispatches · `[Tool]` a deterministic
+Python stage, no LLM call.
 
-⚠️ **Stage 10 is drawn as `[Human]` deliberately.** The orchestrator never
-dispatches it — it is absent from both `STAGE_CONFIGS` and `_SKILL_MAP`, and no
-code writes `regime_audit_decision.yaml`. In practice the pipeline pauses and a
-person runs the [skill](#g-skill). Whether it should become a real stage is an open
-decision: see [E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16).
+**Numbering.** Stages keep the numbers this guide has always used, so 1 and 10
+are missing from the diagram on purpose: `research_brief` is an input rather
+than a step, and `regime_auditor` is a human procedure the orchestrator never
+dispatches. Both are still documented below.
 
-**Ungated-only standing policy** *(a [campaign](#g-campaign) policy, not a step — kept here
-because it constrains every [hypothesis](#g-hypothesis) on the map)*: ER-based [regime](#g-regime) detection
-is unusable on BTC/ETH 1h (A2.3). All hypotheses in the [run](#g-run) queue are ungated. A
-regime gate is only permitted after: (1) a trustworthy detector exists per the
-A2.2 gate, and (2) an ungated edge already confirmed showing regime-dependent
-performance.
+> **Every strategy currently trades all the time.** None of them switches
+> itself on and off by market condition. Why, and what would change it, is in
+> [stage 9](#stage-9--regime_detector_validation) — it is a fact about the
+> campaign's present state, not a step in the flow.
 
 ---
 
@@ -223,7 +234,7 @@ one place to read when the answer matters.
 
 | # | Stage | Engine | Objective — why the stage exists |
 |---|---|---|---|
-| 1 | [**research_brief**](#stage-1--research_brief) | Human | State the question this run exists to answer, and the limits it must respect. |
+| — | [**research_brief**](#the-input--research_brief) | *input, not a step* | State the question this run exists to answer, and the limits it must respect. |
 | 2 | [**hypothesis_generation**](#stage-2--hypothesis_generation) | Claude | Turn the research question into one concrete, testable claim. |
 | 3 | [**innovation_expansion**](#stage-3--innovation_expansion) | Claude | Produce variants that differ in kind, so a [kill](#g-kill) blames the idea rather than one setting. |
 | 4 | [**validation_gate**](#stage-4--validation_gate) | Claude | Try to kill the hypothesis on paper, before any code is written for it. |
@@ -232,7 +243,7 @@ one place to read when the answer matters.
 | 7 | [**signal_prescreen**](#stage-7--signal_prescreen) | Python tool | Decide cheaply, on the signal alone, whether this deserves an expensive backtest. |
 | 8 | [**protocol_execution**](#stage-8--protocol_execution) | Python tool | Trade the strategy across every walk-forward window and record what happened. |
 | 9 | [**regime_detector_validation**](#stage-9--regime_detector_validation) | Python tool | Establish whether the regime detector is trustworthy enough to condition any metric. |
-| 10 | [**regime_auditor**](#stage-10--regime_auditor) | ⚠️ Human | Judge the detector without letting profitability leak into the decision. **Not dispatched by the orchestrator** — see the block. |
+| — | [**regime_auditor**](#not-a-stage--regime_auditor-a-human-procedure) | ⚠️ Human, not dispatched | Judge the detector without letting profitability leak into the decision. **Not dispatched by the orchestrator** — see the block. |
 | 11 | [**verdict_interpreter**](#stage-11--verdict_interpreter) | Claude | Decide what the result means, what to do next, and at what size of change. |
 | 12 | [**campaign_review**](#stage-12--campaign_review) | Claude | Ask whether the campaign's whole line of attack is still worth pursuing. |
 | 13 | [**holdout_evaluation**](#stage-13--holdout_evaluation) | Python tool + human | Spend the one-shot holdout, and only after everything cheaper has passed. |
@@ -243,12 +254,6 @@ one place to read when the answer matters.
 
 The table above is the index. Each block below answers, for one stage: what it
 consumes, what it produces, what logic runs, and why it exists.
-
-**How this section relates to the code.** `STAGE_CONFIGS`
-(`workflow/run_phase1_research.py::STAGE_CONFIGS`) is the engine's registry and holds **10**
-entries; this guide numbers **13**. Stage 1 is a human input, and stages 9 and
-10 are not registry stages — each block says so. Where the code's name for a
-stage differs from this guide's, both are given.
 
 **Terms used throughout this section**
 
@@ -299,9 +304,15 @@ each block glosses the ones it uses.
 
 ---
 
-#### Stage 1 — `research_brief`
-**Engine:** Human (not an engine stage — no `STAGE_CONFIGS` entry)
-**Runs:** once, before anything else. Every run starts here.
+#### The input — `research_brief`
+
+> **Not a step.** It has no entry in the orchestrator's stage registry, no
+> engine and no logic of its own. It is the artifact the pipeline starts from,
+> numbered as stage 1 in earlier versions of this guide because §2.2 is a
+> reading order rather than a dispatch table.
+
+**Written by:** a human, the campaign runner, or the previous run's verdict.
+**Exists before:** anything else in the run.
 
 **Objective.** State the question this run exists to answer, and the limits it
 must respect.
@@ -335,13 +346,16 @@ Not only by stage 2. The pass-rule evaluator reads it (`::run_tool_worker`) beca
 deciding whether funding must be modelled needs the product, timeframe and
 rebalance frequency; the holdout gate reads it to check tradability.
 
-**Notes, history and traps**
+<details>
+<summary><strong>Notes, history and traps</strong> — measured counts, past incidents, and the reasons behind each guard. Open when you need the evidence; skip when you need the flow.</summary>
 
 - **F8 (2026-07-04):** only ever write `research_brief.yaml` for a run that
   does not already have one (`::_safe_write_new_research_brief`) — overwriting one mid-campaign silently
   rewrites the question a run was answering.
 - A brief that does not declare `research_only: false` will be **refused** at
   the holdout gate. Silence is not a green light there.
+
+</details>
 
 ---
 
@@ -352,11 +366,15 @@ rebalance frequency; the holdout gate reads it to check tradability.
 **Objective.** Turn the research question into one concrete, testable claim.
 
 **Design rationale.**
-- A hypothesis that names *who is on the other side* is falsifiable; one that
-  names only an indicator is not. Ordering `edge_source` before
-  `signal_concept` is what forces that.
-- Checking the indicator library first stops the campaign rediscovering
-  something already tried and killed.
+- **A hypothesis has to say who is losing the money you expect to make.** A
+  forced seller, a flow that ignores fees, someone constrained by a mandate.
+  "RSI crosses 30" names an indicator but no counterparty, so there is nothing
+  to disprove — it either worked or it didn't, and you learn nothing either
+  way. Writing `edge_source` before `signal_concept` is what forces the
+  counterparty to be named first.
+- **Check the library before inventing.** `indicator_library.yaml` records
+  which indicator classes have already been tried and what killed them, so the
+  campaign does not rediscover a dead end.
 
 **Stage input**
 
@@ -380,16 +398,17 @@ A1.1–A1.3 (populate `edge_source` before `signal_concept`) and A1.4 (look the
 indicator up in `indicator_library.yaml`) live in the skill prompt. As with
 stage 3, no Python enforces them — see [E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18).
 
-**2. Declare where the evidence comes from, or ask for the feed.**
-The card must declare `evidence_type` from `config/available_feeds.yaml`. If the
-signal needs a feed that does not exist yet, the hypothesis routes to
-`feed_wishlist.yaml` instead of being written against data nobody has. The
-indicator lookup is A1.4 / Improvement 04 (written `Impr 04` in older notes).
+**2. Say which data the signal is built on.**
+The card names its `evidence_type`, chosen from `config/available_feeds.yaml` —
+the list of feeds that exist and are testable today.
 
-**3. A multi-card output has a recovery path.**
-If the skill emits several cards instead of one,
-`_handle_hypothesis_generation_multi_card_split` runs before the stage is
-allowed to fail (`run_phase1_research.py::run_loop`, defined at `::_handle_hypothesis_generation_multi_card_split`).
+**3. If the data does not exist, ask for it instead of assuming it.**
+A signal needing a feed nobody has routes to `feed_wishlist.yaml` rather than
+being written against imaginary data.
+
+**4. If the model returns several hypotheses instead of one, they are split
+rather than rejected.**
+(`run_phase1_research.py::_handle_hypothesis_generation_multi_card_split`)
 
 ---
 
@@ -466,10 +485,13 @@ the power-gate path, `prescreen_result.yaml` as a **5-key stub** carrying `stage
 
 **Features / logic in place**
 
-**1. Read the decision, tolerating a known [schema](#g-schema) drift.**
-`status`, falling back to `family_status` — the skill's real output for a
-multi-variant family validation used the latter (run_053, 2026-07-06, F4f).
-If neither key is present it raises rather than proceeding (`::determine_post_validation_route`).
+**1. The router reads this stage's own verdict to pick the next stage.**
+The stage writes `validation_decision.yaml`; the orchestrator's router then
+reads it. Two different actors, not a loop.
+It looks for `status`, falling back to `family_status` — the skill once emitted
+the latter for a multi-variant family validation (run_053, 2026-07-06, F4f). If
+neither key is present it raises rather than guessing
+(`::determine_post_validation_route`).
 
 **2. A8.6 power gate — the deterministic stop, run on approval.**
 After an `approve`/`conditional_approve`, `_run_a86_power_check` runs
@@ -490,11 +512,14 @@ from `variant_decisions` (`::determine_post_validation_route`).
 | `refine` | `refinement_planner`, up to `max_refinements_after_validation` (default 2), then reject |
 | `reject` | `completed_rejected` |
 
-**Notes, history and traps**
+<details>
+<summary><strong>Notes, history and traps</strong> — measured counts, past incidents, and the reasons behind each guard. Open when you need the evidence; skip when you need the flow.</summary>
 
 - The guide's §2.3 lists approve / refine / reject. **`conditional_approve` is
   a fourth accepted status** and behaves as approve with printed conditions.
 - Must declare the holdout range in `sample_split_design` (A6.1).
+
+</details>
 
 ---
 
@@ -726,10 +751,13 @@ which read as a real `kill_no_ic` and nearly closed an untested family.
 `ic_by_regime` is emitted as `{suspended: true}` with its reason, so the
 absence cannot be mistaken for an oversight. Only ungated IC decides.
 
-**12. Side effect — stage 7 rewrites stage 10's file.**
-`ungated_escape_eligible` in `regime_audit_decision.yaml` is resolved using
-`ic_all_bars`, because an IC measured on detector-gated bars is not admissible
-for or against the escape (A2.3 rule 5) (`::run_prescreen`, `::_resolve_ungated_escape`). The code labels
+**12. Side effect — this stage writes into a file another stage owns.**
+It edits `regime_audit_decision.yaml`, which belongs to stage 10, setting one
+field: whether this hypothesis is allowed to be judged without a trustworthy
+regime detector. It uses the all-bars IC to decide, because an IC measured only
+on bars the detector selected would be circular — you would be using the
+detector to judge whether you can proceed without it
+(`::run_prescreen`, `::_resolve_ungated_escape`). The code labels
 this "A9.1", which appears to be the wrong code — see [E037-13](../engineering/roadmap/E-037/FINDINGS.md#e037-13).
 
 **13. Write the artifact.** `prescreen_result.yaml` (`::run_prescreen`).
@@ -753,7 +781,8 @@ E-025), so a crash-retry replaces the stale row instead of being swallowed.
 | `refine_cost_hurdle` | IC significant positive, cost fails, but marginally — widen threshold or lengthen holding | verdict_interpreter |
 | `proceed_to_backtest` | IC significant positive **and** `cost_check.pass` (A8.1) | stage 8 `protocol_execution` |
 
-**Notes, history and traps**
+<details>
+<summary><strong>Notes, history and traps</strong> — measured counts, past incidents, and the reasons behind each guard. Open when you need the evidence; skip when you need the flow.</summary>
 
 - Signal layer only — no portfolio simulation, no backtest engine.
 - **Two thresholds, one documented.** `_SIG_THRESHOLD = 0.10` is the main IC
@@ -769,6 +798,8 @@ E-025), so a crash-retry replaces the stale row instead of being swallowed.
   `kraken_SUIUSD` train sample.
 - `n_eff_nominal_blocks` is computed over the post-(A) active count, so it
   compares like-for-like with `n_eff_placeable_blocks`, not the pre-#50 value.
+
+</details>
 
 **Owned by which code**
 
@@ -841,12 +872,15 @@ trial row while the data had already been spent, so N was under-counted.
 Recording is wrapped so its own failure only logs; the original error is
 re-raised unchanged.
 
-**Notes, history and traps**
+<details>
+<summary><strong>Notes, history and traps</strong> — measured counts, past incidents, and the reasons behind each guard. Open when you need the evidence; skip when you need the flow.</summary>
 
 - The `pass_rule_evaluation.yaml` step is invisible in §3 — it has no artifact
   entry. See [E037-19](../engineering/roadmap/E-037/FINDINGS.md#e037-19).
 - A verdict that contradicts `pass_rule_evaluation.yaml` without flagging the
   contradiction is a conformance failure, per the verdict-interpreter SKILL.
+
+</details>
 
 ---
 
@@ -858,6 +892,22 @@ handling (`::run_loop`, `::run_loop`).
 
 **Objective.** Establish whether the regime detector is trustworthy enough for
 its labels to be allowed to condition any metric.
+
+> **What a regime gate is, and why nothing uses one today.**
+> A *regime gate* means a strategy only trades when the market is in a state it
+> likes — trending, say — and sits out otherwise. To do that you need a
+> **detector**: a rule that labels each bar with the current state.
+>
+> The detector built for this campaign (ER-based) was measured and **failed its
+> own quality gate**: its labels change under a small parameter nudge, and it
+> cannot hit the required activation band and stay stable at the same time. Its
+> labels are therefore noise wearing a label, and gating on them would add
+> noise rather than selectivity.
+>
+> **So every hypothesis in the queue trades ungated — all the time.** A regime
+> gate becomes permissible again only when both hold: (1) a detector passes the
+> A2.2 quality gate, and (2) an *ungated* edge has already been confirmed and
+> shown to perform differently by regime. Rule A2.3.
 
 **Design rationale.**
 - A detector that flips label under a small parameter nudge produces
@@ -891,8 +941,19 @@ activation band.
 
 ---
 
-#### Stage 10 — `regime_auditor`
-**Engine:** ⚠️ **Human, invoking a skill — not an automated stage.**
+#### Not a stage — `regime_auditor` (a human procedure)
+
+> **This is not part of the pipeline.** It is kept here because the guide
+> referred to it as stage 10 until 2026-08-31 and because the skill and its
+> artifact are real. Nothing dispatches it: it is absent from `STAGE_CONFIGS`
+> and `_SKILL_MAP`, and no code writes `regime_audit_decision.yaml`. What
+> happens in practice is that the pipeline pauses and a person runs the skill
+> by hand. Merging its judgment into
+> [stage 9](#stage-9--regime_detector_validation) — which already computes the
+> metrics it judges — is proposed as its own epic. See
+> [E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16).
+
+**Engine:** Human, invoking a skill.
 **Runs:** only when the pipeline pauses on
 `root_cause.mechanism_failure == regime_misattribution`.
 
@@ -1086,13 +1147,16 @@ If `holdout_result.yaml` is absent, pause.
 holdout is run — otherwise "within expectations" is decided after seeing the
 number. Failure is terminal.
 
-**Notes, history and traps**
+<details>
+<summary><strong>Notes, history and traps</strong> — measured counts, past incidents, and the reasons behind each guard. Open when you need the evidence; skip when you need the flow.</summary>
 
 - The guide's §2.2 row names gates 1 and 2 only. Gates **2b** and **3** are
   not mentioned there, and 2b will refuse every brief that does not explicitly
   declare `research_only: false`.
 - "Looking is spending": gate 2b sits *above* the step that tells a human to go
   run the holdout, not merely above the step that marks it consumed.
+
+</details>
 
 ---
 
