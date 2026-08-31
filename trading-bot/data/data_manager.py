@@ -1050,7 +1050,7 @@ class DataManager:
                 logger.info(f"DataManager: {symbol} initialised ({len(df)} rows)")
 
     def fetch_historical_data(self, symbol: str, start_date, end_date, exchange: str = "binance",
-                              allow_sealed: bool = False) -> pd.DataFrame:
+                              allow_sealed: bool = False, localStorage: bool = True) -> pd.DataFrame:
         """
         Fetch raw OHLCV data for one symbol via CcxtFetcher and return it as
         a flat DataFrame.
@@ -1066,6 +1066,16 @@ class DataManager:
         defaults to "binance" so existing call sites are unaffected unless
         they opt in (e.g. exchange="kraken" to reach kraken_XBTUSD_1h etc.).
 
+        `localStorage` (default True — every existing caller, incl. the only
+        production one at core/backtester.py, passes nothing and is unaffected)
+        controls the on-disk cache. When True the fetcher loads the cache and
+        SAVES any gap-fill back to it — the historical write-through-on-read
+        behaviour. Pass False for a pure read: the SAVE side of
+        `_merge_and_store` is suppressed (`save=self.localStorage`,
+        base_fetcher.py), so a gapped-window read can no longer mutate a tracked
+        cache. It does NOT suppress the live `_fetch_remote` call itself — that
+        is a separate concern; this flag closes the cache-mutation-on-read only.
+
         Returns an empty DataFrame on failure.
         """
         logger.debug(f"Fetching OHLCV for {symbol}  {start_date} → {end_date}  (exchange={exchange})")
@@ -1078,7 +1088,7 @@ class DataManager:
             start_date, end_date, [symbol],
             candle_interval_seconds=self.interval_seconds,
             exchange=exchange,
-            localStorage=True,
+            localStorage=localStorage,
             data_dir = data_storage_dir
         )
         try:

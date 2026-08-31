@@ -20,6 +20,13 @@ and mutate the archive cache. This test therefore reads a deliberately
 gap-free window (BTC 2022 — audited 0 missing bars), which yields zero missing
 periods, hence zero remote fetch and zero re-save. Full-history reachability
 (96,381 rows) is verified by the ingestion script's own reload round-trip.
+
+CUL-26 (fix/data-ingest-s16): the re-save half of that defect is now opt-out —
+`fetch_historical_data(..., localStorage=False)` suppresses the cache write, so
+a gapped read can no longer mutate a tracked cache (see
+tests/test_fetch_localstorage_flag.py). These reachability tests deliberately
+exercise the DEFAULT (localStorage=True) write-through path, so the gap-free
+window is still what keeps them side-effect-free.
 """
 
 import sys
