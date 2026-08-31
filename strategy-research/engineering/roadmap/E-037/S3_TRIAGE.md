@@ -1,7 +1,7 @@
 # E-037 S3 — Triage
 
 **State:** proposed — awaiting Jérémy's decisions
-**Input:** the 31 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
+**Input:** the 32 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
 **Last synced:** 2026-08-31, after S5. A mechanical completeness check confirms every finding appears below.
 **What this file is for:** S3's job per the EPIC is *"each becomes a card or
 issue. Jérémy decides what gets worked."* This groups them so that decision is
@@ -13,7 +13,7 @@ a handful of calls rather than twenty-five.
 
 ## The short version
 
-Of 31 findings, **24 are documentation** and **7 touch code or the machinery around it**. One (E037-29) is already closed. Only the code
+Of 32 findings, **25 are documentation** and **7 touch code or the machinery around it**. One (E037-29) is already closed. Only the code
 ones can hurt a running campaign; the documentation ones are what made the
 system hard to reason about in the first place.
 
@@ -123,7 +123,7 @@ pass during S4.
 
 ---
 
-## Group F — Raised after the first triage pass (5)
+## Group F — Raised after the first triage pass (6)
 
 Added 2026-08-31. Three were found after S3 was written. **E037-07 was missed by
 the original grouping and is high severity** — recorded as a miss rather than
@@ -137,6 +137,8 @@ quietly slotted in.
 | [E037-30](FINDINGS.md#e037-30) | low | 13 of 46 glossary terms appear nowhere else; two describe fields that live on a different artifact. | Partly addressed: the two misattributed terms are marked in §6. The rest is a cleanup decision. |
 
 | [E037-31](FINDINGS.md#e037-31) | **high** | The three terminal run states that actually occur (34 runs) were undocumented, while the one documented since the beginning has never happened. | Guide corrected with measured counts. Decide whether §2.3's tables should name them too. |
+
+| [E037-32](FINDINGS.md#e037-32) | **high** | §2.3's routing tables, never verified by E-037, hold five defects — a missing override route, a missing fail-closed branch, the most-triggered circuit breaker absent, a misstated condition, and a token budget quoted at 1/5 its real value in the wrong unit. | Corrected in place with the old text preserved. Decide whether E037-02 reopens as a class. |
 
 **Why E037-07 being missed is worth stating.** The first triage grouped 25
 findings by hand and dropped one of the highest-severity items in the set. That
