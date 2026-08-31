@@ -1522,9 +1522,17 @@ Cross-run diagnostic memory. Prevents the next run from re-testing parameters or
 
 Internal run state — not a research artifact but the orchestrator's working memory.
 
+> ⚠️ **Three terminal states were undocumented until 2026-08-31**, and they are
+> the three that actually happen. `completed_refined`, `completed_reframed` and
+> `completed_escalated` account for **34 runs on disk** between them and were
+> named nowhere in this guide, while `completed_promoted` — documented since the
+> beginning — has occurred **zero** times. The guide described the ending nobody
+> has reached and omitted the ones everybody reaches. See
+> [E037-31](../engineering/roadmap/E-037/FINDINGS.md#e037-31).
+
 | Field | Definition |
 |---|---|
-| `status` | `running`, `completed_promoted`, `completed_rejected`, `human_pause`, `error` |
+| `status` | Where the run ended up. Terminal values, with counts measured over the runs on disk 2026-08-31: `completed_refined` (**20**) · `completed_reframed` (**11**) · `completed_rejected` (4) · `completed_escalated` (3) · `completed_promoted` (**0 — has never happened**). Non-terminal: `running`, `paused_for_human` / `human_pause`, `error`. |
 | `current_stage` | The stage currently executing |
 | `completed_stages` | Ordered list of stages already finished |
 | `governance` | Budget limits: max_refinements, max_tokens, max_variants |
