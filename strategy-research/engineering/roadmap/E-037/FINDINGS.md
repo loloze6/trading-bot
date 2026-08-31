@@ -1031,8 +1031,7 @@ the only phrasing that stays true if either number changes.
 
 ## E037-29
 
-**Severity:** high · **Type:** guard-not-installed · **Status:** open —
-**live on this machine right now**
+**Severity:** high · **Type:** guard-not-installed · **Status:** ✅ **CLOSED 2026-08-31** — hook re-installed at Jérémy's instruction;  silent;  green
 
 **Lands on:** `.git/hooks/pre-commit` (installed copy) vs
 `strategy-research/tools/hooks/pre-commit` (versioned copy)
