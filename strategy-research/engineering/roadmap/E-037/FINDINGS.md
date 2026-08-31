@@ -50,8 +50,9 @@ contract, so nobody could see them.
 | [F25](#f25) | medium | incomplete-index | `docs/USER_GUIDE.md` §5 |
 | [F26](#f26) | **high** | code-regression | `strategy-research/tools/prescreen_signal.py:1320` |
 | [F27](#f27) | **high** | gap-in-the-gate | `.git/hooks/pre-commit` · `.github/workflows/tests.yml` |
+| [F28](#f28) | low | stale-count | `docs/USER_GUIDE.md` §6 (`Run`) |
 
-**Counts:** 10 high · 14 medium · 3 low. By type: 5 doc-vs-code, 2
+**Counts:** 10 high · 14 medium · 4 low. By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -980,6 +981,37 @@ the cost of a slower commit; (b) commit a small fixture cache so these tests can
 run in CI; (c) fail the CI step if more than N tests skip, so silent erosion is
 visible. (a) and (c) are cheap and independent; (b) is the only one that makes
 CI actually cover the class, and needs a decision about committing data.
+
+---
+
+## F28
+
+**Severity:** low · **Type:** stale-count · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §6, the `Run` glossary entry
+
+**Found by:** S4, 2026-08-31, while cross-linking the glossary
+
+§6 defines a **Run** as *"One complete execution of the 10-stage pipeline."*
+The guide documents **13** numbered stages in §2.2.
+
+Ten is not arbitrary — it is exactly the size of `STAGE_CONFIGS`, the engine's
+dispatch registry, which excludes the human `research_brief` and the two regime
+stages (see [F15](#f15)). So the glossary silently uses the *engine's* count
+while §2.1 and §2.2 use the *documented* count, and nothing reconciles them.
+
+It is also the same number as the stale ten-item stage list found in
+`strategy-research/CLAUDE.md` ([F9](#f9)), though with different members — so
+"10 stages" now means at least two different things across the repo's own docs.
+
+Low severity: nobody makes a decision on this number. Recorded because it is
+the third instance of the same pattern — a count restated in a second place and
+never re-synced — and because the fix is one word once someone decides which
+count the glossary should quote.
+
+**Proposed disposition (S3 decides, not this file):** state both — "13
+documented stages, of which 10 are dispatched by the orchestrator" — which is
+the only phrasing that stays true if either number changes.
 
 ---
 

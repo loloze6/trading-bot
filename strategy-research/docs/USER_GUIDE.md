@@ -54,92 +54,88 @@ It is built around three principles:
 
 ### 2.1 Stage Map
 
+Steps and links only. **Every gate, threshold, amendment code and caveat that
+used to be drawn on this diagram now lives in that stage's block in
+[§2.2](#22-stage-objectives)** — the map answers *"what follows what"*, the
+block answers *"what does it do and why"*.
+
 ```
-[Human]  research_brief
-            │
-            ▼
-[Claude] hypothesis_generation ◄── (reads indicator_library.yaml, available_feeds.yaml)
-            │
-            ▼
-[Claude] innovation_expansion ◄── (diversity check: ≥2 library categories or data_requirements)
-            │
-            ▼
-[Claude] validation_gate ──── A8.6 power check (deterministic, pre-build)
-            │ approve          │ insufficient_power_a_priori
-            │                  └──► completed_rejected (no component built)
-            │ refine (≤2x)
-            │   ↕
-            │  refinement_planner → innovation_expansion loop
-            │
-            ▼
-[Claude] backtest_specification
-            │ spec_ready
-            ▼
-[Tool]   signal_prescreen  ◄── A8.6 pre-flight (blocks if power insufficient)
-            │                   Computes active-bar IC, cost_check (A8.1: both required)
-            │                   Records trial in campaign_state.trial_sharpes (A6.2)
-     ┌──────┴──────────────────────┐
-     │ proceed_to_backtest         │ kill_* / refine_* routes
-     ▼                             ▼
-[Tool]   protocol_execution    [skip to verdict_interpreter]
-     │
-     ▼
-[Tool]   regime_detector_validation  (auto-triggered before verdict if report stale)
-     │
-[Claude] regime_auditor  →  regime_audit_decision.yaml
-     │
-     ▼
-[Claude] verdict_interpreter
-            │
-     ┌──────┼──────────────────────────────┐
-     │      │                              │
-   refine  pivot                       escalate
-   (alt 1) (alt 2)                     (alt 3)
-     │      │                              │
-     └──────┴──────────────────────────────┘
-            │
-     [new run spawned]
-            │
-     (after 2+ family failures)
-            ▼
-[Claude] campaign_review
-            │
-     ┌──────┼──────────────────┐
-     │      │                  │
-  continue reframe          terminate
-     │      │                  │
-     │  [new run]          [kill]
-     │
-     ▼ promote (provisional)
-[Tool]   holdout_evaluation  ◄── DSR gate + single-use enforcement
-            │                    pre-registered expected_range required
-     ┌──────┴─────────┐
-     │ pass           │ fail (terminal)
-     ▼                ▼
-[terminal] promote  kill
+   [Human]  1  research_brief
+               │
+   [Claude]  2  hypothesis_generation
+               │
+   [Claude]  3  innovation_expansion  ◄──────────┐
+               │                                 │ refine
+   [Claude]  4  validation_gate                  │ (bounded)
+               ├── approve ──┐                   │
+               ├── refine ───┼─► 5 refinement_planner
+               └── reject ───┼─► completed_rejected
+                             │
+   [Claude]  6  backtest_specification
+               │ spec_ready
+   [Tool]    7  signal_prescreen
+               ├── proceed_to_backtest ─► 8
+               └── kill_* / refine_* ───────────► 11
+               │
+   [Tool]    8  protocol_execution
+               │
+   [Tool]    9  regime_detector_validation      (before the verdict, if stale)
+   [Human]  10  regime_auditor                  (not dispatched — see the block)
+               │
+   [Claude] 11  verdict_interpreter
+               ├── refine / pivot / escalate ──► new run
+               ├── promote (provisional) ──────► 13
+               └── kill                          ─ terminal
+               │
+   [Claude] 12  campaign_review                 (after 2+ family failures)
+               ├── continue / reframe ─────────► new run
+               └── terminate                     ─ terminal
+               │
+   [Tool]   13  holdout_evaluation
+               ├── pass ─► promote               ─ terminal
+               └── fail ─► kill                  ─ terminal
 ```
 
-**Ungated-only standing policy:** ER-based regime detection is unusable on BTC/ETH 1h (A2.3). All hypotheses in the run queue are ungated. A regime gate is only permitted after: (1) a trustworthy detector exists per the A2.2 gate, and (2) an ungated edge already confirmed showing regime-dependent performance.
+**Engine tags:** `[Human]` a person does it · `[Claude]` an LLM stage the
+orchestrator dispatches · `[Tool]` a deterministic Python stage, no LLM call.
+
+⚠️ **Stage 10 is drawn as `[Human]` deliberately.** The orchestrator never
+dispatches it — it is absent from both `STAGE_CONFIGS` and `_SKILL_MAP`, and no
+code writes `regime_audit_decision.yaml`. In practice the pipeline pauses and a
+person runs the skill. Whether it should become a real stage is an open
+decision: see [F16](../engineering/roadmap/E-037/FINDINGS.md#f16).
+
+**Ungated-only standing policy** *(a campaign policy, not a step — kept here
+because it constrains every hypothesis on the map)*: ER-based regime detection
+is unusable on BTC/ETH 1h (A2.3). All hypotheses in the run queue are ungated. A
+regime gate is only permitted after: (1) a trustworthy detector exists per the
+A2.2 gate, and (2) an ungated edge already confirmed showing regime-dependent
+performance.
 
 ---
 
 ### 2.2 Stage Objectives
 
-| # | Stage | Engine | Objective |
+**This table is the index.** One line per stage, answering *"which stage do I
+want?"*. Everything else — what it consumes, what it produces, what logic runs,
+the amendment codes, the traps — is in that stage's block below, which is the
+one place to read when the answer matters.
+
+| # | Stage | Engine | Objective — why the stage exists |
 |---|---|---|---|
-| 1 | **research_brief** | Human | Define the research question, target market, constraints, and existing context. Entry point for every run. |
-| 2 | **hypothesis_generation** | Claude | Translate the brief into a single, concrete, testable hypothesis. Must: populate `edge_source` BEFORE `signal_concept` (A1.1–A1.3); look up proposed indicator in `indicator_library.yaml` (A1.4/Impr 04); declare `evidence_type` from `available_feeds.yaml` or route to `feed_wishlist.yaml`. |
-| 3 | **innovation_expansion** | Claude | Expand into 3–6 testable variants **when the brief leaves it free to** — a brief carrying `"Single registered hypothesis, no parameter sweep"` or a `REPLICATION_DIAGNOSTIC` constraint correctly yields one variant, and that is obedience, not stage failure (measured 2026-08-26: of 25 *unconstrained* expansion runs, 21 land in [3,6]). Must: pass real-diversity check (≥2 `library_category` OR `data_requirements`; cosmetic = rejected). |
-| 4 | **validation_gate** | Claude | Pressure-test the hypothesis: write falsifiable statements, identify failure modes, run A8.6 a-priori power check deterministically. If `min_detectable_ic > plausible_ic_upper`, routes to `insufficient_power_a_priori` (no component built). Must declare holdout range in `sample_split_design` (A6.1). |
-| 5 | **refinement_planner** | Claude | Convert validation blockers into concrete fixes; decide if implementation is possible in current framework. |
-| 6 | **backtest_specification** | Claude | Translate the validated hypothesis into `strategy_config` JSON for the trading-bot backtest engine. |
-| 7 | **signal_prescreen** | Python tool | A8.6 pre-flight first (blocks if power insufficient). Then: active-bar IC, block-bootstrap significance, cost_check. A8.1: both IC significance AND cost_check.pass required for `proceed_to_backtest`. Records trial in `campaign_state.trial_sharpes` (A6.2). |
-| 8 | **protocol_execution** | Python tool | Walk-forward backtest across all windows; produces per-window metrics including per-trade expectancy (A3.4). |
-| 9 | **regime_detector_validation** | Python tool | Auto-triggered before verdict when `regime_detector_report.yaml` is absent or stale. Computes persistence, class-conditional sensitivity, activation band (A2.2). |
-| 10 | **regime_auditor** | Claude | Reads `regime_detector_report.yaml`; decides trustworthy / needs_retune / unusable. Enforces retune firewall (A2.2): retune acceptance criteria may never include PnL or Sharpe. |
-| 11 | **verdict_interpreter** | Claude | Read backtest diagnostics (or prescreen evidence), apply 5 named diagnostic rules, issue altitude decision: refine / pivot / escalate / promote / kill. Promote is provisional — routes to holdout_evaluation. |
-| 12 | **campaign_review** | Claude | After 2+ hypothesis families have failed (or every 6 runs), assess whether to continue, reframe, escalate to a new instrument, or terminate. |
-| 13 | **holdout_evaluation** | Python tool | DSR gate (Bailey & López de Prado): if `passes_deflated_threshold=False`, terminal reject before holdout runs. Single-use enforcement from `campaign_data_policy.yaml`. Evaluates `holdout_result.yaml` (pre-registered expected_range required). Failure is terminal. |
+| 1 | [**research_brief**](#stage-1--research_brief) | Human | State the question this run exists to answer, and the limits it must respect. |
+| 2 | [**hypothesis_generation**](#stage-2--hypothesis_generation) | Claude | Turn the research question into one concrete, testable claim. |
+| 3 | [**innovation_expansion**](#stage-3--innovation_expansion) | Claude | Produce variants that differ in kind, so a kill blames the idea rather than one setting. |
+| 4 | [**validation_gate**](#stage-4--validation_gate) | Claude | Try to kill the hypothesis on paper, before any code is written for it. |
+| 5 | [**refinement_planner**](#stage-5--refinement_planner) | Claude | Decide whether the blockers can be fixed inside the current engine, and how. |
+| 6 | [**backtest_specification**](#stage-6--backtest_specification) | Claude | Compile the validated idea into a config the engine can actually execute. |
+| 7 | [**signal_prescreen**](#stage-7--signal_prescreen) | Python tool | Decide cheaply, on the signal alone, whether this deserves an expensive backtest. |
+| 8 | [**protocol_execution**](#stage-8--protocol_execution) | Python tool | Trade the strategy across every walk-forward window and record what happened. |
+| 9 | [**regime_detector_validation**](#stage-9--regime_detector_validation) | Python tool | Establish whether the regime detector is trustworthy enough to condition any metric. |
+| 10 | [**regime_auditor**](#stage-10--regime_auditor) | ⚠️ Human | Judge the detector without letting profitability leak into the decision. **Not dispatched by the orchestrator** — see the block. |
+| 11 | [**verdict_interpreter**](#stage-11--verdict_interpreter) | Claude | Decide what the result means, what to do next, and at what size of change. |
+| 12 | [**campaign_review**](#stage-12--campaign_review) | Claude | Ask whether the campaign's whole line of attack is still worth pursuing. |
+| 13 | [**holdout_evaluation**](#stage-13--holdout_evaluation) | Python tool + human | Spend the one-shot holdout, and only after everything cheaper has passed. |
 
 ---
 
@@ -155,6 +151,9 @@ entries; this guide numbers **13**. Stage 1 is a human input, and stages 9 and
 stage differs from this guide's, both are given.
 
 **Terms used throughout this section**
+
+*Stage-reading vocabulary. Campaign-level terms — campaign, run, hypothesis
+family, altitude, exhausted — are in the [Glossary](#6-glossary).*
 
 | Term | In plain words |
 |---|---|
@@ -262,7 +261,13 @@ A1.1–A1.3 (populate `edge_source` before `signal_concept`) and A1.4 (look the
 indicator up in `indicator_library.yaml`) live in the skill prompt. As with
 stage 3, no Python enforces them — see [F18](../engineering/roadmap/E-037/FINDINGS.md#f18).
 
-**2. A multi-card output has a recovery path.**
+**2. Declare where the evidence comes from, or ask for the feed.**
+The card must declare `evidence_type` from `config/available_feeds.yaml`. If the
+signal needs a feed that does not exist yet, the hypothesis routes to
+`feed_wishlist.yaml` instead of being written against data nobody has. The
+indicator lookup is A1.4 / Improvement 04 (written `Impr 04` in older notes).
+
+**3. A multi-card output has a recovery path.**
 If the skill emits several cards instead of one,
 `_handle_hypothesis_generation_multi_card_split` runs before the stage is
 allowed to fail (`run_phase1_research.py:6272`, defined at `:3543`).
@@ -848,7 +853,21 @@ same parameter dimension keeps recurring. **Scoped per hypothesis family since
 F6 (2026-07-04)**: a global list let stale dimensions from the long-closed
 Keltner/RSI families force run_044's first-ever refine straight to pivot.
 
-**4. Promote is provisional.**
+**4. Five named diagnostic rules.**
+The verdict is reached by applying five *named* rules rather than free
+judgment, so two runs with the same evidence reach the same altitude. The names
+appear in `altitude_justification` (run_060's reads *"Rule 2 (weak signal)"*),
+which is what makes a verdict auditable after the fact.
+
+**5. The altitude ladder is numbered — but only in prose.**
+§2.1's map labelled the three non-terminal outcomes `alt 1` (refine), `alt 2`
+(pivot) and `alt 3` (escalate), matching the numbering §3 once ascribed to an
+`altitude` field. **No real artifact carries that field** — measured 0 of 39,
+see [F22](../engineering/roadmap/E-037/FINDINGS.md#f22). The ladder is real and
+the ordering is meaningful; the numeric field was intended and never built.
+What the artifact carries is `status`.
+
+**6. Promote is provisional.**
 A pass writes `promotion_audit.yaml` and routes to `holdout_evaluation`
 (`:5745-5747`); it is not a promotion.
 
@@ -911,7 +930,10 @@ already been passed.
 
 **1. DSR gate — reject before the seal is touched.**
 `passes_deflated_threshold is False` → `completed_rejected` (`:5411`). The
-trial count and Sharpe spread do not support promotion.
+deflated Sharpe ratio is **Bailey & López de Prado**'s correction: it lowers a
+Sharpe according to how many things were tried, so the trial count and the
+spread of trial Sharpes decide whether this result is distinguishable from the
+best of many guesses.
 
 **2. Single-use enforcement — a second attempt is mechanically refused.**
 If `hypothesis_id` is already in `holdout_consumed_by`, refuse (`:5418`). A6.1.
@@ -928,8 +950,12 @@ because those are the acts it exists to prevent. Safe to fail closed:
 **3. Pause for a human — the holdout backtest is run externally.**
 If `holdout_result.yaml` is absent, pause.
 
-**4. Mark consumed, then evaluate.**
-`consumed_at` is stamped, then `status` is read. Failure is terminal.
+**4. Mark consumed, then evaluate against a range fixed in advance.**
+`consumed_at` is stamped, then `status` is read. The comparison is against
+`holdout_result.yaml`'s **pre-registered `expected_range`**
+(`{min_sharpe, max_sharpe, rationale}`), which must be written **before** the
+holdout is run — otherwise "within expectations" is decided after seeing the
+number. Failure is terminal.
 
 **Notes, history and traps**
 
@@ -2087,6 +2113,19 @@ by how load-bearing they are, not alphabetically.
 
 ---
 ## 6. Glossary
+
+Campaign-level vocabulary. For the terms used when reading a **stage** — IC,
+active bar, effective sample, episode, bps, Fisher z, block bootstrap, warmup,
+turnover, firewall, upsert — see
+[**Terms used throughout this section**](#22x-stage-detail-blocks) in §2.2,
+which explains each in one line without jargon.
+
+> ⚠️ **The "10-stage pipeline" in the `Run` entry below is stale.** This guide
+> documents **13** numbered stages (§2.2). Ten is the size of the engine's
+> `STAGE_CONFIGS` registry, which excludes the human brief and the two regime
+> stages — see [F15](../engineering/roadmap/E-037/FINDINGS.md#f15) and
+> [F28](../engineering/roadmap/E-037/FINDINGS.md#f28). Left as written rather
+> than silently corrected, per this epic's record-don't-fix rule.
 
 | Term | Definition |
 |---|---|
