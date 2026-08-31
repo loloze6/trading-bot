@@ -77,8 +77,9 @@ contract, so nobody could see them.
 | [E037-39](#e037-39) | medium | silent-open-default | `run_phase1_research.py::determine_post_refinement_route` |
 | [E037-40](#e037-40) | medium | missing-handoff-input | `handoffs/validation_to_backtest_specification.yaml` |
 | [E037-41](#e037-41) | medium | gate-ordering | `run_phase1_research.py::_route_holdout_evaluation` |
+| [E037-42](#e037-42) | **high** | built-but-never-switched-on (class) | `trading-bot/core/*` · `config/campaign_config.yaml` |
 
-**Counts:** 18 high · 18 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
+**Counts:** 19 high · 18 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -1693,6 +1694,55 @@ the seal*; it says nothing about why nothing checks earlier.
 **Proposed disposition (S3 decides, not this file):** keep gate 2b as the
 last-line defence and add an early refusal at brief registration. Cheap, and
 the two are not alternatives.
+
+---
+
+## E037-42
+
+**Severity:** high · **Type:** built-but-never-switched-on (class) · **Status:** open, untriaged
+
+**Lands on:** `trading-bot/core/backtester.py` · `core/launcher.py` ·
+`strategy-research/config/campaign_config.yaml` · `tools/run_protocol.py`
+
+**Found by:** the flag sweep [E037-38](#e037-38) implied — orchestrator flags
+had been swept ([E037-21](#e037-21)), engine flags never had
+
+**Every correctness improvement this project has shipped is off, and nothing
+ever turns one on.** Three independent sets, all `False`, all with zero
+production use:
+
+| Flag | What it buys | Default | Runs using it |
+|---|---|---|---|
+| `model_funding` | Perp funding accrual — the cost side of every held position | `False`, and **daily bars only** | **0** |
+| `bar_equity` | Bar-level max-drawdown and Sharpe, plus textbook Sortino | `False` | **0** |
+| 6 × `orchestrator.*.enabled` | Variant recording, anti-adjacency gate, exclusion digest, schedulability | all `False` | **0** ([E037-21](#e037-21)) |
+
+`tools/run_protocol.py` — the only caller that matters — passes
+`warmup_prefetch=True` explicitly and passes **neither** `bar_equity` nor
+`model_funding`. Zero artifacts anywhere contain a `bar_equity` block.
+
+**Why this is a class rather than three coincidences.** The project's own
+discipline is *"new features ship off-by-default with a test proving
+byte-identical default behaviour"*. That rule is sound — it protects every
+prior baseline from silent invalidation. **What is missing is the other half:
+nothing in the process ever flips one on.** So the discipline that was meant to
+make change safe has become the reason no change lands.
+
+**The measured cost, for `bar_equity` alone.** The fork's own reference figures
+for the same run: bar-level Sharpe **−5.12** vs trade-exit **−5.65**, max
+drawdown **−24.77%** vs **−24.59%**. Every research verdict to date was decided
+on the trade-exit numbers, because the bar-level block has never been produced.
+The difference is not large here, but *which* number is right is not a matter of
+taste — the bar-level one is, which is why it was built.
+
+**For `model_funding` it is worse**, because it is not merely off but
+unavailable below daily bars — see [E037-38](#e037-38).
+
+**Proposed disposition (S3 decides, not this file):** the fix is process, not
+code. Every off-by-default flag needs a named owner and a switch-on criterion
+recorded when it is created — "on once X is true" — otherwise it is not a safe
+default, it is an abandoned feature with a test suite. Then decide each of the
+eight on its merits.
 
 ---
 
