@@ -67,8 +67,9 @@ contract, so nobody could see them.
 | [E037-29](#e037-29) | **high** | guard-not-installed | `.git/hooks/pre-commit` (this machine) |
 | [E037-30](#e037-30) | low | orphan-glossary-terms | `docs/USER_GUIDE.md` §6 |
 | [E037-31](#e037-31) | **high** | undocumented-terminal-states | `docs/USER_GUIDE.md` §3 (`pipeline_state.yaml`) |
+| [E037-32](#e037-32) | **high** | routing-tables-vs-code | `docs/USER_GUIDE.md` §2.3 |
 
-**Counts:** 12 high · 14 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
+**Counts:** 13 high · 14 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -1228,6 +1229,63 @@ find it mechanically rather than by re-reading.
 five terminal states with their measured counts. Worth deciding separately
 whether §2.3's decision tables should name them too, since that is where a
 reader traces what a route leads to.
+
+---
+
+## E037-32
+
+**Severity:** high · **Type:** routing-tables-vs-code · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §2.3
+
+**Found by:** second mechanical review, 2026-08-31 — §2.3 is the one section
+E-037 never verified. S2 wrote the stage blocks and left the decision tables
+untouched.
+
+Four defects, in one section, none previously noticed:
+
+**1. The prescreen route table omits `no_signal_artifact`.** It lists six
+routes; the code emits seven, and the missing one **overrides all the others**.
+This is [E037-02](#e037-02) again — that finding was raised against §3's route
+enum, and the identical omission sat in §2.3 the whole time. One defect, two
+places, one of them fixed.
+
+**2. The spec-status table omits the fail-closed default.** It lists
+`spec_ready` and `component_gap`. `determine_post_spec_route` pauses on
+**anything else**, which is a deliberate safety property and the branch a real
+run actually took ([E037-23](#e037-23)).
+
+**3. The circuit-breaker table is missing the breaker that fires most.** It
+starts at pivot→escalate. The code's **first** breaker turns `refine` into
+`pivot` when the proposed parameter dimension has been tried before, or when two
+dimensions are already exhausted for that family. That is the one with a
+recorded incident behind it (F6, run_044, 2026-07-04) and it was absent.
+
+**4. A second breaker's condition is misstated.** The table said *"Same
+hypothesis family pivoted 2× with identical root cause"*. The code counts
+occurrences of the family in `failed_families` and **never compares root
+causes**.
+
+**5. The token budget is quoted at one fifth of its real value, in the wrong
+unit.** The table said *"default 300,000 tokens"*. `token_budget_per_run:
+300000` is explicitly **superseded** — `campaign_config.yaml` calls it *"no
+longer read by the loop"* (F4c, 2026-07-05). The live constant is
+`token_budget_per_run_weighted_units: 1500000`, read by
+`run_phase1_research.py::_load_token_budget`. **Five times larger, and weighted
+units are not raw tokens.** An operator sizing a run from this guide would be
+wrong by more than 5×, in the direction of expecting runs to halt far earlier
+than they do.
+
+**Why this section was missed.** S2's mandate was the stage blocks and the
+artifact entries; §2.3 sits between them and was neither. It is a reminder that
+"the section nobody was assigned" is where defects accumulate — and this one
+holds the routing contract, which is the most consequential prose in the
+document after the stage blocks themselves.
+
+**Proposed disposition (S3 decides, not this file):** all five are corrected in
+place with the old text preserved as ⚠️ annotations. Worth deciding whether the
+`no_signal_artifact` omission across two sections means E037-02 should be
+reopened as a class rather than an instance.
 
 ---
 

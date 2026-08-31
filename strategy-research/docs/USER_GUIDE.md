@@ -1106,6 +1106,7 @@ number. Failure is terminal.
 |---|---|
 | `spec_ready` | → signal_prescreen |
 | `component_gap` | → human pause (a new bot component must be built) |
+| **anything else** | → human pause, **deliberately fail-closed**. `KNOWN_STATUSES` holds only the two above; an unrecognised value is not guessed at. A real run produced `validation_incomplete` and took this branch — see [E037-23](../engineering/roadmap/E-037/FINDINGS.md#e037-23). |
 
 #### After signal_prescreen
 
@@ -1117,6 +1118,7 @@ number. Failure is terminal.
 | `refine_cost_hurdle` | → verdict_interpreter |
 | `kill_cost_hurdle` | → verdict_interpreter |
 | `insufficient_power_a_priori` | → verdict_interpreter (skip; already written at validation gate) |
+| `no_signal_artifact` | → verdict_interpreter — **overrides every route above** (F5c). The signal was never tested: either it never activated, or component errors exceeded 5% of bars. Not a scientific result. |
 
 #### After verdict_interpreter — the Altitude System
 
@@ -1132,14 +1134,21 @@ The verdict interpreter assigns an **altitude** to each decision. Altitude measu
 
 #### Circuit Breakers (anti-loop protection)
 
+> ⚠️ **This whole subsection was corrected on 2026-08-31** after being checked
+> against the routing functions for the first time. It was missing the most
+> frequently triggered breaker, misstated a second one's condition, and quoted a
+> superseded budget constant at one fifth of the live value. See
+> [E037-32](../engineering/roadmap/E-037/FINDINGS.md#e037-32).
+
 The orchestrator detects search-space exhaustion and forces an altitude climb automatically:
 
 | Trigger | Action |
 |---|---|
-| Same hypothesis family pivoted 2× with identical root cause | Force [escalate (altitude 3)](#g-escalate) |
+| **`refine` when the parameter dimension repeats, or 2 dimensions are already tried for that family** | **Force pivot (altitude 2).** This is the first and most-triggered breaker and was missing from this table. Scoped **per hypothesis family** since F6 (2026-07-04) — a global scope once forced run_044's first-ever refine straight to pivot using dimensions left over from the long-closed Keltner/RSI families. |
+| Same hypothesis family appears 2× in `failed_families` | Force [escalate (altitude 3)](#g-escalate). ⚠️ This row previously read "pivoted 2× with identical root cause"; the code counts family occurrences in `failed_families` and does **not** compare root causes. |
 | Same instrument/timeframe escalated 2× with no improvement | Force terminate or campaign_review |
 | Refinement budget exhausted (`max_refinements_after_validation`, default 2) | Reject hypothesis |
-| Run token budget exceeded (default 300,000 tokens) | Halt run, preserve state |
+| Run token budget exceeded — **1,500,000 weighted units** by default | Halt run, preserve state. ⚠️ This row previously said "300,000 tokens". That is the **superseded** `token_budget_per_run`, which `campaign_config.yaml` marks *"no longer read by the loop"* (F4c, 2026-07-05). The live key is `token_budget_per_run_weighted_units`, read at runtime by `run_phase1_research.py::_load_token_budget` — **5× larger, and in weighted units rather than raw tokens**. |
 
 #### After campaign_review
 
