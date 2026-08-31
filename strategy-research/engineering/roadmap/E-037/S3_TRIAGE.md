@@ -1,8 +1,8 @@
 # E-037 S3 — Triage
 
 **State:** proposed — awaiting Jérémy's decisions
-**Input:** the 35 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
-**Last synced:** 2026-08-31, after S5. A mechanical completeness check confirms every finding appears below.
+**Input:** the 41 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
+**Last synced:** 2026-08-31, after Jérémy's §1–§2.2 review. A mechanical completeness check confirms every finding appears below.
 **What this file is for:** S3's job per the EPIC is *"each becomes a card or
 issue. Jérémy decides what gets worked."* This groups them so that decision is
 a handful of calls rather than twenty-five.
@@ -13,9 +13,13 @@ a handful of calls rather than twenty-five.
 
 ## The short version
 
-Of 35 findings, **27 are documentation** and **8 touch code or the machinery** and **7 touch code or the machinery around it**. One (E037-29) is already closed. Only the code
-ones can hurt a running campaign; the documentation ones are what made the
-system hard to reason about in the first place.
+Of 41 findings, **27 are documentation** and **14 touch code, the machinery
+around it, or the design itself**. One (E037-29) is closed.
+
+The documentation ones are what made the system hard to reason about. The
+Group G ones, raised by Jérémy reading §1–§2.2, are different in kind: they are
+not errors in the guide but **things the guide accurately describes that may
+not be worth doing**.
 
 Three questions decide almost everything:
 
@@ -154,14 +158,47 @@ It was caught by a mechanical completeness check (every `E037-nn` in
 `FINDINGS.md` must appear here), not by re-reading.
 
 
+---
+
+## Group G — Raised by Jérémy's review of §1–§2.2 (6)
+
+**A different kind of finding.** Groups A–F are places the documentation is
+wrong. These are places the documentation is **right**, and reading it plainly
+made the underlying design look wrong. They came from questions, not scans —
+the one thing no script found.
+
+| ID | Severity | What | The decision it forces |
+|---|---|---|---|
+| [E037-36](FINDINGS.md#e037-36) | **high** | **139 variants generated, 36 tested, 74% discarded untested.** No run ever built more than one config. Stage 3 exists to test a mechanism rather than one arbitrary parameterisation, and the pipeline tests exactly one arbitrary parameterisation. | Build and backtest each surviving variant, or stop paying to generate them. The current state has the cost of breadth with the evidence of a single test. **Also under-counts trials.** |
+| [E037-37](FINDINGS.md#e037-37) | **high** | The A8.6 power gate computes from `activation_rate` and `plausible_ic_upper` **written by the LLM**. Measured: 5 of 8 predictions wrong by 1.2×–5×. The discrepancy log built to catch this has never been written. | Wire the log so the gate earns trust, or remove a gate whose inputs nobody has verified. |
+| [E037-38](FINDINGS.md#e037-38) | **high** | Funding accrual is built, wired and tested — **off by default, daily-bars-only, enabled in 0 research configs.** Every perp strategy held over 8h has uncosted funding. G1 blocks the verdict rather than fixing the modelling. | Relates to [E-014](../E-014/EPIC.md). Either funding accrues on the run's own bar interval, or sub-daily perp strategies are out of scope and the guide says so. |
+| [E037-39](FINDINGS.md#e037-39) | medium | `implementation_allowed` defaults **True** when absent, and the skill is never told to write it. 2 of 4 real files omit it. The only open default in a module whose convention is "silence is never a green light". | Instruct the skill and default closed, or move feasibility to stage 6 where `component_gap` already lives. |
+| [E037-40](FINDINGS.md#e037-40) | medium | `backtest_specification`'s handoff does not carry `refinement_notes.yaml`. | Add it, or document that the expanded card is expected to carry it and check that it did. |
+| [E037-41](FINDINGS.md#e037-41) | medium | The tradability gate fires at stage 13, after a full backtest, on information available at the brief. | Add an early refusal at registration; keep gate 2b as last-line defence. |
+
+**Two of these Jérémy has already proposed discarding outright** — the A8.6
+power gate ([E037-37](FINDINGS.md#e037-37)) and, pending the prescreen redesign,
+the validation gate's remaining role. Recorded as his position, not as a
+conclusion: both deserve the cheap test before removal, because a gate that is
+wrong is not the same as a gate that is useless.
+
+**Why this group matters most.** Groups A–F were found by eight mechanical
+scans. Not one of them could have found these, because nothing here is
+*inconsistent* — the code does what the guide says. What was wrong was the
+design, and only a reader asking "why would that work?" surfaces it. That is
+the argument for the review being a person and not another script.
+
+
 ## Proposed issue set
 
-Seven issues, not thirty:
+Nine issues, not forty-one:
 
 | # | Title | Contains |
 |---|---|---|
 | 1 | **F5c's component-error path is unreachable, and the tests that would catch it run in no gate** | E037-26, E037-27 |
 | 2 | `block_24_dense_fallback` label does not track the derived block size | E037-10 |
+| 2b | **Variants: generate 3–8, test 1** — build each survivor, or stop generating | E037-36 |
+| 2c | **Funding is uncosted on every sub-daily perp run** | E037-38 |
 | 2 | Decide whether `regime_auditor` is a stage or a human step | E037-16 |
 | 3 | §3 field tables describe fields that do not exist — plus a gate to stop recurrence | E037-24, E037-22, E037-21, E037-14, E037-23, E037-02 |
 | 4 | Do "Must" statements in the guide imply enforcement? Sweep §2.2 | E037-18 |
