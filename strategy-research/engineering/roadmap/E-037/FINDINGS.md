@@ -71,8 +71,14 @@ contract, so nobody could see them.
 | [E037-33](#e037-33) | medium | false-claim + incomplete-index | `docs/USER_GUIDE.md` §5 |
 | [E037-34](#e037-34) | **high** | false-claim + unactioned-scope | `docs/USER_GUIDE.md` §1 |
 | [E037-35](#e037-35) | **high** | missing-fixture | `docs/USER_GUIDE.md` §7 · `tools/run_protocol.py` |
+| [E037-36](#e037-36) | **high** | objective-defeated-by-design | `docs/USER_GUIDE.md` §2.2 stage 3 · the pipeline |
+| [E037-37](#e037-37) | **high** | gate-on-unvalidated-estimates | `run_phase1_research.py::_run_a86_power_check` |
+| [E037-38](#e037-38) | **high** | cost-not-modelled | `trading-bot/core/backtester.py` · `verdict_criteria_evaluator.py` |
+| [E037-39](#e037-39) | medium | silent-open-default | `run_phase1_research.py::determine_post_refinement_route` |
+| [E037-40](#e037-40) | medium | missing-handoff-input | `handoffs/validation_to_backtest_specification.yaml` |
+| [E037-41](#e037-41) | medium | gate-ordering | `run_phase1_research.py::_route_holdout_evaluation` |
 
-**Counts:** 15 high · 15 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
+**Counts:** 18 high · 18 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -1441,6 +1447,252 @@ describes.
 regenerate the fixture from `baseline_v2` and commit it, or retire A3.5/A9.1's
 "permanent fixture" language. If regenerated, it needs a test — the reason this
 went unnoticed is that nothing ever asserted on it.
+
+---
+
+## E037-36
+
+**Severity:** high · **Type:** objective-defeated-by-design · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §2.2 stage 3 · the pipeline itself
+
+**Found by:** Jérémy, 2026-08-31, reading §2.2 — *"to reach the objective it
+would mean we test each and every variant. Here I understand we are not doing
+that."*
+
+**Correct. Measured across every run on disk:**
+
+| | |
+|---|---|
+| Runs producing variants | 44 |
+| Variants **generated** | **139** |
+| Variants **built as a config and tested** | **36** |
+| **Discarded without ever being tested** | **103 — 74%** |
+| Most configs ever built in one run | **1** |
+
+`run_018` generated **7** variants and tested 1. `run_007` generated 8 and
+tested none.
+
+**The stage's stated objective is defeated by the pipeline's own design.** §2.2
+says innovation_expansion exists to *"test the mechanism rather than one
+arbitrary parameterisation"*. The pipeline then pays an LLM to produce 3–8
+variants and tests exactly one arbitrary parameterisation. A kill therefore
+still cannot distinguish *"the mechanism is wrong"* from *"this setting was
+wrong"* — the precise confound the stage was built to remove.
+
+**Three consequences, all measurable:**
+
+1. **The reasoning is unsound.** Every family killed on one variant was killed
+   on evidence the design itself calls insufficient.
+2. **Trial accounting understates N.** Seven variants generated and one tested
+   costs one trial. The other six were selected against — a real multiple
+   comparison — and never counted, so the deflated-Sharpe denominator is too
+   small.
+3. **The discards vanish.** `variant_selection.yaml` and
+   `variants_not_pursued.yaml` were built to record them and are flag-gated
+   **off** ([E037-21](#e037-21)), so which variant was picked, and why, is not
+   recorded anywhere.
+
+**Proposed disposition (S3 decides, not this file):** this is an epic, not a
+doc fix. Either build each surviving variant and backtest each — Jérémy's
+proposal, which also fixes the trial count — or restate the objective to match
+what the pipeline does and stop paying to generate variants that are discarded.
+The current state is the worst of both: the cost of breadth with the evidence
+of a single test.
+
+---
+
+## E037-37
+
+**Severity:** high · **Type:** gate-on-unvalidated-estimates · **Status:** open, untriaged
+
+**Lands on:** `strategy-research/workflow/run_phase1_research.py::_run_a86_power_check`
+
+**Found by:** Jérémy, 2026-08-31 — *"how would the system know a component
+detects an effect without it being developed?"*
+
+**It does not know. It asks the model to guess, then does arithmetic on the
+guess.** The check is:
+
+```
+active_n = activation_rate × n_bars × n_symbols_eff
+n_eff    = active_n / block_size
+mde      = 1 / sqrt(n_eff − 3)          block if mde > plausible_ic_upper
+```
+
+`activation_rate` and `plausible_ic_upper` both come from
+`hypothesis_card.yaml`'s `power_parameters` block, **written by the LLM**. If
+the block is absent the check returns `skip`.
+
+**How good the guesses are** — predicted activation rate vs the rate the
+prescreen actually measured:
+
+| Run | Predicted | Actual | Error |
+|---|---|---|---|
+| run_053 | 0.27 | **0.076** | 3.6× over |
+| run_059 | 0.2 | **1.000** | 5× under |
+| run_060 | 0.125 | **0.500** | 4× under |
+| run_050 | 0.03 | 0.017 | 1.8× over |
+| run_043 | 1.0 | 1.000 | exact |
+| run_044 | 0.125 | 0.125 | exact |
+| run_057 | 0.25 | 0.258 | close |
+
+**Five of eight wrong by 1.2× to 5×**, in both directions. Over-estimating
+activation lets an underpowered hypothesis through; under-estimating blocks one
+that had ample data.
+
+**The mechanism built to catch exactly this has never fired.**
+`_log_power_check_discrepancy` exists to record LLM-vs-machine divergence, and
+`power_check_discrepancy_log.yaml` **does not exist** — it has never been
+written in the campaign's history.
+
+**Stated fairly:** a-priori power analysis is standard scientific practice and
+the arithmetic is correct. The objection is not to the method but to its
+inputs being unvalidated model output, and to the validation hook being dead.
+
+**Proposed disposition (S3 decides, not this file):** Jérémy's instinct is to
+discard the gate. Before that, the cheaper test: the estimates *can* be checked
+after the fact — the prescreen measures the real activation rate every run.
+Either wire the discrepancy log so the gate earns trust, or remove a gate whose
+inputs nobody has ever verified.
+
+---
+
+## E037-38
+
+**Severity:** high · **Type:** cost-not-modelled · **Status:** open, untriaged
+
+**Lands on:** `trading-bot/core/backtester.py` · `tools/verdict_criteria_evaluator.py` (G1)
+
+**Found by:** Jérémy, 2026-08-31 — *"funding is already in the engine?? then
+check the epic on funding, something must be missing."* It was.
+
+**Funding accrual is fully built, and has never been used by a research run.**
+
+| Fact | Evidence |
+|---|---|
+| Implemented | `execution/portfolio_info.py::apply_funding` |
+| Wired into the loop | `core/trading_bot.py:221` |
+| Tested | `tests/test_funding_accrual.py`, `tests/test_model_funding_bit_identical.py` |
+| **Off by default** | `core/backtester.py`: `model_funding: bool = False` |
+| **Daily bars only** | raises unless `candle_interval_seconds == 86400` |
+| **Enabled in research configs** | **0 of them** |
+
+So for every 1h and 4h perp strategy — most of the corpus — funding is not
+merely disabled, it is **structurally unavailable**.
+
+**What was built instead is a blocker, not a fix.** G1
+(`cost_model_completeness`) blocks a verdict when the product is a perp and the
+holding period exceeds the funding interval and funding was not modelled or
+bounded. Its docstring names the incident that produced it verbatim:
+
+> *"XS_momentum: perp product, daily rebalance (24h) against an 8h funding
+> interval, funding not modeled — three funding accruals per holding period
+> went uncosted and the verdict issued anyway."*
+
+So the system detected that funding costs were missing from a verdict, and the
+remedy added was a gate that refuses the verdict — while the modelling that
+would make the verdict valid stays off and, below daily bars, impossible.
+
+**Why this matters beyond documentation:** an uncosted funding accrual is a
+systematic overstatement of returns on every perp strategy held longer than 8
+hours. That is a direct threat to the campaign's core question.
+
+**Proposed disposition (S3 decides, not this file):** relates to
+[E-014](../E-014/EPIC.md) (venue-parameterised cost model, `planned`). The
+sub-daily restriction is the blocker worth costing: either funding accrues on
+the run's own bar interval, or perp strategies below daily are out of scope and
+the guide should say so.
+
+---
+
+## E037-39
+
+**Severity:** medium · **Type:** silent-open-default · **Status:** open, untriaged
+
+**Lands on:** `run_phase1_research.py::determine_post_refinement_route`
+
+**Found by:** Jérémy, 2026-08-31, questioning whether `component_gap` should be
+refinement_planner's job
+
+The router reads
+`refinement.get("decision", {}).get("implementation_allowed", True)` —
+**defaulting to `True`** when the key is absent.
+
+**The skill is never told to produce that key.**
+`workflow_artifacts/skills/refinement-planner/SKILL.md` contains **zero**
+occurrences of `implementation_allowed`, "component", or "framework". Its
+stated mission is *"turn validation blockers into a concrete refinement
+artifact"* — nothing about implementation feasibility.
+
+Measured over the 4 real `refinement_notes.yaml` files: **2 carry the key, 2
+omit it entirely.** In those 2 the router silently assumed "yes, implementable"
+and looped back to innovation_expansion.
+
+**This is the only open default in the module.** Everywhere else the
+convention is explicit and opposite — `determine_post_spec_route` pauses on an
+unrecognised status; every `orchestrator.*.enabled` flag defaults `False` with
+the comment *"silence is never a green light"*. Here silence is a green light.
+
+**Proposed disposition (S3 decides, not this file):** either instruct the skill
+to emit the field and default the router closed, or move the feasibility
+question to where it is actually answered — stage 6, which already emits
+`component_gap`.
+
+---
+
+## E037-40
+
+**Severity:** medium · **Type:** missing-handoff-input · **Status:** open, untriaged
+
+**Lands on:** `runs/{run_id}/handoffs/validation_to_backtest_specification.yaml`
+
+**Found by:** Jérémy, 2026-08-31 — *"backtest_specification is not receiving
+refinement_notes.yaml??"*
+
+Correct. The handoff carries exactly two inputs:
+`artifacts/expanded_hypothesis_card.yaml` and
+`artifacts/validation_protocol.yaml`. `refinement_notes.yaml` is not among
+them.
+
+So on a refine loop the planner's conclusions reach the stage that builds the
+config **only if** they were folded back into the expanded card by
+innovation_expansion. Nothing enforces that they were, and nothing records
+whether they survived the round trip.
+
+**Proposed disposition (S3 decides, not this file):** add it to the handoff, or
+document explicitly that refinement output is expected to be carried by the
+expanded card and add a check that it was.
+
+---
+
+## E037-41
+
+**Severity:** medium · **Type:** gate-ordering · **Status:** open, untriaged
+
+**Lands on:** `run_phase1_research.py::_route_holdout_evaluation` gate 2b
+
+**Found by:** Jérémy, 2026-08-31 — *"the legally-tradable check should be part
+of the step where feasibility is checked, not at the very last step."*
+
+The tradability gate sits at **stage 13**, after hypothesis generation,
+expansion, validation, specification, prescreen and a full walk-forward
+backtest. If it refuses, every one of those was spent on a product the operator
+cannot trade.
+
+The information it needs — venue and product — is available at the **brief**.
+[E-015](../E-015/EPIC.md) already established declaring them at registration,
+and `run_campaign.py::_materialize_run` already derives `research_only` there.
+Only the *check* is late.
+
+**Fair counterpoint:** the gate's position is deliberate and documented — it
+sits above the human-pause that tells someone to go run the holdout, because
+"looking is spending". That reasoning is sound for *where it sits relative to
+the seal*; it says nothing about why nothing checks earlier.
+
+**Proposed disposition (S3 decides, not this file):** keep gate 2b as the
+last-line defence and add an early refusal at brief registration. Cheap, and
+the two are not alternatives.
 
 ---
 
