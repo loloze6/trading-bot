@@ -193,7 +193,7 @@ def test_the_real_pipeline_site_uses_the_population_denominator():
 
 _PIPELINE_EXCLUDED_KEYS = {
     "statistic_expectancy", "statistic_neither", "no_sharpe_value",
-    "dedup_removed", "invalidated_artifact",
+    "non_finite_sharpe", "dedup_removed", "invalidated_artifact",
 }
 
 

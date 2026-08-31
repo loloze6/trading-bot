@@ -5202,6 +5202,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     # n_dsr_total, n_trials, or the DSR value -- only which diagnostic bucket a
     # non-sharpe row is reported under in excluded_trial_counts.
     excluded = {"statistic_expectancy": 0, "statistic_neither": 0, "no_sharpe_value": 0,
+                "non_finite_sharpe": 0,
                 "dedup_removed": n_dedup_removed, "invalidated_artifact": n_invalidated}
     sharpe_values = []
     for t in deduped_trials:
@@ -5210,6 +5211,14 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             s = t.get("sharpe")
             if s is None:
                 excluded["no_sharpe_value"] += 1
+            elif not math.isfinite(float(s)):
+                # CUL-31: a NaN/inf sharpe (contract-legitimate merged row, e.g. a
+                # killed-run placeholder) must be excluded with a visible counter --
+                # a single non-finite value silently corrupts mu_sr/sigma_sr/dsr
+                # (NaN < 1e-10 is False, so the zero-variance guard does not catch it).
+                # Lockstep with deflate_sharpe.load_sharpe_trials. Does not shrink
+                # n_dsr_total (len(deduped_trials)): N stays honest.
+                excluded["non_finite_sharpe"] += 1
             else:
                 sharpe_values.append(float(s))
         elif sv == "expectancy":

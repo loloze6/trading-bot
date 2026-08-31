@@ -254,7 +254,8 @@ def test_h1_dsr_n_counts_only_sharpe_valid_trials():
     # CHAR[CONTRACT]: only statistic_valid=='sharpe' with a non-None value feeds N (ds:127-132).
     assert sharpe_values == [0.42]
     # CHAR[CONTRACT]: exclusion taxonomy — what is dropped from sharpe_values, incl. sharpe/None (ds:129-130).
-    assert excluded == {"no_sharpe_value": 1, "statistic_expectancy": 4, "statistic_neither": 11}
+    # non_finite_sharpe added (CUL-31): NaN/inf Sharpes are excluded with a visible counter (0 here).
+    assert excluded == {"no_sharpe_value": 1, "non_finite_sharpe": 0, "statistic_expectancy": 4, "statistic_neither": 11}
 
     dsr = ds.compute_dsr(0.5, sharpe_values)  # n_trials OMITTED -- byte-identical default path.
     # NOT a defect: compute_dsr correctly refuses N<2 when n_trials is omitted -- this

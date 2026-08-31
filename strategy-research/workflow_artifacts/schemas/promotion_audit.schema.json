@@ -64,11 +64,16 @@
       "type": "object",
       "description": "Records excluded from Sharpe trial pool, broken down by reason.",
       "additionalProperties": false,
-      "required": ["no_sharpe_value", "statistic_expectancy", "statistic_neither", "dedup_removed", "invalidated_artifact"],
+      "required": ["no_sharpe_value", "non_finite_sharpe", "statistic_expectancy", "statistic_neither", "dedup_removed", "invalidated_artifact"],
       "properties": {
         "no_sharpe_value": {
           "type": "integer",
           "description": "Trials with statistic_valid='sharpe' but sharpe field is null.",
+          "minimum": 0
+        },
+        "non_finite_sharpe": {
+          "type": "integer",
+          "description": "Trials with statistic_valid='sharpe' but sharpe is NaN or infinite — excluded from the Sharpe pool so a single non-finite value cannot corrupt the DSR computation.",
           "minimum": 0
         },
         "statistic_expectancy": {
