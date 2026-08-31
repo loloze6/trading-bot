@@ -1,7 +1,7 @@
 # E-037 S3 — Triage
 
 **State:** proposed — awaiting Jérémy's decisions
-**Input:** the 42 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
+**Input:** the 43 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
 **Last synced:** 2026-08-31, after Jérémy's §1–§2.2 review. A mechanical completeness check confirms every finding appears below.
 **What this file is for:** S3's job per the EPIC is *"each becomes a card or
 issue. Jérémy decides what gets worked."* This groups them so that decision is
@@ -13,7 +13,7 @@ a handful of calls rather than twenty-five.
 
 ## The short version
 
-Of 42 findings, **27 are documentation** and **15 touch code, the machinery
+Of 43 findings, **28 are documentation** and **15 touch code, the machinery
 around it, or the design itself**. One (E037-29) is closed.
 
 The documentation ones are what made the system hard to reason about. The
@@ -160,7 +160,7 @@ It was caught by a mechanical completeness check (every `E037-nn` in
 
 ---
 
-## Group G — Raised by Jérémy's review of §1–§2.2 (7)
+## Group G — Raised by Jérémy's review of §1–§2.2 (8)
 
 **A different kind of finding.** Groups A–F are places the documentation is
 wrong. These are places the documentation is **right**, and reading it plainly
@@ -177,6 +177,8 @@ the one thing no script found.
 | [E037-41](FINDINGS.md#e037-41) | medium | The tradability gate fires at stage 13, after a full backtest, on information available at the brief. | Add an early refusal at registration; keep gate 2b as last-line defence. |
 
 | [E037-42](FINDINGS.md#e037-42) | **high** | **Eight feature flags across the engine and orchestrator are all `False` with zero production use** — funding accrual, bar-level drawdown/Sharpe, and the six orchestrator features. The off-by-default discipline has no counterpart step that ever turns anything on. | Process fix: every flag gets an owner and a switch-on criterion at creation. Then decide each on merit. |
+
+| [E037-43](FINDINGS.md#e037-43) | medium | E-037 never read `engineering/roadmap/` — it rediscovered findings E-033's S1 recorded on 2026-08-26 and nearly filed two duplicate epics. | Process: read `EPICS.md` and grep the roadmap before recording a finding as new. |
 
 **Two of these Jérémy has already proposed discarding outright** — the A8.6
 power gate ([E037-37](FINDINGS.md#e037-37)) and, pending the prescreen redesign,
