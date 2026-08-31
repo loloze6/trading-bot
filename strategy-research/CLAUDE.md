@@ -25,7 +25,7 @@ Generate, expand, validate, backtest, analyze, and decide on strategy hypotheses
 > verified by grep across `workflow/` and `tools/`, where the only hits are
 > source comments. Where enforcement genuinely exists it is written in code at
 > the seam that reads the value. See `docs/USER_GUIDE.md` §3's preamble
-> (corrected 2026-08-27) and E-037 [F9](engineering/roadmap/E-037/FINDINGS.md#f9).
+> (corrected 2026-08-27) and E-037 [E037-09](engineering/roadmap/E-037/FINDINGS.md#e037-09).
 
 ## Workflow stages
 
@@ -58,7 +58,7 @@ Two caveats the guide explains in full:
 > though nothing produces it. The nearest real equivalents are
 > `signal_prescreen`, `protocol_execution`, `holdout_evaluation`, and
 > `verdict_interpreter` / `campaign_review`. See E-037
-> [F9](engineering/roadmap/E-037/FINDINGS.md#f9).
+> [E037-09](engineering/roadmap/E-037/FINDINGS.md#e037-09).
 
 ## Context policy
 - Default to minimal context.

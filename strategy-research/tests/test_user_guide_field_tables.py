@@ -1,5 +1,5 @@
 """
-E-037 F24 gate: USER_GUIDE.md §3's field tables must not drift further from
+E-037 E037-24 gate: USER_GUIDE.md §3's field tables must not drift further from
 the artifacts they describe.
 
 WHY THIS EXISTS
@@ -28,7 +28,7 @@ LIMITATION (stated, not hidden)
 -------------------------------
 This detects documented-but-absent keys. It CANNOT distinguish a renamed
 field from a deleted one, and it says nothing about real fields that are
-undocumented — the other half of F24, which needs a human read. Passing this
+undocumented — the other half of E037-24, which needs a human read. Passing this
 test does not mean §3 is correct; it means §3 got no worse.
 """
 from __future__ import annotations
@@ -129,7 +129,7 @@ def test_no_new_phantom_fields(head: str) -> None:
         f"NEW phantom field(s) in USER_GUIDE.md §3 for {head}: {sorted(new)}.\n"
         f"These are documented but appear in none of the {n} real artifact(s) on disk.\n"
         f"Either the field name is wrong, or the entry describes intended design "
-        f"rather than the artifact -- see E-037 FINDINGS.md F24.\n"
+        f"rather than the artifact -- see E-037 FINDINGS.md E037-24.\n"
         f"If it is genuinely intended-design, mark it as such in the entry AND add "
         f"it to KNOWN_PHANTOM in this file with a dated note."
     )
