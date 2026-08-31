@@ -81,6 +81,47 @@ sequence behind E-010 is OPEN and unresolved — not decided here.
 4. For each of the 3 re-runs, the verdict movement attributable to fees alone
    (or, for the funding retest, fees+funding) is measured and recorded.
 
+## Blocker found by E-037 (2026-08-31): funding is daily-bars-only
+
+Done-when 3 requires a funding-costed re-run. Measured while auditing the
+guide, the engine cannot currently produce one below daily bars:
+
+| Fact | Evidence |
+|---|---|
+| Funding accrual is implemented | `execution/portfolio_info.py::apply_funding` |
+| Wired into the bar loop | `core/trading_bot.py:221` |
+| Tested | `tests/test_funding_accrual.py`, `tests/test_model_funding_bit_identical.py` |
+| **Off by default** | `core/backtester.py` — `model_funding: bool = False` |
+| **Raises unless bars are daily** | `candle_interval_seconds != 86400` → error |
+| **Enabled in research configs** | **0 of them** |
+
+So for 1h and 4h perp strategies — most of the corpus — funding is not merely
+disabled, it is **structurally unavailable**. `cost_model.yaml`'s
+`perp.funding.modeled: false` is the second lock; this is the first.
+
+**What was built instead is a blocker rather than a fix.** `G1`
+(`cost_model_completeness`) refuses a verdict when a perp's holding period
+exceeds the funding interval and funding was not modelled. Its docstring names
+the incident: *"XS_momentum: perp product, daily rebalance (24h) against an 8h
+funding interval, funding not modeled — three funding accruals per holding
+period went uncosted and the verdict issued anyway."* The system detected the
+missing cost and added a gate, while the modelling that would make the verdict
+valid stayed off.
+
+**Scope question for S1:** is the daily restriction a data limitation
+(`build_daily_funding_series`) or a modelling choice? If data, this becomes a
+data epic and the honest interim is to declare sub-daily perps out of scope. If
+modelling, apportioning the 8-hourly rate across a run's own bars is the fix.
+
+Either way an uncosted funding accrual is a **systematic overstatement of
+returns** on every perp held longer than the funding interval — the one bias
+that most directly manufactures a false positive in a campaign asking whether a
+cost-surviving edge exists.
+
+Recorded in E-037 as [E037-38](../E-037/FINDINGS.md#e037-38). A separate epic
+was drafted and **deleted** once this epic was found to own the question —
+see [E037-43](../E-037/FINDINGS.md#e037-43).
+
 ## Stories
 
 - [ ] S1 — Turn the venue fee schedule into a real parameter (not a
