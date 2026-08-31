@@ -406,15 +406,6 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
             f"or quarantine the file."
         )
 
-    # `_load_local` re-parses only `timestamp`, so `close_time` comes back as
-    # strings. Concatenating that with `converted`'s datetime64 column degrades
-    # the merged column to object, and `to_csv` then writes str(Timestamp) —
-    # `…:59.999000` where a fresh write produces `…:59.999`. Without this the
-    # ingest is not idempotent: re-running it rewrites every archive row of
-    # every cache for a formatting difference alone.
-    if not existing.empty:
-        existing["close_time"] = pd.to_datetime(existing["close_time"])
-
     # MERGE, don't overwrite. Passing `[converted]` alone with no `existing=`
     # has two consequences:
     #   1. the on-disk cache is REPLACED — re-ingesting a 3-month quarterly

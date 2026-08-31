@@ -312,6 +312,16 @@ class BaseFetcher(ABC):
                 logger.warning(f"No 'timestamp' column in {path} — ignoring cache")
                 return pd.DataFrame()
             df["timestamp"] = pd.to_datetime(df["timestamp"])
+            # close_time is re-parsed for the same reason as timestamp: read_csv
+            # infers it as object (string), and concatenating that against a
+            # CcxtFetcher chunk's datetime64 close_time in _merge_and_store
+            # degrades the merged column to object — to_csv then serialises those
+            # rows as '…:59.999000' where a fresh write produces '…:59.999'.
+            # Fixed once here so every caller of _merge_and_store gets a
+            # consistent dtype, not just ingest's own patched call site (CUL-43).
+            # Present only in OHLCV caches; aux feeds carry no close_time column.
+            if "close_time" in df.columns:
+                df["close_time"] = pd.to_datetime(df["close_time"])
         except Exception as e:
             logger.error(f"Error reading local data {path}: {e}")
             return pd.DataFrame()
