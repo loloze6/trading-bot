@@ -153,7 +153,7 @@ card citing *"A3.6, n_episodes >= 8 per window"* where the label was wrong
 *"Plausible-looking fake citations survive until someone quotes the source
 verbatim"* (`engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md:216`).
 Codes nobody can resolve in one hop are codes nobody checks. See
-[F12](FINDINGS.md#f12) and [F13](FINDINGS.md#f13).
+[E037-12](FINDINGS.md#e037-12) and [E037-13](FINDINGS.md#e037-13).
 
 ---
 
@@ -188,14 +188,14 @@ something other than they look like.
    between "does not apply" and "nobody checked": `trade_diagnostics.json` has
    no `Schema` and no `Updated by`, and a reader cannot tell which.
 2. **`Created by` lists every path.** Two pieces of code can write the same
-   file; name both. See [F4](FINDINGS.md#f4).
+   file; name both. See [E037-04](FINDINGS.md#e037-04).
 3. **`Schema` says plainly that nothing checks it.** The word "schema" makes
    people assume validation. A reader landing on one entry never sees §3's
    preamble, so the line itself must say there is none.
 4. **The rationale headliner is one blockquoted line**, so it cannot be
    mistaken for another metadata field.
 5. **Field tables may be a selection, but must say so** — otherwise absence
-   reads as non-existence. See [F3](FINDINGS.md#f3).
+   reads as non-existence. See [E037-03](FINDINGS.md#e037-03).
 6. **Definition = what the field is FOR. Values = what it can hold.**
    A list of legal strings is not a definition. `route` is not "one of seven
    strings"; it is *the decision the prescreen reached, and the field the
@@ -217,7 +217,7 @@ something other than they look like.
    need the document. Each block opens with a **Terms used in this block**
    table: one line each, no jargon inside the explanation. Anything not
    explained there gets explained where it is used. Codes additionally link
-   once to their source text. See [F12](FINDINGS.md#f12) for what the guide
+   once to their source text. See [E037-12](FINDINGS.md#e037-12) for what the guide
    does today: 14 codes, 26 mentions, zero pointers.
 9. **"Logic" prose does not live here.** It belongs in the owning stage's
    block. The artifact entry describes the *file*; the stage block describes
@@ -315,7 +315,7 @@ is never launched. The orchestrator writes `prescreen_result.yaml` itself with
 (`run_phase1_research.py:6217`, `:6232`, `:6235`). The same check runs earlier
 at the validation gate (`:2287`); if it already wrote the file, the
 orchestrator skips the tool (`:6207`). **None of this is in
-`prescreen_signal.py`** — see [F1](FINDINGS.md#f1).
+`prescreen_signal.py`** — see [E037-01](FINDINGS.md#e037-01).
 
 **1. Setup — load the config and protocol, and fix the block size.**
 `block_size = bars_per_day(timeframe)` comes from `tools/timeframe.py`, the
@@ -398,7 +398,7 @@ absence cannot be mistaken for an oversight. Only ungated IC decides.
 `ungated_escape_eligible` in `regime_audit_decision.yaml` is resolved using
 `ic_all_bars`, because an IC measured on detector-gated bars is not admissible
 for or against the escape (A2.3 rule 5) (`:1582`, `:1092`). The code labels
-this "A9.1", which appears to be the wrong code — see [F13](FINDINGS.md#f13).
+this "A9.1", which appears to be the wrong code — see [E037-13](FINDINGS.md#e037-13).
 
 **13. Write the artifact.** `prescreen_result.yaml` (`:1585`).
 
@@ -407,7 +407,7 @@ this "A9.1", which appears to be the wrong code — see [F13](FINDINGS.md#f13).
 Kills count as trials; `statistic_valid = "neither"` when there is no backtest
 Sharpe. Upsert on `(trial_id, "prescreen")` since 2026-08-16 (issue #28 /
 E-025), so a crash-retry replaces the stale row instead of being swallowed.
-**Not in `prescreen_signal.py`** — see [F6](FINDINGS.md#f6).
+**Not in `prescreen_signal.py`** — see [E037-06](FINDINGS.md#e037-06).
 
 **Routes / outcomes**
 
@@ -497,7 +497,7 @@ itself informative and is not padded with an invented value.
 | `forecast_hash` | Fingerprint of the forecast series. Two configs producing identical forecasts are **one** trial, however much else differs — this is the dedup key that stops N being inflated. | 16-char hex | `5b0dee1781bc716f` |
 | `ic_significance` | The significance test that **decided the route**. Which test ran depends on the path taken. | dict: `method`, `pooled_ic`, `p_value`, `significant` (bool), plus method-specific keys | `{method: block_24_dense_fallback, pooled_ic: 0.0162, p_value: 0.5315, density_pct: 50.01, significant: false}` |
 | `ic_significance_block24` | The default block Fisher-z result, always computed even when another method decided — so runs stay comparable across methodology changes. | dict: `pooled_ic`, `z_stat`, `p_value`, `n_eff`, `block_size`, `significant` | `{pooled_ic: 0.0162, z_stat: 0.6257, p_value: 0.5315, n_eff: 1488, block_size: 6, significant: false}` |
-| `significance_methodology_used` | Which test decided. Needed because three can, and a later reader reconstructs the maths from this name. Note the config flag that *requests* A8.5.1a is `episode_blocked_a851a`, which is **not** itself a value of this field — the field records which of A8.5.1a's three outcomes actually ran. | `block_{n}_fisher_z` (default, n_eff-deflated) · `episode_block_bootstrap` (A8.5.1a, episode resampling) · `episode_bootstrap_insufficient_n` (A8.5.1a, too few episodes — descriptive only) · `block_24_dense_fallback` (A8.5.1a, signal too dense for episodes) · stationary-bootstrap label (degenerate-forecast fallback) | `block_24_dense_fallback` — **the literal `24` while `block_size` is `6`; see [F10](FINDINGS.md#f10)** |
+| `significance_methodology_used` | Which test decided. Needed because three can, and a later reader reconstructs the maths from this name. Note the config flag that *requests* A8.5.1a is `episode_blocked_a851a`, which is **not** itself a value of this field — the field records which of A8.5.1a's three outcomes actually ran. | `block_{n}_fisher_z` (default, n_eff-deflated) · `episode_block_bootstrap` (A8.5.1a, episode resampling) · `episode_bootstrap_insufficient_n` (A8.5.1a, too few episodes — descriptive only) · `block_24_dense_fallback` (A8.5.1a, signal too dense for episodes) · stationary-bootstrap label (degenerate-forecast fallback) | `block_24_dense_fallback` — **the literal `24` while `block_size` is `6`; see [E037-10](FINDINGS.md#e037-10)** |
 | `degenerate_active_forecast` | Flags that the component emits one constant magnitude whenever active, which makes `ic_active_bars` mathematically undefined rather than "zero edge". Prevents a code shape being read as a scientific result. | `true` / `false` | `false` |
 | `active_forecast_distinct_count` | How many distinct forecast values occurred on active bars. The measurement behind the flag above. | integer >= 0; `1` means constant | `2` |
 | `cost_check` | Whether the estimated gross edge could survive round-trip trading costs at the implied turnover. The second of the two gates, known in the amendments as **Layer 2**. | dict; `pass` true only when `edge_to_cost_ratio >= safety_factor_required` | `{symbol: BTCUSDT, estimated_gross_edge_bps_per_trade: 2.6012, cost_bps_per_trade: 17.0, edge_to_cost_ratio: 0.153, safety_factor_required: 2.0, pass: false, ic_used: ic_active_bars}` |
@@ -511,7 +511,7 @@ itself informative and is not padded with an invented value.
 | `ic_by_regime` | Reserved for per-regime IC. Deliberately not computed — A2.3 suspends it until a trustworthy detector exists, and the field carries that reason so nobody reads the absence as an oversight. | always `{suspended: true, reason: …}` | `{suspended: true, reason: "A2.3: ic_by_regime suspended until a trustworthy detector exists. …"}` |
 | `component_error_count` / `component_error_sample` | How many bars threw a swallowed exception inside the strategy's `update()`, plus a capped sample of them. Separates "the signal is bad" from "the code is broken". | integer >= 0 — a rate above **5%** of processed bars forces `route: no_signal_artifact` (F5c) / list, capped at 5 entries | `0` / `[]` |
 | `a86_power_check` | The a-priori power verdict, present **only** on the `insufficient_power_a_priori` path, where the run died before any IC was computed. Its presence means this file is one of the two A8.6 stubs, not a result. | dict: `min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, `data_requirement`; absent otherwise | — *absent: run_060 took the normal path* |
-| `config_sha8` / `computed_at` / `protocol_version` / `symbols` / `prescreen_windows_used` / `n_bars_total` | Provenance — what was run, against what, when. Makes the result reproducible and comparable. | hex8 / ISO-8601 UTC / path string / list / list of month labels / integer | `041ea0ef` / `2026-08-28T19:54:01.052853+00:00` / `protocols\funding_mr_4h_retest_v1.json` (**backslash — see [F11](FINDINGS.md#f11)**) / `[BTCUSDT, ETHUSDT]` / 49 month labels `2019-12`…`2023-12` / `17854` |
+| `config_sha8` / `computed_at` / `protocol_version` / `symbols` / `prescreen_windows_used` / `n_bars_total` | Provenance — what was run, against what, when. Makes the result reproducible and comparable. | hex8 / ISO-8601 UTC / path string / list / list of month labels / integer | `041ea0ef` / `2026-08-28T19:54:01.052853+00:00` / `protocols\funding_mr_4h_retest_v1.json` (**backslash — see [E037-11](FINDINGS.md#e037-11)**) / `[BTCUSDT, ETHUSDT]` / 49 month labels `2019-12`…`2023-12` / `17854` |
 
 **Notes**
 
@@ -623,7 +623,7 @@ check flagged five vanished tokens. Four were genuine losses, restored: `F5c`
 and its 5% threshold, `update()`, the `insufficient_power_a_priori` route
 name, and the term "Layer 2". The fifth, `required_gross_edge_bps`, had never
 existed — the guide documents a `cost_check` subkey no code emits, which
-became [F14](FINDINGS.md#f14). **The check finds phantom content as well as
+became [E037-14](FINDINGS.md#e037-14). **The check finds phantom content as well as
 lost content**, and none of the five was visible on a read-through.
 
 **Limits, stated honestly:** it catches dropped *tokens*, not dropped
@@ -657,20 +657,20 @@ code and no guide text was changed.
 
 | ID | Severity | One line — full text in [`FINDINGS.md`](FINDINGS.md) |
 |---|---|---|
-| [F1](FINDINGS.md#f1) | medium | Stage 7's row credits the Python tool with the A8.6 power check; it is orchestrator logic, not in `prescreen_signal.py` at all. |
-| [F2](FINDINGS.md#f2) | medium | The `route` enum omits `no_signal_artifact`, which overrides every other route. |
-| [F3](FINDINGS.md#f3) | low | The field table shows 6 of ~30 keys and is not marked as a selection; `forecast_hash` and `sigma_is_placeholder` are among the missing. |
-| [F4](FINDINGS.md#f4) | medium | `Created by` is wrong on one of three creation paths, and that path emits a 4-key artifact §3 never mentions. |
-| [F5](FINDINGS.md#f5) | medium | "block-bootstrap" names the fallback as if it were the default; there are three methods and the default is block-deflated Fisher z. |
-| [F6](FINDINGS.md#f6) | low | Trial recording (A6.2) is credited to the tool; it is the orchestrator. |
-| [F7](FINDINGS.md#f7) | **high** | Stage 7 rewrites stage 10's `regime_audit_decision.yaml` in place, and that entry has no `Updated by` line — invisible to any reader. |
-| [F8](FINDINGS.md#f8) | low | Two significance thresholds (`0.10` and `0.05`) decide different things; neither is documented. |
-| [F9](FINDINGS.md#f9) | medium | `strategy-research/CLAUDE.md` lists a different 10-stage workflow and asserts the schema validation §3 records as false. |
-| [F10](FINDINGS.md#f10) | **high** | The 2026-08-28 "label must track the arithmetic" fix missed the A8.5.1a path; run_060 stamps `block_24_dense_fallback` with `block_size: 6`. Code defect. |
-| [F11](FINDINGS.md#f11) | medium | `protocol_version` is stamped as a platform-dependent path; `Path(...).name` mis-parses it on POSIX. |
-| [F12](FINDINGS.md#f12) | medium | The guide cites 14 distinct amendment codes across 26 mentions and never once says where any of them is defined. Unresolvable references are how the documented C4 confabulation incident happened. |
-| [F13](FINDINGS.md#f13) | medium | `prescreen_signal.py` labels the ungated-escape write-back "A9.1", but A9.1 is the `keltner_163` must-reject fixture; the governing rules look like A2.1 / A2.3 rule 5. |
-| [F14](FINDINGS.md#f14) | medium | The guide documents a `cost_check` subkey `required_gross_edge_bps` that no code emits, while omitting six real ones. |
+| [E037-01](FINDINGS.md#e037-01) | medium | Stage 7's row credits the Python tool with the A8.6 power check; it is orchestrator logic, not in `prescreen_signal.py` at all. |
+| [E037-02](FINDINGS.md#e037-02) | medium | The `route` enum omits `no_signal_artifact`, which overrides every other route. |
+| [E037-03](FINDINGS.md#e037-03) | low | The field table shows 6 of ~30 keys and is not marked as a selection; `forecast_hash` and `sigma_is_placeholder` are among the missing. |
+| [E037-04](FINDINGS.md#e037-04) | medium | `Created by` is wrong on one of three creation paths, and that path emits a 4-key artifact §3 never mentions. |
+| [E037-05](FINDINGS.md#e037-05) | medium | "block-bootstrap" names the fallback as if it were the default; there are three methods and the default is block-deflated Fisher z. |
+| [E037-06](FINDINGS.md#e037-06) | low | Trial recording (A6.2) is credited to the tool; it is the orchestrator. |
+| [E037-07](FINDINGS.md#e037-07) | **high** | Stage 7 rewrites stage 10's `regime_audit_decision.yaml` in place, and that entry has no `Updated by` line — invisible to any reader. |
+| [E037-08](FINDINGS.md#e037-08) | low | Two significance thresholds (`0.10` and `0.05`) decide different things; neither is documented. |
+| [E037-09](FINDINGS.md#e037-09) | medium | `strategy-research/CLAUDE.md` lists a different 10-stage workflow and asserts the schema validation §3 records as false. |
+| [E037-10](FINDINGS.md#e037-10) | **high** | The 2026-08-28 "label must track the arithmetic" fix missed the A8.5.1a path; run_060 stamps `block_24_dense_fallback` with `block_size: 6`. Code defect. |
+| [E037-11](FINDINGS.md#e037-11) | medium | `protocol_version` is stamped as a platform-dependent path; `Path(...).name` mis-parses it on POSIX. |
+| [E037-12](FINDINGS.md#e037-12) | medium | The guide cites 14 distinct amendment codes across 26 mentions and never once says where any of them is defined. Unresolvable references are how the documented C4 confabulation incident happened. |
+| [E037-13](FINDINGS.md#e037-13) | medium | `prescreen_signal.py` labels the ungated-escape write-back "A9.1", but A9.1 is the `keltner_163` must-reject fixture; the governing rules look like A2.1 / A2.3 rule 5. |
+| [E037-14](FINDINGS.md#e037-14) | medium | The guide documents a `cost_check` subkey `required_gross_edge_bps` that no code emits, while omitting six real ones. |
 
 **Verified consistent** (no finding): §2.2's "A8.1: both IC significance AND
 `cost_check.pass` required for `proceed_to_backtest`" matches
@@ -685,5 +685,5 @@ and signal_prescreen matches the two orchestrator call sites.
 - Did not modify `docs/USER_GUIDE.md`. The worked sample lives here so the
   shape can be rejected cheaply.
 - Did not restructure the stage map (§2.1) — that is S4.
-- Did not fix any code, and did not correct the guide text for F1–F8.
+- Did not fix any code, and did not correct the guide text for E037-01–E037-08.
 - Did not shorten anything.

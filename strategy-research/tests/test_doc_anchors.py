@@ -7,7 +7,7 @@ E-037 wrote ~80 explicit code anchors into USER_GUIDE.md and the E-037 records.
 Nine of roughly forty were wrong on first write and were corrected by hand. Line
 numbers rot on every edit above them, so without a check the whole set silently
 decays into confident-looking noise — the same failure mode as the phantom
-fields in §3 (see FINDINGS.md F24), one layer down.
+fields in §3 (see FINDINGS.md E037-24), one layer down.
 
 WHAT IT CHECKS
 --------------

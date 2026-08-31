@@ -103,7 +103,7 @@ orchestrator dispatches · `[Tool]` a deterministic Python stage, no LLM call.
 dispatches it — it is absent from both `STAGE_CONFIGS` and `_SKILL_MAP`, and no
 code writes `regime_audit_decision.yaml`. In practice the pipeline pauses and a
 person runs the skill. Whether it should become a real stage is an open
-decision: see [F16](../engineering/roadmap/E-037/FINDINGS.md#f16).
+decision: see [E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16).
 
 **Ungated-only standing policy** *(a campaign policy, not a step — kept here
 because it constrains every hypothesis on the map)*: ER-based regime detection
@@ -259,7 +259,7 @@ rebalance frequency; the holdout gate reads it to check tradability.
 **1. Ordering and library lookup are skill instructions, not code gates.**
 A1.1–A1.3 (populate `edge_source` before `signal_concept`) and A1.4 (look the
 indicator up in `indicator_library.yaml`) live in the skill prompt. As with
-stage 3, no Python enforces them — see [F18](../engineering/roadmap/E-037/FINDINGS.md#f18).
+stage 3, no Python enforces them — see [E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18).
 
 **2. Declare where the evidence comes from, or ask for the feed.**
 The card must declare `evidence_type` from `config/available_feeds.yaml`. If the
@@ -311,7 +311,7 @@ OR `data_requirements`; cosmetic = rejected)". `library_category` appears
 (`run_phase1_research.py:490`). The rule lives in
 `workflow_artifacts/skills/innovation-expansion/SKILL.md:74-105`, and the model
 self-reports the verdict. **No code can produce the "rejected" outcome.**
-See [F18](../engineering/roadmap/E-037/FINDINGS.md#f18).
+See [E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18).
 
 ---
 
@@ -521,7 +521,7 @@ is never launched. The orchestrator writes `prescreen_result.yaml` itself with
 (`run_phase1_research.py:6217`, `:6232`, `:6235`). The same check runs earlier
 at the validation gate (`:2287`); if it already wrote the file, the
 orchestrator skips the tool (`:6207`). **None of this is in
-`prescreen_signal.py`** — see [F1](../engineering/roadmap/E-037/FINDINGS.md#f1).
+`prescreen_signal.py`** — see [E037-01](../engineering/roadmap/E-037/FINDINGS.md#e037-01).
 
 **1. Setup — load the config and protocol, and fix the block size.**
 `block_size = bars_per_day(timeframe)` comes from `tools/timeframe.py`, the
@@ -604,7 +604,7 @@ absence cannot be mistaken for an oversight. Only ungated IC decides.
 `ungated_escape_eligible` in `regime_audit_decision.yaml` is resolved using
 `ic_all_bars`, because an IC measured on detector-gated bars is not admissible
 for or against the escape (A2.3 rule 5) (`:1582`, `:1092`). The code labels
-this "A9.1", which appears to be the wrong code — see [F13](../engineering/roadmap/E-037/FINDINGS.md#f13).
+this "A9.1", which appears to be the wrong code — see [E037-13](../engineering/roadmap/E-037/FINDINGS.md#e037-13).
 
 **13. Write the artifact.** `prescreen_result.yaml` (`:1585`).
 
@@ -613,7 +613,7 @@ this "A9.1", which appears to be the wrong code — see [F13](../engineering/roa
 Kills count as trials; `statistic_valid = "neither"` when there is no backtest
 Sharpe. Upsert on `(trial_id, "prescreen")` since 2026-08-16 (issue #28 /
 E-025), so a crash-retry replaces the stale row instead of being swallowed.
-**Not in `prescreen_signal.py`** — see [F6](../engineering/roadmap/E-037/FINDINGS.md#f6).
+**Not in `prescreen_signal.py`** — see [E037-06](../engineering/roadmap/E-037/FINDINGS.md#e037-06).
 
 **Routes / outcomes**
 
@@ -718,7 +718,7 @@ re-raised unchanged.
 **Notes, history and traps**
 
 - The `pass_rule_evaluation.yaml` step is invisible in §3 — it has no artifact
-  entry. See [F19](../engineering/roadmap/E-037/FINDINGS.md#f19).
+  entry. See [E037-19](../engineering/roadmap/E-037/FINDINGS.md#e037-19).
 - A verdict that contradicts `pass_rule_evaluation.yaml` without flagging the
   contradiction is a conformance failure, per the verdict-interpreter SKILL.
 
@@ -757,7 +757,7 @@ returns `None` (`:2433-2434`). If the subprocess exits non-zero, it prints and
 returns `None` (`:2445-2447`). **Neither raises.** The verdict then proceeds
 with no detector report and the only trace is stdout. This sits badly beside
 the project's standing rule that anything feeding decisions raises on
-degenerate inputs. See [F17](../engineering/roadmap/E-037/FINDINGS.md#f17).
+degenerate inputs. See [E037-17](../engineering/roadmap/E-037/FINDINGS.md#e037-17).
 
 **3. Computes the A2.2 gate metrics.**
 Persistence, class-conditional sensitivity under ±10% perturbation, and
@@ -787,7 +787,7 @@ exists (`:6251`, `:6382`), and the sole writer anywhere is
 `prescreen_signal.py:1118`, which updates an existing file and returns early if
 there is none. What happens in practice is a pause (`status="paused_for_human"`)
 printing *"consult regime-auditor skill and regime_detector_report.yaml"*
-(`:5788-5796`). See [F16](../engineering/roadmap/E-037/FINDINGS.md#f16).
+(`:5788-5796`). See [E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16).
 
 **Stage input:** `regime_detector_report.yaml` (campaign root).
 
@@ -863,7 +863,7 @@ which is what makes a verdict auditable after the fact.
 §2.1's map labelled the three non-terminal outcomes `alt 1` (refine), `alt 2`
 (pivot) and `alt 3` (escalate), matching the numbering §3 once ascribed to an
 `altitude` field. **No real artifact carries that field** — measured 0 of 39,
-see [F22](../engineering/roadmap/E-037/FINDINGS.md#f22). The ladder is real and
+see [E037-22](../engineering/roadmap/E-037/FINDINGS.md#e037-22). The ladder is real and
 the ordering is meaningful; the numeric field was intended and never built.
 What the artifact carries is `status`.
 
@@ -1257,7 +1257,7 @@ occurred.** Measured across the **39** real `decision.yaml` files: `spec_ready`
 once, and neither is in the router's `KNOWN_STATUSES`. Note also that
 `validation_incomplete` is **not** a known status either, so that run took the
 fail-closed human-pause branch. See
-[F23](../engineering/roadmap/E-037/FINDINGS.md#f23).
+[E037-23](../engineering/roadmap/E-037/FINDINGS.md#e037-23).
 
 An unknown status is **not** treated as a soft failure: `determine_post_spec_route`
 prints that the SKILL may need a new status case and pauses
@@ -1274,7 +1274,7 @@ prints that the SKILL may need a new status case and pauses
 > `source`, `prescreen_route` and `prescreen_kill_reason`. This is the backtest
 > result every verdict rests on, so the gap matters operationally. Names below
 > preserved as intended design. See
-> [F24](../engineering/roadmap/E-037/FINDINGS.md#f24).
+> [E037-24](../engineering/roadmap/E-037/FINDINGS.md#e037-24).
 
 
 
@@ -1327,7 +1327,7 @@ next"), and `next_altitude` ("fallback altitude if the current verdict fails
 again"). The real fields are `status` (34 of 39) and `root_cause` (11 of 39).
 The former descriptions are preserved here rather than deleted, because they
 record an intended design; they do not describe the artifact. See
-[F22](../engineering/roadmap/E-037/FINDINGS.md#f22).
+[E037-22](../engineering/roadmap/E-037/FINDINGS.md#e037-22).
 
 ⚠️ **A verdict that contradicts `pass_rule_evaluation.yaml` without flagging the
 contradiction is a conformance failure** — that file, not this one, is the
@@ -1353,7 +1353,7 @@ The pre-filled research_brief for the next run. Includes the `existing_context` 
 > really carries `target` (e.g. `timeframe`), `reason`, and
 > `proposed_capability`. The names below are preserved as intended design —
 > they describe the same three concepts under different names. See
-> [F24](../engineering/roadmap/E-037/FINDINGS.md#f24).
+> [E037-24](../engineering/roadmap/E-037/FINDINGS.md#e037-24).
 
 
 
@@ -1436,7 +1436,7 @@ Internal run state — not a research artifact but the orchestrator's working me
 >
 > This is the project's off-by-default discipline working as intended. It is
 > flagged here only because these entries would otherwise read as describing
-> what a run writes. See [F21](../engineering/roadmap/E-037/FINDINGS.md#f21).
+> what a run writes. See [E037-21](../engineering/roadmap/E-037/FINDINGS.md#e037-21).
 
 ### `variant_selection.yaml` (per run)
 
@@ -1610,7 +1610,7 @@ Per-trade records (one row per closed trade) with fields: `entry_bar`, `exit_bar
 by every run, regenerated when older than 30 days
 (`run_phase1_research.py:2425`). `config_source` records which run's config
 last produced it. Note the example's `config_source` is a **Windows path**, the
-same portability issue as [F11](../engineering/roadmap/E-037/FINDINGS.md#f11).
+same portability issue as [E037-11](../engineering/roadmap/E-037/FINDINGS.md#e037-11).
 
 ---
 
@@ -1621,8 +1621,8 @@ same portability issue as [F11](../engineering/roadmap/E-037/FINDINGS.md#f11).
 > does not carry a field recording that it passed. Note also that this file is
 > **updated in place by stage 7**, which resolves `ungated_escape_eligible`
 > here; the entry has no `Updated by` line. See
-> [F7](../engineering/roadmap/E-037/FINDINGS.md#f7) and
-> [F24](../engineering/roadmap/E-037/FINDINGS.md#f24).
+> [E037-07](../engineering/roadmap/E-037/FINDINGS.md#e037-07) and
+> [E037-24](../engineering/roadmap/E-037/FINDINGS.md#e037-24).
 
 
 > **Why this file exists.** The human judgment on the detector, made under a firewall that keeps profitability out of the decision.
@@ -1850,7 +1850,7 @@ product are not `tradable: true` — **or are undeclared**
 > orchestrator can dispatch — `_SKILL_MAP` in `workflow/run_phase1_research.py:689`,
 > verified 2026-08-30. Three more exist under `workflow_artifacts/skills/` and
 > are **not** dispatchable: `regime-auditor` (invoked by a human on a paused
-> pipeline — see stage 10 and [F16](../engineering/roadmap/E-037/FINDINGS.md#f16)),
+> pipeline — see stage 10 and [E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16)),
 > `quant-fundamentals` and `research-system-evolution` (reference/strategic, not
 > pipeline stages). `_build_stage_prompt` raises for any stage not in the map,
 > so the seven below are an exhaustive list of automated stages, not a
@@ -2109,7 +2109,7 @@ by how load-bearing they are, not alphabetically.
 > that implements stage 7 and the tool that produces the decision authority
 > were both absent, while `workflow/stages.yaml` — archived and read by nothing
 > — had a full entry. See
-> [F25](../engineering/roadmap/E-037/FINDINGS.md#f25).
+> [E037-25](../engineering/roadmap/E-037/FINDINGS.md#e037-25).
 
 ---
 ## 6. Glossary
@@ -2123,8 +2123,8 @@ which explains each in one line without jargon.
 > ⚠️ **The "10-stage pipeline" in the `Run` entry below is stale.** This guide
 > documents **13** numbered stages (§2.2). Ten is the size of the engine's
 > `STAGE_CONFIGS` registry, which excludes the human brief and the two regime
-> stages — see [F15](../engineering/roadmap/E-037/FINDINGS.md#f15) and
-> [F28](../engineering/roadmap/E-037/FINDINGS.md#f28). Left as written rather
+> stages — see [E037-15](../engineering/roadmap/E-037/FINDINGS.md#e037-15) and
+> [E037-28](../engineering/roadmap/E-037/FINDINGS.md#e037-28). Left as written rather
 > than silently corrected, per this epic's record-don't-fix rule.
 
 | Term | Definition |

@@ -2,6 +2,19 @@
 
 Doc-vs-code disagreements found while writing E-037.
 
+> **On the ID prefix.** These are numbered **E037-01 … E037-29**, not F1..F29.
+> They were originally written as `F`-numbers and renamed on 2026-08-31, because
+> **this repository already uses an `F`-code convention of its own** in source
+> comments — `F5c` (the zero-signal-artifact override), `F6` (per-family circuit
+> breaker scoping), `F4d`, `F4f`, `F8b` and others. Four IDs collided outright:
+> `F3`, `F5`, `F6` and `F8` meant two different things at once.
+>
+> That is precisely the incident this project already recorded as **C4,
+> "Rule-citation confabulation"** — a citation that looks authoritative and
+> resolves to the wrong rule. Renaming was cheaper than living with it. Where
+> you see a bare `F5c` or `F6` in the guide or in code comments, it is the
+> **codebase's** code and has nothing to do with these findings.
+
 **Rule: findings are RECORDED, never fixed here.** No code and no
 `USER_GUIDE.md` text has been changed on their account. They become cards or
 issues at S3, where Jérémy decides which get worked.
@@ -23,48 +36,48 @@ contract, so nobody could see them.
 
 | ID | Severity | Type | Lands on |
 |---|---|---|---|
-| [F1](#f1) | medium | doc-vs-code | `docs/USER_GUIDE.md §2.2` |
-| [F2](#f2) | medium | doc-vs-code | `docs/USER_GUIDE.md §3` |
-| [F3](#f3) | low | doc-incomplete | `docs/USER_GUIDE.md §3` |
-| [F4](#f4) | medium | doc-vs-code | `docs/USER_GUIDE.md §3` |
-| [F5](#f5) | medium | doc-vs-code | `docs/USER_GUIDE.md §2.2 + §3` |
-| [F6](#f6) | low | doc-vs-code | `docs/USER_GUIDE.md §2.2` |
-| [F7](#f7) | **high** | doc-missing-contract | `docs/USER_GUIDE.md §3` |
-| [F8](#f8) | low | doc-incomplete | `docs/USER_GUIDE.md §2.2 + §3` |
-| [F9](#f9) | medium | doc-vs-doc | `strategy-research/CLAUDE.md` |
-| [F10](#f10) | **high** | code-defect | `strategy-research/tools/episode_significance.py:209` |
-| [F11](#f11) | medium | code-fragility | `strategy-research/workflow/run_phase1_research.py:3237` |
-| [F12](#f12) | medium | doc-unresolvable-reference | `docs/USER_GUIDE.md` (whole document) |
-| [F13](#f13) | medium | wrong-citation | `strategy-research/tools/prescreen_signal.py:1089,1100,1580` |
-| [F14](#f14) | medium | phantom-field | `docs/USER_GUIDE.md:613` |
-| [F15](#f15) | medium | doc-vs-code | `docs/USER_GUIDE.md` §2.2 · `run_phase1_research.py:88` |
-| [F16](#f16) | **high** | stage-does-not-run | `docs/USER_GUIDE.md` §2.1/§2.2 (stage 10) |
-| [F17](#f17) | medium | silent-no-op | `run_phase1_research.py:2410` |
-| [F18](#f18) | **high** | unenforced-rule | `docs/USER_GUIDE.md` §2.2 (stage 3) |
-| [F19](#f19) | **high** | missing-artifacts | `docs/USER_GUIDE.md` §3 |
-| [F20](#f20) | medium | inconsistent-metadata | `docs/USER_GUIDE.md` §3 |
-| [F21](#f21) | **high** | documents-inactive-machinery | `docs/USER_GUIDE.md` §3 |
-| [F22](#f22) | **high** | phantom-fields | `docs/USER_GUIDE.md` §3 (`verdict_interpretation.yaml`) |
-| [F23](#f23) | medium | phantom-values + unhandled-status | `docs/USER_GUIDE.md` §3 (`decision.yaml`) |
-| [F24](#f24) | **high** | phantom-fields (systemic) | `docs/USER_GUIDE.md` §3 — 5 entries |
-| [F25](#f25) | medium | incomplete-index | `docs/USER_GUIDE.md` §5 |
-| [F26](#f26) | **high** | code-regression | `strategy-research/tools/prescreen_signal.py:1320` |
-| [F27](#f27) | **high** | gap-in-the-gate | `.git/hooks/pre-commit` · `.github/workflows/tests.yml` |
-| [F28](#f28) | low | stale-count | `docs/USER_GUIDE.md` §6 (`Run`) |
-| [F29](#f29) | **high** | guard-not-installed | `.git/hooks/pre-commit` (this machine) |
+| [E037-01](#e037-01) | medium | doc-vs-code | `docs/USER_GUIDE.md §2.2` |
+| [E037-02](#e037-02) | medium | doc-vs-code | `docs/USER_GUIDE.md §3` |
+| [E037-03](#e037-03) | low | doc-incomplete | `docs/USER_GUIDE.md §3` |
+| [E037-04](#e037-04) | medium | doc-vs-code | `docs/USER_GUIDE.md §3` |
+| [E037-05](#e037-05) | medium | doc-vs-code | `docs/USER_GUIDE.md §2.2 + §3` |
+| [E037-06](#e037-06) | low | doc-vs-code | `docs/USER_GUIDE.md §2.2` |
+| [E037-07](#e037-07) | **high** | doc-missing-contract | `docs/USER_GUIDE.md §3` |
+| [E037-08](#e037-08) | low | doc-incomplete | `docs/USER_GUIDE.md §2.2 + §3` |
+| [E037-09](#e037-09) | medium | doc-vs-doc | `strategy-research/CLAUDE.md` |
+| [E037-10](#e037-10) | **high** | code-defect | `strategy-research/tools/episode_significance.py:209` |
+| [E037-11](#e037-11) | medium | code-fragility | `strategy-research/workflow/run_phase1_research.py:3237` |
+| [E037-12](#e037-12) | medium | doc-unresolvable-reference | `docs/USER_GUIDE.md` (whole document) |
+| [E037-13](#e037-13) | medium | wrong-citation | `strategy-research/tools/prescreen_signal.py:1089,1100,1580` |
+| [E037-14](#e037-14) | medium | phantom-field | `docs/USER_GUIDE.md:613` |
+| [E037-15](#e037-15) | medium | doc-vs-code | `docs/USER_GUIDE.md` §2.2 · `run_phase1_research.py:88` |
+| [E037-16](#e037-16) | **high** | stage-does-not-run | `docs/USER_GUIDE.md` §2.1/§2.2 (stage 10) |
+| [E037-17](#e037-17) | medium | silent-no-op | `run_phase1_research.py:2410` |
+| [E037-18](#e037-18) | **high** | unenforced-rule | `docs/USER_GUIDE.md` §2.2 (stage 3) |
+| [E037-19](#e037-19) | **high** | missing-artifacts | `docs/USER_GUIDE.md` §3 |
+| [E037-20](#e037-20) | medium | inconsistent-metadata | `docs/USER_GUIDE.md` §3 |
+| [E037-21](#e037-21) | **high** | documents-inactive-machinery | `docs/USER_GUIDE.md` §3 |
+| [E037-22](#e037-22) | **high** | phantom-fields | `docs/USER_GUIDE.md` §3 (`verdict_interpretation.yaml`) |
+| [E037-23](#e037-23) | medium | phantom-values + unhandled-status | `docs/USER_GUIDE.md` §3 (`decision.yaml`) |
+| [E037-24](#e037-24) | **high** | phantom-fields (systemic) | `docs/USER_GUIDE.md` §3 — 5 entries |
+| [E037-25](#e037-25) | medium | incomplete-index | `docs/USER_GUIDE.md` §5 |
+| [E037-26](#e037-26) | **high** | code-regression | `strategy-research/tools/prescreen_signal.py:1320` |
+| [E037-27](#e037-27) | **high** | gap-in-the-gate | `.git/hooks/pre-commit` · `.github/workflows/tests.yml` |
+| [E037-28](#e037-28) | low | stale-count | `docs/USER_GUIDE.md` §6 (`Run`) |
+| [E037-29](#e037-29) | **high** | guard-not-installed | `.git/hooks/pre-commit` (this machine) |
 
 **Counts:** 11 high · 14 medium · 4 low. By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
 
-**The two that are code, not documentation** — F10 and F11 — are the ones that
-do not go away by editing a sentence. F10 in particular is a fix that looked
+**The two that are code, not documentation** — E037-10 and E037-11 — are the ones that
+do not go away by editing a sentence. E037-10 in particular is a fix that looked
 complete and was not.
 
 ---
 
-## F1
+## E037-01
 
 **Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
 
@@ -81,7 +94,7 @@ complete and was not.
 
 ---
 
-## F2
+## E037-02
 
 **Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
 
@@ -98,7 +111,7 @@ complete and was not.
 
 ---
 
-## F3
+## E037-03
 
 **Severity:** low · **Type:** doc-incomplete · **Status:** open, untriaged
 
@@ -115,7 +128,7 @@ complete and was not.
 
 ---
 
-## F4
+## E037-04
 
 **Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
 
@@ -132,7 +145,7 @@ complete and was not.
 
 ---
 
-## F5
+## E037-05
 
 **Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
 
@@ -149,7 +162,7 @@ Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` �
 
 ---
 
-## F6
+## E037-06
 
 **Severity:** low · **Type:** doc-vs-code · **Status:** open, untriaged
 
@@ -158,7 +171,7 @@ Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` �
 **Found by:** S1 worked sample, 2026-08-30
 
 
-§2.2 stage 7 says "Records trial in `campaign_state.trial_sharpes` (A6.2)". Done by the orchestrator (`_record_prescreen_trial`, `run_phase1_research.py:4039`, called at `:1130`, `:6215`, `:6235`), not by the tool. Same class as F1.
+§2.2 stage 7 says "Records trial in `campaign_state.trial_sharpes` (A6.2)". Done by the orchestrator (`_record_prescreen_trial`, `run_phase1_research.py:4039`, called at `:1130`, `:6215`, `:6235`), not by the tool. Same class as E037-01.
 
 
 **Proposed disposition (S3 decides, not this file):** Attribute A6.2 trial recording to the orchestrator.
@@ -166,7 +179,7 @@ Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` �
 
 ---
 
-## F7
+## E037-07
 
 **Severity:** **high** · **Type:** doc-missing-contract · **Status:** open, untriaged
 
@@ -183,7 +196,7 @@ Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` �
 
 ---
 
-## F8
+## E037-08
 
 **Severity:** low · **Type:** doc-incomplete · **Status:** open, untriaged
 
@@ -200,7 +213,7 @@ Two significance thresholds live in `_determine_route` and only the stricter one
 
 ---
 
-## F9
+## E037-09
 
 **Severity:** medium · **Type:** doc-vs-doc · **Status:** open, untriaged
 
@@ -217,7 +230,7 @@ Two significance thresholds live in `_determine_route` and only the stricter one
 
 ---
 
-## F10
+## E037-10
 
 **Severity:** **high** · **Type:** code-defect · **Status:** open, untriaged
 
@@ -234,7 +247,7 @@ Two significance thresholds live in `_determine_route` and only the stricter one
 
 ---
 
-## F11
+## E037-11
 
 **Severity:** medium · **Type:** code-fragility · **Status:** open, untriaged
 
@@ -251,7 +264,7 @@ Two significance thresholds live in `_determine_route` and only the stricter one
 
 ---
 
-## F12
+## E037-12
 
 **Severity:** medium · **Type:** doc-unresolvable-reference · **Status:** open, untriaged
 
@@ -294,7 +307,7 @@ on first use within a block; that convention is worth applying guide-wide.
 
 ---
 
-## F13
+## E037-13
 
 **Severity:** medium · **Type:** wrong-citation · **Status:** open, untriaged — needs the author's confirmation
 
@@ -324,7 +337,7 @@ two-stage rejection. This looks like a label attached to the wrong paragraph
 rather than a systematic misunderstanding, and it has **no runtime effect** —
 it is comment text. It is recorded because it misleads readers and because
 S1 propagated it into the documentation before catching it, which is exactly
-the C4 pattern described in [F12](#f12).
+the C4 pattern described in [E037-12](#e037-12).
 
 **Proposed disposition (S3 decides, not this file):** Confirm with the author
 whether A9.1 was intended, then relabel the three sites to A2.1 / A2.3 rule 5
@@ -333,7 +346,7 @@ be answered rather than guessed.
 
 ---
 
-## F14
+## E037-14
 
 **Severity:** medium · **Type:** phantom-field · **Status:** open, untriaged
 
@@ -371,7 +384,7 @@ this one was invisible until an artifact was opened.
 
 ---
 
-## F15
+## E037-15
 
 **Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
 
@@ -384,8 +397,8 @@ The guide numbers **13 stages**. The engine's own registry, `STAGE_CONFIGS`
 are not in it:
 
 - **stage 1 `research_brief`** — a human input, not an orchestrator stage.
-- **stage 9 `regime_detector_validation`** — a helper function, see [F17](#f17).
-- **stage 10 `regime_auditor`** — never dispatched at all, see [F16](#f16).
+- **stage 9 `regime_detector_validation`** — a helper function, see [E037-17](#e037-17).
+- **stage 10 `regime_auditor`** — never dispatched at all, see [E037-16](#e037-16).
 
 Separately, **stage 4 is named `validation` in code and `validation_gate` in
 the guide** (`STAGE_CONFIGS["validation"]`, `determine_post_validation_route`,
@@ -401,7 +414,7 @@ engine stages and which are not, and give stage 4 both names.
 
 ---
 
-## F16
+## E037-16
 
 **Severity:** high · **Type:** stage-does-not-run · **Status:** open, untriaged
 
@@ -442,7 +455,7 @@ design question, not a wording fix.
 
 ---
 
-## F17
+## E037-17
 
 **Severity:** medium · **Type:** silent-no-op · **Status:** open, untriaged
 
@@ -475,7 +488,7 @@ Whether the silent return should raise is a separate code decision.
 
 ---
 
-## F18
+## E037-18
 
 **Severity:** high · **Type:** unenforced-rule · **Status:** open, untriaged
 
@@ -511,7 +524,7 @@ guarantee with no enforcement, which makes it a class, not an incident.
 
 ---
 
-## F19
+## E037-19
 
 **Severity:** high · **Type:** missing-artifacts · **Status:** open, untriaged
 
@@ -529,7 +542,7 @@ Counts are files on disk under `runs/`, measured 2026-08-30:
 | `pass_rule_evaluation.yaml` | 2 | **The decision authority.** Written by stage 8 via `tools/verdict_criteria_evaluator.py`, and a **REQUIRED input** to verdict_interpreter — its SKILL.md says so at line 16 and treats a verdict contradicting it without flagging as a conformance failure. C7/K2 kernel, 2026-07-13: it *replaced* `evaluate_against_decision_rules` as the authority, which is now informational only. |
 | `pre_registration.yaml` | 10 | Carries the pre-registered `pass_rule` that the above evaluates, and the `machine_constraints` block — which is not a separate file, but the thing that pins stage 7's significance methodology before the prescreen subprocess reads the config. |
 | `run_context.yaml` | 14 | Per-run protocol binding; holds the bare-filename `protocol` key the prescreen conformance gate compares against (`run_phase1_research.py:3013`). |
-| `human_resolution.yaml` | 4 | Required to resume a pipeline paused at `paused_for_human` — the state the `regime_misattribution` path leaves it in (see [F16](#f16)). Without it, a paused campaign cannot restart, and nothing in the guide names it. |
+| `human_resolution.yaml` | 4 | Required to resume a pipeline paused at `paused_for_human` — the state the `regime_misattribution` path leaves it in (see [E037-16](#e037-16)). Without it, a paused campaign cannot restart, and nothing in the guide names it. |
 | `config/venue_tradability.yaml` | config | Single source of truth for the holdout tradability gate (`run_campaign.py:196`). §3's "Config files" addendum lists eight config files and not this one. |
 
 The pattern is that **the artifacts added most recently are the ones missing**
@@ -550,7 +563,7 @@ of five recent additions, so a sweep is warranted rather than optional.
 
 ---
 
-## F20
+## E037-20
 
 **Severity:** medium · **Type:** inconsistent-metadata · **Status:** open, untriaged
 
@@ -584,7 +597,7 @@ Two observations that matter more than the counts:
    pattern this epic exists to stop. **S2 deliberately did not rewrite them** —
    silently normalising would have destroyed the evidence that the split
    happened.
-2. **`Updated by` at 2 of 28 is why [F7](#f7) was invisible.** Stage 7 rewrites
+2. **`Updated by` at 2 of 28 is why [E037-07](#e037-07) was invisible.** Stage 7 rewrites
    `regime_audit_decision.yaml` in place, and that entry has no `Updated by`
    line — but neither does almost anything else, so its absence signalled
    nothing. A field that is nearly always missing cannot carry information by
@@ -602,7 +615,7 @@ so its absence stops being meaningless.
 
 ---
 
-## F21
+## E037-21
 
 **Severity:** high · **Type:** documents-inactive-machinery · **Status:** open, untriaged
 
@@ -637,12 +650,12 @@ discipline working. The defect is that §3 presents the output of unshipped
 machinery indistinguishably from the artifacts every run actually writes, and
 never mentions the flags.
 
-**It also explains [F20](#f20).** The five entries with no `Created by` /
+**It also explains [E037-20](#e037-20).** The five entries with no `Created by` /
 `Read by` / `Schema` metadata are **exactly** the five flag-gated artifacts —
 a one-to-one match, not an overlap. They were written as design records for
 features that then shipped disabled, using an `**Objective:**` convention
-suited to a design note rather than to a catalogue entry. F20's "two
-conventions" and F21's "inactive machinery" are the same event seen twice.
+suited to a design note rather than to a catalogue entry. E037-20's "two
+conventions" and E037-21's "inactive machinery" are the same event seen twice.
 
 **Consequence for an operator:** someone reading §3 to learn what a run
 produces will look for `variant_selection.yaml` in the run directory and not
@@ -657,7 +670,7 @@ doing this as an interim.
 
 ---
 
-## F22
+## E037-22
 
 **Severity:** high · **Type:** phantom-fields · **Status:** open, untriaged
 
@@ -684,7 +697,7 @@ The fields the artifact actually carries — `status` (34 of 39),
 `prescreen_evidence` — were **none of them documented**.
 
 Five of six documented fields are phantom, and eleven real ones were missing.
-This is [F14](#f14) again at whole-table scale: F14 was one phantom key inside
+This is [E037-14](#e037-14) again at whole-table scale: E037-14 was one phantom key inside
 `cost_check`; this is an entire entry describing an intended design rather than
 the artifact.
 
@@ -708,7 +721,7 @@ what the altitude system was meant to look like.
 
 ---
 
-## F23
+## E037-23
 
 **Severity:** medium · **Type:** phantom-values + unhandled-status · **Status:** open, untriaged
 
@@ -736,7 +749,7 @@ Two things, one measurement. Across the **39** real `decision.yaml` files:
    worked exactly as intended — this is the guard doing its job, and it is
    evidence that the skill emits statuses nobody enumerated.
 
-Note the asymmetry with [F18](#f18): here the code fails closed on an
+Note the asymmetry with [E037-18](#e037-18): here the code fails closed on an
 unrecognised value, while stage 3's diversity rule has no enforcement at all.
 The engine is not uniformly permissive — it is strict in some places and absent
 in others, and the guide does not distinguish them.
@@ -747,7 +760,7 @@ values to `spec_ready` / `component_gap`, and decide whether
 
 ---
 
-## F24
+## E037-24
 
 **Severity:** high · **Type:** phantom-fields (systemic) · **Status:** open, untriaged
 
@@ -755,7 +768,7 @@ values to `spec_ready` / `component_gap`, and decide whether
 
 **Found by:** S2 mechanical audit, 2026-08-30
 
-[F22](#f22) was not an isolated bad entry. Auditing **every** §3 field table
+[E037-22](#e037-22) was not an isolated bad entry. Auditing **every** §3 field table
 against **every** matching artifact on disk shows the same defect in five
 entries. Reproduce with
 [`E-037/tools/audit_field_tables.py`](tools/audit_field_tables.py).
@@ -764,7 +777,7 @@ entries. Reproduce with
 |---|---|---|---|
 | `escalation_request.yaml` | 7 | `target_symbol`, `target_timeframe`, `rationale` | **3 of 3** |
 | `protocol_result.yaml` | 38 | `per_window_metrics`, `per_symbol_metrics`, `per_regime_metrics`, `median_sharpe`, `promotion_criteria`, `diagnostic_metrics` | **6 of 7** |
-| `verdict_interpretation.yaml` | 39 | `altitude`, `verdict`, `diagnostic_rule_applied`, `parameter_bracket`, `next_altitude` | 5 of 6 — [F22](#f22) |
+| `verdict_interpretation.yaml` | 39 | `altitude`, `verdict`, `diagnostic_rule_applied`, `parameter_bracket`, `next_altitude` | 5 of 6 — [E037-22](#e037-22) |
 | `regime_detector_report.yaml` | 1 | `persistence_score`, `class_conditional_sensitivity`, `activation_rate` | 3 of 8 |
 | `regime_audit_decision.yaml` | 1 | `retune_firewall_check` | 1 of 3 |
 
@@ -785,8 +798,8 @@ individually:
 
 **What this means.** §3's field tables were written from **intended design**,
 not from artifacts, and were never re-checked against output. That is the
-same root as [F14](#f14) (`required_gross_edge_bps`, a `cost_check` subkey no
-code emits) and [F21](#f21) (entries for flag-gated features that never ran).
+same root as [E037-14](#e037-14) (`required_gross_edge_bps`, a `cost_check` subkey no
+code emits) and [E037-21](#e037-21) (entries for flag-gated features that never ran).
 The guide is not so much out of date as never having been reconciled with
 reality in this section.
 
@@ -795,7 +808,7 @@ backtest result — the evidence every verdict rests on — and an operator
 reading §3 would look for `median_sharpe` and `per_window_metrics` and find
 neither.
 
-**Method note.** This was found mechanically, in one pass, after [F22](#f22)
+**Method note.** This was found mechanically, in one pass, after [E037-22](#e037-22)
 suggested the class might be systemic. The audit is cheap and repeatable;
 running it is a better acceptance gate for S2 and S4 than any amount of
 careful reading. Its limitation is honest: it detects *documented-but-absent*
@@ -812,7 +825,7 @@ cannot silently drift again.
 
 ---
 
-## F25
+## E037-25
 
 **Severity:** medium · **Type:** incomplete-index · **Status:** open, untriaged
 
@@ -827,12 +840,12 @@ repository:
 - **`tools/prescreen_signal.py`** — implements stage 7 in its entirety.
 - **`tools/verdict_criteria_evaluator.py`** — produces
   `pass_rule_evaluation.yaml`, the decision authority since 2026-07-13
-  (see [F19](#f19)).
+  (see [E037-19](#e037-19)).
 
 Also absent: `power_check.py` (the A8.6 gate), `deflate_sharpe.py` (the DSR
 gate before the holdout), `validate_regime_detector.py` (stage 9),
 `episode_significance.py` (the A8.5.1a path, and the site of
-[F10](#f10)), `timeframe.py` (the single source of `bars_per_day`, whose
+[E037-10](#e037-10)), `timeframe.py` (the single source of `bars_per_day`, whose
 enumerated predecessor caused the 4h `n_eff` bug), and `cache_gap_census.py`
 (which stage 7's own notes tell the reader to run).
 
@@ -854,7 +867,7 @@ shrink to a pointer.
 
 ---
 
-## F26
+## E037-26
 
 **Severity:** high · **Type:** code-regression · **Status:** open, untriaged —
 **red on any machine with the data cache; green in CI, which skips it**
@@ -875,7 +888,7 @@ inferred — it is not caused by any E-037 work, all of which is documentation.
 > and `local_data/` is untracked, so on a CI runner it **skips** rather than
 > passes. It fails only where the data cache exists — a developer machine. The
 > defect is real, and the green tick is not evidence against it. See
-> [F27](#f27) for why nothing catches this class.
+> [E037-27](#e037-27) for why nothing catches this class.
 
 ### What broke
 
@@ -934,14 +947,14 @@ first item in the triage that is failing right now rather than merely wrong.
 
 ---
 
-## F27
+## E037-27
 
 **Severity:** high · **Type:** gap-in-the-gate · **Status:** open, untriaged
 
 **Lands on:** `.git/hooks/pre-commit` (versioned at
 `strategy-research/tools/hooks/pre-commit`) · `.github/workflows/tests.yml`
 
-**Found by:** S3, 2026-08-31, while explaining why [F26](#f26) is red locally
+**Found by:** S3, 2026-08-31, while explaining why [E037-26](#e037-26) is red locally
 and green in CI
 
 **A class of test runs in neither gate.** Not "runs rarely" — neither.
@@ -963,12 +976,12 @@ functions in `strategy-research/tests/` —
 
 **Why these are the worst ones to lose.** They are a small share of the suite,
 but they are the tests that drive the real engine over real bars. A synthetic
-unit test cannot catch [F26](#f26): the guard that broke it fires on the
+unit test cannot catch [E037-26](#e037-26): the guard that broke it fires on the
 interaction between data loading, gap suppression and the F5c override, and
 that interaction only exists with data.
 
 **Consequence, plainly.** A green tick on a PR does not mean the prescreen still
-routes correctly. F26 sat on master with CI green, and it surfaced only because
+routes correctly. E037-26 sat on master with CI green, and it surfaced only because
 S3 ran the full suite by hand before landing an unrelated documentation change.
 
 **Not the same as the fork's worktree note.** `CLAUDE.fork.md` records that
@@ -985,7 +998,7 @@ CI actually cover the class, and needs a decision about committing data.
 
 ---
 
-## F28
+## E037-28
 
 **Severity:** low · **Type:** stale-count · **Status:** open, untriaged
 
@@ -998,11 +1011,11 @@ The guide documents **13** numbered stages in §2.2.
 
 Ten is not arbitrary — it is exactly the size of `STAGE_CONFIGS`, the engine's
 dispatch registry, which excludes the human `research_brief` and the two regime
-stages (see [F15](#f15)). So the glossary silently uses the *engine's* count
+stages (see [E037-15](#e037-15)). So the glossary silently uses the *engine's* count
 while §2.1 and §2.2 use the *documented* count, and nothing reconciles them.
 
 It is also the same number as the stale ten-item stage list found in
-`strategy-research/CLAUDE.md` ([F9](#f9)), though with different members — so
+`strategy-research/CLAUDE.md` ([E037-09](#e037-09)), though with different members — so
 "10 stages" now means at least two different things across the repo's own docs.
 
 Low severity: nobody makes a decision on this number. Recorded because it is
@@ -1016,7 +1029,7 @@ the only phrasing that stays true if either number changes.
 
 ---
 
-## F29
+## E037-29
 
 **Severity:** high · **Type:** guard-not-installed · **Status:** open —
 **live on this machine right now**
@@ -1057,8 +1070,8 @@ install command. It correctly identifies the risk for a **fresh clone** and
 misses the one that actually bit: an **update** to the tracked copy does not
 reach an existing installation. Nothing compares the two.
 
-**Same shape as [F27](#f27).** Both are guards that exist, are written down,
-and do not run where it counts. F27: tests that run in neither gate. F29: a
+**Same shape as [E037-27](#e037-27).** Both are guards that exist, are written down,
+and do not run where it counts. E037-27: tests that run in neither gate. E037-29: a
 gate that is not installed. In both cases the artifact of the protection —
 a file in the repo — was mistaken for the protection.
 
@@ -1082,9 +1095,9 @@ exists, so it must skip rather than fail in CI.
 
 ## Log
 
-- 2026-08-30 — file created by S1. F1-F9 came from reading
+- 2026-08-30 — file created by S1. E037-01-E037-09 came from reading
   `tools/prescreen_signal.py` and `workflow/run_phase1_research.py` against
-  `USER_GUIDE.md` §2.2 and §3. F10 and F11 came from a second pass, filling
+  `USER_GUIDE.md` §2.2 and §3. E037-10 and E037-11 came from a second pass, filling
   the artifact template's example-value column from a real run
   (`runs/run_060/artifacts/prescreen_result.yaml`, 2026-08-28) — neither was
   visible from the code alone. Reading real output found defects that reading

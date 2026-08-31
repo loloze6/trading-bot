@@ -34,7 +34,7 @@ Three destinations are used:
 
 - **kept** — the field is real; its description was carried into the new table.
 - **preserved as intended-design** — the field does **not** exist in any real
-  artifact ([F22](FINDINGS.md#f22), [F24](FINDINGS.md#f24)). Its name and
+  artifact ([E037-22](FINDINGS.md#e037-22), [E037-24](FINDINGS.md#e037-24)). Its name and
   description are quoted **verbatim** in a ⚠️ note directly above the new
   table, explicitly marked as absent. Nothing was deleted; it was relabelled
   from *this is the artifact* to *this was the intended design*.
@@ -53,7 +53,7 @@ Three destinations are used:
 | Removed | Destination | Verbatim? |
 |---|---|---|
 | `stage` — "Stage that produced this decision" | kept | expanded |
-| `status` — "`approved`, `blocked`, etc." | **preserved as intended-design** — both values quoted verbatim in the ⚠️ note; measured 0 occurrences in 39 files ([F23](FINDINGS.md#f23)) | yes |
+| `status` — "`approved`, `blocked`, etc." | **preserved as intended-design** — both values quoted verbatim in the ⚠️ note; measured 0 occurrences in 39 files ([E037-23](FINDINGS.md#e037-23)) | yes |
 | `blocking_issues` — "Any config problems found during validation" | kept | expanded |
 
 ### `verdict_interpretation.yaml` (lines 13–18)
@@ -72,7 +72,7 @@ Three destinations are used:
 | Removed | Destination | Verbatim? |
 |---|---|---|
 | `detector_version` — "Hash of the detector config (used to tag findings in KB, per A5.3)" | kept — A5.3 reference retained | expanded |
-| `persistence_score` — "Fraction of regime transitions that persist ≥ dwell_period" | kept as a row **and** noted as absent at top level; the real field is `regime_persistence_median_bars`, nested under `per_symbol_per_timeframe[].metrics` ([F24](FINDINGS.md#f24)) | yes |
+| `persistence_score` — "Fraction of regime transitions that persist ≥ dwell_period" | kept as a row **and** noted as absent at top level; the real field is `regime_persistence_median_bars`, nested under `per_symbol_per_timeframe[].metrics` ([E037-24](FINDINGS.md#e037-24)) | yes |
 | `class_conditional_sensitivity` — "Per-label flip rate under ±10% parameter perturbation" | as above; real name `class_conditional_sensitivity_per_label` | yes |
 | `activation_rate` — "Fraction of bars per regime label (must be in [10%, 40%] for trend labels)" | as above; real name `trending_activation_rate` | yes |
 
@@ -126,5 +126,5 @@ Corrected in both `S1_TARGET_SHAPE.md` and the guide.
 - Did not restructure §2.1's stage map, compress the §2.2 index table's
   Objective column, or hyperlink glossary terms — all S4.
 - Did not normalise the five `**Objective:**`-style artifact entries; doing so
-  silently would have destroyed the evidence for [F20](FINDINGS.md#f20) and
-  [F21](FINDINGS.md#f21).
+  silently would have destroyed the evidence for [E037-20](FINDINGS.md#e037-20) and
+  [E037-21](FINDINGS.md#e037-21).

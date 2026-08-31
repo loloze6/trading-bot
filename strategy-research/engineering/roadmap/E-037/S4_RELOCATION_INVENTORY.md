@@ -22,7 +22,7 @@ For each thing removed, the fact was proven present in its destination
 | `Impr 04` / Improvement 04 indicator lookup | §2.2 table, stage 2 | stage 2 block, logic step 2 |
 | "5 named diagnostic rules" | §2.2 table, stage 11 | stage 11 block, logic step 4 |
 | Bailey & López de Prado attribution for the DSR | §2.2 table, stage 13 | stage 13 block, gate 1 |
-| `alt 1` / `alt 2` / `alt 3` altitude numbering | §2.1 map | stage 11 block, logic step 5 — **with** the note that the matching `altitude` field is phantom ([F22](FINDINGS.md#f22)) |
+| `alt 1` / `alt 2` / `alt 3` altitude numbering | §2.1 map | stage 11 block, logic step 5 — **with** the note that the matching `altitude` field is phantom ([E037-22](FINDINGS.md#e037-22)) |
 | pre-registered `expected_range` | §2.1 map | stage 13 block, gate 4 |
 
 That is the whole argument for the checklist. Seven facts, all real, none of
@@ -123,8 +123,8 @@ verified present in concept before the original was cut.
 - **Did not move the five flag-gated artifacts' `Objective:` prose into stage
   blocks**, which the EPIC lists for S4. There is nowhere to move it: those
   artifacts belong to features that are off by default and have no stage block
-  ([F21](FINDINGS.md#f21)). Forcing the move would also destroy the evidence
-  for [F20](FINDINGS.md#f20). Recorded rather than forced.
+  ([E037-21](FINDINGS.md#e037-21)). Forcing the move would also destroy the evidence
+  for [E037-20](FINDINGS.md#e037-20). Recorded rather than forced.
 - **Did not migrate `file:line` anchors to `file::symbol`.** Recommended, and
   the reason it was deferred is in [`S3_TRIAGE.md`](S3_TRIAGE.md) — two
   automated attempts were reverted. It wants a deliberate pass, not a
@@ -132,4 +132,4 @@ verified present in concept before the original was cut.
 - **Did not hyperlink every glossary term at its point of use.** §6 and the
   §2.2 terms table now cross-reference each other, which covers the reader's
   actual need; per-term anchors for 30+ table rows is available if wanted.
-- Fixed no findings. F28 was raised, not corrected.
+- Fixed no findings. E037-28 was raised, not corrected.

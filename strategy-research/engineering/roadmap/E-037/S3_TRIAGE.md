@@ -18,12 +18,12 @@ system hard to reason about in the first place.
 
 Three questions decide almost everything:
 
-1. **Is `regime_auditor` supposed to run?** ([F16](FINDINGS.md#f16))
+1. **Is `regime_auditor` supposed to run?** ([E037-16](FINDINGS.md#e037-16))
    A documented stage that is never dispatched. Design call, not a fix.
 2. **Should stated rules be enforced, or restated as guidance?**
-   ([F18](FINDINGS.md#f18), and the sweep it implies)
+   ([E037-18](FINDINGS.md#e037-18), and the sweep it implies)
 3. **Do you want a gate that stops §3 drifting again?**
-   ([F24](FINDINGS.md#f24) — the audit script already exists)
+   ([E037-24](FINDINGS.md#e037-24) — the audit script already exists)
 
 ---
 
@@ -33,14 +33,14 @@ The only group that can affect results. Recommend these become issues.
 
 | ID | Severity | What | Why it is not cosmetic |
 |---|---|---|---|
-| [F26](FINDINGS.md#f26) | **high** | The run_060 zero-data guard (`prescreen_signal.py:1320`) raises before F5c's component-error override can fire. **The suite is RED on `origin/master`.** | F5c exists to stop an engineering failure being scored as a scientific kill -- the run_044 lesson. Its component-error branch is now unreachable. Fails loud rather than silent, so no wrong verdicts today, but the error message misreports the cause: it says "no symbols requested" on a run that loaded 168 bars. **The only finding that is failing right now rather than merely wrong.** |
-| [F10](FINDINGS.md#f10) | **high** | `episode_significance.py:209` hardcodes `block_24_dense_fallback` while passing a derived `block_size`. run_060 stamps that label beside `block_size: 6`. | The 2026-08-28 fix that made the label track the arithmetic covered the default path only. An artifact asserting a method it did not use is exactly what that fix existed to prevent. **Not a one-line change** — the literal is in `VALID_METHODS`, which the F4d conformance gate matches on, so label and gate move together. Also needs a decision on already-archived artifacts carrying the wrong label. |
-| [F16](FINDINGS.md#f16) | **high** | `regime_auditor` is documented as an automated stage; nothing dispatches it and nothing writes `regime_audit_decision.yaml`. | Everything downstream that assumes that file exists — the A2.2 retune firewall, stage 7's `ungated_escape_eligible` write-back — is silently conditional on a human having produced it. **Design decision required:** make it a stage, or re-document it as a human step. |
-| [F17](FINDINGS.md#f17) | medium | `_ensure_regime_detector_report` returns `None` silently when the config is missing or the subprocess fails. | The verdict then proceeds with no detector report and the only trace is stdout. Sits against the project's own rule that anything feeding decisions raises on degenerate inputs — the rule that produced the run_060 guards. |
-| [F11](FINDINGS.md#f11) | medium | `protocol_version` is stamped as a platform-dependent path; `Path(...).name` mis-parses a Windows path on POSIX. | Does not bite within one run. Bites when an artifact crosses machines — the dual-writer model. |
+| [E037-26](FINDINGS.md#e037-26) | **high** | The run_060 zero-data guard (`prescreen_signal.py:1320`) raises before F5c's component-error override can fire. **The suite is RED on `origin/master`.** | F5c exists to stop an engineering failure being scored as a scientific kill -- the run_044 lesson. Its component-error branch is now unreachable. Fails loud rather than silent, so no wrong verdicts today, but the error message misreports the cause: it says "no symbols requested" on a run that loaded 168 bars. **The only finding that is failing right now rather than merely wrong.** |
+| [E037-10](FINDINGS.md#e037-10) | **high** | `episode_significance.py:209` hardcodes `block_24_dense_fallback` while passing a derived `block_size`. run_060 stamps that label beside `block_size: 6`. | The 2026-08-28 fix that made the label track the arithmetic covered the default path only. An artifact asserting a method it did not use is exactly what that fix existed to prevent. **Not a one-line change** — the literal is in `VALID_METHODS`, which the F4d conformance gate matches on, so label and gate move together. Also needs a decision on already-archived artifacts carrying the wrong label. |
+| [E037-16](FINDINGS.md#e037-16) | **high** | `regime_auditor` is documented as an automated stage; nothing dispatches it and nothing writes `regime_audit_decision.yaml`. | Everything downstream that assumes that file exists — the A2.2 retune firewall, stage 7's `ungated_escape_eligible` write-back — is silently conditional on a human having produced it. **Design decision required:** make it a stage, or re-document it as a human step. |
+| [E037-17](FINDINGS.md#e037-17) | medium | `_ensure_regime_detector_report` returns `None` silently when the config is missing or the subprocess fails. | The verdict then proceeds with no detector report and the only trace is stdout. Sits against the project's own rule that anything feeding decisions raises on degenerate inputs — the rule that produced the run_060 guards. |
+| [E037-11](FINDINGS.md#e037-11) | medium | `protocol_version` is stamped as a platform-dependent path; `Path(...).name` mis-parses a Windows path on POSIX. | Does not bite within one run. Bites when an artifact crosses machines — the dual-writer model. |
 
-**Recommendation:** **F26 first — master is red.** Then F10 as an issue. F16 needs your design call before it
-can be written as an issue at all. F17 and F11 are real but can wait.
+**Recommendation:** **E037-26 first — master is red.** Then E037-10 as an issue. E037-16 needs your design call before it
+can be written as an issue at all. E037-17 and E037-11 are real but can wait.
 
 ---
 
@@ -51,12 +51,12 @@ written from intended design and never reconciled with output.**
 
 | ID | Severity | What |
 |---|---|---|
-| [F24](FINDINGS.md#f24) | **high** | Systemic: 5 entries have documented fields that appear in **zero** real artifacts. `escalation_request` 3 of 3, `protocol_result` 6 of 7. |
-| [F22](FINDINGS.md#f22) | **high** | `verdict_interpretation.yaml` — 5 of 6 fields phantom across 39 files, 11 real fields undocumented. |
-| [F21](FINDINGS.md#f21) | **high** | 5 artifacts documented as pipeline output are behind feature flags; **every flag is off**. Never produced. |
-| [F14](FINDINGS.md#f14) | medium | `cost_check.required_gross_edge_bps` — a subkey no code emits. |
-| [F23](FINDINGS.md#f23) | medium | `decision.yaml` documented values `approved`/`blocked` never occur; real values are `spec_ready` (38) and `validation_incomplete` (1). |
-| [F2](FINDINGS.md#f2) | medium | `prescreen_result.yaml`'s route enum omits `no_signal_artifact`, which overrides every other route. |
+| [E037-24](FINDINGS.md#e037-24) | **high** | Systemic: 5 entries have documented fields that appear in **zero** real artifacts. `escalation_request` 3 of 3, `protocol_result` 6 of 7. |
+| [E037-22](FINDINGS.md#e037-22) | **high** | `verdict_interpretation.yaml` — 5 of 6 fields phantom across 39 files, 11 real fields undocumented. |
+| [E037-21](FINDINGS.md#e037-21) | **high** | 5 artifacts documented as pipeline output are behind feature flags; **every flag is off**. Never produced. |
+| [E037-14](FINDINGS.md#e037-14) | medium | `cost_check.required_gross_edge_bps` — a subkey no code emits. |
+| [E037-23](FINDINGS.md#e037-23) | medium | `decision.yaml` documented values `approved`/`blocked` never occur; real values are `spec_ready` (38) and `validation_incomplete` (1). |
+| [E037-02](FINDINGS.md#e037-02) | medium | `prescreen_result.yaml`'s route enum omits `no_signal_artifact`, which overrides every other route. |
 
 **These are cheap to fix and were expensive to find.** S2 has already written
 the correct content alongside the old, so the remaining work is deciding
@@ -72,7 +72,7 @@ cannot recur. That second half is the durable part.
 
 | ID | Severity | What |
 |---|---|---|
-| [F18](FINDINGS.md#f18) | **high** | Stage 3's *"Must: pass real-diversity check … cosmetic = rejected"* is enforced by nothing. `library_category` appears once in all of `workflow/` and `tools/`, in a prompt string. The model self-reports its own verdict. |
+| [E037-18](FINDINGS.md#e037-18) | **high** | Stage 3's *"Must: pass real-diversity check … cosmetic = rejected"* is enforced by nothing. `library_category` appears once in all of `workflow/` and `tools/`, in a prompt string. The model self-reports its own verdict. |
 | — | — | Precedent: §3's *"all artifacts are validated against JSON schemas"*, corrected 2026-08-27 after it turned out no schema is loaded by any code. |
 
 Two confirmed instances make this a **class**. The phrasing is the tell:
@@ -90,15 +90,15 @@ The original complaint, in its component parts.
 
 | ID | Severity | What |
 |---|---|---|
-| [F19](FINDINGS.md#f19) | **high** | 5 real artifacts had no entry, including `pass_rule_evaluation.yaml`, the decision authority. **Fixed by S2's additions** — listed here so the pattern is visible: every one was a recent addition that shipped without an entry. |
-| [F12](FINDINGS.md#f12) | medium | 14 amendment codes, 26 mentions, zero pointers to where any is defined. Related incident: C4 rule-citation confabulation. |
-| [F20](FINDINGS.md#f20) | medium | Two metadata conventions coexist; `Updated by` appears on 2 of 28 entries. |
-| [F25](FINDINGS.md#f25) | medium | §5 documented 3 of 22 tools, omitting the one that implements stage 7. |
-| [F15](FINDINGS.md#f15) | medium | Guide numbers 13 stages, `STAGE_CONFIGS` has 10; stage 4 has two names. |
-| [F9](FINDINGS.md#f9) | medium | `strategy-research/CLAUDE.md` lists a different 10-stage workflow and asserts the schema validation §3 records as false. **This is what an agent reads first.** |
+| [E037-19](FINDINGS.md#e037-19) | **high** | 5 real artifacts had no entry, including `pass_rule_evaluation.yaml`, the decision authority. **Fixed by S2's additions** — listed here so the pattern is visible: every one was a recent addition that shipped without an entry. |
+| [E037-12](FINDINGS.md#e037-12) | medium | 14 amendment codes, 26 mentions, zero pointers to where any is defined. Related incident: C4 rule-citation confabulation. |
+| [E037-20](FINDINGS.md#e037-20) | medium | Two metadata conventions coexist; `Updated by` appears on 2 of 28 entries. |
+| [E037-25](FINDINGS.md#e037-25) | medium | §5 documented 3 of 22 tools, omitting the one that implements stage 7. |
+| [E037-15](FINDINGS.md#e037-15) | medium | Guide numbers 13 stages, `STAGE_CONFIGS` has 10; stage 4 has two names. |
+| [E037-09](FINDINGS.md#e037-09) | medium | `strategy-research/CLAUDE.md` lists a different 10-stage workflow and asserts the schema validation §3 records as false. **This is what an agent reads first.** |
 
 **Recommendation:** these are S4's material, not separate issues — except
-[F9](FINDINGS.md#f9), which is a two-minute fix with outsized effect and should
+[E037-09](FINDINGS.md#e037-09), which is a two-minute fix with outsized effect and should
 be done regardless of S4's timing.
 
 ---
@@ -110,13 +110,13 @@ pass during S4.
 
 | ID | Severity | What |
 |---|---|---|
-| [F1](FINDINGS.md#f1) | medium | Stage 7's row credits the tool with the A8.6 check; it is orchestrator logic. |
-| [F4](FINDINGS.md#f4) | medium | `prescreen_result.yaml`'s `Created by` is wrong on one of three creation paths. |
-| [F5](FINDINGS.md#f5) | medium | "block-bootstrap" names the fallback as if it were the default; there are three methods. |
-| [F13](FINDINGS.md#f13) | medium | Three sites label the ungated-escape write-back "A9.1"; A9.1 is the `keltner_163` fixture. Needs the author's confirmation. |
-| [F3](FINDINGS.md#f3) | low | §3's prescreen table shows 6 of ~30 keys, unmarked as a selection. |
-| [F6](FINDINGS.md#f6) | low | Trial recording credited to the tool; it is the orchestrator. |
-| [F8](FINDINGS.md#f8) | low | Two significance thresholds (`0.10`, `0.05`); neither documented. |
+| [E037-01](FINDINGS.md#e037-01) | medium | Stage 7's row credits the tool with the A8.6 check; it is orchestrator logic. |
+| [E037-04](FINDINGS.md#e037-04) | medium | `prescreen_result.yaml`'s `Created by` is wrong on one of three creation paths. |
+| [E037-05](FINDINGS.md#e037-05) | medium | "block-bootstrap" names the fallback as if it were the default; there are three methods. |
+| [E037-13](FINDINGS.md#e037-13) | medium | Three sites label the ungated-escape write-back "A9.1"; A9.1 is the `keltner_163` fixture. Needs the author's confirmation. |
+| [E037-03](FINDINGS.md#e037-03) | low | §3's prescreen table shows 6 of ~30 keys, unmarked as a selection. |
+| [E037-06](FINDINGS.md#e037-06) | low | Trial recording credited to the tool; it is the orchestrator. |
+| [E037-08](FINDINGS.md#e037-08) | low | Two significance thresholds (`0.10`, `0.05`); neither documented. |
 
 ---
 
@@ -126,16 +126,16 @@ Six issues, not twenty-five:
 
 | # | Title | Contains |
 |---|---|---|
-| 1 | `block_24_dense_fallback` label does not track the derived block size | F10 |
-| 2 | Decide whether `regime_auditor` is a stage or a human step | F16 |
-| 3 | §3 field tables describe fields that do not exist — plus a gate to stop recurrence | F24, F22, F21, F14, F23, F2 |
-| 4 | Do "Must" statements in the guide imply enforcement? Sweep §2.2 | F18 |
-| 5 | Detector validation fails silently; `protocol_version` is platform-dependent | F17, F11 |
-| 6 | `strategy-research/CLAUDE.md` contradicts the guide it points at | F9 |
+| 1 | `block_24_dense_fallback` label does not track the derived block size | E037-10 |
+| 2 | Decide whether `regime_auditor` is a stage or a human step | E037-16 |
+| 3 | §3 field tables describe fields that do not exist — plus a gate to stop recurrence | E037-24, E037-22, E037-21, E037-14, E037-23, E037-02 |
+| 4 | Do "Must" statements in the guide imply enforcement? Sweep §2.2 | E037-18 |
+| 5 | Detector validation fails silently; `protocol_version` is platform-dependent | E037-17, E037-11 |
+| 6 | `strategy-research/CLAUDE.md` contradicts the guide it points at | E037-09 |
 
-Remaining — F1, F3, F4, F5, F6, F8, F12, F13, F15, F19, F20, F25 — fold into
+Remaining — E037-01, E037-03, E037-04, E037-05, E037-06, E037-08, E037-12, E037-13, E037-15, E037-19, E037-20, E037-25 — fold into
 S4 rather than becoming issues, since S4 is editing those exact sections
-anyway. F13 needs one question answered by whoever wrote the A9.1 comments.
+anyway. E037-13 needs one question answered by whoever wrote the A9.1 comments.
 
 ---
 
@@ -198,7 +198,7 @@ Two tests now exist. Both are ratchets: green today, failing only on new drift.
 
 | Test | Catches |
 |---|---|
-| `tests/test_user_guide_field_tables.py` | A documented artifact field that exists in no real artifact (F22/F24's defect class). |
+| `tests/test_user_guide_field_tables.py` | A documented artifact field that exists in no real artifact (E037-22/E037-24's defect class). |
 | `tests/test_doc_anchors.py` | An anchor pointing past the end of a file, or naming a function/constant that no longer exists. |
 
 Both were verified in both directions — injecting a fault fails them, and
@@ -206,13 +206,13 @@ Both were verified in both directions — injecting a fault fails them, and
 run.
 
 **A git hook is the wrong home for these, and there is evidence.** See
-[F27](FINDINGS.md#f27): the pre-commit hook runs only `trading-bot/tests/`, so
+[E037-27](FINDINGS.md#e037-27): the pre-commit hook runs only `trading-bot/tests/`, so
 nothing under `strategy-research/tests/` runs on commit at all. CI runs both
 suites, so **both new tests are already gated by CI** on every push and PR —
 which is the right layer, because it also covers merges made through the GitHub
 UI, where client-side hooks never fire.
 
-The gap worth closing is F27's, not these tests': the pre-commit hook's scope,
+The gap worth closing is E037-27's, not these tests': the pre-commit hook's scope,
 and the fact that data-gated tests skip silently in CI. Fixing that is worth
 more than any new routine, because it is what let a real regression sit on
 master behind a green tick.
@@ -222,12 +222,12 @@ covers these; adding a hook would be a guard on a guard.
 
 ## What I recommend doing first
 
-**F9**, because it is small and it is the file an agent reads before anything
+**E037-09**, because it is small and it is the file an agent reads before anything
 else. Then **issue 3's second half** — adopting the audit script as a gate —
 because it is the only item that stops a whole class of finding from returning.
-Then **F16**, because it is a design question and everything about stage 10
+Then **E037-16**, because it is a design question and everything about stage 10
 stays ambiguous until it is answered.
 
-F10 is the most serious *defect*, but it affects a label rather than a
+E037-10 is the most serious *defect*, but it affects a label rather than a
 computation, and the run it misdescribes is already killed. It should be an
 issue; it does not need to be today.
