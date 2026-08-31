@@ -51,8 +51,9 @@ contract, so nobody could see them.
 | [F26](#f26) | **high** | code-regression | `strategy-research/tools/prescreen_signal.py:1320` |
 | [F27](#f27) | **high** | gap-in-the-gate | `.git/hooks/pre-commit` · `.github/workflows/tests.yml` |
 | [F28](#f28) | low | stale-count | `docs/USER_GUIDE.md` §6 (`Run`) |
+| [F29](#f29) | **high** | guard-not-installed | `.git/hooks/pre-commit` (this machine) |
 
-**Counts:** 10 high · 14 medium · 4 low. By type: 5 doc-vs-code, 2
+**Counts:** 11 high · 14 medium · 4 low. By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -1012,6 +1013,70 @@ count the glossary should quote.
 **Proposed disposition (S3 decides, not this file):** state both — "13
 documented stages, of which 10 are dispatched by the orchestrator" — which is
 the only phrasing that stays true if either number changes.
+
+---
+
+## F29
+
+**Severity:** high · **Type:** guard-not-installed · **Status:** open —
+**live on this machine right now**
+
+**Lands on:** `.git/hooks/pre-commit` (installed copy) vs
+`strategy-research/tools/hooks/pre-commit` (versioned copy)
+
+**Found by:** S4 follow-up, 2026-08-31, answering "any weird behaviour?"
+
+**The secret scan is not installed.** The tracked hook has three gates; the one
+actually running on this machine has two.
+
+| Gate | Versioned copy (89 lines) | Installed copy (60 lines) |
+|---|---|---|
+| 0. Secret scan | **yes** | **NO** |
+| 1. Holdout date gate | yes | yes |
+| 2. Test suite | yes | yes |
+
+What is not running:
+
+- **Forbidden paths** — `.env`, `*.env`, `venv/*`, `*.key` are refused by the
+  versioned hook. Nothing refuses them here.
+- **Credential values in the staged diff** — `BINANCE_API_KEY` /
+  `BINANCE_API_SECRET` / `GEMINI_API_KEY` with an assigned value, AWS `AKIA…`,
+  Gemini `AIza…`, `-----BEGIN … PRIVATE KEY`, quoted `api_secret=…`.
+
+**Why this is the serious one.** `CLAUDE.fork.md`'s hard rule 2 records that
+**upstream committed a real `.env` once**. Gate 0 is the guard added so that
+cannot recur — `537558ee`, 2026-08-15, *"fold the tightened secret-scan into
+the tracked pre-commit (E-003 S3)"*. It has been in the tracked copy for over
+two weeks and was never re-installed here, so on this machine the protection
+that incident produced is absent.
+
+**It is exactly the failure the file predicts about itself.** The versioned
+hook's own header says: *".git/hooks/ is not tracked by git, so a fresh clone
+gets NO hooks and would silently lose both checks below"*, and gives the
+install command. It correctly identifies the risk for a **fresh clone** and
+misses the one that actually bit: an **update** to the tracked copy does not
+reach an existing installation. Nothing compares the two.
+
+**Same shape as [F27](#f27).** Both are guards that exist, are written down,
+and do not run where it counts. F27: tests that run in neither gate. F29: a
+gate that is not installed. In both cases the artifact of the protection —
+a file in the repo — was mistaken for the protection.
+
+**Immediate action (a person should do this, not a script):**
+
+```sh
+cp strategy-research/tools/hooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+diff .git/hooks/pre-commit strategy-research/tools/hooks/pre-commit   # must be silent
+```
+
+Worth checking on every machine that commits to this repo, not just this one.
+
+**Proposed disposition (S3 decides, not this file):** the copy above closes it
+today. To stop it recurring, a test that diffs the installed hook against the
+tracked copy would fail the moment they drift — cheap, and it is the check
+whose absence made this invisible. Note it can only run where a `.git/hooks/`
+exists, so it must skip rather than fail in CI.
 
 ---
 
