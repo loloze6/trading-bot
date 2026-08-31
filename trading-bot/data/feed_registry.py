@@ -23,10 +23,15 @@ from data.fetchers.whale_footprint_fetcher import DEFAULT_BAR_SECONDS as _WHALE_
 # funds on its own id (binance → binance), so the default path is byte-identical.
 _FUNDING_VENUE_MAP = {'kraken': 'krakenfutures'}
 
-# feed name → lambda(symbols, start, end, data_dir, exchange="binance") → BaseFetcher
-# instance. `exchange` is trailing and keyword-defaulted so pre-existing 4-arg
-# positional callers keep working unchanged (fix/exchange-plumbing-campaign-aux,
-# Ticket 12). 'funding_rate' routes `exchange` through _FUNDING_VENUE_MAP into
+# feed name → lambda(symbols, start, end, data_dir, exchange="binance",
+# localStorage=True) → BaseFetcher instance. `exchange` and `localStorage` are
+# trailing and keyword-defaulted so pre-existing positional callers keep working
+# unchanged (exchange: fix/exchange-plumbing-campaign-aux, Ticket 12;
+# localStorage: CUL-161). `localStorage` threads to the fetcher's cache switch:
+# default True is the historical write-through-on-read behaviour, False is a pure
+# read (BaseFetcher suppresses the _merge_and_store SAVE, so a gapped aux-feed
+# read cannot mutate a tracked cache — same mechanism CUL-26 closed for OHLCV).
+# 'funding_rate' routes `exchange` through _FUNDING_VENUE_MAP into
 # FundingRateFetcher's exchange_id (the price venue is not always the funding
 # venue), which qualifies its cache_key (funding_rate_fetcher.py:116-131) --
 # adopting exchange_id is what buys a feed the AuxFeedVenueError fail-loud
@@ -35,13 +40,13 @@ _FUNDING_VENUE_MAP = {'kraken': 'krakenfutures'}
 # index with no per-venue variant (fear_greed_fetcher.py has no exchange_id), so
 # it stays exempt from that protection by design, not by oversight.
 FEED_REGISTRY = {
-    'funding_rate': lambda symbols, start, end, data_dir, exchange="binance": FundingRateFetcher(
+    'funding_rate': lambda symbols, start, end, data_dir, exchange="binance", localStorage=True: FundingRateFetcher(
         start, end, symbols=symbols,
         exchange_id=_FUNDING_VENUE_MAP.get(exchange, exchange),
-        localStorage=True, data_dir=data_dir
+        localStorage=localStorage, data_dir=data_dir
     ),
-    'fear_greed': lambda symbols, start, end, data_dir, exchange="binance": FearGreedFetcher(
-        start, end, localStorage=True, data_dir=data_dir
+    'fear_greed': lambda symbols, start, end, data_dir, exchange="binance", localStorage=True: FearGreedFetcher(
+        start, end, localStorage=localStorage, data_dir=data_dir
     ),
 }
 
@@ -109,8 +114,8 @@ WHALE_FOOTPRINT_FEEDS = (
 # venue to thread -- and it has no exchange_id attribute, so it too is exempt
 # from AuxFeedVenueError by design (it is reserved-gated anyway).
 RESERVED_FEED_REGISTRY = {
-    name: (lambda symbols, start, end, data_dir, exchange="binance": WhaleFootprintFetcher(
-        start, end, symbols=symbols, localStorage=True, data_dir=data_dir
+    name: (lambda symbols, start, end, data_dir, exchange="binance", localStorage=True: WhaleFootprintFetcher(
+        start, end, symbols=symbols, localStorage=localStorage, data_dir=data_dir
     ))
     for name in WHALE_FOOTPRINT_FEEDS
 }
