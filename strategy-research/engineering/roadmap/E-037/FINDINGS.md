@@ -502,7 +502,9 @@ OR `data_requirements`; cosmetic = rejected)."** That reads as a mechanical
 gate. **Nothing enforces it.**
 
 `library_category` appears exactly **once** in all of `workflow/` and `tools/`
-— inside a prompt string at `run_phase1_research.py:490`. No code reads the
+— inside a **docstring** at `run_phase1_research.py:490`, recounting a run_044
+YAML-repair incident rather than instructing the model (corrected 2026-08-31:
+this finding first called it a prompt string, which overstated its role). No code reads the
 field from `expanded_hypothesis_card.yaml`, counts distinct categories, or
 rejects an expansion. The rule lives entirely in
 `workflow_artifacts/skills/innovation-expansion/SKILL.md:74-105`, as an

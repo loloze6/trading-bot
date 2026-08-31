@@ -44,7 +44,7 @@ The pipeline is 13 numbered stages:
 Two caveats the guide explains in full:
 
 - The engine's own registry, `STAGE_CONFIGS`
-  (`workflow/run_phase1_research.py:88`), holds **10** entries. `research_brief`
+  (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **10** entries. `research_brief`
   is a human input; `regime_detector_validation` is a helper function; and
   `regime_auditor` is not dispatched by the orchestrator at all.
 - Stage 4 is `validation_gate` in the docs and **`validation`** in the code —
