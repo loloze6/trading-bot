@@ -173,7 +173,7 @@ def test_fixture_c_below_floor_suppresses_significance():
         noise_sd=5.0,
         seed=7,
     )
-    result = es.compute_a851a_significance(records, gap_bars=48, min_n_episodes=8)
+    result = es.compute_a851a_significance(records, gap_bars=48, min_n_episodes=8, block_size=24)
 
     assert result["n_episodes"] == 4
     assert result["method"] == "episode_bootstrap_insufficient_n"
@@ -219,7 +219,7 @@ def test_density_fallback_routes_to_block_24():
         ret = 30.0 * base + rng.gauss(0, 40)
         records.append({"forecast": base, "next_return_bps": ret, "active": active})
 
-    result = es.compute_a851a_significance(records)
+    result = es.compute_a851a_significance(records, block_size=24)
     assert result["method"] == "block_24_dense_fallback"
     assert result["n_episodes"] is None
     assert result["density_pct"] >= 50.0

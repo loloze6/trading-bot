@@ -3165,10 +3165,10 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
             sys.path.insert(0, _tools_path)
         import episode_significance as _es
         actual_sig = prescreen_result.get("significance_methodology_used")
-        if actual_sig not in _es.VALID_METHODS:
+        if not _es.is_a851a_method(actual_sig):
             violations.append(
                 f"significance_methodology_used={actual_sig!r} is not an A8.5.1a outcome "
-                f"({sorted(_es.VALID_METHODS)}) — pre-registered "
+                f"({sorted(_es.VALID_METHODS)} or block_<n>_dense_fallback) — pre-registered "
                 f"machine_constraints.significance_methodology=episode_blocked_a851a was not honored"
             )
     elif expected_sig:

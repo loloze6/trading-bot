@@ -35,6 +35,7 @@ Spec summary (verbatim from pre-registration, condensed):
 
 import math
 import random
+import re
 import statistics
 from collections import defaultdict
 
@@ -58,6 +59,21 @@ VALID_METHODS = {
     "episode_bootstrap_insufficient_n",
     "block_24_dense_fallback",
 }
+
+# The dense-fallback outcome (A8.5.1a rule 4) stamps the block size it actually
+# divided by, so its label is a FAMILY — block_6_dense_fallback at 4h,
+# block_1_dense_fallback at 1d — not the single literal above. Acceptance must be
+# a predicate, not membership in the closed set, or a correctly-derived label
+# halts the conformance gate on every non-1h run. block_<n>_fisher_z stays
+# rejected for every n: it is prescreen_signal.py's OLD default label, and its
+# presence means the significance_methodology flag was absent/ignored.
+_DENSE_FALLBACK_RE = re.compile(r"block_\d+_dense_fallback")
+
+
+def is_a851a_method(label) -> bool:
+    """True iff `label` is a genuine A8.5.1a dispatcher outcome: either episode
+    method, or a dense-fallback label for any block size."""
+    return label in VALID_METHODS or bool(_DENSE_FALLBACK_RE.fullmatch(label or ""))
 
 _DEFAULT_GAP_BARS = 48
 _DEFAULT_DENSITY_FALLBACK_PCT = 50.0
@@ -187,7 +203,7 @@ def compute_a851a_significance(
     gap_bars: int = _DEFAULT_GAP_BARS,
     density_fallback_pct: float = _DEFAULT_DENSITY_FALLBACK_PCT,
     min_n_episodes: int = _MIN_N_EPISODES,
-    block_size: int = 24,
+    block_size: int | None = None,
     n_resamples: int = _DEFAULT_N_RESAMPLES,
     seed: int | None = None,
 ) -> dict:
@@ -195,7 +211,17 @@ def compute_a851a_significance(
     A8.5.1a dispatcher. Returns a dict always containing at least:
       method, pooled_ic, p_value, n_episodes, density_pct, significant
     plus method-specific fields (ci_low/ci_high for the bootstrap path).
+
+    `block_size` is required (no silent default): a wrong block size mislabels
+    and misdivides the dense-fallback path. Derive it from the timeframe via
+    tools.timeframe.bars_per_day.
     """
+    if block_size is None:
+        raise ValueError(
+            "block_size is required — derive it from the timeframe via "
+            "tools.timeframe.bars_per_day; the removed silent default of 24 was "
+            "the block-size bug class (CUL-9/CUL-51)"
+        )
     n_total = len(records)
     active_idx_all = [i for i, r in enumerate(records) if r.get("active")]
     n_active = len(active_idx_all)
@@ -206,7 +232,7 @@ def compute_a851a_significance(
         ic_values_for_sig = [ic_active] if ic_active is not None else []
         sig = prescreen_signal._block_adjusted_significance(ic_values_for_sig, n_active, block_size)
         return {
-            "method": "block_24_dense_fallback",
+            "method": f"block_{block_size}_dense_fallback",
             "pooled_ic": sig["pooled_ic"],
             "p_value": sig["p_value"],
             "ci_low": None, "ci_high": None,

@@ -15,6 +15,7 @@ Without the wiring the pin is a statement no code acts on, and each run has to
 be repaired by hand after the gate catches it.
 """
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -124,3 +125,79 @@ def test_a_derived_label_is_still_not_an_a851a_outcome():
     from timeframe import bars_per_day
     for tf in ("1h", "4h", "1d", "15m"):
         assert f"block_{bars_per_day(tf)}_fisher_z" not in es.VALID_METHODS
+
+
+# ---------------------------------------------------------------------------
+# CUL-51: the dense-fallback method LABEL tracks the block size it divided by,
+# the conformance gate accepts that derived family, and block_size is no longer
+# silently defaulted to 24.
+# ---------------------------------------------------------------------------
+
+
+def _dense_records(n=400, active_frac=0.6, seed=17):
+    """Records dense enough (>=50% active) to route to the block dense-fallback
+    branch, with mixed forecast/return values (not a vacuous uniform fixture)
+    and enough active bars that even block_size=96 (15m) is smaller than the
+    active sample."""
+    rng = random.Random(seed)
+    recs = []
+    for i in range(n):
+        active = rng.random() < active_frac
+        base = rng.uniform(-1.0, 1.0) if active else 0.0
+        ret = 25.0 * base + rng.gauss(0.0, 40.0)
+        recs.append({
+            "active": active,
+            "forecast": base,
+            "next_return_bps": ret,
+            "symbol": "BTCUSDT",
+            "timestamp": i,
+        })
+    return recs
+
+
+def test_dense_fallback_label_tracks_the_block_size():
+    """The label stamped into the artifact must name the block size actually
+    divided by — block_6 at 4h, not the old hardcoded block_24."""
+    import episode_significance as es
+    result = es.compute_a851a_significance(_dense_records(), block_size=6)
+    assert result["method"] == "block_6_dense_fallback"
+    assert result["density_pct"] >= 50.0
+
+
+def test_dense_fallback_label_is_unchanged_at_1h():
+    """At 1h the derived block size is 24, so the label is byte-identical to the
+    old literal and the entire 1h archive still reproduces."""
+    import episode_significance as es
+    from timeframe import bars_per_day
+    result = es.compute_a851a_significance(_dense_records(), block_size=bars_per_day("1h"))
+    assert result["method"] == "block_24_dense_fallback"
+
+
+def test_derived_dense_fallback_is_accepted_by_the_conformance_gate():
+    """The F5 trap: deriving the label without widening the gate's acceptance
+    from a closed set to a predicate converts a cosmetic misreport into a hard
+    conformance halt on every non-1h run. A 4h block_6_dense_fallback is a
+    legitimate A8.5.1a outcome and must pass the gate with zero violations."""
+    constraints = {"significance_methodology": "episode_blocked_a851a"}
+    result = {"significance_methodology_used": "block_6_dense_fallback"}
+    violations = rpr._check_prescreen_conformance(result, constraints, {})
+    assert violations == []
+
+
+def test_fisher_z_is_still_not_an_a851a_outcome_under_the_predicate():
+    """The widened acceptance must stay narrow enough that block_<n>_fisher_z —
+    prescreen_signal.py's OLD default, the 'a851a flag was ignored' signal — is
+    still rejected for every block size."""
+    import episode_significance as es
+    from timeframe import bars_per_day
+    for tf in ("1h", "4h", "1d", "15m"):
+        assert not es.is_a851a_method(f"block_{bars_per_day(tf)}_fisher_z")
+
+
+def test_block_size_is_not_silently_defaulted():
+    """The removed `block_size=24` default was the CUL-9/CUL-51 bug class — a
+    silent 24 that mislabels and misdivides every non-1h run. Omitting it must
+    fail loud, not assume 24."""
+    import episode_significance as es
+    with pytest.raises(ValueError):
+        es.compute_a851a_significance(_dense_records())
