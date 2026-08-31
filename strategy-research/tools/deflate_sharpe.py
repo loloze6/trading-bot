@@ -289,6 +289,9 @@ def load_sharpe_trials(campaign_state: dict) -> tuple[list[float], dict]:
 
     excluded_counts keys:
       - no_sharpe_value: statistic_valid=="sharpe" but sharpe field is None
+      - non_finite_sharpe: statistic_valid=="sharpe" but sharpe is NaN/inf (a
+        contract-legitimate merged row, e.g. a killed-run placeholder) — excluded
+        with a visible counter so a single NaN cannot silently corrupt mu_sr/sigma_sr/dsr
       - statistic_expectancy: statistic_valid=="expectancy"
       - statistic_neither: statistic_valid is something else / absent
     """
@@ -297,6 +300,7 @@ def load_sharpe_trials(campaign_state: dict) -> tuple[list[float], dict]:
     sharpe_values: list[float] = []
     excluded: dict[str, int] = {
         "no_sharpe_value":    0,
+        "non_finite_sharpe":  0,
         "statistic_expectancy": 0,
         "statistic_neither":  0,
     }
@@ -307,6 +311,8 @@ def load_sharpe_trials(campaign_state: dict) -> tuple[list[float], dict]:
             sr = rec.get("sharpe")
             if sr is None:
                 excluded["no_sharpe_value"] += 1
+            elif not math.isfinite(float(sr)):
+                excluded["non_finite_sharpe"] += 1
             else:
                 sharpe_values.append(float(sr))
         elif stat == "expectancy":
