@@ -51,7 +51,9 @@ KNOWN_PHANTOM: dict[str, set[str]] = {
     "`escalation_request.yaml`": {"target_symbol", "target_timeframe", "rationale"},
     "`protocol_result.yaml` / `protocol_summary.json`": {
         "per_window_metrics", "per_symbol_metrics", "per_regime_metrics",
-        "median_sharpe", "promotion_criteria", "diagnostic_metrics",
+        "promotion_criteria", "diagnostic_metrics",
+        # median_sharpe removed 2026-08-31: it IS present, nested, in 31 of 38
+        # files. The original audit only inspected top-level keys.
     },
     # NOTE: `verdict_interpretation.yaml` is deliberately absent. S2 rewrote that
     # table from real artifacts, so its five phantom names (altitude, verdict,
@@ -60,7 +62,8 @@ KNOWN_PHANTOM: dict[str, set[str]] = {
     # table, which this parser correctly does not treat as a field claim. It is
     # the worked example of an entry leaving this baseline. (2026-08-31)
     "`regime_detector_report.yaml`": {
-        "persistence_score", "class_conditional_sensitivity", "activation_rate",
+        # class_conditional_sensitivity removed 2026-08-31: present nested.
+        "persistence_score", "activation_rate",
     },
     "`regime_audit_decision.yaml`": {"retune_firewall_check"},
 }
@@ -97,6 +100,25 @@ def _instances(head: str) -> list[Path]:
     return [p for pat in pats for p in _SR.glob(pat) if p.is_file()]
 
 
+def _all_keys(node):
+    """Every key at EVERY depth.
+
+    Top-level-only was the original bug, found 2026-08-31: it reported
+    `median_sharpe` as absent from protocol_result.yaml, where it is present --
+    nested -- in 31 of 38 files. "Not a top-level key" is a different claim from
+    "does not exist", and conflating the two turned a misfiling into an
+    accusation of invention. Same correction applied to
+    `class_conditional_sensitivity` in regime_detector_report.yaml.
+    """
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield k
+            yield from _all_keys(v)
+    elif isinstance(node, list):
+        for x in node:
+            yield from _all_keys(x)
+
+
 def _real_keys(paths: list[Path]) -> tuple[set[str], int]:
     keys: set[str] = set()
     n = 0
@@ -107,7 +129,7 @@ def _real_keys(paths: list[Path]) -> tuple[set[str], int]:
         except Exception:
             continue
         if isinstance(doc, dict):
-            keys |= set(doc)
+            keys |= set(_all_keys(doc))
             n += 1
     return keys, n
 

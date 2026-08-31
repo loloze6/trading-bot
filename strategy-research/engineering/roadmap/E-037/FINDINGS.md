@@ -65,8 +65,9 @@ contract, so nobody could see them.
 | [E037-27](#e037-27) | **high** | gap-in-the-gate | `.git/hooks/pre-commit` · `.github/workflows/tests.yml` |
 | [E037-28](#e037-28) | low | stale-count | `docs/USER_GUIDE.md` §6 (`Run`) |
 | [E037-29](#e037-29) | **high** | guard-not-installed | `.git/hooks/pre-commit` (this machine) |
+| [E037-30](#e037-30) | low | orphan-glossary-terms | `docs/USER_GUIDE.md` §6 |
 
-**Counts:** 11 high · 14 medium · 4 low. By type: 5 doc-vs-code, 2
+**Counts:** 11 high · 14 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
 doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
 doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
 1 code-fragility.
@@ -679,7 +680,7 @@ doing this as an interim.
 **Found by:** S2 loss check, 2026-08-30
 
 **The entire field table for `verdict_interpretation.yaml` describes fields
-that do not exist.** Measured across the **39** real files on disk:
+that are not in that artifact.** Measured across the **39** real files on disk:
 
 | Documented field | Occurrences in 39 real files |
 |---|---|
@@ -696,7 +697,28 @@ The fields the artifact actually carries — `status` (34 of 39),
 `proposed_change_dimension`, `altitude_justification`, `config_to_failure_map`,
 `prescreen_evidence` — were **none of them documented**.
 
-Five of six documented fields are phantom, and eleven real ones were missing.
+> ### ⚠️ Corrected 2026-08-31 — this finding overclaimed
+>
+> The table above is right: none of those five is in
+> `verdict_interpretation.yaml`. But the original wording, *"fields that no
+> artifact has ever contained"*, was **wrong for four of the five**. Re-measured
+> across every artifact, at every depth:
+>
+> | Field | In `verdict_interpretation.yaml` | Actually lives in |
+> |---|---|---|
+> | `verdict` | 0 | `protocol_result.yaml` — 31 files, populated |
+> | `diagnostic_rule_applied` | 0 | `findings_carryover.yaml` — 31 files, populated (e.g. *"Rule 2: Signal has no directional edge"*) |
+> | `next_altitude` | 0 | `findings_carryover.yaml` — 30 files, populated |
+> | `parameter_bracket` | 0 | `findings_carryover.yaml` — 14 files, 2 of them non-null |
+> | **`altitude`** | 0 | **nowhere — the only genuine phantom** |
+>
+> **The defect is misfiling, not invention**, and that is a materially different
+> and more fixable thing. The cause was my own tool: the audit inspected only
+> **top-level** keys, so "not a top-level key of this file" was reported as
+> "does not exist anywhere". Found by pulling on a glossary entry
+> ([E037-30](#e037-30)), not by review.
+
+One of six documented fields is a genuine phantom, four were misfiled, and eleven real ones were missing.
 This is [E037-14](#e037-14) again at whole-table scale: E037-14 was one phantom key inside
 `cost_check`; this is an entire entry describing an intended design rather than
 the artifact.
@@ -776,13 +798,23 @@ entries. Reproduce with
 | Entry | Real files | Documented fields never present | Rate |
 |---|---|---|---|
 | `escalation_request.yaml` | 7 | `target_symbol`, `target_timeframe`, `rationale` | **3 of 3** |
-| `protocol_result.yaml` | 38 | `per_window_metrics`, `per_symbol_metrics`, `per_regime_metrics`, `median_sharpe`, `promotion_criteria`, `diagnostic_metrics` | **6 of 7** |
+| `protocol_result.yaml` | 38 | `per_window_metrics`, `per_symbol_metrics`, `per_regime_metrics`, `promotion_criteria`, `diagnostic_metrics` | **5 of 7** (corrected) |
 | `verdict_interpretation.yaml` | 39 | `altitude`, `verdict`, `diagnostic_rule_applied`, `parameter_bracket`, `next_altitude` | 5 of 6 — [E037-22](#e037-22) |
-| `regime_detector_report.yaml` | 1 | `persistence_score`, `class_conditional_sensitivity`, `activation_rate` | 3 of 8 |
+| `regime_detector_report.yaml` | 1 | `persistence_score`, `activation_rate` | 2 of 8 (corrected) |
 | `regime_audit_decision.yaml` | 1 | `retune_firewall_check` | 1 of 3 |
 
-**Not a nesting artefact — the names themselves are wrong.** Checked
-individually:
+> **Corrected 2026-08-31.** Two entries in the table above were overstated,
+> for the same reason as [E037-22](#e037-22): the audit read only top-level
+> keys. **`median_sharpe` is present** in `protocol_result.yaml` (31 of 38,
+> nested) and **`class_conditional_sensitivity` is present** in
+> `regime_detector_report.yaml` (nested). Both have been removed from the
+> counts and from the test baseline. The tool now walks every depth.
+>
+> The rest of the finding stands, and the three bullets below were always
+> checked by hand rather than taken from the tool.
+
+**The remaining ones are not a nesting artefact — the names themselves are
+wrong.** Checked individually:
 
 - `escalation_request.yaml` really carries `target`, `reason`,
   `proposed_capability`. The documented names are different words for the same
@@ -1089,6 +1121,58 @@ today. To stop it recurring, a test that diffs the installed hook against the
 tracked copy would fail the moment they drift — cheap, and it is the check
 whose absence made this invisible. Note it can only run where a `.git/hooks/`
 exists, so it must skip rather than fail in CI.
+
+---
+
+## E037-30
+
+**Severity:** low · **Type:** orphan-glossary-terms · **Status:** open, untriaged
+
+**Lands on:** `docs/USER_GUIDE.md` §6
+
+**Found by:** S4 follow-up, 2026-08-31, while measuring whether glossary terms
+could be hyperlinked at their point of use
+
+§6 defines **46** terms. **13 of them appear nowhere else in the guide** —
+measured 2026-08-31 over the body text:
+
+`Innovation Expansion` · `Walk-Forward Test` · `Holdout Period` ·
+`Refine (altitude 1)` · `Pivot (altitude 2)` · `Escalate (altitude 3)` ·
+`Diagnostic Rule` · `Strategy Config` · `Findings Carryover` ·
+`Forecast-Return Correlation` · `Cost Drag %` · `Parameter Bracket` ·
+`Research Decision` · `Burnt data` · `Active-bar IC` · `Dormant mechanism` ·
+`Holdout consumption` · `DSR (Deflated Sharpe Ratio)`
+
+They fall into three groups, and only the third is a defect:
+
+1. **Used under a different name** — `Walk-Forward Test` is written
+   "walk-forward"; `Strategy Config` is `candidate_strategy_config.json`;
+   `Active-bar IC` is `ic_active_bars`; `DSR` is spelled out. Harmless, though
+   it means a reader searching the term finds only the glossary.
+2. **Genuinely unused vocabulary** — `Burnt data`, `Dormant mechanism`. A
+   glossary may reasonably define more than the document uses.
+3. **Terms for things that are not there.** `Parameter Bracket` and
+   `Diagnostic Rule` describe fields the guide elsewhere records as absent from
+   `verdict_interpretation.yaml` ([E037-22](#e037-22)), and `Research Decision`
+   is one of the five stale stage names corrected in
+   [E037-09](#e037-09). The glossary was not updated when those were.
+
+**Why it is worth recording despite being low.** This is the fourth place the
+same pattern has surfaced — §2.2's table, §3's field tables, `CLAUDE.md`'s stage
+list, and now §6. Each was a second copy of something that changed elsewhere.
+The glossary has no generated index and no test behind it, so it is currently
+the least-defended surface in the document.
+
+**It also produced a correction.** Chasing `Parameter Bracket` is what revealed
+that the field-table audit inspected only top-level keys — which had turned four
+misfiled fields into an accusation that they were invented. See the corrections
+now inside [E037-22](#e037-22) and [E037-24](#e037-24). A low-severity finding
+paid for two high-severity corrections.
+
+**Proposed disposition (S3 decides, not this file):** for group 3, either
+update the definitions or mark them as intended-design like their §3
+counterparts. For group 1, consider linking the glossary term to the name the
+document actually uses. Group 2 needs nothing.
 
 ---
 
