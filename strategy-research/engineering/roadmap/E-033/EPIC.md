@@ -141,9 +141,9 @@ characterization is read and a direction is chosen by the operator.**
       decision itself, which still depends on S1.
 - [~] S3 — Propose stage changes, if S1 justifies any, with an explicit
       baseline-impact statement per change. Operator chooses before any build.
-      **Proposals written 2026-08-31** from S1's evidence plus Jérémy's review
-      of §1–§2.2 during E-037 — see "S3 proposals" below. **Six decisions are
-      open; none has been built.**
+      **Proposals written 2026-08-31; five of six decided by Jérémy
+      2026-09-01** — see "S3 decisions" below. **Nothing built yet.** D5
+      (`stages.yaml`) and D6 (`conditions` wiring) remain open.
 
 ## Independent confirmation from E-037 (2026-08-31)
 
@@ -296,6 +296,191 @@ switch-on criterion.
 - **Removing the prescreen's IC computation.** Useful and cheap; the question
   of whether it may *terminate* a run belongs to [E-039](../E-039/EPIC.md).
 - **Any build.** Every item above is a decision for the operator first.
+
+
+---
+
+## S3 decisions (Jérémy, 2026-09-01)
+
+Five of the six proposals are decided. **Nothing is built.** What follows is
+what was decided and what each decision now requires.
+
+### D1 — DECIDED: test every variant, and make the count a parameter
+
+> *"I would like that we test each variant. However having six different
+> variants is too heavy… we could possibly reduce the number of variants, e.g.
+> having 2. But overall the number of variants generated should be a parameter
+> somewhere and easily modifiable with a value X that can be from 1 to Z. The
+> rest of the workflow should follow — testing the X variants automatically,
+> giving the X outputs to the backtesting analysis steps."*
+
+**This is a stronger decision than "test all six".** It separates two things
+that were tangled: *how many candidates a mechanism deserves* (a tunable) from
+*whether the ones generated get tested* (always yes).
+
+**What it requires:**
+
+1. **A single parameter `X`** — the number of variants `innovation_expansion`
+   is asked for — in `campaign_config.yaml`, read at runtime. The current
+   "3–6" becomes its default, and the sensible starting value is **2**, not 6.
+2. **Every stage downstream becomes X-aware.** `backtest_specification` builds
+   X configs; the protocol runs X backtests; the verdict stage receives X
+   results and reasons over the set. Today every one of them assumes exactly
+   one.
+3. **A family-level verdict** that can say *"the mechanism failed"* because all
+   X failed — which is the objective the stage was written for and has never
+   been able to meet.
+4. **`X = 1` must remain valid**, since `REPLICATION_DIAGNOSTIC` and
+   single-hypothesis briefs legitimately want one variant. The parameter's
+   floor is a real case, not a degenerate one.
+
+**Open sub-question:** what is `Z`, the ceiling? It is a cost ceiling, so it
+should come from the wall-clock measurement, not be picked. That measurement
+belongs to [E-039](../E-039/EPIC.md) S1.
+
+**Baseline impact.** None retroactively — it adds runs. Prospectively it raises
+the promotion bar through D2.
+
+### D2 — DECIDED: count what was tested; a variant dropped before data is not a trial
+
+> *"The discarded ones should not be counted — not tested, invalidated not
+> because of bad results but because of invalid variant for research-discipline
+> reason, or unfeasibility of the implementation only. The tested ones should
+> be considered in the deflated Sharpe ratio."*
+
+**This is statistically correct, and the reasoning matters.** A multiple
+comparison is a *look at the data*. A variant rejected for being ill-posed or
+unimplementable never touched the data, so it is not a comparison and must not
+inflate the denominator. A variant rejected because its results were poor
+**is** a look, and must count.
+
+**The line is therefore the discard reason**, and that has a hard requirement
+the current design cannot meet:
+
+- `variants_not_pursued.schema.json`'s `lost_reason` is **optional, free text,
+  best-effort**, and its own description says an absent reason means *"not
+  chosen this round"*, not *"contraindicated"*.
+- Under D2 that is not sufficient. The reason becomes **load-bearing for the
+  trial count**, so it must be a **closed set**, mandatory, and written by code
+  rather than inferred.
+
+**Proposed closed set** — only the first two exempt a variant from the count:
+
+| `discard_reason` | Counts as a trial? |
+|---|---|
+| `invalid_for_research_discipline` | **No** — ill-posed, never testable |
+| `implementation_infeasible` | **No** — the engine cannot express it |
+| `killed_on_results` | **Yes** — the data was looked at |
+| *(absent)* | **Yes** — fail closed; an unexplained drop is assumed to be a look |
+
+The fail-closed default is the important half: it is the only way the rule
+cannot be gamed by omission, and it matches the module's own convention that
+silence is never a green light.
+
+**Baseline impact.** Prospective only. Existing runs each tested one variant
+and already count one trial, so the corpus is unaffected — but every future run
+testing X variants adds X.
+
+### D3 — DECIDED: keep the stage, drop the metric pre-judgement
+
+> *"To not overload the effort we could keep the stage indeed. But the area
+> around pre-validating the results with metrics should not survive."*
+
+So `validation_gate` and `refinement_planner` stay separate — the merge is not
+worth the disruption right now — **but the A8.6 power check leaves**, per the
+2026-08-31 call recorded in [E-039](../E-039/EPIC.md).
+
+**What survives in `validation_gate`:** falsification — writing what would
+disprove the hypothesis, and pre-registering what would count as success
+before any result exists (the holdout split, the `pass_rule`).
+
+**What leaves:** any attempt to pre-judge the *result* from estimated metrics.
+That is the class Jérémy rejected — a gate computing arithmetic on numbers the
+model guessed, about a component that does not exist yet.
+
+**Baseline impact.** Removing A8.6 does not change any completed run's result;
+it changes which future runs are stopped early. Bit-identity provable on the
+corpus it never blocked.
+
+### D4 — DECIDED: feasibility belongs to `refinement_planner`
+
+> *"In my mind, implementation feasibility is answered in the refinement
+> planner. It is the one checking feasibility given the structure of the bot,
+> as well as giving the spec to the backtest specification."*
+
+So `implementation_allowed` stays where the router already looks for it — and
+the two defects around it must be fixed:
+
+1. **The skill must be instructed to produce it.**
+   `refinement-planner/SKILL.md` currently has zero mentions of it; 2 of 4 real
+   files omit the field.
+2. **The router must default closed.** It currently defaults `True` on a key
+   nobody is asked to write — the only open default in the module.
+
+**Open sub-question Jérémy raised:** *"maybe a name confusing if he is in
+charge of implementing only the change of backtest strategy/parameters"* —
+`backtest_specification` compiles the config; it does not decide the backtest
+protocol. If feasibility and the spec both originate in the planner, the two
+stage names describe their jobs poorly. **Renaming is cheap and touches every
+handoff template; worth deciding once rather than drifting.**
+
+**Baseline impact.** None on results. Defaulting closed could pause runs that
+today proceed silently — which is the intent.
+
+### D6 — STILL OPEN, and it is not the variant question
+
+> *"If the change is to send all approved variants to backtest then the topic
+> is solved, no?"*
+
+**Not quite — these are two different things, and the overlap in wording hides
+it.**
+
+D1 is about **which variants** reach the backtest. Decided: all X of them.
+
+D6 is about a **different artifact entirely**: the `conditions` field inside
+`validation_decision.yaml`. On a `conditional_approve` — **78% of validation
+outcomes, 36 of 46** — the gate attaches constraints the backtest config must
+respect. A real example from run_060:
+
+> *"Prescreen cost gate (Layer 2) must pass: edge_to_cost_ratio >= 2.0 for BOTH
+> BTCUSDT and ETHUSDT…"*
+
+That text is printed to console and **never reaches `backtest_specification`**,
+which is closed-book and can only read its declared handoff inputs. So the
+stage builds a config while blind to the conditions its own approval was
+granted under. Sending more variants does not fix it — each of the X configs
+would be equally blind.
+
+**Same defect, second instance:** that handoff also omits
+`refinement_notes.yaml` ([E037-40](../E-037/FINDINGS.md#e037-40)), so under D4
+the planner's feasibility conclusions would not reach the spec stage either.
+**One change fixes both.**
+
+**Still to decide:** whether to wire it. **Baseline impact is the reason it is
+not automatic — it invalidates every `conditional_approve` run, 78% of the
+corpus.** Must ship off-by-default with a byte-identical proof and, per
+[E-041](../E-041/EPIC.md), a written switch-on criterion.
+
+### D5 — STILL OPEN
+
+`stages.yaml` revive-or-delete. S1 recommends **delete**; no impact either way.
+
+---
+
+## What the decisions change about this epic's shape
+
+D1 and D2 together turn "variants" from a documentation problem into a
+**parameterised pipeline change**: one config value, X-aware stages, a typed
+discard reason, and a family verdict. D3 and D4 keep the stage structure as it
+is and fix two specific defects inside it. That is a materially smaller build
+than the original S3 proposals implied, and it is sequenced:
+
+1. **D2's discard-reason taxonomy first** — it must be pre-registered before
+   D1 makes discards common, or the counting rule gets chosen after seeing
+   results.
+2. **D1's parameter and X-aware stages** next.
+3. **D4's two fixes** — independent, small, can go any time.
+4. **D6 and D5** — decisions still outstanding.
 
 
 ## Relationship to other epics
