@@ -1,7 +1,8 @@
 # E-037 S3 — Triage
 
 **State:** proposed — awaiting Jérémy's decisions
-**Input:** the 25 findings in [`FINDINGS.md`](FINDINGS.md)
+**Input:** the 30 findings in [`FINDINGS.md`](FINDINGS.md) — 1 closed, 29 open
+**Last synced:** 2026-08-31, after S5. A mechanical completeness check confirms every finding appears below.
 **What this file is for:** S3's job per the EPIC is *"each becomes a card or
 issue. Jérémy decides what gets worked."* This groups them so that decision is
 a handful of calls rather than twenty-five.
@@ -12,7 +13,7 @@ a handful of calls rather than twenty-five.
 
 ## The short version
 
-Of 26 findings, **21 are documentation** and **5 touch code**. Only the code
+Of 30 findings, **23 are documentation** and **7 touch code or the machinery around it**. One (E037-29) is already closed. Only the code
 ones can hurt a running campaign; the documentation ones are what made the
 system hard to reason about in the first place.
 
@@ -39,7 +40,7 @@ The only group that can affect results. Recommend these become issues.
 | [E037-17](FINDINGS.md#e037-17) | medium | `_ensure_regime_detector_report` returns `None` silently when the config is missing or the subprocess fails. | The verdict then proceeds with no detector report and the only trace is stdout. Sits against the project's own rule that anything feeding decisions raises on degenerate inputs — the rule that produced the run_060 guards. |
 | [E037-11](FINDINGS.md#e037-11) | medium | `protocol_version` is stamped as a platform-dependent path; `Path(...).name` mis-parses a Windows path on POSIX. | Does not bite within one run. Bites when an artifact crosses machines — the dual-writer model. |
 
-**Recommendation:** **E037-26 first — master is red.** Then E037-10 as an issue. E037-16 needs your design call before it
+**Recommendation:** **E037-26 first — the suite is red wherever the data cache exists.** Then E037-10. [E037-27](FINDINGS.md#e037-27) belongs with them: it is *why* E037-26 survived on master behind a green tick. E037-16 needs your design call before it
 can be written as an issue at all. E037-17 and E037-11 are real but can wait.
 
 ---
@@ -120,13 +121,37 @@ pass during S4.
 
 ---
 
+---
+
+## Group F — Raised after the first triage pass (4)
+
+Added 2026-08-31. Three were found after S3 was written. **E037-07 was missed by
+the original grouping and is high severity** — recorded as a miss rather than
+quietly slotted in.
+
+| ID | Severity | What | Disposition |
+|---|---|---|---|
+| [E037-07](FINDINGS.md#e037-07) | **high** | Stage 7 rewrites stage 10's `regime_audit_decision.yaml` in place, and that entry has no `Updated by` line, so a cross-stage write is invisible to any reader. | **Missed in the first pass.** Belongs with Group D and should be worked alongside E037-20 — it is the finding that motivated the `Updated by` normalisation. |
+| [E037-29](FINDINGS.md#e037-29) | **high** | The pre-commit secret scan was not installed here — two gates running of three. | CLOSED 2026-08-31. Hook re-installed, `diff` silent, and `tests/test_installed_hook_matches_tracked.py` now guards recurrence. |
+| [E037-28](FINDINGS.md#e037-28) | low | The glossary says "10-stage pipeline"; the guide documents 13. Ten is the size of `STAGE_CONFIGS`. | Fold into cleanup. One phrasing — "13 documented, 10 dispatched" — stays true if either number changes. |
+| [E037-30](FINDINGS.md#e037-30) | low | 13 of 46 glossary terms appear nowhere else; two describe fields that live on a different artifact. | Partly addressed: the two misattributed terms are marked in §6. The rest is a cleanup decision. |
+
+**Why E037-07 being missed is worth stating.** The first triage grouped 25
+findings by hand and dropped one of the highest-severity items in the set. That
+is the same failure the epic is about — a hand-maintained index drifting from
+what it indexes — happening inside the document written to manage the findings.
+It was caught by a mechanical completeness check (every `E037-nn` in
+`FINDINGS.md` must appear here), not by re-reading.
+
+
 ## Proposed issue set
 
-Six issues, not twenty-five:
+Seven issues, not thirty:
 
 | # | Title | Contains |
 |---|---|---|
-| 1 | `block_24_dense_fallback` label does not track the derived block size | E037-10 |
+| 1 | **F5c's component-error path is unreachable, and the tests that would catch it run in no gate** | E037-26, E037-27 |
+| 2 | `block_24_dense_fallback` label does not track the derived block size | E037-10 |
 | 2 | Decide whether `regime_auditor` is a stage or a human step | E037-16 |
 | 3 | §3 field tables describe fields that do not exist — plus a gate to stop recurrence | E037-24, E037-22, E037-21, E037-14, E037-23, E037-02 |
 | 4 | Do "Must" statements in the guide imply enforcement? Sweep §2.2 | E037-18 |
