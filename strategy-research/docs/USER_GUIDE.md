@@ -229,7 +229,7 @@ The table above is the index. Each block below answers, for one stage: what it
 consumes, what it produces, what logic runs, and why it exists.
 
 **How this section relates to the code.** `STAGE_CONFIGS`
-(`workflow/run_phase1_research.py:88`) is the engine's registry and holds **10**
+(`workflow/run_phase1_research.py::STAGE_CONFIGS`) is the engine's registry and holds **10**
 entries; this guide numbers **13**. Stage 1 is a human input, and stages 9 and
 10 are not registry stages — each block says so. Where the code's name for a
 stage differs from this guide's, both are given.
@@ -270,7 +270,7 @@ family, [altitude](#g-altitude), exhausted — are in the [Glossary](#6-glossary
 
 > **Two kinds of name appear in these blocks, and only one is a term you need
 > to learn.** A name followed by a file and a location — `_extract_forecasts`
-> (`prescreen_signal.py:470`) — is the **address of the code that does it**, not
+> (`prescreen_signal.py::_extract_forecasts`) — is the **address of the code that does it**, not
 > vocabulary: the sentence around it already says what happens, and the name is
 > there so you can go and read it. A name in the table below **is** vocabulary,
 > and you will not follow the block without it. When a block says a step
@@ -308,21 +308,21 @@ verdict_interpreter.
 **Features / logic in place**
 
 **1. Three different things write this file.**
-The campaign runner (`run_campaign.py:288`, `_materialize_run`), the next-run
+The campaign runner (`run_campaign.py::_materialize_run`, `_materialize_run`), the next-run
 spawner when a verdict proposes a new brief
-(`run_phase1_research.py:2539`, `:2574`), or a human by hand. **Only the
+(`run_phase1_research.py::_safe_write_new_research_brief`, `::setup_next_run`), or a human by hand. **Only the
 campaign runner writes `research_only`**, which matters because the holdout
 gate requires it — see stage 13.
 
 **2. It is read late as well as early.**
-Not only by stage 2. The pass-rule evaluator reads it (`:1207`) because
+Not only by stage 2. The pass-rule evaluator reads it (`::run_tool_worker`) because
 deciding whether funding must be modelled needs the product, timeframe and
 rebalance frequency; the holdout gate reads it to check tradability.
 
 **Notes, history and traps**
 
 - **F8 (2026-07-04):** only ever write `research_brief.yaml` for a run that
-  does not already have one (`:2530`) — overwriting one mid-campaign silently
+  does not already have one (`::_safe_write_new_research_brief`) — overwriting one mid-campaign silently
   rewrites the question a run was answering.
 - A brief that does not declare `research_only: false` will be **refused** at
   the holdout gate. Silence is not a green light there.
@@ -373,7 +373,7 @@ indicator lookup is A1.4 / Improvement 04 (written `Impr 04` in older notes).
 **3. A multi-card output has a recovery path.**
 If the skill emits several cards instead of one,
 `_handle_hypothesis_generation_multi_card_split` runs before the stage is
-allowed to fail (`run_phase1_research.py:6272`, defined at `:3543`).
+allowed to fail (`run_phase1_research.py::run_loop`, defined at `::_handle_hypothesis_generation_multi_card_split`).
 
 ---
 
@@ -416,8 +416,9 @@ volatility vs funding) or different **`data_requirements`** (it reads a feed the
 others do not).
 
 **Nothing checks it.** `library_category` appears **once** in all of
-`workflow/` and `tools/`, inside a prompt string
-(`run_phase1_research.py:490`). The rule lives in
+`workflow/` and `tools/` — and not even in a prompt: it is inside a *docstring*
+recounting a YAML-repair incident
+(`run_phase1_research.py::ensure_files`). The rule lives in
 `workflow_artifacts/skills/innovation-expansion/SKILL.md:74-105`, and the model
 self-reports the verdict. **No code can produce the "rejected" outcome.**
 See [E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18).
@@ -452,18 +453,18 @@ the power-gate path, `prescreen_result.yaml` as a **5-key stub** carrying `stage
 **1. Read the decision, tolerating a known [schema](#g-schema) drift.**
 `status`, falling back to `family_status` — the skill's real output for a
 multi-variant family validation used the latter (run_053, 2026-07-06, F4f).
-If neither key is present it raises rather than proceeding (`:2262`).
+If neither key is present it raises rather than proceeding (`::determine_post_validation_route`).
 
 **2. A8.6 power gate — the deterministic stop, run on approval.**
 After an `approve`/`conditional_approve`, `_run_a86_power_check` runs
-(`:2287`). If `min_detectable_ic > plausible_ic_upper` it writes
+(`::determine_post_validation_route`). If `min_detectable_ic > plausible_ic_upper` it writes
 `prescreen_result.yaml` itself with `route: insufficient_power_a_priori`
-(`:2297`) and no component is ever built. A8.6 = *check up front that the
+(`::determine_post_validation_route`) and no component is ever built. A8.6 = *check up front that the
 sample could detect the effect at all; if not, do not spend the trial.*
 
 **3. `conditional_approve` aggregates per-variant conditions.**
 The family-schema output has no top-level `conditions`, so they are collected
-from `variant_decisions` (`:2278`).
+from `variant_decisions` (`::determine_post_validation_route`).
 
 **Routes / outcomes**
 
@@ -506,7 +507,7 @@ fixed inside the current engine — and if so, how.
 **1. One flag decides the route.**
 `implementation_allowed` (default `True` if absent). False pauses the pipeline
 for a human and prints what to do; true loops back to `innovation_expansion`
-(`:2170-2186`).
+(`::determine_post_refinement_route`).
 
 **Routes / outcomes**
 
@@ -543,7 +544,7 @@ actually execute.
 `spec_ready` → `signal_prescreen`. `component_gap` → `human_pause` with a
 pointer to `STRATEGY_EXTENDING.md`. **Any unrecognised status also pauses**,
 printing that the SKILL may need a new status case rather than guessing
-(`:6029-6046`). Failing closed on an unknown status is deliberate.
+(`::determine_post_spec_route`). Failing closed on an unknown status is deliberate.
 
 **Routes / outcomes**
 
@@ -557,7 +558,7 @@ printing that the SKILL may need a new status case rather than guessing
 
 #### Stage 7 — `signal_prescreen`
 **Engine:** Python tool (`tools/prescreen_signal.py`), launched as a
-subprocess by the orchestrator (`workflow/run_phase1_research.py:1074`
+subprocess by the orchestrator (`workflow/run_phase1_research.py::run_tool_worker`
 `run_tool_worker`). No LLM call, no token cost.
 **Runs:** after `backtest_specification` emits `spec_ready`. The orchestrator
 runs an A8.6 power pre-flight *around* the tool first — see logic step 0.
@@ -603,10 +604,10 @@ Full text of every amendment code:
 | What | Where it comes from | Required? |
 |---|---|---|
 | `artifacts/candidate_strategy_config.json` | stage 6 `backtest_specification` | yes |
-| protocol JSON (`symbols`, `windows`, `timeframe`) | `_resolve_protocol_path()` — `run_phase1_research.py:1086` | yes |
+| protocol JSON (`symbols`, `windows`, `timeframe`) | `_resolve_protocol_path()` — `run_phase1_research.py::run_tool_worker` | yes |
 | `config/cost_model.yaml` | round-trip cost in bps per symbol, plus `safety_factor` (default 2.0) | yes |
-| `trading-bot/local_data/{SYMBOL}_{tf}.csv` | price cache; a coarser timeframe is derived from a finer one (`_resolve_ohlcv_source`, `prescreen_signal.py:306`) | yes |
-| aux feeds — funding rate, fear & greed | `prescreen_signal.py:151` / `:171` | only if the config declares them |
+| `trading-bot/local_data/{SYMBOL}_{tf}.csv` | price cache; a coarser timeframe is derived from a finer one (`_resolve_ohlcv_source`, `prescreen_signal.py::_resolve_ohlcv_source`) | yes |
+| aux feeds — funding rate, fear & greed | `prescreen_signal.py::_load_funding_rate` / `::_load_fear_greed` | only if the config declares them |
 | `config/campaign_data_policy.yaml` | era boundaries and episode settings | only on the A8.5.1a path |
 | `runs/{run_id}/artifacts/regime_audit_decision.yaml` | stage 10 | only if present — see the side effect below |
 | `campaign_state.yaml` | read by the orchestrator wrapper, not the tool | yes |
@@ -615,8 +616,8 @@ Full text of every amendment code:
 
 | What | Written where | Read by |
 |---|---|---|
-| `prescreen_result.yaml` | `runs/{run_id}/prescreen/`, copied to `artifacts/` (`run_phase1_research.py:1113`) | `verdict_interpreter`, orchestrator routing |
-| *(side effect)* `regime_audit_decision.yaml` — `ungated_escape_eligible` rewritten in place | `runs/{run_id}/artifacts/` | **stage 10's file, edited by stage 7** (`prescreen_signal.py:1582` → `:1092`) |
+| `prescreen_result.yaml` | `runs/{run_id}/prescreen/`, copied to `artifacts/` (`run_phase1_research.py::run_tool_worker`) | `verdict_interpreter`, orchestrator routing |
+| *(side effect)* `regime_audit_decision.yaml` — `ungated_escape_eligible` rewritten in place | `runs/{run_id}/artifacts/` | **stage 10's file, edited by stage 7** (`prescreen_signal.py::run_prescreen` → `::_resolve_ungated_escape`) |
 | *(side effect, orchestrator not tool)* one row in `campaign_state.trial_sharpes` | campaign root | `deflate_sharpe.py`, campaign accounting |
 
 **Features / logic in place**
@@ -627,31 +628,31 @@ Each step: **title — one-line summary.** Details follow.
 If the sample is too small to detect the effect even if it were real, the tool
 is never launched. The orchestrator writes `prescreen_result.yaml` itself with
 `route: insufficient_power_a_priori` and records the trial
-(`run_phase1_research.py:6217`, `:6232`, `:6235`). The same check runs earlier
-at the [validation gate](#g-validation-gate) (`:2287`); if it already wrote the file, the
-orchestrator skips the tool (`:6207`). **None of this is in
+(`run_phase1_research.py::run_loop`, `::run_loop`, `::run_loop`). The same check runs earlier
+at the [validation gate](#g-validation-gate) (`::determine_post_validation_route`); if it already wrote the file, the
+orchestrator skips the tool (`::run_loop`). **None of this is in
 `prescreen_signal.py`** — see [E037-01](../engineering/roadmap/E-037/FINDINGS.md#e037-01).
 
 **1. Setup — load the config and protocol, and fix the block size.**
 `block_size = bars_per_day(timeframe)` comes from `tools/timeframe.py`, the
 same source the A8.6 gate uses. No fallback: an unparseable timeframe raises
-(`prescreen_signal.py:1215`).
+(`prescreen_signal.py::run_prescreen`).
 
 **2. Extract the forecast — replay the real strategy over the full range.**
 Per symbol, load prices from the earliest window start to the latest window
 end, merge aux feeds, and drive the actual strategy through `CandleBuilder` to
-produce a forecast per bar (`_extract_forecasts`, `:470`).
+produce a forecast per bar (`_extract_forecasts`, `::_extract_forecasts`).
 
 **3. Gap suppression (#50 A) — drop pairs that straddle a hole in the data.**
 If two bars are not one expected step apart, the "next-bar return" is not a
 next-bar return, so the pair is discarded. Counts are surfaced per symbol,
 because a pooled figure can read "no gap effect" while one symbol's whole
-sample was destroyed (red-team D6) (`:1264`, `:1267`).
+sample was destroyed (red-team D6) (`::run_prescreen`, `::run_prescreen`).
 
 **4. Degenerate-input guards — fail loud rather than flattering.**
-A symbol left with zero usable records by step 3 raises (`:1284`). If no symbol
+A symbol left with zero usable records by step 3 raises (`::run_prescreen`). If no symbol
 loaded usable data at all, the run raises rather than emitting a route from
-zero bars (`:1320`, added 2026-08-28 after run_060).
+zero bars (`::run_prescreen`, added 2026-08-28 after run_060).
 
 **5. Compute the IC — two of them, for two different jobs (A8.3).**
 `ic_active_bars` (only bars where the signal spoke) is the primary gate.
@@ -661,44 +662,44 @@ A2.1 escape test, which requires it.
 **6. Significance — is the IC bigger than luck, given how few independent observations there are?**
 Default method is **block-deflated Fisher z**: `n_eff = active_n / block_size`,
 then `z = IC * sqrt(n_eff - 3)`, labelled `block_{block_size}_fisher_z`
-(`:643`, `:1377`). The label is derived from the block size actually used — it
+(`::_block_adjusted_significance`, `::run_prescreen`). The label is derived from the block size actually used — it
 read `block_24_fisher_z` until 2026-08-28 while `block_size` had already become
 per-timeframe, so a 4h run stamped `block_24` while dividing by 6.
 - **#50 (B):** a block that cannot be placed without spanning a gap does not
   exist and does not count toward `n_eff`. Counted per symbol, because pooling
-  first would read the seam between two symbols as a contiguous step (`:1359`).
+  first would read the seam between two symbols as a contiguous step (`::run_prescreen`).
 - **A8.5.1a episode-blocked** replaces it on request (config
   `significance_methodology: episode_blocked_a851a`) for multi-era data
-  (`:1402`). With the flag absent, behaviour is unchanged, so archived runs
+  (`::run_prescreen`). With the flag absent, behaviour is unchanged, so archived runs
   stay reproducible.
 - **Stationary block bootstrap** replaces it automatically when the active-bar
   forecast is *structurally* degenerate — one constant magnitude whenever
   active, which makes `ic_active_bars` undefined by construction rather than a
-  no-edge result (`:730`, branch `:1429`, detector `:720`; found 2026-07-07 via
+  no-edge result (`::_stationary_block_bootstrap_ic_significance`, branch `::run_prescreen`, detector `::_is_degenerate_active_forecast`; found 2026-07-07 via
   the P4_ts_trend shakedown). A merely small active sample is a power problem,
   not a structural one, and is left to A8.5.1a.
 
 **7. Turnover proxy — infer how often this would trade.**
 Active bars per trade implies a holding period (`_compute_turnover_proxy`,
-`:813`). Redefined 2026-07-07 to count activity transitions; the previous
+`::_compute_turnover_proxy`). Redefined 2026-07-07 to count activity transitions; the previous
 sign-flip-only counter silently merged long-only episodes across flat gaps
 into a single trade.
 
 **8. Cost check (Layer 2) — could the edge out-earn the fees?**
 Estimated gross edge (`ic_for_cost` × `sigma_bar_bps` × holding period) versus
 round-trip cost from `cost_model.yaml`. Passes when `edge_to_cost_ratio >=
-safety_factor` (default 2.0) (`:897`).
+safety_factor` (default 2.0) (`::_cost_check`).
 - `sigma_bar_bps` is measured from the records. If no symbol yields an
   estimate, the placeholder `_DEFAULT_SIGMA_BAR_BPS = 15.0` is substituted and
   `sigma_is_placeholder: true` is written into the [artifact](#g-artifact). **When that flag
   is true, the cost check and every required-IC figure are invalid.**
 
 **9. Route decision — combine the two gates (A8.1).**
-`_determine_route` (`:982`); see the route table below. Both IC significance
+`_determine_route` (`::_determine_route`); see the route table below. Both IC significance
 **and** `cost_check.pass` are required for `proceed_to_backtest`.
 
 **10. F5c override — "the code broke" is not "the idea failed".**
-Takes priority over every route above (`:1481`). If `active_n_bars == 0`, or
+Takes priority over every route above (`::run_prescreen`). If `active_n_bars == 0`, or
 swallowed component exceptions exceed 5% of processed bars, the route becomes
 `no_signal_artifact` rather than `kill_no_ic` — the latter claims the idea was
 tested, and here it was not. From run_044 (2026-07-04): a
@@ -712,13 +713,13 @@ absence cannot be mistaken for an oversight. Only ungated IC decides.
 **12. Side effect — stage 7 rewrites stage 10's file.**
 `ungated_escape_eligible` in `regime_audit_decision.yaml` is resolved using
 `ic_all_bars`, because an IC measured on detector-gated bars is not admissible
-for or against the escape (A2.3 rule 5) (`:1582`, `:1092`). The code labels
+for or against the escape (A2.3 rule 5) (`::run_prescreen`, `::_resolve_ungated_escape`). The code labels
 this "A9.1", which appears to be the wrong code — see [E037-13](../engineering/roadmap/E-037/FINDINGS.md#e037-13).
 
-**13. Write the artifact.** `prescreen_result.yaml` (`:1585`).
+**13. Write the artifact.** `prescreen_result.yaml` (`::run_prescreen`).
 
 **14. A6.2 trial recording — the orchestrator logs the trial after the tool returns.**
-`_record_prescreen_trial` (`run_phase1_research.py:4039`, called at `:1130`).
+`_record_prescreen_trial` (`run_phase1_research.py::_record_prescreen_trial`, called at `::run_tool_worker`).
 Kills count as trials; `statistic_valid = "neither"` when there is no backtest
 Sharpe. Upsert on `(trial_id, "prescreen")` since 2026-08-16 (issue #28 /
 E-025), so a crash-retry replaces the stale row instead of being swallowed.
@@ -740,7 +741,7 @@ E-025), so a crash-retry replaces the stale row instead of being swallowed.
 
 - Signal layer only — no portfolio simulation, no backtest engine.
 - **Two thresholds, one documented.** `_SIG_THRESHOLD = 0.10` is the main IC
-  gate (`prescreen_signal.py:87`); a separate `p > 0.05` inside the cost
+  gate (`prescreen_signal.py::_SIG_THRESHOLD`); a separate `p > 0.05` inside the cost
   branch decides `kill_cost_hurdle` vs `refine_cost_hurdle`.
 - **`gap_skipped_pct` is not the cache's contamination rate.** It counts pairs
   actually reached after warmup; gaps inside the warmup are never reached, so
@@ -755,11 +756,11 @@ E-025), so a crash-retry replaces the stale row instead of being swallowed.
 
 **Owned by which code**
 
-`tools/prescreen_signal.py:1185` (`run_prescreen`) · `:982` (`_determine_route`)
-· `:643` (`_block_adjusted_significance`) · `:730` (stationary block bootstrap)
-· `:897` (`_cost_check`) · `:1092` (`_resolve_ungated_escape`) ·
-`workflow/run_phase1_research.py:1074` (`run_tool_worker`) · `:6217` and `:2287`
-(A8.6) · `:4039` (`_record_prescreen_trial`)
+`tools/prescreen_signal.py::run_prescreen` (`run_prescreen`) · `::_determine_route` (`_determine_route`)
+· `::_block_adjusted_significance` (`_block_adjusted_significance`) · `::_stationary_block_bootstrap_ic_significance` (stationary block bootstrap)
+· `::_cost_check` (`_cost_check`) · `::_resolve_ungated_escape` (`_resolve_ungated_escape`) ·
+`workflow/run_phase1_research.py::run_tool_worker` (`run_tool_worker`) · `::run_loop` and `::determine_post_validation_route`
+(A8.6) · `::_record_prescreen_trial` (`_record_prescreen_trial`)
 
 ---
 
@@ -799,13 +800,13 @@ record what happened.
 
 **1. Run the walk-forward backtest.**
 `run_protocol.py` with config, protocol and validation protocol
-(`run_phase1_research.py:1139`). Produces per-window metrics including
+(`run_phase1_research.py::run_tool_worker`). Produces per-window metrics including
 per-trade expectancy (A3.4).
 
 **2. C7 pass-rule evaluation — the machine verdict, and the decision authority.**
 `verdict_criteria_evaluator.evaluate_pass_rule_criteria()` scores the summary
 against the *pre-registered* `pass_rule` and writes
-`pass_rule_evaluation.yaml` (`:1206-1215`). Since the K2 kernel (2026-07-13)
+`pass_rule_evaluation.yaml` (`::run_tool_worker`). Since the K2 kernel (2026-07-13)
 this **replaced** `evaluate_against_decision_rules` as the authority; that
 function's output is informational only. `evaluator_version: 2` since C7-EXT
 (2026-07-22) added the G1–G5 preconditions.
@@ -816,10 +817,10 @@ before K2. Every pre-K2 run, including run_057's, is that legacy shape.
 **3. Every failure path still records the trial (H4-core, issue #28 / E-025).**
 A backtest that touched market data has spent a look, whether or not it
 finished. Three branches each call `_record_failed_backtest_trial` before
-re-raising: non-zero exit (`:1147`), missing `protocol_summary.json`
-(`:1163`), and — added later — the **post-success window** where the
+re-raising: non-zero exit (`::run_tool_worker`), missing `protocol_summary.json`
+(`::run_tool_worker`), and — added later — the **post-success window** where the
 subprocess exited 0 and wrote its summary but `json.load` or the pass-rule
-evaluation then raised (`:1216-1224`). That third window previously left no
+evaluation then raised (`::run_tool_worker`). That third window previously left no
 trial row while the data had already been spent, so N was under-counted.
 Recording is wrapped so its own failure only logs; the original error is
 re-raised unchanged.
@@ -836,8 +837,8 @@ re-raised unchanged.
 #### Stage 9 — `regime_detector_validation`
 **Engine:** Python tool (`tools/validate_regime_detector.py`)
 **Not a registry stage.** It is a helper, `_ensure_regime_detector_report`
-(`run_phase1_research.py:2410`), called from inside verdict_interpreter
-handling (`:6250`, `:6381`).
+(`run_phase1_research.py::_ensure_regime_detector_report`), called from inside verdict_interpreter
+handling (`::run_loop`, `::run_loop`).
 
 **Objective.** Establish whether the regime detector is trustworthy enough for
 its labels to be allowed to condition any metric.
@@ -858,12 +859,12 @@ per run.** One file shared by every run.
 
 **1. Freshness check — "stale" means older than 30 days.**
 If the report exists and `evaluated_at` is under 30 days old, nothing runs
-(`:2425`).
+(`::_ensure_regime_detector_report`).
 
 **2. ⚠️ It can silently do nothing.**
 If `candidate_strategy_config.json` is missing, it prints a warning and
-returns `None` (`:2433-2434`). If the subprocess exits non-zero, it prints and
-returns `None` (`:2445-2447`). **Neither raises.** The verdict then proceeds
+returns `None` (`::_ensure_regime_detector_report`). If the subprocess exits non-zero, it prints and
+returns `None` (`::_ensure_regime_detector_report`). **Neither raises.** The verdict then proceeds
 with no detector report and the only trace is stdout. This sits badly beside
 the project's standing rule that anything feeding decisions raises on
 degenerate inputs. See [E037-17](../engineering/roadmap/E-037/FINDINGS.md#e037-17).
@@ -893,13 +894,13 @@ stage.** Two lists control that, and it is in neither —
 `STAGE_CONFIGS`, the stages the orchestrator knows how to run, and `_SKILL_MAP`,
 the stages it can hand to an LLM. A stage missing from the second cannot be
 dispatched even if something tried: `_build_stage_prompt` raises `ValueError`
-rather than guessing which instructions to use (`:711`). **No code writes
+rather than guessing which instructions to use (`::_build_stage_prompt`). **No code writes
 `regime_audit_decision.yaml`** — the orchestrator only reads it if it already
-exists (`:6251`, `:6382`), and the sole writer anywhere is
-`prescreen_signal.py:1118`, which updates an existing file and returns early if
+exists (`::run_loop`, `::run_loop`), and the sole writer anywhere is
+`prescreen_signal.py::_resolve_ungated_escape`, which updates an existing file and returns early if
 there is none. What happens in practice is a pause (`status="paused_for_human"`)
 printing *"consult regime-auditor skill and regime_detector_report.yaml"*
-(`:5788-5796`). See [E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16).
+(`::determine_post_verdict_route`). See [E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16).
 
 **Stage input:** `regime_detector_report.yaml` (campaign root).
 
@@ -909,14 +910,14 @@ skill.
 **Features / logic in place**
 
 **1. A2.2 retune firewall — enforced in code, and it raises.**
-`_validate_retune_firewall` (`:2459`) scans `recommended_action` for
+`_validate_retune_firewall` (`::_validate_retune_firewall`) scans `recommended_action` for
 `pnl`, `sharpe`, `ic`, `backtest`, `cost_drag`, `forecast_return_corr`,
 `per_trade`, `expectancy`. Any hit raises `RuntimeError` and halts the run
-(`:6256`). Unlike the diversity check, **this one is real.**
+(`::run_loop`). Unlike the diversity check, **this one is real.**
 
 **2. The decision is injected into the verdict handoff.**
 `_inject_regime_context_into_handoff` passes the report and the audit decision
-into `protocol_to_verdict_interpreter.yaml` (`:6263`).
+into `protocol_to_verdict_interpreter.yaml` (`::run_loop`).
 
 **3. Stage 7 later rewrites part of this file.**
 `ungated_escape_eligible` is resolved by the prescreen — see stage 7.
@@ -951,16 +952,16 @@ kill path.
 **1. Engineering failure is immune to everything downstream.**
 Checked **before** any circuit-breaker logic: if
 `root_cause.mechanism_failure == component_execution_error`, the run pauses for
-a human (`:5773-5783`). No trial slot, no parameter-dimension slot, no family
+a human (`::determine_post_verdict_route`). No trial slot, no parameter-dimension slot, no family
 marked failed. F6 (2026-07-04). This is the same principle as stage 7's F5c
 override, applied one layer up — a component bug is not a research finding.
 
 **2. Regime misattribution pauses rather than routes.**
 `mechanism_failure == regime_misattribution` pauses for the regime-auditor
-(`:5788-5796`) — see stage 10 for what that actually means.
+(`::determine_post_verdict_route`) — see stage 10 for what that actually means.
 
 **3. [Circuit breaker](#g-circuit-breaker) — anti-loop protection, scoped per family.**
-`_apply_circuit_breaker` (`:5567`) can force `refine` up to `pivot` when the
+`_apply_circuit_breaker` (`::_apply_circuit_breaker`) can force `refine` up to `pivot` when the
 same parameter dimension keeps recurring. **Scoped per [hypothesis family](#g-hypothesis-family) since
 F6 (2026-07-04)**: a global list let stale dimensions from the long-closed
 Keltner/RSI families force run_044's first-ever refine straight to pivot.
@@ -981,7 +982,7 @@ What the artifact carries is `status`.
 
 **6. [Promote](#g-promote) is provisional.**
 A pass writes `promotion_audit.yaml` and routes to `holdout_evaluation`
-(`:5745-5747`); it is not a promotion.
+(`::_dispatch_verdict_route`); it is not a promotion.
 
 ---
 
@@ -1008,10 +1009,10 @@ whole line of attack is still worth pursuing.
 
 **1. Output YAML is validated before use, and re-run if malformed.**
 The orchestrator parses it and re-invokes the agent if parsing fails — the LLM
-often emits colons inside list items (`:6280`).
+often emits colons inside list items (`::run_loop`).
 
 **2. Shares the circuit breaker with stage 11.**
-`determine_post_campaign_review_route` (`:5883`) applies the identical
+`determine_post_campaign_review_route` (`::determine_post_campaign_review_route`) applies the identical
 per-family breaker, deliberately, so both paths behave the same.
 
 **Routes / outcomes:** continue · reframe (new brief) · escalate (new
@@ -1038,17 +1039,17 @@ already been passed.
 (`holdout_consumed_by`, `consumed_at`); terminal promote or kill.
 
 **Features / logic in place** — *in execution order; the order is the design*
-(`_route_holdout_evaluation`, `:5383`).
+(`_route_holdout_evaluation`, `::_route_holdout_evaluation`).
 
 **1. DSR gate — reject before the seal is touched.**
-`passes_deflated_threshold is False` → `completed_rejected` (`:5411`). The
+`passes_deflated_threshold is False` → `completed_rejected` (`::_route_holdout_evaluation`). The
 deflated Sharpe ratio is **Bailey & López de Prado**'s correction: it lowers a
 Sharpe according to how many things were tried, so the trial count and the
 spread of trial Sharpes decide whether this result is distinguishable from the
 best of many guesses.
 
 **2. Single-use enforcement — a second attempt is mechanically refused.**
-If `hypothesis_id` is already in `holdout_consumed_by`, refuse (`:5418`). A6.1.
+If `hypothesis_id` is already in `holdout_consumed_by`, refuse (`::_route_holdout_evaluation`). A6.1.
 
 **2b. Tradability gate — silence is not a green light (E-015 S3).**
 `brief.research_only is not False` → hold. **Affirmative check, not a negative
@@ -1305,7 +1306,7 @@ Each [run](#g-run) stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-
 quant-validation skill's real output for a multi-variant family validation used
 it instead (run_053, 2026-07-06, F4f), and the router falls back to it. If
 neither key is present the router raises rather than guessing
-(`run_phase1_research.py:2262`). Note also that §2.3 lists three statuses;
+(`run_phase1_research.py::determine_post_validation_route`). Note also that §2.3 lists three statuses;
 `conditional_approve` is a fourth, and is what run_060 actually returned.
 
 ---
@@ -1373,7 +1374,7 @@ fail-closed human-pause branch. See
 
 An unknown status is **not** treated as a soft failure: `determine_post_spec_route`
 prints that the SKILL may need a new status case and pauses
-(`run_phase1_research.py:6029-6046`).
+(`run_phase1_research.py::determine_post_spec_route`).
 
 ---
 
@@ -1729,7 +1730,7 @@ Per-trade records (one row per closed trade) with fields: `entry_bar`, `exit_bar
 
 ⚠️ **This file lives at the campaign root, not under a run** — one file shared
 by every run, regenerated when older than 30 days
-(`run_phase1_research.py:2425`). `config_source` records which run's config
+(`run_phase1_research.py::_ensure_regime_detector_report`). `config_source` records which run's config
 last produced it. Note the example's `config_source` is a **Windows path**, the
 same portability issue as [E037-11](../engineering/roadmap/E-037/FINDINGS.md#e037-11).
 
@@ -1740,7 +1741,7 @@ same portability issue as [E037-11](../engineering/roadmap/E-037/FINDINGS.md#e03
 > `class_conditional_sensitivity`, previously listed here as absent, **is
 > present** — nested rather than top-level; corrected 2026-08-31.) The firewall
 > itself is real and enforced in code — `_validate_retune_firewall`
-> (`run_phase1_research.py:2459`) raises on a violation — but the decision file
+> (`run_phase1_research.py::_validate_retune_firewall`) raises on a violation — but the decision file
 > does not carry a field recording that it passed. Note also that this file is
 > **updated in place by stage 7**, which resolves `ungated_escape_eligible`
 > here; the entry has no `Updated by` line. See
@@ -1809,7 +1810,7 @@ same portability issue as [E037-11](../engineering/roadmap/E-037/FINDINGS.md#e03
 
 **Created by:** `workflow/run_campaign.py` `_materialize_run()` (alongside `research_brief.yaml`)
 **Updated by:** *(none — write-once; rewriting it after a run is the failure it exists to prevent)*
-**Read by:** `tools/verdict_criteria_evaluator.py` via stage 8; `_load_machine_constraints()` (`run_phase1_research.py:2596`) for the stage 7 methodology pin; `_check_prescreen_conformance`
+**Read by:** `tools/verdict_criteria_evaluator.py` via stage 8; `_load_machine_constraints()` (`run_phase1_research.py::_load_machine_constraints`) for the stage 7 methodology pin; `_check_prescreen_conformance`
 **Written to:** `runs/{run_id}/artifacts/pre_registration.yaml`
 **Schema:** *(none)*
 
@@ -1843,7 +1844,7 @@ same portability issue as [E037-11](../engineering/roadmap/E-037/FINDINGS.md#e03
 
 **Created by:** stage 8 `protocol_execution`, via
 `tools/verdict_criteria_evaluator.py::evaluate_pass_rule_criteria()`
-(`run_phase1_research.py:1206-1215`)
+(`run_phase1_research.py::run_tool_worker`)
 **Updated by:** *(none — write-once per run)*
 **Read by:** `verdict_interpreter` — **a REQUIRED input**
 (`workflow_artifacts/skills/verdict-interpreter/SKILL.md:16`)
@@ -1876,11 +1877,11 @@ same portability issue as [E037-11](../engineering/roadmap/E-037/FINDINGS.md#e03
 > brief it inherited — the escalation target, or the forced protocol — so a
 > child run does not silently re-test its parent's asset.
 
-**Created by:** `run_phase1_research.py:2736` (escalation spawn) and `:2775`
+**Created by:** `run_phase1_research.py::_ensure_protocol_from_constraints` (escalation spawn) and `::_ensure_protocol_from_constraints`
 (forced-diagnostic override)
 **Updated by:** *(none — write-once per run)*
 **Read by:** the stage prompts; `_check_prescreen_conformance` compares its
-bare-filename `protocol` key (`:3013`)
+bare-filename `protocol` key (`::_ensure_protocol_ref_pinned`)
 **Written to:** `runs/{run_id}/artifacts/run_context.yaml`
 **Schema:** *(none)*
 
@@ -1903,7 +1904,7 @@ bare-filename `protocol` key (`:3013`)
 
 **Created by:** Human, by hand
 **Updated by:** *(none — write-once)*
-**Read by:** `resume_pipeline()` (`run_phase1_research.py:6048`)
+**Read by:** `resume_pipeline()` (`run_phase1_research.py::resume_pipeline`)
 **Written to:** `runs/{run_id}/artifacts/human_resolution.yaml`
 **Schema:** *(none)*
 
@@ -1929,7 +1930,7 @@ from stage 6, `component_execution_error` or `regime_misattribution` at stage
 
 **Created by:** Human, from the venue survey
 **Updated by:** Human, when the legal or venue position changes
-**Read by:** `run_campaign.py::_load_venue_tradability()` (`:190`), used by
+**Read by:** `run_campaign.py::_load_venue_tradability()` (`::_load_venue_tradability`), used by
 `_materialize_run()` to auto-flag `research_only` on any brief whose venue and
 product are not `tradable: true` — **or are undeclared**
 **Written to:** `config/venue_tradability.yaml`
@@ -1959,7 +1960,7 @@ product are not `tradable: true` — **or are undeclared**
 > It is the last thing written before a mechanism is closed, and the only place
 > the whole trajectory across runs is recorded in one paragraph.
 
-**Created by:** `campaign_review` / `verdict_interpreter` on a terminal outcome — the skill is instructed to emit it on `promote` or `kill` (`run_phase1_research.py:2404-2405`)
+**Created by:** `campaign_review` / `verdict_interpreter` on a terminal outcome — the skill is instructed to emit it on `promote` or `kill` (`run_phase1_research.py::_create_remaining_handoffs`)
 **Updated by:** *(none — write-once; it closes the entry)*
 **Read by:** humans, and the next campaign's `existing_context`
 **Written to:** `runs/{run_id}/artifacts/research_decision.yaml`
@@ -2004,7 +2005,7 @@ product are not `tradable: true` — **or are undeclared**
 ## 4. Skills
 
 > **Scope of this section.** The seven skills below are exactly the seven the
-> orchestrator can dispatch — `_SKILL_MAP` in `workflow/run_phase1_research.py:689`,
+> orchestrator can dispatch — `_SKILL_MAP` in `workflow/run_phase1_research.py::_SKILL_MAP`,
 > verified 2026-08-30. Three more exist under `workflow_artifacts/skills/` and
 > are **not** dispatchable: `regime-auditor` (invoked by a human on a paused
 > pipeline — see stage 10 and [E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16)),
