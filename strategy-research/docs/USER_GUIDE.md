@@ -173,6 +173,12 @@ family, altitude, exhausted — are in the [Glossary](#6-glossary).*
 | **firewall** (retune firewall) | A rule that keeps profitability out of a decision that is supposed to be about instrument quality. You may not retune a regime detector because it made more money. |
 | **conformance gate** | A check that a run actually obeyed what it registered in advance — the protocol it pinned, the method it declared. |
 | **upsert** | Write-or-replace. Used for trial rows so a re-run replaces its earlier row instead of adding a second one and inflating the count. |
+| **orchestrator** | The Python program that actually runs the pipeline: `workflow/run_phase1_research.py`. It decides which stage runs next and calls it. When this guide says "the orchestrator does X", it means that file. |
+| **`STAGE_CONFIGS`** | The orchestrator's **list of stages it knows how to run**. If a stage name is not a key in it, the orchestrator has no way to reach that stage. It holds 10 entries. |
+| **`_SKILL_MAP`** | The orchestrator's **list of which stages are run by an LLM, and which instruction file each uses**. 7 entries. A stage missing from it cannot be given to Claude — `_build_stage_prompt` refuses and raises an error rather than guessing. |
+| **skill** | The instruction file an LLM stage is given, e.g. `workflow_artifacts/skills/quant-validation/SKILL.md`. It tells the model what to produce. A skill file can exist on disk without anything ever calling it. |
+| **`library_category`** | A field in `config/indicator_library.yaml` saying what **kind** of indicator something is — trend, volatility, funding, and so on. Two variants built from different categories are genuinely different ideas; two that differ only in a threshold are the same idea twice. |
+| **`data_requirements`** | Which data feeds a variant needs. The other way a variant can be genuinely different: same category, but it reads a feed the sibling does not. |
 
 Amendment codes (`A2.1`, `A8.6`, …) are defined in
 [`AMENDMENTS_01-06.md`](../engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md);
@@ -305,9 +311,15 @@ obedience, not stage failure. Measured 2026-08-26: of 25 *unconstrained*
 expansion runs, 21 land in [3,6].
 
 **2. ⚠️ The diversity check is not enforced by any code.**
-The guide's table says "Must: pass real-diversity check (≥2 `library_category`
-OR `data_requirements`; cosmetic = rejected)". `library_category` appears
-**once** in all of `workflow/` and `tools/`, inside a prompt string
+The rule is meant to stop the stage producing variants that only *look*
+different — five versions of one idea with different threshold numbers, which
+would spend five trials to learn one thing. Real difference means either a
+different **`library_category`** (a different kind of indicator: trend vs
+volatility vs funding) or different **`data_requirements`** (it reads a feed the
+others do not).
+
+**Nothing checks it.** `library_category` appears **once** in all of
+`workflow/` and `tools/`, inside a prompt string
 (`run_phase1_research.py:490`). The rule lives in
 `workflow_artifacts/skills/innovation-expansion/SKILL.md:74-105`, and the model
 self-reports the verdict. **No code can produce the "rejected" outcome.**
@@ -779,9 +791,12 @@ is unusable — and do so without letting profitability leak into the judgment.
   detector quality and strategy quality separate questions.
 
 **⚠️ Status — read this before relying on the stage.**
-The orchestrator **never dispatches this stage.** It is absent from
-`STAGE_CONFIGS` and from `_SKILL_MAP`; `_build_stage_prompt` raises
-`ValueError` for any stage not in that map (`:711`). **No code writes
+**In plain terms: the program that runs the pipeline has no way to reach this
+stage.** Two lists control that, and it is in neither —
+`STAGE_CONFIGS`, the stages the orchestrator knows how to run, and `_SKILL_MAP`,
+the stages it can hand to an LLM. A stage missing from the second cannot be
+dispatched even if something tried: `_build_stage_prompt` raises `ValueError`
+rather than guessing which instructions to use (`:711`). **No code writes
 `regime_audit_decision.yaml`** — the orchestrator only reads it if it already
 exists (`:6251`, `:6382`), and the sole writer anywhere is
 `prescreen_signal.py:1118`, which updates an existing file and returns early if
