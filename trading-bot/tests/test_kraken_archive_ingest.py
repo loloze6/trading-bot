@@ -818,3 +818,136 @@ def test_unreadable_policy_refuses_rather_than_defaulting(tmp_path, monkeypatch)
 
     with pytest.raises(RuntimeError, match="Cannot read holdout_range"):
         ing.ingest("TEST", archive, data)
+
+
+# ---------------------------------------------------------------------------
+# CUL-44 — leg-4 adversarial residues (fix/data-ingest-s16)
+# ---------------------------------------------------------------------------
+
+def test_main_exits_1_when_resolution_matches_no_sources(tmp_path, monkeypatch):
+    """
+    Residue 1: a typo'd/absent resolution matches no source file for ANY asset,
+    so run_all skips everything, `failures` stays empty, and the old
+    `if failures: sys.exit(1)` never fired — the process exited 0 having
+    ingested nothing. main() must now exit non-zero on "nothing ingested,
+    nothing failed".
+
+    Isolated: PROJECT_ROOT is redirected to tmp_path (main() derives archive_dir
+    and data_dir from it), and a real _60 source is seeded so only the
+    resolution — not a genuinely empty archive — is why everything skips.
+    """
+    archive = tmp_path / "local_data" / "Kraken_batch" / "master_q4"
+    _write_source(archive, "BTC", T0, 48)          # a real XBTUSD_60.csv exists
+    monkeypatch.setattr(ing, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(sys, "argv", ["ingest_kraken_archive.py", "--resolution", "61"])
+
+    with pytest.raises(SystemExit) as exc:
+        ing.main()
+    assert exc.value.code == 1
+
+
+def test_main_does_not_exit_when_some_assets_ingest(tmp_path, monkeypatch):
+    """Control for residue 1: a resolution that DOES ingest at least one asset
+    must not trip the all-skipped guard (BTC present at _60, rest skipped)."""
+    archive = tmp_path / "local_data" / "Kraken_batch" / "master_q4"
+    _write_source(archive, "BTC", T0, 48)
+    monkeypatch.setattr(ing, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(sys, "argv", ["ingest_kraken_archive.py", "--resolution", "60"])
+
+    ing.main()   # must NOT raise SystemExit
+
+
+def test_failed_post_write_verify_leaves_dest_byte_identical(tmp_path, monkeypatch):
+    """
+    Residue 2 (load-bearing): ingest() is a MERGE that would overwrite `dest`
+    in place. Under the write-to-temp + atomic-rename design a post-write verify
+    failure must leave the pre-existing cache byte-for-byte unchanged and leave
+    no stray temp file — NOT merely "no bad file at dest".
+
+    Mutation: revert to the direct-write design (_merge_and_store(save=True)
+    writing straight to dest, verify-after) — dest then holds the failed merge's
+    content and the hash assertion goes red. An existence-only check would miss
+    this.
+    """
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    dest = _seed_cache(data_dir, "TEST", T0, 300, close=999.0)   # real, wide, good
+    before = dest.read_bytes()
+    _write_source(archive, "TEST", T0 + 50 * H, 20, close=111.0)  # inside, mergeable
+
+    def _boom(*args, **kwargs):
+        raise ing.IngestUTCError("forced post-write verify failure")
+
+    monkeypatch.setattr(ing, "verify_boundary_values", _boom)
+
+    with pytest.raises(ing.IngestUTCError, match="forced post-write"):
+        ing.ingest("TEST", archive, data_dir)
+
+    assert dest.read_bytes() == before, "a failed post-write verify overwrote the cache"
+    assert not list(data_dir.glob("*.tmp*")), "a staged temp file was left behind"
+
+
+def test_temp_write_failure_leaves_no_stray_temp(tmp_path, monkeypatch):
+    """
+    Residue 2, cleanup robustness: a to_csv failure mid-write (disk full,
+    permissions) must not strand a partial .tmp<pid> file, and dest must stay
+    byte-identical. The staged to_csv lives inside the try/except so its failure
+    path also unlinks the temp.
+
+    Mutation: move the temp to_csv back outside the try — the partial temp is
+    then left behind and the no-stray-temp assertion goes red.
+    """
+    data_dir = tmp_path / "cache"
+    archive = tmp_path / "archive"
+    dest = _seed_cache(data_dir, "TEST", T0, 300, close=999.0)
+    before = dest.read_bytes()
+    _write_source(archive, "TEST", T0 + 50 * H, 20, close=111.0)
+
+    real_to_csv = pd.DataFrame.to_csv
+
+    def _to_csv(self, path_or_buf=None, *args, **kwargs):
+        # Fail only the staged temp write (a str/Path dest inside data_dir);
+        # let every other to_csv (e.g. _seed_cache setup) proceed. A PARTIAL
+        # file is created before the raise, modelling a real mid-write failure —
+        # so the cleanup (unlink in the except) is what the assertion tests.
+        if isinstance(path_or_buf, (str, Path)) and ".tmp" in str(path_or_buf):
+            Path(path_or_buf).write_text("partial,bytes\n")
+            raise OSError("simulated disk-full mid-write")
+        return real_to_csv(self, path_or_buf, *args, **kwargs)
+
+    monkeypatch.setattr(pd.DataFrame, "to_csv", _to_csv)
+
+    with pytest.raises(OSError, match="simulated disk-full"):
+        ing.ingest("TEST", archive, data_dir)
+
+    assert not list(data_dir.glob("*.tmp*")), "a partial temp file was left behind"
+    assert dest.read_bytes() == before, "dest was mutated by a failed temp write"
+
+
+def test_verify_utc_roundtrip_names_dest_in_error():
+    """
+    Residue 3: verify_utc_roundtrip(..., dest=...) names the real destination in
+    its error, matching sibling verify_boundary_values. The `dest` param is
+    optional and keyword — omitting it (any legacy caller) must still raise, with
+    no path in the message. Tested directly because in the ingest geometry the
+    post-write timestamp round-trip is inert (verify_boundary_values trips first
+    on a shift), so a direct call is the only way to exercise this message.
+    """
+    raw = pd.DataFrame({"unix_s": [T0, T0 + H]})
+    # A shifted `converted` so the round-trip fails at row 0.
+    shifted = pd.DataFrame(
+        {
+            "timestamp": [
+                pd.Timestamp("2020-01-01 01:00:00"),
+                pd.Timestamp("2020-01-01 02:00:00"),
+            ],
+        }
+    )
+    dest = Path("/data/kraken_TESTUSD_1h.csv")
+
+    with pytest.raises(ing.IngestUTCError, match=r"kraken_TESTUSD_1h\.csv"):
+        ing.verify_utc_roundtrip(raw, shifted, dest)
+
+    with pytest.raises(ing.IngestUTCError) as exc:
+        ing.verify_utc_roundtrip(raw, shifted)          # backward-compatible: no dest
+    assert "kraken_TESTUSD" not in str(exc.value)
