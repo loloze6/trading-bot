@@ -1078,9 +1078,21 @@ def _determine_route(ic_sig: dict, cost: dict) -> tuple:
 # Config fingerprint
 # ---------------------------------------------------------------------------
 
-def _config_sha(config_path: str) -> tuple:
-    with open(config_path, encoding="utf-8") as f:
-        cfg = json.load(f)
+def _config_sha(config_source) -> tuple:
+    """Canonical config digest, returning (sha256_hex, sha256_hex[:8]).
+
+    Accepts a path (str/Path) OR raw config bytes. The bytes form lets a caller
+    hash the exact snapshot it will run from, so the stamp certifies what
+    actually ran rather than a separate disk read a mid-run rewrite could desync
+    (CUL-165 / GH#79). Either source is json.loads-ed and canonicalized with the
+    same sort_keys/compact formula as the engine manifest
+    (reporting/run_artifact.py) -- the digest is byte-identical across sources.
+    """
+    if isinstance(config_source, (bytes, bytearray)):
+        cfg = json.loads(config_source)
+    else:
+        with open(config_source, encoding="utf-8") as f:
+            cfg = json.load(f)
     canonical = json.dumps(cfg, sort_keys=True, separators=(",", ":"))
     digest = sha256(canonical.encode()).hexdigest()
     return digest, digest[:8]
@@ -1196,14 +1208,18 @@ def run_prescreen(
     Signal layer only — no portfolio simulation, no full backtest invocation.
     Computes ic_all_bars and ic_active_bars separately per A8.3.
     """
-    with open(config_path, encoding="utf-8") as f:
-        config_raw = json.load(f)
+    # CUL-165 / GH#79: read the config bytes once; hash those same bytes and run
+    # signal extraction from an immutable snapshot of them (written below, once
+    # out_dir exists) so config_sha8 certifies the exact config _extract_forecasts
+    # parses -- a mid-sweep rewrite can no longer desync the stamp from what ran.
+    config_bytes = Path(config_path).read_bytes()
+    config_raw = json.loads(config_bytes)
     with open(protocol_path, encoding="utf-8") as f:
         protocol = json.load(f)
 
     aux_feeds      = config_raw.get("aux_feeds", [])
     cost_model     = _load_cost_model()
-    config_sha256, config_sha8 = _config_sha(config_path)
+    config_sha256, config_sha8 = _config_sha(config_bytes)
 
     symbols   = protocol["symbols"]
     windows   = protocol["windows"]
@@ -1219,6 +1235,19 @@ def run_prescreen(
     if out_dir is None:
         out_dir = Path(_SR) / "results" / "prescreens"
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # CUL-165 / GH#79: immutable run-private snapshot of the config bytes hashed
+    # above; _extract_forecasts reads THIS instead of config_path, so stamp and
+    # signal extraction derive from the same frozen bytes. Written atomically
+    # (temp + os.replace) so a concurrent reader never sees a partial file. The
+    # no-desync guarantee is scoped to a per-run out_dir (the pipeline always
+    # passes one); two concurrent prescreens sharing the default results/prescreens
+    # dir could clobber this file, a pre-existing concurrency caveat identical to
+    # the one on prescreen_result.yaml below.
+    config_snapshot_path = str(out_dir / "config.snapshot.json")
+    _snap_tmp = out_dir / "config.snapshot.json.tmp"
+    _snap_tmp.write_bytes(config_bytes)
+    os.replace(_snap_tmp, config_snapshot_path)
 
     # Collect per-symbol results over the full range
     all_records_by_symbol: dict = {}
@@ -1264,7 +1293,7 @@ def run_prescreen(
         expected_step = pd.Timedelta(seconds=timeframe_seconds(timeframe))
         expected_step_by_symbol[symbol] = expected_step
         records, error_count, error_samples, gap_skipped = _extract_forecasts(
-            config_path, bars_df, expected_step=expected_step
+            config_snapshot_path, bars_df, expected_step=expected_step
         )
         total_gap_skipped += gap_skipped
         # D5 (red-team): the numerator is gated by is_ready(), so the denominator
