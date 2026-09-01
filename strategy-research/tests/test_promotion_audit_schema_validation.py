@@ -156,6 +156,25 @@ def test_pipeline_zero_variance_validates_clean(tmp_path, monkeypatch):
     assert audit["passes_deflated_threshold"] is False
 
 
+def test_pipeline_too_few_real_sharpes_validates_clean(tmp_path, monkeypatch):
+    """Third non-sparse degenerate branch (run_phase1_research.py n_trials < 2): N is
+    honest (>= 2 deduped trials) but fewer than 2 produced a real Sharpe value, so the
+    trial variance is unmeasurable. Distinct from the n_dsr_total < 2 branch. One real
+    Sharpe + one expectancy trial -> n_dsr_total=2, n_trials=1. Pinned to passes=False
+    with its own value-assert so a regression isolated to THIS branch is caught here,
+    not at the holdout gate (the other two backstops do not exercise it)."""
+    trials = [
+        {"trial_id": "a", "forecast_hash": "h1", "statistic_valid": "sharpe", "sharpe": 0.5},
+        {"trial_id": "b", "forecast_hash": "h2", "statistic_valid": "expectancy", "sharpe": None},
+    ]
+    audit = _run_pipeline_audit(tmp_path, monkeypatch, trials, _HAPPY_PROTOCOL)
+    _validate(audit)
+    assert audit["is_sparse_trading"] is False
+    # "real Sharpe" is the distinctive text of the n_trials < 2 branch (not n_dsr_total < 2).
+    assert "real Sharpe" in audit["dsr_error"]
+    assert audit["passes_deflated_threshold"] is False
+
+
 def test_library_sparse_path_unmeasurable_emits_null_validates_clean():
     # >=1 trial: total_hypotheses_tested==0 hits a pre-existing bonferroni_note
     # f-string bug ('N/A':.2f) unrelated to CUL-14 — out of scope here.
@@ -195,6 +214,9 @@ def test_library_insufficient_trials_validates_clean_with_dsr_error():
     _validate(audit)
     # Q4: the library path now carries dsr_error parity with the pipeline path.
     assert "dsr_error" in audit
+    # CUL-163 symmetry with the pipeline degenerate backstops: the non-sparse
+    # library degenerate paths return False, not None.
+    assert audit["passes_deflated_threshold"] is False
 
 
 def test_library_zero_variance_validates_clean_with_dsr_error():
@@ -205,6 +227,8 @@ def test_library_zero_variance_validates_clean_with_dsr_error():
     audit = ds.compute_promotion_audit("H", 1.0, {"trial_sharpes": trials})
     _validate(audit)
     assert "dsr_error" in audit
+    # CUL-163 symmetry (see test_library_insufficient_trials_validates_clean_with_dsr_error).
+    assert audit["passes_deflated_threshold"] is False
 
 
 # ---------------------------------------------------------------------------
