@@ -1,8 +1,8 @@
 # E-026 — Cross-sectional strategies: two engines, one decision
 
-**State:** new
+**State:** parked — direction decided (fold in), timing deferred
 **Owner:** Jeremy (joint with Dorian)
-**Updated:** 2026-08-19
+**Updated:** 2026-09-02
 
 ## Why
 
@@ -48,11 +48,55 @@ panel has no path to the production engine, and therefore no path to live —
 which collides with E-011/E-023 the moment a cross-sectional candidate looks
 promotable.
 
+## DECISION (Jérémy, 2026-09-01): fold it in — but later
+
+**The question was: keep two engines, or fold panel capability into the
+production one? The answer is fold in.**
+
+> *"I would challenge the fact it is for 'research-only', and this chapter could
+> be opened as a bot enhancement, but later."*
+
+So the "keep two" horn is **rejected as a permanent answer.** `panel_backtester.py`
+being research-only is acceptable as a *current state*, not as a destination.
+Multi-coin capability is a **bot enhancement** and eventually belongs in the
+engine that can trade it — otherwise a validated panel result has no path to
+live, which was always this epic's real cost.
+
+**But not now, and the reason generalises.** Same test Jérémy applied to
+[E-044](../E-044/EPIC.md): does this make an unprofitable strategy profitable,
+or does it make a profitable one better? It is the second. The current objective
+is finding one profitable strategy at all, and this competes with that rather
+than serving it.
+
+**Supporting evidence, 2026-09-01:** Dorian's H003 (slow diversified trend over
+the 19-pair Kraken universe) was **killed at train** — pre-registered era
+stability was already unpassable (+0.60 / −0.05 / −0.85 across eras). The
+sharpest finding: as the admitted universe grew (10 → 16 → 17 names) the edge
+*collapsed* — breadth was inversely related to the edge, the opposite of the
+hypothesis, consistent with the alts trading like levered BTC (19 names ≈ 2–4
+effective). His read: *"engine-side multi-symbol breadth for 1d TS-trend isn't
+worth building for this signal shape."* So the cheap panel-side screen has
+already run and returned "no rush" — which is why deferring costs nothing today.
+
+**What this changes:** S1 is no longer a decision-gathering exercise (the
+decision is made). It becomes the characterization needed *when the work is
+unparked*.
+
+**Unpark trigger:** a cross-sectional candidate looks promotable, OR a strategy
+clears the full bar and the missing promotion path becomes a real blocker rather
+than a hypothetical one.
+
+**Not to be confused with [E-044](../E-044/EPIC.md).** This epic is about a
+strategy whose *signal* is computed across many coins at once. E-044 is about
+combining several already-decided strategies into one shared risk budget. Both
+were parked on the same reasoning on the same day, which makes conflating them
+easy — they are different capabilities and neither depends on the other.
+
 ## Done when
 
-Not yet written — this epic opens on a decision, not an implementation. S1
-produces the evidence; the decision follows; only then does a Done-when make
-sense. Recording it early would presume the answer.
+Not yet written — the direction is decided (fold in), the timing is parked. A
+Done-when is written when the epic is unparked, against the state of the engine
+at that time rather than today's.
 
 ## Stories
 
