@@ -1,8 +1,22 @@
 import argparse
+import contextlib
 import shutil
 import yaml
 import sys
 from pathlib import Path
+
+
+# CUL-12: the emoji status prints below crash on a Windows cp1252 console
+# (UnicodeEncodeError) the moment stdout is redirected/piped/logged — exactly an
+# unattended campaign run. Degrade unencodable glyphs to '?' rather than raising.
+# Guarded: pytest's captured stdout has no .reconfigure, and a stream may reject
+# it (OSError) — never crash a context the raw prints already survived. getattr
+# because typeshed types sys.stdout as TextIO, which does not declare reconfigure
+# (present on the real TextIOWrapper since 3.7).
+_reconfigure = getattr(sys.stdout, "reconfigure", None)
+if _reconfigure is not None:
+    with contextlib.suppress(OSError):
+        _reconfigure(errors="replace")
 
 
 ROOT = Path(__file__).parent.parent
