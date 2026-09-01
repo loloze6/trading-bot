@@ -114,3 +114,48 @@ back into the expanded card, and nothing checks that it did.
   check's position, and whether `component_gap` should ever fire given that the
   refinement planner is supposed to settle feasibility. Verifying the second
   found that the planner is never asked, and that the router defaults open.
+
+---
+
+## Decision (Jérémy, 2026-09-01): one flat declaration, checked once
+
+> *"it could be a flat file with venue, fees, data available declared. even how
+> to retrieve them... it does not change the fact that making it an element
+> checked every run and leading to a complex routing and flag sound
+> overengineering."*
+
+**The current design's complexity is a consequence of the check being late, not
+a separate problem.** Because tradability is tested at stage 13, the answer must
+be carried all the way there — hence the `research_only` flag threading through
+the run and the routing branch at the end. **Move the check to registration and
+the flag and the branch cease to have a purpose.** They are not two things to
+simplify; the flag exists only to serve the late check.
+
+**Target shape:**
+
+- **One flat file per venue** — tradable products, fees, what data exists, and
+  how to retrieve it. `config/venue_tradability.yaml` is already half of this;
+  the fees-and-data half belongs to [E-014](../E-014/EPIC.md) and should be
+  built as one file, not two.
+- **Checked once, at brief registration.** Not tradable, or missing fees, or
+  missing data → **refuse the brief there**, naming the reason.
+- **No `research_only` flag threaded through the run. No late routing branch.**
+
+**One correction that must survive the simplification:** *"venue declared =
+legally tradeable"* is not safe, and the flat file is exactly what makes it
+safe. Kraken margin is recorded `unconfirmed` and is treated as **not** tradable
+("unconfirmed is not yes"). The brief names the venue; **the file decides.**
+Verified 2026-09-01: `workflow/run_campaign.py:285` already derives this at
+registration and already fails closed — **the information is present at the
+right moment today; only the refusal is missing.** That is how small this
+change actually is.
+
+**Scope shrinks accordingly.** The implementation-feasibility half of this epic
+was already decided in [E-033](../E-033/EPIC.md) D4 (feasibility belongs to
+`refinement_planner`; the router defaults closed) — it is not re-litigated here.
+What remains: move the check, delete the flag, and extend the flat file with
+fees and data availability jointly with E-014.
+
+**Open, for Jérémy:** with feasibility owned by E-033 and the fees/data file
+owned by E-014, what remains here is a single small change. **Worth asking
+whether this stays its own epic or folds into E-014.**

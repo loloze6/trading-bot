@@ -113,3 +113,43 @@ already own the question — see [E037-43](../E-037/FINDINGS.md#e037-43)).
   swept during E-037, engine flags never had, and `model_funding` surfaced by
   accident while answering Jérémy's question about the funding epic. The sweep
   then found `bar_equity` and made it a class.
+
+---
+
+## Decision (Jérémy, 2026-09-01): switch them on
+
+> *"then lets turn it on. i do not see reasons to be extra careful. we would
+> develop and continue developing new features. if we spend time and time being
+> cautious about activating a feature we would not progress."*
+
+**Recorded as a standing principle, not a one-off call: the default for a
+finished, tested feature is ON. Staying off is the exception and needs a stated
+reason.** The off-by-default rule protects the moment a feature *lands* — it was
+never meant to be where features permanently live. An off flag with no
+switch-on plan is an abandoned feature with a test suite.
+
+**The "it invalidates baselines" objection is weak here and must not be used to
+delay.** Zero strategies have ever been promoted, so the existing corpus is a
+pile of kills, not a baseline worth protecting. The one discipline worth
+keeping costs nothing: **turn them on one at a time**, so a behaviour change
+stays attributable to a specific flag.
+
+**Verified 2026-09-01, answering "was there a reason each was switched off?" —
+no.** Every commit message and config comment says only "off by default" and
+cites its epic; **not one states a condition for turning on.** There is no
+per-flag rationale to recover. The blanket ship-off-by-default rule is the
+entire explanation, which is precisely this epic's finding.
+
+**Two exceptions, both with reasons:**
+
+- **`model_funding` — STAYS OFF.** Jérémy: *"a partially working feature
+  (funding) is a delayed bomb until a bug is found."* It raises on anything
+  below daily bars, so it is not a finished feature and the principle above
+  does not apply to it. Unblocking it belongs to [E-014](../E-014/EPIC.md).
+  **This is the shape of a legitimate exception: not "we are being careful",
+  but "the feature is incomplete."**
+- **`variant_selection_record`** — tied to [E-033](../E-033/EPIC.md) D1's
+  variant-count work, but Jérémy's call is that this does **not** block turning
+  it on now.
+
+So: **7 of 8 on, `model_funding` off until E-014 finishes it.**
