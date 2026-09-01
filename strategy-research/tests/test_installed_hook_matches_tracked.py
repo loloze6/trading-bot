@@ -21,13 +21,24 @@ hard.
 
 SCOPING
 -------
-Skips where there is no `.git/hooks/` (CI checkouts, worktrees, archives) rather
-than failing — an uninstallable hook is not a defect in those contexts. That
-means CI cannot enforce this: it is a developer-machine check, which is exactly
-where the drift happens.
+Skips where there is no `.git/hooks/` (worktrees, archives) rather than
+failing — an uninstallable hook is not a defect in those contexts. It also
+skips under CI (`CI` env var): a CI checkout via `actions/checkout` creates a
+real `.git/` directory with no hooks installed, which is not drift, just how
+CI checkouts work — the environment variable is the only reliable signal for
+that, since `.git` being a real directory does not distinguish a CI checkout
+from a developer's forgotten install. That means CI cannot enforce this: it is
+a developer-machine check, which is exactly where the drift happens.
+
+Measured 2026-08-31/2026-09-01: without the CI skip, this test failed on every
+run of `fast-tests` from the commit that introduced it onward
+(`test_installed_hook_matches_tracked.py:54`, "No pre-commit hook is
+installed") -- a false positive, not a real regression, since no CI checkout
+has ever had `.git/hooks/pre-commit` installed.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -50,6 +61,8 @@ def test_tracked_hook_exists() -> None:
 def test_installed_hook_matches_tracked() -> None:
     if not (_REPO / ".git").is_dir():
         pytest.skip("no .git directory (worktree, archive, or CI checkout)")
+    if os.environ.get("CI"):
+        pytest.skip("CI checkout: .git/hooks is never populated here, by design")
     if not INSTALLED.exists():
         pytest.fail(
             "No pre-commit hook is installed, so none of its gates run here -- "
