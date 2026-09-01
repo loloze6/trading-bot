@@ -44,8 +44,8 @@
     },
     "correction_method": {
       "type": "string",
-      "description": "Citation for the multiple-testing correction applied.",
-      "enum": ["bailey_lopezdeprado_2014"]
+      "description": "Multiple-testing correction applied. 'bailey_lopezdeprado_2014' on the Sharpe/DSR path; 'expectancy_t_stat_bonferroni' on the sparse/expectancy path, which uses a per-trade expectancy t-stat rather than the Bailey & Lopez de Prado DSR.",
+      "enum": ["bailey_lopezdeprado_2014", "expectancy_t_stat_bonferroni"]
     },
     "promotion_threshold_raw": {
       "type": ["number", "null"],
@@ -57,8 +57,8 @@
       "const": 0.95
     },
     "passes_deflated_threshold": {
-      "type": "boolean",
-      "description": "True if DSR > 0.95 (Sharpe path) or t_stat > 2.0 (sparse/expectancy path)."
+      "type": ["boolean", "null"],
+      "description": "True if DSR > 0.95 (Sharpe path) or t_stat > 2.0 (sparse/expectancy path); False if evaluated and did not pass. Null when the promotion decision is indeterminate — the sparse path when expectancy SE is unavailable, so t_stat cannot be computed. The holdout gate reads this with `is False`: null is not a terminal DSR reject, it falls through to the downstream gates."
     },
     "excluded_trial_counts": {
       "type": "object",
@@ -136,8 +136,8 @@
           "description": "t_stat = expectancy_bps / expectancy_se. Null when expectancy_se is unavailable or zero."
         },
         "passes": {
-          "type": "boolean",
-          "description": "True if t_stat > 2.0 (conservative practical threshold)."
+          "type": ["boolean", "null"],
+          "description": "True if t_stat > 2.0 (conservative practical threshold); False if below. Null when t_stat could not be computed (expectancy SE unavailable) — indeterminate, mirrors the top-level passes_deflated_threshold."
         },
         "bonferroni_note": {
           "type": "string",

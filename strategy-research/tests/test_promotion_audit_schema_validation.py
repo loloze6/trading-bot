@@ -106,25 +106,28 @@ def test_pipeline_promotion_threshold_raw_is_e_max_sr(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_pipeline_sparse_path_residual_drift_is_passes_deflated_null(tmp_path, monkeypatch):
-    """RESIDUAL (out of CUL-14 scope, surfaced by this validation work): the pipeline
-    sparse path writes passes_deflated_threshold=None (indeterminate — expectancy SE
-    not yet stored), which violates the schema's boolean type. The library sparse path
-    emits False for the same case, so this is also a pipeline-vs-library lockstep drift.
-    CUL-14's field-audit enumerated 5 undeclared fields + the promotion_threshold_raw
-    hardcode; passes_deflated_threshold nullability was NOT among them and reconciling
-    the two sparse paths (or making the field nullable) is a separate semantic decision.
-    Commit 3's warn-mode is exactly what surfaces this class of residual without halting
-    runs. This test pins the residual so a future reconciliation flips it deliberately."""
+def test_pipeline_sparse_path_passes_deflated_null_validates_clean(tmp_path, monkeypatch):
+    """CUL-163 (reconciles the CUL-14 residual): the pipeline sparse path writes
+    passes_deflated_threshold=None (indeterminate — expectancy SE not stored). The
+    holdout gate reads this with `is False` (run_phase1_research._route_holdout_evaluation),
+    so None is a DELIBERATE tri-state — it falls through rather than terminal-rejecting a
+    low-frequency candidate as "DSR too low". The schema now declares the field (and the
+    nested expectancy_promotion.passes) ["boolean","null"], so the honest None validates
+    CLEAN instead of false-positiving under WORKFLOW_ARTIFACT_VALIDATION=raise. The prior
+    version of this test pinned the pre-reconciliation drift (asserted ValidationError);
+    that reconciliation is this ticket."""
     trials = [{"trial_id": "e", "forecast_hash": "he", "statistic_valid": "expectancy", "sharpe": None, "n_trades": 10}]
     protocol = {"per_symbol_summary": {}, "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 60.0}}}
     audit = _run_pipeline_audit(tmp_path, monkeypatch, trials, protocol)
     assert audit["is_sparse_trading"] is True
     assert audit["promotion_threshold_raw"] is None
-    assert audit["passes_deflated_threshold"] is None  # the residual
-    with pytest.raises(jsonschema.ValidationError) as exc:
-        _validate(audit)
-    assert "passes_deflated_threshold" in str(exc.value)
+    assert audit["passes_deflated_threshold"] is None
+    assert audit["expectancy_promotion"]["passes"] is None
+    # CUL-163 widened to the whole sparse audit: correction_method is the honest
+    # expectancy label (not BLP), now permitted by the enum. All three former sparse
+    # violations are gone, so the audit validates fully clean under raise-mode.
+    assert audit["correction_method"] == "expectancy_t_stat_bonferroni"
+    _validate(audit)  # must NOT raise — the sparse audit is now schema-valid
 
 
 def test_pipeline_insufficient_trials_validates_clean(tmp_path, monkeypatch):
@@ -133,6 +136,11 @@ def test_pipeline_insufficient_trials_validates_clean(tmp_path, monkeypatch):
     _validate(audit)
     assert "dsr_error" in audit
     assert audit["promotion_threshold_raw"] is None
+    # CUL-163 guard-loss mitigation: loosening the schema to ["boolean","null"] removes the
+    # only mechanical catch for an ACCIDENTAL non-sparse None — which the holdout gate reads
+    # as fall-through TOWARD the seal (the unsafe direction). Pin the non-sparse degenerate
+    # paths to False so a branch that regressed to None is caught here, not at the gate.
+    assert audit["passes_deflated_threshold"] is False
 
 
 def test_pipeline_zero_variance_validates_clean(tmp_path, monkeypatch):
@@ -144,15 +152,41 @@ def test_pipeline_zero_variance_validates_clean(tmp_path, monkeypatch):
     _validate(audit)
     assert "dsr_error" in audit
     assert audit["promotion_threshold_raw"] is None
+    # CUL-163 guard-loss mitigation (see test_pipeline_insufficient_trials_validates_clean).
+    assert audit["passes_deflated_threshold"] is False
 
 
-def test_library_sparse_path_validates_clean():
+def test_library_sparse_path_unmeasurable_emits_null_validates_clean():
     # >=1 trial: total_hypotheses_tested==0 hits a pre-existing bonferroni_note
     # f-string bug ('N/A':.2f) unrelated to CUL-14 — out of scope here.
+    # CUL-163: with no expectancy SE, t_stat is unmeasurable, so the library sparse path
+    # now emits None (was False) to match the pipeline's honest indeterminate. Both the
+    # top-level field and the nested expectancy_promotion.passes are None; validates clean.
     trials = [{"trial_id": "e", "statistic_valid": "expectancy", "sharpe": None}]
     audit = ds.compute_promotion_audit("H", None, {"trial_sharpes": trials})
     _validate(audit)
     assert audit["is_sparse_trading"] is True
+    assert audit["passes_deflated_threshold"] is None
+    assert audit["expectancy_promotion"]["passes"] is None
+
+
+def test_library_sparse_path_with_se_emits_real_bool():
+    """CUL-163: Option A preserves the library's real evaluation when expectancy SE IS
+    available — t_stat = expectancy_bps / expectancy_se; > 2.0 -> True, else False, never
+    None. Proves the None-on-unmeasurable change did not collapse the measurable case."""
+    trials = [{"trial_id": "e", "statistic_valid": "expectancy", "sharpe": None}]
+    passing = ds.compute_promotion_audit(
+        "H", None, {"trial_sharpes": trials}, expectancy_bps=30.0, expectancy_se=10.0
+    )  # t_stat = 3.0 > 2.0
+    assert passing["passes_deflated_threshold"] is True
+    assert passing["expectancy_promotion"]["passes"] is True
+    _validate(passing)
+    failing = ds.compute_promotion_audit(
+        "H", None, {"trial_sharpes": trials}, expectancy_bps=10.0, expectancy_se=10.0
+    )  # t_stat = 1.0 < 2.0
+    assert failing["passes_deflated_threshold"] is False
+    assert failing["expectancy_promotion"]["passes"] is False
+    _validate(failing)
 
 
 def test_library_insufficient_trials_validates_clean_with_dsr_error():
@@ -171,3 +205,82 @@ def test_library_zero_variance_validates_clean_with_dsr_error():
     audit = ds.compute_promotion_audit("H", 1.0, {"trial_sharpes": trials})
     _validate(audit)
     assert "dsr_error" in audit
+
+
+# ---------------------------------------------------------------------------
+# Holdout-gate tri-state — locks the load-bearing reader semantic that makes
+# Option A safe. _route_holdout_evaluation reads passes_deflated_threshold with
+# `is False`, so None (indeterminate) must NOT terminal-reject at gate 1 while
+# False must. A future refactor to `if not passes` would collapse the tri-state
+# and reject sparse/indeterminate candidates in the unsafe direction (toward the
+# seal). These two tests bite that mutation.
+# ---------------------------------------------------------------------------
+
+
+def _seed_run_for_gate(tmp_path, passes_value, run_id="gate_run"):
+    """Seed a run dir the holdout gate can route: a promotion_audit carrying the
+    given passes value, a tradable brief (clears gate 2b), and an empty pipeline
+    state (clears the sticky-flag branch). No holdout_result -> a non-rejected run
+    lands on step 3's human_pause."""
+    run_dir = tmp_path / "runs" / run_id
+    (run_dir / "artifacts").mkdir(parents=True)
+    audit = {"hypothesis_id": run_id, "passes_deflated_threshold": passes_value}
+    (run_dir / "artifacts" / "promotion_audit.yaml").write_text(yaml.safe_dump(audit), encoding="utf-8")
+    (run_dir / "artifacts" / "research_brief.yaml").write_text(
+        yaml.safe_dump({"research_only": False}), encoding="utf-8"
+    )
+    (run_dir / "pipeline_state.yaml").write_text(yaml.safe_dump({}), encoding="utf-8")
+    return run_dir
+
+
+def test_holdout_gate_sparse_none_is_not_terminal_reject(tmp_path, monkeypatch):
+    monkeypatch.setattr(rpr, "_DATA_POLICY_PATH", tmp_path / "nonexistent_policy.yaml")
+    run_dir = _seed_run_for_gate(tmp_path, None)
+    result = rpr._route_holdout_evaluation(run_dir, "gate_run")
+    assert result != "completed_rejected"  # None falls through — not a DSR kill
+
+
+def test_holdout_gate_false_is_terminal_reject(tmp_path, monkeypatch):
+    # Positive control: proves gate 1 DOES terminal-reject a real False, which is
+    # what makes the None-falls-through assertion above meaningful.
+    monkeypatch.setattr(rpr, "_DATA_POLICY_PATH", tmp_path / "nonexistent_policy.yaml")
+    run_dir = _seed_run_for_gate(tmp_path, False)
+    result = rpr._route_holdout_evaluation(run_dir, "gate_run")
+    assert result == "completed_rejected"
+
+
+# ---------------------------------------------------------------------------
+# CUL-163 backstop (guard-loss, correction_method): widening the enum to two values
+# means a NON-sparse audit accidentally carrying the sparse "expectancy_t_stat_bonferroni"
+# label would now validate against the schema. test_each_path_is_internally_consistent
+# in test_correction_method_label_agrees.py counts only "bailey" labels, so a
+# non-sparse site regressed to the expectancy label slips past it. Pin the label to
+# is_sparse_trading BY VALUE on both writers so that regression is caught here.
+# Mutation-proof: emit the expectancy label on a non-sparse site -> these fail.
+# ---------------------------------------------------------------------------
+
+
+def test_pipeline_correction_method_agrees_with_is_sparse(tmp_path, monkeypatch):
+    sparse = _run_pipeline_audit(
+        tmp_path,
+        monkeypatch,
+        [{"trial_id": "e", "forecast_hash": "he", "statistic_valid": "expectancy", "sharpe": None, "n_trades": 10}],
+        {"per_symbol_summary": {}, "hypothesis_verdict": {"diagnostics": {"below_floor_pct": 60.0}}},
+        run_id="sp",
+    )
+    assert sparse["is_sparse_trading"] is True
+    assert sparse["correction_method"] == "expectancy_t_stat_bonferroni"
+    nonsparse = _run_pipeline_audit(tmp_path, monkeypatch, _HAPPY_TRIALS, _HAPPY_PROTOCOL, run_id="ns")
+    assert nonsparse["is_sparse_trading"] is False
+    assert nonsparse["correction_method"] == "bailey_lopezdeprado_2014"
+
+
+def test_library_correction_method_agrees_with_is_sparse():
+    sparse = ds.compute_promotion_audit(
+        "H", None, {"trial_sharpes": [{"trial_id": "e", "statistic_valid": "expectancy", "sharpe": None}]}
+    )
+    assert sparse["is_sparse_trading"] is True
+    assert sparse["correction_method"] == "expectancy_t_stat_bonferroni"
+    nonsparse = ds.compute_promotion_audit("H", 1.0, {"trial_sharpes": [dict(t) for t in _HAPPY_TRIALS]})
+    assert nonsparse["is_sparse_trading"] is False
+    assert nonsparse["correction_method"] == "bailey_lopezdeprado_2014"
