@@ -1,6 +1,6 @@
 # E-025 — Trial-Ledger Writer Contract
 
-**Status:** DRAFT for Jeremy's review (E-025, workflow-mitigation #2). Proposed home: `strategy-research/engineering/roadmap/E-025/WRITER_CONTRACT.md`.
+**Status:** APPROVED (E-025, workflow-mitigation #2) — reviewed and merged via PR #34, 2026-08-17 (`48e0b09d`). This file's header still read "DRAFT for Jeremy's review" two weeks after approval; flagged by Dorian 2026-09-01.
 **Rule this file establishes:** changing this contract is its own PR, announced, **before** any code that depends on the change — so the other writer never lands a conflicting edit to the same two files unseen. Additive > invasive.
 **Grounding:** pins what the code does today, verified by reading the source at merge tip `635afa36` (Jeremy's S1/S2 `cf7908bc` + the fork's H2/H4/S3, all ancestors). Not a new design — a written fixture of the current contract.
 

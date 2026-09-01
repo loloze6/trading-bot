@@ -108,8 +108,10 @@ in [E037-26](../E-037/FINDINGS.md#e037-26)'s neighbourhood.
 
 - Removing the prescreen's *IC computation*. It is a useful diagnostic and
   cheap; the question is only whether it may **terminate** a run.
-- The variant question — [E-038](../E-038/EPIC.md), though the two are the same
-  argument seen twice and must be sequenced together.
+- The variant question — [E-033](../E-033/EPIC.md)'s D1/D2 (E-038 was drafted for
+  this, then deleted as a duplicate once S1 was found to already cover it — see
+  [E037-43](../E-037/FINDINGS.md#e037-43)), though the two are the same argument
+  seen twice and must be sequenced together.
 
 ---
 
@@ -147,7 +149,7 @@ clean; if the former, one stage survives with a much narrower job.
 ## Risks
 
 - **Wall clock becomes the binding constraint**, especially combined with
-  [E-038](../E-038/EPIC.md)'s per-variant backtests. S1 must measure it.
+  [E-033](../E-033/EPIC.md) D1's per-variant backtests. S1 must measure it.
 - **Trial count rises** — every hypothesis now touches market data. That is
   more honest, and it raises the promotion bar. State it before, not after.
 - **Removing a gate is harder to reverse than adding one.** S1's re-scoring is
