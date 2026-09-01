@@ -1,8 +1,27 @@
 # E-043 — Refuse untradable or unimplementable briefs at registration
 
-**State:** new
+> ## ⚠️ FOLDED INTO [E-014](../E-014/EPIC.md) — 2026-09-02. Do not work this epic.
+>
+> Jérémy's call, after the 2026-09-01 decisions shrank its scope to one small
+> change plus two items already owned elsewhere:
+>
+> - **Tradability refusal at registration** → [E-014](../E-014/EPIC.md), section
+>   *"Folded in from E-043"*, Done-when 5 and S4. It belongs there because the
+>   per-venue file must carry tradability, fees, data and retrieval as **one
+>   file**, and the fees/data half is already E-014's Done-when 1.
+> - **Implementation feasibility** (`implementation_allowed` defaulting open)
+>   → already decided in [E-033](../E-033/EPIC.md) D4.
+> - **`refinement_notes.yaml` missing from the spec handoff**
+>   ([E037-40](../E-037/FINDINGS.md#e037-40)) → [E-033](../E-033/EPIC.md) D6,
+>   which is the same defect and states one change fixes both.
+>
+> The file is kept rather than deleted: per `PROCESS.md` amendment 2, epics do
+> not move or vanish, and the analysis below is the evidence behind E-014's S4.
+> **Everything below is retained for that evidence, not as live work.**
+
+**State:** folded into E-014 (closed)
 **Owner:** Jérémy
-**Updated:** 2026-08-31
+**Updated:** 2026-09-02
 
 ## Why
 
