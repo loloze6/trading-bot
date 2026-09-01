@@ -161,3 +161,47 @@ clean; if the former, one stage survives with a much narrower job.
   removal is his explicit call. `run_057` found while verifying the challenge:
   the pipeline has already overridden a prescreen kill once and learned more
   from the backtest than the kill could have told it.
+
+---
+
+## Decisions (Jérémy, 2026-09-01)
+
+**1. Success criteria are written together with the idea, not in a separate
+step.** The step that decides the hypothesis or variant also quantifies the
+thresholds it must clear. This answers the open `validation_gate` question
+above: no separate stage survives for it.
+
+**2. With a floor the author cannot lower.** If the agent that invents an idea
+also sets the bar that idea must clear, it will set a bar it can clear. So the
+kill-map minimums are non-negotiable and apply whatever a brief proposes: beats
+buy-and-hold and flat after costs; still positive at 1.5× and 2× costs;
+parameter neighbours (±25–50%) remain profitable; sign-consistent across eras;
+≥100 trades or ≥30 independent episodes. **A brief may set a HIGHER bar, never
+a lower one.**
+
+**3. The criteria are not limited to profitability.** Jérémy: *"the criteria
+approving a variant could be metrics unrelated to profitability (eg:
+correlation factor, variance of X, ...)."*
+
+Verified 2026-09-01: **`pass_rule` already supports this and real briefs
+already use it** — `max abs drawdown < 30%`, `zero_trade_slot_pct <= 40%`,
+per-episode expectancy, trade-count floors are all live examples. The format
+needs no change. What is missing is that some criteria worth using are not
+computed by anything yet — notably **correlation against existing strategies**,
+which only becomes meaningful once more than one strategy exists. That arrives
+with [E-044](../E-044/EPIC.md), and is the natural first customer for it.
+
+**4. Every pre-registered criterion is required — never any-of.** Recorded
+after a misreading: "extend to any kind of metrics" means the criteria MAY be
+non-profit metrics, NOT that passing any one of them suffices. A rule that
+passes on any-of gets EASIER the more criteria you add, which is backwards.
+
+**5. Looking at everything after the run stays unrestricted.** The
+pre-registered set binds the **promote/kill decision only**. The post-backtest
+analysis may and should examine every metric — finding behavioural facts is the
+point of running it. What it may not do is rescue a failed idea with a metric
+chosen after seeing it. Anything found that way becomes a **new idea, with its
+own pre-registered thresholds and its own trial count.**
+
+These two are not in tension, which is why they can both be true: one governs
+*deciding*, the other governs *learning*.
