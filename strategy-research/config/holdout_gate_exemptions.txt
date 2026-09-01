@@ -94,7 +94,9 @@ strategy-research/config/campaign_data_policy.yaml	17
 # This file stays COUNT-pinned on purpose and must never be marked PROSE: the file that
 # defines exemptions is the last place that should be able to hide content from the gate.
 # 2 -> 3 on 2026-08-18 (the PROSE-marker header added one more explanatory mention).
-strategy-research/config/holdout_gate_exemptions.txt	3
+# 3 -> 4 on 2026-09-01 (the test_read_path_seal_guard_ordering.py entry above quotes its
+# fixture dates verbatim in its own explanation -- one more mention).
+strategy-research/config/holdout_gate_exemptions.txt	4
 strategy-research/engineering/improvements/done/design_and_docs/STEP_05_FINDINGS.md	1
 strategy-research/engineering/improvements/done/design_and_docs/K4_routing_registration_design_20260712.md	4
 strategy-research/engineering/improvements/done/design_and_docs/p1b_fetch_manifest.md	6
@@ -398,3 +400,24 @@ strategy-research/runs/run_060/artifacts/validation_protocol.yaml	1
 #     -> 1 line
 #   NO MARKET DATA FROM THE SEALED WINDOW.
 trading-bot/tests/test_funding_window_bound.py	1
+
+# trading-bot/tests/test_read_path_seal_guard_ordering.py (2026-09-01, PR #74 /
+# upstream #49 / CUL-32)
+#   ONE line, in test_a_sealed_ohlcv_request_is_refused_before_any_aux_feed_loads:
+#   a fabricated request window ("2026-01-01", "2026-02-28") passed to
+#   BacktestEngine.load_data purely to trigger SealedDataError and observe that no
+#   aux feed loads before it. The dates are never fetched -- the recording data
+#   manager stub raises before touching disk. No market data from the sealed
+#   window is involved.
+#
+#   Same process gap as test_funding_window_bound.py above: this file arrived via
+#   a GitHub merge of PR #74 (64357c8b), which does not run
+#   .git/hooks/pre-commit, so the gate never saw it at commit time -- it then
+#   blocked the next local commit by an unrelated author (this one).
+#
+#   Verified before registering:
+#     sh strategy-research/tools/holdout_date_gate.sh --report-residual \
+#         | grep test_read_path_seal_guard_ordering
+#     -> 1 line
+#   NO MARKET DATA FROM THE SEALED WINDOW.
+trading-bot/tests/test_read_path_seal_guard_ordering.py	1
