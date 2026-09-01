@@ -26,6 +26,23 @@ Engine for backtesting trading strategies against historical data.
 """
 
 
+def _source_provenance_config(strategy, default_config_path):
+    """Source the config that drives run identity (dir-hash + manifest.config_sha256).
+
+    Prefer the dict the strategy parsed at construction (CUL-27: a mid-run rewrite of
+    the file must not change what run identity certifies); fall back to the disk read
+    by path for strategy-less engines (strategy=None, or a strategy without .config).
+    """
+    config = getattr(strategy, 'config', None)
+    if config is None:
+        config_path = getattr(strategy, '_config_path', None)
+        if config_path is None:
+            config_path = default_config_path
+        with open(config_path) as f:
+            config = json.load(f)
+    return config
+
+
 class FeedRequirementError(RuntimeError):
     """Raised by BacktestEngine.load_data when a strategy's required aux feed
     (AdvancedStrategy.required_feeds) is absent from extra_feeds at registration
@@ -377,14 +394,11 @@ class BacktestEngine:
             self.logger.warning("⚠ Could not find portfolio states! Make sure tracker.record_state() is running.")
 
         # === BUILD RUN ARTIFACT DIR ===
-        # Read config from the path the strategy actually loaded (may be a candidate config).
         _strategies_dir = os.path.dirname(os.path.abspath(__file__))
         _project_dir = os.path.dirname(_strategies_dir)
-        _config_path = getattr(self.strategy, '_config_path', None)
-        if _config_path is None:
-            _config_path = os.path.join(_project_dir, 'strategy_config.json')
-        with open(_config_path) as _f:
-            _strategy_config = json.load(_f)
+        _strategy_config = _source_provenance_config(
+            self.strategy, os.path.join(_project_dir, 'strategy_config.json')
+        )
 
         # fix/risk-layer, PR-1 (§5b): fold the effective portfolio_controls into the
         # config that drives run identity (dir hash + manifest.config + config_sha256)
