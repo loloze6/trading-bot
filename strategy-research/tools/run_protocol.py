@@ -37,9 +37,21 @@ _RESULTS_ROOT = os.path.join(_SR, "results")
 _SPARSE_TRADE_FLOOR = 5
 
 
-def _config_sha(config_path: str):
-    with open(config_path, encoding="utf-8") as f:
-        cfg = json.load(f)
+def _config_sha(config_source):
+    """Canonical config digest, returning (sha256_hex, sha256_hex[:8]).
+
+    Accepts a path (str/Path) OR raw config bytes. The bytes form lets a caller
+    hash the exact snapshot it will run from, so the stamp certifies what
+    actually ran rather than a separate disk read a mid-run rewrite could desync
+    (CUL-165 / GH#79). Either source is json.loads-ed and canonicalized with the
+    same sort_keys/compact formula as the engine manifest
+    (reporting/run_artifact.py) -- the digest is byte-identical across sources.
+    """
+    if isinstance(config_source, (bytes, bytearray)):
+        cfg = json.loads(config_source)
+    else:
+        with open(config_source, encoding="utf-8") as f:
+            cfg = json.load(f)
     canonical = json.dumps(cfg, sort_keys=True, separators=(",", ":"))
     digest = sha256(canonical.encode()).hexdigest()
     return digest, digest[:8]
@@ -1141,7 +1153,15 @@ def main():
     with open(args.protocol_path, encoding="utf-8") as f:
         protocol = json.load(f)
 
-    config_sha256, config_sha8 = _config_sha(args.config_path)
+    # CUL-165 / GH#79: read the config bytes once and hash those bytes, so the
+    # protocol-level stamp certifies the exact bytes every run_backtest() below
+    # parses. The run_id/out_dir are derived from the hash (before out_dir
+    # exists), so we hash the in-memory bytes here; the immutable snapshot is
+    # written into out_dir once it is created and its path replaces
+    # args.config_path at every run_backtest() call -- a mid-run rewrite of the
+    # original file can no longer desync certificate from what actually ran.
+    config_bytes = Path(args.config_path).read_bytes()
+    config_sha256, config_sha8 = _config_sha(config_bytes)
     symbols = protocol["symbols"]
     # Option Y (locked 2026-08-09, Ticket 13): --exchange -> protocol field ->
     # explicit "binance". Resolved with `is not None` rather than truthiness so
@@ -1192,6 +1212,12 @@ def main():
     out_dir = out_dir.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # CUL-165 / GH#79: immutable run-private snapshot of the config bytes hashed
+    # above. Every run_backtest() below reads THIS instead of args.config_path,
+    # so the stamp and the runs derive from the same frozen bytes.
+    config_snapshot_path = str(out_dir / "config.snapshot.json")
+    (out_dir / "config.snapshot.json").write_bytes(config_bytes)
+
     cost_model = _load_cost_model()
 
     # ------------------------------------------------------------------
@@ -1211,7 +1237,7 @@ def main():
             # loop's OWN start IS the holdout start, so its prefetch legitimately
             # reaches backward into pre-holdout training data for warmup only
             # (never scored) -- that's the intended, correct behavior.
-            rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
+            rd = run_backtest(config_snapshot_path, symbol, start, end, _RESULTS_ROOT,
                               runs_root=_runs_root, interval_seconds=interval_seconds,
                               warmup_prefetch=True,
                               commission_rate=_resolve_commission_rate(
@@ -1287,7 +1313,7 @@ def main():
                     f"bars. Fix the protocol's windows before proceeding."
                 )
             print(f"  {symbol}  window={label}  {start} to {end} ...")
-            rd = run_backtest(args.config_path, symbol, start, end, _RESULTS_ROOT,
+            rd = run_backtest(config_snapshot_path, symbol, start, end, _RESULTS_ROOT,
                               runs_root=_runs_root, interval_seconds=interval_seconds,
                               warmup_prefetch=True, holdout_start=_holdout_start,
                               commission_rate=_resolve_commission_rate(
