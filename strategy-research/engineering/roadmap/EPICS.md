@@ -42,6 +42,7 @@ epic".
 | [E-040](E-040/EPIC.md) | Merge the regime auditor into detector validation | new | S1 — every reader of `regime_audit_decision.yaml` and what each does when it is absent. The A2.2 retune firewall must survive the merge still raising |
 | [E-041](E-041/EPIC.md) | Every feature flag gets an owner and a switch-on criterion | new | S1 — for each of the 8 flags, all `False` with zero production use: who added it and whether its condition is now met |
 | [E-043](E-043/EPIC.md) | Refuse untradable or unimplementable briefs at registration | new | S1 — how many briefs an early gate would refuse (0 of 57 carry `research_only`); whether `component_gap` has ever fired |
+| [E-044](E-044/EPIC.md) | Trade a portfolio of strategies, not one strategy at a time | parked | Deliberately unscoped — increases profitability of an existing edge, cannot create one. Unpark once a strategy is promoted or in holdout. Distinct from E-026 (cross-sectional signal generation, not capital allocation across strategies) |
 
 ## Done
 
