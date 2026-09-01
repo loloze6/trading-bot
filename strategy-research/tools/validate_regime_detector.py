@@ -45,9 +45,13 @@ _REPO = os.path.dirname(_SR)
 _TBOT = os.path.join(_REPO, "trading-bot")
 if _TBOT not in sys.path:
     sys.path.insert(0, _TBOT)
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
 
 import pandas as pd
 import yaml
+
+from workflow_artifact_validation import validate_workflow_artifact  # noqa: E402  (CUL-11 sibling helper)
 
 from data.data_manager import DataManager
 from strategies.regime_engine import ConfigDrivenRegimeEngine
@@ -439,6 +443,7 @@ def main():
     report = validate(args.config, args.symbols, args.start, args.end)
 
     out_path = Path(args.out)
+    validate_workflow_artifact(out_path, report)  # CUL-11: opt-in schema check (warn-by-default)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         yaml.dump(report, f, allow_unicode=True, sort_keys=False, default_flow_style=False)

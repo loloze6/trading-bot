@@ -33,6 +33,10 @@ _HERE = os.path.dirname(os.path.abspath(__file__))   # strategy-research/tools/
 _SR   = os.path.dirname(_HERE)                        # strategy-research/
 _REPO = os.path.dirname(_SR)                          # repo root
 
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+from workflow_artifact_validation import validate_workflow_artifact  # noqa: E402  (CUL-11 sibling helper)
+
 # ---------------------------------------------------------------------------
 # Normal distribution helpers (stdlib only — no scipy)
 # ---------------------------------------------------------------------------
@@ -289,6 +293,9 @@ def load_sharpe_trials(campaign_state: dict) -> tuple[list[float], dict]:
 
     excluded_counts keys:
       - no_sharpe_value: statistic_valid=="sharpe" but sharpe field is None
+      - non_finite_sharpe: statistic_valid=="sharpe" but sharpe is NaN/inf (a
+        contract-legitimate merged row, e.g. a killed-run placeholder) — excluded
+        with a visible counter so a single NaN cannot silently corrupt mu_sr/sigma_sr/dsr
       - statistic_expectancy: statistic_valid=="expectancy"
       - statistic_neither: statistic_valid is something else / absent
     """
@@ -297,6 +304,7 @@ def load_sharpe_trials(campaign_state: dict) -> tuple[list[float], dict]:
     sharpe_values: list[float] = []
     excluded: dict[str, int] = {
         "no_sharpe_value":    0,
+        "non_finite_sharpe":  0,
         "statistic_expectancy": 0,
         "statistic_neither":  0,
     }
@@ -307,6 +315,8 @@ def load_sharpe_trials(campaign_state: dict) -> tuple[list[float], dict]:
             sr = rec.get("sharpe")
             if sr is None:
                 excluded["no_sharpe_value"] += 1
+            elif not math.isfinite(float(sr)):
+                excluded["non_finite_sharpe"] += 1
             else:
                 sharpe_values.append(float(sr))
         elif stat == "expectancy":
@@ -564,7 +574,7 @@ def compute_promotion_audit(
 
     passes = bool(dsr_value is not None and dsr_value > 0.95)
 
-    return {
+    audit = {
         "hypothesis_id":             hypothesis_id,
         "raw_median_sharpe":         raw_median_sharpe,
         "total_hypotheses_tested":   total_hypotheses_tested,
@@ -581,6 +591,15 @@ def compute_promotion_audit(
         "expectancy_promotion":      None,
         "generated_at":              datetime.now(timezone.utc).isoformat(),
     }
+    # dsr_error parity with run_phase1_research._write_promotion_audit: when
+    # compute_dsr could not compute the DSR (insufficient trials, too few real
+    # Sharpe values, or zero variance) it returns a diagnostic under "error".
+    # The pipeline path exposes that text as "dsr_error"; mirror it here so the
+    # two lockstep audits carry the same field. Present only when non-None,
+    # matching the pipeline (absent on the happy path).
+    if dsr_result.get("error") is not None:
+        audit["dsr_error"] = dsr_result["error"]
+    return audit
 
 
 # ---------------------------------------------------------------------------
@@ -593,6 +612,7 @@ def _load_yaml(path: Path) -> dict:
 
 
 def _write_yaml(path: Path, data: dict) -> None:
+    validate_workflow_artifact(path, data)  # CUL-11: opt-in schema check (warn-by-default)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)

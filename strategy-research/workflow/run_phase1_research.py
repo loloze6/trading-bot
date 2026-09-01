@@ -56,6 +56,20 @@ from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBl
 from google import genai
 from google.genai import types
 
+# CUL-11: opt-in workflow-artifact schema validation (warn-by-default, exception-proof).
+# Reuses the shared tools/ helper so save_yaml/load_yaml validate against
+# workflow_artifacts/schemas/{stem}.schema.json when one exists.
+_tools_dir = str(Path(__file__).resolve().parent.parent / "tools")
+if _tools_dir not in sys.path:
+    sys.path.insert(0, _tools_dir)
+try:
+    from workflow_artifact_validation import validate_workflow_artifact
+except Exception:  # helper unimportable -> validation is a no-op, never break the pipeline
+
+    def validate_workflow_artifact(path, data):  # type: ignore[misc]
+        return
+
+
 ROOT = Path(".")
 CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
 
@@ -406,13 +420,16 @@ def load_yaml(path: Path):
     # First pass: standard parse (handles well-formed YAML)
     try:
         docs = list(yaml.safe_load_all(content))
-        return docs[0] if docs else None
     except yaml.YAMLError:
-        pass
-    # Second pass: iterative repair (handles LLM colon/multi-doc errors)
-    repaired = _repair_yaml(content, source=Path(path).name)
-    docs = list(yaml.safe_load_all(repaired))
-    return docs[0] if docs else None
+        # Second pass: iterative repair (handles LLM colon/multi-doc errors)
+        repaired = _repair_yaml(content, source=Path(path).name)
+        docs = list(yaml.safe_load_all(repaired))
+    result = docs[0] if docs else None
+    # CUL-11: opt-in read-side schema check — catches drift in LLM-authored artifacts
+    # (which have no Python writer) when the orchestrator reads them back.
+    if result is not None:
+        validate_workflow_artifact(path, result)
+    return result
 
 def save_yaml(path: Path, data):
     """
@@ -424,6 +441,9 @@ def save_yaml(path: Path, data):
     readers always see either the old complete content or the new complete
     content, never a partial one.
     """
+    # CUL-11: opt-in write-side schema check. Warn-by-default (no-op if no schema for
+    # path.stem); under WORKFLOW_ARTIFACT_VALIDATION=raise a violation blocks the write.
+    validate_workflow_artifact(path, data)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
     try:
@@ -5202,6 +5222,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     # n_dsr_total, n_trials, or the DSR value -- only which diagnostic bucket a
     # non-sharpe row is reported under in excluded_trial_counts.
     excluded = {"statistic_expectancy": 0, "statistic_neither": 0, "no_sharpe_value": 0,
+                "non_finite_sharpe": 0,
                 "dedup_removed": n_dedup_removed, "invalidated_artifact": n_invalidated}
     sharpe_values = []
     for t in deduped_trials:
@@ -5210,6 +5231,14 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
             s = t.get("sharpe")
             if s is None:
                 excluded["no_sharpe_value"] += 1
+            elif not math.isfinite(float(s)):
+                # CUL-31: a NaN/inf sharpe (contract-legitimate merged row, e.g. a
+                # killed-run placeholder) must be excluded with a visible counter --
+                # a single non-finite value silently corrupts mu_sr/sigma_sr/dsr
+                # (NaN < 1e-10 is False, so the zero-variance guard does not catch it).
+                # Lockstep with deflate_sharpe.load_sharpe_trials. Does not shrink
+                # n_dsr_total (len(deduped_trials)): N stays honest.
+                excluded["non_finite_sharpe"] += 1
             else:
                 sharpe_values.append(float(s))
         elif sv == "expectancy":
@@ -5244,6 +5273,10 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     # --- Deflated Sharpe computation ---
     dsr_result: dict = {}
     passes_deflated = None
+    # promotion_threshold_raw is E_max_SR (raw Sharpe space); None outside the
+    # happy path, matching deflate_sharpe.compute_promotion_audit exactly. The
+    # Sharpe branch below reassigns this to the computed e_max_sr.
+    e_max_sr = None
 
     if is_sparse:
         # Sparse path: expectancy t-stat
@@ -5367,7 +5400,7 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
         "n_trials_used":              n_trials,
         "is_sparse_trading":          is_sparse,
         "passes_deflated_threshold":  passes_deflated,
-        "promotion_threshold_raw":    0.0,
+        "promotion_threshold_raw":    e_max_sr,
         "promotion_threshold_deflated": DSR_THRESHOLD,
         "excluded_trial_counts":      excluded,
         **dsr_result,

@@ -27,6 +27,10 @@ if _TBOT not in sys.path:
 
 from core.launcher import run_backtest, parse_interval_seconds
 
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+from workflow_artifact_validation import validate_workflow_artifact  # noqa: E402  (CUL-11 sibling helper)
+
 _RESULTS_ROOT = os.path.join(_SR, "results")
 
 # A3.4: windows with fewer than this many closed trades get null Sharpe in protocol_result
@@ -1223,6 +1227,7 @@ def main():
             "holdout_window":  {"start": start, "end": end},
             "results":         holdout_results,
         }
+        validate_workflow_artifact(out_dir / "holdout_result.json", payload)  # CUL-11: opt-in schema check
         (out_dir / "holdout_result.json").write_text(
             json.dumps(payload, indent=2, default=str), encoding="utf-8"
         )
@@ -1327,6 +1332,7 @@ def main():
             "trades":  all_trade_records,
             "summary": trade_diagnostics_summary,
         }
+        validate_workflow_artifact(out_dir / "trade_diagnostics.json", td_payload)  # CUL-11: opt-in schema check
         (out_dir / "trade_diagnostics.json").write_text(
             json.dumps(td_payload, indent=2, default=str), encoding="utf-8"
         )
