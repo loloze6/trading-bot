@@ -79,6 +79,7 @@ from data.data_manager import CandleBuilder
 # therefore already disagreeing with each other, despite the comments in both
 # files asserting they must be kept in sync -- a convention, not a mechanism.
 from timeframe import bars_per_day, timeframe_seconds  # noqa: E402  (sibling module in tools/)
+from workflow_artifact_validation import validate_workflow_artifact  # noqa: E402  (CUL-11 sibling helper)
 
 _BLOCK_SIZE_1H = 24  # regression anchor only: bars_per_day("1h") must equal this
 _BLOCK_SIZE_1D = 1   # regression anchor only: bars_per_day("1d") must equal this
@@ -1172,6 +1173,7 @@ def _resolve_ungated_escape(
     doc["prescreen_ic_active_bars"] = ic_active
     doc["prescreen_ic_all_bars_ci_95"] = [ci_lo, ci_hi]
 
+    validate_workflow_artifact(artifact_path, doc)  # CUL-11: opt-in schema check (warn-by-default)
     with open(artifact_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(doc, f, sort_keys=False, allow_unicode=True)
 
@@ -1590,6 +1592,7 @@ def run_prescreen(
 
     # Write prescreen_result.yaml
     out_path = out_dir / "prescreen_result.yaml"
+    validate_workflow_artifact(out_path, result)  # CUL-11: opt-in schema check (warn-by-default)
     with open(out_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(result, f, sort_keys=False, allow_unicode=True)
 
