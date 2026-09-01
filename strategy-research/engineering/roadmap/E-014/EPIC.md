@@ -80,6 +80,10 @@ sequence behind E-010 is OPEN and unresolved — not decided here.
    in scope here.
 4. For each of the 3 re-runs, the verdict movement attributable to fees alone
    (or, for the funding retest, fees+funding) is measured and recorded.
+5. **(folded in from E-043, 2026-09-02)** The per-venue declaration is ONE flat
+   file covering tradability, fees, what data exists and how to retrieve it —
+   and a brief naming a venue that is not tradable, or whose fees or data are
+   missing, is **refused at registration**, not at stage 13.
 
 ## Blocker found by E-037 (2026-08-31): funding is daily-bars-only
 
@@ -122,6 +126,64 @@ Recorded in E-037 as [E037-38](../E-037/FINDINGS.md#e037-38). A separate epic
 was drafted and **deleted** once this epic was found to own the question —
 see [E037-43](../E-037/FINDINGS.md#e037-43).
 
+## Folded in from E-043 (2026-09-02): refuse untradable briefs at registration
+
+E-043 was opened as its own epic, then folded here on Jérémy's call once its
+scope had shrunk to one small change plus two items already owned elsewhere.
+**E-043 is closed; this section is its surviving content.**
+
+### The decision (Jérémy, 2026-09-01)
+
+> *"it could be a flat file with venue, fees, data available declared. even how
+> to retrieve them... it does not change the fact that making it an element
+> checked every run and leading to a complex routing and flag sound
+> overengineering."*
+
+**The current complexity is a consequence of the check being late, not a
+separate problem.** Because tradability is tested at stage 13
+(`_route_holdout_evaluation`) — after generation, expansion, validation,
+specification, prescreen and a full walk-forward backtest — the answer has to be
+carried all the way there. Hence the `research_only` flag threading through the
+run and the routing branch at the end. **Move the check to registration and the
+flag and the branch have no purpose.** They are not two things to simplify; the
+flag exists only to serve the late check.
+
+### Target shape
+
+- **One flat file per venue** — tradable products, fees, what data exists, how
+  to retrieve it. `config/venue_tradability.yaml` is already half of this; the
+  fees-and-data half is *this epic's* Done-when 1. **Build it as one file, not
+  two** — that is the reason for the fold.
+- **Checked once, at brief registration.** Not tradable, or missing fees, or
+  missing data → refuse the brief there, naming the reason.
+- **No `research_only` flag threaded through the run; no late routing branch.**
+
+### Two corrections that must survive the simplification
+
+1. **"Venue declared = legally tradeable" is not safe** — and the flat file is
+   exactly what makes it safe. Kraken margin is recorded `unconfirmed` and is
+   treated as NOT tradable ("unconfirmed is not yes"). The brief names the
+   venue; **the file decides.**
+2. **Keep the stage-13 gate as the last line of defence before the single-use
+   holdout.** The early refusal and the late gate are not alternatives — looking
+   at the holdout is spending it, so the final check stays.
+
+Verified 2026-09-01: `workflow/run_campaign.py:285` already derives
+`research_only` at registration and already fails closed, so **the information
+is present at the right moment today; only the refusal is missing.** That is how
+small this change is — and why it did not warrant its own epic.
+
+### What did NOT come here, and where it went
+
+- **Implementation feasibility** (`implementation_allowed` defaulting to `True`
+  on a key nobody is asked to write) — decided in [E-033](../E-033/EPIC.md) D4:
+  feasibility belongs to `refinement_planner`, the skill must be instructed to
+  produce the key, and the router defaults closed. Not re-litigated here.
+- **`refinement_notes.yaml` missing from the `backtest_specification` handoff**
+  ([E037-40](../E-037/FINDINGS.md#e037-40)) — belongs with
+  [E-033](../E-033/EPIC.md) D6, which is the same defect (a stage that cannot
+  see what an earlier stage decided) and which states one change fixes both.
+
 ## Stories
 
 - [ ] S1 — Turn the venue fee schedule into a real parameter (not a
@@ -133,6 +195,10 @@ see [E037-43](../E-037/FINDINGS.md#e037-43).
       Dispatch M).
 - [ ] S3 — Build and run the funding-costed retest (the perp `funding` block
       is currently off-by-default and unexercised); record its verdict delta.
+- [ ] S4 — **(folded in from E-043)** Extend the per-venue file with fees, data
+      availability and retrieval, and refuse an untradable/unpriceable brief at
+      registration. Delete the `research_only` flag and the stage-13 routing
+      branch it exists to serve; keep the holdout-side gate.
 
 ## Log
 
