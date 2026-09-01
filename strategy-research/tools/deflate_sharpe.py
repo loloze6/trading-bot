@@ -522,7 +522,12 @@ def compute_promotion_audit(
         if expectancy_bps is not None and expectancy_se is not None and expectancy_se > 0:
             t_stat = expectancy_bps / expectancy_se
 
-        passes_expectancy = bool(t_stat is not None and t_stat > 2.0)
+        # CUL-163: None (not False) when t_stat is unmeasurable (expectancy SE
+        # unavailable), matching the pipeline's honest indeterminate. The holdout gate
+        # reads passes with `is False`, so collapsing indeterminate to False would
+        # terminal-reject a candidate that was never actually evaluated. A real bool
+        # is still returned whenever the t-stat could be computed.
+        passes_expectancy = None if t_stat is None else (t_stat > 2.0)
 
         expectancy_promotion = {
             "t_stat":          t_stat,
@@ -540,7 +545,12 @@ def compute_promotion_audit(
             "total_hypotheses_tested":   total_hypotheses_tested,
             "trial_sharpe_variance":     trial_sharpe_variance,
             "deflated_sharpe_ratio":     None,
-            "correction_method":         "bailey_lopezdeprado_2014",
+            # CUL-163: the sparse path uses a per-trade expectancy t-stat, not the
+            # Bailey & Lopez de Prado DSR -- this label was a genuine mislabel. Aligns
+            # with the pipeline's honest label (run_phase1_research.py:5295) so both
+            # writers lockstep, and the sparse audit validates against the (now
+            # two-value) correction_method enum.
+            "correction_method":         "expectancy_t_stat_bonferroni",
             "promotion_threshold_raw":   None,
             "promotion_threshold_deflated": 0.95,
             "passes_deflated_threshold": passes_expectancy,
