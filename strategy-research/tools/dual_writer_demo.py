@@ -77,7 +77,10 @@ def proof_fixtures_are_synthetic(master: dict, fork: dict) -> dict:
 
 def proof_forecast_hash_contract(fork: dict) -> dict:
     """forecast_hash mandatory on every new row EXCEPT backtest_failed (WRITER_CONTRACT
-    rule 1) -- the one path where null is legal, the config itself may be the failure."""
+    rule 1) -- the one path where null is legal, the config itself may be the failure.
+
+    Fixture-shape assertion only: write-side enforcement lives in
+    run_phase1_research.py (_compute_forecast_hash, fail-loud) and is not exercised here."""
     null_fh = [(r["trial_id"], r["source"]) for r in _rows(fork) if r.get("forecast_hash") is None]
     illegal = [(t, s) for (t, s) in null_fh if s != "backtest_failed"]
     passed = null_fh == [("run_d_902", "backtest_failed")] and not illegal
@@ -183,7 +186,6 @@ def proof_killed_row_counts_toward_N(merged: list[dict]) -> dict:
         "name": "killed prescreen row lands in merged view AND counts toward N",
         "passed": all(ok for _, ok in checks),
         "detail": f"N_merged={n_with}, N_without_killed={n_without}, sharpe_sample={sorted(sharpe_values)}",
-        "n_merged": n_with,
     }
 
 
@@ -281,9 +283,7 @@ def run_demo() -> list[dict]:
     results.append(union)
     results.append(proof_append_only_and_idempotent(master, fork, merged))
     results.append(proof_duplicate_refusal(master, fork))
-    kill = proof_killed_row_counts_toward_N(merged)
-    kill.pop("n_merged", None)
-    results.append(kill)
+    results.append(proof_killed_row_counts_toward_N(merged))
     results.append(proof_no_dsr_until_merged(master, fork, merged))
     return results
 
