@@ -1,0 +1,54 @@
+# E-025 S4 two-sided demo -- MASTER (Jeremy) writer fixture.
+#
+# SYNTHETIC. Never feeds DSR, never touches market data, never merges into the
+# live campaign_record/campaign_state.yaml. Exists only so dual_writer_demo.py
+# can exercise the dual-writer writer contract end to end on a hermetic sandbox.
+#
+# Ids use the real disjoint convention (master = run_NNN) but a 900-range far
+# above the live ledger (live is through the 060s) so a stray copy can never
+# collide with a real trial. `synthetic: true` and campaign_id `e025_s4_demo`
+# are asserted by the driver before anything runs.
+#
+# This is the `a` (authoritative) side of union_merge_trial_ledgers.
+# run_900 rows are the shared ancestor both writers hold after their last sync.
+synthetic: true
+campaign_id: e025_s4_demo
+research_question: 'Synthetic two-writer demo for E-025 S4. Proves the writer
+  contract (disjoint ids, union merge, killed/failed accounting, no-DSR-until-merged)
+  on fabricated rows. No market data.'
+status: demo_closed
+updated_at: '2026-08-20T09:00:00.000000+00:00'
+runs:
+- run_900
+- run_901
+trial_sharpes:
+- trial_id: run_900
+  source: prescreen
+  route: proceed_to_backtest
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  forecast_hash: demo_h900
+- trial_id: run_900
+  source: backtest
+  sharpe: -0.6375
+  expectancy_bps: null
+  n_trades: 118
+  statistic_valid: sharpe
+  forecast_hash: demo_h900
+- trial_id: run_901
+  source: prescreen
+  route: proceed_to_backtest
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: neither
+  forecast_hash: demo_h901
+- trial_id: run_901
+  source: backtest
+  sharpe: 0.30
+  expectancy_bps: null
+  n_trades: 92
+  statistic_valid: sharpe
+  forecast_hash: demo_h901
