@@ -31,6 +31,8 @@ class AdvancedStrategy(MainStrategy):
                 logger.error(e)
             raise ValueError("invalid strategy_config")
 
+        self.config = config
+
         self.regime_engine   = ConfigDrivenRegimeEngine(config["regime_detector"])
         self.strategy_engine = ConfigDrivenStrategyEngine(config["strategies"])
 
