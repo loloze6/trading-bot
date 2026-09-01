@@ -421,18 +421,33 @@ class BacktestEngine:
         # Fail-loud collision guard: the strategy config carries no risk_management key
         # today, but a silent {**a, "risk_management": b} would MASK a real difference
         # in run identity if that ever changed -- exactly the defect this fold closes.
+        _provenance_config = _strategy_config
+
         if self.risk_gate is not None:
-            if "risk_management" in _strategy_config:
+            if "risk_management" in _provenance_config:
                 raise ValueError(
                     "strategy config already carries a risk_management key; provenance "
                     "fold would silently overwrite it -- resolve the collision explicitly"
                 )
             _provenance_config = {
-                **_strategy_config,
+                **_provenance_config,
                 "risk_management": {"portfolio_controls": self.risk_gate.config},
             }
-        else:
-            _provenance_config = _strategy_config
+
+        # #54: model_funding was the ORIGINAL instance of this defect class. Two runs
+        # differing only by this flag shared config_sha256, data_sha256 AND git SHA
+        # while returning 41.125% vs 40.334% -- the manifest could not tell them
+        # apart, and "comparing runs without config+data hashes" is on the fork's
+        # explicit refuse list. Same fold, same fail-loud collision guard as the risk
+        # gate above; OFF (the default) leaves _provenance_config as _strategy_config
+        # itself, so the hash and manifest stay byte-identical.
+        if self.model_funding:
+            if "model_funding" in _provenance_config:
+                raise ValueError(
+                    "strategy config already carries a model_funding key; provenance "
+                    "fold would silently overwrite it -- resolve the collision explicitly"
+                )
+            _provenance_config = {**_provenance_config, "model_funding": True}
 
         results_root = (
             tracker.output_dir if tracker else os.path.join(_project_dir, "results")
