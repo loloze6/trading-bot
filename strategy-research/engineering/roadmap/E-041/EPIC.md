@@ -58,7 +58,9 @@ the bar-level block has never been produced. The gap is not large here, but
 is, which is why it was built.
 
 For `model_funding` it is worse: not merely off, but unavailable below daily
-bars. See [E-042](../E-042/EPIC.md).
+bars. See [E-014](../E-014/EPIC.md)'s "Blocker found by E-037" section (E-042
+was drafted for this, then deleted as a duplicate once E-014 was found to
+already own the question — see [E037-43](../E-037/FINDINGS.md#e037-43)).
 
 ---
 
@@ -78,8 +80,8 @@ bars. See [E-042](../E-042/EPIC.md).
 ### Out
 
 - Turning any specific flag on. That is each flag's own decision, and two of
-  them have epics — [E-038](../E-038/EPIC.md) for
-  `variant_selection_record`, [E-042](../E-042/EPIC.md) for `model_funding`.
+  them have owners elsewhere — [E-033](../E-033/EPIC.md) D1 for
+  `variant_selection_record`, [E-014](../E-014/EPIC.md) for `model_funding`.
 - Changing the off-by-default rule itself. It is correct.
 
 ---

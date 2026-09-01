@@ -35,10 +35,18 @@ run of `fast-tests` from the commit that introduced it onward
 (`test_installed_hook_matches_tracked.py:54`, "No pre-commit hook is
 installed") -- a false positive, not a real regression, since no CI checkout
 has ever had `.git/hooks/pre-commit` installed.
+
+Second false positive, found by Dorian 2026-09-01: a machine that installs
+hooks via `core.hooksPath` (his does) has the tracked hook installed and
+running green, but this test looked only at the hardcoded `.git/hooks/`
+path and reported it missing. Fixed by resolving the installed path through
+`git config --get core.hooksPath` when it is set, same as git itself does,
+instead of assuming the default location.
 """
 from __future__ import annotations
 
 import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -47,7 +55,29 @@ _SR = Path(__file__).resolve().parent.parent
 _REPO = _SR.parent
 
 TRACKED = _SR / "tools" / "hooks" / "pre-commit"
-INSTALLED = _REPO / ".git" / "hooks" / "pre-commit"
+
+
+def _installed_hooks_dir() -> Path:
+    """Where git actually looks for hooks on this machine.
+
+    `core.hooksPath` overrides the default `.git/hooks/` -- resolved the same
+    way git resolves it: relative to the repo root if not absolute.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "config", "--get", "core.hooksPath"],
+            cwd=_REPO, capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return _REPO / ".git" / "hooks"
+    configured = result.stdout.strip()
+    if result.returncode != 0 or not configured:
+        return _REPO / ".git" / "hooks"
+    path = Path(configured)
+    return path if path.is_absolute() else _REPO / path
+
+
+INSTALLED = _installed_hooks_dir() / "pre-commit"
 
 
 def test_tracked_hook_exists() -> None:
