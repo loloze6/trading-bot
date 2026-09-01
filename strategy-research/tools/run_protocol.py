@@ -1214,9 +1214,13 @@ def main():
 
     # CUL-165 / GH#79: immutable run-private snapshot of the config bytes hashed
     # above. Every run_backtest() below reads THIS instead of args.config_path,
-    # so the stamp and the runs derive from the same frozen bytes.
+    # so the stamp and the runs derive from the same frozen bytes. Written
+    # atomically (temp + os.replace) so a concurrent reader never sees a partial
+    # file; the no-desync guarantee holds within a per-run out_dir.
     config_snapshot_path = str(out_dir / "config.snapshot.json")
-    (out_dir / "config.snapshot.json").write_bytes(config_bytes)
+    _snap_tmp = out_dir / "config.snapshot.json.tmp"
+    _snap_tmp.write_bytes(config_bytes)
+    os.replace(_snap_tmp, config_snapshot_path)
 
     cost_model = _load_cost_model()
 

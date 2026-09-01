@@ -1238,9 +1238,16 @@ def run_prescreen(
 
     # CUL-165 / GH#79: immutable run-private snapshot of the config bytes hashed
     # above; _extract_forecasts reads THIS instead of config_path, so stamp and
-    # signal extraction derive from the same frozen bytes.
+    # signal extraction derive from the same frozen bytes. Written atomically
+    # (temp + os.replace) so a concurrent reader never sees a partial file. The
+    # no-desync guarantee is scoped to a per-run out_dir (the pipeline always
+    # passes one); two concurrent prescreens sharing the default results/prescreens
+    # dir could clobber this file, a pre-existing concurrency caveat identical to
+    # the one on prescreen_result.yaml below.
     config_snapshot_path = str(out_dir / "config.snapshot.json")
-    (out_dir / "config.snapshot.json").write_bytes(config_bytes)
+    _snap_tmp = out_dir / "config.snapshot.json.tmp"
+    _snap_tmp.write_bytes(config_bytes)
+    os.replace(_snap_tmp, config_snapshot_path)
 
     # Collect per-symbol results over the full range
     all_records_by_symbol: dict = {}
