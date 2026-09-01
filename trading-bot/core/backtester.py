@@ -167,7 +167,15 @@ class BacktestEngine:
         logger.debug("Backtest bot initialized")
 
 
-    def load_data(self, start_date='2025-01-01',end_date='2025-01-10', extra_feeds=None):
+    def load_data(self, start_date='2025-01-01',end_date='2025-01-10', extra_feeds=None,
+                  feed_local_storage: bool = True):
+        # feed_local_storage (default True — bit-identical: the historical
+        # write-through-on-read behaviour) controls the aux-feed caches. Pass
+        # False for a pure read: it threads localStorage=False into every aux-feed
+        # factory below, so a gapped aux-feed read cannot mutate a tracked cache
+        # (the same opt-out CUL-26 added for OHLCV, extended to the feed path —
+        # CUL-161). It does NOT gate the OHLCV fetch above, which carries its own
+        # localStorage knob on DataManager.fetch_historical_data.
         self.logger.debug("BT - Loading data...")
 
         if not self.historical_data:
@@ -200,10 +208,15 @@ class BacktestEngine:
             # window_seconds is looked up by name, not defaulted — a feed
             # missing from FEED_WINDOW_SECONDS is a KeyError here, not a
             # merge that silently trusts an undeclared window.
+            # localStorage is passed ONLY on the opt-out path so a factory
+            # predating the flag (the fixed (symbols, start, end, data_dir,
+            # exchange=...) contract in the aux-feed tests) is still called
+            # byte-identically on the default write-through path.
+            feed_opt_out = {} if feed_local_storage else {"localStorage": False}
             for feed_name, factory in (extra_feeds or {}).items():
                 self.data_manager.register_feed(
                     name           = feed_name,
-                    fetcher        = factory(self.symbols, start_date, end_date, data_dir = data_storage_dir, exchange = self.exchange),
+                    fetcher        = factory(self.symbols, start_date, end_date, data_dir = data_storage_dir, exchange = self.exchange, **feed_opt_out),
                     window_seconds = FEED_WINDOW_SECONDS[feed_name],
                     agg            = 'last',
                     required       = feed_name in required_feeds,
