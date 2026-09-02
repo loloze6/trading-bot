@@ -164,7 +164,10 @@ def sma_long_only_signal(closes: pd.Series, L: int = 100) -> pd.Series:
     aligned to each bar: position held during [close_T, close_{T+1}]."""
     sma = closes.rolling(L).mean()
     cond = closes > sma            # elementwise close_t > SMA_t
-    return cond.shift(1).fillna(False).astype(bool)  # signal at T uses T-1
+    # shift(fill_value=False) avoids fillna's object-dtype downcast path
+    # entirely (CUL-218) -- byte-identical to the old shift().fillna(False)
+    # but silences pandas' "Downcasting object dtype arrays" FutureWarning.
+    return cond.shift(1, fill_value=False).astype(bool)  # signal at T uses T-1
 
 
 def simulate_long_flat(df: pd.DataFrame, signal: pd.Series, score_mask: pd.Series,
