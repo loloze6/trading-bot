@@ -104,6 +104,54 @@ from _net_guard import install_network_block, register_network_marker
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _RESULTS_REL = "trading-bot/results"
 
+# --- CUL-221 local_data mutation guard ------------------------------------
+# Twin of the D4 guard, one directory over: no test may create or change a file
+# under trading-bot/local_data/. The failure it catches is a test that live-
+# fetches instead of skipping -- base_fetcher writes the fetched OHLCV/funding/
+# fear_greed CSV into local_data, silently, even under the socket block if the
+# cache is a wrong-window-but-non-degenerate stub that slips past requires_cache.
+# The @requires_cache byte-size floor cannot see window coverage; this session
+# snapshot closes that class. The sealed holdout subdir is NEVER enumerated or
+# opened (reading it spends it) -- it is skipped by name at the top level.
+_LOCAL_DATA_REL = "trading-bot/local_data"
+_HOLDOUT_DIRNAME = "holdout_sealed"
+_local_data_snapshot = None
+
+
+def _snapshot_local_data():
+    """Top-level {name: (size, mtime_ns)} of trading-bot/local_data/, with the
+    sealed holdout subdir EXCLUDED -- never descended, never opened. Returns None
+    if the dir can't be read (guard then no-ops rather than false-failing)."""
+    root = _REPO_ROOT / _LOCAL_DATA_REL
+    snap = {}
+    try:
+        for entry in root.iterdir():
+            if entry.name == _HOLDOUT_DIRNAME:
+                continue  # sealed store: never enumerate or open it
+            if entry.is_file():
+                st = entry.stat()
+                snap[entry.name] = (st.st_size, st.st_mtime_ns)
+    except OSError:
+        return None
+    return snap
+
+
+def _mutated_local_data_files():
+    """Files under trading-bot/local_data/ created or changed since session start
+    (top level, holdout excluded), or None if either snapshot was unavailable."""
+    before = _local_data_snapshot
+    after = _snapshot_local_data()
+    if before is None or after is None:
+        return None
+    changed = [f"CREATED {n}" for n in after if n not in before]
+    changed += [f"CHANGED {n}" for n, sig in after.items() if n in before and before[n] != sig]
+    return changed
+
+
+def pytest_sessionstart(session):
+    global _local_data_snapshot
+    _local_data_snapshot = _snapshot_local_data()
+
 
 def _mutated_tracked_results_files():
     """Return the list of tracked files under trading-bot/results/ that the
@@ -129,6 +177,15 @@ def pytest_sessionfinish(session, exitstatus):
             f"\nD4 REGRESSION: the test session mutated tracked file(s) under "
             f"{_RESULTS_REL}. Tests must write to tmp_path, never the shared "
             f"results dir. Offending entries:\n  " + "\n  ".join(dirty)
+        )
+    local_dirty = _mutated_local_data_files()
+    if local_dirty:
+        session.exitstatus = 1
+        print(
+            f"\nCUL-221 REGRESSION: the test session created/changed file(s) "
+            f"under {_LOCAL_DATA_REL} -- a test live-fetched real data instead of "
+            f"skipping. Tests must not write market-data caches. Offending "
+            f"entries:\n  " + "\n  ".join(local_dirty)
         )
 
 
