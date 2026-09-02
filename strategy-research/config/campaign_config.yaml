@@ -166,8 +166,15 @@ orchestrator:
       # engineering/roadmap/E-032/EPIC.md and
       # engineering/roadmap/E-032/artifacts/s1_idea_generation.md Task 3.
   stale_input_path_fix:
-    enabled: false
-      # E-032 S2b. OFF BY DEFAULT and read at runtime by
+    enabled: true
+      # E-032 S2b. SWITCHED ON 2026-09-02 (E-041, flag 3 of 7) -- DECLARED
+      # OUTPUT CHANGE: hypothesis_generation now receives real
+      # campaign_knowledge_base.yaml and feed_wishlist.yaml content for the
+      # first time in the pipeline's life (both files exist on disk; the
+      # paths were simply wrong since the 2026-08-06 restructure). E-041's
+      # decision (Jeremy, 2026-09-01): a finished, tested feature defaults
+      # ON, staying off needs a stated reason -- this one had none. Read at
+      # runtime by
       # run_phase1_research._stale_input_path_fix_enabled() -- same shape as
       # exclusion_digest_input.enabled just above (a fourth explicit exception
       # to this file's "declared parity only" rule). Repoints
