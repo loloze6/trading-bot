@@ -17,6 +17,8 @@ Groups:
 """
 
 import sys
+import typing
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -140,7 +142,7 @@ def test_ingest_roundtrip_integrity(tmp_path):
 
     # close_time = timestamp + (1h - 1ms).
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
-    assert (delta == pd.Timedelta(milliseconds=ing.TIMEFRAME_MS - 1)).all()
+    assert (delta == pd.Timedelta(ing.TIMEFRAME_MS - 1, unit="ms")).all()
 
 
 @pytest.mark.skipif(
@@ -154,7 +156,7 @@ def test_utc_roundtrip_guard_raises_on_shift():
     converted = ing.to_binance_schema(raw)
     # Corrupt the converted timestamps by a +1h shift -> guard must raise.
     bad = converted.copy()
-    bad["timestamp"] = bad["timestamp"] + pd.Timedelta(hours=1)
+    bad["timestamp"] = bad["timestamp"] + pd.Timedelta(1, unit="h")
     with pytest.raises(ing.IngestUTCError):
         ing.verify_utc_roundtrip(raw, bad)
 
@@ -448,7 +450,7 @@ def _shift_the_write(monkeypatch, hours: int = 1) -> None:
         if "timestamp" in getattr(self, "columns", []):
             shifted = self.copy()
             shifted["timestamp"] = (pd.to_datetime(shifted["timestamp"])
-                                    + pd.Timedelta(hours=hours))
+                                    + pd.Timedelta(hours, unit="h"))
             return original(shifted, *args, **kwargs)
         return original(self, *args, **kwargs)
 
@@ -520,7 +522,7 @@ def test_to_binance_schema_daily_close_time_geometry(tmp_path):
     raw = ing.load_kraken_ohlcv(src)
     got = ing.to_binance_schema(raw, 1440)
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
-    assert (delta == pd.Timedelta(milliseconds=86_399_999)).all()
+    assert (delta == pd.Timedelta(86_399_999, unit="ms")).all()
 
 
 def test_to_binance_schema_default_resolution_stays_hourly(tmp_path):
@@ -530,7 +532,30 @@ def test_to_binance_schema_default_resolution_stays_hourly(tmp_path):
     raw = ing.load_kraken_ohlcv(src)
     got = ing.to_binance_schema(raw)
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
-    assert (delta == pd.Timedelta(milliseconds=3_599_999)).all()
+    assert (delta == pd.Timedelta(3_599_999, unit="ms")).all()
+
+
+def test_to_binance_schema_raises_no_deprecation_warning(tmp_path):
+    """CUL-204 follow-up: close_time was built via pd.Timedelta(milliseconds=...)
+    on a bare int -- fixed to datetime.timedelta, matching the backlog-3c
+    precedent commit 674e49e7."""
+    src = _write_source(tmp_path, "TEST", T0, 5, resolution=60)
+    raw = ing.load_kraken_ohlcv(src)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        got = ing.to_binance_schema(raw)
+    delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
+    assert (delta == pd.Timedelta(3_599_999, unit="ms")).all()
+
+
+def test_holdout_bounds_raises_no_deprecation_warning():
+    """CUL-204 follow-up: the holdout upper bound was built via
+    pd.Timedelta(days=1) -- fixed to datetime.timedelta(days=1). This guards
+    the actual holdout-gate boundary _holdout_bounds() feeds into ingest()."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        lo, hi = ing._holdout_bounds()
+    assert lo < hi
 
 
 def test_ingest_at_daily_resolution_writes_1d_cache_and_is_idempotent(tmp_path):
@@ -550,7 +575,7 @@ def test_ingest_at_daily_resolution_writes_1d_cache_and_is_idempotent(tmp_path):
     got = pd.read_csv(dest)
     got["timestamp"] = pd.to_datetime(got["timestamp"])
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
-    assert (delta == pd.Timedelta(milliseconds=86_399_999)).all()
+    assert (delta == pd.Timedelta(86_399_999, unit="ms")).all()
 
     first = dest.read_bytes()
     ing.ingest("TEST", archive, data_dir, 1440)
@@ -731,7 +756,7 @@ def test_to_binance_schema_4h_close_time_geometry(tmp_path):
     raw = ing.load_kraken_ohlcv(src)
     got = ing.to_binance_schema(raw, 240)
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
-    assert (delta == pd.Timedelta(milliseconds=14_399_999)).all()
+    assert (delta == pd.Timedelta(14_399_999, unit="ms")).all()
 
 
 # ---------------------------------------------------------------------------
@@ -818,6 +843,65 @@ def test_unreadable_policy_refuses_rather_than_defaulting(tmp_path, monkeypatch)
 
     with pytest.raises(RuntimeError, match="Cannot read holdout_range"):
         ing.ingest("TEST", archive, data)
+
+
+def _real_policy_exclusive_hi() -> pd.Timestamp:
+    """Independent ground truth for _holdout_bounds()'s upper bound, computed
+    from the REAL campaign_data_policy.yaml the same way _holdout_bounds()
+    itself is documented to (inclusive policy end -> following midnight), but
+    without calling _holdout_bounds() -- if that function's own +1-day step
+    is mutated, this helper must NOT move with it, or the two tests below
+    would just be re-deriving the bug and always agree with it."""
+    import yaml
+
+    with open(ing._POLICY_PATH, encoding="utf-8") as fh:
+        _, hi_inclusive = yaml.safe_load(fh)["holdout_range"][:2]
+    hi = typing.cast(pd.Timestamp, pd.Timestamp(hi_inclusive))
+    return typing.cast(pd.Timestamp, hi.normalize() + pd.Timedelta(1, unit="D"))
+
+
+def test_seal_upper_edge_last_sealed_hour_is_refused(tmp_path):
+    """Round-2 blind review (F4): every seal test above straddles or sits
+    below the LOWER edge (_SEAL); none probed the UPPER edge -- the
+    `+ datetime.timedelta(days=1)` in _holdout_bounds() that makes the
+    policy's inclusive end (campaign_data_policy.yaml's holdout_range[1])
+    into an exclusive upper bound. Mutating that days=1 -> days=0 un-seals
+    the whole last sealed day and every test above still passes.
+
+    The expected boundary is derived from the real policy file via
+    _real_policy_exclusive_hi() above, NOT from ing._holdout_bounds() itself
+    -- deriving it from the function under test would make this row track
+    the mutation instead of catching it (measured: an earlier draft of this
+    test called _holdout_bounds() directly and silently passed under the
+    days=0 mutation, because BOTH the fixture's boundary and the code being
+    tested shifted together)."""
+    last_sealed_hour = int(_real_policy_exclusive_hi().timestamp()) - 3600
+
+    archive, data = tmp_path / "arch", tmp_path / "data"
+    # 2 rows ending exactly at last_sealed_hour: load_kraken_ohlcv requires a
+    # real span (a single-row file has span == 0 and is rejected before the
+    # seal check ever runs). Both rows (last_sealed_hour-1h, last_sealed_hour)
+    # are strictly below the real exclusive hi, so both are unambiguously
+    # sealed regardless of what the (possibly mutated) production code thinks.
+    _write_source(archive, "TEST", last_sealed_hour - 3600, 2)
+
+    with pytest.raises(ValueError, match="holdout seal"):
+        ing.ingest("TEST", archive, data)
+
+
+def test_seal_upper_edge_first_unsealed_hour_is_accepted(tmp_path):
+    """Control for the test above: the exclusive bound must not also refuse
+    the first legitimate post-seal hour (a fail-closed-everywhere guard would
+    pass the refusal test alone). Same independent-ground-truth boundary as
+    above, for the same reason."""
+    first_unsealed_hour = int(_real_policy_exclusive_hi().timestamp())
+
+    archive, data = tmp_path / "arch", tmp_path / "data"
+    _write_source(archive, "TEST", first_unsealed_hour, 2)
+
+    summary = ing.ingest("TEST", archive, data)
+    assert summary["rows"] > 0
+    assert list(data.rglob("*.csv")), "a legitimate post-seal hour was not written"
 
 
 # ---------------------------------------------------------------------------

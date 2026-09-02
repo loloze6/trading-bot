@@ -106,6 +106,7 @@ def test_cli_cost_product_defaults_to_spot():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.slow
+@pytest.mark.network  # runs a real backtest that fetches live data; opt out of the CUL-198 socket block
 @pytest.mark.real_repo_readonly
 def test_perp_rate_changes_engine_output(tmp_path):
     """

@@ -9,7 +9,7 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
+from _cache_guard import requires_cache
 
 TOOLS_PATH = Path(__file__).parent.parent / "tools"
 TBOT_PATH = Path(__file__).parent.parent.parent / "trading-bot"
@@ -49,7 +49,7 @@ def _write(obj, path):
     return path
 
 
-@pytest.mark.skipif(not _OHLCV.exists() or not _FUNDING.exists(), reason="local_data fixtures not present")
+@requires_cache(_OHLCV, _FUNDING)
 def test_default_behavior_unchanged_without_flag(tmp_path):
     config_path = _write(_BASE_CONFIG, tmp_path / "config.json")
     protocol_path = _write(_PROTOCOL, tmp_path / "protocol.json")
@@ -62,7 +62,7 @@ def test_default_behavior_unchanged_without_flag(tmp_path):
     assert result["ic_significance"] == result["ic_significance_block24"]
 
 
-@pytest.mark.skipif(not _OHLCV.exists() or not _FUNDING.exists(), reason="local_data fixtures not present")
+@requires_cache(_OHLCV, _FUNDING)
 def test_a851a_flag_switches_methodology_and_reports_per_era(tmp_path):
     config = dict(_BASE_CONFIG)
     config["significance_methodology"] = "episode_blocked_a851a"
@@ -88,7 +88,7 @@ def test_a851a_flag_switches_methodology_and_reports_per_era(tmp_path):
         assert "n_episodes" in era_stats
 
 
-@pytest.mark.skipif(not _OHLCV.exists() or not _FUNDING.exists(), reason="local_data fixtures not present")
+@requires_cache(_OHLCV, _FUNDING)
 def test_insufficient_episodes_routes_kill_no_ic_with_a851a_kill_reason(tmp_path):
     """A tiny window with too few episodes must NOT silently claim significance —
     route stays kill_no_ic (existing enum, no new route added), but the kill_reason

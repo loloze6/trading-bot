@@ -163,7 +163,7 @@ def check_data_availability(symbols: list, start: str, end: str,
 
         actual_bars = len(df)
         diff = df["timestamp"].diff().dropna()
-        expected_delta = pd.Timedelta(seconds=interval_seconds)
+        expected_delta = datetime.timedelta(seconds=interval_seconds)
         gaps = diff[diff > expected_delta * 1.5]
 
         print(f"{symbol}:")
