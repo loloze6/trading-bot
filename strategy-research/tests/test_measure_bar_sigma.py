@@ -14,6 +14,7 @@ import ast
 import math
 import statistics
 import sys
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -260,6 +261,19 @@ def test_end_date_still_includes_the_whole_end_day(tmp_path):
     got = bar_returns_bps("BTC", "2025-06-01", "2025-06-01", tmp_path)
 
     # 24 bars of the 1st (00:00..23:00) -> 23 returns. The 2nd's 00:00 is excluded.
+    assert len(got) == 23
+
+
+def test_end_window_filter_raises_no_deprecation_warning(tmp_path):
+    """CUL-204 follow-up: the end-window filter built its +1-day bound via
+    pd.Timedelta(days=1) -- fixed to pd.Timedelta(1, unit="D") (not
+    datetime.timedelta: this module's import allowlist, enforced by
+    test_module_cannot_reach_the_recorded_capture, does not include it)."""
+    closes = [100.0] * 25
+    _write_cache(tmp_path, "BTC", closes, start="2025-06-01 00:00:00")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        got = bar_returns_bps("BTC", "2025-06-01", "2025-06-01", tmp_path)
     assert len(got) == 23
 
 

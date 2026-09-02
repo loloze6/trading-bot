@@ -94,6 +94,7 @@ def test_cli_commission_bps_parses_float():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.slow
+@pytest.mark.network  # runs a real backtest that fetches live data; opt out of the CUL-198 socket block
 @pytest.mark.real_repo_readonly
 def test_absent_flag_end_to_end_matches_fixture(tmp_path):
     """Omitting --commission-bps entirely (product='spot', the CLI default) must
@@ -141,6 +142,7 @@ def _commission_over_notional(trade: dict) -> tuple:
 
 
 @pytest.mark.slow
+@pytest.mark.network  # runs a real backtest that fetches live data; opt out of the CUL-198 socket block
 @pytest.mark.real_repo_readonly
 @pytest.mark.parametrize("bps,expected_rate", [(10.0, 0.001), (5.0, 0.0005)])
 def test_commission_bps_flag_recomputes_from_real_trades(tmp_path, bps, expected_rate):
