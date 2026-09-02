@@ -134,17 +134,56 @@ clean; if the former, one stage survives with a much narrower job.
 
 ## Stages
 
-- [ ] **S1 — Characterise and stop.** Re-score the 7 prescreen-killed runs *as
-      if* they had been backtested, where the data allows. How many would have
-      produced a different or more specific verdict? Measure a backtest's real
-      wall clock. Decide where pre-registration lives. Report, then stop.
-- [ ] **S2 — (blocked on S1) Remove A8.6.** Both call sites, the validation
+- [x] **S1 — Characterise and stop.** Done 2026-09-02 —
+      [`S1_FINDINGS.md`](S1_FINDINGS.md). All 7 prescreen-killed runs found and
+      attempted. **5 of 7 completed**, every one more informative than its
+      prescreen stub (`run_043` flipped kill→refine; `run_044`/`047`/`048`/`053`
+      stayed kill with a concrete mechanism the stub couldn't give). **2 of 7
+      (`run_050`, `run_060`) crashed** on a real historical-data gap. Wall-clock:
+      clean case ~3.5–4 min; long-lookback protocols 12–14× slower, 50% failure
+      rate on that class. Pre-registration: `pass_rule` already lives outside
+      `validation_gate` today (materialized at brief-registration); only the
+      A6.1 holdout-range field is still tied to `validation_gate`'s LLM skill.
+- [ ] **S1.5 — (new, added 2026-09-02) A pre-backtest implementation-feasibility
+      check.** Distinct from A8.6 (a soft, guessed judgment call — removed) and
+      from E-033 D4 (strategy-logic implementability — decided, belongs to
+      `refinement_planner`). This is a hard, mechanical check: **can the
+      requested data actually be assembled for this variant's symbols/
+      timeframe/window** before the engine is ever invoked. Jérémy, 2026-09-02:
+      *"There need to be an implementation feasibility check before the
+      backtest... What should change is 'always backtest a variant that can be
+      backtested (no blocker identified on the strategy implementation
+      feasibility)'."* A variant that fails this check is rejected or routed to
+      refine — never silently attempted and left to crash mid-backtest (see
+      `run_050`/`run_060` above, and the follow-up finding below on *why* they
+      crashed).
+- [ ] **S2 — (blocked on S1.5) Remove A8.6.** Both call sites, the validation
       route, and the two stub-writing paths. Bit-identity proof on the runs it
       never blocked.
-- [ ] **S3 — (blocked on S1) The post-backtest gate.** Deterministic, reading
+- [ ] **S3 — (blocked on S1.5) The post-backtest gate.** Deterministic, reading
       the real result, preserving diagnostics on every path.
 - [ ] **S4 — (blocked on S3) Stage consolidation.** Merge `validation_gate` and
-      `refinement_planner` per S1's answer on pre-registration.
+      `refinement_planner`: move the A6.1 holdout-range write into the same
+      brief-materialization step `pass_rule` already uses (S1's recommendation,
+      confirmed by Jérémy 2026-09-02) — no separate stage survives.
+
+### Follow-up finding, 2026-09-02: the `run_050`/`run_060` crash is not a
+### period-length problem
+
+Jérémy's challenge on reading S1: *"is this tested scenario really valid? do we
+really need to backtest a 1h timeframe on a 7 years period... if the issue you
+faced is due to tested data period length"* — checked directly rather than
+assumed. **It is not.** The local BTCUSDT/ETHUSDT 1h caches are near-complete
+across the full 2017–2026 span (74,530 rows, continuous); the only gaps found
+near the crash dates are a handful of 2–6 hour holes, not missing years. The
+crash is a **data-loading pipeline bug** — traced through
+`_identify_missing_periods`/`_load_all`/the window-trim step in
+`trading-bot/data/fetchers/base_fetcher.py` without a fully pinned single line,
+but conclusively **not** caused by requesting a long historical window per se.
+Neither "cap the protocol window length" nor "add a generic retry" would
+reliably fix a bug of this shape. Filed as its own ticket
+([CUL-230](https://linear.app/culito/issue/CUL-230)) rather than folded into
+this epic's design.
 
 ## Risks
 
