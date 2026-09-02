@@ -106,6 +106,7 @@ sys.path.insert(0, str(WORKFLOW_PATH))
 
 import deflate_sharpe as ds  # noqa: E402
 import run_phase1_research as rpr  # noqa: E402
+from killed_run_gate import build_kill_summary  # noqa: E402  (pure fixture builder; no rpr state)
 
 # ---------------------------------------------------------------------------
 # Shared helpers / fixtures
@@ -1007,4 +1008,173 @@ def test_a_priori_route_still_hashes_when_a_config_does_exist(tmp_path):
     h = rpr._forecast_hash_for_prescreen("insufficient_power_a_priori", cfg, "run_061")
     assert h == hashlib.sha256(
         json.dumps({"a": 1, "b": 2}, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+# ===========================================================================
+# E-025 finale (CUL-138 / gh#28) — the killed-run trial-accounting GATE.
+#
+# The functional fix (a completed KILL still counts toward N) shipped in prior
+# E-025 work (H3/H4/A6.2/B1). What no test did until here: drive a COMPLETED
+# backtest whose verdict is a KILL through the real run_tool_worker post-success
+# block and assert (a) the row lands, (b) the writer is verdict-blind, (c) BOTH N
+# paths count it. Every pre-existing kill test is a PRESCREEN kill, a FAILED run,
+# or a seeded fixture row that never touches the pipeline writer.
+#
+# The kill fixture is production-shaped (build_kill_summary, shared with
+# tools/killed_run_gate.py): top-level verdict='kill', hypothesis_verdict.verdict
+# in {'refine', None} — the shapes 39 real protocol_summary.json actually carry.
+# 'kill' NEVER appears in hypothesis_verdict.verdict (0/39); the marker is the
+# top-level verdict (18/39). A P4-style proof that flipped only hv.verdict would
+# miss a mutation branching on the real top-level marker — so the blindness case
+# below flips both fields plus the None shape.
+# ===========================================================================
+
+
+def _seed_promotion_ledger(campaign_state_path, tmp_path, run_id, trials):
+    """Seed campaign_state + the run_dir artifacts _write_promotion_audit reads,
+    mirroring test_promotion_audit_total_count_divergence's setup."""
+    _seed_state(campaign_state_path, trials, runs=[])
+    run_dir = tmp_path / "runs" / run_id
+    (run_dir / "artifacts").mkdir(parents=True)
+    (run_dir / "artifacts" / "verdict_interpretation.yaml").write_text(
+        yaml.safe_dump({"hypothesis_id": "K"}), encoding="utf-8")
+    (run_dir / "artifacts" / "protocol_result.yaml").write_text(
+        yaml.safe_dump({}), encoding="utf-8")
+    return run_dir
+
+
+# A completed kill (no dedup collision — distinct forecast_hash) + one distinct-hash
+# real-Sharpe row. Per G2 the audit dedup key is (forecast_hash, source), so a killed
+# run increments N only when its config differs from every other counted run; two
+# byte-identical kills are correctly one hypothesis. Distinct hashes make N==2 real.
+_KILL_LEDGER = [
+    {"trial_id": "run_k901", "source": "backtest", "sharpe": None,
+     "expectancy_bps": None, "n_trades": 120, "statistic_valid": "neither",
+     "below_floor_pct": 0.0, "forecast_hash": "kill_hash_distinct"},
+    {"trial_id": "run_k902", "source": "backtest", "sharpe": 0.30,
+     "expectancy_bps": None, "n_trades": 140, "statistic_valid": "sharpe",
+     "below_floor_pct": 0.0, "forecast_hash": "promote_hash_distinct"},
+]
+
+
+def test_killed_backtest_lands_one_backtest_row(temp_run, monkeypatch):
+    """E1. A production-shaped completed KILL, driven through the real
+    run_tool_worker post-success block, records exactly one 'backtest' row keyed on
+    (trial_id, 'backtest') and carrying the mandatory forecast_hash. This is the case
+    CUL-138 names: a killed run that COMPLETED must still land its trial row."""
+    run_dir, run_id = temp_run
+    _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    expected_hash = _seed_config(run_dir / "artifacts")
+    _stub_vce(monkeypatch)
+    _install_fake_subprocess(monkeypatch, protocol_summary=build_kill_summary())
+
+    asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
+
+    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
+    assert len(rows) == 1  # CHAR[CONTRACT]: a completed kill lands exactly one row.
+    row = rows[0]
+    assert row["source"] == "backtest"  # CHAR[CONTRACT]: full-backtest source, not backtest_failed.
+    assert row["trial_id"] == run_id  # CHAR[CONTRACT]: trial_id == run_id.
+    assert row["forecast_hash"] == expected_hash  # CHAR[CONTRACT]: mandatory forecast_hash present + correct.
+
+
+def test_backtest_writer_is_verdict_blind(temp_run, monkeypatch):
+    """E2. The writer reads no verdict field for control flow (§1a: hv is bound at
+    :1205 for DISPLAY only, never referenced before the :1251 write; the writer reads
+    only hypothesis_verdict.diagnostics + per_symbol_summary + results). Drive one
+    summary four ways, differing ONLY in the verdict fields — production kill
+    (kill/refine), production non-kill (refine/refine), synthetic hv=kill (kill/kill),
+    and the real kill/None shape — and the recorded rows are identical apart from
+    trial_id. A mutation guarding the :1251 write on EITHER the top-level verdict or
+    hypothesis_verdict.verdict dies here."""
+    _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    _stub_vce(monkeypatch)
+    variants = {
+        "run_ka": build_kill_summary(verdict="kill", hv_verdict="refine"),
+        "run_kb": build_kill_summary(verdict="refine", hv_verdict="refine"),
+        "run_kc": build_kill_summary(verdict="kill", hv_verdict="kill"),
+        "run_kd": build_kill_summary(verdict="kill", hv_verdict=None),
+    }
+    for rid, summary in variants.items():
+        (rpr.ROOT / "runs" / rid / "artifacts").mkdir(parents=True)
+        _seed_config(rpr.ROOT / "runs" / rid / "artifacts")
+        _install_fake_subprocess(monkeypatch, protocol_summary=summary)
+        asyncio.run(rpr.run_tool_worker("protocol_execution", rid))
+
+    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
+    assert len(rows) == 4  # CHAR[CONTRACT]: every verdict shape records — none suppressed.
+    normalized = []
+    for r in rows:
+        r = dict(r)
+        r.pop("trial_id")
+        normalized.append(json.dumps(r, sort_keys=True))
+    assert len(set(normalized)) == 1  # CHAR[CONTRACT]: rows identical apart from trial_id — writer is verdict-blind.
+
+
+def test_killed_row_counts_in_pipeline_N(campaign_state_path, tmp_path):
+    """E3. The pipeline audit (run_phase1_research._write_promotion_audit) counts the
+    killed run in total_hypotheses_tested (n_dsr_total = len(deduped_trials)). With the
+    kill row present N==2; drop it and N==1 — proof the kill row moves N by exactly one."""
+    run_dir = _seed_promotion_ledger(campaign_state_path, tmp_path, "run_k901", _KILL_LEDGER)
+    rpr._write_promotion_audit(run_dir, "run_k901")
+    audit = yaml.safe_load((run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+    assert audit["total_hypotheses_tested"] == 2  # CHAR[CONTRACT]: kill counts toward pipeline N.
+
+    run_dir2 = _seed_promotion_ledger(
+        campaign_state_path, tmp_path, "run_k902_only",
+        [t for t in _KILL_LEDGER if t["trial_id"] != "run_k901"])
+    rpr._write_promotion_audit(run_dir2, "run_k902_only")
+    audit2 = yaml.safe_load((run_dir2 / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8"))
+    assert audit2["total_hypotheses_tested"] == 1  # CHAR[CONTRACT]: dropping the kill drops pipeline N to 1.
+
+
+def test_killed_row_counts_in_library_N():
+    """E4. The library audit (deflate_sharpe.compute_promotion_audit) — the independent
+    lockstep implementation — counts the same killed run in total_hypotheses_tested
+    (len(deduped_records)). Same 2-then-1 as the pipeline path."""
+    n_with = ds.compute_promotion_audit("K", 0.30, {"trial_sharpes": _KILL_LEDGER})["total_hypotheses_tested"]
+    n_without = ds.compute_promotion_audit(
+        "K", 0.30, {"trial_sharpes": [t for t in _KILL_LEDGER if t["trial_id"] != "run_k901"]}
+    )["total_hypotheses_tested"]
+    assert n_with == 2  # CHAR[CONTRACT]: kill counts toward library N.
+    assert n_without == 1  # CHAR[CONTRACT]: dropping the kill drops library N to 1.
+
+
+def test_both_N_paths_agree_on_a_killed_ledger(campaign_state_path, tmp_path):
+    """E5. The two N implementations are held in deliberate lockstep — on the same
+    killed ledger the pipeline audit and the library audit report an equal
+    total_hypotheses_tested. A mutation that changes N in only one path dies here."""
+    run_dir = _seed_promotion_ledger(campaign_state_path, tmp_path, "run_k901", _KILL_LEDGER)
+    rpr._write_promotion_audit(run_dir, "run_k901")
+    pipeline_n = yaml.safe_load(
+        (run_dir / "artifacts" / "promotion_audit.yaml").read_text(encoding="utf-8")
+    )["total_hypotheses_tested"]
+    library_n = ds.compute_promotion_audit(
+        "K", 0.30, {"trial_sharpes": _KILL_LEDGER})["total_hypotheses_tested"]
+    assert pipeline_n == library_n == 2  # CHAR[CONTRACT]: pipeline N and library N agree on a killed ledger.
+
+
+def test_killed_run_with_no_symbol_summary_counts_without_a_sharpe(temp_run, monkeypatch):
+    """E6. A completed kill with an empty per_symbol_summary records
+    statistic_valid='neither' and no Sharpe value — so it is absent from the
+    mu_sr/sigma_sr sample (ds.load_sharpe_trials) yet still one recorded trial that
+    counts toward n_dsr_total (the CUL-31 distinction: N is honest even when a row
+    contributes no Sharpe VALUE)."""
+    run_dir, run_id = temp_run
+    _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    _seed_config(run_dir / "artifacts")
+    _stub_vce(monkeypatch)
+    _install_fake_subprocess(
+        monkeypatch, protocol_summary=build_kill_summary(with_symbol_summary=False))
+
+    asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
+
+    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
+    assert len(rows) == 1  # CHAR[CONTRACT]: the completed kill is one recorded trial.
+    assert rows[0]["statistic_valid"] == "neither"  # CHAR[CONTRACT]: no median Sharpe -> neither.
+    assert rows[0]["sharpe"] is None  # CHAR[CONTRACT]: no Sharpe value contributed.
+    sharpe_values, _ = ds.load_sharpe_trials({"trial_sharpes": rows})
+    assert sharpe_values == []  # CHAR[CONTRACT]: absent from the mu_sr/sigma_sr sample.
+    # But still counted in N: dedup keeps it (distinct row), so it is one of the deduped records.
+    assert ds.compute_promotion_audit("K", None, {"trial_sharpes": rows})["total_hypotheses_tested"] == 1
 
