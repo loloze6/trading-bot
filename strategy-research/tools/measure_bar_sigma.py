@@ -90,6 +90,7 @@ _HERE = Path(__file__).resolve()
 _SR = _HERE.parents[1]
 _REPO = _HERE.parents[2]
 _LOCAL_DATA = _REPO / "trading-bot" / "local_data"
+_POLICY_PATH = _SR / "config" / "campaign_data_policy.yaml"
 
 #: The 19 bases of `campaign_data_policy.yaml:kraken_breadth_19pair`, in the
 #: order the pre-registration lists them.
@@ -108,11 +109,37 @@ DEFAULT_END = "2025-12-31"
 #: (the ledger G2 backfill this policy already anticipates) would extend them
 #: into the holdout and this module would then be reading sealed data with no
 #: signal that anything had changed.
-HOLDOUT_RANGE = ("2026-01-01", "2026-06-30")
+def _holdout_range_from_policy():
+    """(first sealed day, last sealed day) as "YYYY-MM-DD", read from the policy.
+
+    Derived, not a local literal (CUL-203) -- so the seal moves with
+    `campaign_data_policy.yaml` instead of silently drifting from it. This module
+    is import-isolated for pre-registration integrity (`test_module_cannot_reach
+    _the_recorded_capture` pins its imports to stdlib+pandas), so it CANNOT reuse
+    `data_manager._holdout_bounds`; it reads the same single source of truth with
+    a minimal parser over the one contractually-pinned line the policy documents
+    ("exactly ONE holdout_range key, DOUBLE-QUOTED ISO YYYY-MM-DD"). Deny by
+    default: any failure to locate that line raises rather than guessing a
+    window it cannot prove.
+    """
+    for line in _POLICY_PATH.read_text(encoding="utf-8").splitlines():
+        if line.split("#", 1)[0].strip().startswith("holdout_range:"):
+            inside = line.split("[", 1)[1].split("]", 1)[0]
+            lo, hi = (p.strip().strip('"').strip("'") for p in inside.split(",")[:2])
+            return lo, hi
+    raise HoldoutViolation(
+        f"cannot locate holdout_range in {_POLICY_PATH} -- refusing to guess the "
+        "sealed window."
+    )
 
 
 class HoldoutViolation(RuntimeError):
     """A requested window overlaps the sealed holdout range."""
+
+
+#: (closed) sealed-window bounds, DERIVED from the policy (see above), kept as a
+#: public tuple because the module's tests read it.
+HOLDOUT_RANGE = _holdout_range_from_policy()
 
 
 def _assert_window(start: str, end: str) -> None:
