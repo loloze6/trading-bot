@@ -78,25 +78,99 @@ def exclude_invalidated_trials(records: list[dict]) -> tuple[list[dict], int]:
 # Trial deduplication (A6.4)
 # ---------------------------------------------------------------------------
 
+def _reproduces_collapses_onto_present_original(
+    rec: dict, reproduces_by_key: dict
+) -> bool:
+    """
+    Resolve a record's `reproduces_trial` chain WITHIN its own source.
+
+    Returns True when the chain terminates at an original present in the input
+    (a row with no reproduces_trial of its own) -- the reproduction counts once,
+    with that original. Returns False when the chain leaves the input (the
+    referenced trial is absent) -- the reproducing row is a real counted attempt
+    and must be kept, never silently dropped. Raises ValueError on a
+    self-reference or a cycle (A -> B -> A) -- those do not resolve to a clean
+    single original. A chain (A -> B -> C, C terminal) resolves transitively and
+    collapses (CUL-233 F4): a third-generation reproduction still counts once.
+
+    Same-source throughout: the walk carries rec's source, matching the
+    (forecast_hash, source) one-row-per-source convention so a backtest
+    reproduction cannot collapse onto a prescreen row of the referenced trial.
+    """
+    source = rec.get("source")
+    origin_id = rec.get("trial_id")
+    target_id = rec.get("reproduces_trial")
+    if target_id == origin_id:
+        raise ValueError(
+            f"reproduces_trial self-reference: trial {origin_id!r} names itself "
+            f"(CUL-233)."
+        )
+    seen: set = {(origin_id, source)}
+    while True:
+        key = (target_id, source)
+        if key in seen:
+            raise ValueError(
+                f"reproduces_trial cycle detected starting at {origin_id!r} "
+                f"(revisited {target_id!r}, same source) -- refused (CUL-233)."
+            )
+        if key not in reproduces_by_key:
+            return False  # chain leaves the input -> keep the reproducing row
+        seen.add(key)
+        next_target = reproduces_by_key[key]
+        if next_target is None:
+            return True  # terminal original present -> collapse
+        target_id = next_target
+
+
 def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
     """
-    Deduplicate trial records by (forecast_hash, source) (A6.4; #36).
+    Deduplicate trial records by (forecast_hash, source), honouring an explicit
+    `reproduces_trial` back-reference (A6.4; #36; CUL-233).
 
-    Keying on forecast_hash ALONE collapsed a single run's prescreen and backtest
-    rows once forecast_hash was populated (they share the hash), silently dropping
-    the backtest Sharpe from the DSR N. The key includes source to match the
-    read-side (trial_id, source) convention (check_no_duplicate_trial_ids): a run
-    legitimately carries up to one row per source. A genuine duplicate is the SAME
-    (forecast_hash, source) twice.
+    Two collapse paths, both counting the collapsed row as removed:
 
-    Trials with no forecast_hash are treated as unique and always kept.
+    1. reproduces_trial (CUL-233): a row whose `reproduces_trial` chain resolves
+       (transitively, within its own source) to an original present in the input
+       collapses onto that original -- independent of forecast_hash. This is the
+       T036/T038 case: T038 is a byte-identical re-execution of T036, but T036
+       predates the forecast_hash field (hashless) while T038 carries a fresh
+       hash, so the hash key alone counted them twice in the DSR N. Same-source
+       matching preserves the one-row-per-source convention (a backtest
+       reproduction must not collapse onto a prescreen row of the referenced
+       trial). An absent reference is kept (never silently dropped); a chain of
+       reproductions collapses onto the terminal original; self-reference and
+       cycles fail loud. See _reproduces_collapses_onto_present_original.
+
+    2. forecast_hash (#36): keying on forecast_hash ALONE collapsed a single
+       run's prescreen and backtest rows once forecast_hash was populated (they
+       share the hash), silently dropping the backtest Sharpe from the DSR N. The
+       key includes source to match the read-side (trial_id, source) convention
+       (check_no_duplicate_trial_ids): a run legitimately carries up to one row
+       per source. A genuine duplicate is the SAME (forecast_hash, source) twice.
+       Trials with no forecast_hash are treated as unique and always kept.
+
     Returns (deduped_list, n_removed).
     """
+    # Pre-pass: index every (trial_id, source) present and the reproduces_trial it
+    # declares, so the walk can follow a chain and detect a cycle.
+    reproduces_by_key: dict[tuple, object] = {}
+    for rec in records:
+        reproduces_by_key[(rec.get("trial_id"), rec.get("source"))] = rec.get("reproduces_trial")
+
     seen_keys: set[tuple] = set()
     kept: list[dict] = []
     n_removed = 0
 
     for rec in records:
+        # A reproduces_trial row that resolves to a present original collapses
+        # (short-circuit keeps the raise-on-cycle only for rows that declare the
+        # field); an absent reference falls through to the forecast_hash path and
+        # is kept -- never silently dropped.
+        if rec.get("reproduces_trial") is not None and _reproduces_collapses_onto_present_original(
+            rec, reproduces_by_key
+        ):
+            n_removed += 1
+            continue
         fh = rec.get("forecast_hash")
         if fh is None:
             # No hash — treat as unique; always keep
