@@ -229,8 +229,20 @@ orchestrator:
       # See engineering/roadmap/E-032/EPIC.md's S2c story entry and
       # 2026-08-23 operator-ruling Log entry.
   variant_selection_record:
-    enabled: false
-      # E-034 S2. OFF BY DEFAULT and read at runtime by
+    enabled: true
+      # E-034 S2. SWITCHED ON 2026-09-02 (E-041, flag 4 of 7) -- DECLARED
+      # OUTPUT CHANGE: writes artifacts/variant_selection.yaml and
+      # variants_not_pursued.yaml, and RAISES if backtest_spec.yaml lacks
+      # selected_variant_id or the ID does not match any expanded_variants
+      # entry -- intentional fail-loud enforcement of the requirement
+      # backtest-engineering/SKILL.md has stated since 84fc6eb9 (2026-08-25).
+      # Verified 2026-09-02: only 1 run exists since that date (run_060,
+      # 2026-08-28) and it complies; every non-compliant historical run
+      # (40 of 41) predates the requirement, so this is not "will break most
+      # runs" but "the only sample since the fix already conforms." Jeremy,
+      # 2026-09-01, explicit on this flag by name: "let's turn it on ...
+      # it does not prevent us to activate it until [E-033] is developed."
+      # Read at runtime by
       # run_phase1_research._variant_selection_record_enabled() -- same
       # shape as exclusion_digest_input.enabled / stale_input_path_fix.enabled
       # / anti_adjacency_retry.enabled above (a sixth explicit exception to
@@ -303,8 +315,15 @@ orchestrator:
       # own docstring for the full reasoning, and engineering/roadmap/
       # E-034/EPIC.md's S3 Log entry.
   schedulability_block:
-    enabled: false
-      # E-031 S2. OFF BY DEFAULT and read at runtime by
+    enabled: true
+      # E-031 S2. SWITCHED ON 2026-09-02 (E-041, flag 5 of 7) -- DECLARED
+      # OUTPUT CHANGE: process_once() now writes
+      # campaign_record/schedulability.yaml on every step (ready/in_progress/
+      # blocked counts, dwell time, blocker strings). Purely additive: no
+      # decision reads this file yet (E-031 S3, the refill-vs-escalate
+      # consumer, is not built), so this cannot change any run's outcome --
+      # it only starts populating the diagnostic E-030's own blind-spot
+      # finding said was missing. Read at runtime by
       # run_campaign._schedulability_block_enabled() -- same shape as the
       # five orchestrator.<name>.enabled flags above (the sixth such flag; a
       # seventh explicit exception to this file's "declared parity only" rule,
