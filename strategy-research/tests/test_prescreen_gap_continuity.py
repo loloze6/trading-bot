@@ -20,6 +20,7 @@ count can never silently restore the inflated n_eff.
 import csv
 import json
 import sys
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -32,14 +33,14 @@ sys.path.insert(0, str(TBOT))
 
 import prescreen_signal as ps  # noqa: E402
 
-HOUR = pd.Timedelta(hours=1)
+HOUR = pd.Timedelta(1, unit="h")
 
 
 def _recs(spec):
     """spec: list of (hours_since_epoch_start, active). Builds record dicts of
     the shape _gap_aware_block_count consumes."""
     base = pd.Timestamp("2024-01-01 00:00:00")
-    return [{"timestamp": base + pd.Timedelta(hours=h), "active": a} for h, a in spec]
+    return [{"timestamp": base + pd.Timedelta(h, unit="h"), "active": a} for h, a in spec]
 
 
 # --------------------------------------------------------------------------
@@ -116,7 +117,7 @@ def test_block_size_zero_raises():
 def _frame(hours):
     base = pd.Timestamp("2024-01-01 00:00:00")
     return pd.DataFrame({
-        "timestamp": [base + pd.Timedelta(hours=h) for h in hours],
+        "timestamp": [base + pd.Timedelta(h, unit="h") for h in hours],
         "open":  [100.0 + h for h in hours],
         "high":  [100.0 + h for h in hours],
         "low":   [100.0 + h for h in hours],
@@ -170,17 +171,17 @@ def test_c1_c2_c4_gap_free_is_identical_and_hole_is_skipped(monkeypatch):
     assert skipped == 1                                    # C2: exact
     base = pd.Timestamp("2024-01-01 00:00:00")
     kept = [r["timestamp"] for r in recs]
-    assert base + pd.Timedelta(hours=2) not in kept        # the spanning pair is gone
+    assert base + pd.Timedelta(2, unit="h") not in kept        # the spanning pair is gone
     # neighbours keep their ORIGINAL one-bar returns
     by_ts = {r["timestamp"]: r["next_return_bps"] for r in recs}
     assert by_ts[base] == pytest.approx((101.0 - 100.0) / 100.0 * 10_000.0)
-    assert by_ts[base + pd.Timedelta(hours=8)] == pytest.approx(
+    assert by_ts[base + pd.Timedelta(8, unit="h")] == pytest.approx(
         (109.0 - 108.0) / 108.0 * 10_000.0)
 
     # and without the step, the corrupt pair is still present -- proving the
     # fixture actually exercises the defect
     unguarded, _, _, _ = ps._extract_forecasts("ignored", holed)
-    assert base + pd.Timedelta(hours=2) in [r["timestamp"] for r in unguarded]
+    assert base + pd.Timedelta(2, unit="h") in [r["timestamp"] for r in unguarded]
 
 
 # --------------------------------------------------------------------------
@@ -248,7 +249,7 @@ def _write_cache(dirpath, name, hours, step_hours=1):
     rows = []
     for k, h in enumerate(hours):
         px = 100.0 + k
-        ts = base + pd.Timedelta(hours=h * step_hours)
+        ts = base + pd.Timedelta(h * step_hours, unit="h")
         rows.append([ts.strftime("%Y-%m-%d %H:%M:%S"), px, px, px, px, 1])
     _write(Path(dirpath) / f"{name}_1h.csv", rows)
 
@@ -278,9 +279,9 @@ def test_wiring_gap_aware_neff_actually_reaches_the_artifact(monkeypatch, tmp_pa
 
     df = ps._load_ohlcv("GAPPY", "2020-01-01", "2021-01-01")
     recs, _, _, skipped = ps._extract_forecasts(
-        "cfg", df, expected_step=pd.Timedelta(hours=1))
+        "cfg", df, expected_step=pd.Timedelta(1, unit="h"))
     nominal = sum(1 for r in recs if r["active"]) // 24
-    placeable = ps._gap_aware_block_count(recs, 24, pd.Timedelta(hours=1))
+    placeable = ps._gap_aware_block_count(recs, 24, pd.Timedelta(1, unit="h"))
 
     assert skipped == 39, f"expected 39 gap-spanning pairs, got {skipped}"
     assert nominal > 0, "fixture must have a non-trivial nominal count"
@@ -312,7 +313,7 @@ def test_wiring_gap_skipped_counter_is_not_stuck_at_zero(monkeypatch):
     monkeypatch.setattr(ps, "AdvancedStrategy", _AlwaysReady)
     holed = _frame([0, 1, 2, 20, 21, 22, 40, 41])
     _, _, _, skipped = ps._extract_forecasts(
-        "cfg", holed, expected_step=pd.Timedelta(hours=1))
+        "cfg", holed, expected_step=pd.Timedelta(1, unit="h"))
     assert skipped == 2, f"two holes -> two suppressed pairs, got {skipped}"
 
 
@@ -440,3 +441,36 @@ def test_e2e_fully_gapped_symbol_raises(e2e, tmp_path):
         ps.run_prescreen(_minimal_config(tmp_path),
                          _minimal_protocol(tmp_path, ["ALLGAP"]),
                          run_id="e2e_allgap", out_dir=tmp_path / "out")
+
+
+
+# --- CUL-204 follow-up: production Timedelta construction must not emit the
+# numpy generic-unit DeprecationWarning (prescreen_signal._load_fear_greed's
+# A8.4 +1-day shift, matching the backlog-3c precedent commit 674e49e7) ------
+
+
+def test_load_fear_greed_raises_no_deprecation_warning(tmp_path, monkeypatch):
+    fg_path = tmp_path / "fear_greed_daily.csv"
+    fg_path.write_text("timestamp,fear_greed,classification\n2018-03-01,30,Fear\n2018-03-02,45,Neutral\n")
+    monkeypatch.setattr(ps, "_LOCAL_DATA", str(tmp_path))
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        df = ps._load_fear_greed("2018-03-01", "2018-03-05")
+    # A8.4 shift: the 03-01 value becomes visible on 03-02; both rows survive the shift.
+    assert list(df["timestamp"].dt.strftime("%Y-%m-%d")) == ["2018-03-02", "2018-03-03"]
+
+
+
+def test_run_prescreen_expected_step_raises_no_deprecation_warning(e2e, tmp_path):
+    """CUL-204 follow-up: run_prescreen's expected_step is built via
+    pd.Timedelta(seconds=timeframe_seconds(timeframe)) -- fixed to the
+    unit= form, which keeps the pd.Timedelta type (expected_step is typed
+    pd.Timedelta | None downstream) while avoiding the generic-unit warning."""
+    _write_cache(e2e, "CLEAN", list(range(600)))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        out = ps.run_prescreen(_minimal_config(tmp_path),
+                               _minimal_protocol(tmp_path, ["CLEAN"]),
+                               run_id="e2e_no_warn", out_dir=tmp_path / "out")
+    assert out["gap_skipped_pairs"] == 0
