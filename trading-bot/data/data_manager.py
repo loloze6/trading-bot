@@ -128,6 +128,52 @@ def _assert_no_sealed_rows(df: "pd.DataFrame", symbol: str) -> None:
         )
 
 
+def _assert_request_window_unsealed(start_date, end_date, symbol: str) -> None:
+    """Refuse a request whose window OVERLAPS the sealed holdout, before any fetch.
+
+    The companion `_assert_no_sealed_rows` inspects the rows a fetch RETURNS; it
+    cannot fire when a cache has a gap exactly inside the holdout, because then a
+    request reaching into the seal comes back with no sealed rows and the caller
+    is handed a silently-short series it believes covers the window. This guard
+    refuses on the requested RANGE instead of on content, so a sealed-intent
+    request is stopped before a single candle (or aux feed) is read — the
+    range-check the .gitignore seal-exclusion comment flags as still open.
+
+    Keyed on BOTH ends of `_holdout_bounds()`, not the start alone: the seal is a
+    closed window whose data is usable again afterwards, so a post-seal window
+    must pass. The requested [start, end] overlaps the sealed [lo, hi) exactly
+    when `start < hi and end >= lo`.
+
+    Best-effort on the window: an unparseable, absent, or tz-mismatched bound is
+    left to `_assert_no_sealed_rows`, which stays the authoritative backstop.
+    This keeps a caller passing an exotic date value from tripping a false
+    refusal, and it is a no-op on every non-sealed window (the reference simulate
+    requests a pre-seal window, so default output is byte-identical). A failure
+    to LOCATE the seal still denies by default — that raises out of
+    `_holdout_bounds()` and must propagate.
+    """
+    try:
+        start = pd.Timestamp(start_date)
+        end = pd.Timestamp(end_date)
+    except (ValueError, TypeError):
+        return
+    if start is pd.NaT or end is pd.NaT:                     # pd.Timestamp(None) -> NaT
+        return
+    lo, hi = _holdout_bounds()
+    try:
+        overlaps = start < hi and end >= lo
+    except TypeError:                                        # e.g. tz-aware vs naive
+        return
+    if overlaps:
+        raise SealedDataError(
+            f"{symbol}: requested window [{start:%Y-%m-%d}..{end:%Y-%m-%d}] overlaps the "
+            f"holdout seal [{lo:%Y-%m-%d}, {hi - datetime.timedelta(days=1):%Y-%m-%d}] — "
+            f"refused before fetch. The requested range reaches into a single-use, "
+            f"terminal holdout. Bound the request outside the sealed window, or pass "
+            f"allow_sealed=True if this genuinely is the holdout evaluation."
+        )
+
+
 # ===========================================================================
 # Core data structures  (unchanged)
 # ===========================================================================
@@ -1092,6 +1138,13 @@ class DataManager:
             data_dir = data_storage_dir
         )
         try:
+            # Range-check seal guard (CUL-203): refuse a request whose window
+            # reaches into the holdout BEFORE fetching, complementing the
+            # returned-rows guard below. Inside the try on purpose so its
+            # SealedDataError rides the same `except SealedDataError: raise`
+            # propagation and is never degraded to an empty frame.
+            if not allow_sealed:
+                _assert_request_window_unsealed(start_date, end_date, symbol)
             data = fetcher.get_data()   # {symbol: DataFrame}
             if symbol in data and not data[symbol].empty:
                 is_continuous, gaps = fetcher.validate_data_continuity(symbol)
