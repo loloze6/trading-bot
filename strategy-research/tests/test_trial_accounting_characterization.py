@@ -1008,3 +1008,126 @@ def test_a_priori_route_still_hashes_when_a_config_does_exist(tmp_path):
     assert h == hashlib.sha256(
         json.dumps({"a": 1, "b": 2}, sort_keys=True).encode("utf-8")).hexdigest()
 
+
+# ===========================================================================
+# G1 — the SUCCESS-writer call at :1251 is unwrapped, unlike its three sibling
+# _record_failed_backtest_trial calls (:1172/:1183/:1241, each in try/except).
+# The backtest COMPLETED (data spent, a real median Sharpe in the summary) but a
+# raise inside _record_backtest_trial after that loses the trial row entirely —
+# N under-counts a look that already touched market data. This is the exact
+# H4/B1 defect class ONE STAGE LATER: look spent, N under-counts.
+#
+# Three unguarded sites inside the writer, each reachable in production:
+#   _compute_forecast_hash (:4168) — config absent/unreadable at write time
+#   load_campaign_state    (:4124) — corrupt/unreadable ledger YAML
+#   _save_campaign_state   (:4171) — disk/permission failure on the ledger write
+#
+# The fix mirrors B1: record a distinct-reason recovery row (so N still counts the
+# spent look), then RE-RAISE the original unchanged — an accounting add, never a
+# swallow. The recovery writer itself calls load_campaign_state/_save_campaign_state,
+# so when the LEDGER is the failure the recovery also fails: it must degrade to a loud
+# log and re-raise the ORIGINAL error, never mask it with the recovery's own.
+#
+# Committed RED before the fix (fork bug-fix TDD rule).
+# ===========================================================================
+
+_G1_COMPLETED_SUMMARY = {
+    "per_symbol_summary": {"BTCUSDT": {"median_sharpe": 1.0}},
+    "results": [{"symbol": "BTCUSDT", "window": "w1", "core": {"trade_count": 100}}],
+}
+
+
+def test_g1_missing_config_at_write_records_failed_row_and_reraises(temp_run, monkeypatch):
+    """G1a (_compute_forecast_hash site). The backtest ran and wrote its summary, then
+    the config vanished before the trial write (an artifacts-dir anomaly). _record_backtest_trial's
+    _compute_forecast_hash raises FileNotFoundError. The fix records ONE recovery row whose reason
+    distinguishes 'completed then write-raised' from a genuine backtest failure, and re-raises the
+    original. RED pre-fix: the :1251 call is unwrapped, the raise escapes, ZERO rows land."""
+    run_dir, run_id = temp_run
+    _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    config_path = run_dir / "artifacts" / "candidate_strategy_config.json"
+    _seed_config(run_dir / "artifacts")
+    _stub_vce(monkeypatch)
+
+    def _fake_run(cmd, capture_output=True, text=True, **kwargs):
+        out_dir = None
+        for i, tok in enumerate(cmd):
+            if str(tok) == "--out-dir":
+                out_dir = Path(cmd[i + 1])
+                break
+        assert out_dir is not None
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "protocol_summary.json").write_text(
+            json.dumps(_G1_COMPLETED_SUMMARY), encoding="utf-8")
+        config_path.unlink()  # the completed backtest already read it; now it is gone
+        return _FakeResult(0, "fake-stdout", "")
+
+    monkeypatch.setattr(rpr.subprocess, "run", _fake_run)
+
+    with pytest.raises(FileNotFoundError):  # original error propagates unchanged.
+        asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
+
+    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
+    assert len(rows) == 1  # the spent look is counted, exactly once.
+    row = rows[0]
+    assert row["trial_id"] == run_id
+    assert row["source"] == "backtest_failed"  # distinct source, won't shadow a retry's real row.
+    assert row["forecast_hash"] is None  # config was the failure -> hashless row.
+    assert "completed" in row["error"]  # reason distinguishes completed-then-write-failed from a backtest failure.
+
+
+def test_g1_ledger_save_failure_at_write_records_failed_row_and_reraises(temp_run, monkeypatch):
+    """G1b (_save_campaign_state site). The writer builds the row, then the ledger write
+    raises (disk/permission). The fix records the recovery row (its own save then succeeds) and
+    re-raises the original. RED pre-fix: the escape leaves ZERO rows."""
+    run_dir, run_id = temp_run
+    _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    _seed_config(run_dir / "artifacts")
+    _stub_vce(monkeypatch)
+    _install_fake_subprocess(monkeypatch, protocol_summary=_G1_COMPLETED_SUMMARY)
+
+    real_save = rpr.save_yaml
+    calls = {"ledger_writes": 0}
+
+    def _save(path, data):
+        if Path(path) == rpr.CAMPAIGN_STATE_PATH:
+            calls["ledger_writes"] += 1
+            if calls["ledger_writes"] == 1:  # the success-writer's own ledger write fails
+                raise OSError("disk full writing campaign_state.yaml")
+        return real_save(path, data)
+
+    monkeypatch.setattr(rpr, "save_yaml", _save)
+
+    with pytest.raises(OSError, match="disk full"):  # original error propagates unchanged.
+        asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
+
+    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
+    assert len(rows) == 1  # the recovery row lands once the transient write clears.
+    assert rows[0]["source"] == "backtest_failed"
+    assert "completed" in rows[0]["error"]
+
+
+def test_g1_unreadable_ledger_at_write_degrades_to_log_and_reraises(temp_run, monkeypatch, capsys):
+    """G1c (load_campaign_state site, the genuine degrade path). When the LEDGER itself is
+    unreadable, _record_backtest_trial's load raises AND the recovery writer's own load raises
+    the same way — the row genuinely cannot be written. The fix must degrade to a loud log and
+    re-raise the ORIGINAL error, never swallow it and never mask it with the recovery's failure.
+    RED pre-fix: no G1 degrade log line is emitted (the raise just escapes)."""
+    run_dir, run_id = temp_run
+    _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    _seed_config(run_dir / "artifacts")
+    _stub_vce(monkeypatch)
+    _install_fake_subprocess(monkeypatch, protocol_summary=_G1_COMPLETED_SUMMARY)
+
+    def _raise_load():
+        raise RuntimeError("campaign_state.yaml is unreadable (corrupt ledger)")
+
+    monkeypatch.setattr(rpr, "load_campaign_state", _raise_load)
+
+    with pytest.raises(RuntimeError, match="unreadable"):  # ORIGINAL error, not the recovery's.
+        asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
+
+    out = capsys.readouterr().out
+    assert "G1" in out  # the fix logs a loud degrade marker before re-raising.
+    assert "ledger" in out.lower()  # and names the unwritable ledger as the reason.
+
