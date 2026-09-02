@@ -1,4 +1,4 @@
-﻿"""
+"""
 B2 -- machine-local trial-accounting proof (CLAUDE.fork.md backlog item 5, Mac half).
 
 Runs the REAL tools/run_protocol.py subprocess via
