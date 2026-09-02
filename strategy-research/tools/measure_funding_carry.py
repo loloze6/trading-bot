@@ -32,6 +32,11 @@ DATA_DIR = os.path.join(
     "local_data",
 )
 
+_TOOLS = os.path.dirname(os.path.abspath(__file__))
+if _TOOLS not in sys.path:
+    sys.path.insert(0, _TOOLS)
+from seal_safe_cache import read_cache_csv  # noqa: E402  (seal-safe cache reads, CUL-203)
+
 
 def load_bounded(symbol):
     """Load the 8h CSV and IMMEDIATELY restrict to the in-sample window."""
@@ -42,7 +47,11 @@ def load_bounded(symbol):
     if not os.path.exists(path):
         raise SystemExit(f"STOP: missing CSV {path}")
 
-    raw = pd.read_csv(path, usecols=["timestamp", "funding_rate"])
+    # end=WINDOW_END selects the request-window seal check (CUL-203): the CSV
+    # physically extends past the seal, so the read is refused before it happens
+    # if the in-sample window's end ever reaches the holdout. WINDOW_END is
+    # 2023-12-31 (pre-seal), so this is a no-op for the committed measurement.
+    raw = read_cache_csv(path, end=WINDOW_END, usecols=["timestamp", "funding_rate"])
     if raw.empty:
         raise SystemExit(f"STOP: empty CSV {path}")
 
