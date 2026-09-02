@@ -91,7 +91,7 @@ def test_gap_size_reported_matches_the_measured_seam(tmp_path):
     start, end = gaps[0]
     assert start == pd.Timestamp("2026-01-01 00:00")
     assert end == pd.Timestamp("2026-06-22 22:00")
-    assert int((end - start) / pd.Timedelta(hours=1)) + 1 == 4151
+    assert int((end - start) / pd.Timedelta(1, unit="h")) + 1 == 4151
 
 
 # ---------------------------------------------------------------------------

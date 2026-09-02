@@ -39,7 +39,7 @@ def _ohlcv(start, periods: int) -> pd.DataFrame:
             "low": 1.0,
             "close": 1.0,
             "volume": 1.0,
-            "close_time": ts + pd.Timedelta(milliseconds=H * 1000 - 1),
+            "close_time": ts + pd.Timedelta(H * 1000 - 1, unit="ms"),
             "quote_asset_volume": 1.0,
             "number_of_trades": 1,
             "taker_buy_base_asset_volume": float("nan"),
@@ -52,7 +52,7 @@ def _ohlcv(start, periods: int) -> pd.DataFrame:
 def _fetcher(tmp_path) -> CcxtFetcher:
     return CcxtFetcher(
         start_date=T0,
-        end_date=T0 + pd.Timedelta(hours=8),
+        end_date=T0 + pd.Timedelta(8, unit="h"),
         symbols=[SYMBOL],
         candle_interval_seconds=H,
         exchange="binance",
@@ -76,7 +76,7 @@ def test_merge_keeps_close_time_datetime64(tmp_path):
     _ohlcv(T0, 3).to_csv(path, index=False)  # hours 0,1,2 -> close_time as string on disk
 
     existing = fetcher._load_local(SYMBOL)
-    chunk = _ohlcv(T0 + pd.Timedelta(hours=3), 3)  # hours 3,4,5 — contiguous top-up
+    chunk = _ohlcv(T0 + pd.Timedelta(3, unit="h"), 3)  # hours 3,4,5 — contiguous top-up
 
     fetcher._merge_and_store(SYMBOL, [chunk, existing], save=False, existing=existing)
     combined = fetcher.data_cache[SYMBOL]
