@@ -11,7 +11,9 @@ Mutation coverage (run by the executor lane, must fail when the guard breaks):
     test_cache_available_rejects_degenerate fails (an empty file "exists").
 """
 
+import ast
 import socket
+from pathlib import Path
 
 import pytest
 from _cache_guard import cache_is_available, requires_cache
@@ -94,3 +96,55 @@ def test_requires_cache_marks_skip_for_degenerate(tmp_path):
     real = tmp_path / "real.csv"
     real.write_bytes(b"x" * 4096)
     assert bool(requires_cache(real).args[0]) is False
+
+
+# ---------------------------------------------------------------------------
+# Structural guard: a @pytest.mark.network opt-out must pair with @requires_cache
+# ---------------------------------------------------------------------------
+
+_TESTS_DIR = Path(__file__).parent
+
+# The ONE legitimate @pytest.mark.network without a cache guard: the probe just
+# below that proves the opt-out MECHANISM works. It asserts the guard was not
+# installed and never touches the network, so it needs no cache. Everything else
+# that opts out of the socket block runs the real engine and MUST guard its
+# caches or it silently live-fetches on a cache-less tree (CUL-221).
+_NETWORK_WITHOUT_CACHE_ALLOWED = {
+    ("test_cache_network_guard.py", "test_network_marker_opts_out"),
+}
+
+
+def _decorator_source_names(func):
+    names = set()
+    for dec in func.decorator_list:
+        node = dec.func if isinstance(dec, ast.Call) else dec
+        names.add(ast.unparse(node))
+    return names
+
+
+def test_no_network_marker_without_cache_guard():
+    """Any sr test opting out of the CUL-198 socket block via @pytest.mark.network
+    must also carry a @requires_cache guard, else it silently live-fetches (and
+    writes caches into local_data) on a tree without the BTCUSDT caches -- the
+    CUL-221 defect. The only exception is the opt-out mechanism probe itself."""
+    offenders = []
+    for path in sorted(_TESTS_DIR.glob("test_*.py")):
+        # utf-8-sig: at least one test module in this tree carries a UTF-8 BOM
+        # (a Windows artifact); ast.parse chokes on a raw U+FEFF otherwise.
+        tree = ast.parse(path.read_text(encoding="utf-8-sig"))
+        for func in ast.walk(tree):
+            if not isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            names = _decorator_source_names(func)
+            if not any(n.endswith("mark.network") for n in names):
+                continue
+            if any("requires_cache" in n for n in names):
+                continue
+            if (path.name, func.name) in _NETWORK_WITHOUT_CACHE_ALLOWED:
+                continue
+            offenders.append(f"{path.name}::{func.name}")
+    assert not offenders, (
+        "test(s) opt out of the CUL-198 socket block with @pytest.mark.network "
+        "but lack a @requires_cache guard, so they live-fetch on a cache-less "
+        "tree (CUL-221): " + ", ".join(offenders)
+    )
