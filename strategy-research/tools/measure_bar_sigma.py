@@ -178,6 +178,12 @@ def bar_returns_bps(
     IC, so the residual error runs against the conservative direction and is
     reported rather than corrected — see `--report-gaps`.
     """
+    # Self-guard (CUL-203 red-team): `bar_returns_bps` is a PUBLIC library entry,
+    # so a direct caller must not depend on `measure()` having asserted the window
+    # first — refuse a sealed-overlapping window here too, before reading. (No-op
+    # for the None defaults, matching _assert_window elsewhere; the CLI always
+    # passes concrete dates and the caches physically end 2025-12-31.)
+    _assert_window(start, end)
     p = cache_path(base, local_data)
     if not p.exists():
         raise FileNotFoundError(f"no 1h cache for {base}: {p}")
