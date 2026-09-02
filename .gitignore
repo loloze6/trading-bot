@@ -27,6 +27,11 @@ logs/
 backtest_results/
 trading-bot/last_backtest_summary.txt
 
+# Flat interim trades dump — every `simulate` rewrites it, and the same data
+# already lands per-run at trading-bot/results/runs/<id>/trades.json
+# (RUN_ARTIFACT.md), so tracking the flat copy only produces spurious diffs.
+trading-bot/results/trades.json
+
 # Data cache — publish the small per-symbol CSVs at local_data root;
 # deny ALL subdirectories by default (Kraken_batch 32G, Kraken_funding_rates 436M,
 # holdout_sealed 1.9G sealed). Deny-by-default, not name enumeration: a new bulk
