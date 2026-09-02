@@ -41,6 +41,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from _cache_guard import cache_skip_reason  # noqa: E402
 from core import launcher as launcher_mod  # noqa: E402
 from core.backtester import BacktestEngine, FeedRequirementError  # noqa: E402
+from data.data_manager import DataManager  # noqa: E402
 from data.feed_registry import FEED_REGISTRY, WHALE_FOOTPRINT_FEEDS  # noqa: E402
 from strategies import strategy_components as sc_module  # noqa: E402
 from strategies.main_strategy import AdvancedStrategy  # noqa: E402
@@ -391,13 +392,21 @@ def test_run_backtest_drop_feeds_unknown_name_raises_value_error(tmp_path):
     assert "not_a_real_feed" in str(exc_info.value)
 
 
-def test_run_backtest_drop_feeds_required_feed_raises_feed_requirement_error(tmp_path):
+def test_run_backtest_drop_feeds_required_feed_raises_feed_requirement_error(block_network, monkeypatch, tmp_path):
     """Dropping a feed the loaded strategy actually requires must raise V1's
     FeedRequirementError -- the already-built Step 1 guard, exercised end to
-    end through run_backtest(). Raises inside load_data, right after the
-    (cached, fast) price fetch and before any aux-feed fetch or the
-    simulation loop -- stays fast despite using the real BacktestEngine and
-    DataManager."""
+    end through run_backtest(). V1 raises inside load_data right after the
+    price fetch and before any aux-feed fetch; the price fetch is stubbed to a
+    one-bar frame (same shape as _RecordingDataManager above) so the real
+    engine + strategy + guard run without a live Binance fetch that would
+    write the shared local_data/BTCUSDT_1h.csv cache on a cache-less tree
+    (fork CI). block_network makes any socket use fail loud, proving the run
+    is hermetic."""
+    monkeypatch.setattr(
+        DataManager, "fetch_historical_data",
+        lambda self, symbol, start_date, end_date, exchange="binance": pd.DataFrame(
+            {"timestamp": [pd.Timestamp("2024-01-01")], "close": [1.0]}),
+    )
     with pytest.raises(FeedRequirementError) as exc_info:
         launcher_mod.run_backtest(
             config_path=str(_FEAR_GREED_CONFIG),
