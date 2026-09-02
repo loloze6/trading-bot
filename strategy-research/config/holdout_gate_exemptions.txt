@@ -76,6 +76,22 @@ strategy-research/engineering/roadmap/E-003/EPIC.md	PROSE
 # first attempt was. Count of 1 = E-003's closing note citing the sealed-date CSV its
 # own fresh-clone probe used. Bump deliberately, having read the new line.
 strategy-research/engineering/roadmap/EPICS.md	1
+
+# strategy-research/engineering/roadmap/E-039/S1_FINDINGS.md (2026-09-02)
+#   ONE line, Deliverable 3: quotes validation_protocol.yaml's own
+#   sample_split_design.holdout_range value ([2026-01-01, 2026-06-30]) as evidence that
+#   the A6.1 holdout declaration is already correctly sourced from
+#   campaign_data_policy.yaml across all 7 runs checked. Prose describing config content,
+#   not market data -- the seven runs cited (043/044/047/048/050/053/060) all end their
+#   own walk-forward windows at or before 2025-12-31, verified before running anything
+#   (S1_FINDINGS.md's own scope note).
+#
+#   Verified before registering:
+#     sh strategy-research/tools/holdout_date_gate.sh --report-residual \
+#         | grep S1_FINDINGS
+#     -> 1 line
+#   NO MARKET DATA FROM THE SEALED WINDOW.
+strategy-research/engineering/roadmap/E-039/S1_FINDINGS.md	1
 # -----------------------------------------------------------------------------------
 
 .gitignore	4
@@ -96,7 +112,9 @@ strategy-research/config/campaign_data_policy.yaml	17
 # 2 -> 3 on 2026-08-18 (the PROSE-marker header added one more explanatory mention).
 # 3 -> 4 on 2026-09-01 (the test_read_path_seal_guard_ordering.py entry above quotes its
 # fixture dates verbatim in its own explanation -- one more mention).
-strategy-research/config/holdout_gate_exemptions.txt	4
+# 4 -> 5 on 2026-09-02 (the E-039/S1_FINDINGS.md entry quotes the holdout_range value
+# verbatim -- one more mention).
+strategy-research/config/holdout_gate_exemptions.txt	5
 strategy-research/engineering/improvements/done/design_and_docs/STEP_05_FINDINGS.md	1
 strategy-research/engineering/improvements/done/design_and_docs/K4_routing_registration_design_20260712.md	4
 strategy-research/engineering/improvements/done/design_and_docs/p1b_fetch_manifest.md	6

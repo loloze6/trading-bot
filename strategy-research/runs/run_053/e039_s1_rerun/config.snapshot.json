@@ -1,0 +1,36 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 51,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "macd_crossover",
+            "class": "strategies.strategy_components.MacdHistogramCrossoverComponent",
+            "params": {
+              "fast_period": 12,
+              "slow_period": 26,
+              "signal_period": 9,
+              "scaling_factor": 10.0
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}
