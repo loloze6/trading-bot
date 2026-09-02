@@ -1,8 +1,8 @@
 # E-041 — Every feature flag gets an owner and a switch-on criterion
 
-**State:** new
+**State:** in-progress — S1 and S3 done, S2 (the register) remains
 **Owner:** Jérémy
-**Updated:** 2026-08-31
+**Updated:** 2026-09-02
 
 ## Why
 
@@ -88,14 +88,35 @@ already own the question — see [E037-43](../E-037/FINDINGS.md#e037-43)).
 
 ## Stages
 
-- [ ] **S1 — Characterise and stop.** For each of the eight: who added it, what
-      it was waiting for, and whether that condition is now met. Several may
-      simply be ready. Report, then stop for Jérémy's per-flag calls.
+- [x] **S1 — Characterise and stop.** Done 2026-09-02. All eight checked
+      against commit history and config comments: none had a stated switch-on
+      criterion — the blanket ship-off-by-default rule was the entire
+      explanation. Two (`anti_adjacency_retry`, `variant_anti_adjacency_gate`)
+      surfaced a real blocker not visible from the flag alone: E-036 found
+      their shared underlying key broken.
 - [ ] **S2 — (blocked on S1) The register.** One file, plus a test that every
       default-`False` flag in the engine and `campaign_config.yaml` appears in
-      it with an owner and a criterion.
-- [ ] **S3 — (blocked on S1) Act on the decisions.** Each flag turned on,
-      deleted, or documented as blocked with its criterion stated.
+      it with an owner and a criterion. **Not yet built** — the per-flag
+      decisions below are its input.
+- [x] **S3 — (blocked on S1) Act on the decisions.** Done 2026-09-02, one flag
+      per commit: `bar_equity` (PR #95), `exclusion_digest_input` (PR #96),
+      `stale_input_path_fix` (PR #97), `variant_selection_record` +
+      `schedulability_block` (PR #98). Final state, all eight:
+
+      | Flag | State | Reason |
+      |---|---|---|
+      | `bar_equity` | **ON** | Proven since 2026-07-31, no criterion unmet |
+      | `exclusion_digest_input` | **ON** | Digest file exists on disk, fires immediately |
+      | `stale_input_path_fix` | **ON** | Both target files verified present |
+      | `variant_selection_record` | **ON** | Compliance checked before flipping (see PR #98) |
+      | `schedulability_block` | **ON** | Purely additive, no consumer yet |
+      | `model_funding` | off | E-014: incomplete below daily bars, a real bug not a caution |
+      | `anti_adjacency_retry` | off | **E-036: shared key refuses legitimate work, not a caution** |
+      | `variant_anti_adjacency_gate` | off | Same E-036 blocker, same mechanism |
+
+      Guard tests for all eight now live in
+      `tests/test_campaign_config_e041_flags.py`, including two asserting the
+      blocked pair stay off until E-036 ships.
 
 ## Risks
 
