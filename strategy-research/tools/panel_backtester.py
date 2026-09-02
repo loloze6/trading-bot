@@ -53,6 +53,10 @@ _REPO = os.path.dirname(_SR)
 _LOCAL_DATA = os.path.join(_REPO, "trading-bot", "local_data")
 _COST_MODEL = os.path.join(_SR, "config", "cost_model.yaml")
 
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+from seal_safe_cache import read_cache_csv  # noqa: E402  (seal-safe cache reads, CUL-203)
+
 DEFAULT_COMMISSION_RATE = 0.001  # engine DEFAULT_COMMISSION_RATE (10 bps one-way)
 INITIAL_CAPITAL = 1000.0         # engine DEFAULT_INITIAL_BALANCE
 
@@ -61,8 +65,14 @@ INITIAL_CAPITAL = 1000.0         # engine DEFAULT_INITIAL_BALANCE
 # Data loading
 # ---------------------------------------------------------------------------
 
-def load_ohlcv(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path, usecols=["timestamp", "open", "high", "low", "close", "volume"])
+def load_ohlcv(path: str, end=None) -> pd.DataFrame:
+    # `end`: the caller's hard upper clamp when it has one. Passing it selects the
+    # request-window seal check (refuse before reading if the window reaches the
+    # seal), which is what a caller loading a cache that physically extends past
+    # the seal -- e.g. the un-prefixed Binance spot BTCUSDT_1h -- needs: the whole
+    # file is read and clamped, so the file's sealed rows must not trip a
+    # content check. With no `end` the loaded frame itself must be seal-clean.
+    df = read_cache_csv(path, end=end, usecols=["timestamp", "open", "high", "low", "close", "volume"])
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     for c in ("open", "high", "low", "close", "volume"):
         df[c] = pd.to_numeric(df[c], errors="coerce")
