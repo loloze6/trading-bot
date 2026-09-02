@@ -128,6 +128,85 @@ def _assert_no_sealed_rows(df: "pd.DataFrame", symbol: str) -> None:
         )
 
 
+def _naive_bound(value, which: str, symbol: str):
+    """A tz-naive pd.Timestamp for a date-like `value`, or None if it is absent.
+
+    Deny by default (CUL-203 red-team F1): a bound that is PRESENT but not an
+    unambiguous date RAISES SealedDataError rather than being silently skipped —
+    the fail-open where a tz-aware / epoch-int / exotic `end` slipped past the
+    window check and returned sealed rows. Outcomes:
+      * None  -> None (a genuinely absent bound; the content backstop covers it).
+      * str / datetime / date / Timestamp / datetime64 -> parsed; a tz-aware value
+        is normalised to UTC-naive (the policy's convention); NaT / unparseable
+        RAISES.
+      * anything else (int, float, bool, list, object, ...) -> RAISES. An int is
+        an AMBIGUOUS epoch — pandas reads it as NANOSECONDS, i.e. a 1970 date that
+        silently passes the seal — so refuse it; the caller must pass a real date.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, (str, datetime.datetime, datetime.date, pd.Timestamp, np.datetime64)):
+        raise SealedDataError(
+            f"{symbol}: {which} bound {value!r} is a {type(value).__name__}, not a date — "
+            f"refusing to guess whether it reaches the sealed holdout. Pass a naive date "
+            f"string or Timestamp (an epoch int is ambiguous; convert it first)."
+        )
+    try:
+        ts = pd.Timestamp(value)
+    except (ValueError, TypeError) as exc:
+        raise SealedDataError(
+            f"{symbol}: {which} bound {value!r} is not a parseable date — refusing to "
+            f"prove it lies outside the sealed holdout."
+        ) from exc
+    if ts is pd.NaT:
+        raise SealedDataError(
+            f"{symbol}: {which} bound {value!r} parsed to NaT — refusing to prove it lies "
+            f"outside the sealed holdout."
+        )
+    if ts.tz is not None:
+        ts = ts.tz_convert("UTC").tz_localize(None)
+    return ts
+
+
+def _assert_request_window_unsealed(start_date, end_date, symbol: str) -> None:
+    """Refuse a request whose window OVERLAPS the sealed holdout, before any fetch.
+
+    The companion `_assert_no_sealed_rows` inspects the rows a fetch RETURNS; it
+    cannot fire when a cache has a gap exactly inside the holdout, because then a
+    request reaching into the seal comes back with no sealed rows and the caller
+    is handed a silently-short series it believes covers the window. This guard
+    refuses on the requested RANGE instead of on content, so a sealed-intent
+    request is stopped before a single candle (or aux feed) is read — the
+    range-check the .gitignore seal-exclusion comment flags as still open.
+
+    Keyed on BOTH ends of `_holdout_bounds()`, not the start alone: the seal is a
+    closed window whose data is usable again afterwards, so a post-seal window
+    must pass. The requested [start, end] overlaps the sealed [lo, hi) exactly
+    when `start < hi and end >= lo`.
+
+    Deny by default on the bounds (`_naive_bound`): a bound that is present but
+    not an unambiguous naive date RAISES — never a silent return, which was the
+    fail-open on tz-aware / epoch / exotic `end` (CUL-203 red-team F1). tz-aware
+    is normalised to UTC-naive so it compares correctly. Only a genuinely absent
+    (None) bound is permissive, and the content backstop covers that. A failure
+    to LOCATE the seal also denies by default — it raises out of
+    `_holdout_bounds()` and must propagate.
+    """
+    start = _naive_bound(start_date, "start", symbol)
+    end = _naive_bound(end_date, "end", symbol)
+    if start is None or end is None:
+        return
+    lo, hi = _holdout_bounds()
+    if start < hi and end >= lo:
+        raise SealedDataError(
+            f"{symbol}: requested window [{start:%Y-%m-%d}..{end:%Y-%m-%d}] overlaps the "
+            f"holdout seal [{lo:%Y-%m-%d}, {hi - datetime.timedelta(days=1):%Y-%m-%d}] — "
+            f"refused before fetch. The requested range reaches into a single-use, "
+            f"terminal holdout. Bound the request outside the sealed window, or pass "
+            f"allow_sealed=True if this genuinely is the holdout evaluation."
+        )
+
+
 # ===========================================================================
 # Core data structures  (unchanged)
 # ===========================================================================
@@ -1092,6 +1171,13 @@ class DataManager:
             data_dir = data_storage_dir
         )
         try:
+            # Range-check seal guard (CUL-203): refuse a request whose window
+            # reaches into the holdout BEFORE fetching, complementing the
+            # returned-rows guard below. Inside the try on purpose so its
+            # SealedDataError rides the same `except SealedDataError: raise`
+            # propagation and is never degraded to an empty frame.
+            if not allow_sealed:
+                _assert_request_window_unsealed(start_date, end_date, symbol)
             data = fetcher.get_data()   # {symbol: DataFrame}
             if symbol in data and not data[symbol].empty:
                 is_continuous, gaps = fetcher.validate_data_continuity(symbol)

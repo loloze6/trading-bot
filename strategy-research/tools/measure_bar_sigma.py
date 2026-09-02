@@ -90,6 +90,7 @@ _HERE = Path(__file__).resolve()
 _SR = _HERE.parents[1]
 _REPO = _HERE.parents[2]
 _LOCAL_DATA = _REPO / "trading-bot" / "local_data"
+_POLICY_PATH = _SR / "config" / "campaign_data_policy.yaml"
 
 #: The 19 bases of `campaign_data_policy.yaml:kraken_breadth_19pair`, in the
 #: order the pre-registration lists them.
@@ -108,11 +109,37 @@ DEFAULT_END = "2025-12-31"
 #: (the ledger G2 backfill this policy already anticipates) would extend them
 #: into the holdout and this module would then be reading sealed data with no
 #: signal that anything had changed.
-HOLDOUT_RANGE = ("2026-01-01", "2026-06-30")
+def _holdout_range_from_policy():
+    """(first sealed day, last sealed day) as "YYYY-MM-DD", read from the policy.
+
+    Derived, not a local literal (CUL-203) -- so the seal moves with
+    `campaign_data_policy.yaml` instead of silently drifting from it. This module
+    is import-isolated for pre-registration integrity (`test_module_cannot_reach
+    _the_recorded_capture` pins its imports to stdlib+pandas), so it CANNOT reuse
+    `data_manager._holdout_bounds`; it reads the same single source of truth with
+    a minimal parser over the one contractually-pinned line the policy documents
+    ("exactly ONE holdout_range key, DOUBLE-QUOTED ISO YYYY-MM-DD"). Deny by
+    default: any failure to locate that line raises rather than guessing a
+    window it cannot prove.
+    """
+    for line in _POLICY_PATH.read_text(encoding="utf-8").splitlines():
+        if line.split("#", 1)[0].strip().startswith("holdout_range:"):
+            inside = line.split("[", 1)[1].split("]", 1)[0]
+            lo, hi = (p.strip().strip('"').strip("'") for p in inside.split(",")[:2])
+            return lo, hi
+    raise HoldoutViolation(
+        f"cannot locate holdout_range in {_POLICY_PATH} -- refusing to guess the "
+        "sealed window."
+    )
 
 
 class HoldoutViolation(RuntimeError):
     """A requested window overlaps the sealed holdout range."""
+
+
+#: (closed) sealed-window bounds, DERIVED from the policy (see above), kept as a
+#: public tuple because the module's tests read it.
+HOLDOUT_RANGE = _holdout_range_from_policy()
 
 
 def _assert_window(start: str, end: str) -> None:
@@ -135,6 +162,7 @@ def bar_returns_bps(
     start: Optional[str] = None,
     end: Optional[str] = None,
     local_data: Path = _LOCAL_DATA,
+    allow_sealed: bool = False,
 ) -> List[float]:
     """
     Close-to-close 1-bar returns in bps over `[start, end]`.
@@ -151,6 +179,12 @@ def bar_returns_bps(
     IC, so the residual error runs against the conservative direction and is
     reported rather than corrected — see `--report-gaps`.
     """
+    # Self-guard (CUL-203 red-team): `bar_returns_bps` is a PUBLIC library entry,
+    # so a direct caller must not depend on `measure()` having asserted the window
+    # first — refuse a sealed-overlapping window here too, before reading. (No-op
+    # for the None defaults, matching _assert_window elsewhere; the CLI always
+    # passes concrete dates and the caches physically end 2025-12-31.)
+    _assert_window(start, end)
     p = cache_path(base, local_data)
     if not p.exists():
         raise FileNotFoundError(f"no 1h cache for {base}: {p}")
@@ -173,6 +207,23 @@ def bar_returns_bps(
         # `base_fetcher._inclusive_end` exists to prevent, and the reason this
         # fix is not simply "<" instead of "<=".
         df = df[df["timestamp"] < pd.Timestamp(end).normalize() + pd.Timedelta(1, unit="D")]
+    # Content backstop (CUL-203 red-team r2): the no-arg call (start=end=None)
+    # leaves _assert_window a no-op and the frame UNFILTERED, so a kraken_ cache
+    # ever backfilled past 2025-12-31 (the G2 concern the docstring names) would
+    # feed sealed candles into the returns. Refuse any LOADED row at/after the seal
+    # start unless a deliberate escape is set. Uses the module's own derived seal
+    # (HOLDOUT_RANGE from _holdout_range_from_policy) -- no engine import, so the
+    # import-isolation contract holds. No-op today: the caches end 2025-12-31.
+    if not allow_sealed:
+        n_sealed = int((df["timestamp"] >= pd.Timestamp(HOLDOUT_RANGE[0])).sum())
+        if n_sealed:
+            raise HoldoutViolation(
+                f"{base}: {n_sealed} loaded row(s) at/after the seal start "
+                f"{HOLDOUT_RANGE[0]} (window [{start}, {end}]) — refusing to compute "
+                f"returns over sealed candles. A kraken_ cache backfilled past the seal "
+                f"defeats the window filter; trim it, or pass allow_sealed=True for a "
+                f"deliberate holdout evaluation."
+            )
     closes = df["close"].astype(float).tolist()
     out: List[float] = []
     for i in range(len(closes) - 1):
