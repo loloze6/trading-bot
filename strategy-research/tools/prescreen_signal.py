@@ -183,7 +183,7 @@ def _load_fear_greed(start: str, end: str) -> pd.DataFrame:
     df = pd.read_csv(fpath)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     # A8.4 fix: +1 day shift so day D value is visible only from day D+1 onward
-    df["timestamp"] = df["timestamp"] + pd.Timedelta(days=1)
+    df["timestamp"] = df["timestamp"] + timedelta(days=1)
     df = df[(df["timestamp"].dt.strftime("%Y-%m-%d") >= start) &
             (df["timestamp"].dt.strftime("%Y-%m-%d") < end)]
     return df[["timestamp", "fear_greed"]].sort_values("timestamp").reset_index(drop=True)
@@ -1290,7 +1290,7 @@ def run_prescreen(
         print(f"    Loaded {len(bars_df)} bars — running signal extraction ...")
         if aux_feeds:
             bars_df = _merge_aux_feeds(bars_df, aux_feeds, symbol, range_start, range_end)
-        expected_step = pd.Timedelta(seconds=timeframe_seconds(timeframe))
+        expected_step = pd.Timedelta(timeframe_seconds(timeframe), unit="s")
         expected_step_by_symbol[symbol] = expected_step
         records, error_count, error_samples, gap_skipped = _extract_forecasts(
             config_snapshot_path, bars_df, expected_step=expected_step

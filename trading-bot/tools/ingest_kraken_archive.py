@@ -93,7 +93,7 @@ def _holdout_bounds() -> tuple:
         import yaml  # local: keeps the module importable where yaml is absent
         with open(_POLICY_PATH, encoding="utf-8") as fh:
             lo, hi = yaml.safe_load(fh)["holdout_range"][:2]
-        return pd.Timestamp(lo), pd.Timestamp(hi).normalize() + pd.Timedelta(days=1)
+        return pd.Timestamp(lo), pd.Timestamp(hi).normalize() + datetime.timedelta(days=1)
     except Exception as exc:                                  # noqa: BLE001
         raise RuntimeError(
             f"Cannot read holdout_range from {_POLICY_PATH}: {exc}. Refusing to "
@@ -222,7 +222,7 @@ def to_binance_schema(raw: pd.DataFrame,
         "low": raw["low"].astype(float),
         "close": raw["close"].astype(float),
         "volume": raw["volume"].astype(float),
-        "close_time": ts + pd.Timedelta(milliseconds=close_time_ms - 1),
+        "close_time": ts + datetime.timedelta(milliseconds=close_time_ms - 1),
         "quote_asset_volume": raw["volume"].astype(float) * raw["close"].astype(float),
         "number_of_trades": raw["trade_count"].astype("int64"),
         "taker_buy_base_asset_volume": np.nan,
@@ -380,7 +380,7 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
         first, last = sealed["timestamp"].min(), sealed["timestamp"].max()
         raise ValueError(
             f"{asset}: archive carries {len(sealed)} row(s) inside the holdout "
-            f"seal [{_lo:%Y-%m-%d}, {_hi - pd.Timedelta(days=1):%Y-%m-%d}] — "
+            f"seal [{_lo:%Y-%m-%d}, {_hi - datetime.timedelta(days=1):%Y-%m-%d}] — "
             f"first {first}, last {last}. "
             f"Ingesting would write sealed candles into the tracked cache "
             f"{cache_symbol(asset)}. NOTHING was written. Trim the source tranche "
