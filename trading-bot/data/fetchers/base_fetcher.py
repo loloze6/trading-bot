@@ -75,6 +75,14 @@ class BaseFetcher(ABC):
     # (e.g. weekends in macro data).  1.5 = flag gaps > 1.5× expected interval.
     expected_gap_tolerance: float = 1.5
 
+    # When True, a failed OPTIONAL gap-fill (a raising _fetch_remote, or a
+    # FetchGapError from _merge_and_store refusing a non-connecting response)
+    # falls back to the already-cached rows that cover the window instead of
+    # propagating. OFF by default so write/append callers (e.g. the capture
+    # tools) keep failing loud; the read-only backtest path opts in via
+    # DataManager.fetch_historical_data. See _load_all.
+    tolerate_fill_failure: bool = False
+
     def __init__(
         self,
         start_date,
@@ -201,20 +209,80 @@ class BaseFetcher(ABC):
 
             if missing:
                 logger.info(f"[{self.__class__.__name__}] {len(missing)} missing period(s) for {symbol}")
-                pieces = [] if existing.empty else [existing]
-                for ps, pe in missing:
-                    logger.info(f"  Fetching {symbol}  {ps} → {pe}")
-                    chunk = self._trim_to_period(self._fetch_remote(symbol, ps, pe), pe)
-                    if not chunk.empty:
-                        pieces.append(chunk)
+                try:
+                    pieces = [] if existing.empty else [existing]
+                    for ps, pe in missing:
+                        logger.info(f"  Fetching {symbol}  {ps} → {pe}")
+                        chunk = self._trim_to_period(self._fetch_remote(symbol, ps, pe), pe)
+                        if not chunk.empty:
+                            pieces.append(chunk)
+                        else:
+                            logger.warning(f"  No data returned for {symbol} {ps} → {pe}")
+                    if pieces:
+                        self._merge_and_store(symbol, pieces, save=self.localStorage,
+                                              existing=existing)
                     else:
-                        logger.warning(f"  No data returned for {symbol} {ps} → {pe}")
-                if pieces:
-                    self._merge_and_store(symbol, pieces, save=self.localStorage,
-                                          existing=existing)
-                else:
-                    logger.warning(f"  No valid data assembled for {symbol}")
-                    self.data_cache[symbol] = pd.DataFrame()
+                        logger.warning(f"  No valid data assembled for {symbol}")
+                        self.data_cache[symbol] = pd.DataFrame()
+                except Exception as e:
+                    # A gap-fill is an OPTIONAL top-up of already-loaded data. When
+                    # it fails -- a raising _fetch_remote (network / rate limit), or
+                    # a FetchGapError from _merge_and_store refusing a non-connecting
+                    # response -- the read-only backtest path (tolerate_fill_failure)
+                    # falls back to the local rows rather than propagating to
+                    # fetch_historical_data's blanket handler, which degrades any
+                    # exception to an empty frame and turns a recoverable INTERIOR
+                    # gap into a hard "No historical data" crash (data_manager.py).
+                    #
+                    # The fallback is allowed ONLY when the cache, bounded to the
+                    # requested window, reaches BOTH boundaries -- its first in-window
+                    # row strictly within one interval of start_date and its last
+                    # strictly within one interval of window_end. Strict inequalities
+                    # keep the two sides symmetric: an off-grid start/end (a request
+                    # landing mid-interval) whose first/last bar sits inside the first/
+                    # last interval passes, but a whole MISSING boundary bar (first row
+                    # at exactly start_date + interval, or last at window_end - interval)
+                    # re-raises. With `<=` a missing leading bar would pass silently
+                    # while `_inclusive_end`'s 23:59:59.999 already makes the end side
+                    # strict -- the asymmetry this avoids. Interior holes (the real
+                    # CUL-230 case) are tolerated; a boundary shortfall is NOT, because
+                    # returning a
+                    # cache that begins or ends inside the requested window would
+                    # silently backtest a DIFFERENT window than asked -- launcher.py
+                    # rejects only EMPTY frames, so a short window passes as if whole,
+                    # trading the loud crash for a quiet wrong answer. Boundary
+                    # shortfall therefore re-raises the original exception.
+                    #
+                    # Three further exclusions always re-raise:
+                    #   * Seal guards MUST fail loud. _assert_no_sealed_rows /
+                    #     _assert_request_window_unsealed raise SealedDataError
+                    #     (data_manager.py); holdout safety depends on that never
+                    #     being downgraded to a warning. Imported lazily -- data_manager
+                    #     imports this module, so a top-level import would be circular.
+                    #   * An empty in-window cache has nothing to fall back to.
+                    #   * Write/append callers (capture tools) leave the flag off so
+                    #     a non-connecting fetch still fails loud, unchanged.
+                    from data.data_manager import SealedDataError
+                    in_window = existing[
+                        (existing["timestamp"] >= self.start_date) &
+                        (existing["timestamp"] <= window_end)
+                    ] if not existing.empty else existing
+                    one = datetime.timedelta(seconds=int(self.interval_seconds))
+                    covers_window = (
+                        not in_window.empty
+                        and in_window["timestamp"].min() < self.start_date + one
+                        and in_window["timestamp"].max() > window_end - one
+                    )
+                    if (isinstance(e, SealedDataError)
+                            or not self.tolerate_fill_failure
+                            or not covers_window):
+                        raise
+                    logger.warning(
+                        f"[{self.__class__.__name__}] {symbol}: gap-fill failed "
+                        f"({type(e).__name__}: {e}); cache reaches both window "
+                        f"boundaries, using it as-is despite the unfilled gap"
+                    )
+                    self.data_cache[symbol] = existing
             else:
                 logger.info(f"[{self.__class__.__name__}] Local data for {symbol} is complete")
                 self.data_cache[symbol] = existing

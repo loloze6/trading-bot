@@ -1170,6 +1170,12 @@ class DataManager:
             localStorage=localStorage,
             data_dir = data_storage_dir
         )
+        # Read-only path: if an OPTIONAL gap-fill of an internal hole fails
+        # (offline / rate-limited fetch, or a non-connecting response the
+        # write-guard rejects), fall back to the cached rows that already cover
+        # the window rather than crashing the backtest on "No historical data".
+        # Write/append callers construct fetchers directly and leave this off.
+        fetcher.tolerate_fill_failure = True
         try:
             # Range-check seal guard (CUL-203): refuse a request whose window
             # reaches into the holdout BEFORE fetching, complementing the
