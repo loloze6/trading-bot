@@ -44,7 +44,7 @@ def _bars(timestamps) -> pd.DataFrame:
             "low": 1.0,
             "close": 1.0,
             "volume": 1.0,
-            "close_time": ts + pd.Timedelta(milliseconds=_CLOSE_MS),
+            "close_time": ts + pd.Timedelta(_CLOSE_MS, unit="ms"),
             "quote_asset_volume": 1.0,
             "number_of_trades": 1,
             "taker_buy_base_asset_volume": float("nan"),
@@ -56,7 +56,7 @@ def _bars(timestamps) -> pd.DataFrame:
 
 def _seed_gapped_cache(path: Path) -> None:
     """A cache with an internal gap: hours 0,1,2 then 5,6,7 (3,4 missing)."""
-    kept = [T0 + pd.Timedelta(hours=i) for i in (0, 1, 2, 5, 6, 7)]
+    kept = [T0 + pd.Timedelta(i, unit="h") for i in (0, 1, 2, 5, 6, 7)]
     _bars(kept).to_csv(path, index=False)
 
 
@@ -91,7 +91,7 @@ def test_localstorage_false_does_not_write_cache(tmp_path, monkeypatch):
     df = dm.fetch_historical_data(
         "BTCUSD",
         T0,
-        T0 + pd.Timedelta(hours=7),
+        T0 + pd.Timedelta(7, unit="h"),
         exchange="kraken",
         localStorage=False,
     )
@@ -114,7 +114,7 @@ def test_localstorage_default_true_does_write_cache(tmp_path, monkeypatch):
     df = dm.fetch_historical_data(
         "BTCUSD",
         T0,
-        T0 + pd.Timedelta(hours=7),
+        T0 + pd.Timedelta(7, unit="h"),
         exchange="kraken",  # localStorage omitted → default True
     )
 

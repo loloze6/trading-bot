@@ -280,7 +280,7 @@ def test_fetch_emits_a_complete_bar_grid_with_no_timestamp_gaps(tmp_path):
     df = _fetcher(tmp_path, min_baseline_trades=1, min_bar_trades=1)._fetch_remote(
         "BTCUSD", DAY, DAY)
     deltas = df["timestamp"].diff().dropna().unique()
-    assert list(deltas) == [pd.Timedelta(hours=1)]
+    assert list(deltas) == [pd.Timedelta(1, unit="h")]
 
 
 def test_counts_survive_marking_but_values_do_not(tmp_path):
