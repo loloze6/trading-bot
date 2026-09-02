@@ -17,6 +17,7 @@ Exit codes:
   2  — data gap > 1 day detected
 """
 import sys
+import contextlib
 import os
 import json
 import argparse
@@ -32,6 +33,18 @@ if _TBOT not in sys.path:
 
 import pandas as pd
 from data.data_manager import DataManager
+
+# CUL-213: the emoji status prints in this module crash on a Windows cp1252
+# console (UnicodeEncodeError) the moment stdout is redirected/piped/captured
+# (e.g. run as a captured subprocess). Degrade unencodable glyphs to '?' rather
+# than raising — same fix as setup_run.py (CUL-12). getattr because typeshed
+# types sys.stdout as TextIO (no reconfigure); contextlib.suppress because a
+# captured stream may reject it (OSError) — never crash a context the raw prints
+# already survived.
+_reconfigure = getattr(sys.stdout, "reconfigure", None)
+if _reconfigure is not None:
+    with contextlib.suppress(OSError):
+        _reconfigure(errors="replace")
 
 _DEFAULT_POLICY = os.path.join(_SR, "config", "campaign_data_policy.yaml")
 

@@ -46,6 +46,7 @@ Run:
 """
 
 import argparse
+import contextlib
 import datetime
 import sys
 from pathlib import Path
@@ -58,6 +59,18 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from data.fetchers.funding_rate_fetcher import FundingRateFetcher  # noqa: E402
+
+# CUL-213: the emoji status prints in this module crash on a Windows cp1252
+# console (UnicodeEncodeError) the moment stdout is redirected/piped/captured
+# (e.g. run as a captured subprocess). Degrade unencodable glyphs to '?' rather
+# than raising — same fix as setup_run.py (CUL-12). getattr because typeshed
+# types sys.stdout as TextIO (no reconfigure); contextlib.suppress because a
+# captured stream may reject it (OSError) — never crash a context the raw prints
+# already survived.
+_reconfigure = getattr(sys.stdout, "reconfigure", None)
+if _reconfigure is not None:
+    with contextlib.suppress(OSError):
+        _reconfigure(errors="replace")
 
 # Kraken Futures is the funding venue; the fetcher maps it to a 3600s cadence and
 # hence the `krakenfutures_<symbol>_funding_1h` cache slot.
