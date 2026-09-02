@@ -247,8 +247,8 @@ def _window_gate(df: pd.DataFrame, start: str, end: str) -> dict:
     # scores raw CSV rows dated [start+1d, end-2d]. My signal on the raw series at row r
     # equals the engine's forecast at the bar carrying raw close[r], so scoring this raw
     # slice reproduces the engine's exact entry/exit prices.
-    s = pd.Timestamp(start) + pd.Timedelta(days=1)
-    e = pd.Timestamp(end) - pd.Timedelta(days=2)
+    s = pd.Timestamp(start) + timedelta(days=1)
+    e = pd.Timestamp(end) - timedelta(days=2)
     score_mask = (d >= s) & (d <= e)
     trades = simulate_long_flat(df, signal, score_mask)
     core = core_metrics_from_trades(trades)

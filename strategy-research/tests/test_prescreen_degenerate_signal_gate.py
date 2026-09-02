@@ -68,7 +68,7 @@ def _make_bars(mode: str) -> pd.DataFrame:
     rows = []
     price = 100.0
     for i in range(N_BARS):
-        ts = pd.Timestamp("2018-01-01") + pd.Timedelta(days=i)
+        ts = pd.Timestamp("2018-01-01") + pd.Timedelta(i, unit="D")
         if mode == "positive":
             phase_up = (i // PHASE_LEN) % 2 == 0
             ret = 0.0015 if phase_up else -0.0015

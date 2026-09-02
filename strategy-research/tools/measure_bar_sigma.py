@@ -172,7 +172,7 @@ def bar_returns_bps(
         # admitting a full day of sealed bars instead of one. Same overshoot
         # `base_fetcher._inclusive_end` exists to prevent, and the reason this
         # fix is not simply "<" instead of "<=".
-        df = df[df["timestamp"] < pd.Timestamp(end).normalize() + pd.Timedelta(days=1)]
+        df = df[df["timestamp"] < pd.Timestamp(end).normalize() + pd.Timedelta(1, unit="D")]
     closes = df["close"].astype(float).tolist()
     out: List[float] = []
     for i in range(len(closes) - 1):
