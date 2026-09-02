@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
 import json
 import os
@@ -1196,8 +1196,8 @@ class EnhancedPerformanceTracker:
                         duration = trade.exit_time - trade.entry_time
                         
                         # Pad calculation (Combines dynamic padding with a safe minimum)
-                        dynamic_pad = duration * duration_zoom_pad_factor if duration.total_seconds() > 0 else pd.Timedelta(hours=4)
-                        min_zoom_pad = pd.Timedelta(hours=min_zoom_pad_hour)
+                        dynamic_pad = duration * duration_zoom_pad_factor if duration.total_seconds() > 0 else timedelta(hours=4)
+                        min_zoom_pad = timedelta(hours=min_zoom_pad_hour)
                         pad = max(dynamic_pad, min_zoom_pad)
                         
                         x_start = trade.entry_time - pad

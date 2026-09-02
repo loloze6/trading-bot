@@ -1202,8 +1202,15 @@ async def run_tool_worker(stage_name: str, run_id: str):
             with open(summary_path, encoding="utf-8") as f:
                 summary = json.load(f)
             save_yaml(ARTIFACTS / "protocol_result.yaml", summary)
+            # The kill decision is the TOP-LEVEL `verdict` (measured: 'kill' in 18/39 real
+            # protocol_summary.json). hypothesis_verdict.verdict is 'refine'/None but NEVER
+            # 'kill' (0/39), so the old line — which printed only that field — showed 'refine'
+            # for a killed run, the one word an operator reads to see what the run decided. Show
+            # the top-level verdict prominently, keeping the hypothesis_verdict detail alongside.
             hv = (summary.get("hypothesis_verdict") or {}).get("verdict", "unknown")
-            print(f"✅ Protocol complete. Hypothesis verdict: {hv}")
+            top_verdict = summary.get("verdict", "unknown")
+            print(f"✅ Protocol complete. Verdict: {top_verdict} "
+                  f"(hypothesis_verdict detail: {hv})")
 
             # C7 (K2 kernel, 2026-07-13): machine-checkable pass-rule evaluation --
             # replaces evaluate_against_decision_rules (tools/run_protocol.py's own

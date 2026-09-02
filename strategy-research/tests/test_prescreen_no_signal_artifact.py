@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from _cache_guard import requires_cache
 
 TOOLS_PATH = Path(__file__).parent.parent / "tools"
 TBOT_PATH = Path(__file__).parent.parent.parent / "trading-bot"
@@ -36,7 +37,7 @@ def _write(obj, path):
     return path
 
 
-@pytest.mark.skipif(not _OHLCV.exists(), reason="local_data fixture not present")
+@requires_cache(_OHLCV)
 def test_component_errors_route_to_no_signal_artifact(tmp_path):
     config = {
         "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
@@ -63,7 +64,7 @@ def test_component_errors_route_to_no_signal_artifact(tmp_path):
     assert "engineering" in result["route_rationale"].lower() or "bug" in result["route_rationale"].lower()
 
 
-@pytest.mark.skipif(not _OHLCV.exists() or not _FUNDING.exists(), reason="local_data fixtures not present")
+@requires_cache(_OHLCV, _FUNDING)
 def test_zero_activation_no_errors_still_routes_to_no_signal_artifact(tmp_path):
     """A healthy component that simply never fires (threshold set impossibly high)
     must ALSO route to no_signal_artifact, not kill_no_ic — it has been tested for
@@ -93,7 +94,7 @@ def test_zero_activation_no_errors_still_routes_to_no_signal_artifact(tmp_path):
     assert "never activated" in result["route_rationale"]
 
 
-@pytest.mark.skipif(not _OHLCV.exists(), reason="local_data fixture not present")
+@requires_cache(_OHLCV)
 def test_healthy_active_signal_does_not_get_flagged_as_no_signal_artifact(tmp_path):
     """Sanity/non-regression: a genuinely active, error-free signal must still reach
     a normal route (kill_no_ic/proceed_to_backtest/etc.), not be swept into
@@ -119,7 +120,7 @@ def test_healthy_active_signal_does_not_get_flagged_as_no_signal_artifact(tmp_pa
     assert result["active_n_bars"] > 0
 
 
-@pytest.mark.skipif(not _OHLCV.exists() or not _FUNDING.exists(), reason="local_data fixtures not present")
+@requires_cache(_OHLCV, _FUNDING)
 def test_run_044_real_config_no_longer_produces_no_signal_artifact_after_f5a(tmp_path):
     """End-to-end confirmation that F5a's fix + F5c's routing together mean run_044's
     ACTUAL config (threshold=0.0) now produces a real IC result, not the previous
