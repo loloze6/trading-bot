@@ -905,19 +905,26 @@ def _drive_a86_preflight(temp_run, monkeypatch, *, seed_prescreen_result: bool,
     return _read_trials(rpr.CAMPAIGN_STATE_PATH)
 
 
-def test_h3_a86_preflight_records_unguarded_duplicate(temp_run, monkeypatch):
-    """C4a. The A8.6 pre-flight record site (:4874) STILL has NO idempotency guard
-    post-cf7908bc — unlike its sibling at :4854. H3 is PARTIAL upstream: the
-    (trial_id, source) guard landed in _record_backtest_trial (:3056) but not at
-    this run_loop call site. With an existing prescreen row for the same run_id, the
-    pre-flight appends a DUPLICATE (now carrying a forecast_hash). Concrete falsifier
-    for test_resume_idempotency.py's claim that BOTH bypass paths were guarded.
-
-    Defense-in-depth, not a live double-count: prescreen_result.yaml is written at
-    :4871 immediately before this record, so in a real run the guarded sibling path
-    would fire on re-entry — a genuine double here needs that artifact wiped."""
+def test_h3_a86_preflight_is_guarded_on_trial_id_and_source(temp_run, monkeypatch):
+    """C4a (CUL-212, completes H3). The A8.6 pre-flight record site now carries the
+    same (trial_id, source == "prescreen") idempotency guard as its validation-bypass
+    sibling — the twin defect H3 left unfixed upstream ("H3 is PARTIAL"). With an
+    existing prescreen row for the same run_id, the pre-flight no longer appends a
+    DUPLICATE: the second recording attempt is suppressed. Behaviour change from the
+    former unguarded double-count, declared in the CUL-212 follow-up commit."""
     rows = _drive_a86_preflight(temp_run, monkeypatch, seed_prescreen_result=False)
-    assert [r["trial_id"] for r in rows] == ["run_x", "run_x"]  # CHAR[H3-BUG]: unguarded pre-flight dup (:4874).
+    assert [r["trial_id"] for r in rows] == ["run_x"]  # guarded: no duplicate prescreen row.
+
+
+def test_a86_preflight_different_source_row_survives(temp_run, monkeypatch):
+    """CUL-212. The a-priori pre-flight guard keys on (trial_id, source) — a
+    pre-existing row of a DIFFERENT source ("backtest") for the same trial_id must
+    NOT suppress this path's own "prescreen" row. Both survive: the guard tightens
+    the same-source duplicate without dropping a legitimate cross-writer row."""
+    rows = _drive_a86_preflight(
+        temp_run, monkeypatch, seed_prescreen_result=False, seed_source="backtest")
+    assert [r["trial_id"] for r in rows] == ["run_x", "run_x"]  # both rows survive.
+    assert sorted(r["source"] for r in rows) == ["backtest", "prescreen"]  # distinct sources.
 
 
 def test_h3_a86_validation_bypass_is_guarded(temp_run, monkeypatch):
