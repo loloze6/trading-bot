@@ -26,6 +26,7 @@ Exits 0 on power_adequate, 1 on insufficient_power_a_priori, 2 on missing/incomp
 
 import math
 import sys
+import contextlib
 import json
 import argparse
 from pathlib import Path
@@ -43,6 +44,18 @@ except ImportError:
 # source the A8.6 gate and prescreen_signal.py also use. See that module for
 # why the old lookup/constant approach kept regenerating this bug.
 from timeframe import bars_per_day  # noqa: E402  (sibling module in tools/)
+
+# CUL-213: the emoji status prints in this module crash on a Windows cp1252
+# console (UnicodeEncodeError) the moment stdout is redirected/piped/captured
+# (e.g. run as a captured subprocess). Degrade unencodable glyphs to '?' rather
+# than raising — same fix as setup_run.py (CUL-12). getattr because typeshed
+# types sys.stdout as TextIO (no reconfigure); contextlib.suppress because a
+# captured stream may reject it (OSError) — never crash a context the raw prints
+# already survived.
+_reconfigure = getattr(sys.stdout, "reconfigure", None)
+if _reconfigure is not None:
+    with contextlib.suppress(OSError):
+        _reconfigure(errors="replace")
 
 BLOCK_SIZE_1H_LEGACY = 24  # retained ONLY as the regression anchor: bars_per_day("1h") must equal this
 _DEFAULT_CONFIG = Path(__file__).parent.parent / "config" / "campaign_config.yaml"

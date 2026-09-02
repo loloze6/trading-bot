@@ -35,6 +35,7 @@ CLI:
 """
 
 import sys
+import contextlib
 import os
 import csv
 import json
@@ -60,6 +61,18 @@ if _TBOT not in sys.path:
 from strategies.main_strategy import AdvancedStrategy
 from performance.signal_statistics import spearman_correlation as _spearman
 from data.data_manager import CandleBuilder
+
+# CUL-213: the emoji status prints in this module crash on a Windows cp1252
+# console (UnicodeEncodeError) the moment stdout is redirected/piped/captured
+# (e.g. run as a captured subprocess). Degrade unencodable glyphs to '?' rather
+# than raising — same fix as setup_run.py (CUL-12). getattr because typeshed
+# types sys.stdout as TextIO (no reconfigure); contextlib.suppress because a
+# captured stream may reject it (OSError) — never crash a context the raw prints
+# already survived.
+_reconfigure = getattr(sys.stdout, "reconfigure", None)
+if _reconfigure is not None:
+    with contextlib.suppress(OSError):
+        _reconfigure(errors="replace")
 
 # ---------------------------------------------------------------------------
 # Constants
