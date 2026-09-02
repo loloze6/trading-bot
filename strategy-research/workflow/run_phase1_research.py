@@ -6279,7 +6279,8 @@ def run_loop(run_id: str):
                         _skip_agent = True
                         # A6.2: run_tool_worker is skipped in this path; record trial here (idempotent guard)
                         _cs_check = load_campaign_state()
-                        if not any(t.get("trial_id") == run_id for t in _cs_check.get("trial_sharpes", [])):
+                        if not any(t.get("trial_id") == run_id and t.get("source") == "prescreen"
+                                   for t in _cs_check.get("trial_sharpes", [])):
                             _record_prescreen_trial(run_id, _ps_data, ARTIFACTS / "candidate_strategy_config.json")
                 if not _skip_agent:
                     _a86 = _run_a86_power_check(ARTIFACTS)
