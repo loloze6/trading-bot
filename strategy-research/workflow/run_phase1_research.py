@@ -1247,8 +1247,36 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise
 
-        # A6.2: record full-backtest trial in campaign_state.trial_sharpes
-        _record_backtest_trial(run_id, summary, config_path)
+        # A6.2: record full-backtest trial in campaign_state.trial_sharpes.
+        # G1 (E-025, issue #28): the LAST unwrapped writer on the data-touching path —
+        # its three sibling _record_failed_backtest_trial calls — the non-zero-exit branch, the
+        # missing-summary branch, and the post-success-window guard — each wrap the recorder in
+        # try/except.
+        # The backtest COMPLETED here (data spent, a real median Sharpe in `summary`), so a
+        # raise inside _record_backtest_trial (a config that vanished from the artifacts dir
+        # at _compute_forecast_hash; a corrupt/unreadable ledger at load_campaign_state; a
+        # disk/permission failure at _save_campaign_state) would leave NO trial row while the
+        # look had already touched market data — N under-counting a spent look, exactly the
+        # H4/B1 defect one stage later. Record a distinct-reason recovery row so N still counts
+        # it, then RE-RAISE the original unchanged: an accounting add, never a swallow (the loud
+        # halt that escalates to a human must survive). The recovery writer itself calls
+        # load_campaign_state/_save_campaign_state, so when the LEDGER is the failure the recovery
+        # also fails — degrade to a loud log and re-raise the ORIGINAL error, never mask it with
+        # the recovery's own.
+        try:
+            _record_backtest_trial(run_id, summary, config_path)
+        except Exception as _write_err:
+            try:
+                _record_failed_backtest_trial(
+                    run_id, config_path,
+                    f"backtest completed but the trial write raised "
+                    f"{type(_write_err).__name__} (ledger/hash write failure after a "
+                    "successful backtest)")
+            except Exception as _rec_err:
+                print(f"⚠️  G1: backtest completed but the ledger is unwritable for {run_id} — "
+                      f"both the trial write ({type(_write_err).__name__}) and its recovery row "
+                      f"({type(_rec_err).__name__}) failed; re-raising the original.")
+            raise
 
         # Verify Phase A diagnostics are present
         result_data = load_yaml(ARTIFACTS / "protocol_result.yaml")
