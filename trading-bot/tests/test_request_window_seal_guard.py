@@ -98,11 +98,35 @@ def test_start_exactly_at_first_post_seal_instant_passes():
 # --------------------------------------------------------------------------- #
 # Escape + best-effort delegation
 # --------------------------------------------------------------------------- #
-def test_none_or_unparseable_bounds_delegate_to_content_guard():
-    """Exotic/absent bounds are left to `_assert_no_sealed_rows`, not falsely
-    refused — preserves byte-identity for callers with unusual date values."""
+def test_absent_none_bound_is_permissive():
+    """A genuinely ABSENT (None) bound is left to the content backstop — the
+    engine call path always supplies both bounds, so this only spares a caller
+    that omits one."""
     _assert_request_window_unsealed(None, _LO + datetime.timedelta(days=10), "BTCUSDT")
-    _assert_request_window_unsealed(_LO, "not-a-date", "BTCUSDT")
+    _assert_request_window_unsealed(_LO - datetime.timedelta(days=10), None, "BTCUSDT")
+
+
+def test_present_but_non_date_bound_is_denied():
+    """A PRESENT bound that is not an unambiguous naive date RAISES (deny), never
+    silently returns — the CUL-203 fail-open on tz-aware / epoch / exotic `end`
+    (red-team F1). Epoch ints are ambiguous (pandas reads them as nanoseconds ->
+    a 1970 date that silently passes the seal), so they are refused too."""
+    good_start = _LO - datetime.timedelta(days=10)
+    for bad in ("not-a-date", 1767225600000, 1767225600, object(), float("nan"), [], True):
+        with pytest.raises(SealedDataError):
+            _assert_request_window_unsealed(good_start, bad, "BTCUSDT")
+
+
+def test_tz_aware_end_is_normalised_and_compared():
+    """A tz-aware `end` must be normalised to UTC-naive and compared correctly:
+    a tz-aware SEALED end refuses; a tz-aware PRE-seal end passes."""
+    with pytest.raises(SealedDataError):
+        _assert_request_window_unsealed(
+            _LO - datetime.timedelta(days=10),
+            pd.Timestamp(_LO + datetime.timedelta(days=30)).tz_localize("UTC"), "BTCUSDT")
+    _assert_request_window_unsealed(
+        _LO - datetime.timedelta(days=400),
+        pd.Timestamp(_LO - datetime.timedelta(days=1)).tz_localize("UTC"), "BTCUSDT")  # no raise
 
 
 def test_fetch_historical_data_honours_allow_sealed(monkeypatch):
