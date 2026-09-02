@@ -40,6 +40,7 @@ from pathlib import Path
 import yaml
 from datetime import datetime, timezone
 import argparse
+import contextlib
 import os
 import re
 import asyncio
@@ -55,6 +56,19 @@ import hashlib
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBlock
 from google import genai
 from google.genai import types
+
+# CUL-213: the ~130 emoji status prints below crash on a Windows cp1252 console
+# (UnicodeEncodeError) the moment stdout is redirected/piped/logged — exactly an
+# unattended campaign run. Degrade unencodable glyphs to '?' rather than raising.
+# Same fix as setup_run.py (CUL-12). Guarded: pytest's captured stdout has no
+# .reconfigure, and a stream may reject it (OSError) — never crash a context the
+# raw prints already survived. getattr because typeshed types sys.stdout as
+# TextIO, which does not declare reconfigure (present on the real TextIOWrapper
+# since 3.7).
+_reconfigure = getattr(sys.stdout, "reconfigure", None)
+if _reconfigure is not None:
+    with contextlib.suppress(OSError):
+        _reconfigure(errors="replace")
 
 # CUL-11: opt-in workflow-artifact schema validation (warn-by-default, exception-proof).
 # Reuses the shared tools/ helper so save_yaml/load_yaml validate against

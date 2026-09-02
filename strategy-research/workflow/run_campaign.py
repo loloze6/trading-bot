@@ -52,6 +52,7 @@ See RUNBOOK.md for the operational playbook (launch / status / resume / stop).
 """
 
 import argparse
+import contextlib
 import hashlib
 import os
 import re
@@ -69,6 +70,17 @@ import run_phase1_research as orch  # noqa: E402  (path insert must precede this
 import record_schema  # noqa: E402  (closed record schema, see _save_queue)
 import verdict_criteria_evaluator as vce  # noqa: E402  (G6, see _save_queue)
 from setup_run import setup_run  # noqa: E402
+
+# CUL-213: this is the unattended campaign entry point; its emoji status prints
+# crash on a Windows cp1252 console (UnicodeEncodeError) the moment stdout is
+# redirected/piped/logged. Carry the guard directly rather than relying on the
+# transitive import of run_phase1_research above — same fix as setup_run.py
+# (CUL-12). getattr because typeshed types sys.stdout as TextIO (no reconfigure);
+# contextlib.suppress because a captured stream may reject it (OSError).
+_reconfigure = getattr(sys.stdout, "reconfigure", None)
+if _reconfigure is not None:
+    with contextlib.suppress(OSError):
+        _reconfigure(errors="replace")
 
 ROOT = Path(__file__).resolve().parent.parent
 QUEUE_PATH = ROOT / "config" / "campaign_queue.yaml"
