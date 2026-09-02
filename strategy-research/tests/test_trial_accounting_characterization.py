@@ -860,7 +860,8 @@ _A86_CANNED = {
 }
 
 
-def _drive_a86_preflight(temp_run, monkeypatch, *, seed_prescreen_result: bool):
+def _drive_a86_preflight(temp_run, monkeypatch, *, seed_prescreen_result: bool,
+                         seed_source: str = "prescreen"):
     """Drive run_loop far enough to hit the A8.6 pre-flight record site (:4874),
     stopping cleanly right after via a patched routing function. Returns the
     trial rows written. seed_prescreen_result=False => UNGUARDED pre-flight path
@@ -884,7 +885,7 @@ def _drive_a86_preflight(temp_run, monkeypatch, *, seed_prescreen_result: bool):
         encoding="utf-8")
     _seed_state(
         rpr.CAMPAIGN_STATE_PATH,
-        [{"trial_id": run_id, "source": "prescreen", "route": "kill_no_ic",
+        [{"trial_id": run_id, "source": seed_source, "route": "kill_no_ic",
           "sharpe": None, "n_trades": 0, "statistic_valid": "neither"}],
     )
     if seed_prescreen_result:
@@ -925,6 +926,20 @@ def test_h3_a86_validation_bypass_is_guarded(temp_run, monkeypatch):
     Proves the two bypass sites diverge — one guarded, one not."""
     rows = _drive_a86_preflight(temp_run, monkeypatch, seed_prescreen_result=True)
     assert [r["trial_id"] for r in rows] == ["run_x"]  # CHAR[CONTRACT]: guarded path does not duplicate.
+
+
+def test_a86_validation_bypass_guard_keyed_on_trial_id_and_source(temp_run, monkeypatch):
+    """CUL-212. The validation-gate-bypass idempotency guard must key on
+    (trial_id, source) -- the same key as _record_backtest_trial (:4162),
+    _record_failed_backtest_trial (:4259) and deflate_sharpe's read-side
+    check_no_duplicate_trial_ids -- NOT trial_id alone. Once two writers share the
+    ledger a trial_id legitimately recurs across sources: a pre-existing 'backtest'
+    row for this run_id must NOT suppress this path's own 'prescreen' row. Both
+    survive. A trial_id-only guard drops the legitimate second-source row."""
+    rows = _drive_a86_preflight(
+        temp_run, monkeypatch, seed_prescreen_result=True, seed_source="backtest")
+    assert [r["trial_id"] for r in rows] == ["run_x", "run_x"]  # both rows survive.
+    assert sorted(r["source"] for r in rows) == ["backtest", "prescreen"]  # distinct sources.
 
 
 def test_write_promotion_audit_buckets_failed_rows_as_statistic_neither(tmp_path, monkeypatch):
