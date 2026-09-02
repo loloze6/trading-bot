@@ -1,8 +1,10 @@
 # E-036 — An adjacency key that reflects what a strategy actually is
 
-**State:** planned (design below is complete; S2 is the build)
-**Owner:** Jeremy
-**Updated:** 2026-08-27
+**State:** rejected, restart needed — the design below shipped and works as
+built, but Jérémy does not trust what it measures. Out of radar until this
+epic is deliberately restarted.
+**Owner:** Jérémy
+**Updated:** 2026-09-02
 
 ## Why
 
@@ -243,3 +245,42 @@ than 18, and the reproduced keltner `atr_mult 3.0` case returns ADMIT with
   (`anti_adjacency_retry.enabled`, `variant_anti_adjacency_gate.enabled`)
   re-verified unchanged — neither flag-check function was touched, and their
   own byte-identical-output tests (`test_flag_off_*`) still pass.
+
+---
+
+## REJECTED (Jérémy, 2026-09-02) — the shipped design does not measure the right thing
+
+While reviewing whether to switch the two gate flags on (E-041), Jérémy
+rejected the design above outright — not "not done yet," but **not
+convincing as a way to identify adjacency at all**, even though it is built,
+tested, and measured working exactly as designed:
+
+> *"The initial design of the solution is not convincing me and could explain
+> the issue. Rejected on my side as we need to see how to identify
+> 'adjacency' of two strategies with such strategy structure (regime with
+> logic, sub-strategies allocated to regime, sub-strategies composed of
+> weighted components)."*
+
+**Why this is a different kind of problem than a bug.** The composition
+fingerprint — `(regime, component_id, sorted(params), weight)` — treats a
+strategy as a flat bag of parameterised parts. Jérémy's structure is not
+flat: a regime carries its own **detection logic**, each regime is mapped to
+its own **sub-strategy**, and each sub-strategy is itself a **weighted
+composition** of components. The fingerprint has no representation for the
+regime-detection logic at all, and no answer for how much a weight or a
+parameter has to change before two compositions stop being "the same idea" —
+it treats every difference as equally decisive, which is close to the exact
+complaint that killed the original triple.
+
+**Restart from the real question, not from the existing fingerprint.**
+Whoever restarts this epic should treat S1 (design) as reopened, not as a
+tuning pass on S2's fingerprint. The open question is not "which fields go in
+the key" — it is **what makes two strategies the same idea, given that a
+strategy is a regime-detector plus a per-regime mapping to weighted
+sub-strategy compositions.** That may not have a single closed-form answer;
+S1's job is to find out, not to assume the fingerprint shape and refine it.
+
+**Status:** both gate flags (`anti_adjacency_retry`,
+`variant_anti_adjacency_gate`) stay off. Not "waiting for a fix" — **the
+built fix is rejected.** Treat as **incomplete, out of radar** until this
+epic is deliberately restarted with a reconsidered design.
