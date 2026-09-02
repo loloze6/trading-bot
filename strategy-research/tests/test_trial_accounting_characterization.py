@@ -1008,3 +1008,36 @@ def test_a_priori_route_still_hashes_when_a_config_does_exist(tmp_path):
     assert h == hashlib.sha256(
         json.dumps({"a": 1, "b": 2}, sort_keys=True).encode("utf-8")).hexdigest()
 
+
+
+# ===========================================================================
+# The operator-facing "Protocol complete" line (run_phase1_research.py print).
+# ===========================================================================
+
+
+def test_operator_verdict_line_shows_top_level_kill(temp_run, monkeypatch, capsys):
+    """E-025. The kill decision is the TOP-LEVEL `verdict` (measured: 'kill' in 18/39
+    real protocol_summary.json). hypothesis_verdict.verdict is 'refine'/None but NEVER
+    'kill' (0/39), so the old line — which printed only that field — reported a killed
+    run as 'Hypothesis verdict: refine', the one word an operator reads to see what the
+    run decided. The line now shows the top-level verdict. Display-only, no accounting
+    impact; RED before the fix (the line prints 'refine' and never 'kill')."""
+    run_dir, run_id = temp_run
+    _seed_state(rpr.CAMPAIGN_STATE_PATH, [])
+    _seed_config(run_dir / "artifacts")
+    _stub_vce(monkeypatch)
+    # Production-shaped completed KILL: the marker is the TOP-LEVEL verdict;
+    # hypothesis_verdict.verdict is 'refine' (never 'kill' in 39 real summaries).
+    kill_summary = {
+        "verdict": "kill",
+        "hypothesis_verdict": {"verdict": "refine", "diagnostics": {"below_floor_pct": 0.0}},
+        "per_symbol_summary": {"BTCUSDT": {"median_sharpe": -0.9, "min_trade_count": 120}},
+        "results": [{"symbol": "BTCUSDT", "window": "w1", "core": {"trade_count": 120}}],
+    }
+    _install_fake_subprocess(monkeypatch, protocol_summary=kill_summary)
+
+    asyncio.run(rpr.run_tool_worker("protocol_execution", run_id))
+
+    out = capsys.readouterr().out
+    assert "Verdict: kill" in out  # CHAR[CONTRACT]: the top-level kill marker is shown to the operator.
+    assert "Hypothesis verdict: refine" not in out  # CHAR[CONTRACT]: no longer reports a kill as 'refine'.
