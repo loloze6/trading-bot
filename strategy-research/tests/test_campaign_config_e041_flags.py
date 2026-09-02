@@ -41,3 +41,14 @@ def test_exclusion_digest_input_is_on() -> None:
         "switched on deliberately (E-041) -- if reverting was intentional, "
         "update this test with the reason; if not, this is the regression."
     )
+
+
+def test_stale_input_path_fix_is_on() -> None:
+    """Switched on 2026-09-02 (E-041, flag 3 of 7). See campaign_config.yaml's
+    own comment for the declared-output-change note."""
+    flags = _load_orchestrator_flags()
+    assert flags.get("stale_input_path_fix", {}).get("enabled") is True, (
+        "orchestrator.stale_input_path_fix.enabled reverted to off. This was "
+        "switched on deliberately (E-041) -- if reverting was intentional, "
+        "update this test with the reason; if not, this is the regression."
+    )
