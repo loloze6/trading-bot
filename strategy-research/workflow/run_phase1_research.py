@@ -4216,6 +4216,16 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
         "below_floor_pct": below_floor,
         "forecast_hash":   _compute_forecast_hash(config_path),
     }
+    # CUL-233: carry an explicit reproduces_trial back-reference into the ledger
+    # row so deduplicate_trials can collapse a re-execution onto its original in
+    # the DSR N. Additive: added only when the summary declares it (a byte-
+    # identical re-execution of an earlier trial); absent -> key absent -> the row
+    # is byte-identical to before. No current pipeline stage sets it -- the field
+    # is written today by the H-series driver into run artifacts (see
+    # FORK_CHANGES) -- so this is dormant plumbing for the merged-ledger loader.
+    reproduces_trial = summary.get("reproduces_trial") or diag.get("reproduces_trial")
+    if reproduces_trial is not None:
+        trial_entry["reproduces_trial"] = reproduces_trial
     trials.append(trial_entry)
     _save_campaign_state(state)
     print(f"⚙️  A6.2: backtest trial recorded (sharpe={median_sharpe}, "
@@ -5179,6 +5189,79 @@ def _should_trigger_campaign_review(campaign: dict) -> bool:
 _DATA_POLICY_PATH = ROOT / "config" / "campaign_data_policy.yaml"
 
 
+def _reproduces_collapses_inline(rec: dict, reproduces_by_key: dict) -> bool:
+    """Resolve rec's reproduces_trial chain WITHIN its source (CUL-233).
+
+    True when it terminates at an original present in the input (collapse, counts
+    once); False when the chain leaves the input (absent reference -> keep the
+    row, never silently dropped). Raises on self-reference or a cycle. A chain
+    (A->B->C) resolves transitively and collapses onto the terminal original.
+    Independent transcription of deflate_sharpe.py::
+    _reproduces_collapses_onto_present_original -- the two lockstep DSR paths must
+    agree (test_dedup_predicate_lockstep / test_cul233_reproduces_dedup)."""
+    source = rec.get("source")
+    origin_id = rec.get("trial_id")
+    target_id = rec.get("reproduces_trial")
+    if target_id == origin_id:
+        raise ValueError(
+            f"reproduces_trial self-reference: trial {origin_id!r} names itself "
+            f"(CUL-233)."
+        )
+    seen: set = {(origin_id, source)}
+    while True:
+        key = (target_id, source)
+        if key in seen:
+            raise ValueError(
+                f"reproduces_trial cycle detected starting at {origin_id!r} "
+                f"(revisited {target_id!r}, same source) -- refused (CUL-233)."
+            )
+        if key not in reproduces_by_key:
+            return False
+        seen.add(key)
+        next_target = reproduces_by_key[key]
+        if next_target is None:
+            return True
+        target_id = next_target
+
+
+def _dedupe_trials(valid_trials: list) -> tuple[list, int]:
+    """Deduplicate campaign trial rows by (forecast_hash, source), honouring
+    reproduces_trial (CUL-233). Returns (deduped_trials, n_dedup_removed).
+
+    This is the PIPELINE's own, independent implementation of the same rule as
+    deflate_sharpe.py::deduplicate_trials -- deliberately duplicated (the
+    mirrored-paths house pattern: two implementations that a lockstep test proves
+    agree, so drift is caught rather than hidden by sharing). A run's prescreen
+    and backtest rows share a forecast_hash but differ by source, so source is in
+    the key; a reproduces_trial row collapses (transitively, within source) onto
+    the terminal original present in the input, independent of hash. #57: `is
+    None`, NOT truthiness -- a falsy-but-present hash ("" or 0) is a real hash."""
+    reproduces_by_key: dict = {}
+    for t in valid_trials:
+        reproduces_by_key[(t.get("trial_id"), t.get("source"))] = t.get("reproduces_trial")
+
+    seen_keys: set = set()
+    deduped_trials = []
+    n_dedup_removed = 0
+    for t in valid_trials:
+        if t.get("reproduces_trial") is not None and _reproduces_collapses_inline(
+            t, reproduces_by_key
+        ):
+            n_dedup_removed += 1
+            continue
+        fh = t.get("forecast_hash")
+        if fh is None:
+            deduped_trials.append(t)
+            continue
+        key = (fh, t.get("source"))
+        if key in seen_keys:
+            n_dedup_removed += 1
+        else:
+            seen_keys.add(key)
+            deduped_trials.append(t)
+    return deduped_trials, n_dedup_removed
+
+
 def _write_promotion_audit(run_dir: Path, run_id: str):
     """
     A6.2: Write promotion_audit.yaml before holdout_evaluation.
@@ -5228,34 +5311,14 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     n_invalidated = sum(1 for t in all_trials if t.get("invalidated_artifact"))
     valid_trials = [t for t in all_trials if not t.get("invalidated_artifact")]
 
-    # A6.4: deduplicate by (forecast_hash, source) -- #36. Keyed on forecast_hash
-    # alone, a run's prescreen and backtest rows (same hash, different source) collided
-    # and the backtest Sharpe was dropped from n_dsr_total. source is in the key to
-    # match deflate_sharpe.py::deduplicate_trials, which this path must mirror exactly
-    # (see the lockstep note at n_dsr_total below).
-    seen_keys: set = set()
-    deduped_trials = []
-    n_dedup_removed = 0
-    for t in valid_trials:
-        fh = t.get("forecast_hash")
-        # #57: `is None`, NOT truthiness. These two lockstep paths disagreed --
-        # this site read `if fh`, so a falsy-but-PRESENT hash ("" or 0) was
-        # treated as "no hash recorded" and kept as unique, while
-        # deflate_sharpe.deduplicate_trials treated it as a real hash and
-        # deduped it. Same ledger in, different N out, and N feeds DSR.
-        # `is None` is the intended semantics: "no hash recorded" and "hash
-        # recorded but empty" are different states. Third drift of this class
-        # after correction_method (#40/#43) and sigma_sr (#56); #35's Layer-2
-        # design declares unifying them a blocking dependency.
-        if fh is None:
-            deduped_trials.append(t)
-            continue
-        key = (fh, t.get("source"))
-        if key in seen_keys:
-            n_dedup_removed += 1
-        else:
-            seen_keys.add(key)
-            deduped_trials.append(t)
+    # A6.4: deduplicate by (forecast_hash, source) -- #36 -- honouring
+    # reproduces_trial -- CUL-233. This path's own (independent) implementation
+    # lives in module-level _dedupe_trials, which deflate_sharpe.py::
+    # deduplicate_trials must mirror exactly (the mirrored-paths lockstep, pinned
+    # by test_dedup_predicate_lockstep + test_cul233_reproduces_dedup). Extracted
+    # to a named function so the lockstep test can execute this real code, not a
+    # transcription of it (CUL-233 F3).
+    deduped_trials, n_dedup_removed = _dedupe_trials(valid_trials)
 
     # A6.2: compute over statistic_valid='sharpe' only
     #
