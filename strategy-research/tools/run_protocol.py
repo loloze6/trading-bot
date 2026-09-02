@@ -1241,9 +1241,15 @@ def main():
             # loop's OWN start IS the holdout start, so its prefetch legitimately
             # reaches backward into pre-holdout training data for warmup only
             # (never scored) -- that's the intended, correct behavior.
+            # 2026-09-02 (E-041): bar_equity=True -- DECLARED OUTPUT CHANGE. Adds
+            # a purely additive "bar_equity" block to metrics.json (bar-level
+            # maxDD/Sharpe/Sortino from the full portfolio_states series, more
+            # honest than core's trade-exit curve). Proven bit-identical/additive
+            # by tests/test_bar_equity_bit_identical.py; this call site was the
+            # last place still defaulting the flag off (E037-42, E-041's S1).
             rd = run_backtest(config_snapshot_path, symbol, start, end, _RESULTS_ROOT,
                               runs_root=_runs_root, interval_seconds=interval_seconds,
-                              warmup_prefetch=True,
+                              warmup_prefetch=True, bar_equity=True,
                               commission_rate=_resolve_commission_rate(
                                   symbol, cost_model, args.commission_bps, args.cost_product),
                               exchange=exchange, drop_feeds=drop_feeds)
@@ -1317,9 +1323,11 @@ def main():
                     f"bars. Fix the protocol's windows before proceeding."
                 )
             print(f"  {symbol}  window={label}  {start} to {end} ...")
+            # 2026-09-02 (E-041): bar_equity=True -- see the holdout call site
+            # above for the full declaration; same change, same proof.
             rd = run_backtest(config_snapshot_path, symbol, start, end, _RESULTS_ROOT,
                               runs_root=_runs_root, interval_seconds=interval_seconds,
-                              warmup_prefetch=True, holdout_start=_holdout_start,
+                              warmup_prefetch=True, bar_equity=True, holdout_start=_holdout_start,
                               commission_rate=_resolve_commission_rate(
                                   symbol, cost_model, args.commission_bps, args.cost_product),
                               exchange=exchange, drop_feeds=drop_feeds)
