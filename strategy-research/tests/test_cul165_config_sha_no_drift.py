@@ -26,6 +26,7 @@ from hashlib import sha256
 from pathlib import Path
 
 import pytest
+from _cache_guard import requires_cache
 
 ROOT = Path(__file__).parent.parent
 TOOLS_PATH = ROOT / "tools"
@@ -141,7 +142,7 @@ _S2_CONFIG_A = {
 }
 
 
-@pytest.mark.skipif(not _OHLCV.exists() or not _FUNDING.exists(), reason="local_data fixtures not present")
+@requires_cache(_OHLCV, _FUNDING)
 def test_s2_prescreen_stamp_certifies_what_ran(monkeypatch, tmp_path):
     """_extract_forecasts rewrites the original config the moment it is invoked;
     prescreen_result.yaml's config_sha8 must still certify the config the signal
