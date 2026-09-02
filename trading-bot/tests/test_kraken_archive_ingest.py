@@ -17,6 +17,7 @@ Groups:
 """
 
 import sys
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -140,7 +141,7 @@ def test_ingest_roundtrip_integrity(tmp_path):
 
     # close_time = timestamp + (1h - 1ms).
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
-    assert (delta == pd.Timedelta(milliseconds=ing.TIMEFRAME_MS - 1)).all()
+    assert (delta == pd.Timedelta(ing.TIMEFRAME_MS - 1, unit="ms")).all()
 
 
 @pytest.mark.skipif(
@@ -154,7 +155,7 @@ def test_utc_roundtrip_guard_raises_on_shift():
     converted = ing.to_binance_schema(raw)
     # Corrupt the converted timestamps by a +1h shift -> guard must raise.
     bad = converted.copy()
-    bad["timestamp"] = bad["timestamp"] + pd.Timedelta(hours=1)
+    bad["timestamp"] = bad["timestamp"] + pd.Timedelta(1, unit="h")
     with pytest.raises(ing.IngestUTCError):
         ing.verify_utc_roundtrip(raw, bad)
 
@@ -448,7 +449,7 @@ def _shift_the_write(monkeypatch, hours: int = 1) -> None:
         if "timestamp" in getattr(self, "columns", []):
             shifted = self.copy()
             shifted["timestamp"] = (pd.to_datetime(shifted["timestamp"])
-                                    + pd.Timedelta(hours=hours))
+                                    + pd.Timedelta(hours, unit="h"))
             return original(shifted, *args, **kwargs)
         return original(self, *args, **kwargs)
 
@@ -520,7 +521,7 @@ def test_to_binance_schema_daily_close_time_geometry(tmp_path):
     raw = ing.load_kraken_ohlcv(src)
     got = ing.to_binance_schema(raw, 1440)
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
-    assert (delta == pd.Timedelta(milliseconds=86_399_999)).all()
+    assert (delta == pd.Timedelta(86_399_999, unit="ms")).all()
 
 
 def test_to_binance_schema_default_resolution_stays_hourly(tmp_path):
@@ -530,7 +531,30 @@ def test_to_binance_schema_default_resolution_stays_hourly(tmp_path):
     raw = ing.load_kraken_ohlcv(src)
     got = ing.to_binance_schema(raw)
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
-    assert (delta == pd.Timedelta(milliseconds=3_599_999)).all()
+    assert (delta == pd.Timedelta(3_599_999, unit="ms")).all()
+
+
+def test_to_binance_schema_raises_no_deprecation_warning(tmp_path):
+    """CUL-204 follow-up: close_time was built via pd.Timedelta(milliseconds=...)
+    on a bare int -- fixed to datetime.timedelta, matching the backlog-3c
+    precedent commit 674e49e7."""
+    src = _write_source(tmp_path, "TEST", T0, 5, resolution=60)
+    raw = ing.load_kraken_ohlcv(src)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        got = ing.to_binance_schema(raw)
+    delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
+    assert (delta == pd.Timedelta(3_599_999, unit="ms")).all()
+
+
+def test_holdout_bounds_raises_no_deprecation_warning():
+    """CUL-204 follow-up: the holdout upper bound was built via
+    pd.Timedelta(days=1) -- fixed to datetime.timedelta(days=1). This guards
+    the actual holdout-gate boundary _holdout_bounds() feeds into ingest()."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        lo, hi = ing._holdout_bounds()
+    assert lo < hi
 
 
 def test_ingest_at_daily_resolution_writes_1d_cache_and_is_idempotent(tmp_path):
@@ -550,7 +574,7 @@ def test_ingest_at_daily_resolution_writes_1d_cache_and_is_idempotent(tmp_path):
     got = pd.read_csv(dest)
     got["timestamp"] = pd.to_datetime(got["timestamp"])
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
-    assert (delta == pd.Timedelta(milliseconds=86_399_999)).all()
+    assert (delta == pd.Timedelta(86_399_999, unit="ms")).all()
 
     first = dest.read_bytes()
     ing.ingest("TEST", archive, data_dir, 1440)
@@ -731,7 +755,7 @@ def test_to_binance_schema_4h_close_time_geometry(tmp_path):
     raw = ing.load_kraken_ohlcv(src)
     got = ing.to_binance_schema(raw, 240)
     delta = got["close_time"].apply(pd.Timestamp) - got["timestamp"]
-    assert (delta == pd.Timedelta(milliseconds=14_399_999)).all()
+    assert (delta == pd.Timedelta(14_399_999, unit="ms")).all()
 
 
 # ---------------------------------------------------------------------------
