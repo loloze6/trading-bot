@@ -162,6 +162,7 @@ def bar_returns_bps(
     start: Optional[str] = None,
     end: Optional[str] = None,
     local_data: Path = _LOCAL_DATA,
+    allow_sealed: bool = False,
 ) -> List[float]:
     """
     Close-to-close 1-bar returns in bps over `[start, end]`.
@@ -206,6 +207,23 @@ def bar_returns_bps(
         # `base_fetcher._inclusive_end` exists to prevent, and the reason this
         # fix is not simply "<" instead of "<=".
         df = df[df["timestamp"] < pd.Timestamp(end).normalize() + pd.Timedelta(1, unit="D")]
+    # Content backstop (CUL-203 red-team r2): the no-arg call (start=end=None)
+    # leaves _assert_window a no-op and the frame UNFILTERED, so a kraken_ cache
+    # ever backfilled past 2025-12-31 (the G2 concern the docstring names) would
+    # feed sealed candles into the returns. Refuse any LOADED row at/after the seal
+    # start unless a deliberate escape is set. Uses the module's own derived seal
+    # (HOLDOUT_RANGE from _holdout_range_from_policy) -- no engine import, so the
+    # import-isolation contract holds. No-op today: the caches end 2025-12-31.
+    if not allow_sealed:
+        n_sealed = int((df["timestamp"] >= pd.Timestamp(HOLDOUT_RANGE[0])).sum())
+        if n_sealed:
+            raise HoldoutViolation(
+                f"{base}: {n_sealed} loaded row(s) at/after the seal start "
+                f"{HOLDOUT_RANGE[0]} (window [{start}, {end}]) — refusing to compute "
+                f"returns over sealed candles. A kraken_ cache backfilled past the seal "
+                f"defeats the window filter; trim it, or pass allow_sealed=True for a "
+                f"deliberate holdout evaluation."
+            )
     closes = df["close"].astype(float).tolist()
     out: List[float] = []
     for i in range(len(closes) - 1):

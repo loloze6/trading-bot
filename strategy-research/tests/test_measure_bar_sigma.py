@@ -145,6 +145,35 @@ def test_bar_returns_bps_refuses_a_holdout_window_directly(tmp_path):
         bar_returns_bps("TEST", HOLDOUT_RANGE[0], HOLDOUT_RANGE[1], tmp_path)
 
 
+def test_bar_returns_bps_content_check_refuses_a_backfilled_cache(tmp_path):
+    """Red-team r2: the no-arg call (start=end=None) leaves _assert_window a no-op
+    and the frame unfiltered -- a kraken_ cache backfilled past the seal must still
+    be refused by the CONTENT check. Cache written AT the derived seal start (no
+    literal). Mutation: remove the content check -> returns are computed and no
+    raise -> this dies."""
+    _write_cache(tmp_path, "TEST", [100.0, 101.0, 102.0], start=HOLDOUT_RANGE[0] + " 00:00:00")
+    with pytest.raises(HoldoutViolation):
+        bar_returns_bps("TEST", None, None, tmp_path)
+
+
+def test_bar_returns_bps_allow_sealed_escapes_the_content_check(tmp_path):
+    """The escape is explicit and off by default: allow_sealed=True computes over
+    the sealed rows (the single deliberate holdout evaluation)."""
+    _write_cache(tmp_path, "TEST", [100.0, 101.0, 102.0], start=HOLDOUT_RANGE[0] + " 00:00:00")
+    assert len(bar_returns_bps("TEST", None, None, tmp_path, allow_sealed=True)) == 2
+
+
+@pytest.mark.skipif(
+    not cache_path("BTC").exists(),
+    reason="kraken_BTCUSD_1h cache absent",
+)
+def test_bar_returns_bps_pre_seal_identity_unchanged():
+    """The content check is a NO-OP on the real (pre-seal) cache: the guarded read
+    is identical to the allow_sealed bypass, so it changes no committed number."""
+    guarded = bar_returns_bps("BTC", None, None)
+    assert guarded == bar_returns_bps("BTC", None, None, allow_sealed=True)
+
+
 # ---------------------------------------------------------------------------
 # pooling
 # ---------------------------------------------------------------------------
