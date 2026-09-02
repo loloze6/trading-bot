@@ -78,6 +78,19 @@ class TradingBot:
         self.test_mode = test_mode
         self.symbols = symbols or ['BTCUSDT']
         
+        # 2026-08-30: the engine loads and trades symbols[0] only and marks every
+        # asset at that one symbol's close, so len(symbols) > 1 runs silently
+        # corrupted economics with no error. Refuse it loudly. Unconditional by
+        # design: a capable multi-symbol path is a separate orchestrator, not this
+        # class behind a flag.
+        if len(self.symbols) > 1:
+            raise ValueError(
+                f"multi-symbol trading is not supported: TradingBot received "
+                f"{len(self.symbols)} symbols {self.symbols}; the engine trades only "
+                f"symbols[0] and would silently corrupt portfolio valuation. Pass a "
+                f"single symbol."
+            )
+
         # 2026-07-24: off-by-default perpetual-funding accrual (design 2026-07-24 §5).
         # When model_funding is False (default) the funding hook in
         # _process_symbol_candle_completion is never entered, so behavior is
