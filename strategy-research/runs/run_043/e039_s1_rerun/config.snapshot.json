@@ -1,0 +1,65 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "er",
+        "class": "strategies.strategy_components.EfficiencyRatioRegimeComponent",
+        "params": {
+          "period": 24,
+          "smooth_period": 5
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "unknown",
+        "any_of": [
+          [
+            {
+              "id": "er",
+              "op": "gte",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 51,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "ema_spread",
+            "class": "strategies.strategy_components.EMASpreadComponent",
+            "params": {
+              "fast_period": 9,
+              "slow_period": 21,
+              "scaling_factor": 5.0
+            },
+            "weight": 1.0,
+            "lookback": 500,
+            "transforms": [
+              {
+                "op": "ratio_to_mean"
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": -20.0,
+                  "max": 20.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}
