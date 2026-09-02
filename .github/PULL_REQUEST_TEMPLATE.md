@@ -1,4 +1,4 @@
-Notion ticket: <!-- paste the app.notion.com/... card URL this PR closes, if one exists -->
+Linear: <!-- e.g. `Fixes CUL-xxx` — lets the Linear GitHub app auto-close the ticket on merge -->
 
 ## Why
 <!-- what's broken or missing, and why it matters -->
