@@ -79,29 +79,34 @@ def test_schedulability_block_is_on() -> None:
 
 
 def test_anti_adjacency_retry_is_still_off() -> None:
-    """BLOCKED, not simply not-yet-done. E-036 (2026-08-27): the gate's
-    (family, instrument, timeframe) key sees 18 distinct strategies where a
-    composition fingerprint sees 34, and REFUSES a reproduced parameter sweep
-    as a repeat. Turning this on would actively harm research -- refusing
-    legitimate work, not merely being inert. E-036's own EPICS.md entry:
-    "Blocks enabling either gate flag." Unpark trigger: E-036 S2 (the build)
-    ships a corrected adjacency key."""
+    """INCOMPLETE, not merely not-yet-done -- and not a build gap. E-036's
+    fix (composition-fingerprint adjacency, REPEAT/NEIGHBOUR/NOVEL) shipped
+    2026-08-27, is built, tested, and measured working exactly as designed
+    (2.4-2.8x more distinct strategies correctly recognised). Jerémy
+    REJECTED the design itself on review 2026-09-02: given the real strategy
+    structure (a regime detector, mapping to per-regime sub-strategies, each
+    a weighted composition of components), a flat fingerprint of
+    (regime, component, params, weight) is not a convincing answer to "are
+    these two strategies the same idea" -- see E-036/EPIC.md's rejection
+    entry for the full argument. Unpark trigger: E-036 is deliberately
+    restarted with a reconsidered design, not merely re-reviewed."""
     flags = _load_orchestrator_flags()
     assert flags.get("anti_adjacency_retry", {}).get("enabled") is not True, (
-        "orchestrator.anti_adjacency_retry.enabled was turned on, but E-036 "
-        "has not shipped a corrected adjacency key yet -- the current key "
-        "would refuse legitimate parameter sweeps as repeats. Confirm E-036 "
-        "S2 is done before removing this guard."
+        "orchestrator.anti_adjacency_retry.enabled was turned on, but E-036's "
+        "design was rejected by Jerémy (2026-09-02), not merely incomplete -- "
+        "confirm E-036 has been deliberately restarted with a new design "
+        "before removing this guard."
     )
 
 
 def test_variant_anti_adjacency_gate_is_still_off() -> None:
-    """BLOCKED for the same reason as anti_adjacency_retry above -- both are
-    call sites of the same tools/anti_adjacency_gate.py mechanism and the
-    same (family, instrument, timeframe) key E-036 found broken."""
+    """INCOMPLETE for the same reason as anti_adjacency_retry above -- both
+    are call sites of the same tools/anti_adjacency_gate.py mechanism and the
+    same rejected fingerprint design."""
     flags = _load_orchestrator_flags()
     assert flags.get("variant_anti_adjacency_gate", {}).get("enabled") is not True, (
         "orchestrator.variant_anti_adjacency_gate.enabled was turned on, but "
-        "E-036 has not shipped a corrected adjacency key yet. Confirm E-036 "
-        "S2 is done before removing this guard."
+        "E-036's design was rejected by Jerémy (2026-09-02). Confirm E-036 "
+        "has been deliberately restarted with a new design before removing "
+        "this guard."
     )

@@ -92,8 +92,11 @@ already own the question — see [E037-43](../E-037/FINDINGS.md#e037-43)).
       against commit history and config comments: none had a stated switch-on
       criterion — the blanket ship-off-by-default rule was the entire
       explanation. Two (`anti_adjacency_retry`, `variant_anti_adjacency_gate`)
-      surfaced a real blocker not visible from the flag alone: E-036 found
-      their shared underlying key broken.
+      turned out not to be simple activations at all: E-036's fix is built
+      and verified working as designed, but Jérémy **rejected the design
+      itself** on review (2026-09-02) — see [E-036](../E-036/EPIC.md)'s
+      rejection entry. These two are **incomplete, out of radar** until
+      E-036 restarts, same footing as `model_funding` and E-014.
 - [ ] **S2 — (blocked on S1) The register.** One file, plus a test that every
       default-`False` flag in the engine and `campaign_config.yaml` appears in
       it with an owner and a criterion. **Not yet built** — the per-flag
@@ -110,13 +113,15 @@ already own the question — see [E037-43](../E-037/FINDINGS.md#e037-43)).
       | `stale_input_path_fix` | **ON** | Both target files verified present |
       | `variant_selection_record` | **ON** | Compliance checked before flipping (see PR #98) |
       | `schedulability_block` | **ON** | Purely additive, no consumer yet |
-      | `model_funding` | off | E-014: incomplete below daily bars, a real bug not a caution |
-      | `anti_adjacency_retry` | off | **E-036: shared key refuses legitimate work, not a caution** |
-      | `variant_anti_adjacency_gate` | off | Same E-036 blocker, same mechanism |
+      | `model_funding` | **incomplete** | Unavailable below daily bars — a real gap, not a caution. Out of radar until E-014 restarts |
+      | `anti_adjacency_retry` | **incomplete** | E-036's fix is built and works as designed, but Jérémy rejected the design itself. Out of radar until E-036 restarts |
+      | `variant_anti_adjacency_gate` | **incomplete** | Same E-036 rejection, same mechanism |
 
+      None of the three "incomplete" rows is a flag decision at all — each
+      names a piece of work that has to happen in its own epic first.
       Guard tests for all eight now live in
       `tests/test_campaign_config_e041_flags.py`, including two asserting the
-      blocked pair stay off until E-036 ships.
+      incomplete pair stay off until E-036 restarts.
 
 ## Risks
 
@@ -173,4 +178,14 @@ entire explanation, which is precisely this epic's finding.
   variant-count work, but Jérémy's call is that this does **not** block turning
   it on now.
 
-So: **7 of 8 on, `model_funding` off until E-014 finishes it.**
+**A third exception surfaced only once S3 actually checked each flag
+individually (2026-09-02), not visible from this decision alone:**
+`anti_adjacency_retry` and `variant_anti_adjacency_gate` looked ready — their
+underlying fix (E-036) was built and verified working. But reviewing that
+fix on its own merits, Jérémy **rejected the design**, not merely its
+completeness — see [E-036](../E-036/EPIC.md)'s rejection entry. Same shape of
+exception as `model_funding`: **incomplete, not a caution.**
+
+So: **5 of 8 on. Three incomplete, each with its own epic to finish first:**
+`model_funding` (E-014), `anti_adjacency_retry` + `variant_anti_adjacency_gate`
+(E-036).
