@@ -167,7 +167,15 @@ def proof_killed_row_counts_toward_N(merged: list[dict]) -> dict:
     """The killed trial (run_d_901 -- a prescreen kill, no backtest) is a real
     recorded attempt: it lands in the merged view and counts toward N (the
     multiple-testing count), while contributing NO Sharpe value to the mu_sr/
-    sigma_sr sample (statistic_valid=neither). This is the H1 distinction."""
+    sigma_sr sample (statistic_valid=neither). This is the H1 distinction.
+
+    Scope (CUL-214): this exercises a synthetic prescreen row through the
+    dual-writer MERGE/dedup library path only -- it is a demo of the library
+    contract, not the end-to-end guarantee. The real end-to-end proof that a
+    killed run survives the full write path is the E-025 killed-run gate
+    (killed_run_gate.py); CUL-138/CUL-209 own that defect and its fix. Do not
+    read a pass here as closing either of those tickets.
+    """
     killed_key = ("run_d_901", "prescreen")
     in_merged = any((r["trial_id"], r["source"]) == killed_key for r in merged)
 
