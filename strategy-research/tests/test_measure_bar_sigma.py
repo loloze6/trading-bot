@@ -135,6 +135,16 @@ def test_measure_refuses_a_holdout_window(tmp_path):
         measure(["TEST"], "2026-02-01", "2026-03-01", tmp_path)
 
 
+def test_bar_returns_bps_refuses_a_holdout_window_directly(tmp_path):
+    """Obs2 (red-team): the PUBLIC library fn self-guards — a sealed window is
+    refused even when called directly, not only through measure(). Mutation:
+    remove the `_assert_window` inside bar_returns_bps and this dies (the sealed
+    window then filters the clean cache to empty and returns [] with no raise)."""
+    _write_cache(tmp_path, "TEST", [100.0, 101.0, 102.0])
+    with pytest.raises(HoldoutViolation):  # window DERIVED from the seal, not a literal
+        bar_returns_bps("TEST", HOLDOUT_RANGE[0], HOLDOUT_RANGE[1], tmp_path)
+
+
 # ---------------------------------------------------------------------------
 # pooling
 # ---------------------------------------------------------------------------
