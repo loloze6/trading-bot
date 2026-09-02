@@ -54,6 +54,7 @@ Run:
 """
 
 import argparse
+import contextlib
 import datetime
 import os
 import sys
@@ -67,6 +68,18 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from data.fetchers.ccxt_fetcher import CcxtFetcher  # noqa: E402
+
+# CUL-213: the emoji status prints in this module crash on a Windows cp1252
+# console (UnicodeEncodeError) the moment stdout is redirected/piped/captured
+# (e.g. run as a captured subprocess). Degrade unencodable glyphs to '?' rather
+# than raising — same fix as setup_run.py (CUL-12). getattr because typeshed
+# types sys.stdout as TextIO (no reconfigure); contextlib.suppress because a
+# captured stream may reject it (OSError) — never crash a context the raw prints
+# already survived.
+_reconfigure = getattr(sys.stdout, "reconfigure", None)
+if _reconfigure is not None:
+    with contextlib.suppress(OSError):
+        _reconfigure(errors="replace")
 
 #: `strategy-research/config/campaign_data_policy.yaml:holdout_range`. Read, never
 #: assumed — the seal moves with the policy, the same rule

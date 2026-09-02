@@ -24,6 +24,7 @@ CLI:
   python strategy-research/tools/retune_regime_detector.py --start 2024-01-01 --end 2025-12-31
 """
 import sys, os, json, math, statistics, subprocess
+import contextlib
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -48,6 +49,18 @@ from validate_regime_detector import (
     _monthly_activation,
     ACTIVATION_BAND_MIN, ACTIVATION_BAND_MAX,
 )
+
+# CUL-213: the emoji status prints in this module crash on a Windows cp1252
+# console (UnicodeEncodeError) the moment stdout is redirected/piped/captured
+# (e.g. run as a captured subprocess). Degrade unencodable glyphs to '?' rather
+# than raising — same fix as setup_run.py (CUL-12). getattr because typeshed
+# types sys.stdout as TextIO (no reconfigure); contextlib.suppress because a
+# captured stream may reject it (OSError) — never crash a context the raw prints
+# already survived.
+_reconfigure = getattr(sys.stdout, "reconfigure", None)
+if _reconfigure is not None:
+    with contextlib.suppress(OSError):
+        _reconfigure(errors="replace")
 
 
 def _resolve_tbot_python() -> Path:
