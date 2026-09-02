@@ -24,6 +24,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from _cache_guard import requires_cache
 
 ROOT = Path(__file__).parent.parent
 TOOLS_PATH = ROOT / "tools"
@@ -34,6 +35,15 @@ import run_protocol as rp  # noqa: E402 -- also puts trading-bot/ on sys.path as
 
 TBOT_ROOT = ROOT.parent / "trading-bot"
 FIXTURE_PATH = TBOT_ROOT / "tests" / "fixtures" / "warmup_prefetch_reference.json"
+
+# The end-to-end tests run the real backtest engine on the fixture window; its
+# config pulls BTCUSDT 1h OHLCV, funding, and the fear_greed aux feed. On a tree
+# without these caches the engine would make a LIVE Binance fetch (and write the
+# caches into local_data) -- so skip rather than fetch, exactly as the sibling
+# bit-identity test does (trading-bot/tests/test_warmup_prefetch_bit_identical.py).
+_OHLCV = TBOT_ROOT / "local_data" / "BTCUSDT_1h.csv"
+_FUNDING = TBOT_ROOT / "local_data" / "BTCUSDT_funding_8h.csv"
+_FEAR_GREED = TBOT_ROOT / "local_data" / "fear_greed_daily.csv"
 
 
 # ---------------------------------------------------------------------------
@@ -94,7 +104,7 @@ def test_cli_commission_bps_parses_float():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.slow
-@pytest.mark.network  # runs a real backtest that fetches live data; opt out of the CUL-198 socket block
+@requires_cache(_OHLCV, _FUNDING, _FEAR_GREED)
 @pytest.mark.real_repo_readonly
 def test_absent_flag_end_to_end_matches_fixture(tmp_path):
     """Omitting --commission-bps entirely (product='spot', the CLI default) must
@@ -142,7 +152,7 @@ def _commission_over_notional(trade: dict) -> tuple:
 
 
 @pytest.mark.slow
-@pytest.mark.network  # runs a real backtest that fetches live data; opt out of the CUL-198 socket block
+@requires_cache(_OHLCV, _FUNDING, _FEAR_GREED)
 @pytest.mark.real_repo_readonly
 @pytest.mark.parametrize("bps,expected_rate", [(10.0, 0.001), (5.0, 0.0005)])
 def test_commission_bps_flag_recomputes_from_real_trades(tmp_path, bps, expected_rate):
