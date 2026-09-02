@@ -57,6 +57,7 @@ _TBOT = os.path.join(_REPO, "trading-bot")            # trading-bot/
 if _TBOT not in sys.path:
     sys.path.insert(0, _TBOT)
 
+from data.data_manager import _assert_no_sealed_rows  # noqa: E402  (single seal definition, CUL-203)
 from strategies.main_strategy import AdvancedStrategy
 from performance.signal_statistics import spearman_correlation as _spearman
 from data.data_manager import CandleBuilder
@@ -166,6 +167,10 @@ def _load_funding_rate(symbol: str, start: str, end: str) -> pd.DataFrame:
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df = df[(df["timestamp"].dt.strftime("%Y-%m-%d") >= start) &
             (df["timestamp"].dt.strftime("%Y-%m-%d") < end)]
+    # Seal guard (CUL-203): the funding cache physically extends past the seal;
+    # refuse if the windowed frame carries any holdout row. No-op on train
+    # windows (they end <= 2025-12-31), so the returned frame is unchanged.
+    _assert_no_sealed_rows(df, f"{symbol} funding_rate")
     return df[["timestamp", "funding_rate"]].sort_values("timestamp").reset_index(drop=True)
 
 
@@ -186,6 +191,9 @@ def _load_fear_greed(start: str, end: str) -> pd.DataFrame:
     df["timestamp"] = df["timestamp"] + timedelta(days=1)
     df = df[(df["timestamp"].dt.strftime("%Y-%m-%d") >= start) &
             (df["timestamp"].dt.strftime("%Y-%m-%d") < end)]
+    # Seal guard (CUL-203): the fear&greed cache is holdout-carrying; refuse if
+    # the +1d-shifted decision timestamps reach the seal. No-op on train windows.
+    _assert_no_sealed_rows(df, "fear_greed")
     return df[["timestamp", "fear_greed"]].sort_values("timestamp").reset_index(drop=True)
 
 
@@ -426,6 +434,12 @@ def _load_ohlcv(symbol: str, start: str, end: str, timeframe: str = "1h") -> pd.
         return df
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df = df.sort_values("timestamp").reset_index(drop=True)
+
+    # Seal guard (CUL-203): the DictReader already windowed to [start, end); refuse
+    # if that window carries any holdout row. Checked here (pre-aggregation) where
+    # the 'timestamp' column is parsed; CandleBuilder stays within the window, so
+    # this covers the aggregated path too. No-op on train windows.
+    _assert_no_sealed_rows(df, f"{symbol} {timeframe}")
 
     if source_tf != timeframe:
         # Aggregate through the ENGINE'S OWN CandleBuilder rather than a private
