@@ -131,8 +131,15 @@ orchestrator:
       # NOT a retry switch. S2a deliberately ships the quarantine half only; see
       # E-030/EPIC.md S2 and the taxonomy's R2.
   exclusion_digest_input:
-    enabled: false
-      # E-032 S2a. OFF BY DEFAULT and read at runtime by
+    enabled: true
+      # E-032 S2a. SWITCHED ON 2026-09-02 (E-041, flag 2 of 7) -- DECLARED
+      # OUTPUT CHANGE: hypothesis_generation and innovation_expansion's
+      # assembled prompt text now carries campaign_record/exclusion_digest.yaml
+      # content (that file already exists on disk, last built 2026-08-23, so
+      # this takes effect immediately). E-041's decision (Jeremy, 2026-09-01):
+      # a finished, tested feature defaults ON; staying off needs a stated
+      # reason, and this one had none -- it was ready since E-032 S2a shipped.
+      # Read at runtime by
       # run_phase1_research._exclusion_digest_input_enabled() -- same shape as
       # halt_policy.quarantine_enabled just above (a third explicit exception to
       # this file's "declared parity only" rule). While false,
