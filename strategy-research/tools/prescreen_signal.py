@@ -335,11 +335,18 @@ def _resolve_ohlcv_source(symbol: str, timeframe: str) -> tuple:
     zero bars -- while BTCUSDT_1h.csv sat on disk spanning 2018-01-01 to
     2026-07-05, covering the window completely.
 
-    The engine has never had this problem: CandleBuilder AGGREGATES to its
-    interval on both the live (add_tick) and backtest (add_row) paths, so a
-    coarser timeframe is DERIVED from a finer cache and a <SYMBOL>_<TF>.csv is
-    not fetched when a finer one already spans the window. This tool bypasses
-    the engine and read files directly, so it never inherited that behaviour.
+    CORRECTED 2026-09-03: this docstring used to claim "the engine has never
+    had this problem" (CandleBuilder deriving a coarser timeframe from a
+    finer cache) -- that was an unverified assumption, not a checked fact.
+    Re-running run_060 through the real engine after the CUL-230 fetch fix
+    (PR #109) shipped hit this exact gap again: BTCUSDT_4h.csv genuinely
+    stopped short, BTCUSDT_1h.csv fully covered the same period, and the
+    engine crashed anyway -- CandleBuilder only aggregates rows it is given,
+    and CcxtFetcher fetches at the exact requested timeframe with no
+    finer-cache fallback. Filed as CUL-250, proposing this function's own
+    pattern be ported into CcxtFetcher. This tool bypasses the engine and
+    reads files directly, so it needed its own fix regardless of whether the
+    engine ever gets one.
 
     Chooses the COARSEST cache that divides the target evenly: fewest rows to
     read and resample, and identical output to any finer source (aggregating

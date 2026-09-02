@@ -210,9 +210,13 @@ class CcxtFetcher(BaseFetcher):
         """
         Map seconds to the nearest CCXT timeframe string.
 
-        E.g. 240 s → '5m'.  The DataManager's CandleBuilder will then
-        re-aggregate the stored 5-minute candles to the exact 4-minute target
-        during replay.
+        E.g. 240 s → '5m'. CORRECTED 2026-09-03: this used to claim
+        DataManager's CandleBuilder re-aggregates the stored candles to the
+        exact target during replay -- unverified, and false in general.
+        CandleBuilder only aggregates whatever rows it is fed; it never reads
+        a different, finer cache file than the one this snapped timeframe
+        resolves to. A non-standard interval like 240s is fetched and cached
+        AS '5m' with no correction back to 240s anywhere. See CUL-250.
         """
         intervals = {
             60: "1m", 300: "5m", 900: "15m", 1800: "30m",

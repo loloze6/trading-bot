@@ -110,49 +110,50 @@ bars missing in a window → refine, not validate") — pre-registered like ever
 other threshold in this project, not inherited by accident from an unrelated
 tool. **Not decided. Needs its own pass before building.**
 
-**2. The timeframe-derivation trap — flagged as HIGH RISK for the next
-implementer, verified partially, not fully resolved.**
+**2. The timeframe-derivation trap — RESOLVED (conclusively, not partially):
+the claimed capability does not exist. Filed as CUL-250.**
 
-This project's own architecture notes record, as a verified fact
-(2026-08-27): a 4-hour backtest is expected to run off the existing 1-hour
-cache file when no 4-hour file exists — the engine aggregates finer cached
-data up to the requested timeframe during the run. This is real, documented
-behavior, not a hypothesis (an earlier bug already happened from getting this
-wrong once — a stale doc comment caused a redundant re-fetch when it assumed
-the source was "live ticks" instead of a finer cache).
+This project's architecture notes used to claim, as a "verified" fact: a
+4-hour backtest runs off an existing 1-hour cache file when no 4-hour file
+exists — the engine aggregates finer cached data up to the requested
+timeframe during the run. **That claim was false, and is now corrected** in
+`CLAUDE.md` (2026-09-03).
 
-**Checked directly in this session:** the fetcher `check_data.py` calls
-resolves its cache filename from the *exact* requested timeframe —
-`CcxtFetcher.cache_key()` returns `f"{symbol}_{ccxt_timeframe}"` (e.g.
-`BTCUSDT_4h`), snapped from `candle_interval_seconds`. It does **not** know
-about the "derive from a finer cache" behavior described above. So: **as
-currently written, `check_data_availability("4h", ...)` would look for a file
-literally named `BTCUSDT_4h` and could report "no data" for a variant the
-real engine would run perfectly fine off `BTCUSDT_1h.csv`.** That is a false
-decline — the exact trap Jérémy flagged.
+**Code trace (complete, not partial):** `CcxtFetcher.cache_key()` returns
+`f"{symbol}_{ccxt_timeframe}"` — fetch and cache lookup happen at the exact
+requested timeframe. `DataManager.__init__` passes the SAME `interval_seconds`
+to both the fetcher and `CandleBuilder` — there is no split between "fetch
+finer, aggregate coarser." `CandleBuilder.add_row()` aggregates whatever rows
+it's given; when those rows are already at the target interval, aggregation
+is a no-op. Checked every candidate site — `cache_key()`, `_load_local()`,
+`_load_all()`, `CandleBuilder.__init__`/`add_row`, `DataManager.__init__`,
+and a repo-wide grep for `resample`/`coarser`/`finer` across `trading-bot/` —
+none of them derives a coarser timeframe from a finer cache.
 
-**What I did NOT find, in a time-boxed search this session:** the exact code
-path that performs the real derivation (which module decides "read the finer
-cache and aggregate" during an actual backtest run). It is not a simple
-"prefer the finer cache_key" branch in the fetcher — I checked `cache_key()`,
-`_load_local()`, and `DataManager`'s aux-feed resampling path, and none of
-them is it. It most likely lives in how the backtest replay loop selects
-which raw rows to feed `CandleBuilder` (which does the actual aggregation,
-row by row, elsewhere in `data_manager.py`), but this was not pinned to a
-specific file:line before this document was written.
+**Live-reproduced, not just traced:** re-ran `run_060`'s actual protocol
+(4h timeframe) through the real engine after the CUL-230 fetch fix (PR #109)
+shipped. It still crashed at window 2020-02, because `BTCUSDT_4h.csv`
+genuinely stops at 2020-02-01 while `BTCUSDT_1h.csv` is ~99% complete for the
+same period — the data exists, the engine just never looks for it under a
+different timeframe name.
 
-**Consequence for whoever builds S1.5: do not wire `check_data.py` in as-is.**
-Before this check can be trusted, someone must:
-(a) find and read the exact code path that performs finer-to-coarser
-derivation in a real backtest run, then
-(b) either extend the feasibility check to replicate that same
-derivation logic when deciding what counts as "available" (checking for
-a finer existing cache before declaring a coarser one missing), or
-(c) confirm no such extension is needed because the derivation happens at
-a layer this check doesn't need to duplicate.
-Skipping this step means the very first real use of S1.5 risks silently
-declining variants that were always feasible — worse than doing nothing,
-because it would look authoritative while being wrong.
+**This exact gap was already found and fixed once — in a bypass tool, not
+the engine.** `strategy-research/tools/prescreen_signal.py::_resolve_ohlcv_source`
+(added 2026-08-28, docstring cites `run_060` as the trigger) already
+implements coarsest-evenly-dividing-finer-cache resolution + resample. Its
+docstring claimed "the engine has never had this problem" — an unverified
+assumption, now corrected in that file too (2026-09-03).
+
+**Consequence for whoever builds S1.5: do not wire `check_data.py` in as-is
+until CUL-250 is fixed or explicitly deferred.** `check_data_availability`
+would falsely decline a variant needing 4h data when only 1h exists, exactly
+as this section originally warned — the warning was right, the underlying
+capability just turned out not to exist rather than being merely undocumented.
+CUL-250 proposes porting `prescreen_signal.py`'s proven pattern into
+`CcxtFetcher`; once that ships, S1.5 can rely on `check_data_availability`
+(or an equivalent check) reflecting reality. Until then, S1.5 must either
+wait on CUL-250, or independently replicate the same coarsest-dividing-cache
+resolution `prescreen_signal.py` already proves works.
 
 ## Verification method before this becomes a blocking gate
 
