@@ -80,6 +80,19 @@ import sys
 from pathlib import Path
 
 import pytest
+from _net_guard import install_network_block, register_network_marker
+
+# --- CUL-198: cache + network guards for the fast suite -------------------
+# Two structural guards (design ruling 198-O1, 2026-09-02) that replace the
+# per-file "remember the skipif" convention which let two same-day CI catches
+# (2026-09-01) through: an untracked-cache read with no guard, and a live
+# PortfolioInfo pinging Binance from a test. Both guards live in uniquely-named
+# sibling modules so tests import them without the two-conftest name collision
+# (this suite and tools/recorder/tests/ each hold a conftest.py):
+#   * tests/_cache_guard.py  -- requires_cache / cache_is_available
+#   * tests/_net_guard.py    -- the outbound-network block, wired below and
+#     reused verbatim by the recorder subtree's conftest.
+
 
 # --- D4 regression guard --------------------------------------------------
 # The whole point of the D4 fix: no test may write into the shared, tracked
@@ -146,6 +159,20 @@ def pytest_configure(config):
         "-- the marker exists for selective inclusion/exclusion, not to hide "
         "them.",
     )
+    register_network_marker(config)
+
+
+@pytest.fixture(autouse=True)
+def _block_network(request, monkeypatch):
+    """Fail loud on any outbound network connect from a fast-suite test.
+
+    Patches ``socket.socket.connect``/``connect_ex`` for the duration of each
+    test (restored by monkeypatch teardown) so an accidental network call --
+    e.g. constructing a live PortfolioInfo whose __init__ pings Binance --
+    raises on EVERY machine, not only on the network-blocked CI runners.
+    Loopback and AF_UNIX stay reachable. Opt out with @pytest.mark.network.
+    """
+    install_network_block(request, monkeypatch)
 
 
 @pytest.fixture(autouse=True)
