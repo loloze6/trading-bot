@@ -17,6 +17,7 @@ Groups:
 """
 
 import sys
+import typing
 import warnings
 from pathlib import Path
 
@@ -842,6 +843,65 @@ def test_unreadable_policy_refuses_rather_than_defaulting(tmp_path, monkeypatch)
 
     with pytest.raises(RuntimeError, match="Cannot read holdout_range"):
         ing.ingest("TEST", archive, data)
+
+
+def _real_policy_exclusive_hi() -> pd.Timestamp:
+    """Independent ground truth for _holdout_bounds()'s upper bound, computed
+    from the REAL campaign_data_policy.yaml the same way _holdout_bounds()
+    itself is documented to (inclusive policy end -> following midnight), but
+    without calling _holdout_bounds() -- if that function's own +1-day step
+    is mutated, this helper must NOT move with it, or the two tests below
+    would just be re-deriving the bug and always agree with it."""
+    import yaml
+
+    with open(ing._POLICY_PATH, encoding="utf-8") as fh:
+        _, hi_inclusive = yaml.safe_load(fh)["holdout_range"][:2]
+    hi = typing.cast(pd.Timestamp, pd.Timestamp(hi_inclusive))
+    return typing.cast(pd.Timestamp, hi.normalize() + pd.Timedelta(1, unit="D"))
+
+
+def test_seal_upper_edge_last_sealed_hour_is_refused(tmp_path):
+    """Round-2 blind review (F4): every seal test above straddles or sits
+    below the LOWER edge (_SEAL); none probed the UPPER edge -- the
+    `+ datetime.timedelta(days=1)` in _holdout_bounds() that makes the
+    policy's inclusive end (campaign_data_policy.yaml's holdout_range[1])
+    into an exclusive upper bound. Mutating that days=1 -> days=0 un-seals
+    the whole last sealed day and every test above still passes.
+
+    The expected boundary is derived from the real policy file via
+    _real_policy_exclusive_hi() above, NOT from ing._holdout_bounds() itself
+    -- deriving it from the function under test would make this row track
+    the mutation instead of catching it (measured: an earlier draft of this
+    test called _holdout_bounds() directly and silently passed under the
+    days=0 mutation, because BOTH the fixture's boundary and the code being
+    tested shifted together)."""
+    last_sealed_hour = int(_real_policy_exclusive_hi().timestamp()) - 3600
+
+    archive, data = tmp_path / "arch", tmp_path / "data"
+    # 2 rows ending exactly at last_sealed_hour: load_kraken_ohlcv requires a
+    # real span (a single-row file has span == 0 and is rejected before the
+    # seal check ever runs). Both rows (last_sealed_hour-1h, last_sealed_hour)
+    # are strictly below the real exclusive hi, so both are unambiguously
+    # sealed regardless of what the (possibly mutated) production code thinks.
+    _write_source(archive, "TEST", last_sealed_hour - 3600, 2)
+
+    with pytest.raises(ValueError, match="holdout seal"):
+        ing.ingest("TEST", archive, data)
+
+
+def test_seal_upper_edge_first_unsealed_hour_is_accepted(tmp_path):
+    """Control for the test above: the exclusive bound must not also refuse
+    the first legitimate post-seal hour (a fail-closed-everywhere guard would
+    pass the refusal test alone). Same independent-ground-truth boundary as
+    above, for the same reason."""
+    first_unsealed_hour = int(_real_policy_exclusive_hi().timestamp())
+
+    archive, data = tmp_path / "arch", tmp_path / "data"
+    _write_source(archive, "TEST", first_unsealed_hour, 2)
+
+    summary = ing.ingest("TEST", archive, data)
+    assert summary["rows"] > 0
+    assert list(data.rglob("*.csv")), "a legitimate post-seal hour was not written"
 
 
 # ---------------------------------------------------------------------------
