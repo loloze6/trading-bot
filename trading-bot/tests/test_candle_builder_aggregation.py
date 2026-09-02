@@ -25,6 +25,17 @@ which does honour high/low. Only derived timeframes -- the documented "a 4h
 backtest runs off BTCUSDT_1h.csv" path -- aggregate, and no 4h run had ever
 been launched. The whole fast suite (383 tests) passed both before and after
 the fix.
+
+NOTE (2026-09-03, CUL-250): this file tests CandleBuilder's own aggregation
+math in isolation (feeding it finer rows directly via add_row), and that math
+is correct. It does NOT prove the "documented" path above is real end to end
+-- checked separately and it is not. Nothing in the real fetch/backtest
+pipeline ever decides to feed CandleBuilder rows finer than its own configured
+interval; CcxtFetcher fetches and cache-keys at the exact requested timeframe
+with no finer-cache fallback. Reproduced live re-running run_060 (4h) after
+the CUL-230 fetch fix shipped: it still crashed, because the 4h cache was
+incomplete and nothing tried the fully-available 1h cache instead. See
+CUL-250 for the full trace and proposed fix.
 """
 import datetime
 

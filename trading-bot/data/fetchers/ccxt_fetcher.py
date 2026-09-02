@@ -59,9 +59,13 @@ class CcxtFetcher(BaseFetcher):
         Args:
             candle_interval_seconds: Desired candle resolution in seconds.
                                      Snapped to the nearest CCXT timeframe
-                                     (1m, 5m, 15m, 30m, 1h, 4h, 1d) for the
-                                     API call.  DataManager re-aggregates if the
-                                     stored resolution is finer than the target.
+                                     (1m, 5m, 15m, 30m, 1h, 4h, 1d) for both
+                                     the API call and the cache filename
+                                     (cache_key() -> "{symbol}_{ccxt_timeframe}").
+                                     CORRECTED 2026-09-03: this used to claim
+                                     DataManager re-aggregates from a finer
+                                     stored resolution when the exact one is
+                                     absent -- it does not; see CUL-250.
             exchange:                Any CCXT-supported exchange id string.
             localStorage:            Cache fetched data to ./data/ as CSV.
         """
