@@ -1,6 +1,154 @@
 # E-040 — Merge the regime auditor into detector validation
 
-**Moved to Linear.** This epic's status, findings, and decisions now live there:
-https://linear.app/culito/project/e-040-merge-the-regime-auditor-into-detector-validation-970649380a7b
+**State:** new
+**Owner:** Jérémy
+**Updated:** 2026-08-31
 
-This file is kept only as a pointer so existing cross-links (`../E-040/EPIC.md`) keep resolving — it is not updated any more.
+## Why
+
+`regime_auditor` was documented as stage 10 of the pipeline. **The orchestrator
+never dispatches it.**
+
+- Absent from `STAGE_CONFIGS` — so it is never a `current_stage`.
+- Absent from `_SKILL_MAP` — and `_build_stage_prompt` **raises**
+  `ValueError("No SKILL file mapped for stage: …")` for anything not in that
+  map, so it could not be dispatched even if reached.
+- **No code writes `regime_audit_decision.yaml`.** The orchestrator only reads
+  it if it already exists; the sole writer anywhere is
+  `prescreen_signal.py::_resolve_ungated_escape`, which *updates* an existing
+  file and returns early when there is none.
+
+What happens in practice: on the `regime_misattribution` path the pipeline
+pauses (`status="paused_for_human"`) and prints *"consult regime-auditor skill
+and regime_detector_report.yaml"*. A person runs the skill by hand, on one path
+only.
+
+Recorded as [E037-16](../E-037/FINDINGS.md#e037-16).
+
+### Why merging is the coherent fix, not just re-labelling
+
+Stage 9 and stage 10 answer **the same question**: *is this detector
+trustworthy?* Stage 9 computes the evidence — persistence, class-conditional
+sensitivity under ±10% perturbation, activation band. Stage 10 reads that
+evidence and returns `trustworthy` / `needs_retune` / `unusable`.
+
+Splitting measurement from judgment across two stages bought nothing and cost
+the judgment half ever being built. Jérémy, 2026-08-31: *"its objective might
+belong into the regime detector validation step."*
+
+### What silently depends on the missing file
+
+Both of these are conditional on a human having produced
+`regime_audit_decision.yaml`, and neither says so:
+
+- **The A2.2 retune firewall** — `_validate_retune_firewall` scans
+  `recommended_action` for `pnl`, `sharpe`, `ic`, `backtest`, `cost_drag`,
+  `forecast_return_corr`, `per_trade`, `expectancy`, and **raises** on a hit.
+  Real enforcement, on a file that may not exist.
+- **Stage 7's `ungated_escape_eligible` write-back** — returns early and writes
+  nothing when the file is absent, so the escape stays unresolved with no
+  trace.
+
+---
+
+## Scope
+
+### In
+
+- Fold the audit judgment into stage 9, so the tool that measures also
+  classifies: `trustworthy` / `needs_retune` / `unusable`.
+- Keep the **A2.2 retune firewall** — it is genuinely enforced and must survive
+  the merge with its raising behaviour intact.
+- Decide what produces `regime_audit_decision.yaml` afterwards, since two
+  downstream consumers read it.
+- Remove `regime_auditor` from the pipeline's stage numbering. **Already done
+  in the guide** (2026-08-31): it is documented as a human procedure outside
+  the flow, pending this epic.
+- Keep `workflow_artifacts/skills/regime-auditor/SKILL.md` as the reference for
+  what the judgment must contain — it is the specification, even though nothing
+  calls it.
+
+### Out
+
+- Building a new detector. A2.3 forbids that until an ungated edge exists.
+- The silent-`None` defect in `_ensure_regime_detector_report`
+  ([E037-17](../E-037/FINDINGS.md#e037-17)) — related, and worth doing in the
+  same pass, but a separate decision.
+
+---
+
+## Stages
+
+- [ ] **S1 — Characterise and stop.** Every reader of
+      `regime_audit_decision.yaml` and what each does when it is absent. Whether
+      the classification can be computed deterministically from the report, or
+      genuinely needs a judgment call. Report, then stop.
+- [ ] **S2 — (blocked on S1) Merge.** Stage 9 emits the decision; the firewall
+      moves with it and still raises.
+- [ ] **S3 — (blocked on S2) Documentation and cleanup.** Guide, `CLAUDE.md`,
+      the stage registry. The legacy skill file stays, marked as the spec.
+
+## Risks
+
+- **The firewall is the one real guard here.** Losing or weakening it in the
+  merge would remove the only thing stopping a detector being tuned until the
+  PnL looks good. Its behaviour must be test-pinned before the merge, not
+  after.
+- **`needs_retune` may not be mechanisable.** If the judgment genuinely needs a
+  human, the honest outcome is a documented human procedure with a defined
+  trigger — not a stage that pretends to be automated. S1 decides which.
+
+## Log
+
+- 2026-08-31 — `new`. Found during E-037's stage audit; confirmed by Jérémy,
+  who proposed the merge: *"I would stop considering regime_auditor as a step
+  if it is not called. More than that, its objective might belong into the
+  regime detector validation step."* The guide was updated the same day to stop
+  presenting it as a stage; this epic is the code side.
+
+---
+
+## Decisions (Jérémy, 2026-09-01)
+
+**1. It is a real step, and it is mechanical measurement first, agent judgment
+second.** Jérémy: *"backtest output should be generated by the backtester /
+metrics by the backtester OR a script after. And then an agent should analyze
+it to see if the regime identification is efficient."* This answers S1's open
+question — not either/or. **The numbers are code; the interpretation is an
+agent.**
+
+**2. There is no ground truth for a market regime, so the checks are ranked by
+what each can actually answer.** Nobody knows what regime the market "really"
+was in — "trending" and "ranging" are labels we invented, not facts that can be
+looked up. Three checks, in this order:
+
+**(a) Does using the regime label beat ignoring it?** — PRIMARY. The only test
+that does not depend on someone's chosen definition of "trending", and the only
+one denominated in the thing we actually care about. If conditioning on the
+label does not improve results, the detector is not earning its place whatever
+else it scores.
+
+**(b) Retroactive comparison — measures LAG, not correctness.** Jérémy's
+proposal: label the whole history with full hindsight, then check what the live
+detector said at the time. Worth doing, with the honest framing: the hindsight
+label is **another invented definition**, so agreement with it is not
+correctness. Its real value is quantifying **how late the detector is** — if
+hindsight puts the trend's start at day 10 and the detector says so on day 25,
+that 15-day lag is the detector's dominant practical failure mode, and nothing
+else surfaces it.
+
+> ⚠️ **TRAP — must be written into any implementation.** The hindsight labeller
+> reads future data by construction. It may feed the **evaluation report only**.
+> If it ever reaches a signal, that is lookahead and will produce spectacular
+> false results. This is the one place in this epic where a mistake is not
+> merely wrong but flattering.
+
+**(c) Health characteristics** — average regime duration, % of bars per label,
+flip rate, sensitivity to a ±10% parameter nudge. Cheap, and they catch
+degenerate detectors (one label eating 95% of bars; labels that flip every
+other bar). They say nothing about usefulness, which is why they rank last.
+
+Jérémy's own framing of the alternative, recorded because it is the right
+instinct: *"is it really useful to compare a metric against a metric (but
+retroactively calculated)?"* — the answer is yes, but only for (b)'s narrow
+purpose, never as a correctness score.
