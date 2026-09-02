@@ -52,3 +52,56 @@ def test_stale_input_path_fix_is_on() -> None:
         "switched on deliberately (E-041) -- if reverting was intentional, "
         "update this test with the reason; if not, this is the regression."
     )
+
+
+def test_variant_selection_record_is_on() -> None:
+    """Switched on 2026-09-02 (E-041, flag 4 of 7). See campaign_config.yaml's
+    own comment for the declared-output-change note and the compliance check
+    behind this call."""
+    flags = _load_orchestrator_flags()
+    assert flags.get("variant_selection_record", {}).get("enabled") is True, (
+        "orchestrator.variant_selection_record.enabled reverted to off. This "
+        "was switched on deliberately (E-041) -- if reverting was "
+        "intentional, update this test with the reason; if not, this is the "
+        "regression."
+    )
+
+
+def test_schedulability_block_is_on() -> None:
+    """Switched on 2026-09-02 (E-041, flag 5 of 7). See campaign_config.yaml's
+    own comment for the declared-output-change note."""
+    flags = _load_orchestrator_flags()
+    assert flags.get("schedulability_block", {}).get("enabled") is True, (
+        "orchestrator.schedulability_block.enabled reverted to off. This was "
+        "switched on deliberately (E-041) -- if reverting was intentional, "
+        "update this test with the reason; if not, this is the regression."
+    )
+
+
+def test_anti_adjacency_retry_is_still_off() -> None:
+    """BLOCKED, not simply not-yet-done. E-036 (2026-08-27): the gate's
+    (family, instrument, timeframe) key sees 18 distinct strategies where a
+    composition fingerprint sees 34, and REFUSES a reproduced parameter sweep
+    as a repeat. Turning this on would actively harm research -- refusing
+    legitimate work, not merely being inert. E-036's own EPICS.md entry:
+    "Blocks enabling either gate flag." Unpark trigger: E-036 S2 (the build)
+    ships a corrected adjacency key."""
+    flags = _load_orchestrator_flags()
+    assert flags.get("anti_adjacency_retry", {}).get("enabled") is not True, (
+        "orchestrator.anti_adjacency_retry.enabled was turned on, but E-036 "
+        "has not shipped a corrected adjacency key yet -- the current key "
+        "would refuse legitimate parameter sweeps as repeats. Confirm E-036 "
+        "S2 is done before removing this guard."
+    )
+
+
+def test_variant_anti_adjacency_gate_is_still_off() -> None:
+    """BLOCKED for the same reason as anti_adjacency_retry above -- both are
+    call sites of the same tools/anti_adjacency_gate.py mechanism and the
+    same (family, instrument, timeframe) key E-036 found broken."""
+    flags = _load_orchestrator_flags()
+    assert flags.get("variant_anti_adjacency_gate", {}).get("enabled") is not True, (
+        "orchestrator.variant_anti_adjacency_gate.enabled was turned on, but "
+        "E-036 has not shipped a corrected adjacency key yet. Confirm E-036 "
+        "S2 is done before removing this guard."
+    )
