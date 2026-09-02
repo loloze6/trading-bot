@@ -110,8 +110,11 @@ class FearGreedFetcher(BaseFetcher):
             logger.error("FearGreedFetcher: 'requests' library not installed")
             return pd.DataFrame()
 
-        # Request enough days to cover the window plus a small buffer
-        days_needed = int((datetime.datetime.utcnow() - start).days) + 10
+        # Request enough days to cover the window plus a small buffer.
+        # now(tz=utc).replace(tzinfo=None) is the drop-in replacement for the
+        # deprecated utcnow() (CUL-218 class, found alongside line 131's
+        # utcfromtimestamp while fixing that ticket) -- same naive-UTC value.
+        days_needed = int((datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - start).days) + 10
 
         try:
             resp = requests.get(
@@ -128,7 +131,12 @@ class FearGreedFetcher(BaseFetcher):
 
             records = [
                 {
-                    "timestamp": pd.Timestamp(datetime.datetime.utcfromtimestamp(int(entry["timestamp"]))).floor("D"),
+                    # fromtimestamp(tz=utc).replace(tzinfo=None) is the drop-in
+                    # replacement for the deprecated utcfromtimestamp() (CUL-218)
+                    # -- same naive-UTC datetime, byte-identical, warning-free.
+                    "timestamp": pd.Timestamp(
+                        datetime.datetime.fromtimestamp(int(entry["timestamp"]), datetime.timezone.utc).replace(tzinfo=None)
+                    ).floor("D"),
                     "fear_greed": int(entry["value"]),
                     "classification": entry.get("value_classification", ""),
                 }
