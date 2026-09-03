@@ -28,7 +28,7 @@ import ccxt
 import numpy as np
 import pandas as pd
 
-from data.fetchers.base_fetcher import BaseFetcher
+from data.fetchers.base_fetcher import BaseFetcher, _utc_epoch_ms
 
 logger = logging.getLogger("trading_bot")
 
@@ -144,8 +144,11 @@ class CcxtFetcher(BaseFetcher):
             logger.error("CcxtFetcher: exchange not initialised")
             return pd.DataFrame()
 
-        since         = int(start.timestamp() * 1000)   # ms epoch
-        until         = int(end.timestamp()   * 1000)
+        # start/end arrive tz-naive but denote UTC instants; naive
+        # datetime.timestamp() shifts the epoch by the host UTC offset on a
+        # non-UTC host (CUL-248). _utc_epoch_ms anchors both bounds to UTC.
+        since         = _utc_epoch_ms(start)   # ms epoch
+        until         = _utc_epoch_ms(end)
         all_candles   = []
         current_since = since
 

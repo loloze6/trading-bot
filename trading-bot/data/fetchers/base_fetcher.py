@@ -39,6 +39,34 @@ import pandas as pd
 logger = logging.getLogger("trading_bot")
 
 
+def _utc_epoch_ms(dt: datetime.datetime) -> int:
+    """
+    Convert a datetime/Timestamp denoting a UTC instant to epoch-ms, correctly
+    for both tz-naive and tz-aware inputs.
+
+    The fetch path normally passes tz-NAIVE values standing for UTC
+    (data_manager.py:610): _identify_missing_periods emits plain
+    datetime.datetime, and self.start_date/self.end_date are naive. But an
+    aware value can also arrive (e.g. the cadence regression test drives an
+    aware-UTC start), so both are handled:
+
+      * naive  -> .replace(tzinfo=utc): datetime.datetime.timestamp() on a
+        naive value would otherwise interpret it in the host LOCAL zone and
+        shift the epoch by the host UTC offset on a non-UTC host (CUL-248,
+        the bug this helper closes). Same round-trip data_manager._align uses
+        (data_manager.py:634).
+      * aware  -> left as-is; its .timestamp() is already the correct instant.
+        We deliberately do NOT .replace() an aware value, which would OVERWRITE
+        a real offset (e.g. +02:00 mis-read as UTC) and mis-place the epoch.
+
+    An aware value is trusted, not rejected: it is an unambiguous instant, not
+    a degenerate input. Only the naive case carried the tz ambiguity CUL-248 fixed.
+    """
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
+    return int(dt.timestamp() * 1000)
+
+
 class FetchGapError(RuntimeError):
     """
     Raised at the WRITE boundary when a fetch would introduce a NEW hole into a
