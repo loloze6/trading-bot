@@ -89,7 +89,7 @@ funding-carry reproduction now requires re-fetching its two inputs (bounded at
 | Path | Size | Why excluded |
 |---|---|---|
 | `Kraken_batch/` | **15.3 GB**, 7,582 files (was 32 GB / 25,522 — see §1.1) | Bulk Kraken archive. Far past any practical repo size. |
-| `Kraken_funding_rates/` | **436 MB**, 480 CSVs | Bulk Kraken funding export. Size, plus no provenance record (see §2.2). |
+| `Kraken_funding_rates/` | **436 MB**, 480 CSVs | Bulk Kraken funding export. Size, plus no provenance record (see §2.2). **Confirmed present on Jeremy's Windows machine 2026-09-03** (exact match: 436 MB, 480 CSVs, same schema) — git-untracked, so it simply does not travel to a fresh clone or the fork's Mac; not pruned, not lost. |
 | `holdout_sealed/` | **1.9 GB** | **SEALED single-use holdout** — see the section above. Excluded twice over: by `trading-bot/local_data/*/` and by a dedicated `**/holdout_sealed/` rule. |
 | `BTCUSDT_1m.csv` | **177,664,416 bytes (≈169 MiB)** | Exceeds **GitHub's 100 MB per-file hard limit**. A push containing it is rejected outright — this is not a soft warning, it blocks the push. **Present on disk — see §2.3, it is not reconstructible from anything else here.** |
 
@@ -189,6 +189,14 @@ introduce holdout-range data. The `q1_26` Trades tranche came from the same supp
 article's Q1-2026 export; **do not re-obtain it** (§0, §1.2).
 
 ### 2.2 `Kraken_funding_rates/exports/` — 480 × `PF_*USD.csv`
+
+**Machine scope confirmed 2026-09-03 (CUL-197):** present on Jeremy's Windows
+machine, exact match to every figure below (436 MB, 480 CSVs, same schema,
+same `__MACOSX`/`exports` layout) — and git-untracked (0 files in the
+index), which is the whole explanation for its absence on any other clone
+(a fresh checkout, or the fork's Mac). Not pruned, not lost, not drift; a
+docs-vs-disk mismatch only existed relative to machines that were never
+going to have it.
 
 **⚠️ NO PROVENANCE RECORD.** This is filed as **ledger item G7**
 (`strategy-research/engineering/sessions/session_reports/20260725_funding_recost_feasibility.md:503-509`).
