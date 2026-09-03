@@ -286,6 +286,19 @@ class Launcher:
         self.logger.debug("Bot initialized successfully. Starting main loop...")
         self.logger.debug("=" * 80)
 
+        # ORDERING CONSTRAINT (CUL-25): the line above sets
+        # candle_builder.candle_completion_callback for the first time in this
+        # method. The commented-out warmup TODO below is only safe BECAUSE it
+        # sits after that assignment. If a future implementation of this TODO
+        # feeds historical rows through candle_builder before the callback is
+        # wired -- e.g. by moving this block earlier, or by warming up before
+        # TradingBot/the callback wiring exist -- any candle completed during
+        # warmup calls a None callback, which raises TypeError. Whether that
+        # surfaces loudly depends entirely on what (if anything) catches it
+        # upstream; this method has no test coverage (run_bot() is the
+        # forbidden live-trading entry point, never exercised in CI), so
+        # nothing here would catch a silent regression. Keep any warmup
+        # implementation strictly after the callback assignment above.
         # TODO: load historical warmup data before going live
         # self._load_historical_warmup(bot, lookback_days=90)
 
