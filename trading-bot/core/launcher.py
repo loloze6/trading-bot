@@ -40,6 +40,7 @@ class TradingParams:
     test_mode: bool
     commission_rate: float = DEFAULT_COMMISSION_RATE
     exchange: str = "binance"
+    fetch_interval: Optional[int] = None   # backtest OHLCV fetch resolution (CUL-250); None = interval
 
 
 @dataclass
@@ -171,6 +172,18 @@ class Launcher:
         exchange = _validated_exchange(
             self.config.get('trading', 'exchange', 'binance'), self.logger
         )
+        # Optional key (CUL-250). Absent/None means "fetch at trading.interval
+        # directly" -- byte-identical to every config written before this key
+        # existed. When set, backtest OHLCV is fetched/cached at THIS
+        # resolution instead, and CandleBuilder aggregates it up to
+        # trading.interval during replay (e.g. fetch_interval_seconds="1h"
+        # with interval="4h" backtests a 4h strategy off an hourly cache).
+        # Live mode never reads this value -- DataManager only honours it in
+        # fetch_historical_data(), the backtest-only OHLCV loader.
+        raw_fetch_interval = self.config.get('trading', 'fetch_interval_seconds', None)
+        fetch_interval = (
+            parse_interval_seconds(raw_fetch_interval) if raw_fetch_interval is not None else None
+        )
         return TradingParams(
             symbols=self.config.get('trading', 'symbols', ['BTCUSDT']),
             interval=parse_interval_seconds(
@@ -181,6 +194,7 @@ class Launcher:
             ),
             test_mode=self.config.get('trading', 'test_mode', True),
             exchange=exchange,
+            fetch_interval=fetch_interval,
         )
 
     def _build_mock_stack(
@@ -197,6 +211,7 @@ class Launcher:
             symbols=params.symbols,
             interval_seconds=params.interval,
             mode="backtest",
+            fetch_interval_seconds=params.fetch_interval,
         )
         # trades_log_file defaults to None, which lets EnhancedPerformanceTracker
         # keep its own default (the flat results/trades.json path) -- bit-identical
@@ -512,7 +527,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  drop_feeds: list[str] | None = None,
                  model_funding: bool = False,
                  risk_controls: dict | None = None,
-                 feed_local_storage: bool = True):
+                 feed_local_storage: bool = True,
+                 fetch_interval_seconds: int | None = None):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -638,6 +654,16 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         remote but cannot MUTATE a tracked cache -- the same opt-out CUL-26 added
         for OHLCV (fetch_historical_data), extended to the feed path (CUL-161).
         See tests/test_aux_feed_localstorage_flag.py.
+    fetch_interval_seconds: backtest OHLCV fetch resolution override (CUL-250).
+        Defaults to None, which resolves to config.json's trading.fetch_interval_seconds
+        (itself absent by default) -- same None-means-prior-behavior contract as
+        interval_seconds/commission_rate/exchange above. When set (directly or via
+        config), historical OHLCV is fetched/cached at THIS resolution instead of
+        `interval`, and CandleBuilder aggregates the finer rows up to `interval`
+        during replay -- e.g. fetch_interval_seconds=3600 with interval_seconds=14400
+        backtests a 4h strategy off an hourly cache. Must be <= interval and divide
+        it evenly (DataManager raises otherwise). See
+        tests/test_data_manager_fetch_interval.py.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -668,6 +694,13 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         else launcher.config.get('trading', 'exchange', 'binance'),
         launcher.logger,
     )
+    if fetch_interval_seconds is not None:
+        resolved_fetch_interval = fetch_interval_seconds
+    else:
+        _raw_fetch_interval = launcher.config.get('trading', 'fetch_interval_seconds', None)
+        resolved_fetch_interval = (
+            parse_interval_seconds(_raw_fetch_interval) if _raw_fetch_interval is not None else None
+        )
     params = TradingParams(
         symbols=[symbol],
         interval=interval,
@@ -675,6 +708,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         test_mode=True,
         commission_rate=resolved_commission_rate,
         exchange=resolved_exchange,
+        fetch_interval=resolved_fetch_interval,
     )
 
     strategy = AdvancedStrategy(config_path=config_path)
