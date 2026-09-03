@@ -16,7 +16,10 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from performance.signal_statistics import pearson_correlation, t_test_pvalue
+from performance.signal_statistics import (
+    pearson_correlation, t_test_pvalue,
+    gap_aware_active_block_count, block_adjusted_pvalue,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -182,6 +185,7 @@ def build_core(
     metrics_dict: dict,
     completed_trades: list,
     bars_df: Optional[pd.DataFrame] = None,
+    candle_interval_seconds: Optional[int] = None,
 ) -> dict:
     overall = metrics_dict.get("overall_metrics", {})
     n = len(completed_trades)
@@ -212,6 +216,12 @@ def build_core(
     # result that was actually just an artifact of the signal's shape.
     forecast_return_corr       = None
     forecast_return_corr_pvalue = None
+    # CUL-262 (E-039 parity): additive, block-adjusted counterpart to the raw
+    # t-test above -- None unless both a real correlation AND a candle
+    # interval are available, so every existing caller/consumer of this dict
+    # sees byte-identical values for every key that already existed.
+    forecast_return_corr_pvalue_block_adjusted = None
+    forecast_return_corr_n_eff                 = None
     if bars_df is not None and "forecast" in bars_df.columns and "close" in bars_df.columns:
         df = bars_df[["forecast", "close"]].copy()
         df["forward_return"] = df["close"].shift(-1) / df["close"] - 1
@@ -224,6 +234,24 @@ def build_core(
             forecast_return_corr = round(corr, 6) if corr is not None else None
             pvalue = t_test_pvalue(corr, len(x))
             forecast_return_corr_pvalue = round(pvalue, 6) if pvalue is not None else None
+
+            if corr is not None and candle_interval_seconds:
+                block_size = max(86400 // candle_interval_seconds, 1)
+                placeable_blocks = None
+                if "timestamp" in bars_df.columns:
+                    expected_step = pd.Timedelta(seconds=candle_interval_seconds)
+                    records = [
+                        {"active": bool(f != 0), "timestamp": ts}
+                        for f, ts in zip(bars_df["forecast"], bars_df["timestamp"])
+                    ]
+                    placeable_blocks = gap_aware_active_block_count(
+                        records, block_size, expected_step
+                    )
+                pv, neff = block_adjusted_pvalue(
+                    corr, len(x), block_size, placeable_blocks=placeable_blocks
+                )
+                forecast_return_corr_pvalue_block_adjusted = pv
+                forecast_return_corr_n_eff                 = neff
 
     # Avg trade duration in bars (derived from trade timestamps + bar interval)
     avg_trade_duration_bars = None
@@ -250,6 +278,8 @@ def build_core(
         "cost_drag_pct":               cost_drag_pct,
         "forecast_return_corr":        forecast_return_corr,
         "forecast_return_corr_pvalue": forecast_return_corr_pvalue,
+        "forecast_return_corr_pvalue_block_adjusted": forecast_return_corr_pvalue_block_adjusted,
+        "forecast_return_corr_n_eff":  forecast_return_corr_n_eff,
         "avg_trade_duration_bars":     avg_trade_duration_bars,
     }
 
