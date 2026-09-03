@@ -1,7 +1,8 @@
 # Episode significance gap-awareness — policy pre-registration (CUL-21 / GH#66)
 
-**Issue:** GH#66 / CUL-21 · **Status:** proposed, awaiting Jeremy + Dorian sign-off
+**Issue:** GH#66 / CUL-21 · **Status:** implemented 2026-09-03 (fork `mac/setup`, patches P1/P2/P3); the pre-registration text below is unchanged
 **Written:** 2026-09-03, BEFORE any implementation. Measured on fork tree `d961a3d7`.
+**Line numbers:** measured on the pre-patch tree `d961a3d7` (upstream `3578355a` plus fork-only docs). On the shipped tree they do not navigate exactly: `prescreen_signal.py` references sit 18 lines lower above the patches (upstream `c9519775` landed first) and further below them; `episode_significance.py` references shift only by patch 3. Navigate by symbol name.
 **Shared helper:** [`PRESCREEN_GAP_CONTIGUOUS_SEGMENTS.md`](PRESCREEN_GAP_CONTIGUOUS_SEGMENTS.md).
 **Parent policy:** [`PRESCREEN_GAP_POLICY.md`](PRESCREEN_GAP_POLICY.md) — this is
 the fifth consumer of the #50 root defect, named in GH#64's "same family" list.
