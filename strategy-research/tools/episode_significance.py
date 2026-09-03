@@ -86,12 +86,19 @@ _SIG_THRESHOLD = 0.10
 # Episode construction
 # ---------------------------------------------------------------------------
 
-def identify_episodes(records: list, gap_bars: int = _DEFAULT_GAP_BARS, era_of=None) -> list:
+def identify_episodes(records: list, gap_bars: int = _DEFAULT_GAP_BARS, era_of=None,
+                      expected_step=None) -> list:
     """
     records: list of per-bar dicts (order = original bar sequence) each with an
         "active" bool key (as produced by prescreen_signal._extract_forecasts).
     era_of: optional callable(bar_index) -> era_id. When provided, an episode is
         also closed at any era boundary regardless of gap size.
+    expected_step: optional pd.Timedelta bar step. When given, the gap between
+        two consecutive active bars is measured in TRUE elapsed bars, not list
+        positions (GH#66 / CUL-20, the #50 family) -- a data hole between them
+        adds its missing bars to the gap, so a large enough hole splits an
+        episode a positional count would silently merge. None reproduces the
+        pre-gap-aware positional behaviour byte-for-byte.
 
     Returns a list of episodes; each episode is a list of the ACTIVE bar indices
     belonging to it (inactive bars in between are not members of any episode —
@@ -101,10 +108,39 @@ def identify_episodes(records: list, gap_bars: int = _DEFAULT_GAP_BARS, era_of=N
     if not active_idx:
         return []
 
+    # Segment membership per record index (shared #50 helper). Two active bars
+    # in the same contiguous segment have no hole between them, so curr-prev-1
+    # already equals the true bar-gap (byte-identical); across a segment
+    # boundary the true gap comes from the timestamps. seg_of stays None on the
+    # positional (expected_step is None) path so nothing changes there.
+    seg_of = None
+    if expected_step is not None:
+        seg_of = [0] * len(records)
+        for sid, (s, e) in enumerate(
+                prescreen_signal._contiguous_segments(records, expected_step)):
+            for i in range(s, e):
+                seg_of[i] = sid
+
     episodes = []
     current = [active_idx[0]]
     for prev, curr in zip(active_idx, active_idx[1:]):
-        gap = curr - prev - 1
+        # Gap-awareness fires only on an intra-symbol data hole: prev/curr in
+        # different contiguous segments AND the same symbol. A SYMBOL boundary
+        # is also a segment break in the pooled record list, but it is a
+        # separate concern (GH#66 §7 / observation O1) -- keeping it on the
+        # positional gap leaves the pooled-symbol behaviour exactly as it was.
+        # records without a "symbol" key (single-symbol fixtures) read as one
+        # symbol, so intra-symbol holes are still measured.
+        cross_segment = seg_of is not None and seg_of[prev] != seg_of[curr]
+        same_symbol = records[prev].get("symbol") == records[curr].get("symbol")
+        if cross_segment and same_symbol:
+            # a hole intervenes; measure it in true bars. Integer floordiv on
+            # the timedelta is exact for grid-aligned bars (the pre-registration's
+            # round(delta / step) form, without float).
+            gap = int((records[curr]["timestamp"] - records[prev]["timestamp"])
+                      // expected_step) - 1
+        else:
+            gap = curr - prev - 1
         era_break = era_of is not None and era_of(prev) != era_of(curr)
         if gap <= gap_bars and not era_break:
             current.append(curr)
@@ -206,6 +242,7 @@ def compute_a851a_significance(
     block_size: int | None = None,
     n_resamples: int = _DEFAULT_N_RESAMPLES,
     seed: int | None = None,
+    expected_step=None,
 ) -> dict:
     """
     A8.5.1a dispatcher. Returns a dict always containing at least:
@@ -241,7 +278,8 @@ def compute_a851a_significance(
             "significant": sig["significant"],
         }
 
-    episodes = identify_episodes(records, gap_bars=gap_bars, era_of=era_of)
+    episodes = identify_episodes(records, gap_bars=gap_bars, era_of=era_of,
+                                 expected_step=expected_step)
     n_episodes = len(episodes)
 
     if n_episodes < min_n_episodes:
@@ -262,12 +300,14 @@ def compute_a851a_significance(
     return result
 
 
-def per_era_report(records: list, era_of, gap_bars: int = _DEFAULT_GAP_BARS) -> dict:
+def per_era_report(records: list, era_of, gap_bars: int = _DEFAULT_GAP_BARS,
+                   expected_step=None) -> dict:
     """
     Reporting-only per-era breakdown (A8.5.1a: "era stratification is reporting, not
     resampling"). Does not feed into the bootstrap.
     """
-    episodes = identify_episodes(records, gap_bars=gap_bars, era_of=era_of)
+    episodes = identify_episodes(records, gap_bars=gap_bars, era_of=era_of,
+                                 expected_step=expected_step)
 
     by_era_active = defaultdict(list)
     for i, r in enumerate(records):

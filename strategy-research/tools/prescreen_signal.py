@@ -686,6 +686,57 @@ def _gap_aware_block_count(records: list, block_size: int,
     return total
 
 
+def _contiguous_segments(records: list,
+                         expected_step: "pd.Timedelta | None") -> "list[tuple[int, int]]":
+    """
+    Partition `records` (each a dict carrying a "timestamp" key, in bar order)
+    into maximal runs of temporally-consecutive bars. Returns a list of
+    half-open [start, end) index ranges that together cover 0..len(records)
+    with no gaps and no overlaps: a boundary falls exactly where
+    records[i+1]["timestamp"] - records[i]["timestamp"] != expected_step.
+
+    Shared #50-family guardrail (CUL-15 D1a). The run-boundary rule is the same
+    one already inlined in `_gap_aware_block_count`; factoring it here keeps the
+    turnover proxy, the block bootstrap and episode significance from each
+    re-deriving "where are the holes" and re-introducing the positional-vs-time
+    confusion. See docs/analysis-reports/PRESCREEN_GAP_CONTIGUOUS_SEGMENTS.md.
+
+    Contract:
+      - C-H1: ranges are half-open, contiguous, cover [0, len(records)) exactly;
+        sum(end - start) == len(records).
+      - C-H2: a boundary is inserted between i and i+1 iff the timestamp delta is
+        not exactly `expected_step`. The test is `!=`, not `>`, so a backwards or
+        duplicate timestamp (delta <= 0) is also a boundary -- a non-monotone
+        timestamp is as much "not the next bar" as a hole is.
+      - C-H3: `expected_step is None` returns [(0, n)] -- one segment spanning
+        every record, reproducing the pre-#50 positional behaviour exactly.
+      - C-H4: reads only "timestamp"; never "forecast"/"active"/"next_return_bps".
+      - C-H5: fail-loud -- when expected_step is not None, a record with no
+        "timestamp" key raises KeyError naming the index; never a silent
+        positional fallback.
+    """
+    n = len(records)
+    if n == 0:
+        return []
+    if expected_step is None:
+        return [(0, n)]
+    for i, rec in enumerate(records):
+        if "timestamp" not in rec:
+            raise KeyError(
+                f"_contiguous_segments: record at index {i} has no 'timestamp' "
+                "key, but expected_step is not None -- refusing a silent "
+                "positional fallback (#50 family)"
+            )
+    segments = []
+    start = 0
+    for i in range(n - 1):
+        if records[i + 1]["timestamp"] - records[i]["timestamp"] != expected_step:
+            segments.append((start, i + 1))
+            start = i + 1
+    segments.append((start, n))
+    return segments
+
+
 def _block_adjusted_significance(
     ic_values: list,
     n_active_bars: int,
@@ -778,6 +829,7 @@ def _stationary_block_bootstrap_ic_significance(
     block_size: int = _BOOTSTRAP_BLOCK_SIZE_1D,
     n_resamples: int = _BOOTSTRAP_N_RESAMPLES,
     seed: int = _BOOTSTRAP_SEED,
+    expected_step_by_symbol: dict | None = None,
 ) -> dict:
     """
     Pre-registered fallback significance test for the pooled ALL-BARS rank IC, used
@@ -796,13 +848,36 @@ def _stationary_block_bootstrap_ic_significance(
     p = 2 * min(frac(boot_ic <= 0), frac(boot_ic >= 0)), i.e. how much of the
     bootstrap distribution's mass sits on the opposite side of zero from the
     observed IC. Reproducible: fixed seed, not re-randomized per call.
+
+    Gap-awareness (GH#63/CUL-20, #50 family). Each block is drawn from WITHIN a
+    single contiguous segment and wraps circularly within that segment only, so a
+    block can no longer straddle a data hole (or wrap from the series end back to
+    its start across one) -- the same positional-vs-time confusion #50 describes,
+    here in the resampling rather than the labelling. Segments come from
+    `_contiguous_segments(recs, expected_step)`; a block drawn from a segment is
+    `min(block_size, seg_len)` bars long, so a segment shorter than `block_size`
+    contributes a whole-segment block rather than repeating its bars to fill
+    `block_size` -- this keeps the total resampled mass comparable to today's
+    (without the cap, a 3-bar segment with block_size 24 would emit a 24-item
+    block, ~8x inflation). `expected_step_by_symbol=None` (or a symbol absent from
+    it) yields one segment spanning the series AND keeps the old uncapped block
+    length, which reproduces the pre-gap-aware resampling byte-for-byte -- INCLUDING
+    a series shorter than block_size, where the old global wrap emitted block_size
+    items: the rng draw order and every sampled index are identical (randrange(0, n)
+    and the (start+k) % n wrap are the seg_start=0, seg_len=n case). See
+    docs/analysis-reports/PRESCREEN_GAP_BOOTSTRAP_POLICY.md.
     """
     symbol_arrays = {}
     observed_all_f, observed_all_r = [], []
     for sym, recs in records_by_symbol.items():
         f   = [r["forecast"]        for r in recs]
         ret = [r["next_return_bps"] for r in recs]
-        symbol_arrays[sym] = (f, ret)
+        expected_step = (expected_step_by_symbol.get(sym)
+                         if expected_step_by_symbol is not None else None)
+        segments = _contiguous_segments(recs, expected_step)
+        # cap the block length to the segment only on the real gap-aware path;
+        # None must keep the old uncapped block_size (byte-identity for n < block_size)
+        symbol_arrays[sym] = (f, ret, segments, expected_step is not None)
         observed_all_f.extend(f)
         observed_all_r.extend(ret)
 
@@ -820,17 +895,24 @@ def _stationary_block_bootstrap_ic_significance(
     boot_ics = []
     for _ in range(n_resamples):
         rf, rr = [], []
-        for f, ret in symbol_arrays.values():
-            n = len(f)
-            if n == 0:
+        for f, ret, segments, capped in symbol_arrays.values():
+            if not f:
                 continue
-            n_blocks_needed = (n + block_size - 1) // block_size
-            for _b in range(n_blocks_needed):
-                start = rng.randrange(0, n)
-                for k in range(block_size):
-                    idx = (start + k) % n  # circular wrap -- Politis & Romano (1994)
-                    rf.append(f[idx])
-                    rr.append(ret[idx])
+            for seg_start, seg_end in segments:
+                seg_len = seg_end - seg_start
+                n_blocks_needed = (seg_len + block_size - 1) // block_size
+                # block length: capped to the segment on the gap-aware path so a
+                # short segment is not padded by repetition; uncapped (block_size)
+                # on the None path to reproduce the old global wrap byte-for-byte.
+                blk = min(block_size, seg_len) if capped else block_size
+                for _b in range(n_blocks_needed):
+                    start = rng.randrange(seg_start, seg_end)
+                    for k in range(blk):
+                        # circular wrap WITHIN the segment -- Politis & Romano (1994),
+                        # confined so no block straddles a data hole (#50 family)
+                        idx = seg_start + ((start - seg_start + k) % seg_len)
+                        rf.append(f[idx])
+                        rr.append(ret[idx])
         ic = _spearman(rf, rr)
         if ic is not None:
             boot_ics.append(ic)
@@ -856,7 +938,8 @@ def _stationary_block_bootstrap_ic_significance(
 # Turnover proxy (2026-07-07 redefinition -- see run_prescreen's call site)
 # ---------------------------------------------------------------------------
 
-def _compute_turnover_proxy(records_by_symbol: dict) -> dict:
+def _compute_turnover_proxy(records_by_symbol: dict,
+                            expected_step_by_symbol: dict | None = None) -> dict:
     """
     Trade boundary = an ACTIVITY transition, not a sign transition:
     inactive -> active OPENS a trade; active -> inactive CLOSES it; a direct
@@ -876,19 +959,32 @@ def _compute_turnover_proxy(records_by_symbol: dict) -> dict:
     pooling the flat records list across symbols would let one symbol's
     trailing sign leak into the next symbol's opening bar as a spurious
     "no transition" read.
+
+    Gap-awareness (GH#64, CUL-15 D1a). `prev_sign` is reset at the start of each
+    contiguous segment, so a holding whose sign is unchanged across a real data
+    hole is closed and reopened rather than read as one continuous trade. Without
+    it, a same-sign holding spanning a hole undercounts `total_opens`, which
+    inflates `avg_holding_bars` and therefore `edge_to_cost_ratio` -- flattering
+    the cost hurdle. `expected_step_by_symbol=None` (or a symbol absent from it)
+    means one segment spanning the whole series, reproducing the pre-gap-aware
+    value byte-for-byte. See docs/analysis-reports/PRESCREEN_GAP_TURNOVER_POLICY.md.
     """
     total_active = 0
     total_opens = 0
-    for recs in records_by_symbol.values():
-        prev_sign = 0  # 0 = flat; tracks the actual PRIOR bar's state, flat included
-        for r in recs:
-            curr_sign = 1 if r["forecast"] > _ACTIVE_THRESHOLD else (
-                       -1 if r["forecast"] < -_ACTIVE_THRESHOLD else 0)
-            if curr_sign != 0:
-                total_active += 1
-                if curr_sign != prev_sign:
-                    total_opens += 1
-            prev_sign = curr_sign
+    for sym, recs in records_by_symbol.items():
+        expected_step = (expected_step_by_symbol.get(sym)
+                         if expected_step_by_symbol is not None else None)
+        for seg_start, seg_end in _contiguous_segments(recs, expected_step):
+            prev_sign = 0  # 0 = flat; reset per contiguous segment (a gap closes the holding)
+            for idx in range(seg_start, seg_end):
+                r = recs[idx]
+                curr_sign = 1 if r["forecast"] > _ACTIVE_THRESHOLD else (
+                           -1 if r["forecast"] < -_ACTIVE_THRESHOLD else 0)
+                if curr_sign != 0:
+                    total_active += 1
+                    if curr_sign != prev_sign:
+                        total_opens += 1
+                prev_sign = curr_sign
 
     implied_trades = max(total_opens, 1)
     avg_holding_bars = total_active / implied_trades if implied_trades > 0 else None
@@ -1491,6 +1587,10 @@ def run_prescreen(
         def _era_of(i, _records=all_records, _eras=eras):
             return (_records[i]["symbol"], _era_id_for_timestamp(_records[i]["timestamp"], _eras))
 
+        # Scalar bar step for gap-aware episode splitting (GH#66). All pooled
+        # records share one timeframe, so a single step applies to every symbol.
+        episode_expected_step = pd.Timedelta(timeframe_seconds(timeframe), unit="s")
+
         a851a_result = _es.compute_a851a_significance(
             all_records,
             era_of=_era_of if eras else None,
@@ -1499,18 +1599,21 @@ def run_prescreen(
             min_n_episodes=es_cfg.get("min_n_episodes", _es._MIN_N_EPISODES),
             block_size=block_size,
             n_resamples=es_cfg.get("n_resamples", _es._DEFAULT_N_RESAMPLES),
+            expected_step=episode_expected_step,
         )
         ic_sig = a851a_result
         significance_methodology_used = a851a_result["method"]
         if eras:
-            ic_by_era = _es.per_era_report(all_records, _era_of)
+            ic_by_era = _es.per_era_report(all_records, _era_of,
+                                           expected_step=episode_expected_step)
         print(f"    A8.5.1a significance: method={a851a_result['method']} "
               f"n_episodes={a851a_result.get('n_episodes')} "
               f"pooled_ic={a851a_result.get('pooled_ic')} "
               f"p_value={a851a_result.get('p_value')} "
               f"significant={a851a_result.get('significant')}")
     elif degenerate_active_forecast:
-        bootstrap_result = _stationary_block_bootstrap_ic_significance(all_records_by_symbol)
+        bootstrap_result = _stationary_block_bootstrap_ic_significance(
+            all_records_by_symbol, expected_step_by_symbol=expected_step_by_symbol)
         ic_sig = bootstrap_result
         significance_methodology_used = bootstrap_result["method"]
         ic_for_cost = bootstrap_result["pooled_ic"]
@@ -1524,7 +1627,7 @@ def run_prescreen(
     # _compute_turnover_proxy's docstring for the 2026-07-07 activity-transition
     # redefinition (supersedes the prior sign-flip-only counter, which silently
     # merged long-only/short-only episodes across flat gaps into one trade).
-    _turnover = _compute_turnover_proxy(all_records_by_symbol)
+    _turnover = _compute_turnover_proxy(all_records_by_symbol, expected_step_by_symbol)
     total_active     = _turnover["active_bars_total"]
     implied_trades   = _turnover["implied_trades_estimated"]
     avg_holding_bars = _turnover["avg_holding_bars"]
