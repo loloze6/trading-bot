@@ -449,6 +449,26 @@ class BacktestEngine:
                 )
             _provenance_config = {**_provenance_config, "model_funding": True}
 
+        # CUL-250: fold fetch_interval_seconds into run identity ONLY when it
+        # actually diverges from interval_seconds -- the default (None ->
+        # equal to interval_seconds, DataManager.__init__) leaves
+        # _provenance_config untouched, so every existing baseline's hash and
+        # manifest stay byte-identical. When a backtest genuinely fetches at a
+        # finer resolution than it trades on, that fact becomes part of what
+        # makes the run identity distinguishable from one that didn't --same
+        # class of defect #54 (model_funding) closed above.
+        if (self.data_manager is not None
+                and self.data_manager.fetch_interval_seconds != self.data_manager.interval_seconds):
+            if "fetch_interval_seconds" in _provenance_config:
+                raise ValueError(
+                    "strategy config already carries a fetch_interval_seconds key; "
+                    "provenance fold would silently overwrite it -- resolve the collision explicitly"
+                )
+            _provenance_config = {
+                **_provenance_config,
+                "fetch_interval_seconds": self.data_manager.fetch_interval_seconds,
+            }
+
         results_root = (
             tracker.output_dir if tracker else os.path.join(_project_dir, "results")
         )
