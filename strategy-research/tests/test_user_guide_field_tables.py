@@ -47,25 +47,24 @@ _GUIDE = _SR / "docs" / "USER_GUIDE.md"
 # Entry heading -> fields documented but present in ZERO real artifacts.
 # Measured 2026-08-30 (E-037 S2). Shrink this as entries are fixed; the test
 # fails if an entry listed here turns out to be clean.
+#
+# 2026-09-03 (CUL-187): the last four entries all fixed the same way as
+# verdict_interpretation.yaml below -- table replaced with the artifact's
+# real fields, phantom names preserved as a historical note in prose (not in
+# the table), so none of them carry a documented-but-absent field any more.
+# Baseline now empty; kept as a dict (not deleted) so the next drift has a
+# place to land and the docstring's shrink-to-empty claim stays checkable.
 KNOWN_PHANTOM: dict[str, set[str]] = {
-    "`escalation_request.yaml`": {"target_symbol", "target_timeframe", "rationale"},
-    "`protocol_result.yaml` / `protocol_summary.json`": {
-        "per_window_metrics", "per_symbol_metrics", "per_regime_metrics",
-        "promotion_criteria", "diagnostic_metrics",
-        # median_sharpe removed 2026-08-31: it IS present, nested, in 31 of 38
-        # files. The original audit only inspected top-level keys.
-    },
     # NOTE: `verdict_interpretation.yaml` is deliberately absent. S2 rewrote that
     # table from real artifacts, so its five phantom names (altitude, verdict,
     # diagnostic_rule_applied, parameter_bracket, next_altitude) no longer appear
     # as documented fields -- they survive as intended-design prose above the
     # table, which this parser correctly does not treat as a field claim. It is
     # the worked example of an entry leaving this baseline. (2026-08-31)
-    "`regime_detector_report.yaml`": {
-        # class_conditional_sensitivity removed 2026-08-31: present nested.
-        "persistence_score", "activation_rate",
-    },
-    "`regime_audit_decision.yaml`": {"retune_firewall_check"},
+    #
+    # `escalation_request.yaml`, `protocol_result.yaml` / `protocol_summary.json`,
+    # `regime_detector_report.yaml`, `regime_audit_decision.yaml`: fixed the same
+    # way 2026-09-03 (CUL-187) -- see USER_GUIDE.md for each entry's real table.
 }
 
 
