@@ -42,7 +42,7 @@ try:
 except ImportError:
     _CCXT_AVAILABLE = False
 
-from data.fetchers.base_fetcher import BaseFetcher
+from data.fetchers.base_fetcher import BaseFetcher, _utc_epoch_ms
 
 logger = logging.getLogger("trading_bot")
 
@@ -150,8 +150,10 @@ class FundingRateFetcher(BaseFetcher):
         # CCXT expects 'BTC/USDT:USDT' format for perpetual futures
         exchange_symbol = self._to_perp_symbol(symbol)
 
-        since         = int(start.timestamp() * 1000)
-        until         = int(end.timestamp()   * 1000)
+        # start/end are tz-naive UTC instants; naive datetime.timestamp() shifts
+        # the epoch by the host UTC offset on a non-UTC host (CUL-248).
+        since         = _utc_epoch_ms(start)
+        until         = _utc_epoch_ms(end)
         all_records   = []
         current_since = since
 
