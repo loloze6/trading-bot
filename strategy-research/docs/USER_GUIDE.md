@@ -292,7 +292,7 @@ family, [altitude](#g-altitude), exhausted — are in the [Glossary](#6-glossary
 | **skill** | The instruction file an LLM stage is given, e.g. `workflow_artifacts/skills/quant-validation/SKILL.md`. It tells the model what to produce. A skill file can exist on disk without anything ever calling it. |
 | **`library_category`** | A field in `config/indicator_library.yaml` saying what **kind** of indicator something is — trend, volatility, funding, and so on. Two variants built from different categories are genuinely different ideas; two that differ only in a threshold are the same idea twice. |
 | **`data_requirements`** | Which data feeds a variant needs. The other way a variant can be genuinely different: same category, but it reads a feed the sibling does not. |
-| **`CandleBuilder`** | The engine component that turns a stream of rows into finished bars of the timeframe you asked for. It is how a 4h test can run off 1h data: the coarser bar is built from the finer ones, not fetched separately. |
+| **`CandleBuilder`** | The engine component that aggregates whatever rows it is fed into finished bars of `interval_seconds`. **Corrected 2026-09-03:** this entry used to claim it is how a 4h test can run off 1h data — that is false. `CcxtFetcher` fetches and cache-keys at the exact requested timeframe, so `CandleBuilder` is only ever fed rows already at that timeframe; there is no finer-cache fallback in the engine. Reproduced live re-running `run_060` (4h) after the CUL-230 fix shipped — see [CUL-250](https://linear.app/culito/issue/CUL-250). The line below, about `prescreen_signal.py::_resolve_ohlcv_source`, is the one place this derivation genuinely exists today. |
 | **`KNOWN_STATUSES`** | A stage's list of result values it recognises. A value outside the list is not guessed at — the run pauses for a human. Being strict here is deliberate; see stage 6. |
 | **`REPLICATION_DIAGNOSTIC`** | A constraint a brief can carry meaning "re-run this exactly, do not explore". It is why an expansion stage can legitimately return one variant instead of 3–6. |
 | **raises** | Stops the run with an error instead of carrying on. Used deliberately where continuing would produce a decision from bad data — the project's rule is that anything feeding a decision fails loudly rather than quietly. |
@@ -1291,8 +1291,9 @@ Artifacts are YAML files produced and consumed by pipeline stages. They are the 
 > source comments. Measured consequence: `expanded_hypothesis_card.schema.json`
 > declares `expanded_variants` as an array of *strings*, and 74 of the 138
 > variants in the real corpus (53%) are dicts. A field a schema calls
-> `required` is not actually required. Tracked as a bug on Notion's
-> 🐛 Bugs & Tasks board. Where enforcement genuinely exists it is written in
+> `required` is not actually required. Tracked as
+> [CUL-11](https://linear.app/culito/issue/CUL-11) (Notion's bug board was
+> retired in favor of Linear, 2026-09-02). Where enforcement genuinely exists it is written in
 > CODE at the seam that reads the value (see `variant_selection.yaml` below).
 
 Each [run](#g-run) stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-level artifacts live at the root.
@@ -1669,31 +1670,31 @@ Internal run state — not a research artifact but the orchestrator's working me
 
 ---
 
-> ### ⚠️ Flag-gated artifacts — not produced by default
+> ### ⚠️ One of these five artifacts is still flag-gated off
 >
-> The five entries that follow (`variant_selection.yaml`,
-> `variants_not_pursued.yaml`, `exclusion_digest.yaml`,
-> `anti_adjacency_result.yaml`, `schedulability.yaml`) are written **only when
-> an orchestrator feature flag is enabled**. As of 2026-08-30 **every flag is
-> `false`**, so no run produces them — measured instance counts on disk are 0,
-> 0, 1 (at `campaign_record/`, not under a run), 0 and 0, against 103
-> `hypothesis_card.yaml` and 119 `pipeline_state.yaml`.
+> `variant_selection.yaml`, `variants_not_pursued.yaml`, `exclusion_digest.yaml`
+> and `schedulability.yaml` are now produced by default — their gating flags
+> were switched on (E-041, 2026-09-02). `anti_adjacency_result.yaml` is the
+> exception: `orchestrator.variant_anti_adjacency_gate.enabled` stays `false`,
+> not because it is unfinished but because the adjacency-key design it depends
+> on was reviewed and rejected on its own merits (E-036) — it is off pending a
+> redesign, not pending a build.
 >
-> | Flag in `config/campaign_config.yaml` | Gates |
-> |---|---|
-> | `orchestrator.variant_selection_record.enabled` | `variant_selection.yaml`, `variants_not_pursued.yaml` |
-> | `orchestrator.variant_anti_adjacency_gate.enabled` | `anti_adjacency_result.yaml` |
-> | `orchestrator.exclusion_digest_input.enabled` | `exclusion_digest.yaml` |
-> | `orchestrator.schedulability_block.enabled` | `schedulability.yaml` |
+> | Flag in `config/campaign_config.yaml` | Gates | Default |
+> |---|---|---|
+> | `orchestrator.variant_selection_record.enabled` | `variant_selection.yaml`, `variants_not_pursued.yaml` | `true` |
+> | `orchestrator.variant_anti_adjacency_gate.enabled` | `anti_adjacency_result.yaml` | `false` — blocked on E-036 |
+> | `orchestrator.exclusion_digest_input.enabled` | `exclusion_digest.yaml` | `true` |
+> | `orchestrator.schedulability_block.enabled` | `schedulability.yaml` | `true` |
 >
 > Flags are read **at runtime**, so this table states the committed default,
 > not a permanent fact. A missing key, section or file resolves to `false` —
 > silence is never a green light. `variant_anti_adjacency_gate` additionally
-> requires `variant_selection_record` to be on and raises loudly if it is not.
+> requires `variant_selection_record` to be on (it is) and raises loudly if it
+> is not — that precondition is met, it is the flag itself that stays off.
 >
-> This is the project's off-by-default discipline working as intended. It is
-> flagged here only because these entries would otherwise read as describing
-> what a run writes. See [E037-21](../engineering/roadmap/E-037/FINDINGS.md#e037-21).
+> See [E037-21](../engineering/roadmap/E-037/FINDINGS.md#e037-21) for how this
+> was found, and E-041 for the switch-on decisions.
 
 ### `variant_selection.yaml` (per run)
 
