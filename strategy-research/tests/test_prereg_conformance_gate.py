@@ -119,6 +119,44 @@ def test_conformance_gate_flags_the_old_default_path_as_a_real_violation():
     assert any("significance_methodology_used" in v for v in violations)
 
 
+def test_path_basename_any_os_handles_both_separators_regardless_of_host():
+    """E037-11/CUL-186 unit check: Path(...).name only recognizes the host OS's
+    own separator, so this must not delegate to it."""
+    assert rpr._path_basename_any_os("protocols\\baseline_v1.json") == "baseline_v1.json"
+    assert rpr._path_basename_any_os("protocols/baseline_v1.json") == "baseline_v1.json"
+    assert rpr._path_basename_any_os("baseline_v1.json") == "baseline_v1.json"
+    assert rpr._path_basename_any_os("a/b\\c/baseline_v1.json") == "baseline_v1.json"
+
+
+def test_conformance_gate_protocol_ref_matches_across_a_windows_written_path():
+    """E037-11/CUL-186: prescreen_result.protocol_version was recorded on Windows
+    ("protocols\\baseline_v1.json", the exact shape run_060 recorded) and is now
+    being checked against machine_constraints.protocol_ref on ANY host, including
+    POSIX -- pathlib.Path(...).name would mis-parse the Windows path as one long
+    name on POSIX and raise a spurious violation. This exercises the protocol_ref
+    branch of _check_prescreen_conformance at all (it had zero coverage before
+    this ticket)."""
+    result = {"protocol_version": "protocols\\baseline_v1.json",
+              "significance_methodology_used": "episode_block_bootstrap"}
+    constraints = {**RUN_047_MACHINE_CONSTRAINTS, "protocol_ref": "protocols/baseline_v1.json"}
+    protocol = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
+                "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31")}
+    violations = rpr._check_prescreen_conformance(result, constraints, protocol)
+    assert not any("protocol_ref" in v for v in violations)
+
+
+def test_conformance_gate_protocol_ref_still_catches_a_real_mismatch():
+    """The fix must not make the check toothless: a genuinely different executed
+    protocol is still flagged, cross-platform path spelling aside."""
+    result = {"protocol_version": "protocols\\some_other_protocol.json",
+              "significance_methodology_used": "episode_block_bootstrap"}
+    constraints = {**RUN_047_MACHINE_CONSTRAINTS, "protocol_ref": "protocols/baseline_v1.json"}
+    protocol = {"symbols": ["BTCUSDT", "ETHUSDT"], "timeframe": "1h",
+                "windows": rpr._generate_monthly_windows("2019-09-10", "2025-12-31")}
+    violations = rpr._check_prescreen_conformance(result, constraints, protocol)
+    assert any("protocol_ref" in v for v in violations)
+
+
 def test_g7_run_047_real_constraints_are_now_refused_as_ungated(tmp_path, monkeypatch):
     """C7-EXT/G7 (2026-07-22). run_047's REAL machine_constraints carry no
     `promotion` block — it was materialized against the generic code default

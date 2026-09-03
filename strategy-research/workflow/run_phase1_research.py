@@ -3212,6 +3212,20 @@ def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
     )
 
 
+def _path_basename_any_os(path_str: str) -> str:
+    """E037-11/CUL-186: pathlib.Path(...).name only recognizes the HOST OS's own
+    separator -- a Windows-written protocol_version ("protocols\\x.json", the
+    real shape run_060 recorded) mis-parses as one long name on POSIX (and a
+    POSIX-written "protocols/x.json" would, symmetrically, mis-parse on
+    Windows if it ever contained a literal backslash in the filename itself,
+    though that direction hasn't been observed). This treats both '/' and '\\'
+    as separators regardless of host OS, so the comparison below is stable
+    across the dual-writer (Windows + macOS) model. Byte-identical to
+    Path(...).name for any already-well-formed same-OS path.
+    """
+    return str(path_str).replace("\\", "/").rsplit("/", 1)[-1]
+
+
 def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, protocol_obj: dict) -> list:
     """
     Compares a completed prescreen's ACTUALS against what was pre-registered in
@@ -3300,13 +3314,17 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
     # and every protocols/*.json file, not assumed. Compared here by BARE FILENAME
     # (matching A1's own bare-filename convention for run_context.yaml's "protocol"
     # key), never by full path, since the two are constructed differently (CLI arg
-    # vs. ROOT-relative ref).
+    # vs. ROOT-relative ref). Basename extraction goes through
+    # _path_basename_any_os, not Path(...).name (E037-11/CUL-186, fixed
+    # 2026-09-03): a path recorded on Windows ("protocols\\x.json", the real
+    # shape run_060 recorded) mis-parses as one long name on POSIX, producing a
+    # spurious violation the first time an artifact crosses machines.
     protocol_ref = constraints.get("protocol_ref")
     if protocol_ref:
         executed_identity = prescreen_result.get("protocol_version")
-        pinned_name = Path(protocol_ref).name
+        pinned_name = _path_basename_any_os(protocol_ref)
         if executed_identity:
-            executed_name = Path(executed_identity).name
+            executed_name = _path_basename_any_os(executed_identity)
             if executed_name != pinned_name:
                 violations.append(
                     f"prescreen executed protocol {executed_name!r} != pre-registered "
