@@ -76,6 +76,27 @@ def test_ensure_protocol_ref_pinned_pins_existing_protocol():
     assert run_ctx["protocol_ref_pinned"] is True
 
 
+def test_ensure_protocol_ref_pinned_resolves_a_windows_written_ref_on_any_host():
+    """CUL-186 follow-up (code review, 2026-09-03): protocol_ref recorded on
+    Windows ("protocols\\foo.json", the real shape run_060 recorded) must
+    resolve correctly regardless of host OS -- this is the same
+    machine_constraints.protocol_ref field _check_prescreen_conformance was
+    fixed for; this call site was missed in that pass and would previously
+    raise FileNotFoundError on a genuinely-present protocol when run on a
+    POSIX host, since Path("protocols\\foo.json").name does not split on
+    backslash there."""
+    root = rpr.ROOT
+    _write_protocol(root, "foo.json")
+    run_dir = _minimal_run(root, "run_500b")
+    constraints = {"protocol_ref": "protocols\\foo.json"}
+
+    result = rpr._ensure_protocol_ref_pinned(run_dir, "run_500b", constraints)
+
+    assert result == root / "protocols" / "foo.json"
+    run_ctx = rpr.load_yaml(run_dir / "artifacts" / "run_context.yaml")
+    assert run_ctx["protocol"] == "foo.json"
+
+
 def test_ensure_protocol_ref_pinned_missing_ref_raises_filenotfound():
     root = rpr.ROOT
     run_dir = _minimal_run(root, "run_501")
