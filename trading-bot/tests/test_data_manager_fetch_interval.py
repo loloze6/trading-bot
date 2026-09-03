@@ -173,6 +173,45 @@ def test_replay_aggregates_hourly_rows_into_4h_candles_matching_a_resample_oracl
         assert list(got[col]) == list(oracle[col]), f"{col} mismatch vs resample oracle"
 
 
+def test_replay_emits_a_partial_trailing_coarse_bar_when_rows_are_not_an_exact_multiple():
+    """CUL-255 (b): 14 hourly rows into 4h candles -> 3 complete candles
+    (hours 0-3, 4-7, 8-11) plus ONE partial trailing candle (hours 12-13
+    only, 2 of the 4 hours the grid would otherwise expect). flush_final_candle
+    must emit that partial bar rather than silently drop it -- it's the tail
+    of the series, not a lookahead join, so emitting a candle built from
+    fewer rows than the target ratio is the correct, safe behavior. Cross-
+    checked against the same resample oracle as the exact-multiple test."""
+    n_rows = 14
+    frame = _hourly_frame(n_rows)
+
+    dm = DataManager(
+        symbols=[SYMBOL], interval_seconds=4 * 3600, mode="backtest", fetch_interval_seconds=3600,
+    )
+    dm.historical_data[SYMBOL] = frame
+    dm.initialize()
+
+    _replay_all(dm, SYMBOL, n_rows)
+
+    got = dm.candle_builder.get_candle_history(SYMBOL, count=100)
+    assert len(got) == 4, f"expected 3 complete + 1 partial trailing candle from 14 hourly rows, got {len(got)}"
+
+    oracle = (
+        frame.set_index("timestamp")
+        .resample("14400s", closed="left", label="left")
+        .agg({"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"})
+        .reset_index()
+    )
+    assert len(oracle) == 4, "resample oracle must also produce a 4th (partial) bucket from the trailing 2 rows"
+    for col in ("open", "high", "low", "close", "volume"):
+        assert list(got[col]) == list(oracle[col]), f"{col} mismatch vs resample oracle on the partial-trailing-bar path"
+
+    # The trailing candle is genuinely partial: only 2 of the 4 hours in its
+    # window have real rows, so its volume must be the sum of exactly those
+    # 2 rows -- not the sum of all 4 hourly rows a complete bucket would have.
+    last_two_rows_volume = frame["volume"].iloc[-2:].sum()
+    assert got["volume"].iloc[-1] == last_two_rows_volume
+
+
 def test_replay_with_unset_fetch_interval_is_unchanged_one_row_per_candle():
     """Byte-identity check the other direction: fetch_interval_seconds unset
     with hourly historical_data AND an hourly interval_seconds must still
