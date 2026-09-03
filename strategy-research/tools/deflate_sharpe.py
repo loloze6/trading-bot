@@ -603,12 +603,22 @@ def compute_promotion_audit(
         # is still returned whenever the t-stat could be computed.
         passes_expectancy = None if t_stat is None else (t_stat > 2.0)
 
+        # CUL-193: the format spec below used to sit on the whole conditional
+        # expression (`{X if cond else 'N/A':.2f}`), which applies `.2f` even
+        # to the 'N/A' string branch and raises ValueError whenever
+        # total_hypotheses_tested is 0 (an empty or not-yet-recorded trial
+        # ledger -- a real, reachable state, not just a test artifact).
+        # Formatting the numeric branch to a string FIRST avoids the trap.
+        _strict_t_str = (
+            f"{_phi_inv(1.0 - 0.05 / total_hypotheses_tested):.2f}"
+            if total_hypotheses_tested >= 1 else "N/A"
+        )
         expectancy_promotion = {
             "t_stat":          t_stat,
             "passes":          passes_expectancy,
             "bonferroni_note": (
                 f"Strict Bonferroni threshold with N={total_hypotheses_tested} trials "
-                f"would be t > {_phi_inv(1.0 - 0.05 / max(total_hypotheses_tested, 1)) if total_hypotheses_tested >= 1 else 'N/A':.2f}. "
+                f"would be t > {_strict_t_str}. "
                 f"Using conservative t > 2.0 as practical threshold."
             ),
         }
