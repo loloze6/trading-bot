@@ -5320,7 +5320,20 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     raw_median_sr = round(statistics.median(sharpes_raw), 4) if sharpes_raw else None
     below_floor   = hv_diag.get("below_floor_pct", 0.0) or 0.0
     is_sparse     = below_floor > 50.0
-    expectancy_bps = hv_diag.get("per_trade_expectancy_bps")
+    # CUL-193: per_trade_expectancy_bps is a {mean, se, t_stat, n} dict on the
+    # real trade-diagnostics path (run_protocol.py's A3.4 summary, injected into
+    # protocol_result.yaml's hypothesis_verdict.diagnostics verbatim) -- the SE
+    # this function needs was already being computed and stored upstream; this
+    # site was simply reading the whole dict as if it were the bare mean. The
+    # stub path (prescreen-kill, :4866) still writes a bare None here, so both
+    # shapes must be handled.
+    _exp_block = hv_diag.get("per_trade_expectancy_bps")
+    if isinstance(_exp_block, dict):
+        expectancy_bps = _exp_block.get("mean")
+        expectancy_se  = _exp_block.get("se")
+    else:
+        expectancy_bps = _exp_block if isinstance(_exp_block, (int, float)) else None
+        expectancy_se  = None
 
     # --- Load and filter trial_sharpes from campaign_state ---
     campaign   = load_campaign_state()
@@ -5416,27 +5429,34 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     e_max_sr = None
 
     if is_sparse:
-        # Sparse path: expectancy t-stat
+        # Sparse path: expectancy t-stat. CUL-193: mirrors
+        # tools/deflate_sharpe.py::compute_promotion_audit's sparse branch
+        # exactly -- same formula, same t > 2.0 practical threshold (not the
+        # strict Bonferroni value, which is reported in the note only), same
+        # None-not-False indeterminate convention (CUL-163: a candidate whose
+        # t-stat cannot be computed was never actually evaluated, so it must
+        # not collapse to a terminal FAIL). Lockstep is required by CUL-193's
+        # own acceptance criteria -- both implementations must agree on the
+        # sparse verdict for the same inputs.
         n_trades = sum(t.get("n_trades", 0) for t in deduped_trials if t.get("statistic_valid") == "expectancy")
-        exp_se   = None  # SE not yet stored in protocol_result; placeholder
-        t_stat   = None
-        if expectancy_bps is not None and n_trades > 1:
-            # SE approximation: stdev of per-trade PnL / sqrt(n_trades).
-            # We don't store this yet; flag as indeterminate.
-            pass
-        passes_deflated = None  # indeterminate without SE
+        t_stat = None
+        if expectancy_bps is not None and expectancy_se is not None and expectancy_se > 0:
+            t_stat = expectancy_bps / expectancy_se
+        passes_deflated = None if t_stat is None else (t_stat > 2.0)
+        _strict_bonferroni_t = (
+            f"{_phi_inv(1.0 - 0.05 / max(total_tested, 1)):.2f}" if total_tested >= 1 else "N/A"
+        )
         dsr_result = {
             "deflated_sharpe_ratio":   None,
             "expected_max_sharpe":     None,
             "trial_sharpe_variance":   None,
             "correction_method":       "expectancy_t_stat_bonferroni",
             "expectancy_promotion": {
-                "t_stat":          t_stat,
+                "t_stat":          round(t_stat, 4) if t_stat is not None else None,
                 "passes":          passes_deflated,
                 "bonferroni_note": (
-                    f"Bonferroni-adjusted alpha = 0.05/{max(total_tested,1)} = {0.05/max(total_tested,1):.4f}; "
-                    f"threshold t > 2.0 used as conservative approximation. "
-                    f"Expectancy SE not yet stored in protocol_result — passes=null until SE is available."
+                    f"Strict Bonferroni threshold with N={total_tested} trials would be "
+                    f"t > {_strict_bonferroni_t}. Using conservative t > 2.0 as practical threshold."
                 ),
             },
         }
