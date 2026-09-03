@@ -145,6 +145,7 @@ def test_fetch_historical_data_honours_allow_sealed(monkeypatch):
     monkeypatch.setattr(dm, "HistoricalDataFetcher", _StubFetcher)
     mgr = dm.DataManager.__new__(dm.DataManager)
     mgr.interval_seconds = 3600
+    mgr.fetch_interval_seconds = 3600  # CUL-250: DataManager.__new__ bypasses __init__, set explicitly
 
     got = dm.DataManager.fetch_historical_data(
         mgr, "BTCUSDT", str(_LO.date()), str(_LAST_SEALED.date()), allow_sealed=True)
@@ -173,6 +174,7 @@ def test_sealed_request_refused_before_the_fetch_runs(monkeypatch):
     monkeypatch.setattr(dm, "HistoricalDataFetcher", _StubFetcher)
     mgr = dm.DataManager.__new__(dm.DataManager)
     mgr.interval_seconds = 3600
+    mgr.fetch_interval_seconds = 3600  # CUL-250: DataManager.__new__ bypasses __init__, set explicitly
 
     with pytest.raises(SealedDataError):
         dm.DataManager.fetch_historical_data(
@@ -198,6 +200,7 @@ def test_content_guard_still_backstops_a_nonoverlapping_request(monkeypatch):
     monkeypatch.setattr(dm, "HistoricalDataFetcher", _StubFetcher)
     mgr = dm.DataManager.__new__(dm.DataManager)
     mgr.interval_seconds = 3600
+    mgr.fetch_interval_seconds = 3600  # CUL-250: DataManager.__new__ bypasses __init__, set explicitly
 
     # A pre-seal request window: the request guard passes, the content guard bites.
     with pytest.raises(SealedDataError):
