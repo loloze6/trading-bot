@@ -335,11 +335,29 @@ def _resolve_ohlcv_source(symbol: str, timeframe: str) -> tuple:
     zero bars -- while BTCUSDT_1h.csv sat on disk spanning 2018-01-01 to
     2026-07-05, covering the window completely.
 
-    The engine has never had this problem: CandleBuilder AGGREGATES to its
-    interval on both the live (add_tick) and backtest (add_row) paths, so a
-    coarser timeframe is DERIVED from a finer cache and a <SYMBOL>_<TF>.csv is
-    not fetched when a finer one already spans the window. This tool bypasses
-    the engine and read files directly, so it never inherited that behaviour.
+    CORRECTED 2026-09-03 (CUL-250): the paragraph below was wrong when
+    written -- verified live 2026-09-03 re-running run_060, the engine DID
+    have exactly this problem (crashed with "No historical data" on the same
+    class of gap this tool works around) until CUL-250 (PR #133, merged
+    2026-09-03) restored the capability CandleBuilder's own aggregation math
+    was always ready for. Unlike this tool, the engine's fix is an explicit,
+    off-by-default parameter (`DataManager(fetch_interval_seconds=...)` /
+    `trading.fetch_interval_seconds` in config.json) -- NOT automatic
+    coarsest-cache auto-detection. By default (parameter unset) the engine
+    still fetches at the exact requested timeframe, byte-identical to every
+    run before CUL-250. This tool's own auto-detect-coarsest-evenly-dividing
+    behavior below is therefore still a genuinely different mechanism, not
+    superseded by CUL-250 -- it is simply no longer the only place in this
+    codebase that can derive a coarser timeframe from a finer cache.
+
+    Previous (false) claim, kept for the record: "The engine has never had
+    this problem: CandleBuilder AGGREGATES to its interval on both the live
+    (add_tick) and backtest (add_row) paths, so a coarser timeframe is
+    DERIVED from a finer cache and a <SYMBOL>_<TF>.csv is not fetched when a
+    finer one already spans the window. This tool bypasses the engine and
+    reads files directly, so it never inherited that behaviour." This was an
+    unverified assumption, not a checked fact -- see CUL-250's own history
+    for how it was found to be false.
 
     Chooses the COARSEST cache that divides the target evenly: fewest rows to
     read and resample, and identical output to any finer source (aggregating

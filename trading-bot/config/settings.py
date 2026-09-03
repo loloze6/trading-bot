@@ -151,6 +151,32 @@ class ConfigManager:
                         self.logger.error(f"risk_management.portfolio_controls: {err}")
                     return False
 
+            # CUL-255 (CUL-250 follow-up): mirror DataManager.__init__'s two
+            # fetch_interval_seconds ValueErrors here, so a bad value fails at
+            # validate() -- explicit, pre-run -- instead of only inside
+            # DataManager's constructor. Absent key: no check, byte-identical
+            # to every config written before this key existed. Local import:
+            # core.launcher imports ConfigManager, so a module-level import
+            # here would be circular.
+            trading_section = self.config.get('trading', {})
+            raw_fetch_interval = trading_section.get('fetch_interval_seconds')
+            if raw_fetch_interval is not None:
+                from core.launcher import parse_interval_seconds
+                interval_seconds = parse_interval_seconds(trading_section.get('interval', 180))
+                fetch_interval_seconds = parse_interval_seconds(raw_fetch_interval)
+                if fetch_interval_seconds > interval_seconds:
+                    self.logger.error(
+                        f"trading.fetch_interval_seconds ({fetch_interval_seconds}) must be <= "
+                        f"trading.interval ({interval_seconds})"
+                    )
+                    return False
+                if interval_seconds % fetch_interval_seconds != 0:
+                    self.logger.error(
+                        f"trading.interval ({interval_seconds}) must be evenly divisible by "
+                        f"trading.fetch_interval_seconds ({fetch_interval_seconds})"
+                    )
+                    return False
+
             self.logger.debug("Configuration validation passed")
             return True
             

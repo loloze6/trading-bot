@@ -1044,10 +1044,25 @@ class DataManager:
             # the feed's own registered agg function -- exactly the "no new
             # data -> carry previous; one -> use it; multiple -> aggregate"
             # rule this feature needs regardless of agg type.
+            # CUL-255: origin='epoch' pins bucket boundaries to Unix epoch --
+            # the same reference CandleBuilder._align() floors against (epoch
+            # integer division), not pandas' default 'start_day' (anchors to
+            # midnight of THIS FEED'S OWN first timestamp). The two schemes
+            # agree for every interval that evenly divides a day (all
+            # standard timeframes: 1m..1d), verified: identical bucket starts
+            # regardless of feed start time. They silently diverge for an
+            # interval that does NOT divide a day evenly (e.g. 7h): pandas'
+            # default would anchor two feeds starting on different calendar
+            # days to different phase offsets (23:00 vs 21:00 boundaries,
+            # measured), while the price candle grid stays phase-locked to
+            # epoch regardless of when its own data starts -- an aux bucket
+            # boundary that silently drifts out of phase with the candle
+            # boundary it is meant to align to. origin='epoch' removes the
+            # dependency on the feed's own start time entirely.
             feed_data = (
                 feed_data
                 .set_index("timestamp")
-                .resample(f"{self.interval_seconds}s")
+                .resample(f"{self.interval_seconds}s", origin="epoch")
                 .agg({name: feed.agg})
                 .reset_index()
             )
