@@ -40,6 +40,8 @@ class TradingBot:
         model_funding: bool = False,
         funding_daily=None,
         risk_gate=None,
+        gap_detection: bool = False,
+        suppress_allocation_after_gap: bool = False,
     ):
         """
         Initialize the trading bot.
@@ -112,6 +114,32 @@ class TradingBot:
         # configured absolute cap. See risk/portfolio_risk_gate.py.
         self.risk_gate = risk_gate
 
+        # CUL-261 / E-039: off-by-default gap detection at candle completion. When
+        # True, every candle completion (live and backtest alike -- this is the
+        # shared callback for both) compares this candle's timestamp against the
+        # previous completed candle FOR THIS SYMBOL against candle_interval_seconds,
+        # the same expected step CandleBuilder aggregates to. A mismatch is recorded
+        # in self.gap_events; the caller (BacktestEngine._end_of_backtest) surfaces
+        # it into metrics.json's "data_quality" block. Default False: _check_and_
+        # record_gap is never called, self.gap_events stays empty and unread, and no
+        # key is added anywhere -- byte-identical to before this parameter existed.
+        # suppress_allocation_after_gap is a further, independent opt-in (invalid
+        # without gap_detection) that additionally zeroes the allocation_change for
+        # the single bar immediately following a detected gap only -- it does NOT
+        # reset or re-warm any indicator state (this repo's own prescreen policy
+        # docs record that a full segment-and-re-warm was tried once and rejected:
+        # it destroyed 91% of a real sample). See CUL-261.
+        if suppress_allocation_after_gap and not gap_detection:
+            raise ValueError(
+                "suppress_allocation_after_gap=True requires gap_detection=True -- "
+                "there is nothing to suppress against without gap detection enabled. "
+                "Pass gap_detection=True or omit suppress_allocation_after_gap."
+            )
+        self.gap_detection = gap_detection
+        self.suppress_allocation_after_gap = suppress_allocation_after_gap
+        self._last_candle_time: Dict[str, Any] = {}
+        self.gap_events: List[Dict[str, Any]] = []
+
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
         self.closed_trades: List[CompletedTrade] = []
@@ -181,6 +209,41 @@ class TradingBot:
         val = series.get(day)
         return None if val is None else float(val)
 
+    def _check_and_record_gap(self, symbol: str, data_time) -> bool:
+        """
+        CUL-261 / E-039: off-by-default gap detection (see self.gap_detection).
+
+        Compares `data_time` (this candle's timestamp) against the previous
+        completed candle's timestamp FOR THIS SYMBOL, against candle_interval_seconds
+        -- the same expected step CandleBuilder aggregates every bar to, so a real
+        data gap (a delistings-style hole, an exchange outage, a fetch that
+        returned fewer rows than the window implies) shows up here as a delta that
+        isn't exactly one step. The very first candle seen for a symbol has nothing
+        to compare against and is never flagged.
+
+        Only ever looks backward at the immediately preceding candle -- no
+        look-ahead. Returns True the bars a gap was just detected on, so the caller
+        can optionally suppress that one bar's allocation change without touching
+        any indicator state.
+        """
+        ts = pd.Timestamp(data_time)
+        expected_step = pd.Timedelta(seconds=self.candle_interval_seconds)
+        previous = self._last_candle_time.get(symbol)
+        self._last_candle_time[symbol] = ts
+        if previous is None:
+            return False
+        delta = ts - previous
+        if delta == expected_step:
+            return False
+        self.gap_events.append({
+            "symbol": symbol,
+            "timestamp": str(ts),
+            "previous_timestamp": str(previous),
+            "expected_step_seconds": self.candle_interval_seconds,
+            "actual_delta_seconds": delta.total_seconds(),
+        })
+        return True
+
     def _process_symbol_candle_completion(
         self,
         symbol: str,
@@ -207,6 +270,13 @@ class TradingBot:
                 return
             close = data['close'].iloc[-1]
             data_time = data['timestamp'].iloc[-1]
+
+            # CUL-261 / E-039: off-by-default gap detection, checked BEFORE the
+            # warmup-cutoff return below so a gap during warmup is recorded too --
+            # gap_detection default False -> never called, byte-identical.
+            gap_detected_this_bar = (
+                self._check_and_record_gap(symbol, data_time) if self.gap_detection else False
+            )
 
             # 2026-07-07: warmup-only prefetch bars (see BacktestEngine.warmup_cutoff_timestamp)
             # update the strategy's internal history so indicators are primed by the
@@ -265,6 +335,16 @@ class TradingBot:
                 target_allocation, risk_extras = self.risk_gate.apply(target_allocation)
 
             allocation_change = self.forecast_manager.calculate_allocation_change(target_allocation, previous_allocation)
+
+            # CUL-261 / E-039: off-by-default, further opt-in on top of
+            # gap_detection. Quarantines only the single bar immediately following
+            # a detected gap -- forecast/regime/signal are still computed and
+            # recorded normally, only the rebalance action for THIS bar is
+            # skipped. Does not reset or re-warm indicator state. Both flags
+            # default False -> this line is never reached with a truthy condition,
+            # byte-identical.
+            if self.suppress_allocation_after_gap and gap_detected_this_bar:
+                allocation_change = 0.0
 
             #Init variables
             approved_rebalance = None

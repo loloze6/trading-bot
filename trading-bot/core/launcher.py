@@ -528,7 +528,9 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  model_funding: bool = False,
                  risk_controls: dict | None = None,
                  feed_local_storage: bool = True,
-                 fetch_interval_seconds: int | None = None):
+                 fetch_interval_seconds: int | None = None,
+                 gap_detection: bool = False,
+                 suppress_allocation_after_gap: bool = False):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -664,6 +666,27 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         backtests a 4h strategy off an hourly cache. Must be <= interval and divide
         it evenly (DataManager raises otherwise). See
         tests/test_data_manager_fetch_interval.py.
+    gap_detection: when True, adds an off-by-default "data_quality" block to
+        metrics.json (CUL-261 / E-039). On every candle completion (the same
+        callback live trading uses), compares the candle's timestamp against the
+        previous one FOR THAT SYMBOL against `interval` -- a mismatch means a real
+        gap in the data (not merely "no trade happened"), and is recorded with its
+        timestamps and actual/expected step. This is the first place in the whole
+        pipeline that surfaces gap detection as structured, countable data rather
+        than a console warning -- prescreen_signal.py's own gap-aware statistics
+        (the #50/CUL-15 family) were the only prior instance, and only reached the
+        prescreen kill path, never a real backtest. Default False: the check is
+        never called, self.gap_events stays empty and unread, metrics.json is
+        byte-identical to before this parameter existed. See
+        tests/test_gap_detection_bit_identical.py.
+    suppress_allocation_after_gap: further, independent opt-in on top of
+        gap_detection (raises if set without it). Zeroes the allocation_change for
+        the single bar immediately following a detected gap only -- forecast/
+        regime/signal are still computed and recorded normally for that bar, only
+        the rebalance action is skipped. Does NOT reset or re-warm any indicator
+        state (this repo's own prescreen gap policy already tried and rejected a
+        full segment-and-re-warm: it destroyed 91% of a real sample). Default
+        False: byte-identical, same contract as gap_detection above.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -773,6 +796,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         drop_feeds=drop_feeds,
         model_funding=model_funding,
         risk_gate=risk_gate,
+        gap_detection=gap_detection,
+        suppress_allocation_after_gap=suppress_allocation_after_gap,
     )
 
     engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=effective_feed_registry,

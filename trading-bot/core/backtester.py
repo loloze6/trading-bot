@@ -73,6 +73,8 @@ class BacktestEngine:
                  drop_feeds: list[str] | None = None,
                  model_funding: bool = False,
                  risk_gate=None,
+                 gap_detection: bool = False,
+                 suppress_allocation_after_gap: bool = False,
                  ):
         if symbols is None: symbols = ["BTCUSDT"]
         # 2026-07-07: bars with timestamp < warmup_cutoff_timestamp still update the
@@ -146,6 +148,14 @@ class BacktestEngine:
         # _end_of_backtest. See risk/portfolio_risk_gate.py and
         # tests/test_risk_layer_bit_identical.py.
         self.risk_gate = risk_gate
+        # CUL-261 / E-039: off-by-default gap detection, threaded straight through to
+        # TradingBot (see core/trading_bot.py for the actual per-candle check and the
+        # suppress_allocation_after_gap validation -- both defaults False leave the
+        # detection hook never entered, byte-identical to before these parameters
+        # existed). Stored here too so _end_of_backtest can decide whether to add a
+        # "data_quality" block without re-deriving the flag from bot.
+        self.gap_detection = gap_detection
+        self.suppress_allocation_after_gap = suppress_allocation_after_gap
 
         # Initialize Binance client
         self.symbols = symbols
@@ -285,6 +295,8 @@ class BacktestEngine:
             model_funding=self.model_funding,
             funding_daily=funding_daily,
             risk_gate=self.risk_gate,
+            gap_detection=self.gap_detection,
+            suppress_allocation_after_gap=self.suppress_allocation_after_gap,
         )
 
         # Wire the candle callback now that bot exists
@@ -547,10 +559,21 @@ class BacktestEngine:
                 "n_cap_clamped_bars": n_cap_clamped,
                 **self.risk_gate.stateful_summary(),
             }
+        # CUL-261 / E-039: off-by-default gap-detection block, same optional-key
+        # idiom as bar_equity/risk_controls above. Gate off -> None -> key never
+        # inserted, metrics.json byte-identical. Gate on -> always present (even
+        # with zero events) so its absence vs. presence is never ambiguous.
+        data_quality_metrics = None
+        if self.gap_detection:
+            data_quality_metrics = {
+                "gaps_detected": len(bot.gap_events),
+                "events": bot.gap_events,
+            }
         write_metrics_json(
             run_dir, core_metrics, per_regime, forecast_bins, dynamic, regime_validity,
             bar_equity=bar_equity_metrics,
             risk_controls=risk_controls_metrics,
+            data_quality=data_quality_metrics,
         )
 
         # Write bars CSV and forecast distribution
