@@ -1495,34 +1495,40 @@ prints that the SKILL may need a new status case and pauses
 ---
 
 ### `protocol_result.yaml` / `protocol_summary.json`
-> ⚠️ **Five of the seven fields below are absent from every real
-> `protocol_result.yaml`** (38 files, re-measured 2026-08-31):
-> `per_window_metrics`, `per_symbol_metrics`, `per_regime_metrics`,
-> `promotion_criteria`, `diagnostic_metrics`. **`median_sharpe` is real** — it
-> appears, nested, in 31 of the 38; an earlier version of this note wrongly
-> listed it as absent because the audit inspected only top-level keys. The artifact
-> really carries `hypothesis_verdict`, `per_symbol_summary`, `results`,
-> `source`, `prescreen_route` and `prescreen_kill_reason`. This is the backtest
-> result every verdict rests on, so the gap matters operationally. Names below
-> preserved as intended design. See
-> [E037-24](../engineering/roadmap/E-037/FINDINGS.md#e037-24).
-
 
 
 > **Why this file exists.** What actually happened when the strategy was traded across every window. The raw evidence every later judgment rests on.
 
-**Created by:** protocol_execution tool (`tools/run_protocol.py`)  
+**Created by:** protocol_execution tool (`tools/run_protocol.py`) — or, on a prescreen kill, a stub with `source: prescreen_stub` written without ever running a backtest  
 **Read by:** verdict_interpreter  
 
-| Field | Definition |
-|---|---|
-| `per_window_metrics` | Sharpe ratio, max drawdown, trade count, win rate per [backtest window](#g-backtest-window) |
-| `per_symbol_metrics` | Aggregated results per symbol |
-| `per_regime_metrics` | Results split by detected market regime |
-| `median_sharpe` | Median Sharpe across all windows — primary promotion gate. **Basis matters (2026-07-10):** the decision-consumed value must be computed on a bar-level equity curve (`bars.csv` `total_portfolio_value`, full-window daily returns) — a LIFO-fragment/trade-exit-day version of the same statistic can disagree sharply under sparse trading and must never feed a verdict; it may exist elsewhere labeled `basis: lifo_fragment, descriptive_only`. See `docs/TIMEFRAME_CHANGE_PLAYBOOK.md` section 2(c) for the mechanism and a worked example. |
-| `verdict` | `promote`, `kill`, or `refine` — preliminary verdict from the tool |
-| `promotion_criteria` | Which gates passed / failed (median_sharpe, max_drawdown, min_trades) |
-| `diagnostic_metrics` | `forecast_return_corr` (signal quality), `cost_drag_pct` (trading cost burden), `win_rate_vs_sharpe` (consistency check) |
+| Field | Definition — what it means | Values / range (meaning of each) | Example |
+|---|---|---|---|
+| `results` | Per-window, per-symbol raw metrics (`net_return_pct`, `sharpe`, `max_drawdown_pct`, `trade_count`, `win_rate`, `fees_paid`, …) — one entry per `{symbol, window}` pair actually run. | list, `[]` on a prescreen-stub | `run_011`: 24 entries (2 symbols × 12 windows) |
+| `per_symbol_summary` | Per-symbol aggregation across windows: `median_sharpe` (the primary promotion gate — see basis note below), `max_abs_drawdown_pct`, `min_trade_count`. Empty on a prescreen-stub. | dict keyed by symbol, `{}` on a prescreen-stub | `run_011`: `{BTCUSDT: {median_sharpe: -5.019, …}, ETHUSDT: {median_sharpe: -2.604, …}}` |
+| `verdict` | Preliminary verdict from the tool itself, ahead of the LLM verdict-interpreter's own read. | `promote` · `kill` · `refine` | `kill` |
+| `hypothesis_verdict` | The evaluated pre-registered criteria: each one's requirement, actual value, PASS/FAIL/UNTESTED, and a rolled-up `verdict_reason`. This is what `verdict_interpreter` actually reads. | dict: `{verdict, criteria_results: [...], verdict_reason}`, plus `diagnostics` on a prescreen-stub | `run_011`: 4 of 6 evaluable criteria FAIL, 3 UNTESTED |
+| `source` | Present only on a prescreen-kill stub — marks that no backtest ran. Absent (not `null`) on a real protocol execution. | `prescreen_stub` | `run_043`: `prescreen_stub` |
+| `prescreen_route` | Present only alongside `source: prescreen_stub` — which prescreen route produced the kill. | e.g. `kill_no_ic` | `run_043`: `kill_no_ic` |
+| `prescreen_kill_reason` | Present only alongside `source: prescreen_stub` — the short machine-readable reason code. | e.g. `no_informational_content_this_venue` | `run_043`: `no_informational_content_this_venue` |
+
+**Basis matters for `median_sharpe` (2026-07-10):** the decision-consumed value must be computed on a bar-level equity curve (`bars.csv` `total_portfolio_value`, full-window daily returns) — a LIFO-fragment/trade-exit-day version of the same statistic can disagree sharply under sparse trading and must never feed a verdict; it may exist elsewhere labeled `basis: lifo_fragment, descriptive_only`. See `docs/TIMEFRAME_CHANGE_PLAYBOOK.md` section 2(c) for the mechanism and a worked example.
+
+⚠️ **This entry previously documented five fields that no artifact has ever
+contained:** `per_window_metrics`, `per_symbol_metrics`, `per_regime_metrics`,
+`promotion_criteria`, `diagnostic_metrics` (measured 2026-08-30 across 38
+real files; re-measured 2026-08-31, still 0 occurrences of any of the five —
+the one correction from the first pass was `median_sharpe`, wrongly listed
+as absent because that audit inspected only top-level keys; it is real,
+nested inside `per_symbol_summary`, in 31 of the 38). The table above
+replaces them with the artifact's real shape. The former names are preserved
+here as a historical note rather than silently dropped, because they record
+an intended, more granular design (per-window/per-regime breakdowns, an
+explicit promotion-criteria block) that the artifact never grew into — the
+closest real equivalents are `results` (per-window, at least) and
+`hypothesis_verdict.criteria_results` (the pass/fail gates, though not
+labeled `promotion_criteria`). See
+[E037-24](../engineering/roadmap/E-037/FINDINGS.md#e037-24).
 
 ---
 
@@ -1586,13 +1592,6 @@ The pre-filled research_brief for the next run. Includes the `existing_context` 
 ---
 
 ### `escalation_request.yaml`
-> ⚠️ **All three fields below are absent from every real
-> `escalation_request.yaml`** (7 files, measured 2026-08-30). The artifact
-> really carries `target` (e.g. `timeframe`), `reason`, and
-> `proposed_capability`. The names below are preserved as intended design —
-> they describe the same three concepts under different names. See
-> [E037-24](../engineering/roadmap/E-037/FINDINGS.md#e037-24).
-
 
 
 > **Why this file exists.** The record that a search space was widened, and why — so widening cannot happen silently.
@@ -1600,11 +1599,23 @@ The pre-filled research_brief for the next run. Includes the `existing_context` 
 **Created by:** verdict-interpreter skill (when verdict = escalate)  
 **Read by:** orchestrator  
 
-| Field | Definition |
-|---|---|
-| `target_symbol` | New symbol to test (e.g., `SOLUSDT`) |
-| `target_timeframe` | New timeframe to test (e.g., `4h`) |
-| `rationale` | Why escalation to this target is expected to change the outcome |
+| Field | Definition — what it means | Values / range (meaning of each) | Example (`run_020`) |
+|---|---|---|---|
+| `target` | What dimension is being widened. | `timeframe` · `instrument` | `timeframe` |
+| `reason` | Why the current target is exhausted — the evidence that justifies widening rather than refining. | prose | *"TRENDING regime filter (ER≥0.50, VR≥1.20) on 1h bars gates signal generation to <1% of deployment window; zero trades across 22 windows prevent edge evaluation…"* |
+| `proposed_capability` | The concrete next test on the new target, plus the expected outcome that would confirm the escalation was warranted. | prose | *"Backtest RSI momentum, Keltner bands, and other signal components on 4h timeframe for BTCUSDT, ETHUSDT. Expected outcome: regime windows expand 4-5x in bar count per fold…"* |
+
+⚠️ **This entry previously documented three fields that no artifact has ever
+contained:** `target_symbol`, `target_timeframe` (described as new symbol/
+timeframe to test), and `rationale`. Measured 2026-08-30 across the **7**
+real `escalation_request.yaml` files on disk: all three appear **0 times**.
+The real fields — `target`, `reason`, `proposed_capability` above — describe
+the same three concepts under different names (a single `target` field
+naming the dimension rather than separate symbol/timeframe fields, since an
+escalation widens exactly one dimension at a time). The former field names
+are preserved here as a historical note rather than silently dropped,
+because they record an intended design that predates the artifact's actual
+shape. See [E037-24](../engineering/roadmap/E-037/FINDINGS.md#e037-24).
 
 ---
 
@@ -1846,43 +1857,62 @@ Per-trade records (one row per closed trade) with fields: `entry_bar`, `exit_bar
 | Field | Definition — what it means | Values / range (meaning of each) | Example (campaign root, 2026-08-28) |
 |---|---|---|---|
 | `detector_version` | Hash of the detector config, so a finding can be tied to the exact detector that produced it (A5.3). | hex8 | `04cd1e16` |
-| `per_symbol_per_timeframe` | The A2.2 gate metrics, per symbol and timeframe — persistence, transition count, class-conditional sensitivity, activation rate. | list of `{symbol, timeframe, metrics{…}}` | `[{symbol: BTCUSDT, timeframe: 1h, metrics: {regime_persistence_median_bars: 17544, …}}]` |
-| `persistence_score` | Fraction of regime transitions lasting at least the dwell period. A detector that flips constantly is not measuring a regime. | float 0–1 | see `per_symbol_per_timeframe` |
-| `class_conditional_sensitivity` | Per-label flip rate under ±10% parameter perturbation. High sensitivity means the labels are noise. | float per label | — |
-| `activation_rate` | Fraction of bars per label; must sit in [10%, 40%] for trend labels. | float 0–1 | — |
+| `per_symbol_per_timeframe` | The A2.2 gate metrics, per symbol and timeframe. Its nested `metrics` dict carries `regime_persistence_median_bars` (dwell time — the real name for what was once documented as `persistence_score`), `transition_frequency_per_window`, `trending_activation_rate` (the real name for `activation_rate`), `parameter_sensitivity`, `zero_trade_slot_pct`, `agreement_with_reference_labels`, plus two nested sub-blocks: `class_conditional_sensitivity_per_label` (per-label flip rate under perturbation — real name and location for what was documented as a top-level `class_conditional_sensitivity`) and `activation_band_check` (`within_band`, `band_min`/`band_max`, `rare_label_threshold`, `gate_metric_used`). Each entry also carries a sibling `confidence` (`high`/`medium`/`low`), `confidence_rationale` (prose), and `known_weak_periods` (list of window labels) alongside `metrics`. | list of `{symbol, timeframe, metrics{…}, confidence, confidence_rationale, known_weak_periods}` | `{regime_persistence_median_bars: 17544, trending_activation_rate: 0.0, class_conditional_sensitivity_per_label: {unknown: {class_conditional_sensitivity: 0.0, …}}, activation_band_check: {within_band: false, …}}`; `confidence_rationale`: *"persistence=17544.0>=12, all_bars_sensitivity=0.000<=0.25 but fails high gate: activation=0.00% outside [10%,40%] (cap: medium)"* |
 | `data_range` / `config_source` / `evaluated_at` | Provenance. `evaluated_at` drives the 30-day staleness check. | dict / path / ISO-8601 | `{start: 2024-01-01, end: 2025-12-31}` / `runs\run_060\artifacts\candidate_strategy_config.json` / `2026-08-28T19:54:21Z` |
 
 ⚠️ **This file lives at the campaign root, not under a run** — one file shared
 by every run, regenerated when older than 30 days
 (`run_phase1_research.py::_ensure_regime_detector_report`). `config_source` records which run's config
 last produced it. Note the example's `config_source` is a **Windows path**, the
-same portability issue as [E037-11](../engineering/roadmap/E-037/FINDINGS.md#e037-11).
+same portability issue as [E037-11](../engineering/roadmap/E-037/FINDINGS.md#e037-11)
+(fixed for the `protocol_version` conformance check, CUL-186, 2026-09-03; this
+specific `config_source` display field is unaffected — it is provenance
+text, not compared programmatically).
+
+⚠️ **This entry previously documented two fields, `persistence_score` and
+`activation_rate`, that appear at no depth in any real artifact** (measured
+2026-08-30, one file at the campaign root — `class_conditional_sensitivity`,
+also previously listed here, was re-measured 2026-08-31 and found present,
+nested, correcting an earlier top-level-only check). The table above
+replaces both with their real names and nesting depth. See
+[E037-24](../engineering/roadmap/E-037/FINDINGS.md#e037-24).
 
 ---
 
 ### `regime_audit_decision.yaml`
-> ⚠️ **`retune_firewall_check` is absent from the real artifact.** (Note
-> `class_conditional_sensitivity`, previously listed here as absent, **is
-> present** — nested rather than top-level; corrected 2026-08-31.) The firewall
-> itself is real and enforced in code — `_validate_retune_firewall`
-> (`run_phase1_research.py::_validate_retune_firewall`) raises on a violation — but the decision file
-> does not carry a field recording that it passed. Note also that this file is
-> **updated in place by stage 7**, which resolves `ungated_escape_eligible`
-> here; the entry has no `Updated by` line. See
-> [E037-07](../engineering/roadmap/E-037/FINDINGS.md#e037-07) and
-> [E037-24](../engineering/roadmap/E-037/FINDINGS.md#e037-24).
 
 
 > **Why this file exists.** The human judgment on the detector, made under a firewall that keeps profitability out of the decision.
 
-**Created by:** regime-auditor skill
+**Created by:** regime-auditor skill. **Updated in place by stage 7**, which resolves `ungated_escape_eligible` and appends the `ungated_escape_resolved_*`/`prescreen_ic_*` fields below — there is no separate `Updated by` artifact, this file gets a second write.
 **Read by:** verdict_interpreter, orchestrator
 
-| Field | Definition |
-|---|---|
-| `status` | `trustworthy`, `needs_retune`, or `unusable` |
-| `retune_firewall_check` | Confirms acceptance criteria contain no PnL/Sharpe references |
-| `ungated_escape_eligible` | `true / false / indeterminate` — A2.1 escape assessment |
+| Field | Definition — what it means | Values / range (meaning of each) | Example (`run_039`, the only real instance on disk) |
+|---|---|---|---|
+| `status` | The A2.2 classification this audit resolves to. | `trustworthy` · `needs_retune` · `unusable_for_this_symbol_timeframe` | `unusable_for_this_symbol_timeframe` |
+| `affected_symbols_timeframes` | Which symbol/timeframe pairs the status applies to. | list of `SYMBOL_timeframe` | `[BTCUSDT_1h, ETHUSDT_1h]` |
+| `recommended_action` | The auditor's prose reasoning and next step — under the retune firewall (A2.2: must cite detector-intrinsic criteria only, never PnL/Sharpe; enforced in code by `_validate_retune_firewall`, `run_phase1_research.py::_validate_retune_firewall`, which raises on a violation — the file itself carries no field recording that the check passed). | prose | *"The structural blocker is transition_frequency (~40 transitions/window observed…). Per A2.3 post-unusable policy: record candidate detector families in config/detector_wishlist.yaml…"* |
+| `retune_attempted` / `retune_summary` | Whether a retune grid search ran, and if so its full result: `grid_cells_evaluated`, `grid_dimensions`, the `vr_component` drop decision, `best_directly_implementable` vs. `overall_winner_requires_extension` cells, `max_score_achieved` vs. `max_possible_score`, and a `structural_ceiling` prose explanation when no cell passes. | bool / dict (only present when `retune_attempted` is true) | `true` / 48 cells evaluated, best score 5 of 8 possible |
+| `official_report_after_retune` | The regime detector's own per-symbol metrics (`confidence`, `persistence`, `transitions_pw`, `cc_sens_trending`, `activation`, `in_band`) after the retuned config, kept alongside the pre-retune `regime_detector_report.yaml` for comparison. | dict keyed by `detector_version`/`evaluated_at`/`config` plus one entry per symbol_timeframe | `btcusdt_1h: {confidence: medium, persistence: 12.0, …}` |
+| `a23_policy_applied` / `a23_detector_wishlist` | Whether the A2.3 post-unusable policy fired, and the wishlist file candidate replacement detectors were recorded to. | bool / path | `true` / `config/detector_wishlist.yaml` |
+| `ungated_escape_eligible` | A2.1 escape assessment — whether an all-bars (ungated) IC check can substitute for a trustworthy detector. Written `false` at audit time, resolved by stage 7's second write. | `true` · `false` · `indeterminate` | `true` |
+| `ungated_escape_resolved_by` / `ungated_escape_resolved_at` / `ungated_escape_rationale` | Stage 7's second write: which check resolved the escape, when, and the prose justification (cites `prescreen_ic_all_bars` below and the A2.1 rule it satisfies). | string / ISO-8601 / prose | `prescreen_ic_all_bars` / *"Resolved using prescreen ic_all_bars… IC is within 2 SE of zero — consistent with no edge over all bars. Per A2.1: signal_bad_everywhere may be concluded."* |
+| `prescreen_ic_all_bars` / `prescreen_ic_active_bars` / `prescreen_ic_all_bars_ci_95` | The actual IC values the escape rationale is computed from — carried here so the resolution is auditable without opening the prescreen artifact separately. | float / float / `[lo, hi]` | `-0.012237` / `-0.031786` / `[-0.0637, 0.0392]` |
+
+⚠️ **This entry previously documented `retune_firewall_check` as a field —
+it is absent from the real artifact** (1 real instance on disk, measured
+2026-08-30; `class_conditional_sensitivity`, also previously listed here as
+absent, was re-measured 2026-08-31 and found present, nested inside
+`regime_detector_report.yaml` rather than this file — corrected there, not
+here). The firewall itself is real and enforced in code, as the
+`recommended_action` row above explains; the decision file simply never grew
+a field recording that the check passed. The table above replaces the old
+3-row sketch with this file's actual (much larger) shape. See
+[E037-07](../engineering/roadmap/E-037/FINDINGS.md#e037-07) and
+[E037-24](../engineering/roadmap/E-037/FINDINGS.md#e037-24). This file has
+been produced by exactly 1 of 61 runs to date — see
+[E-040](../engineering/roadmap/E-040/EPIC.md) for whether that low incidence
+reflects the audit rarely triggering or the mechanism being under-used.
 
 ---
 
