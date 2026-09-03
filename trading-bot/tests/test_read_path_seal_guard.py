@@ -123,6 +123,7 @@ def test_the_guard_is_not_swallowed_by_the_fetch_error_handler(monkeypatch):
     monkeypatch.setattr(dm, "HistoricalDataFetcher", _StubFetcher)
     mgr = dm.DataManager.__new__(dm.DataManager)
     mgr.interval_seconds = 3600
+    mgr.fetch_interval_seconds = 3600  # CUL-250: DataManager.__new__ bypasses __init__, set explicitly
 
     with pytest.raises(SealedDataError):
         dm.DataManager.fetch_historical_data(mgr, "BTCUSDT", "2026-01-01", "2026-02-28")
@@ -146,6 +147,7 @@ def test_allow_sealed_opt_in_still_returns_the_data(monkeypatch):
     monkeypatch.setattr(dm, "HistoricalDataFetcher", _StubFetcher)
     mgr = dm.DataManager.__new__(dm.DataManager)
     mgr.interval_seconds = 3600
+    mgr.fetch_interval_seconds = 3600  # CUL-250: DataManager.__new__ bypasses __init__, set explicitly
 
     got = dm.DataManager.fetch_historical_data(
         mgr, "BTCUSDT", "2026-01-01", "2026-02-28", allow_sealed=True)

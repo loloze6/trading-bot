@@ -709,6 +709,7 @@ class DataManager:
         interval_seconds: int,
         mode: str = "live",
         price_fetch_interval: int = 60,
+        fetch_interval_seconds: Optional[int] = None,
         candle_completion_callback: Callable[[str, Candle], None] = None,
     ):
         """
@@ -717,6 +718,19 @@ class DataManager:
             interval_seconds:           Candle duration in seconds.
             mode:                       'live' or 'backtest'.
             price_fetch_interval:       Seconds between REST price polls (live only).
+            fetch_interval_seconds:     Backtest only (CUL-250). Historical OHLCV is
+                                        fetched/cached at THIS resolution instead of
+                                        interval_seconds, and CandleBuilder aggregates
+                                        the finer rows up to interval_seconds during
+                                        replay -- e.g. fetch_interval_seconds=3600 with
+                                        interval_seconds=14400 backtests a 4h strategy
+                                        off an hourly cache. None (default) means fetch
+                                        at interval_seconds directly, byte-identical to
+                                        every existing caller. Must be <= interval_seconds
+                                        and divide it evenly (fails loud otherwise) --
+                                        CandleBuilder aggregates by elapsed wall-clock
+                                        time against fixed interval boundaries, so a
+                                        non-dividing source produces misaligned bars.
             candle_completion_callback: Forwarded to CandleBuilder.  Usually set
                                         after TradingBot construction via:
                                         data_manager.candle_builder.candle_completion_callback = ...
@@ -728,6 +742,22 @@ class DataManager:
         self.interval_seconds     = interval_seconds
         self.mode                 = mode
         self.price_fetch_interval = price_fetch_interval
+
+        self.fetch_interval_seconds = (
+            fetch_interval_seconds if fetch_interval_seconds is not None else interval_seconds
+        )
+        if self.fetch_interval_seconds > interval_seconds:
+            raise ValueError(
+                f"fetch_interval_seconds ({self.fetch_interval_seconds}) must be <= "
+                f"interval_seconds ({interval_seconds}) -- CandleBuilder only aggregates "
+                f"finer rows into coarser candles, never the reverse."
+            )
+        if interval_seconds % self.fetch_interval_seconds != 0:
+            raise ValueError(
+                f"interval_seconds ({interval_seconds}) must be evenly divisible by "
+                f"fetch_interval_seconds ({self.fetch_interval_seconds}) -- a non-dividing "
+                f"source produces candles misaligned to the interval grid."
+            )
 
         # ── Registered auxiliary feeds ─────────────────────────────────────
         # Populated by register_feed().  Keys are the column names that will
@@ -993,22 +1023,41 @@ class DataManager:
             # Apply the registered aggregation function to handle cases where
             # the aux feed has higher resolution than the price data
             # (e.g. funding rate every 8h, price every 1m)
-            effective_window_seconds = feed.window_seconds
-            if feed.agg != "last":
-                feed_data = (
-                    feed_data
-                    .set_index("timestamp")
-                    .resample(f"{self.interval_seconds}s")
-                    .agg({name: feed.agg})
-                    .reset_index()
-                )
-                # Resampling buckets raw readings into one row per bar-width
-                # bucket, so the resampled row's own window is at least the
-                # bucket width regardless of what each raw reading declared —
-                # a 'sum'/'mean' over [T, T+interval_seconds) is exactly the
-                # forward window whale features already declare on their own
-                # grid, so this only ever widens (never narrows) the check.
-                effective_window_seconds = max(feed.window_seconds, self.interval_seconds)
+            #
+            # CUL-250 follow-up: this used to be gated on `feed.agg != "last"`,
+            # skipping the resample step for every feed actually registered in
+            # this codebase (core/backtester.py hardcodes agg='last' for all
+            # feeds). That was harmless only because OHLCV was always fetched
+            # at candle resolution, so at most one raw reading could ever fall
+            # inside a candle's span. Once fetch_interval_seconds (CUL-250)
+            # lets OHLCV be fetched finer than the candle, MULTIPLE raw aux
+            # readings can land inside one candle's [start, start+interval)
+            # span, and the un-resampled merge_asof(backward) against price
+            # rows silently anchored to whichever price row happened to be
+            # the candle's FIRST (opening) row -- discarding any aux update
+            # that arrived between candle-open and candle-close. Resampling
+            # unconditionally (agg='last' included) fixes this: a bucket with
+            # zero readings still forward-fills via the causality guard below
+            # (unchanged), one reading is a no-op resample (proven
+            # byte-identical in test_aux_feed_agg_last_resample.py), and
+            # multiple readings correctly collapse to the freshest one via
+            # the feed's own registered agg function -- exactly the "no new
+            # data -> carry previous; one -> use it; multiple -> aggregate"
+            # rule this feature needs regardless of agg type.
+            feed_data = (
+                feed_data
+                .set_index("timestamp")
+                .resample(f"{self.interval_seconds}s")
+                .agg({name: feed.agg})
+                .reset_index()
+            )
+            # Resampling buckets raw readings into one row per bar-width
+            # bucket, so the resampled row's own window is at least the
+            # bucket width regardless of what each raw reading declared —
+            # a 'sum'/'mean'/'last' over [T, T+interval_seconds) is exactly
+            # the forward window whale features already declare on their own
+            # grid, so this only ever widens (never narrows) the check.
+            effective_window_seconds = max(feed.window_seconds, self.interval_seconds)
 
             enriched = _merge_asof_with_causality_guard(
                 enriched, feed_data, name, effective_window_seconds,
@@ -1165,7 +1214,7 @@ class DataManager:
 
         fetcher = HistoricalDataFetcher(
             start_date, end_date, [symbol],
-            candle_interval_seconds=self.interval_seconds,
+            candle_interval_seconds=self.fetch_interval_seconds,
             exchange=exchange,
             localStorage=localStorage,
             data_dir = data_storage_dir
