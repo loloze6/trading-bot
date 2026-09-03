@@ -58,6 +58,7 @@ Forecast → `forecast_to_allocation` (= forecast/10.0) downstream.
 5. **A strategy component spec without `"lookback"` override** gets the engine-default deque; the warmup cap then silently lowers effective warmup to that size. Check the startup log line.
 6. `regimes: {"<name>": null}` = deliberately flat in that regime (forecast 0.0). Not an error.
 7. **`regime_scores`/`regime_margin` in `debug_info` are score-mode-only fields.** Under `threshold_rules` they are structurally `{}` and `None` — correct and expected, not missing data. Only populated when `regime_detector.mode = "score"`.
+8. **All components of ALL regimes update every bar** (`strategy_engine.py::StrategyEngine.update()`, `regime_engine.py::ConfigDrivenRegimeEngine.update()` — both iterate every regime's components unconditionally); inactive-regime histories are always warm at switch. Do not "optimize" `update()` to active-regime-only — it would reintroduce switch staleness (recovered from `trading-bot/docs/STRATEGY_FRAMEWORK.md`, a stale pre-restructure copy of this file where this invariant survived under the same list position but had been dropped here; re-verified against current code, 2026-09-03).
 
 ## Verified baseline
 Backtest BTCUSDT 1h 2024-04-01→2024-05-30: bit-identical (4-dp) per-bar regimes and forecasts vs legacy `WeightedComponentRegimeDetector`/`CompositeStrategy` implementation (1438 bars, 0 diffs).

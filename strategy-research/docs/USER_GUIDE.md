@@ -536,7 +536,15 @@ from `variant_decisions` (`::determine_post_validation_route`).
 
 - The guide's §2.3 lists approve / refine / reject. **`conditional_approve` is
   a fourth accepted status** and behaves as approve with printed conditions.
-- Must declare the holdout range in `sample_split_design` (A6.1).
+- ⚠️ A6.1 is documented elsewhere as requiring the holdout range to be
+  declared in a `sample_split_design` field — **nothing enforces this, and
+  nothing produces it.** `sample_split_design` appears in zero of the 10 real
+  `pre_registration.yaml` files on disk, and zero hits in `workflow/`/`tools/`
+  source. A6.1's actual code-enforced guarantees (single-use holdout, an
+  affirmative `research_only: false`) are real and listed in §8.2 — this
+  specific sub-claim about a named field is not one of them. Same class as
+  [E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18); added to the
+  §8.2 ledger.
 
 </details>
 
@@ -2589,6 +2597,7 @@ may comply or not. "Nothing" means the sentence is the only thing there.**
 | An unrecognised spec status must not be guessed at | Code — `determine_post_spec_route`, pauses for a human | ✅ yes |
 | A6.1 — the holdout is single-use | Code — `_route_holdout_evaluation` refuses a repeat `hypothesis_id` | ✅ yes (never yet exercised — no run has reached it) |
 | A holdout needs an affirmative `research_only: false` | Code — same function, gate 2b | ✅ yes |
+| A6.1 — the holdout range must be declared in `sample_split_design` | **Nothing** — the field appears in 0 of 10 real `pre_registration.yaml` files, 0 hits in `workflow/`/`tools/` source | ❌ no (CUL-188, 2026-09-03) |
 | A6.2 — every evaluation counts as a trial, kills included | Code — `_record_prescreen_trial` / `_record_failed_backtest_trial` | ✅ yes |
 | F5c — a component crash must not be scored as "no edge" | Code — the override in `run_prescreen` | ⚠️ **partly** — an earlier guard now pre-empts the component-error branch ([E037-26](../engineering/roadmap/E-037/FINDINGS.md#e037-26)) |
 | Stage 3 — variants "must" be really diverse, "cosmetic = rejected" | **Skill only** — `innovation-expansion/SKILL.md`; the model reports its own verdict | ❌ **no code can produce "rejected"** ([E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18)) |
