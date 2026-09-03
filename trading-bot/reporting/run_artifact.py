@@ -240,9 +240,17 @@ def build_core(
                 placeable_blocks = None
                 if "timestamp" in bars_df.columns:
                     expected_step = pd.Timedelta(seconds=candle_interval_seconds)
+                    # Exclude the final row: its forward_return is always NaN
+                    # (nothing to shift(-1) into), so it was already dropped
+                    # from `df`/`x` above. Keeping it here would let the
+                    # gap-aware count see one bar `corr`/`len(x)` never did --
+                    # off by at most one active bar, but a real population
+                    # mismatch rather than an approximation.
                     records = [
                         {"active": bool(f != 0), "timestamp": ts}
-                        for f, ts in zip(bars_df["forecast"], bars_df["timestamp"])
+                        for f, ts in zip(
+                            bars_df["forecast"].iloc[:-1], bars_df["timestamp"].iloc[:-1]
+                        )
                     ]
                     placeable_blocks = gap_aware_active_block_count(
                         records, block_size, expected_step

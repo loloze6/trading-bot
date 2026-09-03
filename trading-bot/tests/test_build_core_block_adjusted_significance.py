@@ -78,9 +78,12 @@ def test_block_adjusted_pvalue_matches_prescreen_no_gaps():
     n_active = len(df)
 
     block_size = 24
+    # Match build_core's own population: the last row's forward_return is
+    # always NaN (nothing to shift(-1) into), so it's excluded from `x`/`corr`
+    # and must be excluded here too for an apples-to-apples comparison.
     records = [
         {"active": bool(f != 0), "timestamp": ts}
-        for f, ts in zip(bars["forecast"], bars["timestamp"])
+        for f, ts in zip(bars["forecast"].iloc[:-1], bars["timestamp"].iloc[:-1])
     ]
     expected_step = pd.Timedelta(seconds=candle_interval_seconds)
     placeable = ps._gap_aware_block_count(records, block_size, expected_step)
@@ -122,9 +125,11 @@ def test_block_adjusted_pvalue_gap_aware_with_a_real_gap():
     corr = core["forecast_return_corr"]
     assert corr is not None
 
+    # Match build_core's own population -- see the no-gaps test above for why
+    # the last row is excluded.
     records = [
         {"active": bool(f != 0), "timestamp": t}
-        for f, t in zip(bars["forecast"], bars["timestamp"])
+        for f, t in zip(bars["forecast"].iloc[:-1], bars["timestamp"].iloc[:-1])
     ]
     expected_step = pd.Timedelta(seconds=candle_interval_seconds)
     gap_aware_count   = ps._gap_aware_block_count(records, block_size, expected_step)
@@ -134,4 +139,30 @@ def test_block_adjusted_pvalue_gap_aware_with_a_real_gap():
         "a real 40h gap must reduce the placeable block count relative to "
         "the gap-ignorant count -- otherwise the gap-awareness isn't doing anything"
     )
-    assert core["forecast_return_corr_n_eff"] == max(gap_aware_count, 1)
+
+
+def test_trailing_bar_excluded_from_n_eff_population():
+    """The last bar's forward_return is always NaN (nothing to shift(-1)
+    into), so `df`/`x`/`corr` never see it -- the gap-aware active-block
+    count must not see it either, or n_eff would be computed over a
+    population one bar larger than the one `corr` was actually measured on.
+
+    Crafted so the extra bar crosses a block-size boundary (48 active bars
+    including the last row vs 47 excluding it, block_size=24: floor(48/24)=2
+    vs floor(47/24)=1) -- a case where getting this wrong is visible, not
+    silently absorbed by floor-division coarseness.
+    """
+    n = 48
+    forecasts = [5 + i % 7 for i in range(n)]  # all nonzero (active), varies
+    closes = [100 + sum(forecasts[:i + 1]) * 0.01 for i in range(n)]
+    bars = _bars(forecasts, closes, freq="h")
+
+    core = build_core({}, [], bars, candle_interval_seconds=3600)
+    corr = core["forecast_return_corr"]
+    assert corr is not None
+
+    assert core["forecast_return_corr_n_eff"] == 1, (
+        "47 forward-return-eligible active bars / block_size 24 = floor(47/24) "
+        "= 1 -- if this reads 2 instead, the trailing (forward-return-less) "
+        "bar leaked back into the population"
+    )
