@@ -3091,7 +3091,14 @@ def _ensure_protocol_ref_pinned(run_dir: Path, run_id: str, constraints: dict) -
     if not ref:
         return None
 
-    bare_name = Path(ref).name
+    # _path_basename_any_os, not Path(ref).name (CUL-186 follow-up, 2026-09-03):
+    # this is the same machine_constraints.protocol_ref field
+    # _check_prescreen_conformance was fixed for below -- a Windows-recorded ref
+    # ("protocols\baseline_v1.json") mis-parses as one long name on POSIX,
+    # ref_path then never exists, and this function raises FileNotFoundError on
+    # a protocol that is genuinely present. Missed in the original pass because
+    # this call site is in a different function entirely; caught on code review.
+    bare_name = _path_basename_any_os(ref)
     ref_path = ROOT / "protocols" / bare_name
     run_ctx_path = run_dir / "artifacts" / "run_context.yaml"
 
