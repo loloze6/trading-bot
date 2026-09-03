@@ -729,6 +729,21 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
     Expected effect is CONFIRMING the existing negative-Sharpe result, not
     rescuing the hypothesis -- median_sharpe/min_trade_count (already computed,
     never contaminated by this bug) remain the primary evidence either way.
+
+    CUL-259 (#50 family, deliberately deferred out of CUL-15/CUL-20's D1a
+    patches): bars.csv carries a "timestamp" column, but records built here
+    never captured it, so this caller always passed expected_step_by_symbol=None
+    into the block bootstrap -- gap-unaware even after CUL-20 made the bootstrap
+    itself gap-aware. This is the degenerate-active-forecast fallback path;
+    it fires only when every window's forecast_return_corr is None, but on the
+    windows where it does fire, this is the family the committed production
+    strategy belongs to. Fixed by threading "timestamp" through and deriving
+    expected_step from the first window's own first two consecutive bars
+    (backtest bars are generated at a fixed interval by construction, so any
+    in-window consecutive pair gives the true step) -- gated on every window
+    actually carrying the column, so an older bars.csv without it falls back
+    to expected_step=None (today's byte-identical positional behaviour)
+    instead of _contiguous_segments' fail-loud missing-timestamp KeyError.
     """
     corrs = [r['core'].get('forecast_return_corr') for r in rows
              if r.get('core', {}).get('forecast_return_corr') is not None]
@@ -742,6 +757,8 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
     import prescreen_signal as _ps
 
     records = []
+    expected_step = None
+    all_have_timestamp = True
     for r in sorted(rows, key=lambda x: x['window']):
         bars_path = Path(runs_root) / r['run_id'] / 'bars.csv'
         if not bars_path.exists():
@@ -749,20 +766,38 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
         bdf = pd.read_csv(bars_path)
         if 'forecast' not in bdf.columns or 'close' not in bdf.columns:
             continue
+        has_ts = 'timestamp' in bdf.columns
+        all_have_timestamp = all_have_timestamp and has_ts
         closes = bdf['close'].tolist()
         forecasts = bdf['forecast'].tolist()
+        timestamps = None
+        if has_ts:
+            timestamps = pd.to_datetime(bdf['timestamp']).tolist()
+            if expected_step is None and len(timestamps) > 1:
+                step = timestamps[1] - timestamps[0]
+                if step > pd.Timedelta(0):
+                    expected_step = step
         for i in range(len(bdf) - 1):
             if closes[i] == 0:
                 continue
-            records.append({
+            rec = {
                 'forecast': float(forecasts[i]),
                 'next_return_bps': (closes[i + 1] - closes[i]) / closes[i] * 10000.0,
-            })
+            }
+            if has_ts:
+                rec['timestamp'] = timestamps[i]
+            records.append(rec)
     if not records:
         return None, None
 
     symbol = rows[0]['symbol']
-    boot = _ps._stationary_block_bootstrap_ic_significance({symbol: records})
+    expected_step_by_symbol = (
+        {symbol: expected_step}
+        if (all_have_timestamp and expected_step is not None) else None
+    )
+    boot = _ps._stationary_block_bootstrap_ic_significance(
+        {symbol: records}, expected_step_by_symbol=expected_step_by_symbol,
+    )
     return boot.get('pooled_ic'), boot['method']
 
 
