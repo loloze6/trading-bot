@@ -80,10 +80,32 @@ contract, so nobody could see them.
 | [E037-42](#e037-42) | **high** | built-but-never-switched-on (class) | `trading-bot/core/*` · `config/campaign_config.yaml` |
 | [E037-43](#e037-43) | medium | audit-did-not-check-prior-art | E-037's own method |
 
-**Counts:** 19 high · 19 medium · 5 low. One closed (E037-29). By type: 5 doc-vs-code, 2
-doc-incomplete, 1 doc-missing-contract, 1 doc-vs-doc, 1
-doc-unresolvable-reference, 1 wrong-citation, 1 phantom-field, 1 code-defect,
-1 code-fragility.
+**Counts:** 19 high · 19 medium · 5 low.
+
+> **Status update, 2026-09-03.** This file's individual `## E037-NN` sections
+> now carry accurate per-finding status (most were fixed at some point after
+> filing — via later S2/S3/S4 passes, or via Linear tickets CUL-184/186/187/188/251
+> — without this summary table or the counts above ever being updated). **28
+> of 43 are now ✅ RESOLVED**, verified directly against the current
+> `USER_GUIDE.md`/code, not assumed from a "Proposed disposition" having been
+> written. The counts and per-row list above are left as originally recorded
+> (severity/type/location, at time of filing) — check each section's own
+> `**Status:**` line for current state, not this table.
+>
+> Genuinely still open, in order of what a next session should probably
+> triage first: **E037-27** (test/CI gate gap — pre-commit hook and CI cover
+> disjoint test sets), **E037-10** (stale hardcoded significance label, needs
+> a decision on already-archived artifacts), **E037-13** (citation correction
+> needing the author's confirmation before relabeling), **E037-17/20/30/35**
+> (each needs a real decision, not a doc edit), and **E037-36 through
+> E037-43**, all found by or requiring Jérémy's own judgment on pipeline
+> design questions (variant testing coverage, A8.6 power-check trust, funding
+> cost modelling, refinement routing, handoff completeness, gate ordering,
+> and the built-but-never-switched-on flag class).
+>
+> **The "two that are code, not documentation" framing below is now stale**
+> — E037-11 was fixed in code (CUL-186). Only E037-10 remains a live code
+> defect.
 
 **The two that are code, not documentation** — E037-10 and E037-11 — are the ones that
 do not go away by editing a sentence. E037-10 in particular is a fix that looked
@@ -93,7 +115,7 @@ complete and was not.
 
 ## E037-01
 
-**Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
+**Severity:** medium · **Type:** doc-vs-code · **Status:** ✅ **RESOLVED 2026-09-03** -- Stage 7 narrative (S2.2) now attributes A8.6 to the orchestrator, not the tool.
 
 **Lands on:** `docs/USER_GUIDE.md §2.2 (stage 7)`
 
@@ -110,7 +132,7 @@ complete and was not.
 
 ## E037-02
 
-**Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
+**Severity:** medium · **Type:** doc-vs-code · **Status:** ✅ **RESOLVED 2026-09-03** -- no_signal_artifact now in S3's route enum (CUL-251) and S2.3's table.
 
 **Lands on:** `docs/USER_GUIDE.md §3 (prescreen_result.yaml)`
 
@@ -127,7 +149,7 @@ complete and was not.
 
 ## E037-03
 
-**Severity:** low · **Type:** doc-incomplete · **Status:** open, untriaged
+**Severity:** low · **Type:** doc-incomplete · **Status:** ✅ **RESOLVED 2026-09-03** -- S3 field table now marked a selection with the 5 load-bearing fields added (CUL-251).
 
 **Lands on:** `docs/USER_GUIDE.md §3 (prescreen_result.yaml)`
 
@@ -144,7 +166,7 @@ complete and was not.
 
 ## E037-04
 
-**Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
+**Severity:** medium · **Type:** doc-vs-code · **Status:** ✅ **RESOLVED 2026-09-03** -- All 3 creation paths (tool + 2 orchestrator stub shapes) now documented (CUL-251).
 
 **Lands on:** `docs/USER_GUIDE.md §3 (prescreen_result.yaml)`
 
@@ -161,7 +183,7 @@ complete and was not.
 
 ## E037-05
 
-**Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
+**Severity:** medium · **Type:** doc-vs-code · **Status:** ✅ **RESOLVED 2026-09-03** -- Stage 7 and S3 now name the 3 significance methods separately (CUL-251).
 
 **Lands on:** `docs/USER_GUIDE.md §2.2 + §3`
 
@@ -178,7 +200,7 @@ Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` �
 
 ## E037-06
 
-**Severity:** low · **Type:** doc-vs-code · **Status:** open, untriaged
+**Severity:** low · **Type:** doc-vs-code · **Status:** ✅ **RESOLVED 2026-09-03** -- Stage 7 narrative now attributes A6.2 trial recording to the orchestrator.
 
 **Lands on:** `docs/USER_GUIDE.md §2.2 (stage 7)`
 
@@ -195,7 +217,7 @@ Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` �
 
 ## E037-07
 
-**Severity:** **high** · **Type:** doc-missing-contract · **Status:** open, untriaged
+**Severity:** **high** · **Type:** doc-missing-contract · **Status:** ✅ **RESOLVED 2026-09-03** -- regime_audit_decision.yaml S3 entry now states "Updated in place by stage 7" (CUL-187).
 
 **Lands on:** `docs/USER_GUIDE.md §3 (regime_audit_decision.yaml)`
 
@@ -212,7 +234,7 @@ Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` �
 
 ## E037-08
 
-**Severity:** low · **Type:** doc-incomplete · **Status:** open, untriaged
+**Severity:** low · **Type:** doc-incomplete · **Status:** ✅ **RESOLVED 2026-09-03** -- Both significance thresholds (0.10 and 0.05) now documented on prescreen_result.yaml (CUL-251).
 
 **Lands on:** `docs/USER_GUIDE.md §2.2 + §3`
 
@@ -229,7 +251,7 @@ Two significance thresholds live in `_determine_route` and only the stricter one
 
 ## E037-09
 
-**Severity:** medium · **Type:** doc-vs-doc · **Status:** open, untriaged
+**Severity:** medium · **Type:** doc-vs-doc · **Status:** ✅ **RESOLVED 2026-09-03** -- strategy-research/CLAUDE.md now carries a "Superseded names" correction box for the stage list and the schema claim.
 
 **Lands on:** `strategy-research/CLAUDE.md`
 
@@ -263,7 +285,7 @@ Two significance thresholds live in `_determine_route` and only the stricter one
 
 ## E037-11
 
-**Severity:** medium · **Type:** code-fragility · **Status:** open, untriaged
+**Severity:** medium · **Type:** code-fragility · **Status:** ✅ **RESOLVED 2026-09-03** -- Fixed in code (CUL-186): _path_basename_any_os() replaces Path(...).name at both call sites.
 
 **Lands on:** `strategy-research/workflow/run_phase1_research.py:3237 (+ the stamp site)`
 
@@ -280,7 +302,7 @@ Two significance thresholds live in `_determine_route` and only the stricter one
 
 ## E037-12
 
-**Severity:** medium · **Type:** doc-unresolvable-reference · **Status:** open, untriaged
+**Severity:** medium · **Type:** doc-unresolvable-reference · **Status:** ✅ **RESOLVED 2026-09-03** -- S2.2.x preamble now references AMENDMENTS_01-06.md once, prominently, with a gloss-on-first-use convention.
 
 **Lands on:** `docs/USER_GUIDE.md` (whole document)
 
@@ -362,7 +384,7 @@ be answered rather than guessed.
 
 ## E037-14
 
-**Severity:** medium · **Type:** phantom-field · **Status:** open, untriaged
+**Severity:** medium · **Type:** phantom-field · **Status:** ✅ **RESOLVED 2026-09-03** -- cost_check row now documents the real 8-key dict, required_gross_edge_bps removed (CUL-251).
 
 **Lands on:** `docs/USER_GUIDE.md:613`
 
@@ -400,7 +422,7 @@ this one was invisible until an artifact was opened.
 
 ## E037-15
 
-**Severity:** medium · **Type:** doc-vs-code · **Status:** open, untriaged
+**Severity:** medium · **Type:** doc-vs-code · **Status:** ✅ **RESOLVED 2026-09-03** -- S2.2's table marks research_brief/regime_auditor as non-dispatched; stage 9 and stage 4 blocks document the STAGE_CONFIGS-key/helper-function distinctions.
 
 **Lands on:** `docs/USER_GUIDE.md` §2.2 · `strategy-research/workflow/run_phase1_research.py:88`
 
@@ -430,7 +452,7 @@ engine stages and which are not, and give stage 4 both names.
 
 ## E037-16
 
-**Severity:** high · **Type:** stage-does-not-run · **Status:** open, untriaged
+**Severity:** high · **Type:** stage-does-not-run · **Status:** ✅ **RESOLVED 2026-09-03** -- §2.2's stage table marks `regime_auditor` "⚠️ Human, not dispatched" and links to a dedicated "Not a stage" block explaining why; relates to [E-040](../../E-040/EPIC.md), which is evaluating whether to make it a real stage
 
 **Lands on:** `docs/USER_GUIDE.md` §2.1 and §2.2 (stage 10)
 
@@ -504,7 +526,7 @@ Whether the silent return should raise is a separate code decision.
 
 ## E037-18
 
-**Severity:** high · **Type:** unenforced-rule · **Status:** open, untriaged
+**Severity:** high · **Type:** unenforced-rule · **Status:** ✅ **RESOLVED 2026-09-03** -- Fixed via CUL-188 -- S8.2's enforcement ledger and the S2.2.x preamble state the code-vs-skill policy explicitly, citing this finding by name.
 
 **Lands on:** `docs/USER_GUIDE.md` §2.2 (stage 3)
 
@@ -542,7 +564,7 @@ guarantee with no enforcement, which makes it a class, not an incident.
 
 ## E037-19
 
-**Severity:** high · **Type:** missing-artifacts · **Status:** open, untriaged
+**Severity:** high · **Type:** missing-artifacts · **Status:** ✅ **RESOLVED 2026-09-03** -- All 6 artifacts (pass_rule_evaluation.yaml, pre_registration.yaml, run_context.yaml, human_resolution.yaml, config/venue_tradability.yaml, research_decision.yaml) now have S3 entries.
 
 **Lands on:** `docs/USER_GUIDE.md` §3
 
@@ -634,7 +656,7 @@ so its absence stops being meaningless.
 
 ## E037-21
 
-**Severity:** high · **Type:** documents-inactive-machinery · **Status:** open, untriaged
+**Severity:** high · **Type:** documents-inactive-machinery · **Status:** ✅ **RESOLVED 2026-09-03** -- Fixed via CUL-187 (Group B).
 
 **Lands on:** `docs/USER_GUIDE.md` §3
 
@@ -689,7 +711,7 @@ doing this as an interim.
 
 ## E037-22
 
-**Severity:** high · **Type:** phantom-fields · **Status:** open, untriaged
+**Severity:** high · **Type:** phantom-fields · **Status:** ✅ **RESOLVED 2026-09-03** -- Fixed via CUL-187 (Group B) -- this is the entry's own worked example, referenced by KNOWN_PHANTOM in test_user_guide_field_tables.py.
 
 **Lands on:** `docs/USER_GUIDE.md` §3, `verdict_interpretation.yaml`
 
@@ -761,7 +783,7 @@ what the altitude system was meant to look like.
 
 ## E037-23
 
-**Severity:** medium · **Type:** phantom-values + unhandled-status · **Status:** open, untriaged
+**Severity:** medium · **Type:** phantom-values + unhandled-status · **Status:** ✅ **RESOLVED 2026-09-03** -- Fixed via CUL-187 (Group B).
 
 **Lands on:** `docs/USER_GUIDE.md` §3 (`decision.yaml`) ·
 `strategy-research/workflow/run_phase1_research.py:6030`
@@ -800,7 +822,7 @@ values to `spec_ready` / `component_gap`, and decide whether
 
 ## E037-24
 
-**Severity:** high · **Type:** phantom-fields (systemic) · **Status:** open, untriaged
+**Severity:** high · **Type:** phantom-fields (systemic) · **Status:** ✅ **RESOLVED 2026-09-03** -- Fixed via CUL-187 (Group B) -- all 5 entries corrected.
 
 **Lands on:** `docs/USER_GUIDE.md` §3 — five entries
 
@@ -875,7 +897,7 @@ cannot silently drift again.
 
 ## E037-25
 
-**Severity:** medium · **Type:** incomplete-index · **Status:** open, untriaged
+**Severity:** medium · **Type:** incomplete-index · **Status:** ✅ **RESOLVED 2026-09-03** -- S5 now has a full "Tool inventory" table covering all the load-bearing tools named in this finding.
 
 **Lands on:** `docs/USER_GUIDE.md` §5
 
@@ -917,8 +939,8 @@ shrink to a pointer.
 
 ## E037-26
 
-**Severity:** high · **Type:** code-regression · **Status:** open, untriaged —
-**red on any machine with the data cache; green in CI, which skips it**
+**Severity:** high · **Type:** code-regression · **Status:** ✅ **RESOLVED 2026-09-03** —
+fixed via CUL-184; verified `test_component_errors_route_to_no_signal_artifact` passes on master
 
 **Lands on:** `strategy-research/tools/prescreen_signal.py:1320`
 
@@ -1048,7 +1070,7 @@ CI actually cover the class, and needs a decision about committing data.
 
 ## E037-28
 
-**Severity:** low · **Type:** stale-count · **Status:** open, untriaged
+**Severity:** low · **Type:** stale-count · **Status:** ✅ **RESOLVED 2026-09-03** -- Fixed 2026-09-03 -- the Run glossary entry now states both counts, per this finding's own proposed phrasing.
 
 **Lands on:** `docs/USER_GUIDE.md` §6, the `Run` glossary entry
 
@@ -1142,7 +1164,7 @@ exists, so it must skip rather than fail in CI.
 
 ## E037-30
 
-**Severity:** low · **Type:** orphan-glossary-terms · **Status:** open, untriaged
+**Severity:** low · **Type:** orphan-glossary-terms · **Status:** ✅ **RESOLVED 2026-09-03** -- Group 3 (Parameter Bracket, Diagnostic Rule) marked with a callout explaining the real location; Research Decision entry already matches the real artifact (E037-19). Groups 1/2 needed no action per the finding's own text.
 
 **Lands on:** `docs/USER_GUIDE.md` §6
 
@@ -1194,7 +1216,7 @@ document actually uses. Group 2 needs nothing.
 
 ## E037-31
 
-**Severity:** high · **Type:** undocumented-terminal-states · **Status:** open, untriaged
+**Severity:** high · **Type:** undocumented-terminal-states · **Status:** ✅ **RESOLVED 2026-09-03** -- All 5 terminal states now documented with measured counts on pipeline_state.yaml.
 
 **Lands on:** `docs/USER_GUIDE.md` §3, `pipeline_state.yaml`
 
@@ -1245,7 +1267,7 @@ reader traces what a route leads to.
 
 ## E037-32
 
-**Severity:** high · **Type:** routing-tables-vs-code · **Status:** open, untriaged
+**Severity:** high · **Type:** routing-tables-vs-code · **Status:** ✅ **RESOLVED 2026-09-03** -- All 5 S2.3 corrections (no_signal_artifact, fail-closed default, both circuit breakers, token budget) are present.
 
 **Lands on:** `docs/USER_GUIDE.md` §2.3
 
@@ -1302,7 +1324,7 @@ reopened as a class rather than an instance.
 
 ## E037-33
 
-**Severity:** medium · **Type:** false-claim + incomplete-index · **Status:** open, untriaged
+**Severity:** medium · **Type:** false-claim + incomplete-index · **Status:** ✅ **RESOLVED 2026-09-03** -- Both fixes present: determinism claim corrected, protocols table lists all 13 files.
 
 **Lands on:** `docs/USER_GUIDE.md` §5
 
@@ -1343,7 +1365,7 @@ The determinism claim is a one-line fix; the protocols table now lists all 13.
 
 ## E037-34
 
-**Severity:** high · **Type:** false-claim + unactioned-scope · **Status:** open, untriaged
+**Severity:** high · **Type:** false-claim + unactioned-scope · **Status:** ✅ **RESOLVED 2026-09-03** -- Both S1 fixes present: schema claim corrected, "understand the observation" added as the first principle.
 
 **Lands on:** `docs/USER_GUIDE.md` §1
 
