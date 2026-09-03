@@ -1822,18 +1822,31 @@ Handoffs are the formal interface contract between stages. Each stage reads its 
 
 > **Why this file exists.** The cheap go/no-go on a signal: the evidence that justified spending a full backtest, or killing without one. Also the trial's receipt.
 
-**Created by:** signal_prescreen tool (`tools/prescreen_signal.py`)
+**Created by three different paths, with three different shapes** ([E037-04](../engineering/roadmap/E-037/FINDINGS.md#e037-04)):
+1. **Normal run** — `tools/prescreen_signal.py` itself, the full shape below.
+2. **A8.6 blocked at `validation`** — the orchestrator writes a 5-key stub itself and the tool never runs: `{run_id, route: insufficient_power_a_priori, a86_power_check, stage_blocked_at: "validation", note}` (`run_phase1_research.py::determine_post_validation_route`).
+3. **A8.6 blocked at `signal_prescreen`** — same gate, run a second time immediately before the tool would launch (in case the validation-gate check already passed but conditions changed): a 4-key stub, `{run_id, route: insufficient_power_a_priori, a86_power_check, note}` (`::run_loop`). Neither stub carries any IC/cost/provenance field below — an operator opening this file must check `route` before assuming the full shape is present.
+
 **Read by:** verdict_interpreter, orchestrator
 **Schema:** `workflow_artifacts/schemas/prescreen_result.schema.json`
 
+**The table below is a selection, not the full field list** ([E037-03](../engineering/roadmap/E-037/FINDINGS.md#e037-03)) — the real artifact carries roughly 30 top-level keys; these are the load-bearing ones a reader is most likely to need.
+
 | Field | Definition |
 |---|---|
-| `route` | Routing decision: `proceed_to_backtest`, `kill_no_ic`, `refine_inverted_ic`, `refine_cost_hurdle`, `kill_cost_hurdle`, `insufficient_power_a_priori` |
+| `route` | Routing decision: `proceed_to_backtest`, `kill_no_ic`, `refine_inverted_ic`, `refine_cost_hurdle`, `kill_cost_hurdle`, `insufficient_power_a_priori`, **`no_signal_artifact`** ([E037-02](../engineering/roadmap/E-037/FINDINGS.md#e037-02)) — `active_n_bars == 0`, or component-error rate > 5% (F5c); **overrides every other route**, since it means nothing was actually tested |
 | `ic_all_bars` | Spearman IC computed over all bars (tie-dominated for sparse signals) |
 | `ic_active_bars` | Spearman IC conditional on non-zero/changing [forecast](#g-forecast) — the primary IC gate |
 | `forecast_sparsity_pct` | Fraction of bars with zero/unchanging forecast |
-| `cost_check` | `{pass: bool, edge_to_cost_ratio, required_gross_edge_bps}` — Layer 2 gate |
-| `ic_significance` | Whether `ic_active_bars` is statistically significant (block-bootstrap) |
+| `cost_check` | Layer 2 gate. `required_gross_edge_bps` was documented here but never existed ([E037-14](../engineering/roadmap/E-037/FINDINGS.md#e037-14)) — the real dict is `{symbol, implied_trades_per_window, estimated_gross_edge_bps_per_trade, cost_bps_per_trade, edge_to_cost_ratio, safety_factor_required, pass, ic_used}`. `safety_factor_required` is the threshold the gate compares against; `ic_used` records which IC (`ic_active_bars` or `ic_all_bars`) fed the estimate. Passes only if `ic_active_bars` also clears the significance threshold below (A8.1: a good IC alone is never enough) |
+| `ic_significance` | Whether `ic_active_bars` is statistically significant, at `_SIG_THRESHOLD = 0.10` (`prescreen_signal.py:102`) — **not** `p < 0.05`; that threshold gates a different decision, see `significance_methodology_used` below |
+| `significance_methodology_used` | Which of three significance methods actually ran ([E037-05](../engineering/roadmap/E-037/FINDINGS.md#e037-05)) — §2.2 stage 7 previously named only the fallback as if it were the default: **`block_{n}_fisher_z`** (default — block-deflated Fisher z, `n` derived from the timeframe's actual block size, e.g. `block_24_fisher_z`), **`episode_blocked_a851a`** (config opt-in, for multi-era data), or the stationary block bootstrap (auto-selected when the active-bar forecast is structurally degenerate). |
+| `forecast_hash` | Dedup key for trial counting — the same forecast reproduced twice must count once, not twice, in the deflated-Sharpe N. |
+| `sigma_is_placeholder` | `true` when `sigma_bar_bps` could not be measured and a placeholder was substituted — a `cost_check` computed against a placeholder sigma is not load-bearing evidence. |
+| `gap_stats_by_symbol` | Per-symbol counts of forward-return pairs dropped for straddling a data gap (#50 A) — a pooled figure can read "no gap effect" while one symbol's whole sample was destroyed. |
+| `a86_power_check` | Present only on the two blocked-stub shapes above; the full A8.6 pre-flight result (`min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, …) that produced the block. |
+
+Two significance thresholds are in play and easy to conflate ([E037-08](../engineering/roadmap/E-037/FINDINGS.md#e037-08)): **`0.10`** (`_SIG_THRESHOLD`, `prescreen_signal.py:102`) gates whether `ic_active_bars` counts as significant at all; a separate **`p > 0.05`** test inside the cost branch (`:1070`) decides `kill_cost_hurdle` vs `refine_cost_hurdle` when the edge-to-cost ratio is marginal. Neither appears in this table's field definitions above — noted here since both are load-bearing and neither was documented anywhere before this correction.
 
 ---
 
@@ -2466,17 +2479,17 @@ which explains each in one line without jargon.
 > [E037-22](../engineering/roadmap/E-037/FINDINGS.md#e037-22) and
 > [E037-30](../engineering/roadmap/E-037/FINDINGS.md#e037-30).
 
-> ⚠️ **The "10-stage pipeline" in the `Run` entry below is stale.** This guide
-> documents **13** numbered stages (§2.2). Ten is the size of the engine's
+> ⚠️ **The `Run` entry below previously said "10-stage pipeline."** This guide
+> documents **13** numbered stages (§2.2); ten is the size of the engine's
 > `STAGE_CONFIGS` registry, which excludes the human brief and the two regime
-> stages — see [E037-15](../engineering/roadmap/E-037/FINDINGS.md#e037-15) and
-> [E037-28](../engineering/roadmap/E-037/FINDINGS.md#e037-28). Left as written rather
-> than silently corrected, per this epic's record-don't-fix rule.
+> stages. Corrected 2026-09-03 to state both counts, following the exact
+> phrasing [E037-28](../engineering/roadmap/E-037/FINDINGS.md#e037-28)
+> proposed — see also [E037-15](../engineering/roadmap/E-037/FINDINGS.md#e037-15).
 
 | Term | Definition |
 |---|---|
 | <a id="g-campaign"></a>**Campaign** | A sustained research effort around a single research question, spanning multiple runs and hypothesis families. A campaign ends when a strategy is promoted or the question is declared unanswerable. Example: "Can volume-based signals generate edge on BTC 1h?" |
-| <a id="g-run"></a>**Run** | One complete execution of the 10-stage pipeline for a specific hypothesis. Each run lives in `runs/{run_id}/` and produces its own set of artifacts. A campaign contains many runs. |
+| <a id="g-run"></a>**Run** | One complete execution of the pipeline for a specific hypothesis — 13 documented stages ([E037-15](../engineering/roadmap/E-037/FINDINGS.md#e037-15)), of which 10 are dispatched by the orchestrator's `STAGE_CONFIGS` (the other three: `research_brief` is a human input, `regime_detector_validation` is a helper function, `regime_auditor` is a human-invoked skill on a paused pipeline). Each run lives in `runs/{run_id}/` and produces its own set of artifacts. A campaign contains many runs. |
 | <a id="g-research-brief"></a>**Research Brief** | The entry document for a run. Written by a human (or auto-generated from a previous run's proposed_brief), it defines the research question, target market, constraints, and what has already been tried. |
 | <a id="g-hypothesis"></a>**Hypothesis** | A single, falsifiable claim about a trading signal: what it is, why it should work, and under what conditions. More specific than a "strategy idea" — it must include a signal formula and explicit assumptions. |
 | <a id="g-hypothesis-family"></a>**Hypothesis Family** | A group of related hypotheses that share a core thesis but differ in implementation (e.g., all volume-momentum variants). If all variants in a family fail, the family is marked exhausted and excluded from future runs. |

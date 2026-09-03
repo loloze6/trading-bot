@@ -55,6 +55,16 @@ _GUIDE = _SR / "docs" / "USER_GUIDE.md"
 # Baseline now empty; kept as a dict (not deleted) so the next drift has a
 # place to land and the docstring's shrink-to-empty claim stays checkable.
 KNOWN_PHANTOM: dict[str, set[str]] = {
+    # 2026-09-03 (E037-02/03/04/05/08): both real, verified directly against
+    # prescreen_signal.py source, just absent from the specific 10 sample
+    # files this test's _instances() glob picks up under runs/*/artifacts/ --
+    # situational, not invented. `a86_power_check` only appears on the two
+    # orchestrator-written stub shapes (A8.6 blocked before the tool ever
+    # runs, run_phase1_research.py:2368/6400), which none of the 10 sampled
+    # runs hit. `gap_stats_by_symbol` is written by prescreen_signal.py:1630
+    # but only carries entries when a real data gap was actually found and
+    # dropped (#50 A) -- none of the 10 sampled runs had one.
+    "`prescreen_result.yaml`": {"a86_power_check", "gap_stats_by_symbol"},
     # NOTE: `verdict_interpretation.yaml` is deliberately absent. S2 rewrote that
     # table from real artifacts, so its five phantom names (altitude, verdict,
     # diagnostic_rule_applied, parameter_bracket, next_altitude) no longer appear
