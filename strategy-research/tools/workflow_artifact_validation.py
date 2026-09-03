@@ -35,10 +35,32 @@ _SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "workflow_artifacts" / "
 
 _RAISE_VALUE = "raise"
 _ENV_FLAG = "WORKFLOW_ARTIFACT_VALIDATION"
+_QUIET_ENV_FLAG = "WORKFLOW_ARTIFACT_VALIDATION_QUIET"
+_QUIET_TRUTHY = {"1", "true", "yes"}
+# jsonschema.ValidationError.__str__() embeds the full schema it validated
+# against (can be 100s of KB); truncating to this many characters keeps the
+# warning legible without losing which artifact/rule failed.
+_QUIET_DETAIL_MAX_CHARS = 300
 
 
 def _raise_mode() -> bool:
     return os.environ.get(_ENV_FLAG, "").strip().lower() == _RAISE_VALUE
+
+
+def _quiet_mode() -> bool:
+    return os.environ.get(_QUIET_ENV_FLAG, "").strip().lower() in _QUIET_TRUTHY
+
+
+def _format_detail(exc: Exception) -> str:
+    """CUL-219: full str(exc) on a jsonschema.ValidationError embeds the whole
+    schema (the "echo" this ticket is about). Under the quiet knob, truncate
+    so a synthetic-driver tool doing many minimal-fixture writes stays legible
+    -- this only shortens the message, it never suppresses the warning itself
+    (genuine validation failures still log, just compactly)."""
+    text = str(exc)
+    if _quiet_mode() and len(text) > _QUIET_DETAIL_MAX_CHARS:
+        return text[:_QUIET_DETAIL_MAX_CHARS] + f"... [truncated by {_QUIET_ENV_FLAG}]"
+    return text
 
 
 def _make_validator(jsonschema, schema):
@@ -95,7 +117,7 @@ def validate_workflow_artifact(path, data) -> None:
             logger.warning(
                 "workflow artifact validation unavailable for %s (jsonschema import failed): %s",
                 schema_path.stem,
-                exc,
+                _format_detail(exc),
             )
             return
 
@@ -108,5 +130,5 @@ def validate_workflow_artifact(path, data) -> None:
             "workflow artifact validation failed for %s: %s: %s",
             path,
             type(exc).__name__,
-            exc,
+            _format_detail(exc),
         )

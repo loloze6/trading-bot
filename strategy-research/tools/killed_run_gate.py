@@ -36,7 +36,7 @@ import contextlib
 import hashlib
 import io
 import json
-import logging
+import os
 import re
 import sys
 import tempfile
@@ -353,12 +353,13 @@ def run_demo() -> list[dict]:
 
 def main() -> int:
     # The synthetic fixtures are intentionally minimal, so the pipeline's warn-by-default
-    # schema check (workflow_artifact_validation, WARNING) is pure noise here -- it echoes
-    # the whole schema on every save_yaml. Quiet only that logger, and only on the CLI path
-    # (never at import, so the characterization suite that imports build_kill_summary is
-    # unaffected). WORKFLOW_ARTIFACT_VALIDATION=raise still raises; this only mutes warnings.
-    import workflow_artifact_validation as _wav
-    _wav.logger.setLevel(logging.ERROR)
+    # schema check (workflow_artifact_validation, WARNING) is pure noise here -- it used to
+    # echo the whole schema on every save_yaml. CUL-219: use the validator's own quiet knob
+    # (truncates the echoed detail) rather than muting the shared logger to ERROR, so a
+    # genuine validation warning on this CLI path still surfaces, just compactly. Only on
+    # the CLI path (never at import, so the characterization suite that imports
+    # build_kill_summary is unaffected). WORKFLOW_ARTIFACT_VALIDATION=raise still raises.
+    os.environ.setdefault("WORKFLOW_ARTIFACT_VALIDATION_QUIET", "1")
     print("E-025 -- killed-run trial-accounting gate (synthetic; no market data)\n")
     results = run_demo()
     for r in results:
