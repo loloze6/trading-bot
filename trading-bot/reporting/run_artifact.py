@@ -252,10 +252,58 @@ def build_core(
     # post-backtest cost hurdle below. None until bars_df is available.
     sigma_bar_bps_value  = None
     sigma_is_placeholder = None
+    # CUL-266 (#50(A) on the PRIMARY corr path): counts of (forecast,
+    # forward_return) pairs suppressed for spanning a real data gap. None --
+    # not 0 -- when no gap check was performed, because "not measured" and
+    # "measured, found none" are different claims and this codebase does not
+    # fabricate the second (cf. _fmt_ic never printing 0.0000 for an undefined
+    # IC).
+    gap_skipped_pairs = None
+    gap_skipped_pct   = None
     if bars_df is not None and "forecast" in bars_df.columns and "close" in bars_df.columns:
         df_all = bars_df[["forecast", "close"]].copy()
         df_all["forward_return"] = df_all["close"].shift(-1) / df_all["close"] - 1
+
+        # #50(A) -- the successor must be the next BAR, not merely the next ROW.
+        # shift(-1) above pairs row i with row i+1 unconditionally; across a
+        # real hole in the cache that makes a multi-hour move wear a one-bar
+        # label. Mirrors prescreen_signal.py::_extract_forecasts's contract:
+        # suppress the pair, COUNT it, never drop it silently.
+        #
+        # APPLIED TO df_all (before the active-only filter), so BOTH sigma and
+        # the correlation see the same gap-filtered population. That is not a
+        # convenience -- it is what prescreen does: _extract_forecasts filters
+        # gap-spanning pairs out of `records` (prescreen_signal.py:570), and
+        # _sigma_from_records then consumes that already-filtered list
+        # (::run_prescreen, :1479). Filtering only the corr population would
+        # leave sigma measuring gap-inflated "one-bar" moves and silently
+        # diverge from prescreen on the very number the cost hurdle rests on.
+        if candle_interval_seconds and "timestamp" in bars_df.columns:
+            expected_step   = pd.Timedelta(seconds=candle_interval_seconds)
+            _ts             = pd.to_datetime(bars_df["timestamp"])
+            # NaT for the final row => comparison is False => it is excluded
+            # here, but it is NOT a gap skip (it simply has no successor), so
+            # the count below requires a defined forward_return.
+            valid_successor = (_ts.shift(-1) - _ts) == expected_step
+            gap_skipped_pairs = int(
+                (~valid_successor & df_all["forward_return"].notna()).sum()
+            )
+            df_all = df_all[valid_successor]
+
         df_all = df_all.dropna()
+
+        if gap_skipped_pairs is not None:
+            # Denominator is PAIRS REACHED (kept + skipped), matching
+            # prescreen's own `pairs_reached` (::run_prescreen, :1443/:1446).
+            # This is deliberately NOT the cache's contamination rate: bars
+            # never reached -- e.g. dropped for a NaN close -- are outside both
+            # terms, so this reads lower than a cache-level gap census.
+            _pairs_reached  = len(df_all) + gap_skipped_pairs
+            gap_skipped_pct = (
+                round(gap_skipped_pairs / _pairs_reached * 100.0, 4)
+                if _pairs_reached > 0 else None
+            )
+
         # Sigma is measured across ALL bars with a defined forward return, not
         # just active ones -- it's a property of the underlying market, matching
         # prescreen_signal.py::_sigma_from_records's own population (that
@@ -353,6 +401,12 @@ def build_core(
         "forecast_return_corr_pvalue": forecast_return_corr_pvalue,
         "forecast_return_corr_pvalue_block_adjusted": forecast_return_corr_pvalue_block_adjusted,
         "forecast_return_corr_n_eff":  forecast_return_corr_n_eff,
+        # CUL-266: how much of the reachable sample the #50(A) gap filter
+        # removed. A correlation computed over a heavily-decimated sample is a
+        # different claim from one over a clean one, so the count travels with
+        # the number rather than being inferable only from a log line.
+        "gap_skipped_pairs":           gap_skipped_pairs,
+        "gap_skipped_pct":             gap_skipped_pct,
         "avg_trade_duration_bars":     avg_trade_duration_bars,
         "sigma_bar_bps":               round(sigma_bar_bps_value, 4) if sigma_bar_bps_value is not None else None,
         "sigma_bar_bps_is_placeholder": sigma_is_placeholder,
