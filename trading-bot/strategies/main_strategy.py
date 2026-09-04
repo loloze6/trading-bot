@@ -69,6 +69,18 @@ class AdvancedStrategy(MainStrategy):
 
         logger.debug(f"✅ AdvancedStrategy initialized (required_bars={self.required_bars})")
 
+    def reset_history(self) -> None:
+        """CUL-271: large-gap segment split. Clears the shared data buffer and
+        both engines' component history so the strategy re-warms from scratch
+        on real post-gap bars, rather than treat a position held across a real
+        market hole as informed by pre-gap history. Called by the trading
+        engine when its gap_policy classifies a gap as "large"; never called
+        when gap_policy is unset (byte-identical to before this method existed)."""
+        self.data_buffer.clear()
+        self.regime_engine.reset_history()
+        self.strategy_engine.reset_history()
+        self._regime_classification = None
+
     def _classify_once(self) -> Tuple[MarketRegime, Dict[str, Any]]:
         """regime_engine.classify() for the CURRENT bar, memoized so is_ready() and
         generate_forecast() agree on the same classification within one bar instead

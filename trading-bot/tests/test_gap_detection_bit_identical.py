@@ -9,27 +9,47 @@ a console warning -- never structured, never counted, never reaching any
 artifact. This closes that gap at the source: `TradingBot._process_symbol_
 candle_completion` (core/trading_bot.py), the SAME callback live trading uses.
 
-Three things are proven here:
+Four things are proven here:
   1. `_check_and_record_gap` unit-level: first candle never flags, an exact-step
      candle never flags, a mismatched delta does -- and never mutates state it
      shouldn't.
-  2. `suppress_allocation_after_gap=True` zeroes allocation_change for the ONE
-     bar immediately following a detected gap, and only that bar -- driven
-     through the real `_process_symbol_candle_completion` with lightweight real
-     collaborators (ForecastManager, MockPortfolioInfo) and mocked I/O boundaries
-     (data_manager, execution_handler, risk_manager, strategy), not through a
-     full backtest, since manufacturing a real data-cache gap on demand isn't
-     reliable.
-  3. FLAG OFF is byte-identical, driven through the real engine end to end
+  2. CUL-271's `gap_policy` tiers -- replacing the single-bar
+     `suppress_allocation_after_gap` this ticket originally shipped with, per
+     the design spec's own Step 1/2 investigation (see core/trading_bot.py's
+     constructor docstring: every strategy component already exposes
+     get_required_periods()/is_ready(), but the LIVE engines actually wired
+     into AdvancedStrategy collapse readiness to one shared warmup value, not a
+     true per-indicator check, and CompositeStrategy's per-indicator pattern is
+     never instantiated in the live path -- so the fixed-tier fallback is what
+     the spec's mechanical rule dictates, not a preference). "ignore" (<=
+     ignore_max_bars) does nothing special; "middle" blocks a NEW entry
+     (flat -> nonzero) until bars_since_gap reaches the strategy's own
+     required_bars, keeping any existing position untouched; "large" forces an
+     immediate flatten (reusing the same direct-execute bypass PR-2's risk-gate
+     kill-switch uses) plus AdvancedStrategy.reset_history() (a real segment
+     split), after which the engine's own pre-existing is_ready() gate
+     withholds new entries for free until re-warmed. Driven through the real
+     `_process_symbol_candle_completion` with lightweight real collaborators
+     (ForecastManager, MockPortfolioInfo, a real int strategy.required_bars)
+     and mocked I/O boundaries, not a full backtest, since manufacturing a real
+     data-cache gap of an exact chosen size on demand isn't reliable.
+  3. No fabricated bars: a missing period is never forward-filled, NaN-padded,
+     or interpolated into the strategy's update stream -- a documented
+     judgment call (see CUL-271's Linear issue) made because 23 heterogeneous
+     components' pandas operations were not written with NaN-handling in mind,
+     and inserting NaNs generically risks silently corrupting an unaudited
+     subset of them. Only real observed bars are ever fed through.
+  4. FLAG OFF is byte-identical, driven through the real engine end to end
      (`core/launcher.py::run_backtest`), same reference window and cache-guard
      convention as tests/test_model_funding_bit_identical.py.
 
-NOT verified this session (flagged for review, not silently assumed): whether a
-REAL gap in the shipped local_data caches actually gets detected end-to-end
-through a full run_backtest() call. The unit-level proof (item 1) and the
-wiring proof below (data_quality key appears when the flag is on) stand in for
-it, but a run against a known-gapped window is the stronger proof and should be
-done before relying on this in the campaign loop.
+VERIFIED this session (2026-09-04, CUL-261 follow-up): a real backtest against
+a genuine gap in `local_data/BTCUSDT_1h.csv` (2018-01-04 03:00->05:00) with
+gap_detection=True correctly detected and recorded it end to end -- see
+CUL-261's Linear issue and PR #142 for the reproduction. gap_policy's own tier
+behavior is proven at the unit level above, not yet re-verified against that
+same real gap; the manufactured-timestamp tests are the evidence for the
+tier logic itself.
 """
 import sys
 from pathlib import Path
@@ -103,21 +123,24 @@ def test_per_symbol_isolation_one_symbols_gap_does_not_flag_the_other():
     assert len(bot.gap_events) == 1 and bot.gap_events[0]["symbol"] == "BTCUSDT"
 
 
-def test_suppress_without_gap_detection_raises_loud():
+def test_gap_policy_without_gap_detection_raises_loud():
+    """CUL-271: gap_policy replaces suppress_allocation_after_gap."""
     with pytest.raises(ValueError, match="requires gap_detection=True"):
-        _bare_bot(gap_detection=False, suppress_allocation_after_gap=True)
+        _bare_bot(gap_detection=False, gap_policy={"ignore_max_bars": 2})
 
 
 def test_gap_detection_off_by_default_state_is_inert():
     bot = _bare_bot()
     assert bot.gap_detection is False
-    assert bot.suppress_allocation_after_gap is False
+    assert bot.gap_policy is None
     assert bot.gap_events == []
+    assert bot._active_gap_tier == {}
 
 
 # ---------------------------------------------------------------------------
-# 2. suppress_allocation_after_gap, driven through the real per-bar method with
-#    lightweight real collaborators + mocked I/O boundaries.
+# 2. CUL-271 gap_policy tiers, driven through the real per-bar method with
+#    lightweight real collaborators (ForecastManager, MockPortfolioInfo,
+#    strategy.required_bars a real int) + mocked I/O boundaries.
 # ---------------------------------------------------------------------------
 
 class _RecordingTracker:
@@ -128,19 +151,25 @@ class _RecordingTracker:
         self.calls.append(kwargs)
 
 
-def _make_bot(*, gap_detection: bool, suppress: bool) -> tuple[TradingBot, _RecordingTracker]:
+def _make_bot(*, gap_detection: bool, gap_policy: dict | None,
+              initial_balance: dict | None = None,
+              timestamps: list | None = None,
+              closes: list | None = None) -> tuple[TradingBot, _RecordingTracker]:
     import logging
 
     data_manager = MagicMock()
     data_manager.candle_builder = MagicMock()
-    df1 = pd.DataFrame({"close": [100.0], "timestamp": [pd.Timestamp("2024-01-01 00:00:00")]})
-    # 5h jump against a 1h expected step -- a real gap, not just "no trade".
-    df2 = pd.DataFrame({"close": [101.0], "timestamp": [pd.Timestamp("2024-01-01 05:00:00")]})
-    data_manager.get_data_history.side_effect = [df1, df2]
+    timestamps = timestamps or [pd.Timestamp("2024-01-01 00:00:00"), pd.Timestamp("2024-01-01 05:00:00")]
+    closes = closes or [100.0, 101.0]
+    data_manager.get_data_history.side_effect = [
+        pd.DataFrame({"close": [c], "timestamp": [t]}) for c, t in zip(closes, timestamps)
+    ]
 
     strategy = MagicMock()
     strategy.update.return_value = None
     strategy.generate_signals.return_value = SimpleNamespace(forecast=10.0)
+    strategy.required_bars = 5  # a real int: gap_policy math compares against it directly
+    strategy.reset_history = MagicMock()
 
     execution_handler = MagicMock()
     execution_handler._execute_portfolio_rebalance.return_value = (True, {})
@@ -148,7 +177,9 @@ def _make_bot(*, gap_detection: bool, suppress: bool) -> tuple[TradingBot, _Reco
     risk_manager = MagicMock()
     risk_manager.approve_allocation_change.return_value = (True, {})
 
-    portfolio_info = MockPortfolioInfo(initial_balance={"USDT": {"free": 10000.0, "locked": 0.0}})
+    portfolio_info = MockPortfolioInfo(
+        initial_balance=initial_balance or {"USDT": {"free": 10000.0, "locked": 0.0}}
+    )
     forecast_manager = ForecastManager()
     tracker = _RecordingTracker()
 
@@ -165,38 +196,115 @@ def _make_bot(*, gap_detection: bool, suppress: bool) -> tuple[TradingBot, _Reco
         candle_interval_seconds=3600,
         symbols=["BTCUSDT"],
         gap_detection=gap_detection,
-        suppress_allocation_after_gap=suppress,
+        gap_policy=gap_policy,
     )
     return bot, tracker
 
 
-def test_suppress_off_allocation_change_nonzero_on_gap_bar():
-    bot, tracker = _make_bot(gap_detection=True, suppress=False)
+def test_1bar_gap_ignore_tier_trading_continues():
+    """1-bar gap (2h delta vs 1h step -> 1 bar missed) is <= ignore_max_bars=2:
+    no special handling, allocation_change stays nonzero exactly like the
+    no-gap-policy baseline."""
+    bot, tracker = _make_bot(
+        gap_detection=True, gap_policy={"ignore_max_bars": 2, "large_min_bars": 5},
+        timestamps=[pd.Timestamp("2024-01-01 00:00:00"), pd.Timestamp("2024-01-01 02:00:00")],
+    )
     bot._process_symbol_candle_completion("BTCUSDT")
     bot._process_symbol_candle_completion("BTCUSDT")
     assert len(tracker.calls) == 2
     assert tracker.calls[1]["allocation_change"] != 0.0
+    assert bot._active_gap_tier == {}  # ignore tier records nothing to act on
 
 
-def test_suppress_on_zeroes_only_the_gap_bar():
-    bot, tracker = _make_bot(gap_detection=True, suppress=True)
+def test_middle_tier_blocks_new_entry_keeps_no_position_flat():
+    """A gap of 3 bars (4h delta) with ignore_max_bars=2, large_min_bars=5 is
+    "middle": flat -> nonzero is a NEW entry and must be blocked to exactly 0.0."""
+    bot, tracker = _make_bot(
+        gap_detection=True, gap_policy={"ignore_max_bars": 2, "large_min_bars": 5},
+        timestamps=[pd.Timestamp("2024-01-01 00:00:00"), pd.Timestamp("2024-01-01 04:00:00")],
+    )
     bot._process_symbol_candle_completion("BTCUSDT")
+    assert bot._active_gap_tier.get("BTCUSDT") is None  # first bar: nothing to compare against yet
     bot._process_symbol_candle_completion("BTCUSDT")
-    assert len(tracker.calls) == 2
-    # First bar has no prior candle to compare against -- never a gap, never
-    # suppressed, must match the suppress=False run's first-bar behavior.
-    assert tracker.calls[0]["allocation_change"] != 0.0
-    # Second bar (the manufactured 5h jump) is suppressed to exactly 0.0.
+    assert bot._active_gap_tier.get("BTCUSDT") == "middle"
     assert tracker.calls[1]["allocation_change"] == 0.0
+    strategy = bot.strategy
+    strategy.reset_history.assert_not_called()  # middle tier never resets history
 
 
-def test_suppress_on_first_bar_is_identical_to_suppress_off_first_bar():
-    """Suppression must never touch a bar that wasn't the gap bar."""
-    bot_off, tracker_off = _make_bot(gap_detection=True, suppress=False)
-    bot_on, tracker_on = _make_bot(gap_detection=True, suppress=True)
-    bot_off._process_symbol_candle_completion("BTCUSDT")
-    bot_on._process_symbol_candle_completion("BTCUSDT")
-    assert tracker_off.calls[0]["allocation_change"] == tracker_on.calls[0]["allocation_change"]
+def test_middle_tier_recovery_after_required_bars():
+    """Once bars_since_gap reaches strategy.required_bars, the middle tier
+    lifts and a new entry is allowed again."""
+    timestamps = [pd.Timestamp("2024-01-01 00:00:00"), pd.Timestamp("2024-01-01 04:00:00")] + [
+        pd.Timestamp("2024-01-01 04:00:00") + pd.Timedelta(hours=h) for h in range(1, 7)
+    ]
+    bot, tracker = _make_bot(
+        gap_detection=True, gap_policy={"ignore_max_bars": 2, "large_min_bars": 50},
+        timestamps=timestamps, closes=[100.0] * len(timestamps),
+    )
+    for _ in range(8):
+        bot._process_symbol_candle_completion("BTCUSDT")
+    # strategy.required_bars=5; by the 5th post-gap real bar the tier must be lifted.
+    assert bot._active_gap_tier.get("BTCUSDT") is None
+    assert tracker.calls[-1]["allocation_change"] != 0.0
+
+
+def test_large_tier_flattens_open_position_and_resets_history():
+    """A 10-bar gap (>= large_min_bars=5) with an existing BTC position must
+    force target_allocation to 0 (flatten) and call strategy.reset_history()
+    -- the segment split."""
+    bot, tracker = _make_bot(
+        gap_detection=True, gap_policy={"ignore_max_bars": 2, "large_min_bars": 5},
+        initial_balance={"USDT": {"free": 5000.0, "locked": 0.0}, "BTC": {"free": 1.0, "locked": 0.0}},
+        timestamps=[pd.Timestamp("2024-01-01 00:00:00"), pd.Timestamp("2024-01-01 11:00:00")],
+        closes=[100.0, 100.0],
+    )
+    bot._process_symbol_candle_completion("BTCUSDT")  # establishes previous_allocation from the seeded BTC balance
+    prev_alloc_before = bot.portfolio_info._calculate_actual_allocation(
+        100.0, bot.portfolio_info.get_account_balance(), 5100.0, "BTCUSDT"
+    )
+    assert prev_alloc_before != 0.0, "test setup must start from a real open position"
+    bot._process_symbol_candle_completion("BTCUSDT")
+    assert bot._active_gap_tier.get("BTCUSDT") == "large"
+    bot.strategy.reset_history.assert_called_once()
+    # The rebalance call closed the existing position: previous_allocation was
+    # the real open position, and allocation_change moved target all the way
+    # to 0 (allocation_change == -previous_allocation exactly proves
+    # target_allocation was forced to 0.0, since calculate_allocation_change
+    # is target - previous). execution_handler is mocked, so it never writes
+    # back into portfolio_info -- postRebalance_* reflects unchanged balances,
+    # not a real fill; that isn't this test's concern.
+    call = tracker.calls[1]
+    assert call["previous_allocation"] != 0.0
+    assert call["allocation_change"] == pytest.approx(-call["previous_allocation"])
+
+
+def test_no_fabricated_bars_added_across_a_gap():
+    """CUL-271 does not synthesize placeholder/interpolated bars for a missing
+    period (judgment call, documented on the Linear issue) -- only real
+    observed bars are ever fed to the strategy. Proven directly: strategy.update
+    is called exactly once per REAL candle, never once per missing bar."""
+    bot, tracker = _make_bot(
+        gap_detection=True, gap_policy={"ignore_max_bars": 2, "large_min_bars": 50},
+        timestamps=[pd.Timestamp("2024-01-01 00:00:00"), pd.Timestamp("2024-01-01 10:00:00")],
+    )
+    bot._process_symbol_candle_completion("BTCUSDT")
+    bot._process_symbol_candle_completion("BTCUSDT")
+    # 9 bars were missing (10h delta - 1h step); if any were fabricated and fed
+    # through, update() would have been called more than twice.
+    assert bot.strategy.update.call_count == 2
+
+
+def test_gap_policy_flag_off_default_is_byte_identical_unit_level():
+    """gap_policy=None (default): no tier classification runs at all, exactly
+    the pre-CUL-271 code path -- _active_gap_tier and _bars_since_gap never
+    populate regardless of how large a gap fires."""
+    bot, tracker = _make_bot(gap_detection=True, gap_policy=None)
+    bot._process_symbol_candle_completion("BTCUSDT")
+    bot._process_symbol_candle_completion("BTCUSDT")
+    assert bot._active_gap_tier == {}
+    assert bot._bars_since_gap == {}
+    assert tracker.calls[1]["allocation_change"] != 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -287,6 +395,6 @@ def test_gap_detection_on_adds_data_quality_key_wiring_only(gap_on, gap_explicit
 
 @pytest.mark.slow
 @_needs_cache
-def test_suppress_without_gap_detection_raises_through_run_backtest(tmp_path_factory):
+def test_gap_policy_without_gap_detection_raises_through_run_backtest(tmp_path_factory):
     with pytest.raises(ValueError, match="requires gap_detection=True"):
-        _run(tmp_path_factory.mktemp("gap_bad"), suppress_allocation_after_gap=True)
+        _run(tmp_path_factory.mktemp("gap_bad"), gap_policy={"ignore_max_bars": 2})

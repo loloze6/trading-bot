@@ -81,6 +81,14 @@ class ConfigDrivenStrategyEngine:
                         raw = apply_transform_pipeline(pd.Series([raw]), tfs, data)
                     self._history[rname][cid].append(raw)
 
+    def reset_history(self) -> None:
+        """CUL-271: large-gap segment split -- drop accumulated per-regime
+        component history so post-gap readiness re-derives from real post-gap
+        bars only. Deques keep their maxlen."""
+        for regime_hist in self._history.values():
+            for h in regime_hist.values():
+                h.clear()
+
     def is_ready(self, regime: MarketRegime) -> bool:
         rkey = regime.value
         if rkey not in self._components:

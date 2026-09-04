@@ -530,7 +530,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  feed_local_storage: bool = True,
                  fetch_interval_seconds: int | None = None,
                  gap_detection: bool = False,
-                 suppress_allocation_after_gap: bool = False):
+                 gap_policy: dict | None = None):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -679,14 +679,21 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         never called, self.gap_events stays empty and unread, metrics.json is
         byte-identical to before this parameter existed. See
         tests/test_gap_detection_bit_identical.py.
-    suppress_allocation_after_gap: further, independent opt-in on top of
-        gap_detection (raises if set without it). Zeroes the allocation_change for
-        the single bar immediately following a detected gap only -- forecast/
-        regime/signal are still computed and recorded normally for that bar, only
-        the rebalance action is skipped. Does NOT reset or re-warm any indicator
-        state (this repo's own prescreen gap policy already tried and rejected a
-        full segment-and-re-warm: it destroyed 91% of a real sample). Default
-        False: byte-identical, same contract as gap_detection above.
+    gap_policy: further, independent opt-in on top of gap_detection (raises if
+        set without it) -- CUL-271, replaces the earlier single-bar
+        suppress_allocation_after_gap. `{"ignore_max_bars": int,
+        "large_min_bars": int, "on_large_gap": "flatten"}`. Classifies each
+        detected gap by how many bars were actually missed: "ignore" (<=
+        ignore_max_bars) does nothing special; "middle" keeps any existing
+        position but blocks a NEW entry until enough real post-gap bars have
+        accumulated to flush the contaminated indicator window; "large" (>=
+        large_min_bars, default the strategy's own required_bars) forces an
+        immediate flatten AND resets the strategy's accumulated history (a real
+        segment split), after which the engine's own pre-existing readiness gate
+        naturally withholds new entries until re-warmed. None (default):
+        byte-identical, same contract as gap_detection above. See
+        core/trading_bot.py's constructor docstring for why a per-indicator
+        variant was investigated and rejected (Step 1/2 of the design spec).
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -797,7 +804,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         model_funding=model_funding,
         risk_gate=risk_gate,
         gap_detection=gap_detection,
-        suppress_allocation_after_gap=suppress_allocation_after_gap,
+        gap_policy=gap_policy,
     )
 
     engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=effective_feed_registry,

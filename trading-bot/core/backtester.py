@@ -74,7 +74,7 @@ class BacktestEngine:
                  model_funding: bool = False,
                  risk_gate=None,
                  gap_detection: bool = False,
-                 suppress_allocation_after_gap: bool = False,
+                 gap_policy: dict | None = None,
                  ):
         if symbols is None: symbols = ["BTCUSDT"]
         # 2026-07-07: bars with timestamp < warmup_cutoff_timestamp still update the
@@ -149,13 +149,15 @@ class BacktestEngine:
         # tests/test_risk_layer_bit_identical.py.
         self.risk_gate = risk_gate
         # CUL-261 / E-039: off-by-default gap detection, threaded straight through to
-        # TradingBot (see core/trading_bot.py for the actual per-candle check and the
-        # suppress_allocation_after_gap validation -- both defaults False leave the
-        # detection hook never entered, byte-identical to before these parameters
-        # existed). Stored here too so _end_of_backtest can decide whether to add a
-        # "data_quality" block without re-deriving the flag from bot.
+        # TradingBot (see core/trading_bot.py for the actual per-candle check).
+        # CUL-271: gap_policy replaces suppress_allocation_after_gap -- see
+        # trading_bot.py's constructor docstring for the tier design and why the
+        # per-indicator alternative was rejected. Both default None/False -> the
+        # detection/policy hooks are never entered, byte-identical to before these
+        # parameters existed. Stored here too so _end_of_backtest can decide
+        # whether to add a "data_quality" block without re-deriving the flag from bot.
         self.gap_detection = gap_detection
-        self.suppress_allocation_after_gap = suppress_allocation_after_gap
+        self.gap_policy = gap_policy
 
         # Initialize Binance client
         self.symbols = symbols
@@ -296,7 +298,7 @@ class BacktestEngine:
             funding_daily=funding_daily,
             risk_gate=self.risk_gate,
             gap_detection=self.gap_detection,
-            suppress_allocation_after_gap=self.suppress_allocation_after_gap,
+            gap_policy=self.gap_policy,
         )
 
         # Wire the candle callback now that bot exists
