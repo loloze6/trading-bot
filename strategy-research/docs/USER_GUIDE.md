@@ -2416,7 +2416,7 @@ by how load-bearing they are, not alphabetically.
 | `tools/run_protocol.py` | Walk-forward executor for stage 8 *(documented above)*. |
 | `tools/verdict_criteria_evaluator.py` | **The K2/C7 machine [verdict](#g-verdict)** — scores a run against its pre-registered `pass_rule` and writes `pass_rule_evaluation.yaml`. Since 2026-07-13 this is the decision authority, not an advisory. |
 | `tools/power_check.py` | The A8.6 a-priori [power check](#g-power-check): episode-clustered, symbol-correlation-aware. Shares `timeframe.py` with the [prescreen](#g-prescreen) so both derive the same block size. |
-| `tools/episode_significance.py` | The A8.5.1a episode-blocked significance path used by the prescreen. |
+| `tools/episode_significance.py` | The A8.5.1a episode-blocked significance path. Used by the prescreen (stage 7), where it **replaces** the headline significance on config opt-in, and since CUL-265 also by `run_protocol.py` (stage 8), where it is computed unconditionally as an **additive** second opinion pooled across a symbol's windows — there it never replaces `median_forecast_return_corr`. |
 | `tools/timeframe.py` | Timeframe arithmetic, **derived rather than enumerated** — the single source of `bars_per_day`. A lookup table here was the 4h `n_eff` bug. |
 | `tools/validate_regime_detector.py` | Stage 9's detector validation; computes the A2.2 metrics. |
 | `tools/retune_regime_detector.py` | One-shot grid search over `(ER_enter, ER_exit, min_dwell)`. Scoring is detector-intrinsic only — the A2.2 retune firewall in tool form. |
