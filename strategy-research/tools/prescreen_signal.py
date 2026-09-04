@@ -859,7 +859,24 @@ def _stationary_block_bootstrap_ic_significance(
     contributes a whole-segment block rather than repeating its bars to fill
     `block_size` -- this keeps the total resampled mass comparable to today's
     (without the cap, a 3-bar segment with block_size 24 would emit a 24-item
-    block, ~8x inflation). `expected_step_by_symbol=None` (or a symbol absent from
+    block, ~8x inflation).
+
+    MULTI-SEGMENT DRAW (CUL-15 red-team fix). With more than one segment, WHICH
+    segments contribute is itself a bootstrap draw: segments are sampled with
+    replacement, length-weighted, until the resampled mass reaches the symbol's
+    real bar count. Visiting every segment deterministically was a defect, not a
+    design: a segment no longer than the block length yields a whole-segment
+    block, which is that segment merely ROTATED, and Spearman is order-invariant
+    -- so such a segment contributed an identical value to every replicate. With
+    all segments short the bootstrap distribution collapsed to a point mass and
+    p_value went to 0.0, scoring pure noise as significant (measured: 30
+    gap-separated 6-bar segments of independent gaussians gave p=0.0 /
+    significant=True; the None path on the same data gave p=0.168). A SINGLE
+    segment keeps the deterministic path -- there is nothing to randomise about
+    segment choice, and it is what keeps the gap-free-with-step case identical to
+    the None path (test_bootstrap_gapfree_unchanged).
+
+    `expected_step_by_symbol=None` (or a symbol absent from
     it) yields one segment spanning the series AND keeps the old uncapped block
     length, which reproduces the pre-gap-aware resampling byte-for-byte -- INCLUDING
     a series shorter than block_size, where the old global wrap emitted block_size
@@ -897,6 +914,42 @@ def _stationary_block_bootstrap_ic_significance(
         rf, rr = [], []
         for f, ret, segments, capped in symbol_arrays.values():
             if not f:
+                continue
+            if capped and len(segments) > 1:
+                # CUL-15 red-team fix: WHICH segments contribute is itself a
+                # bootstrap draw. Visiting every segment deterministically (the
+                # loop below) makes a segment no longer than the block length a
+                # CONSTANT in every replicate -- its whole-segment block is the
+                # segment rotated, and Spearman is order-invariant, so the
+                # rotation is a no-op. With every segment short the bootstrap
+                # distribution collapses to a single point and p_value -> 0.0,
+                # i.e. pure noise scores "significant". Measured before this fix
+                # on 30 gap-separated 6-bar segments of independent gaussians:
+                # p=0.0/significant=True (None path on the same data: p=0.168).
+                # That is the exact direction #50 exists to prevent.
+                #
+                # Segments are drawn WITH REPLACEMENT, length-weighted, until the
+                # resampled mass reaches the symbol's real bar count -- so a
+                # short segment is sometimes drawn twice and sometimes not at
+                # all, which is where the bootstrap variance comes from. Blocks
+                # still never straddle a hole, and mass stays within one block of
+                # the original (test_bootstrap_block_mass_not_inflated).
+                total_len = sum(e - s for s, e in segments)
+                emitted = 0
+                while emitted < total_len:
+                    pick = rng.randrange(total_len)
+                    for seg_start, seg_end in segments:
+                        pick -= seg_end - seg_start
+                        if pick < 0:
+                            break
+                    seg_len = seg_end - seg_start
+                    blk = min(block_size, seg_len)
+                    start = rng.randrange(seg_start, seg_end)
+                    for k in range(blk):
+                        idx = seg_start + ((start - seg_start + k) % seg_len)
+                        rf.append(f[idx])
+                        rr.append(ret[idx])
+                    emitted += blk
                 continue
             for seg_start, seg_end in segments:
                 seg_len = seg_end - seg_start

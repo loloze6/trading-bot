@@ -4220,7 +4220,23 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
     n_trades      = sum((r.get("core") or {}).get("trade_count", 0) for r in results_list)
     median_sharpe = round(statistics.median(sharpes), 4) if sharpes else None
 
-    expectancy   = diag.get("per_trade_expectancy_bps")
+    # CUL-15 red-team fix: the SAME {mean, se, t_stat, n} dict shape CUL-193
+    # fixed at _write_promotion_audit reaches this sibling call site too, and it
+    # was still storing the whole dict in a ledger field every other declaration
+    # types `float | None` (deflate_sharpe.py:788, and this function's own
+    # docstring above). Nothing reads that field arithmetically TODAY, which is
+    # why it never crashed -- but deflate_sharpe.compute_promotion_audit divides
+    # by exactly this quantity (`expectancy_bps / expectancy_se`), and handed the
+    # dict it raises "unsupported operand type(s) for /: 'dict' and 'float'".
+    # The trial ledger is what counts N for the deflated Sharpe, so storing a
+    # dict where a number belongs corrupts the accounting record itself. The
+    # prescreen-stub path (:4866) still writes a bare None, so both shapes must
+    # be handled -- same unwrap as :5330.
+    _exp_block   = diag.get("per_trade_expectancy_bps")
+    if isinstance(_exp_block, dict):
+        expectancy = _exp_block.get("mean")
+    else:
+        expectancy = _exp_block if isinstance(_exp_block, (int, float)) else None
     below_floor  = diag.get("below_floor_pct", 0.0) or 0.0
 
     # A6.2 extension: sparse-trading strategies use expectancy, not Sharpe
