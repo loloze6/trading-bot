@@ -15,16 +15,26 @@ literal dict-construction logic to prove it actually reads a real
 metrics.json shape, not just that the key name appears in source.
 """
 import json
+import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RUN_PROTOCOL_SRC = (REPO_ROOT / "strategy-research" / "tools" / "run_protocol.py").read_text(encoding="utf-8")
 
+# Whitespace-insensitive: this guard must survive a reformat of the alignment
+# padding in the result_entry dict literal, which carries no meaning. Matching
+# the exact spacing would make the test fail on a cosmetic edit while the
+# behaviour it guards is untouched -- a false alarm that teaches people to
+# ignore this test, which is worse than not having it.
+_DATA_QUALITY_FORWARD_RE = re.compile(
+    r'"data_quality"\s*:\s*m\.get\(\s*"data_quality"\s*\)'
+)
+
 
 def test_result_entry_construction_includes_data_quality_key():
     """Source guard: result_entry must read metrics.json's data_quality key.
     Fails if this line is ever removed/renamed without a replacement."""
-    assert '"data_quality":    m.get("data_quality")' in RUN_PROTOCOL_SRC, (
+    assert _DATA_QUALITY_FORWARD_RE.search(RUN_PROTOCOL_SRC), (
         "result_entry no longer forwards metrics.json's data_quality block -- "
         "CUL-261's gap-detection output would silently stop reaching "
         "protocol_summary.json's per-window results again"
