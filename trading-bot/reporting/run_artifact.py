@@ -338,6 +338,74 @@ def build_core(
             post_backtest_cost_check,
         )
 
+    # CUL-272: real, measured counterparts to the two ESTIMATED inputs above.
+    # cost_check/determine_route above are a verbatim port of prescreen's own
+    # logic -- appropriate there, since prescreen never executes a real trade
+    # and has nothing to measure. Once a real backtest has run (always true by
+    # the time build_core is called), re-deriving a theoretical edge/cost from
+    # IC*sigma*sqrt(holding) and cost_model.yaml when the REAL numbers already
+    # exist a few lines above (fees_paid, gross_pnl/net_pnl) is the same
+    # estimate-vs-measurement gap this session already fixed for IC (prescreen
+    # vs backtest corr) and turnover (the sign-flip proxy vs bar_equity).
+    #
+    # Real cost: CompletedTrade.total_commission_percent already sums the
+    # entry+exit commission rates for that one trade, in percent -- averaged
+    # and converted to bps, this is a real per-trade round-trip cost, unit-
+    # compatible with round_trip_cost_bps (both bps-per-trade), no notional
+    # estimation needed.
+    # Real edge: CompletedTrade.profit_loss_percent is the GROSS (pre-
+    # commission) per-trade return -- matching estimated_gross_edge's own
+    # "gross, compared against cost separately" semantics. Net PnL is
+    # deliberately NOT used here: it is already cost-adjusted, so ratio-ing it
+    # against cost again would double-count fees.
+    #
+    # Deliberately NOT the same as strategy-research's per_trade_expectancy_bps
+    # (run_protocol.py::_aggregate_trade_diagnostics, a {mean,se,t_stat,n}
+    # block with real statistical care) -- that lives in strategy-research and
+    # importing it here would invert this repo's one-way dependency direction
+    # (the same reason CUL-262 ported rather than imported). This is a
+    # simpler, trade-count-weighted mean, computed natively from
+    # completed_trades already in scope here. Real, not estimated -- just less
+    # statistically careful than the strategy-research figure.
+    #
+    # ADDITIVE ONLY: post_backtest_cost_check/post_backtest_route above are
+    # UNTOUCHED for byte-identity. These are new, separate "_real" fields.
+    real_round_trip_cost_bps           = None
+    real_gross_edge_bps_per_trade      = None
+    post_backtest_cost_check_real      = None
+    post_backtest_route_real           = None
+    post_backtest_route_real_rationale = None
+    if n > 0:
+        real_round_trip_cost_bps = round(
+            sum(t.total_commission_percent for t in completed_trades) / n * 100, 4
+        )
+        real_gross_edge_bps_per_trade = round(
+            sum(t.profit_loss_percent for t in completed_trades) / n * 100, 4
+        )
+    if (forecast_return_corr is not None
+            and forecast_return_corr_pvalue_block_adjusted is not None
+            and real_round_trip_cost_bps is not None
+            and real_round_trip_cost_bps > 0):
+        safety = float(_load_cost_model().get("safety_factor", 2.0))
+        ratio  = abs(real_gross_edge_bps_per_trade) / real_round_trip_cost_bps
+        post_backtest_cost_check_real = {
+            # Key names match cost_check()'s own return shape (not renamed to
+            # "real_*") so determine_route()'s rationale-string lookups
+            # (cost.get("estimated_gross_edge_bps_per_trade") etc.) resolve
+            # correctly -- these values are REAL/measured despite the
+            # "estimated_" key name inherited from the shared shape.
+            "estimated_gross_edge_bps_per_trade": real_gross_edge_bps_per_trade,
+            "cost_bps_per_trade":                 real_round_trip_cost_bps,
+            "edge_to_cost_ratio":                 round(ratio, 4),
+            "safety_factor_required":             safety,
+            "pass":                               bool(ratio >= safety),
+            "basis":                              "real",
+        }
+        post_backtest_route_real, post_backtest_route_real_rationale = determine_route(
+            forecast_return_corr, forecast_return_corr_pvalue_block_adjusted,
+            post_backtest_cost_check_real,
+        )
+
     return {
         "net_return_pct":              overall.get("[OVERALL ONLY] total_return_pct", 0.0),
         "sharpe":                      overall.get("sharpe_ratio", 0.0),
@@ -359,6 +427,11 @@ def build_core(
         "post_backtest_cost_check":    post_backtest_cost_check,
         "post_backtest_route":         post_backtest_route,
         "post_backtest_route_rationale": post_backtest_route_rationale,
+        "real_round_trip_cost_bps":      real_round_trip_cost_bps,
+        "real_gross_edge_bps_per_trade": real_gross_edge_bps_per_trade,
+        "post_backtest_cost_check_real":      post_backtest_cost_check_real,
+        "post_backtest_route_real":           post_backtest_route_real,
+        "post_backtest_route_real_rationale": post_backtest_route_real_rationale,
     }
 
 

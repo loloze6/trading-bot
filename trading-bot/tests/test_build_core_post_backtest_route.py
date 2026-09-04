@@ -37,12 +37,18 @@ def _bars(forecasts, closes, freq="h", start="2020-01-01"):
     })
 
 
-def _fake_trade(duration_minutes, net_pnl=1.0, gross_pnl=1.5, commission=0.5):
+def _fake_trade(duration_minutes, net_pnl=1.0, gross_pnl=1.5, commission=0.5,
+                 total_commission_percent=0.05, profit_loss_percent=1.5):
     return SimpleNamespace(
         net_profit_loss_absolute=net_pnl,
         profit_loss_absolute=gross_pnl,
         total_commission=commission,
         duration_minutes=duration_minutes,
+        # CUL-272: real-cost fields build_core now reads unconditionally
+        # whenever n > 0 -- absent from a fixture, every existing test here
+        # would AttributeError, not just the new CUL-272 ones.
+        total_commission_percent=total_commission_percent,
+        profit_loss_percent=profit_loss_percent,
     )
 
 
