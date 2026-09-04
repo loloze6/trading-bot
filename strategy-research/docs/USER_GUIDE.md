@@ -647,10 +647,111 @@ deserves an expensive walk-forward backtest.
 
 **Terms used in this block**
 
-**This table is the shared glossary for signal-quality terms across the whole
-pipeline, not just this stage** — Stage 8 (`protocol_execution`) and the
-trading-bot side (`build_core`, `signal_statistics.py`) now compute several of
-these same quantities on real backtest data, ported from the exact functions
+**Read this walkthrough first if these terms are new — it builds each idea on
+the last, with one running example. The table further down is a lookup
+reference once you know the shape of the ideas, not a first introduction.**
+Written 2026-09-04 after a real "I don't get this" pass — if a sentence below
+still assumes something unexplained, that's the doc's fault, flag it.
+
+<details>
+<summary><strong>Plain-language walkthrough — start here</strong></summary>
+
+**1. What a forecast is supposed to mean.** The strategy outputs a number from
+−20 to +20 every bar, called the forecast. It directly sets position size —
+`allocation = forecast ÷ 10` — so a forecast of +10 means "go long, at roughly
+full/leveraged size," and +2 means "go long, small." The intent (this repo's
+own design) is that the forecast is a **confidence-weighted expected move**:
+bigger number = more confident and/or bigger expected price move, in that
+direction. That's a reasonable mental model, but keep reading — the tests
+below check something narrower than that full model.
+
+**2. Correlation — does the forecast relate to what actually happens?**
+Every bar has two numbers: the forecast, and what the price actually did next.
+A **correlation** is a single number, −1 to +1, describing whether those two
+columns move together. +1 = perfectly together, 0 = no relationship at all,
+−1 = perfectly opposite. This codebase calls it **IC** ("information
+coefficient" — trading jargon, means nothing more than "the correlation
+number"). **Important limit:** a plain correlation only asks "does bigger
+generally go with bigger, across many bars" — it does NOT verify that the
+forecast's *exact scaling* is correct (see the box below on Spearman vs
+Pearson). It's necessary evidence the forecast means something; it's not proof
+the forecast is *calibrated*.
+
+> **Two flavors, used in different places, and they check slightly different things:**
+> - **Spearman** (used in prescreen) only cares about *order* — "if I sort
+>   bars by forecast, does that also roughly sort them by outcome?" It is
+>   blind to magnitude: a forecast of 1→1%, 2→1.1%, 100→1.2% would score a
+>   *perfect* Spearman correlation, even though the scaling is nonsense.
+> - **Pearson** (used in trading-bot's `build_core`, `forecast_return_corr`)
+>   cares about a straight-line fit, closer to "does the magnitude roughly
+>   track too" — but it's still an average over every bar, not a check that
+>   any *specific* bar's forecast was well-calibrated.
+
+**3. Is the correlation real, or did we get lucky? (p-value / significance.)**
+A correlation of 0.05 could be a real, if weak, edge — or coincidence. A
+**p-value** answers: "if there were truly *no* relationship at all, how likely
+is a correlation this big by pure chance, given how much data we have?" Low
+(this repo's bar: under 10%) → probably real. High → can't rule out luck.
+
+**4. Counting your evidence honestly (n_eff, "block-adjusted").** The p-value
+formula needs to know how much *independent* evidence you have. Naively
+counting every bar as one independent fact is wrong for markets — an hour's
+price isn't a fresh coin-flip from the hour before, prices drift together.
+Counting raw bars this way overstates your evidence and makes a p-value look
+more confident than it should. The fix: group bars into day-sized chunks
+("blocks") and count *chunks*, not bars — `n_eff = active_bars ÷ block_size`.
+**Worked example:** 240 active bars, block size 24 → naive count says "240
+observations," honest count says `n_eff = 10`. A correlation that looked
+convincing against 240 often looks weak, or not significant at all, against
+10. **This never changes the correlation number itself** — only how much you're
+allowed to trust it. "Gap-aware" block counting additionally refuses to count
+a block that would have to straddle a real hole in the data (a missing hour) —
+that block isn't one real contiguous day, so it doesn't earn a vote.
+
+**5. When the normal test breaks (the bootstrap fallback).** The p-value math
+above needs the forecast to actually *vary* in strength. Some signals only
+ever fire at one exact strength (always +10 or 0, nothing between) — for
+those, the formula is undefined. The fallback: instead of trusting a formula,
+generate many **fake, shuffled** copies of the real data, measure the
+correlation on each fake copy, and compare the real correlation to that pile of
+fakes. If the real one stands out from almost all the fakes, that's evidence
+of a real effect. To keep the fakes realistic (markets aren't shuffled bars,
+adjacent hours move together), whole **contiguous chunks** are shuffled, not
+individual bars — that's the "block" in "block bootstrap." (The bug fixed by
+CUL-270 was exactly here: for a real-data stretch shorter than one chunk,
+there was only one possible chunk to draw — the whole stretch itself — so
+every "fake" turned out identical, and the test falsely called noise "highly
+significant.")
+
+**6. Episodes (A8.5.1a) — for signals that fire in bursts.** If a signal stays
+"on" for 5 bars in a row, that's one opinion that lasted 5 bars, not 5
+independent opinions — counting all 5 separately double-counts the same call.
+An **episode** is one such burst, treated as a single event. This test counts
+episodes, checks whether each one's direction matched what actually happened,
+and asks if the hit rate beats chance — the same "is this real or luck"
+question as step 3, just counted in bursts instead of bars.
+
+**7. Sigma and cost — is the edge even worth trading?** `sigma_bar_bps`: the
+typical size of a price move per bar (up OR down — a volatility measure, not
+a directional one), in **bps** (basis points: 1 bps = 0.01%, so **100 bps =
+1%**). "Sigma ≈ 58 bps" means "a typical hour, this moves about ±0.58%."
+**Cost hurdle:** even a real, statistically significant correlation is
+worthless if the money it implies per trade is smaller than what it costs to
+trade (exchange fees). `edge_to_cost_ratio = estimated_edge ÷ round_trip_cost`,
+required to clear a safety margin (2× by default) before being called worth
+pursuing.
+
+**8. Route — the one-word verdict.** Combines "is there a real signal"
+(steps 2–6) and "does it clear costs" (step 7) into one label: `kill_no_ic`
+(no signal), `refine_inverted_ic` (real signal, backwards), `kill_cost_hurdle`
+/ `refine_cost_hurdle` (real signal, not worth the fees), or a pass. On
+trading-bot (CUL-264) this label is currently informational only — nothing
+acts on it automatically yet.
+
+</details>
+
+The table below is the same terms as a quick-lookup reference — read the
+walkthrough above first if any of these still feel unexplained.
 this stage uses (CUL-262, CUL-264, CUL-266; see Stage 8's own notes). Rather
 than a second table drifting out of sync, both stages point here.
 
