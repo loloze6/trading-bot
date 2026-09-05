@@ -181,3 +181,41 @@ and (4) only then assign "honest" vs "leaky" labels. Run both fixtures before tr
 either assertion — a canary that has never been observed to fail on its own control is not
 yet known to be sensitive, and one whose "honest" case fails on the first run is telling
 you the labels are wrong, not that the pipeline is broken.
+
+---
+
+## L-2026-09-05-A — A declarative control artifact with no reader is not a control
+
+**What happened.** A recurring pattern, five separate instances found in one pass
+(2026-08-24): a schema, a threshold, or a config field gets written — `workflow_artifacts/schemas/*.json`,
+`workflow/stages.yaml`'s `conditions` field, `promotion_audit.schema.json`'s
+declared fields, `campaign_state.yaml` bookkeeping — and treated from then on as
+though writing it were the same as enforcing it. It never was. Confirmed
+independently and separately for the schema case: no code under `workflow/` or
+`tools/` ever loads `workflow_artifacts/schemas/*.json` — the only hits are
+source comments (see `strategy-research/CLAUDE.md`'s own corrected preamble,
+and E-037 finding E037-09). A schema that nothing reads cannot reject a bad
+artifact; it can only look, to a human skimming the repo, like a rule that
+exists.
+
+**Why the reasoning failed.** Declaring the shape of a rule and building the
+seam that checks it against real values are two different acts of work, and
+the first one is far cheaper — a JSON Schema file or a YAML field can be
+written in minutes, wiring a validator into the actual read/write path takes
+longer and touches more code. When both acts produce an artifact that *looks*
+like "the control exists" (a file under `schemas/`, a `conditions:` key in a
+config), the cheap act gets mistaken for the expensive one having happened.
+This is the same class as L-2026-07-26-A (a guard scoped to the wrong unit):
+here the guard isn't scoped wrong, it simply was never built, but the
+declaration alone is convincing enough to be filed as done.
+
+**RULE.** A control (schema, threshold, validation rule) is not "in place"
+until you can point at the specific code line that reads the declared
+artifact and rejects a value that violates it. If asked "is X validated" or
+"is X enforced," grep for a reader before answering yes — a file existing
+under a name like `schemas/` or a field existing in a YAML config is not
+evidence of enforcement, only of intent. Where enforcement genuinely doesn't
+exist yet, say so explicitly at the point of use rather than letting the
+artifact's mere existence stand in for it (this is now stated as a standing
+rule in `strategy-research/CLAUDE.md`: "Schemas are declared but not
+enforced").

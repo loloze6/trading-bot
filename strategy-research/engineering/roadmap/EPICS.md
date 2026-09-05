@@ -26,7 +26,6 @@ epic".
 | [E-018](E-018/EPIC.md) | Near-miss scoreboard | planned | **S1 done 2026-08-23** (`112677e2`) — ranked table over 38 verdicts + a static promotion-read firewall with an injected-violation test. S2 (wire idea-generation read access) awaits **E-035**, its consumer |
 | [E-019](E-019/EPIC.md) | Feature matrix + leakage checks | parked | Blocked on Phase 3 complete |
 | [E-020](E-020/EPIC.md) | Cut per-dispatch codebase context cost (scoped CLAUDE.md, then re-evaluate tree-sitter) | new | S1 — inventory known landmines with file:line refs across both trees |
-| [E-021](E-021/EPIC.md) | Consolidate bug/ticket tracking onto GitHub; narrow Notion's role | new | S1 — joint conversation with Dorian before touching anything he relies on |
 | [E-023](E-023/EPIC.md) | Enable live trading, targeting Kraken (P3/P4/P5 migrated in) | parked | Deliberately unscoped — priority is the research workflow; unpark only alongside a real live-deployment decision |
 | [E-024](E-024/EPIC.md) | Mandatory live-trading safety backstop (kill switch, daily loss limit, flatten-all) | parked | Deliberately unscoped — same reasoning as E-023; per-trade sizing/stops stay in the normal strategy-validation workflow, not this epic |
 | [E-025](E-025/EPIC.md) | Trial-ledger dual-writer merge protocol (mechanics) | planned | S1/S2/S3 done; issue #28's H1-H4 all code-complete as of 2026-08-16 (Jeremy: H1/H3, Dorian: H2/H4); S4 mechanics verified (plain merge conflicts, keep-both is correct; merge=union not adopted — layout-contingent safety + one demonstrated silent scalar-loss mode, does NOT corrupt the file, see EPIC.md log for the correction) — only a real two-sided PR proving it end to end remains before campaigns |
@@ -42,6 +41,7 @@ epic".
 | [E-040](E-040/EPIC.md) | Merge the regime auditor into detector validation | new | **Decided 2026-09-01: real step, mechanical metrics then agent judgment. No ground truth exists, so checks rank: (a) does using the label beat ignoring it (primary), (b) hindsight comparison measuring LAG not correctness — hindsight labeller must never reach a signal, (c) health characteristics.** S1 — S1 — every reader of `regime_audit_decision.yaml` and what each does when it is absent. The A2.2 retune firewall must survive the merge still raising |
 | [E-041](E-041/EPIC.md) | Every feature flag gets an owner and a switch-on criterion | in-progress | **S1+S3 done 2026-09-02: 5 of 8 flags ON** (`bar_equity`, `exclusion_digest_input`, `stale_input_path_fix`, `variant_selection_record`, `schedulability_block`), one commit each, full suite green after every flip. **3 flags are incomplete, not "off by decision"** — each names a piece of work in its own epic: `model_funding` (E-014, unavailable below daily bars), `anti_adjacency_retry` + `variant_anti_adjacency_gate` (**E-036's fix is built and works as designed, but its design was rejected on review — not a build gap**). **S2 — the register file — is the only remaining piece, not yet built** |
 | [E-044](E-044/EPIC.md) | Trade a portfolio of strategies, not one strategy at a time | parked | Deliberately unscoped — increases profitability of an existing edge, cannot create one. Unpark once a strategy is promoted or in holdout. Distinct from E-026 (cross-sectional signal generation, not capital allocation across strategies) |
+| [E-045](https://linear.app/culito/project/e-045-split-docs-into-forced-read-engineering-and-capability-reference-f5ccbab469f1) | Split docs into forced-read, engineering, and capability-reference | new | Not yet characterized — filed as a Linear-only project, no local EPIC.md. Decided 2026-09-05: keep |
 | [E-046](https://linear.app/culito/project/e-046-post-backtest-raw-output-categorized-metrics-gate-specialists-8ffce1e0af7f) | Post-backtest: raw output, categorized metrics, gate, specialist analyzers | new | Jérémy's design, captured verbatim 2026-09-04: separate raw bars/trades output → dedicated step computing categorized metrics reports (profitability, trade efficiency, forecast power, regime power, extensible) → deterministic pass_rule gate → per-category specialist LLM analyzers each opining and proposing new hypotheses. Not scoped or built yet — S1 (characterize) is the first step whenever picked up. E-039's gap-closing work continues in parallel on today's artifacts, written with this future migration in mind |
 
 ## Done
@@ -60,6 +60,8 @@ not archived elsewhere.
 | [E-001](E-001/EPIC.md) | Establish the engineering operational process | done | `25960cac` corrected the Done-when; this file's own dispatch (W26) closes it — see `E-001/EPIC.md` Log for the verification output |
 | [E-013](E-013/EPIC.md) | Split docs/ROADMAP.md — retire the name, graduate the engineering items | done | `cd20e6ec` created the six epics (S2); `cc69410f` (S3, W36) closed it but left six live citations unrepointed; this commit (S4, dispatch W37) reopened and re-closed it — see `E-013/EPIC.md` Log for the repoint and re-verification |
 | [E-022](E-022/EPIC.md) | Automated "what's happening" digest, every 2 days | done | Two real firings verified (2026-08-13 p1786650635663579, 2026-08-14 p1786696390584949); moved off the session-bound workaround onto a proper fresh-session claude.ai routine (`trig_01XUckqVaSTdJ4rjPABhKZWv`) — see `E-022/EPIC.md` Log for the 3 sourcing gaps it self-flagged and what's deferred to a later pass |
+| [E-021](https://linear.app/culito/project/linear-migration-e-021-72e5e89c29ee) | Consolidate bug/ticket tracking | done | **Corrected 2026-09-05**: this row previously described "Consolidate onto GitHub" and state `new` with a joint-conversation next step, months after the actual decision (consolidate onto **Linear**, not GitHub) had already shipped — CUL-206 "GO follow-ons" closed 2026-09-02, Linear project "Linear migration · E-021" Completed. The row pointed at a local `E-021/EPIC.md` that was never created |
+| [E-037](E-037/EPIC.md) | Rationalize the workflow via a USER_GUIDE review | done | **Missing from this file entirely until 2026-09-05** despite the epic being substantially complete — USER_GUIDE.md rewritten as an input/output contract per stage, 43 doc-vs-code findings surfaced and recorded (28 status lines self-corrected `f51c07e3`), four findings graduated into their own epics (E-039, E-040, E-041, E-043). Linear project marked Completed 2026-09-05; only CUL-185 (`_ensure_regime_detector_report` silent-None) remains open under it |
 
 ## State legend
 
@@ -73,7 +75,14 @@ continues as a card reference
 
 **WIP limit (amendment 11): at most 2 epics may be `in-progress` at once**,
 and only via an actual dispatch under the epic — a tree audit crediting
-pre-existing code does not itself count. Currently **2 of 2** slots used — E-031 (S2 done, S3 unbuilt) and E-033 (S1 done, S3 awaits a decision).
+pre-existing code does not itself count.
+**Stale as of 2026-09-05:** this note last said "2 of 2 slots used — E-031
+and E-033" from 2026-08-23; the table has since carried E-039, E-025 (now
+correctly `planned`), and E-041 through `in-progress` states too without
+this note being updated, so it was not tracking the actual count for some
+time. Board pass 2026-09-05 found **4** rows currently `in-progress`
+(E-031, E-033, E-039, E-041) — over the stated limit — and did not resolve
+which two (if any) should yield; flagged here rather than silently picked.
 E-018 was returned to `planned` on 2026-08-23 rather than held `in-progress`: its S1 is
 done and its S2 has no consumer to wire until E-032 exists. `in-progress` means a story is
 dispatched, not that an epic is topical.
