@@ -148,7 +148,25 @@ class SubStrategyComponent(StrategyNode):
         )
 
     def store_raw_forecast(self, forecast) -> int:
-        """Store raw forecast for standardization of forecast output."""
+        """Store raw forecast for standardization of forecast output.
+
+        CUL-273b: nan_policy="propagate_invalid" already holds here with NO
+        code change needed -- unlike RSI/funding-rate/fear-greed (which had an
+        explicit `if pd.isna(x): x = fabricated_default` override to remove),
+        this division has no such override. A NaN stddev_24/close (gap-
+        contaminated bar) already propagates to a NaN raw_forecast naturally
+        through Python/numpy division -- confirmed, not assumed.
+
+        CONFIRMED DEAD CODE as of CUL-273b's investigation: this method has
+        zero call sites anywhere in trading-bot (grepped the full tree). It
+        belongs to CompositeStrategy's superseded standardization path --
+        the real, live ConfigDrivenStrategyEngine/ConfigDrivenRegimeEngine
+        never call generate_forecast()/store_raw_forecast() at all; they call
+        only comp.update()/comp.raw_value() and do their own normalization via
+        apply_transform_pipeline() (registry.py) over self._history, which IS
+        cleared by reset_history(). Kept correct rather than deleted, since
+        removing dead code was out of this ticket's scope -- flagged for a
+        separate cleanup decision."""
         raw_forecast = forecast/(self.data['stddev_24'].iloc[-1] * self.data['close'].iloc[-1])
         self._last_raw_forecast = raw_forecast
 

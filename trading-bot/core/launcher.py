@@ -741,7 +741,21 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         fetch_interval=resolved_fetch_interval,
     )
 
-    strategy = AdvancedStrategy(config_path=config_path)
+    # CUL-273b: wires RollingBuffer's dormant reindex-to-NaN-grid mechanism
+    # (built in CUL-273, previously accepted by AdvancedStrategy's constructor
+    # but never supplied by any real call site). `interval` above is already
+    # the resolved candle interval in seconds for THIS backtest, computed
+    # before this line specifically so it's available here. ignore_max_bars
+    # comes from gap_policy when the caller supplies one; both stay None
+    # (reindex off, byte-identical to before this wiring existed) when
+    # gap_policy is absent -- matches RollingBuffer's own "both required, or
+    # neither" contract.
+    _reindex_ignore_max_bars = (gap_policy or {}).get("ignore_max_bars") if gap_detection else None
+    strategy = AdvancedStrategy(
+        config_path=config_path,
+        candle_interval_seconds=interval,
+        ignore_max_bars=_reindex_ignore_max_bars,
+    )
     stack = launcher._build_mock_stack(
         params, DEFAULT_INITIAL_BALANCE, trades_log_file=trades_log_file
     )
