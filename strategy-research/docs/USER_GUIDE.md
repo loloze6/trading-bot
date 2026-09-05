@@ -665,6 +665,7 @@ deserves an expensive walk-forward backtest.
 | **A6.2** | Rule: deflated Sharpe needs the spread of results across trials, so every evaluation counts as a trial — kills included. |
 | **F5c** | Rule: "the code broke" must never be recorded as "the idea failed". |
 | **#50** | Issue: a forecast/return pair straddling a hole in the data cache is not a real observation. |
+| **bootstrap** (stationary block bootstrap) | A fallback way to get the SAME two outputs as the normal test (a correlation number + a significance verdict), used only when the normal formula can't run at all (a forecast that only ever fires at one exact strength has no variance for the formula to divide by). Works by building many fake, reshuffled copies of the real data (shuffling whole contiguous chunks, not individual bars, so the fakes still look like a plausible market) and checking whether the real correlation stands out from that pile of fakes. Not a different kind of statistic — a different way of confirming the same p-value question when the shortcut formula is unavailable. |
 
 Full text of every amendment code:
 [`AMENDMENTS_01-06.md`](../engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md).
