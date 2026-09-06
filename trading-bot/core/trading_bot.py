@@ -7,6 +7,7 @@ and portfolio rebalancing based on forecast allocations.
 import time
 import datetime
 import logging
+import math
 from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 from performance.metrics import EnhancedPerformanceTracker, CompletedTrade
@@ -251,8 +252,28 @@ class TradingBot:
             signal = self.strategy.generate_signals()
 
             # Get target allocation from forecast
-            
+
             target_allocation = self.forecast_manager.forecast_to_allocation(signal.forecast)
+
+            # CUL-274 (2026-09-06): a NaN forecast is not "no signal" -- that case is
+            # already handled explicitly (generate_signals() returns 0.0 when not ready
+            # or on a caught exception, see strategy_base.py). A NaN reaching here means
+            # a "ready" component silently produced a degenerate value (e.g. 0/0 in a
+            # z-score when a rolling std is exactly 0), which numpy/pandas does not raise
+            # on. Left unchecked, `abs(NaN) != 0.0` is True and every downstream `>`/`<`
+            # risk comparison against NaN is False, so both a risk gate (when configured)
+            # and RiskManager's threshold checks silently "pass" a NaN allocation change
+            # through to a real order request. Raise here instead: caught by this
+            # method's own try/except below, so the practical effect on this bar is the
+            # same as forcing allocation_change=0 (no order sent, position unchanged) --
+            # but logged loudly with a traceback, rather than silently indistinguishable
+            # from a legitimate flat forecast.
+            if math.isnan(target_allocation):
+                raise ValueError(
+                    f"NaN target_allocation for {symbol} at {data_time} "
+                    f"(forecast={signal.forecast!r}) -- refusing to route a NaN "
+                    "allocation into risk approval or order execution."
+                )
 
             # 2026-08-29 (fix/risk-layer): off-by-default portfolio risk gate.
             # Gate None (default) -> risk_extras stays {} and record_state below adds
