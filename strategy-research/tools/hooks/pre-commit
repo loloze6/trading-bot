@@ -38,6 +38,12 @@
 #      secret-scanner into the tracked hook so core.hooksPath ships it alongside the
 #      holdout gate to every clone. Runs first: cheapest, and a leaked credential is the
 #      highest-severity block.
+#      Forbidden-file check is scoped to ADD/MODIFY/COPY (`--diff-filter=ACMR`), not
+#      DELETE (E-006 unblock, 2026-09-09): the rationale above is "blocks the two things
+#      a commit can make PERMANENT" — a deletion of an already-tracked file cannot create
+#      any NEW permanent history, the old blob is already permanent in history either way.
+#      A path-only match (no diff-filter) accidentally blocked pure deletions too, which
+#      made `git rm --cached` on a committed venv/ impossible without --no-verify.
 #   1. Holdout date gate — blocks any commit publishing a date inside the sealed
 #      window 2026-01-01..2026-06-30 (campaign_data_policy.yaml:holdout_range).
 #      Added 2026-07-26 by dispatch W5 after two backtest run directories were found
@@ -50,8 +56,10 @@
 ROOT=$(git rev-parse --show-toplevel) || exit 1
 
 # --- 0. Secret scan -------------------------------------------------------------
-# Forbidden files by path (secrets/venv policy).
-for f in $(git diff --cached --name-only); do
+# Forbidden files by path (secrets/venv policy). --diff-filter=ACMR: only additions,
+# modifications, copies and renames can introduce NEW permanent content; a pure
+# deletion (D) cannot, so it does not need this override (E-006, 2026-09-09).
+for f in $(git diff --cached --diff-filter=ACMR --name-only); do
     case "$f" in
         .env|*.env|venv/*|*.key)
             echo "COMMIT BLOCKED: refusing to commit '$f' (secrets/venv policy)." >&2
