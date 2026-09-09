@@ -67,6 +67,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import run_phase1_research as orch  # noqa: E402  (path insert must precede this)
+import campaign_lock  # noqa: E402  (E-011 S1b, single-writer campaign launch lock)
 import record_schema  # noqa: E402  (closed record schema, see _save_queue)
 import verdict_criteria_evaluator as vce  # noqa: E402  (G6, see _save_queue)
 from setup_run import setup_run  # noqa: E402
@@ -2412,4 +2413,18 @@ if __name__ == "__main__":
         if not resume_paused_entry(_load_queue()):
             sys.exit(1)
 
-    run_forever(once=args.once)
+    # E-011 S1b: only one real campaign run_forever() loop may run at a time
+    # on a shared host (--dry-run and `register` never reach this point, so
+    # they are correctly never gated by it). See tools/campaign_lock.py for
+    # the design and why this is deliberately not full concurrent-write
+    # safety (that's E-051).
+    lock_path = campaign_lock.lock_path_for(orch.CAMPAIGN_STATE_PATH)
+    try:
+        campaign_lock.acquire(lock_path)
+    except campaign_lock.CampaignLockHeld as exc:
+        print(f"ERROR: {exc}")
+        sys.exit(1)
+    try:
+        run_forever(once=args.once)
+    finally:
+        campaign_lock.release(lock_path)
