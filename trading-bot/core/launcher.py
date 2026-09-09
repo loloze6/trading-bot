@@ -50,10 +50,13 @@ class TradingParams:
     # (both _read_trading_params and run_backtest do this) unless a caller passes
     # an explicit commission_rate override, which always wins (prior behavior).
     market_type: str = "margin"
-    # Flat basis-point slippage resolved from the same cost_model.json lookup,
-    # threaded into MockExecutionHandler. Default 0.0 -- byte-identical to
-    # before this field existed (price = close exactly).
-    slippage_bps: float = 0.0
+    # NOTE (E-010 S3, 2026-09-10): there is deliberately no `slippage_bps` field
+    # here anymore. Real per-symbol slippage calibration means a single flat
+    # number can't describe a (possibly multi-symbol) run -- MockExecutionHandler
+    # resolves slippage_bps itself, per SYMBOL, at fill time, from
+    # config/cost_model.json keyed on `exchange`/`market_type` above (see
+    # execution/execution_handler.py::MockExecutionHandler._resolve_slippage_bps).
+    # `exchange`/`market_type` are all this dataclass needs to carry.
 
 
 @dataclass
@@ -205,7 +208,9 @@ class Launcher:
         # guessed fee -- this IS the venue-tradability check for cost-model
         # purposes (config/cost_model.py).
         market_type = self.config.get('trading', 'market_type', 'margin')
-        fee_bps, slippage_bps = resolve_cost_model(exchange, market_type)
+        # symbol=None: only fee_bps is needed here -- slippage_bps is resolved
+        # per-symbol at fill time by MockExecutionHandler itself (E-010 S3).
+        fee_bps, _slippage_table = resolve_cost_model(exchange, market_type)
         return TradingParams(
             symbols=self.config.get('trading', 'symbols', ['BTCUSDT']),
             interval=parse_interval_seconds(
@@ -219,7 +224,6 @@ class Launcher:
             exchange=exchange,
             fetch_interval=fetch_interval,
             market_type=market_type,
-            slippage_bps=slippage_bps,
         )
 
     def _build_mock_stack(
@@ -228,6 +232,7 @@ class Launcher:
         initial_balance: int = DEFAULT_INITIAL_BALANCE,
         with_state_tracker: bool = True,
         trades_log_file: Optional[str] = None,
+        slippage_override: float | dict | None = None,
     ) -> MockStack:
         risk_manager, forecast_manager, risk_gate = self._build_risk_and_forecast_managers()
 
@@ -266,7 +271,9 @@ class Launcher:
         execution_handler = MockExecutionHandler(
             performance_tracker=performance_tracker,
             portfolio_info=portfolio_info,
-            slippage_bps=params.slippage_bps,
+            exchange=params.exchange,
+            market_type=params.market_type,
+            slippage_override=slippage_override,
         )
         return MockStack(
             data_manager=data_manager,
@@ -378,6 +385,20 @@ class Launcher:
 
         stack = self._build_mock_stack(params, initial_balance)
 
+        # E-010 S3 / CUL-55-class provenance fold: fold the effective cost
+        # model into run identity, same pattern as model_funding/risk_gate
+        # (see BacktestEngine._end_of_backtest). symbol=None: the whole
+        # per-symbol slippage table is what's actually in effect for this run
+        # (this path is not test-override-aware -- simulate() never accepts
+        # cost_model_override, only run_backtest() does).
+        _fee_bps, _slippage_table = resolve_cost_model(params.exchange, params.market_type)
+        cost_model_provenance = {
+            "exchange": params.exchange,
+            "market_type": params.market_type,
+            "fee_bps": _fee_bps,
+            "slippage_bps": _slippage_table,
+        }
+
         bot = BacktestEngine(
             data_manager=stack.data_manager,
             strategy=strategy,
@@ -395,6 +416,7 @@ class Launcher:
             initial_capital=initial_balance,
             exchange=params.exchange,
             risk_gate=stack.risk_gate,
+            cost_model_provenance=cost_model_provenance,
         )
 
         try:
@@ -706,12 +728,18 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         defaulting -- that raise IS this backtest's venue-tradability check for cost
         purposes; no separate check is layered on top. See tests/test_cost_model.py.
     cost_model_override: test/research-only full-or-partial override of the resolved
-        (fee_bps, slippage_bps) pair for this run, bypassing cost_model.json for
-        whichever of "fee_bps"/"slippage_bps" keys it supplies (the other falls back to
-        the real resolved value). Defaults to None, which changes nothing -- byte-
-        identical to before this parameter existed. Exists so a test can exercise a
-        nonzero slippage_bps for a venue whose committed cost_model.json entry is 0,
-        without touching that file. Never used by production callers. See
+        cost model for this run, bypassing cost_model.json for whichever of
+        "fee_bps"/"slippage_bps" keys it supplies (the other falls back to the real
+        resolved value). Defaults to None, which changes nothing -- byte-identical to
+        before this parameter existed. "fee_bps" is a flat float, same as always.
+        "slippage_bps" (E-010 S3, 2026-09-10: real per-symbol slippage is now the
+        shipped default, not 0) may be either a flat float, applied uniformly to
+        every symbol this handler ever trades with no fallback logging (a deliberate
+        override, not a calibration gap), or a dict replacing cost_model.json's
+        per-symbol table wholesale (same "default"-key fallback + logging behavior
+        as the real table). Threaded straight into MockExecutionHandler's
+        slippage_override (see execution/execution_handler.py) -- resolved per
+        SYMBOL at fill time, not upfront. Never used by production callers. See
         tests/test_cost_model.py.
     """
     from data.feed_registry import FEED_REGISTRY
@@ -747,16 +775,23 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         market_type if market_type is not None
         else launcher.config.get('trading', 'market_type', 'margin')
     )
-    _resolved_fee_bps, _resolved_slippage_bps = resolve_cost_model(
+    # symbol=None: only fee_bps is needed for resolved_commission_rate below --
+    # slippage_bps is resolved per-symbol at fill time by MockExecutionHandler
+    # itself (E-010 S3). _raw_slippage_table is the whole per-symbol table,
+    # unresolved to this run's one symbol -- kept only for the provenance fold
+    # below (or replaced wholesale by cost_model_override's own 'slippage_bps'
+    # key, same as before this dataclass restructuring).
+    _resolved_fee_bps, _raw_slippage_table = resolve_cost_model(
         resolved_exchange, resolved_market_type
     )
     if cost_model_override is not None:
         _resolved_fee_bps = cost_model_override.get('fee_bps', _resolved_fee_bps)
-        _resolved_slippage_bps = cost_model_override.get('slippage_bps', _resolved_slippage_bps)
+    _slippage_override = (
+        cost_model_override.get('slippage_bps') if cost_model_override is not None else None
+    )
     resolved_commission_rate = (
         commission_rate if commission_rate is not None else _resolved_fee_bps / 10000
     )
-    resolved_slippage_bps = _resolved_slippage_bps
     if fetch_interval_seconds is not None:
         resolved_fetch_interval = fetch_interval_seconds
     else:
@@ -773,12 +808,22 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         exchange=resolved_exchange,
         fetch_interval=resolved_fetch_interval,
         market_type=resolved_market_type,
-        slippage_bps=resolved_slippage_bps,
     )
+    # E-010 S3 / CUL-55-class provenance fold (see BacktestEngine._end_of_backtest):
+    # what's actually in effect for this run's slippage -- the override if the
+    # caller supplied one for this test/research run, else the real committed
+    # cost_model.json table.
+    _cost_model_provenance = {
+        "exchange": resolved_exchange,
+        "market_type": resolved_market_type,
+        "fee_bps": _resolved_fee_bps,
+        "slippage_bps": _slippage_override if _slippage_override is not None else _raw_slippage_table,
+    }
 
     strategy = AdvancedStrategy(config_path=config_path)
     stack = launcher._build_mock_stack(
-        params, DEFAULT_INITIAL_BALANCE, trades_log_file=trades_log_file
+        params, DEFAULT_INITIAL_BALANCE, trades_log_file=trades_log_file,
+        slippage_override=_slippage_override,
     )
     # fix/risk-layer, PR-1: risk_controls is a FULL-REPLACEMENT override of the
     # config.json-derived gate in the stack. None -> keep the config-derived gate
@@ -838,6 +883,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         drop_feeds=drop_feeds,
         model_funding=model_funding,
         risk_gate=risk_gate,
+        cost_model_provenance=_cost_model_provenance,
     )
 
     engine.load_data(start_date=fetch_start, end_date=end, extra_feeds=effective_feed_registry,

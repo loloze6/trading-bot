@@ -73,6 +73,7 @@ class BacktestEngine:
                  drop_feeds: list[str] | None = None,
                  model_funding: bool = False,
                  risk_gate=None,
+                 cost_model_provenance: dict | None = None,
                  ):
         if symbols is None: symbols = ["BTCUSDT"]
         # 2026-07-07: bars with timestamp < warmup_cutoff_timestamp still update the
@@ -146,6 +147,20 @@ class BacktestEngine:
         # _end_of_backtest. See risk/portfolio_risk_gate.py and
         # tests/test_risk_layer_bit_identical.py.
         self.risk_gate = risk_gate
+        # 2026-09-10 (E-010 S3): the effective (exchange, market_type, fee_bps,
+        # slippage_bps table) cost model actually used for this run's fills --
+        # folded into run identity by _end_of_backtest below, same CUL-55-class
+        # defect class as model_funding above (#54): two runs sharing
+        # config_sha256/data_sha256/git_sha could otherwise return different
+        # economics purely because cost_model.json (or a cost_model_override)
+        # differed between them, with no way to tell from the manifest. UNLIKE
+        # model_funding/risk_gate, this is not an optional off-by-default toggle
+        # -- a cost model is resolved for every run, always -- so the fold in
+        # _end_of_backtest is unconditional on self.cost_model_provenance being
+        # non-None, not gated behind a separate enable flag. None (a caller that
+        # doesn't pass it, e.g. a test-only engine construction) skips the fold
+        # entirely -- manifest.json unchanged for that caller.
+        self.cost_model_provenance = cost_model_provenance
 
         # Initialize Binance client
         self.symbols = symbols
@@ -467,6 +482,24 @@ class BacktestEngine:
             _provenance_config = {
                 **_provenance_config,
                 "fetch_interval_seconds": self.data_manager.fetch_interval_seconds,
+            }
+
+        # E-010 S3 (2026-09-10): fold the effective cost model into run identity
+        # -- the CUL-55-class gap this feature itself had left open. Unlike the
+        # folds above, this is NOT gated behind an off-by-default flag: a cost
+        # model is resolved for every backtest, always, so a caller that passes
+        # cost_model_provenance always gets the fold (see core/launcher.py's two
+        # BacktestEngine call sites, both of which always pass it). Same
+        # fail-loud collision guard as the folds above.
+        if self.cost_model_provenance is not None:
+            if "cost_model" in _provenance_config:
+                raise ValueError(
+                    "strategy config already carries a cost_model key; provenance "
+                    "fold would silently overwrite it -- resolve the collision explicitly"
+                )
+            _provenance_config = {
+                **_provenance_config,
+                "cost_model": self.cost_model_provenance,
             }
 
         results_root = (

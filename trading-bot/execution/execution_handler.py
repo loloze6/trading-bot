@@ -1,5 +1,6 @@
 from binance.client import Client
 from config.settings import API_KEY, API_SECRET, USE_TESTNET
+from config.cost_model import resolve_cost_model
 from time import time, sleep
 import logging
 from typing import Dict, List, Optional, Union, Tuple
@@ -279,16 +280,41 @@ class ExecutionHandler(BaseExecutionHandler):
 
 class MockExecutionHandler(BaseExecutionHandler):
 
-    def __init__(self, performance_tracker=None, portfolio_info=None, slippage_bps: float = 0.0):
+    def __init__(self, performance_tracker=None, portfolio_info=None,
+                 exchange: str = "binance", market_type: str = "margin",
+                 slippage_override: float | dict | None = None,
+                 cost_model_path: str | None = None):
         """
-        slippage_bps: flat basis-point slippage applied against the trade direction
-        at fill time (E-010, 2026-09-09 design) -- buys fill above the bar close,
-        sells below it; closing a LONG is economically a SELL (price down) and
-        closing a SHORT is a buy-to-cover (price down's opposite -- price up).
-        Resolved from config/cost_model.json's `slippage_bps` entry for the run's
-        (exchange, market_type) -- see core/launcher.py's TradingParams and
-        _build_mock_stack. Defaults to 0.0, byte-identical to before this
-        parameter existed (price = close exactly, no adjustment).
+        Applies flat basis-point slippage against the trade direction at fill
+        time (E-010) -- buys fill above the bar close, sells below it; closing
+        a LONG is economically a SELL (price down) and closing a SHORT is a
+        buy-to-cover (price down's opposite -- price up).
+
+        S3 (2026-09-10, "slippage becomes on-by-default, real per-symbol
+        calibration"): slippage is no longer a single flat number threaded in
+        at construction. A multi-symbol run needs a DIFFERENT bps value per
+        trade's symbol (BTCUSDT vs ETHUSDT vs ...), so this handler resolves
+        slippage_bps per trade, at fill time, from config/cost_model.json's
+        (exchange, market_type, symbol) lookup -- see
+        config/cost_model.py::resolve_cost_model and _resolve_slippage_bps
+        below. exchange/market_type identify which cost_model.json entry to
+        read; they default to "binance"/"margin", matching TradingParams' own
+        defaults.
+
+        slippage_override: test/research-only full-or-partial bypass of
+        cost_model.json for this handler's slippage resolution (threaded from
+        run_backtest's own cost_model_override -- see core/launcher.py).
+        A flat float applies uniformly to every symbol with no fallback
+        logging (an explicit deliberate override, not a calibration gap).
+        A dict replaces cost_model.json's per-symbol table wholesale for the
+        fill-time lookup -- same "default"-key fallback + logging behavior as
+        the real table. None (default) reads the real committed
+        cost_model.json. Never set by production callers.
+
+        cost_model_path: test-only override of the cost_model.json path used
+        at fill time (lets a fixture-backed handler avoid touching the
+        committed file). None (default) -> the real committed
+        config/cost_model.json.
 
         This is the single seam: the adjusted `price` computed here flows to BOTH
         downstream consumers (self.performance_tracker.record_trade and, via
@@ -298,13 +324,49 @@ class MockExecutionHandler(BaseExecutionHandler):
         directly -- that would double-apply it or let the two paths disagree.
         """
         super().__init__(performance_tracker=performance_tracker, portfolio_info=portfolio_info)
-        self.slippage_bps = slippage_bps
+        self.exchange = exchange
+        self.market_type = market_type
+        self.slippage_override = slippage_override
+        self.cost_model_path = cost_model_path
+
+    def _resolve_slippage_bps(self, symbol: str) -> float:
+        """Resolve this trade's slippage_bps, logging loudly if a per-symbol
+        calibration is missing and the "default" fallback fires -- per S3's
+        explicit requirement that a fallback never silently read as a
+        calibrated number. See config/cost_model.py::resolve_cost_model."""
+        if self.slippage_override is not None:
+            if isinstance(self.slippage_override, dict):
+                table = self.slippage_override
+                if symbol in table:
+                    return float(table[symbol])
+                value = float(table["default"])
+                logger.warning(
+                    f"⚠ SLIPPAGE FALLBACK (override table) │ {symbol} │ "
+                    f"{self.exchange}/{self.market_type}: no per-symbol override "
+                    f"entry, using default={value} bps -- not a calibrated "
+                    f"number for {symbol}"
+                )
+                return value
+            return float(self.slippage_override)
+
+        kwargs = {"path": self.cost_model_path} if self.cost_model_path else {}
+        _fee_bps, slippage_bps, used_fallback = resolve_cost_model(
+            self.exchange, self.market_type, symbol=symbol, **kwargs
+        )
+        if used_fallback:
+            logger.warning(
+                f"⚠ SLIPPAGE FALLBACK │ {symbol} │ {self.exchange}/{self.market_type}: "
+                f"no calibrated per-symbol entry in cost_model.json, using "
+                f"default={slippage_bps} bps -- not a calibrated number for {symbol}"
+            )
+        return slippage_bps
 
     def open_long_position(self, symbol, quantity, trade_type, data, signal=None,
                            total_portfolio_value=None, balances=None) -> tuple[bool, dict]:
         try:
             # A BUY -- buyer pays MORE (slippage_bps=0 -> price unchanged, byte-identical).
-            price = data['close'].iloc[-1] * (1 + self.slippage_bps / 10000)
+            slippage_bps = self._resolve_slippage_bps(symbol)
+            price = data['close'].iloc[-1] * (1 + slippage_bps / 10000)
             logger.debug(f"🟢 MOCK BUY │ {symbol} │ {quantity:.6f} @ ${price:.2f} │ Cost: ${quantity * price:.2f}")
             self.executed_orders_counter += 1
             if self.performance_tracker:
@@ -318,7 +380,8 @@ class MockExecutionHandler(BaseExecutionHandler):
                             total_portfolio_value=None, balances=None) -> tuple[bool, dict]:
         try:
             # A SELL -- seller receives LESS (slippage_bps=0 -> price unchanged).
-            price = data['close'].iloc[-1] * (1 - self.slippage_bps / 10000)
+            slippage_bps = self._resolve_slippage_bps(symbol)
+            price = data['close'].iloc[-1] * (1 - slippage_bps / 10000)
             logger.debug(f"🔴 MOCK SELL │ {symbol} │ {quantity:.6f} @ ${price:.2f} │ Value: ${abs(quantity) * price:.2f}")
             self.executed_orders_counter += 1
             if self.performance_tracker:
@@ -338,15 +401,16 @@ class MockExecutionHandler(BaseExecutionHandler):
             close = data['close'].iloc[-1]
             b = balances[symbol]
             position = b.get('free', 0.0) - b.get('locked', 0.0)
+            slippage_bps = self._resolve_slippage_bps(symbol)
             # Closing a LONG (position > 0) is economically a SELL -- price down,
             # same adjustment as open_short_position. Closing a SHORT (position < 0)
             # is a buy-to-cover -- price up, same adjustment as open_long_position.
             # position == 0 (nothing to close) leaves price unadjusted -- unreachable
             # in practice since callers only invoke close_position on a nonzero book.
             if position > 0:
-                price = close * (1 - self.slippage_bps / 10000)
+                price = close * (1 - slippage_bps / 10000)
             elif position < 0:
-                price = close * (1 + self.slippage_bps / 10000)
+                price = close * (1 + slippage_bps / 10000)
             else:
                 price = close
             logger.debug(f"⚪ MOCK CLOSE │ {symbol} │ {position:.6f} @ ${price:.2f} │ Value: ${position * price:.2f}")

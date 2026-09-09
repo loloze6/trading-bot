@@ -38,15 +38,42 @@ from execution.portfolio_info import MockPortfolioInfo  # noqa: E402
 def cost_model_path(tmp_path):
     path = tmp_path / "cost_model.json"
     path.write_text(json.dumps({
-        "binance": {"margin": {"fee_bps": 10, "slippage_bps": 0}},
-        "kraken": {"futures": {"fee_bps": 5, "slippage_bps": 0}},
+        "binance": {"margin": {"fee_bps": 10, "slippage_bps": {"default": 1.5, "BTCUSDT": 1.0}}},
+        "kraken": {"futures": {"fee_bps": 5, "slippage_bps": {"default": 7.5, "BTCUSD": 2.5}}},
     }))
     return str(path)
 
 
-def test_resolves_configured_combination(cost_model_path):
-    assert resolve_cost_model("binance", "margin", path=cost_model_path) == (10.0, 0.0)
-    assert resolve_cost_model("kraken", "futures", path=cost_model_path) == (5.0, 0.0)
+def test_resolves_configured_combination_raw_table(cost_model_path):
+    """symbol=None returns the raw per-symbol slippage table, unresolved."""
+    assert resolve_cost_model("binance", "margin", path=cost_model_path) == (
+        10.0, {"default": 1.5, "BTCUSDT": 1.0},
+    )
+    assert resolve_cost_model("kraken", "futures", path=cost_model_path) == (
+        5.0, {"default": 7.5, "BTCUSD": 2.5},
+    )
+
+
+def test_resolves_per_symbol_slippage_no_fallback(cost_model_path):
+    """A symbol with an explicit table entry resolves to it exactly, with
+    used_fallback=False."""
+    assert resolve_cost_model("binance", "margin", symbol="BTCUSDT", path=cost_model_path) == (
+        10.0, 1.0, False,
+    )
+    assert resolve_cost_model("kraken", "futures", symbol="BTCUSD", path=cost_model_path) == (
+        5.0, 2.5, False,
+    )
+
+
+def test_resolves_per_symbol_slippage_uses_default_fallback(cost_model_path):
+    """A symbol absent from the table resolves to "default" with
+    used_fallback=True -- the conservative, loudly-logged path (S3)."""
+    assert resolve_cost_model("binance", "margin", symbol="ETHUSDT", path=cost_model_path) == (
+        10.0, 1.5, True,
+    )
+    assert resolve_cost_model("kraken", "futures", symbol="AVAXUSD", path=cost_model_path) == (
+        5.0, 7.5, True,
+    )
 
 
 def test_unconfigured_exchange_raises_loud(cost_model_path):
@@ -71,10 +98,16 @@ def test_unknown_cost_model_error_is_a_key_error(cost_model_path):
 
 def test_committed_cost_model_json_resolves_the_ship_time_entries():
     """The real, tracked config/cost_model.json (no path override) -- pins the
-    2026-09-09 ratified ship-time values so an accidental edit is caught here,
-    not only by the slow bit-identity backtest."""
-    assert resolve_cost_model("binance", "margin") == (10.0, 0.0)
-    assert resolve_cost_model("kraken", "futures") == (5.0, 0.0)
+    2026-09-10 ratified S3 real-calibration ship-time values so an accidental
+    edit is caught here, not only by the slow bit-identity backtest."""
+    assert resolve_cost_model("binance", "margin", symbol="BTCUSDT") == (10.0, 1.0, False)
+    assert resolve_cost_model("binance", "margin", symbol="ETHUSDT") == (10.0, 1.5, False)
+    assert resolve_cost_model("binance", "margin", symbol="SOMECOIN") == (10.0, 1.5, True)
+    assert resolve_cost_model("kraken", "futures", symbol="BTCUSD") == (5.0, 2.5, False)
+    assert resolve_cost_model("kraken", "futures", symbol="ETHUSD") == (5.0, 4.0, False)
+    assert resolve_cost_model("kraken", "futures", symbol="AVAXUSD") == (5.0, 7.5, False)
+    assert resolve_cost_model("kraken", "futures", symbol="SOLUSD") == (5.0, 7.5, False)
+    assert resolve_cost_model("kraken", "futures", symbol="SOMECOIN") == (5.0, 7.5, True)
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +125,7 @@ def _bar(close=CLOSE):
 
 def test_open_long_fills_above_close():
     """A BUY: buyer pays MORE."""
-    handler = MockExecutionHandler(slippage_bps=SLIPPAGE_BPS)
+    handler = MockExecutionHandler(slippage_override=SLIPPAGE_BPS)
     success, debug = handler.open_long_position(
         symbol="BTCUSDT", quantity=1.0, trade_type="LONG", data=_bar(),
     )
@@ -102,7 +135,7 @@ def test_open_long_fills_above_close():
 
 def test_open_short_fills_below_close():
     """A SELL: seller receives LESS."""
-    handler = MockExecutionHandler(slippage_bps=SLIPPAGE_BPS)
+    handler = MockExecutionHandler(slippage_override=SLIPPAGE_BPS)
     success, debug = handler.open_short_position(
         symbol="BTCUSDT", quantity=-1.0, trade_type="SHORT", data=_bar(),
     )
@@ -112,7 +145,7 @@ def test_open_short_fills_below_close():
 
 def test_close_long_position_fills_below_close():
     """Closing a LONG (free > locked, position > 0) is economically a SELL."""
-    handler = MockExecutionHandler(slippage_bps=SLIPPAGE_BPS)
+    handler = MockExecutionHandler(slippage_override=SLIPPAGE_BPS)
     balances = {"BTCUSDT": {"free": 1.0, "locked": 0.0}}
     success, debug = handler.close_position(symbol="BTCUSDT", data=_bar(), balances=balances)
     assert success
@@ -121,17 +154,18 @@ def test_close_long_position_fills_below_close():
 
 def test_close_short_position_fills_above_close():
     """Closing a SHORT (locked > free, position < 0) is a buy-to-cover."""
-    handler = MockExecutionHandler(slippage_bps=SLIPPAGE_BPS)
+    handler = MockExecutionHandler(slippage_override=SLIPPAGE_BPS)
     balances = {"BTCUSDT": {"free": 0.0, "locked": 1.0}}
     success, debug = handler.close_position(symbol="BTCUSDT", data=_bar(), balances=balances)
     assert success
     assert debug["price"] == pytest.approx(CLOSE + _ADJ) == pytest.approx(50025.0)
 
 
-def test_zero_slippage_is_byte_identical_to_bare_close():
-    """slippage_bps=0.0 (the default) must reproduce price == close exactly,
-    not merely approximately -- the bit-identity contract for this feature."""
-    handler = MockExecutionHandler()  # slippage_bps defaults to 0.0
+def test_zero_slippage_override_is_byte_identical_to_bare_close():
+    """slippage_override=0.0 (an explicit override, not the default -- see S3
+    below) must reproduce price == close exactly, not merely approximately --
+    proves the price-adjustment formula itself is a true no-op at zero."""
+    handler = MockExecutionHandler(slippage_override=0.0)
     _, long_debug = handler.open_long_position(
         symbol="BTCUSDT", quantity=1.0, trade_type="LONG", data=_bar(),
     )
@@ -144,6 +178,77 @@ def test_zero_slippage_is_byte_identical_to_bare_close():
     assert long_debug["price"] == CLOSE
     assert short_debug["price"] == CLOSE
     assert close_debug["price"] == CLOSE
+
+
+# ---------------------------------------------------------------------------
+# S3 (2026-09-10): real per-symbol slippage is now the DEFAULT (no override
+# given) -- resolved from the real committed config/cost_model.json.
+# ---------------------------------------------------------------------------
+
+def test_default_construction_resolves_real_btcusdt_slippage():
+    """No override given: BTCUSDT (binance/margin, this handler's own
+    defaults) resolves to the real committed 1 bps -- NOT zero. This is the
+    declared default-behavior change (S3): a bare MockExecutionHandler() no
+    longer reproduces price == close."""
+    handler = MockExecutionHandler()
+    _, debug = handler.open_long_position(
+        symbol="BTCUSDT", quantity=1.0, trade_type="LONG", data=_bar(),
+    )
+    expected_adj = CLOSE * 1.0 / 10000
+    assert debug["price"] == pytest.approx(CLOSE + expected_adj)
+    assert debug["price"] != CLOSE
+
+
+def test_unlisted_symbol_falls_back_and_logs_warning(caplog):
+    """A symbol with no cost_model.json entry for this (exchange, market_type)
+    resolves to the "default" fallback AND logs a warning naming the symbol --
+    per S3's explicit requirement that a fallback never silently read as a
+    calibrated number."""
+    import logging as _logging
+    handler = MockExecutionHandler()  # binance/margin
+    with caplog.at_level(_logging.WARNING, logger="trading_bot"):
+        _, debug = handler.open_long_position(
+            symbol="DOGEUSDT", quantity=1.0, trade_type="LONG", data=_bar(),
+        )
+    expected_adj = CLOSE * 1.5 / 10000  # binance/margin's "default" = 1.5
+    assert debug["price"] == pytest.approx(CLOSE + expected_adj)
+    fallback_warnings = [r for r in caplog.records if "FALLBACK" in r.message and "DOGEUSDT" in r.message]
+    assert fallback_warnings, (
+        f"Expected a fallback warning naming DOGEUSDT; got log messages: "
+        f"{[r.message for r in caplog.records]}"
+    )
+
+
+def test_calibrated_symbol_does_not_log_fallback_warning(caplog):
+    """A symbol WITH a cost_model.json entry (BTCUSDT) must not trigger the
+    fallback warning -- only a genuine gap in calibration logs."""
+    import logging as _logging
+    handler = MockExecutionHandler()  # binance/margin
+    with caplog.at_level(_logging.WARNING, logger="trading_bot"):
+        handler.open_long_position(
+            symbol="BTCUSDT", quantity=1.0, trade_type="LONG", data=_bar(),
+        )
+    fallback_warnings = [r for r in caplog.records if "FALLBACK" in r.message]
+    assert not fallback_warnings, f"Unexpected fallback warning(s): {[r.message for r in fallback_warnings]}"
+
+
+def test_slippage_override_dict_resolves_per_symbol_with_fallback_logging(caplog):
+    """slippage_override as a dict (not a flat float) replaces cost_model.json's
+    table wholesale, with the same per-symbol + fallback-logging behavior."""
+    import logging as _logging
+    handler = MockExecutionHandler(slippage_override={"default": 9.0, "BTCUSDT": 2.0})
+    _, btc_debug = handler.open_long_position(
+        symbol="BTCUSDT", quantity=1.0, trade_type="LONG", data=_bar(),
+    )
+    assert btc_debug["price"] == pytest.approx(CLOSE * 1.0002)
+
+    with caplog.at_level(_logging.WARNING, logger="trading_bot"):
+        _, eth_debug = handler.open_long_position(
+            symbol="ETHUSDT", quantity=1.0, trade_type="LONG", data=_bar(),
+        )
+    assert eth_debug["price"] == pytest.approx(CLOSE * 1.0009)
+    fallback_warnings = [r for r in caplog.records if "FALLBACK" in r.message and "ETHUSDT" in r.message]
+    assert fallback_warnings
 
 
 # ---------------------------------------------------------------------------
@@ -166,7 +271,7 @@ def test_fee_and_slippage_combine_as_hand_computed():
     """
     fee_bps = 10.0
     commission_rate = fee_bps / 10000
-    handler = MockExecutionHandler(slippage_bps=SLIPPAGE_BPS)
+    handler = MockExecutionHandler(slippage_override=SLIPPAGE_BPS)
     _, debug = handler.open_long_position(
         symbol="BTCUSDT", quantity=1.0, trade_type="LONG", data=_bar(),
     )
@@ -289,6 +394,53 @@ def test_cost_model_override_replaces_only_the_keys_given(tmp_path, monkeypatch)
         trades_log_file=str(tmp_path / "trades.json"),
         cost_model_override={"slippage_bps": 7.0},
     )
-    assert _RecordingEngine.kwargs["execution_handler"].slippage_bps == 7.0
+    # slippage_override is threaded into MockExecutionHandler and resolved per
+    # SYMBOL at fill time (S3), not upfront as a flat attribute -- verify via
+    # the stored override value and via an actual fill.
+    handler = _RecordingEngine.kwargs["execution_handler"]
+    assert handler.slippage_override == 7.0
+    assert handler._resolve_slippage_bps("BTCUSDT") == 7.0
+    assert handler._resolve_slippage_bps("ANY_OTHER_SYMBOL") == 7.0  # uniform override, no fallback needed
     from performance.metrics import DEFAULT_COMMISSION_RATE
     assert _RecordingEngine.kwargs["performance_tracker"].commission_rate == DEFAULT_COMMISSION_RATE
+
+
+def test_cost_model_override_manifest_provenance_reflects_the_override(tmp_path, monkeypatch):
+    """The cost_model_provenance folded into the run manifest must reflect the
+    OVERRIDE value actually used for fills, not the real committed
+    cost_model.json table it bypassed -- provenance must describe what
+    actually drove the run's economics (same principle as CUL-55/#54)."""
+    import pandas as pd
+    from typing import ClassVar
+    import core.launcher as launcher_mod
+    from core.launcher import run_backtest
+
+    class _RecordingEngine:
+        kwargs: ClassVar[dict] = {}
+
+        def __init__(self, **kwargs):
+            type(self).kwargs = kwargs
+            self._last_run_dir = None
+            self.historical_data = {}
+
+        def load_data(self, **kwargs):
+            self.historical_data["BTCUSDT"] = pd.DataFrame(
+                {"timestamp": [pd.Timestamp("2024-01-01")], "close": [1.0]}
+            )
+
+        def simulate_on_loaded_data(self):
+            pass
+
+    monkeypatch.setattr(launcher_mod, "BacktestEngine", _RecordingEngine)
+    run_backtest(
+        config_path=str(_RUN_BACKTEST_CONFIG),
+        symbol="BTCUSDT", start="2024-01-01", end="2024-01-02",
+        results_root=str(tmp_path / "results"),
+        trades_log_file=str(tmp_path / "trades.json"),
+        cost_model_override={"slippage_bps": 7.0},
+    )
+    provenance = _RecordingEngine.kwargs["cost_model_provenance"]
+    assert provenance["slippage_bps"] == 7.0
+    assert provenance["fee_bps"] == 10.0
+    assert provenance["exchange"] == "binance"
+    assert provenance["market_type"] == "margin"
