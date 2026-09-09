@@ -14,6 +14,7 @@ from typing import Optional, Tuple
 import ccxt
 
 from config.settings import ConfigManager
+from config.cost_model import resolve_cost_model
 from core.backtester import BacktestEngine
 from core.trading_bot import TradingBot
 from data.feed_registry import FEED_REGISTRY
@@ -41,6 +42,18 @@ class TradingParams:
     commission_rate: float = DEFAULT_COMMISSION_RATE
     exchange: str = "binance"
     fetch_interval: Optional[int] = None   # backtest OHLCV fetch resolution (CUL-250); None = interval
+    # E-010 (2026-09-09): second axis alongside `exchange` for cost_model.json's
+    # (exchange, market_type) lookup -- see config/cost_model.py. Default "margin"
+    # is byte-identical to today's actual behavior: execution_handler.py's live
+    # ExecutionHandler uses Binance's margin API exclusively, no plain-spot path
+    # exists. commission_rate above is resolved from this same lookup's fee_bps
+    # (both _read_trading_params and run_backtest do this) unless a caller passes
+    # an explicit commission_rate override, which always wins (prior behavior).
+    market_type: str = "margin"
+    # Flat basis-point slippage resolved from the same cost_model.json lookup,
+    # threaded into MockExecutionHandler. Default 0.0 -- byte-identical to
+    # before this field existed (price = close exactly).
+    slippage_bps: float = 0.0
 
 
 @dataclass
@@ -184,6 +197,15 @@ class Launcher:
         fetch_interval = (
             parse_interval_seconds(raw_fetch_interval) if raw_fetch_interval is not None else None
         )
+        # Optional key (E-010, 2026-09-09). Absent means 'margin' -- see
+        # TradingParams.market_type's own comment for why that default is
+        # byte-identical to today's behavior. Resolved together with `exchange`
+        # against cost_model.json: an unconfigured (exchange, market_type)
+        # combination raises loud here rather than silently running with a
+        # guessed fee -- this IS the venue-tradability check for cost-model
+        # purposes (config/cost_model.py).
+        market_type = self.config.get('trading', 'market_type', 'margin')
+        fee_bps, slippage_bps = resolve_cost_model(exchange, market_type)
         return TradingParams(
             symbols=self.config.get('trading', 'symbols', ['BTCUSDT']),
             interval=parse_interval_seconds(
@@ -193,8 +215,11 @@ class Launcher:
                 'trading', 'check_interval_seconds', check_interval_default
             ),
             test_mode=self.config.get('trading', 'test_mode', True),
+            commission_rate=fee_bps / 10000,
             exchange=exchange,
             fetch_interval=fetch_interval,
+            market_type=market_type,
+            slippage_bps=slippage_bps,
         )
 
     def _build_mock_stack(
@@ -241,6 +266,7 @@ class Launcher:
         execution_handler = MockExecutionHandler(
             performance_tracker=performance_tracker,
             portfolio_info=portfolio_info,
+            slippage_bps=params.slippage_bps,
         )
         return MockStack(
             data_manager=data_manager,
@@ -528,7 +554,9 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
                  model_funding: bool = False,
                  risk_controls: dict | None = None,
                  feed_local_storage: bool = True,
-                 fetch_interval_seconds: int | None = None):
+                 fetch_interval_seconds: int | None = None,
+                 market_type: str | None = None,
+                 cost_model_override: dict | None = None):
     """Wire and run a single-symbol backtest; return the run_dir Path.
 
     runs_root: if set, individual run folders are created directly inside this
@@ -664,6 +692,27 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         backtests a 4h strategy off an hourly cache. Must be <= interval and divide
         it evenly (DataManager raises otherwise). See
         tests/test_data_manager_fetch_interval.py.
+    market_type: second axis (alongside `exchange`) into config/cost_model.json's
+        (exchange, market_type) -> (fee_bps, slippage_bps) lookup (E-010, 2026-09-09).
+        Defaults to None, which resolves to config.json's trading.market_type (itself
+        absent by default -> "margin") -- the same None-means-prior-behavior contract
+        as exchange/commission_rate above. "margin" is byte-identical to today's actual
+        behavior (the live ExecutionHandler is margin-only). commission_rate above, when
+        left at its own default of None, is resolved from this lookup's fee_bps/10000
+        instead of always DEFAULT_COMMISSION_RATE; an explicit commission_rate argument
+        still overrides it exactly as before (this parameter's own default-prior-behavior
+        contract is unchanged). An unconfigured (exchange, market_type) combination
+        raises UnknownCostModelError (config/cost_model.py) rather than silently
+        defaulting -- that raise IS this backtest's venue-tradability check for cost
+        purposes; no separate check is layered on top. See tests/test_cost_model.py.
+    cost_model_override: test/research-only full-or-partial override of the resolved
+        (fee_bps, slippage_bps) pair for this run, bypassing cost_model.json for
+        whichever of "fee_bps"/"slippage_bps" keys it supplies (the other falls back to
+        the real resolved value). Defaults to None, which changes nothing -- byte-
+        identical to before this parameter existed. Exists so a test can exercise a
+        nonzero slippage_bps for a venue whose committed cost_model.json entry is 0,
+        without touching that file. Never used by production callers. See
+        tests/test_cost_model.py.
     """
     from data.feed_registry import FEED_REGISTRY
 
@@ -686,14 +735,28 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         interval = interval_seconds
     else:
         interval = parse_interval_seconds(launcher.config.get('trading', 'interval', 3600))
-    resolved_commission_rate = (
-        commission_rate if commission_rate is not None else DEFAULT_COMMISSION_RATE
-    )
     resolved_exchange = _validated_exchange(
         exchange if exchange is not None
         else launcher.config.get('trading', 'exchange', 'binance'),
         launcher.logger,
     )
+    # E-010 (2026-09-09): resolve (fee_bps, slippage_bps) from cost_model.json for
+    # this run's (exchange, market_type) BEFORE any data fetch -- an unconfigured
+    # combination must fail loud here, not silently trade under a guessed fee.
+    resolved_market_type = (
+        market_type if market_type is not None
+        else launcher.config.get('trading', 'market_type', 'margin')
+    )
+    _resolved_fee_bps, _resolved_slippage_bps = resolve_cost_model(
+        resolved_exchange, resolved_market_type
+    )
+    if cost_model_override is not None:
+        _resolved_fee_bps = cost_model_override.get('fee_bps', _resolved_fee_bps)
+        _resolved_slippage_bps = cost_model_override.get('slippage_bps', _resolved_slippage_bps)
+    resolved_commission_rate = (
+        commission_rate if commission_rate is not None else _resolved_fee_bps / 10000
+    )
+    resolved_slippage_bps = _resolved_slippage_bps
     if fetch_interval_seconds is not None:
         resolved_fetch_interval = fetch_interval_seconds
     else:
@@ -709,6 +772,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         commission_rate=resolved_commission_rate,
         exchange=resolved_exchange,
         fetch_interval=resolved_fetch_interval,
+        market_type=resolved_market_type,
+        slippage_bps=resolved_slippage_bps,
     )
 
     strategy = AdvancedStrategy(config_path=config_path)

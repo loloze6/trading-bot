@@ -207,8 +207,13 @@ def test_absent_exchange_key_resolves_to_binance(tmp_path):
 
 
 def test_exchange_key_is_read_from_the_trading_section(tmp_path):
+    # market_type="futures" is required here since E-010: _read_trading_params now
+    # resolves config/cost_model.json for (exchange, market_type), and "kraken" has
+    # no configured "margin" entry (the default) -- only "futures", the venue this
+    # codebase already associates with a bare "kraken" elsewhere (e.g. funding
+    # routing maps it to krakenfutures). Unrelated to what this test actually checks.
     params = _launcher(
-        {"symbols": ["BTCUSD"], "exchange": "kraken"}, tmp_path
+        {"symbols": ["BTCUSD"], "exchange": "kraken", "market_type": "futures"}, tmp_path
     )._read_trading_params()
     assert params.exchange == "kraken"
 
@@ -263,7 +268,11 @@ def simulate_with(monkeypatch, tmp_path):
 
 
 def test_simulate_hands_the_configured_exchange_to_the_engine(simulate_with):
-    assert simulate_with({"symbols": ["BTCUSD"], "exchange": "kraken"}) == "kraken"
+    # market_type="futures" required post-E-010 -- see
+    # test_exchange_key_is_read_from_the_trading_section's comment above.
+    assert simulate_with(
+        {"symbols": ["BTCUSD"], "exchange": "kraken", "market_type": "futures"}
+    ) == "kraken"
 
 
 def test_simulate_defaults_the_engine_to_binance(simulate_with):
@@ -403,7 +412,9 @@ def run_backtest_with(monkeypatch, tmp_path):
 
 
 def test_run_backtest_forwards_an_explicit_exchange(run_backtest_with):
-    assert run_backtest_with(exchange="kraken") == "kraken"
+    # market_type="futures" required post-E-010 -- see
+    # test_exchange_key_is_read_from_the_trading_section's comment above.
+    assert run_backtest_with(exchange="kraken", market_type="futures") == "kraken"
 
 
 def test_run_backtest_without_an_exchange_defaults_to_binance(run_backtest_with):
@@ -513,6 +524,9 @@ def test_run_backtest_kraken_price_path_is_pure_and_completes(monkeypatch, tmp_p
         results_root=str(tmp_path / "results"),
         trades_log_file=str(tmp_path / "trades.json"),
         exchange="kraken",
+        # market_type="futures" required post-E-010 -- see
+        # test_exchange_key_is_read_from_the_trading_section's comment above.
+        market_type="futures",
     )
 
     assert _sha256(KRAKEN_BTC_CACHE) == kraken_sha_before, (
@@ -585,6 +599,9 @@ def test_run_backtest_kraken_aux_feed_fails_loud(block_network, monkeypatch, tmp
             results_root=str(tmp_path / "results"),
             trades_log_file=str(tmp_path / "trades.json"),
             exchange="kraken",
+            # market_type="futures" required post-E-010 -- see
+            # test_exchange_key_is_read_from_the_trading_section's comment above.
+            market_type="futures",
         )
 
     assert _sha256(KRAKEN_BTC_CACHE) == kraken_sha_before
@@ -608,7 +625,11 @@ def test_run_backtest_exchange_none_falls_back_to_config(monkeypatch, tmp_path):
     above, same mechanism as every config-injection test in this file) --
     the only test in this section that needs injection at all (R8): T-01/02/
     03/12/13 pass exchange= directly and never touch config."""
-    prebuilt = _launcher({"symbols": ["BTCUSD"], "exchange": "kraken"}, tmp_path)
+    # market_type="futures" required post-E-010 -- see
+    # test_exchange_key_is_read_from_the_trading_section's comment above.
+    prebuilt = _launcher(
+        {"symbols": ["BTCUSD"], "exchange": "kraken", "market_type": "futures"}, tmp_path
+    )
     monkeypatch.setattr(launcher_mod, "Launcher", lambda: prebuilt)
     monkeypatch.setattr(launcher_mod, "BacktestEngine", _RecordingRunBacktestEngine)
     from core.launcher import run_backtest

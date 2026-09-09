@@ -279,10 +279,32 @@ class ExecutionHandler(BaseExecutionHandler):
 
 class MockExecutionHandler(BaseExecutionHandler):
 
+    def __init__(self, performance_tracker=None, portfolio_info=None, slippage_bps: float = 0.0):
+        """
+        slippage_bps: flat basis-point slippage applied against the trade direction
+        at fill time (E-010, 2026-09-09 design) -- buys fill above the bar close,
+        sells below it; closing a LONG is economically a SELL (price down) and
+        closing a SHORT is a buy-to-cover (price down's opposite -- price up).
+        Resolved from config/cost_model.json's `slippage_bps` entry for the run's
+        (exchange, market_type) -- see core/launcher.py's TradingParams and
+        _build_mock_stack. Defaults to 0.0, byte-identical to before this
+        parameter existed (price = close exactly, no adjustment).
+
+        This is the single seam: the adjusted `price` computed here flows to BOTH
+        downstream consumers (self.performance_tracker.record_trade and, via
+        BaseExecutionHandler._post_order, self.portfolio_info.update_local_balance)
+        automatically, since both already read this one returned value. Slippage
+        must never be wired into performance/metrics.py or execution/portfolio_info.py
+        directly -- that would double-apply it or let the two paths disagree.
+        """
+        super().__init__(performance_tracker=performance_tracker, portfolio_info=portfolio_info)
+        self.slippage_bps = slippage_bps
+
     def open_long_position(self, symbol, quantity, trade_type, data, signal=None,
                            total_portfolio_value=None, balances=None) -> tuple[bool, dict]:
         try:
-            price = data['close'].iloc[-1]
+            # A BUY -- buyer pays MORE (slippage_bps=0 -> price unchanged, byte-identical).
+            price = data['close'].iloc[-1] * (1 + self.slippage_bps / 10000)
             logger.debug(f"🟢 MOCK BUY │ {symbol} │ {quantity:.6f} @ ${price:.2f} │ Cost: ${quantity * price:.2f}")
             self.executed_orders_counter += 1
             if self.performance_tracker:
@@ -295,7 +317,8 @@ class MockExecutionHandler(BaseExecutionHandler):
     def open_short_position(self, symbol, quantity, trade_type, data, signal=None,
                             total_portfolio_value=None, balances=None) -> tuple[bool, dict]:
         try:
-            price = data['close'].iloc[-1]
+            # A SELL -- seller receives LESS (slippage_bps=0 -> price unchanged).
+            price = data['close'].iloc[-1] * (1 - self.slippage_bps / 10000)
             logger.debug(f"🔴 MOCK SELL │ {symbol} │ {quantity:.6f} @ ${price:.2f} │ Value: ${abs(quantity) * price:.2f}")
             self.executed_orders_counter += 1
             if self.performance_tracker:
@@ -312,9 +335,20 @@ class MockExecutionHandler(BaseExecutionHandler):
             logger.error(f"❌ No balance found for {symbol}")
             return False, {'error': f'No balance for {symbol}'}
         try:
-            price = data['close'].iloc[-1]
+            close = data['close'].iloc[-1]
             b = balances[symbol]
             position = b.get('free', 0.0) - b.get('locked', 0.0)
+            # Closing a LONG (position > 0) is economically a SELL -- price down,
+            # same adjustment as open_short_position. Closing a SHORT (position < 0)
+            # is a buy-to-cover -- price up, same adjustment as open_long_position.
+            # position == 0 (nothing to close) leaves price unadjusted -- unreachable
+            # in practice since callers only invoke close_position on a nonzero book.
+            if position > 0:
+                price = close * (1 - self.slippage_bps / 10000)
+            elif position < 0:
+                price = close * (1 + self.slippage_bps / 10000)
+            else:
+                price = close
             logger.debug(f"⚪ MOCK CLOSE │ {symbol} │ {position:.6f} @ ${price:.2f} │ Value: ${position * price:.2f}")
             self.executed_orders_counter += 1
             if self.performance_tracker:
