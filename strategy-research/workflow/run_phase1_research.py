@@ -118,6 +118,7 @@ STAGE_CONFIGS = {
         "handoff": "research_brief_to_hypothesis.yaml",
         # "required_outputs": [ARTIFACTS / "hypothesis_card.yaml"],
         "default_next": "innovation_expansion",
+        "skill": "hypothesis-design",
     },
     "innovation_expansion": {
         "handoff": "hypothesis_to_innovation_expansion.yaml",
@@ -126,6 +127,7 @@ STAGE_CONFIGS = {
         #     ARTIFACTS / "innovation_notes.yaml",
         # ],
         "default_next": "validation",
+        "skill": "innovation-expansion",
     },
     "validation": {
         "handoff": "innovation_expansion_to_validation.yaml",
@@ -134,15 +136,18 @@ STAGE_CONFIGS = {
         #     ARTIFACTS / "validation_decision.yaml",
         # ],
         "default_next": "dynamic_routing", # Validation decides the next step
+        "skill": "quant-validation",
     },
     "refinement_planner": {
         "handoff": "validation_to_refinement.yaml",
         # "required_outputs": [ARTIFACTS / "refinement_notes.yaml"],
         "default_next": "innovation_expansion", # Route back to innovation after planning
+        "skill": "refinement-planner",
     },
     "backtest_specification": {
         "handoff": "validation_to_backtest_specification.yaml",
         "default_next": "dynamic_routing",
+        "skill": "backtest-engineering",
     },
     # Improvement 08+09: prescreen stage (tool, no LLM)
     "signal_prescreen": {
@@ -156,10 +161,12 @@ STAGE_CONFIGS = {
     "verdict_interpreter": {
         "handoff": "protocol_to_verdict_interpreter.yaml",
         "default_next": "dynamic_routing",
+        "skill": "verdict-interpreter",
     },
     "campaign_review": {
         "handoff": "campaign_review.yaml",
         "default_next": "dynamic_routing",
+        "skill": "campaign-review",
     },
     # Improvement 06: holdout evaluation (tool stage, no LLM — single-use per hypothesis_id)
     "holdout_evaluation": {
@@ -951,17 +958,7 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
     print(f"\n✨ [GEMINI INVOKED] Waking up Native Gemini API for: {stage_name}")
     
     # 2. Map the stage to the correct SKILL definition
-    skill_map = {
-        "hypothesis_generation": "hypothesis-design",
-        "innovation_expansion": "innovation-expansion",
-        "validation": "quant-validation",
-        "refinement_planner": "refinement-planner",
-        "backtest_specification": "backtest-engineering",
-        "verdict_interpreter": "verdict-interpreter",
-        "campaign_review": "campaign-review",
-    }
-
-    skill_file_name = skill_map.get(stage_name)
+    skill_file_name = STAGE_CONFIGS[stage_name].get("skill")
     if not skill_file_name:
         raise ValueError(f"No SKILL file mapped for Gemini stage: {stage_name}")
         
