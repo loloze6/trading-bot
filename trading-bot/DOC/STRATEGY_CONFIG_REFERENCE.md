@@ -90,6 +90,7 @@ Comparison ops: `gte`, `gt`, `lte`, `lt`, `between` (`low`/`high`, inclusive).
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `warmup` | int | engine lookback | Min HISTORY DEQUE entries per active-regime component before forecasts are emitted. Unit is deque appends, NOT bars: appends start only once the component's own `is_ready()` fires, so first possible forecast ≈ max(required_bars, component required periods + warmup). Capped at smallest deque size. Legacy-parity value: 51 |
+| `min_allocation_change` | float | none (falls back to `config.json`'s 0.2) | **Not a strategy-engine setting** — overrides `RiskManager`'s `min_allocation_change.threshold` control (`risk/risk_manager.py`) for THIS strategy's runs only. A rebalance is rejected whenever `abs(target_allocation − actual_allocation) < min_allocation_change`. This is the same gate `config.json`'s `risk_management.controls.min_allocation_change.threshold` has always set globally (default 0.2, live since before this key existed) — setting it here just makes that floor tunable per strategy instead of fixed for every strategy in one file. Omit to keep the global 0.2. See `known_divergences.md` §1 for the history. |
 | `regimes` | dict | required | regime name → forecast config, or `null` = stay flat (forecast 0.0) |
 
 ### Per-regime forecast config

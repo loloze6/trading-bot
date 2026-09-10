@@ -27,15 +27,29 @@ class ForecastManager:
         2. Convert to allocation (e.g., +75% long)
         3. Compute the delta against current allocation
 
-    NO DRIFT THRESHOLD LIVES HERE, and none lives anywhere else either. This
-    class is stateless and holds no threshold. The caller
-    (`trading_bot.py:229`) proceeds on `abs(allocation_change) != 0.0`, so the
-    engine rebalances toward target on EVERY bar. `config.json`'s
-    `risk_management.rebalance_threshold` (0.20) is dead -- its only reference,
-    `core/launcher.py:113`, is commented out. Documented in
-    `strategy-research/engineering/improvements/known_divergences.md` (1); do not re-add a threshold
-    here without reading it, since archived backtest turnover and cost figures
-    all assume the current every-bar behaviour.
+    NO DRIFT THRESHOLD LIVES HERE. This class is stateless and holds no
+    threshold -- `__init__` takes no arguments. The caller
+    (`trading_bot.py:305`) proceeds to `risk_manager.approve_allocation_change`
+    on `abs(allocation_change) != 0.0`, so ForecastManager itself never blocks
+    a rebalance.
+
+    CORRECTED (E-055, 2026-09-10): a prior revision of this docstring claimed
+    "none lives anywhere else either" -- false. A change-based drift gate DOES
+    exist, in `RiskManager._ctrl_min_allocation_change`
+    (`risk/risk_manager.py`): it rejects any rebalance where
+    `abs(allocation_change) < risk_management.controls.min_allocation_change
+    .threshold` (`config.json`, default 0.2). This is not new -- it has been
+    live since the `ac277917` repository restructure. Git archaeology on that
+    commit (same diff hunk) shows the OLD `risk_management.rebalance_threshold`
+    key and its `RiskManager(rebalance_threshold=...)` constructor call
+    (both now deleted as dead) were replaced by this control in the same
+    change -- i.e. this is that mechanism's successor, not an unrelated one.
+    What IS new (E-055): a strategy's own `strategy_config.json` may set
+    `strategies.min_allocation_change` to override the 0.2 default for that
+    strategy's runs only (see `strategies/main_strategy.py` and
+    `core/launcher.py::_build_risk_and_forecast_managers`); omitting the key
+    preserves the exact prior global-0.2 behaviour byte-for-byte. See
+    `strategy-research/engineering/improvements/known_divergences.md` (1).
     """
 
     def __init__(self):
