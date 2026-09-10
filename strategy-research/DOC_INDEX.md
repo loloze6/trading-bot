@@ -38,6 +38,15 @@ engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md).
 → **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — pipeline stage map, every artifact's
 field-by-field schema, skill goals, tools overview, glossary.
 
+### "What does the trading-bot ENGINE currently do (config, data, forecast, risk, execution, artifacts, metrics)?"
+→ **[`../trading-bot/DOC/USER_GUIDE.md`](../trading-bot/DOC/USER_GUIDE.md)** —
+general-purpose capability reference for `trading-bot/` (E-045 S4): config
+retrieval, data management (fetch-timeframe vs. trade-timeframe, aux-feed
+cache-key vs. merge-timing mechanisms), the bar-by-bar main loop, warmup,
+forecast calculation, allocation, risk gates, execution/portfolio, run
+artifacts, and metrics — with explicit call-outs where it corrects stale
+claims in root `CLAUDE.md`/`CLAUDE.fork.md`.
+
 ### "How do I change things safely?"
 → **[`docs/TIMEFRAME_CHANGE_PLAYBOOK.md`](docs/TIMEFRAME_CHANGE_PLAYBOOK.md)**
 — the two assumption-sweep categories, metric-basis rules (bar/episode/fragment),
