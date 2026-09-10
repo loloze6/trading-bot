@@ -472,8 +472,9 @@ with the EXACT diagnostic values that triggered the rule:
   inputs for exactly this reason. If it is ever presented alongside the
   required inputs, ignore it for verdict purposes — it belongs to
   campaign_review's ideation stage, not here. See
-  docs/TIMEFRAME_CHANGE_PLAYBOOK.md section 7 for the three-role model this
-  enforces and test_fragment_patterns_firewall.py for the mechanical check.
+  docs/VERIFICATION_DOCTRINE.md section 2 (the three-role model) for the
+  model this enforces and test_fragment_patterns_firewall.py for the
+  mechanical check.
 
 ## STEP 03 — Trade Attribution (required when trade_diagnostics.json is available)
 

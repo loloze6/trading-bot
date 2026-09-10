@@ -55,6 +55,17 @@ post-CUL-250), aux-feed pointers, the bar-count/signal-shape sweep checklist,
 and zero-data-is-not-a-finding. Required input for `backtest-engineering` and
 `refinement-planner`.
 
+### "How do I verify a claim, metric, or artifact write is actually trustworthy?"
+→ **[`docs/VERIFICATION_DOCTRINE.md`](docs/VERIFICATION_DOCTRINE.md)** —
+metric-basis validity (bar/episode/LIFO-fragment, and why fragment-level
+stats never feed a decision rule), the three-role model for fragment data
+(verdict/diagnosis/ideation), shakedown doctrine (synthetic null/
+positive-control tests before trusting a new code path on a real
+hypothesis), cross-check doctrine (prescreen-vs-backtest agreement), and
+read-back verification doctrine (re-read after every shared-artifact write).
+Not timeframe-specific; bundled out of `docs/TIMEFRAME_CHANGE_PLAYBOOK.md`
+§§2(c)/3/4/5/7 (E-045 S5).
+
 ### "How do I change things safely?"
 → **[`docs/TIMEFRAME_CHANGE_PLAYBOOK.md`](docs/TIMEFRAME_CHANGE_PLAYBOOK.md)**
 — the two assumption-sweep categories, metric-basis rules (bar/episode/fragment),
