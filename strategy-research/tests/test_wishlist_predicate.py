@@ -35,7 +35,7 @@ def test_er_overlay_predicate_does_not_fire_against_real_kb():
     expectation to preserve across future KB corrections -- if it fails again
     because the KB changed, recompute the underlying numbers before assuming
     either this test or the KB is wrong (see the incident's arbitration
-    doctrine in docs/TIMEFRAME_CHANGE_PLAYBOOK.md section 5)."""
+    doctrine in docs/VERIFICATION_DOCTRINE.md section 5)."""
     result = rc.evaluate_wishlist_predicate("daily_timeframe_er_overlay")
     assert result["result"] == "false"
     assert result["matched_finding_id"] is None

@@ -2,10 +2,9 @@
 
 Rules for this file: one line per doc, pointers only — no doctrine, procedure,
 or status duplicated here (that lives in the doc itself; this file only says
-where to find it). Update this file whenever a doc is added or retired (see
-`docs/TIMEFRAME_CHANGE_PLAYBOOK.md`'s checklist). Machine-generated files are
-marked as such, with their writer named — read them for current values, but
-don't hand-edit them.
+where to find it). Update this file whenever a doc is added or retired.
+Machine-generated files are marked as such, with their writer named — read
+them for current values, but don't hand-edit them.
 
 Organized by the question a reader actually arrives with, not by directory.
 
@@ -65,12 +64,6 @@ hypothesis), cross-check doctrine (prescreen-vs-backtest agreement), and
 read-back verification doctrine (re-read after every shared-artifact write).
 Not timeframe-specific; bundled out of `docs/TIMEFRAME_CHANGE_PLAYBOOK.md`
 §§2(c)/3/4/5/7 (E-045 S5).
-
-### "How do I change things safely?"
-→ **[`docs/TIMEFRAME_CHANGE_PLAYBOOK.md`](docs/TIMEFRAME_CHANGE_PLAYBOOK.md)**
-— the two assumption-sweep categories, metric-basis rules (bar/episode/fragment),
-the three-role model for fragment data, the concealment-instruction doctrine,
-read-back verification doctrine.
 
 ### "Where do things stand right now?"
 → **[`engineering/improvements/done/IMPROVEMENTS_DONE_20260706.md`](engineering/improvements/done/IMPROVEMENTS_DONE_20260706.md)**
