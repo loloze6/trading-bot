@@ -25,7 +25,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config.cost_model import resolve_cost_model, UnknownCostModelError  # noqa: E402
+from config.cost_model import (  # noqa: E402
+    resolve_cost_model,
+    UnknownCostModelError,
+    InvalidCostModelError,
+    MAX_SLIPPAGE_BPS,
+)
 from execution.execution_handler import MockExecutionHandler  # noqa: E402
 from execution.portfolio_info import MockPortfolioInfo  # noqa: E402
 
@@ -94,6 +99,78 @@ def test_unknown_cost_model_error_is_a_key_error(cost_model_path):
     KeyError, which would only show the innermost missing key."""
     with pytest.raises(KeyError):
         resolve_cost_model("unicorn", "margin", path=cost_model_path)
+
+
+# ---------------------------------------------------------------------------
+# Range/sign validation (fail-loud, load-time) -- red-team gap fix: bare
+# float(...) coercion previously accepted a negative or absurd fee_bps/
+# slippage_bps with zero validation anywhere in the codebase.
+# ---------------------------------------------------------------------------
+
+def _write_cost_model(tmp_path, model: dict) -> str:
+    path = tmp_path / "cost_model.json"
+    path.write_text(json.dumps(model))
+    return str(path)
+
+
+def test_negative_fee_bps_raises_loud(tmp_path):
+    path = _write_cost_model(tmp_path, {
+        "binance": {"margin": {"fee_bps": -10, "slippage_bps": {"default": 1.5}}},
+    })
+    with pytest.raises(InvalidCostModelError, match=r"fee_bps.*-10.*negative"):
+        resolve_cost_model("binance", "margin", path=path)
+
+
+def test_negative_default_slippage_bps_raises_loud(tmp_path):
+    path = _write_cost_model(tmp_path, {
+        "binance": {"margin": {"fee_bps": 10, "slippage_bps": {"default": -1.5}}},
+    })
+    with pytest.raises(InvalidCostModelError, match=r"slippage_bps\['default'\].*-1\.5.*negative"):
+        resolve_cost_model("binance", "margin", path=path)
+
+
+def test_negative_per_symbol_slippage_bps_override_raises_loud(tmp_path):
+    """A negative override on a specific symbol (not just "default") must
+    raise too -- the sign-flip gap applies to every entry in the table."""
+    path = _write_cost_model(tmp_path, {
+        "binance": {"margin": {"fee_bps": 10, "slippage_bps": {"default": 1.5, "BTCUSDT": -1.0}}},
+    })
+    with pytest.raises(InvalidCostModelError, match=r"slippage_bps\['BTCUSDT'\].*-1\.0.*negative"):
+        resolve_cost_model("binance", "margin", path=path)
+
+
+def test_absurd_slippage_bps_above_bound_raises_loud(tmp_path):
+    """A fat-fingered magnitude error (e.g. 750 typed for 7.5) must raise,
+    not silently drive the sell-side fill price non-positive."""
+    path = _write_cost_model(tmp_path, {
+        "binance": {"margin": {"fee_bps": 10, "slippage_bps": {"default": 750.0}}},
+    })
+    with pytest.raises(InvalidCostModelError, match=r"slippage_bps\['default'\].*750\.0.*exceeds"):
+        resolve_cost_model("binance", "margin", path=path)
+
+
+def test_slippage_bps_at_bound_is_accepted(tmp_path):
+    """The chosen ceiling itself must still resolve -- the bound is inclusive,
+    not an off-by-one trap."""
+    path = _write_cost_model(tmp_path, {
+        "binance": {"margin": {"fee_bps": 10, "slippage_bps": {"default": MAX_SLIPPAGE_BPS}}},
+    })
+    assert resolve_cost_model("binance", "margin", path=path) == (10.0, {"default": MAX_SLIPPAGE_BPS})
+
+
+def test_slippage_bps_just_above_bound_raises(tmp_path):
+    path = _write_cost_model(tmp_path, {
+        "binance": {"margin": {"fee_bps": 10, "slippage_bps": {"default": MAX_SLIPPAGE_BPS + 0.01}}},
+    })
+    with pytest.raises(InvalidCostModelError, match="exceeds"):
+        resolve_cost_model("binance", "margin", path=path)
+
+
+def test_invalid_cost_model_error_is_a_value_error():
+    """Not a KeyError subclass (unlike UnknownCostModelError) -- the key IS
+    present here, only its value is out of range."""
+    assert issubclass(InvalidCostModelError, ValueError)
+    assert not issubclass(InvalidCostModelError, KeyError)
 
 
 def test_committed_cost_model_json_resolves_the_ship_time_entries():

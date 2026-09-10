@@ -60,9 +60,103 @@ class UnknownCostModelError(KeyError):
     """
 
 
+class InvalidCostModelError(ValueError):
+    """Raised when a configured (exchange, market_type) entry in cost_model.json
+    has an out-of-range fee_bps or slippage_bps value.
+
+    Sibling to UnknownCostModelError in spirit -- fail loud, name the exact
+    bad value and exactly where it came from, never silently clamp/default/
+    warn-and-continue -- but a different failure shape: the (exchange,
+    market_type) pair IS configured, its *value* is not sane. Two concrete
+    silent-corruption paths this guards against (see cost_model.py's module
+    docstring and execution/execution_handler.py's fill-price formulas):
+
+      1. A negative slippage_bps (or fee_bps) would silently flip a cost into
+         a subsidy -- slippage would HELP every trade instead of hurting it,
+         producing a flattering but fake backtest.
+      2. A slippage_bps at or above 10000 (100%) drives the sell-side fill
+         formula close * (1 - slippage_bps / 10000) non-positive.
+
+    Not a KeyError subclass -- the key IS present, so a bare KeyError would
+    be misleading here.
+    """
+
+
+# Sanity ceiling for slippage_bps -- NOT a real-world/theoretical limit, a
+# fat-finger tripwire. The real, committed cost_model.json (as of S3,
+# 2026-09-10) tops out at 7.5 bps (kraken/futures "default" and its
+# AVAXUSD/SOLUSD entries); every other configured value is <= 7.5 bps too.
+# 500 bps (5%) is ~66x that real ship-time max: generous enough that no
+# plausible calibrated value -- even a stressed, thin-book, flash-crash fill
+# on an illiquid altcoin -- should ever legitimately reach it, while still
+# catching an obvious units/typo error (e.g. "750" fat-fingered for "7.5",
+# or a stray extra digit) with wide margin, long before the sell-side fill
+# formula above can go non-positive at slippage_bps >= 10000. If a future,
+# genuinely-calibrated value needs to exceed this, raise the constant
+# deliberately (with the same reasoning updated), not silently.
+MAX_SLIPPAGE_BPS = 500.0
+
+
+def _validate_cost_model(model: dict, path: str) -> None:
+    """Range/sign-check every fee_bps and slippage_bps value in a freshly
+    parsed cost_model.json. Raises InvalidCostModelError on the first bad
+    value found; never clamps, coerces, or defaults.
+
+    Called from _load_cost_model, i.e. once per JSON parse -- resolve_cost_model
+    has no caching today (execution_handler.py::MockExecutionHandler.
+    _resolve_slippage_bps calls it fresh per trade, at fill time, per S3), so
+    this validation rides the exact same per-call file read/parse rather than
+    adding a new overhead pattern; it is a fixed, tiny (exchange x market_type)
+    iteration, not a per-bar cost. Hoisting resolve_cost_model itself to a
+    cached/one-time load is a separate, out-of-scope change.
+    """
+    for exchange, market_types in model.items():
+        if not isinstance(market_types, dict):
+            continue
+        for market_type, entry in market_types.items():
+            if not isinstance(entry, dict):
+                continue
+            where = f"{path} [{exchange!r}][{market_type!r}]"
+
+            if "fee_bps" in entry:
+                fee_bps = float(entry["fee_bps"])
+                if fee_bps < 0:
+                    raise InvalidCostModelError(
+                        f"{where}.fee_bps = {entry['fee_bps']!r} is negative -- "
+                        f"fee_bps must be >= 0 (a negative fee would pay the "
+                        f"trader commission instead of charging it)."
+                    )
+
+            slippage_table = entry.get("slippage_bps")
+            if isinstance(slippage_table, dict):
+                for key, raw_value in slippage_table.items():
+                    value = float(raw_value)
+                    slip_where = f"{where}.slippage_bps[{key!r}]"
+                    if value < 0:
+                        raise InvalidCostModelError(
+                            f"{slip_where} = {raw_value!r} is negative -- "
+                            f"slippage_bps must be >= 0 (a negative value "
+                            f"would silently make slippage HELP every trade "
+                            f"instead of hurting it -- see "
+                            f"execution_handler.py's fill-price formulas)."
+                        )
+                    if value > MAX_SLIPPAGE_BPS:
+                        raise InvalidCostModelError(
+                            f"{slip_where} = {raw_value!r} exceeds the "
+                            f"MAX_SLIPPAGE_BPS sanity ceiling of "
+                            f"{MAX_SLIPPAGE_BPS!r} (see config/cost_model.py's "
+                            f"MAX_SLIPPAGE_BPS comment) -- today's real "
+                            f"committed max is 7.5 bps; this is almost "
+                            f"certainly a units/fat-finger error, not a real "
+                            f"calibrated value."
+                        )
+
+
 def _load_cost_model(path: str) -> dict:
     with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        model = json.load(f)
+    _validate_cost_model(model, path)
+    return model
 
 
 def resolve_cost_model(
