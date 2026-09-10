@@ -434,6 +434,55 @@ history, and the memoized `_regime_classification`. It does **not** touch
 attributes are unreachable dead-code state on the real call path, not a gap
 in the reset.
 
+### 5.1 Effective warmup is ~2x `required_bars`, not `required_bars`
+
+A gap this guide's first draft missed, since re-added from
+`TIMEFRAME_CHANGE_PLAYBOOK.md` §1 and re-verified directly against
+`core/launcher.py` on this checkout. `AdvancedStrategy.required_bars` (§5
+above) tells you when a component's OWN `is_ready()` first goes true — but
+`strategy_engine.is_ready()` additionally requires each component's history
+DEQUE to reach length `strategy_engine._warmup`, and that deque only starts
+accepting entries once the component is already ready. So the total bars
+needed before the STRATEGY itself is ready is `required_bars + _warmup - 2`,
+not `required_bars` alone. Since `_warmup <= required_bars` always, `2 x
+required_bars` is a safe, easy-to-verify upper bound without needing the
+exact formula.
+
+At 1h this is invisible (`required_bars` is small, ~24-50 bars, absorbed into
+any reasonably-sized backtest window). At 1d, with `required_bars` around
+100 (e.g. a 100-day SMA), the gap between "component ready" and "strategy
+ready" is ~100 EXTRA days — large enough that a walk-forward window shorter
+than ~200 days never trades at all, for every window, regardless of true
+signal quality.
+
+**The fix, verified present:** `core/launcher.py::run_backtest`'s
+`warmup_prefetch` parameter (`launcher.py:541`, `bool = False` — off by
+default, byte-identical when omitted, per
+`tests/test_warmup_prefetch_bit_identical.py`). When `True`: fetches `2 *
+strategy.required_bars` of EXTRA history before the window's `start`
+(`launcher.py:756-767`), feeds it through `strategy.update()` silently via
+`BacktestEngine.warmup_cutoff_timestamp` (bars before this timestamp update
+indicators but never trade or touch portfolio state —
+`core/backtester.py:70-84`, `core/trading_bot.py:39`), then asserts
+`is_ready()` is actually true by `start` — failing loudly, not silently, if
+the 2x margin is ever insufficient for some future config
+(`launcher.py:814-825`).
+
+**Do not "optimize" the 2x multiplier down to 1x.** It looks wasteful, but
+`_warmup` is not `0` for any component using `strategy_config.json`'s
+`strategies.warmup` field — every production config sets one. 1x silently
+reintroduces the exact under-warmed-strategy bug this fixes.
+
+**Left-edge / exchange-history constraint.** The prefetch has to come from
+somewhere. If `window_start - 2*required_bars` predates the exchange's
+actual listing date (e.g. BTCUSDT/ETHUSDT: 2017-08-17 on Binance — a locally
+cached `_1d.csv`/`_1h.csv` may start later than that for unrelated
+historical reasons), the first scored window(s) silently underrun their
+warmup. Resolve this BEFORE registering a protocol: extend the backfill to
+the true exchange start (verify with `tools/check_data.py` afterward), and
+set the first scored window far enough past the true start to leave a real
+margin, not just clear the bare minimum.
+
 ---
 
 ## 6. Update and Forecast Calculation
