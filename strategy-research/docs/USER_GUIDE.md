@@ -861,6 +861,10 @@ record what happened.
 | `pre_registration.yaml` | the registered `pass_rule` | yes for the C7 evaluation |
 | `research_brief.yaml` | stage 1 | yes since C7-EXT (funding-modelling precondition) |
 
+**`signal_real_but_subscale_vs_costs`** (a `root_cause.mechanism_failure` value): written by the `verdict_interpreter` LLM stage — a soft judgment call, not a threshold. Do not confuse it with `kill_cost_hurdle`/`refine_cost_hurdle` (`determine_route`, `trading-bot/performance/signal_statistics.py`), a real mechanical threshold (`edge ÷ cost` vs. 2.0/0.5) — built on branches `fix/cul-264-post-backtest-route`/`fix/cul-272-real-cost-check`, not yet merged to master, so still not live today.
+
+**E-016 (fee-reduction autopsy field)**, built on top of the above (branch `feat/e016-fee-reduction-autopsy`, also not yet merged to master): once the mechanical route lands, a cost-dominated kill (`kill_cost_hurdle`/`refine_cost_hurdle`) is meant to feed `root_cause.fee_reduction_assessment.candidate_system` — narrowed from an earlier 5-option infra-level enum to 4 timing-only options: `trade_less_often`, `combine_nearby_trades`, `exit_later`, `enter_earlier`. See `workflow_artifacts/skills/verdict-interpreter/SKILL.md`'s "IMPROVEMENT 10" for the selection rule, and `trade_diagnostics.json`'s `summary.fee_reduction_metrics` for the 8 supporting diagnostic metrics (2 per lever) it reads to pick between them.
+
 **Stage output**
 
 | What | Written where | Read by |
