@@ -189,10 +189,10 @@ def _next_action_for_entry(entry: dict) -> str:
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# Phase 1.3 (docs/CAMPAIGN_PROGRAM.md): venue/product registration-rule mechanism.
+# Phase 1.3 (docs/CAMPAIGN_PROGRAM.md): venue/market_type registration-rule mechanism.
 # Single source of truth: config/venue_tradability.yaml. Consumed by
 # _materialize_run() below to auto-flag research_only on any brief whose
-# declared venue+product isn't tradable==true, or whose venue/product is
+# declared venue+market_type isn't tradable==true, or whose venue/market_type is
 # undeclared (safe default -- silence must never resolve to a green light).
 # ---------------------------------------------------------------------------
 
@@ -218,14 +218,14 @@ def _load_venue_tradability() -> dict:
     return table
 
 
-def _venue_product_tradable(venue, product) -> bool:
-    """False if venue/product is undeclared, the (venue, product) pair is
-    absent from the table, or its tradable field isn't literal True --
+def check_venue_tradability(venue, market_type) -> bool:
+    """False if venue/market_type is undeclared, the (venue, market_type) pair
+    is absent from the table, or its tradable field isn't literal True --
     "unconfirmed" and False both resolve to False, only True passes."""
-    if not venue or not product:
+    if not venue or not market_type:
         return False
     table = _load_venue_tradability()
-    entry = table["venues"].get(venue, {}).get(product)
+    entry = table["venues"].get(venue, {}).get(market_type)
     if entry is None:
         return False
     return entry.get("tradable") is True
@@ -246,12 +246,21 @@ def _parse_brief_frontmatter(brief_path: Path) -> dict:
     data = yaml.safe_load(m.group(1)) or {}
     # venue/product added 2026-08-20 (E-015 S1b): Done-when #1 requires missing
     # venue/product to fail registration outright rather than silently resolving
-    # to research_only=True via _venue_product_tradable's own fail-closed default
+    # to research_only=True via check_venue_tradability's own fail-closed default
     # (still exercised directly by _materialize_run for any caller that bypasses
     # this parser, e.g. test_venue_tradability.py's direct-dict tests). No longer
     # load-bearing for holdout safety -- S3's affirmative research_only is False
     # check already closes that gap -- this is belt-and-braces at registration
     # time, which is what the rule was originally written to require.
+    #
+    # NOTE (E-014 naming alignment, 2026-09-10): the brief frontmatter field
+    # itself stays named "product" -- it is a pre-existing, widely-used schema
+    # field (research_brief.yaml template, verdict_criteria_evaluator.py,
+    # test_c7ext_verdict_gates.py, and 60+ existing runs/*/artifacts/
+    # research_brief.yaml files all read/write "product"). Only this module's
+    # internal function/parameter naming was aligned to "market_type" to match
+    # trading-bot/config/cost_model.json's axis name -- see check_venue_tradability()
+    # above, which takes brief.get("product") and passes it in as market_type.
     for required in (
         "strategy_domain", "market_universe", "timeframe", "research_goal",
         "venue", "product",
@@ -292,10 +301,10 @@ def _materialize_run(run_id: str, brief: dict):
     artifacts = run_dir / "artifacts"
     research_brief = {k: v for k, v in brief.items() if k != "machine_constraints"}
     venue = brief.get("venue")
-    product = brief.get("product")
-    tradable = _venue_product_tradable(venue, product)
+    market_type = brief.get("product")
+    tradable = check_venue_tradability(venue, market_type)
     research_brief["research_only"] = not tradable
-    _log(f"VENUE-CHECK {run_id}: venue={venue!r} product={product!r} tradable={tradable} "
+    _log(f"VENUE-CHECK {run_id}: venue={venue!r} market_type={market_type!r} tradable={tradable} "
          f"research_only={not tradable}")
     orch.save_yaml(artifacts / "research_brief.yaml", research_brief)
 

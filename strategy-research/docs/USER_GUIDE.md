@@ -351,7 +351,7 @@ gate requires it — see stage 13.
 
 **2. It is read late as well as early.**
 Not only by stage 2. The pass-rule evaluator reads it (`::run_tool_worker`) because
-deciding whether funding must be modelled needs the product, timeframe and
+deciding whether funding must be modelled needs the market_type, timeframe and
 rebalance frequency; the holdout gate reads it to check tradability.
 
 <details>
@@ -2092,7 +2092,7 @@ from stage 6, `component_execution_error` or `regime_misattribution` at stage
 
 ### `config/venue_tradability.yaml` *(config)*
 
-> **Why this file exists.** It records which venue/product combinations this
+> **Why this file exists.** It records which venue/market_type combinations this
 > operator can legally trade *now*, so research on something untradable cannot
 > reach a live-money decision by accident.
 
@@ -2100,13 +2100,13 @@ from stage 6, `component_execution_error` or `regime_misattribution` at stage
 **Updated by:** Human, when the legal or venue position changes
 **Read by:** `run_campaign.py::_load_venue_tradability()` (`::_load_venue_tradability`), used by
 `_materialize_run()` to auto-flag `research_only` on any brief whose venue and
-product are not `tradable: true` — **or are undeclared**
+market_type are not `tradable: true` — **or are undeclared**
 **Written to:** `config/venue_tradability.yaml`
 **Schema:** *(none)*
 
 | Field | Definition — what it means | Values / range | Example |
 |---|---|---|---|
-| `venues.<venue>.<product>.tradable` | Whether this operator may trade this product on this venue today. | `true` / `false` | `venues.kraken.spot.tradable: true` |
+| `venues.<venue>.<market_type>.tradable` | Whether this operator may trade this market_type on this venue today. | `true` / `false` | `venues.kraken.spot.tradable: true` |
 | `version` / `created_at` | Provenance of the table itself. | string / date | `"1.0"` / `"2026-07-21"` |
 
 **Notes**
