@@ -105,7 +105,11 @@
             },
             "post_backtest_route_real": {
               "type": ["string", "null"],
-              "description": "E-016: most common non-null results[*].core.post_backtest_route_real across all (symbol, window) slots in this run. See that field for the enum."
+              "description": "E-016: most common non-null results[*].core.post_backtest_route_real across all (symbol, window) slots in this run. See that field for the enum. CUL-275: when post_backtest_route_real_tied is true, this was resolved by precedence (_ROUTE_TIE_PRECEDENCE in run_protocol.py), not by a clear majority -- see that field."
+            },
+            "post_backtest_route_real_tied": {
+              "type": "boolean",
+              "description": "CUL-275: true when two or more distinct route values in results[*].core.post_backtest_route_real were tied for most-common across (symbol, window) slots -- statistics.mode()'s silent, iteration-order-dependent tie behavior is what this replaces. When true, post_backtest_route_real was resolved by a documented precedence order (kill_no_ic > refine_inverted_ic > kill_cost_hurdle > refine_cost_hurdle > proceed_to_interpretation), not by a clear majority; verdict_interpreter should not treat it as unambiguous mechanical ground truth. false when there was a clear majority, or when no window produced a post_backtest_route_real value."
             },
             "cost_dominated_real": {
               "type": ["boolean", "null"],

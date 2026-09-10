@@ -296,6 +296,33 @@ def test_resolve_boundary_level_handles_none_config():
     assert rp._resolve_boundary_level(None) == 0.0
 
 
+def test_resolve_boundary_level_warns_on_multiple_threshold_filters(capsys):
+    """
+    CUL-275: a 2-component config, each with its own threshold_filter
+    (min_abs 15.0 and 25.0). Resolution must still pick the FIRST one found
+    (15.0, unchanged behavior -- don't change which value wins), but a
+    WARNING naming both values must be printed so the ambiguity is visible.
+    """
+    config = {
+        "strategies": [
+            {"name": "rsi", "transforms": [
+                {"op": "threshold_filter", "params": {"min_abs": 15.0}},
+            ]},
+            {"name": "macd", "transforms": [
+                {"op": "threshold_filter", "params": {"min_abs": 25.0}},
+            ]},
+        ]
+    }
+    level = rp._resolve_boundary_level(config)
+    assert level == 15.0
+
+    captured = capsys.readouterr()
+    assert "WARNING" in captured.out
+    assert "2" in captured.out
+    assert "15.0" in captured.out
+    assert "25.0" in captured.out
+
+
 # ---------------------------------------------------------------------------
 # _aggregate_fee_reduction_diagnostics
 # ---------------------------------------------------------------------------

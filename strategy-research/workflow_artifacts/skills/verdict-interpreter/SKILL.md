@@ -724,6 +724,15 @@ When `root_cause.mechanism_failure == "signal_real_but_subscale_vs_costs"` (Rule
    confidence `high` regardless of how close cost_drag_pct was to the 80% rule-of-thumb —
    this route comes from real per-trade fees/edge (CUL-264/272), not an estimate.
 
+   **Exception — check `diagnostics.post_backtest_route_real_tied` first (CUL-275).**
+   When it is `true`, `post_backtest_route_real` was not a clear majority across this
+   run's (symbol, window) slots — it was a genuine tie, resolved by a fixed precedence
+   order rather than by evidence. Do not report confidence `high` in this case. Instead
+   set confidence to `medium` at most, and say explicitly in `supporting_evidence` that
+   the route was tied across windows (name the tied candidates if visible in
+   `protocol_result.results[*].core.post_backtest_route_real`) and was broken by
+   precedence, not by a majority of the walk-forward windows agreeing.
+
 2. **Pick `candidate_system` from `diagnostics.fee_reduction_metrics`** (also in
    `trade_diagnostics.json`'s `summary.fee_reduction_metrics`):
 

@@ -14,6 +14,7 @@ import math
 import argparse
 import statistics
 import re
+import collections
 from datetime import datetime, timezone, date
 from hashlib import sha256
 from pathlib import Path
@@ -62,6 +63,79 @@ _SPARSE_TRADE_FLOOR = 5
 # Named constant, not inlined, so it is cheap to retune per strategy family
 # later without touching any of the metric formulas themselves.
 _FEE_REDUCTION_LOOKAHEAD_BARS = 6
+
+# CUL-275 (route-mode tiebreak): tie-break precedence for
+# `post_backtest_route_real` when two or more of the 5 possible
+# `determine_route()` values (trading-bot/performance/signal_statistics.py)
+# are tied for most-common across (symbol, window) slots. `statistics.mode()`
+# silently returns whichever tied value appears FIRST in iteration order in
+# that case -- not documented as an error, just quietly order-dependent -- so
+# a genuine tie could flip `post_backtest_route_real` (and therefore
+# `cost_dominated_real`) depending only on `for symbol in symbols: for window
+# in protocol["windows"]` order, with nothing downstream able to tell a real
+# majority from an ordering artifact.
+#
+# Precedence order below is `determine_route()`'s OWN if/elif priority chain,
+# verbatim (see that function's docstring), which already encodes a severity
+# ordering from "most concerning" to "least concerning":
+#   kill_no_ic          -- no detectable directional content at all
+#   refine_inverted_ic  -- signal is real but backwards
+#   kill_cost_hurdle    -- signal real, right direction, but structurally
+#                          can't clear costs
+#   refine_cost_hurdle  -- signal real, right direction, marginally short of
+#                          the cost hurdle
+#   proceed_to_interpretation -- passes both gates
+# Reusing this existing order (rather than inventing a new one) means a tied
+# route resolves to whichever candidate the codebase already treats as most
+# worth flagging first. It also matches the brief's own reasoning: a false
+# "not cost-dominated" (silently picking `proceed_to_interpretation` or a
+# `refine_*` route over a tied `kill_*`) is worse here than a false
+# "cost-dominated", since verdict_interpreter treats `kill_cost_hurdle`/
+# `refine_cost_hurdle` as a high-confidence mechanical signal -- but
+# `kill_no_ic`/`refine_inverted_ic` are even more fundamental problems than a
+# cost hurdle (no signal, or a backwards one, beats "right signal, wrong
+# economics" as the thing worth surfacing first), so they outrank the cost
+# routes rather than only the two cost routes outranking the pass route.
+_ROUTE_TIE_PRECEDENCE = (
+    "kill_no_ic",
+    "refine_inverted_ic",
+    "kill_cost_hurdle",
+    "refine_cost_hurdle",
+    "proceed_to_interpretation",
+)
+
+
+def _resolve_tied_route(routes: list[str]) -> tuple[str | None, bool]:
+    """
+    Tie-aware replacement for `statistics.mode(routes)`.
+
+    Returns (winning_route, tied). `tied` is True iff two or more distinct
+    values in `routes` share the highest count (a genuine tie for most
+    common) -- regardless of which one this function resolves to. When not
+    tied, the plain most-common value wins (identical to `statistics.mode`'s
+    result in the no-tie case). When tied, the winner is the tied candidate
+    that sorts first in `_ROUTE_TIE_PRECEDENCE`; a tied value absent from
+    that tuple (should not happen -- `determine_route()` only emits the 5
+    named values) sorts last, never crashes.
+    """
+    if not routes:
+        return None, False
+    counts = collections.Counter(routes)
+    ranked = counts.most_common()
+    top_count = ranked[0][1]
+    tied_candidates = [route for route, count in ranked if count == top_count]
+    tied = len(tied_candidates) > 1
+    if not tied:
+        return ranked[0][0], False
+
+    def _precedence_key(route):
+        try:
+            return _ROUTE_TIE_PRECEDENCE.index(route)
+        except ValueError:
+            return len(_ROUTE_TIE_PRECEDENCE)
+
+    winner = min(tied_candidates, key=_precedence_key)
+    return winner, True
 
 
 def _config_sha(config_source):
@@ -659,28 +733,44 @@ def _resolve_boundary_level(strategy_config: dict | None) -> float:
     per strategy (component-level `transforms` vs `history_transforms`, per
     DOC/STRATEGY_FRAMEWORK.md) -- walking the whole tree for the first
     matching op is simpler and more robust than enumerating every shape.
+
+    CUL-275 (visibility, not behavior): today's real
+    trading-bot/strategy_config.json has exactly one `threshold_filter`, so
+    this ambiguity never fires in practice -- but this function is written
+    to generalize to configs with several per-component `threshold_filter`
+    ops, and picking the first one found via an unordered tree walk in that
+    case is a silent judgment call. Resolution is unchanged (still the
+    first value found, in the same traversal order as before), but when more
+    than one distinct threshold_filter.min_abs is found, a WARNING is now
+    printed naming the count and values so the ambiguity is visible instead
+    of silent.
     """
+    found_values = []
+
     def _walk(node):
         if isinstance(node, dict):
             if node.get("op") == "threshold_filter":
                 min_abs = (node.get("params") or {}).get("min_abs")
                 if isinstance(min_abs, (int, float)):
-                    return float(min_abs)
+                    found_values.append(float(min_abs))
             for value in node.values():
-                found = _walk(value)
-                if found is not None:
-                    return found
+                _walk(value)
         elif isinstance(node, list):
             for item in node:
-                found = _walk(item)
-                if found is not None:
-                    return found
-        return None
+                _walk(item)
 
     if not strategy_config:
         return 0.0
-    level = _walk(strategy_config)
-    return level if level is not None else 0.0
+    _walk(strategy_config)
+    if len(found_values) > 1:
+        print(
+            f"WARNING: _resolve_boundary_level found {len(found_values)} "
+            f"threshold_filter.min_abs values in this strategy config "
+            f"{found_values} -- using the first ({found_values[0]}) as the "
+            "trade_less_often boundary_level. Other components' thresholds "
+            "are not reflected in this diagnostic."
+        )
+    return found_values[0] if found_values else 0.0
 
 
 def _compute_window_fee_reduction_diagnostics(
@@ -1366,11 +1456,19 @@ def evaluate_against_decision_rules(
     # non-null value across all windows as this run's overall route. A
     # cost-dominated kill is `kill_cost_hurdle` (structural) or
     # `refine_cost_hurdle` (marginal) -- see signal_statistics.py::determine_route.
+    #
+    # CUL-275: `statistics.mode()` does not flag ties -- on equal counts it
+    # silently returns whichever value appears first in `_routes_real`, which
+    # depends only on `for symbol in symbols: for window in
+    # protocol["windows"]` iteration order. `_resolve_tied_route` replaces it
+    # with tie-aware logic: `post_backtest_route_real_tied` records whether
+    # this run's result was a genuine tie, and the winner is chosen by
+    # `_ROUTE_TIE_PRECEDENCE` (documented above) rather than by list order.
     _routes_real = [
         r["core"].get("post_backtest_route_real") for r in results
         if r["core"].get("post_backtest_route_real") is not None
     ]
-    post_backtest_route_real = statistics.mode(_routes_real) if _routes_real else None
+    post_backtest_route_real, post_backtest_route_real_tied = _resolve_tied_route(_routes_real)
     cost_dominated_real = (
         post_backtest_route_real in ("kill_cost_hurdle", "refine_cost_hurdle")
         if post_backtest_route_real is not None else None
@@ -1409,6 +1507,7 @@ def evaluate_against_decision_rules(
         "win_rate_vs_sharpe":             wr_vs_sharpe,
         "below_floor_pct":                below_floor_pct,  # A3.4
         "post_backtest_route_real":       post_backtest_route_real,  # E-016
+        "post_backtest_route_real_tied":  post_backtest_route_real_tied,  # CUL-275
         "cost_dominated_real":            cost_dominated_real,       # E-016
     }
 
