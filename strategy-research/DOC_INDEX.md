@@ -47,6 +47,14 @@ forecast calculation, allocation, risk gates, execution/portfolio, run
 artifacts, and metrics — with explicit call-outs where it corrects stale
 claims in root `CLAUDE.md`/`CLAUDE.fork.md`.
 
+### "What OHLCV timeframes/aux feeds are available, and what happens when a cache is missing?"
+→ **[`docs/DATA_AVAILABILITY.md`](docs/DATA_AVAILABILITY.md)** — short,
+forced-read doc (E-045 S2): cacheable granularities, the current
+exact-cache-missing fallback rule (`fetch_interval_seconds`, corrected
+post-CUL-250), aux-feed pointers, the bar-count/signal-shape sweep checklist,
+and zero-data-is-not-a-finding. Required input for `backtest-engineering` and
+`refinement-planner`.
+
 ### "How do I change things safely?"
 → **[`docs/TIMEFRAME_CHANGE_PLAYBOOK.md`](docs/TIMEFRAME_CHANGE_PLAYBOOK.md)**
 — the two assumption-sweep categories, metric-basis rules (bar/episode/fragment),
