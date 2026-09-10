@@ -75,7 +75,7 @@ def test_fee_reduction_assessment_present_suppresses_warning(tmp_path, monkeypat
         "supporting_evidence": "cost_drag_pct=180, corr=0.02",
         "fee_reduction_assessment": {
             "has_fee_reduction_system": True,
-            "candidate_system": "maker_only_execution",
+            "candidate_system": "combine_nearby_trades",
             "registered_as": "briefs/some_cheap_variant.md",
         },
     })

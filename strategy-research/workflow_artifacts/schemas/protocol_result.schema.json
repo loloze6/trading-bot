@@ -38,7 +38,11 @@
               "cost_drag_pct":            { "type": ["number", "null"] },
               "forecast_return_corr":     { "type": ["number", "null"] },
               "forecast_return_corr_pvalue": { "type": ["number", "null"] },
-              "avg_trade_duration_bars":  { "type": ["number", "null"] }
+              "avg_trade_duration_bars":  { "type": ["number", "null"] },
+              "post_backtest_route_real": {
+                "type": ["string", "null"],
+                "description": "CUL-264/CUL-272: real, mechanical post-backtest cost-check route for this (symbol, window), from trading-bot/performance/signal_statistics.py::determine_route() fed real per-trade fees/edge. One of kill_no_ic, refine_inverted_ic, kill_cost_hurdle, refine_cost_hurdle, proceed_to_interpretation."
+              }
             }
           },
           "per_regime":      { "type": "object" },
@@ -98,6 +102,19 @@
             "zero_trade_slot_pct": {
               "type": ["number", "null"],
               "description": "A3.4: global % of all window-symbol slots with 0 trades."
+            },
+            "post_backtest_route_real": {
+              "type": ["string", "null"],
+              "description": "E-016: most common non-null results[*].core.post_backtest_route_real across all (symbol, window) slots in this run. See that field for the enum."
+            },
+            "cost_dominated_real": {
+              "type": ["boolean", "null"],
+              "description": "E-016: true when post_backtest_route_real is kill_cost_hurdle or refine_cost_hurdle -- the REAL, mechanical trigger for verdict_interpreter's fee-reduction autopsy (see fee_reduction_metrics below and workflow_artifacts/skills/verdict-interpreter/SKILL.md). null when no window produced a post_backtest_route_real value."
+            },
+            "fee_reduction_metrics": {
+              "type": ["object", "null"],
+              "description": "E-016: present when trade_diagnostics_summary is available. Full field definitions in trade_diagnostics.schema.json.",
+              "$ref": "trade_diagnostics.schema.json#/properties/summary/properties/fee_reduction_metrics"
             }
           }
         }
