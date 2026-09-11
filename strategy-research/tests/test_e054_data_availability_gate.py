@@ -310,6 +310,39 @@ def test_layer1_price_precheck_binance_unreachable_timeframe_rescued_by_aggregat
     assert ok is True, reason
 
 
+def test_timeframe_to_seconds_parses_non_standard_but_valid_intervals():
+    """Regression, Jeremy's catch (2026-09-11, 'Binance BTC 7m'): a timeframe
+    string absent from the fixed _TIMEFRAME_SECONDS enum must still resolve
+    to a real second count if it matches '<N><m|h|d|w>' -- CandleBuilder's
+    real aggregation mechanism has no requirement that an interval be a
+    'named' venue-native token, only that it's a real number of seconds."""
+    assert dag._timeframe_to_seconds("7m") == 420
+    assert dag._timeframe_to_seconds("9d") == 9 * 86400
+    assert dag._timeframe_to_seconds("2w") == 2 * 604800
+    assert dag._timeframe_to_seconds("1h") == 3600  # still hits the fixed dict first
+    assert dag._timeframe_to_seconds("1M") == 2592000  # month: fixed dict only, never regex
+    assert dag._timeframe_to_seconds("not_a_timeframe") is None
+
+
+def test_layer1_price_precheck_nonstandard_timeframe_rescued_by_aggregation():
+    """The exact bug: '7m' (420s) isn't a venue-native token anywhere, but
+    Binance's declared '1m' (60s) divides it evenly -- before the
+    _timeframe_to_seconds fix, this fell through as an unparseable interval
+    (silently treated as 'not real' rather than 'not named') and declined
+    despite being genuinely reachable via aggregation."""
+    layer1 = {
+        "venues": {"binance": {"spot": {
+            "timeframes": {"available": ["1m"]},
+            "symbols": {"earliest_ohlcv_utc": {"BTCUSDT": "2017-08-17T00:00:00Z"}},
+        }}},
+    }
+    ok, reason = dag.layer1_price_precheck(
+        layer1, "binance", "BTCUSDT", "7m",
+        datetime.datetime(2024, 1, 1), datetime.datetime(2024, 2, 1),
+    )
+    assert ok is True, reason
+
+
 def test_layer1_price_precheck_unreachable_timeframe_with_no_finer_available_still_declines():
     """Regression: the genuinely-impossible case (no direct match, no finer
     interval to aggregate from) must still decline -- this is the existing

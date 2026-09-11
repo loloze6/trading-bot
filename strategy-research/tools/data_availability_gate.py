@@ -71,6 +71,7 @@ import contextlib
 import datetime
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Optional
@@ -109,6 +110,35 @@ _TIMEFRAME_SECONDS = {
     "1h": 3600, "2h": 7200, "4h": 14400, "6h": 21600, "8h": 28800,
     "12h": 43200, "1d": 86400, "3d": 259200, "1w": 604800, "1M": 2592000,
 }
+_TIMEFRAME_UNIT_SECONDS = {"m": 60, "h": 3600, "d": 86400, "w": 604800}
+_TIMEFRAME_PATTERN = re.compile(r"^(\d+)(m|h|d|w)$")
+
+
+def _timeframe_to_seconds(timeframe: str) -> Optional[int]:
+    """
+    Parse ANY '<N><unit>' timeframe string to seconds, not just the fixed set
+    of standard/ccxt-native tokens in `_TIMEFRAME_SECONDS`. Bug found
+    2026-09-11 (Jeremy's spot-check, 'Binance BTC 7m'): the aggregation
+    fallback added earlier this session was correct in principle (420s
+    divides evenly into 1m's 60s, so a 7m request should be reachable by
+    aggregating 1m data) but never got a chance to evaluate it, because
+    looking `timeframe` up in the fixed dict returned None for any string
+    that isn't one of the ~15 enumerated tokens -- silently treating "not a
+    named venue timeframe" as "not a real interval at all". CandleBuilder's
+    real aggregation mechanism has no such restriction: DataManager just
+    buckets rows into `interval_seconds`-sized windows (see its
+    fetch_interval_seconds docstring) -- the number never has to correspond
+    to a venue-native/"standard" token. '1M' (calendar month) is
+    deliberately excluded from the regex fallback -- months have variable
+    length in seconds, so it is ONLY ever resolved via the fixed table.
+    """
+    if timeframe in _TIMEFRAME_SECONDS:
+        return _TIMEFRAME_SECONDS[timeframe]
+    match = _TIMEFRAME_PATTERN.match(timeframe)
+    if not match:
+        return None
+    n, unit = match.groups()
+    return int(n) * _TIMEFRAME_UNIT_SECONDS[unit]
 
 # Feed name -> "how it's checked". 'reserved' feeds decline unconditionally
 # here (E-054 scope: a policy gate, not a data-availability fact -- see
@@ -204,7 +234,7 @@ def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: s
         )
 
     timeframes = venue_block.get("timeframes") or {}
-    interval_seconds = _TIMEFRAME_SECONDS.get(timeframe)
+    interval_seconds = _timeframe_to_seconds(timeframe)
 
     if exchange == "kraken":
         live_rest = timeframes.get("live_rest_api") or {}
@@ -433,7 +463,14 @@ def check_price_window(symbol: str, exchange: str, timeframe: str,
     engine would; pass an explicit int (or None) to override for a test or a
     campaign that pins its own value.
     """
-    interval_seconds = _TIMEFRAME_SECONDS[timeframe]
+    interval_seconds = _timeframe_to_seconds(timeframe)
+    if interval_seconds is None:
+        raise ValueError(
+            f"timeframe={timeframe!r} is not a parseable interval (expected a "
+            f"standard token or '<N><m|h|d|w>') -- Layer 1 should have declined "
+            f"this before Layer 2 was ever called; a caller invoking this "
+            f"function directly with a bad timeframe is a real bug, fail loud."
+        )
     start_dt = pd.Timestamp(window_start).to_pydatetime()
     end_dt = pd.Timestamp(window_end).to_pydatetime()
 
