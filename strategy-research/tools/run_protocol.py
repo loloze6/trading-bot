@@ -752,12 +752,56 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
     if runs_root is None:
         return None, None
 
-    import pandas as pd
     # Repointed 2026-09-12 (E-039 step 5): sourced from
     # trading-bot/performance/signal_statistics.py, not prescreen_signal.py
     # (being removed) -- _TBOT already on sys.path at module load, above.
     from performance.signal_statistics import stationary_block_bootstrap_ic_significance
 
+    records, expected_step, all_have_timestamp = _assemble_pooled_symbol_records(rows, runs_root)
+    if not records:
+        return None, None
+
+    symbol = rows[0]['symbol']
+    expected_step_by_symbol = (
+        {symbol: expected_step}
+        if (all_have_timestamp and expected_step is not None) else None
+    )
+    boot = stationary_block_bootstrap_ic_significance(
+        {symbol: records}, expected_step_by_symbol=expected_step_by_symbol,
+    )
+    return boot.get('pooled_ic'), boot['method']
+
+
+def _assemble_pooled_symbol_records(rows: list, runs_root) -> tuple:
+    """
+    Pool ONE symbol's per-bar records across all of its windows, in chronological
+    window order. Returns (records, expected_step, all_have_timestamp).
+
+    Extracted from _pooled_ic_with_bootstrap_fallback (CUL-265) so the A8.5.1a
+    episode path reuses this assembly rather than rebuilding it -- the two
+    consumers must see exactly the same pooled bars, or a disagreement between
+    the bootstrap IC and the episode IC would be an artifact of two different
+    record builders rather than a real methodological difference.
+
+    Record shape matches prescreen_signal._extract_forecasts' own: forecast,
+    next_return_bps, plus "active"/"timestamp"/"symbol" where derivable.
+    "active" uses prescreen's own _ACTIVE_THRESHOLD rather than a local literal,
+    so "did the signal speak on this bar" means the same thing on both sides of
+    the pipeline; episode identification (A8.5.1a) is defined entirely in terms
+    of it. "symbol" is constant here (rows are pre-filtered per symbol) but is
+    carried so era_of can return prescreen's own (symbol, era_id) tuple shape.
+
+    The "active"/"symbol" keys are additive: _stationary_block_bootstrap_ic_
+    significance and _contiguous_segments read only forecast/next_return_bps/
+    timestamp, so the pre-existing bootstrap path is unaffected by their presence.
+    """
+    import pandas as pd
+    # Repointed 2026-09-12 (E-039 step 5): sourced from
+    # trading-bot/performance/signal_statistics.py, not prescreen_signal.py
+    # (being removed) -- _TBOT already on sys.path at module load, above.
+    from performance.signal_statistics import ACTIVE_THRESHOLD
+
+    symbol = rows[0]['symbol'] if rows else None
     records = []
     expected_step = None
     all_have_timestamp = True
@@ -785,28 +829,137 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
             rec = {
                 'forecast': float(forecasts[i]),
                 'next_return_bps': (closes[i + 1] - closes[i]) / closes[i] * 10000.0,
+                'active': abs(float(forecasts[i])) > ACTIVE_THRESHOLD,
+                'symbol': symbol,
             }
             if has_ts:
                 rec['timestamp'] = timestamps[i]
             records.append(rec)
+    return records, expected_step, all_have_timestamp
+
+
+def _load_campaign_data_policy() -> dict:
+    """Local copy (E-039 step 5, 2026-09-12): prescreen_signal.py's own
+    identically-named function is being removed along with that file. This
+    is a small, strategy-research-specific config reader (not general
+    statistics), so it lives here directly rather than in
+    trading-bot/performance/signal_statistics.py."""
+    import yaml
+    p = Path(_SR) / "config" / "campaign_data_policy.yaml"
+    if not p.exists():
+        return {}
+    with open(p, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _era_id_for_timestamp(ts, eras: list) -> str:
+    """Local copy (E-039 step 5, 2026-09-12) of prescreen_signal.py's own
+    _era_id_for_timestamp -- A8.5.1a: map a bar timestamp to its era_id per
+    campaign_data_policy.yaml's `eras` list. Returns 'era_unmapped' if the
+    timestamp falls outside every declared era (should not happen for
+    in-policy data, but must not crash)."""
+    import pandas as pd
+    d = pd.Timestamp(ts).strftime("%Y-%m-%d")
+    for era in eras:
+        lo, hi = era["range"]
+        if lo <= d <= hi:
+            return era["era_id"]
+    return "era_unmapped"
+
+
+def _a851a_episode_significance(rows: list, runs_root, timeframe: str) -> dict | None:
+    """
+    A8.5.1a episode-blocked significance for ONE symbol, pooled across its
+    windows (CUL-265). Returns compute_a851a_significance's own result dict, or
+    None when it is not computable.
+
+    WHY THIS LIVES HERE AND NOT IN build_core. compute_a851a_significance pools
+    across eras/windows for one hypothesis -- that is its entire purpose (it was
+    built for multi-era backward-extension protocols). trading-bot's
+    reporting/run_artifact.py::build_core only ever sees ONE run's own bars_df
+    and structurally cannot do that pooling. Cross-window pooling already lives
+    here, so this is the correct layer. Unlike CUL-262's Fisher-z, no port is
+    needed: run_protocol.py and episode_significance.py are both in
+    strategy-research, so the real function is IMPORTED -- there is no second
+    implementation to drift.
+
+    WHY IT IS COMPUTED UNCONDITIONALLY (and not behind prescreen's
+    significance_methodology flag). In prescreen, A8.5.1a REPLACES the headline
+    significance that decides kill-vs-proceed, so switching method changes a
+    verdict and must be pre-registered and opted into. Here it is purely
+    additive -- median_forecast_return_corr remains the headline and is
+    untouched -- so the pre-registration argument does not apply, and gating it
+    behind a flag would mean the number is absent from exactly the archived runs
+    someone later wants to compare. Gating on "spans multiple eras" was also
+    rejected: an era boundary is only ONE of the two things that closes an
+    episode (a >gap_bars hole is the other), so a single-era but bursty signal
+    still needs the correction, and an eras list that fails to cover a run's
+    window would silently read as one era and suppress it.
+
+    COST, MEASURED not assumed (2026-09-04, CUL-265): the expensive bootstrap is
+    self-limiting -- compute_a851a_significance returns early and cheaply on the
+    dense (>=50% activation) and insufficient-episode (<8) paths, so the 2000
+    resamples run only for the sparse bursty signals the method exists for. Timed
+    on a synthetic worst case matching a 95-window 1h protocol (20,000 pooled
+    bars, 7.9% active, 139 episodes -> the full bootstrap path): 15.2s per
+    symbol. Against the 3.5-52 MINUTES E-039 S1 measured for the backtest that
+    must already have run before this code is reached, that is noise.
+    """
+    if runs_root is None or not rows:
+        return None
+
+    sys.path.insert(0, _HERE)
+    import pandas as pd
+    import episode_significance as _es
+    from timeframe import bars_per_day, timeframe_seconds
+
+    records, _expected_step, all_have_timestamp = _assemble_pooled_symbol_records(rows, runs_root)
     if not records:
-        return None, None
+        return None
 
-    symbol = rows[0]['symbol']
-    expected_step_by_symbol = (
-        {symbol: expected_step}
-        if (all_have_timestamp and expected_step is not None) else None
+    policy = _load_campaign_data_policy()
+    eras = policy.get('eras', [])
+    es_cfg = policy.get('episode_significance', {})
+
+    # Era mapping needs a per-bar timestamp. Without it (an older bars.csv), fall
+    # back to era_of=None -- episodes then close on gap alone, which is the
+    # method's own documented behaviour when no era list applies, NOT a silent
+    # substitution of a different statistic.
+    era_of = None
+    if eras and all_have_timestamp:
+        def era_of(i, _records=records, _eras=eras):
+            return (_records[i]['symbol'],
+                    _era_id_for_timestamp(_records[i]['timestamp'], _eras))
+
+    # Scalar bar step for gap-aware episode splitting (GH#66), mirroring
+    # prescreen's own derivation from the timeframe rather than from the data --
+    # the protocol's declared timeframe is the authority on what one bar means.
+    episode_expected_step = (
+        pd.Timedelta(timeframe_seconds(timeframe), unit='s') if all_have_timestamp else None
     )
-    boot = stationary_block_bootstrap_ic_significance(
-        {symbol: records}, expected_step_by_symbol=expected_step_by_symbol,
+
+    return _es.compute_a851a_significance(
+        records,
+        era_of=era_of,
+        gap_bars=es_cfg.get('gap_bars', _es._DEFAULT_GAP_BARS),
+        density_fallback_pct=es_cfg.get('density_fallback_pct', _es._DEFAULT_DENSITY_FALLBACK_PCT),
+        min_n_episodes=es_cfg.get('min_n_episodes', _es._MIN_N_EPISODES),
+        block_size=bars_per_day(timeframe),
+        n_resamples=es_cfg.get('n_resamples', _es._DEFAULT_N_RESAMPLES),
+        expected_step=episode_expected_step,
     )
-    return boot.get('pooled_ic'), boot['method']
 
 
-def _build_extended_summary(per_symbol_summary: dict, results: list, runs_root=None) -> dict:
+def _build_extended_summary(per_symbol_summary: dict, results: list, runs_root=None,
+                            timeframe: str = "1h") -> dict:
     """Augment per_symbol_summary with median_win_rate, regime_frequency, and
     median_forecast_return_corr (with a degenerate-signal bootstrap fallback --
-    see _pooled_ic_with_bootstrap_fallback)."""
+    see _pooled_ic_with_bootstrap_fallback).
+
+    timeframe: protocol-level bar size, used ONLY by the additive A8.5.1a
+    episode-blocked significance field (CUL-265) for its block size and bar
+    step. Defaults to "1h" to preserve every existing caller's behaviour, the
+    same convention main()'s own protocol_timeframe default uses."""
     extended = {s: dict(v) for s, v in per_symbol_summary.items()}
     for symbol in extended:
         rows = [r for r in results if r['symbol'] == symbol]
@@ -829,6 +982,18 @@ def _build_extended_summary(per_symbol_summary: dict, results: list, runs_root=N
         corr, method = _pooled_ic_with_bootstrap_fallback(rows, runs_root)
         extended[symbol]['median_forecast_return_corr'] = corr
         extended[symbol]['median_forecast_return_corr_method'] = method
+        # CUL-265 (A8.5.1a, E-039): ADDITIVE. Episode-blocked significance for
+        # bursty signals, pooled across this symbol's windows. Never replaces
+        # median_forecast_return_corr above -- that stays the headline, byte for
+        # byte. None (not a fabricated number) whenever it is not computable:
+        # no runs_root, no bars.csv, or no usable records. See
+        # _a851a_episode_significance for why it is unconditional rather than
+        # behind prescreen's significance_methodology flag.
+        a851a = _a851a_episode_significance(rows, runs_root, timeframe)
+        extended[symbol]['episode_blocked_significance'] = a851a
+        extended[symbol]['episode_blocked_significance_method'] = (
+            a851a.get('method') if a851a else None
+        )
     return extended
 
 def _split_criteria(text: str) -> list:
@@ -885,6 +1050,7 @@ def evaluate_against_decision_rules(
     validation_protocol: dict,
     trade_diagnostics_summary: dict | None = None,
     runs_root=None,
+    timeframe: str = "1h",
 ) -> dict:
     """
     Evaluate per_symbol_summary against criteria from a loaded validation_protocol.yaml dict.
@@ -896,8 +1062,10 @@ def evaluate_against_decision_rules(
     runs_root: optional; when provided, enables the block-bootstrap IC fallback
     for degenerate (constant-magnitude-when-active) signals in
     _build_extended_summary (2026-07-09).
+    timeframe: protocol bar size, passed through to _build_extended_summary for
+    the additive A8.5.1a episode-blocked significance field only (CUL-265).
     """
-    extended = _build_extended_summary(per_symbol_summary, results, runs_root)
+    extended = _build_extended_summary(per_symbol_summary, results, runs_root, timeframe)
 
     decision_rules    = validation_protocol.get('decision_rules', {})
     required_evidence = validation_protocol.get('required_evidence', []) or []
@@ -1509,7 +1677,8 @@ def main():
     # summary BEFORE the cross-check, so the check reports whether the
     # fallback already reconciled prescreen/backtest, rather than flagging a
     # "disagreement" that's actually been resolved elsewhere in this same file.
-    extended_for_cross_check = _build_extended_summary(per_symbol, results, _runs_root)
+    extended_for_cross_check = _build_extended_summary(
+        per_symbol, results, _runs_root, protocol_timeframe)
     cross_check = _cross_check_prescreen_vs_backtest(out_dir, results, extended_for_cross_check)
 
     hypothesis_verdict = None
@@ -1519,7 +1688,7 @@ def main():
             vp = yaml.safe_load(f)
         hypothesis_verdict = evaluate_against_decision_rules(
             per_symbol, results, vp, trade_diagnostics_summary or None,
-            runs_root=_runs_root,
+            runs_root=_runs_root, timeframe=protocol_timeframe,
         )
         print(f"Hypothesis verdict : {hypothesis_verdict['verdict']}")
         print(f"Reason             : {hypothesis_verdict['verdict_reason']}")

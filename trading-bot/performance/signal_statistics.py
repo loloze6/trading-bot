@@ -231,6 +231,12 @@ def block_adjusted_pvalue(corr: Optional[float], n_active: int, block_size: int,
 # here. See CUL-264's Linear issue, closing section.
 
 _SIG_THRESHOLD = 0.10          # prescreen_signal.py::_SIG_THRESHOLD, same value
+ACTIVE_THRESHOLD = 1e-6        # prescreen_signal.py::_ACTIVE_THRESHOLD, same value --
+                                # "is this bar's forecast active" (nonzero beyond float
+                                # noise), used wherever active-bar identification matters
+                                # (turnover, episode construction). Public (no leading
+                                # underscore): unlike the other ports above, this is a
+                                # plain constant multiple modules read directly.
 _DEFAULT_SIGMA_BAR_BPS = 15.0  # prescreen_signal.py::_DEFAULT_SIGMA_BAR_BPS, same value
 
 

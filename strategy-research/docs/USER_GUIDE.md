@@ -2589,7 +2589,7 @@ by how load-bearing they are, not alphabetically.
 | `tools/prescreen_signal.py` | **Implements stage 7 in full** — IC, significance, cost gate, routing. The single largest tool in the directory. |
 | `tools/run_protocol.py` | Walk-forward executor for stage 8 *(documented above)*. |
 | `tools/verdict_criteria_evaluator.py` | **The K2/C7 machine [verdict](#g-verdict)** — scores a run against its pre-registered `pass_rule` and writes `pass_rule_evaluation.yaml`. Since 2026-07-13 this is the decision authority, not an advisory. |
-| `tools/episode_significance.py` | The A8.5.1a episode-blocked significance path used by the prescreen. |
+| `tools/episode_significance.py` | The A8.5.1a episode-blocked significance path. Used by `run_protocol.py` (stage 8, CUL-265), where it is computed unconditionally as an **additive** second opinion pooled across a symbol's windows — it never replaces `median_forecast_return_corr`. |
 | `tools/timeframe.py` | Timeframe arithmetic, **derived rather than enumerated** — the single source of `bars_per_day`. A lookup table here was the 4h `n_eff` bug. |
 | `tools/validate_regime_detector.py` | Stage 9's detector validation; computes the A2.2 metrics. |
 | `tools/retune_regime_detector.py` | One-shot grid search over `(ER_enter, ER_exit, min_dwell)`. Scoring is detector-intrinsic only — the A2.2 retune firewall in tool form. |
