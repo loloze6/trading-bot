@@ -38,11 +38,21 @@ class _StubEngine:
         return {}
 
 
+class _StubStrategy:
+    """Minimal stand-in for AdvancedStrategy -- just enough shape for
+    Launcher.simulate() to read before it ever reaches load_data(). E-055 added
+    a min_allocation_change_override read at this point (real AdvancedStrategy
+    always has the attribute, None or not); a bare `None` strategy object
+    doesn't, so it must be stubbed here too."""
+
+    min_allocation_change_override = None
+
+
 @pytest.fixture
 def _stubbed(monkeypatch):
     _StubEngine.simulated = False
     monkeypatch.setattr(launcher_mod, "BacktestEngine", _StubEngine)
-    monkeypatch.setattr(launcher_mod, "AdvancedStrategy", lambda *a, **k: None)
+    monkeypatch.setattr(launcher_mod, "AdvancedStrategy", lambda *a, **k: _StubStrategy())
     return _StubEngine
 
 

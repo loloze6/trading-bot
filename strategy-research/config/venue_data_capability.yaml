@@ -1,0 +1,520 @@
+# E-054 Layer 1 — venue DATA CAPABILITY audit: what each exchange venue's own
+# API/product actually offers, researched once against real, citable sources
+# (exchange API docs fetched and read this session, plus a handful of live,
+# read-only probes against the exchange's own public REST endpoints). Answers
+# one question, fast and cheap, with ZERO network calls at check time: "could
+# this (venue, product, symbol, timeframe, date-range, aux-feed) combination
+# possibly exist AT ALL?"
+#
+# DISTINCT FROM venue_tradability.yaml (E-014), which sits in this same
+# directory. That file answers a LEGAL/REGULATORY question — "is this
+# (venue, product) tradable NOW by this operator (French non-professional
+# retail)" — and fires early, at brief registration, on venue+market_type
+# alone. THIS file answers a TECHNICAL question — "does the venue's own API
+# even publish this symbol/timeframe/aux-series, and since when" — and is
+# consumed later, post-variant (E-054 Layer 2), once a candidate has a
+# concrete symbol/timeframe/window. A venue can be legally tradable and
+# technically incapable (e.g. wrong timeframe for that venue's API), or
+# technically capable and legally untradable (e.g. Kraken spot-margin below).
+# Never conflate the two files or merge them.
+#
+# SCOPE: HISTORICAL / BACKTEST RETRIEVAL ONLY (2026-09-11, Jeremy's explicit
+# call). Live trading is forbidden in this repo today (CLAUDE.fork.md hard
+# rule 1: "Never run live... Backtests only") and this codebase's live vs.
+# backtest data paths are architecturally different mechanisms, not the same
+# one at a different speed (DataManager.add_tick(), fed by a live REST poll,
+# vs. add_row(), fed by historical rows already on disk/fetched in bulk —
+# data_manager.py:435-444). Nothing below describes or should be read as
+# describing live-market data capability (streaming ticks, order-book access,
+# poll latency/reliability) — that is a separate, not-yet-relevant question
+# while live trading itself is disallowed, and would need its own audit if
+# that ever changes. Every entry below is about one specific RETRIEVAL
+# MECHANISM this codebase actually has wired for historical data — named
+# explicitly per entry (e.g. "ccxt live REST klines", "Kraken bulk-archive
+# download, not automated here") — because a venue can offer the same data
+# through more than one mechanism with different limits (see Kraken spot's
+# live_rest_api vs. downloadable_archive split below, the clearest example).
+# Do not read a capability recorded under one mechanism as applying to a
+# different one for the same venue.
+#
+# NOT a record of what THIS codebase has fetched or cached before.
+# local_data/*.csv coverage drifts constantly as backtests run — checking
+# actual per-window gaps in OUR OWN cached/fetched data is E-054 LAYER 2's
+# job (a real check against real data, unavoidably network- or disk-bound),
+# not this file's. This file only records the venue's own, comparatively
+# stable properties: symbols listed and since when, candle resolutions the
+# API offers, aux data series published and since when. Exchange capability
+# changes rarely, so staleness risk here is low relative to Layer 2's target.
+#
+# Three-state model, same convention as venue_tradability.yaml: known-yes,
+# known-no, and an explicit "unconfirmed" state for anything not verified
+# this session. Per that file's own stated policy, carried forward here
+# verbatim: SILENCE OR UNCERTAINTY MUST NEVER RESOLVE TO "AVAILABLE". An
+# unconfirmed symbol/timeframe/feed declines, exactly like a missing one.
+#
+# Scope boundary (per the E-054 Layer 1 task brief): the union of
+# venue_tradability.yaml's own venue list (kraken spot/perp/margin) and the
+# (exchange, market_type) pairs this codebase's own cost model and fetchers
+# actually exercise (binance spot for price, binance futures for funding +
+# as the perp-calibration substrate cost_model.yaml's PERP CALIBRATION block
+# uses to cost the engine's generic margin-short simulation, kraken
+# spot/futures for price + funding). Venues nobody here uses are out of
+# scope; venues in active use are covered even where venue_tradability.yaml
+# does not yet mention them (binance).
+#
+# Sources fetched and read this session (2026-09-11), cited per-entry below:
+#   - https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints
+#   - https://fapi.binance.com/fapi/v1/klines / fundingRate (live REST probes)
+#   - https://api.binance.com/api/v3/klines (live REST probes, 5 symbols)
+#   - https://docs.kraken.com/api/docs/rest-api/get-ohlc-data
+#   - https://api.kraken.com/0/public/AssetPairs (live REST probe)
+#   - https://support.kraken.com/articles/perpetual-contract-specifications-for-clients-in-the-eea
+#   - https://support.kraken.com/articles/360047124832-downloadable-historical-ohlcvt-open-high-low-close-volume-trades-data
+#   - strategy-research/config/cost_model.yaml, strategy-research/config/available_feeds.yaml,
+#     strategy-research/config/venue_tradability.yaml, strategy-research/config/coin_universe.yaml
+#     (this repo's own committed, human-audited records — cited as basis where used)
+#   - trading-bot/data/fetchers/{ccxt_fetcher,funding_rate_fetcher,fear_greed_fetcher,
+#     whale_footprint_fetcher}.py, trading-bot/data/feed_registry.py,
+#     trading-bot/tests/test_exchange_selection.py (source read, not fetched)
+# Attempted but NOT successfully fetched (docs.kraken.com's futures API docs are a
+# JS-rendered SPA the fetch tool could not resolve past a 404): Kraken Futures'
+# own candles/resolutions doc pages. Where this matters, the entry below is marked
+# unconfirmed rather than filled from memory.
+
+version: "1.0"
+created_at: "2026-09-11"
+
+venues:
+
+  # =========================================================================
+  # BINANCE
+  # =========================================================================
+  binance:
+
+    spot:
+      mechanism: "ccxt live REST klines (historical), via CcxtFetcher"
+      description: >
+        Binance cash spot market. This codebase's price path (CcxtFetcher,
+        trading-bot/data/fetchers/ccxt_fetcher.py, defaultType="spot") reads
+        this product directly for exchange="binance" (the default when a
+        backtest declares no exchange at all — core/launcher.py's
+        _read_trading_params / _validated_exchange). Historical retrieval
+        only, per this file's scope note above — this codebase's separate
+        live-tick poll path (data_manager.py's add_tick(), used only when
+        mode="live") is not covered here and not audited by this file.
+      symbols:
+        pattern: >
+          Any BASEQUOTE pair Binance Spot lists (e.g. BTCUSDT). This
+          codebase's actual live universe is the 5 symbols priced in
+          strategy-research/config/cost_model.yaml's top-level fee_rate_bps
+          table: BTCUSDT, ETHUSDT, SOLUSDT, AVAXUSDT, BNBUSDT.
+        earliest_ohlcv_utc:
+          BTCUSDT: "2017-08-17T00:00:00Z"
+          ETHUSDT: "2017-08-17T00:00:00Z"
+          BNBUSDT: "2017-11-06T00:00:00Z"
+          SOLUSDT: "2020-08-11T00:00:00Z"
+          AVAXUSDT: "2020-09-22T00:00:00Z"
+        basis: >
+          Live read-only probe of Binance's own public REST API this session
+          (2026-09-11): GET https://api.binance.com/api/v3/klines?symbol=<SYM>
+          &interval=1d&startTime=0&limit=1 for each of the 5 symbols. Each
+          response's first element (open-time epoch ms) converted to UTC.
+          Requesting startTime=0 with a real venue reliably returns the
+          earliest daily candle Binance's API holds — a backtest requesting
+          data before this date for these symbols is impossible at the source,
+          not just gappy in our cache. Any symbol not in this list is
+          unconfirmed (decline by default), not assumed available.
+        unconfirmed: >
+          No other Binance-listed symbol's earliest-OHLCV date was probed
+          this session — only the 5 currently costed/traded ones. A future
+          candidate on a different Binance pair needs its own probe of the
+          same endpoint before Layer 2 trusts a date for it.
+      timeframes:
+        available: [1s, 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M]
+        basis: >
+          Fetched and read https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints
+          this session — the Kline/Candlestick Data endpoint (GET /api/v3/klines)
+          section lists this exact interval set (including 1s, a newer
+          addition). No documented maximum lookback on startTime.
+        engine_reachability_note: >
+          CcxtFetcher._seconds_to_ccxt_timeframe() (ccxt_fetcher.py:212-224)
+          only ever snaps to {1m,5m,15m,30m,1h,4h,1d} — 9 of the 16
+          venue-offered resolutions are structurally unreachable through this
+          codebase's price path today, not because Binance lacks them.
+          Capability exists at the venue; not reachable through this
+          codebase's fetcher as currently written.
+      aux_feeds:
+        funding_rate:
+          available: false
+          basis: >
+            Cash spot has no funding mechanism by product definition (funding
+            exists only on the futures/perp product below); this codebase's
+            own FundingRateFetcher forces defaultType="future" regardless of
+            the price venue's own type (funding_rate_fetcher.py:100-103),
+            confirming spot is never the funding source in practice either.
+        open_interest:
+          available: unconfirmed
+          basis: >
+            Not applicable to spot by product definition (OI is a
+            derivatives concept); N/A rather than unconfirmed for THIS
+            product, recorded here only for schema symmetry with futures below.
+
+    futures:
+      also_known_as: "USDS-M / USDT-M perpetual futures ('binance' + defaultType='future')"
+      mechanism: "ccxt live REST (historical klines + fundingRate), via FundingRateFetcher"
+      description: >
+        Binance's own perpetual-futures product is NOT this codebase's price
+        source for any symbol (CcxtFetcher always constructs
+        defaultType="spot" — ccxt_fetcher.py:90). It IS the source for the
+        funding_rate aux feed: FundingRateFetcher defaults exchange_id to
+        "binance" and defaultType="future" (funding_rate_fetcher.py:96-103).
+        cost_model.yaml's PERP CALIBRATION block additionally uses Kraken's
+        (not Binance's) perp fee schedule to cost this engine's generic
+        margin-short simulation — see the `margin` entry below; Binance
+        futures is cited here only for the funding_rate series it actually
+        supplies to this codebase.
+      symbols:
+        pattern: "USDT-margined pairs Binance Futures lists, independent of spot's own listing date for the same base asset."
+        unconfirmed: >
+          Per-symbol futures listing dates were not probed this session
+          (only spot, above, and BTCUSDT funding, below, were). A futures
+          candidate on a symbol not yet probed must not assume its spot
+          listing date applies to the futures product — they can and do
+          differ (a token can list on spot years before a perp exists, or
+          never get one).
+      timeframes:
+        available: [1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M]
+        basis: >
+          developers.binance.com's own JS-rendered futures docs pages could
+          not be fetched directly this session (returned only site-nav
+          boilerplate to the fetch tool, not the rendered API reference).
+          This list is corroborated by two independent secondary sources
+          instead: Binance's own official binance-futures-connector-python
+          SDK source (github.com/binance/binance-futures-connector-python,
+          um_futures/market.py, fetched this session) and a web search
+          cross-referencing multiple Binance Open Platform doc-page titles.
+          Identical to spot's set minus 1s. Confidence: moderate (secondary
+          sources agree, not independently confirmed against Binance's own
+          rendered page) — do not treat as equal-strength to the
+          directly-fetched entries above.
+      aux_feeds:
+        funding_rate:
+          available: true
+          cadence_seconds: 28800
+          earliest_utc:
+            BTCUSDT: "2019-09-10T12:00:00Z"
+          basis: >
+            Live read-only probes this session of
+            https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT
+            (startTime=0 returned a near-current record rather than history —
+            the endpoint appears to silently ignore an implausibly old
+            startTime rather than error, so this path alone is NOT reliable
+            for finding an inception date; startTime=1567900800000, i.e.
+            2019-09-01, correctly returned the true early history). A 4-record
+            pull from that point (limit=4) shows exactly 8h between
+            consecutive fundingTime values (1568102400000 -> 1568131200000 ->
+            1568160000000 -> 1568188800000), confirming both the cadence and
+            that this codebase's own hardcoded
+            FundingRateFetcher._FUNDING_INTERVAL_SECONDS = 8*3600 default
+            (funding_rate_fetcher.py:49) is correct for Binance.
+          unconfirmed: >
+            Only BTCUSDT's funding inception date was probed. ETHUSDT and any
+            other symbol's own funding-history start date was not verified
+            this session — do not assume it matches BTCUSDT's.
+        open_interest:
+          available: true
+          reachable_through_this_codebase: false
+          basis: >
+            strategy-research/config/available_feeds.yaml (fetched/read this
+            session, evidence_type funding_open_interest): "Binance
+            perpetual funding rate (8h settlement). Not OI — OI is not
+            wired." Binance's futures API does publish open interest
+            (GET /fapi/v1/openInterest, /futures/data/openInterestHist) as a
+            venue capability, but data/fetchers/ (ls'd this session:
+            ccxt_fetcher.py, funding_rate_fetcher.py, fear_greed_fetcher.py,
+            whale_footprint_fetcher.py, base_fetcher.py) contains no OI
+            fetcher — capability exists at the venue, not reachable through
+            this codebase today.
+
+    margin:
+      description: >
+        NOT a separate market-data product with its own OHLCV/funding series.
+        This engine's SHORT-side execution
+        (trading-bot/execution/portfolio_info.py CommonPortfolioDef,
+        "Synthetic borrow asset, sell for USDT" / "Margin buy (borrow USDT)")
+        is a generic borrow/sell/repay simulation layered on top of the SAME
+        spot price series above, for whichever `exchange` the run is
+        configured with — "binance margin" here means margin mechanics
+        simulated against Binance's own spot price data, not a distinct
+        Binance API product this codebase calls.
+      basis: >
+        strategy-research/engineering/sessions/session_reports/20260720_venue_cost_wiring.md
+        (fetched/read this session): confirms by direct code read that
+        portfolio_info.py's SHORT/REDUCE_SHORT logic is margin borrow/sell/
+        repay, not perpetual-futures mechanics (zero funding-payment cash-flow
+        code found in a full-tree grep), and is venue-agnostic — it runs
+        against whatever price venue is configured, defaulting to binance.
+      symbols_and_timeframes: "Identical to the `spot` entry above — no separate product to audit."
+      aux_feeds: "None — margin interest/borrow cost is not modeled by this codebase's cost_model.yaml at all (see that file's own PERP CALIBRATION comment: an uncalibrated Kraken margin rate was explicitly rejected as a fabrication risk, decision 2 of that report's 3 options was never picked)."
+
+  # =========================================================================
+  # KRAKEN
+  # =========================================================================
+  kraken:
+
+    spot:
+      description: >
+        Kraken cash spot market. This codebase's Kraken price path
+        (CcxtFetcher, exchange="kraken", defaultType="spot") is
+        exchange-qualified (cache_key prefix "kraken_") to avoid colliding
+        with Binance caches (ccxt_fetcher.py:101-124).
+      symbols:
+        pattern: >
+          19-pair breadth universe currently declared in
+          strategy-research/config/coin_universe.yaml, USD-quoted
+          (kraken_<BASE>USD_1h cache-key convention) — not USDT-quoted like
+          Binance. Kraken's public AssetPairs endpoint (probed live this
+          session, https://api.kraken.com/0/public/AssetPairs) confirmed it
+          carries NO listing/creation-date field of any kind — this is not a
+          gap in our reading, the venue simply does not publish it there.
+        unconfirmed: >
+          No per-symbol Kraken earliest-OHLCV date is recorded here. The
+          19-pair set's coin_universe.yaml notes (e.g. "kraken_SOLUSD ...
+          2021-06-17 -> 2025-12-31") describe OUR OWN CACHE's observed range
+          from a one-time bulk-archive ingestion, not an independently
+          venue-audited listing date — reusing them here would violate this
+          file's own "not a record of what we've fetched" scope rule. Kraken's
+          downloadable historical-data product (see next section) states
+          coverage begins "from the beginning of each market", so a genuine
+          per-pair listing date DOES exist and is knowable, but resolving it
+          for all 19 pairs needs a dedicated probe against that archive or
+          Kraken's Trades endpoint (which — unlike OHLC, see below — does
+          support paging back to inception) and was out of this session's
+          budget. Treat every Kraken symbol's earliest date as unconfirmed
+          until that follow-up runs.
+      timeframes:
+        live_rest_api:
+          intervals_minutes: [1, 5, 15, 30, 60, 240, 1440, 10080, 21600]
+          history_depth: capped_720_most_recent_candles
+          basis: >
+            Fetched and read https://docs.kraken.com/api/docs/rest-api/get-ohlc-data
+            this session. The interval list is explicit. The depth cap is a
+            DIRECT QUOTE from that page: "Returns up to 720 of the most
+            recent entries (older data cannot be retrieved, regardless of
+            the value of `since`)."
+          load_bearing_finding: >
+            This is a STRUCTURAL, venue-side impossibility, not a gap in our
+            cache: CcxtFetcher over exchange="kraken" (the only live-fetch
+            path this codebase has for Kraken price data — see
+            engine_reachability_note below) can NEVER retrieve more than the
+            720 most-recent candles at any resolution, no matter how far back
+            `since`/`startTime` is set. A Layer 2 candidate whose window
+            requires Kraken data older than ~720 candles back from "now" at
+            its requested timeframe is impossible via this codebase's live
+            fetch path, independent of whether a local cache happens to
+            already cover it (cache coverage is Layer 2's question, not this
+            one — but the STRUCTURAL ceiling on ever growing that cache via
+            a live top-up is exactly a Layer-1-shaped fact).
+        downloadable_archive:
+          intervals_minutes: [1, 5, 15, 30, 60, 240, 720, 1440]
+          coverage: "from the beginning of each market, through roughly one quarter behind present (support article states 'currently the end of Q3 2024', quarterly update files thereafter)"
+          basis: >
+            Fetched and read
+            https://support.kraken.com/articles/360047124832-downloadable-historical-ohlcvt-open-high-low-close-volume-trades-data
+            this session. Confirms per-pair coverage start varies ("from the
+            beginning of each market") but the page gives no way to look up
+            any single pair's specific start date directly.
+          engine_reachability_note: >
+            This is a SEPARATE Kraken product (a bulk CSV/ZIP download) from
+            the live REST OHLC endpoint above, and this codebase has NO
+            fetcher that reads it programmatically — CcxtFetcher only ever
+            calls the live, 720-capped REST endpoint via ccxt. The 19-pair
+            kraken_*.csv caches under trading-bot/local_data/ almost
+            certainly originated from a manual one-time archive download
+            (coin_universe.yaml's own notes say "Kraken bulk-archive
+            ingestion", 2026-07-22) rather than from CcxtFetcher itself —
+            i.e. capability (deep history) exists at the venue via this
+            product, but is NOT reachable through this codebase's automated
+            fetch path today; only through a manual process outside the
+            engine. A Layer 2 or future automated top-up that assumes
+            CcxtFetcher can replenish a gap anywhere in a multi-year Kraken
+            window is assuming a capability this codebase does not actually
+            have wired.
+          also_note: >
+            Interval sets differ between the two Kraken products: the live
+            REST API offers 10080/21600-minute (1w/15d) but not 720-minute
+            (12h); the archive offers 720-minute but not 10080/21600. Neither
+            is a superset of the other.
+
+    futures:
+      also_known_as: "Kraken Futures / krakenfutures (ccxt exchange id), perpetual futures"
+      mechanism: "ccxt live REST (historical fundingRate only), via FundingRateFetcher"
+      description: >
+        Used by this codebase ONLY for the funding_rate aux feed, routed via
+        feed_registry.py's _FUNDING_VENUE_MAP = {'kraken': 'krakenfutures'}
+        (spot kraken has no funding endpoint at all, per that file's own
+        comment) — never for price/OHLCV; this codebase has no price fetcher
+        targeting krakenfutures directly.
+      symbols:
+        pattern: "PI_<BASE><QUOTE> / PF_<BASE><QUOTE> Kraken Futures market codes (e.g. PI_XBTUSD), distinct from spot's plain <BASE>USD naming."
+        unconfirmed: "No per-symbol Kraken Futures listing date was probed this session."
+      timeframes:
+        available: unconfirmed
+        basis: >
+          docs.kraken.com/api/docs/futures-api/charts/resolutions/ and the
+          sibling candles doc page both returned HTTP 404 to the fetch tool
+          this session (repeated attempts; the site appears to be a
+          JS-rendered SPA the tool cannot resolve without a browser). A web
+          search surfaced the endpoint pattern GET
+          https://futures.kraken.com/api/charts/v1/trade/<symbol>/<resolution>
+          and one example resolution string, "1D", but did NOT yield a
+          complete enumerated interval list from a primary source. Do not
+          treat this as "any interval works" — it is genuinely unconfirmed,
+          not silently available.
+      aux_feeds:
+        funding_rate:
+          available: true
+          cadence_seconds: 3600
+          cadence_region_dependency: >
+            Kraken's own funding cadence varies by client region: EEA/other
+            clients settle hourly, US clients settle every 8 hours (daily
+            aggregate cash settlement). This operator is French/EEA retail
+            (per venue_tradability.yaml's own basis), so the EEA hourly
+            cadence is the applicable one and matches this codebase's own
+            hardcoded _EXCHANGE_FUNDING_INTERVALS = {"krakenfutures": 3600}
+            (funding_rate_fetcher.py:54).
+          basis: >
+            Fetched and read
+            https://support.kraken.com/articles/perpetual-contract-specifications-for-clients-in-the-eea
+            this session — direct quote: "Le financement s'accumule dans le
+            P&L non réalisé et est réglé toutes les heures" (funding
+            accumulates in unrealized P&L and settles every hour). A web
+            search independently corroborated the US-vs-EEA cadence split
+            (8h US / 1h EEA-and-other-regions).
+          earliest_date: unconfirmed
+          unconfirmed_note: >
+            Kraken Futures' own historical-funding-rates endpoint
+            (docs.kraken.com/api/docs/futures-api/trading/historical-funding-rates,
+            fetched successfully this session) documents the query shape
+            (symbol param, e.g. PF_BTCUSD) and confirms ascending-timestamp
+            ordering, but does NOT state an earliest available date, and no
+            live probe of it was run this session (unlike Binance's funding
+            endpoint above). Treat as unconfirmed until probed.
+        open_interest:
+          available: true
+          reachable_through_this_codebase: false
+          basis: >
+            Kraken Futures publishes open interest as part of its standard
+            market data (general industry-standard perp feature; not
+            independently re-confirmed via a dedicated doc fetch this
+            session — flagged unconfirmed for the venue fact itself). What
+            IS confirmed is this codebase's side: no OI fetcher exists in
+            data/fetchers/ for any venue (see the Binance futures entry
+            above for the same finding) — capability, if it exists, is not
+            reachable through this codebase regardless.
+
+    margin:
+      description: >
+        Same generic borrow/sell/repay SHORT simulation as binance.margin
+        above (identical engine code path, venue-agnostic) — NOT a separate
+        Kraken market-data product.
+      tradability_status: >
+        See venue_tradability.yaml's own kraken.margin entry: "unconfirmed"
+        (Kraken spot-margin's EU/French retail legal status is not confirmed
+        either way) — that file's concern, not repeated as a claim here, only
+        cross-referenced so a reader does not assume margin is cleared for
+        use just because it appears in this capability file.
+      aux_feeds: >
+        None modeled. cost_model.yaml's PERP CALIBRATION block explicitly
+        chose to cost engine-simulated SHORT trades using KRAKEN FUTURES'
+        (not Kraken margin's) confirmed 0.05% base-tier taker fee instead,
+        specifically because "grepped docs/venue_survey_20260719.md for
+        'margin' — zero matches... there is no citable Kraken source in this
+        repo for a margin-trading fee rate" (cost_model.yaml's own PERP
+        CALIBRATION comment block, read this session). This file does not
+        manufacture one either.
+
+  # =========================================================================
+  # VENUE-AGNOSTIC / NON-EXCHANGE SOURCES (kept separate — not an
+  # (exchange, market_type) pair, so doesn't fit the venues.* shape above)
+  # =========================================================================
+
+non_exchange_feeds:
+
+  fear_greed:
+    source: "Alternative.me Crypto Fear & Greed Index, https://api.alternative.me/fng/"
+    mechanism: "direct HTTP GET, historical (limit=N days back) — not ccxt, no live-poll path in this codebase"
+    description: >
+      A single global index, not tied to any venue or symbol
+      (fear_greed_fetcher.py has no exchange_id / venue concept at all).
+    cadence_seconds: 86400
+    reachable_through_this_codebase: true
+    basis: >
+      trading-bot/data/fetchers/fear_greed_fetcher.py (read this session):
+      _API_URL = "https://api.alternative.me/fng/",
+      _FEAR_GREED_INTERVAL_SECONDS = 24*3600. Also listed in
+      strategy-research/config/available_feeds.yaml (evidence_type
+      fear_and_greed) as a currently-available feed.
+    earliest_date: unconfirmed
+    unconfirmed_note: >
+      Not probed live this session (the API paginates by a `limit`-days-back
+      parameter rather than an absolute start date, per the fetcher's own
+      _fetch_remote comment, so establishing a true inception date needs a
+      large-limit probe not attempted here).
+
+  whale_footprint_kraken_ws_v2:
+    source: "This codebase's own private forward-capture of Kraken WS v2 trade data, NOT a live pull from a Kraken API at read time."
+    description: >
+      trading-bot/data/fetchers/whale_footprint_fetcher.py reads a
+      previously RECORDED capture on local disk (ShardReader over
+      local_data/recorded_reserved/kraken_ws_v2/), aggregating it into
+      bar-level whale features. Kraken's own public Trades endpoint is a
+      live venue capability distinct from this — this codebase does not
+      call it for backfill; it depends entirely on the forward-capture
+      process having already run and been captured.
+    deny_by_default: true
+    basis: >
+      whale_footprint_fetcher.py's own module docstring and
+      assert_designated() (read this session): the feed raises
+      ReservedDataError at construction unless
+      strategy-research/config/campaign_data_policy.yaml carries an
+      explicit, committed, ratified designation covering the requested
+      window — status configured_reserved_undesignated by default. This is
+      a data-POLICY gate, not a venue-capability fact, but it directly
+      determines whether this feed can ever satisfy a Layer 2 check
+      regardless of what the venue itself offers, so it is recorded here per
+      the task's instruction to flag "capability exists at the venue, but
+      not yet reachable through this codebase" distinctly.
+    cross_check_finding: >
+      strategy-research/config/available_feeds.yaml (created 2026-07-03) does
+      NOT list any whale_footprint / whale_lt_imbalance evidence_type at all,
+      in either its available or unavailable section — that file has gone
+      stale relative to feed_registry.py's RESERVED_FEED_REGISTRY (6 whale
+      feed names, feed_registry.py:102-121), which post-dates it. Flagging
+      as a found inconsistency between two of this repo's own config files,
+      not fixed here (out of this task's scope).
+
+# ---------------------------------------------------------------------------
+# Summary of everything left UNCONFIRMED by this pass (do not resolve any of
+# these to "available" by default — decline until a dedicated follow-up
+# probes them):
+#   - Binance spot: every symbol except BTCUSDT/ETHUSDT/BNBUSDT/SOLUSDT/AVAXUSDT
+#   - Binance futures: per-symbol listing dates (only BTCUSDT funding-inception probed)
+#   - Binance futures: exact interval list (secondary-sourced, not primary-fetched)
+#   - Kraken spot: every symbol's true venue-side earliest-OHLCV date (19-pair
+#     universe's coin_universe.yaml dates are OUR cache history, not re-verified
+#     against the venue and explicitly out of this file's scope to encode as fact)
+#   - Kraken futures: interval/resolution list (doc fetch failed, 404s)
+#   - Kraken futures: symbol listing dates, funding earliest-date
+#   - Kraken futures / Binance futures: open interest availability at the venue
+#     itself (the "not reachable through this codebase" half is confirmed;
+#     the "does the venue even publish it" half is largely general-knowledge,
+#     not independently doc-fetched this session, EXCEPT Binance's OI
+#     endpoints which are well-documented and were not re-verified live)
+#   - fear_greed: earliest date of the Alternative.me index
+#
+# Any (venue, product, symbol, timeframe, aux-feed) combination not
+# explicitly marked available:true above — including anything merely absent
+# from this file — defaults to NOT confirmed available. Per
+# venue_tradability.yaml's own closing policy, carried forward here
+# verbatim: silence must never resolve to a green light.

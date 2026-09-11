@@ -67,7 +67,21 @@ SYMBOL = "BTCUSDT"
 
 _NEEDED_CACHES = ("BTCUSDT_1h.csv", "BTCUSDT_funding_8h.csv", "fear_greed_daily.csv")
 _CACHE_SKIP = cache_skip_reason(PROJECT_ROOT / "local_data", _NEEDED_CACHES, START_DATE, END_DATE)
-pytestmark = pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable")
+# CUL-275 (2026-09-07): both module-scoped fixtures below (rejected_close,
+# zero_change_close) each drive one full real-engine run_backtest() -- measured
+# 7.5-7.7s each on a warm disk cache, but the ticket's original report measured
+# 32-45s, well past pytest.ini's global --timeout=30 for the default (fast)
+# suite, causing pytest-timeout to fire mid-run at an unrelated call site with a
+# misleading traceback. Likely disk-cache-state dependent (cold vs warm CSV
+# reads) rather than fixed, which makes it exactly the class pytest.ini's own
+# `slow` marker docstring describes ("tests that take more than a few
+# seconds") -- every test in this file depends on one of these two fixtures,
+# so the whole module moves to the slow lane rather than the default one.
+# Run explicitly via `pytest -m slow --timeout=0` (see pytest.ini's own note).
+pytestmark = [
+    pytest.mark.skipif(_CACHE_SKIP is not None, reason=_CACHE_SKIP or "local_data caches usable"),
+    pytest.mark.slow,
+]
 
 
 class _RecordingHandler(logging.Handler):

@@ -2,7 +2,7 @@
 fragment_patterns.py -- ideation-only diagnostic layer over LIFO trade
 fragments (trades.json).
 
-FIREWALL (see docs/TIMEFRAME_CHANGE_PLAYBOOK.md section 7 for the doctrine
+FIREWALL (see docs/VERIFICATION_DOCTRINE.md section 2 for the doctrine
 this implements): this module is never imported by any decision-path code
 (strategy-research/tools/run_protocol.py's evaluate_against_decision_rules,
 _aggregate_trade_diagnostics, Gate B, A3.4, or any other verdict-affecting
