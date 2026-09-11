@@ -1133,7 +1133,9 @@ size of change.
 **Stage input:** `protocol_result.yaml`, `pass_rule_evaluation.yaml`
 (**required**), `trade_diagnostics.json`, `regime_detector_report.yaml` and
 `regime_audit_decision.yaml` if present, or `prescreen_result.yaml` on the
-kill path.
+kill path. `post_backtest_routes` (E-039/CUL-264, 2026-09-11) is injected
+directly into this stage's own handoff — not a separate file — when a real
+backtest produced measured trade/window data; see item 7 below.
 
 **Stage output:** `verdict_interpretation.yaml`; possibly `proposed_brief.yaml`,
 `escalation_request.yaml`, `findings_carryover.yaml`, `promotion_audit.yaml`.
@@ -1174,6 +1176,20 @@ What the artifact carries is `status`.
 **6. [Promote](#g-promote) is provisional.**
 A pass writes `promotion_audit.yaml` and routes to `holdout_evaluation`
 (`::_dispatch_verdict_route`); it is not a promotion.
+
+**7. Post-backtest route is injected as context, never a gate (E-039/CUL-264, 2026-09-11).**
+`_inject_post_backtest_route_into_handoff` (`::run_loop`) surfaces each
+window's real, measured `post_backtest_route`/`post_backtest_route_real`
+(computed by `signal_statistics.py::determine_route`/`cost_check` from
+actual trade/correlation data, not an estimate) into
+`post_backtest_routes` on this stage's own handoff, alongside a constraint
+telling the model to treat it as supporting evidence — same as
+`forecast_return_corr` — never as a binding verdict the way
+`pass_rule_evaluation.yaml` is. No-ops cleanly when `protocol_result.yaml`
+is absent (the prescreen-kill path, where no real backtest ran) or no
+window carries a route (a pre-CUL-264 run). This is exactly what replaces
+the removed A8.6 pre-flight — see the `validation`/`signal_prescreen`
+stage sections above.
 
 ---
 

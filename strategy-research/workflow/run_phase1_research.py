@@ -2602,6 +2602,72 @@ def _inject_regime_context_into_handoff(handoff_path: Path, regime_report: dict,
     print(f"✅ Regime context injected into verdict_interpreter handoff: {conf_summary}")
 
 
+def _inject_post_backtest_route_into_handoff(handoff_path: Path, protocol_result: dict | None,
+                                              run_id: str):
+    """
+    E-039 step 3 / CUL-264 (2026-09-11): surface the real, measured
+    post-backtest go/no-go route as CONTEXT for verdict_interpreter --
+    NEVER a gate on whether it runs. Jeremy's explicit decision (CUL-264,
+    2026-09-11): every backtest still gets an LLM pass; a mechanical
+    kill/refine route is informational, exactly like forecast_return_corr
+    or cost_drag_pct, never a bypass. Mirrors
+    _inject_regime_context_into_handoff's exact pattern (summary field +
+    a constraint telling the model how to use it).
+
+    No-ops cleanly when absent: a prescreen-kill run that never reached a
+    real backtest has no protocol_result.yaml at all, and post_backtest_route
+    only exists once build_core has actually run on real trade/window data
+    (CUL-264/272, trading-bot/reporting/run_artifact.py::build_core) --
+    prefers the REAL-cost route (post_backtest_route_real, CUL-272) over the
+    estimated one when both are present, since real numbers supersede an
+    estimate once they exist.
+    """
+    if not handoff_path.exists() or not protocol_result:
+        return
+
+    results = protocol_result.get("results") or []
+    routes = []
+    for r in results:
+        core = r.get("core") or {}
+        route = core.get("post_backtest_route_real") or core.get("post_backtest_route")
+        if not route:
+            continue
+        routes.append({
+            "window": r.get("window_label") or r.get("label"),
+            "symbol": r.get("symbol"),
+            "route": route,
+            "rationale": (core.get("post_backtest_route_real_rationale")
+                          or core.get("post_backtest_route_rationale")),
+        })
+    if not routes:
+        return
+
+    handoff = load_yaml(handoff_path) or {}
+    handoff["post_backtest_routes"] = routes
+
+    constraints = handoff.setdefault("constraints", [])
+    note = (
+        "E-039/CUL-264 POST-BACKTEST ROUTE — INFORMATIONAL ONLY, NEVER A GATE: "
+        "post_backtest_routes above is a REAL, measured go/no-go computed from "
+        "this run's actual backtest (real trades where available, CUL-272; "
+        "otherwise a real correlation/cost estimate, CUL-264) — not a guess "
+        "and not the removed A8.6 pre-flight. Treat it as supporting evidence "
+        "alongside every other diagnostic, exactly like forecast_return_corr "
+        "or cost_drag_pct. Do NOT auto-adopt a kill_*/refine_* label as your "
+        "verdict without independently examining the evidence, and do NOT "
+        "skip your own analysis because a route says kill or refine. A route "
+        "of inconclusive_insufficient_data means the sample was too small to "
+        "trust the route's own math — treat it as informationless, not as a "
+        "kill signal itself."
+    )
+    if note not in constraints:
+        constraints.append(note)
+
+    save_yaml(handoff_path, handoff)
+    print(f"✅ Post-backtest route context injected into verdict_interpreter handoff: "
+          f"{[r['route'] for r in routes]}")
+
+
 _BLANK_BRIEF_PLACEHOLDER = "# TODO: Paste your research brief configuration here."
 
 
@@ -6184,6 +6250,15 @@ def run_loop(run_id: str):
                             )
                     _vi_handoff = RUN_DIR / "handoffs" / "protocol_to_verdict_interpreter.yaml"
                     _inject_regime_context_into_handoff(_vi_handoff, _regime_rpt, _regime_aud, run_id)
+
+                    # E-039 step 3 (2026-09-11): surface the real post-backtest
+                    # route as context, never a gate -- see the function's own
+                    # docstring. No-ops when protocol_result.yaml is absent
+                    # (a prescreen-kill run that never reached a real backtest).
+                    _protocol_result_path = RUN_DIR / "artifacts" / "protocol_result.yaml"
+                    _protocol_result = (load_yaml(_protocol_result_path)
+                                        if _protocol_result_path.exists() else None)
+                    _inject_post_backtest_route_into_handoff(_vi_handoff, _protocol_result, run_id)
 
             # Invoke the Agent (F4b: one bounded YAML-repair retry on failure)
             expected_outputs = [RUN_DIR / "artifacts" / x for x in handoff_data.get("deliverables", [])]

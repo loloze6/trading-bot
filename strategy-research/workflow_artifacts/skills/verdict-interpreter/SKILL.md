@@ -29,6 +29,10 @@ a refined brief that fixes the identified failure, or a final decision to kill o
 - `trade_diagnostics.json`     (Step 03 — optional; present when trades occurred. Read summary block.)
 - `prescreen_result.yaml`      (Improvement 08+09 — present when a prescreen gate was applied.
                                 REQUIRED as primary evidence when protocol_result.yaml is a stub.)
+- `post_backtest_routes`       (E-039/CUL-264, 2026-09-11 — optional, injected directly into this
+                                stage's own handoff, not a separate file. Present only when a real
+                                backtest ran and produced measured trade/window data. See the
+                                dedicated section below — read it, it is evidence, NOT a decision.)
 
 ## MACHINE-AUTHORED VERDICT (K2, 2026-07-13)
 
@@ -58,6 +62,32 @@ not re-decide `hypothesis_verdict`/`lineage_routing` independently when it alrea
 Rule 6 and the other five diagnostic rules below are UNCHANGED by K2 — they still drive
 `root_cause`/`altitude_justification`'s qualitative content on every run; only the
 PASS/FAIL/routing decision itself moves to the machine when a structured pass rule exists.
+
+## Post-backtest route (E-039/CUL-264, 2026-09-11) — evidence, NOT a second decision authority
+
+If this run's handoff carries `post_backtest_routes`, it is a REAL, measured
+go/no-go computed mechanically from this run's actual backtest (real trades
+where available, CUL-272; otherwise a real correlation/cost estimate,
+CUL-264) — never a guess, and never the removed A8.6 pre-flight (that gate
+estimated an activation rate before any backtest ran at all; this is
+computed *after*, from real numbers).
+
+**This is explicitly NOT like `pass_rule_evaluation.yaml` above.** It does
+not bind your `hypothesis_verdict`/`lineage_routing` the way a `PASS`/`FAIL`
+machine verdict does. Treat each window's `route` exactly like any other
+diagnostic (`forecast_return_corr`, `cost_drag_pct`) — supporting evidence
+you weigh alongside everything else, never a label you copy through
+verbatim or a check you can skip your own analysis because of:
+
+- A `kill_no_ic`/`kill_cost_hurdle`/`refine_*` route is a real, computed
+  signal worth taking seriously — but still requires your own root-cause
+  reasoning (Rules 1-6 below), same as any other bad diagnostic number.
+- `inconclusive_insufficient_data` means the sample was too small to trust
+  the route's own math (too few effective observations or trades) — treat
+  this as **informationless**, not as a soft kill signal. Do not let a small
+  sample masquerade as a negative result.
+- If several windows disagree (one `kill_no_ic`, another clean), that
+  disagreement is itself evidence — say so, do not silently average it away.
 
 ## Required outputs
 - `verdict_interpretation.yaml`   (structured findings summary — always required)
