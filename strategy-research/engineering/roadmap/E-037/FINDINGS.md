@@ -72,7 +72,7 @@ contract, so nobody could see them.
 | [E037-34](#e037-34) | **high** | false-claim + unactioned-scope | `docs/USER_GUIDE.md` §1 |
 | [E037-35](#e037-35) | **high** | missing-fixture | `docs/USER_GUIDE.md` §7 · `tools/run_protocol.py` |
 | [E037-36](#e037-36) | **high** | objective-defeated-by-design | `docs/USER_GUIDE.md` §2.2 stage 3 · the pipeline |
-| [E037-37](#e037-37) | **high** | gate-on-unvalidated-estimates | `run_phase1_research.py::_run_a86_power_check` |
+| [E037-37](#e037-37) | resolved | gate-on-unvalidated-estimates | A8.6 removed 2026-09-11 (E-039) |
 | [E037-38](#e037-38) | **high** | cost-not-modelled | `trading-bot/core/backtester.py` · `verdict_criteria_evaluator.py` |
 | [E037-39](#e037-39) | medium | silent-open-default | `run_phase1_research.py::determine_post_refinement_route` |
 | [E037-40](#e037-40) | medium | missing-handoff-input | `handoffs/validation_to_backtest_specification.yaml` |
@@ -1528,9 +1528,9 @@ of a single test.
 
 ## E037-37
 
-**Severity:** high · **Type:** gate-on-unvalidated-estimates · **Status:** open, untriaged
+**Severity:** high · **Type:** gate-on-unvalidated-estimates · **Status:** RESOLVED 2026-09-11 (E-039) — A8.6 removed entirely, see below
 
-**Lands on:** `strategy-research/workflow/run_phase1_research.py::_run_a86_power_check`
+**Lands on (historical):** formerly strategy-research/workflow/run_phase1_research.py's `_run_a86_power_check` — deleted 2026-09-11, no longer resolvable as a code anchor
 
 **Found by:** Jérémy, 2026-08-31 — *"how would the system know a component
 detects an effect without it being developed?"*
@@ -1579,6 +1579,17 @@ discard the gate. Before that, the cheaper test: the estimates *can* be checked
 after the fact — the prescreen measures the real activation rate every run.
 Either wire the discrepancy log so the gate earns trust, or remove a gate whose
 inputs nobody has ever verified.
+
+**Resolution (2026-09-11, E-039):** the gate was removed entirely, not
+repaired — Jérémy's original instinct, taken directly. E-039's premise is
+"always backtest": rather than trust an LLM's guessed `activation_rate` at
+registration, every hypothesis now proceeds to a real backtest, and a
+post-backtest go/no-go route is computed from REAL measured numbers instead
+(CUL-264, `signal_statistics.py::determine_route`/`cost_check`). The
+never-fired discrepancy log (`_log_power_check_discrepancy`) was deleted
+along with the gate itself, not wired — this finding's own evidence (five of
+eight LLM activation-rate guesses wrong by 1.2×-5×) is exactly why "trust the
+guess, then discount it" was rejected in favor of "don't guess at all."
 
 ---
 

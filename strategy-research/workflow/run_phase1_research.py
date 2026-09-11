@@ -2309,64 +2309,6 @@ def determine_post_refinement_route(path: Path):
     
     return "innovation_expansion" # Otherwise, loop back for another try
 
-def _create_a86_validation_bypass_handoffs(run_id: str, run_dir: Path):
-    """
-    A8.6 Fix 2: create minimal handoffs for the power-gate bypass path.
-    Used when A8.6 blocks at the validation gate (before backtest_specification runs).
-    Creates signal_prescreen and verdict_interpreter handoffs with only the artifacts
-    that actually exist (prescreen_result.yaml, hypothesis_card.yaml).
-    """
-    handoffs = run_dir / "handoffs"
-    handoffs.mkdir(exist_ok=True)
-
-    # Overwrite signal_prescreen handoff with a minimal version that has no missing inputs
-    sp_path = handoffs / "backtest_spec_to_signal_prescreen.yaml"
-    save_yaml(sp_path, {
-        "handoff_version": 1, "run_id": run_id,
-        "from_stage": "validation", "to_stage": "signal_prescreen",
-        "assigned_engine": "tool",
-        "objective": (
-            "A8.6 power gate triggered at validation — prescreen_result.yaml already written. "
-            "No prescreen tool runs; prescreen stage is a pass-through."
-        ),
-        "required_inputs": [
-            {"path": "artifacts/prescreen_result.yaml",
-             "reason": "A8.6 power gate output — written at validation stage"},
-        ],
-        "deliverables": [],
-    })
-
-    # Create verdict_interpreter handoff for the A8.6 path
-    vi_path = handoffs / "protocol_to_verdict_interpreter.yaml"
-    if not vi_path.exists():
-        save_yaml(vi_path, {
-            "handoff_version": 1, "run_id": run_id,
-            "from_stage": "signal_prescreen", "to_stage": "verdict_interpreter",
-            "assigned_engine": "claude",
-            "objective": (
-                "Interpret A8.6 power gate result. Hypothesis was blocked before component build. "
-                "Produce verdict_interpretation.yaml with parked disposition and data requirement."
-            ),
-            "required_inputs": [
-                {"path": "artifacts/prescreen_result.yaml",
-                 "reason": "A8.6 power check result — no IC computed; power metrics are the evidence"},
-                {"path": "artifacts/hypothesis_card.yaml",
-                 "reason": "hypothesis parameters for reactivation_condition"},
-            ],
-            "deliverables": ["verdict_interpretation.yaml"],
-            "constraints": [
-                (
-                    "A8.6 POWER GATE: This hypothesis was blocked before prescreen. "
-                    "Use verdict_label: insufficient_power_a_priori. "
-                    "disposition: parked. do_not_add_to_failed_families: true. "
-                    "reactivation_trigger: the data_requirement from prescreen_result.yaml.a86_power_check. "
-                    "trial_count: 0 (no IC computed, no trial spent). "
-                    "sharpe: null, n_trades: 0, statistic_valid: neither."
-                ),
-            ],
-        })
-
-
 def determine_post_validation_route(path: Path):
     """Once validation is complete, read the decision from validation_decision artifact and route accordingly:
     - If "approve": proceed to Phase 2 development of backtest
@@ -2408,27 +2350,16 @@ def determine_post_validation_route(path: Path):
                 print(f"   - {c}")
         update_state(path=path, flags={"validation_approved": True})
 
-        # A8.6 Fix 2: deterministic power stop before component build
-        _a86 = _run_a86_power_check(path / "artifacts")
-        if _a86["verdict"] == "insufficient_power_a_priori":
-            run_id = path.name
-            print(f"\n⚡ A8.6: Power gate blocked at validation — no component will be built.")
-            print(f"   min_detectable_ic={_a86['min_detectable_ic']:.4f} > "
-                  f"plausible_ic_upper={_a86['plausible_ic_upper']}")
-            print(f"   expected_n_eff={_a86['expected_n_eff']:.1f} "
-                  f"(active_n={_a86['expected_active_n']:.0f}, "
-                  f"n_eff_symbols={_a86.get('n_eff_symbols', 'n/a')}, rho={_a86.get('rho_bar')})")
-            print(f"   Data requirement: {_a86.get('data_requirement')}")
-            save_yaml(path / "artifacts" / "prescreen_result.yaml", {
-                "run_id": run_id,
-                "route": "insufficient_power_a_priori",
-                "a86_power_check": _a86,
-                "stage_blocked_at": "validation",
-                "note": "A8.6 power gate: no component built, no trial spent.",
-            })
-            _create_a86_validation_bypass_handoffs(run_id, path)
-            return "signal_prescreen"
-
+        # A8.6 (a-priori power pre-flight) removed 2026-09-11, E-039: the
+        # epic's whole premise is "always backtest" -- a hypothesis is no
+        # longer killed on an estimated activation rate before a real
+        # backtest ever runs. Replaced by E-054's data-availability gate
+        # (a real structural/data check, not a statistical-power guess) and
+        # CUL-264's post-backtest route (a REAL measured go/no-go once the
+        # backtest has actually produced numbers). This is a DECLARED
+        # behavior change, not bit-identity-preserving: hypotheses that
+        # would previously have been blocked here now proceed to
+        # backtest_specification unconditionally.
         return "backtest_specification"
     
     elif status == "refine":
@@ -4649,242 +4580,6 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
     save_yaml(_KB_PATH, kb)
 
 
-# ---------------------------------------------------------------------------
-# A8.6: A-priori power pre-flight (inline of power_check.py logic)
-# ---------------------------------------------------------------------------
-
-def _load_rho_bar() -> float:
-    """Load measured ρ̄ from campaign_config.yaml. Falls back to 0.82 if unavailable."""
-    cfg_path = ROOT / "config" / "campaign_config.yaml"
-    try:
-        cfg = load_yaml(cfg_path) or {}
-        return float(cfg.get("symbol_correlation", {}).get("btc_eth_return_correlation_1h", 0.82))
-    except Exception:
-        return 0.82
-
-
-# ---------------------------------------------------------------------------
-# Soft patch (b) — P1a shakedown, 2026-07-04: LLM-vs-machine power discrepancy log.
-#
-# hypothesis_card.schema.json's power_parameters block only requires the INPUTS
-# (activation_rate, plausible_ic_upper, n_bars, n_symbols, is_market_wide) — it has no
-# fields for a derived n_eff/min_detectable_ic/verdict. In practice the LLM writes its
-# own self-computed conclusion anyway, free-form, usually embedded in prose
-# (a_priori_calculation / power_notes). Fixture: run_044 (2026-07-04) declared
-# is_market_wide=false (correctly — funding rate is per-symbol, not a shared index) but
-# then applied a rho-based discount anyway in its own prose
-# ("n_eff_symbols ≈ sqrt(2) / (1 + 0.82) ≈ 1.1") — contradicting its own flag AND using
-# a formula that isn't even n/(1+(n-1)*rho) (the real one). Its self-reported
-# n_eff≈100.4 came in materially lower than the machine's actual n_eff=182.5 at the same
-# inputs. This was never caught because the run crashed one stage earlier (YAML parse
-# error) before _run_a86_power_check ever ran on it. This log exists so a human can spot
-# this class of self-contradiction even when the run never reaches the point that would
-# have machine-verified it.
-# ---------------------------------------------------------------------------
-
-_POWER_DISCREPANCY_LOG_PATH = ROOT / "power_check_discrepancy_log.yaml"
-
-
-def _extract_llm_reported_power(card: dict) -> dict:
-    """
-    Best-effort extraction of the LLM's OWN self-computed power numbers from
-    hypothesis_card.yaml. Returns only whatever it can find — missing keys are absent,
-    not zero or None-filled, so callers can distinguish "not reported" from "reported
-    as zero."
-    """
-    params = card.get("power_parameters", {}) or {}
-    out = {}
-
-    if isinstance(params.get("n_symbols_effective"), (int, float)):
-        out["n_symbols_effective"] = float(params["n_symbols_effective"])
-
-    prose = " ".join(
-        str(params.get(k, "")) for k in ("a_priori_calculation", "power_notes", "power_note")
-    )
-
-    _NUM = r"(\d+\.\d+|\d+)"
-    m = re.search(r"expected_n_eff\s*=?\s*[^=]*?=\s*" + _NUM, prose)
-    if not m:
-        m = re.search(r"\bn_eff\s*[≈=]\s*" + _NUM, prose)
-    if m:
-        out["expected_n_eff"] = float(m.group(1))
-
-    m = re.search(r"min_detectable_ic\s*=?\s*[^=]*?[≈=]\s*" + _NUM, prose)
-    if m:
-        out["min_detectable_ic"] = float(m.group(1))
-
-    for key in ("verdict", "power_verdict"):
-        if key in params and isinstance(params[key], str):
-            out["power_verdict"] = params[key]
-            break
-
-    return out
-
-
-def _log_power_check_discrepancy(run_id: str, hyp_id: str, machine: dict, llm_reported: dict,
-                                  discrepancies: list):
-    """Append one entry to the running discrepancy log. Never raises — this is an
-    observability aid, not a gate; a logging bug must not block the pipeline."""
-    try:
-        existing = load_yaml(_POWER_DISCREPANCY_LOG_PATH) if _POWER_DISCREPANCY_LOG_PATH.exists() else None
-        log = existing or {"entries": []}
-        log.setdefault("entries", []).append({
-            "run_id": run_id,
-            "hypothesis_id": hyp_id,
-            "logged_at": datetime.now(timezone.utc).isoformat(),
-            "machine_computed": machine,
-            "llm_reported": llm_reported,
-            "discrepancies": discrepancies,
-        })
-        save_yaml(_POWER_DISCREPANCY_LOG_PATH, log)
-        print(f"⚠️  A8.6 discrepancy log: {len(discrepancies)} field(s) diverged for "
-              f"{hyp_id} ({run_id}) — see {_POWER_DISCREPANCY_LOG_PATH.name}")
-    except Exception as e:
-        print(f"⚠️  Could not write power_check_discrepancy_log.yaml: {e}")
-
-
-def _compare_llm_vs_machine_power(run_id: str, hyp_id: str, machine: dict, card: dict,
-                                   rel_tol: float = 0.20):
-    """Compare the machine-computed A8.6 result against whatever the LLM self-reported.
-    Logs (does not gate) any field that diverges by more than rel_tol (relative) or any
-    outright contradiction (is_market_wide=false but a correlation discount applied)."""
-    llm_reported = _extract_llm_reported_power(card)
-    if not llm_reported:
-        return  # LLM reported nothing derived — nothing to compare
-
-    discrepancies = []
-
-    params = card.get("power_parameters", {}) or {}
-    is_market_wide = bool(params.get("is_market_wide", False))
-    if not is_market_wide and llm_reported.get("n_symbols_effective") not in (None,) \
-            and abs(llm_reported["n_symbols_effective"] - float(params.get("n_symbols", 2))) > 1e-6:
-        discrepancies.append(
-            f"is_market_wide=false but n_symbols_effective={llm_reported['n_symbols_effective']} "
-            f"!= n_symbols={params.get('n_symbols', 2)} — a correlation discount was applied "
-            f"despite the signal being declared per-symbol, not a shared index. Per "
-            f"_run_a86_power_check, no discount should apply here."
-        )
-
-    for field in ("expected_n_eff", "min_detectable_ic"):
-        llm_val = llm_reported.get(field)
-        machine_val = machine.get(field)
-        if llm_val is None or machine_val is None:
-            continue
-        denom = max(abs(machine_val), 1e-9)
-        if abs(llm_val - machine_val) / denom > rel_tol:
-            discrepancies.append(
-                f"{field}: LLM self-reported {llm_val} vs machine-computed {machine_val} "
-                f"(>{rel_tol:.0%} relative difference)"
-            )
-
-    if llm_reported.get("power_verdict") and machine.get("verdict"):
-        llm_says_adequate = "adequate" in llm_reported["power_verdict"].lower() or \
-            "sufficient" in llm_reported["power_verdict"].lower()
-        machine_says_adequate = machine["verdict"] == "power_adequate"
-        if llm_says_adequate != machine_says_adequate:
-            discrepancies.append(
-                f"power_verdict: LLM said '{llm_reported['power_verdict']}' "
-                f"(adequate={llm_says_adequate}) vs machine verdict='{machine['verdict']}' "
-                f"(adequate={machine_says_adequate})"
-            )
-
-    if discrepancies:
-        _log_power_check_discrepancy(run_id, hyp_id, machine, llm_reported, discrepancies)
-
-
-# 2026-08-27: the table is gone. A8.6's block_size is BARS PER DAY, which is
-# arithmetic on the timeframe, not a fact to be remembered -- see
-# tools/timeframe.py for the full history. The previous
-# `{"1h": 24, "1d": 1}` + silent `.get(tf, 24)` fallback gave every other
-# timeframe the 1h value: for 4h that made n_eff 4x too small and killed
-# run_060 with an artifact verdict. The 2026-07-07 fix had already hit this
-# once for 1d and repaired it by ADDING a table entry, which guaranteed the
-# recurrence. Deriving it means a timeframe nobody has tried yet is correct on
-# first use, and all three former mirrors now share one implementation.
-def _a86_block_size(timeframe) -> int:
-    """A8.6 autocorrelation block size = bars per day, DERIVED.
-
-    Imported from tools/timeframe.py so this, tools/power_check.py and
-    tools/prescreen_signal.py cannot drift apart -- previously they were held
-    in sync only by comments saying "both must be updated together", which is a
-    convention, not a mechanism, and they had already drifted."""
-    _tools = str(Path(__file__).parent.parent / "tools")
-    if _tools not in sys.path:
-        sys.path.insert(0, _tools)
-    from timeframe import bars_per_day
-    return bars_per_day(timeframe)
-
-
-def _run_a86_power_check(artifacts: Path) -> dict:
-    """
-    A8.6: compute expected statistical power from hypothesis_card.yaml power_parameters.
-    Returns result dict with 'verdict' key: power_adequate | insufficient_power_a_priori | skip.
-    Mirrors power_check.py logic identically — both must be updated together.
-
-    Correlation correction (A8.6 amendment): n_eff_symbols = n / (1 + (n-1)*rho_bar).
-    sqrt(n) heuristic is NOT used; it materially overstates power for correlated symbols.
-    """
-    import math as _math
-    card_path = artifacts / "hypothesis_card.yaml"
-    if not card_path.exists():
-        return {"verdict": "skip", "reason": "hypothesis_card.yaml not found"}
-
-    card = load_yaml(card_path) or {}
-    params = card.get("power_parameters", {})
-    if not params:
-        return {"verdict": "skip", "reason": "no power_parameters block"}
-
-    activation_rate = params.get("activation_rate")
-    plausible_ic_upper = params.get("plausible_ic_upper")
-    if activation_rate is None or plausible_ic_upper is None:
-        return {"verdict": "skip", "reason": "power_parameters incomplete (activation_rate or plausible_ic_upper is null)"}
-
-    n_bars = params.get("n_bars", 17520)
-    n_symbols = params.get("n_symbols", 2)
-    is_market_wide = params.get("is_market_wide", False)
-    # 2026-07-07: block_size must match the run's actual timeframe — this was
-    # hardcoded to 24 (1h bars/day) with no dispatch at all, silently treating
-    # a daily-bar hypothesis's power_parameters.n_bars as if they were hourly
-    # (n_eff off by a full 24x). Read timeframe from research_brief.yaml (the
-    # standard schema field every run already carries); default "1h" preserves
-    # every prior run's exact behavior when the field is absent.
-    brief_path = artifacts / "research_brief.yaml"
-    timeframe = (load_yaml(brief_path) or {}).get("timeframe", "1h") if brief_path.exists() else "1h"
-    block_size = _a86_block_size(timeframe)
-
-    if is_market_wide:
-        rho = _load_rho_bar()
-        n_sym_eff = n_symbols / (1.0 + (n_symbols - 1) * rho)
-    else:
-        rho = 0.0
-        n_sym_eff = float(n_symbols)
-
-    active_n = activation_rate * n_bars * n_sym_eff
-    n_eff = active_n / block_size
-    mde = 1.0 / _math.sqrt(max(n_eff - 3.0, 1.0))
-
-    verdict = "insufficient_power_a_priori" if mde > plausible_ic_upper else "power_adequate"
-    result = {
-        "verdict": verdict,
-        "expected_active_n": round(active_n, 1),
-        "expected_n_eff": round(n_eff, 2),
-        "min_detectable_ic": round(mde, 4),
-        "plausible_ic_upper": plausible_ic_upper,
-        "n_eff_symbols": round(n_sym_eff, 3),
-        "rho_bar": round(rho, 4) if is_market_wide else None,
-        "is_market_wide": is_market_wide,
-        "data_requirement": params.get("data_requirement") if verdict == "insufficient_power_a_priori" else None,
-    }
-
-    # Soft patch (b): log (never gate on) any LLM-vs-machine power discrepancy.
-    _compare_llm_vs_machine_power(
-        run_id=artifacts.parent.name, hyp_id=card.get("hypothesis_id", "unknown"),
-        machine=result, card=card,
-    )
-
-    return result
-
-
 def _create_protocol_result_from_prescreen(path: Path, ps: dict):
     """
     When a prescreen kills (route=kill_* or refine_*), create a minimal
@@ -6456,43 +6151,11 @@ def run_loop(run_id: str):
                     except Exception:
                         pass  # invalid YAML — re-run the agent
 
-            # A8.6: a-priori power pre-flight — runs before the prescreen tool is invoked.
-            # Also handles the validation-gate bypass case (prescreen_result.yaml already written).
-            if current_stage == "signal_prescreen" and not _skip_agent:
-                _ps_existing = ARTIFACTS / "prescreen_result.yaml"
-                if _ps_existing.exists():
-                    _ps_data = load_yaml(_ps_existing) or {}
-                    if _ps_data.get("route") == "insufficient_power_a_priori":
-                        print("⏭️  A8.6: prescreen_result.yaml already written (validation-gate bypass) — skipping prescreen tool.")
-                        _skip_agent = True
-                        # A6.2: run_tool_worker is skipped in this path; record trial here (idempotent guard)
-                        _cs_check = load_campaign_state()
-                        if not any(t.get("trial_id") == run_id and t.get("source") == "prescreen"
-                                   for t in _cs_check.get("trial_sharpes", [])):
-                            _record_prescreen_trial(run_id, _ps_data, ARTIFACTS / "candidate_strategy_config.json")
-                if not _skip_agent:
-                    _a86 = _run_a86_power_check(ARTIFACTS)
-                    if _a86["verdict"] == "insufficient_power_a_priori":
-                        print(f"\n⚡ A8.6: Insufficient a-priori power — skipping prescreen tool.")
-                        print(f"   min_detectable_ic={_a86['min_detectable_ic']:.4f} > "
-                              f"plausible_ic_upper={_a86['plausible_ic_upper']}")
-                        print(f"   expected_n_eff={_a86['expected_n_eff']:.1f} "
-                              f"(active_n={_a86['expected_active_n']:.0f}, "
-                              f"n_eff_symbols={_a86.get('n_eff_symbols','n/a')}, rho={_a86.get('rho_bar')})")
-                        print(f"   Data requirement: {_a86.get('data_requirement')}")
-                        _a86_ps_data = {
-                            "run_id": run_id,
-                            "route": "insufficient_power_a_priori",
-                            "a86_power_check": _a86,
-                            "note": "A8.6 pre-flight: power insufficient before any prescreen IC computed.",
-                        }
-                        save_yaml(ARTIFACTS / "prescreen_result.yaml", _a86_ps_data)
-                        _skip_agent = True
-                        # A6.2: run_tool_worker is skipped in this path; record trial here (idempotent guard)
-                        _cs_check = load_campaign_state()
-                        if not any(t.get("trial_id") == run_id and t.get("source") == "prescreen"
-                                   for t in _cs_check.get("trial_sharpes", [])):
-                            _record_prescreen_trial(run_id, _a86_ps_data, ARTIFACTS / "candidate_strategy_config.json")
+            # A8.6 (a-priori power pre-flight) removed 2026-09-11, E-039 --
+            # see determine_post_validation_route's comment for the full
+            # reasoning. signal_prescreen now always runs the real prescreen
+            # tool/agent; nothing short-circuits it on an estimated power
+            # calculation anymore.
 
             if current_stage == "verdict_interpreter":
                 _vi_path = RUN_DIR / "artifacts" / "verdict_interpretation.yaml"

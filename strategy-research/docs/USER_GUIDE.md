@@ -502,16 +502,19 @@ for it.
 **Design rationale.**
 - Falsification is cheapest before implementation. A failure mode found here
   costs a paragraph; found after a backtest it costs a trial.
-- The A8.6 [power check](#g-power-check) is deterministic and runs here specifically so that a
-  hypothesis the data *cannot* answer is stopped **before a component is
-  built** — no engineering effort, no trial spent on an unanswerable question.
+- The A8.6 [power check](#g-power-check) previously stopped an hypothesis here on an
+  *estimated* activation rate, before any component was built. **Removed
+  2026-09-11 (E-039):** the epic's whole premise is "always backtest" — a
+  guessed pre-flight kill is replaced by E-054's data-availability gate (a
+  real structural/data check) and a real, measured post-backtest go/no-go
+  once the backtest has actually produced numbers, rather than an early
+  statistical guess.
 
 **Stage input:** `expanded_hypothesis_card.yaml`, `hypothesis_card.yaml`,
 handoff `innovation_expansion_to_validation.yaml`, `pipeline_state.yaml`
 (for the refinement counter).
 
-**Stage output:** `validation_protocol.yaml`, `validation_decision.yaml`; on
-the power-gate path, `prescreen_result.yaml` as a **5-key stub** carrying `stage_blocked_at: validation` (the run_loop pre-flight writes a 4-key one without it).
+**Stage output:** `validation_protocol.yaml`, `validation_decision.yaml`.
 
 **Features / logic in place**
 
@@ -523,12 +526,14 @@ the latter for a multi-variant family validation (run_053, 2026-07-06, F4f). If
 neither key is present it raises rather than guessing
 (`::determine_post_validation_route`).
 
-**2. A8.6 power gate — the deterministic stop, run on approval.**
-After an `approve`/`conditional_approve`, `_run_a86_power_check` runs
-(`::determine_post_validation_route`). If `min_detectable_ic > plausible_ic_upper` it writes
-`prescreen_result.yaml` itself with `route: insufficient_power_a_priori`
-(`::determine_post_validation_route`) and no component is ever built. A8.6 = *check up front that the
-sample could detect the effect at all; if not, do not spend the trial.*
+**2. A8.6 power gate — REMOVED 2026-09-11 (E-039).** Previously, after an
+`approve`/`conditional_approve`, `_run_a86_power_check` ran and could block
+here with `route: insufficient_power_a_priori`, no component ever built. That
+function, its inline mirror, and the standalone `tools/power_check.py` CLI
+are all deleted — an `approve`/`conditional_approve` now routes to
+`backtest_specification` unconditionally. Old runs from before this date may
+still carry a `prescreen_result.yaml` stub in this shape (see that artifact's
+own section below) — no new run will ever produce one.
 
 **3. `conditional_approve` aggregates per-variant conditions.**
 The family-schema output has no top-level `conditions`, so they are collected
@@ -538,7 +543,7 @@ from `variant_decisions` (`::determine_post_validation_route`).
 
 | Decision status | Next |
 |---|---|
-| `approve` / `conditional_approve` | `backtest_specification` — unless A8.6 blocks, then `completed_rejected` |
+| `approve` / `conditional_approve` | `backtest_specification` unconditionally |
 | `refine` | `refinement_planner`, up to `max_refinements_after_validation` (default 2), then reject |
 | `reject` | `completed_rejected` |
 
@@ -708,8 +713,9 @@ detail.
 **Engine:** Python tool (`tools/prescreen_signal.py`), launched as a
 subprocess by the orchestrator (`workflow/run_phase1_research.py::run_tool_worker`
 `run_tool_worker`). No LLM call, no token cost.
-**Runs:** after `backtest_specification` emits `spec_ready`. The orchestrator
-runs an A8.6 power pre-flight *around* the tool first — see logic step 0.
+**Runs:** after `backtest_specification` emits `spec_ready`. The tool always
+runs — the A8.6 power pre-flight that used to wrap it was removed 2026-09-11
+(E-039, see logic step 0 below and the `validation` stage section above).
 
 **Objective.** Decide cheaply, on the signal alone, whether this hypothesis
 deserves an expensive walk-forward backtest.
@@ -734,7 +740,7 @@ deserves an expensive walk-forward backtest.
 | **bps** (basis point) | One hundredth of a percent. Costs and edges are quoted in bps per trade. |
 | **effective sample** (`n_eff`) | How many genuinely *independent* observations there are. Adjacent hours move together, so 8928 bars are worth far fewer independent facts — dividing by a block size is how that is accounted for. |
 | **episode** | A burst of consecutive active bars treated as **one** event rather than many, for signals that fire in clusters. |
-| **A8.6** | Rule: check up front that the sample is even big enough to detect the effect. If not, do not spend the trial. |
+| **A8.6** | Rule: check up front that the sample is even big enough to detect the effect. If not, do not spend the trial. **Removed 2026-09-11 (E-039)** — see the `validation` stage section above; kept here only as a vocabulary entry for reading old runs/docs. |
 | **A8.3** | Rule: score a selective signal on the bars where it spoke. An IC over all bars is swamped by the silent ones and collapses toward zero by construction. |
 | **A8.1** | Rule: a good IC alone is never a pass — the cost gate must clear too. A signal with IC 0.2145 still lost 26 bps per trade. |
 | **A8.5.1a** | Rule: for signals that fire in bursts, count events, not bars. |
@@ -772,19 +778,17 @@ Full text of every amendment code:
 
 Each step: **title — one-line summary.** Details follow.
 
-**0. A8.6 power pre-flight — the orchestrator can kill the run before the tool starts.**
-If the sample is too small to detect the effect even if it were real, the tool
-is never launched. The orchestrator writes `prescreen_result.yaml` itself with
-`route: insufficient_power_a_priori` and records the trial
-(`run_phase1_research.py::run_loop`, `::run_loop`, `::run_loop`). The same check runs earlier
-at the [validation gate](#g-validation-gate) (`::determine_post_validation_route`); if it already wrote the file, the
-orchestrator skips the tool (`::run_loop`). **None of this is in
-`prescreen_signal.py`** — see [E037-01](../engineering/roadmap/E-037/FINDINGS.md#e037-01).
+**0. A8.6 power pre-flight — REMOVED 2026-09-11 (E-039).** This step used to
+let the orchestrator kill a run here (and earlier, at the [validation
+gate](#g-validation-gate)) on an *estimated* activation rate before the tool
+ever launched. Both call sites, the inline implementation, and the standalone
+`tools/power_check.py` mirror are deleted — the tool now always runs.
+Old runs from before this date may carry a `prescreen_result.yaml` stub
+produced by this step; no new run will ever produce one.
 
 **1. Setup — load the config and protocol, and fix the block size.**
-`block_size = bars_per_day(timeframe)` comes from `tools/timeframe.py`, the
-same source the A8.6 gate uses. No fallback: an unparseable timeframe raises
-(`prescreen_signal.py::run_prescreen`).
+`block_size = bars_per_day(timeframe)` comes from `tools/timeframe.py`. No
+fallback: an unparseable timeframe raises (`prescreen_signal.py::run_prescreen`).
 
 **2. Extract the forecast — replay the real strategy over the full range.**
 Per symbol, load prices from the earliest window start to the latest window
@@ -881,7 +885,7 @@ E-025), so a crash-retry replaces the stale row instead of being swallowed.
 | Route | Condition | Next |
 |---|---|---|
 | `no_signal_artifact` | `active_n_bars == 0`, or component-error rate > 5% — overrides everything (F5c) | verdict_interpreter; engineering failure, not evidence |
-| `insufficient_power_a_priori` | A8.6: `min_detectable_ic > plausible_ic_upper` — tool never runs | `completed_rejected`, no component built |
+| `insufficient_power_a_priori` | **Historical only, pre-2026-09-11 runs** — A8.6: `min_detectable_ic > plausible_ic_upper`. Removed (E-039); no new run can produce this route. | `completed_rejected`, no component built |
 | `kill_no_ic` | IC not significant at `p < 0.10` | verdict_interpreter |
 | `refine_inverted_ic` | IC significant but negative | verdict_interpreter — flip polarity |
 | `kill_cost_hurdle` | IC significant positive, cost fails, and `p > 0.05` or `ratio < 0.5` — structural barrier | verdict_interpreter |
@@ -913,8 +917,7 @@ E-025), so a crash-retry replaces the stale row instead of being swallowed.
 `tools/prescreen_signal.py::run_prescreen` (`run_prescreen`) · `::_determine_route` (`_determine_route`)
 · `::_block_adjusted_significance` (`_block_adjusted_significance`) · `::_stationary_block_bootstrap_ic_significance` (stationary block bootstrap)
 · `::_cost_check` (`_cost_check`) · `::_resolve_ungated_escape` (`_resolve_ungated_escape`) ·
-`workflow/run_phase1_research.py::run_tool_worker` (`run_tool_worker`) · `::run_loop` and `::determine_post_validation_route`
-(A8.6) · `::_record_prescreen_trial` (`_record_prescreen_trial`)
+`workflow/run_phase1_research.py::run_tool_worker` (`run_tool_worker`) · `::run_loop` · `::_record_prescreen_trial` (`_record_prescreen_trial`)
 
 ---
 
@@ -1308,7 +1311,7 @@ number. Failure is terminal.
 | `refine_inverted_ic` | → verdict_interpreter |
 | `refine_cost_hurdle` | → verdict_interpreter |
 | `kill_cost_hurdle` | → verdict_interpreter |
-| `insufficient_power_a_priori` | → verdict_interpreter (skip; already written at validation gate) |
+| `insufficient_power_a_priori` | **Historical only, pre-2026-09-11 runs** — → verdict_interpreter (skip; already written at validation gate). Removed (E-039); no new run can produce this. |
 | `no_signal_artifact` | → verdict_interpreter — **overrides every route above** (F5c). The signal was never tested: either it never activated, or component errors exceeded 5% of bars. Not a scientific result. |
 
 #### After verdict_interpreter — the Altitude System
@@ -1977,10 +1980,10 @@ Handoffs are the formal interface contract between stages. Each stage reads its 
 
 > **Why this file exists.** The cheap go/no-go on a signal: the evidence that justified spending a full backtest, or killing without one. Also the trial's receipt.
 
-**Created by three different paths, with three different shapes** ([E037-04](../engineering/roadmap/E-037/FINDINGS.md#e037-04)):
-1. **Normal run** — `tools/prescreen_signal.py` itself, the full shape below.
-2. **A8.6 blocked at `validation`** — the orchestrator writes a 5-key stub itself and the tool never runs: `{run_id, route: insufficient_power_a_priori, a86_power_check, stage_blocked_at: "validation", note}` (`run_phase1_research.py::determine_post_validation_route`).
-3. **A8.6 blocked at `signal_prescreen`** — same gate, run a second time immediately before the tool would launch (in case the validation-gate check already passed but conditions changed): a 4-key stub, `{run_id, route: insufficient_power_a_priori, a86_power_check, note}` (`::run_loop`). Neither stub carries any IC/cost/provenance field below — an operator opening this file must check `route` before assuming the full shape is present.
+**Created by three different paths, with three different shapes** ([E037-04](../engineering/roadmap/E-037/FINDINGS.md#e037-04)) — **shapes 2 and 3 are historical only (pre-2026-09-11 runs); A8.6 is removed (E-039) and no new run can produce either**:
+1. **Normal run** — `tools/prescreen_signal.py` itself, the full shape below. Now the ONLY shape any new run produces.
+2. **A8.6 blocked at `validation`** *(historical)* — the orchestrator wrote a 5-key stub itself and the tool never ran: `{run_id, route: insufficient_power_a_priori, a86_power_check, stage_blocked_at: "validation", note}`.
+3. **A8.6 blocked at `signal_prescreen`** *(historical)* — same gate, run a second time immediately before the tool would launch: a 4-key stub, `{run_id, route: insufficient_power_a_priori, a86_power_check, note}`. Neither stub carries any IC/cost/provenance field below — an operator opening an OLD run's file must check `route` before assuming the full shape is present.
 
 **Read by:** verdict_interpreter, orchestrator
 **Schema:** `workflow_artifacts/schemas/prescreen_result.schema.json`
@@ -1999,7 +2002,7 @@ Handoffs are the formal interface contract between stages. Each stage reads its 
 | `forecast_hash` | Dedup key for trial counting — the same forecast reproduced twice must count once, not twice, in the deflated-Sharpe N. |
 | `sigma_is_placeholder` | `true` when `sigma_bar_bps` could not be measured and a placeholder was substituted — a `cost_check` computed against a placeholder sigma is not load-bearing evidence. |
 | `gap_stats_by_symbol` | Per-symbol counts of forward-return pairs dropped for straddling a data gap (#50 A) — a pooled figure can read "no gap effect" while one symbol's whole sample was destroyed. |
-| `a86_power_check` | Present only on the two blocked-stub shapes above; the full A8.6 pre-flight result (`min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, …) that produced the block. |
+| `a86_power_check` | **Historical only** — present only on the two blocked-stub shapes above (pre-2026-09-11 runs); the full A8.6 pre-flight result (`min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, …) that produced the block. A8.6 is removed (E-039); no new run will ever write this field. |
 
 Two significance thresholds are in play and easy to conflate ([E037-08](../engineering/roadmap/E-037/FINDINGS.md#e037-08)): **`0.10`** (`_SIG_THRESHOLD`, `prescreen_signal.py:102`) gates whether `ic_active_bars` counts as significant at all; a separate **`p > 0.05`** test inside the cost branch (`:1070`) decides `kill_cost_hurdle` vs `refine_cost_hurdle` when the edge-to-cost ratio is marginal. Neither appears in this table's field definitions above — noted here since both are load-bearing and neither was documented anywhere before this correction.
 
@@ -2317,7 +2320,7 @@ product are not `tradable: true` — **or are undeclared**
 | `config/campaign_data_policy.yaml` | Frozen holdout range (2026-H1), burned ranges, `holdout_consumed_by` list |
 | `config/cost_model.yaml` | Single source of truth for round-trip cost per symbol (bps); read by prescreen and validation |
 | `config/available_feeds.yaml` | Which data feeds are testable today; constrains `evidence_type` in hypothesis_card |
-| `config/campaign_config.yaml` | Named constants for prescreen, orchestrator, [power check](#g-power-check); drift-guarded by test |
+| `config/campaign_config.yaml` | Named constants for prescreen, orchestrator; drift-guarded by test |
 | `config/indicator_library.yaml` | 15 seeded entries: regime_affinity, crowding_risk, data_requirements per indicator class |
 | `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each. `trigger_condition.predicate` is mechanically evaluated (see `detector_wishlist.yaml` row below — same mechanism, same file format). |
 | `config/detector_wishlist.yaml` | Detector families to build when an ungated edge exists. Each candidate's `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
@@ -2510,7 +2513,7 @@ run.
 
 A fully deterministic tool — no LLM call, no token cost. ⚠️ This line
 previously read *"the only fully deterministic tool"*, which is false and
-contradicts this guide's own §2.2: `prescreen_signal.py`, `power_check.py`,
+contradicts this guide's own §2.2: `prescreen_signal.py`,
 `validate_regime_detector.py`, `deflate_sharpe.py` and `episode_significance.py`
 all run without an LLM too (measured: zero LLM imports in each). See
 [E037-33](../engineering/roadmap/E-037/FINDINGS.md#e037-33).
@@ -2570,7 +2573,6 @@ by how load-bearing they are, not alphabetically.
 | `tools/prescreen_signal.py` | **Implements stage 7 in full** — IC, significance, cost gate, routing. The single largest tool in the directory. |
 | `tools/run_protocol.py` | Walk-forward executor for stage 8 *(documented above)*. |
 | `tools/verdict_criteria_evaluator.py` | **The K2/C7 machine [verdict](#g-verdict)** — scores a run against its pre-registered `pass_rule` and writes `pass_rule_evaluation.yaml`. Since 2026-07-13 this is the decision authority, not an advisory. |
-| `tools/power_check.py` | The A8.6 a-priori [power check](#g-power-check): episode-clustered, symbol-correlation-aware. Shares `timeframe.py` with the [prescreen](#g-prescreen) so both derive the same block size. |
 | `tools/episode_significance.py` | The A8.5.1a episode-blocked significance path used by the prescreen. |
 | `tools/timeframe.py` | Timeframe arithmetic, **derived rather than enumerated** — the single source of `bars_per_day`. A lookup table here was the 4h `n_eff` bug. |
 | `tools/validate_regime_detector.py` | Stage 9's detector validation; computes the A2.2 metrics. |
@@ -2684,7 +2686,7 @@ which explains each in one line without jargon.
 | <a id="g-trial"></a>**Trial** | Any comparison of a strategy config against historical data: prescreen kills, walk-forward runs, refinement iterations. All count. Deduplicated by `forecast_hash` (identical forecasts on identical data = one trial regardless of config differences). |
 | <a id="g-prescreen"></a>**Prescreen** | Cheap IC + cost-hurdle gate run before full walk-forward. A8.1: both `ic_significance` AND `cost_check.pass` required; neither alone is a pass. Records a trial in `campaign_state.trial_sharpes` even when it kills. |
 | <a id="g-active-bar-ic"></a>**Active-bar IC** | Spearman correlation between forecast and return, restricted to bars where the forecast is non-zero or changing. The gate statistic for sparse/event-driven signals; all-bars IC is misleading for these (dominated by the tie mass at forecast=0). |
-| <a id="g-power-check"></a>**Power check** | Deterministic arithmetic (A8.6) run before any component is built: computes `min_detectable_ic` from `activation_rate × n_bars × n_eff_symbols / block_size`. If MDE > `plausible_ic_upper`, the hypothesis is parked with a data requirement. Market-wide signals use `n/(1+(n−1)·ρ̄)` effective symbols (not sqrt(n)). |
+| <a id="g-power-check"></a>**Power check** | **Removed 2026-09-11 (E-039)** — kept here only as a vocabulary entry for reading old runs/docs. Formerly: deterministic arithmetic (A8.6) run before any component is built, computing `min_detectable_ic` from `activation_rate × n_bars × n_eff_symbols / block_size`; if MDE > `plausible_ic_upper`, the hypothesis was parked with a data requirement. Replaced by E-054's data-availability gate and a real, measured post-backtest go/no-go — see the `validation` stage section. |
 | <a id="g-dormant-mechanism"></a>**Dormant mechanism** | A hypothesis whose activating condition never fired in the test window. Disposition: backward data extension (pre-2024 history where the condition demonstrably occurred) OR parking with a condition-based reactivation trigger. |
 | <a id="g-holdout-consumption"></a>**Holdout consumption** | The irreversible event where a hypothesis_id enters `campaign_data_policy.holdout_consumed_by`. From this point, no further holdout evaluation is possible for that hypothesis_id. Failure is terminal. |
 | <a id="g-dsr"></a>**DSR (Deflated Sharpe Ratio)** | Bailey & López de Prado (2014) correction for selection bias across multiple trials. `E_max = μ_SR + σ_SR × [(1−γ)Φ⁻¹(1−1/N) + γΦ⁻¹(1−1/(eN))]`; DSR = Φ[(candidate_SR − E_max)/σ_SR]. Threshold: 0.95. Falls monotonically as trial count grows for fixed true Sharpe. |

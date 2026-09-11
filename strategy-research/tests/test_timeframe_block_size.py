@@ -84,30 +84,12 @@ def test_accepts_raw_seconds():
 # 4. THE MIRROR TEST. Three sites previously held their own copy, kept in sync
 #    only by comments saying "both must be updated together" -- and they had
 #    ALREADY drifted: the A8.6 gate gave 4h a block of 24 while prescreen_signal
-#    gave it 6. This fails the moment any of them stops sharing the derivation.
+#    gave it 6. Two of those three sites (the A8.6 gate itself, and its
+#    standalone power_check.py mirror) were removed entirely 2026-09-11 (E-039:
+#    "always backtest", A8.6 dropped) -- their own mirror tests removed with
+#    them. prescreen_signal.py's copy is the one still live (used for ITS OWN
+#    significance calc, unrelated to A8.6), guarded below.
 # ---------------------------------------------------------------------------
-
-_ALL_TIMEFRAMES = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "12h", "1d"]
-
-
-@pytest.mark.parametrize("timeframe", _ALL_TIMEFRAMES)
-def test_a86_gate_agrees_with_the_shared_derivation(timeframe):
-    import run_phase1_research as rpr
-    assert rpr._a86_block_size(timeframe) == bars_per_day(timeframe)
-
-
-@pytest.mark.parametrize("timeframe", _ALL_TIMEFRAMES)
-def test_power_check_mirror_agrees_with_the_shared_derivation(timeframe, tmp_path):
-    import yaml
-    import power_check as pc
-    card = tmp_path / "hypothesis_card.yaml"
-    card.write_text(yaml.safe_dump({"power_parameters": {
-        "activation_rate": 0.125, "plausible_ic_upper": 0.1,
-        "n_bars": 8820, "n_symbols": 2, "is_market_wide": False,
-    }}), encoding="utf-8")
-    r = pc.run_power_check(card, timeframe=timeframe)
-    assert r["block_size"] == bars_per_day(timeframe)
-
 
 def test_prescreen_no_longer_carries_its_own_fallback():
     """prescreen_signal's old `max(_BLOCK_SIZE_1H // 4, 6)` fallback returned 6
