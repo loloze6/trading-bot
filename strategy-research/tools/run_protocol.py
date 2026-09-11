@@ -753,8 +753,10 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
         return None, None
 
     import pandas as pd
-    sys.path.insert(0, _HERE)
-    import prescreen_signal as _ps
+    # Repointed 2026-09-12 (E-039 step 5): sourced from
+    # trading-bot/performance/signal_statistics.py, not prescreen_signal.py
+    # (being removed) -- _TBOT already on sys.path at module load, above.
+    from performance.signal_statistics import stationary_block_bootstrap_ic_significance
 
     records = []
     expected_step = None
@@ -795,7 +797,7 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
         {symbol: expected_step}
         if (all_have_timestamp and expected_step is not None) else None
     )
-    boot = _ps._stationary_block_bootstrap_ic_significance(
+    boot = stationary_block_bootstrap_ic_significance(
         {symbol: records}, expected_step_by_symbol=expected_step_by_symbol,
     )
     return boot.get('pooled_ic'), boot['method']
