@@ -1519,6 +1519,77 @@ prints that the SKILL may need a new status case and pauses
 
 **Basis matters for `median_sharpe` (2026-07-10):** the decision-consumed value must be computed on a bar-level equity curve (`bars.csv` `total_portfolio_value`, full-window daily returns) — a LIFO-fragment/trade-exit-day version of the same statistic can disagree sharply under sparse trading and must never feed a verdict; it may exist elsewhere labeled `basis: lifo_fragment, descriptive_only`. See `docs/VERIFICATION_DOCTRINE.md` section 1 for the mechanism and a worked example.
 
+> **E-039 post-backtest go/no-go fields (CUL-261/262/264/266/272) — pending
+> merge, not yet in `master` as of 2026-09-11 (branches
+> `fix/cul-261-real-engine-gap-detection`, `fix/cul-262-neff-significance-port`,
+> `fix/cul-264-post-backtest-route`, `fix/cul-266-gap-aware-primary-corr`,
+> `fix/cul-272-real-cost-check`, all pushed to `origin`, none merged).** These
+> live in `trading-bot/reporting/run_artifact.py::build_core`, which produces
+> `metrics.json`, not this file directly — but `metrics.json`'s hand-picked
+> fields are what stage 8 forwards into `protocol_summary.json` (see that
+> stage's forwarding block), so they end up here.
+>
+> **Why these exist.** E-039 moves the signal-quality gate that used to run
+> *before* any backtest (`signal_prescreen`, stage 7) to run *after* one, on
+> real measured numbers instead of a one-pass-over-the-forecast estimate. Each
+> field below is the post-backtest counterpart to a named prescreen
+> concept — same math, ported verbatim into `performance/signal_statistics.py`
+> (trading-bot never imports from strategy-research) — computed on the actual
+> bars/trades a real backtest produced rather than replayed forecasts.
+>
+> | Field | Definition — what it means | Prescreen counterpart | Worked example |
+> |---|---|---|---|
+> | `forecast_return_corr_n_eff` | Effective sample size behind the correlation: active bars placeable into blocks without spanning a real data gap, `÷ block_size`. Same "adjacent hours aren't independent" correction as prescreen's `n_eff`. | `n_eff` (Stage 7, term table) | a run with 8928 active bars, `block_size=24` (1h bars, 24/day) → `n_eff` well under 8928 once gap-spanning blocks are excluded |
+> | `forecast_return_corr_pvalue_block_adjusted` | Two-tailed significance of `forecast_return_corr`, computed from `n_eff` above rather than the raw bar count. Always `≥` the naive `forecast_return_corr_pvalue`. | Stage 7's block-deflated Fisher z | — |
+> | `sigma_bar_bps` | Per-bar return volatility in bps, measured directly from the backtest's own bars. | Stage 7's `sigma_bar_bps` | — |
+> | `sigma_bar_bps_is_placeholder` | `true` when fewer than 5 bars were available and the placeholder `15.0` was substituted. **When true, `post_backtest_cost_check`/`post_backtest_route` below are not load-bearing.** | Stage 7's `sigma_is_placeholder` | — |
+> | `post_backtest_cost_check` | Dict: `{estimated_gross_edge_bps_per_trade, cost_bps_per_trade, edge_to_cost_ratio, safety_factor_required, pass}`. **Estimated**, not measured — `IC × sigma_bar_bps × √(avg_holding_bars)` vs. `cost_model.yaml`'s theoretical round-trip cost, run on real post-backtest inputs. | Stage 7's `_cost_check` / A8.1 | — |
+> | `post_backtest_route` | The combined IC-significance + cost-hurdle verdict on the *estimated* cost check above. | Stage 7's route table | `kill_no_ic` · `refine_inverted_ic` · `kill_cost_hurdle` · `refine_cost_hurdle` · `proceed_to_interpretation` (prescreen's `proceed_to_backtest`, renamed — the backtest already ran) |
+> | `post_backtest_route_rationale` | One-sentence prose explaining `post_backtest_route`, with the actual numbers substituted in. | — | *"Active-bar IC=0.0412 (p=0.0231, significant). Edge-to-cost ratio=1.8342 < required 2.0."* |
+> | `real_round_trip_cost_bps` | **Measured**: mean `CompletedTrade.total_commission_percent` across every completed trade, in bps. No prescreen counterpart — prescreen never executes a trade. | *(none)* | a real run: `20.0` bps |
+> | `real_gross_edge_bps_per_trade` | **Measured**: mean `CompletedTrade.profit_loss_percent` — gross, pre-commission, deliberately not net (net is already cost-adjusted, would double-count fees against `real_round_trip_cost_bps`). | *(none)* | same run: `-2.569` bps/trade |
+> | `post_backtest_cost_check_real` | Same shape as `post_backtest_cost_check`, built from the two measured fields above. Carries `"basis": "real"`. Field is still named `estimated_gross_edge_bps_per_trade` (inherited key shape `determine_route()` reads) even though the value is real — check `basis`, not the key name. | *(none)* | that run: `edge_to_cost_ratio ≈ 0.128`, `pass: false` |
+> | `post_backtest_route_real` / `post_backtest_route_real_rationale` | The route/rationale pair computed from the *real* cost check instead of the estimated one — the actual go/no-go this run's real economics support. | *(none)* | — |
+>
+> **Priority order inside `determine_route()`, exact (verified against the code
+> directly, 2026-09-11), same for both the estimated and real routes:**
+> 1. IC not significant (`p ≥ 0.10`) → `kill_no_ic`.
+> 2. IC significant but negative → `refine_inverted_ic`.
+> 3. IC significant and positive — cost hurdle: edge÷cost must be `≥ 2.0`.
+>    Fails badly (`p > 0.05` or `ratio < 0.5`) → `kill_cost_hurdle` (structural).
+>    Fails narrowly → `refine_cost_hurdle` (try a wider threshold/longer hold).
+> 4. Passes both → `proceed_to_interpretation`.
+>
+> **Worked example, a real run (2026-09-04 verification):** `trade_count=110`,
+> `real_round_trip_cost_bps=20.0`, `real_gross_edge_bps_per_trade=-2.569`. The
+> real edge is *negative* — losing 2.569 bps/trade gross before even reaching
+> the 20 bps it costs to trade — so `post_backtest_route_real` reads a kill,
+> regardless of what the *estimated* `post_backtest_route` above it says. This
+> is the concrete case E-039 exists for: a signal can look viable on
+> `cost_model.yaml`'s theoretical cost and still be a real loser once actual
+> fees and outcomes are measured.
+>
+> **A known gap in the table above, not yet closed (found 2026-09-11):**
+> neither route currently checks whether there was even ENOUGH data to trust
+> the verdict — a result based on 1-2 trades, or very few active bars, gets
+> the exact same `kill_no_ic`/`kill_*` label as a well-powered result that
+> genuinely failed. Those are different situations ("we don't know yet" vs.
+> "we now know it doesn't work"). A fix — a distinct route for
+> too-few-observations, checked before the significance/cost logic — is in
+> progress; this table will be updated with the new route once it lands.
+> `sigma_bar_bps_is_placeholder` above is the one place this repo already
+> flags an under-powered number, but that flag is not yet wired into the
+> route decision either.
+>
+> **INFORMATIONAL ONLY, both routes, as of 2026-09-11.** Nothing in this
+> repository reads `post_backtest_route`/`post_backtest_route_real` to skip,
+> gate, or short-circuit `verdict_interpreter` or any other stage — unlike
+> prescreen's route, which the orchestrator's routing table actually dispatches
+> on. Whether a mechanical kill here should short-circuit the LLM call is a
+> separate, deliberately not-yet-made decision. Until that decision is made,
+> treat these fields as evidence for the verdict-interpreter to read and cite,
+> not as gates it must obey.
+
 ⚠️ **This entry previously documented five fields that no artifact has ever
 contained:** `per_window_metrics`, `per_symbol_metrics`, `per_regime_metrics`,
 `promotion_criteria`, `diagnostic_metrics` (measured 2026-08-30 across 38
