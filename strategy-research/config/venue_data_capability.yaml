@@ -295,6 +295,23 @@ venues:
         exchange-qualified (cache_key prefix "kraken_") to avoid colliding
         with Binance caches (ccxt_fetcher.py:101-124).
       symbols:
+        confirmed_universe:
+          [AAVEUSD, ADAUSD, AVAXUSD, BTCUSD, DOGEUSD, ETHUSD, INJUSD, LINKUSD,
+           LTCUSD, NEARUSD, ONDOUSD, SOLUSD, SUIUSD, TAOUSD, TRXUSD, UNIUSD,
+           XMRUSD, XRPUSD, ZECUSD]
+        confirmed_universe_basis: >
+          Added 2026-09-11 (gap found: Layer 1 had ZERO symbol-level check for
+          Kraken -- Jeremy's spot-check with an unaudited symbol, SHIBUSD,
+          passed unconditionally regardless of timeframe/date, exposing it).
+          This is the 19-pair breadth universe this codebase actually audited
+          and ingested (coin_universe.yaml's Kraken entries, cross-checked
+          against the literal kraken_<BASE>USD_*.csv files present in
+          local_data/ this session) -- membership only, deliberately NOT
+          reusing coin_universe.yaml's own per-pair observed cache date
+          ranges as if they were venue facts (that would violate this file's
+          "not a record of what we've fetched" rule, same as the note below).
+          A symbol outside this list is unconfirmed and declines by default,
+          mirroring binance.spot's existing earliest_ohlcv_utc gate exactly.
         pattern: >
           19-pair breadth universe currently declared in
           strategy-research/config/coin_universe.yaml, USD-quoted
@@ -303,6 +320,26 @@ venues:
           session, https://api.kraken.com/0/public/AssetPairs) confirmed it
           carries NO listing/creation-date field of any kind — this is not a
           gap in our reading, the venue simply does not publish it there.
+        earliest_possible_utc: "2013-09-01T00:00:00Z"
+        earliest_possible_utc_basis: >
+          Added 2026-09-11 (gap found: the archive-mechanism rescue added
+          earlier this session had NO lower bound at all -- a request for
+          Kraken data from 2010-01-15 passed Layer 1 cleanly, despite
+          predating the exchange itself). Fetched and read
+          https://en.wikipedia.org/wiki/Kraken_(cryptocurrency_exchange)
+          this session: "Kraken then launched publicly in September 2013,
+          initially offering bitcoin, Litecoin, and euro trades" -- the
+          COMPANY was founded 2011-07-28 (same page), but no tradable
+          market, and therefore no OHLCV data of any kind, could exist
+          before the public launch; company-founding is NOT usable as the
+          floor. Deliberately venue-WIDE (applies to every symbol/mechanism)
+          rather than per-symbol, and deliberately coarse (month precision
+          from a secondary source, not a primary Kraken API field, since
+          Kraken's own AssetPairs endpoint publishes no listing-date field at
+          all -- see the `pattern` note above) -- catches the
+          exchange-didn't-exist-yet class of impossible request; does NOT
+          replace the still-open per-pair earliest-OHLCV-date follow-up
+          noted below, which remains a tighter, symbol-specific bound.
         unconfirmed: >
           No per-symbol Kraken earliest-OHLCV date is recorded here. The
           19-pair set's coin_universe.yaml notes (e.g. "kraken_SOLUSD ...

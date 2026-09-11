@@ -343,6 +343,66 @@ def test_layer1_price_precheck_nonstandard_timeframe_rescued_by_aggregation():
     assert ok is True, reason
 
 
+def test_layer1_price_precheck_kraken_unconfirmed_symbol_declines_regardless_of_date():
+    """Jeremy's catch: an unaudited Kraken symbol (SHIBUSD, outside the
+    19-pair confirmed_universe) must decline unconditionally -- not just for
+    an impossible date, for ANY date -- same policy binance.spot already
+    applies via earliest_ohlcv_utc."""
+    layer1 = {
+        "venues": {"kraken": {"spot": {
+            "symbols": {"confirmed_universe": ["BTCUSD"]},
+            "timeframes": {"live_rest_api": {"intervals_minutes": [5], "history_depth_candles": 720}},
+        }}},
+    }
+    ok, reason = dag.layer1_price_precheck(
+        layer1, "kraken", "SHIBUSD", "5m",
+        datetime.datetime(2024, 1, 15), datetime.datetime(2024, 1, 16),
+    )
+    assert ok is False
+    assert "confirmed_universe" in reason
+
+
+def test_layer1_price_precheck_kraken_window_before_venue_existed_declines():
+    """Jeremy's catch: the archive-mechanism rescue has no lower bound of its
+    own -- a confirmed symbol requesting a window before Kraken's own public
+    launch must still decline, even though the interval is otherwise listed
+    under BOTH mechanisms (so the archive rescue alone would have let it
+    through)."""
+    layer1 = {
+        "venues": {"kraken": {"spot": {
+            "symbols": {"confirmed_universe": ["BTCUSD"], "earliest_possible_utc": "2013-09-01T00:00:00Z"},
+            "timeframes": {
+                "live_rest_api": {"intervals_minutes": [5], "history_depth_candles": 720},
+                "downloadable_archive": {"intervals_minutes": [5]},
+            },
+        }}},
+    }
+    ok, reason = dag.layer1_price_precheck(
+        layer1, "kraken", "BTCUSD", "5m",
+        datetime.datetime(2010, 1, 15), datetime.datetime(2010, 1, 16),
+    )
+    assert ok is False
+    assert "public launch" in reason
+
+
+def test_layer1_price_precheck_kraken_confirmed_symbol_after_launch_still_passes():
+    """Regression: the two new gates above must not over-trigger -- a
+    confirmed symbol on a real, post-launch date still passes."""
+    layer1 = {
+        "venues": {"kraken": {"spot": {
+            "symbols": {"confirmed_universe": ["BTCUSD"], "earliest_possible_utc": "2013-09-01T00:00:00Z"},
+            "timeframes": {"live_rest_api": {"intervals_minutes": [5], "history_depth_candles": 720}},
+        }}},
+    }
+    now = datetime.datetime(2026, 9, 11)
+    ok, reason = dag.layer1_price_precheck(
+        layer1, "kraken", "BTCUSD", "5m",
+        now - datetime.timedelta(hours=1), now,
+        now=now,
+    )
+    assert ok is True, reason
+
+
 def test_layer1_price_precheck_unreachable_timeframe_with_no_finer_available_still_declines():
     """Regression: the genuinely-impossible case (no direct match, no finer
     interval to aggregate from) must still decline -- this is the existing

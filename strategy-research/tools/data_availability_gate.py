@@ -237,6 +237,33 @@ def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: s
     interval_seconds = _timeframe_to_seconds(timeframe)
 
     if exchange == "kraken":
+        symbols_block = venue_block.get("symbols") or {}
+
+        # Fix 2026-09-11 (Jeremy's catch: 'SHIBUSD 2010-01-15' passed
+        # unconditionally): the archive-mechanism rescue above has no
+        # per-symbol or per-date bound of its own -- these two checks are
+        # both venue-wide facts (never "what we've fetched"), independent of
+        # which mechanism/timeframe is being evaluated, so they run first.
+        confirmed_universe = set(symbols_block.get("confirmed_universe") or [])
+        if confirmed_universe and symbol not in confirmed_universe:
+            return False, (
+                f"{symbol!r} is not in kraken spot's Layer 1 confirmed_universe "
+                f"({sorted(confirmed_universe)}) -- unconfirmed symbols decline "
+                f"by default (silence never resolves to available), same policy "
+                f"as binance.spot's earliest_ohlcv_utc gate."
+            )
+
+        earliest_possible = symbols_block.get("earliest_possible_utc")
+        if earliest_possible:
+            earliest_possible_dt = pd.Timestamp(earliest_possible).to_pydatetime().replace(tzinfo=None)
+            if window_end < earliest_possible_dt:
+                return False, (
+                    f"window end {window_end} is entirely before kraken's own "
+                    f"public launch ({earliest_possible_dt}) -- impossible on "
+                    f"this venue for ANY symbol or mechanism, not just gappy in "
+                    f"our cache."
+                )
+
         live_rest = timeframes.get("live_rest_api") or {}
         archive = timeframes.get("downloadable_archive") or {}
         interval_minutes = (interval_seconds or 0) // 60
