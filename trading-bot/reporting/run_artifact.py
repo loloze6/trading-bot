@@ -16,7 +16,35 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from performance.signal_statistics import pearson_correlation, t_test_pvalue
+from performance.signal_statistics import (
+    pearson_correlation, t_test_pvalue,
+    gap_aware_active_block_count, block_adjusted_pvalue,
+    sigma_bar_bps_from_returns, cost_check, determine_route,
+)
+
+# CUL-264 (E-039 parity): cost_model.yaml is the single source of truth for
+# round_trip_cost_bps/safety_factor -- prescreen_signal.py reads it the same
+# way. This is a data-file read across the repo's package boundary, not a
+# Python import, so it does not invert the "trading-bot never imports from
+# strategy-research" rule the block-adjusted significance port (CUL-262) is
+# built around. Falls back to prescreen's own hardcoded defaults if the file
+# is missing (e.g. a vendored/deployed trading-bot without the sibling repo).
+_COST_MODEL_PATH = Path(__file__).resolve().parent.parent.parent / "strategy-research" / "config" / "cost_model.yaml"
+
+
+def _load_cost_model() -> dict:
+    if not _COST_MODEL_PATH.exists():
+        return {"round_trip_cost_bps": {"default": 18.5}, "safety_factor": 2.0}
+    import yaml
+    with open(_COST_MODEL_PATH, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _round_trip_cost_bps(symbol: Optional[str], cost_model: dict) -> float:
+    rtc = cost_model.get("round_trip_cost_bps", {})
+    if symbol is not None and symbol in rtc:
+        return float(rtc[symbol])
+    return float(rtc.get("default", 18.5))
 
 
 # ---------------------------------------------------------------------------
@@ -182,6 +210,8 @@ def build_core(
     metrics_dict: dict,
     completed_trades: list,
     bars_df: Optional[pd.DataFrame] = None,
+    candle_interval_seconds: Optional[int] = None,
+    symbol: Optional[str] = None,
 ) -> dict:
     overall = metrics_dict.get("overall_metrics", {})
     n = len(completed_trades)
@@ -212,11 +242,77 @@ def build_core(
     # result that was actually just an artifact of the signal's shape.
     forecast_return_corr       = None
     forecast_return_corr_pvalue = None
+    # CUL-262 (E-039 parity): additive, block-adjusted counterpart to the raw
+    # t-test above -- None unless both a real correlation AND a candle
+    # interval are available, so every existing caller/consumer of this dict
+    # sees byte-identical values for every key that already existed.
+    forecast_return_corr_pvalue_block_adjusted = None
+    forecast_return_corr_n_eff                 = None
+    # CUL-264 (E-039 parity): real per-bar return volatility, needed for the
+    # post-backtest cost hurdle below. None until bars_df is available.
+    sigma_bar_bps_value  = None
+    sigma_is_placeholder = None
+    # CUL-266 (#50(A) on the PRIMARY corr path): counts of (forecast,
+    # forward_return) pairs suppressed for spanning a real data gap. None --
+    # not 0 -- when no gap check was performed, because "not measured" and
+    # "measured, found none" are different claims and this codebase does not
+    # fabricate the second (cf. _fmt_ic never printing 0.0000 for an undefined
+    # IC).
+    gap_skipped_pairs = None
+    gap_skipped_pct   = None
     if bars_df is not None and "forecast" in bars_df.columns and "close" in bars_df.columns:
-        df = bars_df[["forecast", "close"]].copy()
-        df["forward_return"] = df["close"].shift(-1) / df["close"] - 1
-        df = df.dropna()
-        df = df[df["forecast"] != 0]
+        df_all = bars_df[["forecast", "close"]].copy()
+        df_all["forward_return"] = df_all["close"].shift(-1) / df_all["close"] - 1
+
+        # #50(A) -- the successor must be the next BAR, not merely the next ROW.
+        # shift(-1) above pairs row i with row i+1 unconditionally; across a
+        # real hole in the cache that makes a multi-hour move wear a one-bar
+        # label. Mirrors prescreen_signal.py::_extract_forecasts's contract:
+        # suppress the pair, COUNT it, never drop it silently.
+        #
+        # APPLIED TO df_all (before the active-only filter), so BOTH sigma and
+        # the correlation see the same gap-filtered population. That is not a
+        # convenience -- it is what prescreen does: _extract_forecasts filters
+        # gap-spanning pairs out of `records` (prescreen_signal.py:570), and
+        # _sigma_from_records then consumes that already-filtered list
+        # (::run_prescreen, :1479). Filtering only the corr population would
+        # leave sigma measuring gap-inflated "one-bar" moves and silently
+        # diverge from prescreen on the very number the cost hurdle rests on.
+        if candle_interval_seconds and "timestamp" in bars_df.columns:
+            expected_step   = pd.Timedelta(seconds=candle_interval_seconds)
+            _ts             = pd.to_datetime(bars_df["timestamp"])
+            # NaT for the final row => comparison is False => it is excluded
+            # here, but it is NOT a gap skip (it simply has no successor), so
+            # the count below requires a defined forward_return.
+            valid_successor = (_ts.shift(-1) - _ts) == expected_step
+            gap_skipped_pairs = int(
+                (~valid_successor & df_all["forward_return"].notna()).sum()
+            )
+            df_all = df_all[valid_successor]
+
+        df_all = df_all.dropna()
+
+        if gap_skipped_pairs is not None:
+            # Denominator is PAIRS REACHED (kept + skipped), matching
+            # prescreen's own `pairs_reached` (::run_prescreen, :1443/:1446).
+            # This is deliberately NOT the cache's contamination rate: bars
+            # never reached -- e.g. dropped for a NaN close -- are outside both
+            # terms, so this reads lower than a cache-level gap census.
+            _pairs_reached  = len(df_all) + gap_skipped_pairs
+            gap_skipped_pct = (
+                round(gap_skipped_pairs / _pairs_reached * 100.0, 4)
+                if _pairs_reached > 0 else None
+            )
+
+        # Sigma is measured across ALL bars with a defined forward return, not
+        # just active ones -- it's a property of the underlying market, matching
+        # prescreen_signal.py::_sigma_from_records's own population (that
+        # function runs on the full per-symbol pairs list, not an active-only
+        # filter).
+        sigma_bar_bps_value, sigma_is_placeholder = sigma_bar_bps_from_returns(
+            (df_all["forward_return"] * 10000.0).tolist()
+        )
+        df = df_all[df_all["forecast"] != 0]
         if len(df) >= 5:
             x = df["forecast"].values.astype(float)
             y = df["forward_return"].values.astype(float)
@@ -224,6 +320,32 @@ def build_core(
             forecast_return_corr = round(corr, 6) if corr is not None else None
             pvalue = t_test_pvalue(corr, len(x))
             forecast_return_corr_pvalue = round(pvalue, 6) if pvalue is not None else None
+
+            if corr is not None and candle_interval_seconds:
+                block_size = max(86400 // candle_interval_seconds, 1)
+                placeable_blocks = None
+                if "timestamp" in bars_df.columns:
+                    expected_step = pd.Timedelta(seconds=candle_interval_seconds)
+                    # Exclude the final row: its forward_return is always NaN
+                    # (nothing to shift(-1) into), so it was already dropped
+                    # from `df`/`x` above. Keeping it here would let the
+                    # gap-aware count see one bar `corr`/`len(x)` never did --
+                    # off by at most one active bar, but a real population
+                    # mismatch rather than an approximation.
+                    records = [
+                        {"active": bool(f != 0), "timestamp": ts}
+                        for f, ts in zip(
+                            bars_df["forecast"].iloc[:-1], bars_df["timestamp"].iloc[:-1]
+                        )
+                    ]
+                    placeable_blocks = gap_aware_active_block_count(
+                        records, block_size, expected_step
+                    )
+                pv, neff = block_adjusted_pvalue(
+                    corr, len(x), block_size, placeable_blocks=placeable_blocks
+                )
+                forecast_return_corr_pvalue_block_adjusted = pv
+                forecast_return_corr_n_eff                 = neff
 
     # Avg trade duration in bars (derived from trade timestamps + bar interval)
     avg_trade_duration_bars = None
@@ -236,6 +358,33 @@ def build_core(
                 avg_trade_duration_bars = round(
                     sum(t.duration_minutes for t in completed_trades) / n / bar_minutes, 2
                 )
+
+    # CUL-264 (E-039 parity). INFORMATIONAL ONLY: this route is computed and
+    # recorded, but nothing anywhere reads it to skip, gate, or short-circuit
+    # any LLM call or orchestrator decision -- see signal_statistics.py's
+    # module docstring for `determine_route` and CUL-264's Linear issue.
+    # Still computed (not suppressed) when sigma is a placeholder, matching
+    # prescreen's own behavior -- `sigma_bar_bps_is_placeholder` is the flag a
+    # reader must check before trusting this route, the same discipline
+    # prescreen's `sigma_is_placeholder` field already enforces.
+    post_backtest_route            = None
+    post_backtest_route_rationale  = None
+    post_backtest_cost_check       = None
+    if (forecast_return_corr is not None
+            and forecast_return_corr_pvalue_block_adjusted is not None
+            and sigma_bar_bps_value is not None
+            and avg_trade_duration_bars is not None):
+        cost_model = _load_cost_model()
+        rtc_bps    = _round_trip_cost_bps(symbol, cost_model)
+        safety     = float(cost_model.get("safety_factor", 2.0))
+        post_backtest_cost_check = cost_check(
+            forecast_return_corr, sigma_bar_bps_value, avg_trade_duration_bars,
+            rtc_bps, safety_factor=safety,
+        )
+        post_backtest_route, post_backtest_route_rationale = determine_route(
+            forecast_return_corr, forecast_return_corr_pvalue_block_adjusted,
+            post_backtest_cost_check,
+        )
 
     return {
         "net_return_pct":              overall.get("[OVERALL ONLY] total_return_pct", 0.0),
@@ -250,7 +399,20 @@ def build_core(
         "cost_drag_pct":               cost_drag_pct,
         "forecast_return_corr":        forecast_return_corr,
         "forecast_return_corr_pvalue": forecast_return_corr_pvalue,
+        "forecast_return_corr_pvalue_block_adjusted": forecast_return_corr_pvalue_block_adjusted,
+        "forecast_return_corr_n_eff":  forecast_return_corr_n_eff,
+        # CUL-266: how much of the reachable sample the #50(A) gap filter
+        # removed. A correlation computed over a heavily-decimated sample is a
+        # different claim from one over a clean one, so the count travels with
+        # the number rather than being inferable only from a log line.
+        "gap_skipped_pairs":           gap_skipped_pairs,
+        "gap_skipped_pct":             gap_skipped_pct,
         "avg_trade_duration_bars":     avg_trade_duration_bars,
+        "sigma_bar_bps":               round(sigma_bar_bps_value, 4) if sigma_bar_bps_value is not None else None,
+        "sigma_bar_bps_is_placeholder": sigma_is_placeholder,
+        "post_backtest_cost_check":    post_backtest_cost_check,
+        "post_backtest_route":         post_backtest_route,
+        "post_backtest_route_rationale": post_backtest_route_rationale,
     }
 
 

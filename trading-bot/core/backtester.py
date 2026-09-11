@@ -520,7 +520,11 @@ class BacktestEngine:
 
         # Write metrics JSON
         completed_trades = self.performance_tracker.completed_trades
-        core_metrics      = build_core(metrics, completed_trades, flat_state_df)
+        core_metrics      = build_core(
+            metrics, completed_trades, flat_state_df,
+            candle_interval_seconds=self.candle_interval_seconds,
+            symbol=self.symbols[0] if self.symbols else None,
+        )
         per_regime        = build_per_regime(flat_state_df, completed_trades) if flat_state_df is not None else {}
         forecast_bins     = build_forecast_bins(completed_trades)
         dynamic           = build_dynamic(flat_state_df) if flat_state_df is not None else {}
