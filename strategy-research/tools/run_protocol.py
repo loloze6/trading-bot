@@ -1395,6 +1395,17 @@ def main():
                 "core":            core,
                 "per_regime":      m.get("per_regime", {}),
                 "regime_validity": m.get("regime_validity", {}),
+                # CUL-263 (E-039): metrics.json's "data_quality" block (CUL-261, gap
+                # detection) is a top-level sibling of "core", not nested inside it --
+                # unlike CUL-262's forecast_return_corr_pvalue_block_adjusted/n_eff,
+                # which already ride along inside "core" and therefore already reached
+                # this dict. None when gap_detection was off for this window (the
+                # default), so this key is always present but usually null --
+                # matches "core"/"per_regime" always being present rather than the
+                # optional-key idiom metrics.json itself uses, since result_entry is
+                # an internal aggregation structure, not the byte-identity-sensitive
+                # artifact metrics.json is.
+                "data_quality":    m.get("data_quality"),
             }
             results.append(result_entry)
 
