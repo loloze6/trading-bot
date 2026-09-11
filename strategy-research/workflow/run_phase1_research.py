@@ -87,6 +87,16 @@ except Exception:  # helper unimportable -> validation is a no-op, never break t
 ROOT = Path(".")
 CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
 
+# E-054 Layer 2 (2026-09-11): off-by-default gate, same convention as
+# WORKFLOW_ARTIFACT_VALIDATION above. OFF (unset, the default): the
+# backtest_specification -> signal_prescreen route is byte-identical to every
+# run before this ticket -- required by CLAUDE.fork.md's bit-identity
+# discipline (new features ship off by default with default behavior proven
+# unchanged). ON: backtest_specification routes through the new
+# "data_availability_gate" tool stage first (see its STAGE_CONFIGS entry and
+# run_tool_worker branch below) before signal_prescreen ever runs.
+_E054_GATE_ENABLED = os.environ.get("E054_DATA_AVAILABILITY_GATE", "") == "1"
+
 
 def _resolve_tbot_python() -> Path:
     """Path to the trading-bot venv interpreter, relative to the CWD the script runs from.
@@ -142,6 +152,16 @@ STAGE_CONFIGS = {
     },
     "backtest_specification": {
         "handoff": "validation_to_backtest_specification.yaml",
+        "default_next": "dynamic_routing",
+    },
+    # E-054 Layer 2 (2026-09-11): pre-backtest data-availability gate (tool,
+    # no LLM). Off by default -- see _E054_GATE_ENABLED below; the entry
+    # exists in the registry unconditionally (Decision A: a real pipeline
+    # stage, not an inline check) but is only ROUTED to when the env flag is
+    # set (bit-identity discipline: default behavior must stay byte-identical
+    # to pre-E-054 runs).
+    "data_availability_gate": {
+        "handoff": "backtest_spec_to_data_availability_gate.yaml",
         "default_next": "dynamic_routing",
     },
     # Improvement 08+09: prescreen stage (tool, no LLM)
@@ -1111,7 +1131,43 @@ async def run_tool_worker(stage_name: str, run_id: str):
     ARTIFACTS = RUN_DIR / "artifacts"
     TBOT_PYTHON = _resolve_tbot_python()
 
-    if stage_name == "signal_prescreen":
+    if stage_name == "data_availability_gate":
+        # E-054 Layer 2: real per-window/per-feed data-touch check, BEFORE the
+        # (much more expensive) prescreen/protocol_execution stages ever run.
+        # Uses the SAME shared resolver signal_prescreen/protocol_execution
+        # use below, so it checks the literal protocol that will execute —
+        # never a hypothesis-level declared timeframe (E-054 Phase 1
+        # characterization's Q3 finding: those can silently diverge).
+        config_path = ARTIFACTS / "candidate_strategy_config.json"
+        protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
+
+        out_dir = RUN_DIR / "data_availability"
+        cmd = [
+            str(TBOT_PYTHON), str(ROOT / "tools" / "data_availability_gate.py"),
+            str(config_path), str(protocol_path),
+            "--run-id", run_id,
+            "--out-dir", str(out_dir),
+        ]
+        print("🗂️  Running E-054 data-availability gate (Layer 2)...")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        print(result.stdout)
+        # Exit codes (data_availability_gate.py's own convention):
+        # 0=validate, 2=decline, 3=refine. A non-{0,2,3} code is a genuine
+        # crash of the tool itself, not a real outcome — raise loud rather
+        # than silently treating a bug in the gate as a data verdict.
+        if result.returncode not in (0, 2, 3):
+            raise RuntimeError(f"data_availability_gate.py crashed (exit {result.returncode}):\n{result.stderr}")
+
+        gate_path = out_dir / "data_availability_gate.yaml"
+        if not gate_path.exists():
+            raise FileNotFoundError("data_availability_gate.yaml not found after gate run")
+
+        import shutil as _dag_shutil
+        _dag_shutil.copy(gate_path, ARTIFACTS / "data_availability_gate.yaml")
+        gate_result = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
+        print(f"✅ E-054 Layer 2 outcome: {gate_result.get('outcome', 'unknown').upper()}")
+
+    elif stage_name == "signal_prescreen":
         # Improvement 08+09: signal prescreen — cheap IC + cost gate before full backtest.
         config_path = ARTIFACTS / "candidate_strategy_config.json"
 
@@ -2201,7 +2257,7 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
 
 
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
-    tool_stages = {"protocol_execution", "signal_prescreen"}
+    tool_stages = {"protocol_execution", "signal_prescreen", "data_availability_gate"}
     if stage_name in tool_stages:
         await run_tool_worker(stage_name, run_id)
         return
@@ -2388,11 +2444,35 @@ def determine_post_validation_route(path: Path):
         raise ValueError(f"Unknown validation status: {status}")
 
 def _create_remaining_handoffs(run_id: str, run_dir: Path):
-    """Write signal_prescreen, protocol_execution, and verdict_interpreter handoffs."""
+    """Write data_availability_gate, signal_prescreen, protocol_execution, and
+    verdict_interpreter handoffs."""
     handoffs = run_dir / "handoffs"
+    dag_path = handoffs / "backtest_spec_to_data_availability_gate.yaml"
     sp_path = handoffs / "backtest_spec_to_signal_prescreen.yaml"
     pe_path = handoffs / "backtest_spec_to_protocol_execution.yaml"
     vi_path = handoffs / "protocol_to_verdict_interpreter.yaml"
+
+    # E-054 Layer 2: data_availability_gate handoff. Written unconditionally
+    # (harmless when _E054_GATE_ENABLED is off — nothing ever routes to this
+    # stage in that case) so enabling the flag later needs no separate
+    # backfill step for runs already past backtest_specification.
+    if not dag_path.exists():
+        save_yaml(dag_path, {
+            "handoff_version": 1, "run_id": run_id,
+            "from_stage": "backtest_specification", "to_stage": "data_availability_gate",
+            "assigned_engine": "tool",
+            "objective": (
+                "E-054 Layer 2: check whether the data this variant needs (price for "
+                "every declared symbol, every declared aux feed) can actually be "
+                "assembled for the resolved protocol's windows, before spending a "
+                "full walk-forward run on it. Outcome: validate / refine / decline."
+            ),
+            "required_inputs": [
+                {"path": "artifacts/candidate_strategy_config.json",
+                 "reason": "declared symbols and aux_feeds to check"},
+            ],
+            "deliverables": ["data_availability_gate.yaml"],
+        })
 
     # Improvement 08+09: signal_prescreen handoff
     if not sp_path.exists():
@@ -6546,8 +6626,47 @@ def run_loop(run_id: str):
                         print("✅ config schema-valid; advancing to signal_prescreen")
                         # Create handoff files for prescreen + remaining pipeline stages
                         _create_remaining_handoffs(run_id, RUN_DIR)
+                        # E-054 Layer 2 (off by default -- see _E054_GATE_ENABLED):
+                        # route through the data-availability gate FIRST. OFF
+                        # leaves next_stage exactly what determine_post_spec_route
+                        # returned above (signal_prescreen/protocol_execution),
+                        # byte-identical to every pre-E-054 run.
+                        if _E054_GATE_ENABLED:
+                            next_stage = "data_availability_gate"
                 elif next_stage == "human_pause":
                     break
+
+            elif current_stage == "data_availability_gate":
+                # E-054 Layer 2: route on validate/refine/decline. This branch
+                # only runs when _E054_GATE_ENABLED routed here in the first
+                # place -- see the backtest_specification branch above.
+                gate = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
+                gate_outcome = gate.get("outcome", "decline")
+                if gate_outcome == "validate":
+                    print("✅ E-054 Layer 2: VALIDATE — advancing to signal_prescreen.")
+                    next_stage = "signal_prescreen"
+                elif gate_outcome == "refine":
+                    # Mirrors this orchestrator's own documented HITL design
+                    # ("Path C: Data Block" in the module docstring) -- a
+                    # partial data problem is exactly what that pause path
+                    # was built for: a human decides how to narrow the
+                    # variant (drop a window, drop a feed), not the pipeline.
+                    print("⏸️  PIPELINE PAUSED: E-054 Layer 2 says REFINE — "
+                          "some data is only partially available. Review "
+                          "artifacts/data_availability_gate.yaml, narrow the "
+                          "variant (drop the listed window(s)/feed), then "
+                          "write artifacts/human_resolution.yaml and resume.")
+                    for reason in gate.get("reasons", [])[:10]:
+                        print(f"   - {reason}")
+                    update_state(path=RUN_DIR, status="paused_for_human")
+                    next_stage = "human_pause"
+                    break
+                else:  # decline
+                    print(f"🛑 E-054 Layer 2: DECLINE — required data does not exist. "
+                          f"Rejecting hypothesis without spending prescreen/protocol_execution.")
+                    for reason in gate.get("reasons", [])[:10]:
+                        print(f"   - {reason}")
+                    next_stage = "completed_rejected"
 
             elif current_stage == "signal_prescreen":
                 # Improvement 08+09: route based on prescreen_result.yaml

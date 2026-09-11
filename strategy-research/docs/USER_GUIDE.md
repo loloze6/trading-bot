@@ -18,6 +18,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [Stage 4 — `validation_gate`](#stage-4--validation_gate)
     - [Stage 5 — `refinement_planner`](#stage-5--refinement_planner)
     - [Stage 6 — `backtest_specification`](#stage-6--backtest_specification)
+    - [Stage 14 — `data_availability_gate`](#stage-14--data_availability_gate)
     - [Stage 7 — `signal_prescreen`](#stage-7--signal_prescreen)
     - [Stage 8 — `protocol_execution`](#stage-8--protocol_execution)
     - [Stage 9 — `regime_detector_validation`](#stage-9--regime_detector_validation)
@@ -187,6 +188,11 @@ block answers *"what does it do and why"*.
                              │
    [Claude]  6  backtest_specification
                │ spec_ready
+   [Tool]   14  data_availability_gate         (E-054 Layer 2, OFF BY DEFAULT —
+               ├── validate ──────────────────► 7            env E054_DATA_AVAILABILITY_GATE=1)
+               ├── refine ──► human_pause
+               └── decline ─► completed_rejected
+               │
    [Tool]    7  signal_prescreen
                ├── proceed_to_backtest ─► 8
                └── kill_* / refine_* ───────────► 11
@@ -216,7 +222,11 @@ Python stage, no LLM call.
 **Numbering.** Stages keep the numbers this guide has always used, so 1 and 10
 are missing from the diagram on purpose: `research_brief` is an input rather
 than a step, and `regime_auditor` is a human procedure the orchestrator never
-dispatches. Both are still documented below.
+dispatches. Both are still documented below. `data_availability_gate` is
+numbered **14**, out of position in the diagram above — it was added later
+(E-054, 2026-09-11) and slotted into its real execution position (between 6
+and 7) without renumbering every stage after it; the number says nothing
+about execution order, the diagram position does.
 
 > **Every strategy currently trades all the time.** None of them switches
 > itself on and off by market condition. Why, and what would change it, is in
@@ -240,6 +250,7 @@ one place to read when the answer matters.
 | 4 | [**validation_gate**](#stage-4--validation_gate) | Claude | Try to kill the hypothesis on paper, before any code is written for it. |
 | 5 | [**refinement_planner**](#stage-5--refinement_planner) | Claude | Decide whether the blockers can be fixed inside the current engine, and how. |
 | 6 | [**backtest_specification**](#stage-6--backtest_specification) | Claude | Compile the validated idea into a config the engine can actually execute. |
+| 14 | [**data_availability_gate**](#stage-14--data_availability_gate) | Python tool | Off by default (E-054). Check, per window and per declared aux feed, whether the data this variant needs can actually be assembled — before spending an expensive backtest on it. |
 | 7 | [**signal_prescreen**](#stage-7--signal_prescreen) | Python tool | Decide cheaply, on the signal alone, whether this deserves an expensive backtest. |
 | 8 | [**protocol_execution**](#stage-8--protocol_execution) | Python tool | Trade the strategy across every walk-forward window and record what happened. |
 | 9 | [**regime_detector_validation**](#stage-9--regime_detector_validation) | Python tool | Establish whether the regime detector is trustworthy enough to condition any metric. |
@@ -618,9 +629,78 @@ printing that the SKILL may need a new status case rather than guessing
 
 | `decision.status` | Next |
 |---|---|
-| `spec_ready` | stage 7 `signal_prescreen` |
+| `spec_ready` | stage 14 `data_availability_gate` if `E054_DATA_AVAILABILITY_GATE=1`, else stage 7 `signal_prescreen` directly (default — see stage 14's own block) |
 | `component_gap` | `human_pause` — extend the engine, then resume |
 | anything else | `human_pause` |
+
+---
+
+#### Stage 14 — `data_availability_gate`
+**Engine:** Python tool (`tools/data_availability_gate.py`), launched as a
+subprocess by the orchestrator (`workflow/run_phase1_research.py::run_tool_worker`).
+No LLM call, no token cost.
+**Runs:** after `backtest_specification` emits `spec_ready` and the config
+passes schema validation — **only when** the environment variable
+`E054_DATA_AVAILABILITY_GATE=1` is set. Unset (the default): this stage is
+never reached, and `spec_ready` routes straight to stage 7
+`signal_prescreen`, byte-identical to every run before E-054
+(`run_phase1_research.py::_E054_GATE_ENABLED`).
+
+**Objective.** A hard, mechanical, data-only check: for the symbols,
+timeframe, windows, and declared aux feeds this variant needs, can the data
+actually be assembled — *before* an expensive backtest (or even the cheaper
+`signal_prescreen`) is ever invoked on it. Real precedent this stage exists to
+catch: `run_050`/`run_060` both crashed mid-`protocol_execution` on exactly
+this failure mode (CUL-230).
+
+**Design rationale.**
+- Two layers, because they answer genuinely different questions. **Layer 1**
+  (`strategy-research/config/venue_data_capability.yaml`, a committed,
+  human-audited reference — E-054's own prerequisite work) is a cheap,
+  zero-network capability audit: could this (venue, symbol, timeframe,
+  aux-feed) combination possibly exist at all. **Layer 2** (this stage's own
+  code, `tools/data_availability_gate.py`) is the real, per-window data
+  touch for whatever survives Layer 1: is the actual cached/fetchable data
+  clean enough within each specific window. No audit can answer Layer 2's
+  question in advance — internal gaps are a property of what actually
+  happened to the data over time.
+- **Every window is checked individually**, not the full protocol span in
+  one call — the only way a `refine` outcome (narrow around the bad window,
+  keep the rest) is possible instead of an all-or-nothing verdict.
+- Resolves the protocol via the SAME shared resolver
+  (`tools/protocol_resolution.py::resolve_protocol_path`, extracted from this
+  orchestrator's own `_resolve_protocol_path`) that `signal_prescreen`/
+  `protocol_execution` use — so it checks the literal protocol that will
+  execute, never a hypothesis-level declared timeframe (those can silently
+  diverge from what actually runs — confirmed during E-054's own
+  characterization).
+- Exchange resolution mirrors `tools/run_protocol.py`'s locked "Option Y"
+  order exactly: explicit override → `protocol.get("exchange")` →
+  `"binance"`.
+- Gap tolerance: **5%** of a window's (or an aux feed's own native-cadence
+  window's) expected observations missing → `refine`; above that →
+  `decline`; 0% → `validate`. An aux feed coarser than the strategy's candle
+  interval (e.g. daily `fear_greed` under an hourly strategy) is measured in
+  its OWN native cadence, never candle units — measuring in candle units
+  would make every normal daily feed look ~95%+ "missing" by construction.
+- Off by default, unlike every other stage in this table: a brand-new,
+  unproven pre-flight check gates every future campaign run the moment it is
+  turned on, so it ships opt-in first (bit-identity discipline).
+
+**Stage input:** `candidate_strategy_config.json` (declared `aux_feeds`), the
+resolved protocol JSON (symbols/timeframe/windows).
+
+**Stage output:** `data_availability_gate.yaml` — `outcome`
+(`validate`/`refine`/`decline`), `reasons`, and full per-window/per-feed
+detail.
+
+**Routes / outcomes**
+
+| `data_availability_gate.yaml`'s `outcome` | Next |
+|---|---|
+| `validate` | stage 7 `signal_prescreen` |
+| `refine` | `human_pause` — a human narrows the variant (drop the listed window(s)/feed), writes `human_resolution.yaml`, then `--resume` |
+| `decline` | `completed_rejected` — a required series does not exist at all, no workaround |
 
 ---
 

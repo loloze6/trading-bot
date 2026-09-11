@@ -179,7 +179,7 @@ def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: s
                 f"intervals_minutes={available_minutes} (Layer 1 audit)."
             )
         if (live_rest.get("history_depth") or "") == "capped_720_most_recent_candles":
-            now = now or datetime.datetime.utcnow()
+            now = now or datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             interval_seconds = _TIMEFRAME_SECONDS.get(timeframe)
             if interval_seconds:
                 cutoff = now - datetime.timedelta(seconds=720 * interval_seconds)
@@ -227,6 +227,19 @@ def _expected_bar_count(start: datetime.datetime, end: datetime.datetime, interv
     return max(int(total_seconds // interval_seconds), 0)
 
 
+# Real single-writer fetchers in this codebase occasionally serialize a
+# timestamp with a spurious sub-second offset (observed directly, 2026-09-11:
+# BTCUSDT_funding_8h.csv / ETHUSDT_funding_8h.csv carry a literal ".001000"ms
+# tail on some rows) -- an artifact of the writer, not a missing observation.
+# Left unguarded this shows up as a ~1e-8 "missing_fraction" on EVERY window
+# uniformly, which is noise wearing the shape of a signal: it would classify
+# a fully-available series as "refine" forever, never "validate". Any real
+# missing observation is at minimum one whole interval (minutes to hours);
+# 2 seconds is generous headroom above millisecond-scale serialization noise
+# while orders of magnitude below the smallest real gap this tool cares about.
+_TIMESTAMP_NOISE_EPSILON_SECONDS = 2.0
+
+
 def _missing_fraction(df: pd.DataFrame, start: datetime.datetime, end: datetime.datetime,
                        interval_seconds: int) -> float:
     """
@@ -234,7 +247,10 @@ def _missing_fraction(df: pd.DataFrame, start: datetime.datetime, end: datetime.
     `interval_seconds` native cadence -- accounts for a totally empty frame
     (1.0), leading/trailing boundary shortfall, AND internal gaps, all in the
     same unit (expected-bar count), so a single 5% threshold means the same
-    thing regardless of which shape the missing data takes.
+    thing regardless of which shape the missing data takes. Sub-
+    `_TIMESTAMP_NOISE_EPSILON_SECONDS` boundary/step deltas are treated as
+    exactly on-grid (see that constant's docstring) so serialization noise
+    can never manufacture a spurious "refine"/"decline" on fully-available data.
     """
     expected = _expected_bar_count(start, end, interval_seconds)
     if expected <= 0:
@@ -247,25 +263,28 @@ def _missing_fraction(df: pd.DataFrame, start: datetime.datetime, end: datetime.
     if ts.empty:
         return 1.0
 
-    interval = pd.Timedelta(seconds=interval_seconds)
     missing_bars = 0.0
+    eps = _TIMESTAMP_NOISE_EPSILON_SECONDS
 
     # Leading shortfall: whole intervals between `start` and the first row.
     lead_gap = (ts.iloc[0] - pd.Timestamp(start)).total_seconds()
-    if lead_gap > 0:
+    if lead_gap > eps:
         missing_bars += lead_gap / interval_seconds
 
     # Trailing shortfall: whole intervals between the last row and `end`.
     trail_gap = (pd.Timestamp(end) - ts.iloc[-1]).total_seconds()
-    if trail_gap > interval_seconds:
-        missing_bars += (trail_gap - interval_seconds) / interval_seconds if trail_gap > 0 else 0
+    if trail_gap > interval_seconds + eps:
+        missing_bars += (trail_gap - interval_seconds) / interval_seconds
 
-    # Internal gaps: any step > 1 interval implies (step/interval - 1) missing bars.
-    diffs = ts.diff().dropna()
-    for d in diffs:
-        steps = d / interval
-        if steps > 1:
-            missing_bars += (steps - 1)
+    # Internal gaps: any step > 1 interval (+ noise floor) implies
+    # (step/interval - 1) missing bars. Worked entirely in float seconds
+    # (.total_seconds() on each Timedelta) to avoid numpy's deprecated
+    # bare-integer/"generic unit" timedelta coercion when dividing a diff
+    # Series against a plain int interval.
+    diff_seconds = ts.diff().dropna().dt.total_seconds()
+    for d_seconds in diff_seconds:
+        if d_seconds > interval_seconds + eps:
+            missing_bars += (d_seconds - interval_seconds) / interval_seconds
 
     return max(min(missing_bars / expected, 1.0), 0.0)
 
@@ -278,23 +297,82 @@ def classify_missing_fraction(fraction: float, gap_tolerance: float = _DEFAULT_G
     return "decline"
 
 
+_DEFAULT_TBOT_CONFIG_PATH = os.path.join(_TBOT, "config.json")
+
+
+def _read_ambient_fetch_interval_seconds(config_path: Optional[str] = None) -> Optional[int]:
+    """
+    CUL-250 (PR #133, 2026-09-03) fidelity: the real engine's coarser-from-finer
+    derivation is an explicit, off-by-default opt-in read from
+    trading-bot/config.json's `trading.fetch_interval_seconds` -- NOT automatic
+    "closest available cache" detection (see strategy-research/docs/
+    DATA_AVAILABILITY.md §2). Default (key absent/None) means "fetch at the
+    exact declared timeframe," byte-identical to every run before CUL-250 --
+    this function mirrors that default exactly so Layer 2 neither invents a
+    derivation the engine wouldn't perform, nor false-declines a timeframe the
+    engine would legitimately serve from a finer cache when the operator HAS
+    opted in.
+    """
+    path = config_path or _DEFAULT_TBOT_CONFIG_PATH
+    try:
+        with open(path, encoding="utf-8") as f:
+            cfg = json.load(f)
+    except (OSError, ValueError):
+        return None
+    return (cfg.get("trading") or {}).get("fetch_interval_seconds")
+
+
 def check_price_window(symbol: str, exchange: str, timeframe: str,
                         window_start: str, window_end: str,
-                        gap_tolerance: float = _DEFAULT_GAP_TOLERANCE) -> dict:
+                        gap_tolerance: float = _DEFAULT_GAP_TOLERANCE,
+                        fetch_interval_seconds: Optional[int] = "AMBIENT") -> dict:
     """
     The real, per-window data touch for PRICE. Uses the exact same
     DataManager.fetch_historical_data() call the real backtest path uses
-    (core/backtester.py's own load_data()), so "available" here means the
-    same thing it means to the engine. A fetch/network failure is caught and
-    classified as a decline for THIS window with a distinct
-    `fetch_error` flag -- Decision B means one window's failure never stops
-    the others from being checked.
+    (core/backtester.py's own load_data()), including its default
+    `localStorage=True` -- so "available" here means the same thing it means
+    to the engine, AND this check contributes to (rather than bypasses) the
+    same on-disk cache a real backtest would build up. `localStorage=False`
+    was tried and reverted (2026-09-11): `_load_all` (base_fetcher.py) gates
+    the CACHE READ on this same flag (`existing = self._load_local(symbol)
+    if self.localStorage else pd.DataFrame()`), not only the write -- passing
+    False makes the fetcher ignore an already-complete local cache entirely
+    and always attempt a live fetch, which is a strictly WORSE availability
+    check (forces a network round-trip this project's own fast-test suite
+    correctly blocks, and would silently reclassify a fully-cached window as
+    unavailable the moment the network is unreachable). A fetch/network
+    failure is caught and classified as a decline for THIS window with a
+    distinct `fetch_error` flag -- Decision B means one window's failure
+    never stops the others from being checked.
+
+    KNOWN HAZARD, not fixed here (out of E-054's scope -- core fetch-path
+    code needs its own dedicated review): `BaseFetcher._merge_and_store`'s
+    cache write (`combined.to_csv(path, index=False)`, base_fetcher.py) is
+    NOT atomic (no temp-file+os.replace, unlike this project's own
+    `save_yaml` convention). Reproduced directly this session (2026-09-11): a
+    single, non-concurrent gate run against run_048's 95-window protocol,
+    interrupted (SIGTERM) mid-run, truncated ETHUSDT_1h.csv from 74,529 rows
+    to 6,630 -- losing years of cache, not just the newest increment. Because
+    Decision B means this gate fires MANY more fetch calls than a normal
+    backtest, it raises the odds of ever hitting this pre-existing hazard.
+    Operational mitigation until fixed: never interrupt a running gate
+    process; let it finish or fail on its own.
+
+    `fetch_interval_seconds`: the CUL-250 opt-in (see
+    `_read_ambient_fetch_interval_seconds`'s docstring). The sentinel
+    "AMBIENT" (default) reads trading-bot/config.json exactly as the real
+    engine would; pass an explicit int (or None) to override for a test or a
+    campaign that pins its own value.
     """
     interval_seconds = _TIMEFRAME_SECONDS[timeframe]
     start_dt = pd.Timestamp(window_start).to_pydatetime()
     end_dt = pd.Timestamp(window_end).to_pydatetime()
 
-    dm = DataManager(symbols=[symbol], interval_seconds=interval_seconds, mode="backtest")
+    if fetch_interval_seconds == "AMBIENT":
+        fetch_interval_seconds = _read_ambient_fetch_interval_seconds()
+
+    dm = DataManager(symbols=[symbol], interval_seconds=interval_seconds, mode="backtest",
+                      fetch_interval_seconds=fetch_interval_seconds)
     try:
         df = dm.fetch_historical_data(symbol, window_start, window_end, exchange=exchange)
     except Exception as e:  # SealedDataError included -- must never be papered over
@@ -305,7 +383,13 @@ def check_price_window(symbol: str, exchange: str, timeframe: str,
             "reason": f"fetch raised {type(e).__name__}: {e}",
         }
 
-    frac = _missing_fraction(df, start_dt, end_dt, interval_seconds)
+    # The dataframe's actual native cadence is dm.fetch_interval_seconds (the
+    # CUL-250 opt-in resolution when set, else interval_seconds itself) -- NOT
+    # necessarily the declared strategy timeframe. Measuring gap % in the
+    # wrong unit would either manufacture a false gap (checking a 1h-native
+    # series in 4h units) or hide a real one (the reverse).
+    native_interval_seconds = dm.fetch_interval_seconds
+    frac = _missing_fraction(df, start_dt, end_dt, native_interval_seconds)
     outcome = classify_missing_fraction(frac, gap_tolerance)
     reason = (
         "fully available" if outcome == "validate" else
@@ -357,6 +441,10 @@ def check_aux_feed_window(feed_name: str, exchange: str, symbols: list,
     if feed_name in _VENUE_LESS_FEED_NAMES:
         try:
             factory = FEED_REGISTRY[feed_name]
+            # localStorage=False: see check_price_window's docstring for why
+            # localStorage default (True): see check_price_window's docstring
+            # -- localStorage=False also disables the CACHE READ, not only
+            # the write, which was tried and reverted.
             fetcher = factory([], window_start, window_end, data_dir=data_dir)
             df = fetcher.get_data()
             if isinstance(df, dict):
@@ -436,6 +524,17 @@ def evaluate_variant(config: dict, protocol: dict, gap_tolerance: float = _DEFAU
         least one window still validates or refines (narrow around the bad
         part).
       - validate iff every window and every aux feed fully validates.
+
+    Known scope boundary: the Layer 1 structural precheck below evaluates the
+    DECLARED protocol `timeframe` against venue capability. When the CUL-250
+    `trading.fetch_interval_seconds` opt-in is set (see
+    `_read_ambient_fetch_interval_seconds`), `check_price_window` correctly
+    checks the actual FINER fetched resolution for gap%, but Layer 1's
+    venue-capability check is not re-pointed at that finer resolution -- a
+    rare, off-by-default combination (an operator must both set the ambient
+    override AND run a timeframe the venue doesn't support natively). Flagged
+    rather than silently assumed correct; not implemented given how narrow
+    the combination is.
     """
     layer1 = layer1 if layer1 is not None else load_layer1()
     exchange = resolve_exchange(protocol, exchange_override)
@@ -477,7 +576,7 @@ def evaluate_variant(config: dict, protocol: dict, gap_tolerance: float = _DEFAU
 
     return {
         "schema_version": 1,
-        "checked_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "checked_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "exchange": exchange,
         "timeframe": timeframe,
         "symbols": symbols,

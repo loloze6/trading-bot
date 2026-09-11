@@ -44,7 +44,12 @@ The pipeline is 13 numbered stages:
 Two caveats the guide explains in full:
 
 - The engine's own registry, `STAGE_CONFIGS`
-  (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **10** entries. `research_brief`
+  (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **11** entries
+  (was 10 before E-054 Layer 2, 2026-09-11, added `data_availability_gate` —
+  a real tool stage per that epic's Decision A, sitting between
+  `backtest_specification` and `signal_prescreen`, routed to only when
+  `E054_DATA_AVAILABILITY_GATE=1`; off by default, so it does not appear in
+  a default run's stage list even though it is registered). `research_brief`
   is a human input; `regime_detector_validation` is a helper function; and
   `regime_auditor` is not dispatched by the orchestrator at all.
 - Stage 4 is `validation_gate` in the docs and **`validation`** in the code —
