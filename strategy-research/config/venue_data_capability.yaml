@@ -297,24 +297,39 @@ venues:
           intervals_minutes: [1, 5, 15, 30, 60, 240, 1440, 10080, 21600]
           history_depth_candles: 720
           basis: >
-            Fetched and read https://docs.kraken.com/api/docs/rest-api/get-ohlc-data
-            this session. The interval list is explicit. The depth cap is a
-            DIRECT QUOTE from that page: "Returns up to 720 of the most
-            recent entries (older data cannot be retrieved, regardless of
-            the value of `since`)."
+            Originally sourced from https://docs.kraken.com/api/docs/rest-api/get-ohlc-data
+            ("Returns up to 720 of the most recent entries (older data cannot
+            be retrieved, regardless of the value of `since`)"). RE-VERIFIED
+            EMPIRICALLY 2026-09-11 (Jeremy's review caught that citing the
+            venue's raw docs is not the same as testing the actual tool this
+            codebase uses) — live call: `ccxt.kraken().fetch_ohlcv('BTC/USD',
+            timeframe='1h', since=<2022-01-01>, limit=1000)` returned candles
+            from 2026-08-12 through 2026-09-11 (i.e. ~720 hours before "now"),
+            completely ignoring the requested 2022 start date. Confirmed
+            directly against the real tool, not inferred from documentation.
           load_bearing_finding: >
             This is a STRUCTURAL, venue-side impossibility, not a gap in our
-            cache: CcxtFetcher over exchange="kraken" (the only live-fetch
-            path this codebase has for Kraken price data — see
-            engine_reachability_note below) can NEVER retrieve more than the
-            720 most-recent candles at any resolution, no matter how far back
-            `since`/`startTime` is set. A Layer 2 candidate whose window
-            requires Kraken data older than ~720 candles back from "now" at
-            its requested timeframe is impossible via this codebase's live
-            fetch path, independent of whether a local cache happens to
-            already cover it (cache coverage is Layer 2's question, not this
-            one — but the STRUCTURAL ceiling on ever growing that cache via
-            a live top-up is exactly a Layer-1-shaped fact).
+            cache: CcxtFetcher over exchange="kraken" can NEVER retrieve more
+            than the 720 most-recent candles at any resolution, no matter how
+            far back `since`/`startTime` is set — empirically confirmed above,
+            not just documented. Precisely why, confirmed by reading
+            CcxtFetcher._fetch_remote (trading-bot/data/fetchers/ccxt_fetcher.py):
+            that method already implements its own pagination loop (repeated
+            fetch_ohlcv calls, each starting where the last batch ended) which
+            works correctly for Binance (proven by the existing multi-year
+            BTCUSDT cache — Binance's API honors `since`). For Kraken
+            specifically, that SAME pagination loop is silently DEFEATED, not
+            blocked by a single-call size limit it could otherwise page
+            around: every "next page" call returns the identical most-recent-
+            720-candle window regardless of the requested start date, so the
+            loop can never actually progress backward in time. A Layer 2
+            candidate whose window requires Kraken data older than ~720
+            candles back from "now" at its requested timeframe is impossible
+            via this codebase's live fetch path, independent of whether a
+            local cache happens to already cover it (cache coverage is
+            Layer 2's question, not this one — but the STRUCTURAL ceiling on
+            ever growing that cache via a live top-up is exactly a
+            Layer-1-shaped fact).
         downloadable_archive:
           intervals_minutes: [1, 5, 15, 30, 60, 240, 720, 1440]
           coverage: "from the beginning of each market, through roughly one quarter behind present (support article states 'currently the end of Q3 2024', quarterly update files thereafter)"
