@@ -27,6 +27,7 @@ logic a third time:
   - No p-value is ever computed from an undefined (None) correlation.
 """
 import math
+import random
 import statistics
 from typing import Optional, Sequence
 
@@ -447,3 +448,245 @@ def determine_route(pooled_ic: Optional[float], p_value: Optional[float],
         f"Active-bar IC={ic_str} (p={p:.4f}, significant). Edge-to-cost "
         f"ratio={ratio_str} >= {safety}. Signal passes both IC and cost gates.",
     )
+
+
+# ---------------------------------------------------------------------------
+# Gap-aware segmenting + pooled significance + block bootstrap
+# (E-039 step 5, 2026-09-12) -- verbatim ports of prescreen_signal.py's own
+# functions, consolidated here so removing the signal_prescreen STAGE does
+# not strand this genuinely reusable statistical machinery. Three other
+# strategy-research tools depend on these: episode_significance.py
+# (contiguous_segments, spearman_correlation already above,
+# pooled_block_adjusted_significance), run_protocol.py
+# (stationary_block_bootstrap_ic_significance), whale_footprint_evaluation.py
+# (pooled_block_adjusted_significance). Ported rather than left behind
+# specifically so this file remains the single shared home for this class of
+# function -- the same reasoning CUL-262/264 already established for
+# block_adjusted_pvalue/cost_check/determine_route above: avoid a third
+# hand-rolled version anywhere in the repo.
+# ---------------------------------------------------------------------------
+
+def contiguous_segments(records: list,
+                         expected_step: "object | None") -> "list[tuple[int, int]]":
+    """
+    Partition `records` (each a dict carrying a "timestamp" key, in bar order)
+    into maximal runs of temporally-consecutive bars. Returns a list of
+    half-open [start, end) index ranges that together cover 0..len(records)
+    with no gaps and no overlaps: a boundary falls exactly where
+    records[i+1]["timestamp"] - records[i]["timestamp"] != expected_step.
+
+    Verbatim port of `prescreen_signal.py::_contiguous_segments` (CUL-15 D1a
+    shared #50-family guardrail) -- kept load-bearing for
+    episode_significance.py, run_protocol.py's bootstrap fallback, and this
+    module's own `stationary_block_bootstrap_ic_significance` below.
+
+    Contract:
+      - C-H1: ranges are half-open, contiguous, cover [0, len(records)) exactly;
+        sum(end - start) == len(records).
+      - C-H2: a boundary is inserted between i and i+1 iff the timestamp delta is
+        not exactly `expected_step`. The test is `!=`, not `>`, so a backwards or
+        duplicate timestamp (delta <= 0) is also a boundary -- a non-monotone
+        timestamp is as much "not the next bar" as a hole is.
+      - C-H3: `expected_step is None` returns [(0, n)] -- one segment spanning
+        every record, reproducing the pre-#50 positional behaviour exactly.
+      - C-H4: reads only "timestamp"; never "forecast"/"active"/"next_return_bps".
+      - C-H5: fail-loud -- when expected_step is not None, a record with no
+        "timestamp" key raises KeyError naming the index; never a silent
+        positional fallback.
+    """
+    n = len(records)
+    if n == 0:
+        return []
+    if expected_step is None:
+        return [(0, n)]
+    for i, rec in enumerate(records):
+        if "timestamp" not in rec:
+            raise KeyError(
+                f"contiguous_segments: record at index {i} has no 'timestamp' "
+                "key, but expected_step is not None -- refusing a silent "
+                "positional fallback (#50 family)"
+            )
+    segments = []
+    start = 0
+    for i in range(n - 1):
+        if records[i + 1]["timestamp"] - records[i]["timestamp"] != expected_step:
+            segments.append((start, i + 1))
+            start = i + 1
+    segments.append((start, n))
+    return segments
+
+
+def pooled_block_adjusted_significance(
+    ic_values: list,
+    n_active_bars: int,
+    block_size: int,
+    placeable_blocks: Optional[int] = None,
+) -> dict:
+    """
+    Block-adjusted z-significance, POOLED across a list of IC values (mean
+    first, then Fisher-z on the pooled figure). Verbatim port of
+    `prescreen_signal.py::_block_adjusted_significance` -- distinct from
+    `block_adjusted_pvalue` above, which takes a single already-computed
+    correlation and returns a `(p_value, n_eff)` tuple; this takes a LIST
+    (episode_significance.py and whale_footprint_evaluation.py both call it
+    with a single-element list today, but the pooling is real, not
+    incidental) and returns the full result dict prescreen's own callers
+    expect (`pooled_ic`, `z_stat`, `p_value`, `n_eff`, `block_size`,
+    `significant`). Both functions stay -- neither replaces the other.
+
+    N_eff = n_active_bars / block_size (not total bars -- A8.3 requires
+    active-bar n). Fisher z-transformation: z = IC * sqrt(N_eff - 3).
+    Two-tailed normal approximation.
+
+    `placeable_blocks` (#50 part B): when given, it REPLACES the
+    `n_active_bars // block_size` term with the count of blocks that can
+    actually be placed without spanning a data gap (see
+    `gap_aware_active_block_count` above). Passing None keeps the pre-#50
+    arithmetic byte for byte.
+
+    NOT byte-identical on a gap-free MULTI-SYMBOL run, and this is
+    deliberate (red-team D2, prescreen_signal.py's own docstring): the
+    caller sums a per-symbol floor while the old term was a pooled floor,
+    and sum(floor(a_i/b)) <= floor(sum(a_i)/b), so n_eff can drop by up to
+    (n_symbols - 1) blocks with ZERO gaps present -- the correct direction,
+    since the discarded remainder is exactly the partial blocks that would
+    otherwise be completed by splicing one symbol's bars onto another's.
+
+    ORDERING IS LOAD-BEARING. The `max(..., len(ic_values))` floor is
+    applied AFTER the gap-aware term, never instead of it -- otherwise a
+    floor above the placeable count would silently restore the inflated
+    n_eff and undo part B.
+    """
+    if not ic_values:
+        return {
+            "pooled_ic": None, "z_stat": None, "p_value": 1.0,
+            "n_eff": (n_active_bars // max(block_size, 1)
+                      if placeable_blocks is None else placeable_blocks),
+            "block_size": block_size, "significant": False,
+        }
+
+    pooled_ic = statistics.mean([v for v in ic_values if v is not None])
+    blocks = (n_active_bars // max(block_size, 1) if placeable_blocks is None
+              else placeable_blocks)
+    n_eff = max(blocks, len(ic_values))
+
+    if abs(pooled_ic) >= 1.0:
+        return {
+            "pooled_ic": round(pooled_ic, 4), "z_stat": None,
+            "p_value": 0.0, "n_eff": n_eff, "block_size": block_size,
+            "significant": True,
+        }
+
+    dof = max(n_eff - 3, 1)
+    z_stat = pooled_ic * math.sqrt(dof)
+    abs_z = abs(z_stat)
+    p_value = 2.0 * (1.0 - 0.5 * (1.0 + math.erf(abs_z / math.sqrt(2.0))))
+
+    return {
+        "pooled_ic": round(pooled_ic, 4),
+        "z_stat": round(z_stat, 4),
+        "p_value": round(p_value, 4),
+        "n_eff": n_eff,
+        "block_size": block_size,
+        "significant": bool(p_value < _SIG_THRESHOLD),
+    }
+
+
+def stationary_block_bootstrap_ic_significance(
+    records_by_symbol: dict,
+    block_size: int = 20,
+    n_resamples: int = 1000,
+    seed: int = 20260707,
+    expected_step_by_symbol: Optional[dict] = None,
+) -> dict:
+    """
+    Pre-registered fallback significance test for the pooled ALL-BARS rank
+    IC, used only when the active-bar IC is degenerate (zero variance).
+    Verbatim port of
+    `prescreen_signal.py::_stationary_block_bootstrap_ic_significance`.
+    Defaults match that module's own `_BOOTSTRAP_BLOCK_SIZE_1D`/
+    `_BOOTSTRAP_N_RESAMPLES`/`_BOOTSTRAP_SEED`.
+
+    Circular block bootstrap: resamples fixed-length blocks WITH
+    replacement, independently per symbol (never crossing a symbol
+    boundary, preserving each symbol's own time ordering and
+    forecast/return pairing within a block), wrapping circularly at the end
+    of each symbol's series. Pools resampled bars across symbols exactly as
+    the real statistic does, recomputing Spearman IC on each of
+    `n_resamples` replicates.
+
+    Significance: two-sided bootstrap p-value via the percentile method --
+    p = 2 * min(frac(boot_ic <= 0), frac(boot_ic >= 0)), i.e. how much of
+    the bootstrap distribution's mass sits on the opposite side of zero
+    from the observed IC. Reproducible: fixed seed, not re-randomized per
+    call.
+
+    Gap-awareness (GH#63/CUL-20, #50 family). Each block is drawn from
+    WITHIN a single contiguous segment (`contiguous_segments` above) and
+    wraps circularly within that segment only, so a block can no longer
+    straddle a data hole. A block drawn from a segment is
+    `min(block_size, seg_len)` bars long, so a segment shorter than
+    `block_size` contributes a whole-segment block rather than repeating
+    its bars to fill `block_size`. `expected_step_by_symbol=None` (or a
+    symbol absent from it) yields one segment spanning the series AND
+    keeps the old uncapped block length, reproducing the pre-gap-aware
+    resampling byte-for-byte.
+    """
+    symbol_arrays = {}
+    observed_all_f, observed_all_r = [], []
+    for sym, recs in records_by_symbol.items():
+        f = [r["forecast"] for r in recs]
+        ret = [r["next_return_bps"] for r in recs]
+        expected_step = (expected_step_by_symbol.get(sym)
+                         if expected_step_by_symbol is not None else None)
+        segments = contiguous_segments(recs, expected_step)
+        symbol_arrays[sym] = (f, ret, segments, expected_step is not None)
+        observed_all_f.extend(f)
+        observed_all_r.extend(ret)
+
+    observed_ic = spearman_correlation(observed_all_f, observed_all_r)
+    result_base = {
+        "method": "block_bootstrap_all_bars_v1",
+        "block_size": block_size,
+        "n_resamples": n_resamples,
+    }
+    if observed_ic is None:
+        return {**result_base, "pooled_ic": None, "p_value": 1.0,
+                "significant": False, "n_bootstrap_valid": 0}
+
+    rng = random.Random(seed)
+    boot_ics = []
+    for _ in range(n_resamples):
+        rf, rr = [], []
+        for f, ret, segments, capped in symbol_arrays.values():
+            if not f:
+                continue
+            for seg_start, seg_end in segments:
+                seg_len = seg_end - seg_start
+                n_blocks_needed = (seg_len + block_size - 1) // block_size
+                blk = min(block_size, seg_len) if capped else block_size
+                for _b in range(n_blocks_needed):
+                    start = rng.randrange(seg_start, seg_end)
+                    for k in range(blk):
+                        idx = seg_start + ((start - seg_start + k) % seg_len)
+                        rf.append(f[idx])
+                        rr.append(ret[idx])
+        ic = spearman_correlation(rf, rr)
+        if ic is not None:
+            boot_ics.append(ic)
+
+    if not boot_ics:
+        return {**result_base, "pooled_ic": round(observed_ic, 6), "p_value": 1.0,
+                "significant": False, "n_bootstrap_valid": 0}
+
+    frac_le_0 = sum(1 for v in boot_ics if v <= 0) / len(boot_ics)
+    frac_ge_0 = sum(1 for v in boot_ics if v >= 0) / len(boot_ics)
+    p_value = min(1.0, 2.0 * min(frac_le_0, frac_ge_0))
+
+    return {
+        **result_base,
+        "pooled_ic": round(observed_ic, 6),
+        "p_value": round(p_value, 4),
+        "significant": bool(p_value < _SIG_THRESHOLD),
+        "n_bootstrap_valid": len(boot_ics),
+    }
