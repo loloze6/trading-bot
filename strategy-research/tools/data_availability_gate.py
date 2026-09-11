@@ -178,18 +178,27 @@ def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: s
                 f"timeframe={timeframe!r} not in kraken spot's live_rest_api "
                 f"intervals_minutes={available_minutes} (Layer 1 audit)."
             )
-        if (live_rest.get("history_depth") or "") == "capped_720_most_recent_candles":
+        # CUL-<TBD> fix (2026-09-11): read the cap as a NUMBER
+        # (history_depth_candles) rather than pattern-matching a descriptive
+        # string (the old "capped_720_most_recent_candles" required the code
+        # to already know the exact number the string described -- a second
+        # venue with a different rolling cap, or a change to this one, would
+        # have silently gone unrecognized). Any venue whose live_rest_api
+        # block declares a numeric history_depth_candles now gets this same
+        # cutoff check for free, not just Kraken specifically.
+        history_depth_candles = live_rest.get("history_depth_candles")
+        if history_depth_candles:
             now = now or datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             interval_seconds = _TIMEFRAME_SECONDS.get(timeframe)
             if interval_seconds:
-                cutoff = now - datetime.timedelta(seconds=720 * interval_seconds)
+                cutoff = now - datetime.timedelta(seconds=history_depth_candles * interval_seconds)
                 if window_start < cutoff:
                     return False, (
-                        f"window start {window_start} is older than Kraken spot's "
-                        f"live REST 720-candle cap at {timeframe} resolution "
-                        f"(cutoff ~{cutoff}) -- structurally unreachable via this "
-                        f"codebase's live fetch path (Layer 1 audit, "
-                        f"load_bearing_finding)."
+                        f"window start {window_start} is older than {exchange} "
+                        f"spot's live REST {history_depth_candles}-candle cap at "
+                        f"{timeframe} resolution (cutoff ~{cutoff}) -- "
+                        f"structurally unreachable via this codebase's live "
+                        f"fetch path (Layer 1 audit, load_bearing_finding)."
                     )
         return True, "ok"
 

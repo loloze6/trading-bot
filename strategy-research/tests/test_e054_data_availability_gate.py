@@ -144,7 +144,7 @@ _LAYER1_FIXTURE = {
                 "timeframes": {
                     "live_rest_api": {
                         "intervals_minutes": [60, 240],
-                        "history_depth": "capped_720_most_recent_candles",
+                        "history_depth_candles": 720,
                     },
                 },
             },
