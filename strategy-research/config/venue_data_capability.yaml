@@ -18,6 +18,25 @@
 # technically capable and legally untradable (e.g. Kraken spot-margin below).
 # Never conflate the two files or merge them.
 #
+# SCOPE: HISTORICAL / BACKTEST RETRIEVAL ONLY (2026-09-11, Jeremy's explicit
+# call). Live trading is forbidden in this repo today (CLAUDE.fork.md hard
+# rule 1: "Never run live... Backtests only") and this codebase's live vs.
+# backtest data paths are architecturally different mechanisms, not the same
+# one at a different speed (DataManager.add_tick(), fed by a live REST poll,
+# vs. add_row(), fed by historical rows already on disk/fetched in bulk —
+# data_manager.py:435-444). Nothing below describes or should be read as
+# describing live-market data capability (streaming ticks, order-book access,
+# poll latency/reliability) — that is a separate, not-yet-relevant question
+# while live trading itself is disallowed, and would need its own audit if
+# that ever changes. Every entry below is about one specific RETRIEVAL
+# MECHANISM this codebase actually has wired for historical data — named
+# explicitly per entry (e.g. "ccxt live REST klines", "Kraken bulk-archive
+# download, not automated here") — because a venue can offer the same data
+# through more than one mechanism with different limits (see Kraken spot's
+# live_rest_api vs. downloadable_archive split below, the clearest example).
+# Do not read a capability recorded under one mechanism as applying to a
+# different one for the same venue.
+#
 # NOT a record of what THIS codebase has fetched or cached before.
 # local_data/*.csv coverage drifts constantly as backtests run — checking
 # actual per-window gaps in OUR OWN cached/fetched data is E-054 LAYER 2's
@@ -73,12 +92,16 @@ venues:
   binance:
 
     spot:
+      mechanism: "ccxt live REST klines (historical), via CcxtFetcher"
       description: >
         Binance cash spot market. This codebase's price path (CcxtFetcher,
         trading-bot/data/fetchers/ccxt_fetcher.py, defaultType="spot") reads
         this product directly for exchange="binance" (the default when a
         backtest declares no exchange at all — core/launcher.py's
-        _read_trading_params / _validated_exchange).
+        _read_trading_params / _validated_exchange). Historical retrieval
+        only, per this file's scope note above — this codebase's separate
+        live-tick poll path (data_manager.py's add_tick(), used only when
+        mode="live") is not covered here and not audited by this file.
       symbols:
         pattern: >
           Any BASEQUOTE pair Binance Spot lists (e.g. BTCUSDT). This
@@ -138,6 +161,7 @@ venues:
 
     futures:
       also_known_as: "USDS-M / USDT-M perpetual futures ('binance' + defaultType='future')"
+      mechanism: "ccxt live REST (historical klines + fundingRate), via FundingRateFetcher"
       description: >
         Binance's own perpetual-futures product is NOT this codebase's price
         source for any symbol (CcxtFetcher always constructs
@@ -324,6 +348,7 @@ venues:
 
     futures:
       also_known_as: "Kraken Futures / krakenfutures (ccxt exchange id), perpetual futures"
+      mechanism: "ccxt live REST (historical fundingRate only), via FundingRateFetcher"
       description: >
         Used by this codebase ONLY for the funding_rate aux feed, routed via
         feed_registry.py's _FUNDING_VENUE_MAP = {'kraken': 'krakenfutures'}
@@ -418,6 +443,7 @@ non_exchange_feeds:
 
   fear_greed:
     source: "Alternative.me Crypto Fear & Greed Index, https://api.alternative.me/fng/"
+    mechanism: "direct HTTP GET, historical (limit=N days back) — not ccxt, no live-poll path in this codebase"
     description: >
       A single global index, not tied to any venue or symbol
       (fear_greed_fetcher.py has no exchange_id / venue concept at all).
