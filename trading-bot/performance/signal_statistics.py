@@ -233,6 +233,58 @@ _SIG_THRESHOLD = 0.10          # prescreen_signal.py::_SIG_THRESHOLD, same value
 _DEFAULT_SIGMA_BAR_BPS = 15.0  # prescreen_signal.py::_DEFAULT_SIGMA_BAR_BPS, same value
 
 
+# ---------------------------------------------------------------------------
+# Minimum-observations safeguard (CUL-264 follow-up, 2026-09-11)
+# ---------------------------------------------------------------------------
+#
+# determine_route() below classifies purely from a p-value and a cost-hurdle
+# ratio -- nothing upstream of that math ever asked whether there were even
+# enough observations to trust the test computing them. Left unguarded, a
+# hypothesis that failed because it had almost no data (n_eff=1, or a single
+# completed trade averaged into "the" edge) gets the exact same label
+# (kill_no_ic / kill_cost_hurdle / ...) as one that genuinely showed nothing
+# on an abundant sample. Those are epistemically different -- "we don't know
+# yet" is not "we now know it doesn't work" -- but nothing distinguished them
+# before this. `determine_route` now checks this FIRST, before the
+# significance/cost math runs at all, and routes to
+# `inconclusive_insufficient_data` instead.
+#
+# PROPOSED DEFAULTS, NOT A SETTLED NUMBER -- flag for explicit sign-off. Two
+# different statistical quantities get their own floor rather than one
+# invented number applied twice:
+#
+# `_MIN_N_EFF_FOR_ROUTE` (estimated path, CUL-264, keyed on n_eff): n_eff is
+# already a block count (each unit is a whole day's worth of active 1h bars,
+# per `block_adjusted_pvalue` above), coarser and more conservative than a
+# raw bar count. That function's own z-test computes
+# `dof = max(n_eff - 3, 1)` (line ~207 above): for every n_eff in
+# {0, 1, 2, 3, 4} that expression clamps to the SAME dof=1 -- the test
+# statistic cannot even distinguish n_eff=1 from n_eff=4, so below 5 "degrees
+# of freedom" isn't tracking sample size at all, just reporting its own
+# floor. 5 is the smallest n_eff where dof starts actually varying with it
+# (dof=2 at n_eff=5) instead of returning a constant regardless of how little
+# data there was -- a floor derived from the significance math already in
+# this file, not picked freehand. It also happens to match
+# `sigma_bar_bps_from_returns`'s own "< 5 -> don't trust it" rule immediately
+# below, giving this file one internally-consistent floor for "too few to
+# trust" rather than two arbitrary numbers doing the same conceptual job.
+#
+# `_MIN_TRADES_FOR_ROUTE` (real path, CUL-272, keyed on completed-trade
+# count): a trade count is a materially different, noisier quantity than
+# n_eff -- a single trade can span many bars, so "5 trades" carries far less
+# statistical information than "5 independent blocks of bars" does. Reusing
+# 5 here is deliberately a floor-of-floors: it only rules out the degenerate
+# "average of 1 trade" case this safeguard exists to catch, and is NOT a
+# claim that 5 trades is a trustworthy sample to route on -- this repo's own
+# research protocol (`CLAUDE.fork.md`) requires >=100 trades (or >=30
+# independent episodes) before a Sharpe may even be quoted. If review decides
+# 5 is too lenient for a real-money-adjacent decision, raise
+# `_MIN_TRADES_FOR_ROUTE` independently of `_MIN_N_EFF_FOR_ROUTE` -- nothing
+# ties them together except that they start from the same number today.
+_MIN_N_EFF_FOR_ROUTE  = 5
+_MIN_TRADES_FOR_ROUTE = 5
+
+
 def sigma_bar_bps_from_returns(returns_bps: Sequence[float]) -> tuple:
     """
     Per-bar return volatility in bps, or a loud placeholder. Verbatim port of
@@ -287,10 +339,23 @@ def cost_check(ic_active: Optional[float], sigma_bar_bps: float,
 
 
 def determine_route(pooled_ic: Optional[float], p_value: Optional[float],
-                     cost: dict) -> tuple:
+                     cost: dict,
+                     n_eff: Optional[int] = None,
+                     n_trades: Optional[int] = None,
+                     sigma_is_placeholder: bool = False,
+                     min_n_eff: int = _MIN_N_EFF_FOR_ROUTE,
+                     min_n_trades: int = _MIN_TRADES_FOR_ROUTE) -> tuple:
     """
-    Verbatim port of `prescreen_signal.py::_determine_route`'s priority logic:
+    Verbatim port of `prescreen_signal.py::_determine_route`'s priority logic,
+    PLUS a minimum-observations safeguard (CUL-264 follow-up) checked FIRST,
+    before the significance/cost math runs at all:
 
+        0. Sample too small to trust (n_eff < min_n_eff, or n_trades <
+           min_n_trades, or the cost check rests on a placeholder sigma) ->
+           inconclusive_insufficient_data. This is NOT a verdict -- it means
+           "not enough information to judge this," and must never be
+           confused with kill_no_ic/kill_cost_hurdle, which mean "judged and
+           failed."
         1. IC not significant (p >= _SIG_THRESHOLD) -> kill_no_ic
         2. IC significant, NEGATIVE -> refine_inverted_ic
         3. IC significant, positive, cost fails structurally (p > 0.05 or
@@ -300,8 +365,40 @@ def determine_route(pooled_ic: Optional[float], p_value: Optional[float],
            `proceed_to_backtest`, renamed: the backtest has already run by the
            time this function is called)
 
+    `n_eff`/`n_trades` are optional and independently checked -- a caller
+    that only has one of the two quantities (e.g. the estimated path has
+    n_eff but no real trade count) passes only that one; omitting both (the
+    default) skips step 0 entirely, preserving the pre-existing 3-positional-
+    arg call shape byte-identically for any caller that hasn't been updated
+    to pass sample-size information yet.
+
     Returns (route: str, rationale: str).
     """
+    insufficiency_reasons = []
+    if n_eff is not None and n_eff < min_n_eff:
+        insufficiency_reasons.append(
+            f"n_eff={n_eff} < min_n_eff={min_n_eff} (block-adjusted effective "
+            f"sample size is below the floor needed to trust the significance "
+            f"test)"
+        )
+    if n_trades is not None and n_trades < min_n_trades:
+        insufficiency_reasons.append(
+            f"n_trades={n_trades} < min_n_trades={min_n_trades} (too few "
+            f"completed trades to trust an average built from them)"
+        )
+    if sigma_is_placeholder:
+        insufficiency_reasons.append(
+            "sigma_bar_bps is a placeholder (fewer than 5 return observations "
+            "were available to measure real volatility) -- a cost check "
+            "resting on it is not a measurement"
+        )
+    if insufficiency_reasons:
+        return (
+            "inconclusive_insufficient_data",
+            "Insufficient data to reach a verdict: "
+            + "; ".join(insufficiency_reasons) + ".",
+        )
+
     significant = p_value is not None and p_value < _SIG_THRESHOLD
     ic          = pooled_ic if pooled_ic is not None else 0.0
     ic_str      = f"{pooled_ic:.4f}" if pooled_ic is not None else "undefined"

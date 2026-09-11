@@ -37,12 +37,18 @@ def _bars(forecasts, closes, freq="h", start="2020-01-01"):
     })
 
 
-def _fake_trade(duration_minutes, net_pnl=1.0, gross_pnl=1.5, commission=0.5):
+def _fake_trade(duration_minutes, net_pnl=1.0, gross_pnl=1.5, commission=0.5,
+                 total_commission_percent=0.05, profit_loss_percent=1.5):
     return SimpleNamespace(
         net_profit_loss_absolute=net_pnl,
         profit_loss_absolute=gross_pnl,
         total_commission=commission,
         duration_minutes=duration_minutes,
+        # CUL-272: real-cost fields build_core now reads unconditionally
+        # whenever n > 0 -- absent from a fixture, every existing test here
+        # would AttributeError, not just the new CUL-272 ones.
+        total_commission_percent=total_commission_percent,
+        profit_loss_percent=profit_loss_percent,
     )
 
 
@@ -74,8 +80,20 @@ def test_route_matches_prescreen_on_identical_input():
     """With candle_interval_seconds AND a symbol supplied (and enough trades
     for avg_trade_duration_bars), the computed route/cost-check must equal
     what prescreen's own _cost_check/_determine_route give on the same
-    IC/significance/holding-period/cost inputs."""
-    forecasts, closes = _varying_series(n=100)
+    IC/significance/holding-period/cost inputs.
+
+    n=200 (not the smaller n=100 used elsewhere in this file) deliberately:
+    n_eff for this series is a block-count derived from `n`, and at n=100 it
+    comes out to 4 -- below the CUL-264-follow-up min-observations floor
+    (`_MIN_N_EFF_FOR_ROUTE=5`, see signal_statistics.py), which would route
+    build_core to `inconclusive_insufficient_data` while prescreen's own
+    (unguarded) `_determine_route` still returns a real classification --
+    a genuine, intended divergence for a too-small sample, not something this
+    "must match prescreen" test should be exercising. n=200 gives n_eff=8,
+    comfortably above the floor, so this test stays about algorithmic parity
+    on an ADEQUATE sample -- see test_insufficient_n_eff_routes_inconclusive*
+    below for the small-sample behavior itself."""
+    forecasts, closes = _varying_series(n=200)
     bars = _bars(forecasts, closes, freq="h")
     candle_interval_seconds = 3600
 
