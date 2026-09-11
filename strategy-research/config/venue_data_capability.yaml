@@ -84,6 +84,32 @@
 version: "1.0"
 created_at: "2026-09-11"
 
+# Venue-agnostic capability note, added 2026-09-11 (Jeremy's review caught
+# Layer 1 was blind to this): a COARSER timeframe not directly offered by a
+# venue mechanism can still be reachable by aggregating an already-available
+# FINER one. This is a real, wired engine mechanism, not a proposal --
+# DataManager accepts an independent `fetch_interval_seconds` (data_manager.py),
+# fetches/caches OHLCV at that finer resolution, and CandleBuilder aggregates
+# the rows up to the strategy's actual candle interval during replay (e.g.
+# fetch_interval_seconds=3600 with interval_seconds=14400 backtests a 4h
+# strategy off an hourly cache) -- see CUL-250 / PR #133. It requires the
+# finer interval to evenly divide the coarser one (CandleBuilder only
+# aggregates, never interpolates) and is OFF BY DEFAULT: an operator must
+# explicitly set `trading.fetch_interval_seconds` in trading-bot/config.json
+# (or pass it as a run_backtest() keyword) -- there is no automatic
+# per-protocol selection of "the right finer resolution." Layer 1
+# (data_availability_gate.py's layer1_price_precheck) treats a coarser
+# timeframe as NOT structurally impossible when a finer one divides it
+# evenly and is itself covered by some declared mechanism below; Layer 2
+# still declines for real if the opt-in was never actually set for that run.
+aggregation_capability:
+  mechanism: "DataManager(fetch_interval_seconds=...) + CandleBuilder aggregation (CUL-250, PR #133)"
+  wired: true
+  default: "off (fetch_interval_seconds=None means fetch at the exact declared timeframe, byte-identical to pre-CUL-250 behavior)"
+  opt_in: "trading-bot/config.json: trading.fetch_interval_seconds, or an explicit run_backtest() keyword"
+  constraint: "finer interval must evenly divide the coarser one; aggregation only, never interpolation"
+  applies_to: "any venue/mechanism below -- this is engine-side, not venue-side, capability"
+
 venues:
 
   # =========================================================================

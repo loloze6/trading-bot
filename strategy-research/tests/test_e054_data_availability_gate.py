@@ -225,6 +225,110 @@ def test_layer1_price_precheck_kraken_recent_window_within_720_cap_passes():
     assert ok is True
 
 
+_LAYER1_FIXTURE_WITH_ARCHIVE = {
+    "venues": {
+        "kraken": {
+            "spot": {
+                "timeframes": {
+                    "live_rest_api": {
+                        "intervals_minutes": [60, 240],
+                        "history_depth_candles": 720,
+                    },
+                    "downloadable_archive": {
+                        "intervals_minutes": [60],
+                    },
+                },
+            },
+        },
+    },
+}
+
+
+def test_layer1_price_precheck_kraken_old_window_rescued_by_declared_archive_mechanism():
+    """Jeremy's 2026-09-11 catch: local_data/kraken_BTCUSD_1h.csv reaches back
+    to 2013 via a one-time bulk-archive ingestion (tools/ingest_kraken_archive.py)
+    -- a SECOND declared mechanism (downloadable_archive) with no 720-candle
+    recency cap. A window older than the live-REST cutoff must NOT decline at
+    Layer 1 when the archive mechanism also lists this interval; Layer 2's
+    real fetch/cache check is what confirms whether it's actually there."""
+    now = datetime.datetime(2026, 9, 11)
+    ok, reason = dag.layer1_price_precheck(
+        _LAYER1_FIXTURE_WITH_ARCHIVE, "kraken", "BTCUSD", "1h",
+        datetime.datetime(2020, 1, 1), datetime.datetime(2020, 2, 1),
+        now=now,
+    )
+    assert ok is True, reason
+
+
+def test_layer1_price_precheck_kraken_old_window_still_declines_when_interval_only_in_live_rest():
+    """The 240-minute (4h) interval is declared ONLY under live_rest_api in
+    this fixture (not in downloadable_archive's [60]) -- the 720-candle cap
+    must still bite for that interval specifically, confirming the rescue
+    above is interval-scoped, not a blanket pass for the whole venue."""
+    now = datetime.datetime(2026, 9, 11)
+    ok, reason = dag.layer1_price_precheck(
+        _LAYER1_FIXTURE_WITH_ARCHIVE, "kraken", "BTCUSD", "4h",
+        datetime.datetime(2020, 1, 1), datetime.datetime(2020, 2, 1),
+        now=now,
+    )
+    assert ok is False
+    assert "720" in reason
+
+
+def test_layer1_price_precheck_kraken_unreachable_timeframe_rescued_by_aggregation():
+    """5-minute isn't listed under any mechanism in this fixture, but
+    1-minute is declared and divides it evenly -- reachable via
+    CandleBuilder aggregation, Layer 2 confirms the rest."""
+    layer1 = {
+        "venues": {"kraken": {"spot": {"timeframes": {
+            "live_rest_api": {"intervals_minutes": [1], "history_depth_candles": 720},
+        }}}},
+    }
+    now = datetime.datetime(2026, 9, 11)
+    ok, reason = dag.layer1_price_precheck(
+        layer1, "kraken", "BTCUSD", "5m",
+        now - datetime.timedelta(hours=1), now,
+        now=now,
+    )
+    assert ok is True, reason
+    assert "aggregation" in reason
+
+
+def test_layer1_price_precheck_binance_unreachable_timeframe_rescued_by_aggregation():
+    """Same aggregation fallback for the flat timeframes.available branch:
+    only 1m is listed, 5m divides it evenly -- must not decline outright."""
+    layer1 = {
+        "venues": {"binance": {"spot": {
+            "timeframes": {"available": ["1m"]},
+            "symbols": {"earliest_ohlcv_utc": {"BTCUSDT": "2017-08-17T00:00:00Z"}},
+        }}},
+    }
+    ok, reason = dag.layer1_price_precheck(
+        layer1, "binance", "BTCUSDT", "5m",
+        datetime.datetime(2024, 1, 1), datetime.datetime(2024, 2, 1),
+    )
+    assert ok is True, reason
+
+
+def test_layer1_price_precheck_unreachable_timeframe_with_no_finer_available_still_declines():
+    """Regression: the genuinely-impossible case (no direct match, no finer
+    interval to aggregate from) must still decline -- this is the existing
+    behavior test_layer1_price_precheck_unknown_timeframe_declines already
+    covers for binance('15m' vs ['1h','4h'], both coarser); this variant
+    pins the same guarantee explicitly for kraken."""
+    layer1 = {
+        "venues": {"kraken": {"spot": {"timeframes": {
+            "live_rest_api": {"intervals_minutes": [1440], "history_depth_candles": 720},
+        }}}},
+    }
+    ok, reason = dag.layer1_price_precheck(
+        layer1, "kraken", "BTCUSD", "1h",
+        datetime.datetime(2024, 1, 1), datetime.datetime(2024, 2, 1),
+    )
+    assert ok is False
+    assert "no finer" in reason
+
+
 # ---------------------------------------------------------------------------
 # Aggregation (_aggregate) -- the validate/refine/decline outcome model
 # ---------------------------------------------------------------------------
