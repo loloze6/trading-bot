@@ -2398,6 +2398,14 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
             "optional_inputs": [
                 {"path": "../../campaign_state.yaml",
                  "reason": "cross-run altitude history; drives circuit-breaker altitude decisions"},
+                {"path": "../../engineering/roadmap/E-018/artifacts/near_miss_scoreboard.yaml",
+                 "reason": "E-018 (2026-09-13): ranked table of past near-miss root causes -- "
+                           "informs root_cause/proposed_brief/findings_carryover only, never "
+                           "hypothesis_verdict/lineage_routing (see verdict-interpreter/SKILL.md's "
+                           "Near-miss scoreboard section). Given unconditionally, with no guard "
+                           "tied to whether THIS run has a registered pass_rule -- optional only "
+                           "in the ordinary missing-file sense every other optional_input here has "
+                           "(e.g. the file not yet regenerated), same as campaign_state.yaml above."},
             ],
             "deliverables": ["verdict_interpretation.yaml"],
             "constraints": [
@@ -5272,25 +5280,64 @@ _LEGACY_STATUS_TO_VERDICT_ROUTING = {
     "escalate": ("kill", "escalate"),
 }
 
+# E-018 (2026-09-13): inverse of the map above, keyed by the (hypothesis_verdict,
+# lineage_routing) pair -- every pair in _LEGACY_STATUS_TO_VERDICT_ROUTING is
+# distinct, so this is a clean one-to-one lookup. Used to translate a BINDING
+# pass_rule_evaluation.yaml's mechanical (hv, lr) pair into the legacy single-enum
+# "status" the circuit breaker itself operates on, so the breaker's family-history
+# governance applies consistently whether the pair came from the mechanical
+# evaluator or (pre-K2) the stage's own restated status.
+_VERDICT_ROUTING_TO_LEGACY_STATUS = {v: k for k, v in _LEGACY_STATUS_TO_VERDICT_ROUTING.items()}
 
-def _resolve_verdict_fields(interp: dict, original_status: str, breaker_status: str) -> tuple:
+
+def _resolve_verdict_fields(interp: dict, original_status: str, breaker_status: str,
+                             pre_eval: dict | None = None) -> tuple:
     """
     A8 (K2 kernel): resolves the (hypothesis_verdict, lineage_routing) pair a
     caller should route on, for one verdict_interpretation.yaml.
 
-    Prefers the artifact's OWN hypothesis_verdict/lineage_routing fields (the
-    new A8 schema) when present. Falls back to deriving both from the legacy
-    single-enum `status` field for a not-yet-migrated (pre-K2) artifact.
+    E-018 (2026-09-13): when `pre_eval` (pass_rule_evaluation.yaml) carries a
+    BINDING verdict (result PASS/FAIL, not a `discretion: stage` branch), its
+    own hypothesis_verdict/lineage_routing are used DIRECTLY as the route --
+    routing no longer depends on the stage's own restated copy being correct.
+    This is what makes it safe to also give verdict_interpreter the near-miss
+    scoreboard as an input: for any run with a registered, binding pass rule,
+    the stage no longer holds the pen on the actual promote/kill decision, only
+    on the qualitative fields (root_cause, findings_carryover, proposed_brief).
+    `_check_pass_rule_evaluation_conformance` (below) still compares the
+    stage's own restated pair against this one, but only to LOG a mismatch as
+    an LLM-comprehension signal -- it no longer blocks routing (see caller).
+
+    Falls back to the artifact's OWN hypothesis_verdict/lineage_routing fields
+    (the A8 schema) when `pre_eval` is absent or not binding, and further falls
+    back to deriving both from the legacy single-enum `status` field for a
+    not-yet-migrated (pre-K2) artifact -- both fallback paths unchanged from
+    before this function took `pre_eval`.
 
     `original_status` / `breaker_status` are the status string BEFORE and
-    AFTER _apply_circuit_breaker ran (callers already compute both). If the
-    breaker fired (they differ), its forced value overrides `lineage_routing`
-    ONLY -- the breaker's job is "route differently" (e.g. force pivot after
-    repeated same-dimension refines), never "re-decide whether the mechanism
-    itself is dead". An artifact-declared `hypothesis_verdict` survives a
-    breaker override; only `lineage_routing` is replaced.
+    AFTER _apply_circuit_breaker ran (callers already compute both, deriving
+    them from `pre_eval` when binding -- see determine_post_verdict_route). If
+    the breaker fired (they differ), its forced value overrides
+    `lineage_routing` ONLY -- the breaker's job is "route differently" (e.g.
+    force pivot after repeated same-dimension refines), never "re-decide
+    whether the mechanism itself is dead". A declared `hypothesis_verdict`
+    (mechanical or artifact-own) survives a breaker override; only
+    `lineage_routing` is replaced.
     """
     breaker_fired = breaker_status != original_status
+
+    if pre_eval and pre_eval.get("result") in ("PASS", "FAIL") and pre_eval.get("discretion") != "stage":
+        mech_hv = pre_eval.get("hypothesis_verdict")
+        mech_lr = pre_eval.get("lineage_routing")
+        if mech_hv is not None or mech_lr is not None:
+            if breaker_fired:
+                mapped = _LEGACY_STATUS_TO_VERDICT_ROUTING.get(breaker_status)
+                if mapped is None:
+                    raise ValueError(f"Unknown circuit-breaker-forced status: '{breaker_status}'")
+                mapped_hv, mapped_lr = mapped
+                return (mech_hv or mapped_hv), mapped_lr
+            return mech_hv, mech_lr
+
     hv = interp.get("hypothesis_verdict")
     lr = interp.get("lineage_routing")
 
@@ -5417,6 +5464,22 @@ def determine_post_verdict_route(path: Path, run_id: str):
     status = (interp.get("status") or interp.get("protocol_verdict") or "").strip().lower()
     campaign = load_campaign_state()
 
+    # E-018 (2026-09-13): when pass_rule_evaluation.yaml carries a BINDING verdict,
+    # its mechanical (hypothesis_verdict, lineage_routing) pair -- not the stage's
+    # own restated `status` -- is what actually drives routing (see
+    # _resolve_verdict_fields). The circuit breaker's family-history governance
+    # must see that SAME mechanical status as its input, not the LLM's copy, so
+    # translate it here via the inverse map before the breaker runs.
+    pre_eval_path = path / "artifacts" / "pass_rule_evaluation.yaml"
+    pre_eval = load_yaml(pre_eval_path) if pre_eval_path.exists() else {}
+    pre_eval_binding = bool(pre_eval) and pre_eval.get("result") in ("PASS", "FAIL") \
+        and pre_eval.get("discretion") != "stage"
+    if pre_eval_binding:
+        _mech_pair = (pre_eval.get("hypothesis_verdict"), pre_eval.get("lineage_routing"))
+        _mech_status = _VERDICT_ROUTING_TO_LEGACY_STATUS.get(_mech_pair)
+        if _mech_status is not None:
+            status = _mech_status
+
     # F6 (2026-07-04): an engineering-failure diagnosis can NEVER be overridden into a
     # scientific verdict by the circuit breaker (or by anything else). Checked before
     # any breaker logic runs, using the LLM's own root_cause -- covers the case
@@ -5476,22 +5539,39 @@ def determine_post_verdict_route(path: Path, run_id: str):
               "fee_reduction_assessment.registered_as.")
     # --- end mechanism_failure routing ---
 
-    # A8 (K2 kernel): resolve the two-field pair (preferring the artifact's own
+    # A8 (K2 kernel): resolve the two-field pair (preferring a BINDING
+    # pass_rule_evaluation.yaml's mechanical pair, then the artifact's own
     # hypothesis_verdict/lineage_routing; legacy-status fallback + circuit-breaker
     # interaction documented in _resolve_verdict_fields).
-    hypothesis_verdict, lineage_routing = _resolve_verdict_fields(interp, original_status, status)
+    hypothesis_verdict, lineage_routing = _resolve_verdict_fields(
+        interp, original_status, status, pre_eval=pre_eval if pre_eval_binding else None
+    )
 
-    # C7: the stage's own verdict must not silently disagree with a BINDING
-    # machine-authored pass_rule_evaluation.yaml verdict.
-    _prc_violations = _check_pass_rule_evaluation_conformance(path, hypothesis_verdict, lineage_routing)
+    # E-018 (2026-09-13): C7 downgraded from BLOCKING to INFORMATIONAL, and now
+    # compares the STAGE'S OWN restated hypothesis_verdict/lineage_routing
+    # (interp's own fields) against pass_rule_evaluation.yaml -- NOT the
+    # already-resolved `hypothesis_verdict`/`lineage_routing` above, which when
+    # pre_eval was binding now simply ARE the mechanical pair (comparing them
+    # to themselves would find nothing). Skipped entirely for a legacy
+    # artifact that never declared its own hypothesis_verdict at all (nothing
+    # to compare -- not a disagreement). A mismatch can no longer mean
+    # "routing might be wrong" (routing already used the mechanical pair
+    # directly) -- it only means the stage's own restated copy was wrong, an
+    # LLM-comprehension signal worth recording, not a reason to halt the
+    # pipeline.
+    _own_hv, _own_lr = interp.get("hypothesis_verdict"), interp.get("lineage_routing")
+    _prc_violations = (
+        _check_pass_rule_evaluation_conformance(path, _own_hv, _own_lr)
+        if _own_hv is not None else []
+    )
     if _prc_violations:
-        print("\n🛑 [C7] STAGE OUTPUT DISAGREES WITH pass_rule_evaluation.yaml:")
+        print("\n⚠️  [C7] Stage's own restated verdict disagreed with the binding "
+              "pass_rule_evaluation.yaml (informational only -- routing already used "
+              "the mechanical verdict directly):")
         for v in _prc_violations:
             print(f"   - {v}")
-        update_state(path=path, status="paused_for_human",
-                     flags={"pass_rule_evaluation_disagreement": True},
+        update_state(path=path, flags={"pass_rule_evaluation_disagreement": True},
                      pass_rule_evaluation_violations=_prc_violations)
-        return "human_pause"
 
     # Short-circuit ordering UNCHANGED from pre-K2 behavior: promote and a
     # terminal kill (lineage_routing == "terminate") bypass carryover
@@ -5586,6 +5666,18 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         status = interp.get("status", "refine").strip().lower()
         campaign = load_campaign_state()
 
+        # E-018 (2026-09-13): same binding-pre_eval status override as
+        # determine_post_verdict_route (R1 -- one shared rule, not a divergent copy).
+        pre_eval_path = path / "artifacts" / "pass_rule_evaluation.yaml"
+        pre_eval = load_yaml(pre_eval_path) if pre_eval_path.exists() else {}
+        pre_eval_binding = bool(pre_eval) and pre_eval.get("result") in ("PASS", "FAIL") \
+            and pre_eval.get("discretion") != "stage"
+        if pre_eval_binding:
+            _mech_pair = (pre_eval.get("hypothesis_verdict"), pre_eval.get("lineage_routing"))
+            _mech_status = _VERDICT_ROUTING_TO_LEGACY_STATUS.get(_mech_pair)
+            if _mech_status is not None:
+                status = _mech_status
+
         # F6 (2026-07-04): same engineering-failure immunity as determine_post_verdict_route.
         root_cause = interp.get("root_cause") or {}
         if root_cause.get("mechanism_failure") == "component_execution_error":
@@ -5612,19 +5704,27 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         # here and in the appended design-note section, not silently merged.
         original_status = status
         status = _apply_circuit_breaker(status, interp, campaign)
-        hypothesis_verdict, lineage_routing = _resolve_verdict_fields(interp, original_status, status)
+        hypothesis_verdict, lineage_routing = _resolve_verdict_fields(
+            interp, original_status, status, pre_eval=pre_eval if pre_eval_binding else None
+        )
 
-        # C7: same disagreement check as determine_post_verdict_route (R1 --
-        # one shared conformance rule, not a divergent second copy).
-        _prc_violations = _check_pass_rule_evaluation_conformance(path, hypothesis_verdict, lineage_routing)
+        # C7: same informational (non-blocking) disagreement check as
+        # determine_post_verdict_route (R1 -- one shared conformance rule, not a
+        # divergent second copy) -- compares the STAGE'S OWN restated pair,
+        # not the already-resolved one. See E-018 (2026-09-13) note there.
+        _own_hv, _own_lr = interp.get("hypothesis_verdict"), interp.get("lineage_routing")
+        _prc_violations = (
+            _check_pass_rule_evaluation_conformance(path, _own_hv, _own_lr)
+            if _own_hv is not None else []
+        )
         if _prc_violations:
-            print("\n🛑 [C7] STAGE OUTPUT DISAGREES WITH pass_rule_evaluation.yaml:")
+            print("\n⚠️  [C7] Stage's own restated verdict disagreed with the binding "
+                  "pass_rule_evaluation.yaml (informational only -- routing already used "
+                  "the mechanical verdict directly):")
             for v in _prc_violations:
                 print(f"   - {v}")
-            update_state(path=path, status="paused_for_human",
-                         flags={"pass_rule_evaluation_disagreement": True},
+            update_state(path=path, flags={"pass_rule_evaluation_disagreement": True},
                          pass_rule_evaluation_violations=_prc_violations)
-            return "human_pause"
 
         return _dispatch_verdict_route(path, run_id, interp, campaign, hypothesis_verdict, lineage_routing)
 

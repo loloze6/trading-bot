@@ -35,6 +35,15 @@ a refined brief that fixes the identified failure, or a final decision to kill o
                                 category each tested symbol belongs to)
 - `innovation_notes.yaml`      (if available in context — its `asset_diversity_audit` may carry
                                 a single-asset opt-out relevant to the asset stability gate below)
+- `near_miss_scoreboard.yaml`  (E-018, 2026-09-13 — ranked table of past runs' near-miss root
+                                causes and how close each came to its own pass_rule. Given
+                                UNCONDITIONALLY, with no guard tied to whether THIS run has a
+                                registered pass_rule — a run without one needs you to produce a
+                                genuinely non-mechanical verdict, which needs full context, not
+                                just near-miss history withheld. See "Near-miss scoreboard" section
+                                below: it informs `root_cause`/`proposed_brief`/
+                                `findings_carryover` only, never `hypothesis_verdict`/
+                                `lineage_routing`.)
 
 ## MACHINE-AUTHORED VERDICT (K2, 2026-07-13)
 
@@ -46,12 +55,19 @@ not re-decide `hypothesis_verdict`/`lineage_routing` independently when it alrea
 
 - `result: PASS` or `FAIL` — copy `hypothesis_verdict` and `lineage_routing` from it
   VERBATIM into `verdict_interpretation.yaml` (B4 copy-through discipline — do not
-  paraphrase, do not re-derive). If your own diagnostic reading (Rules 1-6 below)
-  disagrees with its verdict, do NOT silently overwrite it either direction — write
-  your disagreement into `altitude_justification` and set a `human_pause` per the
-  standing disagreement rule (see RUNBOOK.md's pause table); a stage output that
-  contradicts `pass_rule_evaluation.yaml` without flagging it is a conformance
-  violation, not a judgment call.
+  paraphrase, do not re-derive). **E-018 (2026-09-13):** this copy-through is no
+  longer the only thing standing between an incorrect restatement and a misrouted
+  pipeline — `determine_post_verdict_route` now reads `pass_rule_evaluation.yaml`'s
+  own `hypothesis_verdict`/`lineage_routing` DIRECTLY whenever it is binding, so
+  routing itself no longer depends on your copy being right. The copy is still
+  required and still checked (a mismatch is recorded as an informational
+  `pass_rule_evaluation_disagreement` flag on `pipeline_state.yaml`), but a
+  disagreement no longer halts the pipeline with `human_pause` the way it used to.
+  If your own diagnostic reading (Rules 1-6 below) disagrees with the machine
+  verdict, say so plainly in `altitude_justification` — do not silently overwrite it
+  either direction — but still produce `proposed_brief.yaml`/`findings_carryover.yaml`
+  for whichever route the mechanical verdict actually took; the campaign needs your
+  qualitative writeup regardless of whether you'd have called it the same way.
 - `result: legacy_not_evaluable` or `SPEC_ERROR`, or absent `hypothesis_verdict`/
   `lineage_routing` with `discretion: stage` set — no binding verdict exists for this
   run (a legacy pre_registration.yaml, or a pre-registered branch that explicitly opted
@@ -64,6 +80,29 @@ not re-decide `hypothesis_verdict`/`lineage_routing` independently when it alrea
 Rule 6 and the other five diagnostic rules below are UNCHANGED by K2 — they still drive
 `root_cause`/`altitude_justification`'s qualitative content on every run; only the
 PASS/FAIL/routing decision itself moves to the machine when a structured pass rule exists.
+
+## Near-miss scoreboard (E-018, 2026-09-13) — informs the WRITE-UP, never the verdict
+
+`near_miss_scoreboard.yaml` is a ranked table of past runs' near-miss root causes —
+how close each one came to passing its OWN pass_rule, and why it fell short. It is
+given to you unconditionally, with no guard on whether THIS run has a registered
+pass_rule (see the Required inputs note above for the reasoning).
+
+Use it only for the qualitative fields this skill already owns:
+- `root_cause` / `config_to_failure_map`: if a past near-miss shares this run's
+  failure shape, say so and cite it — a repeated near-miss pattern across runs is
+  itself diagnostic (e.g. "this is the third run to fail criterion (a) by <10%,
+  suggesting the threshold itself, not the signal, is the problem").
+- `proposed_brief.yaml` / `findings_carryover.yaml`: before proposing the next
+  variant (refine/pivot), check whether the scoreboard already shows a near-miss in
+  the direction you're about to propose — do not silently re-propose a change that
+  has already been tried and nearly (but not quite) worked the same way; say so.
+
+Do NOT let it touch `hypothesis_verdict` or `lineage_routing`. Those come from
+`pass_rule_evaluation.yaml` directly when it is binding (MACHINE-AUTHORED VERDICT
+above), or from Rules 1-6 below when it is not — in neither case does "how close
+other runs got" lower or raise the bar for THIS run's own pass/fail. Seeing the
+scoreboard must never turn a fixed pass_rule into a relative leaderboard.
 
 ## Post-backtest route (E-039/CUL-264, 2026-09-11) — evidence, NOT a second decision authority
 
