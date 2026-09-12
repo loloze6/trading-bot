@@ -31,6 +31,10 @@ a refined brief that fixes the identified failure, or a final decision to kill o
                                 stage's own handoff, not a separate file. Present only when a real
                                 backtest ran and produced measured trade/window data. See the
                                 dedicated section below — read it, it is evidence, NOT a decision.)
+- `config/coin_universe.yaml`  (E-026, 2026-09-12 — for the asset stability gate below: which
+                                category each tested symbol belongs to)
+- `innovation_notes.yaml`      (if available in context — its `asset_diversity_audit` may carry
+                                a single-asset opt-out relevant to the asset stability gate below)
 
 ## MACHINE-AUTHORED VERDICT (K2, 2026-07-13)
 
@@ -620,6 +624,45 @@ If `below_floor_pct > 0.50` (more than half the windows are sparse):
 - If `per_trade_expectancy_bps` mean ≤ 0 with |t_stat| > 1.5: treat as a kill/pivot signal.
 - If `per_trade_expectancy_bps` is unavailable in the diagnostics block: note the gap
   and fall back to win_rate + cost_drag as the primary evidence.
+
+## Asset stability gate (mandatory before promote) — E-026, 2026-09-12
+
+**A strategy that only works on one instrument, or on several instruments
+that all move together, has not been shown to have a real edge — it has been
+shown to fit one series of numbers.** This is the same logic already applied
+to era stability (sign-consistent across 2018-20/2021-22/2023-25) — applied
+across ASSETS instead of across TIME. It exists because it was measured to
+matter: a strategy tested across a WIDER, correlated coin set got WORSE, not
+better, as coins were added (Dorian's H003, `engineering/roadmap/E-026/EPIC.md`) —
+exactly the false-confidence pattern this gate exists to catch before a
+`promote` recommendation, not after.
+
+Before recommending `hypothesis_verdict: promote`:
+1. Check `per_symbol_summary` (or the per-window `results[]` entries) for how
+   many DISTINCT symbols this protocol actually covered, and whether they span
+   more than one `config/coin_universe.yaml` category (cross-reference
+   `innovation_notes.yaml`'s `asset_diversity_audit` from earlier in this
+   hypothesis's own lineage, if available in context).
+2. If only one symbol, or symbols from only one category, were tested: this
+   is the SAME shape as A3.4's sparse-trader case — not enough evidence to
+   trust generalization, not a confirmed kill either. Do not recommend
+   `promote`. Recommend `refine` instead, with `altitude_justification`
+   stating plainly that asset-stability evidence is missing (cite the
+   `asset_diversity_audit` opt-out if one exists and genuinely applies here —
+   otherwise this is exactly the gap Improvement 06/02 upstream were supposed
+   to have closed, and is worth saying so).
+3. If 2+ categories were tested: the sign (and rough magnitude) of the core
+   profitability metric must hold independently on each — not just in a
+   pooled average across all of them. A pooled positive result built from one
+   strongly-positive symbol and one negative symbol is not asset-stable; say
+   so explicitly rather than letting the average look clean.
+
+**This does not override K2's machine-authored verdict copy-through above.**
+If `pass_rule_evaluation.yaml` already carries a binding `PASS`/`FAIL` and
+your own asset-stability reading disagrees with it, follow the standing
+disagreement rule (K2 section, above): do not silently overwrite either
+direction — write the disagreement into `altitude_justification` and set
+`human_pause`.
 
 ## A2.3 — IC measurement scope
 
