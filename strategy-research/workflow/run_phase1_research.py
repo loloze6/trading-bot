@@ -143,12 +143,11 @@ STAGE_CONFIGS = {
         #     ARTIFACTS / "validation_protocol.yaml",
         #     ARTIFACTS / "validation_decision.yaml",
         # ],
+        # E-039 S4 (2026-09-12): "refinement_planner" retired as a separate
+        # stage -- this same call now also produces refinement_notes.yaml
+        # (an additive, conditional deliverable) when its own verdict is
+        # "refine", instead of handing off to a second LLM stage to do that.
         "default_next": "dynamic_routing", # Validation decides the next step
-    },
-    "refinement_planner": {
-        "handoff": "validation_to_refinement.yaml",
-        # "required_outputs": [ARTIFACTS / "refinement_notes.yaml"],
-        "default_next": "innovation_expansion", # Route back to innovation after planning
     },
     "backtest_specification": {
         "handoff": "validation_to_backtest_specification.yaml",
@@ -739,7 +738,6 @@ _SKILL_MAP = {
     "hypothesis_generation": "hypothesis-design",
     "innovation_expansion": "innovation-expansion",
     "validation": "quant-validation",
-    "refinement_planner": "refinement-planner",
     "backtest_specification": "backtest-engineering",
     "verdict_interpreter": "verdict-interpreter",
     "campaign_review": "campaign-review",
@@ -970,7 +968,6 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         "hypothesis_generation": "hypothesis-design",
         "innovation_expansion": "innovation-expansion",
         "validation": "quant-validation",
-        "refinement_planner": "refinement-planner",
         "backtest_specification": "backtest-engineering",
         "verdict_interpreter": "verdict-interpreter",
         "campaign_review": "campaign-review",
@@ -1094,8 +1091,13 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         stage_outputs = {
             "hypothesis_generation": ["hypothesis_card.yaml"],
             "innovation_expansion": ["expanded_hypothesis_card.yaml", "innovation_notes.yaml"],
-            "validation": ["validation_protocol.yaml", "validation_decision.yaml"],
-            "refinement_planner": ["refinement_notes.yaml"]
+            # E-039 S4 (2026-09-12): third entry is conditional -- present
+            # only when this call's own verdict is "refine" (refinement_planner
+            # retired as a separate stage; this same response now produces its
+            # plan directly). A 2-block approve/reject response is unaffected:
+            # the block-matching loop below only consumes as many names as
+            # blocks actually exist.
+            "validation": ["validation_protocol.yaml", "validation_decision.yaml", "refinement_notes.yaml"],
         }
         
         expected_files = stage_outputs.get(stage_name, [f"{stage_name}_output.yaml"])
@@ -1333,7 +1335,6 @@ _B7_MANDATORY_INPUT_PATHS = (
 )
 _B7_MANDATORY_INPUT_STAGES = {
     "validation",
-    "refinement_planner",
     "backtest_specification",
     "verdict_interpreter",
     "campaign_review",
@@ -2256,8 +2257,15 @@ def determine_post_refinement_route(path: Path):
 def determine_post_validation_route(path: Path):
     """Once validation is complete, read the decision from validation_decision artifact and route accordingly:
     - If "approve": proceed to Phase 2 development of backtest
-    - If "refine": route to refinement planner (unless max refinements reached, then reject)
+    - If "refine": read the SAME call's refinement_notes.yaml and route per
+      determine_post_refinement_route (unless max refinements reached, then reject)
     - If "reject": mark as completed and rejected
+
+    E-039 S4 (2026-09-12): "refinement_planner" retired as a separate stage --
+    a "refine" verdict used to hand off to it as a second LLM call; now the
+    validation call itself produces refinement_notes.yaml in the same
+    response (an additive, conditional deliverable), and this function reads
+    it directly instead of a later stage doing so.
     """
     decision_path = path / "artifacts" / "validation_decision.yaml"
     decision = load_yaml(decision_path)
@@ -2310,7 +2318,11 @@ def determine_post_validation_route(path: Path):
         if refinements_used >= max_refinements:
             print(f"🛑 Refinement limit reached ({max_refinements}). Rejecting hypothesis.")
             return "completed_rejected"
-        return "refinement_planner"
+        # Increment the refinement counter (previously done by the dispatch
+        # loop's own "refinement_planner" branch, now folded in here since
+        # that stage no longer exists separately).
+        update_state(path=path, counters={"refinements_used": refinements_used + 1})
+        return determine_post_refinement_route(path)
     
     elif status == "reject":
         return "completed_rejected"
@@ -5913,6 +5925,13 @@ def run_loop(run_id: str):
             
             if current_stage == "validation":
                 next_stage = determine_post_validation_route(RUN_DIR) # Used to trigger state of refinement until (Artifact State is validated OR max refinement reached OR rejected)
+                # E-039 S4: a "refine" verdict can now itself resolve to
+                # "human_pause" (determine_post_refinement_route, folded in
+                # above) -- same break-and-stop as every other human-in-the-
+                # loop pause below, since "refinement_planner" no longer
+                # exists as its own stage to catch this.
+                if next_stage == "human_pause":
+                    break # Break the while loop to stop the script cleanly
 
             elif current_stage == "innovation_expansion":
                 # E-032 S2c: anti-adjacency gate + retry/escalate policy, off by
@@ -5922,17 +5941,6 @@ def run_loop(run_id: str):
                 next_stage = _route_post_innovation_expansion(RUN_DIR, run_id, state)
                 if next_stage == "human_pause":
                     break # Break the while loop to stop the script cleanly, same as every other human-in-the-loop stop below
-
-            elif current_stage == "refinement_planner":
-                # Increment the refinement counter
-                current_count = state.get("counters", {}).get("refinements_used", 0)
-                update_state(path=RUN_DIR, counters={"refinements_used": current_count + 1})
-
-                # Ask the new function where to go next
-                next_stage = determine_post_refinement_route(RUN_DIR) #Checks if refinement requires a human pause or loops back to innovation.
-
-                if next_stage == "human_pause":
-                    break # Break the while loop to stop the script cleanly
 
             elif current_stage == "backtest_specification":
                 next_stage = determine_post_spec_route(RUN_DIR)

@@ -840,7 +840,7 @@ def test_apply_b7_mandatory_inputs_noop_for_non_mandatory_stage():
 
 def test_apply_b7_mandatory_inputs_covers_every_downstream_llm_stage():
     root = rpr.ROOT
-    for stage in ("validation", "refinement_planner", "backtest_specification",
+    for stage in ("validation", "backtest_specification",
                   "verdict_interpreter", "campaign_review"):
         run_dir = _minimal_run(root, f"run_614_{stage}")
         (run_dir / "artifacts" / "pre_registration.yaml").write_text("pass_rule: {}\n", encoding="utf-8")

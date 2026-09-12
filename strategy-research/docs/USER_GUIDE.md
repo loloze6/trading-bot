@@ -16,7 +16,6 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [Stage 2 — `hypothesis_generation`](#stage-2--hypothesis_generation)
     - [Stage 3 — `innovation_expansion`](#stage-3--innovation_expansion)
     - [Stage 4 — `validation_gate`](#stage-4--validation_gate)
-    - [Stage 5 — `refinement_planner`](#stage-5--refinement_planner)
     - [Stage 6 — `backtest_specification`](#stage-6--backtest_specification)
     - [Stage 14 — `data_availability_gate`](#stage-14--data_availability_gate)
     - [Stage 8 — `protocol_execution`](#stage-8--protocol_execution)
@@ -27,7 +26,6 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [Stage 13 — `holdout_evaluation`](#stage-13--holdout_evaluation)
   - [2.3 Decision Tree & Routing](#23-decision-tree--routing)
     - [After validation_gate](#after-validation_gate)
-    - [After refinement_planner](#after-refinement_planner)
     - [After backtest_specification](#after-backtest_specification)
     - [After verdict_interpreter — the Altitude System](#after-verdict_interpreter--the-altitude-system)
     - [Circuit Breakers (anti-loop protection)](#circuit-breakers-anti-loop-protection)
@@ -72,7 +70,6 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
   - [`hypothesis-design`](#hypothesis-design)
   - [`innovation-expansion`](#innovation-expansion)
   - [`quant-validation`](#quant-validation)
-  - [`refinement-planner`](#refinement-planner)
   - [`backtest-engineering`](#backtest-engineering)
   - [`verdict-interpreter`](#verdict-interpreter)
   - [`campaign-review`](#campaign-review)
@@ -177,10 +174,10 @@ block answers *"what does it do and why"*.
    [Claude]  2  hypothesis_generation
                │
    [Claude]  3  innovation_expansion  ◄──────────┐
-               │                                 │ refine
-   [Claude]  4  validation_gate                  │ (bounded)
-               ├── approve ──┐                   │
-               ├── refine ───┼─► 5 refinement_planner
+               │                                 │ refine (bounded — same call also
+   [Claude]  4  validation_gate                  │ produces its own refinement plan,
+               ├── approve ──┐                   │ no separate stage for it any more)
+               ├── refine ───┼─────────────────► ┘
                └── reject ───┼─► completed_rejected
                              │
    [Claude]  6  backtest_specification
@@ -243,8 +240,7 @@ one place to read when the answer matters.
 | — | [**research_brief**](#the-input--research_brief) | *input, not a step* | State the question this run exists to answer, and the limits it must respect. |
 | 2 | [**hypothesis_generation**](#stage-2--hypothesis_generation) | Claude | Turn the research question into one concrete, testable claim. |
 | 3 | [**innovation_expansion**](#stage-3--innovation_expansion) | Claude | Produce variants that differ in kind, so a [kill](#g-kill) blames the idea rather than one setting. |
-| 4 | [**validation_gate**](#stage-4--validation_gate) | Claude | Try to kill the hypothesis on paper, before any code is written for it. |
-| 5 | [**refinement_planner**](#stage-5--refinement_planner) | Claude | Decide whether the blockers can be fixed inside the current engine, and how. |
+| 4 | [**validation_gate**](#stage-4--validation_gate) | Claude | Try to kill the hypothesis on paper, before any code is written for it. If it decides `refine`, the same call also decides whether the blockers can be fixed inside the current engine, and how. |
 | 6 | [**backtest_specification**](#stage-6--backtest_specification) | Claude | Compile the validated idea into a config the engine can actually execute. |
 | 14 | [**data_availability_gate**](#stage-14--data_availability_gate) | Python tool | Off by default (E-054). Check, per window and per declared aux feed, whether the data this variant needs can actually be assembled — before spending an expensive backtest on it. |
 | 8 | [**protocol_execution**](#stage-8--protocol_execution) | Python tool | Trade the strategy across every walk-forward window and record what happened. |
@@ -492,7 +488,9 @@ See [E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18).
 **Runs:** after expansion. `default_next: dynamic_routing`.
 
 **Objective.** Try to kill the hypothesis on paper, before any code is written
-for it.
+for it. If its own verdict is `refine`, the same call also decides whether
+the blockers it found can actually be fixed inside the current engine, and
+how (E-039 S4, 2026-09-12 — see item 4 below).
 
 **Design rationale.**
 - Falsification is cheapest before implementation. A failure mode found here
@@ -504,12 +502,19 @@ for it.
   numbers once a backtest has actually run (`determine_route`/`cost_check`,
   `trading-bot/performance/signal_statistics.py`), not from an early
   statistical guess.
+- The refine loop back to expansion is bounded (2 by default,
+  `max_refinements_after_validation`) so a hypothesis cannot be refined
+  indefinitely into a fit.
 
 **Stage input:** `expanded_hypothesis_card.yaml`, `hypothesis_card.yaml`,
-handoff `innovation_expansion_to_validation.yaml`, `pipeline_state.yaml`
-(for the refinement counter).
+`innovation_notes.yaml` (only needed on the refine path), handoff
+`innovation_expansion_to_validation.yaml`, `pipeline_state.yaml`
+(for the refinement counter), `pre_registration.yaml` if present (the
+pre-registered `sample_split_design.holdout_range`, A6.1 — see below).
 
-**Stage output:** `validation_protocol.yaml`, `validation_decision.yaml`.
+**Stage output:** `validation_protocol.yaml`, `validation_decision.yaml`,
+and — only when its own `status` is `refine` — `refinement_notes.yaml`
+(carrying `decision.implementation_allowed`) in the same response.
 
 **Features / logic in place**
 
@@ -529,12 +534,26 @@ that can block a run at this stage.
 The family-schema output has no top-level `conditions`, so they are collected
 from `variant_decisions` (`::determine_post_validation_route`).
 
+**4. A `refine` verdict resolves its own next step in the same call — no
+separate stage.** E-039 S4 (2026-09-12) retired `refinement_planner` as its
+own pipeline stage: it used to be a second LLM call, receiving this stage's
+`refine` decision as a handoff and doing nothing but turn it into a plan.
+Now this same call reads its own `blocking_issues` and produces
+`refinement_notes.yaml` directly (`decision.implementation_allowed`, default
+`True` if absent). `determine_post_validation_route` then reads that file
+immediately: `implementation_allowed: false` pauses the pipeline for a human
+(write `human_resolution.yaml`, then `--resume`); otherwise it loops back to
+`innovation_expansion` (`::determine_post_refinement_route`, still a
+separate function, just no longer a separate stage).
+
 **Routes / outcomes**
 
 | Decision status | Next |
 |---|---|
 | `approve` / `conditional_approve` | `backtest_specification` unconditionally |
-| `refine` | `refinement_planner`, up to `max_refinements_after_validation` (default 2), then reject |
+| `refine`, `implementation_allowed: false` in the same response's `refinement_notes.yaml` | `human_pause` — write `human_resolution.yaml`, then `--resume` |
+| `refine`, otherwise, up to `max_refinements_after_validation` (default 2) | `innovation_expansion` |
+| `refine`, refinement limit already reached | `completed_rejected` |
 | `reject` | `completed_rejected` |
 
 <details>
@@ -542,53 +561,18 @@ from `variant_decisions` (`::determine_post_validation_route`).
 
 - The guide's §2.3 lists approve / refine / reject. **`conditional_approve` is
   a fourth accepted status** and behaves as approve with printed conditions.
-- ⚠️ A6.1 is documented elsewhere as requiring the holdout range to be
-  declared in a `sample_split_design` field — **nothing enforces this, and
-  nothing produces it.** `sample_split_design` appears in zero of the 10 real
-  `pre_registration.yaml` files on disk, and zero hits in `workflow/`/`tools/`
-  source. A6.1's actual code-enforced guarantees (single-use holdout, an
-  affirmative `research_only: false`) are real and listed in §8.2 — this
-  specific sub-claim about a named field is not one of them. Same class as
-  [E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18); added to the
-  §8.2 ledger.
+- A6.1's holdout-range declaration (`sample_split_design.holdout_range`) is
+  pre-registered once, at brief materialization
+  (`run_campaign.py::_materialize_run`/`_materialize_refinement_run`,
+  alongside `pass_rule`) — **not** produced by this stage. Moved here
+  2026-09-12 (E-039 S4) from this stage's own skill, which used to re-read
+  `campaign_data_policy.yaml` and restate the same, never-changing value on
+  every run; confirmed unread anywhere as a `validation_protocol.yaml` field,
+  so the move cost nothing. This stage's own job is only the walk-forward
+  window *design* around that frozen boundary (`sample_split_design.windows`/
+  `window_size_bars`/`step_size_bars`).
 
 </details>
-
----
-
-#### Stage 5 — `refinement_planner`
-**Engine:** Claude (skill `refinement-planner`)
-**Runs:** only when validation returns `refine`. `default_next:
-innovation_expansion`.
-
-**Objective.** Decide whether the blockers validation found can actually be
-fixed inside the current engine — and if so, how.
-
-**Design rationale.**
-- The loop back to expansion is bounded (2 by default) so a hypothesis cannot
-  be refined indefinitely into a fit.
-- Distinguishing "fixable" from "needs an engine change" is what stops the
-  pipeline silently spinning on something it cannot build.
-
-**Stage input:** `validation_decision.yaml`, handoff
-`validation_to_refinement.yaml`.
-
-**Stage output:** `refinement_notes.yaml`, carrying
-`decision.implementation_allowed`.
-
-**Features / logic in place**
-
-**1. One flag decides the route.**
-`implementation_allowed` (default `True` if absent). False pauses the pipeline
-for a human and prints what to do; true loops back to `innovation_expansion`
-(`::determine_post_refinement_route`).
-
-**Routes / outcomes**
-
-| Condition | Next |
-|---|---|
-| `implementation_allowed: false` | `human_pause` — write `human_resolution.yaml`, then `--resume` |
-| otherwise | `innovation_expansion` |
 
 ---
 
@@ -1082,19 +1066,17 @@ number. Failure is terminal.
 
 #### After validation_gate
 
+No separate `refinement_planner` stage any more (E-039 S4, 2026-09-12) — a
+`refine` verdict's own response already carries `refinement_notes.yaml`, so
+its `implementation_allowed` flag is checked immediately, in the same step:
+
 | Validation status | Next stage |
 |---|---|
 | `approve` or `conditional_approve` | → backtest_specification |
-| `refine` (refinement counter < max) | → refinement_planner → innovation_expansion |
+| `refine`, `implementation_allowed: false`, refinement counter < max | → [human pause](#g-human-pause) (pipeline suspended, awaiting audit) |
+| `refine`, `implementation_allowed` true (or absent), refinement counter < max | → innovation_expansion (refinement loop) |
 | `refine` (counter exhausted) | → `completed_rejected` |
 | `reject` | → `completed_rejected` |
-
-#### After refinement_planner
-
-| `implementation_allowed` | Next stage |
-|---|---|
-| `true` | → innovation_expansion (refinement loop) |
-| `false` | → [human pause](#g-human-pause) (pipeline suspended, awaiting audit) |
 
 #### After backtest_specification
 
@@ -1284,12 +1266,12 @@ Each [run](#g-run) stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-
 > **Why this file exists.** The gate's verdict on whether the idea survives paper falsification — the field the router reads to decide what happens next.
 
 **Created by:** quant-validation skill  
-**Read by:** orchestrator (for routing), refinement_planner  
+**Read by:** orchestrator (for routing)  
 **Schema:** `workflow_artifacts/schemas/validation_decision.schema.json`
 
 | Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-27) |
 |---|---|---|---|
-| `status` | The gate's [verdict](#g-verdict) — the field the router reads to decide the whole run's next step. | `approve` (proceed to spec) · `conditional_approve` (proceed, conditions printed) · `refine` (back to the planner, bounded) · `reject` (terminal) | `conditional_approve` |
+| `status` | The gate's [verdict](#g-verdict) — the field the router reads to decide the whole run's next step. | `approve` (proceed to spec) · `conditional_approve` (proceed, conditions printed) · `refine` (this same call also produces `refinement_notes.yaml`, bounded) · `reject` (terminal) | `conditional_approve` |
 | `rationale` | Why that verdict, in prose, so the decision can be audited later. | prose | *"Funding-rate mean-reversion mechanism is established (run_059 daily baseline: Sharpe > 0.8 …)"* |
 | `conditions` | Conditions the backtest config must respect. Only meaningful on `conditional_approve`. | list of strings | *"[Prescreen](#g-prescreen) cost gate (Layer 2) must pass: edge_to_cost_ratio >= 2.0 for BOTH BTCUSDT and ETHUSDT"* |
 | `blocking_issues` | What must be fixed before this can proceed. Non-empty normally implies `refine` or `reject`. | list | `[]` |
@@ -1310,7 +1292,7 @@ neither key is present the router raises rather than guessing
 
 > **Why this file exists.** What would have to change for a blocked hypothesis to become testable, and whether the engine can even do it.
 
-**Created by:** refinement-planner skill  
+**Created by:** quant-validation skill — in the same response as `validation_decision.yaml`, only when its own `status` is `refine` (E-039 S4, 2026-09-12; there is no separate `refinement_planner` stage/skill any more)  
 **Read by:** innovation_expansion (next iteration), orchestrator  
 **Schema:** `workflow_artifacts/schemas/refinement_notes.schema.json`
 
@@ -2119,15 +2101,9 @@ Key outputs:
 - At least **5 failure modes** (named, specific failure scenarios).
 - **Bias risks** (look-ahead contamination, selection bias, [regime](#g-regime) endogeneity).
 - **Decision rules** (the exact conditions that trigger approve / refine / reject).
+- **When its own verdict is `refine`:** a refinement plan, in the same response (`refinement_notes.yaml`) — E-039 S4 (2026-09-12) folded this in from a formerly separate `refinement-planner` skill/stage. Specific instructions, not vague suggestions: which parameter to change, which assumption to drop, which variant to prioritize. Also acts as a [circuit breaker](#g-circuit-breaker) — if the fix needs capabilities the bot doesn't have, it sets `implementation_allowed = false` and suspends the pipeline for human review.
 
 The skill is explicitly forbidden from approving a hypothesis that has no falsifiable statement or fewer than 5 failure modes.
-
----
-
-### `refinement-planner`
-
-**Goal:** Convert validation blockers into concrete, implementable fixes.  
-**Why it exists:** When validation returns `refine`, the system needs specific instructions — not vague suggestions. This skill reads each blocking issue and produces an actionable response: which parameter to change, which assumption to drop, which variant to prioritize. It also acts as a [circuit breaker](#g-circuit-breaker): if the fixes require capabilities the bot doesn't have, it sets `implementation_allowed = false` and suspends the pipeline for human review.
 
 ---
 
