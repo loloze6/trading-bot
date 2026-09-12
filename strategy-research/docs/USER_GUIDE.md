@@ -768,8 +768,14 @@ than letting an un-registered test reach a verdict.
 
 - The `pass_rule_evaluation.yaml` step is invisible in §3 — it has no artifact
   entry. See [E037-19](../engineering/roadmap/E-037/FINDINGS.md#e037-19).
-- A verdict that contradicts `pass_rule_evaluation.yaml` without flagging the
-  contradiction is a conformance failure, per the verdict-interpreter SKILL.
+- **E-018 (2026-09-13):** a verdict that contradicts `pass_rule_evaluation.yaml`
+  no longer halts the pipeline. Before this date, any disagreement between
+  verdict_interpreter's own restated verdict and this file's binding one was a
+  blocking conformance violation (`human_pause`). It is now recorded as an
+  informational flag only (`pipeline_state.yaml`'s
+  `pass_rule_evaluation_disagreement`) — because routing itself no longer
+  depends on the stage's restated copy being correct (see stage 11 below and
+  [`verdict_interpretation.yaml`](#verdict_interpretationyaml)'s note).
 
 </details>
 
@@ -908,6 +914,10 @@ size of change.
 `regime_audit_decision.yaml` if present. `post_backtest_routes` (CUL-264) is
 injected directly into this stage's own handoff — not a separate file — when a real
 backtest produced measured trade/window data; see item 7 below.
+`config/coin_universe.yaml` and `innovation_notes.yaml`, if available, feed
+the asset-stability gate (E-026, 2026-09-12 — see item 8). `near_miss_scoreboard.yaml`
+(E-018, 2026-09-13 — see item 9) is given as an optional input, whether or not
+this run has a registered `pass_rule`.
 
 **Stage output:** `verdict_interpretation.yaml`; possibly `proposed_brief.yaml`,
 `escalation_request.yaml`, `findings_carryover.yaml`, `promotion_audit.yaml`.
@@ -960,6 +970,36 @@ telling the model to treat it as supporting evidence — same as
 is absent or no window carries a route (a pre-CUL-264 run). This is the
 signal-quality go/no-go for the pipeline: a real, measured check on the
 actual backtest data rather than an early statistical guess.
+
+**8. Asset stability gate — mandatory before `promote` (E-026, 2026-09-12).**
+A strategy tested on only one symbol, or on symbols from only one
+`config/coin_universe.yaml` category, has not shown a real edge — it has
+fit one series of numbers. Before recommending `promote`, the skill checks
+how many distinct symbols/categories the protocol actually covered; fewer
+than 2 categories routes to `refine` instead, citing the gap explicitly.
+This does not add a second decision authority — it plugs into the same K2
+disagreement/`human_pause` mechanism already described above. Motivated by
+Dorian's H003: a strategy's edge *collapsed*, rather than improved, as the
+tested coin universe grew, consistent with correlated alts trading as
+leveraged BTC beta rather than independent bets.
+
+**9. Near-miss scoreboard — informs the write-up, never the verdict (E-018,
+2026-09-13).** `near_miss_scoreboard.yaml` (`tools/near_miss_scoreboard.py`,
+a ranked table of past runs' near-miss root causes) is given to this stage
+unconditionally — deliberately with no guard tied to whether *this* run has
+a registered `pass_rule`. It may inform `root_cause`/`proposed_brief`/
+`findings_carryover` (e.g. citing a repeated near-miss pattern), but must
+never touch `hypothesis_verdict`/`lineage_routing` — those come from
+`pass_rule_evaluation.yaml` directly when binding (item above), or from the
+five diagnostic rules when not. This is what makes giving the scoreboard to
+this stage safe at all: on a run with a binding pass rule, the stage is no
+longer the actual promote/kill decision-maker, so seeing "how close other
+runs got" cannot soften that decision. The static test that previously
+enforced zero promotion-code access to the scoreboard
+(`tests/test_near_miss_scoreboard_firewall.py`) was removed the same day,
+by operator decision, once this stage became a reviewed, named exception to
+it — the firewall is now verified by inspection of the routing functions,
+not by a standing test.
 
 ---
 
@@ -1453,7 +1493,12 @@ labeled `promotion_criteria`). See
 > **Why this file exists.** What the result means and what to do next — kept separate from the measurement so the interpretation stays auditable.
 
 **Created by:** verdict-interpreter skill  
-**Read by:** orchestrator (for routing), campaign_review  
+**Read by:** orchestrator, campaign_review. **E-018 (2026-09-13):** the
+orchestrator no longer routes off THIS file's `hypothesis_verdict`/
+`lineage_routing` when `pass_rule_evaluation.yaml` is binding — it reads that
+file directly instead (see stage 11 item 9). It still reads this file for
+every other field (`root_cause`, `hypothesis_family`,
+`proposed_change_dimension`, etc.) on every run.  
 
 | Field | Definition — what it means | Values / range (meaning of each) | Example |
 |---|---|---|---|
@@ -1487,9 +1532,12 @@ The former descriptions are preserved here rather than deleted, because they
 record an intended design; they do not describe the artifact. See
 [E037-22](../engineering/roadmap/E-037/FINDINGS.md#e037-22).
 
-⚠️ **A verdict that contradicts `pass_rule_evaluation.yaml` without flagging the
-contradiction is a conformance failure** — that file, not this one, is the
-decision authority where a structured `pass_rule` exists.
+⚠️ **`pass_rule_evaluation.yaml`, not this file, is the decision authority
+where a structured `pass_rule` exists — and since E-018 (2026-09-13), routing
+reads that file directly rather than trusting this one's copy.** A
+disagreement between the two is recorded as an informational flag
+(`pass_rule_evaluation_disagreement`) but no longer halts the pipeline;
+before 2026-09-13 it was a blocking conformance violation.
 
 ---
 
@@ -1869,13 +1917,16 @@ reflects the audit rarely triggering or the mechanism being under-used.
 | `expected_*` / `min_detectable_ic` / `plausible_ic_upper` / `power_verdict` | A-priori power figures recorded at registration on the legacy shape. No new run writes these fields. | floats / verdict string | present on the legacy shape (e.g. run_043) |
 | `disconfirming_outcome` | Written in advance: what result would falsify the hypothesis. | prose | — |
 | `run_id` / `hypothesis_id` / `registered_at` | Provenance. | string / string / ISO-8601 | `run_060` / … / … |
+| `sample_split_design` | A6.1's holdout-range declaration, alongside `pass_rule` — written by `_materialize_run`/`_materialize_refinement_run` (2026-09-13; see the enforcement ledger, §8.2). | dict: `holdout_range` (the frozen `[start, end]` pair from `campaign_data_policy.yaml`), `holdout_note` | `{holdout_range: ["2026-01-01", "2026-06-30"], holdout_note: "Single-use per A6.1. Evaluated only at holdout_evaluation stage after the deflated Sharpe gate passes."}` |
 
 **Notes**
 
 - ⚠️ **Two shapes, and most of the corpus is the older one.** Measured
   2026-08-30 over the 10 files on disk: **7 have no `pass_rule` at all**
   (run_043–run_057) and only run_058/059/060 carry the structured dict.
-  `machine_constraints` first appears at run_048.
+  `machine_constraints` first appears at run_048. `sample_split_design` is
+  newer still — written from 2026-09-13 forward, so it appears in 0 of these
+  same 10 legacy files.
 - The consequence is in [`pass_rule_evaluation.yaml`](#pass_rule_evaluationyaml)
   below: where `pass_rule` is absent the machine verdict returns
   `legacy_not_evaluable` and the LLM's judgment decides, exactly as before the
@@ -1895,7 +1946,12 @@ reflects the audit rarely triggering or the mechanism being under-used.
 (`run_phase1_research.py::run_tool_worker`)
 **Updated by:** *(none — write-once per run)*
 **Read by:** `verdict_interpreter` — **a REQUIRED input**
-(`workflow_artifacts/skills/verdict-interpreter/SKILL.md:16`)
+(`workflow_artifacts/skills/verdict-interpreter/SKILL.md:16`). **E-018
+(2026-09-13):** also read DIRECTLY by the orchestrator's own
+`determine_post_verdict_route`/`determine_post_campaign_review_route` — when
+`result` is binding (`PASS`/`FAIL`, not `discretion: stage`), its own
+`hypothesis_verdict`/`lineage_routing` drive routing, not
+`verdict_interpretation.yaml`'s restated copy.
 **Written to:** `runs/{run_id}/artifacts/pass_rule_evaluation.yaml`
 **Schema:** *(none)*
 
@@ -1911,8 +1967,10 @@ reflects the audit rarely triggering or the mechanism being under-used.
 - ⚠️ **This is the decision authority, not a second opinion.** Since the K2
   kernel (2026-07-13) it *replaced* `evaluate_against_decision_rules` in
   `tools/run_protocol.py`, whose prose-criteria output is informational only
-  from that date. A verdict that contradicts this file without flagging the
-  contradiction is a conformance failure.
+  from that date. **Since E-018 (2026-09-13), routing is authoritative on
+  this file directly** — a verdict_interpreter restatement that contradicts
+  it is recorded as an informational flag, not a blocking conformance
+  failure (see `verdict_interpretation.yaml` above).
 - **It is only binding where a structured `pass_rule` exists.** On the legacy
   shape it returns `legacy_not_evaluable` and the LLM decides (R3 ruling) — see
   `pre_registration.yaml` above for how much of the corpus that is.
@@ -2320,7 +2378,7 @@ by how load-bearing they are, not alphabetically.
 | Tool | What it does |
 |---|---|
 | `tools/fragment_patterns.py` | Ideation-only fragment diagnostics *(documented above)*. |
-| `tools/near_miss_scoreboard.py` | Ranked table over every tested idea (E-018 S1) — the campaign's "what came closest" view. |
+| `tools/near_miss_scoreboard.py` | Ranked table over every tested idea (E-018 S1) — the campaign's "what came closest" view. Re-run manually (`python tools/near_miss_scoreboard.py`, idempotent); not auto-triggered per run. Since E-018 S2 (2026-09-13), `verdict_interpreter` reads its output unconditionally (see stage 11 item 9) — the only reviewed exception to the "promotion has no read access" doctrine. |
 | `tools/panel_backtester.py` | **RESEARCH-ONLY** vectorized panel backtester. Explicitly *not* part of the production engine; results from it are not comparable with `run_protocol.py` output. |
 | `tools/whale_footprint_evaluation.py` | Evaluation harness for `prereg_whale_footprint_v2.yaml`. |
 
@@ -2507,7 +2565,9 @@ may comply or not. "Nothing" means the sentence is the only thing there.**
 | An unrecognised spec status must not be guessed at | Code — `determine_post_spec_route`, pauses for a human | ✅ yes |
 | A6.1 — the holdout is single-use | Code — `_route_holdout_evaluation` refuses a repeat `hypothesis_id` | ✅ yes (never yet exercised — no run has reached it) |
 | A holdout needs an affirmative `research_only: false` | Code — same function, gate 2b | ✅ yes |
-| A6.1 — the holdout range must be declared in `sample_split_design` | **Nothing** — the field appears in 0 of 10 real `pre_registration.yaml` files, 0 hits in `workflow/`/`tools/` source | ❌ no (CUL-188, 2026-09-03) |
+| A6.1 — the holdout range must be declared in `sample_split_design` | Code — `run_campaign.py::_materialize_run`/`_materialize_refinement_run` now write it, alongside `pass_rule` (2026-09-13) | ✅ yes, for every run materialized from this date forward — 0 of the 10 pre-existing on-disk `pre_registration.yaml` files carry it (all predate the change) |
+| E-018 (2026-09-13) — a binding `pass_rule_evaluation.yaml` drives routing directly | Code — `run_phase1_research.py::_resolve_verdict_fields`'s `pre_eval` branch | ✅ yes |
+| E-018 (2026-09-13) — the near-miss scoreboard has no read access to promotion decisions | **Inspection only** — the static test that proved this (`tests/test_near_miss_scoreboard_firewall.py`) was removed by operator decision the same day `verdict_interpreter` became a reviewed exception to it | ⚠️ downgraded from a standing test to inspection-only |
 | A6.2 — every evaluation counts as a trial, kills included | Code — `_record_backtest_trial` / `_record_failed_backtest_trial` | ✅ yes |
 | F5c/F6 — an engineering failure must not be scored as "no edge" | Code — `verdict_interpreter`'s stage 11 check for `mechanism_failure == component_execution_error`, immune to the circuit breaker | ✅ yes |
 | Stage 3 — variants "must" be really diverse, "cosmetic = rejected" | **Skill only** — `innovation-expansion/SKILL.md`; the model reports its own verdict | ❌ **no code can produce "rejected"** ([E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18)) |

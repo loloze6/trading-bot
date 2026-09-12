@@ -70,6 +70,12 @@ KNOWN_PHANTOM: dict[str, set[str]] = {
     # sample predates the fix, so none carry it yet. Genuinely intended
     # design, not a documentation error.
     "`protocol_result.yaml` / `protocol_summary.json`": {"episode_blocked_significance_by_symbol"},
+    # 2026-09-13 (A6.1 holdout-range relocation): `sample_split_design` is a
+    # real field -- run_campaign.py's `_materialize_run`/`_materialize_refinement_run`
+    # write it into every new pre_registration.yaml, alongside `pass_rule` --
+    # but all 10 sampled runs predate the change (0 of 10 carry it). Same
+    # situational shape as `episode_blocked_significance_by_symbol` above.
+    "`pre_registration.yaml`": {"sample_split_design"},
     # NOTE: `verdict_interpretation.yaml` is deliberately absent. S2 rewrote that
     # table from real artifacts, so its five phantom names (altitude, verdict,
     # diagnostic_rule_applied, parameter_bracket, next_altitude) no longer appear
