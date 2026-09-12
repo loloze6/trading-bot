@@ -493,6 +493,12 @@ def test_materialize_run_fresh_launch_pass_rule_copy_through(campaign_root):
     assert pre_reg_path.exists()
     pre_registration = camp.orch.load_yaml(pre_reg_path)
     assert pre_registration["pass_rule"] == brief["evaluation"]["pass_rule"]
+    # E-039 S4 (2026-09-12): A6.1 holdout-range declaration registered
+    # alongside pass_rule, not re-derived later by the validation stage.
+    assert pre_registration["sample_split_design"]["holdout_range"] == list(
+        camp.orch._load_holdout_range()
+    )
+    assert "A6.1" in pre_registration["sample_split_design"]["holdout_note"]
 
 
 def test_materialize_run_fresh_launch_rejects_non_total_pass_rule_mapping(campaign_root):

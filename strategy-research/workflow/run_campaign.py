@@ -323,6 +323,21 @@ def _materialize_run(run_id: str, brief: dict):
             ),
             "pass_rule": evaluation.get("pass_rule"),
             "machine_constraints": machine_constraints,
+            # E-039 S4 (2026-09-12): A6.1 holdout-range declaration, moved here
+            # from the `validation` stage's own quant-validation skill (which
+            # used to re-read campaign_data_policy.yaml and restate this same,
+            # never-changing value mid-pipeline) -- registered once, with the
+            # rest of this run's pre-registered constraints, not re-declared
+            # per hypothesis. Nothing in this codebase reads it back out of
+            # validation_protocol.yaml's old sample_split_design location
+            # (confirmed by grep); this is a pure documentation relocation.
+            "sample_split_design": {
+                "holdout_range": list(orch._load_holdout_range()),
+                "holdout_note": (
+                    "Single-use per A6.1. Evaluated only at holdout_evaluation "
+                    "stage after the deflated Sharpe gate passes."
+                ),
+            },
         }
         # B11 (K2 kernel): materialization-time total-mapping lint. Previously
         # a no-op on this path (machine_constraints-only briefs never carried
@@ -467,6 +482,15 @@ def _materialize_refinement_run(child_id: str, brief: dict, brief_path: Path):
         "lineage": lineage,
         "gate_definition": brief.get("gate_definition"),
         "pass_rule": evaluation.get("pass_rule"),
+        # E-039 S4: same A6.1 holdout-range relocation as _materialize_run
+        # above -- see that function's comment for the rationale.
+        "sample_split_design": {
+            "holdout_range": list(orch._load_holdout_range()),
+            "holdout_note": (
+                "Single-use per A6.1. Evaluated only at holdout_evaluation "
+                "stage after the deflated Sharpe gate passes."
+            ),
+        },
         "user_brief_checksum": f"sha256:{checksum}",
         "reactivation_context": (
             "Installed via refinement_brief_path (B1, K4 kernel) -- an "
