@@ -1847,7 +1847,7 @@ several rediscoveries here.
 
 ## E037-44
 
-**Severity:** medium · **Type:** silently-dropped-safety-property · **Status:** open, found during E-039 step 5's bug-hunt pass (2026-09-12), not fixed
+**Severity:** medium · **Type:** silently-dropped-safety-property · **Status:** partially fixed 2026-09-12 (data now flows; the pause/quarantine policy itself is still an open decision) — found during E-039 step 5's bug-hunt pass
 
 **Lands on:** `strategy-research/workflow/run_campaign.py` (`_apply_trial_accounting`'s `no_signal_artifact` branch, and the `no_signal_artifact_flagged` sticky-flag path it reads)
 
@@ -1860,6 +1860,10 @@ This is a narrower, different thing from `component_execution_error` (a crash/ex
 **Not fixed, because building the right detection needs a real design decision** (what backtest-side signal counts as "the component never fired" — zero non-zero forecasts across the whole run? A rolling-window activation-rate floor? — and this is exactly the kind of pre-registered, falsifiable threshold this codebase's own convention refuses to invent after the fact). Flagging for the user's judgment rather than guessing at a replacement.
 
 **Proposed disposition:** either (a) design a backtest-side equivalent (e.g., `build_core` or `run_protocol.py` flags a run whose forecast series never exceeds `ACTIVE_THRESHOLD` a single time as an engineering pause, not a kill), or (b) explicitly retire `no_signal_artifact`/`no_signal_artifact_flagged` from `run_campaign.py`'s quarantine taxonomy and `verdict_criteria_evaluator.py`'s non-verdict outcomes as a decision, documenting that this failure mode is no longer distinguished from a real kill under "always backtest."
+
+**Update 2026-09-12: the raw data this needs is no longer silently discarded, but no policy decision has been made yet.** Jérémy's own read of this finding: a *statistic* shouldn't be the thing detecting an engine logic error — the engine should identify and report its own failure directly. Checked against the code, and it already does: `strategy_base.py::generate_signals()` already tags its output `regime="ERROR"` (an exception was actually caught) distinctly from `regime="NOT_READY"` (warmup, expected), and `main_strategy.py`'s F5b fix (2026-07-04, predating F5c) already counts and samples every such exception directly on the `AdvancedStrategy` instance (`component_error_count`/`component_error_samples`) — a real detector at the source, not a statistical inference. The only actual gap was that nothing on the backtest side ever read those counters back out: grepped `core/`, `reporting/`, `performance/` and found zero references before this fix — `prescreen_signal.py`'s own F5c check was the *only* code that ever consumed them, and it's deleted. Fixed by wiring, not by inventing new detection: `core/backtester.py::_end_of_backtest` now reads `strategy.component_error_count`/`component_error_samples` into a new `component_errors` block in `metrics.json` (`reporting/run_artifact.py::write_metrics_json`), and `run_protocol.py`'s `result_entry` forwards it into `protocol_summary.json` the same way CUL-263 already does for `data_quality`. Verified end-to-end against a real `BacktestEngine` run with a component that always throws (`trading-bot/tests/test_component_error_surfacing_into_metrics.py`) and against `run_protocol.py`'s own forwarding logic (`strategy-research/tests/test_component_errors_flow_to_results.py`).
+
+**Still genuinely open, and deliberately not decided here:** whether/how anything should *act* on a nonzero `component_errors.count` — re-instating F5c's own behavior (force a human pause, exclude from scoring as `no_signal_artifact`) is a policy call, not a wiring fix, and was explicitly left to the user rather than guessed at.
 
 ---
 

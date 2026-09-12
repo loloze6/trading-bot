@@ -1576,6 +1576,12 @@ def main():
                 # an internal aggregation structure, not the byte-identity-sensitive
                 # artifact metrics.json is.
                 "data_quality":    m.get("data_quality"),
+                # E-039 step 5 follow-up (2026-09-12): same sibling-of-"core" shape
+                # as data_quality above -- metrics.json's component_errors block
+                # (F5b's error count/samples, now wired through by
+                # core/backtester.py) would otherwise be silently dropped here the
+                # same way data_quality was before CUL-263.
+                "component_errors": m.get("component_errors"),
             }
             results.append(result_entry)
 
