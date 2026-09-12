@@ -20,9 +20,11 @@ ROOT = Path(__file__).parent.parent
 CONFIG_PATH = ROOT / "config" / "campaign_config.yaml"
 TOOLS_PATH = ROOT / "tools"
 WORKFLOW_PATH = ROOT / "workflow"
+TRADING_BOT_ROOT = ROOT.parent / "trading-bot"
 
 sys.path.insert(0, str(TOOLS_PATH))
 sys.path.insert(0, str(WORKFLOW_PATH))
+sys.path.insert(0, str(TRADING_BOT_ROOT))
 
 
 @pytest.fixture(scope="module")
@@ -31,17 +33,15 @@ def campaign_config():
 
 
 # ---------------------------------------------------------------------------
-# prescreen_signal.py constants
+# performance.signal_statistics constants (E-039 step 5, 2026-09-12: relocated
+# here from prescreen_signal.py, which is deleted; the values are unchanged --
+# verbatim ports, per CUL-264/265 -- so campaign_config.yaml's `prescreen.*`
+# keys still name the right constants, just at their new home).
 # ---------------------------------------------------------------------------
 
 def test_block_size_1h(campaign_config):
-    import prescreen_signal
     expected = campaign_config["prescreen"]["block_size_1h"]
-    # _BLOCK_SIZE_1H survives only as a documented regression anchor since
-    # 2026-08-27 -- the live value is derived by tools/timeframe.py. Both must
-    # still agree with config, or the anchor has stopped anchoring anything.
     from timeframe import bars_per_day
-    assert prescreen_signal._BLOCK_SIZE_1H == expected
     assert bars_per_day("1h") == expected, (
         f"derived bars_per_day('1h')={bars_per_day('1h')} "
         f"!= config prescreen.block_size_1h={expected}"
@@ -50,28 +50,19 @@ def test_block_size_1h(campaign_config):
 
 def test_block_size_1d(campaign_config):
     """2026-07-07: daily-bar engine support (P4_ts_trend/SMA(100)-daily)."""
-    import prescreen_signal
     expected = campaign_config["prescreen"]["block_size_1d"]
     from timeframe import bars_per_day
-    assert prescreen_signal._BLOCK_SIZE_1D == expected
     assert bars_per_day("1d") == expected, (
         f"derived bars_per_day('1d')={bars_per_day('1d')} "
         f"!= config prescreen.block_size_1d={expected}"
     )
 
 
-# test_a86_block_size_by_timeframe_matches_config REMOVED 2026-09-11 (E-039):
-# the A8.6 gate it checked (`rpr._a86_block_size`) is deleted entirely --
-# A8.6 dropped, "always backtest". It duplicated test_block_size_1h/1d above
-# (both already assert bars_per_day(...) against this same config), so no
-# replacement test was needed.
-
-
 def test_significance_threshold(campaign_config):
-    import prescreen_signal
+    from performance import signal_statistics
     expected = campaign_config["prescreen"]["significance_threshold"]
-    assert prescreen_signal._SIG_THRESHOLD == expected, (
-        f"prescreen_signal._SIG_THRESHOLD={prescreen_signal._SIG_THRESHOLD} "
+    assert signal_statistics._SIG_THRESHOLD == expected, (
+        f"signal_statistics._SIG_THRESHOLD={signal_statistics._SIG_THRESHOLD} "
         f"!= config prescreen.significance_threshold={expected}"
     )
 
@@ -79,15 +70,14 @@ def test_significance_threshold(campaign_config):
 def test_sigma_bar_bps_degenerate_fallback(campaign_config):
     """
     This constant is a degenerate placeholder (fires only when < 5 return
-    observations are available in _sigma_from_records() — never a volatility
-    estimate). Renamed from sigma_bar_bps_default to make that non-obvious
-    behavior explicit; see campaign_config.yaml's comment and
+    observations are available in sigma_bar_bps_from_returns()) -- never a
+    volatility estimate. See campaign_config.yaml's comment and
     engineering/improvements/done/design_and_docs/11_viable_space_map.md Part 1 for the misreading this caused.
     """
-    import prescreen_signal
+    from performance import signal_statistics
     expected = campaign_config["prescreen"]["sigma_bar_bps_degenerate_fallback"]
-    assert prescreen_signal._DEFAULT_SIGMA_BAR_BPS == expected, (
-        f"prescreen_signal._DEFAULT_SIGMA_BAR_BPS={prescreen_signal._DEFAULT_SIGMA_BAR_BPS} "
+    assert signal_statistics._DEFAULT_SIGMA_BAR_BPS == expected, (
+        f"signal_statistics._DEFAULT_SIGMA_BAR_BPS={signal_statistics._DEFAULT_SIGMA_BAR_BPS} "
         f"!= config prescreen.sigma_bar_bps_degenerate_fallback={expected}"
     )
 

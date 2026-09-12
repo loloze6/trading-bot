@@ -261,7 +261,7 @@ def test_resolve_protocol_path_second_different_run_still_fails():
 # B10 negative-proof: the hard-fail fires BEFORE any subprocess spend (§9 A2)
 # ---------------------------------------------------------------------------
 
-def test_run_tool_worker_signal_prescreen_hard_fail_never_invokes_subprocess(monkeypatch):
+def test_run_tool_worker_protocol_execution_hard_fail_never_invokes_subprocess(monkeypatch):
     root = rpr.ROOT
     run_dir = _minimal_run(root, "run_530")
     (run_dir / "artifacts" / "candidate_strategy_config.json").write_text("{}", encoding="utf-8")
@@ -274,7 +274,7 @@ def test_run_tool_worker_signal_prescreen_hard_fail_never_invokes_subprocess(mon
     monkeypatch.setattr(rpr.subprocess, "run", _spy_subprocess_run)
 
     with pytest.raises(RuntimeError, match="B10"):
-        asyncio.run(rpr.run_tool_worker("signal_prescreen", "run_530"))
+        asyncio.run(rpr.run_tool_worker("protocol_execution", "run_530"))
 
     assert calls == [], "subprocess.run must never be called before the hard-fail raises"
     state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
@@ -286,13 +286,20 @@ def test_run_tool_worker_signal_prescreen_hard_fail_never_invokes_subprocess(mon
 # THEN invoke run_tool_worker's selection path with subprocess.run CAPTURED
 # (not executed, not merely "never called") -- the fixture shape that would
 # have caught A1's path-doubling bug before Phase A approval.
+#
+# E-039 step 5 (2026-09-12): repointed onto "protocol_execution" -- the
+# signal_prescreen stage this originally also drove is removed, and
+# protocol_execution shares the exact same _resolve_protocol_path call this
+# test exercises (Q4 below used to prove both branches shared it; now there
+# is only one branch left to prove it against).
 # ---------------------------------------------------------------------------
 
-def test_run_tool_worker_signal_prescreen_uses_pinned_protocol_exactly(monkeypatch):
+def test_run_tool_worker_protocol_execution_uses_pinned_protocol_exactly(monkeypatch):
     root = rpr.ROOT
     proto_path = _write_protocol(root, "e2e_pinned.json")
     run_dir = _minimal_run(root, "run_540")
     (run_dir / "artifacts" / "candidate_strategy_config.json").write_text("{}", encoding="utf-8")
+    (run_dir / "artifacts" / "validation_protocol.yaml").write_text("{}", encoding="utf-8")
     constraints = {"protocol_ref": "protocols/e2e_pinned.json"}
     rpr._ensure_protocol_ref_pinned(run_dir, "run_540", constraints)
 
@@ -307,25 +314,25 @@ def test_run_tool_worker_signal_prescreen_uses_pinned_protocol_exactly(monkeypat
         captured["cmd"] = cmd
         out_dir = Path(cmd[cmd.index("--out-dir") + 1])
         out_dir.mkdir(parents=True, exist_ok=True)
-        rpr.save_yaml(out_dir / "prescreen_result.yaml", {
-            "route": "kill", "ic_spearman_pooled": 0.0, "cost_check": {"pass": False},
-        })
+        (out_dir / "protocol_summary.json").write_text(
+            rpr.json.dumps({"config_sha256": "x", "protocol_file": str(proto_path),
+                             "results": [], "per_symbol_summary": {}}),
+            encoding="utf-8",
+        )
         return _FakeCompletedProcess()
     monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
 
-    asyncio.run(rpr.run_tool_worker("signal_prescreen", "run_540"))
+    asyncio.run(rpr.run_tool_worker("protocol_execution", "run_540"))
 
     cmd = captured["cmd"]
     protocol_arg = Path(cmd[3])
     assert protocol_arg == proto_path, f"expected exactly the pinned file (no doubling), got {protocol_arg}"
 
 
-# ---------------------------------------------------------------------------
-# Q4 -- duplication closed: BOTH run_tool_worker branches call the ONE
-# shared resolver, no independent copy-pasted logic left in either branch.
-# ---------------------------------------------------------------------------
-
-def test_both_run_tool_worker_branches_call_the_shared_resolver(monkeypatch):
+def test_run_tool_worker_protocol_execution_calls_the_shared_resolver_exactly_once(monkeypatch):
+    """Q4: no independent copy-pasted protocol-selection logic -- protocol_execution
+    goes through the ONE shared resolver, called exactly once with this run's own
+    (run_dir, run_id)."""
     root = rpr.ROOT
     proto_path = _write_protocol(root, "shared_resolver_check.json")
 
@@ -341,21 +348,9 @@ def test_both_run_tool_worker_branches_call_the_shared_resolver(monkeypatch):
         stdout = ""
         stderr = ""
 
-    run_dir_a = _minimal_run(root, "run_550")
-    (run_dir_a / "artifacts" / "candidate_strategy_config.json").write_text("{}", encoding="utf-8")
-
-    def _fake_subprocess_run_prescreen(cmd, *a, **kw):
-        out_dir = Path(cmd[cmd.index("--out-dir") + 1])
-        out_dir.mkdir(parents=True, exist_ok=True)
-        rpr.save_yaml(out_dir / "prescreen_result.yaml",
-                      {"route": "kill", "ic_spearman_pooled": 0.0, "cost_check": {"pass": False}})
-        return _FakeCompletedProcess()
-    monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run_prescreen)
-    asyncio.run(rpr.run_tool_worker("signal_prescreen", "run_550"))
-
-    run_dir_b = _minimal_run(root, "run_551")
-    (run_dir_b / "artifacts" / "candidate_strategy_config.json").write_text("{}", encoding="utf-8")
-    (run_dir_b / "artifacts" / "validation_protocol.yaml").write_text("{}", encoding="utf-8")
+    run_dir = _minimal_run(root, "run_551")
+    (run_dir / "artifacts" / "candidate_strategy_config.json").write_text("{}", encoding="utf-8")
+    (run_dir / "artifacts" / "validation_protocol.yaml").write_text("{}", encoding="utf-8")
 
     def _fake_subprocess_run_protocol(cmd, *a, **kw):
         out_dir = Path(cmd[cmd.index("--out-dir") + 1])
@@ -365,9 +360,7 @@ def test_both_run_tool_worker_branches_call_the_shared_resolver(monkeypatch):
     monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run_protocol)
     asyncio.run(rpr.run_tool_worker("protocol_execution", "run_551"))
 
-    assert len(calls) == 2, "both branches must call the shared resolver exactly once each"
-    assert calls[0] == (run_dir_a, "run_550")
-    assert calls[1] == (run_dir_b, "run_551")
+    assert calls == [(run_dir, "run_551")]
 
 
 # ---------------------------------------------------------------------------
@@ -622,55 +615,58 @@ def test_run_loop_top_hard_fails_on_both_protocol_keys_before_anything_else(monk
 
 
 # ---------------------------------------------------------------------------
-# K3 rider (2026-07-15) -- protocol_ref post-hoc conformance extension of
-# _check_prescreen_conformance (operator ruling overturning Phase B deviation 1:
-# A4/Q1 are registration-time only and never catch an EXECUTED prescreen that
-# silently ran against a different file than the one pinned).
+# K3 rider (2026-07-15) -- protocol_ref post-hoc conformance, RELOCATED
+# 2026-09-12 (E-039 step 5) from _check_prescreen_conformance to
+# _check_protocol_execution_conformance (operator ruling overturning Phase B
+# deviation 1: A4/Q1 are registration-time only and never catch an EXECUTED
+# protocol_execution that silently ran against a different file than the one
+# pinned). Same logic, "protocol_file" replaces "protocol_version" as the
+# executed-identity field (run_protocol.py's own record, the direct analog).
 # ---------------------------------------------------------------------------
 
-def test_check_prescreen_conformance_protocol_ref_mismatch_names_both():
-    prescreen_result = {"protocol_version": str(Path("C:/somewhere/protocols/actually_used.json"))}
+def test_check_protocol_execution_conformance_protocol_ref_mismatch_names_both():
+    protocol_result = {"protocol_file": str(Path("C:/somewhere/protocols/actually_used.json"))}
     constraints = {"protocol_ref": "protocols/pinned_expected.json"}
-    violations = rpr._check_prescreen_conformance(prescreen_result, constraints, {})
+    violations = rpr._check_protocol_execution_conformance(protocol_result, constraints, {})
     assert violations
     assert any("actually_used.json" in v and "pinned_expected.json" in v for v in violations)
 
 
-def test_check_prescreen_conformance_protocol_ref_match_no_violation():
-    prescreen_result = {"protocol_version": str(Path("/anywhere/protocols/pinned_expected.json"))}
+def test_check_protocol_execution_conformance_protocol_ref_match_no_violation():
+    protocol_result = {"protocol_file": str(Path("/anywhere/protocols/pinned_expected.json"))}
     constraints = {"protocol_ref": "protocols/pinned_expected.json"}
-    violations = rpr._check_prescreen_conformance(prescreen_result, constraints, {})
+    violations = rpr._check_protocol_execution_conformance(protocol_result, constraints, {})
     assert violations == []
 
 
-def test_check_prescreen_conformance_protocol_ref_content_hash_mismatch():
+def test_check_protocol_execution_conformance_protocol_ref_content_hash_mismatch():
     protocol_obj = {"symbols": ["BTCUSDT"], "timeframe": "1d", "windows": []}
-    prescreen_result = {"protocol_version": "/anywhere/protocols/pinned.json"}
+    protocol_result = {"protocol_file": "/anywhere/protocols/pinned.json"}
     constraints = {
         "protocol_ref": "protocols/pinned.json",
         "protocol_ref_content_hash": "sha256:" + "0" * 64,
     }
-    violations = rpr._check_prescreen_conformance(prescreen_result, constraints, protocol_obj)
+    violations = rpr._check_protocol_execution_conformance(protocol_result, constraints, protocol_obj)
     assert violations
     assert any("content hash" in v for v in violations)
 
 
-def test_check_prescreen_conformance_protocol_ref_content_hash_match():
+def test_check_protocol_execution_conformance_protocol_ref_content_hash_match():
     protocol_obj = {"symbols": ["BTCUSDT"], "timeframe": "1d", "windows": []}
     expected_hash = stamp_protocol.compute_protocol_content_hash(protocol_obj)
-    prescreen_result = {"protocol_version": "/anywhere/protocols/pinned.json"}
+    protocol_result = {"protocol_file": "/anywhere/protocols/pinned.json"}
     constraints = {
         "protocol_ref": "protocols/pinned.json",
         "protocol_ref_content_hash": expected_hash,
     }
-    violations = rpr._check_prescreen_conformance(prescreen_result, constraints, protocol_obj)
+    violations = rpr._check_protocol_execution_conformance(protocol_result, constraints, protocol_obj)
     assert violations == []
 
 
-def test_check_prescreen_conformance_no_protocol_ref_skips_new_branch():
+def test_check_protocol_execution_conformance_no_protocol_ref_skips_new_branch():
     """No protocol_ref on the brief -- the new branch must never fire, existing
     generation-shape checks unaffected."""
-    violations = rpr._check_prescreen_conformance({"protocol_version": "/x/protocols/whatever.json"}, {}, {})
+    violations = rpr._check_protocol_execution_conformance({"protocol_file": "/x/protocols/whatever.json"}, {}, {})
     assert violations == []
 
 

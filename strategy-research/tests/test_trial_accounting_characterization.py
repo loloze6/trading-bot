@@ -449,30 +449,6 @@ def test_issue36_inline_path_keeps_prescreen_and_backtest_rows(campaign_state_pa
     assert audit["total_hypotheses_tested"] == 2
 
 
-def test_prescreen_writer_row_shape(campaign_state_path, tmp_path):
-    """B1. _record_prescreen_trial emits the fixed prescreen-kill row shape and,
-    post-cf7908bc (H3), a forecast_hash of the candidate config it read."""
-    _seed_state(campaign_state_path, [])
-    expected_hash = _seed_config(tmp_path / "artifacts")
-    rpr._record_prescreen_trial(
-        "run_x",
-        {"route": "kill_no_ic", "ic_spearman_pooled": 0.01, "cost_check": {"pass": False}},
-        tmp_path / "artifacts" / "candidate_strategy_config.json",
-    )
-    rows = _read_trials(campaign_state_path)
-    assert len(rows) == 1
-    row = rows[0]
-    # CHAR[CONTRACT]: prescreen kills record statistic_valid='neither' (:3026), no backtest ran.
-    assert row["statistic_valid"] == "neither"
-    assert row["sharpe"] is None  # CHAR[CONTRACT]: no Sharpe from a prescreen.
-    assert row["n_trades"] == 0  # CHAR[CONTRACT]: no trades from a prescreen.
-    assert row["source"] == "prescreen"  # CHAR[CONTRACT]: source tag.
-    assert row["trial_id"] == "run_x"  # CHAR[CONTRACT]: trial_id == run_id.
-    # CHAR[CONTRACT]: H3 (cf7908bc) — writer now emits forecast_hash (:3029), the exact
-    # canonical-JSON sha256 of the config it read; dedup (ds:76-90) is no longer toothless.
-    assert row["forecast_hash"] == expected_hash
-
-
 def test_backtest_writer_n_trades_sums_results_trade_counts(campaign_state_path, tmp_path):
     """B2. FIXED (2026-08-17, NTRADES). The original NTRADES finding's own diagnosis was
     itself incomplete: per_symbol_summary never carried a 'trade_count' key at all (only
@@ -544,89 +520,9 @@ def test_backtest_writer_statistic_valid_taxonomy(
     assert (row["sharpe"] is None) == expected_sharpe_is_none  # CHAR[CONTRACT]: sharpe presence.
 
 
-def test_writer_contract_lifecycle_pair_shares_trial_id(campaign_state_path, tmp_path):
-    """B4. A prescreen-passing run legitimately writes TWO rows under one
-    trial_id: the prescreen row, then the backtest row (live run_057). This is
-    INTENTIONAL, NOT a bug — cf7908bc's (trial_id, source)-keyed guard (:3056)
-    deliberately preserves it: a naive trial_id-only guard would suppress every
-    prescreen-passing run's backtest row (see C2's naive-fix mutation). The two
-    rows are distinct sources, so the guard lets the backtest row through."""
-    _seed_state(campaign_state_path, [])
-    _seed_config(tmp_path / "artifacts")
-    config_path = tmp_path / "artifacts" / "candidate_strategy_config.json"
-    rpr._record_prescreen_trial("run_x", {"route": "advance", "ic_spearman_pooled": 0.09}, config_path)
-    rpr._record_backtest_trial(
-        "run_x", {"per_symbol_summary": {"BTCUSDT": {"median_sharpe": 0.5, "trade_count": 120}}},
-        config_path)
-    rows = _read_trials(campaign_state_path)
-    assert len(rows) == 2  # CHAR[CONTRACT]: prescreen + backtest, one legit lifecycle.
-    assert [r["trial_id"] for r in rows] == ["run_x", "run_x"]  # CHAR[CONTRACT]: shared trial_id.
-    assert [r["source"] for r in rows] == ["prescreen", "backtest"]  # CHAR[CONTRACT]: order + sources.
-
-
 # ===========================================================================
 # LEVEL C — call sites (run_tool_worker / run_loop)
 # ===========================================================================
-
-def test_h2_resumed_prescreen_upserts_fresh_outcome(temp_run, monkeypatch):
-    """C1. H2 FIXED (E-025, issue #28): a re-entered signal_prescreen — a crash-retry
-    restarting run_loop with a stale pending_stage='signal_prescreen' — now UPSERTS on
-    (trial_id, 'prescreen'): the prior row is REPLACED with the fresh outcome instead of
-    being swallowed by a trial_id-only skip-guard. Still exactly one row (upsert, not
-    append, so N is never widened), but its content is the FRESH re-entry, not the stale
-    first outcome. Was CHAR[H2-BUG] (len==1 AND ic_pooled==0.01, stale survives); flipped
-    to CHAR[CONTRACT] under this branch. RED after this = re-entry stopped updating.
-
-    (The config is seeded here because the fix now reaches _record_prescreen_trial on
-    re-entry — the old skip-guard never called it, so _compute_forecast_hash, which
-    fails loud on a missing config, was never hit on this path before.)"""
-    _run_dir, run_id = temp_run
-    _seed_config(_run_dir / "artifacts")
-    _seed_state(
-        rpr.CAMPAIGN_STATE_PATH,
-        [{"trial_id": "run_x", "source": "prescreen", "route": "kill_no_ic",
-          "sharpe": None, "n_trades": 0, "statistic_valid": "neither", "ic_pooled": 0.01}],
-    )
-    _install_fake_subprocess(
-        monkeypatch,
-        prescreen_payload={"route": "advance", "ic_spearman_pooled": 0.09, "cost_check": {"pass": True}},
-    )
-
-    asyncio.run(rpr.run_tool_worker("signal_prescreen", run_id))
-
-    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
-    assert len(rows) == 1  # CHAR[CONTRACT]: upsert keeps one row per (trial_id, "prescreen") slot.
-    assert rows[0]["ic_pooled"] == 0.09  # CHAR[CONTRACT]: FRESH re-entry content wins (was stale 0.01).
-    assert rows[0]["route"] == "advance"  # CHAR[CONTRACT]: fresh route replaces the stale kill.
-
-
-def test_h2_resumed_prescreen_same_outcome_is_noop(temp_run, monkeypatch):
-    """C1a (reject the strongest form). A same-outcome re-entry is a NO-OP: the upsert
-    replaces the existing (trial_id, 'prescreen') row with identical content, so still
-    exactly one row and the content is unchanged. Proves the fix is 'the FRESH outcome
-    wins' — an idempotent replace — not 'always append' (which would widen N on every
-    crash-retry) and not the H2 bug's 'always keep the first'. Paired with C1 (fresh
-    differs → fresh wins), this pins BOTH directions of the upsert contract."""
-    _run_dir, run_id = temp_run
-    _seed_config(_run_dir / "artifacts")
-    _seed_state(
-        rpr.CAMPAIGN_STATE_PATH,
-        [{"trial_id": "run_x", "source": "prescreen", "route": "advance",
-          "sharpe": None, "expectancy_bps": None, "n_trades": 0,
-          "statistic_valid": "neither", "ic_pooled": 0.09, "cost_pass": True}],
-    )
-    _install_fake_subprocess(
-        monkeypatch,
-        prescreen_payload={"route": "advance", "ic_spearman_pooled": 0.09, "cost_check": {"pass": True}},
-    )
-
-    asyncio.run(rpr.run_tool_worker("signal_prescreen", run_id))
-
-    rows = _read_trials(rpr.CAMPAIGN_STATE_PATH)
-    assert len(rows) == 1  # CHAR[CONTRACT]: same-outcome re-entry stays one row (idempotent).
-    assert rows[0]["route"] == "advance"  # CHAR[CONTRACT]: content unchanged on a no-op re-entry.
-    assert rows[0]["ic_pooled"] == 0.09  # CHAR[CONTRACT]: identical fresh == existing, still one row.
-
 
 def test_h3_protocol_reentry_appends_duplicate_backtest(temp_run, monkeypatch):
     """C2. protocol_execution's _record_backtest_trial (:1134) is now GUARDED post-
@@ -884,51 +780,6 @@ def test_write_promotion_audit_buckets_failed_rows_as_statistic_neither(tmp_path
     assert audit["excluded_trial_counts"]["no_sharpe_value"] == 0
     assert audit["n_trials_used"] == 2  # unaffected: still only the two real sharpe rows.
     assert audit["total_variants_tested"] == 3  # unaffected: all three rows still counted.
-
-
-# ---------------------------------------------------------------------------
-# Regression: run_060 (2026-08-27) -- the first real campaign launch in 39 days
-# halted the WHOLE campaign immediately after producing a correct verdict,
-# because the forecast_hash guard treated a designed no-config path as a
-# structural anomaly. See _forecast_hash_for_prescreen's own docstring.
-# ---------------------------------------------------------------------------
-
-def test_a_priori_power_route_records_a_trial_without_a_config(tmp_path):
-    """The A8.6 power gate blocks at `validation`, BEFORE backtest_specification
-    writes candidate_strategy_config.json. Recording that trial must NOT raise:
-    the config's absence is guaranteed by construction on this route, not
-    symptomatic of a broken artifacts dir.
-
-    Reproduces run_060 exactly -- same route, same missing file."""
-    missing = tmp_path / "candidate_strategy_config.json"
-    assert not missing.exists()
-
-    h = rpr._forecast_hash_for_prescreen("insufficient_power_a_priori", missing, "run_060")
-    assert h is None, (
-        "an a-priori-power trial has no config to hash; the row must record "
-        "forecast_hash=None explicitly rather than raising or omitting the field"
-    )
-
-
-def test_missing_config_still_fails_loud_on_every_other_route(tmp_path):
-    """The fail-loud default is KEPT. On a route that really did run a
-    prescreen/backtest subprocess, a missing config still means the artifacts
-    directory is broken and must raise -- the narrowing is one route wide, not
-    a blanket softening of the guard."""
-    missing = tmp_path / "candidate_strategy_config.json"
-    for route in ("proceed_to_backtest", "kill_no_ic", "unknown"):
-        with pytest.raises(FileNotFoundError):
-            rpr._forecast_hash_for_prescreen(route, missing, "run_999")
-
-
-def test_a_priori_route_still_hashes_when_a_config_does_exist(tmp_path):
-    """The narrowing is conditional on the file actually being absent. If a
-    config IS present on the a-priori route, hash it -- do not skip silently."""
-    cfg = tmp_path / "candidate_strategy_config.json"
-    cfg.write_text(json.dumps({"b": 2, "a": 1}), encoding="utf-8")
-    h = rpr._forecast_hash_for_prescreen("insufficient_power_a_priori", cfg, "run_061")
-    assert h == hashlib.sha256(
-        json.dumps({"a": 1, "b": 2}, sort_keys=True).encode("utf-8")).hexdigest()
 
 
 # ===========================================================================

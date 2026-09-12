@@ -31,7 +31,7 @@ if str(TOOLS_PATH) not in sys.path:
     sys.path.insert(0, str(TOOLS_PATH))
 
 import episode_significance as es
-import prescreen_signal as ps
+import run_protocol as rp
 
 _STEP = pd.Timedelta(1, unit="h")
 _BASE = pd.Timestamp("2020-01-01 00:00:00")
@@ -150,9 +150,11 @@ def test_a851a_min_n_episodes_gate_moves_with_gap():
 
 
 def test_episode_wiring_passes_expected_step():
-    """PR #65 isolation lesson: guard the production call site. run_prescreen
-    must pass the scalar step into compute_a851a_significance (and per_era_report)
-    or gap-awareness silently turns off in production with unit tests still green."""
-    src = inspect.getsource(ps.run_prescreen)
-    # both call sites (compute_a851a_significance and per_era_report) must pass it
-    assert src.count("expected_step=episode_expected_step") == 2
+    """PR #65 isolation lesson: guard the production call site. Relocated to
+    run_protocol.py's _a851a_episode_significance (CUL-265, E-039 step 5) --
+    the post-backtest home for this significance method now that the
+    signal_prescreen stage it originally lived in is removed. It must pass
+    the scalar step into compute_a851a_significance or gap-awareness silently
+    turns off in production with unit tests still green."""
+    src = inspect.getsource(rp._a851a_episode_significance)
+    assert src.count("expected_step=episode_expected_step") == 1

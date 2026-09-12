@@ -89,12 +89,12 @@ CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
 
 # E-054 Layer 2 (2026-09-11): off-by-default gate, same convention as
 # WORKFLOW_ARTIFACT_VALIDATION above. OFF (unset, the default): the
-# backtest_specification -> signal_prescreen route is byte-identical to every
-# run before this ticket -- required by CLAUDE.fork.md's bit-identity
+# backtest_specification -> protocol_execution route is byte-identical to
+# every run before this ticket -- required by CLAUDE.fork.md's bit-identity
 # discipline (new features ship off by default with default behavior proven
 # unchanged). ON: backtest_specification routes through the new
 # "data_availability_gate" tool stage first (see its STAGE_CONFIGS entry and
-# run_tool_worker branch below) before signal_prescreen ever runs.
+# run_tool_worker branch below) before protocol_execution ever runs.
 _E054_GATE_ENABLED = os.environ.get("E054_DATA_AVAILABILITY_GATE", "") == "1"
 
 
@@ -162,11 +162,6 @@ STAGE_CONFIGS = {
     # to pre-E-054 runs).
     "data_availability_gate": {
         "handoff": "backtest_spec_to_data_availability_gate.yaml",
-        "default_next": "dynamic_routing",
-    },
-    # Improvement 08+09: prescreen stage (tool, no LLM)
-    "signal_prescreen": {
-        "handoff": "backtest_spec_to_signal_prescreen.yaml",
         "default_next": "dynamic_routing",
     },
     "protocol_execution": {
@@ -1133,11 +1128,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
 
     if stage_name == "data_availability_gate":
         # E-054 Layer 2: real per-window/per-feed data-touch check, BEFORE the
-        # (much more expensive) prescreen/protocol_execution stages ever run.
-        # Uses the SAME shared resolver signal_prescreen/protocol_execution
-        # use below, so it checks the literal protocol that will execute —
-        # never a hypothesis-level declared timeframe (E-054 Phase 1
-        # characterization's Q3 finding: those can silently diverge).
+        # (much more expensive) protocol_execution stage ever runs. Uses the
+        # SAME shared resolver protocol_execution uses below, so it checks
+        # the literal protocol that will execute — never a hypothesis-level
+        # declared timeframe (E-054 Phase 1 characterization's Q3 finding:
+        # those can silently diverge).
         config_path = ARTIFACTS / "candidate_strategy_config.json"
         protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
 
@@ -1167,62 +1162,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
         gate_result = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
         print(f"✅ E-054 Layer 2 outcome: {gate_result.get('outcome', 'unknown').upper()}")
 
-    elif stage_name == "signal_prescreen":
-        # Improvement 08+09: signal prescreen — cheap IC + cost gate before full backtest.
-        config_path = ARTIFACTS / "candidate_strategy_config.json"
-
-        # K3/§9 Q4: consolidated resolver, replaces the previously-duplicated
-        # inline protocol-selection logic (also present in protocol_execution below).
-        protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
-
-        # F4d wiring: enforce the pre-registered significance methodology BEFORE
-        # the subprocess reads the config, so the pin actually governs the run
-        # rather than merely being audited against it afterwards.
-        _ensure_significance_methodology_pinned(
-            config_path, _load_machine_constraints(RUN_DIR) or {}, run_id)
-
-        out_dir = RUN_DIR / "prescreen"
-        cmd = [
-            str(TBOT_PYTHON), str(ROOT / "tools" / "prescreen_signal.py"),
-            str(config_path), str(protocol_path),
-            "--run-id", run_id,
-            "--out-dir", str(out_dir),
-        ]
-        print("🔬 Running signal prescreen (Improvement 08+09)...")
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        print(result.stdout)
-        if result.returncode != 0:
-            raise RuntimeError(f"prescreen_signal.py failed:\n{result.stderr}")
-
-        prescreen_path = out_dir / "prescreen_result.yaml"
-        if not prescreen_path.exists():
-            raise FileNotFoundError("prescreen_result.yaml not found after prescreen run")
-
-        # Copy to artifacts so verdict_interpreter can read it
-        import shutil as _ps_shutil
-        _ps_shutil.copy(prescreen_path, ARTIFACTS / "prescreen_result.yaml")
-
-        ps = load_yaml(ARTIFACTS / "prescreen_result.yaml")
-        route = ps.get("route", "unknown")
-        print(f"✅ Prescreen complete. Route: {route} | "
-              f"IC={ps.get('ic_spearman_pooled')} | "
-              f"cost_pass={ps.get('cost_check', {}).get('pass')}")
-
-        # A6.2: record prescreen as a trial in campaign_state (even kills count as trials)
-        # statistic_valid = "neither" for kills (no backtest Sharpe available)
-        # H2 fix (2026-08-16, issue #28 / E-025): upsert on (trial_id, "prescreen").
-        # A re-entered signal_prescreen -- a crash-retry restarting run_loop with a
-        # stale pending_stage='signal_prescreen' -- REPLACES the prior prescreen row
-        # with the fresh outcome. The former trial_id-only skip-guard swallowed the
-        # re-entry whole, leaving the STALE first outcome in the ledger (a lost update,
-        # not a suppressed duplicate). Upsert keeps one row per slot, so it neither
-        # widens N nor trips deflate_sharpe.check_no_duplicate_trial_ids.
-        _record_prescreen_trial(run_id, ps, config_path, upsert=True)
-
     elif stage_name == "protocol_execution":
         config_path     = ARTIFACTS / "candidate_strategy_config.json"
-        # K3/§9 Q4: consolidated resolver, replaces the previously-duplicated
-        # inline protocol-selection logic (also present in signal_prescreen above).
+        # K3/§9 Q4: consolidated resolver (also used by the E-054 data-
+        # availability gate above, and formerly by the removed
+        # signal_prescreen stage, E-039 step 5).
         protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
         validation_path = ARTIFACTS / "validation_protocol.yaml"
 
@@ -2257,7 +2201,7 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
 
 
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
-    tool_stages = {"protocol_execution", "signal_prescreen", "data_availability_gate"}
+    tool_stages = {"protocol_execution", "data_availability_gate"}
     if stage_name in tool_stages:
         await run_tool_worker(stage_name, run_id)
         return
@@ -2375,11 +2319,10 @@ def determine_post_validation_route(path: Path):
         raise ValueError(f"Unknown validation status: {status}")
 
 def _create_remaining_handoffs(run_id: str, run_dir: Path):
-    """Write data_availability_gate, signal_prescreen, protocol_execution, and
+    """Write data_availability_gate, protocol_execution, and
     verdict_interpreter handoffs."""
     handoffs = run_dir / "handoffs"
     dag_path = handoffs / "backtest_spec_to_data_availability_gate.yaml"
-    sp_path = handoffs / "backtest_spec_to_signal_prescreen.yaml"
     pe_path = handoffs / "backtest_spec_to_protocol_execution.yaml"
     vi_path = handoffs / "protocol_to_verdict_interpreter.yaml"
 
@@ -2405,34 +2348,6 @@ def _create_remaining_handoffs(run_id: str, run_dir: Path):
             "deliverables": ["data_availability_gate.yaml"],
         })
 
-    # Improvement 08+09: signal_prescreen handoff
-    if not sp_path.exists():
-        save_yaml(sp_path, {
-            "handoff_version": 1, "run_id": run_id,
-            "from_stage": "backtest_specification", "to_stage": "signal_prescreen",
-            "assigned_engine": "tool",
-            "objective": (
-                "Run signal prescreen — cheap IC + cost gate before full walk-forward. "
-                "Compute pooled IC, block-adjusted significance, turnover proxy, and "
-                "cost_check from config/cost_model.yaml. Route: proceed_to_backtest "
-                "(both IC and cost pass) or kill/refine (skip backtest)."
-            ),
-            "required_inputs": [
-                {"path": "artifacts/candidate_strategy_config.json",
-                 "reason": "strategy config to prescreen"},
-                {"path": "../../config/cost_model.yaml",
-                 "reason": "Layer 2 cost hurdle parameters"},
-                {"path": "../../config/campaign_data_policy.yaml",
-                 "reason": "holdout range guard — prescreen must not read holdout data"},
-            ],
-            "deliverables": ["prescreen_result.yaml"],
-            "constraints": [
-                "A8.1: no standalone IC pass — cost_check is always required.",
-                "A2.3: ic_by_regime is suspended; report ungated IC only.",
-                "A6.2: prescreen kills must be recorded as trials in campaign_state.",
-                "Holdout data must not be used in prescreen windows.",
-            ],
-        })
 
     if not pe_path.exists():
         save_yaml(pe_path, {
@@ -2908,10 +2823,11 @@ def _ensure_protocol_from_constraints(run_dir: Path, run_id: str, constraints: d
     print(f"✅ [F4d] Generated protocol from pre-registered machine_constraints: {out_path}"
           f" ({len(windows)} windows, {start} -> {end})")
 
-    # run_type MUST be "forced_diagnostic" — both signal_prescreen's and
-    # protocol_execution's protocol-resolution logic only consult run_context's
-    # `protocol` key under that exact run_type; otherwise they silently fall back
-    # to campaign_state.last_escalation.protocol_path (STALE campaign-wide state
+    # run_type MUST be "forced_diagnostic" — protocol_execution's (and the
+    # E-054 data-availability gate's) shared protocol-resolution logic only
+    # consults run_context's `protocol` key under that exact run_type;
+    # otherwise it silently falls back to campaign_state.last_escalation.
+    # protocol_path (STALE campaign-wide state
     # from a previous, unrelated run's escalation — this is exactly what happened
     # to run_050's first attempt: it picked up run_047's leftover
     # escalation_tf_15m.json because this run_type key was missing).
@@ -3037,56 +2953,6 @@ def _require_pre_registered_promotion(proto_constraint: dict, run_id: str) -> di
         )
     return promotion
 
-
-def _ensure_significance_methodology_pinned(config_path: Path, constraints: dict, run_id: str) -> bool:
-    """Carry machine_constraints.significance_methodology into
-    candidate_strategy_config.json, which is the ONLY place prescreen_signal.py
-    looks for it. Returns True if the config was written.
-
-    WHY (2026-08-28, run_060): the brief pinned
-    significance_methodology=episode_blocked_a851a, but prescreen_signal.py
-    reads that flag from the candidate config
-    (`config_raw.get("significance_methodology")`), and nothing carried the
-    value from pre_registration.yaml to that config. The
-    backtest_specification agent simply had not written the field, so the
-    a851a branch never ran, the default block-Fisher path ran instead, and the
-    F4d conformance gate correctly halted the campaign for testing something
-    other than what was pre-registered.
-
-    That gate is the AUDIT. This is the WIRING. Without it the pin is a
-    statement no code acts on, and every run has to be repaired by hand after
-    the gate catches it -- the recurring pattern where this system writes a
-    correct declarative artifact and then leaves it unenforced.
-
-    A config that already names a DIFFERENT methodology is a genuine conflict
-    between two deliberate statements, so it raises rather than being
-    overwritten.
-    """
-    pinned = constraints.get("significance_methodology")
-    if not pinned:
-        return False
-    if not config_path.exists():
-        raise FileNotFoundError(
-            f"[F4d] {run_id}: machine_constraints pins "
-            f"significance_methodology={pinned!r} but {config_path.name} does not exist "
-            f"-- cannot enforce the pin on a config that was never written."
-        )
-    cfg = json.loads(config_path.read_text(encoding="utf-8"))
-    existing = cfg.get("significance_methodology")
-    if existing == pinned:
-        return False  # already conforms -- idempotent across re-entry
-    if existing:
-        raise RuntimeError(
-            f"[F4d] {run_id}: {config_path.name} declares "
-            f"significance_methodology={existing!r} but pre_registration.yaml pins "
-            f"{pinned!r} -- two deliberate, conflicting statements. Refusing to "
-            f"silently overwrite either; reconcile the brief and the config."
-        )
-    cfg["significance_methodology"] = pinned
-    config_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
-    print(f"📌 [F4d] Propagated pinned significance_methodology={pinned!r} into "
-          f"{config_path.name} (was absent -- the prescreen reads it only from there)")
-    return True
 
 
 def _compute_protocol_content_hash(path: Path) -> str:
@@ -3217,8 +3083,9 @@ def _ensure_protocol_ref_pinned(run_dir: Path, run_id: str, constraints: dict) -
 def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
     """
     K3 (B3+B10, §9 Q4): the ONE shared protocol-selection resolver, replacing the
-    two previously-duplicated copies inside run_tool_worker's signal_prescreen/
-    protocol_execution branches. Four branch classes: replication_diagnostic;
+    two previously-duplicated copies inside run_tool_worker's protocol_execution
+    branch and the removed signal_prescreen branch (E-039 step 5). Four branch
+    classes: replication_diagnostic;
     protocol-GENERATED forced_diagnostic; protocol_ref-PINNED (its own
     distinguishable run_type, A3); and the claim-checked last_escalation fallback
     (B10, §4) -- which now HARD-FAILS instead of silently reusing stale
@@ -3296,41 +3163,68 @@ def _path_basename_any_os(path_str: str) -> str:
     return str(path_str).replace("\\", "/").rsplit("/", 1)[-1]
 
 
-def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, protocol_obj: dict) -> list:
+def _check_protocol_execution_conformance(protocol_result: dict, constraints: dict, protocol_obj: dict) -> list:
     """
-    Compares a completed prescreen's ACTUALS against what was pre-registered in
-    machine_constraints. Returns a list of violation strings (empty = conforms).
+    Compares a completed protocol_execution's ACTUALS against what was
+    pre-registered in machine_constraints. Returns a list of violation
+    strings (empty = conforms).
+
+    RELOCATED 2026-09-12 (E-039 step 5) from the removed signal_prescreen
+    stage's own _check_prescreen_conformance -- the underlying risk this
+    guards against does not disappear once prescreen is removed:
+    protocol_execution resolves its own protocol via the same
+    _resolve_protocol_path() machinery prescreen used, and A4's/Q1's
+    REGISTRATION-time guards still cannot catch a runtime override that
+    changes AFTER that resolution already happened (a stale run_context.yaml,
+    or a hand-edited pre_registration.yaml mid-run -- the real F4d/run_047
+    incident this check exists because of). Same mechanism, new source data:
+    `protocol_result.get("protocol_file")` (run_protocol.py's own CLI-arg
+    record, the direct analog of prescreen_result.yaml's "protocol_version")
+    and `protocol_result.get("episode_blocked_significance_by_symbol")`
+    (CUL-265, exposed 2026-09-12 specifically so this check has something
+    real to read -- previously computed only transiently for the
+    prescreen/backtest cross-check, never persisted).
     """
     violations = []
 
     expected_sig = constraints.get("significance_methodology")
     if expected_sig == "episode_blocked_a851a":
-        # F4d fix (caught before shipping, via test-writing): significance_methodology_used
-        # names the SPECIFIC outcome (episode_block_bootstrap / episode_bootstrap_insufficient_n
-        # / block_24_dense_fallback — episode_significance.VALID_METHODS), not the family
-        # name. A literal-equality check would have wrongly flagged the legitimate
-        # density-fallback and insufficient-episode outcomes (both correct per A8.5.1a's
-        # own spec rules 3/4) as violations. The real thing to detect is "the
-        # significance_methodology config flag was absent/ignored and the OLD default
-        # (block_24_fisher_z, prescreen_signal.py's own default label) ran instead."
+        # Per-symbol now (CUL-265): protocol_execution computes A8.5.1a
+        # significance separately per symbol, unlike prescreen's single
+        # pooled-across-everything value. A violation on ANY symbol is a
+        # real conformance failure -- silently passing because ONE symbol
+        # happened to conform would hide the others.
         _tools_path = str(Path(__file__).parent.parent / "tools")
         if _tools_path not in sys.path:
             sys.path.insert(0, _tools_path)
         import episode_significance as _es
-        actual_sig = prescreen_result.get("significance_methodology_used")
-        if not _es.is_a851a_method(actual_sig):
+        by_symbol = protocol_result.get("episode_blocked_significance_by_symbol") or {}
+        if not by_symbol:
             violations.append(
-                f"significance_methodology_used={actual_sig!r} is not an A8.5.1a outcome "
-                f"({sorted(_es.VALID_METHODS)} or block_<n>_dense_fallback) — pre-registered "
-                f"machine_constraints.significance_methodology=episode_blocked_a851a was not honored"
+                "pre-registered machine_constraints.significance_methodology="
+                "episode_blocked_a851a, but protocol_result carries no "
+                "episode_blocked_significance_by_symbol at all -- the A8.5.1a "
+                "path was not computed for this run"
             )
+        for symbol, actual_sig in by_symbol.items():
+            if not _es.is_a851a_method(actual_sig):
+                violations.append(
+                    f"{symbol}: episode_blocked_significance_method={actual_sig!r} is not "
+                    f"an A8.5.1a outcome ({sorted(_es.VALID_METHODS)} or "
+                    f"block_<n>_dense_fallback) -- pre-registered "
+                    f"machine_constraints.significance_methodology=episode_blocked_a851a "
+                    f"was not honored"
+                )
     elif expected_sig:
-        actual_sig = prescreen_result.get("significance_methodology_used")
-        if actual_sig != expected_sig:
-            violations.append(
-                f"significance_methodology_used={actual_sig!r} != pre-registered "
-                f"machine_constraints.significance_methodology={expected_sig!r}"
-            )
+        # No per-run analog exists yet for a non-A8.5.1a named methodology
+        # constraint on the backtest side -- flag as unconfirmable rather
+        # than silently passing or inventing a comparison.
+        violations.append(
+            f"pre-registered machine_constraints.significance_methodology="
+            f"{expected_sig!r}, but protocol_execution has no equivalent "
+            f"recorded field to confirm it against (only episode_blocked_a851a "
+            f"is currently checkable here)"
+        )
 
     proto_constraint = constraints.get("protocol")
     if proto_constraint:
@@ -3362,54 +3256,43 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
 
     # K3 rider (2026-07-15, operator ruling on Phase B deviation 1): protocol_ref
     # post-hoc conformance -- A4's runtime guard and Q1's materialization lint are
-    # both REGISTRATION-time checks; neither catches an executed prescreen that
+    # both REGISTRATION-time checks; neither catches an executed run that
     # silently ran against a DIFFERENT file than the one pinned (e.g. a stale
     # run_context.yaml override, or a hand-edited pre_registration.yaml that
-    # changed protocol_ref after signal_prescreen already ran once). tools/
-    # prescreen_signal.py's own prescreen_result.yaml records the executed
-    # protocol's identity under the (confusingly named, pre-existing, unrelated
-    # to K3) "protocol_version" field -- protocol.get("_version", protocol_path):
-    # no real protocol JSON in this repo carries a literal "_version" key. Two
-    # files (baseline_v2.json, ts_trend_daily_v1.json) DO carry a "protocol_version"
-    # key, but this is a PRE-EXISTING, hand-set label that predates K3 entirely
-    # (git history: commits 410512a/d9fc4e7, both before K3) -- a coincidental
-    # collision with K3's own §5 stamp FIELD NAME, not K3's own data: stamp_protocol.py
-    # always writes protocol_version PAIRED with protocol_content_hash, and neither
-    # of these two files carries that hash (audit finding, 2026-07-15, corrected
-    # from this comment's own earlier, wrong provenance claim). Either way -- hand
-    # label or K3 stamp -- neither is the underscored "_version" key
-    # prescreen_signal.py's own `.get("_version", ...)` looks for, so this field
-    # is, in practice, always the raw CLI protocol_path argument (an absolute or
-    # ROOT-relative path string) -- confirmed by reading tools/prescreen_signal.py
-    # and every protocols/*.json file, not assumed. Compared here by BARE FILENAME
-    # (matching A1's own bare-filename convention for run_context.yaml's "protocol"
-    # key), never by full path, since the two are constructed differently (CLI arg
-    # vs. ROOT-relative ref). Basename extraction goes through
-    # _path_basename_any_os, not Path(...).name (E037-11/CUL-186, fixed
-    # 2026-09-03): a path recorded on Windows ("protocols\\x.json", the real
-    # shape run_060 recorded) mis-parses as one long name on POSIX, producing a
-    # spurious violation the first time an artifact crosses machines.
+    # changed protocol_ref after protocol_execution already ran once).
+    # run_protocol.py's own protocol_result.yaml/protocol_summary.json records
+    # the executed protocol's identity under "protocol_file" -- the raw CLI
+    # protocol_path argument (an absolute or ROOT-relative path string),
+    # confirmed by reading tools/run_protocol.py directly. Compared here by
+    # BARE FILENAME (matching A1's own bare-filename convention for
+    # run_context.yaml's "protocol" key), never by full path, since the two
+    # are constructed differently (CLI arg vs. ROOT-relative ref). Basename
+    # extraction goes through _path_basename_any_os, not Path(...).name
+    # (E037-11/CUL-186, fixed 2026-09-03): a path recorded on Windows
+    # ("protocols\\x.json", the real shape run_060 recorded) mis-parses as
+    # one long name on POSIX, producing a spurious violation the first time
+    # an artifact crosses machines.
     protocol_ref = constraints.get("protocol_ref")
     if protocol_ref:
-        executed_identity = prescreen_result.get("protocol_version")
+        executed_identity = protocol_result.get("protocol_file")
         pinned_name = _path_basename_any_os(protocol_ref)
         if executed_identity:
             executed_name = _path_basename_any_os(executed_identity)
             if executed_name != pinned_name:
                 violations.append(
-                    f"prescreen executed protocol {executed_name!r} != pre-registered "
+                    f"protocol_execution ran protocol {executed_name!r} != pre-registered "
                     f"machine_constraints.protocol_ref bare filename {pinned_name!r} "
-                    f"(prescreen_result.protocol_version={executed_identity!r})"
+                    f"(protocol_result.protocol_file={executed_identity!r})"
                 )
 
         # Optional, stronger guarantee (§5): if the brief also pinned a content
         # hash, recompute it over the ACTUAL executed protocol_obj (already
-        # loaded by determine_post_prescreen_route's own call site) and compare.
-        # Duplicates _compute_protocol_content_hash's small formula rather than
-        # calling it directly -- that function takes a Path and re-reads the
-        # file from disk; protocol_obj here is already the parsed executed
+        # loaded by this function's own call site) and compare. Duplicates
+        # _compute_protocol_content_hash's small formula rather than calling
+        # it directly -- that function takes a Path and re-reads the file
+        # from disk; protocol_obj here is already the parsed executed
         # content, and this function's authorized write set is
-        # _check_prescreen_conformance only (K3 rider scope).
+        # _check_protocol_execution_conformance only (K3 rider scope).
         expected_hash = constraints.get("protocol_ref_content_hash")
         if expected_hash and protocol_obj:
             _stripped = {k: v for k, v in protocol_obj.items()
@@ -3418,7 +3301,7 @@ def _check_prescreen_conformance(prescreen_result: dict, constraints: dict, prot
             actual_hash = "sha256:" + hashlib.sha256(_canonical.encode("utf-8")).hexdigest()
             if actual_hash != expected_hash:
                 violations.append(
-                    f"prescreen executed protocol's content hash {actual_hash!r} != "
+                    f"protocol_execution's executed protocol content hash {actual_hash!r} != "
                     f"pre-registered machine_constraints.protocol_ref_content_hash "
                     f"{expected_hash!r} -- the executed file's CONTENT differs from "
                     f"what was pre-registered"
@@ -3621,7 +3504,15 @@ def _mark_trial_invalidated(run_id: str, reason: str):
     """F8b-pattern: flag a previously-recorded trial as invalidated_artifact — it
     contacted real data but tested the wrong thing (conformance violation), so it
     must be excluded from promotion/deflate-sharpe accounting like run_044's
-    bug-artifact precedent, not silently deleted."""
+    bug-artifact precedent, not silently deleted.
+
+    RESTORED 2026-09-12 (E-039 step 5): briefly deleted during the
+    signal_prescreen removal on the mistaken assumption its only caller was
+    the (now relocated) prescreen conformance gate -- run_campaign.py's own
+    `_apply_trial_accounting` (E-030 S2a quarantine handling) calls this
+    directly for `component_execution_error` halts, entirely independent of
+    prescreen. Caught by running the real test suite, not by re-reading the
+    diff."""
     state = load_campaign_state()
     marked = False
     for t in state.get("trial_sharpes", []):
@@ -4155,92 +4046,6 @@ def _compute_forecast_hash(config_path: Path) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-_A_PRIORI_NO_CONFIG_ROUTES = frozenset({"insufficient_power_a_priori"})
-
-
-def _forecast_hash_for_prescreen(route: str, config_path: Path, run_id: str):
-    """forecast_hash for a prescreen trial row, tolerating the ONE route that
-    legitimately has no strategy config.
-
-    BUG FIXED 2026-08-27, found by run_060 -- the first real campaign launch in
-    39 days, which halted the whole campaign immediately after producing a
-    correct verdict.
-
-    `_compute_forecast_hash` fails loud on a missing config, and its docstring
-    justifies that: "by the time either trial-recording function calls this, the
-    same config file has already been read by the prescreen/backtest subprocess
-    this trial's result came from". **That premise is false for
-    `insufficient_power_a_priori`.** The A8.6 gate blocks at `validation`, which
-    is BEFORE `backtest_specification` runs, so no
-    candidate_strategy_config.json is ever written -- the gate's own
-    prescreen_result.yaml says `stage_blocked_at: validation` and "no component
-    built, no trial spent". The guard therefore treated a designed,
-    correctly-functioning path as a structural anomaly and raised
-    `unhandled_exception`, halting the campaign on a run that had just done its
-    job.
-
-    The fail-loud default is KEPT for every other route: a missing config on a
-    path that really did run a prescreen or backtest subprocess still raises,
-    because there it genuinely does mean the artifacts directory is broken. Only
-    the a-priori-power route -- where absence is guaranteed by construction, not
-    symptomatic -- returns None, and the row records that explicitly rather than
-    silently omitting the field.
-    """
-    if route in _A_PRIORI_NO_CONFIG_ROUTES and not config_path.exists():
-        print(f"   forecast_hash: null for {run_id} -- route '{route}' blocks at "
-              f"validation, before any strategy config is built (by design).")
-        return None
-    return _compute_forecast_hash(config_path)
-
-
-def _record_prescreen_trial(run_id: str, ps: dict, config_path: Path, *, upsert: bool = False):
-    """
-    A6.2: record a prescreen run as a trial in campaign_state.trial_sharpes.
-    Prescreen kills count as trials (statistic_valid='neither', sharpe=null, n_trades=0).
-    Prescreen passes that advance to backtest will have their full Sharpe recorded
-    after protocol_execution completes.
-
-    H2 fix (2026-08-16, issue #28 / E-025): the normal run_tool_worker call site
-    (:1069) passes upsert=True. On a re-entered signal_prescreen -- a crash-retry that
-    restarts run_loop with a stale pending_stage='signal_prescreen' -- the prior row
-    for this (trial_id, 'prescreen') slot is REPLACED with the fresh outcome instead of
-    being swallowed by a trial_id-only skip-guard that left the STALE first outcome in
-    the ledger. A run_id is one trial slot: a genuine new trial is a new run_NNN with
-    its own trial_id and records on its own key; a same-run_id re-prescreen is a retry
-    (idempotent same-config no-op) or a manual config edit -- neither is a new
-    independent trial, so upsert (not append) is correct and never widens N. Keys on
-    (trial_id, 'prescreen'), so it keeps one row and never trips Jeremy's read-side
-    check_no_duplicate_trial_ids. The a86 call sites (:4935/:4955) keep upsert=False
-    (default) -- their idempotency is H3 territory, a separate ticket.
-    """
-    state = load_campaign_state()
-    trials = state.setdefault("trial_sharpes", [])
-    route  = ps.get("route", "unknown")
-    trial_entry = {
-        "trial_id":        run_id,
-        "source":          "prescreen",
-        "route":           route,
-        "sharpe":          None,
-        "expectancy_bps":  None,
-        "n_trades":        0,
-        "statistic_valid": "neither",  # no backtest ran
-        "ic_pooled":       ps.get("ic_spearman_pooled"),
-        "cost_pass":       ps.get("cost_check", {}).get("pass"),
-        "forecast_hash":   _forecast_hash_for_prescreen(route, config_path, run_id),
-    }
-    if upsert:
-        for i, t in enumerate(trials):
-            if t.get("trial_id") == run_id and t.get("source") == "prescreen":
-                trials[i] = trial_entry
-                _save_campaign_state(state)
-                print(f"⚙️  A6.2/H2: prescreen trial for {run_id} updated in place "
-                      f"(route={route}, statistic_valid=neither)")
-                return
-    trials.append(trial_entry)
-    _save_campaign_state(state)
-    print(f"⚙️  A6.2: prescreen trial recorded in campaign_state.trial_sharpes "
-          f"(route={route}, statistic_valid=neither)")
-
 
 def _record_backtest_trial(run_id: str, summary: dict, config_path: Path):
     """
@@ -4644,186 +4449,6 @@ def _write_kb_findings_entry(path: Path, run_id: str, interp: dict):
 
     _recompute_kb_views(kb)
     save_yaml(_KB_PATH, kb)
-
-
-def _create_protocol_result_from_prescreen(path: Path, ps: dict):
-    """
-    When a prescreen kills (route=kill_* or refine_*), create a minimal
-    protocol_result.yaml from prescreen evidence so verdict_interpreter
-    can run its standard artifact-based flow.
-
-    The stub carries IC and estimated cost_drag as the primary diagnostics.
-    The verdict_interpreter skill reads prescreen_result.yaml (injected as
-    optional input) for full prescreen context.
-    """
-    pr_path = path / "artifacts" / "protocol_result.yaml"
-    if pr_path.exists():
-        return  # don't overwrite an existing real result
-
-    ic_pooled   = ps.get("ic_spearman_pooled")
-    cost_pass   = ps.get("cost_check", {}).get("pass", False)
-    ratio       = ps.get("cost_check", {}).get("edge_to_cost_ratio")
-    route       = ps.get("route", "unknown")
-
-    # Estimate cost_drag_pct from edge_to_cost_ratio:
-    # if ratio = 0.5, edge covers 50% of cost → cost_drag ≈ 200% (cost > gross edge).
-    # If ratio = 0, edge = 0 → cost_drag is undefined; use sentinel 999%.
-    if ratio is not None and ratio > 0:
-        estimated_cost_drag = round(100.0 / ratio, 1)
-    elif ratio is not None and ratio == 0:
-        estimated_cost_drag = 999.0
-    else:
-        estimated_cost_drag = None
-
-    stub = {
-        "source":           "prescreen_stub",
-        "prescreen_route":  route,
-        "hypothesis_verdict": {
-            "verdict": "kill" if route.startswith("kill_") else "refine",
-            "criteria_results": [],
-            "verdict_reason": f"Prescreen gate: {ps.get('route_rationale', '')}",
-            "diagnostics": {
-                "median_forecast_return_corr":    ic_pooled,
-                "median_cost_drag_pct":           estimated_cost_drag,
-                "median_gross_pnl":               None,
-                "median_avg_trade_duration_bars": None,
-                "uninformative_regimes":          [],
-                "win_rate_vs_sharpe":             "N/A (prescreen kill — no backtest)",
-                "below_floor_pct":                100.0,  # no trades
-                "per_trade_expectancy_bps":       None,
-                "zero_trade_slot_pct":            100.0,
-            },
-        },
-        "per_symbol_summary": {},
-        "results":           [],
-        "prescreen_kill_reason": ps.get("prescreen_kill_reason"),
-    }
-    save_yaml(pr_path, stub)
-    print(f"⚙️  Created protocol_result.yaml stub from prescreen evidence "
-          f"(route={route}, IC={ic_pooled})")
-
-
-def determine_post_prescreen_route(path: Path) -> str:
-    """
-    Route after signal_prescreen based on prescreen_result.yaml.
-
-    A8.1: proceed_to_backtest requires both ic_significance AND cost_check.pass.
-    Kill/refine routes skip the full backtest and go directly to verdict_interpreter
-    (with a stub protocol_result.yaml created from prescreen evidence).
-    """
-    ps_path = path / "artifacts" / "prescreen_result.yaml"
-    if not ps_path.exists():
-        print("⚠️  prescreen_result.yaml missing — skipping prescreen gate, continuing to backtest.")
-        return "protocol_execution"
-
-    ps    = load_yaml(ps_path)
-
-    # F4d (2026-07-05, run_047): pre-registration conformance gate. A prescreen
-    # that silently used the wrong protocol range or dropped a MANDATORY
-    # significance methodology tested something other than what was
-    # pre-registered — that is an engineering failure, not a scientific result,
-    # regardless of what route the tool itself computed. Must never reach
-    # verdict_interpreter (no KB write, no verdict) — same principle as F5c's
-    # no_signal_artifact.
-    constraints = _load_machine_constraints(path)
-    if constraints:
-        protocol_obj = {}
-        protocol_path_str = ps.get("protocol_version")
-        if protocol_path_str:
-            candidate = Path(protocol_path_str)
-            if not candidate.is_absolute():
-                candidate = ROOT / candidate
-            if candidate.exists():
-                with open(candidate, encoding="utf-8") as f:
-                    protocol_obj = json.load(f)
-        violations = _check_prescreen_conformance(ps, constraints, protocol_obj)
-        if violations:
-            print("\n🛑 [F4d] PRE-REGISTRATION CONFORMANCE VIOLATION — this prescreen did "
-                  "NOT test what was pre-registered:")
-            for v in violations:
-                print(f"   - {v}")
-            run_id = path.name
-            _mark_trial_invalidated(run_id, "; ".join(violations))
-            update_state(path=path, status="paused_for_human",
-                         flags={"conformance_violation": True},
-                         conformance_violations=violations)
-            return "human_pause"
-
-    route = ps.get("route", "proceed_to_backtest")
-
-    if route == "proceed_to_backtest":
-        print(f"✅ Prescreen PASSED — advancing to protocol_execution.")
-        return "protocol_execution"
-
-    # F5c (2026-07-04): no_signal_artifact is an engineering failure (component never
-    # emitted, or errored on every bar), NOT a scientific result. It must never reach
-    # verdict_interpreter or get a KB write — that would treat a bug as a research
-    # finding (see run_044, 2026-07-04, killed on this basis before F5 existed).
-    # Pause for a human to fix the component/config; no trial is spent, no
-    # findings_carryover is produced, no proposed_brief pivots the hypothesis away.
-    if route == "no_signal_artifact":
-        print(f"\n⏸️  ENGINEERING PAUSE (F5c): prescreen route=no_signal_artifact. "
-              f"{ps.get('route_rationale', '')}")
-        print(f"   component_error_count={ps.get('component_error_count', 0)} — "
-              f"see component_error_sample in {ps_path.name}.")
-        print("   This is NOT a kill/refine/pivot verdict. Fix the underlying component "
-              "or config, then re-run signal_prescreen fresh (do not resume into "
-              "verdict_interpreter — there is nothing for it to interpret).")
-        update_state(path=path, status="paused_for_human",
-                     flags={"no_signal_artifact_flagged": True})
-        return "human_pause"
-
-    # All other routes (kill_* or refine_*) skip the full backtest
-    print(f"🔬 Prescreen gate triggered: {route}. "
-          f"Creating stub protocol_result and routing to verdict_interpreter.")
-    _create_protocol_result_from_prescreen(path, ps)
-    return "verdict_interpreter"
-
-
-def _inject_prescreen_context_into_verdict_handoff(handoff_path: Path, ps: dict):
-    """
-    When a prescreen kill routes directly to verdict_interpreter (no backtest ran),
-    inject prescreen_result.yaml as a required input and add a constraint note
-    so the skill knows to interpret prescreen evidence instead of backtest evidence.
-    """
-    if not handoff_path.exists():
-        return
-
-    handoff = load_yaml(handoff_path) or {}
-
-    # Add prescreen_result as required input (backtest was skipped)
-    req = handoff.setdefault("required_inputs", [])
-    paths_present = {x.get("path") for x in req}
-    if "artifacts/prescreen_result.yaml" not in paths_present:
-        req.append({
-            "path":   "artifacts/prescreen_result.yaml",
-            "reason": "Prescreen killed this run — protocol_result.yaml is a stub. "
-                      "Use prescreen_result.yaml as the primary evidence source.",
-        })
-
-    # Note for the skill
-    constraints = handoff.setdefault("constraints", [])
-    ps_note = (
-        f"PRESCREEN KILL: This run was terminated by signal_prescreen "
-        f"(route={ps.get('route')}, IC={ps.get('ic_spearman_pooled')}, "
-        f"cost_pass={ps.get('cost_check', {}).get('pass')}). "
-        f"protocol_result.yaml is a prescreen stub, NOT a full backtest result. "
-        f"Base your verdict on prescreen_result.yaml evidence. "
-        f"Apply the appropriate Diagnostic Rule from the prescreen route: "
-        f"kill_no_ic → Rule 2 (weak signal); refine_inverted_ic → Rule 3 (signal inversion); "
-        f"refine_cost_hurdle → Rule 1 (cost drag, raise threshold_filter); "
-        f"kill_cost_hurdle → Rule 1 (cost drag, structural — kill); "
-        f"insufficient_power_a_priori → A8.6 power gate: no IC computed, disposition=parked, "
-        f"do_not_add_to_failed_families=true, verdict_label=insufficient_power_a_priori."
-    )
-    if ps_note not in constraints:
-        constraints.append(ps_note)
-
-    handoff["prescreen_route"] = ps.get("route")
-    handoff["prescreen_ic"]    = ps.get("ic_spearman_pooled")
-    save_yaml(handoff_path, handoff)
-    print(f"✅ Prescreen context injected into verdict_interpreter handoff "
-          f"(route={ps.get('route')})")
 
 
 def _auto_generate_findings_carryover(path: Path, interp: dict, lineage_routing: str = None):
@@ -5782,11 +5407,10 @@ def determine_post_verdict_route(path: Path, run_id: str):
 
     # F6 (2026-07-04): an engineering-failure diagnosis can NEVER be overridden into a
     # scientific verdict by the circuit breaker (or by anything else). Checked before
-    # any breaker logic runs, using the LLM's own root_cause — not prescreen's
-    # no_signal_artifact (F5c intercepts that earlier, at signal_prescreen, before
-    # verdict_interpreter ever runs). This covers the case where verdict_interpreter
-    # itself independently reaches an engineering diagnosis (e.g. after a full
-    # backtest, not just a prescreen kill).
+    # any breaker logic runs, using the LLM's own root_cause -- covers the case
+    # where verdict_interpreter itself reaches an engineering diagnosis after a
+    # full backtest (the signal_prescreen stage this once also guarded against
+    # is removed, E-039 step 5).
     root_cause = interp.get("root_cause") or {}
     if root_cause.get("mechanism_failure") == "component_execution_error":
         print("\n⚠️  F6: root_cause.mechanism_failure = component_execution_error — "
@@ -6048,8 +5672,12 @@ def determine_post_spec_route(path: Path):
     decision = load_yaml(path / "artifacts" / "decision.yaml")
     status = decision.get("status", "").strip().lower()
     if status == "spec_ready":
-        # Improvement 08+09: route via signal_prescreen before full backtest
-        return "signal_prescreen"
+        # E-039 step 5 (2026-09-12): signal_prescreen removed -- "always
+        # backtest" (E-039's own premise). A spec-ready hypothesis now goes
+        # straight to protocol_execution; the E-054 data-availability gate
+        # (routed to separately, when enabled) still runs first if that flag
+        # is on -- see the backtest_specification branch in run_loop.
+        return "protocol_execution"
     if status == "component_gap":
         update_state(path=path, status="paused_for_human")
         print("\n⏸️ COMPONENT GAP: hypothesis needs an engine piece that does not exist. "
@@ -6217,12 +5845,6 @@ def run_loop(run_id: str):
                     except Exception:
                         pass  # invalid YAML — re-run the agent
 
-            # A8.6 (a-priori power pre-flight) removed 2026-09-11, E-039 --
-            # see determine_post_validation_route's comment for the full
-            # reasoning. signal_prescreen now always runs the real prescreen
-            # tool/agent; nothing short-circuits it on an estimated power
-            # calculation anymore.
-
             if current_stage == "verdict_interpreter":
                 _vi_path = RUN_DIR / "artifacts" / "verdict_interpretation.yaml"
                 if _vi_path.exists():
@@ -6314,7 +5936,7 @@ def run_loop(run_id: str):
 
             elif current_stage == "backtest_specification":
                 next_stage = determine_post_spec_route(RUN_DIR)
-                if next_stage in ("signal_prescreen", "protocol_execution"):
+                if next_stage == "protocol_execution":
                     # E-034 S2: record which expanded_variants menu entry was
                     # chosen (and persist the discards), off by default (see
                     # _record_variant_selection's own docstring). Runs only on
@@ -6361,14 +5983,14 @@ def run_loop(run_id: str):
                         update_state(path=RUN_DIR, status="failed_validation")
                         next_stage = "failed_validation"
                     else:
-                        print("✅ config schema-valid; advancing to signal_prescreen")
-                        # Create handoff files for prescreen + remaining pipeline stages
+                        print("✅ config schema-valid; advancing to protocol_execution")
+                        # Create handoff files for the remaining pipeline stages
                         _create_remaining_handoffs(run_id, RUN_DIR)
                         # E-054 Layer 2 (off by default -- see _E054_GATE_ENABLED):
                         # route through the data-availability gate FIRST. OFF
                         # leaves next_stage exactly what determine_post_spec_route
-                        # returned above (signal_prescreen/protocol_execution),
-                        # byte-identical to every pre-E-054 run.
+                        # returned above (protocol_execution), byte-identical to
+                        # every pre-E-054 run.
                         if _E054_GATE_ENABLED:
                             next_stage = "data_availability_gate"
                 elif next_stage == "human_pause":
@@ -6381,8 +6003,8 @@ def run_loop(run_id: str):
                 gate = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
                 gate_outcome = gate.get("outcome", "decline")
                 if gate_outcome == "validate":
-                    print("✅ E-054 Layer 2: VALIDATE — advancing to signal_prescreen.")
-                    next_stage = "signal_prescreen"
+                    print("✅ E-054 Layer 2: VALIDATE — advancing to protocol_execution.")
+                    next_stage = "protocol_execution"
                 elif gate_outcome == "refine":
                     # Mirrors this orchestrator's own documented HITL design
                     # ("Path C: Data Block" in the module docstring) -- a
@@ -6401,33 +6023,43 @@ def run_loop(run_id: str):
                     break
                 else:  # decline
                     print(f"🛑 E-054 Layer 2: DECLINE — required data does not exist. "
-                          f"Rejecting hypothesis without spending prescreen/protocol_execution.")
+                          f"Rejecting hypothesis without spending a real backtest.")
                     for reason in gate.get("reasons", [])[:10]:
                         print(f"   - {reason}")
                     next_stage = "completed_rejected"
 
-            elif current_stage == "signal_prescreen":
-                # Improvement 08+09: route based on prescreen_result.yaml
-                next_stage = determine_post_prescreen_route(RUN_DIR)
-                if next_stage == "verdict_interpreter":
-                    # Prescreen kill — inject prescreen context into verdict handoff
-                    ps = load_yaml(ARTIFACTS / "prescreen_result.yaml") or {}
-                    _vi_handoff = RUN_DIR / "handoffs" / "protocol_to_verdict_interpreter.yaml"
-                    _inject_prescreen_context_into_verdict_handoff(_vi_handoff, ps)
-                    # Also inject regime context if available (Improvement 02)
-                    _regime_rpt = _ensure_regime_detector_report(run_id, RUN_DIR)
-                    _regime_aud_path = RUN_DIR / "artifacts" / "regime_audit_decision.yaml"
-                    _regime_aud = load_yaml(_regime_aud_path) if _regime_aud_path.exists() else None
-                    if _regime_aud:
-                        _fw_violations = _validate_retune_firewall(_regime_aud)
-                        if _fw_violations:
-                            raise RuntimeError(
-                                "RETUNE FIREWALL VIOLATION — regime_audit_decision.yaml "
-                                "references forbidden strategy metrics:\n"
-                                + "\n".join(f"  - {v}" for v in _fw_violations)
-                            )
-                    if _regime_rpt:
-                        _inject_regime_context_into_handoff(_vi_handoff, _regime_rpt, _regime_aud, run_id)
+            elif current_stage == "protocol_execution":
+                # E-039 step 5 (2026-09-12): pre-registration conformance gate,
+                # relocated from the removed signal_prescreen stage's own
+                # F4d check (see _check_protocol_execution_conformance's
+                # docstring for why this risk doesn't disappear along with
+                # prescreen). default_next ("verdict_interpreter") is left
+                # untouched on conformance -- this branch only ever PAUSES on
+                # a real violation, never advances early.
+                _pr_path = ARTIFACTS / "protocol_result.yaml"
+                _constraints = _load_machine_constraints(RUN_DIR)
+                if _constraints and _pr_path.exists():
+                    _pr = load_yaml(_pr_path) or {}
+                    _protocol_obj = {}
+                    _protocol_path_str = _pr.get("protocol_file")
+                    if _protocol_path_str:
+                        _candidate = Path(_protocol_path_str)
+                        if not _candidate.is_absolute():
+                            _candidate = ROOT / _candidate
+                        if _candidate.exists():
+                            with open(_candidate, encoding="utf-8") as f:
+                                _protocol_obj = json.load(f)
+                    _violations = _check_protocol_execution_conformance(_pr, _constraints, _protocol_obj)
+                    if _violations:
+                        print("\n🛑 [F4d] PRE-REGISTRATION CONFORMANCE VIOLATION — protocol_execution did "
+                              "NOT test what was pre-registered:")
+                        for v in _violations:
+                            print(f"   - {v}")
+                        _mark_trial_invalidated(run_id, "; ".join(_violations))
+                        update_state(path=RUN_DIR, status="paused_for_human",
+                                     flags={"conformance_violation": True},
+                                     conformance_violations=_violations)
+                        next_stage = "human_pause"
 
             elif current_stage == "verdict_interpreter":
                 _interp = load_yaml(ARTIFACTS / "verdict_interpretation.yaml")

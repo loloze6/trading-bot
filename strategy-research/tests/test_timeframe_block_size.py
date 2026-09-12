@@ -91,13 +91,11 @@ def test_accepts_raw_seconds():
 #    significance calc, unrelated to A8.6), guarded below.
 # ---------------------------------------------------------------------------
 
-def test_prescreen_no_longer_carries_its_own_fallback():
-    """prescreen_signal's old `max(_BLOCK_SIZE_1H // 4, 6)` fallback returned 6
-    for EVERY non-1h/1d timeframe -- right for 4h by coincidence, but 8x too
-    small for 30m and 48x for 5m, inflating n_eff toward false significance."""
-    src = (_SR / "tools" / "prescreen_signal.py").read_text(encoding="utf-8")
-    assert "block_size = bars_per_day(timeframe)" in src, "must use the shared derivation"
-    assert "block_size = max(_BLOCK_SIZE_1H // 4, 6)" not in src, "the guessed fallback must be gone"
+# test_prescreen_no_longer_carries_its_own_fallback REMOVED 2026-09-12
+# (E-039 step 5): read prescreen_signal.py's own source directly to confirm
+# a fix in a now-deleted file. The property it guarded (no venue-specific
+# code hand-rolling its own block-size fallback instead of the shared
+# bars_per_day() derivation) has no live analog left to check.
 
 
 # ---------------------------------------------------------------------------

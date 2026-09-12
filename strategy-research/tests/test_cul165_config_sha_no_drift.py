@@ -10,15 +10,14 @@ The fix snapshots the config bytes once at tool start, hashes those bytes, write
 them verbatim to `<out_dir>/config.snapshot.json`, and points every downstream
 run at the snapshot. Hash and run then derive from the same frozen bytes.
 
-Three tests:
+Two tests:
   - S1 drift: run_protocol.main() -- a run_backtest that rewrites the original
     config mid-run must not change what protocol_summary.json's config_sha256
     certifies.
-  - S2 drift: prescreen_signal.run_prescreen() -- same, via _extract_forecasts.
   - canonicalization pin (delta-3): `_config_sha(bytes)` must json.loads+
     canonicalize identically to the path overload AND to the engine manifest
     formula, on a NON-canonical (pretty, unsorted) fixture. Bites a raw-bytes
-    regression that the two self-consistent drift tests would miss.
+    regression the drift test alone would miss.
 """
 import json
 import sys
@@ -26,7 +25,6 @@ from hashlib import sha256
 from pathlib import Path
 
 import pytest
-from _cache_guard import requires_cache
 
 ROOT = Path(__file__).parent.parent
 TOOLS_PATH = ROOT / "tools"
@@ -36,10 +34,6 @@ for _p in (TOOLS_PATH, TBOT_PATH):
         sys.path.insert(0, str(_p))
 
 import run_protocol as rp  # noqa: E402
-import prescreen_signal as ps  # noqa: E402
-
-_OHLCV = TBOT_PATH / "local_data" / "BTCUSDT_1h.csv"
-_FUNDING = TBOT_PATH / "local_data" / "BTCUSDT_funding_8h.csv"
 
 
 def _canonical_sha256(path) -> str:
@@ -124,75 +118,17 @@ def test_s1_run_protocol_stamp_certifies_what_ran(monkeypatch, tmp_path):
     assert json.loads(snapshot.read_text(encoding="utf-8")) == config_a
 
 
-# ---------------------------------------------------------------------------
-# S2 -- prescreen_signal.py: full-prescreen-sweep drift window
-# ---------------------------------------------------------------------------
-
-_S2_CONFIG_A = {
-    "aux_feeds": ["funding_rate"],
-    "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
-    "strategies": {"warmup": 3, "regimes": {
-        "unknown": {"components": [{
-            "id": "funding_mr",
-            "class": "strategies.strategy_components.FundingRateMeanReversionComponent",
-            "weight": 1.0, "transforms": [], "params": {"threshold": 0.0002, "scaling_factor": 10.0},
-        }]},
-        "trending": None, "mean_reversion": None, "chop": None,
-    }},
-}
-
-
-@requires_cache(_OHLCV, _FUNDING)
-def test_s2_prescreen_stamp_certifies_what_ran(monkeypatch, tmp_path):
-    """_extract_forecasts rewrites the original config the moment it is invoked;
-    prescreen_result.yaml's config_sha8 must still certify the config the signal
-    extraction actually parsed. Delegates to the real _extract_forecasts so the
-    full IC pipeline runs on real data."""
-    config_a = json.loads(json.dumps(_S2_CONFIG_A))
-    config_b = json.loads(json.dumps(_S2_CONFIG_A))
-    config_b["strategies"]["regimes"]["unknown"]["components"][0]["params"] = {
-        "threshold": 0.0009, "scaling_factor": 4.0,
-    }
-    config_path = tmp_path / "config.json"
-    config_path.write_text(json.dumps(config_a), encoding="utf-8")
-    sha_a = _canonical_sha256(config_path)
-    assert _canonical_sha256_of_obj(config_b) != sha_a  # B genuinely differs
-
-    protocol = {
-        "symbols": ["BTCUSDT"],
-        "timeframe": "1h",
-        "windows": [{"label": "test", "test": {"start": "2019-09-10", "end": "2020-01-01"}}],
-    }
-    protocol_path = tmp_path / "protocol.json"
-    protocol_path.write_text(json.dumps(protocol), encoding="utf-8")
-
-    recorded = {}
-    _orig_extract = ps._extract_forecasts
-
-    def _stub_extract(cfg_path, bars_df, expected_step=None):
-        config_path.write_text(json.dumps(config_b), encoding="utf-8")
-        recorded["ran_sha"] = _canonical_sha256(cfg_path)
-        return _orig_extract(cfg_path, bars_df, expected_step=expected_step)
-
-    monkeypatch.setattr(ps, "_extract_forecasts", _stub_extract)
-    result = ps.run_prescreen(str(config_path), str(protocol_path),
-                              run_id="cul165_s2", out_dir=tmp_path)
-
-    assert recorded["ran_sha"] == sha_a, (
-        "_extract_forecasts parsed a different config than config_sha8 certifies "
-        "-- config-hash drift."
-    )
-    assert result["config_sha8"] == sha_a[:8]
-    snapshot = tmp_path / "config.snapshot.json"
-    assert snapshot.exists()
-    assert json.loads(snapshot.read_text(encoding="utf-8")) == config_a
+# S2 (prescreen_signal.py: full-prescreen-sweep drift window) removed along
+# with the signal_prescreen stage and prescreen_signal.py itself (E-039 step
+# 5, 2026-09-12) -- the config-hash-drift risk this guarded is specific to a
+# stage that no longer exists; run_protocol.py's own drift window is S1 above.
 
 
 # ---------------------------------------------------------------------------
 # delta-3 -- canonicalization pin (the test that bites a raw-bytes regression)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("mod", [rp, ps], ids=["run_protocol", "prescreen_signal"])
+@pytest.mark.parametrize("mod", [rp], ids=["run_protocol"])
 def test_config_sha_bytes_overload_canonicalizes_like_path_and_engine(mod, tmp_path):
     """`_config_sha(bytes)` must json.loads then canonicalize (sort_keys, compact)
     -- the SAME value as the path overload and the engine manifest formula

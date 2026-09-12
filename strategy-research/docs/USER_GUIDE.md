@@ -19,7 +19,6 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [Stage 5 — `refinement_planner`](#stage-5--refinement_planner)
     - [Stage 6 — `backtest_specification`](#stage-6--backtest_specification)
     - [Stage 14 — `data_availability_gate`](#stage-14--data_availability_gate)
-    - [Stage 7 — `signal_prescreen`](#stage-7--signal_prescreen)
     - [Stage 8 — `protocol_execution`](#stage-8--protocol_execution)
     - [Stage 9 — `regime_detector_validation`](#stage-9--regime_detector_validation)
     - [Not a stage — `regime_auditor` (a human procedure)](#not-a-stage--regime_auditor-a-human-procedure)
@@ -30,7 +29,6 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [After validation_gate](#after-validation_gate)
     - [After refinement_planner](#after-refinement_planner)
     - [After backtest_specification](#after-backtest_specification)
-    - [After signal_prescreen](#after-signal_prescreen)
     - [After verdict_interpreter — the Altitude System](#after-verdict_interpreter--the-altitude-system)
     - [Circuit Breakers (anti-loop protection)](#circuit-breakers-anti-loop-protection)
     - [After campaign_review](#after-campaign_review)
@@ -58,7 +56,6 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
   - [`schedulability.yaml` (campaign level)](#schedulabilityyaml-campaign-level)
   - [`campaign_state.yaml`](#campaign_stateyaml)
   - [Handoff files (`handoffs/{from}_to_{to}.yaml`)](#handoff-files-handoffsfrom_to_toyaml)
-  - [`prescreen_result.yaml`](#prescreen_resultyaml)
   - [`trade_diagnostics.json`](#trade_diagnosticsjson)
   - [`regime_detector_report.yaml`](#regime_detector_reportyaml)
   - [`regime_audit_decision.yaml`](#regime_audit_decisionyaml)
@@ -189,15 +186,12 @@ block answers *"what does it do and why"*.
    [Claude]  6  backtest_specification
                │ spec_ready
    [Tool]   14  data_availability_gate         (E-054 Layer 2, OFF BY DEFAULT —
-               ├── validate ──────────────────► 7            env E054_DATA_AVAILABILITY_GATE=1)
+               ├── validate ──────────────────► 8            env E054_DATA_AVAILABILITY_GATE=1)
                ├── refine ──► human_pause
                └── decline ─► completed_rejected
                │
-   [Tool]    7  signal_prescreen
-               ├── proceed_to_backtest ─► 8
-               └── kill_* / refine_* ───────────► 11
-               │
-   [Tool]    8  protocol_execution
+   [Tool]    8  protocol_execution             (always runs a full backtest —
+               │                                there is no pre-backtest signal gate)
                │
    [Tool]    9  regime_detector_validation      (before the verdict, if stale)
                │
@@ -219,14 +213,16 @@ block answers *"what does it do and why"*.
 `[Claude]` an LLM stage the orchestrator dispatches · `[Tool]` a deterministic
 Python stage, no LLM call.
 
-**Numbering.** Stages keep the numbers this guide has always used, so 1 and 10
-are missing from the diagram on purpose: `research_brief` is an input rather
-than a step, and `regime_auditor` is a human procedure the orchestrator never
-dispatches. Both are still documented below. `data_availability_gate` is
+**Numbering.** Stages keep the numbers this guide has always used, so 1, 7
+and 10 are missing from the diagram on purpose: `research_brief` is an input
+rather than a step, `regime_auditor` is a human procedure the orchestrator
+never dispatches, and stage 7 (a pre-backtest signal gate) no longer exists —
+the pipeline always runs a full backtest instead. `research_brief` and
+`regime_auditor` are still documented below. `data_availability_gate` is
 numbered **14**, out of position in the diagram above — it was added later
-(E-054, 2026-09-11) and slotted into its real execution position (between 6
-and 7) without renumbering every stage after it; the number says nothing
-about execution order, the diagram position does.
+(E-054) and slotted into its real execution position (between 6 and 8)
+without renumbering every stage after it; the number says nothing about
+execution order, the diagram position does.
 
 > **Every strategy currently trades all the time.** None of them switches
 > itself on and off by market condition. Why, and what would change it, is in
@@ -251,7 +247,6 @@ one place to read when the answer matters.
 | 5 | [**refinement_planner**](#stage-5--refinement_planner) | Claude | Decide whether the blockers can be fixed inside the current engine, and how. |
 | 6 | [**backtest_specification**](#stage-6--backtest_specification) | Claude | Compile the validated idea into a config the engine can actually execute. |
 | 14 | [**data_availability_gate**](#stage-14--data_availability_gate) | Python tool | Off by default (E-054). Check, per window and per declared aux feed, whether the data this variant needs can actually be assembled — before spending an expensive backtest on it. |
-| 7 | [**signal_prescreen**](#stage-7--signal_prescreen) | Python tool | Decide cheaply, on the signal alone, whether this deserves an expensive backtest. |
 | 8 | [**protocol_execution**](#stage-8--protocol_execution) | Python tool | Trade the strategy across every walk-forward window and record what happened. |
 | 9 | [**regime_detector_validation**](#stage-9--regime_detector_validation) | Python tool | Establish whether the regime detector is trustworthy enough to condition any metric. |
 | — | [**regime_auditor**](#not-a-stage--regime_auditor-a-human-procedure) | ⚠️ Human, not dispatched | Judge the detector without letting profitability leak into the decision. **Not dispatched by the orchestrator** — see the block. |
@@ -303,21 +298,21 @@ family, [altitude](#g-altitude), exhausted — are in the [Glossary](#6-glossary
 | **skill** | The instruction file an LLM stage is given, e.g. `workflow_artifacts/skills/quant-validation/SKILL.md`. It tells the model what to produce. A skill file can exist on disk without anything ever calling it. |
 | **`library_category`** | A field in `config/indicator_library.yaml` saying what **kind** of indicator something is — trend, volatility, funding, and so on. Two variants built from different categories are genuinely different ideas; two that differ only in a threshold are the same idea twice. |
 | **`data_requirements`** | Which data feeds a variant needs. The other way a variant can be genuinely different: same category, but it reads a feed the sibling does not. |
-| **`CandleBuilder`** | The engine component that aggregates whatever rows it is fed into finished bars of `interval_seconds`. **Corrected 2026-09-03:** this entry used to claim it is how a 4h test can run off 1h data — that is false. `CcxtFetcher` fetches and cache-keys at the exact requested timeframe, so `CandleBuilder` is only ever fed rows already at that timeframe; there is no finer-cache fallback in the engine. Reproduced live re-running `run_060` (4h) after the CUL-230 fix shipped — see [CUL-250](https://linear.app/culito/issue/CUL-250). The line below, about `prescreen_signal.py::_resolve_ohlcv_source`, is the one place this derivation genuinely exists today. |
+| **`CandleBuilder`** | The engine component that aggregates whatever rows it is fed into finished bars of `interval_seconds`. `CcxtFetcher` fetches and cache-keys at the exact requested timeframe, so by default `CandleBuilder` is only ever fed rows already at that timeframe — there is no automatic finer-cache derivation. `trading-bot`'s `DataManager` accepts an independent, opt-in `fetch_interval_seconds` (off by default) that fetches/caches at a finer resolution and lets `CandleBuilder` aggregate up during replay; a caller must opt in, it is never automatic. |
 | **`KNOWN_STATUSES`** | A stage's list of result values it recognises. A value outside the list is not guessed at — the run pauses for a human. Being strict here is deliberate; see stage 6. |
 | **`REPLICATION_DIAGNOSTIC`** | A constraint a brief can carry meaning "re-run this exactly, do not explore". It is why an expansion stage can legitimately return one variant instead of 3–6. |
 | **raises** | Stops the run with an error instead of carrying on. Used deliberately where continuing would produce a decision from bad data — the project's rule is that anything feeding a decision fails loudly rather than quietly. |
 
 > **Two kinds of name appear in these blocks, and only one is a term you need
-> to learn.** A name followed by a file and a location — `_extract_forecasts`
-> (`prescreen_signal.py::_extract_forecasts`) — is the **address of the code that does it**, not
-> vocabulary: the sentence around it already says what happens, and the name is
-> there so you can go and read it. A name in the table below **is** vocabulary,
-> and you will not follow the block without it. When a block says a step
-> **raises**, that means the run stops with an error rather than continuing on a
-> bad value.
+> to learn.** A name followed by a file and a location — e.g.
+> `run_protocol.py::_a851a_episode_significance` — is the **address of the
+> code that does it**, not vocabulary: the sentence around it already says
+> what happens, and the name is there so you can go and read it. A name in
+> the table below **is** vocabulary, and you will not follow the block
+> without it. When a block says a step **raises**, that means the run stops
+> with an error rather than continuing on a bad value.
 
-Amendment codes (`A2.1`, `A8.6`, …) are defined in
+Amendment codes (`A2.1`, …) are defined in
 [`AMENDMENTS_01-06.md`](../engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md);
 each block glosses the ones it uses.
 
@@ -502,12 +497,12 @@ for it.
 **Design rationale.**
 - Falsification is cheapest before implementation. A failure mode found here
   costs a paragraph; found after a backtest it costs a trial.
-- The A8.6 [power check](#g-power-check) previously stopped an hypothesis here on an
-  *estimated* activation rate, before any component was built. **Removed
-  2026-09-11 (E-039):** the epic's whole premise is "always backtest" — a
-  guessed pre-flight kill is replaced by E-054's data-availability gate (a
-  real structural/data check) and a real, measured post-backtest go/no-go
-  once the backtest has actually produced numbers, rather than an early
+- There is no pre-flight kill on an *estimated* activation rate here — the
+  pipeline's premise is "always backtest": E-054's data-availability gate
+  handles the real structural/data question (can this even be assembled),
+  and the go/no-go on the signal itself is decided from real, measured
+  numbers once a backtest has actually run (`determine_route`/`cost_check`,
+  `trading-bot/performance/signal_statistics.py`), not from an early
   statistical guess.
 
 **Stage input:** `expanded_hypothesis_card.yaml`, `hypothesis_card.yaml`,
@@ -526,14 +521,9 @@ the latter for a multi-variant family validation (run_053, 2026-07-06, F4f). If
 neither key is present it raises rather than guessing
 (`::determine_post_validation_route`).
 
-**2. A8.6 power gate — REMOVED 2026-09-11 (E-039).** Previously, after an
-`approve`/`conditional_approve`, `_run_a86_power_check` ran and could block
-here with `route: insufficient_power_a_priori`, no component ever built. That
-function, its inline mirror, and the standalone `tools/power_check.py` CLI
-are all deleted — an `approve`/`conditional_approve` now routes to
-`backtest_specification` unconditionally. Old runs from before this date may
-still carry a `prescreen_result.yaml` stub in this shape (see that artifact's
-own section below) — no new run will ever produce one.
+**2. No power gate here.** An `approve`/`conditional_approve` routes to
+`backtest_specification` unconditionally — there is no a-priori power check
+that can block a run at this stage.
 
 **3. `conditional_approve` aggregates per-variant conditions.**
 The family-schema output has no top-level `conditions`, so they are collected
@@ -625,16 +615,17 @@ actually execute.
 **Features / logic in place**
 
 **1. Exactly two known statuses; anything else pauses.**
-`spec_ready` → `signal_prescreen`. `component_gap` → `human_pause` with a
-pointer to `STRATEGY_EXTENDING.md`. **Any unrecognised status also pauses**,
-printing that the SKILL may need a new status case rather than guessing
+`spec_ready` → `protocol_execution` (optionally via `data_availability_gate`
+first — see below). `component_gap` → `human_pause` with a pointer to
+`STRATEGY_EXTENDING.md`. **Any unrecognised status also pauses**, printing
+that the SKILL may need a new status case rather than guessing
 (`::determine_post_spec_route`). Failing closed on an unknown status is deliberate.
 
 **Routes / outcomes**
 
 | `decision.status` | Next |
 |---|---|
-| `spec_ready` | stage 14 `data_availability_gate` if `E054_DATA_AVAILABILITY_GATE=1`, else stage 7 `signal_prescreen` directly (default — see stage 14's own block) |
+| `spec_ready` | stage 14 `data_availability_gate` if `E054_DATA_AVAILABILITY_GATE=1`, else stage 8 `protocol_execution` directly (default — see stage 14's own block) |
 | `component_gap` | `human_pause` — extend the engine, then resume |
 | anything else | `human_pause` |
 
@@ -647,16 +638,15 @@ No LLM call, no token cost.
 **Runs:** after `backtest_specification` emits `spec_ready` and the config
 passes schema validation — **only when** the environment variable
 `E054_DATA_AVAILABILITY_GATE=1` is set. Unset (the default): this stage is
-never reached, and `spec_ready` routes straight to stage 7
-`signal_prescreen`, byte-identical to every run before E-054
+never reached, and `spec_ready` routes straight to stage 8
+`protocol_execution`
 (`run_phase1_research.py::_E054_GATE_ENABLED`).
 
 **Objective.** A hard, mechanical, data-only check: for the symbols,
 timeframe, windows, and declared aux feeds this variant needs, can the data
-actually be assembled — *before* an expensive backtest (or even the cheaper
-`signal_prescreen`) is ever invoked on it. Real precedent this stage exists to
-catch: `run_050`/`run_060` both crashed mid-`protocol_execution` on exactly
-this failure mode (CUL-230).
+actually be assembled — *before* an expensive backtest is ever invoked on it.
+Real precedent this stage exists to catch: `run_050`/`run_060` both crashed
+mid-`protocol_execution` on exactly this failure mode (CUL-230).
 
 **Design rationale.**
 - Two layers, because they answer genuinely different questions. **Layer 1**
@@ -674,8 +664,8 @@ this failure mode (CUL-230).
   keep the rest) is possible instead of an all-or-nothing verdict.
 - Resolves the protocol via the SAME shared resolver
   (`tools/protocol_resolution.py::resolve_protocol_path`, extracted from this
-  orchestrator's own `_resolve_protocol_path`) that `signal_prescreen`/
-  `protocol_execution` use — so it checks the literal protocol that will
+  orchestrator's own `_resolve_protocol_path`) that `protocol_execution`
+  uses — so it checks the literal protocol that will
   execute, never a hypothesis-level declared timeframe (those can silently
   diverge from what actually runs — confirmed during E-054's own
   characterization).
@@ -703,227 +693,17 @@ detail.
 
 | `data_availability_gate.yaml`'s `outcome` | Next |
 |---|---|
-| `validate` | stage 7 `signal_prescreen` |
+| `validate` | stage 8 `protocol_execution` |
 | `refine` | `human_pause` — a human narrows the variant (drop the listed window(s)/feed), writes `human_resolution.yaml`, then `--resume` |
 | `decline` | `completed_rejected` — a required series does not exist at all, no workaround |
 
 ---
 
-#### Stage 7 — `signal_prescreen`
-**Engine:** Python tool (`tools/prescreen_signal.py`), launched as a
-subprocess by the orchestrator (`workflow/run_phase1_research.py::run_tool_worker`
-`run_tool_worker`). No LLM call, no token cost.
-**Runs:** after `backtest_specification` emits `spec_ready`. The tool always
-runs — the A8.6 power pre-flight that used to wrap it was removed 2026-09-11
-(E-039, see logic step 0 below and the `validation` stage section above).
-
-**Objective.** Decide cheaply, on the signal alone, whether this hypothesis
-deserves an expensive walk-forward backtest.
-
-**Design rationale.**
-- A full backtest costs compute, and every run is counted as a trial whether
-  it passes or dies, so it also costs statistical budget. Trials spent on
-  hopeless signals raise the bar for the promising ones.
-- The [prescreen](#g-prescreen) answers the question for one pass over the forecast series:
-  no portfolio simulation, no backtest engine, no LLM call.
-- It asks only the two things answerable without simulating a portfolio: does
-  the signal predict anything, and could it out-earn its trading costs.
-- It runs after specification, not before, so the answer is about the compiled
-  config that would actually be backtested — not about the prose hypothesis.
-
-**Terms used in this block**
-
-| Term | In plain words |
-|---|---|
-| **IC** (information coefficient) | How well the forecast ranked what actually happened next. `+1` perfect, `0` useless, `-1` perfectly backwards. Measured with Spearman rank correlation. |
-| **active bar** | A bar where the signal actually said something (forecast non-zero/changing). A selective signal is silent most of the time. |
-| **bps** (basis point) | One hundredth of a percent. Costs and edges are quoted in bps per trade. |
-| **effective sample** (`n_eff`) | How many genuinely *independent* observations there are. Adjacent hours move together, so 8928 bars are worth far fewer independent facts — dividing by a block size is how that is accounted for. |
-| **episode** | A burst of consecutive active bars treated as **one** event rather than many, for signals that fire in clusters. |
-| **A8.6** | Rule: check up front that the sample is even big enough to detect the effect. If not, do not spend the trial. **Removed 2026-09-11 (E-039)** — see the `validation` stage section above; kept here only as a vocabulary entry for reading old runs/docs. |
-| **A8.3** | Rule: score a selective signal on the bars where it spoke. An IC over all bars is swamped by the silent ones and collapses toward zero by construction. |
-| **A8.1** | Rule: a good IC alone is never a pass — the cost gate must clear too. A signal with IC 0.2145 still lost 26 bps per trade. |
-| **A8.5.1a** | Rule: for signals that fire in bursts, count events, not bars. |
-| **A2.1** | "Detector-confidence deadlock escape" — the rule letting a hypothesis be judged without a trusted regime detector. Requires all-bars IC. |
-| **A2.3** | "Post-`unusable` policy" — with no trustworthy detector, regime-conditioned numbers are not evidence. Rule 5 says the escape test must use all-bars IC. |
-| **A6.2** | Rule: deflated Sharpe needs the spread of results across trials, so every evaluation counts as a trial — kills included. |
-| **F5c** | Rule: "the code broke" must never be recorded as "the idea failed". |
-| **#50** | Issue: a forecast/return pair straddling a hole in the data cache is not a real observation. |
-
-Full text of every amendment code:
-[`AMENDMENTS_01-06.md`](../engineering/improvements/done/design_and_docs/AMENDMENTS_01-06.md).
-
-**Stage input**
-
-| What | Where it comes from | Required? |
-|---|---|---|
-| `artifacts/candidate_strategy_config.json` | stage 6 `backtest_specification` | yes |
-| protocol JSON (`symbols`, `windows`, `timeframe`) | `_resolve_protocol_path()` — `run_phase1_research.py::run_tool_worker` | yes |
-| `config/cost_model.yaml` | round-trip cost in bps per symbol, plus `safety_factor` (default 2.0) | yes |
-| `trading-bot/local_data/{SYMBOL}_{tf}.csv` | price cache; a coarser timeframe is derived from a finer one (`_resolve_ohlcv_source`, `prescreen_signal.py::_resolve_ohlcv_source`) | yes |
-| aux feeds — funding rate, fear & greed | `prescreen_signal.py::_load_funding_rate` / `::_load_fear_greed` | only if the config declares them |
-| `config/campaign_data_policy.yaml` | era boundaries and episode settings | only on the A8.5.1a path |
-| `runs/{run_id}/artifacts/regime_audit_decision.yaml` | stage 10 | only if present — see the side effect below |
-| `campaign_state.yaml` | read by the orchestrator wrapper, not the tool | yes |
-
-**Stage output**
-
-| What | Written where | Read by |
-|---|---|---|
-| `prescreen_result.yaml` | `runs/{run_id}/prescreen/`, copied to `artifacts/` (`run_phase1_research.py::run_tool_worker`) | `verdict_interpreter`, orchestrator routing |
-| *(side effect)* `regime_audit_decision.yaml` — `ungated_escape_eligible` rewritten in place | `runs/{run_id}/artifacts/` | **stage 10's file, edited by stage 7** (`prescreen_signal.py::run_prescreen` → `::_resolve_ungated_escape`) |
-| *(side effect, orchestrator not tool)* one row in `campaign_state.trial_sharpes` | campaign root | `deflate_sharpe.py`, campaign accounting |
-
-**Features / logic in place**
-
-Each step: **title — one-line summary.** Details follow.
-
-**0. A8.6 power pre-flight — REMOVED 2026-09-11 (E-039).** This step used to
-let the orchestrator kill a run here (and earlier, at the [validation
-gate](#g-validation-gate)) on an *estimated* activation rate before the tool
-ever launched. Both call sites, the inline implementation, and the standalone
-`tools/power_check.py` mirror are deleted — the tool now always runs.
-Old runs from before this date may carry a `prescreen_result.yaml` stub
-produced by this step; no new run will ever produce one.
-
-**1. Setup — load the config and protocol, and fix the block size.**
-`block_size = bars_per_day(timeframe)` comes from `tools/timeframe.py`. No
-fallback: an unparseable timeframe raises (`prescreen_signal.py::run_prescreen`).
-
-**2. Extract the forecast — replay the real strategy over the full range.**
-Per symbol, load prices from the earliest window start to the latest window
-end, merge aux feeds, and drive the actual strategy through `CandleBuilder` to
-produce a forecast per bar (`_extract_forecasts`, `::_extract_forecasts`).
-
-**3. Gap suppression (#50 A) — drop pairs that straddle a hole in the data.**
-If two bars are not one expected step apart, the "next-bar return" is not a
-next-bar return, so the pair is discarded. Counts are surfaced per symbol,
-because a pooled figure can read "no gap effect" while one symbol's whole
-sample was destroyed (red-team D6) (`::run_prescreen`, `::run_prescreen`).
-
-**4. Degenerate-input guards — fail loud rather than flattering.**
-A symbol left with zero usable records by step 3 raises (`::run_prescreen`). If no symbol
-loaded usable data at all, the run raises rather than emitting a route from
-zero bars (`::run_prescreen`, added 2026-08-28 after run_060).
-
-**5. Compute the IC — two of them, for two different jobs (A8.3).**
-`ic_active_bars` (only bars where the signal spoke) is the primary gate.
-`ic_all_bars` is tie-dominated for a sparse signal and is reserved for the
-A2.1 escape test, which requires it.
-
-**6. Significance — is the IC bigger than luck, given how few independent observations there are?**
-Default method is **block-deflated Fisher z**: `n_eff = active_n / block_size`,
-then `z = IC * sqrt(n_eff - 3)`, labelled `block_{block_size}_fisher_z`
-(`::_block_adjusted_significance`, `::run_prescreen`). The label is derived from the block size actually used — it
-read `block_24_fisher_z` until 2026-08-28 while `block_size` had already become
-per-timeframe, so a 4h run stamped `block_24` while dividing by 6.
-- **#50 (B):** a block that cannot be placed without spanning a gap does not
-  exist and does not count toward `n_eff`. Counted per symbol, because pooling
-  first would read the seam between two symbols as a contiguous step (`::run_prescreen`).
-- **A8.5.1a episode-blocked** replaces it on request (config
-  `significance_methodology: episode_blocked_a851a`) for multi-era data
-  (`::run_prescreen`). With the flag absent, behaviour is unchanged, so archived runs
-  stay reproducible.
-- **Stationary block bootstrap** replaces it automatically when the active-bar
-  forecast is *structurally* degenerate — one constant magnitude whenever
-  active, which makes `ic_active_bars` undefined by construction rather than a
-  no-edge result (`::_stationary_block_bootstrap_ic_significance`, branch `::run_prescreen`, detector `::_is_degenerate_active_forecast`; found 2026-07-07 via
-  the P4_ts_trend shakedown). A merely small active sample is a power problem,
-  not a structural one, and is left to A8.5.1a.
-
-**7. Turnover proxy — infer how often this would trade.**
-Active bars per trade implies a holding period (`_compute_turnover_proxy`,
-`::_compute_turnover_proxy`). Redefined 2026-07-07 to count activity transitions; the previous
-sign-flip-only counter silently merged long-only episodes across flat gaps
-into a single trade.
-
-**8. Cost check (Layer 2) — could the edge out-earn the fees?**
-Estimated gross edge (`ic_for_cost` × `sigma_bar_bps` × holding period) versus
-round-trip cost from `cost_model.yaml`. Passes when `edge_to_cost_ratio >=
-safety_factor` (default 2.0) (`::_cost_check`).
-- `sigma_bar_bps` is measured from the records. If no symbol yields an
-  estimate, the placeholder `_DEFAULT_SIGMA_BAR_BPS = 15.0` is substituted and
-  `sigma_is_placeholder: true` is written into the [artifact](#g-artifact). **When that flag
-  is true, the cost check and every required-IC figure are invalid.**
-
-**9. Route decision — combine the two gates (A8.1).**
-`_determine_route` (`::_determine_route`); see the route table below. Both IC significance
-**and** `cost_check.pass` are required for `proceed_to_backtest`.
-
-**10. F5c override — "the code broke" is not "the idea failed".**
-Takes priority over every route above (`::run_prescreen`). If `active_n_bars == 0`, or
-swallowed component exceptions exceed 5% of processed bars, the route becomes
-`no_signal_artifact` rather than `kill_no_ic` — the latter claims the idea was
-tested, and here it was not. From run_044 (2026-07-04): a
-`FundingRateMeanReversionComponent` divide-by-zero produced `active_n_bars=0`,
-which read as a real `kill_no_ic` and nearly closed an untested family.
-
-**11. A2.3 — per-regime IC is deliberately not computed.**
-`ic_by_regime` is emitted as `{suspended: true}` with its reason, so the
-absence cannot be mistaken for an oversight. Only ungated IC decides.
-
-**12. Side effect — this stage writes into a file another stage owns.**
-It edits `regime_audit_decision.yaml`, which belongs to stage 10, setting one
-field: whether this hypothesis is allowed to be judged without a trustworthy
-regime detector. It uses the all-bars IC to decide, because an IC measured only
-on bars the detector selected would be circular — you would be using the
-detector to judge whether you can proceed without it
-(`::run_prescreen`, `::_resolve_ungated_escape`). The code labels
-this "A9.1", which appears to be the wrong code — see [E037-13](../engineering/roadmap/E-037/FINDINGS.md#e037-13).
-
-**13. Write the artifact.** `prescreen_result.yaml` (`::run_prescreen`).
-
-**14. A6.2 trial recording — the orchestrator logs the trial after the tool returns.**
-`_record_prescreen_trial` (`run_phase1_research.py::_record_prescreen_trial`, called at `::run_tool_worker`).
-Kills count as trials; `statistic_valid = "neither"` when there is no backtest
-Sharpe. Upsert on `(trial_id, "prescreen")` since 2026-08-16 (issue #28 /
-E-025), so a crash-retry replaces the stale row instead of being swallowed.
-**Not in `prescreen_signal.py`** — see [E037-06](../engineering/roadmap/E-037/FINDINGS.md#e037-06).
-
-**Routes / outcomes**
-
-| Route | Condition | Next |
-|---|---|---|
-| `no_signal_artifact` | `active_n_bars == 0`, or component-error rate > 5% — overrides everything (F5c) | verdict_interpreter; engineering failure, not evidence |
-| `insufficient_power_a_priori` | **Historical only, pre-2026-09-11 runs** — A8.6: `min_detectable_ic > plausible_ic_upper`. Removed (E-039); no new run can produce this route. | `completed_rejected`, no component built |
-| `kill_no_ic` | IC not significant at `p < 0.10` | verdict_interpreter |
-| `refine_inverted_ic` | IC significant but negative | verdict_interpreter — flip polarity |
-| `kill_cost_hurdle` | IC significant positive, cost fails, and `p > 0.05` or `ratio < 0.5` — structural barrier | verdict_interpreter |
-| `refine_cost_hurdle` | IC significant positive, cost fails, but marginally — widen threshold or lengthen holding | verdict_interpreter |
-| `proceed_to_backtest` | IC significant positive **and** `cost_check.pass` (A8.1) | stage 8 `protocol_execution` |
-
-<details>
-<summary><strong>Notes, history and traps</strong> — measured counts, past incidents, and the reasons behind each guard. Open when you need the evidence; skip when you need the flow.</summary>
-
-- Signal layer only — no portfolio simulation, no backtest engine.
-- **Two thresholds, one documented.** `_SIG_THRESHOLD = 0.10` is the main IC
-  gate (`prescreen_signal.py::_SIG_THRESHOLD`); a separate `p > 0.05` inside the cost
-  branch decides `kill_cost_hurdle` vs `refine_cost_hurdle`.
-- **`gap_skipped_pct` is not the cache's contamination rate.** It counts pairs
-  actually reached after warmup; gaps inside the warmup are never reached, so
-  it reads lower than `tools/cache_gap_census.py` by a config-dependent amount
-  (red-team D4/D5). For the cache rate, run the census.
-- **The gap fix is partial, knowingly.** (A) fixes the return label, (B) the
-  block count. Neither fixes rolling indicators, which still span the holes.
-  Segment-and-re-warm would, and was rejected: it destroys 91% of the
-  `kraken_SUIUSD` train sample.
-- `n_eff_nominal_blocks` is computed over the post-(A) active count, so it
-  compares like-for-like with `n_eff_placeable_blocks`, not the pre-#50 value.
-
-</details>
-
-**Owned by which code**
-
-`tools/prescreen_signal.py::run_prescreen` (`run_prescreen`) · `::_determine_route` (`_determine_route`)
-· `::_block_adjusted_significance` (`_block_adjusted_significance`) · `::_stationary_block_bootstrap_ic_significance` (stationary block bootstrap)
-· `::_cost_check` (`_cost_check`) · `::_resolve_ungated_escape` (`_resolve_ungated_escape`) ·
-`workflow/run_phase1_research.py::run_tool_worker` (`run_tool_worker`) · `::run_loop` · `::_record_prescreen_trial` (`_record_prescreen_trial`)
-
----
-
 #### Stage 8 — `protocol_execution`
 **Engine:** Python tool (`tools/run_protocol.py`), launched as a subprocess.
-**Runs:** only on `proceed_to_backtest`. `default_next: verdict_interpreter`.
+**Runs:** unconditionally, after `backtest_specification` (optionally via
+`data_availability_gate` first). There is no pre-backtest signal gate that
+can skip it. `default_next: verdict_interpreter`.
 
 **Objective.** Actually trade the strategy across every walk-forward window and
 record what happened.
@@ -944,9 +724,9 @@ record what happened.
 | `pre_registration.yaml` | the registered `pass_rule` | yes for the C7 evaluation |
 | `research_brief.yaml` | stage 1 | yes since C7-EXT (funding-modelling precondition) |
 
-**`signal_real_but_subscale_vs_costs`** (a `root_cause.mechanism_failure` value): written by the `verdict_interpreter` LLM stage — a soft judgment call, not a threshold. Do not confuse it with `kill_cost_hurdle`/`refine_cost_hurdle` (`determine_route`, `trading-bot/performance/signal_statistics.py`), a real mechanical threshold (`edge ÷ cost` vs. 2.0/0.5) — built on branches `fix/cul-264-post-backtest-route`/`fix/cul-272-real-cost-check`, not yet merged to master, so still not live today.
+**`signal_real_but_subscale_vs_costs`** (a `root_cause.mechanism_failure` value): written by the `verdict_interpreter` LLM stage — a soft judgment call, not a threshold. Do not confuse it with `kill_cost_hurdle`/`refine_cost_hurdle` (`determine_route`, `trading-bot/performance/signal_statistics.py`), a real mechanical threshold (`edge ÷ cost` vs. 2.0/0.5) computed from real, measured backtest data — see `protocol_result.yaml`'s post-backtest fields below.
 
-**E-016 (fee-reduction autopsy field)**, built on top of the above (branch `feat/e016-fee-reduction-autopsy`, also not yet merged to master): once the mechanical route lands, a cost-dominated kill (`kill_cost_hurdle`/`refine_cost_hurdle`) is meant to feed `root_cause.fee_reduction_assessment.candidate_system` — narrowed from an earlier 5-option infra-level enum to 4 timing-only options: `trade_less_often`, `combine_nearby_trades`, `exit_later`, `enter_earlier`. See `workflow_artifacts/skills/verdict-interpreter/SKILL.md`'s "IMPROVEMENT 10" for the selection rule, and `trade_diagnostics.json`'s `summary.fee_reduction_metrics` for the 8 supporting diagnostic metrics (2 per lever) it reads to pick between them.
+**E-016 (fee-reduction autopsy field), not yet merged to master (branch `feat/e016-fee-reduction-autopsy`):** once landed, a cost-dominated kill (`kill_cost_hurdle`/`refine_cost_hurdle`) is meant to feed `root_cause.fee_reduction_assessment.candidate_system` — narrowed from an earlier 5-option infra-level enum to 4 timing-only options: `trade_less_often`, `combine_nearby_trades`, `exit_later`, `enter_earlier`. See `workflow_artifacts/skills/verdict-interpreter/SKILL.md`'s "IMPROVEMENT 10" for the selection rule, and `trade_diagnostics.json`'s `summary.fee_reduction_metrics` for the 8 supporting diagnostic metrics (2 per lever) it reads to pick between them.
 
 **Stage output**
 
@@ -985,6 +765,19 @@ evaluation then raised (`::run_tool_worker`). That third window previously left 
 trial row while the data had already been spent, so N was under-counted.
 Recording is wrapped so its own failure only logs; the original error is
 re-raised unchanged.
+
+**4. Pre-registration conformance gate — checked right after this stage.**
+Once `protocol_result.yaml` is written, the orchestrator's routing dispatch
+(`run_phase1_research.py::run_loop`, `protocol_execution` branch) runs
+`_check_protocol_execution_conformance` against `pre_registration.yaml`'s
+`machine_constraints`: it compares `protocol_result.yaml`'s `protocol_file`
+against the pinned `protocol_ref` (bare-filename match), and — when
+`significance_methodology: episode_blocked_a851a` is pre-registered — checks
+every symbol in `episode_blocked_significance_by_symbol` against
+`is_a851a_method()`. Any violation calls `_mark_trial_invalidated`
+(`run_phase1_research.py::_mark_trial_invalidated`) and pauses the run
+(`status="paused_for_human"`, `flags.conformance_violation: true`) rather
+than letting an un-registered test reach a verdict.
 
 <details>
 <summary><strong>Notes, history and traps</strong> — measured counts, past incidents, and the reasons behind each guard. Open when you need the evidence; skip when you need the flow.</summary>
@@ -1087,9 +880,9 @@ the stages it can hand to an LLM. A stage missing from the second cannot be
 dispatched even if something tried: `_build_stage_prompt` raises `ValueError`
 rather than guessing which instructions to use (`::_build_stage_prompt`). **No code writes
 `regime_audit_decision.yaml`** — the orchestrator only reads it if it already
-exists (`::run_loop`, `::run_loop`), and the sole writer anywhere is
-`prescreen_signal.py::_resolve_ungated_escape`, which updates an existing file and returns early if
-there is none. What happens in practice is a pause (`status="paused_for_human"`)
+exists (`::run_loop`, `::run_loop`); it is written only by a human running the
+regime-auditor skill by hand, including its `ungated_escape_eligible` field.
+What happens in practice is a pause (`status="paused_for_human"`)
 printing *"consult regime-auditor skill and regime_detector_report.yaml"*
 (`::determine_post_verdict_route`). See [E037-16](../engineering/roadmap/E-037/FINDINGS.md#e037-16).
 
@@ -1110,15 +903,11 @@ skill.
 `_inject_regime_context_into_handoff` passes the report and the audit decision
 into `protocol_to_verdict_interpreter.yaml` (`::run_loop`).
 
-**3. Stage 7 later rewrites part of this file.**
-`ungated_escape_eligible` is resolved by the prescreen — see stage 7.
-
 ---
 
 #### Stage 11 — `verdict_interpreter`
 **Engine:** Claude (skill `verdict-interpreter`)
-**Runs:** after the backtest, or directly after a prescreen kill.
-`default_next: dynamic_routing`.
+**Runs:** after the backtest. `default_next: dynamic_routing`.
 
 **Objective.** Decide what the result means and what to do next — and at what
 size of change.
@@ -1132,9 +921,8 @@ size of change.
 
 **Stage input:** `protocol_result.yaml`, `pass_rule_evaluation.yaml`
 (**required**), `trade_diagnostics.json`, `regime_detector_report.yaml` and
-`regime_audit_decision.yaml` if present, or `prescreen_result.yaml` on the
-kill path. `post_backtest_routes` (E-039/CUL-264, 2026-09-11) is injected
-directly into this stage's own handoff — not a separate file — when a real
+`regime_audit_decision.yaml` if present. `post_backtest_routes` (CUL-264) is
+injected directly into this stage's own handoff — not a separate file — when a real
 backtest produced measured trade/window data; see item 7 below.
 
 **Stage output:** `verdict_interpretation.yaml`; possibly `proposed_brief.yaml`,
@@ -1146,8 +934,7 @@ backtest produced measured trade/window data; see item 7 below.
 Checked **before** any circuit-breaker logic: if
 `root_cause.mechanism_failure == component_execution_error`, the run pauses for
 a human (`::determine_post_verdict_route`). No trial slot, no parameter-dimension slot, no family
-marked failed. F6 (2026-07-04). This is the same principle as stage 7's F5c
-override, applied one layer up — a component bug is not a research finding.
+marked failed. F6 (2026-07-04) — a component bug is not a research finding.
 
 **2. Regime misattribution pauses rather than routes.**
 `mechanism_failure == regime_misattribution` pauses for the regime-auditor
@@ -1177,7 +964,7 @@ What the artifact carries is `status`.
 A pass writes `promotion_audit.yaml` and routes to `holdout_evaluation`
 (`::_dispatch_verdict_route`); it is not a promotion.
 
-**7. Post-backtest route is injected as context, never a gate (E-039/CUL-264, 2026-09-11).**
+**7. Post-backtest route is injected as context, never a gate (CUL-264).**
 `_inject_post_backtest_route_into_handoff` (`::run_loop`) surfaces each
 window's real, measured `post_backtest_route`/`post_backtest_route_real`
 (computed by `signal_statistics.py::determine_route`/`cost_check` from
@@ -1186,10 +973,9 @@ actual trade/correlation data, not an estimate) into
 telling the model to treat it as supporting evidence — same as
 `forecast_return_corr` — never as a binding verdict the way
 `pass_rule_evaluation.yaml` is. No-ops cleanly when `protocol_result.yaml`
-is absent (the prescreen-kill path, where no real backtest ran) or no
-window carries a route (a pre-CUL-264 run). This is exactly what replaces
-the removed A8.6 pre-flight — see the `validation`/`signal_prescreen`
-stage sections above.
+is absent or no window carries a route (a pre-CUL-264 run). This is the
+signal-quality go/no-go for the pipeline: a real, measured check on the
+actual backtest data rather than an early statistical guess.
 
 ---
 
@@ -1314,21 +1100,9 @@ number. Failure is terminal.
 
 | Config status | Next stage |
 |---|---|
-| `spec_ready` | → signal_prescreen |
+| `spec_ready` | → `data_availability_gate` if `E054_DATA_AVAILABILITY_GATE=1`, else → protocol_execution directly |
 | `component_gap` | → human pause (a new bot component must be built) |
 | **anything else** | → human pause, **deliberately fail-closed**. `KNOWN_STATUSES` holds only the two above; an unrecognised value is not guessed at. A real run produced `validation_incomplete` and took this branch — see [E037-23](../engineering/roadmap/E-037/FINDINGS.md#e037-23). |
-
-#### After signal_prescreen
-
-| Prescreen route | Next stage |
-|---|---|
-| `proceed_to_backtest` | → protocol_execution |
-| `kill_no_ic` | → verdict_interpreter (stub protocol_result) |
-| `refine_inverted_ic` | → verdict_interpreter |
-| `refine_cost_hurdle` | → verdict_interpreter |
-| `kill_cost_hurdle` | → verdict_interpreter |
-| `insufficient_power_a_priori` | **Historical only, pre-2026-09-11 runs** — → verdict_interpreter (skip; already written at validation gate). Removed (E-039); no new run can produce this. |
-| `no_signal_artifact` | → verdict_interpreter — **overrides every route above** (F5c). The signal was never tested: either it never activated, or component errors exceeded 5% of bars. Not a scientific result. |
 
 #### After verdict_interpreter — the Altitude System
 
@@ -1579,7 +1353,7 @@ A simple gate [artifact](#g-artifact) confirming whether the backtest_spec is va
 
 | Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-27) |
 |---|---|---|---|
-| `status` | Whether a runnable spec was produced. Two words that route the run — and anything unrecognised pauses it. | `spec_ready` (→ stage 7 prescreen) · `component_gap` (→ [human pause](#g-human-pause); the engine lacks a piece) · **any other value** (→ human pause, deliberately fail-closed) | `spec_ready` |
+| `status` | Whether a runnable spec was produced. Two words that route the run — and anything unrecognised pauses it. | `spec_ready` (→ stage 8 protocol_execution) · `component_gap` (→ [human pause](#g-human-pause); the engine lacks a piece) · **any other value** (→ human pause, deliberately fail-closed) | `spec_ready` |
 | `rationale` | Why, naming the component or the gap. | prose | *"FundingRateMeanReversionComponent exists in STRATEGY_CONFIG_REFERENCE.md with full threshold=0.0 continuous-forecast support"* |
 | `blocking_issues` | What is missing, when there is a gap. | list | `[]` |
 | `stage` | Which stage wrote it. | string | `backtest_specification` |
@@ -1603,55 +1377,51 @@ prints that the SKILL may need a new status case and pauses
 
 > **Why this file exists.** What actually happened when the strategy was traded across every window. The raw evidence every later judgment rests on.
 
-**Created by:** protocol_execution tool (`tools/run_protocol.py`) — or, on a prescreen kill, a stub with `source: prescreen_stub` written without ever running a backtest  
+**Created by:** protocol_execution tool (`tools/run_protocol.py`) — every run always executes a full walk-forward backtest.
 **Read by:** verdict_interpreter  
 
 | Field | Definition — what it means | Values / range (meaning of each) | Example |
 |---|---|---|---|
-| `results` | Per-window, per-symbol raw metrics (`net_return_pct`, `sharpe`, `max_drawdown_pct`, `trade_count`, `win_rate`, `fees_paid`, …) — one entry per `{symbol, window}` pair actually run. Each entry also carries `core` (that window's real `metrics.json` core block verbatim — this is where CUL-262's `forecast_return_corr_pvalue_block_adjusted`/`forecast_return_corr_n_eff` already ride along, added 2026-09-04), `per_regime`, `regime_validity`, and (added 2026-09-04, CUL-261/CUL-263) `data_quality` — that window's gap-detection block (`null` unless the run used `gap_detection=True`, which defaults to `False`). | list, `[]` on a prescreen-stub | `run_011`: 24 entries (2 symbols × 12 windows) |
-| `per_symbol_summary` | Per-symbol aggregation across windows: `median_sharpe` (the primary promotion gate — see basis note below), `max_abs_drawdown_pct`, `min_trade_count`. Empty on a prescreen-stub. | dict keyed by symbol, `{}` on a prescreen-stub | `run_011`: `{BTCUSDT: {median_sharpe: -5.019, …}, ETHUSDT: {median_sharpe: -2.604, …}}` |
+| `results` | Per-window, per-symbol raw metrics (`net_return_pct`, `sharpe`, `max_drawdown_pct`, `trade_count`, `win_rate`, `fees_paid`, …) — one entry per `{symbol, window}` pair actually run. Each entry also carries `core` (that window's real `metrics.json` core block verbatim, including `forecast_return_corr_pvalue_block_adjusted`/`forecast_return_corr_n_eff`), `per_regime`, `regime_validity`, and `data_quality` — that window's gap-detection block (`null` unless the run used `gap_detection=True`, which defaults to `False`). | list | `run_011`: 24 entries (2 symbols × 12 windows) |
+| `per_symbol_summary` | Per-symbol aggregation across windows: `median_sharpe` (the primary promotion gate — see basis note below), `max_abs_drawdown_pct`, `min_trade_count`. | dict keyed by symbol | `run_011`: `{BTCUSDT: {median_sharpe: -5.019, …}, ETHUSDT: {median_sharpe: -2.604, …}}` |
 | `verdict` | Preliminary verdict from the tool itself, ahead of the LLM verdict-interpreter's own read. | `promote` · `kill` · `refine` | `kill` |
-| `hypothesis_verdict` | The evaluated pre-registered criteria: each one's requirement, actual value, PASS/FAIL/UNTESTED, and a rolled-up `verdict_reason`. This is what `verdict_interpreter` actually reads. | dict: `{verdict, criteria_results: [...], verdict_reason}`, plus `diagnostics` on a prescreen-stub | `run_011`: 4 of 6 evaluable criteria FAIL, 3 UNTESTED |
-| `source` | Present only on a prescreen-kill stub — marks that no backtest ran. Absent (not `null`) on a real protocol execution. | `prescreen_stub` | `run_043`: `prescreen_stub` |
-| `prescreen_route` | Present only alongside `source: prescreen_stub` — which prescreen route produced the kill. | e.g. `kill_no_ic` | `run_043`: `kill_no_ic` |
-| `prescreen_kill_reason` | Present only alongside `source: prescreen_stub` — the short machine-readable reason code. | e.g. `no_informational_content_this_venue` | `run_043`: `no_informational_content_this_venue` |
+| `hypothesis_verdict` | The evaluated pre-registered criteria: each one's requirement, actual value, PASS/FAIL/UNTESTED, and a rolled-up `verdict_reason`. This is what `verdict_interpreter` actually reads. | dict: `{verdict, criteria_results: [...], verdict_reason}` | `run_011`: 4 of 6 evaluable criteria FAIL, 3 UNTESTED |
+| `protocol_file` | Bare filename of the protocol this run executed — the pre-registration conformance check compares this against `pre_registration.yaml`'s pinned `machine_constraints.protocol_ref`. | filename | `funding_mr_4h_retest_v1.json` |
+| `episode_blocked_significance_by_symbol` | Per-symbol A8.5.1a significance method label — the conformance check (`_check_protocol_execution_conformance`) compares each symbol's label against `is_a851a_method()` (`episode_significance.py::is_a851a_method`) when `machine_constraints.significance_methodology: episode_blocked_a851a` is pre-registered; any symbol failing that check is a conformance violation. | dict keyed by symbol | `{BTCUSDT: episode_blocked_a851a, ETHUSDT: block_6_dense_fallback}` |
 
 **Basis matters for `median_sharpe` (2026-07-10):** the decision-consumed value must be computed on a bar-level equity curve (`bars.csv` `total_portfolio_value`, full-window daily returns) — a LIFO-fragment/trade-exit-day version of the same statistic can disagree sharply under sparse trading and must never feed a verdict; it may exist elsewhere labeled `basis: lifo_fragment, descriptive_only`. See `docs/VERIFICATION_DOCTRINE.md` section 1 for the mechanism and a worked example.
 
-> **E-039 post-backtest go/no-go fields (CUL-261/262/264/266/272) — pending
-> merge, not yet in `master` as of 2026-09-11 (branches
-> `fix/cul-261-real-engine-gap-detection`, `fix/cul-262-neff-significance-port`,
-> `fix/cul-264-post-backtest-route`, `fix/cul-266-gap-aware-primary-corr`,
-> `fix/cul-272-real-cost-check`, all pushed to `origin`, none merged).** These
+> **Post-backtest go/no-go fields (CUL-261/262/264/266/272).** These
 > live in `trading-bot/reporting/run_artifact.py::build_core`, which produces
 > `metrics.json`, not this file directly — but `metrics.json`'s hand-picked
 > fields are what stage 8 forwards into `protocol_summary.json` (see that
 > stage's forwarding block), so they end up here.
 >
-> **Why these exist.** E-039 moves the signal-quality gate that used to run
-> *before* any backtest (`signal_prescreen`, stage 7) to run *after* one, on
-> real measured numbers instead of a one-pass-over-the-forecast estimate. Each
-> field below is the post-backtest counterpart to a named prescreen
-> concept — same math, ported verbatim into `performance/signal_statistics.py`
-> (trading-bot never imports from strategy-research) — computed on the actual
-> bars/trades a real backtest produced rather than replayed forecasts.
+> **Why these exist.** The signal-quality go/no-go runs *after* the backtest,
+> on real measured numbers, rather than as a pre-flight estimate — computed
+> by `performance/signal_statistics.py` (trading-bot never imports from
+> strategy-research) on the actual bars/trades a real backtest produced.
 >
-> | Field | Definition — what it means | Prescreen counterpart | Worked example |
-> |---|---|---|---|
-> | `forecast_return_corr_n_eff` | Effective sample size behind the correlation: active bars placeable into blocks without spanning a real data gap, `÷ block_size`. Same "adjacent hours aren't independent" correction as prescreen's `n_eff`. | `n_eff` (Stage 7, term table) | a run with 8928 active bars, `block_size=24` (1h bars, 24/day) → `n_eff` well under 8928 once gap-spanning blocks are excluded |
-> | `forecast_return_corr_pvalue_block_adjusted` | Two-tailed significance of `forecast_return_corr`, computed from `n_eff` above rather than the raw bar count. Always `≥` the naive `forecast_return_corr_pvalue`. | Stage 7's block-deflated Fisher z | — |
-> | `sigma_bar_bps` | Per-bar return volatility in bps, measured directly from the backtest's own bars. | Stage 7's `sigma_bar_bps` | — |
-> | `sigma_bar_bps_is_placeholder` | `true` when fewer than 5 bars were available and the placeholder `15.0` was substituted. **When true, `post_backtest_cost_check`/`post_backtest_route` below are not load-bearing.** | Stage 7's `sigma_is_placeholder` | — |
-> | `post_backtest_cost_check` | Dict: `{estimated_gross_edge_bps_per_trade, cost_bps_per_trade, edge_to_cost_ratio, safety_factor_required, pass}`. **Estimated**, not measured — `IC × sigma_bar_bps × √(avg_holding_bars)` vs. `cost_model.yaml`'s theoretical round-trip cost, run on real post-backtest inputs. | Stage 7's `_cost_check` / A8.1 | — |
-> | `post_backtest_route` | The combined IC-significance + cost-hurdle verdict on the *estimated* cost check above. | Stage 7's route table | `kill_no_ic` · `refine_inverted_ic` · `kill_cost_hurdle` · `refine_cost_hurdle` · `proceed_to_interpretation` (prescreen's `proceed_to_backtest`, renamed — the backtest already ran) |
-> | `post_backtest_route_rationale` | One-sentence prose explaining `post_backtest_route`, with the actual numbers substituted in. | — | *"Active-bar IC=0.0412 (p=0.0231, significant). Edge-to-cost ratio=1.8342 < required 2.0."* |
-> | `real_round_trip_cost_bps` | **Measured**: mean `CompletedTrade.total_commission_percent` across every completed trade, in bps. No prescreen counterpart — prescreen never executes a trade. | *(none)* | a real run: `20.0` bps |
-> | `real_gross_edge_bps_per_trade` | **Measured**: mean `CompletedTrade.profit_loss_percent` — gross, pre-commission, deliberately not net (net is already cost-adjusted, would double-count fees against `real_round_trip_cost_bps`). | *(none)* | same run: `-2.569` bps/trade |
-> | `post_backtest_cost_check_real` | Same shape as `post_backtest_cost_check`, built from the two measured fields above. Carries `"basis": "real"`. Field is still named `estimated_gross_edge_bps_per_trade` (inherited key shape `determine_route()` reads) even though the value is real — check `basis`, not the key name. | *(none)* | that run: `edge_to_cost_ratio ≈ 0.128`, `pass: false` |
-> | `post_backtest_route_real` / `post_backtest_route_real_rationale` | The route/rationale pair computed from the *real* cost check instead of the estimated one — the actual go/no-go this run's real economics support. | *(none)* | — |
+> | Field | Definition — what it means | Worked example |
+> |---|---|---|
+> | `forecast_return_corr_n_eff` | Effective sample size behind the correlation: active bars placeable into blocks without spanning a real data gap, `÷ block_size` — the "adjacent hours aren't independent" correction. | a run with 8928 active bars, `block_size=24` (1h bars, 24/day) → `n_eff` well under 8928 once gap-spanning blocks are excluded |
+> | `forecast_return_corr_pvalue_block_adjusted` | Two-tailed significance of `forecast_return_corr`, computed from `n_eff` above rather than the raw bar count. Always `≥` the naive `forecast_return_corr_pvalue`. | — |
+> | `sigma_bar_bps` | Per-bar return volatility in bps, measured directly from the backtest's own bars. | — |
+> | `sigma_bar_bps_is_placeholder` | `true` when fewer than 5 bars were available and the placeholder `15.0` was substituted. **When true, `post_backtest_cost_check`/`post_backtest_route` below are not load-bearing.** | — |
+> | `post_backtest_cost_check` | Dict: `{estimated_gross_edge_bps_per_trade, cost_bps_per_trade, edge_to_cost_ratio, safety_factor_required, pass}`. **Estimated**, not measured — `IC × sigma_bar_bps × √(avg_holding_bars)` vs. `cost_model.yaml`'s theoretical round-trip cost, run on real post-backtest inputs (A8.1: both IC significance and this cost check are required). | — |
+> | `post_backtest_route` | The combined IC-significance + cost-hurdle verdict on the *estimated* cost check above. | `inconclusive_insufficient_data` · `kill_no_ic` · `refine_inverted_ic` · `kill_cost_hurdle` · `refine_cost_hurdle` · `proceed_to_interpretation` |
+> | `post_backtest_route_rationale` | One-sentence prose explaining `post_backtest_route`, with the actual numbers substituted in. | *"Active-bar IC=0.0412 (p=0.0231, significant). Edge-to-cost ratio=1.8342 < required 2.0."* |
+> | `real_round_trip_cost_bps` | **Measured**: mean `CompletedTrade.total_commission_percent` across every completed trade, in bps. | a real run: `20.0` bps |
+> | `real_gross_edge_bps_per_trade` | **Measured**: mean `CompletedTrade.profit_loss_percent` — gross, pre-commission, deliberately not net (net is already cost-adjusted, would double-count fees against `real_round_trip_cost_bps`). | same run: `-2.569` bps/trade |
+> | `post_backtest_cost_check_real` | Same shape as `post_backtest_cost_check`, built from the two measured fields above. Carries `"basis": "real"`. Field is still named `estimated_gross_edge_bps_per_trade` (inherited key shape `determine_route()` reads) even though the value is real — check `basis`, not the key name. | that run: `edge_to_cost_ratio ≈ 0.128`, `pass: false` |
+> | `post_backtest_route_real` / `post_backtest_route_real_rationale` | The route/rationale pair computed from the *real* cost check instead of the estimated one — the actual go/no-go this run's real economics support. | — |
 >
-> **Priority order inside `determine_route()`, exact (verified against the code
-> directly, 2026-09-11), same for both the estimated and real routes:**
+> **Priority order inside `determine_route()`, exact, same for both the
+> estimated and real routes:**
+> 0. Sample too small to trust (`n_eff` below its floor, `n_trades` below its
+>    floor, or the cost check rests on a placeholder `sigma_bar_bps`) →
+>    `inconclusive_insufficient_data` — not a verdict, "not enough
+>    information to judge this," never to be confused with a `kill_*` route.
 > 1. IC not significant (`p ≥ 0.10`) → `kill_no_ic`.
 > 2. IC significant but negative → `refine_inverted_ic`.
 > 3. IC significant and positive — cost hurdle: edge÷cost must be `≥ 2.0`.
@@ -1659,35 +1429,21 @@ prints that the SKILL may need a new status case and pauses
 >    Fails narrowly → `refine_cost_hurdle` (try a wider threshold/longer hold).
 > 4. Passes both → `proceed_to_interpretation`.
 >
-> **Worked example, a real run (2026-09-04 verification):** `trade_count=110`,
+> **Worked example, a real run:** `trade_count=110`,
 > `real_round_trip_cost_bps=20.0`, `real_gross_edge_bps_per_trade=-2.569`. The
 > real edge is *negative* — losing 2.569 bps/trade gross before even reaching
 > the 20 bps it costs to trade — so `post_backtest_route_real` reads a kill,
-> regardless of what the *estimated* `post_backtest_route` above it says. This
-> is the concrete case E-039 exists for: a signal can look viable on
-> `cost_model.yaml`'s theoretical cost and still be a real loser once actual
-> fees and outcomes are measured.
+> regardless of what the *estimated* `post_backtest_route` above it says. A
+> signal can look viable on `cost_model.yaml`'s theoretical cost and still be
+> a real loser once actual fees and outcomes are measured.
 >
-> **A known gap in the table above, not yet closed (found 2026-09-11):**
-> neither route currently checks whether there was even ENOUGH data to trust
-> the verdict — a result based on 1-2 trades, or very few active bars, gets
-> the exact same `kill_no_ic`/`kill_*` label as a well-powered result that
-> genuinely failed. Those are different situations ("we don't know yet" vs.
-> "we now know it doesn't work"). A fix — a distinct route for
-> too-few-observations, checked before the significance/cost logic — is in
-> progress; this table will be updated with the new route once it lands.
-> `sigma_bar_bps_is_placeholder` above is the one place this repo already
-> flags an under-powered number, but that flag is not yet wired into the
-> route decision either.
->
-> **INFORMATIONAL ONLY, both routes, as of 2026-09-11.** Nothing in this
-> repository reads `post_backtest_route`/`post_backtest_route_real` to skip,
-> gate, or short-circuit `verdict_interpreter` or any other stage — unlike
-> prescreen's route, which the orchestrator's routing table actually dispatches
-> on. Whether a mechanical kill here should short-circuit the LLM call is a
-> separate, deliberately not-yet-made decision. Until that decision is made,
-> treat these fields as evidence for the verdict-interpreter to read and cite,
-> not as gates it must obey.
+> **INFORMATIONAL ONLY, both routes.** Nothing in this repository reads
+> `post_backtest_route`/`post_backtest_route_real` to skip, gate, or
+> short-circuit `verdict_interpreter` or any other stage. Whether a
+> mechanical kill here should short-circuit the LLM call is a separate,
+> deliberately not-yet-made decision. Until that decision is made, treat
+> these fields as evidence for the verdict-interpreter to read and cite, not
+> as gates it must obey.
 
 ⚠️ **This entry previously documented five fields that no artifact has ever
 contained:** `per_window_metrics`, `per_symbol_metrics`, `per_regime_metrics`,
@@ -1715,19 +1471,18 @@ labeled `promotion_criteria`). See
 **Created by:** verdict-interpreter skill  
 **Read by:** orchestrator (for routing), campaign_review  
 
-| Field | Definition — what it means | Values / range (meaning of each) | Example (`run_060`, 2026-08-28) |
+| Field | Definition — what it means | Values / range (meaning of each) | Example |
 |---|---|---|---|
 | `status` | The [altitude](#g-altitude) decision — what happens next, and at what size of change. Falls back to `protocol_verdict` on older runs. | `refine` (same family, new parameter) · `pivot` (new family) · `escalate` (new instrument/timeframe) · `promote` (provisional → holdout) · `kill` (terminal) | `kill` |
 | `hypothesis_verdict` / `lineage_routing` | The verdict on the hypothesis, and what it means for its lineage. | string / `terminate`, `continue`, … | `kill` / `terminate` |
-| `criteria_summary` | Each pre-registered criterion with its measured value and result — the audit trail from evidence to verdict. | list of `{criterion, result, value}` | criterion `prescreen_ic_gate (ic_active_bars >= 0.015, significant)` → `FAIL` |
-| `untested_criteria` | Criteria that were never reached, kept explicit so a partial test is not read as a complete one. | list | `["walk_forward_sharpe (prescreen kill)", "max_drawdown (prescreen kill)"]` |
-| `root_cause` | The diagnosis. **`mechanism_failure` is load-bearing:** two of its values divert the run away from any scientific verdict. | dict; `mechanism_failure` ∈ `already_priced_in`, `component_execution_error` (→ human pause, immune to the [circuit breaker](#g-circuit-breaker)), `regime_misattribution` (→ human pause for the regime auditor), … | `{mechanism_failure: already_priced_in, supporting_evidence: "prescreen_result: ic_active_bars=0.0162 (p=…)"}` |
-| `primary_failure_mode` | Short label for how it failed. | string | `no_informational_content_prescreen` |
+| `criteria_summary` | Each pre-registered criterion with its measured value and result — the audit trail from evidence to verdict. | list of `{criterion, result, value}` | criterion `median_sharpe >= 0.8` → `FAIL` |
+| `untested_criteria` | Criteria that were never reached, kept explicit so a partial test is not read as a complete one. | list | `["max_drawdown (not evaluated)"]` |
+| `root_cause` | The diagnosis. **`mechanism_failure` is load-bearing:** two of its values divert the run away from any scientific verdict. | dict; `mechanism_failure` ∈ `already_priced_in`, `component_execution_error` (→ human pause, immune to the [circuit breaker](#g-circuit-breaker)), `regime_misattribution` (→ human pause for the regime auditor), … | `{mechanism_failure: already_priced_in, supporting_evidence: "post_backtest_route_real=kill_no_ic (p=…)"}` |
+| `primary_failure_mode` | Short label for how it failed. | string | `no_informational_content` |
 | `hypothesis_family` | Scopes the circuit breaker. Per-family since F6 (2026-07-04) — a global scope let a dead family's history force an unrelated family straight to pivot. | string | `funding_rate_mean_reversion` |
 | `proposed_change_dimension` | Which parameter a `refine` would move. The breaker counts repeats of this within a family. | string or `null` | `null` |
-| `altitude_justification` | Why this altitude and not a larger or smaller one. | prose | *"Rule 2 (weak signal): ic_active_bars=0.0162, p=0.5315 > 0.10 — no statistically significant directional …"* |
-| `config_to_failure_map` | Ties the failure back to the exact config that produced it. | prose | *"FundingRateMeanReversionComponent (threshold=0.0, ungated) on 4h timeframe produces ic_active_bars=0.0162"* |
-| `prescreen_evidence` | The prescreen numbers carried forward, so the verdict is auditable without opening another file. | dict | `{ic_active_bars: 0.016237, ic_all_bars: -0.006944, p_value: 0.5315, forecast_sparsity_pct: 49.99, …}` |
+| `altitude_justification` | Why this altitude and not a larger or smaller one. | prose | *"Rule 2 (weak signal): forecast_return_corr=0.0162, p=0.5315 > 0.10 — no statistically significant directional …"* |
+| `config_to_failure_map` | Ties the failure back to the exact config that produced it. | prose | *"FundingRateMeanReversionComponent (threshold=0.0, ungated) on 4h timeframe produces forecast_return_corr=0.0162"* |
 
 ⚠️ **This entry previously documented five fields that no artifact has ever
 contained.** Measured 2026-08-30 across the **39** real
@@ -1992,38 +1747,6 @@ Handoffs are the formal interface contract between stages. Each stage reads its 
 
 ---
 
-### `prescreen_result.yaml`
-
-> **Why this file exists.** The cheap go/no-go on a signal: the evidence that justified spending a full backtest, or killing without one. Also the trial's receipt.
-
-**Created by three different paths, with three different shapes** ([E037-04](../engineering/roadmap/E-037/FINDINGS.md#e037-04)) — **shapes 2 and 3 are historical only (pre-2026-09-11 runs); A8.6 is removed (E-039) and no new run can produce either**:
-1. **Normal run** — `tools/prescreen_signal.py` itself, the full shape below. Now the ONLY shape any new run produces.
-2. **A8.6 blocked at `validation`** *(historical)* — the orchestrator wrote a 5-key stub itself and the tool never ran: `{run_id, route: insufficient_power_a_priori, a86_power_check, stage_blocked_at: "validation", note}`.
-3. **A8.6 blocked at `signal_prescreen`** *(historical)* — same gate, run a second time immediately before the tool would launch: a 4-key stub, `{run_id, route: insufficient_power_a_priori, a86_power_check, note}`. Neither stub carries any IC/cost/provenance field below — an operator opening an OLD run's file must check `route` before assuming the full shape is present.
-
-**Read by:** verdict_interpreter, orchestrator
-**Schema:** `workflow_artifacts/schemas/prescreen_result.schema.json`
-
-**The table below is a selection, not the full field list** ([E037-03](../engineering/roadmap/E-037/FINDINGS.md#e037-03)) — the real artifact carries roughly 30 top-level keys; these are the load-bearing ones a reader is most likely to need.
-
-| Field | Definition |
-|---|---|
-| `route` | Routing decision: `proceed_to_backtest`, `kill_no_ic`, `refine_inverted_ic`, `refine_cost_hurdle`, `kill_cost_hurdle`, `insufficient_power_a_priori`, **`no_signal_artifact`** ([E037-02](../engineering/roadmap/E-037/FINDINGS.md#e037-02)) — `active_n_bars == 0`, or component-error rate > 5% (F5c); **overrides every other route**, since it means nothing was actually tested |
-| `ic_all_bars` | Spearman IC computed over all bars (tie-dominated for sparse signals) |
-| `ic_active_bars` | Spearman IC conditional on non-zero/changing [forecast](#g-forecast) — the primary IC gate |
-| `forecast_sparsity_pct` | Fraction of bars with zero/unchanging forecast |
-| `cost_check` | Layer 2 gate. `required_gross_edge_bps` was documented here but never existed ([E037-14](../engineering/roadmap/E-037/FINDINGS.md#e037-14)) — the real dict is `{symbol, implied_trades_per_window, estimated_gross_edge_bps_per_trade, cost_bps_per_trade, edge_to_cost_ratio, safety_factor_required, pass, ic_used}`. `safety_factor_required` is the threshold the gate compares against; `ic_used` records which IC (`ic_active_bars` or `ic_all_bars`) fed the estimate. Passes only if `ic_active_bars` also clears the significance threshold below (A8.1: a good IC alone is never enough) |
-| `ic_significance` | Whether `ic_active_bars` is statistically significant, at `_SIG_THRESHOLD = 0.10` (`prescreen_signal.py:102`) — **not** `p < 0.05`; that threshold gates a different decision, see `significance_methodology_used` below |
-| `significance_methodology_used` | Which of three significance methods actually ran ([E037-05](../engineering/roadmap/E-037/FINDINGS.md#e037-05)) — §2.2 stage 7 previously named only the fallback as if it were the default: **`block_{n}_fisher_z`** (default — block-deflated Fisher z, `n` derived from the timeframe's actual block size, e.g. `block_24_fisher_z`), **`episode_blocked_a851a`** (config opt-in, for multi-era data), or the stationary block bootstrap (auto-selected when the active-bar forecast is structurally degenerate). |
-| `forecast_hash` | Dedup key for trial counting — the same forecast reproduced twice must count once, not twice, in the deflated-Sharpe N. |
-| `sigma_is_placeholder` | `true` when `sigma_bar_bps` could not be measured and a placeholder was substituted — a `cost_check` computed against a placeholder sigma is not load-bearing evidence. |
-| `gap_stats_by_symbol` | Per-symbol counts of forward-return pairs dropped for straddling a data gap (#50 A) — a pooled figure can read "no gap effect" while one symbol's whole sample was destroyed. |
-| `a86_power_check` | **Historical only** — present only on the two blocked-stub shapes above (pre-2026-09-11 runs); the full A8.6 pre-flight result (`min_detectable_ic`, `plausible_ic_upper`, `expected_n_eff`, …) that produced the block. A8.6 is removed (E-039); no new run will ever write this field. |
-
-Two significance thresholds are in play and easy to conflate ([E037-08](../engineering/roadmap/E-037/FINDINGS.md#e037-08)): **`0.10`** (`_SIG_THRESHOLD`, `prescreen_signal.py:102`) gates whether `ic_active_bars` counts as significant at all; a separate **`p > 0.05`** test inside the cost branch (`:1070`) decides `kill_cost_hurdle` vs `refine_cost_hurdle` when the edge-to-cost ratio is marginal. Neither appears in this table's field definitions above — noted here since both are load-bearing and neither was documented anywhere before this correction.
-
----
-
 ### `trade_diagnostics.json`
 
 > **Why this file exists.** Per-trade records, because aggregate medians hide the failure channel — the finding A3.6 was written for.
@@ -2072,7 +1795,7 @@ replaces both with their real names and nesting depth. See
 
 > **Why this file exists.** The human judgment on the detector, made under a firewall that keeps profitability out of the decision.
 
-**Created by:** regime-auditor skill. **Updated in place by stage 7**, which resolves `ungated_escape_eligible` and appends the `ungated_escape_resolved_*`/`prescreen_ic_*` fields below — there is no separate `Updated by` artifact, this file gets a second write.
+**Created by:** regime-auditor skill (a human running it by hand), including `ungated_escape_eligible` — there is no automated second write to this file.
 **Read by:** verdict_interpreter, orchestrator
 
 | Field | Definition — what it means | Values / range (meaning of each) | Example (`run_039`, the only real instance on disk) |
@@ -2083,9 +1806,8 @@ replaces both with their real names and nesting depth. See
 | `retune_attempted` / `retune_summary` | Whether a retune grid search ran, and if so its full result: `grid_cells_evaluated`, `grid_dimensions`, the `vr_component` drop decision, `best_directly_implementable` vs. `overall_winner_requires_extension` cells, `max_score_achieved` vs. `max_possible_score`, and a `structural_ceiling` prose explanation when no cell passes. | bool / dict (only present when `retune_attempted` is true) | `true` / 48 cells evaluated, best score 5 of 8 possible |
 | `official_report_after_retune` | The regime detector's own per-symbol metrics (`confidence`, `persistence`, `transitions_pw`, `cc_sens_trending`, `activation`, `in_band`) after the retuned config, kept alongside the pre-retune `regime_detector_report.yaml` for comparison. | dict keyed by `detector_version`/`evaluated_at`/`config` plus one entry per symbol_timeframe | `btcusdt_1h: {confidence: medium, persistence: 12.0, …}` |
 | `a23_policy_applied` / `a23_detector_wishlist` | Whether the A2.3 post-unusable policy fired, and the wishlist file candidate replacement detectors were recorded to. | bool / path | `true` / `config/detector_wishlist.yaml` |
-| `ungated_escape_eligible` | A2.1 escape assessment — whether an all-bars (ungated) IC check can substitute for a trustworthy detector. Written `false` at audit time, resolved by stage 7's second write. | `true` · `false` · `indeterminate` | `true` |
-| `ungated_escape_resolved_by` / `ungated_escape_resolved_at` / `ungated_escape_rationale` | Stage 7's second write: which check resolved the escape, when, and the prose justification (cites `prescreen_ic_all_bars` below and the A2.1 rule it satisfies). | string / ISO-8601 / prose | `prescreen_ic_all_bars` / *"Resolved using prescreen ic_all_bars… IC is within 2 SE of zero — consistent with no edge over all bars. Per A2.1: signal_bad_everywhere may be concluded."* |
-| `prescreen_ic_all_bars` / `prescreen_ic_active_bars` / `prescreen_ic_all_bars_ci_95` | The actual IC values the escape rationale is computed from — carried here so the resolution is auditable without opening the prescreen artifact separately. | float / float / `[lo, hi]` | `-0.012237` / `-0.031786` / `[-0.0637, 0.0392]` |
+| `ungated_escape_eligible` | A2.1 escape assessment — whether an all-bars (ungated) IC check can substitute for a trustworthy detector. Set directly by the regime-auditor skill, per its own SKILL.md rules. | `true` · `false` · `indeterminate` | `true` |
+| `ungated_escape_rationale` | The prose justification for the `ungated_escape_eligible` value, citing the A2.1 rule it satisfies. | prose | *"IC is within 2 SE of zero — consistent with no edge over all bars. Per A2.1: signal_bad_everywhere may be concluded."* |
 
 ⚠️ **This entry previously documented `retune_firewall_check` as a field —
 it is absent from the real artifact** (1 real instance on disk, measured
@@ -2152,7 +1874,7 @@ reflects the audit rarely triggering or the mechanism being under-used.
 
 **Created by:** `workflow/run_campaign.py` `_materialize_run()` (alongside `research_brief.yaml`)
 **Updated by:** *(none — write-once; rewriting it after a run is the failure it exists to prevent)*
-**Read by:** `tools/verdict_criteria_evaluator.py` via stage 8; `_load_machine_constraints()` (`run_phase1_research.py::_load_machine_constraints`) for the stage 7 methodology pin; `_check_prescreen_conformance`
+**Read by:** `tools/verdict_criteria_evaluator.py` via stage 8; `_load_machine_constraints()` (`run_phase1_research.py::_load_machine_constraints`) for the `protocol_execution` conformance gate, `run_phase1_research.py::_check_protocol_execution_conformance`
 **Written to:** `runs/{run_id}/artifacts/pre_registration.yaml`
 **Schema:** *(none)*
 
@@ -2160,7 +1882,7 @@ reflects the audit rarely triggering or the mechanism being under-used.
 |---|---|---|---|
 | `pass_rule` | The pre-registered success condition, structured so a machine can evaluate it rather than a human reading prose. | dict with `statement`, `window_set_ref`, `criteria[]`; **or absent** = legacy | `{statement: "PASS iff … BOTH BTCUSDT AND ETHUSDT satisfy: (a) median Sharpe > 0.8; (b) max abs drawdown < 30% …", criteria: [{id: a, metric: median_sharpe, metric_basis: bar_level, comparator: ">"}, …]}` |
 | `machine_constraints` | Things pinned before the run that later stages must obey — not advice, but a contract the conformance gate checks. | dict: `protocol_ref`, `protocol_ref_content_hash`, `significance_methodology` | `{protocol_ref: protocols/funding_mr_4h_retest_v1.json, protocol_ref_content_hash: sha256:4fda1f39…, significance_methodology: episode_blocked_a851a}` |
-| `expected_*` / `min_detectable_ic` / `plausible_ic_upper` / `power_verdict` | The A8.6 a-priori power figures, recorded at registration. | floats / verdict string | present on the legacy shape (e.g. run_043) |
+| `expected_*` / `min_detectable_ic` / `plausible_ic_upper` / `power_verdict` | A-priori power figures recorded at registration on the legacy shape. No new run writes these fields. | floats / verdict string | present on the legacy shape (e.g. run_043) |
 | `disconfirming_outcome` | Written in advance: what result would falsify the hypothesis. | prose | — |
 | `run_id` / `hypothesis_id` / `registered_at` | Provenance. | string / string / ISO-8601 | `run_060` / … / … |
 
@@ -2222,7 +1944,7 @@ reflects the audit rarely triggering or the mechanism being under-used.
 **Created by:** `run_phase1_research.py::_ensure_protocol_from_constraints` (escalation spawn) and `::_ensure_protocol_from_constraints`
 (forced-diagnostic override)
 **Updated by:** *(none — write-once per run)*
-**Read by:** the stage prompts; `_check_prescreen_conformance` compares its
+**Read by:** the stage prompts; `_check_protocol_execution_conformance` compares its
 bare-filename `protocol` key (`::_ensure_protocol_ref_pinned`)
 **Written to:** `runs/{run_id}/artifacts/run_context.yaml`
 **Schema:** *(none)*
@@ -2334,9 +2056,9 @@ product are not `tradable: true` — **or are undeclared**
 | File | Purpose |
 |---|---|
 | `config/campaign_data_policy.yaml` | Frozen holdout range (2026-H1), burned ranges, `holdout_consumed_by` list |
-| `config/cost_model.yaml` | Single source of truth for round-trip cost per symbol (bps); read by prescreen and validation |
+| `config/cost_model.yaml` | Single source of truth for round-trip cost per symbol (bps); read by the post-backtest cost check and validation |
 | `config/available_feeds.yaml` | Which data feeds are testable today; constrains `evidence_type` in hypothesis_card |
-| `config/campaign_config.yaml` | Named constants for prescreen, orchestrator; drift-guarded by test |
+| `config/campaign_config.yaml` | Named constants for the orchestrator; drift-guarded by test |
 | `config/indicator_library.yaml` | 15 seeded entries: regime_affinity, crowding_risk, data_requirements per indicator class |
 | `feed_wishlist.yaml` | Feeds needed but not yet available (liquidation_data); argument for each. `trigger_condition.predicate` is mechanically evaluated (see `detector_wishlist.yaml` row below — same mechanism, same file format). |
 | `config/detector_wishlist.yaml` | Detector families to build when an ungated edge exists. Each candidate's `trigger_condition.predicate` is a structured, machine-checkable expression evaluated by `workflow/run_campaign.py::evaluate_wishlist_predicate()` — no longer human-reviewed prose. `status`/`last_evaluated_at`/`last_evaluated_against`/`kb_state_hash`/`evaluation_note` are written ONLY by `evaluate_and_persist_wishlist_predicate()` (single authority — never hand-edit); a persisted `status` is only trustworthy if its `kb_state_hash` matches a fresh `sha256` of `campaign_knowledge_base.yaml`'s current bytes. See `RUNBOOK.md` section 3 and `docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md`. |
@@ -2527,12 +2249,9 @@ run.
 
 ### `tools/run_protocol.py` — Walk-Forward Executor
 
-A fully deterministic tool — no LLM call, no token cost. ⚠️ This line
-previously read *"the only fully deterministic tool"*, which is false and
-contradicts this guide's own §2.2: `prescreen_signal.py`,
+A fully deterministic tool — no LLM call, no token cost. Not the only one:
 `validate_regime_detector.py`, `deflate_sharpe.py` and `episode_significance.py`
-all run without an LLM too (measured: zero LLM imports in each). See
-[E037-33](../engineering/roadmap/E-037/FINDINGS.md#e037-33).
+all run without an LLM too (measured: zero LLM imports in each).
 
 Given a `backtest_spec.yaml`, it:
 1. Loads the [protocol](#g-protocol) definition (`protocols/baseline_v1.json` or an escalation protocol).
@@ -2578,7 +2297,7 @@ the file, not assumed.
 
 ### Tool inventory — everything in `tools/`
 
-The entries above cover 3 of the **22** Python files in `tools/`. The rest are
+The entries above cover 3 of the **21** Python files in `tools/`. The rest are
 listed here so the section is a complete index rather than a selection. Ordered
 by how load-bearing they are, not alphabetically.
 
@@ -2586,7 +2305,6 @@ by how load-bearing they are, not alphabetically.
 
 | Tool | What it does |
 |---|---|
-| `tools/prescreen_signal.py` | **Implements stage 7 in full** — IC, significance, cost gate, routing. The single largest tool in the directory. |
 | `tools/run_protocol.py` | Walk-forward executor for stage 8 *(documented above)*. |
 | `tools/verdict_criteria_evaluator.py` | **The K2/C7 machine [verdict](#g-verdict)** — scores a run against its pre-registered `pass_rule` and writes `pass_rule_evaluation.yaml`. Since 2026-07-13 this is the decision authority, not an advisory. |
 | `tools/episode_significance.py` | The A8.5.1a episode-blocked significance path. Used by `run_protocol.py` (stage 8, CUL-265), where it is computed unconditionally as an **additive** second opinion pooled across a symbol's windows — it never replaces `median_forecast_return_corr`. |
@@ -2629,10 +2347,9 @@ by how load-bearing they are, not alphabetically.
 | `tools/whale_footprint_evaluation.py` | Evaluation harness for `prereg_whale_footprint_v2.yaml`. |
 
 > **Why this list matters.** Before it, §5 documented three tools. The tool
-> that implements stage 7 and the tool that produces the decision authority
-> were both absent, while `workflow/stages.yaml` — archived and read by nothing
-> — had a full entry. See
-> [E037-25](../engineering/roadmap/E-037/FINDINGS.md#e037-25).
+> that produces the decision authority (`verdict_criteria_evaluator.py`) was
+> absent, while `workflow/stages.yaml` — archived and read by nothing — had a
+> full entry.
 
 ---
 ## 6. Glossary
@@ -2652,12 +2369,10 @@ which explains each in one line without jargon.
 > [E037-22](../engineering/roadmap/E-037/FINDINGS.md#e037-22) and
 > [E037-30](../engineering/roadmap/E-037/FINDINGS.md#e037-30).
 
-> ⚠️ **The `Run` entry below previously said "10-stage pipeline."** This guide
-> documents **13** numbered stages (§2.2); ten is the size of the engine's
-> `STAGE_CONFIGS` registry, which excludes the human brief and the two regime
-> stages. Corrected 2026-09-03 to state both counts, following the exact
-> phrasing [E037-28](../engineering/roadmap/E-037/FINDINGS.md#e037-28)
-> proposed — see also [E037-15](../engineering/roadmap/E-037/FINDINGS.md#e037-15).
+> **On stage counts.** This guide documents **13** stages (§2.2); ten of
+> those are the engine's `STAGE_CONFIGS` registry, which excludes the human
+> brief and the two regime stages (`regime_detector_validation`,
+> `regime_auditor`).
 
 | Term | Definition |
 |---|---|
@@ -2699,10 +2414,9 @@ which explains each in one line without jargon.
 | <a id="g-campaign-review"></a>**Campaign Review** | A special stage triggered after 2+ hypothesis families fail. Unlike the per-run verdict_interpreter, it has access to the full campaign history and can issue campaign-level decisions (reframe, terminate) that no single-run stage can make. |
 | <a id="g-research-decision"></a>**Research Decision** | The terminal artifact of a campaign, written when a strategy is promoted or the campaign is terminated. Captures the final verdict, the lessons learned, and (if promoted) the approved strategy config. |
 | <a id="g-burnt-data"></a>**Burnt data** | Date ranges already used in any walk-forward window. Cannot serve as unbiased holdout. Tracked in `config/campaign_data_policy.yaml.burned_ranges`. |
-| <a id="g-trial"></a>**Trial** | Any comparison of a strategy config against historical data: prescreen kills, walk-forward runs, refinement iterations. All count. Deduplicated by `forecast_hash` (identical forecasts on identical data = one trial regardless of config differences). |
-| <a id="g-prescreen"></a>**Prescreen** | Cheap IC + cost-hurdle gate run before full walk-forward. A8.1: both `ic_significance` AND `cost_check.pass` required; neither alone is a pass. Records a trial in `campaign_state.trial_sharpes` even when it kills. |
+| <a id="g-trial"></a>**Trial** | Any comparison of a strategy config against historical data: walk-forward runs, refinement iterations, kills included. All count. Deduplicated by `forecast_hash` (identical forecasts on identical data = one trial regardless of config differences). |
+| <a id="g-prescreen"></a>**Prescreen** | Legacy vocabulary from before the pipeline's "always backtest" premise: a cheap IC + cost-hurdle gate that used to run before a full walk-forward, used in some field names and older on-disk artifacts (e.g. `machine_constraints.significance_methodology`'s A8.5.1a labelling). There is no prescreen stage in the current pipeline — every run always executes a full backtest. |
 | <a id="g-active-bar-ic"></a>**Active-bar IC** | Spearman correlation between forecast and return, restricted to bars where the forecast is non-zero or changing. The gate statistic for sparse/event-driven signals; all-bars IC is misleading for these (dominated by the tie mass at forecast=0). |
-| <a id="g-power-check"></a>**Power check** | **Removed 2026-09-11 (E-039)** — kept here only as a vocabulary entry for reading old runs/docs. Formerly: deterministic arithmetic (A8.6) run before any component is built, computing `min_detectable_ic` from `activation_rate × n_bars × n_eff_symbols / block_size`; if MDE > `plausible_ic_upper`, the hypothesis was parked with a data requirement. Replaced by E-054's data-availability gate and a real, measured post-backtest go/no-go — see the `validation` stage section. |
 | <a id="g-dormant-mechanism"></a>**Dormant mechanism** | A hypothesis whose activating condition never fired in the test window. Disposition: backward data extension (pre-2024 history where the condition demonstrably occurred) OR parking with a condition-based reactivation trigger. |
 | <a id="g-holdout-consumption"></a>**Holdout consumption** | The irreversible event where a hypothesis_id enters `campaign_data_policy.holdout_consumed_by`. From this point, no further holdout evaluation is possible for that hypothesis_id. Failure is terminal. |
 | <a id="g-dsr"></a>**DSR (Deflated Sharpe Ratio)** | Bailey & López de Prado (2014) correction for selection bias across multiple trials. `E_max = μ_SR + σ_SR × [(1−γ)Φ⁻¹(1−1/N) + γΦ⁻¹(1−1/(eN))]`; DSR = Φ[(candidate_SR − E_max)/σ_SR]. Threshold: 0.95. Falls monotonically as trial count grows for fixed true Sharpe. |
@@ -2730,7 +2444,7 @@ The system uses three distinct acceptance protocols depending on what is being a
 > [E037-35](../engineering/roadmap/E-037/FINDINGS.md#e037-35).
 All quantitative tools are validated against a named fixture whose correct output is known in advance. The standing fixture is **`keltner_163`** — 163 closed trades from the baseline_v2 Keltner re-run. Any tool touching per-trade metrics must reproduce this fixture's known signature: win rate rising 51%→57% from 2024 to 2025 cohorts, per-trade expectancy worsening −26→−58 bps. A tool that cannot reproduce this is not calibrated.
 
-The prescreen tool carries its own must-reject fixture (A9.1): the Keltner config must route to kill despite its historical gated IC of 0.2145 — the all-bars IC (near zero by tie construction) and cost hurdle independently reject it.
+There is no equivalent automated must-reject fixture for the A2.1 ungated-escape check today — that assessment is made directly by a human running the regime-auditor skill, not by any tool.
 
 ### Output audits (for prompts and skills)
 Skill rewrites have no behavior until an LLM executes them. They are accepted by **output audit** (A1.4), never by diff review. For each skill change: (a) run a trial and audit every output card for compliance; (b) look for compliant-looking confabulations (satisfies the letter, violates the spirit). Captured examples go back into the skill. The first audit-passing card serves as the end-to-end pass-path test.
@@ -2785,8 +2499,8 @@ So the load-bearing column below is the last one: **does it actually run?**
 never invoked by the hook. It runs **only** when a person types `pytest` by
 hand, in `strategy-research/`, on a machine holding the cache. Measured
 2026-08-31: **10 such guards across 4 files**, and they are the ones that drive
-the real engine over real bars. A green tick on a PR does not mean the prescreen
-still routes correctly. See
+the real engine over real bars. A green tick on a PR does not mean the
+backtest engine still routes correctly. See
 [E037-27](../engineering/roadmap/E-037/FINDINGS.md#e037-27).
 
 **Two consequences worth stating plainly:**
@@ -2810,14 +2524,14 @@ may comply or not. "Nothing" means the sentence is the only thing there.**
 
 | Guarantee, as the guide states it | Enforced by | Actually runs? |
 |---|---|---|
-| A8.1 — IC significance **and** `cost_check.pass` both required to reach a backtest | Code — `prescreen_signal.py::_determine_route` | ✅ yes |
+| A8.1 — IC significance **and** `cost_check.pass` both considered together on the post-backtest go/no-go | Code — `signal_statistics.py::determine_route` | ✅ yes, computed — but informational only, not a gate (see `protocol_result.yaml`'s post-backtest fields) |
 | A2.2 — a detector retune may not cite PnL or Sharpe | Code — `_validate_retune_firewall`, **raises** on a hit | ✅ yes |
 | An unrecognised spec status must not be guessed at | Code — `determine_post_spec_route`, pauses for a human | ✅ yes |
 | A6.1 — the holdout is single-use | Code — `_route_holdout_evaluation` refuses a repeat `hypothesis_id` | ✅ yes (never yet exercised — no run has reached it) |
 | A holdout needs an affirmative `research_only: false` | Code — same function, gate 2b | ✅ yes |
 | A6.1 — the holdout range must be declared in `sample_split_design` | **Nothing** — the field appears in 0 of 10 real `pre_registration.yaml` files, 0 hits in `workflow/`/`tools/` source | ❌ no (CUL-188, 2026-09-03) |
-| A6.2 — every evaluation counts as a trial, kills included | Code — `_record_prescreen_trial` / `_record_failed_backtest_trial` | ✅ yes |
-| F5c — a component crash must not be scored as "no edge" | Code — the override in `run_prescreen` | ⚠️ **partly** — an earlier guard now pre-empts the component-error branch ([E037-26](../engineering/roadmap/E-037/FINDINGS.md#e037-26)) |
+| A6.2 — every evaluation counts as a trial, kills included | Code — `_record_backtest_trial` / `_record_failed_backtest_trial` | ✅ yes |
+| F5c/F6 — an engineering failure must not be scored as "no edge" | Code — `verdict_interpreter`'s stage 11 check for `mechanism_failure == component_execution_error`, immune to the circuit breaker | ✅ yes |
 | Stage 3 — variants "must" be really diverse, "cosmetic = rejected" | **Skill only** — `innovation-expansion/SKILL.md`; the model reports its own verdict | ❌ **no code can produce "rejected"** ([E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18)) |
 | A1.1–A1.4 — `edge_source` before `signal_concept`, library lookup | **Skill only** | ❌ no |
 | Artifacts are validated against JSON schemas | **Nothing** — no schema is loaded by any code | ❌ no (corrected in §3, 2026-08-27) |

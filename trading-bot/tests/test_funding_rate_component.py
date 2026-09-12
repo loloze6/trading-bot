@@ -53,12 +53,38 @@ def test_threshold_zero_no_longer_raises_directly():
 @pytest.mark.skipif(not _FUNDING_CSV.exists() or not _OHLCV_CSV.exists(), reason="local_data fixtures not present")
 def test_run_044_config_now_produces_real_active_bars():
     """THE regression: this exact config previously produced active_n_bars=0 (silent
-    ZeroDivisionError on every settlement bar). Must now fire."""
-    sys.path.insert(0, str(REPO_ROOT / "strategy-research" / "tools"))
-    import prescreen_signal as ps
+    ZeroDivisionError on every settlement bar). Must now fire.
 
-    bars = ps._load_ohlcv("BTCUSDT", "2024-01-01", "2024-01-08")
-    merged = ps._merge_aux_feeds(bars, ["funding_rate"], "BTCUSDT", "2024-01-01", "2024-01-08")
+    Data loaded via the real DataManager/CandleBuilder merge/attach chain
+    (E-039 step 5, 2026-09-12: prescreen_signal.py's _load_ohlcv/_merge_aux_feeds
+    are gone; this is the same live path protocol_execution drives, and the
+    one test_data_manager_merge_attach_chain_yields_funding_column_at_1d below
+    already proves out for the 1d case)."""
+    from data.data_manager import DataManager
+    from data.fetchers.funding_rate_fetcher import FundingRateFetcher
+
+    start = pd.Timestamp("2024-01-01").to_pydatetime()
+    end = pd.Timestamp("2024-01-08").to_pydatetime()
+    symbol = "BTCUSDT"
+
+    dm = DataManager([symbol], interval_seconds=3600, mode="backtest")
+    dm.register_feed(
+        name="funding_rate",
+        fetcher=FundingRateFetcher(start, end, symbols=[symbol],
+                                    localStorage=True, data_dir=str(PROJECT_ROOT / "local_data")),
+        window_seconds=0,  # published instantaneously -- no forward window
+        agg="last",
+    )
+    dm.historical_data[symbol] = dm.fetch_historical_data(symbol, start, end)
+    dm.initialize()
+    dm.candle_builder.candle_completion_callback = None  # bypass default callback wiring
+
+    n_rows = len(dm.historical_data[symbol])
+    for idx in range(n_rows):
+        row = dm.historical_data[symbol].iloc[idx]
+        dm.candle_builder.add_row(row, symbol)
+
+    merged = dm.get_data_history(symbol, count=n_rows)
 
     with open(_RUN_044_CONFIG) as f:
         config = json.load(f)
@@ -108,12 +134,37 @@ def test_daily_bars_with_merged_funding_produce_nonzero_forecasts():
     """Component-level: FundingRateMeanReversionComponent on DAILY (86400s-
     aligned, hour=00:00) bars with real merged funding data over a small
     2019-12 window must fire (nonzero forecast) on every settlement day --
-    daily bars ARE settlement bars (hour%8==0 whenever hour==0)."""
-    sys.path.insert(0, str(REPO_ROOT / "strategy-research" / "tools"))
-    import prescreen_signal as ps
+    daily bars ARE settlement bars (hour%8==0 whenever hour==0).
 
-    bars = ps._load_ohlcv("BTCUSDT", "2019-12-01", "2019-12-06", timeframe="1d")
-    merged = ps._merge_aux_feeds(bars, ["funding_rate"], "BTCUSDT", "2019-12-01", "2019-12-06")
+    Data loaded via the real DataManager/CandleBuilder merge/attach chain
+    (E-039 step 5, 2026-09-12: prescreen_signal.py's _load_ohlcv/_merge_aux_feeds
+    are gone), the same construction test_data_manager_merge_attach_chain_
+    yields_funding_column_at_1d below already proves out."""
+    from data.data_manager import DataManager
+    from data.fetchers.funding_rate_fetcher import FundingRateFetcher
+
+    start = pd.Timestamp("2019-12-01").to_pydatetime()
+    end = pd.Timestamp("2019-12-06").to_pydatetime()
+    symbol = "BTCUSDT"
+
+    dm = DataManager([symbol], interval_seconds=86400, mode="backtest")
+    dm.register_feed(
+        name="funding_rate",
+        fetcher=FundingRateFetcher(start, end, symbols=[symbol],
+                                    localStorage=True, data_dir=str(PROJECT_ROOT / "local_data")),
+        window_seconds=0,
+        agg="last",
+    )
+    dm.historical_data[symbol] = dm.fetch_historical_data(symbol, start, end)
+    dm.initialize()
+    dm.candle_builder.candle_completion_callback = None
+
+    n_rows = len(dm.historical_data[symbol])
+    for idx in range(n_rows):
+        row = dm.historical_data[symbol].iloc[idx]
+        dm.candle_builder.add_row(row, symbol)
+
+    merged = dm.get_data_history(symbol, count=n_rows)
 
     assert len(merged) >= 3, "fixture window too small to be a meaningful regression test"
     assert all(pd.Timestamp(t).hour == 0 for t in merged["timestamp"]), \

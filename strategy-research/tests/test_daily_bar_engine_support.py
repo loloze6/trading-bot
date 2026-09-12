@@ -29,47 +29,12 @@ sys.path.insert(0, str(WORKFLOW_PATH))
 sys.path.insert(0, str(TOOLS_PATH))
 
 import run_phase1_research as rpr  # noqa: E402
-import prescreen_signal  # noqa: E402
 
-
-# ---------------------------------------------------------------------------
-# prescreen_signal.py block_size dispatch
-# ---------------------------------------------------------------------------
-
-def test_block_size_1h_unchanged():
-    """Bit-identical: "1h" must still resolve to 24, exactly as before this change."""
-    assert prescreen_signal._BLOCK_SIZE_1H == 24
-
-
-def test_block_size_1d_correct():
-    assert prescreen_signal._BLOCK_SIZE_1D == 1
-
-
-def _resolve_block_size(timeframe: str) -> int:
-    """Mirrors the exact dispatch added in run_prescreen()'s body — kept as a
-    small local helper so this test doesn't need to invoke the full prescreen
-    pipeline just to exercise a 3-line if/elif/else."""
-    if timeframe == "1h":
-        return prescreen_signal._BLOCK_SIZE_1H
-    elif timeframe == "1d":
-        return prescreen_signal._BLOCK_SIZE_1D
-    else:
-        return max(prescreen_signal._BLOCK_SIZE_1H // 4, 6)
-
-
-def test_block_size_dispatch_1h():
-    assert _resolve_block_size("1h") == 24
-
-
-def test_block_size_dispatch_1d():
-    assert _resolve_block_size("1d") == 1
-
-
-def test_block_size_dispatch_other_timeframes_unchanged():
-    """4h/15m etc. must still get the pre-existing generic fallback (6) —
-    this project's only intent was to ADD a "1d" case, not touch this."""
-    assert _resolve_block_size("4h") == 6
-    assert _resolve_block_size("15m") == 6
+# prescreen_signal.py's own block_size dispatch (formerly tested here) is
+# removed along with that module (E-039 step 5, 2026-09-12) -- the underlying
+# "1h"->24 / "1d"->1 values it mirrored are the single shared derivation
+# tools/timeframe.py::bars_per_day() already provides, tested exhaustively in
+# test_timeframe_block_size.py.
 
 
 # ---------------------------------------------------------------------------

@@ -1704,6 +1704,16 @@ def main():
         "hypothesis_verdict":     hypothesis_verdict,
         "trade_diagnostics_summary": trade_diagnostics_summary if all_trade_records else None,
         "prescreen_backtest_cross_check": cross_check,
+        # E-039 step 5 (2026-09-12): CUL-265's per-symbol A8.5.1a methodology
+        # label was computed (extended_for_cross_check, above) and used
+        # transiently for the cross-check, but never actually persisted --
+        # exposing it here so the relocated pre-registration conformance
+        # check (which replaces the removed signal_prescreen stage's own
+        # significance_methodology_used check) has something real to read.
+        "episode_blocked_significance_by_symbol": {
+            s: v.get("episode_blocked_significance_method")
+            for s, v in extended_for_cross_check.items()
+        } if extended_for_cross_check else None,
     }
     (out_dir / "protocol_summary.json").write_text(
         json.dumps(summary, indent=2, default=str), encoding="utf-8"

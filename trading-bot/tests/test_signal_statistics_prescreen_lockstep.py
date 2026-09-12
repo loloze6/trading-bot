@@ -1,13 +1,19 @@
 """
-E-039 step 5 (2026-09-12): performance.signal_statistics's newly-ported
-contiguous_segments/pooled_block_adjusted_significance/
-stationary_block_bootstrap_ic_significance must agree EXACTLY with
-prescreen_signal.py's originals on identical input -- proving the port is
-algorithmically faithful before prescreen_signal.py is removed and its
-dependents (episode_significance.py, run_protocol.py,
-whale_footprint_evaluation.py) are repointed here. Same lockstep-test
-discipline CUL-262/264 already established for block_adjusted_pvalue/
-cost_check/determine_route.
+E-039 step 5: performance.signal_statistics's ported
+pooled_block_adjusted_significance/stationary_block_bootstrap_ic_significance,
+pinned-value contract tests.
+
+Originally a lockstep comparison against prescreen_signal.py's originals,
+proving the port (CUL-262/264/E-039 step 5 Phase 1) was algorithmically
+faithful before prescreen_signal.py was removed (2026-09-12, E-039 step 5
+Phase 3) and its dependents (episode_significance.py, run_protocol.py,
+whale_footprint_evaluation.py) were repointed here. That comparison's job is
+done -- prescreen_signal.py no longer exists to compare against -- so this
+file now pins the values the lockstep run last confirmed correct, as a
+regression guard on signal_statistics.py itself.
+
+contiguous_segments has its own direct contract tests in
+strategy-research/tests/test_contiguous_segments.py; not duplicated here.
 """
 import sys
 from pathlib import Path
@@ -16,102 +22,56 @@ TRADING_BOT_ROOT = Path(__file__).parent.parent
 if str(TRADING_BOT_ROOT) not in sys.path:
     sys.path.insert(0, str(TRADING_BOT_ROOT))
 
-TOOLS_PATH = TRADING_BOT_ROOT.parent / "strategy-research" / "tools"
-if str(TOOLS_PATH) not in sys.path:
-    sys.path.insert(0, str(TOOLS_PATH))
-
 from performance.signal_statistics import (
-    contiguous_segments,
     pooled_block_adjusted_significance,
     stationary_block_bootstrap_ic_significance,
 )
-import prescreen_signal as ps
 
 
 # ---------------------------------------------------------------------------
-# contiguous_segments vs prescreen_signal.py::_contiguous_segments
+# pooled_block_adjusted_significance
 # ---------------------------------------------------------------------------
 
-def _recs_with_gap():
-    """5 bars, hourly step, with a 3-hour hole between index 2 and 3."""
-    import pandas as pd
-    ts = [pd.Timestamp("2024-01-01 00:00"), pd.Timestamp("2024-01-01 01:00"),
-          pd.Timestamp("2024-01-01 02:00"), pd.Timestamp("2024-01-01 05:00"),
-          pd.Timestamp("2024-01-01 06:00")]
-    return [{"timestamp": t} for t in ts], pd.Timedelta(hours=1)
+def test_pooled_block_adjusted_significance_typical():
+    result = pooled_block_adjusted_significance([0.15], 400, 24)
+    assert result == {
+        "pooled_ic": 0.15, "z_stat": 0.5408, "p_value": 0.5886,
+        "n_eff": 16, "block_size": 24, "significant": False,
+    }
 
 
-def test_contiguous_segments_matches_prescreen_with_gap():
-    recs, step = _recs_with_gap()
-    assert contiguous_segments(recs, step) == ps._contiguous_segments(recs, step)
-    assert contiguous_segments(recs, step) == [(0, 3), (3, 5)]
+def test_pooled_block_adjusted_significance_empty_ic_values():
+    result = pooled_block_adjusted_significance([], 400, 24)
+    assert result == {
+        "pooled_ic": None, "z_stat": None, "p_value": 1.0,
+        "n_eff": 16, "block_size": 24, "significant": False,
+    }
 
 
-def test_contiguous_segments_matches_prescreen_no_expected_step():
-    recs, _ = _recs_with_gap()
-    assert contiguous_segments(recs, None) == ps._contiguous_segments(recs, None)
-    assert contiguous_segments(recs, None) == [(0, 5)]
+def test_pooled_block_adjusted_significance_placeable_blocks():
+    result = pooled_block_adjusted_significance(
+        [0.05, None, -0.02], 500, 24, placeable_blocks=15)
+    assert result == {
+        "pooled_ic": 0.015, "z_stat": 0.052, "p_value": 0.9586,
+        "n_eff": 15, "block_size": 24, "significant": False,
+    }
 
 
-def test_contiguous_segments_matches_prescreen_empty():
-    assert contiguous_segments([], None) == ps._contiguous_segments([], None)
-
-
-def test_contiguous_segments_missing_timestamp_raises_same_as_prescreen():
-    recs = [{"no_timestamp": True}]
-    import pandas as pd
-    step = pd.Timedelta(hours=1)
-    raised_new = raised_old = False
-    try:
-        contiguous_segments(recs, step)
-    except KeyError:
-        raised_new = True
-    try:
-        ps._contiguous_segments(recs, step)
-    except KeyError:
-        raised_old = True
-    assert raised_new and raised_old
+def test_pooled_block_adjusted_significance_saturated_ic():
+    result = pooled_block_adjusted_significance([1.0], 100, 24)
+    assert result == {
+        "pooled_ic": 1.0, "z_stat": None, "p_value": 0.0,
+        "n_eff": 4, "block_size": 24, "significant": True,
+    }
 
 
 # ---------------------------------------------------------------------------
-# pooled_block_adjusted_significance vs prescreen_signal.py::_block_adjusted_significance
-# ---------------------------------------------------------------------------
-
-def test_pooled_block_adjusted_significance_matches_prescreen_typical():
-    ic_values = [0.15]
-    n_active = 400
-    block_size = 24
-    new = pooled_block_adjusted_significance(ic_values, n_active, block_size)
-    old = ps._block_adjusted_significance(ic_values, n_active, block_size)
-    assert new == old
-
-
-def test_pooled_block_adjusted_significance_matches_prescreen_empty_ic_values():
-    new = pooled_block_adjusted_significance([], 400, 24)
-    old = ps._block_adjusted_significance([], 400, 24)
-    assert new == old
-
-
-def test_pooled_block_adjusted_significance_matches_prescreen_placeable_blocks():
-    ic_values = [0.05, None, -0.02]
-    new = pooled_block_adjusted_significance(ic_values, 500, 24, placeable_blocks=15)
-    old = ps._block_adjusted_significance(ic_values, 500, 24, placeable_blocks=15)
-    assert new == old
-
-
-def test_pooled_block_adjusted_significance_matches_prescreen_saturated_ic():
-    new = pooled_block_adjusted_significance([1.0], 100, 24)
-    old = ps._block_adjusted_significance([1.0], 100, 24)
-    assert new == old
-
-
-# ---------------------------------------------------------------------------
-# stationary_block_bootstrap_ic_significance vs prescreen_signal.py's original
+# stationary_block_bootstrap_ic_significance
 # ---------------------------------------------------------------------------
 
 def _bootstrap_fixture():
     n = 60
-    records_by_symbol = {
+    return {
         "BTCUSDT": [
             {"forecast": ((-1) ** i) * (5 + i % 5), "next_return_bps": (i % 7) - 3}
             for i in range(n)
@@ -121,26 +81,39 @@ def _bootstrap_fixture():
             for i in range(n)
         ],
     }
-    return records_by_symbol
 
 
-def test_stationary_block_bootstrap_matches_prescreen_default_args():
+def test_stationary_block_bootstrap_default_args_structure():
+    """seed=None by default -- p_value/n_bootstrap_valid are resample-dependent
+    and not pinned exactly (see the seeded test below for an exact pin).
+    pooled_ic is computed from the real, unresampled data so it IS
+    deterministic regardless of seed -- pinned here."""
     records_by_symbol = _bootstrap_fixture()
-    new = stationary_block_bootstrap_ic_significance(records_by_symbol)
-    old = ps._stationary_block_bootstrap_ic_significance(records_by_symbol)
-    assert new == old
+    result = stationary_block_bootstrap_ic_significance(records_by_symbol)
+    assert result["method"] == "block_bootstrap_all_bars_v1"
+    assert result["block_size"] == 20
+    assert result["n_resamples"] == 1000
+    assert result["pooled_ic"] == -0.002096
+    assert result["n_bootstrap_valid"] == 1000
+    assert 0.0 <= result["p_value"] <= 1.0
+    assert isinstance(result["significant"], bool)
 
 
-def test_stationary_block_bootstrap_matches_prescreen_smaller_resamples_and_seed():
+def test_stationary_block_bootstrap_smaller_resamples_and_seed():
     records_by_symbol = _bootstrap_fixture()
-    new = stationary_block_bootstrap_ic_significance(
+    result = stationary_block_bootstrap_ic_significance(
         records_by_symbol, block_size=10, n_resamples=50, seed=42)
-    old = ps._stationary_block_bootstrap_ic_significance(
-        records_by_symbol, block_size=10, n_resamples=50, seed=42)
-    assert new == old
+    assert result == {
+        "method": "block_bootstrap_all_bars_v1", "block_size": 10,
+        "n_resamples": 50, "pooled_ic": -0.002096, "p_value": 0.96,
+        "significant": False, "n_bootstrap_valid": 50,
+    }
 
 
-def test_stationary_block_bootstrap_matches_prescreen_empty_input():
-    new = stationary_block_bootstrap_ic_significance({})
-    old = ps._stationary_block_bootstrap_ic_significance({})
-    assert new == old
+def test_stationary_block_bootstrap_empty_input():
+    result = stationary_block_bootstrap_ic_significance({})
+    assert result == {
+        "method": "block_bootstrap_all_bars_v1", "block_size": 20,
+        "n_resamples": 1000, "pooled_ic": None, "p_value": 1.0,
+        "significant": False, "n_bootstrap_valid": 0,
+    }

@@ -61,7 +61,7 @@ contract, so nobody could see them.
 | [E037-23](#e037-23) | medium | phantom-values + unhandled-status | `docs/USER_GUIDE.md` §3 (`decision.yaml`) |
 | [E037-24](#e037-24) | **high** | phantom-fields (systemic) | `docs/USER_GUIDE.md` §3 — 5 entries |
 | [E037-25](#e037-25) | medium | incomplete-index | `docs/USER_GUIDE.md` §5 |
-| [E037-26](#e037-26) | **high** | code-regression | `strategy-research/tools/prescreen_signal.py:1320` |
+| [E037-26](#e037-26) | **high** | code-regression | prescreen_signal.py (removed 2026-09-12, E-039) |
 | [E037-27](#e037-27) | **high** | gap-in-the-gate | `.git/hooks/pre-commit` · `.github/workflows/tests.yml` |
 | [E037-28](#e037-28) | low | stale-count | `docs/USER_GUIDE.md` §6 (`Run`) |
 | [E037-29](#e037-29) | **high** | guard-not-installed | `.git/hooks/pre-commit` (this machine) |
@@ -79,8 +79,9 @@ contract, so nobody could see them.
 | [E037-41](#e037-41) | medium | gate-ordering | `run_phase1_research.py::_route_holdout_evaluation` |
 | [E037-42](#e037-42) | **high** | built-but-never-switched-on (class) | `trading-bot/core/*` · `config/campaign_config.yaml` |
 | [E037-43](#e037-43) | medium | audit-did-not-check-prior-art | E-037's own method |
+| [E037-44](#e037-44) | medium | silently-dropped-safety-property | `run_campaign.py` (`no_signal_artifact_flagged`) |
 
-**Counts:** 19 high · 19 medium · 5 low.
+**Counts:** 19 high · 20 medium · 5 low.
 
 > **Status update, 2026-09-03.** This file's individual `## E037-NN` sections
 > now carry accurate per-finding status (most were fixed at some point after
@@ -122,7 +123,9 @@ complete and was not.
 **Found by:** S1 worked sample, 2026-08-30
 
 
-§2.2 stage 7's Objective opens "A8.6 pre-flight first (blocks if power insufficient)", under Engine = *Python tool*. `tools/prescreen_signal.py` contains **no power check at all**. A8.6 runs in the orchestrator, at `run_phase1_research.py:6217` (immediately before the tool subprocess) and again at `:2287` inside `determine_post_validation_route`. The stage row conflates orchestrator wrapper logic with tool logic — exactly the confusion E-037 exists to remove. §2.1's stage map is *not* wrong here: it correctly attaches A8.6 to both validation_gate and signal_prescreen.
+§2.2 stage 7's Objective opens "A8.6 pre-flight first (blocks if power insufficient)", under Engine = *Python tool*. `tools/prescreen_signal.py` contains **no power check at all**. A8.6 ran in the orchestrator, immediately before the tool subprocess, and again inside `determine_post_validation_route`. The stage row conflates orchestrator wrapper logic with tool logic — exactly the confusion E-037 exists to remove. §2.1's stage map is *not* wrong here: it correctly attaches A8.6 to both validation_gate and signal_prescreen.
+
+Moot as of 2026-09-11/12 (E-039): A8.6 and the `signal_prescreen` stage are both removed entirely, so there is no longer any code anchor to cite either way.
 
 
 **Proposed disposition (S3 decides, not this file):** Correct the stage-7 row to attribute A8.6 to the orchestrator, not the tool.
@@ -139,7 +142,9 @@ complete and was not.
 **Found by:** S1 worked sample, 2026-08-30
 
 
-§3's `prescreen_result.yaml` `route` enum lists 6 values and **omits `no_signal_artifact`**, which the code emits at `prescreen_signal.py:1481` and which **overrides every other route**. A reader of §3 cannot know the most consequential route exists.
+§3's `prescreen_result.yaml` `route` enum lists 6 values and **omits `no_signal_artifact`**, which the code emitted (formerly prescreen_signal.py line 1481) and which **overrides every other route**. A reader of §3 could not know the most consequential route existed.
+
+Moot as of 2026-09-12 (E-039 step 5): `prescreen_result.yaml` and `signal_prescreen` no longer exist.
 
 
 **Proposed disposition (S3 decides, not this file):** Add `no_signal_artifact` to the route enum and mark it as overriding.
@@ -173,10 +178,12 @@ complete and was not.
 **Found by:** S1 worked sample, 2026-08-30
 
 
-§3 says **Created by:** "signal_prescreen tool (`tools/prescreen_signal.py`)". On the insufficient-power path the file is created by the **orchestrator** (`run_phase1_research.py:6232` and `:2297`) and the tool never runs. The `Created by` line is wrong for one of its three creation paths, and the resulting artifact has a completely different shape (4 keys, no IC/cost/provenance fields) that §3 does not mention.
+§3 says **Created by:** "signal_prescreen tool (`tools/prescreen_signal.py`)". On the insufficient-power path the file was created by the **orchestrator** (immediately before the tool subprocess, and again inside `determine_post_validation_route`) and the tool never ran. The `Created by` line was wrong for one of its three creation paths, and the resulting artifact had a completely different shape (4 keys, no IC/cost/provenance fields) that §3 did not mention.
 
 
 **Proposed disposition (S3 decides, not this file):** List all three creation paths; document the 4-key stub shape.
+
+Moot as of 2026-09-11/12 (E-039): `signal_prescreen` and `prescreen_result.yaml` no longer exist; the pipeline now always runs a full backtest instead of a prescreen stub.
 
 
 ---
@@ -190,7 +197,9 @@ complete and was not.
 **Found by:** S1 worked sample, 2026-08-30
 
 
-Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` — "block-bootstrap") name the **fallback** method as if it were the default. The default is block-deflated **Fisher z** (`z = IC * sqrt(n_eff - 3)`, `prescreen_signal.py:643`, labelled `block_{n}_fisher_z` at `:1377`). A stationary block bootstrap runs only on the degenerate-active-forecast path (`:730`), and A8.5.1a episode-blocking is a third method (`:1402`). Three methods, one name in the doc.
+Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` — "block-bootstrap") name the **fallback** method as if it were the default. The default was block-deflated **Fisher z** (`z = IC * sqrt(n_eff - 3)`, formerly prescreen_signal.py line 643, labelled `block_{n}_fisher_z`). A stationary block bootstrap ran only on the degenerate-active-forecast path, and A8.5.1a episode-blocking was a third method. Three methods, one name in the doc.
+
+Moot as of 2026-09-12 (E-039 step 5): `prescreen_signal.py` is removed entirely; the surviving significance machinery (block-deflated Fisher z, the stationary block bootstrap, A8.5.1a episode-blocking) now lives in `trading-bot/performance/signal_statistics.py` and `tools/episode_significance.py`.
 
 
 **Proposed disposition (S3 decides, not this file):** Name the three methods separately; default is block-deflated Fisher z.
@@ -224,10 +233,12 @@ Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` �
 **Found by:** S1 worked sample, 2026-08-30
 
 
-**Undocumented cross-stage write.** `run_prescreen` writes into **stage 10's** artifact: it opens `runs/{run_id}/artifacts/regime_audit_decision.yaml` and resolves `ungated_escape_eligible` in place (`prescreen_signal.py:1582` → `_resolve_ungated_escape`, `:1092`). §3's `regime_audit_decision.yaml` entry says **Created by:** "regime-auditor skill" and has **no** `Updated by` line, so no reader of the guide could discover that stage 7 rewrites it. This is precisely the input/output-contract blind spot the EPIC blames for the bug list feeling uncontrollable — and it is the strongest evidence that the `Updated by` normalisation in §2 of this document is load-bearing rather than cosmetic.
+**Undocumented cross-stage write.** `run_prescreen` writes into **stage 10's** artifact: it opens `runs/{run_id}/artifacts/regime_audit_decision.yaml` and resolves `ungated_escape_eligible` in place (formerly `prescreen_signal.py` → `_resolve_ungated_escape`). §3's `regime_audit_decision.yaml` entry says **Created by:** "regime-auditor skill" and has **no** `Updated by` line, so no reader of the guide could discover that stage 7 rewrites it. This is precisely the input/output-contract blind spot the EPIC blames for the bug list feeling uncontrollable — and it is the strongest evidence that the `Updated by` normalisation in §2 of this document is load-bearing rather than cosmetic.
 
 
 **Proposed disposition (S3 decides, not this file):** Add an `Updated by` line naming signal_prescreen. Consider whether a cross-stage in-place write is the design you want -- that part is a CODE question, not a doc one.
+
+**Update 2026-09-12 (E-039 step 5, found during the `signal_prescreen` removal, not yet acted on):** the write this entry describes (`_resolve_ungated_escape`, the A9.1 side effect resolving `regime_audit_decision.yaml`'s `ungated_escape_eligible` from `indeterminate` using the all-bars IC significance) had **no live analog anywhere else in the pipeline** and was deleted along with the rest of `prescreen_signal.py`. `run_phase1_research.py` still *reads* `ungated_escape_eligible` (building the regime-attribution handoff), and the regime-auditor skill can still set the field directly per its own SKILL.md rules — so nothing is broken — but the automatic "re-resolve `indeterminate` from measured all-bars IC" refinement is gone with no replacement computing an all-bars IC anywhere in `run_protocol.py`. Left as a documented gap rather than guess-relocated, since reproducing "IC on ALL bars, no regime filter" correctly inside the backtest engine is a real design decision, not a mechanical port. Flagged in Linear (E-039) for a deliberate decision.
 
 
 ---
@@ -241,10 +252,12 @@ Both §2.2 stage 7 ("block-bootstrap significance") and §3 (`ic_significance` �
 **Found by:** S1 worked sample, 2026-08-30
 
 
-Two significance thresholds live in `_determine_route` and only the stricter one is documented anywhere: `_SIG_THRESHOLD = 0.10` gates IC significance (`prescreen_signal.py:87`), while a second `p > 0.05` test inside the cost branch decides `kill_cost_hurdle` vs `refine_cost_hurdle` (`:1042`). Neither §2.2 nor §3 mentions either number.
+Two significance thresholds lived in `_determine_route` and only the stricter one was documented anywhere: `_SIG_THRESHOLD = 0.10` gated IC significance (formerly `prescreen_signal.py`), while a second `p > 0.05` test inside the cost branch decided `kill_cost_hurdle` vs `refine_cost_hurdle`. Neither §2.2 nor §3 mentioned either number.
 
 
 **Proposed disposition (S3 decides, not this file):** Document both thresholds and what each decides.
+
+Moot as of 2026-09-12 (E-039 step 5): `determine_route`/`_determine_route` and the `signal_prescreen` stage are removed entirely; route decisions are now made post-backtest by `determine_route`/`cost_check` in the trading-bot side (CUL-264/272).
 
 
 ---
@@ -275,7 +288,7 @@ Two significance thresholds live in `_determine_route` and only the stricter one
 **Found by:** S1 worked sample, 2026-08-30
 
 
-**A stale hardcoded `24` survives in the A8.5.1a label, and a real run proves it.** `prescreen_signal.py:1371-1376` records that the method label used to read `block_24_fisher_z` while `block_size` had become a derived per-timeframe value, and that this was fixed on 2026-08-28 so "the name is what a later reader reconstructs the method from; it has to track the arithmetic." That fix was applied to the **default path only**. The A8.5.1a dense-fallback branch still returns the hardcoded string `"block_24_dense_fallback"` (`tools/episode_significance.py:209`) while passing the derived `block_size` into `_block_adjusted_significance`. `runs/run_060/artifacts/prescreen_result.yaml` (2026-08-28) carries `significance_methodology_used: block_24_dense_fallback` next to `ic_significance_block24.block_size: 6` — the artifact asserts 24 and the arithmetic used 6, which is exactly the defect the comment claims closed. **Not a one-line fix:** the literal is also a member of `VALID_METHODS` (`episode_significance.py:59`), which the orchestrator's F4d conformance gate matches against, so the label and the gate must change together.
+**A stale hardcoded `24` survives in the A8.5.1a label, and a real run proves it.** Formerly `prescreen_signal.py` (removed 2026-09-12, E-039) recorded that the method label used to read `block_24_fisher_z` while `block_size` had become a derived per-timeframe value, and that this was fixed on 2026-08-28 so "the name is what a later reader reconstructs the method from; it has to track the arithmetic." That fix was applied to the **default path only**. The A8.5.1a dense-fallback branch still returns the hardcoded string `"block_24_dense_fallback"` (`tools/episode_significance.py:209`) while passing the derived `block_size` into `_block_adjusted_significance`. `runs/run_060/artifacts/prescreen_result.yaml` (2026-08-28) carries `significance_methodology_used: block_24_dense_fallback` next to `ic_significance_block24.block_size: 6` — the artifact asserts 24 and the arithmetic used 6, which is exactly the defect the comment claims closed. **Not a one-line fix:** the literal is also a member of `VALID_METHODS` (`episode_significance.py:59`), which the orchestrator's F4d conformance gate matches against, so the label and the gate must change together.
 
 
 **Proposed disposition (S3 decides, not this file):** Derive the label from block_size, and update VALID_METHODS and the F4d conformance gate in the same change. Needs a decision on already-archived artifacts carrying the wrong label.
@@ -345,9 +358,9 @@ on first use within a block; that convention is worth applying guide-wide.
 
 ## E037-13
 
-**Severity:** medium · **Type:** wrong-citation · **Status:** open, untriaged — needs the author's confirmation
+**Severity:** medium · **Type:** wrong-citation · **Status:** moot 2026-09-12 (E-039) — `prescreen_signal.py` removed entirely, so the mislabeled sites no longer exist to correct
 
-**Lands on:** `strategy-research/tools/prescreen_signal.py:1089`, `:1100`, `:1580`
+**Lands on (historical):** formerly `strategy-research/tools/prescreen_signal.py` (three sites, all deleted with the file)
 
 **Found by:** S1 review follow-up, 2026-08-30
 
@@ -467,9 +480,10 @@ orchestrator never dispatches it.**
   mapped for stage: {stage_name}")` for anything not in that map (`:711`), so
   it could not be dispatched even if it were reached.
 - **No code writes `regime_audit_decision.yaml`.** The orchestrator only
-  *reads* it if it happens to exist (`:6251`, `:6382`), and the only writer
-  anywhere is `prescreen_signal.py:1118`, which updates an existing file and
-  returns early if there is none.
+  *reads* it if it happens to exist, and the only writer
+  anywhere was prescreen_signal.py line 1118 (file removed 2026-09-12, E-039 —
+  see the E037-07 update above: this write-back has no replacement), which
+  updated an existing file and returned early if there was none.
 
 What actually happens: on the `regime_misattribution` path the pipeline
 **pauses for a human** (`status="paused_for_human"`) and prints *"consult
@@ -942,7 +956,7 @@ shrink to a pointer.
 **Severity:** high · **Type:** code-regression · **Status:** ✅ **RESOLVED 2026-09-03** —
 fixed via CUL-184; verified `test_component_errors_route_to_no_signal_artifact` passes on master
 
-**Lands on:** `strategy-research/tools/prescreen_signal.py:1320`
+**Lands on (historical):** formerly `strategy-research/tools/prescreen_signal.py` — the file, and the test that guarded this regression, were both removed 2026-09-12 (E-039)
 
 **Found by:** S3, 2026-08-31, running the suite before landing an unrelated change
 
@@ -1828,6 +1842,24 @@ epic-drafting finally required reading the index.
 audit or epic — read `EPICS.md` and grep the roadmap for the topic before
 recording a finding as new. Cheap, and it would have saved two epics and
 several rediscoveries here.
+
+---
+
+## E037-44
+
+**Severity:** medium · **Type:** silently-dropped-safety-property · **Status:** open, found during E-039 step 5's bug-hunt pass (2026-09-12), not fixed
+
+**Lands on:** `strategy-research/workflow/run_campaign.py` (`_apply_trial_accounting`'s `no_signal_artifact` branch, and the `no_signal_artifact_flagged` sticky-flag path it reads)
+
+**Found by:** post-removal bug-hunt review of the `signal_prescreen` deletion (E-039 step 5), 2026-09-12 — same method as [E037-07](#e037-07)'s update above: check whether each thing prescreen used to do still has a live setter, not just a live reader.
+
+**F5c's "component never fired or errored on every bar" engineering-pause detection has no replacement now that `signal_prescreen` is gone.** `no_signal_artifact_flagged` is still read in two places in `run_campaign.py` (the halt-reason classifier and `_apply_trial_accounting`'s disposition table) and is still listed as one of four quarantine-safe reasons — but its only setter was `determine_post_prescreen_route`'s `route == "no_signal_artifact"` branch, deleted with the rest of the `signal_prescreen` stage this session. Confirmed by grep: no code anywhere sets this flag on a real run any more (the one remaining hit is a synthetic test in `run_campaign.py` itself that sets it directly to exercise the classifier).
+
+This is a narrower, different thing from `component_execution_error` (a crash/exception — still detected, unaffected by this removal): F5c specifically caught a component that ran without error but produced a degenerate/never-active signal — an engineering bug, not a scientific "IC was measured and found weak" result — and routed it to a human pause instead of letting it score as a research finding (the run_044 incident this branch's own comment cites). Nothing on the current post-backtest path (`determine_route`/`cost_check` in `signal_statistics.py`, or the min-observations gate) distinguishes "the strategy component is broken and never emits a real signal" from "the strategy was measured and its edge is genuinely near zero" — both would now just flow through as an ordinary kill-route verdict.
+
+**Not fixed, because building the right detection needs a real design decision** (what backtest-side signal counts as "the component never fired" — zero non-zero forecasts across the whole run? A rolling-window activation-rate floor? — and this is exactly the kind of pre-registered, falsifiable threshold this codebase's own convention refuses to invent after the fact). Flagging for the user's judgment rather than guessing at a replacement.
+
+**Proposed disposition:** either (a) design a backtest-side equivalent (e.g., `build_core` or `run_protocol.py` flags a run whose forecast series never exceeds `ACTIVE_THRESHOLD` a single time as an engineering pause, not a kill), or (b) explicitly retire `no_signal_artifact`/`no_signal_artifact_flagged` from `run_campaign.py`'s quarantine taxonomy and `verdict_criteria_evaluator.py`'s non-verdict outcomes as a decision, documenting that this failure mode is no longer distinguished from a real kill under "always backtest."
 
 ---
 

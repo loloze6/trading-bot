@@ -64,7 +64,12 @@ KNOWN_PHANTOM: dict[str, set[str]] = {
     # runs hit. `gap_stats_by_symbol` is written by prescreen_signal.py:1630
     # but only carries entries when a real data gap was actually found and
     # dropped (#50 A) -- none of the 10 sampled runs had one.
-    "`prescreen_result.yaml`": {"a86_power_check", "gap_stats_by_symbol"},
+    # 2026-09-12 (E-039 step 5, CUL-265 exposure gap): `episode_blocked_significance_by_symbol`
+    # is a real field -- run_protocol.py's main() writes it into every new
+    # summary from `extended_for_cross_check` -- but no run in the 38-file
+    # sample predates the fix, so none carry it yet. Genuinely intended
+    # design, not a documentation error.
+    "`protocol_result.yaml` / `protocol_summary.json`": {"episode_blocked_significance_by_symbol"},
     # NOTE: `verdict_interpretation.yaml` is deliberately absent. S2 rewrote that
     # table from real artifacts, so its five phantom names (altitude, verdict,
     # diagnostic_rule_applied, parameter_bracket, next_altitude) no longer appear
