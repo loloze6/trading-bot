@@ -696,12 +696,15 @@ Before recommending `hypothesis_verdict: promote`:
    strongly-positive symbol and one negative symbol is not asset-stable; say
    so explicitly rather than letting the average look clean.
 
-**This does not override K2's machine-authored verdict copy-through above.**
-If `pass_rule_evaluation.yaml` already carries a binding `PASS`/`FAIL` and
-your own asset-stability reading disagrees with it, follow the standing
-disagreement rule (K2 section, above): do not silently overwrite either
-direction — write the disagreement into `altitude_justification` and set
-`human_pause`.
+**This does not override K2's machine-authored verdict above.** If
+`pass_rule_evaluation.yaml` already carries a binding `PASS`/`FAIL`, routing
+uses that file's own `hypothesis_verdict`/`lineage_routing` directly (E-018,
+2026-09-13 — see MACHINE-AUTHORED VERDICT above); your own `promote`
+recommendation in that case cannot itself change the route. If your
+asset-stability reading disagrees with the binding verdict, still write the
+disagreement into `altitude_justification` — it is recorded as an
+informational flag, not a `human_pause`, exactly as any other stage/machine
+disagreement now is.
 
 ## A2.3 — IC measurement scope
 
@@ -714,5 +717,9 @@ direction — write the disagreement into `altitude_justification` and set
 If no regime-auditor run exists for this symbol/timeframe, treat `ungated_escape_eligible` as indeterminate and note that in `altitude_justification`.
 
 ## Context rule
-Read only the five input artifacts plus the handoff `regime_detector_confidence` field.
-Minimal context.
+Read only the Required inputs listed above, plus the handoff
+`regime_detector_confidence` field. Minimal context. (Corrected 2026-09-13,
+bug hunt: this said "the five input artifacts" — stale since at least K2
+[2026-07-13], and further out of date after E-026/E-018 each added more
+required inputs without updating this line. Naming an exact count here has
+repeatedly drifted from the list above; stop restating it.)

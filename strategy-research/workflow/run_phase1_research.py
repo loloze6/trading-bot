@@ -4556,10 +4556,19 @@ def _auto_generate_findings_carryover(path: Path, interp: dict, lineage_routing:
     print("⚙️ Auto-generated findings_carryover.yaml from verdict artifacts.")
 
 
-def _verify_verdict_outputs(run_dir: Path) -> list:
+def _verify_verdict_outputs(run_dir: Path, mechanical_lineage_routing: str | None = None) -> list:
     """
     Check that verdict_interpreter produced the right artifacts for its declared status.
-    Always reads verdict_interpretation.yaml fresh — never uses caller-modified status.
+    Always reads verdict_interpretation.yaml fresh — never uses caller-modified status,
+    EXCEPT for `mechanical_lineage_routing` (E-018, 2026-09-13): when a run's
+    pass_rule_evaluation.yaml is binding, the ACTUAL route is that file's
+    lineage_routing, not whatever verdict_interpreter itself restated (the two
+    can now genuinely disagree -- see _resolve_verdict_fields). Checking the
+    artifact's own, possibly-disagreeing field here would verify the WRONG
+    shape (e.g. checking for pivot's required files when the real route is
+    refine), so callers pass the mechanically-resolved value explicitly in
+    that case. None (the default) preserves the original discipline exactly:
+    derive from the artifact itself, for every run without a binding pass rule.
     Returns a list of violation strings. Empty list = all checks pass.
     """
     violations = []
@@ -4572,7 +4581,7 @@ def _verify_verdict_outputs(run_dir: Path) -> list:
     # the artifact's own lineage_routing field, falling back to the legacy
     # status field for a not-yet-migrated artifact.
     legacy_status = (interp.get("status") or interp.get("protocol_verdict") or "").strip().lower()
-    status = interp.get("lineage_routing")
+    status = mechanical_lineage_routing or interp.get("lineage_routing")
     if not status:
         mapped = _LEGACY_STATUS_TO_VERDICT_ROUTING.get(legacy_status)
         status = mapped[1] if mapped else legacy_status
@@ -5552,18 +5561,22 @@ def determine_post_verdict_route(path: Path, run_id: str):
     # (interp's own fields) against pass_rule_evaluation.yaml -- NOT the
     # already-resolved `hypothesis_verdict`/`lineage_routing` above, which when
     # pre_eval was binding now simply ARE the mechanical pair (comparing them
-    # to themselves would find nothing). Skipped entirely for a legacy
-    # artifact that never declared its own hypothesis_verdict at all (nothing
-    # to compare -- not a disagreement). A mismatch can no longer mean
-    # "routing might be wrong" (routing already used the mechanical pair
-    # directly) -- it only means the stage's own restated copy was wrong, an
+    # to themselves would find nothing). Called UNCONDITIONALLY, even when the
+    # stage declared no hypothesis_verdict at all (`_own_hv is None`) --
+    # _check_pass_rule_evaluation_conformance's own early-returns already
+    # handle "pre_eval not binding" safely, and a binding pre_eval can only
+    # arise from a K2-era (2026-07-13+) pre_registration.yaml, which is
+    # exactly the era where verdict_interpreter's SKILL.md instructs the LLM
+    # to declare these fields via B4 copy-through -- so an unexpected `None`
+    # here on a binding run is itself the most useful signal this check can
+    # produce (the LLM ignored the copy-through instruction entirely), not a
+    # case to silently skip. A mismatch can no longer mean "routing might be
+    # wrong" (routing already used the mechanical pair directly) -- it only
+    # means the stage's own restated copy was wrong or absent, an
     # LLM-comprehension signal worth recording, not a reason to halt the
     # pipeline.
     _own_hv, _own_lr = interp.get("hypothesis_verdict"), interp.get("lineage_routing")
-    _prc_violations = (
-        _check_pass_rule_evaluation_conformance(path, _own_hv, _own_lr)
-        if _own_hv is not None else []
-    )
+    _prc_violations = _check_pass_rule_evaluation_conformance(path, _own_hv, _own_lr)
     if _prc_violations:
         print("\n⚠️  [C7] Stage's own restated verdict disagreed with the binding "
               "pass_rule_evaluation.yaml (informational only -- routing already used "
@@ -5586,8 +5599,13 @@ def determine_post_verdict_route(path: Path, run_id: str):
     # A5.1-5.3: update campaign KB with this run's verdict
     _write_kb_findings_entry(path, run_id, interp)
 
-    # Verify verdict outputs before scaffolding the next run (not applied to terminal routes)
-    violations = _verify_verdict_outputs(path)
+    # Verify verdict outputs before scaffolding the next run (not applied to terminal routes).
+    # E-018: pass the MECHANICALLY-resolved lineage_routing when pre_eval was
+    # binding, so this checks the artifacts the actual route requires rather
+    # than whatever the stage's own (possibly-disagreeing) restatement says.
+    violations = _verify_verdict_outputs(
+        path, mechanical_lineage_routing=lineage_routing if pre_eval_binding else None
+    )
     if violations:
         print(f"\n⚠️ VERDICT VERIFICATION FAILED ({len(violations)} issue(s)):")
         for v in violations:
@@ -5711,12 +5729,11 @@ def determine_post_campaign_review_route(path: Path, run_id: str) -> str:
         # C7: same informational (non-blocking) disagreement check as
         # determine_post_verdict_route (R1 -- one shared conformance rule, not a
         # divergent second copy) -- compares the STAGE'S OWN restated pair,
-        # not the already-resolved one. See E-018 (2026-09-13) note there.
+        # not the already-resolved one, called unconditionally. See E-018
+        # (2026-09-13) note there for why an unexpected `None` hv/lr is itself
+        # a signal worth checking, not a case to skip.
         _own_hv, _own_lr = interp.get("hypothesis_verdict"), interp.get("lineage_routing")
-        _prc_violations = (
-            _check_pass_rule_evaluation_conformance(path, _own_hv, _own_lr)
-            if _own_hv is not None else []
-        )
+        _prc_violations = _check_pass_rule_evaluation_conformance(path, _own_hv, _own_lr)
         if _prc_violations:
             print("\n⚠️  [C7] Stage's own restated verdict disagreed with the binding "
                   "pass_rule_evaluation.yaml (informational only -- routing already used "

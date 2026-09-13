@@ -187,3 +187,87 @@ def test_non_binding_discretion_stage_pass_rule_evaluation_ignored(campaign_root
         "discretion:stage must NOT be treated as binding -- the stage's own "
         "kill/terminate call must stand"
     )
+
+
+def test_c7_check_fires_even_when_stage_declares_no_hypothesis_verdict(campaign_root):
+    """Bug hunt (2026-09-13): the C7 disagreement check must run even when the
+    stage's own verdict_interpretation.yaml declares NO hypothesis_verdict at
+    all (a legacy-shaped or malformed response) -- that is exactly the case
+    where the LLM ignored the B4 copy-through instruction, which is a MORE
+    useful signal to surface, not one to silently skip. An earlier
+    implementation gated the whole check on `hypothesis_verdict is not None`,
+    which swallowed this case."""
+    runs_dir = campaign_root["runs_dir"]
+    _write_fresh_scaffold(runs_dir, "run_900")
+    run_dir = runs_dir / "run_900"
+
+    # No hypothesis_verdict/lineage_routing fields at all -- only the legacy
+    # `status` field, as a pre-A8-schema (or non-compliant) response would be.
+    _write_verdict_interpretation(
+        run_dir,
+        status="kill",
+        hypothesis_family="test_family",
+        root_cause={},
+    )
+    _write_pass_rule_evaluation(
+        run_dir,
+        result="FAIL",
+        statement_branch_matched="FAIL-a",
+        hypothesis_verdict="kill",
+        lineage_routing="terminate",
+    )
+
+    rpr.determine_post_verdict_route(run_dir, "run_900")
+
+    state = yaml.safe_load((run_dir / "pipeline_state.yaml").read_text(encoding="utf-8"))
+    assert state.get("flags", {}).get("pass_rule_evaluation_disagreement") is True, (
+        "an absent hypothesis_verdict on a binding run must still be flagged "
+        "as a disagreement -- it means the stage never even attempted the "
+        "B4 copy-through, which is worth recording, not silently accepting"
+    )
+
+
+def test_verify_verdict_outputs_checks_the_mechanical_route_not_the_disagreeing_one(campaign_root):
+    """Bug hunt (2026-09-13): _verify_verdict_outputs must verify the
+    ARTIFACTS THE ACTUAL (mechanically-resolved) ROUTE requires, not whatever
+    the stage's own (possibly-disagreeing) lineage_routing says. Constructed
+    so the two checks diverge: the mechanical route is "refine" (requires
+    proposed_brief.yaml), but the stage's own field says "pivot" (does not
+    require proposed_brief.yaml) -- proposed_brief.yaml is deliberately
+    absent. Checking the stage's own field would silently pass; checking the
+    mechanical route must catch the missing file."""
+    runs_dir = campaign_root["runs_dir"]
+    _write_fresh_scaffold(runs_dir, "run_901")
+    run_dir = runs_dir / "run_901"
+    (run_dir / "artifacts" / "findings_carryover.yaml").write_text(
+        yaml.safe_dump({
+            "diagnostic_rule_applied": "Rule 1: cost_drag_pct=90% > 80%",
+            "what_not_to_try": ["some approach"],
+        }),
+        encoding="utf-8",
+    )
+    _write_verdict_interpretation(
+        run_dir,
+        status="pivot",
+        hypothesis_verdict="kill",
+        lineage_routing="pivot",  # disagrees with the mechanical "refine" below
+        altitude_justification="Rule 1: cost_drag_pct=90% > 80%",
+        hypothesis_family="test_family",
+        root_cause={},
+    )
+    # proposed_brief.yaml deliberately NOT written -- required by "refine",
+    # not required by "pivot".
+
+    violations_as_pivot = rpr._verify_verdict_outputs(run_dir)
+    assert violations_as_pivot == [], (
+        "sanity check: verifying against the artifact's OWN 'pivot' field "
+        "finds nothing wrong (pivot never required proposed_brief.yaml) -- "
+        "this is the buggy behavior being guarded against"
+    )
+
+    violations_as_refine = rpr._verify_verdict_outputs(run_dir, mechanical_lineage_routing="refine")
+    assert any("proposed_brief.yaml not produced" in v for v in violations_as_refine), (
+        "verifying against the MECHANICAL route ('refine') must catch the "
+        "missing proposed_brief.yaml, which the disagreeing 'pivot' field "
+        "would silently let through"
+    )
