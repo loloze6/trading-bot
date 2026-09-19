@@ -119,3 +119,91 @@ def t_test_pvalue(corr: Optional[float], n: int) -> Optional[float]:
         return None
     t_stat = corr * math.sqrt((n - 2) / (1.0 - corr ** 2))
     return float(2 * t_dist.sf(abs(t_stat), df=n - 2))
+
+
+# ---------------------------------------------------------------------------
+# Block-adjusted (autocorrelation-aware) significance -- CUL-262, 2026-09-04
+# ---------------------------------------------------------------------------
+#
+# `t_test_pvalue` above treats every bar as an independent observation. Real
+# bars are autocorrelated (adjacent hours move together), so it systematically
+# overstates significance -- measured as a real gap in E-039's prescreen vs.
+# backtest parity check: `strategy-research/tools/prescreen_signal.py`'s
+# `_block_adjusted_significance`/`_gap_aware_block_count` already correct for
+# this on the prescreen side, dividing by an effective sample size (n_eff)
+# instead of the raw bar count, and (the #50(B) fix, PR #137/CUL-15) refusing
+# to count a block that would span a real data gap.
+#
+# These two functions are a VERBATIM algorithmic port of that pair, not a
+# reimplementation from a blank page and not an import -- `prescreen_signal.py`
+# already imports FROM this module (`from performance.signal_statistics import
+# spearman_correlation`), and trading-bot must never import from
+# strategy-research (that would invert the repo's one-way dependency
+# direction). This module is exactly the place the two independent hand-rolled
+# implementations problem this file's own docstring describes gets fixed --
+# porting the math here, rather than leaving the backtest side to hand-roll a
+# THIRD version, is that fix applied to this specific statistic.
+#
+# `bars_per_day`-style timeframe-string parsing is deliberately NOT ported:
+# trading-bot already carries the equivalent quantity as
+# `candle_interval_seconds` (an int), so the block size is `86400 //
+# candle_interval_seconds`, floored at 1 -- no string parser needed here.
+
+def gap_aware_active_block_count(records: list, block_size: int,
+                                  expected_step) -> int:
+    """
+    Count of blocks of ACTIVE bars that can be placed without spanning a real
+    data gap. Verbatim port of
+    `prescreen_signal.py::_gap_aware_block_count`'s algorithm (see that
+    function's docstring for the full rationale and the measured inflation a
+    gap-naive count produces, up to 1.67x on one real symbol).
+
+    Each record must carry `"active"` (bool-ish) and `"timestamp"` keys, in
+    bar order. `expected_step=None` returns the ungapped count (`total_active
+    // block_size`), reproducing pre-gap-awareness behavior exactly -- this is
+    what happens when the caller has no timestamp column to derive a step
+    from, so degrading to "assume contiguous" rather than refusing to compute
+    anything at all.
+    """
+    if block_size < 1:
+        raise ValueError(f"block_size must be >= 1, got {block_size!r}")
+    active_flags = [bool(r.get("active")) for r in records]
+    if expected_step is None:
+        return sum(active_flags) // block_size
+
+    total = 0
+    run_active = 0
+    for i, rec in enumerate(records):
+        run_active += 1 if active_flags[i] else 0
+        is_last = i == len(records) - 1
+        breaks = is_last or (records[i + 1]["timestamp"] - rec["timestamp"]) != expected_step
+        if breaks:
+            total += run_active // block_size
+            run_active = 0
+    return total
+
+
+def block_adjusted_pvalue(corr: Optional[float], n_active: int, block_size: int,
+                           placeable_blocks: Optional[int] = None):
+    """
+    Two-tailed, block-adjusted significance for a SINGLE correlation value
+    (one run, not prescreen's list-of-window-ICs shape). Verbatim port of the
+    Fisher-z core of `prescreen_signal.py::_block_adjusted_significance`:
+    N_eff = n_active // block_size (or `placeable_blocks` when the caller has
+    already computed the gap-aware count via `gap_aware_active_block_count`),
+    z = corr * sqrt(N_eff - 3), two-tailed normal-approximation p-value.
+
+    Returns `(p_value, n_eff)`. `(None, None)` when `corr is None` -- a
+    p-value is never fabricated from an undefined correlation, same hard rule
+    as `t_test_pvalue`.
+    """
+    if corr is None:
+        return None, None
+    blocks = (n_active // max(block_size, 1)) if placeable_blocks is None else placeable_blocks
+    n_eff = max(blocks, 1)
+    if abs(corr) >= 1.0:
+        return 0.0, n_eff
+    dof = max(n_eff - 3, 1)
+    z_stat = corr * math.sqrt(dof)
+    p_value = 2.0 * (1.0 - 0.5 * (1.0 + math.erf(abs(z_stat) / math.sqrt(2.0))))
+    return round(p_value, 6), n_eff
