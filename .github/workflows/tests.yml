@@ -73,6 +73,20 @@ jobs:
         run: |
           mkdir -p .venv/bin
           ln -s "$(command -v python)" .venv/bin/python
+      # Windows counterpart of the Linux step above. venv/Scripts/python.exe used
+      # to be satisfied by the committed Windows venv (removed by CUL-e006's
+      # untrack, chore(E-006)) -- nothing recreated it, so _resolve_tbot_python's
+      # first candidate started failing here the same way it always failed on
+      # Linux. Copy, not symlink: Windows symlinks need elevated privileges this
+      # runner doesn't reliably have; a real copy satisfies is_file() + X_OK just
+      # the same, and setup-python's own Python is what every test runs under
+      # either way (see the Linux step's comment).
+      - name: Provide a resolvable venv\Scripts\python.exe (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path venv\Scripts | Out-Null
+          Copy-Item (Get-Command python).Source venv\Scripts\python.exe
       # BOTH suites, each from its own directory. Do not collapse this back into
       # a single trading-bot-scoped pytest run: that is the exact gap this step
       # closes, and strategy-research/tests/test_k3_protocol_pinning.py resolves
