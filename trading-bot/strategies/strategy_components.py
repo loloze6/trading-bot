@@ -275,7 +275,18 @@ class RSIPullbackComponent(SubStrategyComponent):
             rsi_series = 100.0 - (100.0 / (1.0 + rs))
             current_rsi = float(rsi_series.iloc[-1])
             if pd.isna(current_rsi):
-                current_rsi = 50.0
+                # CUL-273: nan_policy="propagate_invalid" (base class default).
+                # A NaN RSI (e.g. loss==0 -> rs undefined, or a gap-contaminated
+                # window) is a genuinely unmeasurable bar, not "the market is
+                # neutral" -- 50.0 was a fabricated value silently indistinguishable
+                # from a real, measured neutral reading. Propagate NaN instead;
+                # strategy_engine.py::forecast() already refuses to build a
+                # forecast from a NaN component value (treats it as not-ready
+                # for this bar, same as the existing not_ready_component path).
+                self._raw_value = float('nan')
+                self.confidence = 0.0
+                self.debug_info = {'current_rsi': None, 'nan_policy': 'propagate_invalid'}
+                return
             pullback_score = (50.0 - current_rsi) * self.scaling_factor
             if self.long_only:
                 pullback_score = max(0.0, pullback_score)
@@ -721,6 +732,16 @@ class FundingRateMeanReversionComponent(SubStrategyComponent):
 
         funding_rate = data["funding_rate"].iloc[-1]
         if funding_rate is None or (hasattr(funding_rate, "__float__") and np.isnan(float(funding_rate))):
+            # CUL-273: nan_policy="propagate_invalid". This IS a settlement
+            # bar (already past the boundary check above) with a genuinely
+            # missing/unmeasurable funding print -- a data-quality gap, not
+            # "no signal fired." Distinct from the two legitimate 0.0-return
+            # cases above/below (non-settlement bar; funding present but under
+            # threshold) -- those are real "nothing to report" readings and
+            # keep returning 0.0. This one propagates NaN instead of silently
+            # reusing the same 0.0 a real non-event would produce.
+            self._raw_value = float('nan')
+            self.debug_info = {'nan_policy': 'propagate_invalid', 'reason': 'funding_rate_missing_at_settlement'}
             return
         funding_rate = float(funding_rate)
 
@@ -798,6 +819,13 @@ class FearGreedContrarianComponent(SubStrategyComponent):
 
         fg = data["fear_greed"].iloc[-1]
         if fg is None or (hasattr(fg, "__float__") and np.isnan(float(fg))):
+            # CUL-273: nan_policy="propagate_invalid". This IS the daily
+            # boundary bar (already past the check above) with a genuinely
+            # missing fear/greed print -- a data-quality gap, not "no signal
+            # today." Distinct from the non-boundary-bar 0.0 return above,
+            # which is a real "nothing to report" reading, not a gap.
+            self._raw_value = float('nan')
+            self.debug_info = {'nan_policy': 'propagate_invalid', 'reason': 'fear_greed_missing_at_boundary'}
             return
         fg = float(fg)
 

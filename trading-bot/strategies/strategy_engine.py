@@ -62,12 +62,33 @@ class ConfigDrivenStrategyEngine:
         # warmup: cap against the smallest actual deque, not self.lookback.
         # Per-component "lookback" overrides can make individual deques smaller than
         # self.lookback; capping against self.lookback could set warmup above maxlen.
-        min_buf = min(
+        self._min_buf = min(
             (h.maxlen for rc in self._history.values() for h in rc.values()),
             default=self.lookback,
         )
-        self._warmup = min(config.get("warmup", self.lookback), min_buf)
+        # CUL-273: this is the class's OWN default, used when nobody calls
+        # set_warmup() -- kept so a standalone/test construction of this class
+        # (e.g. tests/test_engine_warmth.py) is byte-identical to before this
+        # ticket. AdvancedStrategy (the real live/backtest path) overrides it
+        # via set_warmup(required_bars) right after required_bars is known --
+        # see main_strategy.py. Measured on the real strategy_config.json this
+        # fork uses: the two numbers had already drifted (51 vs required_bars=120,
+        # the architecture doc's own documented "~120 bars" warmup) -- this
+        # class's own config-driven default was silently wrong for the real
+        # strategy, not just theoretically inconsistent.
+        self._warmup = min(config.get("warmup", self.lookback), self._min_buf)
         logger.debug(f"StrategyEngine: lookback={self.lookback}, warmup={self._warmup}")
+
+    def set_warmup(self, required_bars: int) -> None:
+        """CUL-273: single source of truth for warmup. Called by AdvancedStrategy
+        right after it computes required_bars, so this engine's own internal
+        per-regime readiness (is_ready()) agrees with the outer buffer-size gate
+        instead of drifting from it via its own independent min(config.warmup,
+        min_buf) calculation. Still capped at _min_buf -- a per-component
+        "lookback" override can make an individual deque smaller than
+        required_bars, and warmup must never exceed the smallest deque's maxlen
+        or that component could never satisfy len(h) >= warmup."""
+        self._warmup = min(required_bars, self._min_buf)
 
     def update(self, data: pd.DataFrame) -> None:
         self._data = data
@@ -80,6 +101,14 @@ class ConfigDrivenStrategyEngine:
                     if tfs:
                         raw = apply_transform_pipeline(pd.Series([raw]), tfs, data)
                     self._history[rname][cid].append(raw)
+
+    def reset_history(self) -> None:
+        """CUL-271: large-gap segment split -- drop accumulated per-regime
+        component history so post-gap readiness re-derives from real post-gap
+        bars only. Deques keep their maxlen."""
+        for regime_hist in self._history.values():
+            for h in regime_hist.values():
+                h.clear()
 
     def is_ready(self, regime: MarketRegime) -> bool:
         rkey = regime.value

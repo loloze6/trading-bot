@@ -154,6 +154,7 @@ def write_metrics_json(
     regime_validity: Optional[dict] = None,
     bar_equity: Optional[dict] = None,
     risk_controls: Optional[dict] = None,
+    data_quality: Optional[dict] = None,
 ) -> None:
     payload = {
         "core": {
@@ -170,6 +171,12 @@ def write_metrics_json(
         payload["bar_equity"] = bar_equity
     if risk_controls is not None:
         payload["risk_controls"] = risk_controls
+    # CUL-261 / E-039: off-by-default gap-detection block. None (default, gate
+    # off) -> key never inserted, metrics.json byte-identical to before this
+    # parameter existed -- same optional-key idiom as bar_equity/risk_controls
+    # above. Interim home pending E-046's categorized post-backtest reports.
+    if data_quality is not None:
+        payload["data_quality"] = data_quality
     (run_dir / "metrics.json").write_text(json.dumps(payload, indent=2, default=str))
 
 

@@ -14,7 +14,19 @@ logger = logging.getLogger("trading_bot")
 class AdvancedStrategy(MainStrategy):
     """Multi-regime adaptive trading strategy driven by strategy_config.json."""
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None,
+                 candle_interval_seconds: Optional[int] = None,
+                 ignore_max_bars: Optional[int] = None):
+        """
+        candle_interval_seconds/ignore_max_bars: CUL-273 -- both None (default,
+        every existing call site) leaves data_buffer's timestamp-reindex off,
+        byte-identical to before this ticket. Supplying both enables it (see
+        RollingBuffer._reindex_to_expected_grid). NOT YET wired through
+        core/launcher.py's AdvancedStrategy(...) call sites or gap_policy --
+        that is real-path wiring, a separate, larger, not-yet-done change;
+        this constructor accepting the parameters is the tested mechanism
+        those call sites would need to actually pass them through.
+        """
         if config_path is None:
             strategies_dir = os.path.dirname(os.path.abspath(__file__))
             project_dir    = os.path.dirname(strategies_dir)
@@ -42,8 +54,21 @@ class AdvancedStrategy(MainStrategy):
             self.strategy_engine.get_required_periods(),
             std_dev_period,
         )
+        # CUL-273: required_bars is the single source of truth for how many
+        # real bars this strategy needs before it trusts itself. Before this,
+        # strategy_engine derived its own internal per-regime readiness
+        # threshold (_warmup) independently, from its own local config --
+        # measured on this fork's real strategy_config.json, the two had
+        # already drifted (51 vs required_bars=120, the architecture doc's
+        # own documented "~120 bars"). Reconciled here rather than leaving
+        # strategy_engine's constructor guess in place.
+        self.strategy_engine.set_warmup(self.required_bars)
 
-        self.data_buffer = RollingBuffer(self.required_bars + 100)
+        self.data_buffer = RollingBuffer(
+            self.required_bars + 100,
+            candle_interval_seconds=candle_interval_seconds,
+            ignore_max_bars=ignore_max_bars,
+        )
         self.data_buffer.register_calculated_column(
             'stddev_24', lambda df: df['close'].rolling(std_dev_period).std()
         )
@@ -68,6 +93,18 @@ class AdvancedStrategy(MainStrategy):
         self._update_call_count = 0
 
         logger.debug(f"✅ AdvancedStrategy initialized (required_bars={self.required_bars})")
+
+    def reset_history(self) -> None:
+        """CUL-271: large-gap segment split. Clears the shared data buffer and
+        both engines' component history so the strategy re-warms from scratch
+        on real post-gap bars, rather than treat a position held across a real
+        market hole as informed by pre-gap history. Called by the trading
+        engine when its gap_policy classifies a gap as "large"; never called
+        when gap_policy is unset (byte-identical to before this method existed)."""
+        self.data_buffer.clear()
+        self.regime_engine.reset_history()
+        self.strategy_engine.reset_history()
+        self._regime_classification = None
 
     def _classify_once(self) -> Tuple[MarketRegime, Dict[str, Any]]:
         """regime_engine.classify() for the CURRENT bar, memoized so is_ready() and
