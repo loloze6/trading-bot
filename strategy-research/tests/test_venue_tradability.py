@@ -9,7 +9,7 @@ scaffolded run dir + a sandboxed ROOT so config/venue_tradability.yaml
 reads/writes never touch the real repository.
 
 Every test drives _materialize_run() directly (not just
-_venue_product_tradable() in isolation) so the assertions cover the actual
+check_venue_tradability() in isolation) so the assertions cover the actual
 wiring point: research_brief.yaml's written research_only key.
 """
 import sys
@@ -56,8 +56,8 @@ def _materialize_and_read(run_id: str, brief: dict, runs_dir: Path) -> dict:
 
 
 def test_no_venue_product_declared_defaults_research_only_true(campaign_root):
-    """No venue/product declared on the brief exercises _venue_product_tradable's
-    falsy-venue/product early return (not the file-absent branch of
+    """No venue/product declared on the brief exercises check_venue_tradability's
+    falsy-venue/market_type early return (not the file-absent branch of
     _load_venue_tradability -- that branch is never reached here since the
     early return fires first): must fall back to the safe default,
     research_only True."""
