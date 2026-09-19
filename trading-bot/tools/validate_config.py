@@ -277,6 +277,18 @@ def validate(config: dict) -> List[str]:
                 f"VIOLATION V8 strategies.regimes.{rname}: total weight {total_weight} is not > 0"
             )
 
+    # V11: strategies.min_allocation_change, if present, overrides RiskManager's
+    # min_allocation_change.threshold control (config.json's risk_management.controls)
+    # for this strategy's runs. RiskManager compares abs(allocation_change) against
+    # it, so it must be a non-negative number.
+    if "min_allocation_change" in config["strategies"]:
+        mac = config["strategies"]["min_allocation_change"]
+        if isinstance(mac, bool) or not isinstance(mac, (int, float)) or mac < 0:
+            violations.append(
+                f"VIOLATION V11 strategies.min_allocation_change: must be a non-negative "
+                f"number, got {mac!r}"
+            )
+
     return violations
 
 

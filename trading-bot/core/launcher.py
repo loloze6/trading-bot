@@ -135,14 +135,20 @@ class Launcher:
         self.config = config
         self.logger = logger
 
-    def _build_risk_and_forecast_managers(self):
-        # risk_manager = RiskManager(
-        #     max_position_size=self.config.get('risk_management').get('max_abs_allocation_change', 2.0),
-        #     rebalance_threshold=self.config.get('risk_management').get('rebalance_threshold', 0.2)
-        # )
-        risk_manager = RiskManager(
-            controls_cfg=self.config.get('risk_management', 'controls', {})
-        )
+    def _build_risk_and_forecast_managers(self, min_allocation_change_override: Optional[float] = None):
+        controls_cfg = self.config.get('risk_management', 'controls', {})
+        # E-055: a strategy's strategy_config.json may set strategies
+        # .min_allocation_change to override RiskManager's min_allocation_change
+        # threshold for its own runs. None (the default -- key absent) leaves
+        # controls_cfg untouched, byte-identical to before this override existed.
+        # Only the min_allocation_change sub-dict is replaced; max_allocation_change
+        # and any other configured control pass through unchanged.
+        if min_allocation_change_override is not None:
+            controls_cfg = {
+                **controls_cfg,
+                "min_allocation_change": {"threshold": min_allocation_change_override},
+            }
+        risk_manager = RiskManager(controls_cfg=controls_cfg)
         forecast_manager = ForecastManager(
         )
         # fix/risk-layer, PR-1: build the portfolio risk gate from config.json's
@@ -203,8 +209,11 @@ class Launcher:
         initial_balance: int = DEFAULT_INITIAL_BALANCE,
         with_state_tracker: bool = True,
         trades_log_file: Optional[str] = None,
+        min_allocation_change_override: Optional[float] = None,
     ) -> MockStack:
-        risk_manager, forecast_manager, risk_gate = self._build_risk_and_forecast_managers()
+        risk_manager, forecast_manager, risk_gate = self._build_risk_and_forecast_managers(
+            min_allocation_change_override=min_allocation_change_override
+        )
 
         # Backtest DataManager — no thread, no Binance client
         data_manager = DataManager(
@@ -265,7 +274,9 @@ class Launcher:
         self.logger.debug(f"Candle interval: {params.interval}s, Check interval: {params.check_interval}s")
 
         strategy = AdvancedStrategy()
-        risk_manager, forecast_manager, risk_gate = self._build_risk_and_forecast_managers()
+        risk_manager, forecast_manager, risk_gate = self._build_risk_and_forecast_managers(
+            min_allocation_change_override=strategy.min_allocation_change_override
+        )
 
         # Live DataManager — owns REST thread and CandleBuilder internally
         data_manager = DataManager(
@@ -350,7 +361,10 @@ class Launcher:
         strategy = AdvancedStrategy()
         self.logger.debug(f"Using strategy: {strategy.__class__.__name__}")
 
-        stack = self._build_mock_stack(params, initial_balance)
+        stack = self._build_mock_stack(
+            params, initial_balance,
+            min_allocation_change_override=strategy.min_allocation_change_override,
+        )
 
         bot = BacktestEngine(
             data_manager=stack.data_manager,
@@ -428,7 +442,10 @@ class Launcher:
         strategy = AdvancedStrategy()
         self.logger.debug(f"Using strategy: {strategy.__class__.__name__}")
 
-        stack = self._build_mock_stack(params, initial_balance)
+        stack = self._build_mock_stack(
+            params, initial_balance,
+            min_allocation_change_override=strategy.min_allocation_change_override,
+        )
 
         bot = BacktestEngine(
             data_manager=stack.data_manager,
@@ -757,7 +774,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         ignore_max_bars=_reindex_ignore_max_bars,
     )
     stack = launcher._build_mock_stack(
-        params, DEFAULT_INITIAL_BALANCE, trades_log_file=trades_log_file
+        params, DEFAULT_INITIAL_BALANCE, trades_log_file=trades_log_file,
+        min_allocation_change_override=strategy.min_allocation_change_override,
     )
     # fix/risk-layer, PR-1: risk_controls is a FULL-REPLACEMENT override of the
     # config.json-derived gate in the stack. None -> keep the config-derived gate

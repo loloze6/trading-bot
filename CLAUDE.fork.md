@@ -78,7 +78,7 @@ Per 1h candle (`core/trading_bot.py:158`, identical live/backtest): data+aux fee
 | Wiring / modes / `run_backtest()` | `core/launcher.py`, `main.py` |
 | Backtester + artifacts | `core/backtester.py`, `reporting/run_artifact.py` |
 | Strategy framework | `strategies/` (read `DOC/STRATEGY_FRAMEWORK.md` first; `history_transforms` ≠ `transforms`) |
-| 23 components | `strategies/strategy_components.py` |
+| 24 components (corrected 2026-09-11, `grep -c "^class.*SubStrategyComponent"`) | `strategies/strategy_components.py` |
 | Execution + accounting | `execution/` |
 | Data fetch/cache/gap-guards | `data/fetchers/base_fetcher.py`, `data/data_manager.py` |
 | Metrics (weak) | `performance/metrics.py` |

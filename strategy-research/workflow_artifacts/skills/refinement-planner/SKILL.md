@@ -13,6 +13,9 @@ Turn validation blockers into a concrete refinement artifact.
 - `validation_decision.yaml`
 - `expanded_hypothesis_card.yaml`
 - `innovation_notes.yaml`
+- `DATA_AVAILABILITY.md` (`strategy-research/docs/DATA_AVAILABILITY.md` — read only if a
+  blocker is about data/timeframe availability; it is short by design to fit this skill's
+  minimal-context rule)
 
 ## Required output
 - `refinement_notes.yaml`

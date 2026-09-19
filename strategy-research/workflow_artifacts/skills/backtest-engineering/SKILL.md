@@ -14,6 +14,11 @@ Translate the approved hypothesis into one valid strategy config (emitted inside
 - `validation_protocol.yaml`
 - `STRATEGY_CONFIG_REFERENCE.md`  (trading-bot config reference: the authoritative list of every available
   component, transform op, regime, and parameter)
+- `DATA_AVAILABILITY.md` (`strategy-research/docs/DATA_AVAILABILITY.md` — short, forced-read:
+  what OHLCV timeframes/aux feeds are actually available, the exact-cache-missing fallback
+  rule, and the bar-count/signal-shape checks to run before emitting a config for a new or
+  changed timeframe. Read in full whenever the hypothesis's timeframe, symbol, or venue
+  differs from what a prior config in this campaign already used.)
 - `WORKFLOW_CAPABILITIES.md` (optional — read before emitting any config to confirm the
   required signal variant is achievable without new code. If not achievable, emit
   component_gap immediately rather than inventing a component class name.)

@@ -87,6 +87,16 @@ except Exception:  # helper unimportable -> validation is a no-op, never break t
 ROOT = Path(".")
 CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
 
+# E-054 Layer 2 (2026-09-11): off-by-default gate, same convention as
+# WORKFLOW_ARTIFACT_VALIDATION above. OFF (unset, the default): the
+# backtest_specification -> signal_prescreen route is byte-identical to every
+# run before this ticket -- required by CLAUDE.fork.md's bit-identity
+# discipline (new features ship off by default with default behavior proven
+# unchanged). ON: backtest_specification routes through the new
+# "data_availability_gate" tool stage first (see its STAGE_CONFIGS entry and
+# run_tool_worker branch below) before signal_prescreen ever runs.
+_E054_GATE_ENABLED = os.environ.get("E054_DATA_AVAILABILITY_GATE", "") == "1"
+
 
 def _resolve_tbot_python() -> Path:
     """Path to the trading-bot venv interpreter, relative to the CWD the script runs from.
@@ -148,6 +158,16 @@ STAGE_CONFIGS = {
         "handoff": "validation_to_backtest_specification.yaml",
         "default_next": "dynamic_routing",
         "skill": "backtest-engineering",
+    },
+    # E-054 Layer 2 (2026-09-11): pre-backtest data-availability gate (tool,
+    # no LLM). Off by default -- see _E054_GATE_ENABLED below; the entry
+    # exists in the registry unconditionally (Decision A: a real pipeline
+    # stage, not an inline check) but is only ROUTED to when the env flag is
+    # set (bit-identity discipline: default behavior must stay byte-identical
+    # to pre-E-054 runs).
+    "data_availability_gate": {
+        "handoff": "backtest_spec_to_data_availability_gate.yaml",
+        "default_next": "dynamic_routing",
     },
     # Improvement 08+09: prescreen stage (tool, no LLM)
     "signal_prescreen": {
@@ -1108,7 +1128,43 @@ async def run_tool_worker(stage_name: str, run_id: str):
     ARTIFACTS = RUN_DIR / "artifacts"
     TBOT_PYTHON = _resolve_tbot_python()
 
-    if stage_name == "signal_prescreen":
+    if stage_name == "data_availability_gate":
+        # E-054 Layer 2: real per-window/per-feed data-touch check, BEFORE the
+        # (much more expensive) prescreen/protocol_execution stages ever run.
+        # Uses the SAME shared resolver signal_prescreen/protocol_execution
+        # use below, so it checks the literal protocol that will execute —
+        # never a hypothesis-level declared timeframe (E-054 Phase 1
+        # characterization's Q3 finding: those can silently diverge).
+        config_path = ARTIFACTS / "candidate_strategy_config.json"
+        protocol_path = _resolve_protocol_path(RUN_DIR, run_id)
+
+        out_dir = RUN_DIR / "data_availability"
+        cmd = [
+            str(TBOT_PYTHON), str(ROOT / "tools" / "data_availability_gate.py"),
+            str(config_path), str(protocol_path),
+            "--run-id", run_id,
+            "--out-dir", str(out_dir),
+        ]
+        print("🗂️  Running E-054 data-availability gate (Layer 2)...")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        print(result.stdout)
+        # Exit codes (data_availability_gate.py's own convention):
+        # 0=validate, 2=decline, 3=refine. A non-{0,2,3} code is a genuine
+        # crash of the tool itself, not a real outcome — raise loud rather
+        # than silently treating a bug in the gate as a data verdict.
+        if result.returncode not in (0, 2, 3):
+            raise RuntimeError(f"data_availability_gate.py crashed (exit {result.returncode}):\n{result.stderr}")
+
+        gate_path = out_dir / "data_availability_gate.yaml"
+        if not gate_path.exists():
+            raise FileNotFoundError("data_availability_gate.yaml not found after gate run")
+
+        import shutil as _dag_shutil
+        _dag_shutil.copy(gate_path, ARTIFACTS / "data_availability_gate.yaml")
+        gate_result = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
+        print(f"✅ E-054 Layer 2 outcome: {gate_result.get('outcome', 'unknown').upper()}")
+
+    elif stage_name == "signal_prescreen":
         # Improvement 08+09: signal prescreen — cheap IC + cost gate before full backtest.
         config_path = ARTIFACTS / "candidate_strategy_config.json"
 
@@ -2198,7 +2254,7 @@ def _route_post_variant_selection(run_dir: Path, run_id: str) -> str | None:
 
 
 async def async_invoke_agent(stage_name: str, run_id: str, retry_context: str | None = None):
-    tool_stages = {"protocol_execution", "signal_prescreen"}
+    tool_stages = {"protocol_execution", "signal_prescreen", "data_availability_gate"}
     if stage_name in tool_stages:
         await run_tool_worker(stage_name, run_id)
         return
@@ -2385,11 +2441,35 @@ def determine_post_validation_route(path: Path):
         raise ValueError(f"Unknown validation status: {status}")
 
 def _create_remaining_handoffs(run_id: str, run_dir: Path):
-    """Write signal_prescreen, protocol_execution, and verdict_interpreter handoffs."""
+    """Write data_availability_gate, signal_prescreen, protocol_execution, and
+    verdict_interpreter handoffs."""
     handoffs = run_dir / "handoffs"
+    dag_path = handoffs / "backtest_spec_to_data_availability_gate.yaml"
     sp_path = handoffs / "backtest_spec_to_signal_prescreen.yaml"
     pe_path = handoffs / "backtest_spec_to_protocol_execution.yaml"
     vi_path = handoffs / "protocol_to_verdict_interpreter.yaml"
+
+    # E-054 Layer 2: data_availability_gate handoff. Written unconditionally
+    # (harmless when _E054_GATE_ENABLED is off — nothing ever routes to this
+    # stage in that case) so enabling the flag later needs no separate
+    # backfill step for runs already past backtest_specification.
+    if not dag_path.exists():
+        save_yaml(dag_path, {
+            "handoff_version": 1, "run_id": run_id,
+            "from_stage": "backtest_specification", "to_stage": "data_availability_gate",
+            "assigned_engine": "tool",
+            "objective": (
+                "E-054 Layer 2: check whether the data this variant needs (price for "
+                "every declared symbol, every declared aux feed) can actually be "
+                "assembled for the resolved protocol's windows, before spending a "
+                "full walk-forward run on it. Outcome: validate / refine / decline."
+            ),
+            "required_inputs": [
+                {"path": "artifacts/candidate_strategy_config.json",
+                 "reason": "declared symbols and aux_feeds to check"},
+            ],
+            "deliverables": ["data_availability_gate.yaml"],
+        })
 
     # Improvement 08+09: signal_prescreen handoff
     if not sp_path.exists():
@@ -3148,72 +3228,58 @@ def _resolve_protocol_path(run_dir: Path, run_id: str) -> Path:
     unratified generic promotion block is refused wherever the protocol came
     from -- generated, pinned, defaulted or inherited. The audit's point was that
     guarding only the generator left the artifacts and the defaults untouched.
+
+    E-054 Layer 2 (2026-09-11): the decision logic itself now lives in
+    tools/protocol_resolution.py::resolve_protocol_path, so the data-availability
+    gate can resolve the SAME protocol a run will actually execute against
+    without duplicating this 4-branch logic (see that module's docstring for
+    why it can't just import this file directly). This function is now a thin
+    delegator that supplies the orchestrator's own globals/side-effects
+    (ROOT, load_campaign_state(), update_state's flag write) -- behavior is
+    unchanged, proven by the existing test_k3_protocol_pinning.py suite.
     """
-    artifacts = run_dir / "artifacts"
-    run_ctx_path = artifacts / "run_context.yaml"
-    run_ctx = (load_yaml(run_ctx_path) or {}) if run_ctx_path.exists() else {}
-    run_type = run_ctx.get("run_type", "")
-
-    def _selected(path: Path) -> Path:
-        _assert_promotion_ratified(path)
-        return path
-
-    if run_type == "replication_diagnostic":
-        print("🔁 replication_diagnostic run — ignoring last_escalation, using baseline_v1.json")
-        return _selected(ROOT / "protocols" / "baseline_v1.json")
-
-    if run_type == "forced_diagnostic":
-        # C7-EXT-R/D-3: the implicit "baseline_v1.json" default is gone. A
-        # forced_diagnostic that forgot to name its protocol was silently handed
-        # the generic-threshold baseline -- the same silent-default class of
-        # defect G7 was opened to abolish, one layer further out.
-        proto_name = run_ctx.get("protocol")
-        if not proto_name:
-            raise UngatedProtocolError(
-                f"[G7/D-3] run {run_id}: run_context.yaml declares "
-                f"run_type=forced_diagnostic but names no `protocol`. Refusing to "
-                f"default to baseline_v1.json -- a diagnostic that does not say what "
-                f"it is running against silently inherits generic thresholds. Name "
-                f"the protocol explicitly in run_context.yaml."
-            )
-        print(f"🔬 forced_diagnostic run — using protocol: {proto_name}")
-        return _selected(ROOT / "protocols" / proto_name)
-
-    if run_type == "protocol_ref_pinned":
-        proto_name = run_ctx.get("protocol")
-        if not proto_name:
-            raise RuntimeError(
-                f"[K3] run_context.yaml declares run_type=protocol_ref_pinned but has no "
-                f"'protocol' key -- malformed pin state for {run_id}."
-            )
-        print(f"📌 [B3] protocol_ref_pinned run — using pinned protocol: {proto_name}")
-        return _selected(ROOT / "protocols" / proto_name)
-
-    # B10 fallback: campaign-wide last_escalation, claim-checked (§4).
-    campaign = load_campaign_state()
-    last_escalation = campaign.get("last_escalation") or {}
-    claimed_by = last_escalation.get("claimed_by_run")
-    protocol_path_str = last_escalation.get("protocol_path")
-    if protocol_path_str and claimed_by == run_id:
-        # This run IS the escalation's own designated next run -- the fallback is
-        # correct FOR THIS ONE RUN, not stale reuse. Still printed loudly (never
-        # silent) and still exactly one hop -- claimed_by is not transitively
-        # inherited by any further lineage continuation from this run.
-        print(f"⚠️  [B10] Using campaign_state.last_escalation.protocol_path "
-              f"({protocol_path_str}) -- this run ({run_id}) is its claimed "
-              f"consumer. Fragile: prefer machine_constraints.protocol_ref on "
-              f"this run's own pre_registration.yaml instead.")
-        return _selected(Path(protocol_path_str))
-
-    update_state(path=run_dir, flags={"stale_escalation_unclaimed": True})
-    raise RuntimeError(
-        f"[B10] No run_context.yaml override and no machine_constraints.protocol_ref "
-        f"for {run_id}, and campaign_state.last_escalation "
-        f"(protocol_path={protocol_path_str!r}) is either empty or claimed by a "
-        f"different run ({claimed_by!r}) -- refusing to silently run against stale, "
-        f"unrelated campaign-wide state. Pin this run's protocol explicitly via "
-        f"machine_constraints.protocol_ref in pre_registration.yaml."
+    from protocol_resolution import (
+        resolve_protocol_path as _shared_resolve_protocol_path,
+        UngatedProtocolError as _SharedUngatedProtocolError,
     )
+
+    def _on_stale_escalation():
+        update_state(path=run_dir, flags={"stale_escalation_unclaimed": True})
+
+    # Log-line fidelity only (never a second copy of the DECISION): re-derive
+    # which branch is about to fire purely to pick the right pre-existing
+    # print, using the exact same cheap read the shared resolver does anyway.
+    _run_ctx_path = run_dir / "artifacts" / "run_context.yaml"
+    _run_ctx = (load_yaml(_run_ctx_path) or {}) if _run_ctx_path.exists() else {}
+    _run_type = _run_ctx.get("run_type", "")
+    if _run_type == "replication_diagnostic":
+        print("🔁 replication_diagnostic run — ignoring last_escalation, using baseline_v1.json")
+    elif _run_type == "forced_diagnostic" and _run_ctx.get("protocol"):
+        print(f"🔬 forced_diagnostic run — using protocol: {_run_ctx['protocol']}")
+    elif _run_type == "protocol_ref_pinned" and _run_ctx.get("protocol"):
+        print(f"📌 [B3] protocol_ref_pinned run — using pinned protocol: {_run_ctx['protocol']}")
+
+    try:
+        result = _shared_resolve_protocol_path(
+            run_dir=run_dir,
+            run_id=run_id,
+            protocols_root=ROOT / "protocols",
+            campaign_state=load_campaign_state(),
+            on_stale_escalation=_on_stale_escalation,
+        )
+        if _run_type not in ("replication_diagnostic", "forced_diagnostic", "protocol_ref_pinned"):
+            print(f"⚠️  [B10] Using campaign_state.last_escalation.protocol_path "
+                  f"({result}) -- this run ({run_id}) is its claimed "
+                  f"consumer. Fragile: prefer machine_constraints.protocol_ref on "
+                  f"this run's own pre_registration.yaml instead.")
+        return result
+    except _SharedUngatedProtocolError as e:
+        # Re-wrap as THIS module's own UngatedProtocolError so existing
+        # `except UngatedProtocolError` call sites (if any are ever added
+        # here) and isinstance checks against rpr.UngatedProtocolError keep
+        # working -- the shared module deliberately declares its own class
+        # rather than importing this file (see its docstring).
+        raise UngatedProtocolError(str(e)) from e
 
 
 def _path_basename_any_os(path_str: str) -> str:
@@ -6573,8 +6639,47 @@ def run_loop(run_id: str):
                         print("✅ config schema-valid; advancing to signal_prescreen")
                         # Create handoff files for prescreen + remaining pipeline stages
                         _create_remaining_handoffs(run_id, RUN_DIR)
+                        # E-054 Layer 2 (off by default -- see _E054_GATE_ENABLED):
+                        # route through the data-availability gate FIRST. OFF
+                        # leaves next_stage exactly what determine_post_spec_route
+                        # returned above (signal_prescreen/protocol_execution),
+                        # byte-identical to every pre-E-054 run.
+                        if _E054_GATE_ENABLED:
+                            next_stage = "data_availability_gate"
                 elif next_stage == "human_pause":
                     break
+
+            elif current_stage == "data_availability_gate":
+                # E-054 Layer 2: route on validate/refine/decline. This branch
+                # only runs when _E054_GATE_ENABLED routed here in the first
+                # place -- see the backtest_specification branch above.
+                gate = load_yaml(ARTIFACTS / "data_availability_gate.yaml") or {}
+                gate_outcome = gate.get("outcome", "decline")
+                if gate_outcome == "validate":
+                    print("✅ E-054 Layer 2: VALIDATE — advancing to signal_prescreen.")
+                    next_stage = "signal_prescreen"
+                elif gate_outcome == "refine":
+                    # Mirrors this orchestrator's own documented HITL design
+                    # ("Path C: Data Block" in the module docstring) -- a
+                    # partial data problem is exactly what that pause path
+                    # was built for: a human decides how to narrow the
+                    # variant (drop a window, drop a feed), not the pipeline.
+                    print("⏸️  PIPELINE PAUSED: E-054 Layer 2 says REFINE — "
+                          "some data is only partially available. Review "
+                          "artifacts/data_availability_gate.yaml, narrow the "
+                          "variant (drop the listed window(s)/feed), then "
+                          "write artifacts/human_resolution.yaml and resume.")
+                    for reason in gate.get("reasons", [])[:10]:
+                        print(f"   - {reason}")
+                    update_state(path=RUN_DIR, status="paused_for_human")
+                    next_stage = "human_pause"
+                    break
+                else:  # decline
+                    print(f"🛑 E-054 Layer 2: DECLINE — required data does not exist. "
+                          f"Rejecting hypothesis without spending prescreen/protocol_execution.")
+                    for reason in gate.get("reasons", [])[:10]:
+                        print(f"   - {reason}")
+                    next_stage = "completed_rejected"
 
             elif current_stage == "signal_prescreen":
                 # Improvement 08+09: route based on prescreen_result.yaml

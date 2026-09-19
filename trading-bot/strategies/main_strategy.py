@@ -45,6 +45,15 @@ class AdvancedStrategy(MainStrategy):
 
         self.config = config
 
+        # E-055: optional per-strategy override of RiskManager's min_allocation_change
+        # control (risk/risk_manager.py -- config.json's risk_management.controls
+        # .min_allocation_change.threshold, default 0.2). None (key absent, the
+        # default) means "use config.json's value unchanged" -- core/launcher.py
+        # reads this attribute and only touches the RiskManager controls dict when
+        # it is not None. This is NOT a new gate; the gate is the same one that has
+        # been live since commit ac277917. See known_divergences.md (1).
+        self.min_allocation_change_override = config["strategies"].get("min_allocation_change")
+
         self.regime_engine   = ConfigDrivenRegimeEngine(config["regime_detector"])
         self.strategy_engine = ConfigDrivenStrategyEngine(config["strategies"])
 

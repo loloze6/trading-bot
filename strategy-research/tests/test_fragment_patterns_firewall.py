@@ -1,6 +1,6 @@
 """
 Mechanical enforcement of the fragment_patterns firewall (2026-07-10). See
-docs/TIMEFRAME_CHANGE_PLAYBOOK.md section 7 for the doctrine this enforces:
+docs/VERIFICATION_DOCTRINE.md section 2 for the doctrine this enforces:
 fragment_patterns.yaml is an ideation-only diagnostic artifact and must never
 be a decision-path input. These are static/import-graph checks, not
 convention -- if any of them fail, the firewall has been breached in code or
