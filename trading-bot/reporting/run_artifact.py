@@ -19,7 +19,32 @@ import pandas as pd
 from performance.signal_statistics import (
     pearson_correlation, t_test_pvalue,
     gap_aware_active_block_count, block_adjusted_pvalue,
+    sigma_bar_bps_from_returns, cost_check, determine_route,
 )
+
+# CUL-264 (E-039 parity): cost_model.yaml is the single source of truth for
+# round_trip_cost_bps/safety_factor -- prescreen_signal.py reads it the same
+# way. This is a data-file read across the repo's package boundary, not a
+# Python import, so it does not invert the "trading-bot never imports from
+# strategy-research" rule the block-adjusted significance port (CUL-262) is
+# built around. Falls back to prescreen's own hardcoded defaults if the file
+# is missing (e.g. a vendored/deployed trading-bot without the sibling repo).
+_COST_MODEL_PATH = Path(__file__).resolve().parent.parent.parent / "strategy-research" / "config" / "cost_model.yaml"
+
+
+def _load_cost_model() -> dict:
+    if not _COST_MODEL_PATH.exists():
+        return {"round_trip_cost_bps": {"default": 18.5}, "safety_factor": 2.0}
+    import yaml
+    with open(_COST_MODEL_PATH, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _round_trip_cost_bps(symbol: Optional[str], cost_model: dict) -> float:
+    rtc = cost_model.get("round_trip_cost_bps", {})
+    if symbol is not None and symbol in rtc:
+        return float(rtc[symbol])
+    return float(rtc.get("default", 18.5))
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +211,7 @@ def build_core(
     completed_trades: list,
     bars_df: Optional[pd.DataFrame] = None,
     candle_interval_seconds: Optional[int] = None,
+    symbol: Optional[str] = None,
 ) -> dict:
     overall = metrics_dict.get("overall_metrics", {})
     n = len(completed_trades)
@@ -222,11 +248,23 @@ def build_core(
     # sees byte-identical values for every key that already existed.
     forecast_return_corr_pvalue_block_adjusted = None
     forecast_return_corr_n_eff                 = None
+    # CUL-264 (E-039 parity): real per-bar return volatility, needed for the
+    # post-backtest cost hurdle below. None until bars_df is available.
+    sigma_bar_bps_value  = None
+    sigma_is_placeholder = None
     if bars_df is not None and "forecast" in bars_df.columns and "close" in bars_df.columns:
-        df = bars_df[["forecast", "close"]].copy()
-        df["forward_return"] = df["close"].shift(-1) / df["close"] - 1
-        df = df.dropna()
-        df = df[df["forecast"] != 0]
+        df_all = bars_df[["forecast", "close"]].copy()
+        df_all["forward_return"] = df_all["close"].shift(-1) / df_all["close"] - 1
+        df_all = df_all.dropna()
+        # Sigma is measured across ALL bars with a defined forward return, not
+        # just active ones -- it's a property of the underlying market, matching
+        # prescreen_signal.py::_sigma_from_records's own population (that
+        # function runs on the full per-symbol pairs list, not an active-only
+        # filter).
+        sigma_bar_bps_value, sigma_is_placeholder = sigma_bar_bps_from_returns(
+            (df_all["forward_return"] * 10000.0).tolist()
+        )
+        df = df_all[df_all["forecast"] != 0]
         if len(df) >= 5:
             x = df["forecast"].values.astype(float)
             y = df["forward_return"].values.astype(float)
@@ -273,6 +311,33 @@ def build_core(
                     sum(t.duration_minutes for t in completed_trades) / n / bar_minutes, 2
                 )
 
+    # CUL-264 (E-039 parity). INFORMATIONAL ONLY: this route is computed and
+    # recorded, but nothing anywhere reads it to skip, gate, or short-circuit
+    # any LLM call or orchestrator decision -- see signal_statistics.py's
+    # module docstring for `determine_route` and CUL-264's Linear issue.
+    # Still computed (not suppressed) when sigma is a placeholder, matching
+    # prescreen's own behavior -- `sigma_bar_bps_is_placeholder` is the flag a
+    # reader must check before trusting this route, the same discipline
+    # prescreen's `sigma_is_placeholder` field already enforces.
+    post_backtest_route            = None
+    post_backtest_route_rationale  = None
+    post_backtest_cost_check       = None
+    if (forecast_return_corr is not None
+            and forecast_return_corr_pvalue_block_adjusted is not None
+            and sigma_bar_bps_value is not None
+            and avg_trade_duration_bars is not None):
+        cost_model = _load_cost_model()
+        rtc_bps    = _round_trip_cost_bps(symbol, cost_model)
+        safety     = float(cost_model.get("safety_factor", 2.0))
+        post_backtest_cost_check = cost_check(
+            forecast_return_corr, sigma_bar_bps_value, avg_trade_duration_bars,
+            rtc_bps, safety_factor=safety,
+        )
+        post_backtest_route, post_backtest_route_rationale = determine_route(
+            forecast_return_corr, forecast_return_corr_pvalue_block_adjusted,
+            post_backtest_cost_check,
+        )
+
     return {
         "net_return_pct":              overall.get("[OVERALL ONLY] total_return_pct", 0.0),
         "sharpe":                      overall.get("sharpe_ratio", 0.0),
@@ -289,6 +354,11 @@ def build_core(
         "forecast_return_corr_pvalue_block_adjusted": forecast_return_corr_pvalue_block_adjusted,
         "forecast_return_corr_n_eff":  forecast_return_corr_n_eff,
         "avg_trade_duration_bars":     avg_trade_duration_bars,
+        "sigma_bar_bps":               round(sigma_bar_bps_value, 4) if sigma_bar_bps_value is not None else None,
+        "sigma_bar_bps_is_placeholder": sigma_is_placeholder,
+        "post_backtest_cost_check":    post_backtest_cost_check,
+        "post_backtest_route":         post_backtest_route,
+        "post_backtest_route_rationale": post_backtest_route_rationale,
     }
 
 

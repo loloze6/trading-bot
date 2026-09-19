@@ -27,6 +27,7 @@ logic a third time:
   - No p-value is ever computed from an undefined (None) correlation.
 """
 import math
+import statistics
 from typing import Optional, Sequence
 
 
@@ -207,3 +208,145 @@ def block_adjusted_pvalue(corr: Optional[float], n_active: int, block_size: int,
     z_stat = corr * math.sqrt(dof)
     p_value = 2.0 * (1.0 - 0.5 * (1.0 + math.erf(abs(z_stat) / math.sqrt(2.0))))
     return round(p_value, 6), n_eff
+
+
+# ---------------------------------------------------------------------------
+# Post-backtest go/no-go (A8.1) -- CUL-264, 2026-09-04
+# ---------------------------------------------------------------------------
+#
+# Verbatim port of prescreen_signal.py's cost hurdle (`_cost_check`) and route
+# decision (`_determine_route`), same reasoning as the block-adjusted
+# significance functions above: port the math here rather than let the
+# backtest side hand-roll a third version, since trading-bot cannot import
+# strategy-research. The one semantic change: prescreen's passing route is
+# named `proceed_to_backtest` because the backtest hasn't run yet when IT
+# decides; here the backtest has ALREADY run, so the equivalent passing route
+# is named `proceed_to_interpretation` -- an LLM verdict call is warranted.
+#
+# INFORMATIONAL ONLY (CUL-264 scope, explicit): this module computes and
+# returns a route. Nothing in this repository currently reads that route to
+# skip, gate, or short-circuit anything -- whether a mechanical kill should
+# actually skip the LLM interpretation step is a separate decision, not made
+# here. See CUL-264's Linear issue, closing section.
+
+_SIG_THRESHOLD = 0.10          # prescreen_signal.py::_SIG_THRESHOLD, same value
+_DEFAULT_SIGMA_BAR_BPS = 15.0  # prescreen_signal.py::_DEFAULT_SIGMA_BAR_BPS, same value
+
+
+def sigma_bar_bps_from_returns(returns_bps: Sequence[float]) -> tuple:
+    """
+    Per-bar return volatility in bps, or a loud placeholder. Verbatim port of
+    `prescreen_signal.py::_sigma_from_records`'s logic (that function reads its
+    own `next_return_bps` field off a records list; this takes the bps values
+    directly since build_core already has them as a plain sequence).
+
+    Returns (sigma_bar_bps, is_placeholder). is_placeholder=True means fewer
+    than 5 returns were available and `_DEFAULT_SIGMA_BAR_BPS` was substituted
+    -- prescreen's own rule is that a cost check resting on this value is
+    invalid and must not be cited as measured. Callers should propagate this
+    flag rather than silently trusting the number.
+    """
+    if len(returns_bps) < 5:
+        return _DEFAULT_SIGMA_BAR_BPS, True
+    return statistics.stdev(returns_bps), False
+
+
+def cost_check(ic_active: Optional[float], sigma_bar_bps: float,
+                avg_holding_bars: Optional[float], round_trip_cost_bps: float,
+                safety_factor: float = 2.0) -> dict:
+    """
+    Layer 2 cost hurdle (A8.1). Verbatim port of
+    `prescreen_signal.py::_cost_check`'s math:
+
+        estimated_gross_edge_bps_per_trade = |ic_active| * sigma_bar_bps * sqrt(avg_holding_bars)
+        edge_to_cost_ratio = gross_edge / round_trip_cost_bps
+        pass = (ratio >= safety_factor)
+
+    `symbol`/`cost_model` dict lookup is the caller's job here (build_core
+    resolves `round_trip_cost_bps`/`safety_factor` from `cost_model.yaml`
+    before calling this) -- this function takes the resolved numbers directly,
+    unlike prescreen's version which resolves them internally per-symbol.
+    """
+    if ic_active is None or avg_holding_bars is None or avg_holding_bars <= 0:
+        return {
+            "estimated_gross_edge_bps_per_trade": None,
+            "cost_bps_per_trade":                 round_trip_cost_bps,
+            "edge_to_cost_ratio":                  None,
+            "safety_factor_required":              safety_factor,
+            "pass":                                False,
+        }
+    gross_edge = abs(ic_active) * sigma_bar_bps * math.sqrt(max(avg_holding_bars, 1.0))
+    ratio      = gross_edge / round_trip_cost_bps if round_trip_cost_bps > 0 else 0.0
+    return {
+        "estimated_gross_edge_bps_per_trade": round(gross_edge, 4),
+        "cost_bps_per_trade":                 round_trip_cost_bps,
+        "edge_to_cost_ratio":                 round(ratio, 4),
+        "safety_factor_required":             safety_factor,
+        "pass":                               bool(ratio >= safety_factor),
+    }
+
+
+def determine_route(pooled_ic: Optional[float], p_value: Optional[float],
+                     cost: dict) -> tuple:
+    """
+    Verbatim port of `prescreen_signal.py::_determine_route`'s priority logic:
+
+        1. IC not significant (p >= _SIG_THRESHOLD) -> kill_no_ic
+        2. IC significant, NEGATIVE -> refine_inverted_ic
+        3. IC significant, positive, cost fails structurally (p > 0.05 or
+           ratio < 0.5) -> kill_cost_hurdle
+        4. IC significant, positive, cost fails marginally -> refine_cost_hurdle
+        5. Both pass -> proceed_to_interpretation (prescreen's own
+           `proceed_to_backtest`, renamed: the backtest has already run by the
+           time this function is called)
+
+    Returns (route: str, rationale: str).
+    """
+    significant = p_value is not None and p_value < _SIG_THRESHOLD
+    ic          = pooled_ic if pooled_ic is not None else 0.0
+    ic_str      = f"{pooled_ic:.4f}" if pooled_ic is not None else "undefined"
+    p           = p_value if p_value is not None else 1.0
+    cost_pass   = cost.get("pass", False)
+    ratio       = cost.get("edge_to_cost_ratio")
+    ratio_str   = f"{ratio:.4f}" if ratio is not None else "N/A"
+    safety      = cost.get("safety_factor_required", 2.0)
+
+    if not significant:
+        return (
+            "kill_no_ic",
+            f"Active-bar IC={ic_str}, p={p:.4f} >= {_SIG_THRESHOLD}. "
+            f"Signal has no detectable directional content.",
+        )
+
+    if ic < 0:
+        return (
+            "refine_inverted_ic",
+            f"Active-bar IC={ic_str} (negative, significant at p={p:.4f}). "
+            f"Signal direction is inverted -- flip polarity.",
+        )
+
+    if not cost_pass:
+        edge_str = (
+            f"{cost.get('estimated_gross_edge_bps_per_trade'):.1f} bps"
+            if cost.get("estimated_gross_edge_bps_per_trade") is not None else "N/A"
+        )
+        cost_str = f"{cost.get('cost_bps_per_trade', 'N/A')} bps"
+        if p > 0.05 or (ratio is not None and ratio < 0.5):
+            return (
+                "kill_cost_hurdle",
+                f"Active-bar IC={ic_str} (p={p:.4f}, marginal). Est. gross edge "
+                f"{edge_str} vs cost {cost_str} (ratio={ratio_str} < {safety}). "
+                f"Structural cost barrier.",
+            )
+        return (
+            "refine_cost_hurdle",
+            f"Active-bar IC={ic_str} (significant, p={p:.4f}), but est. gross "
+            f"edge {edge_str} vs cost {cost_str} (ratio={ratio_str} < required "
+            f"{safety}). Fix: wider threshold or longer holding.",
+        )
+
+    return (
+        "proceed_to_interpretation",
+        f"Active-bar IC={ic_str} (p={p:.4f}, significant). Edge-to-cost "
+        f"ratio={ratio_str} >= {safety}. Signal passes both IC and cost gates.",
+    )
