@@ -120,13 +120,12 @@
             "candidate_system": {
               "type": "string",
               "enum": [
-                "maker_only_execution",
-                "lower_frequency_variant",
-                "different_product",
-                "venue_tier",
-                "batching"
+                "trade_less_often",
+                "combine_nearby_trades",
+                "exit_later",
+                "enter_earlier"
               ],
-              "description": "Which category of cheaper variant applies, per docs/CAMPAIGN_PROGRAM.md Phase 1.4's own enumerated options (maker-only execution, lower-frequency variant, different product, venue tier, batching)."
+              "description": "E-016 (2026-09-10 redesign, supersedes the earlier 5-option infra-level enum): which timing-only variant of the SAME signal to try. Deleted entirely (not logged, not tracked): maker-only execution, venue-tier change, different product/venue -- those are Jeremy's decisions to make deliberately and holistically, not per-strategy pipeline suggestions. Prefer the real mechanical flag (protocol_result.hypothesis_verdict.diagnostics.post_backtest_route_real == kill_cost_hurdle/refine_cost_hurdle) over soft judgment when deciding whether this field applies at all, and use diagnostics.fee_reduction_metrics (trade_diagnostics.json's summary.fee_reduction_metrics) to pick which of these 4 values fits best -- see workflow_artifacts/skills/verdict-interpreter/SKILL.md's fee-reduction autopsy rule."
             },
             "registered_as": {
               "type": "string",

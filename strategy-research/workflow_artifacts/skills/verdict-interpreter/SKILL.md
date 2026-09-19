@@ -713,6 +713,47 @@ needs recalibration. Flag this in `findings_carryover.yaml` if the gap is > 2× 
 
 ---
 
+## IMPROVEMENT 10 — Fee-reduction autopsy (E-016)
+
+When `root_cause.mechanism_failure == "signal_real_but_subscale_vs_costs"` (Rule 1),
+`root_cause.fee_reduction_assessment` is mandatory (see schema). Decide it like this:
+
+1. **Prefer the real mechanical flag over your own judgment.** Check
+   `diagnostics.post_backtest_route_real` in `protocol_result.yaml` (or
+   `protocol_result.hypothesis_verdict.diagnostics.post_backtest_route_real`). If it is
+   `kill_cost_hurdle` or `refine_cost_hurdle`, treat this run as cost-dominated with
+   confidence `high` regardless of how close cost_drag_pct was to the 80% rule-of-thumb —
+   this route comes from real per-trade fees/edge (CUL-264/272), not an estimate.
+
+   **Exception — check `diagnostics.post_backtest_route_real_tied` first (CUL-275).**
+   When it is `true`, `post_backtest_route_real` was not a clear majority across this
+   run's (symbol, window) slots — it was a genuine tie, resolved by a fixed precedence
+   order rather than by evidence. Do not report confidence `high` in this case. Instead
+   set confidence to `medium` at most, and say explicitly in `supporting_evidence` that
+   the route was tied across windows (name the tied candidates if visible in
+   `protocol_result.results[*].core.post_backtest_route_real`) and was broken by
+   precedence, not by a majority of the walk-forward windows agreeing.
+
+2. **Pick `candidate_system` from `diagnostics.fee_reduction_metrics`** (also in
+   `trade_diagnostics.json`'s `summary.fee_reduction_metrics`):
+
+   | If this metric stands out | candidate_system |
+   |---|---|
+   | `combine_nearby_trades.same_direction_reentry_rate` is high and `avg_reentry_gap_bars` is small | `combine_nearby_trades` — re-entries are quick enough that merging them would save a round-trip. |
+   | `exit_later.avg_post_exit_drift_pct` is meaningfully positive and `pct_better_exit_1bar_later` is high | `exit_later` — exits are leaving favorable continuation on the table. |
+   | `enter_earlier.avg_pre_entry_drift_pct` is meaningfully positive and `pct_better_entry_1bar_earlier` is high | `enter_earlier` — entries lag the move that triggers them. |
+   | `trade_less_often.boundary_recross_rate` is high, or `frequency_vs_volatility_ratio` is high relative to this hypothesis's other windows | `trade_less_often` — whipsaw around the signal boundary, not genuine market volatility. |
+
+   If more than one stands out, pick the one with the largest deviation from "no problem"
+   and say so in `supporting_evidence`. If none stand out, set `has_fee_reduction_system: false`
+   and leave `candidate_system` unset — do not force a pick.
+
+3. `fee_reduction_metrics` may be null even when cost-dominated (e.g. zero trades in some
+   windows) — in that case fall back to `cost_drag_pct`/duration reasoning (Rule 1) alone,
+   set `has_fee_reduction_system: false`, and note the missing metrics in `supporting_evidence`.
+
+---
+
 ## Context rule
 Read only the five input artifacts plus the handoff `regime_detector_confidence` field.
 When `prescreen_result.yaml` is present (prescreen kill), read it as the primary evidence source.

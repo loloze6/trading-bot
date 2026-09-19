@@ -6070,25 +6070,32 @@ def determine_post_verdict_route(path: Path, run_id: str):
                      flags={"regime_misattribution_flagged": True})
         return "human_pause"
 
-    # Phase 1.4 (docs/CAMPAIGN_PROGRAM.md): a cost-dominated kill must answer "is there
-    # a system that reduces these fees?" (maker-only execution, lower-frequency
-    # variant, different product, venue tier, batching); if yes, register the
-    # cheap variant as a new idea. Unlike component_execution_error/
-    # regime_misattribution above, this does not pause the pipeline -- it's a
-    # completeness gap in the autopsy, not evidence the verdict itself is
-    # untrustworthy (regime_attribution, this schema's only other "mandatory"
-    # root_cause-adjacent field, has no code-side pause either -- it's enforced
-    # only at the prompt/skill level, with no post-hoc check anywhere in this
-    # file). A print-level nudge, mirroring the warning style (not the routing
-    # behavior) of the component_execution_error/regime_misattribution blocks
-    # above, rather than silently passing.
+    # Phase 1.4 (docs/CAMPAIGN_PROGRAM.md) / E-016 (2026-09-10 redesign): a
+    # cost-dominated kill must answer "is there a cheap, timing-only variant
+    # of this SAME signal worth trying?" (trade less often, combine nearby
+    # trades, exit later, enter earlier); if yes, register the cheap variant
+    # as a new idea. The earlier 5-option infra-level enum (maker-only
+    # execution, lower-frequency variant, different product, venue tier,
+    # batching) is superseded -- those are Jeremy's decisions to make
+    # deliberately and holistically, not per-strategy pipeline suggestions
+    # (see verdict_interpretation.schema.json's candidate_system enum and
+    # workflow_artifacts/skills/verdict-interpreter/SKILL.md's IMPROVEMENT 10).
+    # Unlike component_execution_error/regime_misattribution above, this does
+    # not pause the pipeline -- it's a completeness gap in the autopsy, not
+    # evidence the verdict itself is untrustworthy (regime_attribution, this
+    # schema's only other "mandatory" root_cause-adjacent field, has no
+    # code-side pause either -- it's enforced only at the prompt/skill level,
+    # with no post-hoc check anywhere in this file). A print-level nudge,
+    # mirroring the warning style (not the routing behavior) of the
+    # component_execution_error/regime_misattribution blocks above, rather
+    # than silently passing.
     if root_cause.get("mechanism_failure") == "signal_real_but_subscale_vs_costs" \
             and not root_cause.get("fee_reduction_assessment"):
         print("\n⚠️  Phase 1.4: root_cause.mechanism_failure = signal_real_but_subscale_vs_costs "
               "but root_cause.fee_reduction_assessment is missing.")
-        print("   Mandatory: is there a system that reduces these fees (maker-only execution, "
-              "lower-frequency variant, different product, venue tier, batching)? If yes, "
-              "register the cheap variant as a new idea and name it in "
+        print("   Mandatory: is there a cheap, timing-only variant of this same signal worth "
+              "trying (trade_less_often, combine_nearby_trades, exit_later, enter_earlier)? "
+              "If yes, register the cheap variant as a new idea and name it in "
               "fee_reduction_assessment.registered_as.")
     # --- end mechanism_failure routing ---
 

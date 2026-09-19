@@ -129,6 +129,68 @@
         "zero_trade_slot_pct": {
           "type": "number",
           "description": "A3.4: % of all window-symbol slots with 0 trades. > 30% is a deployment risk independent of expectancy."
+        },
+        "fee_reduction_metrics": {
+          "type": ["object", "null"],
+          "description": "E-016 (fee-reduction autopsy field): 2 diagnostic metrics per timing-only lever (4 levers), feeding verdict_interpreter's fee_reduction_assessment.candidate_system decision when a kill is cost-dominated (post_backtest_route_real == kill_cost_hurdle/refine_cost_hurdle). null when no fee_reduction_metrics were computed (mirrors 'summary' itself being absent when there are no trades).",
+          "properties": {
+            "lookback_bars": {
+              "type": "integer",
+              "description": "N: the shared lookback/lookahead bar count used by every metric below. See run_protocol.py::_FEE_REDUCTION_LOOKAHEAD_BARS for the current value and rationale."
+            },
+            "combine_nearby_trades": {
+              "type": "object",
+              "properties": {
+                "same_direction_reentry_rate": {
+                  "type": ["number", "null"],
+                  "description": "Fraction of consecutive same-symbol trade pairs (within one walk-forward window) that are same-direction and re-enter within lookback_bars of the prior trade's exit."
+                },
+                "avg_reentry_gap_bars": {
+                  "type": ["number", "null"],
+                  "description": "Average gap in bars between such qualifying re-entries."
+                }
+              }
+            },
+            "exit_later": {
+              "type": "object",
+              "properties": {
+                "avg_post_exit_drift_pct": {
+                  "type": ["number", "null"],
+                  "description": "Mean of (price lookback_bars after exit - exit price) / exit price, sign-adjusted so positive = favorable (the position would have kept gaining had it stayed open)."
+                },
+                "pct_better_exit_1bar_later": {
+                  "type": ["number", "null"],
+                  "description": "% of trades where holding exactly 1 more bar would have given a better exit price than the actual exit."
+                }
+              }
+            },
+            "enter_earlier": {
+              "type": "object",
+              "properties": {
+                "avg_pre_entry_drift_pct": {
+                  "type": ["number", "null"],
+                  "description": "Mean of (entry price - price lookback_bars before entry) / price lookback_bars before entry, sign-adjusted so positive = favorable (toward the trade's eventual direction)."
+                },
+                "pct_better_entry_1bar_earlier": {
+                  "type": ["number", "null"],
+                  "description": "% of trades where entering exactly 1 bar earlier would have given a better entry price."
+                }
+              }
+            },
+            "trade_less_often": {
+              "type": "object",
+              "properties": {
+                "boundary_recross_rate": {
+                  "type": ["number", "null"],
+                  "description": "How often the forecast re-crosses its boundary level (threshold_filter's min_abs if configured, else the zero-crossing) within lookback_bars of its last crossing of that same level. High = whipsaw."
+                },
+                "frequency_vs_volatility_ratio": {
+                  "type": ["number", "null"],
+                  "description": "trades per day / realized price volatility over the same window. Distinguishes genuine market volatility from a real whipsaw inefficiency."
+                }
+              }
+            }
+          }
         }
       }
     }
