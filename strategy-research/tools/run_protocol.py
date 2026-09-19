@@ -14,6 +14,7 @@ import math
 import argparse
 import statistics
 import re
+import collections
 from datetime import datetime, timezone, date
 from hashlib import sha256
 from pathlib import Path
@@ -48,6 +49,93 @@ _RESULTS_ROOT = os.path.join(_SR, "results")
 
 # A3.4: windows with fewer than this many closed trades get null Sharpe in protocol_result
 _SPARSE_TRADE_FLOOR = 5
+
+# E-016 (fee-reduction autopsy field): lookback/lookahead window, in bars, shared
+# by all 8 fee-reduction diagnostic metrics below (combine_nearby_trades,
+# exit_later, enter_earlier, trade_less_often). Picked as a small fixed bar
+# count consistent with this bot's typical holding period rather than an
+# arbitrary round number: prereg_whale_footprint_v2.yaml's measured
+# avg_holding_bars=5.74 is the closest real reference point available in this
+# repo for "how long a trade here typically lasts", so N=6 (rounded up) keeps
+# the pre-entry/post-exit lookback on the same scale as an actual trade
+# instead of, say, 5 or 20 (the unrelated post_exit_return_5bars/20bars
+# window already used elsewhere in this file for a different diagnostic).
+# Named constant, not inlined, so it is cheap to retune per strategy family
+# later without touching any of the metric formulas themselves.
+_FEE_REDUCTION_LOOKAHEAD_BARS = 6
+
+# CUL-275 (route-mode tiebreak): tie-break precedence for
+# `post_backtest_route_real` when two or more of the 5 possible
+# `determine_route()` values (trading-bot/performance/signal_statistics.py)
+# are tied for most-common across (symbol, window) slots. `statistics.mode()`
+# silently returns whichever tied value appears FIRST in iteration order in
+# that case -- not documented as an error, just quietly order-dependent -- so
+# a genuine tie could flip `post_backtest_route_real` (and therefore
+# `cost_dominated_real`) depending only on `for symbol in symbols: for window
+# in protocol["windows"]` order, with nothing downstream able to tell a real
+# majority from an ordering artifact.
+#
+# Precedence order below is `determine_route()`'s OWN if/elif priority chain,
+# verbatim (see that function's docstring), which already encodes a severity
+# ordering from "most concerning" to "least concerning":
+#   kill_no_ic          -- no detectable directional content at all
+#   refine_inverted_ic  -- signal is real but backwards
+#   kill_cost_hurdle    -- signal real, right direction, but structurally
+#                          can't clear costs
+#   refine_cost_hurdle  -- signal real, right direction, marginally short of
+#                          the cost hurdle
+#   proceed_to_interpretation -- passes both gates
+# Reusing this existing order (rather than inventing a new one) means a tied
+# route resolves to whichever candidate the codebase already treats as most
+# worth flagging first. It also matches the brief's own reasoning: a false
+# "not cost-dominated" (silently picking `proceed_to_interpretation` or a
+# `refine_*` route over a tied `kill_*`) is worse here than a false
+# "cost-dominated", since verdict_interpreter treats `kill_cost_hurdle`/
+# `refine_cost_hurdle` as a high-confidence mechanical signal -- but
+# `kill_no_ic`/`refine_inverted_ic` are even more fundamental problems than a
+# cost hurdle (no signal, or a backwards one, beats "right signal, wrong
+# economics" as the thing worth surfacing first), so they outrank the cost
+# routes rather than only the two cost routes outranking the pass route.
+_ROUTE_TIE_PRECEDENCE = (
+    "kill_no_ic",
+    "refine_inverted_ic",
+    "kill_cost_hurdle",
+    "refine_cost_hurdle",
+    "proceed_to_interpretation",
+)
+
+
+def _resolve_tied_route(routes: list[str]) -> tuple[str | None, bool]:
+    """
+    Tie-aware replacement for `statistics.mode(routes)`.
+
+    Returns (winning_route, tied). `tied` is True iff two or more distinct
+    values in `routes` share the highest count (a genuine tie for most
+    common) -- regardless of which one this function resolves to. When not
+    tied, the plain most-common value wins (identical to `statistics.mode`'s
+    result in the no-tie case). When tied, the winner is the tied candidate
+    that sorts first in `_ROUTE_TIE_PRECEDENCE`; a tied value absent from
+    that tuple (should not happen -- `determine_route()` only emits the 5
+    named values) sorts last, never crashes.
+    """
+    if not routes:
+        return None, False
+    counts = collections.Counter(routes)
+    ranked = counts.most_common()
+    top_count = ranked[0][1]
+    tied_candidates = [route for route, count in ranked if count == top_count]
+    tied = len(tied_candidates) > 1
+    if not tied:
+        return ranked[0][0], False
+
+    def _precedence_key(route):
+        try:
+            return _ROUTE_TIE_PRECEDENCE.index(route)
+        except ValueError:
+            return len(_ROUTE_TIE_PRECEDENCE)
+
+    winner = min(tied_candidates, key=_precedence_key)
+    return winner, True
 
 
 def _config_sha(config_source):
@@ -107,6 +195,15 @@ def _load_bars(run_dir: Path) -> list:
                     "high":  float(row["high"])  if row.get("high")  else None,
                     "low":   float(row["low"])   if row.get("low")   else None,
                     "close": float(row["close"]) if row.get("close") else None,
+                    # E-016: forecast, when the column is present (it is on every
+                    # engine-produced bars.csv -- core/backtester.py always merges
+                    # it in before write_bars_csv; absent only on hand-written
+                    # fixtures that predate this addition, e.g.
+                    # test_run_protocol_exit_reason.py's minimal 5-column rows).
+                    # row.get() returns None for a genuinely missing column
+                    # (DictReader has no such key at all) the same way it already
+                    # does for a present-but-blank cell.
+                    "forecast": float(row["forecast"]) if row.get("forecast") not in (None, "") else None,
                 })
             except (ValueError, KeyError) as e:
                 # #47: this used to be a bare `pass`. A dropped bar silently
@@ -352,6 +449,94 @@ def _compute_post_exit_returns(
     return _signed(5), _signed(20)
 
 
+# ---------------------------------------------------------------------------
+# E-016: fee-reduction autopsy field -- per-trade metric halves for the
+# "exit_later" and "enter_earlier" levers. Deliberately separate from
+# _compute_post_exit_returns above (same shape, different N and different
+# sign convention documented inline) so callers never have to guess which of
+# three different N's a given field used.
+# ---------------------------------------------------------------------------
+
+def _compute_pre_entry_drift(
+    side: str, entry_price: float, bars: list, entry_idx: int,
+    n: int = _FEE_REDUCTION_LOOKAHEAD_BARS,
+) -> float | None:
+    """
+    enter_earlier metric (a): (entry_price - price N bars before entry) / price
+    N bars before entry, as a %, sign-adjusted so positive = favorable (price
+    was already moving toward the trade's eventual direction before entry).
+    For LONG the trade profits from price rising, which is exactly what a
+    positive raw ratio already means -- no flip needed. For SHORT the trade
+    profits from price FALLING, so the raw ratio's sign is flipped, mirroring
+    the existing convention in _compute_post_exit_returns above.
+    """
+    if entry_idx is None or entry_idx < n:
+        return None
+    price_before = bars[entry_idx - n].get("close")
+    if not price_before:
+        return None
+    raw = (entry_price - price_before) / price_before * 100
+    return round(raw if side == "LONG" else -raw, 4)
+
+
+def _compute_entered_earlier_better(
+    side: str, entry_price: float, bars: list, entry_idx: int,
+) -> bool | None:
+    """
+    enter_earlier metric (b): would entering exactly 1 bar earlier have given a
+    better entry price (lower for LONG, higher for SHORT) than the trade's
+    actual fill? None when the prior bar is unavailable (entry on bar 0).
+    """
+    if entry_idx is None or entry_idx < 1:
+        return None
+    prior_close = bars[entry_idx - 1].get("close")
+    if prior_close is None:
+        return None
+    return bool(prior_close < entry_price) if side == "LONG" else bool(prior_close > entry_price)
+
+
+def _compute_post_exit_drift(
+    side: str, exit_price: float, bars: list, exit_idx: int,
+    n: int = _FEE_REDUCTION_LOOKAHEAD_BARS,
+) -> float | None:
+    """
+    exit_later metric (a): (price N bars after exit - exit_price) / exit_price,
+    as a %, sign-adjusted so positive = favorable (the position would have kept
+    gaining had it stayed open N bars longer). Same signed convention as
+    _compute_post_exit_returns's 5/20-bar fields, just parameterized on this
+    lever's own N instead.
+    """
+    if exit_idx is None or exit_idx < 0 or not exit_price:
+        return None
+    target_idx = exit_idx + n
+    if target_idx >= len(bars):
+        return None
+    close = bars[target_idx].get("close")
+    if close is None:
+        return None
+    raw = (close - exit_price) / exit_price * 100
+    return round(raw if side == "LONG" else -raw, 4)
+
+
+def _compute_held_longer_better(
+    side: str, exit_price: float, bars: list, exit_idx: int,
+) -> bool | None:
+    """
+    exit_later metric (b): would holding exactly 1 more bar have given a
+    better exit price (higher for LONG, lower for SHORT) than the trade's
+    actual exit? None when the next bar is unavailable (exit on the last bar).
+    """
+    if exit_idx is None or exit_idx < 0:
+        return None
+    next_idx = exit_idx + 1
+    if next_idx >= len(bars):
+        return None
+    next_close = bars[next_idx].get("close")
+    if next_close is None:
+        return None
+    return bool(next_close > exit_price) if side == "LONG" else bool(next_close < exit_price)
+
+
 def _infer_exit_reason(
     side: str, exit_forecast: float, bars: list, exit_idx: int, window_end: str
 ) -> str:
@@ -480,6 +665,18 @@ def _compute_trade_records_for_window(
         exit_reason = _infer_exit_reason(side, exit_forecast, bars, exit_idx, window_end)
         cost_bps = _cost_paid_bps(trade, cost_model)
 
+        # E-016 (fee-reduction autopsy): per-trade halves of the enter_earlier/
+        # exit_later metrics, plus entry_price/exit_price/entry_idx/exit_idx --
+        # the latter two so _compute_window_fee_reduction_diagnostics can pair
+        # up consecutive trades (combine_nearby_trades) without re-deriving bar
+        # positions from timestamps a second time. entry_idx/exit_idx are only
+        # meaningful WITHIN this one window's own bars.csv (indices reset to 0
+        # per window) -- never compare them across two different windows.
+        pre_entry_drift    = _compute_pre_entry_drift(side, entry_price, bars, entry_idx) if entry_idx >= 0 else None
+        entered_earlier_ok = _compute_entered_earlier_better(side, entry_price, bars, entry_idx) if entry_idx >= 0 else None
+        post_exit_drift    = _compute_post_exit_drift(side, exit_price, bars, exit_idx) if exit_idx >= 0 else None
+        held_longer_ok     = _compute_held_longer_better(side, exit_price, bars, exit_idx) if exit_idx >= 0 else None
+
         records.append({
             "trade_id":                trade.get("trade_id", ""),
             "symbol":                  symbol,
@@ -507,11 +704,259 @@ def _compute_trade_records_for_window(
             "post_exit_return_5bars":  post_5,   # A3.1
             "post_exit_return_20bars": post_20,  # A3.1
             "cost_paid":               cost_bps, # A3.2
+            "entry_price":             entry_price,          # E-016
+            "exit_price":              exit_price,           # E-016
+            "entry_idx":               entry_idx,            # E-016 (window-local index; see note above)
+            "exit_idx":                exit_idx,             # E-016 (window-local index; see note above)
+            "pre_entry_drift_pct":     pre_entry_drift,       # E-016 (enter_earlier, metric a)
+            "entered_earlier_better":  entered_earlier_ok,    # E-016 (enter_earlier, metric b)
+            "post_exit_drift_pct":     post_exit_drift,       # E-016 (exit_later, metric a)
+            "held_longer_better":      held_longer_ok,        # E-016 (exit_later, metric b)
         })
     return records
 
 
-def _aggregate_trade_diagnostics(all_records: list, results: list) -> dict:
+def _resolve_boundary_level(strategy_config: dict | None) -> float:
+    """
+    E-016 (trade_less_often, metric a -- boundary re-cross rate): the forecast
+    level whose repeated re-crossing indicates whipsaw. Prefers this specific
+    strategy's own `threshold_filter` op (params.min_abs) when its config
+    declares one -- that is already the value this strategy treats as
+    meaningful, wherever it sits in the config's component/transform tree
+    (see strategies/registry.py::TRANSFORM_OPS_REGISTRY for the op shape).
+    Falls back to the forecast's natural zero-crossing (0.0) when no
+    threshold_filter is configured -- a strategy with no such gate still has a
+    well-defined "flips direction" boundary at 0.
+
+    Generic recursive search (not a fixed-depth path lookup) because
+    strategy_config.json's transform lists can be nested under different keys
+    per strategy (component-level `transforms` vs `history_transforms`, per
+    DOC/STRATEGY_FRAMEWORK.md) -- walking the whole tree for the first
+    matching op is simpler and more robust than enumerating every shape.
+
+    CUL-275 (visibility, not behavior): today's real
+    trading-bot/strategy_config.json has exactly one `threshold_filter`, so
+    this ambiguity never fires in practice -- but this function is written
+    to generalize to configs with several per-component `threshold_filter`
+    ops, and picking the first one found via an unordered tree walk in that
+    case is a silent judgment call. Resolution is unchanged (still the
+    first value found, in the same traversal order as before), but when more
+    than one distinct threshold_filter.min_abs is found, a WARNING is now
+    printed naming the count and values so the ambiguity is visible instead
+    of silent.
+    """
+    found_values = []
+
+    def _walk(node):
+        if isinstance(node, dict):
+            if node.get("op") == "threshold_filter":
+                min_abs = (node.get("params") or {}).get("min_abs")
+                if isinstance(min_abs, (int, float)):
+                    found_values.append(float(min_abs))
+            for value in node.values():
+                _walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                _walk(item)
+
+    if not strategy_config:
+        return 0.0
+    _walk(strategy_config)
+    if len(found_values) > 1:
+        print(
+            f"WARNING: _resolve_boundary_level found {len(found_values)} "
+            f"threshold_filter.min_abs values in this strategy config "
+            f"{found_values} -- using the first ({found_values[0]}) as the "
+            "trade_less_often boundary_level. Other components' thresholds "
+            "are not reflected in this diagnostic."
+        )
+    return found_values[0] if found_values else 0.0
+
+
+def _compute_window_fee_reduction_diagnostics(
+    run_dir: Path, symbol: str, window: str, trade_records: list, boundary_level: float,
+) -> dict | None:
+    """
+    E-016 (fee-reduction autopsy field): per-window halves of the
+    combine_nearby_trades and trade_less_often metrics. Re-reads this
+    window's own bars.csv (forecast + close columns) rather than threading a
+    second return value through `_compute_trade_records_for_window` -- that
+    function's return shape (a plain list of trade records) is pinned by
+    test_run_protocol_exit_reason.py, which destructures it directly; adding
+    a second value there would break every existing call site and test for a
+    result this function can get more cheaply by re-reading the same
+    already-on-disk bars.csv (same re-read pattern this file already uses in
+    `_pooled_ic_with_bootstrap_fallback`).
+
+    Returns None when there are fewer than 2 bars (nothing to diff).
+    """
+    bars = _load_bars(run_dir)
+    if len(bars) < 2:
+        return None
+
+    # --- trade_less_often (a): boundary re-cross rate -----------------------
+    # A "crossing" is a sign change of (forecast - boundary_level) between two
+    # consecutive bars. Re-cross rate = fraction of crossings that repeat
+    # within _FEE_REDUCTION_LOOKAHEAD_BARS of the PREVIOUS crossing -- high
+    # values mean the forecast keeps flapping back across the same level
+    # (whipsaw); low values mean crossings are clean, isolated direction
+    # changes.
+    crossing_idxs: list[int] = []
+    prev_sign = None
+    for i, bar in enumerate(bars):
+        f = bar.get("forecast")
+        if f is None:
+            continue
+        sign = 1 if f >= boundary_level else -1
+        if prev_sign is not None and sign != prev_sign:
+            crossing_idxs.append(i)
+        prev_sign = sign
+
+    boundary_recross_rate = None
+    avg_boundary_recross_gap_bars = None
+    if len(crossing_idxs) >= 2:
+        gaps = [crossing_idxs[i] - crossing_idxs[i - 1] for i in range(1, len(crossing_idxs))]
+        recrosses = [g for g in gaps if g <= _FEE_REDUCTION_LOOKAHEAD_BARS]
+        boundary_recross_rate = round(len(recrosses) / len(gaps), 4)
+        if recrosses:
+            avg_boundary_recross_gap_bars = round(statistics.mean(recrosses), 4)
+
+    # --- trade_less_often (b): frequency vs. volatility ratio ---------------
+    # trades_per_day (this window) / realized bar-to-bar return volatility
+    # (this window) -- distinguishes "the market was genuinely volatile"
+    # (ratio tracks volatility) from "there's a real whipsaw inefficiency"
+    # (ratio stays high even when volatility is low).
+    closes = [b.get("close") for b in bars]
+    returns = [
+        (closes[i] - closes[i - 1]) / closes[i - 1]
+        for i in range(1, len(closes))
+        if closes[i - 1] and closes[i] is not None
+    ]
+    volatility = statistics.stdev(returns) if len(returns) >= 2 else None
+
+    span_days = None
+    try:
+        t0 = datetime.strptime(_ts_key(bars[0]["timestamp"]), "%Y-%m-%d %H:%M:%S")
+        t1 = datetime.strptime(_ts_key(bars[-1]["timestamp"]), "%Y-%m-%d %H:%M:%S")
+        span_seconds = (t1 - t0).total_seconds()
+        if span_seconds > 0:
+            span_days = span_seconds / 86400.0
+    except (ValueError, KeyError):
+        span_days = None
+
+    trades_per_day = len(trade_records) / span_days if span_days else None
+    frequency_vs_volatility_ratio = (
+        round(trades_per_day / volatility, 6)
+        if trades_per_day is not None and volatility else None
+    )
+
+    # --- combine_nearby_trades: same-direction re-entry rate + avg gap ------
+    # Consecutive-in-TIME trade pairs within THIS window only -- a different
+    # window's bars.csv resets entry_idx/exit_idx to 0, so a gap computed
+    # across two windows would compare unrelated bar positions. trade_records
+    # is already in chronological order (trades.json is written in execution
+    # order, one symbol per window by construction).
+    total_pair_count = 0
+    reentry_pair_count = 0
+    reentry_gaps: list[int] = []
+    for i in range(1, len(trade_records)):
+        prev_t, cur_t = trade_records[i - 1], trade_records[i]
+        if prev_t.get("exit_idx", -1) < 0 or cur_t.get("entry_idx", -1) < 0:
+            continue
+        total_pair_count += 1
+        if cur_t["direction"] == prev_t["direction"]:
+            gap = cur_t["entry_idx"] - prev_t["exit_idx"]
+            if 0 <= gap <= _FEE_REDUCTION_LOOKAHEAD_BARS:
+                reentry_pair_count += 1
+                reentry_gaps.append(gap)
+
+    return {
+        "symbol":                        symbol,
+        "window":                        window,
+        "boundary_level":                boundary_level,
+        "n_crossings":                   len(crossing_idxs),
+        "boundary_recross_rate":         boundary_recross_rate,
+        "avg_boundary_recross_gap_bars": avg_boundary_recross_gap_bars,
+        "trades_per_day":                round(trades_per_day, 4) if trades_per_day is not None else None,
+        "realized_volatility":           round(volatility, 6) if volatility is not None else None,
+        "frequency_vs_volatility_ratio": frequency_vs_volatility_ratio,
+        "total_pair_count":              total_pair_count,
+        "reentry_pair_count":            reentry_pair_count,
+        "reentry_gaps":                  reentry_gaps,
+    }
+
+
+def _aggregate_fee_reduction_diagnostics(all_records: list, all_window_diagnostics: list) -> dict:
+    """
+    E-016 (fee-reduction autopsy field): aggregate the 8 diagnostic metrics
+    (2 per lever x 4 levers: combine_nearby_trades, exit_later, enter_earlier,
+    trade_less_often) across every trade/window already computed by
+    `_compute_trade_records_for_window` and `_compute_window_fee_reduction_diagnostics`
+    above -- no new data source, no re-run. Diagnostic-only: none of this
+    touches any existing numeric output.
+
+    Returns {} when there is nothing to aggregate (mirrors
+    _aggregate_trade_diagnostics's own empty-input contract).
+    """
+    windows = [w for w in all_window_diagnostics if w]
+    if not all_records and not windows:
+        return {}
+
+    # combine_nearby_trades
+    total_pairs   = sum(w["total_pair_count"]   for w in windows)
+    reentry_pairs = sum(w["reentry_pair_count"] for w in windows)
+    all_reentry_gaps = [g for w in windows for g in w["reentry_gaps"]]
+    same_direction_reentry_rate = round(reentry_pairs / total_pairs, 4) if total_pairs else None
+    avg_reentry_gap_bars = round(statistics.mean(all_reentry_gaps), 4) if all_reentry_gaps else None
+
+    # exit_later
+    post_exit_drifts  = [r["post_exit_drift_pct"] for r in all_records if r.get("post_exit_drift_pct") is not None]
+    held_longer_flags = [r["held_longer_better"]  for r in all_records if r.get("held_longer_better")  is not None]
+    avg_post_exit_drift_pct = round(statistics.mean(post_exit_drifts), 4) if post_exit_drifts else None
+    pct_better_exit_1bar_later = (
+        round(sum(1 for f in held_longer_flags if f) / len(held_longer_flags) * 100, 2)
+        if held_longer_flags else None
+    )
+
+    # enter_earlier
+    pre_entry_drifts      = [r["pre_entry_drift_pct"]    for r in all_records if r.get("pre_entry_drift_pct")    is not None]
+    entered_earlier_flags = [r["entered_earlier_better"] for r in all_records if r.get("entered_earlier_better") is not None]
+    avg_pre_entry_drift_pct = round(statistics.mean(pre_entry_drifts), 4) if pre_entry_drifts else None
+    pct_better_entry_1bar_earlier = (
+        round(sum(1 for f in entered_earlier_flags if f) / len(entered_earlier_flags) * 100, 2)
+        if entered_earlier_flags else None
+    )
+
+    # trade_less_often
+    recross_rates   = [w["boundary_recross_rate"]         for w in windows if w["boundary_recross_rate"]         is not None]
+    freq_vol_ratios = [w["frequency_vs_volatility_ratio"] for w in windows if w["frequency_vs_volatility_ratio"] is not None]
+    boundary_recross_rate         = round(statistics.mean(recross_rates),   4) if recross_rates   else None
+    frequency_vs_volatility_ratio = round(statistics.mean(freq_vol_ratios), 6) if freq_vol_ratios else None
+
+    return {
+        "lookback_bars": _FEE_REDUCTION_LOOKAHEAD_BARS,
+        "combine_nearby_trades": {
+            "same_direction_reentry_rate": same_direction_reentry_rate,
+            "avg_reentry_gap_bars":        avg_reentry_gap_bars,
+        },
+        "exit_later": {
+            "avg_post_exit_drift_pct":    avg_post_exit_drift_pct,
+            "pct_better_exit_1bar_later": pct_better_exit_1bar_later,
+        },
+        "enter_earlier": {
+            "avg_pre_entry_drift_pct":       avg_pre_entry_drift_pct,
+            "pct_better_entry_1bar_earlier": pct_better_entry_1bar_earlier,
+        },
+        "trade_less_often": {
+            "boundary_recross_rate":         boundary_recross_rate,
+            "frequency_vs_volatility_ratio": frequency_vs_volatility_ratio,
+        },
+    }
+
+
+def _aggregate_trade_diagnostics(
+    all_records: list, results: list, all_window_fee_diagnostics: list | None = None,
+) -> dict:
     """
     Aggregate per-trade records into the trade_diagnostics_summary block.
     Includes A3.1 stop_loss_recovery_rate, A3.4 per_trade_expectancy_bps and zero_trade_slot_pct.
@@ -519,6 +964,12 @@ def _aggregate_trade_diagnostics(all_records: list, results: list) -> dict:
     Win rate: uses profitable_net (engine's net-of-commission definition) — NOT gross realized_return > 0.
     Expectancy bps: uses net_portfolio_return_pct (portfolio-level net) — NOT position-level gross.
     These two fixes ensure the keltner_163 fixture reproduces 50.7%→57.4% / −26→−58 bps.
+
+    all_window_fee_diagnostics: E-016, optional. Per-window output of
+    _compute_window_fee_reduction_diagnostics, one entry per (symbol, window).
+    When provided (and all_records is non-empty), the returned dict gains a
+    "fee_reduction_metrics" key. Defaults to None so this function's existing
+    behaviour is unchanged for any caller that does not pass it.
     """
     if not all_records:
         return {}
@@ -623,6 +1074,10 @@ def _aggregate_trade_diagnostics(all_records: list, results: list) -> dict:
             "n":      n_trades,
         },
         "zero_trade_slot_pct": zero_trade_slot_pct,  # A3.4
+        "fee_reduction_metrics": (  # E-016
+            _aggregate_fee_reduction_diagnostics(all_records, all_window_fee_diagnostics)
+            if all_window_fee_diagnostics is not None else None
+        ),
     }
 
 
@@ -1131,6 +1586,32 @@ def evaluate_against_decision_rules(
     corrs       = [r["core"].get("forecast_return_corr")     for r in results if r["core"].get("forecast_return_corr")     is not None]
     durations   = [r["core"].get("avg_trade_duration_bars")  for r in results if r["core"].get("avg_trade_duration_bars")  is not None]
 
+    # E-016 (fee-reduction autopsy field): the REAL, mechanical cost-check
+    # route from trading-bot/reporting/run_artifact.py::build_core()'s
+    # `post_backtest_route_real` (CUL-264/CUL-272's determine_route(), fed
+    # real per-trade fees/edge -- not the LLM's soft mechanism_failure
+    # judgment). One value per (symbol, window); take the most common
+    # non-null value across all windows as this run's overall route. A
+    # cost-dominated kill is `kill_cost_hurdle` (structural) or
+    # `refine_cost_hurdle` (marginal) -- see signal_statistics.py::determine_route.
+    #
+    # CUL-275: `statistics.mode()` does not flag ties -- on equal counts it
+    # silently returns whichever value appears first in `_routes_real`, which
+    # depends only on `for symbol in symbols: for window in
+    # protocol["windows"]` iteration order. `_resolve_tied_route` replaces it
+    # with tie-aware logic: `post_backtest_route_real_tied` records whether
+    # this run's result was a genuine tie, and the winner is chosen by
+    # `_ROUTE_TIE_PRECEDENCE` (documented above) rather than by list order.
+    _routes_real = [
+        r["core"].get("post_backtest_route_real") for r in results
+        if r["core"].get("post_backtest_route_real") is not None
+    ]
+    post_backtest_route_real, post_backtest_route_real_tied = _resolve_tied_route(_routes_real)
+    cost_dominated_real = (
+        post_backtest_route_real in ("kill_cost_hurdle", "refine_cost_hurdle")
+        if post_backtest_route_real is not None else None
+    )
+
     uninformative: list = []
     for r in results:
         for regime, stats in r.get("regime_validity", {}).items():
@@ -1163,12 +1644,20 @@ def evaluate_against_decision_rules(
         "uninformative_regimes":          uninformative,
         "win_rate_vs_sharpe":             wr_vs_sharpe,
         "below_floor_pct":                below_floor_pct,  # A3.4
+        "post_backtest_route_real":       post_backtest_route_real,  # E-016
+        "post_backtest_route_real_tied":  post_backtest_route_real_tied,  # CUL-275
+        "cost_dominated_real":            cost_dominated_real,       # E-016
     }
 
     # A3.4: inject per_trade_expectancy_bps and zero_trade_slot_pct from trade diagnostics
     if trade_diagnostics_summary:
         diagnostics["per_trade_expectancy_bps"] = trade_diagnostics_summary.get("per_trade_expectancy_bps")
         diagnostics["zero_trade_slot_pct"]       = trade_diagnostics_summary.get("zero_trade_slot_pct")
+        # E-016: fee-reduction autopsy metrics, feeding verdict_interpreter's
+        # fee_reduction_assessment.candidate_system decision when
+        # cost_dominated_real is true (see workflow_artifacts/skills/
+        # verdict-interpreter/SKILL.md's fee-reduction autopsy rule).
+        diagnostics["fee_reduction_metrics"] = trade_diagnostics_summary.get("fee_reduction_metrics")
 
     return {
         'verdict':          verdict,
@@ -1348,6 +1837,11 @@ def main():
     # original file can no longer desync certificate from what actually ran.
     config_bytes = Path(args.config_path).read_bytes()
     config_sha256, config_sha8 = _config_sha(config_bytes)
+    # E-016 (fee-reduction autopsy field): resolve the boundary_recross_rate
+    # level once from these exact config bytes (same discipline as the sha
+    # above -- one parse, no risk of a mid-run rewrite desyncing the level
+    # from what actually ran).
+    _fee_reduction_boundary_level = _resolve_boundary_level(json.loads(config_bytes))
     symbols = protocol["symbols"]
     # Option Y (locked 2026-08-09, Ticket 13): --exchange -> protocol field ->
     # explicit "binance". Resolved with `is not None` rather than truthiness so
@@ -1479,6 +1973,7 @@ def main():
     _runs_root = str(out_dir / "results") if args.out_dir else None
     results = []
     all_trade_records = []  # Step 03: accumulate per-trade diagnostics
+    all_window_fee_diagnostics = []  # E-016: accumulate per-window fee-reduction diagnostics
 
     # 2026-07-07: holdout boundary guard for the warmup_prefetch buffer (see
     # launcher.run_backtest's warmup_prefetch docstring). Read once; every window
@@ -1553,11 +2048,23 @@ def main():
             )
             all_trade_records.extend(trade_records)
 
+            # E-016: per-window fee-reduction autopsy diagnostics (same run
+            # directory, no re-run) -- see _compute_window_fee_reduction_diagnostics
+            # for why this is a separate re-read rather than a second return
+            # value off _compute_trade_records_for_window.
+            all_window_fee_diagnostics.append(
+                _compute_window_fee_reduction_diagnostics(
+                    rd, symbol, label, trade_records, _fee_reduction_boundary_level
+                )
+            )
+
             print(f"    sharpe={core.get('sharpe') or 0:.3f}  trades={m['core'].get('trade_count', 0)}"
                   f"  dd={m['core'].get('max_drawdown_pct', 0):.1f}%")
 
     # Step 03: aggregate trade diagnostics and write trade_diagnostics.json
-    trade_diagnostics_summary = _aggregate_trade_diagnostics(all_trade_records, results)
+    trade_diagnostics_summary = _aggregate_trade_diagnostics(
+        all_trade_records, results, all_window_fee_diagnostics
+    )
     if all_trade_records:
         td_payload = {
             # A3.5: keltner_163 fixture — production of this artifact is what the regression
