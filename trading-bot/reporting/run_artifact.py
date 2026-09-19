@@ -388,9 +388,16 @@ def build_core(
             forecast_return_corr, sigma_bar_bps_value, avg_trade_duration_bars,
             rtc_bps, safety_factor=safety,
         )
+        # CUL-264 follow-up (min-observations safeguard): n_eff and the
+        # sigma-placeholder flag are threaded through so determine_route()
+        # can route to inconclusive_insufficient_data instead of computing a
+        # confident-sounding verdict off a sample too small to trust -- see
+        # signal_statistics.py's own reasoning for _MIN_N_EFF_FOR_ROUTE.
         post_backtest_route, post_backtest_route_rationale = determine_route(
             forecast_return_corr, forecast_return_corr_pvalue_block_adjusted,
             post_backtest_cost_check,
+            n_eff=forecast_return_corr_n_eff,
+            sigma_is_placeholder=bool(sigma_is_placeholder),
         )
 
     # CUL-272: real, measured counterparts to the two ESTIMATED inputs above.
@@ -456,9 +463,22 @@ def build_core(
             "pass":                               bool(ratio >= safety),
             "basis":                              "real",
         }
+        # CUL-272 follow-up (min-observations safeguard): the real path is
+        # keyed on completed-trade count (n), a different quantity from the
+        # estimated path's n_eff -- see signal_statistics.py's
+        # _MIN_TRADES_FOR_ROUTE reasoning. n_eff is also passed: the
+        # significance judgment (kill_no_ic/refine_inverted_ic) this call
+        # shares with the estimated-path call above rests on the same
+        # forecast_return_corr/p-value, so it is equally unreliable at low
+        # n_eff regardless of which cost dict is being evaluated.
+        # sigma_is_placeholder is deliberately NOT passed here -- the real
+        # cost check is built from measured trade PnL/commission, not
+        # sigma_bar_bps, so that flag has no bearing on this route.
         post_backtest_route_real, post_backtest_route_real_rationale = determine_route(
             forecast_return_corr, forecast_return_corr_pvalue_block_adjusted,
             post_backtest_cost_check_real,
+            n_eff=forecast_return_corr_n_eff,
+            n_trades=n,
         )
 
     return {
