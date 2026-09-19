@@ -421,3 +421,10 @@ class RollingBuffer:
     def size(self):
         return len(self.bars)
 
+    def clear(self):
+        """CUL-271: drop all buffered bars (a large-gap segment split needs the
+        strategy to re-warm from scratch rather than blend pre/post-gap data).
+        Indicator registrations survive; only accumulated data is dropped."""
+        self.bars.clear()
+        self._cached_df = None
+

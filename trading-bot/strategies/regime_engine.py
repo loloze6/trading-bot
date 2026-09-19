@@ -88,6 +88,13 @@ class ConfigDrivenRegimeEngine:
             if comp.is_ready():
                 self._history[cid].append(comp.raw_value())
 
+    def reset_history(self) -> None:
+        """CUL-271: large-gap segment split -- drop accumulated component
+        history so post-gap readiness re-derives from real post-gap bars only,
+        instead of blending pre/post-gap data. Deques keep their maxlen."""
+        for h in self._history.values():
+            h.clear()
+
     def is_ready(self) -> bool:
         if self._mode == "threshold_rules":
             return all(len(h) >= 1 for h in self._history.values())

@@ -40,6 +40,8 @@ class TradingBot:
         model_funding: bool = False,
         funding_daily=None,
         risk_gate=None,
+        gap_detection: bool = False,
+        gap_policy: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize the trading bot.
@@ -112,6 +114,75 @@ class TradingBot:
         # configured absolute cap. See risk/portfolio_risk_gate.py.
         self.risk_gate = risk_gate
 
+        # CUL-261 / E-039: off-by-default gap detection at candle completion. When
+        # True, every candle completion (live and backtest alike -- this is the
+        # shared callback for both) compares this candle's timestamp against the
+        # previous completed candle FOR THIS SYMBOL against candle_interval_seconds,
+        # the same expected step CandleBuilder aggregates to. A mismatch is recorded
+        # in self.gap_events; the caller (BacktestEngine._end_of_backtest) surfaces
+        # it into metrics.json's "data_quality" block. Default False: _check_and_
+        # record_gap is never called, self.gap_events stays empty and unread, and no
+        # key is added anywhere -- byte-identical to before this parameter existed.
+        #
+        # CUL-271: gap_policy REPLACES the single-bar suppress_allocation_after_gap
+        # this ticket shipped with. Investigated first (Step 1 of the design spec):
+        # every strategy component already exposes get_required_periods()/is_ready()
+        # (strategies/strategy_components.py), but the LIVE engines actually wired
+        # into AdvancedStrategy -- ConfigDrivenRegimeEngine/ConfigDrivenStrategyEngine
+        # -- collapse readiness to ONE SHARED warmup value per engine
+        # (`all(len(h) >= self._warmup ...)`), not a true per-indicator check;
+        # CompositeStrategy's per-indicator all(is_ready_with_standardization())
+        # pattern in strategy_base.py is never instantiated anywhere in the live
+        # path (grepped: zero call sites outside its own definition). Genuine
+        # per-indicator validity would mean restructuring both engines' warmup
+        # semantics for every caller, not a targeted gap-response diff, and the
+        # plumbing alone touches 5 files (trading_bot/backtester/launcher/
+        # main_strategy + one engine), over the spec's <=3-file ceiling. Per the
+        # spec's own mechanical rule, that routes to the fixed-tier fallback below,
+        # not the per-indicator variant -- this is not a judgment call, it is what
+        # Step 1's findings dictate under Step 2's rule.
+        #
+        # gap_policy shape: {"ignore_max_bars": int, "large_min_bars": int,
+        # "on_large_gap": "flatten"}. None (default) disables all tiers --
+        # byte-identical to before this parameter existed. Requires
+        # gap_detection=True (there is nothing to classify a tier from otherwise).
+        #
+        # Tiers, classified by how many bars were actually missed
+        # (round(actual_delta / expected_step) - 1):
+        #   ignore  (missed <= ignore_max_bars): no special handling. The engine
+        #     only ever sees REAL bars (there is no synthetic-candle mechanism in
+        #     CandleBuilder to forward-fill into) -- for a gap this short, trading
+        #     resumes on the next real bar exactly as it does today.
+        #   middle  (ignore_max_bars < missed < large_min_bars): existing position
+        #     is KEPT, but a NEW entry (previous_allocation == 0 and target != 0)
+        #     is blocked until bars_since_gap >= the strategy's own required_bars
+        #     -- long enough for the contaminated indicator window to fully flush
+        #     with real post-gap data. No history reset: rolling windows still
+        #     span the gap (this repo's own prescreen gap policy already tried and
+        #     rejected full segment-and-re-warm -- it destroyed 91% of a real
+        #     sample -- so only NEW risk is withheld, not existing exposure).
+        #   large   (missed >= large_min_bars): immediate forced flatten (same
+        #     direct-execute bypass pattern PR-2's risk_gate kill-switch uses),
+        #     plus AdvancedStrategy.reset_history() (a real segment split -- the
+        #     shared data buffer and both engines' component history are cleared).
+        #     After the reset, the EXISTING is_ready()/required_bars gate
+        #     (MainStrategy.generate_signals(), strategy_base.py) already forces
+        #     forecast=0.0/NOT_READY until enough real bars re-accumulate --
+        #     no separate post-large-gap entry block is needed, it falls out of
+        #     the engine's own pre-existing readiness contract for free.
+        if gap_policy is not None and not gap_detection:
+            raise ValueError(
+                "gap_policy requires gap_detection=True -- there is nothing to "
+                "classify a tier from without gap detection enabled. Pass "
+                "gap_detection=True or omit gap_policy."
+            )
+        self.gap_detection = gap_detection
+        self.gap_policy = gap_policy
+        self._last_candle_time: Dict[str, Any] = {}
+        self.gap_events: List[Dict[str, Any]] = []
+        self._bars_since_gap: Dict[str, int] = {}
+        self._active_gap_tier: Dict[str, str] = {}
+
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
         self.closed_trades: List[CompletedTrade] = []
@@ -181,6 +252,60 @@ class TradingBot:
         val = series.get(day)
         return None if val is None else float(val)
 
+    def _check_and_record_gap(self, symbol: str, data_time) -> bool:
+        """
+        CUL-261 / E-039: off-by-default gap detection (see self.gap_detection).
+
+        Compares `data_time` (this candle's timestamp) against the previous
+        completed candle's timestamp FOR THIS SYMBOL, against candle_interval_seconds
+        -- the same expected step CandleBuilder aggregates every bar to, so a real
+        data gap (a delistings-style hole, an exchange outage, a fetch that
+        returned fewer rows than the window implies) shows up here as a delta that
+        isn't exactly one step. The very first candle seen for a symbol has nothing
+        to compare against and is never flagged.
+
+        Only ever looks backward at the immediately preceding candle -- no
+        look-ahead. Returns True the bars a gap was just detected on, so the caller
+        can optionally suppress that one bar's allocation change without touching
+        any indicator state.
+        """
+        ts = pd.Timestamp(data_time)
+        expected_step = pd.Timedelta(seconds=self.candle_interval_seconds)
+        previous = self._last_candle_time.get(symbol)
+        self._last_candle_time[symbol] = ts
+        if previous is None:
+            return False
+        delta = ts - previous
+        if delta == expected_step:
+            return False
+        self.gap_events.append({
+            "symbol": symbol,
+            "timestamp": str(ts),
+            "previous_timestamp": str(previous),
+            "expected_step_seconds": self.candle_interval_seconds,
+            "actual_delta_seconds": delta.total_seconds(),
+        })
+        return True
+
+    @staticmethod
+    def _gap_bars_missing(actual_delta_seconds: float, expected_step_seconds: int) -> int:
+        """CUL-271: number of whole bars missing from a detected gap (0 would
+        mean no gap; this is only ever called when a gap was already detected,
+        so the real minimum is 1). round(), not int(), so a delta that's a hair
+        off an exact multiple of the step (float accumulation) doesn't undercount."""
+        return max(round(actual_delta_seconds / expected_step_seconds) - 1, 1)
+
+    def _classify_gap_tier(self, bars_missing: int) -> str:
+        """CUL-271: which gap_policy tier a just-detected gap falls into.
+        Only called when self.gap_policy is not None."""
+        ignore_max = self.gap_policy.get("ignore_max_bars", 2)
+        large_min = self.gap_policy.get("large_min_bars", self.strategy.required_bars)
+        if bars_missing <= ignore_max:
+            return "ignore"
+        if bars_missing >= large_min:
+            return "large"
+        return "middle"
+
     def _process_symbol_candle_completion(
         self,
         symbol: str,
@@ -207,6 +332,54 @@ class TradingBot:
                 return
             close = data['close'].iloc[-1]
             data_time = data['timestamp'].iloc[-1]
+
+            # CUL-261 / E-039: off-by-default gap detection, checked BEFORE the
+            # warmup-cutoff return below so a gap during warmup is recorded too --
+            # gap_detection default False -> never called, byte-identical.
+            gap_detected_this_bar = (
+                self._check_and_record_gap(symbol, data_time) if self.gap_detection else False
+            )
+
+            # CUL-271: gap_policy tier classification, on top of CUL-261's
+            # detection. gap_policy None (default) -> this whole block is
+            # skipped, byte-identical to before gap_policy existed.
+            if self.gap_policy is not None:
+                if gap_detected_this_bar:
+                    bars_missing = self._gap_bars_missing(
+                        self.gap_events[-1]["actual_delta_seconds"], self.candle_interval_seconds
+                    )
+                    tier = self._classify_gap_tier(bars_missing)
+                    self._bars_since_gap[symbol] = 0
+                    if tier == "ignore":
+                        # No special handling -- the engine only ever sees real
+                        # bars, so trading simply resumes on this bar as normal.
+                        self._active_gap_tier.pop(symbol, None)
+                    else:
+                        self._active_gap_tier[symbol] = tier
+                        self.logger.info(
+                            f"⛔ GAP TIER '{tier}' │ {symbol} │ {bars_missing} bar(s) missing"
+                        )
+                        if tier == "large":
+                            # Segment split now, before this bar's own data is
+                            # added below -- it becomes bar #1 of the fresh
+                            # segment, not blended with pre-gap history.
+                            self.strategy.reset_history()
+                elif symbol in self._bars_since_gap:
+                    self._bars_since_gap[symbol] += 1
+                    active_tier = self._active_gap_tier.get(symbol)
+                    if active_tier == "middle" and self._bars_since_gap[symbol] >= self.strategy.required_bars:
+                        # Recovery window elapsed: real post-gap data has had
+                        # enough bars to flush the contaminated window.
+                        del self._active_gap_tier[symbol]
+                    elif active_tier == "large":
+                        # No separate recovery bookkeeping needed: reset_history()
+                        # already put is_ready() back to False, and
+                        # MainStrategy.generate_signals() (strategy_base.py)
+                        # already forces forecast=0.0/NOT_READY -> allocation_change
+                        # 0.0 -- new entries are blocked for free until re-warmed.
+                        # Once real is_ready() is True again the tier no longer
+                        # does anything, so it doesn't need explicit clearing.
+                        pass
 
             # 2026-07-07: warmup-only prefetch bars (see BacktestEngine.warmup_cutoff_timestamp)
             # update the strategy's internal history so indicators are primed by the
@@ -264,7 +437,30 @@ class TradingBot:
             if self.risk_gate is not None:
                 target_allocation, risk_extras = self.risk_gate.apply(target_allocation)
 
+            # CUL-271: "large" tier forces flat, composed with the risk gate the
+            # same way risk_gate.apply() itself forces flat when latched -- both
+            # act on target_allocation BEFORE allocation_change is derived from
+            # it, so whichever fires, the delta is computed consistently. gap_
+            # policy None (default) or no active "large" tier for this symbol ->
+            # gap_forced_flat False, byte-identical to before this existed.
+            gap_forced_flat = self._active_gap_tier.get(symbol) == "large"
+            if gap_forced_flat:
+                target_allocation = 0.0
+
             allocation_change = self.forecast_manager.calculate_allocation_change(target_allocation, previous_allocation)
+
+            # CUL-271: "middle" tier keeps an existing position but blocks a NEW
+            # entry (flat -> nonzero) until the recovery window elapses (cleared
+            # in the gap-classification block above once bars_since_gap reaches
+            # the strategy's own required_bars). Reducing or closing an existing
+            # position is NOT blocked -- only OPENING new exposure on indicator
+            # state that may still span the gap. gap_policy None (default) or no
+            # active "middle" tier -> this is never reached, byte-identical.
+            if self._active_gap_tier.get(symbol) == "middle" and previous_allocation == 0.0 and allocation_change != 0.0:
+                self.logger.info(
+                    f"⛔ GAP MIDDLE-TIER │ {symbol} │ new entry blocked (target {target_allocation:+.4f})"
+                )
+                allocation_change = 0.0
 
             #Init variables
             approved_rebalance = None
@@ -280,12 +476,17 @@ class TradingBot:
             # trap Q1). Keying off the latch (not "tripped this bar") means a failed
             # flatten retries next bar through the same bypass. Gate None -> False ->
             # the existing per-trade flow below is byte-identical.
-            risk_forced_flat = self.risk_gate is not None and (self.risk_gate.killed or self.risk_gate.daily_halted)
+            # CUL-271: gap_forced_flat (computed above, before allocation_change)
+            # reuses this exact same bypass -- a large-gap flatten has the same
+            # min-Δ-band problem a risk-gate flatten does.
+            risk_forced_flat = gap_forced_flat or (
+                self.risk_gate is not None and (self.risk_gate.killed or self.risk_gate.daily_halted)
+            )
 
             if risk_forced_flat:
                 if abs(allocation_change) != 0.0:
                     self.logger.debug(
-                        f"   🛑 RISK FLATTEN │ Actual: {previous_allocation} → 0.0 (gate latched)"
+                        f"   🛑 {'GAP' if gap_forced_flat else 'RISK'} FLATTEN │ Actual: {previous_allocation} → 0.0"
                     )
                     success_execute_portfolio_rebalance , debug_execute_portfolio_rebalance = self.execution_handler._execute_portfolio_rebalance(
                         symbol=symbol,
